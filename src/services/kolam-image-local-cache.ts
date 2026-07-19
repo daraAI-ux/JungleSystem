@@ -31,20 +31,29 @@ export async function syncKolamImageCache({
   fetcher = fetch,
   revision,
   scope,
+  sourceHeader,
   sourceUri,
 }: {
   fetcher?: typeof fetch;
   revision?: string;
   scope: string;
+  sourceHeader?: string;
   sourceUri: string | null | undefined;
 }) {
-  return syncKolamLocalAsset({ fetcher, revision, scope, sourceUri });
+  return syncKolamLocalAsset({
+    fetcher,
+    revision,
+    scope,
+    sourceHeader,
+    sourceUri,
+  });
 }
 
 export async function syncKolamImageCacheBatch({
   fetcher = fetch,
   images,
   scope,
+  sourceHeader,
 }: {
   fetcher?: typeof fetch;
   images: Array<{
@@ -52,6 +61,12 @@ export async function syncKolamImageCacheBatch({
     sourceUri: string | null | undefined;
   }>;
   scope: string;
+  sourceHeader?: string;
 }) {
-  return syncKolamLocalAssetBatch({ assets: images, fetcher, scope });
+  return syncKolamLocalAssetBatch({
+    assets: images,
+    fetcher,
+    scope,
+    sourceHeader,
+  });
 }

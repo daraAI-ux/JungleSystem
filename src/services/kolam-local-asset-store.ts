@@ -1,3 +1,6 @@
+import { appConfig } from '../config/app';
+import { getRuntimeClientHeaders } from '../domain/runtime-client-contract';
+import { getAccessToken, getNativeDeviceIdentity } from '../lib/api-client';
 import { getLocalDataStore } from './local-data-store';
 
 export interface KolamLocalAsset {
@@ -16,9 +19,27 @@ export function getKolamLocalAssetKey(scope: string, sourceUri: string) {
 }
 
 export async function readKolamLocalAsset(scope: string, sourceUri: string) {
-  return getLocalDataStore().read<KolamLocalAsset>(
-    getKolamLocalAssetKey(scope, sourceUri),
-  );
+  const store = getLocalDataStore();
+  const key = getKolamLocalAssetKey(scope, sourceUri);
+  const record = await store.read<KolamLocalAsset>(key);
+  if (!record) {
+    return null;
+  }
+
+  const migratedAsset = migrateLegacyLocalAsset(record.value);
+  if (migratedAsset !== record.value) {
+    await store.write({
+      key: record.key,
+      value: migratedAsset,
+      revision: record.revision,
+      updatedAt: new Date().toISOString(),
+    });
+  }
+
+  return {
+    ...record,
+    value: migratedAsset,
+  };
 }
 
 export async function writeKolamLocalAsset(
@@ -50,11 +71,13 @@ export async function syncKolamLocalAsset({
   fetcher = fetch,
   revision,
   scope,
+  sourceHeader = appConfig.kolamSourceHeader,
   sourceUri,
 }: {
   fetcher?: typeof fetch;
   revision?: string;
   scope: string;
+  sourceHeader?: string;
   sourceUri: string | null | undefined;
 }) {
   if (!sourceUri) {
@@ -64,7 +87,11 @@ export async function syncKolamLocalAsset({
   const assetRevision = revision ?? sourceUri;
   const key = getKolamLocalAssetKey(scope, sourceUri);
   const cached = await readKolamLocalAsset(scope, sourceUri);
-  if (cached?.revision === assetRevision && cached.value.dataUri) {
+  if (
+    cached?.revision === assetRevision &&
+    cached.value.dataUri &&
+    isUsableCachedAsset(cached.value, sourceUri)
+  ) {
     return cached.value;
   }
 
@@ -78,6 +105,7 @@ export async function syncKolamLocalAsset({
     fetcher,
     revision: assetRevision,
     scope,
+    sourceHeader,
     sourceUri,
   }).finally(() => {
     pendingAssetSyncs.delete(pendingKey);
@@ -91,6 +119,7 @@ export async function syncKolamLocalAssetBatch({
   fetcher = fetch,
   assets,
   scope,
+  sourceHeader = appConfig.kolamSourceHeader,
 }: {
   fetcher?: typeof fetch;
   assets: Array<{
@@ -98,6 +127,7 @@ export async function syncKolamLocalAssetBatch({
     sourceUri: string | null | undefined;
   }>;
   scope: string;
+  sourceHeader?: string;
 }) {
   const uniqueAssets = Array.from(
     new Map(
@@ -113,6 +143,7 @@ export async function syncKolamLocalAssetBatch({
         fetcher,
         revision: asset.revision,
         scope,
+        sourceHeader,
         sourceUri: asset.sourceUri,
       }),
     ),
@@ -139,23 +170,32 @@ async function fetchAndWriteKolamLocalAsset({
   fetcher,
   revision,
   scope,
+  sourceHeader,
   sourceUri,
 }: {
   fetcher: typeof fetch;
   revision: string;
   scope: string;
+  sourceHeader: string;
   sourceUri: string;
 }) {
-  const response = await fetcher(sourceUri);
+  const response = await fetcher(sourceUri, {
+    headers: createKolamLocalAssetRequestHeaders(sourceHeader),
+  });
   if (!response.ok) {
     throw new Error(`Asset fetch failed: ${response.status}`);
   }
 
   const blob = await response.blob();
-  const dataUri = await readBlobAsDataUri(blob);
+  const responseMimeType = response.headers.get('content-type') ?? blob.type;
+  const dataUri = normalizeFetchedAssetDataUri(
+    await readBlobAsDataUri(blob),
+    sourceUri,
+    responseMimeType,
+  );
   const asset = {
     dataUri,
-    mimeType: blob.type || 'image/png',
+    mimeType: getFetchedAssetMimeType(dataUri, responseMimeType),
     revision,
     scope,
     sourceUri,
@@ -164,6 +204,106 @@ async function fetchAndWriteKolamLocalAsset({
 
   await writeKolamLocalAsset(scope, asset);
   return asset;
+}
+
+export function createKolamLocalAssetRequestHeaders(
+  sourceHeader = appConfig.kolamSourceHeader,
+) {
+  const headers: Record<string, string> = {
+    Accept: 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+    ...getRuntimeClientHeaders({ sourceHeader }),
+  };
+  const bearerToken = getAccessToken();
+  const nativeIdentity = getNativeDeviceIdentity();
+  const macHeader = nativeIdentity.macAddresses?.join(',');
+
+  if (bearerToken) {
+    headers.Authorization = `Bearer ${bearerToken}`;
+  }
+
+  if (macHeader) {
+    headers['x-device-mac'] = macHeader;
+  }
+
+  if (nativeIdentity.macSignature) {
+    headers['x-device-mac-signature'] = nativeIdentity.macSignature;
+  }
+
+  return headers;
+}
+
+function isUsableCachedAsset(asset: KolamLocalAsset, sourceUri: string) {
+  if (!isLikelySvgSource(sourceUri)) {
+    return true;
+  }
+
+  return asset.dataUri.startsWith('data:image/svg+xml');
+}
+
+function migrateLegacyLocalAsset(asset: KolamLocalAsset): KolamLocalAsset {
+  if (
+    !isLikelySvgSource(asset.sourceUri, asset.mimeType) ||
+    asset.dataUri.startsWith('data:image/svg+xml')
+  ) {
+    return asset;
+  }
+
+  const payload = asset.dataUri.split(',', 2)[1];
+  if (!payload) {
+    return asset;
+  }
+
+  return {
+    ...asset,
+    dataUri: `data:image/svg+xml;base64,${payload}`,
+    mimeType: 'image/svg+xml',
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+function normalizeFetchedAssetDataUri(
+  dataUri: string,
+  sourceUri: string,
+  responseMimeType: string | null,
+) {
+  if (!isLikelySvgSource(sourceUri, responseMimeType)) {
+    return dataUri;
+  }
+
+  const payload = dataUri.split(',', 2)[1];
+  if (!payload) {
+    return dataUri;
+  }
+
+  return `data:image/svg+xml;base64,${payload}`;
+}
+
+function getFetchedAssetMimeType(
+  dataUri: string,
+  responseMimeType: string | null,
+) {
+  if (dataUri.startsWith('data:image/svg+xml')) {
+    return 'image/svg+xml';
+  }
+
+  if (responseMimeType?.trim()) {
+    return responseMimeType.split(';', 1)[0] || 'image/png';
+  }
+
+  return 'image/png';
+}
+
+function isLikelySvgSource(sourceUri: string, responseMimeType?: string | null) {
+  const mime = responseMimeType?.toLowerCase() ?? '';
+  if (mime.includes('svg')) {
+    return true;
+  }
+
+  try {
+    return new URL(sourceUri).pathname.toLowerCase().endsWith('.svg');
+  } catch {
+    return sourceUri.split('?', 1)[0].toLowerCase().endsWith('.svg');
+  }
 }
 
 function readBlobAsDataUri(blob: Blob) {

@@ -4,6 +4,12 @@ import {
   syncKolamImageCacheBatch,
   writeKolamImageCache,
 } from '../src/services/kolam-image-local-cache';
+import { createKolamLocalAssetRequestHeaders } from '../src/services/kolam-local-asset-store';
+import {
+  clearNativeDeviceIdentity,
+  setAccessToken,
+  setNativeDeviceIdentity,
+} from '../src/lib/api-client';
 import {
   MemoryLocalDataStore,
   resetLocalDataStore,
@@ -20,6 +26,8 @@ describe('Kolam image local cache', () => {
 
   afterEach(() => {
     resetLocalDataStore();
+    setAccessToken(undefined);
+    clearNativeDeviceIdentity();
   });
 
   it('stores image data URI in the local DB only when the source changes', async () => {
@@ -93,5 +101,28 @@ describe('Kolam image local cache', () => {
 
     expect(summary).toEqual({ failed: 0, synced: 1 });
     expect(fetcher).not.toHaveBeenCalled();
+  });
+
+  it('builds backend-gated request headers for local asset downloads', () => {
+    setAccessToken('token-123');
+    setNativeDeviceIdentity({
+      macAddresses: ['AA:BB:CC:DD:EE:FF'],
+      macSignature: 'signed-mac',
+    });
+
+    expect(createKolamLocalAssetRequestHeaders('Kolam')).toEqual(
+      expect.objectContaining({
+        Accept:
+          'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+        Authorization: 'Bearer token-123',
+        Origin: 'app://kolamwindows',
+        'User-Agent': 'KolamWindows/0.0.1',
+        'x-da-client': 'kolam-windows',
+        'x-da-client-version': '0.0.1',
+        'x-device-mac': 'AA:BB:CC:DD:EE:FF',
+        'x-device-mac-signature': 'signed-mac',
+        'x-source': 'Kolam',
+      }),
+    );
   });
 });
