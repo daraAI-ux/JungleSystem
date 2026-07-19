@@ -436,7 +436,7 @@ function KolamCategoryDetail({
               {
                 id: 'parent',
                 label: 'Parent',
-                value: category.parentName ?? 'Root Category',
+                value: category.parentName ?? 'Kategori akar',
                 meta: `Level ${category.level}`,
                 tone: 'default',
               },
@@ -521,18 +521,15 @@ function KolamCategoryForm({
               onChange={parentId => controller.onChangeForm({ parentId })}
               options={[
                 {
-                  label: 'Tanpa induk (Kategori Akar)',
+                  label: 'Tanpa induk (kategori akar)',
                   value: '',
                 },
                 ...parentOptions.map(category => ({
-                  label: `${'  '.repeat(category.level)}${category.name}${
-                    category.childrenCount
-                      ? ` (${category.childrenCount} subkategori)`
-                      : ''
-                  }`,
+                  label: `${'  '.repeat(category.level)}${category.name}`,
                   value: category.id,
                 })),
               ]}
+              showLabelInTrigger={false}
               value={form.parentId}
             />
           </FieldShell>
@@ -602,14 +599,6 @@ function KolamCategoryForm({
             </View>
           </FieldShell>
         </View>
-        {controller.iconDraft ? (
-          <KolamStatusBadge
-            intent={
-              controller.iconDraft.syncState === 'failed' ? 'danger' : 'warning'
-            }
-            label={`Icon ${controller.iconDraft.syncState}`}
-          />
-        ) : null}
         <View style={styles.formActions}>
           <KolamButton
             disabled={controller.saving}

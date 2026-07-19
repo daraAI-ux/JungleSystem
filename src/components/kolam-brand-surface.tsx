@@ -494,10 +494,10 @@ function KolamBrandForm({ controller }: { controller: KolamBrandController }) {
             </View>
           </FieldShell>
         </View>
-        <FieldShell label="Bendera asal" required>
+        <FieldShell label="Negara Asal" required>
           <KolamDropdownSelect
-            accessibilityLabel="Pilih bendera asal"
-            label="Bendera asal"
+            accessibilityLabel="Pilih negara asal"
+            label="Negara Asal"
             menuStyle={styles.longDropdownMenu}
             onChange={originCountry =>
               controller.onChangeForm({ originCountry })
@@ -507,17 +507,10 @@ function KolamBrandForm({ controller }: { controller: KolamBrandController }) {
               label: option.country,
               value: option.country,
             }))}
+            showLabelInTrigger={false}
             value={form.originCountry}
           />
         </FieldShell>
-        {controller.logoDraft ? (
-          <KolamStatusBadge
-            intent={
-              controller.logoDraft.syncState === 'failed' ? 'danger' : 'warning'
-            }
-            label={`Logo ${controller.logoDraft.syncState}`}
-          />
-        ) : null}
         <View style={styles.formActions}>
           <KolamButton
             disabled={controller.saving}

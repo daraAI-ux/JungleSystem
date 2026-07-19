@@ -1,14 +1,18 @@
 import React from 'react';
 import {
+  Pressable,
   ScrollView,
   StyleSheet,
   View,
   type StyleProp,
+  type TextStyle,
   type ViewStyle,
 } from 'react-native';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { KolamButton } from './kolam-button';
+import { KolamChevronIcon } from './kolam-chevron-icon';
 import { KolamCopyStack } from './kolam-copy-stack';
+import { KolamInteractionFrame } from './kolam-interaction-frame';
 
 export interface KolamDropdownOption<TValue extends string = string> {
   icon?: React.ReactNode;
@@ -22,6 +26,9 @@ export function KolamDropdownSelect<TValue extends string = string>({
   menuStyle,
   onChange,
   options,
+  showLabelInTrigger = true,
+  triggerStyle,
+  triggerTextStyle,
   value,
 }: {
   accessibilityLabel?: string;
@@ -29,41 +36,71 @@ export function KolamDropdownSelect<TValue extends string = string>({
   menuStyle?: StyleProp<ViewStyle>;
   onChange: (value: TValue) => void;
   options: Array<KolamDropdownOption<TValue>>;
+  showLabelInTrigger?: boolean;
+  triggerStyle?: StyleProp<ViewStyle>;
+  triggerTextStyle?: StyleProp<TextStyle>;
   value: TValue;
 }) {
   const [open, setOpen] = React.useState(false);
   const selected = options.find(option => option.value === value) ?? options[0];
+  const selectedLabel = selected?.label ?? '-';
+  const triggerLabel = showLabelInTrigger
+    ? `${label}: ${selectedLabel}`
+    : selectedLabel;
 
   return (
-    <View style={styles.root}>
-      <KolamButton
+    <View style={[styles.root, open && styles.rootOpen]}>
+      <KolamInteractionFrame
         accessibilityLabel={accessibilityLabel ?? label}
-        intent="outline"
-        label={`${label}: ${selected?.label ?? '-'}`}
+        accessibilityState={{ expanded: open }}
         onPress={() => setOpen(current => !current)}
-        textStyle={styles.triggerText}
-      />
+        style={[styles.trigger, triggerStyle]}
+      >
+        <View style={styles.triggerValue}>
+          {selected?.icon ? (
+            <View style={styles.triggerIcon}>{selected.icon}</View>
+          ) : null}
+          <KolamCopyStack
+            items={[
+              {
+                id: 'value',
+                text: triggerLabel,
+                style: [styles.triggerText, triggerTextStyle],
+              },
+            ]}
+          />
+        </View>
+        <KolamChevronIcon direction={open ? 'up' : 'down'} size="menu-sm" />
+      </KolamInteractionFrame>
       {open ? (
-        <ScrollView
-          nestedScrollEnabled
-          style={[styles.menu, menuStyle]}
-          contentContainerStyle={styles.menuContent}
-        >
-          {options.map(option => (
-            <KolamButton
-              icon={option.icon}
-              intent={option.value === value ? 'primary' : 'plain'}
-              key={option.value}
-              label={option.label}
-              onPress={() => {
-                onChange(option.value);
-                setOpen(false);
-              }}
-              style={styles.option}
-              textStyle={styles.optionText}
-            />
-          ))}
-        </ScrollView>
+        <>
+          <Pressable
+            accessibilityLabel="Tutup dropdown"
+            accessibilityRole="button"
+            onPress={() => setOpen(false)}
+            style={styles.backdrop}
+          />
+          <ScrollView
+            nestedScrollEnabled
+            style={[styles.menu, menuStyle]}
+            contentContainerStyle={styles.menuContent}
+          >
+            {options.map(option => (
+              <KolamButton
+                icon={option.icon}
+                intent={option.value === value ? 'primary' : 'plain'}
+                key={option.value}
+                label={option.label}
+                onPress={() => {
+                  onChange(option.value);
+                  setOpen(false);
+                }}
+                style={styles.option}
+                textStyle={styles.optionText}
+              />
+            ))}
+          </ScrollView>
+        </>
       ) : null}
     </View>
   );
@@ -178,17 +215,62 @@ const styles = StyleSheet.create({
     zIndex: 20,
     elevation: 8,
   },
+  rootOpen: {
+    zIndex: 1000,
+    elevation: 40,
+  },
+  trigger: {
+    minHeight: 36,
+    minWidth: 190,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: V.radius.lg,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.bg,
+  },
+  triggerValue: {
+    minWidth: 0,
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  triggerIcon: {
+    width: 18,
+    height: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   triggerText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 16,
     maxWidth: 220,
+  },
+  backdrop: {
+    position: 'absolute',
+    top: -4096,
+    right: -4096,
+    bottom: -4096,
+    left: -4096,
+    zIndex: 1,
+    elevation: 1,
+    backgroundColor: 'transparent',
   },
   menu: {
     position: 'absolute',
     top: 38,
     left: 0,
-    zIndex: 10,
-    elevation: 24,
+    zIndex: 2,
+    elevation: 48,
     minWidth: 190,
-    gap: 4,
     padding: 6,
     borderRadius: 8,
     borderColor: V.colors.border,
