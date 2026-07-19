@@ -2137,8 +2137,18 @@ function getLabelAndFieldsBrandNavigationItem(
     /^\/label-dan-field\/merek\/([^/]+)(?:\/edit)?$/,
   );
 
-  if (!brandDetail?.[1] || brandDetail[1] === 'baru') {
+  if (!brandDetail?.[1]) {
     return null;
+  }
+
+  if (brandDetail[1] === 'baru') {
+    return {
+      description: 'Buat merek baru dari Label and Fields Kolam',
+      group: 'Label and Fields',
+      label: 'Buat Merek Baru',
+      requiredAccess: ['kolam'],
+      route: normalizedRoute,
+    };
   }
 
   return {
@@ -2172,8 +2182,18 @@ function getLabelAndFieldsCategoryNavigationItem(
     routePath.match(/^\/label-dan-field\/kategori\/([^/]+)(?:\/edit)?$/) ??
     routePath.match(/^\/category\/([^/]+)(?:\/edit)?$/);
 
-  if (!categoryDetail?.[1] || categoryDetail[1] === 'baru') {
+  if (!categoryDetail?.[1]) {
     return null;
+  }
+
+  if (categoryDetail[1] === 'baru') {
+    return {
+      description: 'Buat kategori baru dari Label and Fields Kolam',
+      group: 'Label and Fields',
+      label: 'Buat Kategori Baru',
+      requiredAccess: ['kolam'],
+      route: normalizedRoute.replace(/^\/category/, '/label-dan-field/kategori'),
+    };
   }
 
   return {

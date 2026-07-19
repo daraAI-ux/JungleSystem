@@ -12,13 +12,13 @@ export interface KolamFormSection {
 export interface KolamFormVisualContract {
   sourceComponent: string;
   section: {
-    layout: 'two-column';
+    layout: 'single-column';
     columnGap: number;
     rowGap: number;
     separator: true;
   };
   fieldGrid: {
-    desktopColumns: 2;
+    desktopColumns: 1;
     gap: number;
   };
   actions: {
@@ -39,13 +39,13 @@ export const kolamFormVisualContract: KolamFormVisualContract = {
   sourceComponent:
     'E:\\Projects\\da-inventory-frontend\\src\\components\\form-section.tsx',
   section: {
-    layout: 'two-column',
+    layout: 'single-column',
     columnGap: 32,
     rowGap: 24,
     separator: true,
   },
   fieldGrid: {
-    desktopColumns: 2,
+    desktopColumns: 1,
     gap: 16,
   },
   actions: {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import {
   filterKolamCategoryTree,
   flattenAllCategories,
@@ -27,6 +27,7 @@ import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import { KolamDescriptionList } from './kolam-description-list';
 import {
+  KolamDropdownSelect,
   KolamOverflowMenuButton,
   KolamPaginationSizeControl,
   KolamPaginationSummaryLabel,
@@ -34,6 +35,7 @@ import {
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamNativeFormSection } from './kolam-native-form-section';
+import { KolamRichTextEditor } from './kolam-rich-text-editor';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamStatusBadge } from './kolam-status-badge';
@@ -511,41 +513,36 @@ function KolamCategoryForm({
               value={form.name}
             />
           </FieldShell>
-          <FieldShell label="Parent">
-            <ScrollView
-              nestedScrollEnabled
-              style={styles.parentScroll}
-              contentContainerStyle={styles.parentGrid}
-            >
-              <KolamButton
-                intent={!form.parentId ? 'primary' : 'outline'}
-                label="Root Category"
-                onPress={() => controller.onChangeForm({ parentId: '' })}
-              />
-              {parentOptions.map(category => (
-                <KolamButton
-                  intent={form.parentId === category.id ? 'primary' : 'outline'}
-                  key={category.id}
-                  label={`${'  '.repeat(category.level)}${category.name}`}
-                  onPress={() =>
-                    controller.onChangeForm({ parentId: category.id })
-                  }
-                />
-              ))}
-            </ScrollView>
+          <FieldShell label="Pilih Induk">
+            <KolamDropdownSelect
+              accessibilityLabel="Pilih induk kategori"
+              label="Pilih Induk"
+              menuStyle={styles.longDropdownMenu}
+              onChange={parentId => controller.onChangeForm({ parentId })}
+              options={[
+                {
+                  label: 'Tanpa induk (Kategori Akar)',
+                  value: '',
+                },
+                ...parentOptions.map(category => ({
+                  label: `${'  '.repeat(category.level)}${category.name}${
+                    category.childrenCount
+                      ? ` (${category.childrenCount} subkategori)`
+                      : ''
+                  }`,
+                  value: category.id,
+                })),
+              ]}
+              value={form.parentId}
+            />
           </FieldShell>
           <FieldShell label="Deskripsi">
-            <KolamFormTextField
+            <KolamRichTextEditor
               editable={!controller.saving}
-              multiline
               onChangeText={description =>
                 controller.onChangeForm({ description })
               }
               placeholder="Deskripsi singkat"
-              style={[
-                settingsWebFormStyles.settingsWebFormFieldValue,
-                settingsWebFormStyles.settingsWebFormFieldValueTextarea,
-              ]}
               value={form.description}
             />
           </FieldShell>
@@ -603,18 +600,6 @@ function KolamCategoryForm({
                 }}
               />
             </View>
-          </FieldShell>
-          <FieldShell label="Icon server">
-            <KolamFormTextField
-              editable={!controller.saving}
-              mode="url"
-              onChangeText={iconRemoteUrl =>
-                controller.onChangeForm({ iconRemoteUrl })
-              }
-              placeholder="URL icon dari backend"
-              style={settingsWebFormStyles.settingsWebFormFieldValue}
-              value={form.iconRemoteUrl}
-            />
           </FieldShell>
         </View>
         {controller.iconDraft ? (
@@ -898,13 +883,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 18,
   },
-  parentScroll: {
-    maxHeight: 160,
-  },
-  parentGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
+  longDropdownMenu: {
+    maxHeight: 280,
+    minWidth: 360,
   },
   segmentRow: {
     minHeight: V.control.inputHeight,

@@ -90,16 +90,14 @@ export const contentFrameStyles = StyleSheet.create({
     borderWidth: 1,
   },
   nativeFormSection: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: KOLAM_FORM_VISUAL.section.columnGap,
+    gap: 16,
     marginBottom: V.layout.cardSpacing,
     paddingTop: KOLAM_FORM_VISUAL.section.rowGap,
     borderTopColor: V.colors.border,
     borderTopWidth: KOLAM_FORM_VISUAL.section.separator ? 1 : 0,
   },
   nativeFormControls: {
-    flex: 1,
+    width: '100%',
     minWidth: 0,
   },
   settingsWebConfig: {

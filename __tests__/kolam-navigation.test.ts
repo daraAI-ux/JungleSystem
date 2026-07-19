@@ -531,6 +531,15 @@ describe('kolamNavigationSections', () => {
       }),
     );
     expect(
+      getKolamNavigationItemByRuntimeRoute('/label-dan-field/merek/baru'),
+    ).toEqual(
+      expect.objectContaining({
+        group: 'Label and Fields',
+        label: 'Buat Merek Baru',
+        route: '/label-dan-field/merek/baru',
+      }),
+    );
+    expect(
       getKolamNavigationItemByRuntimeRoute('/label-dan-field/kategori'),
     ).toEqual(
       expect.objectContaining({
@@ -555,6 +564,15 @@ describe('kolamNavigationSections', () => {
         group: 'Label and Fields',
         label: 'Peralatan',
         route: '/label-dan-field/kategori/Peralatan/edit',
+      }),
+    );
+    expect(
+      getKolamNavigationItemByRuntimeRoute('/label-dan-field/kategori/baru'),
+    ).toEqual(
+      expect.objectContaining({
+        group: 'Label and Fields',
+        label: 'Buat Kategori Baru',
+        route: '/label-dan-field/kategori/baru',
       }),
     );
   });

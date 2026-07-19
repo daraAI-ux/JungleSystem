@@ -1,10 +1,17 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import {
+  ScrollView,
+  StyleSheet,
+  View,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { KolamButton } from './kolam-button';
 import { KolamCopyStack } from './kolam-copy-stack';
 
 export interface KolamDropdownOption<TValue extends string = string> {
+  icon?: React.ReactNode;
   label: string;
   value: TValue;
 }
@@ -12,12 +19,14 @@ export interface KolamDropdownOption<TValue extends string = string> {
 export function KolamDropdownSelect<TValue extends string = string>({
   accessibilityLabel,
   label,
+  menuStyle,
   onChange,
   options,
   value,
 }: {
   accessibilityLabel?: string;
   label: string;
+  menuStyle?: StyleProp<ViewStyle>;
   onChange: (value: TValue) => void;
   options: Array<KolamDropdownOption<TValue>>;
   value: TValue;
@@ -35,9 +44,14 @@ export function KolamDropdownSelect<TValue extends string = string>({
         textStyle={styles.triggerText}
       />
       {open ? (
-        <View style={styles.menu}>
+        <ScrollView
+          nestedScrollEnabled
+          style={[styles.menu, menuStyle]}
+          contentContainerStyle={styles.menuContent}
+        >
           {options.map(option => (
             <KolamButton
+              icon={option.icon}
               intent={option.value === value ? 'primary' : 'plain'}
               key={option.value}
               label={option.label}
@@ -49,7 +63,7 @@ export function KolamDropdownSelect<TValue extends string = string>({
               textStyle={styles.optionText}
             />
           ))}
-        </View>
+        </ScrollView>
       ) : null}
     </View>
   );
@@ -184,6 +198,9 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.12,
     shadowRadius: 16,
+  },
+  menuContent: {
+    gap: 4,
   },
   option: {
     justifyContent: 'flex-start',

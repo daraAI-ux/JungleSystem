@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import {
   getKolamBrandFlagByCountry,
   KOLAM_BRAND_FLAG_OPTIONS,
@@ -35,6 +35,7 @@ import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFlagIcon } from './kolam-flag-icon';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamNativeFormSection } from './kolam-native-form-section';
+import { KolamRichTextEditor } from './kolam-rich-text-editor';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamHoverTooltip } from './kolam-hover-tooltip';
@@ -433,17 +434,12 @@ function KolamBrandForm({ controller }: { controller: KolamBrandController }) {
             </View>
           </FieldShell>
           <FieldShell label="Deskripsi">
-            <KolamFormTextField
+            <KolamRichTextEditor
               editable={!controller.saving}
-              multiline
               onChangeText={description =>
                 controller.onChangeForm({ description })
               }
               placeholder="Deskripsi singkat"
-              style={[
-                settingsWebFormStyles.settingsWebFormFieldValue,
-                settingsWebFormStyles.settingsWebFormFieldValueTextarea,
-              ]}
               value={form.description}
             />
           </FieldShell>
@@ -497,40 +493,22 @@ function KolamBrandForm({ controller }: { controller: KolamBrandController }) {
               />
             </View>
           </FieldShell>
-          <FieldShell label="Logo server">
-            <KolamFormTextField
-              editable={!controller.saving}
-              mode="url"
-              onChangeText={logoRemoteUrl =>
-                controller.onChangeForm({ logoRemoteUrl })
-              }
-              placeholder="URL logo dari backend"
-              style={settingsWebFormStyles.settingsWebFormFieldValue}
-              value={form.logoRemoteUrl}
-            />
-          </FieldShell>
         </View>
-        <FieldShell label="Bendera asal" required wide>
-          <ScrollView
-            nestedScrollEnabled
-            style={styles.flagScroll}
-            contentContainerStyle={styles.flagGrid}
-          >
-            {KOLAM_BRAND_FLAG_OPTIONS.map(option => (
-              <KolamButton
-                icon={<KolamFlagIcon option={option} />}
-                intent={
-                  form.originCountry === option.country ? 'primary' : 'outline'
-                }
-                key={option.code}
-                label={option.country}
-                onPress={() =>
-                  controller.onChangeForm({ originCountry: option.country })
-                }
-                style={styles.flagButton}
-              />
-            ))}
-          </ScrollView>
+        <FieldShell label="Bendera asal" required>
+          <KolamDropdownSelect
+            accessibilityLabel="Pilih bendera asal"
+            label="Bendera asal"
+            menuStyle={styles.longDropdownMenu}
+            onChange={originCountry =>
+              controller.onChangeForm({ originCountry })
+            }
+            options={KOLAM_BRAND_FLAG_OPTIONS.map(option => ({
+              icon: <KolamFlagIcon option={option} />,
+              label: option.country,
+              value: option.country,
+            }))}
+            value={form.originCountry}
+          />
         </FieldShell>
         {controller.logoDraft ? (
           <KolamStatusBadge
@@ -879,17 +857,9 @@ const styles = StyleSheet.create({
   fieldWide: {
     flexBasis: '100%',
   },
-  flagGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  flagScroll: {
-    maxHeight: 216,
-  },
-  flagButton: {
-    minWidth: 168,
-    justifyContent: 'flex-start',
+  longDropdownMenu: {
+    maxHeight: 280,
+    minWidth: 320,
   },
   logoPickerRow: {
     minHeight: V.control.inputHeight,

@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Image, StyleSheet, View } from 'react-native';
 import type { KolamCountryFlagOption } from '../domain/kolam-country-flags';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 
@@ -24,7 +24,16 @@ export function KolamFlagIcon({
       accessibilityLabel={`${option.country} flag`}
       style={[styles.flagIcon, size === 'md' && styles.flagIconMd]}
     >
-      <KolamNativeFlag code={option.code} />
+      {option.imageUrl ? (
+        <Image
+          accessibilityIgnoresInvertColors
+          resizeMode="cover"
+          source={{ uri: option.imageUrl }}
+          style={styles.flagImage}
+        />
+      ) : (
+        <KolamNativeFlag code={option.code} />
+      )}
     </View>
   );
 }
@@ -189,6 +198,10 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     left: 0,
+  },
+  flagImage: {
+    width: '100%',
+    height: '100%',
   },
   horizontalStripe: {
     flex: 1,
