@@ -1,6 +1,10 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import {
+  createKolamDetailItemsFromRawArray,
+  getKolamRawArray,
+} from '../domain/kolam-detail-list';
+import {
   filterKolamCategoryTree,
   flattenAllCategories,
   flattenKolamCategoryTree,
@@ -403,6 +407,7 @@ function KolamCategoryDetail({
 }) {
   const category = controller.selectedCategory;
   const editable = controller.isEditable;
+  const detailLists = category ? getCategoryDetailLists(category) : null;
 
   if (!category && controller.mode !== 'new') {
     return (
@@ -456,30 +461,36 @@ function KolamCategoryDetail({
                 title: 'Produk',
                 total: category.productCount,
                 description: 'Produk yang menggunakan kategori ini',
+                items: detailLists?.products,
                 emptyText: category.productCount
-                  ? `${category.productCount} produk menggunakan kategori ini`
+                  ? 'Daftar produk belum tersedia dari cache lokal.'
                   : 'Tidak ada produk yang menggunakan kategori ini',
               },
               {
                 title: 'Bahan Baku',
-                total: 0,
+                total: detailLists?.raws.length ?? 0,
                 description: 'Bahan baku yang menggunakan kategori ini',
-                emptyText: 'Tidak ada bahan baku yang menggunakan kategori ini',
+                items: detailLists?.raws,
+                emptyText: detailLists?.raws.length
+                  ? 'Daftar bahan baku belum tersedia dari cache lokal.'
+                  : 'Tidak ada bahan baku yang menggunakan kategori ini',
               },
               {
                 title: 'Layanan',
                 total: category.serviceCount,
                 description: 'Layanan yang menggunakan kategori ini',
+                items: detailLists?.services,
                 emptyText: category.serviceCount
-                  ? `${category.serviceCount} layanan menggunakan kategori ini`
+                  ? 'Daftar layanan belum tersedia dari cache lokal.'
                   : 'Tidak ada layanan yang menggunakan kategori ini',
               },
               {
                 title: 'Species',
                 total: category.speciesCount,
                 description: 'Species yang menggunakan kategori ini',
+                items: detailLists?.species,
                 emptyText: category.speciesCount
-                  ? `${category.speciesCount} species menggunakan kategori ini`
+                  ? 'Daftar species belum tersedia dari cache lokal.'
                   : 'Tidak ada species yang menggunakan kategori ini',
               },
             ]}
@@ -667,6 +678,23 @@ function getCategorySummary(categories: KolamCategory[]) {
 
 function getCategoryRoute(category: KolamCategory) {
   return `/label-dan-field/kategori/${encodeURIComponent(category.name)}`;
+}
+
+function getCategoryDetailLists(category: KolamCategory) {
+  return {
+    products: createKolamDetailItemsFromRawArray(
+      getKolamRawArray(category.raw, 'products'),
+    ),
+    raws: createKolamDetailItemsFromRawArray(
+      getKolamRawArray(category.raw, 'raws'),
+    ),
+    services: createKolamDetailItemsFromRawArray(
+      getKolamRawArray(category.raw, 'services'),
+    ),
+    species: createKolamDetailItemsFromRawArray(
+      getKolamRawArray(category.raw, 'species'),
+    ),
+  };
 }
 
 const styles = StyleSheet.create({

@@ -36,8 +36,8 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   logoDetail: {
-    width: 260,
-    height: 86,
+    width: 158,
+    height: 84,
   },
   image: {
     width: '100%',

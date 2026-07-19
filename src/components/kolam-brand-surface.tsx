@@ -1,5 +1,9 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Linking, StyleSheet, View } from 'react-native';
+import {
+  createKolamDetailItemsFromRawArray,
+  getKolamRawArray,
+} from '../domain/kolam-detail-list';
 import {
   getKolamBrandFlagByCountry,
   KOLAM_BRAND_FLAG_OPTIONS,
@@ -334,6 +338,7 @@ function KolamBrandDetail({
 }) {
   const brand = controller.selectedBrand;
   const editable = controller.isEditable;
+  const detailLists = brand ? getBrandDetailLists(brand) : null;
 
   if (!brand && controller.mode !== 'new') {
     return (
@@ -373,6 +378,9 @@ function KolamBrandDetail({
                 : []),
               ...brand.links.map(link => ({
                 label: 'Link',
+                onPress: () => {
+                  void Linking.openURL(normalizeExternalLink(link));
+                },
                 value: link,
               })),
             ]}
@@ -381,32 +389,36 @@ function KolamBrandDetail({
                 title: 'Produk',
                 total: brand.productCount,
                 description: 'Produk yang menggunakan merek ini',
+                items: detailLists?.products,
                 emptyText: brand.productCount
-                  ? `${brand.productCount} produk menggunakan merek ini`
+                  ? 'Daftar produk belum tersedia dari cache lokal.'
                   : 'Tidak ada produk yang menggunakan merek ini',
               },
               {
                 title: 'Bahan Baku',
                 total: brand.rawMaterialCount,
                 description: 'Bahan baku yang menggunakan merek ini',
+                items: detailLists?.raws,
                 emptyText: brand.rawMaterialCount
-                  ? `${brand.rawMaterialCount} bahan baku menggunakan merek ini`
+                  ? 'Daftar bahan baku belum tersedia dari cache lokal.'
                   : 'Tidak ada bahan baku yang menggunakan merek ini',
               },
               {
                 title: 'Layanan',
                 total: brand.serviceCount,
                 description: 'Layanan yang menggunakan merek ini',
+                items: detailLists?.services,
                 emptyText: brand.serviceCount
-                  ? `${brand.serviceCount} layanan menggunakan merek ini`
+                  ? 'Daftar layanan belum tersedia dari cache lokal.'
                   : 'Tidak ada layanan yang menggunakan merek ini',
               },
               {
                 title: 'Species',
                 total: brand.speciesCount,
                 description: 'Species yang menggunakan merek ini',
+                items: detailLists?.species,
                 emptyText: brand.speciesCount
-                  ? `${brand.speciesCount} species menggunakan merek ini`
+                  ? 'Daftar species belum tersedia dari cache lokal.'
                   : 'Tidak ada species yang menggunakan merek ini',
               },
             ]}
@@ -435,20 +447,45 @@ function KolamBrandForm({ controller }: { controller: KolamBrandController }) {
               value={form.name}
             />
           </FieldShell>
-          <FieldShell label="Status" required>
-            <View style={styles.segmentRow}>
-              {(
-                ['active', 'inactive', 'blacklisted'] as KolamBrandStatus[]
-              ).map(status => (
-                <KolamButton
-                  intent={form.status === status ? 'primary' : 'outline'}
-                  key={status}
-                  label={getBrandStatusLabel(status)}
-                  onPress={() => controller.onChangeForm({ status })}
-                />
-              ))}
+          <View style={styles.formSplitRow}>
+            <View style={styles.formSplitCell}>
+              <FieldShell label="Status" required>
+                <View style={styles.segmentRow}>
+                  {(
+                    ['active', 'inactive', 'blacklisted'] as KolamBrandStatus[]
+                  ).map(status => (
+                    <KolamButton
+                      intent={form.status === status ? 'primary' : 'outline'}
+                      key={status}
+                      label={getBrandStatusLabel(status)}
+                      onPress={() => controller.onChangeForm({ status })}
+                    />
+                  ))}
+                </View>
+              </FieldShell>
             </View>
-          </FieldShell>
+            <View style={[styles.formSplitCell, styles.countryDropdownCell]}>
+              <FieldShell label="Negara Asal" required>
+                <KolamDropdownSelect
+                  accessibilityLabel="Pilih negara asal"
+                  label="Negara Asal"
+                  menuStyle={styles.countryDropdownMenu}
+                  onChange={originCountry =>
+                    controller.onChangeForm({ originCountry })
+                  }
+                  options={KOLAM_BRAND_FLAG_OPTIONS.map(option => ({
+                    icon: <KolamFlagIcon option={option} />,
+                    label: option.country,
+                    value: option.country,
+                  }))}
+                  searchable
+                  searchPlaceholder="Cari nama negara..."
+                  showLabelInTrigger={false}
+                  value={form.originCountry}
+                />
+              </FieldShell>
+            </View>
+          </View>
           <FieldShell label="Deskripsi">
             <KolamRichTextEditor
               editable={!controller.saving}
@@ -510,25 +547,6 @@ function KolamBrandForm({ controller }: { controller: KolamBrandController }) {
             </View>
           </FieldShell>
         </View>
-        <FieldShell label="Negara Asal" required>
-          <KolamDropdownSelect
-            accessibilityLabel="Pilih negara asal"
-            label="Negara Asal"
-            menuStyle={styles.longDropdownMenu}
-            onChange={originCountry =>
-              controller.onChangeForm({ originCountry })
-            }
-            options={KOLAM_BRAND_FLAG_OPTIONS.map(option => ({
-              icon: <KolamFlagIcon option={option} />,
-              label: option.country,
-              value: option.country,
-            }))}
-            searchable
-            searchPlaceholder="Cari negara..."
-            showLabelInTrigger={false}
-            value={form.originCountry}
-          />
-        </FieldShell>
         <View style={styles.formActions}>
           <KolamButton
             disabled={controller.saving}
@@ -669,6 +687,32 @@ function getBrandStatusIntent(status: KolamBrandStatus) {
     default:
       return 'success';
   }
+}
+
+function getBrandDetailLists(brand: KolamBrand) {
+  return {
+    products: createKolamDetailItemsFromRawArray(
+      getKolamRawArray(brand.raw, 'products'),
+    ),
+    raws: createKolamDetailItemsFromRawArray(
+      getKolamRawArray(brand.raw, 'raws'),
+    ),
+    services: createKolamDetailItemsFromRawArray(
+      getKolamRawArray(brand.raw, 'services'),
+    ),
+    species: createKolamDetailItemsFromRawArray(
+      getKolamRawArray(brand.raw, 'species'),
+    ),
+  };
+}
+
+function normalizeExternalLink(link: string) {
+  const trimmed = link.trim();
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed;
+  }
+
+  return `https://${trimmed}`;
 }
 
 function stripHtmlForDetail(value: string) {
@@ -828,8 +872,27 @@ const styles = StyleSheet.create({
   fieldWide: {
     flexBasis: '100%',
   },
+  formSplitRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    zIndex: 80,
+    elevation: 16,
+  },
+  formSplitCell: {
+    flex: 1,
+    minWidth: 280,
+  },
+  countryDropdownCell: {
+    zIndex: 120,
+    elevation: 24,
+  },
   longDropdownMenu: {
     maxHeight: 340,
+    minWidth: 360,
+  },
+  countryDropdownMenu: {
+    maxHeight: 260,
     minWidth: 360,
   },
   logoPickerRow: {

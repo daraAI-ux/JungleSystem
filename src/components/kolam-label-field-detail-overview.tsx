@@ -2,6 +2,7 @@ import React from 'react';
 import {StyleSheet, View} from 'react-native';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {KolamCopyStack} from './kolam-copy-stack';
+import {KolamInteractionFrame} from './kolam-interaction-frame';
 import {KolamStatusBadge, type KolamStatusBadgeProps} from './kolam-status-badge';
 
 export interface KolamLabelFieldMetric {
@@ -12,12 +13,22 @@ export interface KolamLabelFieldMetric {
 export interface KolamLabelFieldMeta {
   icon?: React.ReactNode;
   label: string;
+  onPress?: () => void;
   value: string;
+}
+
+export interface KolamLabelFieldDetailSectionItem {
+  badge?: string;
+  meta?: string;
+  thumbnail?: React.ReactNode;
+  title: string;
+  value?: string;
 }
 
 export interface KolamLabelFieldDetailSection {
   description: string;
   emptyText: string;
+  items?: KolamLabelFieldDetailSectionItem[];
   title: string;
   total: number;
 }
@@ -59,16 +70,35 @@ export function KolamLabelFieldDetailOverview({
             {meta.map(item => (
               <View key={`${item.label}-${item.value}`} style={styles.metaRow}>
                 {item.icon ? <View style={styles.metaIcon}>{item.icon}</View> : null}
-                <KolamCopyStack
-                  containerStyle={styles.metaCopy}
-                  items={[
-                    {
-                      id: 'text',
-                      text: `${item.label}: ${item.value}`,
-                      style: styles.metaText,
-                    },
-                  ]}
-                />
+                {item.onPress ? (
+                  <KolamInteractionFrame
+                    accessibilityLabel={`Buka ${item.value}`}
+                    onPress={item.onPress}
+                    style={styles.metaLink}
+                  >
+                    <KolamCopyStack
+                      containerStyle={styles.metaCopy}
+                      items={[
+                        {
+                          id: 'text',
+                          text: `${item.label}: ${item.value}`,
+                          style: [styles.metaText, styles.metaLinkText],
+                        },
+                      ]}
+                    />
+                  </KolamInteractionFrame>
+                ) : (
+                  <KolamCopyStack
+                    containerStyle={styles.metaCopy}
+                    items={[
+                      {
+                        id: 'text',
+                        text: `${item.label}: ${item.value}`,
+                        style: styles.metaText,
+                      },
+                    ]}
+                  />
+                )}
               </View>
             ))}
           </View>
@@ -92,15 +122,61 @@ export function KolamLabelFieldDetailOverview({
               ]}
             />
             <View style={styles.sectionBody}>
-              <KolamCopyStack
-                items={[
-                  {
-                    id: 'empty',
-                    text: section.emptyText,
-                    style: styles.emptyText,
-                  },
-                ]}
-              />
+              {section.items?.length ? (
+                <View style={styles.itemList}>
+                  {section.items.map((item, index) => (
+                    <View key={`${item.title}-${index}`} style={styles.itemRow}>
+                      {item.thumbnail ? (
+                        <View style={styles.itemThumbnail}>{item.thumbnail}</View>
+                      ) : null}
+                      <KolamCopyStack
+                        containerStyle={styles.itemCopy}
+                        items={[
+                          {
+                            id: 'title',
+                            text: item.title,
+                            style: styles.itemTitle,
+                          },
+                          ...(item.meta
+                            ? [
+                                {
+                                  id: 'meta',
+                                  text: item.meta,
+                                  style: styles.itemMeta,
+                                },
+                              ]
+                            : []),
+                        ]}
+                      />
+                      {item.value ? (
+                        <KolamCopyStack
+                          containerStyle={styles.itemValueCopy}
+                          items={[
+                            {
+                              id: 'value',
+                              text: item.value,
+                              style: styles.itemValue,
+                            },
+                          ]}
+                        />
+                      ) : null}
+                      {item.badge ? (
+                        <KolamStatusBadge intent="muted" label={item.badge} />
+                      ) : null}
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <KolamCopyStack
+                  items={[
+                    {
+                      id: 'empty',
+                      text: section.emptyText,
+                      style: styles.emptyText,
+                    },
+                  ]}
+                />
+              )}
             </View>
           </View>
         ))}
@@ -161,7 +237,7 @@ const styles = StyleSheet.create({
     backgroundColor: V.colors.bg,
   },
   heroAsset: {
-    width: 160,
+    width: 170,
     minHeight: 92,
     alignItems: 'flex-start',
     justifyContent: 'flex-start',
@@ -219,11 +295,20 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
   },
+  metaLink: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: 'flex-start',
+    paddingVertical: 2,
+  },
   metaText: {
     color: V.colors.fg,
     fontFamily: V.fontFamily,
     fontSize: 13,
     fontWeight: '700',
+  },
+  metaLinkText: {
+    color: V.colors.primary,
   },
   sectionGrid: {
     flexDirection: 'row',
@@ -257,8 +342,56 @@ const styles = StyleSheet.create({
   sectionBody: {
     flex: 1,
     minHeight: 92,
+    justifyContent: 'center',
+  },
+  itemList: {
+    marginTop: 14,
+    gap: 0,
+    borderTopColor: V.colors.border,
+    borderTopWidth: 1,
+  },
+  itemRow: {
+    minHeight: 58,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 10,
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: 1,
+  },
+  itemThumbnail: {
+    width: 38,
+    height: 38,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  itemCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  itemTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  itemMeta: {
+    marginTop: 3,
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  itemValueCopy: {
+    minWidth: 84,
+    alignItems: 'flex-end',
+  },
+  itemValue: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '800',
+    textAlign: 'right',
   },
   emptyText: {
     color: V.colors.fg,
