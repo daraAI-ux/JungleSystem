@@ -1,4 +1,5 @@
 import {
+  createKolamCategorySavePayload,
   filterKolamCategoryTree,
   flattenAllCategories,
   normalizeKolamCategoryList,
@@ -63,5 +64,25 @@ describe('Kolam category domain contract', () => {
     expect(filterKolamCategoryTree(categories, 'canister')[0].children).toEqual(
       [expect.objectContaining({ name: 'Filter Canister' })],
     );
+  });
+
+  it('builds backend payload with explicit marketplace visibility and order', () => {
+    expect(
+      createKolamCategorySavePayload({
+        name: ' Aquascape ',
+        description: 'Display marketplace',
+        parentId: '',
+        iconLocalUri: '',
+        iconRemoteUrl: '',
+        showInMarketplace: true,
+        marketplaceOrder: '7',
+      }),
+    ).toEqual({
+      name: 'Aquascape',
+      description: 'Display marketplace',
+      parent: null,
+      showInMarketplace: true,
+      marketplaceOrder: 7,
+    });
   });
 });

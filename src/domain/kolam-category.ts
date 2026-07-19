@@ -107,12 +107,16 @@ export function createKolamCategoryFormState(
 }
 
 export function createKolamCategorySavePayload(form: KolamCategoryFormState) {
+  const marketplaceOrder = Number(form.marketplaceOrder);
+
   return {
     name: form.name.trim(),
     description: form.description.trim(),
     parent: form.parentId.trim() || null,
     showInMarketplace: form.showInMarketplace,
-    marketplaceOrder: Number(form.marketplaceOrder) || 0,
+    marketplaceOrder: Number.isFinite(marketplaceOrder)
+      ? Math.max(0, Math.floor(marketplaceOrder))
+      : 0,
   };
 }
 
@@ -151,8 +155,14 @@ export function normalizeKolamCategory(payload: unknown): KolamCategory {
     parentId: parent.id,
     parentName: parent.name,
     level: getNumber(record, 'level') ?? 0,
-    showInMarketplace: record.showInMarketplace === true,
-    marketplaceOrder: getNumber(record, 'marketplaceOrder') ?? 0,
+    showInMarketplace:
+      getBoolean(record, 'showInMarketplace') ??
+      getBoolean(record, 'show_in_marketplace') ??
+      false,
+    marketplaceOrder:
+      getNumber(record, 'marketplaceOrder') ??
+      getNumber(record, 'marketplace_order') ??
+      0,
     status: record.status === 'inactive' ? 'inactive' : 'active',
     children,
     createdAt: getString(record, 'createdAt') || undefined,
@@ -347,6 +357,8 @@ export function createKolamCategoryListRevision(categories: KolamCategory[]) {
       speciesCount: category.speciesCount,
       childrenCount: category.childrenCount,
       iconUrl: category.iconUrl,
+      marketplaceOrder: category.marketplaceOrder,
+      showInMarketplace: category.showInMarketplace,
       updatedAt: category.updatedAt,
     })),
   );
@@ -362,6 +374,8 @@ export function createKolamCategoryDetailRevision(category: KolamCategory) {
     serviceCount: category.serviceCount,
     speciesCount: category.speciesCount,
     iconUrl: category.iconUrl,
+    marketplaceOrder: category.marketplaceOrder,
+    showInMarketplace: category.showInMarketplace,
     updatedAt: category.updatedAt,
   });
 }
@@ -421,9 +435,33 @@ function getString(record: Record<string, unknown>, key: string) {
 
 function getNumber(record: Record<string, unknown>, key: string) {
   const value = record[key];
+  if (typeof value === 'string' && value.trim()) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+
   return typeof value === 'number' && Number.isFinite(value)
     ? value
     : undefined;
+}
+
+function getBoolean(record: Record<string, unknown>, key: string) {
+  const value = record[key];
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    if (value.toLowerCase() === 'true') {
+      return true;
+    }
+
+    if (value.toLowerCase() === 'false') {
+      return false;
+    }
+  }
+
+  return undefined;
 }
 
 function getArray(value: unknown): unknown[] {

@@ -65,7 +65,7 @@ export function KolamPaginationSizeControl({
   return (
     <KolamDropdownSelect
       accessibilityLabel="Jumlah baris per halaman"
-      label="Tampilkan"
+      label="Tampil"
       onChange={next => onChange(Number(next))}
       options={[
         { label: '10', value: '10' },
@@ -161,7 +161,8 @@ export function KolamPaginationSummaryLabel({
 const styles = StyleSheet.create({
   root: {
     position: 'relative',
-    zIndex: 2,
+    zIndex: 20,
+    elevation: 8,
   },
   triggerText: {
     maxWidth: 220,
@@ -171,6 +172,7 @@ const styles = StyleSheet.create({
     top: 38,
     left: 0,
     zIndex: 10,
+    elevation: 24,
     minWidth: 190,
     gap: 4,
     padding: 6,

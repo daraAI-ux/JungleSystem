@@ -33,7 +33,6 @@ import {
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
-import { KolamHoverTooltip } from './kolam-hover-tooltip';
 import { KolamNativeFormSection } from './kolam-native-form-section';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
@@ -336,6 +335,7 @@ function KolamCategoryRow({
           textStyle={styles.treeButtonText}
         />
         <View style={styles.categoryIdentity}>
+          <KolamCategoryIcon category={category} />
           <KolamCopyStack
             containerStyle={styles.categoryCopy}
             items={[
@@ -365,10 +365,21 @@ function KolamCategoryRow({
           intent={category.showInMarketplace ? 'success' : 'muted'}
           label={
             category.showInMarketplace
-              ? `Tampil ${category.marketplaceOrder}`
+              ? 'Tampil'
               : 'Tersembunyi'
           }
         />
+        {category.showInMarketplace ? (
+          <KolamCopyStack
+            items={[
+              {
+                id: 'order',
+                text: `Urutan ${category.marketplaceOrder}`,
+                style: styles.marketplaceMeta,
+              },
+            ]}
+          />
+        ) : null}
       </View>
       <View style={styles.overflowCell}>
         <KolamOverflowMenuButton
@@ -455,6 +466,15 @@ function KolamCategoryDetail({
                 tone: 'success',
               },
               {
+                id: 'marketplace',
+                label: 'Marketplace',
+                value: category.showInMarketplace
+                  ? 'Tampil di marketplace'
+                  : 'Tidak tampil',
+                meta: `Urutan ${category.marketplaceOrder}`,
+                tone: category.showInMarketplace ? 'success' : 'default',
+              },
+              {
                 id: 'icon',
                 label: 'Icon',
                 value: category.iconUrl ?? 'Belum ada icon',
@@ -535,7 +555,7 @@ function KolamCategoryForm({
               value={form.description}
             />
           </FieldShell>
-          <FieldShell label="Marketplace">
+          <FieldShell label="Tampil di Marketplace">
             <View style={styles.segmentRow}>
               <KolamButton
                 intent={form.showInMarketplace ? 'primary' : 'outline'}
@@ -557,7 +577,7 @@ function KolamCategoryForm({
                 onChangeText={marketplaceOrder =>
                   controller.onChangeForm({ marketplaceOrder })
                 }
-                placeholder="Urutan"
+                placeholder="Urutan tampil"
                 style={[
                   settingsWebFormStyles.settingsWebFormFieldValue,
                   styles.orderInput,
@@ -815,11 +835,6 @@ const styles = StyleSheet.create({
   treeButtonText: {
     fontSize: 13,
   },
-  categoryTooltip: {
-    flex: 1,
-    minWidth: 0,
-    alignSelf: 'stretch',
-  },
   categoryIdentity: {
     flex: 1,
     minWidth: 0,
@@ -853,6 +868,13 @@ const styles = StyleSheet.create({
   marketplaceCell: {
     width: 132,
     alignItems: 'flex-start',
+    gap: 3,
+  },
+  marketplaceMeta: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '700',
   },
   activeActionRow: {
     zIndex: 1000,
