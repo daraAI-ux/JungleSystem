@@ -53,16 +53,13 @@ export const settingsWebFormStyles = StyleSheet.create({
     lineHeight: 16,
   },
   settingsWebFormFields: {
-    gap: 10,
+    gap: 14,
   },
   settingsWebFormFieldsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    gap: 14,
   },
   settingsWebFormField: {
-    minWidth: 210,
-    flexGrow: 1,
-    flexBasis: '45%',
+    width: '100%',
     gap: 6,
   },
   settingsWebFormFieldTextarea: {

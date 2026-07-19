@@ -76,12 +76,6 @@ function KolamModuleShell({
     <View style={styles.surface}>
       <View style={styles.header}>
         <View style={styles.headerActions}>
-          {controller.mode === 'list' ? (
-            <KolamStatusBadge
-              intent={getSourceIntent(controller.dataSource)}
-              label={getSourceLabel(controller)}
-            />
-          ) : null}
           <KolamButton
             disabled={controller.loading}
             label="Refresh"
@@ -131,14 +125,19 @@ function KolamBrandList({
 }) {
   const [sortMode, setSortMode] = React.useState<BrandSortMode>('name-asc');
   const [assetMode, setAssetMode] = React.useState<BrandAssetMode>('none');
+  const [search, setSearch] = React.useState('');
   const [pageSize, setPageSize] = React.useState(10);
   const [page, setPage] = React.useState(1);
   const [deleteCandidate, setDeleteCandidate] =
     React.useState<KolamBrand | null>(null);
   const summary = getBrandSummary(controller.brands);
+  const filteredBrands = React.useMemo(
+    () => filterBrands(controller.brands, search),
+    [controller.brands, search],
+  );
   const sortedBrands = React.useMemo(
-    () => getSortedBrands(controller.brands, sortMode, assetMode),
-    [assetMode, controller.brands, sortMode],
+    () => getSortedBrands(filteredBrands, sortMode, assetMode),
+    [assetMode, filteredBrands, sortMode],
   );
   const pageCount = Math.max(1, Math.ceil(sortedBrands.length / pageSize));
   const safePage = Math.min(page, pageCount);
@@ -149,7 +148,7 @@ function KolamBrandList({
 
   React.useEffect(() => {
     setPage(1);
-  }, [assetMode, pageSize, sortMode]);
+  }, [assetMode, pageSize, search, sortMode]);
 
   return (
     <View style={styles.stack}>
@@ -160,6 +159,12 @@ function KolamBrandList({
         <SummaryTile label="Blacklisted" value={summary.blacklisted} />
       </View>
       <View style={styles.tableToolbar}>
+        <KolamFormTextField
+          onChangeText={setSearch}
+          placeholder="Cari merek..."
+          style={styles.searchInput}
+          value={search}
+        />
         <KolamDropdownSelect<BrandSortMode>
           label="Urutan"
           onChange={setSortMode}
@@ -621,6 +626,27 @@ function getBrandSummary(brands: KolamBrand[]) {
   );
 }
 
+function filterBrands(brands: KolamBrand[], search: string) {
+  const query = search.trim().toLowerCase();
+  if (!query) {
+    return brands;
+  }
+
+  return brands.filter(brand =>
+    [
+      brand.name,
+      brand.originCountry,
+      brand.description,
+      brand.notes,
+      String(brand.productCount),
+      String(brand.rawMaterialCount),
+    ]
+      .join(' ')
+      .toLowerCase()
+      .includes(query),
+  );
+}
+
 function getSortedBrands(
   brands: KolamBrand[],
   sortMode: BrandSortMode,
@@ -672,38 +698,6 @@ function getBrandStatusIntent(status: KolamBrandStatus) {
     case 'active':
     default:
       return 'success';
-  }
-}
-
-function getSourceLabel(controller: KolamBrandController) {
-  if (controller.loading) {
-    return 'loading';
-  }
-
-  switch (controller.dataSource) {
-    case 'cache':
-      return 'cache';
-    case 'live':
-      return 'live';
-    case 'error':
-      return 'server down';
-    case 'idle':
-    default:
-      return 'idle';
-  }
-}
-
-function getSourceIntent(source: KolamBrandController['dataSource']) {
-  switch (source) {
-    case 'live':
-      return 'success';
-    case 'cache':
-      return 'warning';
-    case 'error':
-      return 'danger';
-    case 'idle':
-    default:
-      return 'muted';
   }
 }
 
@@ -828,6 +822,9 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8,
     zIndex: 8,
+  },
+  searchInput: {
+    width: 240,
   },
   paginationRow: {
     minHeight: 42,

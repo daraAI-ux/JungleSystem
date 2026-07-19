@@ -74,12 +74,6 @@ function KolamCategoryShell({
     <View style={styles.surface}>
       <View style={styles.header}>
         <View style={styles.headerActions}>
-          {controller.mode === 'list' ? (
-            <KolamStatusBadge
-              intent={getSourceIntent(controller.dataSource)}
-              label={getSourceLabel(controller)}
-            />
-          ) : null}
           <KolamButton
             disabled={controller.loading}
             label="Refresh"
@@ -716,38 +710,6 @@ function getCategorySummary(categories: KolamCategory[]) {
 
 function getCategoryRoute(category: KolamCategory) {
   return `/label-dan-field/kategori/${encodeURIComponent(category.name)}`;
-}
-
-function getSourceLabel(controller: KolamCategoryController) {
-  if (controller.loading) {
-    return 'loading';
-  }
-
-  switch (controller.dataSource) {
-    case 'cache':
-      return 'cache';
-    case 'live':
-      return 'live';
-    case 'error':
-      return 'server down';
-    case 'idle':
-    default:
-      return 'idle';
-  }
-}
-
-function getSourceIntent(source: KolamCategoryController['dataSource']) {
-  switch (source) {
-    case 'live':
-      return 'success';
-    case 'cache':
-      return 'warning';
-    case 'error':
-      return 'danger';
-    case 'idle':
-    default:
-      return 'muted';
-  }
 }
 
 const styles = StyleSheet.create({
