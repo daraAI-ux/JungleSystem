@@ -1,0 +1,21 @@
+﻿export const appConfig = {
+  appName: 'Azurda',
+  appId: 'com.duniaanura.azurda',
+  kolamWebUrl: 'https://kolam.dunia-anura.com',
+  posWebUrl: 'https://pos.dunia-anura.com',
+  amWebUrl: 'https://frogs.dunia-anura.com',
+  apiBaseUrl: 'https://amfibi.dunia-anura.com/api',
+  kolamApiBaseUrl: 'https://amfibi.dunia-anura.com/api',
+  amApiBaseUrl: 'https://frogs.dunia-anura.com/api',
+  fileBaseUrl: 'https://amfibi.dunia-anura.com',
+  nativeClientId: 'kolam-windows',
+  nativeClientVersion: '0.0.1',
+  nativeOrigin: 'app://kolamwindows',
+  nativeUserAgent: 'KolamWindows/0.0.1',
+  sourceHeader: 'pos',
+  kolamSourceHeader: 'Kolam',
+  amSourceHeader: 'am',
+  authSource: 'kolam',
+  preferLiveApi: true,
+};
+

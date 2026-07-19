@@ -1,0 +1,100 @@
+﻿import {StyleSheet} from 'react-native';
+import {kolamVisualTokens as V} from '../domain/kolam-visual';
+
+export const settingsRolePermissionMatrixStyles = StyleSheet.create({
+  settingsRolePermissionMatrix: {
+    marginTop: 12,
+    overflow: 'hidden',
+    borderRadius: V.radius.lg,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.bg,
+  },
+  settingsRolePermissionMatrixGroup: {
+    backgroundColor: V.colors.bg,
+  },
+  settingsRolePermissionMatrixGroupHeader: {
+    minHeight: 58,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: V.colors.secondary,
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: 1,
+  },
+  settingsRolePermissionMatrixGroupTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '900',
+  },
+  settingsRolePermissionMatrixGroupMeta: {
+    marginTop: 3,
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  settingsRolePermissionMatrixCount: {
+    overflow: 'hidden',
+    paddingHorizontal: V.control.badgePaddingX,
+    paddingVertical: V.control.badgePaddingY,
+    borderRadius: V.control.badgeRadius,
+    color: V.colors.mutedFg,
+    backgroundColor: V.colors.muted,
+    fontFamily: V.fontFamily,
+    fontSize: V.control.badgeFontSize,
+    fontWeight: '900',
+  },
+  settingsRolePermissionMatrixCountActive: {
+    color: V.colors.success,
+    backgroundColor: V.colors.successSoft,
+  },
+  settingsRolePermissionMatrixRow: {
+    minHeight: 58,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 16,
+    paddingLeft: 36,
+    paddingRight: 12,
+    paddingVertical: 10,
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: 1,
+  },
+  settingsRolePermissionMatrixResource: {
+    flex: 1,
+    minWidth: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  settingsRolePermissionMatrixDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: V.colors.mutedFg,
+  },
+  settingsRolePermissionMatrixDotSuccess: {
+    backgroundColor: V.colors.success,
+  },
+  settingsRolePermissionMatrixDotWarning: {
+    backgroundColor: V.colors.warning,
+  },
+  settingsRolePermissionMatrixLabel: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '900',
+  },
+  settingsRolePermissionMatrixMeta: {
+    marginTop: 3,
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '800',
+  },
+});

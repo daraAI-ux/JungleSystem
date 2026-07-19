@@ -1,0 +1,96 @@
+﻿import {StyleSheet} from 'react-native';
+import {kolamVisualTokens as V} from '../domain/kolam-visual';
+import {
+  KOLAM_AUTH_FORM_VISUAL,
+  KOLAM_AUTH_INPUT_SHADOW,
+} from './kolam-auth-panel-visual';
+
+export const authPanelStyles = StyleSheet.create({
+  authPanel: {
+    flexDirection: 'row',
+    gap: 14,
+    alignItems: 'center',
+    marginTop: V.layout.cardSpacing,
+    marginBottom: 14,
+    padding: 14,
+    borderRadius: V.radius.lg,
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+  },
+  authIdentity: {
+    flex: 1,
+  },
+  authLabel: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '900',
+    textTransform: 'uppercase',
+  },
+  authUser: {
+    marginTop: 4,
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 17,
+    fontWeight: '900',
+  },
+  authMessage: {
+    marginTop: 2,
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+  },
+  authAccess: {
+    marginTop: 4,
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '900',
+  },
+  authSourceHint: {
+    marginTop: 3,
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+  },
+  authControls: {
+    flex: 2,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    alignItems: 'center',
+  },
+  authSourcePicker: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  authInput: {
+    flex: 1,
+    minHeight: KOLAM_AUTH_FORM_VISUAL.input.height,
+    minWidth: 170,
+    paddingHorizontal: V.control.inputPaddingX,
+    borderRadius: KOLAM_AUTH_FORM_VISUAL.input.radius,
+    color: V.colors.fg,
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.input,
+    borderWidth: 1,
+    fontFamily: V.fontFamily,
+    fontSize: KOLAM_AUTH_FORM_VISUAL.input.fontSize,
+    ...KOLAM_AUTH_INPUT_SHADOW,
+  },
+  authInputWide: {
+    flexGrow: 1,
+    minWidth: 260,
+    minHeight: KOLAM_AUTH_FORM_VISUAL.input.height,
+    paddingHorizontal: V.control.inputPaddingX,
+    borderRadius: KOLAM_AUTH_FORM_VISUAL.input.radius,
+    color: V.colors.fg,
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.input,
+    borderWidth: 1,
+    fontFamily: V.fontFamily,
+    fontSize: KOLAM_AUTH_FORM_VISUAL.input.fontSize,
+    ...KOLAM_AUTH_INPUT_SHADOW,
+  },
+});
