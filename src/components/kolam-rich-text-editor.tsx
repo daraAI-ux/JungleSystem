@@ -13,7 +13,10 @@ import { KolamButton } from './kolam-button';
 import { KolamInteractionFrame } from './kolam-interaction-frame';
 
 type BlockTag = 'h1' | 'h2' | 'h3' | 'blockquote';
-type InlineTag = 'strong' | 'em' | 'u' | 'code';
+type InlineTag = 'strong' | 'em';
+type SelectionRange = { start: number; end: number };
+
+const EMPTY_SELECTION: SelectionRange = { start: 0, end: 0 };
 
 export function KolamRichTextEditor({
   editable = true,
@@ -26,69 +29,138 @@ export function KolamRichTextEditor({
   placeholder?: string;
   value: string;
 }) {
-  const [selection, setSelection] = React.useState({ start: 0, end: 0 });
+  const inputRef = React.useRef<TextInput>(null);
+  const selectionRef = React.useRef<SelectionRange>(EMPTY_SELECTION);
+  const [selection, setSelection] =
+    React.useState<SelectionRange>(EMPTY_SELECTION);
   const [linkPanelOpen, setLinkPanelOpen] = React.useState(false);
   const [linkUrl, setLinkUrl] = React.useState('');
 
-  const replaceSelection = React.useCallback(
-    (next: string) => {
-      const start = Math.min(selection.start, value.length);
-      const end = Math.min(selection.end, value.length);
-      onChangeText(`${value.slice(0, start)}${next}${value.slice(end)}`);
-    },
-    [onChangeText, selection.end, selection.start, value],
-  );
+  const setEditorSelection = React.useCallback((next: SelectionRange) => {
+    selectionRef.current = next;
+    setSelection(next);
+  }, []);
 
-  const getSelectedText = React.useCallback(
-    (fallback: string) => {
-      const start = Math.min(selection.start, value.length);
-      const end = Math.min(selection.end, value.length);
-      return value.slice(start, end) || fallback;
+  const focusInput = React.useCallback(() => {
+    setTimeout(() => inputRef.current?.focus(), 0);
+  }, []);
+
+  const getRange = React.useCallback(() => {
+    const start = clampIndex(selectionRef.current.start, value.length);
+    const end = clampIndex(selectionRef.current.end, value.length);
+    return start <= end ? { start, end } : { start: end, end: start };
+  }, [value.length]);
+
+  const runCommand = React.useCallback(
+    (
+      createReplacement: (selectedText: string) => {
+        caretOffset?: number;
+        text: string;
+      },
+      fallback = '',
+    ) => {
+      if (!editable) {
+        return;
+      }
+
+      const range = getRange();
+      const selectedText = value.slice(range.start, range.end) || fallback;
+      const replacement = createReplacement(selectedText);
+      const nextValue = `${value.slice(0, range.start)}${replacement.text}${value.slice(
+        range.end,
+      )}`;
+      const caret =
+        range.start + (replacement.caretOffset ?? replacement.text.length);
+
+      onChangeText(nextValue);
+      setEditorSelection({ start: caret, end: caret });
+      focusInput();
     },
-    [selection.end, selection.start, value],
+    [editable, focusInput, getRange, onChangeText, setEditorSelection, value],
   );
 
   const applyInline = (tag: InlineTag) => {
-    replaceSelection(`<${tag}>${getSelectedText('Teks')}</${tag}>`);
+    runCommand(
+      selectedText => ({
+        caretOffset: selectedText ? undefined : tag.length + 2,
+        text: `<${tag}>${escapeHtmlText(selectedText)}</${tag}>`,
+      }),
+      'Teks',
+    );
   };
 
   const applyBlock = (tag: BlockTag) => {
-    replaceSelection(`<${tag}>${getSelectedText(getBlockFallback(tag))}</${tag}>`);
+    runCommand(
+      selectedText => ({
+        text: `<${tag}>${escapeHtmlText(selectedText)}</${tag}>`,
+      }),
+      getBlockFallback(tag),
+    );
+  };
+
+  const applyParagraph = () => {
+    runCommand(
+      selectedText => ({
+        text: `<p>${escapeHtmlText(selectedText)}</p>`,
+      }),
+      'Paragraf',
+    );
   };
 
   const applyList = (ordered = false) => {
-    const selected = getSelectedText('Item daftar');
-    const items = selected
-      .split(/\r?\n/)
-      .map(item => item.trim())
-      .filter(Boolean)
-      .map(item => `<li>${escapeHtmlText(item)}</li>`)
-      .join('');
-    replaceSelection(ordered ? `<ol>${items}</ol>` : `<ul>${items}</ul>`);
+    runCommand(
+      selectedText => {
+        const items = selectedText
+          .split(/\r?\n/)
+          .map(item => item.trim())
+          .filter(Boolean)
+          .map(item => `<li>${escapeHtmlText(item)}</li>`)
+          .join('');
+        return {
+          text: ordered ? `<ol>${items}</ol>` : `<ul>${items}</ul>`,
+        };
+      },
+      'Item daftar',
+    );
   };
 
   const insertTemplate = (template: string) => {
-    replaceSelection(template);
+    runCommand(() => ({ text: template }));
   };
 
-  const insertEmoji = (emoji: string) => {
-    replaceSelection(emoji);
+  const openLinkPanel = () => {
+    if (!editable) {
+      return;
+    }
+
+    setLinkPanelOpen(current => !current);
   };
 
   const applyLink = () => {
     const href = normalizeUrl(linkUrl);
     if (!href) {
       setLinkPanelOpen(false);
+      setLinkUrl('');
       return;
     }
 
-    const selected = getSelectedText(href);
-    replaceSelection(`<a href="${escapeHtmlAttribute(href)}">${selected}</a>`);
+    runCommand(
+      selectedText => ({
+        text: `<a href="${escapeHtmlAttribute(href)}">${escapeHtmlText(
+          selectedText || href,
+        )}</a>`,
+      }),
+      href,
+    );
     setLinkPanelOpen(false);
     setLinkUrl('');
   };
 
   const insertImageFromPicker = async () => {
+    if (!editable) {
+      return;
+    }
+
     try {
       const picked = await pickNativeImageFile();
       const uri = picked.uri || (picked.path ? `file:///${picked.path}` : '');
@@ -96,7 +168,7 @@ export function KolamRichTextEditor({
         return;
       }
 
-      replaceSelection(
+      insertTemplate(
         `<img src="${escapeHtmlAttribute(uri)}" alt="${escapeHtmlAttribute(
           picked.name || 'Gambar',
         )}" />`,
@@ -107,13 +179,13 @@ export function KolamRichTextEditor({
   };
 
   const clearBasicFormatting = () => {
-    replaceSelection(stripBasicHtml(getSelectedText(value)));
+    runCommand(selectedText => ({ text: stripBasicHtml(selectedText) }), value);
   };
 
   const onSelectionChange = (
     event: NativeSyntheticEvent<TextInputSelectionChangeEventData>,
   ) => {
-    setSelection(event.nativeEvent.selection);
+    setEditorSelection(event.nativeEvent.selection);
   };
 
   return (
@@ -123,103 +195,84 @@ export function KolamRichTextEditor({
           disabled={!editable}
           label="B"
           onPress={() => applyInline('strong')}
+          title="Bold"
         />
         <ToolbarButton
           disabled={!editable}
           label="I"
           onPress={() => applyInline('em')}
+          title="Italic"
         />
+        <ToolbarDivider />
         <ToolbarButton
           disabled={!editable}
-          label="U"
-          onPress={() => applyInline('u')}
+          label="P"
+          onPress={applyParagraph}
+          title="Paragraf"
         />
-        <ToolbarDivider />
-        {['🙂', '👍', '🙏', '✅', '❌', '📷', '🎉', '💰', '📦', '🐸', '🌿'].map(
-          emoji => (
-            <ToolbarButton
-              disabled={!editable}
-              key={emoji}
-              label={emoji}
-              onPress={() => insertEmoji(emoji)}
-            />
-          ),
-        )}
-        <ToolbarDivider />
         <ToolbarButton
           disabled={!editable}
           label="H1"
           onPress={() => applyBlock('h1')}
+          title="Heading 1"
         />
         <ToolbarButton
           disabled={!editable}
           label="H2"
           onPress={() => applyBlock('h2')}
+          title="Heading 2"
         />
         <ToolbarButton
           disabled={!editable}
           label="H3"
           onPress={() => applyBlock('h3')}
+          title="Heading 3"
         />
+        <ToolbarDivider />
         <ToolbarButton
           disabled={!editable}
-          label="•"
+          label="UL"
           onPress={() => applyList(false)}
+          title="Daftar bullet"
         />
         <ToolbarButton
           disabled={!editable}
-          label="1."
+          label="OL"
           onPress={() => applyList(true)}
+          title="Daftar angka"
         />
         <ToolbarButton
           disabled={!editable}
-          label="2 Kolom"
-          onPress={() =>
-            insertTemplate(
-              '<div class="grid grid-cols-2 gap-4"><div>Kolom 1</div><div>Kolom 2</div></div>',
-            )
-          }
-        />
-        <ToolbarButton
-          disabled={!editable}
-          label="1 Kolom"
-          onPress={() => insertTemplate('<div>Konten</div>')}
-        />
-        <ToolbarButton
-          disabled={!editable}
-          label="Tabel"
-          onPress={() =>
-            insertTemplate(
-              '<table><tbody><tr><td>Kolom 1</td><td>Kolom 2</td></tr></tbody></table>',
-            )
-          }
-        />
-        <ToolbarButton
-          disabled={!editable}
-          label="66"
+          label="Quote"
           onPress={() => applyBlock('blockquote')}
+          title="Kutipan"
         />
         <ToolbarButton
           disabled={!editable}
-          label="-"
+          label="HR"
           onPress={() => insertTemplate('<hr />')}
+          title="Garis pemisah"
+        />
+        <ToolbarDivider />
+        <ToolbarButton
+          disabled={!editable}
+          label="Link"
+          onPress={openLinkPanel}
+          title="Tambah link"
         />
         <ToolbarButton
           disabled={!editable}
-          label="🔗"
-          onPress={() => setLinkPanelOpen(current => !current)}
-        />
-        <ToolbarButton
-          disabled={!editable}
-          label="🖼"
+          label="Img"
           onPress={() => {
             void insertImageFromPicker();
           }}
+          title="Tambah gambar"
         />
         <ToolbarButton
           disabled={!editable}
-          label="⌫"
+          label="Clear"
           onPress={clearBasicFormatting}
+          title="Hapus format dasar"
         />
       </View>
       {linkPanelOpen ? (
@@ -247,40 +300,6 @@ export function KolamRichTextEditor({
           />
         </View>
       ) : null}
-      <View style={styles.subToolbar}>
-        <ToolbarButton
-          disabled={!editable}
-          label="Paragraf"
-          onPress={() => insertTemplate('<p>Paragraf</p>')}
-        />
-        <ToolbarButton
-          disabled={!editable}
-          label="LH"
-          onPress={() => insertTemplate('<p style="line-height: 1.6;">Teks</p>')}
-        />
-        <ToolbarButton
-          disabled={!editable}
-          label="Sebelum"
-          onPress={() => insertTemplate('<p style="margin-top: 1rem;">Teks</p>')}
-        />
-        <ToolbarButton
-          disabled={!editable}
-          label="Sesudah"
-          onPress={() =>
-            insertTemplate('<p style="margin-bottom: 1rem;">Teks</p>')
-          }
-        />
-        <ToolbarButton
-          disabled={!editable}
-          label="LTR"
-          onPress={() => insertTemplate('<p dir="ltr">Teks</p>')}
-        />
-        <ToolbarButton
-          disabled={!editable}
-          label="RTL"
-          onPress={() => insertTemplate('<p dir="rtl">Teks</p>')}
-        />
-      </View>
       <TextInput
         editable={editable}
         multiline
@@ -288,6 +307,8 @@ export function KolamRichTextEditor({
         onSelectionChange={onSelectionChange}
         placeholder={placeholder}
         placeholderTextColor={V.colors.mutedFg}
+        ref={inputRef}
+        selection={selection}
         style={styles.input}
         textAlignVertical="top"
         value={value}
@@ -300,17 +321,19 @@ function ToolbarButton({
   disabled,
   label,
   onPress,
+  title,
 }: {
   disabled?: boolean;
   label: string;
   onPress: () => void;
+  title: string;
 }) {
   return (
     <KolamInteractionFrame
-      accessibilityLabel={label}
+      accessibilityLabel={title}
       disabled={disabled}
       onPress={onPress}
-      style={styles.toolButton}
+      style={[styles.toolButton, disabled && styles.toolButtonDisabled]}
     >
       <Text allowFontScaling={false} style={styles.toolButtonText}>
         {label}
@@ -321,6 +344,14 @@ function ToolbarButton({
 
 function ToolbarDivider() {
   return <View style={styles.separator} />;
+}
+
+function clampIndex(index: number, max: number) {
+  if (!Number.isFinite(index)) {
+    return max;
+  }
+
+  return Math.max(0, Math.min(index, max));
 }
 
 function getBlockFallback(tag: BlockTag) {
@@ -354,10 +385,11 @@ function escapeHtmlText(value: string) {
 
 function stripBasicHtml(text: string) {
   return text
-    .replace(/<\/?(strong|em|u|h1|h2|h3|code|blockquote|ul|ol|li)>/gi, '')
+    .replace(/<\/?(strong|em|u|h1|h2|h3|code|blockquote|ul|ol|li|p)>/gi, '')
     .replace(/<hr\s*\/?>/gi, '')
     .replace(/<a\s+[^>]*>(.*?)<\/a>/gi, '$1')
-    .replace(/<img\s+[^>]*>/gi, '');
+    .replace(/<img\s+[^>]*>/gi, '')
+    .trim();
 }
 
 const styles = StyleSheet.create({
@@ -379,25 +411,19 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     backgroundColor: V.colors.secondary,
   },
-  subToolbar: {
-    minHeight: 42,
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: 1,
-    backgroundColor: V.colors.bg,
-  },
   toolButton: {
-    minWidth: 32,
+    minWidth: 34,
     minHeight: 30,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 8,
     borderRadius: V.radius.md,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.bg,
+  },
+  toolButtonDisabled: {
+    opacity: 0.45,
   },
   toolButtonText: {
     color: V.colors.fg,
@@ -409,6 +435,7 @@ const styles = StyleSheet.create({
   separator: {
     width: 1,
     height: 24,
+    marginHorizontal: 2,
     backgroundColor: V.colors.border,
   },
   linkPanel: {
@@ -434,7 +461,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   input: {
-    minHeight: 170,
+    minHeight: 190,
     paddingHorizontal: V.control.inputPaddingX,
     paddingVertical: 12,
     color: V.colors.fg,
