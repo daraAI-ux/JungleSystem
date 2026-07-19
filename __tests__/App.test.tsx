@@ -74,7 +74,7 @@ test('shows the dedicated login screen before a server session exists', async ()
 
   expect(renderedText).toEqual(
     expect.arrayContaining([
-      'Azurda',
+      'JungleSystem',
       'Backend',
       'Native Client',
       'Login',

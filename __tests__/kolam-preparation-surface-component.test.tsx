@@ -38,7 +38,7 @@ describe('KolamPreparationSurface', () => {
 
     expect(text).toEqual(
       expect.arrayContaining([
-        'Azurda Launch Map',
+        'JungleSystem Launch Map',
         'Kolam Surface Launcher',
         'Source repo live',
         'Unified runtime',

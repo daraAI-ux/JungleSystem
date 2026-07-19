@@ -7,12 +7,12 @@
   IgnorableNamespaces="uap rescap">
 
   <Identity
-    Name="Azurda"
+    Name="JungleSystem"
     Publisher="CN=user"
     Version="1.0.0.0" />
 
   <Properties>
-    <DisplayName>Azurda</DisplayName>
+    <DisplayName>JungleSystem</DisplayName>
     <PublisherDisplayName>user</PublisherDisplayName>
     <Logo>Images\StoreLogo.png</Logo>
   </Properties>
@@ -31,8 +31,8 @@
       Executable="$targetnametoken$.exe"
       EntryPoint="$targetentrypoint$">
       <uap:VisualElements
-        DisplayName="Azurda"
-        Description="Azurda"
+        DisplayName="JungleSystem"
+        Description="JungleSystem"
         BackgroundColor="transparent"
         Square150x150Logo="Images\Square150x150Logo.png"
         Square44x44Logo="Images\Square44x44Logo.png">

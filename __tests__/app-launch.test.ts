@@ -1,6 +1,6 @@
 import {getAppLaunchCoverage} from '../src/domain/app-launch';
 
-test('summarizes Azurda as one breadth-first app', () => {
+test('summarizes JungleSystem as one breadth-first app', () => {
   const coverage = getAppLaunchCoverage();
 
   expect(coverage.serverRule).toContain('backend server berjalan');

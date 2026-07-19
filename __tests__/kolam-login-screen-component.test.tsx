@@ -62,7 +62,7 @@ describe('KolamLoginScreen', () => {
 
     expect(renderText(renderer!)).toEqual(
       expect.arrayContaining([
-        'Azurda',
+        'JungleSystem',
         'Backend',
         'Native Client',
         'Source Login',

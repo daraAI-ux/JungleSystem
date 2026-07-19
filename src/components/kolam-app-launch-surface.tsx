@@ -34,10 +34,10 @@ export function KolamAppLaunchSurface({
 
   return (
     <KolamModulePanel
-      title="Azurda Launch Map"
+      title="JungleSystem Launch Map"
       hint="Aplikasi digeser ke breadth-first: semua area utama bisa dibuka dulu, tampilan final menyusul setelah coverage udara penuh.">
       <KolamDescriptionList
-        accessibilityLabel="Azurda launch coverage summary"
+        accessibilityLabel="JungleSystem launch coverage summary"
         rows={[
           {
             id: 'coverage',

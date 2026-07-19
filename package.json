@@ -1,5 +1,5 @@
 {
-  "name": "azurda",
+  "name": "junglesystem",
   "version": "0.0.1",
   "private": true,
   "scripts": {
@@ -47,7 +47,7 @@
   },
   "react-native-windows": {
     "init-windows": {
-      "name": "Azurda",
+      "name": "JungleSystem",
       "namespace": "KolamWindows",
       "template": "cpp-app"
     }

@@ -37,7 +37,7 @@ describe('KolamAppLaunchSurface', () => {
 
     expect(text).toEqual(
       expect.arrayContaining([
-        'Azurda Launch Map',
+        'JungleSystem Launch Map',
         'User Test Flow',
         'Next Screen Pack',
         'Screen Pack Prioritas',

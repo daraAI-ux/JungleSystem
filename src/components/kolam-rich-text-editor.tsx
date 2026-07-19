@@ -7,7 +7,11 @@ import {
   type TextInputSelectionChangeEventData,
 } from 'react-native';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
+import { pickNativeImageFile } from '../services/native-file-picker';
 import { KolamButton } from './kolam-button';
+
+type BlockTag = 'h1' | 'h2' | 'h3' | 'blockquote';
+type InlineTag = 'strong' | 'em' | 'u' | 'code';
 
 export function KolamRichTextEditor({
   editable = true,
@@ -21,31 +25,33 @@ export function KolamRichTextEditor({
   value: string;
 }) {
   const [selection, setSelection] = React.useState({ start: 0, end: 0 });
-  const [imageAlign, setImageAlign] = React.useState<'left' | 'center' | 'right'>(
-    'center',
-  );
-  const [imageAlt, setImageAlt] = React.useState('');
-  const [imageSize, setImageSize] = React.useState<
-    '15%' | '25%' | '50%' | '75%' | '100%'
-  >('50%');
+  const [linkPanelOpen, setLinkPanelOpen] = React.useState(false);
   const [linkUrl, setLinkUrl] = React.useState('');
-  const [imageUrl, setImageUrl] = React.useState('');
 
-  const replaceSelection = (next: string) => {
-    const start = Math.min(selection.start, value.length);
-    const end = Math.min(selection.end, value.length);
-    onChangeText(`${value.slice(0, start)}${next}${value.slice(end)}`);
+  const replaceSelection = React.useCallback(
+    (next: string) => {
+      const start = Math.min(selection.start, value.length);
+      const end = Math.min(selection.end, value.length);
+      onChangeText(`${value.slice(0, start)}${next}${value.slice(end)}`);
+    },
+    [onChangeText, selection.end, selection.start, value],
+  );
+
+  const getSelectedText = React.useCallback(
+    (fallback: string) => {
+      const start = Math.min(selection.start, value.length);
+      const end = Math.min(selection.end, value.length);
+      return value.slice(start, end) || fallback;
+    },
+    [selection.end, selection.start, value],
+  );
+
+  const applyInline = (tag: InlineTag) => {
+    replaceSelection(`<${tag}>${getSelectedText('Teks')}</${tag}>`);
   };
 
-  const getSelectedText = (fallback: string) => {
-    const start = Math.min(selection.start, value.length);
-    const end = Math.min(selection.end, value.length);
-    return value.slice(start, end) || fallback;
-  };
-
-  const applyTag = (tag: string) => {
-    const selected = getSelectedText(getPlaceholderText(tag));
-    replaceSelection(`<${tag}>${selected}</${tag}>`);
+  const applyBlock = (tag: BlockTag) => {
+    replaceSelection(`<${tag}>${getSelectedText(getBlockFallback(tag))}</${tag}>`);
   };
 
   const applyList = (ordered = false) => {
@@ -54,33 +60,48 @@ export function KolamRichTextEditor({
       .split(/\r?\n/)
       .map(item => item.trim())
       .filter(Boolean)
-      .map(item => `<li>${item}</li>`)
+      .map(item => `<li>${escapeHtmlText(item)}</li>`)
       .join('');
     replaceSelection(ordered ? `<ol>${items}</ol>` : `<ul>${items}</ul>`);
+  };
+
+  const insertTemplate = (template: string) => {
+    replaceSelection(template);
+  };
+
+  const insertEmoji = (emoji: string) => {
+    replaceSelection(emoji);
   };
 
   const applyLink = () => {
     const href = normalizeUrl(linkUrl);
     if (!href) {
+      setLinkPanelOpen(false);
       return;
     }
 
     const selected = getSelectedText(href);
-    replaceSelection(`<a href="${href}">${selected}</a>`);
+    replaceSelection(`<a href="${escapeHtmlAttribute(href)}">${selected}</a>`);
+    setLinkPanelOpen(false);
     setLinkUrl('');
   };
 
-  const applyImage = () => {
-    const src = normalizeUrl(imageUrl);
-    if (!src) {
-      return;
-    }
+  const insertImageFromPicker = async () => {
+    try {
+      const picked = await pickNativeImageFile();
+      const uri = picked.uri || (picked.path ? `file:///${picked.path}` : '');
+      if (picked.cancelled || !uri) {
+        return;
+      }
 
-    replaceSelection(
-      `<img src="${src}" alt="${escapeHtmlAttribute(imageAlt)}" class="align-${imageAlign}" style="width: ${imageSize}; height: auto;" />`,
-    );
-    setImageAlt('');
-    setImageUrl('');
+      replaceSelection(
+        `<img src="${escapeHtmlAttribute(uri)}" alt="${escapeHtmlAttribute(
+          picked.name || 'Gambar',
+        )}" />`,
+      );
+    } catch {
+      insertTemplate('<img src="" alt="Gambar" />');
+    }
   };
 
   const clearBasicFormatting = () => {
@@ -96,136 +117,167 @@ export function KolamRichTextEditor({
   return (
     <View style={styles.editor}>
       <View style={styles.toolbar}>
-        <KolamButton
+        <ToolbarButton
           disabled={!editable}
           label="B"
-          onPress={() => applyTag('strong')}
-          style={styles.toolButton}
+          onPress={() => applyInline('strong')}
         />
-        <KolamButton
+        <ToolbarButton
           disabled={!editable}
           label="I"
-          onPress={() => applyTag('em')}
-          style={styles.toolButton}
+          onPress={() => applyInline('em')}
         />
-        <KolamButton
+        <ToolbarButton
           disabled={!editable}
-          label="Kode"
-          onPress={() => applyTag('code')}
-          style={styles.toolButton}
+          label="U"
+          onPress={() => applyInline('u')}
         />
-        <View style={styles.separator} />
-        <KolamButton
+        <ToolbarDivider />
+        {['🙂', '👍', '🙏', '✅', '❌', '📷', '🎉', '💰', '📦', '🐸', '🌿'].map(
+          emoji => (
+            <ToolbarButton
+              disabled={!editable}
+              key={emoji}
+              label={emoji}
+              onPress={() => insertEmoji(emoji)}
+            />
+          ),
+        )}
+        <ToolbarDivider />
+        <ToolbarButton
           disabled={!editable}
           label="H1"
-          onPress={() => applyTag('h1')}
-          style={styles.toolButton}
+          onPress={() => applyBlock('h1')}
         />
-        <KolamButton
+        <ToolbarButton
           disabled={!editable}
           label="H2"
-          onPress={() => applyTag('h2')}
-          style={styles.toolButton}
+          onPress={() => applyBlock('h2')}
         />
-        <KolamButton
+        <ToolbarButton
           disabled={!editable}
           label="H3"
-          onPress={() => applyTag('h3')}
-          style={styles.toolButton}
+          onPress={() => applyBlock('h3')}
         />
-        <View style={styles.separator} />
-        <KolamButton
+        <ToolbarButton
           disabled={!editable}
-          label="Poin"
+          label="•"
           onPress={() => applyList(false)}
-          style={styles.toolButton}
         />
-        <KolamButton
+        <ToolbarButton
           disabled={!editable}
           label="1."
           onPress={() => applyList(true)}
-          style={styles.toolButton}
         />
-        <KolamButton
+        <ToolbarButton
           disabled={!editable}
-          label="Kutipan"
-          onPress={() => applyTag('blockquote')}
-          style={styles.toolButton}
+          label="2 Kolom"
+          onPress={() =>
+            insertTemplate(
+              '<div class="grid grid-cols-2 gap-4"><div>Kolom 1</div><div>Kolom 2</div></div>',
+            )
+          }
         />
-        <KolamButton
+        <ToolbarButton
           disabled={!editable}
-          label="Garis"
-          onPress={() => replaceSelection('<hr />')}
-          style={styles.toolButton}
+          label="1 Kolom"
+          onPress={() => insertTemplate('<div>Konten</div>')}
         />
-        <KolamButton
+        <ToolbarButton
           disabled={!editable}
-          label="Bersih"
+          label="Tabel"
+          onPress={() =>
+            insertTemplate(
+              '<table><tbody><tr><td>Kolom 1</td><td>Kolom 2</td></tr></tbody></table>',
+            )
+          }
+        />
+        <ToolbarButton
+          disabled={!editable}
+          label="66"
+          onPress={() => applyBlock('blockquote')}
+        />
+        <ToolbarButton
+          disabled={!editable}
+          label="-"
+          onPress={() => insertTemplate('<hr />')}
+        />
+        <ToolbarButton
+          disabled={!editable}
+          label="🔗"
+          onPress={() => setLinkPanelOpen(current => !current)}
+        />
+        <ToolbarButton
+          disabled={!editable}
+          label="🖼"
+          onPress={() => {
+            void insertImageFromPicker();
+          }}
+        />
+        <ToolbarButton
+          disabled={!editable}
+          label="⌫"
           onPress={clearBasicFormatting}
-          style={styles.toolButton}
         />
       </View>
-      <View style={styles.insertRow}>
-        <TextInput
-          editable={editable}
-          onChangeText={setLinkUrl}
-          placeholder="URL tautan"
-          placeholderTextColor={V.colors.mutedFg}
-          style={[styles.inlineInput, styles.inlineInputWide]}
-          value={linkUrl}
-        />
-        <KolamButton
-          disabled={!editable || !linkUrl.trim()}
-          label="Tautan"
-          onPress={applyLink}
-          style={styles.insertButton}
-        />
-        <TextInput
-          editable={editable}
-          onChangeText={setImageUrl}
-          placeholder="URL gambar"
-          placeholderTextColor={V.colors.mutedFg}
-          style={[styles.inlineInput, styles.inlineInputWide]}
-          value={imageUrl}
-        />
-        <KolamButton
-          disabled={!editable || !imageUrl.trim()}
-          label="Gambar"
-          onPress={applyImage}
-          style={styles.insertButton}
-        />
-        <TextInput
-          editable={editable}
-          onChangeText={setImageAlt}
-          placeholder="Alt gambar"
-          placeholderTextColor={V.colors.mutedFg}
-          style={[styles.inlineInput, styles.inlineInputAlt]}
-          value={imageAlt}
-        />
-        <View style={styles.compactGroup}>
-          {(['left', 'center', 'right'] as const).map(align => (
-            <KolamButton
-              disabled={!editable}
-              intent={imageAlign === align ? 'primary' : 'outline'}
-              key={align}
-              label={getAlignmentLabel(align)}
-              onPress={() => setImageAlign(align)}
-              style={styles.compactButton}
-            />
-          ))}
+      {linkPanelOpen ? (
+        <View style={styles.linkPanel}>
+          <TextInput
+            autoFocus
+            editable={editable}
+            onChangeText={setLinkUrl}
+            placeholder="https://..."
+            placeholderTextColor={V.colors.mutedFg}
+            style={styles.linkInput}
+            value={linkUrl}
+          />
+          <KolamButton
+            disabled={!editable}
+            label="Simpan"
+            onPress={applyLink}
+          />
+          <KolamButton
+            label="Batal"
+            onPress={() => {
+              setLinkPanelOpen(false);
+              setLinkUrl('');
+            }}
+          />
         </View>
-        <View style={styles.compactGroup}>
-          {(['15%', '25%', '50%', '75%', '100%'] as const).map(size => (
-            <KolamButton
-              disabled={!editable}
-              intent={imageSize === size ? 'primary' : 'outline'}
-              key={size}
-              label={getImageSizeLabel(size)}
-              onPress={() => setImageSize(size)}
-              style={styles.compactButton}
-            />
-          ))}
-        </View>
+      ) : null}
+      <View style={styles.subToolbar}>
+        <ToolbarButton
+          disabled={!editable}
+          label="Paragraf"
+          onPress={() => insertTemplate('<p>Paragraf</p>')}
+        />
+        <ToolbarButton
+          disabled={!editable}
+          label="LH"
+          onPress={() => insertTemplate('<p style="line-height: 1.6;">Teks</p>')}
+        />
+        <ToolbarButton
+          disabled={!editable}
+          label="Sebelum"
+          onPress={() => insertTemplate('<p style="margin-top: 1rem;">Teks</p>')}
+        />
+        <ToolbarButton
+          disabled={!editable}
+          label="Sesudah"
+          onPress={() =>
+            insertTemplate('<p style="margin-bottom: 1rem;">Teks</p>')
+          }
+        />
+        <ToolbarButton
+          disabled={!editable}
+          label="LTR"
+          onPress={() => insertTemplate('<p dir="ltr">Teks</p>')}
+        />
+        <ToolbarButton
+          disabled={!editable}
+          label="RTL"
+          onPress={() => insertTemplate('<p dir="rtl">Teks</p>')}
+        />
       </View>
       <TextInput
         editable={editable}
@@ -242,19 +294,33 @@ export function KolamRichTextEditor({
   );
 }
 
-function getPlaceholderText(tag: string) {
-  switch (tag) {
-    case 'h1':
-    case 'h2':
-    case 'h3':
-      return 'Judul bagian';
-    case 'code':
-      return 'kode';
-    case 'blockquote':
-      return 'Kutipan';
-    default:
-      return 'Teks';
-  }
+function ToolbarButton({
+  disabled,
+  label,
+  onPress,
+}: {
+  disabled?: boolean;
+  label: string;
+  onPress: () => void;
+}) {
+  return (
+    <KolamButton
+      disabled={disabled}
+      intent="plain"
+      label={label}
+      onPress={onPress}
+      style={styles.toolButton}
+      textStyle={styles.toolButtonText}
+    />
+  );
+}
+
+function ToolbarDivider() {
+  return <View style={styles.separator} />;
+}
+
+function getBlockFallback(tag: BlockTag) {
+  return tag === 'blockquote' ? 'Kutipan' : 'Judul bagian';
 }
 
 function normalizeUrl(url: string) {
@@ -278,37 +344,13 @@ function escapeHtmlAttribute(value: string) {
     .replace(/>/g, '&gt;');
 }
 
-function getAlignmentLabel(align: 'left' | 'center' | 'right') {
-  switch (align) {
-    case 'left':
-      return 'Kiri';
-    case 'right':
-      return 'Kanan';
-    case 'center':
-    default:
-      return 'Tengah';
-  }
-}
-
-function getImageSizeLabel(size: '15%' | '25%' | '50%' | '75%' | '100%') {
-  switch (size) {
-    case '15%':
-      return 'XS';
-    case '25%':
-      return 'S';
-    case '75%':
-      return 'L';
-    case '100%':
-      return 'XL';
-    case '50%':
-    default:
-      return 'M';
-  }
+function escapeHtmlText(value: string) {
+  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 function stripBasicHtml(text: string) {
   return text
-    .replace(/<\/?(strong|em|h1|h2|h3|code|blockquote|ul|ol|li)>/gi, '')
+    .replace(/<\/?(strong|em|u|h1|h2|h3|code|blockquote|ul|ol|li)>/gi, '')
     .replace(/<hr\s*\/?>/gi, '')
     .replace(/<a\s+[^>]*>(.*?)<\/a>/gi, '$1')
     .replace(/<img\s+[^>]*>/gi, '');
@@ -323,39 +365,58 @@ const styles = StyleSheet.create({
     backgroundColor: V.colors.bg,
   },
   toolbar: {
-    minHeight: 42,
+    minHeight: 48,
     flexDirection: 'row',
     alignItems: 'center',
     flexWrap: 'wrap',
-    gap: 6,
-    padding: 7,
+    gap: 4,
+    padding: 8,
     borderBottomColor: V.colors.border,
     borderBottomWidth: 1,
     backgroundColor: V.colors.secondary,
   },
+  subToolbar: {
+    minHeight: 42,
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: 1,
+    backgroundColor: V.colors.bg,
+  },
   toolButton: {
-    minWidth: 38,
+    minWidth: 32,
+    minHeight: 30,
+    paddingHorizontal: 8,
+    borderRadius: V.radius.md,
+  },
+  toolButtonText: {
+    fontSize: 12,
+    lineHeight: 16,
   },
   separator: {
     width: 1,
     height: 24,
     backgroundColor: V.colors.border,
   },
-  insertRow: {
-    minHeight: 44,
+  linkPanel: {
+    minHeight: 46,
     flexDirection: 'row',
     alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 6,
-    padding: 7,
+    gap: 8,
+    padding: 8,
     borderBottomColor: V.colors.border,
     borderBottomWidth: 1,
     backgroundColor: V.colors.bg,
   },
-  inlineInput: {
+  linkInput: {
+    flex: 1,
     minHeight: 34,
     paddingHorizontal: 10,
-    borderRadius: V.radius.md,
+    borderRadius: V.radius.lg,
     borderColor: V.colors.input,
     borderWidth: 1,
     color: V.colors.fg,
@@ -363,34 +424,14 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
   },
-  inlineInputWide: {
-    flex: 1,
-    minWidth: 180,
-  },
-  inlineInputAlt: {
-    width: 150,
-  },
-  insertButton: {
-    minWidth: 74,
-  },
-  compactGroup: {
-    minHeight: 34,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  compactButton: {
-    minWidth: 48,
-    paddingHorizontal: 8,
-  },
   input: {
-    minHeight: 160,
+    minHeight: 170,
     paddingHorizontal: V.control.inputPaddingX,
-    paddingVertical: 10,
+    paddingVertical: 12,
     color: V.colors.fg,
     fontFamily: V.fontFamily,
-    fontSize: 12,
-    lineHeight: 18,
+    fontSize: 13,
+    lineHeight: 20,
     fontWeight: '700',
   },
 });

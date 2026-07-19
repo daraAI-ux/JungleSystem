@@ -21,7 +21,7 @@ import {activeCashflowSession} from '../src/data/seed';
 
 describe('unified application registry', () => {
   it('uses the live Dunia Anura application endpoints', () => {
-    expect(appConfig.appName).toBe('Azurda');
+    expect(appConfig.appName).toBe('JungleSystem');
     expect(appConfig.kolamWebUrl).toBe('https://kolam.dunia-anura.com');
     expect(appConfig.posWebUrl).toBe('https://pos.dunia-anura.com');
     expect(appConfig.amWebUrl).toBe('https://frogs.dunia-anura.com');

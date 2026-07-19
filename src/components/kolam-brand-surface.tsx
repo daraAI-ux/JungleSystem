@@ -507,6 +507,8 @@ function KolamBrandForm({ controller }: { controller: KolamBrandController }) {
               label: option.country,
               value: option.country,
             }))}
+            searchable
+            searchPlaceholder="Cari negara..."
             showLabelInTrigger={false}
             value={form.originCountry}
           />
@@ -851,8 +853,8 @@ const styles = StyleSheet.create({
     flexBasis: '100%',
   },
   longDropdownMenu: {
-    maxHeight: 280,
-    minWidth: 320,
+    maxHeight: 340,
+    minWidth: 360,
   },
   logoPickerRow: {
     minHeight: V.control.inputHeight,

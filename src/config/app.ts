@@ -1,6 +1,6 @@
 ﻿export const appConfig = {
-  appName: 'Azurda',
-  appId: 'com.duniaanura.azurda',
+  appName: 'JungleSystem',
+  appId: 'com.duniaanura.junglesystem',
   kolamWebUrl: 'https://kolam.dunia-anura.com',
   posWebUrl: 'https://pos.dunia-anura.com',
   amWebUrl: 'https://frogs.dunia-anura.com',

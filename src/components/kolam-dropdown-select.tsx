@@ -3,6 +3,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  TextInput,
   View,
   type StyleProp,
   type TextStyle,
@@ -26,6 +27,8 @@ export function KolamDropdownSelect<TValue extends string = string>({
   menuStyle,
   onChange,
   options,
+  searchable = false,
+  searchPlaceholder = 'Cari...',
   showLabelInTrigger = true,
   triggerStyle,
   triggerTextStyle,
@@ -36,24 +39,53 @@ export function KolamDropdownSelect<TValue extends string = string>({
   menuStyle?: StyleProp<ViewStyle>;
   onChange: (value: TValue) => void;
   options: Array<KolamDropdownOption<TValue>>;
+  searchable?: boolean;
+  searchPlaceholder?: string;
   showLabelInTrigger?: boolean;
   triggerStyle?: StyleProp<ViewStyle>;
   triggerTextStyle?: StyleProp<TextStyle>;
   value: TValue;
 }) {
   const [open, setOpen] = React.useState(false);
+  const [query, setQuery] = React.useState('');
   const selected = options.find(option => option.value === value) ?? options[0];
   const selectedLabel = selected?.label ?? '-';
   const triggerLabel = showLabelInTrigger
     ? `${label}: ${selectedLabel}`
     : selectedLabel;
+  const visibleOptions = React.useMemo(() => {
+    const normalizedQuery = normalizeDropdownSearch(query);
+
+    if (!normalizedQuery) {
+      return options;
+    }
+
+    return options.filter(option =>
+      normalizeDropdownSearch(`${option.label} ${option.value}`).includes(
+        normalizedQuery,
+      ),
+    );
+  }, [options, query]);
+  const closeMenu = () => {
+    setOpen(false);
+    setQuery('');
+  };
+  const toggleOpen = () => {
+    setOpen(current => {
+      const next = !current;
+      if (!next) {
+        setQuery('');
+      }
+      return next;
+    });
+  };
 
   return (
     <View style={[styles.root, open && styles.rootOpen]}>
       <KolamInteractionFrame
         accessibilityLabel={accessibilityLabel ?? label}
         accessibilityState={{ expanded: open }}
-        onPress={() => setOpen(current => !current)}
+        onPress={toggleOpen}
         style={[styles.trigger, triggerStyle]}
       >
         <View style={styles.triggerValue}>
@@ -70,40 +102,84 @@ export function KolamDropdownSelect<TValue extends string = string>({
             ]}
           />
         </View>
-        <KolamChevronIcon direction={open ? 'up' : 'down'} size="menu-sm" />
+        <View style={styles.triggerChevronButton}>
+          <KolamChevronIcon direction={open ? 'up' : 'down'} size="menu-sm" />
+        </View>
       </KolamInteractionFrame>
       {open ? (
         <>
           <Pressable
             accessibilityLabel="Tutup dropdown"
             accessibilityRole="button"
-            onPress={() => setOpen(false)}
+            onPress={closeMenu}
             style={styles.backdrop}
           />
-          <ScrollView
-            nestedScrollEnabled
-            style={[styles.menu, menuStyle]}
-            contentContainerStyle={styles.menuContent}
-          >
-            {options.map(option => (
-              <KolamButton
-                icon={option.icon}
-                intent={option.value === value ? 'primary' : 'plain'}
-                key={option.value}
-                label={option.label}
-                onPress={() => {
-                  onChange(option.value);
-                  setOpen(false);
-                }}
-                style={styles.option}
-                textStyle={styles.optionText}
-              />
-            ))}
-          </ScrollView>
+          <View style={[styles.menu, menuStyle]}>
+            {searchable ? (
+              <View style={styles.searchRow}>
+                <TextInput
+                  autoFocus
+                  onChangeText={setQuery}
+                  placeholder={searchPlaceholder}
+                  placeholderTextColor={V.colors.mutedFg}
+                  style={styles.searchInput}
+                  value={query}
+                />
+                {query ? (
+                  <KolamButton
+                    accessibilityLabel="Bersihkan pencarian"
+                    label="x"
+                    onPress={() => setQuery('')}
+                    style={styles.clearSearchButton}
+                    textStyle={styles.clearSearchText}
+                  />
+                ) : null}
+              </View>
+            ) : null}
+            <ScrollView
+              nestedScrollEnabled
+              style={styles.menuScroll}
+              contentContainerStyle={styles.menuContent}
+            >
+              {visibleOptions.map(option => (
+                <KolamButton
+                  icon={option.icon}
+                  intent={option.value === value ? 'primary' : 'plain'}
+                  key={option.value}
+                  label={option.label}
+                  onPress={() => {
+                    onChange(option.value);
+                    closeMenu();
+                  }}
+                  style={styles.option}
+                  textStyle={styles.optionText}
+                />
+              ))}
+              {visibleOptions.length ? null : (
+                <KolamCopyStack
+                  items={[
+                    {
+                      id: 'empty',
+                      text: 'Tidak ada hasil',
+                      style: styles.emptySearchText,
+                    },
+                  ]}
+                />
+              )}
+            </ScrollView>
+          </View>
         </>
       ) : null}
     </View>
   );
+}
+
+function normalizeDropdownSearch(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '');
 }
 
 export function KolamPaginationSizeControl({
@@ -246,6 +322,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  triggerChevronButton: {
+    width: 28,
+    height: 28,
+    flexShrink: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderLeftColor: V.colors.border,
+    borderLeftWidth: 1,
+  },
   triggerText: {
     color: V.colors.fg,
     fontFamily: V.fontFamily,
@@ -281,8 +366,49 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 16,
   },
+  searchRow: {
+    minHeight: 42,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingBottom: 6,
+    marginBottom: 4,
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: 1,
+  },
+  searchInput: {
+    flex: 1,
+    minHeight: 34,
+    paddingHorizontal: 10,
+    borderRadius: V.radius.lg,
+    borderColor: V.colors.input,
+    borderWidth: 1,
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  clearSearchButton: {
+    minWidth: 34,
+    paddingHorizontal: 8,
+  },
+  clearSearchText: {
+    fontSize: 14,
+    lineHeight: 16,
+  },
+  menuScroll: {
+    maxHeight: 240,
+  },
   menuContent: {
     gap: 4,
+  },
+  emptySearchText: {
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '700',
   },
   option: {
     justifyContent: 'flex-start',

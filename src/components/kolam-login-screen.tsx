@@ -22,7 +22,7 @@ export function KolamLoginScreen({
   syncStatus: SyncStatusProps;
 }) {
   return (
-    <View style={styles.screen} accessibilityLabel="Azurda login screen">
+    <View style={styles.screen} accessibilityLabel="JungleSystem login screen">
       <StatusBar barStyle="dark-content" />
       <ScrollView
         style={styles.scroll}
@@ -33,7 +33,7 @@ export function KolamLoginScreen({
             <KolamCopyStack
               items={[
                 {id: 'eyebrow', text: 'Dunia Anura Desktop', style: styles.eyebrow},
-                {id: 'title', text: 'Azurda', style: styles.title},
+                {id: 'title', text: 'JungleSystem', style: styles.title},
                 {
                   id: 'subtitle',
                   text: 'Login ke server existing untuk membuka Kolam, POS, Automation Management, dan Plugin Hub.',
@@ -42,7 +42,7 @@ export function KolamLoginScreen({
               ]}
             />
             <KolamDescriptionList
-              accessibilityLabel="Azurda login runtime contract"
+              accessibilityLabel="JungleSystem login runtime contract"
               rows={[
                 {
                   id: 'server',

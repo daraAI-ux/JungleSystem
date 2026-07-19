@@ -1,5 +1,5 @@
 import React from 'react';
-import { Image, StyleSheet, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import type { KolamCountryFlagOption } from '../domain/kolam-country-flags';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 
@@ -24,16 +24,16 @@ export function KolamFlagIcon({
       accessibilityLabel={`${option.country} flag`}
       style={[styles.flagIcon, size === 'md' && styles.flagIconMd]}
     >
-      {option.imageUrl ? (
-        <Image
-          accessibilityIgnoresInvertColors
-          resizeMode="cover"
-          source={{ uri: option.imageUrl }}
-          style={styles.flagImage}
-        />
-      ) : (
-        <KolamNativeFlag code={option.code} />
-      )}
+      <KolamNativeFlag code={option.code} />
+      {option.flag ? (
+        <Text
+          allowFontScaling={false}
+          numberOfLines={1}
+          style={[styles.flagEmoji, size === 'md' && styles.flagEmojiMd]}
+        >
+          {option.flag}
+        </Text>
+      ) : null}
     </View>
   );
 }
@@ -92,6 +92,38 @@ function KolamNativeFlag({ code }: { code: string }) {
         <HorizontalFlag
           colors={['#dc2626', '#ffffff', '#1e3a8a', '#ffffff', '#dc2626']}
         />
+      );
+    case 'TR':
+      return (
+        <View style={[styles.fill, styles.red]}>
+          <View style={styles.trCrescentOuter} />
+          <View style={styles.trCrescentInner} />
+          <View style={styles.trStar} />
+        </View>
+      );
+    case 'UG':
+      return (
+        <HorizontalFlag
+          colors={[
+            '#111827',
+            '#facc15',
+            '#dc2626',
+            '#111827',
+            '#facc15',
+            '#dc2626',
+          ]}
+        />
+      );
+    case 'UA':
+      return <HorizontalFlag colors={['#2563eb', '#facc15']} />;
+    case 'AE':
+      return (
+        <View style={styles.fill}>
+          <View style={styles.aeStripes}>
+            <HorizontalFlag colors={['#16a34a', '#ffffff', '#111827']} />
+          </View>
+          <View style={styles.aeHoist} />
+        </View>
       );
     case 'DE':
       return <HorizontalFlag colors={['#111827', '#dc2626', '#facc15']} />;
@@ -176,20 +208,20 @@ function getFallbackFlagColors(code: string) {
 
 const styles = StyleSheet.create({
   flagIcon: {
-    width: 28,
-    height: 20,
+    width: 24,
+    height: 18,
     overflow: 'hidden',
-    borderRadius: 4,
-    borderColor: V.colors.border,
-    borderWidth: 1,
-    backgroundColor: V.colors.bg,
+    borderRadius: 3,
+    backgroundColor: '#f8fafc',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   flagSpacer: {
-    width: 28,
-    height: 20,
+    width: 24,
+    height: 18,
   },
   flagIconMd: {
-    width: 32,
+    width: 30,
     height: 22,
   },
   fill: {
@@ -199,9 +231,13 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
   },
-  flagImage: {
-    width: '100%',
-    height: '100%',
+  flagEmoji: {
+    fontSize: 17,
+    lineHeight: 18,
+  },
+  flagEmojiMd: {
+    fontSize: 21,
+    lineHeight: 22,
   },
   horizontalStripe: {
     flex: 1,
@@ -277,6 +313,48 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     borderRadius: 999,
     backgroundColor: '#1d4ed8',
+  },
+  trCrescentOuter: {
+    position: 'absolute',
+    top: '24%',
+    left: '28%',
+    width: '28%',
+    aspectRatio: 1,
+    borderRadius: 999,
+    backgroundColor: '#ffffff',
+  },
+  trCrescentInner: {
+    position: 'absolute',
+    top: '24%',
+    left: '35%',
+    width: '28%',
+    aspectRatio: 1,
+    borderRadius: 999,
+    backgroundColor: '#dc2626',
+  },
+  trStar: {
+    position: 'absolute',
+    top: '40%',
+    left: '59%',
+    width: '12%',
+    aspectRatio: 1,
+    backgroundColor: '#ffffff',
+    transform: [{ rotate: '45deg' }],
+  },
+  aeHoist: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    bottom: 0,
+    width: '28%',
+    backgroundColor: '#dc2626',
+  },
+  aeStripes: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: '28%',
   },
   crossHorizontal: {
     position: 'absolute',
