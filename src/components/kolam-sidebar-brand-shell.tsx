@@ -1,17 +1,20 @@
-﻿import React from 'react';
-import {StyleSheet, View} from 'react-native';
+import React from 'react';
+import {Image, StyleSheet, View} from 'react-native';
 import {getSidebarBrand} from '../domain/app-shell';
-import {KolamSidebarBrandEmblem} from './kolam-sidebar-brand-emblem';
-import {KolamSidebarBrandWordmark} from './kolam-sidebar-brand-wordmark';
 
 const SIDEBAR_BRAND = getSidebarBrand();
+const JUNGLE_SYSTEM_LOGO = require('../assets/brand/jungle-system-logo-color.jpg');
 
 export function KolamSidebarBrand({collapsed}: {collapsed: boolean}) {
   return (
     <View style={[styles.brand, collapsed && styles.brandCollapsed]}>
       <View style={[styles.brandLogo, collapsed && styles.brandLogoCollapsed]}>
-        <KolamSidebarBrandEmblem collapsed={collapsed} />
-        {collapsed ? null : <KolamSidebarBrandWordmark />}
+        <Image
+          accessibilityLabel={SIDEBAR_BRAND.title}
+          resizeMode="contain"
+          source={JUNGLE_SYSTEM_LOGO}
+          style={[styles.brandImage, collapsed && styles.brandImageCollapsed]}
+        />
       </View>
     </View>
   );
@@ -31,14 +34,19 @@ const styles = StyleSheet.create({
   brandLogo: {
     width: SIDEBAR_BRAND.expandedSize.width,
     height: SIDEBAR_BRAND.expandedSize.height,
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
   },
   brandLogoCollapsed: {
     width: SIDEBAR_BRAND.collapsedSize,
     height: SIDEBAR_BRAND.collapsedSize,
-    gap: 0,
+  },
+  brandImage: {
+    width: '100%',
+    height: '100%',
+  },
+  brandImageCollapsed: {
+    width: SIDEBAR_BRAND.collapsedSize,
+    height: SIDEBAR_BRAND.collapsedSize,
   },
 });

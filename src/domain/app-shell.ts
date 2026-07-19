@@ -72,14 +72,14 @@ export interface SidebarBrand {
 }
 
 export const sidebarBrand: SidebarBrand = {
-  title: 'KOLAM',
+  title: 'JungleSystem',
   subtitle: 'Dunia Anura',
-  sourceRepo: 'E:\\Projects\\_latest-da\\da-inventory-frontend',
+  sourceRepo: 'https://github.com/daraAI-ux/JungleSystem',
   sourceComponent:
-    'E:\\Projects\\_latest-da\\da-inventory-frontend\\src\\components\\logo.tsx',
+    'E:\\Dunia Anura\\logo\\logo\\Logo Jungle System\\Logo\\Color\\Logo Jungle System Color.jpg',
   expandedSize: {
-    width: 160,
-    height: 56,
+    width: 184,
+    height: 72,
   },
   collapsedSize: 48,
   palette: {
