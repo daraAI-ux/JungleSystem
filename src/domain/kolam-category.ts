@@ -129,7 +129,7 @@ export function normalizeKolamCategory(payload: unknown): KolamCategory {
     id: id || slugifyCategoryName(name),
     name,
     slug: slugifyCategoryName(name),
-    description: getString(record, 'description'),
+    description: cleanCategoryDescription(getString(record, 'description')),
     iconUrl: getKolamFileUrl(iconPath),
     photos,
     productCount:
@@ -385,6 +385,15 @@ export function slugifyCategoryName(name: string) {
   );
 }
 
+function cleanCategoryDescription(value: string) {
+  return value
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 function normalizeParent(value: unknown) {
   if (typeof value === 'string') {
     return { id: value, name: null };
@@ -444,3 +453,5 @@ function createStableHash(value: unknown) {
 
   return `h${Math.abs(hash)}`;
 }
+
+

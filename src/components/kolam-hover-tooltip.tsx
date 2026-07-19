@@ -1,19 +1,27 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import {
+  StyleSheet,
+  Text,
+  View,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { KolamPressable } from './kolam-pressable';
 
 export function KolamHoverTooltip({
   children,
+  containerStyle,
   label,
 }: {
   children: React.ReactNode;
+  containerStyle?: StyleProp<ViewStyle>;
   label: string;
 }) {
   const [visible, setVisible] = React.useState(false);
 
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, containerStyle]}>
       <KolamPressable
         accessibilityLabel={label}
         accessibilityRole="text"

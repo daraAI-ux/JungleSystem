@@ -198,57 +198,61 @@ function KolamCategoryList({
           pageSize={pageSize}
           total={visibleRows.length}
         />
+
       </View>
       <KolamContentFrame variant="settingsWebConfig">
         <KolamDataTableHeader columns={getKolamTableColumns('category')} />
-        {pagedRows.length ? (
-          pagedRows.map(category => (
-            <KolamCategoryRow
-              category={category}
-              expanded={expandedIds.has(category.id)}
-              key={category.id}
-              onAddChild={() => {
-                controller.onCreateNew();
-                controller.onChangeForm({ parentId: category.id });
-                onRouteChange?.(
-                  `/label-dan-field/kategori/baru?parent=${encodeURIComponent(
-                    category.id,
-                  )}`,
-                );
-              }}
-              onDelete={() => setDeleteCandidate(category)}
-              onEdit={() => {
-                void controller.onSelectCategory(category);
-                onRouteChange?.(`${getCategoryRoute(category)}/edit`);
-              }}
-              onSelect={() => {
-                void controller.onSelectCategory(category);
-                onRouteChange?.(getCategoryRoute(category));
-              }}
-              onToggle={() =>
-                setExpandedIds(current => {
-                  const next = new Set(current);
-                  if (next.has(category.id)) {
-                    next.delete(category.id);
-                  } else {
-                    next.add(category.id);
-                  }
-                  return next;
-                })
-              }
-            />
-          ))
-        ) : (
-          <View style={styles.emptyWrap}>
-            <KolamEmptyState
-              compact
-              message="Data Kategori belum tersedia dari cache atau backend."
-              title={
-                controller.loading ? 'Memuat kategori...' : 'Belum ada kategori'
-              }
-            />
-          </View>
-        )}
+        <View style={styles.tableBody}>
+
+          {pagedRows.length ? (
+            pagedRows.map(category => (
+              <KolamCategoryRow
+                category={category}
+                expanded={expandedIds.has(category.id)}
+                key={category.id}
+                onAddChild={() => {
+                  controller.onCreateNew();
+                  controller.onChangeForm({ parentId: category.id });
+                  onRouteChange?.(
+                    `/label-dan-field/kategori/baru?parent=${encodeURIComponent(
+                      category.id,
+                    )}`,
+                  );
+                }}
+                onDelete={() => setDeleteCandidate(category)}
+                onEdit={() => {
+                  void controller.onSelectCategory(category);
+                  onRouteChange?.(`${getCategoryRoute(category)}/edit`);
+                }}
+                onSelect={() => {
+                  void controller.onSelectCategory(category);
+                  onRouteChange?.(getCategoryRoute(category));
+                }}
+                onToggle={() =>
+                  setExpandedIds(current => {
+                    const next = new Set(current);
+                    if (next.has(category.id)) {
+                      next.delete(category.id);
+                    } else {
+                      next.add(category.id);
+                    }
+                    return next;
+                  })
+                }
+              />
+            ))
+          ) : (
+            <View style={styles.emptyWrap}>
+              <KolamEmptyState
+                compact
+                message="Data Kategori belum tersedia dari cache atau backend."
+                title={
+                  controller.loading ? 'Memuat kategori...' : 'Belum ada kategori'
+                }
+              />
+            </View>
+          )}
+        </View>
       </KolamContentFrame>
       {pageCount > 1 ? (
         <View style={styles.paginationRow}>
@@ -319,7 +323,9 @@ function KolamCategoryRow({
   const canAddChild = category.level < 2;
 
   return (
-    <KolamDataTableRowFrame style={actionMenuOpen && styles.activeActionRow}>
+    <KolamDataTableRowFrame
+      style={[styles.categoryRow, actionMenuOpen ? styles.activeActionRow : null]}
+    >
       <View style={styles.categoryIdentityCell}>
         <View style={[styles.treeIndent, { width: category.level * 24 }]} />
         <KolamButton
@@ -329,22 +335,19 @@ function KolamCategoryRow({
           style={styles.treeButton}
           textStyle={styles.treeButtonText}
         />
-        <KolamHoverTooltip label={category.name}>
-          <View style={styles.categoryIdentity}>
-            <KolamCategoryIcon category={category} />
-            <KolamCopyStack
-              containerStyle={styles.categoryCopy}
-              items={[
-                { id: 'name', text: category.name, style: styles.rowTitle },
-                {
-                  id: 'description',
-                  text: category.description || 'Tanpa deskripsi',
-                  style: styles.rowMeta,
-                },
-              ]}
-            />
-          </View>
-        </KolamHoverTooltip>
+        <View style={styles.categoryIdentity}>
+          <KolamCopyStack
+            containerStyle={styles.categoryCopy}
+            items={[
+              { id: 'name', text: category.name, style: styles.rowTitle },
+              {
+                id: 'description',
+                text: category.description || 'Tanpa deskripsi',
+                style: styles.rowMeta,
+              },
+            ]}
+          />
+        </View>
       </View>
       <View style={styles.childrenCell}>
         <KolamDataTableMetaCell>
@@ -386,7 +389,6 @@ function KolamCategoryRow({
     </KolamDataTableRowFrame>
   );
 }
-
 function KolamCategoryDetail({
   controller,
 }: {
@@ -790,6 +792,12 @@ const styles = StyleSheet.create({
   searchInput: {
     width: 240,
   },
+  tableBody: {
+    width: '100%',
+  },
+  categoryRow: {
+    width: '100%',
+  },
   categoryIdentityCell: {
     flex: 1,
     minWidth: 0,
@@ -806,6 +814,11 @@ const styles = StyleSheet.create({
   },
   treeButtonText: {
     fontSize: 13,
+  },
+  categoryTooltip: {
+    flex: 1,
+    minWidth: 0,
+    alignSelf: 'stretch',
   },
   categoryIdentity: {
     flex: 1,
@@ -937,3 +950,13 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
 });
+
+
+
+
+
+
+
+
+
+
