@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import type { KolamCountryFlagOption } from '../domain/kolam-country-flags';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 
@@ -25,15 +25,6 @@ export function KolamFlagIcon({
       style={[styles.flagIcon, size === 'md' && styles.flagIconMd]}
     >
       <KolamNativeFlag code={option.code} />
-      {option.flag ? (
-        <Text
-          allowFontScaling={false}
-          numberOfLines={1}
-          style={[styles.flagEmoji, size === 'md' && styles.flagEmojiMd]}
-        >
-          {option.flag}
-        </Text>
-      ) : null}
     </View>
   );
 }
@@ -230,14 +221,6 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     left: 0,
-  },
-  flagEmoji: {
-    fontSize: 17,
-    lineHeight: 18,
-  },
-  flagEmojiMd: {
-    fontSize: 21,
-    lineHeight: 22,
   },
   horizontalStripe: {
     flex: 1,

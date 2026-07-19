@@ -25,7 +25,6 @@ import {
 } from './kolam-data-table-text-cell';
 import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
-import { KolamDescriptionList } from './kolam-description-list';
 import {
   KolamDropdownSelect,
   KolamOverflowMenuButton,
@@ -34,6 +33,7 @@ import {
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
+import { KolamLabelFieldDetailOverview } from './kolam-label-field-detail-overview';
 import { KolamNativeFormSection } from './kolam-native-form-section';
 import { KolamRichTextEditor } from './kolam-rich-text-editor';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
@@ -184,7 +184,7 @@ function KolamCategoryList({
           value={search}
         />
         <KolamButton
-          label={expandedIds.size ? 'Collapse All' : 'Expand All'}
+          label={expandedIds.size ? 'Tutup Semua' : 'Buka Semua'}
           onPress={toggleAll}
         />
         <KolamPaginationSizeControl onChange={setPageSize} value={pageSize} />
@@ -415,74 +415,76 @@ function KolamCategoryDetail({
 
   return (
     <View style={styles.stack}>
-      {category ? <KolamCategoryIconPreview category={category} /> : null}
       {!editable && category ? (
-        <KolamContentFrame variant="settingsWebConfig">
-          <View style={styles.detailHeader}>
-            <KolamStatusBadge
-              intent={category.showInMarketplace ? 'success' : 'muted'}
-              label={
-                category.showInMarketplace ? 'Marketplace' : 'Tidak tampil'
-              }
-            />
-            <KolamButton
-              intent="primary"
-              label="Edit"
-              onPress={controller.onEdit}
-            />
+        <>
+          <View style={styles.detailActions}>
+            <KolamButton intent="primary" label="Edit" onPress={controller.onEdit} />
           </View>
-          <KolamDescriptionList
-            rows={[
+          <KolamLabelFieldDetailOverview
+            hero={<KolamCategoryIcon category={category} variant="detail" />}
+            status={{
+              intent: category.status === 'active' ? 'success' : 'warning',
+              label: category.status === 'active' ? 'Aktif' : 'Nonaktif',
+            }}
+            metrics={[
+              { label: 'Produk', value: category.productCount },
+              { label: 'Layanan', value: category.serviceCount },
+              { label: 'Species', value: category.speciesCount },
+            ]}
+            meta={[
               {
-                id: 'parent',
-                label: 'Parent',
+                label: 'Induk',
                 value: category.parentName ?? 'Kategori akar',
-                meta: `Level ${category.level}`,
-                tone: 'default',
               },
               {
-                id: 'products',
-                label: 'Total Produk',
-                value: String(category.productCount),
-                meta: 'Backend',
-                tone: 'success',
-              },
-              {
-                id: 'species',
-                label: 'Species',
-                value: String(category.speciesCount),
-                meta: 'Backend',
-                tone: 'success',
-              },
-              {
-                id: 'services',
-                label: 'Services',
-                value: String(category.serviceCount),
-                meta: 'Backend',
-                tone: 'success',
-              },
-              {
-                id: 'marketplace',
                 label: 'Marketplace',
                 value: category.showInMarketplace
-                  ? 'Tampil di marketplace'
+                  ? `Tampil, urutan ${category.marketplaceOrder}`
                   : 'Tidak tampil',
-                meta: `Urutan ${category.marketplaceOrder}`,
-                tone: category.showInMarketplace ? 'success' : 'default',
+              },
+              ...(category.description
+                ? [
+                    {
+                      label: 'Deskripsi',
+                      value: category.description,
+                    },
+                  ]
+                : []),
+            ]}
+            sections={[
+              {
+                title: 'Produk',
+                total: category.productCount,
+                description: 'Produk yang menggunakan kategori ini',
+                emptyText: category.productCount
+                  ? `${category.productCount} produk menggunakan kategori ini`
+                  : 'Tidak ada produk yang menggunakan kategori ini',
               },
               {
-                id: 'icon',
-                label: 'Icon',
-                value: category.iconUrl ?? 'Belum ada icon',
-                meta: controller.iconDraft?.syncState ?? 'local asset',
-                tone:
-                  controller.iconDraft?.syncState === 'failed'
-                    ? 'danger'
-                    : 'default',
+                title: 'Bahan Baku',
+                total: 0,
+                description: 'Bahan baku yang menggunakan kategori ini',
+                emptyText: 'Tidak ada bahan baku yang menggunakan kategori ini',
+              },
+              {
+                title: 'Layanan',
+                total: category.serviceCount,
+                description: 'Layanan yang menggunakan kategori ini',
+                emptyText: category.serviceCount
+                  ? `${category.serviceCount} layanan menggunakan kategori ini`
+                  : 'Tidak ada layanan yang menggunakan kategori ini',
+              },
+              {
+                title: 'Species',
+                total: category.speciesCount,
+                description: 'Species yang menggunakan kategori ini',
+                emptyText: category.speciesCount
+                  ? `${category.speciesCount} species menggunakan kategori ini`
+                  : 'Tidak ada species yang menggunakan kategori ini',
               },
             ]}
           />
-        </KolamContentFrame>
+        </>
       ) : (
         <KolamCategoryForm controller={controller} />
       )}
@@ -632,25 +634,6 @@ function FieldShell({
     <View style={settingsWebFormStyles.settingsWebFormField}>
       <KolamSettingsWebFieldLabel label={label} required={required} />
       {children}
-    </View>
-  );
-}
-
-function KolamCategoryIconPreview({ category }: { category: KolamCategory }) {
-  return (
-    <View style={styles.iconRow}>
-      <KolamCategoryIcon category={category} variant="detail" />
-      <KolamCopyStack
-        containerStyle={styles.iconCopy}
-        items={[
-          { id: 'name', text: category.name, style: styles.iconTitle },
-          {
-            id: 'meta',
-            text: `${category.productCount} produk / ${category.speciesCount} species`,
-            style: styles.iconMeta,
-          },
-        ]}
-      />
     </View>
   );
 }
@@ -838,39 +821,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '800',
   },
-  detailHeader: {
-    minHeight: 54,
+  detailActions: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-    paddingHorizontal: V.layout.tableCellPaddingX,
-    paddingVertical: 12,
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: 1,
-  },
-  iconRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 8,
-  },
-  iconCopy: {
-    flex: 1,
-    minWidth: 0,
-  },
-  iconTitle: {
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 16,
-    fontWeight: '900',
-  },
-  iconMeta: {
-    marginTop: 4,
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
-    lineHeight: 18,
+    justifyContent: 'flex-end',
   },
   longDropdownMenu: {
     maxHeight: 280,

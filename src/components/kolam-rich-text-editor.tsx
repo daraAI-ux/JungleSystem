@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   StyleSheet,
+  Text,
   TextInput,
   View,
   type NativeSyntheticEvent,
@@ -9,6 +10,7 @@ import {
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { pickNativeImageFile } from '../services/native-file-picker';
 import { KolamButton } from './kolam-button';
+import { KolamInteractionFrame } from './kolam-interaction-frame';
 
 type BlockTag = 'h1' | 'h2' | 'h3' | 'blockquote';
 type InlineTag = 'strong' | 'em' | 'u' | 'code';
@@ -304,14 +306,16 @@ function ToolbarButton({
   onPress: () => void;
 }) {
   return (
-    <KolamButton
+    <KolamInteractionFrame
+      accessibilityLabel={label}
       disabled={disabled}
-      intent="plain"
-      label={label}
       onPress={onPress}
       style={styles.toolButton}
-      textStyle={styles.toolButtonText}
-    />
+    >
+      <Text allowFontScaling={false} style={styles.toolButtonText}>
+        {label}
+      </Text>
+    </KolamInteractionFrame>
   );
 }
 
@@ -390,10 +394,15 @@ const styles = StyleSheet.create({
   toolButton: {
     minWidth: 32,
     minHeight: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingHorizontal: 8,
     borderRadius: V.radius.md,
   },
   toolButtonText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontWeight: '800',
     fontSize: 12,
     lineHeight: 16,
   },

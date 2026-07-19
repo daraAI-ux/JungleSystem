@@ -23,7 +23,6 @@ import {
   KolamDataTableMetaCell,
 } from './kolam-data-table-text-cell';
 import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
-import { KolamDescriptionList } from './kolam-description-list';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import {
   KolamDropdownSelect,
@@ -39,6 +38,7 @@ import { KolamRichTextEditor } from './kolam-rich-text-editor';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamHoverTooltip } from './kolam-hover-tooltip';
+import { KolamLabelFieldDetailOverview } from './kolam-label-field-detail-overview';
 import { KolamStatusBadge } from './kolam-status-badge';
 
 type BrandSortMode = 'name-asc' | 'name-desc';
@@ -346,56 +346,72 @@ function KolamBrandDetail({
 
   return (
     <View style={styles.stack}>
-      {brand ? <KolamBrandLogoPreview brand={brand} /> : null}
       {!editable && brand ? (
-        <KolamContentFrame variant="settingsWebConfig">
-          <View style={styles.detailHeader}>
-            <KolamStatusBadge
-              intent={getBrandStatusIntent(brand.status)}
-              label={getBrandStatusLabel(brand.status)}
-            />
-            <KolamButton
-              intent="primary"
-              label="Edit"
-              onPress={controller.onEdit}
-            />
+        <>
+          <View style={styles.detailActions}>
+            <KolamButton intent="primary" label="Edit" onPress={controller.onEdit} />
           </View>
-          <KolamDescriptionList
-            rows={[
+          <KolamLabelFieldDetailOverview
+            hero={<KolamBrandLogo brand={brand} variant="detail" />}
+            status={{
+              intent: getBrandStatusIntent(brand.status),
+              label: getBrandStatusLabel(brand.status),
+            }}
+            metrics={[
+              { label: 'Produk', value: brand.productCount },
+              { label: 'Bahan Baku', value: brand.rawMaterialCount },
+              { label: 'Layanan', value: brand.serviceCount },
+            ]}
+            meta={[
               {
-                id: 'country',
-                label: 'Negara',
+                icon: <KolamFlagIcon option={getKolamBrandFlagByCountry(brand.originCountry)} />,
+                label: 'Asal',
                 value: brand.originCountry,
-                meta: getKolamBrandFlagByCountry(brand.originCountry).flag,
-                tone: 'default',
+              },
+              ...(brand.description
+                ? [{ label: 'Deskripsi', value: stripHtmlForDetail(brand.description) }]
+                : []),
+              ...brand.links.map(link => ({
+                label: 'Link',
+                value: link,
+              })),
+            ]}
+            sections={[
+              {
+                title: 'Produk',
+                total: brand.productCount,
+                description: 'Produk yang menggunakan merek ini',
+                emptyText: brand.productCount
+                  ? `${brand.productCount} produk menggunakan merek ini`
+                  : 'Tidak ada produk yang menggunakan merek ini',
               },
               {
-                id: 'products',
-                label: 'Total Produk',
-                value: String(brand.productCount),
-                meta: 'Backend',
-                tone: 'success',
+                title: 'Bahan Baku',
+                total: brand.rawMaterialCount,
+                description: 'Bahan baku yang menggunakan merek ini',
+                emptyText: brand.rawMaterialCount
+                  ? `${brand.rawMaterialCount} bahan baku menggunakan merek ini`
+                  : 'Tidak ada bahan baku yang menggunakan merek ini',
               },
               {
-                id: 'raws',
-                label: 'Bahan Baku',
-                value: String(brand.rawMaterialCount),
-                meta: 'Backend',
-                tone: 'success',
+                title: 'Layanan',
+                total: brand.serviceCount,
+                description: 'Layanan yang menggunakan merek ini',
+                emptyText: brand.serviceCount
+                  ? `${brand.serviceCount} layanan menggunakan merek ini`
+                  : 'Tidak ada layanan yang menggunakan merek ini',
               },
               {
-                id: 'logo',
-                label: 'Logo',
-                value: brand.logoUrl ?? 'Belum ada logo',
-                meta: controller.logoDraft?.syncState ?? 'server',
-                tone:
-                  controller.logoDraft?.syncState === 'failed'
-                    ? 'danger'
-                    : 'default',
+                title: 'Species',
+                total: brand.speciesCount,
+                description: 'Species yang menggunakan merek ini',
+                emptyText: brand.speciesCount
+                  ? `${brand.speciesCount} species menggunakan merek ini`
+                  : 'Tidak ada species yang menggunakan merek ini',
               },
             ]}
           />
-        </KolamContentFrame>
+        </>
       ) : (
         <KolamBrandForm controller={controller} />
       )}
@@ -557,25 +573,6 @@ function FieldShell({
   );
 }
 
-function KolamBrandLogoPreview({ brand }: { brand: KolamBrand }) {
-  return (
-    <View style={styles.logoRow}>
-      <KolamBrandLogo brand={brand} variant="detail" />
-      <KolamCopyStack
-        containerStyle={styles.logoCopy}
-        items={[
-          { id: 'name', text: brand.name, style: styles.logoTitle },
-          {
-            id: 'meta',
-            text: `${brand.productCount} produk / ${brand.rawMaterialCount} bahan baku`,
-            style: styles.logoMeta,
-          },
-        ]}
-      />
-    </View>
-  );
-}
-
 function SummaryTile({ label, value }: { label: string; value: number }) {
   return (
     <View style={styles.summaryTile}>
@@ -672,6 +669,15 @@ function getBrandStatusIntent(status: KolamBrandStatus) {
     default:
       return 'success';
   }
+}
+
+function stripHtmlForDetail(value: string) {
+  return value
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 const styles = StyleSheet.create({
@@ -815,39 +821,9 @@ const styles = StyleSheet.create({
   emptyWrap: {
     padding: 16,
   },
-  detailHeader: {
-    minHeight: 54,
+  detailActions: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-    paddingHorizontal: V.layout.tableCellPaddingX,
-    paddingVertical: 12,
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: 1,
-  },
-  logoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 8,
-  },
-  logoCopy: {
-    flex: 1,
-    minWidth: 0,
-  },
-  logoTitle: {
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 16,
-    fontWeight: '900',
-  },
-  logoMeta: {
-    marginTop: 4,
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
-    lineHeight: 18,
+    justifyContent: 'flex-end',
   },
   fieldWide: {
     flexBasis: '100%',
