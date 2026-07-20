@@ -38,7 +38,7 @@ import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFlagIcon } from './kolam-flag-icon';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamNativeFormSection } from './kolam-native-form-section';
-import { KolamRichTextEditor } from './kolam-rich-text-editor';
+import { KolamTipTapRichTextEditor } from './kolam-tiptap-rich-text-editor';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamHoverTooltip } from './kolam-hover-tooltip';
@@ -487,7 +487,7 @@ function KolamBrandForm({ controller }: { controller: KolamBrandController }) {
             </View>
           </View>
           <FieldShell label="Deskripsi">
-            <KolamRichTextEditor
+            <KolamTipTapRichTextEditor
               editable={!controller.saving}
               onChangeText={description =>
                 controller.onChangeForm({ description })

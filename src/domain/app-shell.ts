@@ -78,10 +78,10 @@ export const sidebarBrand: SidebarBrand = {
   sourceComponent:
     'E:\\Dunia Anura\\logo\\logo\\Logo Jungle System\\Logo\\Color\\Logo Jungle System Color.jpg',
   expandedSize: {
-    width: 184,
-    height: 72,
+    width: 118,
+    height: 48,
   },
-  collapsedSize: 48,
+  collapsedSize: 32,
   palette: {
     darkLeaf: '#29381C',
     brightLeaf: '#2EB028',
@@ -357,6 +357,7 @@ export const shellModules: ShellModule[] = [
       'preparation',
       'launch-coverage',
       'source-map',
+      'rich-text-lab',
       'runtime-readiness',
     ],
   },

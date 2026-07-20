@@ -475,6 +475,11 @@ function getManualNavigationItem(route: string): KolamNavigationItem | null {
   const categoryDetail = routePath.match(
     /^\/label-dan-field\/kategori\/([^/]+)(?:\/edit)?$/,
   );
+  const tagDetail = routePath.match(/^\/tags\/([^/]+)(?:\/edit)?$/);
+  const customFieldDetail = routePath.match(
+    /^\/custom-fields\/([^/]+)(?:\/edit)?$/,
+  );
+  const unitDetail = routePath.match(/^\/units\/([^/]+)(?:\/edit)?$/);
 
   if (brandDetail?.[1] && brandDetail[1] !== 'baru') {
     return {
@@ -491,6 +496,36 @@ function getManualNavigationItem(route: string): KolamNavigationItem | null {
       description: 'Detail kategori dari Label and Fields Kolam',
       group: 'Label and Fields',
       label: decodeURIComponent(categoryDetail[1]).replace(/-/g, ' '),
+      requiredAccess: ['kolam'],
+      route,
+    };
+  }
+
+  if (tagDetail?.[1] && tagDetail[1] !== 'baru') {
+    return {
+      description: 'Detail tag dari Label and Fields Kolam',
+      group: 'Label and Fields',
+      label: decodeURIComponent(tagDetail[1]).replace(/-/g, ' '),
+      requiredAccess: ['kolam'],
+      route,
+    };
+  }
+
+  if (customFieldDetail?.[1] && customFieldDetail[1] !== 'baru') {
+    return {
+      description: 'Detail field kustom dari Label and Fields Kolam',
+      group: 'Label and Fields',
+      label: decodeURIComponent(customFieldDetail[1]).replace(/-/g, ' '),
+      requiredAccess: ['kolam'],
+      route,
+    };
+  }
+
+  if (unitDetail?.[1] && unitDetail[1] !== 'baru') {
+    return {
+      description: 'Detail satuan dari Label and Fields Kolam',
+      group: 'Label and Fields',
+      label: decodeURIComponent(unitDetail[1]).replace(/-/g, ' '),
       requiredAccess: ['kolam'],
       route,
     };

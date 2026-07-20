@@ -316,6 +316,11 @@ function getNavigationBreadcrumbLabel(item: KolamNavigationItem) {
   const categoryDetail = routePath.match(
     /^\/label-dan-field\/kategori\/([^/]+)(?:\/edit)?$/,
   );
+  const tagDetail = routePath.match(/^\/tags\/([^/]+)(?:\/edit)?$/);
+  const customFieldDetail = routePath.match(
+    /^\/custom-fields\/([^/]+)(?:\/edit)?$/,
+  );
+  const unitDetail = routePath.match(/^\/units\/([^/]+)(?:\/edit)?$/);
 
   if (brandDetail?.[1] && brandDetail[1] !== 'baru') {
     return decodeURIComponent(brandDetail[1]).replace(/-/g, ' ');
@@ -323,6 +328,18 @@ function getNavigationBreadcrumbLabel(item: KolamNavigationItem) {
 
   if (categoryDetail?.[1] && categoryDetail[1] !== 'baru') {
     return decodeURIComponent(categoryDetail[1]).replace(/-/g, ' ');
+  }
+
+  if (tagDetail?.[1] && tagDetail[1] !== 'baru') {
+    return decodeURIComponent(tagDetail[1]).replace(/-/g, ' ');
+  }
+
+  if (customFieldDetail?.[1] && customFieldDetail[1] !== 'baru') {
+    return decodeURIComponent(customFieldDetail[1]).replace(/-/g, ' ');
+  }
+
+  if (unitDetail?.[1] && unitDetail[1] !== 'baru') {
+    return decodeURIComponent(unitDetail[1]).replace(/-/g, ' ');
   }
 
   return item.label;
@@ -339,6 +356,11 @@ function getNavigationParentBreadcrumb(
   const categoryDetail = routePath.match(
     /^\/label-dan-field\/kategori\/([^/]+)(?:\/edit)?$/,
   );
+  const tagDetail = routePath.match(/^\/tags\/([^/]+)(?:\/edit)?$/);
+  const customFieldDetail = routePath.match(
+    /^\/custom-fields\/([^/]+)(?:\/edit)?$/,
+  );
+  const unitDetail = routePath.match(/^\/units\/([^/]+)(?:\/edit)?$/);
 
   if (brandDetail?.[1] && brandDetail[1] !== 'baru') {
     return {
@@ -355,6 +377,36 @@ function getNavigationParentBreadcrumb(
       id: 'route:/label-dan-field/kategori',
       label: 'Kategori',
       routeHint: '/label-dan-field/kategori',
+      targetModule: moduleId,
+      current: false,
+    };
+  }
+
+  if (tagDetail?.[1] && tagDetail[1] !== 'baru') {
+    return {
+      id: 'route:/tags',
+      label: 'Tag',
+      routeHint: '/tags',
+      targetModule: moduleId,
+      current: false,
+    };
+  }
+
+  if (customFieldDetail?.[1] && customFieldDetail[1] !== 'baru') {
+    return {
+      id: 'route:/custom-fields',
+      label: 'Field Kustom',
+      routeHint: '/custom-fields',
+      targetModule: moduleId,
+      current: false,
+    };
+  }
+
+  if (unitDetail?.[1] && unitDetail[1] !== 'baru') {
+    return {
+      id: 'route:/units',
+      label: 'Satuan',
+      routeHint: '/units',
       targetModule: moduleId,
       current: false,
     };

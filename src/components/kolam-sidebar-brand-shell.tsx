@@ -3,7 +3,7 @@ import {Image, StyleSheet, View} from 'react-native';
 import {getSidebarBrand} from '../domain/app-shell';
 
 const SIDEBAR_BRAND = getSidebarBrand();
-const JUNGLE_SYSTEM_LOGO = require('../assets/brand/jungle-system-logo-color.jpg');
+const JUNGLE_SYSTEM_LOGO = require('../assets/brand/jungle-system-logo-color-transparent.png');
 
 export function KolamSidebarBrand({collapsed}: {collapsed: boolean}) {
   return (

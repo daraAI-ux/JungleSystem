@@ -3,6 +3,7 @@ import { getShellModule } from '../domain/app-shell';
 import { pluginRegistry } from '../domain/unified';
 import { useKolamOverviewController } from '../hooks/use-kolam-overview-controller';
 import { KolamAppLaunchSurface } from './kolam-app-launch-surface';
+import {KolamRichTextLabSurface} from './kolam-rich-text-lab-surface';
 import {
   KolamRuntimeSurface,
   type KolamRuntimeSurfaceProps,
@@ -47,6 +48,7 @@ export function KolamPreparationSurface({
         surfaces={surfaces}
       />
       <KolamUnifiedRuntimeFooter />
+      <KolamRichTextLabSurface />
       {runtime ? <KolamRuntimeSurface {...runtime} /> : null}
     </>
   );

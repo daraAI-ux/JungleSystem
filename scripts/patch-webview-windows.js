@@ -16,6 +16,14 @@ const webViewProject = path.join(
   'ReactNativeWebView',
   'ReactNativeWebView.vcxproj',
 );
+const webViewComponent = path.join(
+  root,
+  'node_modules',
+  'react-native-webview',
+  'windows',
+  'ReactNativeWebView',
+  'RCTWebView2ComponentView.cpp',
+);
 
 function read(file) {
   return fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';
@@ -37,4 +45,27 @@ const next = webViewProjectText.replace(
 if (next !== webViewProjectText) {
   fs.writeFileSync(webViewProject, next);
   console.log(`Patched react-native-webview Windows PlatformToolset to ${toolset}.`);
+}
+
+const webViewComponentText = read(webViewComponent);
+const whiteBackgroundInclude = '#include <winrt/Windows.UI.h>';
+const whiteBackgroundPatch =
+  '    m_webView.DefaultBackgroundColor(winrt::Windows::UI::Color{255, 255, 255, 255});';
+if (
+  webViewComponentText &&
+  !webViewComponentText.includes(whiteBackgroundPatch)
+) {
+  let patchedComponentText = webViewComponentText;
+  if (!patchedComponentText.includes(whiteBackgroundInclude)) {
+    patchedComponentText = patchedComponentText.replace(
+      '#include <winrt/Windows.System.h>',
+      `#include <winrt/Windows.System.h>\n${whiteBackgroundInclude}`,
+    );
+  }
+  patchedComponentText = patchedComponentText.replace(
+    '    m_webView.VerticalAlignment(winrt::Microsoft::UI::Xaml::VerticalAlignment::Stretch);',
+    `    m_webView.VerticalAlignment(winrt::Microsoft::UI::Xaml::VerticalAlignment::Stretch);\n${whiteBackgroundPatch}`,
+  );
+  fs.writeFileSync(webViewComponent, patchedComponentText);
+  console.log('Patched react-native-webview Windows default background to white.');
 }

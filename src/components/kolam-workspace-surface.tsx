@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import {
   getShellModuleRouteIndex,
   type AppModule,
@@ -9,6 +9,11 @@ import type { DashboardCustomerVisitConfirmation } from '../domain/dashboard-cus
 import type { DashboardSalesGraphRange } from '../domain/dashboard-sales-graph';
 import { isKolamBrandRoute } from '../domain/kolam-brand';
 import { isKolamCategoryRoute } from '../domain/kolam-category';
+import { isKolamCustomFieldRoute } from '../domain/kolam-custom-field';
+import { isKolamIucnStatusRoute } from '../domain/kolam-iucn-status';
+import { isKolamTagRoute } from '../domain/kolam-tag';
+import { isKolamTaxonomyRoute } from '../domain/kolam-taxonomy';
+import { isKolamUnitRoute } from '../domain/kolam-unit';
 import type { KolamNavigationItem } from '../domain/kolam-navigation';
 import { getSettingsSurfaceItemByRoute } from '../domain/settings-surface';
 import type { PluginRouteEntry } from '../domain/unified';
@@ -17,6 +22,11 @@ import type { SyncActivityEntry } from '../domain/sync-activity';
 import type { UnifiedDataset } from '../services/unified-data';
 import { KolamBrandSurface } from './kolam-brand-surface';
 import { KolamCategorySurface } from './kolam-category-surface';
+import { KolamCustomFieldSurface } from './kolam-custom-field-surface';
+import { KolamIucnStatusSurface } from './kolam-iucn-status-surface';
+import { KolamTagSurface } from './kolam-tag-surface';
+import { KolamTaxonomySurface } from './kolam-taxonomy-surface';
+import { KolamUnitSurface } from './kolam-unit-surface';
 import { KolamNavigationRouteSurface } from './kolam-navigation-route-surface';
 import { KolamModuleRouteLauncher } from './kolam-module-route-launcher';
 import { KolamModuleRouteSurface } from './kolam-module-route-surface';
@@ -111,6 +121,49 @@ export function KolamWorkspaceSurface({
         if (isKolamCategoryRoute(activeNavigationItem.route.split('?')[0])) {
           return (
             <KolamCategorySurface
+              onRouteChange={onDashboardRoute}
+              route={activeNavigationItem.route}
+            />
+          );
+        }
+
+        if (isKolamTagRoute(activeNavigationItem.route.split('?')[0])) {
+          return (
+            <KolamTagSurface
+              onRouteChange={onDashboardRoute}
+              route={activeNavigationItem.route}
+            />
+          );
+        }
+        if (isKolamTaxonomyRoute(activeNavigationItem.route.split('?')[0])) {
+          return (
+            <KolamTaxonomySurface
+              onRouteChange={onDashboardRoute}
+              route={activeNavigationItem.route}
+            />
+          );
+        }
+        if (isKolamIucnStatusRoute(activeNavigationItem.route.split('?')[0])) {
+          return (
+            <KolamIucnStatusSurface
+              onRouteChange={onDashboardRoute}
+              route={activeNavigationItem.route}
+            />
+          );
+        }
+
+        if (isKolamCustomFieldRoute(activeNavigationItem.route.split('?')[0])) {
+          return (
+            <KolamCustomFieldSurface
+              onRouteChange={onDashboardRoute}
+              route={activeNavigationItem.route}
+            />
+          );
+        }
+
+        if (isKolamUnitRoute(activeNavigationItem.route.split('?')[0])) {
+          return (
+            <KolamUnitSurface
               onRouteChange={onDashboardRoute}
               route={activeNavigationItem.route}
             />
@@ -356,3 +409,6 @@ function getPosModuleLabel(moduleId: AppModule) {
       return 'Checkout';
   }
 }
+
+
+

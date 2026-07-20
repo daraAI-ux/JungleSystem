@@ -1,3 +1,9 @@
+import {
+  normalizeKolamTranslationsForSave,
+  normalizeKolamTranslationsFromRecord,
+  type KolamCatalogTranslationsMap,
+  type KolamCategoryLocaleFields,
+} from './kolam-catalog-locale';
 import { getKolamFileUrl } from '../lib/file-url';
 
 export type KolamCategoryStatus = 'active' | 'inactive';
@@ -7,6 +13,7 @@ export interface KolamCategory {
   name: string;
   slug: string;
   description: string;
+  translations: KolamCatalogTranslationsMap<KolamCategoryLocaleFields>;
   iconUrl: string | null;
   photos: string[];
   productCount: number;
@@ -30,6 +37,7 @@ export interface KolamCategoryFormState {
   id?: string;
   name: string;
   description: string;
+  translations: KolamCatalogTranslationsMap<KolamCategoryLocaleFields>;
   parentId: string;
   iconLocalUri: string;
   iconRemoteUrl: string;
@@ -83,6 +91,7 @@ export function createEmptyKolamCategoryFormState(): KolamCategoryFormState {
   return {
     name: '',
     description: '',
+    translations: {},
     parentId: '',
     iconLocalUri: '',
     iconRemoteUrl: '',
@@ -98,6 +107,7 @@ export function createKolamCategoryFormState(
     id: category.id,
     name: category.name,
     description: category.description,
+    translations: category.translations ?? {},
     parentId: category.parentId ?? '',
     iconLocalUri: '',
     iconRemoteUrl: category.iconUrl ?? '',
@@ -112,6 +122,7 @@ export function createKolamCategorySavePayload(form: KolamCategoryFormState) {
   return {
     name: form.name.trim(),
     description: form.description.trim(),
+    translations: normalizeKolamTranslationsForSave(form.translations) ?? {},
     parent: form.parentId.trim() || null,
     showInMarketplace: form.showInMarketplace,
     marketplaceOrder: Number.isFinite(marketplaceOrder)
@@ -134,6 +145,9 @@ export function normalizeKolamCategory(payload: unknown): KolamCategory {
     name,
     slug: slugifyCategoryName(name),
     description: cleanCategoryDescription(getString(record, 'description')),
+    translations: normalizeKolamTranslationsFromRecord<KolamCategoryLocaleFields>(
+      record.translations,
+    ),
     iconUrl: getKolamFileUrl(iconPath),
     photos,
     productCount:

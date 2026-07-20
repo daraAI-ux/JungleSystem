@@ -123,9 +123,9 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
     title: 'Inventory',
     items: [
       {
-        label: 'Brands',
+        label: 'Merek',
         route: '/brands',
-        description: 'Manage product brands',
+        description: 'Kelola merek produk',
         requiredAccess: ['kolam'],
       },
       {
@@ -137,16 +137,16 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         requiredAccess: ['kolam'],
       },
       {
-        label: 'Tags',
+        label: 'Tag',
         route: '/tags',
-        description: 'Manage tags for products, services, and species',
+        description: 'Kelola tag untuk produk, layanan, dan species',
         group: 'Label and Fields',
         requiredAccess: ['kolam'],
       },
       {
-        label: 'Fields',
+        label: 'Field Kustom',
         route: '/custom-fields',
-        description: 'Add custom fields for data',
+        description: 'Kelola field tambahan untuk data produk dan katalog.',
         group: 'Label and Fields',
         requiredAccess: ['kolam'],
       },
@@ -158,9 +158,9 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         requiredAccess: ['kolam'],
       },
       {
-        label: 'Units',
+        label: 'Satuan',
         route: '/units',
-        description: 'Add custom units for data',
+        description: 'Kelola satuan pengukuran untuk produk dan spesies.',
         group: 'Label and Fields',
         requiredAccess: ['kolam'],
       },
@@ -842,7 +842,7 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
         group: 'Label and Fields',
         label: 'Field Kustom',
       }),
-      sidebarItem('/units', { group: 'Label and Fields' }),
+      sidebarItem('/units', { group: 'Label and Fields', label: 'Satuan' }),
       sidebarItem('/species', { group: 'Life Stocks' }),
       sidebarItem('/taxonomy', { group: 'Life Stocks', label: 'Taksonomi' }),
       sidebarItem('/iucn-status', {
@@ -1066,6 +1066,12 @@ const kolamNavigationRouteVariantSpecs: Array<{
     labelSuffix: 'Create',
     route: '/custom-fields/create',
     description: 'Create custom field page from live Kolam',
+  },
+  {
+    baseRoute: '/custom-fields',
+    labelSuffix: 'Detail',
+    route: '/custom-fields/:id',
+    description: 'Detail field kustom dari live Kolam',
   },
   {
     baseRoute: '/custom-fields',

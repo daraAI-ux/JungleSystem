@@ -26,6 +26,7 @@ export interface KolamLabelFieldDetailSectionItem {
 }
 
 export interface KolamLabelFieldDetailSection {
+  accordion?: boolean;
   description: string;
   emptyText: string;
   items?: KolamLabelFieldDetailSectionItem[];
@@ -106,7 +107,12 @@ export function KolamLabelFieldDetailOverview({
       </View>
       <View style={styles.sectionGrid}>
         {sections.map(section => (
-          <View key={section.title} style={styles.sectionPanel}>
+          <View
+            key={section.title}
+            style={[
+              styles.sectionPanel,
+              section.accordion ? styles.sectionPanelWide : null,
+            ]}>
             <KolamCopyStack
               items={[
                 {
@@ -122,61 +128,7 @@ export function KolamLabelFieldDetailOverview({
               ]}
             />
             <View style={styles.sectionBody}>
-              {section.items?.length ? (
-                <View style={styles.itemList}>
-                  {section.items.map((item, index) => (
-                    <View key={`${item.title}-${index}`} style={styles.itemRow}>
-                      {item.thumbnail ? (
-                        <View style={styles.itemThumbnail}>{item.thumbnail}</View>
-                      ) : null}
-                      <KolamCopyStack
-                        containerStyle={styles.itemCopy}
-                        items={[
-                          {
-                            id: 'title',
-                            text: item.title,
-                            style: styles.itemTitle,
-                          },
-                          ...(item.meta
-                            ? [
-                                {
-                                  id: 'meta',
-                                  text: item.meta,
-                                  style: styles.itemMeta,
-                                },
-                              ]
-                            : []),
-                        ]}
-                      />
-                      {item.value ? (
-                        <KolamCopyStack
-                          containerStyle={styles.itemValueCopy}
-                          items={[
-                            {
-                              id: 'value',
-                              text: item.value,
-                              style: styles.itemValue,
-                            },
-                          ]}
-                        />
-                      ) : null}
-                      {item.badge ? (
-                        <KolamStatusBadge intent="muted" label={item.badge} />
-                      ) : null}
-                    </View>
-                  ))}
-                </View>
-              ) : (
-                <KolamCopyStack
-                  items={[
-                    {
-                      id: 'empty',
-                      text: section.emptyText,
-                      style: styles.emptyText,
-                    },
-                  ]}
-                />
-              )}
+              <DetailSectionItems section={section} />
             </View>
           </View>
         ))}
@@ -222,6 +174,185 @@ function MetricTile({
   );
 }
 
+function DetailSectionItems({
+  section,
+}: {
+  section: KolamLabelFieldDetailSection;
+}) {
+  const [openKey, setOpenKey] = React.useState<string | null>(
+    section.accordion && section.items?.length
+      ? getDetailItemKey(section.items[0], 0)
+      : null,
+  );
+
+  React.useEffect(() => {
+    if (!section.accordion || !section.items?.length) {
+      setOpenKey(null);
+      return;
+    }
+
+    const keys = section.items.map(getDetailItemKey);
+    if (!openKey || !keys.includes(openKey)) {
+      setOpenKey(keys[0]);
+    }
+  }, [openKey, section.accordion, section.items]);
+
+  if (!section.items?.length) {
+    return (
+      <KolamCopyStack
+        items={[
+          {
+            id: 'empty',
+            text: section.emptyText,
+            style: styles.emptyText,
+          },
+        ]}
+      />
+    );
+  }
+
+  if (!section.accordion) {
+    return (
+      <View style={styles.itemList}>
+        {section.items.map((item, index) => (
+          <DetailListItem item={item} key={getDetailItemKey(item, index)} />
+        ))}
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.accordionList}>
+      {section.items.map((item, index) => {
+        const key = getDetailItemKey(item, index);
+        const isOpen = openKey === key;
+
+        return (
+          <View key={key} style={styles.accordionItem}>
+            <KolamInteractionFrame
+              accessibilityLabel={`${isOpen ? 'Tutup' : 'Buka'} ${item.title}`}
+              accessibilityState={{expanded: isOpen}}
+              onPress={() => setOpenKey(isOpen ? null : key)}
+              style={styles.accordionHeader}>
+              <View style={styles.accordionHeaderCopy}>
+                <KolamCopyStack
+                  items={[
+                    {
+                      id: 'title',
+                      text: item.title,
+                      style: styles.itemTitle,
+                    },
+                    ...(item.value
+                      ? [
+                          {
+                            id: 'value',
+                            text: item.value,
+                            style: styles.accordionSummary,
+                          },
+                        ]
+                      : []),
+                  ]}
+                />
+              </View>
+              {item.badge ? (
+                <KolamStatusBadge
+                  intent={item.badge === 'Aktif' ? 'success' : 'muted'}
+                  label={item.badge}
+                />
+              ) : null}
+              <KolamCopyStack
+                items={[
+                  {
+                    id: 'chevron',
+                    text: isOpen ? '^' : 'v',
+                    style: styles.accordionChevron,
+                  },
+                ]}
+              />
+            </KolamInteractionFrame>
+            {isOpen ? (
+              <View style={styles.accordionContent}>
+                {item.thumbnail ? (
+                  <View style={styles.itemThumbnail}>{item.thumbnail}</View>
+                ) : null}
+                <KolamCopyStack
+                  containerStyle={styles.itemCopy}
+                  items={[
+                    ...(item.meta
+                      ? [
+                          {
+                            id: 'meta',
+                            text: item.meta,
+                            style: styles.itemMeta,
+                          },
+                        ]
+                      : []),
+                    ...(item.value
+                      ? [
+                          {
+                            id: 'value',
+                            text: item.value,
+                            style: styles.itemValue,
+                          },
+                        ]
+                      : []),
+                  ]}
+                />
+              </View>
+            ) : null}
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+function DetailListItem({item}: {item: KolamLabelFieldDetailSectionItem}) {
+  return (
+    <View style={styles.itemRow}>
+      {item.thumbnail ? <View style={styles.itemThumbnail}>{item.thumbnail}</View> : null}
+      <KolamCopyStack
+        containerStyle={styles.itemCopy}
+        items={[
+          {
+            id: 'title',
+            text: item.title,
+            style: styles.itemTitle,
+          },
+          ...(item.meta
+            ? [
+                {
+                  id: 'meta',
+                  text: item.meta,
+                  style: styles.itemMeta,
+                },
+              ]
+            : []),
+        ]}
+      />
+      {item.value ? (
+        <KolamCopyStack
+          containerStyle={styles.itemValueCopy}
+          items={[
+            {
+              id: 'value',
+              text: item.value,
+              style: styles.itemValue,
+            },
+          ]}
+        />
+      ) : null}
+      {item.badge ? <KolamStatusBadge intent="muted" label={item.badge} /> : null}
+    </View>
+  );
+}
+
+function getDetailItemKey(
+  item: KolamLabelFieldDetailSectionItem,
+  index: number,
+) {
+  return `${item.title}-${item.value ?? ''}-${index}`;
+}
 const styles = StyleSheet.create({
   stack: {
     gap: 16,
@@ -326,6 +457,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     backgroundColor: V.colors.bg,
   },
+  sectionPanelWide: {
+    flexBasis: '100%',
+    width: '100%',
+  },
   sectionTitle: {
     color: V.colors.fg,
     fontFamily: V.fontFamily,
@@ -393,6 +528,55 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     textAlign: 'right',
   },
+  accordionList: {
+    marginTop: 14,
+    gap: 8,
+  },
+  accordionItem: {
+    overflow: 'hidden',
+    borderRadius: 8,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.secondary,
+  },
+  accordionHeader: {
+    minHeight: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+  },
+  accordionHeaderCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  accordionSummary: {
+    marginTop: 3,
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  accordionChevron: {
+    width: 18,
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 18,
+    fontWeight: '900',
+    textAlign: 'center',
+  },
+  accordionContent: {
+    minHeight: 62,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    paddingHorizontal: 12,
+    paddingBottom: 12,
+    borderTopColor: V.colors.border,
+    borderTopWidth: 1,
+    backgroundColor: V.colors.bg,
+  },
   emptyText: {
     color: V.colors.fg,
     fontFamily: V.fontFamily,
@@ -401,3 +585,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
+
+
+

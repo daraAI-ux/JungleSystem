@@ -22,8 +22,14 @@ function flattenText(value: React.ReactNode): string[] {
   return [];
 }
 
+function expectTextAbsent(text: string[], values: string[]) {
+  values.forEach(value => {
+    expect(text).not.toContain(value);
+  });
+}
+
 describe('KolamLoginScreen', () => {
-  it('renders a dedicated server login page using the shared auth panel', async () => {
+  it('renders a clean Kolam-style login page using the shared auth panel', async () => {
     const onLogin = jest.fn();
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
@@ -60,22 +66,36 @@ describe('KolamLoginScreen', () => {
       );
     });
 
-    expect(renderText(renderer!)).toEqual(
+    const text = renderText(renderer!);
+
+    expect(text).toEqual(
       expect.arrayContaining([
-        'JungleSystem',
-        'Backend',
-        'Native Client',
-        'Source Login',
-        'Device Signature',
-        'MAC attached',
-        'Belum login',
-        'Login',
+        'Masuk',
       ]),
     );
+    expect(
+      renderer!.root.findByProps({accessibilityLabel: 'Logo JungleSystem'}),
+    ).toBeTruthy();
+    expectTextAbsent(text, [
+      'Backend',
+      'Native Client',
+      'Source Login',
+      'Device Signature',
+      'MAC attached',
+      'Belum login',
+      'Kolam',
+      'POS',
+      'AM',
+      'Login',
+      'Sync',
+      'Logout',
+      'Sinkron',
+      'Keluar',
+    ]);
 
     await ReactTestRenderer.act(async () => {
       renderer!.root
-        .findByProps({accessibilityLabel: 'Login'})
+        .findByProps({accessibilityLabel: 'Masuk'})
         .props.onPress();
     });
 

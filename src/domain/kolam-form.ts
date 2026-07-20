@@ -1,7 +1,13 @@
 export type KolamFormSectionId =
   | 'brand-detail'
+  | 'catalog-translations'
   | 'cashflow-open'
-  | 'customer-create';
+  | 'customer-create'
+  | 'custom-field-detail'
+  | 'iucn-status-detail'
+  | 'tag-detail'
+  | 'taxonomy-detail'
+  | 'unit-detail';
 
 export interface KolamFormSection {
   id: KolamFormSectionId;
@@ -69,17 +75,53 @@ const kolamFormSections: Record<KolamFormSectionId, KolamFormSection> = {
     description:
       'Kelola nama, negara asal, status, tautan, dan logo utama merek.',
   },
+  'catalog-translations': {
+    id: 'catalog-translations',
+    title: 'Terjemahan Marketplace',
+    description:
+      'Isi locale selain Indonesia. Data kosong akan fallback ke field utama.',
+  },
   'cashflow-open': {
     id: 'cashflow-open',
     title: 'Open Session',
     description:
       'Buat nama shift sebelum membuka cashflow supaya sale draft mengikuti sesi kasir aktif.',
   },
+  'custom-field-detail': {
+    id: 'custom-field-detail',
+    title: 'Data Field Kustom',
+    description:
+      'Kelola kunci, label, tipe, aturan, icon, dan deskripsi field kustom.',
+  },
   'customer-create': {
     id: 'customer-create',
     title: 'Customer Detail',
     description:
       'Input customer mengikuti form section Kolam live: identitas di kiri, kontrol data di kanan.',
+  },
+  'iucn-status-detail': {
+    id: 'iucn-status-detail',
+    title: 'Data Status IUCN',
+    description:
+      'Kelola nama, singkatan, status, dan gambar badge konservasi IUCN.',
+  },
+  'tag-detail': {
+    id: 'tag-detail',
+    title: 'Data Tag',
+    description:
+      'Kelola nama, warna, status, dan deskripsi tag untuk produk, layanan, dan species.',
+  },
+  'taxonomy-detail': {
+    id: 'taxonomy-detail',
+    title: 'Data Taksonomi',
+    description:
+      'Kelola nama, hierarki, nama ilmiah, status, dan konten locale taksonomi.',
+  },
+  'unit-detail': {
+    id: 'unit-detail',
+    title: 'Data Satuan',
+    description:
+      'Kelola nama dan simbol satuan pengukuran untuk produk dan spesies.',
   },
 };
 
@@ -98,3 +140,6 @@ export function getKolamFormVisualContract(): KolamFormVisualContract {
     input: { ...kolamFormVisualContract.input },
   };
 }
+
+
+

@@ -384,6 +384,7 @@ function createRouteCategoryStub(key: string): KolamCategory {
     name: key,
     slug: slugifyCategoryName(key),
     description: '',
+    translations: {},
     iconUrl: null,
     photos: [],
     productCount: 0,

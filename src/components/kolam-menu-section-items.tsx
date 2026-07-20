@@ -47,7 +47,7 @@ function getMenuItemGroups(items: KolamNavigationItem[]) {
     Array<{ id: string; label: string | null; items: KolamNavigationItem[] }>
   >((groups, item) => {
     const label = item.group ?? null;
-    const id = label ? `group:${label}` : `item:${item.route}`;
+    const id = label ? `group:${label}:${item.route}` : `item:${item.route}`;
     const lastGroup = groups[groups.length - 1];
 
     if (lastGroup?.label === label) {
@@ -85,3 +85,4 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 });
+

@@ -1,6 +1,7 @@
 import React from 'react';
 import {KolamAuthControls} from './kolam-auth-controls';
 import {KolamAuthIdentity} from './kolam-auth-identity';
+import {authPanelStyles as styles} from './kolam-auth-panel-styles';
 import {KolamPanelFrame} from './kolam-panel-frame';
 import type {KolamAuthPanelProps} from './kolam-auth-panel-types';
 
@@ -22,15 +23,22 @@ export function KolamAuthPanel({
   onLogin,
   onLogout,
   onSync,
-}: KolamAuthPanelProps) {
+  variant = 'full',
+}: KolamAuthPanelProps & {variant?: 'full' | 'login'}) {
+  const compactLogin = variant === 'login';
+
   return (
-    <KolamPanelFrame variant="auth">
-      <KolamAuthIdentity
-        accessScope={accessScope}
-        authMessage={authMessage}
-        authSourceHint={authSourceHint}
-        displayName={displayName}
-      />
+    <KolamPanelFrame
+      variant="auth"
+      style={compactLogin ? styles.authPanelLogin : undefined}>
+      {!compactLogin ? (
+        <KolamAuthIdentity
+          accessScope={accessScope}
+          authMessage={authMessage}
+          authSourceHint={authSourceHint}
+          displayName={displayName}
+        />
+      ) : null}
       <KolamAuthControls
         amApiBaseUrl={amApiBaseUrl}
         authEmail={authEmail}
@@ -45,6 +53,7 @@ export function KolamAuthPanel({
         onLogin={onLogin}
         onLogout={onLogout}
         onSync={onSync}
+        variant={variant}
       />
     </KolamPanelFrame>
   );

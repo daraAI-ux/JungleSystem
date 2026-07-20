@@ -71,6 +71,7 @@ describe('Kolam category domain contract', () => {
       createKolamCategorySavePayload({
         name: ' Aquascape ',
         description: 'Display marketplace',
+        translations: {},
         parentId: '',
         iconLocalUri: '',
         iconRemoteUrl: '',
@@ -80,6 +81,7 @@ describe('Kolam category domain contract', () => {
     ).toEqual({
       name: 'Aquascape',
       description: 'Display marketplace',
+      translations: {},
       parent: null,
       showInMarketplace: true,
       marketplaceOrder: 7,

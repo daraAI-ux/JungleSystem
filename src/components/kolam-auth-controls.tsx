@@ -3,6 +3,7 @@ import type {AuthSource, AuthSourceDescriptor} from '../domain/auth';
 import {KolamAuthActionButtons} from './kolam-auth-action-buttons';
 import {KolamAuthCredentialFields} from './kolam-auth-credential-fields';
 import {KolamAuthSourcePicker} from './kolam-auth-source-picker';
+import {authPanelStyles as styles} from './kolam-auth-panel-styles';
 import {KolamListFrame} from './kolam-list-frame';
 
 export function KolamAuthControls({
@@ -19,6 +20,7 @@ export function KolamAuthControls({
   onLogin,
   onLogout,
   onSync,
+  variant = 'full',
 }: {
   amApiBaseUrl: string;
   authEmail: string;
@@ -33,14 +35,21 @@ export function KolamAuthControls({
   onLogin: () => void;
   onLogout: () => void;
   onSync: () => void;
+  variant?: 'full' | 'login';
 }) {
+  const compactLogin = variant === 'login';
+
   return (
-    <KolamListFrame variant="authControls">
-      <KolamAuthSourcePicker
-        authSource={authSource}
-        authSources={authSources}
-        onAuthSourceChange={onAuthSourceChange}
-      />
+    <KolamListFrame
+      variant="authControls"
+      style={compactLogin ? styles.authControlsLogin : undefined}>
+      {!compactLogin ? (
+        <KolamAuthSourcePicker
+          authSource={authSource}
+          authSources={authSources}
+          onAuthSourceChange={onAuthSourceChange}
+        />
+      ) : null}
       <KolamAuthCredentialFields
         amApiBaseUrl={amApiBaseUrl}
         authEmail={authEmail}
@@ -48,12 +57,15 @@ export function KolamAuthControls({
         onAmApiBaseUrlChange={onAmApiBaseUrlChange}
         onAuthEmailChange={onAuthEmailChange}
         onAuthPasswordChange={onAuthPasswordChange}
+        showServerField={!compactLogin}
+        variant={variant}
       />
       <KolamAuthActionButtons
         isSigningIn={isSigningIn}
         onLogin={onLogin}
         onLogout={onLogout}
         onSync={onSync}
+        showSecondaryActions={!compactLogin}
       />
     </KolamListFrame>
   );

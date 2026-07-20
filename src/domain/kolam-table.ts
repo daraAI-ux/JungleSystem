@@ -2,8 +2,13 @@ export type KolamTableId =
   | 'brand'
   | 'catalog'
   | 'category'
+  | 'custom-field'
   | 'customer'
-  | 'sales';
+  | 'iucn-status'
+  | 'sales'
+  | 'tag'
+  | 'taxonomy'
+  | 'unit';
 
 export interface KolamTableColumn {
   id:
@@ -134,10 +139,51 @@ const kolamTableColumns: Record<KolamTableId, KolamTableColumn[]> = {
     { id: 'marketplace', label: 'Marketplace', align: 'left', width: 132 },
     { id: 'actions', label: '', align: 'right', width: 64 },
   ],
+  tag: [
+    { id: 'primary', label: 'Tag', align: 'left' },
+    { id: 'meta', label: 'Warna', align: 'left', width: 96 },
+    { id: 'notes', label: 'Deskripsi', align: 'left', width: 320 },
+    { id: 'amount', label: 'Digunakan', align: 'right', width: 112 },
+    { id: 'status', label: 'Status', align: 'right', width: 116 },
+    { id: 'actions', label: '', align: 'right', width: 64 },
+  ],
+  'custom-field': [
+    { id: 'primary', label: 'Label', align: 'left' },
+    { id: 'meta', label: 'Kunci', align: 'left', width: 150 },
+    { id: 'notes', label: 'Tipe', align: 'left', width: 110 },
+    { id: 'children', label: 'Aturan', align: 'left', width: 230 },
+    { id: 'amount', label: 'Urutan', align: 'right', width: 86 },
+    { id: 'status', label: 'Status', align: 'right', width: 116 },
+    { id: 'actions', label: '', align: 'right', width: 64 },
+  ],
   customer: [
     { id: 'primary', label: 'Customer', align: 'left' },
     { id: 'meta', label: 'Phone', align: 'left', width: 150 },
     { id: 'amount', label: 'Email', align: 'right', width: 170 },
+  ],
+  'iucn-status': [
+    { id: 'meta', label: 'Gambar', align: 'left', width: 72 },
+    { id: 'children', label: 'Singkatan', align: 'left', width: 118 },
+    { id: 'primary', label: 'Nama', align: 'left' },
+    { id: 'amount', label: 'Urutan', align: 'right', width: 90 },
+    { id: 'status', label: 'Status', align: 'right', width: 116 },
+    { id: 'actions', label: '', align: 'right', width: 64 },
+  ],  taxonomy: [
+    { id: 'primary', label: 'Nama', align: 'left' },
+    { id: 'meta', label: 'Tingkat', align: 'left', width: 120 },
+    { id: 'notes', label: 'Nama Ilmiah', align: 'left', width: 180 },
+    { id: 'children', label: 'Anak', align: 'right', width: 88 },
+    { id: 'marketplace', label: 'Jalur', align: 'left', width: 220 },
+    { id: 'status', label: 'Status', align: 'right', width: 116 },
+    { id: 'actions', label: '', align: 'right', width: 64 },
+  ],
+  unit: [
+    { id: 'primary', label: 'Nama', align: 'left' },
+    { id: 'meta', label: 'Simbol/Inisial', align: 'left', width: 140 },
+    { id: 'notes', label: 'Tipe', align: 'left', width: 120 },
+    { id: 'children', label: 'Satuan Dasar', align: 'left', width: 116 },
+    { id: 'status', label: 'Status', align: 'right', width: 116 },
+    { id: 'actions', label: '', align: 'right', width: 64 },
   ],
   sales: [
     { id: 'primary', label: 'Sale', align: 'left' },
@@ -163,3 +209,5 @@ export function getKolamTableVisualContract(): KolamTableVisualContract {
     interaction: { ...kolamTableVisualContract.interaction },
   };
 }
+
+

@@ -12,6 +12,10 @@ import {
   type KolamCategory,
 } from '../domain/kolam-category';
 import { getKolamFormSection } from '../domain/kolam-form';
+import {
+  countActiveLocaleAuditItems,
+  createCategoryLocaleAuditItems,
+} from '../domain/kolam-locale-audit';
 import { getKolamTableColumns } from '../domain/kolam-table';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import {
@@ -19,6 +23,7 @@ import {
   type KolamCategoryController,
 } from '../hooks/use-kolam-category-controller';
 import { KolamButton } from './kolam-button';
+import { KolamCatalogTranslationsEditor } from './kolam-catalog-translations-editor';
 import { KolamCategoryIcon } from './kolam-category-icon';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
@@ -39,7 +44,6 @@ import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamLabelFieldDetailOverview } from './kolam-label-field-detail-overview';
 import { KolamNativeFormSection } from './kolam-native-form-section';
-import { KolamRichTextEditor } from './kolam-rich-text-editor';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamStatusBadge } from './kolam-status-badge';
@@ -408,6 +412,13 @@ function KolamCategoryDetail({
   const category = controller.selectedCategory;
   const editable = controller.isEditable;
   const detailLists = category ? getCategoryDetailLists(category) : null;
+  const localeAuditItems = category
+    ? createCategoryLocaleAuditItems({
+        description: category.description,
+        name: category.name,
+        translations: category.translations,
+      })
+    : [];
 
   if (!category && controller.mode !== 'new') {
     return (
@@ -447,16 +458,18 @@ function KolamCategoryDetail({
                   ? `Tampil, urutan ${category.marketplaceOrder}`
                   : 'Tidak tampil',
               },
-              ...(category.description
-                ? [
-                    {
-                      label: 'Deskripsi',
-                      value: category.description,
-                    },
-                  ]
-                : []),
+
             ]}
             sections={[
+              {
+                accordion: true,
+                title: 'Terjemahan',
+                total: countActiveLocaleAuditItems(localeAuditItems),
+                description:
+                  'Audit isi locale kategori yang tersimpan lokal dan siap dikirim ke backend.',
+                items: localeAuditItems,
+                emptyText: 'Belum ada data locale untuk diaudit.',
+              },
               {
                 title: 'Produk',
                 total: category.productCount,
@@ -517,15 +530,6 @@ function KolamCategoryForm({
     <KolamNativeFormSection section={getKolamFormSection('brand-detail')}>
       <View style={settingsWebFormStyles.settingsWebFormFields}>
         <View style={settingsWebFormStyles.settingsWebFormFieldsGrid}>
-          <FieldShell label="Nama Kategori" required>
-            <KolamFormTextField
-              editable={!controller.saving}
-              onChangeText={name => controller.onChangeForm({ name })}
-              placeholder="Nama kategori"
-              style={settingsWebFormStyles.settingsWebFormFieldValue}
-              value={form.name}
-            />
-          </FieldShell>
           <FieldShell label="Pilih Induk">
             <KolamDropdownSelect
               accessibilityLabel="Pilih induk kategori"
@@ -546,16 +550,17 @@ function KolamCategoryForm({
               value={form.parentId}
             />
           </FieldShell>
-          <FieldShell label="Deskripsi">
-            <KolamRichTextEditor
-              editable={!controller.saving}
-              onChangeText={description =>
-                controller.onChangeForm({ description })
-              }
-              placeholder="Deskripsi singkat"
-              value={form.description}
-            />
-          </FieldShell>
+          <KolamCatalogTranslationsEditor
+            editable={!controller.saving}
+            kind="category"
+            onChange={translations => controller.onChangeForm({ translations })}
+            primary={{
+              name: form.name,
+              description: form.description,
+              onChange: patch => controller.onChangeForm(patch),
+            }}
+            translations={form.translations}
+          />
           <FieldShell label="Tampil di Marketplace">
             <View style={styles.segmentRow}>
               <KolamButton
@@ -885,6 +890,7 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
 });
+
 
 
 
