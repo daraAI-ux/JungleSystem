@@ -38,6 +38,10 @@ import {
   writeKolamSpeciesListCache,
 } from '../services/kolam-species-local-cache';
 import { getKolamTags } from '../services/kolam-tag-api';
+import {
+  readKolamTagListCache,
+  writeKolamTagListCache,
+} from '../services/kolam-tag-local-cache';
 import { getKolamTaxonomies } from '../services/kolam-taxonomy-api';
 import { getKolamUnits } from '../services/kolam-unit-api';
 import {
@@ -113,6 +117,11 @@ export function useKolamSpeciesController(
   const [dataSource, setDataSource] = useState<KolamSpeciesDataSource>('idle');
 
   const refreshOptions = useCallback(async () => {
+    const cachedTags = await readKolamTagListCache();
+    if (cachedTags?.value.length) {
+      setTags(cachedTags.value);
+    }
+
     const [categoryResult, taxonomyResult, unitResult, iucnResult, tagResult] =
       await Promise.allSettled([
         getKolamCategories(),
@@ -136,6 +145,7 @@ export function useKolamSpeciesController(
     }
     if (tagResult.status === 'fulfilled') {
       setTags(tagResult.value);
+      await writeKolamTagListCache(tagResult.value);
     }
   }, []);
 

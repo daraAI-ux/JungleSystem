@@ -45,6 +45,7 @@ type SpeciesSortMode =
   | 'stock-desc'
   | 'newest';
 type SpeciesStatusFilter = 'all' | KolamSpeciesStatus;
+type SpeciesTagFilter = 'all' | string;
 type SpeciesDeleteMediaTarget =
   | { type: 'thumbnail'; label: string }
   | { type: 'photo'; index: number; label: string }
@@ -156,6 +157,7 @@ function KolamSpeciesList({
     React.useState<KolamSpeciesStockStatus>('all');
   const [sellableFilter, setSellableFilter] =
     React.useState<KolamSpeciesSellableFilter>('all');
+  const [tagFilter, setTagFilter] = React.useState<SpeciesTagFilter>('all');
   const [pageSize, setPageSize] = React.useState(10);
   const [page, setPage] = React.useState(1);
   const summary = getSpeciesSummary(controller.species);
@@ -167,8 +169,16 @@ function KolamSpeciesList({
         statusFilter,
         stockFilter,
         sellableFilter,
+        tagFilter,
       ),
-    [controller.species, search, sellableFilter, statusFilter, stockFilter],
+    [
+      controller.species,
+      search,
+      sellableFilter,
+      statusFilter,
+      stockFilter,
+      tagFilter,
+    ],
   );
   const sortedSpecies = React.useMemo(
     () => sortSpecies(filteredSpecies, sortMode),
@@ -183,7 +193,7 @@ function KolamSpeciesList({
 
   React.useEffect(() => {
     setPage(1);
-  }, [pageSize, search, sellableFilter, sortMode, statusFilter, stockFilter]);
+  }, [pageSize, search, sellableFilter, sortMode, statusFilter, stockFilter, tagFilter]);
 
   return (
     <View style={styles.stack}>
@@ -242,6 +252,21 @@ function KolamSpeciesList({
             { label: 'Tidak dijual', value: 'not-sellable' },
           ]}
           value={sellableFilter}
+        />
+        <KolamDropdownSelect<SpeciesTagFilter>
+          label="Tag"
+          menuStyle={styles.longDropdownMenu}
+          onChange={setTagFilter}
+          options={[
+            { label: 'Semua Tag', value: 'all' },
+            ...controller.tags.map(tag => ({
+              label: tag.name,
+              value: tag.id,
+            })),
+          ]}
+          searchable
+          searchPlaceholder="Cari tag..."
+          value={tagFilter}
         />
         <KolamPaginationSizeControl onChange={setPageSize} value={pageSize} />
         <KolamPaginationSummaryLabel
@@ -410,6 +435,14 @@ function KolamSpeciesRow({
             {
               id: 'category',
               text: item.categories.map(category => category.name).join(', ') || '-',
+              style: styles.rowSubtext,
+              textProps: { numberOfLines: 1 },
+            },
+            {
+              id: 'tags',
+              text: item.tags.length
+                ? 'Tag: ' + item.tags.map(tag => tag.name).join(', ')
+                : 'Tag: -',
               style: styles.rowSubtext,
               textProps: { numberOfLines: 1 },
             },
@@ -1785,6 +1818,7 @@ function filterSpecies(
   statusFilter: SpeciesStatusFilter,
   stockFilter: KolamSpeciesStockStatus,
   sellableFilter: KolamSpeciesSellableFilter,
+  tagFilter: SpeciesTagFilter,
 ) {
   const normalizedSearch = search.trim().toLowerCase();
 
@@ -1806,6 +1840,13 @@ function filterSpecies(
     }
 
     if (sellableFilter === 'not-sellable' && item.sellable) {
+      return false;
+    }
+
+    if (
+      tagFilter !== 'all' &&
+      !item.tags.some(tag => tag.id === tagFilter)
+    ) {
       return false;
     }
 
