@@ -10,7 +10,9 @@ export interface NativeImagePickerResult {
 }
 
 export interface NativeFilePickerBridge {
+  pickAudio?(): Promise<NativeImagePickerResult>;
   pickImage(): Promise<NativeImagePickerResult>;
+  pickVideo?(): Promise<NativeImagePickerResult>;
 }
 
 export async function pickNativeImageFile(): Promise<NativeImagePickerResult> {
@@ -26,6 +28,31 @@ export async function pickNativeImageFile(): Promise<NativeImagePickerResult> {
   return bridge.pickImage();
 }
 
+export async function pickNativeVideoFile(): Promise<NativeImagePickerResult> {
+  if (Platform.OS !== 'windows') {
+    return { cancelled: true };
+  }
+
+  const bridge = getNativeFilePickerBridge();
+  if (!bridge?.pickVideo) {
+    throw new Error('File picker video Windows belum tersedia di runtime.');
+  }
+
+  return bridge.pickVideo();
+}
+
+export async function pickNativeAudioFile(): Promise<NativeImagePickerResult> {
+  if (Platform.OS !== 'windows') {
+    return { cancelled: true };
+  }
+
+  const bridge = getNativeFilePickerBridge();
+  if (!bridge?.pickAudio) {
+    throw new Error('File picker audio Windows belum tersedia di runtime.');
+  }
+
+  return bridge.pickAudio();
+}
 export function getNativeFilePickerBridge(): NativeFilePickerBridge | null {
   const bridge = NativeModules.KolamWindowsFilePicker as
     | NativeFilePickerBridge
@@ -37,3 +64,4 @@ export function getNativeFilePickerBridge(): NativeFilePickerBridge | null {
 
   return null;
 }
+

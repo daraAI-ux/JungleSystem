@@ -4,19 +4,33 @@ import {
   getKolamNavigationRouteSurfaceContract,
   type KolamNavigationItem,
 } from '../domain/kolam-navigation';
+import {isKolamSpeciesRoute} from '../domain/kolam-species';
 import type {UnifiedDataset} from '../services/unified-data';
 import {KolamDescriptionList} from './kolam-description-list';
 import {KolamModulePanel} from './kolam-module-panel';
+import {KolamSpeciesSurface} from './kolam-species-surface';
 import {KolamRouteWorkbench} from './kolam-route-workbench';
 
 export function KolamNavigationRouteSurface({
   dataset,
   item,
+  onRouteChange,
 }: {
   dataset: UnifiedDataset;
   item: KolamNavigationItem;
+  onRouteChange?: (route: string) => void;
 }) {
   const contract = getKolamNavigationRouteSurfaceContract(item);
+  const routePath = contract.runtimeRoute.split('?')[0];
+
+  if (isKolamSpeciesRoute(routePath)) {
+    return (
+      <KolamSpeciesSurface
+        onRouteChange={onRouteChange}
+        route={contract.runtimeRoute}
+      />
+    );
+  }
 
   return (
     <KolamModulePanel

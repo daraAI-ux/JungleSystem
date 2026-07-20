@@ -5,6 +5,7 @@ export type KolamFormSectionId =
   | 'customer-create'
   | 'custom-field-detail'
   | 'iucn-status-detail'
+  | 'species-detail'
   | 'tag-detail'
   | 'taxonomy-detail'
   | 'unit-detail';
@@ -105,6 +106,12 @@ const kolamFormSections: Record<KolamFormSectionId, KolamFormSection> = {
     description:
       'Kelola nama, singkatan, status, dan gambar badge konservasi IUCN.',
   },
+  'species-detail': {
+    id: 'species-detail',
+    title: 'Data Spesies',
+    description:
+      'Kelola data utama, relasi master, penjualan, dan deskripsi spesies.',
+  },
   'tag-detail': {
     id: 'tag-detail',
     title: 'Data Tag',
@@ -140,6 +147,7 @@ export function getKolamFormVisualContract(): KolamFormVisualContract {
     input: { ...kolamFormVisualContract.input },
   };
 }
+
 
 
 

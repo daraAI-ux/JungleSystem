@@ -6,6 +6,7 @@ export type KolamTableId =
   | 'customer'
   | 'iucn-status'
   | 'sales'
+  | 'species'
   | 'tag'
   | 'taxonomy'
   | 'unit';
@@ -168,7 +169,18 @@ const kolamTableColumns: Record<KolamTableId, KolamTableColumn[]> = {
     { id: 'amount', label: 'Urutan', align: 'right', width: 90 },
     { id: 'status', label: 'Status', align: 'right', width: 116 },
     { id: 'actions', label: '', align: 'right', width: 64 },
-  ],  taxonomy: [
+  ],
+  species: [
+    { id: 'primary', label: 'Nama', align: 'left' },
+    { id: 'meta', label: 'SKU', align: 'left', width: 126 },
+    { id: 'amount', label: 'Harga Jual', align: 'right', width: 140 },
+    { id: 'children', label: 'Stok', align: 'right', width: 110 },
+    { id: 'marketplace', label: 'Sinkron', align: 'left', width: 132 },
+    { id: 'notes', label: 'Info', align: 'left', width: 230 },
+    { id: 'status', label: 'Status', align: 'right', width: 116 },
+    { id: 'actions', label: '', align: 'right', width: 64 },
+  ],
+  taxonomy: [
     { id: 'primary', label: 'Nama', align: 'left' },
     { id: 'meta', label: 'Tingkat', align: 'left', width: 120 },
     { id: 'notes', label: 'Nama Ilmiah', align: 'left', width: 180 },
@@ -209,5 +221,6 @@ export function getKolamTableVisualContract(): KolamTableVisualContract {
     interaction: { ...kolamTableVisualContract.interaction },
   };
 }
+
 
 

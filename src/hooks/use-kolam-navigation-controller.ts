@@ -54,7 +54,7 @@ export function useKolamNavigationController({
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [expandedKolamMenuSections, setExpandedKolamMenuSections] = useState<
     Record<string, boolean>
-  >({});
+  >({ inventory: true });
   const [kolamMenuSectionOrder, setKolamMenuSectionOrder] = useState<string[]>(
     () => kolamSidebarNavigationSections.map(section => section.id),
   );
@@ -533,3 +533,4 @@ function getManualNavigationItem(route: string): KolamNavigationItem | null {
 
   return null;
 }
+

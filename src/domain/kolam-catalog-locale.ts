@@ -40,6 +40,16 @@ export type KolamTaxonomyLocaleFields = {
   description?: string;
 };
 
+export type KolamSpeciesLocaleFields = {
+  commonName?: string;
+  localName?: string;
+  shortDescription?: string;
+  description?: string;
+  morfologis?: string;
+  habitat?: string;
+  distribution?: string;
+};
+
 export type KolamCustomFieldLocaleFields = {
   fieldLabel?: string;
   description?: string;
@@ -147,5 +157,6 @@ function compactLocaleBlock(value: unknown) {
 
   return Object.keys(output).length ? output : null;
 }
+
 
 

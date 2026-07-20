@@ -9,6 +9,7 @@ import {
   type KolamCatalogTranslationsMap,
   type KolamCategoryLocaleFields,
   type KolamCustomFieldLocaleFields,
+  type KolamSpeciesLocaleFields,
   type KolamTaxonomyLocaleFields,
 } from '../domain/kolam-catalog-locale';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
@@ -28,6 +29,16 @@ type TaxonomyPrimaryBinding = {
   name: string;
   description: string;
   onChange: (patch: Partial<KolamTaxonomyLocaleFields>) => void;
+};
+type SpeciesPrimaryBinding = {
+  commonName: string;
+  localName: string;
+  shortDescription: string;
+  description: string;
+  morfologis: string;
+  habitat: string;
+  distribution: string;
+  onChange: (patch: Partial<KolamSpeciesLocaleFields>) => void;
 };
 
 type CustomFieldPrimaryBinding = {
@@ -64,6 +75,14 @@ type Props =
     }
   | {
       editable?: boolean;
+      kind: 'species';
+      onChange: (
+        translations: KolamCatalogTranslationsMap<KolamSpeciesLocaleFields>,
+      ) => void;
+      primarySpeciesLocale: SpeciesPrimaryBinding;
+      translations?: KolamCatalogTranslationsMap<KolamSpeciesLocaleFields>;
+    }  | {
+      editable?: boolean;
       kind: 'custom-field';
       onChange: (
         translations: KolamCatalogTranslationsMap<KolamCustomFieldLocaleFields>,
@@ -88,6 +107,8 @@ export function KolamCatalogTranslationsEditor(props: Props) {
             text:
               props.kind === 'custom-field'
                 ? 'Konten Field'
+                : props.kind === 'species'
+                ? 'Konten Spesies'
                 : 'Konten Marketplace',
             style: styles.title,
           },
@@ -96,6 +117,8 @@ export function KolamCatalogTranslationsEditor(props: Props) {
             text:
               props.kind === 'custom-field'
                 ? 'Indonesia disimpan sebagai field utama. Bahasa lain dipakai webstore dan CS agent bila tersedia.'
+                : props.kind === 'species'
+                ? 'Indonesia disimpan sebagai field utama. Bahasa lain dipakai webstore dan marketplace bila tersedia.'
                 : 'Indonesia disimpan sebagai field utama. Bahasa lain fallback ke Indonesia bila kosong.',
             style: styles.hint,
           },
@@ -126,6 +149,14 @@ export function KolamCatalogTranslationsEditor(props: Props) {
           locale={activeLocale}
           onChange={props.onChange}
           primary={props.primary}
+          translations={props.translations}
+        />
+      ) : props.kind === 'species' ? (
+        <SpeciesLocaleFields
+          editable={editable}
+          locale={activeLocale}
+          onChange={props.onChange}
+          primary={props.primarySpeciesLocale}
           translations={props.translations}
         />
       ) : (
@@ -250,6 +281,106 @@ function TaxonomyLocaleFields({
           }}
           placeholder="Deskripsi taksonomi"
           value={block.description ?? ''}
+        />
+      </View>
+    </View>
+  );
+}
+function SpeciesLocaleFields({
+  editable,
+  locale,
+  onChange,
+  primary,
+  translations,
+}: {
+  editable: boolean;
+  locale: KolamCatalogLocale;
+  onChange: (
+    translations: KolamCatalogTranslationsMap<KolamSpeciesLocaleFields>,
+  ) => void;
+  primary: SpeciesPrimaryBinding;
+  translations?: KolamCatalogTranslationsMap<KolamSpeciesLocaleFields>;
+}) {
+  const isPrimary = locale === KOLAM_CATALOG_DEFAULT_LOCALE;
+  const block = isPrimary ? primary : translations?.[locale] ?? {};
+
+  const patch = (next: Partial<KolamSpeciesLocaleFields>) => {
+    if (isPrimary) {
+      primary.onChange(next);
+      return;
+    }
+
+    onChange(patchKolamLocaleBlock(translations, locale, next));
+  };
+
+  return (
+    <View style={settingsWebFormStyles.settingsWebFormFieldsGrid}>
+      <View style={settingsWebFormStyles.settingsWebFormField}>
+        <KolamFormTextField
+          editable={editable}
+          onChangeText={commonName => patch({ commonName })}
+          placeholder="Nama umum"
+          style={settingsWebFormStyles.settingsWebFormFieldValue}
+          value={block.commonName ?? ''}
+        />
+      </View>
+      <View style={settingsWebFormStyles.settingsWebFormField}>
+        <KolamFormTextField
+          editable={editable}
+          onChangeText={localName => patch({ localName })}
+          placeholder="Nama lokal"
+          style={settingsWebFormStyles.settingsWebFormFieldValue}
+          value={block.localName ?? ''}
+        />
+      </View>
+      <View style={settingsWebFormStyles.settingsWebFormField}>
+        <KolamFormTextField
+          editable={editable}
+          multiline
+          onChangeText={shortDescription => patch({ shortDescription })}
+          placeholder="Deskripsi singkat"
+          style={[
+            settingsWebFormStyles.settingsWebFormFieldValue,
+            styles.textArea,
+          ]}
+          value={block.shortDescription ?? ''}
+        />
+      </View>
+      <View style={settingsWebFormStyles.settingsWebFormField}>
+        <KolamTipTapRichTextEditor
+          editable={editable}
+          onChangeText={description => patch({ description })}
+          placeholder="Deskripsi spesies"
+          value={block.description ?? ''}
+        />
+      </View>
+      <View style={settingsWebFormStyles.settingsWebFormField}>
+        <KolamTipTapRichTextEditor
+          editable={editable}
+          onChangeText={morfologis => patch({ morfologis })}
+          placeholder="Morfologis"
+          value={block.morfologis ?? ''}
+        />
+      </View>
+      <View style={settingsWebFormStyles.settingsWebFormField}>
+        <KolamTipTapRichTextEditor
+          editable={editable}
+          onChangeText={habitat => patch({ habitat })}
+          placeholder="Habitat"
+          value={block.habitat ?? ''}
+        />
+      </View>
+      <View style={settingsWebFormStyles.settingsWebFormField}>
+        <KolamFormTextField
+          editable={editable}
+          multiline
+          onChangeText={distribution => patch({ distribution })}
+          placeholder="Distribusi"
+          style={[
+            settingsWebFormStyles.settingsWebFormFieldValue,
+            styles.textArea,
+          ]}
+          value={block.distribution ?? ''}
         />
       </View>
     </View>
@@ -396,5 +527,6 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
 });
+
 
 

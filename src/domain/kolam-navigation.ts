@@ -179,9 +179,9 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         requiredAccess: ['kolam'],
       },
       {
-        label: 'Species',
+        label: 'Spesies',
         route: '/species',
-        description: 'List of livestock species',
+        description: 'Kelola data spesies untuk livestock, POS, dan marketplace',
         group: 'Life Stocks',
         requiredAccess: ['kolam', 'pos'],
       },
@@ -2365,13 +2365,12 @@ export function getKolamNavigationRouteTarget(
 ): KolamNavigationRouteTarget {
   const routePath = item.route.split('?')[0];
 
-  if (
-    routePath === '/products' ||
-    routePath.startsWith('/products/') ||
-    routePath === '/species' ||
-    routePath.startsWith('/species/')
-  ) {
+  if (routePath === '/products' || routePath.startsWith('/products/')) {
     return routeTarget('catalog', item);
+  }
+
+  if (routePath === '/species' || routePath.startsWith('/species/')) {
+    return routeTarget('kolam', item);
   }
 
   if (routePath === '/sales/discount-approval') {
@@ -2410,3 +2409,5 @@ function routeTarget(
     message: `${item.label} dibuka dari Kolam Menu native (${item.route}).`,
   };
 }
+
+

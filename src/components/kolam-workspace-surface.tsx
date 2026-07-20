@@ -12,6 +12,7 @@ import { isKolamCategoryRoute } from '../domain/kolam-category';
 import { isKolamCustomFieldRoute } from '../domain/kolam-custom-field';
 import { isKolamIucnStatusRoute } from '../domain/kolam-iucn-status';
 import { isKolamTagRoute } from '../domain/kolam-tag';
+import { isKolamSpeciesRoute } from '../domain/kolam-species';
 import { isKolamTaxonomyRoute } from '../domain/kolam-taxonomy';
 import { isKolamUnitRoute } from '../domain/kolam-unit';
 import type { KolamNavigationItem } from '../domain/kolam-navigation';
@@ -24,6 +25,7 @@ import { KolamBrandSurface } from './kolam-brand-surface';
 import { KolamCategorySurface } from './kolam-category-surface';
 import { KolamCustomFieldSurface } from './kolam-custom-field-surface';
 import { KolamIucnStatusSurface } from './kolam-iucn-status-surface';
+import { KolamSpeciesSurface } from './kolam-species-surface';
 import { KolamTagSurface } from './kolam-tag-surface';
 import { KolamTaxonomySurface } from './kolam-taxonomy-surface';
 import { KolamUnitSurface } from './kolam-unit-surface';
@@ -106,6 +108,17 @@ export function KolamWorkspaceSurface({
   syncActivity,
   runtime,
 }: KolamWorkspaceSurfaceProps) {
+  const activeRoutePath = activeNavigationItem?.route.split('?')[0] ?? '';
+
+  if (activeRoutePath && isKolamSpeciesRoute(activeRoutePath)) {
+    return (
+      <KolamSpeciesSurface
+        onRouteChange={onDashboardRoute}
+        route={activeNavigationItem?.route ?? '/species'}
+      />
+    );
+  }
+
   switch (activeModule) {
     case 'kolam':
       if (activeNavigationItem && activeNavigationItem.route !== '/') {
@@ -130,6 +143,14 @@ export function KolamWorkspaceSurface({
         if (isKolamTagRoute(activeNavigationItem.route.split('?')[0])) {
           return (
             <KolamTagSurface
+              onRouteChange={onDashboardRoute}
+              route={activeNavigationItem.route}
+            />
+          );
+        }
+        if (isKolamSpeciesRoute(activeNavigationItem.route.split('?')[0])) {
+          return (
+            <KolamSpeciesSurface
               onRouteChange={onDashboardRoute}
               route={activeNavigationItem.route}
             />
@@ -174,6 +195,7 @@ export function KolamWorkspaceSurface({
           <KolamNavigationRouteSurface
             dataset={dataset}
             item={activeNavigationItem}
+            onRouteChange={onDashboardRoute}
           />
         );
       }
@@ -211,6 +233,7 @@ export function KolamWorkspaceSurface({
             <KolamNavigationRouteSurface
               dataset={dataset}
               item={activeNavigationItem}
+              onRouteChange={onDashboardRoute}
             />
           );
         }
@@ -314,6 +337,7 @@ function renderWithNavigationRoute(
   dataset: UnifiedDataset,
   item: KolamNavigationItem | null | undefined,
   surface: React.ReactNode,
+  onRouteChange?: (route: string) => void,
 ) {
   if (!item) {
     return surface;
@@ -321,7 +345,11 @@ function renderWithNavigationRoute(
 
   return (
     <>
-      <KolamNavigationRouteSurface dataset={dataset} item={item} />
+      <KolamNavigationRouteSurface
+        dataset={dataset}
+        item={item}
+        onRouteChange={onRouteChange}
+      />
       {surface}
     </>
   );
@@ -409,6 +437,3 @@ function getPosModuleLabel(moduleId: AppModule) {
       return 'Checkout';
   }
 }
-
-
-

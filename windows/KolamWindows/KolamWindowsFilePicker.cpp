@@ -22,15 +22,16 @@ std::string GetExtension(std::string fileName) {
 }
 
 std::string GetMimeType(std::string const &extension) {
-  if (extension == ".png") {
-    return "image/png";
-  }
-  if (extension == ".webp") {
-    return "image/webp";
-  }
-  if (extension == ".gif") {
-    return "image/gif";
-  }
+  if (extension == ".png") return "image/png";
+  if (extension == ".webp") return "image/webp";
+  if (extension == ".gif") return "image/gif";
+  if (extension == ".mp4") return "video/mp4";
+  if (extension == ".mov") return "video/quicktime";
+  if (extension == ".webm") return "video/webm";
+  if (extension == ".mp3") return "audio/mpeg";
+  if (extension == ".wav") return "audio/wav";
+  if (extension == ".m4a") return "audio/mp4";
+  if (extension == ".aac") return "audio/aac";
 
   return "image/jpeg";
 }
@@ -62,6 +63,61 @@ HWND GetCurrentProcessWindow() {
   return ::React::JSValueObject{{"cancelled", true}};
 }
 
+
+void PickFileWithTypes(
+    ::React::ReactPromise<::React::JSValueObject> &&result,
+    winrt::Windows::Storage::Pickers::PickerLocationId startLocation,
+    winrt::Windows::Storage::Pickers::PickerViewMode viewMode,
+    std::initializer_list<wchar_t const *> extensions) noexcept {
+  try {
+    auto picker = winrt::Windows::Storage::Pickers::FileOpenPicker();
+    picker.SuggestedStartLocation(startLocation);
+    picker.ViewMode(viewMode);
+    for (auto extension : extensions) {
+      picker.FileTypeFilter().Append(extension);
+    }
+
+    auto hwnd = GetCurrentProcessWindow();
+    if (hwnd) {
+      auto initializeWithWindow{picker.as<::IInitializeWithWindow>()};
+      initializeWithWindow->Initialize(hwnd);
+    }
+
+    auto asyncOp = picker.PickSingleFileAsync();
+    asyncOp.Completed(
+        [result = std::move(result)](
+            winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::Storage::StorageFile> const &operation,
+            winrt::Windows::Foundation::AsyncStatus status) mutable {
+          if (status != winrt::Windows::Foundation::AsyncStatus::Completed) {
+            result.Resolve(CancelledResult());
+            return;
+          }
+
+          auto file = operation.GetResults();
+          if (!file) {
+            result.Resolve(CancelledResult());
+            return;
+          }
+
+          const auto path = winrt::to_string(file.Path());
+          const auto name = winrt::to_string(file.Name());
+          const auto extension = GetExtension(name);
+
+          result.Resolve(::React::JSValueObject{
+              {"cancelled", false},
+              {"path", path},
+              {"uri", ToFileUri(path)},
+              {"name", name},
+              {"extension", extension},
+              {"mimeType", GetMimeType(extension)},
+          });
+        });
+  } catch (winrt::hresult_error const &error) {
+    result.Reject(winrt::to_string(error.message()).c_str());
+  } catch (...) {
+    result.Reject("File picker tidak bisa dibuka.");
+  }
+}
 } // namespace
 
 void KolamWindowsFilePicker::Initialize(
@@ -72,58 +128,32 @@ void KolamWindowsFilePicker::Initialize(
 void KolamWindowsFilePicker::pickImage(
     ::React::ReactPromise<::React::JSValueObject> &&result) noexcept {
   m_context.UIDispatcher().Post([result = std::move(result)]() mutable {
-    try {
-      auto picker = winrt::Windows::Storage::Pickers::FileOpenPicker();
-      picker.SuggestedStartLocation(
-          winrt::Windows::Storage::Pickers::PickerLocationId::PicturesLibrary);
-      picker.ViewMode(winrt::Windows::Storage::Pickers::PickerViewMode::Thumbnail);
-      picker.FileTypeFilter().Append(L".png");
-      picker.FileTypeFilter().Append(L".jpg");
-      picker.FileTypeFilter().Append(L".jpeg");
-      picker.FileTypeFilter().Append(L".webp");
-      picker.FileTypeFilter().Append(L".gif");
+    PickFileWithTypes(std::move(result),
+        winrt::Windows::Storage::Pickers::PickerLocationId::PicturesLibrary,
+        winrt::Windows::Storage::Pickers::PickerViewMode::Thumbnail,
+        {L".png", L".jpg", L".jpeg", L".webp", L".gif"});
+  });
+}
 
-      auto hwnd = GetCurrentProcessWindow();
-      if (hwnd) {
-        auto initializeWithWindow{picker.as<::IInitializeWithWindow>()};
-        initializeWithWindow->Initialize(hwnd);
-      }
+void KolamWindowsFilePicker::pickVideo(
+    ::React::ReactPromise<::React::JSValueObject> &&result) noexcept {
+  m_context.UIDispatcher().Post([result = std::move(result)]() mutable {
+    PickFileWithTypes(std::move(result),
+        winrt::Windows::Storage::Pickers::PickerLocationId::VideosLibrary,
+        winrt::Windows::Storage::Pickers::PickerViewMode::Thumbnail,
+        {L".mp4", L".mov", L".webm"});
+  });
+}
 
-      auto asyncOp = picker.PickSingleFileAsync();
-      asyncOp.Completed(
-          [result = std::move(result)](
-              winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::Storage::StorageFile> const &operation,
-              winrt::Windows::Foundation::AsyncStatus status) mutable {
-            if (status != winrt::Windows::Foundation::AsyncStatus::Completed) {
-              result.Resolve(CancelledResult());
-              return;
-            }
-
-            auto file = operation.GetResults();
-            if (!file) {
-              result.Resolve(CancelledResult());
-              return;
-            }
-
-            const auto path = winrt::to_string(file.Path());
-            const auto name = winrt::to_string(file.Name());
-            const auto extension = GetExtension(name);
-
-            result.Resolve(::React::JSValueObject{
-                {"cancelled", false},
-                {"path", path},
-                {"uri", ToFileUri(path)},
-                {"name", name},
-                {"extension", extension},
-                {"mimeType", GetMimeType(extension)},
-            });
-          });
-    } catch (winrt::hresult_error const &error) {
-      result.Reject(winrt::to_string(error.message()).c_str());
-    } catch (...) {
-      result.Reject("File picker tidak bisa dibuka.");
-    }
+void KolamWindowsFilePicker::pickAudio(
+    ::React::ReactPromise<::React::JSValueObject> &&result) noexcept {
+  m_context.UIDispatcher().Post([result = std::move(result)]() mutable {
+    PickFileWithTypes(std::move(result),
+        winrt::Windows::Storage::Pickers::PickerLocationId::MusicLibrary,
+        winrt::Windows::Storage::Pickers::PickerViewMode::List,
+        {L".mp3", L".wav", L".m4a", L".aac"});
   });
 }
 
 } // namespace KolamWindows
+
