@@ -65,6 +65,38 @@ export interface KolamSpeciesExternalLink {
   label: string;
   value: string;
 }
+export interface KolamSpeciesVendorPriceHistory {
+  oldPrice: number;
+  newPrice: number;
+  oldShippingCost: number;
+  newShippingCost: number;
+  oldTotalCost: number;
+  newTotalCost: number;
+  poRef: string;
+  poId: string;
+  date: string;
+  updatedByLabel: string;
+}
+
+export interface KolamSpeciesVendorPrice {
+  id: string;
+  vendorId: string;
+  vendorName: string;
+  price: number;
+  shippingCost: number;
+  totalCost: number;
+  link: string;
+  priceHistory: KolamSpeciesVendorPriceHistory[];
+}
+
+export interface KolamSpeciesVendorPriceFormRow {
+  id: string;
+  vendorId: string;
+  price: string;
+  shippingCost: string;
+  link: string;
+  priceHistory: KolamSpeciesVendorPriceHistory[];
+}
 export interface KolamSpeciesVariantMedia {
   id: string;
   label: string;
@@ -87,6 +119,7 @@ export interface KolamSpeciesVariantMedia {
   dimensionUnitId: string;
   photoUris: string[];
   videoUris: string[];
+  vendorPrices: KolamSpeciesVendorPrice[];
   raw: unknown;
 }
 
@@ -108,6 +141,7 @@ export interface KolamSpeciesVariantFormRow {
   dimensionWidth: string;
   dimensionHeight: string;
   dimensionUnitId: string;
+  vendorPrices: KolamSpeciesVendorPriceFormRow[];
   raw: unknown;
 }
 
@@ -391,6 +425,7 @@ export function createEmptyKolamSpeciesVariantFormRow(): KolamSpeciesVariantForm
     dimensionWidth: '',
     dimensionHeight: '',
     dimensionUnitId: '',
+    vendorPrices: [],
     raw: null,
   };
 }
@@ -416,6 +451,7 @@ function createKolamSpeciesVariantFormRow(
     dimensionWidth: variant.dimensionWidth ? String(variant.dimensionWidth) : '',
     dimensionHeight: variant.dimensionHeight ? String(variant.dimensionHeight) : '',
     dimensionUnitId: variant.dimensionUnitId,
+    vendorPrices: variant.vendorPrices.map(createKolamSpeciesVendorPriceFormRow),
     raw: variant.raw,
   };
 }
@@ -467,7 +503,7 @@ function createKolamSpeciesVariantPayload(row: KolamSpeciesVariantFormRow) {
     payload.dimension = dimension;
   }
 
-  const vendorPrices = normalizeExistingVendorPrices(raw.vendorPrices);
+  const vendorPrices = createKolamSpeciesVendorPricePayload(row.vendorPrices);
   if (vendorPrices.length) {
     payload.vendorPrices = vendorPrices;
   }
@@ -540,25 +576,22 @@ function createDimensionPayload(
     : null;
 }
 
-function normalizeExistingVendorPrices(value: unknown) {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value
-    .map(item => {
-      const record = asRecord(item);
-      const vendor = getObjectIdString(record.vendor);
-      const price = getNumber(record, 'price');
-      if (!vendor || price === undefined || price < 0) {
+function createKolamSpeciesVendorPricePayload(
+  rows: KolamSpeciesVendorPriceFormRow[],
+) {
+  return rows
+    .map(row => {
+      const vendor = row.vendorId.trim();
+      const price = toNonNegativeNumber(row.price);
+      if (!vendor) {
         return null;
       }
 
       return {
         vendor,
         price,
-        shippingCost: Math.max(0, getNumber(record, 'shippingCost') ?? 0),
-        link: getString(record, 'link'),
+        shippingCost: toNonNegativeNumber(row.shippingCost),
+        link: row.link.trim(),
       };
     })
     .filter(Boolean) as Array<{
@@ -567,6 +600,98 @@ function normalizeExistingVendorPrices(value: unknown) {
     shippingCost: number;
     link: string;
   }>;
+}
+
+export function createEmptyKolamSpeciesVendorPriceFormRow(): KolamSpeciesVendorPriceFormRow {
+  return {
+    id: `vendor-draft-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    vendorId: '',
+    price: '0',
+    shippingCost: '0',
+    link: '',
+    priceHistory: [],
+  };
+}
+
+function createKolamSpeciesVendorPriceFormRow(
+  item: KolamSpeciesVendorPrice,
+): KolamSpeciesVendorPriceFormRow {
+  return {
+    id: item.id,
+    vendorId: item.vendorId,
+    price: String(item.price),
+    shippingCost: String(item.shippingCost),
+    link: item.link,
+    priceHistory: item.priceHistory,
+  };
+}
+
+function normalizeKolamSpeciesVendorPrices(value: unknown): KolamSpeciesVendorPrice[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((item, index) => {
+      const record = asRecord(item);
+      const vendorRecord = asRecord(record.vendor);
+      const vendorId = getObjectIdString(record.vendor);
+      const price = getNumber(record, 'price');
+      if (!vendorId || price === undefined || price < 0) {
+        return null;
+      }
+
+      const shippingCost = Math.max(0, getNumber(record, 'shippingCost') ?? 0);
+      const totalCost = Math.max(
+        0,
+        getNumber(record, 'totalCost') ?? price + shippingCost,
+      );
+
+      return {
+        id: getString(record, '_id') || getString(record, 'id') || vendorId || String(index),
+        vendorId,
+        vendorName:
+          getString(vendorRecord, 'name') ||
+          getString(vendorRecord, 'companyName') ||
+          getString(record, 'vendorName') ||
+          'Vendor',
+        price,
+        shippingCost,
+        totalCost,
+        link: getString(record, 'link'),
+        priceHistory: normalizeKolamSpeciesVendorPriceHistory(record.priceHistory),
+      };
+    })
+    .filter(Boolean) as KolamSpeciesVendorPrice[];
+}
+
+function normalizeKolamSpeciesVendorPriceHistory(
+  value: unknown,
+): KolamSpeciesVendorPriceHistory[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.map((item, index) => {
+    const record = asRecord(item);
+    const updatedBy = asRecord(record.updatedBy);
+
+    return {
+      oldPrice: getNumber(record, 'oldPrice') ?? 0,
+      newPrice: getNumber(record, 'newPrice') ?? 0,
+      oldShippingCost: getNumber(record, 'oldShippingCost') ?? 0,
+      newShippingCost: getNumber(record, 'newShippingCost') ?? 0,
+      oldTotalCost: getNumber(record, 'oldTotalCost') ?? 0,
+      newTotalCost: getNumber(record, 'newTotalCost') ?? 0,
+      poRef: getString(record, 'poRef'),
+      poId: getObjectIdString(record.poId),
+      date: getString(record, 'date') || String(index),
+      updatedByLabel:
+        getString(updatedBy, 'name') ||
+        getString(updatedBy, 'email') ||
+        getString(record, 'updatedByLabel'),
+    };
+  });
 }
 
 function normalizeExistingGrocerPricingTiers(value: unknown) {
@@ -732,6 +857,12 @@ export function createKolamSpeciesListRevision(items: KolamSpecies[]) {
         id: variant.id,
         photoUris: variant.photoUris,
         videoUris: variant.videoUris,
+        vendorPrices: variant.vendorPrices.map(price => ({
+          vendorId: price.vendorId,
+          price: price.price,
+          shippingCost: price.shippingCost,
+          totalCost: price.totalCost,
+        })),
       })),
       tags: item.tags.map(tag => tag.id),
       links: item.links,
@@ -950,6 +1081,7 @@ function normalizeVariantMediaList(value: unknown): KolamSpeciesVariantMedia[] {
       dimensionUnitId: getObjectIdString(dimension.unit),
       photoUris: uniqueStrings(normalizeMediaList(record.photos)),
       videoUris: uniqueStrings(normalizeMediaList(record.videos)),
+      vendorPrices: normalizeKolamSpeciesVendorPrices(record.vendorPrices),
       raw: item,
     };
   });

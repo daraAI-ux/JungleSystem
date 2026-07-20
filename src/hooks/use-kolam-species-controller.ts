@@ -13,6 +13,7 @@ import {
 } from '../domain/kolam-species';
 import type { KolamTaxonomy } from '../domain/kolam-taxonomy';
 import type { KolamUnit } from '../domain/kolam-unit';
+import type { KolamVendor } from '../domain/kolam-vendor';
 import { getKolamCategories } from '../services/kolam-category-api';
 import { getKolamIucnStatuses } from '../services/kolam-iucn-status-api';
 import {
@@ -44,6 +45,11 @@ import {
 } from '../services/kolam-tag-local-cache';
 import { getKolamTaxonomies } from '../services/kolam-taxonomy-api';
 import { getKolamUnits } from '../services/kolam-unit-api';
+import { getKolamVendors } from '../services/kolam-vendor-api';
+import {
+  readKolamVendorListCache,
+  writeKolamVendorListCache,
+} from '../services/kolam-vendor-local-cache';
 import {
   pickNativeAudioFile,
   pickNativeImageFile,
@@ -69,6 +75,7 @@ export interface KolamSpeciesController {
   tags: KolamTag[];
   taxonomies: KolamTaxonomy[];
   units: KolamUnit[];
+  vendors: KolamVendor[];
   onBackToList: () => void;
   onChangeForm: (patch: Partial<KolamSpeciesFormState>) => void;
   onCreateNew: () => void;
@@ -109,6 +116,7 @@ export function useKolamSpeciesController(
   const [categories, setCategories] = useState<KolamCategory[]>([]);
   const [taxonomies, setTaxonomies] = useState<KolamTaxonomy[]>([]);
   const [units, setUnits] = useState<KolamUnit[]>([]);
+  const [vendors, setVendors] = useState<KolamVendor[]>([]);
   const [iucnStatuses, setIucnStatuses] = useState<KolamIucnStatus[]>([]);
   const [tags, setTags] = useState<KolamTag[]>([]);
   const [loading, setLoading] = useState(false);
@@ -122,14 +130,26 @@ export function useKolamSpeciesController(
       setTags(cachedTags.value);
     }
 
-    const [categoryResult, taxonomyResult, unitResult, iucnResult, tagResult] =
-      await Promise.allSettled([
-        getKolamCategories(),
-        getKolamTaxonomies({ level: 'Genus', limit: 1000 }),
-        getKolamUnits(),
-        getKolamIucnStatuses({ limit: 1000 }),
-        getKolamTags(),
-      ]);
+    const cachedVendors = await readKolamVendorListCache();
+    if (cachedVendors?.value.length) {
+      setVendors(cachedVendors.value);
+    }
+
+    const [
+      categoryResult,
+      taxonomyResult,
+      unitResult,
+      iucnResult,
+      tagResult,
+      vendorResult,
+    ] = await Promise.allSettled([
+      getKolamCategories(),
+      getKolamTaxonomies({ level: 'Genus', limit: 1000 }),
+      getKolamUnits(),
+      getKolamIucnStatuses({ limit: 1000 }),
+      getKolamTags(),
+      getKolamVendors(),
+    ]);
 
     if (categoryResult.status === 'fulfilled') {
       setCategories(flattenCategories(categoryResult.value));
@@ -146,6 +166,10 @@ export function useKolamSpeciesController(
     if (tagResult.status === 'fulfilled') {
       setTags(tagResult.value);
       await writeKolamTagListCache(tagResult.value);
+    }
+    if (vendorResult.status === 'fulfilled') {
+      setVendors(vendorResult.value);
+      await writeKolamVendorListCache(vendorResult.value);
     }
   }, []);
 
@@ -742,6 +766,7 @@ export function useKolamSpeciesController(
     tags,
     taxonomies,
     units,
+    vendors,
     onBackToList,
     onChangeForm,
     onCreateNew,

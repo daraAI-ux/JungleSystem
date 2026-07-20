@@ -3,6 +3,7 @@ import { Linking, StyleSheet, View } from 'react-native';
 import { getKolamFormSection } from '../domain/kolam-form';
 import {
   createEmptyKolamSpeciesVariantFormRow,
+  createEmptyKolamSpeciesVendorPriceFormRow,
   getSpeciesStatusLabel,
   slugifySpeciesName,
   type KolamSpecies,
@@ -11,6 +12,7 @@ import {
   type KolamSpeciesStockStatus,
   type KolamSpeciesMarketplaceSyncPlatform,
   type KolamSpeciesVariantFormRow,
+  type KolamSpeciesVendorPriceFormRow,
 } from '../domain/kolam-species';
 import { getKolamTableColumns } from '../domain/kolam-table';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
@@ -1302,10 +1304,234 @@ function SpeciesVariantFormCard({
           />
         </View>
       </View>
+      <SpeciesVariantVendorPricesEditor
+        controller={controller}
+        variant={variant}
+      />
     </View>
   );
 }
 
+function SpeciesVariantVendorPricesEditor({
+  controller,
+  variant,
+}: {
+  controller: KolamSpeciesController;
+  variant: KolamSpeciesVariantFormRow;
+}) {
+  const vendorOptions = [
+    { label: 'Pilih vendor', value: '' },
+    ...controller.vendors.map(vendor => ({
+      label: vendor.name,
+      value: vendor.id,
+    })),
+  ];
+
+  return (
+    <View style={styles.vendorPricePanel}>
+      <View style={styles.variantEditorHeader}>
+        <KolamCopyStack
+          items={[
+            {
+              id: 'title',
+              text: 'Vendor Price / HPP',
+              style: styles.variantTitle,
+            },
+            {
+              id: 'hint',
+              text: 'Harga beli vendor, ongkir dari PO, dan history HPP per varian.',
+              style: styles.fieldHint,
+            },
+          ]}
+        />
+        <KolamButton
+          disabled={controller.saving}
+          intent="primary"
+          label="Tambah Vendor"
+          onPress={() => addSpeciesVariantVendorPriceRow(controller, variant.id)}
+        />
+      </View>
+      {variant.vendorPrices.length ? (
+        variant.vendorPrices.map((row, index) => (
+          <SpeciesVariantVendorPriceRow
+            controller={controller}
+            index={index}
+            key={row.id}
+            row={row}
+            variant={variant}
+            vendorOptions={vendorOptions}
+          />
+        ))
+      ) : (
+        <KolamCopyStack
+          items={[
+            {
+              id: 'empty',
+              text: 'Belum ada vendor price untuk varian ini.',
+              style: styles.fieldHint,
+            },
+          ]}
+        />
+      )}
+    </View>
+  );
+}
+
+function SpeciesVariantVendorPriceRow({
+  controller,
+  index,
+  row,
+  variant,
+  vendorOptions,
+}: {
+  controller: KolamSpeciesController;
+  index: number;
+  row: KolamSpeciesVendorPriceFormRow;
+  variant: KolamSpeciesVariantFormRow;
+  vendorOptions: Array<{ label: string; value: string }>;
+}) {
+  const shippingCost = parseCurrencyInput(row.shippingCost);
+  const totalCost = parseCurrencyInput(row.price) + shippingCost;
+  const latestHistory = row.priceHistory[0];
+
+  return (
+    <View style={styles.vendorPriceRow}>
+      <View style={styles.variantEditorHeader}>
+        <KolamCopyStack
+          items={[
+            {
+              id: 'title',
+              text: `Vendor ${index + 1}`,
+              style: styles.rowText,
+            },
+            {
+              id: 'total',
+              text: `Total HPP: ${formatCurrency(totalCost)}`,
+              style: styles.fieldHint,
+            },
+          ]}
+        />
+        <KolamButton
+          disabled={controller.saving}
+          intent="danger"
+          label="Hapus Vendor"
+          onPress={() => removeSpeciesVariantVendorPriceRow(controller, variant.id, row.id)}
+        />
+      </View>
+      <View style={styles.twoColumnGrid}>
+        <KolamDropdownSelect
+          label="Vendor"
+          menuStyle={styles.longDropdownMenu}
+          onChange={vendorId =>
+            updateSpeciesVariantVendorPriceRow(controller, variant.id, row.id, { vendorId })
+          }
+          options={vendorOptions}
+          searchable
+          searchPlaceholder="Cari vendor..."
+          showLabelInTrigger={false}
+          value={row.vendorId}
+        />
+        <KolamFormTextField
+          editable={!controller.saving}
+          mode="url"
+          onChangeText={link =>
+            updateSpeciesVariantVendorPriceRow(controller, variant.id, row.id, { link })
+          }
+          placeholder="Link produk vendor"
+          style={settingsWebFormStyles.settingsWebFormFieldValue}
+          value={row.link}
+        />
+      </View>
+      <View style={styles.threeColumnGrid}>
+        <KolamFormTextField
+          editable={!controller.saving}
+          keyboardType="numeric"
+          onChangeText={price =>
+            updateSpeciesVariantVendorPriceRow(controller, variant.id, row.id, { price })
+          }
+          placeholder="Harga beli vendor"
+          style={settingsWebFormStyles.settingsWebFormFieldValue}
+          value={row.price}
+        />
+        <KolamFormTextField
+          editable={false}
+          placeholder="Ongkir / unit"
+          style={settingsWebFormStyles.settingsWebFormFieldValue}
+          value={formatCurrency(shippingCost)}
+        />
+        <KolamFormTextField
+          editable={false}
+          placeholder="Total HPP"
+          style={settingsWebFormStyles.settingsWebFormFieldValue}
+          value={formatCurrency(totalCost)}
+        />
+      </View>
+      <KolamCopyStack
+        items={[
+          {
+            id: 'shipping-note',
+            text: 'Ongkir diisi dari PO completed dan disimpan ulang agar tidak hilang saat edit varian.',
+            style: styles.fieldHint,
+          },
+          {
+            id: 'history',
+            text: latestHistory
+              ? `History terakhir: ${formatCurrency(latestHistory.oldTotalCost)} ke ${formatCurrency(latestHistory.newTotalCost)}${latestHistory.poRef ? ` dari ${latestHistory.poRef}` : ''}${latestHistory.date ? ` (${formatShortDate(latestHistory.date)})` : ''}`
+              : 'Belum ada history HPP dari backend.',
+            style: styles.fieldHint,
+          },
+        ]}
+      />
+    </View>
+  );
+}
+
+function addSpeciesVariantVendorPriceRow(
+  controller: KolamSpeciesController,
+  variantId: string,
+) {
+  updateSpeciesVariantRow(controller, variantId, {
+    vendorPrices: [
+      ...getSpeciesVariantFormRow(controller, variantId).vendorPrices,
+      createEmptyKolamSpeciesVendorPriceFormRow(),
+    ],
+  });
+}
+
+function updateSpeciesVariantVendorPriceRow(
+  controller: KolamSpeciesController,
+  variantId: string,
+  rowId: string,
+  patch: Partial<KolamSpeciesVendorPriceFormRow>,
+) {
+  const variant = getSpeciesVariantFormRow(controller, variantId);
+  updateSpeciesVariantRow(controller, variantId, {
+    vendorPrices: variant.vendorPrices.map(row =>
+      row.id === rowId ? { ...row, ...patch } : row,
+    ),
+  });
+}
+
+function removeSpeciesVariantVendorPriceRow(
+  controller: KolamSpeciesController,
+  variantId: string,
+  rowId: string,
+) {
+  const variant = getSpeciesVariantFormRow(controller, variantId);
+  updateSpeciesVariantRow(controller, variantId, {
+    vendorPrices: variant.vendorPrices.filter(row => row.id !== rowId),
+  });
+}
+
+function getSpeciesVariantFormRow(
+  controller: KolamSpeciesController,
+  variantId: string,
+) {
+  return (
+    controller.form.variants.find(variant => variant.id === variantId) ??
+    createEmptyKolamSpeciesVariantFormRow()
+  );
+}
 function addSpeciesVariantRow(controller: KolamSpeciesController) {
   controller.onChangeForm({
     variants: [...controller.form.variants, createEmptyKolamSpeciesVariantFormRow()],
@@ -1766,6 +1992,13 @@ function KolamSpeciesDetail({
           total: getMarketplaceSyncTotal(item.marketplaceSync),
         },
         {
+          description: 'Harga beli vendor, ongkir dari PO, total HPP, dan history per varian.',
+          emptyText: 'Belum ada vendor price/HPP varian.',
+          items: createVariantVendorPriceItems(item),
+          title: 'Vendor Price / HPP Varian',
+          total: getVariantVendorPriceTotal(item),
+        },
+        {
           description: 'Media lokal yang disinkron dari backend ketika ada perubahan.',
           emptyText: 'Belum ada foto spesies.',
           items: item.photoUris.map((uri, index) => ({
@@ -1794,6 +2027,35 @@ function KolamSpeciesDetail({
   );
 }
 
+function createVariantVendorPriceItems(item: KolamSpecies) {
+  return item.variants.flatMap(variant =>
+    variant.vendorPrices.map(price => ({
+      title: `${variant.label}: ${price.vendorName}`,
+      value: `Total HPP ${formatCurrency(price.totalCost)} | Harga ${formatCurrency(price.price)} | Ongkir ${formatCurrency(price.shippingCost)}`,
+      meta: [
+        price.link ? `Link: ${price.link}` : '',
+        price.priceHistory.length
+          ? `History terakhir: ${formatVariantVendorHistory(price.priceHistory[0])}`
+          : 'Belum ada history HPP',
+      ]
+        .filter(Boolean)
+        .join('\n'),
+    })),
+  );
+}
+
+function getVariantVendorPriceTotal(item: KolamSpecies) {
+  return item.variants.reduce(
+    (total, variant) => total + variant.vendorPrices.length,
+    0,
+  );
+}
+
+function formatVariantVendorHistory(
+  history: KolamSpeciesVendorPriceFormRow['priceHistory'][number],
+) {
+  return `${formatCurrency(history.oldTotalCost)} ke ${formatCurrency(history.newTotalCost)}${history.poRef ? ` dari ${history.poRef}` : ''}${history.date ? ` (${formatShortDate(history.date)})` : ''}`;
+}
 function MarketplaceSyncPanel({ item }: { item: KolamSpecies | null }) {
   if (!item) {
     return null;
@@ -2061,6 +2323,24 @@ function formatNumber(value: number) {
   }).format(value || 0);
 }
 
+function formatShortDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).format(date);
+}
+
+function parseCurrencyInput(value: string) {
+  const parsed = Number(String(value).replace(/[^0-9.-]/g, ''));
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
+}
+
 const styles = StyleSheet.create({
   surface: {
     gap: 16,
@@ -2230,6 +2510,11 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 12,
   },
+  threeColumnGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
   variantEditorPanel: {
     gap: 12,
   },
@@ -2253,6 +2538,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '800',
     lineHeight: 20,
+  },
+  vendorPricePanel: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 10,
+    padding: 12,
+  },
+  vendorPriceRow: {
+    backgroundColor: V.colors.secondary,
+    borderColor: V.colors.border,
+    borderRadius: 6,
+    borderWidth: 1,
+    gap: 10,
+    padding: 10,
   },
   inlineFieldGroup: {
     flexBasis: 320,
