@@ -97,6 +97,19 @@ export interface KolamSpeciesVendorPriceFormRow {
   link: string;
   priceHistory: KolamSpeciesVendorPriceHistory[];
 }
+
+export interface KolamSpeciesGrocerPricingTier {
+  minQty: number;
+  price: number;
+  onlinePrice: number;
+}
+
+export interface KolamSpeciesGrocerPricingTierFormRow {
+  id: string;
+  minQty: string;
+  price: string;
+  onlinePrice: string;
+}
 export interface KolamSpeciesVariantMedia {
   id: string;
   label: string;
@@ -111,6 +124,7 @@ export interface KolamSpeciesVariantMedia {
   onlinePrice: number;
   minimumPriceToSales: number;
   minimumOrderQty: number;
+  grocerPricingTiers: KolamSpeciesGrocerPricingTier[];
   weightValue: number;
   weightUnitId: string;
   dimensionLength: number;
@@ -135,6 +149,7 @@ export interface KolamSpeciesVariantFormRow {
   onlinePrice: string;
   minimumPriceToSales: string;
   minimumOrderQty: string;
+  grocerPricingTiers: KolamSpeciesGrocerPricingTierFormRow[];
   weightValue: string;
   weightUnitId: string;
   dimensionLength: string;
@@ -166,6 +181,7 @@ export interface KolamSpecies {
   iucnLink: string;
   unitLabel: string;
   priceToSell: number;
+  grocerPricingTiers: KolamSpeciesGrocerPricingTier[];
   stock: number;
   variantCount: number;
   hasVariants: boolean;
@@ -199,6 +215,7 @@ export interface KolamSpeciesFormState {
   iucnLink: string;
   unitId: string;
   priceToSell: string;
+  grocerPricingTiers: KolamSpeciesGrocerPricingTierFormRow[];
   stock: string;
   sellable: boolean;
   status: KolamSpeciesStatus;
@@ -275,6 +292,7 @@ export function createEmptyKolamSpeciesFormState(): KolamSpeciesFormState {
     iucnLink: '',
     unitId: '',
     priceToSell: '0',
+    grocerPricingTiers: [],
     stock: '0',
     sellable: false,
     status: 'active',
@@ -327,6 +345,7 @@ export function createKolamSpeciesFormState(
       getString(asRecord(raw.unit), '_id') ||
       getString(asRecord(raw.unit), 'id'),
     priceToSell: String(species.priceToSell),
+    grocerPricingTiers: species.grocerPricingTiers.map(createKolamSpeciesGrocerPricingTierFormRow),
     stock: String(species.stock),
     sellable: species.sellable,
     status: species.status,
@@ -376,6 +395,9 @@ export function createKolamSpeciesSavePayload(form: KolamSpeciesFormState) {
     units: form.unitId.trim() || undefined,
     link: createKolamSpeciesLinkPayload(form),
     priceToSell: Number.isFinite(priceToSell) ? Math.max(0, priceToSell) : 0,
+    grocerPricingTiers: form.variants.length
+      ? []
+      : createKolamSpeciesGrocerPricingTierPayload(form.grocerPricingTiers),
     stock: Number.isFinite(stock) ? Math.max(0, stock) : 0,
     sellable: form.sellable,
     status: form.status,
@@ -419,6 +441,7 @@ export function createEmptyKolamSpeciesVariantFormRow(): KolamSpeciesVariantForm
     onlinePrice: '0',
     minimumPriceToSales: '0',
     minimumOrderQty: '1',
+    grocerPricingTiers: [],
     weightValue: '',
     weightUnitId: '',
     dimensionLength: '',
@@ -445,6 +468,7 @@ function createKolamSpeciesVariantFormRow(
     onlinePrice: String(variant.onlinePrice),
     minimumPriceToSales: String(variant.minimumPriceToSales),
     minimumOrderQty: String(variant.minimumOrderQty || 1),
+    grocerPricingTiers: variant.grocerPricingTiers.map(createKolamSpeciesGrocerPricingTierFormRow),
     weightValue: variant.weightValue ? String(variant.weightValue) : '',
     weightUnitId: variant.weightUnitId,
     dimensionLength: variant.dimensionLength ? String(variant.dimensionLength) : '',
@@ -485,6 +509,9 @@ function createKolamSpeciesVariantPayload(row: KolamSpeciesVariantFormRow) {
     onlinePrice: toNonNegativeNumber(row.onlinePrice),
     minimum_price_to_sales: toNonNegativeNumber(row.minimumPriceToSales),
     minimumOrderQty: Math.max(1, toNonNegativeNumber(row.minimumOrderQty) || 1),
+    grocerPricingTiers: createKolamSpeciesGrocerPricingTierPayload(
+      row.grocerPricingTiers,
+    ),
   };
 
   if (isMongoObjectId(row.id)) {
@@ -508,7 +535,7 @@ function createKolamSpeciesVariantPayload(row: KolamSpeciesVariantFormRow) {
     payload.vendorPrices = vendorPrices;
   }
 
-  const grocerPricingTiers = normalizeExistingGrocerPricingTiers(raw.grocerPricingTiers);
+  const grocerPricingTiers = normalizeKolamSpeciesGrocerPricingTiers(raw.grocerPricingTiers);
   if (grocerPricingTiers.length) {
     payload.grocerPricingTiers = grocerPricingTiers;
   }
@@ -576,6 +603,63 @@ function createDimensionPayload(
     : null;
 }
 
+function createKolamSpeciesGrocerPricingTierPayload(
+  rows: KolamSpeciesGrocerPricingTierFormRow[],
+) {
+  return rows
+    .map(row => {
+      const minQty = Math.max(1, toNonNegativeNumber(row.minQty) || 1);
+      const price = toNonNegativeNumber(row.price);
+      const onlinePrice = toNonNegativeNumber(row.onlinePrice);
+      if (price <= 0 && onlinePrice <= 0) {
+        return null;
+      }
+
+      return {
+        minQty,
+        price,
+        onlinePrice,
+      };
+    })
+    .filter(Boolean) as KolamSpeciesGrocerPricingTier[];
+}
+
+function createKolamSpeciesGrocerPricingTierFormRow(
+  item: KolamSpeciesGrocerPricingTier,
+  index: number,
+): KolamSpeciesGrocerPricingTierFormRow {
+  return {
+    id: `tier-${index}-${item.minQty}`,
+    minQty: String(item.minQty),
+    price: String(item.price),
+    onlinePrice: String(item.onlinePrice),
+  };
+}
+
+function normalizeKolamSpeciesGrocerPricingTiers(
+  value: unknown,
+): KolamSpeciesGrocerPricingTier[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map(item => {
+      const record = asRecord(item);
+      const minQty = getNumber(record, 'minQty');
+      const price = getNumber(record, 'price');
+      if (minQty === undefined || minQty < 1 || price === undefined || price < 0) {
+        return null;
+      }
+
+      return {
+        minQty,
+        price,
+        onlinePrice: Math.max(0, getNumber(record, 'onlinePrice') ?? 0),
+      };
+    })
+    .filter(Boolean) as KolamSpeciesGrocerPricingTier[];
+}
 function createKolamSpeciesVendorPricePayload(
   rows: KolamSpeciesVendorPriceFormRow[],
 ) {
@@ -800,6 +884,7 @@ export function normalizeKolamSpecies(payload: unknown): KolamSpecies {
       getNumber(record, 'sellingPrice') ??
       getNumber(record, 'price') ??
       0,
+    grocerPricingTiers: normalizeKolamSpeciesGrocerPricingTiers(record.grocerPricingTiers),
     stock: normalizeStock(record, variants),
     variantCount: variants.length,
     hasVariants: variants.length > 0,
@@ -850,6 +935,7 @@ export function createKolamSpeciesListRevision(items: KolamSpecies[]) {
       sku: item.sku,
       stock: item.stock,
       priceToSell: item.priceToSell,
+      grocerPricingTiers: item.grocerPricingTiers,
       thumbnailUri: item.thumbnailUri,
       videoUris: item.videoUris,
       voiceUri: item.voiceUri,
@@ -863,6 +949,7 @@ export function createKolamSpeciesListRevision(items: KolamSpecies[]) {
           shippingCost: price.shippingCost,
           totalCost: price.totalCost,
         })),
+        grocerPricingTiers: variant.grocerPricingTiers,
       })),
       tags: item.tags.map(tag => tag.id),
       links: item.links,
@@ -882,6 +969,7 @@ export function createKolamSpeciesDetailRevision(item: KolamSpecies) {
     sku: item.sku,
     stock: item.stock,
     priceToSell: item.priceToSell,
+    grocerPricingTiers: item.grocerPricingTiers,
     photoUris: item.photoUris,
     videoUris: item.videoUris,
     voiceUri: item.voiceUri,
@@ -1073,6 +1161,7 @@ function normalizeVariantMediaList(value: unknown): KolamSpeciesVariantMedia[] {
       onlinePrice: getNumber(record, 'onlinePrice') ?? 0,
       minimumPriceToSales: getNumber(record, 'minimum_price_to_sales') ?? 0,
       minimumOrderQty: getNumber(record, 'minimumOrderQty') ?? 1,
+      grocerPricingTiers: normalizeKolamSpeciesGrocerPricingTiers(record.grocerPricingTiers),
       weightValue: getNumber(weight, 'value') ?? 0,
       weightUnitId: getObjectIdString(weight.unit),
       dimensionLength: getNumber(dimension, 'length') ?? 0,

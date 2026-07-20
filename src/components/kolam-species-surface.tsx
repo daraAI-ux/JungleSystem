@@ -35,6 +35,10 @@ import {
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
+import {
+  KolamGrocerPricingTiersEditor,
+  type KolamGrocerPricingTierEditorRow,
+} from './kolam-grocer-pricing-tiers-editor';
 import { KolamLabelFieldDetailOverview } from './kolam-label-field-detail-overview';
 import { KolamNativeFormSection } from './kolam-native-form-section';
 import { KolamRemoteImage } from './kolam-remote-image';
@@ -818,6 +822,17 @@ function KolamSpeciesForm({
               />
             </FieldShell>
           </View>
+          {!form.variants.length ? (
+            <SpeciesGrocerPricingPanel
+              disabled={controller.saving}
+              hint="Dipakai untuk species tanpa varian. Jika varian dibuat, harga grosir diatur per varian."
+              onChange={grocerPricingTiers =>
+                controller.onChangeForm({ grocerPricingTiers })
+              }
+              rows={form.grocerPricingTiers}
+              title="Harga Grosir Species"
+            />
+          ) : null}
           <SpeciesVariantEditorPanel
             controller={controller}
             onDeleteVariant={setDeleteVariantTarget}
@@ -1304,6 +1319,15 @@ function SpeciesVariantFormCard({
           />
         </View>
       </View>
+      <SpeciesGrocerPricingPanel
+        disabled={controller.saving}
+        hint="Harga bertingkat POS dan online untuk pembelian grosir varian ini."
+        onChange={grocerPricingTiers =>
+          updateSpeciesVariantRow(controller, variant.id, { grocerPricingTiers })
+        }
+        rows={variant.grocerPricingTiers}
+        title="Harga Grosir Varian"
+      />
       <SpeciesVariantVendorPricesEditor
         controller={controller}
         variant={variant}
@@ -1312,6 +1336,43 @@ function SpeciesVariantFormCard({
   );
 }
 
+function SpeciesGrocerPricingPanel({
+  disabled,
+  hint,
+  onChange,
+  rows,
+  title,
+}: {
+  disabled: boolean;
+  hint: string;
+  onChange: (rows: KolamGrocerPricingTierEditorRow[]) => void;
+  rows: KolamGrocerPricingTierEditorRow[];
+  title: string;
+}) {
+  return (
+    <View style={styles.grocerPricingPanel}>
+      <KolamCopyStack
+        items={[
+          {
+            id: 'title',
+            text: title,
+            style: styles.variantTitle,
+          },
+          {
+            id: 'hint',
+            text: hint,
+            style: styles.fieldHint,
+          },
+        ]}
+      />
+      <KolamGrocerPricingTiersEditor
+        disabled={disabled}
+        onChange={onChange}
+        rows={rows}
+      />
+    </View>
+  );
+}
 function SpeciesVariantVendorPricesEditor({
   controller,
   variant,
@@ -1999,6 +2060,13 @@ function KolamSpeciesDetail({
           total: getVariantVendorPriceTotal(item),
         },
         {
+          description: 'Harga grosir bertingkat untuk species tanpa varian dan setiap varian.',
+          emptyText: 'Belum ada harga grosir bertingkat.',
+          items: createGrocerPricingTierItems(item),
+          title: 'Harga Grosir',
+          total: getGrocerPricingTierTotal(item),
+        },
+        {
           description: 'Media lokal yang disinkron dari backend ketika ada perubahan.',
           emptyText: 'Belum ada foto spesies.',
           items: item.photoUris.map((uri, index) => ({
@@ -2027,6 +2095,30 @@ function KolamSpeciesDetail({
   );
 }
 
+function createGrocerPricingTierItems(item: KolamSpecies) {
+  const rootItems = item.grocerPricingTiers.map((tier, index) => ({
+    title: `Species Tier ${index + 1}`,
+    value: `Mulai ${formatNumber(tier.minQty)} unit | POS ${formatCurrency(tier.price)} | Online ${formatCurrency(tier.onlinePrice)}`,
+  }));
+  const variantItems = item.variants.flatMap(variant =>
+    variant.grocerPricingTiers.map((tier, index) => ({
+      title: `${variant.label} - Tier ${index + 1}`,
+      value: `Mulai ${formatNumber(tier.minQty)} unit | POS ${formatCurrency(tier.price)} | Online ${formatCurrency(tier.onlinePrice)}`,
+    })),
+  );
+
+  return [...rootItems, ...variantItems];
+}
+
+function getGrocerPricingTierTotal(item: KolamSpecies) {
+  return (
+    item.grocerPricingTiers.length +
+    item.variants.reduce(
+      (total, variant) => total + variant.grocerPricingTiers.length,
+      0,
+    )
+  );
+}
 function createVariantVendorPriceItems(item: KolamSpecies) {
   return item.variants.flatMap(variant =>
     variant.vendorPrices.map(price => ({
@@ -2538,6 +2630,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '800',
     lineHeight: 20,
+  },
+  grocerPricingPanel: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 10,
+    padding: 12,
   },
   vendorPricePanel: {
     backgroundColor: V.colors.bg,
