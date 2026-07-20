@@ -9,6 +9,7 @@ import {
   type KolamSpeciesSellableFilter,
   type KolamSpeciesStatus,
   type KolamSpeciesStockStatus,
+  type KolamSpeciesMarketplaceSyncPlatform,
   type KolamSpeciesVariantFormRow,
 } from '../domain/kolam-species';
 import { getKolamTableColumns } from '../domain/kolam-table';
@@ -755,6 +756,7 @@ function KolamSpeciesForm({
               />
             </View>
           </FieldShell>
+          <MarketplaceSyncPanel item={controller.selectedSpecies} />
           <View style={styles.twoColumnGrid}>
             <FieldShell label="Dijual">
               <View style={styles.segmentRow}>
@@ -1705,6 +1707,11 @@ function KolamSpeciesDetail({
           label: 'Tag',
           value: item.tags.map(tag => tag.name).join(', ') || '-',
         },
+        { label: 'Sync Marketplace', value: item.marketplaceSync.label },
+        {
+          label: 'Sync Terakhir',
+          value: item.marketplaceSync.lastSyncedAt || '-',
+        },
         ...detailLinks.map(link => ({
           label: link.label,
           value: link.value,
@@ -1752,6 +1759,15 @@ function KolamSpeciesDetail({
           total: detailLinks.length,
         },
         {
+          description: 'Status sync stok dan harga marketplace dari backend.',
+          emptyText: 'Belum ada status sync marketplace.',
+          items: createMarketplaceSyncItems(item.marketplaceSync),
+          title: 'Marketplace',
+          total:
+            item.marketplaceSync.platforms.length +
+            item.marketplaceSync.pricePlatforms.length,
+        },
+        {
           description: 'Media lokal yang disinkron dari backend ketika ada perubahan.',
           emptyText: 'Belum ada foto spesies.',
           items: item.photoUris.map((uri, index) => ({
@@ -1780,6 +1796,95 @@ function KolamSpeciesDetail({
   );
 }
 
+function MarketplaceSyncPanel({ item }: { item: KolamSpecies | null }) {
+  if (!item) {
+    return null;
+  }
+
+  const syncItems = createMarketplaceSyncItems(item.marketplaceSync);
+
+  return (
+    <FieldShell label="Status Sync Marketplace">
+      <View style={styles.marketplaceSyncPanel}>
+        <KolamStatusBadge
+          intent={getMarketplaceSyncBadgeIntent(item.marketplaceSync.label)}
+          label={item.marketplaceSync.label}
+        />
+        <KolamCopyStack
+          items={[
+            {
+              id: 'last-sync',
+              text: item.marketplaceSync.lastSyncedAt
+                ? 'Terakhir sync: ' + item.marketplaceSync.lastSyncedAt
+                : 'Belum ada waktu sync dari backend.',
+              style: styles.fieldHint,
+            },
+          ]}
+        />
+        {syncItems.length ? (
+          <View style={styles.marketplaceSyncGrid}>
+            {syncItems.map(sync => (
+              <View key={sync.id} style={styles.marketplaceSyncCard}>
+                <KolamCopyStack
+                  items={[
+                    {
+                      id: 'title',
+                      text: sync.title,
+                      style: styles.rowText,
+                      textProps: { numberOfLines: 1 },
+                    },
+                    {
+                      id: 'value',
+                      text: sync.value,
+                      style: styles.rowSubtext,
+                      textProps: { numberOfLines: 2 },
+                    },
+                  ]}
+                />
+              </View>
+            ))}
+          </View>
+        ) : null}
+      </View>
+    </FieldShell>
+  );
+}
+
+function createMarketplaceSyncItems(sync: KolamSpecies['marketplaceSync']) {
+  return [
+    ...sync.platforms.map(platform => createMarketplaceSyncItem(platform, 'Stok')),
+    ...sync.pricePlatforms.map(platform => createMarketplaceSyncItem(platform, 'Harga')),
+  ];
+}
+
+function createMarketplaceSyncItem(
+  platform: KolamSpeciesMarketplaceSyncPlatform,
+  kind: 'Stok' | 'Harga',
+) {
+  return {
+    id: kind + '-' + platform.platform,
+    title: kind + ' ' + platform.label + ': ' + platform.statusLabel,
+    value: [
+      platform.lastSyncedAt ? 'Sync: ' + platform.lastSyncedAt : '',
+      platform.lastError ? 'Error: ' + platform.lastError : '',
+      platform.variantCount ? platform.variantCount + ' varian' : '',
+      platform.lastTaskId ? 'Task: ' + platform.lastTaskId : '',
+    ]
+      .filter(Boolean)
+      .join(' | ') || 'Belum ada detail sync.',
+  };
+}
+
+function getMarketplaceSyncBadgeIntent(label: string) {
+  const normalized = label.toLowerCase();
+  if (normalized.includes('gagal') || normalized.includes('failed')) {
+    return 'danger' as const;
+  }
+  if (normalized.includes('sinkron')) {
+    return 'success' as const;
+  }
+  return 'muted' as const;
+}
 function SummaryTile({ label, value }: { label: string; value: number }) {
   return (
     <KolamContentFrame style={styles.summaryTile} variant="settingsWebConfig">
@@ -2151,6 +2256,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
+  },
+  marketplaceSyncPanel: {
+    gap: 10,
+  },
+  marketplaceSyncGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  marketplaceSyncCard: {
+    borderColor: V.colors.border,
+    borderRadius: 6,
+    borderWidth: 1,
+    flexBasis: 220,
+    flexGrow: 1,
+    padding: 10,
   },
   fieldHint: {
     color: V.colors.mutedFg,

@@ -26,9 +26,31 @@ export interface KolamSpeciesLocaleContent {
   distribution: string;
 }
 
+export type KolamSpeciesMarketplaceSyncStatus =
+  | 'pending'
+  | 'synced'
+  | 'skipped'
+  | 'notFound'
+  | 'failed'
+  | 'partial'
+  | 'unknown';
+
+export interface KolamSpeciesMarketplaceSyncPlatform {
+  platform: 'tokopedia' | 'shopee';
+  label: string;
+  status: KolamSpeciesMarketplaceSyncStatus;
+  statusLabel: string;
+  lastSyncedAt?: string;
+  lastError?: string;
+  lastTaskId?: string;
+  variantCount: number;
+}
+
 export interface KolamSpeciesMarketplaceSync {
   label: string;
   lastSyncedAt?: string;
+  platforms: KolamSpeciesMarketplaceSyncPlatform[];
+  pricePlatforms: KolamSpeciesMarketplaceSyncPlatform[];
 }
 
 export type KolamSpeciesLinkName =
@@ -968,20 +990,136 @@ function normalizeStock(
 }
 
 function normalizeMarketplaceSync(record: Record<string, unknown>) {
-  const sync = asRecord(record.marketplaceSync ?? record.marketplace);
+  const stockSync = asRecord(record.marketplaceSync ?? record.marketplace);
+  const priceSync = asRecord(record.marketplacePriceSync);
+  const platforms = normalizeMarketplaceSyncPlatforms(stockSync);
+  const pricePlatforms = normalizeMarketplaceSyncPlatforms(priceSync);
   const lastSyncedAt =
-    getString(sync, 'lastSyncedAt') ||
-    getString(sync, 'updatedAt') ||
+    getLatestMarketplaceSyncDate([...platforms, ...pricePlatforms]) ||
+    getString(stockSync, 'lastSyncedAt') ||
+    getString(stockSync, 'updatedAt') ||
     getString(record, 'lastMarketplaceSyncAt');
   const status =
-    getString(sync, 'status') ||
+    getMarketplaceAggregateLabel(platforms) ||
+    getString(stockSync, 'status') ||
     getString(record, 'syncStatus') ||
-    (lastSyncedAt ? 'sinkron' : 'belum sinkron');
+    (lastSyncedAt ? 'Sinkron' : 'Belum sinkron');
 
   return {
     label: status || '-',
     lastSyncedAt: lastSyncedAt || undefined,
+    platforms,
+    pricePlatforms,
   };
+}
+
+function normalizeMarketplaceSyncPlatforms(
+  sync: Record<string, unknown>,
+): KolamSpeciesMarketplaceSyncPlatform[] {
+  return (['tokopedia', 'shopee'] as const)
+    .map(platform => {
+      const source = asRecord(sync[platform]);
+      const status = normalizeMarketplaceSyncStatus(
+        getString(source, 'lastStatus') || getString(source, 'status'),
+      );
+      const lastSyncedAt = getString(source, 'lastSyncedAt');
+      const lastError = getString(source, 'lastError');
+      const lastTaskId = getString(source, 'lastTaskId');
+      const variantResults = Array.isArray(source.variantResults)
+        ? source.variantResults
+        : [];
+
+      if (
+        status === 'unknown' &&
+        !lastSyncedAt &&
+        !lastError &&
+        !lastTaskId &&
+        !variantResults.length
+      ) {
+        return null;
+      }
+
+      return {
+        platform,
+        label: platform === 'tokopedia' ? 'Tokopedia' : 'Shopee',
+        status,
+        statusLabel: getMarketplaceSyncStatusLabel(status),
+        lastSyncedAt: lastSyncedAt || undefined,
+        lastError: lastError || undefined,
+        lastTaskId: lastTaskId || undefined,
+        variantCount: variantResults.length,
+      };
+    })
+    .filter(Boolean) as KolamSpeciesMarketplaceSyncPlatform[];
+}
+
+function normalizeMarketplaceSyncStatus(
+  value: string,
+): KolamSpeciesMarketplaceSyncStatus {
+  switch (value) {
+    case 'pending':
+    case 'synced':
+    case 'skipped':
+    case 'notFound':
+    case 'failed':
+    case 'partial':
+      return value;
+    default:
+      return 'unknown';
+  }
+}
+
+function getMarketplaceSyncStatusLabel(
+  status: KolamSpeciesMarketplaceSyncStatus,
+) {
+  switch (status) {
+    case 'pending':
+      return 'Menunggu';
+    case 'synced':
+      return 'Sinkron';
+    case 'skipped':
+      return 'Dilewati';
+    case 'notFound':
+      return 'Tidak ditemukan';
+    case 'failed':
+      return 'Gagal';
+    case 'partial':
+      return 'Sebagian';
+    default:
+      return 'Belum ada data';
+  }
+}
+
+function getMarketplaceAggregateLabel(
+  platforms: KolamSpeciesMarketplaceSyncPlatform[],
+) {
+  if (!platforms.length) {
+    return '';
+  }
+
+  if (platforms.some(platform => platform.status === 'failed')) {
+    return 'Ada sync gagal';
+  }
+
+  if (platforms.some(platform => platform.status === 'partial')) {
+    return 'Sinkron sebagian';
+  }
+
+  if (platforms.every(platform => platform.status === 'synced')) {
+    return 'Sinkron';
+  }
+
+  return platforms.map(platform => platform.statusLabel).join(', ');
+}
+
+function getLatestMarketplaceSyncDate(
+  platforms: KolamSpeciesMarketplaceSyncPlatform[],
+) {
+  return platforms
+    .map(platform => platform.lastSyncedAt)
+    .filter(Boolean)
+    .sort()
+    .at(-1);
 }
 
 function normalizeLocaleContent(
