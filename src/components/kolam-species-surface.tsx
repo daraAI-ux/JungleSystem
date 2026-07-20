@@ -1707,10 +1707,10 @@ function KolamSpeciesDetail({
           label: 'Tag',
           value: item.tags.map(tag => tag.name).join(', ') || '-',
         },
-        { label: 'Sync Marketplace', value: item.marketplaceSync.label },
+        { label: 'Sync Marketplace', value: getMarketplaceSyncLabel(item) },
         {
           label: 'Sync Terakhir',
-          value: item.marketplaceSync.lastSyncedAt || '-',
+          value: getMarketplaceSyncLastSyncedAt(item) || '-',
         },
         ...detailLinks.map(link => ({
           label: link.label,
@@ -1763,9 +1763,7 @@ function KolamSpeciesDetail({
           emptyText: 'Belum ada status sync marketplace.',
           items: createMarketplaceSyncItems(item.marketplaceSync),
           title: 'Marketplace',
-          total:
-            item.marketplaceSync.platforms.length +
-            item.marketplaceSync.pricePlatforms.length,
+          total: getMarketplaceSyncTotal(item.marketplaceSync),
         },
         {
           description: 'Media lokal yang disinkron dari backend ketika ada perubahan.',
@@ -1802,20 +1800,22 @@ function MarketplaceSyncPanel({ item }: { item: KolamSpecies | null }) {
   }
 
   const syncItems = createMarketplaceSyncItems(item.marketplaceSync);
+  const syncLabel = getMarketplaceSyncLabel(item);
+  const lastSyncedAt = getMarketplaceSyncLastSyncedAt(item);
 
   return (
     <FieldShell label="Status Sync Marketplace">
       <View style={styles.marketplaceSyncPanel}>
         <KolamStatusBadge
-          intent={getMarketplaceSyncBadgeIntent(item.marketplaceSync.label)}
-          label={item.marketplaceSync.label}
+          intent={getMarketplaceSyncBadgeIntent(syncLabel)}
+          label={syncLabel}
         />
         <KolamCopyStack
           items={[
             {
               id: 'last-sync',
-              text: item.marketplaceSync.lastSyncedAt
-                ? 'Terakhir sync: ' + item.marketplaceSync.lastSyncedAt
+              text: lastSyncedAt
+                ? 'Terakhir sync: ' + lastSyncedAt
                 : 'Belum ada waktu sync dari backend.',
               style: styles.fieldHint,
             },
@@ -1851,10 +1851,32 @@ function MarketplaceSyncPanel({ item }: { item: KolamSpecies | null }) {
 }
 
 function createMarketplaceSyncItems(sync: KolamSpecies['marketplaceSync']) {
+  const platforms = getMarketplaceSyncPlatforms(sync);
+
   return [
-    ...sync.platforms.map(platform => createMarketplaceSyncItem(platform, 'Stok')),
-    ...sync.pricePlatforms.map(platform => createMarketplaceSyncItem(platform, 'Harga')),
+    ...platforms.stock.map(platform => createMarketplaceSyncItem(platform, 'Stok')),
+    ...platforms.price.map(platform => createMarketplaceSyncItem(platform, 'Harga')),
   ];
+}
+
+function getMarketplaceSyncPlatforms(sync: KolamSpecies['marketplaceSync']) {
+  return {
+    stock: Array.isArray(sync?.platforms) ? sync.platforms : [],
+    price: Array.isArray(sync?.pricePlatforms) ? sync.pricePlatforms : [],
+  };
+}
+
+function getMarketplaceSyncTotal(sync: KolamSpecies['marketplaceSync']) {
+  const platforms = getMarketplaceSyncPlatforms(sync);
+  return platforms.stock.length + platforms.price.length;
+}
+
+function getMarketplaceSyncLabel(item: KolamSpecies) {
+  return item.marketplaceSync?.label || 'Belum sinkron';
+}
+
+function getMarketplaceSyncLastSyncedAt(item: KolamSpecies) {
+  return item.marketplaceSync?.lastSyncedAt || '';
 }
 
 function createMarketplaceSyncItem(

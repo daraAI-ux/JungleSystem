@@ -306,7 +306,7 @@ describe('kolamNavigationSections', () => {
       getKolamNavigationRouteTarget(byRoute('/purchase-order')).moduleId,
     ).toBe('kolam');
     expect(getKolamNavigationRouteTarget(byRoute('/species')).moduleId).toBe(
-      'catalog',
+      'kolam',
     );
     expect(getKolamNavigationRouteTarget(byRoute('/sales')).moduleId).toBe(
       'sales',
@@ -359,7 +359,7 @@ describe('kolamNavigationSections', () => {
   it('finds live menu items by route for native route surfaces', () => {
     expect(getKolamNavigationItemByRoute('/brands')).toEqual(
       expect.objectContaining({
-        label: 'Brands',
+        label: 'Merek',
         route: '/brands',
       }),
     );
@@ -375,7 +375,7 @@ describe('kolamNavigationSections', () => {
   it('indexes live create detail and edit route variants for native command search', () => {
     const variants = getKolamNavigationRouteVariants();
 
-    expect(variants).toHaveLength(168);
+    expect(variants).toHaveLength(169);
     expect(variants).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
