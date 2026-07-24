@@ -30,6 +30,19 @@ export interface KolamTableColumn {
   width?: number;
 }
 
+export type KolamTableColumnWidthMap = Partial<
+  Record<KolamTableColumn['id'], number>
+>;
+
+export interface KolamTableColumnSizing {
+  id: KolamTableColumn['id'];
+  values?: Array<number | string | null | undefined>;
+  minWidth: number;
+  maxWidth: number;
+  charWidth?: number;
+  padding?: number;
+}
+
 export interface KolamTableVisualContract {
   sourceComponent: string;
   wrapper: {
@@ -136,10 +149,10 @@ const kolamTableColumns: Record<KolamTableId, KolamTableColumn[]> = {
   ],
   category: [
     { id: 'primary', label: 'Kategori', align: 'left' },
-    { id: 'children', label: 'Subkategori', align: 'left', width: 132 },
+    { id: 'children', label: 'Subkategori', align: 'right', width: 132 },
     { id: 'products', label: 'Produk', align: 'right', width: 92 },
     { id: 'meta', label: 'Species', align: 'right', width: 92 },
-    { id: 'marketplace', label: 'Marketplace', align: 'left', width: 132 },
+    { id: 'marketplace', label: 'Marketplace', align: 'right', width: 132 },
     { id: 'actions', label: '', align: 'right', width: 64 },
   ],
   tag: [
@@ -224,6 +237,38 @@ export function getKolamTableColumns(
   return kolamTableColumns[tableId].map(column => ({ ...column }));
 }
 
+export function applyKolamAdaptiveColumnWidths(
+  columns: KolamTableColumn[],
+  sizing: KolamTableColumnSizing[],
+): KolamTableColumn[] {
+  const sizingById = new Map(sizing.map(item => [item.id, item]));
+
+  return columns.map(column => {
+    const columnSizing = sizingById.get(column.id);
+
+    if (!columnSizing) {
+      return { ...column };
+    }
+
+    return {
+      ...column,
+      width: getKolamAdaptiveColumnWidth(column.label, columnSizing),
+    };
+  });
+}
+
+export function getKolamTableColumnWidthMap(
+  columns: KolamTableColumn[],
+): KolamTableColumnWidthMap {
+  return columns.reduce<KolamTableColumnWidthMap>((widths, column) => {
+    if (typeof column.width === 'number') {
+      widths[column.id] = column.width;
+    }
+
+    return widths;
+  }, {});
+}
+
 export function getKolamTableVisualContract(): KolamTableVisualContract {
   return {
     ...kolamTableVisualContract,
@@ -233,5 +278,36 @@ export function getKolamTableVisualContract(): KolamTableVisualContract {
     body: { ...kolamTableVisualContract.body },
     interaction: { ...kolamTableVisualContract.interaction },
   };
+}
+
+function getKolamAdaptiveColumnWidth(
+  label: string,
+  sizing: KolamTableColumnSizing,
+) {
+  const values: Array<number | string | null | undefined> = [
+    label,
+    ...(sizing.values ?? []),
+  ];
+  const maxLength = values.reduce<number>(
+    (length, value) =>
+      Math.max(length, stringifyKolamColumnValue(value).length),
+    0,
+  );
+  const charWidth = sizing.charWidth ?? 8;
+  const padding = sizing.padding ?? 28;
+  const preferredWidth = Math.ceil(maxLength * charWidth + padding);
+
+  return Math.min(
+    sizing.maxWidth,
+    Math.max(sizing.minWidth, preferredWidth),
+  );
+}
+
+function stringifyKolamColumnValue(value: number | string | null | undefined) {
+  if (value === null || value === undefined) {
+    return '';
+  }
+
+  return String(value);
 }
 

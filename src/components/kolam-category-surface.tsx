@@ -16,7 +16,12 @@ import {
   countActiveLocaleAuditItems,
   createCategoryLocaleAuditItems,
 } from '../domain/kolam-locale-audit';
-import { getKolamTableColumns } from '../domain/kolam-table';
+import {
+  applyKolamAdaptiveColumnWidths,
+  getKolamTableColumnWidthMap,
+  getKolamTableColumns,
+  type KolamTableColumnWidthMap,
+} from '../domain/kolam-table';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import {
   useKolamCategoryController,
@@ -154,6 +159,47 @@ function KolamCategoryList({
     safePage * pageSize,
   );
   const summary = getCategorySummary(allCategories);
+  const categoryColumns = React.useMemo(
+    () =>
+      applyKolamAdaptiveColumnWidths(getKolamTableColumns('category'), [
+        {
+          id: 'children',
+          values: allCategories.map(
+            category => category.childrenCount || category.children.length,
+          ),
+          minWidth: 92,
+          maxWidth: 132,
+        },
+        {
+          id: 'products',
+          values: allCategories.map(category => category.productCount),
+          minWidth: 76,
+          maxWidth: 104,
+        },
+        {
+          id: 'meta',
+          values: allCategories.map(category => category.speciesCount),
+          minWidth: 76,
+          maxWidth: 104,
+        },
+        {
+          id: 'marketplace',
+          values: allCategories.map(category =>
+            category.showInMarketplace
+              ? `Tampil Urutan ${category.marketplaceOrder}`
+              : 'Tersembunyi',
+          ),
+          minWidth: 112,
+          maxWidth: 132,
+          charWidth: 7,
+        },
+      ]),
+    [allCategories],
+  );
+  const columnWidths = React.useMemo(
+    () => getKolamTableColumnWidthMap(categoryColumns),
+    [categoryColumns],
+  );
 
   React.useEffect(() => {
     setPage(1);
@@ -196,12 +242,13 @@ function KolamCategoryList({
         />
       </View>
       <KolamContentFrame variant="settingsWebConfig">
-        <KolamDataTableHeader columns={getKolamTableColumns('category')} />
+        <KolamDataTableHeader columns={categoryColumns} />
         <View style={styles.tableBody}>
           {pagedRows.length ? (
             pagedRows.map(category => (
               <KolamCategoryRow
                 category={category}
+                columnWidths={columnWidths}
                 expanded={expandedIds.has(category.id)}
                 key={category.id}
                 onAddChild={() => {
@@ -308,6 +355,7 @@ function KolamCategoryList({
 
 function KolamCategoryRow({
   category,
+  columnWidths,
   expanded,
   onAddChild,
   onDelete,
@@ -316,6 +364,7 @@ function KolamCategoryRow({
   onToggle,
 }: {
   category: KolamCategory;
+  columnWidths: KolamTableColumnWidthMap;
   expanded: boolean;
   onAddChild: () => void;
   onDelete: () => void;
@@ -361,18 +410,24 @@ function KolamCategoryRow({
           />
         </View>
       </View>
-      <View style={styles.childrenCell}>
-        <KolamDataTableMetaCell>
+      <View style={[styles.childrenCell, { width: columnWidths.children }]}>
+        <KolamDataTableMetaCell style={{ width: columnWidths.children }}>
           {category.childrenCount || category.children.length}
         </KolamDataTableMetaCell>
       </View>
-      <KolamDataTableAmountCell style={styles.countCell}>
+      <KolamDataTableAmountCell
+        style={[styles.countCell, { width: columnWidths.products }]}
+      >
         {category.productCount}
       </KolamDataTableAmountCell>
-      <KolamDataTableAmountCell style={styles.countCell}>
+      <KolamDataTableAmountCell
+        style={[styles.countCell, { width: columnWidths.meta }]}
+      >
         {category.speciesCount}
       </KolamDataTableAmountCell>
-      <View style={styles.marketplaceCell}>
+      <View
+        style={[styles.marketplaceCell, { width: columnWidths.marketplace }]}
+      >
         <KolamStatusBadge
           intent={category.showInMarketplace ? 'success' : 'muted'}
           label={category.showInMarketplace ? 'Tampil' : 'Tersembunyi'}
