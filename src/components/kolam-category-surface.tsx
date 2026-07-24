@@ -326,6 +326,9 @@ function KolamCategoryRow({
   const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
   const hasChildren = category.children.length > 0;
   const canAddChild = category.level < 2;
+  const rowDescription = truncateCategoryRowDescription(
+    category.description || 'Tanpa deskripsi',
+  );
 
   return (
     <KolamDataTableRowFrame
@@ -351,7 +354,7 @@ function KolamCategoryRow({
               { id: 'name', text: category.name, style: styles.rowTitle },
               {
                 id: 'description',
-                text: category.description || 'Tanpa deskripsi',
+                text: rowDescription,
                 style: styles.rowMeta,
               },
             ]}
@@ -685,6 +688,13 @@ function getCategorySummary(categories: KolamCategory[]) {
   );
 }
 
+function truncateCategoryRowDescription(description: string) {
+  const normalized = description.replace(/\s+/g, ' ').trim();
+  return normalized.length > 86
+    ? `${normalized.slice(0, 83).trimEnd()}...`
+    : normalized;
+}
+
 function getCategoryRoute(category: KolamCategory) {
   return `/label-dan-field/kategori/${encodeURIComponent(category.name)}`;
 }
@@ -785,8 +795,9 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   treeButton: {
+    width: 30,
     minWidth: 30,
-    paddingHorizontal: 8,
+    paddingHorizontal: 0,
     marginRight: 8,
   },
   treeButtonText: {
@@ -818,20 +829,23 @@ const styles = StyleSheet.create({
   },
   childrenCell: {
     width: 132,
+    alignItems: 'flex-end',
   },
   countCell: {
     width: 92,
   },
   marketplaceCell: {
     width: 132,
-    alignItems: 'flex-start',
-    gap: 3,
+    alignItems: 'flex-end',
+    gap: 2,
   },
   marketplaceMeta: {
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '700',
+    lineHeight: 13,
+    textAlign: 'right',
   },
   activeActionRow: {
     zIndex: 1000,
