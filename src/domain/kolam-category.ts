@@ -135,8 +135,8 @@ export function normalizeKolamCategory(payload: unknown): KolamCategory {
   const record = asRecord(payload);
   const id = getString(record, '_id') || getString(record, 'id');
   const name = getString(record, 'name') || 'Kategori tanpa nama';
-  const photos = getStringArray(record.photos);
-  const iconPath = getString(record, 'icon') || photos[0] || null;
+  const photos = normalizeCategoryPhotoList(record.photos);
+  const iconPath = getFilePath(record.icon) || photos[0] || null;
   const parent = normalizeParent(record.parent);
   const children = getArray(record.children).map(normalizeKolamCategory);
 
@@ -482,9 +482,23 @@ function getArray(value: unknown): unknown[] {
   return Array.isArray(value) ? value : [];
 }
 
-function getStringArray(value: unknown): string[] {
-  return getArray(value).filter(
-    (entry): entry is string => typeof entry === 'string',
+function normalizeCategoryPhotoList(value: unknown): string[] {
+  return getArray(value).map(getFilePath).filter(Boolean);
+}
+
+function getFilePath(value: unknown): string {
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  const record = asRecord(value);
+  return (
+    getString(record, 'url') ||
+    getString(record, 'path') ||
+    getString(record, 'filePath') ||
+    getString(record, 'file_path') ||
+    getString(record, 'location') ||
+    getString(record, 'key')
   );
 }
 

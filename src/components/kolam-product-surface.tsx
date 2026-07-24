@@ -1377,7 +1377,6 @@ function ProductSummaryTab({
               {product.categories.length ? (
                 product.categories.map(category => (
                   <KolamCategoryLabel
-                    imageUri={category.logoUri}
                     key={category.id || category.name}
                     label={category.name}
                     style={styles.sidebarCategoryChip}
