@@ -24,6 +24,7 @@ import {
   type KolamTableColumnWidthMap,
 } from '../domain/kolam-table';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
+import { getKolamFileUrl } from '../lib/file-url';
 import {
   useKolamCategoryController,
   type KolamCategoryController,
@@ -49,9 +50,11 @@ import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamLabelFieldDetailOverview } from './kolam-label-field-detail-overview';
 import { KolamNativeFormSection } from './kolam-native-form-section';
+import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamStatusBadge } from './kolam-status-badge';
+import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 
 export function KolamCategorySurface({
   onRouteChange,
@@ -239,17 +242,19 @@ function KolamCategoryList({
         <SummaryTile label="Produk" value={summary.products} />
         <SummaryTile label="Species" value={summary.species} />
       </View>
-      <View style={styles.tableToolbar}>
+      <View style={kolamTableToolbarStyles.row}>
         <KolamFormTextField
           onChangeText={setSearch}
           placeholder="Cari kategori..."
-          style={styles.searchInput}
+          style={kolamTableToolbarStyles.searchInput}
           value={search}
         />
-        <KolamButton
-          label={expandedIds.size ? 'Tutup Semua' : 'Buka Semua'}
-          onPress={toggleAll}
-        />
+        <View style={kolamTableToolbarStyles.controls}>
+          <KolamButton
+            label={expandedIds.size ? 'Tutup Semua' : 'Buka Semua'}
+            onPress={toggleAll}
+          />
+        </View>
       </View>
       <KolamContentFrame
         style={[styles.categoryTableFrame, { width: categoryTableWidth }]}
@@ -787,19 +792,120 @@ function getCategoryRoute(category: KolamCategory) {
 
 function getCategoryDetailLists(category: KolamCategory) {
   return {
-    products: createKolamDetailItemsFromRawArray(
+    products: createCategoryDetailItemsWithThumbnails(
       getKolamRawArray(category.raw, 'products'),
+      'produk',
     ),
-    raws: createKolamDetailItemsFromRawArray(
+    raws: createCategoryDetailItemsWithThumbnails(
       getKolamRawArray(category.raw, 'raws'),
+      'bahan-baku',
     ),
     services: createKolamDetailItemsFromRawArray(
       getKolamRawArray(category.raw, 'services'),
     ),
-    species: createKolamDetailItemsFromRawArray(
+    species: createCategoryDetailItemsWithThumbnails(
       getKolamRawArray(category.raw, 'species'),
+      'species',
     ),
   };
+}
+
+function createCategoryDetailItemsWithThumbnails(
+  rawItems: unknown[],
+  scope: string,
+) {
+  const baseItems = createKolamDetailItemsFromRawArray(rawItems);
+
+  return baseItems.map((item, index) => {
+    const imageUris = getCategoryDetailItemImageUris(rawItems[index]);
+    const imageUri = imageUris[0];
+
+    if (!imageUri) {
+      return item;
+    }
+
+    return {
+      ...item,
+      thumbnail: (
+        <KolamRemoteImage
+          accessibilityLabel={`Foto ${item.title}`}
+          previewIndex={0}
+          previewItems={imageUris.map((uri, photoIndex) => ({
+            id: `${scope}-${index}-${photoIndex}`,
+            title: item.title,
+            uri,
+          }))}
+          revision={`${scope}-${index}-${imageUri}`}
+          scope={`category-detail-${scope}`}
+          sourceUri={imageUri}
+          style={styles.detailThumbnail}
+        />
+      ),
+    };
+  });
+}
+
+function getCategoryDetailItemImageUris(item: unknown) {
+  const record = asCategoryDetailRecord(item);
+  const values = [
+    ...getCategoryDetailStringArray(record, 'photoUris'),
+    ...getCategoryDetailStringArray(record, 'photos'),
+    ...getCategoryDetailStringArray(record, 'images'),
+    getCategoryDetailString(record, 'thumbnailUri'),
+    getCategoryDetailString(record, 'thumbnailUrl'),
+    getCategoryDetailString(record, 'thumbnailImage'),
+    getCategoryDetailString(record, 'thumbnail'),
+    getCategoryDetailString(record, 'imageUri'),
+    getCategoryDetailString(record, 'imageUrl'),
+    getCategoryDetailString(record, 'image'),
+    getCategoryDetailString(record, 'photoUri'),
+    getCategoryDetailString(record, 'photoUrl'),
+    getCategoryDetailString(record, 'photo'),
+  ];
+
+  return Array.from(
+    new Set(
+      values
+        .map(value => (value ? getKolamFileUrl(value) ?? value : ''))
+        .filter(Boolean),
+    ),
+  );
+}
+
+function getCategoryDetailStringArray(
+  record: Record<string, unknown>,
+  key: string,
+) {
+  const value = record[key];
+
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map(item =>
+      typeof item === 'string'
+        ? item.trim()
+        : getCategoryDetailString(asCategoryDetailRecord(item), 'url') ||
+          getCategoryDetailString(asCategoryDetailRecord(item), 'uri') ||
+          getCategoryDetailString(asCategoryDetailRecord(item), 'path') ||
+          getCategoryDetailString(asCategoryDetailRecord(item), 'file'),
+    )
+    .filter(Boolean);
+}
+
+function getCategoryDetailString(
+  record: Record<string, unknown>,
+  key: string,
+) {
+  const value = record[key];
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+function asCategoryDetailRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object'
+    ? (value as Record<string, unknown>)
+    : {};
 }
 
 const styles = StyleSheet.create({
@@ -853,17 +959,6 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 12,
     fontWeight: '700',
-  },
-  tableToolbar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 8,
-    zIndex: 9200,
-    elevation: 96,
-  },
-  searchInput: {
-    width: 240,
   },
   categoryTableFrame: {
     alignSelf: 'flex-start',
@@ -936,6 +1031,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     lineHeight: 13,
     textAlign: 'right',
+  },
+  detailThumbnail: {
+    width: 38,
+    height: 38,
+    borderRadius: 7,
+    backgroundColor: V.colors.muted,
+    borderColor: V.colors.border,
+    borderWidth: 1,
   },
   activeActionRow: {
     zIndex: 1000,

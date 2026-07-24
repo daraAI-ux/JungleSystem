@@ -43,6 +43,7 @@ import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamHoverTooltip } from './kolam-hover-tooltip';
 import { KolamLabelFieldDetailOverview } from './kolam-label-field-detail-overview';
 import { KolamStatusBadge } from './kolam-status-badge';
+import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 
 type BrandSortMode = 'name-asc' | 'name-desc';
 type BrandAssetMode = 'none' | 'products-desc' | 'raws-desc';
@@ -162,32 +163,34 @@ function KolamBrandList({
         <SummaryTile label="Nonaktif" value={summary.inactive} />
         <SummaryTile label="Blacklisted" value={summary.blacklisted} />
       </View>
-      <View style={styles.tableToolbar}>
+      <View style={kolamTableToolbarStyles.row}>
         <KolamFormTextField
           onChangeText={setSearch}
           placeholder="Cari merek..."
-          style={styles.searchInput}
+          style={kolamTableToolbarStyles.searchInput}
           value={search}
         />
-        <KolamDropdownSelect<BrandSortMode>
-          label="Urutan"
-          onChange={setSortMode}
-          options={[
-            { label: 'Nama A-Z', value: 'name-asc' },
-            { label: 'Nama Z-A', value: 'name-desc' },
-          ]}
-          value={sortMode}
-        />
-        <KolamDropdownSelect<BrandAssetMode>
-          label="Aset terbanyak"
-          onChange={setAssetMode}
-          options={[
-            { label: 'Semua', value: 'none' },
-            { label: 'Produk', value: 'products-desc' },
-            { label: 'Bahan', value: 'raws-desc' },
-          ]}
-          value={assetMode}
-        />
+        <View style={kolamTableToolbarStyles.controls}>
+          <KolamDropdownSelect<BrandSortMode>
+            label="Urutan"
+            onChange={setSortMode}
+            options={[
+              { label: 'Nama A-Z', value: 'name-asc' },
+              { label: 'Nama Z-A', value: 'name-desc' },
+            ]}
+            value={sortMode}
+          />
+          <KolamDropdownSelect<BrandAssetMode>
+            label="Aset terbanyak"
+            onChange={setAssetMode}
+            options={[
+              { label: 'Semua', value: 'none' },
+              { label: 'Produk', value: 'products-desc' },
+              { label: 'Bahan', value: 'raws-desc' },
+            ]}
+            value={assetMode}
+          />
+        </View>
       </View>
       <KolamContentFrame variant="settingsWebConfig">
         <KolamDataTableHeader columns={getKolamTableColumns('brand')} />
@@ -853,17 +856,6 @@ const styles = StyleSheet.create({
   },
   countCell: {
     width: 92,
-  },
-  tableToolbar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 8,
-    zIndex: 9200,
-    elevation: 96,
-  },
-  searchInput: {
-    width: 240,
   },
   paginationRow: {
     minHeight: 42,

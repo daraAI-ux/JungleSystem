@@ -12,6 +12,8 @@ export type KolamTableId =
   | 'taxonomy'
   | 'unit';
 
+export type KolamTableColumnAlign = 'center' | 'left' | 'right';
+
 export interface KolamTableColumn {
   id:
     | 'primary'
@@ -26,7 +28,8 @@ export interface KolamTableColumn {
     | 'status'
     | 'actions';
   label: string;
-  align: 'left' | 'right';
+  align: Exclude<KolamTableColumnAlign, 'center'>;
+  headerAlign?: KolamTableColumnAlign;
   width?: number;
 }
 
@@ -157,10 +160,34 @@ const kolamTableColumns: Record<KolamTableId, KolamTableColumn[]> = {
   ],
   category: [
     { id: 'primary', label: 'Kategori', align: 'left' },
-    { id: 'children', label: 'Subkategori', align: 'right', width: 132 },
-    { id: 'products', label: 'Produk', align: 'right', width: 92 },
-    { id: 'meta', label: 'Species', align: 'right', width: 92 },
-    { id: 'marketplace', label: 'Marketplace', align: 'right', width: 132 },
+    {
+      id: 'children',
+      label: 'Subkategori',
+      align: 'right',
+      headerAlign: 'center',
+      width: 132,
+    },
+    {
+      id: 'products',
+      label: 'Produk',
+      align: 'right',
+      headerAlign: 'center',
+      width: 92,
+    },
+    {
+      id: 'meta',
+      label: 'Species',
+      align: 'right',
+      headerAlign: 'center',
+      width: 92,
+    },
+    {
+      id: 'marketplace',
+      label: 'Marketplace',
+      align: 'right',
+      headerAlign: 'center',
+      width: 132,
+    },
     { id: 'actions', label: '', align: 'right', width: 64 },
   ],
   tag: [

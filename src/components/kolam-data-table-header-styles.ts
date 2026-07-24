@@ -29,6 +29,9 @@ export const dataTableHeaderStyles = StyleSheet.create({
   primary: {
     flex: 1,
   },
+  center: {
+    textAlign: 'center',
+  },
   right: {
     textAlign: 'right',
   },

@@ -8,6 +8,8 @@ export function KolamDataTableHeaderCell({
 }: {
   column: KolamTableColumn;
 }) {
+  const headerAlign = column.headerAlign ?? column.align;
+
   return (
     <KolamCopyStack
       items={[
@@ -18,7 +20,8 @@ export function KolamDataTableHeaderCell({
           style: [
             styles.text,
             column.id === 'primary' && styles.primary,
-            column.align === 'right' && styles.right,
+            headerAlign === 'center' && styles.center,
+            headerAlign === 'right' && styles.right,
             column.width ? { width: column.width } : null,
           ],
         },
