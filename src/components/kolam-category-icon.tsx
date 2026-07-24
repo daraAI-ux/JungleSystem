@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { SvgXml } from 'react-native-svg';
 import type { KolamCategory } from '../domain/kolam-category';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { KolamLocalAssetImage } from './kolam-local-asset-image';
@@ -15,7 +16,8 @@ export function KolamCategoryIcon({
     variant === 'list'
       ? category.photos[0] ?? category.iconUrl
       : category.iconUrl;
-  const renderUri = useRenderableCategoryIconUri(sourceUri);
+  const svgXml = useCategorySvgXml(sourceUri);
+  const usesSvg = Boolean(sourceUri && isSvgUri(sourceUri));
 
   return (
     <View style={[styles.icon, variant === 'detail' && styles.iconDetail]}>
@@ -28,26 +30,42 @@ export function KolamCategoryIcon({
           </Text>
         ) : null}
       </View>
-      <KolamLocalAssetImage
-        accessibilityLabel={`${category.name} icon`}
-        resizeMode="contain"
-        revision={getCategoryIconRevision(category)}
-        scope="category-icon"
-        sourceUri={renderUri}
-        style={styles.image}
-      />
+      {usesSvg ? (
+        svgXml ? (
+          <View style={styles.image}>
+            <SvgXml height="100%" width="100%" xml={svgXml} />
+          </View>
+        ) : null
+      ) : (
+        <KolamLocalAssetImage
+          accessibilityLabel={`${category.name} icon`}
+          resizeMode="contain"
+          revision={getCategoryIconRevision(category)}
+          scope="category-icon"
+          sourceUri={sourceUri}
+          style={styles.image}
+        />
+      )}
     </View>
   );
 }
 
-function useRenderableCategoryIconUri(sourceUri: string | null | undefined) {
-  const [svgDataUri, setSvgDataUri] = React.useState<string | null>(null);
+function useCategorySvgXml(sourceUri: string | null | undefined) {
+  const [svgXml, setSvgXml] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     let cancelled = false;
-    setSvgDataUri(null);
+    setSvgXml(null);
 
-    if (!sourceUri || !isSvgUri(sourceUri) || isSvgDataUri(sourceUri)) {
+    if (!sourceUri || !isSvgUri(sourceUri)) {
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    if (isSvgDataUri(sourceUri)) {
+      const decoded = decodeSvgDataUri(sourceUri);
+      setSvgXml(decoded);
       return () => {
         cancelled = true;
       };
@@ -57,12 +75,12 @@ function useRenderableCategoryIconUri(sourceUri: string | null | undefined) {
       .then(response => (response.ok ? response.text() : ''))
       .then(svg => {
         if (!cancelled && svg.trim()) {
-          setSvgDataUri(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`);
+          setSvgXml(svg);
         }
       })
       .catch(() => {
         if (!cancelled) {
-          setSvgDataUri(null);
+          setSvgXml(null);
         }
       });
 
@@ -71,19 +89,7 @@ function useRenderableCategoryIconUri(sourceUri: string | null | undefined) {
     };
   }, [sourceUri]);
 
-  if (!sourceUri) {
-    return null;
-  }
-
-  if (isSvgDataUri(sourceUri)) {
-    return sourceUri;
-  }
-
-  if (isSvgUri(sourceUri)) {
-    return svgDataUri;
-  }
-
-  return sourceUri;
+  return svgXml;
 }
 
 function isSvgUri(uri: string) {
@@ -92,6 +98,20 @@ function isSvgUri(uri: string) {
 
 function isSvgDataUri(uri: string) {
   return /^data:image\/svg\+xml/i.test(uri);
+}
+
+function decodeSvgDataUri(uri: string) {
+  const commaIndex = uri.indexOf(',');
+  if (commaIndex < 0) {
+    return null;
+  }
+
+  const payload = uri.slice(commaIndex + 1);
+  try {
+    return decodeURIComponent(payload);
+  } catch {
+    return payload;
+  }
 }
 
 function getCategoryIconRevision(category: KolamCategory) {
