@@ -31,6 +31,7 @@ import { KolamNativeFormSection } from './kolam-native-form-section';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamStatusBadge } from './kolam-status-badge';
+import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 
 type UnitSortMode = 'name-asc' | 'name-desc' | 'initial-asc' | 'newest';
 type UnitStatusFilter = 'all' | KolamUnitStatus;
@@ -153,47 +154,49 @@ function KolamUnitList({
         <SummaryTile label="Nonaktif" value={summary.inactive} />
         <SummaryTile label="Satuan Dasar" value={summary.base} />
       </View>
-      <View style={styles.tableToolbar}>
+      <View style={kolamTableToolbarStyles.row}>
         <KolamFormTextField
           onChangeText={setSearch}
           placeholder="Cari satuan..."
-          style={styles.searchInput}
+          style={kolamTableToolbarStyles.searchInput}
           value={search}
         />
-        <KolamDropdownSelect<UnitSortMode>
-          label="Urutan"
-          onChange={setSortMode}
-          options={[
-            { label: 'Nama A-Z', value: 'name-asc' },
-            { label: 'Nama Z-A', value: 'name-desc' },
-            { label: 'Inisial A-Z', value: 'initial-asc' },
-            { label: 'Terbaru', value: 'newest' },
-          ]}
-          value={sortMode}
-        />
-        <KolamDropdownSelect<UnitStatusFilter>
-          label="Status"
-          onChange={setStatusFilter}
-          options={[
-            { label: 'Semua', value: 'all' },
-            { label: 'Aktif', value: 'active' },
-            { label: 'Nonaktif', value: 'inactive' },
-          ]}
-          value={statusFilter}
-        />
-        <KolamDropdownSelect<UnitTypeFilter>
-          label="Tipe"
-          onChange={setTypeFilter}
-          options={[
-            { label: 'Semua', value: 'all' },
-            { label: 'Berat', value: 'weight' },
-            { label: 'Volume', value: 'volume' },
-            { label: 'Panjang', value: 'length' },
-            { label: 'Luas', value: 'area' },
-            { label: 'Lainnya', value: 'other' },
-          ]}
-          value={typeFilter}
-        />
+        <View style={kolamTableToolbarStyles.controls}>
+          <KolamDropdownSelect<UnitSortMode>
+            label="Urutan"
+            onChange={setSortMode}
+            options={[
+              { label: 'Nama A-Z', value: 'name-asc' },
+              { label: 'Nama Z-A', value: 'name-desc' },
+              { label: 'Inisial A-Z', value: 'initial-asc' },
+              { label: 'Terbaru', value: 'newest' },
+            ]}
+            value={sortMode}
+          />
+          <KolamDropdownSelect<UnitStatusFilter>
+            label="Status"
+            onChange={setStatusFilter}
+            options={[
+              { label: 'Semua', value: 'all' },
+              { label: 'Aktif', value: 'active' },
+              { label: 'Nonaktif', value: 'inactive' },
+            ]}
+            value={statusFilter}
+          />
+          <KolamDropdownSelect<UnitTypeFilter>
+            label="Tipe"
+            onChange={setTypeFilter}
+            options={[
+              { label: 'Semua', value: 'all' },
+              { label: 'Berat', value: 'weight' },
+              { label: 'Volume', value: 'volume' },
+              { label: 'Panjang', value: 'length' },
+              { label: 'Luas', value: 'area' },
+              { label: 'Lainnya', value: 'other' },
+            ]}
+            value={typeFilter}
+          />
+        </View>
       </View>
       <KolamContentFrame variant="settingsWebConfig">
         <KolamDataTableHeader columns={getKolamTableColumns('unit')} />
@@ -686,17 +689,6 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 12,
     fontWeight: '700',
-  },
-  tableToolbar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 8,
-    zIndex: 9200,
-    elevation: 96,
-  },
-  searchInput: {
-    width: 240,
   },
   emptyWrap: {
     minHeight: 220,

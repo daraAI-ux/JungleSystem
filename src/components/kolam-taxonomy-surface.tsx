@@ -39,6 +39,7 @@ import { KolamNativeFormSection } from './kolam-native-form-section';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamStatusBadge } from './kolam-status-badge';
+import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 
 type TaxonomySortMode = 'name-asc' | 'name-desc' | 'level-asc' | 'newest';
 type TaxonomyLevelFilter = 'all' | KolamTaxonomyLevel;
@@ -177,55 +178,57 @@ function KolamTaxonomyList({
         <SummaryTile label="Nonaktif" value={summary.inactive} />
         <SummaryTile label="Genus" value={summary.genus} />
       </View>
-      <View style={styles.tableToolbar}>
+      <View style={kolamTableToolbarStyles.row}>
         <KolamFormTextField
           onChangeText={setSearch}
           placeholder="Cari taksonomi..."
-          style={styles.searchInput}
+          style={kolamTableToolbarStyles.searchInput}
           value={search}
         />
-        <KolamDropdownSelect<TaxonomySortMode>
-          label="Urutan"
-          onChange={setSortMode}
-          options={[
-            { label: 'Nama A-Z', value: 'name-asc' },
-            { label: 'Nama Z-A', value: 'name-desc' },
-            { label: 'Tingkat', value: 'level-asc' },
-            { label: 'Terbaru', value: 'newest' },
-          ]}
-          value={sortMode}
-        />
-        <KolamDropdownSelect<TaxonomyLevelFilter>
-          label="Tingkat"
-          onChange={setLevelFilter}
-          options={[
-            { label: 'Semua', value: 'all' },
-            ...KOLAM_TAXONOMY_LEVELS.map(level => ({
-              label: getTaxonomyLevelLabel(level),
-              value: level,
-            })),
-          ]}
-          value={levelFilter}
-        />
-        <KolamDropdownSelect<TaxonomyRootFilter>
-          label="Hierarki"
-          onChange={setRootFilter}
-          options={[
-            { label: 'Semua', value: 'all' },
-            { label: 'Hanya akar', value: 'root' },
-          ]}
-          value={rootFilter}
-        />
-        <KolamDropdownSelect<TaxonomyStatusFilter>
-          label="Status"
-          onChange={setStatusFilter}
-          options={[
-            { label: 'Semua', value: 'all' },
-            { label: 'Aktif', value: 'active' },
-            { label: 'Nonaktif', value: 'inactive' },
-          ]}
-          value={statusFilter}
-        />
+        <View style={kolamTableToolbarStyles.controls}>
+          <KolamDropdownSelect<TaxonomySortMode>
+            label="Urutan"
+            onChange={setSortMode}
+            options={[
+              { label: 'Nama A-Z', value: 'name-asc' },
+              { label: 'Nama Z-A', value: 'name-desc' },
+              { label: 'Tingkat', value: 'level-asc' },
+              { label: 'Terbaru', value: 'newest' },
+            ]}
+            value={sortMode}
+          />
+          <KolamDropdownSelect<TaxonomyLevelFilter>
+            label="Tingkat"
+            onChange={setLevelFilter}
+            options={[
+              { label: 'Semua', value: 'all' },
+              ...KOLAM_TAXONOMY_LEVELS.map(level => ({
+                label: getTaxonomyLevelLabel(level),
+                value: level,
+              })),
+            ]}
+            value={levelFilter}
+          />
+          <KolamDropdownSelect<TaxonomyRootFilter>
+            label="Hierarki"
+            onChange={setRootFilter}
+            options={[
+              { label: 'Semua', value: 'all' },
+              { label: 'Hanya akar', value: 'root' },
+            ]}
+            value={rootFilter}
+          />
+          <KolamDropdownSelect<TaxonomyStatusFilter>
+            label="Status"
+            onChange={setStatusFilter}
+            options={[
+              { label: 'Semua', value: 'all' },
+              { label: 'Aktif', value: 'active' },
+              { label: 'Nonaktif', value: 'inactive' },
+            ]}
+            value={statusFilter}
+          />
+        </View>
       </View>
       <KolamContentFrame variant="settingsWebConfig">
         <KolamDataTableHeader columns={getKolamTableColumns('taxonomy')} />
@@ -866,18 +869,6 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 12,
     fontWeight: '800',
-  },
-  tableToolbar: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    gap: 10,
-    zIndex: 9200,
-    elevation: 96,
-  },
-  searchInput: {
-    minWidth: 220,
-    flexGrow: 1,
   },
   emptyWrap: {
     minHeight: 220,

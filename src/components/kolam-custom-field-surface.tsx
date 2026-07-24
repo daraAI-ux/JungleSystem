@@ -38,6 +38,7 @@ import { KolamNativeFormSection } from './kolam-native-form-section';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamStatusBadge } from './kolam-status-badge';
+import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 
 type CustomFieldSortMode = 'label-asc' | 'label-desc' | 'order' | 'newest';
 type CustomFieldStatusFilter = 'all' | KolamCustomFieldStatus;
@@ -168,47 +169,49 @@ function KolamCustomFieldList({
         <SummaryTile label="Nonaktif" value={summary.inactive} />
         <SummaryTile label="Wajib" value={summary.required} />
       </View>
-      <View style={styles.tableToolbar}>
+      <View style={kolamTableToolbarStyles.row}>
         <KolamFormTextField
           onChangeText={setSearch}
           placeholder="Cari field kustom..."
-          style={styles.searchInput}
+          style={kolamTableToolbarStyles.searchInput}
           value={search}
         />
-        <KolamDropdownSelect<CustomFieldSortMode>
-          label="Urutan"
-          onChange={setSortMode}
-          options={[
-            { label: 'Label A-Z', value: 'label-asc' },
-            { label: 'Label Z-A', value: 'label-desc' },
-            { label: 'Urutan Field', value: 'order' },
-            { label: 'Terbaru', value: 'newest' },
-          ]}
-          value={sortMode}
-        />
-        <KolamDropdownSelect<CustomFieldStatusFilter>
-          label="Status"
-          onChange={setStatusFilter}
-          options={[
-            { label: 'Semua', value: 'all' },
-            { label: 'Aktif', value: 'active' },
-            { label: 'Nonaktif', value: 'inactive' },
-          ]}
-          value={statusFilter}
-        />
-        <KolamDropdownSelect<CustomFieldTypeFilter>
-          label="Tipe"
-          onChange={setTypeFilter}
-          options={[
-            { label: 'Semua', value: 'all' },
-            { label: 'Teks', value: 'string' },
-            { label: 'Angka', value: 'number' },
-            { label: 'Ya/Tidak', value: 'boolean' },
-            { label: 'Rentang', value: 'range' },
-            { label: 'Pilihan', value: 'select' },
-          ]}
-          value={typeFilter}
-        />
+        <View style={kolamTableToolbarStyles.controls}>
+          <KolamDropdownSelect<CustomFieldSortMode>
+            label="Urutan"
+            onChange={setSortMode}
+            options={[
+              { label: 'Label A-Z', value: 'label-asc' },
+              { label: 'Label Z-A', value: 'label-desc' },
+              { label: 'Urutan Field', value: 'order' },
+              { label: 'Terbaru', value: 'newest' },
+            ]}
+            value={sortMode}
+          />
+          <KolamDropdownSelect<CustomFieldStatusFilter>
+            label="Status"
+            onChange={setStatusFilter}
+            options={[
+              { label: 'Semua', value: 'all' },
+              { label: 'Aktif', value: 'active' },
+              { label: 'Nonaktif', value: 'inactive' },
+            ]}
+            value={statusFilter}
+          />
+          <KolamDropdownSelect<CustomFieldTypeFilter>
+            label="Tipe"
+            onChange={setTypeFilter}
+            options={[
+              { label: 'Semua', value: 'all' },
+              { label: 'Teks', value: 'string' },
+              { label: 'Angka', value: 'number' },
+              { label: 'Ya/Tidak', value: 'boolean' },
+              { label: 'Rentang', value: 'range' },
+              { label: 'Pilihan', value: 'select' },
+            ]}
+            value={typeFilter}
+          />
+        </View>
       </View>
       <KolamContentFrame variant="settingsWebConfig">
         <KolamDataTableHeader columns={getKolamTableColumns('custom-field')} />
@@ -989,17 +992,6 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 12,
     fontWeight: '700',
-  },
-  tableToolbar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 8,
-    zIndex: 9200,
-    elevation: 96,
-  },
-  searchInput: {
-    width: 240,
   },
   emptyWrap: {
     minHeight: 220,

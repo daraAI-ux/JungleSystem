@@ -33,6 +33,7 @@ import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamStatusBadge } from './kolam-status-badge';
+import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 
 type IucnSortMode = 'order-asc' | 'name-asc' | 'name-desc' | 'newest';
 type IucnStatusFilter = 'all' | KolamIucnStatusState;
@@ -155,44 +156,46 @@ function KolamIucnList({
         <SummaryTile label="Nonaktif" value={summary.inactive} />
         <SummaryTile label="Dengan Gambar" value={summary.withImage} />
       </View>
-      <View style={styles.tableToolbar}>
+      <View style={kolamTableToolbarStyles.row}>
         <KolamFormTextField
           onChangeText={setSearch}
           placeholder="Cari status IUCN..."
-          style={styles.searchInput}
+          style={kolamTableToolbarStyles.searchInput}
           value={search}
         />
-        <KolamDropdownSelect<IucnSortMode>
-          label="Urutan"
-          onChange={setSortMode}
-          options={[
-            { label: 'Urutan IUCN', value: 'order-asc' },
-            { label: 'Nama A-Z', value: 'name-asc' },
-            { label: 'Nama Z-A', value: 'name-desc' },
-            { label: 'Terbaru', value: 'newest' },
-          ]}
-          value={sortMode}
-        />
-        <KolamDropdownSelect<IucnStatusFilter>
-          label="Status"
-          onChange={setStatusFilter}
-          options={[
-            { label: 'Semua', value: 'all' },
-            { label: 'Aktif', value: 'active' },
-            { label: 'Nonaktif', value: 'inactive' },
-          ]}
-          value={statusFilter}
-        />
-        <KolamDropdownSelect<IucnImageFilter>
-          label="Gambar"
-          onChange={setImageFilter}
-          options={[
-            { label: 'Semua', value: 'all' },
-            { label: 'Dengan gambar', value: 'with-image' },
-            { label: 'Tanpa gambar', value: 'without-image' },
-          ]}
-          value={imageFilter}
-        />
+        <View style={kolamTableToolbarStyles.controls}>
+          <KolamDropdownSelect<IucnSortMode>
+            label="Urutan"
+            onChange={setSortMode}
+            options={[
+              { label: 'Urutan IUCN', value: 'order-asc' },
+              { label: 'Nama A-Z', value: 'name-asc' },
+              { label: 'Nama Z-A', value: 'name-desc' },
+              { label: 'Terbaru', value: 'newest' },
+            ]}
+            value={sortMode}
+          />
+          <KolamDropdownSelect<IucnStatusFilter>
+            label="Status"
+            onChange={setStatusFilter}
+            options={[
+              { label: 'Semua', value: 'all' },
+              { label: 'Aktif', value: 'active' },
+              { label: 'Nonaktif', value: 'inactive' },
+            ]}
+            value={statusFilter}
+          />
+          <KolamDropdownSelect<IucnImageFilter>
+            label="Gambar"
+            onChange={setImageFilter}
+            options={[
+              { label: 'Semua', value: 'all' },
+              { label: 'Dengan gambar', value: 'with-image' },
+              { label: 'Tanpa gambar', value: 'without-image' },
+            ]}
+            value={imageFilter}
+          />
+        </View>
       </View>
       <KolamContentFrame variant="settingsWebConfig">
         <KolamDataTableHeader columns={getKolamTableColumns('iucn-status')} />
@@ -776,18 +779,6 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 12,
     fontWeight: '800',
-  },
-  tableToolbar: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    gap: 10,
-    zIndex: 9200,
-    elevation: 96,
-  },
-  searchInput: {
-    minWidth: 220,
-    flexGrow: 1,
   },
   emptyWrap: {
     minHeight: 220,
