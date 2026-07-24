@@ -3,6 +3,8 @@ import { StyleSheet, Text, View } from 'react-native';
 import { SvgXml } from 'react-native-svg';
 import type { KolamCategory } from '../domain/kolam-category';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
+import { openKolamImagePreview } from './kolam-image-preview-dialog';
+import { KolamInteractionFrame } from './kolam-interaction-frame';
 import { KolamLocalAssetImage } from './kolam-local-asset-image';
 
 export function KolamCategoryIcon({
@@ -18,9 +20,46 @@ export function KolamCategoryIcon({
       : category.iconUrl;
   const svgXml = useCategorySvgXml(sourceUri);
   const usesSvg = Boolean(sourceUri && isSvgUri(sourceUri));
+  const iconStyle = [styles.icon, variant === 'detail' && styles.iconDetail];
+
+  if (usesSvg) {
+    return (
+      <KolamInteractionFrame
+        accessibilityLabel={`Lihat ${category.name} icon`}
+        onPress={() => {
+          if (!sourceUri) {
+            return;
+          }
+
+          openKolamImagePreview({
+            revision: getCategoryIconRevision(category),
+            scope: 'category-icon',
+            title: `${category.name} icon`,
+            uri: sourceUri,
+          });
+        }}
+        style={iconStyle}
+      >
+        <View style={styles.placeholder}>
+          {variant === 'detail' ? (
+            <Text
+              numberOfLines={1}
+              style={[styles.placeholderText, styles.placeholderTextDetail]}>
+              {getCategoryInitial(category.name)}
+            </Text>
+          ) : null}
+        </View>
+        {svgXml ? (
+          <View style={styles.image}>
+            <SvgXml height="100%" width="100%" xml={svgXml} />
+          </View>
+        ) : null}
+      </KolamInteractionFrame>
+    );
+  }
 
   return (
-    <View style={[styles.icon, variant === 'detail' && styles.iconDetail]}>
+    <View style={iconStyle}>
       <View style={styles.placeholder}>
         {variant === 'detail' ? (
           <Text
@@ -30,22 +69,14 @@ export function KolamCategoryIcon({
           </Text>
         ) : null}
       </View>
-      {usesSvg ? (
-        svgXml ? (
-          <View style={styles.image}>
-            <SvgXml height="100%" width="100%" xml={svgXml} />
-          </View>
-        ) : null
-      ) : (
-        <KolamLocalAssetImage
-          accessibilityLabel={`${category.name} icon`}
-          resizeMode="contain"
-          revision={getCategoryIconRevision(category)}
-          scope="category-icon"
-          sourceUri={sourceUri}
-          style={styles.image}
-        />
-      )}
+      <KolamLocalAssetImage
+        accessibilityLabel={`${category.name} icon`}
+        resizeMode="contain"
+        revision={getCategoryIconRevision(category)}
+        scope="category-icon"
+        sourceUri={sourceUri}
+        style={styles.image}
+      />
     </View>
   );
 }

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Dimensions, Image, StyleSheet, Text, View } from 'react-native';
+import { SvgXml } from 'react-native-svg';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { KolamButton } from './kolam-button';
 import { KolamInteractionFrame } from './kolam-interaction-frame';
@@ -143,6 +144,8 @@ function KolamImagePreviewDialog({
     };
   }, [galleryKey]);
   const resolvedUri = current?.uri ?? null;
+  const usesSvg = Boolean(resolvedUri && isSvgUri(resolvedUri));
+  const svgXml = usePreviewSvgXml(resolvedUri);
 
   React.useEffect(() => {
     setCurrentIndex(initialIndex);
@@ -196,7 +199,20 @@ function KolamImagePreviewDialog({
             },
           ]}
         >
-          {resolvedUri ? (
+          {resolvedUri && usesSvg ? (
+            svgXml ? (
+              <View
+                style={{
+                  height: previewSize.imageStageHeight,
+                  width: previewSize.imageStageWidth,
+                }}
+              >
+                <SvgXml height="100%" width="100%" xml={svgXml} />
+              </View>
+            ) : (
+              <Text style={styles.loadingText}>Memuat gambar...</Text>
+            )
+          ) : resolvedUri ? (
             <Image
               accessibilityIgnoresInvertColors
               accessibilityLabel={current.title}
@@ -240,6 +256,69 @@ function KolamImagePreviewDialog({
       </View>
     </View>
   );
+}
+
+function usePreviewSvgXml(sourceUri: string | null | undefined) {
+  const [svgXml, setSvgXml] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    setSvgXml(null);
+
+    if (!sourceUri || !isSvgUri(sourceUri)) {
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    if (isSvgDataUri(sourceUri)) {
+      setSvgXml(decodeSvgDataUri(sourceUri));
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    fetch(sourceUri)
+      .then(response => (response.ok ? response.text() : ''))
+      .then(svg => {
+        if (!cancelled && svg.trim()) {
+          setSvgXml(svg);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setSvgXml(null);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [sourceUri]);
+
+  return svgXml;
+}
+
+function isSvgUri(uri: string) {
+  return isSvgDataUri(uri) || /\.svg(?:[?#]|$)/i.test(uri);
+}
+
+function isSvgDataUri(uri: string) {
+  return /^data:image\/svg\+xml/i.test(uri);
+}
+
+function decodeSvgDataUri(uri: string) {
+  const commaIndex = uri.indexOf(',');
+  if (commaIndex < 0) {
+    return null;
+  }
+
+  const payload = uri.slice(commaIndex + 1);
+  try {
+    return decodeURIComponent(payload);
+  } catch {
+    return payload;
+  }
 }
 
 
