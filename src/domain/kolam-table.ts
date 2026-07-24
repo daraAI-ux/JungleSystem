@@ -43,6 +43,14 @@ export interface KolamTableColumnSizing {
   padding?: number;
 }
 
+export interface KolamTablePreferredWidthOptions {
+  gap?: number;
+  maxWidth?: number;
+  minWidth?: number;
+  paddingX?: number;
+  primaryWidth: number;
+}
+
 export interface KolamTableVisualContract {
   sourceComponent: string;
   wrapper: {
@@ -267,6 +275,26 @@ export function getKolamTableColumnWidthMap(
 
     return widths;
   }, {});
+}
+
+export function getKolamTablePreferredWidth(
+  columns: KolamTableColumn[],
+  options: KolamTablePreferredWidthOptions,
+) {
+  const visual = getKolamTableVisualContract();
+  const gap = options.gap ?? 16;
+  const paddingX = options.paddingX ?? visual.body.cellPaddingX;
+  const preferredWidth =
+    columns.reduce((total, column) => {
+      return total + (column.width ?? options.primaryWidth);
+    }, 0) +
+    Math.max(0, columns.length - 1) * gap +
+    paddingX * 2;
+
+  return Math.min(
+    options.maxWidth ?? preferredWidth,
+    Math.max(options.minWidth ?? 0, preferredWidth),
+  );
 }
 
 export function getKolamTableVisualContract(): KolamTableVisualContract {

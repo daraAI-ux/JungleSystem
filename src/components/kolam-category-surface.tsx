@@ -20,6 +20,7 @@ import {
   applyKolamAdaptiveColumnWidths,
   getKolamTableColumnWidthMap,
   getKolamTableColumns,
+  getKolamTablePreferredWidth,
   type KolamTableColumnWidthMap,
 } from '../domain/kolam-table';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
@@ -200,6 +201,15 @@ function KolamCategoryList({
     () => getKolamTableColumnWidthMap(categoryColumns),
     [categoryColumns],
   );
+  const categoryTableWidth = React.useMemo(
+    () =>
+      getKolamTablePreferredWidth(categoryColumns, {
+        maxWidth: 940,
+        minWidth: 760,
+        primaryWidth: getCategoryPrimaryColumnWidth(allCategories),
+      }),
+    [allCategories, categoryColumns],
+  );
 
   React.useEffect(() => {
     setPage(1);
@@ -241,7 +251,10 @@ function KolamCategoryList({
           onPress={toggleAll}
         />
       </View>
-      <KolamContentFrame variant="settingsWebConfig">
+      <KolamContentFrame
+        style={[styles.categoryTableFrame, { width: categoryTableWidth }]}
+        variant="settingsWebConfig"
+      >
         <KolamDataTableHeader columns={categoryColumns} />
         <View style={styles.tableBody}>
           {pagedRows.length ? (
@@ -743,6 +756,24 @@ function getCategorySummary(categories: KolamCategory[]) {
   );
 }
 
+function getCategoryPrimaryColumnWidth(categories: KolamCategory[]) {
+  const longestName = categories.reduce(
+    (length, category) => Math.max(length, category.name.length),
+    0,
+  );
+  const longestDescription = categories.reduce(
+    (length, category) =>
+      Math.max(length, (category.description || 'Tanpa deskripsi').length),
+    0,
+  );
+  const preferredTextWidth = Math.max(
+    longestName * 8,
+    longestDescription * 5,
+  );
+
+  return Math.min(360, Math.max(280, preferredTextWidth + 116));
+}
+
 function truncateCategoryRowDescription(description: string) {
   const normalized = description.replace(/\s+/g, ' ').trim();
   return normalized.length > 86
@@ -833,6 +864,10 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     width: 240,
+  },
+  categoryTableFrame: {
+    alignSelf: 'flex-start',
+    maxWidth: '100%',
   },
   tableBody: {
     width: '100%',
