@@ -11,24 +11,28 @@ export function KolamCategoryIcon({
   category: KolamCategory;
   variant?: 'list' | 'detail';
 }) {
+  const sourceUri =
+    variant === 'list'
+      ? category.photos[0] ?? category.iconUrl
+      : category.iconUrl;
+
   return (
     <View style={[styles.icon, variant === 'detail' && styles.iconDetail]}>
       <View style={styles.placeholder}>
-        <Text
-          numberOfLines={1}
-          style={[
-            styles.placeholderText,
-            variant === 'detail' && styles.placeholderTextDetail,
-          ]}>
-          {getCategoryInitial(category.name)}
-        </Text>
+        {variant === 'detail' ? (
+          <Text
+            numberOfLines={1}
+            style={[styles.placeholderText, styles.placeholderTextDetail]}>
+            {getCategoryInitial(category.name)}
+          </Text>
+        ) : null}
       </View>
       <KolamLocalAssetImage
         accessibilityLabel={`${category.name} icon`}
         resizeMode="contain"
         revision={getCategoryIconRevision(category)}
         scope="category-icon"
-        sourceUri={category.iconUrl}
+        sourceUri={sourceUri}
         style={styles.image}
       />
     </View>
@@ -36,7 +40,11 @@ export function KolamCategoryIcon({
 }
 
 function getCategoryIconRevision(category: KolamCategory) {
-  return [category.iconUrl ?? '', category.updatedAt ?? ''].join(':');
+  return [
+    category.iconUrl ?? '',
+    category.photos[0] ?? '',
+    category.updatedAt ?? '',
+  ].join(':');
 }
 
 function getCategoryInitial(name: string) {
