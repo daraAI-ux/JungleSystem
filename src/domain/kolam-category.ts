@@ -136,7 +136,7 @@ export function normalizeKolamCategory(payload: unknown): KolamCategory {
   const id = getString(record, '_id') || getString(record, 'id');
   const name = getString(record, 'name') || 'Kategori tanpa nama';
   const photos = normalizeCategoryPhotoList(record.photos);
-  const iconPath = getFilePath(record.icon) || photos[0] || null;
+  const iconUrl = getFileUri(record.icon) ?? photos[0] ?? null;
   const parent = normalizeParent(record.parent);
   const children = getArray(record.children).map(normalizeKolamCategory);
 
@@ -148,7 +148,7 @@ export function normalizeKolamCategory(payload: unknown): KolamCategory {
     translations: normalizeKolamTranslationsFromRecord<KolamCategoryLocaleFields>(
       record.translations,
     ),
-    iconUrl: getKolamFileUrl(iconPath),
+    iconUrl,
     photos,
     productCount:
       getNumber(record, 'totalProducts') ??
@@ -483,7 +483,12 @@ function getArray(value: unknown): unknown[] {
 }
 
 function normalizeCategoryPhotoList(value: unknown): string[] {
-  return getArray(value).map(getFilePath).filter(Boolean);
+  return getArray(value).map(getFileUri).filter((uri): uri is string => Boolean(uri));
+}
+
+function getFileUri(value: unknown): string | null {
+  const path = getFilePath(value);
+  return path ? getKolamFileUrl(path) ?? path : null;
 }
 
 function getFilePath(value: unknown): string {
@@ -497,6 +502,8 @@ function getFilePath(value: unknown): string {
     getString(record, 'path') ||
     getString(record, 'filePath') ||
     getString(record, 'file_path') ||
+    getString(record, 'src') ||
+    getString(record, 'uri') ||
     getString(record, 'location') ||
     getString(record, 'key')
   );
