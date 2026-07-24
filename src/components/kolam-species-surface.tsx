@@ -41,6 +41,7 @@ import {
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
+import { KolamCustomFieldIcon } from './kolam-custom-field-icon';
 import { KolamDataTableHeader } from './kolam-data-table-header';
 import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
@@ -4813,6 +4814,14 @@ function KolamSpeciesDetail({
             total: item.variants.length,
           },
           {
+            description:
+              'Custom field spesifikasi utama dan varian dari backend/cache lokal.',
+            emptyText: 'Belum ada custom field spesifikasi tersimpan.',
+            items: createCustomFieldItems(item),
+            title: 'Spesifikasi',
+            total: getCustomFieldTotal(item),
+          },
+          {
             accordion: true,
             description: 'Terjemahan dan deskripsi yang akan dipakai webstore.',
             emptyText: 'Belum ada data terjemahan.',
@@ -4858,14 +4867,6 @@ function KolamSpeciesDetail({
             items: createExternalLinkItems(detailLinks),
             title: 'Tautan',
             total: detailLinks.length,
-          },
-          {
-            description:
-              'Field kustom utama dan varian dari backend/cache lokal.',
-            emptyText: 'Belum ada field kustom tersimpan.',
-            items: createCustomFieldItems(item),
-            title: 'Kolom Kustom',
-            total: getCustomFieldTotal(item),
           },
           {
             description:
@@ -5348,6 +5349,9 @@ function createCustomFieldItems(item: KolamSpecies) {
     : [];
   const variants = getSpeciesDetailVariants(item);
   const rootItems = customFieldValues.map(field => ({
+    thumbnail: (
+      <KolamCustomFieldIcon field={createCustomFieldIconAdapter(field)} />
+    ),
     title: `Spesies - ${field.fieldLabel}`,
     value: field.valueLabel,
   }));
@@ -5356,12 +5360,60 @@ function createCustomFieldItems(item: KolamSpecies) {
       ? variant.customFieldValues
       : []
     ).map(field => ({
+      thumbnail: (
+        <KolamCustomFieldIcon field={createCustomFieldIconAdapter(field)} />
+      ),
       title: `${variant.label} - ${field.fieldLabel}`,
       value: field.valueLabel,
     })),
   );
 
   return [...rootItems, ...variantItems];
+}
+
+function createCustomFieldIconAdapter(
+  field: KolamSpeciesCustomFieldValue,
+): KolamCustomField {
+  const raw = field.raw && typeof field.raw === 'object'
+    ? (field.raw as Record<string, unknown>)
+    : {};
+  const rawField = raw.field && typeof raw.field === 'object'
+    ? (raw.field as Record<string, unknown>)
+    : raw;
+
+  return {
+    createdAt: '',
+    defaultValue: null,
+    description: '',
+    fieldKey: getCustomFieldAdapterString(rawField, 'fieldKey') || field.fieldId,
+    fieldLabel: field.fieldLabel || 'Field kustom',
+    fieldType: 'string',
+    hasMinMax: false,
+    iconUrl:
+      getKolamFileUrl(getCustomFieldAdapterString(rawField, 'icon')) ??
+      null,
+    id: field.fieldId || field.fieldLabel || 'custom-field',
+    maxAllowed: null,
+    minAllowed: null,
+    options: [],
+    order: 0,
+    raw: field.raw,
+    required: false,
+    requiresUnit: Boolean(field.unitLabel),
+    status: 'active',
+    translations: {},
+    unitId: '',
+    unitLabel: field.unitLabel,
+    updatedAt: '',
+  };
+}
+
+function getCustomFieldAdapterString(
+  record: Record<string, unknown>,
+  key: string,
+) {
+  const value = record[key];
+  return typeof value === 'string' ? value.trim() : '';
 }
 
 function getCustomFieldTotal(item: KolamSpecies) {

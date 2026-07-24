@@ -177,7 +177,7 @@ export function KolamSpeciesDetailOverview({
       [
         'overview',
         'pricing',
-        ...(hasVariants ? ['specifications' as const] : []),
+        'specifications',
         'logistics',
         'location',
         'materials',
@@ -2702,13 +2702,13 @@ function getTabSectionTitles(tab: DetailTabId) {
         'Marketplace',
       ];
     case 'specifications':
-      return ['Varian'];
+      return ['Spesifikasi'];
     case 'logistics':
       return [];
     case 'materials':
       return [];
     case 'more':
-      return ['Link', 'Custom Fields'];
+      return ['Tautan'];
     case 'assets':
       return ['Media'];
     default:

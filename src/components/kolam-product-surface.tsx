@@ -1,6 +1,7 @@
 import React from 'react';
 import { Image, Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { KolamBarcodeLabelItem } from '../domain/kolam-barcode';
+import type { KolamCustomField } from '../domain/kolam-custom-field';
 import type { KolamTableColumn } from '../domain/kolam-table';
 import type {
   KolamProduct,
@@ -34,6 +35,7 @@ import {
 } from './kolam-dropdown-select';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamControlTabList } from './kolam-control-tab-list';
+import { KolamCustomFieldIcon } from './kolam-custom-field-icon';
 import { KolamDataTableHeader } from './kolam-data-table-header';
 import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
@@ -835,9 +837,7 @@ function KolamProductDetailView({
   const tabItems = [
     { id: 'overview', label: 'Ringkasan' },
     { id: 'pricing', label: 'Harga' },
-    ...(product.hasVariants
-      ? [{ id: 'specifications', label: 'Spesifikasi', count: product.variants.length }]
-      : []),
+    { id: 'specifications', label: 'Spesifikasi', count: getProductSpecificationTotal(product) },
     { id: 'logistics', label: 'Logistik' },
     { id: 'materials', label: 'Bahan Penyusun', count: product.components.length + product.packings.length },
     { id: 'more', label: 'Lainnya' },
@@ -1995,34 +1995,113 @@ function getBrandInitials(name: string) {
 }
 
 function ProductVariantsTab({ product }: { product: KolamProduct }) {
-  if (!product.variants.length) {
-    return <EmptyDetailPanel title="Spesifikasi" message="Produk ini belum memiliki varian." />;
-  }
+  const rootFields = Array.isArray(product.customFields) ? product.customFields : [];
+  const variants = Array.isArray(product.variants) ? product.variants : [];
+  const hasSpecs =
+    rootFields.length ||
+    variants.some(variant => Array.isArray(variant.customFields) && variant.customFields.length);
 
   return (
     <View style={styles.detailPanel}>
       <Text style={styles.detailPanelTitle}>Spesifikasi</Text>
-      {product.variants.map(variant => (
-        <View key={variant.id} style={styles.variantRow}>
-          <View style={styles.variantCopy}>
-            <Text style={styles.variantTitle}>{variant.label}</Text>
-            {variant.customFields.length ? (
-              <View style={[styles.labelRow, styles.variantSpecList]}>
-                {variant.customFields.map(field => (
-                  <KolamBadge
-                    intent="outline"
-                    key={`${variant.id}-${field.id}`}
-                    label={`${field.label}: ${field.value}`}
-                  />
-                ))}
-              </View>
-            ) : (
-              <Text style={styles.variantMeta}>Belum ada spesifikasi varian.</Text>
-            )}
-          </View>
-        </View>
-      ))}
+      {hasSpecs ? (
+        <>
+          {rootFields.length ? (
+            <ProductCustomFieldGroup fields={rootFields} title="Produk" />
+          ) : null}
+          {variants.map(variant =>
+            variant.customFields.length ? (
+              <ProductCustomFieldGroup
+                fields={variant.customFields}
+                key={variant.id}
+                title={variant.label || variant.sku || 'Varian'}
+              />
+            ) : null,
+          )}
+        </>
+      ) : (
+        <Text style={styles.variantMeta}>Belum ada custom field spesifikasi.</Text>
+      )}
     </View>
+  );
+}
+
+function ProductCustomFieldGroup({
+  fields,
+  title,
+}: {
+  fields: KolamProduct['customFields'];
+  title: string;
+}) {
+  return (
+    <View style={styles.variantRow}>
+      <View style={styles.variantCopy}>
+        <Text style={styles.variantTitle}>{title}</Text>
+        <View style={styles.customFieldSpecList}>
+          {fields.map(field => (
+            <View key={field.id} style={styles.customFieldSpecRow}>
+              <KolamCustomFieldIcon
+                field={createProductCustomFieldIconAdapter(field)}
+              />
+              <View style={styles.customFieldSpecCopy}>
+                <Text style={styles.customFieldSpecLabel}>{field.label}</Text>
+                <Text style={styles.customFieldSpecValue}>{field.value || '-'}</Text>
+                {field.meta ? (
+                  <Text style={styles.customFieldSpecMeta}>{field.meta}</Text>
+                ) : null}
+              </View>
+            </View>
+          ))}
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function createProductCustomFieldIconAdapter(
+  field: KolamProduct['customFields'][number],
+): KolamCustomField {
+  return {
+    createdAt: '',
+    defaultValue: null,
+    description: field.meta,
+    fieldKey: field.id,
+    fieldLabel: field.label,
+    fieldType: getProductCustomFieldIconType(field.type),
+    hasMinMax: false,
+    iconUrl: field.iconUri || null,
+    id: field.id,
+    maxAllowed: null,
+    minAllowed: null,
+    options: [],
+    order: 0,
+    raw: field,
+    required: field.required,
+    requiresUnit: false,
+    status: 'active',
+    translations: {},
+    unitId: '',
+    unitLabel: '',
+    updatedAt: '',
+  };
+}
+
+function getProductCustomFieldIconType(value: string): KolamCustomField['fieldType'] {
+  return value === 'number' ||
+    value === 'boolean' ||
+    value === 'range' ||
+    value === 'select'
+    ? value
+    : 'string';
+}
+
+function getProductSpecificationTotal(product: KolamProduct) {
+  return (
+    product.customFields.length +
+    product.variants.reduce(
+      (total, variant) => total + variant.customFields.length,
+      0,
+    )
   );
 }
 
@@ -2187,28 +2266,6 @@ function ProductMoreTab({ product }: { product: KolamProduct }) {
   return (
     <View style={styles.detailPanel}>
       <Text style={styles.detailPanelTitle}>Lainnya</Text>
-      <KolamDescriptionList
-        accessibilityLabel="Field kustom produk"
-        rows={
-          product.customFields.length
-            ? product.customFields.map(field => ({
-                id: field.id,
-                label: field.label,
-                meta: field.meta || field.type,
-                tone: field.required ? 'warning' : 'default',
-                value: field.value,
-              }))
-            : [
-                {
-                  id: 'custom-empty',
-                  label: 'Field kustom',
-                  meta: 'Spesifikasi tambahan produk',
-                  tone: 'default',
-                  value: '-',
-                },
-              ]
-        }
-      />
       <KolamDescriptionList
         accessibilityLabel="Garansi dan SEO produk"
         rows={[
@@ -3876,6 +3933,43 @@ const styles = StyleSheet.create({
   },
   variantSpecList: {
     marginTop: 8,
+  },
+  customFieldSpecList: {
+    gap: 8,
+    marginTop: 10,
+  },
+  customFieldSpecRow: {
+    minHeight: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    padding: 10,
+    borderRadius: 8,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.secondary,
+  },
+  customFieldSpecCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  customFieldSpecLabel: {
+    color: V.colors.mutedFg,
+    fontSize: 11,
+    fontWeight: '900',
+    textTransform: 'uppercase',
+  },
+  customFieldSpecValue: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '900',
+    marginTop: 2,
+  },
+  customFieldSpecMeta: {
+    color: V.colors.mutedFg,
+    fontSize: 11,
+    fontWeight: '700',
+    marginTop: 2,
   },
   variantAmount: {
     color: V.colors.fg,
