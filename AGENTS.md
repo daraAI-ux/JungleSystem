@@ -33,4 +33,5 @@ Setelah coding:
 1. Laporkan file yang berubah.
 2. Laporkan fitur yang dipertahankan.
 3. Jalankan test/typecheck sesuai scope.
-4. Jangan lanjut section berikutnya tanpa approval.
+4. Reload atau rebuild aplikasi jika perlu agar perubahan terlihat. Jika rebuild tidak diperlukan, cukup reload.
+5. Jangan lanjut section berikutnya tanpa approval.
