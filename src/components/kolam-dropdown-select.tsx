@@ -1,9 +1,11 @@
 import React from 'react';
 import {
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
   TextInput,
+  useWindowDimensions,
   View,
   type StyleProp,
   type TextStyle,
@@ -24,8 +26,10 @@ export interface KolamDropdownOption<TValue extends string = string> {
 export function KolamDropdownSelect<TValue extends string = string>({
   accessibilityLabel,
   label,
+  menuPlacement = 'overlay',
   menuStyle,
   onChange,
+  onOpenChange,
   options,
   searchable = false,
   searchPlaceholder = 'Cari...',
@@ -36,8 +40,10 @@ export function KolamDropdownSelect<TValue extends string = string>({
 }: {
   accessibilityLabel?: string;
   label: string;
+  menuPlacement?: 'overlay' | 'inline';
   menuStyle?: StyleProp<ViewStyle>;
   onChange: (value: TValue) => void;
+  onOpenChange?: (open: boolean) => void;
   options: Array<KolamDropdownOption<TValue>>;
   searchable?: boolean;
   searchPlaceholder?: string;
@@ -48,6 +54,15 @@ export function KolamDropdownSelect<TValue extends string = string>({
 }) {
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState('');
+  const triggerRef = React.useRef<View>(null);
+  const viewport = useWindowDimensions();
+  const [triggerFrame, setTriggerFrame] = React.useState({
+    height: 36,
+    width: 190,
+    x: 0,
+    y: 0,
+  });
+  const inlineMenu = menuPlacement === 'inline';
   const selected = options.find(option => option.value === value) ?? options[0];
   const selectedLabel = selected?.label ?? '-';
   const triggerLabel = showLabelInTrigger
@@ -66,9 +81,20 @@ export function KolamDropdownSelect<TValue extends string = string>({
       ),
     );
   }, [options, query]);
+  const measureTrigger = () => {
+    triggerRef.current?.measureInWindow((x, y, width, height) => {
+      setTriggerFrame({
+        height: height || 36,
+        width: width || 190,
+        x,
+        y,
+      });
+    });
+  };
   const closeMenu = () => {
     setOpen(false);
     setQuery('');
+    onOpenChange?.(false);
   };
   const toggleOpen = () => {
     setOpen(current => {
@@ -76,12 +102,80 @@ export function KolamDropdownSelect<TValue extends string = string>({
       if (!next) {
         setQuery('');
       }
+      if (next && !inlineMenu) {
+        requestAnimationFrame(measureTrigger);
+      }
+      onOpenChange?.(next);
       return next;
     });
   };
 
+  const menu = (
+    <View
+      style={[
+        styles.menu,
+        inlineMenu && styles.inlineMenu,
+        !inlineMenu && getDropdownPortalMenuStyle(triggerFrame, viewport),
+        menuStyle,
+      ]}
+    >
+      {searchable ? (
+        <View style={styles.searchRow}>
+          <TextInput
+            autoFocus
+            onChangeText={setQuery}
+            placeholder={searchPlaceholder}
+            placeholderTextColor={V.colors.mutedFg}
+            style={styles.searchInput}
+            value={query}
+          />
+          {query ? (
+            <KolamButton
+              accessibilityLabel="Bersihkan pencarian"
+              label="x"
+              onPress={() => setQuery('')}
+              style={styles.clearSearchButton}
+              textStyle={styles.clearSearchText}
+            />
+          ) : null}
+        </View>
+      ) : null}
+      <ScrollView
+        nestedScrollEnabled
+        style={styles.menuScroll}
+        contentContainerStyle={styles.menuContent}
+      >
+        {visibleOptions.map(option => (
+          <KolamButton
+            icon={option.icon}
+            intent={option.value === value ? 'primary' : 'plain'}
+            key={option.value}
+            label={option.label}
+            onPress={() => {
+              onChange(option.value);
+              closeMenu();
+            }}
+            style={styles.option}
+            textStyle={styles.optionText}
+          />
+        ))}
+        {visibleOptions.length ? null : (
+          <KolamCopyStack
+            items={[
+              {
+                id: 'empty',
+                text: 'Tidak ada hasil',
+                style: styles.emptySearchText,
+              },
+            ]}
+          />
+        )}
+      </ScrollView>
+    </View>
+  );
+
   return (
-    <View style={[styles.root, open && styles.rootOpen]}>
+    <View ref={triggerRef} style={[styles.root, open && styles.rootOpen]}>
       <KolamInteractionFrame
         accessibilityLabel={accessibilityLabel ?? label}
         accessibilityState={{ expanded: open }}
@@ -106,72 +200,54 @@ export function KolamDropdownSelect<TValue extends string = string>({
           <KolamChevronIcon direction={open ? 'up' : 'down'} size="menu-sm" />
         </View>
       </KolamInteractionFrame>
-      {open ? (
-        <>
-          <Pressable
-            accessibilityLabel="Tutup dropdown"
-            accessibilityRole="button"
-            onPress={closeMenu}
-            style={styles.backdrop}
-          />
-          <View style={[styles.menu, menuStyle]}>
-            {searchable ? (
-              <View style={styles.searchRow}>
-                <TextInput
-                  autoFocus
-                  onChangeText={setQuery}
-                  placeholder={searchPlaceholder}
-                  placeholderTextColor={V.colors.mutedFg}
-                  style={styles.searchInput}
-                  value={query}
-                />
-                {query ? (
-                  <KolamButton
-                    accessibilityLabel="Bersihkan pencarian"
-                    label="x"
-                    onPress={() => setQuery('')}
-                    style={styles.clearSearchButton}
-                    textStyle={styles.clearSearchText}
-                  />
-                ) : null}
-              </View>
-            ) : null}
-            <ScrollView
-              nestedScrollEnabled
-              style={styles.menuScroll}
-              contentContainerStyle={styles.menuContent}
-            >
-              {visibleOptions.map(option => (
-                <KolamButton
-                  icon={option.icon}
-                  intent={option.value === value ? 'primary' : 'plain'}
-                  key={option.value}
-                  label={option.label}
-                  onPress={() => {
-                    onChange(option.value);
-                    closeMenu();
-                  }}
-                  style={styles.option}
-                  textStyle={styles.optionText}
-                />
-              ))}
-              {visibleOptions.length ? null : (
-                <KolamCopyStack
-                  items={[
-                    {
-                      id: 'empty',
-                      text: 'Tidak ada hasil',
-                      style: styles.emptySearchText,
-                    },
-                  ]}
-                />
-              )}
-            </ScrollView>
+      {open && inlineMenu ? menu : null}
+      {open && !inlineMenu ? (
+        <Modal
+          animationType="none"
+          onRequestClose={closeMenu}
+          transparent
+          visible={open}
+        >
+          <View style={styles.portalOverlay}>
+            <Pressable
+              accessibilityLabel="Tutup dropdown"
+              accessibilityRole="button"
+              onPress={closeMenu}
+              style={styles.portalBackdrop}
+            />
+            {menu}
           </View>
-        </>
+        </Modal>
       ) : null}
     </View>
   );
+}
+
+function getDropdownPortalMenuStyle(
+  frame: { height: number; width: number; x: number; y: number },
+  viewport: { height: number; width: number },
+): ViewStyle {
+  const menuWidth = Math.min(
+    Math.max(frame.width, 260),
+    Math.max(260, viewport.width - 24),
+  );
+  const left = Math.min(
+    Math.max(12, frame.x),
+    Math.max(12, viewport.width - menuWidth - 12),
+  );
+  const menuHeight = 292;
+  const belowTop = frame.y + frame.height + 4;
+  const top =
+    belowTop + menuHeight > viewport.height - 12
+      ? Math.max(12, frame.y - menuHeight - 4)
+      : belowTop;
+
+  return {
+    left,
+    minWidth: menuWidth,
+    top,
+    width: menuWidth,
+  };
 }
 
 function normalizeDropdownSearch(value: string) {
@@ -251,7 +327,7 @@ export function KolamOverflowMenuButton({
                 action.onPress();
               }}
               style={styles.overflowOption}
-              textStyle={styles.optionText}
+              textStyle={styles.overflowOptionText}
             />
           ))}
         </View>
@@ -285,15 +361,48 @@ export function KolamPaginationSummaryLabel({
   );
 }
 
+export function KolamTableFooterControls({
+  children,
+  onPageSizeChange,
+  page,
+  pageSize,
+  total,
+}: {
+  children?: React.ReactNode;
+  onPageSizeChange: (value: number) => void;
+  page: number;
+  pageSize: number;
+  total: number;
+}) {
+  return (
+    <View style={styles.tableFooterControls}>
+      <View style={styles.tableFooterLeft}>
+        <KolamPaginationSizeControl
+          onChange={onPageSizeChange}
+          value={pageSize}
+        />
+        <KolamPaginationSummaryLabel
+          page={page}
+          pageSize={pageSize}
+          total={total}
+        />
+      </View>
+      {children ? (
+        <View style={styles.tableFooterRight}>{children}</View>
+      ) : null}
+    </View>
+  );
+}
 const styles = StyleSheet.create({
   root: {
+    overflow: 'visible',
     position: 'relative',
-    zIndex: 20,
-    elevation: 8,
+    zIndex: 10000,
+    elevation: 200,
   },
   rootOpen: {
-    zIndex: 1000,
-    elevation: 40,
+    zIndex: 2000000,
+    elevation: 2000000,
   },
   trigger: {
     minHeight: 36,
@@ -339,22 +448,25 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     maxWidth: 220,
   },
-  backdrop: {
+  portalOverlay: {
+    flex: 1,
+  },
+  portalBackdrop: {
     position: 'absolute',
     top: -4096,
     right: -4096,
     bottom: -4096,
     left: -4096,
-    zIndex: 1,
-    elevation: 1,
+    zIndex: 2000001,
+    elevation: 2000001,
     backgroundColor: 'transparent',
   },
   menu: {
     position: 'absolute',
     top: 38,
     left: 0,
-    zIndex: 2,
-    elevation: 48,
+    zIndex: 2000002,
+    elevation: 2000002,
     minWidth: 190,
     padding: 6,
     borderRadius: 8,
@@ -365,6 +477,14 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.12,
     shadowRadius: 16,
+  },
+  inlineMenu: {
+    alignSelf: 'stretch',
+    left: 0,
+    marginTop: 4,
+    position: 'relative',
+    top: 0,
+    width: '100%',
   },
   searchRow: {
     minHeight: 42,
@@ -435,9 +555,10 @@ const styles = StyleSheet.create({
     right: 42,
     zIndex: 1200,
     elevation: 32,
-    minWidth: 132,
-    gap: 4,
-    padding: 6,
+    minWidth: 156,
+    gap: 3,
+    paddingHorizontal: 8,
+    paddingVertical: 7,
     borderRadius: 8,
     borderColor: V.colors.border,
     borderWidth: 1,
@@ -449,6 +570,15 @@ const styles = StyleSheet.create({
   },
   overflowOption: {
     justifyContent: 'flex-start',
+    minHeight: 32,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  overflowOptionText: {
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 16,
+    textAlign: 'left',
   },
   summary: {
     color: V.colors.mutedFg,
@@ -456,4 +586,30 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
   },
+  tableFooterControls: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    justifyContent: 'space-between',
+  },
+  tableFooterLeft: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    justifyContent: 'flex-start',
+  },
+  tableFooterRight: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    justifyContent: 'flex-end',
+  },
 });
+
+
+
+
+

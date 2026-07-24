@@ -1,72 +1,61 @@
-import {
-  getKolamLocalAssetKey,
-  readKolamLocalAsset,
-  syncKolamLocalAsset,
-  syncKolamLocalAssetBatch,
-  writeKolamLocalAsset,
-  type KolamLocalAsset,
-} from './kolam-local-asset-store';
+import type { KolamLocalAssetRecord } from './kolam-local-asset-store';
 
-export type KolamCachedImage = KolamLocalAsset;
+export type KolamImageCacheRecord = KolamLocalAssetRecord & {
+  revision?: string;
+  scope: string;
+  updatedAt?: string;
+};
 
-export function getKolamImageCacheKey(scope: string, sourceUri: string) {
-  return getKolamLocalAssetKey(scope, sourceUri);
-}
-
-export async function readKolamImageCache(scope: string, sourceUri: string) {
-  return readKolamLocalAsset(scope, sourceUri);
-}
-
-export async function writeKolamImageCache(
-  scope: string,
-  image: KolamCachedImage,
+export function readKolamImageCache(
+  _scope: string,
+  _sourceUri: string | null | undefined,
 ) {
-  return writeKolamLocalAsset(scope, {
-    ...image,
-    scope,
-  });
+  return Promise.resolve<{
+    key: string;
+    revision?: string;
+    updatedAt?: string;
+    value: KolamImageCacheRecord;
+  } | null>(null);
+}
+
+export function readCachedKolamImage(
+  scope: string,
+  sourceUri: string | null | undefined,
+) {
+  return readKolamImageCache(scope, sourceUri);
+}
+
+export function writeKolamImageCache(
+  _scope: string,
+  _image: KolamImageCacheRecord,
+) {
+  return Promise.resolve(false);
 }
 
 export async function syncKolamImageCache({
-  fetcher = fetch,
-  revision,
-  scope,
-  sourceHeader,
   sourceUri,
 }: {
   fetcher?: typeof fetch;
   revision?: string;
   scope: string;
-  sourceHeader?: string;
   sourceUri: string | null | undefined;
 }) {
-  return syncKolamLocalAsset({
-    fetcher,
-    revision,
-    scope,
-    sourceHeader,
-    sourceUri,
-  });
+  if (!sourceUri) {
+    return null;
+  }
+
+  return null;
 }
 
-export async function syncKolamImageCacheBatch({
-  fetcher = fetch,
+export function syncKolamImageCacheBatch({
   images,
-  scope,
-  sourceHeader,
 }: {
   fetcher?: typeof fetch;
-  images: Array<{
-    revision?: string;
-    sourceUri: string | null | undefined;
-  }>;
+  images: { revision?: string; sourceUri: string | null | undefined }[];
   scope: string;
-  sourceHeader?: string;
 }) {
-  return syncKolamLocalAssetBatch({
-    assets: images,
-    fetcher,
-    scope,
-    sourceHeader,
+  return Promise.resolve({
+    failed: 0,
+    synced: images.filter(image => Boolean(image.sourceUri)).length,
   });
 }

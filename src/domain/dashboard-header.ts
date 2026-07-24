@@ -254,7 +254,7 @@ export function getDashboardHeaderRouteContext({
       eyebrow: activeNavigationItem.group ?? 'Kolam Route',
       route: activeNavigationItem.route,
       title: getDashboardRouteTitle(activeNavigationItem),
-      subtitle: '',
+      subtitle: activeNavigationItem.description ?? '',
     };
   }
 

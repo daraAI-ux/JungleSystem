@@ -1,0 +1,170 @@
+import { appConfig } from '../config/app';
+import {
+  normalizeKolamProductDetail,
+  normalizeKolamProductList,
+  type KolamProduct,
+  type KolamProductListResult,
+} from '../domain/kolam-product';
+import { apiRequest } from '../lib/api-client';
+
+type QueryValue = string | number | boolean | string[] | undefined | null;
+
+interface DataResponse<T> {
+  data: T;
+}
+
+const DETAIL_EDIT_HEADER = 'X-Detail-Edit';
+const DETAIL_EDIT_HEADER_VALUE = '1';
+
+export interface GetKolamProductsOptions {
+  page?: number;
+  limit?: number;
+  search?: string;
+  type?: 'product' | 'raw' | string;
+  category?: string | string[];
+  brand?: string | string[];
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  stockStatus?: string;
+  view?: 'list' | 'grid' | string;
+  archived?: boolean;
+}
+
+export interface GetKolamProductDetailOptions {
+  forEdit?: boolean;
+}
+
+export async function getKolamProducts(
+  options: GetKolamProductsOptions = {},
+): Promise<KolamProductListResult> {
+  const response = await kolamRequest<unknown>('/products', {
+    query: createProductsQuery(options),
+  });
+
+  return normalizeKolamProductList(response);
+}
+
+export async function getKolamProductDetail(
+  productId: string,
+  options: GetKolamProductDetailOptions = {},
+): Promise<KolamProduct> {
+  const response = await kolamRequest<unknown>(`/products/${productId}`, {
+    headers: options.forEdit
+      ? { [DETAIL_EDIT_HEADER]: DETAIL_EDIT_HEADER_VALUE }
+      : undefined,
+  });
+
+  return normalizeKolamProductDetail(response);
+}
+
+export async function updateKolamProduct(
+  productId: string,
+  body: Record<string, unknown>,
+): Promise<KolamProduct> {
+  const response = await kolamRequest<unknown>(`/products/${productId}`, {
+    method: 'PUT',
+    body,
+    headers: { [DETAIL_EDIT_HEADER]: DETAIL_EDIT_HEADER_VALUE },
+  });
+
+  return normalizeKolamProductDetail(response);
+}
+
+export async function updateKolamProductPartial(
+  productId: string,
+  body: Record<string, unknown>,
+): Promise<KolamProduct> {
+  const response = await kolamRequest<unknown>(`/products/${productId}`, {
+    method: 'PUT',
+    body,
+  });
+
+  return normalizeKolamProductDetail(response);
+}
+
+export async function deleteKolamProduct(productId: string): Promise<void> {
+  await kolamRequest<unknown>(`/products/${productId}`, {
+    method: 'DELETE',
+  });
+}
+
+export async function duplicateKolamProduct(productId: string): Promise<KolamProduct> {
+  const response = await kolamRequest<unknown>(`/products/copy/${productId}`, {
+    method: 'POST',
+  });
+
+  return normalizeKolamProductDetail(response);
+}
+
+export async function archiveKolamProduct(productId: string): Promise<KolamProduct> {
+  const response = await kolamRequest<unknown>(`/products/${productId}/archive`, {
+    method: 'POST',
+  });
+
+  return normalizeKolamProductDetail(response);
+}
+
+export async function restoreKolamProduct(productId: string): Promise<KolamProduct> {
+  const response = await kolamRequest<unknown>(`/products/${productId}/restore`, {
+    method: 'POST',
+  });
+
+  return normalizeKolamProductDetail(response);
+}
+function createProductsQuery(options: GetKolamProductsOptions) {
+  const query: Record<string, QueryValue> = {
+    page: options.page ?? 1,
+    limit: options.limit ?? 10,
+    search: options.search,
+    type: options.type ?? 'product',
+    sortBy: options.sortBy,
+    sortOrder: options.sortOrder,
+    stockStatus: options.stockStatus,
+    view: options.view ?? 'list',
+    archived: options.archived,
+  };
+
+  applySingleOrArrayQuery(query, 'category', options.category);
+  applySingleOrArrayQuery(query, 'brand', options.brand);
+
+  return query;
+}
+
+function applySingleOrArrayQuery(
+  query: Record<string, QueryValue>,
+  key: 'category' | 'brand',
+  value: string | string[] | undefined,
+) {
+  if (!value) {
+    return;
+  }
+
+  if (Array.isArray(value)) {
+    query[`${key}[]`] = value;
+    return;
+  }
+
+  query[key] = value;
+}
+
+function kolamRequest<T>(
+  path: string,
+  options: {
+    method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+    query?: Record<string, QueryValue>;
+    body?: unknown;
+    headers?: Record<string, string>;
+  } = {},
+) {
+  return apiRequest<T | DataResponse<T>>({
+    method: options.method ?? 'GET',
+    path,
+    query: options.query,
+    body: options.body,
+    headers: options.headers,
+    baseUrl: appConfig.kolamApiBaseUrl,
+    sourceHeader: appConfig.kolamSourceHeader,
+  }) as Promise<T>;
+}
+
+

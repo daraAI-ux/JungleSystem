@@ -30,7 +30,6 @@ import {
   writeKolamCategoryIconDraft,
   writeKolamCategoryListCache,
 } from '../services/kolam-category-local-cache';
-import { syncKolamLocalAssetBatch } from '../services/kolam-local-asset-store';
 import { pickNativeImageFile } from '../services/native-file-picker';
 
 export type KolamCategorySurfaceMode = 'list' | 'detail' | 'edit' | 'new';
@@ -490,19 +489,8 @@ function removeCategoryFromTree(
     }));
 }
 
-function syncCategoryIconAssets(categories: KolamCategory[]) {
-  const allCategories = flattenAllCategories(categories);
-  return syncKolamLocalAssetBatch({
-    scope: 'category-icon',
-    assets: allCategories.map(category => ({
-      sourceUri: category.iconUrl,
-      revision: getCategoryIconRevision(category),
-    })),
-  }).catch(() => ({ failed: allCategories.length, synced: 0 }));
-}
-
-function getCategoryIconRevision(category: KolamCategory) {
-  return [category.iconUrl ?? '', category.updatedAt ?? ''].join(':');
+function syncCategoryIconAssets(_categories: KolamCategory[]) {
+  return Promise.resolve({ failed: 0, synced: 0 });
 }
 
 function getErrorMessage(error: unknown) {
@@ -512,3 +500,4 @@ function getErrorMessage(error: unknown) {
 
   return 'Kategori belum bisa dimuat dari backend.';
 }
+

@@ -22,8 +22,7 @@ import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import {
   KolamDropdownSelect,
   KolamOverflowMenuButton,
-  KolamPaginationSizeControl,
-  KolamPaginationSummaryLabel,
+  KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
@@ -195,12 +194,6 @@ function KolamUnitList({
           ]}
           value={typeFilter}
         />
-        <KolamPaginationSizeControl onChange={setPageSize} value={pageSize} />
-        <KolamPaginationSummaryLabel
-          page={safePage}
-          pageSize={pageSize}
-          total={sortedUnits.length}
-        />
       </View>
       <KolamContentFrame variant="settingsWebConfig">
         <KolamDataTableHeader columns={getKolamTableColumns('unit')} />
@@ -225,34 +218,45 @@ function KolamUnitList({
             <KolamEmptyState
               compact
               message="Data Satuan belum tersedia dari cache atau backend."
-              title={controller.loading ? 'Memuat satuan...' : 'Belum ada satuan'}
+              title={
+                controller.loading ? 'Memuat satuan...' : 'Belum ada satuan'
+              }
             />
           </View>
         )}
       </KolamContentFrame>
-      {pageCount > 1 ? (
-        <View style={styles.paginationRow}>
-          <KolamButton
-            disabled={safePage <= 1}
-            label="Sebelumnya"
-            onPress={() => setPage(current => Math.max(1, current - 1))}
-          />
-          <KolamCopyStack
-            items={[
-              {
-                id: 'page',
-                text: `${safePage} / ${pageCount}`,
-                style: styles.pageLabel,
-              },
-            ]}
-          />
-          <KolamButton
-            disabled={safePage >= pageCount}
-            label="Berikutnya"
-            onPress={() => setPage(current => Math.min(pageCount, current + 1))}
-          />
-        </View>
-      ) : null}
+      <KolamTableFooterControls
+        onPageSizeChange={setPageSize}
+        page={safePage}
+        pageSize={pageSize}
+        total={sortedUnits.length}
+      >
+        {pageCount > 1 ? (
+          <View style={styles.paginationRow}>
+            <KolamButton
+              disabled={safePage <= 1}
+              label="Sebelumnya"
+              onPress={() => setPage(current => Math.max(1, current - 1))}
+            />
+            <KolamCopyStack
+              items={[
+                {
+                  id: 'page',
+                  text: `${safePage} / ${pageCount}`,
+                  style: styles.pageLabel,
+                },
+              ]}
+            />
+            <KolamButton
+              disabled={safePage >= pageCount}
+              label="Berikutnya"
+              onPress={() =>
+                setPage(current => Math.min(pageCount, current + 1))
+              }
+            />
+          </View>
+        ) : null}
+      </KolamTableFooterControls>
       <KolamDeleteConfirmDialog
         itemLabel={deleteCandidate?.name}
         itemType="satuan"
@@ -368,7 +372,11 @@ function KolamUnitDetail({ controller }: { controller: KolamUnitController }) {
       {!editable && unit ? (
         <>
           <View style={styles.detailActions}>
-            <KolamButton intent="primary" label="Edit" onPress={controller.onEdit} />
+            <KolamButton
+              intent="primary"
+              label="Edit"
+              onPress={controller.onEdit}
+            />
           </View>
           <KolamLabelFieldDetailOverview
             hero={<UnitHero unit={unit} />}
@@ -382,7 +390,12 @@ function KolamUnitDetail({ controller }: { controller: KolamUnitController }) {
                 ? [{ label: 'Dibuat', value: formatDateTime(unit.createdAt) }]
                 : []),
               ...(unit.updatedAt
-                ? [{ label: 'Diperbarui', value: formatDateTime(unit.updatedAt) }]
+                ? [
+                    {
+                      label: 'Diperbarui',
+                      value: formatDateTime(unit.updatedAt),
+                    },
+                  ]
                 : []),
             ]}
             metrics={[
@@ -397,7 +410,9 @@ function KolamUnitDetail({ controller }: { controller: KolamUnitController }) {
                 items: [
                   { title: `ID: ${unit.id}` },
                   { title: `Status: ${getUnitStatusLabel(unit.status)}` },
-                  ...(unit.category ? [{ title: `Kategori: ${unit.category}` }] : []),
+                  ...(unit.category
+                    ? [{ title: `Kategori: ${unit.category}` }]
+                    : []),
                 ],
                 title: 'Metadata',
                 total: unit.category ? 3 : 2,
@@ -490,7 +505,11 @@ function UnitHero({ unit }: { unit: KolamUnit }) {
     <View style={styles.unitHero}>
       <KolamCopyStack
         items={[
-          { id: 'initial', text: unit.initial || '-', style: styles.heroInitial },
+          {
+            id: 'initial',
+            text: unit.initial || '-',
+            style: styles.heroInitial,
+          },
           { id: 'name', text: unit.name, style: styles.heroName },
         ]}
       />
@@ -673,7 +692,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexWrap: 'wrap',
     gap: 8,
-    zIndex: 8,
+    zIndex: 9200,
+    elevation: 96,
   },
   searchInput: {
     width: 240,
@@ -684,7 +704,7 @@ const styles = StyleSheet.create({
   },
   activeActionRow: {
     zIndex: 1000,
-    elevation: 30,
+    elevation: 96,
   },
   nameCell: {
     flex: 1,

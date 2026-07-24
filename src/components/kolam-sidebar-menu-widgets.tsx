@@ -48,13 +48,6 @@ export function KolamMenuGroup({
 
   return (
     <View style={styles.kolamMenuGroup}>
-      <KolamMenuTitle
-        filterByAccess={filterByAccess}
-        itemCount={sections.reduce(
-          (total, section) => total + section.items.length,
-          0,
-        )}
-      />
       <KolamMappedList
         items={sections}
         getKey={section => section.id}

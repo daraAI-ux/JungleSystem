@@ -12,6 +12,7 @@ import {
   type KolamSpeciesLocaleFields,
   type KolamTaxonomyLocaleFields,
 } from '../domain/kolam-catalog-locale';
+import type { KolamProductLocaleFields } from '../domain/kolam-product';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { KolamButton } from './kolam-button';
 import { KolamCopyStack } from './kolam-copy-stack';
@@ -39,6 +40,13 @@ type SpeciesPrimaryBinding = {
   habitat: string;
   distribution: string;
   onChange: (patch: Partial<KolamSpeciesLocaleFields>) => void;
+};
+
+type ProductPrimaryBinding = {
+  name: string;
+  shortDescription: string;
+  description: string;
+  onChange: (patch: Partial<KolamProductLocaleFields>) => void;
 };
 
 type CustomFieldPrimaryBinding = {
@@ -81,6 +89,15 @@ type Props =
       ) => void;
       primarySpeciesLocale: SpeciesPrimaryBinding;
       translations?: KolamCatalogTranslationsMap<KolamSpeciesLocaleFields>;
+    }
+  | {
+      editable?: boolean;
+      kind: 'product';
+      onChange: (
+        translations: KolamCatalogTranslationsMap<KolamProductLocaleFields>,
+      ) => void;
+      primaryProductLocale: ProductPrimaryBinding;
+      translations?: KolamCatalogTranslationsMap<KolamProductLocaleFields>;
     }  | {
       editable?: boolean;
       kind: 'custom-field';
@@ -107,6 +124,8 @@ export function KolamCatalogTranslationsEditor(props: Props) {
             text:
               props.kind === 'custom-field'
                 ? 'Konten Field'
+                : props.kind === 'product'
+                ? 'Konten Produk'
                 : props.kind === 'species'
                 ? 'Konten Spesies'
                 : 'Konten Marketplace',
@@ -117,6 +136,8 @@ export function KolamCatalogTranslationsEditor(props: Props) {
             text:
               props.kind === 'custom-field'
                 ? 'Indonesia disimpan sebagai field utama. Bahasa lain dipakai webstore dan CS agent bila tersedia.'
+                : props.kind === 'product'
+                ? 'Indonesia disimpan sebagai field utama. Bahasa lain dipakai webstore dan marketplace bila tersedia.'
                 : props.kind === 'species'
                 ? 'Indonesia disimpan sebagai field utama. Bahasa lain dipakai webstore dan marketplace bila tersedia.'
                 : 'Indonesia disimpan sebagai field utama. Bahasa lain fallback ke Indonesia bila kosong.',
@@ -157,6 +178,14 @@ export function KolamCatalogTranslationsEditor(props: Props) {
           locale={activeLocale}
           onChange={props.onChange}
           primary={props.primarySpeciesLocale}
+          translations={props.translations}
+        />
+      ) : props.kind === 'product' ? (
+        <ProductLocaleFields
+          editable={editable}
+          locale={activeLocale}
+          onChange={props.onChange}
+          primary={props.primaryProductLocale}
           translations={props.translations}
         />
       ) : (
@@ -381,6 +410,69 @@ function SpeciesLocaleFields({
             styles.textArea,
           ]}
           value={block.distribution ?? ''}
+        />
+      </View>
+    </View>
+  );
+}
+
+function ProductLocaleFields({
+  editable,
+  locale,
+  onChange,
+  primary,
+  translations,
+}: {
+  editable: boolean;
+  locale: KolamCatalogLocale;
+  onChange: (
+    translations: KolamCatalogTranslationsMap<KolamProductLocaleFields>,
+  ) => void;
+  primary: ProductPrimaryBinding;
+  translations?: KolamCatalogTranslationsMap<KolamProductLocaleFields>;
+}) {
+  const isPrimary = locale === KOLAM_CATALOG_DEFAULT_LOCALE;
+  const block = isPrimary ? primary : translations?.[locale] ?? {};
+
+  const patch = (next: Partial<KolamProductLocaleFields>) => {
+    if (isPrimary) {
+      primary.onChange(next);
+      return;
+    }
+
+    onChange(patchKolamLocaleBlock(translations, locale, next));
+  };
+
+  return (
+    <View style={settingsWebFormStyles.settingsWebFormFieldsGrid}>
+      <View style={settingsWebFormStyles.settingsWebFormField}>
+        <KolamFormTextField
+          editable={editable}
+          onChangeText={name => patch({ name })}
+          placeholder="Nama produk"
+          style={settingsWebFormStyles.settingsWebFormFieldValue}
+          value={block.name ?? ''}
+        />
+      </View>
+      <View style={settingsWebFormStyles.settingsWebFormField}>
+        <KolamFormTextField
+          editable={editable}
+          multiline
+          onChangeText={shortDescription => patch({ shortDescription })}
+          placeholder="Deskripsi singkat"
+          style={[
+            settingsWebFormStyles.settingsWebFormFieldValue,
+            styles.textArea,
+          ]}
+          value={block.shortDescription ?? ''}
+        />
+      </View>
+      <View style={settingsWebFormStyles.settingsWebFormField}>
+        <KolamTipTapRichTextEditor
+          editable={editable}
+          onChangeText={description => patch({ description })}
+          placeholder="Deskripsi produk"
+          value={block.description ?? ''}
         />
       </View>
     </View>

@@ -1,8 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { KolamCategory } from '../domain/kolam-category';
+import type { KolamCustomField } from '../domain/kolam-custom-field';
 import type { KolamIucnStatus } from '../domain/kolam-iucn-status';
+import type { KolamPackingOption } from '../domain/kolam-packing-option';
+import type { KolamProductOption } from '../domain/kolam-product-option';
+import type { KolamShippingMethod } from '../domain/kolam-shipping-method';
 import type { KolamTag } from '../domain/kolam-tag';
 import {
+  createKolamSpeciesDetailRevision,
   createEmptyKolamSpeciesFormState,
   createKolamSpeciesFormState,
   getKolamSpeciesBreadcrumbPath,
@@ -15,22 +20,57 @@ import type { KolamTaxonomy } from '../domain/kolam-taxonomy';
 import type { KolamUnit } from '../domain/kolam-unit';
 import type { KolamVendor } from '../domain/kolam-vendor';
 import { getKolamCategories } from '../services/kolam-category-api';
-import { getKolamIucnStatuses } from '../services/kolam-iucn-status-api';
+import { getKolamCustomFields } from '../services/kolam-custom-field-api';
 import {
+  readKolamCustomFieldListCache,
+  writeKolamCustomFieldListCache,
+} from '../services/kolam-custom-field-local-cache';
+import { getKolamIucnStatuses } from '../services/kolam-iucn-status-api';
+import { getKolamPackingOptions } from '../services/kolam-packing-option-api';
+import {
+  readKolamPackingOptionListCache,
+  writeKolamPackingOptionListCache,
+} from '../services/kolam-packing-option-local-cache';
+import {
+  getKolamProductOptions,
+  getKolamRawProductOptions,
+} from '../services/kolam-product-option-api';
+import {
+  readKolamProductOptionListCache,
+  readKolamRawProductOptionListCache,
+  writeKolamProductOptionListCache,
+  writeKolamRawProductOptionListCache,
+} from '../services/kolam-product-option-local-cache';
+import {
+  addKolamSpeciesAttachedItem,
   createKolamSpecies,
+  deleteKolamSpecies,
   deleteKolamSpeciesPhoto,
   deleteKolamSpeciesThumbnail,
   deleteKolamSpeciesVideo,
   deleteKolamSpeciesVoice,
   getKolamSpecies,
   getKolamSpeciesList,
+  getKolamSpeciesTermsTemplates,
+  duplicateKolamSpecies,
+  linkKolamSpeciesPackings,
+  removeKolamSpeciesAttachedItem,
   reorderKolamSpeciesMedia,
   updateKolamSpecies,
+  updateKolamSpeciesPartial,
+  updateKolamSpeciesSeo,
   uploadKolamSpeciesPhoto,
   uploadKolamSpeciesThumbnail,
   uploadKolamSpeciesVideo,
   uploadKolamSpeciesVoice,
+  type KolamSpeciesAttachedItemPayload,
+  type KolamSpeciesTermsTemplate,
 } from '../services/kolam-species-api';
+import { getKolamActiveShippingMethods } from '../services/kolam-shipping-method-api';
+import {
+  readKolamShippingMethodListCache,
+  writeKolamShippingMethodListCache,
+} from '../services/kolam-shipping-method-local-cache';
 import {
   readKolamSpeciesDetailCache,
   readKolamSpeciesFromListCacheByRouteKey,
@@ -55,6 +95,13 @@ import {
   pickNativeImageFile,
   pickNativeVideoFile,
 } from '../services/native-file-picker';
+import { syncKolamMarketplacePrice } from '../services/kolam-marketplace-sync-api';
+import {
+  readKolamMediaManifest,
+  summarizeKolamMediaManifest,
+  syncKolamMediaManifest,
+  type KolamMediaManifestSummary,
+} from '../services/kolam-media-manifest-cache';
 
 export type KolamSpeciesSurfaceMode = 'list' | 'detail' | 'edit' | 'new';
 export type KolamSpeciesDataSource = 'idle' | 'cache' | 'live' | 'error';
@@ -62,30 +109,44 @@ export type KolamSpeciesDataSource = 'idle' | 'cache' | 'live' | 'error';
 export interface KolamSpeciesController {
   breadcrumbPath: string;
   categories: KolamCategory[];
+  customFields: KolamCustomField[];
   dataSource: KolamSpeciesDataSource;
   error: string | null;
   form: KolamSpeciesFormState;
   iucnStatuses: KolamIucnStatus[];
   isEditable: boolean;
   loading: boolean;
+  mediaManifestSummary: KolamMediaManifestSummary;
   mode: KolamSpeciesSurfaceMode;
+  packingOptions: KolamPackingOption[];
+  productOptions: KolamProductOption[];
+  rawMaterialProducts: KolamProductOption[];
+  shippingMethods: KolamShippingMethod[];
   saving: boolean;
   selectedSpecies: KolamSpecies | null;
   species: KolamSpecies[];
+  syncPriceMessage: string | null;
+  syncingPrice: boolean;
   tags: KolamTag[];
+  termsTemplates: KolamSpeciesTermsTemplate[];
   taxonomies: KolamTaxonomy[];
   units: KolamUnit[];
   vendors: KolamVendor[];
+  onAddAttachedItem: (body: KolamSpeciesAttachedItemPayload) => Promise<boolean>;
+  onApplySpecies: (species: KolamSpecies) => Promise<void>;
   onBackToList: () => void;
   onChangeForm: (patch: Partial<KolamSpeciesFormState>) => void;
   onCreateNew: () => void;
   onDeletePhoto: (index: number) => Promise<boolean>;
+  onDeleteSpecies: (species: KolamSpecies) => Promise<boolean>;
+  onDuplicateSpecies: (species: KolamSpecies) => Promise<boolean>;
   onDeleteThumbnail: () => Promise<boolean>;
   onDeleteVariantPhoto: (variantId: string, index: number) => Promise<boolean>;
   onDeleteVariantVideo: (variantId: string, index: number) => Promise<boolean>;
   onDeleteVideo: (index: number) => Promise<boolean>;
   onDeleteVoice: () => Promise<boolean>;
   onEdit: () => void;
+  onRemoveAttachedItem: (itemId: string) => Promise<boolean>;
   onPickPhoto: () => Promise<void>;
   onPickVariantPhoto: () => Promise<void>;
   onPickVariantVideo: () => Promise<void>;
@@ -99,6 +160,8 @@ export interface KolamSpeciesController {
   onReorderVideo: (index: number, direction: 'up' | 'down') => Promise<boolean>;
   onSave: () => Promise<void>;
   onSelectSpecies: (species: KolamSpecies, nextMode?: KolamSpeciesSurfaceMode) => Promise<void>;
+  onSyncPrice: (speciesIds?: string[]) => Promise<boolean>;
+  onTogglePin: (species: KolamSpecies) => Promise<boolean>;
 }
 
 export function useKolamSpeciesController(
@@ -114,17 +177,33 @@ export function useKolamSpeciesController(
     createEmptyKolamSpeciesFormState(),
   );
   const [categories, setCategories] = useState<KolamCategory[]>([]);
+  const [customFields, setCustomFields] = useState<KolamCustomField[]>([]);
   const [taxonomies, setTaxonomies] = useState<KolamTaxonomy[]>([]);
   const [units, setUnits] = useState<KolamUnit[]>([]);
   const [vendors, setVendors] = useState<KolamVendor[]>([]);
+  const [packingOptions, setPackingOptions] = useState<KolamPackingOption[]>([]);
+  const [productOptions, setProductOptions] = useState<KolamProductOption[]>([]);
+  const [rawMaterialProducts, setRawMaterialProducts] = useState<KolamProductOption[]>([]);
+  const [shippingMethods, setShippingMethods] = useState<KolamShippingMethod[]>([]);
   const [iucnStatuses, setIucnStatuses] = useState<KolamIucnStatus[]>([]);
   const [tags, setTags] = useState<KolamTag[]>([]);
+  const [termsTemplates, setTermsTemplates] = useState<KolamSpeciesTermsTemplate[]>([]);
   const [loading, setLoading] = useState(false);
+  const [mediaManifestSummary, setMediaManifestSummary] = useState(
+    summarizeKolamMediaManifest(null),
+  );
   const [saving, setSaving] = useState(false);
+  const [syncingPrice, setSyncingPrice] = useState(false);
+  const [syncPriceMessage, setSyncPriceMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [dataSource, setDataSource] = useState<KolamSpeciesDataSource>('idle');
 
   const refreshOptions = useCallback(async () => {
+    const cachedCustomFields = await readKolamCustomFieldListCache();
+    if (cachedCustomFields?.value.length) {
+      setCustomFields(cachedCustomFields.value);
+    }
+
     const cachedTags = await readKolamTagListCache();
     if (cachedTags?.value.length) {
       setTags(cachedTags.value);
@@ -135,6 +214,26 @@ export function useKolamSpeciesController(
       setVendors(cachedVendors.value);
     }
 
+    const cachedProducts = await readKolamProductOptionListCache();
+    if (cachedProducts?.value.length) {
+      setProductOptions(cachedProducts.value);
+    }
+
+    const cachedRawProducts = await readKolamRawProductOptionListCache();
+    if (cachedRawProducts?.value.length) {
+      setRawMaterialProducts(cachedRawProducts.value);
+    }
+
+    const cachedShippingMethods = await readKolamShippingMethodListCache();
+    if (cachedShippingMethods?.value.length) {
+      setShippingMethods(cachedShippingMethods.value);
+    }
+
+    const cachedPackings = await readKolamPackingOptionListCache();
+    if (cachedPackings?.value.length) {
+      setPackingOptions(cachedPackings.value);
+    }
+
     const [
       categoryResult,
       taxonomyResult,
@@ -142,6 +241,11 @@ export function useKolamSpeciesController(
       iucnResult,
       tagResult,
       vendorResult,
+      productResult,
+      rawProductResult,
+      shippingMethodResult,
+      packingResult,
+      customFieldResult,
     ] = await Promise.allSettled([
       getKolamCategories(),
       getKolamTaxonomies({ level: 'Genus', limit: 1000 }),
@@ -149,6 +253,11 @@ export function useKolamSpeciesController(
       getKolamIucnStatuses({ limit: 1000 }),
       getKolamTags(),
       getKolamVendors(),
+      getKolamProductOptions(),
+      getKolamRawProductOptions(),
+      getKolamActiveShippingMethods(),
+      getKolamPackingOptions(),
+      getKolamCustomFields(),
     ]);
 
     if (categoryResult.status === 'fulfilled') {
@@ -170,6 +279,26 @@ export function useKolamSpeciesController(
     if (vendorResult.status === 'fulfilled') {
       setVendors(vendorResult.value);
       await writeKolamVendorListCache(vendorResult.value);
+    }
+    if (productResult.status === 'fulfilled') {
+      setProductOptions(productResult.value);
+      await writeKolamProductOptionListCache(productResult.value);
+    }
+    if (rawProductResult.status === 'fulfilled') {
+      setRawMaterialProducts(rawProductResult.value);
+      await writeKolamRawProductOptionListCache(rawProductResult.value);
+    }
+    if (shippingMethodResult.status === 'fulfilled') {
+      setShippingMethods(shippingMethodResult.value);
+      await writeKolamShippingMethodListCache(shippingMethodResult.value);
+    }
+    if (packingResult.status === 'fulfilled') {
+      setPackingOptions(packingResult.value);
+      await writeKolamPackingOptionListCache(packingResult.value);
+    }
+    if (customFieldResult.status === 'fulfilled') {
+      setCustomFields(customFieldResult.value);
+      await writeKolamCustomFieldListCache(customFieldResult.value);
     }
   }, []);
 
@@ -193,6 +322,7 @@ export function useKolamSpeciesController(
       await writeKolamSpeciesListCache(liveSpecies);
       setSpecies(liveSpecies);
       setDataSource('live');
+      void startKolamSpeciesDetailCacheHydration(liveSpecies);
     } catch (loadError) {
       setError(getErrorMessage(loadError));
       setDataSource(cached?.value.length ? 'cache' : 'error');
@@ -206,9 +336,13 @@ export function useKolamSpeciesController(
     if (initialMode === 'new') {
       setSelectedSpecies(null);
       setForm(createEmptyKolamSpeciesFormState());
+      setMediaManifestSummary(summarizeKolamMediaManifest(null));
+      setTermsTemplates([]);
     }
     if (initialMode === 'list') {
       setSelectedSpecies(null);
+      setMediaManifestSummary(summarizeKolamMediaManifest(null));
+      setTermsTemplates([]);
     }
   }, [initialMode]);
 
@@ -222,12 +356,17 @@ export function useKolamSpeciesController(
       setSelectedSpecies(item);
       setForm(createKolamSpeciesFormState(item));
       setError(null);
+      void refreshSpeciesTermsTemplates(item.id, setTermsTemplates);
 
       const cached = await readKolamSpeciesDetailCache(item.id);
       if (cached?.value) {
         setSelectedSpecies(cached.value);
         setForm(createKolamSpeciesFormState(cached.value));
         setDataSource('cache');
+        void refreshSpeciesMediaManifestSummary(
+          cached.value,
+          setMediaManifestSummary,
+        );
       }
 
       try {
@@ -236,6 +375,10 @@ export function useKolamSpeciesController(
         setSelectedSpecies(liveSpecies);
         setForm(createKolamSpeciesFormState(liveSpecies));
         setDataSource('live');
+        void refreshSpeciesMediaManifestSummary(
+          liveSpecies,
+          setMediaManifestSummary,
+        );
       } catch (detailError) {
         setError(getErrorMessage(detailError));
         setDataSource(cached?.value || item ? 'cache' : 'error');
@@ -273,12 +416,16 @@ export function useKolamSpeciesController(
     setMode('list');
     setSelectedSpecies(null);
     setForm(createEmptyKolamSpeciesFormState());
+    setMediaManifestSummary(summarizeKolamMediaManifest(null));
+    setTermsTemplates([]);
   }, []);
 
   const onCreateNew = useCallback(() => {
     setMode('new');
     setSelectedSpecies(null);
     setForm(createEmptyKolamSpeciesFormState());
+    setMediaManifestSummary(summarizeKolamMediaManifest(null));
+    setTermsTemplates([]);
     setError(null);
     void refreshOptions();
   }, [refreshOptions]);
@@ -307,8 +454,56 @@ export function useKolamSpeciesController(
       setSelectedSpecies(next);
       setForm(createKolamSpeciesFormState(next));
       setDataSource('live');
+      void refreshSpeciesMediaManifestSummary(next, setMediaManifestSummary);
     },
     [species],
+  );
+
+  const onAddAttachedItem = useCallback(
+    async (body: KolamSpeciesAttachedItemPayload) => {
+      const item = selectedSpecies;
+      if (!item) {
+        setError('Simpan spesies terlebih dahulu sebelum menambahkan item terlampir.');
+        return false;
+      }
+
+      setSaving(true);
+      setError(null);
+      try {
+        const next = await addKolamSpeciesAttachedItem(item.id, body);
+        await applyLiveSpecies(next);
+        return true;
+      } catch (addError) {
+        setError(getErrorMessage(addError));
+        return false;
+      } finally {
+        setSaving(false);
+      }
+    },
+    [applyLiveSpecies, selectedSpecies],
+  );
+
+  const onRemoveAttachedItem = useCallback(
+    async (itemId: string) => {
+      const item = selectedSpecies;
+      if (!item) {
+        return false;
+      }
+
+      setSaving(true);
+      setError(null);
+      try {
+        const next = await removeKolamSpeciesAttachedItem(item.id, itemId);
+        await applyLiveSpecies(next);
+        return true;
+      } catch (removeError) {
+        setError(getErrorMessage(removeError));
+        return false;
+      } finally {
+        setSaving(false);
+      }
+    },
+    [applyLiveSpecies, selectedSpecies],
   );
 
   const onDeleteThumbnail = useCallback(async () => {
@@ -677,44 +872,10 @@ export function useKolamSpeciesController(
     }
   }, []);
   const onSave = useCallback(async () => {
-    if (!form.scientificName.trim()) {
-      setError('Nama ilmiah wajib diisi.');
+    const validationError = validateKolamSpeciesFormForSave(form);
+    if (validationError) {
+      setError(validationError);
       return;
-    }
-
-    if (!form.taxonomyId.trim()) {
-      setError('Taksonomi Genus wajib dipilih.');
-      return;
-    }
-
-    if (!form.categoryIds.length) {
-      setError('Minimal satu kategori wajib dipilih.');
-      return;
-    }
-
-    if (form.sellable && !form.unitId.trim()) {
-      setError('Satuan wajib dipilih untuk spesies yang dijual.');
-      return;
-    }
-
-    if (form.variantsTouched) {
-      const missingTier1 = form.variants.findIndex(
-        variant => !variant.tier1Value.trim(),
-      );
-      if (missingTier1 >= 0) {
-        setError(`Varian ${missingTier1 + 1} wajib memiliki nilai varian utama.`);
-        return;
-      }
-
-      if (form.variantConfigTier2Name.trim()) {
-        const missingTier2 = form.variants.findIndex(
-          variant => !variant.tier2Value.trim(),
-        );
-        if (missingTier2 >= 0) {
-          setError(`Varian ${missingTier2 + 1} wajib memiliki nilai varian kedua.`);
-          return;
-        }
-      }
     }
 
     setSaving(true);
@@ -729,8 +890,14 @@ export function useKolamSpeciesController(
               form,
             );
 
-      await writeKolamSpeciesDetailCache(savedSpecies);
-      const syncedSpecies = await syncSpeciesMediaIfNeeded(savedSpecies, form);
+      const seoSyncedSpecies = await syncSpeciesSeoIfNeeded(savedSpecies, form);
+      const linkedSpecies = await linkKolamSpeciesPackings(seoSyncedSpecies, form);
+      await writeKolamSpeciesDetailCache(linkedSpecies);
+      const syncedSpecies = await syncSpeciesMediaIfNeeded(linkedSpecies, form);
+      void refreshSpeciesMediaManifestSummary(
+        syncedSpecies,
+        setMediaManifestSummary,
+      );
       const nextSpecies = upsertSpecies(species, syncedSpecies);
       await writeKolamSpeciesListCache(nextSpecies);
       setSpecies(nextSpecies);
@@ -745,6 +912,92 @@ export function useKolamSpeciesController(
     }
   }, [form, mode, selectedSpecies, species]);
 
+  const onDuplicateSpecies = useCallback(async (item: KolamSpecies) => {
+    setSaving(true);
+    setError(null);
+
+    try {
+      await duplicateKolamSpecies(item.id);
+      await refresh();
+      return true;
+    } catch (duplicateError) {
+      setError(getErrorMessage(duplicateError));
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  }, [refresh]);
+
+  const onDeleteSpecies = useCallback(async (item: KolamSpecies) => {
+    setSaving(true);
+    setError(null);
+
+    try {
+      await deleteKolamSpecies(item.id);
+      const nextSpecies = species.filter(speciesItem => speciesItem.id !== item.id);
+      await writeKolamSpeciesListCache(nextSpecies);
+      setSpecies(nextSpecies);
+      if (selectedSpecies?.id === item.id) {
+        setSelectedSpecies(null);
+        setMode('list');
+      }
+      await refresh();
+      return true;
+    } catch (deleteError) {
+      setError(getErrorMessage(deleteError));
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  }, [refresh, selectedSpecies?.id, species]);
+
+  const onTogglePin = useCallback(async (item: KolamSpecies) => {
+    setError(null);
+
+    try {
+      const updated = await updateKolamSpeciesPartial(item.id, {
+        isPinned: !item.isPinned,
+      });
+      const nextSpecies = upsertSpecies(species, updated);
+      await writeKolamSpeciesListCache(nextSpecies);
+      await writeKolamSpeciesDetailCache(updated);
+      setSpecies(nextSpecies);
+      if (selectedSpecies?.id === item.id) {
+        setSelectedSpecies(updated);
+        setForm(createKolamSpeciesFormState(updated));
+      }
+      setDataSource('live');
+      return true;
+    } catch (pinError) {
+      setError(getErrorMessage(pinError));
+      return false;
+    }
+  }, [selectedSpecies?.id, species]);
+
+  const onSyncPrice = useCallback(async (speciesIds?: string[]) => {
+    setSyncingPrice(true);
+    setSyncPriceMessage(null);
+    setError(null);
+
+    try {
+      const result = await syncKolamMarketplacePrice({
+        source: 'species',
+        speciesIds,
+      });
+      const skippedText = result.skippedNoPrice
+        ? ' ' + result.skippedNoPrice + ' item dilewati karena onlinePrice kosong/tidak valid.'
+        : '';
+      setSyncPriceMessage(result.message + skippedText);
+      await refresh();
+      return true;
+    } catch (syncError) {
+      setError(getErrorMessage(syncError));
+      return false;
+    } finally {
+      setSyncingPrice(false);
+    }
+  }, [refresh]);
+
   const breadcrumbPath = useMemo(
     () => getKolamSpeciesBreadcrumbPath(mode, selectedSpecies),
     [mode, selectedSpecies],
@@ -753,30 +1006,44 @@ export function useKolamSpeciesController(
   return {
     breadcrumbPath,
     categories,
+    customFields,
     dataSource,
     error,
     form,
     iucnStatuses,
     isEditable: mode === 'edit' || mode === 'new',
     loading,
+    mediaManifestSummary,
     mode,
+    packingOptions,
+    productOptions,
+    rawMaterialProducts,
+    shippingMethods,
     saving,
     selectedSpecies,
     species,
+    syncPriceMessage,
+    syncingPrice,
     tags,
+    termsTemplates,
     taxonomies,
     units,
     vendors,
+    onAddAttachedItem,
+    onApplySpecies: applyLiveSpecies,
     onBackToList,
     onChangeForm,
     onCreateNew,
     onDeletePhoto,
+    onDeleteSpecies,
     onDeleteThumbnail,
+    onDuplicateSpecies,
     onDeleteVariantPhoto,
     onDeleteVariantVideo,
     onDeleteVideo,
     onDeleteVoice,
     onEdit,
+    onRemoveAttachedItem,
     onPickPhoto,
     onPickThumbnail,
     onPickVariantPhoto,
@@ -790,7 +1057,118 @@ export function useKolamSpeciesController(
     onReorderVideo,
     onSave,
     onSelectSpecies,
+    onSyncPrice,
+    onTogglePin,
   };
+}
+
+function validateKolamSpeciesFormForSave(form: KolamSpeciesFormState) {
+  if (!form.scientificName.trim()) {
+    return 'Nama ilmiah wajib diisi.';
+  }
+
+  if (!form.taxonomyId.trim()) {
+    return 'Taksonomi genus wajib dipilih.';
+  }
+
+  if (!form.categoryIds.length) {
+    return 'Minimal satu kategori wajib dipilih.';
+  }
+
+  if (form.sellable && !form.unitId.trim()) {
+    return 'Satuan wajib dipilih untuk spesies yang dijual.';
+  }
+
+  if (form.sellable && !Number.isFinite(Number(form.priceToSell))) {
+    return 'Harga jual wajib berupa angka yang valid.';
+  }
+
+  if (form.minimumOrderQty.trim() && Number(form.minimumOrderQty) < 1) {
+    return 'Minimal pesanan harus bernilai 1 atau lebih.';
+  }
+
+  const variantValidationError = validateKolamSpeciesVariantsForSave(form);
+  if (variantValidationError) {
+    return variantValidationError;
+  }
+
+  return null;
+}
+
+function validateKolamSpeciesVariantsForSave(form: KolamSpeciesFormState) {
+  if (!form.variantsTouched) {
+    return null;
+  }
+
+  const missingTier1 = form.variants.findIndex(
+    variant => !variant.tier1Value.trim(),
+  );
+  if (missingTier1 >= 0) {
+    return `Varian ${missingTier1 + 1} wajib memiliki nilai varian utama.`;
+  }
+
+  if (form.variantConfigTier2Name.trim()) {
+    const missingTier2 = form.variants.findIndex(
+      variant => !variant.tier2Value.trim(),
+    );
+    if (missingTier2 >= 0) {
+      return `Varian ${missingTier2 + 1} wajib memiliki nilai varian kedua.`;
+    }
+  }
+
+  const invalidPriceIndex = form.variants.findIndex(
+    variant => variant.priceToSell.trim() && !Number.isFinite(Number(variant.priceToSell)),
+  );
+  if (invalidPriceIndex >= 0) {
+    return `Harga jual varian ${invalidPriceIndex + 1} wajib berupa angka yang valid.`;
+  }
+
+  return null;
+}
+async function refreshSpeciesTermsTemplates(
+  speciesId: string,
+  setTermsTemplates: (templates: KolamSpeciesTermsTemplate[]) => void,
+) {
+  try {
+    const templates = await getKolamSpeciesTermsTemplates(speciesId);
+    setTermsTemplates(templates);
+  } catch {
+    setTermsTemplates([]);
+  }
+}
+
+async function syncSpeciesSeoIfNeeded(
+  species: KolamSpecies,
+  form: KolamSpeciesFormState,
+) {
+  const metaTitle = form.seoMetaTitle.trim();
+  const metaDescription = form.seoMetaDescription.trim();
+  const keywords = normalizeSeoKeywordsText(form.seoKeywords);
+  const currentKeywords = normalizeSeoKeywordsText(
+    (species.seo.keywords ?? []).join(', '),
+  );
+
+  if (
+    metaTitle === species.seo.metaTitle.trim() &&
+    metaDescription === species.seo.metaDescription.trim() &&
+    keywords === currentKeywords
+  ) {
+    return species;
+  }
+
+  return updateKolamSpeciesSeo(species.id, {
+    metaTitle,
+    metaDescription,
+    keywords,
+  });
+}
+
+function normalizeSeoKeywordsText(value: string) {
+  return value
+    .split(',')
+    .map(keyword => keyword.trim())
+    .filter(Boolean)
+    .join(', ');
 }
 
 async function syncSpeciesMediaIfNeeded(
@@ -836,6 +1214,165 @@ async function syncSpeciesMediaIfNeeded(
 
   await writeKolamSpeciesDetailCache(current);
   return current;
+}
+
+const SPECIES_DETAIL_HYDRATION_DELAY_MS = 80;
+let activeSpeciesDetailHydration: Promise<void> | null = null;
+
+function startKolamSpeciesDetailCacheHydration(items: KolamSpecies[]) {
+  if (activeSpeciesDetailHydration || !items.length) {
+    return;
+  }
+
+  activeSpeciesDetailHydration = hydrateKolamSpeciesDetailCache(items).finally(
+    () => {
+      activeSpeciesDetailHydration = null;
+    },
+  );
+}
+
+async function hydrateKolamSpeciesDetailCache(items: KolamSpecies[]) {
+  for (const item of items) {
+    if (!item.id) {
+      continue;
+    }
+
+    const shouldHydrate = await shouldHydrateKolamSpeciesDetail(item);
+    if (!shouldHydrate) {
+      continue;
+    }
+
+    try {
+      const detail = await getKolamSpecies(item.id);
+      await writeKolamSpeciesDetailCache(detail);
+    } catch {
+      // Background hydration must never break the foreground list/detail flow.
+    }
+
+    await delayKolamSpeciesDetailHydration();
+  }
+}
+
+async function shouldHydrateKolamSpeciesDetail(item: KolamSpecies) {
+  const cached = await readKolamSpeciesDetailCache(item.id);
+
+  if (!cached?.value) {
+    return true;
+  }
+
+  if (!hasKolamSpeciesLocaleContent(cached.value)) {
+    return true;
+  }
+
+  return isKolamSpeciesNewerThanCache(item.updatedAt, cached.value.updatedAt);
+}
+
+function hasKolamSpeciesLocaleContent(item: KolamSpecies) {
+  const locales = Array.isArray(item.locales) ? item.locales : [];
+  const hasLocaleText = locales.some(locale =>
+    Boolean(
+      locale.shortDescription?.trim() ||
+        locale.description?.trim() ||
+        locale.morfologis?.trim() ||
+        locale.habitat?.trim() ||
+        locale.distribution?.trim(),
+    ),
+  );
+
+  return Boolean(
+    hasLocaleText ||
+      item.shortDescription?.trim() ||
+      item.description?.trim() ||
+      item.morfologis?.trim() ||
+      item.habitat?.trim() ||
+      item.distribution?.trim(),
+  );
+}
+
+function isKolamSpeciesNewerThanCache(
+  sourceUpdatedAt: string | undefined,
+  cacheUpdatedAt: string | undefined,
+) {
+  if (!sourceUpdatedAt) {
+    return false;
+  }
+
+  const sourceTime = Date.parse(sourceUpdatedAt);
+  const cacheTime = cacheUpdatedAt ? Date.parse(cacheUpdatedAt) : Number.NaN;
+
+  if (!Number.isFinite(sourceTime)) {
+    return false;
+  }
+
+  return !Number.isFinite(cacheTime) || sourceTime > cacheTime;
+}
+
+function delayKolamSpeciesDetailHydration() {
+  return new Promise<void>(resolve => {
+    setTimeout(() => resolve(), SPECIES_DETAIL_HYDRATION_DELAY_MS);
+  });
+}
+
+async function refreshSpeciesMediaManifestSummary(
+  species: KolamSpecies,
+  setSummary: (summary: KolamMediaManifestSummary) => void,
+) {
+  const ownerId = getSpeciesMediaManifestOwnerId(species.id);
+  const cached = await readKolamMediaManifest(ownerId);
+
+  if (cached?.value) {
+    setSummary(summarizeKolamMediaManifest(cached.value));
+  }
+
+  try {
+    const manifest = await syncKolamMediaManifest({
+      assets: createSpeciesMediaManifestAssets(species),
+      ownerId,
+      revision: createKolamSpeciesDetailRevision(species),
+    });
+    setSummary(summarizeKolamMediaManifest(manifest));
+  } catch {
+    setSummary(summarizeKolamMediaManifest(cached?.value));
+  }
+}
+
+function getSpeciesMediaManifestOwnerId(speciesId: string) {
+  return `species:${speciesId}`;
+}
+
+function createSpeciesMediaManifestAssets(species: KolamSpecies) {
+  const revisionSeed = species.updatedAt ?? createKolamSpeciesDetailRevision(species);
+  const videoUris = Array.isArray(species.videoUris) ? species.videoUris : [];
+  const variants = Array.isArray(species.variants) ? species.variants : [];
+  const rootVideos = videoUris.map((sourceUri, index) => ({
+    kind: 'video' as const,
+    label: `Species video ${index + 1}`,
+    revision: `${revisionSeed}:root-video:${index}:${sourceUri}`,
+    scope: 'species',
+    sourceUri,
+  }));
+  const rootVoice = species.voiceUri
+    ? [
+        {
+          kind: 'voice' as const,
+          label: 'Species voice',
+          revision: `${revisionSeed}:root-voice:${species.voiceUri}`,
+          scope: 'species',
+          sourceUri: species.voiceUri,
+        },
+      ]
+    : [];
+  const variantVideos = variants.flatMap(variant =>
+    (Array.isArray(variant.videoUris) ? variant.videoUris : []).map((sourceUri, index) => ({
+      kind: 'video' as const,
+      label: `${variant.label || variant.id} video ${index + 1}`,
+      revision: `${revisionSeed}:${variant.id}:video:${index}:${sourceUri}`,
+      scope: 'species-variant',
+      sourceUri,
+    })),
+  );
+
+  return [...rootVideos, ...rootVoice, ...variantVideos];
 }
 function getInitialMode(route: string): KolamSpeciesSurfaceMode {
   const cleanRoute = route.split('?')[0];
@@ -918,6 +1455,9 @@ function getErrorMessage(error: unknown) {
 
   return 'Gagal memuat data spesies.';
 }
+
+
+
 
 
 

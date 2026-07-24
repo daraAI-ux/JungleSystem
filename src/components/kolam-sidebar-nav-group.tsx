@@ -23,10 +23,10 @@ export function KolamSidebarNavGroup({
 }) {
   return (
     <View style={[styles.navGroup, collapsed && styles.navGroupCollapsed]}>
-      {collapsed ? null : (
+      {collapsed || (!label && !meta) ? null : (
         <KolamCopyStack
           items={[
-            {id: 'label', text: label, style: styles.navGroupLabel},
+            ...(label ? [{id: 'label', text: label, style: styles.navGroupLabel}] : []),
             ...(meta
               ? [{id: 'meta', text: meta, style: styles.navGroupMeta}]
               : []),

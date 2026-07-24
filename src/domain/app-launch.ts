@@ -116,7 +116,7 @@ export function getAppLaunchCoverage({
         {
           id: 'test-flow',
           label: 'User Test Flow',
-          value: 'Beranda -> Route Atlas -> Inventory/Finance/Service',
+          value: 'Beranda -> Atlas Rute -> Inventori/Keuangan/Layanan',
           meta: 'User bisa membuka surface besar dulu dari dashboard native.',
           tone: 'success',
         },
@@ -130,7 +130,7 @@ export function getAppLaunchCoverage({
         {
           id: 'next-pack',
           label: 'Next Screen Pack',
-          value: 'Inventory, Finance, Service, People',
+          value: 'Inventori, Keuangan, Layanan, Pengguna',
           meta: 'Bangun screen pack berdasarkan intent route, bukan tombol per modul.',
           tone: 'warning',
         },
@@ -160,7 +160,7 @@ export function getAppLaunchCoverage({
         {
           id: 'test-flow',
           label: 'User Test Flow',
-          value: 'Checkout -> Katalog -> Sales -> Cashflow -> Customer',
+          value: 'Checkout -> Katalog -> Penjualan -> Arus Kas -> Pelanggan',
           meta: 'User bisa mencoba satu alur POS penuh tanpa backend lokal.',
           tone: 'success',
         },
@@ -191,7 +191,7 @@ export function getAppLaunchCoverage({
       status: 'contract-ready',
       summary:
         'Checkout, katalog sellable, sales, cashflow session, dan customer POS sudah punya surface native awal.',
-      testTarget: 'Checkout, Katalog, Sales, Cashflow, Customer',
+      testTarget: 'Checkout, Katalog, Penjualan, Arus Kas, Pelanggan',
     },
     {
       id: 'am',
@@ -255,7 +255,7 @@ export function getAppLaunchCoverage({
         {
           id: 'test-flow',
           label: 'User Test Flow',
-          value: 'Plugin Hub -> Chat/Dara/Layanan/Task Manager route',
+          value: 'Hub Plugin -> Chat/Dara/Layanan/Manajemen Tugas',
           meta: 'User bisa membuka route plugin dari registry host native.',
           tone: 'success',
         },
@@ -285,7 +285,7 @@ export function getAppLaunchCoverage({
       sourceRepo: 'E:\\Projects\\DA-*-Plugin',
       status: 'plugin-host',
       summary:
-        'Bantuan, Chat, Dara, Enclosure, Freyer, KPI, Layanan, Proyek, dan Task Manager masuk registry host.',
+        'Bantuan, Chat, Dara, Enclosure, Freyer, KPI, Layanan, Proyek, dan Manajemen Tugas masuk registry host.',
       testTarget: 'Plugin search + plugin route',
     },
   ];

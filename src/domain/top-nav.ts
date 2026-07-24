@@ -76,7 +76,7 @@ export const topNavUserMenuItems: TopNavUserMenuItem[] = [
   },
   {
     id: 'settings',
-    label: 'Settings',
+    label: 'Pengaturan',
     routeHint: '/settings',
     iconKind: 'settings',
     section: 'main',
@@ -85,7 +85,7 @@ export const topNavUserMenuItems: TopNavUserMenuItem[] = [
   },
   {
     id: 'web-settings',
-    label: 'Web Settings',
+    label: 'Pengaturan Web',
     routeHint: '/settings/websetting',
     iconKind: 'settings',
     section: 'main',

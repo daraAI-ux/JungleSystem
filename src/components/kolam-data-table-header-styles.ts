@@ -1,6 +1,6 @@
-﻿import {StyleSheet} from 'react-native';
-import {kolamVisualTokens as V} from '../domain/kolam-visual';
-import {getKolamTableVisualContract} from '../domain/kolam-table';
+import { StyleSheet } from 'react-native';
+import { kolamVisualTokens as V } from '../domain/kolam-visual';
+import { getKolamTableVisualContract } from '../domain/kolam-table';
 
 export const KOLAM_TABLE_VISUAL = getKolamTableVisualContract();
 
@@ -22,7 +22,7 @@ export const dataTableHeaderStyles = StyleSheet.create({
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: KOLAM_TABLE_VISUAL.header.fontSize,
-    lineHeight: KOLAM_TABLE_VISUAL.header.lineHeight,
+    lineHeight: 18,
     fontWeight:
       KOLAM_TABLE_VISUAL.header.fontWeight === 'medium' ? '500' : '700',
   },

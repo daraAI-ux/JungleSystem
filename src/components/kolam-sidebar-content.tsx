@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import type { AccessScope } from '../domain/auth';
 import type { AppModule } from '../domain/app-shell';
@@ -53,7 +53,7 @@ export function KolamSidebarContent({
         activeModule={activeModule}
         area="kolam"
         collapsed={collapsed}
-        label="Kolam"
+        label=""
         onSelect={onSelectModule}
       />
       <KolamMenuGroup

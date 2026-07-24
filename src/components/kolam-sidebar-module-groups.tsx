@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import {getShellModulesByArea, type AppModule} from '../domain/app-shell';
 import {KolamMappedList} from './kolam-mapped-list';
 import {KolamSidebarModuleGroup} from './kolam-sidebar-module-group';
@@ -12,7 +12,7 @@ const SIDEBAR_MODULE_GROUPS: SidebarModuleGroupDescriptor[] = [
   {area: 'pos', label: 'POS'},
   {area: 'am', label: 'AM'},
   {area: 'plugins', label: 'Plugin'},
-  {area: 'preparation', label: 'Preparation'},
+  {area: 'preparation', label: 'Persiapan'},
 ];
 
 export function KolamSidebarModuleGroups({

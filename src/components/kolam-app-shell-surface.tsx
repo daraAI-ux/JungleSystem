@@ -33,7 +33,8 @@ export function KolamAppShellSurface({
   sidebar,
   topNavigation,
 }: KolamAppShellSurfaceProps) {
-  const isKolamDashboard = sidebar.activeModule === 'kolam';
+  const isKolamDashboard =
+    sidebar.activeModule === 'kolam' || isKolamCenteredRoute(sidebar.activeRoute);
 
   return (
     <KolamShellFrame variant="appShell">
@@ -59,6 +60,35 @@ export function KolamAppShellSurface({
   );
 }
 
+function isKolamCenteredRoute(route?: string | null) {
+  const routePath = route?.split('?')[0] ?? '';
+
+  return KOLAM_CENTERED_ROUTE_PREFIXES.some(prefix =>
+    routePath === prefix || routePath.startsWith(`${prefix}/`),
+  );
+}
+
+const KOLAM_CENTERED_ROUTE_PREFIXES = [
+  '/label-dan-field',
+  '/merek',
+  '/kategori',
+  '/tag',
+  '/field-kustom',
+  '/satuan',
+  '/species',
+  '/taxonomy',
+  '/iucn-status',
+  '/products',
+  '/archive',
+  '/raw-materials',
+  '/packing-materials',
+  '/teranura',
+  '/stock-transactions',
+  '/stock-opname',
+  '/locations',
+  '/suppliers',
+  '/purchase-orders',
+];
 const styles = StyleSheet.create({
   mainScroll: {
     flex: 1,
@@ -75,3 +105,6 @@ const styles = StyleSheet.create({
     paddingBottom: DASHBOARD_LAYOUT_VISUAL.page.paddingBottom,
   },
 });
+
+
+

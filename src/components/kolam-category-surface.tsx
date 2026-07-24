@@ -37,8 +37,7 @@ import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import {
   KolamDropdownSelect,
   KolamOverflowMenuButton,
-  KolamPaginationSizeControl,
-  KolamPaginationSummaryLabel,
+  KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
@@ -195,18 +194,10 @@ function KolamCategoryList({
           label={expandedIds.size ? 'Tutup Semua' : 'Buka Semua'}
           onPress={toggleAll}
         />
-        <KolamPaginationSizeControl onChange={setPageSize} value={pageSize} />
-        <KolamPaginationSummaryLabel
-          page={safePage}
-          pageSize={pageSize}
-          total={visibleRows.length}
-        />
-
       </View>
       <KolamContentFrame variant="settingsWebConfig">
         <KolamDataTableHeader columns={getKolamTableColumns('category')} />
         <View style={styles.tableBody}>
-
           {pagedRows.length ? (
             pagedRows.map(category => (
               <KolamCategoryRow
@@ -250,36 +241,47 @@ function KolamCategoryList({
                 compact
                 message="Data Kategori belum tersedia dari cache atau backend."
                 title={
-                  controller.loading ? 'Memuat kategori...' : 'Belum ada kategori'
+                  controller.loading
+                    ? 'Memuat kategori...'
+                    : 'Belum ada kategori'
                 }
               />
             </View>
           )}
         </View>
       </KolamContentFrame>
-      {pageCount > 1 ? (
-        <View style={styles.paginationRow}>
-          <KolamButton
-            disabled={safePage <= 1}
-            label="Sebelumnya"
-            onPress={() => setPage(current => Math.max(1, current - 1))}
-          />
-          <KolamCopyStack
-            items={[
-              {
-                id: 'page',
-                text: `${safePage} / ${pageCount}`,
-                style: styles.pageLabel,
-              },
-            ]}
-          />
-          <KolamButton
-            disabled={safePage >= pageCount}
-            label="Berikutnya"
-            onPress={() => setPage(current => Math.min(pageCount, current + 1))}
-          />
-        </View>
-      ) : null}
+      <KolamTableFooterControls
+        onPageSizeChange={setPageSize}
+        page={safePage}
+        pageSize={pageSize}
+        total={visibleRows.length}
+      >
+        {pageCount > 1 ? (
+          <View style={styles.paginationRow}>
+            <KolamButton
+              disabled={safePage <= 1}
+              label="Sebelumnya"
+              onPress={() => setPage(current => Math.max(1, current - 1))}
+            />
+            <KolamCopyStack
+              items={[
+                {
+                  id: 'page',
+                  text: `${safePage} / ${pageCount}`,
+                  style: styles.pageLabel,
+                },
+              ]}
+            />
+            <KolamButton
+              disabled={safePage >= pageCount}
+              label="Berikutnya"
+              onPress={() =>
+                setPage(current => Math.min(pageCount, current + 1))
+              }
+            />
+          </View>
+        ) : null}
+      </KolamTableFooterControls>
       <KolamDeleteConfirmDialog
         itemLabel={deleteCandidate?.name}
         itemType="kategori"
@@ -327,7 +329,10 @@ function KolamCategoryRow({
 
   return (
     <KolamDataTableRowFrame
-      style={[styles.categoryRow, actionMenuOpen ? styles.activeActionRow : null]}
+      style={[
+        styles.categoryRow,
+        actionMenuOpen ? styles.activeActionRow : null,
+      ]}
     >
       <View style={styles.categoryIdentityCell}>
         <View style={[styles.treeIndent, { width: category.level * 24 }]} />
@@ -367,11 +372,7 @@ function KolamCategoryRow({
       <View style={styles.marketplaceCell}>
         <KolamStatusBadge
           intent={category.showInMarketplace ? 'success' : 'muted'}
-          label={
-            category.showInMarketplace
-              ? 'Tampil'
-              : 'Tersembunyi'
-          }
+          label={category.showInMarketplace ? 'Tampil' : 'Tersembunyi'}
         />
         {category.showInMarketplace ? (
           <KolamCopyStack
@@ -434,7 +435,11 @@ function KolamCategoryDetail({
       {!editable && category ? (
         <>
           <View style={styles.detailActions}>
-            <KolamButton intent="primary" label="Edit" onPress={controller.onEdit} />
+            <KolamButton
+              intent="primary"
+              label="Edit"
+              onPress={controller.onEdit}
+            />
           </View>
           <KolamLabelFieldDetailOverview
             hero={<KolamCategoryIcon category={category} variant="detail" />}
@@ -458,7 +463,6 @@ function KolamCategoryDetail({
                   ? `Tampil, urutan ${category.marketplaceOrder}`
                   : 'Tidak tampil',
               },
-
             ]}
             sections={[
               {
@@ -759,7 +763,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexWrap: 'wrap',
     gap: 8,
-    zIndex: 8,
+    zIndex: 9200,
+    elevation: 96,
   },
   searchInput: {
     width: 240,
@@ -830,7 +835,7 @@ const styles = StyleSheet.create({
   },
   activeActionRow: {
     zIndex: 1000,
-    elevation: 30,
+    elevation: 96,
   },
   overflowCell: {
     width: 64,
@@ -890,14 +895,3 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
 });
-
-
-
-
-
-
-
-
-
-
-

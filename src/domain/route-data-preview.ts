@@ -60,7 +60,7 @@ function getInventoryPreviewCards(
     badges: [item.type, item.stock <= item.lowStockThreshold ? 'low stock' : 'ready'],
   }));
 
-  return cards.length ? cards : [getFallbackCard('Inventory', dataset.sync.pos)];
+  return cards.length ? cards : [getFallbackCard('Inventori', dataset.sync.pos)];
 }
 
 function getTransactionPreviewCards(

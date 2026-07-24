@@ -19,6 +19,7 @@ export interface KolamLabelFieldMeta {
 
 export interface KolamLabelFieldDetailSectionItem {
   badge?: string;
+  fields?: { label: string; value?: string | null }[];
   meta?: string;
   thumbnail?: React.ReactNode;
   title: string;
@@ -585,6 +586,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
+
 
 
 

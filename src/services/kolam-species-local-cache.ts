@@ -31,6 +31,7 @@ export async function writeKolamSpeciesListCache(
 ) {
   const key = getKolamSpeciesListCacheKey(ownerId);
   const revision = createKolamSpeciesListRevision(species);
+  const cacheSpecies = species.map(createKolamSpeciesLocalCacheValue);
   const current = await getLocalDataStore().read<KolamSpecies[]>(key);
 
   if (current?.revision === revision) {
@@ -39,7 +40,7 @@ export async function writeKolamSpeciesListCache(
 
   await getLocalDataStore().write({
     key,
-    value: species,
+    value: cacheSpecies,
     revision,
     updatedAt: new Date().toISOString(),
   });
@@ -62,6 +63,7 @@ export async function writeKolamSpeciesDetailCache(
 ) {
   const key = getKolamSpeciesDetailCacheKey(species.id, ownerId);
   const revision = createKolamSpeciesDetailRevision(species);
+  const cacheSpecies = createKolamSpeciesLocalCacheValue(species);
   const current = await getLocalDataStore().read<KolamSpecies>(key);
 
   if (current?.revision === revision) {
@@ -70,7 +72,7 @@ export async function writeKolamSpeciesDetailCache(
 
   await getLocalDataStore().write({
     key,
-    value: species,
+    value: cacheSpecies,
     revision,
     updatedAt: new Date().toISOString(),
   });
@@ -104,3 +106,45 @@ export async function readKolamSpeciesFromListCacheByRouteKey(
     }) ?? null
   );
 }
+function createKolamSpeciesLocalCacheValue(species: KolamSpecies): KolamSpecies {
+  return stripInlineMediaPayloads(species) as KolamSpecies;
+}
+
+function stripInlineMediaPayloads(value: unknown, key = ''): unknown {
+  if (typeof value === 'string') {
+    if (isInlineMediaPayload(value) || isLikelyBinaryMediaField(key, value)) {
+      return '';
+    }
+
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    return value.map(entry => stripInlineMediaPayloads(entry, key));
+  }
+
+  if (!value || typeof value !== 'object') {
+    return value;
+  }
+
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>).map(([entryKey, entry]) => [
+      entryKey,
+      stripInlineMediaPayloads(entry, entryKey),
+    ]),
+  );
+}
+
+function isInlineMediaPayload(value: string) {
+  return /^data:(image|video|audio)\//i.test(value.trim());
+}
+
+function isLikelyBinaryMediaField(key: string, value: string) {
+  if (value.length < 120000) {
+    return false;
+  }
+
+  return /^(base64|buffer|blob|bytes|file)$/i.test(key);
+}
+
+

@@ -17,11 +17,8 @@ import {
 } from '../src/services/local-data-store';
 
 describe('Kolam image local cache', () => {
-  let store: MemoryLocalDataStore;
-
   beforeEach(() => {
-    store = new MemoryLocalDataStore();
-    setLocalDataStore(store);
+    setLocalDataStore(new MemoryLocalDataStore());
   });
 
   afterEach(() => {
@@ -30,7 +27,7 @@ describe('Kolam image local cache', () => {
     clearNativeDeviceIdentity();
   });
 
-  it('stores image data URI in the local DB only when the source changes', async () => {
+  it('does not store image data URI in SQLite because media renders from backend URI', async () => {
     const image = {
       sourceUri: 'https://cdn/logo.png',
       revision: 'brand-1:v1',
@@ -40,55 +37,28 @@ describe('Kolam image local cache', () => {
       updatedAt: '2026-07-19T00:00:00.000Z',
     };
 
-    await expect(writeKolamImageCache('brand-logo', image)).resolves.toBe(true);
-    await expect(writeKolamImageCache('brand-logo', image)).resolves.toBe(
-      false,
-    );
+    await expect(writeKolamImageCache('brand-logo', image)).resolves.toBe(false);
     await expect(
       readKolamImageCache('brand-logo', image.sourceUri),
-    ).resolves.toEqual(
-      expect.objectContaining({
-        revision: image.revision,
-        value: image,
-      }),
-    );
+    ).resolves.toBeNull();
   });
 
-  it('returns cached image data without fetching again', async () => {
+  it('does not fetch image blobs during sync', async () => {
     const fetcher = jest.fn();
-    const image = {
-      sourceUri: 'https://cdn/flag.png',
-      revision: 'https://cdn/flag.png',
-      dataUri: 'data:image/png;base64,BBB',
-      mimeType: 'image/png',
-      scope: 'country-flag',
-      updatedAt: '2026-07-19T00:00:00.000Z',
-    };
-
-    await writeKolamImageCache('country-flag', image);
 
     await expect(
       syncKolamImageCache({
         fetcher: fetcher as unknown as typeof fetch,
-        revision: image.revision,
+        revision: 'https://cdn/flag.png',
         scope: 'country-flag',
-        sourceUri: image.sourceUri,
+        sourceUri: 'https://cdn/flag.png',
       }),
-    ).resolves.toEqual(image);
+    ).resolves.toBeNull();
     expect(fetcher).not.toHaveBeenCalled();
   });
 
-  it('syncs image batches once per source URI for shared local asset storage', async () => {
+  it('indexes image batch inputs without downloading binary media', async () => {
     const fetcher = jest.fn();
-    await writeKolamImageCache('brand-logo', {
-      sourceUri: 'https://cdn/logo-a.png',
-      revision: 'a:v1',
-      dataUri: 'data:image/png;base64,AAA',
-      mimeType: 'image/png',
-      scope: 'brand-logo',
-      updatedAt: '2026-07-19T00:00:00.000Z',
-    });
-
     const summary = await syncKolamImageCacheBatch({
       fetcher: fetcher as unknown as typeof fetch,
       scope: 'brand-logo',
@@ -99,11 +69,11 @@ describe('Kolam image local cache', () => {
       ],
     });
 
-    expect(summary).toEqual({ failed: 0, synced: 1 });
+    expect(summary).toEqual({ failed: 0, synced: 2 });
     expect(fetcher).not.toHaveBeenCalled();
   });
 
-  it('builds backend-gated request headers for local asset downloads', () => {
+  it('builds backend-gated request headers for optional file downloads', () => {
     setAccessToken('token-123');
     setNativeDeviceIdentity({
       macAddresses: ['AA:BB:CC:DD:EE:FF'],

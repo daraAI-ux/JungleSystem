@@ -31,8 +31,7 @@ import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import {
   KolamDropdownSelect,
   KolamOverflowMenuButton,
-  KolamPaginationSizeControl,
-  KolamPaginationSummaryLabel,
+  KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFlagIcon } from './kolam-flag-icon';
@@ -189,12 +188,6 @@ function KolamBrandList({
           ]}
           value={assetMode}
         />
-        <KolamPaginationSizeControl onChange={setPageSize} value={pageSize} />
-        <KolamPaginationSummaryLabel
-          page={safePage}
-          pageSize={pageSize}
-          total={sortedBrands.length}
-        />
       </View>
       <KolamContentFrame variant="settingsWebConfig">
         <KolamDataTableHeader columns={getKolamTableColumns('brand')} />
@@ -224,29 +217,38 @@ function KolamBrandList({
           </View>
         )}
       </KolamContentFrame>
-      {pageCount > 1 ? (
-        <View style={styles.paginationRow}>
-          <KolamButton
-            disabled={safePage <= 1}
-            label="Sebelumnya"
-            onPress={() => setPage(current => Math.max(1, current - 1))}
-          />
-          <KolamCopyStack
-            items={[
-              {
-                id: 'page',
-                text: `${safePage} / ${pageCount}`,
-                style: styles.pageLabel,
-              },
-            ]}
-          />
-          <KolamButton
-            disabled={safePage >= pageCount}
-            label="Berikutnya"
-            onPress={() => setPage(current => Math.min(pageCount, current + 1))}
-          />
-        </View>
-      ) : null}
+      <KolamTableFooterControls
+        onPageSizeChange={setPageSize}
+        page={safePage}
+        pageSize={pageSize}
+        total={sortedBrands.length}
+      >
+        {pageCount > 1 ? (
+          <View style={styles.paginationRow}>
+            <KolamButton
+              disabled={safePage <= 1}
+              label="Sebelumnya"
+              onPress={() => setPage(current => Math.max(1, current - 1))}
+            />
+            <KolamCopyStack
+              items={[
+                {
+                  id: 'page',
+                  text: `${safePage} / ${pageCount}`,
+                  style: styles.pageLabel,
+                },
+              ]}
+            />
+            <KolamButton
+              disabled={safePage >= pageCount}
+              label="Berikutnya"
+              onPress={() =>
+                setPage(current => Math.min(pageCount, current + 1))
+              }
+            />
+          </View>
+        ) : null}
+      </KolamTableFooterControls>
       <KolamDeleteConfirmDialog
         itemLabel={deleteCandidate?.name}
         itemType="merek"
@@ -354,7 +356,11 @@ function KolamBrandDetail({
       {!editable && brand ? (
         <>
           <View style={styles.detailActions}>
-            <KolamButton intent="primary" label="Edit" onPress={controller.onEdit} />
+            <KolamButton
+              intent="primary"
+              label="Edit"
+              onPress={controller.onEdit}
+            />
           </View>
           <KolamLabelFieldDetailOverview
             hero={<KolamBrandLogo brand={brand} variant="detail" />}
@@ -369,12 +375,21 @@ function KolamBrandDetail({
             ]}
             meta={[
               {
-                icon: <KolamFlagIcon option={getKolamBrandFlagByCountry(brand.originCountry)} />,
+                icon: (
+                  <KolamFlagIcon
+                    option={getKolamBrandFlagByCountry(brand.originCountry)}
+                  />
+                ),
                 label: 'Asal',
                 value: brand.originCountry,
               },
               ...(brand.description
-                ? [{ label: 'Deskripsi', value: stripHtmlForDetail(brand.description) }]
+                ? [
+                    {
+                      label: 'Deskripsi',
+                      value: stripHtmlForDetail(brand.description),
+                    },
+                  ]
                 : []),
               ...brand.links.map(link => ({
                 label: 'Link',
@@ -844,7 +859,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexWrap: 'wrap',
     gap: 8,
-    zIndex: 8,
+    zIndex: 9200,
+    elevation: 96,
   },
   searchInput: {
     width: 240,
@@ -877,7 +893,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 12,
     zIndex: 80,
-    elevation: 16,
+    elevation: 96,
   },
   formSplitCell: {
     flex: 1,

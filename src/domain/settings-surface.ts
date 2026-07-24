@@ -340,7 +340,7 @@ export interface SettingsLiveEndpoint {
 export const settingsSurfaceItems: SettingsSurfaceItem[] = [
   {
     id: 'web-settings',
-    title: 'Web Settings',
+    title: 'Pengaturan Web',
     route: '/settings/websetting',
     description: 'Display, web storefront, and general Kolam configuration.',
     status: 'source-audit',
@@ -859,7 +859,7 @@ export function getSettingsRolePermissionPreviewRows(): SettingsRolePermissionPr
     {
       id: 'websetting-admin',
       resource: 'websetting',
-      label: 'Web Settings',
+      label: 'Pengaturan Web',
       actions: ['view', 'update'],
       source: 'lib/permissions/resource-actions.ts',
     },
@@ -912,7 +912,7 @@ export function getSettingsRolePermissionMatrixGroups(
   return [
     {
       id: 'settings-configuration-preview',
-      label: 'Settings & Configuration',
+      label: 'Pengaturan & Konfigurasi',
       resourceCount: rows.length,
       activeCount: rows.reduce((total, row) => total + row.activeCount, 0),
       totalPossible: rows.reduce((total, row) => total + row.totalCount, 0),
@@ -1010,7 +1010,7 @@ export function getSettingsRoleResourceGroups(): SettingsRoleResourceGroup[] {
   return [
     {
       id: 'inventory',
-      label: 'Inventory',
+      label: 'Inventori',
       resources: [
         'brand',
         'category',
@@ -1026,7 +1026,7 @@ export function getSettingsRoleResourceGroups(): SettingsRoleResourceGroup[] {
     },
     {
       id: 'sales-customers',
-      label: 'Sales & Customers',
+      label: 'Penjualan & Pelanggan',
       resources: [
         'sale',
         'customer',
@@ -1071,7 +1071,7 @@ export function getSettingsRoleResourceGroups(): SettingsRoleResourceGroup[] {
     },
     {
       id: 'settings-configuration',
-      label: 'Settings & Configuration',
+      label: 'Pengaturan & Konfigurasi',
       resources: ['user', 'role', 'websetting', 'custom-field'],
       sourceComponent: 'settings/roles/list.tsx',
     },
@@ -1098,7 +1098,7 @@ export function getSettingsRoleAccessRows(): SettingsRoleAccessRow[] {
     },
     {
       id: 'inventory-staff',
-      role: 'Inventory Staff',
+      role: 'Staf Inventori',
       key: 'inventory-staff',
       kolam: true,
       pos: false,
@@ -1153,7 +1153,7 @@ export function getSettingsRoleMemberPreview(
       members: [
         {
           id: 'inventory-lead',
-          name: 'Inventory Lead',
+          name: 'Lead Inventori',
           initials: 'IL',
         },
         {
@@ -1325,7 +1325,7 @@ export function getSettingsLiveEndpoints(): SettingsLiveEndpoint[] {
   return [
     {
       id: 'websetting-read',
-      label: 'Web Settings',
+      label: 'Pengaturan Web',
       method: 'GET',
       path: '/websetting',
       permission: 'optional auth, policy sliced by role',
@@ -1333,7 +1333,7 @@ export function getSettingsLiveEndpoints(): SettingsLiveEndpoint[] {
     },
     {
       id: 'websetting-update',
-      label: 'Web Settings update',
+      label: 'Pembaruan Pengaturan Web',
       method: 'PUT',
       path: '/websetting',
       permission: 'websetting:update',

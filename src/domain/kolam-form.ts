@@ -5,6 +5,7 @@ export type KolamFormSectionId =
   | 'customer-create'
   | 'custom-field-detail'
   | 'iucn-status-detail'
+  | 'packing-material-detail'
   | 'species-detail'
   | 'tag-detail'
   | 'taxonomy-detail'
@@ -96,9 +97,15 @@ const kolamFormSections: Record<KolamFormSectionId, KolamFormSection> = {
   },
   'customer-create': {
     id: 'customer-create',
-    title: 'Customer Detail',
+    title: 'Detail Pelanggan',
     description:
       'Input customer mengikuti form section Kolam live: identitas di kiri, kontrol data di kanan.',
+  },
+  'packing-material-detail': {
+    id: 'packing-material-detail',
+    title: 'Data Bahan Kemasan',
+    description:
+      'Kelola nama, kategori, dimensi, berat, harga tagih, HPP vendor, stok, dan foto bahan kemasan.',
   },
   'iucn-status-detail': {
     id: 'iucn-status-detail',
@@ -147,7 +154,4 @@ export function getKolamFormVisualContract(): KolamFormVisualContract {
     input: { ...kolamFormVisualContract.input },
   };
 }
-
-
-
 

@@ -18,9 +18,17 @@ struct KolamWindowsFilePicker {
   REACT_METHOD(pickAudio)
   void pickAudio(::React::ReactPromise<::React::JSValueObject> &&result) noexcept;
 
+  REACT_METHOD(pickFile)
+  void pickFile(::React::ReactPromise<::React::JSValueObject> &&result) noexcept;
+
+  REACT_METHOD(saveFileBase64)
+  void saveFileBase64(
+      std::string suggestedName,
+      std::string base64Content,
+      ::React::ReactPromise<::React::JSValueObject> &&result) noexcept;
+
  private:
   winrt::Microsoft::ReactNative::ReactContext m_context;
 };
 
 } // namespace KolamWindows
-

@@ -13,24 +13,28 @@ export function KolamCustomFieldIcon({
 }) {
   return (
     <View style={[styles.icon, variant === 'detail' && styles.iconDetail]}>
-      <View style={styles.placeholder}>
-        <Text
-          numberOfLines={1}
-          style={[
-            styles.placeholderText,
-            variant === 'detail' && styles.placeholderTextDetail,
-          ]}>
-          {getFieldInitial(field.fieldLabel)}
-        </Text>
-      </View>
-      <KolamLocalAssetImage
-        accessibilityLabel={`${field.fieldLabel} icon`}
-        resizeMode="contain"
-        revision={getCustomFieldIconRevision(field)}
-        scope="custom-field-icon"
-        sourceUri={field.iconUrl}
-        style={styles.image}
-      />
+      {field.iconUrl ? (
+        <KolamLocalAssetImage
+          accessibilityLabel={`${field.fieldLabel} icon`}
+          resizeMode="contain"
+          revision={getCustomFieldIconRevision(field)}
+          scope="custom-field-icon"
+          sourceUri={field.iconUrl}
+          style={styles.image}
+        />
+      ) : (
+        <View style={styles.placeholder}>
+          <Text
+            numberOfLines={1}
+            style={[
+              styles.placeholderText,
+              variant === 'detail' && styles.placeholderTextDetail,
+            ]}
+          >
+            {getFieldInitial(field.fieldLabel)}
+          </Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -50,7 +54,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     overflow: 'hidden',
     flexShrink: 0,
-    backgroundColor: V.colors.successSoft,
   },
   iconDetail: {
     width: 84,
@@ -66,7 +69,6 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: V.colors.successSoft,
   },
   placeholderText: {
     color: V.colors.success,

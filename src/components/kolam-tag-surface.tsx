@@ -24,8 +24,7 @@ import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import {
   KolamDropdownSelect,
   KolamOverflowMenuButton,
-  KolamPaginationSizeControl,
-  KolamPaginationSummaryLabel,
+  KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
@@ -125,8 +124,9 @@ function KolamTagList({
     React.useState<TagStatusFilter>('all');
   const [pageSize, setPageSize] = React.useState(10);
   const [page, setPage] = React.useState(1);
-  const [deleteCandidate, setDeleteCandidate] =
-    React.useState<KolamTag | null>(null);
+  const [deleteCandidate, setDeleteCandidate] = React.useState<KolamTag | null>(
+    null,
+  );
   const summary = getTagSummary(controller.tags);
   const filteredTags = React.useMemo(
     () => filterTags(controller.tags, search, statusFilter),
@@ -182,12 +182,6 @@ function KolamTagList({
           ]}
           value={statusFilter}
         />
-        <KolamPaginationSizeControl onChange={setPageSize} value={pageSize} />
-        <KolamPaginationSummaryLabel
-          page={safePage}
-          pageSize={pageSize}
-          total={sortedTags.length}
-        />
       </View>
       <KolamContentFrame variant="settingsWebConfig">
         <KolamDataTableHeader columns={getKolamTableColumns('tag')} />
@@ -217,29 +211,38 @@ function KolamTagList({
           </View>
         )}
       </KolamContentFrame>
-      {pageCount > 1 ? (
-        <View style={styles.paginationRow}>
-          <KolamButton
-            disabled={safePage <= 1}
-            label="Sebelumnya"
-            onPress={() => setPage(current => Math.max(1, current - 1))}
-          />
-          <KolamCopyStack
-            items={[
-              {
-                id: 'page',
-                text: `${safePage} / ${pageCount}`,
-                style: styles.pageLabel,
-              },
-            ]}
-          />
-          <KolamButton
-            disabled={safePage >= pageCount}
-            label="Berikutnya"
-            onPress={() => setPage(current => Math.min(pageCount, current + 1))}
-          />
-        </View>
-      ) : null}
+      <KolamTableFooterControls
+        onPageSizeChange={setPageSize}
+        page={safePage}
+        pageSize={pageSize}
+        total={sortedTags.length}
+      >
+        {pageCount > 1 ? (
+          <View style={styles.paginationRow}>
+            <KolamButton
+              disabled={safePage <= 1}
+              label="Sebelumnya"
+              onPress={() => setPage(current => Math.max(1, current - 1))}
+            />
+            <KolamCopyStack
+              items={[
+                {
+                  id: 'page',
+                  text: `${safePage} / ${pageCount}`,
+                  style: styles.pageLabel,
+                },
+              ]}
+            />
+            <KolamButton
+              disabled={safePage >= pageCount}
+              label="Berikutnya"
+              onPress={() =>
+                setPage(current => Math.min(pageCount, current + 1))
+              }
+            />
+          </View>
+        ) : null}
+      </KolamTableFooterControls>
       <KolamDeleteConfirmDialog
         itemLabel={deleteCandidate?.name}
         itemType="tag"
@@ -299,7 +302,9 @@ function KolamTagRow({
       <View style={styles.colorCell}>
         <View style={[styles.colorChip, { borderColor: color }]}>
           <View style={[styles.colorChipDot, { backgroundColor: color }]} />
-          <KolamCopyStack items={[{ id: 'color', text: color, style: styles.colorChipText }]} />
+          <KolamCopyStack
+            items={[{ id: 'color', text: color, style: styles.colorChipText }]}
+          />
         </View>
       </View>
       <View style={styles.descriptionCell}>
@@ -359,7 +364,11 @@ function KolamTagDetail({ controller }: { controller: KolamTagController }) {
       {!editable && tag ? (
         <>
           <View style={styles.detailActions}>
-            <KolamButton intent="primary" label="Edit" onPress={controller.onEdit} />
+            <KolamButton
+              intent="primary"
+              label="Edit"
+              onPress={controller.onEdit}
+            />
           </View>
           <KolamLabelFieldDetailOverview
             hero={<TagHero tag={tag} />}
@@ -384,7 +393,12 @@ function KolamTagDetail({ controller }: { controller: KolamTagController }) {
                   ]
                 : []),
               ...(tag.updatedAt
-                ? [{ label: 'Diperbarui', value: formatDateTime(tag.updatedAt) }]
+                ? [
+                    {
+                      label: 'Diperbarui',
+                      value: formatDateTime(tag.updatedAt),
+                    },
+                  ]
                 : []),
             ]}
             sections={[
@@ -707,7 +721,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexWrap: 'wrap',
     gap: 8,
-    zIndex: 8,
+    zIndex: 9200,
+    elevation: 96,
   },
   searchInput: {
     width: 240,
@@ -718,7 +733,7 @@ const styles = StyleSheet.create({
   },
   activeActionRow: {
     zIndex: 1000,
-    elevation: 30,
+    elevation: 96,
   },
   tagIdentityCell: {
     flex: 1,

@@ -1,5 +1,8 @@
 import React from 'react';
+import { View } from 'react-native';
 import { KolamAppShellSurface } from './src/components/kolam-app-shell-surface';
+import { KolamImagePreviewHost } from './src/components/kolam-image-preview-dialog';
+import { KolamMediaPreviewHost } from './src/components/kolam-media-preview-dialog';
 import { KolamLoginScreen } from './src/components/kolam-login-screen';
 import { KolamWorkspaceSurface } from './src/components/kolam-workspace-surface';
 import type { DashboardSalesGraphRange } from './src/domain/dashboard-sales-graph';
@@ -444,14 +447,18 @@ function App() {
   }
 
   return (
-    <KolamAppShellSurface
-      sidebar={sidebar}
-      topNavigation={topNavigation}
-      overlay={overlay}
-      dashboardHeader={dashboardHeader}
-    >
-      <KolamWorkspaceSurface {...workspace} runtime={runtime} />
-    </KolamAppShellSurface>
+    <View style={{ flex: 1 }}>
+      <KolamAppShellSurface
+        sidebar={sidebar}
+        topNavigation={topNavigation}
+        overlay={overlay}
+        dashboardHeader={dashboardHeader}
+      >
+        <KolamWorkspaceSurface {...workspace} runtime={runtime} />
+      </KolamAppShellSurface>
+      <KolamImagePreviewHost />
+      <KolamMediaPreviewHost />
+    </View>
   );
 }
 

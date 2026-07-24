@@ -11,6 +11,7 @@ export interface RequestOptions {
   path: string;
   query?: Record<string, QueryValue>;
   body?: unknown;
+  headers?: Record<string, string>;
   cookieJar?: boolean;
   credentials?: RequestCredentialsMode;
   token?: string;
@@ -71,6 +72,7 @@ export async function apiRequest<T>({
   path,
   query,
   body,
+  headers: requestHeaders,
   cookieJar,
   credentials,
   token,
@@ -81,6 +83,7 @@ export async function apiRequest<T>({
   const headers: Record<string, string> = {
     Accept: 'application/json',
     ...getRuntimeClientHeaders({ sourceHeader }),
+    ...(requestHeaders ?? {}),
   };
 
   const macHeader = nativeDeviceIdentity.macAddresses?.join(',');

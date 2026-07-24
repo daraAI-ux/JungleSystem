@@ -51,7 +51,6 @@ export function KolamMenuSection({
           onPress={() => onToggle(section.id)}
         />
         <KolamMenuSectionActions
-          countLabel={disclosure.countLabel}
           onMove={direction => onMove(section.id, direction)}
         />
       </KolamHeaderFrame>

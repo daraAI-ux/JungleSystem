@@ -40,6 +40,10 @@ export function KolamGrocerPricingTiersEditor({
   rows: KolamGrocerPricingTierEditorRow[];
   style?: StyleProp<ViewStyle>;
 }) {
+  const orderedRows = React.useMemo(
+    () => [...rows].sort((a, b) => toNumber(a.minQty) - toNumber(b.minQty)),
+    [rows],
+  );
   const addTier = () => onChange([...rows, createEmptyGrocerPricingTierRow(rows)]);
   const removeTier = (id: string) => onChange(rows.filter(row => row.id !== id));
   const patchTier = (
@@ -49,20 +53,20 @@ export function KolamGrocerPricingTiersEditor({
 
   return (
     <View style={[styles.root, style]}>
-      {rows.length ? (
-        rows.map((row, index) => (
+      {orderedRows.length ? (
+        orderedRows.map((row, index) => (
           <View key={row.id} style={styles.row}>
             <View style={styles.rowHeader}>
               <KolamCopyStack
                 items={[
                   {
                     id: 'title',
-                    text: `Tier ${index + 1}`,
+                    text: `Tingkat ${index + 1}`,
                     style: styles.rowTitle,
                   },
                   {
                     id: 'summary',
-                    text: `Mulai ${toNumber(row.minQty)} unit`,
+                    text: getTierSummary(row),
                     style: styles.rowHint,
                   },
                 ]}
@@ -70,33 +74,33 @@ export function KolamGrocerPricingTiersEditor({
               <KolamButton
                 disabled={disabled}
                 intent="danger"
-                label="Hapus Tier"
+                label="Hapus Tingkat"
                 onPress={() => removeTier(row.id)}
               />
             </View>
             <View style={styles.fieldGrid}>
-              <KolamFormTextField
-                editable={!disabled}
-                keyboardType="numeric"
+              <GrocerPricingField
+                disabled={disabled}
+                hint="Harga ini aktif mulai jumlah pembelian tersebut."
+                label="Mulai Kuantitas"
                 onChangeText={minQty => patchTier(row.id, {minQty})}
-                placeholder="Min. qty"
-                style={settingsWebFormStyles.settingsWebFormFieldValue}
+                placeholder="Contoh: 10"
                 value={row.minQty}
               />
-              <KolamFormTextField
-                editable={!disabled}
-                keyboardType="numeric"
+              <GrocerPricingField
+                disabled={disabled}
+                hint="Harga per unit untuk transaksi POS."
+                label="Harga POS / Unit"
                 onChangeText={price => patchTier(row.id, {price})}
-                placeholder="Harga POS"
-                style={settingsWebFormStyles.settingsWebFormFieldValue}
+                placeholder="Contoh: 45000"
                 value={row.price}
               />
-              <KolamFormTextField
-                editable={!disabled}
-                keyboardType="numeric"
+              <GrocerPricingField
+                disabled={disabled}
+                hint="Harga per unit untuk webstore atau marketplace."
+                label="Harga Daring / Unit"
                 onChangeText={onlinePrice => patchTier(row.id, {onlinePrice})}
-                placeholder="Harga online"
-                style={settingsWebFormStyles.settingsWebFormFieldValue}
+                placeholder="Contoh: 47000"
                 value={row.onlinePrice}
               />
             </View>
@@ -108,8 +112,13 @@ export function KolamGrocerPricingTiersEditor({
             items={[
               {
                 id: 'empty',
-                text: 'Belum ada tier harga grosir.',
+                text: 'Belum ada harga grosir bertingkat.',
                 style: styles.emptyText,
+              },
+              {
+                id: 'empty-hint',
+                text: 'Tambahkan tingkat jika pembelian jumlah besar memiliki harga per unit berbeda.',
+                style: styles.emptyHint,
               },
             ]}
           />
@@ -118,13 +127,66 @@ export function KolamGrocerPricingTiersEditor({
       <KolamButton
         disabled={disabled}
         intent="secondary"
-        label="Tambah Tier"
+        label="Tambah Harga Grosir"
         onPress={addTier}
       />
     </View>
   );
 }
 
+function GrocerPricingField({
+  disabled,
+  hint,
+  label,
+  onChangeText,
+  placeholder,
+  value,
+}: {
+  disabled: boolean;
+  hint: string;
+  label: string;
+  onChangeText: (value: string) => void;
+  placeholder: string;
+  value: string;
+}) {
+  return (
+    <View style={styles.fieldBlock}>
+      <KolamCopyStack
+        items={[
+          {id: 'label', text: label, style: styles.fieldLabel},
+          {id: 'hint', text: hint, style: styles.fieldHint},
+        ]}
+      />
+      <KolamFormTextField
+        editable={!disabled}
+        keyboardType="numeric"
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        style={settingsWebFormStyles.settingsWebFormFieldValue}
+        value={value}
+      />
+    </View>
+  );
+}
+
+function getTierSummary(row: KolamGrocerPricingTierEditorRow) {
+  const minQty = toNumber(row.minQty);
+  const posPrice = toNumber(row.price);
+  const onlinePrice = toNumber(row.onlinePrice);
+  const posLabel = posPrice > 0 ? formatCurrency(posPrice) : 'Harga POS belum diisi';
+  const onlineLabel =
+    onlinePrice > 0 ? formatCurrency(onlinePrice) : 'Harga daring belum diisi';
+
+  return `Mulai ${minQty} unit - ${posLabel} POS / ${onlineLabel} daring`;
+}
+
+function formatCurrency(value: number) {
+  return new Intl.NumberFormat('id-ID', {
+    currency: 'IDR',
+    maximumFractionDigits: 0,
+    style: 'currency',
+  }).format(value || 0);
+}
 function toNumber(value: string) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
@@ -180,4 +242,33 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 10,
   },
+  fieldBlock: {
+    flexBasis: 240,
+    flexGrow: 1,
+    gap: 8,
+    minWidth: 210,
+  },
+  fieldLabel: {
+    color: V.colors.fg,
+    fontSize: 12,
+    fontWeight: '900',
+    lineHeight: 16,
+  },
+  fieldHint: {
+    color: V.colors.mutedFg,
+    fontSize: 11,
+    fontWeight: '600',
+    lineHeight: 15,
+  },
+  emptyHint: {
+    color: V.colors.mutedFg,
+    fontSize: 11,
+    fontWeight: '600',
+    lineHeight: 16,
+    marginTop: 4,
+    textAlign: 'center',
+  },
 });
+
+
+

@@ -57,6 +57,9 @@ pegangan lokal yang mudah dibaca oleh agen berikutnya.
 - Control umum seperti input, select, tabs, badge, card, table row, sidebar
   item, toolbar, menu item, modal, empty state, command item, dan filter chip
   harus reusable.
+- Warna, background, border, teks, dan state visual control yang terlihat user
+  tidak boleh bergantung pada default Windows/native theme. Semua harus eksplisit
+  memakai token aplikasi atau style aplikasi agar tetap terbaca di light/dark/LogBox.
 
 ## File Size Rules
 
@@ -133,3 +136,5 @@ Catatan:
 - Tidak ada perubahan production server tanpa audit dan alasan jelas.
 - File baru/refactor tetap kecil, terpisah, dan mudah dibaca.
 - Gate yang relevan pass, atau blocker dijelaskan spesifik.
+
+

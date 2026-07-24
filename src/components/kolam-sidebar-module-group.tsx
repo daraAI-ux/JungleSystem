@@ -1,6 +1,5 @@
-﻿import React from 'react';
+import React from 'react';
 import {
-  getShellAreaCoverage,
   getShellModulesByArea,
   type AppModule,
 } from '../domain/app-shell';
@@ -19,14 +18,11 @@ export function KolamSidebarModuleGroup({
   label: string;
   onSelect: (module: AppModule) => void;
 }) {
-  const coverage = getShellAreaCoverage(area);
-
   return (
     <KolamSidebarNavGroup
       activeModule={activeModule}
       collapsed={collapsed}
       label={label}
-      meta={coverage.summaryLabel}
       modules={getShellModulesByArea(area)}
       onSelect={onSelect}
     />

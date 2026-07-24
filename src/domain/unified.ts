@@ -63,7 +63,7 @@ export interface UnifiedOverviewMetrics {
 export const kolamSurfaces: UnifiedSurface[] = [
   {
     id: 'inventory',
-    label: 'Inventory',
+    label: 'Inventori',
     route: 'products / species',
     description: 'Produk, species, stock transaction, dan data sellable.',
     sourceRepo: 'E:\\Projects\\da-inventory-frontend',
@@ -207,7 +207,7 @@ export const pluginRegistry: PluginDescriptor[] = [
     label: 'Dara',
     manifestName: 'DARA Intelligence',
     description:
-      'Campaign SEO, Tax Intelligence, Market Intel, Jobs, dan training DARA.',
+      'Campaign SEO, Intel Pajak, Intel Pasar, Jobs, dan pelatihan DARA.',
     packageName: '@dara-ai/da-dara-plugin',
     packageVersion: '0.1.44',
     manifestVersion: '0.1.45',
@@ -363,7 +363,7 @@ export const pluginRegistry: PluginDescriptor[] = [
   },
   {
     id: 'task-manager',
-    label: 'Task Manager',
+    label: 'Manajemen Tugas',
     manifestName: 'DA-Task-Manager-Plugin',
     description:
       'Kelola tugas, tugas terjadwal, kategori, tipe task enclosure, dan integrasi proyek.',

@@ -1,15 +1,22 @@
 import React from 'react';
 import {
   Image,
+  StyleSheet,
   type ImageResizeMode,
   type ImageStyle,
   type StyleProp,
+  type ViewStyle,
 } from 'react-native';
-import { syncKolamImageCache } from '../services/kolam-image-local-cache';
+import {
+  openKolamImagePreview,
+  type KolamImagePreviewItem,
+} from './kolam-image-preview-dialog';
+import { KolamInteractionFrame } from './kolam-interaction-frame';
 
 export function KolamRemoteImage({
   accessibilityLabel,
-  allowRemoteFallback = false,
+  previewIndex,
+  previewItems,
   resizeMode = 'cover',
   revision,
   scope = 'general',
@@ -18,6 +25,8 @@ export function KolamRemoteImage({
 }: {
   accessibilityLabel: string;
   allowRemoteFallback?: boolean;
+  previewIndex?: number;
+  previewItems?: KolamImagePreviewItem[];
   resizeMode?: ImageResizeMode;
   revision?: string;
   scope?: string;
@@ -25,52 +34,51 @@ export function KolamRemoteImage({
   style: StyleProp<ImageStyle>;
 }) {
   const [failedUri, setFailedUri] = React.useState<string | null>(null);
-  const [cachedUri, setCachedUri] = React.useState<string | null>(null);
   const imageRevision = revision ?? sourceUri ?? '';
-  const isInlineImage = sourceUri?.startsWith('data:') ?? false;
-  const fallbackUri = allowRemoteFallback || isInlineImage ? sourceUri : null;
-  const visibleUri = [cachedUri, fallbackUri].find(
-    uri => uri && uri !== failedUri,
-  );
+  const visibleUri = sourceUri && sourceUri !== failedUri ? sourceUri : null;
 
   React.useEffect(() => {
     setFailedUri(null);
-    setCachedUri(null);
-
-    if (isInlineImage) {
-      return;
-    }
-
-    let active = true;
-    void syncKolamImageCache({ revision: imageRevision, scope, sourceUri })
-      .then(image => {
-        if (active) {
-          setCachedUri(image?.dataUri ?? null);
-        }
-      })
-      .catch(() => {
-        if (active) {
-          setCachedUri(null);
-        }
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [imageRevision, isInlineImage, scope, sourceUri]);
+  }, [sourceUri]);
 
   if (!visibleUri) {
     return null;
   }
 
   return (
-    <Image
-      accessibilityIgnoresInvertColors
-      accessibilityLabel={accessibilityLabel}
-      resizeMode={resizeMode}
-      source={{ uri: visibleUri }}
-      style={style}
-      onError={() => setFailedUri(visibleUri)}
-    />
+    <KolamInteractionFrame
+      accessibilityLabel={`Lihat ${accessibilityLabel}`}
+      onPress={() =>
+        openKolamImagePreview({
+          initialIndex: previewIndex,
+          items: previewItems,
+          revision: imageRevision,
+          scope,
+          title: accessibilityLabel,
+          uri: visibleUri,
+        })
+      }
+      style={[style as StyleProp<ViewStyle>, styles.imageShell]}
+    >
+      <Image
+        accessibilityIgnoresInvertColors
+        accessibilityLabel={accessibilityLabel}
+        resizeMode={resizeMode}
+        source={{ uri: visibleUri }}
+        style={styles.imageFill}
+        onError={() => setFailedUri(visibleUri)}
+      />
+    </KolamInteractionFrame>
   );
 }
+
+const styles = StyleSheet.create({
+  imageShell: {
+    overflow: 'hidden',
+  },
+  imageFill: {
+    ...StyleSheet.absoluteFillObject,
+    height: '100%',
+    width: '100%',
+  },
+});

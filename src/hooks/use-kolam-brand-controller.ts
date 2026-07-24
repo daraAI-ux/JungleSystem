@@ -29,7 +29,6 @@ import {
   writeKolamBrandListCache,
   writeKolamBrandLogoDraft,
 } from '../services/kolam-brand-local-cache';
-import { syncKolamImageCacheBatch } from '../services/kolam-image-local-cache';
 import { pickNativeImageFile } from '../services/native-file-picker';
 
 export type KolamBrandSurfaceMode = 'list' | 'detail' | 'edit' | 'new';
@@ -442,18 +441,8 @@ function upsertBrand(brands: KolamBrand[], brand: KolamBrand) {
   return brands.map(item => (item.id === brand.id ? brand : item));
 }
 
-function syncBrandLogoAssets(brands: KolamBrand[]) {
-  return syncKolamImageCacheBatch({
-    scope: 'brand-logo',
-    images: brands.map(brand => ({
-      sourceUri: brand.logoUrl,
-      revision: getBrandLogoImageRevision(brand),
-    })),
-  }).catch(() => ({ failed: brands.length, synced: 0 }));
-}
-
-function getBrandLogoImageRevision(brand: KolamBrand) {
-  return [brand.logoUrl ?? '', brand.updatedAt ?? ''].join(':');
+function syncBrandLogoAssets(_brands: KolamBrand[]) {
+  return Promise.resolve({ failed: 0, synced: 0 });
 }
 
 function getErrorMessage(error: unknown) {
@@ -463,3 +452,4 @@ function getErrorMessage(error: unknown) {
 
   return 'Merek belum bisa dimuat dari backend.';
 }
+

@@ -29,7 +29,6 @@ import {
   writeKolamCustomFieldListCache,
   writeKolamCustomFieldUnitsCache,
 } from '../services/kolam-custom-field-local-cache';
-import { syncKolamLocalAssetBatch } from '../services/kolam-local-asset-store';
 import { pickNativeImageFile } from '../services/native-file-picker';
 
 export type KolamCustomFieldSurfaceMode = 'list' | 'detail' | 'edit' | 'new';
@@ -463,14 +462,8 @@ function validateForm(form: KolamCustomFieldFormState) {
   return null;
 }
 
-function syncCustomFieldIconAssets(fields: KolamCustomField[]) {
-  return syncKolamLocalAssetBatch({
-    assets: fields.map(field => ({
-      revision: [field.iconUrl ?? '', field.updatedAt ?? ''].join(':'),
-      sourceUri: field.iconUrl,
-    })),
-    scope: 'custom-field-icon',
-  }).catch(() => null);
+function syncCustomFieldIconAssets(_fields: KolamCustomField[]) {
+  return Promise.resolve(null);
 }
 
 function getErrorMessage(error: unknown) {
@@ -484,3 +477,4 @@ function getErrorMessage(error: unknown) {
 
   return 'Terjadi kendala saat membaca data field kustom.';
 }
+

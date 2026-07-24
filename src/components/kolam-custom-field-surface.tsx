@@ -29,8 +29,7 @@ import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import {
   KolamDropdownSelect,
   KolamOverflowMenuButton,
-  KolamPaginationSizeControl,
-  KolamPaginationSummaryLabel,
+  KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
@@ -54,7 +53,10 @@ export function KolamCustomFieldSurface({
   const controller = useKolamCustomFieldController(route);
 
   return (
-    <KolamCustomFieldShell controller={controller} onRouteChange={onRouteChange}>
+    <KolamCustomFieldShell
+      controller={controller}
+      onRouteChange={onRouteChange}
+    >
       {controller.mode === 'list' ? (
         <KolamCustomFieldList
           controller={controller}
@@ -207,12 +209,6 @@ function KolamCustomFieldList({
           ]}
           value={typeFilter}
         />
-        <KolamPaginationSizeControl onChange={setPageSize} value={pageSize} />
-        <KolamPaginationSummaryLabel
-          page={safePage}
-          pageSize={pageSize}
-          total={sortedFields.length}
-        />
       </View>
       <KolamContentFrame variant="settingsWebConfig">
         <KolamDataTableHeader columns={getKolamTableColumns('custom-field')} />
@@ -241,35 +237,46 @@ function KolamCustomFieldList({
               compact
               message="Data Field Kustom belum tersedia dari cache atau backend."
               title={
-                controller.loading ? 'Memuat field kustom...' : 'Belum ada field'
+                controller.loading
+                  ? 'Memuat field kustom...'
+                  : 'Belum ada field'
               }
             />
           </View>
         )}
       </KolamContentFrame>
-      {pageCount > 1 ? (
-        <View style={styles.paginationRow}>
-          <KolamButton
-            disabled={safePage <= 1}
-            label="Sebelumnya"
-            onPress={() => setPage(current => Math.max(1, current - 1))}
-          />
-          <KolamCopyStack
-            items={[
-              {
-                id: 'page',
-                text: `${safePage} / ${pageCount}`,
-                style: styles.pageLabel,
-              },
-            ]}
-          />
-          <KolamButton
-            disabled={safePage >= pageCount}
-            label="Berikutnya"
-            onPress={() => setPage(current => Math.min(pageCount, current + 1))}
-          />
-        </View>
-      ) : null}
+      <KolamTableFooterControls
+        onPageSizeChange={setPageSize}
+        page={safePage}
+        pageSize={pageSize}
+        total={sortedFields.length}
+      >
+        {pageCount > 1 ? (
+          <View style={styles.paginationRow}>
+            <KolamButton
+              disabled={safePage <= 1}
+              label="Sebelumnya"
+              onPress={() => setPage(current => Math.max(1, current - 1))}
+            />
+            <KolamCopyStack
+              items={[
+                {
+                  id: 'page',
+                  text: `${safePage} / ${pageCount}`,
+                  style: styles.pageLabel,
+                },
+              ]}
+            />
+            <KolamButton
+              disabled={safePage >= pageCount}
+              label="Berikutnya"
+              onPress={() =>
+                setPage(current => Math.min(pageCount, current + 1))
+              }
+            />
+          </View>
+        ) : null}
+      </KolamTableFooterControls>
       <KolamDeleteConfirmDialog
         itemLabel={deleteCandidate?.fieldLabel}
         itemType="field kustom"
@@ -413,7 +420,11 @@ function KolamCustomFieldDetail({
       {!editable && field ? (
         <>
           <View style={styles.detailActions}>
-            <KolamButton intent="primary" label="Edit" onPress={controller.onEdit} />
+            <KolamButton
+              intent="primary"
+              label="Edit"
+              onPress={controller.onEdit}
+            />
           </View>
           <KolamLabelFieldDetailOverview
             hero={<KolamCustomFieldIcon field={field} variant="detail" />}
@@ -426,7 +437,12 @@ function KolamCustomFieldDetail({
               { label: 'Aturan', value: getFieldRulesLabel(field) },
 
               ...(field.updatedAt
-                ? [{ label: 'Diperbarui', value: formatDateTime(field.updatedAt) }]
+                ? [
+                    {
+                      label: 'Diperbarui',
+                      value: formatDateTime(field.updatedAt),
+                    },
+                  ]
                 : []),
             ]}
             metrics={[
@@ -483,7 +499,9 @@ function KolamCustomFieldForm({
   const numericLike = form.fieldType === 'number' || form.fieldType === 'range';
 
   return (
-    <KolamNativeFormSection section={getKolamFormSection('custom-field-detail')}>
+    <KolamNativeFormSection
+      section={getKolamFormSection('custom-field-detail')}
+    >
       <View style={settingsWebFormStyles.settingsWebFormFields}>
         <View style={settingsWebFormStyles.settingsWebFormFieldsGrid}>
           <FieldShell label="Kunci Field" required>
@@ -494,7 +512,8 @@ function KolamCustomFieldForm({
               style={settingsWebFormStyles.settingsWebFormFieldValue}
               value={form.fieldKey}
             />
-          </FieldShell><FieldShell label="Tipe Field" required>
+          </FieldShell>
+          <FieldShell label="Tipe Field" required>
             <KolamDropdownSelect<KolamCustomFieldType>
               label="Tipe"
               onChange={fieldType =>
@@ -767,7 +786,6 @@ function SummaryTile({ label, value }: { label: string; value: number }) {
   );
 }
 
-
 function getCustomFieldSummary(fields: KolamCustomField[]) {
   return fields.reduce(
     (summary, field) => {
@@ -816,10 +834,7 @@ function filterFields(
   });
 }
 
-function sortFields(
-  fields: KolamCustomField[],
-  sortMode: CustomFieldSortMode,
-) {
+function sortFields(fields: KolamCustomField[], sortMode: CustomFieldSortMode) {
   return [...fields].sort((left, right) => {
     if (sortMode === 'newest') {
       return (
@@ -829,7 +844,10 @@ function sortFields(
     }
 
     if (sortMode === 'order') {
-      return left.order - right.order || left.fieldLabel.localeCompare(right.fieldLabel);
+      return (
+        left.order - right.order ||
+        left.fieldLabel.localeCompare(right.fieldLabel)
+      );
     }
 
     return sortMode === 'label-desc'
@@ -977,7 +995,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexWrap: 'wrap',
     gap: 8,
-    zIndex: 8,
+    zIndex: 9200,
+    elevation: 96,
   },
   searchInput: {
     width: 240,
@@ -988,7 +1007,7 @@ const styles = StyleSheet.create({
   },
   activeActionRow: {
     zIndex: 1000,
-    elevation: 30,
+    elevation: 96,
   },
   identityCell: {
     flex: 1,
@@ -1108,5 +1127,3 @@ const styles = StyleSheet.create({
     paddingTop: 16,
   },
 });
-
-

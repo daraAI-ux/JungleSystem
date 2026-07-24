@@ -18,7 +18,7 @@ describe('KolamLocalAssetImage', () => {
     resetLocalDataStore();
   });
 
-  it('renders only asset data already stored in the local DB', async () => {
+  it('renders the backend URI directly instead of reading SQLite data URI', async () => {
     await writeKolamLocalAsset('brand-logo', {
       dataUri: 'data:image/png;base64,AAA',
       mimeType: 'image/png',
@@ -42,11 +42,11 @@ describe('KolamLocalAssetImage', () => {
     });
 
     expect(renderer!.root.findByType(Image).props.source).toEqual({
-      uri: 'data:image/png;base64,AAA',
+      uri: 'https://cdn/logo.png',
     });
   });
 
-  it('stays empty when the asset has not been synced locally', async () => {
+  it('stays empty when the backend URI is missing', async () => {
     let renderer: ReactTestRenderer.ReactTestRenderer;
     await ReactTestRenderer.act(async () => {
       renderer = ReactTestRenderer.create(
@@ -54,7 +54,7 @@ describe('KolamLocalAssetImage', () => {
           accessibilityLabel="Brand logo"
           revision="logo:v1"
           scope="brand-logo"
-          sourceUri="https://cdn/logo.png"
+          sourceUri={null}
           style={{ height: 40, width: 132 }}
         />,
       );

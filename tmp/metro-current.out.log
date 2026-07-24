@@ -1,0 +1,129 @@
+
+> junglesystem@0.0.1 start
+> react-native start --reset-cache
+
+
+Welcome to React Native v0.84
+Starting dev server on http://localhost:8081
+
+
+                        ▒▒▓▓▓▓▒▒
+                     ▒▓▓▓▒▒░░▒▒▓▓▓▒
+                  ▒▓▓▓▓░░░▒▒▒▒░░░▓▓▓▓▒
+                 ▓▓▒▒▒▓▓▓▓▓▓▓▓▓▓▓▓▒▒▒▓▓
+                 ▓▓░░░░░▒▓▓▓▓▓▓▒░░░░░▓▓
+                 ▓▓░░▓▓▒░░░▒▒░░░▒▓▒░░▓▓
+                 ▓▓░░▓▓▓▓▓▒▒▒▒▓▓▓▓▒░░▓▓
+                 ▓▓░░▓▓▓▓▓▓▓▓▓▓▓▓▓▒░░▓▓
+                 ▓▓▒░░▒▒▓▓▓▓▓▓▓▓▒░░░▒▓▓
+                  ▒▓▓▓▒░░░▒▓▓▒░░░▒▓▓▓▒
+                     ▒▓▓▓▒░░░░▒▓▓▓▒
+                        ▒▒▓▓▓▓▒▒
+
+
+ WARN  the transform cache was reset.
+                Welcome to Metro v0.83.7
+              Fast - Scalable - Integrated
+
+
+ INFO  Dev server ready. Press Ctrl+C to exit.
+ INFO  Interactive mode is not supported in this environment
+ BUNDLE  ./index.js ░░░░░░░░░░░░░░░░ 0% (0/1)
+ INFO  [1m[7m💡 JavaScript logs have moved![22m They can now be viewed in React Native DevTools. Tip: Type [1mj[22m in the terminal to open.[27m
+ BUNDLE  ./index.js ▓▓▓▓▓▓▓▓░░░░░░░░ 50% (360/530)
+ BUNDLE  ./index.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 91% (1220/1273)
+ BUNDLE  ./index.js 
+ ERROR  SyntaxError: E:\Data\Dunia-Anura\KolamWindows\src\components\kolam-species-detail-overview.tsx: Adjacent JSX elements must be wrapped in an enclosing tag. Did you want a JSX fragment <>...</>? (388:6)
+
+  386 | }
+  387 |         <Text style={styles.videoPlayText}>{'â–¶'}</Text>
+> 388 |       </View>
+      |       ^
+  389 |     </KolamInteractionFrame>
+  390 |   );
+  391 | }
+ ERROR  SyntaxError: E:\Data\Dunia-Anura\KolamWindows\src\domain\kolam-product.ts: Nullish coalescing operator(??) requires parens when mixing with logical operators. (641:86)
+
+  639 |     memberPoints: String(getNumber(memberPoints, 'points') ?? product.memberPoints.points),
+  640 |     warrantyMode: getString(warranty, 'mode') || product.warranty.mode || 'none',
+> 641 |     warrantyDays: String(getNumber(warranty, 'warrantyDays') ?? product.warranty.days || 365),
+      |                                                                                       ^
+  642 |     warrantyVendorId: getObjectIdString(warranty.warrantyVendor),
+  643 |     warrantyTermsTemplateId: getObjectIdString(warranty.warrantyTermsTemplate),
+  644 |     grocerPricingTiers: product.grocerPricingTiers.map(createKolamProductGrocerPricingTierFormRow),
+ ERROR  SyntaxError: E:\Data\Dunia-Anura\KolamWindows\src\domain\kolam-product.ts: Nullish coalescing operator(??) requires parens when mixing with logical operators. (641:86)
+
+  639 |     memberPoints: String(getNumber(memberPoints, 'points') ?? product.memberPoints.points),
+  640 |     warrantyMode: getString(warranty, 'mode') || product.warranty.mode || 'none',
+> 641 |     warrantyDays: String(getNumber(warranty, 'warrantyDays') ?? product.warranty.days || 365),
+      |                                                                                       ^
+  642 |     warrantyVendorId: getObjectIdString(warranty.warrantyVendor),
+  643 |     warrantyTermsTemplateId: getObjectIdString(warranty.warrantyTermsTemplate),
+  644 |     grocerPricingTiers: product.grocerPricingTiers.map(createKolamProductGrocerPricingTierFormRow),
+ ERROR  SyntaxError: E:\Data\Dunia-Anura\KolamWindows\src\domain\kolam-product.ts: Nullish coalescing operator(??) requires parens when mixing with logical operators. (641:86)
+
+  639 |     memberPoints: String(getNumber(memberPoints, 'points') ?? product.memberPoints.points),
+  640 |     warrantyMode: getString(warranty, 'mode') || product.warranty.mode || 'none',
+> 641 |     warrantyDays: String(getNumber(warranty, 'warrantyDays') ?? product.warranty.days || 365),
+      |                                                                                       ^
+  642 |     warrantyVendorId: getObjectIdString(warranty.warrantyVendor),
+  643 |     warrantyTermsTemplateId: getObjectIdString(warranty.warrantyTermsTemplate),
+  644 |     grocerPricingTiers: product.grocerPricingTiers.map(createKolamProductGrocerPricingTierFormRow),
+ ERROR  SyntaxError: E:\Data\Dunia-Anura\KolamWindows\src\domain\kolam-product.ts: Nullish coalescing operator(??) requires parens when mixing with logical operators. (641:86)
+
+  639 |     memberPoints: String(getNumber(memberPoints, 'points') ?? product.memberPoints.points),
+  640 |     warrantyMode: getString(warranty, 'mode') || product.warranty.mode || 'none',
+> 641 |     warrantyDays: String(getNumber(warranty, 'warrantyDays') ?? product.warranty.days || 365),
+      |                                                                                       ^
+  642 |     warrantyVendorId: getObjectIdString(warranty.warrantyVendor),
+  643 |     warrantyTermsTemplateId: getObjectIdString(warranty.warrantyTermsTemplate),
+  644 |     grocerPricingTiers: product.grocerPricingTiers.map(createKolamProductGrocerPricingTierFormRow),
+ ERROR  SyntaxError: E:\Data\Dunia-Anura\KolamWindows\src\domain\kolam-product.ts: Nullish coalescing operator(??) requires parens when mixing with logical operators. (641:86)
+
+  639 |     memberPoints: String(getNumber(memberPoints, 'points') ?? product.memberPoints.points),
+  640 |     warrantyMode: getString(warranty, 'mode') || product.warranty.mode || 'none',
+> 641 |     warrantyDays: String(getNumber(warranty, 'warrantyDays') ?? product.warranty.days || 365),
+      |                                                                                       ^
+  642 |     warrantyVendorId: getObjectIdString(warranty.warrantyVendor),
+  643 |     warrantyTermsTemplateId: getObjectIdString(warranty.warrantyTermsTemplate),
+  644 |     grocerPricingTiers: product.grocerPricingTiers.map(createKolamProductGrocerPricingTierFormRow),
+ ERROR  SyntaxError: E:\Data\Dunia-Anura\KolamWindows\src\domain\kolam-product.ts: Nullish coalescing operator(??) requires parens when mixing with logical operators. (641:86)
+
+  639 |     memberPoints: String(getNumber(memberPoints, 'points') ?? product.memberPoints.points),
+  640 |     warrantyMode: getString(warranty, 'mode') || product.warranty.mode || 'none',
+> 641 |     warrantyDays: String(getNumber(warranty, 'warrantyDays') ?? product.warranty.days || 365),
+      |                                                                                       ^
+  642 |     warrantyVendorId: getObjectIdString(warranty.warrantyVendor),
+  643 |     warrantyTermsTemplateId: getObjectIdString(warranty.warrantyTermsTemplate),
+  644 |     grocerPricingTiers: product.grocerPricingTiers.map(createKolamProductGrocerPricingTierFormRow),
+ ERROR  SyntaxError: E:\Data\Dunia-Anura\KolamWindows\src\domain\kolam-product.ts: Nullish coalescing operator(??) requires parens when mixing with logical operators. (641:86)
+
+  639 |     memberPoints: String(getNumber(memberPoints, 'points') ?? product.memberPoints.points),
+  640 |     warrantyMode: getString(warranty, 'mode') || product.warranty.mode || 'none',
+> 641 |     warrantyDays: String(getNumber(warranty, 'warrantyDays') ?? product.warranty.days || 365),
+      |                                                                                       ^
+  642 |     warrantyVendorId: getObjectIdString(warranty.warrantyVendor),
+  643 |     warrantyTermsTemplateId: getObjectIdString(warranty.warrantyTermsTemplate),
+  644 |     grocerPricingTiers: product.grocerPricingTiers.map(createKolamProductGrocerPricingTierFormRow),
+ ERROR  SyntaxError: E:\Data\Dunia-Anura\KolamWindows\src\domain\kolam-product.ts: Nullish coalescing operator(??) requires parens when mixing with logical operators. (641:86)
+
+  639 |     memberPoints: String(getNumber(memberPoints, 'points') ?? product.memberPoints.points),
+  640 |     warrantyMode: getString(warranty, 'mode') || product.warranty.mode || 'none',
+> 641 |     warrantyDays: String(getNumber(warranty, 'warrantyDays') ?? product.warranty.days || 365),
+      |                                                                                       ^
+  642 |     warrantyVendorId: getObjectIdString(warranty.warrantyVendor),
+  643 |     warrantyTermsTemplateId: getObjectIdString(warranty.warrantyTermsTemplate),
+  644 |     grocerPricingTiers: product.grocerPricingTiers.map(createKolamProductGrocerPricingTierFormRow),
+ ERROR  SyntaxError: E:\Data\Dunia-Anura\KolamWindows\src\domain\kolam-product.ts: Nullish coalescing operator(??) requires parens when mixing with logical operators. (641:86)
+
+  639 |     memberPoints: String(getNumber(memberPoints, 'points') ?? product.memberPoints.points),
+  640 |     warrantyMode: getString(warranty, 'mode') || product.warranty.mode || 'none',
+> 641 |     warrantyDays: String(getNumber(warranty, 'warrantyDays') ?? product.warranty.days || 365),
+      |                                                                                       ^
+  642 |     warrantyVendorId: getObjectIdString(warranty.warrantyVendor),
+  643 |     warrantyTermsTemplateId: getObjectIdString(warranty.warrantyTermsTemplate),
+  644 |     grocerPricingTiers: product.grocerPricingTiers.map(createKolamProductGrocerPricingTierFormRow),
+ BUNDLE  ./index.js ░░░░░░░░░░░░░░░░ 0% (0/1)
+ BUNDLE  ./index.js 
+ BUNDLE  ./index.js ░░░░░░░░░░░░░░░░ 0% (0/1)
+ BUNDLE  ./index.js 

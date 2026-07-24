@@ -24,7 +24,6 @@ import {
   writeKolamIucnStatusDetailCache,
   writeKolamIucnStatusListCache,
 } from '../services/kolam-iucn-status-local-cache';
-import { syncKolamImageCacheBatch } from '../services/kolam-image-local-cache';
 import { pickNativeImageFile } from '../services/native-file-picker';
 
 export type KolamIucnStatusSurfaceMode = 'list' | 'detail' | 'edit' | 'new';
@@ -369,16 +368,8 @@ function upsertItem(items: KolamIucnStatus[], item: KolamIucnStatus) {
   return items.map(entry => (entry.id === item.id ? item : entry));
 }
 
-function syncIucnImages(items: KolamIucnStatus[]) {
-  return syncKolamImageCacheBatch({
-    images: items
-      .filter(item => item.imageUri)
-      .map(item => ({
-        revision: item.updatedAt ?? item.image ?? item.imageUri ?? undefined,
-        sourceUri: item.imageUri,
-      })),
-    scope: 'iucn-status',
-  });
+function syncIucnImages(_items: KolamIucnStatus[]) {
+  return Promise.resolve({ failed: 0, synced: 0 });
 }
 
 function getErrorMessage(error: unknown) {
@@ -392,3 +383,4 @@ function getErrorMessage(error: unknown) {
 
   return 'Terjadi kendala saat membaca data Status IUCN.';
 }
+

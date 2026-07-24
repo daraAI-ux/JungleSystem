@@ -30,8 +30,7 @@ import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import {
   KolamDropdownSelect,
   KolamOverflowMenuButton,
-  KolamPaginationSizeControl,
-  KolamPaginationSummaryLabel,
+  KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
@@ -58,7 +57,10 @@ export function KolamTaxonomySurface({
   return (
     <KolamTaxonomyShell controller={controller} onRouteChange={onRouteChange}>
       {controller.mode === 'list' ? (
-        <KolamTaxonomyList controller={controller} onRouteChange={onRouteChange} />
+        <KolamTaxonomyList
+          controller={controller}
+          onRouteChange={onRouteChange}
+        />
       ) : (
         <KolamTaxonomyDetail controller={controller} />
       )}
@@ -128,7 +130,8 @@ function KolamTaxonomyList({
 }) {
   const [search, setSearch] = React.useState('');
   const [sortMode, setSortMode] = React.useState<TaxonomySortMode>('name-asc');
-  const [levelFilter, setLevelFilter] = React.useState<TaxonomyLevelFilter>('all');
+  const [levelFilter, setLevelFilter] =
+    React.useState<TaxonomyLevelFilter>('all');
   const [statusFilter, setStatusFilter] =
     React.useState<TaxonomyStatusFilter>('all');
   const [rootFilter, setRootFilter] = React.useState<TaxonomyRootFilter>('all');
@@ -166,7 +169,10 @@ function KolamTaxonomyList({
   return (
     <View style={styles.stack}>
       <View style={styles.summaryGrid}>
-        <SummaryTile label="Total Taksonomi" value={controller.taxonomies.length} />
+        <SummaryTile
+          label="Total Taksonomi"
+          value={controller.taxonomies.length}
+        />
         <SummaryTile label="Aktif" value={summary.active} />
         <SummaryTile label="Nonaktif" value={summary.inactive} />
         <SummaryTile label="Genus" value={summary.genus} />
@@ -220,12 +226,6 @@ function KolamTaxonomyList({
           ]}
           value={statusFilter}
         />
-        <KolamPaginationSizeControl onChange={setPageSize} value={pageSize} />
-        <KolamPaginationSummaryLabel
-          page={safePage}
-          pageSize={pageSize}
-          total={sortedTaxonomies.length}
-        />
       </View>
       <KolamContentFrame variant="settingsWebConfig">
         <KolamDataTableHeader columns={getKolamTableColumns('taxonomy')} />
@@ -251,29 +251,46 @@ function KolamTaxonomyList({
               compact
               message="Data Taksonomi belum tersedia dari cache atau backend."
               title={
-                controller.loading ? 'Memuat taksonomi...' : 'Belum ada taksonomi'
+                controller.loading
+                  ? 'Memuat taksonomi...'
+                  : 'Belum ada taksonomi'
               }
             />
           </View>
         )}
       </KolamContentFrame>
-      {pageCount > 1 ? (
-        <View style={styles.paginationRow}>
-          <KolamButton
-            disabled={safePage <= 1}
-            label="Sebelumnya"
-            onPress={() => setPage(current => Math.max(1, current - 1))}
-          />
-          <KolamCopyStack
-            items={[{ id: 'page', text: `${safePage} / ${pageCount}`, style: styles.pageLabel }]}
-          />
-          <KolamButton
-            disabled={safePage >= pageCount}
-            label="Berikutnya"
-            onPress={() => setPage(current => Math.min(pageCount, current + 1))}
-          />
-        </View>
-      ) : null}
+      <KolamTableFooterControls
+        onPageSizeChange={setPageSize}
+        page={safePage}
+        pageSize={pageSize}
+        total={sortedTaxonomies.length}
+      >
+        {pageCount > 1 ? (
+          <View style={styles.paginationRow}>
+            <KolamButton
+              disabled={safePage <= 1}
+              label="Sebelumnya"
+              onPress={() => setPage(current => Math.max(1, current - 1))}
+            />
+            <KolamCopyStack
+              items={[
+                {
+                  id: 'page',
+                  text: `${safePage} / ${pageCount}`,
+                  style: styles.pageLabel,
+                },
+              ]}
+            />
+            <KolamButton
+              disabled={safePage >= pageCount}
+              label="Berikutnya"
+              onPress={() =>
+                setPage(current => Math.min(pageCount, current + 1))
+              }
+            />
+          </View>
+        ) : null}
+      </KolamTableFooterControls>
       <KolamDeleteConfirmDialog
         itemLabel={deleteCandidate?.name}
         itemType="taksonomi"
@@ -331,7 +348,10 @@ function KolamTaxonomyRow({
         </View>
       </View>
       <View style={styles.levelCell}>
-        <KolamStatusBadge intent="muted" label={getTaxonomyLevelLabel(taxonomy.level)} />
+        <KolamStatusBadge
+          intent="muted"
+          label={getTaxonomyLevelLabel(taxonomy.level)}
+        />
       </View>
       <View style={styles.scientificCell}>
         <KolamCopyStack
@@ -339,7 +359,10 @@ function KolamTaxonomyRow({
             {
               id: 'scientific',
               text: taxonomy.scientificName || '-',
-              style: [styles.rowMeta, taxonomy.scientificName ? styles.italicText : null],
+              style: [
+                styles.rowMeta,
+                taxonomy.scientificName ? styles.italicText : null,
+              ],
               textProps: { ellipsizeMode: 'tail', numberOfLines: 1 },
             },
           ]}
@@ -347,7 +370,13 @@ function KolamTaxonomyRow({
       </View>
       <View style={styles.childrenCell}>
         <KolamCopyStack
-          items={[{ id: 'children', text: String(taxonomy.children.length), style: styles.amountText }]}
+          items={[
+            {
+              id: 'children',
+              text: String(taxonomy.children.length),
+              style: styles.amountText,
+            },
+          ]}
         />
       </View>
       <View style={styles.pathCell}>
@@ -412,25 +441,40 @@ function KolamTaxonomyDetail({
       {!editable && taxonomy ? (
         <>
           <View style={styles.detailActions}>
-            <KolamButton intent="primary" label="Edit" onPress={controller.onEdit} />
+            <KolamButton
+              intent="primary"
+              label="Edit"
+              onPress={controller.onEdit}
+            />
           </View>
           <KolamLabelFieldDetailOverview
             hero={<TaxonomyHero taxonomy={taxonomy} />}
             meta={[
-              { label: 'Tingkat', value: getTaxonomyLevelLabel(taxonomy.level) },
-              { label: 'Induk', value: taxonomy.parentName || 'Akar taksonomi' },
+              {
+                label: 'Tingkat',
+                value: getTaxonomyLevelLabel(taxonomy.level),
+              },
+              {
+                label: 'Induk',
+                value: taxonomy.parentName || 'Akar taksonomi',
+              },
               ...(taxonomy.scientificName
                 ? [{ label: 'Nama ilmiah', value: taxonomy.scientificName }]
                 : []),
               ...(taxonomy.commonName
                 ? [{ label: 'Nama umum', value: taxonomy.commonName }]
                 : []),
-              ...(taxonomy.path ? [{ label: 'Jalur', value: taxonomy.path }] : []),
+              ...(taxonomy.path
+                ? [{ label: 'Jalur', value: taxonomy.path }]
+                : []),
             ]}
             metrics={[
               { label: 'Anak', value: taxonomy.children.length },
               { label: 'Foto', value: taxonomy.photos.length },
-              { label: 'Locale aktif', value: countActiveLocaleAuditItems(localeAuditItems) },
+              {
+                label: 'Locale aktif',
+                value: countActiveLocaleAuditItems(localeAuditItems),
+              },
             ]}
             sections={[
               {
@@ -461,7 +505,8 @@ function KolamTaxonomyDetail({
                 total: taxonomy.children.length,
               },
               {
-                description: 'Referensi foto taksonomi dari backend yang tersimpan lokal',
+                description:
+                  'Referensi foto taksonomi dari backend yang tersimpan lokal',
                 emptyText: 'Belum ada foto taksonomi.',
                 items: taxonomy.photos.map((photo, index) => ({
                   title: `Foto ${index + 1}`,
@@ -530,7 +575,10 @@ function KolamTaxonomyForm({
                     label="Induk"
                     onChange={parentId => controller.onChangeForm({ parentId })}
                     options={[
-                      { label: `Pilih ${getTaxonomyLevelLabel(parentLevel)}`, value: '' },
+                      {
+                        label: `Pilih ${getTaxonomyLevelLabel(parentLevel)}`,
+                        value: '',
+                      },
                       ...parentOptions.map(parent => ({
                         label: parent.name,
                         value: parent.id,
@@ -570,7 +618,9 @@ function KolamTaxonomyForm({
               <FieldShell label="Nama umum">
                 <KolamFormTextField
                   editable={!controller.saving}
-                  onChangeText={commonName => controller.onChangeForm({ commonName })}
+                  onChangeText={commonName =>
+                    controller.onChangeForm({ commonName })
+                  }
                   placeholder="Nama umum"
                   style={settingsWebFormStyles.settingsWebFormFieldValue}
                   value={form.commonName}
@@ -642,7 +692,9 @@ function FieldShell({
 function ReadonlyValue({ value }: { value: string }) {
   return (
     <View style={styles.readonlyBox}>
-      <KolamCopyStack items={[{ id: 'value', text: value, style: styles.readonlyText }]} />
+      <KolamCopyStack
+        items={[{ id: 'value', text: value, style: styles.readonlyText }]}
+      />
     </View>
   );
 }
@@ -666,7 +718,11 @@ function TaxonomyHero({ taxonomy }: { taxonomy: KolamTaxonomy }) {
       <View style={styles.heroMark} />
       <KolamCopyStack
         items={[
-          { id: 'level', text: getTaxonomyLevelLabel(taxonomy.level), style: styles.heroLevel },
+          {
+            id: 'level',
+            text: getTaxonomyLevelLabel(taxonomy.level),
+            style: styles.heroLevel,
+          },
           { id: 'name', text: taxonomy.name, style: styles.heroName },
         ]}
       />
@@ -690,7 +746,9 @@ function getPathItems(taxonomy: KolamTaxonomy) {
 }
 
 function getTaxonomyRoute(taxonomy: KolamTaxonomy) {
-  return `/taxonomy/${encodeURIComponent(taxonomy.slug || taxonomy.name || taxonomy.id)}`;
+  return `/taxonomy/${encodeURIComponent(
+    taxonomy.slug || taxonomy.name || taxonomy.id,
+  )}`;
 }
 
 function getTaxonomySummary(taxonomies: KolamTaxonomy[]) {
@@ -726,7 +784,8 @@ function filterTaxonomies(
           .toLowerCase()
           .includes(query)
       : true;
-    const matchesLevel = levelFilter === 'all' || taxonomy.level === levelFilter;
+    const matchesLevel =
+      levelFilter === 'all' || taxonomy.level === levelFilter;
     const matchesStatus =
       statusFilter === 'all' || taxonomy.status === statusFilter;
     const matchesRoot = rootFilter === 'all' || !taxonomy.parentId;
@@ -735,7 +794,10 @@ function filterTaxonomies(
   });
 }
 
-function sortTaxonomies(taxonomies: KolamTaxonomy[], sortMode: TaxonomySortMode) {
+function sortTaxonomies(
+  taxonomies: KolamTaxonomy[],
+  sortMode: TaxonomySortMode,
+) {
   const next = [...taxonomies];
   switch (sortMode) {
     case 'name-desc':
@@ -749,7 +811,9 @@ function sortTaxonomies(taxonomies: KolamTaxonomy[], sortMode: TaxonomySortMode)
       });
     case 'newest':
       return next.sort((left, right) =>
-        String(right.updatedAt ?? '').localeCompare(String(left.updatedAt ?? '')),
+        String(right.updatedAt ?? '').localeCompare(
+          String(left.updatedAt ?? ''),
+        ),
       );
     case 'name-asc':
     default:
@@ -808,6 +872,8 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     alignItems: 'center',
     gap: 10,
+    zIndex: 9200,
+    elevation: 96,
   },
   searchInput: {
     minWidth: 220,
@@ -975,4 +1041,3 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
 });
-

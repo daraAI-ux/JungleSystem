@@ -222,7 +222,7 @@ export function getRouteWorkbenchIntentTitle(intent: RouteWorkbenchIntent) {
     case 'governance':
       return 'Governance';
     case 'inventory':
-      return 'Inventory Flow';
+      return 'Alur Inventori';
     case 'people':
       return 'People Flow';
     case 'service':
@@ -246,11 +246,11 @@ function getIntentMeta(intent: RouteWorkbenchIntent) {
     case 'form':
       return 'Create, edit, payment, dan draft flow disiapkan sebagai form native.';
     case 'governance':
-      return 'Settings, admin, role, dan audit dibuka dengan guard native.';
+      return 'Pengaturan, admin, role, dan audit dibuka dengan guard native.';
     case 'inventory':
-      return 'Inventory, product, species, stock, storage, dan purchase data.';
+      return 'Inventori, produk, spesies, stok, penyimpanan, dan data pembelian.';
     case 'people':
-      return 'Customer, staff, team, account, dan role workflow.';
+      return 'Pelanggan, staf, tim, akun, dan alur role.';
     case 'service':
       return 'Layanan, proyek, appointment, dan operational task.';
     case 'transaction':

@@ -96,7 +96,7 @@ export const shellModules: ShellModule[] = [
   {
     id: 'kolam',
     area: 'kolam',
-    label: 'Kolam',
+    label: 'Beranda',
     iconKind: 'dashboard',
     sourceRepo: 'E:\\Projects\\_latest-da\\da-inventory-frontend',
     summary:
@@ -208,7 +208,7 @@ export const shellModules: ShellModule[] = [
   {
     id: 'settings',
     area: 'kolam',
-    label: 'Settings',
+    label: 'Pengaturan',
     iconKind: 'settings',
     sourceRepo: 'E:\\Projects\\_latest-da\\da-inventory-frontend',
     summary:
@@ -264,10 +264,10 @@ export const shellModules: ShellModule[] = [
   {
     id: 'customer',
     area: 'pos',
-    label: 'Customer',
+    label: 'Pelanggan',
     iconKind: 'people',
     sourceRepo: 'E:\\Projects\\da-pos',
-    summary: 'Customer POS dan walk-in buyer untuk transaksi toko.',
+    summary: 'Pelanggan POS dan pembeli langsung untuk transaksi toko.',
     routes: [
       'customers',
       'customer',
@@ -332,7 +332,7 @@ export const shellModules: ShellModule[] = [
     iconKind: 'plugin',
     sourceRepo: 'E:\\Projects',
     summary:
-      'Plugin Bantuan, Chat, Dara, Enclosure, Freyer, KPI, Layanan, Proyek, dan Task Manager.',
+      'Plugin Bantuan, Chat, Dara, Enclosure, Freyer, KPI, Layanan, Proyek, dan Manajemen Tugas.',
     routes: [
       'DA-Bantuan-Plugin',
       'DA-Chat-Plugin',
@@ -348,7 +348,7 @@ export const shellModules: ShellModule[] = [
   {
     id: 'preparation',
     area: 'preparation',
-    label: 'Preparation',
+    label: 'Persiapan',
     iconKind: 'preparation',
     sourceRepo: 'E:\\Projects\\KolamWindows',
     summary:

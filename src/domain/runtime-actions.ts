@@ -64,7 +64,7 @@ export const runtimeActions: RuntimeAction[] = [
     area: 'kolam',
     label: 'Review settings',
     description:
-      'Buka ringkasan Web Settings, Role Management, dan Activity Log Kolam.',
+      'Buka ringkasan Pengaturan Web, Manajemen Role, dan Log Aktivitas Kolam.',
     sourceContract: 'da-inventory-frontend settings routes',
     requiredAccess: 'kolam',
     status: 'source-audit',

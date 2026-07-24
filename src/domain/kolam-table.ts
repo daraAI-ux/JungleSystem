@@ -5,6 +5,7 @@ export type KolamTableId =
   | 'custom-field'
   | 'customer'
   | 'iucn-status'
+  | 'packing-material'
   | 'sales'
   | 'species'
   | 'tag'
@@ -18,6 +19,7 @@ export interface KolamTableColumn {
     | 'amount'
     | 'children'
     | 'marketplace'
+    | 'price'
     | 'products'
     | 'raws'
     | 'notes'
@@ -158,9 +160,21 @@ const kolamTableColumns: Record<KolamTableId, KolamTableColumn[]> = {
     { id: 'actions', label: '', align: 'right', width: 64 },
   ],
   customer: [
-    { id: 'primary', label: 'Customer', align: 'left' },
+    { id: 'primary', label: 'Pelanggan', align: 'left' },
     { id: 'meta', label: 'Phone', align: 'left', width: 150 },
     { id: 'amount', label: 'Email', align: 'right', width: 170 },
+  ],
+  'packing-material': [
+    { id: 'meta', label: 'Foto', align: 'left', width: 72 },
+    { id: 'primary', label: 'Nama', align: 'left' },
+    { id: 'children', label: 'Kategori', align: 'left', width: 132 },
+    { id: 'notes', label: 'Dimensi', align: 'left', width: 150 },
+    { id: 'marketplace', label: 'Berat', align: 'left', width: 110 },
+    { id: 'price', label: 'Harga Tagih', align: 'right', width: 132 },
+    { id: 'amount', label: 'HPP', align: 'right', width: 120 },
+    { id: 'raws', label: 'Stok', align: 'right', width: 86 },
+    { id: 'status', label: 'Status', align: 'right', width: 116 },
+    { id: 'actions', label: '', align: 'right', width: 64 },
   ],
   'iucn-status': [
     { id: 'meta', label: 'Gambar', align: 'left', width: 72 },
@@ -175,9 +189,8 @@ const kolamTableColumns: Record<KolamTableId, KolamTableColumn[]> = {
     { id: 'meta', label: 'SKU', align: 'left', width: 126 },
     { id: 'amount', label: 'Harga Jual', align: 'right', width: 140 },
     { id: 'children', label: 'Stok', align: 'right', width: 110 },
-    { id: 'marketplace', label: 'Sinkron', align: 'left', width: 132 },
-    { id: 'notes', label: 'Info', align: 'left', width: 230 },
-    { id: 'status', label: 'Status', align: 'right', width: 116 },
+    { id: 'marketplace', label: 'Sinkron Terakhir', align: 'left', width: 168 },
+    { id: 'notes', label: 'Informasi', align: 'right', width: 136 },
     { id: 'actions', label: '', align: 'right', width: 64 },
   ],
   taxonomy: [
@@ -221,6 +234,4 @@ export function getKolamTableVisualContract(): KolamTableVisualContract {
     interaction: { ...kolamTableVisualContract.interaction },
   };
 }
-
-
 
