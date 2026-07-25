@@ -185,6 +185,7 @@ export function useKolamProductController(
   route: string,
 ): KolamProductController {
   const initialMode = getInitialMode(route);
+  const catalogKind = getKolamProductCatalogKind(route);
   const [products, setProducts] = useState<KolamProduct[]>([]);
   const [brands, setBrands] = useState<KolamBrand[]>([]);
   const [categories, setCategories] = useState<KolamCategory[]>([]);
@@ -341,7 +342,6 @@ export function useKolamProductController(
     setLoading(true);
     setError(null);
 
-    const catalogKind = getKolamProductCatalogKind(route);
     const canUseCache = catalogKind === 'product' && isDefaultListFilters(filters);
     const cached = canUseCache ? await readKolamProductListCache() : null;
     if (cached?.value.data.length) {
@@ -363,19 +363,22 @@ export function useKolamProductController(
     } finally {
       setLoading(false);
     }
-  }, [filters, route]);
+  }, [catalogKind, filters, route]);
 
   useEffect(() => {
     setMode(initialMode);
     setFilters(current => {
       const archived = route.split('?')[0] === '/products/archive';
-      return current.archived === archived ? current : { ...current, archived };
+      const stockStatus = catalogKind === 'raw' ? '' : current.stockStatus;
+      return current.archived === archived && current.stockStatus === stockStatus
+        ? current
+        : { ...current, archived, stockStatus };
     });
     if (initialMode === 'new') {
       setSelectedProduct(null);
-      setForm(null);
+      setForm(createEmptyKolamProductFormState(catalogKind));
     }
-  }, [initialMode, route]);
+  }, [catalogKind, initialMode, route]);
 
   useEffect(() => {
     if (isKolamProductRoute(route)) {
@@ -451,11 +454,11 @@ export function useKolamProductController(
   const onCreateNew = useCallback(() => {
     setMode('new');
     setSelectedProduct(null);
-    setForm(createEmptyKolamProductFormState());
+    setForm(createEmptyKolamProductFormState(catalogKind));
     setVariantPhotoLocalUris({});
     setError(null);
     void refreshOptions();
-  }, [refreshOptions]);
+  }, [catalogKind, refreshOptions]);
 
   const onEdit = useCallback(() => {
     if (selectedProduct) {
@@ -1071,7 +1074,7 @@ function createListRequest(
     brand: filters.brandIds.length ? filters.brandIds : undefined,
     sortBy: filters.sortBy || undefined,
     sortOrder: filters.sortBy ? filters.sortOrder : undefined,
-    stockStatus: filters.stockStatus || undefined,
+    stockStatus: catalogKind === 'product' ? filters.stockStatus || undefined : undefined,
     view: 'list',
     archived: filters.archived || undefined,
   };
@@ -1236,7 +1239,12 @@ function applyProductListResult(
 function getInitialMode(route: string): KolamProductSurfaceMode {
   const routePath = route.split('?')[0];
 
-  if (routePath === '/products/create' || routePath === '/products/baru') {
+  if (
+    routePath === '/products/create' ||
+    routePath === '/products/baru' ||
+    routePath === '/raw-materials/create' ||
+    routePath === '/raw-materials/baru'
+  ) {
     return 'new';
   }
 
@@ -1253,7 +1261,7 @@ function getInitialMode(route: string): KolamProductSurfaceMode {
 
 function getRouteProductKey(route: string) {
   const routePath = route.split('?')[0];
-  const detailRoute = routePath.match(/^\/products\/([^/]+)(?:\/edit)?$/);
+  const detailRoute = routePath.match(/^\/(?:products|raw-materials)\/([^/]+)(?:\/edit)?$/);
   const key = detailRoute?.[1];
 
   if (!key || key === 'create' || key === 'baru' || key === 'archive') {

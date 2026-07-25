@@ -7,7 +7,10 @@ import {
   type KolamCustomField,
 } from '../domain/kolam-custom-field';
 import type { KolamTableColumn } from '../domain/kolam-table';
-import { createEmptyKolamProductVendorPriceFormRow } from '../domain/kolam-product';
+import {
+  createEmptyKolamProductVendorPriceFormRow,
+  getKolamProductCatalogKind,
+} from '../domain/kolam-product';
 import type {
   KolamProduct,
   KolamProductExternalLinkFormRow,
@@ -164,6 +167,20 @@ export function KolamProductSurface({
   route: string;
 }) {
   const controller = useKolamProductController(route);
+  const catalogKind = getKolamProductCatalogKind(route);
+  const isRawCatalog = catalogKind === 'raw';
+  const listRoute = isRawCatalog ? '/raw-materials' : '/products';
+  const createRoute = isRawCatalog ? '/raw-materials/create' : '/products/create';
+  const exportTitle = isRawCatalog ? 'Ekspor Bahan Baku' : 'Ekspor Produk';
+  const exportStorageKey = isRawCatalog ? 'export.raw-materials.v1' : 'export.products.v1';
+  const exportFilenameHint = isRawCatalog ? 'raw-materials' : 'products';
+  const hasActiveListFilters = Boolean(
+    controller.filters.search.trim() ||
+      controller.filters.categoryIds.length ||
+      controller.filters.brandIds.length ||
+      controller.filters.stockStatus ||
+      controller.filters.sortBy,
+  );
   const [exportOpen, setExportOpen] = React.useState(false);
   const [barcodeOpen, setBarcodeOpen] = React.useState(false);
   const [syncPriceOpen, setSyncPriceOpen] = React.useState(false);
@@ -219,6 +236,18 @@ export function KolamProductSurface({
     setActiveFilterPanel(null);
     setFilterPanelQuery('');
   };
+  const resetListFilters = () => {
+    controller.onChangeFilters({
+      search: '',
+      categoryIds: [],
+      brandIds: [],
+      stockStatus: '',
+      sortBy: '',
+      sortOrder: 'desc',
+      page: 1,
+    });
+    closeFilterPanel();
+  };
 
   if (controller.mode !== 'list') {
     return (
@@ -227,7 +256,7 @@ export function KolamProductSurface({
         onArchive={product => setPendingAction({ type: 'archive', product })}
         onBack={() => {
           controller.onBackToList();
-          onRouteChange?.('/products');
+          onRouteChange?.(listRoute);
         }}
         onCancelEdit={product => {
           void controller.onSelectProduct(product);
@@ -251,6 +280,17 @@ export function KolamProductSurface({
     <View style={styles.surface}>
 
       <View style={styles.stack}>
+        {isRawCatalog ? (
+          <View style={styles.headingRow}>
+            <View style={styles.headingCopy}>
+              <Text style={styles.eyebrow}>KATALOG</Text>
+              <Text style={styles.title}>Bahan Baku</Text>
+              <Text style={styles.description}>
+                Kelola semua bahan baku di katalog Anda.
+              </Text>
+            </View>
+          </View>
+        ) : null}
         <View style={styles.toolbarShell}>
           <View style={styles.filterRow}>
             <KolamFormTextField
@@ -269,42 +309,51 @@ export function KolamProductSurface({
               label={brandFilterLabel}
               onPress={() => openFilterPanel('brand')}
             />
-            <ProductFilterTrigger
-              active={activeFilterPanel === 'stock'}
-              label={stockFilterLabel}
-              onPress={() => openFilterPanel('stock')}
-            />
+            {!isRawCatalog ? (
+              <ProductFilterTrigger
+                active={activeFilterPanel === 'stock'}
+                label={stockFilterLabel}
+                onPress={() => openFilterPanel('stock')}
+              />
+            ) : null}
           </View>
           <View style={styles.actionRow}>
+            {hasActiveListFilters ? (
+              <KolamButton label="Reset" muted onPress={resetListFilters} style={styles.toolbarButton} />
+            ) : null}
             <KolamButton label="Ekspor" onPress={() => setExportOpen(true)} style={styles.toolbarButton} />
-            <KolamButton
-              label={`Cetak barcode (${barcodeItems.length})`}
-              onPress={() => {
-                setBarcodeDialogItems(null);
-                setBarcodeOpen(true);
-              }}
-              style={styles.toolbarButton}
-            />
-            <KolamButton label="SEO audit" muted style={styles.toolbarButton} />
-            <KolamButton
-              label="Sinkron Harga"
-              onPress={() => setSyncPriceOpen(true)}
-              style={styles.toolbarButton}
-            />
-            <KolamButton
-              label="Sinkron Stok"
-              onPress={() => {
-                setSyncStockSelection({ ids: productIds, title: 'Samakan Stok Produk ke Marketplace' });
-                setSyncStockOpen(true);
-              }}
-              style={styles.toolbarButton}
-            />
+            {!isRawCatalog ? (
+              <>
+                <KolamButton
+                  label={`Cetak barcode (${barcodeItems.length})`}
+                  onPress={() => {
+                    setBarcodeDialogItems(null);
+                    setBarcodeOpen(true);
+                  }}
+                  style={styles.toolbarButton}
+                />
+                <KolamButton label="SEO audit" muted style={styles.toolbarButton} />
+                <KolamButton
+                  label="Sinkron Harga"
+                  onPress={() => setSyncPriceOpen(true)}
+                  style={styles.toolbarButton}
+                />
+                <KolamButton
+                  label="Sinkron Stok"
+                  onPress={() => {
+                    setSyncStockSelection({ ids: productIds, title: 'Samakan Stok Produk ke Marketplace' });
+                    setSyncStockOpen(true);
+                  }}
+                  style={styles.toolbarButton}
+                />
+              </>
+            ) : null}
             <KolamButton
               intent="primary"
               label="Baru"
               onPress={() => {
                 controller.onCreateNew();
-                onRouteChange?.('/products/create');
+                onRouteChange?.(createRoute);
               }}
               style={styles.toolbarButton}
             />
@@ -414,21 +463,21 @@ export function KolamProductSurface({
 
       <KolamExportDialog
         catalogEndpoint="/products/export/fields"
-        catalogParams={{ type: 'product' }}
+        catalogParams={{ type: catalogKind }}
         defaultPresetKey="basic"
         description="Pilih field yang ingin di-ekspor ke XLSX. Filter dan pencarian saat ini ikut diterapkan."
         downloadEndpoint="/products/export.xlsx"
         downloadParams={{
-          type: 'product',
+          type: catalogKind,
           search: controller.filters.search || undefined,
           category: controller.filters.categoryIds,
           brand: controller.filters.brandIds,
-          stockStatus: controller.filters.stockStatus || undefined,
+          stockStatus: isRawCatalog ? undefined : controller.filters.stockStatus || undefined,
         }}
-        filenameHint="products"
+        filenameHint={exportFilenameHint}
         onOpenChange={setExportOpen}
-        storageKey="export.products.v1"
-        title="Ekspor Produk"
+        storageKey={exportStorageKey}
+        title={exportTitle}
         visible={exportOpen}
       />
       <KolamBarcodePrintDialog

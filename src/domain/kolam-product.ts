@@ -600,7 +600,9 @@ export function createKolamProductDetailRevision(item: KolamProduct) {
   });
 }
 
-export function createEmptyKolamProductFormState(): KolamProductFormState {
+export function createEmptyKolamProductFormState(
+  catalogKind: KolamProductCatalogKind = 'product',
+): KolamProductFormState {
   return {
     id: '',
     name: '',
@@ -613,8 +615,8 @@ export function createEmptyKolamProductFormState(): KolamProductFormState {
     categoryIds: [],
     tagIds: [],
     unitId: '',
-    productType: 'product',
-    sellable: true,
+    productType: catalogKind,
+    sellable: catalogKind !== 'raw',
     lowStockThreshold: '0',
     locationId: '',
     availableShippingMethodIds: [],
