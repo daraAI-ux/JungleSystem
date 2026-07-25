@@ -37,6 +37,7 @@ import { KolamBarcodePrintDialog } from './kolam-barcode-print-dialog';
 import { KolamButton } from './kolam-button';
 import { KolamCategoryLabel } from './kolam-category-label';
 import { KolamCatalogTranslationsEditor } from './kolam-catalog-translations-editor';
+import { KolamCommercialPolicyEditor } from './kolam-commercial-policy-editor';
 import {
   KolamDropdownSelect,
   KolamOverflowMenuButton,
@@ -950,6 +951,7 @@ function ProductEditFormPage({
   const disabled = controller.saving;
   const formTitle = controller.mode === 'new' ? 'Produk Baru' : 'Edit Produk';
   const saveLabel = controller.mode === 'new' ? 'Simpan Produk' : 'Simpan Perubahan';
+  const hasVariants = form.hasVariants || form.variants.length > 0;
 
   return (
     <ScrollView contentContainerStyle={styles.root}>
@@ -1087,6 +1089,48 @@ function ProductEditFormPage({
               <ProductCustomFieldEditorPanel controller={controller} />
             </ProductEditSection>
 
+            {!hasVariants ? (
+              <ProductEditSection
+                description="Harga jual dan aturan pesanan untuk produk tanpa varian."
+                title="Harga"
+              >
+                <ProductRootPricingPanel controller={controller} />
+              </ProductEditSection>
+            ) : null}
+
+            <ProductEditSection
+              description={form.sellable && !hasVariants ? 'Poin anggota dan komisi transaksi produk.' : 'Komisi transaksi produk.'}
+              title={form.sellable && !hasVariants ? 'Komisi dan Poin Anggota' : 'Komisi'}
+            >
+              <KolamCommercialPolicyEditor
+                disabled={disabled}
+                memberPointsDisabled={!form.sellable || hasVariants}
+                memberPointsHint={
+                  hasVariants
+                    ? 'Produk ini memakai varian. Poin anggota diatur di tiap varian.'
+                    : form.sellable
+                    ? 'Poin yang didapat pelanggan per unit produk.'
+                    : 'Aktifkan penjualan untuk mengatur poin anggota.'
+                }
+                onChange={value =>
+                  controller.onChangeForm({
+                    commissionEnabled: value.commissionEnabled,
+                    commissionType: value.commissionType,
+                    commissionValue: value.commissionValue,
+                    memberPointsEnabled: value.memberPointsEnabled,
+                    memberPoints: value.memberPoints,
+                  })
+                }
+                value={{
+                  commissionEnabled: form.commissionEnabled,
+                  commissionType: form.commissionType,
+                  commissionValue: form.commissionValue,
+                  memberPointsEnabled: form.memberPointsEnabled,
+                  memberPoints: form.memberPoints,
+                }}
+              />
+            </ProductEditSection>
+
             <ProductEditSection
               description="Tag untuk filter internal, pengelompokan, dan SEO."
               title="Tag"
@@ -1146,6 +1190,151 @@ function ProductEditFormPage({
         </View>
       </KolamNativeFormSection>
     </ScrollView>
+  );
+}
+
+function ProductRootPricingPanel({
+  controller,
+}: {
+  controller: ReturnType<typeof useKolamProductController>;
+}) {
+  const form = controller.form;
+  const selectedUnit = controller.units.find(unit => unit.id === form?.unitId);
+  const unitLabel = selectedUnit?.initial || selectedUnit?.name || '';
+
+  if (!form) {
+    return null;
+  }
+
+  return (
+    <ProductFieldShell label="Harga Produk">
+      <View style={styles.pricingPanelStack}>
+        <ProductPricingFieldPanel
+          description="Harga yang dipakai katalog, POS, toko daring, dan pembanding marketplace."
+          title="Harga Penjualan"
+        >
+          <View style={styles.twoColumnGrid}>
+            <ProductPriceInput
+              disabled={controller.saving}
+              hint="Harga utama yang tampil di katalog dan POS."
+              label="Harga Jual"
+              onChangeText={priceToSell => controller.onChangeForm({ priceToSell })}
+              unitLabel={unitLabel}
+              value={form.priceToSell}
+            />
+            <ProductPriceInput
+              disabled={controller.saving}
+              hint="Harga daring untuk toko daring atau kanal digital."
+              label="Harga Daring"
+              onChangeText={onlinePrice => controller.onChangeForm({ onlinePrice })}
+              unitLabel={unitLabel}
+              value={form.onlinePrice}
+            />
+            <ProductPriceInput
+              disabled={controller.saving}
+              hint="Harga pembanding pasar, bukan harga jual utama."
+              label="Harga Pasar"
+              onChangeText={marketPrice => controller.onChangeForm({ marketPrice })}
+              unitLabel={unitLabel}
+              value={form.marketPrice}
+            />
+            <ProductPriceInput
+              disabled={controller.saving}
+              hint="Batas harga terendah yang masih boleh dijual."
+              label="Harga Minimum"
+              onChangeText={minimumPriceToSales =>
+                controller.onChangeForm({ minimumPriceToSales })
+              }
+              unitLabel={unitLabel}
+              value={form.minimumPriceToSales}
+            />
+          </View>
+        </ProductPricingFieldPanel>
+
+        <ProductPricingFieldPanel
+          description="Aturan jumlah minimum saat produk dibeli."
+          title="Aturan Pesanan"
+        >
+          <View style={styles.twoColumnGrid}>
+            <ProductPriceInput
+              disabled={controller.saving}
+              hint="Jumlah minimum per transaksi."
+              label="Minimum Pesanan"
+              onChangeText={minimumOrderQty => controller.onChangeForm({ minimumOrderQty })}
+              value={form.minimumOrderQty}
+            />
+          </View>
+        </ProductPricingFieldPanel>
+      </View>
+    </ProductFieldShell>
+  );
+}
+
+function ProductPricingFieldPanel({
+  children,
+  description,
+  title,
+}: {
+  children: React.ReactNode;
+  description?: string;
+  title: string;
+}) {
+  return (
+    <View style={styles.variantFieldPanel}>
+      <KolamCopyStack
+        items={[
+          { id: 'title', text: title, style: styles.variantFieldPanelTitle },
+          ...(description ? [{ id: 'description', text: description, style: styles.fieldHint }] : []),
+        ]}
+      />
+      <View style={styles.variantFieldPanelBody}>{children}</View>
+    </View>
+  );
+}
+
+function ProductPriceInput({
+  disabled,
+  hint,
+  label,
+  onChangeText,
+  placeholder,
+  unitLabel,
+  value,
+}: {
+  disabled: boolean;
+  hint?: string;
+  label: string;
+  onChangeText: (value: string) => void;
+  placeholder?: string;
+  unitLabel?: string;
+  value: string;
+}) {
+  return (
+    <View style={styles.priceInputBlock}>
+      <KolamCopyStack
+        items={[
+          { id: 'label', text: label, style: styles.priceInputLabel },
+          ...(hint ? [{ id: 'hint', text: hint, style: styles.priceInputHint }] : []),
+        ]}
+      />
+      <View style={styles.priceInputRow}>
+        <KolamFormTextField
+          editable={!disabled}
+          keyboardType="numeric"
+          onChangeText={onChangeText}
+          placeholder={placeholder ?? label}
+          style={[settingsWebFormStyles.settingsWebFormFieldValue, styles.priceInputControl]}
+          value={value}
+        />
+        {unitLabel ? (
+          <View style={styles.priceUnitBadge}>
+            <KolamCopyStack
+              items={[{ id: 'unit', text: unitLabel, style: styles.priceUnitBadgeText }]}
+            />
+          </View>
+        ) : null}
+      </View>
+    </View>
   );
 }
 
@@ -4350,6 +4539,69 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     lineHeight: 18,
+  },
+  variantFieldPanel: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 10,
+    padding: 12,
+  },
+  variantFieldPanelTitle: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 18,
+  },
+  variantFieldPanelBody: {
+    gap: 10,
+  },
+  pricingPanelStack: {
+    gap: 12,
+  },
+  priceInputBlock: {
+    flexBasis: 320,
+    flexGrow: 1,
+    gap: 8,
+    minWidth: 240,
+  },
+  priceInputLabel: {
+    color: V.colors.fg,
+    fontSize: 12,
+    fontWeight: '900',
+    lineHeight: 16,
+  },
+  priceInputHint: {
+    color: V.colors.mutedFg,
+    fontSize: 11,
+    fontWeight: '600',
+    lineHeight: 15,
+  },
+  priceInputRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  priceInputControl: {
+    flex: 1,
+    minWidth: 0,
+  },
+  priceUnitBadge: {
+    alignItems: 'center',
+    backgroundColor: V.colors.muted,
+    borderColor: V.colors.border,
+    borderRadius: 6,
+    borderWidth: 1,
+    justifyContent: 'center',
+    minHeight: 38,
+    paddingHorizontal: 10,
+  },
+  priceUnitBadgeText: {
+    color: V.colors.mutedFg,
+    fontSize: 11,
+    fontWeight: '800',
+    lineHeight: 15,
   },
   externalLinksStack: {
     gap: 8,
