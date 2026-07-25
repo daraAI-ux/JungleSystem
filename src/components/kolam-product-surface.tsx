@@ -789,6 +789,7 @@ function ProductRow({
     ? getRawListThumbnailUri(product)
     : product.thumbnailUri || product.photoUris[0] || '';
   const productCode = getProductCode(product);
+  const rawProductCode = product.productCode.trim();
   const labels = getVisibleProductLabels(product);
 
   return (
@@ -894,9 +895,9 @@ function ProductRow({
                   { label: 'Lihat', onPress: onDetail },
                   { label: 'Rubah', onPress: onEdit },
                   {
-                    disabled: !productCode,
+                    disabled: !rawProductCode,
                     label: 'Salin Kode Produk',
-                    onPress: () => void copyTextToClipboard(productCode),
+                    onPress: () => void copyTextToClipboard(rawProductCode),
                   },
                   { label: 'Duplikat Data', onPress: onDuplicate },
                   { label: 'Hapus', onPress: onDelete, tone: 'danger' },
