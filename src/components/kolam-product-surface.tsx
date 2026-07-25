@@ -2236,7 +2236,7 @@ function ProductMaterialsTab({ product }: { product: KolamProduct }) {
     ...product.components.map(component => ({
       id: `component-${component.id}`,
       label: component.name,
-      meta: [component.code, component.brandLabel, `${component.quantity} ${component.unitLabel || 'unit'}`]
+      meta: [getMaterialComponentCode(component), component.brandLabel, `${component.quantity} ${component.unitLabel || 'unit'}`]
         .filter(Boolean)
         .join(' | '),
       thumbnail: component.thumbnailUri ? (
@@ -2337,6 +2337,40 @@ function ProductMoreTab({ product }: { product: KolamProduct }) {
       />
     </View>
   );
+}
+
+function getMaterialComponentCode(component: KolamProduct['components'][number]) {
+  const currentCode = cleanMaterialCode(component.code);
+  if (currentCode) {
+    return currentCode;
+  }
+
+  const row = toMaterialRecord(component.raw);
+  const product = toMaterialRecord(row.product);
+  return (
+    cleanMaterialCode(readMaterialString(product, 'productCode')) ||
+    cleanMaterialCode(readMaterialString(product, 'product_code')) ||
+    cleanMaterialCode(readMaterialString(product, 'code')) ||
+    cleanMaterialCode(readMaterialString(row, 'productCode')) ||
+    cleanMaterialCode(readMaterialString(row, 'product_code')) ||
+    cleanMaterialCode(readMaterialString(row, 'code'))
+  );
+}
+
+function cleanMaterialCode(value: string) {
+  const code = value.trim();
+  return code && code !== '-' ? code : '';
+}
+
+function toMaterialRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object'
+    ? value as Record<string, unknown>
+    : {};
+}
+
+function readMaterialString(record: Record<string, unknown>, key: string) {
+  const value = record[key];
+  return typeof value === 'string' ? value.trim() : '';
 }
 
 function ProductStatisticsTab({ product }: { product: KolamProduct }) {
