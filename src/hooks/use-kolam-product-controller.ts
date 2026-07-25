@@ -13,6 +13,7 @@ import { flattenAllCategories, type KolamCategory } from '../domain/kolam-catego
 import type { KolamBrand } from '../domain/kolam-brand';
 import type { KolamCustomField } from '../domain/kolam-custom-field';
 import type { KolamProductOption } from '../domain/kolam-product-option';
+import type { KolamShippingMethod } from '../domain/kolam-shipping-method';
 import type { KolamSpecies } from '../domain/kolam-species';
 import {
   createEmptyKolamProductFormState,
@@ -64,6 +65,11 @@ import {
   readKolamSpeciesListCache,
   writeKolamSpeciesListCache,
 } from '../services/kolam-species-local-cache';
+import { getKolamActiveShippingMethods } from '../services/kolam-shipping-method-api';
+import {
+  readKolamShippingMethodListCache,
+  writeKolamShippingMethodListCache,
+} from '../services/kolam-shipping-method-local-cache';
 import { getKolamTags } from '../services/kolam-tag-api';
 import { getKolamUnits } from '../services/kolam-unit-api';
 import { getKolamVendors } from '../services/kolam-vendor-api';
@@ -111,6 +117,7 @@ export interface KolamProductController {
   products: KolamProduct[];
   saving: boolean;
   selectedProduct: KolamProduct | null;
+  shippingMethods: KolamShippingMethod[];
   species: KolamSpecies[];
   tags: KolamTag[];
   units: KolamUnit[];
@@ -164,6 +171,7 @@ export function useKolamProductController(
   const [selectedProduct, setSelectedProduct] = useState<KolamProduct | null>(
     null,
   );
+  const [shippingMethods, setShippingMethods] = useState<KolamShippingMethod[]>([]);
   const [mode, setMode] = useState<KolamProductSurfaceMode>(initialMode);
   const [filters, setFilters] = useState<KolamProductListFilters>(() =>
     createInitialFilters(route),
@@ -209,6 +217,11 @@ export function useKolamProductController(
       setVendors(cachedVendors.value);
     }
 
+    const cachedShippingMethods = await readKolamShippingMethodListCache();
+    if (cachedShippingMethods?.value.length) {
+      setShippingMethods(cachedShippingMethods.value);
+    }
+
     const [
       brandResult,
       categoryResult,
@@ -218,6 +231,7 @@ export function useKolamProductController(
       productOptionResult,
       speciesResult,
       vendorResult,
+      shippingMethodResult,
     ] = await Promise.allSettled([
       getKolamBrands(),
       getKolamCategories(),
@@ -227,6 +241,7 @@ export function useKolamProductController(
       getKolamProductOptions(),
       getKolamSpeciesList({ limit: 1000 }),
       getKolamVendors(),
+      getKolamActiveShippingMethods(),
     ]);
 
     if (brandResult.status === 'fulfilled') {
@@ -265,6 +280,11 @@ export function useKolamProductController(
     if (vendorResult.status === 'fulfilled') {
       await writeKolamVendorListCache(vendorResult.value);
       setVendors(vendorResult.value);
+    }
+
+    if (shippingMethodResult.status === 'fulfilled') {
+      await writeKolamShippingMethodListCache(shippingMethodResult.value);
+      setShippingMethods(shippingMethodResult.value);
     }
   }, []);
   const refresh = useCallback(async () => {
@@ -715,6 +735,7 @@ export function useKolamProductController(
     products,
     saving,
     selectedProduct,
+    shippingMethods,
     species,
     tags,
     units,

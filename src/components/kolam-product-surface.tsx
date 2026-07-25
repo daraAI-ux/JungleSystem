@@ -1088,6 +1088,13 @@ function ProductEditFormPage({
             </ProductEditSection>
 
             <ProductEditSection
+              description="Metode pengiriman yang tersedia untuk produk ini."
+              title="Metode Pengiriman"
+            >
+              <ProductShippingMethodsPanel controller={controller} />
+            </ProductEditSection>
+
+            <ProductEditSection
               description="Pilih profil spesifikasi atau field manual untuk produk ini."
               title="Field Kustom"
             >
@@ -1119,6 +1126,15 @@ function ProductEditFormPage({
                     rows={form.grocerPricingTiers}
                   />
                 </ProductPricingFieldPanel>
+              </ProductEditSection>
+            ) : null}
+
+            {!hasVariants ? (
+              <ProductEditSection
+                description="Berat dan dimensi produk tanpa varian."
+                title="Logistik"
+              >
+                <ProductRootLogisticsPanel controller={controller} />
               </ProductEditSection>
             ) : null}
 
@@ -1368,6 +1384,208 @@ function ProductPriceInput({
         ) : null}
       </View>
     </View>
+  );
+}
+
+function mergeProductShippingMethods(
+  primary: Array<{ id: string; displayName: string }>,
+  fallback: Array<{ id: string; displayName: string }>,
+) {
+  const byId = new Map<string, { id: string; displayName: string }>();
+
+  [...primary, ...fallback].forEach(method => {
+    if (method.id && !byId.has(method.id)) {
+      byId.set(method.id, method);
+    }
+  });
+
+  return Array.from(byId.values());
+}
+
+function ProductShippingMethodsPanel({
+  controller,
+}: {
+  controller: ReturnType<typeof useKolamProductController>;
+}) {
+  const form = controller.form;
+
+  if (!form) {
+    return null;
+  }
+
+  const shippingMethods = mergeProductShippingMethods(
+    controller.shippingMethods,
+    controller.selectedProduct?.logistics.shippingMethods ?? [],
+  );
+  const shippingOptions = [
+    { label: 'Tambah metode pengiriman', value: '' },
+    ...shippingMethods
+      .filter(method => !form.availableShippingMethodIds.includes(method.id))
+      .map(method => ({ label: method.displayName, value: method.id })),
+  ];
+  const selectedMethods = shippingMethods.filter(method =>
+    form.availableShippingMethodIds.includes(method.id),
+  );
+
+  return (
+    <ProductFieldShell label="Metode Pengiriman">
+      <View style={styles.categoryPickerStack}>
+        <KolamDropdownSelect
+          accessibilityLabel="Tambah metode pengiriman"
+          label="Metode pengiriman tersedia"
+          menuStyle={styles.longDropdownMenu}
+          onChange={methodId => {
+            if (!methodId || form.availableShippingMethodIds.includes(methodId)) {
+              return;
+            }
+            controller.onChangeForm({
+              availableShippingMethodIds: [
+                ...form.availableShippingMethodIds,
+                methodId,
+              ],
+            });
+          }}
+          options={shippingOptions}
+          searchable
+          searchPlaceholder="Cari metode pengiriman..."
+          showLabelInTrigger={false}
+          value=""
+        />
+        <View style={styles.selectedCategoryRow}>
+          {selectedMethods.length ? (
+            selectedMethods.map(method => (
+              <KolamButton
+                disabled={controller.saving}
+                intent="outline"
+                key={method.id}
+                label={`${method.displayName} x`}
+                onPress={() =>
+                  controller.onChangeForm({
+                    availableShippingMethodIds: form.availableShippingMethodIds.filter(
+                      methodId => methodId !== method.id,
+                    ),
+                  })
+                }
+                style={styles.selectedCategoryButton}
+              />
+            ))
+          ) : (
+            <KolamCopyStack
+              items={[
+                {
+                  id: 'empty-shipping',
+                  text: 'Belum ada metode pengiriman dipilih atau daftar metode belum tersedia dari detail/cache.',
+                  style: styles.fieldHint,
+                },
+              ]}
+            />
+          )}
+        </View>
+      </View>
+    </ProductFieldShell>
+  );
+}
+
+function ProductRootLogisticsPanel({
+  controller,
+}: {
+  controller: ReturnType<typeof useKolamProductController>;
+}) {
+  const form = controller.form;
+
+  if (!form) {
+    return null;
+  }
+
+  const unitOptions = [
+    { label: 'Pilih satuan', value: '' },
+    ...controller.units.map(unit => ({
+      label: unit.initial ? `${unit.name} (${unit.initial})` : unit.name,
+      value: unit.id,
+    })),
+  ];
+
+  return (
+    <ProductFieldShell label="Berat dan Dimensi Root">
+      <View style={styles.variantSpecsGrid}>
+        <View style={styles.variantSpecsGroup}>
+          <KolamCopyStack
+            items={[{ id: 'label', text: 'Berat', style: styles.variantSpecsLabel }]}
+          />
+          <View style={styles.variantSpecsTwoGrid}>
+            <KolamFormTextField
+              editable={!controller.saving}
+              keyboardType="numeric"
+              onChangeText={weightValue => controller.onChangeForm({ weightValue })}
+              placeholder="Nilai"
+              style={settingsWebFormStyles.settingsWebFormFieldValue}
+              value={form.weightValue}
+            />
+            <KolamDropdownSelect
+              label="Satuan"
+              menuStyle={styles.longDropdownMenu}
+              onChange={weightUnitId => controller.onChangeForm({ weightUnitId })}
+              options={unitOptions}
+              searchable
+              searchPlaceholder="Cari satuan..."
+              showLabelInTrigger={false}
+              value={form.weightUnitId}
+            />
+          </View>
+        </View>
+        <View style={styles.variantSpecsGroup}>
+          <KolamCopyStack
+            items={[
+              { id: 'label', text: 'Dimensi (P x L x T)', style: styles.variantSpecsLabel },
+            ]}
+          />
+          <View style={styles.variantSpecsFourGrid}>
+            <KolamFormTextField
+              editable={!controller.saving}
+              keyboardType="numeric"
+              onChangeText={dimensionLength =>
+                controller.onChangeForm({ dimensionLength })
+              }
+              placeholder="P"
+              style={settingsWebFormStyles.settingsWebFormFieldValue}
+              value={form.dimensionLength}
+            />
+            <KolamFormTextField
+              editable={!controller.saving}
+              keyboardType="numeric"
+              onChangeText={dimensionWidth =>
+                controller.onChangeForm({ dimensionWidth })
+              }
+              placeholder="L"
+              style={settingsWebFormStyles.settingsWebFormFieldValue}
+              value={form.dimensionWidth}
+            />
+            <KolamFormTextField
+              editable={!controller.saving}
+              keyboardType="numeric"
+              onChangeText={dimensionHeight =>
+                controller.onChangeForm({ dimensionHeight })
+              }
+              placeholder="T"
+              style={settingsWebFormStyles.settingsWebFormFieldValue}
+              value={form.dimensionHeight}
+            />
+            <KolamDropdownSelect
+              label="Satuan"
+              menuStyle={styles.longDropdownMenu}
+              onChange={dimensionUnitId =>
+                controller.onChangeForm({ dimensionUnitId })
+              }
+              options={unitOptions}
+              searchable
+              searchPlaceholder="Cari satuan..."
+              showLabelInTrigger={false}
+              value={form.dimensionUnitId}
+            />
+          </View>
+        </View>
+      </View>
+    </ProductFieldShell>
   );
 }
 
