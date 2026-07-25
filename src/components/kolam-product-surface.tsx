@@ -129,7 +129,7 @@ const STOCK_OPTIONS = [
 ];
 
 type ProductListFilterPanel = 'category' | 'brand' | 'stock';
-type ProductVariantEditTab = 'pricing' | 'vendor' | 'specs';
+type ProductVariantEditTab = 'pricing' | 'vendor' | 'specs' | 'media';
 
 type PendingProductAction = {
   product: KolamProduct;
@@ -1525,6 +1525,11 @@ function ProductVariantFormCard({
   const displayCost = vendorCost ?? parseNumberInput(variant.price);
   const priceValue = parseNumberInput(variant.priceToSell);
   const priceLabel = priceValue > 0 ? formatCurrency(priceValue) : 'Rp 0';
+  const liveVariant = controller.selectedProduct?.variants.find(item => item.id === variant.id);
+  const pendingMediaCount = controller.variantPhotoLocalUris[variant.id] ? 1 : 0;
+  const mediaCount =
+    (Array.isArray(liveVariant?.photoUris) ? liveVariant.photoUris.length : 0) +
+    pendingMediaCount;
   const [activeTab, setActiveTab] = React.useState<ProductVariantEditTab>('pricing');
   const unitOptions = [
     { label: 'Pilih satuan', value: '' },
@@ -1568,6 +1573,11 @@ function ProductVariantFormCard({
               label={`Pemasok ${variant.vendorPrices.length}`}
               style={styles.variantMetaBadge}
             />
+            <KolamBadge
+              intent={mediaCount ? 'success' : 'muted'}
+              label={`Media ${mediaCount}`}
+              style={styles.variantMetaBadge}
+            />
           </View>
         </KolamInteractionFrame>
         <KolamButton
@@ -1598,6 +1608,12 @@ function ProductVariantFormCard({
               intent={activeTab === 'specs' ? 'primary' : 'outline'}
               label="Spesifikasi"
               onPress={() => setActiveTab('specs')}
+              style={styles.variantTabButton}
+            />
+            <KolamButton
+              intent={activeTab === 'media' ? 'primary' : 'outline'}
+              label="Media"
+              onPress={() => setActiveTab('media')}
               style={styles.variantTabButton}
             />
           </View>
@@ -1846,8 +1862,157 @@ function ProductVariantFormCard({
               </ProductPricingFieldPanel>
             </View>
           ) : null}
+
+          {activeTab === 'media' ? (
+            <View style={styles.variantTabContent}>
+              <ProductVariantMediaPanel
+                controller={controller}
+                liveVariant={liveVariant}
+                variant={variant}
+              />
+            </View>
+          ) : null}
         </>
       ) : null}
+    </View>
+  );
+}
+
+function ProductVariantMediaPanel({
+  controller,
+  liveVariant,
+  variant,
+}: {
+  controller: ReturnType<typeof useKolamProductController>;
+  liveVariant?: KolamProduct['variants'][number];
+  variant: KolamProductVariantFormRow;
+}) {
+  const [deleteTarget, setDeleteTarget] = React.useState<{
+    index: number;
+    label: string;
+  } | null>(null);
+  const variantLabel =
+    [variant.tier1Value, variant.tier2Value].filter(Boolean).join(' / ') ||
+    'Varian';
+  const photoUris = Array.isArray(liveVariant?.photoUris) ? liveVariant.photoUris : [];
+  const pendingPhotoUri = controller.variantPhotoLocalUris[variant.id] ?? '';
+
+  return (
+    <View style={styles.variantMediaPanel}>
+      <View style={styles.mediaPickerRow}>
+        <KolamFormTextField
+          editable={false}
+          mode="url"
+          placeholder="Pilih foto varian"
+          style={[
+            settingsWebFormStyles.settingsWebFormFieldValue,
+            styles.mediaPickerInput,
+          ]}
+          value={pendingPhotoUri}
+        />
+        <KolamButton
+          disabled={controller.saving}
+          label="Tambah Foto Varian"
+          onPress={() => {
+            void controller.onPickVariantPhoto(variant.id);
+          }}
+        />
+      </View>
+      <KolamCopyStack
+        items={[
+          {
+            id: 'media-note',
+            text: pendingPhotoUri
+              ? 'Foto varian akan dikirim ke backend saat Simpan.'
+              : 'Foto varian mengikuti data backend/cache lokal.',
+            style: styles.fieldHint,
+          },
+        ]}
+      />
+      {photoUris.length ? (
+        <View style={styles.existingMediaGrid}>
+          {photoUris.map((photoUri, index) => (
+            <ProductVariantImageMediaCard
+              accessibilityLabel={`${variantLabel} foto ${index + 1}`}
+              disabled={controller.saving || !liveVariant?.id}
+              key={`${liveVariant?.id ?? variant.id}-photo-${index}`}
+              onDelete={() =>
+                setDeleteTarget({
+                  index,
+                  label: `${variantLabel} foto ${index + 1}`,
+                })
+              }
+              revision={`${liveVariant?.id ?? variant.id}-${photoUri}`}
+              sourceUri={photoUri}
+              deleteLabel={`Hapus Foto ${index + 1}`}
+            />
+          ))}
+        </View>
+      ) : (
+        <KolamCopyStack
+          items={[
+            {
+              id: 'empty-media',
+              text: 'Belum ada foto varian dari backend/cache lokal.',
+              style: styles.fieldHint,
+            },
+          ]}
+        />
+      )}
+      <KolamDeleteConfirmDialog
+        itemLabel={deleteTarget?.label}
+        itemType="foto varian produk"
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={() => {
+          if (!deleteTarget || !liveVariant?.id) {
+            return;
+          }
+          void controller
+            .onDeleteVariantPhoto(liveVariant.id, deleteTarget.index)
+            .then(ok => {
+              if (ok) {
+                setDeleteTarget(null);
+              }
+            });
+        }}
+        visible={!!deleteTarget}
+      />
+    </View>
+  );
+}
+
+function ProductVariantImageMediaCard({
+  accessibilityLabel,
+  deleteLabel,
+  disabled,
+  onDelete,
+  revision,
+  sourceUri,
+}: {
+  accessibilityLabel: string;
+  deleteLabel: string;
+  disabled: boolean;
+  onDelete: () => void;
+  revision: string;
+  sourceUri: string;
+}) {
+  return (
+    <View style={styles.existingMediaItem}>
+      <KolamRemoteImage
+        accessibilityLabel={accessibilityLabel}
+        resizeMode="cover"
+        revision={revision}
+        scope="product-variant"
+        sourceUri={sourceUri}
+        style={styles.existingMediaImage}
+      />
+      <KolamButton
+        disabled={disabled}
+        intent="danger"
+        label={deleteLabel}
+        onPress={onDelete}
+        style={styles.mediaDeleteButton}
+      />
     </View>
   );
 }
@@ -5529,6 +5694,43 @@ const styles = StyleSheet.create({
   variantSpecsFourGrid: {
     flexDirection: 'row',
     gap: 8,
+  },
+  variantMediaPanel: {
+    backgroundColor: V.colors.secondary,
+    borderRadius: 6,
+    gap: 10,
+    padding: 10,
+  },
+  existingMediaGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  existingMediaItem: {
+    alignItems: 'center',
+    backgroundColor: V.colors.secondary,
+    borderRadius: 6,
+    gap: 8,
+    padding: 8,
+    width: 132,
+  },
+  existingMediaImage: {
+    borderRadius: 6,
+    height: 72,
+    width: 116,
+  },
+  mediaDeleteButton: {
+    minHeight: 30,
+  },
+  mediaPickerRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  mediaPickerInput: {
+    flex: 1,
+    minWidth: 240,
   },
   vendorPricePanel: {
     backgroundColor: V.colors.bg,

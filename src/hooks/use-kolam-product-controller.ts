@@ -35,6 +35,7 @@ import {
   archiveKolamProduct,
   createKolamProduct,
   deleteKolamProduct,
+  deleteKolamProductPhoto,
   duplicateKolamProduct,
   getKolamProductDetail,
   getKolamProducts,
@@ -43,9 +44,11 @@ import {
   updateKolamProduct,
   updateKolamProductPartial,
   updateKolamProductSeo,
+  uploadKolamProductPhoto,
   type GetKolamProductsOptions,
   type KolamProductAttachedItemPayload,
 } from '../services/kolam-product-api';
+import { pickNativeImageFile } from '../services/native-file-picker';
 import { getKolamCustomFields } from '../services/kolam-custom-field-api';
 import {
   readKolamCustomFieldListCache,
@@ -112,6 +115,7 @@ export interface KolamProductController {
   tags: KolamTag[];
   units: KolamUnit[];
   vendors: KolamVendor[];
+  variantPhotoLocalUris: Record<string, string>;
   onAddAttachedItem: (body: KolamProductAttachedItemPayload) => Promise<boolean>;
   onBackToList: () => void;
   onChangeForm: (patch: Partial<KolamProductFormState>) => void;
@@ -123,9 +127,11 @@ export interface KolamProductController {
   onRefresh: () => Promise<void>;
   onArchiveProduct: (product: KolamProduct) => Promise<boolean>;
   onDeleteProduct: (product: KolamProduct) => Promise<boolean>;
+  onDeleteVariantPhoto: (variantId: string, index: number) => Promise<boolean>;
   onDuplicateProduct: (product: KolamProduct) => Promise<boolean>;
   onRemoveAttachedItem: (itemId: string) => Promise<boolean>;
   onRestoreProduct: (product: KolamProduct) => Promise<boolean>;
+  onPickVariantPhoto: (variantId: string) => Promise<boolean>;
   onSave: () => Promise<void>;
   onSearchChange: (search: string) => void;
   onTogglePin: (product: KolamProduct) => Promise<boolean>;
@@ -166,6 +172,7 @@ export function useKolamProductController(
     DEFAULT_PAGINATION,
   );
   const [form, setForm] = useState<KolamProductFormState | null>(null);
+  const [variantPhotoLocalUris, setVariantPhotoLocalUris] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -318,6 +325,7 @@ export function useKolamProductController(
       setMode(nextMode);
       setSelectedProduct(product);
       setForm(nextMode === 'edit' ? createKolamProductFormState(product) : null);
+      setVariantPhotoLocalUris({});
       setError(null);
 
       const cached = await readKolamProductDetailCache(product.id);
@@ -370,12 +378,14 @@ export function useKolamProductController(
     setMode('list');
     setSelectedProduct(null);
     setForm(null);
+    setVariantPhotoLocalUris({});
   }, []);
 
   const onCreateNew = useCallback(() => {
     setMode('new');
     setSelectedProduct(null);
     setForm(createEmptyKolamProductFormState());
+    setVariantPhotoLocalUris({});
     setError(null);
     void refreshOptions();
   }, [refreshOptions]);
@@ -384,6 +394,7 @@ export function useKolamProductController(
     if (selectedProduct) {
       setMode('edit');
       setForm(createKolamProductFormState(selectedProduct));
+      setVariantPhotoLocalUris({});
     }
   }, [selectedProduct]);
 
@@ -577,6 +588,62 @@ export function useKolamProductController(
     setFilters(current => ({ ...current, limit, page: 1 }));
   }, []);
 
+  const onPickVariantPhoto = useCallback(async (variantId: string) => {
+    try {
+      setError(null);
+      const picked = await pickNativeImageFile();
+      if (picked.cancelled) {
+        return false;
+      }
+
+      const localUri = picked.uri ?? picked.path ?? '';
+      if (!localUri) {
+        setError('File foto varian tidak memiliki path yang bisa dibaca.');
+        return false;
+      }
+
+      setVariantPhotoLocalUris(current => ({ ...current, [variantId]: localUri }));
+      return true;
+    } catch (pickError) {
+      setError(getErrorMessage(pickError));
+      return false;
+    }
+  }, []);
+
+  const onDeleteVariantPhoto = useCallback(
+    async (variantId: string, index: number) => {
+      const product = selectedProduct;
+      if (!product) {
+        setError('Produk belum dipilih.');
+        return false;
+      }
+
+      setSaving(true);
+      setError(null);
+
+      try {
+        const nextProduct = await deleteKolamProductPhoto(product.id, index, variantId);
+        await writeKolamProductDetailCache(nextProduct);
+        const nextProducts = upsertProduct(products, nextProduct);
+        await writeKolamProductListCache({
+          data: nextProducts,
+          pagination,
+        });
+        setProducts(nextProducts);
+        setSelectedProduct(nextProduct);
+        setForm(createKolamProductFormState(nextProduct));
+        setDataSource('live');
+        return true;
+      } catch (deleteError) {
+        setError(getErrorMessage(deleteError));
+        return false;
+      } finally {
+        setSaving(false);
+      }
+    },
+    [pagination, products, selectedProduct],
+  );
+
   const onSave = useCallback(async () => {
     if (!form) {
       setError('Form produk belum siap.');
@@ -601,7 +668,12 @@ export function useKolamProductController(
               form.id || selectedProduct?.id || slugifyProductName(form.name),
               payload,
             );
-      const syncedProduct = await syncProductSeoIfNeeded(savedProduct, form);
+      const mediaProduct = await syncProductVariantPhotosIfNeeded(
+        savedProduct,
+        form,
+        variantPhotoLocalUris,
+      );
+      const syncedProduct = await syncProductSeoIfNeeded(mediaProduct, form);
       await writeKolamProductDetailCache(syncedProduct);
       const nextProducts = upsertProduct(products, syncedProduct);
       await writeKolamProductListCache({
@@ -611,6 +683,7 @@ export function useKolamProductController(
       setProducts(nextProducts);
       setSelectedProduct(syncedProduct);
       setForm(createKolamProductFormState(syncedProduct));
+      setVariantPhotoLocalUris({});
       setMode('detail');
       setDataSource('live');
     } catch (saveError) {
@@ -618,7 +691,7 @@ export function useKolamProductController(
     } finally {
       setSaving(false);
     }
-  }, [form, mode, pagination, products, selectedProduct?.id]);
+  }, [form, mode, pagination, products, selectedProduct?.id, variantPhotoLocalUris]);
 
   const breadcrumbPath = useMemo(
     () => getKolamProductBreadcrumbPath(mode, selectedProduct),
@@ -646,6 +719,7 @@ export function useKolamProductController(
     tags,
     units,
     vendors,
+    variantPhotoLocalUris,
     onAddAttachedItem,
     onBackToList,
     onChangeForm,
@@ -657,9 +731,11 @@ export function useKolamProductController(
     onRefresh: refresh,
     onArchiveProduct,
     onDeleteProduct,
+    onDeleteVariantPhoto,
     onDuplicateProduct,
     onRemoveAttachedItem,
     onRestoreProduct,
+    onPickVariantPhoto,
     onSave,
     onSearchChange,
     onTogglePin,
@@ -757,6 +833,57 @@ async function syncProductSeoIfNeeded(
     metaDescription,
     keywords,
   });
+}
+
+async function syncProductVariantPhotosIfNeeded(
+  product: KolamProduct,
+  form: KolamProductFormState,
+  variantPhotoLocalUris: Record<string, string>,
+) {
+  let current = product;
+
+  for (const [index, variant] of form.variants.entries()) {
+    const localUri = variantPhotoLocalUris[variant.id]?.trim();
+    if (!localUri) {
+      continue;
+    }
+
+    const variantId = resolveSavedProductVariantId(current, variant, index);
+    if (!variantId) {
+      throw new Error(
+        `Varian ${[variant.tier1Value, variant.tier2Value].filter(Boolean).join(' / ') || index + 1} belum memiliki ID backend untuk upload foto.`,
+      );
+    }
+
+    current = await uploadKolamProductPhoto(current.id, localUri, variantId);
+  }
+
+  return current;
+}
+
+function resolveSavedProductVariantId(
+  product: KolamProduct,
+  formVariant: KolamProductFormState['variants'][number],
+  index: number,
+) {
+  if (formVariant.id && !formVariant.id.startsWith('variant-draft-')) {
+    return formVariant.id;
+  }
+
+  const tier1Value = formVariant.tier1Value.trim();
+  const tier2Value = formVariant.tier2Value.trim();
+  const sku = formVariant.sku.trim();
+  const productCode = formVariant.productCode.trim();
+  const matchedVariant = product.variants.find(variant => {
+    const sameTier =
+      variant.tier1Value.trim() === tier1Value &&
+      variant.tier2Value.trim() === tier2Value;
+    const sameSku = sku && variant.sku.trim() === sku;
+    const sameProductCode = productCode && variant.productCode.trim() === productCode;
+    return sameTier || sameSku || sameProductCode;
+  });
+
+  return matchedVariant?.id || product.variants[index]?.id || '';
 }
 
 function normalizeSeoKeywordsText(value: string) {

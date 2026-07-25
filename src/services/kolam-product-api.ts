@@ -190,6 +190,46 @@ export async function restoreKolamProduct(productId: string): Promise<KolamProdu
   return normalizeKolamProductDetail(response);
 }
 
+export async function uploadKolamProductPhoto(
+  productId: string,
+  localUri: string,
+  variantId?: string,
+): Promise<KolamProduct> {
+  const body = new FormData();
+  body.append('photos', createReactNativeFilePart(localUri, 'product-photo') as unknown as Blob);
+  if (variantId) {
+    body.append('variant', variantId);
+  }
+
+  const response = await kolamRequest<unknown>(
+    `/products/${encodeURIComponent(productId)}/photos`,
+    {
+      method: 'POST',
+      body,
+      headers: { [DETAIL_EDIT_HEADER]: DETAIL_EDIT_HEADER_VALUE },
+    },
+  );
+
+  return normalizeKolamProductDetail(response);
+}
+
+export async function deleteKolamProductPhoto(
+  productId: string,
+  index: number,
+  variantId?: string,
+): Promise<KolamProduct> {
+  const response = await kolamRequest<unknown>(
+    `/products/${encodeURIComponent(productId)}/photos/${index}`,
+    {
+      method: 'DELETE',
+      query: { variant: variantId },
+      headers: { [DETAIL_EDIT_HEADER]: DETAIL_EDIT_HEADER_VALUE },
+    },
+  );
+
+  return normalizeKolamProductDetail(response);
+}
+
 export async function uploadKolamProductAsset(
   productId: string,
   title: string,
