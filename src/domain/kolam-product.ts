@@ -1637,7 +1637,40 @@ function normalizeProductComponents(value: unknown): KolamProductComponentLine[]
     const quantity = getNumber(line, 'quantity') ?? 0;
     const price = getNumber(product, 'price') ?? getNumber(line, 'price') ?? 0;
     const brands = normalizeRefList(product.brand ?? product.brands);
-    const photos = normalizeFileUriList(product.photos ?? product.images);
+    const thumbnailUri =
+      getFirstFileUri(product, [
+        'thumbnailUri',
+        'thumbnailUrl',
+        'thumbnail',
+        'thumbnailImage',
+        'thumbnailPath',
+        'image',
+        'imageUrl',
+        'imagePath',
+        'photo',
+        'mainPhoto',
+        'mainImage',
+        'cover',
+        'coverImage',
+      ]) ||
+      getFirstFileUri(line, [
+        'thumbnailUri',
+        'thumbnailUrl',
+        'thumbnail',
+        'thumbnailImage',
+        'thumbnailPath',
+        'image',
+        'imageUrl',
+        'imagePath',
+        'photo',
+        'mainPhoto',
+        'mainImage',
+        'cover',
+        'coverImage',
+      ]) ||
+      normalizeFileUriList(product.photos ?? product.images)[0] ||
+      normalizeFileUriList(line.photos ?? line.images)[0] ||
+      '';
 
     return {
       id:
@@ -1658,7 +1691,7 @@ function normalizeProductComponents(value: unknown): KolamProductComponentLine[]
       quantity,
       raw: entry,
       stock: getNumber(product, 'stock') ?? 0,
-      thumbnailUri: photos[0] ?? '',
+      thumbnailUri,
       totalPrice: price * quantity,
       unitLabel: normalizeUnitLabel(product),
     };

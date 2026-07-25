@@ -8,6 +8,7 @@ export interface KolamDescriptionListRow {
   id: string;
   label: string;
   meta: string;
+  thumbnail?: import('react').ReactNode;
   tone: KolamDescriptionListTone;
   value: string;
 }

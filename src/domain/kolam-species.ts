@@ -1350,7 +1350,7 @@ function normalizeKolamSpeciesComponentOverrides(
           getString(record, 'sku'),
         productType: getString(productRecord, 'type'),
         productDescription: getString(productRecord, 'description'),
-        productPhotoUri: getFirstProductPhotoUri(productRecord),
+        productPhotoUri: getFirstProductPhotoUri(productRecord) ?? getFirstProductMediaUri(record),
         unitLabel: getUnitLabel(productRecord.units) || getUnitLabel(productRecord.unit),
         quantity,
         totalWeightValue: Math.max(0, getNumber(totalWeight, 'value') ?? 0),
@@ -1365,7 +1365,12 @@ function normalizeKolamSpeciesComponentOverrides(
 }
 
 function getFirstProductPhotoUri(productRecord: Record<string, unknown>) {
-  const photos = normalizeMediaList(productRecord.photos);
+  const direct = getFirstProductMediaUri(productRecord);
+  if (direct) {
+    return direct;
+  }
+
+  const photos = normalizeMediaList(productRecord.photos ?? productRecord.images);
   if (photos[0]) {
     return photos[0];
   }
@@ -1373,9 +1378,41 @@ function getFirstProductPhotoUri(productRecord: Record<string, unknown>) {
   const variants = Array.isArray(productRecord.variants) ? productRecord.variants : [];
   for (const variant of variants) {
     const variantRecord = asRecord(variant);
-    const variantPhotos = normalizeMediaList(variantRecord.photos);
+    const variantDirect = getFirstProductMediaUri(variantRecord);
+    if (variantDirect) {
+      return variantDirect;
+    }
+
+    const variantPhotos = normalizeMediaList(variantRecord.photos ?? variantRecord.images);
     if (variantPhotos[0]) {
       return variantPhotos[0];
+    }
+  }
+
+  return null;
+}
+
+function getFirstProductMediaUri(record: Record<string, unknown>) {
+  const keys = [
+    'thumbnailUri',
+    'thumbnailUrl',
+    'thumbnail',
+    'thumbnailImage',
+    'thumbnailPath',
+    'image',
+    'imageUrl',
+    'imagePath',
+    'photo',
+    'mainPhoto',
+    'mainImage',
+    'cover',
+    'coverImage',
+  ];
+
+  for (const key of keys) {
+    const uri = normalizeMediaList(record[key] ? [record[key]] : [])[0];
+    if (uri) {
+      return uri;
     }
   }
 

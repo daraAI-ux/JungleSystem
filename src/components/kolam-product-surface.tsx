@@ -2225,6 +2225,16 @@ function ProductMaterialsTab({ product }: { product: KolamProduct }) {
       meta: [component.code, component.brandLabel, `${component.quantity} ${component.unitLabel || 'unit'}`]
         .filter(Boolean)
         .join(' | '),
+      thumbnail: component.thumbnailUri ? (
+        <KolamRemoteImage
+          accessibilityLabel={`Foto ${component.name}`}
+          resizeMode="cover"
+          revision={component.thumbnailUri}
+          scope="product"
+          sourceUri={component.thumbnailUri}
+          style={styles.variantThumbImage}
+        />
+      ) : undefined,
       tone: component.stock <= 0 ? 'danger' as const : 'default' as const,
       value: formatCurrency(component.totalPrice),
     })),
@@ -2234,6 +2244,16 @@ function ProductMaterialsTab({ product }: { product: KolamProduct }) {
       meta: [packing.sku, packing.variantLabel ? `Varian: ${packing.variantLabel}` : '']
         .filter(Boolean)
         .join(' | '),
+      thumbnail: packing.thumbnailUri ? (
+        <KolamRemoteImage
+          accessibilityLabel={`Foto ${packing.name}`}
+          resizeMode="cover"
+          revision={packing.thumbnailUri}
+          scope="packing-material"
+          sourceUri={packing.thumbnailUri}
+          style={styles.variantThumbImage}
+        />
+      ) : undefined,
       tone: 'default' as const,
       value: `x${packing.quantity}`,
     })),

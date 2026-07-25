@@ -14,6 +14,9 @@ export function KolamDescriptionListRow({
 }) {
   return (
     <View style={[styles.row, first && styles.rowFirst]}>
+      {row.thumbnail ? (
+        <View style={styles.thumbnail}>{row.thumbnail}</View>
+      ) : null}
       <KolamDescriptionListTerm label={row.label} />
       <KolamDescriptionListDetails row={row} />
     </View>

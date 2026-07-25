@@ -24,6 +24,16 @@ export const descriptionListStyles = StyleSheet.create({
     maxWidth: 320,
     paddingRight: 18,
   },
+  thumbnail: {
+    alignItems: 'center',
+    backgroundColor: V.colors.mutedSoft,
+    borderRadius: 6,
+    height: 42,
+    justifyContent: 'center',
+    marginRight: 10,
+    overflow: 'hidden',
+    width: 42,
+  },
   termText: {
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
