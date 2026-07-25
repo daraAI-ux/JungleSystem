@@ -815,17 +815,19 @@ function KolamProductDetailView({
     [controller.selectedProduct],
   );
 
+  if (controller.mode === 'new') {
+    return <ProductEditFormPage controller={controller} onCancel={onBack} />;
+  }
+
   if (!product) {
     return (
       <ScrollView contentContainerStyle={styles.root}>
         <View style={styles.detailHeaderRow}>
           <View style={styles.headingCopy}>
             <Text style={styles.eyebrow}>PRODUK</Text>
-            <Text style={styles.title}>{controller.mode === 'new' ? 'Produk Baru' : 'Detail Produk'}</Text>
+            <Text style={styles.title}>Detail Produk</Text>
             <Text style={styles.description}>
-              {controller.mode === 'new'
-                ? 'Form produk baru akan disambungkan pada fase edit.'
-                : controller.loading
+              {controller.loading
                 ? 'Membaca detail produk...'
                 : 'Produk belum dipilih.'}
             </Text>
@@ -845,7 +847,7 @@ function KolamProductDetailView({
   const productCode = getProductCode(product);
 
   if (controller.mode === 'edit') {
-    return <ProductEditFormPage controller={controller} onCancel={() => onCancelEdit(product)} product={product} />;
+    return <ProductEditFormPage controller={controller} onCancel={() => onCancelEdit(product)} />;
   }
 
   const tabItems = [
@@ -912,11 +914,9 @@ function KolamProductDetailView({
 function ProductEditFormPage({
   controller,
   onCancel,
-  product,
 }: {
   controller: ReturnType<typeof useKolamProductController>;
   onCancel: () => void;
-  product: KolamProduct;
 }) {
   const form = controller.form;
 
@@ -1099,6 +1099,27 @@ function ProductEditFormPage({
                 onChange={externalLinks => controller.onChangeForm({ externalLinks })}
               />
             </ProductEditSection>
+
+            <ProductEditSection
+              description="Judul, kata kunci, dan deskripsi SEO Google."
+              title="SEO Google"
+            >
+              <ProductSeoEditPanel controller={controller} />
+            </ProductEditSection>
+
+            <ProductEditSection
+              description="Hubungkan produk kompatibel atau pengganti."
+              title="Produk kompatibel"
+            >
+              <ProductAttachedItemsEditPanel controller={controller} />
+            </ProductEditSection>
+
+            <ProductEditSection
+              description="Template S&K yang berlaku untuk produk ini."
+              title="Syarat dan Ketentuan"
+            >
+              <ProductTermsTemplatesSummaryPanel controller={controller} />
+            </ProductEditSection>
           </View>
           <View style={styles.formActions}>
             <KolamButton disabled={disabled} label="Batal" onPress={onCancel} />
@@ -1263,6 +1284,291 @@ function ProductExternalLinksRowsEditor({ disabled, links, onChange }: { disable
       <KolamButton disabled={disabled} intent="secondary" label="Tambah tautan" onPress={() => onChange([...links, { name: '', value: '' }])} style={styles.externalLinkAddButton} />
     </View>
   );
+}
+
+function ProductSeoEditPanel({
+  controller,
+}: {
+  controller: ReturnType<typeof useKolamProductController>;
+}) {
+  const score = controller.selectedProduct?.seo.lastSeoScore;
+  const disabled = controller.saving;
+
+  return (
+    <ProductFieldShell label="SEO Google">
+      <View style={styles.variantPricingPanel}>
+        <View style={styles.variantTabHeader}>
+          <KolamCopyStack
+            items={[
+              {
+                id: 'summary',
+                text: score ? `Skor SEO terakhir: ${score}/100` : 'Skor SEO belum tersedia.',
+                style: styles.fieldHint,
+              },
+            ]}
+          />
+          {controller.selectedProduct?.seo.lastAuditedAt ? (
+            <KolamBadge label="Sudah diaudit" />
+          ) : null}
+        </View>
+        <View style={styles.twoColumnGrid}>
+          <ProductFieldShell label="Judul SEO">
+            <KolamFormTextField
+              editable={!disabled}
+              onChangeText={seoMetaTitle => controller.onChangeForm({ seoMetaTitle })}
+              placeholder="Judul SEO"
+              style={settingsWebFormStyles.settingsWebFormFieldValue}
+              value={controller.form?.seoMetaTitle ?? ''}
+            />
+          </ProductFieldShell>
+          <ProductFieldShell label="Kata Kunci">
+            <KolamFormTextField
+              editable={!disabled}
+              onChangeText={seoKeywords => controller.onChangeForm({ seoKeywords })}
+              placeholder="Kata kunci, pisahkan dengan koma"
+              style={settingsWebFormStyles.settingsWebFormFieldValue}
+              value={controller.form?.seoKeywords ?? ''}
+            />
+          </ProductFieldShell>
+        </View>
+        <ProductFieldShell label="Deskripsi SEO">
+          <KolamFormTextField
+            editable={!disabled}
+            multiline
+            onChangeText={seoMetaDescription => controller.onChangeForm({ seoMetaDescription })}
+            placeholder="Deskripsi SEO"
+            style={[settingsWebFormStyles.settingsWebFormFieldValue, styles.seoTextArea]}
+            value={controller.form?.seoMetaDescription ?? ''}
+          />
+        </ProductFieldShell>
+      </View>
+    </ProductFieldShell>
+  );
+}
+
+function ProductAttachedItemsEditPanel({
+  controller,
+}: {
+  controller: ReturnType<typeof useKolamProductController>;
+}) {
+  const [showForm, setShowForm] = React.useState(false);
+  const [itemType, setItemType] = React.useState<'product' | 'species'>('product');
+  const [relationType, setRelationType] = React.useState('compatible_with');
+  const [targetId, setTargetId] = React.useState('');
+  const [note, setNote] = React.useState('');
+  const [deleteTarget, setDeleteTarget] = React.useState<{ id: string; label: string } | null>(null);
+  const selectedProduct = controller.selectedProduct;
+  const attachedItems = selectedProduct?.attachedItems ?? [];
+  const targetOptions = getProductAttachedItemTargetOptions(controller, itemType);
+  const relationOptions = [
+    { label: 'Kompatibel', value: 'compatible_with' },
+    { label: 'Pengganti', value: 'replacement' },
+  ];
+
+  const resetForm = () => {
+    setTargetId('');
+    setNote('');
+    setShowForm(false);
+  };
+
+  const addItem = async () => {
+    if (!targetId) {
+      return;
+    }
+
+    const ok = await controller.onAddAttachedItem({
+      itemType,
+      type: relationType,
+      ...(itemType === 'product' ? { product: targetId } : { species: targetId }),
+      ...(note.trim() ? { note: note.trim() } : {}),
+    });
+    if (ok) {
+      resetForm();
+    }
+  };
+
+  return (
+    <ProductFieldShell label="Produk Kompatibel">
+      <View style={styles.variantPricingPanel}>
+        <View style={styles.variantTabHeader}>
+          <KolamCopyStack
+            items={[
+              {
+                id: 'summary',
+                text: attachedItems.length
+                  ? `${attachedItems.length} item terhubung ke produk ini.`
+                  : selectedProduct
+                  ? 'Belum ada produk kompatibel atau pengganti.'
+                  : 'Simpan produk terlebih dahulu sebelum menambahkan item terlampir.',
+                style: styles.fieldHint,
+              },
+            ]}
+          />
+          <KolamButton
+            disabled={controller.saving || !selectedProduct}
+            intent="primary"
+            label={showForm ? 'Tutup Form' : 'Tambah Item'}
+            onPress={() => setShowForm(current => !current)}
+          />
+        </View>
+        {attachedItems.map(item => (
+          <View key={item.id} style={styles.attachedItemRow}>
+            <KolamCopyStack
+              items={[
+                { id: 'name', text: item.targetName, style: styles.variantTitle },
+                {
+                  id: 'meta',
+                  text: [
+                    item.typeLabel,
+                    item.itemType === 'species' ? 'Spesies' : 'Produk',
+                    item.targetSku ? `SKU: ${item.targetSku}` : '',
+                    item.note,
+                  ]
+                    .filter(Boolean)
+                    .join(' - '),
+                  style: styles.fieldHint,
+                },
+              ]}
+            />
+            <KolamButton
+              disabled={controller.saving}
+              intent="danger"
+              label="Hapus"
+              onPress={() => setDeleteTarget({ id: item.id, label: item.targetName })}
+            />
+          </View>
+        ))}
+        {showForm ? (
+          <View style={styles.attachedItemForm}>
+            <View style={styles.twoColumnGrid}>
+              <KolamDropdownSelect
+                label="Tipe Hubungan"
+                onChange={setRelationType}
+                options={relationOptions}
+                value={relationType}
+              />
+              <KolamDropdownSelect
+                label="Jenis Item"
+                onChange={value => {
+                  setItemType(value as 'product' | 'species');
+                  setTargetId('');
+                }}
+                options={[
+                  { label: 'Produk', value: 'product' },
+                  { label: 'Spesies', value: 'species' },
+                ]}
+                value={itemType}
+              />
+            </View>
+            <KolamDropdownSelect
+              label={itemType === 'product' ? 'Pilih Produk' : 'Pilih Spesies'}
+              menuStyle={styles.longDropdownMenu}
+              onChange={setTargetId}
+              options={[{ label: 'Belum dipilih', value: '' }, ...targetOptions]}
+              searchable
+              searchPlaceholder={itemType === 'product' ? 'Cari produk...' : 'Cari spesies...'}
+              value={targetId}
+            />
+            <KolamFormTextField
+              editable={!controller.saving}
+              onChangeText={setNote}
+              placeholder="Catatan"
+              style={settingsWebFormStyles.settingsWebFormFieldValue}
+              value={note}
+            />
+            <View style={styles.formActions}>
+              <KolamButton intent="secondary" label="Batal" onPress={resetForm} />
+              <KolamButton
+                disabled={controller.saving || !targetId}
+                intent="primary"
+                label="Tambah"
+                onPress={addItem}
+              />
+            </View>
+          </View>
+        ) : null}
+      </View>
+      <KolamDeleteConfirmDialog
+        itemLabel={deleteTarget?.label}
+        itemType="item terlampir"
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={() => {
+          if (deleteTarget) {
+            void controller.onRemoveAttachedItem(deleteTarget.id).then(() => setDeleteTarget(null));
+          }
+        }}
+        visible={Boolean(deleteTarget)}
+      />
+    </ProductFieldShell>
+  );
+}
+
+function ProductTermsTemplatesSummaryPanel({
+  controller,
+}: {
+  controller: ReturnType<typeof useKolamProductController>;
+}) {
+  const product = controller.selectedProduct;
+  if (!product) {
+    return (
+      <ProductFieldShell label="TOS Aktif">
+        <KolamCopyStack
+          items={[
+            {
+              id: 'empty-terms-create',
+              text: 'Simpan produk terlebih dahulu untuk melihat template S&K aktif.',
+              style: styles.fieldHint,
+            },
+          ]}
+        />
+      </ProductFieldShell>
+    );
+  }
+
+  return (
+    <KolamDetailTermsTemplatesPanel
+      itemId={product.id}
+      itemLabel="produk"
+      itemType="product"
+      summary={{
+        label: 'Garansi',
+        meta: [
+          product.warranty.days ? `${product.warranty.days} hari` : '',
+          product.warranty.vendorName,
+          product.warranty.termsTitle,
+        ]
+          .filter(Boolean)
+          .join(' | '),
+        status: product.warranty.label,
+        statusIntent: product.warranty.mode === 'none' ? 'muted' : 'success',
+      }}
+    />
+  );
+}
+
+function getProductAttachedItemTargetOptions(
+  controller: ReturnType<typeof useKolamProductController>,
+  itemType: 'product' | 'species',
+) {
+  if (itemType === 'species') {
+    return controller.species.map(item => ({
+      label: [
+        item.displayName || item.scientificName,
+        item.sku ? `(${item.sku})` : '',
+      ]
+        .filter(Boolean)
+        .join(' '),
+      value: item.id,
+    }));
+  }
+
+  const selectedId = controller.selectedProduct?.id;
+  return controller.productOptions
+    .filter(item => item.id !== selectedId)
+    .map(item => ({
+      label: [item.name, item.sku ? `(${item.sku})` : ''].filter(Boolean).join(' '),
+      value: item.id,
+    }));
 }
 
 function ProductSummaryTab({
@@ -3403,6 +3709,29 @@ const styles = StyleSheet.create({
   externalLinkAddButton: {
     alignSelf: 'flex-start',
     minHeight: 34,
+  },
+  seoTextArea: {
+    minHeight: 84,
+    textAlignVertical: 'top',
+  },
+  attachedItemRow: {
+    alignItems: 'center',
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+    padding: 10,
+  },
+  attachedItemForm: {
+    backgroundColor: V.colors.mutedSoft,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 10,
+    padding: 10,
   },
   formActions: {
     alignItems: 'center',

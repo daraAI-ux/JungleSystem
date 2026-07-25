@@ -11,6 +11,8 @@ import {
 } from '../services/kolam-category-local-cache';
 import { flattenAllCategories, type KolamCategory } from '../domain/kolam-category';
 import type { KolamBrand } from '../domain/kolam-brand';
+import type { KolamProductOption } from '../domain/kolam-product-option';
+import type { KolamSpecies } from '../domain/kolam-species';
 import {
   createEmptyKolamProductFormState,
   createKolamProductFormState,
@@ -27,17 +29,31 @@ import {
 import type { KolamTag } from '../domain/kolam-tag';
 import type { KolamUnit } from '../domain/kolam-unit';
 import {
+  addKolamProductAttachedItem,
   archiveKolamProduct,
   createKolamProduct,
   deleteKolamProduct,
   duplicateKolamProduct,
   getKolamProductDetail,
   getKolamProducts,
+  removeKolamProductAttachedItem,
   restoreKolamProduct,
   updateKolamProduct,
   updateKolamProductPartial,
+  updateKolamProductSeo,
   type GetKolamProductsOptions,
+  type KolamProductAttachedItemPayload,
 } from '../services/kolam-product-api';
+import { getKolamProductOptions } from '../services/kolam-product-option-api';
+import {
+  readKolamProductOptionListCache,
+  writeKolamProductOptionListCache,
+} from '../services/kolam-product-option-local-cache';
+import { getKolamSpeciesList } from '../services/kolam-species-api';
+import {
+  readKolamSpeciesListCache,
+  writeKolamSpeciesListCache,
+} from '../services/kolam-species-local-cache';
 import { getKolamTags } from '../services/kolam-tag-api';
 import { getKolamUnits } from '../services/kolam-unit-api';
 import {
@@ -75,11 +91,14 @@ export interface KolamProductController {
   loading: boolean;
   mode: KolamProductSurfaceMode;
   pagination: KolamProductPagination;
+  productOptions: KolamProductOption[];
   products: KolamProduct[];
   saving: boolean;
   selectedProduct: KolamProduct | null;
+  species: KolamSpecies[];
   tags: KolamTag[];
   units: KolamUnit[];
+  onAddAttachedItem: (body: KolamProductAttachedItemPayload) => Promise<boolean>;
   onBackToList: () => void;
   onChangeForm: (patch: Partial<KolamProductFormState>) => void;
   onChangeFilters: (patch: Partial<KolamProductListFilters>) => void;
@@ -91,6 +110,7 @@ export interface KolamProductController {
   onArchiveProduct: (product: KolamProduct) => Promise<boolean>;
   onDeleteProduct: (product: KolamProduct) => Promise<boolean>;
   onDuplicateProduct: (product: KolamProduct) => Promise<boolean>;
+  onRemoveAttachedItem: (itemId: string) => Promise<boolean>;
   onRestoreProduct: (product: KolamProduct) => Promise<boolean>;
   onSave: () => Promise<void>;
   onSearchChange: (search: string) => void;
@@ -115,6 +135,8 @@ export function useKolamProductController(
   const [products, setProducts] = useState<KolamProduct[]>([]);
   const [brands, setBrands] = useState<KolamBrand[]>([]);
   const [categories, setCategories] = useState<KolamCategory[]>([]);
+  const [productOptions, setProductOptions] = useState<KolamProductOption[]>([]);
+  const [species, setSpecies] = useState<KolamSpecies[]>([]);
   const [tags, setTags] = useState<KolamTag[]>([]);
   const [units, setUnits] = useState<KolamUnit[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<KolamProduct | null>(
@@ -144,11 +166,30 @@ export function useKolamProductController(
       setCategories(flattenAllCategories(cachedCategories.value));
     }
 
-    const [brandResult, categoryResult, tagResult, unitResult] = await Promise.allSettled([
+    const cachedProducts = await readKolamProductOptionListCache();
+    if (cachedProducts?.value.length) {
+      setProductOptions(cachedProducts.value);
+    }
+
+    const cachedSpecies = await readKolamSpeciesListCache();
+    if (cachedSpecies?.value.length) {
+      setSpecies(cachedSpecies.value);
+    }
+
+    const [
+      brandResult,
+      categoryResult,
+      tagResult,
+      unitResult,
+      productOptionResult,
+      speciesResult,
+    ] = await Promise.allSettled([
       getKolamBrands(),
       getKolamCategories(),
       getKolamTags(),
       getKolamUnits(),
+      getKolamProductOptions(),
+      getKolamSpeciesList({ limit: 1000 }),
     ]);
 
     if (brandResult.status === 'fulfilled') {
@@ -167,6 +208,16 @@ export function useKolamProductController(
 
     if (unitResult.status === 'fulfilled') {
       setUnits(tagActiveUnits(unitResult.value));
+    }
+
+    if (productOptionResult.status === 'fulfilled') {
+      await writeKolamProductOptionListCache(productOptionResult.value);
+      setProductOptions(productOptionResult.value);
+    }
+
+    if (speciesResult.status === 'fulfilled') {
+      await writeKolamSpeciesListCache(speciesResult.value);
+      setSpecies(speciesResult.value);
     }
   }, []);
   const refresh = useCallback(async () => {
@@ -409,6 +460,71 @@ export function useKolamProductController(
     },
     [refresh],
   );
+
+  const onAddAttachedItem = useCallback(
+    async (body: KolamProductAttachedItemPayload) => {
+      const product = selectedProduct;
+      if (!product) {
+        setError('Simpan produk terlebih dahulu sebelum menambahkan item terlampir.');
+        return false;
+      }
+
+      setSaving(true);
+      setError(null);
+      try {
+        const nextProduct = await addKolamProductAttachedItem(product.id, body);
+        await writeKolamProductDetailCache(nextProduct);
+        const nextProducts = upsertProduct(products, nextProduct);
+        await writeKolamProductListCache({
+          data: nextProducts,
+          pagination,
+        });
+        setProducts(nextProducts);
+        setSelectedProduct(nextProduct);
+        setForm(createKolamProductFormState(nextProduct));
+        setDataSource('live');
+        return true;
+      } catch (addError) {
+        setError(getErrorMessage(addError));
+        return false;
+      } finally {
+        setSaving(false);
+      }
+    },
+    [pagination, products, selectedProduct],
+  );
+
+  const onRemoveAttachedItem = useCallback(
+    async (itemId: string) => {
+      const product = selectedProduct;
+      if (!product) {
+        return false;
+      }
+
+      setSaving(true);
+      setError(null);
+      try {
+        const nextProduct = await removeKolamProductAttachedItem(product.id, itemId);
+        await writeKolamProductDetailCache(nextProduct);
+        const nextProducts = upsertProduct(products, nextProduct);
+        await writeKolamProductListCache({
+          data: nextProducts,
+          pagination,
+        });
+        setProducts(nextProducts);
+        setSelectedProduct(nextProduct);
+        setForm(createKolamProductFormState(nextProduct));
+        setDataSource('live');
+        return true;
+      } catch (removeError) {
+        setError(getErrorMessage(removeError));
+        return false;
+      } finally {
+        setSaving(false);
+      }
+    },
+    [pagination, products, selectedProduct],
+  );
   const onSearchChange = useCallback((search: string) => {
     setFilters(current => ({ ...current, search, page: 1 }));
   }, []);
@@ -445,15 +561,16 @@ export function useKolamProductController(
               form.id || selectedProduct?.id || slugifyProductName(form.name),
               payload,
             );
-      await writeKolamProductDetailCache(savedProduct);
-      const nextProducts = upsertProduct(products, savedProduct);
+      const syncedProduct = await syncProductSeoIfNeeded(savedProduct, form);
+      await writeKolamProductDetailCache(syncedProduct);
+      const nextProducts = upsertProduct(products, syncedProduct);
       await writeKolamProductListCache({
         data: nextProducts,
         pagination,
       });
       setProducts(nextProducts);
-      setSelectedProduct(savedProduct);
-      setForm(createKolamProductFormState(savedProduct));
+      setSelectedProduct(syncedProduct);
+      setForm(createKolamProductFormState(syncedProduct));
       setMode('detail');
       setDataSource('live');
     } catch (saveError) {
@@ -480,11 +597,14 @@ export function useKolamProductController(
     loading,
     mode,
     pagination,
+    productOptions,
     products,
     saving,
     selectedProduct,
+    species,
     tags,
     units,
+    onAddAttachedItem,
     onBackToList,
     onChangeForm,
     onChangeFilters,
@@ -496,6 +616,7 @@ export function useKolamProductController(
     onArchiveProduct,
     onDeleteProduct,
     onDuplicateProduct,
+    onRemoveAttachedItem,
     onRestoreProduct,
     onSave,
     onSearchChange,
@@ -568,6 +689,40 @@ function validateKolamProductFormForSave(form: KolamProductFormState) {
   }
 
   return null;
+}
+
+async function syncProductSeoIfNeeded(
+  product: KolamProduct,
+  form: KolamProductFormState,
+) {
+  const metaTitle = form.seoMetaTitle.trim();
+  const metaDescription = form.seoMetaDescription.trim();
+  const keywords = normalizeSeoKeywordsText(form.seoKeywords);
+  const currentKeywords = normalizeSeoKeywordsText(
+    (product.seo.keywords ?? []).join(', '),
+  );
+
+  if (
+    metaTitle === product.seo.metaTitle.trim() &&
+    metaDescription === product.seo.metaDescription.trim() &&
+    keywords === currentKeywords
+  ) {
+    return product;
+  }
+
+  return updateKolamProductSeo(product.id, {
+    metaTitle,
+    metaDescription,
+    keywords,
+  });
+}
+
+function normalizeSeoKeywordsText(value: string) {
+  return value
+    .split(',')
+    .map(keyword => keyword.trim())
+    .filter(Boolean)
+    .join(', ');
 }
 
 function tagActiveUnits(units: KolamUnit[]) {

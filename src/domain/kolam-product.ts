@@ -389,6 +389,9 @@ export interface KolamProductFormState {
   warrantyDays: string;
   warrantyVendorId: string;
   warrantyTermsTemplateId: string;
+  seoMetaTitle: string;
+  seoMetaDescription: string;
+  seoKeywords: string;
   grocerPricingTiers: KolamProductGrocerPricingTierFormRow[];
   customFieldValues: unknown[];
   componentRows: KolamProductComponentFormRow[];
@@ -622,6 +625,9 @@ export function createEmptyKolamProductFormState(): KolamProductFormState {
     warrantyDays: '365',
     warrantyVendorId: '',
     warrantyTermsTemplateId: '',
+    seoMetaTitle: '',
+    seoMetaDescription: '',
+    seoKeywords: '',
     grocerPricingTiers: [],
     customFieldValues: [],
     componentRows: [],
@@ -704,6 +710,9 @@ export function createKolamProductFormState(product: KolamProduct): KolamProduct
     ),
     warrantyVendorId: getObjectIdString(warranty.warrantyVendor),
     warrantyTermsTemplateId: getObjectIdString(warranty.warrantyTermsTemplate),
+    seoMetaTitle: product.seo.metaTitle,
+    seoMetaDescription: product.seo.metaDescription,
+    seoKeywords: product.seo.keywords.join(', '),
     grocerPricingTiers: product.grocerPricingTiers.map(createKolamProductGrocerPricingTierFormRow),
     customFieldValues: Array.isArray(raw.customFieldValues) ? raw.customFieldValues : [],
     componentRows: normalizeProductComponentFormRows(raw.components),

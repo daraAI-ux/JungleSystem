@@ -93,6 +93,73 @@ export async function updateKolamProductPartial(
   return normalizeKolamProductDetail(response);
 }
 
+export interface KolamProductSeoFormPayload {
+  metaTitle: string;
+  metaDescription: string;
+  keywords: string;
+}
+
+export async function updateKolamProductSeo(
+  productId: string,
+  form: KolamProductSeoFormPayload,
+): Promise<KolamProduct> {
+  await kolamRequest<unknown>(
+    `/dara-seo/products/${encodeURIComponent(productId)}/seo`,
+    {
+      method: 'PUT',
+      body: {
+        metaTitle: form.metaTitle.trim(),
+        metaDescription: form.metaDescription.trim(),
+        keywords: form.keywords
+          .split(',')
+          .map(keyword => keyword.trim())
+          .filter(Boolean),
+      },
+    },
+  );
+
+  return getKolamProductDetail(productId, { forEdit: true });
+}
+
+export interface KolamProductAttachedItemPayload {
+  itemType: 'product' | 'species';
+  product?: string;
+  species?: string;
+  type: string;
+  note?: string;
+}
+
+export async function addKolamProductAttachedItem(
+  productId: string,
+  body: KolamProductAttachedItemPayload,
+): Promise<KolamProduct> {
+  const response = await kolamRequest<unknown>(
+    `/products/${encodeURIComponent(productId)}/attached-items`,
+    {
+      method: 'POST',
+      body,
+      headers: { [DETAIL_EDIT_HEADER]: DETAIL_EDIT_HEADER_VALUE },
+    },
+  );
+
+  return normalizeKolamProductDetail(response);
+}
+
+export async function removeKolamProductAttachedItem(
+  productId: string,
+  itemId: string,
+): Promise<KolamProduct> {
+  const response = await kolamRequest<unknown>(
+    `/products/${encodeURIComponent(productId)}/attached-items/${encodeURIComponent(itemId)}`,
+    {
+      method: 'DELETE',
+      headers: { [DETAIL_EDIT_HEADER]: DETAIL_EDIT_HEADER_VALUE },
+    },
+  );
+
+  return normalizeKolamProductDetail(response);
+}
+
 export async function deleteKolamProduct(productId: string): Promise<void> {
   await kolamRequest<unknown>(`/products/${productId}`, {
     method: 'DELETE',
