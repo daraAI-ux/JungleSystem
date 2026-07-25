@@ -57,6 +57,17 @@ export async function getKolamProductDetail(
   return normalizeKolamProductDetail(response);
 }
 
+export async function createKolamProduct(
+  body: Record<string, unknown>,
+): Promise<KolamProduct> {
+  const response = await kolamRequest<unknown>('/products', {
+    method: 'POST',
+    body,
+  });
+
+  return normalizeKolamProductDetail(response);
+}
+
 export async function updateKolamProduct(
   productId: string,
   body: Record<string, unknown>,

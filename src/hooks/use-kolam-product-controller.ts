@@ -12,6 +12,7 @@ import {
 import { flattenAllCategories, type KolamCategory } from '../domain/kolam-category';
 import type { KolamBrand } from '../domain/kolam-brand';
 import {
+  createEmptyKolamProductFormState,
   createKolamProductFormState,
   createKolamProductSavePayload,
   getKolamProductBreadcrumbPath,
@@ -27,6 +28,7 @@ import type { KolamTag } from '../domain/kolam-tag';
 import type { KolamUnit } from '../domain/kolam-unit';
 import {
   archiveKolamProduct,
+  createKolamProduct,
   deleteKolamProduct,
   duplicateKolamProduct,
   getKolamProductDetail,
@@ -282,8 +284,10 @@ export function useKolamProductController(
   const onCreateNew = useCallback(() => {
     setMode('new');
     setSelectedProduct(null);
+    setForm(createEmptyKolamProductFormState());
     setError(null);
-  }, []);
+    void refreshOptions();
+  }, [refreshOptions]);
 
   const onEdit = useCallback(() => {
     if (selectedProduct) {
@@ -433,10 +437,14 @@ export function useKolamProductController(
     setError(null);
 
     try {
-      const savedProduct = await updateKolamProduct(
-        form.id || selectedProduct?.id || slugifyProductName(form.name),
-        createKolamProductSavePayload(form),
-      );
+      const payload = createKolamProductSavePayload(form);
+      const savedProduct =
+        mode === 'new'
+          ? await createKolamProduct(payload)
+          : await updateKolamProduct(
+              form.id || selectedProduct?.id || slugifyProductName(form.name),
+              payload,
+            );
       await writeKolamProductDetailCache(savedProduct);
       const nextProducts = upsertProduct(products, savedProduct);
       await writeKolamProductListCache({
@@ -453,7 +461,7 @@ export function useKolamProductController(
     } finally {
       setSaving(false);
     }
-  }, [form, pagination, products, selectedProduct?.id]);
+  }, [form, mode, pagination, products, selectedProduct?.id]);
 
   const breadcrumbPath = useMemo(
     () => getKolamProductBreadcrumbPath(mode, selectedProduct),
