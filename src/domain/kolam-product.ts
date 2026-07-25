@@ -1706,7 +1706,10 @@ function normalizeProductComponents(value: unknown): KolamProductComponentLine[]
       code:
         getNonPlaceholderString(product, 'productCode') ||
         getNonPlaceholderString(product, 'product_code') ||
-        getNonPlaceholderString(product, 'code'),
+        getNonPlaceholderString(product, 'code') ||
+        getNonPlaceholderString(line, 'productCode') ||
+        getNonPlaceholderString(line, 'product_code') ||
+        getNonPlaceholderString(line, 'code'),
       name:
         getString(product, 'name') ||
         (typeof line.product === 'string' ? line.product : '') ||
