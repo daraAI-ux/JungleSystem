@@ -1703,13 +1703,7 @@ function normalizeProductComponents(value: unknown): KolamProductComponentLine[]
         getString(product, '_id') ||
         `component-${index + 1}`,
       brandLabel: brands.map(brand => brand.name).join(', '),
-      code:
-        getNonPlaceholderString(product, 'productCode') ||
-        getNonPlaceholderString(product, 'product_code') ||
-        getNonPlaceholderString(product, 'code') ||
-        getNonPlaceholderString(line, 'productCode') ||
-        getNonPlaceholderString(line, 'product_code') ||
-        getNonPlaceholderString(line, 'code'),
+      code: getProductComponentCode(product, line),
       name:
         getString(product, 'name') ||
         (typeof line.product === 'string' ? line.product : '') ||
@@ -1723,6 +1717,26 @@ function normalizeProductComponents(value: unknown): KolamProductComponentLine[]
       unitLabel: normalizeUnitLabel(product),
     };
   });
+}
+
+function getProductComponentCode(
+  product: Record<string, unknown>,
+  line: Record<string, unknown>,
+) {
+  const productCode =
+    getNonPlaceholderString(product, 'productCode') ||
+    getNonPlaceholderString(product, 'product_code') ||
+    getNonPlaceholderString(product, 'code') ||
+    getNonPlaceholderString(line, 'productCode') ||
+    getNonPlaceholderString(line, 'product_code') ||
+    getNonPlaceholderString(line, 'code');
+  const sku = getString(product, 'sku') || getString(line, 'sku');
+
+  if (sku === '-') {
+    return productCode;
+  }
+
+  return productCode;
 }
 
 function normalizePackings(value: unknown): KolamProductPackingLine[] {
