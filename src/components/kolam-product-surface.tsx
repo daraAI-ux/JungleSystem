@@ -76,6 +76,7 @@ import { KolamInteractionFrame } from './kolam-interaction-frame';
 import { KolamMediaPlayer } from './kolam-media-player';
 import { KolamMarketplaceSyncPlatformList } from './kolam-marketplace-sync-platform-list';
 import { KolamNativeFormSection } from './kolam-native-form-section';
+import { KolamPackingLinksEditor } from './kolam-packing-links-editor';
 import {
   KolamPricingMetric,
   KolamPricingMetricsGrid,
@@ -1239,6 +1240,13 @@ function ProductEditFormPage({
               title="Syarat dan Ketentuan"
             >
               <ProductTermsTemplatesSummaryPanel controller={controller} />
+            </ProductEditSection>
+
+            <ProductEditSection
+              description="Material packing default untuk mengirim 1 unit produk."
+              title="Bahan Kemasan"
+            >
+              <ProductPackingLinksPanel controller={controller} />
             </ProductEditSection>
           </View>
           <View style={styles.formActions}>
@@ -3967,6 +3975,48 @@ function ProductTermsTemplatesSummaryPanel({
         statusIntent: product.warranty.mode === 'none' ? 'muted' : 'success',
       }}
     />
+  );
+}
+
+function ProductPackingLinksPanel({
+  controller,
+}: {
+  controller: ReturnType<typeof useKolamProductController>;
+}) {
+  const form = controller.form;
+
+  if (!form) {
+    return null;
+  }
+
+  const variants = form.variants.map((variant, index) => ({
+    id: variant.id,
+    label:
+      [variant.tier1Value, variant.tier2Value].filter(Boolean).join(' / ') ||
+      `Varian ${index + 1}`,
+  }));
+
+  return (
+    <ProductFieldShell label="Bahan Kemasan">
+      <View style={styles.variantMediaPanel}>
+        <KolamCopyStack
+          items={[
+            {
+              id: 'hint',
+              text: 'Kemasan default untuk checkout. Disimpan melalui endpoint bahan kemasan setelah produk tersimpan.',
+              style: styles.fieldHint,
+            },
+          ]}
+        />
+        <KolamPackingLinksEditor
+          disabled={controller.saving}
+          onChange={packingLinks => controller.onChangeForm({ packingLinks })}
+          packings={controller.packingOptions}
+          rows={form.packingLinks}
+          variants={variants}
+        />
+      </View>
+    </ProductFieldShell>
   );
 }
 

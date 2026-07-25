@@ -12,6 +12,7 @@ import {
 import { flattenAllCategories, type KolamCategory } from '../domain/kolam-category';
 import type { KolamBrand } from '../domain/kolam-brand';
 import type { KolamCustomField } from '../domain/kolam-custom-field';
+import type { KolamPackingOption } from '../domain/kolam-packing-option';
 import type { KolamProductOption } from '../domain/kolam-product-option';
 import type { KolamShippingMethod } from '../domain/kolam-shipping-method';
 import type { KolamSpecies } from '../domain/kolam-species';
@@ -42,6 +43,7 @@ import {
   duplicateKolamProduct,
   getKolamProductDetail,
   getKolamProducts,
+  linkKolamProductPackings,
   reorderKolamProductMedia,
   removeKolamProductAttachedItem,
   restoreKolamProduct,
@@ -60,6 +62,11 @@ import {
   readKolamCustomFieldListCache,
   writeKolamCustomFieldListCache,
 } from '../services/kolam-custom-field-local-cache';
+import { getKolamPackingOptions } from '../services/kolam-packing-option-api';
+import {
+  readKolamPackingOptionListCache,
+  writeKolamPackingOptionListCache,
+} from '../services/kolam-packing-option-local-cache';
 import { getKolamProductOptions } from '../services/kolam-product-option-api';
 import {
   readKolamProductOptionListCache,
@@ -117,6 +124,7 @@ export interface KolamProductController {
   isEditable: boolean;
   loading: boolean;
   mode: KolamProductSurfaceMode;
+  packingOptions: KolamPackingOption[];
   pagination: KolamProductPagination;
   productOptions: KolamProductOption[];
   products: KolamProduct[];
@@ -181,6 +189,7 @@ export function useKolamProductController(
   const [tags, setTags] = useState<KolamTag[]>([]);
   const [units, setUnits] = useState<KolamUnit[]>([]);
   const [vendors, setVendors] = useState<KolamVendor[]>([]);
+  const [packingOptions, setPackingOptions] = useState<KolamPackingOption[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<KolamProduct | null>(
     null,
   );
@@ -230,6 +239,11 @@ export function useKolamProductController(
       setVendors(cachedVendors.value);
     }
 
+    const cachedPackings = await readKolamPackingOptionListCache();
+    if (cachedPackings?.value.length) {
+      setPackingOptions(cachedPackings.value);
+    }
+
     const cachedShippingMethods = await readKolamShippingMethodListCache();
     if (cachedShippingMethods?.value.length) {
       setShippingMethods(cachedShippingMethods.value);
@@ -244,6 +258,7 @@ export function useKolamProductController(
       productOptionResult,
       speciesResult,
       vendorResult,
+      packingResult,
       shippingMethodResult,
     ] = await Promise.allSettled([
       getKolamBrands(),
@@ -254,6 +269,7 @@ export function useKolamProductController(
       getKolamProductOptions(),
       getKolamSpeciesList({ limit: 1000 }),
       getKolamVendors(),
+      getKolamPackingOptions(),
       getKolamActiveShippingMethods(),
     ]);
 
@@ -293,6 +309,11 @@ export function useKolamProductController(
     if (vendorResult.status === 'fulfilled') {
       await writeKolamVendorListCache(vendorResult.value);
       setVendors(vendorResult.value);
+    }
+
+    if (packingResult.status === 'fulfilled') {
+      await writeKolamPackingOptionListCache(packingResult.value);
+      setPackingOptions(packingResult.value);
     }
 
     if (shippingMethodResult.status === 'fulfilled') {
@@ -922,7 +943,14 @@ export function useKolamProductController(
         form,
         variantPhotoLocalUris,
       );
-      const syncedProduct = await syncProductSeoIfNeeded(mediaProduct, form);
+      let syncedProduct = await syncProductSeoIfNeeded(mediaProduct, form);
+      try {
+        syncedProduct = await linkKolamProductPackings(syncedProduct, form);
+      } catch (packingError) {
+        setError(
+          `Produk tersimpan, tetapi sinkron bahan kemasan gagal: ${getErrorMessage(packingError)}`,
+        );
+      }
       await writeKolamProductDetailCache(syncedProduct);
       const nextProducts = upsertProduct(products, syncedProduct);
       await writeKolamProductListCache({
@@ -960,6 +988,7 @@ export function useKolamProductController(
     loading,
     mode,
     pagination,
+    packingOptions,
     productOptions,
     products,
     saving,

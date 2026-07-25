@@ -1,8 +1,10 @@
 import { appConfig } from '../config/app';
 import {
+  createKolamProductPackingLinkPayload,
   normalizeKolamProductDetail,
   normalizeKolamProductList,
   type KolamProduct,
+  type KolamProductFormState,
   type KolamProductListResult,
 } from '../domain/kolam-product';
 import { apiRequest } from '../lib/api-client';
@@ -311,6 +313,24 @@ export async function reorderKolamProductMedia(
   );
 
   return normalizeKolamProductDetail(response);
+}
+
+export async function linkKolamProductPackings(
+  product: KolamProduct,
+  form: KolamProductFormState,
+): Promise<KolamProduct> {
+  await kolamRequest<unknown>(
+    `/products/${encodeURIComponent(product.id)}/link-packings`,
+    {
+      method: 'POST',
+      body: {
+        packings: createKolamProductPackingLinkPayload(form, product),
+      },
+      headers: { [DETAIL_EDIT_HEADER]: DETAIL_EDIT_HEADER_VALUE },
+    },
+  );
+
+  return getKolamProductDetail(product.id, { forEdit: true });
 }
 
 export async function uploadKolamProductAsset(
