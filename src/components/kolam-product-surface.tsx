@@ -1011,16 +1011,25 @@ function KolamProductDetailView({
     return <ProductEditFormPage controller={controller} onCancel={() => onCancelEdit(product)} />;
   }
 
-  const tabItems = [
-    { id: 'overview', label: 'Ringkasan' },
-    { id: 'pricing', label: 'Harga' },
-    { id: 'specifications', label: 'Spesifikasi', count: getProductSpecificationTotal(product) },
-    { id: 'logistics', label: 'Logistik' },
-    { id: 'materials', label: 'Bahan Penyusun', count: product.components.length + product.packings.length },
-    { id: 'more', label: 'Lainnya' },
-    { id: 'assets', label: 'Aset', count: product.assets.length },
-    { id: 'statistics', label: 'Statistik' },
-  ];
+  const isRawDetail = product.type === 'raw';
+  const tabItems = isRawDetail
+    ? [
+        { id: 'overview', label: 'Ringkasan' },
+        { id: 'assets', label: 'Aset', count: product.assets.length },
+      ]
+    : [
+        { id: 'overview', label: 'Ringkasan' },
+        { id: 'pricing', label: 'Harga' },
+        { id: 'specifications', label: 'Spesifikasi', count: getProductSpecificationTotal(product) },
+        { id: 'logistics', label: 'Logistik' },
+        { id: 'materials', label: 'Bahan Penyusun', count: product.components.length + product.packings.length },
+        { id: 'more', label: 'Lainnya' },
+        { id: 'assets', label: 'Aset', count: product.assets.length },
+        { id: 'statistics', label: 'Statistik' },
+      ];
+  const activeDetailTab = tabItems.some(item => item.id === activeTab)
+    ? activeTab
+    : 'overview';
 
   return (
     <ScrollView contentContainerStyle={styles.root}>
@@ -1048,10 +1057,10 @@ function KolamProductDetailView({
         accessibilityLabel={shellLabels.tabsAccessibilityLabel}
         items={tabItems}
         onSelect={setActiveTab}
-        selectedId={activeTab}
+        selectedId={activeDetailTab}
       />
 
-      {activeTab === 'overview' ? (
+      {activeDetailTab === 'overview' ? (
         <ProductSummaryTab
           mediaItems={mediaItems}
           onPrintBarcode={() => onPrintBarcode(product)}
@@ -1059,13 +1068,13 @@ function KolamProductDetailView({
         />
       ) : (
         <View style={styles.detailMain}>
-          {activeTab === 'pricing' ? <ProductPricingTab product={product} /> : null}
-          {activeTab === 'specifications' ? <ProductVariantsTab product={product} /> : null}
-          {activeTab === 'logistics' ? <ProductLogisticsTab product={product} /> : null}
-          {activeTab === 'materials' ? <ProductMaterialsTab product={product} /> : null}
-          {activeTab === 'more' ? <ProductMoreTab product={product} /> : null}
-          {activeTab === 'assets' ? <ProductAssetsTab product={product} /> : null}
-          {activeTab === 'statistics' ? <ProductStatisticsTab product={product} /> : null}
+          {activeDetailTab === 'pricing' ? <ProductPricingTab product={product} /> : null}
+          {activeDetailTab === 'specifications' ? <ProductVariantsTab product={product} /> : null}
+          {activeDetailTab === 'logistics' ? <ProductLogisticsTab product={product} /> : null}
+          {activeDetailTab === 'materials' ? <ProductMaterialsTab product={product} /> : null}
+          {activeDetailTab === 'more' ? <ProductMoreTab product={product} /> : null}
+          {activeDetailTab === 'assets' ? <ProductAssetsTab product={product} /> : null}
+          {activeDetailTab === 'statistics' ? <ProductStatisticsTab product={product} /> : null}
         </View>
       )}
     </ScrollView>
