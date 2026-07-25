@@ -1704,9 +1704,9 @@ function normalizeProductComponents(value: unknown): KolamProductComponentLine[]
         `component-${index + 1}`,
       brandLabel: brands.map(brand => brand.name).join(', '),
       code:
-        getString(product, 'sku') ||
-        getString(product, 'productCode') ||
-        getString(product, 'product_code'),
+        getNonPlaceholderString(product, 'productCode') ||
+        getNonPlaceholderString(product, 'product_code') ||
+        getNonPlaceholderString(product, 'code'),
       name:
         getString(product, 'name') ||
         (typeof line.product === 'string' ? line.product : '') ||
@@ -2358,6 +2358,11 @@ function getFirstString(record: Record<string, unknown>, keys: string[]) {
 function getString(record: Record<string, unknown>, key: string) {
   const value = record[key];
   return typeof value === 'string' ? value.trim() : '';
+}
+
+function getNonPlaceholderString(record: Record<string, unknown>, key: string) {
+  const value = getString(record, key);
+  return value && value !== '-' ? value : '';
 }
 
 function getNumber(record: Record<string, unknown>, key: string) {
