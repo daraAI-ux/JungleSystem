@@ -267,6 +267,7 @@ export function KolamProductSurface({
     return (
       <KolamProductDetailView
         controller={controller}
+        isRawCatalog={isRawCatalog}
         onArchive={product => setPendingAction({ type: 'archive', product })}
         onBack={() => {
           controller.onBackToList();
@@ -274,12 +275,12 @@ export function KolamProductSurface({
         }}
         onCancelEdit={product => {
           void controller.onSelectProduct(product);
-          onRouteChange?.(`/products/${product.slug || product.id}`);
+          onRouteChange?.(getProductDetailRoute(product));
         }}
         onDelete={product => setPendingAction({ type: 'delete', product })}
         onEdit={product => {
           void controller.onSelectProduct(product, 'edit');
-          onRouteChange?.(`/products/${product.slug || product.id}/edit`);
+          onRouteChange?.(`${getProductDetailRoute(product)}/edit`);
         }}
         onPrintBarcode={product => {
           setBarcodeDialogItems(createBarcodeItems([product]));
@@ -946,6 +947,7 @@ function ProductRow({
 
 function KolamProductDetailView({
   controller,
+  isRawCatalog,
   onArchive,
   onBack,
   onCancelEdit,
@@ -955,6 +957,7 @@ function KolamProductDetailView({
   onRestore,
 }: {
   controller: ReturnType<typeof useKolamProductController>;
+  isRawCatalog: boolean;
   onArchive: (product: KolamProduct) => void;
   onBack: () => void;
   onCancelEdit: (product: KolamProduct) => void;
@@ -971,6 +974,7 @@ function KolamProductDetailView({
         : null,
     [controller.selectedProduct],
   );
+  const shellLabels = getProductDetailShellLabels(product?.type === 'raw' || isRawCatalog);
 
   if (controller.mode === 'new') {
     return <ProductEditFormPage controller={controller} onCancel={onBack} />;
@@ -981,12 +985,12 @@ function KolamProductDetailView({
       <ScrollView contentContainerStyle={styles.root}>
         <View style={styles.detailHeaderRow}>
           <View style={styles.headingCopy}>
-            <Text style={styles.eyebrow}>PRODUK</Text>
-            <Text style={styles.title}>Detail Produk</Text>
+            <Text style={styles.eyebrow}>{shellLabels.eyebrow}</Text>
+            <Text style={styles.title}>{shellLabels.detailTitle}</Text>
             <Text style={styles.description}>
               {controller.loading
-                ? 'Membaca detail produk...'
-                : 'Produk belum dipilih.'}
+                ? shellLabels.loadingDetail
+                : shellLabels.emptyDetail}
             </Text>
           </View>
           <KolamButton label="Daftar" onPress={onBack} />
@@ -1022,7 +1026,7 @@ function KolamProductDetailView({
     <ScrollView contentContainerStyle={styles.root}>
       <View style={styles.detailHeaderRow}>
         <View style={styles.headingCopy}>
-          <Text style={styles.eyebrow}>PRODUK</Text>
+          <Text style={styles.eyebrow}>{shellLabels.eyebrow}</Text>
           <Text style={styles.title}>{product.name}</Text>
           <Text style={styles.description}>
             Dibuat {formatDateTime(product.createdAt)} | Diperbarui {formatDateTime(product.updatedAt)}
@@ -1041,7 +1045,7 @@ function KolamProductDetailView({
       </View>
 
       <KolamControlTabList
-        accessibilityLabel="Tab detail produk"
+        accessibilityLabel={shellLabels.tabsAccessibilityLabel}
         items={tabItems}
         onSelect={setActiveTab}
         selectedId={activeTab}
@@ -1077,16 +1081,19 @@ function ProductEditFormPage({
 }) {
   const form = controller.form;
   const [deleteMediaTarget, setDeleteMediaTarget] = React.useState<ProductDeleteMediaTarget | null>(null);
+  const shellLabels = getProductDetailShellLabels(
+    form?.productType === 'raw' || controller.selectedProduct?.type === 'raw',
+  );
 
   if (!form) {
     return (
       <ScrollView contentContainerStyle={styles.root}>
         <View style={styles.detailHeaderRow}>
           <View style={styles.headingCopy}>
-            <Text style={styles.eyebrow}>PRODUK</Text>
-            <Text style={styles.title}>Edit Produk</Text>
+            <Text style={styles.eyebrow}>{shellLabels.eyebrow}</Text>
+            <Text style={styles.title}>{shellLabels.editTitle}</Text>
             <Text style={styles.description}>
-              {controller.loading ? 'Membaca detail produk...' : 'Form produk belum siap.'}
+              {controller.loading ? shellLabels.loadingDetail : shellLabels.emptyForm}
             </Text>
           </View>
           <KolamButton label="Batal" onPress={onCancel} />
@@ -1102,15 +1109,15 @@ function ProductEditFormPage({
   const tagOptions = controller.tags.filter(tag => !form.tagIds.includes(tag.id));
   const selectedTags = controller.tags.filter(tag => form.tagIds.includes(tag.id));
   const disabled = controller.saving;
-  const formTitle = controller.mode === 'new' ? 'Produk Baru' : 'Edit Produk';
-  const saveLabel = controller.mode === 'new' ? 'Simpan Produk' : 'Simpan Perubahan';
+  const formTitle = controller.mode === 'new' ? shellLabels.newTitle : shellLabels.editTitle;
+  const saveLabel = controller.mode === 'new' ? shellLabels.saveNewLabel : 'Simpan Perubahan';
   const hasVariants = form.hasVariants || form.variants.length > 0;
 
   return (
     <ScrollView contentContainerStyle={styles.root}>
       <View style={styles.detailHeaderRow}>
         <View style={styles.headingCopy}>
-          <Text style={styles.eyebrow}>PRODUK</Text>
+          <Text style={styles.eyebrow}>{shellLabels.eyebrow}</Text>
           <Text style={styles.title}>{formTitle}</Text>
         </View>
         <View style={styles.detailHeaderActions}>
@@ -5709,6 +5716,27 @@ function getProductCode(product: KolamProduct) {
   return product.type === 'raw'
     ? product.productCode || product.sku || product.id
     : product.sku || product.productCode || product.id;
+}
+
+function getProductDetailRoute(product: KolamProduct) {
+  const isRaw = product.type === 'raw';
+  const basePath = isRaw ? '/raw-materials' : '/products';
+  const routeKey = isRaw ? product.id : product.slug || product.id;
+  return `${basePath}/${routeKey}`;
+}
+
+function getProductDetailShellLabels(isRaw: boolean) {
+  return {
+    detailTitle: isRaw ? 'Detail Bahan Baku' : 'Detail Produk',
+    editTitle: isRaw ? 'Edit Bahan Baku' : 'Edit Produk',
+    emptyDetail: isRaw ? 'Bahan baku belum dipilih.' : 'Produk belum dipilih.',
+    emptyForm: isRaw ? 'Form bahan baku belum siap.' : 'Form produk belum siap.',
+    eyebrow: isRaw ? 'BAHAN BAKU' : 'PRODUK',
+    loadingDetail: isRaw ? 'Membaca detail bahan baku...' : 'Membaca detail produk...',
+    newTitle: isRaw ? 'Bahan Baku Baru' : 'Produk Baru',
+    saveNewLabel: isRaw ? 'Simpan Bahan Baku' : 'Simpan Produk',
+    tabsAccessibilityLabel: isRaw ? 'Tab detail bahan baku' : 'Tab detail produk',
+  };
 }
 
 function getProductVendorPrices(product: KolamProduct): KolamVendorPriceCardItem[] {
