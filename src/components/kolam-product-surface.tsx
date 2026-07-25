@@ -1,5 +1,6 @@
 import React from 'react';
 import { Image, Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { appConfig } from '../config/app';
 import type { KolamBarcodeLabelItem } from '../domain/kolam-barcode';
 import type { KolamCustomField } from '../domain/kolam-custom-field';
 import type { KolamTableColumn } from '../domain/kolam-table';
@@ -22,6 +23,10 @@ import {
 } from '../services/kolam-pricing-analysis-api';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { useKolamProductController } from '../hooks/use-kolam-product-controller';
+import {
+  deleteKolamProductAsset,
+  uploadKolamProductAsset,
+} from '../services/kolam-product-api';
 import { KolamBadge } from './kolam-badge';
 import { KolamBarcodePanel } from './kolam-barcode-panel';
 import { KolamBarcodePrintDialog } from './kolam-barcode-print-dialog';
@@ -49,6 +54,11 @@ import {
 } from './kolam-detail-media-preview';
 import { KolamDetailLocaleTabs } from './kolam-detail-locale-tabs';
 import {
+  KolamEntityDetailAssetsPanel,
+  type KolamEntityDetailAsset,
+} from './kolam-entity-detail-assets-panel';
+import { KolamEntityStatisticsPanel } from './kolam-entity-statistics-panel';
+import {
   KolamDetailAttachedItemsPanel,
   KolamDetailSeoGooglePanel,
   KolamDetailTermsTemplatesPanel,
@@ -57,7 +67,6 @@ import { KolamDescriptionList } from './kolam-description-list';
 import { KolamInteractionFrame } from './kolam-interaction-frame';
 import { KolamMediaPlayer } from './kolam-media-player';
 import { KolamMarketplaceSyncPlatformList } from './kolam-marketplace-sync-platform-list';
-import { KolamMetricCardGrid } from './kolam-metric-card-grid';
 import { KolamNativeFormSection } from './kolam-native-form-section';
 import {
   KolamPricingMetric,
@@ -846,7 +855,7 @@ function KolamProductDetailView({
     { id: 'logistics', label: 'Logistik' },
     { id: 'materials', label: 'Bahan Penyusun', count: product.components.length + product.packings.length },
     { id: 'more', label: 'Lainnya' },
-    { id: 'assets', label: 'Aset', count: photos.length + product.videos.length + product.assets.length },
+    { id: 'assets', label: 'Aset', count: product.assets.length },
     { id: 'statistics', label: 'Statistik' },
   ];
 
@@ -892,7 +901,7 @@ function KolamProductDetailView({
           {activeTab === 'logistics' ? <ProductLogisticsTab product={product} /> : null}
           {activeTab === 'materials' ? <ProductMaterialsTab product={product} /> : null}
           {activeTab === 'more' ? <ProductMoreTab product={product} /> : null}
-          {activeTab === 'assets' ? <ProductAssetsTab photos={photos} product={product} /> : null}
+          {activeTab === 'assets' ? <ProductAssetsTab product={product} /> : null}
           {activeTab === 'statistics' ? <ProductStatisticsTab product={product} /> : null}
         </View>
       )}
@@ -2332,67 +2341,37 @@ function ProductMoreTab({ product }: { product: KolamProduct }) {
 
 function ProductStatisticsTab({ product }: { product: KolamProduct }) {
   return (
-    <View style={styles.detailPanel}>
-      <Text style={styles.detailPanelTitle}>Statistik</Text>
-      <KolamMetricCardGrid
-        accessibilityLabel="Statistik produk"
-        items={[
-          { id: 'stock', label: 'Stok', value: formatStock(product) },
-          { id: 'variants', label: 'Varian', value: product.variants.length },
-          { id: 'assets', label: 'Aset internal', value: product.assets.length },
-          { id: 'marketplace-sync', label: 'Sinkron marketplace', value: product.marketplaceSync.label },
-        ]}
-      />
-    </View>
+    <KolamEntityStatisticsPanel
+      description="Penjualan, pembelian, dan performa produk."
+      entityId={product.id}
+      entityType="product"
+    />
   );
 }
 
-function ProductAssetsTab({ photos, product }: { photos: string[]; product: KolamProduct }) {
-  const mediaItems = createProductMediaItems(product);
-  if (!mediaItems.length && !product.assets.length) {
-    return <EmptyDetailPanel title="Aset" message="Belum ada aset media." />;
-  }
+function ProductAssetsTab({ product }: { product: KolamProduct }) {
+  const handleUpload = React.useCallback(async (title: string, localUri: string) => {
+    const updated = await uploadKolamProductAsset(product.id, title, localUri);
+    return updated.assets;
+  }, [product.id]);
+
+  const handleDelete = React.useCallback(async (assetId: string) => {
+    const updated = await deleteKolamProductAsset(product.id, assetId);
+    return updated.assets;
+  }, [product.id]);
+
+  const handleDownload = React.useCallback((asset: KolamEntityDetailAsset) => {
+    const base = appConfig.kolamApiBaseUrl.replace(/\/$/, '');
+    void Linking.openURL(`${base}/products/${encodeURIComponent(product.id)}/assets/${encodeURIComponent(asset.id)}/download`);
+  }, [product.id]);
 
   return (
-    <View style={styles.detailPanel}>
-      <Text style={styles.detailPanelTitle}>Aset</Text>
-      <View style={styles.assetGrid}>
-        {mediaItems.map((item, index) =>
-          item.type === 'image' ? (
-            <KolamRemoteImage
-              accessibilityLabel={`Foto ${item.title}`}
-              key={item.id}
-              previewIndex={index}
-              previewItems={photos.map((photoUri, photoIndex) => ({ id: `${product.id}-${photoIndex}`, title: product.name, uri: photoUri }))}
-              resizeMode="cover"
-              scope="product-assets"
-              sourceUri={item.uri}
-              style={styles.assetThumb}
-            />
-          ) : (
-            <KolamMediaPlayer
-              kind="video"
-              key={item.id}
-              title={item.title}
-              uri={item.uri}
-              style={styles.assetVideoThumb}
-            />
-          ),
-        )}
-      </View>
-      {product.assets.length ? (
-        <KolamDescriptionList
-          accessibilityLabel="Aset internal produk"
-          rows={product.assets.map(asset => ({
-            id: asset.id,
-            label: asset.title,
-            meta: [asset.filename, asset.mimeType].filter(Boolean).join(' | '),
-            tone: 'default',
-            value: formatFileSize(asset.fileSize),
-          }))}
-        />
-      ) : null}
-    </View>
+    <KolamEntityDetailAssetsPanel
+      assets={product.assets}
+      deleteAsset={handleDelete}
+      downloadAsset={handleDownload}
+      uploadAsset={handleUpload}
+    />
   );
 }
 

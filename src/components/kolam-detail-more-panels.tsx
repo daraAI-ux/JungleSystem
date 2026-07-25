@@ -323,8 +323,8 @@ const styles = StyleSheet.create({
   },
   pricingValue: {
     color: V.colors.fg,
-    fontSize: 15,
-    fontWeight: '900',
+    fontSize: 13,
+    fontWeight: '600',
     lineHeight: 20,
   },
   sectionCardFull: {
@@ -383,19 +383,20 @@ const styles = StyleSheet.create({
   seoPreviewDescription: {
     color: V.colors.mutedFg,
     fontSize: 12,
+    fontWeight: '500',
     lineHeight: 18,
     marginTop: 6,
   },
   seoPreviewTitle: {
     color: '#1a0dab',
     fontSize: 17,
-    fontWeight: '800',
+    fontWeight: '600',
     lineHeight: 23,
   },
   seoPreviewUrl: {
     color: '#0b7d33',
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '500',
     marginTop: 4,
   },
   termsListCopy: {

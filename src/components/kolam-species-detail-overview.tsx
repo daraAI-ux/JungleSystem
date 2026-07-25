@@ -54,8 +54,8 @@ import {
   KolamDetailSeoGooglePanel,
   KolamDetailTermsTemplatesPanel,
 } from './kolam-detail-more-panels';
+import { KolamEntityStatisticsPanel } from './kolam-entity-statistics-panel';
 import { KolamSpeciesDetailAssetsPanel } from './kolam-species-detail-assets-panel';
-import { KolamSpeciesDetailExternalLinksPanel } from './kolam-species-detail-external-links-panel';
 import { containsHtmlMarkup, KolamHtmlContent } from './kolam-html-content';
 import { KolamInteractionFrame } from './kolam-interaction-frame';
 import { KolamMediaPlayer } from './kolam-media-player';
@@ -309,7 +309,11 @@ export function KolamSpeciesDetailOverview({
           species={species}
         />
       ) : safeActiveTab === 'statistics' ? (
-        <StatisticsPanel species={species} />
+        <KolamEntityStatisticsPanel
+          description="Penjualan, pembelian, dan performa lifestock."
+          entityId={species.id}
+          entityType="species"
+        />
       ) : safeActiveTab === 'location' ? (
         <LocationPanel species={species} />
       ) : safeActiveTab === 'logistics' ? (
@@ -2502,7 +2506,6 @@ function MorePanel({
 }) {
   return (
     <View style={styles.sectionGrid}>
-      <KolamSpeciesDetailExternalLinksPanel species={species} />
       {sections.filter(section => section.title !== 'Link').map(section => (
         <DetailSectionPanel key={section.title} section={section} />
       ))}

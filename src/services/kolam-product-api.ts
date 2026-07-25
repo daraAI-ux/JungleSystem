@@ -111,6 +111,38 @@ export async function restoreKolamProduct(productId: string): Promise<KolamProdu
 
   return normalizeKolamProductDetail(response);
 }
+
+export async function uploadKolamProductAsset(
+  productId: string,
+  title: string,
+  localUri: string,
+): Promise<KolamProduct> {
+  const body = new FormData();
+  body.append('title', title.trim());
+  body.append('file', createReactNativeFilePart(localUri, 'product-asset') as unknown as Blob);
+
+  await kolamRequest<unknown>(
+    `/products/${encodeURIComponent(productId)}/assets`,
+    {
+      method: 'POST',
+      body,
+    },
+  );
+
+  return getKolamProductDetail(productId);
+}
+
+export async function deleteKolamProductAsset(
+  productId: string,
+  assetId: string,
+): Promise<KolamProduct> {
+  const response = await kolamRequest<unknown>(
+    `/products/${encodeURIComponent(productId)}/assets/${encodeURIComponent(assetId)}`,
+    { method: 'DELETE' },
+  );
+
+  return normalizeKolamProductDetail(response);
+}
 function createProductsQuery(options: GetKolamProductsOptions) {
   const query: Record<string, QueryValue> = {
     page: options.page ?? 1,
@@ -165,6 +197,47 @@ function kolamRequest<T>(
     baseUrl: appConfig.kolamApiBaseUrl,
     sourceHeader: appConfig.kolamSourceHeader,
   }) as Promise<T>;
+}
+
+function createReactNativeFilePart(localUri: string, fallbackName = 'product-asset') {
+  const normalizedUri = localUri.startsWith('file://')
+    ? localUri
+    : `file:///${localUri.replace(/\\/g, '/')}`;
+  const name = normalizedUri.split('/').pop() || fallbackName;
+
+  return {
+    uri: normalizedUri,
+    name,
+    type: inferFileMimeType(name),
+  };
+}
+
+function inferFileMimeType(fileName: string) {
+  const extension = fileName.split('.').pop()?.toLowerCase();
+
+  switch (extension) {
+    case 'pdf':
+      return 'application/pdf';
+    case 'doc':
+      return 'application/msword';
+    case 'docx':
+      return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    case 'xls':
+      return 'application/vnd.ms-excel';
+    case 'xlsx':
+      return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    case 'png':
+      return 'image/png';
+    case 'webp':
+      return 'image/webp';
+    case 'gif':
+      return 'image/gif';
+    case 'jpg':
+    case 'jpeg':
+      return 'image/jpeg';
+    default:
+      return 'application/octet-stream';
+  }
 }
 
 
