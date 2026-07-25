@@ -588,10 +588,11 @@ function ProductFilterTrigger({
 }) {
   return (
     <KolamButton
-      intent={active ? 'primary' : 'plain'}
-      label={label}
+      intent={active ? 'primary' : 'secondary'}
+      label={`${label} v`}
       onPress={onPress}
-      style={styles.filterTrigger}
+      style={[styles.filterTrigger, active && styles.filterTriggerActive]}
+      textStyle={[styles.filterTriggerText, active && styles.filterTriggerTextActive]}
     />
   );
 }
@@ -6197,11 +6198,24 @@ const styles = StyleSheet.create({
     minWidth: 140,
   },
   filterTrigger: {
+    backgroundColor: V.colors.successSoft,
+    borderColor: V.colors.success,
     flexBasis: 0,
     flexGrow: 1,
     minHeight: 34,
     minWidth: 128,
     paddingHorizontal: 8,
+  },
+  filterTriggerActive: {
+    backgroundColor: V.colors.success,
+    borderColor: V.colors.success,
+  },
+  filterTriggerText: {
+    color: V.colors.success,
+    fontWeight: '800',
+  },
+  filterTriggerTextActive: {
+    color: V.colors.primaryFg,
   },
   stockTrigger: {
     flexBasis: 0,
