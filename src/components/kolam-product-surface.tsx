@@ -125,6 +125,16 @@ const PRODUCT_COLUMNS: KolamTableColumn[] = [
   { id: 'actions', label: '', align: 'right', width: 54 },
 ];
 
+const RAW_COLUMNS: KolamTableColumn[] = [
+  { id: 'primary', label: 'Nama', align: 'left' },
+  { id: 'meta', label: 'Kode Produk', align: 'left', width: 118 },
+  { id: 'price', label: 'Merek', align: 'left', width: 130 },
+  { id: 'children', label: 'Varian', align: 'left', width: 122 },
+  { id: 'products', label: 'Stok', align: 'right', headerAlign: 'center', width: 104 },
+  { id: 'status', label: 'Status', align: 'right', width: 118 },
+  { id: 'actions', label: '', align: 'right', width: 54 },
+];
+
 const STOCK_OPTIONS = [
   { label: 'Semua', value: 'all' },
   { label: 'Stok tersedia', value: 'in_stock' },
@@ -171,6 +181,7 @@ export function KolamProductSurface({
   const isRawCatalog = catalogKind === 'raw';
   const listRoute = isRawCatalog ? '/raw-materials' : '/products';
   const createRoute = isRawCatalog ? '/raw-materials/create' : '/products/create';
+  const tableColumns = isRawCatalog ? RAW_COLUMNS : PRODUCT_COLUMNS;
   const exportTitle = isRawCatalog ? 'Ekspor Bahan Baku' : 'Ekspor Produk';
   const exportStorageKey = isRawCatalog ? 'export.raw-materials.v1' : 'export.products.v1';
   const exportFilenameHint = isRawCatalog ? 'raw-materials' : 'products';
@@ -398,11 +409,12 @@ export function KolamProductSurface({
         ) : null}
 
         <KolamContentFrame style={styles.tableFrame} variant="settingsWebConfig">
-          <KolamDataTableHeader columns={PRODUCT_COLUMNS} />
+          <KolamDataTableHeader columns={tableColumns} />
           {controller.products.length ? (
             controller.products.map(product => (
               <ProductRow
                 key={product.id}
+                isRawCatalog={isRawCatalog}
                 onArchive={() => setPendingAction({ type: 'archive', product })}
                 onBarcode={() => {
                   setBarcodeDialogItems(createBarcodeItems([product]));
@@ -411,12 +423,14 @@ export function KolamProductSurface({
                 onDelete={() => setPendingAction({ type: 'delete', product })}
                 onDetail={() => {
                   void controller.onSelectProduct(product);
-                  onRouteChange?.(`/products/${product.slug || product.id}`);
+                  const key = isRawCatalog ? product.id : product.slug || product.id;
+                  onRouteChange?.(`${listRoute}/${key}`);
                 }}
                 onDuplicate={() => setPendingAction({ type: 'duplicate', product })}
                 onEdit={() => {
                   void controller.onSelectProduct(product, 'edit');
-                  onRouteChange?.(`/products/${product.slug || product.id}/edit`);
+                  const key = isRawCatalog ? product.id : product.slug || product.id;
+                  onRouteChange?.(`${listRoute}/${key}/edit`);
                 }}
                 onLicense={() => onRouteChange?.(`/product-serials?productId=${product.id}`)}
                 onSyncStock={platforms => {
@@ -434,7 +448,13 @@ export function KolamProductSurface({
           ) : (
             <View style={styles.emptyState}>
               <Text style={styles.emptyText}>
-                {controller.loading ? 'Membaca produk...' : 'Belum ada produk.'}
+                {controller.loading
+                  ? isRawCatalog
+                    ? 'Membaca bahan baku...'
+                    : 'Membaca produk...'
+                  : isRawCatalog
+                  ? 'Belum ada bahan baku.'
+                  : 'Belum ada produk.'}
               </Text>
             </View>
           )}
@@ -741,6 +761,7 @@ function normalizeProductFilterQuery(value: string) {
 }
 
 function ProductRow({
+  isRawCatalog,
   onArchive,
   onBarcode,
   onDelete,
@@ -752,6 +773,7 @@ function ProductRow({
   onTogglePin,
   product,
 }: {
+  isRawCatalog: boolean;
   onArchive: () => void;
   onBarcode: () => void;
   onDelete: () => void;
@@ -764,6 +786,7 @@ function ProductRow({
   product: KolamProduct;
 }) {
   const thumbnailUri = product.thumbnailUri || product.photoUris[0] || '';
+  const productCode = getProductCode(product);
 
   return (
     <KolamDataTableRowFrame style={styles.tableRow}>
@@ -792,7 +815,9 @@ function ProductRow({
           ]}
         />
       </View>
-      <Text selectable style={styles.skuCell}>{product.sku || product.productCode || '-'}</Text>
+      <Text selectable style={styles.skuCell}>
+        {isRawCatalog ? product.productCode || '-' : product.sku || product.productCode || '-'}
+      </Text>
       <View style={styles.brandCell}>
         {product.brands.length ? (
           <View style={styles.brandLogoRow}>
@@ -822,30 +847,63 @@ function ProductRow({
           <Text style={styles.mutedText}>-</Text>
         )}
       </View>
-      <Text style={styles.amountCell}>{formatCurrency(product.priceToSell)}</Text>
-      <Text style={styles.stockCell}>{formatStock(product)}</Text>
-      <View style={styles.syncCell}>{renderSyncCell(product)}</View>
-      <View style={styles.infoCell}>{renderInfoBadges(product)}</View>
+      {isRawCatalog ? (
+        <>
+          <View style={styles.infoCell}>
+            <Text style={styles.mutedText}>
+              {product.hasVariants ? 'Produk varian' : 'Produk standar'}
+            </Text>
+          </View>
+          <Text style={styles.stockCell}>{formatRawListStock(product)}</Text>
+          <View style={styles.infoCell}>
+            <KolamBadge
+              intent={product.sellable ? 'success' : 'secondary'}
+              label={product.sellable ? 'Dapat dijual' : 'Tidak dijual'}
+            />
+          </View>
+        </>
+      ) : (
+        <>
+          <Text style={styles.amountCell}>{formatCurrency(product.priceToSell)}</Text>
+          <Text style={styles.stockCell}>{formatStock(product)}</Text>
+          <View style={styles.syncCell}>{renderSyncCell(product)}</View>
+          <View style={styles.infoCell}>{renderInfoBadges(product)}</View>
+        </>
+      )}
       <View style={styles.actionCell}>
         <KolamOverflowMenuButton
-          actions={[
-            { label: 'Lihat', onPress: onDetail },
-            { label: 'Lihat lisensi / stok', onPress: onLicense },
-            { label: 'Rubah', onPress: onEdit },
-            { label: 'Sinkron ke Tokopedia', onPress: () => onSyncStock(['tokopedia']) },
-            { label: 'Sinkron ke Shopee', onPress: () => onSyncStock(['shopee']) },
-            { label: 'Sinkron ke Keduanya', onPress: () => onSyncStock(['tokopedia', 'shopee']) },
-            {
-              disabled: !getProductCode(product),
-              label: product.type === 'raw' ? 'Salin Kode Produk' : 'Salin SKU',
-              onPress: () => void copyTextToClipboard(getProductCode(product)),
-            },
-            { disabled: !getProductCode(product), label: 'Buat Barcode', onPress: onBarcode },
-            { label: 'Duplikat Data', onPress: onDuplicate },
-            { label: product.isPinned ? 'Lepas Pin' : 'Pin', onPress: onTogglePin },
-            { label: 'Arsipkan', onPress: onArchive },
-            { label: 'Hapus', onPress: onDelete, tone: 'danger' },
-          ]}
+          actions={
+            isRawCatalog
+              ? [
+                  { label: 'Lihat', onPress: onDetail },
+                  { label: 'Rubah', onPress: onEdit },
+                  {
+                    disabled: !productCode,
+                    label: 'Salin Kode Produk',
+                    onPress: () => void copyTextToClipboard(productCode),
+                  },
+                  { label: 'Duplikat Data', onPress: onDuplicate },
+                  { label: 'Hapus', onPress: onDelete, tone: 'danger' },
+                ]
+              : [
+                  { label: 'Lihat', onPress: onDetail },
+                  { label: 'Lihat lisensi / stok', onPress: onLicense },
+                  { label: 'Rubah', onPress: onEdit },
+                  { label: 'Sinkron ke Tokopedia', onPress: () => onSyncStock(['tokopedia']) },
+                  { label: 'Sinkron ke Shopee', onPress: () => onSyncStock(['shopee']) },
+                  { label: 'Sinkron ke Keduanya', onPress: () => onSyncStock(['tokopedia', 'shopee']) },
+                  {
+                    disabled: !productCode,
+                    label: product.type === 'raw' ? 'Salin Kode Produk' : 'Salin SKU',
+                    onPress: () => void copyTextToClipboard(productCode),
+                  },
+                  { disabled: !productCode, label: 'Buat Barcode', onPress: onBarcode },
+                  { label: 'Duplikat Data', onPress: onDuplicate },
+                  { label: product.isPinned ? 'Lepas Pin' : 'Pin', onPress: onTogglePin },
+                  { label: 'Arsipkan', onPress: onArchive },
+                  { label: 'Hapus', onPress: onDelete, tone: 'danger' },
+                ]
+          }
         />
       </View>
     </KolamDataTableRowFrame>
@@ -5956,6 +6014,15 @@ function formatStock(product: KolamProduct) {
   }
 
   return `${product.stock} ${product.unitLabel}`;
+}
+
+function formatRawListStock(product: KolamProduct) {
+  const stock =
+    product.hasVariants && product.variants.length
+      ? product.variants.reduce((total, variant) => total + variant.stock, 0)
+      : product.stock;
+
+  return product.unitLabel ? `${stock} ${product.unitLabel}` : String(stock);
 }
 
 function getProductStockStatusLabel(product: KolamProduct) {
