@@ -1145,6 +1145,15 @@ function ProductEditFormPage({
               </ProductEditSection>
             ) : null}
 
+            {controller.mode !== 'new' ? (
+              <ProductEditSection
+                description="Garansi distributor resmi atau DA. Terpisah dari komplain kedatangan dan garansi custom project."
+                title="Garansi Produk"
+              >
+                <ProductWarrantyPanel controller={controller} />
+              </ProductEditSection>
+            ) : null}
+
             <ProductEditSection
               description={form.sellable && !hasVariants ? 'Poin anggota dan komisi transaksi produk.' : 'Komisi transaksi produk.'}
               title={form.sellable && !hasVariants ? 'Komisi dan Poin Anggota' : 'Komisi'}
@@ -1624,6 +1633,122 @@ function ProductRootLogisticsPanel({
             />
           </View>
         </View>
+      </View>
+    </ProductFieldShell>
+  );
+}
+
+function ProductWarrantyPanel({
+  controller,
+}: {
+  controller: ReturnType<typeof useKolamProductController>;
+}) {
+  const form = controller.form;
+
+  if (!form) {
+    return null;
+  }
+
+  const warrantyModeOptions = [
+    { label: 'Tanpa garansi', value: 'none' },
+    { label: 'Distributor resmi', value: 'official_distributor' },
+    { label: 'Garansi DA', value: 'da' },
+  ];
+  const warrantyTermsOptions = [
+    { label: 'Pilih template', value: '' },
+    ...controller.warrantyTermsTemplates.map(template => ({
+      label: template.title,
+      value: template.id,
+    })),
+  ];
+  const officialDistributorOptions = [
+    { label: 'Pilih distributor', value: '' },
+    ...controller.vendors
+      .filter(vendor => vendor.isOfficialDistributor)
+      .map(vendor => ({ label: vendor.name, value: vendor.id })),
+  ];
+  const warrantyActive = form.warrantyMode !== 'none';
+
+  return (
+    <ProductFieldShell label="Garansi Produk">
+      <View style={styles.variantSpecsGrid}>
+        <KolamDropdownSelect
+          label="Mode garansi"
+          menuStyle={styles.longDropdownMenu}
+          onChange={warrantyMode =>
+            controller.onChangeForm({
+              warrantyMode,
+              ...(warrantyMode === 'none'
+                ? {
+                    warrantyTermsTemplateId: '',
+                    warrantyVendorId: '',
+                  }
+                : {}),
+              ...(warrantyMode !== 'official_distributor'
+                ? { warrantyVendorId: '' }
+                : {}),
+            })
+          }
+          options={warrantyModeOptions}
+          showLabelInTrigger={false}
+          value={form.warrantyMode}
+        />
+        {warrantyActive ? (
+          <View style={styles.twoColumnGrid}>
+            <ProductCompactField label="Durasi garansi (hari)">
+              <KolamFormTextField
+                editable={!controller.saving}
+                keyboardType="numeric"
+                onChangeText={warrantyDays => controller.onChangeForm({ warrantyDays })}
+                placeholder="365"
+                style={settingsWebFormStyles.settingsWebFormFieldValue}
+                value={form.warrantyDays}
+              />
+            </ProductCompactField>
+            <ProductCompactField label="Template S&K garansi">
+              <KolamDropdownSelect
+                label="Template S&K garansi"
+                menuStyle={styles.longDropdownMenu}
+                onChange={warrantyTermsTemplateId =>
+                  controller.onChangeForm({ warrantyTermsTemplateId })
+                }
+                options={warrantyTermsOptions}
+                searchable
+                searchPlaceholder="Cari template..."
+                showLabelInTrigger={false}
+                value={form.warrantyTermsTemplateId}
+              />
+            </ProductCompactField>
+          </View>
+        ) : null}
+        {form.warrantyMode === 'official_distributor' ? (
+          <ProductCompactField label="Distributor resmi">
+            <KolamDropdownSelect
+              label="Distributor resmi"
+              menuStyle={styles.longDropdownMenu}
+              onChange={warrantyVendorId =>
+                controller.onChangeForm({ warrantyVendorId })
+              }
+              options={officialDistributorOptions}
+              searchable
+              searchPlaceholder="Cari distributor..."
+              showLabelInTrigger={false}
+              value={form.warrantyVendorId}
+            />
+          </ProductCompactField>
+        ) : null}
+        {form.warrantyMode === 'official_distributor' &&
+        officialDistributorOptions.length === 1 ? (
+          <KolamCopyStack
+            items={[
+              {
+                id: 'empty-official-distributor',
+                text: 'Belum ada supplier bertanda distributor resmi.',
+                style: styles.fieldHint,
+              },
+            ]}
+          />
+        ) : null}
       </View>
     </ProductFieldShell>
   );

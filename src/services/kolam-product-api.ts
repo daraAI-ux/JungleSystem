@@ -36,6 +36,12 @@ export interface GetKolamProductDetailOptions {
   forEdit?: boolean;
 }
 
+export interface KolamProductTermsTemplate {
+  id: string;
+  status: string;
+  title: string;
+}
+
 export async function getKolamProducts(
   options: GetKolamProductsOptions = {},
 ): Promise<KolamProductListResult> {
@@ -57,6 +63,14 @@ export async function getKolamProductDetail(
   });
 
   return normalizeKolamProductDetail(response);
+}
+
+export async function getKolamProductWarrantyTermsTemplates(): Promise<KolamProductTermsTemplate[]> {
+  const response = await kolamRequest<unknown>('/terms-templates', {
+    query: { limit: 200, status: 'published' },
+  });
+
+  return normalizeKolamProductTermsTemplateList(response);
 }
 
 export async function createKolamProduct(
@@ -418,6 +432,40 @@ function kolamRequest<T>(
     baseUrl: appConfig.kolamApiBaseUrl,
     sourceHeader: appConfig.kolamSourceHeader,
   }) as Promise<T>;
+}
+
+function normalizeKolamProductTermsTemplateList(payload: unknown): KolamProductTermsTemplate[] {
+  const root = asRecord(payload);
+  const data = asRecord(root.data);
+  const list = Array.isArray(payload)
+    ? payload
+    : Array.isArray(root.data)
+    ? root.data
+    : Array.isArray(data.data)
+    ? data.data
+    : Array.isArray(root.items)
+    ? root.items
+    : [];
+
+  return list
+    .map(item => {
+      const record = asRecord(item);
+      return {
+        id: getString(record, '_id') || getString(record, 'id'),
+        status: getString(record, 'status') || 'published',
+        title: getString(record, 'title') || 'Syarat & Ketentuan',
+      };
+    })
+    .filter(item => item.id && item.title);
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
+}
+
+function getString(record: Record<string, unknown>, key: string) {
+  const value = record[key];
+  return typeof value === 'string' ? value.trim() : '';
 }
 
 function createReactNativeFilePart(localUri: string, fallbackName = 'product-asset') {

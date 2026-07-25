@@ -2,6 +2,7 @@ export interface KolamVendor {
   id: string;
   name: string;
   email: string;
+  isOfficialDistributor: boolean;
   phone: string;
   status: string;
 }
@@ -32,6 +33,7 @@ export function normalizeKolamVendor(value: unknown): KolamVendor {
       getString(record, 'displayName') ||
       'Vendor tanpa nama',
     email: getString(record, 'email'),
+    isOfficialDistributor: getBoolean(record, 'isOfficialDistributor'),
     phone: getString(record, 'phone') || getString(record, 'phoneNumber'),
     status: getString(record, 'status') || 'active',
   };
@@ -41,6 +43,7 @@ export function createKolamVendorListRevision(vendors: KolamVendor[]) {
   return JSON.stringify(
     vendors.map(vendor => ({
       id: vendor.id,
+      isOfficialDistributor: vendor.isOfficialDistributor,
       name: vendor.name,
       email: vendor.email,
       phone: vendor.phone,
@@ -56,4 +59,8 @@ function asRecord(value: unknown): Record<string, unknown> {
 function getString(record: Record<string, unknown>, key: string) {
   const value = record[key];
   return typeof value === 'string' ? value.trim() : '';
+}
+
+function getBoolean(record: Record<string, unknown>, key: string) {
+  return record[key] === true;
 }

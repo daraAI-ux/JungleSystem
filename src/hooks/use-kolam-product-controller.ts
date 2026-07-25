@@ -43,6 +43,7 @@ import {
   duplicateKolamProduct,
   getKolamProductDetail,
   getKolamProducts,
+  getKolamProductWarrantyTermsTemplates,
   linkKolamProductPackings,
   reorderKolamProductMedia,
   removeKolamProductAttachedItem,
@@ -55,6 +56,7 @@ import {
   uploadKolamProductVideo,
   type GetKolamProductsOptions,
   type KolamProductAttachedItemPayload,
+  type KolamProductTermsTemplate,
 } from '../services/kolam-product-api';
 import { pickNativeImageFile, pickNativeVideoFile } from '../services/native-file-picker';
 import { getKolamCustomFields } from '../services/kolam-custom-field-api';
@@ -136,6 +138,7 @@ export interface KolamProductController {
   units: KolamUnit[];
   vendors: KolamVendor[];
   variantPhotoLocalUris: Record<string, string>;
+  warrantyTermsTemplates: KolamProductTermsTemplate[];
   onAddAttachedItem: (body: KolamProductAttachedItemPayload) => Promise<boolean>;
   onBackToList: () => void;
   onChangeForm: (patch: Partial<KolamProductFormState>) => void;
@@ -203,6 +206,7 @@ export function useKolamProductController(
   );
   const [form, setForm] = useState<KolamProductFormState | null>(null);
   const [variantPhotoLocalUris, setVariantPhotoLocalUris] = useState<Record<string, string>>({});
+  const [warrantyTermsTemplates, setWarrantyTermsTemplates] = useState<KolamProductTermsTemplate[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -260,6 +264,7 @@ export function useKolamProductController(
       vendorResult,
       packingResult,
       shippingMethodResult,
+      warrantyTermsResult,
     ] = await Promise.allSettled([
       getKolamBrands(),
       getKolamCategories(),
@@ -271,6 +276,7 @@ export function useKolamProductController(
       getKolamVendors(),
       getKolamPackingOptions(),
       getKolamActiveShippingMethods(),
+      getKolamProductWarrantyTermsTemplates(),
     ]);
 
     if (brandResult.status === 'fulfilled') {
@@ -319,6 +325,10 @@ export function useKolamProductController(
     if (shippingMethodResult.status === 'fulfilled') {
       await writeKolamShippingMethodListCache(shippingMethodResult.value);
       setShippingMethods(shippingMethodResult.value);
+    }
+
+    if (warrantyTermsResult.status === 'fulfilled') {
+      setWarrantyTermsTemplates(warrantyTermsResult.value);
     }
   }, []);
   const refresh = useCallback(async () => {
@@ -999,6 +1009,7 @@ export function useKolamProductController(
     units,
     vendors,
     variantPhotoLocalUris,
+    warrantyTermsTemplates,
     onAddAttachedItem,
     onBackToList,
     onChangeForm,
