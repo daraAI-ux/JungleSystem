@@ -35,8 +35,10 @@ import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { useKolamProductController } from '../hooks/use-kolam-product-controller';
 import {
   deleteKolamProductAsset,
+  getKolamProductUsedIn,
   uploadKolamProductAsset,
 } from '../services/kolam-product-api';
+import type { KolamPackingCatalogUsageRow } from '../domain/kolam-packing-option';
 import { KolamBadge } from './kolam-badge';
 import { KolamBarcodePanel } from './kolam-barcode-panel';
 import { KolamBarcodePrintDialog } from './kolam-barcode-print-dialog';
@@ -286,6 +288,7 @@ export function KolamProductSurface({
           setBarcodeDialogItems(createBarcodeItems([product]));
           setBarcodeOpen(true);
         }}
+        onRouteChange={onRouteChange}
         onRestore={product => void controller.onRestoreProduct(product)}
       />
     );
@@ -955,6 +958,7 @@ function KolamProductDetailView({
   onEdit,
   onPrintBarcode,
   onRestore,
+  onRouteChange,
 }: {
   controller: ReturnType<typeof useKolamProductController>;
   isRawCatalog: boolean;
@@ -965,6 +969,7 @@ function KolamProductDetailView({
   onEdit: (product: KolamProduct) => void;
   onPrintBarcode: (product: KolamProduct) => void;
   onRestore: (product: KolamProduct) => void;
+  onRouteChange?: (route: string) => void;
 }) {
   const [activeTab, setActiveTab] = React.useState('overview');
   const product = React.useMemo(
@@ -1062,17 +1067,12 @@ function KolamProductDetailView({
 
       {activeDetailTab === 'overview' ? (
         isRawDetail ? (
-          <View style={styles.detailMain}>
-            <ProductSummaryTab
-              mediaItems={mediaItems}
-              onPrintBarcode={() => onPrintBarcode(product)}
-              product={product}
-            />
-            {hasRawOverviewPricingContent(product) ? <ProductPricingTab product={product} /> : null}
-            {getProductSpecificationTotal(product) > 0 ? <ProductVariantsTab product={product} /> : null}
-            {hasRawOverviewLogisticsContent(product) ? <ProductLogisticsTab product={product} /> : null}
-            {hasRawOverviewMaterialsContent(product) ? <ProductMaterialsTab product={product} /> : null}
-          </View>
+          <ProductRawOverviewTab
+            mediaItems={mediaItems}
+            onPrintBarcode={() => onPrintBarcode(product)}
+            onRouteChange={onRouteChange}
+            product={product}
+          />
         ) : (
           <ProductSummaryTab
             mediaItems={mediaItems}
@@ -4553,6 +4553,550 @@ function ProductSummaryTab({
   );
 }
 
+function ProductRawOverviewTab({
+  mediaItems,
+  onPrintBarcode,
+  onRouteChange,
+  product,
+}: {
+  mediaItems: ProductMediaItem[];
+  onPrintBarcode: () => void;
+  onRouteChange?: (route: string) => void;
+  product: KolamProduct;
+}) {
+  const productCode = getProductCode(product);
+  const currentStock = getProductCurrentStock(product);
+  const isLowStock = product.lowStockThreshold > 0 && currentStock <= product.lowStockThreshold;
+  const sidebarLinks = createProductSidebarLinks(product).filter(link => link.url);
+  const vendorPrices = getProductVendorPrices(product);
+
+  return (
+    <View style={styles.detailMain}>
+      <View style={styles.detailPanel}>
+        <View style={styles.panelTitleRow}>
+          <Text style={styles.detailPanelTitle}>Overview</Text>
+          {product.locationLabel ? <KolamBadge intent="secondary" label={product.locationLabel} /> : null}
+        </View>
+        <View style={styles.rawOverviewGrid}>
+          {mediaItems.length ? (
+            <View style={styles.rawMediaColumn}>
+              <KolamDetailMediaPreview
+                items={mediaItems.map(item => ({
+                  badgeLabel: item.badgeLabel,
+                  id: item.id,
+                  label: item.title,
+                  scope: item.type === 'image' ? 'product-detail' : 'product-video',
+                  type: item.type,
+                  uri: item.uri,
+                } satisfies KolamDetailMediaItem))}
+                title={product.name}
+              />
+              <KolamBarcodePanel
+                name={product.name}
+                onPrint={onPrintBarcode}
+                priceLabel={formatCurrency(product.priceToSell)}
+                sku={productCode || product.name}
+              />
+            </View>
+          ) : (
+            <View style={styles.rawMediaColumn}>
+              <View style={styles.detailHeroPlaceholder}>
+                <Text style={styles.emptyText}>Belum ada foto</Text>
+              </View>
+              <KolamBarcodePanel
+                name={product.name}
+                onPrint={onPrintBarcode}
+                priceLabel={formatCurrency(product.priceToSell)}
+                sku={productCode || product.name}
+              />
+            </View>
+          )}
+
+          <View style={styles.rawOverviewContent}>
+            <KolamPricingMetricsGrid compact>
+              <KolamPricingMetric label="Status">
+                <KolamBadge intent={product.sellable ? 'success' : 'secondary'} label={product.sellable ? 'Dapat dijual' : 'Tidak dijual'} />
+              </KolamPricingMetric>
+              <KolamPricingMetric label="Stok">
+                {currentStock <= 0 ? (
+                  <KolamBadge intent="danger" label="Habis" />
+                ) : (
+                  <View style={styles.inlineMetricRow}>
+                    <Text style={styles.pricingMetricText}>{formatNumber(currentStock)} {product.unitLabel}</Text>
+                    {isLowStock ? <KolamBadge intent="warning" label="Stok rendah" /> : null}
+                  </View>
+                )}
+              </KolamPricingMetric>
+              <KolamPricingMetric label="Kode Produk">
+                <Text selectable style={styles.variantSkuCode}>{productCode || '-'}</Text>
+              </KolamPricingMetric>
+              {product.categories.length ? (
+                <KolamPricingMetric label="Kategori">
+                  <View style={styles.sidebarChipWrap}>
+                    {product.categories.map(category => (
+                      <KolamCategoryLabel
+                        key={category.id || category.name}
+                        label={category.name}
+                        style={styles.sidebarCategoryChip}
+                        textStyle={styles.sidebarCategoryChipText}
+                      />
+                    ))}
+                  </View>
+                </KolamPricingMetric>
+              ) : null}
+            </KolamPricingMetricsGrid>
+
+            {product.description ? (
+              <View style={styles.rawSectionBlock}>
+                <Text style={styles.metaLabel}>Deskripsi</Text>
+                <Text style={styles.detailLongText}>{stripHtml(product.description)}</Text>
+              </View>
+            ) : null}
+
+            {(product.labels.length || product.tags.length || product.brands.length || sidebarLinks.length) ? (
+              <View style={styles.rawMetaGrid}>
+                {product.labels.length ? <RawBadgeBlock title="Label" labels={product.labels} /> : null}
+                {product.tags.length ? <RawBadgeBlock title="Tag" labels={product.tags.map(tag => tag.name)} /> : null}
+                {product.brands.length ? (
+                  <View style={styles.rawMetaBlock}>
+                    <Text style={styles.metaLabel}>Merek</Text>
+                    <View style={styles.miniBrandRow}>
+                      {product.brands.map(brand => (
+                        <View key={brand.id || brand.name} style={styles.rawBrandPill}>
+                          {brand.logoUri ? (
+                            <KolamRemoteImage
+                              accessibilityLabel={`Logo ${brand.name}`}
+                              resizeMode="contain"
+                              revision={brand.logoUri}
+                              scope="product-brand"
+                              sourceUri={brand.logoUri}
+                              style={styles.miniBrandLogoImage}
+                            />
+                          ) : (
+                            <Text style={styles.sidebarChipText}>{brand.name}</Text>
+                          )}
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                ) : null}
+                {sidebarLinks.length ? (
+                  <View style={styles.rawMetaBlock}>
+                    <Text style={styles.metaLabel}>Tautan</Text>
+                    <View style={styles.externalTileGrid}>
+                      {sidebarLinks.map(link => (
+                        <KolamInteractionFrame
+                          accessibilityLabel={`Buka ${link.label}`}
+                          key={link.id}
+                          onPress={() => void Linking.openURL(normalizeProductUrl(link.url))}
+                          style={styles.rawExternalButton}
+                        >
+                          {link.logo ? (
+                            <Image resizeMode="cover" source={link.logo} style={styles.externalTileLogo} />
+                          ) : (
+                            <Text style={styles.externalTileMark}>{link.mark}</Text>
+                          )}
+                        </KolamInteractionFrame>
+                      ))}
+                    </View>
+                  </View>
+                ) : null}
+              </View>
+            ) : null}
+
+            {hasRawOverviewPricingContent(product) ? (
+              <ProductRawPricingSummary product={product} vendorPrices={vendorPrices} />
+            ) : null}
+          </View>
+        </View>
+      </View>
+
+      {product.hasVariants && product.variants.length ? <ProductRawVariantsPanel product={product} /> : null}
+      {hasRawOverviewLogisticsContent(product) ? <ProductLogisticsTab product={product} /> : null}
+      {getProductSpecificationTotal(product) > 0 ? <ProductRawCustomFieldsPanel product={product} /> : null}
+      {product.components.length ? <ProductRawComponentsTable components={product.components} /> : null}
+      <ProductRawVendorSection product={product} vendorPrices={vendorPrices} />
+      <ProductRawCatalogUsagePanel onRouteChange={onRouteChange} productId={product.id} />
+    </View>
+  );
+}
+
+function RawBadgeBlock({ labels, title }: { labels: string[]; title: string }) {
+  return (
+    <View style={styles.rawMetaBlock}>
+      <Text style={styles.metaLabel}>{title}</Text>
+      <View style={styles.sidebarChipWrap}>
+        {labels.map(label => (
+          <View key={label} style={styles.sidebarChip}>
+            <View style={styles.sidebarChipContent}>
+              <Text numberOfLines={2} style={styles.sidebarChipText}>{label}</Text>
+            </View>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function ProductRawPricingSummary({
+  product,
+  vendorPrices,
+}: {
+  product: KolamProduct;
+  vendorPrices: KolamVendorPriceCardItem[];
+}) {
+  const [taxEstimate, setTaxEstimate] = React.useState<KolamTaxEstimate | null>(null);
+  const variantPrices = product.variants.map(variant => variant.priceToSell).filter(value => value > 0);
+  const cheapestVendor = getCheapestVendorPrice(vendorPrices);
+  const cost = product.price || 0;
+  const sell = product.priceToSell || 0;
+
+  React.useEffect(() => {
+    let active = true;
+    fetchKolamTaxEstimate()
+      .then(nextTax => {
+        if (active) {
+          setTaxEstimate(nextTax);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setTaxEstimate(null);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  return (
+    <View style={styles.rawSectionBlock}>
+      <Text style={styles.metaLabel}>Harga</Text>
+      <KolamPricingMetricsGrid compact>
+        <KolamPricingMetric label="Harga jual">
+          <Text style={styles.pricingMetricText}>
+            {product.hasVariants ? formatPriceRange(variantPrices) : formatCurrency(product.priceToSell)}
+          </Text>
+          {!product.hasVariants && product.unitLabel ? <Text style={styles.detailMutedText}>/ {product.unitLabel}</Text> : null}
+        </KolamPricingMetric>
+        {!product.hasVariants && product.minimumPriceToSales > 0 ? (
+          <KolamPricingMetric label="Harga jual minimum">
+            <Text style={styles.pricingMetricText}>{formatCurrency(product.minimumPriceToSales)}</Text>
+          </KolamPricingMetric>
+        ) : null}
+        {!product.hasVariants && product.onlinePrice > 0 ? (
+          <KolamPricingMetric label="Harga daring">
+            <Text style={styles.pricingMetricText}>{formatCurrency(product.onlinePrice)}</Text>
+          </KolamPricingMetric>
+        ) : null}
+        {!product.hasVariants && product.marketPrice > 0 ? (
+          <KolamPricingMetric label="Harga pasar">
+            <Text style={styles.pricingMetricText}>{formatCurrency(product.marketPrice)}</Text>
+          </KolamPricingMetric>
+        ) : null}
+        {!product.hasVariants ? (
+          <KolamPricingMetric label="Harga pokok">
+            <Text style={styles.pricingMetricText}>{formatCurrency(product.price)}</Text>
+          </KolamPricingMetric>
+        ) : null}
+        <KolamPricingMetric label="Harga vendor">
+          {vendorPrices.length ? (
+            <View style={styles.hppBasisStack}>
+              <View style={styles.inlineMetricRow}>
+                <KolamBadge intent="secondary" label={`${vendorPrices.length} vendor`} />
+                {cheapestVendor ? <KolamBadge intent="success" label={`Terbaik: ${formatCurrency(cheapestVendor.price)}`} /> : null}
+              </View>
+              {cheapestVendor ? <Text style={styles.detailMutedText}>Termurah: {cheapestVendor.vendorName}</Text> : null}
+            </View>
+          ) : (
+            <Text style={styles.detailMutedText}>Belum ada harga vendor.</Text>
+          )}
+        </KolamPricingMetric>
+        {taxEstimate ? (
+          <KolamPricingMetric label="Pajak">
+            <View style={styles.inlineMetricRow}>
+              <Text style={styles.pricingMetricText}>{formatNumber(taxEstimate.ppnRate)}%</Text>
+              <KolamBadge intent="secondary" label="PPN" />
+            </View>
+          </KolamPricingMetric>
+        ) : null}
+        {!product.hasVariants && cost > 0 && sell > 0 ? (
+          <KolamPricingMetric label="Laba">
+            <Text style={styles.pricingMetricText}>{formatCurrency(sell - cost)}</Text>
+            <Text style={styles.detailMutedText}>{(((sell - cost) / cost) * 100).toFixed(1)}%</Text>
+          </KolamPricingMetric>
+        ) : null}
+        <KolamPricingMetric label="Poin member">
+          <Text style={styles.pricingMetricText}>{product.memberPoints.enabled ? `${formatNumber(product.memberPoints.points)} pts` : 'Nonaktif'}</Text>
+        </KolamPricingMetric>
+        <KolamPricingMetric label="Komisi">
+          <Text style={styles.pricingMetricDanger}>{product.commission.label}</Text>
+        </KolamPricingMetric>
+      </KolamPricingMetricsGrid>
+    </View>
+  );
+}
+
+function ProductRawVariantsPanel({ product }: { product: KolamProduct }) {
+  const inStockCount = product.variants.filter(variant => variant.stock > 0).length;
+
+  return (
+    <View style={styles.detailPanel}>
+      <View style={styles.panelTitleRow}>
+        <View style={styles.sectionTitleWrap}>
+          <Text style={styles.detailPanelTitle}>Varian Produk</Text>
+          <Text style={styles.detailMutedText}>Informasi harga, stok, dimensi, dan harga vendor per varian.</Text>
+        </View>
+        <View style={styles.inlineMetricRow}>
+          <KolamBadge intent="primary" label={`${product.variants.length} varian`} />
+          <KolamBadge intent={inStockCount === 0 ? 'danger' : inStockCount === product.variants.length ? 'success' : 'warning'} label={`${inStockCount}/${product.variants.length} tersedia`} />
+        </View>
+      </View>
+      <View style={styles.rawVariantGrid}>
+        {product.variants.map((variant, index) => (
+          <View key={variant.id || String(index)} style={styles.rawVariantCard}>
+            <Text style={styles.variantTitle}>{variant.label || [variant.tier1Value, variant.tier2Value].filter(Boolean).join(' / ') || `Varian ${index + 1}`}</Text>
+            <KolamPricingMetricsGrid compact>
+              <KolamPricingMetric label="Kode produk">
+                <Text selectable style={styles.variantSkuCode}>{variant.productCode || variant.sku || '-'}</Text>
+              </KolamPricingMetric>
+              <KolamPricingMetric label="Stok">
+                <Text style={styles.pricingMetricText}>{formatNumber(variant.stock)} {product.unitLabel}</Text>
+              </KolamPricingMetric>
+              <KolamPricingMetric label="Harga jual">
+                <Text style={styles.pricingMetricText}>{formatCurrency(variant.priceToSell)}</Text>
+              </KolamPricingMetric>
+              <KolamPricingMetric label="Harga vendor">
+                <Text style={styles.pricingMetricText}>{variant.vendorPrices.length ? `${variant.vendorPrices.length} vendor` : '-'}</Text>
+              </KolamPricingMetric>
+              <KolamPricingMetric label="Berat">
+                <Text style={styles.pricingMetricText}>{getProductVariantWeightLabel(variant)}</Text>
+              </KolamPricingMetric>
+              <KolamPricingMetric label="Dimensi">
+                <Text style={styles.pricingMetricText}>{getProductVariantDimensionLabel(variant)}</Text>
+              </KolamPricingMetric>
+            </KolamPricingMetricsGrid>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function ProductRawCustomFieldsPanel({ product }: { product: KolamProduct }) {
+  return (
+    <View style={styles.detailPanel}>
+      <View style={styles.sectionTitleWrap}>
+        <Text style={styles.detailPanelTitle}>Informasi Tambahan</Text>
+        <Text style={styles.detailMutedText}>Custom field dan spesifikasi.</Text>
+      </View>
+      {product.customFields.length ? (
+        <ProductCustomFieldGroup fields={product.customFields} title="Bahan Baku" />
+      ) : null}
+      {product.variants.map(variant =>
+        variant.customFields.length ? (
+          <ProductCustomFieldGroup
+            fields={variant.customFields}
+            key={variant.id}
+            title={variant.label || variant.productCode || variant.sku || 'Varian'}
+          />
+        ) : null,
+      )}
+    </View>
+  );
+}
+
+function ProductRawComponentsTable({ components }: { components: KolamProduct['components'] }) {
+  const grandTotal = components.reduce((sum, component) => sum + component.totalPrice, 0);
+
+  return (
+    <View style={styles.detailPanel}>
+      <Text style={styles.detailPanelTitle}>Komponen</Text>
+      <View style={styles.rawTable}>
+        <View style={[styles.rawTableRow, styles.rawTableHeader]}>
+          <Text style={[styles.rawTableHead, styles.rawNameCell]}>Nama Produk</Text>
+          <Text style={[styles.rawTableHead, styles.rawSmallCell]}>Jumlah</Text>
+          <Text style={[styles.rawTableHead, styles.rawSmallCell]}>Stok</Text>
+          <Text style={[styles.rawTableHead, styles.rawAmountCell]}>Harga</Text>
+          <Text style={[styles.rawTableHead, styles.rawAmountCell]}>Total harga</Text>
+        </View>
+        {components.map(component => (
+          <View key={component.id} style={styles.rawTableRow}>
+            <View style={styles.rawNameCell}>
+              <View style={styles.rawComponentIdentity}>
+                <View style={styles.variantThumb}>
+                  {component.thumbnailUri ? (
+                    <KolamRemoteImage
+                      accessibilityLabel={`Foto ${component.name}`}
+                      resizeMode="cover"
+                      revision={component.thumbnailUri}
+                      scope="product"
+                      sourceUri={component.thumbnailUri}
+                      style={styles.variantThumbImage}
+                    />
+                  ) : (
+                    <Text style={styles.variantThumbText}>-</Text>
+                  )}
+                </View>
+                <View style={styles.variantCopy}>
+                  <Text style={styles.variantTitle}>{component.name}</Text>
+                  <Text style={styles.variantMeta}>
+                    {[getMaterialComponentCode(component), component.brandLabel].filter(Boolean).join(' | ') || '-'}
+                  </Text>
+                </View>
+              </View>
+            </View>
+            <Text style={[styles.rawTableText, styles.rawSmallCell]}>{formatNumber(component.quantity)} {component.unitLabel}</Text>
+            <Text style={[styles.rawTableText, styles.rawSmallCell]}>{component.stock <= 0 ? 'Habis' : formatNumber(component.stock)}</Text>
+            <Text style={[styles.rawTableText, styles.rawAmountCell]}>{formatCurrency(component.price)}</Text>
+            <Text style={[styles.rawTableStrong, styles.rawAmountCell]}>{formatCurrency(component.totalPrice)}</Text>
+          </View>
+        ))}
+        <View style={[styles.rawTableRow, styles.rawTableFooter]}>
+          <Text style={[styles.rawTableStrong, styles.rawFooterLabel]}>Total harga keseluruhan</Text>
+          <Text style={[styles.rawTableStrong, styles.rawAmountCell]}>{formatCurrency(grandTotal)}</Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function ProductRawVendorSection({
+  product,
+  vendorPrices,
+}: {
+  product: KolamProduct;
+  vendorPrices: KolamVendorPriceCardItem[];
+}) {
+  if (!product.hasVariants) {
+    return (
+      <KolamVendorPriceCard
+        description="Referensi harga pokok dari supplier. Baris termurah ditandai Terbaik."
+        formatCurrency={formatCurrency}
+        prices={vendorPrices}
+        title="Harga Vendor"
+      />
+    );
+  }
+
+  const variantGroups = product.variants.filter(variant => variant.vendorPrices.length > 0);
+  if (!variantGroups.length) {
+    return (
+      <KolamVendorPriceCard
+        description="Harga vendor per varian."
+        formatCurrency={formatCurrency}
+        prices={[]}
+        title="Harga Vendor"
+      />
+    );
+  }
+
+  return (
+    <View style={styles.rawVendorStack}>
+      {variantGroups.map(variant => (
+        <KolamVendorPriceCard
+          badge={variant.label || variant.productCode || variant.sku || 'Varian'}
+          description="Harga vendor per varian. Baris termurah ditandai Terbaik."
+          formatCurrency={formatCurrency}
+          key={variant.id}
+          prices={variant.vendorPrices}
+          title="Harga Vendor"
+        />
+      ))}
+    </View>
+  );
+}
+
+function ProductRawCatalogUsagePanel({
+  onRouteChange,
+  productId,
+}: {
+  onRouteChange?: (route: string) => void;
+  productId: string;
+}) {
+  const [rows, setRows] = React.useState<KolamPackingCatalogUsageRow[]>([]);
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState('');
+
+  React.useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setError('');
+    getKolamProductUsedIn(productId)
+      .then(nextRows => {
+        if (active) {
+          setRows(nextRows);
+        }
+      })
+      .catch(err => {
+        if (active) {
+          setError(err instanceof Error ? err.message : 'Gagal memuat daftar pemakaian.');
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [productId]);
+
+  return (
+    <View style={styles.detailPanel}>
+      <View style={styles.panelTitleRow}>
+        <View style={styles.sectionTitleWrap}>
+          <Text style={styles.detailPanelTitle}>Digunakan di</Text>
+          <Text style={styles.detailMutedText}>Produk dan species yang memakai bahan baku ini sebagai komponen.</Text>
+        </View>
+        {!loading && rows.length ? <KolamBadge intent="secondary" label={String(rows.length)} /> : null}
+      </View>
+      {loading ? (
+        <Text style={styles.detailMutedText}>Memuat...</Text>
+      ) : error ? (
+        <Text style={styles.error}>{error}</Text>
+      ) : rows.length ? (
+        <View style={styles.rawTable}>
+          <View style={[styles.rawTableRow, styles.rawTableHeader]}>
+            <Text style={[styles.rawTableHead, styles.rawUsageTypeCell]}>Tipe</Text>
+            <Text style={[styles.rawTableHead, styles.rawNameCell]}>Nama</Text>
+            <Text style={[styles.rawTableHead, styles.rawSmallCell]}>Kode</Text>
+            <Text style={[styles.rawTableHead, styles.rawSmallCell]}>Varian</Text>
+            <Text style={[styles.rawTableHead, styles.rawQtyCell]}>Qty</Text>
+          </View>
+          {rows.map(row => (
+            <View
+              key={`${row.entityType}-${row.entityId}-${row.variantLabel || 'root'}-${row.quantity}`}
+              style={styles.rawTableRow}
+            >
+              <View style={styles.rawUsageTypeCell}>
+                <KolamBadge intent={getCatalogUsageIntent(row)} label={getCatalogUsageTypeLabel(row)} />
+              </View>
+              <View style={styles.rawNameCell}>
+                <KolamInteractionFrame
+                  accessibilityLabel={`Buka ${row.name}`}
+                  onPress={() => onRouteChange?.(getCatalogUsageRoute(row))}
+                  style={styles.rawUsageLink}
+                >
+                  <Text numberOfLines={1} style={styles.rawUsageLinkText}>{row.name}</Text>
+                </KolamInteractionFrame>
+              </View>
+              <Text style={[styles.rawTableText, styles.rawSmallCell]}>{row.code || '-'}</Text>
+              <Text style={[styles.rawTableText, styles.rawSmallCell]}>{row.variantLabel || '-'}</Text>
+              <Text style={[styles.rawTableStrong, styles.rawQtyCell]}>x{formatNumber(row.quantity)}</Text>
+            </View>
+          ))}
+        </View>
+      ) : (
+        <Text style={styles.detailMutedText}>Belum dipakai di produk atau species manapun.</Text>
+      )}
+    </View>
+  );
+}
+
 function ProductPricingTab({ product }: { product: KolamProduct }) {
   const [syncPriceDialogOpen, setSyncPriceDialogOpen] = React.useState(false);
   const [syncPricePlatforms, setSyncPricePlatforms] = React.useState<Array<'tokopedia' | 'shopee'>>(['tokopedia', 'shopee']);
@@ -5212,6 +5756,59 @@ function getProductSpecificationTotal(product: KolamProduct) {
       0,
     )
   );
+}
+
+function getProductCurrentStock(product: KolamProduct) {
+  return product.hasVariants
+    ? product.variants.reduce((total, variant) => total + variant.stock, 0)
+    : product.stock;
+}
+
+function formatPriceRange(values: number[]) {
+  const validValues = values.filter(value => Number.isFinite(value) && value > 0);
+  if (!validValues.length) {
+    return 'Belum ada harga varian.';
+  }
+
+  const min = Math.min(...validValues);
+  const max = Math.max(...validValues);
+  return min === max ? formatCurrency(min) : `${formatCurrency(min)} - ${formatCurrency(max)}`;
+}
+
+function getCheapestVendorPrice(prices: KolamVendorPriceCardItem[]) {
+  return prices
+    .filter(price => (price.totalCost || price.price + price.shippingCost) > 0)
+    .sort(
+      (left, right) =>
+        (left.totalCost || left.price + left.shippingCost) -
+        (right.totalCost || right.price + right.shippingCost),
+    )[0];
+}
+
+function getCatalogUsageTypeLabel(row: KolamPackingCatalogUsageRow) {
+  if (row.entityType === 'species') {
+    return 'Species';
+  }
+
+  return row.productType === 'raw' ? 'Bahan baku' : 'Produk';
+}
+
+function getCatalogUsageIntent(row: KolamPackingCatalogUsageRow) {
+  if (row.entityType === 'species') {
+    return 'success';
+  }
+
+  return row.productType === 'raw' ? 'secondary' : 'primary';
+}
+
+function getCatalogUsageRoute(row: KolamPackingCatalogUsageRow) {
+  if (row.entityType === 'species') {
+    return `/species/${row.entityId}`;
+  }
+  if (row.productType === 'raw') {
+    return `/raw-materials/${row.entityId}`;
+  }
+  return `/products/${row.entityId}`;
 }
 
 function hasRawOverviewPricingContent(product: KolamProduct) {
@@ -7294,6 +7891,164 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 12,
     minWidth: 0,
+  },
+  rawOverviewGrid: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 24,
+  },
+  rawMediaColumn: {
+    gap: 12,
+    width: 320,
+  },
+  rawOverviewContent: {
+    flex: 1,
+    gap: 14,
+    minWidth: 360,
+  },
+  rawSectionBlock: {
+    borderTopColor: V.colors.border,
+    borderTopWidth: 1,
+    gap: 8,
+    paddingTop: 12,
+  },
+  rawMetaGrid: {
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: 1,
+    borderTopColor: V.colors.border,
+    borderTopWidth: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    paddingVertical: 12,
+  },
+  rawMetaBlock: {
+    flexBasis: 180,
+    flexGrow: 1,
+    gap: 6,
+    minWidth: 160,
+  },
+  rawBrandPill: {
+    alignItems: 'center',
+    backgroundColor: V.colors.mutedSoft,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    justifyContent: 'center',
+    minHeight: 32,
+    minWidth: 54,
+    overflow: 'hidden',
+    paddingHorizontal: 8,
+  },
+  rawExternalButton: {
+    alignItems: 'center',
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    height: 36,
+    justifyContent: 'center',
+    overflow: 'hidden',
+    width: 36,
+  },
+  rawVariantGrid: {
+    gap: 10,
+  },
+  rawVariantCard: {
+    backgroundColor: V.colors.mutedSoft,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 10,
+    padding: 12,
+  },
+  rawTable: {
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  rawTableRow: {
+    alignItems: 'center',
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    gap: 12,
+    minHeight: 58,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  rawTableHeader: {
+    backgroundColor: V.colors.secondary,
+    minHeight: 42,
+  },
+  rawTableFooter: {
+    borderBottomWidth: 0,
+    justifyContent: 'flex-end',
+  },
+  rawTableHead: {
+    color: V.colors.mutedFg,
+    fontSize: 11,
+    fontWeight: '900',
+    lineHeight: 15,
+    textTransform: 'uppercase',
+  },
+  rawTableText: {
+    color: V.colors.fg,
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 17,
+  },
+  rawTableStrong: {
+    color: V.colors.fg,
+    fontSize: 12,
+    fontWeight: '900',
+    lineHeight: 17,
+  },
+  rawNameCell: {
+    flex: 1.9,
+    minWidth: 260,
+  },
+  rawSmallCell: {
+    flex: 0.85,
+    minWidth: 92,
+  },
+  rawUsageTypeCell: {
+    flex: 0.9,
+    minWidth: 106,
+  },
+  rawQtyCell: {
+    flex: 0.45,
+    minWidth: 58,
+    textAlign: 'right',
+  },
+  rawAmountCell: {
+    flex: 1,
+    minWidth: 116,
+    textAlign: 'right',
+  },
+  rawFooterLabel: {
+    flex: 1,
+    textAlign: 'right',
+  },
+  rawComponentIdentity: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 10,
+  },
+  rawUsageLink: {
+    alignSelf: 'flex-start',
+    maxWidth: '100%',
+  },
+  rawUsageLinkText: {
+    color: V.colors.primary,
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 18,
+  },
+  rawVendorStack: {
+    gap: 12,
   },
   localeTitleRow: {
     alignItems: 'flex-start',

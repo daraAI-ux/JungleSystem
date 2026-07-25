@@ -7,6 +7,10 @@ import {
   type KolamProductFormState,
   type KolamProductListResult,
 } from '../domain/kolam-product';
+import {
+  normalizeKolamPackingCatalogUsageList,
+  type KolamPackingCatalogUsageRow,
+} from '../domain/kolam-packing-option';
 import { apiRequest } from '../lib/api-client';
 
 type QueryValue = string | number | boolean | string[] | undefined | null;
@@ -63,6 +67,16 @@ export async function getKolamProductDetail(
   });
 
   return normalizeKolamProductDetail(response);
+}
+
+export async function getKolamProductUsedIn(
+  productId: string,
+): Promise<KolamPackingCatalogUsageRow[]> {
+  const response = await kolamRequest<unknown>(
+    `/products/${encodeURIComponent(productId)}/used-in`,
+  );
+
+  return normalizeKolamPackingCatalogUsageList(response);
 }
 
 export async function getKolamProductWarrantyTermsTemplates(): Promise<KolamProductTermsTemplate[]> {
