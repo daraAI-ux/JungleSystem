@@ -21,9 +21,11 @@ import {
   createKolamProductFormState,
   createKolamProductSavePayload,
   getKolamProductBreadcrumbPath,
+  getKolamProductCatalogKind,
   isKolamProductRoute,
   slugifyProductName,
   type KolamProduct,
+  type KolamProductCatalogKind,
   type KolamProductFormState,
   type KolamProductListResult,
   type KolamProductPagination,
@@ -339,7 +341,8 @@ export function useKolamProductController(
     setLoading(true);
     setError(null);
 
-    const canUseCache = isDefaultListFilters(filters);
+    const catalogKind = getKolamProductCatalogKind(route);
+    const canUseCache = catalogKind === 'product' && isDefaultListFilters(filters);
     const cached = canUseCache ? await readKolamProductListCache() : null;
     if (cached?.value.data.length) {
       setProducts(cached.value.data);
@@ -348,7 +351,7 @@ export function useKolamProductController(
     }
 
     try {
-      const liveResult = await getKolamProducts(createListRequest(filters));
+      const liveResult = await getKolamProducts(createListRequest(filters, catalogKind));
       if (canUseCache) {
         await writeKolamProductListCache(liveResult);
       }
@@ -1057,12 +1060,13 @@ function createInitialFilters(route: string): KolamProductListFilters {
 
 function createListRequest(
   filters: KolamProductListFilters,
+  catalogKind: KolamProductCatalogKind,
 ): GetKolamProductsOptions {
   return {
     page: filters.page,
     limit: filters.limit,
     search: filters.search.trim() || undefined,
-    type: 'product',
+    type: catalogKind,
     category: filters.categoryIds.length ? filters.categoryIds : undefined,
     brand: filters.brandIds.length ? filters.brandIds : undefined,
     sortBy: filters.sortBy || undefined,

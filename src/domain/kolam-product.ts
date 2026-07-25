@@ -412,10 +412,23 @@ export interface KolamProductFormState {
 }
 
 export type KolamProductSurfaceMode = 'list' | 'detail' | 'edit' | 'new';
+export type KolamProductCatalogKind = 'product' | 'raw';
+
+export function getKolamProductCatalogKind(route: string): KolamProductCatalogKind {
+  const routePath = route.split('?')[0];
+  return routePath === '/raw-materials' || routePath.startsWith('/raw-materials/')
+    ? 'raw'
+    : 'product';
+}
 
 export function isKolamProductRoute(route: string) {
   const routePath = route.split('?')[0];
-  return routePath === '/products' || routePath.startsWith('/products/');
+  return (
+    routePath === '/products' ||
+    routePath.startsWith('/products/') ||
+    routePath === '/raw-materials' ||
+    routePath.startsWith('/raw-materials/')
+  );
 }
 
 export function getKolamProductBreadcrumbPath(
