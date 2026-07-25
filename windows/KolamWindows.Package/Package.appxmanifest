@@ -42,6 +42,15 @@
     </Application>
   </Applications>
 
+  <Extensions>
+    <Extension Category="windows.activatableClass.inProcessServer">
+      <InProcessServer>
+        <Path>RNSVG\RNSVG.dll</Path>
+        <ActivatableClass ActivatableClassId="RNSVG.ReactPackageProvider" ThreadingModel="both" />
+      </InProcessServer>
+    </Extension>
+  </Extensions>
+
   <Capabilities>
     <Capability Name="internetClient" />
     <rescap:Capability Name="runFullTrust" />
