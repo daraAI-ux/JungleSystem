@@ -37,19 +37,24 @@ import {
   createKolamProduct,
   deleteKolamProduct,
   deleteKolamProductPhoto,
+  deleteKolamProductThumbnail,
+  deleteKolamProductVideo,
   duplicateKolamProduct,
   getKolamProductDetail,
   getKolamProducts,
+  reorderKolamProductMedia,
   removeKolamProductAttachedItem,
   restoreKolamProduct,
   updateKolamProduct,
   updateKolamProductPartial,
   updateKolamProductSeo,
   uploadKolamProductPhoto,
+  uploadKolamProductThumbnail,
+  uploadKolamProductVideo,
   type GetKolamProductsOptions,
   type KolamProductAttachedItemPayload,
 } from '../services/kolam-product-api';
-import { pickNativeImageFile } from '../services/native-file-picker';
+import { pickNativeImageFile, pickNativeVideoFile } from '../services/native-file-picker';
 import { getKolamCustomFields } from '../services/kolam-custom-field-api';
 import {
   readKolamCustomFieldListCache,
@@ -134,11 +139,19 @@ export interface KolamProductController {
   onRefresh: () => Promise<void>;
   onArchiveProduct: (product: KolamProduct) => Promise<boolean>;
   onDeleteProduct: (product: KolamProduct) => Promise<boolean>;
+  onDeletePhoto: (index: number) => Promise<boolean>;
+  onDeleteThumbnail: () => Promise<boolean>;
   onDeleteVariantPhoto: (variantId: string, index: number) => Promise<boolean>;
+  onDeleteVideo: (index: number) => Promise<boolean>;
   onDuplicateProduct: (product: KolamProduct) => Promise<boolean>;
   onRemoveAttachedItem: (itemId: string) => Promise<boolean>;
   onRestoreProduct: (product: KolamProduct) => Promise<boolean>;
+  onPickPhoto: () => Promise<boolean>;
+  onPickThumbnail: () => Promise<boolean>;
   onPickVariantPhoto: (variantId: string) => Promise<boolean>;
+  onPickVideo: () => Promise<boolean>;
+  onReorderPhoto: (index: number, direction: 'up' | 'down') => Promise<boolean>;
+  onReorderVideo: (index: number, direction: 'up' | 'down') => Promise<boolean>;
   onSave: () => Promise<void>;
   onSearchChange: (search: string) => void;
   onTogglePin: (product: KolamProduct) => Promise<boolean>;
@@ -426,6 +439,22 @@ export function useKolamProductController(
     setFilters(current => ({ ...current, ...patch, page: patch.page ?? 1 }));
   }, []);
 
+  const applyLiveProduct = useCallback(
+    async (nextProduct: KolamProduct) => {
+      await writeKolamProductDetailCache(nextProduct);
+      const nextProducts = upsertProduct(products, nextProduct);
+      await writeKolamProductListCache({
+        data: nextProducts,
+        pagination,
+      });
+      setProducts(nextProducts);
+      setSelectedProduct(nextProduct);
+      setForm(createKolamProductFormState(nextProduct));
+      setDataSource('live');
+    },
+    [pagination, products],
+  );
+
   const onTogglePin = useCallback(
     async (product: KolamProduct) => {
       setLoading(true);
@@ -596,6 +625,205 @@ export function useKolamProductController(
     },
     [pagination, products, selectedProduct],
   );
+
+  const onDeleteThumbnail = useCallback(async () => {
+    const product = selectedProduct;
+    if (!product) {
+      return false;
+    }
+
+    setSaving(true);
+    setError(null);
+    try {
+      const nextProduct = await deleteKolamProductThumbnail(product.id);
+      await applyLiveProduct(nextProduct);
+      return true;
+    } catch (deleteError) {
+      setError(getErrorMessage(deleteError));
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  }, [applyLiveProduct, selectedProduct]);
+
+  const onDeletePhoto = useCallback(
+    async (index: number) => {
+      const product = selectedProduct;
+      if (!product) {
+        return false;
+      }
+
+      setSaving(true);
+      setError(null);
+      try {
+        const nextProduct = await deleteKolamProductPhoto(product.id, index);
+        await applyLiveProduct(nextProduct);
+        return true;
+      } catch (deleteError) {
+        setError(getErrorMessage(deleteError));
+        return false;
+      } finally {
+        setSaving(false);
+      }
+    },
+    [applyLiveProduct, selectedProduct],
+  );
+
+  const onDeleteVideo = useCallback(
+    async (index: number) => {
+      const product = selectedProduct;
+      if (!product) {
+        return false;
+      }
+
+      setSaving(true);
+      setError(null);
+      try {
+        const nextProduct = await deleteKolamProductVideo(product.id, index);
+        await applyLiveProduct(nextProduct);
+        return true;
+      } catch (deleteError) {
+        setError(getErrorMessage(deleteError));
+        return false;
+      } finally {
+        setSaving(false);
+      }
+    },
+    [applyLiveProduct, selectedProduct],
+  );
+
+  const onReorderPhoto = useCallback(
+    async (index: number, direction: 'up' | 'down') => {
+      const product = selectedProduct;
+      if (!product) {
+        return false;
+      }
+
+      const nextIndex = direction === 'up' ? index - 1 : index + 1;
+      if (nextIndex < 0 || nextIndex >= product.photoUris.length) {
+        return false;
+      }
+
+      const photos = [...product.photoUris];
+      const moved = photos[index];
+      photos[index] = photos[nextIndex];
+      photos[nextIndex] = moved;
+
+      setSaving(true);
+      setError(null);
+      try {
+        const nextProduct = await reorderKolamProductMedia(product.id, { photos });
+        await applyLiveProduct(nextProduct);
+        return true;
+      } catch (reorderError) {
+        setError(getErrorMessage(reorderError));
+        return false;
+      } finally {
+        setSaving(false);
+      }
+    },
+    [applyLiveProduct, selectedProduct],
+  );
+
+  const onReorderVideo = useCallback(
+    async (index: number, direction: 'up' | 'down') => {
+      const product = selectedProduct;
+      if (!product) {
+        return false;
+      }
+
+      const nextIndex = direction === 'up' ? index - 1 : index + 1;
+      if (nextIndex < 0 || nextIndex >= product.videos.length) {
+        return false;
+      }
+
+      const videos = [...product.videos];
+      const moved = videos[index];
+      videos[index] = videos[nextIndex];
+      videos[nextIndex] = moved;
+
+      setSaving(true);
+      setError(null);
+      try {
+        const nextProduct = await reorderKolamProductMedia(product.id, { videos });
+        await applyLiveProduct(nextProduct);
+        return true;
+      } catch (reorderError) {
+        setError(getErrorMessage(reorderError));
+        return false;
+      } finally {
+        setSaving(false);
+      }
+    },
+    [applyLiveProduct, selectedProduct],
+  );
+
+  const onPickThumbnail = useCallback(async () => {
+    try {
+      setError(null);
+      const picked = await pickNativeImageFile();
+      if (picked.cancelled) {
+        return false;
+      }
+
+      const thumbnailLocalUri = picked.uri ?? picked.path ?? '';
+      if (!thumbnailLocalUri) {
+        setError('File thumbnail produk tidak memiliki path yang bisa dibaca.');
+        return false;
+      }
+
+      setForm(current => (current ? { ...current, thumbnailLocalUri } : current));
+      return true;
+    } catch (pickError) {
+      setError(getErrorMessage(pickError));
+      return false;
+    }
+  }, []);
+
+  const onPickPhoto = useCallback(async () => {
+    try {
+      setError(null);
+      const picked = await pickNativeImageFile();
+      if (picked.cancelled) {
+        return false;
+      }
+
+      const photoLocalUri = picked.uri ?? picked.path ?? '';
+      if (!photoLocalUri) {
+        setError('File foto produk tidak memiliki path yang bisa dibaca.');
+        return false;
+      }
+
+      setForm(current => (current ? { ...current, photoLocalUri } : current));
+      return true;
+    } catch (pickError) {
+      setError(getErrorMessage(pickError));
+      return false;
+    }
+  }, []);
+
+  const onPickVideo = useCallback(async () => {
+    try {
+      setError(null);
+      const picked = await pickNativeVideoFile();
+      if (picked.cancelled) {
+        return false;
+      }
+
+      const videoLocalUri = picked.uri ?? picked.path ?? '';
+      if (!videoLocalUri) {
+        setError('File video produk tidak memiliki path yang bisa dibaca.');
+        return false;
+      }
+
+      setForm(current => (current ? { ...current, videoLocalUri } : current));
+      return true;
+    } catch (pickError) {
+      setError(getErrorMessage(pickError));
+      return false;
+    }
+  }, []);
+
   const onSearchChange = useCallback((search: string) => {
     setFilters(current => ({ ...current, search, page: 1 }));
   }, []);
@@ -688,8 +916,9 @@ export function useKolamProductController(
               form.id || selectedProduct?.id || slugifyProductName(form.name),
               payload,
             );
+      const rootMediaProduct = await syncProductRootMediaIfNeeded(savedProduct, form);
       const mediaProduct = await syncProductVariantPhotosIfNeeded(
-        savedProduct,
+        rootMediaProduct,
         form,
         variantPhotoLocalUris,
       );
@@ -751,12 +980,20 @@ export function useKolamProductController(
     onPageChange,
     onRefresh: refresh,
     onArchiveProduct,
+    onDeletePhoto,
     onDeleteProduct,
+    onDeleteThumbnail,
     onDeleteVariantPhoto,
+    onDeleteVideo,
     onDuplicateProduct,
     onRemoveAttachedItem,
     onRestoreProduct,
+    onPickPhoto,
+    onPickThumbnail,
     onPickVariantPhoto,
+    onPickVideo,
+    onReorderPhoto,
+    onReorderVideo,
     onSave,
     onSearchChange,
     onTogglePin,
@@ -854,6 +1091,30 @@ async function syncProductSeoIfNeeded(
     metaDescription,
     keywords,
   });
+}
+
+async function syncProductRootMediaIfNeeded(
+  product: KolamProduct,
+  form: KolamProductFormState,
+) {
+  let current = product;
+
+  if (form.thumbnailLocalUri.trim()) {
+    current = await uploadKolamProductThumbnail(
+      current.id,
+      form.thumbnailLocalUri.trim(),
+    );
+  }
+
+  if (form.photoLocalUri.trim()) {
+    current = await uploadKolamProductPhoto(current.id, form.photoLocalUri.trim());
+  }
+
+  if (form.videoLocalUri.trim()) {
+    current = await uploadKolamProductVideo(current.id, form.videoLocalUri.trim());
+  }
+
+  return current;
 }
 
 async function syncProductVariantPhotosIfNeeded(

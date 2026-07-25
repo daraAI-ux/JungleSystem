@@ -230,6 +230,89 @@ export async function deleteKolamProductPhoto(
   return normalizeKolamProductDetail(response);
 }
 
+export async function uploadKolamProductThumbnail(
+  productId: string,
+  localUri: string,
+): Promise<KolamProduct> {
+  const body = new FormData();
+  body.append('thumbnail', createReactNativeFilePart(localUri, 'product-thumbnail') as unknown as Blob);
+
+  const response = await kolamRequest<unknown>(
+    `/products/${encodeURIComponent(productId)}/thumbnail`,
+    {
+      method: 'POST',
+      body,
+      headers: { [DETAIL_EDIT_HEADER]: DETAIL_EDIT_HEADER_VALUE },
+    },
+  );
+
+  return normalizeKolamProductDetail(response);
+}
+
+export async function deleteKolamProductThumbnail(
+  productId: string,
+): Promise<KolamProduct> {
+  const response = await kolamRequest<unknown>(
+    `/products/${encodeURIComponent(productId)}/thumbnail`,
+    {
+      method: 'DELETE',
+      headers: { [DETAIL_EDIT_HEADER]: DETAIL_EDIT_HEADER_VALUE },
+    },
+  );
+
+  return normalizeKolamProductDetail(response);
+}
+
+export async function uploadKolamProductVideo(
+  productId: string,
+  localUri: string,
+): Promise<KolamProduct> {
+  const body = new FormData();
+  body.append('videos', createReactNativeFilePart(localUri, 'product-video') as unknown as Blob);
+
+  const response = await kolamRequest<unknown>(
+    `/products/${encodeURIComponent(productId)}/videos`,
+    {
+      method: 'POST',
+      body,
+      headers: { [DETAIL_EDIT_HEADER]: DETAIL_EDIT_HEADER_VALUE },
+    },
+  );
+
+  return normalizeKolamProductDetail(response);
+}
+
+export async function deleteKolamProductVideo(
+  productId: string,
+  index: number,
+): Promise<KolamProduct> {
+  const response = await kolamRequest<unknown>(
+    `/products/${encodeURIComponent(productId)}/videos/${index}`,
+    {
+      method: 'DELETE',
+      headers: { [DETAIL_EDIT_HEADER]: DETAIL_EDIT_HEADER_VALUE },
+    },
+  );
+
+  return normalizeKolamProductDetail(response);
+}
+
+export async function reorderKolamProductMedia(
+  productId: string,
+  media: { photos?: string[]; videos?: string[]; variant?: string },
+): Promise<KolamProduct> {
+  const response = await kolamRequest<unknown>(
+    `/products/${encodeURIComponent(productId)}/media/reorder`,
+    {
+      method: 'PUT',
+      body: media,
+      headers: { [DETAIL_EDIT_HEADER]: DETAIL_EDIT_HEADER_VALUE },
+    },
+  );
+
+  return normalizeKolamProductDetail(response);
+}
+
 export async function uploadKolamProductAsset(
   productId: string,
   title: string,
@@ -350,6 +433,12 @@ function inferFileMimeType(fileName: string) {
       return 'image/webp';
     case 'gif':
       return 'image/gif';
+    case 'mp4':
+      return 'video/mp4';
+    case 'mov':
+      return 'video/quicktime';
+    case 'webm':
+      return 'video/webm';
     case 'jpg':
     case 'jpeg':
       return 'image/jpeg';

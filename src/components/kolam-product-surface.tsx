@@ -131,6 +131,11 @@ const STOCK_OPTIONS = [
 type ProductListFilterPanel = 'category' | 'brand' | 'stock';
 type ProductVariantEditTab = 'pricing' | 'vendor' | 'specs' | 'media';
 
+type ProductDeleteMediaTarget =
+  | { type: 'thumbnail'; label: string }
+  | { type: 'photo'; index: number; label: string }
+  | { type: 'video'; index: number; label: string };
+
 type PendingProductAction = {
   product: KolamProduct;
   type: 'archive' | 'delete' | 'duplicate';
@@ -929,6 +934,7 @@ function ProductEditFormPage({
   onCancel: () => void;
 }) {
   const form = controller.form;
+  const [deleteMediaTarget, setDeleteMediaTarget] = React.useState<ProductDeleteMediaTarget | null>(null);
 
   if (!form) {
     return (
@@ -1205,6 +1211,16 @@ function ProductEditFormPage({
             </ProductEditSection>
 
             <ProductEditSection
+              description="Thumbnail, foto, dan video produk utama."
+              title="Media"
+            >
+              <ProductMediaEditPanel
+                controller={controller}
+                onDelete={setDeleteMediaTarget}
+              />
+            </ProductEditSection>
+
+            <ProductEditSection
               description="Judul, kata kunci, dan deskripsi SEO Google."
               title="SEO Google"
             >
@@ -1238,6 +1254,22 @@ function ProductEditFormPage({
           </View>
         </View>
       </KolamNativeFormSection>
+      <KolamDeleteConfirmDialog
+        itemLabel={deleteMediaTarget?.label}
+        itemType="media produk"
+        onCancel={() => setDeleteMediaTarget(null)}
+        onConfirm={() => {
+          if (!deleteMediaTarget) {
+            return;
+          }
+          void createProductDeleteMediaAction(controller, deleteMediaTarget).then(ok => {
+            if (ok) {
+              setDeleteMediaTarget(null);
+            }
+          });
+        }}
+        visible={Boolean(deleteMediaTarget)}
+      />
     </ScrollView>
   );
 }
@@ -2117,6 +2149,199 @@ function ProductVariantFormCard({
   );
 }
 
+function ProductMediaEditPanel({
+  controller,
+  onDelete,
+}: {
+  controller: ReturnType<typeof useKolamProductController>;
+  onDelete: (target: ProductDeleteMediaTarget) => void;
+}) {
+  const product = controller.selectedProduct;
+  const form = controller.form;
+
+  if (!form) {
+    return null;
+  }
+
+  return (
+    <ProductFieldShell label="Media Produk">
+      <View style={styles.variantMediaPanel}>
+        <View style={styles.mediaPickerRow}>
+          <KolamFormTextField
+            editable={false}
+            mode="url"
+            placeholder="Pilih thumbnail dari komputer"
+            style={[
+              settingsWebFormStyles.settingsWebFormFieldValue,
+              styles.mediaPickerInput,
+            ]}
+            value={form.thumbnailLocalUri}
+          />
+          <KolamButton
+            disabled={controller.saving}
+            label="Pilih Thumbnail"
+            onPress={() => {
+              void controller.onPickThumbnail();
+            }}
+          />
+        </View>
+        <View style={styles.mediaPickerRow}>
+          <KolamFormTextField
+            editable={false}
+            mode="url"
+            placeholder="Pilih foto untuk ditambahkan"
+            style={[
+              settingsWebFormStyles.settingsWebFormFieldValue,
+              styles.mediaPickerInput,
+            ]}
+            value={form.photoLocalUri}
+          />
+          <KolamButton
+            disabled={controller.saving}
+            label="Tambah Foto"
+            onPress={() => {
+              void controller.onPickPhoto();
+            }}
+          />
+        </View>
+        <View style={styles.mediaPickerRow}>
+          <KolamFormTextField
+            editable={false}
+            mode="url"
+            placeholder="Pilih video untuk ditambahkan"
+            style={[
+              settingsWebFormStyles.settingsWebFormFieldValue,
+              styles.mediaPickerInput,
+            ]}
+            value={form.videoLocalUri}
+          />
+          <KolamButton
+            disabled={controller.saving}
+            label="Tambah Video"
+            onPress={() => {
+              void controller.onPickVideo();
+            }}
+          />
+        </View>
+        <KolamCopyStack
+          items={[
+            {
+              id: 'media-note',
+              text: 'Media dikirim ke backend saat Simpan, lalu detail dan cache lokal diperbarui.',
+              style: styles.fieldHint,
+            },
+          ]}
+        />
+        {product?.thumbnailUri || product?.photoUris.length ? (
+          <View style={styles.existingMediaGrid}>
+            {product.thumbnailUri ? (
+              <ProductVariantImageMediaCard
+                accessibilityLabel="Thumbnail produk"
+                deleteLabel="Hapus Thumbnail"
+                disabled={controller.saving}
+                onDelete={() =>
+                  onDelete({
+                    type: 'thumbnail',
+                    label: 'thumbnail produk',
+                  })
+                }
+                revision={product.updatedAt ?? product.thumbnailUri}
+                scope="product"
+                sourceUri={product.thumbnailUri}
+              />
+            ) : null}
+            {product.photoUris.map((photoUri, index) => (
+              <ProductVariantImageMediaCard
+                accessibilityLabel={`Foto produk ${index + 1}`}
+                deleteLabel={`Hapus Foto ${index + 1}`}
+                disabled={controller.saving}
+                key={`${photoUri}-${index}`}
+                onDelete={() =>
+                  onDelete({
+                    type: 'photo',
+                    index,
+                    label: `foto ${index + 1}`,
+                  })
+                }
+                onMoveDown={() => {
+                  void controller.onReorderPhoto(index, 'down');
+                }}
+                onMoveUp={() => {
+                  void controller.onReorderPhoto(index, 'up');
+                }}
+                revision={`${product.updatedAt ?? ''}-${index}`}
+                scope="product"
+                showMoveDown={index < product.photoUris.length - 1}
+                showMoveUp={index > 0}
+                sourceUri={photoUri}
+              />
+            ))}
+          </View>
+        ) : null}
+        {product?.videos.length ? (
+          <View style={styles.existingMediaGrid}>
+            {product.videos.map((videoUri, index) => (
+              <View key={`${videoUri}-${index}`} style={styles.existingMediaItem}>
+                <KolamMediaPlayer
+                  kind="video"
+                  title={`Video produk ${index + 1}`}
+                  uri={videoUri}
+                  style={styles.videoPlayer}
+                />
+                <View style={styles.mediaPickerRow}>
+                  <KolamButton
+                    disabled={controller.saving || index <= 0}
+                    label="Naik"
+                    onPress={() => {
+                      void controller.onReorderVideo(index, 'up');
+                    }}
+                  />
+                  <KolamButton
+                    disabled={controller.saving || index >= product.videos.length - 1}
+                    label="Turun"
+                    onPress={() => {
+                      void controller.onReorderVideo(index, 'down');
+                    }}
+                  />
+                </View>
+                <KolamButton
+                  disabled={controller.saving}
+                  intent="danger"
+                  label={`Hapus Video ${index + 1}`}
+                  onPress={() =>
+                    onDelete({
+                      type: 'video',
+                      index,
+                      label: `video ${index + 1}`,
+                    })
+                  }
+                  style={styles.mediaDeleteButton}
+                />
+              </View>
+            ))}
+          </View>
+        ) : null}
+      </View>
+    </ProductFieldShell>
+  );
+}
+
+function createProductDeleteMediaAction(
+  controller: ReturnType<typeof useKolamProductController>,
+  target: ProductDeleteMediaTarget,
+) {
+  switch (target.type) {
+    case 'thumbnail':
+      return controller.onDeleteThumbnail();
+    case 'photo':
+      return controller.onDeletePhoto(target.index);
+    case 'video':
+      return controller.onDeleteVideo(target.index);
+    default:
+      return Promise.resolve(false);
+  }
+}
+
 function ProductVariantMediaPanel({
   controller,
   liveVariant,
@@ -2225,14 +2450,24 @@ function ProductVariantImageMediaCard({
   deleteLabel,
   disabled,
   onDelete,
+  onMoveDown,
+  onMoveUp,
   revision,
+  scope = 'product-variant',
+  showMoveDown = false,
+  showMoveUp = false,
   sourceUri,
 }: {
   accessibilityLabel: string;
   deleteLabel: string;
   disabled: boolean;
   onDelete: () => void;
+  onMoveDown?: () => void;
+  onMoveUp?: () => void;
   revision: string;
+  scope?: string;
+  showMoveDown?: boolean;
+  showMoveUp?: boolean;
   sourceUri: string;
 }) {
   return (
@@ -2241,10 +2476,24 @@ function ProductVariantImageMediaCard({
         accessibilityLabel={accessibilityLabel}
         resizeMode="cover"
         revision={revision}
-        scope="product-variant"
+        scope={scope}
         sourceUri={sourceUri}
         style={styles.existingMediaImage}
       />
+      {onMoveUp || onMoveDown ? (
+        <View style={styles.mediaPickerRow}>
+          <KolamButton
+            disabled={disabled || !showMoveUp}
+            label="Naik"
+            onPress={onMoveUp ?? (() => undefined)}
+          />
+          <KolamButton
+            disabled={disabled || !showMoveDown}
+            label="Turun"
+            onPress={onMoveDown ?? (() => undefined)}
+          />
+        </View>
+      ) : null}
       <KolamButton
         disabled={disabled}
         intent="danger"
