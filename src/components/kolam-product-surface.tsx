@@ -48,6 +48,11 @@ import {
   type KolamDetailMediaItem,
 } from './kolam-detail-media-preview';
 import { KolamDetailLocaleTabs } from './kolam-detail-locale-tabs';
+import {
+  KolamDetailAttachedItemsPanel,
+  KolamDetailSeoGooglePanel,
+  KolamDetailTermsTemplatesPanel,
+} from './kolam-detail-more-panels';
 import { KolamDescriptionList } from './kolam-description-list';
 import { KolamInteractionFrame } from './kolam-interaction-frame';
 import { KolamMediaPlayer } from './kolam-media-player';
@@ -2284,39 +2289,42 @@ function ProductMaterialsTab({ product }: { product: KolamProduct }) {
 
 function ProductMoreTab({ product }: { product: KolamProduct }) {
   return (
-    <View style={styles.detailPanel}>
-      <Text style={styles.detailPanelTitle}>Lainnya</Text>
-      <KolamDescriptionList
-        accessibilityLabel="Garansi dan SEO produk"
-        rows={[
-          {
-            id: 'warranty',
-            label: 'Garansi',
-            meta: [
-              product.warranty.days ? `${product.warranty.days} hari` : '',
-              product.warranty.vendorName,
-              product.warranty.termsTitle,
-            ]
-              .filter(Boolean)
-              .join(' | '),
-            tone: product.warranty.mode === 'none' ? 'default' : 'success',
-            value: product.warranty.label,
-          },
-          {
-            id: 'seo',
-            label: 'SEO',
-            meta: product.seo.metaDescription || product.shortDescription || 'Audit SEO produk',
-            tone: product.seo.lastSeoScore > 0 ? 'success' : 'default',
-            value: product.seo.lastSeoScore ? `${product.seo.lastSeoScore}` : '-',
-          },
-          {
-            id: 'faq',
-            label: 'FAQ SEO',
-            meta: product.seo.keywords.join(', ') || 'Keywords',
-            tone: 'default',
-            value: String(product.seo.faqCount),
-          },
-        ]}
+    <View style={styles.sectionGrid}>
+      <KolamDetailTermsTemplatesPanel
+        itemId={product.id}
+        itemLabel="produk"
+        itemType="product"
+        summary={{
+          label: 'Garansi',
+          meta: [
+            product.warranty.days ? `${product.warranty.days} hari` : '',
+            product.warranty.vendorName,
+            product.warranty.termsTitle,
+          ]
+            .filter(Boolean)
+            .join(' | '),
+          status: product.warranty.label,
+          statusIntent: product.warranty.mode === 'none' ? 'muted' : 'success',
+        }}
+      />
+      <KolamDetailAttachedItemsPanel
+        description="Produk atau spesies terhubung (compatible / replacement)."
+        emptyText="Belum ada item terlampir."
+        items={product.attachedItems}
+        title="Produk kompatibel"
+      />
+      <KolamDetailSeoGooglePanel
+        description={product.description}
+        entityName={product.name}
+        pathPrefix="products"
+        seo={{
+          keywords: product.seo.keywords,
+          lastSeoScore: product.seo.lastSeoScore,
+          metaDescription: product.seo.metaDescription,
+          metaTitle: product.seo.metaTitle,
+        }}
+        shortDescription={product.shortDescription}
+        slug={product.slug}
       />
     </View>
   );
@@ -2535,6 +2543,7 @@ function ensureProductDetailDefaults(product: KolamProduct): KolamProduct {
 
   return {
     ...product,
+    attachedItems: Array.isArray(product.attachedItems) ? product.attachedItems : [],
     assets: Array.isArray(product.assets) ? product.assets : [],
     brands,
     categories,

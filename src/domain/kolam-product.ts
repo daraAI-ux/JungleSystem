@@ -169,6 +169,17 @@ export interface KolamProductSeo {
   lastSeoScore: number;
 }
 
+export interface KolamProductAttachedItem {
+  id: string;
+  itemType: string;
+  type: string;
+  typeLabel: string;
+  targetId: string;
+  targetName: string;
+  targetSku: string;
+  note: string;
+}
+
 export interface KolamProductVariant {
   id: string;
   label: string;
@@ -304,6 +315,7 @@ export interface KolamProduct {
   brands: KolamProductRef[];
   description: string;
   externalLinks: KolamProductExternalLink[];
+  attachedItems: KolamProductAttachedItem[];
   customFields: KolamProductCustomFieldDisplay[];
   components: KolamProductComponentLine[];
   packings: KolamProductPackingLine[];
@@ -533,6 +545,16 @@ export function createKolamProductDetailRevision(item: KolamProduct) {
       quantity: packing.quantity,
       variantLabel: packing.variantLabel,
     })),
+    attachedItems: (Array.isArray(item.attachedItems) ? item.attachedItems : []).map(
+      attachedItem => ({
+        id: attachedItem.id,
+        itemType: attachedItem.itemType,
+        type: attachedItem.type,
+        targetId: attachedItem.targetId,
+        targetName: attachedItem.targetName,
+        targetSku: attachedItem.targetSku,
+      }),
+    ),
     assets: item.assets.map(asset => ({
       id: asset.id,
       title: asset.title,
@@ -1185,6 +1207,7 @@ function normalizeKolamProduct(payload: unknown): KolamProduct {
   const components = normalizeProductComponents(record.components);
   const packings = normalizePackings(record.packings);
   const assets = normalizeAssets(record.assets);
+  const attachedItems = normalizeKolamProductAttachedItems(record.attachedItems);
   const warranty = normalizeWarranty(record);
   const seo = normalizeSeo(record);
   const logistics = normalizeLogistics(record);
@@ -1240,6 +1263,7 @@ function normalizeKolamProduct(payload: unknown): KolamProduct {
     brands: normalizeRefList(record.brands ?? record.brand),
     description: getFirstString(record, ['description', 'longDescription', 'content']),
     externalLinks: normalizeExternalLinks(record),
+    attachedItems,
     customFields,
     components,
     packings,
@@ -1744,6 +1768,54 @@ function normalizeAssets(value: unknown): KolamProductAsset[] {
       title: getString(asset, 'title') || getString(asset, 'name') || `Aset ${index + 1}`,
     };
   });
+}
+
+function normalizeKolamProductAttachedItems(value: unknown): KolamProductAttachedItem[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((item, index) => {
+      const record = asRecord(item);
+      const itemType = getString(record, 'itemType') || 'product';
+      const target = itemType === 'species' ? record.species : record.product;
+      const targetRecord = asRecord(target);
+      const fallbackName = itemType === 'species' ? 'Spesies' : 'Produk';
+      return {
+        id: getString(record, '_id') || getString(record, 'id') || `${itemType}-${index}`,
+        itemType,
+        note: getString(record, 'note'),
+        targetId: getObjectIdString(target),
+        targetName:
+          getString(targetRecord, 'name') ||
+          getString(targetRecord, 'scientificName') ||
+          getString(targetRecord, 'commonName') ||
+          getString(record, 'name') ||
+          fallbackName,
+        targetSku: getString(targetRecord, 'sku') || getString(record, 'sku'),
+        type: getString(record, 'type'),
+        typeLabel: getAttachedItemTypeLabel(getString(record, 'type')),
+      };
+    })
+    .filter(item => item.targetName);
+}
+
+function getAttachedItemTypeLabel(type: string) {
+  switch (type) {
+    case 'feeding':
+      return 'Pakan';
+    case 'supplements':
+      return 'Suplemen';
+    case 'medicine':
+      return 'Obat';
+    case 'compatible_with':
+      return 'Kompatibel';
+    case 'replacement':
+      return 'Pengganti';
+    default:
+      return type || 'Terlampir';
+  }
 }
 
 function normalizeWarranty(record: Record<string, unknown>): KolamProductWarranty {

@@ -644,6 +644,7 @@ function createRouteProductStub(key: string): KolamProduct {
     categories: [],
     brands: [],
     description: '',
+    attachedItems: [],
     customFields: [],
     components: [],
     packings: [],

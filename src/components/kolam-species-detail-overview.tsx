@@ -22,12 +22,10 @@ import {
   getKolamSpeciesEnclosureAllocation,
   getKolamSpeciesPendingLivestockAllocations,
   getKolamSpeciesStatistics,
-  getKolamSpeciesTermsTemplates,
   type KolamSpeciesEnclosureAllocation,
   type KolamSpeciesPendingLivestockAllocation,
   type KolamSpeciesStatistics,
   type KolamSpeciesStatisticsPeriod,
-  type KolamSpeciesTermsTemplate,
 } from '../services/kolam-species-api';
 import type {
   KolamSpecies,
@@ -51,6 +49,11 @@ import {
   type KolamDetailMediaItem,
 } from './kolam-detail-media-preview';
 import { KolamDetailLocaleTabs } from './kolam-detail-locale-tabs';
+import {
+  KolamDetailAttachedItemsPanel,
+  KolamDetailSeoGooglePanel,
+  KolamDetailTermsTemplatesPanel,
+} from './kolam-detail-more-panels';
 import { KolamSpeciesDetailAssetsPanel } from './kolam-species-detail-assets-panel';
 import { KolamSpeciesDetailExternalLinksPanel } from './kolam-species-detail-external-links-panel';
 import { containsHtmlMarkup, KolamHtmlContent } from './kolam-html-content';
@@ -2497,168 +2500,36 @@ function MorePanel({
   sections: KolamLabelFieldDetailSection[];
   species: KolamSpecies;
 }) {
-  const [terms, setTerms] = React.useState<KolamSpeciesTermsTemplate[]>([]);
-  const [loadingTerms, setLoadingTerms] = React.useState(false);
-  const [termsError, setTermsError] = React.useState('');
-
-  const loadTerms = React.useCallback(async () => {
-    setLoadingTerms(true);
-    setTermsError('');
-    try {
-      setTerms(await getKolamSpeciesTermsTemplates(species.id));
-    } catch (err) {
-      setTermsError(err instanceof Error ? err.message : 'Gagal memuat S&K spesies.');
-    } finally {
-      setLoadingTerms(false);
-    }
-  }, [species.id]);
-
-  React.useEffect(() => {
-    void loadTerms();
-  }, [loadTerms]);
-
-  const attachedItems = Array.isArray(species.attachedItems) ? species.attachedItems : [];
-
   return (
     <View style={styles.sectionGrid}>
       <KolamSpeciesDetailExternalLinksPanel species={species} />
       {sections.filter(section => section.title !== 'Link').map(section => (
         <DetailSectionPanel key={section.title} section={section} />
       ))}
-
-      <KolamContentFrame style={styles.sectionCardFull} variant="settingsWebConfig">
-        <View style={styles.sectionHeader}>
-          <View style={styles.sectionTitleWrap}>
-            <Text style={styles.sectionTitle}>Syarat & Ketentuan</Text>
-            <Text style={styles.sectionDescription}>Template S&K yang berlaku untuk spesies ini.</Text>
-          </View>
-          <KolamButton disabled={loadingTerms} label={loadingTerms ? 'Memuat...' : 'Segarkan'} onPress={loadTerms} />
-        </View>
-        {termsError ? <Text style={styles.emptyText}>{termsError}</Text> : null}
-        <View style={styles.logisticsVariantStack}>
-          {terms.length ? (
-            terms.map(template => (
-              <View key={template.id} style={styles.termsListItem}>
-                <View style={styles.termsListCopy}>
-                  <Text style={styles.itemTitle}>{template.title}</Text>
-                  {template.slug ? <Text style={styles.logisticsMethodMeta}>{template.slug}</Text> : null}
-                  <View style={styles.inlineMetricRow}>
-                    <KolamStatusBadge
-                      intent={template.sourceKind === 'direct' ? 'muted' : 'info'}
-                      label={getTermsSourceBadgeLabel(template)}
-                    />
-                  </View>
-                </View>
-                <KolamStatusBadge intent="muted" label={getTermsStatusLabel(template.status)} />
-              </View>
-            ))
-          ) : loadingTerms ? (
-            <Text style={styles.emptyText}>Memuat S&K aktif...</Text>
-          ) : (
-            <Text style={styles.emptyText}>Belum ada template S&K terhubung (langsung atau via kategori katalog).</Text>
-          )}
-        </View>
-      </KolamContentFrame>
-
-      <KolamContentFrame style={styles.sectionCardFull} variant="settingsWebConfig">
-        <View style={styles.sectionHeader}>
-          <View style={styles.sectionTitleWrap}>
-            <Text style={styles.sectionTitle}>Item Terlampir</Text>
-            <Text style={styles.sectionDescription}>Produk dan spesies terkait untuk pakan, suplemen, dan obat.</Text>
-          </View>
-          <KolamStatusBadge intent="muted" label={String(attachedItems.length)} />
-        </View>
-        <View style={styles.logisticsVariantStack}>
-          {attachedItems.length ? (
-            attachedItems.map(item => (
-              <View key={item.id} style={styles.locationListCard}>
-                <View style={styles.profitHeaderRow}>
-                  <View style={styles.logisticsMethodTitleWrap}>
-                    <Text style={styles.logisticsMethodTitle}>{item.targetName}</Text>
-                    {item.targetSku ? <Text style={styles.logisticsMethodMeta}>SKU: {item.targetSku}</Text> : null}
-                  </View>
-                  <View style={styles.inlineMetricRow}>
-                    <KolamStatusBadge intent="success" label={item.typeLabel} />
-                    <KolamStatusBadge intent="muted" label={item.itemType === 'species' ? 'Spesies' : 'Produk'} />
-                  </View>
-                </View>
-                {item.note ? <Text style={styles.logisticsMethodMeta}>{item.note}</Text> : null}
-              </View>
-            ))
-          ) : (
-            <Text style={styles.emptyText}>Belum ada item terlampir dari server.</Text>
-          )}
-        </View>
-      </KolamContentFrame>
-
-      <SeoGooglePanel species={species} />
+      <KolamDetailTermsTemplatesPanel
+        itemId={species.id}
+        itemLabel="spesies"
+        itemType="species"
+      />
+      <KolamDetailAttachedItemsPanel
+        description="Produk dan spesies terkait untuk pakan, suplemen, dan obat."
+        items={species.attachedItems}
+        title="Item Terlampir"
+      />
+      <KolamDetailSeoGooglePanel
+        description={species.description}
+        entityName={species.displayName || species.scientificName}
+        pathPrefix="species"
+        seo={{
+          keywords: species.seo.keywords,
+          lastSeoScore: species.seo.lastSeoScore,
+          metaDescription: species.seo.metaDescription,
+          metaTitle: species.seo.metaTitle,
+        }}
+        shortDescription={species.shortDescription}
+        slug={species.slug}
+      />
     </View>
-  );
-}
-
-function getTermsSourceBadgeLabel(template: KolamSpeciesTermsTemplate) {
-  if (template.sourceKind === 'direct') {
-    return 'Tautan langsung';
-  }
-  if (template.sourceCategoryNames.length) {
-    return `Via kategori: ${template.sourceCategoryNames.join(', ')}`;
-  }
-  return 'Via kategori katalog';
-}
-function getTermsStatusLabel(status: string) {
-  switch (status) {
-    case 'published':
-      return 'Terbit';
-    case 'draft':
-      return 'Draf';
-    case 'archived':
-      return 'Arsip';
-    default:
-      return status || '-';
-  }
-}
-
-function SeoGooglePanel({ species }: { species: KolamSpecies }) {
-  const seo = species.seo;
-  const title = seo.metaTitle || species.displayName || species.scientificName;
-  const description = seo.metaDescription || species.shortDescription || species.description;
-  const keywords = seo.keywords.length ? seo.keywords.join(', ') : '-';
-  const url = `junglesystem.local/species/${species.slug}`;
-
-  return (
-    <KolamContentFrame style={styles.sectionCardFull} variant="settingsWebConfig">
-      <View style={styles.sectionHeader}>
-        <View style={styles.sectionTitleWrap}>
-          <Text style={styles.sectionTitle}>SEO & Google</Text>
-          <Text style={styles.sectionDescription}>Skor audit: {seo.lastSeoScore !== null ? `${formatNumber(seo.lastSeoScore)}/100` : 'belum diaudit'}</Text>
-        </View>
-        <KolamStatusBadge intent="muted" label="Google" />
-      </View>
-      <View style={styles.logisticsShippingGrid}>
-        <View style={[styles.logisticsVariantCard, styles.logisticsHalfCard]}>
-          <KolamPricingMetricsGrid compact>
-            <KolamPricingMetric label="Deskripsi singkat">
-              <Text style={styles.pricingValue}>{stripHtml(description || '-')}</Text>
-            </KolamPricingMetric>
-            <KolamPricingMetric label="Judul meta">
-              <Text style={styles.pricingValue}>{seo.metaTitle || '-'}</Text>
-            </KolamPricingMetric>
-            <KolamPricingMetric label="Deskripsi meta">
-              <Text style={styles.pricingValue}>{seo.metaDescription || '-'}</Text>
-            </KolamPricingMetric>
-            <KolamPricingMetric label="Kata kunci">
-              <Text style={styles.pricingValue}>{keywords}</Text>
-            </KolamPricingMetric>
-          </KolamPricingMetricsGrid>
-        </View>
-        <View style={[styles.logisticsVariantCard, styles.logisticsHalfCard]}>
-          <Text style={styles.pricingSubTitle}>Pratinjau Google</Text>
-          <Text style={styles.seoPreviewTitle}>{title}</Text>
-          <Text style={styles.seoPreviewUrl}>{url}</Text>
-          <Text style={styles.seoPreviewDescription}>{stripHtml(description || '-')}</Text>
-        </View>
-      </View>
-    </KolamContentFrame>
   );
 }
 function PlaceholderPanel({

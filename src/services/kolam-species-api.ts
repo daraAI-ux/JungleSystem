@@ -149,17 +149,26 @@ export interface KolamSpeciesTermsTemplate {
   updatedAt: string;
 }
 
-export async function getKolamSpeciesTermsTemplates(
-  speciesId: string,
+export type KolamTermsItemType = 'product' | 'species';
+
+export async function getKolamTermsTemplatesForItem(
+  itemType: KolamTermsItemType,
+  itemId: string,
 ): Promise<KolamSpeciesTermsTemplate[]> {
   const response = await kolamRequest<unknown>('/terms-templates/for-item', {
     query: {
-      itemType: 'species',
-      itemId: speciesId,
+      itemType,
+      itemId,
     },
   });
 
   return normalizeKolamSpeciesTermsTemplates(response);
+}
+
+export async function getKolamSpeciesTermsTemplates(
+  speciesId: string,
+): Promise<KolamSpeciesTermsTemplate[]> {
+  return getKolamTermsTemplatesForItem('species', speciesId);
 }
 export async function createKolamSpecies(
   form: KolamSpeciesFormState,
@@ -483,7 +492,7 @@ function normalizeKolamSpeciesTermsTemplates(value: unknown): KolamSpeciesTermsT
 }
 
 function getTermsSourceKind(record: Record<string, unknown>): 'direct' | 'category' {
-  if (Array.isArray(record.species) && record.species.length > 0) {
+  if (hasTermsDirectLink(record, 'species') || hasTermsDirectLink(record, 'product')) {
     return 'direct';
   }
   return 'category';
@@ -502,13 +511,29 @@ function getTermsCategoryNames(record: Record<string, unknown>) {
     .filter(Boolean);
 }
 function getTermsSourceLabel(record: Record<string, unknown>) {
-  if (Array.isArray(record.species) && record.species.length > 0) {
+  if (hasTermsDirectLink(record, 'species')) {
     return 'Langsung di spesies';
+  }
+  if (hasTermsDirectLink(record, 'product')) {
+    return 'Langsung di produk';
   }
   if (Array.isArray(record.catalogCategories) && record.catalogCategories.length > 0) {
     return 'Dari kategori';
   }
   return 'Aktif';
+}
+
+function hasTermsDirectLink(record: Record<string, unknown>, key: 'product' | 'species') {
+  const plural = key === 'product' ? 'products' : 'species';
+  const direct = record[key];
+  if (Array.isArray(direct)) {
+    return direct.length > 0;
+  }
+  if (direct) {
+    return true;
+  }
+  const directList = record[plural];
+  return Array.isArray(directList) && directList.length > 0;
 }
 function normalizeEnclosureAllocation(value: unknown): KolamSpeciesEnclosureAllocation {
   const record = asApiRecord(value);
