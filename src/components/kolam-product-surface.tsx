@@ -785,8 +785,11 @@ function ProductRow({
   onTogglePin: () => void;
   product: KolamProduct;
 }) {
-  const thumbnailUri = product.thumbnailUri || product.photoUris[0] || '';
+  const thumbnailUri = isRawCatalog
+    ? getRawListThumbnailUri(product)
+    : product.thumbnailUri || product.photoUris[0] || '';
   const productCode = getProductCode(product);
+  const labels = getVisibleProductLabels(product);
 
   return (
     <KolamDataTableRowFrame style={styles.tableRow}>
@@ -803,17 +806,30 @@ function ProductRow({
             />
           ) : null}
         </View>
-        <KolamCopyStack
-          containerStyle={styles.productCopy}
-          items={[
-            { id: 'name', text: product.name, style: styles.productName },
-            {
-              id: 'category',
-              text: product.categories.map(category => category.name).join(', ') || '-',
-              style: styles.productCategory,
-            },
-          ]}
-        />
+        {isRawCatalog ? (
+          <View style={styles.productCopy}>
+            <Text style={styles.productName}>{product.name}</Text>
+            {labels.length ? (
+              <View style={styles.infoBadges}>
+                {labels.map(label => (
+                  <KolamBadge key={label} intent="secondary" label={label} />
+                ))}
+              </View>
+            ) : null}
+          </View>
+        ) : (
+          <KolamCopyStack
+            containerStyle={styles.productCopy}
+            items={[
+              { id: 'name', text: product.name, style: styles.productName },
+              {
+                id: 'category',
+                text: product.categories.map(category => category.name).join(', ') || '-',
+                style: styles.productCategory,
+              },
+            ]}
+          />
+        )}
       </View>
       <Text selectable style={styles.skuCell}>
         {isRawCatalog ? product.productCode || '-' : product.sku || product.productCode || '-'}
@@ -6023,6 +6039,18 @@ function formatRawListStock(product: KolamProduct) {
       : product.stock;
 
   return product.unitLabel ? `${stock} ${product.unitLabel}` : String(stock);
+}
+
+function getRawListThumbnailUri(product: KolamProduct) {
+  return (
+    product.photoUris[0] ||
+    product.variants.find(variant => variant.photoUris.length)?.photoUris[0] ||
+    ''
+  );
+}
+
+function getVisibleProductLabels(product: KolamProduct) {
+  return product.labels.map(label => label.trim()).filter(Boolean);
 }
 
 function getProductStockStatusLabel(product: KolamProduct) {
