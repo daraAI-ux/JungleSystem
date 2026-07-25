@@ -1061,11 +1061,25 @@ function KolamProductDetailView({
       />
 
       {activeDetailTab === 'overview' ? (
-        <ProductSummaryTab
-          mediaItems={mediaItems}
-          onPrintBarcode={() => onPrintBarcode(product)}
-          product={product}
-        />
+        isRawDetail ? (
+          <View style={styles.detailMain}>
+            <ProductSummaryTab
+              mediaItems={mediaItems}
+              onPrintBarcode={() => onPrintBarcode(product)}
+              product={product}
+            />
+            {hasRawOverviewPricingContent(product) ? <ProductPricingTab product={product} /> : null}
+            {getProductSpecificationTotal(product) > 0 ? <ProductVariantsTab product={product} /> : null}
+            {hasRawOverviewLogisticsContent(product) ? <ProductLogisticsTab product={product} /> : null}
+            {hasRawOverviewMaterialsContent(product) ? <ProductMaterialsTab product={product} /> : null}
+          </View>
+        ) : (
+          <ProductSummaryTab
+            mediaItems={mediaItems}
+            onPrintBarcode={() => onPrintBarcode(product)}
+            product={product}
+          />
+        )
       ) : (
         <View style={styles.detailMain}>
           {activeDetailTab === 'pricing' ? <ProductPricingTab product={product} /> : null}
@@ -5198,6 +5212,62 @@ function getProductSpecificationTotal(product: KolamProduct) {
       0,
     )
   );
+}
+
+function hasRawOverviewPricingContent(product: KolamProduct) {
+  const hasRootPricing =
+    [
+      product.price,
+      product.priceToSell,
+      product.onlinePrice,
+      product.marketPrice,
+      product.minimumPriceToSales,
+    ].some(value => value > 0) ||
+    getProductVendorPrices(product).length > 0 ||
+    product.grocerPricingTiers.length > 0 ||
+    product.memberPoints.enabled ||
+    product.commission.enabled ||
+    product.marketplaceSync.pricePlatforms.length > 0;
+
+  return (
+    hasRootPricing ||
+    product.variants.some(variant =>
+      [
+        variant.price,
+        variant.priceToSell,
+        variant.onlinePrice,
+        variant.marketPrice,
+        variant.minimumPriceToSales,
+      ].some(value => value > 0) ||
+      variant.vendorPrices.length > 0 ||
+      variant.grocerPricingTiers.length > 0 ||
+      variant.memberPoints.enabled ||
+      variant.commissionEnabled,
+    )
+  );
+}
+
+function hasRawOverviewLogisticsContent(product: KolamProduct) {
+  const rootWeight = product.logistics.weightLabel || '-';
+  const rootDimension = product.logistics.dimensionLabel || '-';
+  const rootVolume = getProductRootVolumeLabel(product);
+
+  return (
+    product.logistics.shippingMethods.length > 0 ||
+    rootWeight !== '-' ||
+    rootDimension !== '-' ||
+    rootVolume !== '-' ||
+    product.variants.some(
+      variant =>
+        getProductVariantWeightLabel(variant) !== '-' ||
+        getProductVariantDimensionLabel(variant) !== '-' ||
+        getProductVariantVolumeLabel(variant) !== '-',
+    )
+  );
+}
+
+function hasRawOverviewMaterialsContent(product: KolamProduct) {
+  return product.components.length > 0 || product.packings.length > 0;
 }
 
 function ProductLogisticsTab({ product }: { product: KolamProduct }) {
