@@ -1103,10 +1103,22 @@ function ProductEditFormPage({
 
             {!hasVariants ? (
               <ProductEditSection
-                description="Harga jual dan aturan pesanan untuk produk tanpa varian."
+                description="Harga jual, aturan pesanan, dan harga grosir untuk produk tanpa varian."
                 title="Harga"
               >
                 <ProductRootPricingPanel controller={controller} />
+                <ProductPricingFieldPanel
+                  description="Harga per unit berdasarkan jumlah pembelian. Berlaku untuk produk tanpa varian."
+                  title="Harga Bertingkat / Grosir Produk"
+                >
+                  <KolamGrocerPricingTiersEditor
+                    disabled={controller.saving}
+                    onChange={grocerPricingTiers =>
+                      controller.onChangeForm({ grocerPricingTiers })
+                    }
+                    rows={form.grocerPricingTiers}
+                  />
+                </ProductPricingFieldPanel>
               </ProductEditSection>
             ) : null}
 
@@ -1142,6 +1154,15 @@ function ProductEditFormPage({
                 }}
               />
             </ProductEditSection>
+
+            {!hasVariants ? (
+              <ProductEditSection
+                description="Harga beli pemasok, ongkir, dan total HPP."
+                title="Harga Supplier"
+              >
+                <ProductRootVendorPricesEditor controller={controller} />
+              </ProductEditSection>
+            ) : null}
 
             <ProductEditSection
               description="Tag untuk filter internal, pengelompokan, dan SEO."
@@ -2024,6 +2045,85 @@ function ProductVariantVendorPricesEditor({
   controller: ReturnType<typeof useKolamProductController>;
   variant: KolamProductVariantFormRow;
 }) {
+  return (
+    <ProductVendorPricesEditor
+      controller={controller}
+      emptyText="Belum ada harga pemasok untuk varian ini."
+      hint="Harga beli pemasok, ongkir dari PO, dan total HPP per varian."
+      onAdd={() => addProductVariantVendorPriceRow(controller, variant.id)}
+      onPatch={(rowId, patch) =>
+        updateProductVariantVendorPriceRow(controller, variant.id, rowId, patch)
+      }
+      onRemove={rowId =>
+        removeProductVariantVendorPriceRow(controller, variant.id, rowId)
+      }
+      rows={variant.vendorPrices}
+      title="Harga Vendor / HPP"
+    />
+  );
+}
+
+function ProductRootVendorPricesEditor({
+  controller,
+}: {
+  controller: ReturnType<typeof useKolamProductController>;
+}) {
+  const form = controller.form;
+
+  if (!form) {
+    return null;
+  }
+
+  return (
+    <ProductVendorPricesEditor
+      controller={controller}
+      emptyText="Belum ada harga pemasok untuk produk utama."
+      hint="Harga beli pemasok untuk produk tanpa varian. Ongkir mengikuti data PO jika tersedia."
+      onAdd={() =>
+        controller.onChangeForm({
+          vendorPrices: [
+            ...form.vendorPrices,
+            createEmptyKolamProductVendorPriceFormRow(),
+          ],
+        })
+      }
+      onPatch={(rowId, patch) =>
+        controller.onChangeForm({
+          vendorPrices: form.vendorPrices.map(row =>
+            row.id === rowId ? { ...row, ...patch } : row,
+          ),
+        })
+      }
+      onRemove={rowId =>
+        controller.onChangeForm({
+          vendorPrices: form.vendorPrices.filter(row => row.id !== rowId),
+        })
+      }
+      rows={form.vendorPrices}
+      title="Harga Vendor / HPP Utama"
+    />
+  );
+}
+
+function ProductVendorPricesEditor({
+  controller,
+  emptyText,
+  hint,
+  onAdd,
+  onPatch,
+  onRemove,
+  rows,
+  title,
+}: {
+  controller: ReturnType<typeof useKolamProductController>;
+  emptyText: string;
+  hint: string;
+  onAdd: () => void;
+  onPatch: (rowId: string, patch: Partial<KolamProductVendorPriceFormRow>) => void;
+  onRemove: (rowId: string) => void;
+  rows: KolamProductVendorPriceFormRow[];
+  title: string;
+}) {
   const vendorOptions = [
     { label: 'Pilih pemasok', value: '' },
     ...controller.vendors.map(vendor => ({
@@ -2039,12 +2139,12 @@ function ProductVariantVendorPricesEditor({
           items={[
             {
               id: 'title',
-              text: 'Harga Vendor / HPP',
+              text: title,
               style: styles.variantTitle,
             },
             {
               id: 'hint',
-              text: 'Harga beli pemasok, ongkir dari PO, dan total HPP per varian.',
+              text: hint,
               style: styles.fieldHint,
             },
           ]}
@@ -2053,17 +2153,18 @@ function ProductVariantVendorPricesEditor({
           disabled={controller.saving}
           intent="primary"
           label="Tambah Pemasok"
-          onPress={() => addProductVariantVendorPriceRow(controller, variant.id)}
+          onPress={onAdd}
         />
       </View>
-      {variant.vendorPrices.length ? (
-        variant.vendorPrices.map((row, index) => (
-          <ProductVariantVendorPriceRow
+      {rows.length ? (
+        rows.map((row, index) => (
+          <ProductVendorPriceRow
             controller={controller}
             index={index}
             key={row.id}
+            onPatch={patch => onPatch(row.id, patch)}
+            onRemove={() => onRemove(row.id)}
             row={row}
-            variant={variant}
             vendorOptions={vendorOptions}
           />
         ))
@@ -2072,7 +2173,7 @@ function ProductVariantVendorPricesEditor({
           items={[
             {
               id: 'empty',
-              text: 'Belum ada harga pemasok untuk varian ini.',
+              text: emptyText,
               style: styles.fieldHint,
             },
           ]}
@@ -2082,17 +2183,19 @@ function ProductVariantVendorPricesEditor({
   );
 }
 
-function ProductVariantVendorPriceRow({
+function ProductVendorPriceRow({
   controller,
   index,
+  onPatch,
+  onRemove,
   row,
-  variant,
   vendorOptions,
 }: {
   controller: ReturnType<typeof useKolamProductController>;
   index: number;
+  onPatch: (patch: Partial<KolamProductVendorPriceFormRow>) => void;
+  onRemove: () => void;
   row: KolamProductVendorPriceFormRow;
-  variant: KolamProductVariantFormRow;
   vendorOptions: Array<{ label: string; value: string }>;
 }) {
   const shippingCost = parseNumberInput(row.shippingCost);
@@ -2119,20 +2222,14 @@ function ProductVariantVendorPriceRow({
           disabled={controller.saving}
           intent="danger"
           label="Hapus Pemasok"
-          onPress={() =>
-            removeProductVariantVendorPriceRow(controller, variant.id, row.id)
-          }
+          onPress={onRemove}
         />
       </View>
       <View style={styles.twoColumnGrid}>
         <KolamDropdownSelect
           label="Vendor"
           menuStyle={styles.longDropdownMenu}
-          onChange={vendorId =>
-            updateProductVariantVendorPriceRow(controller, variant.id, row.id, {
-              vendorId,
-            })
-          }
+          onChange={vendorId => onPatch({ vendorId })}
           options={vendorOptions}
           searchable
           searchPlaceholder="Cari pemasok..."
@@ -2142,11 +2239,7 @@ function ProductVariantVendorPriceRow({
         <KolamFormTextField
           editable={!controller.saving}
           mode="url"
-          onChangeText={link =>
-            updateProductVariantVendorPriceRow(controller, variant.id, row.id, {
-              link,
-            })
-          }
+          onChangeText={link => onPatch({ link })}
           placeholder="Link produk vendor"
           style={settingsWebFormStyles.settingsWebFormFieldValue}
           value={row.link}
@@ -2156,11 +2249,7 @@ function ProductVariantVendorPriceRow({
         <KolamFormTextField
           editable={!controller.saving}
           keyboardType="numeric"
-          onChangeText={price =>
-            updateProductVariantVendorPriceRow(controller, variant.id, row.id, {
-              price,
-            })
-          }
+          onChangeText={price => onPatch({ price })}
           placeholder="Harga beli pemasok"
           style={settingsWebFormStyles.settingsWebFormFieldValue}
           value={row.price}
