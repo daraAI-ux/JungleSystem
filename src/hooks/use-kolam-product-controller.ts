@@ -29,6 +29,7 @@ import {
 } from '../domain/kolam-product';
 import type { KolamTag } from '../domain/kolam-tag';
 import type { KolamUnit } from '../domain/kolam-unit';
+import type { KolamVendor } from '../domain/kolam-vendor';
 import {
   addKolamProductAttachedItem,
   archiveKolamProduct,
@@ -62,6 +63,11 @@ import {
 } from '../services/kolam-species-local-cache';
 import { getKolamTags } from '../services/kolam-tag-api';
 import { getKolamUnits } from '../services/kolam-unit-api';
+import { getKolamVendors } from '../services/kolam-vendor-api';
+import {
+  readKolamVendorListCache,
+  writeKolamVendorListCache,
+} from '../services/kolam-vendor-local-cache';
 import {
   readKolamProductDetailCache,
   readKolamProductFromListCacheByRouteKey,
@@ -105,6 +111,7 @@ export interface KolamProductController {
   species: KolamSpecies[];
   tags: KolamTag[];
   units: KolamUnit[];
+  vendors: KolamVendor[];
   onAddAttachedItem: (body: KolamProductAttachedItemPayload) => Promise<boolean>;
   onBackToList: () => void;
   onChangeForm: (patch: Partial<KolamProductFormState>) => void;
@@ -147,6 +154,7 @@ export function useKolamProductController(
   const [species, setSpecies] = useState<KolamSpecies[]>([]);
   const [tags, setTags] = useState<KolamTag[]>([]);
   const [units, setUnits] = useState<KolamUnit[]>([]);
+  const [vendors, setVendors] = useState<KolamVendor[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<KolamProduct | null>(
     null,
   );
@@ -189,6 +197,11 @@ export function useKolamProductController(
       setSpecies(cachedSpecies.value);
     }
 
+    const cachedVendors = await readKolamVendorListCache();
+    if (cachedVendors?.value.length) {
+      setVendors(cachedVendors.value);
+    }
+
     const [
       brandResult,
       categoryResult,
@@ -197,6 +210,7 @@ export function useKolamProductController(
       unitResult,
       productOptionResult,
       speciesResult,
+      vendorResult,
     ] = await Promise.allSettled([
       getKolamBrands(),
       getKolamCategories(),
@@ -205,6 +219,7 @@ export function useKolamProductController(
       getKolamUnits(),
       getKolamProductOptions(),
       getKolamSpeciesList({ limit: 1000 }),
+      getKolamVendors(),
     ]);
 
     if (brandResult.status === 'fulfilled') {
@@ -238,6 +253,11 @@ export function useKolamProductController(
     if (speciesResult.status === 'fulfilled') {
       await writeKolamSpeciesListCache(speciesResult.value);
       setSpecies(speciesResult.value);
+    }
+
+    if (vendorResult.status === 'fulfilled') {
+      await writeKolamVendorListCache(vendorResult.value);
+      setVendors(vendorResult.value);
     }
   }, []);
   const refresh = useCallback(async () => {
@@ -625,6 +645,7 @@ export function useKolamProductController(
     species,
     tags,
     units,
+    vendors,
     onAddAttachedItem,
     onBackToList,
     onChangeForm,

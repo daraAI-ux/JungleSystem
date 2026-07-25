@@ -7,11 +7,13 @@ import {
   type KolamCustomField,
 } from '../domain/kolam-custom-field';
 import type { KolamTableColumn } from '../domain/kolam-table';
+import { createEmptyKolamProductVendorPriceFormRow } from '../domain/kolam-product';
 import type {
   KolamProduct,
   KolamProductExternalLinkFormRow,
   KolamProductFormState,
   KolamProductLinkName,
+  KolamProductVendorPriceFormRow,
   KolamProductVariantFormRow,
 } from '../domain/kolam-product';
 import type { KolamMarketplacePlatform } from '../services/kolam-marketplace-sync-api';
@@ -127,6 +129,7 @@ const STOCK_OPTIONS = [
 ];
 
 type ProductListFilterPanel = 'category' | 'brand' | 'stock';
+type ProductVariantEditTab = 'pricing' | 'vendor';
 
 type PendingProductAction = {
   product: KolamProduct;
@@ -1522,6 +1525,7 @@ function ProductVariantFormCard({
   const displayCost = vendorCost ?? parseNumberInput(variant.price);
   const priceValue = parseNumberInput(variant.priceToSell);
   const priceLabel = priceValue > 0 ? formatCurrency(priceValue) : 'Rp 0';
+  const [activeTab, setActiveTab] = React.useState<ProductVariantEditTab>('pricing');
 
   return (
     <View style={styles.variantFormCard}>
@@ -1548,6 +1552,11 @@ function ProductVariantFormCard({
               label={`Grosir ${variant.grocerPricingTiers.length}`}
               style={styles.variantMetaBadge}
             />
+            <KolamBadge
+              intent={variant.vendorPrices.length ? 'success' : 'muted'}
+              label={`Pemasok ${variant.vendorPrices.length}`}
+              style={styles.variantMetaBadge}
+            />
           </View>
         </KolamInteractionFrame>
         <KolamButton
@@ -1562,9 +1571,22 @@ function ProductVariantFormCard({
       {expanded ? (
         <>
           <View style={styles.variantTabRow}>
-            <KolamButton intent="primary" label="Harga" style={styles.variantTabButton} />
+            <KolamButton
+              intent={activeTab === 'pricing' ? 'primary' : 'outline'}
+              label="Harga"
+              onPress={() => setActiveTab('pricing')}
+              style={styles.variantTabButton}
+            />
+            <KolamButton
+              intent={activeTab === 'vendor' ? 'primary' : 'outline'}
+              label="Pemasok"
+              onPress={() => setActiveTab('vendor')}
+              style={styles.variantTabButton}
+            />
           </View>
-          <View style={styles.variantTabContent}>
+
+          {activeTab === 'pricing' ? (
+            <View style={styles.variantTabContent}>
             <View style={styles.variantPricingGrid}>
               <ProductCompactField label={form?.variantConfigTier1Name || 'Tier 1'}>
                 <KolamFormTextField
@@ -1692,8 +1714,192 @@ function ProductVariantFormCard({
               />
             </ProductPricingFieldPanel>
           </View>
+          ) : null}
+
+          {activeTab === 'vendor' ? (
+            <View style={styles.variantTabContent}>
+              <ProductVariantVendorPricesEditor
+                controller={controller}
+                variant={variant}
+              />
+            </View>
+          ) : null}
         </>
       ) : null}
+    </View>
+  );
+}
+
+function ProductVariantVendorPricesEditor({
+  controller,
+  variant,
+}: {
+  controller: ReturnType<typeof useKolamProductController>;
+  variant: KolamProductVariantFormRow;
+}) {
+  const vendorOptions = [
+    { label: 'Pilih pemasok', value: '' },
+    ...controller.vendors.map(vendor => ({
+      label: vendor.name,
+      value: vendor.id,
+    })),
+  ];
+
+  return (
+    <View style={styles.vendorPricePanel}>
+      <View style={styles.variantEditorHeader}>
+        <KolamCopyStack
+          items={[
+            {
+              id: 'title',
+              text: 'Harga Vendor / HPP',
+              style: styles.variantTitle,
+            },
+            {
+              id: 'hint',
+              text: 'Harga beli pemasok, ongkir dari PO, dan total HPP per varian.',
+              style: styles.fieldHint,
+            },
+          ]}
+        />
+        <KolamButton
+          disabled={controller.saving}
+          intent="primary"
+          label="Tambah Pemasok"
+          onPress={() => addProductVariantVendorPriceRow(controller, variant.id)}
+        />
+      </View>
+      {variant.vendorPrices.length ? (
+        variant.vendorPrices.map((row, index) => (
+          <ProductVariantVendorPriceRow
+            controller={controller}
+            index={index}
+            key={row.id}
+            row={row}
+            variant={variant}
+            vendorOptions={vendorOptions}
+          />
+        ))
+      ) : (
+        <KolamCopyStack
+          items={[
+            {
+              id: 'empty',
+              text: 'Belum ada harga pemasok untuk varian ini.',
+              style: styles.fieldHint,
+            },
+          ]}
+        />
+      )}
+    </View>
+  );
+}
+
+function ProductVariantVendorPriceRow({
+  controller,
+  index,
+  row,
+  variant,
+  vendorOptions,
+}: {
+  controller: ReturnType<typeof useKolamProductController>;
+  index: number;
+  row: KolamProductVendorPriceFormRow;
+  variant: KolamProductVariantFormRow;
+  vendorOptions: Array<{ label: string; value: string }>;
+}) {
+  const shippingCost = parseNumberInput(row.shippingCost);
+  const totalCost = parseNumberInput(row.price) + shippingCost;
+
+  return (
+    <View style={styles.vendorPriceRow}>
+      <View style={styles.variantEditorHeader}>
+        <KolamCopyStack
+          items={[
+            {
+              id: 'title',
+              text: `Vendor ${index + 1}`,
+              style: styles.rowText,
+            },
+            {
+              id: 'total',
+              text: `Total HPP: ${formatCurrency(totalCost)}`,
+              style: styles.fieldHint,
+            },
+          ]}
+        />
+        <KolamButton
+          disabled={controller.saving}
+          intent="danger"
+          label="Hapus Pemasok"
+          onPress={() =>
+            removeProductVariantVendorPriceRow(controller, variant.id, row.id)
+          }
+        />
+      </View>
+      <View style={styles.twoColumnGrid}>
+        <KolamDropdownSelect
+          label="Vendor"
+          menuStyle={styles.longDropdownMenu}
+          onChange={vendorId =>
+            updateProductVariantVendorPriceRow(controller, variant.id, row.id, {
+              vendorId,
+            })
+          }
+          options={vendorOptions}
+          searchable
+          searchPlaceholder="Cari pemasok..."
+          showLabelInTrigger={false}
+          value={row.vendorId}
+        />
+        <KolamFormTextField
+          editable={!controller.saving}
+          mode="url"
+          onChangeText={link =>
+            updateProductVariantVendorPriceRow(controller, variant.id, row.id, {
+              link,
+            })
+          }
+          placeholder="Link produk vendor"
+          style={settingsWebFormStyles.settingsWebFormFieldValue}
+          value={row.link}
+        />
+      </View>
+      <View style={styles.threeColumnGrid}>
+        <KolamFormTextField
+          editable={!controller.saving}
+          keyboardType="numeric"
+          onChangeText={price =>
+            updateProductVariantVendorPriceRow(controller, variant.id, row.id, {
+              price,
+            })
+          }
+          placeholder="Harga beli pemasok"
+          style={settingsWebFormStyles.settingsWebFormFieldValue}
+          value={row.price}
+        />
+        <KolamFormTextField
+          editable={false}
+          placeholder="Ongkir / unit"
+          style={settingsWebFormStyles.settingsWebFormFieldValue}
+          value={formatCurrency(shippingCost)}
+        />
+        <KolamFormTextField
+          editable={false}
+          placeholder="Total HPP"
+          style={settingsWebFormStyles.settingsWebFormFieldValue}
+          value={formatCurrency(totalCost)}
+        />
+      </View>
+      <KolamCopyStack
+        items={[
+          {
+            id: 'shipping-note',
+            text: 'Ongkir diisi dari PO completed dan disimpan ulang agar tidak hilang saat edit varian.',
+            style: styles.fieldHint,
+          },
+        ]}
+      />
     </View>
   );
 }
@@ -1774,6 +1980,54 @@ function removeProductVariantRow(
     variants: nextVariants,
     variantsTouched: true,
   });
+}
+
+function addProductVariantVendorPriceRow(
+  controller: ReturnType<typeof useKolamProductController>,
+  variantId: string,
+) {
+  const variant = getProductVariantFormRow(controller, variantId);
+  updateProductVariantRow(controller, variantId, {
+    vendorPrices: [
+      ...variant.vendorPrices,
+      createEmptyKolamProductVendorPriceFormRow(),
+    ],
+  });
+}
+
+function updateProductVariantVendorPriceRow(
+  controller: ReturnType<typeof useKolamProductController>,
+  variantId: string,
+  rowId: string,
+  patch: Partial<KolamProductVendorPriceFormRow>,
+) {
+  const variant = getProductVariantFormRow(controller, variantId);
+  updateProductVariantRow(controller, variantId, {
+    vendorPrices: variant.vendorPrices.map(row =>
+      row.id === rowId ? { ...row, ...patch } : row,
+    ),
+  });
+}
+
+function removeProductVariantVendorPriceRow(
+  controller: ReturnType<typeof useKolamProductController>,
+  variantId: string,
+  rowId: string,
+) {
+  const variant = getProductVariantFormRow(controller, variantId);
+  updateProductVariantRow(controller, variantId, {
+    vendorPrices: variant.vendorPrices.filter(row => row.id !== rowId),
+  });
+}
+
+function getProductVariantFormRow(
+  controller: ReturnType<typeof useKolamProductController>,
+  variantId: string,
+) {
+  return (
+    controller.form?.variants.find(variant => variant.id === variantId) ??
+    createEmptyProductVariantFormRow()
+  );
 }
 
 function createEmptyProductVariantFormRow(): KolamProductVariantFormRow {
@@ -5021,6 +5275,17 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     lineHeight: 18,
   },
+  rowText: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '700',
+    lineHeight: 18,
+  },
+  threeColumnGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
   variantEditorPanel: {
     gap: 12,
   },
@@ -5117,6 +5382,22 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '600',
     lineHeight: 13,
+  },
+  vendorPricePanel: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 10,
+    padding: 12,
+  },
+  vendorPriceRow: {
+    backgroundColor: V.colors.secondary,
+    borderColor: V.colors.border,
+    borderRadius: 6,
+    borderWidth: 1,
+    gap: 10,
+    padding: 10,
   },
   variantFieldPanel: {
     backgroundColor: V.colors.bg,
