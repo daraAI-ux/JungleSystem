@@ -2,6 +2,16 @@
 
 Semua file, modul, komponen, behavior, style, data flow, dan fitur existing di aplikasi ini adalah protected by default.
 
+## Local Source Repositories
+
+Sebelum membandingkan UI, API, atau behavior Kolam, agen wajib memakai repo lokal berikut sebagai source of truth/read-only terlebih dahulu:
+
+- FE Kolam lokal: `E:\Projects\da-inventory-frontend`
+- BE Kolam lokal: `E:\Projects\da-inventory-backend`
+- FE raw material detail: `E:\Projects\da-inventory-frontend\src\app\(app)\raw-materials\[id]\raw-material-detail.tsx`
+
+Jangan menebak dari memori atau dari hasil implementasi RN saja. Jika path tidak ditemukan, laporkan sebagai blocker dan jangan mengarang fallback.
+
 Agen tidak boleh:
 - mengubah file apa pun di luar scope eksplisit
 - refactor opportunistic
