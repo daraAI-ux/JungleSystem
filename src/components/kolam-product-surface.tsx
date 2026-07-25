@@ -944,21 +944,22 @@ function ProductEditFormPage({
   const tagOptions = controller.tags.filter(tag => !form.tagIds.includes(tag.id));
   const selectedTags = controller.tags.filter(tag => form.tagIds.includes(tag.id));
   const disabled = controller.saving;
+  const formTitle = controller.mode === 'new' ? 'Produk Baru' : 'Edit Produk';
+  const saveLabel = controller.mode === 'new' ? 'Simpan Produk' : 'Simpan Perubahan';
 
   return (
     <ScrollView contentContainerStyle={styles.root}>
       <View style={styles.detailHeaderRow}>
         <View style={styles.headingCopy}>
           <Text style={styles.eyebrow}>PRODUK</Text>
-          <Text style={styles.title}>Edit Produk</Text>
-          <Text style={styles.description}>Form edit produk mengikuti halaman edit produk FE.</Text>
+          <Text style={styles.title}>{formTitle}</Text>
         </View>
         <View style={styles.detailHeaderActions}>
           <KolamButton disabled={disabled} label="Batal" onPress={onCancel} />
           <KolamButton
             disabled={disabled}
             intent="primary"
-            label={disabled ? 'Menyimpan...' : 'Simpan Perubahan'}
+            label={disabled ? 'Menyimpan...' : saveLabel}
             onPress={() => {
               void controller.onSave();
             }}
@@ -968,12 +969,12 @@ function ProductEditFormPage({
 
       {controller.error ? <Text style={styles.error}>{controller.error}</Text> : null}
 
-      <KolamNativeFormSection section={{ description: '', id: 'catalog-translations', title: 'Edit Produk' }}>
+      <KolamNativeFormSection section={{ description: '', id: 'catalog-translations', title: formTitle }}>
         <View style={settingsWebFormStyles.settingsWebFormFields}>
           <View style={settingsWebFormStyles.settingsWebFormFieldsGrid}>
             <ProductEditSection
-              description="Kode identitas internal. Nama dan deskripsi diatur per bahasa di Konten Marketplace."
-              title="Identitas Produk"
+              description="Kode identitas internal. Nama dan deskripsi diatur per bahasa di tab Konten Marketplace."
+              title="Identitas produk"
             >
               <View style={styles.twoColumnGrid}>
                 <ProductFieldShell label={form.productType === 'raw' ? 'Kode Produk' : 'SKU'} required>
@@ -1005,8 +1006,8 @@ function ProductEditFormPage({
             </ProductEditSection>
 
             <ProductEditSection
-              description="Indonesia disimpan sebagai field utama; bahasa lain dipakai webstore dan marketplace."
-              title="Konten Marketplace"
+              description="Terjemahan katalog untuk webstore dan marketplace."
+              title="Konten marketplace"
             >
               <KolamCatalogTranslationsEditor
                 editable={!disabled}
@@ -1023,8 +1024,8 @@ function ProductEditFormPage({
             </ProductEditSection>
 
             <ProductEditSection
-              description="Hubungkan produk dengan kategori, merek, satuan, dan tag."
-              title="Klasifikasi"
+              description="Pilih satu atau lebih kategori yang relevan."
+              title="Kategori Produk"
             >
               <ProductMultiSelectField
                 disabled={disabled}
@@ -1036,6 +1037,12 @@ function ProductEditFormPage({
                 selected={selectedCategories.map(category => ({ id: category.id, label: category.name, tone: 'category' as const }))}
                 triggerLabel="Tambah kategori"
               />
+            </ProductEditSection>
+
+            <ProductEditSection
+              description="Hubungkan produk dengan satu atau lebih brand."
+              title="Brand"
+            >
               <ProductMultiSelectField
                 disabled={disabled}
                 emptyText="Belum ada merek dipilih."
@@ -1046,6 +1053,12 @@ function ProductEditFormPage({
                 selected={selectedBrands.map(brand => ({ id: brand.id, label: brand.name }))}
                 triggerLabel="Tambah merek"
               />
+            </ProductEditSection>
+
+            <ProductEditSection
+              description="Satuan pengukuran dan penghitungan stok produk."
+              title="Satuan"
+            >
               <ProductFieldShell label="Satuan" required>
                 <KolamDropdownSelect
                   label="Satuan"
@@ -1061,6 +1074,12 @@ function ProductEditFormPage({
                   value={form.unitId}
                 />
               </ProductFieldShell>
+            </ProductEditSection>
+
+            <ProductEditSection
+              description="Tag untuk filter internal, pengelompokan, dan SEO."
+              title="Tag"
+            >
               <ProductMultiSelectField
                 disabled={disabled}
                 emptyText="Belum ada tag dipilih."
@@ -1086,7 +1105,7 @@ function ProductEditFormPage({
             <KolamButton
               disabled={disabled}
               intent="primary"
-              label={disabled ? 'Menyimpan...' : 'Simpan Perubahan'}
+              label={disabled ? 'Menyimpan...' : saveLabel}
               onPress={() => {
                 void controller.onSave();
               }}
