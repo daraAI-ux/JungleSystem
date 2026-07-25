@@ -291,17 +291,6 @@ export function KolamProductSurface({
     <View style={styles.surface}>
 
       <View style={styles.stack}>
-        {isRawCatalog ? (
-          <View style={styles.headingRow}>
-            <View style={styles.headingCopy}>
-              <Text style={styles.eyebrow}>KATALOG</Text>
-              <Text style={styles.title}>Bahan Baku</Text>
-              <Text style={styles.description}>
-                Kelola semua bahan baku di katalog Anda.
-              </Text>
-            </View>
-          </View>
-        ) : null}
         <View style={styles.toolbarShell}>
           <View style={styles.filterRow}>
             <KolamFormTextField
