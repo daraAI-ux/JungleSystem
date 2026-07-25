@@ -129,7 +129,7 @@ const STOCK_OPTIONS = [
 ];
 
 type ProductListFilterPanel = 'category' | 'brand' | 'stock';
-type ProductVariantEditTab = 'pricing' | 'vendor';
+type ProductVariantEditTab = 'pricing' | 'vendor' | 'specs';
 
 type PendingProductAction = {
   product: KolamProduct;
@@ -1526,6 +1526,17 @@ function ProductVariantFormCard({
   const priceValue = parseNumberInput(variant.priceToSell);
   const priceLabel = priceValue > 0 ? formatCurrency(priceValue) : 'Rp 0';
   const [activeTab, setActiveTab] = React.useState<ProductVariantEditTab>('pricing');
+  const unitOptions = [
+    { label: 'Pilih satuan', value: '' },
+    ...controller.units.map(unit => ({
+      label: unit.initial ? `${unit.name} (${unit.initial})` : unit.name,
+      value: unit.id,
+    })),
+  ];
+  const activeCustomFields = React.useMemo(
+    () => getActiveProductCustomFields(controller.customFields),
+    [controller.customFields],
+  );
 
   return (
     <View style={styles.variantFormCard}>
@@ -1581,6 +1592,12 @@ function ProductVariantFormCard({
               intent={activeTab === 'vendor' ? 'primary' : 'outline'}
               label="Pemasok"
               onPress={() => setActiveTab('vendor')}
+              style={styles.variantTabButton}
+            />
+            <KolamButton
+              intent={activeTab === 'specs' ? 'primary' : 'outline'}
+              label="Spesifikasi"
+              onPress={() => setActiveTab('specs')}
               style={styles.variantTabButton}
             />
           </View>
@@ -1722,6 +1739,111 @@ function ProductVariantFormCard({
                 controller={controller}
                 variant={variant}
               />
+            </View>
+          ) : null}
+
+          {activeTab === 'specs' ? (
+            <View style={styles.variantTabContent}>
+              <View style={styles.variantSpecsGrid}>
+                <View style={styles.variantSpecsGroup}>
+                  <KolamCopyStack
+                    items={[{ id: 'label', text: 'Berat', style: styles.variantSpecsLabel }]}
+                  />
+                  <View style={styles.variantSpecsTwoGrid}>
+                    <KolamFormTextField
+                      editable={!controller.saving}
+                      keyboardType="numeric"
+                      onChangeText={weightValue =>
+                        updateProductVariantRow(controller, variant.id, { weightValue })
+                      }
+                      placeholder="Nilai"
+                      style={settingsWebFormStyles.settingsWebFormFieldValue}
+                      value={variant.weightValue}
+                    />
+                    <KolamDropdownSelect
+                      label="Satuan"
+                      menuStyle={styles.longDropdownMenu}
+                      onChange={weightUnitId =>
+                        updateProductVariantRow(controller, variant.id, { weightUnitId })
+                      }
+                      options={unitOptions}
+                      searchable
+                      searchPlaceholder="Cari satuan..."
+                      showLabelInTrigger={false}
+                      value={variant.weightUnitId}
+                    />
+                  </View>
+                </View>
+                <View style={styles.variantSpecsGroup}>
+                  <KolamCopyStack
+                    items={[{ id: 'label', text: 'Dimensi (P x L x T)', style: styles.variantSpecsLabel }]}
+                  />
+                  <View style={styles.variantSpecsFourGrid}>
+                    <KolamFormTextField
+                      editable={!controller.saving}
+                      keyboardType="numeric"
+                      onChangeText={dimensionLength =>
+                        updateProductVariantRow(controller, variant.id, { dimensionLength })
+                      }
+                      placeholder="P"
+                      style={settingsWebFormStyles.settingsWebFormFieldValue}
+                      value={variant.dimensionLength}
+                    />
+                    <KolamFormTextField
+                      editable={!controller.saving}
+                      keyboardType="numeric"
+                      onChangeText={dimensionWidth =>
+                        updateProductVariantRow(controller, variant.id, { dimensionWidth })
+                      }
+                      placeholder="L"
+                      style={settingsWebFormStyles.settingsWebFormFieldValue}
+                      value={variant.dimensionWidth}
+                    />
+                    <KolamFormTextField
+                      editable={!controller.saving}
+                      keyboardType="numeric"
+                      onChangeText={dimensionHeight =>
+                        updateProductVariantRow(controller, variant.id, { dimensionHeight })
+                      }
+                      placeholder="T"
+                      style={settingsWebFormStyles.settingsWebFormFieldValue}
+                      value={variant.dimensionHeight}
+                    />
+                    <KolamDropdownSelect
+                      label="Satuan"
+                      menuStyle={styles.longDropdownMenu}
+                      onChange={dimensionUnitId =>
+                        updateProductVariantRow(controller, variant.id, { dimensionUnitId })
+                      }
+                      options={unitOptions}
+                      searchable
+                      searchPlaceholder="Cari satuan..."
+                      showLabelInTrigger={false}
+                      value={variant.dimensionUnitId}
+                    />
+                  </View>
+                </View>
+              </View>
+              <ProductPricingFieldPanel
+                description="Field kustom varian disimpan pada data spesifikasi varian."
+                title="Field Kustom Varian"
+              >
+                <ProductCustomFieldRowsEditor
+                  disabled={controller.saving}
+                  emptyText="Belum ada field kustom aktif untuk varian."
+                  fields={activeCustomFields}
+                  onChange={customFieldValues =>
+                    updateProductVariantRow(controller, variant.id, { customFieldValues })
+                  }
+                  rows={variant.customFieldValues}
+                  summaryText={
+                    activeCustomFields.length
+                      ? `${activeCustomFields.length} field aktif tersedia.`
+                      : 'Belum ada field kustom aktif.'
+                  }
+                  units={controller.units}
+                />
+              </ProductPricingFieldPanel>
             </View>
           ) : null}
         </>
@@ -5382,6 +5504,31 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '600',
     lineHeight: 13,
+  },
+  variantSpecsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+  },
+  variantSpecsGroup: {
+    flexBasis: 360,
+    flexGrow: 1,
+    gap: 8,
+    minWidth: 280,
+  },
+  variantSpecsLabel: {
+    color: V.colors.fg,
+    fontSize: 12,
+    fontWeight: '900',
+    lineHeight: 16,
+  },
+  variantSpecsTwoGrid: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  variantSpecsFourGrid: {
+    flexDirection: 'row',
+    gap: 8,
   },
   vendorPricePanel: {
     backgroundColor: V.colors.bg,
