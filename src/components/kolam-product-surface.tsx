@@ -2,7 +2,10 @@ import React from 'react';
 import { Image, Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { appConfig } from '../config/app';
 import type { KolamBarcodeLabelItem } from '../domain/kolam-barcode';
-import type { KolamCustomField } from '../domain/kolam-custom-field';
+import {
+  getCustomFieldTypeLabel,
+  type KolamCustomField,
+} from '../domain/kolam-custom-field';
 import type { KolamTableColumn } from '../domain/kolam-table';
 import type {
   KolamProduct,
@@ -11,6 +14,7 @@ import type {
   KolamProductLinkName,
 } from '../domain/kolam-product';
 import type { KolamMarketplacePlatform } from '../services/kolam-marketplace-sync-api';
+import type { KolamUnit } from '../domain/kolam-unit';
 import {
   fetchKolamActivePricingSources,
   fetchKolamChannelPricingAnalysis,
@@ -1077,6 +1081,13 @@ function ProductEditFormPage({
             </ProductEditSection>
 
             <ProductEditSection
+              description="Pilih profil spesifikasi atau field manual untuk produk ini."
+              title="Field Kustom"
+            >
+              <ProductCustomFieldEditorPanel controller={controller} />
+            </ProductEditSection>
+
+            <ProductEditSection
               description="Tag untuk filter internal, pengelompokan, dan SEO."
               title="Tag"
             >
@@ -1284,6 +1295,657 @@ function ProductExternalLinksRowsEditor({ disabled, links, onChange }: { disable
       <KolamButton disabled={disabled} intent="secondary" label="Tambah tautan" onPress={() => onChange([...links, { name: '', value: '' }])} style={styles.externalLinkAddButton} />
     </View>
   );
+}
+
+function ProductCustomFieldEditorPanel({
+  controller,
+}: {
+  controller: ReturnType<typeof useKolamProductController>;
+}) {
+  const fields = React.useMemo(
+    () => getActiveProductCustomFields(controller.customFields),
+    [controller.customFields],
+  );
+  const form = controller.form;
+
+  return (
+    <ProductFieldShell label="Field Kustom">
+      <ProductCustomFieldRowsEditor
+        disabled={controller.saving}
+        emptyText="Belum ada definisi field kustom aktif dari modul Field Kustom."
+        fields={fields}
+        rows={form?.customFieldValues ?? []}
+        summaryText={
+          fields.length
+            ? `${fields.length} field aktif tersedia untuk produk ini.`
+            : 'Belum ada definisi field kustom aktif dari modul Field Kustom.'
+        }
+        units={controller.units}
+        onChange={customFieldValues =>
+          controller.onChangeForm({ customFieldValues })
+        }
+      />
+    </ProductFieldShell>
+  );
+}
+
+function getActiveProductCustomFields(fields: KolamCustomField[]) {
+  return fields
+    .filter(field => field.status === 'active')
+    .slice()
+    .sort((left, right) => left.order - right.order || left.fieldLabel.localeCompare(right.fieldLabel));
+}
+
+type ProductCustomFieldPatch = {
+  value?: string;
+  minValue?: string;
+  maxValue?: string;
+  unitId?: string;
+};
+
+function ProductCustomFieldRowsEditor({
+  disabled,
+  emptyText,
+  fields,
+  onChange,
+  rows,
+  summaryText,
+  units,
+}: {
+  disabled: boolean;
+  emptyText: string;
+  fields: KolamCustomField[];
+  onChange: (rows: unknown[]) => void;
+  rows: unknown[];
+  summaryText: string;
+  units: KolamUnit[];
+}) {
+  const knownKeys = React.useMemo(
+    () => new Set(fields.map(field => field.fieldKey).filter(Boolean)),
+    [fields],
+  );
+  const initialSelectedKeys = React.useMemo(
+    () => getProductSelectedCustomFieldKeys(rows, fields),
+    [fields, rows],
+  );
+  const unknownRows = rows.filter(row => {
+    const key = getProductCustomFieldRowKey(row, fields);
+    return !key || !knownKeys.has(key);
+  });
+  const [enabled, setEnabled] = React.useState(initialSelectedKeys.length > 0);
+  const [selectedKeys, setSelectedKeys] = React.useState(initialSelectedKeys);
+
+  React.useEffect(() => {
+    setSelectedKeys(initialSelectedKeys);
+    setEnabled(initialSelectedKeys.length > 0);
+  }, [initialSelectedKeys.join('|')]);
+
+  const selectedKeySet = React.useMemo(
+    () => new Set(selectedKeys),
+    [selectedKeys],
+  );
+  const selectedFields = fields.filter(field => selectedKeySet.has(field.fieldKey));
+  const setFieldSelected = (field: KolamCustomField, nextSelected: boolean) => {
+    const nextKeys = nextSelected
+      ? Array.from(new Set([...selectedKeys, field.fieldKey]))
+      : selectedKeys.filter(key => key !== field.fieldKey);
+    setSelectedKeys(nextKeys);
+
+    if (!nextSelected) {
+      onChange(rows.filter(row => !productCustomFieldRowMatchesField(row, field)));
+    }
+  };
+  const setUseCustomFields = (nextEnabled: boolean) => {
+    setEnabled(nextEnabled);
+    if (!nextEnabled) {
+      setSelectedKeys([]);
+      onChange([]);
+    }
+  };
+
+  return (
+    <View style={styles.variantPricingPanel}>
+      <View style={styles.variantTabHeader}>
+        <KolamCopyStack
+          items={[
+            {
+              id: 'summary',
+              text: summaryText || emptyText,
+              style: styles.fieldHint,
+            },
+          ]}
+        />
+        <KolamButton
+          disabled={disabled || fields.length === 0}
+          intent={enabled ? 'primary' : 'secondary'}
+          label={enabled ? 'Field Kustom Aktif' : 'Gunakan Field Kustom'}
+          onPress={() => setUseCustomFields(!enabled)}
+        />
+      </View>
+
+      {enabled ? (
+        <>
+          <View style={styles.customFieldPickerPanel}>
+            <KolamCopyStack
+              items={[
+                {
+                  id: 'picker-title',
+                  text: 'Pilih field yang digunakan',
+                  style: styles.variantTitle,
+                },
+                {
+                  id: 'picker-hint',
+                  text: fields.length
+                    ? 'Hanya field yang dipilih yang muncul dan dikirim ke backend.'
+                    : emptyText,
+                  style: styles.fieldHint,
+                },
+              ]}
+            />
+            <View style={styles.selectedCategoryRow}>
+              {fields.map(field => {
+                const selected = selectedKeySet.has(field.fieldKey);
+                return (
+                  <KolamButton
+                    disabled={disabled}
+                    intent={selected ? 'primary' : 'outline'}
+                    key={field.id || field.fieldKey}
+                    label={`${field.fieldLabel}${field.required ? ' *' : ''}`}
+                    onPress={() => setFieldSelected(field, !selected)}
+                    style={styles.selectedCategoryButton}
+                  />
+                );
+              })}
+            </View>
+          </View>
+
+          {selectedFields.length ? (
+            selectedFields.map(field => (
+              <ProductCustomFieldRowsEditorRow
+                disabled={disabled}
+                field={field}
+                key={field.id || field.fieldKey}
+                onChange={onChange}
+                rows={rows}
+                units={units}
+              />
+            ))
+          ) : (
+            <KolamCopyStack
+              items={[
+                {
+                  id: 'empty-selected-fields',
+                  text: 'Pilih minimal satu field kustom untuk mengisi nilai.',
+                  style: styles.fieldHint,
+                },
+              ]}
+            />
+          )}
+        </>
+      ) : null}
+
+      {enabled && unknownRows.length ? (
+        <View style={styles.customFieldUnknownPanel}>
+          <KolamCopyStack
+            items={[
+              {
+                id: 'title',
+                text: 'Field tersimpan tanpa definisi aktif',
+                style: styles.variantTitle,
+              },
+              ...unknownRows.map((row, index) => ({
+                id: getProductCustomFieldRowId(row) || `unknown-${index}`,
+                text: `${getProductCustomFieldRowLabel(row, index)}: ${getProductCustomFieldRowValueLabel(row)}`,
+                style: styles.fieldHint,
+              })),
+            ]}
+          />
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+function ProductCustomFieldRowsEditorRow({
+  disabled,
+  field,
+  onChange,
+  rows,
+  units,
+}: {
+  disabled: boolean;
+  field: KolamCustomField;
+  onChange: (rows: unknown[]) => void;
+  rows: unknown[];
+  units: KolamUnit[];
+}) {
+  const row = findProductCustomFieldValueRow(rows, field);
+  const raw = getProductCustomFieldValueRecord(row);
+  const unitLabel = field.unitLabel || getProductCustomFieldRowUnitLabel(row) || '';
+  const fieldTypeLabel = getCustomFieldTypeLabel(field.fieldType);
+
+  return (
+    <View style={styles.customFieldEditorRow}>
+      <View style={styles.variantTabHeader}>
+        <KolamCopyStack
+          items={[
+            {
+              id: 'label',
+              text: `${field.fieldLabel}${field.required ? ' *' : ''}`,
+              style: styles.variantTitle,
+            },
+            {
+              id: 'meta',
+              text: [fieldTypeLabel, unitLabel ? `Satuan: ${unitLabel}` : '']
+                .filter(Boolean)
+                .join(' - '),
+              style: styles.fieldHint,
+            },
+          ]}
+        />
+        <KolamButton
+          disabled={disabled || !row}
+          intent="secondary"
+          label="Kosongkan"
+          onPress={() => updateProductCustomFieldRows(rows, onChange, field, null)}
+        />
+      </View>
+      {renderProductCustomFieldRowsInput(disabled, rows, onChange, field, raw, units)}
+      {field.description ? (
+        <KolamCopyStack
+          items={[{ id: 'description', text: field.description, style: styles.fieldHint }]}
+        />
+      ) : null}
+    </View>
+  );
+}
+
+function renderProductCustomFieldRowsInput(
+  disabled: boolean,
+  rows: unknown[],
+  onChange: (rows: unknown[]) => void,
+  field: KolamCustomField,
+  raw: Record<string, unknown>,
+  units: KolamUnit[],
+) {
+  const update = (patch: ProductCustomFieldPatch) =>
+    updateProductCustomFieldRows(rows, onChange, field, patch);
+  const unitSelector = renderProductCustomFieldUnitSelector(disabled, rows, onChange, field, raw, units);
+
+  if (field.fieldType === 'boolean') {
+    return (
+      <KolamDropdownSelect
+        label={field.fieldLabel}
+        onChange={value => update({ value })}
+        options={[
+          { label: 'Belum diisi', value: '' },
+          { label: 'Ya', value: 'true' },
+          { label: 'Tidak', value: 'false' },
+        ]}
+        value={getProductCustomFieldBooleanValue(raw)}
+      />
+    );
+  }
+
+  if (field.fieldType === 'select') {
+    return (
+      <KolamDropdownSelect
+        label={field.fieldLabel}
+        menuStyle={styles.longDropdownMenu}
+        onChange={value => update({ value })}
+        options={[
+          { label: 'Belum diisi', value: '' },
+          ...field.options.map(option => ({ label: option, value: option })),
+        ]}
+        searchable
+        searchPlaceholder="Cari pilihan..."
+        value={getProductCustomFieldStringValue(raw)}
+      />
+    );
+  }
+
+  if (field.fieldType === 'range') {
+    return (
+      <View style={styles.twoColumnGrid}>
+        <KolamFormTextField
+          editable={!disabled}
+          keyboardType="numeric"
+          onChangeText={minValue => update({ minValue })}
+          placeholder="Nilai minimum"
+          style={settingsWebFormStyles.settingsWebFormFieldValue}
+          value={getProductCustomFieldNumberText(raw.minValue)}
+        />
+        <KolamFormTextField
+          editable={!disabled}
+          keyboardType="numeric"
+          onChangeText={maxValue => update({ maxValue })}
+          placeholder="Nilai maksimum"
+          style={settingsWebFormStyles.settingsWebFormFieldValue}
+          value={getProductCustomFieldNumberText(raw.maxValue)}
+        />
+        {unitSelector}
+      </View>
+    );
+  }
+
+  if (field.fieldType === 'number') {
+    return (
+      <View style={field.requiresUnit ? styles.twoColumnGrid : undefined}>
+        <KolamFormTextField
+          editable={!disabled}
+          keyboardType="numeric"
+          onChangeText={value => update({ value })}
+          placeholder="Masukkan angka"
+          style={settingsWebFormStyles.settingsWebFormFieldValue}
+          value={getProductCustomFieldStringValue(raw)}
+        />
+        {unitSelector}
+      </View>
+    );
+  }
+
+  return (
+    <KolamFormTextField
+      editable={!disabled}
+      multiline
+      onChangeText={value => update({ value })}
+      placeholder="Masukkan nilai"
+      style={[settingsWebFormStyles.settingsWebFormFieldValue, styles.customFieldTextArea]}
+      value={getProductCustomFieldStringValue(raw)}
+    />
+  );
+}
+
+function renderProductCustomFieldUnitSelector(
+  disabled: boolean,
+  rows: unknown[],
+  onChange: (rows: unknown[]) => void,
+  field: KolamCustomField,
+  raw: Record<string, unknown>,
+  units: KolamUnit[],
+) {
+  if (!field.requiresUnit || (field.fieldType !== 'number' && field.fieldType !== 'range')) {
+    return null;
+  }
+
+  if (field.unitId && field.unitLabel) {
+    return (
+      <View style={styles.customFieldFixedUnitBox}>
+        <KolamCopyStack
+          items={[
+            { id: 'label', text: 'Satuan tetap', style: styles.fieldHint },
+            { id: 'value', text: field.unitLabel, style: styles.pricingMetricText },
+          ]}
+        />
+      </View>
+    );
+  }
+
+  return (
+    <KolamDropdownSelect
+      label="Satuan"
+      menuStyle={styles.longDropdownMenu}
+      onChange={unitId => updateProductCustomFieldRows(rows, onChange, field, { unitId })}
+      options={[
+        { label: 'Pilih satuan', value: '' },
+        ...units.map(unit => ({
+          label: unit.initial ? `${unit.name} (${unit.initial})` : unit.name,
+          value: unit.id,
+        })),
+      ]}
+      searchable
+      searchPlaceholder="Cari satuan..."
+      value={getProductCustomFieldUnitId(raw)}
+    />
+  );
+}
+
+function updateProductCustomFieldRows(
+  rows: unknown[],
+  onChange: (rows: unknown[]) => void,
+  field: KolamCustomField,
+  patch: ProductCustomFieldPatch | null,
+) {
+  const currentRow = findProductCustomFieldValueRow(rows, field);
+  const currentRaw = getProductCustomFieldValueRecord(currentRow);
+  const baseRaw: Record<string, unknown> = {
+    field: field.id,
+    fieldKey: field.fieldKey,
+  };
+
+  if (field.requiresUnit && field.unitId) {
+    baseRaw.unit = field.unitId;
+  }
+
+  const nextRaw = patch
+    ? createNextProductCustomFieldValueRaw(field, currentRaw, baseRaw, patch)
+    : baseRaw;
+  const nextRows = rows.filter(row => !productCustomFieldRowMatchesField(row, field));
+
+  if (!patch || !shouldKeepProductCustomFieldValue(field, nextRaw)) {
+    onChange(nextRows);
+    return;
+  }
+
+  onChange([...nextRows, nextRaw]);
+}
+
+function getProductSelectedCustomFieldKeys(rows: unknown[], fields: KolamCustomField[]) {
+  return Array.from(
+    new Set(
+      rows
+        .map(row => getProductCustomFieldRowKey(row, fields))
+        .filter(Boolean) as string[],
+    ),
+  );
+}
+
+function getProductCustomFieldRowKey(row: unknown, fields: KolamCustomField[]) {
+  const raw = getProductCustomFieldValueRecord(row);
+  const rawKey = getStringFromRecord(raw, 'fieldKey');
+  if (rawKey) {
+    return rawKey;
+  }
+  const fieldRecord = getPlainRecord(raw.field);
+  const fieldId = getProductCustomFieldRowId(row);
+  const rawFieldId = getStringFromRecord(fieldRecord, '_id') || getStringFromRecord(fieldRecord, 'id');
+  return fields.find(field => field.id === fieldId || field.id === rawFieldId)?.fieldKey || '';
+}
+
+function createNextProductCustomFieldValueRaw(
+  field: KolamCustomField,
+  currentRaw: Record<string, unknown>,
+  baseRaw: Record<string, unknown>,
+  patch: ProductCustomFieldPatch,
+) {
+  const nextRaw: Record<string, unknown> = { ...currentRaw, ...baseRaw };
+
+  if (patch.unitId !== undefined) {
+    if (patch.unitId.trim()) {
+      nextRaw.unit = patch.unitId.trim();
+    } else {
+      delete nextRaw.unit;
+    }
+  }
+
+  if (field.fieldType === 'range') {
+    const minValue = patch.minValue ?? getProductCustomFieldNumberText(currentRaw.minValue);
+    const maxValue = patch.maxValue ?? getProductCustomFieldNumberText(currentRaw.maxValue);
+    setOptionalNumberValue(nextRaw, 'minValue', minValue);
+    setOptionalNumberValue(nextRaw, 'maxValue', maxValue);
+    delete nextRaw.value;
+    return nextRaw;
+  }
+
+  if (field.fieldType === 'boolean') {
+    if (patch.value === 'true') {
+      nextRaw.value = true;
+    } else if (patch.value === 'false') {
+      nextRaw.value = false;
+    } else {
+      delete nextRaw.value;
+    }
+    delete nextRaw.minValue;
+    delete nextRaw.maxValue;
+    return nextRaw;
+  }
+
+  if (field.fieldType === 'number') {
+    setOptionalNumberValue(nextRaw, 'value', patch.value ?? '');
+  } else {
+    const value = (patch.value ?? '').trim();
+    if (value) {
+      nextRaw.value = value;
+    } else {
+      delete nextRaw.value;
+    }
+  }
+  delete nextRaw.minValue;
+  delete nextRaw.maxValue;
+  return nextRaw;
+}
+
+function shouldKeepProductCustomFieldValue(
+  field: KolamCustomField,
+  raw: Record<string, unknown>,
+) {
+  if (field.fieldType === 'range') {
+    return raw.minValue !== undefined || raw.maxValue !== undefined;
+  }
+  return raw.value !== undefined && raw.value !== null && raw.value !== '';
+}
+
+function findProductCustomFieldValueRow(rows: unknown[], field: KolamCustomField) {
+  return rows.find(row => productCustomFieldRowMatchesField(row, field));
+}
+
+function productCustomFieldRowMatchesField(row: unknown, field: KolamCustomField) {
+  const raw = getProductCustomFieldValueRecord(row);
+  const fieldRecord = getPlainRecord(raw.field);
+  const rawFieldId = getStringFromRecord(fieldRecord, '_id') || getStringFromRecord(fieldRecord, 'id');
+  return (
+    getProductCustomFieldRowId(row) === field.id ||
+    getProductCustomFieldRowId(row) === field.fieldKey ||
+    rawFieldId === field.id ||
+    getStringFromRecord(raw, 'fieldKey') === field.fieldKey
+  );
+}
+
+function getProductCustomFieldValueRecord(row?: unknown) {
+  return getPlainRecord(row);
+}
+
+function getProductCustomFieldRowId(row: unknown) {
+  const raw = getProductCustomFieldValueRecord(row);
+  const fieldRecord = getPlainRecord(raw.field);
+  return (
+    getStringFromRecord(raw, 'fieldId') ||
+    getStringFromRecord(fieldRecord, '_id') ||
+    getStringFromRecord(fieldRecord, 'id') ||
+    getStringFromRecord(raw, 'fieldKey')
+  );
+}
+
+function getProductCustomFieldRowLabel(row: unknown, index: number) {
+  const raw = getProductCustomFieldValueRecord(row);
+  const fieldRecord = getPlainRecord(raw.field);
+  return (
+    getStringFromRecord(fieldRecord, 'fieldLabel') ||
+    getStringFromRecord(raw, 'fieldLabel') ||
+    getStringFromRecord(raw, 'fieldKey') ||
+    `Field ${index + 1}`
+  );
+}
+
+function getProductCustomFieldRowValueLabel(row: unknown) {
+  const raw = getProductCustomFieldValueRecord(row);
+  const valueLabel = getStringFromRecord(raw, 'valueLabel');
+  if (valueLabel) {
+    return valueLabel;
+  }
+  if (raw.minValue !== undefined || raw.maxValue !== undefined) {
+    return [raw.minValue, raw.maxValue]
+      .map(value => getProductCustomFieldNumberText(value))
+      .filter(Boolean)
+      .join(' - ') || '-';
+  }
+  if (raw.value === true) {
+    return 'Ya';
+  }
+  if (raw.value === false) {
+    return 'Tidak';
+  }
+  return getProductCustomFieldStringValue(raw) || '-';
+}
+
+function getProductCustomFieldRowUnitLabel(row: unknown) {
+  const raw = getProductCustomFieldValueRecord(row);
+  const unitRecord = getPlainRecord(raw.unit);
+  return (
+    getStringFromRecord(raw, 'unitLabel') ||
+    getStringFromRecord(unitRecord, 'initial') ||
+    getStringFromRecord(unitRecord, 'name')
+  );
+}
+
+function getProductCustomFieldUnitId(raw: Record<string, unknown>) {
+  const unitRecord = getPlainRecord(raw.unit);
+  return (
+    getStringFromRecord(raw, 'unit') ||
+    getStringFromRecord(unitRecord, '_id') ||
+    getStringFromRecord(unitRecord, 'id')
+  );
+}
+
+function getPlainRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
+}
+
+function getStringFromRecord(record: Record<string, unknown>, key: string) {
+  const value = record[key];
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+function getProductCustomFieldStringValue(raw: Record<string, unknown>) {
+  const value = raw.value;
+  return value === undefined || value === null ? '' : String(value);
+}
+
+function getProductCustomFieldBooleanValue(raw: Record<string, unknown>) {
+  if (raw.value === true) {
+    return 'true';
+  }
+  if (raw.value === false) {
+    return 'false';
+  }
+  return '';
+}
+
+function getProductCustomFieldNumberText(value: unknown) {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return String(value);
+  }
+  if (typeof value === 'string') {
+    return value.trim();
+  }
+  return '';
+}
+
+function setOptionalNumberValue(
+  target: Record<string, unknown>,
+  key: string,
+  value: string,
+) {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    delete target[key];
+    return;
+  }
+
+  const parsed = Number(trimmed.replace(',', '.'));
+  if (Number.isFinite(parsed)) {
+    target[key] = parsed;
+  }
 }
 
 function ProductSeoEditPanel({
@@ -3709,6 +4371,46 @@ const styles = StyleSheet.create({
   externalLinkAddButton: {
     alignSelf: 'flex-start',
     minHeight: 34,
+  },
+  customFieldPickerPanel: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 10,
+    padding: 10,
+  },
+  customFieldFixedUnitBox: {
+    backgroundColor: V.colors.mutedSoft,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexBasis: 180,
+    flexGrow: 1,
+    justifyContent: 'center',
+    minHeight: 42,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  customFieldEditorRow: {
+    backgroundColor: V.colors.secondary,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 10,
+    padding: 10,
+  },
+  customFieldTextArea: {
+    minHeight: 88,
+    textAlignVertical: 'top',
+  },
+  customFieldUnknownPanel: {
+    backgroundColor: V.colors.mutedSoft,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 8,
+    padding: 10,
   },
   seoTextArea: {
     minHeight: 84,

@@ -11,6 +11,7 @@ import {
 } from '../services/kolam-category-local-cache';
 import { flattenAllCategories, type KolamCategory } from '../domain/kolam-category';
 import type { KolamBrand } from '../domain/kolam-brand';
+import type { KolamCustomField } from '../domain/kolam-custom-field';
 import type { KolamProductOption } from '../domain/kolam-product-option';
 import type { KolamSpecies } from '../domain/kolam-species';
 import {
@@ -44,6 +45,11 @@ import {
   type GetKolamProductsOptions,
   type KolamProductAttachedItemPayload,
 } from '../services/kolam-product-api';
+import { getKolamCustomFields } from '../services/kolam-custom-field-api';
+import {
+  readKolamCustomFieldListCache,
+  writeKolamCustomFieldListCache,
+} from '../services/kolam-custom-field-local-cache';
 import { getKolamProductOptions } from '../services/kolam-product-option-api';
 import {
   readKolamProductOptionListCache,
@@ -83,6 +89,7 @@ export interface KolamProductController {
   brands: KolamBrand[];
   breadcrumbPath: string;
   categories: KolamCategory[];
+  customFields: KolamCustomField[];
   dataSource: KolamProductDataSource;
   error: string | null;
   filters: KolamProductListFilters;
@@ -135,6 +142,7 @@ export function useKolamProductController(
   const [products, setProducts] = useState<KolamProduct[]>([]);
   const [brands, setBrands] = useState<KolamBrand[]>([]);
   const [categories, setCategories] = useState<KolamCategory[]>([]);
+  const [customFields, setCustomFields] = useState<KolamCustomField[]>([]);
   const [productOptions, setProductOptions] = useState<KolamProductOption[]>([]);
   const [species, setSpecies] = useState<KolamSpecies[]>([]);
   const [tags, setTags] = useState<KolamTag[]>([]);
@@ -166,6 +174,11 @@ export function useKolamProductController(
       setCategories(flattenAllCategories(cachedCategories.value));
     }
 
+    const cachedCustomFields = await readKolamCustomFieldListCache();
+    if (cachedCustomFields?.value.length) {
+      setCustomFields(cachedCustomFields.value);
+    }
+
     const cachedProducts = await readKolamProductOptionListCache();
     if (cachedProducts?.value.length) {
       setProductOptions(cachedProducts.value);
@@ -179,6 +192,7 @@ export function useKolamProductController(
     const [
       brandResult,
       categoryResult,
+      customFieldResult,
       tagResult,
       unitResult,
       productOptionResult,
@@ -186,6 +200,7 @@ export function useKolamProductController(
     ] = await Promise.allSettled([
       getKolamBrands(),
       getKolamCategories(),
+      getKolamCustomFields(),
       getKolamTags(),
       getKolamUnits(),
       getKolamProductOptions(),
@@ -200,6 +215,11 @@ export function useKolamProductController(
     if (categoryResult.status === 'fulfilled') {
       await writeKolamCategoryListCache(categoryResult.value);
       setCategories(flattenAllCategories(categoryResult.value));
+    }
+
+    if (customFieldResult.status === 'fulfilled') {
+      await writeKolamCustomFieldListCache(customFieldResult.value);
+      setCustomFields(customFieldResult.value);
     }
 
     if (tagResult.status === 'fulfilled') {
@@ -593,6 +613,7 @@ export function useKolamProductController(
     error,
     filters,
     form,
+    customFields,
     isEditable: mode === 'edit' || mode === 'new',
     loading,
     mode,
