@@ -43,6 +43,7 @@ import { KolamBarcodePrintDialog } from './kolam-barcode-print-dialog';
 import { KolamButton } from './kolam-button';
 import { KolamCategoryLabel } from './kolam-category-label';
 import { KolamCatalogTranslationsEditor } from './kolam-catalog-translations-editor';
+import { KolamChevronIcon } from './kolam-chevron-icon';
 import { KolamCommercialPolicyEditor } from './kolam-commercial-policy-editor';
 import {
   KolamDropdownSelect,
@@ -247,6 +248,8 @@ export function KolamProductSurface({
     setActiveFilterPanel(null);
     setFilterPanelQuery('');
   };
+  const pageCount = Math.max(1, controller.pagination.totalPages);
+  const safePage = Math.min(Math.max(controller.pagination.page, 1), pageCount);
   const resetListFilters = () => {
     controller.onChangeFilters({
       search: '',
@@ -456,16 +459,33 @@ export function KolamProductSurface({
             pageSize={controller.pagination.limit}
             total={controller.pagination.total}
           >
-            <KolamButton
-              disabled={controller.pagination.page <= 1}
-              label="Sebelumnya"
-              onPress={() => controller.onPageChange(controller.pagination.page - 1)}
-            />
-            <KolamButton
-              disabled={controller.pagination.page >= controller.pagination.totalPages}
-              label="Berikutnya"
-              onPress={() => controller.onPageChange(controller.pagination.page + 1)}
-            />
+            {pageCount > 1 ? (
+              <View style={styles.paginationBar}>
+                <KolamButton
+                  disabled={safePage <= 1}
+                  label="Sebelumnya"
+                  onPress={() =>
+                    controller.onPageChange(Math.max(1, safePage - 1))
+                  }
+                />
+                <KolamCopyStack
+                  items={[
+                    {
+                      id: 'page',
+                      text: `${safePage} / ${pageCount}`,
+                      style: styles.pageLabel,
+                    },
+                  ]}
+                />
+                <KolamButton
+                  disabled={safePage >= pageCount}
+                  label="Berikutnya"
+                  onPress={() =>
+                    controller.onPageChange(Math.min(pageCount, safePage + 1))
+                  }
+                />
+              </View>
+            ) : null}
           </KolamTableFooterControls>
         </View>
       </View>
@@ -588,8 +608,15 @@ function ProductFilterTrigger({
 }) {
   return (
     <KolamButton
+      icon={
+        <KolamChevronIcon
+          color={active ? V.colors.primaryFg : V.colors.success}
+          direction="down"
+          size="menu-sm"
+        />
+      }
       intent={active ? 'primary' : 'secondary'}
-      label={`${label} v`}
+      label={label}
       onPress={onPress}
       style={[styles.filterTrigger, active && styles.filterTriggerActive]}
       textStyle={[styles.filterTriggerText, active && styles.filterTriggerTextActive]}
@@ -6944,6 +6971,18 @@ const styles = StyleSheet.create({
   },
   footerWrap: {
     marginTop: 14,
+  },
+  paginationBar: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'flex-end',
+  },
+  pageLabel: {
+    color: V.colors.fg,
+    fontSize: 14,
+    fontWeight: '800',
+    lineHeight: 20,
   },
   detailHeaderRow: {
     alignItems: 'flex-start',
