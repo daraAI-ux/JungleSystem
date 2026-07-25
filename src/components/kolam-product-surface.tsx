@@ -821,7 +821,7 @@ function ProductRow({
           />
         )}
       </View>
-      <Text selectable style={styles.skuCell}>
+      <Text selectable style={isRawCatalog ? styles.rawCodeCell : styles.skuCell}>
         {isRawCatalog ? product.productCode || '-' : product.sku || product.productCode || '-'}
       </Text>
       <View style={styles.brandCell}>
@@ -855,13 +855,13 @@ function ProductRow({
       </View>
       {isRawCatalog ? (
         <>
-          <View style={styles.infoCell}>
+          <View style={styles.rawVariantCell}>
             <Text style={styles.mutedText}>
               {product.hasVariants ? 'Produk varian' : 'Produk standar'}
             </Text>
           </View>
-          <Text style={styles.stockCell}>{formatRawListStock(product)}</Text>
-          <View style={styles.infoCell}>
+          <Text style={styles.rawStockCell}>{formatRawListStock(product)}</Text>
+          <View style={styles.rawStatusCell}>
             <KolamBadge
               intent={product.sellable ? 'success' : 'secondary'}
               label={product.sellable ? 'Dapat dijual' : 'Tidak dijual'}
@@ -6811,6 +6811,13 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     width: 86,
   },
+  rawCodeCell: {
+    color: V.colors.fg,
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 18,
+    width: 118,
+  },
   brandCell: {
     width: 130,
   },
@@ -6861,6 +6868,22 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     textAlign: 'right',
     width: 86,
+  },
+  rawVariantCell: {
+    justifyContent: 'center',
+    width: 122,
+  },
+  rawStockCell: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '700',
+    lineHeight: 20,
+    textAlign: 'right',
+    width: 104,
+  },
+  rawStatusCell: {
+    alignItems: 'flex-end',
+    width: 118,
   },
   syncCell: {
     gap: 4,
