@@ -10,11 +10,13 @@ import WebView from 'react-native-webview';
 const KolamWebView = WebView as unknown as React.ComponentType<any>;
 
 export function KolamMediaPlayer({
+  autoPlay = false,
   kind,
   style,
   title,
   uri,
 }: {
+  autoPlay?: boolean;
   kind: 'audio' | 'video';
   style?: StyleProp<ViewStyle>;
   title: string;
@@ -22,8 +24,8 @@ export function KolamMediaPlayer({
 }) {
   const sourceUri = normalizeMediaUrl(uri ?? '');
   const html = React.useMemo(
-    () => createMediaPlayerHtml({ kind, title, uri: sourceUri }),
-    [kind, sourceUri, title],
+    () => createMediaPlayerHtml({ autoPlay, kind, title, uri: sourceUri }),
+    [autoPlay, kind, sourceUri, title],
   );
 
   if (!sourceUri) {
@@ -45,10 +47,12 @@ export function KolamMediaPlayer({
 }
 
 function createMediaPlayerHtml({
+  autoPlay,
   kind,
   title,
   uri,
 }: {
+  autoPlay: boolean;
   kind: 'audio' | 'video';
   title: string;
   uri: string;
@@ -57,14 +61,16 @@ function createMediaPlayerHtml({
   const safeUri = escapeHtml(uri);
 
   return kind === 'video'
-    ? createVideoPlayerHtml({ safeTitle, safeUri })
-    : createAudioPlayerHtml({ safeTitle, safeUri });
+    ? createVideoPlayerHtml({ autoPlay, safeTitle, safeUri })
+    : createAudioPlayerHtml({ autoPlay, safeTitle, safeUri });
 }
 
 function createVideoPlayerHtml({
+  autoPlay,
   safeTitle,
   safeUri,
 }: {
+  autoPlay: boolean;
   safeTitle: string;
   safeUri: string;
 }) {
@@ -79,15 +85,19 @@ function createVideoPlayerHtml({
   </style>
 </head>
 <body>
-  <video controls preload="metadata" title="${safeTitle}"><source src="${safeUri}"></video>
+  <video ${
+    autoPlay ? 'autoplay' : ''
+  } controls preload="metadata" title="${safeTitle}"><source src="${safeUri}"></video>
 </body>
 </html>`;
 }
 
 function createAudioPlayerHtml({
+  autoPlay,
   safeTitle,
   safeUri,
 }: {
+  autoPlay: boolean;
   safeTitle: string;
   safeUri: string;
 }) {
@@ -186,6 +196,11 @@ function createAudioPlayerHtml({
     audio.addEventListener('timeupdate', update);
     audio.addEventListener('play', update);
     audio.addEventListener('pause', update);
+    if (${autoPlay ? 'true' : 'false'}) {
+      const start = () => audio.play().catch(() => {});
+      audio.addEventListener('canplay', start, { once: true });
+      setTimeout(start, 50);
+    }
     update();
   </script>
 </body>

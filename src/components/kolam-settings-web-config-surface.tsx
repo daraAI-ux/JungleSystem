@@ -42,6 +42,11 @@ import type {
   WebContentLauncherItem,
 } from './kolam-settings-panel-controller';
 import type { KolamKpiWeeklyAnnouncePreview } from '../services/kolam-api';
+import { getKolamFileUrl } from '../lib/file-url';
+import { KolamMediaPlayer } from './kolam-media-player';
+
+const DEFAULT_NOTIFICATION_BEEP_URI =
+  'data:audio/wav;base64,UklGRqQMAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YYAMAAAAAOEdCy4UKUERhPFs2H/R6d8P/Y0bZy1qKvUTWPQU2jjR1N0g+h4ZlSyVK5UWN/fi2yDR4ts395UWlSuVLB4ZIPrU3TjRFNpY9PUTaipnLY0bD/3p33/RbNiE8UERFCkLLuEdAAAf4vXR7Na/7nwOlCeBLhcg8QJz5JnSltUL7KgL7CXILiwi4AXi5mvTa9Rr6ckIHiTgLh4kyQhr6WvUa9Pi5uAFLCLILuwlqAsL7JbVmdJz5PECFyCBLpQnfA6/7uzW9dEf4gAA4R0LLhQpQRGE8WzYf9Hp3w/9jRtnLWoq9RNY9BTaONHU3SD6HhmVLJUrlRY39+LbINHi2zf3lRaVK5UsHhkg+tTdONEU2lj09RNqKmctjRsP/enff9Fs2ITxQREUKQsu4R0AAB/i9dHs1r/ufA6UJ4EuFyDxAnPkmdKW1QvsqAvsJcguLCLgBeLma9Nr1GvpyQgeJOAuHiTJCGvpa9Rr0+Lm4AUsIsgu7CWoCwvsltWZ0nPk8QIXIIEulCd8Dr/u7Nb10R/iAADhHQsuFClBEYTxbNh/0enfD/2NG2ctair1E1j0FNo40dTdIPoeGZUslSuVFjf34tsg0eLbN/eVFpUrlSweGSD61N040RTaWPT1E2oqZy2NGw/96d9/0WzYhPFBERQpCy7hHQAAH+L10ezWv+58DpQngS4XIPECc+SZ0pbVC+yoC+wlyC4sIuAF4uZr02vUa+nJCB4k4C4eJMkIa+lr1GvT4ubgBSwiyC7sJagLC+yW1ZnSc+TxAhcggS6UJ3wOv+7s1vXRH+IAAOEdCy4UKUERhPFs2H/R6d8P/Y0bZy1qKvUTWPQU2jjR1N0g+h4ZlSyVK5UWN/fi2yDR4ts395UWlSuVLB4ZIPrU3TjRFNpY9PUTaipnLY0bD/3p33/RbNiE8UERFCkLLuEdAAAf4vXR7Na/7nwOlCeBLhcg8QJz5JnSltUL7KgL7CXILiwi4AXi5mvTa9Rr6ckIHiTgLh4kyQhr6WvUa9Pi5uAFLCLILuwlqAsL7JbVmdJz5PECFyCBLpQnfA6/7uzW9dEf4g==';
 
 type WebSettingDraft = {
   versionKolam: string;
@@ -542,6 +547,37 @@ export function KolamSettingsWebConfigSurface({
       value: draft.salesNotificationSound,
     },
   ];
+  const [previewNotificationSound, setPreviewNotificationSound] =
+    React.useState<{
+      id: string;
+      title: string;
+      uri: string;
+    } | null>(null);
+  const getNotificationSoundPreviewUri = (value: string | null | undefined) => {
+    const trimmed = value?.trim() ?? '';
+
+    return trimmed
+      ? getKolamFileUrl(trimmed) ?? DEFAULT_NOTIFICATION_BEEP_URI
+      : DEFAULT_NOTIFICATION_BEEP_URI;
+  };
+  const getNotificationSoundFileName = (value: string | null | undefined) => {
+    const trimmed = value?.trim() ?? '';
+
+    if (!trimmed) {
+      return 'Default sistem';
+    }
+
+    return trimmed.split(/[\\/]/).pop() || trimmed;
+  };
+  const playNotificationSound = (
+    item: (typeof notificationSoundItems)[number],
+  ) => {
+    setPreviewNotificationSound({
+      id: `${item.id}:${item.value ?? 'default'}:${Date.now()}`,
+      title: item.label,
+      uri: getNotificationSoundPreviewUri(item.value),
+    });
+  };
   const roomSummary = operationalRooms.length
     ? operationalRooms
         .slice(0, 5)
@@ -572,12 +608,17 @@ export function KolamSettingsWebConfigSurface({
             },
             {
               id: `${item.id}-path`,
-              text: item.value || '-',
+              text: getNotificationSoundFileName(item.value),
               style: styles.notificationSoundPath,
             },
           ]}
         />
         <View style={styles.notificationSoundActions}>
+          <KolamActionControlButton
+            label="Tes suara"
+            disabled={busy}
+            onPress={() => playNotificationSound(item)}
+          />
           <KolamActionControlButton
             label="Unggah"
             loading={status === 'uploading'}
@@ -2439,6 +2480,18 @@ export function KolamSettingsWebConfigSurface({
             {renderNotificationSoundRow(notificationSoundItems[3])}
             {renderNotificationSoundRow(notificationSoundItems[4])}
           </View>
+          {previewNotificationSound ? (
+            <View style={styles.notificationSoundPlayer}>
+              <KolamMediaPlayer
+                key={previewNotificationSound.id}
+                autoPlay
+                kind="audio"
+                style={styles.notificationSoundPlayerFrame}
+                title={previewNotificationSound.title}
+                uri={previewNotificationSound.uri}
+              />
+            </View>
+          ) : null}
           <KolamToggleRow
             label="Firebase"
             description="Aktifkan Firebase Admin untuk notifikasi."
@@ -4435,6 +4488,13 @@ const styles = StyleSheet.create({
   notificationSoundPath: {
     color: '#6b7280',
     fontSize: 12,
+  },
+  notificationSoundPlayer: {
+    height: 52,
+  },
+  notificationSoundPlayerFrame: {
+    height: 52,
+    width: '100%',
   },
   notificationSoundRow: {
     alignItems: 'center',

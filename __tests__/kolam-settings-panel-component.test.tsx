@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, TextInput } from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
+import { KolamMediaPlayer } from '../src/components/kolam-media-player';
 import { KolamSettingsPanel } from '../src/components/kolam-settings-panel';
 import {
   useKolamSettingsPanelController,
@@ -9,6 +10,17 @@ import {
 import { getCurrentUser } from '../src/services/auth-api';
 import { getSyncActivityEntries } from '../src/domain/sync-activity';
 import { seedUnifiedDataset } from '../src/services/unified-data';
+
+jest.mock('react-native-webview', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+
+  return {
+    __esModule: true,
+    default: (props: Record<string, unknown>) =>
+      React.createElement(View, props),
+  };
+});
 
 jest.mock('../src/services/auth-api', () => {
   const actual = jest.requireActual('../src/services/auth-api');
@@ -247,6 +259,7 @@ describe('KolamSettingsPanel', () => {
         'Firebase',
         'Server SMTP',
         'OTP masuk staf',
+        'Tes suara',
         'Simpan',
       ]),
     );
@@ -281,6 +294,20 @@ describe('KolamSettingsPanel', () => {
       .find(node => node.props.placeholder === '10');
     expect(StyleSheet.flatten(smtpHostInput?.props.style).width).toBe(460);
     expect(StyleSheet.flatten(otpInput?.props.style).width).toBe(460);
+
+    await ReactTestRenderer.act(async () => {
+      renderer!.root.findAllByProps({ label: 'Tes suara' })[0].props.onPress();
+    });
+
+    const previewPlayer = renderer!.root.findByType(KolamMediaPlayer);
+    expect(previewPlayer.props).toEqual(
+      expect.objectContaining({
+        autoPlay: true,
+        kind: 'audio',
+        title: 'Suara notifikasi',
+      }),
+    );
+    expect(previewPlayer.props.uri).toMatch(/^data:audio\/wav;base64,/);
     expect(text).not.toEqual(
       expect.arrayContaining([
         'Tagline Perusahaan',
