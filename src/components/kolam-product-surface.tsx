@@ -1140,6 +1140,204 @@ function ProductEditFormPage({
   const hasVariants = form.hasVariants || form.variants.length > 0;
   const isRawForm = controller.catalogKind === 'raw';
 
+  if (isRawForm) {
+    return (
+      <ScrollView contentContainerStyle={styles.root}>
+        <View style={styles.detailHeaderRow}>
+          <View style={styles.headingCopy}>
+            <Text style={styles.eyebrow}>{shellLabels.eyebrow}</Text>
+            <Text style={styles.title}>{formTitle}</Text>
+          </View>
+          <View style={styles.detailHeaderActions}>
+            <KolamButton disabled={disabled} label="Batal" onPress={onCancel} />
+            <KolamButton
+              disabled={disabled}
+              intent="primary"
+              label={disabled ? 'Menyimpan...' : saveLabel}
+              onPress={() => {
+                void controller.onSave();
+              }}
+            />
+          </View>
+        </View>
+
+        {controller.error ? <Text style={styles.error}>{controller.error}</Text> : null}
+
+        <KolamNativeFormSection section={{ description: '', id: 'catalog-translations', title: formTitle }}>
+          <View style={settingsWebFormStyles.settingsWebFormFields}>
+            <View style={settingsWebFormStyles.settingsWebFormFieldsGrid}>
+              <ProductEditSection
+                description="Thumbnail, foto, dan video bahan baku."
+                title="Media"
+              >
+                <ProductMediaEditPanel
+                  controller={controller}
+                  onDelete={setDeleteMediaTarget}
+                />
+              </ProductEditSection>
+
+              <ProductEditSection
+                description="Pilih profil spesifikasi atau field manual untuk bahan baku ini."
+                title="Field Kustom"
+              >
+                <ProductCustomFieldEditorPanel controller={controller} />
+              </ProductEditSection>
+
+              <ProductEditSection
+                description="Kode identitas bahan baku. Nama dan deskripsi diatur per bahasa di tab Konten Marketplace."
+                title="Detail bahan baku"
+              >
+                <View style={styles.twoColumnGrid}>
+                  <ProductFieldShell label="Kode Produk" required>
+                    <KolamFormTextField
+                      editable={!disabled}
+                      onChangeText={productCode => controller.onChangeForm({ productCode })}
+                      placeholder="Kode produk"
+                      style={settingsWebFormStyles.settingsWebFormFieldValue}
+                      value={form.productCode}
+                    />
+                  </ProductFieldShell>
+                </View>
+              </ProductEditSection>
+
+              <ProductEditSection
+                description="Terjemahan katalog untuk webstore dan marketplace."
+                title="Konten marketplace"
+              >
+                <KolamCatalogTranslationsEditor
+                  editable={!disabled}
+                  kind="product"
+                  onChange={translations => controller.onChangeForm({ translations })}
+                  primaryProductLocale={{
+                    name: form.name,
+                    shortDescription: form.shortDescription,
+                    description: form.description,
+                    onChange: patch => controller.onChangeForm(patch),
+                  }}
+                  translations={form.translations}
+                />
+              </ProductEditSection>
+
+              <ProductEditSection
+                description="Komisi transaksi bahan baku."
+                title="Komisi"
+              >
+                <KolamCommercialPolicyEditor
+                  disabled={disabled}
+                  memberPointsDisabled
+                  memberPointsHint="Poin anggota bahan baku diatur pada fase harga/penjualan."
+                  onChange={value =>
+                    controller.onChangeForm({
+                      commissionEnabled: value.commissionEnabled,
+                      commissionType: value.commissionType,
+                      commissionValue: value.commissionValue,
+                      memberPointsEnabled: value.memberPointsEnabled,
+                      memberPoints: value.memberPoints,
+                    })
+                  }
+                  value={{
+                    commissionEnabled: form.commissionEnabled,
+                    commissionType: form.commissionType,
+                    commissionValue: form.commissionValue,
+                    memberPointsEnabled: form.memberPointsEnabled,
+                    memberPoints: form.memberPoints,
+                  }}
+                />
+              </ProductEditSection>
+
+              <ProductEditSection
+                description="Pilih satu atau lebih kategori yang relevan."
+                title="Kategori Bahan Baku"
+              >
+                <ProductMultiSelectField
+                  disabled={disabled}
+                  emptyText="Belum ada kategori dipilih."
+                  label="Kategori"
+                  onAdd={categoryId => controller.onChangeForm({ categoryIds: [...form.categoryIds, categoryId] })}
+                  onRemove={categoryId => controller.onChangeForm({ categoryIds: form.categoryIds.filter(id => id !== categoryId) })}
+                  options={categoryOptions.map(category => ({ id: category.id, label: `${'  '.repeat(category.level)}${category.name}` }))}
+                  selected={selectedCategories.map(category => ({ id: category.id, label: category.name, tone: 'category' as const }))}
+                  triggerLabel="Tambah kategori"
+                />
+              </ProductEditSection>
+
+              <ProductEditSection
+                description="Hubungkan bahan baku dengan satu atau lebih merek."
+                title="Merek"
+              >
+                <ProductMultiSelectField
+                  disabled={disabled}
+                  emptyText="Belum ada merek dipilih."
+                  label="Merek"
+                  onAdd={brandId => controller.onChangeForm({ brandIds: [...form.brandIds, brandId] })}
+                  onRemove={brandId => controller.onChangeForm({ brandIds: form.brandIds.filter(id => id !== brandId) })}
+                  options={brandOptions.map(brand => ({ id: brand.id, label: brand.name }))}
+                  selected={selectedBrands.map(brand => ({ id: brand.id, label: brand.name }))}
+                  triggerLabel="Tambah merek"
+                />
+              </ProductEditSection>
+
+              <ProductEditSection
+                description="Satuan pengukuran dan penghitungan stok bahan baku."
+                title="Satuan"
+              >
+                <ProductFieldShell label="Satuan" required>
+                  <KolamDropdownSelect
+                    label="Satuan"
+                    menuStyle={styles.longDropdownMenu}
+                    onChange={unitId => controller.onChangeForm({ unitId })}
+                    options={[
+                      { label: 'Pilih satuan', value: '' },
+                      ...controller.units.map(unit => ({ label: unit.initial ? `${unit.name} (${unit.initial})` : unit.name, value: unit.id })),
+                    ]}
+                    searchable
+                    searchPlaceholder="Cari satuan..."
+                    showLabelInTrigger={false}
+                    value={form.unitId}
+                  />
+                </ProductFieldShell>
+              </ProductEditSection>
+
+              <ProductEditSection
+                description="Metode pengiriman yang tersedia untuk bahan baku ini."
+                title="Metode Pengiriman"
+              >
+                <ProductShippingMethodsPanel controller={controller} />
+              </ProductEditSection>
+            </View>
+            <View style={styles.formActions}>
+              <KolamButton disabled={disabled} label="Batal" onPress={onCancel} />
+              <KolamButton
+                disabled={disabled}
+                intent="primary"
+                label={disabled ? 'Menyimpan...' : saveLabel}
+                onPress={() => {
+                  void controller.onSave();
+                }}
+              />
+            </View>
+          </View>
+        </KolamNativeFormSection>
+        <KolamDeleteConfirmDialog
+          itemLabel={deleteMediaTarget?.label}
+          itemType="media bahan baku"
+          onCancel={() => setDeleteMediaTarget(null)}
+          onConfirm={() => {
+            if (!deleteMediaTarget) {
+              return;
+            }
+            void createProductDeleteMediaAction(controller, deleteMediaTarget).then(ok => {
+              if (ok) {
+                setDeleteMediaTarget(null);
+              }
+            });
+          }}
+          visible={Boolean(deleteMediaTarget)}
+        />
+      </ScrollView>
+    );
+  }
+
   return (
     <ScrollView contentContainerStyle={styles.root}>
       <View style={styles.detailHeaderRow}>
