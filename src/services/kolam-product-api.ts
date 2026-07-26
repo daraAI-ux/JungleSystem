@@ -347,6 +347,10 @@ export async function linkKolamProductPackings(
   product: KolamProduct,
   form: KolamProductFormState,
 ): Promise<KolamProduct> {
+  if (form.productType === 'raw') {
+    return product;
+  }
+
   const packings = createKolamProductPackingLinkPayload(form, product);
   if (!packings.length && !product.packings.length) {
     return product;

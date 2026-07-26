@@ -1443,12 +1443,6 @@ function ProductEditFormPage({
                 />
               </ProductEditSection>
 
-              <ProductEditSection
-                description="Material packing default untuk mengirim 1 unit bahan baku."
-                title="Bahan Kemasan"
-              >
-                <ProductPackingLinksPanel controller={controller} />
-              </ProductEditSection>
             </View>
             <View style={styles.formActions}>
               <KolamButton disabled={disabled} label="Batal" onPress={onCancel} />
