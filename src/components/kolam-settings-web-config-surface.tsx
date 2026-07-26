@@ -502,6 +502,7 @@ export function KolamSettingsWebConfigSurface({
   const showSyncSettings = activeTabId === 'sync';
   const showKpiSettings = activeTabId === 'kpi';
   const generalFormSections = sections.filter(section => section.id === 'logo');
+  const generalFieldWidth = 300;
   const chatPluginEnabled = draft.pluginControls.chat;
   const daraPluginEnabled = draft.pluginControls.dara;
   const kpiPluginEnabled = draft.pluginControls.kpi;
@@ -559,8 +560,42 @@ export function KolamSettingsWebConfigSurface({
       {showGeneralSettings ? (
         <>
           <KolamTextFieldRow
-            label={fields[0].label}
-            description={fields[0].description}
+            fieldWidth={generalFieldWidth}
+            label="Kolam Version"
+            description="Disimpan melalui PUT /websetting/version untuk app kolam."
+            value={draft.versionKolam}
+            onChangeText={value => setDraftField('versionKolam', value)}
+            placeholder="1.0.0"
+          />
+          <KolamTextFieldRow
+            fieldWidth={generalFieldWidth}
+            label="Enclonura Version"
+            description="Disimpan melalui endpoint version app enclonura."
+            value={draft.versionEnclonura}
+            onChangeText={value => setDraftField('versionEnclonura', value)}
+            placeholder="1.0.0"
+          />
+          <KolamTextFieldRow
+            fieldWidth={generalFieldWidth}
+            label="POS Version"
+            description="Disimpan melalui endpoint version app pos."
+            value={draft.versionPos}
+            onChangeText={value => setDraftField('versionPos', value)}
+            placeholder="1.0.0"
+          />
+          <KolamTextFieldRow
+            fieldWidth={generalFieldWidth}
+            label="Marketplace Version"
+            description="Disimpan melalui endpoint version app marketplace."
+            value={draft.versionMarketplace}
+            onChangeText={value => setDraftField('versionMarketplace', value)}
+            placeholder="1.0.0"
+          />
+          <KolamSettingsWebFormSections sections={generalFormSections} />
+          <KolamTextFieldRow
+            fieldWidth={generalFieldWidth}
+            label="Company Name"
+            description="Company name and storefront branding."
             value={draft.companyName || webTitle}
             onChangeText={value => {
               if (disabled) {
@@ -572,6 +607,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="Storefront title"
           />
           <KolamTextFieldRow
+            fieldWidth={generalFieldWidth}
             label="Company Tagline"
             description="Tagline branding yang tampil di storefront."
             value={draft.companyTagline}
@@ -579,34 +615,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="Your trusted pet store"
           />
           <KolamTextFieldRow
-            label="Kolam Version"
-            description="Disimpan melalui PUT /websetting/version untuk app kolam."
-            value={draft.versionKolam}
-            onChangeText={value => setDraftField('versionKolam', value)}
-            placeholder="1.0.0"
-          />
-          <KolamTextFieldRow
-            label="Enclonura Version"
-            description="Disimpan melalui endpoint version app enclonura."
-            value={draft.versionEnclonura}
-            onChangeText={value => setDraftField('versionEnclonura', value)}
-            placeholder="1.0.0"
-          />
-          <KolamTextFieldRow
-            label="POS Version"
-            description="Disimpan melalui endpoint version app pos."
-            value={draft.versionPos}
-            onChangeText={value => setDraftField('versionPos', value)}
-            placeholder="1.0.0"
-          />
-          <KolamTextFieldRow
-            label="Marketplace Version"
-            description="Disimpan melalui endpoint version app marketplace."
-            value={draft.versionMarketplace}
-            onChangeText={value => setDraftField('versionMarketplace', value)}
-            placeholder="1.0.0"
-          />
-          <KolamTextFieldRow
+            fieldWidth={generalFieldWidth}
             label="Phone"
             description="Nomor kontak customer."
             value={draft.phone}
@@ -614,6 +623,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="+62 812-3456-7890"
           />
           <KolamTextFieldRow
+            fieldWidth={generalFieldWidth}
             label="Email"
             description="Email kontak customer."
             value={draft.email}
@@ -621,6 +631,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="info@duniaanura.com"
           />
           <KolamTextFieldRow
+            fieldWidth={generalFieldWidth}
             label="Address"
             description="Alamat bisnis utama."
             value={draft.address}
@@ -716,6 +727,7 @@ export function KolamSettingsWebConfigSurface({
             </>
           ) : null}
           <KolamTextFieldRow
+            fieldWidth={generalFieldWidth}
             label="Facebook"
             description="Link Facebook storefront."
             value={draft.facebook}
@@ -723,6 +735,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="https://facebook.com/..."
           />
           <KolamTextFieldRow
+            fieldWidth={generalFieldWidth}
             label="Instagram"
             description="Link Instagram storefront."
             value={draft.instagram}
@@ -730,6 +743,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="https://instagram.com/..."
           />
           <KolamTextFieldRow
+            fieldWidth={generalFieldWidth}
             label="Twitter"
             description="Link Twitter/X storefront."
             value={draft.twitter}
@@ -737,6 +751,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="https://twitter.com/..."
           />
           <KolamTextFieldRow
+            fieldWidth={generalFieldWidth}
             label="YouTube"
             description="Link YouTube storefront."
             value={draft.youtube}
@@ -744,6 +759,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="https://youtube.com/..."
           />
           <KolamTextFieldRow
+            fieldWidth={generalFieldWidth}
             label="TikTok"
             description="Link TikTok storefront."
             value={draft.tiktok}
@@ -763,6 +779,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamTextFieldRow
+            fieldWidth={generalFieldWidth}
             label="Staff redirect URL"
             description="URL redirect jika staff desktop-only aktif."
             value={draft.staffDesktopOnlyRedirectUrl}
@@ -808,6 +825,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamTextFieldRow
+            fieldWidth={generalFieldWidth}
             label="Allowed MAC addresses"
             description="Pisahkan dengan koma atau baris baru."
             value={draft.kolamMacAccessAllowedMacAddresses}
@@ -2715,9 +2733,6 @@ export function KolamSettingsWebConfigSurface({
             />
           )}
         </>
-      ) : null}
-      {showGeneralSettings ? (
-        <KolamSettingsWebFormSections sections={generalFormSections} />
       ) : null}
     </KolamContentFrame>
   );

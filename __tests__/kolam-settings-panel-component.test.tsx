@@ -151,6 +151,7 @@ describe('KolamSettingsPanel', () => {
         'Umum',
         'Kolam Version',
         'Marketplace Version',
+        'Company Name',
         'Company Tagline',
         'Phone',
         'Email',
@@ -161,6 +162,30 @@ describe('KolamSettingsPanel', () => {
         'Allowed MAC addresses',
         'Logo',
       ]),
+    );
+    expect(text.indexOf('Kolam Version')).toBeLessThan(
+      text.indexOf('Enclonura Version'),
+    );
+    expect(text.indexOf('Enclonura Version')).toBeLessThan(
+      text.indexOf('POS Version'),
+    );
+    expect(text.indexOf('POS Version')).toBeLessThan(
+      text.indexOf('Marketplace Version'),
+    );
+    expect(text.indexOf('Marketplace Version')).toBeLessThan(
+      text.indexOf('Logo'),
+    );
+    expect(text.indexOf('Logo')).toBeLessThan(text.indexOf('Company Name'));
+    expect(text.indexOf('Company Name')).toBeLessThan(
+      text.indexOf('Company Tagline'),
+    );
+    expect(text.indexOf('Company Tagline')).toBeLessThan(text.indexOf('Phone'));
+    expect(text.indexOf('Address')).toBeLessThan(text.indexOf('Facebook'));
+    expect(text.indexOf('TikTok')).toBeLessThan(
+      text.indexOf('Staff desktop only'),
+    );
+    expect(text.indexOf('Staff redirect URL')).toBeLessThan(
+      text.indexOf('MAC access'),
     );
     expect(text).not.toEqual(
       expect.arrayContaining([
