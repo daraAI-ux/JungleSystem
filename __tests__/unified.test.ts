@@ -2,7 +2,9 @@
 import {appConfig} from '../src/config/app';
 import {
   amSurfaces,
+  filterEnabledPluginRegistry,
   filterPluginRegistry,
+  getPluginRouteEntryByRoute,
   getAmSurfaceById,
   getKolamSurfaceById,
   getPluginIntegrationStats,
@@ -99,6 +101,26 @@ describe('unified application registry', () => {
         integrationStatus: 'version-mismatch',
       }),
     );
+  });
+
+  it('filters Plugin Hub and route index from live Settings plugin config', () => {
+    const config = {
+      chat: {enabled: false},
+      taskManager: {enabled: false},
+      layanan: {enabled: true},
+      dara: {enabled: true},
+    };
+
+    expect(
+      filterEnabledPluginRegistry(pluginRegistry, config).map(plugin => plugin.id),
+    ).not.toEqual(expect.arrayContaining(['chat', 'task-manager']));
+    expect(getPluginRouteIndex(pluginRegistry, config)).not.toContainEqual(
+      expect.objectContaining({route: '/team-chat'}),
+    );
+    expect(getPluginRouteEntryByRoute('/team-chat', pluginRegistry, config)).toBeNull();
+    expect(
+      getPluginRouteEntryByRoute('/campaign/dara-seo/approvals', pluginRegistry, config),
+    ).toEqual(expect.objectContaining({pluginId: 'dara'}));
   });
 
   it('filters plugins by route package capability and integration status', () => {

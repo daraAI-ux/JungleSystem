@@ -26,6 +26,7 @@ export function KolamSettingsSurfaceBody({
         onSave={() => {
           void controller.saveWebSetting();
         }}
+        onPluginControlChange={controller.setWebSettingPluginControl}
         onWebTitleChange={controller.setWebTitle}
         draft={controller.webSettingDraft}
         saveMessage={controller.webSettingMessage}

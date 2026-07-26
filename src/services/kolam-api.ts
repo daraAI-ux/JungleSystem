@@ -190,6 +190,27 @@ export type KolamAppKey =
   | 'pos-da'
   | 'marketplace';
 
+export type KolamPluginConfigKey =
+  | 'enclosure'
+  | 'taskManager'
+  | 'layanan'
+  | 'freyer'
+  | 'kpi'
+  | 'chat'
+  | 'dara'
+  | 'proyek';
+
+export type KolamPluginSettings = Partial<
+  Record<
+    KolamPluginConfigKey,
+    {
+      enabled?: boolean;
+      storeEnabled?: boolean;
+      installedVersion?: string;
+    }
+  >
+>;
+
 export interface KolamWebSetting {
   _id?: string;
   version?: string;
@@ -228,6 +249,7 @@ export interface KolamWebSetting {
     enabled?: boolean;
     redirectUrl?: string;
   };
+  kolamPlugins?: KolamPluginSettings;
   updatedAt?: string;
   createdAt?: string;
   [key: string]: unknown;
@@ -259,6 +281,7 @@ export interface UpdateKolamWebSettingBody
       | 'livechatOnline'
       | 'maintenance'
       | 'staffDesktopOnly'
+      | 'kolamPlugins'
     >
   > {
   [key: string]: unknown;

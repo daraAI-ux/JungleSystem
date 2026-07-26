@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   getShellModuleRouteEntry,
   type ShellModuleRouteEntry,
@@ -25,11 +25,15 @@ import {
   getAmSurfaceById,
   getKolamSurfaceById,
   filterPluginRegistry,
+  filterEnabledPluginRegistry,
+  getPluginRouteEntryIgnoringConfig,
   getPluginRouteIndex,
   pluginRegistry,
+  type PluginEnabledConfig,
   type PluginRouteEntry,
   type UnifiedSurface,
 } from '../domain/unified';
+import {getKolamWebSetting} from '../services/kolam-api';
 
 export function useKolamNavigationController({
   onMessage,
@@ -49,6 +53,9 @@ export function useKolamNavigationController({
   const [activeModuleRoute, setActiveModuleRoute] =
     useState<ShellModuleRouteEntry | null>(null);
   const [pluginSearch, setPluginSearch] = useState('');
+  const [pluginConfig, setPluginConfig] = useState<PluginEnabledConfig | null>(
+    null,
+  );
   const [commandSearch, setCommandSearch] = useState('');
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -61,13 +68,37 @@ export function useKolamNavigationController({
   const [isAttentionPanelOpen, setIsAttentionPanelOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
+  useEffect(() => {
+    let mounted = true;
+
+    getKolamWebSetting()
+      .then(setting => {
+        if (mounted) {
+          setPluginConfig(setting.kolamPlugins ?? null);
+        }
+      })
+      .catch(() => {
+        if (mounted) {
+          setPluginConfig(null);
+        }
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const enabledPlugins = useMemo(
+    () => filterEnabledPluginRegistry(pluginRegistry, pluginConfig),
+    [pluginConfig],
+  );
   const filteredPlugins = useMemo(
-    () => filterPluginRegistry(pluginRegistry, pluginSearch),
-    [pluginSearch],
+    () => filterPluginRegistry(enabledPlugins, pluginSearch),
+    [enabledPlugins, pluginSearch],
   );
   const pluginRouteIndex = useMemo(
-    () => getPluginRouteIndex(pluginRegistry),
-    [],
+    () => getPluginRouteIndex(pluginRegistry, pluginConfig),
+    [pluginConfig],
   );
   const commandIndex = useMemo(
     () => getCommandIndex({ pluginRoutes: pluginRouteIndex }),
@@ -300,6 +331,13 @@ export function useKolamNavigationController({
           item.pluginId === command.pluginId && item.route === command.route,
       );
 
+      if (!route) {
+        onMessage(
+          `${command.label} tidak dibuka karena plugin dinonaktifkan di Settings.`,
+        );
+        return;
+      }
+
       setActiveModule('plugins');
       setActiveNavigationItem(null);
       setActivePluginRoute(route ?? null);
@@ -318,6 +356,31 @@ export function useKolamNavigationController({
   };
 
   const handleKolamNavigationItem = (item: KolamNavigationItem) => {
+    const disabledPluginRoute = getPluginRouteEntryIgnoringConfig(
+      item.route,
+    );
+
+    if (
+      disabledPluginRoute &&
+      !pluginRouteIndex.some(
+        route =>
+          route.pluginId === disabledPluginRoute.pluginId &&
+          route.route === disabledPluginRoute.route,
+      )
+    ) {
+      setActiveModule('plugins');
+      setActiveNavigationItem(null);
+      setActivePluginRoute(null);
+      setActiveAmSurface(null);
+      setActiveKolamSurface(null);
+      setActiveModuleRoute(null);
+      setPluginSearch(disabledPluginRoute.pluginLabel);
+      onMessage(
+        `${disabledPluginRoute.pluginLabel} dinonaktifkan di Settings. Route ${item.route} tidak dibuka.`,
+      );
+      return;
+    }
+
     const target = getKolamNavigationRouteTarget(item);
     setActiveModule(target.moduleId);
     setActiveNavigationItem(item);
@@ -330,9 +393,27 @@ export function useKolamNavigationController({
   };
 
   const handlePluginRouteSelect = (route: PluginRouteEntry) => {
+    const enabledRoute = pluginRouteIndex.find(
+      item => item.pluginId === route.pluginId && item.route === route.route,
+    );
+
+    if (!enabledRoute) {
+      setActiveModule('plugins');
+      setActiveNavigationItem(null);
+      setActivePluginRoute(null);
+      setActiveAmSurface(null);
+      setActiveKolamSurface(null);
+      setActiveModuleRoute(null);
+      setPluginSearch(route.pluginLabel);
+      onMessage(
+        `${route.pluginLabel} dinonaktifkan di Settings. Route ${route.route} tidak dibuka.`,
+      );
+      return;
+    }
+
     setActiveModule('plugins');
     setActiveNavigationItem(null);
-    setActivePluginRoute(route);
+    setActivePluginRoute(enabledRoute);
     setActiveAmSurface(null);
     setActiveKolamSurface(null);
     setActiveModuleRoute(null);

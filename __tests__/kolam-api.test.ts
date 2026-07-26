@@ -169,6 +169,16 @@ describe('Kolam Settings API contracts', () => {
         enabled: true,
         redirectUrl: 'https://desktop.dunia-anura.com',
       },
+      kolamPlugins: {
+        enclosure: {enabled: true, installedVersion: '1.4.58'},
+        taskManager: {enabled: false, installedVersion: '1.0.13'},
+        layanan: {enabled: true, installedVersion: '1.10.17'},
+        freyer: {enabled: true, installedVersion: '1.3.4'},
+        kpi: {enabled: true, installedVersion: '0.9.10'},
+        chat: {enabled: false, storeEnabled: false, installedVersion: '0.2.74'},
+        dara: {enabled: true, installedVersion: '0.1.44'},
+        proyek: {enabled: true, installedVersion: '0.4.0'},
+      },
     });
 
     expect(fetchMock).toHaveBeenCalledWith(
@@ -192,6 +202,20 @@ describe('Kolam Settings API contracts', () => {
           staffDesktopOnly: {
             enabled: true,
             redirectUrl: 'https://desktop.dunia-anura.com',
+          },
+          kolamPlugins: {
+            enclosure: {enabled: true, installedVersion: '1.4.58'},
+            taskManager: {enabled: false, installedVersion: '1.0.13'},
+            layanan: {enabled: true, installedVersion: '1.10.17'},
+            freyer: {enabled: true, installedVersion: '1.3.4'},
+            kpi: {enabled: true, installedVersion: '0.9.10'},
+            chat: {
+              enabled: false,
+              storeEnabled: false,
+              installedVersion: '0.2.74',
+            },
+            dara: {enabled: true, installedVersion: '0.1.44'},
+            proyek: {enabled: true, installedVersion: '0.4.0'},
           },
         }),
       }),

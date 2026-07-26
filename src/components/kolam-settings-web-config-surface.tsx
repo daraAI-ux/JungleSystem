@@ -9,6 +9,7 @@ import {KolamCopyStack} from './kolam-copy-stack';
 import {KolamSettingsWebFormSections} from './kolam-settings-web-widgets';
 import {KolamTextFieldRow} from './kolam-text-field-row';
 import {KolamToggleRow} from './kolam-toggle-row';
+import type {KolamPluginConfigKey} from '../services/kolam-api';
 
 type WebSettingDraft = {
   versionKolam: string;
@@ -36,6 +37,7 @@ type WebSettingDraft = {
   originLongitude: string;
   staffDesktopOnlyEnabled: boolean;
   staffDesktopOnlyRedirectUrl: string;
+  pluginControls: Record<KolamPluginConfigKey, boolean>;
 };
 
 export function KolamSettingsWebConfigSurface({
@@ -44,6 +46,7 @@ export function KolamSettingsWebConfigSurface({
   onToggleMaintenanceMode,
   onToggleStorefrontEnabled,
   onSave,
+  onPluginControlChange,
   onWebTitleChange,
   readOnly = false,
   saveMessage,
@@ -60,6 +63,7 @@ export function KolamSettingsWebConfigSurface({
   onToggleMaintenanceMode: () => void;
   onToggleStorefrontEnabled: () => void;
   onSave: () => void;
+  onPluginControlChange: (key: KolamPluginConfigKey, enabled: boolean) => void;
   onWebTitleChange: (value: string) => void;
   readOnly?: boolean;
   saveMessage: string;
@@ -270,6 +274,81 @@ export function KolamSettingsWebConfigSurface({
         value={draft.staffDesktopOnlyRedirectUrl}
         onChangeText={value => setDraftField('staffDesktopOnlyRedirectUrl', value)}
         placeholder="https://..."
+      />
+      <KolamToggleRow
+        label="Plugin Enclosure"
+        description="Aktifkan route dan registry plugin enclosure."
+        active={draft.pluginControls.enclosure}
+        onPress={() =>
+          !disabled &&
+          onPluginControlChange('enclosure', !draft.pluginControls.enclosure)
+        }
+      />
+      <KolamToggleRow
+        label="Plugin Task Manager"
+        description="Aktifkan route dan registry plugin manajemen tugas."
+        active={draft.pluginControls.taskManager}
+        onPress={() =>
+          !disabled &&
+          onPluginControlChange(
+            'taskManager',
+            !draft.pluginControls.taskManager,
+          )
+        }
+      />
+      <KolamToggleRow
+        label="Plugin Layanan"
+        description="Aktifkan route dan registry plugin layanan."
+        active={draft.pluginControls.layanan}
+        onPress={() =>
+          !disabled &&
+          onPluginControlChange('layanan', !draft.pluginControls.layanan)
+        }
+      />
+      <KolamToggleRow
+        label="Plugin Freyer"
+        description="Aktifkan route dan registry plugin Freyer."
+        active={draft.pluginControls.freyer}
+        onPress={() =>
+          !disabled &&
+          onPluginControlChange('freyer', !draft.pluginControls.freyer)
+        }
+      />
+      <KolamToggleRow
+        label="Plugin KPI"
+        description="Aktifkan route dan registry plugin KPI."
+        active={draft.pluginControls.kpi}
+        onPress={() =>
+          !disabled &&
+          onPluginControlChange('kpi', !draft.pluginControls.kpi)
+        }
+      />
+      <KolamToggleRow
+        label="Plugin Chat"
+        description="Aktifkan route dan registry plugin chat."
+        active={draft.pluginControls.chat}
+        onPress={() =>
+          !disabled &&
+          onPluginControlChange('chat', !draft.pluginControls.chat)
+        }
+      />
+      <KolamToggleRow
+        label="Plugin DARA"
+        description="Aktifkan route dan registry plugin DARA."
+        active={draft.pluginControls.dara}
+        onPress={() =>
+          !disabled &&
+          onPluginControlChange('dara', !draft.pluginControls.dara)
+        }
+      />
+      <KolamToggleRow
+        label="Plugin Proyek"
+        description="Aktifkan route dan registry plugin proyek."
+        active={draft.pluginControls.proyek}
+        onPress={() =>
+          !disabled &&
+          onPluginControlChange('proyek', !draft.pluginControls.proyek)
+        }
       />
       <KolamActionControlButton
         label="Save"

@@ -3,6 +3,10 @@ import type {
   CatalogItem,
   SaleSummary,
 } from './pos';
+import type {
+  KolamPluginConfigKey,
+  KolamPluginSettings,
+} from '../services/kolam-api';
 
 export interface UnifiedSurface {
   id: string;
@@ -30,6 +34,8 @@ export interface PluginDescriptor {
   integrationStatus: 'ready' | 'version-mismatch';
 }
 
+export type PluginEnabledConfig = KolamPluginSettings;
+
 export interface PluginIntegrationStats {
   total: number;
   ready: number;
@@ -45,6 +51,17 @@ export interface PluginRouteEntry {
   sourceRepo: string;
   integrationStatus: PluginDescriptor['integrationStatus'];
 }
+
+const pluginConfigKeys: Partial<Record<string, KolamPluginConfigKey>> = {
+  chat: 'chat',
+  dara: 'dara',
+  enclosure: 'enclosure',
+  freyer: 'freyer',
+  kpi: 'kpi',
+  layanan: 'layanan',
+  proyek: 'proyek',
+  'task-manager': 'taskManager',
+};
 
 export interface UnifiedDataSnapshot {
   catalog: CatalogItem[];
@@ -404,10 +421,35 @@ export function getPluginIntegrationStats(
   };
 }
 
+export function getPluginConfigKey(pluginId: string) {
+  return pluginConfigKeys[pluginId] ?? null;
+}
+
+export function isPluginEnabledByConfig(
+  plugin: Pick<PluginDescriptor, 'id'>,
+  config?: PluginEnabledConfig | null,
+) {
+  const configKey = getPluginConfigKey(plugin.id);
+
+  if (!configKey || !config) {
+    return true;
+  }
+
+  return config[configKey]?.enabled !== false;
+}
+
+export function filterEnabledPluginRegistry(
+  plugins: PluginDescriptor[] = pluginRegistry,
+  config?: PluginEnabledConfig | null,
+) {
+  return plugins.filter(plugin => isPluginEnabledByConfig(plugin, config));
+}
+
 export function getPluginRouteIndex(
   plugins: PluginDescriptor[] = pluginRegistry,
+  config?: PluginEnabledConfig | null,
 ): PluginRouteEntry[] {
-  return plugins.flatMap(plugin =>
+  return filterEnabledPluginRegistry(plugins, config).flatMap(plugin =>
     plugin.routes.map(route => ({
       pluginId: plugin.id,
       pluginLabel: plugin.label,
@@ -417,6 +459,25 @@ export function getPluginRouteIndex(
       integrationStatus: plugin.integrationStatus,
     })),
   );
+}
+
+export function getPluginRouteEntryByRoute(
+  route: string,
+  plugins: PluginDescriptor[] = pluginRegistry,
+  config?: PluginEnabledConfig | null,
+) {
+  return getPluginRouteIndex(plugins, config).find(entry =>
+    isPluginRouteMatch(entry.route, route),
+  ) ?? null;
+}
+
+export function getPluginRouteEntryIgnoringConfig(
+  route: string,
+  plugins: PluginDescriptor[] = pluginRegistry,
+) {
+  return getPluginRouteIndex(plugins).find(entry =>
+    isPluginRouteMatch(entry.route, route),
+  ) ?? null;
 }
 
 export function filterPluginRegistry(
@@ -450,6 +511,23 @@ export function filterPluginRegistry(
       .toLowerCase();
 
     return searchableText.includes(normalizedQuery);
+  });
+}
+
+function isPluginRouteMatch(pattern: string, route: string) {
+  if (pattern === route) {
+    return true;
+  }
+
+  const patternParts = pattern.split('/').filter(Boolean);
+  const routeParts = route.split('?')[0].split('/').filter(Boolean);
+
+  if (patternParts.length !== routeParts.length) {
+    return false;
+  }
+
+  return patternParts.every((part, index) => {
+    return part.startsWith(':') || part === routeParts[index];
   });
 }
 

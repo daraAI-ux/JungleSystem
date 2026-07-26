@@ -29,6 +29,7 @@ import {
   getKolamWebSettingVersions,
   updateKolamWebSetting,
   updateKolamWebSettingVersion,
+  type KolamPluginConfigKey,
   type KolamWebSetting,
   type KolamWebSettingVersion,
   type KolamWebSettingVersions,
@@ -63,6 +64,7 @@ interface WebSettingDraft {
   originLongitude: string;
   staffDesktopOnlyEnabled: boolean;
   staffDesktopOnlyRedirectUrl: string;
+  pluginControls: Record<KolamPluginConfigKey, boolean>;
 }
 
 const emptyWebSettingDraft: WebSettingDraft = {
@@ -91,6 +93,16 @@ const emptyWebSettingDraft: WebSettingDraft = {
   originLongitude: '',
   staffDesktopOnlyEnabled: false,
   staffDesktopOnlyRedirectUrl: '',
+  pluginControls: {
+    enclosure: true,
+    taskManager: true,
+    layanan: true,
+    freyer: true,
+    kpi: true,
+    chat: true,
+    dara: true,
+    proyek: true,
+  },
 };
 
 export function useKolamSettingsPanelController(
@@ -224,6 +236,19 @@ export function useKolamSettingsPanelController(
     }));
     setWebSettingSaveStatus('idle');
   };
+  const setWebSettingPluginControl = (
+    key: KolamPluginConfigKey,
+    enabled: boolean,
+  ) => {
+    setWebSettingDraft(current => ({
+      ...current,
+      pluginControls: {
+        ...current.pluginControls,
+        [key]: enabled,
+      },
+    }));
+    setWebSettingSaveStatus('idle');
+  };
   const saveWebSetting = async () => {
     setWebSettingSaveStatus('saving');
     setWebSettingMessage('');
@@ -259,6 +284,10 @@ export function useKolamSettingsPanelController(
           enabled: webSettingDraft.staffDesktopOnlyEnabled,
           redirectUrl: webSettingDraft.staffDesktopOnlyRedirectUrl.trim(),
         },
+        kolamPlugins: createKolamPluginsUpdateBody(
+          webSettingDraft.pluginControls,
+          webSetting?.kolamPlugins,
+        ),
       });
 
       await Promise.all(
@@ -294,6 +323,10 @@ export function useKolamSettingsPanelController(
           pos: webSettingDraft.maintenancePos,
           marketplace: webSettingDraft.maintenanceMarketplace,
         },
+        kolamPlugins: createKolamPluginsUpdateBody(
+          webSettingDraft.pluginControls,
+          updated.kolamPlugins,
+        ),
       });
       setWebSettingVersions(nextVersions);
       setWebSettingVersion({
@@ -346,6 +379,7 @@ export function useKolamSettingsPanelController(
     ),
     saveWebSetting,
     setWebSettingDraftField,
+    setWebSettingPluginControl,
     webSettingDraft,
     webSettingMessage,
     webSettingSaveStatus,
@@ -420,6 +454,56 @@ function createWebSettingDraft(
         : String(origin.longitude),
     staffDesktopOnlyEnabled: setting.staffDesktopOnly?.enabled === true,
     staffDesktopOnlyRedirectUrl: setting.staffDesktopOnly?.redirectUrl ?? '',
+    pluginControls: {
+      enclosure: setting.kolamPlugins?.enclosure?.enabled !== false,
+      taskManager: setting.kolamPlugins?.taskManager?.enabled !== false,
+      layanan: setting.kolamPlugins?.layanan?.enabled !== false,
+      freyer: setting.kolamPlugins?.freyer?.enabled !== false,
+      kpi: setting.kolamPlugins?.kpi?.enabled !== false,
+      chat: setting.kolamPlugins?.chat?.enabled !== false,
+      dara: setting.kolamPlugins?.dara?.enabled !== false,
+      proyek: setting.kolamPlugins?.proyek?.enabled !== false,
+    },
+  };
+}
+
+function createKolamPluginsUpdateBody(
+  controls: Record<KolamPluginConfigKey, boolean>,
+  current: KolamWebSetting['kolamPlugins'],
+) {
+  return {
+    enclosure: {
+      ...(current?.enclosure ?? {}),
+      enabled: controls.enclosure,
+    },
+    taskManager: {
+      ...(current?.taskManager ?? {}),
+      enabled: controls.taskManager,
+    },
+    layanan: {
+      ...(current?.layanan ?? {}),
+      enabled: controls.layanan,
+    },
+    freyer: {
+      ...(current?.freyer ?? {}),
+      enabled: controls.freyer,
+    },
+    kpi: {
+      ...(current?.kpi ?? {}),
+      enabled: controls.kpi,
+    },
+    chat: {
+      ...(current?.chat ?? {}),
+      enabled: controls.chat,
+    },
+    dara: {
+      ...(current?.dara ?? {}),
+      enabled: controls.dara,
+    },
+    proyek: {
+      ...(current?.proyek ?? {}),
+      enabled: controls.proyek,
+    },
   };
 }
 

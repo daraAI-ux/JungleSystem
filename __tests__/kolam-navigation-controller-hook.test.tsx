@@ -38,6 +38,25 @@ function NavigationHarness({
 }
 
 describe('Kolam navigation controller hook', () => {
+  beforeEach(() => {
+    globalThis.fetch = jest.fn().mockResolvedValue(
+      jsonResponse({
+        data: {
+          kolamPlugins: {
+            chat: {enabled: true},
+            dara: {enabled: true},
+            enclosure: {enabled: true},
+            freyer: {enabled: true},
+            kpi: {enabled: true},
+            layanan: {enabled: true},
+            proyek: {enabled: true},
+            taskManager: {enabled: true},
+          },
+        },
+      }),
+    );
+  });
+
   it('opens quick search and handles module commands', async () => {
     const messages: string[] = [];
     let latest: NavigationController | null = null;
@@ -472,6 +491,70 @@ describe('Kolam navigation controller hook', () => {
     expect(messages.at(-1)).toContain('/team-chat');
   });
 
+  it('blocks disabled plugin routes from Settings plugin config', async () => {
+    const messages: string[] = [];
+    let latest: NavigationController | null = null;
+    globalThis.fetch = jest.fn().mockResolvedValue(
+      jsonResponse({
+        data: {
+          kolamPlugins: {
+            chat: {enabled: false},
+            dara: {enabled: true},
+          },
+        },
+      }),
+    );
+
+    await ReactTestRenderer.act(async () => {
+      ReactTestRenderer.create(
+        <NavigationHarness
+          messages={messages}
+          onRender={controller => {
+            latest = controller;
+          }}
+        />,
+      );
+    });
+
+    await ReactTestRenderer.act(async () => {
+      await Promise.resolve();
+    });
+
+    const teamChatCommand = getCommandIndex().find(
+      command =>
+        command.kind === 'plugin-route' && command.route === '/team-chat',
+    );
+
+    expect(teamChatCommand).toBeDefined();
+
+    await ReactTestRenderer.act(async () => {
+      await requireNavigationController(latest).handleCommand(
+        teamChatCommand!,
+        async () => undefined,
+      );
+    });
+
+    expect(requireNavigationController(latest).activePluginRoute).toBeNull();
+    expect(messages.at(-1)).toContain('dinonaktifkan di Settings');
+
+    const staleTeamChatRoute = getPluginRouteIndex(pluginRegistry).find(
+      route => route.pluginId === 'chat' && route.route === '/team-chat',
+    );
+
+    if (!staleTeamChatRoute) {
+      throw new Error('Team Chat route missing from plugin registry.');
+    }
+
+    await ReactTestRenderer.act(async () => {
+      requireNavigationController(latest).handlePluginRouteSelect(
+        staleTeamChatRoute,
+      );
+    });
+
+    expect(requireNavigationController(latest).activePluginRoute).toBeNull();
+    expect(messages.at(-1)).toContain('dinonaktifkan di Settings');
+  });
+
   it('keeps selected plugin route context from Plugin Hub launcher', async () => {
     const messages: string[] = [];
     let latest: NavigationController | null = null;
@@ -665,3 +748,11 @@ describe('Kolam navigation controller hook', () => {
     expect(requireNavigationController(latest).activePluginRoute).toBeNull();
   });
 });
+
+function jsonResponse(payload: unknown) {
+  return {
+    ok: true,
+    status: 200,
+    text: jest.fn().mockResolvedValue(JSON.stringify(payload)),
+  };
+}
