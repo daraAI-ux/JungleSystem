@@ -519,13 +519,13 @@ export function KolamSettingsWebConfigSurface({
     },
     {
       id: 'unassigned-notification-sound',
-      label: 'Suara chat belum diassign',
+      label: 'Suara chat belum ditugaskan',
       type: 'unassigned' as const,
       value: draft.unassignedNotificationSound,
     },
     {
       id: 'handoff-notification-sound',
-      label: 'Suara handoff',
+      label: 'Suara alih tangan',
       type: 'handoff' as const,
       value: draft.handoffNotificationSound,
     },
@@ -537,7 +537,7 @@ export function KolamSettingsWebConfigSurface({
     },
     {
       id: 'sales-notification-sound',
-      label: 'Suara penjualan',
+      label: 'Suara notifikasi penjualan',
       type: 'sales' as const,
       value: draft.salesNotificationSound,
     },
@@ -586,10 +586,10 @@ export function KolamSettingsWebConfigSurface({
             onPress={() => onUploadNotificationSound(item.type)}
           />
           <KolamActionControlButton
-            label="Reset"
+            label="Atur ulang"
             intent="danger"
             loading={status === 'deleting'}
-            loadingLabel="Mereset..."
+            loadingLabel="Mengatur ulang..."
             disabled={disabled || busy || !item.value}
             onPress={() => onDeleteNotificationSound(item.type)}
           />
@@ -895,8 +895,8 @@ export function KolamSettingsWebConfigSurface({
           {showNotificationSettings ? (
             <>
               <KolamToggleRow
-                label="OTP login staff"
-                description="Aktifkan OTP untuk login staff produksi."
+                label="OTP masuk staf"
+                description="Aktifkan OTP untuk masuk staf produksi."
                 active={draft.staffOtpLoginEnabled}
                 onPress={() =>
                   !disabled &&
@@ -943,8 +943,8 @@ export function KolamSettingsWebConfigSurface({
                 placeholder="15"
               />
               <KolamTextFieldRow
-                label="Host SMTP"
-                description="Host SMTP untuk email sistem."
+                label="Server SMTP"
+                description="Server SMTP untuk email sistem."
                 value={draft.smtpHost}
                 onChangeText={value => setDraftField('smtpHost', value)}
                 placeholder="smtp.gmail.com"
@@ -957,14 +957,14 @@ export function KolamSettingsWebConfigSurface({
                 placeholder="465"
               />
               <KolamTextFieldRow
-                label="User SMTP"
-                description="Username SMTP."
+                label="Pengguna SMTP"
+                description="Nama pengguna SMTP."
                 value={draft.smtpUser}
                 onChangeText={value => setDraftField('smtpUser', value)}
                 placeholder="mailer@duniaanura.com"
               />
               <KolamTextFieldRow
-                label="Password SMTP"
+                label="Kata sandi SMTP"
                 description="Biarkan ******** agar secret BE tidak dikirim ulang."
                 value={draft.smtpPass}
                 onChangeText={value => setDraftField('smtpPass', value)}
@@ -1002,8 +1002,8 @@ export function KolamSettingsWebConfigSurface({
                 }
               />
               <KolamTextFieldRow
-                label="ID project Firebase"
-                description="ID project Firebase produksi."
+                label="ID proyek Firebase"
+                description="ID proyek Firebase produksi."
                 value={draft.firebaseProjectId}
                 onChangeText={value =>
                   setDraftField('firebaseProjectId', value)
@@ -1011,8 +1011,8 @@ export function KolamSettingsWebConfigSurface({
                 placeholder="dunia-anura"
               />
               <KolamTextFieldRow
-                label="Email client Firebase"
-                description="Email client service account."
+                label="Email klien Firebase"
+                description="Email klien akun layanan."
                 value={draft.firebaseClientEmail}
                 onChangeText={value =>
                   setDraftField('firebaseClientEmail', value)
@@ -1020,8 +1020,8 @@ export function KolamSettingsWebConfigSurface({
                 placeholder="firebase-adminsdk@..."
               />
               <KolamTextFieldRow
-                label="Private key Firebase"
-                description="Biarkan ******** agar private key BE tidak dikirim ulang."
+                label="Kunci privat Firebase"
+                description="Biarkan ******** agar kunci privat BE tidak dikirim ulang."
                 value={draft.firebasePrivateKey}
                 onChangeText={value =>
                   setDraftField('firebasePrivateKey', value)
@@ -1042,8 +1042,8 @@ export function KolamSettingsWebConfigSurface({
                 }
               />
               <KolamToggleRow
-                label="Panggilan grup team chat"
-                description="Aktifkan panggilan grup di team chat."
+                label="Panggilan grup chat tim"
+                description="Aktifkan panggilan grup di chat tim."
                 active={draft.teamChatGroupCallEnabled}
                 onPress={() =>
                   !disabled &&
@@ -1105,8 +1105,8 @@ export function KolamSettingsWebConfigSurface({
                 }
               />
               <KolamToggleRow
-                label="Notifikasi handoff DARA"
-                description="Kirim notifikasi saat handoff customer."
+                label="Notifikasi alih tangan DARA"
+                description="Kirim notifikasi saat pelanggan dialihkan."
                 active={draft.daraHandoffNotifyEnabled}
                 onPress={() =>
                   !disabled &&
@@ -2007,8 +2007,8 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
-            label="Panggilan grup team chat"
-            description="Aktifkan panggilan grup di team chat."
+            label="Panggilan grup chat tim"
+            description="Aktifkan panggilan grup di chat tim."
             active={draft.teamChatGroupCallEnabled}
             onPress={() =>
               !chatControlsDisabled &&
@@ -2058,8 +2058,8 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
-            label="Notifikasi handoff DARA"
-            description="Kirim notifikasi saat handoff customer."
+            label="Notifikasi alih tangan DARA"
+            description="Kirim notifikasi saat pelanggan dialihkan."
             active={draft.daraHandoffNotifyEnabled}
             onPress={() =>
               !daraControlsDisabled &&
@@ -2409,8 +2409,8 @@ export function KolamSettingsWebConfigSurface({
             {notificationSoundItems.slice(0, 2).map(renderNotificationSoundRow)}
           </View>
           <KolamToggleRow
-            label="Notifikasi handoff DARA"
-            description="Kirim notifikasi saat handoff customer."
+            label="Notifikasi alih tangan DARA"
+            description="Kirim notifikasi saat pelanggan dialihkan."
             active={draft.daraHandoffNotifyEnabled}
             onPress={() =>
               !disabled &&
@@ -2424,8 +2424,8 @@ export function KolamSettingsWebConfigSurface({
             {renderNotificationSoundRow(notificationSoundItems[2])}
           </View>
           <KolamToggleRow
-            label="Panggilan grup team chat"
-            description="Aktifkan panggilan grup di team chat."
+            label="Panggilan grup chat tim"
+            description="Aktifkan panggilan grup di chat tim."
             active={draft.teamChatGroupCallEnabled}
             onPress={() =>
               !disabled &&
@@ -2450,39 +2450,39 @@ export function KolamSettingsWebConfigSurface({
           />
           <KolamTextFieldRow
             fieldWidth={settingsFieldWidth}
-            label="ID project Firebase"
-            description="ID project Firebase produksi."
+            label="ID proyek Firebase"
+            description="ID proyek Firebase produksi."
             value={draft.firebaseProjectId}
             onChangeText={value => setDraftField('firebaseProjectId', value)}
             placeholder="dunia-anura"
           />
           <KolamTextFieldRow
             fieldWidth={settingsFieldWidth}
-            label="Email client Firebase"
-            description="Email client service account."
+            label="Email klien Firebase"
+            description="Email klien akun layanan."
             value={draft.firebaseClientEmail}
             onChangeText={value => setDraftField('firebaseClientEmail', value)}
             placeholder="firebase-adminsdk@..."
           />
           <KolamTextFieldRow
             fieldWidth={settingsFieldWidth}
-            label="Private key Firebase"
-            description="Biarkan ******** agar private key BE tidak dikirim ulang."
+            label="Kunci privat Firebase"
+            description="Biarkan ******** agar kunci privat BE tidak dikirim ulang."
             value={draft.firebasePrivateKey}
             onChangeText={value => setDraftField('firebasePrivateKey', value)}
             placeholder="********"
           />
           <KolamTextFieldRow
             fieldWidth={settingsFieldWidth}
-            label="Host SMTP"
-            description="Host SMTP untuk email sistem."
+            label="Server SMTP"
+            description="Server SMTP untuk email sistem."
             value={draft.smtpHost}
             onChangeText={value => setDraftField('smtpHost', value)}
             placeholder="smtp.gmail.com"
           />
           <KolamTextFieldRow
             fieldWidth={settingsFieldWidth}
-            label="SMTP port"
+            label="Port SMTP"
             description="Port SMTP produksi."
             value={draft.smtpPort}
             onChangeText={value => setDraftField('smtpPort', value)}
@@ -2490,16 +2490,16 @@ export function KolamSettingsWebConfigSurface({
           />
           <KolamTextFieldRow
             fieldWidth={settingsFieldWidth}
-            label="User SMTP"
-            description="Username SMTP."
+            label="Pengguna SMTP"
+            description="Nama pengguna SMTP."
             value={draft.smtpUser}
             onChangeText={value => setDraftField('smtpUser', value)}
             placeholder="mailer@duniaanura.com"
           />
           <KolamTextFieldRow
             fieldWidth={settingsFieldWidth}
-            label="Password SMTP"
-            description="Biarkan ******** agar secret BE tidak dikirim ulang."
+            label="Kata sandi SMTP"
+            description="Biarkan ******** agar rahasia BE tidak dikirim ulang."
             value={draft.smtpPass}
             onChangeText={value => setDraftField('smtpPass', value)}
             placeholder="********"
@@ -2529,8 +2529,8 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
-            label="OTP login staff"
-            description="Aktifkan OTP untuk login staff produksi."
+            label="OTP masuk staf"
+            description="Aktifkan OTP untuk masuk staf produksi."
             active={draft.staffOtpLoginEnabled}
             onPress={() =>
               !disabled &&
@@ -2559,16 +2559,16 @@ export function KolamSettingsWebConfigSurface({
           />
           <KolamTextFieldRow
             fieldWidth={settingsFieldWidth}
-            label="Maks percobaan OTP"
-            description="Batas percobaan OTP sebelum lock."
+            label="Batas percobaan OTP"
+            description="Batas percobaan OTP sebelum dikunci."
             value={draft.staffOtpMaxAttempts}
             onChangeText={value => setDraftField('staffOtpMaxAttempts', value)}
             placeholder="5"
           />
           <KolamTextFieldRow
             fieldWidth={settingsFieldWidth}
-            label="Menit lock OTP"
-            description="Durasi lock setelah percobaan OTP melewati batas."
+            label="Menit kunci OTP"
+            description="Durasi penguncian setelah percobaan OTP melewati batas."
             value={draft.staffOtpLockMinutes}
             onChangeText={value => setDraftField('staffOtpLockMinutes', value)}
             placeholder="15"

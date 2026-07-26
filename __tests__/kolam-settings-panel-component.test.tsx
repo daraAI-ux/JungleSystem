@@ -206,8 +206,8 @@ describe('KolamSettingsPanel', () => {
       expect.arrayContaining([
         'Alamat asal',
         'Maintenance marketplace',
-        'OTP login staff',
-        'Host SMTP',
+        'OTP masuk staf',
+        'Server SMTP',
         'Firebase',
         'DARA business',
         'Suara notifikasi',
@@ -237,40 +237,40 @@ describe('KolamSettingsPanel', () => {
     expect(text).toEqual(
       expect.arrayContaining([
         'Notifikasi',
-        'Notifikasi handoff DARA',
-        'Suara handoff',
-        'Panggilan grup team chat',
+        'Notifikasi alih tangan DARA',
+        'Suara alih tangan',
+        'Panggilan grup chat tim',
         'Nada panggilan grup',
-        'Suara penjualan',
+        'Suara notifikasi penjualan',
         'Suara notifikasi',
-        'Suara chat belum diassign',
+        'Suara chat belum ditugaskan',
         'Firebase',
-        'Host SMTP',
-        'OTP login staff',
+        'Server SMTP',
+        'OTP masuk staf',
         'Simpan',
       ]),
     );
     expect(text.indexOf('Suara notifikasi')).toBeLessThan(
-      text.indexOf('Suara chat belum diassign'),
+      text.indexOf('Suara chat belum ditugaskan'),
     );
-    expect(text.indexOf('Suara chat belum diassign')).toBeLessThan(
-      text.indexOf('Notifikasi handoff DARA'),
+    expect(text.indexOf('Suara chat belum ditugaskan')).toBeLessThan(
+      text.indexOf('Notifikasi alih tangan DARA'),
     );
-    expect(text.indexOf('Notifikasi handoff DARA')).toBeLessThan(
-      text.indexOf('Suara handoff'),
+    expect(text.indexOf('Notifikasi alih tangan DARA')).toBeLessThan(
+      text.indexOf('Suara alih tangan'),
     );
-    expect(text.indexOf('Suara handoff')).toBeLessThan(
-      text.indexOf('Panggilan grup team chat'),
+    expect(text.indexOf('Suara alih tangan')).toBeLessThan(
+      text.indexOf('Panggilan grup chat tim'),
     );
-    expect(text.indexOf('Panggilan grup team chat')).toBeLessThan(
+    expect(text.indexOf('Panggilan grup chat tim')).toBeLessThan(
       text.indexOf('Nada panggilan grup'),
     );
-    expect(text.indexOf('Suara penjualan')).toBeLessThan(
+    expect(text.indexOf('Suara notifikasi penjualan')).toBeLessThan(
       text.indexOf('Firebase'),
     );
-    expect(text.indexOf('Firebase')).toBeLessThan(text.indexOf('Host SMTP'));
-    expect(text.indexOf('Host SMTP')).toBeLessThan(
-      text.indexOf('OTP login staff'),
+    expect(text.indexOf('Firebase')).toBeLessThan(text.indexOf('Server SMTP'));
+    expect(text.indexOf('Server SMTP')).toBeLessThan(
+      text.indexOf('OTP masuk staf'),
     );
 
     const smtpHostInput = renderer!.root
@@ -331,7 +331,7 @@ describe('KolamSettingsPanel', () => {
     expect(text).not.toEqual(
       expect.arrayContaining([
         'Tagline Perusahaan',
-        'OTP login staff',
+        'OTP masuk staf',
         'Plugin Enclosure',
         'Ringkasan Landing Marketplace',
       ]),
@@ -377,7 +377,7 @@ describe('KolamSettingsPanel', () => {
       expect.arrayContaining([
         'Tagline Perusahaan',
         'Biteship API key',
-        'OTP login staff',
+        'OTP masuk staf',
         'Plugin Enclosure',
         'Ringkasan Landing Marketplace',
       ]),
@@ -451,7 +451,7 @@ describe('KolamSettingsPanel', () => {
         'Bisnis DARA',
         'Tools DARA',
         'Knowledge / SOP DARA',
-        'Notifikasi handoff DARA',
+        'Notifikasi alih tangan DARA',
         'Laporan otomatis DARA',
         'Fulfillment DARA',
         'Simpan',
