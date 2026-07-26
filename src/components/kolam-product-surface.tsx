@@ -1048,6 +1048,9 @@ function KolamProductDetailView({
         </View>
         <View style={styles.detailHeaderActions}>
           <KolamButton label="Daftar" onPress={onBack} />
+          {isRawDetail && onRouteChange ? (
+            <KolamButton label="Transaksi Stok" onPress={() => onRouteChange(`/stock-transaction?productId=${product.id}`)} />
+          ) : null}
           <KolamButton intent="primary" label="Rubah" onPress={() => onEdit(product)} />
           {controller.filters.archived ? (
             <KolamButton label="Pulihkan" onPress={() => onRestore(product)} />
@@ -4574,7 +4577,7 @@ function ProductRawOverviewTab({
     <View style={styles.detailMain}>
       <View style={styles.detailPanel}>
         <View style={styles.panelTitleRow}>
-          <Text style={styles.detailPanelTitle}>Overview</Text>
+          <Text style={styles.detailPanelTitle}>Ringkasan</Text>
           {product.locationLabel ? <KolamBadge intent="secondary" label={product.locationLabel} /> : null}
         </View>
         <View style={styles.rawOverviewGrid}>
@@ -4712,7 +4715,7 @@ function ProductRawOverviewTab({
       </View>
 
       {product.hasVariants && product.variants.length ? <ProductRawVariantsPanel product={product} /> : null}
-      {hasRawOverviewLogisticsContent(product) ? <ProductLogisticsTab product={product} /> : null}
+      <ProductRawShippingMethodsPanel product={product} />
       {getProductSpecificationTotal(product) > 0 ? <ProductRawCustomFieldsPanel product={product} /> : null}
       {product.components.length ? <ProductRawComponentsTable components={product.components} /> : null}
       <ProductRawVendorSection product={product} vendorPrices={vendorPrices} />
@@ -4747,9 +4750,19 @@ function ProductRawPricingSummary({
 }) {
   const [taxEstimate, setTaxEstimate] = React.useState<KolamTaxEstimate | null>(null);
   const variantPrices = product.variants.map(variant => variant.priceToSell).filter(value => value > 0);
+  const variantMemberPoints = product.variants
+    .filter(variant => variant.memberPoints.enabled && variant.memberPoints.points > 0)
+    .map(variant => variant.memberPoints.points);
   const cheapestVendor = getCheapestVendorPrice(vendorPrices);
   const cost = product.price || 0;
   const sell = product.priceToSell || 0;
+  const hppBasis = getProductHppBasis({
+    components: product.components,
+    minimumOrderQty: product.minimumOrderQty || 1,
+    packings: product.packings,
+    storedPrice: product.price,
+    vendorPrices,
+  });
 
   React.useEffect(() => {
     let active = true;
@@ -4774,33 +4787,29 @@ function ProductRawPricingSummary({
     <View style={styles.rawSectionBlock}>
       <Text style={styles.metaLabel}>Harga</Text>
       <KolamPricingMetricsGrid compact>
-        <KolamPricingMetric label="Harga jual">
+        <KolamPricingMetric label="Harga Produk">
           <Text style={styles.pricingMetricText}>
             {product.hasVariants ? formatPriceRange(variantPrices) : formatCurrency(product.priceToSell)}
           </Text>
           {!product.hasVariants && product.unitLabel ? <Text style={styles.detailMutedText}>/ {product.unitLabel}</Text> : null}
         </KolamPricingMetric>
         {!product.hasVariants && product.minimumPriceToSales > 0 ? (
-          <KolamPricingMetric label="Harga jual minimum">
+          <KolamPricingMetric label="Harga Minimum">
             <Text style={styles.pricingMetricText}>{formatCurrency(product.minimumPriceToSales)}</Text>
           </KolamPricingMetric>
         ) : null}
         {!product.hasVariants && product.onlinePrice > 0 ? (
-          <KolamPricingMetric label="Harga daring">
+          <KolamPricingMetric label="Harga Daring">
             <Text style={styles.pricingMetricText}>{formatCurrency(product.onlinePrice)}</Text>
           </KolamPricingMetric>
         ) : null}
         {!product.hasVariants && product.marketPrice > 0 ? (
-          <KolamPricingMetric label="Harga pasar">
+          <KolamPricingMetric label="Harga Pasar">
             <Text style={styles.pricingMetricText}>{formatCurrency(product.marketPrice)}</Text>
           </KolamPricingMetric>
         ) : null}
-        {!product.hasVariants ? (
-          <KolamPricingMetric label="Harga pokok">
-            <Text style={styles.pricingMetricText}>{formatCurrency(product.price)}</Text>
-          </KolamPricingMetric>
-        ) : null}
-        <KolamPricingMetric label="Harga vendor">
+        {!product.hasVariants ? <ProductHppBasisMetric basis={hppBasis} /> : null}
+        <KolamPricingMetric label="Harga Vendor">
           {vendorPrices.length ? (
             <View style={styles.hppBasisStack}>
               <View style={styles.inlineMetricRow}>
@@ -4813,6 +4822,10 @@ function ProductRawPricingSummary({
             <Text style={styles.detailMutedText}>Belum ada harga vendor.</Text>
           )}
         </KolamPricingMetric>
+      </KolamPricingMetricsGrid>
+
+      <Text style={styles.metaLabel}>Pengaturan Penjualan</Text>
+      <KolamPricingMetricsGrid compact>
         {taxEstimate ? (
           <KolamPricingMetric label="Pajak">
             <View style={styles.inlineMetricRow}>
@@ -4822,13 +4835,23 @@ function ProductRawPricingSummary({
           </KolamPricingMetric>
         ) : null}
         {!product.hasVariants && cost > 0 && sell > 0 ? (
-          <KolamPricingMetric label="Laba">
+          <KolamPricingMetric label="Nominal Laba">
             <Text style={styles.pricingMetricText}>{formatCurrency(sell - cost)}</Text>
+          </KolamPricingMetric>
+        ) : null}
+        {!product.hasVariants && cost > 0 && sell > 0 ? (
+          <KolamPricingMetric label="Margin Laba">
             <Text style={styles.detailMutedText}>{(((sell - cost) / cost) * 100).toFixed(1)}%</Text>
           </KolamPricingMetric>
         ) : null}
         <KolamPricingMetric label="Poin member">
-          <Text style={styles.pricingMetricText}>{product.memberPoints.enabled ? `${formatNumber(product.memberPoints.points)} pts` : 'Nonaktif'}</Text>
+          <Text style={styles.pricingMetricText}>
+            {product.hasVariants
+              ? formatRawMemberPointRange(variantMemberPoints)
+              : product.memberPoints.enabled
+              ? `${formatNumber(product.memberPoints.points)} pts`
+              : 'Nonaktif'}
+          </Text>
         </KolamPricingMetric>
         <KolamPricingMetric label="Komisi">
           <Text style={styles.pricingMetricDanger}>{product.commission.label}</Text>
@@ -4836,6 +4859,19 @@ function ProductRawPricingSummary({
       </KolamPricingMetricsGrid>
     </View>
   );
+}
+
+function formatRawMemberPointRange(values: number[]) {
+  const validValues = values.filter(value => Number.isFinite(value) && value > 0);
+  if (!validValues.length) {
+    return 'Nonaktif';
+  }
+
+  const min = Math.min(...validValues);
+  const max = Math.max(...validValues);
+  return min === max
+    ? `${formatNumber(min)} pts`
+    : `${formatNumber(min)} - ${formatNumber(max)} pts`;
 }
 
 function ProductRawVariantsPanel({ product }: { product: KolamProduct }) {
@@ -4853,30 +4889,30 @@ function ProductRawVariantsPanel({ product }: { product: KolamProduct }) {
           <KolamBadge intent={inStockCount === 0 ? 'danger' : inStockCount === product.variants.length ? 'success' : 'warning'} label={`${inStockCount}/${product.variants.length} tersedia`} />
         </View>
       </View>
-      <View style={styles.rawVariantGrid}>
+      <View style={styles.rawTable}>
+        <View style={[styles.rawTableRow, styles.rawTableHeader]}>
+          <Text style={[styles.rawTableHead, styles.rawNameCell]}>Varian</Text>
+          <Text style={[styles.rawTableHead, styles.rawSmallCell]}>Kode</Text>
+          <Text style={[styles.rawTableHead, styles.rawSmallCell]}>Stok</Text>
+          <Text style={[styles.rawTableHead, styles.rawAmountCell]}>Harga</Text>
+          <Text style={[styles.rawTableHead, styles.rawAmountCell]}>Vendor</Text>
+        </View>
         {product.variants.map((variant, index) => (
-          <View key={variant.id || String(index)} style={styles.rawVariantCard}>
-            <Text style={styles.variantTitle}>{variant.label || [variant.tier1Value, variant.tier2Value].filter(Boolean).join(' / ') || `Varian ${index + 1}`}</Text>
-            <KolamPricingMetricsGrid compact>
-              <KolamPricingMetric label="Kode produk">
-                <Text selectable style={styles.variantSkuCode}>{variant.productCode || variant.sku || '-'}</Text>
-              </KolamPricingMetric>
-              <KolamPricingMetric label="Stok">
-                <Text style={styles.pricingMetricText}>{formatNumber(variant.stock)} {product.unitLabel}</Text>
-              </KolamPricingMetric>
-              <KolamPricingMetric label="Harga jual">
-                <Text style={styles.pricingMetricText}>{formatCurrency(variant.priceToSell)}</Text>
-              </KolamPricingMetric>
-              <KolamPricingMetric label="Harga vendor">
-                <Text style={styles.pricingMetricText}>{variant.vendorPrices.length ? `${variant.vendorPrices.length} vendor` : '-'}</Text>
-              </KolamPricingMetric>
-              <KolamPricingMetric label="Berat">
-                <Text style={styles.pricingMetricText}>{getProductVariantWeightLabel(variant)}</Text>
-              </KolamPricingMetric>
-              <KolamPricingMetric label="Dimensi">
-                <Text style={styles.pricingMetricText}>{getProductVariantDimensionLabel(variant)}</Text>
-              </KolamPricingMetric>
-            </KolamPricingMetricsGrid>
+          <View key={variant.id || String(index)} style={styles.rawTableRow}>
+            <View style={styles.rawNameCell}>
+              <Text style={styles.variantTitle}>
+                {variant.label || [variant.tier1Value, variant.tier2Value].filter(Boolean).join(' / ') || `Varian ${index + 1}`}
+              </Text>
+              <Text style={styles.variantMeta}>
+                {[getProductVariantWeightLabel(variant), getProductVariantDimensionLabel(variant)]
+                  .filter(value => value && value !== '-')
+                  .join(' | ') || '-'}
+              </Text>
+            </View>
+            <Text selectable style={[styles.rawTableText, styles.rawSmallCell]}>{variant.productCode || variant.sku || '-'}</Text>
+            <Text style={[styles.rawTableText, styles.rawSmallCell]}>{formatNumber(variant.stock)} {product.unitLabel}</Text>
+            <Text style={[styles.rawTableStrong, styles.rawAmountCell]}>{formatCurrency(variant.priceToSell)}</Text>
+            <Text style={[styles.rawTableText, styles.rawAmountCell]}>{variant.vendorPrices.length ? `${variant.vendorPrices.length} vendor` : '-'}</Text>
           </View>
         ))}
       </View>
@@ -4885,26 +4921,137 @@ function ProductRawVariantsPanel({ product }: { product: KolamProduct }) {
 }
 
 function ProductRawCustomFieldsPanel({ product }: { product: KolamProduct }) {
+  const rows = [
+    ...product.customFields.map(field => ({ field, group: 'Bahan Baku' })),
+    ...product.variants.flatMap(variant =>
+      variant.customFields.map(field => ({
+        field,
+        group: variant.label || variant.productCode || variant.sku || 'Varian',
+      })),
+    ),
+  ];
+
+  if (!rows.length) {
+    return null;
+  }
+
   return (
     <View style={styles.detailPanel}>
       <View style={styles.sectionTitleWrap}>
         <Text style={styles.detailPanelTitle}>Informasi Tambahan</Text>
         <Text style={styles.detailMutedText}>Custom field dan spesifikasi.</Text>
       </View>
-      {product.customFields.length ? (
-        <ProductCustomFieldGroup fields={product.customFields} title="Bahan Baku" />
-      ) : null}
-      {product.variants.map(variant =>
-        variant.customFields.length ? (
-          <ProductCustomFieldGroup
-            fields={variant.customFields}
-            key={variant.id}
-            title={variant.label || variant.productCode || variant.sku || 'Varian'}
-          />
-        ) : null,
-      )}
+      <View style={styles.rawCustomFieldGrid}>
+        {rows.map(({ field, group }) => (
+          <View key={`${group}-${field.id}`} style={styles.rawCustomFieldCard}>
+            <KolamCustomFieldIcon field={createProductCustomFieldIconAdapter(field)} />
+            <View style={styles.rawCustomFieldCopy}>
+              <View style={styles.inlineMetricRow}>
+                <Text style={styles.customFieldSpecLabel}>{field.label}</Text>
+                {field.required ? <KolamBadge intent="warning" label="Wajib" /> : null}
+              </View>
+              <Text style={styles.customFieldSpecValue}>{field.value || '-'}</Text>
+              <Text style={styles.customFieldSpecMeta}>{group}{field.meta ? ` | ${field.meta}` : ''}</Text>
+            </View>
+          </View>
+        ))}
+      </View>
     </View>
   );
+}
+
+function ProductRawShippingMethodsPanel({ product }: { product: KolamProduct }) {
+  const shippingMethods = Array.isArray(product.logistics.shippingMethods)
+    ? product.logistics.shippingMethods
+    : [];
+  const summaryItems = getRawShippingSummaryItems(product);
+
+  if (!shippingMethods.length) {
+    return null;
+  }
+
+  return (
+    <View style={styles.detailPanel}>
+      <View style={styles.panelTitleRow}>
+        <View style={styles.sectionTitleWrap}>
+          <Text style={styles.detailPanelTitle}>Metode Pengiriman</Text>
+          <Text style={styles.detailMutedText}>Opsi pengiriman yang tersedia untuk bahan baku ini.</Text>
+        </View>
+        {summaryItems.length ? (
+          <View style={styles.inlineMetricRow}>
+            {summaryItems.map(item => (
+              <KolamBadge key={item} intent="secondary" label={item} />
+            ))}
+          </View>
+        ) : null}
+      </View>
+      <View style={styles.logisticsShippingGrid}>
+        {shippingMethods.map(method => {
+          const limits = formatProductShippingLimits(method);
+          return (
+            <View key={method.id} style={[styles.logisticsVariantCard, styles.logisticsHalfCard]}>
+              <View style={styles.logisticsMethodHeader}>
+                {method.logoUri ? (
+                  <KolamRemoteImage
+                    accessibilityLabel={`Logo ${method.displayName}`}
+                    resizeMode="contain"
+                    revision={method.id}
+                    scope="shipping-method-logo"
+                    sourceUri={method.logoUri}
+                    style={styles.logisticsMethodLogo}
+                  />
+                ) : (
+                  <View style={styles.logisticsMethodLogoFallback}>
+                    <Text style={styles.logisticsMethodLogoFallbackText}>{method.displayName.slice(0, 1).toUpperCase()}</Text>
+                  </View>
+                )}
+                <View style={styles.logisticsMethodTitleWrap}>
+                  <Text style={styles.logisticsMethodTitle}>{method.displayName}</Text>
+                  <Text style={styles.logisticsMethodMeta}>{formatProductShippingPrice(method)}</Text>
+                </View>
+                {method.category ? <KolamBadge intent="muted" label={method.category} /> : null}
+              </View>
+              <Text style={styles.logisticsMethodMeta}>{formatProductShippingEta(method)}</Text>
+              <Text style={styles.logisticsMethodMeta}>{formatProductShippingCoverage(method)}</Text>
+              {limits ? <Text style={styles.logisticsMethodMeta}>{limits}</Text> : null}
+              {method.minimumOrderAmount > 0 ? (
+                <Text style={styles.logisticsMethodMeta}>Min. order: {formatCurrency(method.minimumOrderAmount)}</Text>
+              ) : null}
+            </View>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+function getRawShippingSummaryItems(product: KolamProduct) {
+  if (!product.hasVariants) {
+    return [
+      product.logistics.weightLabel && product.logistics.weightLabel !== '-'
+        ? `Berat: ${product.logistics.weightLabel}`
+        : '',
+      product.logistics.dimensionLabel && product.logistics.dimensionLabel !== '-'
+        ? `Dimensi: ${product.logistics.dimensionLabel}`
+        : '',
+    ].filter(Boolean);
+  }
+
+  const weightLabels = Array.from(new Set(
+    product.variants
+      .map(variant => getProductVariantWeightLabel(variant))
+      .filter(label => label && label !== '-'),
+  ));
+  const dimensionLabels = Array.from(new Set(
+    product.variants
+      .map(variant => getProductVariantDimensionLabel(variant))
+      .filter(label => label && label !== '-'),
+  ));
+
+  return [
+    weightLabels.length ? `Berat: ${weightLabels.length === 1 ? weightLabels[0] : `${weightLabels.length} varian`}` : '',
+    dimensionLabels.length ? `Dimensi: ${dimensionLabels.length === 1 ? dimensionLabels[0] : `${dimensionLabels.length} varian`}` : '',
+  ].filter(Boolean);
 }
 
 function ProductRawComponentsTable({ components }: { components: KolamProduct['components'] }) {
@@ -8049,6 +8196,29 @@ const styles = StyleSheet.create({
   },
   rawVendorStack: {
     gap: 12,
+  },
+  rawCustomFieldGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginTop: 12,
+  },
+  rawCustomFieldCard: {
+    alignItems: 'flex-start',
+    backgroundColor: V.colors.mutedSoft,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexBasis: 280,
+    flexDirection: 'row',
+    flexGrow: 1,
+    gap: 10,
+    padding: 12,
+  },
+  rawCustomFieldCopy: {
+    flex: 1,
+    gap: 4,
+    minWidth: 0,
   },
   localeTitleRow: {
     alignItems: 'flex-start',
