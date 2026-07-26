@@ -52,6 +52,7 @@ import { KolamStatusBadge } from './kolam-status-badge';
 type PackingSortMode = 'newest' | 'name-asc' | 'name-desc' | 'stock-desc';
 type PackingStatusFilter = 'all' | 'active' | 'inactive';
 type PackingCategoryFilter = 'all' | string;
+type PackingToolbarFilterPanel = 'sort' | 'category' | 'status';
 
 export function KolamPackingMaterialSurface({
   onRouteChange,
@@ -127,7 +128,8 @@ function KolamPackingMaterialList({
   const [sortMode, setSortMode] = React.useState<PackingSortMode>('newest');
   const [categoryFilter, setCategoryFilter] =
     React.useState<PackingCategoryFilter>('all');
-  const [categoryPanelOpen, setCategoryPanelOpen] = React.useState(false);
+  const [activeFilterPanel, setActiveFilterPanel] =
+    React.useState<PackingToolbarFilterPanel | null>(null);
   const [statusFilter, setStatusFilter] =
     React.useState<PackingStatusFilter>('all');
   const [pageSize, setPageSize] = React.useState(10);
@@ -155,17 +157,45 @@ function KolamPackingMaterialList({
     (safePage - 1) * pageSize,
     safePage * pageSize,
   );
-  const categoryFilterOptions = React.useMemo(
+  const sortFilterOptions = React.useMemo<Array<{ label: string; value: PackingSortMode }>>(
+    () => [
+      { label: 'Terbaru', value: 'newest' },
+      { label: 'Nama A-Z', value: 'name-asc' },
+      { label: 'Nama Z-A', value: 'name-desc' },
+      { label: 'Stok Terbanyak', value: 'stock-desc' },
+    ],
+    [],
+  );
+  const categoryFilterOptions = React.useMemo<Array<{ label: string; value: PackingCategoryFilter }>>(
     () => [
       { label: 'Semua', value: 'all' },
       ...KOLAM_PACKING_CATEGORY_OPTIONS,
     ],
     [],
   );
+  const statusFilterOptions = React.useMemo<Array<{ label: string; value: PackingStatusFilter }>>(
+    () => [
+      { label: 'Semua', value: 'all' },
+      { label: 'Aktif', value: 'active' },
+      { label: 'Nonaktif', value: 'inactive' },
+    ],
+    [],
+  );
+  const sortFilterLabel =
+    sortFilterOptions.find(option => option.value === sortMode)?.label ??
+    'Urutan';
   const categoryFilterLabel =
     categoryFilter === 'all'
       ? 'Kategori'
       : getPackingCategoryLabel(categoryFilter);
+  const statusFilterLabel =
+    statusFilter === 'all'
+      ? 'Status'
+      : statusFilterOptions.find(option => option.value === statusFilter)
+          ?.label ?? 'Status';
+  const toggleFilterPanel = (panel: PackingToolbarFilterPanel) => {
+    setActiveFilterPanel(current => (current === panel ? null : panel));
+  };
 
   React.useEffect(() => {
     setPage(1);
@@ -188,31 +218,20 @@ function KolamPackingMaterialList({
               style={styles.searchInput}
               value={search}
             />
-            <KolamDropdownSelect<PackingSortMode>
-              label="Urutan"
-              onChange={setSortMode}
-              options={[
-                { label: 'Terbaru', value: 'newest' },
-                { label: 'Nama A-Z', value: 'name-asc' },
-                { label: 'Nama Z-A', value: 'name-desc' },
-                { label: 'Stok Terbanyak', value: 'stock-desc' },
-              ]}
-              value={sortMode}
+            <PackingFilterTrigger
+              active={activeFilterPanel === 'sort' || sortMode !== 'newest'}
+              label={sortFilterLabel}
+              onPress={() => toggleFilterPanel('sort')}
             />
             <PackingFilterTrigger
-              active={categoryPanelOpen || categoryFilter !== 'all'}
+              active={activeFilterPanel === 'category' || categoryFilter !== 'all'}
               label={categoryFilterLabel}
-              onPress={() => setCategoryPanelOpen(current => !current)}
+              onPress={() => toggleFilterPanel('category')}
             />
-            <KolamDropdownSelect<PackingStatusFilter>
-              label="Status"
-              onChange={setStatusFilter}
-              options={[
-                { label: 'Semua', value: 'all' },
-                { label: 'Aktif', value: 'active' },
-                { label: 'Nonaktif', value: 'inactive' },
-              ]}
-              value={statusFilter}
+            <PackingFilterTrigger
+              active={activeFilterPanel === 'status' || statusFilter !== 'all'}
+              label={statusFilterLabel}
+              onPress={() => toggleFilterPanel('status')}
             />
           </View>
           <View style={styles.actionRow}>
@@ -235,15 +254,34 @@ function KolamPackingMaterialList({
             />
           </View>
         </View>
-        {categoryPanelOpen ? (
-          <PackingCategoryFilterPanel
-            onCategoryChange={value => {
-              setCategoryFilter(value);
-              setCategoryPanelOpen(false);
+        {activeFilterPanel ? (
+          <PackingFilterPanel
+            onClose={() => setActiveFilterPanel(null)}
+            onSelect={value => {
+              if (activeFilterPanel === 'sort') {
+                setSortMode(value as PackingSortMode);
+              } else if (activeFilterPanel === 'category') {
+                setCategoryFilter(value);
+              } else {
+                setStatusFilter(value as PackingStatusFilter);
+              }
+              setActiveFilterPanel(null);
             }}
-            onClose={() => setCategoryPanelOpen(false)}
-            options={categoryFilterOptions}
-            selectedCategory={categoryFilter}
+            options={
+              activeFilterPanel === 'sort'
+                ? sortFilterOptions
+                : activeFilterPanel === 'category'
+                ? categoryFilterOptions
+                : statusFilterOptions
+            }
+            panel={activeFilterPanel}
+            selectedValue={
+              activeFilterPanel === 'sort'
+                ? sortMode
+                : activeFilterPanel === 'category'
+                ? categoryFilter
+                : statusFilter
+            }
           />
         ) : null}
       </View>
@@ -365,32 +403,35 @@ function PackingFilterTrigger({
   );
 }
 
-function PackingCategoryFilterPanel({
-  onCategoryChange,
+function PackingFilterPanel({
   onClose,
+  onSelect,
   options,
-  selectedCategory,
+  panel,
+  selectedValue,
 }: {
-  onCategoryChange: (value: PackingCategoryFilter) => void;
   onClose: () => void;
+  onSelect: (value: string) => void;
   options: Array<{ label: string; value: string }>;
-  selectedCategory: PackingCategoryFilter;
+  panel: PackingToolbarFilterPanel;
+  selectedValue: string;
 }) {
   return (
-    <View style={styles.filterOverlayPanel}>
+    <View
+      style={[styles.filterOverlayPanel, getPackingFilterOverlayStyle(panel)]}>
       <ScrollView
         contentContainerStyle={styles.filterPanelContent}
         keyboardShouldPersistTaps="handled"
         style={styles.filterPanelScroll}>
         {options.map(option => {
-          const selected = option.value === selectedCategory;
+          const selected = option.value === selectedValue;
 
           return (
             <KolamButton
               intent={selected ? 'primary' : 'plain'}
               key={option.value}
               label={option.label}
-              onPress={() => onCategoryChange(option.value)}
+              onPress={() => onSelect(option.value)}
               style={styles.filterPanelOption}
             />
           );
@@ -401,6 +442,18 @@ function PackingCategoryFilterPanel({
       </View>
     </View>
   );
+}
+
+function getPackingFilterOverlayStyle(panel: PackingToolbarFilterPanel) {
+  switch (panel) {
+    case 'sort':
+      return styles.filterPanelSort;
+    case 'status':
+      return styles.filterPanelStatus;
+    case 'category':
+    default:
+      return styles.filterPanelCategory;
+  }
 }
 
 function KolamPackingMaterialRow({
@@ -2310,7 +2363,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     elevation: 1200,
-    left: 390,
     padding: 6,
     position: 'absolute',
     shadowColor: V.colors.fg,
@@ -2320,6 +2372,16 @@ const styles = StyleSheet.create({
     top: 48,
     width: 240,
     zIndex: 120000,
+  },
+  filterPanelSort: {
+    left: 236,
+  },
+  filterPanelCategory: {
+    left: 390,
+  },
+  filterPanelStatus: {
+    left: 544,
+    width: 220,
   },
   filterPanelScroll: {
     maxHeight: 240,
