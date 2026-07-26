@@ -690,7 +690,7 @@ function PackingOverviewPanel({
           <View style={styles.overviewBody}>
             <View style={styles.overviewMetricGrid}>
               <DetailMetric
-                label="Status pembayaran"
+                label="Status checkout"
                 value={item.status === 'active' ? 'Aktif' : 'Nonaktif'}
                 badgeIntent={item.status === 'active' ? 'success' : 'warning'}
               />
@@ -724,7 +724,7 @@ function PackingOverviewPanel({
                   value={formatRupiah(item.price)}
                 />
                 <PriceTile
-                  label="HPP dari supplier"
+                  label="HPP dari vendor"
                   value={effectiveHpp > 0 ? formatRupiah(effectiveHpp) : '-'}
                   note={cheapestSupplier ? `Termurah: ${cheapestSupplier.vendorName}` : undefined}
                 />
@@ -1943,15 +1943,17 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   overviewContent: {
+    alignItems: 'flex-start',
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 18,
+    gap: 22,
     padding: 16,
   },
   overviewBody: {
     flex: 1,
+    flexBasis: 0,
     gap: 14,
-    minWidth: 420,
+    minWidth: 520,
   },
   overviewMetricGrid: {
     flexDirection: 'row',
@@ -1964,6 +1966,7 @@ const styles = StyleSheet.create({
     borderRadius: V.radius.lg,
     borderWidth: 1,
     flex: 1,
+    flexBasis: '23%',
     gap: 6,
     minHeight: 76,
     minWidth: 150,
@@ -2019,6 +2022,7 @@ const styles = StyleSheet.create({
     borderRadius: V.radius.lg,
     borderWidth: 1,
     flex: 1,
+    flexBasis: '30%',
     minWidth: 190,
     padding: 12,
   },
@@ -2047,18 +2051,18 @@ const styles = StyleSheet.create({
   },
   gallery: {
     gap: 10,
-    width: 300,
+    width: 320,
   },
   galleryHeroWrap: {
-    height: 300,
+    height: 320,
     position: 'relative',
-    width: 300,
+    width: 320,
   },
   galleryHero: {
     backgroundColor: V.colors.muted,
     borderRadius: 8,
-    height: 300,
-    width: 300,
+    height: 320,
+    width: 320,
   },
   galleryEmpty: {
     alignItems: 'center',
