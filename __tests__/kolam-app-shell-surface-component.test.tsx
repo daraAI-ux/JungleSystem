@@ -257,4 +257,93 @@ describe('KolamAppShellSurface', () => {
       }),
     );
   });
+
+  it('uses the same centered page container for Pengaturan', async () => {
+    const visual = getDashboardLayoutVisualContract();
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAppShellSurface
+          sidebar={{
+            accessScope: { am: true, kolam: true, pos: true },
+            activeModule: 'settings',
+            activeRoute: '/pengaturan',
+            collapsed: false,
+            expandedSections: {},
+            filterMenuByAccess: false,
+            onMoveMenuSection: () => undefined,
+            onQuickSearch: () => undefined,
+            onSelectMenuItem: () => undefined,
+            onSelectModule: () => undefined,
+            onToggleMenuSection: () => undefined,
+            sectionOrder: [],
+          }}
+          topNavigation={{
+            attentionCount: 0,
+            breadcrumbItems: getTopNavBreadcrumbItems('settings'),
+            displayInitials: 'DA',
+            rightControls: getTopNavRightControls(),
+            serverMetrics: {
+              snapshot: {
+                checkedAt: '2026-07-19T00:00:00.000Z',
+                cpuPercent: 12,
+                memoryPercent: 34,
+                diskPercent: 56,
+              },
+            },
+            onAvatarPress: () => undefined,
+            onBreadcrumbDashboardPress: () => undefined,
+            onNotificationPress: () => undefined,
+            onToggleSidebar: () => undefined,
+          }}
+          overlay={{
+            isAttentionOpen: false,
+            isCommandPaletteOpen: false,
+            isUserMenuOpen: false,
+            userMenu: {
+              items: [],
+              displayName: 'Dunia Anura',
+              initials: 'DA',
+              email: 'seed@kolam.local',
+              accessScope: { am: true, kolam: true, pos: true },
+              onClose: () => undefined,
+              onSelect: () => undefined,
+            },
+            attention: {
+              items: [],
+              unreadCount: 0,
+              onClose: () => undefined,
+              onSeeAll: () => undefined,
+            },
+            commandPalette: {
+              commands: [],
+              search: '',
+              onSearchChange: () => undefined,
+              onClose: () => undefined,
+              onSelect: () => undefined,
+            },
+          }}
+          dashboardHeader={{
+            actions: getDashboardHeaderActions(),
+            title: 'Pengaturan',
+            subtitle: 'Settings produksi',
+            sessionOpen: false,
+            showSessionPill: false,
+            syncIndicator: seedHeaderSyncIndicator,
+            onSelectModule: () => undefined,
+          }}
+        >
+          <Text>Pengaturan child</Text>
+        </KolamAppShellSurface>,
+      );
+    });
+
+    expect(getMainContentStyle(renderer!)).toEqual(
+      expect.objectContaining({
+        maxWidth: visual.page.maxWidthPx,
+        alignSelf: 'center',
+      }),
+    );
+  });
 });

@@ -122,6 +122,30 @@ describe('topNavUserMenuItems', () => {
         current: true,
       },
     ]);
+    expect(
+      getTopNavBreadcrumbItems('settings', {
+        activeNavigationItem: {
+          label: 'Pengaturan',
+          route: '/pengaturan',
+          description: 'Pusat settings produksi',
+          group: 'Settings',
+          requiredAccess: ['kolam'],
+        },
+      }),
+    ).toEqual([
+      {
+        id: 'dashboard',
+        label: 'Dashboard',
+        routeHint: '/',
+        current: false,
+      },
+      {
+        id: 'settings',
+        label: 'Pengaturan',
+        routeHint: '/pengaturan',
+        current: true,
+      },
+    ]);
 
     expect(getTopNavBreadcrumbItems('plugins')).toEqual([
       expect.objectContaining({

@@ -73,6 +73,7 @@ function isKolamCenteredRoute(route?: string | null) {
 }
 
 const KOLAM_CENTERED_ROUTE_PREFIXES = [
+  '/pengaturan',
   '/label-dan-field',
   '/merek',
   '/kategori',

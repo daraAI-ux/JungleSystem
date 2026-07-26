@@ -257,8 +257,15 @@ export function getTopNavBreadcrumbItems(
     id: module.id,
     label: module.label,
     routeHint,
-    current: !hasTopNavRouteContext(context),
+    current:
+      !hasTopNavRouteContext(context) ||
+      isTopNavSameRoute(context.activeNavigationItem?.route, routeHint),
   };
+  const activeNavigationItem =
+    context.activeNavigationItem &&
+    !isTopNavSameRoute(context.activeNavigationItem.route, routeHint)
+      ? context.activeNavigationItem
+      : null;
 
   return compactBreadcrumbs([
     { ...dashboardCrumb, current: false },
@@ -272,17 +279,15 @@ export function getTopNavBreadcrumbItems(
           current: true,
         }
       : null,
-    context.activeNavigationItem
-      ? getGroupBreadcrumb(context.activeNavigationItem.group)
+    activeNavigationItem ? getGroupBreadcrumb(activeNavigationItem.group) : null,
+    activeNavigationItem
+      ? getNavigationParentBreadcrumb(activeNavigationItem, moduleId)
       : null,
-    context.activeNavigationItem
-      ? getNavigationParentBreadcrumb(context.activeNavigationItem, moduleId)
-      : null,
-    context.activeNavigationItem
+    activeNavigationItem
       ? {
-          id: `route:${context.activeNavigationItem.route}`,
-          label: getNavigationBreadcrumbLabel(context.activeNavigationItem),
-          routeHint: context.activeNavigationItem.route,
+          id: `route:${activeNavigationItem.route}`,
+          label: getNavigationBreadcrumbLabel(activeNavigationItem),
+          routeHint: activeNavigationItem.route,
           targetModule: moduleId,
           current: true,
         }
@@ -435,6 +440,19 @@ function compactBreadcrumbs(
   items: Array<TopNavBreadcrumbItem | null>,
 ): TopNavBreadcrumbItem[] {
   return items.filter((item): item is TopNavBreadcrumbItem => Boolean(item));
+}
+
+function isTopNavSameRoute(left?: string | null, right?: string | null) {
+  if (!left || !right) {
+    return false;
+  }
+
+  return normalizeTopNavRoute(left) === normalizeTopNavRoute(right);
+}
+
+function normalizeTopNavRoute(route: string) {
+  const routePath = route.split('?')[0] || '/';
+  return routePath.startsWith('/') ? routePath : `/${routePath}`;
 }
 
 function hasTopNavRouteContext({
