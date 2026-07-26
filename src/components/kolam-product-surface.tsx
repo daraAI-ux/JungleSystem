@@ -3172,11 +3172,17 @@ function ProductVariantVendorPricesEditor({
   controller: ReturnType<typeof useKolamProductController>;
   variant: KolamProductVariantFormRow;
 }) {
+  const isRaw = controller.form?.productType === 'raw';
+
   return (
     <ProductVendorPricesEditor
       controller={controller}
       emptyText="Belum ada harga pemasok untuk varian ini."
-      hint="Harga beli pemasok, ongkir dari PO, dan total HPP per varian."
+      hint={
+        isRaw
+          ? 'Harga beli supplier varian. Ongkir dan total biaya berasal dari data PO/BE.'
+          : 'Harga beli pemasok, ongkir dari PO, dan total HPP per varian.'
+      }
       onAdd={() => addProductVariantVendorPriceRow(controller, variant.id)}
       onPatch={(rowId, patch) =>
         updateProductVariantVendorPriceRow(controller, variant.id, rowId, patch)
@@ -3185,7 +3191,7 @@ function ProductVariantVendorPricesEditor({
         removeProductVariantVendorPriceRow(controller, variant.id, rowId)
       }
       rows={variant.vendorPrices}
-      title="Harga Vendor / HPP"
+      title={isRaw ? 'Harga Supplier Varian' : 'Harga Vendor / HPP'}
     />
   );
 }
@@ -3205,7 +3211,11 @@ function ProductRootVendorPricesEditor({
     <ProductVendorPricesEditor
       controller={controller}
       emptyText="Belum ada harga pemasok untuk produk utama."
-      hint="Harga beli pemasok untuk produk tanpa varian. Ongkir mengikuti data PO jika tersedia."
+      hint={
+        form.productType === 'raw'
+          ? 'Harga beli supplier untuk bahan baku tanpa varian. Ongkir dan total biaya berasal dari data PO/BE.'
+          : 'Harga beli pemasok untuk produk tanpa varian. Ongkir mengikuti data PO jika tersedia.'
+      }
       onAdd={() =>
         controller.onChangeForm({
           vendorPrices: [
@@ -3227,7 +3237,7 @@ function ProductRootVendorPricesEditor({
         })
       }
       rows={form.vendorPrices}
-      title="Harga Vendor / HPP Utama"
+      title={form.productType === 'raw' ? 'Harga Supplier' : 'Harga Vendor / HPP Utama'}
     />
   );
 }
