@@ -36,10 +36,17 @@ import {
   deleteKolamRole,
   getKolamActivityLogs,
   getKolamActivityLogStats,
+  getKolamAnnouncementBannersAdmin,
+  getKolamCategoryBannersAdmin,
+  getKolamCtaSectionAdmin,
+  getKolamCustomerNoticesAdmin,
+  getKolamHeroSlidesAdmin,
+  getKolamMarketplaceContentAdmin,
   getKolamWebSetting,
   getKolamWebSettingVersion,
   getKolamWebSettingVersions,
   getKolamRoles,
+  getKolamYoutubeSectionAdmin,
   deleteKolamNotificationSound,
   updateKolamRole,
   updateKolamWebSetting,
@@ -49,12 +56,19 @@ import {
   type KolamActivityLog,
   type KolamActivityLogListParams,
   type KolamActivityLogStatsResponse,
+  type KolamAnnouncementBanner,
+  type KolamCategoryBanner,
+  type KolamCtaSection,
+  type KolamCustomerTextNotice,
+  type KolamHeroSlide,
+  type KolamMarketplaceContent,
   type KolamNotificationSoundType,
   type KolamRole,
   type KolamRolePermission,
   type KolamWebSetting,
   type KolamWebSettingVersion,
   type KolamWebSettingVersions,
+  type KolamYoutubeSection,
 } from '../services/kolam-api';
 import {getCurrentUser} from '../services/auth-api';
 import {ApiError} from '../lib/api-error';
@@ -64,6 +78,7 @@ type WebSettingSaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 type RoleSaveStatus = 'idle' | 'loading' | 'saving' | 'saved' | 'error';
 type ActivityLogStatus = 'idle' | 'loading' | 'live' | 'error';
 type NotificationSoundStatus = 'idle' | 'uploading' | 'deleting';
+type MarketplaceLandingOverviewStatus = 'idle' | 'loading' | 'live' | 'error';
 const maskedSecretPlaceholder = '********';
 const notificationSoundDraftFieldByType: Record<
   KolamNotificationSoundType,
@@ -165,6 +180,18 @@ interface RoleDraft {
   description: string;
 }
 
+export interface MarketplaceLandingOverview {
+  status: MarketplaceLandingOverviewStatus;
+  message: string;
+  heroSlides: KolamHeroSlide[];
+  categoryBanners: KolamCategoryBanner[];
+  ctaSection: KolamCtaSection | null;
+  youtubeSection: KolamYoutubeSection | null;
+  announcementBanners: KolamAnnouncementBanner[];
+  customerNotices: KolamCustomerTextNotice[];
+  marketplaceContent: KolamMarketplaceContent;
+}
+
 const emptyWebSettingDraft: WebSettingDraft = {
   versionKolam: '',
   versionEnclonura: '',
@@ -256,6 +283,18 @@ const emptyRoleDraft: RoleDraft = {
   description: '',
 };
 
+const emptyMarketplaceLandingOverview: MarketplaceLandingOverview = {
+  status: 'idle',
+  message: '',
+  heroSlides: [],
+  categoryBanners: [],
+  ctaSection: null,
+  youtubeSection: null,
+  announcementBanners: [],
+  customerNotices: [],
+  marketplaceContent: {},
+};
+
 const activityLogPageSize = 50;
 
 const emptyActivityLogFilters: SettingsActivityLogFilterState = {
@@ -304,6 +343,8 @@ export function useKolamSettingsPanelController(
   const [notificationSoundStatus, setNotificationSoundStatus] = useState<
     Partial<Record<KolamNotificationSoundType, NotificationSoundStatus>>
   >({});
+  const [marketplaceLandingOverview, setMarketplaceLandingOverview] =
+    useState<MarketplaceLandingOverview>(emptyMarketplaceLandingOverview);
   const [webSettingDraft, setWebSettingDraft] = useState<WebSettingDraft>(
     emptyWebSettingDraft,
   );
@@ -363,6 +404,69 @@ export function useKolamSettingsPanelController(
         if (mounted) {
           setWebSettingStatus('error');
           setWebSettingMessage('Gagal membaca Web Settings live.');
+        }
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [activeSurfaceId]);
+
+  useEffect(() => {
+    if (activeSurfaceId !== 'web-settings') {
+      return;
+    }
+
+    let mounted = true;
+    setMarketplaceLandingOverview(current => ({
+      ...current,
+      status: 'loading',
+      message: '',
+    }));
+
+    Promise.all([
+      getKolamHeroSlidesAdmin(),
+      getKolamCategoryBannersAdmin(),
+      getKolamCtaSectionAdmin(),
+      getKolamYoutubeSectionAdmin(),
+      getKolamAnnouncementBannersAdmin(),
+      getKolamCustomerNoticesAdmin(),
+      getKolamMarketplaceContentAdmin(),
+    ])
+      .then(
+        ([
+          heroSlides,
+          categoryBanners,
+          ctaSection,
+          youtubeSection,
+          announcementBanners,
+          customerNotices,
+          marketplaceContent,
+        ]) => {
+          if (!mounted) {
+            return;
+          }
+
+          setMarketplaceLandingOverview({
+            status: 'live',
+            message: '',
+            heroSlides,
+            categoryBanners,
+            ctaSection,
+            youtubeSection,
+            announcementBanners,
+            customerNotices,
+            marketplaceContent,
+          });
+        },
+      )
+      .catch(error => {
+        if (mounted) {
+          setMarketplaceLandingOverview(current => ({
+            ...current,
+            status: 'error',
+            message: getMarketplaceLandingOverviewErrorMessage(error),
+          }));
         }
       });
 
@@ -990,6 +1094,7 @@ export function useKolamSettingsPanelController(
     detailRows,
     liveEndpoints,
     maintenanceMode,
+    marketplaceLandingOverview,
     roleRows,
     roles,
     roleDraft,
@@ -1385,6 +1490,18 @@ function getNotificationSoundErrorMessage(error: unknown) {
   }
 
   return 'Gagal memproses notification sound.';
+}
+
+function getMarketplaceLandingOverviewErrorMessage(error: unknown) {
+  if (error instanceof ApiError && error.status === 403) {
+    return 'Akses ditolak: permission websetting:view diperlukan.';
+  }
+
+  if (error instanceof ApiError && error.message) {
+    return error.message;
+  }
+
+  return 'Gagal membaca Marketplace Landing live.';
 }
 
 function getRoleSaveErrorMessage(error: unknown) {

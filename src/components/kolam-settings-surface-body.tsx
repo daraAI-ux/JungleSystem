@@ -17,6 +17,7 @@ export function KolamSettingsSurfaceBody({
       <KolamSettingsWebConfigSurface
         fields={controller.webConfigFields}
         maintenanceMode={controller.maintenanceMode}
+        marketplaceLandingOverview={controller.marketplaceLandingOverview}
         onToggleMaintenanceMode={() =>
           controller.setMaintenanceMode(current => !current)
         }

@@ -14,6 +14,7 @@ import type {
   KolamNotificationSoundType,
   KolamPluginConfigKey,
 } from '../services/kolam-api';
+import type {MarketplaceLandingOverview} from './kolam-settings-panel-controller';
 
 type WebSettingDraft = {
   versionKolam: string;
@@ -94,6 +95,7 @@ type WebSettingDraft = {
 export function KolamSettingsWebConfigSurface({
   fields,
   maintenanceMode,
+  marketplaceLandingOverview,
   onToggleMaintenanceMode,
   onToggleStorefrontEnabled,
   onSave,
@@ -114,6 +116,7 @@ export function KolamSettingsWebConfigSurface({
   draft: WebSettingDraft;
   fields: SettingsWebConfigField[];
   maintenanceMode: boolean;
+  marketplaceLandingOverview: MarketplaceLandingOverview;
   onToggleMaintenanceMode: () => void;
   onToggleStorefrontEnabled: () => void;
   onSave: () => void;
@@ -891,12 +894,202 @@ export function KolamSettingsWebConfigSurface({
           ]}
         />
       ) : null}
+      <MarketplaceLandingOverviewPanel overview={marketplaceLandingOverview} />
       <KolamSettingsWebFormSections sections={sections} />
     </KolamContentFrame>
   );
 }
 
+function MarketplaceLandingOverviewPanel({
+  overview,
+}: {
+  overview: MarketplaceLandingOverview;
+}) {
+  const featuredCollections =
+    overview.marketplaceContent.featuredCollections ?? [];
+  const bioactiveSteps =
+    overview.marketplaceContent.bioactiveEcosystem?.steps ?? [];
+  const rows = [
+    {
+      id: 'hero-slides',
+      label: 'Hero slides',
+      value: getCollectionSummary(overview.heroSlides),
+      detail: getFirstTitles(
+        overview.heroSlides.map(item => item.title || item.image),
+      ),
+    },
+    {
+      id: 'category-banners',
+      label: 'Category banners',
+      value: getCollectionSummary(overview.categoryBanners),
+      detail: getFirstTitles(
+        overview.categoryBanners.map(item => item.categorySlug || item.image),
+      ),
+    },
+    {
+      id: 'cta',
+      label: 'CTA section',
+      value: overview.ctaSection?.isActive === false ? 'Inactive' : 'Active',
+      detail: overview.ctaSection?.title || '-',
+    },
+    {
+      id: 'youtube',
+      label: 'YouTube section',
+      value:
+        overview.youtubeSection?.isActive === false ? 'Inactive' : 'Active',
+      detail: overview.youtubeSection?.link || overview.youtubeSection?.title || '-',
+    },
+    {
+      id: 'announcement-banners',
+      label: 'Announcement banners',
+      value: getCollectionSummary(overview.announcementBanners),
+      detail: getFirstTitles(
+        overview.announcementBanners.map(item => item.link || item.image),
+      ),
+    },
+    {
+      id: 'customer-notices',
+      label: 'Customer notices',
+      value: getCollectionSummary(overview.customerNotices),
+      detail: getFirstTitles(
+        overview.customerNotices.map(item => item.title || item.key),
+      ),
+    },
+    {
+      id: 'featured-collections',
+      label: 'Featured collections',
+      value: getCollectionSummary(featuredCollections),
+      detail: getFirstTitles(featuredCollections.map(item => item.title)),
+    },
+    {
+      id: 'bioactive-ecosystem',
+      label: 'Bioactive ecosystem',
+      value: getCollectionSummary(bioactiveSteps),
+      detail: getFirstTitles(bioactiveSteps.map(item => item.key)),
+    },
+  ];
+
+  return (
+    <View style={styles.marketplaceOverview}>
+      <KolamCopyStack
+        items={[
+          {
+            id: 'title',
+            text: 'Marketplace Landing Overview',
+            style: styles.marketplaceOverviewTitle,
+          },
+          {
+            id: 'status',
+            text:
+              overview.status === 'loading'
+                ? 'Loading live marketplace landing data...'
+                : overview.status === 'error'
+                  ? overview.message
+                  : 'Read-only live data from Marketplace Landing endpoints.',
+            style:
+              overview.status === 'error'
+                ? styles.marketplaceOverviewError
+                : styles.marketplaceOverviewMeta,
+          },
+        ]}
+      />
+      <View style={styles.marketplaceOverviewRows}>
+        {rows.map(row => (
+          <View key={row.id} style={styles.marketplaceOverviewRow}>
+            <KolamCopyStack
+              containerStyle={styles.marketplaceOverviewCopy}
+              items={[
+                {
+                  id: `${row.id}-label`,
+                  text: row.label,
+                  style: styles.marketplaceOverviewLabel,
+                },
+                {
+                  id: `${row.id}-detail`,
+                  text: row.detail,
+                  style: styles.marketplaceOverviewDetail,
+                },
+              ]}
+            />
+            <KolamCopyStack
+              items={[
+                {
+                  id: `${row.id}-value`,
+                  text: row.value,
+                  style: styles.marketplaceOverviewValue,
+                },
+              ]}
+            />
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function getCollectionSummary(items: Array<{isActive?: boolean}>) {
+  const active = items.filter(item => item.isActive !== false).length;
+  return `${active}/${items.length} active`;
+}
+
+function getFirstTitles(values: string[]) {
+  const visible = values.filter(Boolean).slice(0, 3);
+  return visible.length ? visible.join(' | ') : '-';
+}
+
 const styles = StyleSheet.create({
+  marketplaceOverview: {
+    borderColor: '#d1d5db',
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 12,
+    padding: 14,
+  },
+  marketplaceOverviewCopy: {
+    flex: 1,
+    gap: 4,
+    minWidth: 260,
+  },
+  marketplaceOverviewDetail: {
+    color: '#6b7280',
+    fontSize: 12,
+  },
+  marketplaceOverviewError: {
+    color: '#b91c1c',
+    fontSize: 12,
+  },
+  marketplaceOverviewLabel: {
+    color: '#111827',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  marketplaceOverviewMeta: {
+    color: '#6b7280',
+    fontSize: 12,
+  },
+  marketplaceOverviewRow: {
+    alignItems: 'center',
+    borderColor: '#e5e7eb',
+    borderTopWidth: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+  },
+  marketplaceOverviewRows: {
+    gap: 0,
+  },
+  marketplaceOverviewTitle: {
+    color: '#111827',
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  marketplaceOverviewValue: {
+    color: '#374151',
+    fontSize: 12,
+    fontWeight: '700',
+  },
   notificationSoundActions: {
     flexDirection: 'row',
     flexWrap: 'wrap',
