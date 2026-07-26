@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text } from 'react-native';
+import { StyleSheet, Text, TextInput } from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 import { KolamSettingsPanel } from '../src/components/kolam-settings-panel';
 import {
@@ -250,6 +250,37 @@ describe('KolamSettingsPanel', () => {
         'Simpan',
       ]),
     );
+    expect(text.indexOf('Suara notifikasi')).toBeLessThan(
+      text.indexOf('Suara chat belum diassign'),
+    );
+    expect(text.indexOf('Suara chat belum diassign')).toBeLessThan(
+      text.indexOf('Notifikasi handoff DARA'),
+    );
+    expect(text.indexOf('Notifikasi handoff DARA')).toBeLessThan(
+      text.indexOf('Suara handoff'),
+    );
+    expect(text.indexOf('Suara handoff')).toBeLessThan(
+      text.indexOf('Panggilan grup team chat'),
+    );
+    expect(text.indexOf('Panggilan grup team chat')).toBeLessThan(
+      text.indexOf('Nada panggilan grup'),
+    );
+    expect(text.indexOf('Suara penjualan')).toBeLessThan(
+      text.indexOf('Firebase'),
+    );
+    expect(text.indexOf('Firebase')).toBeLessThan(text.indexOf('Host SMTP'));
+    expect(text.indexOf('Host SMTP')).toBeLessThan(
+      text.indexOf('OTP login staff'),
+    );
+
+    const smtpHostInput = renderer!.root
+      .findAllByType(TextInput)
+      .find(node => node.props.placeholder === 'smtp.gmail.com');
+    const otpInput = renderer!.root
+      .findAllByType(TextInput)
+      .find(node => node.props.placeholder === '10');
+    expect(StyleSheet.flatten(smtpHostInput?.props.style).width).toBe(460);
+    expect(StyleSheet.flatten(otpInput?.props.style).width).toBe(460);
     expect(text).not.toEqual(
       expect.arrayContaining([
         'Tagline Perusahaan',

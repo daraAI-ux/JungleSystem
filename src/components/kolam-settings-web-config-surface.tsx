@@ -554,6 +554,49 @@ export function KolamSettingsWebConfigSurface({
         .map(staff => `${getUserPickerLabel(staff)} (${staff._id})`)
         .join(' | ')
     : 'Staff list belum tersedia. Isi user ID manual, pisahkan koma atau baris baru.';
+  const renderNotificationSoundRow = (
+    item: (typeof notificationSoundItems)[number],
+  ) => {
+    const status = notificationSoundStatus[item.type] ?? 'idle';
+    const busy = status === 'uploading' || status === 'deleting';
+
+    return (
+      <View key={item.id} style={styles.notificationSoundRow}>
+        <KolamCopyStack
+          containerStyle={styles.notificationSoundCopy}
+          items={[
+            {
+              id: `${item.id}-label`,
+              text: item.label,
+              style: styles.notificationSoundLabel,
+            },
+            {
+              id: `${item.id}-path`,
+              text: item.value || '-',
+              style: styles.notificationSoundPath,
+            },
+          ]}
+        />
+        <View style={styles.notificationSoundActions}>
+          <KolamActionControlButton
+            label="Unggah"
+            loading={status === 'uploading'}
+            loadingLabel="Mengunggah..."
+            disabled={disabled || busy}
+            onPress={() => onUploadNotificationSound(item.type)}
+          />
+          <KolamActionControlButton
+            label="Reset"
+            intent="danger"
+            loading={status === 'deleting'}
+            loadingLabel="Mereset..."
+            disabled={disabled || busy || !item.value}
+            onPress={() => onDeleteNotificationSound(item.type)}
+          />
+        </View>
+      </View>
+    );
+  };
 
   return (
     <KolamContentFrame variant="settingsWebConfig">
@@ -2362,6 +2405,9 @@ export function KolamSettingsWebConfigSurface({
       ) : null}
       {showNotificationSettings ? (
         <>
+          <View style={styles.notificationSoundList}>
+            {notificationSoundItems.slice(0, 2).map(renderNotificationSoundRow)}
+          </View>
           <KolamToggleRow
             label="Notifikasi handoff DARA"
             description="Kirim notifikasi saat handoff customer."
@@ -2374,6 +2420,9 @@ export function KolamSettingsWebConfigSurface({
               )
             }
           />
+          <View style={styles.notificationSoundList}>
+            {renderNotificationSoundRow(notificationSoundItems[2])}
+          </View>
           <KolamToggleRow
             label="Panggilan grup team chat"
             description="Aktifkan panggilan grup di team chat."
@@ -2386,48 +2435,45 @@ export function KolamSettingsWebConfigSurface({
               )
             }
           />
+          <View style={styles.notificationSoundList}>
+            {renderNotificationSoundRow(notificationSoundItems[3])}
+            {renderNotificationSoundRow(notificationSoundItems[4])}
+          </View>
           <KolamToggleRow
-            label="OTP login staff"
-            description="Aktifkan OTP untuk login staff produksi."
-            active={draft.staffOtpLoginEnabled}
+            label="Firebase"
+            description="Aktifkan Firebase Admin untuk notifikasi."
+            active={draft.firebaseEnabled}
             onPress={() =>
               !disabled &&
-              setDraftField('staffOtpLoginEnabled', !draft.staffOtpLoginEnabled)
+              setDraftField('firebaseEnabled', !draft.firebaseEnabled)
             }
           />
           <KolamTextFieldRow
-            label="Menit kedaluwarsa OTP"
-            description="Durasi OTP aktif sebelum kadaluarsa."
-            value={draft.staffOtpExpireMinutes}
-            onChangeText={value =>
-              setDraftField('staffOtpExpireMinutes', value)
-            }
-            placeholder="10"
+            fieldWidth={settingsFieldWidth}
+            label="ID project Firebase"
+            description="ID project Firebase produksi."
+            value={draft.firebaseProjectId}
+            onChangeText={value => setDraftField('firebaseProjectId', value)}
+            placeholder="dunia-anura"
           />
           <KolamTextFieldRow
-            label="Jeda kirim ulang OTP"
-            description="Jeda detik sebelum OTP boleh dikirim ulang."
-            value={draft.staffOtpResendCooldownSeconds}
-            onChangeText={value =>
-              setDraftField('staffOtpResendCooldownSeconds', value)
-            }
-            placeholder="60"
+            fieldWidth={settingsFieldWidth}
+            label="Email client Firebase"
+            description="Email client service account."
+            value={draft.firebaseClientEmail}
+            onChangeText={value => setDraftField('firebaseClientEmail', value)}
+            placeholder="firebase-adminsdk@..."
           />
           <KolamTextFieldRow
-            label="Maks percobaan OTP"
-            description="Batas percobaan OTP sebelum lock."
-            value={draft.staffOtpMaxAttempts}
-            onChangeText={value => setDraftField('staffOtpMaxAttempts', value)}
-            placeholder="5"
+            fieldWidth={settingsFieldWidth}
+            label="Private key Firebase"
+            description="Biarkan ******** agar private key BE tidak dikirim ulang."
+            value={draft.firebasePrivateKey}
+            onChangeText={value => setDraftField('firebasePrivateKey', value)}
+            placeholder="********"
           />
           <KolamTextFieldRow
-            label="Menit lock OTP"
-            description="Durasi lock setelah percobaan OTP melewati batas."
-            value={draft.staffOtpLockMinutes}
-            onChangeText={value => setDraftField('staffOtpLockMinutes', value)}
-            placeholder="15"
-          />
-          <KolamTextFieldRow
+            fieldWidth={settingsFieldWidth}
             label="Host SMTP"
             description="Host SMTP untuk email sistem."
             value={draft.smtpHost}
@@ -2435,6 +2481,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="smtp.gmail.com"
           />
           <KolamTextFieldRow
+            fieldWidth={settingsFieldWidth}
             label="SMTP port"
             description="Port SMTP produksi."
             value={draft.smtpPort}
@@ -2442,6 +2489,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="465"
           />
           <KolamTextFieldRow
+            fieldWidth={settingsFieldWidth}
             label="User SMTP"
             description="Username SMTP."
             value={draft.smtpUser}
@@ -2449,6 +2497,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="mailer@duniaanura.com"
           />
           <KolamTextFieldRow
+            fieldWidth={settingsFieldWidth}
             label="Password SMTP"
             description="Biarkan ******** agar secret BE tidak dikirim ulang."
             value={draft.smtpPass}
@@ -2456,6 +2505,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="********"
           />
           <KolamTextFieldRow
+            fieldWidth={settingsFieldWidth}
             label="Email pengirim SMTP"
             description="Alamat pengirim email sistem."
             value={draft.smtpFromEmail}
@@ -2463,6 +2513,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="no-reply@duniaanura.com"
           />
           <KolamTextFieldRow
+            fieldWidth={settingsFieldWidth}
             label="Nama pengirim SMTP"
             description="Nama pengirim email sistem."
             value={draft.smtpFromName}
@@ -2478,78 +2529,50 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
-            label="Firebase"
-            description="Aktifkan Firebase Admin untuk notifikasi."
-            active={draft.firebaseEnabled}
+            label="OTP login staff"
+            description="Aktifkan OTP untuk login staff produksi."
+            active={draft.staffOtpLoginEnabled}
             onPress={() =>
               !disabled &&
-              setDraftField('firebaseEnabled', !draft.firebaseEnabled)
+              setDraftField('staffOtpLoginEnabled', !draft.staffOtpLoginEnabled)
             }
           />
           <KolamTextFieldRow
-            label="ID project Firebase"
-            description="ID project Firebase produksi."
-            value={draft.firebaseProjectId}
-            onChangeText={value => setDraftField('firebaseProjectId', value)}
-            placeholder="dunia-anura"
+            fieldWidth={settingsFieldWidth}
+            label="Menit kedaluwarsa OTP"
+            description="Durasi OTP aktif sebelum kadaluarsa."
+            value={draft.staffOtpExpireMinutes}
+            onChangeText={value =>
+              setDraftField('staffOtpExpireMinutes', value)
+            }
+            placeholder="10"
           />
           <KolamTextFieldRow
-            label="Email client Firebase"
-            description="Email client service account."
-            value={draft.firebaseClientEmail}
-            onChangeText={value => setDraftField('firebaseClientEmail', value)}
-            placeholder="firebase-adminsdk@..."
+            fieldWidth={settingsFieldWidth}
+            label="Jeda kirim ulang OTP"
+            description="Jeda detik sebelum OTP boleh dikirim ulang."
+            value={draft.staffOtpResendCooldownSeconds}
+            onChangeText={value =>
+              setDraftField('staffOtpResendCooldownSeconds', value)
+            }
+            placeholder="60"
           />
           <KolamTextFieldRow
-            label="Private key Firebase"
-            description="Biarkan ******** agar private key BE tidak dikirim ulang."
-            value={draft.firebasePrivateKey}
-            onChangeText={value => setDraftField('firebasePrivateKey', value)}
-            placeholder="********"
+            fieldWidth={settingsFieldWidth}
+            label="Maks percobaan OTP"
+            description="Batas percobaan OTP sebelum lock."
+            value={draft.staffOtpMaxAttempts}
+            onChangeText={value => setDraftField('staffOtpMaxAttempts', value)}
+            placeholder="5"
           />
-          <View style={styles.notificationSoundList}>
-            {notificationSoundItems.map(item => {
-              const status = notificationSoundStatus[item.type] ?? 'idle';
-              const busy = status === 'uploading' || status === 'deleting';
-
-              return (
-                <View key={item.id} style={styles.notificationSoundRow}>
-                  <KolamCopyStack
-                    containerStyle={styles.notificationSoundCopy}
-                    items={[
-                      {
-                        id: `${item.id}-label`,
-                        text: item.label,
-                        style: styles.notificationSoundLabel,
-                      },
-                      {
-                        id: `${item.id}-path`,
-                        text: item.value || '-',
-                        style: styles.notificationSoundPath,
-                      },
-                    ]}
-                  />
-                  <View style={styles.notificationSoundActions}>
-                    <KolamActionControlButton
-                      label="Unggah"
-                      loading={status === 'uploading'}
-                      loadingLabel="Mengunggah..."
-                      disabled={disabled || busy}
-                      onPress={() => onUploadNotificationSound(item.type)}
-                    />
-                    <KolamActionControlButton
-                      label="Reset"
-                      intent="danger"
-                      loading={status === 'deleting'}
-                      loadingLabel="Mereset..."
-                      disabled={disabled || busy || !item.value}
-                      onPress={() => onDeleteNotificationSound(item.type)}
-                    />
-                  </View>
-                </View>
-              );
-            })}
-          </View>
+          <KolamTextFieldRow
+            fieldWidth={settingsFieldWidth}
+            label="Menit lock OTP"
+            description="Durasi lock setelah percobaan OTP melewati batas."
+            value={draft.staffOtpLockMinutes}
+            onChangeText={value => setDraftField('staffOtpLockMinutes', value)}
+            placeholder="15"
+          />
         </>
       ) : null}
       {showGeneralSettings ||
