@@ -18,6 +18,12 @@ import type {
   KolamHeroSlide,
   KolamNotificationSoundType,
   KolamPluginConfigKey,
+  KolamRegion,
+  KolamRegionLevel,
+  KolamRegionSyncScope,
+  KolamSitemapChangeFrequency,
+  KolamSitemapConfig,
+  KolamSitemapSectionKey,
   KolamTeamChatRoom,
   KolamUserPickerRow,
 } from '../services/kolam-api';
@@ -27,6 +33,7 @@ import type {
   MarketplaceLandingNoticeDraft,
   MarketplaceLandingOverview,
   MarketplaceLandingYoutubeDraft,
+  RegionSyncSummaryRow,
 } from './kolam-settings-panel-controller';
 
 type WebSettingDraft = {
@@ -222,6 +229,13 @@ export function KolamSettingsWebConfigSurface({
   financialSummaryRows,
   operationalRooms,
   operationalStaffRows,
+  regionLevel,
+  regionParentCode,
+  regionRows,
+  regionSearch,
+  regionSyncMessage,
+  regionSyncStatus,
+  regionSyncSummaryRows,
   marketplaceLandingCtaDraft,
   marketplaceLandingYoutubeDraft,
   marketplaceLandingNoticeDraft,
@@ -253,6 +267,8 @@ export function KolamSettingsWebConfigSurface({
   onUploadMarketplaceHeroImage,
   onUploadMarketplaceLogo,
   onUploadMarketplaceYoutubeBackground,
+  onRefreshRegionSync,
+  onRunRegionSync,
   onToggleMaintenanceMode,
   onToggleStorefrontEnabled,
   onSave,
@@ -268,10 +284,20 @@ export function KolamSettingsWebConfigSurface({
   setMarketplaceLandingCtaDraftField,
   setMarketplaceLandingYoutubeDraftField,
   setMarketplaceLandingNoticeDraftField,
+  setRegionFilter,
+  setSitemapCustomUrlsDraftText,
+  setSitemapExcludedSlugsDraftText,
+  setSitemapMasterField,
+  setSitemapSectionField,
   setDraftField,
   storefrontEnabled,
   draft,
   notificationSoundStatus,
+  sitemapChangeFrequencies,
+  sitemapCustomUrlsText,
+  sitemapDraft,
+  sitemapExcludedSlugsText,
+  sitemapSectionKeys,
   webTitle,
 }: {
   draft: WebSettingDraft;
@@ -281,6 +307,13 @@ export function KolamSettingsWebConfigSurface({
   financialSummaryRows: SettingsFinancialSummaryRow[];
   operationalRooms: KolamTeamChatRoom[];
   operationalStaffRows: KolamUserPickerRow[];
+  regionLevel: KolamRegionLevel | '';
+  regionParentCode: string;
+  regionRows: KolamRegion[];
+  regionSearch: string;
+  regionSyncMessage: string;
+  regionSyncStatus: 'idle' | 'loading' | 'live' | 'syncing' | 'error';
+  regionSyncSummaryRows: RegionSyncSummaryRow[];
   marketplaceLandingCtaDraft: MarketplaceLandingCtaDraft;
   marketplaceLandingYoutubeDraft: MarketplaceLandingYoutubeDraft;
   marketplaceLandingNoticeDraft: MarketplaceLandingNoticeDraft;
@@ -330,6 +363,8 @@ export function KolamSettingsWebConfigSurface({
   onUploadMarketplaceHeroImage: (slide: KolamHeroSlide) => void;
   onUploadMarketplaceLogo: () => void;
   onUploadMarketplaceYoutubeBackground: () => void;
+  onRefreshRegionSync: () => void;
+  onRunRegionSync: (scope: KolamRegionSyncScope) => void;
   onToggleMaintenanceMode: () => void;
   onToggleStorefrontEnabled: () => void;
   onSave: () => void;
@@ -363,7 +398,30 @@ export function KolamSettingsWebConfigSurface({
     key: Key,
     value: MarketplaceLandingNoticeDraft[Key],
   ) => void;
+  setRegionFilter: (
+    key: 'level' | 'parentCode' | 'search',
+    value: string,
+  ) => void;
+  setSitemapCustomUrlsDraftText: (value: string) => void;
+  setSitemapExcludedSlugsDraftText: (
+    section: KolamSitemapSectionKey,
+    value: string,
+  ) => void;
+  setSitemapMasterField: (
+    key: 'enabled' | 'includeImages',
+    value: boolean,
+  ) => void;
+  setSitemapSectionField: (
+    section: KolamSitemapSectionKey,
+    key: 'enabled' | 'priority' | 'changeFrequency',
+    value: string | boolean,
+  ) => void;
   setDraftField: (key: keyof WebSettingDraft, value: string | boolean) => void;
+  sitemapChangeFrequencies: KolamSitemapChangeFrequency[];
+  sitemapCustomUrlsText: string;
+  sitemapDraft: KolamSitemapConfig;
+  sitemapExcludedSlugsText: Partial<Record<KolamSitemapSectionKey, string>>;
+  sitemapSectionKeys: KolamSitemapSectionKey[];
   storefrontEnabled: boolean;
   webTitle: string;
 }) {
@@ -376,6 +434,8 @@ export function KolamSettingsWebConfigSurface({
   const showAiSettings = activeTabId === 'ai';
   const showPluginControls = activeTabId === 'plugin';
   const showMarketplaceLanding = activeTabId === 'konten';
+  const showSitemapSettings = activeTabId === 'sitemap';
+  const showSyncSettings = activeTabId === 'sync';
   const generalFormSections = sections.filter(section => section.id === 'logo');
   const chatPluginEnabled = draft.pluginControls.chat;
   const daraPluginEnabled = draft.pluginControls.dara;
@@ -1480,6 +1540,289 @@ export function KolamSettingsWebConfigSurface({
           </View>
         </View>
       ) : null}
+      {showSitemapSettings ? (
+        <>
+          <KolamToggleRow
+            label="Sitemap enabled"
+            description="Master switch untuk sitemap marketplace."
+            active={sitemapDraft.enabled !== false}
+            onPress={() =>
+              !disabled &&
+              setSitemapMasterField('enabled', sitemapDraft.enabled === false)
+            }
+          />
+          <KolamToggleRow
+            label="Include images"
+            description="Sertakan image metadata pada sitemap jika tersedia."
+            active={sitemapDraft.includeImages !== false}
+            onPress={() =>
+              !disabled &&
+              setSitemapMasterField(
+                'includeImages',
+                sitemapDraft.includeImages === false,
+              )
+            }
+          />
+          <View style={styles.marketplaceOverview}>
+            <KolamCopyStack
+              items={[
+                {
+                  id: 'sitemap-sections-title',
+                  text: 'Dynamic sections',
+                  style: styles.marketplaceOverviewTitle,
+                },
+                {
+                  id: 'sitemap-sections-meta',
+                  text: 'Priority memakai angka 0 sampai 1. Frequency menerima always, hourly, daily, weekly, monthly, yearly, never.',
+                  style: styles.marketplaceOverviewMeta,
+                },
+              ]}
+            />
+            {sitemapSectionKeys.map(section => {
+              const item = sitemapDraft.sections?.[section] ?? {};
+              return (
+                <View key={section} style={styles.storeHoursRow}>
+                  <KolamToggleRow
+                    label={getSitemapSectionLabel(section)}
+                    description="Aktifkan section dinamis pada sitemap."
+                    active={item.enabled !== false}
+                    onPress={() =>
+                      !disabled &&
+                      setSitemapSectionField(
+                        section,
+                        'enabled',
+                        item.enabled === false,
+                      )
+                    }
+                  />
+                  <View style={styles.storeHoursTimeGrid}>
+                    <KolamTextFieldRow
+                      fieldWidth={140}
+                      label="Priority"
+                      description="Nilai 0 sampai 1."
+                      value={String(item.priority ?? 0.5)}
+                      onChangeText={value =>
+                        setSitemapSectionField(section, 'priority', value)
+                      }
+                      placeholder="0.7"
+                    />
+                    <KolamTextFieldRow
+                      fieldWidth={180}
+                      label="Change frequency"
+                      description="daily, weekly, monthly..."
+                      value={item.changeFrequency ?? 'weekly'}
+                      onChangeText={value =>
+                        setSitemapSectionField(
+                          section,
+                          'changeFrequency',
+                          value,
+                        )
+                      }
+                      placeholder={sitemapChangeFrequencies.join(', ')}
+                    />
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+          <KolamTextFieldRow
+            label="Custom URLs"
+            description="Satu baris per URL: /path|0.5|weekly."
+            value={sitemapCustomUrlsText}
+            onChangeText={setSitemapCustomUrlsDraftText}
+            placeholder="/promo|0.8|daily"
+          />
+          {sitemapSectionKeys.map(section => (
+            <KolamTextFieldRow
+              key={`excluded-${section}`}
+              label={`Excluded ${getSitemapSectionLabel(section)}`}
+              description="Slug dipisah koma atau baris baru."
+              value={sitemapExcludedSlugsText[section] ?? ''}
+              onChangeText={value =>
+                setSitemapExcludedSlugsDraftText(section, value)
+              }
+              placeholder="slug-lama, draft-internal"
+            />
+          ))}
+        </>
+      ) : null}
+      {showSyncSettings ? (
+        <>
+          <View style={styles.marketplaceOverview}>
+            <KolamCopyStack
+              items={[
+                {
+                  id: 'region-sync-title',
+                  text: 'Master Wilayah',
+                  style: styles.marketplaceOverviewTitle,
+                },
+                {
+                  id: 'region-sync-meta',
+                  text: 'Live dari /regions, /regions/stats, dan /regions/sync. Filter kosong tidak dikirim.',
+                  style: styles.marketplaceOverviewMeta,
+                },
+              ]}
+            />
+            <View style={styles.marketplaceOverviewRows}>
+              {regionSyncSummaryRows.map(row => (
+                <View key={row.id} style={styles.marketplaceOverviewRow}>
+                  <KolamCopyStack
+                    containerStyle={styles.marketplaceOverviewCopy}
+                    items={[
+                      {
+                        id: `${row.id}-label`,
+                        text: row.label,
+                        style: styles.marketplaceOverviewLabel,
+                      },
+                      {
+                        id: `${row.id}-detail`,
+                        text: row.detail,
+                        style: styles.marketplaceOverviewDetail,
+                      },
+                    ]}
+                  />
+                  <KolamCopyStack
+                    items={[
+                      {
+                        id: `${row.id}-value`,
+                        text: row.value,
+                        style: styles.marketplaceOverviewValue,
+                      },
+                    ]}
+                  />
+                </View>
+              ))}
+            </View>
+          </View>
+          <View style={styles.storeHoursTimeGrid}>
+            <KolamTextFieldRow
+              fieldWidth={170}
+              label="Level"
+              description="province, regency, district, village."
+              value={regionLevel}
+              onChangeText={value => setRegionFilter('level', value)}
+              placeholder="province"
+            />
+            <KolamTextFieldRow
+              fieldWidth={180}
+              label="Parent code"
+              description="Kode parent untuk city/district/village."
+              value={regionParentCode}
+              onChangeText={value => setRegionFilter('parentCode', value)}
+              placeholder="32.73"
+            />
+            <KolamTextFieldRow
+              fieldWidth={220}
+              label="Search"
+              description="Cari nama, kode, atau postal code."
+              value={regionSearch}
+              onChangeText={value => setRegionFilter('search', value)}
+              placeholder="Bandung / 40111"
+            />
+          </View>
+          <View style={styles.notificationSoundActions}>
+            <KolamActionControlButton
+              label="Refresh"
+              loading={regionSyncStatus === 'loading'}
+              loadingLabel="Refreshing..."
+              onPress={onRefreshRegionSync}
+            />
+            {(
+              [
+                'all',
+                'provinces',
+                'regencies',
+                'districts',
+                'villages',
+              ] as const
+            ).map(scope => (
+              <KolamActionControlButton
+                key={scope}
+                label={`Sync ${scope}`}
+                loading={regionSyncStatus === 'syncing'}
+                loadingLabel="Syncing..."
+                disabled={regionSyncStatus === 'syncing'}
+                onPress={() => onRunRegionSync(scope)}
+              />
+            ))}
+          </View>
+          {regionSyncMessage ? (
+            <KolamCopyStack
+              items={[
+                {
+                  id: 'region-sync-message',
+                  text: regionSyncMessage,
+                },
+              ]}
+            />
+          ) : null}
+          <View style={styles.marketplaceOverview}>
+            <KolamCopyStack
+              items={[
+                {
+                  id: 'region-table-title',
+                  text: 'Table Region',
+                  style: styles.marketplaceOverviewTitle,
+                },
+                {
+                  id: 'region-table-meta',
+                  text: `${regionRows.length} rows ditampilkan, urut code dari backend.`,
+                  style: styles.marketplaceOverviewMeta,
+                },
+              ]}
+            />
+            <View style={styles.marketplaceOverviewRows}>
+              {regionRows.slice(0, 100).map(region => (
+                <View
+                  key={region._id || region.code}
+                  style={styles.marketplaceOverviewRow}
+                >
+                  <KolamCopyStack
+                    containerStyle={styles.marketplaceOverviewCopy}
+                    items={[
+                      {
+                        id: `${region.code}-name`,
+                        text: `${region.code} - ${region.name}`,
+                        style: styles.marketplaceOverviewLabel,
+                      },
+                      {
+                        id: `${region.code}-meta`,
+                        text: `${getRegionLevelLabel(region.level)} | parent ${
+                          region.parentCode || '-'
+                        } | postal ${region.postalCode || '-'}`,
+                        style: styles.marketplaceOverviewDetail,
+                      },
+                    ]}
+                  />
+                  <KolamCopyStack
+                    items={[
+                      {
+                        id: `${region.code}-updated`,
+                        text: region.updatedAt ?? '-',
+                        style: styles.marketplaceOverviewValue,
+                      },
+                    ]}
+                  />
+                </View>
+              ))}
+              {regionRows.length === 0 ? (
+                <KolamCopyStack
+                  items={[
+                    {
+                      id: 'region-empty',
+                      text:
+                        regionSyncStatus === 'loading'
+                          ? 'Loading region...'
+                          : 'Belum ada region untuk filter ini.',
+                      style: styles.marketplaceOverviewMeta,
+                    },
+                  ]}
+                />
+              ) : null}
+            </View>
+          </View>
+        </>
+      ) : null}
       {showAiSettings ? (
         <>
           <KolamCopyStack
@@ -2091,7 +2434,8 @@ export function KolamSettingsWebConfigSurface({
       showOperationalSettings ||
       showStoreShippingSettings ||
       showAiSettings ||
-      showNotificationSettings ? (
+      showNotificationSettings ||
+      showSitemapSettings ? (
         <>
           <KolamActionControlButton
             label="Save"
@@ -3142,6 +3486,30 @@ function getUserPickerLabel(user: KolamUserPickerRow) {
     user.username ||
     'Staff'
   );
+}
+
+function getSitemapSectionLabel(section: KolamSitemapSectionKey) {
+  const labels: Record<KolamSitemapSectionKey, string> = {
+    products: 'Products',
+    species: 'Species',
+    blog: 'Blog',
+    brands: 'Brands',
+    categories: 'Categories',
+    tags: 'Tags',
+  };
+
+  return labels[section];
+}
+
+function getRegionLevelLabel(level: KolamRegionLevel) {
+  const labels: Record<KolamRegionLevel, string> = {
+    province: 'Province',
+    regency: 'City / Regency',
+    district: 'District',
+    village: 'Village',
+  };
+
+  return labels[level];
 }
 
 const styles = StyleSheet.create({

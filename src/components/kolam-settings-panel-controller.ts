@@ -48,6 +48,8 @@ import {
   getKolamCustomerNoticesAdmin,
   getKolamHeroSlidesAdmin,
   getKolamMarketplaceContentAdmin,
+  getKolamRegionStats,
+  getKolamRegions,
   getKolamStaffAttendanceSettings,
   getKolamTeamChatRooms,
   getKolamUserPickerRows,
@@ -72,9 +74,11 @@ import {
   updateKolamCtaSection,
   updateKolamFeaturedCollections,
   updateKolamHeroSlide,
+  updateKolamSitemapConfig,
   updateKolamYoutubeSection,
   updateKolamWebSetting,
   updateKolamWebSettingVersion,
+  syncKolamRegions,
   uploadKolamDaraAvatar,
   uploadKolamMarketplaceContentImage,
   uploadKolamNotificationSound,
@@ -93,6 +97,13 @@ import {
   type KolamNotificationSoundType,
   type KolamRole,
   type KolamRolePermission,
+  type KolamRegion,
+  type KolamRegionLevel,
+  type KolamRegionStats,
+  type KolamRegionSyncScope,
+  type KolamSitemapChangeFrequency,
+  type KolamSitemapConfig,
+  type KolamSitemapSectionKey,
   type KolamStaffAttendanceSettings,
   type KolamStoreOperatingWeekday,
   type KolamTeamChatRoom,
@@ -114,6 +125,7 @@ import {
 type WebSettingSaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 type RoleSaveStatus = 'idle' | 'loading' | 'saving' | 'saved' | 'error';
 type ActivityLogStatus = 'idle' | 'loading' | 'live' | 'error';
+type RegionSyncStatus = 'idle' | 'loading' | 'live' | 'syncing' | 'error';
 type NotificationSoundStatus = 'idle' | 'uploading' | 'deleting';
 type MarketplaceLandingOverviewStatus = 'idle' | 'loading' | 'live' | 'error';
 type MarketplaceLandingSaveStatus = 'idle' | 'saving' | 'saved' | 'error';
@@ -128,7 +140,36 @@ export interface SettingsFinancialSummaryRow {
   value: string;
   detail: string;
 }
+export interface RegionSyncSummaryRow {
+  id: string;
+  label: string;
+  value: string;
+  detail: string;
+}
 const maskedSecretPlaceholder = '********';
+const sitemapSectionKeys: KolamSitemapSectionKey[] = [
+  'products',
+  'species',
+  'blog',
+  'brands',
+  'categories',
+  'tags',
+];
+const regionLevels: KolamRegionLevel[] = [
+  'province',
+  'regency',
+  'district',
+  'village',
+];
+const sitemapChangeFrequencies: KolamSitemapChangeFrequency[] = [
+  'always',
+  'hourly',
+  'daily',
+  'weekly',
+  'monthly',
+  'yearly',
+  'never',
+];
 const storeOperatingWeekdays: Array<{
   key: KolamStoreOperatingWeekday;
   label: string;
@@ -512,6 +553,29 @@ const emptyMarketplaceLandingOverview: MarketplaceLandingOverview = {
   marketplaceContent: {},
 };
 
+const defaultSitemapConfig: KolamSitemapConfig = {
+  enabled: true,
+  includeImages: true,
+  sections: {
+    products: { enabled: true, priority: 0.7, changeFrequency: 'weekly' },
+    species: { enabled: true, priority: 0.7, changeFrequency: 'weekly' },
+    blog: { enabled: true, priority: 0.6, changeFrequency: 'monthly' },
+    brands: { enabled: true, priority: 0.5, changeFrequency: 'weekly' },
+    categories: { enabled: true, priority: 0.6, changeFrequency: 'weekly' },
+    tags: { enabled: true, priority: 0.4, changeFrequency: 'weekly' },
+  },
+  staticPages: [],
+  customUrls: [],
+  excludedSlugs: {
+    products: [],
+    species: [],
+    blog: [],
+    brands: [],
+    categories: [],
+    tags: [],
+  },
+};
+
 const activityLogPageSize = 50;
 
 const emptyActivityLogFilters: SettingsActivityLogFilterState = {
@@ -582,6 +646,23 @@ export function useKolamSettingsPanelController(
     useState<Partial<Record<string, MarketplaceLandingAssetStatus>>>({});
   const [webSettingDraft, setWebSettingDraft] =
     useState<WebSettingDraft>(emptyWebSettingDraft);
+  const [sitemapDraft, setSitemapDraft] =
+    useState<KolamSitemapConfig>(defaultSitemapConfig);
+  const [sitemapCustomUrlsText, setSitemapCustomUrlsText] = useState('');
+  const [sitemapExcludedSlugsText, setSitemapExcludedSlugsText] = useState<
+    Partial<Record<KolamSitemapSectionKey, string>>
+  >({});
+  const [regionRows, setRegionRows] = useState<KolamRegion[]>([]);
+  const [regionStats, setRegionStats] = useState<KolamRegionStats | null>(null);
+  const [regionSyncStatus, setRegionSyncStatus] =
+    useState<RegionSyncStatus>('idle');
+  const [regionSyncMessage, setRegionSyncMessage] = useState('');
+  const [regionLevel, setRegionLevel] = useState<KolamRegionLevel | ''>(
+    'province',
+  );
+  const [regionParentCode, setRegionParentCode] = useState('');
+  const [regionSearch, setRegionSearch] = useState('');
+  const [regionReloadKey, setRegionReloadKey] = useState(0);
   const [operationalRooms, setOperationalRooms] = useState<KolamTeamChatRoom[]>(
     [],
   );
@@ -637,6 +718,12 @@ export function useKolamSettingsPanelController(
         setWebSettingVersion(version);
         setWebSettingVersions(versions);
         setWebSettingDraft(createWebSettingDraft(setting, versions, version));
+        const nextSitemapDraft = normalizeSitemapConfig(setting.sitemapConfig);
+        setSitemapDraft(nextSitemapDraft);
+        setSitemapCustomUrlsText(formatSitemapCustomUrlsText(nextSitemapDraft));
+        setSitemapExcludedSlugsText(
+          formatSitemapExcludedSlugsText(nextSitemapDraft),
+        );
         setWebTitle(getSettingsWebConfigFields(setting)[0].value);
         setStorefrontEnabled(setting.livechatOnline === true);
         setMaintenanceMode(setting.maintenance?.pos === true);
@@ -825,6 +912,61 @@ export function useKolamSettingsPanelController(
   }, [activeSettingsTabId]);
 
   useEffect(() => {
+    if (activeSettingsTabId !== 'sync') {
+      return;
+    }
+
+    let mounted = true;
+    setRegionSyncStatus(current =>
+      current === 'syncing' ? 'syncing' : 'loading',
+    );
+
+    Promise.allSettled([
+      getKolamRegions({
+        level: regionLevel,
+        parentCode: regionParentCode,
+        search: regionSearch,
+        limit: 500,
+      }),
+      getKolamRegionStats(),
+    ])
+      .then(([rowsResult, statsResult]) => {
+        if (!mounted) {
+          return;
+        }
+
+        if (rowsResult.status !== 'fulfilled') {
+          setRegionSyncStatus('error');
+          setRegionSyncMessage(getRegionSyncErrorMessage(rowsResult.reason));
+          return;
+        }
+
+        setRegionRows(rowsResult.value);
+        setRegionStats(
+          statsResult.status === 'fulfilled' ? statsResult.value : null,
+        );
+        setRegionSyncStatus('live');
+        setRegionSyncMessage('');
+      })
+      .catch(error => {
+        if (mounted) {
+          setRegionSyncStatus('error');
+          setRegionSyncMessage(getRegionSyncErrorMessage(error));
+        }
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [
+    activeSettingsTabId,
+    regionLevel,
+    regionParentCode,
+    regionSearch,
+    regionReloadKey,
+  ]);
+
+  useEffect(() => {
     if (activeSurfaceId !== 'activity-log') {
       return;
     }
@@ -910,6 +1052,10 @@ export function useKolamSettingsPanelController(
     webSetting,
     paymentMethods,
   );
+  const regionSyncSummaryRows = createRegionSyncSummaryRows(
+    regionStats,
+    regionRows,
+  );
 
   const selectSurface = (id: SettingsSurfaceItem['id']) => {
     setActiveSurfaceId(id);
@@ -983,6 +1129,102 @@ export function useKolamSettingsPanelController(
       },
     }));
     setWebSettingSaveStatus('idle');
+  };
+  const setSitemapMasterField = (
+    key: 'enabled' | 'includeImages',
+    value: boolean,
+  ) => {
+    setSitemapDraft(current => ({ ...current, [key]: value }));
+    setWebSettingSaveStatus('idle');
+  };
+  const setSitemapSectionField = (
+    section: KolamSitemapSectionKey,
+    key: 'enabled' | 'priority' | 'changeFrequency',
+    value: string | boolean,
+  ) => {
+    setSitemapDraft(current => ({
+      ...current,
+      sections: {
+        ...(current.sections ?? {}),
+        [section]: {
+          ...(current.sections?.[section] ?? {}),
+          [key]:
+            key === 'priority'
+              ? parseNumberOrFallback(String(value), 0.5)
+              : value,
+        },
+      },
+    }));
+    setWebSettingSaveStatus('idle');
+  };
+  const setSitemapCustomUrlsDraftText = (value: string) => {
+    setSitemapCustomUrlsText(value);
+    setWebSettingSaveStatus('idle');
+  };
+  const setSitemapExcludedSlugsDraftText = (
+    section: KolamSitemapSectionKey,
+    value: string,
+  ) => {
+    setSitemapExcludedSlugsText(current => ({
+      ...current,
+      [section]: value,
+    }));
+    setWebSettingSaveStatus('idle');
+  };
+  const setRegionFilter = (
+    key: 'level' | 'parentCode' | 'search',
+    value: string,
+  ) => {
+    if (key === 'level') {
+      setRegionLevel(
+        regionLevels.includes(value as KolamRegionLevel)
+          ? (value as KolamRegionLevel)
+          : '',
+      );
+    } else if (key === 'parentCode') {
+      setRegionParentCode(value);
+    } else {
+      setRegionSearch(value);
+    }
+  };
+  const refreshRegionSync = () => {
+    setRegionSyncStatus('loading');
+    setRegionReloadKey(current => current + 1);
+  };
+  const runRegionSync = async (scope: KolamRegionSyncScope) => {
+    setRegionSyncStatus('syncing');
+    setRegionSyncMessage('');
+
+    try {
+      const result = await syncKolamRegions({
+        scope,
+        parentCode:
+          scope === 'regencies' || scope === 'districts' || scope === 'villages'
+            ? regionParentCode
+            : '',
+      });
+      const stats = result.data;
+      setRegionSyncMessage(
+        `Synced ${formatNumber(stats.upserted)} rows, ${formatNumber(
+          stats.withPostalCode,
+        )} postal codes.`,
+      );
+      const [rows, nextStats] = await Promise.all([
+        getKolamRegions({
+          level: regionLevel,
+          parentCode: regionParentCode,
+          search: regionSearch,
+          limit: 500,
+        }),
+        getKolamRegionStats(),
+      ]);
+      setRegionRows(rows);
+      setRegionStats(nextStats);
+      setRegionSyncStatus('live');
+    } catch (error) {
+      setRegionSyncStatus('error');
+      setRegionSyncMessage(getRegionSyncErrorMessage(error));
+    }
   };
   const setMarketplaceLandingCtaDraftField = <
     Key extends keyof MarketplaceLandingCtaDraft,
@@ -1660,6 +1902,26 @@ export function useKolamSettingsPanelController(
     setWebSettingMessage('');
 
     try {
+      if (activeSettingsTabId === 'sitemap') {
+        const nextSitemap = createSitemapConfigUpdateBody(
+          sitemapDraft,
+          sitemapCustomUrlsText,
+          sitemapExcludedSlugsText,
+        );
+        const updatedSitemap = await updateKolamSitemapConfig(nextSitemap);
+        const normalized = normalizeSitemapConfig(updatedSitemap);
+
+        setSitemapDraft(normalized);
+        setSitemapCustomUrlsText(formatSitemapCustomUrlsText(normalized));
+        setSitemapExcludedSlugsText(formatSitemapExcludedSlugsText(normalized));
+        setWebSetting(current =>
+          current ? { ...current, sitemapConfig: normalized } : current,
+        );
+        setWebSettingSaveStatus('saved');
+        setWebSettingMessage('Sitemap berhasil disimpan.');
+        return;
+      }
+
       const updated = await updateKolamWebSetting({
         companyName: cleanOptionalString(webSettingDraft.companyName),
         companyTagline: cleanOptionalString(webSettingDraft.companyTagline),
@@ -2097,6 +2359,13 @@ export function useKolamSettingsPanelController(
     marketplaceLandingAssetStatus,
     operationalRooms,
     operationalStaffRows,
+    regionLevel,
+    regionParentCode,
+    regionRows,
+    regionSearch,
+    regionSyncMessage,
+    regionSyncStatus,
+    regionSyncSummaryRows,
     roleRows,
     roles,
     roleDraft,
@@ -2112,6 +2381,7 @@ export function useKolamSettingsPanelController(
     selectedRoleId,
     setMaintenanceMode,
     setActivityLogFilter,
+    setRegionFilter,
     setRoleDraftField,
     setSelectedActivityLogId,
     setSelectedRoleId,
@@ -2137,6 +2407,10 @@ export function useKolamSettingsPanelController(
     setMarketplaceLandingCtaDraftField,
     setMarketplaceLandingYoutubeDraftField,
     setMarketplaceLandingNoticeDraftField,
+    setSitemapCustomUrlsDraftText,
+    setSitemapExcludedSlugsDraftText,
+    setSitemapMasterField,
+    setSitemapSectionField,
     clearMarketplaceLandingNoticeDraft,
     deleteMarketplaceAnnouncementBanner,
     deleteMarketplaceBioactiveStep,
@@ -2194,6 +2468,13 @@ export function useKolamSettingsPanelController(
         )
       : getSettingsActivityLogStatsCards(activityEntries),
     refreshActivityLogs,
+    refreshRegionSync,
+    runRegionSync,
+    sitemapChangeFrequencies,
+    sitemapCustomUrlsText,
+    sitemapDraft,
+    sitemapExcludedSlugsText,
+    sitemapSectionKeys,
   };
 }
 
@@ -2611,6 +2892,106 @@ function createFinancialSummaryRows(
   ];
 }
 
+function normalizeSitemapConfig(
+  config?: KolamSitemapConfig,
+): KolamSitemapConfig {
+  return {
+    ...defaultSitemapConfig,
+    ...(config ?? {}),
+    sections: sitemapSectionKeys.reduce((sections, key) => {
+      sections[key] = {
+        ...(defaultSitemapConfig.sections?.[key] ?? {}),
+        ...(config?.sections?.[key] ?? {}),
+      };
+      return sections;
+    }, {} as Record<KolamSitemapSectionKey, NonNullable<KolamSitemapConfig['sections']>[KolamSitemapSectionKey]>),
+    staticPages: config?.staticPages ?? defaultSitemapConfig.staticPages,
+    customUrls: config?.customUrls ?? defaultSitemapConfig.customUrls,
+    excludedSlugs: sitemapSectionKeys.reduce((slugs, key) => {
+      slugs[key] = config?.excludedSlugs?.[key] ?? [];
+      return slugs;
+    }, {} as Record<KolamSitemapSectionKey, string[]>),
+  };
+}
+
+function createSitemapConfigUpdateBody(
+  draft: KolamSitemapConfig,
+  customUrlsText: string,
+  excludedSlugsText: Partial<Record<KolamSitemapSectionKey, string>>,
+): KolamSitemapConfig {
+  const normalized = normalizeSitemapConfig(draft);
+
+  return {
+    ...normalized,
+    customUrls: parseSitemapCustomUrlsText(customUrlsText),
+    excludedSlugs: sitemapSectionKeys.reduce((slugs, key) => {
+      slugs[key] = parseLooseList(excludedSlugsText[key] ?? '');
+      return slugs;
+    }, {} as Record<KolamSitemapSectionKey, string[]>),
+  };
+}
+
+function formatSitemapCustomUrlsText(config: KolamSitemapConfig) {
+  return (config.customUrls ?? [])
+    .map(
+      item =>
+        `${item.path}|${formatNumber(item.priority ?? 0.5)}|${
+          item.changeFrequency ?? 'weekly'
+        }`,
+    )
+    .join('\n');
+}
+
+function parseSitemapCustomUrlsText(text: string) {
+  return text
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(Boolean)
+    .map(line => {
+      const [path = '', priority = '0.5', frequency = 'weekly'] =
+        line.split('|');
+      return {
+        path: path.trim(),
+        priority: parseNumberOrFallback(priority, 0.5),
+        changeFrequency: normalizeSitemapChangeFrequency(frequency),
+      };
+    })
+    .filter(item => item.path);
+}
+
+function formatSitemapExcludedSlugsText(config: KolamSitemapConfig) {
+  return sitemapSectionKeys.reduce((result, key) => {
+    result[key] = (config.excludedSlugs?.[key] ?? []).join('\n');
+    return result;
+  }, {} as Record<KolamSitemapSectionKey, string>);
+}
+
+function normalizeSitemapChangeFrequency(value: string) {
+  const clean = value.trim() as KolamSitemapChangeFrequency;
+  return sitemapChangeFrequencies.includes(clean) ? clean : 'weekly';
+}
+
+function parseLooseList(value: string) {
+  return value
+    .split(/[\n,]/)
+    .map(item => item.trim())
+    .filter(Boolean);
+}
+
+function createRegionSyncSummaryRows(
+  stats: KolamRegionStats | null,
+  rows: KolamRegion[],
+): RegionSyncSummaryRow[] {
+  return regionLevels.map(level => ({
+    id: level,
+    label: getRegionLevelLabel(level),
+    value: formatNumber(stats?.counts[level]?.count ?? 0),
+    detail: `${formatNumber(
+      stats?.counts[level]?.withPostalCode ?? 0,
+    )} postal codes | table cache ${formatNumber(rows.length)} rows`,
+  }));
+}
+
 function cleanOptionalString(value: string) {
   const trimmed = value.trim();
   return trimmed || undefined;
@@ -2725,6 +3106,17 @@ function formatEnabled(value: boolean) {
 
 function formatNumber(value: number | undefined) {
   return Number.isFinite(value) ? String(value) : '0';
+}
+
+function getRegionLevelLabel(level: KolamRegionLevel) {
+  const labels: Record<KolamRegionLevel, string> = {
+    province: 'Province',
+    regency: 'City / Regency',
+    district: 'District',
+    village: 'Village',
+  };
+
+  return labels[level];
 }
 
 function createSmtpUpdateBody(draft: WebSettingDraft) {
@@ -3024,6 +3416,22 @@ function getActivityLogErrorMessage(error: unknown) {
   }
 
   return 'Gagal membaca Activity Log live.';
+}
+
+function getRegionSyncErrorMessage(error: unknown) {
+  if (isPermissionApiError(error)) {
+    return 'Akses ditolak: permission websetting:view diperlukan.';
+  }
+
+  if (error instanceof ApiError && error.message) {
+    return error.message;
+  }
+
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return 'Gagal membaca master wilayah live.';
 }
 
 function isPermissionApiError(error: unknown) {

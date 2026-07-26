@@ -589,6 +589,18 @@ describe('KolamSettingsPanel', () => {
     });
 
     expect(requireController(latest).activeSurfaceId).toBe('web-settings');
+
+    await ReactTestRenderer.act(async () => {
+      requireController(latest).selectSettingsTab('sitemap');
+    });
+
+    expect(requireController(latest).activeSurfaceId).toBe('web-settings');
+
+    await ReactTestRenderer.act(async () => {
+      requireController(latest).selectSettingsTab('sync');
+    });
+
+    expect(requireController(latest).activeSurfaceId).toBe('web-settings');
   });
 
   it('starts on the matching Settings tab when an existing surface is opened directly', async () => {
@@ -618,7 +630,7 @@ describe('KolamSettingsPanel', () => {
       );
     });
 
-    expect(requireController(latest).activeSettingsTabId).toBe('sync');
+    expect(requireController(latest).activeSettingsTabId).toBe('umum');
   });
 });
 

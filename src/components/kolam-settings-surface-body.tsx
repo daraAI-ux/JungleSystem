@@ -20,7 +20,9 @@ export function KolamSettingsSurfaceBody({
     controller.activeSettingsTabId === 'finansial' ||
     controller.activeSettingsTabId === 'ai' ||
     controller.activeSettingsTabId === 'plugin' ||
-    controller.activeSettingsTabId === 'konten'
+    controller.activeSettingsTabId === 'konten' ||
+    controller.activeSettingsTabId === 'sitemap' ||
+    controller.activeSettingsTabId === 'sync'
   ) {
     return (
       <KolamSettingsWebConfigSurface
@@ -39,6 +41,13 @@ export function KolamSettingsSurfaceBody({
         financialSummaryRows={controller.financialSummaryRows}
         operationalRooms={controller.operationalRooms}
         operationalStaffRows={controller.operationalStaffRows}
+        regionLevel={controller.regionLevel}
+        regionParentCode={controller.regionParentCode}
+        regionRows={controller.regionRows}
+        regionSearch={controller.regionSearch}
+        regionSyncMessage={controller.regionSyncMessage}
+        regionSyncStatus={controller.regionSyncStatus}
+        regionSyncSummaryRows={controller.regionSyncSummaryRows}
         onClearMarketplaceLandingNoticeDraft={
           controller.clearMarketplaceLandingNoticeDraft
         }
@@ -128,6 +137,10 @@ export function KolamSettingsSurfaceBody({
         onUploadNotificationSound={type => {
           void controller.uploadNotificationSound(type);
         }}
+        onRefreshRegionSync={controller.refreshRegionSync}
+        onRunRegionSync={scope => {
+          void controller.runRegionSync(scope);
+        }}
         onWebTitleChange={controller.setWebTitle}
         setMarketplaceLandingCtaDraftField={
           controller.setMarketplaceLandingCtaDraftField
@@ -138,8 +151,20 @@ export function KolamSettingsSurfaceBody({
         setMarketplaceLandingNoticeDraftField={
           controller.setMarketplaceLandingNoticeDraftField
         }
+        setRegionFilter={controller.setRegionFilter}
+        setSitemapCustomUrlsDraftText={controller.setSitemapCustomUrlsDraftText}
+        setSitemapExcludedSlugsDraftText={
+          controller.setSitemapExcludedSlugsDraftText
+        }
+        setSitemapMasterField={controller.setSitemapMasterField}
+        setSitemapSectionField={controller.setSitemapSectionField}
         draft={controller.webSettingDraft}
         notificationSoundStatus={controller.notificationSoundStatus}
+        sitemapChangeFrequencies={controller.sitemapChangeFrequencies}
+        sitemapCustomUrlsText={controller.sitemapCustomUrlsText}
+        sitemapDraft={controller.sitemapDraft}
+        sitemapExcludedSlugsText={controller.sitemapExcludedSlugsText}
+        sitemapSectionKeys={controller.sitemapSectionKeys}
         saveMessage={controller.webSettingMessage}
         saveStatus={controller.webSettingSaveStatus}
         sections={controller.webFormSections}
@@ -170,26 +195,6 @@ export function KolamSettingsSurfaceBody({
         setDraftField={controller.setRoleDraftField}
         onSelectRole={controller.setSelectedRoleId}
         onTogglePermissionAction={controller.onToggleRolePermissionAction}
-      />
-    );
-  }
-
-  if (controller.activeSettingsTabId === 'sync') {
-    return (
-      <KolamSettingsActivityLogSurface
-        columns={controller.activityColumns}
-        filterControls={controller.activityFilterControls}
-        filterValues={controller.activityLogFilters}
-        onPageChange={controller.changeActivityPage}
-        onRefresh={controller.refreshActivityLogs}
-        onSelectActivityLog={controller.setSelectedActivityLogId}
-        onFilterChange={controller.setActivityLogFilter}
-        pagination={controller.activityPagination}
-        rows={controller.activityRows}
-        selectedActivityLog={controller.selectedActivityLog}
-        selectedActivityLogFields={controller.selectedActivityLogFields}
-        selectedActivityLogId={controller.selectedActivityLogId}
-        statsCards={controller.activityStatsCards}
       />
     );
   }

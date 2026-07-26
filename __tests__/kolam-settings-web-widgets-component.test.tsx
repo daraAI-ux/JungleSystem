@@ -84,6 +84,13 @@ describe('settings web widgets', () => {
           financialSummaryRows={[]}
           operationalRooms={[]}
           operationalStaffRows={[]}
+          regionLevel="province"
+          regionParentCode=""
+          regionRows={[]}
+          regionSearch=""
+          regionSyncMessage=""
+          regionSyncStatus="idle"
+          regionSyncSummaryRows={[]}
           marketplaceLandingOverview={{
             status: 'live',
             message: '',
@@ -159,6 +166,8 @@ describe('settings web widgets', () => {
           onUploadMarketplaceHeroImage={jest.fn()}
           onUploadMarketplaceLogo={jest.fn()}
           onUploadMarketplaceYoutubeBackground={jest.fn()}
+          onRefreshRegionSync={jest.fn()}
+          onRunRegionSync={jest.fn()}
           onToggleMaintenanceMode={jest.fn()}
           onToggleStorefrontEnabled={jest.fn()}
           onUploadNotificationSound={jest.fn()}
@@ -169,7 +178,38 @@ describe('settings web widgets', () => {
           setMarketplaceLandingCtaDraftField={jest.fn()}
           setMarketplaceLandingYoutubeDraftField={jest.fn()}
           setMarketplaceLandingNoticeDraftField={jest.fn()}
+          setRegionFilter={jest.fn()}
+          setSitemapCustomUrlsDraftText={jest.fn()}
+          setSitemapExcludedSlugsDraftText={jest.fn()}
+          setSitemapMasterField={jest.fn()}
+          setSitemapSectionField={jest.fn()}
           setDraftField={jest.fn()}
+          sitemapChangeFrequencies={[
+            'always',
+            'hourly',
+            'daily',
+            'weekly',
+            'monthly',
+            'yearly',
+            'never',
+          ]}
+          sitemapCustomUrlsText=""
+          sitemapDraft={{
+            enabled: true,
+            includeImages: true,
+            sections: {},
+            customUrls: [],
+            excludedSlugs: {},
+          }}
+          sitemapExcludedSlugsText={{}}
+          sitemapSectionKeys={[
+            'products',
+            'species',
+            'blog',
+            'brands',
+            'categories',
+            'tags',
+          ]}
           storefrontEnabled
           webTitle="Dunia Anura"
         />,

@@ -340,6 +340,111 @@ export type KolamPluginSettings = Partial<
   >
 >;
 
+export type KolamSitemapChangeFrequency =
+  | 'always'
+  | 'hourly'
+  | 'daily'
+  | 'weekly'
+  | 'monthly'
+  | 'yearly'
+  | 'never';
+
+export type KolamSitemapSectionKey =
+  | 'products'
+  | 'species'
+  | 'blog'
+  | 'brands'
+  | 'categories'
+  | 'tags';
+
+export interface KolamSitemapSection {
+  enabled?: boolean;
+  priority?: number;
+  changeFrequency?: KolamSitemapChangeFrequency;
+}
+
+export interface KolamSitemapStaticPage {
+  _id?: string;
+  path: string;
+  enabled?: boolean;
+  priority?: number;
+  changeFrequency?: KolamSitemapChangeFrequency;
+}
+
+export interface KolamSitemapCustomUrl {
+  _id?: string;
+  path: string;
+  priority?: number;
+  changeFrequency?: KolamSitemapChangeFrequency;
+}
+
+export interface KolamSitemapConfig {
+  enabled?: boolean;
+  includeImages?: boolean;
+  sections?: Partial<Record<KolamSitemapSectionKey, KolamSitemapSection>>;
+  staticPages?: KolamSitemapStaticPage[];
+  customUrls?: KolamSitemapCustomUrl[];
+  excludedSlugs?: Partial<Record<KolamSitemapSectionKey, string[]>>;
+}
+
+export type KolamRegionLevel = 'province' | 'regency' | 'district' | 'village';
+export type KolamRegionSyncScope =
+  | 'provinces'
+  | 'regencies'
+  | 'districts'
+  | 'villages'
+  | 'all';
+
+export interface KolamRegion {
+  _id: string;
+  code: string;
+  name: string;
+  level: KolamRegionLevel;
+  parentCode?: string | null;
+  postalCode?: string;
+  source?: string;
+  sourceUpdatedAt?: string;
+  updatedAt?: string;
+}
+
+export interface KolamRegionLevelStats {
+  count: number;
+  withPostalCode: number;
+  latestUpdatedAt: string | null;
+}
+
+export interface KolamRegionStats {
+  counts: Record<KolamRegionLevel, KolamRegionLevelStats>;
+  samples: KolamRegion[];
+  sources: {
+    wilayah: string;
+    kodepos: string;
+  };
+}
+
+export interface KolamRegionSyncResult {
+  provinces: number;
+  regencies: number;
+  districts: number;
+  villages: number;
+  upserted: number;
+  withPostalCode: number;
+  sources: {
+    wilayah: string;
+    kodepos: string;
+  };
+  sourceUpdatedAt?: string;
+  kodeposSourceUpdatedAt?: string;
+}
+
+export interface KolamRegionListParams
+  extends Record<string, string | number | boolean | undefined | null> {
+  level?: KolamRegionLevel | '';
+  parentCode?: string;
+  search?: string;
+  limit?: number;
+}
+
 export interface KolamWebSetting {
   _id?: string;
   version?: string;
@@ -418,6 +523,7 @@ export interface KolamWebSetting {
     privateKey?: string;
     privateKeyConfigured?: boolean;
   };
+  sitemapConfig?: KolamSitemapConfig;
   kolamPlugins?: KolamPluginSettings;
   notificationSound?: string;
   unassignedNotificationSound?: string;
@@ -848,6 +954,17 @@ export async function updateKolamWebSetting(
   return unwrapData(response);
 }
 
+export async function updateKolamSitemapConfig(
+  sitemapConfig: KolamSitemapConfig,
+): Promise<KolamSitemapConfig> {
+  const response = await kolamPut<DataResponse<KolamSitemapConfig>>(
+    '/websetting/sitemap',
+    sitemapConfig,
+  );
+
+  return response.data;
+}
+
 export function updateKolamWebSettingVersion(
   body: UpdateKolamWebSettingVersionBody,
 ): Promise<KolamWebSettingVersion & {message: string}> {
@@ -1184,6 +1301,34 @@ export async function getKolamStaffAttendanceSettings(): Promise<KolamStaffAtten
   return unwrapData(response);
 }
 
+export async function getKolamRegions(
+  params: KolamRegionListParams = {},
+): Promise<KolamRegion[]> {
+  const response = await kolamGet<DataResponse<KolamRegion[]>>(
+    '/regions',
+    cleanKolamRegionListParams(params),
+  );
+
+  return response.data ?? [];
+}
+
+export async function getKolamRegionStats(): Promise<KolamRegionStats> {
+  const response =
+    await kolamGet<DataResponse<KolamRegionStats>>('/regions/stats');
+
+  return response.data;
+}
+
+export function syncKolamRegions(body: {
+  scope: KolamRegionSyncScope;
+  parentCode?: string;
+}): Promise<{message: string; data: KolamRegionSyncResult}> {
+  return kolamPost<{message: string; data: KolamRegionSyncResult}>(
+    '/regions/sync',
+    cleanKolamRegionSyncBody(body),
+  );
+}
+
 export function updateKolamStaffAttendanceSettings(
   body: KolamStaffAttendanceSettings,
 ): Promise<KolamStaffAttendanceSettings> {
@@ -1246,6 +1391,30 @@ function kolamDelete<T>(path: string) {
     baseUrl: appConfig.kolamApiBaseUrl,
     sourceHeader: appConfig.kolamSourceHeader,
   });
+}
+
+function cleanKolamRegionListParams(params: KolamRegionListParams) {
+  return Object.fromEntries(
+    Object.entries(params).filter(([, value]) => {
+      if (value === undefined || value === null) {
+        return false;
+      }
+
+      if (typeof value === 'string') {
+        return value.trim().length > 0;
+      }
+
+      return true;
+    }),
+  ) as KolamRegionListParams;
+}
+
+function cleanKolamRegionSyncBody(body: {
+  scope: KolamRegionSyncScope;
+  parentCode?: string;
+}) {
+  const parentCode = body.parentCode?.trim();
+  return parentCode ? {...body, parentCode} : {scope: body.scope};
 }
 
 function unwrapData<T>(response: T | DataResponse<T>): T {

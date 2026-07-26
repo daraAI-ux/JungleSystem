@@ -1,4 +1,4 @@
-import type {SyncActivityEntry} from './sync-activity';
+import type { SyncActivityEntry } from './sync-activity';
 import type {
   KolamActivityLog,
   KolamActivityLogStatsResponse,
@@ -214,7 +214,9 @@ export interface SettingsRoleEditorAction {
   intent: 'outline' | 'danger';
   disabled: boolean;
   disabledReason?: string;
-  sourceComponent: 'settings/roles/create-roles.tsx' | 'settings/roles/list.tsx';
+  sourceComponent:
+    | 'settings/roles/create-roles.tsx'
+    | 'settings/roles/list.tsx';
 }
 
 export interface SettingsRolePermissionPreviewRow {
@@ -449,7 +451,7 @@ export const settingsTabItems: SettingsTabItem[] = [
     description:
       'Dynamic sitemap sections, priority, change frequency, custom URLs, dan exclusions.',
     permission: 'websetting:view',
-    status: 'planned',
+    status: 'source-audit',
     surfaceId: 'web-settings',
     sourceComponent: 'settings/system/page.tsx',
   },
@@ -460,8 +462,8 @@ export const settingsTabItems: SettingsTabItem[] = [
     route: '/pengaturan',
     description: 'Master data wilayah, region table, dan sync status.',
     permission: 'websetting:view',
-    status: 'planned',
-    surfaceId: 'activity-log',
+    status: 'source-audit',
+    surfaceId: 'web-settings',
     sourceComponent: 'settings/system/page.tsx',
   },
   {
@@ -525,7 +527,10 @@ export function getDefaultSettingsTabIdForSurface(
   surfaceId: SettingsSurfaceItem['id'],
   items = settingsTabItems,
 ) {
-  return items.find(item => item.surfaceId === surfaceId)?.id ?? DEFAULT_SETTINGS_TAB_ID;
+  return (
+    items.find(item => item.surfaceId === surfaceId)?.id ??
+    DEFAULT_SETTINGS_TAB_ID
+  );
 }
 
 export function isSettingsTabId(tabId: string): tabId is SettingsTabId {
@@ -826,23 +831,25 @@ export function getSettingsActivityLogRowsFromLive(
       log.suspicious?.length > 0
         ? 'warning'
         : log.status === 'success'
-          ? 'success'
-          : 'muted',
+        ? 'success'
+        : 'muted',
   }));
 }
 
 export function getSettingsActivityLogTableColumns(): SettingsActivityLogTableColumn[] {
-  const columns: Array<Omit<SettingsActivityLogTableColumn, 'sourceComponent'>> = [
-    {id: 'timestamp', label: 'Waktu', width: 92, isRowHeader: false},
-    {id: 'user', label: 'User', width: 112, isRowHeader: false},
-    {id: 'source', label: 'Source', width: 84, isRowHeader: false},
-    {id: 'type', label: 'Tipe', width: 68, isRowHeader: false},
-    {id: 'method', label: 'Method', width: 78, isRowHeader: false},
-    {id: 'path', label: 'Path', width: 'flex', isRowHeader: true},
-    {id: 'ip', label: 'IP', width: 72, isRowHeader: false},
-    {id: 'status', label: 'Status', width: 78, isRowHeader: false},
-    {id: 'duration', label: 'Durasi', width: 68, isRowHeader: false},
-    {id: 'detail', label: '', width: 36, isRowHeader: false},
+  const columns: Array<
+    Omit<SettingsActivityLogTableColumn, 'sourceComponent'>
+  > = [
+    { id: 'timestamp', label: 'Waktu', width: 92, isRowHeader: false },
+    { id: 'user', label: 'User', width: 112, isRowHeader: false },
+    { id: 'source', label: 'Source', width: 84, isRowHeader: false },
+    { id: 'type', label: 'Tipe', width: 68, isRowHeader: false },
+    { id: 'method', label: 'Method', width: 78, isRowHeader: false },
+    { id: 'path', label: 'Path', width: 'flex', isRowHeader: true },
+    { id: 'ip', label: 'IP', width: 72, isRowHeader: false },
+    { id: 'status', label: 'Status', width: 78, isRowHeader: false },
+    { id: 'duration', label: 'Durasi', width: 68, isRowHeader: false },
+    { id: 'detail', label: '', width: 36, isRowHeader: false },
   ];
 
   return columns.map(column => ({
@@ -854,34 +861,40 @@ export function getSettingsActivityLogTableColumns(): SettingsActivityLogTableCo
 export function getSettingsActivityLogDetailFields(
   row: SettingsActivityLogRow,
 ): SettingsActivityLogDetailField[] {
-  const fields: Array<Omit<SettingsActivityLogDetailField, 'sourceComponent'>> = [
-    {id: 'timestamp', label: 'Timestamp', value: row.timestamp, mono: false},
-    {id: 'user', label: 'User', value: row.user, mono: false},
-    {id: 'source', label: 'Source', value: row.source || '-', mono: false},
-    {id: 'type', label: 'Type', value: row.type, mono: false},
-    {id: 'method', label: 'Method', value: row.method, mono: false},
-    {id: 'path', label: 'Path', value: row.path, mono: true},
-    {id: 'ip', label: 'IP', value: row.ip || '-', mono: true},
-    {
-      id: 'user-agent',
-      label: 'User Agent',
-      value: 'React Native Windows shell',
-      mono: false,
-    },
-    {
-      id: 'status',
-      label: 'Status',
-      value: `${row.statusCode} (${row.status})`,
-      mono: false,
-    },
-    {id: 'duration', label: 'Duration', value: row.duration, mono: false},
-    {
-      id: 'action',
-      label: 'Action',
-      value: 'sync_activity_preview',
-      mono: true,
-    },
-  ];
+  const fields: Array<Omit<SettingsActivityLogDetailField, 'sourceComponent'>> =
+    [
+      {
+        id: 'timestamp',
+        label: 'Timestamp',
+        value: row.timestamp,
+        mono: false,
+      },
+      { id: 'user', label: 'User', value: row.user, mono: false },
+      { id: 'source', label: 'Source', value: row.source || '-', mono: false },
+      { id: 'type', label: 'Type', value: row.type, mono: false },
+      { id: 'method', label: 'Method', value: row.method, mono: false },
+      { id: 'path', label: 'Path', value: row.path, mono: true },
+      { id: 'ip', label: 'IP', value: row.ip || '-', mono: true },
+      {
+        id: 'user-agent',
+        label: 'User Agent',
+        value: 'React Native Windows shell',
+        mono: false,
+      },
+      {
+        id: 'status',
+        label: 'Status',
+        value: `${row.statusCode} (${row.status})`,
+        mono: false,
+      },
+      { id: 'duration', label: 'Duration', value: row.duration, mono: false },
+      {
+        id: 'action',
+        label: 'Action',
+        value: 'sync_activity_preview',
+        mono: true,
+      },
+    ];
 
   return fields.map(field => ({
     ...field,
@@ -892,34 +905,50 @@ export function getSettingsActivityLogDetailFields(
 export function getSettingsActivityLogDetailFieldsFromLive(
   log: KolamActivityLog,
 ): SettingsActivityLogDetailField[] {
-  const fields: Array<Omit<SettingsActivityLogDetailField, 'sourceComponent'>> = [
-    {id: 'timestamp', label: 'Timestamp', value: formatActivityLogTimestamp(log.timestamp), mono: false},
-    {id: 'user', label: 'User', value: getActivityLogUserLabel(log.userId), mono: false},
-    {id: 'source', label: 'Source', value: log.source || '-', mono: false},
-    {id: 'type', label: 'Type', value: log.type, mono: false},
-    {id: 'method', label: 'Method', value: log.method || '-', mono: false},
-    {id: 'path', label: 'Path', value: log.path, mono: true},
-    {id: 'ip', label: 'IP', value: log.ip || '-', mono: true},
-    {
-      id: 'user-agent',
-      label: 'User Agent',
-      value: log.userAgent || '-',
-      mono: false,
-    },
-    {
-      id: 'status',
-      label: 'Status',
-      value: `${log.statusCode ?? '-'} (${log.status})`,
-      mono: false,
-    },
-    {id: 'duration', label: 'Duration', value: `${log.duration ?? '-'}ms`, mono: false},
-    {
-      id: 'action',
-      label: 'Action',
-      value: log.action || '-',
-      mono: true,
-    },
-  ];
+  const fields: Array<Omit<SettingsActivityLogDetailField, 'sourceComponent'>> =
+    [
+      {
+        id: 'timestamp',
+        label: 'Timestamp',
+        value: formatActivityLogTimestamp(log.timestamp),
+        mono: false,
+      },
+      {
+        id: 'user',
+        label: 'User',
+        value: getActivityLogUserLabel(log.userId),
+        mono: false,
+      },
+      { id: 'source', label: 'Source', value: log.source || '-', mono: false },
+      { id: 'type', label: 'Type', value: log.type, mono: false },
+      { id: 'method', label: 'Method', value: log.method || '-', mono: false },
+      { id: 'path', label: 'Path', value: log.path, mono: true },
+      { id: 'ip', label: 'IP', value: log.ip || '-', mono: true },
+      {
+        id: 'user-agent',
+        label: 'User Agent',
+        value: log.userAgent || '-',
+        mono: false,
+      },
+      {
+        id: 'status',
+        label: 'Status',
+        value: `${log.statusCode ?? '-'} (${log.status})`,
+        mono: false,
+      },
+      {
+        id: 'duration',
+        label: 'Duration',
+        value: `${log.duration ?? '-'}ms`,
+        mono: false,
+      },
+      {
+        id: 'action',
+        label: 'Action',
+        value: log.action || '-',
+        mono: true,
+      },
+    ];
 
   return fields.map(field => ({
     ...field,
@@ -1029,7 +1058,7 @@ export function getSettingsActivityLogPagination(
     to,
     hasPrevious: safePage > 1,
     hasNext: safePage < pageCount,
-    pages: Array.from({length: pageCount}, (_, index) => index + 1),
+    pages: Array.from({ length: pageCount }, (_, index) => index + 1),
   };
 }
 
@@ -1038,7 +1067,9 @@ export function getSettingsActivityLogStatsCards(
   days = 7,
 ): SettingsActivityLogStatsCard[] {
   const successCount = entries.filter(entry => entry.tone === 'success').length;
-  const attentionCount = entries.filter(entry => entry.tone === 'warning').length;
+  const attentionCount = entries.filter(
+    entry => entry.tone === 'warning',
+  ).length;
 
   return [
     {
@@ -1148,9 +1179,9 @@ export function getSettingsActivityLogFilterControls(): SettingsActivityLogFilte
       control: 'select',
       triggerWidth: 'min-w-32',
       options: [
-        {id: '', label: 'Semua tipe'},
-        {id: 'api', label: 'API'},
-        {id: 'page', label: 'Page'},
+        { id: '', label: 'Semua tipe' },
+        { id: 'api', label: 'API' },
+        { id: 'page', label: 'Page' },
       ],
       sourceComponent: 'settings/activity-log/activity-log-list.tsx',
     },
@@ -1160,9 +1191,9 @@ export function getSettingsActivityLogFilterControls(): SettingsActivityLogFilte
       control: 'select',
       triggerWidth: 'min-w-32',
       options: [
-        {id: '', label: 'Semua status'},
-        {id: 'success', label: 'Success'},
-        {id: 'failed', label: 'Failed'},
+        { id: '', label: 'Semua status' },
+        { id: 'success', label: 'Success' },
+        { id: 'failed', label: 'Failed' },
       ],
       sourceComponent: 'settings/activity-log/activity-log-list.tsx',
     },
@@ -1172,12 +1203,12 @@ export function getSettingsActivityLogFilterControls(): SettingsActivityLogFilte
       control: 'select',
       triggerWidth: 'min-w-32',
       options: [
-        {id: '', label: 'Semua method'},
-        {id: 'GET', label: 'GET'},
-        {id: 'POST', label: 'POST'},
-        {id: 'PUT', label: 'PUT'},
-        {id: 'PATCH', label: 'PATCH'},
-        {id: 'DELETE', label: 'DELETE'},
+        { id: '', label: 'Semua method' },
+        { id: 'GET', label: 'GET' },
+        { id: 'POST', label: 'POST' },
+        { id: 'PUT', label: 'PUT' },
+        { id: 'PATCH', label: 'PATCH' },
+        { id: 'DELETE', label: 'DELETE' },
       ],
       sourceComponent: 'settings/activity-log/activity-log-list.tsx',
     },
@@ -1187,10 +1218,10 @@ export function getSettingsActivityLogFilterControls(): SettingsActivityLogFilte
       control: 'select',
       triggerWidth: 'min-w-32',
       options: [
-        {id: '', label: 'Semua source'},
-        {id: 'Kolam', label: 'Kolam (admin)'},
-        {id: 'pos', label: 'POS'},
-        {id: 'store', label: 'Store'},
+        { id: '', label: 'Semua source' },
+        { id: 'Kolam', label: 'Kolam (admin)' },
+        { id: 'pos', label: 'POS' },
+        { id: 'store', label: 'Store' },
       ],
       sourceComponent: 'settings/activity-log/activity-log-list.tsx',
     },
@@ -1200,12 +1231,12 @@ export function getSettingsActivityLogFilterControls(): SettingsActivityLogFilte
       control: 'select',
       triggerWidth: 'min-w-40',
       options: [
-        {id: '', label: 'Semua (incl. suspicious)'},
-        {id: 'true', label: 'Hanya suspicious'},
-        {id: 'automation_tool_ua', label: 'UA: automation tool'},
-        {id: 'missing_user_agent', label: 'UA: missing'},
-        {id: 'forged_source_no_origin', label: 'Forged source (no origin)'},
-        {id: 'source_origin_mismatch', label: 'Source/origin mismatch'},
+        { id: '', label: 'Semua (incl. suspicious)' },
+        { id: 'true', label: 'Hanya suspicious' },
+        { id: 'automation_tool_ua', label: 'UA: automation tool' },
+        { id: 'missing_user_agent', label: 'UA: missing' },
+        { id: 'forged_source_no_origin', label: 'Forged source (no origin)' },
+        { id: 'source_origin_mismatch', label: 'Source/origin mismatch' },
       ],
       sourceComponent: 'settings/activity-log/activity-log-list.tsx',
     },
@@ -1242,7 +1273,9 @@ export function getSettingsRoleEditorActions(
       path: `/roles/${roleId}`,
       intent: 'danger',
       disabled: defaultRole,
-      disabledReason: defaultRole ? 'Default role cannot be deleted' : undefined,
+      disabledReason: defaultRole
+        ? 'Default role cannot be deleted'
+        : undefined,
       sourceComponent: 'settings/roles/list.tsx',
     },
   ];
@@ -1278,8 +1311,7 @@ export function getSettingsRolePermissionMatrixGroups(
   roleOrId: KolamRole | string = 'super-admin',
   defaultRole = false,
 ): SettingsRolePermissionMatrixGroup[] {
-  const role =
-    typeof roleOrId === 'string' ? undefined : roleOrId;
+  const role = typeof roleOrId === 'string' ? undefined : roleOrId;
   const roleId = typeof roleOrId === 'string' ? roleOrId : roleOrId._id;
   const roleKey = role?.key ?? roleId;
   const fullAccess = isSettingsSuperAdminRoleKey(roleKey);
@@ -1305,8 +1337,8 @@ export function getSettingsRolePermissionMatrixGroups(
           activeCount === actions.length
             ? 'success'
             : activeCount > 0
-              ? 'warning'
-              : 'muted';
+            ? 'warning'
+            : 'muted';
 
         return {
           id: `${group.id}-${resource}`,
@@ -1349,7 +1381,10 @@ export function getSettingsRoleTabItems(
       id: row.id,
       label: row.role,
       key: row.key,
-      permissionCount: groups.reduce((total, group) => total + group.activeCount, 0),
+      permissionCount: groups.reduce(
+        (total, group) => total + group.activeCount,
+        0,
+      ),
       defaultRole: row.defaultRole,
       fullAccess: isSettingsSuperAdminRoleKey(row.key),
       sourceComponent: 'settings/roles/list.tsx',
@@ -1369,11 +1404,11 @@ export function getSettingsRoleInfoPanel(
   const badges: SettingsRoleInfoPanel['badges'] = [];
 
   if (fullAccess) {
-    badges.push({id: 'full-access', label: 'Full Access', tone: 'warning'});
+    badges.push({ id: 'full-access', label: 'Full Access', tone: 'warning' });
   }
 
   if (row.defaultRole) {
-    badges.push({id: 'default', label: 'Default', tone: 'secondary'});
+    badges.push({ id: 'default', label: 'Default', tone: 'secondary' });
   }
 
   return {
@@ -1391,12 +1426,13 @@ export function getSettingsRoleInfoPanel(
   };
 }
 
-function getPreviewSelectedActions(
-  resource: string,
-  roleId: string,
-) {
+function getPreviewSelectedActions(resource: string, roleId: string) {
   if (roleId === 'inventory-staff') {
-    return resource === 'role' ? ['view'] : resource === 'activity-log' ? ['view'] : [];
+    return resource === 'role'
+      ? ['view']
+      : resource === 'activity-log'
+      ? ['view']
+      : [];
   }
 
   if (roleId === 'pos-cashier') {
@@ -1411,7 +1447,9 @@ function getPreviewSelectedActions(
 }
 
 function getLiveSelectedActions(role: KolamRole, resource: string) {
-  const wildcard = role.permissions?.find(permission => permission.resource === '*');
+  const wildcard = role.permissions?.find(
+    permission => permission.resource === '*',
+  );
   if (wildcard?.actions.includes('*')) {
     return getSettingsRoleActionsForResource(resource);
   }
@@ -1577,7 +1615,8 @@ export function getSettingsRoleAccessRowsFromLive(
     const permissions = role.permissions ?? [];
     const fullAccess = isSettingsSuperAdminRoleKey(key);
     const hasResource = (resource: string) =>
-      fullAccess || permissions.some(permission => permission.resource === resource);
+      fullAccess ||
+      permissions.some(permission => permission.resource === resource);
 
     return {
       id: role._id,
@@ -1677,7 +1716,15 @@ export function getSettingsRoleActionsForResource(resource: string) {
       'flag_employee',
     ],
     salary: ['view', 'view_salary', 'create', 'update', 'delete'],
-    payroll: ['view', 'create', 'update', 'delete', 'approve', 'reject', 'verify'],
+    payroll: [
+      'view',
+      'create',
+      'update',
+      'delete',
+      'approve',
+      'reject',
+      'verify',
+    ],
     tax: ['view', 'create', 'update', 'delete', 'draft', 'review', 'post'],
     role: ['view', 'create', 'update', 'delete'],
     websetting: ['view', 'update'],
@@ -1729,7 +1776,9 @@ export function getSettingsRoleResourceLabel(resource: string) {
     '*': 'All Resources (Wildcard)',
   };
 
-  return labels[resource] ?? resource.charAt(0).toUpperCase() + resource.slice(1);
+  return (
+    labels[resource] ?? resource.charAt(0).toUpperCase() + resource.slice(1)
+  );
 }
 
 export function getSettingsRoleAccessRows(): SettingsRoleAccessRow[] {
@@ -1848,8 +1897,12 @@ export function getSettingsRoleMemberPreview(
 export function getSettingsWebConfigFields(
   webSetting?: KolamWebSetting | null,
 ): SettingsWebConfigField[] {
-  const companyName = displayString(webSetting?.companyName, 'Kolam Dunia Anura');
-  const storefrontEnabled = webSetting?.livechatOnline === true ? 'Enabled' : 'Off';
+  const companyName = displayString(
+    webSetting?.companyName,
+    'Kolam Dunia Anura',
+  );
+  const storefrontEnabled =
+    webSetting?.livechatOnline === true ? 'Enabled' : 'Off';
   const maintenancePos = webSetting?.maintenance?.pos === true ? 'On' : 'Off';
 
   return [
@@ -1901,13 +1954,42 @@ export function getSettingsWebFormSections(
     {
       id: 'version',
       title: 'Version',
-      description: 'Version per application. Each app has its own version number.',
+      description:
+        'Version per application. Each app has its own version number.',
       layout: 'grid-2',
       fields: [
-        {id: 'kolam', label: 'Kolam', placeholder: '1.0.0', control: 'text', value: displayString(kolamVersion, '1.0.0'), required: false},
-        {id: 'enclonura', label: 'Enclonura', placeholder: '1.0.0', control: 'text', value: displayString(versions.enclonura, ''), required: false},
-        {id: 'pos', label: 'POS', placeholder: '1.0.0', control: 'text', value: displayString(versions.pos, ''), required: false},
-        {id: 'marketplace', label: 'Marketplace', placeholder: '1.0.0', control: 'text', value: displayString(versions.marketplace, ''), required: false},
+        {
+          id: 'kolam',
+          label: 'Kolam',
+          placeholder: '1.0.0',
+          control: 'text',
+          value: displayString(kolamVersion, '1.0.0'),
+          required: false,
+        },
+        {
+          id: 'enclonura',
+          label: 'Enclonura',
+          placeholder: '1.0.0',
+          control: 'text',
+          value: displayString(versions.enclonura, ''),
+          required: false,
+        },
+        {
+          id: 'pos',
+          label: 'POS',
+          placeholder: '1.0.0',
+          control: 'text',
+          value: displayString(versions.pos, ''),
+          required: false,
+        },
+        {
+          id: 'marketplace',
+          label: 'Marketplace',
+          placeholder: '1.0.0',
+          control: 'text',
+          value: displayString(versions.marketplace, ''),
+          required: false,
+        },
       ],
       sourceComponent: 'settings/websetting/websetting-page.tsx',
     },
@@ -1917,7 +1999,14 @@ export function getSettingsWebFormSections(
       description: 'Upload logo/photo for WebSetting',
       layout: 'single',
       fields: [
-        {id: 'logo-upload', label: 'Logo', placeholder: 'Upload Logo', control: 'file', value: displayString(webSetting?.logo, 'No logo configured'), required: false},
+        {
+          id: 'logo-upload',
+          label: 'Logo',
+          placeholder: 'Upload Logo',
+          control: 'file',
+          value: displayString(webSetting?.logo, 'No logo configured'),
+          required: false,
+        },
       ],
       sourceComponent: 'settings/websetting/websetting-page.tsx',
     },
@@ -1927,8 +2016,22 @@ export function getSettingsWebFormSections(
       description: 'Company name and tagline for branding',
       layout: 'stack',
       fields: [
-        {id: 'company-name', label: 'Company Name', placeholder: 'Dunia Anura', control: 'text', value: displayString(webSetting?.companyName, 'Dunia Anura'), required: false},
-        {id: 'company-tagline', label: 'Company Tagline', placeholder: 'Your trusted pet store', control: 'text', value: displayString(webSetting?.companyTagline, ''), required: false},
+        {
+          id: 'company-name',
+          label: 'Company Name',
+          placeholder: 'Dunia Anura',
+          control: 'text',
+          value: displayString(webSetting?.companyName, 'Dunia Anura'),
+          required: false,
+        },
+        {
+          id: 'company-tagline',
+          label: 'Company Tagline',
+          placeholder: 'Your trusted pet store',
+          control: 'text',
+          value: displayString(webSetting?.companyTagline, ''),
+          required: false,
+        },
       ],
       sourceComponent: 'settings/websetting/websetting-page.tsx',
     },
@@ -1938,8 +2041,22 @@ export function getSettingsWebFormSections(
       description: 'Phone and email for customer contact',
       layout: 'stack',
       fields: [
-        {id: 'phone', label: 'Phone', placeholder: '+62 812-3456-7890', control: 'text', value: displayString(webSetting?.phone, ''), required: false},
-        {id: 'email', label: 'Email', placeholder: 'info@duniaanura.com', control: 'text', value: displayString(webSetting?.email, ''), required: false},
+        {
+          id: 'phone',
+          label: 'Phone',
+          placeholder: '+62 812-3456-7890',
+          control: 'text',
+          value: displayString(webSetting?.phone, ''),
+          required: false,
+        },
+        {
+          id: 'email',
+          label: 'Email',
+          placeholder: 'info@duniaanura.com',
+          control: 'text',
+          value: displayString(webSetting?.email, ''),
+          required: false,
+        },
       ],
       sourceComponent: 'settings/websetting/websetting-page.tsx',
     },
@@ -1949,23 +2066,80 @@ export function getSettingsWebFormSections(
       description: 'Business/clinic/warehouse address',
       layout: 'single',
       fields: [
-        {id: 'address', label: 'Address', placeholder: 'Jl. Contoh No. 1', control: 'textarea', value: displayString(webSetting?.address, ''), required: false},
+        {
+          id: 'address',
+          label: 'Address',
+          placeholder: 'Jl. Contoh No. 1',
+          control: 'textarea',
+          value: displayString(webSetting?.address, ''),
+          required: false,
+        },
       ],
       sourceComponent: 'settings/websetting/websetting-page.tsx',
     },
     {
       id: 'shipping-origin',
       title: 'Shipping Origin',
-      description: 'Origin address and Biteship API for shipping rate calculation. Secret fields stay masked.',
+      description:
+        'Origin address and Biteship API for shipping rate calculation. Secret fields stay masked.',
       layout: 'grid-2',
       fields: [
-        {id: 'biteship-api-key', label: 'Biteship API Key', placeholder: '********', control: 'text', value: biteshipApiKey, required: false},
-        {id: 'origin-address', label: 'Address', placeholder: 'Jl. Taman Ratu Raya No.34', control: 'text', value: displayString(origin.addressLine1, ''), required: false},
-        {id: 'origin-city', label: 'City', placeholder: 'Jakarta Barat', control: 'text', value: displayString(origin.city, ''), required: false},
-        {id: 'origin-province', label: 'Province', placeholder: 'DKI Jakarta', control: 'text', value: displayString(origin.province, ''), required: false},
-        {id: 'origin-postal-code', label: 'Postal Code', placeholder: '11550', control: 'text', value: displayString(origin.postalCode, ''), required: true},
-        {id: 'origin-latitude', label: 'Latitude', placeholder: '-6.1687829', control: 'text', value: displayString(origin.latitude, ''), required: false},
-        {id: 'origin-longitude', label: 'Longitude', placeholder: '106.7676678', control: 'text', value: displayString(origin.longitude, ''), required: false},
+        {
+          id: 'biteship-api-key',
+          label: 'Biteship API Key',
+          placeholder: '********',
+          control: 'text',
+          value: biteshipApiKey,
+          required: false,
+        },
+        {
+          id: 'origin-address',
+          label: 'Address',
+          placeholder: 'Jl. Taman Ratu Raya No.34',
+          control: 'text',
+          value: displayString(origin.addressLine1, ''),
+          required: false,
+        },
+        {
+          id: 'origin-city',
+          label: 'City',
+          placeholder: 'Jakarta Barat',
+          control: 'text',
+          value: displayString(origin.city, ''),
+          required: false,
+        },
+        {
+          id: 'origin-province',
+          label: 'Province',
+          placeholder: 'DKI Jakarta',
+          control: 'text',
+          value: displayString(origin.province, ''),
+          required: false,
+        },
+        {
+          id: 'origin-postal-code',
+          label: 'Postal Code',
+          placeholder: '11550',
+          control: 'text',
+          value: displayString(origin.postalCode, ''),
+          required: true,
+        },
+        {
+          id: 'origin-latitude',
+          label: 'Latitude',
+          placeholder: '-6.1687829',
+          control: 'text',
+          value: displayString(origin.latitude, ''),
+          required: false,
+        },
+        {
+          id: 'origin-longitude',
+          label: 'Longitude',
+          placeholder: '106.7676678',
+          control: 'text',
+          value: displayString(origin.longitude, ''),
+          required: false,
+        },
       ],
       sourceComponent: 'settings/websetting/websetting-page.tsx',
     },
@@ -1975,11 +2149,46 @@ export function getSettingsWebFormSections(
       description: 'Link social media (opsional)',
       layout: 'stack',
       fields: [
-        {id: 'facebook', label: 'Facebook', placeholder: 'https://facebook.com/...', control: 'text', value: displayString(social.facebook, ''), required: false},
-        {id: 'instagram', label: 'Instagram', placeholder: 'https://instagram.com/...', control: 'text', value: displayString(social.instagram, ''), required: false},
-        {id: 'twitter', label: 'Twitter', placeholder: 'https://twitter.com/...', control: 'text', value: displayString(social.twitter, ''), required: false},
-        {id: 'youtube', label: 'YouTube', placeholder: 'https://youtube.com/...', control: 'text', value: displayString(social.youtube, ''), required: false},
-        {id: 'tiktok', label: 'TikTok', placeholder: 'https://tiktok.com/...', control: 'text', value: displayString(social.tiktok, ''), required: false},
+        {
+          id: 'facebook',
+          label: 'Facebook',
+          placeholder: 'https://facebook.com/...',
+          control: 'text',
+          value: displayString(social.facebook, ''),
+          required: false,
+        },
+        {
+          id: 'instagram',
+          label: 'Instagram',
+          placeholder: 'https://instagram.com/...',
+          control: 'text',
+          value: displayString(social.instagram, ''),
+          required: false,
+        },
+        {
+          id: 'twitter',
+          label: 'Twitter',
+          placeholder: 'https://twitter.com/...',
+          control: 'text',
+          value: displayString(social.twitter, ''),
+          required: false,
+        },
+        {
+          id: 'youtube',
+          label: 'YouTube',
+          placeholder: 'https://youtube.com/...',
+          control: 'text',
+          value: displayString(social.youtube, ''),
+          required: false,
+        },
+        {
+          id: 'tiktok',
+          label: 'TikTok',
+          placeholder: 'https://tiktok.com/...',
+          control: 'text',
+          value: displayString(social.tiktok, ''),
+          required: false,
+        },
       ],
       sourceComponent: 'settings/websetting/websetting-page.tsx',
     },
@@ -1989,8 +2198,22 @@ export function getSettingsWebFormSections(
       description: 'Enable/disable maintenance mode',
       layout: 'grid-2',
       fields: [
-        {id: 'maintenance-pos', label: 'POS', placeholder: 'Enable maintenance mode for the POS', control: 'switch', value: String(webSetting?.maintenance?.pos === true), required: false},
-        {id: 'maintenance-marketplace', label: 'Marketplace', placeholder: 'Enable maintenance mode for the Marketplace', control: 'switch', value: String(webSetting?.maintenance?.marketplace === true), required: false},
+        {
+          id: 'maintenance-pos',
+          label: 'POS',
+          placeholder: 'Enable maintenance mode for the POS',
+          control: 'switch',
+          value: String(webSetting?.maintenance?.pos === true),
+          required: false,
+        },
+        {
+          id: 'maintenance-marketplace',
+          label: 'Marketplace',
+          placeholder: 'Enable maintenance mode for the Marketplace',
+          control: 'switch',
+          value: String(webSetting?.maintenance?.marketplace === true),
+          required: false,
+        },
       ],
       sourceComponent: 'settings/websetting/websetting-page.tsx',
     },
@@ -2016,7 +2239,11 @@ function maskSecretField(fieldId: string, value: unknown) {
     return text;
   }
 
-  if (/(apikey|api-key|api_key|privatekey|private-key|private_key|password|passwd|secret|credential|token)/i.test(fieldId)) {
+  if (
+    /(apikey|api-key|api_key|privatekey|private-key|private_key|password|passwd|secret|credential|token)/i.test(
+      fieldId,
+    )
+  ) {
     return '********';
   }
 
