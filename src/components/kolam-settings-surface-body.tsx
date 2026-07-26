@@ -68,8 +68,11 @@ export function KolamSettingsSurfaceBody({
       <KolamSettingsActivityLogSurface
         columns={controller.activityColumns}
         filterControls={controller.activityFilterControls}
+        filterValues={controller.activityLogFilters}
         onPageChange={controller.changeActivityPage}
+        onRefresh={controller.refreshActivityLogs}
         onSelectActivityLog={controller.setSelectedActivityLogId}
+        onFilterChange={controller.setActivityLogFilter}
         pagination={controller.activityPagination}
         rows={controller.activityRows}
         selectedActivityLog={controller.selectedActivityLog}

@@ -10,5 +10,8 @@
 export interface KolamFilterBarProps {
   accessibilityLabel?: string;
   controls: KolamFilterBarControl[];
+  values?: Record<string, string>;
+  onChange?: (controlId: string, value: string) => void;
+  onRefresh?: () => void;
   refreshLabel?: string;
 }

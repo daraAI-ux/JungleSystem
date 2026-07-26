@@ -8,8 +8,10 @@ import {
 } from '../src/services/kolam-category-api';
 import {
   createKolamRole,
+  deleteKolamActivityLogs,
   deleteKolamRole,
   getKolamActivityLogs,
+  getKolamActivityLogStats,
   getKolamPendingCustomerVerifications,
   getKolamRoles,
   getKolamWebSetting,
@@ -437,6 +439,51 @@ describe('Kolam Settings API contracts', () => {
       expect.objectContaining({
         method: 'GET',
       }),
+    );
+  });
+
+  it('requests Activity Log stats and optional delete through direct BE', async () => {
+    fetchMock
+      .mockResolvedValueOnce(
+        jsonResponse({
+          success: true,
+          data: {
+            since: '2026-07-19T00:00:00.000Z',
+            days: 14,
+            byType: [{_id: 'api', count: 3}],
+            byStatus: [{_id: 'success', count: 2}],
+            topUsers: [],
+            topPaths: [],
+          },
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          success: true,
+          data: {deletedCount: 4},
+        }),
+      );
+
+    await expect(getKolamActivityLogStats(14)).resolves.toEqual(
+      expect.objectContaining({
+        data: expect.objectContaining({days: 14}),
+      }),
+    );
+    await expect(deleteKolamActivityLogs()).resolves.toEqual(
+      expect.objectContaining({
+        data: {deletedCount: 4},
+      }),
+    );
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      `${appConfig.kolamApiBaseUrl}/activity-log/stats?days=14`,
+      expect.objectContaining({method: 'GET'}),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      `${appConfig.kolamApiBaseUrl}/activity-log`,
+      expect.objectContaining({method: 'DELETE'}),
     );
   });
 

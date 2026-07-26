@@ -1,10 +1,13 @@
 ﻿import {useEffect, useState} from 'react';
 import {
   getSettingsActivityLogDetailFields,
+  getSettingsActivityLogDetailFieldsFromLive,
   getSettingsActivityLogFilterControls,
   getSettingsActivityLogPagination,
   getSettingsActivityLogRows,
+  getSettingsActivityLogRowsFromLive,
   getSettingsActivityLogStatsCards,
+  getSettingsActivityLogStatsCardsFromLive,
   getSettingsActivityLogTableColumns,
   getSettingsDetailRows,
   getSettingsLiveEndpoints,
@@ -24,12 +27,15 @@ import {
   isSettingsDefaultRoleKey,
   isSettingsSuperAdminRoleKey,
   settingsSurfaceItems,
+  type SettingsActivityLogFilterState,
   type SettingsSurfaceItem,
 } from '../domain/settings-surface';
 import type {SyncActivityEntry} from '../domain/sync-activity';
 import {
   createKolamRole,
   deleteKolamRole,
+  getKolamActivityLogs,
+  getKolamActivityLogStats,
   getKolamWebSetting,
   getKolamWebSettingVersion,
   getKolamWebSettingVersions,
@@ -38,6 +44,9 @@ import {
   updateKolamWebSetting,
   updateKolamWebSettingVersion,
   type KolamPluginConfigKey,
+  type KolamActivityLog,
+  type KolamActivityLogListParams,
+  type KolamActivityLogStatsResponse,
   type KolamRole,
   type KolamRolePermission,
   type KolamWebSetting,
@@ -49,6 +58,7 @@ import {ApiError} from '../lib/api-error';
 
 type WebSettingSaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 type RoleSaveStatus = 'idle' | 'loading' | 'saving' | 'saved' | 'error';
+type ActivityLogStatus = 'idle' | 'loading' | 'live' | 'error';
 
 interface WebSettingDraft {
   versionKolam: string;
@@ -129,6 +139,17 @@ const emptyRoleDraft: RoleDraft = {
   description: '',
 };
 
+const activityLogPageSize = 50;
+
+const emptyActivityLogFilters: SettingsActivityLogFilterState = {
+  search: '',
+  type: '',
+  status: '',
+  method: '',
+  source: '',
+  suspicious: '',
+};
+
 export function useKolamSettingsPanelController(
   activityEntries: SyncActivityEntry[],
   initialActiveSurfaceId: SettingsSurfaceItem['id'] = 'web-settings',
@@ -138,6 +159,15 @@ export function useKolamSettingsPanelController(
     useState<SettingsSurfaceItem['id']>(initialActiveSurfaceId);
   const [selectedActivityLogId, setSelectedActivityLogId] = useState('');
   const [activityPage, setActivityPage] = useState(1);
+  const [activityLogs, setActivityLogs] = useState<KolamActivityLog[]>([]);
+  const [activityLogStats, setActivityLogStats] =
+    useState<KolamActivityLogStatsResponse | null>(null);
+  const [activityLogTotal, setActivityLogTotal] = useState(0);
+  const [activityLogStatus, setActivityLogStatus] =
+    useState<ActivityLogStatus>('idle');
+  const [activityLogMessage, setActivityLogMessage] = useState('');
+  const [activityLogFilters, setActivityLogFilters] =
+    useState<SettingsActivityLogFilterState>(emptyActivityLogFilters);
   const [webTitle, setWebTitle] = useState(
     getSettingsWebConfigFields()[0].value,
   );
@@ -256,24 +286,76 @@ export function useKolamSettingsPanelController(
     };
   }, [activeSurfaceId]);
 
+  useEffect(() => {
+    if (activeSurfaceId !== 'activity-log') {
+      return;
+    }
+
+    let mounted = true;
+    setActivityLogStatus('loading');
+
+    Promise.allSettled([
+      getKolamActivityLogs(
+        createActivityLogListParams(activityLogFilters, activityPage),
+      ),
+      getKolamActivityLogStats(7),
+    ])
+      .then(([logsResult, statsResult]) => {
+        if (!mounted) {
+          return;
+        }
+
+        if (logsResult.status !== 'fulfilled') {
+          setActivityLogStatus('error');
+          setActivityLogMessage(getActivityLogErrorMessage(logsResult.reason));
+          return;
+        }
+
+        setActivityLogs(logsResult.value.data);
+        setActivityLogTotal(logsResult.value.meta.total);
+        setActivityPage(logsResult.value.meta.page);
+        setActivityLogStats(
+          statsResult.status === 'fulfilled' ? statsResult.value : null,
+        );
+        setActivityLogStatus('live');
+        setActivityLogMessage('');
+      })
+      .catch(error => {
+        if (mounted) {
+          setActivityLogStatus('error');
+          setActivityLogMessage(getActivityLogErrorMessage(error));
+        }
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [activeSurfaceId, activityLogFilters, activityPage]);
+
   const activeSurface =
     settingsSurfaceItems.find(item => item.id === activeSurfaceId) ??
     settingsSurfaceItems[0];
   const detailRows = getSettingsDetailRows(activeSurface.id);
+  const useLiveActivityLogs =
+    activeSurfaceId === 'activity-log' && activityLogStatus !== 'idle';
+  const activityRows =
+    useLiveActivityLogs
+      ? getSettingsActivityLogRowsFromLive(activityLogs)
+      : getSettingsActivityLogRows(activityEntries, activityLogPageSize, 1);
   const activityPagination = getSettingsActivityLogPagination(
-    activityEntries.length,
+    useLiveActivityLogs ? activityLogTotal : activityEntries.length,
     activityPage,
-  );
-  const activityRows = getSettingsActivityLogRows(
-    activityEntries,
-    activityPagination.pageSize,
-    activityPagination.page,
+    activityLogPageSize,
   );
   const selectedActivityLog =
     activityRows.find(row => row.id === selectedActivityLogId) ?? null;
-  const selectedActivityLogFields = selectedActivityLog
-    ? getSettingsActivityLogDetailFields(selectedActivityLog)
-    : [];
+  const selectedLiveActivityLog =
+    activityLogs.find(log => log._id === selectedActivityLogId) ?? null;
+  const selectedActivityLogFields = selectedLiveActivityLog
+    ? getSettingsActivityLogDetailFieldsFromLive(selectedLiveActivityLog)
+    : selectedActivityLog
+      ? getSettingsActivityLogDetailFields(selectedActivityLog)
+      : [];
   const selectedRole =
     roleRows.find(row => row.id === selectedRoleId) ?? roleRows[0];
   const selectedLiveRole =
@@ -310,6 +392,21 @@ export function useKolamSettingsPanelController(
   const changeActivityPage = (page: number) => {
     setActivityPage(page);
     setSelectedActivityLogId('');
+  };
+  const setActivityLogFilter = (
+    key: keyof SettingsActivityLogFilterState,
+    value: string,
+  ) => {
+    setActivityLogFilters(current => ({
+      ...current,
+      [key]: value,
+    }));
+    setActivityPage(1);
+    setSelectedActivityLogId('');
+  };
+  const refreshActivityLogs = () => {
+    setActivityPage(current => current);
+    setActivityLogFilters(current => ({...current}));
   };
   const setWebSettingDraftField = <Key extends keyof WebSettingDraft>(
     key: Key,
@@ -581,6 +678,9 @@ export function useKolamSettingsPanelController(
     activeSurface,
     activeSurfaceId,
     activityEntries,
+    activityLogFilters,
+    activityLogMessage,
+    activityLogStatus,
     activityPagination,
     activityRows,
     changeActivityPage,
@@ -600,6 +700,7 @@ export function useKolamSettingsPanelController(
     selectedRole,
     selectedRoleId,
     setMaintenanceMode,
+    setActivityLogFilter,
     setRoleDraftField,
     setSelectedActivityLogId,
     setSelectedRoleId,
@@ -643,7 +744,13 @@ export function useKolamSettingsPanelController(
     onToggleRolePermissionAction: toggleRolePermissionAction,
     activityColumns: getSettingsActivityLogTableColumns(),
     activityFilterControls: getSettingsActivityLogFilterControls(),
-    activityStatsCards: getSettingsActivityLogStatsCards(activityEntries),
+    activityStatsCards: useLiveActivityLogs
+      ? getSettingsActivityLogStatsCardsFromLive(
+          activityLogStats,
+          activityLogTotal,
+        )
+      : getSettingsActivityLogStatsCards(activityEntries),
+    refreshActivityLogs,
   };
 }
 
@@ -764,6 +871,30 @@ function parseOptionalNumber(value: string) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+function createActivityLogListParams(
+  filters: SettingsActivityLogFilterState,
+  page: number,
+): KolamActivityLogListParams {
+  return cleanActivityLogParams({
+    page,
+    limit: activityLogPageSize,
+    search: filters.search.trim(),
+    type: filters.type as KolamActivityLogListParams['type'],
+    status: filters.status as KolamActivityLogListParams['status'],
+    method: filters.method,
+    source: filters.source as KolamActivityLogListParams['source'],
+    suspicious: filters.suspicious,
+  });
+}
+
+function cleanActivityLogParams(
+  params: KolamActivityLogListParams,
+): KolamActivityLogListParams {
+  return Object.fromEntries(
+    Object.entries(params).filter(([, value]) => value !== ''),
+  ) as KolamActivityLogListParams;
+}
+
 function createUpdatedRolePermissions(
   currentPermissions: KolamRolePermission[],
   resource: string,
@@ -819,4 +950,16 @@ function getRoleSaveErrorMessage(error: unknown) {
   }
 
   return 'Gagal menyimpan Role Management live.';
+}
+
+function getActivityLogErrorMessage(error: unknown) {
+  if (error instanceof ApiError && error.status === 403) {
+    return 'Akses ditolak: permission activity-log:view diperlukan.';
+  }
+
+  if (error instanceof ApiError && error.message) {
+    return error.message;
+  }
+
+  return 'Gagal membaca Activity Log live.';
 }

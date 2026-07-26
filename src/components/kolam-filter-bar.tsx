@@ -14,6 +14,9 @@ export {KolamRefreshIcon} from './kolam-refresh-icon';
 export function KolamFilterBar({
   accessibilityLabel,
   controls,
+  values = {},
+  onChange,
+  onRefresh,
   refreshLabel = 'Refresh',
 }: KolamFilterBarProps) {
   return (
@@ -23,9 +26,18 @@ export function KolamFilterBar({
       <KolamMappedList
         items={controls}
         getKey={control => control.id}
-        renderItem={control => <KolamFilterControl control={control} />}
+        renderItem={control => (
+          <KolamFilterControl
+            control={control}
+            value={values[control.id] ?? ''}
+            onChange={value => onChange?.(control.id, value)}
+          />
+        )}
       />
-      <KolamFilterRefreshButton refreshLabel={refreshLabel} />
+      <KolamFilterRefreshButton
+        refreshLabel={refreshLabel}
+        onRefresh={onRefresh}
+      />
     </KolamListFrame>
   );
 }

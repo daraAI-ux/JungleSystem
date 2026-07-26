@@ -2,6 +2,7 @@
 import type {
   SettingsActivityLogDetailField,
   SettingsActivityLogFilterControl,
+  SettingsActivityLogFilterState,
   SettingsActivityLogPagination,
   SettingsActivityLogRow,
   SettingsActivityLogStatsCard,
@@ -16,7 +17,10 @@ import {KolamStatsCardStrip} from './kolam-stats-card-strip';
 export function KolamSettingsActivityLogSurface({
   columns,
   filterControls,
+  filterValues = emptyActivityLogFilterValues,
   onPageChange,
+  onFilterChange = noopFilterChange,
+  onRefresh = noopRefresh,
   onSelectActivityLog,
   pagination,
   rows,
@@ -27,7 +31,13 @@ export function KolamSettingsActivityLogSurface({
 }: {
   columns: SettingsActivityLogTableColumn[];
   filterControls: SettingsActivityLogFilterControl[];
+  filterValues?: SettingsActivityLogFilterState;
   onPageChange: (page: number) => void;
+  onFilterChange?: (
+    key: keyof SettingsActivityLogFilterState,
+    value: string,
+  ) => void;
+  onRefresh?: () => void;
   onSelectActivityLog: (activityLogId: string) => void;
   pagination: SettingsActivityLogPagination;
   rows: SettingsActivityLogRow[];
@@ -40,6 +50,11 @@ export function KolamSettingsActivityLogSurface({
     <>
       <KolamFilterBar
         controls={filterControls}
+        values={{...filterValues}}
+        onChange={(key, value) =>
+          onFilterChange(key as keyof SettingsActivityLogFilterState, value)
+        }
+        onRefresh={onRefresh}
         accessibilityLabel="settings/activity-log/activity-log-list.tsx filters mapped to native controls"
       />
       <KolamStatsCardStrip cards={statsCards} />
@@ -66,3 +81,16 @@ export function KolamSettingsActivityLogSurface({
     </>
   );
 }
+
+const emptyActivityLogFilterValues: SettingsActivityLogFilterState = {
+  search: '',
+  type: '',
+  status: '',
+  method: '',
+  source: '',
+  suspicious: '',
+};
+
+function noopFilterChange() {}
+
+function noopRefresh() {}

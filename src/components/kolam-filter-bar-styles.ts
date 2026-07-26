@@ -45,6 +45,15 @@ export const filterBarStyles = StyleSheet.create({
     lineHeight: 18,
     fontWeight: '400',
   },
+  searchInput: {
+    minWidth: 180,
+    flex: 1,
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    lineHeight: 18,
+    padding: 0,
+  },
   refreshButton: {
     minHeight: FILTER_VISUAL.controlHeight,
     flexDirection: 'row',

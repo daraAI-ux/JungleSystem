@@ -1,5 +1,7 @@
 import type {SyncActivityEntry} from './sync-activity';
 import type {
+  KolamActivityLog,
+  KolamActivityLogStatsResponse,
   KolamRole,
   KolamWebSetting,
   KolamWebSettingVersion,
@@ -277,6 +279,15 @@ export interface SettingsActivityLogRow {
   event: string;
   suspicious: string[];
   tone: 'success' | 'warning' | 'muted';
+}
+
+export interface SettingsActivityLogFilterState {
+  search: string;
+  type: string;
+  status: string;
+  method: string;
+  source: string;
+  suspicious: string;
 }
 
 export interface SettingsActivityLogStatsCard {
@@ -578,6 +589,38 @@ export function getSettingsActivityLogRows(
   }));
 }
 
+export function getSettingsActivityLogRowsFromLive(
+  logs: KolamActivityLog[],
+): SettingsActivityLogRow[] {
+  return logs.map(log => ({
+    id: log._id,
+    timestamp: formatActivityLogTimestamp(log.timestamp),
+    user: getActivityLogUserLabel(log.userId),
+    source: log.source || '-',
+    type: log.type,
+    method: normalizeActivityLogMethod(log.method),
+    path: log.path,
+    ip: log.ip || '-',
+    event: log.action || log.error || '-',
+    status: log.status,
+    statusCode:
+      log.statusCode === null || log.statusCode === undefined
+        ? '-'
+        : String(log.statusCode),
+    duration:
+      log.duration === null || log.duration === undefined
+        ? '-'
+        : `${log.duration}ms`,
+    suspicious: log.suspicious ?? [],
+    tone:
+      log.suspicious?.length > 0
+        ? 'warning'
+        : log.status === 'success'
+          ? 'success'
+          : 'muted',
+  }));
+}
+
 export function getSettingsActivityLogTableColumns(): SettingsActivityLogTableColumn[] {
   const columns: Array<Omit<SettingsActivityLogTableColumn, 'sourceComponent'>> = [
     {id: 'timestamp', label: 'Waktu', width: 92, isRowHeader: false},
@@ -636,6 +679,44 @@ export function getSettingsActivityLogDetailFields(
   }));
 }
 
+export function getSettingsActivityLogDetailFieldsFromLive(
+  log: KolamActivityLog,
+): SettingsActivityLogDetailField[] {
+  const fields: Array<Omit<SettingsActivityLogDetailField, 'sourceComponent'>> = [
+    {id: 'timestamp', label: 'Timestamp', value: formatActivityLogTimestamp(log.timestamp), mono: false},
+    {id: 'user', label: 'User', value: getActivityLogUserLabel(log.userId), mono: false},
+    {id: 'source', label: 'Source', value: log.source || '-', mono: false},
+    {id: 'type', label: 'Type', value: log.type, mono: false},
+    {id: 'method', label: 'Method', value: log.method || '-', mono: false},
+    {id: 'path', label: 'Path', value: log.path, mono: true},
+    {id: 'ip', label: 'IP', value: log.ip || '-', mono: true},
+    {
+      id: 'user-agent',
+      label: 'User Agent',
+      value: log.userAgent || '-',
+      mono: false,
+    },
+    {
+      id: 'status',
+      label: 'Status',
+      value: `${log.statusCode ?? '-'} (${log.status})`,
+      mono: false,
+    },
+    {id: 'duration', label: 'Duration', value: `${log.duration ?? '-'}ms`, mono: false},
+    {
+      id: 'action',
+      label: 'Action',
+      value: log.action || '-',
+      mono: true,
+    },
+  ];
+
+  return fields.map(field => ({
+    ...field,
+    sourceComponent: 'settings/activity-log/activity-log-list.tsx' as const,
+  }));
+}
+
 function getActivityLogSource(area: SyncActivityEntry['area']) {
   if (area === 'kolam') {
     return 'Kolam';
@@ -674,6 +755,47 @@ function getActivityLogStatusCode(status: SyncActivityEntry['status']) {
   }
 
   return 'seed';
+}
+
+function normalizeActivityLogMethod(
+  method: string,
+): SettingsActivityLogRow['method'] {
+  if (
+    method === 'GET' ||
+    method === 'POST' ||
+    method === 'PUT' ||
+    method === 'PATCH' ||
+    method === 'DELETE'
+  ) {
+    return method;
+  }
+
+  return '-';
+}
+
+function formatActivityLogTimestamp(timestamp: string) {
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) {
+    return timestamp;
+  }
+
+  return date.toLocaleString('id-ID', {
+    dateStyle: 'short',
+    timeStyle: 'medium',
+  });
+}
+
+function getActivityLogUserLabel(user: KolamActivityLog['userId']) {
+  if (!user) {
+    return 'anonymous';
+  }
+
+  return (
+    [user.first_name, user.last_name].filter(Boolean).join(' ') ||
+    user.username ||
+    user.email ||
+    user._id
+  );
 }
 
 export function getSettingsActivityLogPagination(
@@ -742,6 +864,58 @@ export function getSettingsActivityLogStatsCards(
       value: attentionCount.toString(),
       detail: 'Warnings until full API detail',
       tone: attentionCount > 0 ? 'warning' : 'muted',
+      sourceEndpoint: '/activity-log/stats',
+      backendField: 'topPaths',
+    },
+  ];
+}
+
+export function getSettingsActivityLogStatsCardsFromLive(
+  stats: KolamActivityLogStatsResponse | null,
+  total = 0,
+): SettingsActivityLogStatsCard[] {
+  const data = stats?.data;
+  const successCount =
+    data?.byStatus.find(item => item._id === 'success')?.count ?? 0;
+  const failedCount =
+    data?.byStatus.find(item => item._id === 'failed')?.count ?? 0;
+  const apiCount = data?.byType.find(item => item._id === 'api')?.count ?? 0;
+  const pageCount = data?.byType.find(item => item._id === 'page')?.count ?? 0;
+
+  return [
+    {
+      id: 'window',
+      label: 'Window',
+      value: `${data?.days ?? 7}d`,
+      detail: 'Backend stats window',
+      tone: 'muted',
+      sourceEndpoint: '/activity-log/stats',
+      backendField: 'days',
+    },
+    {
+      id: 'events',
+      label: 'Events',
+      value: total.toString(),
+      detail: `${apiCount} API / ${pageCount} page`,
+      tone: 'default',
+      sourceEndpoint: '/activity-log/stats',
+      backendField: 'byType',
+    },
+    {
+      id: 'success',
+      label: 'Success',
+      value: successCount.toString(),
+      detail: 'Backend byStatus success',
+      tone: 'success',
+      sourceEndpoint: '/activity-log/stats',
+      backendField: 'byStatus',
+    },
+    {
+      id: 'attention',
+      label: 'Attention',
+      value: failedCount.toString(),
+      detail: 'Failed requests in stats window',
+      tone: failedCount > 0 ? 'warning' : 'muted',
       sourceEndpoint: '/activity-log/stats',
       backendField: 'topPaths',
     },

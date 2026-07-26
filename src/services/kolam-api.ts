@@ -381,6 +381,13 @@ export interface KolamActivityLogStatsResponse {
   };
 }
 
+export interface KolamActivityLogDeleteResponse {
+  success: boolean;
+  data: {
+    deletedCount: number;
+  };
+}
+
 interface DataResponse<T> {
   data: T;
 }
@@ -520,6 +527,10 @@ export function getKolamActivityLogStats(
   days = 7,
 ): Promise<KolamActivityLogStatsResponse> {
   return kolamGet<KolamActivityLogStatsResponse>('/activity-log/stats', {days});
+}
+
+export function deleteKolamActivityLogs(): Promise<KolamActivityLogDeleteResponse> {
+  return kolamDelete<KolamActivityLogDeleteResponse>('/activity-log');
 }
 
 function kolamGet<T>(
