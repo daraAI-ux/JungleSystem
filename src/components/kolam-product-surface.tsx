@@ -1194,6 +1194,15 @@ function ProductEditFormPage({
                 title="Detail bahan baku"
               >
                 <View style={styles.twoColumnGrid}>
+                  <ProductFieldShell label="Nama" required>
+                    <KolamFormTextField
+                      editable={!disabled}
+                      onChangeText={name => controller.onChangeForm({ name })}
+                      placeholder="Nama bahan baku"
+                      style={settingsWebFormStyles.settingsWebFormFieldValue}
+                      value={form.name}
+                    />
+                  </ProductFieldShell>
                   <ProductFieldShell label="Kode Produk" required>
                     <KolamFormTextField
                       editable={!disabled}
@@ -1204,18 +1213,19 @@ function ProductEditFormPage({
                     />
                   </ProductFieldShell>
                 </View>
-                <KolamCatalogTranslationsEditor
-                  editable={!disabled}
-                  kind="product"
-                  onChange={translations => controller.onChangeForm({ translations })}
-                  primaryProductLocale={{
-                    name: form.name,
-                    shortDescription: form.shortDescription,
-                    description: form.description,
-                    onChange: patch => controller.onChangeForm(patch),
-                  }}
-                  translations={form.translations}
-                />
+                <ProductFieldShell label="Deskripsi">
+                  <KolamFormTextField
+                    editable={!disabled}
+                    multiline
+                    onChangeText={description => controller.onChangeForm({ description })}
+                    placeholder="Deskripsi bahan baku"
+                    style={[
+                      settingsWebFormStyles.settingsWebFormFieldValue,
+                      styles.customFieldTextArea,
+                    ]}
+                    value={form.description}
+                  />
+                </ProductFieldShell>
               </ProductEditSection>
 
               <ProductEditSection
