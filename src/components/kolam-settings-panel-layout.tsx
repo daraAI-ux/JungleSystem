@@ -1,9 +1,8 @@
 ﻿import React from 'react';
-import {KolamModulePanel} from './kolam-surface-widgets';
-import type {KolamSettingsPanelController} from './kolam-settings-panel-controller';
-import {KolamSettingsMetricsGrid} from './kolam-settings-metrics-grid';
-import {KolamSettingsSurfaceFrame} from './kolam-settings-surface-frame';
-import {KolamMappedControlTabList} from './kolam-mapped-control-tab-list';
+import { KolamModulePanel } from './kolam-surface-widgets';
+import type { KolamSettingsPanelController } from './kolam-settings-panel-controller';
+import { KolamSettingsSurfaceFrame } from './kolam-settings-surface-frame';
+import { KolamMappedControlTabList } from './kolam-mapped-control-tab-list';
 
 export function KolamSettingsPanelLayout({
   controller,
@@ -11,10 +10,7 @@ export function KolamSettingsPanelLayout({
   controller: KolamSettingsPanelController;
 }) {
   return (
-    <KolamModulePanel
-      title="Settings"
-      hint="Native summary untuk Web Settings, Role Management, dan Activity Log Kolam.">
-      <KolamSettingsMetricsGrid stats={controller.stats} />
+    <KolamModulePanel title="Settings" hint="">
       <KolamMappedControlTabList
         accessibilityLabel="settings native tabs"
         selectedId={controller.activeSettingsTabId}

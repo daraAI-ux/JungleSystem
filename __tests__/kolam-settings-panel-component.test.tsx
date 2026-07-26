@@ -77,6 +77,10 @@ describe('KolamSettingsPanel', () => {
         '/websetting',
         'Storefront display',
         'Runtime API config',
+        'Native summary untuk Web Settings, Role Management, dan Activity Log Kolam.',
+        'Routes',
+        'Native Summary',
+        'Source Audit',
       ]),
     );
   });
