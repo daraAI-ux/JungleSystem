@@ -8,20 +8,36 @@ import {
 } from '../src/services/kolam-category-api';
 import {
   createKolamRole,
+  createKolamHeroSlide,
   deleteKolamActivityLogs,
+  deleteKolamCustomerNotice,
+  deleteKolamHeroSlide,
   deleteKolamRole,
   getKolamActivityLogs,
   getKolamActivityLogStats,
+  getKolamCtaSectionAdmin,
+  getKolamCustomerNoticesAdmin,
+  getKolamHeroSlidesAdmin,
+  getKolamMarketplaceContentAdmin,
   getKolamPendingCustomerVerifications,
   getKolamRoles,
   getKolamWebSetting,
   getKolamWebSettingVersion,
   getKolamWebSettingVersions,
   deleteKolamNotificationSound,
+  reorderKolamHeroSlides,
+  updateKolamBioactiveEcosystem,
+  updateKolamCtaSection,
+  updateKolamFeaturedCollections,
+  updateKolamHeroSlide,
   updateKolamRole,
   updateKolamWebSetting,
   updateKolamWebSettingVersion,
+  uploadKolamDaraAvatar,
+  uploadKolamMarketplaceContentImage,
   uploadKolamNotificationSound,
+  uploadKolamWebSettingLogo,
+  upsertKolamCustomerNotice,
 } from '../src/services/kolam-api';
 
 const fetchMock = jest.fn();
@@ -398,6 +414,320 @@ describe('Kolam Settings API contracts', () => {
         method: 'DELETE',
       }),
     );
+  });
+
+  it('maps Marketplace Landing hero slide CRUD and reorder contracts', async () => {
+    const appendSpy = jest.spyOn(FormData.prototype, 'append');
+    fetchMock
+      .mockResolvedValueOnce(
+        jsonResponse({
+          data: [
+            {
+              _id: 'slide-1',
+              title: 'Dunia Anura',
+              image: 'media/hero.jpg',
+              order: 0,
+              isActive: true,
+            },
+          ],
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          data: {
+            _id: 'slide-2',
+            title: 'New Hero',
+            image: 'media/new.jpg',
+            order: 1,
+            isActive: true,
+          },
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          data: {
+            _id: 'slide-2',
+            title: 'Updated Hero',
+            image: 'media/new.jpg',
+            order: 1,
+            isActive: false,
+          },
+        }),
+      )
+      .mockResolvedValueOnce(jsonResponse({data: [{_id: 'slide-2'}]}))
+      .mockResolvedValueOnce(jsonResponse({message: 'Hero slide deleted'}));
+
+    await expect(getKolamHeroSlidesAdmin()).resolves.toEqual([
+      expect.objectContaining({_id: 'slide-1'}),
+    ]);
+    await expect(
+      createKolamHeroSlide({
+        title: 'New Hero',
+        imageLocalUri: 'C:\\hero\\new.jpg',
+        isActive: true,
+      }),
+    ).resolves.toMatchObject({_id: 'slide-2'});
+    await expect(
+      updateKolamHeroSlide('slide-2', {
+        title: 'Updated Hero',
+        isActive: false,
+      }),
+    ).resolves.toMatchObject({title: 'Updated Hero'});
+    await expect(reorderKolamHeroSlides(['slide-2'])).resolves.toEqual([
+      expect.objectContaining({_id: 'slide-2'}),
+    ]);
+    await expect(deleteKolamHeroSlide('slide-1')).resolves.toBeUndefined();
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      `${appConfig.kolamApiBaseUrl}/websetting/hero-slides/admin`,
+      expect.objectContaining({method: 'GET'}),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      `${appConfig.kolamApiBaseUrl}/websetting/hero-slides`,
+      expect.objectContaining({
+        method: 'POST',
+        body: expect.any(FormData),
+      }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      `${appConfig.kolamApiBaseUrl}/websetting/hero-slides/slide-2`,
+      expect.objectContaining({
+        method: 'PUT',
+        body: expect.any(FormData),
+      }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      4,
+      `${appConfig.kolamApiBaseUrl}/websetting/hero-slides/reorder`,
+      expect.objectContaining({
+        method: 'PUT',
+        body: JSON.stringify({slideIds: ['slide-2']}),
+      }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      5,
+      `${appConfig.kolamApiBaseUrl}/websetting/hero-slides/slide-1`,
+      expect.objectContaining({method: 'DELETE'}),
+    );
+    expect(appendSpy).toHaveBeenCalledWith(
+      'image',
+      expect.objectContaining({name: 'new.jpg', type: 'image/jpeg'}),
+    );
+    appendSpy.mockRestore();
+  });
+
+  it('maps Marketplace Landing section, notice, content upload, logo, and DARA avatar contracts', async () => {
+    const appendSpy = jest.spyOn(FormData.prototype, 'append');
+    fetchMock
+      .mockResolvedValueOnce(
+        jsonResponse({
+          data: {
+            title: 'Jelajahi Dunia Species',
+            description: 'Temukan koleksi',
+            backgroundImage: '',
+            buttonText: 'View All Species',
+            buttonLink: '/species',
+            isActive: true,
+          },
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          data: {
+            title: 'CTA Baru',
+            description: 'Deskripsi',
+            buttonText: 'Buka',
+            buttonLink: '/species',
+            isActive: false,
+          },
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          data: [
+            {
+              key: 'migration',
+              title: 'Migrasi',
+              message: 'Marketplace update',
+              isActive: true,
+            },
+          ],
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          data: {
+            key: 'migration',
+            title: 'Migrasi',
+            message: 'Marketplace update',
+            isActive: true,
+          },
+        }),
+      )
+      .mockResolvedValueOnce(jsonResponse({message: 'Notice deleted'}))
+      .mockResolvedValueOnce(
+        jsonResponse({
+          data: {
+            marketplaceContent: {
+              featuredCollections: [{title: 'Amphibians', image: ''}],
+            },
+          },
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          data: {
+            marketplaceContent: {
+              featuredCollections: [{title: 'Amphibians', image: 'media/a.jpg'}],
+            },
+          },
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          data: {
+            marketplaceContent: {
+              bioactiveEcosystem: {steps: [{key: 'setup', image: ''}]},
+            },
+          },
+        }),
+      )
+      .mockResolvedValueOnce(jsonResponse({data: {image: 'media/featured.jpg'}}))
+      .mockResolvedValueOnce(
+        jsonResponse({data: {logo: 'media/logo.png', companyName: 'Kolam'}}),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          success: true,
+          daraAvatarUrl: '/media/dara/avatar.png',
+        }),
+      );
+
+    await expect(getKolamCtaSectionAdmin()).resolves.toMatchObject({
+      title: 'Jelajahi Dunia Species',
+    });
+    await expect(
+      updateKolamCtaSection({
+        title: 'CTA Baru',
+        isActive: false,
+        backgroundImageLocalUri: 'C:\\images\\cta.png',
+      }),
+    ).resolves.toMatchObject({title: 'CTA Baru'});
+    await expect(getKolamCustomerNoticesAdmin()).resolves.toEqual([
+      expect.objectContaining({key: 'migration'}),
+    ]);
+    await expect(
+      upsertKolamCustomerNotice({
+        key: 'migration',
+        title: 'Migrasi',
+        message: 'Marketplace update',
+        isActive: true,
+      }),
+    ).resolves.toMatchObject({key: 'migration'});
+    await expect(deleteKolamCustomerNotice('migration')).resolves.toBeUndefined();
+    await expect(getKolamMarketplaceContentAdmin()).resolves.toMatchObject({
+      featuredCollections: [expect.objectContaining({title: 'Amphibians'})],
+    });
+    await expect(
+      updateKolamFeaturedCollections([
+        {
+          title: 'Amphibians',
+          image: 'media/a.jpg',
+          order: 0,
+          isActive: true,
+        },
+      ]),
+    ).resolves.toMatchObject({
+      featuredCollections: [expect.objectContaining({image: 'media/a.jpg'})],
+    });
+    await expect(
+      updateKolamBioactiveEcosystem({
+        steps: [{key: 'setup', image: '', order: 0, isActive: true}],
+      }),
+    ).resolves.toMatchObject({
+      bioactiveEcosystem: {steps: [expect.objectContaining({key: 'setup'})]},
+    });
+    await expect(
+      uploadKolamMarketplaceContentImage(
+        'featured-collections',
+        'C:\\images\\featured.jpg',
+      ),
+    ).resolves.toBe('media/featured.jpg');
+    await expect(uploadKolamWebSettingLogo('C:\\images\\logo.png')).resolves.toMatchObject({
+      logo: 'media/logo.png',
+    });
+    await expect(uploadKolamDaraAvatar('C:\\images\\avatar.png')).resolves.toMatchObject({
+      daraAvatarUrl: '/media/dara/avatar.png',
+    });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      `${appConfig.kolamApiBaseUrl}/websetting/cta-section`,
+      expect.objectContaining({
+        method: 'PUT',
+        body: expect.any(FormData),
+      }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      5,
+      `${appConfig.kolamApiBaseUrl}/websetting/customer-notices/migration`,
+      expect.objectContaining({method: 'DELETE'}),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      7,
+      `${appConfig.kolamApiBaseUrl}/websetting`,
+      expect.objectContaining({
+        method: 'PUT',
+        body: JSON.stringify({
+          marketplaceContent: {
+            featuredCollections: [
+              {
+                title: 'Amphibians',
+                image: 'media/a.jpg',
+                order: 0,
+                isActive: true,
+              },
+            ],
+          },
+        }),
+      }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      9,
+      `${appConfig.kolamApiBaseUrl}/websetting/marketplace-content/featured-collections/image`,
+      expect.objectContaining({
+        method: 'POST',
+        body: expect.any(FormData),
+      }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      10,
+      `${appConfig.kolamApiBaseUrl}/websetting/upload-photos`,
+      expect.objectContaining({
+        method: 'POST',
+        body: expect.any(FormData),
+      }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      11,
+      `${appConfig.kolamApiBaseUrl}/websetting/dara-avatar`,
+      expect.objectContaining({
+        method: 'POST',
+        body: expect.any(FormData),
+      }),
+    );
+    expect(appendSpy).toHaveBeenCalledWith(
+      'backgroundImage',
+      expect.objectContaining({name: 'cta.png', type: 'image/png'}),
+    );
+    expect(appendSpy).toHaveBeenCalledWith(
+      'photo',
+      expect.objectContaining({name: 'logo.png', type: 'image/png'}),
+    );
+    appendSpy.mockRestore();
   });
 
   it('surfaces notification sound permission errors from the live backend', async () => {

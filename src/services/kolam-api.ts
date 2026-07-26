@@ -207,6 +207,15 @@ export type KolamNotificationSoundType =
   | 'group-call'
   | 'sales';
 
+export type KolamMarketplaceLandingCollectionKey =
+  | 'hero-slides'
+  | 'category-banners'
+  | 'announcement-banners';
+
+export type KolamMarketplaceContentImageType =
+  | 'featured-collections'
+  | 'bioactive-ecosystem';
+
 export type KolamPluginSettings = Partial<
   Record<
     KolamPluginConfigKey,
@@ -329,6 +338,138 @@ export interface KolamWebSettingVersions {
   versions: Partial<Record<KolamAppKey, string>>;
   updatedAt?: string;
   createdAt?: string;
+}
+
+export interface KolamHeroSlide {
+  _id: string;
+  eyebrow?: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  image: string;
+  link: string;
+  linkText: string;
+  secondaryLink?: string;
+  secondaryLinkText?: string;
+  order: number;
+  isActive: boolean;
+}
+
+export interface KolamCategoryBanner {
+  _id: string;
+  image: string;
+  categorySlug: string;
+  order: number;
+  isActive: boolean;
+}
+
+export interface KolamCtaSection {
+  title: string;
+  description: string;
+  backgroundImage?: string;
+  buttonText: string;
+  buttonLink: string;
+  isActive: boolean;
+}
+
+export interface KolamYoutubeSection {
+  backgroundImage?: string;
+  link: string;
+  title: string;
+  subtitle: string;
+  isActive: boolean;
+}
+
+export interface KolamAnnouncementBanner {
+  _id: string;
+  image: string;
+  link: string;
+  order: number;
+  isActive: boolean;
+}
+
+export interface KolamCustomerTextNotice {
+  key: string;
+  title: string;
+  message: string;
+  ctaUrl?: string;
+  ctaLabel?: string;
+  showOnHome?: boolean;
+  showOnDashboard?: boolean;
+  isActive?: boolean;
+}
+
+export interface KolamFeaturedCollection {
+  _id?: string;
+  title: string;
+  subtitle?: string;
+  categoryId?: string | null;
+  image: string;
+  order: number;
+  isActive: boolean;
+}
+
+export interface KolamBioactiveEcosystemStep {
+  key: string;
+  image: string;
+  order: number;
+  isActive: boolean;
+}
+
+export interface KolamBioactiveEcosystem {
+  steps?: KolamBioactiveEcosystemStep[];
+}
+
+export interface KolamMarketplaceContent {
+  featuredCollections?: KolamFeaturedCollection[];
+  bioactiveEcosystem?: KolamBioactiveEcosystem;
+}
+
+export interface KolamHeroSlideBody {
+  eyebrow?: string;
+  title: string;
+  subtitle?: string;
+  description?: string;
+  link?: string;
+  linkText?: string;
+  secondaryLink?: string;
+  secondaryLinkText?: string;
+  order?: number;
+  isActive?: boolean;
+  imageLocalUri?: string;
+}
+
+export interface KolamCategoryBannerBody {
+  categorySlug: string;
+  order?: number;
+  isActive?: boolean;
+  imageLocalUri?: string;
+}
+
+export interface KolamAnnouncementBannerBody {
+  link?: string;
+  order?: number;
+  isActive?: boolean;
+  imageLocalUri?: string;
+}
+
+export interface KolamCtaSectionBody {
+  title?: string;
+  description?: string;
+  buttonText?: string;
+  buttonLink?: string;
+  isActive?: boolean;
+  removeBackgroundImage?: boolean;
+  backgroundImageLocalUri?: string;
+}
+
+export interface KolamYoutubeSectionBody {
+  link?: string;
+  title?: string;
+  subtitle?: string;
+  isActive?: boolean;
+  removeBackgroundImage?: boolean;
+  backgroundImageLocalUri?: string;
 }
 
 export interface UpdateKolamWebSettingBody
@@ -581,6 +722,256 @@ export function updateKolamWebSettingVersion(
   );
 }
 
+export async function getKolamHeroSlidesAdmin(): Promise<KolamHeroSlide[]> {
+  const response = await kolamGet<DataResponse<KolamHeroSlide[]>>(
+    '/websetting/hero-slides/admin',
+  );
+  return response.data ?? [];
+}
+
+export function createKolamHeroSlide(
+  body: KolamHeroSlideBody,
+): Promise<KolamHeroSlide> {
+  return createMarketplaceLandingItem<KolamHeroSlide>(
+    '/websetting/hero-slides',
+    createMarketplaceFormData(body, 'image', body.imageLocalUri),
+  );
+}
+
+export function updateKolamHeroSlide(
+  slideId: string,
+  body: KolamHeroSlideBody,
+): Promise<KolamHeroSlide> {
+  return updateMarketplaceLandingItem<KolamHeroSlide>(
+    `/websetting/hero-slides/${encodeURIComponent(slideId)}`,
+    createMarketplaceFormData(body, 'image', body.imageLocalUri),
+  );
+}
+
+export async function deleteKolamHeroSlide(slideId: string): Promise<void> {
+  await kolamDelete<MessageDataResponse<unknown>>(
+    `/websetting/hero-slides/${encodeURIComponent(slideId)}`,
+  );
+}
+
+export function reorderKolamHeroSlides(
+  slideIds: string[],
+): Promise<KolamHeroSlide[]> {
+  return reorderMarketplaceLandingItems<KolamHeroSlide>(
+    '/websetting/hero-slides/reorder',
+    {slideIds},
+  );
+}
+
+export async function getKolamCategoryBannersAdmin(): Promise<
+  KolamCategoryBanner[]
+> {
+  const response = await kolamGet<DataResponse<KolamCategoryBanner[]>>(
+    '/websetting/category-banners/admin',
+  );
+  return response.data ?? [];
+}
+
+export function createKolamCategoryBanner(
+  body: KolamCategoryBannerBody,
+): Promise<KolamCategoryBanner> {
+  return createMarketplaceLandingItem<KolamCategoryBanner>(
+    '/websetting/category-banners',
+    createMarketplaceFormData(body, 'image', body.imageLocalUri),
+  );
+}
+
+export function updateKolamCategoryBanner(
+  bannerId: string,
+  body: KolamCategoryBannerBody,
+): Promise<KolamCategoryBanner> {
+  return updateMarketplaceLandingItem<KolamCategoryBanner>(
+    `/websetting/category-banners/${encodeURIComponent(bannerId)}`,
+    createMarketplaceFormData(body, 'image', body.imageLocalUri),
+  );
+}
+
+export async function deleteKolamCategoryBanner(
+  bannerId: string,
+): Promise<void> {
+  await kolamDelete<MessageDataResponse<unknown>>(
+    `/websetting/category-banners/${encodeURIComponent(bannerId)}`,
+  );
+}
+
+export function reorderKolamCategoryBanners(
+  bannerIds: string[],
+): Promise<KolamCategoryBanner[]> {
+  return reorderMarketplaceLandingItems<KolamCategoryBanner>(
+    '/websetting/category-banners/reorder',
+    {bannerIds},
+  );
+}
+
+export async function getKolamCtaSectionAdmin(): Promise<KolamCtaSection> {
+  const response = await kolamGet<DataResponse<KolamCtaSection>>(
+    '/websetting/cta-section/admin',
+  );
+  return response.data;
+}
+
+export function updateKolamCtaSection(
+  body: KolamCtaSectionBody,
+): Promise<KolamCtaSection> {
+  return updateMarketplaceLandingItem<KolamCtaSection>(
+    '/websetting/cta-section',
+    createMarketplaceFormData(
+      body,
+      'backgroundImage',
+      body.backgroundImageLocalUri,
+    ),
+  );
+}
+
+export async function getKolamYoutubeSectionAdmin(): Promise<KolamYoutubeSection> {
+  const response = await kolamGet<DataResponse<KolamYoutubeSection>>(
+    '/websetting/youtube-section/admin',
+  );
+  return response.data;
+}
+
+export function updateKolamYoutubeSection(
+  body: KolamYoutubeSectionBody,
+): Promise<KolamYoutubeSection> {
+  return updateMarketplaceLandingItem<KolamYoutubeSection>(
+    '/websetting/youtube-section',
+    createMarketplaceFormData(
+      body,
+      'backgroundImage',
+      body.backgroundImageLocalUri,
+    ),
+  );
+}
+
+export async function getKolamAnnouncementBannersAdmin(): Promise<
+  KolamAnnouncementBanner[]
+> {
+  const response = await kolamGet<DataResponse<KolamAnnouncementBanner[]>>(
+    '/websetting/announcement-banners/admin',
+  );
+  return response.data ?? [];
+}
+
+export function createKolamAnnouncementBanner(
+  body: KolamAnnouncementBannerBody,
+): Promise<KolamAnnouncementBanner> {
+  return createMarketplaceLandingItem<KolamAnnouncementBanner>(
+    '/websetting/announcement-banners',
+    createMarketplaceFormData(body, 'image', body.imageLocalUri),
+  );
+}
+
+export function updateKolamAnnouncementBanner(
+  bannerId: string,
+  body: KolamAnnouncementBannerBody,
+): Promise<KolamAnnouncementBanner> {
+  return updateMarketplaceLandingItem<KolamAnnouncementBanner>(
+    `/websetting/announcement-banners/${encodeURIComponent(bannerId)}`,
+    createMarketplaceFormData(body, 'image', body.imageLocalUri),
+  );
+}
+
+export async function deleteKolamAnnouncementBanner(
+  bannerId: string,
+): Promise<void> {
+  await kolamDelete<MessageDataResponse<unknown>>(
+    `/websetting/announcement-banners/${encodeURIComponent(bannerId)}`,
+  );
+}
+
+export function reorderKolamAnnouncementBanners(
+  bannerIds: string[],
+): Promise<KolamAnnouncementBanner[]> {
+  return reorderMarketplaceLandingItems<KolamAnnouncementBanner>(
+    '/websetting/announcement-banners/reorder',
+    {bannerIds},
+  );
+}
+
+export async function getKolamCustomerNoticesAdmin(): Promise<
+  KolamCustomerTextNotice[]
+> {
+  const response = await kolamGet<DataResponse<KolamCustomerTextNotice[]>>(
+    '/websetting/customer-notices/admin',
+  );
+  return response.data ?? [];
+}
+
+export async function upsertKolamCustomerNotice(
+  body: KolamCustomerTextNotice,
+): Promise<KolamCustomerTextNotice> {
+  const response = await kolamPut<DataResponse<KolamCustomerTextNotice>>(
+    '/websetting/customer-notices',
+    body,
+  );
+  return response.data;
+}
+
+export async function deleteKolamCustomerNotice(key: string): Promise<void> {
+  await kolamDelete<MessageDataResponse<unknown>>(
+    `/websetting/customer-notices/${encodeURIComponent(key)}`,
+  );
+}
+
+export async function getKolamMarketplaceContentAdmin(): Promise<
+  KolamMarketplaceContent
+> {
+  const webSetting = await getKolamWebSetting();
+  return getMarketplaceContentFromWebSetting(webSetting);
+}
+
+export async function updateKolamFeaturedCollections(
+  featuredCollections: KolamFeaturedCollection[],
+): Promise<KolamMarketplaceContent> {
+  const response = await updateKolamWebSetting({
+    marketplaceContent: {featuredCollections},
+  });
+  return getMarketplaceContentFromWebSetting(response, {featuredCollections});
+}
+
+export async function updateKolamBioactiveEcosystem(
+  bioactiveEcosystem: KolamBioactiveEcosystem,
+): Promise<KolamMarketplaceContent> {
+  const response = await updateKolamWebSetting({
+    marketplaceContent: {bioactiveEcosystem},
+  });
+  return getMarketplaceContentFromWebSetting(response, {bioactiveEcosystem});
+}
+
+export async function uploadKolamMarketplaceContentImage(
+  type: KolamMarketplaceContentImageType,
+  localUri: string,
+): Promise<string> {
+  const response = await uploadMarketplaceImage(
+    `/websetting/marketplace-content/${type}/image`,
+    localUri,
+    'image',
+  );
+  return getUploadedImagePath(response);
+}
+
+export async function uploadKolamWebSettingLogo(
+  localUri: string,
+): Promise<KolamWebSetting> {
+  const response = await uploadMarketplaceImage(
+    '/websetting/upload-photos',
+    localUri,
+    'photo',
+  );
+  return unwrapData(response as KolamWebSetting | DataResponse<KolamWebSetting>);
+}
+
+export async function uploadKolamDaraAvatar(
+  localUri: string,
+): Promise<{success?: boolean; message?: string; daraAvatarUrl?: string}> {
+  return uploadMarketplaceImage('/websetting/dara-avatar', localUri, 'photo');
+}
+
 export function uploadKolamNotificationSound(
   type: KolamNotificationSoundType,
   localUri: string,
@@ -699,6 +1090,125 @@ function unwrapData<T>(response: T | DataResponse<T>): T {
   }
 
   return response as T;
+}
+
+async function createMarketplaceLandingItem<T>(
+  path: string,
+  body: FormData,
+): Promise<T> {
+  const response = await kolamPost<DataResponse<T> | T>(path, body);
+  return unwrapData(response);
+}
+
+async function updateMarketplaceLandingItem<T>(
+  path: string,
+  body: FormData,
+): Promise<T> {
+  const response = await kolamPut<DataResponse<T> | T>(path, body);
+  return unwrapData(response);
+}
+
+async function reorderMarketplaceLandingItems<T>(
+  path: string,
+  body: Record<string, string[]>,
+): Promise<T[]> {
+  const response = await kolamPut<DataResponse<T[]> | T[]>(path, body);
+  return unwrapData(response);
+}
+
+function createMarketplaceFormData(
+  body: object,
+  fileField: string,
+  localUri?: string,
+) {
+  const formData = new FormData();
+
+  Object.entries(body as Record<string, unknown>).forEach(([key, value]) => {
+    if (key.endsWith('LocalUri') || value === undefined || value === null) {
+      return;
+    }
+
+    formData.append(key, String(value));
+  });
+
+  if (localUri) {
+    formData.append(fileField, createImageFilePart(localUri) as unknown as Blob);
+  }
+
+  return formData;
+}
+
+async function uploadMarketplaceImage<T = unknown>(
+  path: string,
+  localUri: string,
+  fieldName: string,
+): Promise<T> {
+  const body = new FormData();
+  body.append(fieldName, createImageFilePart(localUri) as unknown as Blob);
+  return kolamPost<T>(path, body);
+}
+
+function getMarketplaceContentFromWebSetting(
+  webSetting: KolamWebSetting,
+  fallback: KolamMarketplaceContent = {},
+): KolamMarketplaceContent {
+  const content = webSetting.marketplaceContent;
+
+  if (content && typeof content === 'object') {
+    return content as KolamMarketplaceContent;
+  }
+
+  return fallback;
+}
+
+function getUploadedImagePath(response: unknown) {
+  if (!response || typeof response !== 'object') {
+    return '';
+  }
+
+  const directImage = (response as {image?: unknown}).image;
+  if (typeof directImage === 'string') {
+    return directImage;
+  }
+
+  const dataImage = (response as {data?: {image?: unknown}}).data?.image;
+  return typeof dataImage === 'string' ? dataImage : '';
+}
+
+function createImageFilePart(localUri: string) {
+  const normalizedUri = localUri.startsWith('file://')
+    ? localUri
+    : `file:///${localUri.replace(/\\/g, '/')}`;
+  const name = normalizedUri.split('/').pop() || 'marketplace-image.jpg';
+
+  return {
+    uri: normalizedUri,
+    name,
+    type: inferImageMimeType(name),
+  };
+}
+
+function inferImageMimeType(fileName: string) {
+  const extension = fileName.split('.').pop()?.toLowerCase();
+
+  switch (extension) {
+    case 'png':
+      return 'image/png';
+    case 'webp':
+      return 'image/webp';
+    case 'gif':
+      return 'image/gif';
+    case 'svg':
+      return 'image/svg+xml';
+    case 'heic':
+      return 'image/heic';
+    case 'heif':
+      return 'image/heif';
+    case 'jpg':
+    case 'jpeg':
+    default:
+      return 'image/jpeg';
+  }
 }
 
 function createAudioFilePart(localUri: string) {
