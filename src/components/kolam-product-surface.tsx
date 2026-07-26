@@ -1413,6 +1413,24 @@ function ProductEditFormPage({
               >
                 <ProductShippingMethodsPanel controller={controller} />
               </ProductEditSection>
+
+              <ProductEditSection
+                description="Link marketplace, webstore, POS, atau dokumentasi bahan baku."
+                title="Tautan Eksternal"
+              >
+                <ProductExternalLinksRowsEditor
+                  disabled={disabled}
+                  links={form.externalLinks}
+                  onChange={externalLinks => controller.onChangeForm({ externalLinks })}
+                />
+              </ProductEditSection>
+
+              <ProductEditSection
+                description="Material packing default untuk mengirim 1 unit bahan baku."
+                title="Bahan Kemasan"
+              >
+                <ProductPackingLinksPanel controller={controller} />
+              </ProductEditSection>
             </View>
             <View style={styles.formActions}>
               <KolamButton disabled={disabled} label="Batal" onPress={onCancel} />
