@@ -1240,30 +1240,34 @@ function ProductEditFormPage({
                 />
               </ProductEditSection>
 
-              <ProductEditSection
-                description="Harga jual bahan baku tanpa varian."
-                title="Harga"
-              >
-                <ProductRootPricingPanel controller={controller} />
-              </ProductEditSection>
+              {!hasVariants ? (
+                <ProductEditSection
+                  description="Harga jual bahan baku tanpa varian."
+                  title="Harga"
+                >
+                  <ProductRootPricingPanel controller={controller} />
+                </ProductEditSection>
+              ) : null}
 
-              <ProductEditSection
-                description="Batas stok rendah untuk peringatan inventory."
-                title="Persediaan"
-              >
-                <ProductFieldShell label="Batas Stok Rendah">
-                  <KolamFormTextField
-                    editable={!disabled}
-                    keyboardType="numeric"
-                    onChangeText={lowStockThreshold =>
-                      controller.onChangeForm({ lowStockThreshold })
-                    }
-                    placeholder="Batas stok rendah"
-                    style={settingsWebFormStyles.settingsWebFormFieldValue}
-                    value={form.lowStockThreshold}
-                  />
-                </ProductFieldShell>
-              </ProductEditSection>
+              {!hasVariants ? (
+                <ProductEditSection
+                  description="Batas stok rendah untuk peringatan inventory."
+                  title="Persediaan"
+                >
+                  <ProductFieldShell label="Batas Stok Rendah">
+                    <KolamFormTextField
+                      editable={!disabled}
+                      keyboardType="numeric"
+                      onChangeText={lowStockThreshold =>
+                        controller.onChangeForm({ lowStockThreshold })
+                      }
+                      placeholder="Batas stok rendah"
+                      style={settingsWebFormStyles.settingsWebFormFieldValue}
+                      value={form.lowStockThreshold}
+                    />
+                  </ProductFieldShell>
+                </ProductEditSection>
+              ) : null}
 
               <ProductEditSection
                 description="Aktifkan varian jika bahan baku memiliki beberapa variasi."
@@ -1311,9 +1315,11 @@ function ProductEditFormPage({
               >
                 <KolamCommercialPolicyEditor
                   disabled={disabled}
-                  memberPointsDisabled={!form.sellable}
+                  memberPointsDisabled={!form.sellable || hasVariants}
                   memberPointsHint={
-                    form.sellable
+                    hasVariants
+                      ? 'Bahan baku ini memakai varian. Poin anggota diatur di tiap varian.'
+                      : form.sellable
                       ? 'Poin yang didapat pelanggan per unit bahan baku.'
                       : 'Aktifkan penjualan POS untuk mengatur poin anggota.'
                   }
@@ -1410,12 +1416,14 @@ function ProductEditFormPage({
                 </ProductFieldShell>
               </ProductEditSection>
 
-              <ProductEditSection
-                description="Berat dan dimensi bahan baku tanpa varian."
-                title="Logistik"
-              >
-                <ProductRootLogisticsPanel controller={controller} />
-              </ProductEditSection>
+              {!hasVariants ? (
+                <ProductEditSection
+                  description="Berat dan dimensi bahan baku tanpa varian."
+                  title="Logistik"
+                >
+                  <ProductRootLogisticsPanel controller={controller} />
+                </ProductEditSection>
+              ) : null}
 
               <ProductEditSection
                 description="Metode pengiriman yang tersedia untuk bahan baku ini."
