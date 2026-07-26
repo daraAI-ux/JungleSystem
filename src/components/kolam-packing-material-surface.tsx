@@ -257,37 +257,39 @@ function KolamPackingMaterialList({
           </View>
         )}
       </KolamContentFrame>
-      <KolamTableFooterControls
-        onPageSizeChange={setPageSize}
-        page={safePage}
-        pageSize={pageSize}
-        total={sortedMaterials.length}>
-        {pageCount > 1 ? (
-          <View style={styles.paginationRow}>
-            <KolamButton
-              disabled={safePage <= 1}
-              label="Sebelumnya"
-              onPress={() => setPage(current => Math.max(1, current - 1))}
-            />
-            <KolamCopyStack
-              items={[
-                {
-                  id: 'page',
-                  text: `${safePage} / ${pageCount}`,
-                  style: styles.pageLabel,
-                },
-              ]}
-            />
-            <KolamButton
-              disabled={safePage >= pageCount}
-              label="Berikutnya"
-              onPress={() =>
-                setPage(current => Math.min(pageCount, current + 1))
-              }
-            />
-          </View>
-        ) : null}
-      </KolamTableFooterControls>
+      <View style={styles.footerWrap}>
+        <KolamTableFooterControls
+          onPageSizeChange={setPageSize}
+          page={safePage}
+          pageSize={pageSize}
+          total={sortedMaterials.length}>
+          {pageCount > 1 ? (
+            <View style={styles.paginationBar}>
+              <KolamButton
+                disabled={safePage <= 1}
+                label="Sebelumnya"
+                onPress={() => setPage(current => Math.max(1, current - 1))}
+              />
+              <KolamCopyStack
+                items={[
+                  {
+                    id: 'page',
+                    text: `${safePage} / ${pageCount}`,
+                    style: styles.pageLabel,
+                  },
+                ]}
+              />
+              <KolamButton
+                disabled={safePage >= pageCount}
+                label="Berikutnya"
+                onPress={() =>
+                  setPage(current => Math.min(pageCount, current + 1))
+                }
+              />
+            </View>
+          ) : null}
+        </KolamTableFooterControls>
+      </View>
       <KolamDeleteConfirmDialog
         itemLabel={deleteCandidate?.name}
         itemType="bahan kemasan"
@@ -2266,17 +2268,21 @@ const styles = StyleSheet.create({
     width: 64,
     alignItems: 'flex-end',
   },
-  paginationRow: {
+  footerWrap: {
+    marginTop: 14,
+  },
+  paginationBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 12,
+    justifyContent: 'flex-end',
   },
   pageLabel: {
     color: V.colors.fg,
     fontFamily: V.fontFamily,
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '800',
-    lineHeight: 18,
+    lineHeight: 20,
   },
   detailActions: {
     flexDirection: 'row',
