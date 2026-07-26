@@ -89,6 +89,7 @@ import {
   type KolamNotificationSoundType,
   type KolamRole,
   type KolamRolePermission,
+  type KolamStoreOperatingWeekday,
   type KolamWebSetting,
   type KolamWebSettingVersion,
   type KolamWebSettingVersions,
@@ -113,6 +114,18 @@ type MarketplaceLandingAssetStatus =
   | 'deleting'
   | 'reordering';
 const maskedSecretPlaceholder = '********';
+const storeOperatingWeekdays: Array<{
+  key: KolamStoreOperatingWeekday;
+  label: string;
+}> = [
+  { key: 'monday', label: 'Senin' },
+  { key: 'tuesday', label: 'Selasa' },
+  { key: 'wednesday', label: 'Rabu' },
+  { key: 'thursday', label: 'Kamis' },
+  { key: 'friday', label: 'Jumat' },
+  { key: 'saturday', label: 'Sabtu' },
+  { key: 'sunday', label: 'Minggu' },
+];
 const notificationSoundDraftFieldByType: Record<
   KolamNotificationSoundType,
   keyof Pick<
@@ -149,12 +162,38 @@ interface WebSettingDraft {
   maintenancePos: boolean;
   maintenanceMarketplace: boolean;
   livechatOnline: boolean;
+  biteshipApiKey: string;
+  googleMapsBrowserApiKey: string;
   originAddressLine1: string;
   originCity: string;
   originProvince: string;
   originPostalCode: string;
   originLatitude: string;
   originLongitude: string;
+  storeOperatingHoursEnabled: boolean;
+  storeOperatingHoursDaraReplyWhenClosed: boolean;
+  storeOperatingHoursTimezone: string;
+  storeHoursMondayOpen: boolean;
+  storeHoursMondayOpenAt: string;
+  storeHoursMondayCloseAt: string;
+  storeHoursTuesdayOpen: boolean;
+  storeHoursTuesdayOpenAt: string;
+  storeHoursTuesdayCloseAt: string;
+  storeHoursWednesdayOpen: boolean;
+  storeHoursWednesdayOpenAt: string;
+  storeHoursWednesdayCloseAt: string;
+  storeHoursThursdayOpen: boolean;
+  storeHoursThursdayOpenAt: string;
+  storeHoursThursdayCloseAt: string;
+  storeHoursFridayOpen: boolean;
+  storeHoursFridayOpenAt: string;
+  storeHoursFridayCloseAt: string;
+  storeHoursSaturdayOpen: boolean;
+  storeHoursSaturdayOpenAt: string;
+  storeHoursSaturdayCloseAt: string;
+  storeHoursSundayOpen: boolean;
+  storeHoursSundayOpenAt: string;
+  storeHoursSundayCloseAt: string;
   staffDesktopOnlyEnabled: boolean;
   staffDesktopOnlyRedirectUrl: string;
   kolamMacAccessEnabled: boolean;
@@ -269,12 +308,38 @@ const emptyWebSettingDraft: WebSettingDraft = {
   maintenancePos: false,
   maintenanceMarketplace: false,
   livechatOnline: false,
+  biteshipApiKey: '',
+  googleMapsBrowserApiKey: '',
   originAddressLine1: '',
   originCity: '',
   originProvince: '',
   originPostalCode: '',
   originLatitude: '',
   originLongitude: '',
+  storeOperatingHoursEnabled: false,
+  storeOperatingHoursDaraReplyWhenClosed: false,
+  storeOperatingHoursTimezone: 'Asia/Jakarta',
+  storeHoursMondayOpen: true,
+  storeHoursMondayOpenAt: '09:00',
+  storeHoursMondayCloseAt: '21:00',
+  storeHoursTuesdayOpen: true,
+  storeHoursTuesdayOpenAt: '09:00',
+  storeHoursTuesdayCloseAt: '21:00',
+  storeHoursWednesdayOpen: true,
+  storeHoursWednesdayOpenAt: '09:00',
+  storeHoursWednesdayCloseAt: '21:00',
+  storeHoursThursdayOpen: true,
+  storeHoursThursdayOpenAt: '09:00',
+  storeHoursThursdayCloseAt: '21:00',
+  storeHoursFridayOpen: true,
+  storeHoursFridayOpenAt: '09:00',
+  storeHoursFridayCloseAt: '21:00',
+  storeHoursSaturdayOpen: true,
+  storeHoursSaturdayOpenAt: '09:00',
+  storeHoursSaturdayCloseAt: '21:00',
+  storeHoursSundayOpen: true,
+  storeHoursSundayOpenAt: '09:00',
+  storeHoursSundayCloseAt: '21:00',
   staffDesktopOnlyEnabled: false,
   staffDesktopOnlyRedirectUrl: '',
   kolamMacAccessEnabled: false,
@@ -1471,6 +1536,14 @@ export function useKolamSettingsPanelController(
           marketplace: webSettingDraft.maintenanceMarketplace,
         },
         livechatOnline: webSettingDraft.livechatOnline,
+        ...(createSecretUpdateField(
+          'biteshipApiKey',
+          webSettingDraft.biteshipApiKey,
+        ) as Pick<KolamWebSetting, 'biteshipApiKey'>),
+        ...(createSecretUpdateField(
+          'googleMapsBrowserApiKey',
+          webSettingDraft.googleMapsBrowserApiKey,
+        ) as Pick<KolamWebSetting, 'googleMapsBrowserApiKey'>),
         originAddress: {
           addressLine1: webSettingDraft.originAddressLine1.trim(),
           city: webSettingDraft.originCity.trim(),
@@ -1479,6 +1552,8 @@ export function useKolamSettingsPanelController(
           latitude: parseOptionalNumber(webSettingDraft.originLatitude),
           longitude: parseOptionalNumber(webSettingDraft.originLongitude),
         },
+        storeOperatingHours:
+          createStoreOperatingHoursUpdateBody(webSettingDraft),
         staffDesktopOnly: {
           enabled: webSettingDraft.staffDesktopOnlyEnabled,
           redirectUrl: webSettingDraft.staffDesktopOnlyRedirectUrl.trim(),
@@ -1577,6 +1652,25 @@ export function useKolamSettingsPanelController(
           pos: webSettingDraft.maintenancePos,
           marketplace: webSettingDraft.maintenanceMarketplace,
         },
+        originAddress: {
+          ...(updated.originAddress ?? {}),
+          addressLine1: webSettingDraft.originAddressLine1.trim(),
+          city: webSettingDraft.originCity.trim(),
+          province: webSettingDraft.originProvince.trim(),
+          postalCode: webSettingDraft.originPostalCode.trim(),
+          latitude: parseOptionalNumber(webSettingDraft.originLatitude),
+          longitude: parseOptionalNumber(webSettingDraft.originLongitude),
+        },
+        biteshipApiKeyConfigured:
+          updated.biteshipApiKeyConfigured ??
+          webSetting?.biteshipApiKeyConfigured ??
+          isConfiguredSecretDraft(webSettingDraft.biteshipApiKey),
+        googleMapsBrowserApiKeyConfigured:
+          updated.googleMapsBrowserApiKeyConfigured ??
+          webSetting?.googleMapsBrowserApiKeyConfigured ??
+          isConfiguredSecretDraft(webSettingDraft.googleMapsBrowserApiKey),
+        storeOperatingHours:
+          createStoreOperatingHoursUpdateBody(webSettingDraft),
         kolamMacAccess: {
           ...(updated.kolamMacAccess ?? {}),
           enabled: webSettingDraft.kolamMacAccessEnabled,
@@ -1958,6 +2052,15 @@ function createWebSettingDraft(
   const staffOtpLogin = setting.staffOtpLogin ?? {};
   const smtp = setting.smtp ?? {};
   const firebase = setting.firebase ?? {};
+  const storeOperatingHours = setting.storeOperatingHours ?? {};
+  const weeklyHours = storeOperatingHours.weeklyHours ?? {};
+  const mondayHours = weeklyHours.monday ?? {};
+  const tuesdayHours = weeklyHours.tuesday ?? {};
+  const wednesdayHours = weeklyHours.wednesday ?? {};
+  const thursdayHours = weeklyHours.thursday ?? {};
+  const fridayHours = weeklyHours.friday ?? {};
+  const saturdayHours = weeklyHours.saturday ?? {};
+  const sundayHours = weeklyHours.sunday ?? {};
 
   return {
     versionKolam:
@@ -1978,6 +2081,12 @@ function createWebSettingDraft(
     maintenancePos: setting.maintenance?.pos === true,
     maintenanceMarketplace: setting.maintenance?.marketplace === true,
     livechatOnline: setting.livechatOnline === true,
+    biteshipApiKey: setting.biteshipApiKeyConfigured
+      ? maskedSecretPlaceholder
+      : setting.biteshipApiKey ?? '',
+    googleMapsBrowserApiKey: setting.googleMapsBrowserApiKeyConfigured
+      ? maskedSecretPlaceholder
+      : setting.googleMapsBrowserApiKey ?? '',
     originAddressLine1: origin.addressLine1 ?? '',
     originCity: origin.city ?? '',
     originProvince: origin.province ?? '',
@@ -1990,6 +2099,47 @@ function createWebSettingDraft(
       origin.longitude === null || origin.longitude === undefined
         ? ''
         : String(origin.longitude),
+    storeOperatingHoursEnabled: storeOperatingHours.enabled === true,
+    storeOperatingHoursDaraReplyWhenClosed:
+      storeOperatingHours.daraReplyWhenClosed === true,
+    storeOperatingHoursTimezone:
+      storeOperatingHours.timezone ??
+      emptyWebSettingDraft.storeOperatingHoursTimezone,
+    storeHoursMondayOpen: mondayHours.open !== false,
+    storeHoursMondayOpenAt:
+      mondayHours.openAt ?? emptyWebSettingDraft.storeHoursMondayOpenAt,
+    storeHoursMondayCloseAt:
+      mondayHours.closeAt ?? emptyWebSettingDraft.storeHoursMondayCloseAt,
+    storeHoursTuesdayOpen: tuesdayHours.open !== false,
+    storeHoursTuesdayOpenAt:
+      tuesdayHours.openAt ?? emptyWebSettingDraft.storeHoursTuesdayOpenAt,
+    storeHoursTuesdayCloseAt:
+      tuesdayHours.closeAt ?? emptyWebSettingDraft.storeHoursTuesdayCloseAt,
+    storeHoursWednesdayOpen: wednesdayHours.open !== false,
+    storeHoursWednesdayOpenAt:
+      wednesdayHours.openAt ?? emptyWebSettingDraft.storeHoursWednesdayOpenAt,
+    storeHoursWednesdayCloseAt:
+      wednesdayHours.closeAt ?? emptyWebSettingDraft.storeHoursWednesdayCloseAt,
+    storeHoursThursdayOpen: thursdayHours.open !== false,
+    storeHoursThursdayOpenAt:
+      thursdayHours.openAt ?? emptyWebSettingDraft.storeHoursThursdayOpenAt,
+    storeHoursThursdayCloseAt:
+      thursdayHours.closeAt ?? emptyWebSettingDraft.storeHoursThursdayCloseAt,
+    storeHoursFridayOpen: fridayHours.open !== false,
+    storeHoursFridayOpenAt:
+      fridayHours.openAt ?? emptyWebSettingDraft.storeHoursFridayOpenAt,
+    storeHoursFridayCloseAt:
+      fridayHours.closeAt ?? emptyWebSettingDraft.storeHoursFridayCloseAt,
+    storeHoursSaturdayOpen: saturdayHours.open !== false,
+    storeHoursSaturdayOpenAt:
+      saturdayHours.openAt ?? emptyWebSettingDraft.storeHoursSaturdayOpenAt,
+    storeHoursSaturdayCloseAt:
+      saturdayHours.closeAt ?? emptyWebSettingDraft.storeHoursSaturdayCloseAt,
+    storeHoursSundayOpen: sundayHours.open !== false,
+    storeHoursSundayOpenAt:
+      sundayHours.openAt ?? emptyWebSettingDraft.storeHoursSundayOpenAt,
+    storeHoursSundayCloseAt:
+      sundayHours.closeAt ?? emptyWebSettingDraft.storeHoursSundayCloseAt,
     staffDesktopOnlyEnabled: setting.staffDesktopOnly?.enabled === true,
     staffDesktopOnlyRedirectUrl: setting.staffDesktopOnly?.redirectUrl ?? '',
     kolamMacAccessEnabled: macAccess.enabled === true,
@@ -2106,6 +2256,78 @@ function createKolamPluginsUpdateBody(
 function cleanOptionalString(value: string) {
   const trimmed = value.trim();
   return trimmed || undefined;
+}
+
+function isConfiguredSecretDraft(value: string) {
+  return Boolean(value.trim()) || value === maskedSecretPlaceholder;
+}
+
+function createSecretUpdateField(key: string, value: string) {
+  const trimmed = value.trim();
+  if (!trimmed || trimmed === maskedSecretPlaceholder) {
+    return {};
+  }
+
+  return { [key]: trimmed };
+}
+
+function createStoreOperatingHoursUpdateBody(draft: WebSettingDraft) {
+  return {
+    enabled: draft.storeOperatingHoursEnabled,
+    daraReplyWhenClosed: draft.storeOperatingHoursDaraReplyWhenClosed,
+    timezone:
+      draft.storeOperatingHoursTimezone.trim() ||
+      emptyWebSettingDraft.storeOperatingHoursTimezone,
+    weeklyHours: {
+      monday: createStoreOperatingDayHours(
+        draft.storeHoursMondayOpen,
+        draft.storeHoursMondayOpenAt,
+        draft.storeHoursMondayCloseAt,
+      ),
+      tuesday: createStoreOperatingDayHours(
+        draft.storeHoursTuesdayOpen,
+        draft.storeHoursTuesdayOpenAt,
+        draft.storeHoursTuesdayCloseAt,
+      ),
+      wednesday: createStoreOperatingDayHours(
+        draft.storeHoursWednesdayOpen,
+        draft.storeHoursWednesdayOpenAt,
+        draft.storeHoursWednesdayCloseAt,
+      ),
+      thursday: createStoreOperatingDayHours(
+        draft.storeHoursThursdayOpen,
+        draft.storeHoursThursdayOpenAt,
+        draft.storeHoursThursdayCloseAt,
+      ),
+      friday: createStoreOperatingDayHours(
+        draft.storeHoursFridayOpen,
+        draft.storeHoursFridayOpenAt,
+        draft.storeHoursFridayCloseAt,
+      ),
+      saturday: createStoreOperatingDayHours(
+        draft.storeHoursSaturdayOpen,
+        draft.storeHoursSaturdayOpenAt,
+        draft.storeHoursSaturdayCloseAt,
+      ),
+      sunday: createStoreOperatingDayHours(
+        draft.storeHoursSundayOpen,
+        draft.storeHoursSundayOpenAt,
+        draft.storeHoursSundayCloseAt,
+      ),
+    },
+  } satisfies KolamWebSetting['storeOperatingHours'];
+}
+
+function createStoreOperatingDayHours(
+  open: boolean,
+  openAt: string,
+  closeAt: string,
+) {
+  return {
+    open,
+    openAt: openAt.trim() || '09:00',
+    closeAt: closeAt.trim() || '21:00',
+  };
 }
 
 function parseOptionalNumber(value: string) {
@@ -2354,7 +2576,7 @@ async function refreshRolePermissionCache() {
 }
 
 function getWebSettingSaveErrorMessage(error: unknown) {
-  if (error instanceof ApiError && error.status === 403) {
+  if (isPermissionApiError(error)) {
     return 'Akses ditolak: permission websetting:update diperlukan.';
   }
 
@@ -2366,7 +2588,7 @@ function getWebSettingSaveErrorMessage(error: unknown) {
 }
 
 function getNotificationSoundErrorMessage(error: unknown) {
-  if (error instanceof ApiError && error.status === 403) {
+  if (isPermissionApiError(error)) {
     return 'Akses ditolak: permission websetting:update diperlukan.';
   }
 
@@ -2382,7 +2604,7 @@ function getNotificationSoundErrorMessage(error: unknown) {
 }
 
 function getMarketplaceLandingOverviewErrorMessage(error: unknown) {
-  if (error instanceof ApiError && error.status === 403) {
+  if (isPermissionApiError(error)) {
     return 'Akses ditolak: permission websetting:view diperlukan.';
   }
 
@@ -2394,7 +2616,7 @@ function getMarketplaceLandingOverviewErrorMessage(error: unknown) {
 }
 
 function getMarketplaceLandingSaveErrorMessage(error: unknown) {
-  if (error instanceof ApiError && error.status === 403) {
+  if (isPermissionApiError(error)) {
     return 'Akses ditolak: permission websetting:update diperlukan.';
   }
 
@@ -2406,7 +2628,7 @@ function getMarketplaceLandingSaveErrorMessage(error: unknown) {
 }
 
 function getRoleSaveErrorMessage(error: unknown) {
-  if (error instanceof ApiError && error.status === 403) {
+  if (isPermissionApiError(error)) {
     return 'Akses ditolak: permission role diperlukan.';
   }
 
@@ -2418,7 +2640,7 @@ function getRoleSaveErrorMessage(error: unknown) {
 }
 
 function getActivityLogErrorMessage(error: unknown) {
-  if (error instanceof ApiError && error.status === 403) {
+  if (isPermissionApiError(error)) {
     return 'Akses ditolak: permission activity-log:view diperlukan.';
   }
 
@@ -2427,4 +2649,14 @@ function getActivityLogErrorMessage(error: unknown) {
   }
 
   return 'Gagal membaca Activity Log live.';
+}
+
+function isPermissionApiError(error: unknown) {
+  return (
+    (error instanceof ApiError && error.status === 403) ||
+    (typeof error === 'object' &&
+      error !== null &&
+      'status' in error &&
+      error.status === 403)
+  );
 }

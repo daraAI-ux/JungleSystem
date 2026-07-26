@@ -15,6 +15,7 @@ export function KolamSettingsSurfaceBody({
   if (
     controller.activeSettingsTabId === 'umum' ||
     controller.activeSettingsTabId === 'notifikasi' ||
+    controller.activeSettingsTabId === 'toko' ||
     controller.activeSettingsTabId === 'plugin' ||
     controller.activeSettingsTabId === 'konten'
   ) {

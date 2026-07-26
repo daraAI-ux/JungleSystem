@@ -51,6 +51,7 @@ describe('settings web widgets', () => {
     await ReactTestRenderer.act(async () => {
       renderer = ReactTestRenderer.create(
         <KolamSettingsWebConfigSurface
+          activeTabId="konten"
           draft={createWebSettingDraft()}
           fields={getSettingsWebConfigFields()}
           maintenanceMode={false}
@@ -213,12 +214,38 @@ function createWebSettingDraft() {
     maintenancePos: false,
     maintenanceMarketplace: false,
     livechatOnline: true,
+    biteshipApiKey: '',
+    googleMapsBrowserApiKey: '',
     originAddressLine1: '',
     originCity: '',
     originProvince: '',
     originPostalCode: '',
     originLatitude: '',
     originLongitude: '',
+    storeOperatingHoursEnabled: false,
+    storeOperatingHoursDaraReplyWhenClosed: false,
+    storeOperatingHoursTimezone: 'Asia/Jakarta',
+    storeHoursMondayOpen: true,
+    storeHoursMondayOpenAt: '09:00',
+    storeHoursMondayCloseAt: '21:00',
+    storeHoursTuesdayOpen: true,
+    storeHoursTuesdayOpenAt: '09:00',
+    storeHoursTuesdayCloseAt: '21:00',
+    storeHoursWednesdayOpen: true,
+    storeHoursWednesdayOpenAt: '09:00',
+    storeHoursWednesdayCloseAt: '21:00',
+    storeHoursThursdayOpen: true,
+    storeHoursThursdayOpenAt: '09:00',
+    storeHoursThursdayCloseAt: '21:00',
+    storeHoursFridayOpen: true,
+    storeHoursFridayOpenAt: '09:00',
+    storeHoursFridayCloseAt: '21:00',
+    storeHoursSaturdayOpen: true,
+    storeHoursSaturdayOpenAt: '09:00',
+    storeHoursSaturdayCloseAt: '21:00',
+    storeHoursSundayOpen: true,
+    storeHoursSundayOpenAt: '09:00',
+    storeHoursSundayCloseAt: '21:00',
     staffDesktopOnlyEnabled: false,
     staffDesktopOnlyRedirectUrl: '',
     kolamMacAccessEnabled: false,

@@ -202,6 +202,53 @@ describe('KolamSettingsPanel', () => {
     );
   });
 
+  it('renders store and shipping production fields in the Toko & Pengiriman tab', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamSettingsPanel
+          activityEntries={getSyncActivityEntries(seedUnifiedDataset, '10:00')}
+        />,
+      );
+    });
+
+    await ReactTestRenderer.act(async () => {
+      findTabByText(renderer!, 'Toko & Pengiriman').props.onPress();
+    });
+
+    const text = renderText(renderer!);
+
+    expect(text).toEqual(
+      expect.arrayContaining([
+        'Toko & Pengiriman',
+        'Biteship API key',
+        'Google Maps browser key',
+        'Origin Address',
+        'Origin City',
+        'Origin Province',
+        'Origin Postal Code',
+        'Origin Latitude',
+        'Origin Longitude',
+        'Map native planned: gunakan latitude/longitude sebagai fallback koordinat produksi.',
+        'Store operating hours',
+        'DARA reply when closed',
+        'Timezone',
+        'Senin open',
+        'Minggu close at',
+        'Save',
+      ]),
+    );
+    expect(text).not.toEqual(
+      expect.arrayContaining([
+        'Company Tagline',
+        'Staff OTP login',
+        'Plugin Enclosure',
+        'Marketplace Landing Overview',
+      ]),
+    );
+  });
+
   it('keeps local Web Settings draft intact when live update is rejected', async () => {
     const fetchMock = jest
       .fn()
@@ -230,6 +277,13 @@ describe('KolamSettingsPanel', () => {
           },
         }),
       )
+      .mockResolvedValueOnce(jsonResponse({ data: [] }))
+      .mockResolvedValueOnce(jsonResponse({ data: [] }))
+      .mockResolvedValueOnce(jsonResponse({ data: null }))
+      .mockResolvedValueOnce(jsonResponse({ data: null }))
+      .mockResolvedValueOnce(jsonResponse({ data: [] }))
+      .mockResolvedValueOnce(jsonResponse({ data: [] }))
+      .mockResolvedValueOnce(jsonResponse({ data: { marketplaceContent: {} } }))
       .mockResolvedValueOnce({
         ok: false,
         status: 403,
@@ -322,6 +376,12 @@ describe('KolamSettingsPanel', () => {
         breadcrumbLabel: 'Pajak',
       }),
     );
+    expect(requireController(latest).activeSurfaceId).toBe('web-settings');
+
+    await ReactTestRenderer.act(async () => {
+      requireController(latest).selectSettingsTab('toko');
+    });
+
     expect(requireController(latest).activeSurfaceId).toBe('web-settings');
 
     await ReactTestRenderer.act(async () => {

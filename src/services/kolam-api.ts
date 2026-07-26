@@ -216,6 +216,44 @@ export type KolamMarketplaceContentImageType =
   | 'featured-collections'
   | 'bioactive-ecosystem';
 
+export type KolamStoreOperatingWeekday =
+  | 'monday'
+  | 'tuesday'
+  | 'wednesday'
+  | 'thursday'
+  | 'friday'
+  | 'saturday'
+  | 'sunday';
+
+export interface KolamStoreOperatingDayHours {
+  open?: boolean;
+  openAt?: string;
+  closeAt?: string;
+}
+
+export interface KolamStoreOperatingHours {
+  enabled?: boolean;
+  daraReplyWhenClosed?: boolean;
+  timezone?: string;
+  weeklyHours?: Partial<
+    Record<KolamStoreOperatingWeekday, KolamStoreOperatingDayHours>
+  >;
+  specialClosures?: Array<{
+    date?: string;
+    label?: string;
+    allDay?: boolean;
+    openAt?: string;
+    closeAt?: string;
+  }>;
+  messages?: {
+    beforeOpen?: string;
+    afterClose?: string;
+    weeklyClosed?: string;
+    specialClosed?: string;
+    shippingDisclaimer?: string;
+  };
+}
+
 export type KolamPluginSettings = Partial<
   Record<
     KolamPluginConfigKey,
@@ -256,6 +294,9 @@ export interface KolamWebSetting {
   };
   biteshipApiKey?: string;
   biteshipApiKeyConfigured?: boolean;
+  googleMapsBrowserApiKey?: string;
+  googleMapsBrowserApiKeyConfigured?: boolean;
+  storeOperatingHours?: KolamStoreOperatingHours;
   maintenance?: {
     pos?: boolean;
     marketplace?: boolean;
@@ -490,6 +531,9 @@ export interface UpdateKolamWebSettingBody
       | 'smtp'
       | 'firebase'
       | 'kolamPlugins'
+      | 'biteshipApiKey'
+      | 'googleMapsBrowserApiKey'
+      | 'storeOperatingHours'
       | 'teamChatGroupCallEnabled'
       | 'daraBusinessEnabled'
       | 'daraToolsEnabled'
