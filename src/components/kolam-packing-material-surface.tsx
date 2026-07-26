@@ -1,5 +1,5 @@
 import React from 'react';
-import { Linking, StyleSheet, Text, View } from 'react-native';
+import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
   formatPackingDimension,
   formatPackingWeight,
@@ -21,6 +21,7 @@ import {
   type KolamPackingMaterialController,
 } from '../hooks/use-kolam-packing-material-controller';
 import { KolamButton } from './kolam-button';
+import { KolamChevronIcon } from './kolam-chevron-icon';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDataTableHeader } from './kolam-data-table-header';
@@ -126,6 +127,7 @@ function KolamPackingMaterialList({
   const [sortMode, setSortMode] = React.useState<PackingSortMode>('newest');
   const [categoryFilter, setCategoryFilter] =
     React.useState<PackingCategoryFilter>('all');
+  const [categoryPanelOpen, setCategoryPanelOpen] = React.useState(false);
   const [statusFilter, setStatusFilter] =
     React.useState<PackingStatusFilter>('all');
   const [pageSize, setPageSize] = React.useState(10);
@@ -153,6 +155,17 @@ function KolamPackingMaterialList({
     (safePage - 1) * pageSize,
     safePage * pageSize,
   );
+  const categoryFilterOptions = React.useMemo(
+    () => [
+      { label: 'Semua', value: 'all' },
+      ...KOLAM_PACKING_CATEGORY_OPTIONS,
+    ],
+    [],
+  );
+  const categoryFilterLabel =
+    categoryFilter === 'all'
+      ? 'Kategori'
+      : getPackingCategoryLabel(categoryFilter);
 
   React.useEffect(() => {
     setPage(1);
@@ -166,64 +179,73 @@ function KolamPackingMaterialList({
         <SummaryTile label="Nonaktif" value={summary.inactive} />
         <SummaryTile label="Stok" value={summary.stock} />
       </View>
-      <View style={styles.toolbarShell}>
-        <View style={styles.filterRow}>
-          <KolamFormTextField
-            onChangeText={setSearch}
-            placeholder="Cari bahan kemasan..."
-            style={styles.searchInput}
-            value={search}
-          />
-          <KolamDropdownSelect<PackingSortMode>
-            label="Urutan"
-            onChange={setSortMode}
-            options={[
-              { label: 'Terbaru', value: 'newest' },
-              { label: 'Nama A-Z', value: 'name-asc' },
-              { label: 'Nama Z-A', value: 'name-desc' },
-              { label: 'Stok Terbanyak', value: 'stock-desc' },
-            ]}
-            value={sortMode}
-          />
-          <KolamDropdownSelect<PackingCategoryFilter>
-            label="Kategori"
-            onChange={setCategoryFilter}
-            options={[
-              { label: 'Semua', value: 'all' },
-              ...KOLAM_PACKING_CATEGORY_OPTIONS,
-            ]}
-            value={categoryFilter}
-          />
-          <KolamDropdownSelect<PackingStatusFilter>
-            label="Status"
-            onChange={setStatusFilter}
-            options={[
-              { label: 'Semua', value: 'all' },
-              { label: 'Aktif', value: 'active' },
-              { label: 'Nonaktif', value: 'inactive' },
-            ]}
-            value={statusFilter}
-          />
+      <View style={styles.toolbarWrap}>
+        <View style={styles.toolbarShell}>
+          <View style={styles.filterRow}>
+            <KolamFormTextField
+              onChangeText={setSearch}
+              placeholder="Cari bahan kemasan..."
+              style={styles.searchInput}
+              value={search}
+            />
+            <KolamDropdownSelect<PackingSortMode>
+              label="Urutan"
+              onChange={setSortMode}
+              options={[
+                { label: 'Terbaru', value: 'newest' },
+                { label: 'Nama A-Z', value: 'name-asc' },
+                { label: 'Nama Z-A', value: 'name-desc' },
+                { label: 'Stok Terbanyak', value: 'stock-desc' },
+              ]}
+              value={sortMode}
+            />
+            <PackingFilterTrigger
+              active={categoryPanelOpen || categoryFilter !== 'all'}
+              label={categoryFilterLabel}
+              onPress={() => setCategoryPanelOpen(current => !current)}
+            />
+            <KolamDropdownSelect<PackingStatusFilter>
+              label="Status"
+              onChange={setStatusFilter}
+              options={[
+                { label: 'Semua', value: 'all' },
+                { label: 'Aktif', value: 'active' },
+                { label: 'Nonaktif', value: 'inactive' },
+              ]}
+              value={statusFilter}
+            />
+          </View>
+          <View style={styles.actionRow}>
+            <KolamButton
+              disabled={controller.loading}
+              label="Muat Ulang"
+              onPress={() => {
+                void controller.onRefresh();
+              }}
+              style={styles.toolbarButton}
+            />
+            <KolamButton
+              intent="primary"
+              label="Tambah Kemasan"
+              onPress={() => {
+                controller.onCreateNew();
+                onRouteChange?.('/packing-materials/baru');
+              }}
+              style={styles.toolbarButton}
+            />
+          </View>
         </View>
-        <View style={styles.actionRow}>
-          <KolamButton
-            disabled={controller.loading}
-            label="Muat Ulang"
-            onPress={() => {
-              void controller.onRefresh();
+        {categoryPanelOpen ? (
+          <PackingCategoryFilterPanel
+            onCategoryChange={value => {
+              setCategoryFilter(value);
+              setCategoryPanelOpen(false);
             }}
-            style={styles.toolbarButton}
+            onClose={() => setCategoryPanelOpen(false)}
+            options={categoryFilterOptions}
+            selectedCategory={categoryFilter}
           />
-          <KolamButton
-            intent="primary"
-            label="Tambah Kemasan"
-            onPress={() => {
-              controller.onCreateNew();
-              onRouteChange?.('/packing-materials/baru');
-            }}
-            style={styles.toolbarButton}
-          />
-        </View>
+        ) : null}
       </View>
       <KolamContentFrame variant="settingsWebConfig">
         <KolamDataTableHeader columns={getKolamTableColumns('packing-material')} />
@@ -309,6 +331,74 @@ function KolamPackingMaterialList({
         }}
         visible={Boolean(deleteCandidate)}
       />
+    </View>
+  );
+}
+
+function PackingFilterTrigger({
+  active,
+  label,
+  onPress,
+}: {
+  active: boolean;
+  label: string;
+  onPress: () => void;
+}) {
+  return (
+    <KolamButton
+      icon={
+        <KolamChevronIcon
+          color={active ? V.colors.primaryFg : V.colors.success}
+          direction="down"
+          size="menu-sm"
+        />
+      }
+      intent={active ? 'primary' : 'secondary'}
+      label={label}
+      onPress={onPress}
+      style={[styles.filterTrigger, active && styles.filterTriggerActive]}
+      textStyle={[
+        styles.filterTriggerText,
+        active && styles.filterTriggerTextActive,
+      ]}
+    />
+  );
+}
+
+function PackingCategoryFilterPanel({
+  onCategoryChange,
+  onClose,
+  options,
+  selectedCategory,
+}: {
+  onCategoryChange: (value: PackingCategoryFilter) => void;
+  onClose: () => void;
+  options: Array<{ label: string; value: string }>;
+  selectedCategory: PackingCategoryFilter;
+}) {
+  return (
+    <View style={styles.filterOverlayPanel}>
+      <ScrollView
+        contentContainerStyle={styles.filterPanelContent}
+        keyboardShouldPersistTaps="handled"
+        style={styles.filterPanelScroll}>
+        {options.map(option => {
+          const selected = option.value === selectedCategory;
+
+          return (
+            <KolamButton
+              intent={selected ? 'primary' : 'plain'}
+              key={option.value}
+              label={option.label}
+              onPress={() => onCategoryChange(option.value)}
+              style={styles.filterPanelOption}
+            />
+          );
+        })}
+      </ScrollView>
+      <View style={styles.filterPanelFooter}>
+        <KolamButton label="Tutup" onPress={onClose} />
+      </View>
     </View>
   );
 }
@@ -2114,6 +2204,8 @@ const styles = StyleSheet.create({
   },
   stack: {
     gap: 16,
+    overflow: 'visible',
+    position: 'relative',
   },
   summaryGrid: {
     flexDirection: 'row',
@@ -2144,10 +2236,15 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     lineHeight: 16,
   },
+  toolbarWrap: {
+    position: 'relative',
+    zIndex: 100000,
+    elevation: 1000,
+  },
   toolbarShell: {
     position: 'relative',
-    zIndex: 1000,
-    elevation: 100,
+    zIndex: 100001,
+    elevation: 1001,
     flexDirection: 'row',
     flexWrap: 'nowrap',
     alignItems: 'center',
@@ -2186,6 +2283,59 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     maxWidth: 260,
     minWidth: 150,
+  },
+  filterTrigger: {
+    backgroundColor: V.colors.successSoft,
+    borderColor: V.colors.success,
+    flexBasis: 0,
+    flexGrow: 1,
+    minHeight: 34,
+    minWidth: 128,
+    paddingHorizontal: 8,
+  },
+  filterTriggerActive: {
+    backgroundColor: V.colors.success,
+    borderColor: V.colors.success,
+  },
+  filterTriggerText: {
+    color: V.colors.success,
+    fontWeight: '800',
+  },
+  filterTriggerTextActive: {
+    color: V.colors.primaryFg,
+  },
+  filterOverlayPanel: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    elevation: 1200,
+    left: 390,
+    padding: 6,
+    position: 'absolute',
+    shadowColor: V.colors.fg,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    top: 48,
+    width: 240,
+    zIndex: 120000,
+  },
+  filterPanelScroll: {
+    maxHeight: 240,
+  },
+  filterPanelContent: {
+    gap: 4,
+  },
+  filterPanelOption: {
+    justifyContent: 'flex-start',
+  },
+  filterPanelFooter: {
+    alignItems: 'flex-end',
+    borderTopColor: V.colors.border,
+    borderTopWidth: 1,
+    marginTop: 6,
+    paddingTop: 6,
   },
   toolbarButton: {
     minHeight: 34,
