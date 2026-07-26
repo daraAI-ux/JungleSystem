@@ -324,6 +324,8 @@ function KolamPackingMaterialRow({
 }) {
   const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
   const photoUri = getKolamFileUrl(item.photos[0]);
+  const description = item.description.trim();
+  const effectiveHpp = getPackingEffectiveHpp(item);
 
   return (
     <KolamDataTableRowFrame style={actionMenuOpen && styles.activeActionRow}>
@@ -351,11 +353,15 @@ function KolamPackingMaterialRow({
         <KolamCopyStack
           items={[
             { id: 'name', text: item.name, style: styles.rowTitle },
-            {
-              id: 'description',
-              text: item.description || 'Bahan kemasan pembayaran',
-              style: styles.rowMeta,
-            },
+            ...(description
+              ? [
+                  {
+                    id: 'description',
+                    text: description,
+                    style: styles.rowMeta,
+                  },
+                ]
+              : []),
           ]}
         />
       </View>
@@ -375,9 +381,7 @@ function KolamPackingMaterialRow({
         {formatRupiah(item.price)}
       </KolamDataTableAmountCell>
       <KolamDataTableAmountCell style={styles.hppCell}>
-        {getPackingEffectiveHpp(item) > 0
-          ? formatRupiah(getPackingEffectiveHpp(item))
-          : '-'}
+        {effectiveHpp > 0 ? formatRupiah(effectiveHpp) : '-'}
       </KolamDataTableAmountCell>
       <KolamDataTableAmountCell style={styles.stockCell}>
         {item.stock}
