@@ -115,6 +115,50 @@ describe('KolamSettingsPanel', () => {
     );
   });
 
+  it('keeps the Umum tab focused on production general settings fields', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamSettingsPanel
+          activityEntries={getSyncActivityEntries(seedUnifiedDataset, '10:00')}
+        />,
+      );
+    });
+
+    const text = renderText(renderer!);
+
+    expect(text).toEqual(
+      expect.arrayContaining([
+        'Umum',
+        'Kolam Version',
+        'Marketplace Version',
+        'Company Tagline',
+        'Phone',
+        'Email',
+        'Address',
+        'Facebook',
+        'Staff desktop only',
+        'MAC access',
+        'Allowed MAC addresses',
+        'Logo',
+      ]),
+    );
+    expect(text).not.toEqual(
+      expect.arrayContaining([
+        'Origin Address',
+        'Marketplace maintenance',
+        'Staff OTP login',
+        'SMTP host',
+        'Firebase',
+        'DARA business',
+        'Notification sound',
+        'Plugin Enclosure',
+        'Marketplace Landing Overview',
+      ]),
+    );
+  });
+
   it('keeps local Web Settings draft intact when live update is rejected', async () => {
     const fetchMock = jest
       .fn()
