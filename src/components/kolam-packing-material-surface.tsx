@@ -91,24 +91,8 @@ function KolamPackingMaterialShell({
 }) {
   return (
     <View style={styles.surface}>
-      <View style={styles.headerActions}>
-        <KolamButton
-          disabled={controller.loading}
-          label="Refresh"
-          onPress={() => {
-            void controller.onRefresh();
-          }}
-        />
-        {controller.mode === 'list' ? (
-          <KolamButton
-            intent="primary"
-            label="Buat Baru"
-            onPress={() => {
-              controller.onCreateNew();
-              onRouteChange?.('/packing-materials/baru');
-            }}
-          />
-        ) : (
+      {controller.mode !== 'list' ? (
+        <View style={styles.headerActions}>
           <KolamButton
             label="Daftar"
             onPress={() => {
@@ -116,8 +100,8 @@ function KolamPackingMaterialShell({
               onRouteChange?.('/packing-materials');
             }}
           />
-        )}
-      </View>
+        </View>
+      ) : null}
       {controller.error ? (
         <KolamStatusBadge
           intent="danger"
@@ -182,43 +166,64 @@ function KolamPackingMaterialList({
         <SummaryTile label="Nonaktif" value={summary.inactive} />
         <SummaryTile label="Stok" value={summary.stock} />
       </View>
-      <View style={styles.tableToolbar}>
-        <KolamFormTextField
-          onChangeText={setSearch}
-          placeholder="Cari bahan kemasan..."
-          style={styles.searchInput}
-          value={search}
-        />
-        <KolamDropdownSelect<PackingSortMode>
-          label="Urutan"
-          onChange={setSortMode}
-          options={[
-            { label: 'Terbaru', value: 'newest' },
-            { label: 'Nama A-Z', value: 'name-asc' },
-            { label: 'Nama Z-A', value: 'name-desc' },
-            { label: 'Stok Terbanyak', value: 'stock-desc' },
-          ]}
-          value={sortMode}
-        />
-        <KolamDropdownSelect<PackingCategoryFilter>
-          label="Kategori"
-          onChange={setCategoryFilter}
-          options={[
-            { label: 'Semua', value: 'all' },
-            ...KOLAM_PACKING_CATEGORY_OPTIONS,
-          ]}
-          value={categoryFilter}
-        />
-        <KolamDropdownSelect<PackingStatusFilter>
-          label="Status"
-          onChange={setStatusFilter}
-          options={[
-            { label: 'Semua', value: 'all' },
-            { label: 'Aktif', value: 'active' },
-            { label: 'Nonaktif', value: 'inactive' },
-          ]}
-          value={statusFilter}
-        />
+      <View style={styles.toolbarShell}>
+        <View style={styles.filterRow}>
+          <KolamFormTextField
+            onChangeText={setSearch}
+            placeholder="Cari bahan kemasan..."
+            style={styles.searchInput}
+            value={search}
+          />
+          <KolamDropdownSelect<PackingSortMode>
+            label="Urutan"
+            onChange={setSortMode}
+            options={[
+              { label: 'Terbaru', value: 'newest' },
+              { label: 'Nama A-Z', value: 'name-asc' },
+              { label: 'Nama Z-A', value: 'name-desc' },
+              { label: 'Stok Terbanyak', value: 'stock-desc' },
+            ]}
+            value={sortMode}
+          />
+          <KolamDropdownSelect<PackingCategoryFilter>
+            label="Kategori"
+            onChange={setCategoryFilter}
+            options={[
+              { label: 'Semua', value: 'all' },
+              ...KOLAM_PACKING_CATEGORY_OPTIONS,
+            ]}
+            value={categoryFilter}
+          />
+          <KolamDropdownSelect<PackingStatusFilter>
+            label="Status"
+            onChange={setStatusFilter}
+            options={[
+              { label: 'Semua', value: 'all' },
+              { label: 'Aktif', value: 'active' },
+              { label: 'Nonaktif', value: 'inactive' },
+            ]}
+            value={statusFilter}
+          />
+        </View>
+        <View style={styles.actionRow}>
+          <KolamButton
+            disabled={controller.loading}
+            label="Muat Ulang"
+            onPress={() => {
+              void controller.onRefresh();
+            }}
+            style={styles.toolbarButton}
+          />
+          <KolamButton
+            intent="primary"
+            label="Tambah Kemasan"
+            onPress={() => {
+              controller.onCreateNew();
+              onRouteChange?.('/packing-materials/baru');
+            }}
+            style={styles.toolbarButton}
+          />
+        </View>
       </View>
       <KolamContentFrame variant="settingsWebConfig">
         <KolamDataTableHeader columns={getKolamTableColumns('packing-material')} />
@@ -2133,17 +2138,52 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     lineHeight: 16,
   },
-  tableToolbar: {
+  toolbarShell: {
     position: 'relative',
     zIndex: 1000,
+    elevation: 100,
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexWrap: 'nowrap',
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'space-between',
+    gap: 6,
+    padding: 4,
+    borderWidth: 1,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    backgroundColor: V.colors.bg,
+  },
+  filterRow: {
+    position: 'relative',
+    zIndex: 1001,
+    elevation: 101,
+    flexDirection: 'row',
+    flexWrap: 'nowrap',
+    alignItems: 'center',
+    flex: 1,
+    gap: 6,
+    minWidth: 0,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    flexShrink: 0,
+    flexWrap: 'nowrap',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 6,
+    paddingLeft: 8,
+    borderLeftWidth: 1,
+    borderLeftColor: V.colors.border,
   },
   searchInput: {
-    minWidth: 260,
-    flex: 1,
+    flexBasis: 180,
+    flexGrow: 1,
+    maxWidth: 260,
+    minWidth: 150,
+  },
+  toolbarButton: {
+    minHeight: 34,
+    paddingHorizontal: 10,
   },
   emptyWrap: {
     minHeight: 260,
