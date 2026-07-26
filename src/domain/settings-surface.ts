@@ -48,6 +48,7 @@ export interface SettingsTabItem {
   description: string;
   permission: SettingsTabPermission;
   status: SettingsSurfaceItem['status'];
+  surfaceId: SettingsSurfaceItem['id'];
   sourceComponent: 'settings/system/page.tsx';
 }
 
@@ -366,6 +367,7 @@ export const settingsTabItems: SettingsTabItem[] = [
       'Versi aplikasi, logo, perusahaan, kontak, alamat, sosial media, MAC access Kolam, dan staff desktop-only.',
     permission: 'websetting:view',
     status: 'source-audit',
+    surfaceId: 'web-settings',
     sourceComponent: 'settings/system/page.tsx',
   },
   {
@@ -377,6 +379,7 @@ export const settingsTabItems: SettingsTabItem[] = [
       'Suara chat, DARA handoff, Team Chat group call, Firebase push, dan SMTP staff OTP.',
     permission: 'websetting:view',
     status: 'source-audit',
+    surfaceId: 'web-settings',
     sourceComponent: 'settings/system/page.tsx',
   },
   {
@@ -388,6 +391,7 @@ export const settingsTabItems: SettingsTabItem[] = [
       'Asal pengiriman Biteship, Google Maps browser key, koordinat origin, dan jam operasional toko.',
     permission: 'websetting:view',
     status: 'source-audit',
+    surfaceId: 'web-settings',
     sourceComponent: 'settings/system/page.tsx',
   },
   {
@@ -399,6 +403,7 @@ export const settingsTabItems: SettingsTabItem[] = [
       'Maintenance POS/marketplace, Google Sign-In webstore, absensi staff, PO workflow, dan livechat.',
     permission: 'websetting:view',
     status: 'source-audit',
+    surfaceId: 'web-settings',
     sourceComponent: 'settings/system/page.tsx',
   },
   {
@@ -410,6 +415,7 @@ export const settingsTabItems: SettingsTabItem[] = [
       'Metode pembayaran, profil pajak perusahaan, overtime, dan enclosure sale commission.',
     permission: 'wallet:view|tax:view',
     status: 'planned',
+    surfaceId: 'web-settings',
     sourceComponent: 'settings/system/page.tsx',
   },
   {
@@ -421,6 +427,7 @@ export const settingsTabItems: SettingsTabItem[] = [
       'Chat AI tools, DARA tools, auto reply, handoff, knowledge, dan SOP controls.',
     permission: 'admin:websetting:view',
     status: 'source-audit',
+    surfaceId: 'web-settings',
     sourceComponent: 'settings/system/page.tsx',
   },
   {
@@ -431,6 +438,7 @@ export const settingsTabItems: SettingsTabItem[] = [
     description: 'Role, permission group, members, create/update/delete role.',
     permission: 'role:view',
     status: 'native-summary',
+    surfaceId: 'role-management',
     sourceComponent: 'settings/system/page.tsx',
   },
   {
@@ -442,6 +450,7 @@ export const settingsTabItems: SettingsTabItem[] = [
       'Dynamic sitemap sections, priority, change frequency, custom URLs, dan exclusions.',
     permission: 'websetting:view',
     status: 'planned',
+    surfaceId: 'web-settings',
     sourceComponent: 'settings/system/page.tsx',
   },
   {
@@ -452,6 +461,7 @@ export const settingsTabItems: SettingsTabItem[] = [
     description: 'Master data wilayah, region table, dan sync status.',
     permission: 'websetting:view',
     status: 'planned',
+    surfaceId: 'activity-log',
     sourceComponent: 'settings/system/page.tsx',
   },
   {
@@ -463,6 +473,7 @@ export const settingsTabItems: SettingsTabItem[] = [
       'Landing marketplace, blog, topik blog, hero, banner, CTA, YouTube, announcement, dan notices.',
     permission: 'websetting:view',
     status: 'native-summary',
+    surfaceId: 'web-settings',
     sourceComponent: 'settings/system/page.tsx',
   },
   {
@@ -474,6 +485,7 @@ export const settingsTabItems: SettingsTabItem[] = [
       'Task points, chat SLA, complaint, attendance, monthly level, dan DARA weekly preview.',
     permission: 'websetting:update',
     status: 'planned',
+    surfaceId: 'web-settings',
     sourceComponent: 'settings/system/page.tsx',
   },
   {
@@ -484,6 +496,7 @@ export const settingsTabItems: SettingsTabItem[] = [
     description: 'Kolam plugin enable/disable dan deploy bundle.',
     permission: 'admin:websetting:view:user',
     status: 'native-summary',
+    surfaceId: 'web-settings',
     sourceComponent: 'settings/system/page.tsx',
   },
 ];
@@ -499,6 +512,20 @@ export function getSettingsTabItemById(
   items = settingsTabItems,
 ) {
   return items.find(item => item.id === tabId) ?? null;
+}
+
+export function getSettingsSurfaceIdForTab(
+  tabId: SettingsTabId | string,
+  items = settingsTabItems,
+) {
+  return getSettingsTabItemById(tabId, items)?.surfaceId ?? 'web-settings';
+}
+
+export function getDefaultSettingsTabIdForSurface(
+  surfaceId: SettingsSurfaceItem['id'],
+  items = settingsTabItems,
+) {
+  return items.find(item => item.surfaceId === surfaceId)?.id ?? DEFAULT_SETTINGS_TAB_ID;
 }
 
 export function isSettingsTabId(tabId: string): tabId is SettingsTabId {

@@ -21,6 +21,8 @@ import {
   getSettingsSurfaceItemByRoute,
   getSettingsSurfaceStats,
   getSettingsSwitchVisualContract,
+  getDefaultSettingsTabIdForSurface,
+  getSettingsSurfaceIdForTab,
   getSettingsTabItemById,
   getSettingsTabItems,
   getSettingsWebConfigFields,
@@ -63,6 +65,20 @@ describe('settingsSurfaceItems', () => {
     expect(settingsTabItems.every(item => item.route === '/pengaturan')).toBe(
       true,
     );
+    expect(settingsTabItems.map(item => item.surfaceId)).toEqual([
+      'web-settings',
+      'web-settings',
+      'web-settings',
+      'web-settings',
+      'web-settings',
+      'web-settings',
+      'role-management',
+      'web-settings',
+      'activity-log',
+      'web-settings',
+      'web-settings',
+      'web-settings',
+    ]);
     expect(settingsTabItems.every(item => item.sourceComponent)).toBe(true);
   });
 
@@ -91,6 +107,11 @@ describe('settingsSurfaceItems', () => {
     );
     expect(isSettingsTabId('umum')).toBe(true);
     expect(isSettingsTabId('activity-log')).toBe(false);
+    expect(getSettingsSurfaceIdForTab('peran')).toBe('role-management');
+    expect(getSettingsSurfaceIdForTab('sync')).toBe('activity-log');
+    expect(getSettingsSurfaceIdForTab('unknown')).toBe('web-settings');
+    expect(getDefaultSettingsTabIdForSurface('role-management')).toBe('peran');
+    expect(getDefaultSettingsTabIdForSurface('activity-log')).toBe('sync');
   });
 
   it('maps live Kolam settings routes into a native summary surface', () => {

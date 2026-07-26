@@ -21,9 +21,12 @@ import {
   getSettingsRolePermissionPreviewRows,
   getSettingsRoleResourceGroups,
   getSettingsRoleTabItems,
+  getSettingsSurfaceIdForTab,
   getSettingsSurfaceStats,
+  getDefaultSettingsTabIdForSurface,
   getSettingsTabItemById,
   getSettingsTabItems,
+  isSettingsTabId,
   getSettingsWebConfigFields,
   getSettingsWebFormSections,
   isSettingsDefaultRoleKey,
@@ -703,6 +706,18 @@ export function useKolamSettingsPanelController(
 
   const selectSurface = (id: SettingsSurfaceItem['id']) => {
     setActiveSurfaceId(id);
+    setActiveSettingsTabId(getDefaultSettingsTabIdForSurface(id));
+    setActivityPage(1);
+    setSelectedActivityLogId('');
+  };
+
+  const selectSettingsTab = (id: SettingsTabId | string) => {
+    if (!isSettingsTabId(id)) {
+      return;
+    }
+
+    setActiveSettingsTabId(id);
+    setActiveSurfaceId(getSettingsSurfaceIdForTab(id));
     setActivityPage(1);
     setSelectedActivityLogId('');
   };
@@ -1830,7 +1845,7 @@ export function useKolamSettingsPanelController(
     roleMessage,
     roleSaveStatus,
     roleStatus,
-    selectSettingsTab: setActiveSettingsTabId,
+    selectSettingsTab,
     selectSurface,
     selectedActivityLog,
     selectedActivityLogFields,

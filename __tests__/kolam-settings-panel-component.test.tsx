@@ -44,7 +44,38 @@ describe('KolamSettingsPanel', () => {
     });
 
     expect(renderText(renderer!)).toEqual(
-      expect.arrayContaining(['Settings', 'Routes', 'Web Settings form']),
+      expect.arrayContaining([
+        'Settings',
+        'Umum',
+        'Konten Web',
+        'Plugin',
+        'Web Settings form',
+      ]),
+    );
+  });
+
+  it('switches the native Settings tab without changing the pengaturan landing route', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamSettingsPanel
+          activityEntries={getSyncActivityEntries(seedUnifiedDataset, '10:00')}
+        />,
+      );
+    });
+
+    await ReactTestRenderer.act(async () => {
+      findTabByText(renderer!, 'Peran & Izin').props.onPress();
+    });
+
+    expect(renderText(renderer!)).toEqual(
+      expect.arrayContaining(['Peran & Izin', 'Role Management']),
+    );
+    expect(
+      findTabByText(renderer!, 'Peran & Izin').props.accessibilityState,
+    ).toEqual(
+      {selected: true},
     );
   });
 
@@ -166,8 +197,41 @@ describe('KolamSettingsPanel', () => {
         breadcrumbLabel: 'Pajak',
       }),
     );
+    expect(requireController(latest).activeSurfaceId).toBe('web-settings');
+
+    await ReactTestRenderer.act(async () => {
+      requireController(latest).selectSettingsTab('peran');
+    });
+
+    expect(requireController(latest).activeSurfaceId).toBe('role-management');
+    expect(requireController(latest).activeSettingsTab?.route).toBe(
+      '/pengaturan',
+    );
   });
 });
+
+function findTabByText(
+  renderer: ReactTestRenderer.ReactTestRenderer,
+  label: string,
+) {
+  const tab = renderer.root.findAll(
+    node =>
+      node.props.accessibilityRole === 'tab' &&
+      renderInstanceText(node).includes(label),
+  )[0];
+
+  if (!tab) {
+    throw new Error(`Settings tab ${label} did not render.`);
+  }
+
+  return tab;
+}
+
+function renderInstanceText(instance: ReactTestRenderer.ReactTestInstance) {
+  return instance
+    .findAllByType(Text)
+    .flatMap(node => flattenText(node.props.children));
+}
 
 function SettingsControllerHarness({
   onRender,
