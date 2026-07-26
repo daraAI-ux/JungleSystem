@@ -347,12 +347,17 @@ export async function linkKolamProductPackings(
   product: KolamProduct,
   form: KolamProductFormState,
 ): Promise<KolamProduct> {
+  const packings = createKolamProductPackingLinkPayload(form, product);
+  if (!packings.length && !product.packings.length) {
+    return product;
+  }
+
   await kolamRequest<unknown>(
     `/products/${encodeURIComponent(product.id)}/link-packings`,
     {
       method: 'POST',
       body: {
-        packings: createKolamProductPackingLinkPayload(form, product),
+        packings,
       },
       headers: { [DETAIL_EDIT_HEADER]: DETAIL_EDIT_HEADER_VALUE },
     },
