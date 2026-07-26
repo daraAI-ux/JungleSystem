@@ -70,6 +70,15 @@ describe('KolamSettingsPanel', () => {
         'Web Settings form',
       ]),
     );
+    expect(renderText(renderer!)).not.toEqual(
+      expect.arrayContaining([
+        'Pengaturan Web',
+        'Pembaruan Pengaturan Web',
+        '/websetting',
+        'Storefront display',
+        'Runtime API config',
+      ]),
+    );
   });
 
   it('switches the native Settings tab without changing the pengaturan landing route', async () => {
