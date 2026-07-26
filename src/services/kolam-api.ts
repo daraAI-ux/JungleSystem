@@ -249,7 +249,63 @@ export interface KolamWebSetting {
     enabled?: boolean;
     redirectUrl?: string;
   };
+  kolamMacAccess?: {
+    enabled?: boolean;
+    allowWebBrowser?: boolean;
+    bypassSuperAdmin?: boolean;
+    allowedMacAddresses?: string[];
+  };
+  staffOtpLogin?: {
+    enabled?: boolean;
+    otpExpireMinutes?: number;
+    resendCooldownSeconds?: number;
+    maxAttempts?: number;
+    lockMinutes?: number;
+  };
+  smtp?: {
+    host?: string;
+    port?: number;
+    user?: string;
+    pass?: string;
+    passConfigured?: boolean;
+    fromEmail?: string;
+    fromName?: string;
+    secure?: boolean;
+  };
+  firebase?: {
+    enabled?: boolean;
+    projectId?: string;
+    clientEmail?: string;
+    privateKey?: string;
+    privateKeyConfigured?: boolean;
+  };
   kolamPlugins?: KolamPluginSettings;
+  notificationSound?: string;
+  unassignedNotificationSound?: string;
+  handoffNotificationSound?: string;
+  groupCallRingtone?: string;
+  salesNotificationSound?: string;
+  teamChatGroupCallEnabled?: boolean;
+  daraBusinessEnabled?: boolean;
+  daraToolsEnabled?: boolean;
+  daraKnowledgeEnabled?: boolean;
+  daraHandoffNotifyEnabled?: boolean;
+  daraInsightsEnabled?: boolean;
+  daraAutoReportEnabled?: boolean;
+  daraImageAnalysisEnabled?: boolean;
+  daraTaxEnabled?: boolean;
+  daraSeoEnabled?: boolean;
+  daraTaxRegulationWatcherEnabled?: boolean;
+  daraTaxComplianceJobEnabled?: boolean;
+  daraTaxLlmNarrativeEnabled?: boolean;
+  daraWebstoreFulfillmentEnabled?: boolean;
+  daraStaffOpsNotifyEnabled?: boolean;
+  daraStaffWaNotifyEnabled?: boolean;
+  daraOlshopCustomerNotifyEnabled?: boolean;
+  daraOwnerDigestEnabled?: boolean;
+  daraOwnerDigestWaEnabled?: boolean;
+  daraOwnerDigestFcmEnabled?: boolean;
+  daraOwnerFcmUrgentEnabled?: boolean;
   updatedAt?: string;
   createdAt?: string;
   [key: string]: unknown;
@@ -281,7 +337,32 @@ export interface UpdateKolamWebSettingBody
       | 'livechatOnline'
       | 'maintenance'
       | 'staffDesktopOnly'
+      | 'kolamMacAccess'
+      | 'staffOtpLogin'
+      | 'smtp'
+      | 'firebase'
       | 'kolamPlugins'
+      | 'teamChatGroupCallEnabled'
+      | 'daraBusinessEnabled'
+      | 'daraToolsEnabled'
+      | 'daraKnowledgeEnabled'
+      | 'daraHandoffNotifyEnabled'
+      | 'daraInsightsEnabled'
+      | 'daraAutoReportEnabled'
+      | 'daraImageAnalysisEnabled'
+      | 'daraTaxEnabled'
+      | 'daraSeoEnabled'
+      | 'daraTaxRegulationWatcherEnabled'
+      | 'daraTaxComplianceJobEnabled'
+      | 'daraTaxLlmNarrativeEnabled'
+      | 'daraWebstoreFulfillmentEnabled'
+      | 'daraStaffOpsNotifyEnabled'
+      | 'daraStaffWaNotifyEnabled'
+      | 'daraOlshopCustomerNotifyEnabled'
+      | 'daraOwnerDigestEnabled'
+      | 'daraOwnerDigestWaEnabled'
+      | 'daraOwnerDigestFcmEnabled'
+      | 'daraOwnerFcmUrgentEnabled'
     >
   > {
   [key: string]: unknown;

@@ -59,6 +59,7 @@ import {ApiError} from '../lib/api-error';
 type WebSettingSaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 type RoleSaveStatus = 'idle' | 'loading' | 'saving' | 'saved' | 'error';
 type ActivityLogStatus = 'idle' | 'loading' | 'live' | 'error';
+const maskedSecretPlaceholder = '********';
 
 interface WebSettingDraft {
   versionKolam: string;
@@ -86,6 +87,53 @@ interface WebSettingDraft {
   originLongitude: string;
   staffDesktopOnlyEnabled: boolean;
   staffDesktopOnlyRedirectUrl: string;
+  kolamMacAccessEnabled: boolean;
+  kolamMacAccessAllowWebBrowser: boolean;
+  kolamMacAccessBypassSuperAdmin: boolean;
+  kolamMacAccessAllowedMacAddresses: string;
+  staffOtpLoginEnabled: boolean;
+  staffOtpExpireMinutes: string;
+  staffOtpResendCooldownSeconds: string;
+  staffOtpMaxAttempts: string;
+  staffOtpLockMinutes: string;
+  smtpHost: string;
+  smtpPort: string;
+  smtpUser: string;
+  smtpPass: string;
+  smtpFromEmail: string;
+  smtpFromName: string;
+  smtpSecure: boolean;
+  firebaseEnabled: boolean;
+  firebaseProjectId: string;
+  firebaseClientEmail: string;
+  firebasePrivateKey: string;
+  chatStoreEnabled: boolean;
+  teamChatGroupCallEnabled: boolean;
+  daraBusinessEnabled: boolean;
+  daraToolsEnabled: boolean;
+  daraKnowledgeEnabled: boolean;
+  daraHandoffNotifyEnabled: boolean;
+  daraInsightsEnabled: boolean;
+  daraAutoReportEnabled: boolean;
+  daraImageAnalysisEnabled: boolean;
+  daraTaxEnabled: boolean;
+  daraSeoEnabled: boolean;
+  daraTaxRegulationWatcherEnabled: boolean;
+  daraTaxComplianceJobEnabled: boolean;
+  daraTaxLlmNarrativeEnabled: boolean;
+  daraWebstoreFulfillmentEnabled: boolean;
+  daraStaffOpsNotifyEnabled: boolean;
+  daraStaffWaNotifyEnabled: boolean;
+  daraOlshopCustomerNotifyEnabled: boolean;
+  daraOwnerDigestEnabled: boolean;
+  daraOwnerDigestWaEnabled: boolean;
+  daraOwnerDigestFcmEnabled: boolean;
+  daraOwnerFcmUrgentEnabled: boolean;
+  notificationSound: string;
+  unassignedNotificationSound: string;
+  handoffNotificationSound: string;
+  groupCallRingtone: string;
+  salesNotificationSound: string;
   pluginControls: Record<KolamPluginConfigKey, boolean>;
 }
 
@@ -121,6 +169,53 @@ const emptyWebSettingDraft: WebSettingDraft = {
   originLongitude: '',
   staffDesktopOnlyEnabled: false,
   staffDesktopOnlyRedirectUrl: '',
+  kolamMacAccessEnabled: false,
+  kolamMacAccessAllowWebBrowser: false,
+  kolamMacAccessBypassSuperAdmin: true,
+  kolamMacAccessAllowedMacAddresses: '',
+  staffOtpLoginEnabled: false,
+  staffOtpExpireMinutes: '10',
+  staffOtpResendCooldownSeconds: '60',
+  staffOtpMaxAttempts: '5',
+  staffOtpLockMinutes: '15',
+  smtpHost: 'smtp.gmail.com',
+  smtpPort: '465',
+  smtpUser: '',
+  smtpPass: '',
+  smtpFromEmail: '',
+  smtpFromName: 'Kolam',
+  smtpSecure: true,
+  firebaseEnabled: false,
+  firebaseProjectId: '',
+  firebaseClientEmail: '',
+  firebasePrivateKey: '',
+  chatStoreEnabled: true,
+  teamChatGroupCallEnabled: false,
+  daraBusinessEnabled: true,
+  daraToolsEnabled: true,
+  daraKnowledgeEnabled: true,
+  daraHandoffNotifyEnabled: true,
+  daraInsightsEnabled: true,
+  daraAutoReportEnabled: true,
+  daraImageAnalysisEnabled: true,
+  daraTaxEnabled: true,
+  daraSeoEnabled: true,
+  daraTaxRegulationWatcherEnabled: false,
+  daraTaxComplianceJobEnabled: true,
+  daraTaxLlmNarrativeEnabled: false,
+  daraWebstoreFulfillmentEnabled: true,
+  daraStaffOpsNotifyEnabled: true,
+  daraStaffWaNotifyEnabled: true,
+  daraOlshopCustomerNotifyEnabled: true,
+  daraOwnerDigestEnabled: true,
+  daraOwnerDigestWaEnabled: true,
+  daraOwnerDigestFcmEnabled: true,
+  daraOwnerFcmUrgentEnabled: true,
+  notificationSound: '',
+  unassignedNotificationSound: '',
+  handoffNotificationSound: '',
+  groupCallRingtone: '',
+  salesNotificationSound: '',
   pluginControls: {
     enclosure: true,
     taskManager: true,
@@ -466,9 +561,65 @@ export function useKolamSettingsPanelController(
           enabled: webSettingDraft.staffDesktopOnlyEnabled,
           redirectUrl: webSettingDraft.staffDesktopOnlyRedirectUrl.trim(),
         },
+        kolamMacAccess: {
+          enabled: webSettingDraft.kolamMacAccessEnabled,
+          allowWebBrowser: webSettingDraft.kolamMacAccessAllowWebBrowser,
+          bypassSuperAdmin: webSettingDraft.kolamMacAccessBypassSuperAdmin,
+          allowedMacAddresses: parseMacAddressList(
+            webSettingDraft.kolamMacAccessAllowedMacAddresses,
+          ),
+        },
+        staffOtpLogin: {
+          enabled: webSettingDraft.staffOtpLoginEnabled,
+          otpExpireMinutes: parseIntegerOrFallback(
+            webSettingDraft.staffOtpExpireMinutes,
+            10,
+          ),
+          resendCooldownSeconds: parseIntegerOrFallback(
+            webSettingDraft.staffOtpResendCooldownSeconds,
+            60,
+          ),
+          maxAttempts: parseIntegerOrFallback(
+            webSettingDraft.staffOtpMaxAttempts,
+            5,
+          ),
+          lockMinutes: parseIntegerOrFallback(
+            webSettingDraft.staffOtpLockMinutes,
+            15,
+          ),
+        },
+        smtp: createSmtpUpdateBody(webSettingDraft),
+        firebase: createFirebaseUpdateBody(webSettingDraft),
+        teamChatGroupCallEnabled: webSettingDraft.teamChatGroupCallEnabled,
+        daraBusinessEnabled: webSettingDraft.daraBusinessEnabled,
+        daraToolsEnabled: webSettingDraft.daraToolsEnabled,
+        daraKnowledgeEnabled: webSettingDraft.daraKnowledgeEnabled,
+        daraHandoffNotifyEnabled: webSettingDraft.daraHandoffNotifyEnabled,
+        daraInsightsEnabled: webSettingDraft.daraInsightsEnabled,
+        daraAutoReportEnabled: webSettingDraft.daraAutoReportEnabled,
+        daraImageAnalysisEnabled: webSettingDraft.daraImageAnalysisEnabled,
+        daraTaxEnabled: webSettingDraft.daraTaxEnabled,
+        daraSeoEnabled: webSettingDraft.daraSeoEnabled,
+        daraTaxRegulationWatcherEnabled:
+          webSettingDraft.daraTaxRegulationWatcherEnabled,
+        daraTaxComplianceJobEnabled:
+          webSettingDraft.daraTaxComplianceJobEnabled,
+        daraTaxLlmNarrativeEnabled:
+          webSettingDraft.daraTaxLlmNarrativeEnabled,
+        daraWebstoreFulfillmentEnabled:
+          webSettingDraft.daraWebstoreFulfillmentEnabled,
+        daraStaffOpsNotifyEnabled: webSettingDraft.daraStaffOpsNotifyEnabled,
+        daraStaffWaNotifyEnabled: webSettingDraft.daraStaffWaNotifyEnabled,
+        daraOlshopCustomerNotifyEnabled:
+          webSettingDraft.daraOlshopCustomerNotifyEnabled,
+        daraOwnerDigestEnabled: webSettingDraft.daraOwnerDigestEnabled,
+        daraOwnerDigestWaEnabled: webSettingDraft.daraOwnerDigestWaEnabled,
+        daraOwnerDigestFcmEnabled: webSettingDraft.daraOwnerDigestFcmEnabled,
+        daraOwnerFcmUrgentEnabled: webSettingDraft.daraOwnerFcmUrgentEnabled,
         kolamPlugins: createKolamPluginsUpdateBody(
           webSettingDraft.pluginControls,
           webSetting?.kolamPlugins,
+          webSettingDraft.chatStoreEnabled,
         ),
       });
 
@@ -505,9 +656,81 @@ export function useKolamSettingsPanelController(
           pos: webSettingDraft.maintenancePos,
           marketplace: webSettingDraft.maintenanceMarketplace,
         },
+        kolamMacAccess: {
+          ...(updated.kolamMacAccess ?? {}),
+          enabled: webSettingDraft.kolamMacAccessEnabled,
+          allowWebBrowser: webSettingDraft.kolamMacAccessAllowWebBrowser,
+          bypassSuperAdmin: webSettingDraft.kolamMacAccessBypassSuperAdmin,
+          allowedMacAddresses: parseMacAddressList(
+            webSettingDraft.kolamMacAccessAllowedMacAddresses,
+          ),
+        },
+        staffOtpLogin: {
+          ...(updated.staffOtpLogin ?? {}),
+          enabled: webSettingDraft.staffOtpLoginEnabled,
+          otpExpireMinutes: parseIntegerOrFallback(
+            webSettingDraft.staffOtpExpireMinutes,
+            10,
+          ),
+          resendCooldownSeconds: parseIntegerOrFallback(
+            webSettingDraft.staffOtpResendCooldownSeconds,
+            60,
+          ),
+          maxAttempts: parseIntegerOrFallback(
+            webSettingDraft.staffOtpMaxAttempts,
+            5,
+          ),
+          lockMinutes: parseIntegerOrFallback(
+            webSettingDraft.staffOtpLockMinutes,
+            15,
+          ),
+        },
+        smtp: {
+          ...(updated.smtp ?? {}),
+          ...createSmtpUpdateBody(webSettingDraft),
+          passConfigured:
+            updated.smtp?.passConfigured ??
+            webSetting?.smtp?.passConfigured ??
+            webSettingDraft.smtpPass === maskedSecretPlaceholder,
+        },
+        firebase: {
+          ...(updated.firebase ?? {}),
+          ...createFirebaseUpdateBody(webSettingDraft),
+          privateKeyConfigured:
+            updated.firebase?.privateKeyConfigured ??
+            webSetting?.firebase?.privateKeyConfigured ??
+            webSettingDraft.firebasePrivateKey === maskedSecretPlaceholder,
+        },
+        teamChatGroupCallEnabled: webSettingDraft.teamChatGroupCallEnabled,
+        daraBusinessEnabled: webSettingDraft.daraBusinessEnabled,
+        daraToolsEnabled: webSettingDraft.daraToolsEnabled,
+        daraKnowledgeEnabled: webSettingDraft.daraKnowledgeEnabled,
+        daraHandoffNotifyEnabled: webSettingDraft.daraHandoffNotifyEnabled,
+        daraInsightsEnabled: webSettingDraft.daraInsightsEnabled,
+        daraAutoReportEnabled: webSettingDraft.daraAutoReportEnabled,
+        daraImageAnalysisEnabled: webSettingDraft.daraImageAnalysisEnabled,
+        daraTaxEnabled: webSettingDraft.daraTaxEnabled,
+        daraSeoEnabled: webSettingDraft.daraSeoEnabled,
+        daraTaxRegulationWatcherEnabled:
+          webSettingDraft.daraTaxRegulationWatcherEnabled,
+        daraTaxComplianceJobEnabled:
+          webSettingDraft.daraTaxComplianceJobEnabled,
+        daraTaxLlmNarrativeEnabled:
+          webSettingDraft.daraTaxLlmNarrativeEnabled,
+        daraWebstoreFulfillmentEnabled:
+          webSettingDraft.daraWebstoreFulfillmentEnabled,
+        daraStaffOpsNotifyEnabled: webSettingDraft.daraStaffOpsNotifyEnabled,
+        daraStaffWaNotifyEnabled: webSettingDraft.daraStaffWaNotifyEnabled,
+        daraOlshopCustomerNotifyEnabled:
+          webSettingDraft.daraOlshopCustomerNotifyEnabled,
+        daraOwnerDigestEnabled: webSettingDraft.daraOwnerDigestEnabled,
+        daraOwnerDigestWaEnabled: webSettingDraft.daraOwnerDigestWaEnabled,
+        daraOwnerDigestFcmEnabled: webSettingDraft.daraOwnerDigestFcmEnabled,
+        daraOwnerFcmUrgentEnabled: webSettingDraft.daraOwnerFcmUrgentEnabled,
         kolamPlugins: createKolamPluginsUpdateBody(
           webSettingDraft.pluginControls,
           updated.kolamPlugins,
+          webSettingDraft.chatStoreEnabled,
         ),
       });
       setWebSettingVersions(nextVersions);
@@ -769,6 +992,10 @@ function createWebSettingDraft(
   };
   const origin = setting.originAddress ?? {};
   const social = setting.socialMedia ?? {};
+  const macAccess = setting.kolamMacAccess ?? {};
+  const staffOtpLogin = setting.staffOtpLogin ?? {};
+  const smtp = setting.smtp ?? {};
+  const firebase = setting.firebase ?? {};
 
   return {
     versionKolam:
@@ -803,6 +1030,63 @@ function createWebSettingDraft(
         : String(origin.longitude),
     staffDesktopOnlyEnabled: setting.staffDesktopOnly?.enabled === true,
     staffDesktopOnlyRedirectUrl: setting.staffDesktopOnly?.redirectUrl ?? '',
+    kolamMacAccessEnabled: macAccess.enabled === true,
+    kolamMacAccessAllowWebBrowser: macAccess.allowWebBrowser === true,
+    kolamMacAccessBypassSuperAdmin: macAccess.bypassSuperAdmin !== false,
+    kolamMacAccessAllowedMacAddresses: (
+      macAccess.allowedMacAddresses ?? []
+    ).join('\n'),
+    staffOtpLoginEnabled: staffOtpLogin.enabled === true,
+    staffOtpExpireMinutes: String(staffOtpLogin.otpExpireMinutes ?? 10),
+    staffOtpResendCooldownSeconds: String(
+      staffOtpLogin.resendCooldownSeconds ?? 60,
+    ),
+    staffOtpMaxAttempts: String(staffOtpLogin.maxAttempts ?? 5),
+    staffOtpLockMinutes: String(staffOtpLogin.lockMinutes ?? 15),
+    smtpHost: smtp.host ?? '',
+    smtpPort: String(smtp.port ?? ''),
+    smtpUser: smtp.user ?? '',
+    smtpPass: smtp.passConfigured ? maskedSecretPlaceholder : '',
+    smtpFromEmail: smtp.fromEmail ?? '',
+    smtpFromName: smtp.fromName ?? '',
+    smtpSecure: smtp.secure !== false,
+    firebaseEnabled: firebase.enabled === true,
+    firebaseProjectId: firebase.projectId ?? '',
+    firebaseClientEmail: firebase.clientEmail ?? '',
+    firebasePrivateKey: firebase.privateKeyConfigured
+      ? maskedSecretPlaceholder
+      : '',
+    chatStoreEnabled: setting.kolamPlugins?.chat?.storeEnabled !== false,
+    teamChatGroupCallEnabled: setting.teamChatGroupCallEnabled === true,
+    daraBusinessEnabled: setting.daraBusinessEnabled !== false,
+    daraToolsEnabled: setting.daraToolsEnabled !== false,
+    daraKnowledgeEnabled: setting.daraKnowledgeEnabled !== false,
+    daraHandoffNotifyEnabled: setting.daraHandoffNotifyEnabled !== false,
+    daraInsightsEnabled: setting.daraInsightsEnabled !== false,
+    daraAutoReportEnabled: setting.daraAutoReportEnabled !== false,
+    daraImageAnalysisEnabled: setting.daraImageAnalysisEnabled !== false,
+    daraTaxEnabled: setting.daraTaxEnabled !== false,
+    daraSeoEnabled: setting.daraSeoEnabled !== false,
+    daraTaxRegulationWatcherEnabled:
+      setting.daraTaxRegulationWatcherEnabled === true,
+    daraTaxComplianceJobEnabled:
+      setting.daraTaxComplianceJobEnabled !== false,
+    daraTaxLlmNarrativeEnabled: setting.daraTaxLlmNarrativeEnabled === true,
+    daraWebstoreFulfillmentEnabled:
+      setting.daraWebstoreFulfillmentEnabled !== false,
+    daraStaffOpsNotifyEnabled: setting.daraStaffOpsNotifyEnabled !== false,
+    daraStaffWaNotifyEnabled: setting.daraStaffWaNotifyEnabled !== false,
+    daraOlshopCustomerNotifyEnabled:
+      setting.daraOlshopCustomerNotifyEnabled !== false,
+    daraOwnerDigestEnabled: setting.daraOwnerDigestEnabled !== false,
+    daraOwnerDigestWaEnabled: setting.daraOwnerDigestWaEnabled !== false,
+    daraOwnerDigestFcmEnabled: setting.daraOwnerDigestFcmEnabled !== false,
+    daraOwnerFcmUrgentEnabled: setting.daraOwnerFcmUrgentEnabled !== false,
+    notificationSound: setting.notificationSound ?? '',
+    unassignedNotificationSound: setting.unassignedNotificationSound ?? '',
+    handoffNotificationSound: setting.handoffNotificationSound ?? '',
+    groupCallRingtone: setting.groupCallRingtone ?? '',
+    salesNotificationSound: setting.salesNotificationSound ?? '',
     pluginControls: {
       enclosure: setting.kolamPlugins?.enclosure?.enabled !== false,
       taskManager: setting.kolamPlugins?.taskManager?.enabled !== false,
@@ -819,6 +1103,7 @@ function createWebSettingDraft(
 function createKolamPluginsUpdateBody(
   controls: Record<KolamPluginConfigKey, boolean>,
   current: KolamWebSetting['kolamPlugins'],
+  chatStoreEnabled: boolean,
 ) {
   return {
     enclosure: {
@@ -844,6 +1129,7 @@ function createKolamPluginsUpdateBody(
     chat: {
       ...(current?.chat ?? {}),
       enabled: controls.chat,
+      storeEnabled: chatStoreEnabled,
     },
     dara: {
       ...(current?.dara ?? {}),
@@ -869,6 +1155,52 @@ function parseOptionalNumber(value: string) {
 
   const parsed = Number(trimmed);
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+function parseMacAddressList(value: string) {
+  return value
+    .split(/[\n,]/)
+    .map(item => item.trim())
+    .filter(Boolean);
+}
+
+function parseIntegerOrFallback(value: string, fallback: number) {
+  const parsed = Number.parseInt(value.trim(), 10);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function createSmtpUpdateBody(draft: WebSettingDraft) {
+  const smtp: KolamWebSetting['smtp'] = {
+    host: draft.smtpHost.trim(),
+    port: parseIntegerOrFallback(draft.smtpPort, 465),
+    user: draft.smtpUser.trim(),
+    fromEmail: draft.smtpFromEmail.trim(),
+    fromName: draft.smtpFromName.trim(),
+    secure: draft.smtpSecure,
+  };
+
+  if (draft.smtpPass.trim() && draft.smtpPass !== maskedSecretPlaceholder) {
+    smtp.pass = draft.smtpPass;
+  }
+
+  return smtp;
+}
+
+function createFirebaseUpdateBody(draft: WebSettingDraft) {
+  const firebase: KolamWebSetting['firebase'] = {
+    enabled: draft.firebaseEnabled,
+    projectId: draft.firebaseProjectId.trim(),
+    clientEmail: draft.firebaseClientEmail.trim(),
+  };
+
+  if (
+    draft.firebasePrivateKey.trim() &&
+    draft.firebasePrivateKey !== maskedSecretPlaceholder
+  ) {
+    firebase.privateKey = draft.firebasePrivateKey;
+  }
+
+  return firebase;
 }
 
 function createActivityLogListParams(

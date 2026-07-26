@@ -37,6 +37,53 @@ type WebSettingDraft = {
   originLongitude: string;
   staffDesktopOnlyEnabled: boolean;
   staffDesktopOnlyRedirectUrl: string;
+  kolamMacAccessEnabled: boolean;
+  kolamMacAccessAllowWebBrowser: boolean;
+  kolamMacAccessBypassSuperAdmin: boolean;
+  kolamMacAccessAllowedMacAddresses: string;
+  staffOtpLoginEnabled: boolean;
+  staffOtpExpireMinutes: string;
+  staffOtpResendCooldownSeconds: string;
+  staffOtpMaxAttempts: string;
+  staffOtpLockMinutes: string;
+  smtpHost: string;
+  smtpPort: string;
+  smtpUser: string;
+  smtpPass: string;
+  smtpFromEmail: string;
+  smtpFromName: string;
+  smtpSecure: boolean;
+  firebaseEnabled: boolean;
+  firebaseProjectId: string;
+  firebaseClientEmail: string;
+  firebasePrivateKey: string;
+  chatStoreEnabled: boolean;
+  teamChatGroupCallEnabled: boolean;
+  daraBusinessEnabled: boolean;
+  daraToolsEnabled: boolean;
+  daraKnowledgeEnabled: boolean;
+  daraHandoffNotifyEnabled: boolean;
+  daraInsightsEnabled: boolean;
+  daraAutoReportEnabled: boolean;
+  daraImageAnalysisEnabled: boolean;
+  daraTaxEnabled: boolean;
+  daraSeoEnabled: boolean;
+  daraTaxRegulationWatcherEnabled: boolean;
+  daraTaxComplianceJobEnabled: boolean;
+  daraTaxLlmNarrativeEnabled: boolean;
+  daraWebstoreFulfillmentEnabled: boolean;
+  daraStaffOpsNotifyEnabled: boolean;
+  daraStaffWaNotifyEnabled: boolean;
+  daraOlshopCustomerNotifyEnabled: boolean;
+  daraOwnerDigestEnabled: boolean;
+  daraOwnerDigestWaEnabled: boolean;
+  daraOwnerDigestFcmEnabled: boolean;
+  daraOwnerFcmUrgentEnabled: boolean;
+  notificationSound: string;
+  unassignedNotificationSound: string;
+  handoffNotificationSound: string;
+  groupCallRingtone: string;
+  salesNotificationSound: string;
   pluginControls: Record<KolamPluginConfigKey, boolean>;
 };
 
@@ -274,6 +321,422 @@ export function KolamSettingsWebConfigSurface({
         value={draft.staffDesktopOnlyRedirectUrl}
         onChangeText={value => setDraftField('staffDesktopOnlyRedirectUrl', value)}
         placeholder="https://..."
+      />
+      <KolamToggleRow
+        label="MAC access"
+        description="Batasi akses Kolam berdasarkan daftar MAC address."
+        active={draft.kolamMacAccessEnabled}
+        onPress={() =>
+          !disabled &&
+          setDraftField('kolamMacAccessEnabled', !draft.kolamMacAccessEnabled)
+        }
+      />
+      <KolamToggleRow
+        label="Allow web browser"
+        description="Izinkan browser web tetap masuk saat MAC access aktif."
+        active={draft.kolamMacAccessAllowWebBrowser}
+        onPress={() =>
+          !disabled &&
+          setDraftField(
+            'kolamMacAccessAllowWebBrowser',
+            !draft.kolamMacAccessAllowWebBrowser,
+          )
+        }
+      />
+      <KolamToggleRow
+        label="Bypass super admin"
+        description="Super admin tidak diblokir oleh validasi MAC."
+        active={draft.kolamMacAccessBypassSuperAdmin}
+        onPress={() =>
+          !disabled &&
+          setDraftField(
+            'kolamMacAccessBypassSuperAdmin',
+            !draft.kolamMacAccessBypassSuperAdmin,
+          )
+        }
+      />
+      <KolamTextFieldRow
+        label="Allowed MAC addresses"
+        description="Pisahkan dengan koma atau baris baru."
+        value={draft.kolamMacAccessAllowedMacAddresses}
+        onChangeText={value =>
+          setDraftField('kolamMacAccessAllowedMacAddresses', value)
+        }
+        placeholder="AA:BB:CC:DD:EE:FF"
+      />
+      <KolamToggleRow
+        label="Staff OTP login"
+        description="Aktifkan OTP untuk login staff produksi."
+        active={draft.staffOtpLoginEnabled}
+        onPress={() =>
+          !disabled &&
+          setDraftField('staffOtpLoginEnabled', !draft.staffOtpLoginEnabled)
+        }
+      />
+      <KolamTextFieldRow
+        label="OTP expire minutes"
+        description="Durasi OTP aktif sebelum kadaluarsa."
+        value={draft.staffOtpExpireMinutes}
+        onChangeText={value => setDraftField('staffOtpExpireMinutes', value)}
+        placeholder="10"
+      />
+      <KolamTextFieldRow
+        label="OTP resend cooldown"
+        description="Jeda detik sebelum OTP boleh dikirim ulang."
+        value={draft.staffOtpResendCooldownSeconds}
+        onChangeText={value =>
+          setDraftField('staffOtpResendCooldownSeconds', value)
+        }
+        placeholder="60"
+      />
+      <KolamTextFieldRow
+        label="OTP max attempts"
+        description="Batas percobaan OTP sebelum lock."
+        value={draft.staffOtpMaxAttempts}
+        onChangeText={value => setDraftField('staffOtpMaxAttempts', value)}
+        placeholder="5"
+      />
+      <KolamTextFieldRow
+        label="OTP lock minutes"
+        description="Durasi lock setelah percobaan OTP melewati batas."
+        value={draft.staffOtpLockMinutes}
+        onChangeText={value => setDraftField('staffOtpLockMinutes', value)}
+        placeholder="15"
+      />
+      <KolamTextFieldRow
+        label="SMTP host"
+        description="Host SMTP untuk email system."
+        value={draft.smtpHost}
+        onChangeText={value => setDraftField('smtpHost', value)}
+        placeholder="smtp.gmail.com"
+      />
+      <KolamTextFieldRow
+        label="SMTP port"
+        description="Port SMTP produksi."
+        value={draft.smtpPort}
+        onChangeText={value => setDraftField('smtpPort', value)}
+        placeholder="465"
+      />
+      <KolamTextFieldRow
+        label="SMTP user"
+        description="Username SMTP."
+        value={draft.smtpUser}
+        onChangeText={value => setDraftField('smtpUser', value)}
+        placeholder="mailer@duniaanura.com"
+      />
+      <KolamTextFieldRow
+        label="SMTP password"
+        description="Biarkan ******** agar secret BE tidak dikirim ulang."
+        value={draft.smtpPass}
+        onChangeText={value => setDraftField('smtpPass', value)}
+        placeholder="********"
+      />
+      <KolamTextFieldRow
+        label="SMTP from email"
+        description="Alamat pengirim email system."
+        value={draft.smtpFromEmail}
+        onChangeText={value => setDraftField('smtpFromEmail', value)}
+        placeholder="no-reply@duniaanura.com"
+      />
+      <KolamTextFieldRow
+        label="SMTP from name"
+        description="Nama pengirim email system."
+        value={draft.smtpFromName}
+        onChangeText={value => setDraftField('smtpFromName', value)}
+        placeholder="Kolam"
+      />
+      <KolamToggleRow
+        label="SMTP secure"
+        description="Gunakan koneksi SMTP secure."
+        active={draft.smtpSecure}
+        onPress={() =>
+          !disabled && setDraftField('smtpSecure', !draft.smtpSecure)
+        }
+      />
+      <KolamToggleRow
+        label="Firebase"
+        description="Aktifkan Firebase Admin untuk notifikasi."
+        active={draft.firebaseEnabled}
+        onPress={() =>
+          !disabled && setDraftField('firebaseEnabled', !draft.firebaseEnabled)
+        }
+      />
+      <KolamTextFieldRow
+        label="Firebase project ID"
+        description="Project ID Firebase produksi."
+        value={draft.firebaseProjectId}
+        onChangeText={value => setDraftField('firebaseProjectId', value)}
+        placeholder="dunia-anura"
+      />
+      <KolamTextFieldRow
+        label="Firebase client email"
+        description="Client email service account."
+        value={draft.firebaseClientEmail}
+        onChangeText={value => setDraftField('firebaseClientEmail', value)}
+        placeholder="firebase-adminsdk@..."
+      />
+      <KolamTextFieldRow
+        label="Firebase private key"
+        description="Biarkan ******** agar private key BE tidak dikirim ulang."
+        value={draft.firebasePrivateKey}
+        onChangeText={value => setDraftField('firebasePrivateKey', value)}
+        placeholder="********"
+      />
+      <KolamToggleRow
+        label="Chat store"
+        description="Aktifkan chat pada storefront."
+        active={draft.chatStoreEnabled}
+        onPress={() =>
+          !disabled && setDraftField('chatStoreEnabled', !draft.chatStoreEnabled)
+        }
+      />
+      <KolamToggleRow
+        label="Team chat group call"
+        description="Aktifkan panggilan grup di team chat."
+        active={draft.teamChatGroupCallEnabled}
+        onPress={() =>
+          !disabled &&
+          setDraftField(
+            'teamChatGroupCallEnabled',
+            !draft.teamChatGroupCallEnabled,
+          )
+        }
+      />
+      <KolamToggleRow
+        label="DARA business"
+        description="Aktifkan fitur bisnis DARA."
+        active={draft.daraBusinessEnabled}
+        onPress={() =>
+          !disabled &&
+          setDraftField('daraBusinessEnabled', !draft.daraBusinessEnabled)
+        }
+      />
+      <KolamToggleRow
+        label="DARA tools"
+        description="Aktifkan tool runtime DARA."
+        active={draft.daraToolsEnabled}
+        onPress={() =>
+          !disabled && setDraftField('daraToolsEnabled', !draft.daraToolsEnabled)
+        }
+      />
+      <KolamToggleRow
+        label="DARA knowledge"
+        description="Aktifkan knowledge base DARA."
+        active={draft.daraKnowledgeEnabled}
+        onPress={() =>
+          !disabled &&
+          setDraftField('daraKnowledgeEnabled', !draft.daraKnowledgeEnabled)
+        }
+      />
+      <KolamToggleRow
+        label="DARA tax"
+        description="Aktifkan modul pajak DARA."
+        active={draft.daraTaxEnabled}
+        onPress={() =>
+          !disabled && setDraftField('daraTaxEnabled', !draft.daraTaxEnabled)
+        }
+      />
+      <KolamToggleRow
+        label="DARA SEO"
+        description="Aktifkan fitur SEO DARA."
+        active={draft.daraSeoEnabled}
+        onPress={() =>
+          !disabled && setDraftField('daraSeoEnabled', !draft.daraSeoEnabled)
+        }
+      />
+      <KolamToggleRow
+        label="DARA handoff notify"
+        description="Kirim notifikasi saat handoff customer."
+        active={draft.daraHandoffNotifyEnabled}
+        onPress={() =>
+          !disabled &&
+          setDraftField(
+            'daraHandoffNotifyEnabled',
+            !draft.daraHandoffNotifyEnabled,
+          )
+        }
+      />
+      <KolamToggleRow
+        label="DARA insights"
+        description="Aktifkan insight otomatis DARA."
+        active={draft.daraInsightsEnabled}
+        onPress={() =>
+          !disabled &&
+          setDraftField('daraInsightsEnabled', !draft.daraInsightsEnabled)
+        }
+      />
+      <KolamToggleRow
+        label="DARA auto report"
+        description="Aktifkan laporan otomatis DARA."
+        active={draft.daraAutoReportEnabled}
+        onPress={() =>
+          !disabled &&
+          setDraftField('daraAutoReportEnabled', !draft.daraAutoReportEnabled)
+        }
+      />
+      <KolamToggleRow
+        label="DARA image analysis"
+        description="Aktifkan analisis gambar DARA."
+        active={draft.daraImageAnalysisEnabled}
+        onPress={() =>
+          !disabled &&
+          setDraftField(
+            'daraImageAnalysisEnabled',
+            !draft.daraImageAnalysisEnabled,
+          )
+        }
+      />
+      <KolamToggleRow
+        label="DARA tax watcher"
+        description="Pantau regulasi pajak secara otomatis."
+        active={draft.daraTaxRegulationWatcherEnabled}
+        onPress={() =>
+          !disabled &&
+          setDraftField(
+            'daraTaxRegulationWatcherEnabled',
+            !draft.daraTaxRegulationWatcherEnabled,
+          )
+        }
+      />
+      <KolamToggleRow
+        label="DARA tax compliance"
+        description="Aktifkan job kepatuhan pajak."
+        active={draft.daraTaxComplianceJobEnabled}
+        onPress={() =>
+          !disabled &&
+          setDraftField(
+            'daraTaxComplianceJobEnabled',
+            !draft.daraTaxComplianceJobEnabled,
+          )
+        }
+      />
+      <KolamToggleRow
+        label="DARA tax narrative"
+        description="Aktifkan narasi LLM untuk pajak."
+        active={draft.daraTaxLlmNarrativeEnabled}
+        onPress={() =>
+          !disabled &&
+          setDraftField(
+            'daraTaxLlmNarrativeEnabled',
+            !draft.daraTaxLlmNarrativeEnabled,
+          )
+        }
+      />
+      <KolamToggleRow
+        label="DARA fulfillment"
+        description="Aktifkan fulfillment webstore DARA."
+        active={draft.daraWebstoreFulfillmentEnabled}
+        onPress={() =>
+          !disabled &&
+          setDraftField(
+            'daraWebstoreFulfillmentEnabled',
+            !draft.daraWebstoreFulfillmentEnabled,
+          )
+        }
+      />
+      <KolamToggleRow
+        label="DARA staff ops"
+        description="Aktifkan notifikasi operasional staff."
+        active={draft.daraStaffOpsNotifyEnabled}
+        onPress={() =>
+          !disabled &&
+          setDraftField(
+            'daraStaffOpsNotifyEnabled',
+            !draft.daraStaffOpsNotifyEnabled,
+          )
+        }
+      />
+      <KolamToggleRow
+        label="DARA staff WhatsApp"
+        description="Aktifkan notifikasi WhatsApp staff."
+        active={draft.daraStaffWaNotifyEnabled}
+        onPress={() =>
+          !disabled &&
+          setDraftField('daraStaffWaNotifyEnabled', !draft.daraStaffWaNotifyEnabled)
+        }
+      />
+      <KolamToggleRow
+        label="DARA olshop notify"
+        description="Aktifkan notifikasi customer olshop."
+        active={draft.daraOlshopCustomerNotifyEnabled}
+        onPress={() =>
+          !disabled &&
+          setDraftField(
+            'daraOlshopCustomerNotifyEnabled',
+            !draft.daraOlshopCustomerNotifyEnabled,
+          )
+        }
+      />
+      <KolamToggleRow
+        label="DARA owner digest"
+        description="Aktifkan ringkasan owner."
+        active={draft.daraOwnerDigestEnabled}
+        onPress={() =>
+          !disabled &&
+          setDraftField('daraOwnerDigestEnabled', !draft.daraOwnerDigestEnabled)
+        }
+      />
+      <KolamToggleRow
+        label="DARA owner WhatsApp"
+        description="Kirim digest owner melalui WhatsApp."
+        active={draft.daraOwnerDigestWaEnabled}
+        onPress={() =>
+          !disabled &&
+          setDraftField(
+            'daraOwnerDigestWaEnabled',
+            !draft.daraOwnerDigestWaEnabled,
+          )
+        }
+      />
+      <KolamToggleRow
+        label="DARA owner FCM"
+        description="Kirim digest owner melalui FCM."
+        active={draft.daraOwnerDigestFcmEnabled}
+        onPress={() =>
+          !disabled &&
+          setDraftField(
+            'daraOwnerDigestFcmEnabled',
+            !draft.daraOwnerDigestFcmEnabled,
+          )
+        }
+      />
+      <KolamToggleRow
+        label="DARA urgent FCM"
+        description="Kirim notifikasi urgent owner melalui FCM."
+        active={draft.daraOwnerFcmUrgentEnabled}
+        onPress={() =>
+          !disabled &&
+          setDraftField(
+            'daraOwnerFcmUrgentEnabled',
+            !draft.daraOwnerFcmUrgentEnabled,
+          )
+        }
+      />
+      <KolamCopyStack
+        items={[
+          {
+            id: 'notification-sound',
+            text: `Notification sound: ${draft.notificationSound || '-'}`,
+          },
+          {
+            id: 'unassigned-notification-sound',
+            text: `Unassigned sound: ${
+              draft.unassignedNotificationSound || '-'
+            }`,
+          },
+          {
+            id: 'handoff-notification-sound',
+            text: `Handoff sound: ${draft.handoffNotificationSound || '-'}`,
+          },
+          {
+            id: 'group-call-ringtone',
+            text: `Group call ringtone: ${draft.groupCallRingtone || '-'}`,
+          },
+          {
+            id: 'sales-notification-sound',
+            text: `Sales sound: ${draft.salesNotificationSound || '-'}`,
+          },
+        ]}
       />
       <KolamToggleRow
         label="Plugin Enclosure"
