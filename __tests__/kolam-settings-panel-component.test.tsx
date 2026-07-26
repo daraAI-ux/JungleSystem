@@ -295,6 +295,47 @@ describe('KolamSettingsPanel', () => {
     );
   });
 
+  it('renders financial and tax settings as a read-only summary', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamSettingsPanel
+          activityEntries={getSyncActivityEntries(seedUnifiedDataset, '10:00')}
+        />,
+      );
+    });
+
+    await ReactTestRenderer.act(async () => {
+      findTabByText(renderer!, 'Finansial / Pajak').props.onPress();
+    });
+
+    const text = renderText(renderer!);
+
+    expect(text).toEqual(
+      expect.arrayContaining([
+        'Finansial / Pajak',
+        'Finansial / Pajak Summary',
+        'Metode pembayaran',
+        'Metode nonaktif',
+        'Harga jual include PPN',
+        'PPh 21 komisi',
+        'Overtime calculation',
+        'Overtime policy',
+        'Enclosure sale commission',
+        'Read-only live summary. Update editor ditunda sampai kontrak endpoint/body final.',
+      ]),
+    );
+    expect(text).not.toEqual(
+      expect.arrayContaining([
+        'Google Sign-In webstore',
+        'Biteship API key',
+        'Plugin Enclosure',
+        'Marketplace Landing Overview',
+      ]),
+    );
+  });
+
   it('keeps local Web Settings draft intact when live update is rejected', async () => {
     const fetchMock = jest
       .fn()

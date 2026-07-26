@@ -81,6 +81,7 @@ describe('settings web widgets', () => {
           marketplaceLandingSaveStatus="idle"
           marketplaceLandingMessage=""
           marketplaceLandingAssetStatus={{}}
+          financialSummaryRows={[]}
           operationalRooms={[]}
           operationalStaffRows={[]}
           marketplaceLandingOverview={{

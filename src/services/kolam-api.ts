@@ -266,6 +266,22 @@ export interface KolamPoWorkflowSettings {
   notifyCompleteUserIds?: string[];
 }
 
+export interface KolamOvertimeSettings {
+  calculationMode?: 'per_hour' | 'per_day';
+  ratePerHour?: number;
+  ratePerDay?: number;
+  useSalaryDerivedRate?: boolean;
+  defaultHoursPerRequest?: number;
+  midnightCutoff?: string;
+  useStoreCloseForPerDay?: boolean;
+}
+
+export interface KolamEnclosureSaleCommissionSettings {
+  enabled?: boolean;
+  type?: 'percentage' | 'fixed';
+  value?: number;
+}
+
 export interface KolamStaffAttendanceWorkSite {
   _id?: string;
   name?: string;
@@ -359,6 +375,10 @@ export interface KolamWebSetting {
   webstoreGoogleAuthEnabled?: boolean;
   storeOperatingHours?: KolamStoreOperatingHours;
   poWorkflow?: KolamPoWorkflowSettings;
+  salePricesIncludeTax?: boolean;
+  commissionPph21Enabled?: boolean;
+  overtimeSettings?: KolamOvertimeSettings;
+  enclosureSaleCommission?: KolamEnclosureSaleCommissionSettings;
   maintenance?: {
     pos?: boolean;
     marketplace?: boolean;
@@ -599,6 +619,10 @@ export interface UpdateKolamWebSettingBody
       | 'googleOAuthClientId'
       | 'webstoreGoogleAuthEnabled'
       | 'poWorkflow'
+      | 'salePricesIncludeTax'
+      | 'commissionPph21Enabled'
+      | 'overtimeSettings'
+      | 'enclosureSaleCommission'
       | 'teamChatGroupCallEnabled'
       | 'daraBusinessEnabled'
       | 'daraToolsEnabled'

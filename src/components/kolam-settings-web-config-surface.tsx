@@ -22,6 +22,7 @@ import type {
   KolamUserPickerRow,
 } from '../services/kolam-api';
 import type {
+  SettingsFinancialSummaryRow,
   MarketplaceLandingCtaDraft,
   MarketplaceLandingNoticeDraft,
   MarketplaceLandingOverview,
@@ -217,6 +218,7 @@ export function KolamSettingsWebConfigSurface({
   fields,
   maintenanceMode,
   marketplaceLandingOverview,
+  financialSummaryRows,
   operationalRooms,
   operationalStaffRows,
   marketplaceLandingCtaDraft,
@@ -275,6 +277,7 @@ export function KolamSettingsWebConfigSurface({
   fields: SettingsWebConfigField[];
   maintenanceMode: boolean;
   marketplaceLandingOverview: MarketplaceLandingOverview;
+  financialSummaryRows: SettingsFinancialSummaryRow[];
   operationalRooms: KolamTeamChatRoom[];
   operationalStaffRows: KolamUserPickerRow[];
   marketplaceLandingCtaDraft: MarketplaceLandingCtaDraft;
@@ -367,6 +370,7 @@ export function KolamSettingsWebConfigSurface({
   const showGeneralSettings = activeTabId === 'umum';
   const showStoreShippingSettings = activeTabId === 'toko';
   const showOperationalSettings = activeTabId === 'operasional';
+  const showFinancialTaxSummary = activeTabId === 'finansial';
   const showNotificationSettings = activeTabId === 'notifikasi';
   const showAiSettings = activeTabId === 'ai';
   const showPluginControls = activeTabId === 'plugin';
@@ -1420,6 +1424,54 @@ export function KolamSettingsWebConfigSurface({
             placeholder="0.72"
           />
         </>
+      ) : null}
+      {showFinancialTaxSummary ? (
+        <View style={styles.marketplaceOverview}>
+          <KolamCopyStack
+            items={[
+              {
+                id: 'financial-title',
+                text: 'Finansial / Pajak Summary',
+                style: styles.marketplaceOverviewTitle,
+              },
+              {
+                id: 'financial-status',
+                text: 'Read-only live summary. Update editor ditunda sampai kontrak endpoint/body final.',
+                style: styles.marketplaceOverviewMeta,
+              },
+            ]}
+          />
+          <View style={styles.marketplaceOverviewRows}>
+            {financialSummaryRows.map(row => (
+              <View key={row.id} style={styles.marketplaceOverviewRow}>
+                <KolamCopyStack
+                  containerStyle={styles.marketplaceOverviewCopy}
+                  items={[
+                    {
+                      id: `${row.id}-label`,
+                      text: row.label,
+                      style: styles.marketplaceOverviewLabel,
+                    },
+                    {
+                      id: `${row.id}-detail`,
+                      text: row.detail,
+                      style: styles.marketplaceOverviewDetail,
+                    },
+                  ]}
+                />
+                <KolamCopyStack
+                  items={[
+                    {
+                      id: `${row.id}-value`,
+                      text: row.value,
+                      style: styles.marketplaceOverviewValue,
+                    },
+                  ]}
+                />
+              </View>
+            ))}
+          </View>
+        </View>
       ) : null}
       {showStoreShippingSettings ? (
         <>

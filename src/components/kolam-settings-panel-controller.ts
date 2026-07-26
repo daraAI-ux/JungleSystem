@@ -104,6 +104,8 @@ import {
 } from '../services/kolam-api';
 import { getCurrentUser } from '../services/auth-api';
 import { ApiError } from '../lib/api-error';
+import { getPaymentMethods } from '../services/pos-api';
+import type { PaymentMethod } from '../domain/pos';
 import {
   pickNativeAudioFile,
   pickNativeImageFile,
@@ -120,6 +122,12 @@ type MarketplaceLandingAssetStatus =
   | 'uploading'
   | 'deleting'
   | 'reordering';
+export interface SettingsFinancialSummaryRow {
+  id: string;
+  label: string;
+  value: string;
+  detail: string;
+}
 const maskedSecretPlaceholder = '********';
 const storeOperatingWeekdays: Array<{
   key: KolamStoreOperatingWeekday;
@@ -580,6 +588,7 @@ export function useKolamSettingsPanelController(
   >([]);
   const [staffAttendanceSettings, setStaffAttendanceSettings] =
     useState<KolamStaffAttendanceSettings | null>(null);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const fallbackRoleRows = getSettingsRoleAccessRows();
   const [roles, setRoles] = useState<KolamRole[]>([]);
   const [roleStatus, setRoleStatus] = useState<RoleSaveStatus>('idle');
@@ -790,6 +799,30 @@ export function useKolamSettingsPanelController(
   }, [activeSettingsTabId]);
 
   useEffect(() => {
+    if (activeSettingsTabId !== 'finansial') {
+      return;
+    }
+
+    let mounted = true;
+
+    getPaymentMethods()
+      .then(methods => {
+        if (mounted) {
+          setPaymentMethods(methods);
+        }
+      })
+      .catch(() => {
+        if (mounted) {
+          setPaymentMethods([]);
+        }
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [activeSettingsTabId]);
+
+  useEffect(() => {
     if (activeSurfaceId !== 'activity-log') {
       return;
     }
@@ -871,6 +904,10 @@ export function useKolamSettingsPanelController(
     }
     return endpoint.path.startsWith('/activity-log');
   });
+  const financialSummaryRows = createFinancialSummaryRows(
+    webSetting,
+    paymentMethods,
+  );
 
   const selectSurface = (id: SettingsSurfaceItem['id']) => {
     setActiveSurfaceId(id);
@@ -2045,6 +2082,7 @@ export function useKolamSettingsPanelController(
     changeActivityPage,
     detailRows,
     liveEndpoints,
+    financialSummaryRows,
     maintenanceMode,
     marketplaceLandingOverview,
     marketplaceLandingCtaDraft,
@@ -2491,6 +2529,83 @@ function createStaffAttendanceUpdateBody(
   };
 }
 
+function createFinancialSummaryRows(
+  setting: KolamWebSetting | null,
+  methods: PaymentMethod[],
+): SettingsFinancialSummaryRow[] {
+  const overtime = setting?.overtimeSettings ?? {};
+  const commission = setting?.enclosureSaleCommission ?? {};
+  const activeMethods = methods.filter(method => method.active);
+  const inactiveMethods = methods.filter(method => !method.active);
+
+  return [
+    {
+      id: 'payment-methods',
+      label: 'Metode pembayaran',
+      value: methods.length
+        ? `${activeMethods.length}/${methods.length} aktif`
+        : 'Belum dimuat',
+      detail: methods.length
+        ? methods
+            .slice(0, 5)
+            .map(method => `${method.name} - ${method.wallet}`)
+            .join(' | ')
+        : 'Read-only dari endpoint payment method native.',
+    },
+    {
+      id: 'payment-methods-inactive',
+      label: 'Metode nonaktif',
+      value: String(inactiveMethods.length),
+      detail: inactiveMethods.length
+        ? inactiveMethods.map(method => method.name).join(' | ')
+        : 'Tidak ada metode nonaktif dalam cache native.',
+    },
+    {
+      id: 'tax-sale-prices',
+      label: 'Harga jual include PPN',
+      value: formatEnabled(setting?.salePricesIncludeTax !== false),
+      detail:
+        'Field WebSetting salePricesIncludeTax untuk estimasi faktur POS/web.',
+    },
+    {
+      id: 'tax-commission-pph21',
+      label: 'PPh 21 komisi',
+      value: formatEnabled(setting?.commissionPph21Enabled !== false),
+      detail:
+        'Field WebSetting commissionPph21Enabled untuk accrue komisi staff.',
+    },
+    {
+      id: 'overtime-mode',
+      label: 'Overtime calculation',
+      value: overtime.calculationMode ?? 'per_hour',
+      detail: `Rate/hour ${formatNumber(
+        overtime.ratePerHour,
+      )} | rate/day ${formatNumber(overtime.ratePerDay)}`,
+    },
+    {
+      id: 'overtime-policy',
+      label: 'Overtime policy',
+      value:
+        overtime.useSalaryDerivedRate === false
+          ? 'Manual rate'
+          : 'Salary derived',
+      detail: `Default hours ${formatNumber(
+        overtime.defaultHoursPerRequest ?? 3,
+      )} | cutoff ${overtime.midnightCutoff ?? '23:59'} | store close ${
+        overtime.useStoreCloseForPerDay === false ? 'off' : 'on'
+      }`,
+    },
+    {
+      id: 'enclosure-sale-commission',
+      label: 'Enclosure sale commission',
+      value: formatEnabled(commission.enabled === true),
+      detail: `${commission.type ?? 'percentage'} ${formatNumber(
+        commission.value,
+      )}`,
+    },
+  ];
+}
+
 function cleanOptionalString(value: string) {
   const trimmed = value.trim();
   return trimmed || undefined;
@@ -2597,6 +2712,14 @@ function parseIntegerOrFallback(value: string, fallback: number) {
 function parseNumberOrFallback(value: string, fallback: number) {
   const parsed = Number(value.trim());
   return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function formatEnabled(value: boolean) {
+  return value ? 'Aktif' : 'Nonaktif';
+}
+
+function formatNumber(value: number | undefined) {
+  return Number.isFinite(value) ? String(value) : '0';
 }
 
 function createSmtpUpdateBody(draft: WebSettingDraft) {
