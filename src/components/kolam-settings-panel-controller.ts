@@ -31,7 +31,6 @@ import {
   getSettingsWebFormSections,
   isSettingsDefaultRoleKey,
   isSettingsSuperAdminRoleKey,
-  DEFAULT_SETTINGS_TAB_ID,
   settingsSurfaceItems,
   type SettingsActivityLogFilterState,
   type SettingsSurfaceItem,
@@ -400,8 +399,9 @@ export function useKolamSettingsPanelController(
   const [activeSurfaceId, setActiveSurfaceId] = useState<
     SettingsSurfaceItem['id']
   >(initialActiveSurfaceId);
-  const [activeSettingsTabId, setActiveSettingsTabId] =
-    useState<SettingsTabId>(DEFAULT_SETTINGS_TAB_ID);
+  const [activeSettingsTabId, setActiveSettingsTabId] = useState<SettingsTabId>(
+    getDefaultSettingsTabIdForSurface(initialActiveSurfaceId),
+  );
   const [selectedActivityLogId, setSelectedActivityLogId] = useState('');
   const [activityPage, setActivityPage] = useState(1);
   const [activityLogs, setActivityLogs] = useState<KolamActivityLog[]>([]);

@@ -12,9 +12,14 @@ export function KolamSettingsSurfaceBody({
 }: {
   controller: KolamSettingsPanelController;
 }) {
-  if (controller.activeSurfaceId === 'web-settings') {
+  if (
+    controller.activeSettingsTabId === 'umum' ||
+    controller.activeSettingsTabId === 'plugin' ||
+    controller.activeSettingsTabId === 'konten'
+  ) {
     return (
       <KolamSettingsWebConfigSurface
+        activeTabId={controller.activeSettingsTabId}
         fields={controller.webConfigFields}
         maintenanceMode={controller.maintenanceMode}
         marketplaceLandingOverview={controller.marketplaceLandingOverview}
@@ -137,7 +142,7 @@ export function KolamSettingsSurfaceBody({
     );
   }
 
-  if (controller.activeSurfaceId === 'role-management') {
+  if (controller.activeSettingsTabId === 'peran') {
     return (
       <KolamSettingsRoleManagementSurface
         roleEditorActions={controller.roleEditorActions}
@@ -161,7 +166,7 @@ export function KolamSettingsSurfaceBody({
     );
   }
 
-  if (controller.activeSurfaceId === 'activity-log') {
+  if (controller.activeSettingsTabId === 'sync') {
     return (
       <KolamSettingsActivityLogSurface
         columns={controller.activityColumns}

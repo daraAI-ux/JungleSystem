@@ -1,13 +1,13 @@
 import React from 'react';
-import {Text} from 'react-native';
+import { Text } from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
-import {KolamSettingsPanel} from '../src/components/kolam-settings-panel';
+import { KolamSettingsPanel } from '../src/components/kolam-settings-panel';
 import {
   useKolamSettingsPanelController,
   type KolamSettingsPanelController,
 } from '../src/components/kolam-settings-panel-controller';
-import {getSyncActivityEntries} from '../src/domain/sync-activity';
-import {seedUnifiedDataset} from '../src/services/unified-data';
+import { getSyncActivityEntries } from '../src/domain/sync-activity';
+import { seedUnifiedDataset } from '../src/services/unified-data';
 
 function renderText(renderer: ReactTestRenderer.ReactTestRenderer) {
   return renderer.root
@@ -74,8 +74,44 @@ describe('KolamSettingsPanel', () => {
     );
     expect(
       findTabByText(renderer!, 'Peran & Izin').props.accessibilityState,
-    ).toEqual(
-      {selected: true},
+    ).toEqual({ selected: true });
+  });
+
+  it('rehomes existing native panels under Settings tabs', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamSettingsPanel
+          activityEntries={getSyncActivityEntries(seedUnifiedDataset, '10:00')}
+        />,
+      );
+    });
+
+    await ReactTestRenderer.act(async () => {
+      findTabByText(renderer!, 'Plugin').props.onPress();
+    });
+
+    expect(renderText(renderer!)).toEqual(
+      expect.arrayContaining(['Plugin', 'Plugin Enclosure', 'Plugin DARA']),
+    );
+    expect(renderText(renderer!)).not.toEqual(
+      expect.arrayContaining(['Marketplace Landing Overview']),
+    );
+
+    await ReactTestRenderer.act(async () => {
+      findTabByText(renderer!, 'Konten Web').props.onPress();
+    });
+
+    expect(renderText(renderer!)).toEqual(
+      expect.arrayContaining([
+        'Konten Web',
+        'Marketplace Landing Overview',
+        'Marketplace Landing Controls',
+      ]),
+    );
+    expect(renderText(renderer!)).not.toEqual(
+      expect.arrayContaining(['Plugin Enclosure']),
     );
   });
 
@@ -87,7 +123,7 @@ describe('KolamSettingsPanel', () => {
           data: {
             _id: 'websetting-1',
             companyName: 'Dunia Anura',
-            versions: {kolam: '1.0.0'},
+            versions: { kolam: '1.0.0' },
           },
         }),
       )
@@ -110,7 +146,9 @@ describe('KolamSettingsPanel', () => {
       .mockResolvedValueOnce({
         ok: false,
         status: 403,
-        text: jest.fn().mockResolvedValue(JSON.stringify({message: 'Forbidden'})),
+        text: jest
+          .fn()
+          .mockResolvedValue(JSON.stringify({ message: 'Forbidden' })),
       });
     globalThis.fetch = fetchMock;
     let latest: KolamSettingsPanelController | null = null;
@@ -207,6 +245,48 @@ describe('KolamSettingsPanel', () => {
     expect(requireController(latest).activeSettingsTab?.route).toBe(
       '/pengaturan',
     );
+
+    await ReactTestRenderer.act(async () => {
+      requireController(latest).selectSettingsTab('plugin');
+    });
+
+    expect(requireController(latest).activeSurfaceId).toBe('web-settings');
+
+    await ReactTestRenderer.act(async () => {
+      requireController(latest).selectSettingsTab('konten');
+    });
+
+    expect(requireController(latest).activeSurfaceId).toBe('web-settings');
+  });
+
+  it('starts on the matching Settings tab when an existing surface is opened directly', async () => {
+    let latest: KolamSettingsPanelController | null = null;
+
+    await ReactTestRenderer.act(async () => {
+      ReactTestRenderer.create(
+        <SettingsControllerHarness
+          initialActiveSurfaceId="role-management"
+          onRender={controller => {
+            latest = controller;
+          }}
+        />,
+      );
+    });
+
+    expect(requireController(latest).activeSettingsTabId).toBe('peran');
+
+    await ReactTestRenderer.act(async () => {
+      ReactTestRenderer.create(
+        <SettingsControllerHarness
+          initialActiveSurfaceId="activity-log"
+          onRender={controller => {
+            latest = controller;
+          }}
+        />,
+      );
+    });
+
+    expect(requireController(latest).activeSettingsTabId).toBe('sync');
   });
 });
 
@@ -234,11 +314,16 @@ function renderInstanceText(instance: ReactTestRenderer.ReactTestInstance) {
 }
 
 function SettingsControllerHarness({
+  initialActiveSurfaceId = 'web-settings',
   onRender,
 }: {
+  initialActiveSurfaceId?: KolamSettingsPanelController['activeSurfaceId'];
   onRender: (controller: KolamSettingsPanelController) => void;
 }) {
-  const controller = useKolamSettingsPanelController([], 'web-settings');
+  const controller = useKolamSettingsPanelController(
+    [],
+    initialActiveSurfaceId,
+  );
   onRender(controller);
   return null;
 }

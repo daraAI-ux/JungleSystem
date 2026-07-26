@@ -1,10 +1,11 @@
 ﻿import React from 'react';
-import {getSettingsDescriptionListVisualContract} from '../domain/settings-surface';
-import {KolamDescriptionList} from './kolam-description-list';
-import {KolamEndpointList} from './kolam-endpoint-list';
-import {KolamMappedSurfacePanel} from './kolam-mapped-surface-panel';
-import type {KolamSettingsPanelController} from './kolam-settings-panel-controller';
-import {KolamSettingsSurfaceBody} from './kolam-settings-surface-body';
+import { getSettingsDescriptionListVisualContract } from '../domain/settings-surface';
+import { KolamDescriptionList } from './kolam-description-list';
+import { KolamEndpointList } from './kolam-endpoint-list';
+import { KolamPanelFrame } from './kolam-panel-frame';
+import type { KolamSettingsPanelController } from './kolam-settings-panel-controller';
+import { KolamSettingsSurfaceBody } from './kolam-settings-surface-body';
+import { KolamSurfacePanelCopy } from './kolam-surface-panel-copy';
 
 const SETTINGS_DESCRIPTION_LIST_VISUAL =
   getSettingsDescriptionListVisualContract();
@@ -14,17 +15,15 @@ export function KolamSettingsSurfaceFrame({
 }: {
   controller: KolamSettingsPanelController;
 }) {
+  const title =
+    controller.activeSettingsTab?.label ?? controller.activeSurface.title;
+  const description =
+    controller.activeSettingsTab?.description ??
+    controller.activeSurface.description;
+
   return (
-    <KolamMappedSurfacePanel
-      title={controller.activeSurface.title}
-      description={controller.activeSurface.description}
-      selectedTabId={controller.activeSurfaceId}
-      onSelectTab={controller.selectSurface}
-      tabItems={controller.settingsSurfaceItems}
-      getTab={item => ({
-        id: item.id,
-        label: item.badge,
-      })}>
+    <KolamPanelFrame variant="surface">
+      <KolamSurfacePanelCopy title={title} description={description} />
       <KolamEndpointList
         accessibilityLabel="settings live endpoint contracts"
         endpoints={controller.liveEndpoints}
@@ -34,6 +33,6 @@ export function KolamSettingsSurfaceFrame({
         accessibilityLabel={`${SETTINGS_DESCRIPTION_LIST_VISUAL.sourceComponent} mapped to native Settings`}
       />
       <KolamSettingsSurfaceBody controller={controller} />
-    </KolamMappedSurfacePanel>
+    </KolamPanelFrame>
   );
 }
