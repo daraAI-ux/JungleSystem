@@ -159,6 +159,49 @@ describe('KolamSettingsPanel', () => {
     );
   });
 
+  it('renders notification production fields in the Notifikasi tab', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamSettingsPanel
+          activityEntries={getSyncActivityEntries(seedUnifiedDataset, '10:00')}
+        />,
+      );
+    });
+
+    await ReactTestRenderer.act(async () => {
+      findTabByText(renderer!, 'Notifikasi').props.onPress();
+    });
+
+    const text = renderText(renderer!);
+
+    expect(text).toEqual(
+      expect.arrayContaining([
+        'Notifikasi',
+        'DARA handoff notify',
+        'Handoff sound',
+        'Team chat group call',
+        'Group call ringtone',
+        'Sales sound',
+        'Notification sound',
+        'Unassigned sound',
+        'Firebase',
+        'SMTP host',
+        'Staff OTP login',
+        'Save',
+      ]),
+    );
+    expect(text).not.toEqual(
+      expect.arrayContaining([
+        'Company Tagline',
+        'MAC access',
+        'Plugin Enclosure',
+        'Marketplace Landing Overview',
+      ]),
+    );
+  });
+
   it('keeps local Web Settings draft intact when live update is rejected', async () => {
     const fetchMock = jest
       .fn()

@@ -995,6 +995,219 @@ export function KolamSettingsWebConfigSurface({
           ) : null}
         </>
       ) : null}
+      {showNotificationSettings ? (
+        <>
+          <KolamToggleRow
+            label="DARA handoff notify"
+            description="Kirim notifikasi saat handoff customer."
+            active={draft.daraHandoffNotifyEnabled}
+            onPress={() =>
+              !disabled &&
+              setDraftField(
+                'daraHandoffNotifyEnabled',
+                !draft.daraHandoffNotifyEnabled,
+              )
+            }
+          />
+          <KolamToggleRow
+            label="Team chat group call"
+            description="Aktifkan panggilan grup di team chat."
+            active={draft.teamChatGroupCallEnabled}
+            onPress={() =>
+              !disabled &&
+              setDraftField(
+                'teamChatGroupCallEnabled',
+                !draft.teamChatGroupCallEnabled,
+              )
+            }
+          />
+          <KolamToggleRow
+            label="Staff OTP login"
+            description="Aktifkan OTP untuk login staff produksi."
+            active={draft.staffOtpLoginEnabled}
+            onPress={() =>
+              !disabled &&
+              setDraftField('staffOtpLoginEnabled', !draft.staffOtpLoginEnabled)
+            }
+          />
+          <KolamTextFieldRow
+            label="OTP expire minutes"
+            description="Durasi OTP aktif sebelum kadaluarsa."
+            value={draft.staffOtpExpireMinutes}
+            onChangeText={value =>
+              setDraftField('staffOtpExpireMinutes', value)
+            }
+            placeholder="10"
+          />
+          <KolamTextFieldRow
+            label="OTP resend cooldown"
+            description="Jeda detik sebelum OTP boleh dikirim ulang."
+            value={draft.staffOtpResendCooldownSeconds}
+            onChangeText={value =>
+              setDraftField('staffOtpResendCooldownSeconds', value)
+            }
+            placeholder="60"
+          />
+          <KolamTextFieldRow
+            label="OTP max attempts"
+            description="Batas percobaan OTP sebelum lock."
+            value={draft.staffOtpMaxAttempts}
+            onChangeText={value => setDraftField('staffOtpMaxAttempts', value)}
+            placeholder="5"
+          />
+          <KolamTextFieldRow
+            label="OTP lock minutes"
+            description="Durasi lock setelah percobaan OTP melewati batas."
+            value={draft.staffOtpLockMinutes}
+            onChangeText={value => setDraftField('staffOtpLockMinutes', value)}
+            placeholder="15"
+          />
+          <KolamTextFieldRow
+            label="SMTP host"
+            description="Host SMTP untuk email system."
+            value={draft.smtpHost}
+            onChangeText={value => setDraftField('smtpHost', value)}
+            placeholder="smtp.gmail.com"
+          />
+          <KolamTextFieldRow
+            label="SMTP port"
+            description="Port SMTP produksi."
+            value={draft.smtpPort}
+            onChangeText={value => setDraftField('smtpPort', value)}
+            placeholder="465"
+          />
+          <KolamTextFieldRow
+            label="SMTP user"
+            description="Username SMTP."
+            value={draft.smtpUser}
+            onChangeText={value => setDraftField('smtpUser', value)}
+            placeholder="mailer@duniaanura.com"
+          />
+          <KolamTextFieldRow
+            label="SMTP password"
+            description="Biarkan ******** agar secret BE tidak dikirim ulang."
+            value={draft.smtpPass}
+            onChangeText={value => setDraftField('smtpPass', value)}
+            placeholder="********"
+          />
+          <KolamTextFieldRow
+            label="SMTP from email"
+            description="Alamat pengirim email system."
+            value={draft.smtpFromEmail}
+            onChangeText={value => setDraftField('smtpFromEmail', value)}
+            placeholder="no-reply@duniaanura.com"
+          />
+          <KolamTextFieldRow
+            label="SMTP from name"
+            description="Nama pengirim email system."
+            value={draft.smtpFromName}
+            onChangeText={value => setDraftField('smtpFromName', value)}
+            placeholder="Kolam"
+          />
+          <KolamToggleRow
+            label="SMTP secure"
+            description="Gunakan koneksi SMTP secure."
+            active={draft.smtpSecure}
+            onPress={() =>
+              !disabled && setDraftField('smtpSecure', !draft.smtpSecure)
+            }
+          />
+          <KolamToggleRow
+            label="Firebase"
+            description="Aktifkan Firebase Admin untuk notifikasi."
+            active={draft.firebaseEnabled}
+            onPress={() =>
+              !disabled &&
+              setDraftField('firebaseEnabled', !draft.firebaseEnabled)
+            }
+          />
+          <KolamTextFieldRow
+            label="Firebase project ID"
+            description="Project ID Firebase produksi."
+            value={draft.firebaseProjectId}
+            onChangeText={value => setDraftField('firebaseProjectId', value)}
+            placeholder="dunia-anura"
+          />
+          <KolamTextFieldRow
+            label="Firebase client email"
+            description="Client email service account."
+            value={draft.firebaseClientEmail}
+            onChangeText={value => setDraftField('firebaseClientEmail', value)}
+            placeholder="firebase-adminsdk@..."
+          />
+          <KolamTextFieldRow
+            label="Firebase private key"
+            description="Biarkan ******** agar private key BE tidak dikirim ulang."
+            value={draft.firebasePrivateKey}
+            onChangeText={value => setDraftField('firebasePrivateKey', value)}
+            placeholder="********"
+          />
+          <View style={styles.notificationSoundList}>
+            {notificationSoundItems.map(item => {
+              const status = notificationSoundStatus[item.type] ?? 'idle';
+              const busy = status === 'uploading' || status === 'deleting';
+
+              return (
+                <View key={item.id} style={styles.notificationSoundRow}>
+                  <KolamCopyStack
+                    containerStyle={styles.notificationSoundCopy}
+                    items={[
+                      {
+                        id: `${item.id}-label`,
+                        text: item.label,
+                        style: styles.notificationSoundLabel,
+                      },
+                      {
+                        id: `${item.id}-path`,
+                        text: item.value || '-',
+                        style: styles.notificationSoundPath,
+                      },
+                    ]}
+                  />
+                  <View style={styles.notificationSoundActions}>
+                    <KolamActionControlButton
+                      label="Upload"
+                      loading={status === 'uploading'}
+                      loadingLabel="Uploading..."
+                      disabled={disabled || busy}
+                      onPress={() => onUploadNotificationSound(item.type)}
+                    />
+                    <KolamActionControlButton
+                      label="Reset"
+                      intent="danger"
+                      loading={status === 'deleting'}
+                      loadingLabel="Resetting..."
+                      disabled={disabled || busy || !item.value}
+                      onPress={() => onDeleteNotificationSound(item.type)}
+                    />
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        </>
+      ) : null}
+      {showGeneralSettings || showNotificationSettings ? (
+        <>
+          <KolamActionControlButton
+            label="Save"
+            loading={saveStatus === 'saving'}
+            loadingLabel="Saving..."
+            intent="primary"
+            onPress={disabled ? undefined : onSave}
+          />
+          {saveMessage ? (
+            <KolamCopyStack
+              items={[
+                {
+                  id: 'save-message',
+                  text: saveMessage,
+                },
+              ]}
+            />
+          ) : null}
+        </>
+      ) : null}
       {showPluginControls ? (
         <>
           <KolamToggleRow
