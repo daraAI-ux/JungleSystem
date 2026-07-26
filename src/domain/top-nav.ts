@@ -4,6 +4,7 @@ import {
   type ShellModuleRouteEntry,
 } from './app-shell';
 import type { KolamNavigationItem } from './kolam-navigation';
+import type { SettingsTabItem } from './settings-surface';
 import type { PluginRouteEntry, UnifiedSurface } from './unified';
 
 export interface TopNavUserMenuItem {
@@ -201,6 +202,7 @@ export function getTopNavBreadcrumbItems(
     activeModuleRoute?: ShellModuleRouteEntry | null;
     activeNavigationItem?: KolamNavigationItem | null;
     activePluginRoute?: PluginRouteEntry | null;
+    activeSettingsTab?: SettingsTabItem | null;
   } = {},
 ): TopNavBreadcrumbItem[] {
   const dashboardCrumb: TopNavBreadcrumbItem = {
@@ -212,6 +214,26 @@ export function getTopNavBreadcrumbItems(
 
   if (moduleId === 'kolam' && !hasTopNavRouteContext(context)) {
     return [dashboardCrumb];
+  }
+
+  if (moduleId === 'settings' && context.activeSettingsTab) {
+    return [
+      { ...dashboardCrumb, current: false },
+      {
+        id: 'settings',
+        label: 'Pengaturan',
+        routeHint: '/pengaturan',
+        targetModule: 'settings',
+        current: false,
+      },
+      {
+        id: `settings-tab:${context.activeSettingsTab.id}`,
+        label: context.activeSettingsTab.breadcrumbLabel,
+        routeHint: context.activeSettingsTab.route,
+        targetModule: 'settings',
+        current: true,
+      },
+    ];
   }
 
   if (moduleId === 'kolam' && context.activeNavigationItem) {
@@ -461,18 +483,21 @@ function hasTopNavRouteContext({
   activeModuleRoute,
   activeNavigationItem,
   activePluginRoute,
+  activeSettingsTab,
 }: {
   activeAmSurface?: UnifiedSurface | null;
   activeKolamSurface?: UnifiedSurface | null;
   activeModuleRoute?: ShellModuleRouteEntry | null;
   activeNavigationItem?: KolamNavigationItem | null;
   activePluginRoute?: PluginRouteEntry | null;
+  activeSettingsTab?: SettingsTabItem | null;
 }) {
   return Boolean(
     activeAmSurface ||
       activeKolamSurface ||
       activeModuleRoute ||
       activeNavigationItem ||
-      activePluginRoute,
+      activePluginRoute ||
+      activeSettingsTab,
   );
 }

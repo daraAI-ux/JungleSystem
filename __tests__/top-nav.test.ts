@@ -8,6 +8,7 @@ import {
   isTopNavAdminRole,
   topNavUserMenuItems,
 } from '../src/domain/top-nav';
+import {settingsTabItems} from '../src/domain/settings-surface';
 
 describe('topNavUserMenuItems', () => {
   it('mirrors the live Kolam avatar menu actions for the native top nav', () => {
@@ -159,6 +160,43 @@ describe('topNavUserMenuItems', () => {
         current: true,
       }),
     ]);
+  });
+
+  it('builds Settings breadcrumbs from the active native tab without duplicating Pengaturan', () => {
+    for (const tab of settingsTabItems) {
+      const breadcrumbs = getTopNavBreadcrumbItems('settings', {
+        activeSettingsTab: tab,
+        activeNavigationItem: {
+          label: 'Pengaturan',
+          route: '/pengaturan',
+          description: 'Pusat settings produksi',
+          group: 'Settings',
+          requiredAccess: ['kolam'],
+        },
+      });
+
+      expect(breadcrumbs.map(item => item.label)).toEqual([
+        'Dashboard',
+        'Pengaturan',
+        tab.breadcrumbLabel,
+      ]);
+      expect(
+        breadcrumbs.filter(item => item.label === 'Pengaturan'),
+      ).toHaveLength(1);
+      expect(breadcrumbs[2]).toEqual(
+        expect.objectContaining({
+          id: `settings-tab:${tab.id}`,
+          routeHint: '/pengaturan',
+          current: true,
+        }),
+      );
+    }
+
+    expect(
+      getTopNavBreadcrumbItems('settings', {
+        activeSettingsTab: settingsTabItems.find(item => item.id === 'finansial'),
+      }).map(item => item.label),
+    ).toEqual(['Dashboard', 'Pengaturan', 'Pajak']);
   });
 
   it('builds route-aware breadcrumbs for active Kolam menu items', () => {

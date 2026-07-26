@@ -11,6 +11,11 @@ import { KolamLoginScreen } from './src/components/kolam-login-screen';
 import { KolamWorkspaceSurface } from './src/components/kolam-workspace-surface';
 import type { DashboardSalesGraphRange } from './src/domain/dashboard-sales-graph';
 import type { TopNavRightControl } from './src/domain/top-nav';
+import {
+  DEFAULT_SETTINGS_TAB_ID,
+  getSettingsTabItemById,
+  type SettingsTabItem,
+} from './src/domain/settings-surface';
 import { getUnifiedSyncMessage } from './src/services/unified-data';
 import { useKolamAuthController } from './src/hooks/use-kolam-auth-controller';
 import { useKolamCashflowController } from './src/hooks/use-kolam-cashflow-controller';
@@ -36,6 +41,10 @@ function App() {
   const localFirstSyncedOwnerRef = React.useRef<string | null>(null);
   const [activeChatRail, setActiveChatRail] =
     React.useState<KolamGlobalChatRailMode | null>(null);
+  const [activeSettingsTab, setActiveSettingsTab] =
+    React.useState<SettingsTabItem | null>(
+      getSettingsTabItemById(DEFAULT_SETTINGS_TAB_ID),
+    );
   const deviceIdentityStatus = useKolamNativeDeviceIdentity();
   const {
     accessScope,
@@ -322,6 +331,7 @@ function App() {
       activeModuleRoute,
       activeNavigationItem,
       activePluginRoute,
+      activeSettingsTab,
       activeSession: dataset.activeSession,
       attentionItems,
       collapsed: isSidebarCollapsed,
@@ -413,6 +423,7 @@ function App() {
     onQuantityChange: updateQuantity,
     onSalesGraphRangeSelect: handleSalesGraphRangeSelect,
     onSelectModule: handleModuleSelect,
+    onSettingsTabChange: setActiveSettingsTab,
     onSelectCustomer: selectCustomer,
     onSelectPaymentMethod: selectPaymentMethod,
     onShippingCostChange: updateShippingCost,

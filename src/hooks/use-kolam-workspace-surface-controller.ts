@@ -57,6 +57,7 @@ export function useKolamWorkspaceSurfaceController({
   onModuleRouteSelect,
   onPluginRouteSelect,
   onSelectModule,
+  onSettingsTabChange,
   onDiscountAmountChange,
   onDiscountTypeChange,
   onGlobalDiscountChange,
@@ -121,6 +122,7 @@ export function useKolamWorkspaceSurfaceController({
   onModuleRouteSelect?: (route: ShellModuleRouteEntry) => void;
   onPluginRouteSelect?: (route: PluginRouteEntry) => void;
   onSelectModule: (module: AppModule) => void;
+  onSettingsTabChange?: KolamWorkspaceSurfaceProps['onSettingsTabChange'];
   onDiscountAmountChange: WorkspaceCheckoutProps['onDiscountAmountChange'];
   onDiscountTypeChange: WorkspaceCheckoutProps['onDiscountTypeChange'];
   onGlobalDiscountChange: WorkspaceCheckoutProps['onGlobalDiscountChange'];
@@ -236,6 +238,7 @@ export function useKolamWorkspaceSurfaceController({
     onModuleRouteSelect,
     onPluginRouteSelect,
     onSelectModule,
+    onSettingsTabChange,
     onCustomerVisitConfirm,
     onSalesGraphRangeSelect,
     salesGraphRange,

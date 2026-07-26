@@ -18,7 +18,10 @@ import { isKolamSpeciesRoute } from '../domain/kolam-species';
 import { isKolamTaxonomyRoute } from '../domain/kolam-taxonomy';
 import { isKolamUnitRoute } from '../domain/kolam-unit';
 import type { KolamNavigationItem } from '../domain/kolam-navigation';
-import { getSettingsSurfaceItemByRoute } from '../domain/settings-surface';
+import {
+  getSettingsSurfaceItemByRoute,
+  type SettingsTabItem,
+} from '../domain/settings-surface';
 import type { PluginRouteEntry } from '../domain/unified';
 import type { UnifiedSurface } from '../domain/unified';
 import type { SyncActivityEntry } from '../domain/sync-activity';
@@ -78,6 +81,7 @@ export interface KolamWorkspaceSurfaceProps {
   onPluginRouteSelect?: (route: PluginRouteEntry) => void;
   onSelectModule?: (module: AppModule) => void;
   onKolamSurfaceSelect?: (surface: UnifiedSurface) => void;
+  onSettingsTabChange?: (tab: SettingsTabItem) => void;
   onSalesGraphRangeSelect?: (range: DashboardSalesGraphRange) => void;
   sales: KolamSalesSurfaceProps;
   syncActivity: SyncActivityEntry[];
@@ -107,6 +111,7 @@ export function KolamWorkspaceSurface({
   onPluginRouteSelect,
   onSelectModule,
   onKolamSurfaceSelect,
+  onSettingsTabChange,
   onSalesGraphRangeSelect,
   sales,
   syncActivity,
@@ -263,12 +268,18 @@ export function KolamWorkspaceSurface({
           <KolamSettingsSurface
             key={settingsSurface.id}
             activeSurfaceId={settingsSurface.id}
+            onActiveTabChange={onSettingsTabChange}
             syncActivity={syncActivity}
           />
         );
       }
 
-      return <KolamSettingsSurface syncActivity={syncActivity} />;
+      return (
+        <KolamSettingsSurface
+          onActiveTabChange={onSettingsTabChange}
+          syncActivity={syncActivity}
+        />
+      );
     case 'checkout':
       return renderWithPosModuleRoute(
         activeModule,

@@ -2,6 +2,8 @@ import React from 'react';
 import ReactTestRenderer from 'react-test-renderer';
 import type {AppModule} from '../src/domain/app-shell';
 import type {AttentionPanelItem} from '../src/domain/attention-panel';
+import type {SettingsTabItem} from '../src/domain/settings-surface';
+import {settingsTabItems} from '../src/domain/settings-surface';
 import {useKolamTopNavigationController} from '../src/hooks/use-kolam-top-navigation-controller';
 
 type TopNavigationController = ReturnType<
@@ -18,15 +20,18 @@ function requireController(controller: TopNavigationController | null) {
 
 function TopNavigationHarness({
   activeModule,
+  activeSettingsTab,
   attentionItems,
   onRender,
 }: {
   activeModule: AppModule;
+  activeSettingsTab?: SettingsTabItem | null;
   attentionItems: AttentionPanelItem[];
   onRender: (controller: TopNavigationController) => void;
 }) {
   const controller = useKolamTopNavigationController({
     activeModule,
+    activeSettingsTab,
     attentionItems,
     displayInitials: 'DA',
     onAvatarPress: () => undefined,
@@ -117,6 +122,33 @@ describe('Kolam top navigation controller hook', () => {
     expect(controller.attentionCount).toBe(1);
     expect(controller.topNavigation.breadcrumbItems.map(item => item.label)).toEqual([
       'Dashboard',
+      'Plugin',
+    ]);
+  });
+
+  it('uses the active Settings tab for Pengaturan breadcrumbs', async () => {
+    let latest: TopNavigationController | null = null;
+
+    await ReactTestRenderer.act(async () => {
+      ReactTestRenderer.create(
+        <TopNavigationHarness
+          activeModule="settings"
+          activeSettingsTab={
+            settingsTabItems.find(item => item.id === 'plugin') ?? null
+          }
+          attentionItems={[]}
+          onRender={controller => {
+            latest = controller;
+          }}
+        />,
+      );
+    });
+
+    const controller = requireController(latest);
+
+    expect(controller.topNavigation.breadcrumbItems.map(item => item.label)).toEqual([
+      'Dashboard',
+      'Pengaturan',
       'Plugin',
     ]);
   });

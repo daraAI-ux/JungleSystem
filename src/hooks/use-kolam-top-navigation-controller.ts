@@ -3,6 +3,7 @@ import type { KolamAppShellSurfaceProps } from '../components/kolam-app-shell-su
 import type { AppModule, ShellModuleRouteEntry } from '../domain/app-shell';
 import type { AttentionPanelItem } from '../domain/attention-panel';
 import type { KolamNavigationItem } from '../domain/kolam-navigation';
+import type { SettingsTabItem } from '../domain/settings-surface';
 import {
   getTopNavBreadcrumbItems,
   getTopNavRightControls,
@@ -19,6 +20,7 @@ export function useKolamTopNavigationController({
   activeModuleRoute,
   activeNavigationItem,
   activePluginRoute,
+  activeSettingsTab,
   attentionItems,
   displayInitials,
   onAvatarPress,
@@ -36,6 +38,7 @@ export function useKolamTopNavigationController({
   activeModuleRoute?: ShellModuleRouteEntry | null;
   activeNavigationItem?: KolamNavigationItem | null;
   activePluginRoute?: PluginRouteEntry | null;
+  activeSettingsTab?: SettingsTabItem | null;
   attentionItems: AttentionPanelItem[];
   displayInitials: string;
   onAvatarPress: () => void;
@@ -61,6 +64,7 @@ export function useKolamTopNavigationController({
         activeModuleRoute,
         activeNavigationItem,
         activePluginRoute,
+        activeSettingsTab,
       }),
       displayInitials,
       rightControls: getTopNavRightControls(),
@@ -80,6 +84,7 @@ export function useKolamTopNavigationController({
       activeModuleRoute,
       activeNavigationItem,
       activePluginRoute,
+      activeSettingsTab,
       attentionCount,
       displayInitials,
       onAvatarPress,

@@ -3,6 +3,7 @@ import type { AttentionPanelItem } from '../domain/attention-panel';
 import type { AccessScope } from '../domain/auth';
 import type { CommandEntry } from '../domain/command-index';
 import type { KolamNavigationItem } from '../domain/kolam-navigation';
+import type { SettingsTabItem } from '../domain/settings-surface';
 import {
   getTopNavUserMenuItems,
   type TopNavBreadcrumbItem,
@@ -23,6 +24,7 @@ export function useKolamShellChromeController({
   activeModuleRoute,
   activeNavigationItem,
   activePluginRoute,
+  activeSettingsTab,
   activeSession,
   attentionItems,
   collapsed,
@@ -70,6 +72,7 @@ export function useKolamShellChromeController({
   activeModuleRoute?: ShellModuleRouteEntry | null;
   activeNavigationItem?: KolamNavigationItem | null;
   activePluginRoute?: PluginRouteEntry | null;
+  activeSettingsTab?: SettingsTabItem | null;
   activeSession: UnifiedDataset['activeSession'];
   attentionItems: AttentionPanelItem[];
   collapsed: boolean;
@@ -141,6 +144,7 @@ export function useKolamShellChromeController({
     activeModuleRoute,
     activeNavigationItem,
     activePluginRoute,
+    activeSettingsTab,
     attentionItems,
     displayInitials,
     onAvatarPress,
