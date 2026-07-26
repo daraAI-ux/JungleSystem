@@ -6910,13 +6910,13 @@ function getProductDetailRoute(product: KolamProduct) {
 function getProductDetailShellLabels(isRaw: boolean) {
   return {
     detailTitle: isRaw ? 'Detail Bahan Baku' : 'Detail Produk',
-    editTitle: isRaw ? 'Edit Bahan Baku' : 'Edit Produk',
+    editTitle: isRaw ? 'Rubah Bahan Baku' : 'Edit Produk',
     emptyDetail: isRaw ? 'Bahan baku belum dipilih.' : 'Produk belum dipilih.',
     emptyForm: isRaw ? 'Form bahan baku belum siap.' : 'Form produk belum siap.',
     eyebrow: isRaw ? 'BAHAN BAKU' : 'PRODUK',
     loadingDetail: isRaw ? 'Membaca detail bahan baku...' : 'Membaca detail produk...',
-    newTitle: isRaw ? 'Bahan Baku Baru' : 'Produk Baru',
-    saveNewLabel: isRaw ? 'Simpan Bahan Baku' : 'Simpan Produk',
+    newTitle: isRaw ? 'Tambah Bahan Baku' : 'Produk Baru',
+    saveNewLabel: isRaw ? 'Tambah Bahan Baku' : 'Simpan Produk',
     tabsAccessibilityLabel: isRaw ? 'Tab detail bahan baku' : 'Tab detail produk',
   };
 }
