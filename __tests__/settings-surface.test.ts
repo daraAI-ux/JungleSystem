@@ -25,6 +25,7 @@ import {
   getSettingsSurfaceIdForTab,
   getSettingsTabItemById,
   getSettingsTabItems,
+  getVisibleSettingsTabItems,
   getSettingsWebConfigFields,
   getSettingsWebFormSections,
   isSettingsTabId,
@@ -74,7 +75,7 @@ describe('settingsSurfaceItems', () => {
       'web-settings',
       'role-management',
       'web-settings',
-      'activity-log',
+      'web-settings',
       'web-settings',
       'web-settings',
       'web-settings',
@@ -108,10 +109,69 @@ describe('settingsSurfaceItems', () => {
     expect(isSettingsTabId('umum')).toBe(true);
     expect(isSettingsTabId('activity-log')).toBe(false);
     expect(getSettingsSurfaceIdForTab('peran')).toBe('role-management');
-    expect(getSettingsSurfaceIdForTab('sync')).toBe('activity-log');
+    expect(getSettingsSurfaceIdForTab('sync')).toBe('web-settings');
     expect(getSettingsSurfaceIdForTab('unknown')).toBe('web-settings');
     expect(getDefaultSettingsTabIdForSurface('role-management')).toBe('peran');
-    expect(getDefaultSettingsTabIdForSurface('activity-log')).toBe('sync');
+    expect(getDefaultSettingsTabIdForSurface('activity-log')).toBe('umum');
+  });
+
+  it('filters Settings tabs by role permission visibility rules', () => {
+    expect(
+      getVisibleSettingsTabItems({
+        roleKey: 'superadmin',
+        permissions: [],
+      }).map(item => item.id),
+    ).toEqual(settingsTabItems.map(item => item.id));
+    expect(
+      getVisibleSettingsTabItems({
+        roleKey: 'staff',
+        permissions: [{ resource: 'websetting', actions: ['view'] }],
+      }).map(item => item.id),
+    ).toEqual([
+      'umum',
+      'notifikasi',
+      'toko',
+      'operasional',
+      'sitemap',
+      'sync',
+      'konten',
+    ]);
+    expect(
+      getVisibleSettingsTabItems({
+        roleKey: 'staff',
+        permissions: [{ resource: 'role', actions: ['view'] }],
+      }).map(item => item.id),
+    ).toEqual(['peran']);
+    expect(
+      getVisibleSettingsTabItems({
+        roleKey: 'admin',
+        permissions: [],
+      }).map(item => item.id),
+    ).toEqual(['ai', 'plugin']);
+    expect(
+      getVisibleSettingsTabItems({
+        roleKey: 'staff',
+        permissions: [{ resource: 'websetting', actions: ['update'] }],
+      }).map(item => item.id),
+    ).toEqual(['kpi']);
+    expect(
+      getVisibleSettingsTabItems({
+        roleKey: 'staff',
+        permissions: [{ resource: 'wallet', actions: ['view'] }],
+      }).map(item => item.id),
+    ).toEqual(['finansial']);
+    expect(
+      getVisibleSettingsTabItems({
+        roleKey: 'staff',
+        permissions: [{ resource: 'tax', actions: ['view'] }],
+      }).map(item => item.id),
+    ).toEqual(['finansial']);
+    expect(
+      getVisibleSettingsTabItems({
+        roleKey: 'staff',
+        permissions: [],
+      }).map(item => item.id),
+    ).toEqual([]);
   });
 
   it('maps live Kolam settings routes into a native summary surface', () => {
@@ -684,7 +744,7 @@ describe('settingsSurfaceItems', () => {
       {
         id: 'websetting-admin',
         resource: 'websetting',
-        label: 'Web Settings',
+        label: 'Pengaturan Web',
         actions: ['view', 'update'],
         source: 'lib/permissions/resource-actions.ts',
       },
@@ -699,23 +759,24 @@ describe('settingsSurfaceItems', () => {
   });
 
   it('maps live Role Management permissions into native toggle matrix groups', () => {
-    const [group] = getSettingsRolePermissionMatrixGroups(
+    const group = getSettingsRolePermissionMatrixGroups(
       'inventory-staff',
       false,
-    );
+    ).find(item => item.id === 'settings-configuration');
 
-    expect(group).toEqual(
+    expect(group).toBeDefined();
+    expect(group!).toEqual(
       expect.objectContaining({
-        id: 'settings-configuration-preview',
-        label: 'Settings & Configuration',
-        resourceCount: 3,
+        id: 'settings-configuration',
+        label: 'Settings & Administration',
+        resourceCount: 4,
         activeCount: 2,
-        totalPossible: 7,
+        totalPossible: 17,
         expanded: true,
         sourceComponent: 'settings/roles/list.tsx',
       }),
     );
-    expect(group.rows).toEqual(
+    expect(group!.rows).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           resource: 'role',
@@ -732,7 +793,10 @@ describe('settingsSurfaceItems', () => {
         }),
       ]),
     );
-    expect(group.rows[0].actions.map(action => action.label)).toEqual([
+    const roleRow = group!.rows.find(row => row.resource === 'role');
+
+    expect(roleRow).toBeDefined();
+    expect(roleRow!.actions.map(action => action.label)).toEqual([
       'View',
       'Create',
       'Update',
@@ -746,14 +810,14 @@ describe('settingsSurfaceItems', () => {
         id: 'super-admin',
         label: 'Super Administrator',
         key: 'super-admin',
-        permissionCount: 7,
+        permissionCount: 231,
         defaultRole: true,
         fullAccess: true,
         sourceComponent: 'settings/roles/list.tsx',
       }),
       expect.objectContaining({
         id: 'inventory-staff',
-        label: 'Inventory Staff',
+        label: 'Staf Inventori',
         permissionCount: 2,
         defaultRole: false,
         fullAccess: false,
@@ -812,25 +876,27 @@ describe('settingsSurfaceItems', () => {
     const groups = getSettingsRoleResourceGroups();
 
     expect(groups.map(group => group.label)).toEqual([
-      'Inventory',
-      'Sales & Customers',
-      'Content',
-      'Purchasing & Production',
-      'Finance',
+      'General & Communication',
+      'Inventory & Catalog',
       'Stock Management',
-      'Enclonura',
-      'Settings & Configuration',
+      'Purchasing & Production',
+      'Sales & Customers',
+      'Plugins (Kolam)',
+      'Marketing AI (DARA)',
+      'Finance & HR',
+      'Content & Blog',
+      'Settings & Administration',
       'System (Wildcard)',
     ]);
     expect(groups).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           id: 'settings-configuration',
-          resources: ['user', 'role', 'websetting', 'custom-field'],
+          resources: ['user', 'role', 'websetting', 'activity-log'],
           sourceComponent: 'settings/roles/list.tsx',
         }),
         expect.objectContaining({
-          id: 'system',
+          id: 'system-wildcard',
           resources: ['*'],
         }),
       ]),
@@ -843,7 +909,7 @@ describe('settingsSurfaceItems', () => {
       label: 'Members',
       count: 2,
       members: [
-        {id: 'inventory-lead', name: 'Inventory Lead', initials: 'IL'},
+        {id: 'inventory-lead', name: 'Lead Inventori', initials: 'IL'},
         {id: 'stock-staff', name: 'Stock Staff', initials: 'SS'},
       ],
       sourceComponent: 'settings/roles/list.tsx',

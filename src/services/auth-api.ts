@@ -37,6 +37,10 @@ export interface SignedInUser {
   accessAm?: boolean;
   accountRestricted?: boolean;
   resignedAt?: string | null;
+  permissions?: Array<{
+    resource?: string;
+    actions?: string[];
+  }>;
 }
 
 interface SignInResponse {
@@ -71,6 +75,10 @@ interface SignInResponse {
   };
   role?: {
     key?: string;
+    permissions?: Array<{
+      resource?: string;
+      actions?: string[];
+    }>;
   };
   roleKey?: string | null;
 }
@@ -91,6 +99,10 @@ interface BackendUserPayload {
   resignedAt?: string | null;
   role?: {
     key?: string;
+    permissions?: Array<{
+      resource?: string;
+      actions?: string[];
+    }>;
   };
 }
 
@@ -216,6 +228,7 @@ function mapSignedInUser(
     accessAm: payload.access_am,
     accountRestricted: payload.account_restricted,
     resignedAt: payload.resignedAt,
+    permissions: payload.role?.permissions,
   };
 }
 
@@ -308,7 +321,6 @@ export function getUserDisplayName(user: SignedInUser | null): string {
   const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ');
   return fullName || user.username || user.email || 'User POS';
 }
-
 
 
 

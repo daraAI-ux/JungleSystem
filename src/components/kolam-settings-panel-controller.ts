@@ -26,6 +26,7 @@ import {
   getDefaultSettingsTabIdForSurface,
   getSettingsTabItemById,
   getSettingsTabItems,
+  getVisibleSettingsTabItems,
   isSettingsTabId,
   getSettingsWebConfigFields,
   getSettingsWebFormSections,
@@ -35,6 +36,7 @@ import {
   type SettingsActivityLogFilterState,
   type SettingsSurfaceItem,
   type SettingsTabId,
+  type SettingsTabVisibilityContext,
 } from '../domain/settings-surface';
 import type { SyncActivityEntry } from '../domain/sync-activity';
 import {
@@ -708,6 +710,9 @@ export function useKolamSettingsPanelController(
   const [activeSettingsTabId, setActiveSettingsTabId] = useState<SettingsTabId>(
     getDefaultSettingsTabIdForSurface(initialActiveSurfaceId),
   );
+  const [settingsVisibilityContext, setSettingsVisibilityContext] = useState<
+    SettingsTabVisibilityContext | null | undefined
+  >(undefined);
   const [selectedActivityLogId, setSelectedActivityLogId] = useState('');
   const [activityPage, setActivityPage] = useState(1);
   const [activityLogs, setActivityLogs] = useState<KolamActivityLog[]>([]);
@@ -758,6 +763,14 @@ export function useKolamSettingsPanelController(
     useState<WebContentPanelId>('marketplace');
   const [marketplaceLandingTabId, setMarketplaceLandingTabId] =
     useState<MarketplaceLandingTabId>('hero');
+  const allSettingsTabItems = getSettingsTabItems();
+  const visibleSettingsTabItems =
+    settingsVisibilityContext === undefined
+      ? allSettingsTabItems
+      : getVisibleSettingsTabItems(settingsVisibilityContext);
+  const visibleSettingsTabIdSignature = visibleSettingsTabItems
+    .map(item => item.id)
+    .join('|');
   const [blogRows, setBlogRows] = useState<KolamBlog[]>([]);
   const [blogTopicRows, setBlogTopicRows] = useState<KolamBlogTopic[]>([]);
   const [blogTotal, setBlogTotal] = useState(0);
@@ -816,6 +829,56 @@ export function useKolamSettingsPanelController(
   const [selectedRoleId, setSelectedRoleId] = useState(
     fallbackRoleRows[0]?.id ?? '',
   );
+
+  useEffect(() => {
+    let mounted = true;
+
+    getCurrentUser()
+      .then(user => {
+        if (!mounted) {
+          return;
+        }
+
+        setSettingsVisibilityContext({
+          roleKey: user.roleKey,
+          permissions: user.permissions,
+        });
+      })
+      .catch(() => {
+        if (mounted) {
+          setSettingsVisibilityContext(null);
+        }
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (settingsVisibilityContext === undefined) {
+      return;
+    }
+
+    if (visibleSettingsTabItems.some(item => item.id === activeSettingsTabId)) {
+      return;
+    }
+
+    const nextTab = visibleSettingsTabItems[0];
+    if (!nextTab) {
+      return;
+    }
+
+    setActiveSettingsTabId(nextTab.id);
+    setActiveSurfaceId(nextTab.surfaceId);
+    setActivityPage(1);
+    setSelectedActivityLogId('');
+  }, [
+    activeSettingsTabId,
+    settingsVisibilityContext,
+    visibleSettingsTabIdSignature,
+    visibleSettingsTabItems,
+  ]);
 
   useEffect(() => {
     if (activeSurfaceId !== 'web-settings') {
@@ -1303,6 +1366,13 @@ export function useKolamSettingsPanelController(
 
   const selectSettingsTab = (id: SettingsTabId | string) => {
     if (!isSettingsTabId(id)) {
+      return;
+    }
+
+    if (
+      settingsVisibilityContext !== undefined &&
+      !visibleSettingsTabItems.some(item => item.id === id)
+    ) {
       return;
     }
 
@@ -2696,7 +2766,7 @@ export function useKolamSettingsPanelController(
     setStorefrontEnabled,
     setWebContentPanelId,
     setWebTitle,
-    settingsTabItems: getSettingsTabItems(),
+    settingsTabItems: visibleSettingsTabItems,
     settingsSurfaceItems,
     stats,
     storefrontEnabled,

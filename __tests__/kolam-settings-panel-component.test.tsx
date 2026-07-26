@@ -6,8 +6,22 @@ import {
   useKolamSettingsPanelController,
   type KolamSettingsPanelController,
 } from '../src/components/kolam-settings-panel-controller';
+import { getCurrentUser } from '../src/services/auth-api';
 import { getSyncActivityEntries } from '../src/domain/sync-activity';
 import { seedUnifiedDataset } from '../src/services/unified-data';
+
+jest.mock('../src/services/auth-api', () => {
+  const actual = jest.requireActual('../src/services/auth-api');
+
+  return {
+    ...actual,
+    getCurrentUser: jest.fn(),
+  };
+});
+
+const mockedGetCurrentUser = getCurrentUser as jest.MockedFunction<
+  typeof getCurrentUser
+>;
 
 function renderText(renderer: ReactTestRenderer.ReactTestRenderer) {
   return renderer.root
@@ -30,6 +44,10 @@ function flattenText(value: React.ReactNode): string[] {
 describe('KolamSettingsPanel', () => {
   beforeEach(() => {
     globalThis.fetch = jest.fn();
+    mockedGetCurrentUser.mockResolvedValue({
+      roleKey: 'super-admin',
+      permissions: [],
+    });
   });
 
   it('renders the settings summary from the direct panel module', async () => {
@@ -607,6 +625,46 @@ describe('KolamSettingsPanel', () => {
     });
 
     expect(requireController(latest).activeSurfaceId).toBe('web-settings');
+  });
+
+  it('hides Settings tabs that are not visible for the current user permissions', async () => {
+    mockedGetCurrentUser.mockResolvedValueOnce({
+      roleKey: 'staff',
+      permissions: [{ resource: 'websetting', actions: ['view'] }],
+    });
+    let latest: KolamSettingsPanelController | null = null;
+
+    await ReactTestRenderer.act(async () => {
+      ReactTestRenderer.create(
+        <SettingsControllerHarness
+          onRender={controller => {
+            latest = controller;
+          }}
+        />,
+      );
+    });
+
+    await ReactTestRenderer.act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(
+      requireController(latest).settingsTabItems.map(item => item.id),
+    ).toEqual([
+      'umum',
+      'notifikasi',
+      'toko',
+      'operasional',
+      'sitemap',
+      'sync',
+      'konten',
+    ]);
+
+    await ReactTestRenderer.act(async () => {
+      requireController(latest).selectSettingsTab('plugin');
+    });
+
+    expect(requireController(latest).activeSettingsTabId).toBe('umum');
   });
 
   it('starts on the matching Settings tab when an existing surface is opened directly', async () => {

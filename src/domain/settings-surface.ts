@@ -52,6 +52,16 @@ export interface SettingsTabItem {
   sourceComponent: 'settings/system/page.tsx';
 }
 
+export interface SettingsVisibilityPermission {
+  resource?: string;
+  actions?: string[];
+}
+
+export interface SettingsTabVisibilityContext {
+  roleKey?: string | null;
+  permissions?: SettingsVisibilityPermission[];
+}
+
 export interface SettingsDetailRow {
   id: string;
   label: string;
@@ -507,6 +517,43 @@ export const DEFAULT_SETTINGS_TAB_ID: SettingsTabId = 'umum';
 
 export function getSettingsTabItems(items = settingsTabItems) {
   return items;
+}
+
+export function getVisibleSettingsTabItems(
+  context: SettingsTabVisibilityContext | null | undefined,
+  items = settingsTabItems,
+) {
+  return items.filter(item => isSettingsTabVisible(item, context));
+}
+
+export function isSettingsTabVisible(
+  item: SettingsTabItem,
+  context: SettingsTabVisibilityContext | null | undefined,
+) {
+  if (isSettingsSuperAdminRoleKey(String(context?.roleKey ?? ''))) {
+    return true;
+  }
+
+  if (item.id === 'peran') {
+    return hasSettingsPermission(context, 'role', 'view');
+  }
+
+  if (item.id === 'ai' || item.id === 'plugin') {
+    return isSettingsAdminRoleKey(context?.roleKey);
+  }
+
+  if (item.id === 'kpi') {
+    return hasSettingsPermission(context, 'websetting', 'update');
+  }
+
+  if (item.id === 'finansial') {
+    return (
+      hasSettingsPermission(context, 'wallet', 'view') ||
+      hasSettingsPermission(context, 'tax', 'view')
+    );
+  }
+
+  return hasSettingsPermission(context, 'websetting', 'view');
 }
 
 export function getSettingsTabItemById(
@@ -1652,7 +1699,44 @@ export function isSettingsDefaultRoleKey(key: string) {
 }
 
 export function isSettingsSuperAdminRoleKey(key: string) {
-  return key === 'super-admin' || key === 'super_admin';
+  const normalized = key.toLowerCase();
+  return (
+    normalized === 'super-admin' ||
+    normalized === 'super_admin' ||
+    normalized === 'superadmin' ||
+    normalized === 'super-administrator' ||
+    normalized === 'super_administrator'
+  );
+}
+
+export function isSettingsAdminRoleKey(key?: string | null) {
+  const normalized = String(key ?? '').toLowerCase();
+  return (
+    normalized === 'admin' ||
+    normalized === 'administrator' ||
+    normalized === 'super-admin' ||
+    normalized === 'super_admin' ||
+    normalized === 'super-administrator' ||
+    normalized === 'superadmin'
+  );
+}
+
+function hasSettingsPermission(
+  context: SettingsTabVisibilityContext | null | undefined,
+  resource: string,
+  action: string,
+) {
+  return (context?.permissions ?? []).some(permission => {
+    const permissionResource = String(permission.resource ?? '').toLowerCase();
+    const actions = (permission.actions ?? []).map(action =>
+      action.toLowerCase(),
+    );
+
+    return (
+      (permissionResource === resource || permissionResource === '*') &&
+      (actions.includes(action) || actions.includes('*'))
+    );
+  });
 }
 
 export function getSettingsRolePermissionCount(role: KolamRole) {
