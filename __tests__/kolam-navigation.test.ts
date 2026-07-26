@@ -23,7 +23,6 @@ describe('kolamNavigationSections', () => {
       'Finance',
       'User',
       'Enclonura',
-      'Settings',
     ]);
     expect(getKolamNavigationRouteCount()).toBeGreaterThanOrEqual(78);
     expect(
@@ -100,17 +99,8 @@ describe('kolamNavigationSections', () => {
         '/taxonomy-request',
         '/storage-management',
         '/storage-history',
-        '/settings/sitemap',
         '/blogs',
         '/blog-topics',
-        '/settings/activity-log',
-        '/settings/ai-tools',
-        '/settings/alerts',
-        '/settings/maintenance',
-        '/settings/syncs',
-        '/settings/system',
-        '/settings/tax',
-        '/settings/websetting/marketplace-landing',
         '/list-of-users/hr',
         '/list-of-users/overtime',
         '/staff-attendance',
@@ -118,8 +108,6 @@ describe('kolamNavigationSections', () => {
         '/staff-attendance/me',
         '/portal',
         '/task-manager',
-        '/settings',
-        '/web-settings',
         '/app-downloads',
       ]),
     );
@@ -163,7 +151,7 @@ describe('kolamNavigationSections', () => {
       .flatMap(section => section.items)
       .map(item => item.route);
 
-    expect(kolamRoutes).toContain('/settings/activity-log');
+    expect(kolamRoutes).not.toContain('/settings/activity-log');
     expect(kolamRoutes).toContain('/raw-materials');
     expect(kolamRoutes).toContain('/label-dan-field/kategori');
     expect(kolamRoutes).toContain('/custom-field-profiles');
@@ -190,11 +178,12 @@ describe('kolamNavigationSections', () => {
     expect(kolamRoutes).toContain('/customer-storage-logs');
     expect(kolamRoutes).toContain('/enclonura-species');
     expect(kolamRoutes).toContain('/storage-history');
-    expect(kolamRoutes).toContain('/settings/sitemap');
     expect(kolamRoutes).toContain('/blogs');
     expect(kolamRoutes).toContain('/blog-topics');
-    expect(kolamRoutes).toContain('/settings/ai-tools');
-    expect(kolamRoutes).toContain('/settings/websetting/marketplace-landing');
+    expect(kolamRoutes).not.toContain('/settings/ai-tools');
+    expect(kolamRoutes).not.toContain(
+      '/settings/websetting/marketplace-landing',
+    );
     expect(kolamRoutes).toContain('/list-of-users/hr');
     expect(kolamRoutes).toContain('/staff-attendance/leaves');
 
@@ -252,10 +241,9 @@ describe('kolamNavigationSections', () => {
       'Expenses & Income',
       'Finance Settings',
     ]);
-    expect(getKolamNavigationLiveGroups(byId('settings'))).toEqual([
-      'Web',
-      'System',
-    ]);
+    expect(kolamNavigationSections.some(section => section.id === 'settings')).toBe(
+      false,
+    );
   });
 
   it('keeps native icon chrome for disclosure and section reorder controls', () => {
@@ -336,15 +324,6 @@ describe('kolamNavigationSections', () => {
     expect(
       getKolamNavigationRouteTarget(byRoute('/customer-species')).moduleId,
     ).toBe('kolam');
-    expect(
-      getKolamNavigationRouteTarget(byRoute('/settings/activity-log')).moduleId,
-    ).toBe('settings');
-    expect(
-      getKolamNavigationRouteTarget(byRoute('/settings/ai-tools')).moduleId,
-    ).toBe('settings');
-    expect(
-      getKolamNavigationRouteTarget(byRoute('/settings/sitemap')).moduleId,
-    ).toBe('settings');
     expect(getKolamNavigationRouteTarget(byRoute('/blogs')).moduleId).toBe(
       'kolam',
     );
@@ -363,19 +342,14 @@ describe('kolamNavigationSections', () => {
         route: '/brands',
       }),
     );
-    expect(getKolamNavigationItemByRoute('/settings/activity-log')).toEqual(
-      expect.objectContaining({
-        label: 'Activity Log',
-        route: '/settings/activity-log',
-      }),
-    );
+    expect(getKolamNavigationItemByRoute('/settings/activity-log')).toBeNull();
     expect(getKolamNavigationItemByRoute('/missing-route')).toBeNull();
   });
 
   it('indexes live create detail and edit route variants for native command search', () => {
     const variants = getKolamNavigationRouteVariants();
 
-    expect(variants).toHaveLength(169);
+    expect(variants).toHaveLength(164);
     expect(variants).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -624,9 +598,9 @@ describe('kolamNavigationSections', () => {
     ]);
 
     expect(ordered.map(section => section.id).slice(0, 3)).toEqual([
-      'settings',
       'overview',
       'inventory',
+      'sales',
     ]);
     expect(ordered.map(section => section.id)).toEqual(
       expect.arrayContaining(['sales', 'finance', 'user', 'enclonura']),
@@ -634,16 +608,11 @@ describe('kolamNavigationSections', () => {
     expect(ordered).toHaveLength(kolamNavigationSections.length);
   });
 
-  it('uses the native Web Settings route for the compact Settings sidebar entry', () => {
+  it('removes the compact Settings sidebar entry because Settings lives in top modules', () => {
     const settingsSection = kolamSidebarNavigationSections.find(
       section => section.id === 'settings',
     );
 
-    expect(settingsSection?.items).toEqual([
-      expect.objectContaining({
-        label: 'Pengaturan',
-        route: '/settings/websetting',
-      }),
-    ]);
+    expect(settingsSection).toBeUndefined();
   });
 });
