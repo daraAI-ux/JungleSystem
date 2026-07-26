@@ -1,11 +1,16 @@
 import React from 'react';
 import { View } from 'react-native';
 import { KolamAppShellSurface } from './src/components/kolam-app-shell-surface';
+import {
+  KolamGlobalChatRail,
+  type KolamGlobalChatRailMode,
+} from './src/components/kolam-global-chat-rail';
 import { KolamImagePreviewHost } from './src/components/kolam-image-preview-dialog';
 import { KolamMediaPreviewHost } from './src/components/kolam-media-preview-dialog';
 import { KolamLoginScreen } from './src/components/kolam-login-screen';
 import { KolamWorkspaceSurface } from './src/components/kolam-workspace-surface';
 import type { DashboardSalesGraphRange } from './src/domain/dashboard-sales-graph';
+import type { TopNavRightControl } from './src/domain/top-nav';
 import { getUnifiedSyncMessage } from './src/services/unified-data';
 import { useKolamAuthController } from './src/hooks/use-kolam-auth-controller';
 import { useKolamCashflowController } from './src/hooks/use-kolam-cashflow-controller';
@@ -29,6 +34,8 @@ import { useKolamWorkspaceSurfaceController } from './src/hooks/use-kolam-worksp
 
 function App() {
   const localFirstSyncedOwnerRef = React.useRef<string | null>(null);
+  const [activeChatRail, setActiveChatRail] =
+    React.useState<KolamGlobalChatRailMode | null>(null);
   const deviceIdentityStatus = useKolamNativeDeviceIdentity();
   const {
     accessScope,
@@ -288,6 +295,23 @@ function App() {
     setIsCommandPaletteOpen,
     setIsUserMenuOpen,
   });
+  const handleChatControlPress = React.useCallback(
+    (control: TopNavRightControl) => {
+      const nextMode = getChatRailMode(control);
+
+      if (!nextMode) {
+        return;
+      }
+
+      setActiveChatRail(currentMode =>
+        currentMode === nextMode ? null : nextMode,
+      );
+    },
+    [],
+  );
+  const handleChatRailClose = React.useCallback(() => {
+    setActiveChatRail(null);
+  }, []);
 
   const { dashboardHeader, overlay, sidebar, topNavigation } =
     useKolamShellChromeController({
@@ -315,6 +339,7 @@ function App() {
       onAvatarPress: toggleUserMenu,
       onBreadcrumbPress: handleBreadcrumbPress,
       onBreadcrumbDashboardPress: openDashboardFromBreadcrumb,
+      onChatControlPress: handleChatControlPress,
       onCommandPaletteClose: handleCommandPaletteClose,
       onCommandSearchChange: setCommandSearch,
       onCommandSelect: handleCommandSelect,
@@ -453,6 +478,14 @@ function App() {
         topNavigation={topNavigation}
         overlay={overlay}
         dashboardHeader={dashboardHeader}
+        rightRail={
+          activeChatRail ? (
+            <KolamGlobalChatRail
+              mode={activeChatRail}
+              onClose={handleChatRailClose}
+            />
+          ) : null
+        }
       >
         <KolamWorkspaceSurface {...workspace} runtime={runtime} />
       </KolamAppShellSurface>
@@ -468,6 +501,20 @@ function getKolamLoginDeviceIdentityMessage(): string {
 
 function getCacheOwnerId(user: { id?: string; email?: string } | null) {
   return user?.id ?? user?.email ?? null;
+}
+
+function getChatRailMode(
+  control: TopNavRightControl,
+): KolamGlobalChatRailMode | null {
+  if (control.id === 'chat-inbox') {
+    return 'inbox';
+  }
+
+  if (control.id === 'chat-team') {
+    return 'team-chat';
+  }
+
+  return null;
 }
 
 export default App;

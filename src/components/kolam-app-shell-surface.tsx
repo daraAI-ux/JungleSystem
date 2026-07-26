@@ -22,6 +22,7 @@ export interface KolamAppShellSurfaceProps {
   children: React.ReactNode;
   dashboardHeader: KolamDashboardHeaderProps;
   overlay: KolamOverlaySurfaceProps;
+  rightRail?: React.ReactNode;
   sidebar: KolamSidebarProps;
   topNavigation: KolamTopNavigationProps;
 }
@@ -30,6 +31,7 @@ export function KolamAppShellSurface({
   children,
   dashboardHeader,
   overlay,
+  rightRail,
   sidebar,
   topNavigation,
 }: KolamAppShellSurfaceProps) {
@@ -56,6 +58,8 @@ export function KolamAppShellSurface({
           {children}
         </ScrollView>
       </KolamShellFrame>
+
+      {rightRail}
     </KolamShellFrame>
   );
 }

@@ -40,6 +40,7 @@ export function useKolamShellChromeController({
   onAvatarPress,
   onBreadcrumbPress,
   onBreadcrumbDashboardPress,
+  onChatControlPress,
   onCommandPaletteClose,
   onCommandSearchChange,
   onCommandSelect,
@@ -86,6 +87,9 @@ export function useKolamShellChromeController({
   onAvatarPress: () => void;
   onBreadcrumbPress?: (item: TopNavBreadcrumbItem) => void;
   onBreadcrumbDashboardPress: () => void;
+  onChatControlPress?: ReturnType<
+    typeof useKolamTopNavigationController
+  >['topNavigation']['onChatControlPress'];
   onCommandPaletteClose: () => void;
   onCommandSearchChange: (search: string) => void;
   onCommandSelect: (command: CommandEntry) => Promise<void>;
@@ -142,6 +146,7 @@ export function useKolamShellChromeController({
     onAvatarPress,
     onBreadcrumbPress,
     onBreadcrumbDashboardPress,
+    onChatControlPress,
     onNotificationPress,
     onToggleSidebar,
     profilePhotoUrl,
