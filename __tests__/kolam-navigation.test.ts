@@ -633,4 +633,17 @@ describe('kolamNavigationSections', () => {
     );
     expect(ordered).toHaveLength(kolamNavigationSections.length);
   });
+
+  it('uses the native Web Settings route for the compact Settings sidebar entry', () => {
+    const settingsSection = kolamSidebarNavigationSections.find(
+      section => section.id === 'settings',
+    );
+
+    expect(settingsSection?.items).toEqual([
+      expect.objectContaining({
+        label: 'Pengaturan',
+        route: '/settings/websetting',
+      }),
+    ]);
+  });
 });

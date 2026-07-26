@@ -80,7 +80,11 @@ export function useKolamNavigationController({
 
   const handleModuleSelect = (module: AppModule) => {
     setActiveModule(module);
-    setActiveNavigationItem(null);
+    setActiveNavigationItem(
+      module === 'settings'
+        ? getKolamNavigationItemByRoute('/settings/websetting')
+        : null,
+    );
     setActivePluginRoute(null);
     setActiveAmSurface(null);
     setActiveKolamSurface(null);
@@ -178,7 +182,9 @@ export function useKolamNavigationController({
 
     if (item.id === 'settings') {
       setActiveModule('settings');
-      setActiveNavigationItem(getKolamNavigationItemByRoute('/settings/roles'));
+      setActiveNavigationItem(
+        getKolamNavigationItemByRoute('/settings/websetting'),
+      );
       setActivePluginRoute(null);
       setActiveAmSurface(null);
       setActiveKolamSurface(null);

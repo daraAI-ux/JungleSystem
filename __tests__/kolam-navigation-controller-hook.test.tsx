@@ -635,4 +635,33 @@ describe('Kolam navigation controller hook', () => {
     expect(requireNavigationController(latest).activeNavigationItem).toBeNull();
     expect(requireNavigationController(latest).activePluginRoute).toBeNull();
   });
+
+  it('opens the top Settings module on the native Web Settings landing', async () => {
+    const messages: string[] = [];
+    let latest: NavigationController | null = null;
+
+    await ReactTestRenderer.act(async () => {
+      ReactTestRenderer.create(
+        <NavigationHarness
+          messages={messages}
+          onRender={controller => {
+            latest = controller;
+          }}
+        />,
+      );
+    });
+
+    await ReactTestRenderer.act(async () => {
+      requireNavigationController(latest).handleModuleSelect('settings');
+    });
+
+    expect(requireNavigationController(latest).activeModule).toBe('settings');
+    expect(requireNavigationController(latest).activeNavigationItem).toEqual(
+      expect.objectContaining({
+        label: 'Pengaturan Web',
+        route: '/settings/websetting',
+      }),
+    );
+    expect(requireNavigationController(latest).activePluginRoute).toBeNull();
+  });
 });

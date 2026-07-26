@@ -941,7 +941,7 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
   {
     id: 'settings',
     title: 'Pengaturan',
-    items: [sidebarItem('/settings/system', { label: 'Pengaturan' })],
+    items: [sidebarItem('/settings/websetting', { label: 'Pengaturan' })],
   },
 ];
 

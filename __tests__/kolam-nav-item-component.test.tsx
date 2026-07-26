@@ -5,13 +5,17 @@ import {KolamNavItem} from '../src/components/kolam-nav-item';
 import {getShellModule} from '../src/domain/app-shell';
 
 describe('KolamNavItem', () => {
-  it('renders the module label, route count, and selected state', async () => {
+  it('renders non-Kolam module route count and selected state', async () => {
     const onPress = jest.fn();
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
     await ReactTestRenderer.act(async () => {
       renderer = ReactTestRenderer.create(
-        <KolamNavItem active module={getShellModule('kolam')} onPress={onPress} />,
+        <KolamNavItem
+          active
+          module={getShellModule('checkout')}
+          onPress={onPress}
+        />,
       );
     });
 
@@ -25,8 +29,32 @@ describe('KolamNavItem', () => {
     expect(onPress).toHaveBeenCalledTimes(1);
     expect(pressable.props.accessibilityState).toEqual({selected: true});
     expect(textNodes.map(node => node.props.children)).toEqual(
-      expect.arrayContaining(['Kolam', getShellModule('kolam').routes.length]),
+      expect.arrayContaining([
+        'Checkout',
+        getShellModule('checkout').routes.length,
+      ]),
     );
+  });
+
+  it('keeps top Kolam area modules free from route-count badges', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamNavItem
+          active
+          module={getShellModule('settings')}
+          onPress={jest.fn()}
+        />,
+      );
+    });
+
+    const labels = renderer!.root
+      .findAllByType(Text)
+      .map(node => node.props.children);
+
+    expect(labels).toContain('Pengaturan');
+    expect(labels).not.toContain(getShellModule('settings').routes.length);
   });
 
   it('keeps collapsed sidebar items icon-only', async () => {
