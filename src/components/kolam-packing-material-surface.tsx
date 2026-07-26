@@ -41,6 +41,10 @@ import {
   KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
+import {
+  KolamEntityDetailAssetsPanel,
+  type KolamEntityDetailAsset,
+} from './kolam-entity-detail-assets-panel';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamNativeFormSection } from './kolam-native-form-section';
 import { KolamRemoteImage } from './kolam-remote-image';
@@ -50,7 +54,6 @@ import {
 } from './kolam-pricing-detail-widgets';
 import { appConfig } from '../config/app';
 import { getKolamPackingMaterialUsedIn, uploadKolamPackingMaterialAsset, deleteKolamPackingMaterialAsset } from '../services/kolam-packing-option-api';
-import { pickNativeAssetFile, type NativeImagePickerResult } from '../services/native-file-picker';
 import { KolamControlTabList } from './kolam-control-tab-list';
 import { containsHtmlMarkup, KolamHtmlContent } from './kolam-html-content';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
@@ -632,7 +635,7 @@ function KolamPackingMaterialDetail({
           onRouteChange={onRouteChange}
         />
       ) : (
-        <PackingAssetsPanel controller={controller} item={item} />
+        <KolamPackingMaterialAssetsPanel controller={controller} item={item} />
       )}
       <KolamDeleteConfirmDialog
         itemLabel={deleteCandidate?.name}
@@ -886,168 +889,37 @@ function PackingUsageCard({
   );
 }
 
-function PackingAssetsPanel({
+function KolamPackingMaterialAssetsPanel({
   controller,
   item,
 }: {
   controller: KolamPackingMaterialController;
   item: KolamPackingMaterial;
 }) {
-  const [title, setTitle] = React.useState('');
-  const [file, setFile] = React.useState<NativeImagePickerResult | null>(null);
-  const [busy, setBusy] = React.useState(false);
-  const [message, setMessage] = React.useState('');
-  const [error, setError] = React.useState('');
+  const uploadAsset = React.useCallback(async (title: string, localUri: string) => {
+    const updated = await uploadKolamPackingMaterialAsset(item.id, title, localUri);
+    await controller.onSelectMaterial(updated);
+    return updated.assets;
+  }, [controller, item.id]);
 
-  const chooseFile = React.useCallback(async () => {
-    setError('');
-    setMessage('');
-    try {
-      const result = await pickNativeAssetFile();
-      if (!result.cancelled) {
-        setFile(result);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Gagal membuka pemilih file aset.');
-    }
-  }, []);
+  const deleteAsset = React.useCallback(async (assetId: string) => {
+    const updated = await deleteKolamPackingMaterialAsset(item.id, assetId);
+    await controller.onSelectMaterial(updated);
+    return updated.assets;
+  }, [controller, item.id]);
 
-  const uploadAsset = React.useCallback(async () => {
-    const assetTitle = title.trim();
-    const localUri = file?.uri ?? file?.path ?? '';
-    if (!assetTitle) {
-      setError('Judul aset wajib diisi.');
-      return;
-    }
-    if (!localUri) {
-      setError('Pilih file aset terlebih dahulu.');
-      return;
-    }
-
-    setBusy(true);
-    setError('');
-    setMessage('');
-    try {
-      const updated = await uploadKolamPackingMaterialAsset(
-        item.id,
-        assetTitle,
-        localUri,
-      );
-      await controller.onSelectMaterial(updated);
-      setTitle('');
-      setFile(null);
-      setMessage('Aset berhasil diunggah.');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Gagal mengunggah aset.');
-    } finally {
-      setBusy(false);
-    }
-  }, [controller, file, item.id, title]);
-
-  const deleteAsset = React.useCallback(
-    async (assetId: string) => {
-      setBusy(true);
-      setError('');
-      setMessage('');
-      try {
-        const updated = await deleteKolamPackingMaterialAsset(item.id, assetId);
-        await controller.onSelectMaterial(updated);
-        setMessage('Aset berhasil dihapus.');
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Gagal menghapus aset.');
-      } finally {
-        setBusy(false);
-      }
-    },
-    [controller, item.id],
-  );
+  const downloadAsset = React.useCallback((asset: KolamEntityDetailAsset) => {
+    openPackingAssetDownload(item.id, asset.id);
+  }, [item.id]);
 
   return (
-    <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
-      <View style={styles.detailCardHeader}>
-        <View style={styles.detailTitleWrap}>
-          <Text style={styles.detailCardTitle}>Aset</Text>
-          <Text style={styles.detailCardDescription}>
-            Dokumen internal seperti PDF, Word, Excel, dan gambar. Tidak ditampilkan di webstore.
-          </Text>
-        </View>
-      </View>
-      <View style={styles.assetUploadCard}>
-        <View style={styles.assetInputWrap}>
-          <Text style={styles.fieldLabel}>Judul</Text>
-          <KolamFormTextField
-            editable={!busy}
-            onChangeText={setTitle}
-            placeholder="Judul aset"
-            style={settingsWebFormStyles.settingsWebFormFieldValue}
-            value={title}
-          />
-          <Text style={styles.helpText}>Tipe file: PDF, Word, Excel, PNG, JPG.</Text>
-        </View>
-        <View style={styles.assetActions}>
-          <KolamButton disabled={busy} label="Pilih file" onPress={chooseFile} />
-          <KolamButton
-            disabled={busy || !title.trim() || !file}
-            label={busy ? 'Mengunggah...' : 'Unggah file'}
-            onPress={uploadAsset}
-          />
-        </View>
-        {file ? (
-          <Text style={styles.helpText}>
-            File dipilih: {file.name ?? file.path ?? file.uri}
-          </Text>
-        ) : null}
-        {error ? <Text style={styles.errorText}>{error}</Text> : null}
-        {message ? <Text style={styles.successText}>{message}</Text> : null}
-      </View>
-      {item.assets.length ? (
-        <View style={styles.simpleTable}>
-          <View style={[styles.simpleTableRow, styles.simpleTableHeader]}>
-            <Text style={[styles.simpleTableHead, styles.assetTitleCell]}>Judul</Text>
-            <Text style={[styles.simpleTableHead, styles.assetSmallCell]}>Ukuran file</Text>
-            <Text style={[styles.simpleTableHead, styles.assetSmallCell]}>Tipe file</Text>
-            <Text style={[styles.simpleTableHead, styles.assetActionCell]}>Link download</Text>
-            <Text style={[styles.simpleTableHead, styles.assetActionCell]}>Aksi</Text>
-          </View>
-          {item.assets.map(asset => (
-            <View key={asset.id} style={styles.simpleTableRow}>
-              <View style={styles.assetTitleCell}>
-                <Text style={styles.tableTitle}>{asset.title || asset.name}</Text>
-                {asset.originalFilename ? (
-                  <Text style={styles.tableMeta}>{asset.originalFilename}</Text>
-                ) : null}
-              </View>
-              <Text style={[styles.simpleTableText, styles.assetSmallCell]}>
-                {formatFileSize(asset.fileSize || asset.size)}
-              </Text>
-              <Text style={[styles.simpleTableText, styles.assetSmallCell]}>
-                {formatAssetType(asset)}
-              </Text>
-              <View style={styles.assetActionCell}>
-                <KolamButton
-                  label="Unduh"
-                  onPress={() => openPackingAssetDownload(item.id, asset.id)}
-                  style={styles.tableActionButton}
-                />
-              </View>
-              <View style={styles.assetActionCell}>
-                <KolamButton
-                  disabled={busy}
-                  intent="danger"
-                  label="Hapus"
-                  onPress={() => {
-                    void deleteAsset(asset.id);
-                  }}
-                  style={styles.tableActionButton}
-                />
-              </View>
-            </View>
-          ))}
-        </View>
-      ) : (
-        <Text style={styles.emptyText}>Belum ada aset.</Text>
-      )}
-    </KolamContentFrame>
+    <KolamEntityDetailAssetsPanel
+      assets={item.assets}
+      deleteAsset={deleteAsset}
+      downloadAsset={downloadAsset}
+      itemType="aset bahan kemasan"
+      uploadAsset={uploadAsset}
+    />
   );
 }
 function KolamPackingMaterialForm({
@@ -1555,32 +1427,6 @@ function getUsageRoute(row: KolamPackingCatalogUsageRow) {
   return `/products/${row.entityId}`;
 }
 
-function formatFileSize(value: number) {
-  if (!value || value <= 0) {
-    return '-';
-  }
-  const units = ['B', 'KB', 'MB', 'GB'];
-  let size = value;
-  let unitIndex = 0;
-  while (size >= 1024 && unitIndex < units.length - 1) {
-    size /= 1024;
-    unitIndex += 1;
-  }
-  return `${size.toFixed(size >= 10 || unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
-}
-
-function formatAssetType(asset: KolamPackingMaterial['assets'][number]) {
-  const mimeType = asset.mimeType || asset.type;
-  if (mimeType) {
-    if (mimeType.includes('pdf')) return 'PDF';
-    if (mimeType.includes('word')) return 'Word';
-    if (mimeType.includes('excel') || mimeType.includes('spreadsheet')) return 'Excel';
-    if (mimeType.startsWith('image/')) return 'Gambar';
-    return mimeType;
-  }
-  return asset.originalFilename.split('.').pop()?.toUpperCase() || '-';
-}
-
 function openPackingAssetDownload(packingId: string, assetId: string) {
   const base = appConfig.kolamApiBaseUrl.replace(/\/$/, '');
   void Linking.openURL(
@@ -1747,10 +1593,6 @@ function createPackingDetailTimestamp(item: KolamPackingMaterial) {
 }
 
 const styles = StyleSheet.create({
-  tableActionButton: {
-    minHeight: 28,
-    paddingHorizontal: 8,
-  },
   emptyText: {
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
@@ -2154,34 +1996,6 @@ const styles = StyleSheet.create({
     minWidth: 60,
     textAlign: 'right',
   },
-  assetUploadCard: {
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: 1,
-    gap: 10,
-    padding: 12,
-  },
-  assetInputWrap: {
-    gap: 6,
-  },
-  assetActions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  helpText: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
-    fontWeight: '700',
-    lineHeight: 18,
-  },
-  successText: {
-    color: V.colors.primary,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
-    fontWeight: '900',
-    lineHeight: 18,
-  },
   errorText: {
     color: V.colors.danger,
     fontFamily: V.fontFamily,
@@ -2189,19 +2003,6 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     lineHeight: 18,
     padding: 12,
-  },
-  assetTitleCell: {
-    flex: 2,
-    minWidth: 220,
-  },
-  assetSmallCell: {
-    flex: 1,
-    minWidth: 100,
-  },
-  assetActionCell: {
-    alignItems: 'flex-end',
-    flex: 0.8,
-    minWidth: 96,
   },
   mutedDash: {
     color: V.colors.mutedFg,
