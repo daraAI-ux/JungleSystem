@@ -45,7 +45,7 @@
   <Extensions>
     <Extension Category="windows.activatableClass.inProcessServer">
       <InProcessServer>
-        <Path>KolamWindows\RNSVG.dll</Path>
+        <Path>RNSVG\RNSVG.dll</Path>
         <ActivatableClass ActivatableClassId="RNSVG.ReactPackageProvider" ThreadingModel="both" />
       </InProcessServer>
     </Extension>
