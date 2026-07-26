@@ -93,7 +93,7 @@ function KolamPackingMaterialShell({
 }) {
   return (
     <View style={styles.surface}>
-      {controller.mode !== 'list' ? (
+      {controller.mode === 'edit' || controller.mode === 'new' ? (
         <View style={styles.headerActions}>
           <KolamButton
             label="Daftar"
@@ -581,18 +581,33 @@ function KolamPackingMaterialDetail({
 
   return (
     <View style={styles.stack}>
-      <View style={styles.detailTopActions}>
-        <KolamButton
-          intent="primary"
-          label="Rubah"
-          onPress={controller.onEdit}
-        />
-        <KolamButton
-          disabled={item.status !== 'active' || controller.saving}
-          intent="danger"
-          label="Nonaktifkan"
-          onPress={() => setDeleteCandidate(item)}
-        />
+      <View style={styles.detailPageHeader}>
+        <View style={styles.detailHeading}>
+          <Text style={styles.detailPageTitle}>{item.name}</Text>
+          <Text style={styles.detailPageMeta}>
+            {createPackingDetailTimestamp(item)}
+          </Text>
+        </View>
+        <View style={styles.detailTopActions}>
+          <KolamButton
+            label="Daftar"
+            onPress={() => {
+              controller.onBackToList();
+              onRouteChange?.('/packing-materials');
+            }}
+          />
+          <KolamButton
+            intent="primary"
+            label="Rubah"
+            onPress={controller.onEdit}
+          />
+          <KolamButton
+            disabled={item.status !== 'active' || controller.saving}
+            intent="danger"
+            label="Nonaktifkan"
+            onPress={() => setDeleteCandidate(item)}
+          />
+        </View>
       </View>
       <KolamControlTabList
         accessibilityLabel="Bagian detail bahan kemasan"
@@ -1808,6 +1823,15 @@ function formatDateTime(value: string) {
   }).format(date);
 }
 
+function createPackingDetailTimestamp(item: KolamPackingMaterial) {
+  const parts = [
+    item.createdAt ? `Dibuat ${formatDateTime(item.createdAt)}` : '',
+    item.updatedAt ? `Diperbarui ${formatDateTime(item.updatedAt)}` : '',
+  ].filter(Boolean);
+
+  return parts.length ? parts.join(' | ') : 'Tanggal belum tersedia';
+}
+
 const styles = StyleSheet.create({
   tableActionButton: {
     minHeight: 28,
@@ -1823,9 +1847,37 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   detailTopActions: {
+    alignItems: 'center',
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    flexWrap: 'wrap',
     gap: 8,
+    justifyContent: 'flex-end',
+  },
+  detailPageHeader: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+    justifyContent: 'space-between',
+  },
+  detailHeading: {
+    flex: 1,
+    gap: 4,
+    minWidth: 260,
+  },
+  detailPageTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 26,
+    fontWeight: '900',
+    lineHeight: 32,
+  },
+  detailPageMeta: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 18,
   },
   detailSectionStack: {
     gap: 16,
