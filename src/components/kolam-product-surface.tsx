@@ -4663,9 +4663,9 @@ function ProductRawOverviewTab({
                 {product.brands.length ? (
                   <View style={styles.rawMetaBlock}>
                     <Text style={styles.metaLabel}>Merek</Text>
-                    <View style={styles.miniBrandRow}>
+                    <View style={[styles.miniBrandRow, styles.rawBrandLogoRow]}>
                       {product.brands.map(brand => (
-                        <View key={brand.id || brand.name} style={styles.miniBrandLogoFrame}>
+                        <View key={brand.id || brand.name} style={[styles.miniBrandLogoFrame, styles.rawBrandLogoFrame]}>
                           {brand.logoUri ? (
                             <KolamRemoteImage
                               accessibilityLabel={`Logo ${brand.name}`}
@@ -8087,6 +8087,13 @@ const styles = StyleSheet.create({
     minWidth: 54,
     overflow: 'hidden',
     paddingHorizontal: 8,
+  },
+  rawBrandLogoRow: {
+    justifyContent: 'flex-start',
+  },
+  rawBrandLogoFrame: {
+    height: 34,
+    width: 42,
   },
   rawExternalButton: {
     alignItems: 'center',
