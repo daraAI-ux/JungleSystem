@@ -25,6 +25,7 @@ export function KolamSettingsSurfaceBody({
         marketplaceLandingNoticeDraft={controller.marketplaceLandingNoticeDraft}
         marketplaceLandingSaveStatus={controller.marketplaceLandingSaveStatus}
         marketplaceLandingMessage={controller.marketplaceLandingMessage}
+        marketplaceLandingAssetStatus={controller.marketplaceLandingAssetStatus}
         onClearMarketplaceLandingNoticeDraft={
           controller.clearMarketplaceLandingNoticeDraft
         }
@@ -40,6 +41,33 @@ export function KolamSettingsSurfaceBody({
         }}
         onSaveMarketplaceLandingNotice={() => {
           void controller.saveMarketplaceLandingNotice();
+        }}
+        onUploadMarketplaceAnnouncementImage={banner => {
+          void controller.uploadMarketplaceAnnouncementImage(banner);
+        }}
+        onUploadMarketplaceBioactiveStepImage={index => {
+          void controller.uploadMarketplaceBioactiveStepImage(index);
+        }}
+        onUploadMarketplaceCategoryBannerImage={banner => {
+          void controller.uploadMarketplaceCategoryBannerImage(banner);
+        }}
+        onUploadMarketplaceCtaBackground={() => {
+          void controller.uploadMarketplaceCtaBackground();
+        }}
+        onUploadMarketplaceDaraAvatar={() => {
+          void controller.uploadMarketplaceDaraAvatar();
+        }}
+        onUploadMarketplaceFeaturedCollectionImage={index => {
+          void controller.uploadMarketplaceFeaturedCollectionImage(index);
+        }}
+        onUploadMarketplaceHeroImage={slide => {
+          void controller.uploadMarketplaceHeroImage(slide);
+        }}
+        onUploadMarketplaceLogo={() => {
+          void controller.uploadMarketplaceLogo();
+        }}
+        onUploadMarketplaceYoutubeBackground={() => {
+          void controller.uploadMarketplaceYoutubeBackground();
         }}
         onToggleMaintenanceMode={() =>
           controller.setMaintenanceMode(current => !current)

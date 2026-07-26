@@ -79,6 +79,7 @@ describe('settings web widgets', () => {
           }}
           marketplaceLandingSaveStatus="idle"
           marketplaceLandingMessage=""
+          marketplaceLandingAssetStatus={{}}
           marketplaceLandingOverview={{
             status: 'live',
             message: '',
@@ -135,6 +136,15 @@ describe('settings web widgets', () => {
           onSaveMarketplaceLandingCta={jest.fn()}
           onSaveMarketplaceLandingYoutube={jest.fn()}
           onSaveMarketplaceLandingNotice={jest.fn()}
+          onUploadMarketplaceAnnouncementImage={jest.fn()}
+          onUploadMarketplaceBioactiveStepImage={jest.fn()}
+          onUploadMarketplaceCategoryBannerImage={jest.fn()}
+          onUploadMarketplaceCtaBackground={jest.fn()}
+          onUploadMarketplaceDaraAvatar={jest.fn()}
+          onUploadMarketplaceFeaturedCollectionImage={jest.fn()}
+          onUploadMarketplaceHeroImage={jest.fn()}
+          onUploadMarketplaceLogo={jest.fn()}
+          onUploadMarketplaceYoutubeBackground={jest.fn()}
           onToggleMaintenanceMode={jest.fn()}
           onToggleStorefrontEnabled={jest.fn()}
           onUploadNotificationSound={jest.fn()}
@@ -156,6 +166,9 @@ describe('settings web widgets', () => {
       expect.arrayContaining([
         'Marketplace Landing Overview',
         'Marketplace Landing Controls',
+        'Marketplace Asset Uploads',
+        'Upload logo',
+        'Upload DARA avatar',
         'CTA Section',
         'YouTube Section',
         'Customer Notices',

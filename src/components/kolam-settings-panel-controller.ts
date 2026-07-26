@@ -49,12 +49,20 @@ import {
   getKolamYoutubeSectionAdmin,
   deleteKolamNotificationSound,
   deleteKolamCustomerNotice,
+  updateKolamAnnouncementBanner,
+  updateKolamBioactiveEcosystem,
+  updateKolamCategoryBanner,
   updateKolamRole,
   updateKolamCtaSection,
+  updateKolamFeaturedCollections,
+  updateKolamHeroSlide,
   updateKolamYoutubeSection,
   updateKolamWebSetting,
   updateKolamWebSettingVersion,
+  uploadKolamDaraAvatar,
+  uploadKolamMarketplaceContentImage,
   uploadKolamNotificationSound,
+  uploadKolamWebSettingLogo,
   upsertKolamCustomerNotice,
   type KolamPluginConfigKey,
   type KolamActivityLog,
@@ -76,7 +84,10 @@ import {
 } from '../services/kolam-api';
 import {getCurrentUser} from '../services/auth-api';
 import {ApiError} from '../lib/api-error';
-import {pickNativeAudioFile} from '../services/native-file-picker';
+import {
+  pickNativeAudioFile,
+  pickNativeImageFile,
+} from '../services/native-file-picker';
 
 type WebSettingSaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 type RoleSaveStatus = 'idle' | 'loading' | 'saving' | 'saved' | 'error';
@@ -84,6 +95,7 @@ type ActivityLogStatus = 'idle' | 'loading' | 'live' | 'error';
 type NotificationSoundStatus = 'idle' | 'uploading' | 'deleting';
 type MarketplaceLandingOverviewStatus = 'idle' | 'loading' | 'live' | 'error';
 type MarketplaceLandingSaveStatus = 'idle' | 'saving' | 'saved' | 'error';
+type MarketplaceLandingAssetStatus = 'idle' | 'uploading';
 const maskedSecretPlaceholder = '********';
 const notificationSoundDraftFieldByType: Record<
   KolamNotificationSoundType,
@@ -416,6 +428,8 @@ export function useKolamSettingsPanelController(
     useState<MarketplaceLandingSaveStatus>('idle');
   const [marketplaceLandingMessage, setMarketplaceLandingMessage] =
     useState('');
+  const [marketplaceLandingAssetStatus, setMarketplaceLandingAssetStatus] =
+    useState<Partial<Record<string, MarketplaceLandingAssetStatus>>>({});
   const [webSettingDraft, setWebSettingDraft] = useState<WebSettingDraft>(
     emptyWebSettingDraft,
   );
@@ -865,6 +879,180 @@ export function useKolamSettingsPanelController(
       setMarketplaceLandingMessage(getMarketplaceLandingSaveErrorMessage(error));
     }
   };
+  const uploadMarketplaceHeroImage = (slide: KolamHeroSlide) =>
+    uploadMarketplaceAsset(`hero:${slide._id}`, async localUri => {
+      const updated = await updateKolamHeroSlide(slide._id, {
+        eyebrow: slide.eyebrow ?? '',
+        title: slide.title,
+        subtitle: slide.subtitle,
+        description: slide.description,
+        link: slide.link,
+        linkText: slide.linkText,
+        secondaryLink: slide.secondaryLink,
+        secondaryLinkText: slide.secondaryLinkText,
+        order: slide.order,
+        isActive: slide.isActive,
+        imageLocalUri: localUri,
+      });
+      setMarketplaceLandingOverview(current => ({
+        ...current,
+        heroSlides: replaceById(current.heroSlides, updated),
+      }));
+      setMarketplaceLandingMessage('Hero slide image berhasil diupload.');
+    });
+  const uploadMarketplaceCategoryBannerImage = (banner: KolamCategoryBanner) =>
+    uploadMarketplaceAsset(`category:${banner._id}`, async localUri => {
+      const updated = await updateKolamCategoryBanner(banner._id, {
+        categorySlug: banner.categorySlug,
+        order: banner.order,
+        isActive: banner.isActive,
+        imageLocalUri: localUri,
+      });
+      setMarketplaceLandingOverview(current => ({
+        ...current,
+        categoryBanners: replaceById(current.categoryBanners, updated),
+      }));
+      setMarketplaceLandingMessage('Category banner image berhasil diupload.');
+    });
+  const uploadMarketplaceAnnouncementImage = (
+    banner: KolamAnnouncementBanner,
+  ) =>
+    uploadMarketplaceAsset(`announcement:${banner._id}`, async localUri => {
+      const updated = await updateKolamAnnouncementBanner(banner._id, {
+        link: banner.link,
+        order: banner.order,
+        isActive: banner.isActive,
+        imageLocalUri: localUri,
+      });
+      setMarketplaceLandingOverview(current => ({
+        ...current,
+        announcementBanners: replaceById(current.announcementBanners, updated),
+      }));
+      setMarketplaceLandingMessage('Announcement banner image berhasil diupload.');
+    });
+  const uploadMarketplaceCtaBackground = () =>
+    uploadMarketplaceAsset('cta-background', async localUri => {
+      const ctaSection = await updateKolamCtaSection({
+        title: marketplaceLandingCtaDraft.title.trim(),
+        description: marketplaceLandingCtaDraft.description.trim(),
+        buttonText: marketplaceLandingCtaDraft.buttonText.trim(),
+        buttonLink: marketplaceLandingCtaDraft.buttonLink.trim(),
+        isActive: marketplaceLandingCtaDraft.isActive,
+        backgroundImageLocalUri: localUri,
+      });
+      setMarketplaceLandingCtaDraft(createMarketplaceLandingCtaDraft(ctaSection));
+      setMarketplaceLandingOverview(current => ({...current, ctaSection}));
+      setMarketplaceLandingMessage('CTA background berhasil diupload.');
+    });
+  const uploadMarketplaceYoutubeBackground = () =>
+    uploadMarketplaceAsset('youtube-background', async localUri => {
+      const youtubeSection = await updateKolamYoutubeSection({
+        link: marketplaceLandingYoutubeDraft.link.trim(),
+        title: marketplaceLandingYoutubeDraft.title.trim(),
+        subtitle: marketplaceLandingYoutubeDraft.subtitle.trim(),
+        isActive: marketplaceLandingYoutubeDraft.isActive,
+        backgroundImageLocalUri: localUri,
+      });
+      setMarketplaceLandingYoutubeDraft(
+        createMarketplaceLandingYoutubeDraft(youtubeSection),
+      );
+      setMarketplaceLandingOverview(current => ({...current, youtubeSection}));
+      setMarketplaceLandingMessage('YouTube background berhasil diupload.');
+    });
+  const uploadMarketplaceFeaturedCollectionImage = (index: number) =>
+    uploadMarketplaceAsset(`featured:${index}`, async localUri => {
+      const image = await uploadKolamMarketplaceContentImage(
+        'featured-collections',
+        localUri,
+      );
+      const currentRows =
+        marketplaceLandingOverview.marketplaceContent.featuredCollections ?? [];
+      const nextRows = currentRows.map((row, rowIndex) =>
+        rowIndex === index ? {...row, image} : row,
+      );
+      const marketplaceContent = await updateKolamFeaturedCollections(nextRows);
+      setMarketplaceLandingOverview(current => ({
+        ...current,
+        marketplaceContent,
+      }));
+      setMarketplaceLandingMessage('Featured collection image berhasil diupload.');
+    });
+  const uploadMarketplaceBioactiveStepImage = (index: number) =>
+    uploadMarketplaceAsset(`bioactive:${index}`, async localUri => {
+      const image = await uploadKolamMarketplaceContentImage(
+        'bioactive-ecosystem',
+        localUri,
+      );
+      const currentSteps =
+        marketplaceLandingOverview.marketplaceContent.bioactiveEcosystem
+          ?.steps ?? [];
+      const steps = currentSteps.map((step, stepIndex) =>
+        stepIndex === index ? {...step, image} : step,
+      );
+      const marketplaceContent = await updateKolamBioactiveEcosystem({steps});
+      setMarketplaceLandingOverview(current => ({
+        ...current,
+        marketplaceContent,
+      }));
+      setMarketplaceLandingMessage('Bioactive ecosystem image berhasil diupload.');
+    });
+  const uploadMarketplaceLogo = () =>
+    uploadMarketplaceAsset('websetting-logo', async localUri => {
+      const setting = await uploadKolamWebSettingLogo(localUri);
+      setWebSetting(setting);
+      setMarketplaceLandingMessage('Websetting logo berhasil diupload.');
+    });
+  const uploadMarketplaceDaraAvatar = () =>
+    uploadMarketplaceAsset('dara-avatar', async localUri => {
+      const response = await uploadKolamDaraAvatar(localUri);
+      if (response.daraAvatarUrl) {
+        setWebSetting(current =>
+          current
+            ? ({...current, daraAvatarUrl: response.daraAvatarUrl} as KolamWebSetting)
+            : current,
+        );
+      }
+      setMarketplaceLandingMessage('DARA avatar berhasil diupload.');
+    });
+  const uploadMarketplaceAsset = async (
+    key: string,
+    upload: (localUri: string) => Promise<void>,
+  ) => {
+    setMarketplaceLandingMessage('');
+
+    try {
+      const picked = await pickNativeImageFile();
+      if (picked.cancelled) {
+        return;
+      }
+
+      const localUri = picked.uri || picked.path || '';
+      if (!localUri) {
+        setMarketplaceLandingMessage('File image tidak valid.');
+        return;
+      }
+
+      if (!isAllowedMarketplaceImageFile(localUri, picked.extension)) {
+        setMarketplaceLandingMessage(
+          'Asset image hanya menerima JPG, PNG, WEBP, GIF, SVG, HEIC, atau HEIF.',
+        );
+        return;
+      }
+
+      setMarketplaceLandingAssetStatus(current => ({
+        ...current,
+        [key]: 'uploading',
+      }));
+      setMarketplaceLandingSaveStatus('saving');
+      await upload(localUri);
+      setMarketplaceLandingSaveStatus('saved');
+    } catch (error) {
+      setMarketplaceLandingSaveStatus('error');
+      setMarketplaceLandingMessage(getMarketplaceLandingSaveErrorMessage(error));
+    } finally {
+      setMarketplaceLandingAssetStatus(current => ({...current, [key]: 'idle'}));
+    }
+  };
   const uploadNotificationSound = async (type: KolamNotificationSoundType) => {
     setWebSettingMessage('');
 
@@ -1310,6 +1498,7 @@ export function useKolamSettingsPanelController(
     marketplaceLandingNoticeDraft,
     marketplaceLandingSaveStatus,
     marketplaceLandingMessage,
+    marketplaceLandingAssetStatus,
     roleRows,
     roles,
     roleDraft,
@@ -1354,6 +1543,15 @@ export function useKolamSettingsPanelController(
     saveMarketplaceLandingCta,
     saveMarketplaceLandingYoutube,
     saveMarketplaceLandingNotice,
+    uploadMarketplaceAnnouncementImage,
+    uploadMarketplaceBioactiveStepImage,
+    uploadMarketplaceCategoryBannerImage,
+    uploadMarketplaceCtaBackground,
+    uploadMarketplaceDaraAvatar,
+    uploadMarketplaceFeaturedCollectionImage,
+    uploadMarketplaceHeroImage,
+    uploadMarketplaceLogo,
+    uploadMarketplaceYoutubeBackground,
     webSettingDraft,
     webSettingMessage,
     webSettingSaveStatus,
@@ -1621,6 +1819,27 @@ function isAllowedNotificationSoundFile(localUri: string, extension?: string) {
     localUri.split(/[./\\]/).pop()?.toLowerCase();
 
   return inferredExtension === 'mp3' || inferredExtension === 'wav';
+}
+
+function isAllowedMarketplaceImageFile(localUri: string, extension?: string) {
+  const inferredExtension =
+    extension?.toLowerCase().replace(/^\./, '') ??
+    localUri.split(/[./\\]/).pop()?.toLowerCase();
+
+  return [
+    'jpg',
+    'jpeg',
+    'png',
+    'webp',
+    'gif',
+    'svg',
+    'heic',
+    'heif',
+  ].includes(inferredExtension ?? '');
+}
+
+function replaceById<Item extends {_id: string}>(items: Item[], next: Item) {
+  return items.map(item => (item._id === next._id ? next : item));
 }
 
 function getNotificationSoundPathFromResponse(

@@ -11,7 +11,10 @@ import {KolamSettingsWebFormSections} from './kolam-settings-web-widgets';
 import {KolamTextFieldRow} from './kolam-text-field-row';
 import {KolamToggleRow} from './kolam-toggle-row';
 import type {
+  KolamAnnouncementBanner,
+  KolamCategoryBanner,
   KolamCustomerTextNotice,
+  KolamHeroSlide,
   KolamNotificationSoundType,
   KolamPluginConfigKey,
 } from '../services/kolam-api';
@@ -107,12 +110,22 @@ export function KolamSettingsWebConfigSurface({
   marketplaceLandingNoticeDraft,
   marketplaceLandingSaveStatus,
   marketplaceLandingMessage,
+  marketplaceLandingAssetStatus,
   onClearMarketplaceLandingNoticeDraft,
   onDeleteMarketplaceLandingNotice,
   onEditMarketplaceLandingNotice,
   onSaveMarketplaceLandingCta,
   onSaveMarketplaceLandingYoutube,
   onSaveMarketplaceLandingNotice,
+  onUploadMarketplaceAnnouncementImage,
+  onUploadMarketplaceBioactiveStepImage,
+  onUploadMarketplaceCategoryBannerImage,
+  onUploadMarketplaceCtaBackground,
+  onUploadMarketplaceDaraAvatar,
+  onUploadMarketplaceFeaturedCollectionImage,
+  onUploadMarketplaceHeroImage,
+  onUploadMarketplaceLogo,
+  onUploadMarketplaceYoutubeBackground,
   onToggleMaintenanceMode,
   onToggleStorefrontEnabled,
   onSave,
@@ -142,12 +155,24 @@ export function KolamSettingsWebConfigSurface({
   marketplaceLandingNoticeDraft: MarketplaceLandingNoticeDraft;
   marketplaceLandingSaveStatus: 'idle' | 'saving' | 'saved' | 'error';
   marketplaceLandingMessage: string;
+  marketplaceLandingAssetStatus: Partial<Record<string, 'idle' | 'uploading'>>;
   onClearMarketplaceLandingNoticeDraft: () => void;
   onDeleteMarketplaceLandingNotice: (key: string) => void;
   onEditMarketplaceLandingNotice: (notice: KolamCustomerTextNotice) => void;
   onSaveMarketplaceLandingCta: () => void;
   onSaveMarketplaceLandingYoutube: () => void;
   onSaveMarketplaceLandingNotice: () => void;
+  onUploadMarketplaceAnnouncementImage: (
+    banner: KolamAnnouncementBanner,
+  ) => void;
+  onUploadMarketplaceBioactiveStepImage: (index: number) => void;
+  onUploadMarketplaceCategoryBannerImage: (banner: KolamCategoryBanner) => void;
+  onUploadMarketplaceCtaBackground: () => void;
+  onUploadMarketplaceDaraAvatar: () => void;
+  onUploadMarketplaceFeaturedCollectionImage: (index: number) => void;
+  onUploadMarketplaceHeroImage: (slide: KolamHeroSlide) => void;
+  onUploadMarketplaceLogo: () => void;
+  onUploadMarketplaceYoutubeBackground: () => void;
   onToggleMaintenanceMode: () => void;
   onToggleStorefrontEnabled: () => void;
   onSave: () => void;
@@ -941,7 +966,22 @@ export function KolamSettingsWebConfigSurface({
           ]}
         />
       ) : null}
-      <MarketplaceLandingOverviewPanel overview={marketplaceLandingOverview} />
+      <MarketplaceLandingOverviewPanel
+        assetStatus={marketplaceLandingAssetStatus}
+        disabled={disabled || marketplaceLandingSaveStatus === 'saving'}
+        onUploadAnnouncementImage={onUploadMarketplaceAnnouncementImage}
+        onUploadBioactiveStepImage={onUploadMarketplaceBioactiveStepImage}
+        onUploadCategoryBannerImage={onUploadMarketplaceCategoryBannerImage}
+        onUploadCtaBackground={onUploadMarketplaceCtaBackground}
+        onUploadDaraAvatar={onUploadMarketplaceDaraAvatar}
+        onUploadFeaturedCollectionImage={
+          onUploadMarketplaceFeaturedCollectionImage
+        }
+        onUploadHeroImage={onUploadMarketplaceHeroImage}
+        onUploadLogo={onUploadMarketplaceLogo}
+        onUploadYoutubeBackground={onUploadMarketplaceYoutubeBackground}
+        overview={marketplaceLandingOverview}
+      />
       <MarketplaceLandingControlsPanel
         ctaDraft={marketplaceLandingCtaDraft}
         disabled={disabled || marketplaceLandingSaveStatus === 'saving'}
@@ -966,8 +1006,30 @@ export function KolamSettingsWebConfigSurface({
 }
 
 function MarketplaceLandingOverviewPanel({
+  assetStatus,
+  disabled,
+  onUploadAnnouncementImage,
+  onUploadBioactiveStepImage,
+  onUploadCategoryBannerImage,
+  onUploadCtaBackground,
+  onUploadDaraAvatar,
+  onUploadFeaturedCollectionImage,
+  onUploadHeroImage,
+  onUploadLogo,
+  onUploadYoutubeBackground,
   overview,
 }: {
+  assetStatus: Partial<Record<string, 'idle' | 'uploading'>>;
+  disabled: boolean;
+  onUploadAnnouncementImage: (banner: KolamAnnouncementBanner) => void;
+  onUploadBioactiveStepImage: (index: number) => void;
+  onUploadCategoryBannerImage: (banner: KolamCategoryBanner) => void;
+  onUploadCtaBackground: () => void;
+  onUploadDaraAvatar: () => void;
+  onUploadFeaturedCollectionImage: (index: number) => void;
+  onUploadHeroImage: (slide: KolamHeroSlide) => void;
+  onUploadLogo: () => void;
+  onUploadYoutubeBackground: () => void;
   overview: MarketplaceLandingOverview;
 }) {
   const featuredCollections =
@@ -1088,7 +1150,248 @@ function MarketplaceLandingOverviewPanel({
           </View>
         ))}
       </View>
+      <View style={styles.marketplaceAssetSection}>
+        <KolamCopyStack
+          items={[
+            {
+              id: 'asset-title',
+              text: 'Marketplace Asset Uploads',
+              style: styles.marketplaceOverviewLabel,
+            },
+            {
+              id: 'asset-meta',
+              text: 'Replace images for existing live items. Create, delete, and reorder stay out of Fase 8D.',
+              style: styles.marketplaceOverviewMeta,
+            },
+          ]}
+        />
+        <View style={styles.marketplaceAssetActions}>
+          <MarketplaceAssetButton
+            disabled={disabled}
+            id="websetting-logo"
+            label="Upload logo"
+            onPress={onUploadLogo}
+            status={assetStatus}
+          />
+          <MarketplaceAssetButton
+            disabled={disabled}
+            id="dara-avatar"
+            label="Upload DARA avatar"
+            onPress={onUploadDaraAvatar}
+            status={assetStatus}
+          />
+          <MarketplaceAssetButton
+            disabled={disabled}
+            id="cta-background"
+            label="Upload CTA background"
+            onPress={onUploadCtaBackground}
+            status={assetStatus}
+          />
+          <MarketplaceAssetButton
+            disabled={disabled}
+            id="youtube-background"
+            label="Upload YouTube background"
+            onPress={onUploadYoutubeBackground}
+            status={assetStatus}
+          />
+        </View>
+        <MarketplaceAssetRows
+          disabled={disabled}
+          emptyText="No hero slides available for image replacement."
+          getId={item => `hero:${item._id}`}
+          getLabel={item => item.title || item._id}
+          items={overview.heroSlides}
+          onUpload={onUploadHeroImage}
+          status={assetStatus}
+          title="Hero slide images"
+        />
+        <MarketplaceAssetRows
+          disabled={disabled}
+          emptyText="No category banners available for image replacement."
+          getId={item => `category:${item._id}`}
+          getLabel={item => item.categorySlug || item._id}
+          items={overview.categoryBanners}
+          onUpload={onUploadCategoryBannerImage}
+          status={assetStatus}
+          title="Category banner images"
+        />
+        <MarketplaceAssetRows
+          disabled={disabled}
+          emptyText="No announcement banners available for image replacement."
+          getId={item => `announcement:${item._id}`}
+          getLabel={item => item.link || item._id}
+          items={overview.announcementBanners}
+          onUpload={onUploadAnnouncementImage}
+          status={assetStatus}
+          title="Announcement banner images"
+        />
+        <MarketplaceIndexedAssetRows
+          disabled={disabled}
+          emptyText="No featured collections available for image upload."
+          getId={index => `featured:${index}`}
+          getLabel={item => item.title || '-'}
+          items={featuredCollections}
+          onUpload={onUploadFeaturedCollectionImage}
+          status={assetStatus}
+          title="Featured collection images"
+        />
+        <MarketplaceIndexedAssetRows
+          disabled={disabled}
+          emptyText="No bioactive steps available for image upload."
+          getId={index => `bioactive:${index}`}
+          getLabel={item => item.key || '-'}
+          items={bioactiveSteps}
+          onUpload={onUploadBioactiveStepImage}
+          status={assetStatus}
+          title="Bioactive ecosystem images"
+        />
+      </View>
     </View>
+  );
+}
+
+function MarketplaceAssetRows<Item>({
+  disabled,
+  emptyText,
+  getId,
+  getLabel,
+  items,
+  onUpload,
+  status,
+  title,
+}: {
+  disabled: boolean;
+  emptyText: string;
+  getId: (item: Item) => string;
+  getLabel: (item: Item) => string;
+  items: Item[];
+  onUpload: (item: Item) => void;
+  status: Partial<Record<string, 'idle' | 'uploading'>>;
+  title: string;
+}) {
+  return (
+    <View style={styles.marketplaceAssetGroup}>
+      <KolamCopyStack
+        items={[{id: 'title', text: title, style: styles.marketplaceOverviewMeta}]}
+      />
+      {items.length ? (
+        items.map(item => {
+          const id = getId(item);
+          return (
+            <View key={id} style={styles.marketplaceAssetRow}>
+              <KolamCopyStack
+                containerStyle={styles.marketplaceOverviewCopy}
+                items={[
+                  {
+                    id: `${id}-label`,
+                    text: getLabel(item),
+                    style: styles.marketplaceOverviewDetail,
+                  },
+                ]}
+              />
+              <MarketplaceAssetButton
+                disabled={disabled}
+                id={id}
+                label="Upload image"
+                onPress={() => onUpload(item)}
+                status={status}
+              />
+            </View>
+          );
+        })
+      ) : (
+        <KolamCopyStack
+          items={[
+            {id: 'empty', text: emptyText, style: styles.marketplaceOverviewMeta},
+          ]}
+        />
+      )}
+    </View>
+  );
+}
+
+function MarketplaceIndexedAssetRows<Item>({
+  disabled,
+  emptyText,
+  getId,
+  getLabel,
+  items,
+  onUpload,
+  status,
+  title,
+}: {
+  disabled: boolean;
+  emptyText: string;
+  getId: (index: number) => string;
+  getLabel: (item: Item) => string;
+  items: Item[];
+  onUpload: (index: number) => void;
+  status: Partial<Record<string, 'idle' | 'uploading'>>;
+  title: string;
+}) {
+  return (
+    <View style={styles.marketplaceAssetGroup}>
+      <KolamCopyStack
+        items={[{id: 'title', text: title, style: styles.marketplaceOverviewMeta}]}
+      />
+      {items.length ? (
+        items.map((item, index) => {
+          const id = getId(index);
+          return (
+            <View key={id} style={styles.marketplaceAssetRow}>
+              <KolamCopyStack
+                containerStyle={styles.marketplaceOverviewCopy}
+                items={[
+                  {
+                    id: `${id}-label`,
+                    text: getLabel(item),
+                    style: styles.marketplaceOverviewDetail,
+                  },
+                ]}
+              />
+              <MarketplaceAssetButton
+                disabled={disabled}
+                id={id}
+                label="Upload image"
+                onPress={() => onUpload(index)}
+                status={status}
+              />
+            </View>
+          );
+        })
+      ) : (
+        <KolamCopyStack
+          items={[
+            {id: 'empty', text: emptyText, style: styles.marketplaceOverviewMeta},
+          ]}
+        />
+      )}
+    </View>
+  );
+}
+
+function MarketplaceAssetButton({
+  disabled,
+  id,
+  label,
+  onPress,
+  status,
+}: {
+  disabled: boolean;
+  id: string;
+  label: string;
+  onPress: () => void;
+  status: Partial<Record<string, 'idle' | 'uploading'>>;
+}) {
+  const uploading = status[id] === 'uploading';
+  return (
+    <KolamActionControlButton
+      disabled={disabled || uploading}
+      label={label}
+      loading={uploading}
+      loadingLabel="Uploading..."
+      onPress={onPress}
+    />
   );
 }
 
@@ -1427,6 +1730,28 @@ function getFirstTitles(values: string[]) {
 }
 
 const styles = StyleSheet.create({
+  marketplaceAssetActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  marketplaceAssetGroup: {
+    gap: 8,
+  },
+  marketplaceAssetRow: {
+    alignItems: 'center',
+    borderColor: '#e5e7eb',
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    justifyContent: 'space-between',
+    padding: 10,
+  },
+  marketplaceAssetSection: {
+    gap: 10,
+  },
   marketplaceControls: {
     borderColor: '#d1d5db',
     borderRadius: 8,
