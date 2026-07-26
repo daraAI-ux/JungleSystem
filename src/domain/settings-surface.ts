@@ -1,4 +1,9 @@
 import type {SyncActivityEntry} from './sync-activity';
+import type {
+  KolamWebSetting,
+  KolamWebSettingVersion,
+  KolamWebSettingVersions,
+} from '../services/kolam-api';
 
 export interface SettingsSurfaceItem {
   id: 'web-settings' | 'role-management' | 'activity-log';
@@ -1197,33 +1202,58 @@ export function getSettingsRoleMemberPreview(
   );
 }
 
-export function getSettingsWebConfigFields(): SettingsWebConfigField[] {
+export function getSettingsWebConfigFields(
+  webSetting?: KolamWebSetting | null,
+): SettingsWebConfigField[] {
+  const companyName = displayString(webSetting?.companyName, 'Kolam Dunia Anura');
+  const storefrontEnabled = webSetting?.livechatOnline === true ? 'Enabled' : 'Off';
+  const maintenancePos = webSetting?.maintenance?.pos === true ? 'On' : 'Off';
+
   return [
     {
       id: 'storefront-title',
       label: 'Storefront title',
-      value: 'Kolam Dunia Anura',
+      value: companyName,
       description: 'Display name used by the public storefront and header.',
       control: 'text',
     },
     {
       id: 'storefront-status',
       label: 'Storefront enabled',
-      value: 'Enabled',
+      value: storefrontEnabled,
       description: 'Native preview for /settings/websetting storefront status.',
       control: 'toggle',
     },
     {
       id: 'maintenance-mode',
       label: 'Maintenance mode',
-      value: 'Off',
+      value: maintenancePos,
       description: 'Operational toggle for maintenance banner/state review.',
       control: 'toggle',
     },
   ];
 }
 
-export function getSettingsWebFormSections(): SettingsWebFormSection[] {
+export function getSettingsWebFormSections(
+  webSetting?: KolamWebSetting | null,
+  versionAll?: KolamWebSettingVersions | null,
+  appVersion?: KolamWebSettingVersion | null,
+): SettingsWebFormSection[] {
+  const versions = {
+    ...(webSetting?.versions ?? {}),
+    ...(versionAll?.versions ?? {}),
+  };
+  const kolamVersion =
+    versions.kolam ?? appVersion?.version ?? webSetting?.version ?? '';
+  const origin = webSetting?.originAddress ?? {};
+  const social = webSetting?.socialMedia ?? {};
+  const biteshipApiKey = maskSecretField(
+    'biteship-api-key',
+    webSetting?.biteshipApiKeyConfigured
+      ? 'configured'
+      : webSetting?.biteshipApiKey,
+  );
+
   return [
     {
       id: 'version',
@@ -1231,10 +1261,10 @@ export function getSettingsWebFormSections(): SettingsWebFormSection[] {
       description: 'Version per application. Each app has its own version number.',
       layout: 'grid-2',
       fields: [
-        {id: 'kolam', label: 'Kolam', placeholder: '1.0.0', control: 'text', value: '1.0.0', required: false},
-        {id: 'enclonura', label: 'Enclonura', placeholder: '1.0.0', control: 'text', value: '1.0.0', required: false},
-        {id: 'pos', label: 'POS', placeholder: '1.0.0', control: 'text', value: '1.0.0', required: false},
-        {id: 'marketplace', label: 'Marketplace', placeholder: '1.0.0', control: 'text', value: '1.0.0', required: false},
+        {id: 'kolam', label: 'Kolam', placeholder: '1.0.0', control: 'text', value: displayString(kolamVersion, '1.0.0'), required: false},
+        {id: 'enclonura', label: 'Enclonura', placeholder: '1.0.0', control: 'text', value: displayString(versions.enclonura, ''), required: false},
+        {id: 'pos', label: 'POS', placeholder: '1.0.0', control: 'text', value: displayString(versions.pos, ''), required: false},
+        {id: 'marketplace', label: 'Marketplace', placeholder: '1.0.0', control: 'text', value: displayString(versions.marketplace, ''), required: false},
       ],
       sourceComponent: 'settings/websetting/websetting-page.tsx',
     },
@@ -1244,7 +1274,7 @@ export function getSettingsWebFormSections(): SettingsWebFormSection[] {
       description: 'Upload logo/photo for WebSetting',
       layout: 'single',
       fields: [
-        {id: 'logo-upload', label: 'Logo', placeholder: 'Upload Logo', control: 'file', value: 'Upload Logo', required: false},
+        {id: 'logo-upload', label: 'Logo', placeholder: 'Upload Logo', control: 'file', value: displayString(webSetting?.logo, 'No logo configured'), required: false},
       ],
       sourceComponent: 'settings/websetting/websetting-page.tsx',
     },
@@ -1254,8 +1284,8 @@ export function getSettingsWebFormSections(): SettingsWebFormSection[] {
       description: 'Company name and tagline for branding',
       layout: 'stack',
       fields: [
-        {id: 'company-name', label: 'Company Name', placeholder: 'Dunia Anura', control: 'text', value: 'Dunia Anura', required: false},
-        {id: 'company-tagline', label: 'Company Tagline', placeholder: 'Your trusted pet store', control: 'text', value: 'Your trusted pet store', required: false},
+        {id: 'company-name', label: 'Company Name', placeholder: 'Dunia Anura', control: 'text', value: displayString(webSetting?.companyName, 'Dunia Anura'), required: false},
+        {id: 'company-tagline', label: 'Company Tagline', placeholder: 'Your trusted pet store', control: 'text', value: displayString(webSetting?.companyTagline, ''), required: false},
       ],
       sourceComponent: 'settings/websetting/websetting-page.tsx',
     },
@@ -1265,8 +1295,8 @@ export function getSettingsWebFormSections(): SettingsWebFormSection[] {
       description: 'Phone and email for customer contact',
       layout: 'stack',
       fields: [
-        {id: 'phone', label: 'Phone', placeholder: '+62 812-3456-7890', control: 'text', value: '+62 812-3456-7890', required: false},
-        {id: 'email', label: 'Email', placeholder: 'info@duniaanura.com', control: 'text', value: 'info@duniaanura.com', required: false},
+        {id: 'phone', label: 'Phone', placeholder: '+62 812-3456-7890', control: 'text', value: displayString(webSetting?.phone, ''), required: false},
+        {id: 'email', label: 'Email', placeholder: 'info@duniaanura.com', control: 'text', value: displayString(webSetting?.email, ''), required: false},
       ],
       sourceComponent: 'settings/websetting/websetting-page.tsx',
     },
@@ -1276,20 +1306,23 @@ export function getSettingsWebFormSections(): SettingsWebFormSection[] {
       description: 'Business/clinic/warehouse address',
       layout: 'single',
       fields: [
-        {id: 'address', label: 'Address', placeholder: 'Jl. Contoh No. 1', control: 'textarea', value: 'Jl. Contoh No. 1', required: false},
+        {id: 'address', label: 'Address', placeholder: 'Jl. Contoh No. 1', control: 'textarea', value: displayString(webSetting?.address, ''), required: false},
       ],
       sourceComponent: 'settings/websetting/websetting-page.tsx',
     },
     {
       id: 'shipping-origin',
       title: 'Shipping Origin',
-      description: 'Origin address for shipping rate calculation. Make sure postal code is filled.',
+      description: 'Origin address and Biteship API for shipping rate calculation. Secret fields stay masked.',
       layout: 'grid-2',
       fields: [
-        {id: 'origin-address', label: 'Address', placeholder: 'Jl. Taman Ratu Raya No.34', control: 'text', value: 'Jl. Taman Ratu Raya No.34', required: false},
-        {id: 'origin-city', label: 'City', placeholder: 'Jakarta Barat', control: 'text', value: 'Jakarta Barat', required: false},
-        {id: 'origin-province', label: 'Province', placeholder: 'DKI Jakarta', control: 'text', value: 'DKI Jakarta', required: false},
-        {id: 'origin-postal-code', label: 'Postal Code', placeholder: '11550', control: 'text', value: '11550', required: true},
+        {id: 'biteship-api-key', label: 'Biteship API Key', placeholder: '********', control: 'text', value: biteshipApiKey, required: false},
+        {id: 'origin-address', label: 'Address', placeholder: 'Jl. Taman Ratu Raya No.34', control: 'text', value: displayString(origin.addressLine1, ''), required: false},
+        {id: 'origin-city', label: 'City', placeholder: 'Jakarta Barat', control: 'text', value: displayString(origin.city, ''), required: false},
+        {id: 'origin-province', label: 'Province', placeholder: 'DKI Jakarta', control: 'text', value: displayString(origin.province, ''), required: false},
+        {id: 'origin-postal-code', label: 'Postal Code', placeholder: '11550', control: 'text', value: displayString(origin.postalCode, ''), required: true},
+        {id: 'origin-latitude', label: 'Latitude', placeholder: '-6.1687829', control: 'text', value: displayString(origin.latitude, ''), required: false},
+        {id: 'origin-longitude', label: 'Longitude', placeholder: '106.7676678', control: 'text', value: displayString(origin.longitude, ''), required: false},
       ],
       sourceComponent: 'settings/websetting/websetting-page.tsx',
     },
@@ -1299,11 +1332,11 @@ export function getSettingsWebFormSections(): SettingsWebFormSection[] {
       description: 'Link social media (opsional)',
       layout: 'stack',
       fields: [
-        {id: 'facebook', label: 'Facebook', placeholder: 'https://facebook.com/...', control: 'text', value: '', required: false},
-        {id: 'instagram', label: 'Instagram', placeholder: 'https://instagram.com/...', control: 'text', value: '', required: false},
-        {id: 'twitter', label: 'Twitter', placeholder: 'https://twitter.com/...', control: 'text', value: '', required: false},
-        {id: 'youtube', label: 'YouTube', placeholder: 'https://youtube.com/...', control: 'text', value: '', required: false},
-        {id: 'tiktok', label: 'TikTok', placeholder: 'https://tiktok.com/...', control: 'text', value: '', required: false},
+        {id: 'facebook', label: 'Facebook', placeholder: 'https://facebook.com/...', control: 'text', value: displayString(social.facebook, ''), required: false},
+        {id: 'instagram', label: 'Instagram', placeholder: 'https://instagram.com/...', control: 'text', value: displayString(social.instagram, ''), required: false},
+        {id: 'twitter', label: 'Twitter', placeholder: 'https://twitter.com/...', control: 'text', value: displayString(social.twitter, ''), required: false},
+        {id: 'youtube', label: 'YouTube', placeholder: 'https://youtube.com/...', control: 'text', value: displayString(social.youtube, ''), required: false},
+        {id: 'tiktok', label: 'TikTok', placeholder: 'https://tiktok.com/...', control: 'text', value: displayString(social.tiktok, ''), required: false},
       ],
       sourceComponent: 'settings/websetting/websetting-page.tsx',
     },
@@ -1313,12 +1346,38 @@ export function getSettingsWebFormSections(): SettingsWebFormSection[] {
       description: 'Enable/disable maintenance mode',
       layout: 'grid-2',
       fields: [
-        {id: 'maintenance-pos', label: 'POS', placeholder: 'Enable maintenance mode for the POS', control: 'switch', value: 'Off', required: false},
-        {id: 'maintenance-marketplace', label: 'Marketplace', placeholder: 'Enable maintenance mode for the Marketplace', control: 'switch', value: 'Off', required: false},
+        {id: 'maintenance-pos', label: 'POS', placeholder: 'Enable maintenance mode for the POS', control: 'switch', value: String(webSetting?.maintenance?.pos === true), required: false},
+        {id: 'maintenance-marketplace', label: 'Marketplace', placeholder: 'Enable maintenance mode for the Marketplace', control: 'switch', value: String(webSetting?.maintenance?.marketplace === true), required: false},
       ],
       sourceComponent: 'settings/websetting/websetting-page.tsx',
     },
   ];
+}
+
+function displayString(value: unknown, fallback: string) {
+  if (value === null || value === undefined) {
+    return fallback;
+  }
+
+  const text = String(value).trim();
+  return text || fallback;
+}
+
+function maskSecretField(fieldId: string, value: unknown) {
+  const text = displayString(value, '');
+  if (!text) {
+    return '';
+  }
+
+  if (/^\*+$/.test(text)) {
+    return text;
+  }
+
+  if (/(apikey|api-key|api_key|privatekey|private-key|private_key|password|passwd|secret|credential|token)/i.test(fieldId)) {
+    return '********';
+  }
+
+  return text;
 }
 
 export function getSettingsLiveEndpoints(): SettingsLiveEndpoint[] {
@@ -1344,6 +1403,14 @@ export function getSettingsLiveEndpoints(): SettingsLiveEndpoint[] {
       label: 'App version',
       method: 'GET',
       path: '/websetting/version',
+      permission: 'public',
+      status: 'wired',
+    },
+    {
+      id: 'version-read-all',
+      label: 'All app versions',
+      method: 'GET',
+      path: '/websetting/version/all',
       permission: 'public',
       status: 'wired',
     },

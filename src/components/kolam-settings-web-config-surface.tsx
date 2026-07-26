@@ -14,6 +14,7 @@ export function KolamSettingsWebConfigSurface({
   onToggleMaintenanceMode,
   onToggleStorefrontEnabled,
   onWebTitleChange,
+  readOnly = false,
   sections,
   storefrontEnabled,
   webTitle,
@@ -23,6 +24,7 @@ export function KolamSettingsWebConfigSurface({
   onToggleMaintenanceMode: () => void;
   onToggleStorefrontEnabled: () => void;
   onWebTitleChange: (value: string) => void;
+  readOnly?: boolean;
   sections: SettingsWebFormSection[];
   storefrontEnabled: boolean;
   webTitle: string;
@@ -33,20 +35,20 @@ export function KolamSettingsWebConfigSurface({
         label={fields[0].label}
         description={fields[0].description}
         value={webTitle}
-        onChangeText={onWebTitleChange}
+        onChangeText={readOnly ? () => undefined : onWebTitleChange}
         placeholder="Storefront title"
       />
       <KolamToggleRow
         label={fields[1].label}
         description={fields[1].description}
         active={storefrontEnabled}
-        onPress={onToggleStorefrontEnabled}
+        onPress={readOnly ? () => undefined : onToggleStorefrontEnabled}
       />
       <KolamToggleRow
         label={fields[2].label}
         description={fields[2].description}
         active={maintenanceMode}
-        onPress={onToggleMaintenanceMode}
+        onPress={readOnly ? () => undefined : onToggleMaintenanceMode}
       />
       <KolamSettingsWebFormSections sections={sections} />
     </KolamContentFrame>

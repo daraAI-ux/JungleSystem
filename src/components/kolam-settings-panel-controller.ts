@@ -1,4 +1,4 @@
-﻿import {useState} from 'react';
+﻿import {useEffect, useState} from 'react';
 import {
   getSettingsActivityLogDetailFields,
   getSettingsActivityLogFilterControls,
@@ -23,6 +23,14 @@ import {
   type SettingsSurfaceItem,
 } from '../domain/settings-surface';
 import type {SyncActivityEntry} from '../domain/sync-activity';
+import {
+  getKolamWebSetting,
+  getKolamWebSettingVersion,
+  getKolamWebSettingVersions,
+  type KolamWebSetting,
+  type KolamWebSettingVersion,
+  type KolamWebSettingVersions,
+} from '../services/kolam-api';
 
 export function useKolamSettingsPanelController(
   activityEntries: SyncActivityEntry[],
@@ -38,8 +46,64 @@ export function useKolamSettingsPanelController(
   );
   const [storefrontEnabled, setStorefrontEnabled] = useState(true);
   const [maintenanceMode, setMaintenanceMode] = useState(false);
+  const [webSetting, setWebSetting] = useState<KolamWebSetting | null>(null);
+  const [webSettingVersion, setWebSettingVersion] =
+    useState<KolamWebSettingVersion | null>(null);
+  const [webSettingVersions, setWebSettingVersions] =
+    useState<KolamWebSettingVersions | null>(null);
+  const [webSettingStatus, setWebSettingStatus] = useState<
+    'idle' | 'loading' | 'live' | 'error'
+  >('idle');
   const roleRows = getSettingsRoleAccessRows();
   const [selectedRoleId, setSelectedRoleId] = useState(roleRows[0]?.id ?? '');
+
+  useEffect(() => {
+    if (activeSurfaceId !== 'web-settings') {
+      return;
+    }
+
+    let mounted = true;
+    setWebSettingStatus('loading');
+
+    Promise.allSettled([
+      getKolamWebSetting(),
+      getKolamWebSettingVersion('kolam'),
+      getKolamWebSettingVersions(),
+    ])
+      .then(([settingResult, versionResult, versionsResult]) => {
+        if (!mounted) {
+          return;
+        }
+
+        if (settingResult.status !== 'fulfilled') {
+          setWebSettingStatus('error');
+          return;
+        }
+
+        const setting = settingResult.value;
+        const version =
+          versionResult.status === 'fulfilled' ? versionResult.value : null;
+        const versions =
+          versionsResult.status === 'fulfilled' ? versionsResult.value : null;
+
+        setWebSetting(setting);
+        setWebSettingVersion(version);
+        setWebSettingVersions(versions);
+        setWebTitle(getSettingsWebConfigFields(setting)[0].value);
+        setStorefrontEnabled(setting.livechatOnline === true);
+        setMaintenanceMode(setting.maintenance?.pos === true);
+        setWebSettingStatus('live');
+      })
+      .catch(() => {
+        if (mounted) {
+          setWebSettingStatus('error');
+        }
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [activeSurfaceId]);
 
   const activeSurface =
     settingsSurfaceItems.find(item => item.id === activeSurfaceId) ??
@@ -107,8 +171,13 @@ export function useKolamSettingsPanelController(
     stats,
     storefrontEnabled,
     webTitle,
-    webConfigFields: getSettingsWebConfigFields(),
-    webFormSections: getSettingsWebFormSections(),
+    webConfigFields: getSettingsWebConfigFields(webSetting),
+    webFormSections: getSettingsWebFormSections(
+      webSetting,
+      webSettingVersions,
+      webSettingVersion,
+    ),
+    webSettingStatus,
     roleEditorActions: getSettingsRoleEditorActions(
       selectedRole?.id,
       selectedRole?.defaultRole,

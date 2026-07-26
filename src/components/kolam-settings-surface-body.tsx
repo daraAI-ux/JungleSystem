@@ -24,6 +24,7 @@ export function KolamSettingsSurfaceBody({
           controller.setStorefrontEnabled(current => !current)
         }
         onWebTitleChange={controller.setWebTitle}
+        readOnly
         sections={controller.webFormSections}
         storefrontEnabled={controller.storefrontEnabled}
         webTitle={controller.webTitle}

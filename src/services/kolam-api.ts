@@ -201,6 +201,24 @@ export interface KolamWebSetting {
   email?: string;
   logo?: string;
   livechatOnline?: boolean;
+  socialMedia?: {
+    facebook?: string;
+    instagram?: string;
+    twitter?: string;
+    youtube?: string;
+    tiktok?: string;
+    [key: string]: string | undefined;
+  };
+  originAddress?: {
+    addressLine1?: string;
+    city?: string;
+    province?: string;
+    postalCode?: string;
+    latitude?: number | string | null;
+    longitude?: number | string | null;
+  };
+  biteshipApiKey?: string;
+  biteshipApiKeyConfigured?: boolean;
   maintenance?: {
     pos?: boolean;
     marketplace?: boolean;

@@ -12,6 +12,7 @@ import {
   getKolamRoles,
   getKolamWebSetting,
   getKolamWebSettingVersion,
+  getKolamWebSettingVersions,
   updateKolamWebSetting,
 } from '../src/services/kolam-api';
 
@@ -74,6 +75,34 @@ describe('Kolam Settings API contracts', () => {
 
     expect(fetchMock).toHaveBeenCalledWith(
       `${appConfig.kolamApiBaseUrl}/websetting/version?app=pos`,
+      expect.objectContaining({
+        method: 'GET',
+      }),
+    );
+  });
+
+  it('requests all Web Settings versions through direct BE', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        versions: {
+          kolam: '2.1.0',
+          enclonura: '1.5.0',
+          pos: '3.0.0',
+          marketplace: '4.0.0',
+        },
+        updatedAt: '2026-07-16T00:00:00.000Z',
+      }),
+    );
+
+    await expect(getKolamWebSettingVersions()).resolves.toMatchObject({
+      versions: expect.objectContaining({
+        kolam: '2.1.0',
+        marketplace: '4.0.0',
+      }),
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${appConfig.kolamApiBaseUrl}/websetting/version/all`,
       expect.objectContaining({
         method: 'GET',
       }),

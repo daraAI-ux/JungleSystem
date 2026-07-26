@@ -122,7 +122,34 @@ describe('settingsSurfaceItems', () => {
   });
 
   it('maps live Web Settings page into native form sections', () => {
-    const sections = getSettingsWebFormSections();
+    const sections = getSettingsWebFormSections(
+      {
+        companyName: 'Dunia Anura Live',
+        companyTagline: 'Live tagline',
+        address: 'Jl. Live',
+        phone: '021-live',
+        email: 'live@duniaanura.com',
+        socialMedia: {instagram: 'https://instagram.com/live'},
+        originAddress: {
+          addressLine1: 'Gudang Live',
+          city: 'Jakarta Barat',
+          province: 'DKI Jakarta',
+          postalCode: '11550',
+          latitude: -6.1,
+          longitude: 106.7,
+        },
+        biteshipApiKey: 'sk_live_should_not_render',
+        maintenance: {pos: true, marketplace: false},
+      },
+      {
+        versions: {
+          kolam: '2.1.0',
+          enclonura: '2.2.0',
+          pos: '2.3.0',
+          marketplace: '2.4.0',
+        },
+      },
+    );
 
     expect(sections.map(section => section.title)).toEqual([
       'Version',
@@ -147,13 +174,34 @@ describe('settingsSurfaceItems', () => {
       'POS',
       'Marketplace',
     ]);
+    expect(sections[0].fields.map(field => field.value)).toEqual([
+      '2.1.0',
+      '2.2.0',
+      '2.3.0',
+      '2.4.0',
+    ]);
+    expect(
+      sections.find(section => section.id === 'company-info')?.fields,
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'company-name',
+          value: 'Dunia Anura Live',
+        }),
+      ]),
+    );
     expect(
       sections.find(section => section.id === 'shipping-origin')?.fields,
     ).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
+          id: 'biteship-api-key',
+          value: '********',
+        }),
+        expect.objectContaining({
           id: 'origin-postal-code',
           label: 'Postal Code',
+          value: '11550',
           required: true,
         }),
       ]),
@@ -161,10 +209,15 @@ describe('settingsSurfaceItems', () => {
     expect(
       sections.find(section => section.id === 'maintenance-mode')?.fields,
     ).toEqual([
-      expect.objectContaining({id: 'maintenance-pos', control: 'switch'}),
+      expect.objectContaining({
+        id: 'maintenance-pos',
+        control: 'switch',
+        value: 'true',
+      }),
       expect.objectContaining({
         id: 'maintenance-marketplace',
         control: 'switch',
+        value: 'false',
       }),
     ]);
   });
@@ -717,20 +770,25 @@ describe('settingsSurfaceItems', () => {
   });
 
   it('defines native Web Settings config fields', () => {
-    expect(getSettingsWebConfigFields()).toEqual([
+    expect(getSettingsWebConfigFields({
+      companyName: 'Live Storefront',
+      livechatOnline: false,
+      maintenance: {pos: true},
+    })).toEqual([
       expect.objectContaining({
         id: 'storefront-title',
         label: 'Storefront title',
+        value: 'Live Storefront',
         control: 'text',
       }),
       expect.objectContaining({
         id: 'storefront-status',
-        value: 'Enabled',
+        value: 'Off',
         control: 'toggle',
       }),
       expect.objectContaining({
         id: 'maintenance-mode',
-        value: 'Off',
+        value: 'On',
         control: 'toggle',
       }),
     ]);
@@ -756,6 +814,11 @@ describe('settingsSurfaceItems', () => {
         permission: 'public',
       }),
       expect.objectContaining({
+        id: 'version-read-all',
+        path: '/websetting/version/all',
+        permission: 'public',
+      }),
+      expect.objectContaining({
         id: 'roles-read',
         path: '/roles',
         permission: 'role:view',
@@ -770,6 +833,6 @@ describe('settingsSurfaceItems', () => {
         path: '/activity-log/stats',
       }),
     ]));
-    expect(getSettingsLiveEndpoints()).toHaveLength(6);
+    expect(getSettingsLiveEndpoints()).toHaveLength(7);
   });
 });
