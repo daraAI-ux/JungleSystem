@@ -210,11 +210,11 @@ const kolamTableColumns: Record<KolamTableId, KolamTableColumn[]> = {
     { id: 'children', label: 'Kategori', align: 'left', width: 132 },
     { id: 'notes', label: 'Dimensi', align: 'left', width: 150 },
     { id: 'marketplace', label: 'Berat', align: 'left', width: 110 },
-    { id: 'price', label: 'Harga Tagih', align: 'right', width: 132 },
+    { id: 'price', label: 'Harga tagih', align: 'right', width: 132 },
     { id: 'amount', label: 'HPP', align: 'right', width: 120 },
     { id: 'raws', label: 'Stok', align: 'right', width: 86 },
     { id: 'status', label: 'Status', align: 'right', width: 116 },
-    { id: 'actions', label: '', align: 'right', width: 64 },
+    { id: 'actions', label: 'Aksi', align: 'right', width: 64 },
   ],
   'iucn-status': [
     { id: 'meta', label: 'Gambar', align: 'left', width: 72 },
