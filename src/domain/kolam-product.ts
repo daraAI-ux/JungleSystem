@@ -969,14 +969,12 @@ function createKolamProductVendorPricePayload(rows: KolamProductVendorPriceFormR
       return {
         vendor,
         price: toNonNegativeNumber(row.price),
-        shippingCost: toNonNegativeNumber(row.shippingCost),
         link: row.link.trim(),
       };
     })
     .filter(Boolean) as Array<{
     vendor: string;
     price: number;
-    shippingCost: number;
     link: string;
   }>;
 }

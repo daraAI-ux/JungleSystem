@@ -47,6 +47,7 @@ import { KolamCategoryLabel } from './kolam-category-label';
 import { KolamCatalogTranslationsEditor } from './kolam-catalog-translations-editor';
 import { KolamChevronIcon } from './kolam-chevron-icon';
 import { KolamCommercialPolicyEditor } from './kolam-commercial-policy-editor';
+import { KolamComponentOverridesEditor } from './kolam-component-overrides-editor';
 import {
   KolamDropdownSelect,
   KolamOverflowMenuButton,
@@ -1260,6 +1261,35 @@ function ProductEditFormPage({
               >
                 <ProductVariantEditorPanel controller={controller} />
               </ProductEditSection>
+
+              {!hasVariants ? (
+                <ProductEditSection
+                  description="Komponen produksi untuk bahan baku tanpa varian."
+                  title="Bahan Penyusun"
+                >
+                  <ProductFieldShell label="Bahan Penyusun Root">
+                    <View style={styles.variantFieldPanel}>
+                      <KolamComponentOverridesEditor
+                        disabled={controller.saving}
+                        onChange={componentRows =>
+                          controller.onChangeForm({ componentRows })
+                        }
+                        products={controller.rawMaterialProducts}
+                        rows={form.componentRows}
+                      />
+                    </View>
+                  </ProductFieldShell>
+                </ProductEditSection>
+              ) : null}
+
+              {!hasVariants ? (
+                <ProductEditSection
+                  description="Harga pemasok untuk bahan baku tanpa varian."
+                  title="Harga Supplier"
+                >
+                  <ProductRootVendorPricesEditor controller={controller} />
+                </ProductEditSection>
+              ) : null}
 
               <ProductEditSection
                 description={
@@ -3332,7 +3362,7 @@ function ProductVendorPriceRow({
         items={[
           {
             id: 'shipping-note',
-            text: 'Ongkir diisi dari PO completed dan disimpan ulang agar tidak hilang saat edit varian.',
+            text: 'Ongkir dan total HPP berasal dari PO completed; form manual hanya mengirim vendor, harga, dan link.',
             style: styles.fieldHint,
           },
         ]}

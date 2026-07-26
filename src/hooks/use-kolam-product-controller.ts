@@ -71,10 +71,15 @@ import {
   readKolamPackingOptionListCache,
   writeKolamPackingOptionListCache,
 } from '../services/kolam-packing-option-local-cache';
-import { getKolamProductOptions } from '../services/kolam-product-option-api';
+import {
+  getKolamProductOptions,
+  getKolamRawProductOptions,
+} from '../services/kolam-product-option-api';
 import {
   readKolamProductOptionListCache,
+  readKolamRawProductOptionListCache,
   writeKolamProductOptionListCache,
+  writeKolamRawProductOptionListCache,
 } from '../services/kolam-product-option-local-cache';
 import { getKolamSpeciesList } from '../services/kolam-species-api';
 import {
@@ -138,6 +143,7 @@ export interface KolamProductController {
   pagination: KolamProductPagination;
   productOptions: KolamProductOption[];
   products: KolamProduct[];
+  rawMaterialProducts: KolamProductOption[];
   saving: boolean;
   selectedProduct: KolamProduct | null;
   shippingMethods: KolamShippingMethod[];
@@ -197,6 +203,7 @@ export function useKolamProductController(
   const [categories, setCategories] = useState<KolamCategory[]>([]);
   const [customFields, setCustomFields] = useState<KolamCustomField[]>([]);
   const [productOptions, setProductOptions] = useState<KolamProductOption[]>([]);
+  const [rawMaterialProducts, setRawMaterialProducts] = useState<KolamProductOption[]>([]);
   const [species, setSpecies] = useState<KolamSpecies[]>([]);
   const [tags, setTags] = useState<KolamTag[]>([]);
   const [units, setUnits] = useState<KolamUnit[]>([]);
@@ -243,6 +250,11 @@ export function useKolamProductController(
       setProductOptions(cachedProducts.value);
     }
 
+    const cachedRawProducts = await readKolamRawProductOptionListCache();
+    if (cachedRawProducts?.value.length) {
+      setRawMaterialProducts(cachedRawProducts.value);
+    }
+
     const cachedSpecies = await readKolamSpeciesListCache();
     if (cachedSpecies?.value.length) {
       setSpecies(cachedSpecies.value);
@@ -270,6 +282,7 @@ export function useKolamProductController(
       tagResult,
       unitResult,
       productOptionResult,
+      rawProductOptionResult,
       speciesResult,
       vendorResult,
       packingResult,
@@ -283,6 +296,7 @@ export function useKolamProductController(
       getKolamTags(),
       getKolamUnits(),
       getKolamProductOptions(),
+      getKolamRawProductOptions(),
       getKolamSpeciesList({ limit: 1000 }),
       getKolamVendors(),
       getKolamPackingOptions(),
@@ -317,6 +331,11 @@ export function useKolamProductController(
     if (productOptionResult.status === 'fulfilled') {
       await writeKolamProductOptionListCache(productOptionResult.value);
       setProductOptions(productOptionResult.value);
+    }
+
+    if (rawProductOptionResult.status === 'fulfilled') {
+      await writeKolamRawProductOptionListCache(rawProductOptionResult.value);
+      setRawMaterialProducts(rawProductOptionResult.value);
     }
 
     if (speciesResult.status === 'fulfilled') {
@@ -1022,6 +1041,7 @@ export function useKolamProductController(
     packingOptions,
     productOptions,
     products,
+    rawMaterialProducts,
     saving,
     selectedProduct,
     shippingMethods,
