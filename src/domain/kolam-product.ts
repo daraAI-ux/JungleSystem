@@ -755,6 +755,11 @@ export function createKolamProductFormState(product: KolamProduct): KolamProduct
 export function createKolamProductSavePayload(form: KolamProductFormState) {
   const hasVariants = form.hasVariants || form.variants.length > 0;
   const productType = form.productType === 'raw' ? 'raw' : 'product';
+  const cleanProductCode = form.productCode.trim();
+  if (productType === 'raw' && !cleanProductCode) {
+    throw new Error('Kode produk wajib diisi untuk bahan baku.');
+  }
+
   const grocerPricingTiers = createKolamProductGrocerPricingTierPayload(
     form.grocerPricingTiers,
   );
@@ -777,7 +782,7 @@ export function createKolamProductSavePayload(form: KolamProductFormState) {
           commissionValue: toNonNegativeNumber(form.commissionValue),
         }
       : {}),
-    productCode: productType === 'raw' ? form.productCode.trim() : '-',
+    productCode: productType === 'raw' ? cleanProductCode : '-',
     sellable: form.sellable,
     type: productType,
     customFieldValues: form.customFieldValues,
