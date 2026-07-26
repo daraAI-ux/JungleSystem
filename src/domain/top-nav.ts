@@ -40,8 +40,9 @@ export interface TopNavBreadcrumbItem {
 }
 
 export interface TopNavRightControl {
-  id: 'notifications' | 'avatar';
+  id: 'chat-inbox' | 'chat-team' | 'notifications' | 'avatar';
   label: string;
+  sourceComponent?: string;
 }
 
 export interface TopNavChromeContract {
@@ -142,6 +143,18 @@ export function getTopNavUserMenuPreview(
 
 export function getTopNavRightControls(): TopNavRightControl[] {
   return [
+    {
+      id: 'chat-inbox',
+      label: 'Pesan masuk',
+      sourceComponent:
+        'E:\\Projects\\DA-Chat-Plugin\\src\\components\\chat-header-quick-access-icons.tsx',
+    },
+    {
+      id: 'chat-team',
+      label: 'Team chat',
+      sourceComponent:
+        'E:\\Projects\\DA-Chat-Plugin\\src\\components\\chat-header-quick-access-icons.tsx',
+    },
     {
       id: 'notifications',
       label: 'Notifications',

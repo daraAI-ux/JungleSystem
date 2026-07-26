@@ -230,8 +230,20 @@ describe('topNavUserMenuItems', () => {
     ]);
   });
 
-  it('keeps the live top nav right control order', () => {
+  it('adds the chat plugin actions before the protected live top nav controls', () => {
     expect(getTopNavRightControls()).toEqual([
+      {
+        id: 'chat-inbox',
+        label: 'Pesan masuk',
+        sourceComponent:
+          'E:\\Projects\\DA-Chat-Plugin\\src\\components\\chat-header-quick-access-icons.tsx',
+      },
+      {
+        id: 'chat-team',
+        label: 'Team chat',
+        sourceComponent:
+          'E:\\Projects\\DA-Chat-Plugin\\src\\components\\chat-header-quick-access-icons.tsx',
+      },
       {
         id: 'notifications',
         label: 'Notifications',

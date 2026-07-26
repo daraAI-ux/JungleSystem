@@ -24,6 +24,7 @@ export function useKolamTopNavigationController({
   onAvatarPress,
   onBreadcrumbPress,
   onBreadcrumbDashboardPress,
+  onChatControlPress,
   onNotificationPress,
   onToggleSidebar,
   profilePhotoUrl,
@@ -40,6 +41,7 @@ export function useKolamTopNavigationController({
   onAvatarPress: () => void;
   onBreadcrumbPress?: (item: TopNavBreadcrumbItem) => void;
   onBreadcrumbDashboardPress: () => void;
+  onChatControlPress?: TopNavigationProps['onChatControlPress'];
   onNotificationPress: () => void;
   onToggleSidebar: () => void;
   profilePhotoUrl?: string | null;
@@ -65,6 +67,7 @@ export function useKolamTopNavigationController({
       onAvatarPress,
       onBreadcrumbPress,
       onBreadcrumbDashboardPress,
+      onChatControlPress,
       onNotificationPress,
       onToggleSidebar,
       profilePhotoUrl,
@@ -82,6 +85,7 @@ export function useKolamTopNavigationController({
       onAvatarPress,
       onBreadcrumbPress,
       onBreadcrumbDashboardPress,
+      onChatControlPress,
       onNotificationPress,
       onToggleSidebar,
       profilePhotoUrl,

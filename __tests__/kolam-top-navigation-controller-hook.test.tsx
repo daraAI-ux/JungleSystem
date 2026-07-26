@@ -81,6 +81,8 @@ describe('Kolam top navigation controller hook', () => {
     expect(controller.topNavigation.displayInitials).toBe('DA');
     expect(controller.topNavigation.serverMetrics?.snapshot?.cpuPercent).toBe(12);
     expect(controller.topNavigation.rightControls.map(control => control.id)).toEqual([
+      'chat-inbox',
+      'chat-team',
       'notifications',
       'avatar',
     ]);

@@ -12,6 +12,7 @@ export function KolamTopNavigation({
   onAvatarPress,
   onBreadcrumbPress,
   onBreadcrumbDashboardPress,
+  onChatControlPress,
   onNotificationPress,
   onToggleSidebar,
   profilePhotoUrl,
@@ -31,6 +32,7 @@ export function KolamTopNavigation({
         attentionCount={attentionCount}
         displayInitials={displayInitials}
         onAvatarPress={onAvatarPress}
+        onChatControlPress={onChatControlPress}
         onNotificationPress={onNotificationPress}
         profilePhotoUrl={profilePhotoUrl}
         rightControls={rightControls}
