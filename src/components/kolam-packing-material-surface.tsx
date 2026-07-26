@@ -44,6 +44,10 @@ import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamNativeFormSection } from './kolam-native-form-section';
 import { KolamRemoteImage } from './kolam-remote-image';
+import {
+  KolamVendorPriceCard,
+  type KolamVendorPriceCardItem,
+} from './kolam-pricing-detail-widgets';
 import { appConfig } from '../config/app';
 import { getKolamPackingMaterialUsedIn, uploadKolamPackingMaterialAsset, deleteKolamPackingMaterialAsset } from '../services/kolam-packing-option-api';
 import { pickNativeAssetFile, type NativeImagePickerResult } from '../services/native-file-picker';
@@ -662,6 +666,10 @@ function PackingOverviewPanel({
 }) {
   const effectiveHpp = getPackingEffectiveHpp(item);
   const cheapestSupplier = getCheapestSupplier(item);
+  const vendorPrices = React.useMemo(
+    () => createPackingVendorPriceItems(item),
+    [item],
+  );
   const mediaItems = React.useMemo(
     () => createPackingMediaItems(item),
     [item],
@@ -750,8 +758,8 @@ function PackingOverviewPanel({
                 <PriceTile
                   label="Supplier"
                   value={
-                    item.vendorPrices.length
-                      ? `${item.vendorPrices.length} supplier`
+                    vendorPrices.length
+                      ? `${vendorPrices.length} supplier`
                       : 'Belum ada'
                   }
                 />
@@ -760,74 +768,20 @@ function PackingOverviewPanel({
           </View>
         </View>
       </KolamContentFrame>
-      <PackingVendorPricesTable item={item} />
+      <KolamVendorPriceCard
+        badge={String(vendorPrices.length)}
+        description="Referensi harga pokok dari supplier. Baris termurah ditandai Terbaik."
+        emptyText="Belum ada harga vendor aktif."
+        formatCurrency={formatRupiah}
+        onOpenVendor={onRouteChange ? openPackingSupplierDetail(onRouteChange) : undefined}
+        prices={vendorPrices}
+        title="Harga Vendor"
+      />
       <PackingUsageCard
         item={item}
         onRouteChange={onRouteChange}
       />
     </View>
-  );
-}
-
-function PackingVendorPricesTable({ item }: { item: KolamPackingMaterial }) {
-  const rows = item.vendorPrices.filter(
-    price => price.vendorName || price.price > 0 || price.shippingCost > 0,
-  );
-
-  return (
-    <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
-      <View style={styles.detailCardHeader}>
-        <View style={styles.detailTitleWrap}>
-          <Text style={styles.detailCardTitle}>Harga Supplier ({rows.length})</Text>
-          <Text style={styles.detailCardDescription}>
-            Perbandingan harga beli, ongkir/unit, dan total HPP dari supplier.
-          </Text>
-        </View>
-      </View>
-      {rows.length ? (
-        <View style={styles.simpleTable}>
-          <View style={[styles.simpleTableRow, styles.simpleTableHeader]}>
-            <Text style={[styles.simpleTableHead, styles.supplierCell]}>Supplier</Text>
-            <Text style={[styles.simpleTableHead, styles.moneyCell]}>Harga Beli</Text>
-            <Text style={[styles.simpleTableHead, styles.moneyCell]}>Ongkir</Text>
-            <Text style={[styles.simpleTableHead, styles.moneyCell]}>Total HPP</Text>
-            <Text style={[styles.simpleTableHead, styles.linkCell]}>Link</Text>
-          </View>
-          {rows.map((price, index) => (
-            <View key={price.id || index} style={styles.simpleTableRow}>
-              <View style={styles.supplierCell}>
-                <Text style={styles.tableTitle}>{price.vendorName}</Text>
-                <Text style={styles.tableMeta}>
-                  {price.priceHistoryCount} riwayat perubahan
-                </Text>
-              </View>
-              <Text style={[styles.simpleTableText, styles.moneyCell]}>
-                {formatRupiah(price.price)}
-              </Text>
-              <Text style={[styles.simpleTableText, styles.moneyCell]}>
-                {formatRupiah(price.shippingCost)}
-              </Text>
-              <Text style={[styles.simpleTableStrong, styles.moneyCell]}>
-                {formatRupiah(price.totalCost || price.price + price.shippingCost)}
-              </Text>
-              <View style={styles.linkCell}>
-                {price.link ? (
-                  <KolamButton
-                    label="Buka"
-                    onPress={() => openExternalUrl(price.link)}
-                    style={styles.tableActionButton}
-                  />
-                ) : (
-                  <Text style={styles.mutedDash}>-</Text>
-                )}
-              </View>
-            </View>
-          ))}
-        </View>
-      ) : (
-        <Text style={styles.emptyText}>Belum ada harga supplier aktif.</Text>
-      )}
-    </KolamContentFrame>
   );
 }
 
@@ -1553,6 +1507,30 @@ function createPackingMediaItems(item: KolamPackingMaterial): KolamDetailMediaIt
     .filter(Boolean) as KolamDetailMediaItem[];
 }
 
+function createPackingVendorPriceItems(item: KolamPackingMaterial): KolamVendorPriceCardItem[] {
+  return item.vendorPrices
+    .filter(price => price.vendorName || price.price > 0 || price.shippingCost > 0)
+    .map((price, index) => ({
+      id: price.id || `packing-vendor-${index}`,
+      link: price.link,
+      price: price.price,
+      priceHistory: [],
+      shippingCost: price.shippingCost,
+      totalCost: price.totalCost || price.price + price.shippingCost,
+      vendorId: price.vendorId,
+      vendorName: price.vendorName,
+    }));
+}
+
+function openPackingSupplierDetail(onRouteChange: (route: string) => void) {
+  return (vendorId: string) => {
+    if (!vendorId) {
+      return;
+    }
+    onRouteChange(`/suppliers/${encodeURIComponent(vendorId)}`);
+  };
+}
+
 function getUsageTypeLabel(row: KolamPackingCatalogUsageRow) {
   if (row.entityType === 'species') {
     return 'Species';
@@ -1610,12 +1588,6 @@ function openPackingAssetDownload(packingId: string, assetId: string) {
   );
 }
 
-function openExternalUrl(url: string) {
-  if (!url.trim()) {
-    return;
-  }
-  void Linking.openURL(url);
-}
 function SummaryTile({ label, value }: { label: string; value: number }) {
   return (
     <View style={styles.summaryTile}>
