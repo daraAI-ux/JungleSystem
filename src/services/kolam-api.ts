@@ -200,6 +200,13 @@ export type KolamPluginConfigKey =
   | 'dara'
   | 'proyek';
 
+export type KolamNotificationSoundType =
+  | 'assigned'
+  | 'unassigned'
+  | 'handoff'
+  | 'group-call'
+  | 'sales';
+
 export type KolamPluginSettings = Partial<
   Record<
     KolamPluginConfigKey,
@@ -469,6 +476,15 @@ export interface KolamActivityLogDeleteResponse {
   };
 }
 
+export interface KolamNotificationSoundResponse {
+  message: string;
+  notificationSound?: string;
+  unassignedNotificationSound?: string;
+  handoffNotificationSound?: string;
+  groupCallRingtone?: string;
+  salesNotificationSound?: string;
+}
+
 interface DataResponse<T> {
   data: T;
 }
@@ -562,6 +578,27 @@ export function updateKolamWebSettingVersion(
   return kolamPut<KolamWebSettingVersion & {message: string}>(
     '/websetting/version',
     body,
+  );
+}
+
+export function uploadKolamNotificationSound(
+  type: KolamNotificationSoundType,
+  localUri: string,
+): Promise<KolamNotificationSoundResponse> {
+  const body = new FormData();
+  body.append('sound', createAudioFilePart(localUri) as unknown as Blob);
+
+  return kolamPost<KolamNotificationSoundResponse>(
+    `/websetting/notification-sound/${encodeURIComponent(type)}`,
+    body,
+  );
+}
+
+export function deleteKolamNotificationSound(
+  type: KolamNotificationSoundType,
+): Promise<KolamNotificationSoundResponse> {
+  return kolamDelete<KolamNotificationSoundResponse>(
+    `/websetting/notification-sound/${encodeURIComponent(type)}`,
   );
 }
 
@@ -664,5 +701,29 @@ function unwrapData<T>(response: T | DataResponse<T>): T {
   return response as T;
 }
 
+function createAudioFilePart(localUri: string) {
+  const normalizedUri = localUri.startsWith('file://')
+    ? localUri
+    : `file:///${localUri.replace(/\\/g, '/')}`;
+  const name = normalizedUri.split('/').pop() || 'notification-sound.mp3';
+
+  return {
+    uri: normalizedUri,
+    name,
+    type: inferAudioMimeType(name),
+  };
+}
+
+function inferAudioMimeType(fileName: string) {
+  const extension = fileName.split('.').pop()?.toLowerCase();
+
+  switch (extension) {
+    case 'wav':
+      return 'audio/wav';
+    case 'mp3':
+    default:
+      return 'audio/mpeg';
+  }
+}
 
 

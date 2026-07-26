@@ -1,4 +1,5 @@
 import React from 'react';
+import {StyleSheet, View} from 'react-native';
 import type {
   SettingsWebConfigField,
   SettingsWebFormSection,
@@ -9,7 +10,10 @@ import {KolamCopyStack} from './kolam-copy-stack';
 import {KolamSettingsWebFormSections} from './kolam-settings-web-widgets';
 import {KolamTextFieldRow} from './kolam-text-field-row';
 import {KolamToggleRow} from './kolam-toggle-row';
-import type {KolamPluginConfigKey} from '../services/kolam-api';
+import type {
+  KolamNotificationSoundType,
+  KolamPluginConfigKey,
+} from '../services/kolam-api';
 
 type WebSettingDraft = {
   versionKolam: string;
@@ -93,7 +97,9 @@ export function KolamSettingsWebConfigSurface({
   onToggleMaintenanceMode,
   onToggleStorefrontEnabled,
   onSave,
+  onDeleteNotificationSound,
   onPluginControlChange,
+  onUploadNotificationSound,
   onWebTitleChange,
   readOnly = false,
   saveMessage,
@@ -102,6 +108,7 @@ export function KolamSettingsWebConfigSurface({
   setDraftField,
   storefrontEnabled,
   draft,
+  notificationSoundStatus,
   webTitle,
 }: {
   draft: WebSettingDraft;
@@ -110,8 +117,13 @@ export function KolamSettingsWebConfigSurface({
   onToggleMaintenanceMode: () => void;
   onToggleStorefrontEnabled: () => void;
   onSave: () => void;
+  onDeleteNotificationSound: (type: KolamNotificationSoundType) => void;
   onPluginControlChange: (key: KolamPluginConfigKey, enabled: boolean) => void;
+  onUploadNotificationSound: (type: KolamNotificationSoundType) => void;
   onWebTitleChange: (value: string) => void;
+  notificationSoundStatus: Partial<
+    Record<KolamNotificationSoundType, 'idle' | 'uploading' | 'deleting'>
+  >;
   readOnly?: boolean;
   saveMessage: string;
   saveStatus: 'idle' | 'saving' | 'saved' | 'error';
@@ -121,6 +133,38 @@ export function KolamSettingsWebConfigSurface({
   webTitle: string;
 }) {
   const disabled = readOnly || saveStatus === 'saving';
+  const notificationSoundItems = [
+    {
+      id: 'notification-sound',
+      label: 'Notification sound',
+      type: 'assigned' as const,
+      value: draft.notificationSound,
+    },
+    {
+      id: 'unassigned-notification-sound',
+      label: 'Unassigned sound',
+      type: 'unassigned' as const,
+      value: draft.unassignedNotificationSound,
+    },
+    {
+      id: 'handoff-notification-sound',
+      label: 'Handoff sound',
+      type: 'handoff' as const,
+      value: draft.handoffNotificationSound,
+    },
+    {
+      id: 'group-call-ringtone',
+      label: 'Group call ringtone',
+      type: 'group-call' as const,
+      value: draft.groupCallRingtone,
+    },
+    {
+      id: 'sales-notification-sound',
+      label: 'Sales sound',
+      type: 'sales' as const,
+      value: draft.salesNotificationSound,
+    },
+  ];
 
   return (
     <KolamContentFrame variant="settingsWebConfig">
@@ -712,32 +756,49 @@ export function KolamSettingsWebConfigSurface({
           )
         }
       />
-      <KolamCopyStack
-        items={[
-          {
-            id: 'notification-sound',
-            text: `Notification sound: ${draft.notificationSound || '-'}`,
-          },
-          {
-            id: 'unassigned-notification-sound',
-            text: `Unassigned sound: ${
-              draft.unassignedNotificationSound || '-'
-            }`,
-          },
-          {
-            id: 'handoff-notification-sound',
-            text: `Handoff sound: ${draft.handoffNotificationSound || '-'}`,
-          },
-          {
-            id: 'group-call-ringtone',
-            text: `Group call ringtone: ${draft.groupCallRingtone || '-'}`,
-          },
-          {
-            id: 'sales-notification-sound',
-            text: `Sales sound: ${draft.salesNotificationSound || '-'}`,
-          },
-        ]}
-      />
+      <View style={styles.notificationSoundList}>
+        {notificationSoundItems.map(item => {
+          const status = notificationSoundStatus[item.type] ?? 'idle';
+          const busy = status === 'uploading' || status === 'deleting';
+
+          return (
+            <View key={item.id} style={styles.notificationSoundRow}>
+              <KolamCopyStack
+                containerStyle={styles.notificationSoundCopy}
+                items={[
+                  {
+                    id: `${item.id}-label`,
+                    text: item.label,
+                    style: styles.notificationSoundLabel,
+                  },
+                  {
+                    id: `${item.id}-path`,
+                    text: item.value || '-',
+                    style: styles.notificationSoundPath,
+                  },
+                ]}
+              />
+              <View style={styles.notificationSoundActions}>
+                <KolamActionControlButton
+                  label="Upload"
+                  loading={status === 'uploading'}
+                  loadingLabel="Uploading..."
+                  disabled={disabled || busy}
+                  onPress={() => onUploadNotificationSound(item.type)}
+                />
+                <KolamActionControlButton
+                  label="Reset"
+                  intent="danger"
+                  loading={status === 'deleting'}
+                  loadingLabel="Resetting..."
+                  disabled={disabled || busy || !item.value}
+                  onPress={() => onDeleteNotificationSound(item.type)}
+                />
+              </View>
+            </View>
+          );
+        })}
+      </View>
       <KolamToggleRow
         label="Plugin Enclosure"
         description="Aktifkan route dan registry plugin enclosure."
@@ -834,3 +895,40 @@ export function KolamSettingsWebConfigSurface({
     </KolamContentFrame>
   );
 }
+
+const styles = StyleSheet.create({
+  notificationSoundActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'flex-end',
+  },
+  notificationSoundCopy: {
+    flex: 1,
+    gap: 4,
+    minWidth: 260,
+  },
+  notificationSoundLabel: {
+    color: '#1f2937',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  notificationSoundList: {
+    gap: 10,
+  },
+  notificationSoundPath: {
+    color: '#6b7280',
+    fontSize: 12,
+  },
+  notificationSoundRow: {
+    alignItems: 'center',
+    borderColor: '#e5e7eb',
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    justifyContent: 'space-between',
+    padding: 12,
+  },
+});

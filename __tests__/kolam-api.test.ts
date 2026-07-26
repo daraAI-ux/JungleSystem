@@ -17,9 +17,11 @@ import {
   getKolamWebSetting,
   getKolamWebSettingVersion,
   getKolamWebSettingVersions,
+  deleteKolamNotificationSound,
   updateKolamRole,
   updateKolamWebSetting,
   updateKolamWebSettingVersion,
+  uploadKolamNotificationSound,
 } from '../src/services/kolam-api';
 
 const fetchMock = jest.fn();
@@ -344,6 +346,75 @@ describe('Kolam Settings API contracts', () => {
           app: 'marketplace',
           version: '2.4.0',
         }),
+      }),
+    );
+  });
+
+  it('uploads and resets Web Settings notification sounds through the live backend contract', async () => {
+    const appendSpy = jest.spyOn(FormData.prototype, 'append');
+    fetchMock
+      .mockResolvedValueOnce(
+        jsonResponse({
+          message: 'Notification sound uploaded',
+          groupCallRingtone: 'media/audios/ring.wav',
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({message: 'Notification sound reset to default'}),
+      );
+
+    await expect(
+      uploadKolamNotificationSound('group-call', 'C:\\sounds\\ring.wav'),
+    ).resolves.toMatchObject({
+      groupCallRingtone: 'media/audios/ring.wav',
+    });
+    await expect(deleteKolamNotificationSound('sales')).resolves.toMatchObject({
+      message: 'Notification sound reset to default',
+    });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      `${appConfig.kolamApiBaseUrl}/websetting/notification-sound/group-call`,
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.not.objectContaining({
+          'Content-Type': 'application/json',
+        }),
+        body: expect.any(FormData),
+      }),
+    );
+    expect(appendSpy).toHaveBeenCalledWith(
+      'sound',
+      expect.objectContaining({
+        name: 'ring.wav',
+        type: 'audio/wav',
+      }),
+    );
+    appendSpy.mockRestore();
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      `${appConfig.kolamApiBaseUrl}/websetting/notification-sound/sales`,
+      expect.objectContaining({
+        method: 'DELETE',
+      }),
+    );
+  });
+
+  it('surfaces notification sound permission errors from the live backend', async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: false,
+      status: 403,
+      text: jest.fn().mockResolvedValue(JSON.stringify({message: 'Forbidden'})),
+    });
+
+    await expect(
+      uploadKolamNotificationSound('assigned', 'C:\\sounds\\bell.mp3'),
+    ).rejects.toThrow('Forbidden');
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${appConfig.kolamApiBaseUrl}/websetting/notification-sound/assigned`,
+      expect.objectContaining({
+        method: 'POST',
       }),
     );
   });

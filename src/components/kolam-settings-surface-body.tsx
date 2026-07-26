@@ -26,9 +26,16 @@ export function KolamSettingsSurfaceBody({
         onSave={() => {
           void controller.saveWebSetting();
         }}
+        onDeleteNotificationSound={type => {
+          void controller.deleteNotificationSound(type);
+        }}
         onPluginControlChange={controller.setWebSettingPluginControl}
+        onUploadNotificationSound={type => {
+          void controller.uploadNotificationSound(type);
+        }}
         onWebTitleChange={controller.setWebTitle}
         draft={controller.webSettingDraft}
+        notificationSoundStatus={controller.notificationSoundStatus}
         saveMessage={controller.webSettingMessage}
         saveStatus={controller.webSettingSaveStatus}
         sections={controller.webFormSections}

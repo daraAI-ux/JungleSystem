@@ -40,13 +40,16 @@ import {
   getKolamWebSettingVersion,
   getKolamWebSettingVersions,
   getKolamRoles,
+  deleteKolamNotificationSound,
   updateKolamRole,
   updateKolamWebSetting,
   updateKolamWebSettingVersion,
+  uploadKolamNotificationSound,
   type KolamPluginConfigKey,
   type KolamActivityLog,
   type KolamActivityLogListParams,
   type KolamActivityLogStatsResponse,
+  type KolamNotificationSoundType,
   type KolamRole,
   type KolamRolePermission,
   type KolamWebSetting,
@@ -55,11 +58,30 @@ import {
 } from '../services/kolam-api';
 import {getCurrentUser} from '../services/auth-api';
 import {ApiError} from '../lib/api-error';
+import {pickNativeAudioFile} from '../services/native-file-picker';
 
 type WebSettingSaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 type RoleSaveStatus = 'idle' | 'loading' | 'saving' | 'saved' | 'error';
 type ActivityLogStatus = 'idle' | 'loading' | 'live' | 'error';
+type NotificationSoundStatus = 'idle' | 'uploading' | 'deleting';
 const maskedSecretPlaceholder = '********';
+const notificationSoundDraftFieldByType: Record<
+  KolamNotificationSoundType,
+  keyof Pick<
+    WebSettingDraft,
+    | 'notificationSound'
+    | 'unassignedNotificationSound'
+    | 'handoffNotificationSound'
+    | 'groupCallRingtone'
+    | 'salesNotificationSound'
+  >
+> = {
+  assigned: 'notificationSound',
+  unassigned: 'unassignedNotificationSound',
+  handoff: 'handoffNotificationSound',
+  'group-call': 'groupCallRingtone',
+  sales: 'salesNotificationSound',
+};
 
 interface WebSettingDraft {
   versionKolam: string;
@@ -279,6 +301,9 @@ export function useKolamSettingsPanelController(
   const [webSettingSaveStatus, setWebSettingSaveStatus] =
     useState<WebSettingSaveStatus>('idle');
   const [webSettingMessage, setWebSettingMessage] = useState('');
+  const [notificationSoundStatus, setNotificationSoundStatus] = useState<
+    Partial<Record<KolamNotificationSoundType, NotificationSoundStatus>>
+  >({});
   const [webSettingDraft, setWebSettingDraft] = useState<WebSettingDraft>(
     emptyWebSettingDraft,
   );
@@ -525,6 +550,61 @@ export function useKolamSettingsPanelController(
       },
     }));
     setWebSettingSaveStatus('idle');
+  };
+  const uploadNotificationSound = async (type: KolamNotificationSoundType) => {
+    setWebSettingMessage('');
+
+    try {
+      const picked = await pickNativeAudioFile();
+      if (picked.cancelled) {
+        return;
+      }
+
+      const localUri = picked.uri || picked.path || '';
+      if (!localUri) {
+        setWebSettingMessage('File audio tidak valid.');
+        return;
+      }
+
+      if (!isAllowedNotificationSoundFile(localUri, picked.extension)) {
+        setWebSettingMessage('Notification sound hanya menerima MP3 atau WAV.');
+        return;
+      }
+
+      setNotificationSoundStatus(current => ({...current, [type]: 'uploading'}));
+      const response = await uploadKolamNotificationSound(type, localUri);
+      const field = notificationSoundDraftFieldByType[type];
+      const nextPath = getNotificationSoundPathFromResponse(response, field);
+
+      setWebSettingDraft(current => ({...current, [field]: nextPath}));
+      setWebSetting(current =>
+        current ? ({...current, [field]: nextPath} as KolamWebSetting) : current,
+      );
+      setWebSettingMessage('Notification sound berhasil diupload.');
+    } catch (error) {
+      setWebSettingMessage(getNotificationSoundErrorMessage(error));
+    } finally {
+      setNotificationSoundStatus(current => ({...current, [type]: 'idle'}));
+    }
+  };
+  const deleteNotificationSound = async (type: KolamNotificationSoundType) => {
+    setWebSettingMessage('');
+    setNotificationSoundStatus(current => ({...current, [type]: 'deleting'}));
+
+    try {
+      await deleteKolamNotificationSound(type);
+      const field = notificationSoundDraftFieldByType[type];
+
+      setWebSettingDraft(current => ({...current, [field]: ''}));
+      setWebSetting(current =>
+        current ? ({...current, [field]: ''} as KolamWebSetting) : current,
+      );
+      setWebSettingMessage('Notification sound berhasil direset.');
+    } catch (error) {
+      setWebSettingMessage(getNotificationSoundErrorMessage(error));
+    } finally {
+      setNotificationSoundStatus(current => ({...current, [type]: 'idle'}));
+    }
   };
   const saveWebSetting = async () => {
     setWebSettingSaveStatus('saving');
@@ -940,6 +1020,9 @@ export function useKolamSettingsPanelController(
       webSettingVersion,
     ),
     saveWebSetting,
+    deleteNotificationSound,
+    notificationSoundStatus,
+    uploadNotificationSound,
     setWebSettingDraftField,
     setWebSettingPluginControl,
     webSettingDraft,
@@ -1203,6 +1286,22 @@ function createFirebaseUpdateBody(draft: WebSettingDraft) {
   return firebase;
 }
 
+function isAllowedNotificationSoundFile(localUri: string, extension?: string) {
+  const inferredExtension =
+    extension?.toLowerCase().replace(/^\./, '') ??
+    localUri.split(/[./\\]/).pop()?.toLowerCase();
+
+  return inferredExtension === 'mp3' || inferredExtension === 'wav';
+}
+
+function getNotificationSoundPathFromResponse(
+  response: Partial<Record<keyof WebSettingDraft, unknown>>,
+  field: keyof WebSettingDraft,
+) {
+  const value = response[field];
+  return typeof value === 'string' ? value : '';
+}
+
 function createActivityLogListParams(
   filters: SettingsActivityLogFilterState,
   page: number,
@@ -1270,6 +1369,22 @@ function getWebSettingSaveErrorMessage(error: unknown) {
   }
 
   return 'Gagal menyimpan Web Settings.';
+}
+
+function getNotificationSoundErrorMessage(error: unknown) {
+  if (error instanceof ApiError && error.status === 403) {
+    return 'Akses ditolak: permission websetting:update diperlukan.';
+  }
+
+  if (error instanceof ApiError && error.message) {
+    return error.message;
+  }
+
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return 'Gagal memproses notification sound.';
 }
 
 function getRoleSaveErrorMessage(error: unknown) {
