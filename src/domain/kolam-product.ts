@@ -898,12 +898,20 @@ function createKolamProductVariantPayload(
   row: KolamProductVariantFormRow,
   productType: 'product' | 'raw',
 ) {
+  const cleanProductCode = row.productCode.trim();
+  if (productType === 'raw' && !cleanProductCode) {
+    const variantLabel =
+      [row.tier1Value, row.tier2Value].map(value => value.trim()).filter(Boolean).join(' - ') ||
+      'tanpa nama';
+    throw new Error(`Kode produk wajib diisi untuk varian: ${variantLabel}.`);
+  }
+
   const payload = {
     ...(row.id && !row.id.startsWith('variant-draft-') ? { _id: row.id } : {}),
     tier1Value: row.tier1Value.trim(),
     tier2Value: row.tier2Value.trim(),
     sku: productType === 'product' ? row.sku.trim() : '',
-    productCode: productType === 'raw' ? row.productCode.trim() : '',
+    productCode: productType === 'raw' ? cleanProductCode : '',
     price: toNonNegativeNumber(row.price),
     price_to_sell: toNonNegativeNumber(row.priceToSell),
     marketPrice: toNonNegativeNumber(row.marketPrice),

@@ -2576,7 +2576,7 @@ function ProductVariantFormCard({
                   />
                 </ProductCompactField>
               ) : null}
-              <ProductCompactField label={productType === 'raw' ? 'Kode Produk' : 'SKU'}>
+              <ProductCompactField label={productType === 'raw' ? 'Kode Produk *' : 'SKU'}>
                 <KolamFormTextField
                   editable={!controller.saving}
                   onChangeText={value =>
@@ -2586,7 +2586,7 @@ function ProductVariantFormCard({
                       productType === 'raw' ? { productCode: value } : { sku: value },
                     )
                   }
-                  placeholder={productType === 'raw' ? 'Kode produk' : 'SKU'}
+                  placeholder={productType === 'raw' ? 'Kode produk wajib' : 'SKU'}
                   style={settingsWebFormStyles.settingsWebFormFieldValue}
                   value={productType === 'raw' ? variant.productCode : variant.sku}
                 />
