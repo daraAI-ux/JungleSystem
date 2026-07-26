@@ -398,7 +398,7 @@ function KolamPackingMaterialRow({
           actions={[
             { label: 'Lihat', onPress: onSelect },
             { label: 'Rubah', onPress: onEdit },
-            { label: 'Hapus', onPress: onDelete, tone: 'danger' },
+            { label: 'Nonaktifkan', onPress: onDelete, tone: 'danger' },
           ]}
           onOpenChange={setActionMenuOpen}
         />
