@@ -125,10 +125,8 @@ describe('Kolam shell chrome controller hook', () => {
     });
 
     expect(
-      requireController(latest).overlay.userMenu.items.some(
-        item => item.id === 'web-settings',
-      ),
-    ).toBe(false);
+      requireController(latest).overlay.userMenu.items.map(item => item.id),
+    ).toEqual(['dashboard', 'settings', 'command-menu', 'support', 'logout']);
   });
 
   it('passes dashboard header route context through shell chrome', async () => {

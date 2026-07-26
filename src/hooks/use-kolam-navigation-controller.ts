@@ -10,7 +10,6 @@ import {
   type CommandEntry,
 } from '../domain/command-index';
 import {
-  getKolamNavigationItemByRoute,
   getKolamNavigationItemByRuntimeRoute,
   getKolamNavigationRouteTarget,
   type KolamNavigationItem,
@@ -113,7 +112,7 @@ export function useKolamNavigationController({
     setActiveModule(module);
     setActiveNavigationItem(
       module === 'settings'
-        ? getKolamNavigationItemByRoute('/settings/websetting')
+        ? getSettingsNavigationItem()
         : null,
     );
     setActivePluginRoute(null);
@@ -213,29 +212,13 @@ export function useKolamNavigationController({
 
     if (item.id === 'settings') {
       setActiveModule('settings');
-      setActiveNavigationItem(
-        getKolamNavigationItemByRoute('/settings/websetting'),
-      );
+      setActiveNavigationItem(getSettingsNavigationItem());
       setActivePluginRoute(null);
       setActiveAmSurface(null);
       setActiveKolamSurface(null);
       setActiveModuleRoute(null);
       setCommandSearch('settings');
       onMessage('Settings Kolam dibuka sebagai surface native.');
-      return;
-    }
-
-    if (item.id === 'web-settings') {
-      setActiveModule('settings');
-      setActiveNavigationItem(
-        getKolamNavigationItemByRoute('/settings/websetting'),
-      );
-      setActivePluginRoute(null);
-      setActiveAmSurface(null);
-      setActiveKolamSurface(null);
-      setActiveModuleRoute(null);
-      setCommandSearch('web settings');
-      onMessage('Web Settings Kolam dibuka dari user menu admin native.');
       return;
     }
 
@@ -618,6 +601,19 @@ function getManualNavigationItem(route: string): KolamNavigationItem | null {
     };
   }
 
+  if (routePath === '/pengaturan') {
+    return getSettingsNavigationItem();
+  }
+
   return null;
+}
+
+function getSettingsNavigationItem(): KolamNavigationItem {
+  return {
+    description: 'Pusat Settings produksi JungleSystem.',
+    label: 'Pengaturan',
+    requiredAccess: ['kolam'],
+    route: '/pengaturan',
+  };
 }
 

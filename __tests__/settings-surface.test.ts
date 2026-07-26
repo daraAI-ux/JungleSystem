@@ -29,9 +29,9 @@ import {
 describe('settingsSurfaceItems', () => {
   it('maps live Kolam settings routes into a native summary surface', () => {
     expect(settingsSurfaceItems.map(item => item.route)).toEqual([
-      '/settings/websetting',
-      '/settings/roles',
-      '/settings/activity-log',
+      '/pengaturan',
+      '/pengaturan',
+      '/pengaturan',
     ]);
     expect(settingsSurfaceItems.map(item => item.badge)).toEqual([
       'Config',
@@ -47,10 +47,10 @@ describe('settingsSurfaceItems', () => {
   });
 
   it('resolves native settings surface items from live routes', () => {
-    expect(getSettingsSurfaceItemByRoute('/settings/roles')).toEqual(
+    expect(getSettingsSurfaceItemByRoute('/pengaturan')).toEqual(
       expect.objectContaining({
-        id: 'role-management',
-        title: 'Role Management',
+        id: 'web-settings',
+        title: 'Pengaturan Web',
       }),
     );
     expect(getSettingsSurfaceItemByRoute('/settings/sitemap')).toBeNull();

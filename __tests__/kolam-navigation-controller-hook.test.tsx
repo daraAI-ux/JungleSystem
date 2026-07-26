@@ -719,7 +719,7 @@ describe('Kolam navigation controller hook', () => {
     expect(requireNavigationController(latest).activePluginRoute).toBeNull();
   });
 
-  it('opens the top Settings module on the native Web Settings landing', async () => {
+  it('opens the top Settings module on the consolidated Settings landing', async () => {
     const messages: string[] = [];
     let latest: NavigationController | null = null;
 
@@ -741,8 +741,8 @@ describe('Kolam navigation controller hook', () => {
     expect(requireNavigationController(latest).activeModule).toBe('settings');
     expect(requireNavigationController(latest).activeNavigationItem).toEqual(
       expect.objectContaining({
-        label: 'Pengaturan Web',
-        route: '/settings/websetting',
+        label: 'Pengaturan',
+        route: '/pengaturan',
       }),
     );
     expect(requireNavigationController(latest).activePluginRoute).toBeNull();

@@ -201,14 +201,6 @@ test('keeps sidebar metadata available for native navigation badges', () => {
       'staff-attendance',
       'staff-attendance/leaves',
       'staff-attendance/me',
-      'settings/activity-log',
-      'settings/ai-tools',
-      'settings/alerts',
-      'settings/maintenance',
-      'settings/syncs',
-      'settings/system',
-      'settings/tax',
-      'settings/websetting/marketplace-landing',
     ]), 
   );
   expect(getShellModule('kolam').routes.length).toBeGreaterThanOrEqual(30);
@@ -220,12 +212,7 @@ test('keeps sidebar metadata available for native navigation badges', () => {
     'runtime-readiness',
   ]);
   expect(getShellModulesByArea('pos')).toHaveLength(5);
-  expect(getShellModule('settings').routes).toEqual([
-    'settings/websetting',
-    'settings/sitemap',
-    'settings/roles',
-    'settings/activity-log',
-  ]);
+  expect(getShellModule('settings').routes).toEqual(['pengaturan']);
 });
 
 test('keeps Kolam shell route metadata aligned with live navigation routes', () => {

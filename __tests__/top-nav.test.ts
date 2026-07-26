@@ -17,14 +17,13 @@ describe('topNavUserMenuItems', () => {
     expect(topNavUserMenuItems.map(item => item.id)).toEqual([
       'dashboard',
       'settings',
-      'web-settings',
       'command-menu',
       'support',
       'logout',
     ]);
     expect(getTopNavUserMenuItems().map(item => item.label)).toEqual([
       'Dashboard',
-      'Settings',
+      'Pengaturan',
       'Command Menu',
       'Contact Support',
       'Log out',
@@ -51,20 +50,20 @@ describe('topNavUserMenuItems', () => {
     ]);
     expect(getTopNavUserMenuItems().map(item => item.routeHint)).toEqual([
       '/',
-      '/settings',
+      '/pengaturan',
       'Ctrl K',
       '#contact-s',
       'auth/logout',
     ]);
     expect(getTopNavUserMenuPreview()).toBe(
-      'Dashboard / Settings / Command Menu',
+      'Dashboard / Pengaturan / Command Menu',
     );
     expect(getTopNavUserMenuPreview(getTopNavUserMenuItems(), 5)).toBe(
-      'Dashboard / Settings / Command Menu / Contact Support / Log out',
+      'Dashboard / Pengaturan / Command Menu / Contact Support / Log out',
     );
   });
 
-  it('shows Web Settings for admin roles like the live Kolam avatar menu', () => {
+  it('keeps admin roles on the same consolidated Settings menu', () => {
     expect(isTopNavAdminRole('admin')).toBe(true);
     expect(isTopNavAdminRole('super-admin')).toBe(true);
     expect(isTopNavAdminRole('super_administrator')).toBe(true);
@@ -74,8 +73,7 @@ describe('topNavUserMenuItems', () => {
       getTopNavUserMenuItems('super-admin').map(item => item.label),
     ).toEqual([
       'Dashboard',
-      'Settings',
-      'Web Settings',
+      'Pengaturan',
       'Command Menu',
       'Contact Support',
       'Log out',
@@ -85,20 +83,19 @@ describe('topNavUserMenuItems', () => {
     ).toEqual([
       'dashboard',
       'settings',
-      'settings',
       'command',
       'support',
       'logout',
     ]);
     expect(
       getTopNavUserMenuItems('super-admin').map(item => item.section),
-    ).toEqual(['main', 'main', 'main', 'command', 'support', 'session']);
+    ).toEqual(['main', 'main', 'command', 'support', 'session']);
     expect(
       getTopNavUserMenuItems('super-admin').map(item => item.trailingIconKind),
-    ).toEqual(Array(6).fill(undefined));
+    ).toEqual(Array(5).fill(undefined));
     expect(
       getTopNavUserMenuPreview(getTopNavUserMenuItems('super-admin')),
-    ).toBe('Dashboard / Settings / Web Settings');
+    ).toBe('Dashboard / Pengaturan / Command Menu');
   });
 
   it('builds live-style breadcrumb items for Dashboard and active module', () => {
@@ -120,8 +117,8 @@ describe('topNavUserMenuItems', () => {
       },
       {
         id: 'settings',
-        label: 'Settings',
-        routeHint: '/settings/websetting',
+        label: 'Pengaturan',
+        routeHint: '/pengaturan',
         current: true,
       },
     ]);

@@ -688,122 +688,6 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
       },
     ],
   },
-  {
-    id: 'settings',
-    title: 'Pengaturan',
-    items: [
-      {
-        label: 'Pengaturan Web',
-        route: '/settings/websetting',
-        description: 'Web display and configuration settings',
-        group: 'Web',
-        requiredAccess: ['kolam'],
-      },
-      {
-        label: 'Beranda Pengaturan',
-        route: '/settings',
-        description: 'Live settings landing route',
-        group: 'System',
-        requiredAccess: ['kolam'],
-      },
-      {
-        label: 'Pengaturan Web Lama',
-        route: '/web-settings',
-        description: 'Legacy web settings route still present in live Kolam',
-        group: 'Web',
-        requiredAccess: ['kolam'],
-      },
-      {
-        label: 'App Downloads',
-        route: '/app-downloads',
-        description: 'Desktop and companion app downloads',
-        group: 'System',
-        requiredAccess: ['kolam'],
-      },
-      {
-        label: 'Sitemap',
-        route: '/settings/sitemap',
-        description: 'Configure XML sitemap served on the marketplace',
-        group: 'Web',
-        requiredAccess: ['kolam'],
-      },
-      {
-        label: 'Blog Post',
-        route: '/blogs',
-        description: 'Manage blog posts and content',
-        group: 'Web',
-        requiredAccess: ['kolam'],
-      },
-      {
-        label: 'Blog Topics',
-        route: '/blog-topics',
-        description: 'Manage blog topics for categorization',
-        group: 'Web',
-        requiredAccess: ['kolam'],
-      },
-      {
-        label: 'Role Management',
-        route: '/settings/roles',
-        description: 'Manage user roles and permissions',
-        requiredAccess: ['kolam'],
-      },
-      {
-        label: 'Activity Log',
-        route: '/settings/activity-log',
-        description: 'Audit trail for navigation and API calls',
-        requiredAccess: ['kolam'],
-      },
-      {
-        label: 'AI Tools',
-        route: '/settings/ai-tools',
-        description: 'AI tool settings from the live Kolam settings area',
-        group: 'System',
-        requiredAccess: ['kolam'],
-      },
-      {
-        label: 'Alerts',
-        route: '/settings/alerts',
-        description: 'Operational alert configuration',
-        group: 'System',
-        requiredAccess: ['kolam'],
-      },
-      {
-        label: 'Maintenance',
-        route: '/settings/maintenance',
-        description: 'Maintenance controls and service mode settings',
-        group: 'System',
-        requiredAccess: ['kolam'],
-      },
-      {
-        label: 'Syncs',
-        route: '/settings/syncs',
-        description: 'Synchronization settings and status pages',
-        group: 'System',
-        requiredAccess: ['kolam'],
-      },
-      {
-        label: 'System',
-        route: '/settings/system',
-        description: 'System-level Kolam configuration',
-        group: 'System',
-        requiredAccess: ['kolam'],
-      },
-      {
-        label: 'Pengaturan Pajak',
-        route: '/settings/tax',
-        description: 'Tax settings used by finance workflows',
-        group: 'System',
-        requiredAccess: ['kolam'],
-      },
-      {
-        label: 'Marketplace Landing',
-        route: '/settings/websetting/marketplace-landing',
-        description: 'Marketplace landing page configuration',
-        group: 'Web',
-        requiredAccess: ['kolam'],
-      },
-    ],
-  },
 ];
 
 const sidebarFallbackDescriptions: Record<string, string> = {
@@ -937,11 +821,6 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
         label: 'Tipe Tugas',
       }),
     ],
-  },
-  {
-    id: 'settings',
-    title: 'Pengaturan',
-    items: [sidebarItem('/settings/websetting', { label: 'Pengaturan' })],
   },
 ];
 
@@ -2387,7 +2266,7 @@ export function getKolamNavigationRouteTarget(
     return routeTarget('customer', item);
   }
 
-  if (routePath.startsWith('/settings')) {
+  if (routePath === '/pengaturan') {
     return routeTarget('settings', item);
   }
 

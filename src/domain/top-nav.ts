@@ -10,7 +10,6 @@ export interface TopNavUserMenuItem {
   id:
     | 'dashboard'
     | 'settings'
-    | 'web-settings'
     | 'command-menu'
     | 'support'
     | 'logout';
@@ -78,21 +77,11 @@ export const topNavUserMenuItems: TopNavUserMenuItem[] = [
   {
     id: 'settings',
     label: 'Pengaturan',
-    routeHint: '/settings',
+    routeHint: '/pengaturan',
     iconKind: 'settings',
     section: 'main',
     sourceComponent:
       'E:\\Projects\\da-inventory-frontend\\src\\components\\app-sidebar-nav.tsx',
-  },
-  {
-    id: 'web-settings',
-    label: 'Pengaturan Web',
-    routeHint: '/settings/websetting',
-    iconKind: 'settings',
-    section: 'main',
-    sourceComponent:
-      'E:\\Projects\\da-inventory-frontend\\src\\components\\app-sidebar-nav.tsx',
-    adminOnly: true,
   },
   {
     id: 'command-menu',
@@ -123,12 +112,10 @@ export const topNavUserMenuItems: TopNavUserMenuItem[] = [
   },
 ];
 
-export function getTopNavUserMenuItems(roleKey?: string): TopNavUserMenuItem[] {
-  const canSeeWebSettings = isTopNavAdminRole(roleKey);
-
-  return topNavUserMenuItems.filter(
-    item => !item.adminOnly || canSeeWebSettings,
-  );
+export function getTopNavUserMenuItems(
+  _roleKey?: string,
+): TopNavUserMenuItem[] {
+  return topNavUserMenuItems;
 }
 
 export function getTopNavUserMenuPreview(

@@ -190,19 +190,6 @@ export const shellModules: ShellModule[] = [
       'staff-attendance/me',
       'portal',
       'task-manager',
-      'settings',
-      'settings/websetting',
-      'settings/sitemap',
-      'settings/roles',
-      'settings/activity-log',
-      'settings/ai-tools',
-      'settings/alerts',
-      'settings/maintenance',
-      'settings/syncs',
-      'settings/system',
-      'settings/tax',
-      'settings/websetting/marketplace-landing',
-      'web-settings',
     ],
   },
   {
@@ -213,12 +200,7 @@ export const shellModules: ShellModule[] = [
     sourceRepo: 'E:\\Projects\\_latest-da\\da-inventory-frontend',
     summary:
       'Pengaturan web, role management, activity log, dan audit akses Kolam.',
-    routes: [
-      'settings/websetting',
-      'settings/sitemap',
-      'settings/roles',
-      'settings/activity-log',
-    ],
+    routes: ['pengaturan'],
   },
   {
     id: 'checkout',

@@ -369,7 +369,7 @@ export const settingsSurfaceItems: SettingsSurfaceItem[] = [
   {
     id: 'web-settings',
     title: 'Pengaturan Web',
-    route: '/settings/websetting',
+    route: '/pengaturan',
     description: 'Display, web storefront, and general Kolam configuration.',
     status: 'source-audit',
     badge: 'Config',
@@ -377,7 +377,7 @@ export const settingsSurfaceItems: SettingsSurfaceItem[] = [
   {
     id: 'role-management',
     title: 'Role Management',
-    route: '/settings/roles',
+    route: '/pengaturan',
     description: 'Role access, permission groups, and staff capability review.',
     status: 'source-audit',
     badge: 'Access',
@@ -385,7 +385,7 @@ export const settingsSurfaceItems: SettingsSurfaceItem[] = [
   {
     id: 'activity-log',
     title: 'Activity Log',
-    route: '/settings/activity-log',
+    route: '/pengaturan',
     description: 'Audit trail for user activity, navigation, and API changes.',
     status: 'native-summary',
     badge: 'Audit',
@@ -1654,7 +1654,7 @@ export function getSettingsWebConfigFields(
       id: 'storefront-status',
       label: 'Storefront enabled',
       value: storefrontEnabled,
-      description: 'Native preview for /settings/websetting storefront status.',
+      description: 'Native preview for /pengaturan storefront status.',
       control: 'toggle',
     },
     {

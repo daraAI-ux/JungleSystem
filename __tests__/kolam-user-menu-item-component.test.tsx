@@ -14,7 +14,7 @@ describe('KolamUserMenuItem', () => {
           icon={<View />}
           label="Settings"
           onPress={onPress}
-          routeHint="/settings"
+          routeHint="/pengaturan"
           trailing={<Text>{'>'}</Text>}
         />,
       );
@@ -28,7 +28,7 @@ describe('KolamUserMenuItem', () => {
 
     expect(onPress).toHaveBeenCalledTimes(1);
     expect(renderer!.root.findAllByType(Text).map(node => node.props.children)).toEqual(
-      ['Settings', '/settings', '>'],
+      ['Settings', '/pengaturan', '>'],
     );
   });
 
