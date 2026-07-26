@@ -87,6 +87,7 @@ import {
   KolamPricingMetric,
   KolamPricingMetricsGrid,
 } from './kolam-pricing-metric-grid';
+import { KolamToggleRow } from './kolam-toggle-row';
 import {
   KolamGrocerPricingCard,
   KolamInternalProfitCard,
@@ -1217,13 +1218,58 @@ function ProductEditFormPage({
               </ProductEditSection>
 
               <ProductEditSection
-                description="Komisi transaksi bahan baku."
-                title="Komisi"
+                description="Atur apakah bahan baku ini tersedia untuk penjualan POS."
+                title="Penjualan POS"
+              >
+                <KolamToggleRow
+                  active={form.sellable}
+                  description="Aktifkan jika bahan baku dapat dijual langsung melalui POS."
+                  label="Bahan baku dijual"
+                  onPress={() => controller.onChangeForm({ sellable: !form.sellable })}
+                />
+              </ProductEditSection>
+
+              <ProductEditSection
+                description="Harga jual bahan baku tanpa varian."
+                title="Harga"
+              >
+                <ProductRootPricingPanel controller={controller} />
+              </ProductEditSection>
+
+              <ProductEditSection
+                description="Batas stok rendah untuk peringatan inventory."
+                title="Persediaan"
+              >
+                <ProductFieldShell label="Batas Stok Rendah">
+                  <KolamFormTextField
+                    editable={!disabled}
+                    keyboardType="numeric"
+                    onChangeText={lowStockThreshold =>
+                      controller.onChangeForm({ lowStockThreshold })
+                    }
+                    placeholder="Batas stok rendah"
+                    style={settingsWebFormStyles.settingsWebFormFieldValue}
+                    value={form.lowStockThreshold}
+                  />
+                </ProductFieldShell>
+              </ProductEditSection>
+
+              <ProductEditSection
+                description={
+                  form.sellable
+                    ? 'Poin anggota dan komisi transaksi bahan baku.'
+                    : 'Komisi transaksi bahan baku.'
+                }
+                title={form.sellable ? 'Komisi dan Poin Anggota' : 'Komisi'}
               >
                 <KolamCommercialPolicyEditor
                   disabled={disabled}
-                  memberPointsDisabled
-                  memberPointsHint="Poin anggota bahan baku diatur pada fase harga/penjualan."
+                  memberPointsDisabled={!form.sellable}
+                  memberPointsHint={
+                    form.sellable
+                      ? 'Poin yang didapat pelanggan per unit bahan baku.'
+                      : 'Aktifkan penjualan POS untuk mengatur poin anggota.'
+                  }
                   onChange={value =>
                     controller.onChangeForm({
                       commissionEnabled: value.commissionEnabled,
@@ -1315,6 +1361,13 @@ function ProductEditFormPage({
                     value={form.locationId}
                   />
                 </ProductFieldShell>
+              </ProductEditSection>
+
+              <ProductEditSection
+                description="Berat dan dimensi bahan baku tanpa varian."
+                title="Logistik"
+              >
+                <ProductRootLogisticsPanel controller={controller} />
               </ProductEditSection>
 
               <ProductEditSection
