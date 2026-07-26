@@ -48,10 +48,14 @@ import {
   getKolamRoles,
   getKolamYoutubeSectionAdmin,
   deleteKolamNotificationSound,
+  deleteKolamCustomerNotice,
   updateKolamRole,
+  updateKolamCtaSection,
+  updateKolamYoutubeSection,
   updateKolamWebSetting,
   updateKolamWebSettingVersion,
   uploadKolamNotificationSound,
+  upsertKolamCustomerNotice,
   type KolamPluginConfigKey,
   type KolamActivityLog,
   type KolamActivityLogListParams,
@@ -79,6 +83,7 @@ type RoleSaveStatus = 'idle' | 'loading' | 'saving' | 'saved' | 'error';
 type ActivityLogStatus = 'idle' | 'loading' | 'live' | 'error';
 type NotificationSoundStatus = 'idle' | 'uploading' | 'deleting';
 type MarketplaceLandingOverviewStatus = 'idle' | 'loading' | 'live' | 'error';
+type MarketplaceLandingSaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 const maskedSecretPlaceholder = '********';
 const notificationSoundDraftFieldByType: Record<
   KolamNotificationSoundType,
@@ -178,6 +183,32 @@ interface RoleDraft {
   name: string;
   key: string;
   description: string;
+}
+
+export interface MarketplaceLandingCtaDraft {
+  title: string;
+  description: string;
+  buttonText: string;
+  buttonLink: string;
+  isActive: boolean;
+}
+
+export interface MarketplaceLandingYoutubeDraft {
+  link: string;
+  title: string;
+  subtitle: string;
+  isActive: boolean;
+}
+
+export interface MarketplaceLandingNoticeDraft {
+  key: string;
+  title: string;
+  message: string;
+  ctaUrl: string;
+  ctaLabel: string;
+  showOnHome: boolean;
+  showOnDashboard: boolean;
+  isActive: boolean;
 }
 
 export interface MarketplaceLandingOverview {
@@ -283,6 +314,32 @@ const emptyRoleDraft: RoleDraft = {
   description: '',
 };
 
+const emptyMarketplaceLandingCtaDraft: MarketplaceLandingCtaDraft = {
+  title: '',
+  description: '',
+  buttonText: '',
+  buttonLink: '',
+  isActive: true,
+};
+
+const emptyMarketplaceLandingYoutubeDraft: MarketplaceLandingYoutubeDraft = {
+  link: '',
+  title: '',
+  subtitle: '',
+  isActive: true,
+};
+
+const emptyMarketplaceLandingNoticeDraft: MarketplaceLandingNoticeDraft = {
+  key: '',
+  title: '',
+  message: '',
+  ctaUrl: '',
+  ctaLabel: '',
+  showOnHome: true,
+  showOnDashboard: true,
+  isActive: true,
+};
+
 const emptyMarketplaceLandingOverview: MarketplaceLandingOverview = {
   status: 'idle',
   message: '',
@@ -345,6 +402,20 @@ export function useKolamSettingsPanelController(
   >({});
   const [marketplaceLandingOverview, setMarketplaceLandingOverview] =
     useState<MarketplaceLandingOverview>(emptyMarketplaceLandingOverview);
+  const [marketplaceLandingCtaDraft, setMarketplaceLandingCtaDraft] =
+    useState<MarketplaceLandingCtaDraft>(emptyMarketplaceLandingCtaDraft);
+  const [marketplaceLandingYoutubeDraft, setMarketplaceLandingYoutubeDraft] =
+    useState<MarketplaceLandingYoutubeDraft>(
+      emptyMarketplaceLandingYoutubeDraft,
+    );
+  const [marketplaceLandingNoticeDraft, setMarketplaceLandingNoticeDraft] =
+    useState<MarketplaceLandingNoticeDraft>(
+      emptyMarketplaceLandingNoticeDraft,
+    );
+  const [marketplaceLandingSaveStatus, setMarketplaceLandingSaveStatus] =
+    useState<MarketplaceLandingSaveStatus>('idle');
+  const [marketplaceLandingMessage, setMarketplaceLandingMessage] =
+    useState('');
   const [webSettingDraft, setWebSettingDraft] = useState<WebSettingDraft>(
     emptyWebSettingDraft,
   );
@@ -458,6 +529,13 @@ export function useKolamSettingsPanelController(
             customerNotices,
             marketplaceContent,
           });
+          setMarketplaceLandingCtaDraft(createMarketplaceLandingCtaDraft(ctaSection));
+          setMarketplaceLandingYoutubeDraft(
+            createMarketplaceLandingYoutubeDraft(youtubeSection),
+          );
+          setMarketplaceLandingNoticeDraft(emptyMarketplaceLandingNoticeDraft);
+          setMarketplaceLandingSaveStatus('idle');
+          setMarketplaceLandingMessage('');
         },
       )
       .catch(error => {
@@ -654,6 +732,138 @@ export function useKolamSettingsPanelController(
       },
     }));
     setWebSettingSaveStatus('idle');
+  };
+  const setMarketplaceLandingCtaDraftField = <
+    Key extends keyof MarketplaceLandingCtaDraft,
+  >(
+    key: Key,
+    value: MarketplaceLandingCtaDraft[Key],
+  ) => {
+    setMarketplaceLandingCtaDraft(current => ({...current, [key]: value}));
+    setMarketplaceLandingSaveStatus('idle');
+  };
+  const setMarketplaceLandingYoutubeDraftField = <
+    Key extends keyof MarketplaceLandingYoutubeDraft,
+  >(
+    key: Key,
+    value: MarketplaceLandingYoutubeDraft[Key],
+  ) => {
+    setMarketplaceLandingYoutubeDraft(current => ({...current, [key]: value}));
+    setMarketplaceLandingSaveStatus('idle');
+  };
+  const setMarketplaceLandingNoticeDraftField = <
+    Key extends keyof MarketplaceLandingNoticeDraft,
+  >(
+    key: Key,
+    value: MarketplaceLandingNoticeDraft[Key],
+  ) => {
+    setMarketplaceLandingNoticeDraft(current => ({...current, [key]: value}));
+    setMarketplaceLandingSaveStatus('idle');
+  };
+  const editMarketplaceLandingNotice = (notice: KolamCustomerTextNotice) => {
+    setMarketplaceLandingNoticeDraft(createMarketplaceLandingNoticeDraft(notice));
+    setMarketplaceLandingSaveStatus('idle');
+    setMarketplaceLandingMessage('');
+  };
+  const clearMarketplaceLandingNoticeDraft = () => {
+    setMarketplaceLandingNoticeDraft(emptyMarketplaceLandingNoticeDraft);
+    setMarketplaceLandingSaveStatus('idle');
+    setMarketplaceLandingMessage('');
+  };
+  const saveMarketplaceLandingCta = async () => {
+    setMarketplaceLandingSaveStatus('saving');
+    setMarketplaceLandingMessage('');
+
+    try {
+      const ctaSection = await updateKolamCtaSection({
+        title: marketplaceLandingCtaDraft.title.trim(),
+        description: marketplaceLandingCtaDraft.description.trim(),
+        buttonText: marketplaceLandingCtaDraft.buttonText.trim(),
+        buttonLink: marketplaceLandingCtaDraft.buttonLink.trim(),
+        isActive: marketplaceLandingCtaDraft.isActive,
+      });
+      setMarketplaceLandingCtaDraft(createMarketplaceLandingCtaDraft(ctaSection));
+      setMarketplaceLandingOverview(current => ({...current, ctaSection}));
+      setMarketplaceLandingSaveStatus('saved');
+      setMarketplaceLandingMessage('CTA section berhasil disimpan.');
+    } catch (error) {
+      setMarketplaceLandingSaveStatus('error');
+      setMarketplaceLandingMessage(getMarketplaceLandingSaveErrorMessage(error));
+    }
+  };
+  const saveMarketplaceLandingYoutube = async () => {
+    setMarketplaceLandingSaveStatus('saving');
+    setMarketplaceLandingMessage('');
+
+    try {
+      const youtubeSection = await updateKolamYoutubeSection({
+        link: marketplaceLandingYoutubeDraft.link.trim(),
+        title: marketplaceLandingYoutubeDraft.title.trim(),
+        subtitle: marketplaceLandingYoutubeDraft.subtitle.trim(),
+        isActive: marketplaceLandingYoutubeDraft.isActive,
+      });
+      setMarketplaceLandingYoutubeDraft(
+        createMarketplaceLandingYoutubeDraft(youtubeSection),
+      );
+      setMarketplaceLandingOverview(current => ({...current, youtubeSection}));
+      setMarketplaceLandingSaveStatus('saved');
+      setMarketplaceLandingMessage('YouTube section berhasil disimpan.');
+    } catch (error) {
+      setMarketplaceLandingSaveStatus('error');
+      setMarketplaceLandingMessage(getMarketplaceLandingSaveErrorMessage(error));
+    }
+  };
+  const saveMarketplaceLandingNotice = async () => {
+    setMarketplaceLandingSaveStatus('saving');
+    setMarketplaceLandingMessage('');
+
+    try {
+      const notice = await upsertKolamCustomerNotice({
+        key: marketplaceLandingNoticeDraft.key.trim(),
+        title: marketplaceLandingNoticeDraft.title.trim(),
+        message: marketplaceLandingNoticeDraft.message.trim(),
+        ctaUrl: marketplaceLandingNoticeDraft.ctaUrl.trim(),
+        ctaLabel: marketplaceLandingNoticeDraft.ctaLabel.trim(),
+        showOnHome: marketplaceLandingNoticeDraft.showOnHome,
+        showOnDashboard: marketplaceLandingNoticeDraft.showOnDashboard,
+        isActive: marketplaceLandingNoticeDraft.isActive,
+      });
+      setMarketplaceLandingOverview(current => ({
+        ...current,
+        customerNotices: upsertMarketplaceNotice(
+          current.customerNotices,
+          notice,
+        ),
+      }));
+      setMarketplaceLandingNoticeDraft(createMarketplaceLandingNoticeDraft(notice));
+      setMarketplaceLandingSaveStatus('saved');
+      setMarketplaceLandingMessage('Customer notice berhasil disimpan.');
+    } catch (error) {
+      setMarketplaceLandingSaveStatus('error');
+      setMarketplaceLandingMessage(getMarketplaceLandingSaveErrorMessage(error));
+    }
+  };
+  const deleteMarketplaceLandingNotice = async (key: string) => {
+    setMarketplaceLandingSaveStatus('saving');
+    setMarketplaceLandingMessage('');
+
+    try {
+      await deleteKolamCustomerNotice(key);
+      setMarketplaceLandingOverview(current => ({
+        ...current,
+        customerNotices: current.customerNotices.filter(
+          notice => notice.key !== key,
+        ),
+      }));
+      setMarketplaceLandingNoticeDraft(current =>
+        current.key === key ? emptyMarketplaceLandingNoticeDraft : current,
+      );
+      setMarketplaceLandingSaveStatus('saved');
+      setMarketplaceLandingMessage('Customer notice berhasil dihapus.');
+    } catch (error) {
+      setMarketplaceLandingSaveStatus('error');
+      setMarketplaceLandingMessage(getMarketplaceLandingSaveErrorMessage(error));
+    }
   };
   const uploadNotificationSound = async (type: KolamNotificationSoundType) => {
     setWebSettingMessage('');
@@ -1095,6 +1305,11 @@ export function useKolamSettingsPanelController(
     liveEndpoints,
     maintenanceMode,
     marketplaceLandingOverview,
+    marketplaceLandingCtaDraft,
+    marketplaceLandingYoutubeDraft,
+    marketplaceLandingNoticeDraft,
+    marketplaceLandingSaveStatus,
+    marketplaceLandingMessage,
     roleRows,
     roles,
     roleDraft,
@@ -1130,6 +1345,15 @@ export function useKolamSettingsPanelController(
     uploadNotificationSound,
     setWebSettingDraftField,
     setWebSettingPluginControl,
+    setMarketplaceLandingCtaDraftField,
+    setMarketplaceLandingYoutubeDraftField,
+    setMarketplaceLandingNoticeDraftField,
+    clearMarketplaceLandingNoticeDraft,
+    deleteMarketplaceLandingNotice,
+    editMarketplaceLandingNotice,
+    saveMarketplaceLandingCta,
+    saveMarketplaceLandingYoutube,
+    saveMarketplaceLandingNotice,
     webSettingDraft,
     webSettingMessage,
     webSettingSaveStatus,
@@ -1407,6 +1631,56 @@ function getNotificationSoundPathFromResponse(
   return typeof value === 'string' ? value : '';
 }
 
+function createMarketplaceLandingCtaDraft(
+  section: KolamCtaSection | null,
+): MarketplaceLandingCtaDraft {
+  return {
+    title: section?.title ?? '',
+    description: section?.description ?? '',
+    buttonText: section?.buttonText ?? '',
+    buttonLink: section?.buttonLink ?? '',
+    isActive: section?.isActive !== false,
+  };
+}
+
+function createMarketplaceLandingYoutubeDraft(
+  section: KolamYoutubeSection | null,
+): MarketplaceLandingYoutubeDraft {
+  return {
+    link: section?.link ?? '',
+    title: section?.title ?? '',
+    subtitle: section?.subtitle ?? '',
+    isActive: section?.isActive !== false,
+  };
+}
+
+function createMarketplaceLandingNoticeDraft(
+  notice: KolamCustomerTextNotice,
+): MarketplaceLandingNoticeDraft {
+  return {
+    key: notice.key ?? '',
+    title: notice.title ?? '',
+    message: notice.message ?? '',
+    ctaUrl: notice.ctaUrl ?? '',
+    ctaLabel: notice.ctaLabel ?? '',
+    showOnHome: notice.showOnHome !== false,
+    showOnDashboard: notice.showOnDashboard !== false,
+    isActive: notice.isActive !== false,
+  };
+}
+
+function upsertMarketplaceNotice(
+  notices: KolamCustomerTextNotice[],
+  notice: KolamCustomerTextNotice,
+) {
+  const existing = notices.findIndex(item => item.key === notice.key);
+  if (existing < 0) {
+    return [...notices, notice];
+  }
+
+  return notices.map(item => (item.key === notice.key ? notice : item));
+}
+
 function createActivityLogListParams(
   filters: SettingsActivityLogFilterState,
   page: number,
@@ -1502,6 +1776,18 @@ function getMarketplaceLandingOverviewErrorMessage(error: unknown) {
   }
 
   return 'Gagal membaca Marketplace Landing live.';
+}
+
+function getMarketplaceLandingSaveErrorMessage(error: unknown) {
+  if (error instanceof ApiError && error.status === 403) {
+    return 'Akses ditolak: permission websetting:update diperlukan.';
+  }
+
+  if (error instanceof ApiError && error.message) {
+    return error.message;
+  }
+
+  return 'Gagal menyimpan Marketplace Landing.';
 }
 
 function getRoleSaveErrorMessage(error: unknown) {

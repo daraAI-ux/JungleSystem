@@ -54,6 +54,31 @@ describe('settings web widgets', () => {
           draft={createWebSettingDraft()}
           fields={getSettingsWebConfigFields()}
           maintenanceMode={false}
+          marketplaceLandingCtaDraft={{
+            title: 'Jelajahi Dunia Species',
+            description: 'Temukan koleksi',
+            buttonText: 'View',
+            buttonLink: '/species',
+            isActive: true,
+          }}
+          marketplaceLandingYoutubeDraft={{
+            link: 'https://youtube.com/@DuniaAnura',
+            title: 'Dunia Anura',
+            subtitle: 'YouTube',
+            isActive: true,
+          }}
+          marketplaceLandingNoticeDraft={{
+            key: '',
+            title: '',
+            message: '',
+            ctaUrl: '',
+            ctaLabel: '',
+            showOnHome: true,
+            showOnDashboard: true,
+            isActive: true,
+          }}
+          marketplaceLandingSaveStatus="idle"
+          marketplaceLandingMessage=""
           marketplaceLandingOverview={{
             status: 'live',
             message: '',
@@ -101,9 +126,15 @@ describe('settings web widgets', () => {
             },
           }}
           notificationSoundStatus={{}}
+          onClearMarketplaceLandingNoticeDraft={jest.fn()}
+          onDeleteMarketplaceLandingNotice={jest.fn()}
           onDeleteNotificationSound={jest.fn()}
+          onEditMarketplaceLandingNotice={jest.fn()}
           onPluginControlChange={jest.fn()}
           onSave={jest.fn()}
+          onSaveMarketplaceLandingCta={jest.fn()}
+          onSaveMarketplaceLandingYoutube={jest.fn()}
+          onSaveMarketplaceLandingNotice={jest.fn()}
           onToggleMaintenanceMode={jest.fn()}
           onToggleStorefrontEnabled={jest.fn()}
           onUploadNotificationSound={jest.fn()}
@@ -111,6 +142,9 @@ describe('settings web widgets', () => {
           saveMessage=""
           saveStatus="idle"
           sections={[]}
+          setMarketplaceLandingCtaDraftField={jest.fn()}
+          setMarketplaceLandingYoutubeDraftField={jest.fn()}
+          setMarketplaceLandingNoticeDraftField={jest.fn()}
           setDraftField={jest.fn()}
           storefrontEnabled
           webTitle="Dunia Anura"
@@ -121,6 +155,10 @@ describe('settings web widgets', () => {
     expect(renderText(renderer!)).toEqual(
       expect.arrayContaining([
         'Marketplace Landing Overview',
+        'Marketplace Landing Controls',
+        'CTA Section',
+        'YouTube Section',
+        'Customer Notices',
         'Hero slides',
         '1/1 active',
         'Featured collections',

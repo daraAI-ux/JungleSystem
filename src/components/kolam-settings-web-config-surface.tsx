@@ -11,10 +11,16 @@ import {KolamSettingsWebFormSections} from './kolam-settings-web-widgets';
 import {KolamTextFieldRow} from './kolam-text-field-row';
 import {KolamToggleRow} from './kolam-toggle-row';
 import type {
+  KolamCustomerTextNotice,
   KolamNotificationSoundType,
   KolamPluginConfigKey,
 } from '../services/kolam-api';
-import type {MarketplaceLandingOverview} from './kolam-settings-panel-controller';
+import type {
+  MarketplaceLandingCtaDraft,
+  MarketplaceLandingNoticeDraft,
+  MarketplaceLandingOverview,
+  MarketplaceLandingYoutubeDraft,
+} from './kolam-settings-panel-controller';
 
 type WebSettingDraft = {
   versionKolam: string;
@@ -96,6 +102,17 @@ export function KolamSettingsWebConfigSurface({
   fields,
   maintenanceMode,
   marketplaceLandingOverview,
+  marketplaceLandingCtaDraft,
+  marketplaceLandingYoutubeDraft,
+  marketplaceLandingNoticeDraft,
+  marketplaceLandingSaveStatus,
+  marketplaceLandingMessage,
+  onClearMarketplaceLandingNoticeDraft,
+  onDeleteMarketplaceLandingNotice,
+  onEditMarketplaceLandingNotice,
+  onSaveMarketplaceLandingCta,
+  onSaveMarketplaceLandingYoutube,
+  onSaveMarketplaceLandingNotice,
   onToggleMaintenanceMode,
   onToggleStorefrontEnabled,
   onSave,
@@ -107,6 +124,9 @@ export function KolamSettingsWebConfigSurface({
   saveMessage,
   saveStatus,
   sections,
+  setMarketplaceLandingCtaDraftField,
+  setMarketplaceLandingYoutubeDraftField,
+  setMarketplaceLandingNoticeDraftField,
   setDraftField,
   storefrontEnabled,
   draft,
@@ -117,6 +137,17 @@ export function KolamSettingsWebConfigSurface({
   fields: SettingsWebConfigField[];
   maintenanceMode: boolean;
   marketplaceLandingOverview: MarketplaceLandingOverview;
+  marketplaceLandingCtaDraft: MarketplaceLandingCtaDraft;
+  marketplaceLandingYoutubeDraft: MarketplaceLandingYoutubeDraft;
+  marketplaceLandingNoticeDraft: MarketplaceLandingNoticeDraft;
+  marketplaceLandingSaveStatus: 'idle' | 'saving' | 'saved' | 'error';
+  marketplaceLandingMessage: string;
+  onClearMarketplaceLandingNoticeDraft: () => void;
+  onDeleteMarketplaceLandingNotice: (key: string) => void;
+  onEditMarketplaceLandingNotice: (notice: KolamCustomerTextNotice) => void;
+  onSaveMarketplaceLandingCta: () => void;
+  onSaveMarketplaceLandingYoutube: () => void;
+  onSaveMarketplaceLandingNotice: () => void;
   onToggleMaintenanceMode: () => void;
   onToggleStorefrontEnabled: () => void;
   onSave: () => void;
@@ -131,6 +162,22 @@ export function KolamSettingsWebConfigSurface({
   saveMessage: string;
   saveStatus: 'idle' | 'saving' | 'saved' | 'error';
   sections: SettingsWebFormSection[];
+  setMarketplaceLandingCtaDraftField: <Key extends keyof MarketplaceLandingCtaDraft>(
+    key: Key,
+    value: MarketplaceLandingCtaDraft[Key],
+  ) => void;
+  setMarketplaceLandingYoutubeDraftField: <
+    Key extends keyof MarketplaceLandingYoutubeDraft,
+  >(
+    key: Key,
+    value: MarketplaceLandingYoutubeDraft[Key],
+  ) => void;
+  setMarketplaceLandingNoticeDraftField: <
+    Key extends keyof MarketplaceLandingNoticeDraft,
+  >(
+    key: Key,
+    value: MarketplaceLandingNoticeDraft[Key],
+  ) => void;
   setDraftField: (key: keyof WebSettingDraft, value: string | boolean) => void;
   storefrontEnabled: boolean;
   webTitle: string;
@@ -895,6 +942,24 @@ export function KolamSettingsWebConfigSurface({
         />
       ) : null}
       <MarketplaceLandingOverviewPanel overview={marketplaceLandingOverview} />
+      <MarketplaceLandingControlsPanel
+        ctaDraft={marketplaceLandingCtaDraft}
+        disabled={disabled || marketplaceLandingSaveStatus === 'saving'}
+        message={marketplaceLandingMessage}
+        noticeDraft={marketplaceLandingNoticeDraft}
+        notices={marketplaceLandingOverview.customerNotices}
+        onClearNoticeDraft={onClearMarketplaceLandingNoticeDraft}
+        onDeleteNotice={onDeleteMarketplaceLandingNotice}
+        onEditNotice={onEditMarketplaceLandingNotice}
+        onSaveCta={onSaveMarketplaceLandingCta}
+        onSaveNotice={onSaveMarketplaceLandingNotice}
+        onSaveYoutube={onSaveMarketplaceLandingYoutube}
+        saveStatus={marketplaceLandingSaveStatus}
+        setCtaDraftField={setMarketplaceLandingCtaDraftField}
+        setNoticeDraftField={setMarketplaceLandingNoticeDraftField}
+        setYoutubeDraftField={setMarketplaceLandingYoutubeDraftField}
+        youtubeDraft={marketplaceLandingYoutubeDraft}
+      />
       <KolamSettingsWebFormSections sections={sections} />
     </KolamContentFrame>
   );
@@ -1027,6 +1092,330 @@ function MarketplaceLandingOverviewPanel({
   );
 }
 
+function MarketplaceLandingControlsPanel({
+  ctaDraft,
+  disabled,
+  message,
+  noticeDraft,
+  notices,
+  onClearNoticeDraft,
+  onDeleteNotice,
+  onEditNotice,
+  onSaveCta,
+  onSaveNotice,
+  onSaveYoutube,
+  saveStatus,
+  setCtaDraftField,
+  setNoticeDraftField,
+  setYoutubeDraftField,
+  youtubeDraft,
+}: {
+  ctaDraft: MarketplaceLandingCtaDraft;
+  disabled: boolean;
+  message: string;
+  noticeDraft: MarketplaceLandingNoticeDraft;
+  notices: KolamCustomerTextNotice[];
+  onClearNoticeDraft: () => void;
+  onDeleteNotice: (key: string) => void;
+  onEditNotice: (notice: KolamCustomerTextNotice) => void;
+  onSaveCta: () => void;
+  onSaveNotice: () => void;
+  onSaveYoutube: () => void;
+  saveStatus: 'idle' | 'saving' | 'saved' | 'error';
+  setCtaDraftField: <Key extends keyof MarketplaceLandingCtaDraft>(
+    key: Key,
+    value: MarketplaceLandingCtaDraft[Key],
+  ) => void;
+  setNoticeDraftField: <Key extends keyof MarketplaceLandingNoticeDraft>(
+    key: Key,
+    value: MarketplaceLandingNoticeDraft[Key],
+  ) => void;
+  setYoutubeDraftField: <Key extends keyof MarketplaceLandingYoutubeDraft>(
+    key: Key,
+    value: MarketplaceLandingYoutubeDraft[Key],
+  ) => void;
+  youtubeDraft: MarketplaceLandingYoutubeDraft;
+}) {
+  const noticeCanSave =
+    !!noticeDraft.key.trim() &&
+    !!noticeDraft.title.trim() &&
+    !!noticeDraft.message.trim();
+
+  return (
+    <View style={styles.marketplaceControls}>
+      <KolamCopyStack
+        items={[
+          {
+            id: 'title',
+            text: 'Marketplace Landing Controls',
+            style: styles.marketplaceOverviewTitle,
+          },
+          {
+            id: 'meta',
+            text: 'Text and toggle controls only. Asset upload and reorder stay out of Fase 8C.',
+            style: styles.marketplaceOverviewMeta,
+          },
+        ]}
+      />
+      <View style={styles.marketplaceControlSection}>
+        <KolamCopyStack
+          items={[
+            {
+              id: 'cta-title',
+              text: 'CTA Section',
+              style: styles.marketplaceOverviewLabel,
+            },
+          ]}
+        />
+        <KolamTextFieldRow
+          label="CTA title"
+          description="Judul section CTA marketplace."
+          value={ctaDraft.title}
+          onChangeText={value => setCtaDraftField('title', value)}
+          placeholder="Jelajahi Dunia Species"
+        />
+        <KolamTextFieldRow
+          label="CTA description"
+          description="Deskripsi singkat CTA marketplace."
+          value={ctaDraft.description}
+          onChangeText={value => setCtaDraftField('description', value)}
+          placeholder="Temukan koleksi lengkap..."
+        />
+        <KolamTextFieldRow
+          label="CTA button text"
+          description="Label tombol CTA."
+          value={ctaDraft.buttonText}
+          onChangeText={value => setCtaDraftField('buttonText', value)}
+          placeholder="View All Species"
+        />
+        <KolamTextFieldRow
+          label="CTA button link"
+          description="Target URL tombol CTA."
+          value={ctaDraft.buttonLink}
+          onChangeText={value => setCtaDraftField('buttonLink', value)}
+          placeholder="/species"
+        />
+        <KolamToggleRow
+          label="CTA active"
+          description="Tampilkan CTA di marketplace landing."
+          active={ctaDraft.isActive}
+          onPress={() =>
+            !disabled && setCtaDraftField('isActive', !ctaDraft.isActive)
+          }
+        />
+        <KolamActionControlButton
+          disabled={disabled}
+          label="Save CTA"
+          loading={saveStatus === 'saving'}
+          loadingLabel="Saving..."
+          intent="primary"
+          onPress={onSaveCta}
+        />
+      </View>
+      <View style={styles.marketplaceControlSection}>
+        <KolamCopyStack
+          items={[
+            {
+              id: 'youtube-title',
+              text: 'YouTube Section',
+              style: styles.marketplaceOverviewLabel,
+            },
+          ]}
+        />
+        <KolamTextFieldRow
+          label="YouTube link"
+          description="URL channel atau video YouTube."
+          value={youtubeDraft.link}
+          onChangeText={value => setYoutubeDraftField('link', value)}
+          placeholder="https://www.youtube.com/@DuniaAnura"
+        />
+        <KolamTextFieldRow
+          label="YouTube title"
+          description="Judul section YouTube."
+          value={youtubeDraft.title}
+          onChangeText={value => setYoutubeDraftField('title', value)}
+          placeholder="Dunia Anura"
+        />
+        <KolamTextFieldRow
+          label="YouTube subtitle"
+          description="Subtitle section YouTube."
+          value={youtubeDraft.subtitle}
+          onChangeText={value => setYoutubeDraftField('subtitle', value)}
+          placeholder="YouTube"
+        />
+        <KolamToggleRow
+          label="YouTube active"
+          description="Tampilkan YouTube section di marketplace landing."
+          active={youtubeDraft.isActive}
+          onPress={() =>
+            !disabled &&
+            setYoutubeDraftField('isActive', !youtubeDraft.isActive)
+          }
+        />
+        <KolamActionControlButton
+          disabled={disabled}
+          label="Save YouTube"
+          loading={saveStatus === 'saving'}
+          loadingLabel="Saving..."
+          intent="primary"
+          onPress={onSaveYoutube}
+        />
+      </View>
+      <View style={styles.marketplaceControlSection}>
+        <KolamCopyStack
+          items={[
+            {
+              id: 'notice-title',
+              text: 'Customer Notices',
+              style: styles.marketplaceOverviewLabel,
+            },
+          ]}
+        />
+        <View style={styles.marketplaceNoticeList}>
+          {notices.length ? (
+            notices.map(notice => (
+              <View key={notice.key} style={styles.marketplaceNoticeRow}>
+                <KolamCopyStack
+                  containerStyle={styles.marketplaceOverviewCopy}
+                  items={[
+                    {
+                      id: `${notice.key}-title`,
+                      text: notice.title || notice.key,
+                      style: styles.marketplaceOverviewLabel,
+                    },
+                    {
+                      id: `${notice.key}-message`,
+                      text: notice.message || '-',
+                      style: styles.marketplaceOverviewDetail,
+                    },
+                  ]}
+                />
+                <View style={styles.notificationSoundActions}>
+                  <KolamActionControlButton
+                    disabled={disabled}
+                    label="Edit"
+                    onPress={() => onEditNotice(notice)}
+                  />
+                  <KolamActionControlButton
+                    disabled={disabled}
+                    intent="danger"
+                    label="Delete"
+                    onPress={() => onDeleteNotice(notice.key)}
+                  />
+                </View>
+              </View>
+            ))
+          ) : (
+            <KolamCopyStack
+              items={[
+                {
+                  id: 'empty',
+                  text: 'No customer notices configured.',
+                  style: styles.marketplaceOverviewMeta,
+                },
+              ]}
+            />
+          )}
+        </View>
+        <KolamTextFieldRow
+          label="Notice key"
+          description="Key unik notice. Untuk edit, pilih notice dari list."
+          value={noticeDraft.key}
+          onChangeText={value => setNoticeDraftField('key', value)}
+          placeholder="enclonura-migration-2026"
+        />
+        <KolamTextFieldRow
+          label="Notice title"
+          description="Judul singkat notice."
+          value={noticeDraft.title}
+          onChangeText={value => setNoticeDraftField('title', value)}
+          placeholder="Enclonura pindah ke Dunia Anura"
+        />
+        <KolamTextFieldRow
+          label="Notice message"
+          description="Pesan teks untuk customer marketplace."
+          value={noticeDraft.message}
+          onChangeText={value => setNoticeDraftField('message', value)}
+          placeholder="Kelola kandang, Freyr, dan layanan..."
+        />
+        <KolamTextFieldRow
+          label="Notice CTA URL"
+          description="URL tombol opsional."
+          value={noticeDraft.ctaUrl}
+          onChangeText={value => setNoticeDraftField('ctaUrl', value)}
+          placeholder="/dashboard"
+        />
+        <KolamTextFieldRow
+          label="Notice CTA label"
+          description="Label tombol opsional."
+          value={noticeDraft.ctaLabel}
+          onChangeText={value => setNoticeDraftField('ctaLabel', value)}
+          placeholder="Buka dashboard"
+        />
+        <KolamToggleRow
+          label="Notice active"
+          description="Aktifkan notice untuk customer."
+          active={noticeDraft.isActive}
+          onPress={() =>
+            !disabled &&
+            setNoticeDraftField('isActive', !noticeDraft.isActive)
+          }
+        />
+        <KolamToggleRow
+          label="Show on home"
+          description="Tampilkan notice di homepage marketplace."
+          active={noticeDraft.showOnHome}
+          onPress={() =>
+            !disabled &&
+            setNoticeDraftField('showOnHome', !noticeDraft.showOnHome)
+          }
+        />
+        <KolamToggleRow
+          label="Show on dashboard"
+          description="Tampilkan notice di dashboard customer."
+          active={noticeDraft.showOnDashboard}
+          onPress={() =>
+            !disabled &&
+            setNoticeDraftField(
+              'showOnDashboard',
+              !noticeDraft.showOnDashboard,
+            )
+          }
+        />
+        <View style={styles.notificationSoundActions}>
+          <KolamActionControlButton
+            disabled={disabled || !noticeCanSave}
+            label="Save Notice"
+            loading={saveStatus === 'saving'}
+            loadingLabel="Saving..."
+            intent="primary"
+            onPress={onSaveNotice}
+          />
+          <KolamActionControlButton
+            disabled={disabled}
+            label="New Notice"
+            onPress={onClearNoticeDraft}
+          />
+        </View>
+      </View>
+      {message ? (
+        <KolamCopyStack
+          items={[
+            {
+              id: 'message',
+              text: message,
+              style:
+                saveStatus === 'error'
+                  ? styles.marketplaceOverviewError
+                  : styles.marketplaceOverviewMeta,
+            },
+          ]}
+        />
+      ) : null}
+    </View>
+  );
+}
+
 function getCollectionSummary(items: Array<{isActive?: boolean}>) {
   const active = items.filter(item => item.isActive !== false).length;
   return `${active}/${items.length} active`;
@@ -1038,6 +1427,30 @@ function getFirstTitles(values: string[]) {
 }
 
 const styles = StyleSheet.create({
+  marketplaceControls: {
+    borderColor: '#d1d5db',
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 14,
+    padding: 14,
+  },
+  marketplaceControlSection: {
+    gap: 10,
+  },
+  marketplaceNoticeList: {
+    gap: 8,
+  },
+  marketplaceNoticeRow: {
+    alignItems: 'center',
+    borderColor: '#e5e7eb',
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    justifyContent: 'space-between',
+    padding: 10,
+  },
   marketplaceOverview: {
     borderColor: '#d1d5db',
     borderRadius: 8,

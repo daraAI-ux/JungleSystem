@@ -18,6 +18,29 @@ export function KolamSettingsSurfaceBody({
         fields={controller.webConfigFields}
         maintenanceMode={controller.maintenanceMode}
         marketplaceLandingOverview={controller.marketplaceLandingOverview}
+        marketplaceLandingCtaDraft={controller.marketplaceLandingCtaDraft}
+        marketplaceLandingYoutubeDraft={
+          controller.marketplaceLandingYoutubeDraft
+        }
+        marketplaceLandingNoticeDraft={controller.marketplaceLandingNoticeDraft}
+        marketplaceLandingSaveStatus={controller.marketplaceLandingSaveStatus}
+        marketplaceLandingMessage={controller.marketplaceLandingMessage}
+        onClearMarketplaceLandingNoticeDraft={
+          controller.clearMarketplaceLandingNoticeDraft
+        }
+        onDeleteMarketplaceLandingNotice={key => {
+          void controller.deleteMarketplaceLandingNotice(key);
+        }}
+        onEditMarketplaceLandingNotice={controller.editMarketplaceLandingNotice}
+        onSaveMarketplaceLandingCta={() => {
+          void controller.saveMarketplaceLandingCta();
+        }}
+        onSaveMarketplaceLandingYoutube={() => {
+          void controller.saveMarketplaceLandingYoutube();
+        }}
+        onSaveMarketplaceLandingNotice={() => {
+          void controller.saveMarketplaceLandingNotice();
+        }}
         onToggleMaintenanceMode={() =>
           controller.setMaintenanceMode(current => !current)
         }
@@ -35,6 +58,15 @@ export function KolamSettingsSurfaceBody({
           void controller.uploadNotificationSound(type);
         }}
         onWebTitleChange={controller.setWebTitle}
+        setMarketplaceLandingCtaDraftField={
+          controller.setMarketplaceLandingCtaDraftField
+        }
+        setMarketplaceLandingYoutubeDraftField={
+          controller.setMarketplaceLandingYoutubeDraftField
+        }
+        setMarketplaceLandingNoticeDraftField={
+          controller.setMarketplaceLandingNoticeDraftField
+        }
         draft={controller.webSettingDraft}
         notificationSoundStatus={controller.notificationSoundStatus}
         saveMessage={controller.webSettingMessage}
