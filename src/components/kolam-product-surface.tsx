@@ -1085,7 +1085,7 @@ function KolamProductDetailView({
         )
       ) : (
         <View style={styles.detailMain}>
-          {activeDetailTab === 'pricing' ? <ProductPricingTab product={product} /> : null}
+          {activeDetailTab === 'pricing' ? <ProductPricingTab onRouteChange={onRouteChange} product={product} /> : null}
           {activeDetailTab === 'specifications' ? <ProductVariantsTab product={product} /> : null}
           {activeDetailTab === 'logistics' ? <ProductLogisticsTab product={product} /> : null}
           {activeDetailTab === 'materials' ? <ProductMaterialsTab product={product} /> : null}
@@ -4718,7 +4718,7 @@ function ProductRawOverviewTab({
       <ProductRawShippingMethodsPanel product={product} />
       {getProductSpecificationTotal(product) > 0 ? <ProductRawCustomFieldsPanel product={product} /> : null}
       {product.components.length ? <ProductRawComponentsTable components={product.components} /> : null}
-      <ProductRawVendorSection product={product} vendorPrices={vendorPrices} />
+      <ProductRawVendorSection onRouteChange={onRouteChange} product={product} vendorPrices={vendorPrices} />
       <ProductRawCatalogUsagePanel onRouteChange={onRouteChange} productId={product.id} />
     </View>
   );
@@ -4739,6 +4739,14 @@ function RawBadgeBlock({ labels, title }: { labels: string[]; title: string }) {
       </View>
     </View>
   );
+}
+
+function openProductSupplierDetail(onRouteChange: (route: string) => void) {
+  return (vendorId: string) => {
+    if (vendorId) {
+      onRouteChange(`/suppliers/${encodeURIComponent(vendorId)}`);
+    }
+  };
 }
 
 function ProductRawPricingSummary({
@@ -5110,9 +5118,11 @@ function ProductRawComponentsTable({ components }: { components: KolamProduct['c
 }
 
 function ProductRawVendorSection({
+  onRouteChange,
   product,
   vendorPrices,
 }: {
+  onRouteChange?: (route: string) => void;
   product: KolamProduct;
   vendorPrices: KolamVendorPriceCardItem[];
 }) {
@@ -5121,6 +5131,7 @@ function ProductRawVendorSection({
       <KolamVendorPriceCard
         description="Referensi harga pokok dari supplier. Baris termurah ditandai Terbaik."
         formatCurrency={formatCurrency}
+        onOpenVendor={onRouteChange ? openProductSupplierDetail(onRouteChange) : undefined}
         prices={vendorPrices}
         title="Harga Vendor"
       />
@@ -5133,6 +5144,7 @@ function ProductRawVendorSection({
       <KolamVendorPriceCard
         description="Harga vendor per varian."
         formatCurrency={formatCurrency}
+        onOpenVendor={onRouteChange ? openProductSupplierDetail(onRouteChange) : undefined}
         prices={[]}
         title="Harga Vendor"
       />
@@ -5146,6 +5158,7 @@ function ProductRawVendorSection({
           badge={variant.label || variant.productCode || variant.sku || 'Varian'}
           description="Harga vendor per varian. Baris termurah ditandai Terbaik."
           formatCurrency={formatCurrency}
+          onOpenVendor={onRouteChange ? openProductSupplierDetail(onRouteChange) : undefined}
           key={variant.id}
           prices={variant.vendorPrices}
           title="Harga Vendor"
@@ -5244,7 +5257,13 @@ function ProductRawCatalogUsagePanel({
   );
 }
 
-function ProductPricingTab({ product }: { product: KolamProduct }) {
+function ProductPricingTab({
+  onRouteChange,
+  product,
+}: {
+  onRouteChange?: (route: string) => void;
+  product: KolamProduct;
+}) {
   const [syncPriceDialogOpen, setSyncPriceDialogOpen] = React.useState(false);
   const [syncPricePlatforms, setSyncPricePlatforms] = React.useState<Array<'tokopedia' | 'shopee'>>(['tokopedia', 'shopee']);
   const openSyncPrice = React.useCallback((platforms: Array<'tokopedia' | 'shopee'>) => {
@@ -5305,6 +5324,7 @@ function ProductPricingTab({ product }: { product: KolamProduct }) {
     return (
       <ProductVariantPricingTab
         onOpenSyncPrice={openSyncPrice}
+        onRouteChange={onRouteChange}
         pricingSupport={pricingSupport}
         product={product}
         rawPackings={rawPackings}
@@ -5404,6 +5424,7 @@ function ProductPricingTab({ product }: { product: KolamProduct }) {
         <KolamVendorPriceCard
           description="Referensi harga pokok dari supplier. Baris termurah ditandai Terbaik."
           formatCurrency={formatCurrency}
+          onOpenVendor={onRouteChange ? openProductSupplierDetail(onRouteChange) : undefined}
           prices={vendorPrices}
           title="Harga Vendor"
         />
@@ -5424,12 +5445,14 @@ function ProductPricingTab({ product }: { product: KolamProduct }) {
 
 function ProductVariantPricingTab({
   onOpenSyncPrice,
+  onRouteChange,
   pricingSupport,
   product,
   rawPackings,
   syncPriceDialog,
 }: {
   onOpenSyncPrice: (platforms: Array<'tokopedia' | 'shopee'>) => void;
+  onRouteChange?: (route: string) => void;
   pricingSupport: {
     analysis: KolamChannelPricingAnalysis | null;
     paymentMethods: KolamPricingPaymentMethod[];
@@ -5647,6 +5670,7 @@ function ProductVariantPricingTab({
             badge={activeTab.label}
             description="Harga vendor untuk varian aktif. Baris termurah ditandai Terbaik."
             formatCurrency={formatCurrency}
+            onOpenVendor={onRouteChange ? openProductSupplierDetail(onRouteChange) : undefined}
             prices={variant.vendorPrices}
             title="Harga Vendor"
           />

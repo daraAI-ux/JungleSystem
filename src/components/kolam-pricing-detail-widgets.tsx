@@ -156,6 +156,7 @@ export function KolamVendorPriceCard({
   description,
   emptyText = 'Belum ada harga vendor.',
   formatCurrency,
+  onOpenVendor,
   prices,
   title,
 }: {
@@ -163,6 +164,7 @@ export function KolamVendorPriceCard({
   description: string;
   emptyText?: string;
   formatCurrency: (value: number) => string;
+  onOpenVendor?: (vendorId: string) => void;
   prices: KolamVendorPriceCardItem[];
   title: string;
 }) {
@@ -195,7 +197,17 @@ export function KolamVendorPriceCard({
           {sortedPrices.map(price => (
             <View key={price.id} style={styles.vendorTableRow}>
               <View style={[styles.vendorNameCell, styles.vendorSupplierCell]}>
-                <Text style={styles.vendorItemTitle}>{price.vendorName || '-'}</Text>
+                {price.vendorId && onOpenVendor ? (
+                  <Text
+                    accessibilityRole="button"
+                    onPress={() => onOpenVendor(price.vendorId ?? '')}
+                    style={[styles.vendorItemTitle, styles.vendorItemLink]}
+                  >
+                    {price.vendorName || '-'}
+                  </Text>
+                ) : (
+                  <Text style={styles.vendorItemTitle}>{price.vendorName || '-'}</Text>
+                )}
                 {price.id === bestId ? (
                   <View style={styles.vendorBestBadge}>
                     <KolamStatusBadge intent="success" label="Terbaik" />
@@ -1051,6 +1063,10 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '900',
     lineHeight: 18,
+  },
+  vendorItemLink: {
+    color: V.colors.primary,
+    textDecorationLine: 'underline',
   },
   vendorAmountCell: {
     color: V.colors.fg,
