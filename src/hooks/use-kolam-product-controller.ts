@@ -86,6 +86,10 @@ import {
   readKolamShippingMethodListCache,
   writeKolamShippingMethodListCache,
 } from '../services/kolam-shipping-method-local-cache';
+import {
+  getKolamLocations,
+  type KolamLocationOption,
+} from '../services/kolam-location-api';
 import { getKolamTags } from '../services/kolam-tag-api';
 import { getKolamUnits } from '../services/kolam-unit-api';
 import { getKolamVendors } from '../services/kolam-vendor-api';
@@ -128,6 +132,7 @@ export interface KolamProductController {
   form: KolamProductFormState | null;
   isEditable: boolean;
   loading: boolean;
+  locations: KolamLocationOption[];
   mode: KolamProductSurfaceMode;
   packingOptions: KolamPackingOption[];
   pagination: KolamProductPagination;
@@ -201,6 +206,7 @@ export function useKolamProductController(
     null,
   );
   const [shippingMethods, setShippingMethods] = useState<KolamShippingMethod[]>([]);
+  const [locations, setLocations] = useState<KolamLocationOption[]>([]);
   const [mode, setMode] = useState<KolamProductSurfaceMode>(initialMode);
   const [filters, setFilters] = useState<KolamProductListFilters>(() =>
     createInitialFilters(route),
@@ -269,6 +275,7 @@ export function useKolamProductController(
       packingResult,
       shippingMethodResult,
       warrantyTermsResult,
+      locationResult,
     ] = await Promise.allSettled([
       getKolamBrands(),
       getKolamCategories(),
@@ -281,6 +288,7 @@ export function useKolamProductController(
       getKolamPackingOptions(),
       getKolamActiveShippingMethods(),
       getKolamProductWarrantyTermsTemplates(),
+      getKolamLocations(),
     ]);
 
     if (brandResult.status === 'fulfilled') {
@@ -333,6 +341,10 @@ export function useKolamProductController(
 
     if (warrantyTermsResult.status === 'fulfilled') {
       setWarrantyTermsTemplates(warrantyTermsResult.value);
+    }
+
+    if (locationResult.status === 'fulfilled') {
+      setLocations(locationResult.value);
     }
   }, []);
   const refresh = useCallback(async () => {
@@ -1004,6 +1016,7 @@ export function useKolamProductController(
     customFields,
     isEditable: mode === 'edit' || mode === 'new',
     loading,
+    locations,
     mode,
     pagination,
     packingOptions,

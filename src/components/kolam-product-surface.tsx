@@ -1139,6 +1139,10 @@ function ProductEditFormPage({
   const saveLabel = controller.mode === 'new' ? shellLabels.saveNewLabel : 'Simpan Perubahan';
   const hasVariants = form.hasVariants || form.variants.length > 0;
   const isRawForm = controller.catalogKind === 'raw';
+  const locationOptions = controller.locations.map(location => ({
+    label: location.label,
+    value: location.id,
+  }));
 
   if (isRawForm) {
     return (
@@ -1184,7 +1188,7 @@ function ProductEditFormPage({
               </ProductEditSection>
 
               <ProductEditSection
-                description="Kode identitas bahan baku. Nama dan deskripsi diatur per bahasa di tab Konten Marketplace."
+                description="Nama, kode produk, dan deskripsi bahan baku."
                 title="Detail bahan baku"
               >
                 <View style={styles.twoColumnGrid}>
@@ -1198,12 +1202,6 @@ function ProductEditFormPage({
                     />
                   </ProductFieldShell>
                 </View>
-              </ProductEditSection>
-
-              <ProductEditSection
-                description="Terjemahan katalog untuk webstore dan marketplace."
-                title="Konten marketplace"
-              >
                 <KolamCatalogTranslationsEditor
                   editable={!disabled}
                   kind="product"
@@ -1294,6 +1292,27 @@ function ProductEditFormPage({
                     searchPlaceholder="Cari satuan..."
                     showLabelInTrigger={false}
                     value={form.unitId}
+                  />
+                </ProductFieldShell>
+              </ProductEditSection>
+
+              <ProductEditSection
+                description="Lokasi penyimpanan bahan baku."
+                title="Lokasi"
+              >
+                <ProductFieldShell label="Lokasi">
+                  <KolamDropdownSelect
+                    label="Lokasi"
+                    menuStyle={styles.longDropdownMenu}
+                    onChange={locationId => controller.onChangeForm({ locationId })}
+                    options={[
+                      { label: 'Pilih lokasi', value: '' },
+                      ...locationOptions,
+                    ]}
+                    searchable
+                    searchPlaceholder="Cari lokasi..."
+                    showLabelInTrigger={false}
+                    value={form.locationId}
                   />
                 </ProductFieldShell>
               </ProductEditSection>
