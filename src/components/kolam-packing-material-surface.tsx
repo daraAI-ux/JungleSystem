@@ -522,9 +522,6 @@ function KolamPackingMaterialRow({
       <KolamDataTableMetaCell style={styles.weightCell}>
         {formatPackingWeight(item)}
       </KolamDataTableMetaCell>
-      <KolamDataTableAmountCell style={styles.priceCell}>
-        {formatRupiah(item.price)}
-      </KolamDataTableAmountCell>
       <KolamDataTableAmountCell style={styles.hppCell}>
         {effectiveHpp > 0 ? formatRupiah(effectiveHpp) : '-'}
       </KolamDataTableAmountCell>
@@ -2454,30 +2451,27 @@ const styles = StyleSheet.create({
     lineHeight: 15,
   },
   categoryCell: {
-    width: 132,
+    width: 120,
     alignItems: 'flex-start',
   },
   dimensionCell: {
-    width: 150,
+    width: 128,
   },
   weightCell: {
-    width: 110,
-  },
-  priceCell: {
-    width: 132,
+    width: 96,
   },
   hppCell: {
-    width: 120,
+    width: 116,
   },
   stockCell: {
-    width: 86,
+    width: 72,
   },
   statusCell: {
-    width: 116,
+    width: 104,
     alignItems: 'flex-end',
   },
   overflowCell: {
-    width: 64,
+    width: 56,
     alignItems: 'flex-end',
   },
   footerWrap: {
