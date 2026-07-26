@@ -17,6 +17,40 @@ export interface SettingsSurfaceItem {
   badge: string;
 }
 
+export type SettingsTabId =
+  | 'umum'
+  | 'notifikasi'
+  | 'toko'
+  | 'operasional'
+  | 'finansial'
+  | 'ai'
+  | 'peran'
+  | 'sitemap'
+  | 'sync'
+  | 'konten'
+  | 'kpi'
+  | 'plugin';
+
+export type SettingsTabPermission =
+  | 'websetting:view'
+  | 'websetting:update'
+  | 'role:view'
+  | 'wallet:view|tax:view'
+  | 'admin:websetting:view'
+  | 'admin:websetting:view:user'
+  | 'super-admin';
+
+export interface SettingsTabItem {
+  id: SettingsTabId;
+  label: string;
+  breadcrumbLabel: string;
+  route: '/pengaturan';
+  description: string;
+  permission: SettingsTabPermission;
+  status: SettingsSurfaceItem['status'];
+  sourceComponent: 'settings/system/page.tsx';
+}
+
 export interface SettingsDetailRow {
   id: string;
   label: string;
@@ -321,6 +355,155 @@ export const SETTINGS_DEFAULT_ROLE_KEYS = [
   'marketing-staff',
   'admin',
 ] as const;
+
+export const settingsTabItems: SettingsTabItem[] = [
+  {
+    id: 'umum',
+    label: 'Umum',
+    breadcrumbLabel: 'Umum',
+    route: '/pengaturan',
+    description:
+      'Versi aplikasi, logo, perusahaan, kontak, alamat, sosial media, MAC access Kolam, dan staff desktop-only.',
+    permission: 'websetting:view',
+    status: 'source-audit',
+    sourceComponent: 'settings/system/page.tsx',
+  },
+  {
+    id: 'notifikasi',
+    label: 'Notifikasi',
+    breadcrumbLabel: 'Notifikasi',
+    route: '/pengaturan',
+    description:
+      'Suara chat, DARA handoff, Team Chat group call, Firebase push, dan SMTP staff OTP.',
+    permission: 'websetting:view',
+    status: 'source-audit',
+    sourceComponent: 'settings/system/page.tsx',
+  },
+  {
+    id: 'toko',
+    label: 'Toko & Pengiriman',
+    breadcrumbLabel: 'Toko & Pengiriman',
+    route: '/pengaturan',
+    description:
+      'Asal pengiriman Biteship, Google Maps browser key, koordinat origin, dan jam operasional toko.',
+    permission: 'websetting:view',
+    status: 'source-audit',
+    sourceComponent: 'settings/system/page.tsx',
+  },
+  {
+    id: 'operasional',
+    label: 'Operasional',
+    breadcrumbLabel: 'Operasional',
+    route: '/pengaturan',
+    description:
+      'Maintenance POS/marketplace, Google Sign-In webstore, absensi staff, PO workflow, dan livechat.',
+    permission: 'websetting:view',
+    status: 'source-audit',
+    sourceComponent: 'settings/system/page.tsx',
+  },
+  {
+    id: 'finansial',
+    label: 'Finansial / Pajak',
+    breadcrumbLabel: 'Pajak',
+    route: '/pengaturan',
+    description:
+      'Metode pembayaran, profil pajak perusahaan, overtime, dan enclosure sale commission.',
+    permission: 'wallet:view|tax:view',
+    status: 'planned',
+    sourceComponent: 'settings/system/page.tsx',
+  },
+  {
+    id: 'ai',
+    label: 'AI / DARA',
+    breadcrumbLabel: 'AI',
+    route: '/pengaturan',
+    description:
+      'Chat AI tools, DARA tools, auto reply, handoff, knowledge, dan SOP controls.',
+    permission: 'admin:websetting:view',
+    status: 'source-audit',
+    sourceComponent: 'settings/system/page.tsx',
+  },
+  {
+    id: 'peran',
+    label: 'Peran & Izin',
+    breadcrumbLabel: 'Peran',
+    route: '/pengaturan',
+    description: 'Role, permission group, members, create/update/delete role.',
+    permission: 'role:view',
+    status: 'native-summary',
+    sourceComponent: 'settings/system/page.tsx',
+  },
+  {
+    id: 'sitemap',
+    label: 'Sitemap',
+    breadcrumbLabel: 'Sitemap',
+    route: '/pengaturan',
+    description:
+      'Dynamic sitemap sections, priority, change frequency, custom URLs, dan exclusions.',
+    permission: 'websetting:view',
+    status: 'planned',
+    sourceComponent: 'settings/system/page.tsx',
+  },
+  {
+    id: 'sync',
+    label: 'Sinkronisasi',
+    breadcrumbLabel: 'Sinkronisasi',
+    route: '/pengaturan',
+    description: 'Master data wilayah, region table, dan sync status.',
+    permission: 'websetting:view',
+    status: 'planned',
+    sourceComponent: 'settings/system/page.tsx',
+  },
+  {
+    id: 'konten',
+    label: 'Konten Web',
+    breadcrumbLabel: 'Konten Web',
+    route: '/pengaturan',
+    description:
+      'Landing marketplace, blog, topik blog, hero, banner, CTA, YouTube, announcement, dan notices.',
+    permission: 'websetting:view',
+    status: 'native-summary',
+    sourceComponent: 'settings/system/page.tsx',
+  },
+  {
+    id: 'kpi',
+    label: 'KPI Staff',
+    breadcrumbLabel: 'KPI',
+    route: '/pengaturan',
+    description:
+      'Task points, chat SLA, complaint, attendance, monthly level, dan DARA weekly preview.',
+    permission: 'websetting:update',
+    status: 'planned',
+    sourceComponent: 'settings/system/page.tsx',
+  },
+  {
+    id: 'plugin',
+    label: 'Plugin',
+    breadcrumbLabel: 'Plugin',
+    route: '/pengaturan',
+    description: 'Kolam plugin enable/disable dan deploy bundle.',
+    permission: 'admin:websetting:view:user',
+    status: 'native-summary',
+    sourceComponent: 'settings/system/page.tsx',
+  },
+];
+
+export const DEFAULT_SETTINGS_TAB_ID: SettingsTabId = 'umum';
+
+export function getSettingsTabItems(items = settingsTabItems) {
+  return items;
+}
+
+export function getSettingsTabItemById(
+  tabId: SettingsTabId | string,
+  items = settingsTabItems,
+) {
+  return items.find(item => item.id === tabId) ?? null;
+}
+
+export function isSettingsTabId(tabId: string): tabId is SettingsTabId {
+  return settingsTabItems.some(item => item.id === tabId);
+}
 
 export interface SettingsWebConfigField {
   id: 'storefront-title' | 'storefront-status' | 'maintenance-mode';

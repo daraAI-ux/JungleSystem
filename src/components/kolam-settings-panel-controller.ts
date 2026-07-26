@@ -22,13 +22,17 @@ import {
   getSettingsRoleResourceGroups,
   getSettingsRoleTabItems,
   getSettingsSurfaceStats,
+  getSettingsTabItemById,
+  getSettingsTabItems,
   getSettingsWebConfigFields,
   getSettingsWebFormSections,
   isSettingsDefaultRoleKey,
   isSettingsSuperAdminRoleKey,
+  DEFAULT_SETTINGS_TAB_ID,
   settingsSurfaceItems,
   type SettingsActivityLogFilterState,
   type SettingsSurfaceItem,
+  type SettingsTabId,
 } from '../domain/settings-surface';
 import type { SyncActivityEntry } from '../domain/sync-activity';
 import {
@@ -393,6 +397,8 @@ export function useKolamSettingsPanelController(
   const [activeSurfaceId, setActiveSurfaceId] = useState<
     SettingsSurfaceItem['id']
   >(initialActiveSurfaceId);
+  const [activeSettingsTabId, setActiveSettingsTabId] =
+    useState<SettingsTabId>(DEFAULT_SETTINGS_TAB_ID);
   const [selectedActivityLogId, setSelectedActivityLogId] = useState('');
   const [activityPage, setActivityPage] = useState(1);
   const [activityLogs, setActivityLogs] = useState<KolamActivityLog[]>([]);
@@ -1797,6 +1803,8 @@ export function useKolamSettingsPanelController(
   };
 
   return {
+    activeSettingsTab: getSettingsTabItemById(activeSettingsTabId),
+    activeSettingsTabId,
     activeSurface,
     activeSurfaceId,
     activityEntries,
@@ -1822,6 +1830,7 @@ export function useKolamSettingsPanelController(
     roleMessage,
     roleSaveStatus,
     roleStatus,
+    selectSettingsTab: setActiveSettingsTabId,
     selectSurface,
     selectedActivityLog,
     selectedActivityLogFields,
@@ -1835,6 +1844,7 @@ export function useKolamSettingsPanelController(
     setSelectedRoleId,
     setStorefrontEnabled,
     setWebTitle,
+    settingsTabItems: getSettingsTabItems(),
     settingsSurfaceItems,
     stats,
     storefrontEnabled,

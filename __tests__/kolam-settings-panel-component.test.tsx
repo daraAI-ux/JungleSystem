@@ -117,6 +117,56 @@ describe('KolamSettingsPanel', () => {
       'Dunia Anura Edited',
     );
   });
+
+  it('exposes the native Settings tab registry from controller state', async () => {
+    let latest: KolamSettingsPanelController | null = null;
+
+    await ReactTestRenderer.act(async () => {
+      ReactTestRenderer.create(
+        <SettingsControllerHarness
+          onRender={controller => {
+            latest = controller;
+          }}
+        />,
+      );
+    });
+
+    expect(requireController(latest).activeSettingsTabId).toBe('umum');
+    expect(requireController(latest).activeSettingsTab).toEqual(
+      expect.objectContaining({
+        id: 'umum',
+        route: '/pengaturan',
+        breadcrumbLabel: 'Umum',
+      }),
+    );
+    expect(
+      requireController(latest).settingsTabItems.map(item => item.id),
+    ).toEqual([
+      'umum',
+      'notifikasi',
+      'toko',
+      'operasional',
+      'finansial',
+      'ai',
+      'peran',
+      'sitemap',
+      'sync',
+      'konten',
+      'kpi',
+      'plugin',
+    ]);
+
+    await ReactTestRenderer.act(async () => {
+      requireController(latest).selectSettingsTab('finansial');
+    });
+
+    expect(requireController(latest).activeSettingsTab).toEqual(
+      expect.objectContaining({
+        id: 'finansial',
+        breadcrumbLabel: 'Pajak',
+      }),
+    );
+  });
 });
 
 function SettingsControllerHarness({

@@ -21,12 +21,78 @@ import {
   getSettingsSurfaceItemByRoute,
   getSettingsSurfaceStats,
   getSettingsSwitchVisualContract,
+  getSettingsTabItemById,
+  getSettingsTabItems,
   getSettingsWebConfigFields,
   getSettingsWebFormSections,
+  isSettingsTabId,
+  settingsTabItems,
   settingsSurfaceItems,
 } from '../src/domain/settings-surface';
 
 describe('settingsSurfaceItems', () => {
+  it('defines the native Settings tab registry from the FE system settings contract', () => {
+    expect(settingsTabItems.map(item => item.id)).toEqual([
+      'umum',
+      'notifikasi',
+      'toko',
+      'operasional',
+      'finansial',
+      'ai',
+      'peran',
+      'sitemap',
+      'sync',
+      'konten',
+      'kpi',
+      'plugin',
+    ]);
+    expect(settingsTabItems.map(item => item.label)).toEqual([
+      'Umum',
+      'Notifikasi',
+      'Toko & Pengiriman',
+      'Operasional',
+      'Finansial / Pajak',
+      'AI / DARA',
+      'Peran & Izin',
+      'Sitemap',
+      'Sinkronisasi',
+      'Konten Web',
+      'KPI Staff',
+      'Plugin',
+    ]);
+    expect(settingsTabItems.every(item => item.route === '/pengaturan')).toBe(
+      true,
+    );
+    expect(settingsTabItems.every(item => item.sourceComponent)).toBe(true);
+  });
+
+  it('keeps breadcrumb labels and permission visibility on each Settings tab', () => {
+    expect(getSettingsTabItems()).toBe(settingsTabItems);
+    expect(getSettingsTabItemById('finansial')).toEqual(
+      expect.objectContaining({
+        breadcrumbLabel: 'Pajak',
+        permission: 'wallet:view|tax:view',
+        status: 'planned',
+      }),
+    );
+    expect(getSettingsTabItemById('plugin')).toEqual(
+      expect.objectContaining({
+        breadcrumbLabel: 'Plugin',
+        permission: 'admin:websetting:view:user',
+        status: 'native-summary',
+      }),
+    );
+    expect(getSettingsTabItemById('peran')).toEqual(
+      expect.objectContaining({
+        breadcrumbLabel: 'Peran',
+        permission: 'role:view',
+        status: 'native-summary',
+      }),
+    );
+    expect(isSettingsTabId('umum')).toBe(true);
+    expect(isSettingsTabId('activity-log')).toBe(false);
+  });
+
   it('maps live Kolam settings routes into a native summary surface', () => {
     expect(settingsSurfaceItems.map(item => item.route)).toEqual([
       '/pengaturan',
