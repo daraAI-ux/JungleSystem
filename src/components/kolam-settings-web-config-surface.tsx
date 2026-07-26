@@ -591,7 +591,10 @@ export function KolamSettingsWebConfigSurface({
             onChangeText={value => setDraftField('versionMarketplace', value)}
             placeholder="1.0.0"
           />
-          <KolamSettingsWebFormSections sections={generalFormSections} />
+          <KolamSettingsWebFormSections
+            sections={generalFormSections}
+            onUploadFile={onUploadMarketplaceLogo}
+          />
           <KolamTextFieldRow
             fieldWidth={settingsFieldWidth}
             label="Nama Perusahaan"

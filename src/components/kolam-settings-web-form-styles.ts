@@ -1,5 +1,5 @@
-﻿import {StyleSheet} from 'react-native';
-import {kolamVisualTokens as V} from '../domain/kolam-visual';
+﻿import { StyleSheet } from 'react-native';
+import { kolamVisualTokens as V } from '../domain/kolam-visual';
 
 export const settingsWebFormStyles = StyleSheet.create({
   settingsWebFormSections: {
@@ -120,5 +120,18 @@ export const settingsWebFormStyles = StyleSheet.create({
     backgroundColor: V.colors.muted,
     borderColor: V.colors.border,
     borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  settingsWebLogoImage: {
+    width: 80,
+    height: 80,
+  },
+  settingsWebLogoFallback: {
+    color: V.colors.mutedFg,
+    fontSize: 11,
+    fontWeight: '700',
+    textAlign: 'center',
   },
 });

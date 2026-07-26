@@ -2,6 +2,8 @@ import React from 'react';
 import { Text, View } from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 import { KolamSettingsWebConfigSurface } from '../src/components/kolam-settings-panel-surfaces';
+import { KolamRemoteImage } from '../src/components/kolam-remote-image';
+import { KolamSettingsWebFileField } from '../src/components/kolam-settings-web-file-field';
 import { KolamSettingsWebFormSections } from '../src/components/kolam-settings-web-widgets';
 import {
   getSettingsWebConfigFields,
@@ -43,6 +45,36 @@ describe('settings web widgets', () => {
     expect(renderText(renderer!)).toEqual(
       expect.arrayContaining(['Form Pengaturan Web', 'Simpan']),
     );
+  });
+
+  it('renders the websetting logo preview with an upload action', async () => {
+    const onUpload = jest.fn();
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamSettingsWebFileField
+          value="media/logo.png"
+          onUpload={onUpload}
+        />,
+      );
+    });
+
+    expect(renderText(renderer!)).toEqual(
+      expect.arrayContaining(['Unggah logo']),
+    );
+    expect(renderer!.root.findByType(KolamRemoteImage).props).toEqual(
+      expect.objectContaining({
+        accessibilityLabel: 'Logo WebSetting',
+        scope: 'websetting-logo',
+      }),
+    );
+
+    await ReactTestRenderer.act(async () => {
+      renderer!.root.findByProps({ label: 'Unggah logo' }).props.onPress();
+    });
+
+    expect(onUpload).toHaveBeenCalledTimes(1);
   });
 
   it('renders marketplace landing overview in Web Settings', async () => {

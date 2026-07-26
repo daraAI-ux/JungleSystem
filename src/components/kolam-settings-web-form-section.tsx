@@ -1,15 +1,17 @@
 import React from 'react';
-import {View} from 'react-native';
-import type {SettingsWebFormSection} from '../domain/settings-surface';
-import {KolamContentFrame} from './kolam-content-frame';
-import {KolamSettingsWebFormFields} from './kolam-settings-web-form-fields';
-import {KolamSettingsWebFormSectionHeader} from './kolam-settings-web-form-section-header';
-import {settingsWebFormStyles as styles} from './kolam-settings-web-form-styles';
+import { View } from 'react-native';
+import type { SettingsWebFormSection } from '../domain/settings-surface';
+import { KolamContentFrame } from './kolam-content-frame';
+import { KolamSettingsWebFormFields } from './kolam-settings-web-form-fields';
+import { KolamSettingsWebFormSectionHeader } from './kolam-settings-web-form-section-header';
+import { settingsWebFormStyles as styles } from './kolam-settings-web-form-styles';
 
 export function KolamSettingsWebFormSection({
+  onUploadFile,
   section,
   showSeparator,
 }: {
+  onUploadFile?: () => void;
   section: SettingsWebFormSection;
   showSeparator: boolean;
 }) {
@@ -23,6 +25,7 @@ export function KolamSettingsWebFormSection({
       <KolamSettingsWebFormFields
         fields={section.fields}
         layout={section.layout}
+        onUploadFile={onUploadFile}
       />
     </KolamContentFrame>
   );
