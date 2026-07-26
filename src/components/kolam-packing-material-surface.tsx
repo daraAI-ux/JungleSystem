@@ -32,6 +32,10 @@ import {
 import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import {
+  KolamDetailMediaPreview,
+  type KolamDetailMediaItem,
+} from './kolam-detail-media-preview';
+import {
   KolamDropdownSelect,
   KolamOverflowMenuButton,
   KolamTableFooterControls,
@@ -658,6 +662,10 @@ function PackingOverviewPanel({
 }) {
   const effectiveHpp = getPackingEffectiveHpp(item);
   const cheapestSupplier = getCheapestSupplier(item);
+  const mediaItems = React.useMemo(
+    () => createPackingMediaItems(item),
+    [item],
+  );
 
   return (
     <View style={styles.detailSectionStack}>
@@ -686,7 +694,18 @@ function PackingOverviewPanel({
           </View>
         </View>
         <View style={styles.overviewContent}>
-          <PackingPhotoGallery item={item} />
+          <View style={styles.gallery}>
+            {mediaItems.length ? (
+              <KolamDetailMediaPreview items={mediaItems} title={item.name} />
+            ) : (
+              <View style={styles.galleryEmpty}>
+                <Text style={styles.galleryEmptyTitle}>{item.name}</Text>
+                <Text style={styles.galleryEmptyMeta}>
+                  Belum ada foto bahan kemasan.
+                </Text>
+              </View>
+            )}
+          </View>
           <View style={styles.overviewBody}>
             <View style={styles.overviewMetricGrid}>
               <DetailMetric
@@ -746,104 +765,6 @@ function PackingOverviewPanel({
         item={item}
         onRouteChange={onRouteChange}
       />
-    </View>
-  );
-}
-
-function PackingPhotoGallery({ item }: { item: KolamPackingMaterial }) {
-  const [activeIndex, setActiveIndex] = React.useState(0);
-  const photoItems = React.useMemo(
-    () =>
-      item.photos
-        .map((photo, index) => ({
-          id: `${item.id}-photo-${index}`,
-          title: `${item.name} ${index + 1}`,
-          uri: getKolamFileUrl(photo) ?? '',
-        }))
-        .filter(photo => photo.uri),
-    [item.id, item.name, item.photos],
-  );
-  const safeIndex = Math.min(activeIndex, Math.max(0, photoItems.length - 1));
-  const activePhoto = photoItems[safeIndex];
-
-  React.useEffect(() => {
-    if (activeIndex >= photoItems.length) {
-      setActiveIndex(0);
-    }
-  }, [activeIndex, photoItems.length]);
-
-  if (!activePhoto) {
-    return (
-      <View style={styles.galleryEmpty}>
-        <Text style={styles.galleryEmptyTitle}>{item.name}</Text>
-        <Text style={styles.galleryEmptyMeta}>
-          Belum ada foto bahan kemasan.
-        </Text>
-      </View>
-    );
-  }
-
-  return (
-    <View style={styles.gallery}>
-      <View style={styles.galleryHeroWrap}>
-        <KolamRemoteImage
-          accessibilityLabel={`Foto ${item.name}`}
-          previewIndex={safeIndex}
-          previewItems={photoItems}
-          resizeMode="cover"
-          scope="packing-material"
-          sourceUri={activePhoto.uri}
-          style={styles.galleryHero}
-        />
-        {photoItems.length > 1 ? (
-          <>
-            <KolamButton
-              accessibilityLabel="Foto sebelumnya"
-              label="<"
-              onPress={() =>
-                setActiveIndex(current =>
-                  (current - 1 + photoItems.length) % photoItems.length,
-                )
-              }
-              style={[styles.galleryArrow, styles.galleryArrowLeft]}
-              textStyle={styles.galleryArrowText}
-            />
-            <KolamButton
-              accessibilityLabel="Foto berikutnya"
-              label=">"
-              onPress={() =>
-                setActiveIndex(current => (current + 1) % photoItems.length)
-              }
-              style={[styles.galleryArrow, styles.galleryArrowRight]}
-              textStyle={styles.galleryArrowText}
-            />
-            <View style={styles.galleryCounter}>
-              <Text style={styles.galleryCounterText}>
-                {safeIndex + 1} / {photoItems.length}
-              </Text>
-            </View>
-          </>
-        ) : null}
-      </View>
-      {photoItems.length > 1 ? (
-        <View style={styles.thumbnailRow}>
-          {photoItems.map((photo, index) => (
-            <KolamRemoteImage
-              accessibilityLabel={`Thumbnail ${item.name} ${index + 1}`}
-              key={photo.id}
-              previewIndex={index}
-              previewItems={photoItems}
-              resizeMode="cover"
-              scope="packing-material"
-              sourceUri={photo.uri}
-              style={[
-                styles.thumbnail,
-                index === safeIndex && styles.thumbnailActive,
-              ]}
-            />
-          ))}
-        </View>
-      ) : null}
     </View>
   );
 }
@@ -1609,6 +1530,27 @@ function getCheapestSupplier(item: KolamPackingMaterial) {
         (left.totalCost || left.price + left.shippingCost) -
         (right.totalCost || right.price + right.shippingCost),
     )[0];
+}
+
+function createPackingMediaItems(item: KolamPackingMaterial): KolamDetailMediaItem[] {
+  return item.photos
+    .map((photo, index) => {
+      const uri = getKolamFileUrl(photo) ?? '';
+      if (!uri) {
+        return null;
+      }
+
+      return {
+        badgeLabel: `${index + 1} / ${item.photos.length}`,
+        id: `${item.id}-photo-${index}`,
+        label: `${item.name} ${index + 1}`,
+        revision: photo,
+        scope: 'packing-material',
+        type: 'image',
+        uri,
+      } satisfies KolamDetailMediaItem;
+    })
+    .filter(Boolean) as KolamDetailMediaItem[];
 }
 
 function getUsageTypeLabel(row: KolamPackingCatalogUsageRow) {
