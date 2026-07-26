@@ -4665,7 +4665,7 @@ function ProductRawOverviewTab({
                     <Text style={styles.metaLabel}>Merek</Text>
                     <View style={styles.miniBrandRow}>
                       {product.brands.map(brand => (
-                        <View key={brand.id || brand.name} style={styles.rawBrandPill}>
+                        <View key={brand.id || brand.name} style={styles.miniBrandLogoFrame}>
                           {brand.logoUri ? (
                             <KolamRemoteImage
                               accessibilityLabel={`Logo ${brand.name}`}
