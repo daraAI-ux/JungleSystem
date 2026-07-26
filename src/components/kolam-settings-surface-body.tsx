@@ -50,9 +50,15 @@ export function KolamSettingsSurfaceBody({
         roleResourceGroups={controller.roleResourceGroups}
         roleRows={controller.roleRows}
         roleTabItems={controller.roleTabItems}
+        draft={controller.roleDraft}
+        onAction={controller.onRoleAction}
         selectedRole={controller.selectedRole}
         selectedRoleId={controller.selectedRoleId}
+        saveMessage={controller.roleMessage}
+        saveStatus={controller.roleSaveStatus}
+        setDraftField={controller.setRoleDraftField}
         onSelectRole={controller.setSelectedRoleId}
+        onTogglePermissionAction={controller.onToggleRolePermissionAction}
       />
     );
   }

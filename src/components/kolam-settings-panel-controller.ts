@@ -8,6 +8,8 @@ import {
   getSettingsActivityLogTableColumns,
   getSettingsDetailRows,
   getSettingsLiveEndpoints,
+  getSettingsRoleAccessRowsFromLive,
+  getSettingsRoleActionsForResource,
   getSettingsRoleAccessRows,
   getSettingsRoleEditorActions,
   getSettingsRoleInfoPanel,
@@ -19,24 +21,34 @@ import {
   getSettingsSurfaceStats,
   getSettingsWebConfigFields,
   getSettingsWebFormSections,
+  isSettingsDefaultRoleKey,
+  isSettingsSuperAdminRoleKey,
   settingsSurfaceItems,
   type SettingsSurfaceItem,
 } from '../domain/settings-surface';
 import type {SyncActivityEntry} from '../domain/sync-activity';
 import {
+  createKolamRole,
+  deleteKolamRole,
   getKolamWebSetting,
   getKolamWebSettingVersion,
   getKolamWebSettingVersions,
+  getKolamRoles,
+  updateKolamRole,
   updateKolamWebSetting,
   updateKolamWebSettingVersion,
   type KolamPluginConfigKey,
+  type KolamRole,
+  type KolamRolePermission,
   type KolamWebSetting,
   type KolamWebSettingVersion,
   type KolamWebSettingVersions,
 } from '../services/kolam-api';
+import {getCurrentUser} from '../services/auth-api';
 import {ApiError} from '../lib/api-error';
 
 type WebSettingSaveStatus = 'idle' | 'saving' | 'saved' | 'error';
+type RoleSaveStatus = 'idle' | 'loading' | 'saving' | 'saved' | 'error';
 
 interface WebSettingDraft {
   versionKolam: string;
@@ -65,6 +77,12 @@ interface WebSettingDraft {
   staffDesktopOnlyEnabled: boolean;
   staffDesktopOnlyRedirectUrl: string;
   pluginControls: Record<KolamPluginConfigKey, boolean>;
+}
+
+interface RoleDraft {
+  name: string;
+  key: string;
+  description: string;
 }
 
 const emptyWebSettingDraft: WebSettingDraft = {
@@ -105,6 +123,12 @@ const emptyWebSettingDraft: WebSettingDraft = {
   },
 };
 
+const emptyRoleDraft: RoleDraft = {
+  name: '',
+  key: '',
+  description: '',
+};
+
 export function useKolamSettingsPanelController(
   activityEntries: SyncActivityEntry[],
   initialActiveSurfaceId: SettingsSurfaceItem['id'] = 'web-settings',
@@ -133,8 +157,18 @@ export function useKolamSettingsPanelController(
   const [webSettingDraft, setWebSettingDraft] = useState<WebSettingDraft>(
     emptyWebSettingDraft,
   );
-  const roleRows = getSettingsRoleAccessRows();
-  const [selectedRoleId, setSelectedRoleId] = useState(roleRows[0]?.id ?? '');
+  const fallbackRoleRows = getSettingsRoleAccessRows();
+  const [roles, setRoles] = useState<KolamRole[]>([]);
+  const [roleStatus, setRoleStatus] = useState<RoleSaveStatus>('idle');
+  const [roleSaveStatus, setRoleSaveStatus] = useState<RoleSaveStatus>('idle');
+  const [roleMessage, setRoleMessage] = useState('');
+  const [roleDraft, setRoleDraft] = useState<RoleDraft>(emptyRoleDraft);
+  const roleRows = roles.length
+    ? getSettingsRoleAccessRowsFromLive(roles)
+    : fallbackRoleRows;
+  const [selectedRoleId, setSelectedRoleId] = useState(
+    fallbackRoleRows[0]?.id ?? '',
+  );
 
   useEffect(() => {
     if (activeSurfaceId !== 'web-settings') {
@@ -187,6 +221,41 @@ export function useKolamSettingsPanelController(
     };
   }, [activeSurfaceId]);
 
+  useEffect(() => {
+    if (activeSurfaceId !== 'role-management') {
+      return;
+    }
+
+    let mounted = true;
+    setRoleStatus('loading');
+
+    getKolamRoles()
+      .then(nextRoles => {
+        if (!mounted) {
+          return;
+        }
+
+        setRoles(nextRoles);
+        setRoleStatus('saved');
+        setRoleMessage('');
+        setSelectedRoleId(current =>
+          nextRoles.some(role => role._id === current)
+            ? current
+            : nextRoles[0]?._id ?? '',
+        );
+      })
+      .catch(error => {
+        if (mounted) {
+          setRoleStatus('error');
+          setRoleMessage(getRoleSaveErrorMessage(error));
+        }
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [activeSurfaceId]);
+
   const activeSurface =
     settingsSurfaceItems.find(item => item.id === activeSurfaceId) ??
     settingsSurfaceItems[0];
@@ -207,6 +276,8 @@ export function useKolamSettingsPanelController(
     : [];
   const selectedRole =
     roleRows.find(row => row.id === selectedRoleId) ?? roleRows[0];
+  const selectedLiveRole =
+    roles.find(role => role._id === selectedRole?.id) ?? null;
   const liveEndpoints = getSettingsLiveEndpoints().filter(endpoint => {
     if (activeSurfaceId === 'web-settings') {
       return endpoint.path.startsWith('/websetting');
@@ -222,6 +293,20 @@ export function useKolamSettingsPanelController(
     setActivityPage(1);
     setSelectedActivityLogId('');
   };
+
+  useEffect(() => {
+    if (!selectedLiveRole) {
+      return;
+    }
+
+    setRoleDraft({
+      name: selectedLiveRole.name ?? '',
+      key: selectedLiveRole.key ?? '',
+      description: selectedLiveRole.description ?? '',
+    });
+    setRoleSaveStatus('idle');
+  }, [selectedLiveRole]);
+
   const changeActivityPage = (page: number) => {
     setActivityPage(page);
     setSelectedActivityLogId('');
@@ -345,6 +430,153 @@ export function useKolamSettingsPanelController(
     }
   };
 
+  const setRoleDraftField = <Key extends keyof RoleDraft>(
+    key: Key,
+    value: RoleDraft[Key],
+  ) => {
+    setRoleDraft(current => ({
+      ...current,
+      [key]: value,
+    }));
+    setRoleSaveStatus('idle');
+  };
+
+  const reloadRoles = async () => {
+    const nextRoles = await getKolamRoles();
+    setRoles(nextRoles);
+    setSelectedRoleId(current =>
+      nextRoles.some(role => role._id === current)
+        ? current
+        : nextRoles[0]?._id ?? '',
+    );
+    return nextRoles;
+  };
+
+  const createRole = async () => {
+    setRoleSaveStatus('saving');
+    setRoleMessage('');
+
+    try {
+      const created = await createKolamRole({
+        name: roleDraft.name.trim(),
+        key: roleDraft.key.trim(),
+        description: cleanOptionalString(roleDraft.description),
+        permissions: [{resource: 'role', actions: ['view']}],
+      });
+
+      await reloadRoles();
+      await refreshRolePermissionCache();
+      setSelectedRoleId(created._id);
+      setRoleSaveStatus('saved');
+      setRoleMessage('Role berhasil dibuat dari data live.');
+    } catch (error) {
+      setRoleSaveStatus('error');
+      setRoleMessage(getRoleSaveErrorMessage(error));
+    }
+  };
+
+  const updateRole = async () => {
+    if (!selectedLiveRole) {
+      return;
+    }
+
+    setRoleSaveStatus('saving');
+    setRoleMessage('');
+
+    try {
+      const updated = await updateKolamRole(selectedLiveRole._id, {
+        name: roleDraft.name.trim(),
+        key: roleDraft.key.trim(),
+        description: cleanOptionalString(roleDraft.description),
+        permissions: selectedLiveRole.permissions ?? [],
+      });
+
+      setRoles(current =>
+        current.map(role => (role._id === updated._id ? updated : role)),
+      );
+      await reloadRoles();
+      await refreshRolePermissionCache();
+      setRoleSaveStatus('saved');
+      setRoleMessage('Role berhasil diperbarui dan permission user direfresh.');
+    } catch (error) {
+      setRoleSaveStatus('error');
+      setRoleMessage(getRoleSaveErrorMessage(error));
+    }
+  };
+
+  const deleteRole = async () => {
+    if (!selectedLiveRole) {
+      return;
+    }
+
+    if (isSettingsDefaultRoleKey(selectedLiveRole.key)) {
+      setRoleSaveStatus('error');
+      setRoleMessage('Default role tidak boleh dihapus.');
+      return;
+    }
+
+    setRoleSaveStatus('saving');
+    setRoleMessage('');
+
+    try {
+      await deleteKolamRole(selectedLiveRole._id);
+      const nextRoles = await reloadRoles();
+      await refreshRolePermissionCache();
+      setRoleSaveStatus('saved');
+      setRoleMessage('Role berhasil dihapus dari data live.');
+      setSelectedRoleId(nextRoles[0]?._id ?? '');
+    } catch (error) {
+      setRoleSaveStatus('error');
+      setRoleMessage(getRoleSaveErrorMessage(error));
+    }
+  };
+
+  const toggleRolePermissionAction = async (
+    resource: string,
+    action: string,
+  ) => {
+    if (
+      !selectedLiveRole ||
+      isSettingsSuperAdminRoleKey(selectedLiveRole.key) ||
+      roleSaveStatus === 'saving'
+    ) {
+      return;
+    }
+
+    setRoleSaveStatus('saving');
+    setRoleMessage('');
+
+    try {
+      const permissions = createUpdatedRolePermissions(
+        selectedLiveRole.permissions ?? [],
+        resource,
+        action,
+      );
+      const updated = await updateKolamRole(selectedLiveRole._id, {
+        name: selectedLiveRole.name,
+        key: selectedLiveRole.key,
+        description: selectedLiveRole.description,
+        permissions,
+      });
+
+      setRoles(current =>
+        current.map(role => (role._id === updated._id ? updated : role)),
+      );
+      await refreshRolePermissionCache();
+      setRoleSaveStatus('saved');
+      setRoleMessage('Permission role berhasil diperbarui.');
+    } catch (error) {
+      setRoleSaveStatus('error');
+      setRoleMessage(getRoleSaveErrorMessage(error));
+    }
+  };
+
+  const roleActionHandlers = {
+    'create-role': createRole,
+    'update-role': updateRole,
+    'delete-role': deleteRole,
+  };
+
   return {
     activeSurface,
     activeSurfaceId,
@@ -356,6 +588,11 @@ export function useKolamSettingsPanelController(
     liveEndpoints,
     maintenanceMode,
     roleRows,
+    roles,
+    roleDraft,
+    roleMessage,
+    roleSaveStatus,
+    roleStatus,
     selectSurface,
     selectedActivityLog,
     selectedActivityLogFields,
@@ -363,6 +600,7 @@ export function useKolamSettingsPanelController(
     selectedRole,
     selectedRoleId,
     setMaintenanceMode,
+    setRoleDraftField,
     setSelectedActivityLogId,
     setSelectedRoleId,
     setStorefrontEnabled,
@@ -388,17 +626,21 @@ export function useKolamSettingsPanelController(
       selectedRole?.id,
       selectedRole?.defaultRole,
     ),
-    roleInfoPanel: getSettingsRoleInfoPanel(selectedRole?.id),
+    roleInfoPanel: getSettingsRoleInfoPanel(selectedRole?.id, roleRows),
     roleMemberPreview: getSettingsRoleMemberPreview(
       selectedRole?.id ?? roleRows[0]?.id ?? 'super-admin',
     ),
     rolePermissionMatrixGroups: getSettingsRolePermissionMatrixGroups(
-      selectedRole?.id,
+      selectedLiveRole ?? selectedRole?.id,
       selectedRole?.defaultRole,
     ),
     rolePermissionPreviewRows: getSettingsRolePermissionPreviewRows(),
     roleResourceGroups: getSettingsRoleResourceGroups(),
-    roleTabItems: getSettingsRoleTabItems(roleRows),
+    roleTabItems: getSettingsRoleTabItems(roleRows, roles),
+    onRoleAction: (actionId: keyof typeof roleActionHandlers) => {
+      void roleActionHandlers[actionId]?.();
+    },
+    onToggleRolePermissionAction: toggleRolePermissionAction,
     activityColumns: getSettingsActivityLogTableColumns(),
     activityFilterControls: getSettingsActivityLogFilterControls(),
     activityStatsCards: getSettingsActivityLogStatsCards(activityEntries),
@@ -522,6 +764,39 @@ function parseOptionalNumber(value: string) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+function createUpdatedRolePermissions(
+  currentPermissions: KolamRolePermission[],
+  resource: string,
+  action: string,
+): KolamRolePermission[] {
+  const validActions = getSettingsRoleActionsForResource(resource);
+  const current = currentPermissions.find(
+    permission => permission.resource === resource,
+  );
+  const currentActions = (current?.actions ?? []).filter(currentAction =>
+    validActions.includes(currentAction),
+  );
+  const nextActions = currentActions.includes(action)
+    ? currentActions.filter(currentAction => currentAction !== action)
+    : [...currentActions, action];
+  const nextPermission =
+    nextActions.length > 0 ? {resource, actions: nextActions} : null;
+
+  return [
+    ...currentPermissions
+      .filter(permission => permission.resource !== resource)
+      .map(permission => ({
+        resource: permission.resource,
+        actions: permission.actions,
+      })),
+    ...(nextPermission ? [nextPermission] : []),
+  ];
+}
+
+async function refreshRolePermissionCache() {
+  await getCurrentUser().catch(() => undefined);
+}
+
 function getWebSettingSaveErrorMessage(error: unknown) {
   if (error instanceof ApiError && error.status === 403) {
     return 'Akses ditolak: permission websetting:update diperlukan.';
@@ -532,4 +807,16 @@ function getWebSettingSaveErrorMessage(error: unknown) {
   }
 
   return 'Gagal menyimpan Web Settings.';
+}
+
+function getRoleSaveErrorMessage(error: unknown) {
+  if (error instanceof ApiError && error.status === 403) {
+    return 'Akses ditolak: permission role diperlukan.';
+  }
+
+  if (error instanceof ApiError && error.message) {
+    return error.message;
+  }
+
+  return 'Gagal menyimpan Role Management live.';
 }

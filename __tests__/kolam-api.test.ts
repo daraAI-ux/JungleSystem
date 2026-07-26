@@ -7,12 +7,15 @@ import {
   uploadKolamCategoryIcon,
 } from '../src/services/kolam-category-api';
 import {
+  createKolamRole,
+  deleteKolamRole,
   getKolamActivityLogs,
   getKolamPendingCustomerVerifications,
   getKolamRoles,
   getKolamWebSetting,
   getKolamWebSettingVersion,
   getKolamWebSettingVersions,
+  updateKolamRole,
   updateKolamWebSetting,
   updateKolamWebSettingVersion,
 } from '../src/services/kolam-api';
@@ -288,6 +291,91 @@ describe('Kolam Settings API contracts', () => {
         }),
       }),
     );
+  });
+
+  it('sends Role Management create and update bodies to the live backend', async () => {
+    const body = {
+      name: 'Warehouse Staff',
+      key: 'warehouse-staff',
+      description: 'Gudang produksi',
+      permissions: [{resource: 'role', actions: ['view']}],
+    };
+    const updatedBody = {
+      ...body,
+      permissions: [{resource: 'role', actions: ['view', 'update']}],
+    };
+
+    fetchMock
+      .mockResolvedValueOnce(
+        jsonResponse({
+          message: 'Role created successfully',
+          data: {_id: 'role-3', ...body},
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          message: 'Role updated successfully',
+          data: {_id: 'role-3', ...updatedBody},
+        }),
+      );
+
+    await expect(createKolamRole(body)).resolves.toEqual(
+      expect.objectContaining({key: 'warehouse-staff'}),
+    );
+    await expect(updateKolamRole('role-3', updatedBody)).resolves.toEqual(
+      expect.objectContaining({_id: 'role-3'}),
+    );
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      `${appConfig.kolamApiBaseUrl}/roles`,
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify(body),
+      }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      `${appConfig.kolamApiBaseUrl}/roles/role-3`,
+      expect.objectContaining({
+        method: 'PUT',
+        body: JSON.stringify(updatedBody),
+      }),
+    );
+  });
+
+  it('sends Role Management delete requests to the live backend', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({message: 'Role deleted successfully'}),
+    );
+
+    await expect(deleteKolamRole('role-3')).resolves.toBeUndefined();
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${appConfig.kolamApiBaseUrl}/roles/role-3`,
+      expect.objectContaining({
+        method: 'DELETE',
+      }),
+    );
+  });
+
+  it('surfaces Role Management permission errors from the live backend', async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: false,
+      status: 403,
+      text: jest.fn().mockResolvedValue(JSON.stringify({message: 'Forbidden'})),
+    });
+
+    await expect(
+      updateKolamRole('role-3', {
+        name: 'No Access',
+        key: 'no-access',
+        permissions: [{resource: 'role', actions: ['view']}],
+      }),
+    ).rejects.toMatchObject({
+      status: 403,
+      message: 'Forbidden',
+    });
   });
 
   it('requests customer visit confirmations through direct BE', async () => {

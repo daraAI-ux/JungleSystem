@@ -6,8 +6,10 @@ import {getRoleEditorActionGlyphVariant} from './kolam-settings-role-editor-acti
 
 export function KolamSettingsRoleEditorAction({
   action,
+  onPress,
 }: {
   action: SettingsRoleEditorAction;
+  onPress?: () => void;
 }) {
   return (
     <KolamActionButton
@@ -15,6 +17,7 @@ export function KolamSettingsRoleEditorAction({
       intent={action.intent}
       disabled={action.disabled}
       disabledReason={action.disabledReason}
+      onPress={onPress}
       icon={
         <KolamActionGlyph
           variant={getRoleEditorActionGlyphVariant(action.id)}

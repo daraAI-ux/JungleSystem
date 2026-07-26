@@ -33,4 +33,47 @@ export const settingsRoleManagementStyles = StyleSheet.create({
     textAlign: 'center',
     textTransform: 'uppercase',
   },
+  settingsRoleForm: {
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: 1,
+    backgroundColor: V.colors.bg,
+  },
+  settingsRoleFormGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  settingsRoleFormField: {
+    minWidth: 210,
+    flex: 1,
+    gap: 6,
+  },
+  settingsRoleFormFieldWide: {
+    minWidth: 260,
+    flex: 1.4,
+    gap: 6,
+  },
+  settingsRoleInput: {
+    minHeight: 38,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    borderRadius: V.radius.md,
+    paddingHorizontal: 10,
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    backgroundColor: V.colors.bg,
+  },
+  settingsRoleMessage: {
+    color: V.colors.success,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  settingsRoleMessageError: {
+    color: V.colors.warning,
+  },
 });

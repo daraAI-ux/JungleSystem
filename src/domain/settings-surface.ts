@@ -1,5 +1,6 @@
 import type {SyncActivityEntry} from './sync-activity';
 import type {
+  KolamRole,
   KolamWebSetting,
   KolamWebSettingVersion,
   KolamWebSettingVersions,
@@ -203,7 +204,7 @@ export interface SettingsRolePermissionMatrixAction {
 
 export interface SettingsRolePermissionMatrixRow {
   id: string;
-  resource: 'role' | 'websetting' | 'activity-log';
+  resource: string;
   label: string;
   activeCount: number;
   totalCount: number;
@@ -298,6 +299,17 @@ export interface SettingsRoleAccessRow {
   meta: string;
   defaultRole: boolean;
 }
+
+export const SETTINGS_DEFAULT_ROLE_KEYS = [
+  'super-admin',
+  'finance',
+  'purchasing',
+  'staff',
+  'member',
+  'marketing-manager',
+  'marketing-staff',
+  'admin',
+] as const;
 
 export interface SettingsWebConfigField {
   id: 'storefront-title' | 'storefront-status' | 'maintenance-mode';
@@ -879,61 +891,73 @@ export function getSettingsRolePermissionPreviewRows(): SettingsRolePermissionPr
 }
 
 export function getSettingsRolePermissionMatrixGroups(
-  roleId = 'super-admin',
+  roleOrId: KolamRole | string = 'super-admin',
   defaultRole = false,
 ): SettingsRolePermissionMatrixGroup[] {
-  const fullAccess = roleId === 'super-admin';
+  const role =
+    typeof roleOrId === 'string' ? undefined : roleOrId;
+  const roleId = typeof roleOrId === 'string' ? roleOrId : roleOrId._id;
+  const roleKey = role?.key ?? roleId;
+  const fullAccess = isSettingsSuperAdminRoleKey(roleKey);
   const canEdit = !defaultRole && !fullAccess;
-  const previewRows = getSettingsRolePermissionPreviewRows();
-  const rows: SettingsRolePermissionMatrixRow[] = previewRows.map(row => {
-    const selectedActions = getPreviewSelectedActions(row.resource, roleId);
-    const actions = row.actions.map(action => ({
-      id: action,
-      label: getPermissionActionLabel(action),
-      selected: fullAccess || selectedActions.includes(action),
-      disabled: !canEdit,
-    }));
-    const activeCount = actions.filter(action => action.selected).length;
+  const groups = getSettingsRoleResourceGroups();
 
-    const tone: SettingsRolePermissionMatrixRow['tone'] =
-      activeCount === actions.length
-        ? 'success'
-        : activeCount > 0
-          ? 'warning'
-          : 'muted';
+  return groups.map(group => {
+    const rows: SettingsRolePermissionMatrixRow[] = group.resources.map(
+      resource => {
+        const availableActions = getSettingsRoleActionsForResource(resource);
+        const selectedActions = role
+          ? getLiveSelectedActions(role, resource)
+          : getPreviewSelectedActions(resource, roleId);
+        const actions = availableActions.map(action => ({
+          id: action,
+          label: getPermissionActionLabel(action),
+          selected: fullAccess || selectedActions.includes(action),
+          disabled: !canEdit,
+        }));
+        const activeCount = actions.filter(action => action.selected).length;
+
+        const tone: SettingsRolePermissionMatrixRow['tone'] =
+          activeCount === actions.length
+            ? 'success'
+            : activeCount > 0
+              ? 'warning'
+              : 'muted';
+
+        return {
+          id: `${group.id}-${resource}`,
+          resource,
+          label: getSettingsRoleResourceLabel(resource),
+          activeCount,
+          totalCount: actions.length,
+          tone,
+          actions,
+          source: 'lib/permissions/resource-actions.ts',
+        };
+      },
+    );
 
     return {
-      id: row.id,
-      resource: row.resource,
-      label: row.label,
-      activeCount,
-      totalCount: actions.length,
-      tone,
-      actions,
-      source: row.source,
-    };
-  });
-
-  return [
-    {
-      id: 'settings-configuration-preview',
-      label: 'Pengaturan & Konfigurasi',
+      id: group.id,
+      label: group.label,
       resourceCount: rows.length,
       activeCount: rows.reduce((total, row) => total + row.activeCount, 0),
       totalPossible: rows.reduce((total, row) => total + row.totalCount, 0),
       expanded: true,
       rows,
       sourceComponent: 'settings/roles/list.tsx',
-    },
-  ];
+    };
+  });
 }
 
 export function getSettingsRoleTabItems(
   rows = getSettingsRoleAccessRows(),
+  roles: KolamRole[] = [],
 ): SettingsRoleTabItem[] {
   return rows.map(row => {
-    const [group] = getSettingsRolePermissionMatrixGroups(
-      row.id,
+    const liveRole = roles.find(role => role._id === row.id);
+    const groups = getSettingsRolePermissionMatrixGroups(
+      liveRole ?? row.id,
       row.defaultRole,
     );
 
@@ -941,9 +965,9 @@ export function getSettingsRoleTabItems(
       id: row.id,
       label: row.role,
       key: row.key,
-      permissionCount: group?.activeCount ?? 0,
+      permissionCount: groups.reduce((total, group) => total + group.activeCount, 0),
       defaultRole: row.defaultRole,
-      fullAccess: row.id === 'super-admin',
+      fullAccess: isSettingsSuperAdminRoleKey(row.key),
       sourceComponent: 'settings/roles/list.tsx',
     };
   });
@@ -951,11 +975,13 @@ export function getSettingsRoleTabItems(
 
 export function getSettingsRoleInfoPanel(
   roleId = 'super-admin',
+  rows = getSettingsRoleAccessRows(),
 ): SettingsRoleInfoPanel {
   const row =
-    getSettingsRoleAccessRows().find(role => role.id === roleId) ??
+    rows.find(role => role.id === roleId) ??
+    rows[0] ??
     getSettingsRoleAccessRows()[0];
-  const fullAccess = row.id === 'super-admin';
+  const fullAccess = isSettingsSuperAdminRoleKey(row.key);
   const badges: SettingsRoleInfoPanel['badges'] = [];
 
   if (fullAccess) {
@@ -982,7 +1008,7 @@ export function getSettingsRoleInfoPanel(
 }
 
 function getPreviewSelectedActions(
-  resource: SettingsRolePermissionPreviewRow['resource'],
+  resource: string,
   roleId: string,
 ) {
   if (roleId === 'inventory-staff') {
@@ -1000,12 +1026,53 @@ function getPreviewSelectedActions(
   return [];
 }
 
+function getLiveSelectedActions(role: KolamRole, resource: string) {
+  const wildcard = role.permissions?.find(permission => permission.resource === '*');
+  if (wildcard?.actions.includes('*')) {
+    return getSettingsRoleActionsForResource(resource);
+  }
+
+  return (
+    role.permissions?.find(permission => permission.resource === resource)
+      ?.actions ?? []
+  );
+}
+
 function getPermissionActionLabel(action: string) {
   const labels: Record<string, string> = {
     view: 'View',
+    read: 'Read',
     create: 'Create',
     update: 'Update',
     delete: 'Delete',
+    update_status: 'Status',
+    receive: 'Terima barang',
+    check: 'Quality check',
+    complete_stock: 'Masuk stok',
+    view_by_admin: 'View Admin',
+    update_by_admin: 'Update Admin',
+    create_by_admin: 'Create Admin',
+    delete_by_admin: 'Delete Admin',
+    change_role_by_admin: 'Change Role',
+    opname: 'Opname',
+    approve: 'Approve',
+    reject: 'Reject',
+    confirm: 'Confirm',
+    submit: 'Submit',
+    post: 'Post',
+    review: 'Review',
+    draft: 'Draft',
+    view_detail: 'View Detail',
+    view_code: 'View Code',
+    view_salary: 'View Salary',
+    view_all: 'View All',
+    flag_employee: 'Flag Employee',
+    verify: 'Verify',
+    update_decision: 'Decision',
+    assign_staff: 'Assign',
+    update_return: 'Return',
+    close: 'Close',
+    '*': 'All',
   };
 
   return labels[action] ?? action;
@@ -1014,52 +1081,30 @@ function getPermissionActionLabel(action: string) {
 export function getSettingsRoleResourceGroups(): SettingsRoleResourceGroup[] {
   return [
     {
-      id: 'inventory',
-      label: 'Inventori',
+      id: 'general-communication',
+      label: 'General & Communication',
+      resources: ['chat'],
+      sourceComponent: 'settings/roles/list.tsx',
+    },
+    {
+      id: 'inventory-catalog',
+      label: 'Inventory & Catalog',
       resources: [
         'brand',
         'category',
-        'taxonomy',
-        'location',
+        'tag',
+        'custom-field',
         'units',
-        'product',
+        'taxonomy',
         'species',
         'source',
         'iucn-status',
-      ],
-      sourceComponent: 'settings/roles/list.tsx',
-    },
-    {
-      id: 'sales-customers',
-      label: 'Penjualan & Pelanggan',
-      resources: [
-        'sale',
-        'customer',
-        'complaint',
-        'enclosure',
-        'shipping_method',
         'customer-species',
-        'species-request',
-        'taxonomy-request',
+        'product',
+        'packing',
+        'location',
+        'media',
       ],
-      sourceComponent: 'settings/roles/list.tsx',
-    },
-    {
-      id: 'content',
-      label: 'Content',
-      resources: ['blog', 'blog-topic', 'tag'],
-      sourceComponent: 'settings/roles/list.tsx',
-    },
-    {
-      id: 'purchasing-production',
-      label: 'Purchasing & Production',
-      resources: ['vendor', 'purchase-order', 'production'],
-      sourceComponent: 'settings/roles/list.tsx',
-    },
-    {
-      id: 'finance',
-      label: 'Finance',
-      resources: ['wallet'],
       sourceComponent: 'settings/roles/list.tsx',
     },
     {
@@ -1069,24 +1114,238 @@ export function getSettingsRoleResourceGroups(): SettingsRoleResourceGroup[] {
       sourceComponent: 'settings/roles/list.tsx',
     },
     {
-      id: 'enclonura',
-      label: 'Enclonura',
-      resources: ['enclonura-species'],
+      id: 'purchasing-production',
+      label: 'Purchasing & Production',
+      resources: ['vendor', 'purchase-order', 'production'],
+      sourceComponent: 'settings/roles/list.tsx',
+    },
+    {
+      id: 'sales-customers',
+      label: 'Sales & Customers',
+      resources: [
+        'sale',
+        'custom-project',
+        'customer',
+        'complaint',
+        'shipping_method',
+        'voucher',
+      ],
+      sourceComponent: 'settings/roles/list.tsx',
+    },
+    {
+      id: 'plugins-kolam',
+      label: 'Plugins (Kolam)',
+      resources: ['layanan', 'enclosure', 'task-manager', 'freyer', 'teranura'],
+      sourceComponent: 'settings/roles/list.tsx',
+    },
+    {
+      id: 'marketing-ai',
+      label: 'Marketing AI (DARA)',
+      resources: ['ai-seo', 'ai-market-intel', 'dara-training'],
+      sourceComponent: 'settings/roles/list.tsx',
+    },
+    {
+      id: 'finance',
+      label: 'Finance & HR',
+      resources: [
+        'wallet',
+        'commission',
+        'payable',
+        'routine-expense',
+        'unexpected-expense',
+        'unexpected-income',
+        'receivable',
+        'tax',
+        'payroll',
+        'salary',
+        'staff_attendance',
+        'kasbon',
+        'salary_deduction',
+      ],
+      sourceComponent: 'settings/roles/list.tsx',
+    },
+    {
+      id: 'content',
+      label: 'Content & Blog',
+      resources: ['blog', 'blog-topic'],
       sourceComponent: 'settings/roles/list.tsx',
     },
     {
       id: 'settings-configuration',
-      label: 'Pengaturan & Konfigurasi',
-      resources: ['user', 'role', 'websetting', 'custom-field'],
+      label: 'Settings & Administration',
+      resources: ['user', 'role', 'websetting', 'activity-log'],
       sourceComponent: 'settings/roles/list.tsx',
     },
     {
-      id: 'system',
+      id: 'system-wildcard',
       label: 'System (Wildcard)',
       resources: ['*'],
       sourceComponent: 'settings/roles/list.tsx',
     },
   ];
+}
+
+export function getSettingsRoleAccessRowsFromLive(
+  roles: KolamRole[],
+): SettingsRoleAccessRow[] {
+  return roles.map(role => {
+    const key = role.key || role._id;
+    const permissions = role.permissions ?? [];
+    const fullAccess = isSettingsSuperAdminRoleKey(key);
+    const hasResource = (resource: string) =>
+      fullAccess || permissions.some(permission => permission.resource === resource);
+
+    return {
+      id: role._id,
+      role: role.name || key,
+      key,
+      kolam:
+        fullAccess ||
+        permissions.some(permission =>
+          [
+            'brand',
+            'product',
+            'species',
+            'role',
+            'websetting',
+            'activity-log',
+            '*',
+          ].includes(permission.resource),
+        ),
+      pos: hasResource('sale') || hasResource('customer'),
+      am: hasResource('custom-project') || hasResource('task-manager'),
+      meta:
+        role.description?.trim() ||
+        `${getSettingsRolePermissionCount(role)} live permissions`,
+      defaultRole: isSettingsDefaultRoleKey(key),
+    };
+  });
+}
+
+export function isSettingsDefaultRoleKey(key: string) {
+  return SETTINGS_DEFAULT_ROLE_KEYS.includes(
+    key as (typeof SETTINGS_DEFAULT_ROLE_KEYS)[number],
+  );
+}
+
+export function isSettingsSuperAdminRoleKey(key: string) {
+  return key === 'super-admin' || key === 'super_admin';
+}
+
+export function getSettingsRolePermissionCount(role: KolamRole) {
+  if (isSettingsSuperAdminRoleKey(role.key)) {
+    return getSettingsRoleResourceGroups().reduce(
+      (total, group) =>
+        total +
+        group.resources.reduce(
+          (subtotal, resource) =>
+            subtotal + getSettingsRoleActionsForResource(resource).length,
+          0,
+        ),
+      0,
+    );
+  }
+
+  return (role.permissions ?? []).reduce(
+    (total, permission) =>
+      total +
+      getSettingsRoleActionsForResource(permission.resource).filter(action =>
+        permission.actions.includes(action),
+      ).length,
+    0,
+  );
+}
+
+export function getSettingsRoleActionsForResource(resource: string) {
+  const actionsByResource: Record<string, string[]> = {
+    '*': ['*'],
+    'purchase-order': [
+      'view',
+      'create',
+      'update',
+      'delete',
+      'receive',
+      'check',
+      'complete_stock',
+      'update_status',
+    ],
+    'stock-opname': ['view', 'create', 'update', 'delete', 'opname'],
+    complaint: [
+      'view',
+      'create',
+      'update',
+      'delete',
+      'update_decision',
+      'assign_staff',
+      'update_return',
+      'close',
+    ],
+    user: [
+      'view',
+      'create',
+      'update',
+      'delete',
+      'view_by_admin',
+      'update_by_admin',
+      'create_by_admin',
+      'delete_by_admin',
+      'change_role_by_admin',
+      'flag_employee',
+    ],
+    salary: ['view', 'view_salary', 'create', 'update', 'delete'],
+    payroll: ['view', 'create', 'update', 'delete', 'approve', 'reject', 'verify'],
+    tax: ['view', 'create', 'update', 'delete', 'draft', 'review', 'post'],
+    role: ['view', 'create', 'update', 'delete'],
+    websetting: ['view', 'update'],
+    'activity-log': ['view'],
+    chat: ['view', 'create', 'update', 'delete', 'view_all'],
+    media: ['view', 'create', 'update', 'delete'],
+  };
+
+  return actionsByResource[resource] ?? ['view', 'create', 'update', 'delete'];
+}
+
+export function getSettingsRoleResourceLabel(resource: string) {
+  const labels: Record<string, string> = {
+    'purchase-order': 'Purchase Order',
+    'stock-transaction': 'Stock Transaction',
+    'stock-opname': 'Stock Opname',
+    'custom-field': 'Custom Field',
+    shipping_method: 'Shipping Method',
+    websetting: 'Web Settings',
+    'blog-topic': 'Blog Topic',
+    'iucn-status': 'IUCN Status',
+    'ai-seo': 'DARA AI SEO',
+    'ai-market-intel': 'DARA Market Intelligence',
+    'dara-training': 'Pelatihan DARA',
+    'task-manager': 'Task Manager (plugin)',
+    layanan: 'Layanan / Langganan (plugin)',
+    enclosure: 'Enclosure (plugin)',
+    freyer: 'Freyr - katalog & IoT (plugin)',
+    teranura: 'Teranura - katalog perangkat (plugin)',
+    'activity-log': 'Activity Log',
+    packing: 'Packing Materials',
+    tax: 'Tax Intelligence',
+    commission: 'Komisi penjualan',
+    payable: 'Utang / kewajiban bayar',
+    'routine-expense': 'Biaya rutin',
+    'unexpected-expense': 'Pengeluaran tak terduga',
+    'unexpected-income': 'Pemasukan tak terduga',
+    chat: 'Chat / Inbox',
+    payroll: 'Payroll',
+    salary: 'Salary & Bonus',
+    staff_attendance: 'Staff Attendance',
+    kasbon: 'Kasbon',
+    salary_deduction: 'Salary Deduction',
+    'customer-species': 'Customer Species (portal)',
+    source: 'Sumber Penjualan',
+    receivable: 'Piutang',
+    'custom-project': 'Proyek kustom',
+    production: 'Production',
+    '*': 'All Resources (Wildcard)',
+  };
+
+  return labels[resource] ?? resource.charAt(0).toUpperCase() + resource.slice(1);
 }
 
 export function getSettingsRoleAccessRows(): SettingsRoleAccessRow[] {

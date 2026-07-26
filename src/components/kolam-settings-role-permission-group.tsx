@@ -7,18 +7,25 @@ import {KolamSettingsRolePermissionRow} from './kolam-settings-role-permission-r
 
 export function KolamSettingsRolePermissionGroup({
   group,
+  onTogglePermissionAction,
 }: {
   group: SettingsRolePermissionMatrixGroup;
+  onTogglePermissionAction?: (resource: string, action: string) => void;
 }) {
   return (
     <KolamCardFrame variant="settingsRolePermissionGroup">
       <KolamSettingsRolePermissionGroupHeader group={group} />
       {group.expanded ? (
         <KolamMappedList
-          items={group.rows}
-          getKey={row => row.id}
-          renderItem={row => <KolamSettingsRolePermissionRow row={row} />}
-        />
+        items={group.rows}
+        getKey={row => row.id}
+        renderItem={row => (
+          <KolamSettingsRolePermissionRow
+            row={row}
+            onTogglePermissionAction={onTogglePermissionAction}
+          />
+        )}
+      />
       ) : null}
     </KolamCardFrame>
   );

@@ -1,6 +1,7 @@
 import React from 'react';
 import type {
   SettingsRoleEditorAction,
+  SettingsRoleEditorActionId,
   SettingsRoleMemberPreview,
   SettingsRolePermissionMatrixGroup,
   SettingsRolePermissionPreviewRow,
@@ -20,6 +21,8 @@ export function KolamSettingsRoleEditorToolbar({
   permissionRows,
   permissionMatrixGroups,
   resourceGroups,
+  onAction = noopRoleEditorAction,
+  onTogglePermissionAction,
 }: {
   selectedRoleName: string;
   actions: SettingsRoleEditorAction[];
@@ -27,15 +30,21 @@ export function KolamSettingsRoleEditorToolbar({
   permissionRows: SettingsRolePermissionPreviewRow[];
   permissionMatrixGroups: SettingsRolePermissionMatrixGroup[];
   resourceGroups: SettingsRoleResourceGroup[];
+  onAction?: (actionId: SettingsRoleEditorActionId) => void;
+  onTogglePermissionAction?: (resource: string, action: string) => void;
 }) {
   return (
     <KolamListFrame variant="roleEditorToolbar">
       <KolamSettingsRoleEditorHeader
         actions={actions}
+        onAction={onAction}
         selectedRoleName={selectedRoleName}
       />
       <KolamSettingsRoleMemberPreview preview={memberPreview} />
-      <KolamSettingsRolePermissionMatrix groups={permissionMatrixGroups} />
+      <KolamSettingsRolePermissionMatrix
+        groups={permissionMatrixGroups}
+        onTogglePermissionAction={onTogglePermissionAction}
+      />
       <KolamSettingsRoleEditorPermissionPreviewList rows={permissionRows} />
       <KolamSettingsRoleEditorResourceSummaryList
         resourceGroups={resourceGroups}
@@ -43,3 +52,5 @@ export function KolamSettingsRoleEditorToolbar({
     </KolamListFrame>
   );
 }
+
+function noopRoleEditorAction() {}

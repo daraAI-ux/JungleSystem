@@ -297,7 +297,20 @@ export interface KolamRole {
   name: string;
   key: string;
   description?: string;
-  permissions?: unknown[];
+  permissions?: KolamRolePermission[];
+}
+
+export interface KolamRolePermission {
+  _id?: string;
+  resource: string;
+  actions: string[];
+}
+
+export interface KolamRoleBody {
+  name: string;
+  key: string;
+  description?: string;
+  permissions: KolamRolePermission[];
 }
 
 export type KolamActivityLogType = 'api' | 'page';
@@ -470,6 +483,33 @@ export async function getKolamRoles(): Promise<KolamRole[]> {
   return response.data;
 }
 
+export async function createKolamRole(
+  body: KolamRoleBody,
+): Promise<KolamRole> {
+  const response = await kolamPost<MessageDataResponse<KolamRole>>(
+    '/roles',
+    body,
+  );
+
+  return response.data;
+}
+
+export async function updateKolamRole(
+  roleId: string,
+  body: KolamRoleBody,
+): Promise<KolamRole> {
+  const response = await kolamPut<MessageDataResponse<KolamRole>>(
+    `/roles/${roleId}`,
+    body,
+  );
+
+  return response.data;
+}
+
+export async function deleteKolamRole(roleId: string): Promise<void> {
+  await kolamDelete<MessageDataResponse<unknown>>(`/roles/${roleId}`);
+}
+
 export function getKolamActivityLogs(
   params: KolamActivityLogListParams = {page: 1, limit: 50},
 ): Promise<KolamActivityLogListResponse> {
@@ -500,6 +540,25 @@ function kolamPut<T>(path: string, body: unknown) {
     method: 'PUT',
     path,
     body,
+    baseUrl: appConfig.kolamApiBaseUrl,
+    sourceHeader: appConfig.kolamSourceHeader,
+  });
+}
+
+function kolamPost<T>(path: string, body: unknown) {
+  return apiRequest<T>({
+    method: 'POST',
+    path,
+    body,
+    baseUrl: appConfig.kolamApiBaseUrl,
+    sourceHeader: appConfig.kolamSourceHeader,
+  });
+}
+
+function kolamDelete<T>(path: string) {
+  return apiRequest<T>({
+    method: 'DELETE',
+    path,
     baseUrl: appConfig.kolamApiBaseUrl,
     sourceHeader: appConfig.kolamSourceHeader,
   });
