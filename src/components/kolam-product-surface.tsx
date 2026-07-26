@@ -2817,28 +2817,32 @@ function ProductMediaEditPanel({
     return null;
   }
 
+  const showThumbnailControls = form.productType !== 'raw';
+
   return (
     <ProductFieldShell label="Media Produk">
       <View style={styles.variantMediaPanel}>
-        <View style={styles.mediaPickerRow}>
-          <KolamFormTextField
-            editable={false}
-            mode="url"
-            placeholder="Pilih thumbnail dari komputer"
-            style={[
-              settingsWebFormStyles.settingsWebFormFieldValue,
-              styles.mediaPickerInput,
-            ]}
-            value={form.thumbnailLocalUri}
-          />
-          <KolamButton
-            disabled={controller.saving}
-            label="Pilih Thumbnail"
-            onPress={() => {
-              void controller.onPickThumbnail();
-            }}
-          />
-        </View>
+        {showThumbnailControls ? (
+          <View style={styles.mediaPickerRow}>
+            <KolamFormTextField
+              editable={false}
+              mode="url"
+              placeholder="Pilih thumbnail dari komputer"
+              style={[
+                settingsWebFormStyles.settingsWebFormFieldValue,
+                styles.mediaPickerInput,
+              ]}
+              value={form.thumbnailLocalUri}
+            />
+            <KolamButton
+              disabled={controller.saving}
+              label="Pilih Thumbnail"
+              onPress={() => {
+                void controller.onPickThumbnail();
+              }}
+            />
+          </View>
+        ) : null}
         <View style={styles.mediaPickerRow}>
           <KolamFormTextField
             editable={false}
@@ -2886,9 +2890,9 @@ function ProductMediaEditPanel({
             },
           ]}
         />
-        {product?.thumbnailUri || product?.photoUris.length ? (
+        {(showThumbnailControls && product?.thumbnailUri) || product?.photoUris.length ? (
           <View style={styles.existingMediaGrid}>
-            {product.thumbnailUri ? (
+            {showThumbnailControls && product?.thumbnailUri ? (
               <ProductVariantImageMediaCard
                 accessibilityLabel="Thumbnail produk"
                 deleteLabel="Hapus Thumbnail"
