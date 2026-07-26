@@ -1255,6 +1255,13 @@ function ProductEditFormPage({
               </ProductEditSection>
 
               <ProductEditSection
+                description="Aktifkan varian jika bahan baku memiliki beberapa variasi."
+                title="Varian"
+              >
+                <ProductVariantEditorPanel controller={controller} />
+              </ProductEditSection>
+
+              <ProductEditSection
                 description={
                   form.sellable
                     ? 'Poin anggota dan komisi transaksi bahan baku.'
@@ -2231,9 +2238,10 @@ function ProductVariantEditorPanel({
   }
 
   const variantActive = form.hasVariants || form.variants.length > 0;
+  const isRawVariantForm = form.productType === 'raw';
 
   return (
-    <ProductFieldShell label="Varian Produk">
+    <ProductFieldShell label={isRawVariantForm ? 'Varian Bahan Baku' : 'Varian Produk'}>
       <View style={styles.variantEditorPanel}>
         <View style={styles.variantToggleHeader}>
           <KolamCopyStack
@@ -2242,7 +2250,9 @@ function ProductVariantEditorPanel({
                 id: 'summary',
                 text: variantActive
                   ? `${form.variants.length} varian disiapkan`
-                  : 'Produk tanpa varian',
+                  : isRawVariantForm
+                    ? 'Bahan baku tanpa varian'
+                    : 'Produk tanpa varian',
                 style: styles.fieldHint,
               },
             ]}
