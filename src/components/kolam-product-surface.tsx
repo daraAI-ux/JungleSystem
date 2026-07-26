@@ -1138,6 +1138,7 @@ function ProductEditFormPage({
   const formTitle = controller.mode === 'new' ? shellLabels.newTitle : shellLabels.editTitle;
   const saveLabel = controller.mode === 'new' ? shellLabels.saveNewLabel : 'Simpan Perubahan';
   const hasVariants = form.hasVariants || form.variants.length > 0;
+  const isRawForm = controller.catalogKind === 'raw';
 
   return (
     <ScrollView contentContainerStyle={styles.root}>
@@ -1165,8 +1166,12 @@ function ProductEditFormPage({
         <View style={settingsWebFormStyles.settingsWebFormFields}>
           <View style={settingsWebFormStyles.settingsWebFormFieldsGrid}>
             <ProductEditSection
-              description="Kode identitas internal. Nama dan deskripsi diatur per bahasa di tab Konten Marketplace."
-              title="Identitas produk"
+              description={
+                isRawForm
+                  ? 'Kode identitas bahan baku. Nama dan deskripsi diatur per bahasa di tab Konten Marketplace.'
+                  : 'Kode identitas internal. Nama dan deskripsi diatur per bahasa di tab Konten Marketplace.'
+              }
+              title={isRawForm ? 'Identitas bahan baku' : 'Identitas produk'}
             >
               <View style={styles.twoColumnGrid}>
                 <ProductFieldShell label={form.productType === 'raw' ? 'Kode Produk' : 'SKU'} required>
@@ -1180,20 +1185,22 @@ function ProductEditFormPage({
                     value={form.productType === 'raw' ? form.productCode : form.sku}
                   />
                 </ProductFieldShell>
-                <ProductFieldShell label="Tipe Produk">
-                  <KolamDropdownSelect
-                    label="Tipe Produk"
-                    onChange={productType =>
-                      controller.onChangeForm({ productType: productType as KolamProductFormState['productType'] })
-                    }
-                    options={[
-                      { label: 'Produk', value: 'product' },
-                      { label: 'Bahan Baku', value: 'raw' },
-                    ]}
-                    showLabelInTrigger={false}
-                    value={form.productType}
-                  />
-                </ProductFieldShell>
+                {!isRawForm ? (
+                  <ProductFieldShell label="Tipe Produk">
+                    <KolamDropdownSelect
+                      label="Tipe Produk"
+                      onChange={productType =>
+                        controller.onChangeForm({ productType: productType as KolamProductFormState['productType'] })
+                      }
+                      options={[
+                        { label: 'Produk', value: 'product' },
+                        { label: 'Bahan Baku', value: 'raw' },
+                      ]}
+                      showLabelInTrigger={false}
+                      value={form.productType}
+                    />
+                  </ProductFieldShell>
+                ) : null}
               </View>
             </ProductEditSection>
 

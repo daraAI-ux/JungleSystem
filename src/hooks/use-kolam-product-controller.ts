@@ -119,6 +119,7 @@ export interface KolamProductListFilters {
 export interface KolamProductController {
   brands: KolamBrand[];
   breadcrumbPath: string;
+  catalogKind: KolamProductCatalogKind;
   categories: KolamCategory[];
   customFields: KolamCustomField[];
   dataSource: KolamProductDataSource;
@@ -394,14 +395,14 @@ export function useKolamProductController(
     async (product: KolamProduct, nextMode: KolamProductSurfaceMode = 'detail') => {
       setMode(nextMode);
       setSelectedProduct(product);
-      setForm(nextMode === 'edit' ? createKolamProductFormState(product) : null);
+      setForm(nextMode === 'edit' ? createRouteProductFormState(product, catalogKind) : null);
       setVariantPhotoLocalUris({});
       setError(null);
 
       const cached = await readKolamProductDetailCache(product.id);
       if (cached?.value) {
         setSelectedProduct(cached.value);
-        setForm(nextMode === 'edit' ? createKolamProductFormState(cached.value) : null);
+        setForm(nextMode === 'edit' ? createRouteProductFormState(cached.value, catalogKind) : null);
         setDataSource('cache');
       }
 
@@ -411,7 +412,7 @@ export function useKolamProductController(
         });
         await writeKolamProductDetailCache(liveProduct);
         setSelectedProduct(liveProduct);
-        setForm(nextMode === 'edit' ? createKolamProductFormState(liveProduct) : null);
+        setForm(nextMode === 'edit' ? createRouteProductFormState(liveProduct, catalogKind) : null);
         setProducts(current => upsertProduct(current, liveProduct));
         setDataSource('live');
       } catch (detailError) {
@@ -419,7 +420,7 @@ export function useKolamProductController(
         setDataSource(cached?.value || product ? 'cache' : 'error');
       }
     },
-    [],
+    [catalogKind],
   );
 
   useEffect(() => {
@@ -463,10 +464,10 @@ export function useKolamProductController(
   const onEdit = useCallback(() => {
     if (selectedProduct) {
       setMode('edit');
-      setForm(createKolamProductFormState(selectedProduct));
+      setForm(createRouteProductFormState(selectedProduct, catalogKind));
       setVariantPhotoLocalUris({});
     }
-  }, [selectedProduct]);
+  }, [catalogKind, selectedProduct]);
 
   const onChangeForm = useCallback((patch: Partial<KolamProductFormState>) => {
     setForm(current => (current ? { ...current, ...patch } : current));
@@ -987,13 +988,14 @@ export function useKolamProductController(
   }, [form, mode, pagination, products, selectedProduct?.id, variantPhotoLocalUris]);
 
   const breadcrumbPath = useMemo(
-    () => getKolamProductBreadcrumbPath(mode, selectedProduct),
-    [mode, selectedProduct],
+    () => getKolamProductBreadcrumbPath(mode, selectedProduct, catalogKind),
+    [catalogKind, mode, selectedProduct],
   );
 
   return {
     brands,
     breadcrumbPath,
+    catalogKind,
     categories,
     dataSource,
     error,
@@ -1112,6 +1114,14 @@ function validateKolamProductFormForSave(form: KolamProductFormState) {
   }
 
   return null;
+}
+
+function createRouteProductFormState(
+  product: KolamProduct,
+  catalogKind: KolamProductCatalogKind,
+) {
+  const form = createKolamProductFormState(product);
+  return catalogKind === 'raw' ? { ...form, productType: 'raw' as const } : form;
 }
 
 async function syncProductSeoIfNeeded(

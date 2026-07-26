@@ -434,17 +434,21 @@ export function isKolamProductRoute(route: string) {
 export function getKolamProductBreadcrumbPath(
   mode: KolamProductSurfaceMode,
   selectedProduct?: KolamProduct | null,
+  catalogKind: KolamProductCatalogKind = 'product',
 ) {
+  const basePath = catalogKind === 'raw' ? '/raw-materials' : '/products';
+
   if (mode === 'new') {
-    return '/products/create';
+    return `${basePath}/create`;
   }
 
   if (selectedProduct) {
     const key = selectedProduct.slug || selectedProduct.id;
-    return mode === 'edit' ? `/products/${key}/edit` : `/products/${key}`;
+    const detailBasePath = selectedProduct.type === 'raw' ? '/raw-materials' : '/products';
+    return mode === 'edit' ? `${detailBasePath}/${key}/edit` : `${detailBasePath}/${key}`;
   }
 
-  return '/products';
+  return basePath;
 }
 export function normalizeKolamProductList(payload: unknown): KolamProductListResult {
   const rootRecord = asRecord(payload);
