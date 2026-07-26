@@ -13,6 +13,8 @@ import { KolamTextFieldRow } from './kolam-text-field-row';
 import { KolamToggleRow } from './kolam-toggle-row';
 import type {
   KolamAnnouncementBanner,
+  KolamBlog,
+  KolamBlogTopic,
   KolamCategoryBanner,
   KolamCustomerTextNotice,
   KolamHeroSlide,
@@ -33,7 +35,9 @@ import type {
   MarketplaceLandingNoticeDraft,
   MarketplaceLandingOverview,
   MarketplaceLandingYoutubeDraft,
+  MarketplaceLandingTabItem,
   RegionSyncSummaryRow,
+  WebContentLauncherItem,
 } from './kolam-settings-panel-controller';
 
 type WebSettingDraft = {
@@ -242,6 +246,14 @@ export function KolamSettingsWebConfigSurface({
   marketplaceLandingSaveStatus,
   marketplaceLandingMessage,
   marketplaceLandingAssetStatus,
+  marketplaceLandingTabId,
+  marketplaceLandingTabItems,
+  webContentLauncherItems,
+  webContentMessage,
+  webContentPanelId,
+  webContentStatus,
+  blogRows,
+  blogTopicRows,
   onClearMarketplaceLandingNoticeDraft,
   onDeleteMarketplaceAnnouncementBanner,
   onDeleteMarketplaceBioactiveStep,
@@ -282,8 +294,10 @@ export function KolamSettingsWebConfigSurface({
   saveStatus,
   sections,
   setMarketplaceLandingCtaDraftField,
+  setMarketplaceLandingTabId,
   setMarketplaceLandingYoutubeDraftField,
   setMarketplaceLandingNoticeDraftField,
+  setWebContentPanelId,
   setRegionFilter,
   setSitemapCustomUrlsDraftText,
   setSitemapExcludedSlugsDraftText,
@@ -322,6 +336,21 @@ export function KolamSettingsWebConfigSurface({
   marketplaceLandingAssetStatus: Partial<
     Record<string, 'idle' | 'uploading' | 'deleting' | 'reordering'>
   >;
+  marketplaceLandingTabId:
+    | 'hero'
+    | 'featured'
+    | 'category'
+    | 'cta'
+    | 'youtube'
+    | 'announcement'
+    | 'notices';
+  marketplaceLandingTabItems: MarketplaceLandingTabItem[];
+  webContentLauncherItems: WebContentLauncherItem[];
+  webContentMessage: string;
+  webContentPanelId: 'marketplace' | 'blog' | 'blog-topics';
+  webContentStatus: 'idle' | 'loading' | 'live' | 'error';
+  blogRows: KolamBlog[];
+  blogTopicRows: KolamBlogTopic[];
   onClearMarketplaceLandingNoticeDraft: () => void;
   onDeleteMarketplaceAnnouncementBanner: (
     banner: KolamAnnouncementBanner,
@@ -386,6 +415,16 @@ export function KolamSettingsWebConfigSurface({
     key: Key,
     value: MarketplaceLandingCtaDraft[Key],
   ) => void;
+  setMarketplaceLandingTabId: (
+    id:
+      | 'hero'
+      | 'featured'
+      | 'category'
+      | 'cta'
+      | 'youtube'
+      | 'announcement'
+      | 'notices',
+  ) => void;
   setMarketplaceLandingYoutubeDraftField: <
     Key extends keyof MarketplaceLandingYoutubeDraft,
   >(
@@ -398,6 +437,7 @@ export function KolamSettingsWebConfigSurface({
     key: Key,
     value: MarketplaceLandingNoticeDraft[Key],
   ) => void;
+  setWebContentPanelId: (id: 'marketplace' | 'blog' | 'blog-topics') => void;
   setRegionFilter: (
     key: 'level' | 'parentCode' | 'search',
     value: string,
@@ -2557,50 +2597,82 @@ export function KolamSettingsWebConfigSurface({
       ) : null}
       {showMarketplaceLanding ? (
         <>
-          <MarketplaceLandingOverviewPanel
-            assetStatus={marketplaceLandingAssetStatus}
-            disabled={disabled || marketplaceLandingSaveStatus === 'saving'}
-            onDeleteAnnouncementBanner={onDeleteMarketplaceAnnouncementBanner}
-            onDeleteBioactiveStep={onDeleteMarketplaceBioactiveStep}
-            onDeleteCategoryBanner={onDeleteMarketplaceCategoryBanner}
-            onDeleteFeaturedCollection={onDeleteMarketplaceFeaturedCollection}
-            onDeleteHeroSlide={onDeleteMarketplaceHeroSlide}
-            onMoveAnnouncementBanner={onMoveMarketplaceAnnouncementBanner}
-            onMoveBioactiveStep={onMoveMarketplaceBioactiveStep}
-            onMoveCategoryBanner={onMoveMarketplaceCategoryBanner}
-            onMoveFeaturedCollection={onMoveMarketplaceFeaturedCollection}
-            onMoveHeroSlide={onMoveMarketplaceHeroSlide}
-            onUploadAnnouncementImage={onUploadMarketplaceAnnouncementImage}
-            onUploadBioactiveStepImage={onUploadMarketplaceBioactiveStepImage}
-            onUploadCategoryBannerImage={onUploadMarketplaceCategoryBannerImage}
-            onUploadCtaBackground={onUploadMarketplaceCtaBackground}
-            onUploadDaraAvatar={onUploadMarketplaceDaraAvatar}
-            onUploadFeaturedCollectionImage={
-              onUploadMarketplaceFeaturedCollectionImage
-            }
-            onUploadHeroImage={onUploadMarketplaceHeroImage}
-            onUploadLogo={onUploadMarketplaceLogo}
-            onUploadYoutubeBackground={onUploadMarketplaceYoutubeBackground}
-            overview={marketplaceLandingOverview}
+          <WebContentLauncherPanel
+            activePanelId={webContentPanelId}
+            items={webContentLauncherItems}
+            message={webContentMessage}
+            onSelect={setWebContentPanelId}
+            status={webContentStatus}
           />
-          <MarketplaceLandingControlsPanel
-            ctaDraft={marketplaceLandingCtaDraft}
-            disabled={disabled || marketplaceLandingSaveStatus === 'saving'}
-            message={marketplaceLandingMessage}
-            noticeDraft={marketplaceLandingNoticeDraft}
-            notices={marketplaceLandingOverview.customerNotices}
-            onClearNoticeDraft={onClearMarketplaceLandingNoticeDraft}
-            onDeleteNotice={onDeleteMarketplaceLandingNotice}
-            onEditNotice={onEditMarketplaceLandingNotice}
-            onSaveCta={onSaveMarketplaceLandingCta}
-            onSaveNotice={onSaveMarketplaceLandingNotice}
-            onSaveYoutube={onSaveMarketplaceLandingYoutube}
-            saveStatus={marketplaceLandingSaveStatus}
-            setCtaDraftField={setMarketplaceLandingCtaDraftField}
-            setNoticeDraftField={setMarketplaceLandingNoticeDraftField}
-            setYoutubeDraftField={setMarketplaceLandingYoutubeDraftField}
-            youtubeDraft={marketplaceLandingYoutubeDraft}
-          />
+          {webContentPanelId === 'marketplace' ? (
+            <>
+              <MarketplaceLandingSubTabs
+                activeTabId={marketplaceLandingTabId}
+                items={marketplaceLandingTabItems}
+                onSelect={setMarketplaceLandingTabId}
+              />
+              <MarketplaceLandingOverviewPanel
+                activeTabId={marketplaceLandingTabId}
+                assetStatus={marketplaceLandingAssetStatus}
+                disabled={disabled || marketplaceLandingSaveStatus === 'saving'}
+                onDeleteAnnouncementBanner={
+                  onDeleteMarketplaceAnnouncementBanner
+                }
+                onDeleteBioactiveStep={onDeleteMarketplaceBioactiveStep}
+                onDeleteCategoryBanner={onDeleteMarketplaceCategoryBanner}
+                onDeleteFeaturedCollection={
+                  onDeleteMarketplaceFeaturedCollection
+                }
+                onDeleteHeroSlide={onDeleteMarketplaceHeroSlide}
+                onMoveAnnouncementBanner={onMoveMarketplaceAnnouncementBanner}
+                onMoveBioactiveStep={onMoveMarketplaceBioactiveStep}
+                onMoveCategoryBanner={onMoveMarketplaceCategoryBanner}
+                onMoveFeaturedCollection={onMoveMarketplaceFeaturedCollection}
+                onMoveHeroSlide={onMoveMarketplaceHeroSlide}
+                onUploadAnnouncementImage={onUploadMarketplaceAnnouncementImage}
+                onUploadBioactiveStepImage={
+                  onUploadMarketplaceBioactiveStepImage
+                }
+                onUploadCategoryBannerImage={
+                  onUploadMarketplaceCategoryBannerImage
+                }
+                onUploadCtaBackground={onUploadMarketplaceCtaBackground}
+                onUploadDaraAvatar={onUploadMarketplaceDaraAvatar}
+                onUploadFeaturedCollectionImage={
+                  onUploadMarketplaceFeaturedCollectionImage
+                }
+                onUploadHeroImage={onUploadMarketplaceHeroImage}
+                onUploadLogo={onUploadMarketplaceLogo}
+                onUploadYoutubeBackground={onUploadMarketplaceYoutubeBackground}
+                overview={marketplaceLandingOverview}
+              />
+              <MarketplaceLandingControlsPanel
+                activeTabId={marketplaceLandingTabId}
+                ctaDraft={marketplaceLandingCtaDraft}
+                disabled={disabled || marketplaceLandingSaveStatus === 'saving'}
+                message={marketplaceLandingMessage}
+                noticeDraft={marketplaceLandingNoticeDraft}
+                notices={marketplaceLandingOverview.customerNotices}
+                onClearNoticeDraft={onClearMarketplaceLandingNoticeDraft}
+                onDeleteNotice={onDeleteMarketplaceLandingNotice}
+                onEditNotice={onEditMarketplaceLandingNotice}
+                onSaveCta={onSaveMarketplaceLandingCta}
+                onSaveNotice={onSaveMarketplaceLandingNotice}
+                onSaveYoutube={onSaveMarketplaceLandingYoutube}
+                saveStatus={marketplaceLandingSaveStatus}
+                setCtaDraftField={setMarketplaceLandingCtaDraftField}
+                setNoticeDraftField={setMarketplaceLandingNoticeDraftField}
+                setYoutubeDraftField={setMarketplaceLandingYoutubeDraftField}
+                youtubeDraft={marketplaceLandingYoutubeDraft}
+              />
+            </>
+          ) : (
+            <WebContentRowsPanel
+              blogs={blogRows}
+              topics={blogTopicRows}
+              type={webContentPanelId}
+            />
+          )}
         </>
       ) : null}
       {showGeneralSettings ? (
@@ -2610,7 +2682,214 @@ export function KolamSettingsWebConfigSurface({
   );
 }
 
+function WebContentLauncherPanel({
+  activePanelId,
+  items,
+  message,
+  onSelect,
+  status,
+}: {
+  activePanelId: 'marketplace' | 'blog' | 'blog-topics';
+  items: WebContentLauncherItem[];
+  message: string;
+  onSelect: (id: 'marketplace' | 'blog' | 'blog-topics') => void;
+  status: 'idle' | 'loading' | 'live' | 'error';
+}) {
+  return (
+    <View style={styles.marketplaceOverview}>
+      <KolamCopyStack
+        items={[
+          {
+            id: 'title',
+            text: 'Konten Web',
+            style: styles.marketplaceOverviewTitle,
+          },
+          {
+            id: 'meta',
+            text:
+              status === 'loading'
+                ? 'Loading Blog, Blog Topics, dan Marketplace Landing...'
+                : status === 'error'
+                ? message
+                : 'Launcher produksi untuk Landing Marketplace, Blog, dan Blog Topics.',
+            style:
+              status === 'error'
+                ? styles.marketplaceOverviewError
+                : styles.marketplaceOverviewMeta,
+          },
+        ]}
+      />
+      <View style={styles.marketplaceOverviewRows}>
+        {items.map(item => (
+          <View key={item.id} style={styles.marketplaceOverviewRow}>
+            <KolamCopyStack
+              containerStyle={styles.marketplaceOverviewCopy}
+              items={[
+                {
+                  id: `${item.id}-label`,
+                  text: item.label,
+                  style: styles.marketplaceOverviewLabel,
+                },
+                {
+                  id: `${item.id}-detail`,
+                  text: item.detail,
+                  style: styles.marketplaceOverviewDetail,
+                },
+              ]}
+            />
+            <View style={styles.notificationSoundActions}>
+              <KolamCopyStack
+                items={[
+                  {
+                    id: `${item.id}-value`,
+                    text: item.value,
+                    style: styles.marketplaceOverviewValue,
+                  },
+                ]}
+              />
+              <KolamActionControlButton
+                intent={activePanelId === item.id ? 'primary' : undefined}
+                label={activePanelId === item.id ? 'Open' : 'View'}
+                onPress={() => onSelect(item.id)}
+              />
+            </View>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function MarketplaceLandingSubTabs({
+  activeTabId,
+  items,
+  onSelect,
+}: {
+  activeTabId:
+    | 'hero'
+    | 'featured'
+    | 'category'
+    | 'cta'
+    | 'youtube'
+    | 'announcement'
+    | 'notices';
+  items: MarketplaceLandingTabItem[];
+  onSelect: (
+    id:
+      | 'hero'
+      | 'featured'
+      | 'category'
+      | 'cta'
+      | 'youtube'
+      | 'announcement'
+      | 'notices',
+  ) => void;
+}) {
+  return (
+    <View style={styles.marketplaceAssetActions}>
+      {items.map(item => (
+        <KolamActionControlButton
+          key={item.id}
+          intent={activeTabId === item.id ? 'primary' : undefined}
+          label={`${item.label} ${item.value}`}
+          onPress={() => onSelect(item.id)}
+        />
+      ))}
+    </View>
+  );
+}
+
+function WebContentRowsPanel({
+  blogs,
+  topics,
+  type,
+}: {
+  blogs: KolamBlog[];
+  topics: KolamBlogTopic[];
+  type: 'blog' | 'blog-topics';
+}) {
+  const rows =
+    type === 'blog'
+      ? blogs.map(blog => ({
+          id: blog._id,
+          label: blog.title,
+          value: blog.status,
+          detail: `${blog.slug} | ${
+            blog.topics?.map(topic => topic.name).join(', ') || 'No topic'
+          } | views ${blog.viewCount ?? 0}`,
+        }))
+      : topics.map(topic => ({
+          id: topic._id,
+          label: topic.name,
+          value: topic.status ?? 'active',
+          detail: `${topic.slug} | ${topic.blogCount ?? 0} blogs | ${
+            topic.color ?? '-'
+          }`,
+        }));
+
+  return (
+    <View style={styles.marketplaceOverview}>
+      <KolamCopyStack
+        items={[
+          {
+            id: 'title',
+            text: type === 'blog' ? 'Blog' : 'Blog Topics',
+            style: styles.marketplaceOverviewTitle,
+          },
+          {
+            id: 'meta',
+            text: 'Read-only live overview. Editor penuh mengikuti kontrak FE lama Blog/Blog Topics.',
+            style: styles.marketplaceOverviewMeta,
+          },
+        ]}
+      />
+      <View style={styles.marketplaceOverviewRows}>
+        {rows.map(row => (
+          <View key={row.id} style={styles.marketplaceOverviewRow}>
+            <KolamCopyStack
+              containerStyle={styles.marketplaceOverviewCopy}
+              items={[
+                {
+                  id: `${row.id}-label`,
+                  text: row.label,
+                  style: styles.marketplaceOverviewLabel,
+                },
+                {
+                  id: `${row.id}-detail`,
+                  text: row.detail,
+                  style: styles.marketplaceOverviewDetail,
+                },
+              ]}
+            />
+            <KolamCopyStack
+              items={[
+                {
+                  id: `${row.id}-value`,
+                  text: row.value,
+                  style: styles.marketplaceOverviewValue,
+                },
+              ]}
+            />
+          </View>
+        ))}
+        {rows.length === 0 ? (
+          <KolamCopyStack
+            items={[
+              {
+                id: 'empty',
+                text: 'Belum ada data live untuk panel ini.',
+                style: styles.marketplaceOverviewMeta,
+              },
+            ]}
+          />
+        ) : null}
+      </View>
+    </View>
+  );
+}
+
 function MarketplaceLandingOverviewPanel({
+  activeTabId,
   assetStatus,
   disabled,
   onDeleteAnnouncementBanner,
@@ -2634,6 +2913,14 @@ function MarketplaceLandingOverviewPanel({
   onUploadYoutubeBackground,
   overview,
 }: {
+  activeTabId:
+    | 'hero'
+    | 'featured'
+    | 'category'
+    | 'cta'
+    | 'youtube'
+    | 'announcement'
+    | 'notices';
   assetStatus: Partial<
     Record<string, 'idle' | 'uploading' | 'deleting' | 'reordering'>
   >;
@@ -2829,66 +3116,76 @@ function MarketplaceLandingOverviewPanel({
             status={assetStatus}
           />
         </View>
-        <MarketplaceAssetRows
-          disabled={disabled}
-          emptyText="No hero slides available for image replacement."
-          getId={item => `hero:${item._id}`}
-          getLabel={item => item.title || item._id}
-          items={overview.heroSlides}
-          onDelete={onDeleteHeroSlide}
-          onMove={onMoveHeroSlide}
-          onUpload={onUploadHeroImage}
-          status={assetStatus}
-          title="Hero slide images"
-        />
-        <MarketplaceAssetRows
-          disabled={disabled}
-          emptyText="No category banners available for image replacement."
-          getId={item => `category:${item._id}`}
-          getLabel={item => item.categorySlug || item._id}
-          items={overview.categoryBanners}
-          onDelete={onDeleteCategoryBanner}
-          onMove={onMoveCategoryBanner}
-          onUpload={onUploadCategoryBannerImage}
-          status={assetStatus}
-          title="Category banner images"
-        />
-        <MarketplaceAssetRows
-          disabled={disabled}
-          emptyText="No announcement banners available for image replacement."
-          getId={item => `announcement:${item._id}`}
-          getLabel={item => item.link || item._id}
-          items={overview.announcementBanners}
-          onDelete={onDeleteAnnouncementBanner}
-          onMove={onMoveAnnouncementBanner}
-          onUpload={onUploadAnnouncementImage}
-          status={assetStatus}
-          title="Announcement banner images"
-        />
-        <MarketplaceIndexedAssetRows
-          disabled={disabled}
-          emptyText="No featured collections available for image upload."
-          getId={index => `featured:${index}`}
-          getLabel={item => item.title || '-'}
-          items={featuredCollections}
-          onDelete={onDeleteFeaturedCollection}
-          onMove={onMoveFeaturedCollection}
-          onUpload={onUploadFeaturedCollectionImage}
-          status={assetStatus}
-          title="Featured collection images"
-        />
-        <MarketplaceIndexedAssetRows
-          disabled={disabled}
-          emptyText="No bioactive steps available for image upload."
-          getId={index => `bioactive:${index}`}
-          getLabel={item => item.key || '-'}
-          items={bioactiveSteps}
-          onDelete={onDeleteBioactiveStep}
-          onMove={onMoveBioactiveStep}
-          onUpload={onUploadBioactiveStepImage}
-          status={assetStatus}
-          title="Bioactive ecosystem images"
-        />
+        {activeTabId === 'hero' ? (
+          <MarketplaceAssetRows
+            disabled={disabled}
+            emptyText="No hero slides available for image replacement."
+            getId={item => `hero:${item._id}`}
+            getLabel={item => item.title || item._id}
+            items={overview.heroSlides}
+            onDelete={onDeleteHeroSlide}
+            onMove={onMoveHeroSlide}
+            onUpload={onUploadHeroImage}
+            status={assetStatus}
+            title="Hero slide images"
+          />
+        ) : null}
+        {activeTabId === 'category' ? (
+          <MarketplaceAssetRows
+            disabled={disabled}
+            emptyText="No category banners available for image replacement."
+            getId={item => `category:${item._id}`}
+            getLabel={item => item.categorySlug || item._id}
+            items={overview.categoryBanners}
+            onDelete={onDeleteCategoryBanner}
+            onMove={onMoveCategoryBanner}
+            onUpload={onUploadCategoryBannerImage}
+            status={assetStatus}
+            title="Category banner images"
+          />
+        ) : null}
+        {activeTabId === 'announcement' ? (
+          <MarketplaceAssetRows
+            disabled={disabled}
+            emptyText="No announcement banners available for image replacement."
+            getId={item => `announcement:${item._id}`}
+            getLabel={item => item.link || item._id}
+            items={overview.announcementBanners}
+            onDelete={onDeleteAnnouncementBanner}
+            onMove={onMoveAnnouncementBanner}
+            onUpload={onUploadAnnouncementImage}
+            status={assetStatus}
+            title="Announcement banner images"
+          />
+        ) : null}
+        {activeTabId === 'featured' ? (
+          <>
+            <MarketplaceIndexedAssetRows
+              disabled={disabled}
+              emptyText="No featured collections available for image upload."
+              getId={index => `featured:${index}`}
+              getLabel={item => item.title || '-'}
+              items={featuredCollections}
+              onDelete={onDeleteFeaturedCollection}
+              onMove={onMoveFeaturedCollection}
+              onUpload={onUploadFeaturedCollectionImage}
+              status={assetStatus}
+              title="Featured collection images"
+            />
+            <MarketplaceIndexedAssetRows
+              disabled={disabled}
+              emptyText="No bioactive steps available for image upload."
+              getId={index => `bioactive:${index}`}
+              getLabel={item => item.key || '-'}
+              items={bioactiveSteps}
+              onDelete={onDeleteBioactiveStep}
+              onMove={onMoveBioactiveStep}
+              onUpload={onUploadBioactiveStepImage}
+              status={assetStatus}
+              title="Bioactive ecosystem images"
+            />
+          </>
+        ) : null}
       </View>
     </View>
   );
@@ -3135,6 +3432,7 @@ function getMarketplaceAssetLoadingLabel(
 }
 
 function MarketplaceLandingControlsPanel({
+  activeTabId,
   ctaDraft,
   disabled,
   message,
@@ -3152,6 +3450,14 @@ function MarketplaceLandingControlsPanel({
   setYoutubeDraftField,
   youtubeDraft,
 }: {
+  activeTabId:
+    | 'hero'
+    | 'featured'
+    | 'category'
+    | 'cta'
+    | 'youtube'
+    | 'announcement'
+    | 'notices';
   ctaDraft: MarketplaceLandingCtaDraft;
   disabled: boolean;
   message: string;
@@ -3199,243 +3505,253 @@ function MarketplaceLandingControlsPanel({
           },
         ]}
       />
-      <View style={styles.marketplaceControlSection}>
-        <KolamCopyStack
-          items={[
-            {
-              id: 'cta-title',
-              text: 'CTA Section',
-              style: styles.marketplaceOverviewLabel,
-            },
-          ]}
-        />
-        <KolamTextFieldRow
-          label="CTA title"
-          description="Judul section CTA marketplace."
-          value={ctaDraft.title}
-          onChangeText={value => setCtaDraftField('title', value)}
-          placeholder="Jelajahi Dunia Species"
-        />
-        <KolamTextFieldRow
-          label="CTA description"
-          description="Deskripsi singkat CTA marketplace."
-          value={ctaDraft.description}
-          onChangeText={value => setCtaDraftField('description', value)}
-          placeholder="Temukan koleksi lengkap..."
-        />
-        <KolamTextFieldRow
-          label="CTA button text"
-          description="Label tombol CTA."
-          value={ctaDraft.buttonText}
-          onChangeText={value => setCtaDraftField('buttonText', value)}
-          placeholder="View All Species"
-        />
-        <KolamTextFieldRow
-          label="CTA button link"
-          description="Target URL tombol CTA."
-          value={ctaDraft.buttonLink}
-          onChangeText={value => setCtaDraftField('buttonLink', value)}
-          placeholder="/species"
-        />
-        <KolamToggleRow
-          label="CTA active"
-          description="Tampilkan CTA di marketplace landing."
-          active={ctaDraft.isActive}
-          onPress={() =>
-            !disabled && setCtaDraftField('isActive', !ctaDraft.isActive)
-          }
-        />
-        <KolamActionControlButton
-          disabled={disabled}
-          label="Save CTA"
-          loading={saveStatus === 'saving'}
-          loadingLabel="Saving..."
-          intent="primary"
-          onPress={onSaveCta}
-        />
-      </View>
-      <View style={styles.marketplaceControlSection}>
-        <KolamCopyStack
-          items={[
-            {
-              id: 'youtube-title',
-              text: 'YouTube Section',
-              style: styles.marketplaceOverviewLabel,
-            },
-          ]}
-        />
-        <KolamTextFieldRow
-          label="YouTube link"
-          description="URL channel atau video YouTube."
-          value={youtubeDraft.link}
-          onChangeText={value => setYoutubeDraftField('link', value)}
-          placeholder="https://www.youtube.com/@DuniaAnura"
-        />
-        <KolamTextFieldRow
-          label="YouTube title"
-          description="Judul section YouTube."
-          value={youtubeDraft.title}
-          onChangeText={value => setYoutubeDraftField('title', value)}
-          placeholder="Dunia Anura"
-        />
-        <KolamTextFieldRow
-          label="YouTube subtitle"
-          description="Subtitle section YouTube."
-          value={youtubeDraft.subtitle}
-          onChangeText={value => setYoutubeDraftField('subtitle', value)}
-          placeholder="YouTube"
-        />
-        <KolamToggleRow
-          label="YouTube active"
-          description="Tampilkan YouTube section di marketplace landing."
-          active={youtubeDraft.isActive}
-          onPress={() =>
-            !disabled &&
-            setYoutubeDraftField('isActive', !youtubeDraft.isActive)
-          }
-        />
-        <KolamActionControlButton
-          disabled={disabled}
-          label="Save YouTube"
-          loading={saveStatus === 'saving'}
-          loadingLabel="Saving..."
-          intent="primary"
-          onPress={onSaveYoutube}
-        />
-      </View>
-      <View style={styles.marketplaceControlSection}>
-        <KolamCopyStack
-          items={[
-            {
-              id: 'notice-title',
-              text: 'Customer Notices',
-              style: styles.marketplaceOverviewLabel,
-            },
-          ]}
-        />
-        <View style={styles.marketplaceNoticeList}>
-          {notices.length ? (
-            notices.map(notice => (
-              <View key={notice.key} style={styles.marketplaceNoticeRow}>
-                <KolamCopyStack
-                  containerStyle={styles.marketplaceOverviewCopy}
-                  items={[
-                    {
-                      id: `${notice.key}-title`,
-                      text: notice.title || notice.key,
-                      style: styles.marketplaceOverviewLabel,
-                    },
-                    {
-                      id: `${notice.key}-message`,
-                      text: notice.message || '-',
-                      style: styles.marketplaceOverviewDetail,
-                    },
-                  ]}
-                />
-                <View style={styles.notificationSoundActions}>
-                  <KolamActionControlButton
-                    disabled={disabled}
-                    label="Edit"
-                    onPress={() => onEditNotice(notice)}
-                  />
-                  <KolamActionControlButton
-                    disabled={disabled}
-                    intent="danger"
-                    label="Delete"
-                    onPress={() => onDeleteNotice(notice.key)}
-                  />
-                </View>
-              </View>
-            ))
-          ) : (
-            <KolamCopyStack
-              items={[
-                {
-                  id: 'empty',
-                  text: 'No customer notices configured.',
-                  style: styles.marketplaceOverviewMeta,
-                },
-              ]}
-            />
-          )}
-        </View>
-        <KolamTextFieldRow
-          label="Notice key"
-          description="Key unik notice. Untuk edit, pilih notice dari list."
-          value={noticeDraft.key}
-          onChangeText={value => setNoticeDraftField('key', value)}
-          placeholder="enclonura-migration-2026"
-        />
-        <KolamTextFieldRow
-          label="Notice title"
-          description="Judul singkat notice."
-          value={noticeDraft.title}
-          onChangeText={value => setNoticeDraftField('title', value)}
-          placeholder="Enclonura pindah ke Dunia Anura"
-        />
-        <KolamTextFieldRow
-          label="Notice message"
-          description="Pesan teks untuk customer marketplace."
-          value={noticeDraft.message}
-          onChangeText={value => setNoticeDraftField('message', value)}
-          placeholder="Kelola kandang, Freyr, dan layanan..."
-        />
-        <KolamTextFieldRow
-          label="Notice CTA URL"
-          description="URL tombol opsional."
-          value={noticeDraft.ctaUrl}
-          onChangeText={value => setNoticeDraftField('ctaUrl', value)}
-          placeholder="/dashboard"
-        />
-        <KolamTextFieldRow
-          label="Notice CTA label"
-          description="Label tombol opsional."
-          value={noticeDraft.ctaLabel}
-          onChangeText={value => setNoticeDraftField('ctaLabel', value)}
-          placeholder="Buka dashboard"
-        />
-        <KolamToggleRow
-          label="Notice active"
-          description="Aktifkan notice untuk customer."
-          active={noticeDraft.isActive}
-          onPress={() =>
-            !disabled && setNoticeDraftField('isActive', !noticeDraft.isActive)
-          }
-        />
-        <KolamToggleRow
-          label="Show on home"
-          description="Tampilkan notice di homepage marketplace."
-          active={noticeDraft.showOnHome}
-          onPress={() =>
-            !disabled &&
-            setNoticeDraftField('showOnHome', !noticeDraft.showOnHome)
-          }
-        />
-        <KolamToggleRow
-          label="Show on dashboard"
-          description="Tampilkan notice di dashboard customer."
-          active={noticeDraft.showOnDashboard}
-          onPress={() =>
-            !disabled &&
-            setNoticeDraftField('showOnDashboard', !noticeDraft.showOnDashboard)
-          }
-        />
-        <View style={styles.notificationSoundActions}>
-          <KolamActionControlButton
-            disabled={disabled || !noticeCanSave}
-            label="Save Notice"
-            loading={saveStatus === 'saving'}
-            loadingLabel="Saving..."
-            intent="primary"
-            onPress={onSaveNotice}
+      {activeTabId === 'cta' ? (
+        <View style={styles.marketplaceControlSection}>
+          <KolamCopyStack
+            items={[
+              {
+                id: 'cta-title',
+                text: 'CTA Section',
+                style: styles.marketplaceOverviewLabel,
+              },
+            ]}
+          />
+          <KolamTextFieldRow
+            label="CTA title"
+            description="Judul section CTA marketplace."
+            value={ctaDraft.title}
+            onChangeText={value => setCtaDraftField('title', value)}
+            placeholder="Jelajahi Dunia Species"
+          />
+          <KolamTextFieldRow
+            label="CTA description"
+            description="Deskripsi singkat CTA marketplace."
+            value={ctaDraft.description}
+            onChangeText={value => setCtaDraftField('description', value)}
+            placeholder="Temukan koleksi lengkap..."
+          />
+          <KolamTextFieldRow
+            label="CTA button text"
+            description="Label tombol CTA."
+            value={ctaDraft.buttonText}
+            onChangeText={value => setCtaDraftField('buttonText', value)}
+            placeholder="View All Species"
+          />
+          <KolamTextFieldRow
+            label="CTA button link"
+            description="Target URL tombol CTA."
+            value={ctaDraft.buttonLink}
+            onChangeText={value => setCtaDraftField('buttonLink', value)}
+            placeholder="/species"
+          />
+          <KolamToggleRow
+            label="CTA active"
+            description="Tampilkan CTA di marketplace landing."
+            active={ctaDraft.isActive}
+            onPress={() =>
+              !disabled && setCtaDraftField('isActive', !ctaDraft.isActive)
+            }
           />
           <KolamActionControlButton
             disabled={disabled}
-            label="New Notice"
-            onPress={onClearNoticeDraft}
+            label="Save CTA"
+            loading={saveStatus === 'saving'}
+            loadingLabel="Saving..."
+            intent="primary"
+            onPress={onSaveCta}
           />
         </View>
-      </View>
+      ) : null}
+      {activeTabId === 'youtube' ? (
+        <View style={styles.marketplaceControlSection}>
+          <KolamCopyStack
+            items={[
+              {
+                id: 'youtube-title',
+                text: 'YouTube Section',
+                style: styles.marketplaceOverviewLabel,
+              },
+            ]}
+          />
+          <KolamTextFieldRow
+            label="YouTube link"
+            description="URL channel atau video YouTube."
+            value={youtubeDraft.link}
+            onChangeText={value => setYoutubeDraftField('link', value)}
+            placeholder="https://www.youtube.com/@DuniaAnura"
+          />
+          <KolamTextFieldRow
+            label="YouTube title"
+            description="Judul section YouTube."
+            value={youtubeDraft.title}
+            onChangeText={value => setYoutubeDraftField('title', value)}
+            placeholder="Dunia Anura"
+          />
+          <KolamTextFieldRow
+            label="YouTube subtitle"
+            description="Subtitle section YouTube."
+            value={youtubeDraft.subtitle}
+            onChangeText={value => setYoutubeDraftField('subtitle', value)}
+            placeholder="YouTube"
+          />
+          <KolamToggleRow
+            label="YouTube active"
+            description="Tampilkan YouTube section di marketplace landing."
+            active={youtubeDraft.isActive}
+            onPress={() =>
+              !disabled &&
+              setYoutubeDraftField('isActive', !youtubeDraft.isActive)
+            }
+          />
+          <KolamActionControlButton
+            disabled={disabled}
+            label="Save YouTube"
+            loading={saveStatus === 'saving'}
+            loadingLabel="Saving..."
+            intent="primary"
+            onPress={onSaveYoutube}
+          />
+        </View>
+      ) : null}
+      {activeTabId === 'notices' ? (
+        <View style={styles.marketplaceControlSection}>
+          <KolamCopyStack
+            items={[
+              {
+                id: 'notice-title',
+                text: 'Customer Notices',
+                style: styles.marketplaceOverviewLabel,
+              },
+            ]}
+          />
+          <View style={styles.marketplaceNoticeList}>
+            {notices.length ? (
+              notices.map(notice => (
+                <View key={notice.key} style={styles.marketplaceNoticeRow}>
+                  <KolamCopyStack
+                    containerStyle={styles.marketplaceOverviewCopy}
+                    items={[
+                      {
+                        id: `${notice.key}-title`,
+                        text: notice.title || notice.key,
+                        style: styles.marketplaceOverviewLabel,
+                      },
+                      {
+                        id: `${notice.key}-message`,
+                        text: notice.message || '-',
+                        style: styles.marketplaceOverviewDetail,
+                      },
+                    ]}
+                  />
+                  <View style={styles.notificationSoundActions}>
+                    <KolamActionControlButton
+                      disabled={disabled}
+                      label="Edit"
+                      onPress={() => onEditNotice(notice)}
+                    />
+                    <KolamActionControlButton
+                      disabled={disabled}
+                      intent="danger"
+                      label="Delete"
+                      onPress={() => onDeleteNotice(notice.key)}
+                    />
+                  </View>
+                </View>
+              ))
+            ) : (
+              <KolamCopyStack
+                items={[
+                  {
+                    id: 'empty',
+                    text: 'No customer notices configured.',
+                    style: styles.marketplaceOverviewMeta,
+                  },
+                ]}
+              />
+            )}
+          </View>
+          <KolamTextFieldRow
+            label="Notice key"
+            description="Key unik notice. Untuk edit, pilih notice dari list."
+            value={noticeDraft.key}
+            onChangeText={value => setNoticeDraftField('key', value)}
+            placeholder="enclonura-migration-2026"
+          />
+          <KolamTextFieldRow
+            label="Notice title"
+            description="Judul singkat notice."
+            value={noticeDraft.title}
+            onChangeText={value => setNoticeDraftField('title', value)}
+            placeholder="Enclonura pindah ke Dunia Anura"
+          />
+          <KolamTextFieldRow
+            label="Notice message"
+            description="Pesan teks untuk customer marketplace."
+            value={noticeDraft.message}
+            onChangeText={value => setNoticeDraftField('message', value)}
+            placeholder="Kelola kandang, Freyr, dan layanan..."
+          />
+          <KolamTextFieldRow
+            label="Notice CTA URL"
+            description="URL tombol opsional."
+            value={noticeDraft.ctaUrl}
+            onChangeText={value => setNoticeDraftField('ctaUrl', value)}
+            placeholder="/dashboard"
+          />
+          <KolamTextFieldRow
+            label="Notice CTA label"
+            description="Label tombol opsional."
+            value={noticeDraft.ctaLabel}
+            onChangeText={value => setNoticeDraftField('ctaLabel', value)}
+            placeholder="Buka dashboard"
+          />
+          <KolamToggleRow
+            label="Notice active"
+            description="Aktifkan notice untuk customer."
+            active={noticeDraft.isActive}
+            onPress={() =>
+              !disabled &&
+              setNoticeDraftField('isActive', !noticeDraft.isActive)
+            }
+          />
+          <KolamToggleRow
+            label="Show on home"
+            description="Tampilkan notice di homepage marketplace."
+            active={noticeDraft.showOnHome}
+            onPress={() =>
+              !disabled &&
+              setNoticeDraftField('showOnHome', !noticeDraft.showOnHome)
+            }
+          />
+          <KolamToggleRow
+            label="Show on dashboard"
+            description="Tampilkan notice di dashboard customer."
+            active={noticeDraft.showOnDashboard}
+            onPress={() =>
+              !disabled &&
+              setNoticeDraftField(
+                'showOnDashboard',
+                !noticeDraft.showOnDashboard,
+              )
+            }
+          />
+          <View style={styles.notificationSoundActions}>
+            <KolamActionControlButton
+              disabled={disabled || !noticeCanSave}
+              label="Save Notice"
+              loading={saveStatus === 'saving'}
+              loadingLabel="Saving..."
+              intent="primary"
+              onPress={onSaveNotice}
+            />
+            <KolamActionControlButton
+              disabled={disabled}
+              label="New Notice"
+              onPress={onClearNoticeDraft}
+            />
+          </View>
+        </View>
+      ) : null}
       {message ? (
         <KolamCopyStack
           items={[

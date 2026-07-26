@@ -445,6 +445,74 @@ export interface KolamRegionListParams
   limit?: number;
 }
 
+export type KolamBlogStatus = 'draft' | 'published' | 'scheduled' | 'archived';
+
+export interface KolamBlogTopic {
+  _id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  color?: string;
+  status?: 'active' | 'inactive';
+  blogCount?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface KolamBlog {
+  _id: string;
+  title: string;
+  slug: string;
+  excerpt?: string;
+  featuredImage?: string | null;
+  topics?: KolamBlogTopic[];
+  tags?: string[];
+  status: KolamBlogStatus;
+  publishedAt?: string | null;
+  scheduledAt?: string | null;
+  viewCount?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface KolamBlogListParams
+  extends Record<string, string | number | boolean | undefined | null> {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: KolamBlogStatus | 'all' | '';
+  topic?: string;
+  tag?: string;
+  author?: string;
+  sort?: string;
+}
+
+export interface KolamBlogTopicListParams
+  extends Record<string, string | number | boolean | undefined | null> {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: 'active' | 'inactive' | 'all' | '';
+  sort?: string;
+}
+
+export interface KolamPaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages?: number;
+}
+
+export interface KolamBlogListResponse {
+  data: KolamBlog[];
+  pagination: KolamPaginationMeta;
+}
+
+export interface KolamBlogTopicListResponse {
+  data: KolamBlogTopic[];
+  pagination: KolamPaginationMeta;
+}
+
 export interface KolamWebSetting {
   _id?: string;
   version?: string;
@@ -1319,6 +1387,28 @@ export async function getKolamRegionStats(): Promise<KolamRegionStats> {
   return response.data;
 }
 
+export function getKolamBlogs(
+  params: KolamBlogListParams = {page: 1, limit: 10, sort: 'createdAt:desc'},
+): Promise<KolamBlogListResponse> {
+  return kolamGet<KolamBlogListResponse>(
+    '/blogs',
+    cleanKolamListParams(params),
+  );
+}
+
+export function getKolamBlogTopics(
+  params: KolamBlogTopicListParams = {
+    page: 1,
+    limit: 50,
+    sort: 'name:asc',
+  },
+): Promise<KolamBlogTopicListResponse> {
+  return kolamGet<KolamBlogTopicListResponse>(
+    '/blog-topics',
+    cleanKolamListParams(params),
+  );
+}
+
 export function syncKolamRegions(body: {
   scope: KolamRegionSyncScope;
   parentCode?: string;
@@ -1394,6 +1484,12 @@ function kolamDelete<T>(path: string) {
 }
 
 function cleanKolamRegionListParams(params: KolamRegionListParams) {
+  return cleanKolamListParams(params) as KolamRegionListParams;
+}
+
+function cleanKolamListParams(
+  params: Record<string, string | number | boolean | undefined | null>,
+) {
   return Object.fromEntries(
     Object.entries(params).filter(([, value]) => {
       if (value === undefined || value === null) {
@@ -1406,7 +1502,7 @@ function cleanKolamRegionListParams(params: KolamRegionListParams) {
 
       return true;
     }),
-  ) as KolamRegionListParams;
+  );
 }
 
 function cleanKolamRegionSyncBody(body: {

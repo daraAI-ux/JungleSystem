@@ -81,6 +81,41 @@ describe('settings web widgets', () => {
           marketplaceLandingSaveStatus="idle"
           marketplaceLandingMessage=""
           marketplaceLandingAssetStatus={{}}
+          marketplaceLandingTabId="hero"
+          marketplaceLandingTabItems={[
+            { id: 'hero', label: 'Hero Slides', value: '1' },
+            { id: 'featured', label: 'Featured Collections', value: '1' },
+            { id: 'category', label: 'Category Banners', value: '0' },
+            { id: 'cta', label: 'CTA Section', value: 'On' },
+            { id: 'youtube', label: 'YouTube Section', value: 'On' },
+            { id: 'announcement', label: 'Announcement Banner', value: '0' },
+            { id: 'notices', label: 'Customer Notices', value: '0' },
+          ]}
+          webContentLauncherItems={[
+            {
+              id: 'marketplace',
+              label: 'Landing Marketplace',
+              value: 'Live',
+              detail: '1 hero',
+            },
+            {
+              id: 'blog',
+              label: 'Blog',
+              value: '0',
+              detail: 'No blog',
+            },
+            {
+              id: 'blog-topics',
+              label: 'Blog Topics',
+              value: '0',
+              detail: 'No topic',
+            },
+          ]}
+          webContentMessage=""
+          webContentPanelId="marketplace"
+          webContentStatus="live"
+          blogRows={[]}
+          blogTopicRows={[]}
           financialSummaryRows={[]}
           operationalRooms={[]}
           operationalStaffRows={[]}
@@ -176,8 +211,10 @@ describe('settings web widgets', () => {
           saveStatus="idle"
           sections={[]}
           setMarketplaceLandingCtaDraftField={jest.fn()}
+          setMarketplaceLandingTabId={jest.fn()}
           setMarketplaceLandingYoutubeDraftField={jest.fn()}
           setMarketplaceLandingNoticeDraftField={jest.fn()}
+          setWebContentPanelId={jest.fn()}
           setRegionFilter={jest.fn()}
           setSitemapCustomUrlsDraftText={jest.fn()}
           setSitemapExcludedSlugsDraftText={jest.fn()}
@@ -218,18 +255,23 @@ describe('settings web widgets', () => {
 
     expect(renderText(renderer!)).toEqual(
       expect.arrayContaining([
+        'Konten Web',
+        'Landing Marketplace',
+        'Blog',
+        'Blog Topics',
+        'Hero Slides 1',
+        'Featured Collections 1',
+        'Category Banners 0',
+        'CTA Section On',
+        'YouTube Section On',
+        'Announcement Banner 0',
+        'Customer Notices 0',
         'Marketplace Landing Overview',
-        'Marketplace Landing Controls',
         'Marketplace Asset Uploads',
         'Upload logo',
         'Upload DARA avatar',
-        'CTA Section',
-        'YouTube Section',
-        'Customer Notices',
         'Hero slides',
         '1/1 active',
-        'Featured collections',
-        'Amphibians',
         'Move up',
         'Move down',
         'Delete',

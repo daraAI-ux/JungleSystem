@@ -38,6 +38,14 @@ export function KolamSettingsSurfaceBody({
         marketplaceLandingSaveStatus={controller.marketplaceLandingSaveStatus}
         marketplaceLandingMessage={controller.marketplaceLandingMessage}
         marketplaceLandingAssetStatus={controller.marketplaceLandingAssetStatus}
+        marketplaceLandingTabId={controller.marketplaceLandingTabId}
+        marketplaceLandingTabItems={controller.marketplaceLandingTabItems}
+        webContentLauncherItems={controller.webContentLauncherItems}
+        webContentMessage={controller.webContentMessage}
+        webContentPanelId={controller.webContentPanelId}
+        webContentStatus={controller.webContentStatus}
+        blogRows={controller.blogRows}
+        blogTopicRows={controller.blogTopicRows}
         financialSummaryRows={controller.financialSummaryRows}
         operationalRooms={controller.operationalRooms}
         operationalStaffRows={controller.operationalStaffRows}
@@ -145,12 +153,14 @@ export function KolamSettingsSurfaceBody({
         setMarketplaceLandingCtaDraftField={
           controller.setMarketplaceLandingCtaDraftField
         }
+        setMarketplaceLandingTabId={controller.setMarketplaceLandingTabId}
         setMarketplaceLandingYoutubeDraftField={
           controller.setMarketplaceLandingYoutubeDraftField
         }
         setMarketplaceLandingNoticeDraftField={
           controller.setMarketplaceLandingNoticeDraftField
         }
+        setWebContentPanelId={controller.setWebContentPanelId}
         setRegionFilter={controller.setRegionFilter}
         setSitemapCustomUrlsDraftText={controller.setSitemapCustomUrlsDraftText}
         setSitemapExcludedSlugsDraftText={

@@ -47,6 +47,8 @@ import {
   getKolamCtaSectionAdmin,
   getKolamCustomerNoticesAdmin,
   getKolamHeroSlidesAdmin,
+  getKolamBlogs,
+  getKolamBlogTopics,
   getKolamMarketplaceContentAdmin,
   getKolamRegionStats,
   getKolamRegions,
@@ -89,6 +91,8 @@ import {
   type KolamActivityLogListParams,
   type KolamActivityLogStatsResponse,
   type KolamAnnouncementBanner,
+  type KolamBlog,
+  type KolamBlogTopic,
   type KolamCategoryBanner,
   type KolamCtaSection,
   type KolamCustomerTextNotice,
@@ -134,6 +138,15 @@ type MarketplaceLandingAssetStatus =
   | 'uploading'
   | 'deleting'
   | 'reordering';
+type WebContentPanelId = 'marketplace' | 'blog' | 'blog-topics';
+type MarketplaceLandingTabId =
+  | 'hero'
+  | 'featured'
+  | 'category'
+  | 'cta'
+  | 'youtube'
+  | 'announcement'
+  | 'notices';
 export interface SettingsFinancialSummaryRow {
   id: string;
   label: string;
@@ -145,6 +158,17 @@ export interface RegionSyncSummaryRow {
   label: string;
   value: string;
   detail: string;
+}
+export interface WebContentLauncherItem {
+  id: WebContentPanelId;
+  label: string;
+  value: string;
+  detail: string;
+}
+export interface MarketplaceLandingTabItem {
+  id: MarketplaceLandingTabId;
+  label: string;
+  value: string;
 }
 const maskedSecretPlaceholder = '********';
 const sitemapSectionKeys: KolamSitemapSectionKey[] = [
@@ -644,6 +668,18 @@ export function useKolamSettingsPanelController(
     useState('');
   const [marketplaceLandingAssetStatus, setMarketplaceLandingAssetStatus] =
     useState<Partial<Record<string, MarketplaceLandingAssetStatus>>>({});
+  const [webContentPanelId, setWebContentPanelId] =
+    useState<WebContentPanelId>('marketplace');
+  const [marketplaceLandingTabId, setMarketplaceLandingTabId] =
+    useState<MarketplaceLandingTabId>('hero');
+  const [blogRows, setBlogRows] = useState<KolamBlog[]>([]);
+  const [blogTopicRows, setBlogTopicRows] = useState<KolamBlogTopic[]>([]);
+  const [blogTotal, setBlogTotal] = useState(0);
+  const [blogTopicTotal, setBlogTopicTotal] = useState(0);
+  const [webContentStatus, setWebContentStatus] = useState<
+    'idle' | 'loading' | 'live' | 'error'
+  >('idle');
+  const [webContentMessage, setWebContentMessage] = useState('');
   const [webSettingDraft, setWebSettingDraft] =
     useState<WebSettingDraft>(emptyWebSettingDraft);
   const [sitemapDraft, setSitemapDraft] =
@@ -912,6 +948,51 @@ export function useKolamSettingsPanelController(
   }, [activeSettingsTabId]);
 
   useEffect(() => {
+    if (activeSettingsTabId !== 'konten') {
+      return;
+    }
+
+    let mounted = true;
+    setWebContentStatus('loading');
+
+    Promise.allSettled([
+      getKolamBlogs({ page: 1, limit: 10, sort: 'createdAt:desc' }),
+      getKolamBlogTopics({ page: 1, limit: 50, sort: 'name:asc' }),
+    ])
+      .then(([blogsResult, topicsResult]) => {
+        if (!mounted) {
+          return;
+        }
+
+        if (
+          blogsResult.status !== 'fulfilled' ||
+          topicsResult.status !== 'fulfilled'
+        ) {
+          setWebContentStatus('error');
+          setWebContentMessage('Gagal membaca Blog atau Blog Topics live.');
+          return;
+        }
+
+        setBlogRows(blogsResult.value.data ?? []);
+        setBlogTopicRows(topicsResult.value.data ?? []);
+        setBlogTotal(blogsResult.value.pagination?.total ?? 0);
+        setBlogTopicTotal(topicsResult.value.pagination?.total ?? 0);
+        setWebContentStatus('live');
+        setWebContentMessage('');
+      })
+      .catch(() => {
+        if (mounted) {
+          setWebContentStatus('error');
+          setWebContentMessage('Gagal membaca Konten Web live.');
+        }
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [activeSettingsTabId]);
+
+  useEffect(() => {
     if (activeSettingsTabId !== 'sync') {
       return;
     }
@@ -1055,6 +1136,16 @@ export function useKolamSettingsPanelController(
   const regionSyncSummaryRows = createRegionSyncSummaryRows(
     regionStats,
     regionRows,
+  );
+  const webContentLauncherItems = createWebContentLauncherItems({
+    blogRows,
+    blogTopicRows,
+    blogTotal,
+    blogTopicTotal,
+    marketplaceLandingOverview,
+  });
+  const marketplaceLandingTabItems = createMarketplaceLandingTabItems(
+    marketplaceLandingOverview,
   );
 
   const selectSurface = (id: SettingsSurfaceItem['id']) => {
@@ -2357,6 +2448,8 @@ export function useKolamSettingsPanelController(
     marketplaceLandingSaveStatus,
     marketplaceLandingMessage,
     marketplaceLandingAssetStatus,
+    marketplaceLandingTabId,
+    marketplaceLandingTabItems,
     operationalRooms,
     operationalStaffRows,
     regionLevel,
@@ -2381,11 +2474,13 @@ export function useKolamSettingsPanelController(
     selectedRoleId,
     setMaintenanceMode,
     setActivityLogFilter,
+    setMarketplaceLandingTabId,
     setRegionFilter,
     setRoleDraftField,
     setSelectedActivityLogId,
     setSelectedRoleId,
     setStorefrontEnabled,
+    setWebContentPanelId,
     setWebTitle,
     settingsTabItems: getSettingsTabItems(),
     settingsSurfaceItems,
@@ -2393,6 +2488,12 @@ export function useKolamSettingsPanelController(
     storefrontEnabled,
     webTitle,
     webConfigFields: getSettingsWebConfigFields(webSetting),
+    webContentLauncherItems,
+    webContentMessage,
+    webContentPanelId,
+    webContentStatus,
+    blogRows,
+    blogTopicRows,
     webFormSections: getSettingsWebFormSections(
       webSetting,
       webSettingVersions,
@@ -2990,6 +3091,98 @@ function createRegionSyncSummaryRows(
       stats?.counts[level]?.withPostalCode ?? 0,
     )} postal codes | table cache ${formatNumber(rows.length)} rows`,
   }));
+}
+
+function createWebContentLauncherItems({
+  blogRows,
+  blogTopicRows,
+  blogTotal,
+  blogTopicTotal,
+  marketplaceLandingOverview,
+}: {
+  blogRows: KolamBlog[];
+  blogTopicRows: KolamBlogTopic[];
+  blogTotal: number;
+  blogTopicTotal: number;
+  marketplaceLandingOverview: MarketplaceLandingOverview;
+}): WebContentLauncherItem[] {
+  return [
+    {
+      id: 'marketplace',
+      label: 'Landing Marketplace',
+      value:
+        marketplaceLandingOverview.status === 'live'
+          ? 'Live'
+          : marketplaceLandingOverview.status,
+      detail: `${marketplaceLandingOverview.heroSlides.length} hero, ${marketplaceLandingOverview.categoryBanners.length} category banners, ${marketplaceLandingOverview.customerNotices.length} notices`,
+    },
+    {
+      id: 'blog',
+      label: 'Blog',
+      value: formatNumber(blogTotal || blogRows.length),
+      detail: blogRows.length
+        ? blogRows
+            .slice(0, 3)
+            .map(row => `${row.title} (${row.status})`)
+            .join(' | ')
+        : 'Belum ada blog dalam cache native.',
+    },
+    {
+      id: 'blog-topics',
+      label: 'Blog Topics',
+      value: formatNumber(blogTopicTotal || blogTopicRows.length),
+      detail: blogTopicRows.length
+        ? blogTopicRows
+            .slice(0, 5)
+            .map(row => `${row.name} (${row.status ?? 'active'})`)
+            .join(' | ')
+        : 'Belum ada topic dalam cache native.',
+    },
+  ];
+}
+
+function createMarketplaceLandingTabItems(
+  overview: MarketplaceLandingOverview,
+): MarketplaceLandingTabItem[] {
+  const featured = overview.marketplaceContent.featuredCollections ?? [];
+
+  return [
+    {
+      id: 'hero',
+      label: 'Hero Slides',
+      value: formatNumber(overview.heroSlides.length),
+    },
+    {
+      id: 'featured',
+      label: 'Featured Collections',
+      value: formatNumber(featured.length),
+    },
+    {
+      id: 'category',
+      label: 'Category Banners',
+      value: formatNumber(overview.categoryBanners.length),
+    },
+    {
+      id: 'cta',
+      label: 'CTA Section',
+      value: overview.ctaSection?.isActive === false ? 'Off' : 'On',
+    },
+    {
+      id: 'youtube',
+      label: 'YouTube Section',
+      value: overview.youtubeSection?.isActive === false ? 'Off' : 'On',
+    },
+    {
+      id: 'announcement',
+      label: 'Announcement Banner',
+      value: formatNumber(overview.announcementBanners.length),
+    },
+    {
+      id: 'notices',
+      label: 'Customer Notices',
+      value: formatNumber(overview.customerNotices.length),
+    },
+  ];
 }
 
 function cleanOptionalString(value: string) {
