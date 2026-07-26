@@ -14,6 +14,7 @@ import {
   getKolamWebSettingVersion,
   getKolamWebSettingVersions,
   updateKolamWebSetting,
+  updateKolamWebSettingVersion,
 } from '../src/services/kolam-api';
 
 const fetchMock = jest.fn();
@@ -138,6 +139,104 @@ describe('Kolam Settings API contracts', () => {
         }),
       }),
     );
+  });
+
+  it('sends minimal production Web Settings update body to the live backend contract', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        data: {
+          companyName: 'Dunia Anura Production',
+          livechatOnline: true,
+        },
+      }),
+    );
+
+    await updateKolamWebSetting({
+      companyName: 'Dunia Anura Production',
+      companyTagline: 'Aquatic life',
+      maintenanceMode: {pos: true, marketplace: false},
+      livechatOnline: true,
+      originAddress: {
+        addressLine1: 'Gudang Barat',
+        city: 'Jakarta Barat',
+        province: 'DKI Jakarta',
+        postalCode: '11550',
+        latitude: -6.1,
+        longitude: 106.7,
+      },
+      socialMedia: {instagram: 'https://instagram.com/duniaanura'},
+      staffDesktopOnly: {
+        enabled: true,
+        redirectUrl: 'https://desktop.dunia-anura.com',
+      },
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${appConfig.kolamApiBaseUrl}/websetting`,
+      expect.objectContaining({
+        method: 'PUT',
+        body: JSON.stringify({
+          companyName: 'Dunia Anura Production',
+          companyTagline: 'Aquatic life',
+          maintenanceMode: {pos: true, marketplace: false},
+          livechatOnline: true,
+          originAddress: {
+            addressLine1: 'Gudang Barat',
+            city: 'Jakarta Barat',
+            province: 'DKI Jakarta',
+            postalCode: '11550',
+            latitude: -6.1,
+            longitude: 106.7,
+          },
+          socialMedia: {instagram: 'https://instagram.com/duniaanura'},
+          staffDesktopOnly: {
+            enabled: true,
+            redirectUrl: 'https://desktop.dunia-anura.com',
+          },
+        }),
+      }),
+    );
+  });
+
+  it('sends Web Settings version updates to the live backend contract', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        message: 'Version updated',
+        version: '2.4.0',
+        app: 'marketplace',
+      }),
+    );
+
+    await updateKolamWebSettingVersion({
+      app: 'marketplace',
+      version: '2.4.0',
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${appConfig.kolamApiBaseUrl}/websetting/version`,
+      expect.objectContaining({
+        method: 'PUT',
+        body: JSON.stringify({
+          app: 'marketplace',
+          version: '2.4.0',
+        }),
+      }),
+    );
+  });
+
+  it('surfaces Web Settings update permission errors from the live backend', async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: false,
+      status: 403,
+      text: jest.fn().mockResolvedValue(JSON.stringify({message: 'Forbidden'})),
+    });
+
+    await expect(
+      updateKolamWebSetting({companyName: 'No access'}),
+    ).rejects.toMatchObject({
+      status: 403,
+      message: 'Forbidden',
+    });
   });
 
   it('maps Role Management from /roles data responses through direct BE', async () => {

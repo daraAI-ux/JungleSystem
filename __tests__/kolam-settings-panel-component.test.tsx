@@ -2,6 +2,10 @@ import React from 'react';
 import {Text} from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 import {KolamSettingsPanel} from '../src/components/kolam-settings-panel';
+import {
+  useKolamSettingsPanelController,
+  type KolamSettingsPanelController,
+} from '../src/components/kolam-settings-panel-controller';
 import {getSyncActivityEntries} from '../src/domain/sync-activity';
 import {seedUnifiedDataset} from '../src/services/unified-data';
 
@@ -24,6 +28,10 @@ function flattenText(value: React.ReactNode): string[] {
 }
 
 describe('KolamSettingsPanel', () => {
+  beforeEach(() => {
+    globalThis.fetch = jest.fn();
+  });
+
   it('renders the settings summary from the direct panel module', async () => {
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
@@ -39,4 +47,100 @@ describe('KolamSettingsPanel', () => {
       expect.arrayContaining(['Settings', 'Routes', 'Web Settings form']),
     );
   });
+
+  it('keeps local Web Settings draft intact when live update is rejected', async () => {
+    const fetchMock = jest
+      .fn()
+      .mockResolvedValueOnce(
+        jsonResponse({
+          data: {
+            _id: 'websetting-1',
+            companyName: 'Dunia Anura',
+            versions: {kolam: '1.0.0'},
+          },
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          app: 'kolam',
+          version: '1.0.0',
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          versions: {
+            kolam: '1.0.0',
+            enclonura: '1.0.0',
+            pos: '1.0.0',
+            marketplace: '1.0.0',
+          },
+        }),
+      )
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 403,
+        text: jest.fn().mockResolvedValue(JSON.stringify({message: 'Forbidden'})),
+      });
+    globalThis.fetch = fetchMock;
+    let latest: KolamSettingsPanelController | null = null;
+
+    await ReactTestRenderer.act(async () => {
+      ReactTestRenderer.create(
+        <SettingsControllerHarness
+          onRender={controller => {
+            latest = controller;
+          }}
+        />,
+      );
+    });
+
+    await ReactTestRenderer.act(async () => {
+      await Promise.resolve();
+    });
+
+    await ReactTestRenderer.act(async () => {
+      requireController(latest).setWebSettingDraftField(
+        'companyName',
+        'Dunia Anura Edited',
+      );
+    });
+
+    await ReactTestRenderer.act(async () => {
+      await requireController(latest).saveWebSetting();
+    });
+
+    expect(requireController(latest).webSettingSaveStatus).toBe('error');
+    expect(requireController(latest).webSettingMessage).toContain(
+      'permission websetting:update',
+    );
+    expect(requireController(latest).webSettingDraft.companyName).toBe(
+      'Dunia Anura Edited',
+    );
+  });
 });
+
+function SettingsControllerHarness({
+  onRender,
+}: {
+  onRender: (controller: KolamSettingsPanelController) => void;
+}) {
+  const controller = useKolamSettingsPanelController([], 'web-settings');
+  onRender(controller);
+  return null;
+}
+
+function requireController(controller: KolamSettingsPanelController | null) {
+  if (!controller) {
+    throw new Error('Settings controller did not render.');
+  }
+
+  return controller;
+}
+
+function jsonResponse(payload: unknown) {
+  return {
+    ok: true,
+    status: 200,
+    text: jest.fn().mockResolvedValue(JSON.stringify(payload)),
+  };
+}

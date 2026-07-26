@@ -27,10 +27,71 @@ import {
   getKolamWebSetting,
   getKolamWebSettingVersion,
   getKolamWebSettingVersions,
+  updateKolamWebSetting,
+  updateKolamWebSettingVersion,
   type KolamWebSetting,
   type KolamWebSettingVersion,
   type KolamWebSettingVersions,
 } from '../services/kolam-api';
+import {ApiError} from '../lib/api-error';
+
+type WebSettingSaveStatus = 'idle' | 'saving' | 'saved' | 'error';
+
+interface WebSettingDraft {
+  versionKolam: string;
+  versionEnclonura: string;
+  versionPos: string;
+  versionMarketplace: string;
+  companyName: string;
+  companyTagline: string;
+  address: string;
+  phone: string;
+  email: string;
+  facebook: string;
+  instagram: string;
+  twitter: string;
+  youtube: string;
+  tiktok: string;
+  maintenancePos: boolean;
+  maintenanceMarketplace: boolean;
+  livechatOnline: boolean;
+  originAddressLine1: string;
+  originCity: string;
+  originProvince: string;
+  originPostalCode: string;
+  originLatitude: string;
+  originLongitude: string;
+  staffDesktopOnlyEnabled: boolean;
+  staffDesktopOnlyRedirectUrl: string;
+}
+
+const emptyWebSettingDraft: WebSettingDraft = {
+  versionKolam: '',
+  versionEnclonura: '',
+  versionPos: '',
+  versionMarketplace: '',
+  companyName: '',
+  companyTagline: '',
+  address: '',
+  phone: '',
+  email: '',
+  facebook: '',
+  instagram: '',
+  twitter: '',
+  youtube: '',
+  tiktok: '',
+  maintenancePos: false,
+  maintenanceMarketplace: false,
+  livechatOnline: false,
+  originAddressLine1: '',
+  originCity: '',
+  originProvince: '',
+  originPostalCode: '',
+  originLatitude: '',
+  originLongitude: '',
+  staffDesktopOnlyEnabled: false,
+  staffDesktopOnlyRedirectUrl: '',
+};
 
 export function useKolamSettingsPanelController(
   activityEntries: SyncActivityEntry[],
@@ -54,6 +115,12 @@ export function useKolamSettingsPanelController(
   const [webSettingStatus, setWebSettingStatus] = useState<
     'idle' | 'loading' | 'live' | 'error'
   >('idle');
+  const [webSettingSaveStatus, setWebSettingSaveStatus] =
+    useState<WebSettingSaveStatus>('idle');
+  const [webSettingMessage, setWebSettingMessage] = useState('');
+  const [webSettingDraft, setWebSettingDraft] = useState<WebSettingDraft>(
+    emptyWebSettingDraft,
+  );
   const roleRows = getSettingsRoleAccessRows();
   const [selectedRoleId, setSelectedRoleId] = useState(roleRows[0]?.id ?? '');
 
@@ -89,14 +156,17 @@ export function useKolamSettingsPanelController(
         setWebSetting(setting);
         setWebSettingVersion(version);
         setWebSettingVersions(versions);
+        setWebSettingDraft(createWebSettingDraft(setting, versions, version));
         setWebTitle(getSettingsWebConfigFields(setting)[0].value);
         setStorefrontEnabled(setting.livechatOnline === true);
         setMaintenanceMode(setting.maintenance?.pos === true);
         setWebSettingStatus('live');
+        setWebSettingMessage('');
       })
       .catch(() => {
         if (mounted) {
           setWebSettingStatus('error');
+          setWebSettingMessage('Gagal membaca Web Settings live.');
         }
       });
 
@@ -144,6 +214,103 @@ export function useKolamSettingsPanelController(
     setActivityPage(page);
     setSelectedActivityLogId('');
   };
+  const setWebSettingDraftField = <Key extends keyof WebSettingDraft>(
+    key: Key,
+    value: WebSettingDraft[Key],
+  ) => {
+    setWebSettingDraft(current => ({
+      ...current,
+      [key]: value,
+    }));
+    setWebSettingSaveStatus('idle');
+  };
+  const saveWebSetting = async () => {
+    setWebSettingSaveStatus('saving');
+    setWebSettingMessage('');
+
+    try {
+      const updated = await updateKolamWebSetting({
+        companyName: cleanOptionalString(webSettingDraft.companyName),
+        companyTagline: cleanOptionalString(webSettingDraft.companyTagline),
+        address: cleanOptionalString(webSettingDraft.address),
+        phone: cleanOptionalString(webSettingDraft.phone),
+        email: cleanOptionalString(webSettingDraft.email),
+        socialMedia: {
+          facebook: cleanOptionalString(webSettingDraft.facebook),
+          instagram: cleanOptionalString(webSettingDraft.instagram),
+          twitter: cleanOptionalString(webSettingDraft.twitter),
+          youtube: cleanOptionalString(webSettingDraft.youtube),
+          tiktok: cleanOptionalString(webSettingDraft.tiktok),
+        },
+        maintenanceMode: {
+          pos: webSettingDraft.maintenancePos,
+          marketplace: webSettingDraft.maintenanceMarketplace,
+        },
+        livechatOnline: webSettingDraft.livechatOnline,
+        originAddress: {
+          addressLine1: webSettingDraft.originAddressLine1.trim(),
+          city: webSettingDraft.originCity.trim(),
+          province: webSettingDraft.originProvince.trim(),
+          postalCode: webSettingDraft.originPostalCode.trim(),
+          latitude: parseOptionalNumber(webSettingDraft.originLatitude),
+          longitude: parseOptionalNumber(webSettingDraft.originLongitude),
+        },
+        staffDesktopOnly: {
+          enabled: webSettingDraft.staffDesktopOnlyEnabled,
+          redirectUrl: webSettingDraft.staffDesktopOnlyRedirectUrl.trim(),
+        },
+      });
+
+      await Promise.all(
+        [
+          ['kolam', webSettingDraft.versionKolam],
+          ['enclonura', webSettingDraft.versionEnclonura],
+          ['pos', webSettingDraft.versionPos],
+          ['marketplace', webSettingDraft.versionMarketplace],
+        ].map(([app, version]) =>
+          updateKolamWebSettingVersion({
+            app: app as 'kolam' | 'enclonura' | 'pos' | 'marketplace',
+            version: version.trim(),
+          }),
+        ),
+      );
+
+      const nextVersions = {
+        versions: {
+          ...(webSettingVersions?.versions ?? {}),
+          kolam: webSettingDraft.versionKolam.trim(),
+          enclonura: webSettingDraft.versionEnclonura.trim(),
+          pos: webSettingDraft.versionPos.trim(),
+          marketplace: webSettingDraft.versionMarketplace.trim(),
+        },
+        updatedAt: updated.updatedAt,
+      };
+
+      setWebSetting({
+        ...updated,
+        versions: nextVersions.versions,
+        maintenance: {
+          ...(updated.maintenance ?? {}),
+          pos: webSettingDraft.maintenancePos,
+          marketplace: webSettingDraft.maintenanceMarketplace,
+        },
+      });
+      setWebSettingVersions(nextVersions);
+      setWebSettingVersion({
+        app: 'kolam',
+        version: webSettingDraft.versionKolam.trim(),
+        updatedAt: updated.updatedAt,
+      });
+      setWebTitle(webSettingDraft.companyName);
+      setStorefrontEnabled(webSettingDraft.livechatOnline);
+      setMaintenanceMode(webSettingDraft.maintenancePos);
+      setWebSettingSaveStatus('saved');
+      setWebSettingMessage('Web Settings berhasil disimpan.');
+    } catch (error) {
+      setWebSettingSaveStatus('error');
+      setWebSettingMessage(getWebSettingSaveErrorMessage(error));
+    }
+  };
 
   return {
     activeSurface,
@@ -177,6 +344,11 @@ export function useKolamSettingsPanelController(
       webSettingVersions,
       webSettingVersion,
     ),
+    saveWebSetting,
+    setWebSettingDraftField,
+    webSettingDraft,
+    webSettingMessage,
+    webSettingSaveStatus,
     webSettingStatus,
     roleEditorActions: getSettingsRoleEditorActions(
       selectedRole?.id,
@@ -202,3 +374,78 @@ export function useKolamSettingsPanelController(
 export type KolamSettingsPanelController = ReturnType<
   typeof useKolamSettingsPanelController
 >;
+
+function createWebSettingDraft(
+  setting: KolamWebSetting,
+  versions: KolamWebSettingVersions | null,
+  version: KolamWebSettingVersion | null,
+): WebSettingDraft {
+  const mergedVersions = {
+    ...(setting.versions ?? {}),
+    ...(versions?.versions ?? {}),
+  };
+  const origin = setting.originAddress ?? {};
+  const social = setting.socialMedia ?? {};
+
+  return {
+    versionKolam:
+      mergedVersions.kolam ?? version?.version ?? setting.version ?? '',
+    versionEnclonura: mergedVersions.enclonura ?? '',
+    versionPos: mergedVersions.pos ?? '',
+    versionMarketplace: mergedVersions.marketplace ?? '',
+    companyName: setting.companyName ?? '',
+    companyTagline: setting.companyTagline ?? '',
+    address: setting.address ?? '',
+    phone: setting.phone ?? '',
+    email: setting.email ?? '',
+    facebook: social.facebook ?? '',
+    instagram: social.instagram ?? '',
+    twitter: social.twitter ?? '',
+    youtube: social.youtube ?? '',
+    tiktok: social.tiktok ?? '',
+    maintenancePos: setting.maintenance?.pos === true,
+    maintenanceMarketplace: setting.maintenance?.marketplace === true,
+    livechatOnline: setting.livechatOnline === true,
+    originAddressLine1: origin.addressLine1 ?? '',
+    originCity: origin.city ?? '',
+    originProvince: origin.province ?? '',
+    originPostalCode: origin.postalCode ?? '',
+    originLatitude:
+      origin.latitude === null || origin.latitude === undefined
+        ? ''
+        : String(origin.latitude),
+    originLongitude:
+      origin.longitude === null || origin.longitude === undefined
+        ? ''
+        : String(origin.longitude),
+    staffDesktopOnlyEnabled: setting.staffDesktopOnly?.enabled === true,
+    staffDesktopOnlyRedirectUrl: setting.staffDesktopOnly?.redirectUrl ?? '',
+  };
+}
+
+function cleanOptionalString(value: string) {
+  const trimmed = value.trim();
+  return trimmed || undefined;
+}
+
+function parseOptionalNumber(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  const parsed = Number(trimmed);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function getWebSettingSaveErrorMessage(error: unknown) {
+  if (error instanceof ApiError && error.status === 403) {
+    return 'Akses ditolak: permission websetting:update diperlukan.';
+  }
+
+  if (error instanceof ApiError && error.message) {
+    return error.message;
+  }
+
+  return 'Gagal menyimpan Web Settings.';
+}

@@ -23,9 +23,15 @@ export function KolamSettingsSurfaceBody({
         onToggleStorefrontEnabled={() =>
           controller.setStorefrontEnabled(current => !current)
         }
+        onSave={() => {
+          void controller.saveWebSetting();
+        }}
         onWebTitleChange={controller.setWebTitle}
-        readOnly
+        draft={controller.webSettingDraft}
+        saveMessage={controller.webSettingMessage}
+        saveStatus={controller.webSettingSaveStatus}
         sections={controller.webFormSections}
+        setDraftField={controller.setWebSettingDraftField}
         storefrontEnabled={controller.storefrontEnabled}
         webTitle={controller.webTitle}
       />
