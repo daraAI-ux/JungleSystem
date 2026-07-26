@@ -831,7 +831,7 @@ function PackingUsageCard({
         <View style={styles.detailTitleWrap}>
           <Text style={styles.detailCardTitle}>Dipakai oleh katalog</Text>
           <Text style={styles.detailCardDescription}>
-            Produk dan species yang menautkan bahan kemasan ini.
+            Produk dan spesies yang menautkan bahan kemasan ini.
           </Text>
         </View>
         {!loading && rows.length ? (
@@ -882,7 +882,7 @@ function PackingUsageCard({
         </View>
       ) : (
         <Text style={styles.emptyText}>
-          Belum dipakai di produk atau species manapun.
+          Belum dipakai di produk atau spesies manapun.
         </Text>
       )}
     </KolamContentFrame>
@@ -1405,9 +1405,9 @@ function openPackingSupplierDetail(onRouteChange: (route: string) => void) {
 
 function getUsageTypeLabel(row: KolamPackingCatalogUsageRow) {
   if (row.entityType === 'species') {
-    return 'Species';
+    return 'Spesies';
   }
-  return row.productType === 'raw' ? 'Bahan Baku' : 'Produk';
+  return row.productType === 'raw' ? 'Bahan baku' : 'Produk';
 }
 
 function getUsageIntent(row: KolamPackingCatalogUsageRow) {
@@ -1418,13 +1418,14 @@ function getUsageIntent(row: KolamPackingCatalogUsageRow) {
 }
 
 function getUsageRoute(row: KolamPackingCatalogUsageRow) {
+  const entityId = encodeURIComponent(row.entityId);
   if (row.entityType === 'species') {
-    return `/species/${row.entityId}`;
+    return `/species/${entityId}`;
   }
   if (row.productType === 'raw') {
-    return `/raw-materials/${row.entityId}`;
+    return `/raw-materials/${entityId}`;
   }
-  return `/products/${row.entityId}`;
+  return `/products/${entityId}`;
 }
 
 function openPackingAssetDownload(packingId: string, assetId: string) {
