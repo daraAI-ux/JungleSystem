@@ -1184,7 +1184,7 @@ function ProductEditFormPage({
 
               <ProductEditSection
                 description="Pilih profil spesifikasi atau field manual untuk bahan baku ini."
-                title="Field Kustom"
+                title="Field Kustom / Spesifikasi"
               >
                 <ProductCustomFieldEditorPanel controller={controller} />
               </ProductEditSection>
@@ -1297,7 +1297,7 @@ function ProductEditFormPage({
                     ? 'Poin anggota dan komisi transaksi bahan baku.'
                     : 'Komisi transaksi bahan baku.'
                 }
-                title={form.sellable ? 'Komisi dan Poin Anggota' : 'Komisi'}
+                title="Komisi / Poin"
               >
                 <KolamCommercialPolicyEditor
                   disabled={disabled}
@@ -1328,7 +1328,7 @@ function ProductEditFormPage({
 
               <ProductEditSection
                 description="Pilih satu atau lebih kategori yang relevan."
-                title="Kategori Bahan Baku"
+                title="Kategori"
               >
                 <ProductMultiSelectField
                   disabled={disabled}
