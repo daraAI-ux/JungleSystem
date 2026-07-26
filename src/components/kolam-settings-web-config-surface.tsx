@@ -35,10 +35,13 @@ import type {
   MarketplaceLandingNoticeDraft,
   MarketplaceLandingOverview,
   MarketplaceLandingYoutubeDraft,
+  KpiSettingsDraft,
+  KpiSettingsSummaryRow,
   MarketplaceLandingTabItem,
   RegionSyncSummaryRow,
   WebContentLauncherItem,
 } from './kolam-settings-panel-controller';
+import type { KolamKpiWeeklyAnnouncePreview } from '../services/kolam-api';
 
 type WebSettingDraft = {
   versionKolam: string;
@@ -254,6 +257,11 @@ export function KolamSettingsWebConfigSurface({
   webContentStatus,
   blogRows,
   blogTopicRows,
+  kpiMessage,
+  kpiPreview,
+  kpiSettingsDraft,
+  kpiStatus,
+  kpiSummaryRows,
   onClearMarketplaceLandingNoticeDraft,
   onDeleteMarketplaceAnnouncementBanner,
   onDeleteMarketplaceBioactiveStep,
@@ -280,7 +288,9 @@ export function KolamSettingsWebConfigSurface({
   onUploadMarketplaceLogo,
   onUploadMarketplaceYoutubeBackground,
   onRefreshRegionSync,
+  onRefreshKpiWeeklyPreview,
   onRunRegionSync,
+  onSaveKpiSettings,
   onToggleMaintenanceMode,
   onToggleStorefrontEnabled,
   onSave,
@@ -295,6 +305,8 @@ export function KolamSettingsWebConfigSurface({
   sections,
   setMarketplaceLandingCtaDraftField,
   setMarketplaceLandingTabId,
+  setKpiEnabledRule,
+  setKpiSettingsDraftField,
   setMarketplaceLandingYoutubeDraftField,
   setMarketplaceLandingNoticeDraftField,
   setWebContentPanelId,
@@ -351,6 +363,11 @@ export function KolamSettingsWebConfigSurface({
   webContentStatus: 'idle' | 'loading' | 'live' | 'error';
   blogRows: KolamBlog[];
   blogTopicRows: KolamBlogTopic[];
+  kpiMessage: string;
+  kpiPreview: KolamKpiWeeklyAnnouncePreview | null;
+  kpiSettingsDraft: KpiSettingsDraft;
+  kpiStatus: 'idle' | 'loading' | 'live' | 'saving' | 'error' | 'disabled';
+  kpiSummaryRows: KpiSettingsSummaryRow[];
   onClearMarketplaceLandingNoticeDraft: () => void;
   onDeleteMarketplaceAnnouncementBanner: (
     banner: KolamAnnouncementBanner,
@@ -393,7 +410,9 @@ export function KolamSettingsWebConfigSurface({
   onUploadMarketplaceLogo: () => void;
   onUploadMarketplaceYoutubeBackground: () => void;
   onRefreshRegionSync: () => void;
+  onRefreshKpiWeeklyPreview: () => void;
   onRunRegionSync: (scope: KolamRegionSyncScope) => void;
+  onSaveKpiSettings: () => void;
   onToggleMaintenanceMode: () => void;
   onToggleStorefrontEnabled: () => void;
   onSave: () => void;
@@ -424,6 +443,11 @@ export function KolamSettingsWebConfigSurface({
       | 'youtube'
       | 'announcement'
       | 'notices',
+  ) => void;
+  setKpiEnabledRule: (rule: string, enabled: boolean) => void;
+  setKpiSettingsDraftField: <Key extends keyof KpiSettingsDraft>(
+    key: Key,
+    value: KpiSettingsDraft[Key],
   ) => void;
   setMarketplaceLandingYoutubeDraftField: <
     Key extends keyof MarketplaceLandingYoutubeDraft,
@@ -476,9 +500,11 @@ export function KolamSettingsWebConfigSurface({
   const showMarketplaceLanding = activeTabId === 'konten';
   const showSitemapSettings = activeTabId === 'sitemap';
   const showSyncSettings = activeTabId === 'sync';
+  const showKpiSettings = activeTabId === 'kpi';
   const generalFormSections = sections.filter(section => section.id === 'logo');
   const chatPluginEnabled = draft.pluginControls.chat;
   const daraPluginEnabled = draft.pluginControls.dara;
+  const kpiPluginEnabled = draft.pluginControls.kpi;
   const chatControlsDisabled = disabled || !chatPluginEnabled;
   const daraControlsDisabled = disabled || !daraPluginEnabled;
   const daraChatControlsDisabled =
@@ -1579,6 +1605,21 @@ export function KolamSettingsWebConfigSurface({
             ))}
           </View>
         </View>
+      ) : null}
+      {showKpiSettings ? (
+        <KpiSettingsPanel
+          disabled={disabled || kpiStatus === 'saving' || !kpiPluginEnabled}
+          draft={kpiSettingsDraft}
+          message={kpiMessage}
+          onRefreshPreview={onRefreshKpiWeeklyPreview}
+          onSave={onSaveKpiSettings}
+          onSetField={setKpiSettingsDraftField}
+          onToggleRule={setKpiEnabledRule}
+          pluginEnabled={kpiPluginEnabled}
+          preview={kpiPreview}
+          status={kpiStatus}
+          summaryRows={kpiSummaryRows}
+        />
       ) : null}
       {showSitemapSettings ? (
         <>
@@ -2885,6 +2926,391 @@ function WebContentRowsPanel({
         ) : null}
       </View>
     </View>
+  );
+}
+
+function KpiSettingsPanel({
+  disabled,
+  draft,
+  message,
+  onRefreshPreview,
+  onSave,
+  onSetField,
+  onToggleRule,
+  pluginEnabled,
+  preview,
+  status,
+  summaryRows,
+}: {
+  disabled: boolean;
+  draft: KpiSettingsDraft;
+  message: string;
+  onRefreshPreview: () => void;
+  onSave: () => void;
+  onSetField: <Key extends keyof KpiSettingsDraft>(
+    key: Key,
+    value: KpiSettingsDraft[Key],
+  ) => void;
+  onToggleRule: (rule: string, enabled: boolean) => void;
+  pluginEnabled: boolean;
+  preview: KolamKpiWeeklyAnnouncePreview | null;
+  status: 'idle' | 'loading' | 'live' | 'saving' | 'error' | 'disabled';
+  summaryRows: KpiSettingsSummaryRow[];
+}) {
+  const busy = status === 'loading' || status === 'saving';
+  const ruleRows = [
+    ['task.base', 'Task base points'],
+    ['task.on_time', 'Task on-time'],
+    ['task.qc', 'Task QC'],
+    ['task.proof', 'Task proof'],
+    ['task.no_proof', 'Task no proof'],
+    ['complaint', 'Complaint points'],
+    ['task.noshow', 'Task no-show'],
+    ['attendance.radius', 'Attendance radius'],
+    ['task.rating', 'Customer rating'],
+    ['chat.fast_reply', 'Chat fast reply'],
+    ['chat.late_reply', 'Chat late reply'],
+    ['chat.no_reply', 'Chat no reply'],
+  ] as const;
+
+  return (
+    <>
+      <View style={styles.marketplaceOverview}>
+        <KolamCopyStack
+          items={[
+            {
+              id: 'kpi-title',
+              text: 'KPI Staff Plugin Settings',
+              style: styles.marketplaceOverviewTitle,
+            },
+            {
+              id: 'kpi-gate',
+              text: pluginEnabled
+                ? 'Plugin KPI aktif. Settings dibaca dari /kpi/settings.'
+                : 'Plugin KPI nonaktif. Aktifkan dari tab Plugin untuk mengubah settings.',
+              style: pluginEnabled
+                ? styles.marketplaceOverviewMeta
+                : styles.marketplaceOverviewError,
+            },
+          ]}
+        />
+        <View style={styles.marketplaceOverviewRows}>
+          {summaryRows.map(row => (
+            <View key={row.id} style={styles.marketplaceOverviewRow}>
+              <KolamCopyStack
+                containerStyle={styles.marketplaceOverviewCopy}
+                items={[
+                  {
+                    id: `${row.id}-label`,
+                    text: row.label,
+                    style: styles.marketplaceOverviewLabel,
+                  },
+                  {
+                    id: `${row.id}-detail`,
+                    text: row.detail,
+                    style: styles.marketplaceOverviewDetail,
+                  },
+                ]}
+              />
+              <KolamCopyStack
+                items={[
+                  {
+                    id: `${row.id}-value`,
+                    text: row.value,
+                    style: styles.marketplaceOverviewValue,
+                  },
+                ]}
+              />
+            </View>
+          ))}
+        </View>
+      </View>
+      <View style={styles.storeHoursTimeGrid}>
+        <KolamTextFieldRow
+          fieldWidth={120}
+          label="Task low"
+          description="Base points low priority."
+          value={draft.taskBaseLow}
+          onChangeText={value => onSetField('taskBaseLow', value)}
+          placeholder="5"
+        />
+        <KolamTextFieldRow
+          fieldWidth={120}
+          label="Task medium"
+          description="Base points medium priority."
+          value={draft.taskBaseMedium}
+          onChangeText={value => onSetField('taskBaseMedium', value)}
+          placeholder="10"
+        />
+        <KolamTextFieldRow
+          fieldWidth={120}
+          label="Task high"
+          description="Base points high priority."
+          value={draft.taskBaseHigh}
+          onChangeText={value => onSetField('taskBaseHigh', value)}
+          placeholder="20"
+        />
+        <KolamTextFieldRow
+          fieldWidth={120}
+          label="Task urgent"
+          description="Base points urgent priority."
+          value={draft.taskBaseUrgent}
+          onChangeText={value => onSetField('taskBaseUrgent', value)}
+          placeholder="30"
+        />
+        <KolamTextFieldRow
+          fieldWidth={120}
+          label="Assisted ratio"
+          description="Ratio points untuk assistedBy."
+          value={draft.assistedByRatio}
+          onChangeText={value => onSetField('assistedByRatio', value)}
+          placeholder="0.5"
+        />
+      </View>
+      <View style={styles.storeHoursTimeGrid}>
+        <KolamTextFieldRow
+          fieldWidth={130}
+          label="Fast reply minutes"
+          description="Batas fast reply chat."
+          value={draft.chatFastReplyMinutes}
+          onChangeText={value => onSetField('chatFastReplyMinutes', value)}
+          placeholder="5"
+        />
+        <KolamTextFieldRow
+          fieldWidth={130}
+          label="Fast reply points"
+          description="Poin fast reply."
+          value={draft.chatFastReplyPoints}
+          onChangeText={value => onSetField('chatFastReplyPoints', value)}
+          placeholder="5"
+        />
+        <KolamTextFieldRow
+          fieldWidth={130}
+          label="Late reply minutes"
+          description="Batas late reply chat."
+          value={draft.chatLateReplyMinutes}
+          onChangeText={value => onSetField('chatLateReplyMinutes', value)}
+          placeholder="14"
+        />
+        <KolamTextFieldRow
+          fieldWidth={130}
+          label="Late reply points"
+          description="Poin late reply."
+          value={draft.chatLateReplyPoints}
+          onChangeText={value => onSetField('chatLateReplyPoints', value)}
+          placeholder="-10"
+        />
+        <KolamTextFieldRow
+          fieldWidth={130}
+          label="No reply points"
+          description="Penalty chat tidak dibalas."
+          value={draft.chatNoReplyPoints}
+          onChangeText={value => onSetField('chatNoReplyPoints', value)}
+          placeholder="-15"
+        />
+      </View>
+      <View style={styles.storeHoursTimeGrid}>
+        <KolamTextFieldRow
+          fieldWidth={120}
+          label="Complaint light"
+          description="Penalty complaint light."
+          value={draft.complaintLight}
+          onChangeText={value => onSetField('complaintLight', value)}
+          placeholder="-10"
+        />
+        <KolamTextFieldRow
+          fieldWidth={120}
+          label="Complaint valid"
+          description="Penalty complaint valid."
+          value={draft.complaintValid}
+          onChangeText={value => onSetField('complaintValid', value)}
+          placeholder="-25"
+        />
+        <KolamTextFieldRow
+          fieldWidth={120}
+          label="Complaint severe"
+          description="Penalty complaint severe."
+          value={draft.complaintSevere}
+          onChangeText={value => onSetField('complaintSevere', value)}
+          placeholder="-50"
+        />
+        <KolamTextFieldRow
+          fieldWidth={160}
+          label="Attendance outside radius"
+          description="Penalty absensi di luar radius."
+          value={draft.attendanceOutsideRadius}
+          onChangeText={value => onSetField('attendanceOutsideRadius', value)}
+          placeholder="-20"
+        />
+      </View>
+      <View style={styles.storeHoursTimeGrid}>
+        <KolamTextFieldRow
+          fieldWidth={120}
+          label="On-time before"
+          description="Poin sebelum deadline."
+          value={draft.onTimeBeforeDeadline}
+          onChangeText={value => onSetField('onTimeBeforeDeadline', value)}
+          placeholder="5"
+        />
+        <KolamTextFieldRow
+          fieldWidth={120}
+          label="Far early pct"
+          description="Persen threshold far early."
+          value={draft.onTimeFarEarlyPct}
+          onChangeText={value => onSetField('onTimeFarEarlyPct', value)}
+          placeholder="50"
+        />
+        <KolamTextFieldRow
+          fieldWidth={120}
+          label="Far early bonus"
+          description="Bonus far early."
+          value={draft.onTimeFarEarlyBonus}
+          onChangeText={value => onSetField('onTimeFarEarlyBonus', value)}
+          placeholder="10"
+        />
+        <KolamTextFieldRow
+          fieldWidth={120}
+          label="Late task"
+          description="Penalty task late."
+          value={draft.onTimeLate}
+          onChangeText={value => onSetField('onTimeLate', value)}
+          placeholder="-5"
+        />
+      </View>
+      <View style={styles.storeHoursTimeGrid}>
+        <KolamTextFieldRow
+          fieldWidth={120}
+          label="QC pass first"
+          description="Poin QC pass pertama."
+          value={draft.qcPassFirst}
+          onChangeText={value => onSetField('qcPassFirst', value)}
+          placeholder="10"
+        />
+        <KolamTextFieldRow
+          fieldWidth={120}
+          label="QC revision 1"
+          description="Poin revisi pertama."
+          value={draft.qcRevision1}
+          onChangeText={value => onSetField('qcRevision1', value)}
+          placeholder="0"
+        />
+        <KolamTextFieldRow
+          fieldWidth={120}
+          label="QC revision many"
+          description="Penalty banyak revisi."
+          value={draft.qcRevisionMany}
+          onChangeText={value => onSetField('qcRevisionMany', value)}
+          placeholder="-5"
+        />
+        <KolamTextFieldRow
+          fieldWidth={120}
+          label="Proof complete"
+          description="Poin bukti task lengkap."
+          value={draft.proofComplete}
+          onChangeText={value => onSetField('proofComplete', value)}
+          placeholder="5"
+        />
+        <KolamTextFieldRow
+          fieldWidth={120}
+          label="No proof"
+          description="Penalty bukti hilang."
+          value={draft.noProofMissing}
+          onChangeText={value => onSetField('noProofMissing', value)}
+          placeholder="-10"
+        />
+        <KolamTextFieldRow
+          fieldWidth={150}
+          label="No-show task"
+          description="Penalty reassign/cancel."
+          value={draft.noShowReassignOrCancel}
+          onChangeText={value => onSetField('noShowReassignOrCancel', value)}
+          placeholder="-25"
+        />
+      </View>
+      <KolamTextFieldRow
+        label="Monthly levels"
+        description="Satu baris per level: id|label|min|max. Kosongkan max untuk open ended."
+        value={draft.levelsText}
+        onChangeText={value => onSetField('levelsText', value)}
+        placeholder="gold|Gold|501|1000"
+      />
+      <KolamTextFieldRow
+        label="Monthly rewards"
+        description="Satu baris per reward: levelId|amountRp."
+        value={draft.rewardsText}
+        onChangeText={value => onSetField('rewardsText', value)}
+        placeholder="gold|250000"
+      />
+      <View style={styles.marketplaceOverview}>
+        <KolamCopyStack
+          items={[
+            {
+              id: 'rules-title',
+              text: 'Enabled Rules',
+              style: styles.marketplaceOverviewLabel,
+            },
+          ]}
+        />
+        {ruleRows.map(([key, label]) => (
+          <KolamToggleRow
+            key={key}
+            label={label}
+            description={`Rule key ${key}`}
+            active={draft.enabledRules[key] !== false}
+            onPress={() =>
+              !disabled && onToggleRule(key, draft.enabledRules[key] === false)
+            }
+          />
+        ))}
+      </View>
+      <View style={styles.marketplaceOverview}>
+        <KolamCopyStack
+          items={[
+            {
+              id: 'preview-title',
+              text: 'DARA Weekly Announcement Preview',
+              style: styles.marketplaceOverviewLabel,
+            },
+            {
+              id: 'preview-body',
+              text: preview?.body ?? 'Preview belum dimuat.',
+              style: styles.marketplaceOverviewDetail,
+            },
+          ]}
+        />
+        <View style={styles.notificationSoundActions}>
+          <KolamActionControlButton
+            disabled={disabled || busy}
+            label="Refresh Preview"
+            loading={status === 'loading'}
+            loadingLabel="Loading..."
+            onPress={onRefreshPreview}
+          />
+          <KolamActionControlButton
+            disabled={disabled || busy}
+            intent="primary"
+            label="Save KPI"
+            loading={status === 'saving'}
+            loadingLabel="Saving..."
+            onPress={onSave}
+          />
+        </View>
+        {message ? (
+          <KolamCopyStack
+            items={[
+              {
+                id: 'message',
+                text: message,
+                style:
+                  status === 'error' || status === 'disabled'
+                    ? styles.marketplaceOverviewError
+                    : styles.marketplaceOverviewMeta,
+              },
+            ]}
+          />
+        ) : null}
+      </View>
+    </>
   );
 }
 

@@ -116,6 +116,11 @@ describe('settings web widgets', () => {
           webContentStatus="live"
           blogRows={[]}
           blogTopicRows={[]}
+          kpiMessage=""
+          kpiPreview={null}
+          kpiSettingsDraft={createKpiSettingsDraft()}
+          kpiStatus="idle"
+          kpiSummaryRows={[]}
           financialSummaryRows={[]}
           operationalRooms={[]}
           operationalStaffRows={[]}
@@ -202,7 +207,9 @@ describe('settings web widgets', () => {
           onUploadMarketplaceLogo={jest.fn()}
           onUploadMarketplaceYoutubeBackground={jest.fn()}
           onRefreshRegionSync={jest.fn()}
+          onRefreshKpiWeeklyPreview={jest.fn()}
           onRunRegionSync={jest.fn()}
+          onSaveKpiSettings={jest.fn()}
           onToggleMaintenanceMode={jest.fn()}
           onToggleStorefrontEnabled={jest.fn()}
           onUploadNotificationSound={jest.fn()}
@@ -212,6 +219,8 @@ describe('settings web widgets', () => {
           sections={[]}
           setMarketplaceLandingCtaDraftField={jest.fn()}
           setMarketplaceLandingTabId={jest.fn()}
+          setKpiEnabledRule={jest.fn()}
+          setKpiSettingsDraftField={jest.fn()}
           setMarketplaceLandingYoutubeDraftField={jest.fn()}
           setMarketplaceLandingNoticeDraftField={jest.fn()}
           setWebContentPanelId={jest.fn()}
@@ -415,6 +424,51 @@ function createWebSettingDraft() {
       chat: true,
       dara: true,
       proyek: true,
+    },
+  };
+}
+
+function createKpiSettingsDraft() {
+  return {
+    taskBaseLow: '5',
+    taskBaseMedium: '10',
+    taskBaseHigh: '20',
+    taskBaseUrgent: '30',
+    assistedByRatio: '0.5',
+    onTimeBeforeDeadline: '5',
+    onTimeFarEarlyPct: '50',
+    onTimeFarEarlyBonus: '10',
+    onTimeLate: '-5',
+    qcPassFirst: '10',
+    qcRevision1: '0',
+    qcRevisionMany: '-5',
+    proofComplete: '5',
+    noProofMissing: '-10',
+    noShowReassignOrCancel: '-25',
+    chatFastReplyMinutes: '5',
+    chatFastReplyPoints: '5',
+    chatLateReplyMinutes: '14',
+    chatLateReplyPoints: '-10',
+    chatNoReplyPoints: '-15',
+    complaintLight: '-10',
+    complaintValid: '-25',
+    complaintSevere: '-50',
+    attendanceOutsideRadius: '-20',
+    levelsText: 'bronze|Bronze|0|200',
+    rewardsText: 'bronze|0',
+    enabledRules: {
+      'task.base': true,
+      'task.on_time': true,
+      'task.qc': true,
+      'task.proof': true,
+      'task.no_proof': true,
+      complaint: true,
+      'task.noshow': true,
+      'attendance.radius': true,
+      'task.rating': true,
+      'chat.fast_reply': true,
+      'chat.late_reply': true,
+      'chat.no_reply': true,
     },
   };
 }

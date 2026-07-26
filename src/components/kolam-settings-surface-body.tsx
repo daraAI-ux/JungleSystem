@@ -22,7 +22,8 @@ export function KolamSettingsSurfaceBody({
     controller.activeSettingsTabId === 'plugin' ||
     controller.activeSettingsTabId === 'konten' ||
     controller.activeSettingsTabId === 'sitemap' ||
-    controller.activeSettingsTabId === 'sync'
+    controller.activeSettingsTabId === 'sync' ||
+    controller.activeSettingsTabId === 'kpi'
   ) {
     return (
       <KolamSettingsWebConfigSurface
@@ -47,6 +48,11 @@ export function KolamSettingsSurfaceBody({
         blogRows={controller.blogRows}
         blogTopicRows={controller.blogTopicRows}
         financialSummaryRows={controller.financialSummaryRows}
+        kpiMessage={controller.kpiMessage}
+        kpiPreview={controller.kpiPreview}
+        kpiSettingsDraft={controller.kpiSettingsDraft}
+        kpiStatus={controller.kpiStatus}
+        kpiSummaryRows={controller.kpiSummaryRows}
         operationalRooms={controller.operationalRooms}
         operationalStaffRows={controller.operationalStaffRows}
         regionLevel={controller.regionLevel}
@@ -146,14 +152,20 @@ export function KolamSettingsSurfaceBody({
           void controller.uploadNotificationSound(type);
         }}
         onRefreshRegionSync={controller.refreshRegionSync}
+        onRefreshKpiWeeklyPreview={controller.refreshKpiWeeklyPreview}
         onRunRegionSync={scope => {
           void controller.runRegionSync(scope);
+        }}
+        onSaveKpiSettings={() => {
+          void controller.saveKpiSettings();
         }}
         onWebTitleChange={controller.setWebTitle}
         setMarketplaceLandingCtaDraftField={
           controller.setMarketplaceLandingCtaDraftField
         }
         setMarketplaceLandingTabId={controller.setMarketplaceLandingTabId}
+        setKpiEnabledRule={controller.setKpiEnabledRule}
+        setKpiSettingsDraftField={controller.setKpiSettingsDraftField}
         setMarketplaceLandingYoutubeDraftField={
           controller.setMarketplaceLandingYoutubeDraftField
         }

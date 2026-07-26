@@ -513,6 +513,78 @@ export interface KolamBlogTopicListResponse {
   pagination: KolamPaginationMeta;
 }
 
+export interface KolamKpiSettings {
+  rulesVersion?: number;
+  effectiveFrom?: string;
+  basePoints?: {
+    low?: number;
+    medium?: number;
+    high?: number;
+    urgent?: number;
+  };
+  assistedByRatio?: number;
+  onTime?: {
+    beforeDeadline?: number;
+    farEarlyPct?: number;
+    farEarlyBonus?: number;
+    late?: number;
+  };
+  qc?: {
+    passFirst?: number;
+    revision1?: number;
+    revisionMany?: number;
+  };
+  proof?: {
+    complete?: number;
+  };
+  complaint?: {
+    light?: number;
+    valid?: number;
+    severe?: number;
+  };
+  noShow?: {
+    reassignOrCancel?: number;
+  };
+  attendance?: {
+    outsideRadius?: number;
+  };
+  chat?: {
+    fastReplyMinutes?: number;
+    fastReplyPoints?: number;
+    lateReplyMinutes?: number;
+    lateReplyPoints?: number;
+    noReplyPoints?: number;
+  };
+  noProof?: {
+    missing?: number;
+  };
+  customerRating?: Record<string, number>;
+  levels?: Array<{
+    id: string;
+    label: string;
+    min: number;
+    max: number | null;
+  }>;
+  rewards?: Array<Record<string, unknown>>;
+  enabledRules?: Record<string, boolean>;
+  updatedAt?: string;
+  createdAt?: string;
+}
+
+export interface KolamKpiWeeklyAnnouncePreview {
+  dryRun: boolean;
+  weekKey: string;
+  topCount: number;
+  rows: Array<{
+    userId?: string;
+    name?: string;
+    points?: number;
+  }>;
+  body: string;
+  alreadySent: boolean;
+  broadcastAt: string | null;
+}
+
 export interface KolamWebSetting {
   _id?: string;
   version?: string;
@@ -1407,6 +1479,36 @@ export function getKolamBlogTopics(
     '/blog-topics',
     cleanKolamListParams(params),
   );
+}
+
+export async function getKolamKpiSettings(): Promise<KolamKpiSettings> {
+  const response = await kolamGet<DataResponse<KolamKpiSettings>>(
+    '/kpi/settings',
+  );
+
+  return response.data;
+}
+
+export async function updateKolamKpiSettings(
+  body: KolamKpiSettings,
+): Promise<KolamKpiSettings> {
+  const response = await kolamPut<MessageDataResponse<KolamKpiSettings>>(
+    '/kpi/settings',
+    body,
+  );
+
+  return response.data;
+}
+
+export async function getKolamKpiWeeklyAnnouncePreview(
+  params: { week?: string; limit?: number } = {},
+): Promise<KolamKpiWeeklyAnnouncePreview> {
+  const response = await kolamGet<DataResponse<KolamKpiWeeklyAnnouncePreview>>(
+    '/kpi/admin/weekly-announce/preview',
+    cleanKolamListParams(params),
+  );
+
+  return response.data;
 }
 
 export function syncKolamRegions(body: {

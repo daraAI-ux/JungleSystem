@@ -49,6 +49,8 @@ import {
   getKolamHeroSlidesAdmin,
   getKolamBlogs,
   getKolamBlogTopics,
+  getKolamKpiSettings,
+  getKolamKpiWeeklyAnnouncePreview,
   getKolamMarketplaceContentAdmin,
   getKolamRegionStats,
   getKolamRegions,
@@ -76,6 +78,7 @@ import {
   updateKolamCtaSection,
   updateKolamFeaturedCollections,
   updateKolamHeroSlide,
+  updateKolamKpiSettings,
   updateKolamSitemapConfig,
   updateKolamYoutubeSection,
   updateKolamWebSetting,
@@ -97,6 +100,8 @@ import {
   type KolamCtaSection,
   type KolamCustomerTextNotice,
   type KolamHeroSlide,
+  type KolamKpiSettings,
+  type KolamKpiWeeklyAnnouncePreview,
   type KolamMarketplaceContent,
   type KolamNotificationSoundType,
   type KolamRole,
@@ -396,6 +401,43 @@ export interface MarketplaceLandingOverview {
   marketplaceContent: KolamMarketplaceContent;
 }
 
+export interface KpiSettingsDraft {
+  taskBaseLow: string;
+  taskBaseMedium: string;
+  taskBaseHigh: string;
+  taskBaseUrgent: string;
+  assistedByRatio: string;
+  onTimeBeforeDeadline: string;
+  onTimeFarEarlyPct: string;
+  onTimeFarEarlyBonus: string;
+  onTimeLate: string;
+  qcPassFirst: string;
+  qcRevision1: string;
+  qcRevisionMany: string;
+  proofComplete: string;
+  noProofMissing: string;
+  noShowReassignOrCancel: string;
+  chatFastReplyMinutes: string;
+  chatFastReplyPoints: string;
+  chatLateReplyMinutes: string;
+  chatLateReplyPoints: string;
+  chatNoReplyPoints: string;
+  complaintLight: string;
+  complaintValid: string;
+  complaintSevere: string;
+  attendanceOutsideRadius: string;
+  levelsText: string;
+  rewardsText: string;
+  enabledRules: Record<string, boolean>;
+}
+
+export interface KpiSettingsSummaryRow {
+  id: string;
+  label: string;
+  value: string;
+  detail: string;
+}
+
 const emptyWebSettingDraft: WebSettingDraft = {
   versionKolam: '',
   versionEnclonura: '',
@@ -577,6 +619,50 @@ const emptyMarketplaceLandingOverview: MarketplaceLandingOverview = {
   marketplaceContent: {},
 };
 
+const emptyKpiSettingsDraft: KpiSettingsDraft = {
+  taskBaseLow: '5',
+  taskBaseMedium: '10',
+  taskBaseHigh: '20',
+  taskBaseUrgent: '30',
+  assistedByRatio: '0.5',
+  onTimeBeforeDeadline: '5',
+  onTimeFarEarlyPct: '50',
+  onTimeFarEarlyBonus: '10',
+  onTimeLate: '-5',
+  qcPassFirst: '10',
+  qcRevision1: '0',
+  qcRevisionMany: '-5',
+  proofComplete: '5',
+  noProofMissing: '-10',
+  noShowReassignOrCancel: '-25',
+  chatFastReplyMinutes: '5',
+  chatFastReplyPoints: '5',
+  chatLateReplyMinutes: '14',
+  chatLateReplyPoints: '-10',
+  chatNoReplyPoints: '-15',
+  complaintLight: '-10',
+  complaintValid: '-25',
+  complaintSevere: '-50',
+  attendanceOutsideRadius: '-20',
+  levelsText:
+    'bronze|Bronze|0|200\nsilver|Silver|201|500\ngold|Gold|501|1000\nplatinum|Platinum|1001|',
+  rewardsText: 'bronze|0\nsilver|100000\ngold|250000\nplatinum|500000',
+  enabledRules: {
+    'task.base': true,
+    'task.on_time': true,
+    'task.qc': true,
+    'task.proof': true,
+    'task.no_proof': true,
+    complaint: true,
+    'task.noshow': true,
+    'attendance.radius': true,
+    'task.rating': true,
+    'chat.fast_reply': true,
+    'chat.late_reply': true,
+    'chat.no_reply': true,
+  },
+};
+
 const defaultSitemapConfig: KolamSitemapConfig = {
   enabled: true,
   includeImages: true,
@@ -680,6 +766,16 @@ export function useKolamSettingsPanelController(
     'idle' | 'loading' | 'live' | 'error'
   >('idle');
   const [webContentMessage, setWebContentMessage] = useState('');
+  const [kpiSettings, setKpiSettings] = useState<KolamKpiSettings | null>(null);
+  const [kpiSettingsDraft, setKpiSettingsDraft] = useState<KpiSettingsDraft>(
+    emptyKpiSettingsDraft,
+  );
+  const [kpiPreview, setKpiPreview] =
+    useState<KolamKpiWeeklyAnnouncePreview | null>(null);
+  const [kpiStatus, setKpiStatus] = useState<
+    'idle' | 'loading' | 'live' | 'saving' | 'error' | 'disabled'
+  >('idle');
+  const [kpiMessage, setKpiMessage] = useState('');
   const [webSettingDraft, setWebSettingDraft] =
     useState<WebSettingDraft>(emptyWebSettingDraft);
   const [sitemapDraft, setSitemapDraft] =
@@ -993,6 +1089,55 @@ export function useKolamSettingsPanelController(
   }, [activeSettingsTabId]);
 
   useEffect(() => {
+    if (activeSettingsTabId !== 'kpi') {
+      return;
+    }
+
+    if (!webSettingDraft.pluginControls.kpi) {
+      setKpiStatus('disabled');
+      setKpiMessage('Plugin KPI nonaktif. Aktifkan dari tab Plugin.');
+      return;
+    }
+
+    let mounted = true;
+    setKpiStatus('loading');
+
+    Promise.allSettled([
+      getKolamKpiSettings(),
+      getKolamKpiWeeklyAnnouncePreview({ limit: 5 }),
+    ])
+      .then(([settingsResult, previewResult]) => {
+        if (!mounted) {
+          return;
+        }
+
+        if (settingsResult.status !== 'fulfilled') {
+          setKpiStatus('error');
+          setKpiMessage(getKpiSettingsErrorMessage(settingsResult.reason));
+          return;
+        }
+
+        setKpiSettings(settingsResult.value);
+        setKpiSettingsDraft(createKpiSettingsDraft(settingsResult.value));
+        setKpiPreview(
+          previewResult.status === 'fulfilled' ? previewResult.value : null,
+        );
+        setKpiStatus('live');
+        setKpiMessage('');
+      })
+      .catch(error => {
+        if (mounted) {
+          setKpiStatus('error');
+          setKpiMessage(getKpiSettingsErrorMessage(error));
+        }
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [activeSettingsTabId, webSettingDraft.pluginControls.kpi]);
+
+  useEffect(() => {
     if (activeSettingsTabId !== 'sync') {
       return;
     }
@@ -1147,6 +1292,7 @@ export function useKolamSettingsPanelController(
   const marketplaceLandingTabItems = createMarketplaceLandingTabItems(
     marketplaceLandingOverview,
   );
+  const kpiSummaryRows = createKpiSettingsSummaryRows(kpiSettings, kpiPreview);
 
   const selectSurface = (id: SettingsSurfaceItem['id']) => {
     setActiveSurfaceId(id);
@@ -1315,6 +1461,67 @@ export function useKolamSettingsPanelController(
     } catch (error) {
       setRegionSyncStatus('error');
       setRegionSyncMessage(getRegionSyncErrorMessage(error));
+    }
+  };
+  const setKpiSettingsDraftField = <Key extends keyof KpiSettingsDraft>(
+    key: Key,
+    value: KpiSettingsDraft[Key],
+  ) => {
+    setKpiSettingsDraft(current => ({ ...current, [key]: value }));
+    setKpiStatus(current => (current === 'disabled' ? current : 'live'));
+    setKpiMessage('');
+  };
+  const setKpiEnabledRule = (rule: string, enabled: boolean) => {
+    setKpiSettingsDraft(current => ({
+      ...current,
+      enabledRules: {
+        ...current.enabledRules,
+        [rule]: enabled,
+      },
+    }));
+    setKpiStatus(current => (current === 'disabled' ? current : 'live'));
+    setKpiMessage('');
+  };
+  const refreshKpiWeeklyPreview = async () => {
+    if (!webSettingDraft.pluginControls.kpi) {
+      setKpiStatus('disabled');
+      setKpiMessage('Plugin KPI nonaktif. Aktifkan dari tab Plugin.');
+      return;
+    }
+
+    setKpiStatus('loading');
+    try {
+      const preview = await getKolamKpiWeeklyAnnouncePreview({ limit: 5 });
+      setKpiPreview(preview);
+      setKpiStatus('live');
+      setKpiMessage('');
+    } catch (error) {
+      setKpiStatus('error');
+      setKpiMessage(getKpiSettingsErrorMessage(error));
+    }
+  };
+  const saveKpiSettings = async () => {
+    if (!webSettingDraft.pluginControls.kpi) {
+      setKpiStatus('disabled');
+      setKpiMessage('Plugin KPI nonaktif. Aktifkan dari tab Plugin.');
+      return;
+    }
+
+    setKpiStatus('saving');
+    setKpiMessage('');
+
+    try {
+      const updated = await updateKolamKpiSettings(
+        createKpiSettingsUpdateBody(kpiSettingsDraft, kpiSettings),
+      );
+      setKpiSettings(updated);
+      setKpiSettingsDraft(createKpiSettingsDraft(updated));
+      setKpiPreview(await getKolamKpiWeeklyAnnouncePreview({ limit: 5 }));
+      setKpiStatus('live');
+      setKpiMessage('Pengaturan KPI berhasil disimpan.');
+    } catch (error) {
+      setKpiStatus('error');
+      setKpiMessage(getKpiSettingsErrorMessage(error));
     }
   };
   const setMarketplaceLandingCtaDraftField = <
@@ -2440,6 +2647,11 @@ export function useKolamSettingsPanelController(
     detailRows,
     liveEndpoints,
     financialSummaryRows,
+    kpiMessage,
+    kpiPreview,
+    kpiSettingsDraft,
+    kpiStatus,
+    kpiSummaryRows,
     maintenanceMode,
     marketplaceLandingOverview,
     marketplaceLandingCtaDraft,
@@ -2474,6 +2686,8 @@ export function useKolamSettingsPanelController(
     selectedRoleId,
     setMaintenanceMode,
     setActivityLogFilter,
+    setKpiEnabledRule,
+    setKpiSettingsDraftField,
     setMarketplaceLandingTabId,
     setRegionFilter,
     setRoleDraftField,
@@ -2528,6 +2742,7 @@ export function useKolamSettingsPanelController(
     saveMarketplaceLandingCta,
     saveMarketplaceLandingYoutube,
     saveMarketplaceLandingNotice,
+    saveKpiSettings,
     uploadMarketplaceAnnouncementImage,
     uploadMarketplaceBioactiveStepImage,
     uploadMarketplaceCategoryBannerImage,
@@ -2569,6 +2784,7 @@ export function useKolamSettingsPanelController(
         )
       : getSettingsActivityLogStatsCards(activityEntries),
     refreshActivityLogs,
+    refreshKpiWeeklyPreview,
     refreshRegionSync,
     runRegionSync,
     sitemapChangeFrequencies,
@@ -3185,6 +3401,246 @@ function createMarketplaceLandingTabItems(
   ];
 }
 
+function createKpiSettingsDraft(settings: KolamKpiSettings): KpiSettingsDraft {
+  const base = settings.basePoints ?? {};
+  const onTime = settings.onTime ?? {};
+  const qc = settings.qc ?? {};
+  const proof = settings.proof ?? {};
+  const noProof = settings.noProof ?? {};
+  const noShow = settings.noShow ?? {};
+  const chat = settings.chat ?? {};
+  const complaint = settings.complaint ?? {};
+  const attendance = settings.attendance ?? {};
+
+  return {
+    ...emptyKpiSettingsDraft,
+    taskBaseLow: String(base.low ?? emptyKpiSettingsDraft.taskBaseLow),
+    taskBaseMedium: String(base.medium ?? emptyKpiSettingsDraft.taskBaseMedium),
+    taskBaseHigh: String(base.high ?? emptyKpiSettingsDraft.taskBaseHigh),
+    taskBaseUrgent: String(base.urgent ?? emptyKpiSettingsDraft.taskBaseUrgent),
+    assistedByRatio: String(
+      settings.assistedByRatio ?? emptyKpiSettingsDraft.assistedByRatio,
+    ),
+    onTimeBeforeDeadline: String(
+      onTime.beforeDeadline ?? emptyKpiSettingsDraft.onTimeBeforeDeadline,
+    ),
+    onTimeFarEarlyPct: String(
+      onTime.farEarlyPct ?? emptyKpiSettingsDraft.onTimeFarEarlyPct,
+    ),
+    onTimeFarEarlyBonus: String(
+      onTime.farEarlyBonus ?? emptyKpiSettingsDraft.onTimeFarEarlyBonus,
+    ),
+    onTimeLate: String(onTime.late ?? emptyKpiSettingsDraft.onTimeLate),
+    qcPassFirst: String(qc.passFirst ?? emptyKpiSettingsDraft.qcPassFirst),
+    qcRevision1: String(qc.revision1 ?? emptyKpiSettingsDraft.qcRevision1),
+    qcRevisionMany: String(
+      qc.revisionMany ?? emptyKpiSettingsDraft.qcRevisionMany,
+    ),
+    proofComplete: String(
+      proof.complete ?? emptyKpiSettingsDraft.proofComplete,
+    ),
+    noProofMissing: String(
+      noProof.missing ?? emptyKpiSettingsDraft.noProofMissing,
+    ),
+    noShowReassignOrCancel: String(
+      noShow.reassignOrCancel ?? emptyKpiSettingsDraft.noShowReassignOrCancel,
+    ),
+    chatFastReplyMinutes: String(
+      chat.fastReplyMinutes ?? emptyKpiSettingsDraft.chatFastReplyMinutes,
+    ),
+    chatFastReplyPoints: String(
+      chat.fastReplyPoints ?? emptyKpiSettingsDraft.chatFastReplyPoints,
+    ),
+    chatLateReplyMinutes: String(
+      chat.lateReplyMinutes ?? emptyKpiSettingsDraft.chatLateReplyMinutes,
+    ),
+    chatLateReplyPoints: String(
+      chat.lateReplyPoints ?? emptyKpiSettingsDraft.chatLateReplyPoints,
+    ),
+    chatNoReplyPoints: String(
+      chat.noReplyPoints ?? emptyKpiSettingsDraft.chatNoReplyPoints,
+    ),
+    complaintLight: String(
+      complaint.light ?? emptyKpiSettingsDraft.complaintLight,
+    ),
+    complaintValid: String(
+      complaint.valid ?? emptyKpiSettingsDraft.complaintValid,
+    ),
+    complaintSevere: String(
+      complaint.severe ?? emptyKpiSettingsDraft.complaintSevere,
+    ),
+    attendanceOutsideRadius: String(
+      attendance.outsideRadius ?? emptyKpiSettingsDraft.attendanceOutsideRadius,
+    ),
+    levelsText: formatKpiLevelsText(settings.levels),
+    rewardsText: formatKpiRewardsText(settings.rewards),
+    enabledRules: {
+      ...emptyKpiSettingsDraft.enabledRules,
+      ...(settings.enabledRules ?? {}),
+    },
+  };
+}
+
+function createKpiSettingsUpdateBody(
+  draft: KpiSettingsDraft,
+  current: KolamKpiSettings | null,
+): KolamKpiSettings {
+  return {
+    ...(current ?? {}),
+    basePoints: {
+      low: parseNumberOrFallback(draft.taskBaseLow, 5),
+      medium: parseNumberOrFallback(draft.taskBaseMedium, 10),
+      high: parseNumberOrFallback(draft.taskBaseHigh, 20),
+      urgent: parseNumberOrFallback(draft.taskBaseUrgent, 30),
+    },
+    assistedByRatio: parseNumberOrFallback(draft.assistedByRatio, 0.5),
+    onTime: {
+      beforeDeadline: parseNumberOrFallback(draft.onTimeBeforeDeadline, 5),
+      farEarlyPct: parseNumberOrFallback(draft.onTimeFarEarlyPct, 50),
+      farEarlyBonus: parseNumberOrFallback(draft.onTimeFarEarlyBonus, 10),
+      late: parseNumberOrFallback(draft.onTimeLate, -5),
+    },
+    qc: {
+      passFirst: parseNumberOrFallback(draft.qcPassFirst, 10),
+      revision1: parseNumberOrFallback(draft.qcRevision1, 0),
+      revisionMany: parseNumberOrFallback(draft.qcRevisionMany, -5),
+    },
+    proof: { complete: parseNumberOrFallback(draft.proofComplete, 5) },
+    noProof: { missing: parseNumberOrFallback(draft.noProofMissing, -10) },
+    noShow: {
+      reassignOrCancel: parseNumberOrFallback(
+        draft.noShowReassignOrCancel,
+        -25,
+      ),
+    },
+    chat: {
+      fastReplyMinutes: parseNumberOrFallback(draft.chatFastReplyMinutes, 5),
+      fastReplyPoints: parseNumberOrFallback(draft.chatFastReplyPoints, 5),
+      lateReplyMinutes: parseNumberOrFallback(draft.chatLateReplyMinutes, 14),
+      lateReplyPoints: parseNumberOrFallback(draft.chatLateReplyPoints, -10),
+      noReplyPoints: parseNumberOrFallback(draft.chatNoReplyPoints, -15),
+    },
+    complaint: {
+      light: parseNumberOrFallback(draft.complaintLight, -10),
+      valid: parseNumberOrFallback(draft.complaintValid, -25),
+      severe: parseNumberOrFallback(draft.complaintSevere, -50),
+    },
+    attendance: {
+      outsideRadius: parseNumberOrFallback(draft.attendanceOutsideRadius, -20),
+    },
+    levels: parseKpiLevelsText(draft.levelsText),
+    rewards: parseKpiRewardsText(draft.rewardsText),
+    enabledRules: draft.enabledRules,
+  };
+}
+
+function createKpiSettingsSummaryRows(
+  settings: KolamKpiSettings | null,
+  preview: KolamKpiWeeklyAnnouncePreview | null,
+): KpiSettingsSummaryRow[] {
+  return [
+    {
+      id: 'task-points',
+      label: 'Task points',
+      value: settings
+        ? `${settings.basePoints?.low ?? 0}/${
+            settings.basePoints?.medium ?? 0
+          }/${settings.basePoints?.high ?? 0}/${
+            settings.basePoints?.urgent ?? 0
+          }`
+        : 'Belum dimuat',
+      detail: 'low / medium / high / urgent base points.',
+    },
+    {
+      id: 'chat-sla',
+      label: 'Chat SLA',
+      value: settings
+        ? `${settings.chat?.fastReplyMinutes ?? 0}m / ${
+            settings.chat?.lateReplyMinutes ?? 0
+          }m`
+        : 'Belum dimuat',
+      detail: `Fast ${settings?.chat?.fastReplyPoints ?? 0}, late ${
+        settings?.chat?.lateReplyPoints ?? 0
+      }, no reply ${settings?.chat?.noReplyPoints ?? 0}.`,
+    },
+    {
+      id: 'complaint',
+      label: 'Complaint points',
+      value: settings
+        ? `${settings.complaint?.light ?? 0}/${
+            settings.complaint?.valid ?? 0
+          }/${settings.complaint?.severe ?? 0}`
+        : 'Belum dimuat',
+      detail: 'light / valid / severe penalty.',
+    },
+    {
+      id: 'attendance',
+      label: 'Attendance',
+      value: String(settings?.attendance?.outsideRadius ?? 0),
+      detail: 'Penalty outside radius.',
+    },
+    {
+      id: 'monthly-level',
+      label: 'Monthly level',
+      value: `${settings?.levels?.length ?? 0} levels`,
+      detail:
+        settings?.levels
+          ?.map(level => `${level.label} ${level.min}-${level.max ?? '∞'}`)
+          .join(' | ') ?? 'Belum dimuat',
+    },
+    {
+      id: 'weekly-preview',
+      label: 'DARA weekly announcement preview',
+      value: preview?.weekKey ?? 'Belum dimuat',
+      detail: preview?.body?.replace(/\s+/g, ' ').slice(0, 180) ?? '-',
+    },
+  ];
+}
+
+function formatKpiLevelsText(levels: KolamKpiSettings['levels']) {
+  return (levels ?? [])
+    .map(level => `${level.id}|${level.label}|${level.min}|${level.max ?? ''}`)
+    .join('\n');
+}
+
+function parseKpiLevelsText(text: string) {
+  return text
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(Boolean)
+    .map(line => {
+      const [id = '', label = '', min = '0', max = ''] = line.split('|');
+      return {
+        id: id.trim(),
+        label: label.trim() || id.trim(),
+        min: parseNumberOrFallback(min, 0),
+        max: max.trim() ? parseNumberOrFallback(max, 0) : null,
+      };
+    })
+    .filter(level => level.id);
+}
+
+function formatKpiRewardsText(rewards: KolamKpiSettings['rewards']) {
+  return (rewards ?? [])
+    .map(row => `${String(row.levelId ?? '')}|${String(row.amountRp ?? 0)}`)
+    .join('\n');
+}
+
+function parseKpiRewardsText(text: string) {
+  return text
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(Boolean)
+    .map(line => {
+      const [levelId = '', amountRp = '0'] = line.split('|');
+      return {
+        levelId: levelId.trim(),
+        amountRp: parseNumberOrFallback(amountRp, 0),
+      };
+    })
+    .filter(row => row.levelId);
+}
+
 function cleanOptionalString(value: string) {
   const trimmed = value.trim();
   return trimmed || undefined;
@@ -3625,6 +4081,22 @@ function getRegionSyncErrorMessage(error: unknown) {
   }
 
   return 'Gagal membaca master wilayah live.';
+}
+
+function getKpiSettingsErrorMessage(error: unknown) {
+  if (isPermissionApiError(error)) {
+    return 'Akses ditolak: permission websetting diperlukan untuk KPI.';
+  }
+
+  if (error instanceof ApiError && error.message) {
+    return error.message;
+  }
+
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return 'Gagal membaca atau menyimpan pengaturan KPI.';
 }
 
 function isPermissionApiError(error: unknown) {
