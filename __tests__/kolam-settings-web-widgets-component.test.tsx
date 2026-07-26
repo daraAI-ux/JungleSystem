@@ -297,6 +297,7 @@ function createWebSettingDraft() {
     firebaseClientEmail: '',
     firebasePrivateKey: '',
     chatStoreEnabled: true,
+    teamChatDaraReplyEnabled: true,
     teamChatGroupCallEnabled: false,
     daraBusinessEnabled: true,
     daraToolsEnabled: true,

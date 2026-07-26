@@ -336,6 +336,104 @@ describe('KolamSettingsPanel', () => {
     );
   });
 
+  it('renders AI settings with plugin gate aware controls', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamSettingsPanel
+          activityEntries={getSyncActivityEntries(seedUnifiedDataset, '10:00')}
+        />,
+      );
+    });
+
+    await ReactTestRenderer.act(async () => {
+      findTabByText(renderer!, 'AI / DARA').props.onPress();
+    });
+
+    const text = renderText(renderer!);
+
+    expect(text).toEqual(
+      expect.arrayContaining([
+        'AI / DARA',
+        'Plugin Chat dan DARA aktif. Kontrol AI siap disimpan ke Web Settings.',
+        'Chat store',
+        'Team Chat DARA reply',
+        'DARA business',
+        'DARA tools',
+        'DARA knowledge / SOP',
+        'DARA handoff notify',
+        'DARA auto report',
+        'DARA fulfillment',
+        'Save',
+      ]),
+    );
+    expect(text).not.toEqual(
+      expect.arrayContaining([
+        'Company Tagline',
+        'Biteship API key',
+        'Marketplace Landing Overview',
+      ]),
+    );
+  });
+
+  it('keeps AI controls visible with disabled state when plugins are off', async () => {
+    const fetchMock = jest
+      .fn()
+      .mockResolvedValueOnce(
+        jsonResponse({
+          data: {
+            _id: 'websetting-1',
+            kolamPlugins: {
+              chat: { enabled: false, storeEnabled: false },
+              dara: { enabled: false },
+            },
+          },
+        }),
+      )
+      .mockResolvedValueOnce(jsonResponse({ app: 'kolam', version: '1.0.0' }))
+      .mockResolvedValueOnce(jsonResponse({ versions: { kolam: '1.0.0' } }))
+      .mockResolvedValueOnce(jsonResponse({ data: [] }))
+      .mockResolvedValueOnce(jsonResponse({ data: [] }))
+      .mockResolvedValueOnce(jsonResponse({ data: null }))
+      .mockResolvedValueOnce(jsonResponse({ data: null }))
+      .mockResolvedValueOnce(jsonResponse({ data: [] }))
+      .mockResolvedValueOnce(jsonResponse({ data: [] }))
+      .mockResolvedValueOnce(
+        jsonResponse({ data: { marketplaceContent: {} } }),
+      );
+    globalThis.fetch = fetchMock;
+
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamSettingsPanel
+          activityEntries={getSyncActivityEntries(seedUnifiedDataset, '10:00')}
+        />,
+      );
+    });
+
+    await ReactTestRenderer.act(async () => {
+      await Promise.resolve();
+    });
+
+    await ReactTestRenderer.act(async () => {
+      findTabByText(renderer!, 'AI / DARA').props.onPress();
+    });
+
+    const text = renderText(renderer!);
+
+    expect(text).toEqual(
+      expect.arrayContaining([
+        'AI / DARA',
+        'Disabled state: Plugin Chat nonaktif. Plugin DARA nonaktif. Aktifkan dari tab Plugin untuk mengubah kontrol terkait.',
+        'Chat store',
+        'DARA knowledge / SOP',
+      ]),
+    );
+  });
+
   it('keeps local Web Settings draft intact when live update is rejected', async () => {
     const fetchMock = jest
       .fn()

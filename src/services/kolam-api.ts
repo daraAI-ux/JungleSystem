@@ -424,6 +424,7 @@ export interface KolamWebSetting {
   handoffNotificationSound?: string;
   groupCallRingtone?: string;
   salesNotificationSound?: string;
+  teamChatDaraReplyEnabled?: boolean;
   teamChatGroupCallEnabled?: boolean;
   daraBusinessEnabled?: boolean;
   daraToolsEnabled?: boolean;
@@ -623,6 +624,7 @@ export interface UpdateKolamWebSettingBody
       | 'commissionPph21Enabled'
       | 'overtimeSettings'
       | 'enclosureSaleCommission'
+      | 'teamChatDaraReplyEnabled'
       | 'teamChatGroupCallEnabled'
       | 'daraBusinessEnabled'
       | 'daraToolsEnabled'

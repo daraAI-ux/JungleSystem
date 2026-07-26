@@ -18,6 +18,7 @@ export function KolamSettingsSurfaceBody({
     controller.activeSettingsTabId === 'toko' ||
     controller.activeSettingsTabId === 'operasional' ||
     controller.activeSettingsTabId === 'finansial' ||
+    controller.activeSettingsTabId === 'ai' ||
     controller.activeSettingsTabId === 'plugin' ||
     controller.activeSettingsTabId === 'konten'
   ) {

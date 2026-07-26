@@ -127,6 +127,7 @@ type WebSettingDraft = {
   firebaseClientEmail: string;
   firebasePrivateKey: string;
   chatStoreEnabled: boolean;
+  teamChatDaraReplyEnabled: boolean;
   teamChatGroupCallEnabled: boolean;
   daraBusinessEnabled: boolean;
   daraToolsEnabled: boolean;
@@ -376,6 +377,12 @@ export function KolamSettingsWebConfigSurface({
   const showPluginControls = activeTabId === 'plugin';
   const showMarketplaceLanding = activeTabId === 'konten';
   const generalFormSections = sections.filter(section => section.id === 'logo');
+  const chatPluginEnabled = draft.pluginControls.chat;
+  const daraPluginEnabled = draft.pluginControls.dara;
+  const chatControlsDisabled = disabled || !chatPluginEnabled;
+  const daraControlsDisabled = disabled || !daraPluginEnabled;
+  const daraChatControlsDisabled =
+    disabled || !chatPluginEnabled || !daraPluginEnabled;
   const notificationSoundItems = [
     {
       id: 'notification-sound',
@@ -1473,6 +1480,280 @@ export function KolamSettingsWebConfigSurface({
           </View>
         </View>
       ) : null}
+      {showAiSettings ? (
+        <>
+          <KolamCopyStack
+            items={[
+              {
+                id: 'ai-plugin-gate',
+                text:
+                  chatPluginEnabled && daraPluginEnabled
+                    ? 'Plugin Chat dan DARA aktif. Kontrol AI siap disimpan ke Web Settings.'
+                    : `Disabled state: ${
+                        chatPluginEnabled ? '' : 'Plugin Chat nonaktif. '
+                      }${
+                        daraPluginEnabled ? '' : 'Plugin DARA nonaktif. '
+                      }Aktifkan dari tab Plugin untuk mengubah kontrol terkait.`,
+              },
+            ]}
+          />
+          <KolamToggleRow
+            label="Chat store"
+            description="Aktifkan chat pada storefront."
+            active={draft.chatStoreEnabled}
+            onPress={() =>
+              !chatControlsDisabled &&
+              setDraftField('chatStoreEnabled', !draft.chatStoreEnabled)
+            }
+          />
+          <KolamToggleRow
+            label="Team chat group call"
+            description="Aktifkan panggilan grup di team chat."
+            active={draft.teamChatGroupCallEnabled}
+            onPress={() =>
+              !chatControlsDisabled &&
+              setDraftField(
+                'teamChatGroupCallEnabled',
+                !draft.teamChatGroupCallEnabled,
+              )
+            }
+          />
+          <KolamToggleRow
+            label="Team Chat DARA reply"
+            description="Aktifkan balasan @dara di Team Chat."
+            active={draft.teamChatDaraReplyEnabled}
+            onPress={() =>
+              !daraChatControlsDisabled &&
+              setDraftField(
+                'teamChatDaraReplyEnabled',
+                !draft.teamChatDaraReplyEnabled,
+              )
+            }
+          />
+          <KolamToggleRow
+            label="DARA business"
+            description="Aktifkan fitur bisnis DARA."
+            active={draft.daraBusinessEnabled}
+            onPress={() =>
+              !daraControlsDisabled &&
+              setDraftField('daraBusinessEnabled', !draft.daraBusinessEnabled)
+            }
+          />
+          <KolamToggleRow
+            label="DARA tools"
+            description="Aktifkan tool runtime DARA."
+            active={draft.daraToolsEnabled}
+            onPress={() =>
+              !daraControlsDisabled &&
+              setDraftField('daraToolsEnabled', !draft.daraToolsEnabled)
+            }
+          />
+          <KolamToggleRow
+            label="DARA knowledge / SOP"
+            description="Aktifkan knowledge base dan SOP lookup DARA."
+            active={draft.daraKnowledgeEnabled}
+            onPress={() =>
+              !daraControlsDisabled &&
+              setDraftField('daraKnowledgeEnabled', !draft.daraKnowledgeEnabled)
+            }
+          />
+          <KolamToggleRow
+            label="DARA handoff notify"
+            description="Kirim notifikasi saat handoff customer."
+            active={draft.daraHandoffNotifyEnabled}
+            onPress={() =>
+              !daraControlsDisabled &&
+              setDraftField(
+                'daraHandoffNotifyEnabled',
+                !draft.daraHandoffNotifyEnabled,
+              )
+            }
+          />
+          <KolamToggleRow
+            label="DARA insights"
+            description="Aktifkan insight otomatis DARA."
+            active={draft.daraInsightsEnabled}
+            onPress={() =>
+              !daraControlsDisabled &&
+              setDraftField('daraInsightsEnabled', !draft.daraInsightsEnabled)
+            }
+          />
+          <KolamToggleRow
+            label="DARA auto report"
+            description="Aktifkan laporan otomatis DARA."
+            active={draft.daraAutoReportEnabled}
+            onPress={() =>
+              !daraControlsDisabled &&
+              setDraftField(
+                'daraAutoReportEnabled',
+                !draft.daraAutoReportEnabled,
+              )
+            }
+          />
+          <KolamToggleRow
+            label="DARA image analysis"
+            description="Aktifkan analisis gambar DARA."
+            active={draft.daraImageAnalysisEnabled}
+            onPress={() =>
+              !daraControlsDisabled &&
+              setDraftField(
+                'daraImageAnalysisEnabled',
+                !draft.daraImageAnalysisEnabled,
+              )
+            }
+          />
+          <KolamToggleRow
+            label="DARA tax"
+            description="Aktifkan modul pajak DARA."
+            active={draft.daraTaxEnabled}
+            onPress={() =>
+              !daraControlsDisabled &&
+              setDraftField('daraTaxEnabled', !draft.daraTaxEnabled)
+            }
+          />
+          <KolamToggleRow
+            label="DARA SEO"
+            description="Aktifkan fitur SEO DARA."
+            active={draft.daraSeoEnabled}
+            onPress={() =>
+              !daraControlsDisabled &&
+              setDraftField('daraSeoEnabled', !draft.daraSeoEnabled)
+            }
+          />
+          <KolamToggleRow
+            label="DARA tax watcher"
+            description="Pantau regulasi pajak secara otomatis."
+            active={draft.daraTaxRegulationWatcherEnabled}
+            onPress={() =>
+              !daraControlsDisabled &&
+              setDraftField(
+                'daraTaxRegulationWatcherEnabled',
+                !draft.daraTaxRegulationWatcherEnabled,
+              )
+            }
+          />
+          <KolamToggleRow
+            label="DARA tax compliance"
+            description="Aktifkan job kepatuhan pajak."
+            active={draft.daraTaxComplianceJobEnabled}
+            onPress={() =>
+              !daraControlsDisabled &&
+              setDraftField(
+                'daraTaxComplianceJobEnabled',
+                !draft.daraTaxComplianceJobEnabled,
+              )
+            }
+          />
+          <KolamToggleRow
+            label="DARA tax narrative"
+            description="Aktifkan narasi LLM untuk pajak."
+            active={draft.daraTaxLlmNarrativeEnabled}
+            onPress={() =>
+              !daraControlsDisabled &&
+              setDraftField(
+                'daraTaxLlmNarrativeEnabled',
+                !draft.daraTaxLlmNarrativeEnabled,
+              )
+            }
+          />
+          <KolamToggleRow
+            label="DARA fulfillment"
+            description="Aktifkan fulfillment webstore DARA."
+            active={draft.daraWebstoreFulfillmentEnabled}
+            onPress={() =>
+              !daraControlsDisabled &&
+              setDraftField(
+                'daraWebstoreFulfillmentEnabled',
+                !draft.daraWebstoreFulfillmentEnabled,
+              )
+            }
+          />
+          <KolamToggleRow
+            label="DARA staff ops"
+            description="Aktifkan notifikasi operasional staff."
+            active={draft.daraStaffOpsNotifyEnabled}
+            onPress={() =>
+              !daraControlsDisabled &&
+              setDraftField(
+                'daraStaffOpsNotifyEnabled',
+                !draft.daraStaffOpsNotifyEnabled,
+              )
+            }
+          />
+          <KolamToggleRow
+            label="DARA staff WhatsApp"
+            description="Aktifkan notifikasi WhatsApp staff."
+            active={draft.daraStaffWaNotifyEnabled}
+            onPress={() =>
+              !daraControlsDisabled &&
+              setDraftField(
+                'daraStaffWaNotifyEnabled',
+                !draft.daraStaffWaNotifyEnabled,
+              )
+            }
+          />
+          <KolamToggleRow
+            label="DARA olshop notify"
+            description="Aktifkan notifikasi customer olshop."
+            active={draft.daraOlshopCustomerNotifyEnabled}
+            onPress={() =>
+              !daraControlsDisabled &&
+              setDraftField(
+                'daraOlshopCustomerNotifyEnabled',
+                !draft.daraOlshopCustomerNotifyEnabled,
+              )
+            }
+          />
+          <KolamToggleRow
+            label="DARA owner digest"
+            description="Aktifkan ringkasan owner."
+            active={draft.daraOwnerDigestEnabled}
+            onPress={() =>
+              !daraControlsDisabled &&
+              setDraftField(
+                'daraOwnerDigestEnabled',
+                !draft.daraOwnerDigestEnabled,
+              )
+            }
+          />
+          <KolamToggleRow
+            label="DARA owner WhatsApp"
+            description="Kirim digest owner melalui WhatsApp."
+            active={draft.daraOwnerDigestWaEnabled}
+            onPress={() =>
+              !daraControlsDisabled &&
+              setDraftField(
+                'daraOwnerDigestWaEnabled',
+                !draft.daraOwnerDigestWaEnabled,
+              )
+            }
+          />
+          <KolamToggleRow
+            label="DARA owner FCM"
+            description="Kirim digest owner melalui FCM."
+            active={draft.daraOwnerDigestFcmEnabled}
+            onPress={() =>
+              !daraControlsDisabled &&
+              setDraftField(
+                'daraOwnerDigestFcmEnabled',
+                !draft.daraOwnerDigestFcmEnabled,
+              )
+            }
+          />
+          <KolamToggleRow
+            label="DARA urgent FCM"
+            description="Kirim notifikasi urgent owner melalui FCM."
+            active={draft.daraOwnerFcmUrgentEnabled}
+            onPress={() =>
+              !daraControlsDisabled &&
+              setDraftField(
+                'daraOwnerFcmUrgentEnabled',
+                !draft.daraOwnerFcmUrgentEnabled,
+              )
+            }
+          />
+        </>
+      ) : null}
       {showStoreShippingSettings ? (
         <>
           <KolamTextFieldRow
@@ -1809,6 +2090,7 @@ export function KolamSettingsWebConfigSurface({
       {showGeneralSettings ||
       showOperationalSettings ||
       showStoreShippingSettings ||
+      showAiSettings ||
       showNotificationSettings ? (
         <>
           <KolamActionControlButton

@@ -257,6 +257,7 @@ interface WebSettingDraft {
   firebaseClientEmail: string;
   firebasePrivateKey: string;
   chatStoreEnabled: boolean;
+  teamChatDaraReplyEnabled: boolean;
   teamChatGroupCallEnabled: boolean;
   daraBusinessEnabled: boolean;
   daraToolsEnabled: boolean;
@@ -428,6 +429,7 @@ const emptyWebSettingDraft: WebSettingDraft = {
   firebaseClientEmail: '',
   firebasePrivateKey: '',
   chatStoreEnabled: true,
+  teamChatDaraReplyEnabled: true,
   teamChatGroupCallEnabled: false,
   daraBusinessEnabled: true,
   daraToolsEnabled: true,
@@ -1730,6 +1732,7 @@ export function useKolamSettingsPanelController(
         },
         smtp: createSmtpUpdateBody(webSettingDraft),
         firebase: createFirebaseUpdateBody(webSettingDraft),
+        teamChatDaraReplyEnabled: webSettingDraft.teamChatDaraReplyEnabled,
         teamChatGroupCallEnabled: webSettingDraft.teamChatGroupCallEnabled,
         daraBusinessEnabled: webSettingDraft.daraBusinessEnabled,
         daraToolsEnabled: webSettingDraft.daraToolsEnabled,
@@ -1873,6 +1876,7 @@ export function useKolamSettingsPanelController(
             webSetting?.firebase?.privateKeyConfigured ??
             webSettingDraft.firebasePrivateKey === maskedSecretPlaceholder,
         },
+        teamChatDaraReplyEnabled: webSettingDraft.teamChatDaraReplyEnabled,
         teamChatGroupCallEnabled: webSettingDraft.teamChatGroupCallEnabled,
         daraBusinessEnabled: webSettingDraft.daraBusinessEnabled,
         daraToolsEnabled: webSettingDraft.daraToolsEnabled,
@@ -2349,6 +2353,7 @@ function createWebSettingDraft(
       ? maskedSecretPlaceholder
       : '',
     chatStoreEnabled: setting.kolamPlugins?.chat?.storeEnabled !== false,
+    teamChatDaraReplyEnabled: setting.teamChatDaraReplyEnabled !== false,
     teamChatGroupCallEnabled: setting.teamChatGroupCallEnabled === true,
     daraBusinessEnabled: setting.daraBusinessEnabled !== false,
     daraToolsEnabled: setting.daraToolsEnabled !== false,
