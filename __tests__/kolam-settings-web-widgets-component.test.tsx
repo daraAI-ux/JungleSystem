@@ -81,6 +81,8 @@ describe('settings web widgets', () => {
           marketplaceLandingSaveStatus="idle"
           marketplaceLandingMessage=""
           marketplaceLandingAssetStatus={{}}
+          operationalRooms={[]}
+          operationalStaffRows={[]}
           marketplaceLandingOverview={{
             status: 'live',
             message: '',
@@ -214,6 +216,31 @@ function createWebSettingDraft() {
     maintenancePos: false,
     maintenanceMarketplace: false,
     livechatOnline: true,
+    webstoreGoogleAuthEnabled: false,
+    googleOAuthClientId: '',
+    poWorkflowReceivingRoomId: '',
+    poWorkflowNotifyOnReceive: true,
+    poWorkflowNotifyOnCheck: true,
+    poWorkflowNotifyOnPartial: true,
+    poWorkflowPostProofToTeamChat: true,
+    poWorkflowPartialCompleteRequiresAdmin: true,
+    poWorkflowNotifyReceiveUserIds: '',
+    poWorkflowNotifyCheckUserIds: '',
+    poWorkflowNotifyCompleteUserIds: '',
+    staffAttendancePayrollCutoffDay: '28',
+    staffAttendanceWorkStartTime: '08:00',
+    staffAttendanceWorkEndTime: '17:00',
+    staffAttendanceTimezone: 'Asia/Jakarta',
+    staffAttendanceLateToleranceMinutes: '15',
+    staffAttendanceLateTier2MaxMinutes: '120',
+    staffAttendanceLateCheckInDeadlineMinutes: '240',
+    staffAttendanceLateFineTier2: '50000',
+    staffAttendanceLateFineTier3: '100000',
+    staffAttendanceAbsentDailyDivisor: '30',
+    staffAttendanceMapProvider: 'openstreetmap',
+    staffAttendanceRequireGps: true,
+    staffAttendanceRequireFace: false,
+    staffAttendanceFaceMatchThreshold: '0.72',
     biteshipApiKey: '',
     googleMapsBrowserApiKey: '',
     originAddressLine1: '',

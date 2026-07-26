@@ -18,6 +18,8 @@ import type {
   KolamHeroSlide,
   KolamNotificationSoundType,
   KolamPluginConfigKey,
+  KolamTeamChatRoom,
+  KolamUserPickerRow,
 } from '../services/kolam-api';
 import type {
   MarketplaceLandingCtaDraft,
@@ -44,6 +46,31 @@ type WebSettingDraft = {
   maintenancePos: boolean;
   maintenanceMarketplace: boolean;
   livechatOnline: boolean;
+  webstoreGoogleAuthEnabled: boolean;
+  googleOAuthClientId: string;
+  poWorkflowReceivingRoomId: string;
+  poWorkflowNotifyOnReceive: boolean;
+  poWorkflowNotifyOnCheck: boolean;
+  poWorkflowNotifyOnPartial: boolean;
+  poWorkflowPostProofToTeamChat: boolean;
+  poWorkflowPartialCompleteRequiresAdmin: boolean;
+  poWorkflowNotifyReceiveUserIds: string;
+  poWorkflowNotifyCheckUserIds: string;
+  poWorkflowNotifyCompleteUserIds: string;
+  staffAttendancePayrollCutoffDay: string;
+  staffAttendanceWorkStartTime: string;
+  staffAttendanceWorkEndTime: string;
+  staffAttendanceTimezone: string;
+  staffAttendanceLateToleranceMinutes: string;
+  staffAttendanceLateTier2MaxMinutes: string;
+  staffAttendanceLateCheckInDeadlineMinutes: string;
+  staffAttendanceLateFineTier2: string;
+  staffAttendanceLateFineTier3: string;
+  staffAttendanceAbsentDailyDivisor: string;
+  staffAttendanceMapProvider: string;
+  staffAttendanceRequireGps: boolean;
+  staffAttendanceRequireFace: boolean;
+  staffAttendanceFaceMatchThreshold: string;
   biteshipApiKey: string;
   googleMapsBrowserApiKey: string;
   originAddressLine1: string;
@@ -190,6 +217,8 @@ export function KolamSettingsWebConfigSurface({
   fields,
   maintenanceMode,
   marketplaceLandingOverview,
+  operationalRooms,
+  operationalStaffRows,
   marketplaceLandingCtaDraft,
   marketplaceLandingYoutubeDraft,
   marketplaceLandingNoticeDraft,
@@ -246,6 +275,8 @@ export function KolamSettingsWebConfigSurface({
   fields: SettingsWebConfigField[];
   maintenanceMode: boolean;
   marketplaceLandingOverview: MarketplaceLandingOverview;
+  operationalRooms: KolamTeamChatRoom[];
+  operationalStaffRows: KolamUserPickerRow[];
   marketplaceLandingCtaDraft: MarketplaceLandingCtaDraft;
   marketplaceLandingYoutubeDraft: MarketplaceLandingYoutubeDraft;
   marketplaceLandingNoticeDraft: MarketplaceLandingNoticeDraft;
@@ -373,6 +404,18 @@ export function KolamSettingsWebConfigSurface({
       value: draft.salesNotificationSound,
     },
   ];
+  const roomSummary = operationalRooms.length
+    ? operationalRooms
+        .slice(0, 5)
+        .map(room => `${getTeamChatRoomLabel(room)} (${room._id})`)
+        .join(' | ')
+    : 'Room list belum tersedia. Isi Team Chat room ID manual.';
+  const staffSummary = operationalStaffRows.length
+    ? operationalStaffRows
+        .slice(0, 5)
+        .map(staff => `${getUserPickerLabel(staff)} (${staff._id})`)
+        .join(' | ')
+    : 'Staff list belum tersedia. Isi user ID manual, pisahkan koma atau baris baru.';
 
   return (
     <KolamContentFrame variant="settingsWebConfig">
@@ -1079,6 +1122,305 @@ export function KolamSettingsWebConfigSurface({
           ) : null}
         </>
       ) : null}
+      {showOperationalSettings ? (
+        <>
+          <KolamToggleRow
+            label={fields[1].label}
+            description={fields[1].description}
+            active={draft.livechatOnline}
+            onPress={() => {
+              if (disabled) {
+                return;
+              }
+              setDraftField('livechatOnline', !draft.livechatOnline);
+              onToggleStorefrontEnabled();
+            }}
+          />
+          <KolamToggleRow
+            label={fields[2].label}
+            description={fields[2].description}
+            active={draft.maintenancePos}
+            onPress={() => {
+              if (disabled) {
+                return;
+              }
+              setDraftField('maintenancePos', !draft.maintenancePos);
+              onToggleMaintenanceMode();
+            }}
+          />
+          <KolamToggleRow
+            label="Marketplace maintenance"
+            description="Aktifkan mode pemeliharaan untuk Marketplace."
+            active={draft.maintenanceMarketplace}
+            onPress={() =>
+              !disabled &&
+              setDraftField(
+                'maintenanceMarketplace',
+                !draft.maintenanceMarketplace,
+              )
+            }
+          />
+          <KolamToggleRow
+            label="Google Sign-In webstore"
+            description="Aktifkan OAuth Google untuk customer webstore."
+            active={draft.webstoreGoogleAuthEnabled}
+            onPress={() =>
+              !disabled &&
+              setDraftField(
+                'webstoreGoogleAuthEnabled',
+                !draft.webstoreGoogleAuthEnabled,
+              )
+            }
+          />
+          <KolamTextFieldRow
+            label="Google OAuth client ID"
+            description="OAuth 2.0 Web client ID untuk webstore."
+            value={draft.googleOAuthClientId}
+            onChangeText={value => setDraftField('googleOAuthClientId', value)}
+            placeholder="xxxx.apps.googleusercontent.com"
+          />
+          <KolamCopyStack
+            items={[
+              {
+                id: 'po-room-options',
+                text: `Team Chat rooms: ${roomSummary}`,
+              },
+              {
+                id: 'po-staff-options',
+                text: `Staff picker: ${staffSummary}`,
+              },
+            ]}
+          />
+          <KolamTextFieldRow
+            label="PO receiving room ID"
+            description="Room Team Chat untuk alur penerimaan/QC PO."
+            value={draft.poWorkflowReceivingRoomId}
+            onChangeText={value =>
+              setDraftField('poWorkflowReceivingRoomId', value)
+            }
+            placeholder="Team Chat room ID"
+          />
+          <KolamToggleRow
+            label="PO notify on receive"
+            description="Kirim notifikasi saat barang PO diterima."
+            active={draft.poWorkflowNotifyOnReceive}
+            onPress={() =>
+              !disabled &&
+              setDraftField(
+                'poWorkflowNotifyOnReceive',
+                !draft.poWorkflowNotifyOnReceive,
+              )
+            }
+          />
+          <KolamToggleRow
+            label="PO notify on check"
+            description="Kirim notifikasi saat QC/check PO berjalan."
+            active={draft.poWorkflowNotifyOnCheck}
+            onPress={() =>
+              !disabled &&
+              setDraftField(
+                'poWorkflowNotifyOnCheck',
+                !draft.poWorkflowNotifyOnCheck,
+              )
+            }
+          />
+          <KolamToggleRow
+            label="PO notify on partial"
+            description="Kirim notifikasi saat PO diterima sebagian."
+            active={draft.poWorkflowNotifyOnPartial}
+            onPress={() =>
+              !disabled &&
+              setDraftField(
+                'poWorkflowNotifyOnPartial',
+                !draft.poWorkflowNotifyOnPartial,
+              )
+            }
+          />
+          <KolamToggleRow
+            label="PO post proof to Team Chat"
+            description="Posting bukti penerimaan/QC ke room Team Chat."
+            active={draft.poWorkflowPostProofToTeamChat}
+            onPress={() =>
+              !disabled &&
+              setDraftField(
+                'poWorkflowPostProofToTeamChat',
+                !draft.poWorkflowPostProofToTeamChat,
+              )
+            }
+          />
+          <KolamToggleRow
+            label="PO partial requires admin"
+            description="Penerimaan sebagian wajib approval admin."
+            active={draft.poWorkflowPartialCompleteRequiresAdmin}
+            onPress={() =>
+              !disabled &&
+              setDraftField(
+                'poWorkflowPartialCompleteRequiresAdmin',
+                !draft.poWorkflowPartialCompleteRequiresAdmin,
+              )
+            }
+          />
+          <KolamTextFieldRow
+            label="PO receive notify user IDs"
+            description="User ID penerima notif receive, pisahkan koma atau baris baru."
+            value={draft.poWorkflowNotifyReceiveUserIds}
+            onChangeText={value =>
+              setDraftField('poWorkflowNotifyReceiveUserIds', value)
+            }
+            placeholder="userId1, userId2"
+          />
+          <KolamTextFieldRow
+            label="PO check notify user IDs"
+            description="User ID penerima notif check/QC."
+            value={draft.poWorkflowNotifyCheckUserIds}
+            onChangeText={value =>
+              setDraftField('poWorkflowNotifyCheckUserIds', value)
+            }
+            placeholder="userId1, userId2"
+          />
+          <KolamTextFieldRow
+            label="PO complete notify user IDs"
+            description="User ID penerima notif complete."
+            value={draft.poWorkflowNotifyCompleteUserIds}
+            onChangeText={value =>
+              setDraftField('poWorkflowNotifyCompleteUserIds', value)
+            }
+            placeholder="userId1, userId2"
+          />
+          <KolamTextFieldRow
+            label="Attendance payroll cutoff day"
+            description="Tanggal cutoff payroll bulanan."
+            value={draft.staffAttendancePayrollCutoffDay}
+            onChangeText={value =>
+              setDraftField('staffAttendancePayrollCutoffDay', value)
+            }
+            placeholder="28"
+          />
+          <KolamTextFieldRow
+            label="Attendance work start"
+            description="Jam mulai kerja default."
+            value={draft.staffAttendanceWorkStartTime}
+            onChangeText={value =>
+              setDraftField('staffAttendanceWorkStartTime', value)
+            }
+            placeholder="08:00"
+          />
+          <KolamTextFieldRow
+            label="Attendance work end"
+            description="Jam selesai kerja default."
+            value={draft.staffAttendanceWorkEndTime}
+            onChangeText={value =>
+              setDraftField('staffAttendanceWorkEndTime', value)
+            }
+            placeholder="17:00"
+          />
+          <KolamTextFieldRow
+            label="Attendance timezone"
+            description="Timezone untuk perhitungan absensi."
+            value={draft.staffAttendanceTimezone}
+            onChangeText={value =>
+              setDraftField('staffAttendanceTimezone', value)
+            }
+            placeholder="Asia/Jakarta"
+          />
+          <KolamTextFieldRow
+            label="Attendance late tolerance"
+            description="Menit toleransi keterlambatan."
+            value={draft.staffAttendanceLateToleranceMinutes}
+            onChangeText={value =>
+              setDraftField('staffAttendanceLateToleranceMinutes', value)
+            }
+            placeholder="15"
+          />
+          <KolamTextFieldRow
+            label="Attendance tier 2 max"
+            description="Batas menit tier keterlambatan kedua."
+            value={draft.staffAttendanceLateTier2MaxMinutes}
+            onChangeText={value =>
+              setDraftField('staffAttendanceLateTier2MaxMinutes', value)
+            }
+            placeholder="120"
+          />
+          <KolamTextFieldRow
+            label="Attendance check-in deadline"
+            description="Batas menit clock-in terlambat."
+            value={draft.staffAttendanceLateCheckInDeadlineMinutes}
+            onChangeText={value =>
+              setDraftField('staffAttendanceLateCheckInDeadlineMinutes', value)
+            }
+            placeholder="240"
+          />
+          <KolamTextFieldRow
+            label="Attendance late fine tier 2"
+            description="Nominal denda tier 2."
+            value={draft.staffAttendanceLateFineTier2}
+            onChangeText={value =>
+              setDraftField('staffAttendanceLateFineTier2', value)
+            }
+            placeholder="50000"
+          />
+          <KolamTextFieldRow
+            label="Attendance late fine tier 3"
+            description="Nominal denda tier 3."
+            value={draft.staffAttendanceLateFineTier3}
+            onChangeText={value =>
+              setDraftField('staffAttendanceLateFineTier3', value)
+            }
+            placeholder="100000"
+          />
+          <KolamTextFieldRow
+            label="Attendance absent divisor"
+            description="Pembagi harian untuk potongan absen."
+            value={draft.staffAttendanceAbsentDailyDivisor}
+            onChangeText={value =>
+              setDraftField('staffAttendanceAbsentDailyDivisor', value)
+            }
+            placeholder="30"
+          />
+          <KolamTextFieldRow
+            label="Attendance map provider"
+            description="Isi openstreetmap atau google."
+            value={draft.staffAttendanceMapProvider}
+            onChangeText={value =>
+              setDraftField('staffAttendanceMapProvider', value)
+            }
+            placeholder="openstreetmap"
+          />
+          <KolamToggleRow
+            label="Attendance require GPS"
+            description="Wajibkan lokasi GPS saat clock-in/out."
+            active={draft.staffAttendanceRequireGps}
+            onPress={() =>
+              !disabled &&
+              setDraftField(
+                'staffAttendanceRequireGps',
+                !draft.staffAttendanceRequireGps,
+              )
+            }
+          />
+          <KolamToggleRow
+            label="Attendance require face"
+            description="Wajibkan face match saat clock-in/out."
+            active={draft.staffAttendanceRequireFace}
+            onPress={() =>
+              !disabled &&
+              setDraftField(
+                'staffAttendanceRequireFace',
+                !draft.staffAttendanceRequireFace,
+              )
+            }
+          />
+          <KolamTextFieldRow
+            label="Attendance face threshold"
+            description="Ambang face match 0.5 sampai 0.99."
+            value={draft.staffAttendanceFaceMatchThreshold}
+            onChangeText={value =>
+              setDraftField('staffAttendanceFaceMatchThreshold', value)
+            }
+            placeholder="0.72"
+          />
+        </>
+      ) : null}
       {showStoreShippingSettings ? (
         <>
           <KolamTextFieldRow
@@ -1413,6 +1755,7 @@ export function KolamSettingsWebConfigSurface({
         </>
       ) : null}
       {showGeneralSettings ||
+      showOperationalSettings ||
       showStoreShippingSettings ||
       showNotificationSettings ? (
         <>
@@ -2441,6 +2784,30 @@ function getCollectionSummary(items: Array<{ isActive?: boolean }>) {
 function getFirstTitles(values: string[]) {
   const visible = values.filter(Boolean).slice(0, 3);
   return visible.length ? visible.join(' | ') : '-';
+}
+
+function getTeamChatRoomLabel(room: KolamTeamChatRoom) {
+  if (room.name) {
+    return room.name;
+  }
+
+  if (room.isGeneral) {
+    return 'General Chat';
+  }
+
+  if (room.isAiRoom) {
+    return 'Chat dengan DARA';
+  }
+
+  return room.category || 'Team Chat';
+}
+
+function getUserPickerLabel(user: KolamUserPickerRow) {
+  return (
+    [user.first_name, user.last_name].filter(Boolean).join(' ').trim() ||
+    user.username ||
+    'Staff'
+  );
 }
 
 const styles = StyleSheet.create({

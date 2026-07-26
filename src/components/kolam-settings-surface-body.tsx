@@ -16,6 +16,7 @@ export function KolamSettingsSurfaceBody({
     controller.activeSettingsTabId === 'umum' ||
     controller.activeSettingsTabId === 'notifikasi' ||
     controller.activeSettingsTabId === 'toko' ||
+    controller.activeSettingsTabId === 'operasional' ||
     controller.activeSettingsTabId === 'plugin' ||
     controller.activeSettingsTabId === 'konten'
   ) {
@@ -33,6 +34,8 @@ export function KolamSettingsSurfaceBody({
         marketplaceLandingSaveStatus={controller.marketplaceLandingSaveStatus}
         marketplaceLandingMessage={controller.marketplaceLandingMessage}
         marketplaceLandingAssetStatus={controller.marketplaceLandingAssetStatus}
+        operationalRooms={controller.operationalRooms}
+        operationalStaffRows={controller.operationalStaffRows}
         onClearMarketplaceLandingNoticeDraft={
           controller.clearMarketplaceLandingNoticeDraft
         }

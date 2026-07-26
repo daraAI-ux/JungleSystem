@@ -249,6 +249,52 @@ describe('KolamSettingsPanel', () => {
     );
   });
 
+  it('renders operational production fields in the Operasional tab', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamSettingsPanel
+          activityEntries={getSyncActivityEntries(seedUnifiedDataset, '10:00')}
+        />,
+      );
+    });
+
+    await ReactTestRenderer.act(async () => {
+      findTabByText(renderer!, 'Operasional').props.onPress();
+    });
+
+    const text = renderText(renderer!);
+
+    expect(text).toEqual(
+      expect.arrayContaining([
+        'Operasional',
+        'Maintenance mode',
+        'Marketplace maintenance',
+        'Google Sign-In webstore',
+        'Google OAuth client ID',
+        'PO receiving room ID',
+        'PO notify on receive',
+        'PO post proof to Team Chat',
+        'PO receive notify user IDs',
+        'Attendance payroll cutoff day',
+        'Attendance require GPS',
+        'Attendance require face',
+        'Storefront enabled',
+        'Save',
+      ]),
+    );
+    expect(text).not.toEqual(
+      expect.arrayContaining([
+        'Company Tagline',
+        'Biteship API key',
+        'Staff OTP login',
+        'Plugin Enclosure',
+        'Marketplace Landing Overview',
+      ]),
+    );
+  });
+
   it('keeps local Web Settings draft intact when live update is rejected', async () => {
     const fetchMock = jest
       .fn()

@@ -254,6 +254,65 @@ export interface KolamStoreOperatingHours {
   };
 }
 
+export interface KolamPoWorkflowSettings {
+  receivingRoomId?: string;
+  notifyOnReceive?: boolean;
+  notifyOnCheck?: boolean;
+  notifyOnPartial?: boolean;
+  postProofToTeamChat?: boolean;
+  partialCompleteRequiresAdmin?: boolean;
+  notifyReceiveUserIds?: string[];
+  notifyCheckUserIds?: string[];
+  notifyCompleteUserIds?: string[];
+}
+
+export interface KolamStaffAttendanceWorkSite {
+  _id?: string;
+  name?: string;
+  latitude?: number;
+  longitude?: number;
+  radiusMeters?: number;
+  active?: boolean;
+}
+
+export interface KolamStaffAttendanceSettings {
+  payrollCutoffDay?: number;
+  workStartTime?: string;
+  workEndTime?: string;
+  serviceCommissionInsideHoursPct?: number;
+  serviceCommissionOutsideHoursPct?: number;
+  timezone?: string;
+  lateToleranceMinutes?: number;
+  lateTier2MaxMinutes?: number;
+  lateCheckInDeadlineMinutes?: number;
+  lateFineTier2?: number;
+  lateFineTier3?: number;
+  absentDailyDivisor?: number;
+  attendanceMapProvider?: 'openstreetmap' | 'google';
+  osmNominatimUrl?: string;
+  osmTileUrl?: string;
+  googleMapsBrowserApiKey?: string;
+  requireGps?: boolean;
+  requireFace?: boolean;
+  faceMatchThreshold?: number;
+  workSites?: KolamStaffAttendanceWorkSite[];
+}
+
+export interface KolamTeamChatRoom {
+  _id: string;
+  name?: string;
+  category?: string;
+  isGeneral?: boolean;
+  isAiRoom?: boolean;
+}
+
+export interface KolamUserPickerRow {
+  _id: string;
+  username?: string;
+  first_name?: string;
+  last_name?: string;
+}
+
 export type KolamPluginSettings = Partial<
   Record<
     KolamPluginConfigKey,
@@ -296,7 +355,10 @@ export interface KolamWebSetting {
   biteshipApiKeyConfigured?: boolean;
   googleMapsBrowserApiKey?: string;
   googleMapsBrowserApiKeyConfigured?: boolean;
+  googleOAuthClientId?: string;
+  webstoreGoogleAuthEnabled?: boolean;
   storeOperatingHours?: KolamStoreOperatingHours;
+  poWorkflow?: KolamPoWorkflowSettings;
   maintenance?: {
     pos?: boolean;
     marketplace?: boolean;
@@ -534,6 +596,9 @@ export interface UpdateKolamWebSettingBody
       | 'biteshipApiKey'
       | 'googleMapsBrowserApiKey'
       | 'storeOperatingHours'
+      | 'googleOAuthClientId'
+      | 'webstoreGoogleAuthEnabled'
+      | 'poWorkflow'
       | 'teamChatGroupCallEnabled'
       | 'daraBusinessEnabled'
       | 'daraToolsEnabled'
@@ -1084,6 +1149,35 @@ export function getKolamActivityLogStats(
 
 export function deleteKolamActivityLogs(): Promise<KolamActivityLogDeleteResponse> {
   return kolamDelete<KolamActivityLogDeleteResponse>('/activity-log');
+}
+
+export async function getKolamStaffAttendanceSettings(): Promise<KolamStaffAttendanceSettings> {
+  const response = await kolamGet<
+    KolamStaffAttendanceSettings | DataResponse<KolamStaffAttendanceSettings>
+  >('/staff-attendance/settings');
+  return unwrapData(response);
+}
+
+export function updateKolamStaffAttendanceSettings(
+  body: KolamStaffAttendanceSettings,
+): Promise<KolamStaffAttendanceSettings> {
+  return kolamPut<KolamStaffAttendanceSettings>(
+    '/staff-attendance/settings',
+    body,
+  );
+}
+
+export async function getKolamTeamChatRooms(): Promise<KolamTeamChatRoom[]> {
+  const response = await kolamGet<
+    DataResponse<KolamTeamChatRoom[]> | { success?: boolean; data?: KolamTeamChatRoom[] }
+  >('/team-chat/rooms');
+  return response.data ?? [];
+}
+
+export function getKolamUserPickerRows(
+  search = '',
+): Promise<KolamUserPickerRow[]> {
+  return kolamGet<KolamUserPickerRow[]>('/auth/users', { search });
 }
 
 function kolamGet<T>(

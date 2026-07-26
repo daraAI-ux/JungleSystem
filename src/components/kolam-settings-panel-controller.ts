@@ -48,6 +48,9 @@ import {
   getKolamCustomerNoticesAdmin,
   getKolamHeroSlidesAdmin,
   getKolamMarketplaceContentAdmin,
+  getKolamStaffAttendanceSettings,
+  getKolamTeamChatRooms,
+  getKolamUserPickerRows,
   getKolamWebSetting,
   getKolamWebSettingVersion,
   getKolamWebSettingVersions,
@@ -65,6 +68,7 @@ import {
   updateKolamBioactiveEcosystem,
   updateKolamCategoryBanner,
   updateKolamRole,
+  updateKolamStaffAttendanceSettings,
   updateKolamCtaSection,
   updateKolamFeaturedCollections,
   updateKolamHeroSlide,
@@ -89,7 +93,10 @@ import {
   type KolamNotificationSoundType,
   type KolamRole,
   type KolamRolePermission,
+  type KolamStaffAttendanceSettings,
   type KolamStoreOperatingWeekday,
+  type KolamTeamChatRoom,
+  type KolamUserPickerRow,
   type KolamWebSetting,
   type KolamWebSettingVersion,
   type KolamWebSettingVersions,
@@ -162,6 +169,31 @@ interface WebSettingDraft {
   maintenancePos: boolean;
   maintenanceMarketplace: boolean;
   livechatOnline: boolean;
+  webstoreGoogleAuthEnabled: boolean;
+  googleOAuthClientId: string;
+  poWorkflowReceivingRoomId: string;
+  poWorkflowNotifyOnReceive: boolean;
+  poWorkflowNotifyOnCheck: boolean;
+  poWorkflowNotifyOnPartial: boolean;
+  poWorkflowPostProofToTeamChat: boolean;
+  poWorkflowPartialCompleteRequiresAdmin: boolean;
+  poWorkflowNotifyReceiveUserIds: string;
+  poWorkflowNotifyCheckUserIds: string;
+  poWorkflowNotifyCompleteUserIds: string;
+  staffAttendancePayrollCutoffDay: string;
+  staffAttendanceWorkStartTime: string;
+  staffAttendanceWorkEndTime: string;
+  staffAttendanceTimezone: string;
+  staffAttendanceLateToleranceMinutes: string;
+  staffAttendanceLateTier2MaxMinutes: string;
+  staffAttendanceLateCheckInDeadlineMinutes: string;
+  staffAttendanceLateFineTier2: string;
+  staffAttendanceLateFineTier3: string;
+  staffAttendanceAbsentDailyDivisor: string;
+  staffAttendanceMapProvider: string;
+  staffAttendanceRequireGps: boolean;
+  staffAttendanceRequireFace: boolean;
+  staffAttendanceFaceMatchThreshold: string;
   biteshipApiKey: string;
   googleMapsBrowserApiKey: string;
   originAddressLine1: string;
@@ -308,6 +340,31 @@ const emptyWebSettingDraft: WebSettingDraft = {
   maintenancePos: false,
   maintenanceMarketplace: false,
   livechatOnline: false,
+  webstoreGoogleAuthEnabled: false,
+  googleOAuthClientId: '',
+  poWorkflowReceivingRoomId: '',
+  poWorkflowNotifyOnReceive: true,
+  poWorkflowNotifyOnCheck: true,
+  poWorkflowNotifyOnPartial: true,
+  poWorkflowPostProofToTeamChat: true,
+  poWorkflowPartialCompleteRequiresAdmin: true,
+  poWorkflowNotifyReceiveUserIds: '',
+  poWorkflowNotifyCheckUserIds: '',
+  poWorkflowNotifyCompleteUserIds: '',
+  staffAttendancePayrollCutoffDay: '28',
+  staffAttendanceWorkStartTime: '08:00',
+  staffAttendanceWorkEndTime: '17:00',
+  staffAttendanceTimezone: 'Asia/Jakarta',
+  staffAttendanceLateToleranceMinutes: '15',
+  staffAttendanceLateTier2MaxMinutes: '120',
+  staffAttendanceLateCheckInDeadlineMinutes: '240',
+  staffAttendanceLateFineTier2: '50000',
+  staffAttendanceLateFineTier3: '100000',
+  staffAttendanceAbsentDailyDivisor: '30',
+  staffAttendanceMapProvider: 'openstreetmap',
+  staffAttendanceRequireGps: true,
+  staffAttendanceRequireFace: false,
+  staffAttendanceFaceMatchThreshold: '0.72',
   biteshipApiKey: '',
   googleMapsBrowserApiKey: '',
   originAddressLine1: '',
@@ -515,6 +572,14 @@ export function useKolamSettingsPanelController(
     useState<Partial<Record<string, MarketplaceLandingAssetStatus>>>({});
   const [webSettingDraft, setWebSettingDraft] =
     useState<WebSettingDraft>(emptyWebSettingDraft);
+  const [operationalRooms, setOperationalRooms] = useState<KolamTeamChatRoom[]>(
+    [],
+  );
+  const [operationalStaffRows, setOperationalStaffRows] = useState<
+    KolamUserPickerRow[]
+  >([]);
+  const [staffAttendanceSettings, setStaffAttendanceSettings] =
+    useState<KolamStaffAttendanceSettings | null>(null);
   const fallbackRoleRows = getSettingsRoleAccessRows();
   const [roles, setRoles] = useState<KolamRole[]>([]);
   const [roleStatus, setRoleStatus] = useState<RoleSaveStatus>('idle');
@@ -685,6 +750,44 @@ export function useKolamSettingsPanelController(
       mounted = false;
     };
   }, [activeSurfaceId]);
+
+  useEffect(() => {
+    if (activeSettingsTabId !== 'operasional') {
+      return;
+    }
+
+    let mounted = true;
+
+    Promise.allSettled([
+      getKolamStaffAttendanceSettings(),
+      getKolamTeamChatRooms(),
+      getKolamUserPickerRows(),
+    ]).then(([attendanceResult, roomsResult, staffResult]) => {
+      if (!mounted) {
+        return;
+      }
+
+      if (attendanceResult.status === 'fulfilled') {
+        setStaffAttendanceSettings(attendanceResult.value);
+        setWebSettingDraft(current => ({
+          ...current,
+          ...createStaffAttendanceDraftFields(attendanceResult.value),
+        }));
+      }
+
+      if (roomsResult.status === 'fulfilled') {
+        setOperationalRooms(roomsResult.value);
+      }
+
+      if (staffResult.status === 'fulfilled') {
+        setOperationalStaffRows(staffResult.value);
+      }
+    });
+
+    return () => {
+      mounted = false;
+    };
+  }, [activeSettingsTabId]);
 
   useEffect(() => {
     if (activeSurfaceId !== 'activity-log') {
@@ -1536,6 +1639,9 @@ export function useKolamSettingsPanelController(
           marketplace: webSettingDraft.maintenanceMarketplace,
         },
         livechatOnline: webSettingDraft.livechatOnline,
+        webstoreGoogleAuthEnabled: webSettingDraft.webstoreGoogleAuthEnabled,
+        googleOAuthClientId: webSettingDraft.googleOAuthClientId.trim(),
+        poWorkflow: createPoWorkflowUpdateBody(webSettingDraft),
         ...(createSecretUpdateField(
           'biteshipApiKey',
           webSettingDraft.biteshipApiKey,
@@ -1619,6 +1725,16 @@ export function useKolamSettingsPanelController(
         ),
       });
 
+      if (activeSettingsTabId === 'operasional') {
+        const attendance = await updateKolamStaffAttendanceSettings(
+          createStaffAttendanceUpdateBody(
+            webSettingDraft,
+            staffAttendanceSettings,
+          ),
+        );
+        setStaffAttendanceSettings(attendance);
+      }
+
       await Promise.all(
         [
           ['kolam', webSettingDraft.versionKolam],
@@ -1652,6 +1768,10 @@ export function useKolamSettingsPanelController(
           pos: webSettingDraft.maintenancePos,
           marketplace: webSettingDraft.maintenanceMarketplace,
         },
+        livechatOnline: webSettingDraft.livechatOnline,
+        webstoreGoogleAuthEnabled: webSettingDraft.webstoreGoogleAuthEnabled,
+        googleOAuthClientId: webSettingDraft.googleOAuthClientId.trim(),
+        poWorkflow: createPoWorkflowUpdateBody(webSettingDraft),
         originAddress: {
           ...(updated.originAddress ?? {}),
           addressLine1: webSettingDraft.originAddressLine1.trim(),
@@ -1933,6 +2053,8 @@ export function useKolamSettingsPanelController(
     marketplaceLandingSaveStatus,
     marketplaceLandingMessage,
     marketplaceLandingAssetStatus,
+    operationalRooms,
+    operationalStaffRows,
     roleRows,
     roles,
     roleDraft,
@@ -2053,6 +2175,7 @@ function createWebSettingDraft(
   const smtp = setting.smtp ?? {};
   const firebase = setting.firebase ?? {};
   const storeOperatingHours = setting.storeOperatingHours ?? {};
+  const poWorkflow = setting.poWorkflow ?? {};
   const weeklyHours = storeOperatingHours.weeklyHours ?? {};
   const mondayHours = weeklyHours.monday ?? {};
   const tuesdayHours = weeklyHours.tuesday ?? {};
@@ -2081,6 +2204,25 @@ function createWebSettingDraft(
     maintenancePos: setting.maintenance?.pos === true,
     maintenanceMarketplace: setting.maintenance?.marketplace === true,
     livechatOnline: setting.livechatOnline === true,
+    webstoreGoogleAuthEnabled: setting.webstoreGoogleAuthEnabled === true,
+    googleOAuthClientId: setting.googleOAuthClientId ?? '',
+    poWorkflowReceivingRoomId: poWorkflow.receivingRoomId ?? '',
+    poWorkflowNotifyOnReceive: poWorkflow.notifyOnReceive !== false,
+    poWorkflowNotifyOnCheck: poWorkflow.notifyOnCheck !== false,
+    poWorkflowNotifyOnPartial: poWorkflow.notifyOnPartial !== false,
+    poWorkflowPostProofToTeamChat: poWorkflow.postProofToTeamChat !== false,
+    poWorkflowPartialCompleteRequiresAdmin:
+      poWorkflow.partialCompleteRequiresAdmin !== false,
+    poWorkflowNotifyReceiveUserIds: (
+      poWorkflow.notifyReceiveUserIds ?? []
+    ).join('\n'),
+    poWorkflowNotifyCheckUserIds: (poWorkflow.notifyCheckUserIds ?? []).join(
+      '\n',
+    ),
+    poWorkflowNotifyCompleteUserIds: (
+      poWorkflow.notifyCompleteUserIds ?? []
+    ).join('\n'),
+    ...createStaffAttendanceDraftFields({}),
     biteshipApiKey: setting.biteshipApiKeyConfigured
       ? maskedSecretPlaceholder
       : setting.biteshipApiKey ?? '',
@@ -2253,6 +2395,102 @@ function createKolamPluginsUpdateBody(
   };
 }
 
+function createPoWorkflowUpdateBody(draft: WebSettingDraft) {
+  return {
+    receivingRoomId: draft.poWorkflowReceivingRoomId.trim(),
+    notifyOnReceive: draft.poWorkflowNotifyOnReceive,
+    notifyOnCheck: draft.poWorkflowNotifyOnCheck,
+    notifyOnPartial: draft.poWorkflowNotifyOnPartial,
+    postProofToTeamChat: draft.poWorkflowPostProofToTeamChat,
+    partialCompleteRequiresAdmin: draft.poWorkflowPartialCompleteRequiresAdmin,
+    notifyReceiveUserIds: parseIdList(draft.poWorkflowNotifyReceiveUserIds),
+    notifyCheckUserIds: parseIdList(draft.poWorkflowNotifyCheckUserIds),
+    notifyCompleteUserIds: parseIdList(draft.poWorkflowNotifyCompleteUserIds),
+  };
+}
+
+function createStaffAttendanceDraftFields(
+  settings: KolamStaffAttendanceSettings,
+) {
+  return {
+    staffAttendancePayrollCutoffDay: String(settings.payrollCutoffDay ?? 28),
+    staffAttendanceWorkStartTime: settings.workStartTime ?? '08:00',
+    staffAttendanceWorkEndTime: settings.workEndTime ?? '17:00',
+    staffAttendanceTimezone: settings.timezone ?? 'Asia/Jakarta',
+    staffAttendanceLateToleranceMinutes: String(
+      settings.lateToleranceMinutes ?? 15,
+    ),
+    staffAttendanceLateTier2MaxMinutes: String(
+      settings.lateTier2MaxMinutes ?? 120,
+    ),
+    staffAttendanceLateCheckInDeadlineMinutes: String(
+      settings.lateCheckInDeadlineMinutes ?? 240,
+    ),
+    staffAttendanceLateFineTier2: String(settings.lateFineTier2 ?? 50000),
+    staffAttendanceLateFineTier3: String(settings.lateFineTier3 ?? 100000),
+    staffAttendanceAbsentDailyDivisor: String(
+      settings.absentDailyDivisor ?? 30,
+    ),
+    staffAttendanceMapProvider:
+      settings.attendanceMapProvider ?? 'openstreetmap',
+    staffAttendanceRequireGps: settings.requireGps !== false,
+    staffAttendanceRequireFace: settings.requireFace === true,
+    staffAttendanceFaceMatchThreshold: String(
+      settings.faceMatchThreshold ?? 0.72,
+    ),
+  } satisfies Partial<WebSettingDraft>;
+}
+
+function createStaffAttendanceUpdateBody(
+  draft: WebSettingDraft,
+  current: KolamStaffAttendanceSettings | null,
+): KolamStaffAttendanceSettings {
+  return {
+    ...(current ?? {}),
+    payrollCutoffDay: parseIntegerOrFallback(
+      draft.staffAttendancePayrollCutoffDay,
+      28,
+    ),
+    workStartTime: draft.staffAttendanceWorkStartTime.trim() || '08:00',
+    workEndTime: draft.staffAttendanceWorkEndTime.trim() || '17:00',
+    timezone: draft.staffAttendanceTimezone.trim() || 'Asia/Jakarta',
+    lateToleranceMinutes: parseIntegerOrFallback(
+      draft.staffAttendanceLateToleranceMinutes,
+      15,
+    ),
+    lateTier2MaxMinutes: parseIntegerOrFallback(
+      draft.staffAttendanceLateTier2MaxMinutes,
+      120,
+    ),
+    lateCheckInDeadlineMinutes: parseIntegerOrFallback(
+      draft.staffAttendanceLateCheckInDeadlineMinutes,
+      240,
+    ),
+    lateFineTier2: parseIntegerOrFallback(
+      draft.staffAttendanceLateFineTier2,
+      50000,
+    ),
+    lateFineTier3: parseIntegerOrFallback(
+      draft.staffAttendanceLateFineTier3,
+      100000,
+    ),
+    absentDailyDivisor: parseIntegerOrFallback(
+      draft.staffAttendanceAbsentDailyDivisor,
+      30,
+    ),
+    attendanceMapProvider:
+      draft.staffAttendanceMapProvider === 'google'
+        ? 'google'
+        : 'openstreetmap',
+    requireGps: draft.staffAttendanceRequireGps,
+    requireFace: draft.staffAttendanceRequireFace,
+    faceMatchThreshold: parseNumberOrFallback(
+      draft.staffAttendanceFaceMatchThreshold,
+      0.72,
+    ),
+  };
+}
+
 function cleanOptionalString(value: string) {
   const trimmed = value.trim();
   return trimmed || undefined;
@@ -2341,6 +2579,10 @@ function parseOptionalNumber(value: string) {
 }
 
 function parseMacAddressList(value: string) {
+  return parseIdList(value);
+}
+
+function parseIdList(value: string) {
   return value
     .split(/[\n,]/)
     .map(item => item.trim())
@@ -2349,6 +2591,11 @@ function parseMacAddressList(value: string) {
 
 function parseIntegerOrFallback(value: string, fallback: number) {
   const parsed = Number.parseInt(value.trim(), 10);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function parseNumberOrFallback(value: string, fallback: number) {
+  const parsed = Number(value.trim());
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
