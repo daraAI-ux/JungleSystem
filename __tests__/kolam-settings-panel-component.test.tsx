@@ -63,11 +63,11 @@ describe('KolamSettingsPanel', () => {
 
     expect(renderText(renderer!)).toEqual(
       expect.arrayContaining([
-        'Settings',
+        'Pengaturan',
         'Umum',
         'Konten Web',
         'Plugin',
-        'Web Settings form',
+        'Form Pengaturan Web',
       ]),
     );
     expect(renderText(renderer!)).not.toEqual(
@@ -127,7 +127,7 @@ describe('KolamSettingsPanel', () => {
       expect.arrayContaining(['Plugin', 'Plugin Enclosure', 'Plugin DARA']),
     );
     expect(renderText(renderer!)).not.toEqual(
-      expect.arrayContaining(['Marketplace Landing Overview']),
+      expect.arrayContaining(['Ringkasan Landing Marketplace']),
     );
 
     await ReactTestRenderer.act(async () => {
@@ -137,8 +137,8 @@ describe('KolamSettingsPanel', () => {
     expect(renderText(renderer!)).toEqual(
       expect.arrayContaining([
         'Konten Web',
-        'Marketplace Landing Overview',
-        'Marketplace Landing Controls',
+        'Ringkasan Landing Marketplace',
+        'Kontrol Landing Marketplace',
       ]),
     );
     expect(renderText(renderer!)).not.toEqual(
@@ -162,55 +162,57 @@ describe('KolamSettingsPanel', () => {
     expect(text).toEqual(
       expect.arrayContaining([
         'Umum',
-        'Kolam Version',
-        'Marketplace Version',
-        'Company Name',
-        'Company Tagline',
-        'Phone',
+        'Versi Kolam',
+        'Versi Marketplace',
+        'Nama Perusahaan',
+        'Tagline Perusahaan',
+        'Telepon',
         'Email',
-        'Address',
+        'Alamat',
         'Facebook',
-        'Staff desktop only',
-        'MAC access',
-        'Allowed MAC addresses',
+        'Khusus desktop staff',
+        'Akses MAC',
+        'Daftar MAC diizinkan',
         'Logo',
       ]),
     );
-    expect(text.indexOf('Kolam Version')).toBeLessThan(
-      text.indexOf('Enclonura Version'),
+    expect(text.indexOf('Versi Kolam')).toBeLessThan(
+      text.indexOf('Versi Enclonura'),
     );
-    expect(text.indexOf('Enclonura Version')).toBeLessThan(
-      text.indexOf('POS Version'),
+    expect(text.indexOf('Versi Enclonura')).toBeLessThan(
+      text.indexOf('Versi POS'),
     );
-    expect(text.indexOf('POS Version')).toBeLessThan(
-      text.indexOf('Marketplace Version'),
+    expect(text.indexOf('Versi POS')).toBeLessThan(
+      text.indexOf('Versi Marketplace'),
     );
-    expect(text.indexOf('Marketplace Version')).toBeLessThan(
+    expect(text.indexOf('Versi Marketplace')).toBeLessThan(
       text.indexOf('Logo'),
     );
-    expect(text.indexOf('Logo')).toBeLessThan(text.indexOf('Company Name'));
-    expect(text.indexOf('Company Name')).toBeLessThan(
-      text.indexOf('Company Tagline'),
+    expect(text.indexOf('Logo')).toBeLessThan(text.indexOf('Nama Perusahaan'));
+    expect(text.indexOf('Nama Perusahaan')).toBeLessThan(
+      text.indexOf('Tagline Perusahaan'),
     );
-    expect(text.indexOf('Company Tagline')).toBeLessThan(text.indexOf('Phone'));
-    expect(text.indexOf('Address')).toBeLessThan(text.indexOf('Facebook'));
+    expect(text.indexOf('Tagline Perusahaan')).toBeLessThan(
+      text.indexOf('Telepon'),
+    );
+    expect(text.indexOf('Alamat')).toBeLessThan(text.indexOf('Facebook'));
     expect(text.indexOf('TikTok')).toBeLessThan(
-      text.indexOf('Staff desktop only'),
+      text.indexOf('Khusus desktop staff'),
     );
-    expect(text.indexOf('Staff redirect URL')).toBeLessThan(
-      text.indexOf('MAC access'),
+    expect(text.indexOf('URL redirect staff')).toBeLessThan(
+      text.indexOf('Akses MAC'),
     );
     expect(text).not.toEqual(
       expect.arrayContaining([
-        'Origin Address',
-        'Marketplace maintenance',
-        'Staff OTP login',
-        'SMTP host',
+        'Alamat asal',
+        'Maintenance marketplace',
+        'OTP login staff',
+        'Host SMTP',
         'Firebase',
         'DARA business',
-        'Notification sound',
+        'Suara notifikasi',
         'Plugin Enclosure',
-        'Marketplace Landing Overview',
+        'Ringkasan Landing Marketplace',
       ]),
     );
   });
@@ -235,25 +237,25 @@ describe('KolamSettingsPanel', () => {
     expect(text).toEqual(
       expect.arrayContaining([
         'Notifikasi',
-        'DARA handoff notify',
-        'Handoff sound',
-        'Team chat group call',
-        'Group call ringtone',
-        'Sales sound',
-        'Notification sound',
-        'Unassigned sound',
+        'Notifikasi handoff DARA',
+        'Suara handoff',
+        'Panggilan grup team chat',
+        'Nada panggilan grup',
+        'Suara penjualan',
+        'Suara notifikasi',
+        'Suara chat belum diassign',
         'Firebase',
-        'SMTP host',
-        'Staff OTP login',
-        'Save',
+        'Host SMTP',
+        'OTP login staff',
+        'Simpan',
       ]),
     );
     expect(text).not.toEqual(
       expect.arrayContaining([
-        'Company Tagline',
-        'MAC access',
+        'Tagline Perusahaan',
+        'Akses MAC',
         'Plugin Enclosure',
-        'Marketplace Landing Overview',
+        'Ringkasan Landing Marketplace',
       ]),
     );
   });
@@ -280,27 +282,27 @@ describe('KolamSettingsPanel', () => {
         'Toko & Pengiriman',
         'Biteship API key',
         'Google Maps browser key',
-        'Origin Address',
-        'Origin City',
-        'Origin Province',
-        'Origin Postal Code',
-        'Origin Latitude',
-        'Origin Longitude',
+        'Alamat asal',
+        'Kota asal',
+        'Provinsi asal',
+        'Kode pos asal',
+        'Latitude asal',
+        'Longitude asal',
         'Map native planned: gunakan latitude/longitude sebagai fallback koordinat produksi.',
-        'Store operating hours',
-        'DARA reply when closed',
-        'Timezone',
+        'Jam operasional toko',
+        'Balasan DARA saat tutup',
+        'Zona waktu',
         'Senin open',
-        'Minggu close at',
-        'Save',
+        'Minggu tutup',
+        'Simpan',
       ]),
     );
     expect(text).not.toEqual(
       expect.arrayContaining([
-        'Company Tagline',
-        'Staff OTP login',
+        'Tagline Perusahaan',
+        'OTP login staff',
         'Plugin Enclosure',
-        'Marketplace Landing Overview',
+        'Ringkasan Landing Marketplace',
       ]),
     );
   });
@@ -325,28 +327,28 @@ describe('KolamSettingsPanel', () => {
     expect(text).toEqual(
       expect.arrayContaining([
         'Operasional',
-        'Maintenance mode',
-        'Marketplace maintenance',
+        'Mode maintenance',
+        'Maintenance marketplace',
         'Google Sign-In webstore',
         'Google OAuth client ID',
-        'PO receiving room ID',
-        'PO notify on receive',
-        'PO post proof to Team Chat',
-        'PO receive notify user IDs',
-        'Attendance payroll cutoff day',
-        'Attendance require GPS',
-        'Attendance require face',
-        'Storefront enabled',
-        'Save',
+        'ID room penerimaan PO',
+        'Notifikasi PO diterima',
+        'Post bukti PO ke Team Chat',
+        'User ID notif PO diterima',
+        'Tanggal cutoff payroll absensi',
+        'Absensi wajib GPS',
+        'Absensi wajib face match',
+        'Storefront aktif',
+        'Simpan',
       ]),
     );
     expect(text).not.toEqual(
       expect.arrayContaining([
-        'Company Tagline',
+        'Tagline Perusahaan',
         'Biteship API key',
-        'Staff OTP login',
+        'OTP login staff',
         'Plugin Enclosure',
-        'Marketplace Landing Overview',
+        'Ringkasan Landing Marketplace',
       ]),
     );
   });
@@ -371,7 +373,7 @@ describe('KolamSettingsPanel', () => {
     expect(text).toEqual(
       expect.arrayContaining([
         'Finansial / Pajak',
-        'Finansial / Pajak Summary',
+        'Ringkasan Finansial / Pajak',
         'Metode pembayaran',
         'Metode nonaktif',
         'Harga jual include PPN',
@@ -379,7 +381,7 @@ describe('KolamSettingsPanel', () => {
         'Overtime calculation',
         'Overtime policy',
         'Enclosure sale commission',
-        'Read-only live summary. Update editor ditunda sampai kontrak endpoint/body final.',
+        'Ringkasan live read-only. Editor update ditunda sampai kontrak endpoint/body final.',
       ]),
     );
     expect(text).not.toEqual(
@@ -387,7 +389,7 @@ describe('KolamSettingsPanel', () => {
         'Google Sign-In webstore',
         'Biteship API key',
         'Plugin Enclosure',
-        'Marketplace Landing Overview',
+        'Ringkasan Landing Marketplace',
       ]),
     );
   });
@@ -412,23 +414,23 @@ describe('KolamSettingsPanel', () => {
     expect(text).toEqual(
       expect.arrayContaining([
         'AI / DARA',
-        'Plugin Chat dan DARA aktif. Kontrol AI siap disimpan ke Web Settings.',
-        'Chat store',
-        'Team Chat DARA reply',
-        'DARA business',
-        'DARA tools',
-        'DARA knowledge / SOP',
-        'DARA handoff notify',
-        'DARA auto report',
-        'DARA fulfillment',
-        'Save',
+        'Plugin Chat dan DARA aktif. Kontrol AI siap disimpan ke Pengaturan Web.',
+        'Chat storefront',
+        'Balasan DARA Team Chat',
+        'Bisnis DARA',
+        'Tools DARA',
+        'Knowledge / SOP DARA',
+        'Notifikasi handoff DARA',
+        'Laporan otomatis DARA',
+        'Fulfillment DARA',
+        'Simpan',
       ]),
     );
     expect(text).not.toEqual(
       expect.arrayContaining([
-        'Company Tagline',
+        'Tagline Perusahaan',
         'Biteship API key',
-        'Marketplace Landing Overview',
+        'Ringkasan Landing Marketplace',
       ]),
     );
   });
@@ -483,9 +485,9 @@ describe('KolamSettingsPanel', () => {
     expect(text).toEqual(
       expect.arrayContaining([
         'AI / DARA',
-        'Disabled state: Plugin Chat nonaktif. Plugin DARA nonaktif. Aktifkan dari tab Plugin untuk mengubah kontrol terkait.',
-        'Chat store',
-        'DARA knowledge / SOP',
+        'State nonaktif: Plugin Chat nonaktif. Plugin DARA nonaktif. Aktifkan dari tab Plugin untuk mengubah kontrol terkait.',
+        'Chat storefront',
+        'Knowledge / SOP DARA',
       ]),
     );
   });

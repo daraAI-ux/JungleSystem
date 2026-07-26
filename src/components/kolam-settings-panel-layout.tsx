@@ -10,7 +10,7 @@ export function KolamSettingsPanelLayout({
   controller: KolamSettingsPanelController;
 }) {
   return (
-    <KolamModulePanel title="Settings" hint="">
+    <KolamModulePanel title="Pengaturan" hint="">
       <KolamMappedControlTabList
         accessibilityLabel="settings native tabs"
         selectedId={controller.activeSettingsTabId}
@@ -19,7 +19,7 @@ export function KolamSettingsPanelLayout({
         getItem={item => ({
           id: item.id,
           label: item.label,
-          flag: item.status === 'planned' ? 'Planned' : undefined,
+          flag: item.status === 'planned' ? 'Direncanakan' : undefined,
         })}
       />
       <KolamSettingsSurfaceFrame controller={controller} />

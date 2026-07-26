@@ -502,7 +502,7 @@ export function KolamSettingsWebConfigSurface({
   const showSyncSettings = activeTabId === 'sync';
   const showKpiSettings = activeTabId === 'kpi';
   const generalFormSections = sections.filter(section => section.id === 'logo');
-  const generalFieldWidth = 300;
+  const settingsFieldWidth = 460;
   const chatPluginEnabled = draft.pluginControls.chat;
   const daraPluginEnabled = draft.pluginControls.dara;
   const kpiPluginEnabled = draft.pluginControls.kpi;
@@ -513,31 +513,31 @@ export function KolamSettingsWebConfigSurface({
   const notificationSoundItems = [
     {
       id: 'notification-sound',
-      label: 'Notification sound',
+      label: 'Suara notifikasi',
       type: 'assigned' as const,
       value: draft.notificationSound,
     },
     {
       id: 'unassigned-notification-sound',
-      label: 'Unassigned sound',
+      label: 'Suara chat belum diassign',
       type: 'unassigned' as const,
       value: draft.unassignedNotificationSound,
     },
     {
       id: 'handoff-notification-sound',
-      label: 'Handoff sound',
+      label: 'Suara handoff',
       type: 'handoff' as const,
       value: draft.handoffNotificationSound,
     },
     {
       id: 'group-call-ringtone',
-      label: 'Group call ringtone',
+      label: 'Nada panggilan grup',
       type: 'group-call' as const,
       value: draft.groupCallRingtone,
     },
     {
       id: 'sales-notification-sound',
-      label: 'Sales sound',
+      label: 'Suara penjualan',
       type: 'sales' as const,
       value: draft.salesNotificationSound,
     },
@@ -560,32 +560,32 @@ export function KolamSettingsWebConfigSurface({
       {showGeneralSettings ? (
         <>
           <KolamTextFieldRow
-            fieldWidth={generalFieldWidth}
-            label="Kolam Version"
+            fieldWidth={settingsFieldWidth}
+            label="Versi Kolam"
             description="Disimpan melalui PUT /websetting/version untuk app kolam."
             value={draft.versionKolam}
             onChangeText={value => setDraftField('versionKolam', value)}
             placeholder="1.0.0"
           />
           <KolamTextFieldRow
-            fieldWidth={generalFieldWidth}
-            label="Enclonura Version"
+            fieldWidth={settingsFieldWidth}
+            label="Versi Enclonura"
             description="Disimpan melalui endpoint version app enclonura."
             value={draft.versionEnclonura}
             onChangeText={value => setDraftField('versionEnclonura', value)}
             placeholder="1.0.0"
           />
           <KolamTextFieldRow
-            fieldWidth={generalFieldWidth}
-            label="POS Version"
+            fieldWidth={settingsFieldWidth}
+            label="Versi POS"
             description="Disimpan melalui endpoint version app pos."
             value={draft.versionPos}
             onChangeText={value => setDraftField('versionPos', value)}
             placeholder="1.0.0"
           />
           <KolamTextFieldRow
-            fieldWidth={generalFieldWidth}
-            label="Marketplace Version"
+            fieldWidth={settingsFieldWidth}
+            label="Versi Marketplace"
             description="Disimpan melalui endpoint version app marketplace."
             value={draft.versionMarketplace}
             onChangeText={value => setDraftField('versionMarketplace', value)}
@@ -593,9 +593,9 @@ export function KolamSettingsWebConfigSurface({
           />
           <KolamSettingsWebFormSections sections={generalFormSections} />
           <KolamTextFieldRow
-            fieldWidth={generalFieldWidth}
-            label="Company Name"
-            description="Company name and storefront branding."
+            fieldWidth={settingsFieldWidth}
+            label="Nama Perusahaan"
+            description="Nama perusahaan dan branding storefront."
             value={draft.companyName || webTitle}
             onChangeText={value => {
               if (disabled) {
@@ -604,26 +604,26 @@ export function KolamSettingsWebConfigSurface({
               setDraftField('companyName', value);
               onWebTitleChange(value);
             }}
-            placeholder="Storefront title"
+            placeholder="Nama perusahaan"
           />
           <KolamTextFieldRow
-            fieldWidth={generalFieldWidth}
-            label="Company Tagline"
+            fieldWidth={settingsFieldWidth}
+            label="Tagline Perusahaan"
             description="Tagline branding yang tampil di storefront."
             value={draft.companyTagline}
             onChangeText={value => setDraftField('companyTagline', value)}
-            placeholder="Your trusted pet store"
+            placeholder="Toko hewan terpercaya"
           />
           <KolamTextFieldRow
-            fieldWidth={generalFieldWidth}
-            label="Phone"
+            fieldWidth={settingsFieldWidth}
+            label="Telepon"
             description="Nomor kontak customer."
             value={draft.phone}
             onChangeText={value => setDraftField('phone', value)}
             placeholder="+62 812-3456-7890"
           />
           <KolamTextFieldRow
-            fieldWidth={generalFieldWidth}
+            fieldWidth={settingsFieldWidth}
             label="Email"
             description="Email kontak customer."
             value={draft.email}
@@ -631,9 +631,11 @@ export function KolamSettingsWebConfigSurface({
             placeholder="info@duniaanura.com"
           />
           <KolamTextFieldRow
-            fieldWidth={generalFieldWidth}
-            label="Address"
+            fieldWidth={settingsFieldWidth}
+            label="Alamat"
             description="Alamat bisnis utama."
+            multiline
+            numberOfLines={4}
             value={draft.address}
             onChangeText={value => setDraftField('address', value)}
             placeholder="Jl. Contoh No. 1"
@@ -665,7 +667,7 @@ export function KolamSettingsWebConfigSurface({
                 }}
               />
               <KolamToggleRow
-                label="Marketplace maintenance"
+                label="Maintenance marketplace"
                 description="Aktifkan mode pemeliharaan untuk Marketplace."
                 active={draft.maintenanceMarketplace}
                 onPress={() =>
@@ -681,8 +683,11 @@ export function KolamSettingsWebConfigSurface({
           {showStoreShippingSettings ? (
             <>
               <KolamTextFieldRow
-                label="Origin Address"
+                fieldWidth={settingsFieldWidth}
+                label="Alamat asal"
                 description="Alamat asal pengiriman."
+                multiline
+                numberOfLines={4}
                 value={draft.originAddressLine1}
                 onChangeText={value =>
                   setDraftField('originAddressLine1', value)
@@ -690,35 +695,40 @@ export function KolamSettingsWebConfigSurface({
                 placeholder="Jl. Taman Ratu Raya No.34"
               />
               <KolamTextFieldRow
-                label="Origin City"
+                fieldWidth={settingsFieldWidth}
+                label="Kota asal"
                 description="Kota asal pengiriman."
                 value={draft.originCity}
                 onChangeText={value => setDraftField('originCity', value)}
                 placeholder="Jakarta Barat"
               />
               <KolamTextFieldRow
-                label="Origin Province"
+                fieldWidth={settingsFieldWidth}
+                label="Provinsi asal"
                 description="Provinsi asal pengiriman."
                 value={draft.originProvince}
                 onChangeText={value => setDraftField('originProvince', value)}
                 placeholder="DKI Jakarta"
               />
               <KolamTextFieldRow
-                label="Origin Postal Code"
+                fieldWidth={settingsFieldWidth}
+                label="Kode pos asal"
                 description="Kode pos asal pengiriman."
                 value={draft.originPostalCode}
                 onChangeText={value => setDraftField('originPostalCode', value)}
                 placeholder="11550"
               />
               <KolamTextFieldRow
-                label="Origin Latitude"
+                fieldWidth={settingsFieldWidth}
+                label="Latitude asal"
                 description="Koordinat latitude origin."
                 value={draft.originLatitude}
                 onChangeText={value => setDraftField('originLatitude', value)}
                 placeholder="-6.1687829"
               />
               <KolamTextFieldRow
-                label="Origin Longitude"
+                fieldWidth={settingsFieldWidth}
+                label="Longitude asal"
                 description="Koordinat longitude origin."
                 value={draft.originLongitude}
                 onChangeText={value => setDraftField('originLongitude', value)}
@@ -727,47 +737,47 @@ export function KolamSettingsWebConfigSurface({
             </>
           ) : null}
           <KolamTextFieldRow
-            fieldWidth={generalFieldWidth}
+            fieldWidth={settingsFieldWidth}
             label="Facebook"
-            description="Link Facebook storefront."
+            description="Tautan Facebook storefront."
             value={draft.facebook}
             onChangeText={value => setDraftField('facebook', value)}
             placeholder="https://facebook.com/..."
           />
           <KolamTextFieldRow
-            fieldWidth={generalFieldWidth}
+            fieldWidth={settingsFieldWidth}
             label="Instagram"
-            description="Link Instagram storefront."
+            description="Tautan Instagram storefront."
             value={draft.instagram}
             onChangeText={value => setDraftField('instagram', value)}
             placeholder="https://instagram.com/..."
           />
           <KolamTextFieldRow
-            fieldWidth={generalFieldWidth}
+            fieldWidth={settingsFieldWidth}
             label="Twitter"
-            description="Link Twitter/X storefront."
+            description="Tautan Twitter/X storefront."
             value={draft.twitter}
             onChangeText={value => setDraftField('twitter', value)}
             placeholder="https://twitter.com/..."
           />
           <KolamTextFieldRow
-            fieldWidth={generalFieldWidth}
+            fieldWidth={settingsFieldWidth}
             label="YouTube"
-            description="Link YouTube storefront."
+            description="Tautan YouTube storefront."
             value={draft.youtube}
             onChangeText={value => setDraftField('youtube', value)}
             placeholder="https://youtube.com/..."
           />
           <KolamTextFieldRow
-            fieldWidth={generalFieldWidth}
+            fieldWidth={settingsFieldWidth}
             label="TikTok"
-            description="Link TikTok storefront."
+            description="Tautan TikTok storefront."
             value={draft.tiktok}
             onChangeText={value => setDraftField('tiktok', value)}
             placeholder="https://tiktok.com/..."
           />
           <KolamToggleRow
-            label="Staff desktop only"
+            label="Khusus desktop staff"
             description="Batasi staff ke aplikasi desktop sesuai policy BE."
             active={draft.staffDesktopOnlyEnabled}
             onPress={() =>
@@ -779,8 +789,8 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamTextFieldRow
-            fieldWidth={generalFieldWidth}
-            label="Staff redirect URL"
+            fieldWidth={settingsFieldWidth}
+            label="URL redirect staff"
             description="URL redirect jika staff desktop-only aktif."
             value={draft.staffDesktopOnlyRedirectUrl}
             onChangeText={value =>
@@ -789,7 +799,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="https://..."
           />
           <KolamToggleRow
-            label="MAC access"
+            label="Akses MAC"
             description="Batasi akses Kolam berdasarkan daftar MAC address."
             active={draft.kolamMacAccessEnabled}
             onPress={() =>
@@ -801,7 +811,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
-            label="Allow web browser"
+            label="Izinkan browser web"
             description="Izinkan browser web tetap masuk saat MAC access aktif."
             active={draft.kolamMacAccessAllowWebBrowser}
             onPress={() =>
@@ -813,7 +823,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
-            label="Bypass super admin"
+            label="Lewati super admin"
             description="Super admin tidak diblokir oleh validasi MAC."
             active={draft.kolamMacAccessBypassSuperAdmin}
             onPress={() =>
@@ -825,9 +835,11 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamTextFieldRow
-            fieldWidth={generalFieldWidth}
-            label="Allowed MAC addresses"
+            fieldWidth={settingsFieldWidth}
+            label="Daftar MAC diizinkan"
             description="Pisahkan dengan koma atau baris baru."
+            multiline
+            numberOfLines={4}
             value={draft.kolamMacAccessAllowedMacAddresses}
             onChangeText={value =>
               setDraftField('kolamMacAccessAllowedMacAddresses', value)
@@ -837,7 +849,7 @@ export function KolamSettingsWebConfigSurface({
           {showNotificationSettings ? (
             <>
               <KolamToggleRow
-                label="Staff OTP login"
+                label="OTP login staff"
                 description="Aktifkan OTP untuk login staff produksi."
                 active={draft.staffOtpLoginEnabled}
                 onPress={() =>
@@ -849,7 +861,7 @@ export function KolamSettingsWebConfigSurface({
                 }
               />
               <KolamTextFieldRow
-                label="OTP expire minutes"
+                label="Menit kedaluwarsa OTP"
                 description="Durasi OTP aktif sebelum kadaluarsa."
                 value={draft.staffOtpExpireMinutes}
                 onChangeText={value =>
@@ -858,7 +870,7 @@ export function KolamSettingsWebConfigSurface({
                 placeholder="10"
               />
               <KolamTextFieldRow
-                label="OTP resend cooldown"
+                label="Jeda kirim ulang OTP"
                 description="Jeda detik sebelum OTP boleh dikirim ulang."
                 value={draft.staffOtpResendCooldownSeconds}
                 onChangeText={value =>
@@ -867,7 +879,7 @@ export function KolamSettingsWebConfigSurface({
                 placeholder="60"
               />
               <KolamTextFieldRow
-                label="OTP max attempts"
+                label="Maks percobaan OTP"
                 description="Batas percobaan OTP sebelum lock."
                 value={draft.staffOtpMaxAttempts}
                 onChangeText={value =>
@@ -876,7 +888,7 @@ export function KolamSettingsWebConfigSurface({
                 placeholder="5"
               />
               <KolamTextFieldRow
-                label="OTP lock minutes"
+                label="Menit lock OTP"
                 description="Durasi lock setelah percobaan OTP melewati batas."
                 value={draft.staffOtpLockMinutes}
                 onChangeText={value =>
@@ -885,8 +897,8 @@ export function KolamSettingsWebConfigSurface({
                 placeholder="15"
               />
               <KolamTextFieldRow
-                label="SMTP host"
-                description="Host SMTP untuk email system."
+                label="Host SMTP"
+                description="Host SMTP untuk email sistem."
                 value={draft.smtpHost}
                 onChangeText={value => setDraftField('smtpHost', value)}
                 placeholder="smtp.gmail.com"
@@ -899,36 +911,36 @@ export function KolamSettingsWebConfigSurface({
                 placeholder="465"
               />
               <KolamTextFieldRow
-                label="SMTP user"
+                label="User SMTP"
                 description="Username SMTP."
                 value={draft.smtpUser}
                 onChangeText={value => setDraftField('smtpUser', value)}
                 placeholder="mailer@duniaanura.com"
               />
               <KolamTextFieldRow
-                label="SMTP password"
+                label="Password SMTP"
                 description="Biarkan ******** agar secret BE tidak dikirim ulang."
                 value={draft.smtpPass}
                 onChangeText={value => setDraftField('smtpPass', value)}
                 placeholder="********"
               />
               <KolamTextFieldRow
-                label="SMTP from email"
-                description="Alamat pengirim email system."
+                label="Email pengirim SMTP"
+                description="Alamat pengirim email sistem."
                 value={draft.smtpFromEmail}
                 onChangeText={value => setDraftField('smtpFromEmail', value)}
                 placeholder="no-reply@duniaanura.com"
               />
               <KolamTextFieldRow
-                label="SMTP from name"
-                description="Nama pengirim email system."
+                label="Nama pengirim SMTP"
+                description="Nama pengirim email sistem."
                 value={draft.smtpFromName}
                 onChangeText={value => setDraftField('smtpFromName', value)}
                 placeholder="Kolam"
               />
               <KolamToggleRow
-                label="SMTP secure"
-                description="Gunakan koneksi SMTP secure."
+                label="SMTP aman"
+                description="Gunakan koneksi SMTP aman."
                 active={draft.smtpSecure}
                 onPress={() =>
                   !disabled && setDraftField('smtpSecure', !draft.smtpSecure)
@@ -944,8 +956,8 @@ export function KolamSettingsWebConfigSurface({
                 }
               />
               <KolamTextFieldRow
-                label="Firebase project ID"
-                description="Project ID Firebase produksi."
+                label="ID project Firebase"
+                description="ID project Firebase produksi."
                 value={draft.firebaseProjectId}
                 onChangeText={value =>
                   setDraftField('firebaseProjectId', value)
@@ -953,8 +965,8 @@ export function KolamSettingsWebConfigSurface({
                 placeholder="dunia-anura"
               />
               <KolamTextFieldRow
-                label="Firebase client email"
-                description="Client email service account."
+                label="Email client Firebase"
+                description="Email client service account."
                 value={draft.firebaseClientEmail}
                 onChangeText={value =>
                   setDraftField('firebaseClientEmail', value)
@@ -962,7 +974,7 @@ export function KolamSettingsWebConfigSurface({
                 placeholder="firebase-adminsdk@..."
               />
               <KolamTextFieldRow
-                label="Firebase private key"
+                label="Private key Firebase"
                 description="Biarkan ******** agar private key BE tidak dikirim ulang."
                 value={draft.firebasePrivateKey}
                 onChangeText={value =>
@@ -975,7 +987,7 @@ export function KolamSettingsWebConfigSurface({
           {showAiSettings ? (
             <>
               <KolamToggleRow
-                label="Chat store"
+                label="Chat storefront"
                 description="Aktifkan chat pada storefront."
                 active={draft.chatStoreEnabled}
                 onPress={() =>
@@ -984,7 +996,7 @@ export function KolamSettingsWebConfigSurface({
                 }
               />
               <KolamToggleRow
-                label="Team chat group call"
+                label="Panggilan grup team chat"
                 description="Aktifkan panggilan grup di team chat."
                 active={draft.teamChatGroupCallEnabled}
                 onPress={() =>
@@ -996,7 +1008,7 @@ export function KolamSettingsWebConfigSurface({
                 }
               />
               <KolamToggleRow
-                label="DARA business"
+                label="Bisnis DARA"
                 description="Aktifkan fitur bisnis DARA."
                 active={draft.daraBusinessEnabled}
                 onPress={() =>
@@ -1008,7 +1020,7 @@ export function KolamSettingsWebConfigSurface({
                 }
               />
               <KolamToggleRow
-                label="DARA tools"
+                label="Tools DARA"
                 description="Aktifkan tool runtime DARA."
                 active={draft.daraToolsEnabled}
                 onPress={() =>
@@ -1017,7 +1029,7 @@ export function KolamSettingsWebConfigSurface({
                 }
               />
               <KolamToggleRow
-                label="DARA knowledge"
+                label="Knowledge DARA"
                 description="Aktifkan knowledge base DARA."
                 active={draft.daraKnowledgeEnabled}
                 onPress={() =>
@@ -1029,7 +1041,7 @@ export function KolamSettingsWebConfigSurface({
                 }
               />
               <KolamToggleRow
-                label="DARA tax"
+                label="Pajak DARA"
                 description="Aktifkan modul pajak DARA."
                 active={draft.daraTaxEnabled}
                 onPress={() =>
@@ -1047,7 +1059,7 @@ export function KolamSettingsWebConfigSurface({
                 }
               />
               <KolamToggleRow
-                label="DARA handoff notify"
+                label="Notifikasi handoff DARA"
                 description="Kirim notifikasi saat handoff customer."
                 active={draft.daraHandoffNotifyEnabled}
                 onPress={() =>
@@ -1059,7 +1071,7 @@ export function KolamSettingsWebConfigSurface({
                 }
               />
               <KolamToggleRow
-                label="DARA insights"
+                label="Insight DARA"
                 description="Aktifkan insight otomatis DARA."
                 active={draft.daraInsightsEnabled}
                 onPress={() =>
@@ -1071,7 +1083,7 @@ export function KolamSettingsWebConfigSurface({
                 }
               />
               <KolamToggleRow
-                label="DARA auto report"
+                label="Laporan otomatis DARA"
                 description="Aktifkan laporan otomatis DARA."
                 active={draft.daraAutoReportEnabled}
                 onPress={() =>
@@ -1083,7 +1095,7 @@ export function KolamSettingsWebConfigSurface({
                 }
               />
               <KolamToggleRow
-                label="DARA image analysis"
+                label="Analisis gambar DARA"
                 description="Aktifkan analisis gambar DARA."
                 active={draft.daraImageAnalysisEnabled}
                 onPress={() =>
@@ -1095,7 +1107,7 @@ export function KolamSettingsWebConfigSurface({
                 }
               />
               <KolamToggleRow
-                label="DARA tax watcher"
+                label="Watcher pajak DARA"
                 description="Pantau regulasi pajak secara otomatis."
                 active={draft.daraTaxRegulationWatcherEnabled}
                 onPress={() =>
@@ -1254,9 +1266,9 @@ export function KolamSettingsWebConfigSurface({
                       />
                       <View style={styles.notificationSoundActions}>
                         <KolamActionControlButton
-                          label="Upload"
+                          label="Unggah"
                           loading={status === 'uploading'}
-                          loadingLabel="Uploading..."
+                          loadingLabel="Mengunggah..."
                           disabled={disabled || busy}
                           onPress={() => onUploadNotificationSound(item.type)}
                         />
@@ -1264,7 +1276,7 @@ export function KolamSettingsWebConfigSurface({
                           label="Reset"
                           intent="danger"
                           loading={status === 'deleting'}
-                          loadingLabel="Resetting..."
+                          loadingLabel="Mereset..."
                           disabled={disabled || busy || !item.value}
                           onPress={() => onDeleteNotificationSound(item.type)}
                         />
@@ -1304,7 +1316,7 @@ export function KolamSettingsWebConfigSurface({
             }}
           />
           <KolamToggleRow
-            label="Marketplace maintenance"
+            label="Maintenance marketplace"
             description="Aktifkan mode pemeliharaan untuk Marketplace."
             active={draft.maintenanceMarketplace}
             onPress={() =>
@@ -1338,16 +1350,16 @@ export function KolamSettingsWebConfigSurface({
             items={[
               {
                 id: 'po-room-options',
-                text: `Team Chat rooms: ${roomSummary}`,
+                text: `Room Team Chat: ${roomSummary}`,
               },
               {
                 id: 'po-staff-options',
-                text: `Staff picker: ${staffSummary}`,
+                text: `Picker staff: ${staffSummary}`,
               },
             ]}
           />
           <KolamTextFieldRow
-            label="PO receiving room ID"
+            label="ID room penerimaan PO"
             description="Room Team Chat untuk alur penerimaan/QC PO."
             value={draft.poWorkflowReceivingRoomId}
             onChangeText={value =>
@@ -1356,7 +1368,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="Team Chat room ID"
           />
           <KolamToggleRow
-            label="PO notify on receive"
+            label="Notifikasi PO diterima"
             description="Kirim notifikasi saat barang PO diterima."
             active={draft.poWorkflowNotifyOnReceive}
             onPress={() =>
@@ -1368,7 +1380,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
-            label="PO notify on check"
+            label="Notifikasi PO check"
             description="Kirim notifikasi saat QC/check PO berjalan."
             active={draft.poWorkflowNotifyOnCheck}
             onPress={() =>
@@ -1380,7 +1392,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
-            label="PO notify on partial"
+            label="Notifikasi PO parsial"
             description="Kirim notifikasi saat PO diterima sebagian."
             active={draft.poWorkflowNotifyOnPartial}
             onPress={() =>
@@ -1392,7 +1404,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
-            label="PO post proof to Team Chat"
+            label="Post bukti PO ke Team Chat"
             description="Posting bukti penerimaan/QC ke room Team Chat."
             active={draft.poWorkflowPostProofToTeamChat}
             onPress={() =>
@@ -1404,7 +1416,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
-            label="PO partial requires admin"
+            label="PO parsial wajib admin"
             description="Penerimaan sebagian wajib approval admin."
             active={draft.poWorkflowPartialCompleteRequiresAdmin}
             onPress={() =>
@@ -1416,7 +1428,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamTextFieldRow
-            label="PO receive notify user IDs"
+            label="User ID notif PO diterima"
             description="User ID penerima notif receive, pisahkan koma atau baris baru."
             value={draft.poWorkflowNotifyReceiveUserIds}
             onChangeText={value =>
@@ -1425,7 +1437,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="userId1, userId2"
           />
           <KolamTextFieldRow
-            label="PO check notify user IDs"
+            label="User ID notif PO check"
             description="User ID penerima notif check/QC."
             value={draft.poWorkflowNotifyCheckUserIds}
             onChangeText={value =>
@@ -1434,7 +1446,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="userId1, userId2"
           />
           <KolamTextFieldRow
-            label="PO complete notify user IDs"
+            label="User ID notif PO selesai"
             description="User ID penerima notif complete."
             value={draft.poWorkflowNotifyCompleteUserIds}
             onChangeText={value =>
@@ -1443,7 +1455,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="userId1, userId2"
           />
           <KolamTextFieldRow
-            label="Attendance payroll cutoff day"
+            label="Tanggal cutoff payroll absensi"
             description="Tanggal cutoff payroll bulanan."
             value={draft.staffAttendancePayrollCutoffDay}
             onChangeText={value =>
@@ -1452,7 +1464,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="28"
           />
           <KolamTextFieldRow
-            label="Attendance work start"
+            label="Jam mulai kerja absensi"
             description="Jam mulai kerja default."
             value={draft.staffAttendanceWorkStartTime}
             onChangeText={value =>
@@ -1461,7 +1473,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="08:00"
           />
           <KolamTextFieldRow
-            label="Attendance work end"
+            label="Jam selesai kerja absensi"
             description="Jam selesai kerja default."
             value={draft.staffAttendanceWorkEndTime}
             onChangeText={value =>
@@ -1470,8 +1482,8 @@ export function KolamSettingsWebConfigSurface({
             placeholder="17:00"
           />
           <KolamTextFieldRow
-            label="Attendance timezone"
-            description="Timezone untuk perhitungan absensi."
+            label="Zona waktu absensi"
+            description="Zona waktu untuk perhitungan absensi."
             value={draft.staffAttendanceTimezone}
             onChangeText={value =>
               setDraftField('staffAttendanceTimezone', value)
@@ -1479,7 +1491,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="Asia/Jakarta"
           />
           <KolamTextFieldRow
-            label="Attendance late tolerance"
+            label="Toleransi terlambat absensi"
             description="Menit toleransi keterlambatan."
             value={draft.staffAttendanceLateToleranceMinutes}
             onChangeText={value =>
@@ -1488,7 +1500,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="15"
           />
           <KolamTextFieldRow
-            label="Attendance tier 2 max"
+            label="Maks tier 2 absensi"
             description="Batas menit tier keterlambatan kedua."
             value={draft.staffAttendanceLateTier2MaxMinutes}
             onChangeText={value =>
@@ -1497,7 +1509,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="120"
           />
           <KolamTextFieldRow
-            label="Attendance check-in deadline"
+            label="Batas check-in absensi"
             description="Batas menit clock-in terlambat."
             value={draft.staffAttendanceLateCheckInDeadlineMinutes}
             onChangeText={value =>
@@ -1506,7 +1518,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="240"
           />
           <KolamTextFieldRow
-            label="Attendance late fine tier 2"
+            label="Denda telat absensi tier 2"
             description="Nominal denda tier 2."
             value={draft.staffAttendanceLateFineTier2}
             onChangeText={value =>
@@ -1515,7 +1527,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="50000"
           />
           <KolamTextFieldRow
-            label="Attendance late fine tier 3"
+            label="Denda telat absensi tier 3"
             description="Nominal denda tier 3."
             value={draft.staffAttendanceLateFineTier3}
             onChangeText={value =>
@@ -1524,7 +1536,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="100000"
           />
           <KolamTextFieldRow
-            label="Attendance absent divisor"
+            label="Pembagi absen"
             description="Pembagi harian untuk potongan absen."
             value={draft.staffAttendanceAbsentDailyDivisor}
             onChangeText={value =>
@@ -1533,7 +1545,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="30"
           />
           <KolamTextFieldRow
-            label="Attendance map provider"
+            label="Provider map absensi"
             description="Isi openstreetmap atau google."
             value={draft.staffAttendanceMapProvider}
             onChangeText={value =>
@@ -1542,7 +1554,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="openstreetmap"
           />
           <KolamToggleRow
-            label="Attendance require GPS"
+            label="Absensi wajib GPS"
             description="Wajibkan lokasi GPS saat clock-in/out."
             active={draft.staffAttendanceRequireGps}
             onPress={() =>
@@ -1554,7 +1566,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
-            label="Attendance require face"
+            label="Absensi wajib face match"
             description="Wajibkan face match saat clock-in/out."
             active={draft.staffAttendanceRequireFace}
             onPress={() =>
@@ -1566,7 +1578,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamTextFieldRow
-            label="Attendance face threshold"
+            label="Threshold face match absensi"
             description="Ambang face match 0.5 sampai 0.99."
             value={draft.staffAttendanceFaceMatchThreshold}
             onChangeText={value =>
@@ -1582,12 +1594,12 @@ export function KolamSettingsWebConfigSurface({
             items={[
               {
                 id: 'financial-title',
-                text: 'Finansial / Pajak Summary',
+                text: 'Ringkasan Finansial / Pajak',
                 style: styles.marketplaceOverviewTitle,
               },
               {
                 id: 'financial-status',
-                text: 'Read-only live summary. Update editor ditunda sampai kontrak endpoint/body final.',
+                text: 'Ringkasan live read-only. Editor update ditunda sampai kontrak endpoint/body final.',
                 style: styles.marketplaceOverviewMeta,
               },
             ]}
@@ -1911,7 +1923,7 @@ export function KolamSettingsWebConfigSurface({
                       id: 'region-empty',
                       text:
                         regionSyncStatus === 'loading'
-                          ? 'Loading region...'
+                          ? 'Memuat wilayah...'
                           : 'Belum ada region untuk filter ini.',
                       style: styles.marketplaceOverviewMeta,
                     },
@@ -1930,8 +1942,8 @@ export function KolamSettingsWebConfigSurface({
                 id: 'ai-plugin-gate',
                 text:
                   chatPluginEnabled && daraPluginEnabled
-                    ? 'Plugin Chat dan DARA aktif. Kontrol AI siap disimpan ke Web Settings.'
-                    : `Disabled state: ${
+                    ? 'Plugin Chat dan DARA aktif. Kontrol AI siap disimpan ke Pengaturan Web.'
+                    : `State nonaktif: ${
                         chatPluginEnabled ? '' : 'Plugin Chat nonaktif. '
                       }${
                         daraPluginEnabled ? '' : 'Plugin DARA nonaktif. '
@@ -1940,7 +1952,7 @@ export function KolamSettingsWebConfigSurface({
             ]}
           />
           <KolamToggleRow
-            label="Chat store"
+            label="Chat storefront"
             description="Aktifkan chat pada storefront."
             active={draft.chatStoreEnabled}
             onPress={() =>
@@ -1949,7 +1961,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
-            label="Team chat group call"
+            label="Panggilan grup team chat"
             description="Aktifkan panggilan grup di team chat."
             active={draft.teamChatGroupCallEnabled}
             onPress={() =>
@@ -1961,7 +1973,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
-            label="Team Chat DARA reply"
+            label="Balasan DARA Team Chat"
             description="Aktifkan balasan @dara di Team Chat."
             active={draft.teamChatDaraReplyEnabled}
             onPress={() =>
@@ -1973,7 +1985,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
-            label="DARA business"
+            label="Bisnis DARA"
             description="Aktifkan fitur bisnis DARA."
             active={draft.daraBusinessEnabled}
             onPress={() =>
@@ -1982,7 +1994,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
-            label="DARA tools"
+            label="Tools DARA"
             description="Aktifkan tool runtime DARA."
             active={draft.daraToolsEnabled}
             onPress={() =>
@@ -1991,7 +2003,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
-            label="DARA knowledge / SOP"
+            label="Knowledge / SOP DARA"
             description="Aktifkan knowledge base dan SOP lookup DARA."
             active={draft.daraKnowledgeEnabled}
             onPress={() =>
@@ -2000,7 +2012,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
-            label="DARA handoff notify"
+            label="Notifikasi handoff DARA"
             description="Kirim notifikasi saat handoff customer."
             active={draft.daraHandoffNotifyEnabled}
             onPress={() =>
@@ -2012,7 +2024,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
-            label="DARA insights"
+            label="Insight DARA"
             description="Aktifkan insight otomatis DARA."
             active={draft.daraInsightsEnabled}
             onPress={() =>
@@ -2021,7 +2033,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
-            label="DARA auto report"
+            label="Laporan otomatis DARA"
             description="Aktifkan laporan otomatis DARA."
             active={draft.daraAutoReportEnabled}
             onPress={() =>
@@ -2033,7 +2045,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
-            label="DARA image analysis"
+            label="Analisis gambar DARA"
             description="Aktifkan analisis gambar DARA."
             active={draft.daraImageAnalysisEnabled}
             onPress={() =>
@@ -2045,7 +2057,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
-            label="DARA tax"
+            label="Pajak DARA"
             description="Aktifkan modul pajak DARA."
             active={draft.daraTaxEnabled}
             onPress={() =>
@@ -2063,7 +2075,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
-            label="DARA tax watcher"
+            label="Watcher pajak DARA"
             description="Pantau regulasi pajak secara otomatis."
             active={draft.daraTaxRegulationWatcherEnabled}
             onPress={() =>
@@ -2075,7 +2087,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
-            label="DARA tax compliance"
+            label="Kepatuhan pajak DARA"
             description="Aktifkan job kepatuhan pajak."
             active={draft.daraTaxComplianceJobEnabled}
             onPress={() =>
@@ -2087,7 +2099,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
-            label="DARA tax narrative"
+            label="Narasi pajak DARA"
             description="Aktifkan narasi LLM untuk pajak."
             active={draft.daraTaxLlmNarrativeEnabled}
             onPress={() =>
@@ -2099,7 +2111,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
-            label="DARA fulfillment"
+            label="Fulfillment DARA"
             description="Aktifkan fulfillment webstore DARA."
             active={draft.daraWebstoreFulfillmentEnabled}
             onPress={() =>
@@ -2111,7 +2123,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
-            label="DARA staff ops"
+            label="Operasional staff DARA"
             description="Aktifkan notifikasi operasional staff."
             active={draft.daraStaffOpsNotifyEnabled}
             onPress={() =>
@@ -2123,7 +2135,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
-            label="DARA staff WhatsApp"
+            label="WhatsApp staff DARA"
             description="Aktifkan notifikasi WhatsApp staff."
             active={draft.daraStaffWaNotifyEnabled}
             onPress={() =>
@@ -2135,7 +2147,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
-            label="DARA olshop notify"
+            label="Notifikasi olshop DARA"
             description="Aktifkan notifikasi customer olshop."
             active={draft.daraOlshopCustomerNotifyEnabled}
             onPress={() =>
@@ -2147,7 +2159,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
-            label="DARA owner digest"
+            label="Digest owner DARA"
             description="Aktifkan ringkasan owner."
             active={draft.daraOwnerDigestEnabled}
             onPress={() =>
@@ -2159,7 +2171,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
-            label="DARA owner WhatsApp"
+            label="WhatsApp owner DARA"
             description="Kirim digest owner melalui WhatsApp."
             active={draft.daraOwnerDigestWaEnabled}
             onPress={() =>
@@ -2171,7 +2183,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
-            label="DARA owner FCM"
+            label="FCM owner DARA"
             description="Kirim digest owner melalui FCM."
             active={draft.daraOwnerDigestFcmEnabled}
             onPress={() =>
@@ -2183,7 +2195,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
-            label="DARA urgent FCM"
+            label="FCM urgent DARA"
             description="Kirim notifikasi urgent owner melalui FCM."
             active={draft.daraOwnerFcmUrgentEnabled}
             onPress={() =>
@@ -2215,42 +2227,50 @@ export function KolamSettingsWebConfigSurface({
             placeholder="********"
           />
           <KolamTextFieldRow
-            label="Origin Address"
+            fieldWidth={settingsFieldWidth}
+            label="Alamat asal"
             description="Alamat asal pengiriman."
+            multiline
+            numberOfLines={4}
             value={draft.originAddressLine1}
             onChangeText={value => setDraftField('originAddressLine1', value)}
             placeholder="Jl. Taman Ratu Raya No.34"
           />
           <KolamTextFieldRow
-            label="Origin City"
+            fieldWidth={settingsFieldWidth}
+            label="Kota asal"
             description="Kota asal pengiriman."
             value={draft.originCity}
             onChangeText={value => setDraftField('originCity', value)}
             placeholder="Jakarta Barat"
           />
           <KolamTextFieldRow
-            label="Origin Province"
+            fieldWidth={settingsFieldWidth}
+            label="Provinsi asal"
             description="Provinsi asal pengiriman."
             value={draft.originProvince}
             onChangeText={value => setDraftField('originProvince', value)}
             placeholder="DKI Jakarta"
           />
           <KolamTextFieldRow
-            label="Origin Postal Code"
+            fieldWidth={settingsFieldWidth}
+            label="Kode pos asal"
             description="Kode pos asal pengiriman."
             value={draft.originPostalCode}
             onChangeText={value => setDraftField('originPostalCode', value)}
             placeholder="11550"
           />
           <KolamTextFieldRow
-            label="Origin Latitude"
+            fieldWidth={settingsFieldWidth}
+            label="Latitude asal"
             description="Koordinat latitude origin."
             value={draft.originLatitude}
             onChangeText={value => setDraftField('originLatitude', value)}
             placeholder="-6.1687829"
           />
           <KolamTextFieldRow
-            label="Origin Longitude"
+            fieldWidth={settingsFieldWidth}
+            label="Longitude asal"
             description="Koordinat longitude origin."
             value={draft.originLongitude}
             onChangeText={value => setDraftField('originLongitude', value)}
@@ -2265,7 +2285,7 @@ export function KolamSettingsWebConfigSurface({
             ]}
           />
           <KolamToggleRow
-            label="Store operating hours"
+            label="Jam operasional toko"
             description="Aktifkan jadwal toko untuk fulfillment dan DARA."
             active={draft.storeOperatingHoursEnabled}
             onPress={() =>
@@ -2277,7 +2297,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
-            label="DARA reply when closed"
+            label="Balasan DARA saat tutup"
             description="DARA membalas status tutup berdasarkan jam operasional."
             active={draft.storeOperatingHoursDaraReplyWhenClosed}
             onPress={() =>
@@ -2289,8 +2309,8 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamTextFieldRow
-            label="Timezone"
-            description="Timezone jadwal toko."
+            label="Zona waktu"
+            description="Zona waktu jadwal toko."
             value={draft.storeOperatingHoursTimezone}
             onChangeText={value =>
               setDraftField('storeOperatingHoursTimezone', value)
@@ -2313,7 +2333,7 @@ export function KolamSettingsWebConfigSurface({
                   />
                   <View style={styles.storeHoursTimeGrid}>
                     <KolamTextFieldRow
-                      label={`${row.label} open at`}
+                      label={`${row.label} buka`}
                       description="Jam buka format HH:mm."
                       value={String(draft[row.openAtField] ?? '')}
                       onChangeText={value =>
@@ -2322,7 +2342,7 @@ export function KolamSettingsWebConfigSurface({
                       placeholder="09:00"
                     />
                     <KolamTextFieldRow
-                      label={`${row.label} close at`}
+                      label={`${row.label} tutup`}
                       description="Jam tutup format HH:mm."
                       value={String(draft[row.closeAtField] ?? '')}
                       onChangeText={value =>
@@ -2340,7 +2360,7 @@ export function KolamSettingsWebConfigSurface({
       {showNotificationSettings ? (
         <>
           <KolamToggleRow
-            label="DARA handoff notify"
+            label="Notifikasi handoff DARA"
             description="Kirim notifikasi saat handoff customer."
             active={draft.daraHandoffNotifyEnabled}
             onPress={() =>
@@ -2352,7 +2372,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
-            label="Team chat group call"
+            label="Panggilan grup team chat"
             description="Aktifkan panggilan grup di team chat."
             active={draft.teamChatGroupCallEnabled}
             onPress={() =>
@@ -2364,7 +2384,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
-            label="Staff OTP login"
+            label="OTP login staff"
             description="Aktifkan OTP untuk login staff produksi."
             active={draft.staffOtpLoginEnabled}
             onPress={() =>
@@ -2373,7 +2393,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamTextFieldRow
-            label="OTP expire minutes"
+            label="Menit kedaluwarsa OTP"
             description="Durasi OTP aktif sebelum kadaluarsa."
             value={draft.staffOtpExpireMinutes}
             onChangeText={value =>
@@ -2382,7 +2402,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="10"
           />
           <KolamTextFieldRow
-            label="OTP resend cooldown"
+            label="Jeda kirim ulang OTP"
             description="Jeda detik sebelum OTP boleh dikirim ulang."
             value={draft.staffOtpResendCooldownSeconds}
             onChangeText={value =>
@@ -2391,22 +2411,22 @@ export function KolamSettingsWebConfigSurface({
             placeholder="60"
           />
           <KolamTextFieldRow
-            label="OTP max attempts"
+            label="Maks percobaan OTP"
             description="Batas percobaan OTP sebelum lock."
             value={draft.staffOtpMaxAttempts}
             onChangeText={value => setDraftField('staffOtpMaxAttempts', value)}
             placeholder="5"
           />
           <KolamTextFieldRow
-            label="OTP lock minutes"
+            label="Menit lock OTP"
             description="Durasi lock setelah percobaan OTP melewati batas."
             value={draft.staffOtpLockMinutes}
             onChangeText={value => setDraftField('staffOtpLockMinutes', value)}
             placeholder="15"
           />
           <KolamTextFieldRow
-            label="SMTP host"
-            description="Host SMTP untuk email system."
+            label="Host SMTP"
+            description="Host SMTP untuk email sistem."
             value={draft.smtpHost}
             onChangeText={value => setDraftField('smtpHost', value)}
             placeholder="smtp.gmail.com"
@@ -2419,36 +2439,36 @@ export function KolamSettingsWebConfigSurface({
             placeholder="465"
           />
           <KolamTextFieldRow
-            label="SMTP user"
+            label="User SMTP"
             description="Username SMTP."
             value={draft.smtpUser}
             onChangeText={value => setDraftField('smtpUser', value)}
             placeholder="mailer@duniaanura.com"
           />
           <KolamTextFieldRow
-            label="SMTP password"
+            label="Password SMTP"
             description="Biarkan ******** agar secret BE tidak dikirim ulang."
             value={draft.smtpPass}
             onChangeText={value => setDraftField('smtpPass', value)}
             placeholder="********"
           />
           <KolamTextFieldRow
-            label="SMTP from email"
-            description="Alamat pengirim email system."
+            label="Email pengirim SMTP"
+            description="Alamat pengirim email sistem."
             value={draft.smtpFromEmail}
             onChangeText={value => setDraftField('smtpFromEmail', value)}
             placeholder="no-reply@duniaanura.com"
           />
           <KolamTextFieldRow
-            label="SMTP from name"
-            description="Nama pengirim email system."
+            label="Nama pengirim SMTP"
+            description="Nama pengirim email sistem."
             value={draft.smtpFromName}
             onChangeText={value => setDraftField('smtpFromName', value)}
             placeholder="Kolam"
           />
           <KolamToggleRow
-            label="SMTP secure"
-            description="Gunakan koneksi SMTP secure."
+            label="SMTP aman"
+            description="Gunakan koneksi SMTP aman."
             active={draft.smtpSecure}
             onPress={() =>
               !disabled && setDraftField('smtpSecure', !draft.smtpSecure)
@@ -2464,21 +2484,21 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamTextFieldRow
-            label="Firebase project ID"
-            description="Project ID Firebase produksi."
+            label="ID project Firebase"
+            description="ID project Firebase produksi."
             value={draft.firebaseProjectId}
             onChangeText={value => setDraftField('firebaseProjectId', value)}
             placeholder="dunia-anura"
           />
           <KolamTextFieldRow
-            label="Firebase client email"
-            description="Client email service account."
+            label="Email client Firebase"
+            description="Email client service account."
             value={draft.firebaseClientEmail}
             onChangeText={value => setDraftField('firebaseClientEmail', value)}
             placeholder="firebase-adminsdk@..."
           />
           <KolamTextFieldRow
-            label="Firebase private key"
+            label="Private key Firebase"
             description="Biarkan ******** agar private key BE tidak dikirim ulang."
             value={draft.firebasePrivateKey}
             onChangeText={value => setDraftField('firebasePrivateKey', value)}
@@ -2508,9 +2528,9 @@ export function KolamSettingsWebConfigSurface({
                   />
                   <View style={styles.notificationSoundActions}>
                     <KolamActionControlButton
-                      label="Upload"
+                      label="Unggah"
                       loading={status === 'uploading'}
-                      loadingLabel="Uploading..."
+                      loadingLabel="Mengunggah..."
                       disabled={disabled || busy}
                       onPress={() => onUploadNotificationSound(item.type)}
                     />
@@ -2518,7 +2538,7 @@ export function KolamSettingsWebConfigSurface({
                       label="Reset"
                       intent="danger"
                       loading={status === 'deleting'}
-                      loadingLabel="Resetting..."
+                      loadingLabel="Mereset..."
                       disabled={disabled || busy || !item.value}
                       onPress={() => onDeleteNotificationSound(item.type)}
                     />
@@ -2537,9 +2557,9 @@ export function KolamSettingsWebConfigSurface({
       showSitemapSettings ? (
         <>
           <KolamActionControlButton
-            label="Save"
+            label="Simpan"
             loading={saveStatus === 'saving'}
-            loadingLabel="Saving..."
+            loadingLabel="Menyimpan..."
             intent="primary"
             onPress={disabled ? undefined : onSave}
           />
@@ -2636,9 +2656,9 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamActionControlButton
-            label="Save"
+            label="Simpan"
             loading={saveStatus === 'saving'}
-            loadingLabel="Saving..."
+            loadingLabel="Menyimpan..."
             intent="primary"
             onPress={disabled ? undefined : onSave}
           />
@@ -2764,7 +2784,7 @@ function WebContentLauncherPanel({
             id: 'meta',
             text:
               status === 'loading'
-                ? 'Loading Blog, Blog Topics, dan Marketplace Landing...'
+                ? 'Memuat Blog, Topik Blog, dan Landing Marketplace...'
                 : status === 'error'
                 ? message
                 : 'Launcher produksi untuk Landing Marketplace, Blog, dan Blog Topics.',
@@ -2871,7 +2891,7 @@ function WebContentRowsPanel({
           label: blog.title,
           value: blog.status,
           detail: `${blog.slug} | ${
-            blog.topics?.map(topic => topic.name).join(', ') || 'No topic'
+            blog.topics?.map(topic => topic.name).join(', ') || 'Tanpa topik'
           } | views ${blog.viewCount ?? 0}`,
         }))
       : topics.map(topic => ({
@@ -2894,7 +2914,7 @@ function WebContentRowsPanel({
           },
           {
             id: 'meta',
-            text: 'Read-only live overview. Editor penuh mengikuti kontrak FE lama Blog/Blog Topics.',
+            text: 'Ringkasan live read-only. Editor penuh mengikuti kontrak FE lama Blog/Blog Topics.',
             style: styles.marketplaceOverviewMeta,
           },
         ]}
@@ -2974,18 +2994,18 @@ function KpiSettingsPanel({
 }) {
   const busy = status === 'loading' || status === 'saving';
   const ruleRows = [
-    ['task.base', 'Task base points'],
-    ['task.on_time', 'Task on-time'],
-    ['task.qc', 'Task QC'],
-    ['task.proof', 'Task proof'],
-    ['task.no_proof', 'Task no proof'],
-    ['complaint', 'Complaint points'],
+    ['task.base', 'Poin dasar task'],
+    ['task.on_time', 'Task tepat waktu'],
+    ['task.qc', 'QC task'],
+    ['task.proof', 'Bukti task'],
+    ['task.no_proof', 'Task tanpa bukti'],
+    ['complaint', 'Poin komplain'],
     ['task.noshow', 'Task no-show'],
-    ['attendance.radius', 'Attendance radius'],
-    ['task.rating', 'Customer rating'],
-    ['chat.fast_reply', 'Chat fast reply'],
-    ['chat.late_reply', 'Chat late reply'],
-    ['chat.no_reply', 'Chat no reply'],
+    ['attendance.radius', 'Radius absensi'],
+    ['task.rating', 'Rating customer'],
+    ['chat.fast_reply', 'Balasan chat cepat'],
+    ['chat.late_reply', 'Balasan chat terlambat'],
+    ['chat.no_reply', 'Chat tidak dibalas'],
   ] as const;
 
   return (
@@ -2995,14 +3015,14 @@ function KpiSettingsPanel({
           items={[
             {
               id: 'kpi-title',
-              text: 'KPI Staff Plugin Settings',
+              text: 'Pengaturan Plugin KPI Staff',
               style: styles.marketplaceOverviewTitle,
             },
             {
               id: 'kpi-gate',
               text: pluginEnabled
-                ? 'Plugin KPI aktif. Settings dibaca dari /kpi/settings.'
-                : 'Plugin KPI nonaktif. Aktifkan dari tab Plugin untuk mengubah settings.',
+                ? 'Plugin KPI aktif. Pengaturan dibaca dari /kpi/settings.'
+                : 'Plugin KPI nonaktif. Aktifkan dari tab Plugin untuk mengubah pengaturan.',
               style: pluginEnabled
                 ? styles.marketplaceOverviewMeta
                 : styles.marketplaceOverviewError,
@@ -3043,24 +3063,24 @@ function KpiSettingsPanel({
       <View style={styles.storeHoursTimeGrid}>
         <KolamTextFieldRow
           fieldWidth={120}
-          label="Task low"
-          description="Base points low priority."
+          label="Task rendah"
+          description="Poin dasar prioritas rendah."
           value={draft.taskBaseLow}
           onChangeText={value => onSetField('taskBaseLow', value)}
           placeholder="5"
         />
         <KolamTextFieldRow
           fieldWidth={120}
-          label="Task medium"
-          description="Base points medium priority."
+          label="Task sedang"
+          description="Poin dasar prioritas sedang."
           value={draft.taskBaseMedium}
           onChangeText={value => onSetField('taskBaseMedium', value)}
           placeholder="10"
         />
         <KolamTextFieldRow
           fieldWidth={120}
-          label="Task high"
-          description="Base points high priority."
+          label="Task tinggi"
+          description="Poin dasar prioritas tinggi."
           value={draft.taskBaseHigh}
           onChangeText={value => onSetField('taskBaseHigh', value)}
           placeholder="20"
@@ -3068,14 +3088,14 @@ function KpiSettingsPanel({
         <KolamTextFieldRow
           fieldWidth={120}
           label="Task urgent"
-          description="Base points urgent priority."
+          description="Poin dasar prioritas urgent."
           value={draft.taskBaseUrgent}
           onChangeText={value => onSetField('taskBaseUrgent', value)}
           placeholder="30"
         />
         <KolamTextFieldRow
           fieldWidth={120}
-          label="Assisted ratio"
+          label="Rasio bantuan"
           description="Ratio points untuk assistedBy."
           value={draft.assistedByRatio}
           onChangeText={value => onSetField('assistedByRatio', value)}
@@ -3085,39 +3105,39 @@ function KpiSettingsPanel({
       <View style={styles.storeHoursTimeGrid}>
         <KolamTextFieldRow
           fieldWidth={130}
-          label="Fast reply minutes"
-          description="Batas fast reply chat."
+          label="Menit balasan cepat"
+          description="Batas balasan cepat chat."
           value={draft.chatFastReplyMinutes}
           onChangeText={value => onSetField('chatFastReplyMinutes', value)}
           placeholder="5"
         />
         <KolamTextFieldRow
           fieldWidth={130}
-          label="Fast reply points"
-          description="Poin fast reply."
+          label="Poin balasan cepat"
+          description="Poin balasan cepat."
           value={draft.chatFastReplyPoints}
           onChangeText={value => onSetField('chatFastReplyPoints', value)}
           placeholder="5"
         />
         <KolamTextFieldRow
           fieldWidth={130}
-          label="Late reply minutes"
-          description="Batas late reply chat."
+          label="Menit balasan telat"
+          description="Batas balasan telat chat."
           value={draft.chatLateReplyMinutes}
           onChangeText={value => onSetField('chatLateReplyMinutes', value)}
           placeholder="14"
         />
         <KolamTextFieldRow
           fieldWidth={130}
-          label="Late reply points"
-          description="Poin late reply."
+          label="Poin balasan telat"
+          description="Poin balasan telat."
           value={draft.chatLateReplyPoints}
           onChangeText={value => onSetField('chatLateReplyPoints', value)}
           placeholder="-10"
         />
         <KolamTextFieldRow
           fieldWidth={130}
-          label="No reply points"
+          label="Poin tanpa balasan"
           description="Penalty chat tidak dibalas."
           value={draft.chatNoReplyPoints}
           onChangeText={value => onSetField('chatNoReplyPoints', value)}
@@ -3127,31 +3147,31 @@ function KpiSettingsPanel({
       <View style={styles.storeHoursTimeGrid}>
         <KolamTextFieldRow
           fieldWidth={120}
-          label="Complaint light"
-          description="Penalty complaint light."
+          label="Komplain ringan"
+          description="Penalti komplain ringan."
           value={draft.complaintLight}
           onChangeText={value => onSetField('complaintLight', value)}
           placeholder="-10"
         />
         <KolamTextFieldRow
           fieldWidth={120}
-          label="Complaint valid"
-          description="Penalty complaint valid."
+          label="Komplain valid"
+          description="Penalti komplain valid."
           value={draft.complaintValid}
           onChangeText={value => onSetField('complaintValid', value)}
           placeholder="-25"
         />
         <KolamTextFieldRow
           fieldWidth={120}
-          label="Complaint severe"
-          description="Penalty complaint severe."
+          label="Komplain berat"
+          description="Penalti komplain berat."
           value={draft.complaintSevere}
           onChangeText={value => onSetField('complaintSevere', value)}
           placeholder="-50"
         />
         <KolamTextFieldRow
           fieldWidth={160}
-          label="Attendance outside radius"
+          label="Absensi di luar radius"
           description="Penalty absensi di luar radius."
           value={draft.attendanceOutsideRadius}
           onChangeText={value => onSetField('attendanceOutsideRadius', value)}
@@ -3161,7 +3181,7 @@ function KpiSettingsPanel({
       <View style={styles.storeHoursTimeGrid}>
         <KolamTextFieldRow
           fieldWidth={120}
-          label="On-time before"
+          label="Tepat waktu sebelum"
           description="Poin sebelum deadline."
           value={draft.onTimeBeforeDeadline}
           onChangeText={value => onSetField('onTimeBeforeDeadline', value)}
@@ -3169,24 +3189,24 @@ function KpiSettingsPanel({
         />
         <KolamTextFieldRow
           fieldWidth={120}
-          label="Far early pct"
-          description="Persen threshold far early."
+          label="Persen terlalu awal"
+          description="Persen threshold terlalu awal."
           value={draft.onTimeFarEarlyPct}
           onChangeText={value => onSetField('onTimeFarEarlyPct', value)}
           placeholder="50"
         />
         <KolamTextFieldRow
           fieldWidth={120}
-          label="Far early bonus"
-          description="Bonus far early."
+          label="Bonus terlalu awal"
+          description="Bonus terlalu awal."
           value={draft.onTimeFarEarlyBonus}
           onChangeText={value => onSetField('onTimeFarEarlyBonus', value)}
           placeholder="10"
         />
         <KolamTextFieldRow
           fieldWidth={120}
-          label="Late task"
-          description="Penalty task late."
+          label="Task telat"
+          description="Penalti task telat."
           value={draft.onTimeLate}
           onChangeText={value => onSetField('onTimeLate', value)}
           placeholder="-5"
@@ -3195,7 +3215,7 @@ function KpiSettingsPanel({
       <View style={styles.storeHoursTimeGrid}>
         <KolamTextFieldRow
           fieldWidth={120}
-          label="QC pass first"
+          label="QC lulus pertama"
           description="Poin QC pass pertama."
           value={draft.qcPassFirst}
           onChangeText={value => onSetField('qcPassFirst', value)}
@@ -3211,7 +3231,7 @@ function KpiSettingsPanel({
         />
         <KolamTextFieldRow
           fieldWidth={120}
-          label="QC revision many"
+          label="QC revisi banyak"
           description="Penalty banyak revisi."
           value={draft.qcRevisionMany}
           onChangeText={value => onSetField('qcRevisionMany', value)}
@@ -3219,7 +3239,7 @@ function KpiSettingsPanel({
         />
         <KolamTextFieldRow
           fieldWidth={120}
-          label="Proof complete"
+          label="Bukti lengkap"
           description="Poin bukti task lengkap."
           value={draft.proofComplete}
           onChangeText={value => onSetField('proofComplete', value)}
@@ -3227,7 +3247,7 @@ function KpiSettingsPanel({
         />
         <KolamTextFieldRow
           fieldWidth={120}
-          label="No proof"
+          label="Tanpa bukti"
           description="Penalty bukti hilang."
           value={draft.noProofMissing}
           onChangeText={value => onSetField('noProofMissing', value)}
@@ -3235,7 +3255,7 @@ function KpiSettingsPanel({
         />
         <KolamTextFieldRow
           fieldWidth={150}
-          label="No-show task"
+          label="Task no-show"
           description="Penalty reassign/cancel."
           value={draft.noShowReassignOrCancel}
           onChangeText={value => onSetField('noShowReassignOrCancel', value)}
@@ -3243,14 +3263,14 @@ function KpiSettingsPanel({
         />
       </View>
       <KolamTextFieldRow
-        label="Monthly levels"
+        label="Level bulanan"
         description="Satu baris per level: id|label|min|max. Kosongkan max untuk open ended."
         value={draft.levelsText}
         onChangeText={value => onSetField('levelsText', value)}
         placeholder="gold|Gold|501|1000"
       />
       <KolamTextFieldRow
-        label="Monthly rewards"
+        label="Reward bulanan"
         description="Satu baris per reward: levelId|amountRp."
         value={draft.rewardsText}
         onChangeText={value => onSetField('rewardsText', value)}
@@ -3261,7 +3281,7 @@ function KpiSettingsPanel({
           items={[
             {
               id: 'rules-title',
-              text: 'Enabled Rules',
+              text: 'Rule Aktif',
               style: styles.marketplaceOverviewLabel,
             },
           ]}
@@ -3270,7 +3290,7 @@ function KpiSettingsPanel({
           <KolamToggleRow
             key={key}
             label={label}
-            description={`Rule key ${key}`}
+            description={`Key rule ${key}`}
             active={draft.enabledRules[key] !== false}
             onPress={() =>
               !disabled && onToggleRule(key, draft.enabledRules[key] === false)
@@ -3283,7 +3303,7 @@ function KpiSettingsPanel({
           items={[
             {
               id: 'preview-title',
-              text: 'DARA Weekly Announcement Preview',
+              text: 'Preview Pengumuman Mingguan DARA',
               style: styles.marketplaceOverviewLabel,
             },
             {
@@ -3296,17 +3316,17 @@ function KpiSettingsPanel({
         <View style={styles.notificationSoundActions}>
           <KolamActionControlButton
             disabled={disabled || busy}
-            label="Refresh Preview"
+            label="Refresh preview"
             loading={status === 'loading'}
-            loadingLabel="Loading..."
+            loadingLabel="Memuat..."
             onPress={onRefreshPreview}
           />
           <KolamActionControlButton
             disabled={disabled || busy}
             intent="primary"
-            label="Save KPI"
+            label="Simpan KPI"
             loading={status === 'saving'}
-            loadingLabel="Saving..."
+            loadingLabel="Menyimpan..."
             onPress={onSave}
           />
         </View>
@@ -3400,7 +3420,7 @@ function MarketplaceLandingOverviewPanel({
   const rows = [
     {
       id: 'hero-slides',
-      label: 'Hero slides',
+      label: 'Hero slide',
       value: getCollectionSummary(overview.heroSlides),
       detail: getFirstTitles(
         overview.heroSlides.map(item => item.title || item.image),
@@ -3408,7 +3428,7 @@ function MarketplaceLandingOverviewPanel({
     },
     {
       id: 'category-banners',
-      label: 'Category banners',
+      label: 'Banner kategori',
       value: getCollectionSummary(overview.categoryBanners),
       detail: getFirstTitles(
         overview.categoryBanners.map(item => item.categorySlug || item.image),
@@ -3416,21 +3436,20 @@ function MarketplaceLandingOverviewPanel({
     },
     {
       id: 'cta',
-      label: 'CTA section',
-      value: overview.ctaSection?.isActive === false ? 'Inactive' : 'Active',
+      label: 'Bagian CTA',
+      value: overview.ctaSection?.isActive === false ? 'Nonaktif' : 'Aktif',
       detail: overview.ctaSection?.title || '-',
     },
     {
       id: 'youtube',
-      label: 'YouTube section',
-      value:
-        overview.youtubeSection?.isActive === false ? 'Inactive' : 'Active',
+      label: 'Bagian YouTube',
+      value: overview.youtubeSection?.isActive === false ? 'Nonaktif' : 'Aktif',
       detail:
         overview.youtubeSection?.link || overview.youtubeSection?.title || '-',
     },
     {
       id: 'announcement-banners',
-      label: 'Announcement banners',
+      label: 'Banner pengumuman',
       value: getCollectionSummary(overview.announcementBanners),
       detail: getFirstTitles(
         overview.announcementBanners.map(item => item.link || item.image),
@@ -3438,7 +3457,7 @@ function MarketplaceLandingOverviewPanel({
     },
     {
       id: 'customer-notices',
-      label: 'Customer notices',
+      label: 'Notice customer',
       value: getCollectionSummary(overview.customerNotices),
       detail: getFirstTitles(
         overview.customerNotices.map(item => item.title || item.key),
@@ -3446,13 +3465,13 @@ function MarketplaceLandingOverviewPanel({
     },
     {
       id: 'featured-collections',
-      label: 'Featured collections',
+      label: 'Koleksi unggulan',
       value: getCollectionSummary(featuredCollections),
       detail: getFirstTitles(featuredCollections.map(item => item.title)),
     },
     {
       id: 'bioactive-ecosystem',
-      label: 'Bioactive ecosystem',
+      label: 'Ekosistem bioaktif',
       value: getCollectionSummary(bioactiveSteps),
       detail: getFirstTitles(bioactiveSteps.map(item => item.key)),
     },
@@ -3464,17 +3483,17 @@ function MarketplaceLandingOverviewPanel({
         items={[
           {
             id: 'title',
-            text: 'Marketplace Landing Overview',
+            text: 'Ringkasan Landing Marketplace',
             style: styles.marketplaceOverviewTitle,
           },
           {
             id: 'status',
             text:
               overview.status === 'loading'
-                ? 'Loading live marketplace landing data...'
+                ? 'Memuat data live landing marketplace...'
                 : overview.status === 'error'
                 ? overview.message
-                : 'Read-only live data from Marketplace Landing endpoints.',
+                : 'Data live read-only dari endpoint Landing Marketplace.',
             style:
               overview.status === 'error'
                 ? styles.marketplaceOverviewError
@@ -3517,12 +3536,12 @@ function MarketplaceLandingOverviewPanel({
           items={[
             {
               id: 'asset-title',
-              text: 'Marketplace Asset Uploads',
+              text: 'Unggah Aset Marketplace',
               style: styles.marketplaceOverviewLabel,
             },
             {
               id: 'asset-meta',
-              text: 'Replace, reorder, and delete existing live marketplace landing items.',
+              text: 'Ganti, urutkan ulang, dan hapus item live landing marketplace.',
               style: styles.marketplaceOverviewMeta,
             },
           ]}
@@ -3531,28 +3550,28 @@ function MarketplaceLandingOverviewPanel({
           <MarketplaceAssetButton
             disabled={disabled}
             id="websetting-logo"
-            label="Upload logo"
+            label="Unggah logo"
             onPress={onUploadLogo}
             status={assetStatus}
           />
           <MarketplaceAssetButton
             disabled={disabled}
             id="dara-avatar"
-            label="Upload DARA avatar"
+            label="Unggah avatar DARA"
             onPress={onUploadDaraAvatar}
             status={assetStatus}
           />
           <MarketplaceAssetButton
             disabled={disabled}
             id="cta-background"
-            label="Upload CTA background"
+            label="Unggah background CTA"
             onPress={onUploadCtaBackground}
             status={assetStatus}
           />
           <MarketplaceAssetButton
             disabled={disabled}
             id="youtube-background"
-            label="Upload YouTube background"
+            label="Unggah background YouTube"
             onPress={onUploadYoutubeBackground}
             status={assetStatus}
           />
@@ -3560,7 +3579,7 @@ function MarketplaceLandingOverviewPanel({
         {activeTabId === 'hero' ? (
           <MarketplaceAssetRows
             disabled={disabled}
-            emptyText="No hero slides available for image replacement."
+            emptyText="Belum ada hero slide untuk penggantian gambar."
             getId={item => `hero:${item._id}`}
             getLabel={item => item.title || item._id}
             items={overview.heroSlides}
@@ -3568,13 +3587,13 @@ function MarketplaceLandingOverviewPanel({
             onMove={onMoveHeroSlide}
             onUpload={onUploadHeroImage}
             status={assetStatus}
-            title="Hero slide images"
+            title="Gambar hero slide"
           />
         ) : null}
         {activeTabId === 'category' ? (
           <MarketplaceAssetRows
             disabled={disabled}
-            emptyText="No category banners available for image replacement."
+            emptyText="Belum ada banner kategori untuk penggantian gambar."
             getId={item => `category:${item._id}`}
             getLabel={item => item.categorySlug || item._id}
             items={overview.categoryBanners}
@@ -3582,13 +3601,13 @@ function MarketplaceLandingOverviewPanel({
             onMove={onMoveCategoryBanner}
             onUpload={onUploadCategoryBannerImage}
             status={assetStatus}
-            title="Category banner images"
+            title="Gambar banner kategori"
           />
         ) : null}
         {activeTabId === 'announcement' ? (
           <MarketplaceAssetRows
             disabled={disabled}
-            emptyText="No announcement banners available for image replacement."
+            emptyText="Belum ada banner pengumuman untuk penggantian gambar."
             getId={item => `announcement:${item._id}`}
             getLabel={item => item.link || item._id}
             items={overview.announcementBanners}
@@ -3596,14 +3615,14 @@ function MarketplaceLandingOverviewPanel({
             onMove={onMoveAnnouncementBanner}
             onUpload={onUploadAnnouncementImage}
             status={assetStatus}
-            title="Announcement banner images"
+            title="Gambar banner pengumuman"
           />
         ) : null}
         {activeTabId === 'featured' ? (
           <>
             <MarketplaceIndexedAssetRows
               disabled={disabled}
-              emptyText="No featured collections available for image upload."
+              emptyText="Belum ada koleksi unggulan untuk unggah gambar."
               getId={index => `featured:${index}`}
               getLabel={item => item.title || '-'}
               items={featuredCollections}
@@ -3611,11 +3630,11 @@ function MarketplaceLandingOverviewPanel({
               onMove={onMoveFeaturedCollection}
               onUpload={onUploadFeaturedCollectionImage}
               status={assetStatus}
-              title="Featured collection images"
+              title="Gambar koleksi unggulan"
             />
             <MarketplaceIndexedAssetRows
               disabled={disabled}
-              emptyText="No bioactive steps available for image upload."
+              emptyText="Belum ada step bioaktif untuk unggah gambar."
               getId={index => `bioactive:${index}`}
               getLabel={item => item.key || '-'}
               items={bioactiveSteps}
@@ -3623,7 +3642,7 @@ function MarketplaceLandingOverviewPanel({
               onMove={onMoveBioactiveStep}
               onUpload={onUploadBioactiveStepImage}
               status={assetStatus}
-              title="Bioactive ecosystem images"
+              title="Gambar ekosistem bioaktif"
             />
           </>
         ) : null}
@@ -3683,21 +3702,21 @@ function MarketplaceAssetRows<Item>({
                 <MarketplaceAssetButton
                   disabled={disabled || index === 0}
                   id={id}
-                  label="Move up"
+                  label="Naik"
                   onPress={() => onMove(item, -1)}
                   status={status}
                 />
                 <MarketplaceAssetButton
                   disabled={disabled || index === items.length - 1}
                   id={id}
-                  label="Move down"
+                  label="Turun"
                   onPress={() => onMove(item, 1)}
                   status={status}
                 />
                 <MarketplaceAssetButton
                   disabled={disabled}
                   id={id}
-                  label="Upload image"
+                  label="Unggah gambar"
                   onPress={() => onUpload(item)}
                   status={status}
                 />
@@ -3705,7 +3724,7 @@ function MarketplaceAssetRows<Item>({
                   disabled={disabled}
                   id={id}
                   intent="danger"
-                  label="Delete"
+                  label="Hapus"
                   onPress={() => onDelete(item)}
                   status={status}
                 />
@@ -3779,21 +3798,21 @@ function MarketplaceIndexedAssetRows<Item>({
                 <MarketplaceAssetButton
                   disabled={disabled || index === 0}
                   id={id}
-                  label="Move up"
+                  label="Naik"
                   onPress={() => onMove(index, -1)}
                   status={status}
                 />
                 <MarketplaceAssetButton
                   disabled={disabled || index === items.length - 1}
                   id={id}
-                  label="Move down"
+                  label="Turun"
                   onPress={() => onMove(index, 1)}
                   status={status}
                 />
                 <MarketplaceAssetButton
                   disabled={disabled}
                   id={id}
-                  label="Upload image"
+                  label="Unggah gambar"
                   onPress={() => onUpload(index)}
                   status={status}
                 />
@@ -3801,7 +3820,7 @@ function MarketplaceIndexedAssetRows<Item>({
                   disabled={disabled}
                   id={id}
                   intent="danger"
-                  label="Delete"
+                  label="Hapus"
                   onPress={() => onDelete(index)}
                   status={status}
                 />
@@ -3862,14 +3881,14 @@ function getMarketplaceAssetLoadingLabel(
   status: 'idle' | 'uploading' | 'deleting' | 'reordering' | undefined,
 ) {
   if (status === 'deleting') {
-    return 'Deleting...';
+    return 'Menghapus...';
   }
 
   if (status === 'reordering') {
-    return 'Moving...';
+    return 'Memindahkan...';
   }
 
-  return 'Uploading...';
+  return 'Mengunggah...';
 }
 
 function MarketplaceLandingControlsPanel({
@@ -3936,12 +3955,12 @@ function MarketplaceLandingControlsPanel({
         items={[
           {
             id: 'title',
-            text: 'Marketplace Landing Controls',
+            text: 'Kontrol Landing Marketplace',
             style: styles.marketplaceOverviewTitle,
           },
           {
             id: 'meta',
-            text: 'Text and toggle controls only. Asset upload and reorder stay out of Fase 8C.',
+            text: 'Kontrol teks dan toggle. Unggah aset dan reorder tetap memakai kontrak Fase 8D/8E.',
             style: styles.marketplaceOverviewMeta,
           },
         ]}
@@ -3952,41 +3971,41 @@ function MarketplaceLandingControlsPanel({
             items={[
               {
                 id: 'cta-title',
-                text: 'CTA Section',
+                text: 'Bagian CTA',
                 style: styles.marketplaceOverviewLabel,
               },
             ]}
           />
           <KolamTextFieldRow
-            label="CTA title"
+            label="Judul CTA"
             description="Judul section CTA marketplace."
             value={ctaDraft.title}
             onChangeText={value => setCtaDraftField('title', value)}
             placeholder="Jelajahi Dunia Species"
           />
           <KolamTextFieldRow
-            label="CTA description"
+            label="Deskripsi CTA"
             description="Deskripsi singkat CTA marketplace."
             value={ctaDraft.description}
             onChangeText={value => setCtaDraftField('description', value)}
             placeholder="Temukan koleksi lengkap..."
           />
           <KolamTextFieldRow
-            label="CTA button text"
+            label="Teks tombol CTA"
             description="Label tombol CTA."
             value={ctaDraft.buttonText}
             onChangeText={value => setCtaDraftField('buttonText', value)}
             placeholder="View All Species"
           />
           <KolamTextFieldRow
-            label="CTA button link"
+            label="Link tombol CTA"
             description="Target URL tombol CTA."
             value={ctaDraft.buttonLink}
             onChangeText={value => setCtaDraftField('buttonLink', value)}
             placeholder="/species"
           />
           <KolamToggleRow
-            label="CTA active"
+            label="CTA aktif"
             description="Tampilkan CTA di marketplace landing."
             active={ctaDraft.isActive}
             onPress={() =>
@@ -3995,9 +4014,9 @@ function MarketplaceLandingControlsPanel({
           />
           <KolamActionControlButton
             disabled={disabled}
-            label="Save CTA"
+            label="Simpan CTA"
             loading={saveStatus === 'saving'}
-            loadingLabel="Saving..."
+            loadingLabel="Menyimpan..."
             intent="primary"
             onPress={onSaveCta}
           />
@@ -4009,34 +4028,34 @@ function MarketplaceLandingControlsPanel({
             items={[
               {
                 id: 'youtube-title',
-                text: 'YouTube Section',
+                text: 'Bagian YouTube',
                 style: styles.marketplaceOverviewLabel,
               },
             ]}
           />
           <KolamTextFieldRow
-            label="YouTube link"
+            label="Link YouTube"
             description="URL channel atau video YouTube."
             value={youtubeDraft.link}
             onChangeText={value => setYoutubeDraftField('link', value)}
             placeholder="https://www.youtube.com/@DuniaAnura"
           />
           <KolamTextFieldRow
-            label="YouTube title"
+            label="Judul YouTube"
             description="Judul section YouTube."
             value={youtubeDraft.title}
             onChangeText={value => setYoutubeDraftField('title', value)}
             placeholder="Dunia Anura"
           />
           <KolamTextFieldRow
-            label="YouTube subtitle"
+            label="Subtitle YouTube"
             description="Subtitle section YouTube."
             value={youtubeDraft.subtitle}
             onChangeText={value => setYoutubeDraftField('subtitle', value)}
             placeholder="YouTube"
           />
           <KolamToggleRow
-            label="YouTube active"
+            label="YouTube aktif"
             description="Tampilkan YouTube section di marketplace landing."
             active={youtubeDraft.isActive}
             onPress={() =>
@@ -4046,9 +4065,9 @@ function MarketplaceLandingControlsPanel({
           />
           <KolamActionControlButton
             disabled={disabled}
-            label="Save YouTube"
+            label="Simpan YouTube"
             loading={saveStatus === 'saving'}
-            loadingLabel="Saving..."
+            loadingLabel="Menyimpan..."
             intent="primary"
             onPress={onSaveYoutube}
           />
@@ -4060,7 +4079,7 @@ function MarketplaceLandingControlsPanel({
             items={[
               {
                 id: 'notice-title',
-                text: 'Customer Notices',
+                text: 'Notice Customer',
                 style: styles.marketplaceOverviewLabel,
               },
             ]}
@@ -4093,7 +4112,7 @@ function MarketplaceLandingControlsPanel({
                     <KolamActionControlButton
                       disabled={disabled}
                       intent="danger"
-                      label="Delete"
+                      label="Hapus"
                       onPress={() => onDeleteNotice(notice.key)}
                     />
                   </View>
@@ -4104,7 +4123,7 @@ function MarketplaceLandingControlsPanel({
                 items={[
                   {
                     id: 'empty',
-                    text: 'No customer notices configured.',
+                    text: 'Belum ada notice customer.',
                     style: styles.marketplaceOverviewMeta,
                   },
                 ]}
@@ -4112,42 +4131,42 @@ function MarketplaceLandingControlsPanel({
             )}
           </View>
           <KolamTextFieldRow
-            label="Notice key"
+            label="Key notice"
             description="Key unik notice. Untuk edit, pilih notice dari list."
             value={noticeDraft.key}
             onChangeText={value => setNoticeDraftField('key', value)}
             placeholder="enclonura-migration-2026"
           />
           <KolamTextFieldRow
-            label="Notice title"
+            label="Judul notice"
             description="Judul singkat notice."
             value={noticeDraft.title}
             onChangeText={value => setNoticeDraftField('title', value)}
             placeholder="Enclonura pindah ke Dunia Anura"
           />
           <KolamTextFieldRow
-            label="Notice message"
+            label="Pesan notice"
             description="Pesan teks untuk customer marketplace."
             value={noticeDraft.message}
             onChangeText={value => setNoticeDraftField('message', value)}
             placeholder="Kelola kandang, Freyr, dan layanan..."
           />
           <KolamTextFieldRow
-            label="Notice CTA URL"
+            label="URL CTA notice"
             description="URL tombol opsional."
             value={noticeDraft.ctaUrl}
             onChangeText={value => setNoticeDraftField('ctaUrl', value)}
             placeholder="/dashboard"
           />
           <KolamTextFieldRow
-            label="Notice CTA label"
+            label="Label CTA notice"
             description="Label tombol opsional."
             value={noticeDraft.ctaLabel}
             onChangeText={value => setNoticeDraftField('ctaLabel', value)}
             placeholder="Buka dashboard"
           />
           <KolamToggleRow
-            label="Notice active"
+            label="Notice aktif"
             description="Aktifkan notice untuk customer."
             active={noticeDraft.isActive}
             onPress={() =>
@@ -4156,7 +4175,7 @@ function MarketplaceLandingControlsPanel({
             }
           />
           <KolamToggleRow
-            label="Show on home"
+            label="Tampilkan di home"
             description="Tampilkan notice di homepage marketplace."
             active={noticeDraft.showOnHome}
             onPress={() =>
@@ -4165,7 +4184,7 @@ function MarketplaceLandingControlsPanel({
             }
           />
           <KolamToggleRow
-            label="Show on dashboard"
+            label="Tampilkan di dashboard"
             description="Tampilkan notice di dashboard customer."
             active={noticeDraft.showOnDashboard}
             onPress={() =>
@@ -4179,15 +4198,15 @@ function MarketplaceLandingControlsPanel({
           <View style={styles.notificationSoundActions}>
             <KolamActionControlButton
               disabled={disabled || !noticeCanSave}
-              label="Save Notice"
+              label="Simpan notice"
               loading={saveStatus === 'saving'}
-              loadingLabel="Saving..."
+              loadingLabel="Menyimpan..."
               intent="primary"
               onPress={onSaveNotice}
             />
             <KolamActionControlButton
               disabled={disabled}
-              label="New Notice"
+              label="Notice baru"
               onPress={onClearNoticeDraft}
             />
           </View>
@@ -4213,7 +4232,7 @@ function MarketplaceLandingControlsPanel({
 
 function getCollectionSummary(items: Array<{ isActive?: boolean }>) {
   const active = items.filter(item => item.isActive !== false).length;
-  return `${active}/${items.length} active`;
+  return `${active}/${items.length} aktif`;
 }
 
 function getFirstTitles(values: string[]) {

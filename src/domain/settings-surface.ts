@@ -1986,29 +1986,30 @@ export function getSettingsWebConfigFields(
     'Kolam Dunia Anura',
   );
   const storefrontEnabled =
-    webSetting?.livechatOnline === true ? 'Enabled' : 'Off';
-  const maintenancePos = webSetting?.maintenance?.pos === true ? 'On' : 'Off';
+    webSetting?.livechatOnline === true ? 'Aktif' : 'Nonaktif';
+  const maintenancePos =
+    webSetting?.maintenance?.pos === true ? 'Aktif' : 'Nonaktif';
 
   return [
     {
       id: 'storefront-title',
-      label: 'Storefront title',
+      label: 'Judul storefront',
       value: companyName,
-      description: 'Display name used by the public storefront and header.',
+      description: 'Nama tampil untuk storefront publik dan header.',
       control: 'text',
     },
     {
       id: 'storefront-status',
-      label: 'Storefront enabled',
+      label: 'Storefront aktif',
       value: storefrontEnabled,
-      description: 'Native preview for /pengaturan storefront status.',
+      description: 'Preview native untuk status storefront /pengaturan.',
       control: 'toggle',
     },
     {
       id: 'maintenance-mode',
-      label: 'Maintenance mode',
+      label: 'Mode maintenance',
       value: maintenancePos,
-      description: 'Operational toggle for maintenance banner/state review.',
+      description: 'Toggle operasional untuk review banner/status maintenance.',
       control: 'toggle',
     },
   ];
@@ -2080,15 +2081,15 @@ export function getSettingsWebFormSections(
     {
       id: 'logo',
       title: 'Logo',
-      description: 'Upload logo/photo for WebSetting',
+      description: 'Unggah logo/foto untuk WebSetting',
       layout: 'single',
       fields: [
         {
           id: 'logo-upload',
           label: 'Logo',
-          placeholder: 'Upload Logo',
+          placeholder: 'Unggah Logo',
           control: 'file',
-          value: displayString(webSetting?.logo, 'No logo configured'),
+          value: displayString(webSetting?.logo, 'Logo belum diatur'),
           required: false,
         },
       ],

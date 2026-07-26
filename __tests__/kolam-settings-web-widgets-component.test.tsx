@@ -41,7 +41,7 @@ describe('settings web widgets', () => {
     });
 
     expect(renderText(renderer!)).toEqual(
-      expect.arrayContaining(['Web Settings form', 'Save']),
+      expect.arrayContaining(['Form Pengaturan Web', 'Simpan']),
     );
   });
 
@@ -268,22 +268,15 @@ describe('settings web widgets', () => {
         'Landing Marketplace',
         'Blog',
         'Blog Topics',
-        'Hero Slides 1',
-        'Featured Collections 1',
-        'Category Banners 0',
-        'CTA Section On',
-        'YouTube Section On',
-        'Announcement Banner 0',
-        'Customer Notices 0',
-        'Marketplace Landing Overview',
-        'Marketplace Asset Uploads',
-        'Upload logo',
-        'Upload DARA avatar',
-        'Hero slides',
-        '1/1 active',
-        'Move up',
-        'Move down',
-        'Delete',
+        'Ringkasan Landing Marketplace',
+        'Unggah Aset Marketplace',
+        'Unggah logo',
+        'Unggah avatar DARA',
+        'Hero slide',
+        '1/1 aktif',
+        'Naik',
+        'Turun',
+        'Hapus',
       ]),
     );
   });

@@ -1,9 +1,11 @@
-﻿import type {TextInputProps} from 'react-native';
+﻿import type { TextInputProps } from 'react-native';
 
 export interface KolamTextFieldRowProps {
   description: string;
   fieldWidth?: number;
   label: string;
+  multiline?: boolean;
+  numberOfLines?: number;
   onChangeText: TextInputProps['onChangeText'];
   placeholder?: string;
   value: string;

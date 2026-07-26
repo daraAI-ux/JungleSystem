@@ -1,11 +1,11 @@
-﻿import {StyleSheet, type ViewStyle} from 'react-native';
-import {getKolamFormVisualContract} from '../domain/kolam-form';
-import {kolamVisualTokens as V} from '../domain/kolam-visual';
+﻿import { StyleSheet, type ViewStyle } from 'react-native';
+import { getKolamFormVisualContract } from '../domain/kolam-form';
+import { kolamVisualTokens as V } from '../domain/kolam-visual';
 
 const KOLAM_FORM_VISUAL = getKolamFormVisualContract();
 const INPUT_SHADOW = {
   shadowColor: V.colors.fg,
-  shadowOffset: {width: 0, height: V.surface.cardShadow.offsetY},
+  shadowOffset: { width: 0, height: V.surface.cardShadow.offsetY },
   shadowOpacity: V.surface.cardShadow.opacity,
   shadowRadius: V.surface.cardShadow.radius,
   elevation: V.surface.cardShadow.elevation,
@@ -51,5 +51,9 @@ export const textFieldRowStyles = StyleSheet.create({
     fontSize: KOLAM_FORM_VISUAL.input.fontSize,
     fontWeight: '800',
     ...INPUT_SHADOW,
+  },
+  multilineInput: {
+    minHeight: 96,
+    paddingVertical: 10,
   },
 });

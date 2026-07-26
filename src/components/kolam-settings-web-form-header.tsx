@@ -1,8 +1,8 @@
 import React from 'react';
-import {KolamActionControlButton} from './kolam-action-control-button';
-import {KolamCopyStack} from './kolam-copy-stack';
-import {KolamHeaderFrame} from './kolam-header-frame';
-import {settingsWebFormStyles as styles} from './kolam-settings-web-form-styles';
+import { KolamActionControlButton } from './kolam-action-control-button';
+import { KolamCopyStack } from './kolam-copy-stack';
+import { KolamHeaderFrame } from './kolam-header-frame';
+import { settingsWebFormStyles as styles } from './kolam-settings-web-form-styles';
 
 export function KolamSettingsWebFormHeader() {
   return (
@@ -11,17 +11,17 @@ export function KolamSettingsWebFormHeader() {
         items={[
           {
             id: 'title',
-            text: 'Web Settings form',
+            text: 'Form Pengaturan Web',
             style: styles.settingsWebFormTitle,
           },
           {
             id: 'description',
-            text: 'Live FormSection preview from websetting-page.tsx',
+            text: 'Preview FormSection live dari websetting-page.tsx',
             style: styles.settingsWebFormDescription,
           },
         ]}
       />
-      <KolamActionControlButton label="Save" intent="primary" />
+      <KolamActionControlButton label="Simpan" intent="primary" />
     </KolamHeaderFrame>
   );
 }
