@@ -1,8 +1,8 @@
 import React from 'react';
-import {Text, View} from 'react-native';
+import { Text, View } from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
-import {KolamSettingsWebConfigSurface} from '../src/components/kolam-settings-panel-surfaces';
-import {KolamSettingsWebFormSections} from '../src/components/kolam-settings-web-widgets';
+import { KolamSettingsWebConfigSurface } from '../src/components/kolam-settings-panel-surfaces';
+import { KolamSettingsWebFormSections } from '../src/components/kolam-settings-web-widgets';
 import {
   getSettingsWebConfigFields,
   getSettingsWebFormSections,
@@ -122,15 +122,25 @@ describe('settings web widgets', () => {
                 },
               ],
               bioactiveEcosystem: {
-                steps: [{key: 'setup', image: '', order: 0, isActive: true}],
+                steps: [{ key: 'setup', image: '', order: 0, isActive: true }],
               },
             },
           }}
           notificationSoundStatus={{}}
           onClearMarketplaceLandingNoticeDraft={jest.fn()}
+          onDeleteMarketplaceAnnouncementBanner={jest.fn()}
+          onDeleteMarketplaceBioactiveStep={jest.fn()}
+          onDeleteMarketplaceCategoryBanner={jest.fn()}
+          onDeleteMarketplaceFeaturedCollection={jest.fn()}
+          onDeleteMarketplaceHeroSlide={jest.fn()}
           onDeleteMarketplaceLandingNotice={jest.fn()}
           onDeleteNotificationSound={jest.fn()}
           onEditMarketplaceLandingNotice={jest.fn()}
+          onMoveMarketplaceAnnouncementBanner={jest.fn()}
+          onMoveMarketplaceBioactiveStep={jest.fn()}
+          onMoveMarketplaceCategoryBanner={jest.fn()}
+          onMoveMarketplaceFeaturedCollection={jest.fn()}
+          onMoveMarketplaceHeroSlide={jest.fn()}
           onPluginControlChange={jest.fn()}
           onSave={jest.fn()}
           onSaveMarketplaceLandingCta={jest.fn()}
@@ -176,6 +186,9 @@ describe('settings web widgets', () => {
         '1/1 active',
         'Featured collections',
         'Amphibians',
+        'Move up',
+        'Move down',
+        'Delete',
       ]),
     );
   });

@@ -1,4 +1,4 @@
-﻿import {useEffect, useState} from 'react';
+﻿import { useEffect, useState } from 'react';
 import {
   getSettingsActivityLogDetailFields,
   getSettingsActivityLogDetailFieldsFromLive,
@@ -30,7 +30,7 @@ import {
   type SettingsActivityLogFilterState,
   type SettingsSurfaceItem,
 } from '../domain/settings-surface';
-import type {SyncActivityEntry} from '../domain/sync-activity';
+import type { SyncActivityEntry } from '../domain/sync-activity';
 import {
   createKolamRole,
   deleteKolamRole,
@@ -47,8 +47,14 @@ import {
   getKolamWebSettingVersions,
   getKolamRoles,
   getKolamYoutubeSectionAdmin,
+  deleteKolamAnnouncementBanner,
+  deleteKolamCategoryBanner,
+  deleteKolamHeroSlide,
   deleteKolamNotificationSound,
   deleteKolamCustomerNotice,
+  reorderKolamAnnouncementBanners,
+  reorderKolamCategoryBanners,
+  reorderKolamHeroSlides,
   updateKolamAnnouncementBanner,
   updateKolamBioactiveEcosystem,
   updateKolamCategoryBanner,
@@ -82,8 +88,8 @@ import {
   type KolamWebSettingVersions,
   type KolamYoutubeSection,
 } from '../services/kolam-api';
-import {getCurrentUser} from '../services/auth-api';
-import {ApiError} from '../lib/api-error';
+import { getCurrentUser } from '../services/auth-api';
+import { ApiError } from '../lib/api-error';
 import {
   pickNativeAudioFile,
   pickNativeImageFile,
@@ -95,7 +101,11 @@ type ActivityLogStatus = 'idle' | 'loading' | 'live' | 'error';
 type NotificationSoundStatus = 'idle' | 'uploading' | 'deleting';
 type MarketplaceLandingOverviewStatus = 'idle' | 'loading' | 'live' | 'error';
 type MarketplaceLandingSaveStatus = 'idle' | 'saving' | 'saved' | 'error';
-type MarketplaceLandingAssetStatus = 'idle' | 'uploading';
+type MarketplaceLandingAssetStatus =
+  | 'idle'
+  | 'uploading'
+  | 'deleting'
+  | 'reordering';
 const maskedSecretPlaceholder = '********';
 const notificationSoundDraftFieldByType: Record<
   KolamNotificationSoundType,
@@ -380,8 +390,9 @@ export function useKolamSettingsPanelController(
   initialActiveSurfaceId: SettingsSurfaceItem['id'] = 'web-settings',
 ) {
   const stats = getSettingsSurfaceStats();
-  const [activeSurfaceId, setActiveSurfaceId] =
-    useState<SettingsSurfaceItem['id']>(initialActiveSurfaceId);
+  const [activeSurfaceId, setActiveSurfaceId] = useState<
+    SettingsSurfaceItem['id']
+  >(initialActiveSurfaceId);
   const [selectedActivityLogId, setSelectedActivityLogId] = useState('');
   const [activityPage, setActivityPage] = useState(1);
   const [activityLogs, setActivityLogs] = useState<KolamActivityLog[]>([]);
@@ -421,18 +432,15 @@ export function useKolamSettingsPanelController(
       emptyMarketplaceLandingYoutubeDraft,
     );
   const [marketplaceLandingNoticeDraft, setMarketplaceLandingNoticeDraft] =
-    useState<MarketplaceLandingNoticeDraft>(
-      emptyMarketplaceLandingNoticeDraft,
-    );
+    useState<MarketplaceLandingNoticeDraft>(emptyMarketplaceLandingNoticeDraft);
   const [marketplaceLandingSaveStatus, setMarketplaceLandingSaveStatus] =
     useState<MarketplaceLandingSaveStatus>('idle');
   const [marketplaceLandingMessage, setMarketplaceLandingMessage] =
     useState('');
   const [marketplaceLandingAssetStatus, setMarketplaceLandingAssetStatus] =
     useState<Partial<Record<string, MarketplaceLandingAssetStatus>>>({});
-  const [webSettingDraft, setWebSettingDraft] = useState<WebSettingDraft>(
-    emptyWebSettingDraft,
-  );
+  const [webSettingDraft, setWebSettingDraft] =
+    useState<WebSettingDraft>(emptyWebSettingDraft);
   const fallbackRoleRows = getSettingsRoleAccessRows();
   const [roles, setRoles] = useState<KolamRole[]>([]);
   const [roleStatus, setRoleStatus] = useState<RoleSaveStatus>('idle');
@@ -543,7 +551,9 @@ export function useKolamSettingsPanelController(
             customerNotices,
             marketplaceContent,
           });
-          setMarketplaceLandingCtaDraft(createMarketplaceLandingCtaDraft(ctaSection));
+          setMarketplaceLandingCtaDraft(
+            createMarketplaceLandingCtaDraft(ctaSection),
+          );
           setMarketplaceLandingYoutubeDraft(
             createMarketplaceLandingYoutubeDraft(youtubeSection),
           );
@@ -654,10 +664,9 @@ export function useKolamSettingsPanelController(
   const detailRows = getSettingsDetailRows(activeSurface.id);
   const useLiveActivityLogs =
     activeSurfaceId === 'activity-log' && activityLogStatus !== 'idle';
-  const activityRows =
-    useLiveActivityLogs
-      ? getSettingsActivityLogRowsFromLive(activityLogs)
-      : getSettingsActivityLogRows(activityEntries, activityLogPageSize, 1);
+  const activityRows = useLiveActivityLogs
+    ? getSettingsActivityLogRowsFromLive(activityLogs)
+    : getSettingsActivityLogRows(activityEntries, activityLogPageSize, 1);
   const activityPagination = getSettingsActivityLogPagination(
     useLiveActivityLogs ? activityLogTotal : activityEntries.length,
     activityPage,
@@ -670,8 +679,8 @@ export function useKolamSettingsPanelController(
   const selectedActivityLogFields = selectedLiveActivityLog
     ? getSettingsActivityLogDetailFieldsFromLive(selectedLiveActivityLog)
     : selectedActivityLog
-      ? getSettingsActivityLogDetailFields(selectedActivityLog)
-      : [];
+    ? getSettingsActivityLogDetailFields(selectedActivityLog)
+    : [];
   const selectedRole =
     roleRows.find(row => row.id === selectedRoleId) ?? roleRows[0];
   const selectedLiveRole =
@@ -722,7 +731,7 @@ export function useKolamSettingsPanelController(
   };
   const refreshActivityLogs = () => {
     setActivityPage(current => current);
-    setActivityLogFilters(current => ({...current}));
+    setActivityLogFilters(current => ({ ...current }));
   };
   const setWebSettingDraftField = <Key extends keyof WebSettingDraft>(
     key: Key,
@@ -753,7 +762,7 @@ export function useKolamSettingsPanelController(
     key: Key,
     value: MarketplaceLandingCtaDraft[Key],
   ) => {
-    setMarketplaceLandingCtaDraft(current => ({...current, [key]: value}));
+    setMarketplaceLandingCtaDraft(current => ({ ...current, [key]: value }));
     setMarketplaceLandingSaveStatus('idle');
   };
   const setMarketplaceLandingYoutubeDraftField = <
@@ -762,7 +771,10 @@ export function useKolamSettingsPanelController(
     key: Key,
     value: MarketplaceLandingYoutubeDraft[Key],
   ) => {
-    setMarketplaceLandingYoutubeDraft(current => ({...current, [key]: value}));
+    setMarketplaceLandingYoutubeDraft(current => ({
+      ...current,
+      [key]: value,
+    }));
     setMarketplaceLandingSaveStatus('idle');
   };
   const setMarketplaceLandingNoticeDraftField = <
@@ -771,11 +783,13 @@ export function useKolamSettingsPanelController(
     key: Key,
     value: MarketplaceLandingNoticeDraft[Key],
   ) => {
-    setMarketplaceLandingNoticeDraft(current => ({...current, [key]: value}));
+    setMarketplaceLandingNoticeDraft(current => ({ ...current, [key]: value }));
     setMarketplaceLandingSaveStatus('idle');
   };
   const editMarketplaceLandingNotice = (notice: KolamCustomerTextNotice) => {
-    setMarketplaceLandingNoticeDraft(createMarketplaceLandingNoticeDraft(notice));
+    setMarketplaceLandingNoticeDraft(
+      createMarketplaceLandingNoticeDraft(notice),
+    );
     setMarketplaceLandingSaveStatus('idle');
     setMarketplaceLandingMessage('');
   };
@@ -796,13 +810,17 @@ export function useKolamSettingsPanelController(
         buttonLink: marketplaceLandingCtaDraft.buttonLink.trim(),
         isActive: marketplaceLandingCtaDraft.isActive,
       });
-      setMarketplaceLandingCtaDraft(createMarketplaceLandingCtaDraft(ctaSection));
-      setMarketplaceLandingOverview(current => ({...current, ctaSection}));
+      setMarketplaceLandingCtaDraft(
+        createMarketplaceLandingCtaDraft(ctaSection),
+      );
+      setMarketplaceLandingOverview(current => ({ ...current, ctaSection }));
       setMarketplaceLandingSaveStatus('saved');
       setMarketplaceLandingMessage('CTA section berhasil disimpan.');
     } catch (error) {
       setMarketplaceLandingSaveStatus('error');
-      setMarketplaceLandingMessage(getMarketplaceLandingSaveErrorMessage(error));
+      setMarketplaceLandingMessage(
+        getMarketplaceLandingSaveErrorMessage(error),
+      );
     }
   };
   const saveMarketplaceLandingYoutube = async () => {
@@ -819,12 +837,17 @@ export function useKolamSettingsPanelController(
       setMarketplaceLandingYoutubeDraft(
         createMarketplaceLandingYoutubeDraft(youtubeSection),
       );
-      setMarketplaceLandingOverview(current => ({...current, youtubeSection}));
+      setMarketplaceLandingOverview(current => ({
+        ...current,
+        youtubeSection,
+      }));
       setMarketplaceLandingSaveStatus('saved');
       setMarketplaceLandingMessage('YouTube section berhasil disimpan.');
     } catch (error) {
       setMarketplaceLandingSaveStatus('error');
-      setMarketplaceLandingMessage(getMarketplaceLandingSaveErrorMessage(error));
+      setMarketplaceLandingMessage(
+        getMarketplaceLandingSaveErrorMessage(error),
+      );
     }
   };
   const saveMarketplaceLandingNotice = async () => {
@@ -849,12 +872,16 @@ export function useKolamSettingsPanelController(
           notice,
         ),
       }));
-      setMarketplaceLandingNoticeDraft(createMarketplaceLandingNoticeDraft(notice));
+      setMarketplaceLandingNoticeDraft(
+        createMarketplaceLandingNoticeDraft(notice),
+      );
       setMarketplaceLandingSaveStatus('saved');
       setMarketplaceLandingMessage('Customer notice berhasil disimpan.');
     } catch (error) {
       setMarketplaceLandingSaveStatus('error');
-      setMarketplaceLandingMessage(getMarketplaceLandingSaveErrorMessage(error));
+      setMarketplaceLandingMessage(
+        getMarketplaceLandingSaveErrorMessage(error),
+      );
     }
   };
   const deleteMarketplaceLandingNotice = async (key: string) => {
@@ -876,8 +903,276 @@ export function useKolamSettingsPanelController(
       setMarketplaceLandingMessage('Customer notice berhasil dihapus.');
     } catch (error) {
       setMarketplaceLandingSaveStatus('error');
-      setMarketplaceLandingMessage(getMarketplaceLandingSaveErrorMessage(error));
+      setMarketplaceLandingMessage(
+        getMarketplaceLandingSaveErrorMessage(error),
+      );
     }
+  };
+  const runMarketplaceLandingAssetAction = async (
+    key: string,
+    status: MarketplaceLandingAssetStatus,
+    action: () => Promise<void>,
+  ) => {
+    setMarketplaceLandingMessage('');
+    setMarketplaceLandingAssetStatus(current => ({
+      ...current,
+      [key]: status,
+    }));
+    setMarketplaceLandingSaveStatus('saving');
+
+    try {
+      await action();
+      setMarketplaceLandingSaveStatus('saved');
+    } catch (error) {
+      setMarketplaceLandingSaveStatus('error');
+      setMarketplaceLandingMessage(
+        getMarketplaceLandingSaveErrorMessage(error),
+      );
+    } finally {
+      setMarketplaceLandingAssetStatus(current => ({
+        ...current,
+        [key]: 'idle',
+      }));
+    }
+  };
+  const deleteMarketplaceHeroSlide = (slide: KolamHeroSlide) =>
+    runMarketplaceLandingAssetAction(
+      `hero:${slide._id}`,
+      'deleting',
+      async () => {
+        await deleteKolamHeroSlide(slide._id);
+        setMarketplaceLandingOverview(current => ({
+          ...current,
+          heroSlides: current.heroSlides.filter(item => item._id !== slide._id),
+        }));
+        setMarketplaceLandingMessage('Hero slide berhasil dihapus.');
+      },
+    );
+  const moveMarketplaceHeroSlide = (
+    slide: KolamHeroSlide,
+    direction: -1 | 1,
+  ) => {
+    const nextRows = moveOrderedItemById(
+      marketplaceLandingOverview.heroSlides,
+      slide._id,
+      direction,
+    );
+    if (!nextRows) {
+      return Promise.resolve();
+    }
+
+    return runMarketplaceLandingAssetAction(
+      `hero:${slide._id}`,
+      'reordering',
+      async () => {
+        const heroSlides = await reorderKolamHeroSlides(
+          nextRows.map(item => item._id),
+        );
+        setMarketplaceLandingOverview(current => ({ ...current, heroSlides }));
+        setMarketplaceLandingMessage('Urutan hero slide berhasil diperbarui.');
+      },
+    );
+  };
+  const deleteMarketplaceCategoryBanner = (banner: KolamCategoryBanner) =>
+    runMarketplaceLandingAssetAction(
+      `category:${banner._id}`,
+      'deleting',
+      async () => {
+        await deleteKolamCategoryBanner(banner._id);
+        setMarketplaceLandingOverview(current => ({
+          ...current,
+          categoryBanners: current.categoryBanners.filter(
+            item => item._id !== banner._id,
+          ),
+        }));
+        setMarketplaceLandingMessage('Category banner berhasil dihapus.');
+      },
+    );
+  const moveMarketplaceCategoryBanner = (
+    banner: KolamCategoryBanner,
+    direction: -1 | 1,
+  ) => {
+    const nextRows = moveOrderedItemById(
+      marketplaceLandingOverview.categoryBanners,
+      banner._id,
+      direction,
+    );
+    if (!nextRows) {
+      return Promise.resolve();
+    }
+
+    return runMarketplaceLandingAssetAction(
+      `category:${banner._id}`,
+      'reordering',
+      async () => {
+        const categoryBanners = await reorderKolamCategoryBanners(
+          nextRows.map(item => item._id),
+        );
+        setMarketplaceLandingOverview(current => ({
+          ...current,
+          categoryBanners,
+        }));
+        setMarketplaceLandingMessage(
+          'Urutan category banner berhasil diperbarui.',
+        );
+      },
+    );
+  };
+  const deleteMarketplaceAnnouncementBanner = (
+    banner: KolamAnnouncementBanner,
+  ) =>
+    runMarketplaceLandingAssetAction(
+      `announcement:${banner._id}`,
+      'deleting',
+      async () => {
+        await deleteKolamAnnouncementBanner(banner._id);
+        setMarketplaceLandingOverview(current => ({
+          ...current,
+          announcementBanners: current.announcementBanners.filter(
+            item => item._id !== banner._id,
+          ),
+        }));
+        setMarketplaceLandingMessage('Announcement banner berhasil dihapus.');
+      },
+    );
+  const moveMarketplaceAnnouncementBanner = (
+    banner: KolamAnnouncementBanner,
+    direction: -1 | 1,
+  ) => {
+    const nextRows = moveOrderedItemById(
+      marketplaceLandingOverview.announcementBanners,
+      banner._id,
+      direction,
+    );
+    if (!nextRows) {
+      return Promise.resolve();
+    }
+
+    return runMarketplaceLandingAssetAction(
+      `announcement:${banner._id}`,
+      'reordering',
+      async () => {
+        const announcementBanners = await reorderKolamAnnouncementBanners(
+          nextRows.map(item => item._id),
+        );
+        setMarketplaceLandingOverview(current => ({
+          ...current,
+          announcementBanners,
+        }));
+        setMarketplaceLandingMessage(
+          'Urutan announcement banner berhasil diperbarui.',
+        );
+      },
+    );
+  };
+  const deleteMarketplaceFeaturedCollection = (index: number) => {
+    const nextRows = removeOrderedItemAt(
+      marketplaceLandingOverview.marketplaceContent.featuredCollections ?? [],
+      index,
+    );
+    if (!nextRows) {
+      return Promise.resolve();
+    }
+
+    return runMarketplaceLandingAssetAction(
+      `featured:${index}`,
+      'deleting',
+      async () => {
+        const marketplaceContent = await updateKolamFeaturedCollections(
+          nextRows,
+        );
+        setMarketplaceLandingOverview(current => ({
+          ...current,
+          marketplaceContent,
+        }));
+        setMarketplaceLandingMessage('Featured collection berhasil dihapus.');
+      },
+    );
+  };
+  const moveMarketplaceFeaturedCollection = (
+    index: number,
+    direction: -1 | 1,
+  ) => {
+    const nextRows = moveOrderedItemAt(
+      marketplaceLandingOverview.marketplaceContent.featuredCollections ?? [],
+      index,
+      direction,
+    );
+    if (!nextRows) {
+      return Promise.resolve();
+    }
+
+    return runMarketplaceLandingAssetAction(
+      `featured:${index}`,
+      'reordering',
+      async () => {
+        const marketplaceContent = await updateKolamFeaturedCollections(
+          nextRows,
+        );
+        setMarketplaceLandingOverview(current => ({
+          ...current,
+          marketplaceContent,
+        }));
+        setMarketplaceLandingMessage(
+          'Urutan featured collection berhasil diperbarui.',
+        );
+      },
+    );
+  };
+  const deleteMarketplaceBioactiveStep = (index: number) => {
+    const steps = removeOrderedItemAt(
+      marketplaceLandingOverview.marketplaceContent.bioactiveEcosystem?.steps ??
+        [],
+      index,
+    );
+    if (!steps) {
+      return Promise.resolve();
+    }
+
+    return runMarketplaceLandingAssetAction(
+      `bioactive:${index}`,
+      'deleting',
+      async () => {
+        const marketplaceContent = await updateKolamBioactiveEcosystem({
+          steps,
+        });
+        setMarketplaceLandingOverview(current => ({
+          ...current,
+          marketplaceContent,
+        }));
+        setMarketplaceLandingMessage(
+          'Bioactive ecosystem step berhasil dihapus.',
+        );
+      },
+    );
+  };
+  const moveMarketplaceBioactiveStep = (index: number, direction: -1 | 1) => {
+    const steps = moveOrderedItemAt(
+      marketplaceLandingOverview.marketplaceContent.bioactiveEcosystem?.steps ??
+        [],
+      index,
+      direction,
+    );
+    if (!steps) {
+      return Promise.resolve();
+    }
+
+    return runMarketplaceLandingAssetAction(
+      `bioactive:${index}`,
+      'reordering',
+      async () => {
+        const marketplaceContent = await updateKolamBioactiveEcosystem({
+          steps,
+        });
+        setMarketplaceLandingOverview(current => ({
+          ...current,
+          marketplaceContent,
+        }));
+        setMarketplaceLandingMessage(
+          'Urutan bioactive ecosystem berhasil diperbarui.',
+        );
+      },
+    );
   };
   const uploadMarketplaceHeroImage = (slide: KolamHeroSlide) =>
     uploadMarketplaceAsset(`hero:${slide._id}`, async localUri => {
@@ -928,7 +1223,9 @@ export function useKolamSettingsPanelController(
         ...current,
         announcementBanners: replaceById(current.announcementBanners, updated),
       }));
-      setMarketplaceLandingMessage('Announcement banner image berhasil diupload.');
+      setMarketplaceLandingMessage(
+        'Announcement banner image berhasil diupload.',
+      );
     });
   const uploadMarketplaceCtaBackground = () =>
     uploadMarketplaceAsset('cta-background', async localUri => {
@@ -940,8 +1237,10 @@ export function useKolamSettingsPanelController(
         isActive: marketplaceLandingCtaDraft.isActive,
         backgroundImageLocalUri: localUri,
       });
-      setMarketplaceLandingCtaDraft(createMarketplaceLandingCtaDraft(ctaSection));
-      setMarketplaceLandingOverview(current => ({...current, ctaSection}));
+      setMarketplaceLandingCtaDraft(
+        createMarketplaceLandingCtaDraft(ctaSection),
+      );
+      setMarketplaceLandingOverview(current => ({ ...current, ctaSection }));
       setMarketplaceLandingMessage('CTA background berhasil diupload.');
     });
   const uploadMarketplaceYoutubeBackground = () =>
@@ -956,7 +1255,10 @@ export function useKolamSettingsPanelController(
       setMarketplaceLandingYoutubeDraft(
         createMarketplaceLandingYoutubeDraft(youtubeSection),
       );
-      setMarketplaceLandingOverview(current => ({...current, youtubeSection}));
+      setMarketplaceLandingOverview(current => ({
+        ...current,
+        youtubeSection,
+      }));
       setMarketplaceLandingMessage('YouTube background berhasil diupload.');
     });
   const uploadMarketplaceFeaturedCollectionImage = (index: number) =>
@@ -968,14 +1270,16 @@ export function useKolamSettingsPanelController(
       const currentRows =
         marketplaceLandingOverview.marketplaceContent.featuredCollections ?? [];
       const nextRows = currentRows.map((row, rowIndex) =>
-        rowIndex === index ? {...row, image} : row,
+        rowIndex === index ? { ...row, image } : row,
       );
       const marketplaceContent = await updateKolamFeaturedCollections(nextRows);
       setMarketplaceLandingOverview(current => ({
         ...current,
         marketplaceContent,
       }));
-      setMarketplaceLandingMessage('Featured collection image berhasil diupload.');
+      setMarketplaceLandingMessage(
+        'Featured collection image berhasil diupload.',
+      );
     });
   const uploadMarketplaceBioactiveStepImage = (index: number) =>
     uploadMarketplaceAsset(`bioactive:${index}`, async localUri => {
@@ -987,14 +1291,16 @@ export function useKolamSettingsPanelController(
         marketplaceLandingOverview.marketplaceContent.bioactiveEcosystem
           ?.steps ?? [];
       const steps = currentSteps.map((step, stepIndex) =>
-        stepIndex === index ? {...step, image} : step,
+        stepIndex === index ? { ...step, image } : step,
       );
-      const marketplaceContent = await updateKolamBioactiveEcosystem({steps});
+      const marketplaceContent = await updateKolamBioactiveEcosystem({ steps });
       setMarketplaceLandingOverview(current => ({
         ...current,
         marketplaceContent,
       }));
-      setMarketplaceLandingMessage('Bioactive ecosystem image berhasil diupload.');
+      setMarketplaceLandingMessage(
+        'Bioactive ecosystem image berhasil diupload.',
+      );
     });
   const uploadMarketplaceLogo = () =>
     uploadMarketplaceAsset('websetting-logo', async localUri => {
@@ -1008,7 +1314,10 @@ export function useKolamSettingsPanelController(
       if (response.daraAvatarUrl) {
         setWebSetting(current =>
           current
-            ? ({...current, daraAvatarUrl: response.daraAvatarUrl} as KolamWebSetting)
+            ? ({
+                ...current,
+                daraAvatarUrl: response.daraAvatarUrl,
+              } as KolamWebSetting)
             : current,
         );
       }
@@ -1048,9 +1357,14 @@ export function useKolamSettingsPanelController(
       setMarketplaceLandingSaveStatus('saved');
     } catch (error) {
       setMarketplaceLandingSaveStatus('error');
-      setMarketplaceLandingMessage(getMarketplaceLandingSaveErrorMessage(error));
+      setMarketplaceLandingMessage(
+        getMarketplaceLandingSaveErrorMessage(error),
+      );
     } finally {
-      setMarketplaceLandingAssetStatus(current => ({...current, [key]: 'idle'}));
+      setMarketplaceLandingAssetStatus(current => ({
+        ...current,
+        [key]: 'idle',
+      }));
     }
   };
   const uploadNotificationSound = async (type: KolamNotificationSoundType) => {
@@ -1073,39 +1387,44 @@ export function useKolamSettingsPanelController(
         return;
       }
 
-      setNotificationSoundStatus(current => ({...current, [type]: 'uploading'}));
+      setNotificationSoundStatus(current => ({
+        ...current,
+        [type]: 'uploading',
+      }));
       const response = await uploadKolamNotificationSound(type, localUri);
       const field = notificationSoundDraftFieldByType[type];
       const nextPath = getNotificationSoundPathFromResponse(response, field);
 
-      setWebSettingDraft(current => ({...current, [field]: nextPath}));
+      setWebSettingDraft(current => ({ ...current, [field]: nextPath }));
       setWebSetting(current =>
-        current ? ({...current, [field]: nextPath} as KolamWebSetting) : current,
+        current
+          ? ({ ...current, [field]: nextPath } as KolamWebSetting)
+          : current,
       );
       setWebSettingMessage('Notification sound berhasil diupload.');
     } catch (error) {
       setWebSettingMessage(getNotificationSoundErrorMessage(error));
     } finally {
-      setNotificationSoundStatus(current => ({...current, [type]: 'idle'}));
+      setNotificationSoundStatus(current => ({ ...current, [type]: 'idle' }));
     }
   };
   const deleteNotificationSound = async (type: KolamNotificationSoundType) => {
     setWebSettingMessage('');
-    setNotificationSoundStatus(current => ({...current, [type]: 'deleting'}));
+    setNotificationSoundStatus(current => ({ ...current, [type]: 'deleting' }));
 
     try {
       await deleteKolamNotificationSound(type);
       const field = notificationSoundDraftFieldByType[type];
 
-      setWebSettingDraft(current => ({...current, [field]: ''}));
+      setWebSettingDraft(current => ({ ...current, [field]: '' }));
       setWebSetting(current =>
-        current ? ({...current, [field]: ''} as KolamWebSetting) : current,
+        current ? ({ ...current, [field]: '' } as KolamWebSetting) : current,
       );
       setWebSettingMessage('Notification sound berhasil direset.');
     } catch (error) {
       setWebSettingMessage(getNotificationSoundErrorMessage(error));
     } finally {
-      setNotificationSoundStatus(current => ({...current, [type]: 'idle'}));
+      setNotificationSoundStatus(current => ({ ...current, [type]: 'idle' }));
     }
   };
   const saveWebSetting = async () => {
@@ -1186,8 +1505,7 @@ export function useKolamSettingsPanelController(
           webSettingDraft.daraTaxRegulationWatcherEnabled,
         daraTaxComplianceJobEnabled:
           webSettingDraft.daraTaxComplianceJobEnabled,
-        daraTaxLlmNarrativeEnabled:
-          webSettingDraft.daraTaxLlmNarrativeEnabled,
+        daraTaxLlmNarrativeEnabled: webSettingDraft.daraTaxLlmNarrativeEnabled,
         daraWebstoreFulfillmentEnabled:
           webSettingDraft.daraWebstoreFulfillmentEnabled,
         daraStaffOpsNotifyEnabled: webSettingDraft.daraStaffOpsNotifyEnabled,
@@ -1297,8 +1615,7 @@ export function useKolamSettingsPanelController(
           webSettingDraft.daraTaxRegulationWatcherEnabled,
         daraTaxComplianceJobEnabled:
           webSettingDraft.daraTaxComplianceJobEnabled,
-        daraTaxLlmNarrativeEnabled:
-          webSettingDraft.daraTaxLlmNarrativeEnabled,
+        daraTaxLlmNarrativeEnabled: webSettingDraft.daraTaxLlmNarrativeEnabled,
         daraWebstoreFulfillmentEnabled:
           webSettingDraft.daraWebstoreFulfillmentEnabled,
         daraStaffOpsNotifyEnabled: webSettingDraft.daraStaffOpsNotifyEnabled,
@@ -1363,7 +1680,7 @@ export function useKolamSettingsPanelController(
         name: roleDraft.name.trim(),
         key: roleDraft.key.trim(),
         description: cleanOptionalString(roleDraft.description),
-        permissions: [{resource: 'role', actions: ['view']}],
+        permissions: [{ resource: 'role', actions: ['view'] }],
       });
 
       await reloadRoles();
@@ -1538,8 +1855,18 @@ export function useKolamSettingsPanelController(
     setMarketplaceLandingYoutubeDraftField,
     setMarketplaceLandingNoticeDraftField,
     clearMarketplaceLandingNoticeDraft,
+    deleteMarketplaceAnnouncementBanner,
+    deleteMarketplaceBioactiveStep,
+    deleteMarketplaceCategoryBanner,
+    deleteMarketplaceFeaturedCollection,
+    deleteMarketplaceHeroSlide,
     deleteMarketplaceLandingNotice,
     editMarketplaceLandingNotice,
+    moveMarketplaceAnnouncementBanner,
+    moveMarketplaceBioactiveStep,
+    moveMarketplaceCategoryBanner,
+    moveMarketplaceFeaturedCollection,
+    moveMarketplaceHeroSlide,
     saveMarketplaceLandingCta,
     saveMarketplaceLandingYoutube,
     saveMarketplaceLandingNotice,
@@ -1679,8 +2006,7 @@ function createWebSettingDraft(
     daraSeoEnabled: setting.daraSeoEnabled !== false,
     daraTaxRegulationWatcherEnabled:
       setting.daraTaxRegulationWatcherEnabled === true,
-    daraTaxComplianceJobEnabled:
-      setting.daraTaxComplianceJobEnabled !== false,
+    daraTaxComplianceJobEnabled: setting.daraTaxComplianceJobEnabled !== false,
     daraTaxLlmNarrativeEnabled: setting.daraTaxLlmNarrativeEnabled === true,
     daraWebstoreFulfillmentEnabled:
       setting.daraWebstoreFulfillmentEnabled !== false,
@@ -1816,7 +2142,10 @@ function createFirebaseUpdateBody(draft: WebSettingDraft) {
 function isAllowedNotificationSoundFile(localUri: string, extension?: string) {
   const inferredExtension =
     extension?.toLowerCase().replace(/^\./, '') ??
-    localUri.split(/[./\\]/).pop()?.toLowerCase();
+    localUri
+      .split(/[./\\]/)
+      .pop()
+      ?.toLowerCase();
 
   return inferredExtension === 'mp3' || inferredExtension === 'wav';
 }
@@ -1824,22 +2153,64 @@ function isAllowedNotificationSoundFile(localUri: string, extension?: string) {
 function isAllowedMarketplaceImageFile(localUri: string, extension?: string) {
   const inferredExtension =
     extension?.toLowerCase().replace(/^\./, '') ??
-    localUri.split(/[./\\]/).pop()?.toLowerCase();
+    localUri
+      .split(/[./\\]/)
+      .pop()
+      ?.toLowerCase();
 
-  return [
-    'jpg',
-    'jpeg',
-    'png',
-    'webp',
-    'gif',
-    'svg',
-    'heic',
-    'heif',
-  ].includes(inferredExtension ?? '');
+  return ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg', 'heic', 'heif'].includes(
+    inferredExtension ?? '',
+  );
 }
 
-function replaceById<Item extends {_id: string}>(items: Item[], next: Item) {
+function replaceById<Item extends { _id: string }>(items: Item[], next: Item) {
   return items.map(item => (item._id === next._id ? next : item));
+}
+
+function moveOrderedItemById<Item extends { _id: string; order?: number }>(
+  items: Item[],
+  id: string,
+  direction: -1 | 1,
+) {
+  const index = items.findIndex(item => item._id === id);
+  return moveOrderedItemAt(items, index, direction);
+}
+
+function moveOrderedItemAt<Item extends { order?: number }>(
+  items: Item[],
+  index: number,
+  direction: -1 | 1,
+) {
+  const targetIndex = index + direction;
+  if (index < 0 || targetIndex < 0 || targetIndex >= items.length) {
+    return null;
+  }
+
+  const nextItems = [...items];
+  [nextItems[index], nextItems[targetIndex]] = [
+    nextItems[targetIndex],
+    nextItems[index],
+  ];
+  return normalizeMarketplaceOrder(nextItems);
+}
+
+function removeOrderedItemAt<Item extends { order?: number }>(
+  items: Item[],
+  index: number,
+) {
+  if (index < 0 || index >= items.length) {
+    return null;
+  }
+
+  return normalizeMarketplaceOrder(
+    items.filter((_, itemIndex) => itemIndex !== index),
+  );
+}
+
+function normalizeMarketplaceOrder<Item extends { order?: number }>(
+  items: Item[],
+) {
+  return items.map((item, index) => ({ ...item, order: index })) as Item[];
 }
 
 function getNotificationSoundPathFromResponse(
@@ -1940,7 +2311,7 @@ function createUpdatedRolePermissions(
     ? currentActions.filter(currentAction => currentAction !== action)
     : [...currentActions, action];
   const nextPermission =
-    nextActions.length > 0 ? {resource, actions: nextActions} : null;
+    nextActions.length > 0 ? { resource, actions: nextActions } : null;
 
   return [
     ...currentPermissions

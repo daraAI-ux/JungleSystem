@@ -1,5 +1,5 @@
 ﻿import React from 'react';
-import type {KolamSettingsPanelController} from './kolam-settings-panel-controller';
+import type { KolamSettingsPanelController } from './kolam-settings-panel-controller';
 import {
   KolamSettingsActivityLogSurface,
   KolamSettingsDetailRowsSurface,
@@ -29,10 +29,40 @@ export function KolamSettingsSurfaceBody({
         onClearMarketplaceLandingNoticeDraft={
           controller.clearMarketplaceLandingNoticeDraft
         }
+        onDeleteMarketplaceAnnouncementBanner={banner => {
+          void controller.deleteMarketplaceAnnouncementBanner(banner);
+        }}
+        onDeleteMarketplaceBioactiveStep={index => {
+          void controller.deleteMarketplaceBioactiveStep(index);
+        }}
+        onDeleteMarketplaceCategoryBanner={banner => {
+          void controller.deleteMarketplaceCategoryBanner(banner);
+        }}
+        onDeleteMarketplaceFeaturedCollection={index => {
+          void controller.deleteMarketplaceFeaturedCollection(index);
+        }}
+        onDeleteMarketplaceHeroSlide={slide => {
+          void controller.deleteMarketplaceHeroSlide(slide);
+        }}
         onDeleteMarketplaceLandingNotice={key => {
           void controller.deleteMarketplaceLandingNotice(key);
         }}
         onEditMarketplaceLandingNotice={controller.editMarketplaceLandingNotice}
+        onMoveMarketplaceAnnouncementBanner={(banner, direction) => {
+          void controller.moveMarketplaceAnnouncementBanner(banner, direction);
+        }}
+        onMoveMarketplaceBioactiveStep={(index, direction) => {
+          void controller.moveMarketplaceBioactiveStep(index, direction);
+        }}
+        onMoveMarketplaceCategoryBanner={(banner, direction) => {
+          void controller.moveMarketplaceCategoryBanner(banner, direction);
+        }}
+        onMoveMarketplaceFeaturedCollection={(index, direction) => {
+          void controller.moveMarketplaceFeaturedCollection(index, direction);
+        }}
+        onMoveMarketplaceHeroSlide={(slide, direction) => {
+          void controller.moveMarketplaceHeroSlide(slide, direction);
+        }}
         onSaveMarketplaceLandingCta={() => {
           void controller.saveMarketplaceLandingCta();
         }}

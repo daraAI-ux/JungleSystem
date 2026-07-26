@@ -1,15 +1,15 @@
 import React from 'react';
-import {StyleSheet, View} from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import type {
   SettingsWebConfigField,
   SettingsWebFormSection,
 } from '../domain/settings-surface';
-import {KolamContentFrame} from './kolam-content-frame';
-import {KolamActionControlButton} from './kolam-action-control-button';
-import {KolamCopyStack} from './kolam-copy-stack';
-import {KolamSettingsWebFormSections} from './kolam-settings-web-widgets';
-import {KolamTextFieldRow} from './kolam-text-field-row';
-import {KolamToggleRow} from './kolam-toggle-row';
+import { KolamContentFrame } from './kolam-content-frame';
+import { KolamActionControlButton } from './kolam-action-control-button';
+import { KolamCopyStack } from './kolam-copy-stack';
+import { KolamSettingsWebFormSections } from './kolam-settings-web-widgets';
+import { KolamTextFieldRow } from './kolam-text-field-row';
+import { KolamToggleRow } from './kolam-toggle-row';
 import type {
   KolamAnnouncementBanner,
   KolamCategoryBanner,
@@ -112,8 +112,18 @@ export function KolamSettingsWebConfigSurface({
   marketplaceLandingMessage,
   marketplaceLandingAssetStatus,
   onClearMarketplaceLandingNoticeDraft,
+  onDeleteMarketplaceAnnouncementBanner,
+  onDeleteMarketplaceBioactiveStep,
+  onDeleteMarketplaceCategoryBanner,
+  onDeleteMarketplaceFeaturedCollection,
+  onDeleteMarketplaceHeroSlide,
   onDeleteMarketplaceLandingNotice,
   onEditMarketplaceLandingNotice,
+  onMoveMarketplaceAnnouncementBanner,
+  onMoveMarketplaceBioactiveStep,
+  onMoveMarketplaceCategoryBanner,
+  onMoveMarketplaceFeaturedCollection,
+  onMoveMarketplaceHeroSlide,
   onSaveMarketplaceLandingCta,
   onSaveMarketplaceLandingYoutube,
   onSaveMarketplaceLandingNotice,
@@ -155,10 +165,36 @@ export function KolamSettingsWebConfigSurface({
   marketplaceLandingNoticeDraft: MarketplaceLandingNoticeDraft;
   marketplaceLandingSaveStatus: 'idle' | 'saving' | 'saved' | 'error';
   marketplaceLandingMessage: string;
-  marketplaceLandingAssetStatus: Partial<Record<string, 'idle' | 'uploading'>>;
+  marketplaceLandingAssetStatus: Partial<
+    Record<string, 'idle' | 'uploading' | 'deleting' | 'reordering'>
+  >;
   onClearMarketplaceLandingNoticeDraft: () => void;
+  onDeleteMarketplaceAnnouncementBanner: (
+    banner: KolamAnnouncementBanner,
+  ) => void;
+  onDeleteMarketplaceBioactiveStep: (index: number) => void;
+  onDeleteMarketplaceCategoryBanner: (banner: KolamCategoryBanner) => void;
+  onDeleteMarketplaceFeaturedCollection: (index: number) => void;
+  onDeleteMarketplaceHeroSlide: (slide: KolamHeroSlide) => void;
   onDeleteMarketplaceLandingNotice: (key: string) => void;
   onEditMarketplaceLandingNotice: (notice: KolamCustomerTextNotice) => void;
+  onMoveMarketplaceAnnouncementBanner: (
+    banner: KolamAnnouncementBanner,
+    direction: -1 | 1,
+  ) => void;
+  onMoveMarketplaceBioactiveStep: (index: number, direction: -1 | 1) => void;
+  onMoveMarketplaceCategoryBanner: (
+    banner: KolamCategoryBanner,
+    direction: -1 | 1,
+  ) => void;
+  onMoveMarketplaceFeaturedCollection: (
+    index: number,
+    direction: -1 | 1,
+  ) => void;
+  onMoveMarketplaceHeroSlide: (
+    slide: KolamHeroSlide,
+    direction: -1 | 1,
+  ) => void;
   onSaveMarketplaceLandingCta: () => void;
   onSaveMarketplaceLandingYoutube: () => void;
   onSaveMarketplaceLandingNotice: () => void;
@@ -187,7 +223,9 @@ export function KolamSettingsWebConfigSurface({
   saveMessage: string;
   saveStatus: 'idle' | 'saving' | 'saved' | 'error';
   sections: SettingsWebFormSection[];
-  setMarketplaceLandingCtaDraftField: <Key extends keyof MarketplaceLandingCtaDraft>(
+  setMarketplaceLandingCtaDraftField: <
+    Key extends keyof MarketplaceLandingCtaDraft,
+  >(
     key: Key,
     value: MarketplaceLandingCtaDraft[Key],
   ) => void;
@@ -438,7 +476,9 @@ export function KolamSettingsWebConfigSurface({
         label="Staff redirect URL"
         description="URL redirect jika staff desktop-only aktif."
         value={draft.staffDesktopOnlyRedirectUrl}
-        onChangeText={value => setDraftField('staffDesktopOnlyRedirectUrl', value)}
+        onChangeText={value =>
+          setDraftField('staffDesktopOnlyRedirectUrl', value)
+        }
         placeholder="https://..."
       />
       <KolamToggleRow
@@ -606,7 +646,8 @@ export function KolamSettingsWebConfigSurface({
         description="Aktifkan chat pada storefront."
         active={draft.chatStoreEnabled}
         onPress={() =>
-          !disabled && setDraftField('chatStoreEnabled', !draft.chatStoreEnabled)
+          !disabled &&
+          setDraftField('chatStoreEnabled', !draft.chatStoreEnabled)
         }
       />
       <KolamToggleRow
@@ -635,7 +676,8 @@ export function KolamSettingsWebConfigSurface({
         description="Aktifkan tool runtime DARA."
         active={draft.daraToolsEnabled}
         onPress={() =>
-          !disabled && setDraftField('daraToolsEnabled', !draft.daraToolsEnabled)
+          !disabled &&
+          setDraftField('daraToolsEnabled', !draft.daraToolsEnabled)
         }
       />
       <KolamToggleRow
@@ -771,7 +813,10 @@ export function KolamSettingsWebConfigSurface({
         active={draft.daraStaffWaNotifyEnabled}
         onPress={() =>
           !disabled &&
-          setDraftField('daraStaffWaNotifyEnabled', !draft.daraStaffWaNotifyEnabled)
+          setDraftField(
+            'daraStaffWaNotifyEnabled',
+            !draft.daraStaffWaNotifyEnabled,
+          )
         }
       />
       <KolamToggleRow
@@ -918,8 +963,7 @@ export function KolamSettingsWebConfigSurface({
         description="Aktifkan route dan registry plugin KPI."
         active={draft.pluginControls.kpi}
         onPress={() =>
-          !disabled &&
-          onPluginControlChange('kpi', !draft.pluginControls.kpi)
+          !disabled && onPluginControlChange('kpi', !draft.pluginControls.kpi)
         }
       />
       <KolamToggleRow
@@ -927,8 +971,7 @@ export function KolamSettingsWebConfigSurface({
         description="Aktifkan route dan registry plugin chat."
         active={draft.pluginControls.chat}
         onPress={() =>
-          !disabled &&
-          onPluginControlChange('chat', !draft.pluginControls.chat)
+          !disabled && onPluginControlChange('chat', !draft.pluginControls.chat)
         }
       />
       <KolamToggleRow
@@ -936,8 +979,7 @@ export function KolamSettingsWebConfigSurface({
         description="Aktifkan route dan registry plugin DARA."
         active={draft.pluginControls.dara}
         onPress={() =>
-          !disabled &&
-          onPluginControlChange('dara', !draft.pluginControls.dara)
+          !disabled && onPluginControlChange('dara', !draft.pluginControls.dara)
         }
       />
       <KolamToggleRow
@@ -969,6 +1011,16 @@ export function KolamSettingsWebConfigSurface({
       <MarketplaceLandingOverviewPanel
         assetStatus={marketplaceLandingAssetStatus}
         disabled={disabled || marketplaceLandingSaveStatus === 'saving'}
+        onDeleteAnnouncementBanner={onDeleteMarketplaceAnnouncementBanner}
+        onDeleteBioactiveStep={onDeleteMarketplaceBioactiveStep}
+        onDeleteCategoryBanner={onDeleteMarketplaceCategoryBanner}
+        onDeleteFeaturedCollection={onDeleteMarketplaceFeaturedCollection}
+        onDeleteHeroSlide={onDeleteMarketplaceHeroSlide}
+        onMoveAnnouncementBanner={onMoveMarketplaceAnnouncementBanner}
+        onMoveBioactiveStep={onMoveMarketplaceBioactiveStep}
+        onMoveCategoryBanner={onMoveMarketplaceCategoryBanner}
+        onMoveFeaturedCollection={onMoveMarketplaceFeaturedCollection}
+        onMoveHeroSlide={onMoveMarketplaceHeroSlide}
         onUploadAnnouncementImage={onUploadMarketplaceAnnouncementImage}
         onUploadBioactiveStepImage={onUploadMarketplaceBioactiveStepImage}
         onUploadCategoryBannerImage={onUploadMarketplaceCategoryBannerImage}
@@ -1008,6 +1060,16 @@ export function KolamSettingsWebConfigSurface({
 function MarketplaceLandingOverviewPanel({
   assetStatus,
   disabled,
+  onDeleteAnnouncementBanner,
+  onDeleteBioactiveStep,
+  onDeleteCategoryBanner,
+  onDeleteFeaturedCollection,
+  onDeleteHeroSlide,
+  onMoveAnnouncementBanner,
+  onMoveBioactiveStep,
+  onMoveCategoryBanner,
+  onMoveFeaturedCollection,
+  onMoveHeroSlide,
   onUploadAnnouncementImage,
   onUploadBioactiveStepImage,
   onUploadCategoryBannerImage,
@@ -1019,8 +1081,26 @@ function MarketplaceLandingOverviewPanel({
   onUploadYoutubeBackground,
   overview,
 }: {
-  assetStatus: Partial<Record<string, 'idle' | 'uploading'>>;
+  assetStatus: Partial<
+    Record<string, 'idle' | 'uploading' | 'deleting' | 'reordering'>
+  >;
   disabled: boolean;
+  onDeleteAnnouncementBanner: (banner: KolamAnnouncementBanner) => void;
+  onDeleteBioactiveStep: (index: number) => void;
+  onDeleteCategoryBanner: (banner: KolamCategoryBanner) => void;
+  onDeleteFeaturedCollection: (index: number) => void;
+  onDeleteHeroSlide: (slide: KolamHeroSlide) => void;
+  onMoveAnnouncementBanner: (
+    banner: KolamAnnouncementBanner,
+    direction: -1 | 1,
+  ) => void;
+  onMoveBioactiveStep: (index: number, direction: -1 | 1) => void;
+  onMoveCategoryBanner: (
+    banner: KolamCategoryBanner,
+    direction: -1 | 1,
+  ) => void;
+  onMoveFeaturedCollection: (index: number, direction: -1 | 1) => void;
+  onMoveHeroSlide: (slide: KolamHeroSlide, direction: -1 | 1) => void;
   onUploadAnnouncementImage: (banner: KolamAnnouncementBanner) => void;
   onUploadBioactiveStepImage: (index: number) => void;
   onUploadCategoryBannerImage: (banner: KolamCategoryBanner) => void;
@@ -1064,7 +1144,8 @@ function MarketplaceLandingOverviewPanel({
       label: 'YouTube section',
       value:
         overview.youtubeSection?.isActive === false ? 'Inactive' : 'Active',
-      detail: overview.youtubeSection?.link || overview.youtubeSection?.title || '-',
+      detail:
+        overview.youtubeSection?.link || overview.youtubeSection?.title || '-',
     },
     {
       id: 'announcement-banners',
@@ -1111,8 +1192,8 @@ function MarketplaceLandingOverviewPanel({
               overview.status === 'loading'
                 ? 'Loading live marketplace landing data...'
                 : overview.status === 'error'
-                  ? overview.message
-                  : 'Read-only live data from Marketplace Landing endpoints.',
+                ? overview.message
+                : 'Read-only live data from Marketplace Landing endpoints.',
             style:
               overview.status === 'error'
                 ? styles.marketplaceOverviewError
@@ -1160,7 +1241,7 @@ function MarketplaceLandingOverviewPanel({
             },
             {
               id: 'asset-meta',
-              text: 'Replace images for existing live items. Create, delete, and reorder stay out of Fase 8D.',
+              text: 'Replace, reorder, and delete existing live marketplace landing items.',
               style: styles.marketplaceOverviewMeta,
             },
           ]}
@@ -1201,6 +1282,8 @@ function MarketplaceLandingOverviewPanel({
           getId={item => `hero:${item._id}`}
           getLabel={item => item.title || item._id}
           items={overview.heroSlides}
+          onDelete={onDeleteHeroSlide}
+          onMove={onMoveHeroSlide}
           onUpload={onUploadHeroImage}
           status={assetStatus}
           title="Hero slide images"
@@ -1211,6 +1294,8 @@ function MarketplaceLandingOverviewPanel({
           getId={item => `category:${item._id}`}
           getLabel={item => item.categorySlug || item._id}
           items={overview.categoryBanners}
+          onDelete={onDeleteCategoryBanner}
+          onMove={onMoveCategoryBanner}
           onUpload={onUploadCategoryBannerImage}
           status={assetStatus}
           title="Category banner images"
@@ -1221,6 +1306,8 @@ function MarketplaceLandingOverviewPanel({
           getId={item => `announcement:${item._id}`}
           getLabel={item => item.link || item._id}
           items={overview.announcementBanners}
+          onDelete={onDeleteAnnouncementBanner}
+          onMove={onMoveAnnouncementBanner}
           onUpload={onUploadAnnouncementImage}
           status={assetStatus}
           title="Announcement banner images"
@@ -1231,6 +1318,8 @@ function MarketplaceLandingOverviewPanel({
           getId={index => `featured:${index}`}
           getLabel={item => item.title || '-'}
           items={featuredCollections}
+          onDelete={onDeleteFeaturedCollection}
+          onMove={onMoveFeaturedCollection}
           onUpload={onUploadFeaturedCollectionImage}
           status={assetStatus}
           title="Featured collection images"
@@ -1241,6 +1330,8 @@ function MarketplaceLandingOverviewPanel({
           getId={index => `bioactive:${index}`}
           getLabel={item => item.key || '-'}
           items={bioactiveSteps}
+          onDelete={onDeleteBioactiveStep}
+          onMove={onMoveBioactiveStep}
           onUpload={onUploadBioactiveStepImage}
           status={assetStatus}
           title="Bioactive ecosystem images"
@@ -1256,6 +1347,8 @@ function MarketplaceAssetRows<Item>({
   getId,
   getLabel,
   items,
+  onDelete,
+  onMove,
   onUpload,
   status,
   title,
@@ -1265,17 +1358,23 @@ function MarketplaceAssetRows<Item>({
   getId: (item: Item) => string;
   getLabel: (item: Item) => string;
   items: Item[];
+  onDelete: (item: Item) => void;
+  onMove: (item: Item, direction: -1 | 1) => void;
   onUpload: (item: Item) => void;
-  status: Partial<Record<string, 'idle' | 'uploading'>>;
+  status: Partial<
+    Record<string, 'idle' | 'uploading' | 'deleting' | 'reordering'>
+  >;
   title: string;
 }) {
   return (
     <View style={styles.marketplaceAssetGroup}>
       <KolamCopyStack
-        items={[{id: 'title', text: title, style: styles.marketplaceOverviewMeta}]}
+        items={[
+          { id: 'title', text: title, style: styles.marketplaceOverviewMeta },
+        ]}
       />
       {items.length ? (
-        items.map(item => {
+        items.map((item, index) => {
           const id = getId(item);
           return (
             <View key={id} style={styles.marketplaceAssetRow}>
@@ -1289,20 +1388,48 @@ function MarketplaceAssetRows<Item>({
                   },
                 ]}
               />
-              <MarketplaceAssetButton
-                disabled={disabled}
-                id={id}
-                label="Upload image"
-                onPress={() => onUpload(item)}
-                status={status}
-              />
+              <View style={styles.marketplaceAssetActions}>
+                <MarketplaceAssetButton
+                  disabled={disabled || index === 0}
+                  id={id}
+                  label="Move up"
+                  onPress={() => onMove(item, -1)}
+                  status={status}
+                />
+                <MarketplaceAssetButton
+                  disabled={disabled || index === items.length - 1}
+                  id={id}
+                  label="Move down"
+                  onPress={() => onMove(item, 1)}
+                  status={status}
+                />
+                <MarketplaceAssetButton
+                  disabled={disabled}
+                  id={id}
+                  label="Upload image"
+                  onPress={() => onUpload(item)}
+                  status={status}
+                />
+                <MarketplaceAssetButton
+                  disabled={disabled}
+                  id={id}
+                  intent="danger"
+                  label="Delete"
+                  onPress={() => onDelete(item)}
+                  status={status}
+                />
+              </View>
             </View>
           );
         })
       ) : (
         <KolamCopyStack
           items={[
-            {id: 'empty', text: emptyText, style: styles.marketplaceOverviewMeta},
+            {
+              id: 'empty',
+              text: emptyText,
+              style: styles.marketplaceOverviewMeta,
+            },
           ]}
         />
       )}
@@ -1316,6 +1443,8 @@ function MarketplaceIndexedAssetRows<Item>({
   getId,
   getLabel,
   items,
+  onDelete,
+  onMove,
   onUpload,
   status,
   title,
@@ -1325,14 +1454,20 @@ function MarketplaceIndexedAssetRows<Item>({
   getId: (index: number) => string;
   getLabel: (item: Item) => string;
   items: Item[];
+  onDelete: (index: number) => void;
+  onMove: (index: number, direction: -1 | 1) => void;
   onUpload: (index: number) => void;
-  status: Partial<Record<string, 'idle' | 'uploading'>>;
+  status: Partial<
+    Record<string, 'idle' | 'uploading' | 'deleting' | 'reordering'>
+  >;
   title: string;
 }) {
   return (
     <View style={styles.marketplaceAssetGroup}>
       <KolamCopyStack
-        items={[{id: 'title', text: title, style: styles.marketplaceOverviewMeta}]}
+        items={[
+          { id: 'title', text: title, style: styles.marketplaceOverviewMeta },
+        ]}
       />
       {items.length ? (
         items.map((item, index) => {
@@ -1349,20 +1484,48 @@ function MarketplaceIndexedAssetRows<Item>({
                   },
                 ]}
               />
-              <MarketplaceAssetButton
-                disabled={disabled}
-                id={id}
-                label="Upload image"
-                onPress={() => onUpload(index)}
-                status={status}
-              />
+              <View style={styles.marketplaceAssetActions}>
+                <MarketplaceAssetButton
+                  disabled={disabled || index === 0}
+                  id={id}
+                  label="Move up"
+                  onPress={() => onMove(index, -1)}
+                  status={status}
+                />
+                <MarketplaceAssetButton
+                  disabled={disabled || index === items.length - 1}
+                  id={id}
+                  label="Move down"
+                  onPress={() => onMove(index, 1)}
+                  status={status}
+                />
+                <MarketplaceAssetButton
+                  disabled={disabled}
+                  id={id}
+                  label="Upload image"
+                  onPress={() => onUpload(index)}
+                  status={status}
+                />
+                <MarketplaceAssetButton
+                  disabled={disabled}
+                  id={id}
+                  intent="danger"
+                  label="Delete"
+                  onPress={() => onDelete(index)}
+                  status={status}
+                />
+              </View>
             </View>
           );
         })
       ) : (
         <KolamCopyStack
           items={[
-            {id: 'empty', text: emptyText, style: styles.marketplaceOverviewMeta},
+            {
+              id: 'empty',
+              text: emptyText,
+              style: styles.marketplaceOverviewMeta,
+            },
           ]}
         />
       )}
@@ -1373,26 +1536,49 @@ function MarketplaceIndexedAssetRows<Item>({
 function MarketplaceAssetButton({
   disabled,
   id,
+  intent,
   label,
   onPress,
   status,
 }: {
   disabled: boolean;
   id: string;
+  intent?: 'danger' | 'primary';
   label: string;
   onPress: () => void;
-  status: Partial<Record<string, 'idle' | 'uploading'>>;
+  status: Partial<
+    Record<string, 'idle' | 'uploading' | 'deleting' | 'reordering'>
+  >;
 }) {
-  const uploading = status[id] === 'uploading';
+  const actionStatus = status[id];
+  const busy =
+    actionStatus === 'uploading' ||
+    actionStatus === 'deleting' ||
+    actionStatus === 'reordering';
   return (
     <KolamActionControlButton
-      disabled={disabled || uploading}
+      disabled={disabled || busy}
+      intent={intent}
       label={label}
-      loading={uploading}
-      loadingLabel="Uploading..."
+      loading={busy}
+      loadingLabel={getMarketplaceAssetLoadingLabel(actionStatus)}
       onPress={onPress}
     />
   );
+}
+
+function getMarketplaceAssetLoadingLabel(
+  status: 'idle' | 'uploading' | 'deleting' | 'reordering' | undefined,
+) {
+  if (status === 'deleting') {
+    return 'Deleting...';
+  }
+
+  if (status === 'reordering') {
+    return 'Moving...';
+  }
+
+  return 'Uploading...';
 }
 
 function MarketplaceLandingControlsPanel({
@@ -1660,8 +1846,7 @@ function MarketplaceLandingControlsPanel({
           description="Aktifkan notice untuk customer."
           active={noticeDraft.isActive}
           onPress={() =>
-            !disabled &&
-            setNoticeDraftField('isActive', !noticeDraft.isActive)
+            !disabled && setNoticeDraftField('isActive', !noticeDraft.isActive)
           }
         />
         <KolamToggleRow
@@ -1679,10 +1864,7 @@ function MarketplaceLandingControlsPanel({
           active={noticeDraft.showOnDashboard}
           onPress={() =>
             !disabled &&
-            setNoticeDraftField(
-              'showOnDashboard',
-              !noticeDraft.showOnDashboard,
-            )
+            setNoticeDraftField('showOnDashboard', !noticeDraft.showOnDashboard)
           }
         />
         <View style={styles.notificationSoundActions}>
@@ -1719,7 +1901,7 @@ function MarketplaceLandingControlsPanel({
   );
 }
 
-function getCollectionSummary(items: Array<{isActive?: boolean}>) {
+function getCollectionSummary(items: Array<{ isActive?: boolean }>) {
   const active = items.filter(item => item.isActive !== false).length;
   return `${active}/${items.length} active`;
 }
