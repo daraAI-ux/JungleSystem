@@ -52,9 +52,9 @@ describe('settingsSurfaceItems', () => {
     expect(settingsTabItems.map(item => item.label)).toEqual([
       'Umum',
       'Notifikasi',
-      'Toko & Pengiriman',
+      'Pengiriman',
       'Operasional',
-      'Finansial / Pajak',
+      'Finansial',
       'AI / DARA',
       'Peran & Izin',
       'Sitemap',
@@ -87,7 +87,7 @@ describe('settingsSurfaceItems', () => {
     expect(getSettingsTabItems()).toBe(settingsTabItems);
     expect(getSettingsTabItemById('finansial')).toEqual(
       expect.objectContaining({
-        breadcrumbLabel: 'Pajak',
+        breadcrumbLabel: 'Finansial',
         permission: 'wallet:view|tax:view',
         status: 'planned',
       }),
@@ -930,18 +930,20 @@ describe('settingsSurfaceItems', () => {
     })).toEqual([
       expect.objectContaining({
         id: 'storefront-title',
-        label: 'Storefront title',
+        label: 'Judul storefront',
         value: 'Live Storefront',
         control: 'text',
       }),
       expect.objectContaining({
         id: 'storefront-status',
-        value: 'Off',
+        label: 'Storefront aktif',
+        value: 'Nonaktif',
         control: 'toggle',
       }),
       expect.objectContaining({
         id: 'maintenance-mode',
-        value: 'On',
+        label: 'POS',
+        value: 'Aktif',
         control: 'toggle',
       }),
     ]);

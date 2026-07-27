@@ -318,7 +318,7 @@ describe('KolamSettingsPanel', () => {
     );
   });
 
-  it('renders store and shipping production fields in the Toko & Pengiriman tab', async () => {
+  it('renders store and shipping production fields in the Pengiriman tab', async () => {
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
     await ReactTestRenderer.act(async () => {
@@ -330,14 +330,14 @@ describe('KolamSettingsPanel', () => {
     });
 
     await ReactTestRenderer.act(async () => {
-      findTabByText(renderer!, 'Toko & Pengiriman').props.onPress();
+      findTabByText(renderer!, 'Pengiriman').props.onPress();
     });
 
     const text = renderText(renderer!);
 
     expect(text).toEqual(
       expect.arrayContaining([
-        'Toko & Pengiriman',
+        'Pengiriman',
         'Asal pengiriman (Biteship)',
         'Biteship API key',
         'Alamat',
@@ -479,14 +479,14 @@ describe('KolamSettingsPanel', () => {
     });
 
     await ReactTestRenderer.act(async () => {
-      findTabByText(renderer!, 'Finansial / Pajak').props.onPress();
+      findTabByText(renderer!, 'Finansial').props.onPress();
     });
 
     const text = renderText(renderer!);
 
     expect(text).toEqual(
       expect.arrayContaining([
-        'Finansial / Pajak',
+        'Finansial',
         'Ringkasan Finansial / Pajak',
         'Metode pembayaran',
         'Metode nonaktif',
@@ -730,7 +730,7 @@ describe('KolamSettingsPanel', () => {
     expect(requireController(latest).activeSettingsTab).toEqual(
       expect.objectContaining({
         id: 'finansial',
-        breadcrumbLabel: 'Pajak',
+        breadcrumbLabel: 'Finansial',
       }),
     );
     expect(requireController(latest).activeSurfaceId).toBe('web-settings');

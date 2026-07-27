@@ -2016,7 +2016,7 @@ export function KolamSettingsWebConfigSurface({
             <KolamTextFieldRow
               variant="settingsForm"
               label="Google Maps API key (browser)"
-              description="Opsional jika key yang sama sudah di tab Toko & Pengiriman. Kosongkan untuk pakai key Toko."
+              description="Opsional jika key yang sama sudah di tab Pengiriman. Kosongkan untuk pakai key Toko."
               value={draft.staffAttendanceGoogleMapsBrowserApiKey}
               onChangeText={value =>
                 setDraftField('staffAttendanceGoogleMapsBrowserApiKey', value)

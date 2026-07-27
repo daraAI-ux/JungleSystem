@@ -396,8 +396,8 @@ export const settingsTabItems: SettingsTabItem[] = [
   },
   {
     id: 'toko',
-    label: 'Toko & Pengiriman',
-    breadcrumbLabel: 'Toko & Pengiriman',
+    label: 'Pengiriman',
+    breadcrumbLabel: 'Pengiriman',
     route: '/pengaturan',
     description:
       'Asal pengiriman Biteship, Google Maps browser key, koordinat origin, dan jam operasional toko.',
@@ -420,8 +420,8 @@ export const settingsTabItems: SettingsTabItem[] = [
   },
   {
     id: 'finansial',
-    label: 'Finansial / Pajak',
-    breadcrumbLabel: 'Pajak',
+    label: 'Finansial',
+    breadcrumbLabel: 'Finansial',
     route: '/pengaturan',
     description:
       'Metode pembayaran, profil pajak perusahaan, overtime, dan enclosure sale commission.',
