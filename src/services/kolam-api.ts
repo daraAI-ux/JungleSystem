@@ -327,6 +327,23 @@ export interface KolamTeamChatRoom {
   unreadCount?: number;
 }
 
+export interface KolamTeamChatMessage {
+  _id: string;
+  room?: string;
+  sender?: string | {
+    _id?: string;
+    first_name?: string;
+    last_name?: string;
+    username?: string;
+    email?: string;
+  } | null;
+  senderType?: 'user' | 'ai';
+  botKey?: string;
+  botName?: string;
+  body?: string;
+  createdAt?: string;
+}
+
 export type KolamChatPlatform =
   | 'tokopedia'
   | 'shopee'
@@ -355,12 +372,37 @@ export interface KolamChatConversation {
       };
 }
 
+export interface KolamChatMessageContent {
+  type: string;
+  text?: string;
+  imageUrl?: string;
+  fileName?: string;
+}
+
+export interface KolamChatMessage {
+  _id: string;
+  conversationId?: string;
+  direction?: 'in' | 'out';
+  senderName?: string;
+  senderType?: 'buyer' | 'staff' | 'system' | 'ai_agent';
+  content?: KolamChatMessageContent;
+  deliveryStatus?: string;
+  sentAt?: string;
+  createdAt?: string;
+}
+
 export interface KolamChatConversationListParams
   extends Record<string, string | number | boolean | undefined | null> {
   status?: KolamChatConversationStatus | 'all';
   unreadOnly?: boolean;
   limit?: number;
   page?: number;
+}
+
+export interface KolamChatMessageListParams
+  extends Record<string, string | number | boolean | undefined | null> {
+  before?: string;
+  limit?: number;
 }
 
 export interface KolamUserPickerRow {
@@ -1605,12 +1647,93 @@ export async function getKolamChatUnreadTotal(): Promise<number> {
   );
 }
 
+export async function getKolamChatMessages(
+  conversationId: string,
+  params: KolamChatMessageListParams = {limit: 50},
+): Promise<KolamChatMessage[]> {
+  const response = await kolamGet<
+    | DataResponse<KolamChatMessage[]>
+    | {
+        success?: boolean;
+        data?: KolamChatMessage[];
+      }
+  >(
+    `/chat/conversations/${encodeURIComponent(conversationId)}/messages`,
+    cleanKolamListParams(params),
+  );
+
+  return response.data ?? [];
+}
+
+export async function sendKolamChatTextMessage(
+  conversationId: string,
+  text: string,
+): Promise<KolamChatMessage> {
+  const response = await kolamPost<DataResponse<KolamChatMessage>>(
+    `/chat/conversations/${encodeURIComponent(conversationId)}/messages`,
+    {
+      content: {
+        type: 'text',
+        text,
+      },
+    },
+  );
+
+  return response.data;
+}
+
+export async function markKolamChatConversationRead(
+  conversationId: string,
+): Promise<void> {
+  await kolamPost<DataResponse<{unreadCount: number}>>(
+    `/chat/conversations/${encodeURIComponent(conversationId)}/mark-read`,
+    {},
+  );
+}
+
 export async function getKolamTeamChatUnreadTotal(): Promise<number> {
   const rooms = await getKolamTeamChatRooms();
 
   return rooms.reduce(
     (total, room) => total + Math.max(0, room.unreadCount ?? 0),
     0,
+  );
+}
+
+export async function getKolamTeamChatMessages(
+  roomId: string,
+  params: KolamChatMessageListParams = {limit: 80},
+): Promise<KolamTeamChatMessage[]> {
+  const response = await kolamGet<
+    | DataResponse<KolamTeamChatMessage[]>
+    | {
+        success?: boolean;
+        data?: KolamTeamChatMessage[];
+      }
+  >(
+    `/team-chat/rooms/${encodeURIComponent(roomId)}/messages`,
+    cleanKolamListParams(params),
+  );
+
+  return response.data ?? [];
+}
+
+export async function sendKolamTeamChatTextMessage(
+  roomId: string,
+  body: string,
+): Promise<KolamTeamChatMessage> {
+  const response = await kolamPost<DataResponse<KolamTeamChatMessage>>(
+    `/team-chat/rooms/${encodeURIComponent(roomId)}/messages`,
+    {body},
+  );
+
+  return response.data;
+}
+
+export async function markKolamTeamChatRoomRead(roomId: string): Promise<void> {
+  await kolamPost<{success?: boolean}>(
+    `/team-chat/rooms/${encodeURIComponent(roomId)}/read`,
+    {},
   );
 }
 

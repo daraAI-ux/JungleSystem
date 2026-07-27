@@ -1,6 +1,7 @@
 import React from 'react';
-import {ScrollView, StyleSheet, Text, View} from 'react-native';
+import {ScrollView, StyleSheet, Text, TextInput, View} from 'react-native';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
+import {useKolamChatRailDetail} from '../hooks/use-kolam-chat-rail-detail';
 import {useKolamChatRailReadonlyData} from '../hooks/use-kolam-chat-rail-readonly-data';
 import {KolamBadge} from './kolam-badge';
 import {KolamEmptyState} from './kolam-empty-state';
@@ -25,17 +26,31 @@ export function KolamGlobalChatRail({
   const [selectedItemId, setSelectedItemId] = React.useState<string | null>(
     null,
   );
+  const [composerText, setComposerText] = React.useState('');
   const selectedItem = items.find(item => item.id === selectedItemId) ?? null;
+  const detail = useKolamChatRailDetail({mode, selectedId: selectedItemId});
 
   React.useEffect(() => {
     setSelectedItemId(null);
+    setComposerText('');
   }, [mode]);
 
   React.useEffect(() => {
     if (selectedItemId && !items.some(item => item.id === selectedItemId)) {
       setSelectedItemId(null);
+      setComposerText('');
     }
   }, [items, selectedItemId]);
+
+  const handleSend = React.useCallback(async () => {
+    const body = composerText.trim();
+    if (!body || detail.sending) {
+      return;
+    }
+
+    await detail.sendMessage(body);
+    setComposerText('');
+  }, [composerText, detail]);
 
   return (
     <View accessibilityLabel={content.accessibilityLabel} style={styles.rail}>
@@ -80,14 +95,14 @@ export function KolamGlobalChatRail({
         </Text>
 
         {selectedItem ? (
-          <View style={styles.selectedBanner}>
-            <Text numberOfLines={1} style={styles.selectedTitle}>
-              {selectedItem.title}
-            </Text>
-            <Text numberOfLines={2} style={styles.selectedMeta}>
-              {selectedItem.preview}
-            </Text>
-          </View>
+          <KolamChatRailDetailPanel
+            composerText={composerText}
+            detail={detail}
+            mode={mode}
+            onComposerTextChange={setComposerText}
+            onSend={handleSend}
+            selectedItem={selectedItem}
+          />
         ) : null}
 
         {data.errorMessage ? (
@@ -157,6 +172,107 @@ export function KolamGlobalChatRail({
             />
           </ScrollView>
         ) : null}
+      </View>
+    </View>
+  );
+}
+
+function KolamChatRailDetailPanel({
+  composerText,
+  detail,
+  mode,
+  onComposerTextChange,
+  onSend,
+  selectedItem,
+}: {
+  composerText: string;
+  detail: ReturnType<typeof useKolamChatRailDetail>;
+  mode: KolamGlobalChatRailMode;
+  onComposerTextChange: (value: string) => void;
+  onSend: () => void;
+  selectedItem: ReturnType<typeof getChatRailItems>[number];
+}) {
+  return (
+    <View style={styles.detailPanel}>
+      <View style={styles.selectedBanner}>
+        <Text numberOfLines={1} style={styles.selectedTitle}>
+          {selectedItem.title}
+        </Text>
+        <Text numberOfLines={2} style={styles.selectedMeta}>
+          {selectedItem.preview}
+        </Text>
+      </View>
+
+      <View style={styles.messagePane}>
+        {detail.loading ? (
+          <Text style={styles.metaText}>Memuat pesan...</Text>
+        ) : null}
+
+        {detail.errorMessage ? (
+          <Text style={styles.errorText}>{detail.errorMessage}</Text>
+        ) : null}
+
+        {!detail.loading &&
+        !detail.errorMessage &&
+        detail.messages.length === 0 ? (
+          <Text style={styles.emptyDetailText}>Belum ada pesan.</Text>
+        ) : null}
+
+        {detail.messages.length > 0 ? (
+          <ScrollView
+            style={styles.messageScroll}
+            contentContainerStyle={styles.messageList}
+            showsVerticalScrollIndicator>
+            <KolamMappedList
+              items={detail.messages}
+              getKey={message => message.id}
+              renderItem={message => (
+                <View
+                  style={[
+                    styles.messageBubble,
+                    message.mine ? styles.messageBubbleMine : styles.messageBubbleOther,
+                  ]}>
+                  <Text style={styles.messageAuthor}>{message.author}</Text>
+                  <Text style={styles.messageBody}>{message.body}</Text>
+                  <Text style={styles.messageMeta}>
+                    {[formatRelativeTime(message.sentAt), message.status]
+                      .filter(Boolean)
+                      .join(' | ')}
+                  </Text>
+                </View>
+              )}
+            />
+          </ScrollView>
+        ) : null}
+      </View>
+
+      <View style={styles.composer}>
+        <TextInput
+          accessibilityLabel={
+            mode === 'team-chat'
+              ? 'Tulis pesan team chat'
+              : 'Tulis pesan inbox'
+          }
+          editable={!detail.sending}
+          multiline
+          onChangeText={onComposerTextChange}
+          placeholder="Tulis pesan..."
+          placeholderTextColor={V.colors.mutedFg}
+          style={styles.composerInput}
+          value={composerText}
+        />
+        <KolamPressable
+          accessibilityLabel="Kirim pesan"
+          disabled={!composerText.trim() || detail.sending}
+          onPress={onSend}
+          style={[
+            styles.sendButton,
+            (!composerText.trim() || detail.sending) && styles.sendButtonDisabled,
+          ]}>
+          <Text style={styles.sendButtonText}>
+            {detail.sending ? 'Mengirim' : 'Kirim'}
+          </Text>
+        </KolamPressable>
       </View>
     </View>
   );
@@ -469,6 +585,117 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 12,
     lineHeight: 17,
+  },
+  detailPanel: {
+    maxHeight: 330,
+    borderRadius: V.radius.lg,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.bg,
+    overflow: 'hidden',
+  },
+  messagePane: {
+    minHeight: 120,
+    maxHeight: 190,
+    padding: 10,
+    borderTopColor: V.colors.border,
+    borderTopWidth: 1,
+    gap: 8,
+  },
+  messageScroll: {
+    maxHeight: 170,
+  },
+  messageList: {
+    gap: 8,
+    paddingBottom: 4,
+  },
+  messageBubble: {
+    maxWidth: '86%',
+    padding: 9,
+    borderRadius: V.radius.lg,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.mutedSoft,
+    gap: 3,
+  },
+  messageBubbleMine: {
+    alignSelf: 'flex-end',
+    backgroundColor: V.colors.primarySoft,
+    borderColor: V.colors.primary,
+  },
+  messageBubbleOther: {
+    alignSelf: 'flex-start',
+  },
+  messageAuthor: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  messageBody: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    lineHeight: 17,
+  },
+  messageMeta: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  emptyDetailText: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  errorText: {
+    color: V.colors.danger,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  composer: {
+    padding: 10,
+    borderTopColor: V.colors.border,
+    borderTopWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 8,
+  },
+  composerInput: {
+    minHeight: 38,
+    maxHeight: 84,
+    minWidth: 0,
+    flex: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: V.radius.lg,
+    borderColor: V.colors.input,
+    borderWidth: 1,
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    backgroundColor: V.colors.bg,
+  },
+  sendButton: {
+    minHeight: 38,
+    minWidth: 66,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    borderRadius: V.radius.lg,
+    backgroundColor: V.colors.primary,
+  },
+  sendButtonDisabled: {
+    backgroundColor: V.colors.secondary,
+  },
+  sendButtonText: {
+    color: V.colors.primaryFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '900',
   },
   listScroll: {
     flex: 1,

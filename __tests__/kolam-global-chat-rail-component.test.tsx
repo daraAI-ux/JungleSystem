@@ -1,13 +1,22 @@
 import React from 'react';
-import {Text} from 'react-native';
+import {Text, TextInput} from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 import {KolamGlobalChatRail} from '../src/components/kolam-global-chat-rail';
+import {KolamPressable} from '../src/components/kolam-pressable';
+import {useKolamChatRailDetail} from '../src/hooks/use-kolam-chat-rail-detail';
 import {useKolamChatRailReadonlyData} from '../src/hooks/use-kolam-chat-rail-readonly-data';
+
+jest.mock('../src/hooks/use-kolam-chat-rail-detail', () => ({
+  useKolamChatRailDetail: jest.fn(),
+}));
 
 jest.mock('../src/hooks/use-kolam-chat-rail-readonly-data', () => ({
   useKolamChatRailReadonlyData: jest.fn(),
 }));
 
+const useDetailMock = useKolamChatRailDetail as jest.MockedFunction<
+  typeof useKolamChatRailDetail
+>;
 const useReadonlyDataMock = useKolamChatRailReadonlyData as jest.MockedFunction<
   typeof useKolamChatRailReadonlyData
 >;
@@ -32,6 +41,12 @@ function flattenText(value: React.ReactNode): string[] {
 
 describe('KolamGlobalChatRail', () => {
   beforeEach(() => {
+    useDetailMock.mockReturnValue({
+      loading: false,
+      messages: [],
+      sendMessage: jest.fn(),
+      sending: false,
+    });
     useReadonlyDataMock.mockReturnValue({
       conversations: [],
       loading: false,
@@ -154,5 +169,71 @@ describe('KolamGlobalChatRail', () => {
         'Shopee',
       ]),
     );
+  });
+
+  it('opens selected conversation details and sends a text message', async () => {
+    const sendMessage = jest.fn().mockResolvedValue(undefined);
+    useReadonlyDataMock.mockReturnValue({
+      conversations: [
+        {
+          _id: 'conv-1',
+          platform: 'tokopedia',
+          contactId: {displayName: 'Buyer Tokopedia'},
+          lastMessagePreview: 'Apakah masih tersedia?',
+          unreadCount: 2,
+        },
+      ],
+      loading: false,
+      rooms: [],
+      totalUnread: 2,
+    });
+    useDetailMock.mockReturnValue({
+      loading: false,
+      messages: [
+        {
+          id: 'msg-1',
+          author: 'Buyer',
+          body: 'Apakah masih tersedia?',
+          mine: false,
+          sentAt: '2026-07-28T08:00:00.000Z',
+        },
+      ],
+      sendMessage,
+      sending: false,
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamGlobalChatRail mode="inbox" onClose={() => undefined} />,
+      );
+    });
+
+    const selectButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Pilih conversation Buyer Tokopedia');
+
+    await ReactTestRenderer.act(async () => {
+      selectButton!.props.onPress();
+    });
+
+    expect(renderText(renderer!)).toEqual(
+      expect.arrayContaining(['Buyer', 'Apakah masih tersedia?']),
+    );
+
+    const input = renderer!.root.findByType(TextInput);
+    await ReactTestRenderer.act(async () => {
+      input.props.onChangeText('Siap, masih tersedia.');
+    });
+
+    const sendButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Kirim pesan');
+
+    await ReactTestRenderer.act(async () => {
+      await sendButton!.props.onPress();
+    });
+
+    expect(sendMessage).toHaveBeenCalledWith('Siap, masih tersedia.');
   });
 });

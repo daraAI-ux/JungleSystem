@@ -26,8 +26,14 @@ import {
   getKolamWebSettingVersions,
   deleteKolamNotificationSound,
   getKolamChatConversations,
+  getKolamChatMessages,
   getKolamChatUnreadTotal,
+  getKolamTeamChatMessages,
+  markKolamChatConversationRead,
+  markKolamTeamChatRoomRead,
   reorderKolamHeroSlides,
+  sendKolamChatTextMessage,
+  sendKolamTeamChatTextMessage,
   updateKolamBioactiveEcosystem,
   updateKolamCtaSection,
   updateKolamFeaturedCollections,
@@ -1162,6 +1168,109 @@ describe('Kolam Settings API contracts', () => {
     expect(fetchMock).toHaveBeenCalledWith(
       `${appConfig.kolamApiBaseUrl}/chat/conversations?status=open&page=1&limit=50`,
       expect.objectContaining({method: 'GET'}),
+    );
+  });
+
+  it('maps chat detail read, mark-read, and text send endpoints', async () => {
+    fetchMock
+      .mockResolvedValueOnce(
+        jsonResponse({
+          success: true,
+          data: [
+            {
+              _id: 'msg-1',
+              direction: 'in',
+              content: {type: 'text', text: 'Masih tersedia?'},
+            },
+          ],
+        }),
+      )
+      .mockResolvedValueOnce(jsonResponse({success: true, data: {unreadCount: 0}}))
+      .mockResolvedValueOnce(
+        jsonResponse({
+          success: true,
+          data: {
+            _id: 'msg-2',
+            direction: 'out',
+            content: {type: 'text', text: 'Masih tersedia.'},
+          },
+        }),
+      );
+
+    await expect(getKolamChatMessages('conv-1')).resolves.toEqual([
+      expect.objectContaining({_id: 'msg-1'}),
+    ]);
+    await expect(markKolamChatConversationRead('conv-1')).resolves.toBeUndefined();
+    await expect(
+      sendKolamChatTextMessage('conv-1', 'Masih tersedia.'),
+    ).resolves.toEqual(expect.objectContaining({_id: 'msg-2'}));
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      `${appConfig.kolamApiBaseUrl}/chat/conversations/conv-1/messages?limit=50`,
+      expect.objectContaining({method: 'GET'}),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      `${appConfig.kolamApiBaseUrl}/chat/conversations/conv-1/mark-read`,
+      expect.objectContaining({method: 'POST'}),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      `${appConfig.kolamApiBaseUrl}/chat/conversations/conv-1/messages`,
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          content: {
+            type: 'text',
+            text: 'Masih tersedia.',
+          },
+        }),
+      }),
+    );
+  });
+
+  it('maps team chat detail read, mark-read, and text send endpoints', async () => {
+    fetchMock
+      .mockResolvedValueOnce(
+        jsonResponse({
+          success: true,
+          data: [{_id: 'team-msg-1', body: 'Barang siap dikirim'}],
+        }),
+      )
+      .mockResolvedValueOnce(jsonResponse({success: true}))
+      .mockResolvedValueOnce(
+        jsonResponse({
+          success: true,
+          data: {_id: 'team-msg-2', body: 'Siap.'},
+        }),
+      );
+
+    await expect(getKolamTeamChatMessages('room-1')).resolves.toEqual([
+      expect.objectContaining({_id: 'team-msg-1'}),
+    ]);
+    await expect(markKolamTeamChatRoomRead('room-1')).resolves.toBeUndefined();
+    await expect(sendKolamTeamChatTextMessage('room-1', 'Siap.')).resolves.toEqual(
+      expect.objectContaining({_id: 'team-msg-2'}),
+    );
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      `${appConfig.kolamApiBaseUrl}/team-chat/rooms/room-1/messages?limit=80`,
+      expect.objectContaining({method: 'GET'}),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      `${appConfig.kolamApiBaseUrl}/team-chat/rooms/room-1/read`,
+      expect.objectContaining({method: 'POST'}),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      `${appConfig.kolamApiBaseUrl}/team-chat/rooms/room-1/messages`,
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({body: 'Siap.'}),
+      }),
     );
   });
 });
