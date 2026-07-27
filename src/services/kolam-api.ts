@@ -318,8 +318,10 @@ export interface KolamTeamChatRoom {
   _id: string;
   name?: string;
   category?: string;
+  directPeerName?: string;
   isGeneral?: boolean;
   isAiRoom?: boolean;
+  isDaraDirect?: boolean;
   lastMessageAt?: string | null;
   lastMessagePreview?: string;
   unreadCount?: number;
@@ -339,7 +341,9 @@ export interface KolamChatConversation {
   _id: string;
   platform?: KolamChatPlatform;
   lastMessageAt?: string | null;
+  lastMessageDirection?: 'in' | 'out';
   lastMessagePreview?: string;
+  lastMessageType?: string;
   unreadCount?: number;
   status?: KolamChatConversationStatus;
   contactId?:

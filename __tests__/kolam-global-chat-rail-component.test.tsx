@@ -56,12 +56,12 @@ describe('KolamGlobalChatRail', () => {
         'Inbox siap dipasang',
         'Read-only conversation unread sudah terhubung. Detail pesan dan aksi balas masuk di fase berikutnya.',
         '0',
-        '0 item terpantau',
+        '0 conversation terpantau',
       ]),
     );
   });
 
-  it('renders read-only team chat rooms without loading message details', async () => {
+  it('renders a scrollable read-only team chat room list without loading message details', async () => {
     useReadonlyDataMock.mockReturnValue({
       conversations: [],
       loading: false,
@@ -69,8 +69,17 @@ describe('KolamGlobalChatRail', () => {
         {
           _id: 'room-1',
           name: 'Operasional',
+          category: 'general',
+          isGeneral: true,
           lastMessagePreview: 'Barang siap dikirim',
           unreadCount: 4,
+        },
+        {
+          _id: 'room-2',
+          category: 'direct',
+          directPeerName: 'CS Tokopedia',
+          lastMessagePreview: 'Follow up buyer',
+          unreadCount: 0,
         },
       ],
       totalUnread: 4,
@@ -90,14 +99,18 @@ describe('KolamGlobalChatRail', () => {
         'Team chat siap dipasang',
         'Read-only room dan unread sudah terhubung. Stream realtime dan detail pesan masuk di fase berikutnya.',
         '4',
-        '1 item terpantau',
+        '2 room terpantau',
         'Operasional',
         'Barang siap dikirim',
+        'General',
+        'Room utama',
+        'CS Tokopedia',
+        'Follow up buyer',
       ]),
     );
   });
 
-  it('renders read-only inbox conversations without loading message details', async () => {
+  it('renders a scrollable read-only inbox conversation list without loading message details', async () => {
     useReadonlyDataMock.mockReturnValue({
       conversations: [
         {
@@ -106,6 +119,14 @@ describe('KolamGlobalChatRail', () => {
           contactId: {displayName: 'Buyer Tokopedia'},
           lastMessagePreview: 'Apakah masih tersedia?',
           unreadCount: 2,
+        },
+        {
+          _id: 'conv-2',
+          platform: 'shopee',
+          contactId: {displayName: 'Buyer Shopee'},
+          lastMessageDirection: 'out',
+          lastMessagePreview: 'Baik, kami cek stok dulu.',
+          unreadCount: 0,
         },
       ],
       loading: false,
@@ -123,9 +144,14 @@ describe('KolamGlobalChatRail', () => {
     expect(renderText(renderer!)).toEqual(
       expect.arrayContaining([
         '2',
-        '1 item terpantau',
+        '2 conversation terpantau',
         'Buyer Tokopedia',
         'Apakah masih tersedia?',
+        'Tokopedia',
+        'Open',
+        'Buyer Shopee',
+        'Anda: Baik, kami cek stok dulu.',
+        'Shopee',
       ]),
     );
   });
