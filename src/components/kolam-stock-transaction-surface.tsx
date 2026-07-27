@@ -35,12 +35,13 @@ import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamStockCrossSyncObservabilityHost } from './kolam-stock-cross-sync-observability-host';
+import { KolamStockTransactionSourceIcon } from './kolam-stock-transaction-source-icon';
 
 const LIST_COLUMNS = [
   { id: 'target', label: 'Target', flex: 1.4 },
   { id: 'variant', label: 'Varian', flex: 0.9 },
   { id: 'type', label: 'Tipe', flex: 0.6 },
-  { id: 'source', label: 'Sumber', flex: 0.9 },
+  { id: 'source', label: 'Sumber', flex: 0.75 },
   { id: 'sync', label: 'Sync MP', flex: 0.8 },
   { id: 'status', label: 'Status', flex: 1 },
   { id: 'qty', label: 'Qty', flex: 0.5 },
@@ -902,10 +903,11 @@ function KolamStockTransactionList({
         <View style={[styles.cell, { flex: 0.6 }]}>
           <Text style={styles.cellText}>{formatType(item.type)}</Text>
         </View>
-        <View style={[styles.cell, { flex: 0.9 }]}>
-          <Text numberOfLines={2} style={styles.cellText}>
-            {item.sourceLabel}
-          </Text>
+        <View style={[styles.cell, { flex: 0.75 }]}>
+          <KolamStockTransactionSourceIcon
+            label={item.sourceLabel}
+            source={item.source}
+          />
         </View>
         <View style={[styles.cell, { flex: 0.8 }]}>
           <Text numberOfLines={2} style={styles.metaText}>
