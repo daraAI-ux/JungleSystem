@@ -13,6 +13,10 @@ import {useKolamChatRailReadonlyData} from '../hooks/use-kolam-chat-rail-readonl
 import {useKolamNotificationSoundSettings} from '../hooks/use-kolam-notification-sound-settings';
 import {createKolamNotificationSoundService} from '../services/kolam-notification-sound-service';
 import {createKolamRuntimeNotificationSoundAdapter} from '../services/kolam-notification-sound-runtime';
+import {
+  pickNativeAssetFile,
+  type NativeImagePickerResult,
+} from '../services/native-file-picker';
 import {KolamBadge} from './kolam-badge';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamIconButton} from './kolam-icon-button';
@@ -38,6 +42,8 @@ export function KolamGlobalChatRail({
     null,
   );
   const [composerText, setComposerText] = React.useState('');
+  const [pendingAttachment, setPendingAttachment] =
+    React.useState<NativeImagePickerResult | null>(null);
   const selectedItem = items.find(item => item.id === selectedItemId) ?? null;
   const detail = useKolamChatRailDetail({mode, selectedId: selectedItemId});
   const {syncFromLiveClassification} = useKolamChatRailLiveSync({
@@ -80,24 +86,44 @@ export function KolamGlobalChatRail({
   React.useEffect(() => {
     setSelectedItemId(null);
     setComposerText('');
+    setPendingAttachment(null);
   }, [mode]);
 
   React.useEffect(() => {
     if (selectedItemId && !items.some(item => item.id === selectedItemId)) {
       setSelectedItemId(null);
       setComposerText('');
+      setPendingAttachment(null);
     }
   }, [items, selectedItemId]);
 
+  const handleChooseAttachment = React.useCallback(async () => {
+    if (mode !== 'team-chat' || detail.sending) {
+      return;
+    }
+
+    const file = await pickNativeAssetFile();
+    if (!file.cancelled) {
+      setPendingAttachment(file);
+    }
+  }, [detail.sending, mode]);
+
   const handleSend = React.useCallback(async () => {
     const body = composerText.trim();
-    if (!body || detail.sending) {
+    if ((!body && !pendingAttachment) || detail.sending) {
+      return;
+    }
+
+    if (pendingAttachment) {
+      await detail.sendAttachment(pendingAttachment, body);
+      setPendingAttachment(null);
+      setComposerText('');
       return;
     }
 
     await detail.sendMessage(body);
     setComposerText('');
-  }, [composerText, detail]);
+  }, [composerText, detail, pendingAttachment]);
 
   return (
     <View accessibilityLabel={content.accessibilityLabel} style={styles.rail}>
@@ -148,7 +174,10 @@ export function KolamGlobalChatRail({
             detail={detail}
             mode={mode}
             onComposerTextChange={setComposerText}
+            onPendingAttachmentClear={() => setPendingAttachment(null)}
+            onPendingAttachmentPick={handleChooseAttachment}
             onSend={handleSend}
+            pendingAttachment={pendingAttachment}
             selectedItem={selectedItem}
           />
         ) : null}
@@ -245,16 +274,27 @@ function KolamChatRailDetailPanel({
   detail,
   mode,
   onComposerTextChange,
+  onPendingAttachmentClear,
+  onPendingAttachmentPick,
   onSend,
+  pendingAttachment,
   selectedItem,
 }: {
   composerText: string;
   detail: ReturnType<typeof useKolamChatRailDetail>;
   mode: KolamGlobalChatRailMode;
   onComposerTextChange: (value: string) => void;
+  onPendingAttachmentClear: () => void;
+  onPendingAttachmentPick: () => void;
   onSend: () => void;
+  pendingAttachment: NativeImagePickerResult | null;
   selectedItem: ReturnType<typeof getChatRailItems>[number];
 }) {
+  const canSend = Boolean(composerText.trim() || pendingAttachment);
+  const attachmentLabel = pendingAttachment
+    ? pendingAttachment.name ?? pendingAttachment.path ?? pendingAttachment.uri ?? 'File'
+    : '';
+
   return (
     <View style={styles.detailPanel}>
       <View style={styles.selectedBanner}>
@@ -309,7 +349,34 @@ function KolamChatRailDetailPanel({
         ) : null}
       </View>
 
+      {pendingAttachment ? (
+        <View style={styles.pendingAttachment}>
+          <Text numberOfLines={1} style={styles.pendingAttachmentText}>
+            {attachmentLabel}
+          </Text>
+          <KolamPressable
+            accessibilityLabel="Hapus lampiran chat"
+            disabled={detail.sending}
+            onPress={onPendingAttachmentClear}
+            style={styles.pendingAttachmentRemove}>
+            <Text style={styles.pendingAttachmentRemoveText}>x</Text>
+          </KolamPressable>
+        </View>
+      ) : null}
+
       <View style={styles.composer}>
+        {mode === 'team-chat' ? (
+          <KolamPressable
+            accessibilityLabel="Lampirkan file team chat"
+            disabled={detail.sending}
+            onPress={onPendingAttachmentPick}
+            style={[
+              styles.attachButton,
+              detail.sending && styles.attachButtonDisabled,
+            ]}>
+            <Text style={styles.attachButtonText}>+</Text>
+          </KolamPressable>
+        ) : null}
         <TextInput
           accessibilityLabel={
             mode === 'team-chat'
@@ -326,11 +393,11 @@ function KolamChatRailDetailPanel({
         />
         <KolamPressable
           accessibilityLabel="Kirim pesan"
-          disabled={!composerText.trim() || detail.sending}
+          disabled={!canSend || detail.sending}
           onPress={onSend}
           style={[
             styles.sendButton,
-            (!composerText.trim() || detail.sending) && styles.sendButtonDisabled,
+            (!canSend || detail.sending) && styles.sendButtonDisabled,
           ]}>
           <Text style={styles.sendButtonText}>
             {detail.sending ? 'Mengirim' : 'Kirim'}
@@ -719,6 +786,42 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
   },
+  pendingAttachment: {
+    marginHorizontal: 10,
+    marginBottom: 8,
+    minHeight: 32,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: V.radius.lg,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.mutedSoft,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  pendingAttachmentText: {
+    minWidth: 0,
+    flex: 1,
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  pendingAttachmentRemove: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: V.colors.secondary,
+  },
+  pendingAttachmentRemoveText: {
+    color: V.colors.secondaryFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '900',
+  },
   composer: {
     padding: 10,
     borderTopColor: V.colors.border,
@@ -726,6 +829,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-end',
     gap: 8,
+  },
+  attachButton: {
+    width: 38,
+    height: 38,
+    borderRadius: V.radius.lg,
+    borderColor: V.colors.input,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: V.colors.bg,
+  },
+  attachButtonDisabled: {
+    opacity: 0.55,
+  },
+  attachButtonText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 20,
+    fontWeight: '900',
+    lineHeight: 22,
   },
   composerInput: {
     minHeight: 38,

@@ -9,6 +9,7 @@ import {useKolamChatRailDetail} from '../src/hooks/use-kolam-chat-rail-detail';
 import {useKolamChatRailReadonlyData} from '../src/hooks/use-kolam-chat-rail-readonly-data';
 import {useKolamNotificationSoundSettings} from '../src/hooks/use-kolam-notification-sound-settings';
 import {createKolamNotificationSoundService} from '../src/services/kolam-notification-sound-service';
+import {pickNativeAssetFile} from '../src/services/native-file-picker';
 
 const mockSoundPlay = jest.fn();
 
@@ -44,6 +45,10 @@ jest.mock('../src/services/kolam-notification-sound-runtime', () => ({
   })),
 }));
 
+jest.mock('../src/services/native-file-picker', () => ({
+  pickNativeAssetFile: jest.fn(),
+}));
+
 const useAuthContextMock = useKolamAuthContext as jest.MockedFunction<
   typeof useKolamAuthContext
 >;
@@ -64,6 +69,9 @@ const createSoundServiceMock =
   createKolamNotificationSoundService as jest.MockedFunction<
     typeof createKolamNotificationSoundService
   >;
+const pickNativeAssetFileMock = pickNativeAssetFile as jest.MockedFunction<
+  typeof pickNativeAssetFile
+>;
 
 function renderText(renderer: ReactTestRenderer.ReactTestRenderer) {
   return renderer.root
@@ -109,6 +117,7 @@ describe('KolamGlobalChatRail', () => {
       loading: false,
       messages: [],
       refresh: jest.fn(),
+      sendAttachment: jest.fn(),
       sendMessage: jest.fn(),
       sending: false,
     });
@@ -127,6 +136,7 @@ describe('KolamGlobalChatRail', () => {
         unassignedNotificationSound: 'media/audios/unassigned.wav',
       },
     });
+    pickNativeAssetFileMock.mockResolvedValue({cancelled: true});
   });
 
   afterEach(() => {
@@ -280,6 +290,7 @@ describe('KolamGlobalChatRail', () => {
         },
       ],
       refresh: jest.fn(),
+      sendAttachment: jest.fn(),
       sendMessage,
       sending: false,
     });
@@ -319,6 +330,77 @@ describe('KolamGlobalChatRail', () => {
     expect(sendMessage).toHaveBeenCalledWith('Siap, masih tersedia.');
   });
 
+  it('picks and sends a team chat attachment from the composer', async () => {
+    const sendAttachment = jest.fn().mockResolvedValue(undefined);
+    pickNativeAssetFileMock.mockResolvedValue({
+      cancelled: false,
+      mimeType: 'application/pdf',
+      name: 'invoice.pdf',
+      path: 'C:\\docs\\invoice.pdf',
+    });
+    useReadonlyDataMock.mockReturnValue({
+      conversations: [],
+      loading: false,
+      refresh: jest.fn(),
+      rooms: [
+        {
+          _id: 'room-1',
+          name: 'Operasional',
+          category: 'general',
+          lastMessagePreview: 'Barang siap dikirim',
+          unreadCount: 0,
+        },
+      ],
+      totalUnread: 0,
+    });
+    useDetailMock.mockReturnValue({
+      loading: false,
+      messages: [],
+      refresh: jest.fn(),
+      sendAttachment,
+      sendMessage: jest.fn(),
+      sending: false,
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamGlobalChatRail mode="team-chat" onClose={() => undefined} />,
+      );
+    });
+
+    const selectButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Pilih room Operasional');
+
+    await ReactTestRenderer.act(async () => {
+      selectButton!.props.onPress();
+    });
+
+    const attachButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Lampirkan file team chat');
+
+    await ReactTestRenderer.act(async () => {
+      await attachButton!.props.onPress();
+    });
+
+    expect(renderText(renderer!)).toEqual(expect.arrayContaining(['invoice.pdf']));
+
+    const sendButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Kirim pesan');
+
+    await ReactTestRenderer.act(async () => {
+      await sendButton!.props.onPress();
+    });
+
+    expect(sendAttachment).toHaveBeenCalledWith(
+      expect.objectContaining({name: 'invoice.pdf'}),
+      '',
+    );
+  });
+
   it('refreshes list and active detail from live events without playing sound', async () => {
     jest.useFakeTimers();
     const refreshList = jest.fn().mockResolvedValue(undefined);
@@ -349,6 +431,7 @@ describe('KolamGlobalChatRail', () => {
       loading: false,
       messages: [],
       refresh: refreshDetail,
+      sendAttachment: jest.fn(),
       sendMessage: jest.fn(),
       sending: false,
     });

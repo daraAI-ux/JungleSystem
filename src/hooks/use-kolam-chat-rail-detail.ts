@@ -6,10 +6,13 @@ import {
   markKolamChatConversationRead,
   markKolamTeamChatRoomRead,
   sendKolamChatTextMessage,
+  sendKolamTeamChatMessage,
   sendKolamTeamChatTextMessage,
   type KolamChatMessage,
   type KolamTeamChatMessage,
+  uploadKolamTeamChatMedia,
 } from '../services/kolam-api';
+import type {NativeImagePickerResult} from '../services/native-file-picker';
 
 export interface KolamChatRailDetailMessage {
   id: string;
@@ -24,6 +27,7 @@ export interface KolamChatRailDetailState {
   errorMessage?: string;
   loading: boolean;
   messages: KolamChatRailDetailMessage[];
+  sendAttachment: (file: NativeImagePickerResult, text?: string) => Promise<void>;
   refresh: () => Promise<void>;
   sendMessage: (text: string) => Promise<void>;
   sending: boolean;
@@ -109,11 +113,45 @@ export function useKolamChatRailDetail({
     [mode, selectedId, sending],
   );
 
+  const sendAttachment = useCallback(
+    async (file: NativeImagePickerResult, text = '') => {
+      if (!selectedId || mode !== 'team-chat' || sending) {
+        return;
+      }
+
+      const localUri = file.uri ?? file.path ?? '';
+      if (!localUri) {
+        setErrorMessage('File lampiran belum bisa dibaca.');
+        return;
+      }
+
+      setSending(true);
+      setErrorMessage(undefined);
+
+      try {
+        const attachment = await uploadKolamTeamChatMedia(localUri);
+        const message = await sendKolamTeamChatMessage(selectedId, {
+          body: text.trim(),
+          attachments: [attachment],
+        });
+        setMessages(current => [...current, mapTeamChatMessage(message)]);
+      } catch (error) {
+        setErrorMessage(
+          error instanceof Error ? error.message : 'Lampiran gagal dikirim.',
+        );
+      } finally {
+        setSending(false);
+      }
+    },
+    [mode, selectedId, sending],
+  );
+
   return {
     errorMessage,
     loading,
     messages,
     refresh,
+    sendAttachment,
     sendMessage,
     sending,
   };
