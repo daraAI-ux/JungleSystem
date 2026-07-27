@@ -1,10 +1,11 @@
-import {useCallback, useEffect, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import type {KolamGlobalChatRailMode} from '../components/kolam-global-chat-rail';
 import {
   getKolamChatMessages,
   getKolamTeamChatMessages,
   markKolamChatConversationRead,
   markKolamTeamChatRoomRead,
+  postKolamTeamChatPresence,
   sendKolamChatTextMessage,
   sendKolamTeamChatMessage,
   sendKolamTeamChatTextMessage,
@@ -13,9 +14,16 @@ import {
   type KolamTeamChatReaction,
   type KolamTeamChatAttachment,
   type KolamTeamChatMessage,
+  type KolamTeamChatPresence,
   uploadKolamTeamChatMedia,
 } from '../services/kolam-api';
 import type {NativeImagePickerResult} from '../services/native-file-picker';
+
+const EMPTY_TEAM_CHAT_PRESENCE: KolamTeamChatPresence = {
+  onlineCount: 0,
+  typingUserIds: [],
+  viewingCount: 0,
+};
 
 export interface KolamChatRailDetailReactionGroup {
   count: number;
@@ -38,11 +46,14 @@ export interface KolamChatRailDetailState {
   errorMessage?: string;
   loading: boolean;
   messages: KolamChatRailDetailMessage[];
+  presence: KolamTeamChatPresence;
   reactToMessage: (messageId: string, emoji: string) => Promise<void>;
   sendAttachment: (file: NativeImagePickerResult, text?: string) => Promise<void>;
   refresh: () => Promise<void>;
   sendMessage: (text: string) => Promise<void>;
+  signalTyping: (typing: boolean) => void;
   sending: boolean;
+  updatePresenceFromLive: (presence: KolamTeamChatPresence) => void;
 }
 
 export function useKolamChatRailDetail({
@@ -58,10 +69,15 @@ export function useKolamChatRailDetail({
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
+  const [presence, setPresence] = useState<KolamTeamChatPresence>(
+    EMPTY_TEAM_CHAT_PRESENCE,
+  );
+  const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const refresh = useCallback(async () => {
     if (!selectedId) {
       setMessages([]);
+      setPresence(EMPTY_TEAM_CHAT_PRESENCE);
       setErrorMessage(undefined);
       setLoading(false);
       return;
@@ -98,6 +114,79 @@ export function useKolamChatRailDetail({
   useEffect(() => {
     refresh();
   }, [refresh]);
+
+  const postTeamChatPresence = useCallback(
+    async (typing: boolean, typingRoomId?: string | null) => {
+      if (mode !== 'team-chat') {
+        return;
+      }
+
+      const nextPresence = await postKolamTeamChatPresence({
+        typing,
+        typingRoomId: typingRoomId ?? null,
+        viewingRoomId: selectedId,
+      }).catch(() => null);
+
+      if (nextPresence) {
+        setPresence(nextPresence);
+      }
+    },
+    [mode, selectedId],
+  );
+
+  useEffect(() => {
+    if (mode !== 'team-chat' || !selectedId) {
+      setPresence(EMPTY_TEAM_CHAT_PRESENCE);
+      return;
+    }
+
+    void postTeamChatPresence(false, null);
+
+    return () => {
+      if (typingTimerRef.current) {
+        clearTimeout(typingTimerRef.current);
+        typingTimerRef.current = null;
+      }
+
+      void postKolamTeamChatPresence({
+        typing: false,
+        typingRoomId: null,
+        viewingRoomId: null,
+      }).catch(() => null);
+    };
+  }, [mode, postTeamChatPresence, selectedId]);
+
+  const signalTyping = useCallback(
+    (typing: boolean) => {
+      if (mode !== 'team-chat' || !selectedId) {
+        return;
+      }
+
+      if (typingTimerRef.current) {
+        clearTimeout(typingTimerRef.current);
+        typingTimerRef.current = null;
+      }
+
+      if (!typing) {
+        void postTeamChatPresence(false, selectedId);
+        return;
+      }
+
+      void postTeamChatPresence(true, selectedId);
+      typingTimerRef.current = setTimeout(() => {
+        typingTimerRef.current = null;
+        void postTeamChatPresence(false, selectedId);
+      }, 2000);
+    },
+    [mode, postTeamChatPresence, selectedId],
+  );
+
+  const updatePresenceFromLive = useCallback(
+    (nextPresence: KolamTeamChatPresence) => {
+      setPresence(nextPresence);
+    },
+    [],
+  );
 
   const sendMessage = useCallback(
     async (text: string) => {
@@ -205,11 +294,14 @@ export function useKolamChatRailDetail({
     errorMessage,
     loading,
     messages,
+    presence,
     reactToMessage,
     refresh,
     sendAttachment,
     sendMessage,
+    signalTyping,
     sending,
+    updatePresenceFromLive,
   };
 }
 

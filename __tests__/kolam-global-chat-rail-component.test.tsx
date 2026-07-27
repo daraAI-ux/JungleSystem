@@ -116,11 +116,14 @@ describe('KolamGlobalChatRail', () => {
     useDetailMock.mockReturnValue({
       loading: false,
       messages: [],
+      presence: {onlineCount: 0, typingUserIds: [], viewingCount: 0},
       reactToMessage: jest.fn(),
       refresh: jest.fn(),
       sendAttachment: jest.fn(),
       sendMessage: jest.fn(),
+      signalTyping: jest.fn(),
       sending: false,
+      updatePresenceFromLive: jest.fn(),
     });
     useReadonlyDataMock.mockReturnValue({
       conversations: [],
@@ -299,11 +302,14 @@ describe('KolamGlobalChatRail', () => {
           sentAt: '2026-07-28T08:00:00.000Z',
         },
       ],
+      presence: {onlineCount: 0, typingUserIds: [], viewingCount: 0},
       reactToMessage: jest.fn(),
       refresh: jest.fn(),
       sendAttachment: jest.fn(),
       sendMessage,
+      signalTyping: jest.fn(),
       sending: false,
+      updatePresenceFromLive: jest.fn(),
     });
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
@@ -377,11 +383,14 @@ describe('KolamGlobalChatRail', () => {
           sentAt: '2026-07-28T08:00:00.000Z',
         },
       ],
+      presence: {onlineCount: 3, typingUserIds: ['staff-2'], viewingCount: 2},
       reactToMessage,
       refresh: jest.fn(),
       sendAttachment: jest.fn(),
       sendMessage: jest.fn(),
+      signalTyping: jest.fn(),
       sending: false,
+      updatePresenceFromLive: jest.fn(),
     });
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
@@ -400,7 +409,13 @@ describe('KolamGlobalChatRail', () => {
     });
 
     expect(renderText(renderer!)).toEqual(
-      expect.arrayContaining(['Staff', 'Barang siap dikirim', '👍', '2']),
+      expect.arrayContaining([
+        '3 online · 2 melihat · 1 mengetik...',
+        'Staff',
+        'Barang siap dikirim',
+        '👍',
+        '2',
+      ]),
     );
 
     const reactionButton = renderer!.root
@@ -412,6 +427,91 @@ describe('KolamGlobalChatRail', () => {
     });
 
     expect(reactToMessage).toHaveBeenCalledWith('team-msg-1', '🙏');
+  });
+
+  it('signals typing for team chat composer changes and accepts live presence updates', async () => {
+    const signalTyping = jest.fn();
+    const updatePresenceFromLive = jest.fn();
+    let liveOptions:
+      | Parameters<typeof useKolamChatLiveStream>[0]
+      | undefined;
+
+    useLiveStreamMock.mockImplementation(options => {
+      liveOptions = options;
+    });
+    useReadonlyDataMock.mockReturnValue({
+      conversations: [],
+      loading: false,
+      refresh: jest.fn(),
+      rooms: [
+        {
+          _id: 'room-1',
+          name: 'Operasional',
+          category: 'general',
+          lastMessagePreview: 'Barang siap dikirim',
+          unreadCount: 0,
+        },
+      ],
+      totalUnread: 0,
+    });
+    useDetailMock.mockReturnValue({
+      loading: false,
+      messages: [],
+      presence: {onlineCount: 1, typingUserIds: [], viewingCount: 1},
+      reactToMessage: jest.fn(),
+      refresh: jest.fn(),
+      sendAttachment: jest.fn(),
+      sendMessage: jest.fn(),
+      signalTyping,
+      sending: false,
+      updatePresenceFromLive,
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamGlobalChatRail mode="team-chat" onClose={() => undefined} />,
+      );
+    });
+
+    const selectButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Pilih room Operasional');
+
+    await ReactTestRenderer.act(async () => {
+      selectButton!.props.onPress();
+    });
+
+    const input = renderer!.root.findByType(TextInput);
+    await ReactTestRenderer.act(async () => {
+      input.props.onChangeText('Halo tim');
+    });
+
+    expect(signalTyping).toHaveBeenCalledWith(true);
+
+    await ReactTestRenderer.act(async () => {
+      liveOptions!.onEvent({
+        contract: {
+          eventName: 'presence.updated',
+          legacySources: [],
+          note: '',
+          refreshTargets: ['team-room-presence'],
+          route: '/team-chat/stream',
+          soundIntent: 'none',
+          stream: 'team-chat',
+        },
+        payload: {
+          presence: {onlineCount: 4, typingUserIds: ['staff-2'], viewingCount: 2},
+          roomId: 'room-1',
+        },
+      });
+    });
+
+    expect(updatePresenceFromLive).toHaveBeenCalledWith({
+      onlineCount: 4,
+      typingUserIds: ['staff-2'],
+      viewingCount: 2,
+    });
   });
 
   it('picks and sends a team chat attachment from the composer', async () => {
@@ -440,11 +540,14 @@ describe('KolamGlobalChatRail', () => {
     useDetailMock.mockReturnValue({
       loading: false,
       messages: [],
+      presence: {onlineCount: 0, typingUserIds: [], viewingCount: 0},
       reactToMessage: jest.fn(),
       refresh: jest.fn(),
       sendAttachment,
       sendMessage: jest.fn(),
+      signalTyping: jest.fn(),
       sending: false,
+      updatePresenceFromLive: jest.fn(),
     });
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
@@ -515,11 +618,14 @@ describe('KolamGlobalChatRail', () => {
     useDetailMock.mockReturnValue({
       loading: false,
       messages: [],
+      presence: {onlineCount: 0, typingUserIds: [], viewingCount: 0},
       reactToMessage: jest.fn(),
       refresh: refreshDetail,
       sendAttachment: jest.fn(),
       sendMessage: jest.fn(),
+      signalTyping: jest.fn(),
       sending: false,
+      updatePresenceFromLive: jest.fn(),
     });
     let renderer: ReactTestRenderer.ReactTestRenderer;
 

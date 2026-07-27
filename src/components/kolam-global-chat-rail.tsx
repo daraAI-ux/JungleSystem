@@ -12,7 +12,10 @@ import {useKolamChatRailLiveSync} from '../hooks/use-kolam-chat-rail-live-sync';
 import {useKolamChatRailReadonlyData} from '../hooks/use-kolam-chat-rail-readonly-data';
 import {useKolamNotificationSoundSettings} from '../hooks/use-kolam-notification-sound-settings';
 import {getKolamFileUrl} from '../lib/file-url';
-import type {KolamTeamChatAttachment} from '../services/kolam-api';
+import type {
+  KolamTeamChatAttachment,
+  KolamTeamChatPresence,
+} from '../services/kolam-api';
 import {createKolamNotificationSoundService} from '../services/kolam-notification-sound-service';
 import {createKolamRuntimeNotificationSoundAdapter} from '../services/kolam-notification-sound-runtime';
 import {
@@ -76,6 +79,16 @@ export function KolamGlobalChatRail({
 
       syncFromLiveClassification(classification);
 
+      if (
+        classification.refreshPresence &&
+        classification.targetId === selectedItemId
+      ) {
+        const presence = getTeamChatPresenceFromLiveEvent(event);
+        if (presence) {
+          detail.updatePresenceFromLive(presence);
+        }
+      }
+
       Promise.resolve(
         notificationSoundService.play({
           intent: classification.soundIntent,
@@ -85,6 +98,7 @@ export function KolamGlobalChatRail({
     },
     [
       authUser?.id,
+      detail,
       notificationSoundService,
       selectedItemId,
       soundSettings.webSetting,
@@ -127,12 +141,22 @@ export function KolamGlobalChatRail({
       await detail.sendAttachment(pendingAttachment, body);
       setPendingAttachment(null);
       setComposerText('');
+      detail.signalTyping(false);
       return;
     }
 
     await detail.sendMessage(body);
     setComposerText('');
+    detail.signalTyping(false);
   }, [composerText, detail, pendingAttachment]);
+
+  const handleComposerTextChange = React.useCallback(
+    (value: string) => {
+      setComposerText(value);
+      detail.signalTyping(Boolean(value.trim()));
+    },
+    [detail],
+  );
 
   return (
     <View accessibilityLabel={content.accessibilityLabel} style={styles.rail}>
@@ -182,7 +206,7 @@ export function KolamGlobalChatRail({
             composerText={composerText}
             detail={detail}
             mode={mode}
-            onComposerTextChange={setComposerText}
+            onComposerTextChange={handleComposerTextChange}
             onPendingAttachmentClear={() => setPendingAttachment(null)}
             onPendingAttachmentPick={handleChooseAttachment}
             onSend={handleSend}
@@ -313,6 +337,11 @@ function KolamChatRailDetailPanel({
         <Text numberOfLines={2} style={styles.selectedMeta}>
           {selectedItem.preview}
         </Text>
+        {mode === 'team-chat' ? (
+          <Text numberOfLines={1} style={styles.presenceMeta}>
+            {formatTeamChatPresence(detail.presence)}
+          </Text>
+        ) : null}
       </View>
 
       <View style={styles.messagePane}>
@@ -717,6 +746,42 @@ function getConversationPreview({
   return `${getConversationDirectionPrefix(lastMessageDirection)}${preview}`;
 }
 
+function getTeamChatPresenceFromLiveEvent(
+  event: KolamChatLiveEvent,
+): KolamTeamChatPresence | null {
+  if (!event.payload || typeof event.payload !== 'object') {
+    return null;
+  }
+
+  const presence = (event.payload as {presence?: unknown}).presence;
+  if (!presence || typeof presence !== 'object') {
+    return null;
+  }
+
+  const record = presence as Partial<KolamTeamChatPresence>;
+  return {
+    onlineCount: Number.isFinite(record.onlineCount) ? record.onlineCount ?? 0 : 0,
+    typingUserIds: Array.isArray(record.typingUserIds)
+      ? record.typingUserIds.filter(id => typeof id === 'string')
+      : [],
+    viewingCount: Number.isFinite(record.viewingCount)
+      ? record.viewingCount ?? 0
+      : 0,
+  };
+}
+
+function formatTeamChatPresence(presence: KolamTeamChatPresence) {
+  const parts = [
+    presence.onlineCount > 0 ? `${presence.onlineCount} online` : 'Tidak ada yang online',
+    presence.viewingCount > 0 ? `${presence.viewingCount} melihat` : '',
+    presence.typingUserIds.length > 0
+      ? `${presence.typingUserIds.length} mengetik...`
+      : '',
+  ].filter(Boolean);
+
+  return parts.join(' · ');
+}
+
 function getAttachmentFileName(attachment: KolamTeamChatAttachment) {
   if (attachment.fileName?.trim()) {
     return attachment.fileName.trim();
@@ -873,6 +938,12 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 12,
     lineHeight: 17,
+  },
+  presenceMeta: {
+    color: V.colors.primary,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '800',
   },
   detailPanel: {
     maxHeight: 330,
