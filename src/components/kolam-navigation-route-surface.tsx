@@ -5,10 +5,13 @@ import {
   type KolamNavigationItem,
 } from '../domain/kolam-navigation';
 import {isKolamSpeciesRoute} from '../domain/kolam-species';
+import {isKolamStockTransactionRoute} from '../domain/kolam-stock-transaction';
 import type {UnifiedDataset} from '../services/unified-data';
 import {KolamDescriptionList} from './kolam-description-list';
 import {KolamModulePanel} from './kolam-module-panel';
 import {KolamSpeciesSurface} from './kolam-species-surface';
+import {KolamTeranuraSurface} from './kolam-teranura-surface';
+import {KolamStockTransactionSurface} from './kolam-stock-transaction-surface';
 import {KolamRouteWorkbench} from './kolam-route-workbench';
 
 export function KolamNavigationRouteSurface({
@@ -30,6 +33,19 @@ export function KolamNavigationRouteSurface({
         route={contract.runtimeRoute}
       />
     );
+  }
+
+  if (isKolamStockTransactionRoute(routePath)) {
+    return (
+      <KolamStockTransactionSurface
+        onRouteChange={onRouteChange}
+        route={contract.runtimeRoute}
+      />
+    );
+  }
+
+  if (routePath === '/teranura') {
+    return <KolamTeranuraSurface onRouteChange={onRouteChange} />;
   }
 
   return (
