@@ -1,16 +1,24 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
 import type {KolamGlobalChatRailMode} from '../components/kolam-global-chat-rail';
 import {
+  declineKolamTeamChatCall,
+  endKolamTeamChatCall,
   getKolamChatMessages,
+  getKolamRoomActiveTeamChatCall,
   getKolamTeamChatMessages,
+  getKolamTeamChatCallConfig,
+  joinKolamTeamChatCall,
   markKolamChatConversationRead,
   markKolamTeamChatRoomRead,
   postKolamTeamChatPresence,
   sendKolamChatTextMessage,
   sendKolamTeamChatMessage,
   sendKolamTeamChatTextMessage,
+  startKolamTeamChatCall,
   toggleKolamTeamChatReaction,
   type KolamChatMessage,
+  type KolamTeamChatCall,
+  type KolamTeamChatCallConfig,
   type KolamTeamChatReaction,
   type KolamTeamChatAttachment,
   type KolamTeamChatMessage,
@@ -43,16 +51,25 @@ export interface KolamChatRailDetailMessage {
 }
 
 export interface KolamChatRailDetailState {
+  activeCall: KolamTeamChatCall | null;
+  callBusy: boolean;
+  callConfig: KolamTeamChatCallConfig;
+  callErrorMessage?: string;
+  declineCall: () => Promise<void>;
+  endCall: () => Promise<void>;
   errorMessage?: string;
+  joinCall: () => Promise<void>;
   loading: boolean;
   messages: KolamChatRailDetailMessage[];
   presence: KolamTeamChatPresence;
   reactToMessage: (messageId: string, emoji: string) => Promise<void>;
+  refreshCall: () => Promise<void>;
   sendAttachment: (file: NativeImagePickerResult, text?: string) => Promise<void>;
   refresh: () => Promise<void>;
   sendMessage: (text: string) => Promise<void>;
   signalTyping: (typing: boolean) => void;
   sending: boolean;
+  startCall: () => Promise<void>;
   updatePresenceFromLive: (presence: KolamTeamChatPresence) => void;
 }
 
@@ -68,6 +85,12 @@ export function useKolamChatRailDetail({
   const [messages, setMessages] = useState<KolamChatRailDetailMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
+  const [callBusy, setCallBusy] = useState(false);
+  const [activeCall, setActiveCall] = useState<KolamTeamChatCall | null>(null);
+  const [callConfig, setCallConfig] = useState<KolamTeamChatCallConfig>({
+    enabled: false,
+  });
+  const [callErrorMessage, setCallErrorMessage] = useState<string | undefined>();
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
   const [presence, setPresence] = useState<KolamTeamChatPresence>(
     EMPTY_TEAM_CHAT_PRESENCE,
@@ -78,6 +101,7 @@ export function useKolamChatRailDetail({
     if (!selectedId) {
       setMessages([]);
       setPresence(EMPTY_TEAM_CHAT_PRESENCE);
+      setActiveCall(null);
       setErrorMessage(undefined);
       setLoading(false);
       return;
@@ -114,6 +138,34 @@ export function useKolamChatRailDetail({
   useEffect(() => {
     refresh();
   }, [refresh]);
+
+  const refreshCall = useCallback(async () => {
+    if (mode !== 'team-chat' || !selectedId) {
+      setActiveCall(null);
+      setCallConfig({enabled: false});
+      setCallErrorMessage(undefined);
+      return;
+    }
+
+    setCallErrorMessage(undefined);
+
+    try {
+      const [config, call] = await Promise.all([
+        getKolamTeamChatCallConfig(),
+        getKolamRoomActiveTeamChatCall(selectedId),
+      ]);
+      setCallConfig(config);
+      setActiveCall(call && call.status !== 'ended' ? call : null);
+    } catch (error) {
+      setCallErrorMessage(
+        error instanceof Error ? error.message : 'Status call belum bisa dibaca.',
+      );
+    }
+  }, [mode, selectedId]);
+
+  useEffect(() => {
+    void refreshCall();
+  }, [refreshCall]);
 
   const postTeamChatPresence = useCallback(
     async (typing: boolean, typingRoomId?: string | null) => {
@@ -290,17 +342,81 @@ export function useKolamChatRailDetail({
     [currentUserId, mode, selectedId, sending],
   );
 
+  const runCallAction = useCallback(
+    async (action: () => Promise<KolamTeamChatCall>) => {
+      if (mode !== 'team-chat' || !selectedId || callBusy) {
+        return;
+      }
+
+      setCallBusy(true);
+      setCallErrorMessage(undefined);
+
+      try {
+        const call = await action();
+        setActiveCall(call.status === 'ended' ? null : call);
+      } catch (error) {
+        setCallErrorMessage(
+          error instanceof Error ? error.message : 'Aksi call gagal diproses.',
+        );
+      } finally {
+        setCallBusy(false);
+      }
+    },
+    [callBusy, mode, selectedId],
+  );
+
+  const startCall = useCallback(async () => {
+    if (!selectedId) {
+      return;
+    }
+
+    await runCallAction(() => startKolamTeamChatCall(selectedId));
+  }, [runCallAction, selectedId]);
+
+  const joinCall = useCallback(async () => {
+    if (!activeCall) {
+      return;
+    }
+
+    await runCallAction(() => joinKolamTeamChatCall(activeCall._id));
+  }, [activeCall, runCallAction]);
+
+  const declineCall = useCallback(async () => {
+    if (!activeCall) {
+      return;
+    }
+
+    await runCallAction(() => declineKolamTeamChatCall(activeCall._id));
+  }, [activeCall, runCallAction]);
+
+  const endCall = useCallback(async () => {
+    if (!activeCall) {
+      return;
+    }
+
+    await runCallAction(() => endKolamTeamChatCall(activeCall._id));
+  }, [activeCall, runCallAction]);
+
   return {
+    activeCall,
+    callBusy,
+    callConfig,
+    callErrorMessage,
+    declineCall,
+    endCall,
     errorMessage,
+    joinCall,
     loading,
     messages,
     presence,
     reactToMessage,
+    refreshCall,
     refresh,
     sendAttachment,
     sendMessage,
     signalTyping,
     sending,
+    startCall,
     updatePresenceFromLive,
   };
 }

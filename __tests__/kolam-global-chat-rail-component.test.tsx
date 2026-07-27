@@ -91,6 +91,29 @@ function flattenText(value: React.ReactNode): string[] {
   return [];
 }
 
+function getDefaultDetailMock() {
+  return {
+    activeCall: null,
+    callBusy: false,
+    callConfig: {enabled: false},
+    declineCall: jest.fn(),
+    endCall: jest.fn(),
+    loading: false,
+    messages: [],
+    presence: {onlineCount: 0, typingUserIds: [], viewingCount: 0},
+    reactToMessage: jest.fn(),
+    refresh: jest.fn(),
+    refreshCall: jest.fn(),
+    sendAttachment: jest.fn(),
+    sendMessage: jest.fn(),
+    signalTyping: jest.fn(),
+    sending: false,
+    startCall: jest.fn(),
+    joinCall: jest.fn(),
+    updatePresenceFromLive: jest.fn(),
+  };
+}
+
 describe('KolamGlobalChatRail', () => {
   beforeEach(() => {
     mockSoundPlay.mockClear();
@@ -114,6 +137,7 @@ describe('KolamGlobalChatRail', () => {
       setAuthSource: jest.fn(),
     });
     useDetailMock.mockReturnValue({
+      ...getDefaultDetailMock(),
       loading: false,
       messages: [],
       presence: {onlineCount: 0, typingUserIds: [], viewingCount: 0},
@@ -283,6 +307,7 @@ describe('KolamGlobalChatRail', () => {
       totalUnread: 2,
     });
     useDetailMock.mockReturnValue({
+      ...getDefaultDetailMock(),
       loading: false,
       messages: [
         {
@@ -371,6 +396,7 @@ describe('KolamGlobalChatRail', () => {
       totalUnread: 0,
     });
     useDetailMock.mockReturnValue({
+      ...getDefaultDetailMock(),
       loading: false,
       messages: [
         {
@@ -455,6 +481,7 @@ describe('KolamGlobalChatRail', () => {
       totalUnread: 0,
     });
     useDetailMock.mockReturnValue({
+      ...getDefaultDetailMock(),
       loading: false,
       messages: [],
       presence: {onlineCount: 1, typingUserIds: [], viewingCount: 1},
@@ -514,6 +541,125 @@ describe('KolamGlobalChatRail', () => {
     });
   });
 
+  it('renders minimal team chat call actions and refreshes call state from live events', async () => {
+    const startCall = jest.fn().mockResolvedValue(undefined);
+    const joinCall = jest.fn().mockResolvedValue(undefined);
+    const endCall = jest.fn().mockResolvedValue(undefined);
+    const refreshCall = jest.fn().mockResolvedValue(undefined);
+    let liveOptions:
+      | Parameters<typeof useKolamChatLiveStream>[0]
+      | undefined;
+
+    useLiveStreamMock.mockImplementation(options => {
+      liveOptions = options;
+    });
+    useReadonlyDataMock.mockReturnValue({
+      conversations: [],
+      loading: false,
+      refresh: jest.fn(),
+      rooms: [
+        {
+          _id: 'room-1',
+          name: 'Operasional',
+          category: 'general',
+          lastMessagePreview: 'Barang siap dikirim',
+          unreadCount: 0,
+        },
+      ],
+      totalUnread: 0,
+    });
+    useDetailMock.mockReturnValue({
+      ...getDefaultDetailMock(),
+      activeCall: {
+        _id: 'call-1',
+        participantCount: 3,
+        status: 'active',
+      },
+      callConfig: {enabled: true},
+      endCall,
+      joinCall,
+      loading: false,
+      messages: [],
+      refreshCall,
+      startCall,
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamGlobalChatRail mode="team-chat" onClose={() => undefined} />,
+      );
+    });
+
+    const selectButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Pilih room Operasional');
+
+    await ReactTestRenderer.act(async () => {
+      selectButton!.props.onPress();
+    });
+
+    expect(renderText(renderer!)).toEqual(
+      expect.arrayContaining(['Call aktif', '3 peserta', 'Join', 'End']),
+    );
+
+    const joinButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Join team chat call');
+    const endButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'End team chat call');
+
+    await ReactTestRenderer.act(async () => {
+      await joinButton!.props.onPress();
+      await endButton!.props.onPress();
+    });
+
+    expect(joinCall).toHaveBeenCalledTimes(1);
+    expect(endCall).toHaveBeenCalledTimes(1);
+
+    await ReactTestRenderer.act(async () => {
+      liveOptions!.onEvent({
+        contract: {
+          eventName: 'call.updated',
+          legacySources: [],
+          note: '',
+          refreshTargets: ['call-state'],
+          route: '/team-chat/stream',
+          soundIntent: 'none',
+          stream: 'team-chat',
+        },
+        payload: {callId: 'call-1', roomId: 'room-1'},
+      });
+    });
+
+    expect(refreshCall).toHaveBeenCalledTimes(1);
+
+    useDetailMock.mockReturnValue({
+      ...getDefaultDetailMock(),
+      callConfig: {enabled: true},
+      loading: false,
+      messages: [],
+      startCall,
+    });
+
+    await ReactTestRenderer.act(async () => {
+      renderer!.update(
+        <KolamGlobalChatRail mode="team-chat" onClose={() => undefined} />,
+      );
+    });
+
+    const startButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Start team chat call');
+
+    await ReactTestRenderer.act(async () => {
+      await startButton!.props.onPress();
+    });
+
+    expect(startCall).toHaveBeenCalledTimes(1);
+  });
+
   it('picks and sends a team chat attachment from the composer', async () => {
     const sendAttachment = jest.fn().mockResolvedValue(undefined);
     pickNativeAssetFileMock.mockResolvedValue({
@@ -538,6 +684,7 @@ describe('KolamGlobalChatRail', () => {
       totalUnread: 0,
     });
     useDetailMock.mockReturnValue({
+      ...getDefaultDetailMock(),
       loading: false,
       messages: [],
       presence: {onlineCount: 0, typingUserIds: [], viewingCount: 0},
@@ -616,6 +763,7 @@ describe('KolamGlobalChatRail', () => {
       totalUnread: 2,
     });
     useDetailMock.mockReturnValue({
+      ...getDefaultDetailMock(),
       loading: false,
       messages: [],
       presence: {onlineCount: 0, typingUserIds: [], viewingCount: 0},

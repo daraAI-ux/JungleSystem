@@ -89,6 +89,10 @@ export function KolamGlobalChatRail({
         }
       }
 
+      if (classification.refreshCallState && classification.targetId === selectedItemId) {
+        void detail.refreshCall();
+      }
+
       Promise.resolve(
         notificationSoundService.play({
           intent: classification.soundIntent,
@@ -342,6 +346,9 @@ function KolamChatRailDetailPanel({
             {formatTeamChatPresence(detail.presence)}
           </Text>
         ) : null}
+        {mode === 'team-chat' ? (
+          <KolamChatCallStrip detail={detail} />
+        ) : null}
       </View>
 
       <View style={styles.messagePane}>
@@ -453,6 +460,82 @@ function KolamChatRailDetailPanel({
             {detail.sending ? 'Mengirim' : 'Kirim'}
           </Text>
         </KolamPressable>
+      </View>
+    </View>
+  );
+}
+
+function KolamChatCallStrip({
+  detail,
+}: {
+  detail: ReturnType<typeof useKolamChatRailDetail>;
+}) {
+  if (!detail.callConfig.enabled) {
+    return null;
+  }
+
+  const activeCall = detail.activeCall;
+  const primaryLabel = detail.callBusy
+    ? 'Memproses...'
+    : activeCall
+      ? getCallStatusLabel(activeCall.status)
+      : 'Tidak ada call aktif';
+  const secondaryLabel = activeCall
+    ? `${activeCall.participantCount ?? activeCall.participants?.length ?? 0} peserta`
+    : 'Siap mulai call grup';
+
+  return (
+    <View style={styles.callStrip}>
+      <View style={styles.callCopy}>
+        <Text style={styles.callTitle}>{primaryLabel}</Text>
+        <Text numberOfLines={1} style={styles.callMeta}>
+          {detail.callErrorMessage || secondaryLabel}
+        </Text>
+      </View>
+      <View style={styles.callActions}>
+        {activeCall ? (
+          <>
+            <KolamPressable
+              accessibilityLabel="Join team chat call"
+              disabled={detail.callBusy}
+              onPress={detail.joinCall}
+              style={[styles.callButton, detail.callBusy && styles.callButtonDisabled]}>
+              <Text style={styles.callButtonText}>Join</Text>
+            </KolamPressable>
+            {activeCall.status === 'ringing' ? (
+              <KolamPressable
+                accessibilityLabel="Decline team chat call"
+                disabled={detail.callBusy}
+                onPress={detail.declineCall}
+                style={[
+                  styles.callButton,
+                  styles.callButtonGhost,
+                  detail.callBusy && styles.callButtonDisabled,
+                ]}>
+                <Text style={styles.callButtonGhostText}>Tolak</Text>
+              </KolamPressable>
+            ) : null}
+            <KolamPressable
+              accessibilityLabel="End team chat call"
+              disabled={detail.callBusy}
+              onPress={detail.endCall}
+              style={[
+                styles.callButton,
+                styles.callButtonDanger,
+                detail.callBusy && styles.callButtonDisabled,
+              ]}>
+              <Text style={styles.callButtonText}>End</Text>
+            </KolamPressable>
+          </>
+        ) : (
+          <KolamPressable
+            accessibilityLabel="Start team chat call"
+            disabled={detail.callBusy}
+            onPress={detail.startCall}
+            style={[styles.callButton, detail.callBusy && styles.callButtonDisabled]}>
+            <Text style={styles.callButtonText}>Call</Text>
+          </KolamPressable>
+        )}
       </View>
     </View>
   );
@@ -782,6 +865,19 @@ function formatTeamChatPresence(presence: KolamTeamChatPresence) {
   return parts.join(' · ');
 }
 
+function getCallStatusLabel(status: string) {
+  switch (status) {
+    case 'active':
+      return 'Call aktif';
+    case 'ringing':
+      return 'Call berdering';
+    case 'ended':
+      return 'Call selesai';
+    default:
+      return 'Call';
+  }
+}
+
 function getAttachmentFileName(attachment: KolamTeamChatAttachment) {
   if (attachment.fileName?.trim()) {
     return attachment.fileName.trim();
@@ -944,6 +1040,70 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 11,
     fontWeight: '800',
+  },
+  callStrip: {
+    marginTop: 6,
+    padding: 8,
+    borderRadius: V.radius.lg,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.bg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  callCopy: {
+    minWidth: 0,
+    flex: 1,
+    gap: 2,
+  },
+  callTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  callMeta: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  callActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  callButton: {
+    minHeight: 28,
+    paddingHorizontal: 9,
+    borderRadius: V.radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: V.colors.primary,
+  },
+  callButtonGhost: {
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.bg,
+  },
+  callButtonDanger: {
+    backgroundColor: V.colors.danger,
+  },
+  callButtonDisabled: {
+    opacity: 0.55,
+  },
+  callButtonText: {
+    color: V.colors.primaryFg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '900',
+  },
+  callButtonGhostText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '900',
   },
   detailPanel: {
     maxHeight: 330,
