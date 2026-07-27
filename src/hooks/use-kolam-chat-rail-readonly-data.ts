@@ -1,4 +1,4 @@
-import {useEffect, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import type {KolamGlobalChatRailMode} from '../components/kolam-global-chat-rail';
 import {
   getKolamChatConversations,
@@ -11,6 +11,7 @@ export interface KolamChatRailReadonlyDataState {
   conversations: KolamChatConversation[];
   errorMessage?: string;
   loading: boolean;
+  refresh: () => Promise<void>;
   rooms: KolamTeamChatRoom[];
   totalUnread: number;
 }
@@ -22,70 +23,76 @@ export function useKolamChatRailReadonlyData({
   intervalMs?: number;
   mode: KolamGlobalChatRailMode;
 }): KolamChatRailReadonlyDataState {
+  const mountedRef = useRef(false);
   const [state, setState] = useState<KolamChatRailReadonlyDataState>({
     conversations: [],
     loading: true,
     rooms: [],
+    refresh: async () => undefined,
     totalUnread: 0,
   });
 
-  useEffect(() => {
-    let cancelled = false;
-    let timer: ReturnType<typeof setInterval> | undefined;
+  const refresh = useCallback(async () => {
+    setState(current => ({
+      ...current,
+      loading: !getHasLoadedData(current),
+      errorMessage: undefined,
+    }));
 
-    const refresh = async () => {
-      setState(current => ({
-        ...current,
-        loading: !getHasLoadedData(current),
-        errorMessage: undefined,
-      }));
-
-      try {
-        if (mode === 'team-chat') {
-          const rooms = await getKolamTeamChatRooms();
-          if (cancelled) {
-            return;
-          }
-
-          setState({
-            conversations: [],
-            loading: false,
-            rooms,
-            totalUnread: getUnreadTotal(rooms),
-          });
-          return;
-        }
-
-        const conversations = await getKolamChatConversations({
-          status: 'open',
-          unreadOnly: true,
-          limit: 100,
-        });
-        if (cancelled) {
+    try {
+      if (mode === 'team-chat') {
+        const rooms = await getKolamTeamChatRooms();
+        if (!mountedRef.current) {
           return;
         }
 
         setState({
-          conversations,
+          conversations: [],
           loading: false,
-          rooms: [],
-          totalUnread: getUnreadTotal(conversations),
+          rooms,
+          refresh,
+          totalUnread: getUnreadTotal(rooms),
         });
-      } catch (error) {
-        if (cancelled) {
-          return;
-        }
-
-        setState(current => ({
-          ...current,
-          loading: false,
-          errorMessage:
-            error instanceof Error
-              ? error.message
-              : 'Data chat belum bisa dibaca.',
-        }));
+        return;
       }
-    };
+
+      const conversations = await getKolamChatConversations({
+        status: 'open',
+        unreadOnly: true,
+        limit: 100,
+      });
+      if (!mountedRef.current) {
+        return;
+      }
+
+      setState({
+        conversations,
+        loading: false,
+        rooms: [],
+        refresh,
+        totalUnread: getUnreadTotal(conversations),
+      });
+    } catch (error) {
+      if (!mountedRef.current) {
+        return;
+      }
+
+      setState(current => ({
+        ...current,
+        loading: false,
+        errorMessage:
+          error instanceof Error
+            ? error.message
+            : 'Data chat belum bisa dibaca.',
+        refresh,
+      }));
+    }
+  }, [mode]);
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setInterval> | undefined;
+
+    mountedRef.current = true;
 
     refresh();
     timer = setInterval(() => {
@@ -93,12 +100,12 @@ export function useKolamChatRailReadonlyData({
     }, intervalMs);
 
     return () => {
-      cancelled = true;
+      mountedRef.current = false;
       if (timer) {
         clearInterval(timer);
       }
     };
-  }, [intervalMs, mode]);
+  }, [intervalMs, mode, refresh]);
 
   return state;
 }

@@ -1,6 +1,10 @@
 import React from 'react';
 import {ScrollView, StyleSheet, Text, TextInput, View} from 'react-native';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
+import {
+  type KolamChatLiveEvent,
+  useKolamChatLiveStream,
+} from '../hooks/use-kolam-chat-live-stream';
 import {useKolamChatRailDetail} from '../hooks/use-kolam-chat-rail-detail';
 import {useKolamChatRailReadonlyData} from '../hooks/use-kolam-chat-rail-readonly-data';
 import {KolamBadge} from './kolam-badge';
@@ -29,6 +33,20 @@ export function KolamGlobalChatRail({
   const [composerText, setComposerText] = React.useState('');
   const selectedItem = items.find(item => item.id === selectedItemId) ?? null;
   const detail = useKolamChatRailDetail({mode, selectedId: selectedItemId});
+  const refreshData = data.refresh;
+  const refreshDetail = detail.refresh;
+  const handleLiveEvent = React.useCallback(
+    (event: KolamChatLiveEvent) => {
+      if (shouldRefreshRailList(event)) {
+        refreshData().catch(() => undefined);
+      }
+
+      if (shouldRefreshRailDetail(event, selectedItemId)) {
+        refreshDetail().catch(() => undefined);
+      }
+    },
+    [refreshData, refreshDetail, selectedItemId],
+  );
 
   React.useEffect(() => {
     setSelectedItemId(null);
@@ -54,6 +72,7 @@ export function KolamGlobalChatRail({
 
   return (
     <View accessibilityLabel={content.accessibilityLabel} style={styles.rail}>
+      <KolamChatRailLiveHost mode={mode} onEvent={handleLiveEvent} />
       <View style={styles.header}>
         <View style={styles.titleGroup}>
           <View style={styles.iconShell}>
@@ -175,6 +194,21 @@ export function KolamGlobalChatRail({
       </View>
     </View>
   );
+}
+
+function KolamChatRailLiveHost({
+  mode,
+  onEvent,
+}: {
+  mode: KolamGlobalChatRailMode;
+  onEvent: (event: KolamChatLiveEvent) => void;
+}) {
+  useKolamChatLiveStream({
+    mode,
+    onEvent,
+  });
+
+  return null;
 }
 
 function KolamChatRailDetailPanel({
@@ -480,6 +514,50 @@ function formatRelativeTime(iso?: string | null) {
   }
 
   return new Date(iso).toLocaleDateString('id-ID');
+}
+
+function shouldRefreshRailList({contract}: KolamChatLiveEvent) {
+  return contract.refreshTargets.some(target =>
+    ['inbox-list', 'team-room-list', 'unread-badge'].includes(target),
+  );
+}
+
+function shouldRefreshRailDetail(
+  event: KolamChatLiveEvent,
+  selectedItemId: string | null,
+) {
+  if (!selectedItemId) {
+    return false;
+  }
+
+  if (
+    !event.contract.refreshTargets.some(target =>
+      ['inbox-detail', 'team-room-detail'].includes(target),
+    )
+  ) {
+    return false;
+  }
+
+  if (event.contract.eventName === 'sync.required') {
+    return true;
+  }
+
+  const targetId = getLiveEventTargetId(event);
+  return !targetId || targetId === selectedItemId;
+}
+
+function getLiveEventTargetId({contract, payload}: KolamChatLiveEvent) {
+  if (!payload || typeof payload !== 'object') {
+    return undefined;
+  }
+
+  const record = payload as Record<string, unknown>;
+  const id =
+    contract.stream === 'team-chat'
+      ? record.roomId ?? record.id
+      : record.conversationId ?? record.id;
+
+  return typeof id === 'string' ? id : undefined;
 }
 
 const styles = StyleSheet.create({

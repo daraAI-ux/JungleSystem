@@ -24,6 +24,7 @@ export interface KolamChatRailDetailState {
   errorMessage?: string;
   loading: boolean;
   messages: KolamChatRailDetailMessage[];
+  refresh: () => Promise<void>;
   sendMessage: (text: string) => Promise<void>;
   sending: boolean;
 }
@@ -112,6 +113,7 @@ export function useKolamChatRailDetail({
     errorMessage,
     loading,
     messages,
+    refresh,
     sendMessage,
     sending,
   };

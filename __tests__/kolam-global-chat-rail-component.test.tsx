@@ -3,6 +3,7 @@ import {Text, TextInput} from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 import {KolamGlobalChatRail} from '../src/components/kolam-global-chat-rail';
 import {KolamPressable} from '../src/components/kolam-pressable';
+import {useKolamChatLiveStream} from '../src/hooks/use-kolam-chat-live-stream';
 import {useKolamChatRailDetail} from '../src/hooks/use-kolam-chat-rail-detail';
 import {useKolamChatRailReadonlyData} from '../src/hooks/use-kolam-chat-rail-readonly-data';
 
@@ -14,11 +15,18 @@ jest.mock('../src/hooks/use-kolam-chat-rail-readonly-data', () => ({
   useKolamChatRailReadonlyData: jest.fn(),
 }));
 
+jest.mock('../src/hooks/use-kolam-chat-live-stream', () => ({
+  useKolamChatLiveStream: jest.fn(),
+}));
+
 const useDetailMock = useKolamChatRailDetail as jest.MockedFunction<
   typeof useKolamChatRailDetail
 >;
 const useReadonlyDataMock = useKolamChatRailReadonlyData as jest.MockedFunction<
   typeof useKolamChatRailReadonlyData
+>;
+const useLiveStreamMock = useKolamChatLiveStream as jest.MockedFunction<
+  typeof useKolamChatLiveStream
 >;
 
 function renderText(renderer: ReactTestRenderer.ReactTestRenderer) {
@@ -44,15 +52,18 @@ describe('KolamGlobalChatRail', () => {
     useDetailMock.mockReturnValue({
       loading: false,
       messages: [],
+      refresh: jest.fn(),
       sendMessage: jest.fn(),
       sending: false,
     });
     useReadonlyDataMock.mockReturnValue({
       conversations: [],
       loading: false,
+      refresh: jest.fn(),
       rooms: [],
       totalUnread: 0,
     });
+    useLiveStreamMock.mockImplementation(() => undefined);
   });
 
   it('renders the inbox skeleton without loading chat data', async () => {
@@ -80,6 +91,7 @@ describe('KolamGlobalChatRail', () => {
     useReadonlyDataMock.mockReturnValue({
       conversations: [],
       loading: false,
+      refresh: jest.fn(),
       rooms: [
         {
           _id: 'room-1',
@@ -145,6 +157,7 @@ describe('KolamGlobalChatRail', () => {
         },
       ],
       loading: false,
+      refresh: jest.fn(),
       rooms: [],
       totalUnread: 2,
     });
@@ -184,6 +197,7 @@ describe('KolamGlobalChatRail', () => {
         },
       ],
       loading: false,
+      refresh: jest.fn(),
       rooms: [],
       totalUnread: 2,
     });
@@ -198,6 +212,7 @@ describe('KolamGlobalChatRail', () => {
           sentAt: '2026-07-28T08:00:00.000Z',
         },
       ],
+      refresh: jest.fn(),
       sendMessage,
       sending: false,
     });
@@ -235,5 +250,72 @@ describe('KolamGlobalChatRail', () => {
     });
 
     expect(sendMessage).toHaveBeenCalledWith('Siap, masih tersedia.');
+  });
+
+  it('refreshes list and active detail from live events without playing sound', async () => {
+    const refreshList = jest.fn().mockResolvedValue(undefined);
+    const refreshDetail = jest.fn().mockResolvedValue(undefined);
+    let liveOptions:
+      | Parameters<typeof useKolamChatLiveStream>[0]
+      | undefined;
+
+    useLiveStreamMock.mockImplementation(options => {
+      liveOptions = options;
+    });
+    useReadonlyDataMock.mockReturnValue({
+      conversations: [
+        {
+          _id: 'conv-1',
+          platform: 'tokopedia',
+          contactId: {displayName: 'Buyer Tokopedia'},
+          lastMessagePreview: 'Apakah masih tersedia?',
+          unreadCount: 2,
+        },
+      ],
+      loading: false,
+      refresh: refreshList,
+      rooms: [],
+      totalUnread: 2,
+    });
+    useDetailMock.mockReturnValue({
+      loading: false,
+      messages: [],
+      refresh: refreshDetail,
+      sendMessage: jest.fn(),
+      sending: false,
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamGlobalChatRail mode="inbox" onClose={() => undefined} />,
+      );
+    });
+
+    const selectButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Pilih conversation Buyer Tokopedia');
+
+    await ReactTestRenderer.act(async () => {
+      selectButton!.props.onPress();
+    });
+
+    await ReactTestRenderer.act(async () => {
+      liveOptions!.onEvent({
+        contract: {
+          eventName: 'message.created',
+          legacySources: [],
+          note: '',
+          refreshTargets: ['inbox-list', 'inbox-detail', 'unread-badge'],
+          route: '/chat/stream',
+          soundIntent: 'incoming-assigned-or-unassigned',
+          stream: 'inbox',
+        },
+        payload: {conversationId: 'conv-1'},
+      });
+    });
+
+    expect(refreshList).toHaveBeenCalledTimes(1);
+    expect(refreshDetail).toHaveBeenCalledTimes(1);
   });
 });
