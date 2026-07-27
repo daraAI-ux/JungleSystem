@@ -893,3 +893,285 @@ function getNumber(record: Record<string, unknown>, key: string) {
   }
   return undefined;
 }
+
+export type KolamStockOpnameTargetType =
+  | 'product'
+  | 'raw'
+  | 'species'
+  | 'freyer'
+  | 'teranura';
+
+export interface KolamStockOpnameVariantOption {
+  id: string;
+  label: string;
+  sku: string;
+  stock: number;
+  price: number;
+}
+
+export interface KolamStockOpnameTargetOption {
+  id: string;
+  label: string;
+  sku: string;
+  stock: number;
+  price: number;
+  hasVariants: boolean;
+  variants: KolamStockOpnameVariantOption[];
+}
+
+export interface KolamStockOpnameFormState {
+  targetType: KolamStockOpnameTargetType;
+  targetId: string;
+  variantId: string;
+  adjustedStock: string;
+  reason: string;
+  photoUris: string[];
+  walletId: string;
+}
+
+export interface KolamStockOpnameCreateInput {
+  targetType: KolamStockOpnameTargetType;
+  targetId: string;
+  variantId?: string;
+  adjustedStock: string;
+  reason?: string;
+  photoUris: string[];
+  walletId?: string;
+}
+
+export const KOLAM_STOCK_OPNAME_TARGET_LABELS: Record<
+  KolamStockOpnameTargetType,
+  string
+> = {
+  product: 'Produk',
+  raw: 'Bahan baku',
+  species: 'Life stock',
+  freyer: 'Freyer',
+  teranura: 'Teranura',
+};
+
+export function createEmptyKolamStockOpnameFormState(): KolamStockOpnameFormState {
+  return {
+    targetType: 'product',
+    targetId: '',
+    variantId: '',
+    adjustedStock: '0',
+    reason: '',
+    photoUris: [],
+    walletId: '',
+  };
+}
+
+export function getStockOpnameCurrentStock(
+  target: KolamStockOpnameTargetOption | null,
+  variantId: string,
+): number | null {
+  if (!target) {
+    return null;
+  }
+  if (variantId) {
+    const variant = target.variants.find(item => item.id === variantId);
+    if (!variant) {
+      return null;
+    }
+    return Number.isFinite(variant.stock) ? variant.stock : null;
+  }
+  return Number.isFinite(target.stock) ? target.stock : null;
+}
+
+export function getStockOpnameAdjustedStock(form: KolamStockOpnameFormState) {
+  const parsed = Number(form.adjustedStock);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+export function getStockOpnameDiff(
+  form: KolamStockOpnameFormState,
+  target: KolamStockOpnameTargetOption | null,
+) {
+  const current = getStockOpnameCurrentStock(target, form.variantId);
+  const adjusted = getStockOpnameAdjustedStock(form);
+  if (current == null || adjusted == null) {
+    return null;
+  }
+  return adjusted - current;
+}
+
+export function getStockOpnameUnitPrice(
+  target: KolamStockOpnameTargetOption | null,
+  variantId: string,
+) {
+  if (!target) {
+    return 0;
+  }
+  if (variantId) {
+    const variant = target.variants.find(item => item.id === variantId);
+    return variant?.price ?? 0;
+  }
+  return target.price ?? 0;
+}
+
+export function getStockOpnameLossAmount(
+  form: KolamStockOpnameFormState,
+  target: KolamStockOpnameTargetOption | null,
+) {
+  const diff = getStockOpnameDiff(form, target);
+  if (diff == null || diff >= 0) {
+    return 0;
+  }
+  return Math.abs(diff) * getStockOpnameUnitPrice(target, form.variantId);
+}
+
+export function stockOpnameNeedsWalletConfirm(
+  form: KolamStockOpnameFormState,
+  target: KolamStockOpnameTargetOption | null,
+) {
+  const diff = getStockOpnameDiff(form, target);
+  const loss = getStockOpnameLossAmount(form, target);
+  return diff != null && diff < 0 && loss > 0;
+}
+
+export function validateKolamStockOpnameForm(
+  form: KolamStockOpnameFormState,
+  target: KolamStockOpnameTargetOption | null,
+): string | null {
+  if (!form.targetId || !target) {
+    return `Pilih ${KOLAM_STOCK_OPNAME_TARGET_LABELS[form.targetType]} terlebih dahulu.`;
+  }
+  if (target.hasVariants && !form.variantId) {
+    return 'Pilih varian terlebih dahulu.';
+  }
+  if (getStockOpnameAdjustedStock(form) == null) {
+    return 'Stok sesudah harus berupa angka.';
+  }
+  return null;
+}
+
+export function createKolamStockOpnameTargetFromProduct(product: {
+  id: string;
+  name?: string;
+  displayName?: string;
+  sku?: string;
+  stock?: number;
+  price?: number;
+  priceToSell?: number;
+  hasVariants?: boolean;
+  variants?: Array<{
+    id: string;
+    label?: string;
+    sku?: string;
+    stock?: number;
+    price?: number;
+    priceToSell?: number;
+  }>;
+}): KolamStockOpnameTargetOption {
+  const variants = (product.variants ?? [])
+    .filter(variant => variant.id)
+    .map(variant => ({
+      id: variant.id,
+      label: variant.label || variant.sku || 'Varian',
+      sku: variant.sku || '',
+      stock: Number(variant.stock) || 0,
+      price: Number(variant.priceToSell ?? variant.price) || 0,
+    }));
+
+  return {
+    id: product.id,
+    label: product.name || product.displayName || 'Produk',
+    sku: product.sku || '',
+    stock: Number(product.stock) || 0,
+    price: Number(product.priceToSell ?? product.price) || 0,
+    hasVariants: Boolean(product.hasVariants && variants.length) || variants.length > 0,
+    variants,
+  };
+}
+
+export function createKolamStockOpnameTargetFromSpecies(species: {
+  id: string;
+  scientificName?: string;
+  displayName?: string;
+  sku?: string;
+  stock?: number | null;
+  price?: number;
+  priceToSell?: number;
+  variants?: Array<{
+    id: string;
+    label?: string;
+    sku?: string;
+    stock?: number;
+    price?: number;
+    priceToSell?: number;
+  }>;
+}): KolamStockOpnameTargetOption {
+  const variants = (species.variants ?? [])
+    .filter(variant => variant.id)
+    .map(variant => ({
+      id: variant.id,
+      label: variant.label || variant.sku || 'Varian',
+      sku: variant.sku || '',
+      stock: Number(variant.stock) || 0,
+      price: Number(variant.priceToSell ?? variant.price) || 0,
+    }));
+
+  return {
+    id: species.id,
+    label: species.scientificName || species.displayName || 'Spesies',
+    sku: species.sku || '',
+    stock: Number(species.stock) || 0,
+    price: Number(species.priceToSell ?? species.price) || 0,
+    hasVariants: variants.length > 0,
+    variants,
+  };
+}
+
+export function createKolamStockOpnameTargetFromFreyer(item: {
+  id: string;
+  name: string;
+  sku: string;
+  stock: number;
+  price: number;
+  hasVariants: boolean;
+  variants: KolamStockOpnameVariantOption[];
+}): KolamStockOpnameTargetOption {
+  return {
+    id: item.id,
+    label: item.name,
+    sku: item.sku,
+    stock: item.stock,
+    price: item.price,
+    hasVariants: item.hasVariants && item.variants.length > 0,
+    variants: item.variants,
+  };
+}
+
+export function createKolamStockOpnameTargetFromTeranura(item: {
+  id: string;
+  name: string;
+  sku: string;
+  stock: number;
+  priceToSell: number;
+  variants: Array<{
+    id: string;
+    label: string;
+    sku: string;
+    stock: number;
+    priceToSell: number;
+  }>;
+}): KolamStockOpnameTargetOption {
+  const variants = item.variants.map(variant => ({
+    id: variant.id,
+    label: variant.label || variant.sku || 'Varian',
+    sku: variant.sku,
+    stock: variant.stock,
+    price: variant.priceToSell,
+  }));
+
+  return {
+    id: item.id,
+    label: item.name,
+    sku: item.sku,
+    stock: item.stock,
+    price: item.priceToSell,
+    hasVariants: variants.length > 0,
+    variants,
+  };
+}

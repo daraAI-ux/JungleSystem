@@ -3,6 +3,7 @@ import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import type { KolamStockTransaction } from '../domain/kolam-stock-transaction';
 import {
   KOLAM_STOCK_TRANSACTION_ROOT,
+  KOLAM_STOCK_OPNAME_TARGET_LABELS,
   canCancelFinanceStockTransaction,
   canVerifyStockTransaction,
   crossSyncOriginLabel,
@@ -89,33 +90,308 @@ export function KolamStockTransactionSurface({
           onRouteChange={onRouteChange}
         />
       ) : (
-        <KolamStockTransactionPlaceholder onRouteChange={onRouteChange} />
+        <KolamStockTransactionOpname
+          controller={controller}
+          onRouteChange={onRouteChange}
+        />
       )}
     </View>
   );
 }
 
-function KolamStockTransactionPlaceholder({
+function KolamStockTransactionOpname({
+  controller,
   onRouteChange,
 }: {
+  controller: KolamStockTransactionController;
   onRouteChange?: (route: string) => void;
 }) {
+  const [walletModalOpen, setWalletModalOpen] = React.useState(false);
+  const form = controller.opnameForm;
+  const targetOptions = React.useMemo(() => {
+    if (form.targetType === 'product') {
+      return controller.opnameProducts.map(item => ({
+        label: `${item.name}${item.sku ? ` (${item.sku})` : ''}`,
+        value: item.id,
+      }));
+    }
+    if (form.targetType === 'raw') {
+      return controller.opnameRawProducts.map(item => ({
+        label: `${item.name}${item.sku ? ` (${item.sku})` : ''}`,
+        value: item.id,
+      }));
+    }
+    if (form.targetType === 'species') {
+      return controller.speciesOptions.map(item => ({
+        label: `${item.scientificName || item.displayName}${
+          item.sku ? ` (${item.sku})` : ''
+        }`,
+        value: item.id,
+      }));
+    }
+    if (form.targetType === 'freyer') {
+      return controller.freyerOptions.map(item => ({
+        label: `${item.name}${item.sku ? ` (${item.sku})` : ''}`,
+        value: item.id,
+      }));
+    }
+    return controller.teranuraOptions.map(item => ({
+      label: `${item.name}${item.sku ? ` (${item.sku})` : ''}`,
+      value: item.id,
+    }));
+  }, [
+    controller.freyerOptions,
+    controller.opnameProducts,
+    controller.opnameRawProducts,
+    controller.speciesOptions,
+    controller.teranuraOptions,
+    form.targetType,
+  ]);
+
+  const variantOptions = React.useMemo(
+    () =>
+      (controller.opnameSelectedTarget?.variants ?? []).map(variant => ({
+        label: `${variant.label}${variant.sku ? ` (${variant.sku})` : ''}`,
+        value: variant.id,
+      })),
+    [controller.opnameSelectedTarget],
+  );
+
+  const walletSelectOptions = React.useMemo(
+    () =>
+      controller.walletOptions.map(wallet => ({
+        label: `${wallet.name} (${wallet.type})`,
+        value: wallet.id,
+      })),
+    [controller.walletOptions],
+  );
+
+  const hasVariants = Boolean(controller.opnameSelectedTarget?.hasVariants);
+  const canSave =
+    Boolean(form.targetId) &&
+    (!hasVariants || Boolean(form.variantId)) &&
+    !controller.mutating;
+
   return (
-    <View style={styles.placeholder}>
-      <KolamCopyStack
-        items={[
-          { id: 'title', text: 'Opname cepat', style: styles.title },
-          {
-            id: 'msg',
-            text: 'Form opname cepat menyusul di Batch 3.',
-            style: styles.subtitle,
-          },
-        ]}
-      />
-      <KolamButton
-        label="Kembali ke daftar"
-        onPress={() => onRouteChange?.(KOLAM_STOCK_TRANSACTION_ROOT)}
-      />
+    <View style={styles.detailRoot}>
+      <View style={styles.headerBlock}>
+        <KolamCopyStack
+          items={[
+            { id: 'title', text: 'Opname cepat', style: styles.title },
+            {
+              id: 'desc',
+              text: 'Sesuaikan stok produk/life stock. Backend membuat transaksi sumber stock-opname.',
+              style: styles.subtitle,
+            },
+          ]}
+        />
+        <View style={styles.headerActions}>
+          <KolamButton
+            label="Batal"
+            onPress={() => onRouteChange?.(KOLAM_STOCK_TRANSACTION_ROOT)}
+          />
+          <KolamButton
+            disabled={!canSave}
+            intent="primary"
+            label={controller.mutating ? 'Menyimpan…' : 'Simpan'}
+            onPress={() => {
+              void controller.onSubmitOpname().then(result => {
+                if (result === 'wallet') {
+                  setWalletModalOpen(true);
+                  return;
+                }
+                if (result === 'done') {
+                  onRouteChange?.(KOLAM_STOCK_TRANSACTION_ROOT);
+                }
+              });
+            }}
+          />
+        </View>
+      </View>
+
+      <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
+        <Text style={styles.sectionTitle}>Target penyesuaian</Text>
+        <View style={styles.filterGrid}>
+          <View style={styles.filterItem}>
+            <KolamDropdownSelect
+              label="Tipe target"
+              onChange={value =>
+                controller.onChangeOpnameForm({
+                  targetType: value as typeof form.targetType,
+                })
+              }
+              options={[
+                { label: 'Produk', value: 'product' },
+                { label: 'Bahan baku', value: 'raw' },
+                { label: 'Life stock', value: 'species' },
+                { label: 'Freyer', value: 'freyer' },
+                { label: 'Teranura', value: 'teranura' },
+              ]}
+              value={form.targetType}
+            />
+          </View>
+          <View style={styles.filterItem}>
+            <KolamDropdownSelect
+              label={KOLAM_STOCK_OPNAME_TARGET_LABELS[form.targetType]}
+              onChange={value =>
+                controller.onChangeOpnameForm({ targetId: value })
+              }
+              options={[
+                { label: 'Pilih item…', value: '' },
+                ...targetOptions,
+              ]}
+              searchable
+              searchPlaceholder="Cari item…"
+              value={form.targetId || ''}
+            />
+          </View>
+          {hasVariants ? (
+            <View style={styles.filterItem}>
+              <KolamDropdownSelect
+                label="Varian"
+                onChange={value =>
+                  controller.onChangeOpnameForm({ variantId: value })
+                }
+                options={[
+                  { label: 'Pilih varian…', value: '' },
+                  ...variantOptions,
+                ]}
+                searchable
+                searchPlaceholder="Cari varian…"
+                value={form.variantId || ''}
+              />
+            </View>
+          ) : null}
+        </View>
+        {hasVariants ? (
+          <Text style={styles.metaText}>
+            Item ini punya varian — pilih varian. Stok utama tidak bisa disesuaikan langsung.
+          </Text>
+        ) : null}
+      </KolamContentFrame>
+
+      <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
+        <Text style={styles.sectionTitle}>Penyesuaian stok</Text>
+        <View style={styles.stockSummary}>
+          <View style={styles.stockSummaryItem}>
+            <Text style={styles.metaText}>Stok sekarang</Text>
+            <Text style={styles.primaryText}>
+              {controller.opnameCurrentStock == null
+                ? '—'
+                : formatNumber(controller.opnameCurrentStock)}
+            </Text>
+          </View>
+          <View style={styles.stockSummaryItem}>
+            <Text style={styles.metaText}>Selisih</Text>
+            <Text
+              style={[
+                styles.primaryText,
+                (controller.opnameDiff ?? 0) > 0
+                  ? styles.deltaPositive
+                  : (controller.opnameDiff ?? 0) < 0
+                  ? styles.deltaNegative
+                  : null,
+              ]}
+            >
+              {controller.opnameDiff == null
+                ? '—'
+                : formatSigned(controller.opnameDiff)}
+            </Text>
+          </View>
+        </View>
+        <Text style={styles.filterLabel}>Stok sesudah</Text>
+        <KolamFormTextField
+          keyboardType="numeric"
+          onChangeText={value =>
+            controller.onChangeOpnameForm({ adjustedStock: value })
+          }
+          placeholder="0"
+          value={form.adjustedStock}
+        />
+        <Text style={styles.filterLabel}>Alasan</Text>
+        <KolamFormTextField
+          multiline
+          numberOfLines={3}
+          onChangeText={value =>
+            controller.onChangeOpnameForm({ reason: value })
+          }
+          placeholder="Opsional"
+          value={form.reason}
+        />
+      </KolamContentFrame>
+
+      <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
+        <Text style={styles.sectionTitle}>Foto bukti</Text>
+        <View style={styles.headerActions}>
+          <KolamButton
+            disabled={controller.mutating}
+            label="Tambah foto"
+            onPress={() => {
+              void controller.onAddOpnamePhoto();
+            }}
+          />
+        </View>
+        {form.photoUris.length ? (
+          <View style={styles.photoGrid}>
+            {form.photoUris.map((uri, index) => (
+              <View key={`${uri}-${index}`} style={styles.photoItem}>
+                <KolamRemoteImage
+                  accessibilityLabel={`Foto opname ${index + 1}`}
+                  sourceUri={uri}
+                  style={styles.photoThumb}
+                />
+                <KolamButton
+                  label="Hapus"
+                  onPress={() => controller.onRemoveOpnamePhoto(index)}
+                />
+              </View>
+            ))}
+          </View>
+        ) : (
+          <Text style={styles.metaText}>Belum ada foto.</Text>
+        )}
+      </KolamContentFrame>
+
+      {walletModalOpen ? (
+        <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
+          <Text style={styles.sectionTitle}>Konfirmasi dompet</Text>
+          <Text style={styles.metaText}>
+            Penurunan stok berdampak sekitar{' '}
+            {formatCurrency(controller.opnameLossAmount)}. Pilih dompet lalu
+            simpan.
+          </Text>
+          <KolamDropdownSelect
+            label="Dompet"
+            onChange={value =>
+              controller.onChangeOpnameForm({ walletId: value })
+            }
+            options={[
+              { label: 'Pilih dompet…', value: '' },
+              ...walletSelectOptions,
+            ]}
+            value={form.walletId || ''}
+          />
+          <View style={styles.headerActions}>
+            <KolamButton
+              label="Batal"
+              onPress={() => setWalletModalOpen(false)}
+            />
+            <KolamButton
+              disabled={!form.walletId || controller.mutating}
+              intent="primary"
+              label={controller.mutating ? 'Menyimpan…' : 'Lanjut simpan'}
+              onPress={() => {
+                void controller.onConfirmOpnameWallet().then(ok => {
+                  if (ok) {
+                    setWalletModalOpen(false);
+                    onRouteChange?.(KOLAM_STOCK_TRANSACTION_ROOT);
+                  }
+                });
+              }}
+            />
+          </View>
+        </KolamContentFrame>
+      ) : null}
     </View>
   );
 }
@@ -700,6 +976,13 @@ function KolamStockTransactionList({
             }}
           />
           <KolamButton
+            intent="primary"
+            label="Opname cepat"
+            onPress={() =>
+              onRouteChange?.(`${KOLAM_STOCK_TRANSACTION_ROOT}/opname`)
+            }
+          />
+          <KolamButton
             disabled={controller.exporting || controller.loading}
             label={controller.exporting ? 'Mengekspor…' : 'Ekspor'}
             onPress={() => {
@@ -1121,6 +1404,9 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 10,
   },
+  photoItem: {
+    gap: 6,
+  },
   photoThumb: {
     width: 148,
     height: 96,
@@ -1128,5 +1414,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: V.colors.border,
     backgroundColor: V.colors.muted,
+  },
+  stockSummary: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+  },
+  stockSummaryItem: {
+    minWidth: 120,
+    gap: 2,
   },
 });

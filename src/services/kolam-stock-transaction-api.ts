@@ -97,6 +97,87 @@ export async function cancelKolamStockTransactionFinance(
   return normalizeKolamStockTransaction(response);
 }
 
+export async function createKolamStockOpname(input: {
+  targetType: 'product' | 'raw' | 'species' | 'freyer' | 'teranura';
+  targetId: string;
+  variantId?: string;
+  adjustedStock: string;
+  reason?: string;
+  photoUris?: string[];
+  walletId?: string;
+}): Promise<unknown> {
+  const body = new FormData();
+  body.append('adjustedStock', input.adjustedStock);
+
+  if (input.targetType === 'product' || input.targetType === 'raw') {
+    body.append('productId', input.targetId);
+  } else if (input.targetType === 'species') {
+    body.append('speciesId', input.targetId);
+  } else if (input.targetType === 'freyer') {
+    body.append('freyerId', input.targetId);
+  } else if (input.targetType === 'teranura') {
+    body.append('teranuraId', input.targetId);
+  }
+
+  if (input.variantId?.trim()) {
+    body.append('variantId', input.variantId.trim());
+  }
+  if (input.reason?.trim()) {
+    body.append('reason', input.reason.trim());
+  }
+  if (input.walletId?.trim()) {
+    body.append('walletId', input.walletId.trim());
+  }
+
+  for (const uri of input.photoUris ?? []) {
+    if (uri.trim()) {
+      body.append(
+        'photos',
+        createReactNativeFilePart(uri.trim(), 'stock-opname-photo.jpg') as unknown as Blob,
+      );
+    }
+  }
+
+  return apiRequest<unknown>({
+    method: 'POST',
+    path: '/stock-transactions/opname',
+    body,
+    baseUrl: appConfig.kolamApiBaseUrl,
+    sourceHeader: appConfig.kolamSourceHeader,
+  });
+}
+
+function createReactNativeFilePart(
+  localUri: string,
+  fallbackName = 'stock-opname-photo.jpg',
+) {
+  const normalizedUri = localUri.startsWith('file://')
+    ? localUri
+    : `file:///${localUri.replace(/\\/g, '/')}`;
+  const name = normalizedUri.split('/').pop() || fallbackName;
+  return {
+    uri: normalizedUri,
+    name,
+    type: inferFileMimeType(name),
+  };
+}
+
+function inferFileMimeType(fileName: string) {
+  const extension = fileName.split('.').pop()?.toLowerCase();
+  switch (extension) {
+    case 'png':
+      return 'image/png';
+    case 'webp':
+      return 'image/webp';
+    case 'gif':
+      return 'image/gif';
+    case 'jpg':
+    case 'jpeg':
+    default:
+      return 'image/jpeg';
+  }
+}
+
 export async function downloadKolamStockTransactionExport(
   filters: KolamStockTransactionListFilters,
 ): Promise<{ path?: string; name: string }> {
