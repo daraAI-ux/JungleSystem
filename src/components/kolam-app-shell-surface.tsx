@@ -1,5 +1,5 @@
 import React from 'react';
-import {ScrollView, StatusBar, StyleSheet} from 'react-native';
+import {ScrollView, StatusBar, StyleSheet, View} from 'react-native';
 import {getDashboardLayoutVisualContract} from '../domain/dashboard-layout';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {KolamOverlaySurface} from './kolam-overlay-surface';
@@ -42,6 +42,11 @@ function KolamAppShellSurfaceComponent({
 }: KolamAppShellSurfaceProps) {
   const isKolamDashboard =
     sidebar.activeModule === 'kolam' || isKolamCenteredRoute(sidebar.activeRoute);
+  const ownsListScroll = isCatalogTableListRoute(sidebar.activeRoute);
+  const pageContentStyle = [
+    styles.mainContent,
+    isKolamDashboard && styles.dashboardPageContent,
+  ];
 
   return (
     <KolamShellFrame variant="appShell">
@@ -53,15 +58,19 @@ function KolamAppShellSurfaceComponent({
         <MemoKolamTopNavigation {...topNavigation} />
         <MemoKolamOverlaySurface {...overlay} />
 
-        <ScrollView
-          style={styles.mainScroll}
-          contentContainerStyle={[
-            styles.mainContent,
-            isKolamDashboard && styles.dashboardPageContent,
-          ]}>
-          <MemoKolamDashboardHeader {...dashboardHeader} />
-          {children}
-        </ScrollView>
+        {ownsListScroll ? (
+          <View style={[styles.mainScroll, pageContentStyle, styles.ownedListPage]}>
+            <MemoKolamDashboardHeader {...dashboardHeader} />
+            <View style={styles.ownedListWorkspace}>{children}</View>
+          </View>
+        ) : (
+          <ScrollView
+            style={styles.mainScroll}
+            contentContainerStyle={pageContentStyle}>
+            <MemoKolamDashboardHeader {...dashboardHeader} />
+            {children}
+          </ScrollView>
+        )}
       </KolamShellFrame>
 
       {rightRail}
@@ -77,6 +86,18 @@ function isKolamCenteredRoute(route?: string | null) {
 
   return KOLAM_CENTERED_ROUTE_PREFIXES.some(prefix =>
     routePath === prefix || routePath.startsWith(`${prefix}/`),
+  );
+}
+
+/** Catalog table lists own scrolling via FlatList; disable shell ScrollView nesting. */
+export function isCatalogTableListRoute(route?: string | null) {
+  const routePath = (route?.split('?')[0] ?? '').replace(/\/+$/, '') || '/';
+
+  return (
+    routePath === '/species' ||
+    routePath === '/products' ||
+    routePath === '/products/archive' ||
+    routePath === '/raw-materials'
   );
 }
 
@@ -117,7 +138,11 @@ const styles = StyleSheet.create({
     paddingTop: DASHBOARD_LAYOUT_VISUAL.page.paddingTop,
     paddingBottom: DASHBOARD_LAYOUT_VISUAL.page.paddingBottom,
   },
+  ownedListPage: {
+    minHeight: 0,
+  },
+  ownedListWorkspace: {
+    flex: 1,
+    minHeight: 0,
+  },
 });
-
-
-

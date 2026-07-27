@@ -331,4 +331,86 @@ describe('KolamAppShellSurface', () => {
       }),
     );
   });
+
+  it('disables shell ScrollView on catalog table list routes so FlatList owns scroll', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAppShellSurface
+          sidebar={{
+            accessScope: { am: true, kolam: true, pos: true },
+            activeModule: 'settings',
+            activeRoute: '/species',
+            collapsed: false,
+            expandedSections: {},
+            filterMenuByAccess: false,
+            onMoveMenuSection: () => undefined,
+            onQuickSearch: () => undefined,
+            onSelectMenuItem: () => undefined,
+            onSelectModule: () => undefined,
+            onToggleMenuSection: () => undefined,
+            sectionOrder: [],
+          }}
+          topNavigation={{
+            attentionCount: 0,
+            breadcrumbItems: getTopNavBreadcrumbItems('settings'),
+            displayInitials: 'DA',
+            rightControls: getTopNavRightControls(),
+            onAvatarPress: () => undefined,
+            onBreadcrumbDashboardPress: () => undefined,
+            onNotificationPress: () => undefined,
+            onToggleSidebar: () => undefined,
+          }}
+          overlay={{
+            isAttentionOpen: false,
+            isCommandPaletteOpen: false,
+            isUserMenuOpen: false,
+            userMenu: {
+              items: [],
+              displayName: 'Dunia Anura',
+              initials: 'DA',
+              email: 'seed@kolam.local',
+              accessScope: { am: true, kolam: true, pos: true },
+              onClose: () => undefined,
+              onSelect: () => undefined,
+            },
+            attention: {
+              items: [],
+              unreadCount: 0,
+              onClose: () => undefined,
+              onSeeAll: () => undefined,
+            },
+            commandPalette: {
+              commands: [],
+              search: '',
+              onSearchChange: () => undefined,
+              onClose: () => undefined,
+              onSelect: () => undefined,
+            },
+          }}
+          dashboardHeader={{
+            actions: getDashboardHeaderActions(),
+            title: 'Species',
+            subtitle: 'Daftar spesies',
+            sessionOpen: false,
+            showSessionPill: false,
+            syncIndicator: seedHeaderSyncIndicator,
+            onSelectModule: () => undefined,
+          }}
+        >
+          <Text>Species list child</Text>
+        </KolamAppShellSurface>,
+      );
+    });
+
+    const mainScrollViews = renderer!.root.findAllByType(ScrollView).filter(node => {
+      const style = StyleSheet.flatten(node.props.contentContainerStyle);
+      return style?.padding === 16 || typeof style?.maxWidth === 'number';
+    });
+    expect(mainScrollViews).toHaveLength(0);
+    expect(renderText(renderer!)).toEqual(
+      expect.arrayContaining(['Species list child', 'Species']),
+    );
+  });
 });

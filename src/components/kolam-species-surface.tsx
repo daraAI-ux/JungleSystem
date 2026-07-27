@@ -1,5 +1,13 @@
 import React from 'react';
-import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  FlatList,
+  Linking,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import type { KolamBarcodeLabelItem } from '../domain/kolam-barcode';
 import { getCustomFieldTypeLabel, type KolamCustomField } from '../domain/kolam-custom-field';
 import { getKolamFormSection } from '../domain/kolam-form';
@@ -162,7 +170,12 @@ function KolamSpeciesShell({
   onRouteChange?: (route: string) => void;
 }) {
   return (
-    <View style={styles.surface}>
+    <View
+      style={[
+        styles.surface,
+        controller.mode === 'list' ? styles.listSurface : null,
+      ]}
+    >
       {controller.mode !== 'list' ? (
         <View style={styles.header}>
           <View style={styles.headerActions}>
@@ -270,8 +283,55 @@ function KolamSpeciesList({
     setFilterPanelQuery('');
   };
 
+  const renderSpeciesRow = React.useCallback(
+    ({ item }: { item: KolamSpecies }) => (
+      <KolamSpeciesRow
+        item={item}
+        onBarcode={() => {
+          setBarcodeDialogItems(createSpeciesBarcodeItems([item]));
+          setBarcodeDialogOpen(true);
+        }}
+        onCopySku={() => void copyTextToClipboard(item.sku)}
+        onDelete={() => setPendingAction({ species: item, type: 'delete' })}
+        onDuplicate={() =>
+          setPendingAction({ species: item, type: 'duplicate' })
+        }
+        onEdit={() => {
+          void controller.onSelectSpecies(item, 'edit');
+          onRouteChange?.(`${getSpeciesRoute(item)}/edit`);
+        }}
+        onSelect={() => {
+          void controller.onSelectSpecies(item);
+          onRouteChange?.(getSpeciesRoute(item));
+        }}
+        onTogglePin={() => void controller.onTogglePin(item)}
+        onSyncPrice={platforms => {
+          setSyncPriceSelection({
+            ids: [item.id],
+            itemCount: 1,
+            platforms,
+            title:
+              'Samakan Harga ' + getSpeciesActionName(item) + ' ke Marketplace',
+          });
+          setSyncPriceDialogOpen(true);
+        }}
+        onSyncStock={platforms => {
+          setSyncStockSelection({
+            ids: [item.id],
+            itemCount: 1,
+            platforms,
+            title:
+              'Samakan Stok ' + getSpeciesActionName(item) + ' ke Marketplace',
+          });
+          setSyncStockDialogOpen(true);
+        }}
+      />
+    ),
+    [controller, onRouteChange],
+  );
+
   return (
-    <View style={styles.stack}>
+    <View style={[styles.stack, styles.listStack]}>
       <View style={styles.speciesFilterToolbar}>
         <View style={styles.speciesFilterGrid}>
           <KolamFormTextField
@@ -472,64 +532,29 @@ function KolamSpeciesList({
         />
       ) : null}
       <KolamContentFrame
-        style={styles.speciesTableFrame}
+        style={[styles.speciesTableFrame, styles.listTableFrame]}
         variant="settingsWebConfig"
       >
-        <KolamDataTableHeader columns={getKolamTableColumns('species')} />
-        {listSpecies.length ? (
-          listSpecies.map(item => (
-            <KolamSpeciesRow
-              item={item}
-              key={item.id}
-              onBarcode={() => {
-                setBarcodeDialogItems(createSpeciesBarcodeItems([item]));
-                setBarcodeDialogOpen(true);
-              }}
-              onCopySku={() => void copyTextToClipboard(item.sku)}
-              onDelete={() => setPendingAction({ species: item, type: 'delete' })}
-              onDuplicate={() =>
-                setPendingAction({ species: item, type: 'duplicate' })
-              }
-              onEdit={() => {
-                void controller.onSelectSpecies(item, 'edit');
-                onRouteChange?.(`${getSpeciesRoute(item)}/edit`);
-              }}
-              onSelect={() => {
-                void controller.onSelectSpecies(item);
-                onRouteChange?.(getSpeciesRoute(item));
-              }}
-              onTogglePin={() => void controller.onTogglePin(item)}
-              onSyncPrice={platforms => {
-                setSyncPriceSelection({
-                  ids: [item.id],
-                  itemCount: 1,
-                  platforms,
-                  title: 'Samakan Harga ' + getSpeciesActionName(item) + ' ke Marketplace',
-                });
-                setSyncPriceDialogOpen(true);
-              }}
-              onSyncStock={platforms => {
-                setSyncStockSelection({
-                  ids: [item.id],
-                  itemCount: 1,
-                  platforms,
-                  title: 'Samakan Stok ' + getSpeciesActionName(item) + ' ke Marketplace',
-                });
-                setSyncStockDialogOpen(true);
-              }}
-            />
-          ))
-        ) : (
-          <View style={styles.emptyWrap}>
-            <KolamEmptyState
-              compact
-              message="Data Spesies belum tersedia dari cache lokal atau backend."
-              title={
-                controller.loading ? 'Memuat spesies...' : 'Belum ada spesies'
-              }
-            />
-          </View>
-        )}
+        <FlatList
+          data={listSpecies}
+          keyExtractor={item => item.id}
+          ListEmptyComponent={
+            <View style={styles.emptyWrap}>
+              <KolamEmptyState
+                compact
+                message="Data Spesies belum tersedia dari cache lokal atau backend."
+                title={
+                  controller.loading ? 'Memuat spesies...' : 'Belum ada spesies'
+                }
+              />
+            </View>
+          }
+          ListHeaderComponent={
+            <KolamDataTableHeader columns={getKolamTableColumns('species')} />
+          }
+          renderItem={renderSpeciesRow}
+          style={styles.listFlatList}
+        />
       </KolamContentFrame>
       <KolamTableFooterControls
         onPageSizeChange={controller.onLimitChange}
@@ -6159,6 +6184,10 @@ const styles = StyleSheet.create({
   surface: {
     gap: 16,
   },
+  listSurface: {
+    flex: 1,
+    minHeight: 0,
+  },
   header: {
     alignItems: 'flex-end',
     flexDirection: 'row',
@@ -6229,6 +6258,17 @@ const styles = StyleSheet.create({
     gap: 16,
     overflow: 'visible',
     position: 'relative',
+  },
+  listStack: {
+    flex: 1,
+    minHeight: 0,
+  },
+  listTableFrame: {
+    flex: 1,
+    minHeight: 0,
+  },
+  listFlatList: {
+    flex: 1,
   },
   speciesEditSection: {
     gap: 0,

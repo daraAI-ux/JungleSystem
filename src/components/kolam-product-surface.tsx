@@ -1,5 +1,13 @@
 import React from 'react';
-import { Image, Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  FlatList,
+  Image,
+  Linking,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { appConfig } from '../config/app';
 import type { KolamBarcodeLabelItem } from '../domain/kolam-barcode';
 import {
@@ -297,9 +305,9 @@ export function KolamProductSurface({
   }
 
   return (
-    <View style={styles.surface}>
+    <View style={[styles.surface, styles.listSurface]}>
 
-      <View style={styles.stack}>
+      <View style={[styles.stack, styles.listStack]}>
         <View style={styles.toolbarShell}>
           <View style={styles.filterRow}>
             <KolamFormTextField
@@ -406,12 +414,31 @@ export function KolamProductSurface({
           />
         ) : null}
 
-        <KolamContentFrame style={styles.tableFrame} variant="settingsWebConfig">
-          <KolamDataTableHeader columns={tableColumns} />
-          {controller.products.length ? (
-            controller.products.map(product => (
+        <KolamContentFrame
+          style={[styles.tableFrame, styles.listTableFrame]}
+          variant="settingsWebConfig"
+        >
+          <FlatList
+            data={controller.products}
+            keyExtractor={product => product.id}
+            ListEmptyComponent={
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyText}>
+                  {controller.loading
+                    ? isRawCatalog
+                      ? 'Membaca bahan baku...'
+                      : 'Membaca produk...'
+                    : isRawCatalog
+                    ? 'Belum ada bahan baku.'
+                    : 'Belum ada produk.'}
+                </Text>
+              </View>
+            }
+            ListHeaderComponent={
+              <KolamDataTableHeader columns={tableColumns} />
+            }
+            renderItem={({ item: product }) => (
               <ProductRow
-                key={product.id}
                 isRawCatalog={isRawCatalog}
                 onArchive={() => setPendingAction({ type: 'archive', product })}
                 onBarcode={() => {
@@ -442,20 +469,9 @@ export function KolamProductSurface({
                 onTogglePin={() => void controller.onTogglePin(product)}
                 product={product}
               />
-            ))
-          ) : (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyText}>
-                {controller.loading
-                  ? isRawCatalog
-                    ? 'Membaca bahan baku...'
-                    : 'Membaca produk...'
-                  : isRawCatalog
-                  ? 'Belum ada bahan baku.'
-                  : 'Belum ada produk.'}
-              </Text>
-            </View>
-          )}
+            )}
+            style={styles.listFlatList}
+          />
         </KolamContentFrame>
 
         <View style={styles.footerWrap}>
@@ -7344,6 +7360,10 @@ const styles = StyleSheet.create({
   surface: {
     gap: 16,
   },
+  listSurface: {
+    flex: 1,
+    minHeight: 0,
+  },
   header: {
     alignItems: 'flex-end',
     flexDirection: 'row',
@@ -7414,6 +7434,17 @@ const styles = StyleSheet.create({
     gap: 16,
     overflow: 'visible',
     position: 'relative',
+  },
+  listStack: {
+    flex: 1,
+    minHeight: 0,
+  },
+  listTableFrame: {
+    flex: 1,
+    minHeight: 0,
+  },
+  listFlatList: {
+    flex: 1,
   },
   toolbarShell: {
     alignItems: 'center',
