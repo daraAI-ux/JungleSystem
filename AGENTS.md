@@ -77,3 +77,50 @@ Aturan ini melengkapi proteksi di atas. Tidak menghapus atau melemahkan rule exi
 2. Jangan “meniru” menumpuk hook di `App.tsx` hanya karena file itu historis masih berisi banyak controller.
 3. Jika pola peletakan state tidak jelas: STOP, audit-only, tanya user — jangan menebak atau merombak App.
 4. Setelah batch perubahan disetujui dan selesai: **buat git commit** untuk batch itu (jangan menumpuk banyak fitur tak terkait dalam satu commit), kecuali user meminta menunda commit. Jangan `git push` kecuali diminta eksplisit.
+
+## Component Reuse (anti-duplication)
+
+Aturan ini melengkapi proteksi di atas. Tidak menghapus atau melemahkan rule existing (termasuk larangan extract shared / ubah reusable tanpa approval).
+
+Tujuan: cegah kelemahan FE Kolam — terlalu banyak komponen berbeda yang fungsi/UI-nya sama — agar tidak diulang di RNW.
+
+### Wajib sebelum membuat komponen baru
+
+1. **Audit reuse dulu (audit-only).** Cari di `src/components/` (dan hook/domain terkait) apakah sudah ada komponen / primitif / pola dengan **fungsi sama atau sangat mirip** (button, row, field, toggle, dialog, table frame, status badge, list row, card frame, dll.).
+2. Di proposal sebelum coding, sebutkan:
+   - kandidat reuse yang ditemukan (path file), atau
+   - bukti singkat bahwa **tidak ada** yang cocok.
+3. **Default: reuse atau extend** komponen/pritimif existing (props opsional, variant, composition), bukan file komponen baru.
+4. Jangan meng-copy struktur/JSX/style dari FE Kolam menjadi komponen RNW baru jika di repo ini sudah ada padanan fungsi yang sama.
+
+### Kapan komponen baru boleh dibuat
+
+Komponen baru hanya jika **semua** ini benar, dan user sudah approve:
+
+1. Tidak ada komponen existing yang menutupi use case tanpa merusak API/behavior pemakai lain, **atau**
+2. Perbedaan perilaku/visual cukup material sehingga memaksa shared component akan melanggar proteksi modul lain,
+3. Dan di proposal dijelaskan mengapa reuse/extend ditolak.
+
+“Terlihat mirip di FE web” atau “lebih cepat buat file baru” **bukan** alasan cukup.
+
+### Yang tetap dilarang (rule lama tetap berlaku)
+
+1. **Extract / merge** banyak pemakai menjadi shared component baru **tanpa approval** — tetap dilarang.
+2. Mengubah reusable component yang sudah dipakai luas **tanpa approval khusus** — tetap dilarang.
+3. Refactor opportunistic “sekalian dedupe seluruh app” di luar scope — tetap dilarang.
+4. Menyentuh Species/Product/modul lain hanya karena mau reuse — tetap butuh disebut eksplisit + approval.
+
+### Alur yang diizinkan
+
+| Situasi | Tindakan |
+|--------|----------|
+| Ada komponen cocok | Reuse apa adanya |
+| Hampir cocok, butuh 1–2 props | Extend komponen itu (dengan approval jika file reusable/shared) |
+| Cocok tapi ubah akan rusak pemakai lain | STOP → usulkan opsi (wrapper lokal vs extract baru) → tunggu approval |
+| Tidak ada yang cocok | Komponen baru di scope modul, setelah audit reuse dilaporkan |
+
+### Agen yang membangun halaman paralel
+
+1. Jangan menambah “satu set widget lokal” (button/row/field/dialog) jika shell/katalog sudah punya padanan.
+2. Jika ragu komponen mana yang benar: STOP, audit-only, tanya user — jangan menduplikasi “untuk amannya”.
+3. Dedup/extract massal hanya jika user meminta eksplisit sebagai task tersendiri.
