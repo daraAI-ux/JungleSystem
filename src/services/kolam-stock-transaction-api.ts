@@ -1,10 +1,14 @@
 import { appConfig } from '../config/app';
 import { getRuntimeClientHeaders } from '../domain/runtime-client-contract';
 import type {
+  KolamStockTransaction,
   KolamStockTransactionListFilters,
   KolamStockTransactionListResult,
 } from '../domain/kolam-stock-transaction';
-import { normalizeKolamStockTransactionList } from '../domain/kolam-stock-transaction';
+import {
+  normalizeKolamStockTransaction,
+  normalizeKolamStockTransactionList,
+} from '../domain/kolam-stock-transaction';
 import {
   apiRequest,
   getAccessToken,
@@ -52,6 +56,45 @@ export async function getKolamStockTransactionList(
   });
 
   return normalizeKolamStockTransactionList(response);
+}
+
+export async function getKolamStockTransaction(
+  id: string,
+): Promise<KolamStockTransaction> {
+  const response = await apiRequest<unknown>({
+    path: `/stock-transactions/${encodeURIComponent(id)}`,
+    baseUrl: appConfig.kolamApiBaseUrl,
+    sourceHeader: appConfig.kolamSourceHeader,
+  });
+
+  return normalizeKolamStockTransaction(response);
+}
+
+export async function verifyKolamStockTransaction(
+  id: string,
+): Promise<KolamStockTransaction> {
+  const response = await apiRequest<unknown>({
+    method: 'PUT',
+    path: `/stock-transactions/${encodeURIComponent(id)}/verify`,
+    body: {},
+    baseUrl: appConfig.kolamApiBaseUrl,
+    sourceHeader: appConfig.kolamSourceHeader,
+  });
+
+  return normalizeKolamStockTransaction(response);
+}
+
+export async function cancelKolamStockTransactionFinance(
+  id: string,
+): Promise<KolamStockTransaction> {
+  const response = await apiRequest<unknown>({
+    method: 'PUT',
+    path: `/stock-transactions/${encodeURIComponent(id)}/cancel-finance`,
+    baseUrl: appConfig.kolamApiBaseUrl,
+    sourceHeader: appConfig.kolamSourceHeader,
+  });
+
+  return normalizeKolamStockTransaction(response);
 }
 
 export async function downloadKolamStockTransactionExport(

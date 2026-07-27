@@ -4,7 +4,10 @@ import type { KolamSpecies } from '../domain/kolam-species';
 import {
   createInitialStockTransactionListFilters,
   getKolamStockTransactionBreadcrumbPath,
+  getKolamStockTransactionRouteId,
+  isKolamStockTransactionDetailRoute,
   isKolamStockTransactionListRoute,
+  isKolamStockTransactionOpnameRoute,
   isKolamStockTransactionRoute,
   type KolamStockTransaction,
   type KolamStockTransactionListFilters,
@@ -16,8 +19,11 @@ import { getErrorMessage } from '../lib/api-error';
 import { getKolamProductOptions } from '../services/kolam-product-option-api';
 import { getKolamSpeciesList } from '../services/kolam-species-api';
 import {
+  cancelKolamStockTransactionFinance,
   downloadKolamStockTransactionExport,
+  getKolamStockTransaction,
   getKolamStockTransactionList,
+  verifyKolamStockTransaction,
 } from '../services/kolam-stock-transaction-api';
 
 export type KolamStockTransactionSurfaceMode = 'list' | 'detail' | 'opname';
@@ -38,11 +44,15 @@ export interface KolamStockTransactionController {
   filters: KolamStockTransactionListFilters;
   loading: boolean;
   mode: KolamStockTransactionSurfaceMode;
+  mutating: boolean;
   pagination: KolamStockTransactionPagination;
   pendingReturns: KolamStockTransactionPendingReturn[];
   productOptions: KolamProductOption[];
+  selectedTransaction: KolamStockTransaction | null;
   speciesOptions: KolamSpecies[];
+  statusMessage: string | null;
   transactions: KolamStockTransaction[];
+  onCancelFinance: () => Promise<boolean>;
   onChangeFilters: (patch: Partial<KolamStockTransactionListFilters>) => void;
   onClearFilters: () => void;
   onExport: () => Promise<void>;
@@ -50,6 +60,7 @@ export interface KolamStockTransactionController {
   onPageChange: (page: number) => void;
   onRefresh: () => Promise<void>;
   onSearchChange: (search: string) => void;
+  onVerify: () => Promise<boolean>;
 }
 
 export function useKolamStockTransactionController(
@@ -61,6 +72,8 @@ export function useKolamStockTransactionController(
     createInitialStockTransactionListFilters(route),
   );
   const [transactions, setTransactions] = useState<KolamStockTransaction[]>([]);
+  const [selectedTransaction, setSelectedTransaction] =
+    useState<KolamStockTransaction | null>(null);
   const [pagination, setPagination] =
     useState<KolamStockTransactionPagination>(DEFAULT_PAGINATION);
   const [pendingReturns, setPendingReturns] = useState<
@@ -70,13 +83,24 @@ export function useKolamStockTransactionController(
   const [speciesOptions, setSpeciesOptions] = useState<KolamSpecies[]>([]);
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [mutating, setMutating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [dataSource, setDataSource] =
     useState<KolamStockTransactionDataSource>('idle');
 
   useEffect(() => {
-    setMode(getInitialMode(route));
-    setFilters(createInitialStockTransactionListFilters(route));
+    const nextMode = getInitialMode(route);
+    setMode(nextMode);
+    if (nextMode === 'list') {
+      setFilters(createInitialStockTransactionListFilters(route));
+      setSelectedTransaction(null);
+    }
+    if (nextMode === 'opname') {
+      setSelectedTransaction(null);
+    }
+    setError(null);
+    setStatusMessage(null);
   }, [route]);
 
   const refreshOptions = useCallback(async () => {
@@ -92,10 +116,7 @@ export function useKolamStockTransactionController(
     }
   }, []);
 
-  const refresh = useCallback(async () => {
-    if (!isKolamStockTransactionRoute(route)) {
-      return;
-    }
+  const refreshList = useCallback(async () => {
     if (!isKolamStockTransactionListRoute(route)) {
       return;
     }
@@ -117,6 +138,40 @@ export function useKolamStockTransactionController(
       setLoading(false);
     }
   }, [filters, refreshOptions, route]);
+
+  const refreshDetail = useCallback(async () => {
+    const id = getKolamStockTransactionRouteId(route);
+    if (!id) {
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const live = await getKolamStockTransaction(id);
+      setSelectedTransaction(live);
+      setDataSource('live');
+    } catch (loadError) {
+      setError(getErrorMessage(loadError));
+      setDataSource('error');
+    } finally {
+      setLoading(false);
+    }
+  }, [route]);
+
+  const refresh = useCallback(async () => {
+    if (!isKolamStockTransactionRoute(route)) {
+      return;
+    }
+    if (isKolamStockTransactionListRoute(route)) {
+      await refreshList();
+      return;
+    }
+    if (isKolamStockTransactionDetailRoute(route)) {
+      await refreshDetail();
+    }
+  }, [refreshDetail, refreshList, route]);
 
   useEffect(() => {
     void refresh();
@@ -186,6 +241,50 @@ export function useKolamStockTransactionController(
     }
   }, [filters]);
 
+  const onVerify = useCallback(async () => {
+    const id = selectedTransaction?.id || getKolamStockTransactionRouteId(route);
+    if (!id) {
+      return false;
+    }
+    setMutating(true);
+    setError(null);
+    setStatusMessage(null);
+    try {
+      const updated = await verifyKolamStockTransaction(id);
+      setSelectedTransaction(updated);
+      setStatusMessage('Verifikasi finance berhasil');
+      setDataSource('live');
+      return true;
+    } catch (verifyError) {
+      setError(getErrorMessage(verifyError));
+      return false;
+    } finally {
+      setMutating(false);
+    }
+  }, [route, selectedTransaction?.id]);
+
+  const onCancelFinance = useCallback(async () => {
+    const id = selectedTransaction?.id || getKolamStockTransactionRouteId(route);
+    if (!id) {
+      return false;
+    }
+    setMutating(true);
+    setError(null);
+    setStatusMessage(null);
+    try {
+      const updated = await cancelKolamStockTransactionFinance(id);
+      setSelectedTransaction(updated);
+      setStatusMessage('Finance dibatalkan untuk transaksi ini');
+      setDataSource('live');
+      return true;
+    } catch (cancelError) {
+      setError(getErrorMessage(cancelError));
+      return false;
+    } finally {
+      setMutating(false);
+    }
+  }, [route, selectedTransaction?.id]);
+
   const breadcrumbPath = useMemo(
     () => getKolamStockTransactionBreadcrumbPath(mode),
     [mode],
@@ -199,11 +298,15 @@ export function useKolamStockTransactionController(
     filters,
     loading,
     mode,
+    mutating,
     pagination,
     pendingReturns,
     productOptions,
+    selectedTransaction,
     speciesOptions,
+    statusMessage,
     transactions,
+    onCancelFinance,
     onChangeFilters,
     onClearFilters,
     onExport,
@@ -211,15 +314,15 @@ export function useKolamStockTransactionController(
     onPageChange,
     onRefresh: refresh,
     onSearchChange,
+    onVerify,
   };
 }
 
 function getInitialMode(route: string): KolamStockTransactionSurfaceMode {
-  const path = route.trim().split('?')[0].replace(/\/+$/, '');
-  if (path.endsWith('/opname')) {
+  if (isKolamStockTransactionOpnameRoute(route)) {
     return 'opname';
   }
-  if (/\/stock-transaction\/[^/]+$/.test(path) && !path.endsWith('/opname')) {
+  if (isKolamStockTransactionDetailRoute(route)) {
     return 'detail';
   }
   return 'list';

@@ -104,11 +104,14 @@ describe('Kolam stock transaction domain', () => {
         label: 'Produk A',
         kind: 'product',
         sku: 'SKU-A',
+        href: '/products/prod-1',
       },
       crossSync: {
         summary: 'synced',
         originPlatform: 'shopee',
         sku: 'SKU-A',
+        targetStock: null,
+        targets: [],
       },
     });
     expect(result.pagination).toEqual({
