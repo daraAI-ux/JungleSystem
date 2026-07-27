@@ -34,6 +34,7 @@ export function KolamDashboardStatChannelRow({
 const styles = StyleSheet.create({
   metricChannelRow: {
     flex: 1,
+    flexBasis: 0,
     minWidth: DASHBOARD_STATS_VISUAL.channelRows.itemMinWidth,
     minHeight: DASHBOARD_STATS_VISUAL.channelRows.itemMinHeight,
     paddingHorizontal: DASHBOARD_STATS_VISUAL.channelRows.itemPaddingX,
@@ -47,6 +48,7 @@ const styles = StyleSheet.create({
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: DASHBOARD_STATS_VISUAL.channelRows.labelFontSize,
+    flexShrink: 1,
     textAlign: 'center',
   },
   metricChannelValue: {
@@ -55,6 +57,7 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: DASHBOARD_STATS_VISUAL.channelRows.valueFontSize,
     fontWeight: '700',
+    flexShrink: 1,
     textAlign: 'center',
   },
 });

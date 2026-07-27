@@ -167,7 +167,7 @@ const dashboardStatsVisualContract: DashboardStatsVisualContract = {
     gapY: 10,
     gridGap: 8,
     itemMinHeight: 44,
-    itemMinWidth: 64,
+    itemMinWidth: 0,
     itemPaddingX: 4,
     itemPaddingY: 6,
     itemRadius: 8,
