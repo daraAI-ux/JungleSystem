@@ -89,7 +89,7 @@ export interface KolamWorkspaceSurfaceProps {
   onAmSurfaceSelect?: (surface: UnifiedSurface) => void;
 }
 
-export function KolamWorkspaceSurface({
+export function KolamWorkspaceSurfaceComponent({
   activeModule,
   activeAmSurface,
   activeKolamSurface,
@@ -469,5 +469,8 @@ function getPosModuleLabel(moduleId: AppModule) {
       return 'Checkout';
   }
 }
+
+export const KolamWorkspaceSurface = React.memo(KolamWorkspaceSurfaceComponent);
+KolamWorkspaceSurface.displayName = 'KolamWorkspaceSurface';
 
 

@@ -467,6 +467,21 @@ function App() {
     syncActivity,
   });
 
+  const workspaceNode = React.useMemo(
+    () => <KolamWorkspaceSurface {...workspace} runtime={runtime} />,
+    [runtime, workspace],
+  );
+  const rightRailNode = React.useMemo(
+    () =>
+      activeChatRail ? (
+        <KolamGlobalChatRail
+          mode={activeChatRail}
+          onClose={handleChatRailClose}
+        />
+      ) : null,
+    [activeChatRail, handleChatRailClose],
+  );
+
   if (!authUser) {
     return (
       <KolamLoginScreen
@@ -484,16 +499,9 @@ function App() {
         topNavigation={topNavigation}
         overlay={overlay}
         dashboardHeader={dashboardHeader}
-        rightRail={
-          activeChatRail ? (
-            <KolamGlobalChatRail
-              mode={activeChatRail}
-              onClose={handleChatRailClose}
-            />
-          ) : null
-        }
+        rightRail={rightRailNode}
       >
-        <KolamWorkspaceSurface {...workspace} runtime={runtime} />
+        {workspaceNode}
       </KolamAppShellSurface>
       <KolamImagePreviewHost />
       <KolamMediaPreviewHost />

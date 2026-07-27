@@ -18,6 +18,11 @@ type KolamSidebarProps = React.ComponentProps<typeof KolamSidebar>;
 type KolamTopNavigationProps = React.ComponentProps<typeof KolamTopNavigation>;
 const DASHBOARD_LAYOUT_VISUAL = getDashboardLayoutVisualContract();
 
+const MemoKolamSidebar = React.memo(KolamSidebar);
+const MemoKolamTopNavigation = React.memo(KolamTopNavigation);
+const MemoKolamOverlaySurface = React.memo(KolamOverlaySurface);
+const MemoKolamDashboardHeader = React.memo(KolamDashboardHeader);
+
 export interface KolamAppShellSurfaceProps {
   children: React.ReactNode;
   dashboardHeader: KolamDashboardHeaderProps;
@@ -27,7 +32,7 @@ export interface KolamAppShellSurfaceProps {
   topNavigation: KolamTopNavigationProps;
 }
 
-export function KolamAppShellSurface({
+function KolamAppShellSurfaceComponent({
   children,
   dashboardHeader,
   overlay,
@@ -42,11 +47,11 @@ export function KolamAppShellSurface({
     <KolamShellFrame variant="appShell">
       <StatusBar barStyle="dark-content" />
 
-      <KolamSidebar {...sidebar} />
+      <MemoKolamSidebar {...sidebar} />
 
       <KolamShellFrame variant="appMain">
-        <KolamTopNavigation {...topNavigation} />
-        <KolamOverlaySurface {...overlay} />
+        <MemoKolamTopNavigation {...topNavigation} />
+        <MemoKolamOverlaySurface {...overlay} />
 
         <ScrollView
           style={styles.mainScroll}
@@ -54,7 +59,7 @@ export function KolamAppShellSurface({
             styles.mainContent,
             isKolamDashboard && styles.dashboardPageContent,
           ]}>
-          <KolamDashboardHeader {...dashboardHeader} />
+          <MemoKolamDashboardHeader {...dashboardHeader} />
           {children}
         </ScrollView>
       </KolamShellFrame>
@@ -63,6 +68,9 @@ export function KolamAppShellSurface({
     </KolamShellFrame>
   );
 }
+
+export const KolamAppShellSurface = React.memo(KolamAppShellSurfaceComponent);
+KolamAppShellSurface.displayName = 'KolamAppShellSurface';
 
 function isKolamCenteredRoute(route?: string | null) {
   const routePath = route?.split('?')[0] ?? '';

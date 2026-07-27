@@ -1,4 +1,5 @@
 import type {Dispatch, SetStateAction} from 'react';
+import {useMemo} from 'react';
 import type {AppModule} from '../domain/app-shell';
 import {authSources, type AccessScope, type AuthSource} from '../domain/auth';
 import type {CommandEntry} from '../domain/command-index';
@@ -10,6 +11,7 @@ import {
   getUnifiedSyncMessage,
   type UnifiedDataset,
 } from '../services/unified-data';
+import type {KolamRuntimeSurfaceProps} from '../components/kolam-runtime-surface';
 import {useKolamRuntimeController} from './use-kolam-runtime-controller';
 
 export function useKolamRuntimeSurfaceController({
@@ -77,8 +79,8 @@ export function useKolamRuntimeSurfaceController({
   setCommandSearch: Dispatch<SetStateAction<string>>;
   syncActivity: SyncActivityEntry[];
 }) {
-  return useKolamRuntimeController({
-    auth: {
+  const auth = useMemo<KolamRuntimeSurfaceProps['auth']>(
+    () => ({
       accessScope,
       amApiBaseUrl,
       authEmail,
@@ -96,33 +98,87 @@ export function useKolamRuntimeSurfaceController({
       onLogin: onSignIn,
       onLogout: onSignOut,
       onSync,
-    },
-    runtimeIdentity: {
+    }),
+    [
+      accessScope,
+      amApiBaseUrl,
+      authEmail,
+      authMessage,
+      authPassword,
+      authSource,
+      authSourceHint,
+      displayName,
+      isSigningIn,
+      onSignIn,
+      onSignOut,
+      onSync,
+      setAmApiBaseUrl,
+      setAuthEmail,
+      setAuthPassword,
+      setAuthSource,
+    ],
+  );
+
+  const runtimeIdentity = useMemo<KolamRuntimeSurfaceProps['runtimeIdentity']>(
+    () => ({
       items: runtimeIdentityItems,
       meta: runtimeIdentityMeta,
-    },
-    syncStatus: {
+    }),
+    [runtimeIdentityItems, runtimeIdentityMeta],
+  );
+
+  const syncStatus = useMemo<KolamRuntimeSurfaceProps['syncStatus']>(
+    () => ({
       message: getUnifiedSyncMessage(dataset),
       loading: isLoadingDataset,
       errorMessage: dataset.errorMessage,
-    },
-    syncActivity,
-    readiness: {
+    }),
+    [dataset, isLoadingDataset],
+  );
+
+  const readiness = useMemo<KolamRuntimeSurfaceProps['readiness']>(
+    () => ({
       checks: readinessChecks,
       summaryText: readinessSummaryText,
-    },
-    runtimeActions: {
+    }),
+    [readinessChecks, readinessSummaryText],
+  );
+
+  const runtimeActions = useMemo<KolamRuntimeSurfaceProps['runtimeActions']>(
+    () => ({
       moduleId: activeModule,
       accessScope,
       onAction: onRuntimeAction,
-    },
-    commandIndex: {
+    }),
+    [accessScope, activeModule, onRuntimeAction],
+  );
+
+  const commandIndex = useMemo<KolamRuntimeSurfaceProps['commandIndex']>(
+    () => ({
       commands,
       coverageCommands,
       totalCount: commandTotalCount,
       search: commandSearch,
       onSearchChange: setCommandSearch,
       onSelect: onCommandSelect,
-    },
+    }),
+    [
+      commandSearch,
+      commandTotalCount,
+      commands,
+      coverageCommands,
+      onCommandSelect,
+      setCommandSearch,
+    ],
+  );
+
+  return useKolamRuntimeController({
+    auth,
+    runtimeIdentity,
+    syncStatus,
+    syncActivity,
+    readiness,
+    runtimeActions,
+    commandIndex,
   });
 }

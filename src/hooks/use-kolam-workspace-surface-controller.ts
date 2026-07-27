@@ -1,4 +1,4 @@
-import {useCallback} from 'react';
+import {useCallback, useMemo} from 'react';
 import type {AppModule, ShellModuleRouteEntry} from '../domain/app-shell';
 import type {CommandEntry} from '../domain/command-index';
 import type {PluginRouteEntry, UnifiedSurface} from '../domain/unified';
@@ -158,16 +158,8 @@ export function useKolamWorkspaceSurfaceController({
     [onDashboardRouteContext, onMessage, onSelectModule],
   );
 
-  return useKolamWorkspaceController({
-    activeModule,
-    activeAmSurface,
-    activeKolamSurface,
-    activeModuleRoute,
-    activeNavigationItem,
-    activePluginRoute,
-    dataset,
-    syncActivity,
-    checkout: {
+  const checkoutProps = useMemo<WorkspaceCheckoutProps>(
+    () => ({
       activeType,
       afterDiscount,
       canCreateDraft,
@@ -197,18 +189,60 @@ export function useKolamWorkspaceSurfaceController({
       selectedPayment,
       subtotal,
       workflowSteps,
-    },
-    catalog: {
+    }),
+    [
+      activeType,
+      afterDiscount,
+      canCreateDraft,
+      catalogSearch,
+      checkout,
+      dataset.catalog,
+      dataset.customers,
+      dataset.paymentMethods,
+      dataset.recentSales,
+      filteredCatalog,
+      finalTotal,
+      isCreatingSale,
+      onAddToCart,
+      onCatalogSearchChange,
+      onClearCart,
+      onCreateSaleDraft,
+      onDiscountAmountChange,
+      onDiscountTypeChange,
+      onGlobalDiscountChange,
+      onGlobalDiscountTypeChange,
+      onQuantityChange,
+      onSelectCustomer,
+      onSelectPaymentMethod,
+      onShippingCostChange,
+      onTypeChange,
+      selectedCustomer,
+      selectedPayment,
+      subtotal,
+      workflowSteps,
+    ],
+  );
+
+  const catalogProps = useMemo<WorkspaceCatalogProps>(
+    () => ({
       catalogSearch,
       filteredCatalog,
       onCatalogSearchChange,
-    },
-    sales: {
+    }),
+    [catalogSearch, filteredCatalog, onCatalogSearchChange],
+  );
+
+  const salesProps = useMemo<WorkspaceSalesProps>(
+    () => ({
       sales: dataset.recentSales,
       updatingSaleId,
       onStatusChange,
-    },
-    cashflow: {
+    }),
+    [dataset.recentSales, onStatusChange, updatingSaleId],
+  );
+
+  const cashflowProps = useMemo<WorkspaceCashflowProps>(
+    () => ({
       cashflowPreview,
       cashflowShiftName,
       canClose: canCloseCashflow,
@@ -219,18 +253,55 @@ export function useKolamWorkspaceSurfaceController({
       onCashflowShiftNameChange,
       onCloseCashflow,
       onOpenCashflow,
-    },
-    customer: {
+    }),
+    [
+      canCloseCashflow,
+      canOpenCashflow,
+      cashflowPreview,
+      cashflowShiftName,
+      isClosingCashflow,
+      isLoadingCashflowPreview,
+      isOpeningCashflow,
+      onCashflowShiftNameChange,
+      onCloseCashflow,
+      onOpenCashflow,
+    ],
+  );
+
+  const customerProps = useMemo<WorkspaceCustomerProps>(
+    () => ({
       customerForm,
       isCreatingCustomer,
       onCreateCustomer,
       onCustomerFormChange,
-    },
-    plugins: {
+    }),
+    [customerForm, isCreatingCustomer, onCreateCustomer, onCustomerFormChange],
+  );
+
+  const pluginsProps = useMemo<WorkspacePluginsProps>(
+    () => ({
       filteredPlugins,
       pluginSearch,
       onPluginSearchChange,
-    },
+    }),
+    [filteredPlugins, onPluginSearchChange, pluginSearch],
+  );
+
+  return useKolamWorkspaceController({
+    activeModule,
+    activeAmSurface,
+    activeKolamSurface,
+    activeModuleRoute,
+    activeNavigationItem,
+    activePluginRoute,
+    dataset,
+    syncActivity,
+    checkout: checkoutProps,
+    catalog: catalogProps,
+    sales: salesProps,
+    cashflow: cashflowProps,
+    customer: customerProps,
+    plugins: pluginsProps,
     onAmSurfaceSelect,
     onCommandSelect,
     onDashboardRoute: handleDashboardRoute,
