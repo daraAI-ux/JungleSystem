@@ -344,8 +344,8 @@ export function useKolamSpeciesController(
     const canUseCache = isDefaultSpeciesListFilters(filters);
     const cached = canUseCache ? await readKolamSpeciesListCache() : null;
     if (
-      cached?.value.data.length &&
-      cached.value.pagination.limit === filters.limit
+      cached?.value?.data?.length &&
+      cached.value.pagination?.limit === filters.limit
     ) {
       applySpeciesListResult(cached.value, setSpecies, setPagination);
       setDataSource('cache');
@@ -364,7 +364,7 @@ export function useKolamSpeciesController(
       void startKolamSpeciesDetailCacheHydration(liveResult.data);
     } catch (loadError) {
       setError(getErrorMessage(loadError));
-      setDataSource(cached?.value.data.length ? 'cache' : 'error');
+      setDataSource(cached?.value?.data?.length ? 'cache' : 'error');
     } finally {
       setLoading(false);
     }

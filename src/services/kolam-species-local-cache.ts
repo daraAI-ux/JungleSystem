@@ -4,6 +4,7 @@ import {
   slugifySpeciesName,
   type KolamSpecies,
   type KolamSpeciesListResult,
+  type KolamSpeciesPagination,
 } from '../domain/kolam-species';
 import { getLocalDataStore } from './local-data-store';
 
@@ -21,9 +22,23 @@ export function getKolamSpeciesDetailCacheKey(
 }
 
 export async function readKolamSpeciesListCache(ownerId = SPECIES_OWNER) {
-  return getLocalDataStore().read<KolamSpeciesListResult>(
-    getKolamSpeciesListCacheKey(ownerId),
-  );
+  const cached = await getLocalDataStore().read<
+    KolamSpeciesListResult | KolamSpecies[]
+  >(getKolamSpeciesListCacheKey(ownerId));
+
+  if (!cached) {
+    return null;
+  }
+
+  const value = normalizeKolamSpeciesListCacheValue(cached.value);
+  if (!value) {
+    return null;
+  }
+
+  return {
+    ...cached,
+    value,
+  };
 }
 
 export async function writeKolamSpeciesListCache(
@@ -115,6 +130,41 @@ function createKolamSpeciesListLocalCacheValue(
     pagination: result.pagination,
     data: result.data.map(createKolamSpeciesLocalCacheValue),
   };
+}
+
+/** Accepts legacy array cache entries written before server-side pagination. */
+export function normalizeKolamSpeciesListCacheValue(
+  value: unknown,
+): KolamSpeciesListResult | null {
+  if (Array.isArray(value)) {
+    const data = value as KolamSpecies[];
+    const pagination: KolamSpeciesPagination = {
+      page: 1,
+      limit: data.length || 10,
+      total: data.length,
+      totalPages: 1,
+    };
+    return { data, pagination };
+  }
+
+  if (!value || typeof value !== 'object') {
+    return null;
+  }
+
+  const record = value as Partial<KolamSpeciesListResult>;
+  if (!Array.isArray(record.data)) {
+    return null;
+  }
+
+  const data = record.data;
+  const pagination = record.pagination ?? {
+    page: 1,
+    limit: data.length || 10,
+    total: data.length,
+    totalPages: 1,
+  };
+
+  return { data, pagination };
 }
 
 function createKolamSpeciesLocalCacheValue(species: KolamSpecies): KolamSpecies {
