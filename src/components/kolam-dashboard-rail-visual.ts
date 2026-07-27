@@ -8,9 +8,9 @@ export const KOLAM_BUTTON_VISUAL = getKolamButtonVisualContract();
 export const liveCardShadow = {
   shadowColor: V.colors.fg,
   shadowOffset: {width: 0, height: V.surface.cardShadow.offsetY},
-  shadowOpacity: V.surface.cardShadow.opacity,
-  shadowRadius: V.surface.cardShadow.radius,
-  elevation: V.surface.cardShadow.elevation,
+  shadowOpacity: 0,
+  shadowRadius: 0,
+  elevation: 0,
 };
 
 export const liveCardChrome = {
@@ -22,6 +22,6 @@ export const liveCardChrome = {
 };
 
 export const liveCardHeaderCompact = {
-  paddingHorizontal: 0,
+  paddingHorizontal: DASHBOARD_RAIL_VISUAL.layout.headerPaddingX,
   paddingVertical: V.layout.cardCompactSpacing,
 };

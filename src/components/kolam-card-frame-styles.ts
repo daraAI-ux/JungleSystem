@@ -33,6 +33,12 @@ const liveCardShadow = {
   elevation: V.surface.cardShadow.elevation,
 };
 
+const dashboardNoShadow = {
+  shadowOpacity: 0,
+  shadowRadius: 0,
+  elevation: 0,
+};
+
 const liveCardChrome = {
   borderRadius: V.surface.cardChrome.radius,
   backgroundColor: V.colors.bg,
@@ -111,6 +117,7 @@ export const cardFrameStyles = StyleSheet.create({
     borderColor: V.colors.border,
     borderWidth: V.surface.cardChrome.borderWidth,
     ...liveCardShadow,
+    ...dashboardNoShadow,
   },
   dashboardRail: {
     flex: 1,
@@ -184,6 +191,7 @@ export const cardFrameStyles = StyleSheet.create({
     borderColor: V.colors.border,
     borderWidth: VISIT_CONFIRMATIONS_VISUAL.card.borderWidth,
     ...liveCardShadow,
+    ...dashboardNoShadow,
   },
   pluginTable: {
     overflow: 'hidden',

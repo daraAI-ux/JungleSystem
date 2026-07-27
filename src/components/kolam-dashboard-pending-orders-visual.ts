@@ -9,9 +9,9 @@ export const PENDING_ORDERS_VISUAL =
 export const pendingOrdersCardShadow = {
   shadowColor: V.colors.fg,
   shadowOffset: {width: 0, height: V.surface.cardShadow.offsetY},
-  shadowOpacity: V.surface.cardShadow.opacity,
-  shadowRadius: V.surface.cardShadow.radius,
-  elevation: V.surface.cardShadow.elevation,
+  shadowOpacity: 0,
+  shadowRadius: 0,
+  elevation: 0,
 };
 
 export const pendingOrdersCardChrome = {
