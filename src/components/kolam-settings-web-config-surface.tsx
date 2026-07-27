@@ -1060,47 +1060,6 @@ export function KolamSettingsWebConfigSurface({
             onChangeText={value => setDraftField('address', value)}
             placeholder="Jl. Contoh No. 1"
           />
-          {showOperationalSettings ? (
-            <>
-              <KolamToggleRow
-                variant="settingsForm"
-                label={fields[1].label}
-                description={fields[1].description}
-                active={draft.livechatOnline}
-                onPress={() => {
-                  if (disabled) {
-                    return;
-                  }
-                  onSaveOperationalLivechat(!draft.livechatOnline);
-                }}
-              />
-              <KolamToggleRow
-                variant="settingsForm"
-                label={fields[2].label}
-                description={fields[2].description}
-                active={draft.maintenancePos}
-                onPress={() => {
-                  if (disabled) {
-                    return;
-                  }
-                  onSaveOperationalMaintenance('pos', !draft.maintenancePos);
-                }}
-              />
-              <KolamToggleRow
-                variant="settingsForm"
-                label="Maintenance marketplace"
-                description="Aktifkan mode pemeliharaan untuk Marketplace."
-                active={draft.maintenanceMarketplace}
-                onPress={() =>
-                  !disabled &&
-                  onSaveOperationalMaintenance(
-                    'marketplace',
-                    !draft.maintenanceMarketplace,
-                  )
-                }
-              />
-            </>
-          ) : null}
           {showStoreShippingSettings ? (
             <>
               <KolamTextFieldRow
@@ -1783,8 +1742,8 @@ export function KolamSettingsWebConfigSurface({
           />
           <KolamToggleRow
             variant="settingsForm"
-            label={fields[2].label}
-            description={fields[2].description}
+            label="POS"
+            description="Maintenance POS."
             active={draft.maintenancePos}
             onPress={() => {
               if (disabled) {
@@ -1795,8 +1754,8 @@ export function KolamSettingsWebConfigSurface({
           />
           <KolamToggleRow
             variant="settingsForm"
-            label="Maintenance marketplace"
-            description="Aktifkan mode pemeliharaan untuk Marketplace."
+            label="Marketplace"
+            description="Maintenance web toko."
             active={draft.maintenanceMarketplace}
             onPress={() =>
               !disabled &&
@@ -2310,32 +2269,6 @@ export function KolamSettingsWebConfigSurface({
           <KolamCopyStack
             items={[
               {
-                id: 'operational-livechat-title',
-                text: 'Livechat',
-                style: styles.marketplaceOverviewTitle,
-              },
-              {
-                id: 'operational-livechat-meta',
-                text: 'Override darurat agar banner chat tampil online meski di luar jam buka.',
-                style: styles.marketplaceOverviewMeta,
-              },
-            ]}
-          />
-          <KolamToggleRow
-            variant="settingsForm"
-            label="Livechat Always Online"
-            description="Jika off, jam operasional mengatur banner tutup/libur di dunia-anura.com."
-            active={draft.livechatOnline}
-            onPress={() => {
-              if (disabled) {
-                return;
-              }
-              onSaveOperationalLivechat(!draft.livechatOnline);
-            }}
-          />
-          <KolamCopyStack
-            items={[
-              {
                 id: 'operational-po-title',
                 text: 'Purchase Order - penerimaan barang',
                 style: styles.marketplaceOverviewTitle,
@@ -2489,6 +2422,32 @@ export function KolamSettingsWebConfigSurface({
             'poWorkflowNotifyCompleteUserIds',
             'Notif masuk stok - staff override',
           )}
+          <KolamCopyStack
+            items={[
+              {
+                id: 'operational-livechat-title',
+                text: 'Livechat',
+                style: styles.marketplaceOverviewTitle,
+              },
+              {
+                id: 'operational-livechat-meta',
+                text: 'Override darurat agar banner chat tampil online meski di luar jam buka.',
+                style: styles.marketplaceOverviewMeta,
+              },
+            ]}
+          />
+          <KolamToggleRow
+            variant="settingsForm"
+            label="Livechat Always Online"
+            description="Jika off, jam operasional mengatur banner tutup/libur di dunia-anura.com."
+            active={draft.livechatOnline}
+            onPress={() => {
+              if (disabled) {
+                return;
+              }
+              onSaveOperationalLivechat(!draft.livechatOnline);
+            }}
+          />
         </>
       ) : null}
       {showFinancialTaxSummary ? (

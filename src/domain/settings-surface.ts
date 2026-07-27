@@ -2007,9 +2007,9 @@ export function getSettingsWebConfigFields(
     },
     {
       id: 'maintenance-mode',
-      label: 'Mode maintenance',
+      label: 'POS',
       value: maintenancePos,
-      description: 'Toggle operasional untuk review banner/status maintenance.',
+      description: 'Maintenance POS.',
       control: 'toggle',
     },
   ];

@@ -435,20 +435,26 @@ describe('KolamSettingsPanel', () => {
     expect(text).toEqual(
       expect.arrayContaining([
         'Operasional',
-        'Mode maintenance',
-        'Maintenance marketplace',
-        'Google Sign-In webstore',
-        'Google OAuth client ID',
-        'ID room penerimaan PO',
-        'Notifikasi PO diterima',
-        'Post bukti PO ke Team Chat',
-        'User ID notif PO diterima',
-        'Tanggal cutoff payroll absensi',
-        'Absensi wajib GPS',
-        'Absensi wajib face match',
-        'Storefront aktif',
-        'Simpan',
+        'Mode pemeliharaan',
+        'POS',
+        'Marketplace',
+        'Google Sign-In (Webstore)',
+        'Absensi karyawan',
+        'Purchase Order - penerimaan barang',
+        'Livechat',
       ]),
+    );
+    expect(text.indexOf('Mode pemeliharaan')).toBeLessThan(
+      text.indexOf('Google Sign-In (Webstore)'),
+    );
+    expect(text.indexOf('Google Sign-In (Webstore)')).toBeLessThan(
+      text.indexOf('Absensi karyawan'),
+    );
+    expect(text.indexOf('Absensi karyawan')).toBeLessThan(
+      text.indexOf('Purchase Order - penerimaan barang'),
+    );
+    expect(text.indexOf('Purchase Order - penerimaan barang')).toBeLessThan(
+      text.indexOf('Livechat'),
     );
     expect(text).not.toEqual(
       expect.arrayContaining([

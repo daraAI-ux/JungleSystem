@@ -379,7 +379,7 @@ describe('settings web widgets', () => {
 
     await ReactTestRenderer.act(async () => {
       toggles
-        .find(node => node.props.label === 'Maintenance marketplace')!
+        .find(node => node.props.label === 'Marketplace')!
         .props.onPress();
       toggles
         .find(node => node.props.label === 'Livechat Always Online')!
