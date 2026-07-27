@@ -426,7 +426,7 @@ export const settingsTabItems: SettingsTabItem[] = [
     description:
       'Metode pembayaran, profil pajak perusahaan, overtime, dan enclosure sale commission.',
     permission: 'wallet:view|tax:view',
-    status: 'planned',
+    status: 'source-audit',
     surfaceId: 'web-settings',
     sourceComponent: 'settings/system/page.tsx',
   },

@@ -51,6 +51,38 @@ import { KolamMediaPlayer } from './kolam-media-player';
 const DEFAULT_NOTIFICATION_BEEP_URI =
   'data:audio/wav;base64,UklGRqQMAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YYAMAAAAAOEdCy4UKUERhPFs2H/R6d8P/Y0bZy1qKvUTWPQU2jjR1N0g+h4ZlSyVK5UWN/fi2yDR4ts395UWlSuVLB4ZIPrU3TjRFNpY9PUTaipnLY0bD/3p33/RbNiE8UERFCkLLuEdAAAf4vXR7Na/7nwOlCeBLhcg8QJz5JnSltUL7KgL7CXILiwi4AXi5mvTa9Rr6ckIHiTgLh4kyQhr6WvUa9Pi5uAFLCLILuwlqAsL7JbVmdJz5PECFyCBLpQnfA6/7uzW9dEf4gAA4R0LLhQpQRGE8WzYf9Hp3w/9jRtnLWoq9RNY9BTaONHU3SD6HhmVLJUrlRY39+LbINHi2zf3lRaVK5UsHhkg+tTdONEU2lj09RNqKmctjRsP/enff9Fs2ITxQREUKQsu4R0AAB/i9dHs1r/ufA6UJ4EuFyDxAnPkmdKW1QvsqAvsJcguLCLgBeLma9Nr1GvpyQgeJOAuHiTJCGvpa9Rr0+Lm4AUsIsgu7CWoCwvsltWZ0nPk8QIXIIEulCd8Dr/u7Nb10R/iAADhHQsuFClBEYTxbNh/0enfD/2NG2ctair1E1j0FNo40dTdIPoeGZUslSuVFjf34tsg0eLbN/eVFpUrlSweGSD61N040RTaWPT1E2oqZy2NGw/96d9/0WzYhPFBERQpCy7hHQAAH+L10ezWv+58DpQngS4XIPECc+SZ0pbVC+yoC+wlyC4sIuAF4uZr02vUa+nJCB4k4C4eJMkIa+lr1GvT4ubgBSwiyC7sJagLC+yW1ZnSc+TxAhcggS6UJ3wOv+7s1vXRH+IAAOEdCy4UKUERhPFs2H/R6d8P/Y0bZy1qKvUTWPQU2jjR1N0g+h4ZlSyVK5UWN/fi2yDR4ts395UWlSuVLB4ZIPrU3TjRFNpY9PUTaipnLY0bD/3p33/RbNiE8UERFCkLLuEdAAAf4vXR7Na/7nwOlCeBLhcg8QJz5JnSltUL7KgL7CXILiwi4AXi5mvTa9Rr6ckIHiTgLh4kyQhr6WvUa9Pi5uAFLCLILuwlqAsL7JbVmdJz5PECFyCBLpQnfA6/7uzW9dEf4g==';
 
+const financialShellSections: Array<{
+  id: string;
+  title: string;
+  description: string;
+  rowIds: string[];
+}> = [
+  {
+    id: 'payment-methods',
+    title: 'Metode pembayaran',
+    description: 'Ringkasan channel pembayaran live dari backend Kolam.',
+    rowIds: ['payment-methods', 'payment-methods-inactive'],
+  },
+  {
+    id: 'tax-profile',
+    title: 'Profil pajak perusahaan',
+    description: 'Status harga include PPN dan PPh 21 komisi.',
+    rowIds: ['tax-sale-prices', 'tax-commission-pph21'],
+  },
+  {
+    id: 'overtime',
+    title: 'Lembur karyawan',
+    description: 'Mode hitung lembur dan kebijakan minimum pembayaran.',
+    rowIds: ['overtime-mode', 'overtime-policy'],
+  },
+  {
+    id: 'enclosure-commission',
+    title: 'Komisi penjualan kandang',
+    description: 'Status komisi global untuk penjualan enclosure.',
+    rowIds: ['enclosure-sale-commission'],
+  },
+] as const;
+
 type WebSettingDraft = {
   versionKolam: string;
   versionEnclonura: string;
@@ -2456,46 +2488,70 @@ export function KolamSettingsWebConfigSurface({
             items={[
               {
                 id: 'financial-title',
-                text: 'Ringkasan Finansial / Pajak',
+                text: 'Finansial',
                 style: styles.marketplaceOverviewTitle,
               },
               {
                 id: 'financial-status',
-                text: 'Ringkasan live read-only. Editor update ditunda sampai kontrak endpoint/body final.',
+                text: 'Shell native mengikuti urutan FE. Data live masih read-only sampai kontrak update final.',
                 style: styles.marketplaceOverviewMeta,
               },
             ]}
           />
-          <View style={styles.marketplaceOverviewRows}>
-            {financialSummaryRows.map(row => (
-              <View key={row.id} style={styles.marketplaceOverviewRow}>
+          {financialShellSections.map(section => {
+            const rows = financialSummaryRows.filter(row =>
+              section.rowIds.includes(row.id),
+            );
+
+            return (
+              <View key={section.id} style={styles.marketplaceOverview}>
                 <KolamCopyStack
-                  containerStyle={styles.marketplaceOverviewCopy}
                   items={[
                     {
-                      id: `${row.id}-label`,
-                      text: row.label,
+                      id: `${section.id}-title`,
+                      text: section.title,
                       style: styles.marketplaceOverviewLabel,
                     },
                     {
-                      id: `${row.id}-detail`,
-                      text: row.detail,
+                      id: `${section.id}-detail`,
+                      text: section.description,
                       style: styles.marketplaceOverviewDetail,
                     },
                   ]}
                 />
-                <KolamCopyStack
-                  items={[
-                    {
-                      id: `${row.id}-value`,
-                      text: row.value,
-                      style: styles.marketplaceOverviewValue,
-                    },
-                  ]}
-                />
+                <View style={styles.marketplaceOverviewRows}>
+                  {rows.map(row => (
+                    <View key={row.id} style={styles.marketplaceOverviewRow}>
+                      <KolamCopyStack
+                        containerStyle={styles.marketplaceOverviewCopy}
+                        items={[
+                          {
+                            id: `${row.id}-label`,
+                            text: row.label,
+                            style: styles.marketplaceOverviewLabel,
+                          },
+                          {
+                            id: `${row.id}-detail`,
+                            text: row.detail,
+                            style: styles.marketplaceOverviewDetail,
+                          },
+                        ]}
+                      />
+                      <KolamCopyStack
+                        items={[
+                          {
+                            id: `${row.id}-value`,
+                            text: row.value,
+                            style: styles.marketplaceOverviewValue,
+                          },
+                        ]}
+                      />
+                    </View>
+                  ))}
+                </View>
               </View>
-            ))}
-          </View>
+            );
+          })}
         </View>
       ) : null}
       {showKpiSettings ? (

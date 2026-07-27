@@ -89,7 +89,7 @@ describe('settingsSurfaceItems', () => {
       expect.objectContaining({
         breadcrumbLabel: 'Finansial',
         permission: 'wallet:view|tax:view',
-        status: 'planned',
+        status: 'source-audit',
       }),
     );
     expect(getSettingsTabItemById('plugin')).toEqual(

@@ -467,7 +467,7 @@ describe('KolamSettingsPanel', () => {
     );
   });
 
-  it('renders financial and tax settings as a read-only summary', async () => {
+  it('renders financial settings shell sections in FE order', async () => {
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
     await ReactTestRenderer.act(async () => {
@@ -487,16 +487,31 @@ describe('KolamSettingsPanel', () => {
     expect(text).toEqual(
       expect.arrayContaining([
         'Finansial',
-        'Ringkasan Finansial / Pajak',
+        'Shell native mengikuti urutan FE. Data live masih read-only sampai kontrak update final.',
         'Metode pembayaran',
+        'Ringkasan channel pembayaran live dari backend Kolam.',
         'Metode nonaktif',
+        'Profil pajak perusahaan',
+        'Status harga include PPN dan PPh 21 komisi.',
         'Harga jual include PPN',
         'PPh 21 komisi',
+        'Lembur karyawan',
+        'Mode hitung lembur dan kebijakan minimum pembayaran.',
         'Overtime calculation',
         'Overtime policy',
+        'Komisi penjualan kandang',
+        'Status komisi global untuk penjualan enclosure.',
         'Enclosure sale commission',
-        'Ringkasan live read-only. Editor update ditunda sampai kontrak endpoint/body final.',
       ]),
+    );
+    expect(text.indexOf('Metode pembayaran')).toBeLessThan(
+      text.indexOf('Profil pajak perusahaan'),
+    );
+    expect(text.indexOf('Profil pajak perusahaan')).toBeLessThan(
+      text.indexOf('Lembur karyawan'),
+    );
+    expect(text.indexOf('Lembur karyawan')).toBeLessThan(
+      text.indexOf('Komisi penjualan kandang'),
     );
     expect(text).not.toEqual(
       expect.arrayContaining([
