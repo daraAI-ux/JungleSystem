@@ -188,6 +188,169 @@ void SaveBase64File(
   }
 }
 
+bool IsSafeRelativeCachePath(std::string const &relativePath) {
+  if (relativePath.empty() || relativePath.size() > 180) {
+    return false;
+  }
+
+  if (relativePath.find(':') != std::string::npos ||
+      relativePath.find('\\') != std::string::npos ||
+      relativePath.find('/') != std::string::npos ||
+      relativePath.find("..") != std::string::npos) {
+    return false;
+  }
+
+  return true;
+}
+
+void WriteCacheFileBase64(
+    std::string relativePath,
+    std::string base64Content,
+    ::React::ReactPromise<::React::JSValueObject> &&result) noexcept {
+  if (!IsSafeRelativeCachePath(relativePath)) {
+    result.Reject("Path cache tidak valid.");
+    return;
+  }
+
+  try {
+    auto root = winrt::Windows::Storage::ApplicationData::Current().LocalCacheFolder();
+    auto folderOp = root.CreateFolderAsync(
+        L"kolam-images",
+        winrt::Windows::Storage::CreationCollisionOption::OpenIfExists);
+    folderOp.Completed(
+        [result = std::move(result),
+         base64Content = std::move(base64Content),
+         relativePath](
+            winrt::Windows::Foundation::IAsyncOperation<
+                winrt::Windows::Storage::StorageFolder> const &operation,
+            winrt::Windows::Foundation::AsyncStatus status) mutable {
+          if (status != winrt::Windows::Foundation::AsyncStatus::Completed) {
+            result.Reject("Folder cache tidak bisa dibuat.");
+            return;
+          }
+
+          try {
+            auto folder = operation.GetResults();
+            auto createOp = folder.CreateFileAsync(
+                winrt::to_hstring(relativePath),
+                winrt::Windows::Storage::CreationCollisionOption::ReplaceExisting);
+            createOp.Completed(
+                [result = std::move(result),
+                 base64Content = std::move(base64Content),
+                 relativePath](
+                    winrt::Windows::Foundation::IAsyncOperation<
+                        winrt::Windows::Storage::StorageFile> const &fileOperation,
+                    winrt::Windows::Foundation::AsyncStatus createStatus) mutable {
+                  if (createStatus != winrt::Windows::Foundation::AsyncStatus::Completed) {
+                    result.Reject("File cache tidak bisa dibuat.");
+                    return;
+                  }
+
+                  try {
+                    auto file = fileOperation.GetResults();
+                    auto bytes = DecodeBase64(base64Content);
+                    auto writeOp = winrt::Windows::Storage::FileIO::WriteBytesAsync(
+                        file,
+                        winrt::array_view<uint8_t const>(
+                            bytes.data(), bytes.data() + bytes.size()));
+                    writeOp.Completed(
+                        [result = std::move(result), file, relativePath](
+                            winrt::Windows::Foundation::IAsyncAction const &,
+                            winrt::Windows::Foundation::AsyncStatus writeStatus) mutable {
+                          if (writeStatus !=
+                              winrt::Windows::Foundation::AsyncStatus::Completed) {
+                            result.Reject("File cache tidak bisa ditulis.");
+                            return;
+                          }
+
+                          const auto path = winrt::to_string(file.Path());
+                          result.Resolve(::React::JSValueObject{
+                              {"cancelled", false},
+                              {"path", path},
+                              {"relativePath", relativePath},
+                              {"uri", ToFileUri(path)},
+                              {"name", winrt::to_string(file.Name())},
+                          });
+                        });
+                  } catch (winrt::hresult_error const &error) {
+                    result.Reject(winrt::to_string(error.message()).c_str());
+                  } catch (...) {
+                    result.Reject("File cache tidak bisa ditulis.");
+                  }
+                });
+          } catch (winrt::hresult_error const &error) {
+            result.Reject(winrt::to_string(error.message()).c_str());
+          } catch (...) {
+            result.Reject("File cache tidak bisa dibuat.");
+          }
+        });
+  } catch (winrt::hresult_error const &error) {
+    result.Reject(winrt::to_string(error.message()).c_str());
+  } catch (...) {
+    result.Reject("Cache writer tidak bisa dibuka.");
+  }
+}
+
+void CacheFileExists(
+    std::string relativePath,
+    ::React::ReactPromise<::React::JSValueObject> &&result) noexcept {
+  if (!IsSafeRelativeCachePath(relativePath)) {
+    result.Resolve(::React::JSValueObject{{"exists", false}});
+    return;
+  }
+
+  try {
+    auto root = winrt::Windows::Storage::ApplicationData::Current().LocalCacheFolder();
+    auto folderOp = root.CreateFolderAsync(
+        L"kolam-images",
+        winrt::Windows::Storage::CreationCollisionOption::OpenIfExists);
+    folderOp.Completed(
+        [result = std::move(result), relativePath](
+            winrt::Windows::Foundation::IAsyncOperation<
+                winrt::Windows::Storage::StorageFolder> const &operation,
+            winrt::Windows::Foundation::AsyncStatus status) mutable {
+          if (status != winrt::Windows::Foundation::AsyncStatus::Completed) {
+            result.Resolve(::React::JSValueObject{{"exists", false}});
+            return;
+          }
+
+          try {
+            auto folder = operation.GetResults();
+            auto tryGetOp = folder.TryGetItemAsync(winrt::to_hstring(relativePath));
+            tryGetOp.Completed(
+                [result = std::move(result)](
+                    winrt::Windows::Foundation::IAsyncOperation<
+                        winrt::Windows::Storage::IStorageItem> const &itemOperation,
+                    winrt::Windows::Foundation::AsyncStatus itemStatus) mutable {
+                  if (itemStatus != winrt::Windows::Foundation::AsyncStatus::Completed) {
+                    result.Resolve(::React::JSValueObject{{"exists", false}});
+                    return;
+                  }
+
+                  auto item = itemOperation.GetResults();
+                  const bool exists =
+                      item != nullptr &&
+                      item.IsOfType(winrt::Windows::Storage::StorageItemTypes::File);
+                  if (!exists) {
+                    result.Resolve(::React::JSValueObject{{"exists", false}});
+                    return;
+                  }
+
+                  const auto path = winrt::to_string(item.Path());
+                  result.Resolve(::React::JSValueObject{
+                      {"exists", true},
+                      {"path", path},
+                      {"uri", ToFileUri(path)},
+                  });
+                });
+          } catch (...) {
+            result.Resolve(::React::JSValueObject{{"exists", false}});
+          }
+        });
+  } catch (...) {
+    result.Resolve(::React::JSValueObject{{"exists", false}});
+  }
+}
 
 void PickFileWithTypes(
     ::React::ReactPromise<::React::JSValueObject> &&result,
@@ -300,6 +463,29 @@ void KolamWindowsFilePicker::saveFileBase64(
       base64Content = std::move(base64Content),
       result = std::move(result)]() mutable {
     SaveBase64File(std::move(suggestedName), std::move(base64Content), std::move(result));
+  });
+}
+
+void KolamWindowsFilePicker::writeCacheFileBase64(
+    std::string relativePath,
+    std::string base64Content,
+    ::React::ReactPromise<::React::JSValueObject> &&result) noexcept {
+  m_context.UIDispatcher().Post([
+      relativePath = std::move(relativePath),
+      base64Content = std::move(base64Content),
+      result = std::move(result)]() mutable {
+    WriteCacheFileBase64(
+        std::move(relativePath), std::move(base64Content), std::move(result));
+  });
+}
+
+void KolamWindowsFilePicker::cacheFileExists(
+    std::string relativePath,
+    ::React::ReactPromise<::React::JSValueObject> &&result) noexcept {
+  m_context.UIDispatcher().Post([
+      relativePath = std::move(relativePath),
+      result = std::move(result)]() mutable {
+    CacheFileExists(std::move(relativePath), std::move(result));
   });
 }
 

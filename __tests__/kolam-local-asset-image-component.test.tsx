@@ -2,7 +2,12 @@ import React from 'react';
 import { Image } from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 import { KolamLocalAssetImage } from '../src/components/kolam-local-asset-image';
-import { writeKolamLocalAsset } from '../src/services/kolam-local-asset-store';
+import {
+  getMemoryKolamImageDiskBackend,
+  resetKolamImageDiskBackend,
+  setKolamImageDiskBackend,
+} from '../src/services/kolam-image-disk-backend';
+import { syncKolamLocalAsset } from '../src/services/kolam-local-asset-store';
 import {
   MemoryLocalDataStore,
   resetLocalDataStore,
@@ -12,20 +17,46 @@ import {
 describe('KolamLocalAssetImage', () => {
   beforeEach(() => {
     setLocalDataStore(new MemoryLocalDataStore());
+    resetKolamImageDiskBackend();
+    setKolamImageDiskBackend(getMemoryKolamImageDiskBackend());
   });
 
   afterEach(() => {
     resetLocalDataStore();
+    resetKolamImageDiskBackend();
   });
 
-  it('renders the backend URI directly instead of reading SQLite data URI', async () => {
-    await writeKolamLocalAsset('brand-logo', {
-      dataUri: 'data:image/png;base64,AAA',
-      mimeType: 'image/png',
+  it('renders the disk-cached local URI after sync', async () => {
+    const bytes = Uint8Array.from([0, 0, 0]);
+    const fetcher = jest.fn(async () => {
+      return {
+        ok: true,
+        status: 200,
+        headers: {
+          get(name: string) {
+            return name.toLowerCase() === 'content-type' ? 'image/png' : null;
+          },
+        },
+        async blob() {
+          return {
+            size: bytes.byteLength,
+            type: 'image/png',
+            async arrayBuffer() {
+              return bytes.buffer.slice(
+                bytes.byteOffset,
+                bytes.byteOffset + bytes.byteLength,
+              );
+            },
+          };
+        },
+      };
+    });
+
+    await syncKolamLocalAsset({
+      fetcher: fetcher as unknown as typeof fetch,
       revision: 'logo:v1',
       scope: 'brand-logo',
       sourceUri: 'https://cdn/logo.png',
-      updatedAt: '2026-07-19T00:00:00.000Z',
     });
 
     let renderer: ReactTestRenderer.ReactTestRenderer;
@@ -39,11 +70,12 @@ describe('KolamLocalAssetImage', () => {
           style={{ height: 40, width: 132 }}
         />,
       );
+      await Promise.resolve();
     });
 
-    expect(renderer!.root.findByType(Image).props.source).toEqual({
-      uri: 'https://cdn/logo.png',
-    });
+    expect(renderer!.root.findByType(Image).props.source.uri).toEqual(
+      expect.stringMatching(/^data:image\/png;base64,/),
+    );
   });
 
   it('stays empty when the backend URI is missing', async () => {

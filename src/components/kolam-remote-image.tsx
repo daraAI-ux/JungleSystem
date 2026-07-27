@@ -8,6 +8,10 @@ import {
   type ViewStyle,
 } from 'react-native';
 import {
+  getRenderableKolamImageUri,
+  syncKolamImageCache,
+} from '../services/kolam-image-local-cache';
+import {
   openKolamImagePreview,
   type KolamImagePreviewItem,
 } from './kolam-image-preview-dialog';
@@ -15,6 +19,7 @@ import { KolamInteractionFrame } from './kolam-interaction-frame';
 
 export function KolamRemoteImage({
   accessibilityLabel,
+  allowRemoteFallback = true,
   previewIndex,
   previewItems,
   resizeMode = 'cover',
@@ -33,13 +38,63 @@ export function KolamRemoteImage({
   sourceUri: string | null | undefined;
   style: StyleProp<ImageStyle>;
 }) {
-  const [failedUri, setFailedUri] = React.useState<string | null>(null);
   const imageRevision = revision ?? sourceUri ?? '';
-  const visibleUri = sourceUri && sourceUri !== failedUri ? sourceUri : null;
+  const [cachedUri, setCachedUri] = React.useState<string | null>(null);
+  const [failedUri, setFailedUri] = React.useState<string | null>(null);
+  const [syncDone, setSyncDone] = React.useState(() => isDirectRenderUri(sourceUri));
 
   React.useEffect(() => {
+    let cancelled = false;
     setFailedUri(null);
-  }, [sourceUri]);
+    setCachedUri(null);
+
+    if (!sourceUri) {
+      setSyncDone(true);
+      return;
+    }
+
+    if (isDirectRenderUri(sourceUri)) {
+      setCachedUri(sourceUri);
+      setSyncDone(true);
+      return;
+    }
+
+    setSyncDone(false);
+    void syncKolamImageCache({
+      revision: imageRevision,
+      scope,
+      sourceUri,
+    })
+      .then(asset => {
+        if (cancelled) {
+          return;
+        }
+
+        setCachedUri(getRenderableKolamImageUri(asset));
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setCachedUri(null);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setSyncDone(true);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [imageRevision, scope, sourceUri]);
+
+  const remoteUri =
+    allowRemoteFallback && sourceUri && !isDirectRenderUri(sourceUri)
+      ? sourceUri
+      : null;
+  const preferredUri = cachedUri || (syncDone || allowRemoteFallback ? remoteUri : null);
+  const visibleUri =
+    preferredUri && preferredUri !== failedUri ? preferredUri : null;
 
   if (!visibleUri) {
     return null;
@@ -70,6 +125,10 @@ export function KolamRemoteImage({
       />
     </KolamInteractionFrame>
   );
+}
+
+function isDirectRenderUri(uri: string | null | undefined) {
+  return Boolean(uri && /^(data:|file:)/i.test(uri));
 }
 
 const styles = StyleSheet.create({

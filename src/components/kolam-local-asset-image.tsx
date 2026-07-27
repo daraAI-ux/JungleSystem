@@ -7,11 +7,16 @@ import {
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
+import {
+  getRenderableKolamLocalAssetUri,
+  syncKolamLocalAsset,
+} from '../services/kolam-local-asset-store';
 import { openKolamImagePreview } from './kolam-image-preview-dialog';
 import { KolamInteractionFrame } from './kolam-interaction-frame';
 
 export function KolamLocalAssetImage({
   accessibilityLabel,
+  allowRemoteFallback = true,
   resizeMode = 'cover',
   revision,
   scope,
@@ -19,18 +24,69 @@ export function KolamLocalAssetImage({
   style,
 }: {
   accessibilityLabel: string;
+  allowRemoteFallback?: boolean;
   resizeMode?: ImageResizeMode;
   revision?: string;
   scope: string;
   sourceUri: string | null | undefined;
   style: StyleProp<ImageStyle>;
 }) {
+  const [cachedUri, setCachedUri] = React.useState<string | null>(null);
   const [failedUri, setFailedUri] = React.useState<string | null>(null);
-  const visibleUri = sourceUri && sourceUri !== failedUri ? sourceUri : null;
+  const [syncDone, setSyncDone] = React.useState(() => isDirectRenderUri(sourceUri));
 
   React.useEffect(() => {
+    let cancelled = false;
     setFailedUri(null);
+    setCachedUri(null);
+
+    if (!sourceUri) {
+      setSyncDone(true);
+      return;
+    }
+
+    if (isDirectRenderUri(sourceUri)) {
+      setCachedUri(sourceUri);
+      setSyncDone(true);
+      return;
+    }
+
+    setSyncDone(false);
+    void syncKolamLocalAsset({
+      revision,
+      scope,
+      sourceUri,
+    })
+      .then(asset => {
+        if (cancelled) {
+          return;
+        }
+
+        setCachedUri(getRenderableKolamLocalAssetUri(asset));
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setCachedUri(null);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setSyncDone(true);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [revision, scope, sourceUri]);
+
+  const remoteUri =
+    allowRemoteFallback && sourceUri && !isDirectRenderUri(sourceUri)
+      ? sourceUri
+      : null;
+  const preferredUri = cachedUri || (syncDone || allowRemoteFallback ? remoteUri : null);
+  const visibleUri =
+    preferredUri && preferredUri !== failedUri ? preferredUri : null;
 
   if (!visibleUri) {
     return null;
@@ -59,6 +115,10 @@ export function KolamLocalAssetImage({
       />
     </KolamInteractionFrame>
   );
+}
+
+function isDirectRenderUri(uri: string | null | undefined) {
+  return Boolean(uri && /^(data:|file:)/i.test(uri));
 }
 
 const styles = StyleSheet.create({

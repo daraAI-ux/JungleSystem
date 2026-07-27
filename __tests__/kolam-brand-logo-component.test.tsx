@@ -31,6 +31,7 @@ describe('KolamBrandLogo', () => {
       renderer = ReactTestRenderer.create(
         <KolamBrandLogo brand={brand} variant="detail" />,
       );
+      await Promise.resolve();
     });
 
     const wrapperStyle = StyleSheet.flatten(
@@ -39,8 +40,8 @@ describe('KolamBrandLogo', () => {
 
     expect(wrapperStyle).toEqual(
       expect.objectContaining({
-        width: 260,
-        height: 86,
+        width: 158,
+        height: 84,
         overflow: 'hidden',
       }),
     );

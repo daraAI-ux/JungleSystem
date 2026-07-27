@@ -27,6 +27,17 @@ struct KolamWindowsFilePicker {
       std::string base64Content,
       ::React::ReactPromise<::React::JSValueObject> &&result) noexcept;
 
+  REACT_METHOD(writeCacheFileBase64)
+  void writeCacheFileBase64(
+      std::string relativePath,
+      std::string base64Content,
+      ::React::ReactPromise<::React::JSValueObject> &&result) noexcept;
+
+  REACT_METHOD(cacheFileExists)
+  void cacheFileExists(
+      std::string relativePath,
+      ::React::ReactPromise<::React::JSValueObject> &&result) noexcept;
+
  private:
   winrt::Microsoft::ReactNative::ReactContext m_context;
 };

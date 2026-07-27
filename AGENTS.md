@@ -174,3 +174,22 @@ Pada Windows, setiap `WebView` dengan `useWebView2` = **satu proses WebView2** (
 1. Rich text → `KolamTipTapRichTextEditor`; jika ≥2 field di layar yang sama → bungkus `KolamTipTapExclusiveGroup`.
 2. Preview HTML read-only → prefer `KolamHtmlContent` (bukan WebView2), kecuali requirement eksplisit.
 3. Jangan copy pola FE web yang me-mount banyak editor sekaligus tanpa mempertimbangkan biaya WebView2 di RNW.
+
+## Image disk cache (Windows)
+
+Aturan ini melengkapi proteksi di atas. Tidak menghapus atau melemahkan rule existing.
+
+Gambar remote **tidak** boleh disimpan sebagai blob/base64 besar di SQLite. Cache yang benar:
+
+1. **Disk file** di `LocalCacheFolder/kolam-images/` lewat native bridge `KolamWindowsFilePicker.writeCacheFileBase64` / `cacheFileExists`
+2. **Metadata saja** di SQLite (`localPath`, `localUri`, `mimeType`, `sourceUri`, revision) via `kolam-local-asset-store` / `kolam-image-local-cache`
+3. UI memakai `KolamRemoteImage` atau `KolamLocalAssetImage` (sudah sync + prefer `localUri`, fallback remote default `allowRemoteFallback`)
+
+### Wajib untuk agen lain
+
+1. Tampilkan gambar remote katalog → **reuse** `KolamRemoteImage` / `KolamLocalAssetImage`. Jangan `Image` + URL mentah di list/detail baru jika komponen ini menutupi use case.
+2. Jangan menulis `dataUri` gambar besar ke `getLocalDataStore()` / SQLite.
+3. Prefetch batch → `syncKolamImageCache` / `syncKolamImageCacheBatch` (atau `syncKolamLocalAsset*`), bukan fetch ad-hoc + simpan base64.
+4. Jest: pakai `setKolamImageDiskBackend(getMemoryKolamImageDiskBackend())` + `MemoryLocalDataStore`; native bridge tidak ada di unit test.
+5. Setelah ubah native FilePicker cache API: perlu **rebuild Windows** (tanyakan approval build); reload Metro saja tidak cukup.
+6. Jika butuh cache video/audio disk: STOP, usulkan terpisah — pola saat ini khusus image; media besar lain tetap indeks via `kolam-media-manifest-cache` tanpa auto-download blob.

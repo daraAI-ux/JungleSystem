@@ -1,10 +1,16 @@
 import {
+  getRenderableKolamImageUri,
   readKolamImageCache,
   syncKolamImageCache,
   syncKolamImageCacheBatch,
   writeKolamImageCache,
 } from '../src/services/kolam-image-local-cache';
 import { createKolamLocalAssetRequestHeaders } from '../src/services/kolam-local-asset-store';
+import {
+  getMemoryKolamImageDiskBackend,
+  resetKolamImageDiskBackend,
+  setKolamImageDiskBackend,
+} from '../src/services/kolam-image-disk-backend';
 import {
   clearNativeDeviceIdentity,
   setAccessToken,
@@ -19,15 +25,18 @@ import {
 describe('Kolam image local cache', () => {
   beforeEach(() => {
     setLocalDataStore(new MemoryLocalDataStore());
+    resetKolamImageDiskBackend();
+    setKolamImageDiskBackend(getMemoryKolamImageDiskBackend());
   });
 
   afterEach(() => {
     resetLocalDataStore();
+    resetKolamImageDiskBackend();
     setAccessToken(undefined);
     clearNativeDeviceIdentity();
   });
 
-  it('does not store image data URI in SQLite because media renders from backend URI', async () => {
+  it('refuses to store image data URI blobs in SQLite metadata', async () => {
     const image = {
       sourceUri: 'https://cdn/logo.png',
       revision: 'brand-1:v1',
@@ -43,22 +52,35 @@ describe('Kolam image local cache', () => {
     ).resolves.toBeNull();
   });
 
-  it('does not fetch image blobs during sync', async () => {
-    const fetcher = jest.fn();
+  it('downloads image bytes to disk backend and stores path metadata only', async () => {
+    const fetcher = jest.fn(async () =>
+      createImageResponse('image/png', 'AAA'),
+    );
 
-    await expect(
-      syncKolamImageCache({
-        fetcher: fetcher as unknown as typeof fetch,
-        revision: 'https://cdn/flag.png',
-        scope: 'country-flag',
-        sourceUri: 'https://cdn/flag.png',
-      }),
-    ).resolves.toBeNull();
-    expect(fetcher).not.toHaveBeenCalled();
+    const asset = await syncKolamImageCache({
+      fetcher: fetcher as unknown as typeof fetch,
+      revision: 'flag:v1',
+      scope: 'country-flag',
+      sourceUri: 'https://cdn/flag.png',
+    });
+
+    expect(fetcher).toHaveBeenCalled();
+    expect(asset?.localPath).toEqual(expect.stringMatching(/^country-flag-h\d+\.png$/));
+    expect(asset?.localUri).toEqual(
+      expect.stringMatching(/^data:image\/png;base64,AAA/),
+    );
+    expect(asset?.dataUri).toBeUndefined();
+    expect(getRenderableKolamImageUri(asset)).toBe(asset?.localUri);
+
+    const cached = await readKolamImageCache('country-flag', 'https://cdn/flag.png');
+    expect(cached?.value.localPath).toBe(asset?.localPath);
+    expect(cached?.value.dataUri).toBeUndefined();
   });
 
-  it('indexes image batch inputs without downloading binary media', async () => {
-    const fetcher = jest.fn();
+  it('dedupes batch sync inputs and downloads unique remote images', async () => {
+    const fetcher = jest.fn(async () =>
+      createImageResponse('image/png', 'BBB'),
+    );
     const summary = await syncKolamImageCacheBatch({
       fetcher: fetcher as unknown as typeof fetch,
       scope: 'brand-logo',
@@ -69,8 +91,8 @@ describe('Kolam image local cache', () => {
       ],
     });
 
-    expect(summary).toEqual({ failed: 0, synced: 2 });
-    expect(fetcher).not.toHaveBeenCalled();
+    expect(summary).toEqual({ failed: 0, synced: 1 });
+    expect(fetcher).toHaveBeenCalledTimes(1);
   });
 
   it('builds backend-gated request headers for optional file downloads', () => {
@@ -96,3 +118,52 @@ describe('Kolam image local cache', () => {
     );
   });
 });
+
+function createImageResponse(mimeType: string, base64Payload: string) {
+  const bytes = decodeBase64Fixture(base64Payload);
+  return {
+    ok: true,
+    status: 200,
+    headers: {
+      get(name: string) {
+        return name.toLowerCase() === 'content-type' ? mimeType : null;
+      },
+    },
+    async blob() {
+      return {
+        size: bytes.byteLength,
+        type: mimeType,
+        async arrayBuffer() {
+          return bytes.buffer.slice(
+            bytes.byteOffset,
+            bytes.byteOffset + bytes.byteLength,
+          );
+        },
+      };
+    },
+  };
+}
+
+function decodeBase64Fixture(value: string) {
+  const alphabet =
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+  const cleaned = value.replace(/=+$/, '');
+  const bytes: number[] = [];
+
+  for (let index = 0; index < cleaned.length; index += 4) {
+    const a = alphabet.indexOf(cleaned[index] ?? 'A');
+    const b = alphabet.indexOf(cleaned[index + 1] ?? 'A');
+    const c = alphabet.indexOf(cleaned[index + 2] ?? 'A');
+    const d = alphabet.indexOf(cleaned[index + 3] ?? 'A');
+    const triplet = (a << 18) | (b << 12) | ((c & 63) << 6) | (d & 63);
+    bytes.push((triplet >> 16) & 255);
+    if (cleaned[index + 2]) {
+      bytes.push((triplet >> 8) & 255);
+    }
+    if (cleaned[index + 3]) {
+      bytes.push(triplet & 255);
+    }
+  }
+
+  return Uint8Array.from(bytes);
+}

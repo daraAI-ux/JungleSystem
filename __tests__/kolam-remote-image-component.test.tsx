@@ -5,6 +5,9 @@ import { KolamRemoteImage } from '../src/components/kolam-remote-image';
 import { syncKolamImageCache } from '../src/services/kolam-image-local-cache';
 
 jest.mock('../src/services/kolam-image-local-cache', () => ({
+  getRenderableKolamImageUri: (
+    asset: { localUri?: string; dataUri?: string } | null,
+  ) => asset?.localUri || asset?.dataUri || null,
   syncKolamImageCache: jest.fn(),
 }));
 
@@ -13,7 +16,7 @@ describe('KolamRemoteImage', () => {
     (syncKolamImageCache as jest.Mock).mockReset();
   });
 
-  it('does not render the remote image URL while local storage is still empty', async () => {
+  it('falls back to the remote URL while disk cache is still empty', async () => {
     let renderer: ReactTestRenderer.ReactTestRenderer;
     (syncKolamImageCache as jest.Mock).mockResolvedValueOnce(null);
 
@@ -27,7 +30,9 @@ describe('KolamRemoteImage', () => {
       );
     });
 
-    expect(renderer!.root.findAllByType(Image)).toHaveLength(0);
+    expect(renderer!.root.findByType(Image).props.source).toEqual({
+      uri: 'https://cdn/logo.png',
+    });
     expect(syncKolamImageCache).toHaveBeenCalledWith({
       revision: 'https://cdn/logo.png',
       scope: 'general',
@@ -35,12 +40,13 @@ describe('KolamRemoteImage', () => {
     });
   });
 
-  it('renders the cached data URI instead of the remote image URL', async () => {
+  it('prefers the cached local URI once disk sync resolves', async () => {
     let renderer: ReactTestRenderer.ReactTestRenderer;
     (syncKolamImageCache as jest.Mock).mockResolvedValueOnce({
       sourceUri: 'https://cdn/logo.png',
       revision: 'https://cdn/logo.png',
-      dataUri: 'data:image/png;base64,AAA',
+      localPath: 'general-h1.png',
+      localUri: 'file:///C:/cache/kolam-images/general-h1.png',
       mimeType: 'image/png',
       updatedAt: '2026-07-19T00:00:00.000Z',
     });
@@ -56,7 +62,7 @@ describe('KolamRemoteImage', () => {
     });
 
     expect(renderer!.root.findByType(Image).props.source).toEqual({
-      uri: 'data:image/png;base64,AAA',
+      uri: 'file:///C:/cache/kolam-images/general-h1.png',
     });
     expect(syncKolamImageCache).toHaveBeenCalledWith({
       revision: 'https://cdn/logo.png',
@@ -82,5 +88,35 @@ describe('KolamRemoteImage', () => {
       uri: 'data:image/svg+xml;utf8,%3Csvg%2F%3E',
     });
     expect(syncKolamImageCache).not.toHaveBeenCalled();
+  });
+
+  it('can hide remote fallback until a local cache entry exists', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+    let resolveSync: (value: null) => void = () => undefined;
+    (syncKolamImageCache as jest.Mock).mockImplementationOnce(
+      () =>
+        new Promise(resolve => {
+          resolveSync = resolve;
+        }),
+    );
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamRemoteImage
+          accessibilityLabel="Brand logo"
+          allowRemoteFallback={false}
+          sourceUri="https://cdn/logo.png"
+          style={{ height: 24, width: 64 }}
+        />,
+      );
+    });
+
+    expect(renderer!.root.findAllByType(Image)).toHaveLength(0);
+
+    await ReactTestRenderer.act(async () => {
+      resolveSync(null);
+    });
+
+    expect(renderer!.root.findAllByType(Image)).toHaveLength(0);
   });
 });
