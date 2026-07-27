@@ -80,6 +80,8 @@ type WebSettingDraft = {
   staffAttendancePayrollCutoffDay: string;
   staffAttendanceWorkStartTime: string;
   staffAttendanceWorkEndTime: string;
+  staffAttendanceServiceCommissionInsideHoursPct: string;
+  staffAttendanceServiceCommissionOutsideHoursPct: string;
   staffAttendanceTimezone: string;
   staffAttendanceLateToleranceMinutes: string;
   staffAttendanceLateTier2MaxMinutes: string;
@@ -88,9 +90,12 @@ type WebSettingDraft = {
   staffAttendanceLateFineTier3: string;
   staffAttendanceAbsentDailyDivisor: string;
   staffAttendanceMapProvider: string;
+  staffAttendanceOsmNominatimUrl: string;
+  staffAttendanceOsmTileUrl: string;
   staffAttendanceRequireGps: boolean;
   staffAttendanceRequireFace: boolean;
   staffAttendanceFaceMatchThreshold: string;
+  staffAttendanceWorkSitesText: string;
   biteshipApiKey: string;
   googleMapsBrowserApiKey: string;
   originAddressLine1: string;
@@ -1528,18 +1533,19 @@ export function KolamSettingsWebConfigSurface({
       ) : null}
       {showOperationalSettings ? (
         <>
-          <KolamToggleRow
-            variant="settingsForm"
-            label={fields[1].label}
-            description={fields[1].description}
-            active={draft.livechatOnline}
-            onPress={() => {
-              if (disabled) {
-                return;
-              }
-              setDraftField('livechatOnline', !draft.livechatOnline);
-              onToggleStorefrontEnabled();
-            }}
+          <KolamCopyStack
+            items={[
+              {
+                id: 'operational-maintenance-title',
+                text: 'Mode pemeliharaan',
+                style: styles.marketplaceOverviewTitle,
+              },
+              {
+                id: 'operational-maintenance-meta',
+                text: 'Aktifkan atau nonaktifkan mode pemeliharaan untuk POS dan Marketplace.',
+                style: styles.marketplaceOverviewMeta,
+              },
+            ]}
           />
           <KolamToggleRow
             variant="settingsForm"
@@ -1567,6 +1573,20 @@ export function KolamSettingsWebConfigSurface({
               )
             }
           />
+          <KolamCopyStack
+            items={[
+              {
+                id: 'operational-google-title',
+                text: 'Google Sign-In (Webstore)',
+                style: styles.marketplaceOverviewTitle,
+              },
+              {
+                id: 'operational-google-meta',
+                text: 'Izinkan pembeli daftar atau masuk dengan akun Google di webstore.',
+                style: styles.marketplaceOverviewMeta,
+              },
+            ]}
+          />
           <KolamToggleRow
             variant="settingsForm"
             label="Google Sign-In webstore"
@@ -1591,124 +1611,21 @@ export function KolamSettingsWebConfigSurface({
           <KolamCopyStack
             items={[
               {
-                id: 'po-room-options',
-                text: `Room Team Chat: ${roomSummary}`,
+                id: 'operational-attendance-title',
+                text: 'Absensi karyawan',
+                style: styles.marketplaceOverviewTitle,
               },
               {
-                id: 'po-staff-options',
-                text: `Picker staff: ${staffSummary}`,
+                id: 'operational-attendance-meta',
+                text: 'Cut-off gaji, jam kerja, toleransi telat, komisi layanan, lokasi GPS, dan verifikasi wajah.',
+                style: styles.marketplaceOverviewMeta,
               },
             ]}
           />
           <KolamTextFieldRow
             variant="settingsForm"
-            label="ID room penerimaan PO"
-            description="Room Team Chat untuk alur penerimaan/QC PO."
-            value={draft.poWorkflowReceivingRoomId}
-            onChangeText={value =>
-              setDraftField('poWorkflowReceivingRoomId', value)
-            }
-            placeholder="Team Chat room ID"
-          />
-          <KolamToggleRow
-            variant="settingsForm"
-            label="Notifikasi PO diterima"
-            description="Kirim notifikasi saat barang PO diterima."
-            active={draft.poWorkflowNotifyOnReceive}
-            onPress={() =>
-              !disabled &&
-              setDraftField(
-                'poWorkflowNotifyOnReceive',
-                !draft.poWorkflowNotifyOnReceive,
-              )
-            }
-          />
-          <KolamToggleRow
-            variant="settingsForm"
-            label="Notifikasi PO check"
-            description="Kirim notifikasi saat QC/check PO berjalan."
-            active={draft.poWorkflowNotifyOnCheck}
-            onPress={() =>
-              !disabled &&
-              setDraftField(
-                'poWorkflowNotifyOnCheck',
-                !draft.poWorkflowNotifyOnCheck,
-              )
-            }
-          />
-          <KolamToggleRow
-            variant="settingsForm"
-            label="Notifikasi PO parsial"
-            description="Kirim notifikasi saat PO diterima sebagian."
-            active={draft.poWorkflowNotifyOnPartial}
-            onPress={() =>
-              !disabled &&
-              setDraftField(
-                'poWorkflowNotifyOnPartial',
-                !draft.poWorkflowNotifyOnPartial,
-              )
-            }
-          />
-          <KolamToggleRow
-            variant="settingsForm"
-            label="Post bukti PO ke Team Chat"
-            description="Posting bukti penerimaan/QC ke room Team Chat."
-            active={draft.poWorkflowPostProofToTeamChat}
-            onPress={() =>
-              !disabled &&
-              setDraftField(
-                'poWorkflowPostProofToTeamChat',
-                !draft.poWorkflowPostProofToTeamChat,
-              )
-            }
-          />
-          <KolamToggleRow
-            variant="settingsForm"
-            label="PO parsial wajib admin"
-            description="Penerimaan sebagian wajib approval admin."
-            active={draft.poWorkflowPartialCompleteRequiresAdmin}
-            onPress={() =>
-              !disabled &&
-              setDraftField(
-                'poWorkflowPartialCompleteRequiresAdmin',
-                !draft.poWorkflowPartialCompleteRequiresAdmin,
-              )
-            }
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            label="User ID notif PO diterima"
-            description="User ID penerima notif receive, pisahkan koma atau baris baru."
-            value={draft.poWorkflowNotifyReceiveUserIds}
-            onChangeText={value =>
-              setDraftField('poWorkflowNotifyReceiveUserIds', value)
-            }
-            placeholder="userId1, userId2"
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            label="User ID notif PO check"
-            description="User ID penerima notif check/QC."
-            value={draft.poWorkflowNotifyCheckUserIds}
-            onChangeText={value =>
-              setDraftField('poWorkflowNotifyCheckUserIds', value)
-            }
-            placeholder="userId1, userId2"
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            label="User ID notif PO selesai"
-            description="User ID penerima notif complete."
-            value={draft.poWorkflowNotifyCompleteUserIds}
-            onChangeText={value =>
-              setDraftField('poWorkflowNotifyCompleteUserIds', value)
-            }
-            placeholder="userId1, userId2"
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            label="Tanggal cutoff payroll absensi"
-            description="Tanggal cutoff payroll bulanan."
+            label="Tanggal cut-off gaji"
+            description="Tanggal cut-off payroll bulanan."
             value={draft.staffAttendancePayrollCutoffDay}
             onChangeText={value =>
               setDraftField('staffAttendancePayrollCutoffDay', value)
@@ -1717,7 +1634,7 @@ export function KolamSettingsWebConfigSurface({
           />
           <KolamTextFieldRow
             variant="settingsForm"
-            label="Jam mulai kerja absensi"
+            label="Jam mulai kerja (WIB)"
             description="Jam mulai kerja default."
             value={draft.staffAttendanceWorkStartTime}
             onChangeText={value =>
@@ -1727,7 +1644,7 @@ export function KolamSettingsWebConfigSurface({
           />
           <KolamTextFieldRow
             variant="settingsForm"
-            label="Jam selesai kerja absensi"
+            label="Jam selesai kerja (WIB)"
             description="Jam selesai kerja default."
             value={draft.staffAttendanceWorkEndTime}
             onChangeText={value =>
@@ -1737,17 +1654,33 @@ export function KolamSettingsWebConfigSurface({
           />
           <KolamTextFieldRow
             variant="settingsForm"
-            label="Zona waktu absensi"
-            description="Zona waktu untuk perhitungan absensi."
-            value={draft.staffAttendanceTimezone}
+            label="Komisi layanan dalam jam kerja (%)"
+            description="Persentase komisi layanan saat masih dalam jam kerja."
+            value={draft.staffAttendanceServiceCommissionInsideHoursPct}
             onChangeText={value =>
-              setDraftField('staffAttendanceTimezone', value)
+              setDraftField(
+                'staffAttendanceServiceCommissionInsideHoursPct',
+                value,
+              )
             }
-            placeholder="Asia/Jakarta"
+            placeholder="0"
           />
           <KolamTextFieldRow
             variant="settingsForm"
-            label="Toleransi terlambat absensi"
+            label="Komisi layanan luar jam kerja (%)"
+            description="Persentase komisi layanan saat di luar jam kerja."
+            value={draft.staffAttendanceServiceCommissionOutsideHoursPct}
+            onChangeText={value =>
+              setDraftField(
+                'staffAttendanceServiceCommissionOutsideHoursPct',
+                value,
+              )
+            }
+            placeholder="0"
+          />
+          <KolamTextFieldRow
+            variant="settingsForm"
+            label="Toleransi telat (menit)"
             description="Menit toleransi keterlambatan."
             value={draft.staffAttendanceLateToleranceMinutes}
             onChangeText={value =>
@@ -1777,7 +1710,7 @@ export function KolamSettingsWebConfigSurface({
           />
           <KolamTextFieldRow
             variant="settingsForm"
-            label="Denda telat absensi tier 2"
+            label="Denda telat tier 2 (Rp)"
             description="Nominal denda tier 2."
             value={draft.staffAttendanceLateFineTier2}
             onChangeText={value =>
@@ -1787,7 +1720,7 @@ export function KolamSettingsWebConfigSurface({
           />
           <KolamTextFieldRow
             variant="settingsForm"
-            label="Denda telat absensi tier 3"
+            label="Denda telat tier 3 (Rp)"
             description="Nominal denda tier 3."
             value={draft.staffAttendanceLateFineTier3}
             onChangeText={value =>
@@ -1797,7 +1730,7 @@ export function KolamSettingsWebConfigSurface({
           />
           <KolamTextFieldRow
             variant="settingsForm"
-            label="Pembagi absen"
+            label="Pembagi gaji harian (absen)"
             description="Pembagi harian untuk potongan absen."
             value={draft.staffAttendanceAbsentDailyDivisor}
             onChangeText={value =>
@@ -1805,19 +1738,9 @@ export function KolamSettingsWebConfigSurface({
             }
             placeholder="30"
           />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            label="Provider map absensi"
-            description="Isi openstreetmap atau google."
-            value={draft.staffAttendanceMapProvider}
-            onChangeText={value =>
-              setDraftField('staffAttendanceMapProvider', value)
-            }
-            placeholder="openstreetmap"
-          />
           <KolamToggleRow
             variant="settingsForm"
-            label="Absensi wajib GPS"
+            label="Wajib GPS"
             description="Wajibkan lokasi GPS saat clock-in/out."
             active={draft.staffAttendanceRequireGps}
             onPress={() =>
@@ -1830,7 +1753,7 @@ export function KolamSettingsWebConfigSurface({
           />
           <KolamToggleRow
             variant="settingsForm"
-            label="Absensi wajib face match"
+            label="Wajib verifikasi wajah"
             description="Wajibkan face match saat clock-in/out."
             active={draft.staffAttendanceRequireFace}
             onPress={() =>
@@ -1843,13 +1766,221 @@ export function KolamSettingsWebConfigSurface({
           />
           <KolamTextFieldRow
             variant="settingsForm"
-            label="Threshold face match absensi"
+            label="Provider peta absen"
+            description="Isi openstreetmap atau google."
+            value={draft.staffAttendanceMapProvider}
+            onChangeText={value =>
+              setDraftField('staffAttendanceMapProvider', value)
+            }
+            placeholder="openstreetmap"
+          />
+          <KolamTextFieldRow
+            variant="settingsForm"
+            label="URL Nominatim (geocoding)"
+            description="Dipakai jika provider peta absen memakai OpenStreetMap."
+            value={draft.staffAttendanceOsmNominatimUrl}
+            onChangeText={value =>
+              setDraftField('staffAttendanceOsmNominatimUrl', value)
+            }
+            placeholder="https://nominatim.openstreetmap.org"
+          />
+          <KolamTextFieldRow
+            variant="settingsForm"
+            label="URL tile peta"
+            description="Dipakai jika provider peta absen memakai OpenStreetMap."
+            value={draft.staffAttendanceOsmTileUrl}
+            onChangeText={value =>
+              setDraftField('staffAttendanceOsmTileUrl', value)
+            }
+            placeholder="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          <KolamTextFieldRow
+            variant="settingsForm"
+            label="Threshold face match"
             description="Ambang face match 0.5 sampai 0.99."
             value={draft.staffAttendanceFaceMatchThreshold}
             onChangeText={value =>
               setDraftField('staffAttendanceFaceMatchThreshold', value)
             }
             placeholder="0.72"
+          />
+          <KolamTextFieldRow
+            variant="settingsForm"
+            label="Lokasi kerja (GPS + radius)"
+            description="Satu baris per lokasi: Nama|latitude|longitude|radiusMeter|aktif."
+            multiline
+            numberOfLines={5}
+            value={draft.staffAttendanceWorkSitesText}
+            onChangeText={value =>
+              setDraftField('staffAttendanceWorkSitesText', value)
+            }
+            placeholder="Kantor|-6.2088|106.8456|150|true"
+          />
+          <KolamTextFieldRow
+            variant="settingsForm"
+            label="Zona waktu absensi"
+            description="Zona waktu untuk perhitungan absensi."
+            value={draft.staffAttendanceTimezone}
+            onChangeText={value =>
+              setDraftField('staffAttendanceTimezone', value)
+            }
+            placeholder="Asia/Jakarta"
+          />
+          <KolamCopyStack
+            items={[
+              {
+                id: 'operational-livechat-title',
+                text: 'Livechat',
+                style: styles.marketplaceOverviewTitle,
+              },
+              {
+                id: 'operational-livechat-meta',
+                text: 'Override darurat agar banner chat tampil online meski di luar jam buka.',
+                style: styles.marketplaceOverviewMeta,
+              },
+            ]}
+          />
+          <KolamToggleRow
+            variant="settingsForm"
+            label="Livechat Always Online"
+            description="Jika off, jam operasional mengatur banner tutup/libur di dunia-anura.com."
+            active={draft.livechatOnline}
+            onPress={() => {
+              if (disabled) {
+                return;
+              }
+              setDraftField('livechatOnline', !draft.livechatOnline);
+              onToggleStorefrontEnabled();
+            }}
+          />
+          <KolamCopyStack
+            items={[
+              {
+                id: 'operational-po-title',
+                text: 'Purchase Order - penerimaan barang',
+                style: styles.marketplaceOverviewTitle,
+              },
+              {
+                id: 'operational-po-meta',
+                text: 'Room Team Chat untuk bukti terima/QC, notifikasi per tahap, dan gate partial.',
+                style: styles.marketplaceOverviewMeta,
+              },
+              {
+                id: 'po-room-options',
+                text: `Room Team Chat: ${roomSummary}`,
+                style: styles.marketplaceOverviewDetail,
+              },
+              {
+                id: 'po-staff-options',
+                text: `Picker staff: ${staffSummary}`,
+                style: styles.marketplaceOverviewDetail,
+              },
+            ]}
+          />
+          <KolamTextFieldRow
+            variant="settingsForm"
+            label="Room penerimaan barang (Team Chat)"
+            description="Room Team Chat untuk alur penerimaan/QC PO."
+            value={draft.poWorkflowReceivingRoomId}
+            onChangeText={value =>
+              setDraftField('poWorkflowReceivingRoomId', value)
+            }
+            placeholder="Team Chat room ID"
+          />
+          <KolamToggleRow
+            variant="settingsForm"
+            label="Notif saat PO siap diterima / sudah diterima"
+            description="Kirim notifikasi saat barang PO diterima."
+            active={draft.poWorkflowNotifyOnReceive}
+            onPress={() =>
+              !disabled &&
+              setDraftField(
+                'poWorkflowNotifyOnReceive',
+                !draft.poWorkflowNotifyOnReceive,
+              )
+            }
+          />
+          <KolamToggleRow
+            variant="settingsForm"
+            label="Notif saat PO siap quality check"
+            description="Kirim notifikasi saat QC/check PO berjalan."
+            active={draft.poWorkflowNotifyOnCheck}
+            onPress={() =>
+              !disabled &&
+              setDraftField(
+                'poWorkflowNotifyOnCheck',
+                !draft.poWorkflowNotifyOnCheck,
+              )
+            }
+          />
+          <KolamToggleRow
+            variant="settingsForm"
+            label="Notif saat partial receive"
+            description="Kirim notifikasi saat PO diterima sebagian."
+            active={draft.poWorkflowNotifyOnPartial}
+            onPress={() =>
+              !disabled &&
+              setDraftField(
+                'poWorkflowNotifyOnPartial',
+                !draft.poWorkflowNotifyOnPartial,
+              )
+            }
+          />
+          <KolamToggleRow
+            variant="settingsForm"
+            label="Post bukti ke Team Chat"
+            description="Posting bukti penerimaan/QC ke room Team Chat."
+            active={draft.poWorkflowPostProofToTeamChat}
+            onPress={() =>
+              !disabled &&
+              setDraftField(
+                'poWorkflowPostProofToTeamChat',
+                !draft.poWorkflowPostProofToTeamChat,
+              )
+            }
+          />
+          <KolamToggleRow
+            variant="settingsForm"
+            label="Partial: complete stok hanya admin/purchasing"
+            description="Penerimaan sebagian wajib approval admin."
+            active={draft.poWorkflowPartialCompleteRequiresAdmin}
+            onPress={() =>
+              !disabled &&
+              setDraftField(
+                'poWorkflowPartialCompleteRequiresAdmin',
+                !draft.poWorkflowPartialCompleteRequiresAdmin,
+              )
+            }
+          />
+          <KolamTextFieldRow
+            variant="settingsForm"
+            label="Notif terima - staff override"
+            description="Kosong = semua staff dengan permission tahap. Pisahkan dengan koma atau baris baru."
+            value={draft.poWorkflowNotifyReceiveUserIds}
+            onChangeText={value =>
+              setDraftField('poWorkflowNotifyReceiveUserIds', value)
+            }
+            placeholder="userId1, userId2"
+          />
+          <KolamTextFieldRow
+            variant="settingsForm"
+            label="Notif QC - staff override"
+            description="Kosong = semua staff dengan permission tahap."
+            value={draft.poWorkflowNotifyCheckUserIds}
+            onChangeText={value =>
+              setDraftField('poWorkflowNotifyCheckUserIds', value)
+            }
+            placeholder="userId1, userId2"
+          />
+          <KolamTextFieldRow
+            variant="settingsForm"
+            label="Notif masuk stok - staff override"
+            description="Kosong = semua staff dengan permission tahap."
+            value={draft.poWorkflowNotifyCompleteUserIds}
+            onChangeText={value =>
+              setDraftField('poWorkflowNotifyCompleteUserIds', value)
+            }
+            placeholder="userId1, userId2"
           />
         </>
       ) : null}

@@ -116,6 +116,7 @@ import {
   type KolamSitemapConfig,
   type KolamSitemapSectionKey,
   type KolamStaffAttendanceSettings,
+  type KolamStaffAttendanceWorkSite,
   type KolamStoreOperatingHours,
   type KolamStoreOperatingWeekday,
   type KolamTeamChatRoom,
@@ -264,6 +265,8 @@ interface WebSettingDraft {
   staffAttendancePayrollCutoffDay: string;
   staffAttendanceWorkStartTime: string;
   staffAttendanceWorkEndTime: string;
+  staffAttendanceServiceCommissionInsideHoursPct: string;
+  staffAttendanceServiceCommissionOutsideHoursPct: string;
   staffAttendanceTimezone: string;
   staffAttendanceLateToleranceMinutes: string;
   staffAttendanceLateTier2MaxMinutes: string;
@@ -272,9 +275,12 @@ interface WebSettingDraft {
   staffAttendanceLateFineTier3: string;
   staffAttendanceAbsentDailyDivisor: string;
   staffAttendanceMapProvider: string;
+  staffAttendanceOsmNominatimUrl: string;
+  staffAttendanceOsmTileUrl: string;
   staffAttendanceRequireGps: boolean;
   staffAttendanceRequireFace: boolean;
   staffAttendanceFaceMatchThreshold: string;
+  staffAttendanceWorkSitesText: string;
   biteshipApiKey: string;
   googleMapsBrowserApiKey: string;
   originAddressLine1: string;
@@ -481,6 +487,8 @@ const emptyWebSettingDraft: WebSettingDraft = {
   staffAttendancePayrollCutoffDay: '28',
   staffAttendanceWorkStartTime: '08:00',
   staffAttendanceWorkEndTime: '17:00',
+  staffAttendanceServiceCommissionInsideHoursPct: '0',
+  staffAttendanceServiceCommissionOutsideHoursPct: '0',
   staffAttendanceTimezone: 'Asia/Jakarta',
   staffAttendanceLateToleranceMinutes: '15',
   staffAttendanceLateTier2MaxMinutes: '120',
@@ -489,9 +497,12 @@ const emptyWebSettingDraft: WebSettingDraft = {
   staffAttendanceLateFineTier3: '100000',
   staffAttendanceAbsentDailyDivisor: '30',
   staffAttendanceMapProvider: 'openstreetmap',
+  staffAttendanceOsmNominatimUrl: '',
+  staffAttendanceOsmTileUrl: '',
   staffAttendanceRequireGps: true,
   staffAttendanceRequireFace: false,
   staffAttendanceFaceMatchThreshold: '0.72',
+  staffAttendanceWorkSitesText: '',
   biteshipApiKey: '',
   googleMapsBrowserApiKey: '',
   originAddressLine1: '',
@@ -3156,6 +3167,12 @@ function createStaffAttendanceDraftFields(
     staffAttendancePayrollCutoffDay: String(settings.payrollCutoffDay ?? 28),
     staffAttendanceWorkStartTime: settings.workStartTime ?? '08:00',
     staffAttendanceWorkEndTime: settings.workEndTime ?? '17:00',
+    staffAttendanceServiceCommissionInsideHoursPct: String(
+      settings.serviceCommissionInsideHoursPct ?? 0,
+    ),
+    staffAttendanceServiceCommissionOutsideHoursPct: String(
+      settings.serviceCommissionOutsideHoursPct ?? 0,
+    ),
     staffAttendanceTimezone: settings.timezone ?? 'Asia/Jakarta',
     staffAttendanceLateToleranceMinutes: String(
       settings.lateToleranceMinutes ?? 15,
@@ -3173,10 +3190,15 @@ function createStaffAttendanceDraftFields(
     ),
     staffAttendanceMapProvider:
       settings.attendanceMapProvider ?? 'openstreetmap',
+    staffAttendanceOsmNominatimUrl: settings.osmNominatimUrl ?? '',
+    staffAttendanceOsmTileUrl: settings.osmTileUrl ?? '',
     staffAttendanceRequireGps: settings.requireGps !== false,
     staffAttendanceRequireFace: settings.requireFace === true,
     staffAttendanceFaceMatchThreshold: String(
       settings.faceMatchThreshold ?? 0.72,
+    ),
+    staffAttendanceWorkSitesText: formatStaffAttendanceWorkSites(
+      settings.workSites,
     ),
   } satisfies Partial<WebSettingDraft>;
 }
@@ -3193,6 +3215,14 @@ function createStaffAttendanceUpdateBody(
     ),
     workStartTime: draft.staffAttendanceWorkStartTime.trim() || '08:00',
     workEndTime: draft.staffAttendanceWorkEndTime.trim() || '17:00',
+    serviceCommissionInsideHoursPct: parseNumberOrFallback(
+      draft.staffAttendanceServiceCommissionInsideHoursPct,
+      0,
+    ),
+    serviceCommissionOutsideHoursPct: parseNumberOrFallback(
+      draft.staffAttendanceServiceCommissionOutsideHoursPct,
+      0,
+    ),
     timezone: draft.staffAttendanceTimezone.trim() || 'Asia/Jakarta',
     lateToleranceMinutes: parseIntegerOrFallback(
       draft.staffAttendanceLateToleranceMinutes,
@@ -3222,11 +3252,17 @@ function createStaffAttendanceUpdateBody(
       draft.staffAttendanceMapProvider === 'google'
         ? 'google'
         : 'openstreetmap',
+    osmNominatimUrl: draft.staffAttendanceOsmNominatimUrl.trim(),
+    osmTileUrl: draft.staffAttendanceOsmTileUrl.trim(),
     requireGps: draft.staffAttendanceRequireGps,
     requireFace: draft.staffAttendanceRequireFace,
     faceMatchThreshold: parseNumberOrFallback(
       draft.staffAttendanceFaceMatchThreshold,
       0.72,
+    ),
+    workSites: parseStaffAttendanceWorkSitesText(
+      draft.staffAttendanceWorkSitesText,
+      current?.workSites,
     ),
   };
 }
@@ -3899,6 +3935,66 @@ function parseIdList(value: string) {
     .split(/[\n,]/)
     .map(item => item.trim())
     .filter(Boolean);
+}
+
+function formatStaffAttendanceWorkSites(
+  sites: KolamStaffAttendanceWorkSite[] | undefined,
+) {
+  return (sites ?? [])
+    .map(site =>
+      [
+        site.name ?? '',
+        formatNumber(site.latitude),
+        formatNumber(site.longitude),
+        formatNumber(site.radiusMeters),
+        site.active === false ? 'false' : 'true',
+      ].join('|'),
+    )
+    .join('\n');
+}
+
+function parseStaffAttendanceWorkSitesText(
+  value: string,
+  fallback: KolamStaffAttendanceWorkSite[] | undefined,
+) {
+  const lines = value
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(Boolean);
+
+  if (!lines.length) {
+    return [];
+  }
+
+  const parsed = lines
+    .map<KolamStaffAttendanceWorkSite | null>(line => {
+      const [
+        name = '',
+        latitude = '',
+        longitude = '',
+        radius = '',
+        active = 'true',
+      ] = line.split('|');
+      const parsedLatitude = parseOptionalNumber(latitude);
+      const parsedLongitude = parseOptionalNumber(longitude);
+
+      if (!name.trim() || parsedLatitude === null || parsedLongitude === null) {
+        return null;
+      }
+
+      const parsedRadius = parseOptionalNumber(radius);
+
+      return {
+        name: name.trim(),
+        latitude: parsedLatitude,
+        longitude: parsedLongitude,
+        radiusMeters: parsedRadius ?? 150,
+        active: active.trim().toLowerCase() !== 'false',
+      };
+    })
+    .filter((site): site is KolamStaffAttendanceWorkSite => Boolean(site));
+
+  return parsed.length ? parsed : fallback ?? [];
 }
 
 function parseIntegerOrFallback(value: string, fallback: number) {
