@@ -5,6 +5,7 @@ import {
   type KolamNavigationItem,
 } from '../domain/kolam-navigation';
 import {isKolamSpeciesRoute} from '../domain/kolam-species';
+import {isKolamStockOpnameRoute} from '../domain/kolam-stock-opname';
 import {isKolamStockTransactionRoute} from '../domain/kolam-stock-transaction';
 import {isKolamTeranuraNativeRoute} from '../domain/kolam-teranura';
 import type {UnifiedDataset} from '../services/unified-data';
@@ -12,6 +13,7 @@ import {KolamDescriptionList} from './kolam-description-list';
 import {KolamModulePanel} from './kolam-module-panel';
 import {KolamSpeciesSurface} from './kolam-species-surface';
 import {KolamTeranuraSurface} from './kolam-teranura-surface';
+import {KolamStockOpnameSurface} from './kolam-stock-opname-surface';
 import {KolamStockTransactionSurface} from './kolam-stock-transaction-surface';
 import {KolamRouteWorkbench} from './kolam-route-workbench';
 
@@ -39,6 +41,15 @@ export function KolamNavigationRouteSurface({
   if (isKolamStockTransactionRoute(routePath)) {
     return (
       <KolamStockTransactionSurface
+        onRouteChange={onRouteChange}
+        route={contract.runtimeRoute}
+      />
+    );
+  }
+
+  if (isKolamStockOpnameRoute(routePath)) {
+    return (
+      <KolamStockOpnameSurface
         onRouteChange={onRouteChange}
         route={contract.runtimeRoute}
       />

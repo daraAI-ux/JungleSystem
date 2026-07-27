@@ -235,9 +235,10 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         requiredAccess: ['kolam'],
       },
       {
-        label: 'Stok Opname',
+        label: 'Stock Opname',
         route: '/stock-opname',
-        description: 'Multi-line counts, review, then post to stock',
+        description:
+          'Penghitungan fisik multi-baris dengan alur review dan posting',
         group: 'Stok',
         requiredAccess: ['kolam'],
       },
@@ -734,7 +735,7 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
       sidebarItem('/packing-materials', { group: 'Produk', label: 'Bahan Kemasan' }),
       sidebarItem('/teranura', { group: 'Produk', label: 'Teranura' }),
       sidebarItem('/stock-transaction', { group: 'Stok', label: 'Transaksi Stok' }),
-      sidebarItem('/stock-opname', { group: 'Stok', label: 'Stok Opname' }),
+      sidebarItem('/stock-opname', { group: 'Stok', label: 'Stock Opname' }),
       sidebarItem('/locations', { label: 'Lokasi' }),
       sidebarItem('/suppliers', { group: 'Pengadaan', label: 'Pemasok' }),
       sidebarItem('/purchase-order', { group: 'Pengadaan', label: 'Pesanan Pembelian' }),

@@ -1776,7 +1776,15 @@ export function getSettingsRoleActionsForResource(resource: string) {
       'complete_stock',
       'update_status',
     ],
-    'stock-opname': ['view', 'create', 'update', 'delete', 'opname'],
+    'stock-opname': [
+      'view',
+      'create',
+      'update',
+      'delete',
+      'submit',
+      'review',
+      'post',
+    ],
     complaint: [
       'view',
       'create',
