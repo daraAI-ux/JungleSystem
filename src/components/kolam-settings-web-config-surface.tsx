@@ -2511,23 +2511,60 @@ export function KolamSettingsWebConfigSurface({
               }
               placeholder="Asia/Jakarta"
             />
-            <View style={styles.storeHoursList}>
+            <View style={styles.storeHoursCompactTable}>
+              <KolamCopyStack
+                containerStyle={styles.storeHoursCompactHeader}
+                items={[
+                  {
+                    id: 'store-hours-day-header',
+                    text: 'Hari',
+                    style: styles.storeHoursHeaderDay,
+                  },
+                  {
+                    id: 'store-hours-open-header',
+                    text: 'Buka',
+                    style: styles.storeHoursHeaderCell,
+                  },
+                  {
+                    id: 'store-hours-open-at-header',
+                    text: 'Jam buka',
+                    style: styles.storeHoursHeaderCell,
+                  },
+                  {
+                    id: 'store-hours-close-at-header',
+                    text: 'Jam tutup',
+                    style: styles.storeHoursHeaderCell,
+                  },
+                ]}
+              />
               {storeOperatingHourRows.map(row => {
                 const isOpen = draft[row.openField] === true;
 
                 return (
-                  <View key={row.id} style={styles.storeHoursRow}>
-                    <KolamToggleRow
-                      label={row.label}
-                      description="Status buka pada hari ini."
-                      active={isOpen}
-                      onPress={() =>
-                        !disabled && setDraftField(row.openField, !isOpen)
-                      }
+                  <View key={row.id} style={styles.storeHoursCompactRow}>
+                    <KolamCopyStack
+                      containerStyle={styles.storeHoursCompactDay}
+                      items={[
+                        {
+                          id: `${row.id}-day`,
+                          text: row.label,
+                          style: styles.notificationSoundLabel,
+                        },
+                      ]}
                     />
-                    <View style={styles.storeHoursTimeGrid}>
+                    <View style={styles.storeHoursCompactToggle}>
+                      <KolamToggleRow
+                        label="Buka"
+                        description="Status buka."
+                        active={isOpen}
+                        onPress={() =>
+                          !disabled && setDraftField(row.openField, !isOpen)
+                        }
+                      />
+                    </View>
+                    <View style={styles.storeHoursCompactTimes}>
                       <KolamTextFieldRow
-                        fieldWidth={180}
+                        fieldWidth={140}
                         label="Jam buka"
                         description="Format HH:mm."
                         value={String(draft[row.openAtField] ?? '')}
@@ -2537,7 +2574,7 @@ export function KolamSettingsWebConfigSurface({
                         placeholder="09:00"
                       />
                       <KolamTextFieldRow
-                        fieldWidth={180}
+                        fieldWidth={140}
                         label="Jam tutup"
                         description="Format HH:mm."
                         value={String(draft[row.closeAtField] ?? '')}
@@ -4725,6 +4762,54 @@ const styles = StyleSheet.create({
   },
   storeHoursList: {
     gap: 10,
+  },
+  storeHoursCompactDay: {
+    minWidth: 96,
+  },
+  storeHoursCompactHeader: {
+    alignItems: 'center',
+    backgroundColor: '#f9fafb',
+    borderColor: '#e5e7eb',
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  storeHoursCompactRow: {
+    alignItems: 'center',
+    borderColor: '#e5e7eb',
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    padding: 10,
+  },
+  storeHoursCompactTable: {
+    gap: 8,
+  },
+  storeHoursCompactTimes: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  storeHoursCompactToggle: {
+    minWidth: 180,
+  },
+  storeHoursHeaderCell: {
+    color: '#6b7280',
+    fontSize: 12,
+    fontWeight: '800',
+    width: 140,
+  },
+  storeHoursHeaderDay: {
+    color: '#6b7280',
+    fontSize: 12,
+    fontWeight: '800',
+    width: 96,
   },
   storeClosureRow: {
     alignItems: 'center',

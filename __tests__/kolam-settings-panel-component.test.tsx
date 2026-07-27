@@ -352,6 +352,8 @@ describe('KolamSettingsPanel', () => {
         'Jam operasional toko (dunia-anura.com)',
         'Aktifkan jadwal operasional',
         'Zona waktu',
+        'Hari',
+        'Buka',
         'Senin',
         'Jam buka',
         'Jam tutup',
