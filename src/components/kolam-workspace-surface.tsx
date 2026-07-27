@@ -36,6 +36,7 @@ import { KolamProductSurface } from './kolam-product-surface';
 import { KolamSpeciesSurface } from './kolam-species-surface';
 import { KolamStockTransactionSurface } from './kolam-stock-transaction-surface';
 import { KolamTagSurface } from './kolam-tag-surface';
+import { KolamTeranuraSurface } from './kolam-teranura-surface';
 import { KolamTaxonomySurface } from './kolam-taxonomy-surface';
 import { KolamUnitSurface } from './kolam-unit-surface';
 import { KolamNavigationRouteSurface } from './kolam-navigation-route-surface';
@@ -148,6 +149,10 @@ export function KolamWorkspaceSurfaceComponent({
     );
   }
 
+  if (activeRoutePath === '/teranura') {
+    return <KolamTeranuraSurface onRouteChange={onDashboardRoute} />;
+  }
+
   switch (activeModule) {
     case 'kolam':
       if (activeNavigationItem && activeNavigationItem.route !== '/') {
@@ -184,6 +189,9 @@ export function KolamWorkspaceSurfaceComponent({
               route={activeNavigationItem.route}
             />
           );
+        }
+        if (activeNavigationItem.route.split('?')[0] === '/teranura') {
+          return <KolamTeranuraSurface onRouteChange={onDashboardRoute} />;
         }
         if (isKolamTaxonomyRoute(activeNavigationItem.route.split('?')[0])) {
           return (

@@ -9,6 +9,7 @@ export type KolamTableId =
   | 'sales'
   | 'species'
   | 'tag'
+  | 'teranura'
   | 'taxonomy'
   | 'unit';
 
@@ -230,6 +231,16 @@ const kolamTableColumns: Record<KolamTableId, KolamTableColumn[]> = {
     { id: 'children', label: 'Stok', align: 'right', width: 110 },
     { id: 'marketplace', label: 'Sinkron Terakhir', align: 'left', width: 168 },
     { id: 'notes', label: 'Informasi', align: 'right', width: 136 },
+    { id: 'actions', label: '', align: 'right', width: 64 },
+  ],
+  teranura: [
+    { id: 'primary', label: 'Nama', align: 'left' },
+    { id: 'meta', label: 'SKU', align: 'left', width: 118 },
+    { id: 'price', label: 'Merek', align: 'left', width: 130 },
+    { id: 'children', label: 'Varian', align: 'left', width: 112 },
+    { id: 'amount', label: 'Harga Jual', align: 'right', width: 132 },
+    { id: 'products', label: 'Stok', align: 'right', width: 104 },
+    { id: 'status', label: 'Status', align: 'right', width: 118 },
     { id: 'actions', label: '', align: 'right', width: 64 },
   ],
   taxonomy: [
