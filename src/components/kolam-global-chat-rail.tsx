@@ -1,5 +1,6 @@
 import React from 'react';
 import {ScrollView, StyleSheet, Text, TextInput, View} from 'react-native';
+import {classifyKolamChatLiveEvent} from '../domain/kolam-chat-live-classifier';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {
   type KolamChatLiveEvent,
@@ -37,11 +38,15 @@ export function KolamGlobalChatRail({
   const refreshDetail = detail.refresh;
   const handleLiveEvent = React.useCallback(
     (event: KolamChatLiveEvent) => {
-      if (shouldRefreshRailList(event)) {
+      const classification = classifyKolamChatLiveEvent(event, {
+        selectedItemId,
+      });
+
+      if (classification.refreshList) {
         refreshData().catch(() => undefined);
       }
 
-      if (shouldRefreshRailDetail(event, selectedItemId)) {
+      if (classification.refreshDetail) {
         refreshDetail().catch(() => undefined);
       }
     },
@@ -514,50 +519,6 @@ function formatRelativeTime(iso?: string | null) {
   }
 
   return new Date(iso).toLocaleDateString('id-ID');
-}
-
-function shouldRefreshRailList({contract}: KolamChatLiveEvent) {
-  return contract.refreshTargets.some(target =>
-    ['inbox-list', 'team-room-list', 'unread-badge'].includes(target),
-  );
-}
-
-function shouldRefreshRailDetail(
-  event: KolamChatLiveEvent,
-  selectedItemId: string | null,
-) {
-  if (!selectedItemId) {
-    return false;
-  }
-
-  if (
-    !event.contract.refreshTargets.some(target =>
-      ['inbox-detail', 'team-room-detail'].includes(target),
-    )
-  ) {
-    return false;
-  }
-
-  if (event.contract.eventName === 'sync.required') {
-    return true;
-  }
-
-  const targetId = getLiveEventTargetId(event);
-  return !targetId || targetId === selectedItemId;
-}
-
-function getLiveEventTargetId({contract, payload}: KolamChatLiveEvent) {
-  if (!payload || typeof payload !== 'object') {
-    return undefined;
-  }
-
-  const record = payload as Record<string, unknown>;
-  const id =
-    contract.stream === 'team-chat'
-      ? record.roomId ?? record.id
-      : record.conversationId ?? record.id;
-
-  return typeof id === 'string' ? id : undefined;
 }
 
 const styles = StyleSheet.create({
