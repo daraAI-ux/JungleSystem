@@ -7,9 +7,12 @@ import {
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
-import RenderHtml, { defaultSystemFonts } from 'react-native-render-html';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 
+const RenderHtml = require('react-native-render-html/lib/commonjs/RenderHTML.js')
+  .default as React.ComponentType<any>;
+const defaultSystemFonts = require('react-native-render-html/lib/commonjs/defaultSystemFonts.js')
+  .default as string[];
 const htmlSystemFonts = [...defaultSystemFonts, V.fontFamily];
 const htmlBaseStyle = {
   color: V.colors.fg,
@@ -168,6 +171,8 @@ export function KolamHtmlContent({
         baseStyle={htmlBaseStyle}
         classesStyles={htmlClassesStyles}
         contentWidth={contentWidth}
+        enableCSSInlineProcessing={false}
+        enableUserAgentStyles={false}
         ignoredDomTags={['script', 'style', 'iframe']}
         renderersProps={htmlRenderersProps}
         source={source}
