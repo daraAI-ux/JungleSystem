@@ -12,6 +12,7 @@ import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamSettingsWebFormSections } from './kolam-settings-web-widgets';
 import { KolamTextFieldRow } from './kolam-text-field-row';
 import { KolamToggleRow } from './kolam-toggle-row';
+import { geocodeKolamStaffAttendanceWorkSite } from '../services/kolam-api';
 import type {
   KolamAnnouncementBanner,
   KolamBlog,
@@ -617,6 +618,15 @@ export function KolamSettingsWebConfigSurface({
       title: string;
       uri: string;
     } | null>(null);
+  const [workSiteGeocodeQueries, setWorkSiteGeocodeQueries] = React.useState<
+    Record<string, string>
+  >({});
+  const [workSiteGeocodeStatus, setWorkSiteGeocodeStatus] = React.useState<
+    Record<
+      string,
+      { message: string; status: 'idle' | 'loading' | 'saved' | 'error' }
+    >
+  >({});
   const getNotificationSoundPreviewUri = (value: string | null | undefined) => {
     const trimmed = value?.trim() ?? '';
 
@@ -727,6 +737,47 @@ export function KolamSettingsWebConfigSurface({
         (_, siteIndex) => siteIndex !== index,
       ),
     );
+  };
+  const geocodeStaffAttendanceWorkSite = async (
+    index: number,
+    site: KolamStaffAttendanceWorkSite,
+  ) => {
+    const siteKey = getWorkSiteDraftKey(site, index);
+    const query = (workSiteGeocodeQueries[siteKey] ?? site.name ?? '').trim();
+
+    if (!query || disabled || draft.staffAttendanceMapProvider === 'google') {
+      return;
+    }
+
+    setWorkSiteGeocodeStatus(current => ({
+      ...current,
+      [siteKey]: { message: '', status: 'loading' },
+    }));
+
+    try {
+      const result = await geocodeKolamStaffAttendanceWorkSite(query);
+      updateStaffAttendanceWorkSite(index, {
+        latitude: result.latitude,
+        longitude: result.longitude,
+      });
+      setWorkSiteGeocodeStatus(current => ({
+        ...current,
+        [siteKey]: {
+          message: result.displayName
+            ? `Koordinat ditemukan: ${result.displayName}`
+            : 'Koordinat ditemukan.',
+          status: 'saved',
+        },
+      }));
+    } catch (error) {
+      setWorkSiteGeocodeStatus(current => ({
+        ...current,
+        [siteKey]: {
+          message: getWorkSiteGeocodeErrorMessage(error),
+          status: 'error',
+        },
+      }));
+    }
   };
   const selectableOperationalRooms = operationalRooms.filter(
     room => room.category !== 'ai' && !room.isAiRoom,
@@ -2073,11 +2124,16 @@ export function KolamSettingsWebConfigSurface({
             {draft.staffAttendanceWorkSites.length ? (
               <View style={styles.workSiteList}>
                 {draft.staffAttendanceWorkSites.map((site, index) => {
-                  const siteKey =
-                    site._id ||
-                    `${index}-${site.name ?? 'lokasi'}-${site.latitude ?? ''}-${
-                      site.longitude ?? ''
-                    }`;
+                  const siteKey = getWorkSiteDraftKey(site, index);
+                  const geocodeStatus = workSiteGeocodeStatus[siteKey];
+                  const geocodeQuery =
+                    workSiteGeocodeQueries[siteKey] ?? site.name ?? '';
+                  const geocodeLoading = geocodeStatus?.status === 'loading';
+                  const geocodeDisabled =
+                    disabled ||
+                    geocodeLoading ||
+                    !geocodeQuery.trim() ||
+                    draft.staffAttendanceMapProvider === 'google';
 
                   return (
                     <View key={siteKey} style={styles.workSiteRow}>
@@ -2123,6 +2179,49 @@ export function KolamSettingsWebConfigSurface({
                         }
                         placeholder="Kantor"
                       />
+                      <View style={styles.workSiteGeocodeRow}>
+                        <KolamTextFieldRow
+                          variant="settingsForm"
+                          fieldWidth={settingsFieldWidth}
+                          label="Cari alamat"
+                          description={
+                            draft.staffAttendanceMapProvider === 'google'
+                              ? 'Pencarian server tersedia untuk OpenStreetMap. Map Google native belum dipasang.'
+                              : 'Cari alamat via endpoint geocode backend, lalu isi latitude/longitude otomatis.'
+                          }
+                          value={geocodeQuery}
+                          onChangeText={value =>
+                            setWorkSiteGeocodeQueries(current => ({
+                              ...current,
+                              [siteKey]: value,
+                            }))
+                          }
+                          placeholder="Alamat kantor / toko"
+                        />
+                        <KolamActionControlButton
+                          label="Cari koordinat"
+                          loading={geocodeLoading}
+                          loadingLabel="Mencari..."
+                          disabled={geocodeDisabled}
+                          onPress={() =>
+                            void geocodeStaffAttendanceWorkSite(index, site)
+                          }
+                        />
+                      </View>
+                      {geocodeStatus?.message ? (
+                        <KolamCopyStack
+                          items={[
+                            {
+                              id: `${siteKey}-geocode-message`,
+                              text: geocodeStatus.message,
+                              style:
+                                geocodeStatus.status === 'error'
+                                  ? styles.marketplaceOverviewError
+                                  : styles.marketplaceOverviewMeta,
+                            },
+                          ]}
+                        />
+                      ) : null}
                       <View style={styles.workSiteCoordinateGrid}>
                         <KolamTextFieldRow
                           variant="settingsForm"
@@ -5344,6 +5443,21 @@ function formatWorkSiteRadius(value: number | undefined) {
     : 150;
 }
 
+function getWorkSiteDraftKey(
+  site: KolamStaffAttendanceWorkSite,
+  index: number,
+) {
+  return site._id || `draft-${index}`;
+}
+
+function getWorkSiteGeocodeErrorMessage(error: unknown) {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return 'Alamat tidak ditemukan.';
+}
+
 function parseWorkSiteNumber(value: string) {
   const trimmed = value.trim();
   if (!trimmed) {
@@ -5511,6 +5625,12 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   workSiteCoordinateGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  workSiteGeocodeRow: {
+    alignItems: 'flex-end',
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,

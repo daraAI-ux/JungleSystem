@@ -7,6 +7,8 @@ import { KolamSettingsWebConfigSurface } from '../src/components/kolam-settings-
 import { KolamRemoteImage } from '../src/components/kolam-remote-image';
 import { KolamSettingsWebFileField } from '../src/components/kolam-settings-web-file-field';
 import { KolamSettingsWebFormSections } from '../src/components/kolam-settings-web-widgets';
+import { KolamTextFieldRow } from '../src/components/kolam-text-field-row';
+import * as KolamApi from '../src/services/kolam-api';
 import { KolamToggleRow } from '../src/components/kolam-toggle-row';
 import {
   getSettingsWebConfigFields,
@@ -43,6 +45,10 @@ function flattenText(value: React.ReactNode): string[] {
 }
 
 describe('settings web widgets', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   it('renders web form sections directly', async () => {
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
@@ -408,6 +414,69 @@ describe('settings web widgets', () => {
     });
     expect(onSaveOperationalStaffAttendance).toHaveBeenCalledTimes(1);
     expect(onSave).not.toHaveBeenCalled();
+  });
+
+  it('fills work site coordinates from backend geocode', async () => {
+    const setDraftField = jest.fn();
+    jest
+      .spyOn(KolamApi, 'geocodeKolamStaffAttendanceWorkSite')
+      .mockResolvedValueOnce({
+        latitude: -6.2088,
+        longitude: 106.8456,
+        displayName: 'Kantor Dunia Anura',
+      });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamSettingsWebConfigSurface
+          {...createSurfaceProps({
+            activeTabId: 'operasional',
+            draft: {
+              ...createWebSettingDraft(),
+              staffAttendanceWorkSites: [
+                {
+                  name: 'Kantor Dunia Anura',
+                  latitude: 0,
+                  longitude: 0,
+                  radiusMeters: 150,
+                  active: true,
+                },
+              ],
+            },
+            setDraftField,
+          })}
+        />,
+      );
+    });
+
+    expect(
+      renderer!.root
+        .findAllByType(KolamTextFieldRow)
+        .some(node => node.props.label === 'Cari alamat'),
+    ).toBe(true);
+
+    await ReactTestRenderer.act(async () => {
+      renderer!.root
+        .findAllByType(KolamActionControlButton)
+        .find(node => node.props.label === 'Cari koordinat')!
+        .props.onPress();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(KolamApi.geocodeKolamStaffAttendanceWorkSite).toHaveBeenCalledWith(
+      'Kantor Dunia Anura',
+    );
+    expect(setDraftField).toHaveBeenCalledWith(
+      'staffAttendanceWorkSites',
+      expect.arrayContaining([
+        expect.objectContaining({
+          latitude: -6.2088,
+          longitude: 106.8456,
+        }),
+      ]),
+    );
   });
 });
 

@@ -17,6 +17,7 @@ import {
   getKolamActivityLogStats,
   getKolamCtaSectionAdmin,
   getKolamCustomerNoticesAdmin,
+  geocodeKolamStaffAttendanceWorkSite,
   getKolamHeroSlidesAdmin,
   getKolamMarketplaceContentAdmin,
   getKolamPendingCustomerVerifications,
@@ -343,6 +344,37 @@ describe('Kolam Settings API contracts', () => {
             dara: {enabled: true, installedVersion: '0.1.44'},
             proyek: {enabled: true, installedVersion: '0.4.0'},
           },
+        }),
+      }),
+    );
+  });
+
+  it('requests staff attendance work site geocode through direct BE', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        success: true,
+        data: {
+          latitude: -6.2088,
+          longitude: 106.8456,
+          displayName: 'Kantor Dunia Anura',
+        },
+      }),
+    );
+
+    await expect(
+      geocodeKolamStaffAttendanceWorkSite('Kantor Dunia Anura'),
+    ).resolves.toMatchObject({
+      latitude: -6.2088,
+      longitude: 106.8456,
+      displayName: 'Kantor Dunia Anura',
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${appConfig.kolamApiBaseUrl}/staff-attendance/geocode?q=Kantor+Dunia+Anura`,
+      expect.objectContaining({
+        method: 'GET',
+        headers: expect.objectContaining({
+          'x-source': appConfig.kolamSourceHeader,
         }),
       }),
     );

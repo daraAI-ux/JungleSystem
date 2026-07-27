@@ -314,6 +314,12 @@ export interface KolamStaffAttendanceSettings {
   workSites?: KolamStaffAttendanceWorkSite[];
 }
 
+export interface KolamStaffAttendanceGeocodeResult {
+  latitude: number;
+  longitude: number;
+  displayName?: string;
+}
+
 export interface KolamTeamChatRoom {
   _id: string;
   name?: string;
@@ -1522,6 +1528,15 @@ export async function getKolamStaffAttendanceSettings(): Promise<KolamStaffAtten
     KolamStaffAttendanceSettings | DataResponse<KolamStaffAttendanceSettings>
   >('/staff-attendance/settings');
   return unwrapData(response);
+}
+
+export async function geocodeKolamStaffAttendanceWorkSite(
+  query: string,
+): Promise<KolamStaffAttendanceGeocodeResult> {
+  const response = await kolamGet<
+    DataResponse<KolamStaffAttendanceGeocodeResult>
+  >('/staff-attendance/geocode', {q: query});
+  return response.data;
 }
 
 export async function getKolamRegions(
