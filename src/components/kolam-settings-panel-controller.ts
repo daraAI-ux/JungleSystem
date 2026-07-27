@@ -794,8 +794,12 @@ export function useKolamSettingsPanelController(
   const [marketplaceLandingTabId, setMarketplaceLandingTabId] =
     useState<MarketplaceLandingTabId>('hero');
   const allSettingsTabItems = getSettingsTabItems();
+  const settingsVisibilityPending =
+    settingsVisibilityContext === undefined ||
+    settingsVisibilityContext === null ||
+    !Array.isArray(settingsVisibilityContext.permissions);
   const visibleSettingsTabItems =
-    settingsVisibilityContext === undefined
+    settingsVisibilityPending
       ? allSettingsTabItems
       : getVisibleSettingsTabItems(settingsVisibilityContext);
   const visibleSettingsTabIdSignature = visibleSettingsTabItems

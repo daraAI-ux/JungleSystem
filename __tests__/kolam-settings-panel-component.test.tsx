@@ -821,6 +821,65 @@ describe('KolamSettingsPanel', () => {
     expect(requireController(latest).activeSettingsTabId).toBe('umum');
   });
 
+  it('keeps Settings tabs visible while user permission payload is unavailable', async () => {
+    mockedGetCurrentUser.mockRejectedValueOnce(new Error('offline'));
+    let latest: KolamSettingsPanelController | null = null;
+
+    await ReactTestRenderer.act(async () => {
+      ReactTestRenderer.create(
+        <SettingsControllerHarness
+          onRender={controller => {
+            latest = controller;
+          }}
+        />,
+      );
+    });
+
+    await ReactTestRenderer.act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(
+      requireController(latest).settingsTabItems.map(item => item.id),
+    ).toEqual([
+      'umum',
+      'notifikasi',
+      'toko',
+      'operasional',
+      'finansial',
+      'ai',
+      'peran',
+      'sitemap',
+      'sync',
+      'konten',
+      'kpi',
+      'plugin',
+    ]);
+  });
+
+  it('keeps Settings tabs visible when current user omits permissions', async () => {
+    mockedGetCurrentUser.mockResolvedValueOnce({
+      roleKey: 'staff',
+    });
+    let latest: KolamSettingsPanelController | null = null;
+
+    await ReactTestRenderer.act(async () => {
+      ReactTestRenderer.create(
+        <SettingsControllerHarness
+          onRender={controller => {
+            latest = controller;
+          }}
+        />,
+      );
+    });
+
+    await ReactTestRenderer.act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(requireController(latest).settingsTabItems).toHaveLength(12);
+  });
+
   it('starts on the matching Settings tab when an existing surface is opened directly', async () => {
     let latest: KolamSettingsPanelController | null = null;
 
