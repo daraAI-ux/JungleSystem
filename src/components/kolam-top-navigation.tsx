@@ -2,7 +2,7 @@ import React from 'react';
 import { KolamShellFrame } from './kolam-shell-frame';
 import { KolamTopNavigationLeft } from './kolam-top-navigation-left';
 import { KolamTopNavigationRight } from './kolam-top-navigation-right';
-import { KolamServerMetricsStrip } from './kolam-server-metrics-strip';
+import { KolamServerMetricsStripHost } from './kolam-server-metrics-strip-host';
 import type { KolamTopNavigationProps } from './kolam-top-navigation-types';
 
 export function KolamTopNavigation({
@@ -17,7 +17,6 @@ export function KolamTopNavigation({
   onToggleSidebar,
   profilePhotoUrl,
   rightControls,
-  serverMetrics,
 }: KolamTopNavigationProps) {
   return (
     <KolamShellFrame variant="topNavigation">
@@ -27,7 +26,7 @@ export function KolamTopNavigation({
         onBreadcrumbDashboardPress={onBreadcrumbDashboardPress}
         onToggleSidebar={onToggleSidebar}
       />
-      {serverMetrics ? <KolamServerMetricsStrip {...serverMetrics} /> : null}
+      <KolamServerMetricsStripHost />
       <KolamTopNavigationRight
         attentionCount={attentionCount}
         displayInitials={displayInitials}

@@ -30,7 +30,6 @@ export function useKolamTopNavigationController({
   onNotificationPress,
   onToggleSidebar,
   profilePhotoUrl,
-  serverMetrics,
 }: {
   activeModule: AppModule;
   activeAmSurface?: UnifiedSurface | null;
@@ -48,7 +47,6 @@ export function useKolamTopNavigationController({
   onNotificationPress: () => void;
   onToggleSidebar: () => void;
   profilePhotoUrl?: string | null;
-  serverMetrics?: TopNavigationProps['serverMetrics'];
 }) {
   const attentionCount = useMemo(
     () => attentionItems.filter(item => item.id !== 'all-clear').length,
@@ -75,7 +73,6 @@ export function useKolamTopNavigationController({
       onNotificationPress,
       onToggleSidebar,
       profilePhotoUrl,
-      serverMetrics,
     }),
     [
       activeModule,
@@ -94,7 +91,6 @@ export function useKolamTopNavigationController({
       onNotificationPress,
       onToggleSidebar,
       profilePhotoUrl,
-      serverMetrics,
     ],
   );
 

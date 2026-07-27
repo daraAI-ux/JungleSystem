@@ -2,7 +2,6 @@
   TopNavBreadcrumbItem,
   TopNavRightControl,
 } from '../domain/top-nav';
-import type { KolamServerMetricsStripProps } from './kolam-server-metrics-strip-types';
 
 export interface KolamTopNavigationProps {
   attentionCount: number;
@@ -16,5 +15,4 @@ export interface KolamTopNavigationProps {
   onToggleSidebar: () => void;
   profilePhotoUrl?: string | null;
   rightControls: TopNavRightControl[];
-  serverMetrics?: KolamServerMetricsStripProps;
 }

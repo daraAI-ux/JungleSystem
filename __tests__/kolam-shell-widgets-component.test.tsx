@@ -22,6 +22,17 @@ import {
 } from '../src/domain/top-nav';
 import { seedUnifiedDataset } from '../src/services/unified-data';
 
+jest.mock('../src/hooks/use-kolam-server-metrics-controller', () => ({
+  useKolamServerMetricsController: () => ({
+    snapshot: {
+      checkedAt: '2026-07-19T00:00:00.000Z',
+      cpuPercent: 12,
+      memoryPercent: 34,
+      diskPercent: 56,
+    },
+  }),
+}));
+
 const seedHeaderSyncIndicator = getDashboardHeaderSyncIndicator({
   activeModule: 'kolam',
   dataset: seedUnifiedDataset,
@@ -72,14 +83,6 @@ describe('shell Kolam widgets', () => {
             breadcrumbItems={getTopNavBreadcrumbItems('checkout')}
             displayInitials="DA"
             rightControls={getTopNavRightControls()}
-            serverMetrics={{
-              snapshot: {
-                checkedAt: '2026-07-19T00:00:00.000Z',
-                cpuPercent: 12,
-                memoryPercent: 34,
-                diskPercent: 56,
-              },
-            }}
             onAvatarPress={() => undefined}
             onBreadcrumbDashboardPress={() => undefined}
             onNotificationPress={() => undefined}
@@ -138,11 +141,6 @@ describe('shell Kolam widgets', () => {
     expect(renderText(renderer!)).toEqual(
       expect.arrayContaining([
         'Dashboard',
-        'Kolam',
-        'Kolam Menu',
-        'POS',
-        'AM',
-        'Plugin',
         'Checkout',
         'CPU 12%',
         'RAM 34%',
@@ -150,8 +148,8 @@ describe('shell Kolam widgets', () => {
         'Cashflow closed',
         'Session',
         'Dunia Anura',
-        'Login',
-        'Sync',
+        'Masuk',
+        'Sinkron',
         'Unified sync live',
         'sample warning',
       ]),

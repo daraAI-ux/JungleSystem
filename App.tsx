@@ -30,7 +30,6 @@ import { useKolamRuntimeSurfaceController } from './src/hooks/use-kolam-runtime-
 import { useKolamRuntimeStatusController } from './src/hooks/use-kolam-runtime-status-controller';
 import { useKolamSaleDraftController } from './src/hooks/use-kolam-sale-draft-controller';
 import { useKolamSaleStatusController } from './src/hooks/use-kolam-sale-status-controller';
-import { useKolamServerMetricsController } from './src/hooks/use-kolam-server-metrics-controller';
 import { useKolamSessionSyncController } from './src/hooks/use-kolam-session-sync-controller';
 import { useKolamShellChromeController } from './src/hooks/use-kolam-shell-chrome-controller';
 import { useKolamShellInteractionController } from './src/hooks/use-kolam-shell-interaction-controller';
@@ -252,9 +251,6 @@ function App() {
     runtimeIdentityItems,
     runtimeIdentityMeta,
   } = useKolamRuntimeStatusController({ dataset, deviceIdentityStatus });
-  const serverMetrics = useKolamServerMetricsController({
-    enabled: Boolean(authUser),
-  });
   const {
     handleCustomerCreated,
     handleCustomerVisitConfirm,
@@ -369,7 +365,6 @@ function App() {
       profilePhotoUrl: authUser?.profilePhotoUrl,
       roleKey: authUser?.roleKey,
       sectionOrder: kolamMenuSectionOrder,
-      serverMetrics,
       timezone: authUser?.timezone,
     });
   const { workspace } = useKolamWorkspaceSurfaceController({

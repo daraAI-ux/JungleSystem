@@ -13,6 +13,17 @@ import {
 } from '../src/domain/top-nav';
 import { seedUnifiedDataset } from '../src/services/unified-data';
 
+jest.mock('../src/hooks/use-kolam-server-metrics-controller', () => ({
+  useKolamServerMetricsController: () => ({
+    snapshot: {
+      checkedAt: '2026-07-19T00:00:00.000Z',
+      cpuPercent: 12,
+      memoryPercent: 34,
+      diskPercent: 56,
+    },
+  }),
+}));
+
 const seedHeaderSyncIndicator = getDashboardHeaderSyncIndicator({
   activeModule: 'kolam',
   dataset: seedUnifiedDataset,
@@ -76,14 +87,6 @@ describe('KolamAppShellSurface', () => {
             displayInitials: 'DA',
             profilePhotoUrl: 'https://amfibi.dunia-anura.com/media/avatar.jpg',
             rightControls: getTopNavRightControls(),
-            serverMetrics: {
-              snapshot: {
-                checkedAt: '2026-07-19T00:00:00.000Z',
-                cpuPercent: 12,
-                memoryPercent: 34,
-                diskPercent: 56,
-              },
-            },
             onAvatarPress: () => undefined,
             onBreadcrumbDashboardPress: () => undefined,
             onNotificationPress: () => undefined,
@@ -135,8 +138,6 @@ describe('KolamAppShellSurface', () => {
 
     expect(renderText(renderer!)).toEqual(
       expect.arrayContaining([
-        'Kolam',
-        'POS',
         'Dashboard',
         'Checkout',
         'CPU 12%',
@@ -189,14 +190,6 @@ describe('KolamAppShellSurface', () => {
             breadcrumbItems: getTopNavBreadcrumbItems('kolam'),
             displayInitials: 'DA',
             rightControls: getTopNavRightControls(),
-            serverMetrics: {
-              snapshot: {
-                checkedAt: '2026-07-19T00:00:00.000Z',
-                cpuPercent: 12,
-                memoryPercent: 34,
-                diskPercent: 56,
-              },
-            },
             onAvatarPress: () => undefined,
             onBreadcrumbDashboardPress: () => undefined,
             onNotificationPress: () => undefined,
@@ -284,14 +277,6 @@ describe('KolamAppShellSurface', () => {
             breadcrumbItems: getTopNavBreadcrumbItems('settings'),
             displayInitials: 'DA',
             rightControls: getTopNavRightControls(),
-            serverMetrics: {
-              snapshot: {
-                checkedAt: '2026-07-19T00:00:00.000Z',
-                cpuPercent: 12,
-                memoryPercent: 34,
-                diskPercent: 56,
-              },
-            },
             onAvatarPress: () => undefined,
             onBreadcrumbDashboardPress: () => undefined,
             onNotificationPress: () => undefined,

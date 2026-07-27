@@ -10,7 +10,8 @@ export interface KolamServerMetricsState {
 
 export function useKolamServerMetricsController({
   enabled,
-  intervalMs = 5000,
+  // Match FE HostResourceMonitor refetchInterval (30s).
+  intervalMs = 30_000,
 }: {
   enabled: boolean;
   intervalMs?: number;

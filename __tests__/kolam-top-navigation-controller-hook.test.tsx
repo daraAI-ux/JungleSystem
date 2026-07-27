@@ -38,14 +38,6 @@ function TopNavigationHarness({
     onBreadcrumbDashboardPress: () => undefined,
     onNotificationPress: () => undefined,
     onToggleSidebar: () => undefined,
-    serverMetrics: {
-      snapshot: {
-        checkedAt: '2026-07-19T00:00:00.000Z',
-        cpuPercent: 12,
-        memoryPercent: 34,
-        diskPercent: 56,
-      },
-    },
   });
 
   onRender(controller);
@@ -84,7 +76,6 @@ describe('Kolam top navigation controller hook', () => {
       {id: 'dashboard', label: 'Dashboard', routeHint: '/', current: true},
     ]);
     expect(controller.topNavigation.displayInitials).toBe('DA');
-    expect(controller.topNavigation.serverMetrics?.snapshot?.cpuPercent).toBe(12);
     expect(controller.topNavigation.rightControls.map(control => control.id)).toEqual([
       'chat-inbox',
       'chat-team',

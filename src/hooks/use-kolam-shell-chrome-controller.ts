@@ -62,7 +62,6 @@ export function useKolamShellChromeController({
   profilePhotoUrl,
   roleKey,
   sectionOrder,
-  serverMetrics,
   timezone,
 }: {
   accessScope: AccessScope;
@@ -115,9 +114,6 @@ export function useKolamShellChromeController({
   profilePhotoUrl?: string | null;
   roleKey?: string;
   sectionOrder: string[];
-  serverMetrics?: ReturnType<
-    typeof useKolamTopNavigationController
-  >['topNavigation']['serverMetrics'];
   timezone?: string;
 }) {
   const { dashboardHeader, displayInitials } =
@@ -154,7 +150,6 @@ export function useKolamShellChromeController({
     onNotificationPress,
     onToggleSidebar,
     profilePhotoUrl,
-    serverMetrics,
   });
   const { overlay } = useKolamOverlayController({
     accessScope,
