@@ -9,12 +9,14 @@ import {
   sendKolamTeamChatMessage,
   sendKolamTeamChatTextMessage,
   type KolamChatMessage,
+  type KolamTeamChatAttachment,
   type KolamTeamChatMessage,
   uploadKolamTeamChatMedia,
 } from '../services/kolam-api';
 import type {NativeImagePickerResult} from '../services/native-file-picker';
 
 export interface KolamChatRailDetailMessage {
+  attachments: KolamTeamChatAttachment[];
   id: string;
   author: string;
   body: string;
@@ -159,6 +161,7 @@ export function useKolamChatRailDetail({
 
 function mapInboxMessage(message: KolamChatMessage): KolamChatRailDetailMessage {
   return {
+    attachments: [],
     id: message._id,
     author: getInboxAuthor(message),
     body: getInboxMessageBody(message),
@@ -172,9 +175,10 @@ function mapTeamChatMessage(
   message: KolamTeamChatMessage,
 ): KolamChatRailDetailMessage {
   return {
+    attachments: Array.isArray(message.attachments) ? message.attachments : [],
     id: message._id,
     author: getTeamChatAuthor(message),
-    body: message.body?.trim() || 'Pesan',
+    body: message.body?.trim() || (message.attachments?.length ? '' : 'Pesan'),
     mine: message.senderType !== 'ai',
     sentAt: message.createdAt,
   };

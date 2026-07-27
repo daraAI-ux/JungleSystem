@@ -282,6 +282,14 @@ describe('KolamGlobalChatRail', () => {
       loading: false,
       messages: [
         {
+          attachments: [
+            {
+              fileName: 'invoice.pdf',
+              kind: 'file',
+              mimeType: 'application/pdf',
+              url: '/uploads/team-chat/invoice.pdf',
+            },
+          ],
           id: 'msg-1',
           author: 'Buyer',
           body: 'Apakah masih tersedia?',
@@ -311,7 +319,13 @@ describe('KolamGlobalChatRail', () => {
     });
 
     expect(renderText(renderer!)).toEqual(
-      expect.arrayContaining(['Buyer', 'Apakah masih tersedia?']),
+      expect.arrayContaining([
+        'Buyer',
+        'Apakah masih tersedia?',
+        'File',
+        'invoice.pdf',
+        'application/pdf',
+      ]),
     );
 
     const input = renderer!.root.findByType(TextInput);

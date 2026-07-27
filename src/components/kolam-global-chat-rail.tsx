@@ -11,6 +11,8 @@ import {useKolamChatRailDetail} from '../hooks/use-kolam-chat-rail-detail';
 import {useKolamChatRailLiveSync} from '../hooks/use-kolam-chat-rail-live-sync';
 import {useKolamChatRailReadonlyData} from '../hooks/use-kolam-chat-rail-readonly-data';
 import {useKolamNotificationSoundSettings} from '../hooks/use-kolam-notification-sound-settings';
+import {getKolamFileUrl} from '../lib/file-url';
+import type {KolamTeamChatAttachment} from '../services/kolam-api';
 import {createKolamNotificationSoundService} from '../services/kolam-notification-sound-service';
 import {createKolamRuntimeNotificationSoundAdapter} from '../services/kolam-notification-sound-runtime';
 import {
@@ -22,6 +24,7 @@ import {KolamEmptyState} from './kolam-empty-state';
 import {KolamIconButton} from './kolam-icon-button';
 import {KolamMappedList} from './kolam-mapped-list';
 import {KolamPressable} from './kolam-pressable';
+import {KolamRemoteImage} from './kolam-remote-image';
 import {KolamTopNavigationChatIcon} from './kolam-top-navigation-chat-icon';
 import {KolamXIcon} from './kolam-x-icon';
 
@@ -336,7 +339,12 @@ function KolamChatRailDetailPanel({
                     message.mine ? styles.messageBubbleMine : styles.messageBubbleOther,
                   ]}>
                   <Text style={styles.messageAuthor}>{message.author}</Text>
-                  <Text style={styles.messageBody}>{message.body}</Text>
+                  {message.body ? (
+                    <Text style={styles.messageBody}>{message.body}</Text>
+                  ) : null}
+                  {message.attachments.length > 0 ? (
+                    <KolamChatAttachmentList attachments={message.attachments} />
+                  ) : null}
                   <Text style={styles.messageMeta}>
                     {[formatRelativeTime(message.sentAt), message.status]
                       .filter(Boolean)
@@ -403,6 +411,65 @@ function KolamChatRailDetailPanel({
             {detail.sending ? 'Mengirim' : 'Kirim'}
           </Text>
         </KolamPressable>
+      </View>
+    </View>
+  );
+}
+
+function KolamChatAttachmentList({
+  attachments,
+}: {
+  attachments: KolamTeamChatAttachment[];
+}) {
+  return (
+    <View style={styles.attachmentList}>
+      <KolamMappedList
+        items={attachments}
+        getKey={(attachment, index) =>
+          `${attachment.url}-${attachment.fileName ?? attachment.kind}-${index}`
+        }
+        renderItem={attachment => (
+          <KolamChatAttachmentPreview attachment={attachment} />
+        )}
+      />
+    </View>
+  );
+}
+
+function KolamChatAttachmentPreview({
+  attachment,
+}: {
+  attachment: KolamTeamChatAttachment;
+}) {
+  const fileName = getAttachmentFileName(attachment);
+  const sourceUri = getKolamFileUrl(attachment.url) ?? attachment.url;
+
+  if (attachment.kind === 'image') {
+    return (
+      <View style={styles.attachmentImageShell}>
+        <KolamRemoteImage
+          accessibilityLabel={`Lampiran ${fileName}`}
+          sourceUri={sourceUri}
+          style={styles.attachmentImage}
+        />
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.attachmentFileRow}>
+      <View style={styles.attachmentKindBadge}>
+        <Text style={styles.attachmentKindText}>
+          {getAttachmentKindLabel(attachment)}
+        </Text>
+      </View>
+      <View style={styles.attachmentFileCopy}>
+        <Text numberOfLines={1} style={styles.attachmentFileName}>
+          {fileName}
+        </Text>
+        <Text numberOfLines={1} style={styles.attachmentFileMeta}>
+          {attachment.mimeType || sourceUri}
+        </Text>
       </View>
     </View>
   );
@@ -580,6 +647,29 @@ function getConversationPreview({
   }
 
   return `${getConversationDirectionPrefix(lastMessageDirection)}${preview}`;
+}
+
+function getAttachmentFileName(attachment: KolamTeamChatAttachment) {
+  if (attachment.fileName?.trim()) {
+    return attachment.fileName.trim();
+  }
+
+  const pathName = attachment.url.split(/[\\/]/).pop()?.trim();
+  return pathName || getAttachmentKindLabel(attachment);
+}
+
+function getAttachmentKindLabel(attachment: KolamTeamChatAttachment) {
+  switch (attachment.kind) {
+    case 'audio':
+      return 'Audio';
+    case 'image':
+      return 'Gambar';
+    case 'video':
+      return 'Video';
+    case 'file':
+    default:
+      return 'File';
+  }
 }
 
 function formatRelativeTime(iso?: string | null) {
@@ -767,6 +857,64 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 12,
     lineHeight: 17,
+  },
+  attachmentList: {
+    gap: 6,
+  },
+  attachmentImageShell: {
+    width: 180,
+    height: 118,
+    borderRadius: V.radius.lg,
+    overflow: 'hidden',
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.bg,
+  },
+  attachmentImage: {
+    width: 180,
+    height: 118,
+  },
+  attachmentFileRow: {
+    minHeight: 44,
+    padding: 8,
+    borderRadius: V.radius.lg,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.bg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  attachmentKindBadge: {
+    minWidth: 44,
+    height: 24,
+    borderRadius: V.radius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: V.colors.secondary,
+  },
+  attachmentKindText: {
+    color: V.colors.secondaryFg,
+    fontFamily: V.fontFamily,
+    fontSize: 9,
+    fontWeight: '900',
+  },
+  attachmentFileCopy: {
+    minWidth: 0,
+    flex: 1,
+    gap: 2,
+  },
+  attachmentFileName: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  attachmentFileMeta: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '700',
   },
   messageMeta: {
     color: V.colors.mutedFg,
