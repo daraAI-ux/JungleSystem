@@ -109,4 +109,36 @@ describe('useKolamChatRailLiveSync', () => {
     expect(refreshList).toHaveBeenCalledTimes(1);
     expect(refreshDetail).toHaveBeenCalledTimes(1);
   });
+
+  it('clears pending live refresh timers on unmount', async () => {
+    const refreshList = jest.fn().mockResolvedValue(undefined);
+    const refreshDetail = jest.fn().mockResolvedValue(undefined);
+    let sync: ReturnType<typeof useKolamChatRailLiveSync> | undefined;
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <LiveSyncProbe
+          onReady={value => {
+            sync = value;
+          }}
+          refreshDetail={refreshDetail}
+          refreshList={refreshList}
+        />,
+      );
+    });
+
+    sync!.syncFromLiveClassification(listAndDetailClassification);
+
+    await ReactTestRenderer.act(async () => {
+      renderer!.unmount();
+    });
+
+    await ReactTestRenderer.act(async () => {
+      jest.advanceTimersByTime(100);
+    });
+
+    expect(refreshList).not.toHaveBeenCalled();
+    expect(refreshDetail).not.toHaveBeenCalled();
+  });
 });

@@ -36,16 +36,22 @@ class FakeEventSource {
 }
 
 function LiveStreamProbe({
+  enabled,
   eventSourceFactory,
   onEvent,
+  onStatusChange,
 }: {
-  eventSourceFactory: Parameters<typeof useKolamChatLiveStream>[0]['eventSourceFactory'];
+  enabled?: boolean;
+  eventSourceFactory?: Parameters<typeof useKolamChatLiveStream>[0]['eventSourceFactory'];
   onEvent: (event: KolamChatLiveEvent) => void;
+  onStatusChange?: Parameters<typeof useKolamChatLiveStream>[0]['onStatusChange'];
 }) {
   useKolamChatLiveStream({
+    enabled,
     eventSourceFactory,
     mode: 'inbox',
     onEvent,
+    onStatusChange,
   });
 
   return null;
@@ -118,5 +124,49 @@ describe('useKolamChatLiveStream', () => {
     });
 
     expect(createdSources[0].closed).toBe(true);
+  });
+
+  it('reports idle when disabled and does not create an EventSource', async () => {
+    const onStatusChange = jest.fn();
+    const factory = jest.fn();
+
+    await ReactTestRenderer.act(async () => {
+      ReactTestRenderer.create(
+        <LiveStreamProbe
+          enabled={false}
+          eventSourceFactory={factory}
+          onEvent={jest.fn()}
+          onStatusChange={onStatusChange}
+        />,
+      );
+    });
+
+    expect(factory).not.toHaveBeenCalled();
+    expect(onStatusChange).toHaveBeenCalledWith('idle');
+  });
+
+  it('reports unsupported when no EventSource runtime is available', async () => {
+    const onStatusChange = jest.fn();
+    const globalWithEventSource = globalThis as typeof globalThis & {
+      EventSource?: unknown;
+    };
+    const originalEventSource = globalWithEventSource.EventSource;
+
+    delete globalWithEventSource.EventSource;
+
+    try {
+      await ReactTestRenderer.act(async () => {
+        ReactTestRenderer.create(
+          <LiveStreamProbe
+            onEvent={jest.fn()}
+            onStatusChange={onStatusChange}
+          />,
+        );
+      });
+    } finally {
+      globalWithEventSource.EventSource = originalEventSource;
+    }
+
+    expect(onStatusChange).toHaveBeenCalledWith('unsupported');
   });
 });

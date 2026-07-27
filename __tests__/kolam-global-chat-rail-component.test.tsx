@@ -442,4 +442,47 @@ describe('KolamGlobalChatRail', () => {
       },
     });
   });
+
+  it('suppresses headless sound for inbox messages assigned to another staff', async () => {
+    let liveOptions:
+      | Parameters<typeof useKolamChatLiveStream>[0]
+      | undefined;
+
+    useLiveStreamMock.mockImplementation(options => {
+      liveOptions = options;
+    });
+
+    await ReactTestRenderer.act(async () => {
+      ReactTestRenderer.create(
+        <KolamGlobalChatRail mode="inbox" onClose={() => undefined} />,
+      );
+    });
+
+    await ReactTestRenderer.act(async () => {
+      liveOptions!.onEvent({
+        contract: {
+          eventName: 'message.created',
+          legacySources: [],
+          note: '',
+          refreshTargets: ['inbox-list', 'inbox-detail', 'unread-badge'],
+          route: '/chat/stream',
+          soundIntent: 'incoming-assigned-or-unassigned',
+          stream: 'inbox',
+        },
+        payload: {
+          assignedStaffId: 'staff-2',
+          conversationId: 'conv-3',
+          message: {direction: 'in'},
+        },
+      });
+    });
+
+    expect(mockSoundPlay).toHaveBeenCalledWith({
+      intent: 'none',
+      webSetting: {
+        notificationSound: 'media/audios/assigned.wav',
+        unassignedNotificationSound: 'media/audios/unassigned.wav',
+      },
+    });
+  });
 });
