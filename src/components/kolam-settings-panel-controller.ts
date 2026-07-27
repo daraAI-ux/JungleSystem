@@ -116,6 +116,7 @@ import {
   type KolamSitemapConfig,
   type KolamSitemapSectionKey,
   type KolamStaffAttendanceSettings,
+  type KolamStoreOperatingHours,
   type KolamStoreOperatingWeekday,
   type KolamTeamChatRoom,
   type KolamUserPickerRow,
@@ -285,6 +286,14 @@ interface WebSettingDraft {
   storeOperatingHoursEnabled: boolean;
   storeOperatingHoursDaraReplyWhenClosed: boolean;
   storeOperatingHoursTimezone: string;
+  storeOperatingHoursSpecialClosureDate: string;
+  storeOperatingHoursSpecialClosureLabel: string;
+  storeOperatingHoursSpecialClosuresText: string;
+  storeOperatingHoursMessageBeforeOpen: string;
+  storeOperatingHoursMessageAfterClose: string;
+  storeOperatingHoursMessageWeeklyClosed: string;
+  storeOperatingHoursMessageSpecialClosed: string;
+  storeOperatingHoursMessageShippingDisclaimer: string;
   storeHoursMondayOpen: boolean;
   storeHoursMondayOpenAt: string;
   storeHoursMondayCloseAt: string;
@@ -494,6 +503,14 @@ const emptyWebSettingDraft: WebSettingDraft = {
   storeOperatingHoursEnabled: false,
   storeOperatingHoursDaraReplyWhenClosed: false,
   storeOperatingHoursTimezone: 'Asia/Jakarta',
+  storeOperatingHoursSpecialClosureDate: '',
+  storeOperatingHoursSpecialClosureLabel: '',
+  storeOperatingHoursSpecialClosuresText: '',
+  storeOperatingHoursMessageBeforeOpen: '',
+  storeOperatingHoursMessageAfterClose: '',
+  storeOperatingHoursMessageWeeklyClosed: '',
+  storeOperatingHoursMessageSpecialClosed: '',
+  storeOperatingHoursMessageShippingDisclaimer: '',
   storeHoursMondayOpen: true,
   storeHoursMondayOpenAt: '09:00',
   storeHoursMondayCloseAt: '21:00',
@@ -2887,6 +2904,7 @@ function createWebSettingDraft(
   const storeOperatingHours = setting.storeOperatingHours ?? {};
   const poWorkflow = setting.poWorkflow ?? {};
   const weeklyHours = storeOperatingHours.weeklyHours ?? {};
+  const storeMessages = storeOperatingHours.messages ?? {};
   const mondayHours = weeklyHours.monday ?? {};
   const tuesdayHours = weeklyHours.tuesday ?? {};
   const wednesdayHours = weeklyHours.wednesday ?? {};
@@ -2957,6 +2975,17 @@ function createWebSettingDraft(
     storeOperatingHoursTimezone:
       storeOperatingHours.timezone ??
       emptyWebSettingDraft.storeOperatingHoursTimezone,
+    storeOperatingHoursSpecialClosureDate: '',
+    storeOperatingHoursSpecialClosureLabel: '',
+    storeOperatingHoursSpecialClosuresText: serializeStoreSpecialClosures(
+      storeOperatingHours.specialClosures,
+    ),
+    storeOperatingHoursMessageBeforeOpen: storeMessages.beforeOpen ?? '',
+    storeOperatingHoursMessageAfterClose: storeMessages.afterClose ?? '',
+    storeOperatingHoursMessageWeeklyClosed: storeMessages.weeklyClosed ?? '',
+    storeOperatingHoursMessageSpecialClosed: storeMessages.specialClosed ?? '',
+    storeOperatingHoursMessageShippingDisclaimer:
+      storeMessages.shippingDisclaimer ?? '',
     storeHoursMondayOpen: mondayHours.open !== false,
     storeHoursMondayOpenAt:
       mondayHours.openAt ?? emptyWebSettingDraft.storeHoursMondayOpenAt,
@@ -3773,7 +3802,70 @@ function createStoreOperatingHoursUpdateBody(draft: WebSettingDraft) {
         draft.storeHoursSundayCloseAt,
       ),
     },
+    specialClosures: parseStoreSpecialClosures(
+      draft.storeOperatingHoursSpecialClosuresText,
+    ),
+    messages: {
+      beforeOpen: cleanOptionalString(
+        draft.storeOperatingHoursMessageBeforeOpen,
+      ),
+      afterClose: cleanOptionalString(
+        draft.storeOperatingHoursMessageAfterClose,
+      ),
+      weeklyClosed: cleanOptionalString(
+        draft.storeOperatingHoursMessageWeeklyClosed,
+      ),
+      specialClosed: cleanOptionalString(
+        draft.storeOperatingHoursMessageSpecialClosed,
+      ),
+      shippingDisclaimer: cleanOptionalString(
+        draft.storeOperatingHoursMessageShippingDisclaimer,
+      ),
+    },
   } satisfies KolamWebSetting['storeOperatingHours'];
+}
+
+function serializeStoreSpecialClosures(
+  closures: KolamStoreOperatingHours['specialClosures'],
+) {
+  if (!Array.isArray(closures)) {
+    return '';
+  }
+
+  return closures
+    .map(closure =>
+      [closure?.date ?? '', closure?.label ?? '']
+        .map(value => String(value).trim())
+        .filter(Boolean)
+        .join('|'),
+    )
+    .filter(Boolean)
+    .join('\n');
+}
+
+function parseStoreSpecialClosures(value: string) {
+  return value
+    .split(/\r?\n/)
+    .map(line => {
+      const [date = '', label = ''] = line.split('|');
+      const trimmedDate = date.trim();
+
+      if (!trimmedDate) {
+        return null;
+      }
+
+      return {
+        date: trimmedDate,
+        label: label.trim() || undefined,
+        allDay: true,
+      };
+    })
+    .filter(
+      (
+        closure,
+      ): closure is { date: string; label: string | undefined; allDay: true } =>
+        closure !== null,
+    );
 }
 
 function createStoreOperatingDayHours(

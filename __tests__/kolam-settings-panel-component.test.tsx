@@ -338,22 +338,67 @@ describe('KolamSettingsPanel', () => {
     expect(text).toEqual(
       expect.arrayContaining([
         'Toko & Pengiriman',
+        'Asal pengiriman (Biteship)',
         'Biteship API key',
-        'Google Maps browser key',
-        'Alamat asal',
-        'Kota asal',
-        'Provinsi asal',
-        'Kode pos asal',
-        'Latitude asal',
-        'Longitude asal',
+        'Alamat',
+        'Kota',
+        'Provinsi',
+        'Kode pos',
+        'Latitude',
+        'Longitude',
+        'Google Maps API key (browser)',
+        'Pinpoint peta',
         'Map native planned: gunakan latitude/longitude sebagai fallback koordinat produksi.',
-        'Jam operasional toko',
-        'Balasan DARA saat tutup',
+        'Jam operasional toko (dunia-anura.com)',
+        'Aktifkan jadwal operasional',
         'Zona waktu',
-        'Senin open',
-        'Minggu tutup',
+        'Senin',
+        'Jam buka',
+        'Jam tutup',
+        'Libur khusus (tanggal)',
+        'Tanggal libur khusus',
+        'Keterangan libur',
+        'Tambah',
+        'Belum ada libur khusus.',
+        'Pesan untuk pembeli / DARA',
+        'Sebelum buka',
+        'Setelah tutup',
+        'Libur rutin mingguan',
+        'Libur khusus ({label})',
+        'Peringatan pengiriman (konteks AI)',
         'Simpan',
       ]),
+    );
+    expect(text.indexOf('Biteship API key')).toBeLessThan(
+      text.indexOf('Alamat'),
+    );
+    expect(text.indexOf('Longitude')).toBeLessThan(
+      text.indexOf('Google Maps API key (browser)'),
+    );
+    expect(text.indexOf('Pinpoint peta')).toBeLessThan(
+      text.indexOf('Jam operasional toko (dunia-anura.com)'),
+    );
+    expect(text.indexOf('Libur khusus (tanggal)')).toBeLessThan(
+      text.indexOf('Pesan untuk pembeli / DARA'),
+    );
+
+    const dateInput = renderer!.root
+      .findAllByType(TextInput)
+      .find(node => node.props.placeholder === '2026-04-10');
+    const labelInput = renderer!.root
+      .findAllByType(TextInput)
+      .find(node => node.props.placeholder === 'Libur Idul Fitri');
+
+    await ReactTestRenderer.act(async () => {
+      dateInput?.props.onChangeText('2026-04-10');
+      labelInput?.props.onChangeText('Libur Idul Fitri');
+    });
+    await ReactTestRenderer.act(async () => {
+      renderer!.root.findByProps({ label: 'Tambah' }).props.onPress();
+    });
+
+    expect(renderText(renderer!)).toEqual(
+      expect.arrayContaining(['2026-04-10', 'Libur Idul Fitri', 'Hapus']),
     );
     expect(text).not.toEqual(
       expect.arrayContaining([
@@ -361,6 +406,9 @@ describe('KolamSettingsPanel', () => {
         'OTP masuk staf',
         'Plugin Enclosure',
         'Ringkasan Landing Marketplace',
+        'Google Maps browser key',
+        'Alamat asal',
+        'Balasan DARA saat tutup',
       ]),
     );
   });

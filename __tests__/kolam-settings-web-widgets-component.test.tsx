@@ -10,6 +10,17 @@ import {
   getSettingsWebFormSections,
 } from '../src/domain/settings-surface';
 
+jest.mock('react-native-webview', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+
+  return {
+    __esModule: true,
+    default: (props: Record<string, unknown>) =>
+      React.createElement(View, props),
+  };
+});
+
 function renderText(renderer: ReactTestRenderer.ReactTestRenderer) {
   return renderer.root
     .findAllByType(Text)
@@ -369,6 +380,14 @@ function createWebSettingDraft() {
     storeOperatingHoursEnabled: false,
     storeOperatingHoursDaraReplyWhenClosed: false,
     storeOperatingHoursTimezone: 'Asia/Jakarta',
+    storeOperatingHoursSpecialClosureDate: '',
+    storeOperatingHoursSpecialClosureLabel: '',
+    storeOperatingHoursSpecialClosuresText: '',
+    storeOperatingHoursMessageBeforeOpen: '',
+    storeOperatingHoursMessageAfterClose: '',
+    storeOperatingHoursMessageWeeklyClosed: '',
+    storeOperatingHoursMessageSpecialClosed: '',
+    storeOperatingHoursMessageShippingDisclaimer: '',
     storeHoursMondayOpen: true,
     storeHoursMondayOpenAt: '09:00',
     storeHoursMondayCloseAt: '21:00',

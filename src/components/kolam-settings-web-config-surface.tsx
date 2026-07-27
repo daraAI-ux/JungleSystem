@@ -102,6 +102,14 @@ type WebSettingDraft = {
   storeOperatingHoursEnabled: boolean;
   storeOperatingHoursDaraReplyWhenClosed: boolean;
   storeOperatingHoursTimezone: string;
+  storeOperatingHoursSpecialClosureDate: string;
+  storeOperatingHoursSpecialClosureLabel: string;
+  storeOperatingHoursSpecialClosuresText: string;
+  storeOperatingHoursMessageBeforeOpen: string;
+  storeOperatingHoursMessageAfterClose: string;
+  storeOperatingHoursMessageWeeklyClosed: string;
+  storeOperatingHoursMessageSpecialClosed: string;
+  storeOperatingHoursMessageShippingDisclaimer: string;
   storeHoursMondayOpen: boolean;
   storeHoursMondayOpenAt: string;
   storeHoursMondayCloseAt: string;
@@ -231,6 +239,38 @@ const storeOperatingHourRows: Array<{
     openField: 'storeHoursSundayOpen',
     openAtField: 'storeHoursSundayOpenAt',
     closeAtField: 'storeHoursSundayCloseAt',
+  },
+];
+
+const storeOperatingMessageRows: Array<{
+  id: string;
+  label: string;
+  field: keyof WebSettingDraft;
+}> = [
+  {
+    id: 'before-open',
+    label: 'Sebelum buka',
+    field: 'storeOperatingHoursMessageBeforeOpen',
+  },
+  {
+    id: 'after-close',
+    label: 'Setelah tutup',
+    field: 'storeOperatingHoursMessageAfterClose',
+  },
+  {
+    id: 'weekly-closed',
+    label: 'Libur rutin mingguan',
+    field: 'storeOperatingHoursMessageWeeklyClosed',
+  },
+  {
+    id: 'special-closed',
+    label: 'Libur khusus ({label})',
+    field: 'storeOperatingHoursMessageSpecialClosed',
+  },
+  {
+    id: 'shipping-disclaimer',
+    label: 'Peringatan pengiriman (konteks AI)',
+    field: 'storeOperatingHoursMessageShippingDisclaimer',
   },
 ];
 
@@ -577,6 +617,49 @@ export function KolamSettingsWebConfigSurface({
       title: item.label,
       uri: getNotificationSoundPreviewUri(item.value),
     });
+  };
+  const storeSpecialClosureRows = draft.storeOperatingHoursSpecialClosuresText
+    .split(/\r?\n/)
+    .map((line, index) => {
+      const [date = '', label = ''] = line.split('|');
+      return {
+        date: date.trim(),
+        id: `${index}-${date.trim()}`,
+        index,
+        label: label.trim(),
+        line,
+      };
+    })
+    .filter(row => row.date.length > 0);
+  const addStoreSpecialClosure = () => {
+    const date = draft.storeOperatingHoursSpecialClosureDate.trim();
+
+    if (!date || disabled) {
+      return;
+    }
+
+    const label = draft.storeOperatingHoursSpecialClosureLabel.trim();
+    const nextLine = [date, label].filter(Boolean).join('|');
+    const current = draft.storeOperatingHoursSpecialClosuresText.trim();
+    setDraftField(
+      'storeOperatingHoursSpecialClosuresText',
+      current ? `${current}\n${nextLine}` : nextLine,
+    );
+    setDraftField('storeOperatingHoursSpecialClosureDate', '');
+    setDraftField('storeOperatingHoursSpecialClosureLabel', '');
+  };
+  const removeStoreSpecialClosure = (index: number) => {
+    if (disabled) {
+      return;
+    }
+
+    setDraftField(
+      'storeOperatingHoursSpecialClosuresText',
+      draft.storeOperatingHoursSpecialClosuresText
+        .split(/\r?\n/)
+        .filter((line, lineIndex) => line.trim() && lineIndex !== index)
+        .join('\n'),
+    );
   };
   const roomSummary = operationalRooms.length
     ? operationalRooms
@@ -2297,150 +2380,283 @@ export function KolamSettingsWebConfigSurface({
       ) : null}
       {showStoreShippingSettings ? (
         <>
-          <KolamTextFieldRow
-            label="Biteship API key"
-            description="Biarkan ******** agar secret BE tidak dikirim ulang."
-            value={draft.biteshipApiKey}
-            onChangeText={value => setDraftField('biteshipApiKey', value)}
-            placeholder="********"
-          />
-          <KolamTextFieldRow
-            label="Google Maps browser key"
-            description="Biarkan ******** agar secret BE tidak dikirim ulang."
-            value={draft.googleMapsBrowserApiKey}
-            onChangeText={value =>
-              setDraftField('googleMapsBrowserApiKey', value)
-            }
-            placeholder="********"
-          />
-          <KolamTextFieldRow
-            fieldWidth={settingsFieldWidth}
-            label="Alamat asal"
-            description="Alamat asal pengiriman."
-            multiline
-            numberOfLines={4}
-            value={draft.originAddressLine1}
-            onChangeText={value => setDraftField('originAddressLine1', value)}
-            placeholder="Jl. Taman Ratu Raya No.34"
-          />
-          <KolamTextFieldRow
-            fieldWidth={settingsFieldWidth}
-            label="Kota asal"
-            description="Kota asal pengiriman."
-            value={draft.originCity}
-            onChangeText={value => setDraftField('originCity', value)}
-            placeholder="Jakarta Barat"
-          />
-          <KolamTextFieldRow
-            fieldWidth={settingsFieldWidth}
-            label="Provinsi asal"
-            description="Provinsi asal pengiriman."
-            value={draft.originProvince}
-            onChangeText={value => setDraftField('originProvince', value)}
-            placeholder="DKI Jakarta"
-          />
-          <KolamTextFieldRow
-            fieldWidth={settingsFieldWidth}
-            label="Kode pos asal"
-            description="Kode pos asal pengiriman."
-            value={draft.originPostalCode}
-            onChangeText={value => setDraftField('originPostalCode', value)}
-            placeholder="11550"
-          />
-          <KolamTextFieldRow
-            fieldWidth={settingsFieldWidth}
-            label="Latitude asal"
-            description="Koordinat latitude origin."
-            value={draft.originLatitude}
-            onChangeText={value => setDraftField('originLatitude', value)}
-            placeholder="-6.1687829"
-          />
-          <KolamTextFieldRow
-            fieldWidth={settingsFieldWidth}
-            label="Longitude asal"
-            description="Koordinat longitude origin."
-            value={draft.originLongitude}
-            onChangeText={value => setDraftField('originLongitude', value)}
-            placeholder="106.7676678"
-          />
-          <KolamCopyStack
-            items={[
-              {
-                id: 'native-map-planned',
-                text: 'Map native planned: gunakan latitude/longitude sebagai fallback koordinat produksi.',
-              },
-            ]}
-          />
-          <KolamToggleRow
-            label="Jam operasional toko"
-            description="Aktifkan jadwal toko untuk fulfillment dan DARA."
-            active={draft.storeOperatingHoursEnabled}
-            onPress={() =>
-              !disabled &&
-              setDraftField(
-                'storeOperatingHoursEnabled',
-                !draft.storeOperatingHoursEnabled,
-              )
-            }
-          />
-          <KolamToggleRow
-            label="Balasan DARA saat tutup"
-            description="DARA membalas status tutup berdasarkan jam operasional."
-            active={draft.storeOperatingHoursDaraReplyWhenClosed}
-            onPress={() =>
-              !disabled &&
-              setDraftField(
-                'storeOperatingHoursDaraReplyWhenClosed',
-                !draft.storeOperatingHoursDaraReplyWhenClosed,
-              )
-            }
-          />
-          <KolamTextFieldRow
-            label="Zona waktu"
-            description="Zona waktu jadwal toko."
-            value={draft.storeOperatingHoursTimezone}
-            onChangeText={value =>
-              setDraftField('storeOperatingHoursTimezone', value)
-            }
-            placeholder="Asia/Jakarta"
-          />
-          <View style={styles.storeHoursList}>
-            {storeOperatingHourRows.map(row => {
-              const isOpen = draft[row.openField] === true;
+          <View style={styles.marketplaceControlSection}>
+            <KolamCopyStack
+              items={[
+                {
+                  id: 'shipping-origin-title',
+                  text: 'Asal pengiriman (Biteship)',
+                  style: styles.marketplaceOverviewLabel,
+                },
+              ]}
+            />
+            <KolamTextFieldRow
+              fieldWidth={settingsFieldWidth}
+              label="Biteship API key"
+              description="Webhook: https://amfibi.dunia-anura.com/api/biteship/webhook"
+              value={draft.biteshipApiKey}
+              onChangeText={value => setDraftField('biteshipApiKey', value)}
+              placeholder="********"
+            />
+            <KolamTextFieldRow
+              fieldWidth={settingsFieldWidth}
+              label="Alamat"
+              description="Alamat asal pengiriman."
+              multiline
+              numberOfLines={4}
+              value={draft.originAddressLine1}
+              onChangeText={value => setDraftField('originAddressLine1', value)}
+              placeholder="Jl. Taman Ratu Raya No.34"
+            />
+            <KolamTextFieldRow
+              fieldWidth={settingsFieldWidth}
+              label="Kota"
+              description="Kota asal pengiriman."
+              value={draft.originCity}
+              onChangeText={value => setDraftField('originCity', value)}
+              placeholder="Jakarta Barat"
+            />
+            <KolamTextFieldRow
+              fieldWidth={settingsFieldWidth}
+              label="Provinsi"
+              description="Provinsi asal pengiriman."
+              value={draft.originProvince}
+              onChangeText={value => setDraftField('originProvince', value)}
+              placeholder="DKI Jakarta"
+            />
+            <KolamTextFieldRow
+              fieldWidth={settingsFieldWidth}
+              label="Kode pos"
+              description="Kode pos asal pengiriman."
+              value={draft.originPostalCode}
+              onChangeText={value => setDraftField('originPostalCode', value)}
+              placeholder="11550"
+            />
+            <KolamTextFieldRow
+              fieldWidth={settingsFieldWidth}
+              label="Latitude"
+              description="Koordinat latitude origin."
+              value={draft.originLatitude}
+              onChangeText={value => setDraftField('originLatitude', value)}
+              placeholder="-6.1687829"
+            />
+            <KolamTextFieldRow
+              fieldWidth={settingsFieldWidth}
+              label="Longitude"
+              description="Koordinat longitude origin."
+              value={draft.originLongitude}
+              onChangeText={value => setDraftField('originLongitude', value)}
+              placeholder="106.7676678"
+            />
+            <KolamTextFieldRow
+              fieldWidth={settingsFieldWidth}
+              label="Google Maps API key (browser)"
+              description="Biarkan ******** agar key browser tersimpan tidak dikirim ulang."
+              value={draft.googleMapsBrowserApiKey}
+              onChangeText={value =>
+                setDraftField('googleMapsBrowserApiKey', value)
+              }
+              placeholder="********"
+            />
+            <KolamCopyStack
+              items={[
+                {
+                  id: 'pinpoint-map-title',
+                  text: 'Pinpoint peta',
+                  style: styles.marketplaceOverviewLabel,
+                },
+                {
+                  id: 'native-map-planned',
+                  text: 'Map native planned: gunakan latitude/longitude sebagai fallback koordinat produksi.',
+                  style: styles.marketplaceOverviewMeta,
+                },
+              ]}
+            />
+          </View>
 
-              return (
-                <View key={row.id} style={styles.storeHoursRow}>
-                  <KolamToggleRow
-                    label={`${row.label} open`}
-                    description="Status buka pada hari ini."
-                    active={isOpen}
-                    onPress={() =>
-                      !disabled && setDraftField(row.openField, !isOpen)
-                    }
-                  />
-                  <View style={styles.storeHoursTimeGrid}>
-                    <KolamTextFieldRow
-                      label={`${row.label} buka`}
-                      description="Jam buka format HH:mm."
-                      value={String(draft[row.openAtField] ?? '')}
-                      onChangeText={value =>
-                        setDraftField(row.openAtField, value)
+          <View style={styles.marketplaceControlSection}>
+            <KolamCopyStack
+              items={[
+                {
+                  id: 'store-hours-title',
+                  text: 'Jam operasional toko (dunia-anura.com)',
+                  style: styles.marketplaceOverviewLabel,
+                },
+                {
+                  id: 'store-hours-meta',
+                  text: 'DARA tetap aktif untuk produk dan FAQ. Saat tutup atau libur, DARA mendapat konteks jam operasional dan mengingatkan pengiriman tertunda.',
+                  style: styles.marketplaceOverviewMeta,
+                },
+              ]}
+            />
+            <KolamToggleRow
+              label="Aktifkan jadwal operasional"
+              description="Jika off, tidak ada banner jam tutup di marketplace dan DARA tidak mendapat konteks jam operasional."
+              active={draft.storeOperatingHoursEnabled}
+              onPress={() =>
+                !disabled &&
+                setDraftField(
+                  'storeOperatingHoursEnabled',
+                  !draft.storeOperatingHoursEnabled,
+                )
+              }
+            />
+            <KolamTextFieldRow
+              fieldWidth={settingsFieldWidth}
+              label="Zona waktu"
+              description="Zona waktu jadwal toko."
+              value={draft.storeOperatingHoursTimezone}
+              onChangeText={value =>
+                setDraftField('storeOperatingHoursTimezone', value)
+              }
+              placeholder="Asia/Jakarta"
+            />
+            <View style={styles.storeHoursList}>
+              {storeOperatingHourRows.map(row => {
+                const isOpen = draft[row.openField] === true;
+
+                return (
+                  <View key={row.id} style={styles.storeHoursRow}>
+                    <KolamToggleRow
+                      label={row.label}
+                      description="Status buka pada hari ini."
+                      active={isOpen}
+                      onPress={() =>
+                        !disabled && setDraftField(row.openField, !isOpen)
                       }
-                      placeholder="09:00"
                     />
-                    <KolamTextFieldRow
-                      label={`${row.label} tutup`}
-                      description="Jam tutup format HH:mm."
-                      value={String(draft[row.closeAtField] ?? '')}
-                      onChangeText={value =>
-                        setDraftField(row.closeAtField, value)
-                      }
-                      placeholder="21:00"
+                    <View style={styles.storeHoursTimeGrid}>
+                      <KolamTextFieldRow
+                        fieldWidth={180}
+                        label="Jam buka"
+                        description="Format HH:mm."
+                        value={String(draft[row.openAtField] ?? '')}
+                        onChangeText={value =>
+                          setDraftField(row.openAtField, value)
+                        }
+                        placeholder="09:00"
+                      />
+                      <KolamTextFieldRow
+                        fieldWidth={180}
+                        label="Jam tutup"
+                        description="Format HH:mm."
+                        value={String(draft[row.closeAtField] ?? '')}
+                        onChangeText={value =>
+                          setDraftField(row.closeAtField, value)
+                        }
+                        placeholder="21:00"
+                      />
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+
+          <View style={styles.marketplaceControlSection}>
+            <KolamCopyStack
+              items={[
+                {
+                  id: 'special-closures-title',
+                  text: 'Libur khusus (tanggal)',
+                  style: styles.marketplaceOverviewLabel,
+                },
+              ]}
+            />
+            <View style={styles.storeHoursTimeGrid}>
+              <KolamTextFieldRow
+                fieldWidth={220}
+                label="Tanggal libur khusus"
+                description="Format YYYY-MM-DD."
+                value={draft.storeOperatingHoursSpecialClosureDate}
+                onChangeText={value =>
+                  setDraftField('storeOperatingHoursSpecialClosureDate', value)
+                }
+                placeholder="2026-04-10"
+              />
+              <KolamTextFieldRow
+                fieldWidth={settingsFieldWidth}
+                label="Keterangan libur"
+                description="Label libur yang ditampilkan ke pembeli."
+                value={draft.storeOperatingHoursSpecialClosureLabel}
+                onChangeText={value =>
+                  setDraftField('storeOperatingHoursSpecialClosureLabel', value)
+                }
+                placeholder="Libur Idul Fitri"
+              />
+              <KolamActionControlButton
+                label="Tambah"
+                disabled={
+                  disabled ||
+                  !draft.storeOperatingHoursSpecialClosureDate.trim()
+                }
+                onPress={addStoreSpecialClosure}
+              />
+            </View>
+            {storeSpecialClosureRows.length ? (
+              <View style={styles.storeHoursList}>
+                {storeSpecialClosureRows.map(row => (
+                  <View key={row.id} style={styles.storeClosureRow}>
+                    <KolamCopyStack
+                      containerStyle={styles.notificationSoundCopy}
+                      items={[
+                        {
+                          id: `${row.id}-date`,
+                          text: row.date,
+                          style: styles.notificationSoundLabel,
+                        },
+                        {
+                          id: `${row.id}-label`,
+                          text: row.label || '-',
+                          style: styles.notificationSoundPath,
+                        },
+                      ]}
+                    />
+                    <KolamActionControlButton
+                      label="Hapus"
+                      intent="danger"
+                      disabled={disabled}
+                      onPress={() => removeStoreSpecialClosure(row.index)}
                     />
                   </View>
-                </View>
-              );
-            })}
+                ))}
+              </View>
+            ) : (
+              <KolamCopyStack
+                items={[
+                  {
+                    id: 'no-special-closure',
+                    text: 'Belum ada libur khusus.',
+                    style: styles.marketplaceOverviewMeta,
+                  },
+                ]}
+              />
+            )}
+          </View>
+
+          <View style={styles.marketplaceControlSection}>
+            <KolamCopyStack
+              items={[
+                {
+                  id: 'store-messages-title',
+                  text: 'Pesan untuk pembeli / DARA',
+                  style: styles.marketplaceOverviewLabel,
+                },
+              ]}
+            />
+            {storeOperatingMessageRows.map(row => (
+              <KolamTextFieldRow
+                key={row.id}
+                fieldWidth={settingsFieldWidth}
+                label={row.label}
+                description="Pesan konteks untuk marketplace dan DARA."
+                multiline
+                numberOfLines={4}
+                value={String(draft[row.field] ?? '')}
+                onChangeText={value => setDraftField(row.field, value)}
+                placeholder="Tulis pesan..."
+              />
+            ))}
           </View>
         </>
       ) : null}
@@ -4509,6 +4725,17 @@ const styles = StyleSheet.create({
   },
   storeHoursList: {
     gap: 10,
+  },
+  storeClosureRow: {
+    alignItems: 'center',
+    borderColor: '#e5e7eb',
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    justifyContent: 'space-between',
+    padding: 12,
   },
   storeHoursRow: {
     borderColor: '#e5e7eb',
