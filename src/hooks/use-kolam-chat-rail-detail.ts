@@ -8,12 +8,20 @@ import {
   sendKolamChatTextMessage,
   sendKolamTeamChatMessage,
   sendKolamTeamChatTextMessage,
+  toggleKolamTeamChatReaction,
   type KolamChatMessage,
+  type KolamTeamChatReaction,
   type KolamTeamChatAttachment,
   type KolamTeamChatMessage,
   uploadKolamTeamChatMedia,
 } from '../services/kolam-api';
 import type {NativeImagePickerResult} from '../services/native-file-picker';
+
+export interface KolamChatRailDetailReactionGroup {
+  count: number;
+  emoji: string;
+  mine: boolean;
+}
 
 export interface KolamChatRailDetailMessage {
   attachments: KolamTeamChatAttachment[];
@@ -21,6 +29,7 @@ export interface KolamChatRailDetailMessage {
   author: string;
   body: string;
   mine: boolean;
+  reactions: KolamChatRailDetailReactionGroup[];
   sentAt?: string;
   status?: string;
 }
@@ -29,6 +38,7 @@ export interface KolamChatRailDetailState {
   errorMessage?: string;
   loading: boolean;
   messages: KolamChatRailDetailMessage[];
+  reactToMessage: (messageId: string, emoji: string) => Promise<void>;
   sendAttachment: (file: NativeImagePickerResult, text?: string) => Promise<void>;
   refresh: () => Promise<void>;
   sendMessage: (text: string) => Promise<void>;
@@ -36,9 +46,11 @@ export interface KolamChatRailDetailState {
 }
 
 export function useKolamChatRailDetail({
+  currentUserId,
   mode,
   selectedId,
 }: {
+  currentUserId?: string;
   mode: KolamGlobalChatRailMode;
   selectedId: string | null;
 }): KolamChatRailDetailState {
@@ -64,7 +76,9 @@ export function useKolamChatRailDetail({
           limit: 80,
         });
         await markKolamTeamChatRoomRead(selectedId).catch(() => undefined);
-        setMessages(nextMessages.map(mapTeamChatMessage));
+        setMessages(
+          nextMessages.map(message => mapTeamChatMessage(message, currentUserId)),
+        );
         return;
       }
 
@@ -79,7 +93,7 @@ export function useKolamChatRailDetail({
     } finally {
       setLoading(false);
     }
-  }, [mode, selectedId]);
+  }, [currentUserId, mode, selectedId]);
 
   useEffect(() => {
     refresh();
@@ -98,7 +112,10 @@ export function useKolamChatRailDetail({
       try {
         if (mode === 'team-chat') {
           const message = await sendKolamTeamChatTextMessage(selectedId, body);
-          setMessages(current => [...current, mapTeamChatMessage(message)]);
+          setMessages(current => [
+            ...current,
+            mapTeamChatMessage(message, currentUserId),
+          ]);
           return;
         }
 
@@ -112,7 +129,7 @@ export function useKolamChatRailDetail({
         setSending(false);
       }
     },
-    [mode, selectedId, sending],
+    [currentUserId, mode, selectedId, sending],
   );
 
   const sendAttachment = useCallback(
@@ -136,7 +153,10 @@ export function useKolamChatRailDetail({
           body: text.trim(),
           attachments: [attachment],
         });
-        setMessages(current => [...current, mapTeamChatMessage(message)]);
+        setMessages(current => [
+          ...current,
+          mapTeamChatMessage(message, currentUserId),
+        ]);
       } catch (error) {
         setErrorMessage(
           error instanceof Error ? error.message : 'Lampiran gagal dikirim.',
@@ -145,13 +165,47 @@ export function useKolamChatRailDetail({
         setSending(false);
       }
     },
-    [mode, selectedId, sending],
+    [currentUserId, mode, selectedId, sending],
+  );
+
+  const reactToMessage = useCallback(
+    async (messageId: string, emoji: string) => {
+      if (!selectedId || mode !== 'team-chat' || sending) {
+        return;
+      }
+
+      setSending(true);
+      setErrorMessage(undefined);
+
+      try {
+        const message = await toggleKolamTeamChatReaction(
+          selectedId,
+          messageId,
+          emoji,
+        );
+        setMessages(current =>
+          current.map(item =>
+            item.id === messageId
+              ? mapTeamChatMessage(message, currentUserId)
+              : item,
+          ),
+        );
+      } catch (error) {
+        setErrorMessage(
+          error instanceof Error ? error.message : 'Reaksi gagal dikirim.',
+        );
+      } finally {
+        setSending(false);
+      }
+    },
+    [currentUserId, mode, selectedId, sending],
   );
 
   return {
     errorMessage,
     loading,
     messages,
+    reactToMessage,
     refresh,
     sendAttachment,
     sendMessage,
@@ -166,6 +220,7 @@ function mapInboxMessage(message: KolamChatMessage): KolamChatRailDetailMessage 
     author: getInboxAuthor(message),
     body: getInboxMessageBody(message),
     mine: message.direction === 'out',
+    reactions: [],
     sentAt: message.sentAt ?? message.createdAt,
     status: message.deliveryStatus,
   };
@@ -173,6 +228,7 @@ function mapInboxMessage(message: KolamChatMessage): KolamChatRailDetailMessage 
 
 function mapTeamChatMessage(
   message: KolamTeamChatMessage,
+  currentUserId?: string,
 ): KolamChatRailDetailMessage {
   return {
     attachments: Array.isArray(message.attachments) ? message.attachments : [],
@@ -180,8 +236,34 @@ function mapTeamChatMessage(
     author: getTeamChatAuthor(message),
     body: message.body?.trim() || (message.attachments?.length ? '' : 'Pesan'),
     mine: message.senderType !== 'ai',
+    reactions: groupTeamChatReactions(message.reactions, currentUserId),
     sentAt: message.createdAt,
   };
+}
+
+function groupTeamChatReactions(
+  reactions: KolamTeamChatReaction[] | undefined,
+  currentUserId?: string,
+): KolamChatRailDetailReactionGroup[] {
+  const groups = new Map<string, KolamChatRailDetailReactionGroup>();
+
+  reactions?.forEach(reaction => {
+    const current = groups.get(reaction.emoji) ?? {
+      count: 0,
+      emoji: reaction.emoji,
+      mine: false,
+    };
+    const userId =
+      typeof reaction.user === 'string' ? reaction.user : reaction.user?._id;
+
+    groups.set(reaction.emoji, {
+      count: current.count + 1,
+      emoji: reaction.emoji,
+      mine: current.mine || Boolean(currentUserId && userId === currentUserId),
+    });
+  });
+
+  return Array.from(groups.values());
 }
 
 function getInboxAuthor(message: KolamChatMessage) {

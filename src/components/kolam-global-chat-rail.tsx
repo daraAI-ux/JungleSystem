@@ -30,6 +30,8 @@ import {KolamXIcon} from './kolam-x-icon';
 
 export type KolamGlobalChatRailMode = 'inbox' | 'team-chat';
 
+const TEAM_CHAT_REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
+
 export function KolamGlobalChatRail({
   mode,
   onClose,
@@ -48,7 +50,11 @@ export function KolamGlobalChatRail({
   const [pendingAttachment, setPendingAttachment] =
     React.useState<NativeImagePickerResult | null>(null);
   const selectedItem = items.find(item => item.id === selectedItemId) ?? null;
-  const detail = useKolamChatRailDetail({mode, selectedId: selectedItemId});
+  const detail = useKolamChatRailDetail({
+    currentUserId: authUser?.id,
+    mode,
+    selectedId: selectedItemId,
+  });
   const {syncFromLiveClassification} = useKolamChatRailLiveSync({
     refreshDetail: detail.refresh,
     refreshList: data.refresh,
@@ -345,6 +351,13 @@ function KolamChatRailDetailPanel({
                   {message.attachments.length > 0 ? (
                     <KolamChatAttachmentList attachments={message.attachments} />
                   ) : null}
+                  {mode === 'team-chat' ? (
+                    <KolamChatReactionControls
+                      disabled={detail.sending}
+                      message={message}
+                      onReact={emoji => detail.reactToMessage(message.id, emoji)}
+                    />
+                  ) : null}
                   <Text style={styles.messageMeta}>
                     {[formatRelativeTime(message.sentAt), message.status]
                       .filter(Boolean)
@@ -470,6 +483,61 @@ function KolamChatAttachmentPreview({
         <Text numberOfLines={1} style={styles.attachmentFileMeta}>
           {attachment.mimeType || sourceUri}
         </Text>
+      </View>
+    </View>
+  );
+}
+
+function KolamChatReactionControls({
+  disabled,
+  message,
+  onReact,
+}: {
+  disabled: boolean;
+  message: ReturnType<typeof useKolamChatRailDetail>['messages'][number];
+  onReact: (emoji: string) => void;
+}) {
+  return (
+    <View style={styles.reactionControls}>
+      {message.reactions.length > 0 ? (
+        <View style={styles.reactionPills}>
+          <KolamMappedList
+            items={message.reactions}
+            getKey={reaction => reaction.emoji}
+            renderItem={reaction => (
+              <KolamPressable
+                accessibilityLabel={`Toggle reaction ${reaction.emoji}`}
+                disabled={disabled}
+                onPress={() => onReact(reaction.emoji)}
+                style={[
+                  styles.reactionPill,
+                  reaction.mine && styles.reactionPillMine,
+                ]}>
+                <Text style={styles.reactionPillText}>
+                  {reaction.emoji} {reaction.count}
+                </Text>
+              </KolamPressable>
+            )}
+          />
+        </View>
+      ) : null}
+      <View style={styles.reactionPalette}>
+        <KolamMappedList
+          items={TEAM_CHAT_REACTIONS}
+          getKey={emoji => emoji}
+          renderItem={emoji => (
+            <KolamPressable
+              accessibilityLabel={`Reaksi ${emoji}`}
+              disabled={disabled}
+              onPress={() => onReact(emoji)}
+              style={[
+                styles.reactionButton,
+                disabled && styles.reactionButtonDisabled,
+              ]}>
+              <Text style={styles.reactionButtonText}>{emoji}</Text>
+            </KolamPressable>
+          )}
+        />
       </View>
     </View>
   );
@@ -915,6 +983,55 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 10,
     fontWeight: '700',
+  },
+  reactionControls: {
+    gap: 5,
+  },
+  reactionPills: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
+  },
+  reactionPill: {
+    minHeight: 24,
+    paddingHorizontal: 7,
+    borderRadius: 12,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    justifyContent: 'center',
+    backgroundColor: V.colors.bg,
+  },
+  reactionPillMine: {
+    borderColor: V.colors.primary,
+    backgroundColor: V.colors.primarySoft,
+  },
+  reactionPillText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  reactionPalette: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
+  },
+  reactionButton: {
+    width: 26,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: V.colors.secondary,
+  },
+  reactionButtonDisabled: {
+    opacity: 0.55,
+  },
+  reactionButtonText: {
+    color: V.colors.secondaryFg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '900',
   },
   messageMeta: {
     color: V.colors.mutedFg,

@@ -116,6 +116,7 @@ describe('KolamGlobalChatRail', () => {
     useDetailMock.mockReturnValue({
       loading: false,
       messages: [],
+      reactToMessage: jest.fn(),
       refresh: jest.fn(),
       sendAttachment: jest.fn(),
       sendMessage: jest.fn(),
@@ -294,9 +295,11 @@ describe('KolamGlobalChatRail', () => {
           author: 'Buyer',
           body: 'Apakah masih tersedia?',
           mine: false,
+          reactions: [],
           sentAt: '2026-07-28T08:00:00.000Z',
         },
       ],
+      reactToMessage: jest.fn(),
       refresh: jest.fn(),
       sendAttachment: jest.fn(),
       sendMessage,
@@ -344,6 +347,73 @@ describe('KolamGlobalChatRail', () => {
     expect(sendMessage).toHaveBeenCalledWith('Siap, masih tersedia.');
   });
 
+  it('renders and toggles team chat reactions from message bubbles', async () => {
+    const reactToMessage = jest.fn().mockResolvedValue(undefined);
+    useReadonlyDataMock.mockReturnValue({
+      conversations: [],
+      loading: false,
+      refresh: jest.fn(),
+      rooms: [
+        {
+          _id: 'room-1',
+          name: 'Operasional',
+          category: 'general',
+          lastMessagePreview: 'Barang siap dikirim',
+          unreadCount: 0,
+        },
+      ],
+      totalUnread: 0,
+    });
+    useDetailMock.mockReturnValue({
+      loading: false,
+      messages: [
+        {
+          attachments: [],
+          id: 'team-msg-1',
+          author: 'Staff',
+          body: 'Barang siap dikirim',
+          mine: true,
+          reactions: [{count: 2, emoji: '👍', mine: true}],
+          sentAt: '2026-07-28T08:00:00.000Z',
+        },
+      ],
+      reactToMessage,
+      refresh: jest.fn(),
+      sendAttachment: jest.fn(),
+      sendMessage: jest.fn(),
+      sending: false,
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamGlobalChatRail mode="team-chat" onClose={() => undefined} />,
+      );
+    });
+
+    const selectButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Pilih room Operasional');
+
+    await ReactTestRenderer.act(async () => {
+      selectButton!.props.onPress();
+    });
+
+    expect(renderText(renderer!)).toEqual(
+      expect.arrayContaining(['Staff', 'Barang siap dikirim', '👍', '2']),
+    );
+
+    const reactionButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Reaksi 🙏');
+
+    await ReactTestRenderer.act(async () => {
+      reactionButton!.props.onPress();
+    });
+
+    expect(reactToMessage).toHaveBeenCalledWith('team-msg-1', '🙏');
+  });
+
   it('picks and sends a team chat attachment from the composer', async () => {
     const sendAttachment = jest.fn().mockResolvedValue(undefined);
     pickNativeAssetFileMock.mockResolvedValue({
@@ -370,6 +440,7 @@ describe('KolamGlobalChatRail', () => {
     useDetailMock.mockReturnValue({
       loading: false,
       messages: [],
+      reactToMessage: jest.fn(),
       refresh: jest.fn(),
       sendAttachment,
       sendMessage: jest.fn(),
@@ -444,6 +515,7 @@ describe('KolamGlobalChatRail', () => {
     useDetailMock.mockReturnValue({
       loading: false,
       messages: [],
+      reactToMessage: jest.fn(),
       refresh: refreshDetail,
       sendAttachment: jest.fn(),
       sendMessage: jest.fn(),
