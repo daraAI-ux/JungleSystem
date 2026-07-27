@@ -25,10 +25,12 @@ import { KolamRemoteImage } from './kolam-remote-image';
 
 export function KolamTeranuraSurface({
   onRouteChange,
+  route = '/teranura',
 }: {
   onRouteChange?: (route: string) => void;
+  route?: string;
 }) {
-  const controller = useKolamTeranuraController();
+  const controller = useKolamTeranuraController(route);
   const columns = React.useMemo(() => getKolamTableColumns('teranura'), []);
   const categoryOptions = React.useMemo(
     () => [
@@ -62,6 +64,17 @@ export function KolamTeranuraSurface({
   const safePage = Math.min(Math.max(controller.pagination.page, 1), pageCount);
   const selectedCategory = controller.filters.categoryIds[0] ?? 'all';
   const selectedBrand = controller.filters.brandIds[0] ?? 'all';
+
+  if (controller.mode === 'detail') {
+    return (
+      <TeranuraDetailShell
+        item={controller.selectedItem}
+        loading={controller.loading}
+        onBack={() => onRouteChange?.('/teranura')}
+        onEdit={item => onRouteChange?.(`/teranura/${item.id}/edit`)}
+      />
+    );
+  }
 
   return (
     <View style={styles.surface}>
@@ -199,6 +212,59 @@ export function KolamTeranuraSurface({
   );
 }
 
+function TeranuraDetailShell({
+  item,
+  loading,
+  onBack,
+  onEdit,
+}: {
+  item: KolamTeranura | null;
+  loading: boolean;
+  onBack: () => void;
+  onEdit: (item: KolamTeranura) => void;
+}) {
+  if (!item) {
+    return (
+      <View style={styles.detailRoot}>
+        <View style={styles.detailHeaderRow}>
+          <View style={styles.headingCopy}>
+            <Text style={styles.eyebrow}>TERANURA</Text>
+            <Text style={styles.detailTitle}>Detail Teranura</Text>
+            <Text style={styles.description}>
+              {loading ? 'Memuat detail Teranura...' : 'Detail Teranura tidak ditemukan.'}
+            </Text>
+          </View>
+          <KolamButton label="Daftar" onPress={onBack} />
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.detailRoot}>
+      <View style={styles.detailHeaderRow}>
+        <View style={styles.headingCopy}>
+          <View style={styles.detailEyebrowRow}>
+            <Text style={styles.eyebrow}>TERANURA</Text>
+            {item.deviceLine === 'freyer' ? (
+              <KolamBadge intent="info" label="Freyer" />
+            ) : null}
+          </View>
+          <Text style={styles.detailTitle}>{item.name}</Text>
+          <Text style={styles.description}>
+            Dibuat {formatDateTime(item.createdAt)} | Diperbarui {formatDateTime(item.updatedAt)}
+          </Text>
+        </View>
+        <View style={styles.detailHeaderActions}>
+          <KolamButton label="Daftar" onPress={onBack} />
+          <KolamButton intent="primary" label="Rubah" onPress={() => onEdit(item)} />
+          <KolamButton disabled intent="danger" label="Hapus" onPress={() => undefined} />
+        </View>
+      </View>
+    </View>
+  );
+}
+
 function TeranuraRow({
   columns,
   item,
@@ -287,6 +353,22 @@ function getCellWidth(columns: KolamTableColumn[], id: KolamTableColumn['id']) {
 
 function formatNumber(value: number) {
   return new Intl.NumberFormat('id-ID', { maximumFractionDigits: 2 }).format(value);
+}
+
+function formatDateTime(value: string | null | undefined) {
+  if (!value) {
+    return '-';
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return '-';
+  }
+
+  return new Intl.DateTimeFormat('id-ID', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(date);
 }
 
 const styles = StyleSheet.create({
@@ -437,5 +519,55 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 12,
     fontWeight: '700',
+  },
+  detailRoot: {
+    width: '100%',
+    gap: 16,
+  },
+  detailHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 16,
+  },
+  headingCopy: {
+    flex: 1,
+    minWidth: 0,
+    gap: 6,
+  },
+  detailEyebrowRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  eyebrow: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 0,
+    lineHeight: 14,
+  },
+  detailTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 26,
+    fontWeight: '900',
+    letterSpacing: 0,
+    lineHeight: 32,
+  },
+  description: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 18,
+  },
+  detailHeaderActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-end',
+    gap: 8,
   },
 });

@@ -6,6 +6,7 @@ import {
 } from '../domain/kolam-navigation';
 import {isKolamSpeciesRoute} from '../domain/kolam-species';
 import {isKolamStockTransactionRoute} from '../domain/kolam-stock-transaction';
+import {isKolamTeranuraNativeRoute} from '../domain/kolam-teranura';
 import type {UnifiedDataset} from '../services/unified-data';
 import {KolamDescriptionList} from './kolam-description-list';
 import {KolamModulePanel} from './kolam-module-panel';
@@ -44,8 +45,13 @@ export function KolamNavigationRouteSurface({
     );
   }
 
-  if (routePath === '/teranura') {
-    return <KolamTeranuraSurface onRouteChange={onRouteChange} />;
+  if (isKolamTeranuraNativeRoute(routePath)) {
+    return (
+      <KolamTeranuraSurface
+        onRouteChange={onRouteChange}
+        route={contract.runtimeRoute}
+      />
+    );
   }
 
   return (

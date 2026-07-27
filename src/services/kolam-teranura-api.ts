@@ -1,6 +1,8 @@
 import { appConfig } from '../config/app';
 import {
+  normalizeKolamTeranuraDetail,
   normalizeKolamTeranuraList,
+  type KolamTeranura,
   type KolamTeranuraListResult,
   type KolamTeranuraSortBy,
   type KolamTeranuraSortOrder,
@@ -33,6 +35,16 @@ export async function getKolamTeranuras(
   });
 
   return normalizeKolamTeranuraList(response);
+}
+
+export async function getKolamTeranuraDetail(
+  teranuraId: string,
+): Promise<KolamTeranura> {
+  const response = await kolamRequest<unknown>(
+    `/teranura/${encodeURIComponent(teranuraId)}`,
+  );
+
+  return normalizeKolamTeranuraDetail(response);
 }
 
 function createTeranuraQuery(

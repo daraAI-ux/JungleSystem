@@ -42,6 +42,7 @@ export interface KolamTeranuraListResult {
   pagination: KolamTeranuraPagination;
 }
 
+export type KolamTeranuraSurfaceMode = 'list' | 'detail' | 'unsupported';
 export type KolamTeranuraSortBy = 'createdAt' | 'updatedAt' | 'name' | 'stock' | 'price';
 export type KolamTeranuraSortOrder = 'asc' | 'desc';
 
@@ -51,6 +52,37 @@ export function isKolamTeranuraRoute(route: string) {
     route === '/teranura/create' ||
     route.startsWith('/teranura/')
   );
+}
+
+export function isKolamTeranuraNativeRoute(route: string) {
+  return getKolamTeranuraSurfaceMode(route) !== 'unsupported';
+}
+
+export function getKolamTeranuraSurfaceMode(route: string): KolamTeranuraSurfaceMode {
+  const routePath = route.split('?')[0].replace(/\/+$/, '') || '/';
+
+  if (routePath === '/teranura') {
+    return 'list';
+  }
+
+  if (
+    routePath.startsWith('/teranura/') &&
+    !routePath.endsWith('/edit') &&
+    routePath !== '/teranura/create' &&
+    routePath !== '/teranura/freyr' &&
+    !routePath.startsWith('/teranura/freyr/') &&
+    !routePath.endsWith('/statistics')
+  ) {
+    return 'detail';
+  }
+
+  return 'unsupported';
+}
+
+export function getKolamTeranuraRouteId(route: string) {
+  const routePath = route.split('?')[0].replace(/\/+$/, '');
+  const [, , id] = routePath.split('/');
+  return id ? decodeURIComponent(id) : '';
 }
 
 export function normalizeKolamTeranuraList(payload: unknown): KolamTeranuraListResult {
@@ -101,7 +133,14 @@ export function normalizeKolamTeranuraList(payload: unknown): KolamTeranuraListR
   };
 }
 
-function normalizeKolamTeranura(value: unknown): KolamTeranura {
+export function normalizeKolamTeranuraDetail(payload: unknown): KolamTeranura {
+  const root = asRecord(payload);
+  const data = root.data !== undefined ? root.data : payload;
+
+  return normalizeKolamTeranura(data);
+}
+
+export function normalizeKolamTeranura(value: unknown): KolamTeranura {
   const record = asRecord(value);
   const variants = getArray(record, 'variants').map(normalizeKolamTeranuraVariant);
   const units = asRecord(record.units) || asRecord(record.unit);

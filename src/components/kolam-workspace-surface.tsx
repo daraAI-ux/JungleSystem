@@ -17,6 +17,7 @@ import { isKolamTagRoute } from '../domain/kolam-tag';
 import { isKolamSpeciesRoute } from '../domain/kolam-species';
 import { isKolamStockTransactionRoute } from '../domain/kolam-stock-transaction';
 import { isKolamTaxonomyRoute } from '../domain/kolam-taxonomy';
+import { isKolamTeranuraNativeRoute } from '../domain/kolam-teranura';
 import { isKolamUnitRoute } from '../domain/kolam-unit';
 import type { KolamNavigationItem } from '../domain/kolam-navigation';
 import {
@@ -149,8 +150,13 @@ export function KolamWorkspaceSurfaceComponent({
     );
   }
 
-  if (activeRoutePath === '/teranura') {
-    return <KolamTeranuraSurface onRouteChange={onDashboardRoute} />;
+  if (activeRoutePath && isKolamTeranuraNativeRoute(activeRoutePath)) {
+    return (
+      <KolamTeranuraSurface
+        onRouteChange={onDashboardRoute}
+        route={activeNavigationItem?.route ?? '/teranura'}
+      />
+    );
   }
 
   switch (activeModule) {
@@ -190,8 +196,13 @@ export function KolamWorkspaceSurfaceComponent({
             />
           );
         }
-        if (activeNavigationItem.route.split('?')[0] === '/teranura') {
-          return <KolamTeranuraSurface onRouteChange={onDashboardRoute} />;
+        if (isKolamTeranuraNativeRoute(activeNavigationItem.route.split('?')[0])) {
+          return (
+            <KolamTeranuraSurface
+              onRouteChange={onDashboardRoute}
+              route={activeNavigationItem.route}
+            />
+          );
         }
         if (isKolamTaxonomyRoute(activeNavigationItem.route.split('?')[0])) {
           return (
@@ -491,4 +502,3 @@ function getPosModuleLabel(moduleId: AppModule) {
 
 export const KolamWorkspaceSurface = React.memo(KolamWorkspaceSurfaceComponent);
 KolamWorkspaceSurface.displayName = 'KolamWorkspaceSurface';
-

@@ -2,14 +2,20 @@ import { useCallback, useEffect, useState } from 'react';
 import { flattenAllCategories, type KolamCategory } from '../domain/kolam-category';
 import type { KolamBrand } from '../domain/kolam-brand';
 import {
+  getKolamTeranuraRouteId,
+  getKolamTeranuraSurfaceMode,
   type KolamTeranura,
   type KolamTeranuraPagination,
+  type KolamTeranuraSurfaceMode,
   type KolamTeranuraSortBy,
   type KolamTeranuraSortOrder,
 } from '../domain/kolam-teranura';
 import { getKolamBrands } from '../services/kolam-brand-api';
 import { getKolamCategories } from '../services/kolam-category-api';
-import { getKolamTeranuras } from '../services/kolam-teranura-api';
+import {
+  getKolamTeranuraDetail,
+  getKolamTeranuras,
+} from '../services/kolam-teranura-api';
 
 export type KolamTeranuraDataSource = 'idle' | 'live' | 'error';
 export type KolamTeranuraSellableFilter = 'all' | 'true' | 'false';
@@ -33,7 +39,9 @@ export interface KolamTeranuraController {
   filters: KolamTeranuraListFilters;
   items: KolamTeranura[];
   loading: boolean;
+  mode: KolamTeranuraSurfaceMode;
   pagination: KolamTeranuraPagination;
+  selectedItem: KolamTeranura | null;
   onChangeFilters: (patch: Partial<KolamTeranuraListFilters>) => void;
   onLimitChange: (limit: number) => void;
   onPageChange: (page: number) => void;
@@ -59,8 +67,11 @@ const DEFAULT_FILTERS: KolamTeranuraListFilters = {
   limit: 10,
 };
 
-export function useKolamTeranuraController(): KolamTeranuraController {
+export function useKolamTeranuraController(route = '/teranura'): KolamTeranuraController {
+  const mode = getKolamTeranuraSurfaceMode(route);
+  const detailId = getKolamTeranuraRouteId(route);
   const [items, setItems] = useState<KolamTeranura[]>([]);
+  const [selectedItem, setSelectedItem] = useState<KolamTeranura | null>(null);
   const [categories, setCategories] = useState<KolamCategory[]>([]);
   const [brands, setBrands] = useState<KolamBrand[]>([]);
   const [filters, setFilters] =
@@ -86,6 +97,13 @@ export function useKolamTeranuraController(): KolamTeranuraController {
     setError(null);
 
     try {
+      if (mode === 'detail') {
+        const item = await getKolamTeranuraDetail(detailId);
+        setSelectedItem(item);
+        setDataSource('live');
+        return;
+      }
+
       const result = await getKolamTeranuras({
         page: filters.page,
         limit: filters.limit,
@@ -107,7 +125,7 @@ export function useKolamTeranuraController(): KolamTeranuraController {
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, [detailId, filters, mode]);
 
   useEffect(() => {
     void refreshOptions().catch(caught => {
@@ -148,7 +166,9 @@ export function useKolamTeranuraController(): KolamTeranuraController {
     filters,
     items,
     loading,
+    mode,
     pagination,
+    selectedItem,
     onChangeFilters,
     onLimitChange,
     onPageChange,
