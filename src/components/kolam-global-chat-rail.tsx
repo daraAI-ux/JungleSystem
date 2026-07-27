@@ -1,5 +1,6 @@
 import React from 'react';
 import {ScrollView, StyleSheet, Text, TextInput, View} from 'react-native';
+import {useKolamAuthContext} from '../context/kolam-app-contexts';
 import {classifyKolamChatLiveEvent} from '../domain/kolam-chat-live-classifier';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {
@@ -8,6 +9,9 @@ import {
 } from '../hooks/use-kolam-chat-live-stream';
 import {useKolamChatRailDetail} from '../hooks/use-kolam-chat-rail-detail';
 import {useKolamChatRailReadonlyData} from '../hooks/use-kolam-chat-rail-readonly-data';
+import {useKolamNotificationSoundSettings} from '../hooks/use-kolam-notification-sound-settings';
+import {createKolamNotificationSoundService} from '../services/kolam-notification-sound-service';
+import {createKolamRuntimeNotificationSoundAdapter} from '../services/kolam-notification-sound-runtime';
 import {KolamBadge} from './kolam-badge';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamIconButton} from './kolam-icon-button';
@@ -25,6 +29,7 @@ export function KolamGlobalChatRail({
   mode: KolamGlobalChatRailMode;
   onClose: () => void;
 }) {
+  const {authUser} = useKolamAuthContext();
   const content = getChatRailContent(mode);
   const data = useKolamChatRailReadonlyData({mode});
   const items = getChatRailItems(mode, data);
@@ -36,21 +41,44 @@ export function KolamGlobalChatRail({
   const detail = useKolamChatRailDetail({mode, selectedId: selectedItemId});
   const refreshData = data.refresh;
   const refreshDetail = detail.refresh;
+  const soundSettings = useKolamNotificationSoundSettings();
+  const notificationSoundService = React.useMemo(
+    () =>
+      createKolamNotificationSoundService({
+        adapter: createKolamRuntimeNotificationSoundAdapter(),
+      }),
+    [],
+  );
   const handleLiveEvent = React.useCallback(
     (event: KolamChatLiveEvent) => {
       const classification = classifyKolamChatLiveEvent(event, {
+        currentUserId: authUser?.id,
         selectedItemId,
       });
 
       if (classification.refreshList) {
-        refreshData().catch(() => undefined);
+        Promise.resolve(refreshData()).catch(() => undefined);
       }
 
       if (classification.refreshDetail) {
-        refreshDetail().catch(() => undefined);
+        Promise.resolve(refreshDetail()).catch(() => undefined);
       }
+
+      Promise.resolve(
+        notificationSoundService.play({
+          intent: classification.soundIntent,
+          webSetting: soundSettings.webSetting,
+        }),
+      ).catch(() => undefined);
     },
-    [refreshData, refreshDetail, selectedItemId],
+    [
+      authUser?.id,
+      notificationSoundService,
+      refreshData,
+      refreshDetail,
+      selectedItemId,
+      soundSettings.webSetting,
+    ],
   );
 
   React.useEffect(() => {

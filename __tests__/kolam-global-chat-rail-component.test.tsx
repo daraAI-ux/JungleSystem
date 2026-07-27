@@ -3,9 +3,18 @@ import {Text, TextInput} from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 import {KolamGlobalChatRail} from '../src/components/kolam-global-chat-rail';
 import {KolamPressable} from '../src/components/kolam-pressable';
+import {useKolamAuthContext} from '../src/context/kolam-app-contexts';
 import {useKolamChatLiveStream} from '../src/hooks/use-kolam-chat-live-stream';
 import {useKolamChatRailDetail} from '../src/hooks/use-kolam-chat-rail-detail';
 import {useKolamChatRailReadonlyData} from '../src/hooks/use-kolam-chat-rail-readonly-data';
+import {useKolamNotificationSoundSettings} from '../src/hooks/use-kolam-notification-sound-settings';
+import {createKolamNotificationSoundService} from '../src/services/kolam-notification-sound-service';
+
+const mockSoundPlay = jest.fn();
+
+jest.mock('../src/context/kolam-app-contexts', () => ({
+  useKolamAuthContext: jest.fn(),
+}));
 
 jest.mock('../src/hooks/use-kolam-chat-rail-detail', () => ({
   useKolamChatRailDetail: jest.fn(),
@@ -19,6 +28,25 @@ jest.mock('../src/hooks/use-kolam-chat-live-stream', () => ({
   useKolamChatLiveStream: jest.fn(),
 }));
 
+jest.mock('../src/hooks/use-kolam-notification-sound-settings', () => ({
+  useKolamNotificationSoundSettings: jest.fn(),
+}));
+
+jest.mock('../src/services/kolam-notification-sound-service', () => ({
+  createKolamNotificationSoundService: jest.fn(() => ({
+    play: mockSoundPlay,
+  })),
+}));
+
+jest.mock('../src/services/kolam-notification-sound-runtime', () => ({
+  createKolamRuntimeNotificationSoundAdapter: jest.fn(() => ({
+    play: jest.fn(),
+  })),
+}));
+
+const useAuthContextMock = useKolamAuthContext as jest.MockedFunction<
+  typeof useKolamAuthContext
+>;
 const useDetailMock = useKolamChatRailDetail as jest.MockedFunction<
   typeof useKolamChatRailDetail
 >;
@@ -28,6 +56,14 @@ const useReadonlyDataMock = useKolamChatRailReadonlyData as jest.MockedFunction<
 const useLiveStreamMock = useKolamChatLiveStream as jest.MockedFunction<
   typeof useKolamChatLiveStream
 >;
+const useSoundSettingsMock =
+  useKolamNotificationSoundSettings as jest.MockedFunction<
+    typeof useKolamNotificationSoundSettings
+  >;
+const createSoundServiceMock =
+  createKolamNotificationSoundService as jest.MockedFunction<
+    typeof createKolamNotificationSoundService
+  >;
 
 function renderText(renderer: ReactTestRenderer.ReactTestRenderer) {
   return renderer.root
@@ -49,6 +85,26 @@ function flattenText(value: React.ReactNode): string[] {
 
 describe('KolamGlobalChatRail', () => {
   beforeEach(() => {
+    mockSoundPlay.mockClear();
+    createSoundServiceMock.mockClear();
+    useAuthContextMock.mockReturnValue({
+      accessScope: {am: false, kolam: true, pos: false},
+      authEmail: '',
+      authMessage: '',
+      authPassword: '',
+      authSource: 'kolam',
+      authSourceHint: '',
+      authUser: {id: 'staff-1'},
+      deviceIdentityStatus: 'missing',
+      displayName: 'Staff',
+      handleSignIn: jest.fn(),
+      handleSignOut: jest.fn(),
+      isSigningIn: false,
+      setAuthEmail: jest.fn(),
+      setAuthMessage: jest.fn(),
+      setAuthPassword: jest.fn(),
+      setAuthSource: jest.fn(),
+    });
     useDetailMock.mockReturnValue({
       loading: false,
       messages: [],
@@ -64,6 +120,13 @@ describe('KolamGlobalChatRail', () => {
       totalUnread: 0,
     });
     useLiveStreamMock.mockImplementation(() => undefined);
+    useSoundSettingsMock.mockReturnValue({
+      loading: false,
+      webSetting: {
+        notificationSound: 'media/audios/assigned.wav',
+        unassignedNotificationSound: 'media/audios/unassigned.wav',
+      },
+    });
   });
 
   it('renders the inbox skeleton without loading chat data', async () => {
@@ -317,5 +380,55 @@ describe('KolamGlobalChatRail', () => {
 
     expect(refreshList).toHaveBeenCalledTimes(1);
     expect(refreshDetail).toHaveBeenCalledTimes(1);
+    expect(mockSoundPlay).toHaveBeenCalledWith({
+      intent: 'none',
+      webSetting: {
+        notificationSound: 'media/audios/assigned.wav',
+        unassignedNotificationSound: 'media/audios/unassigned.wav',
+      },
+    });
+  });
+
+  it('plays configured headless sound for assigned inbound live messages', async () => {
+    let liveOptions:
+      | Parameters<typeof useKolamChatLiveStream>[0]
+      | undefined;
+
+    useLiveStreamMock.mockImplementation(options => {
+      liveOptions = options;
+    });
+
+    await ReactTestRenderer.act(async () => {
+      ReactTestRenderer.create(
+        <KolamGlobalChatRail mode="inbox" onClose={() => undefined} />,
+      );
+    });
+
+    await ReactTestRenderer.act(async () => {
+      liveOptions!.onEvent({
+        contract: {
+          eventName: 'message.created',
+          legacySources: [],
+          note: '',
+          refreshTargets: ['inbox-list', 'inbox-detail', 'unread-badge'],
+          route: '/chat/stream',
+          soundIntent: 'incoming-assigned-or-unassigned',
+          stream: 'inbox',
+        },
+        payload: {
+          assignedStaffId: 'staff-1',
+          conversationId: 'conv-2',
+          message: {direction: 'in'},
+        },
+      });
+    });
+
+    expect(mockSoundPlay).toHaveBeenCalledWith({
+      intent: 'assigned',
+      webSetting: {
+        notificationSound: 'media/audios/assigned.wav',
+        unassignedNotificationSound: 'media/audios/unassigned.wav',
+      },
+    });
   });
 });
