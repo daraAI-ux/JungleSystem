@@ -664,15 +664,6 @@ function arrayBufferToBase64(buffer: ArrayBuffer) {
   for (let i = 0; i < bytes.length; i += chunk) {
     binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
   }
-  const encode =
-    typeof globalThis !== 'undefined' &&
-    typeof (globalThis as { btoa?: (value: string) => string }).btoa ===
-      'function'
-      ? (globalThis as { btoa: (value: string) => string }).btoa
-      : null;
-  if (encode) {
-    return encode(binary);
-  }
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const { Buffer } = require('buffer') as typeof import('buffer');
   return Buffer.from(bytes).toString('base64');
