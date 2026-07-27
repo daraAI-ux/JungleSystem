@@ -1,5 +1,5 @@
 import React from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { KolamStockTransaction } from '../domain/kolam-stock-transaction';
 import {
   KOLAM_STOCK_TRANSACTION_ROOT,
@@ -21,6 +21,7 @@ import {
   type KolamStockTransactionController,
 } from '../hooks/use-kolam-stock-transaction-controller';
 import { KolamButton } from './kolam-button';
+import { KolamChevronIcon } from './kolam-chevron-icon';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
@@ -36,6 +37,8 @@ import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamStockCrossSyncObservabilityHost } from './kolam-stock-cross-sync-observability-host';
 import { KolamStockTransactionSourceIcon } from './kolam-stock-transaction-source-icon';
+
+type StockTxFilterPanel = 'target' | 'status';
 
 const LIST_COLUMNS = [
   { id: 'target', label: 'Target', flex: 1.4 },
@@ -822,6 +825,9 @@ function KolamStockTransactionList({
   onRouteChange?: (route: string) => void;
 }) {
   const [searchInput, setSearchInput] = React.useState(controller.filters.search);
+  const [activeFilterPanel, setActiveFilterPanel] =
+    React.useState<StockTxFilterPanel | null>(null);
+  const [filterQuery, setFilterQuery] = React.useState('');
   const pageCount = Math.max(1, controller.pagination.totalPages);
   const safePage = Math.min(Math.max(controller.pagination.page, 1), pageCount);
   const filtersAppliedCount = [
@@ -869,11 +875,37 @@ function KolamStockTransactionList({
       value: `species:${item.id}` as const,
     }));
     return [
-      { label: 'Target', value: 'all' as const },
+      { label: 'Semua', value: 'all' as const },
       ...productOpts,
       ...speciesOpts,
     ];
   }, [controller.productOptions, controller.speciesOptions]);
+
+  const statusOptions = React.useMemo(
+    () => [
+      { label: 'Semua', value: 'all' },
+      { label: 'Terverifikasi', value: 'verified' },
+      { label: 'Belum verifikasi', value: 'unverified' },
+    ],
+    [],
+  );
+
+  const targetFilterLabel =
+    targetFilterValue === 'all'
+      ? 'Target'
+      : truncateFilterLabel(
+          targetOptions.find(option => option.value === targetFilterValue)
+            ?.label ?? 'Target',
+        );
+  const statusFilterLabel = !controller.filters.status
+    ? 'Status'
+    : statusOptions.find(option => option.value === controller.filters.status)
+        ?.label ?? 'Status';
+
+  const openFilterPanel = (panel: StockTxFilterPanel) => {
+    setFilterQuery('');
+    setActiveFilterPanel(current => (current === panel ? null : panel));
+  };
 
   const renderRow = React.useCallback(
     ({ item }: { item: KolamStockTransaction }) => (
@@ -971,87 +1003,45 @@ function KolamStockTransactionList({
               style={styles.searchInput}
               value={searchInput}
             />
-            <View style={styles.filterControl}>
-              <KolamDropdownSelect
-                accessibilityLabel="Filter target"
-                label="Target"
-                onChange={value => {
-                  if (value === 'all') {
-                    controller.onChangeFilters({ productId: '', speciesId: '' });
-                    return;
-                  }
-                  if (value.startsWith('product:')) {
-                    controller.onChangeFilters({
-                      productId: value.slice('product:'.length),
-                      speciesId: '',
-                    });
-                    return;
-                  }
-                  if (value.startsWith('species:')) {
-                    controller.onChangeFilters({
-                      productId: '',
-                      speciesId: value.slice('species:'.length),
-                    });
-                  }
-                }}
-                options={targetOptions}
-                searchable
-                searchPlaceholder="Cari…"
-                showLabelInTrigger={false}
-                style={styles.filterControlFill}
-                triggerStyle={styles.filterTrigger}
-                value={targetFilterValue}
-              />
-            </View>
-            <View style={styles.filterControl}>
-              <KolamDropdownSelect
-                accessibilityLabel="Filter status"
-                label="Status"
-                onChange={value => {
-                  controller.onChangeFilters({
-                    status:
-                      value === 'verified' || value === 'unverified'
-                        ? value
-                        : '',
-                  });
-                }}
-                options={[
-                  { label: 'Status', value: 'all' },
-                  { label: 'Terverifikasi', value: 'verified' },
-                  { label: 'Belum verifikasi', value: 'unverified' },
-                ]}
-                showLabelInTrigger={false}
-                style={styles.filterControlFill}
-                triggerStyle={styles.filterTrigger}
-                value={controller.filters.status || 'all'}
-              />
-            </View>
-            <View style={styles.filterControl}>
-              <KolamDateField
-                accessibilityLabel="Tanggal mulai"
-                label="Dari"
-                onChange={value =>
-                  controller.onChangeFilters({ startDate: value })
-                }
-                placeholder="Dari"
-                showLabelInTrigger={false}
-                style={styles.dateField}
-                value={controller.filters.startDate}
-              />
-            </View>
-            <View style={styles.filterControl}>
-              <KolamDateField
-                accessibilityLabel="Tanggal sampai"
-                label="Sampai"
-                onChange={value =>
-                  controller.onChangeFilters({ endDate: value })
-                }
-                placeholder="Sampai"
-                showLabelInTrigger={false}
-                style={styles.dateField}
-                value={controller.filters.endDate}
-              />
-            </View>
+            <StockTxFilterTrigger
+              active={
+                activeFilterPanel === 'target' || targetFilterValue !== 'all'
+              }
+              label={targetFilterLabel}
+              onPress={() => openFilterPanel('target')}
+            />
+            <StockTxFilterTrigger
+              active={
+                activeFilterPanel === 'status' ||
+                Boolean(controller.filters.status)
+              }
+              label={statusFilterLabel}
+              onPress={() => openFilterPanel('status')}
+            />
+            <KolamDateField
+              accessibilityLabel="Tanggal mulai"
+              label="Dari"
+              onChange={value => {
+                setActiveFilterPanel(null);
+                controller.onChangeFilters({ startDate: value });
+              }}
+              placeholder="Dari"
+              showLabelInTrigger={false}
+              style={styles.dateField}
+              value={controller.filters.startDate}
+            />
+            <KolamDateField
+              accessibilityLabel="Tanggal sampai"
+              label="Sampai"
+              onChange={value => {
+                setActiveFilterPanel(null);
+                controller.onChangeFilters({ endDate: value });
+              }}
+              placeholder="Sampai"
+              showLabelInTrigger={false}
+              style={styles.dateField}
+              value={controller.filters.endDate}
+            />
           </View>
           <View style={styles.actionRow}>
             {filtersAppliedCount > 0 ? (
@@ -1060,6 +1050,7 @@ function KolamStockTransactionList({
                 muted
                 onPress={() => {
                   setSearchInput('');
+                  setActiveFilterPanel(null);
                   controller.onClearFilters();
                 }}
                 style={styles.toolbarButton}
@@ -1091,6 +1082,47 @@ function KolamStockTransactionList({
             />
           </View>
         </View>
+
+        {activeFilterPanel ? (
+          <StockTxFilterOverlayPanel
+            onClose={() => setActiveFilterPanel(null)}
+            onQueryChange={setFilterQuery}
+            onSelect={value => {
+              if (activeFilterPanel === 'target') {
+                if (value === 'all') {
+                  controller.onChangeFilters({ productId: '', speciesId: '' });
+                } else if (value.startsWith('product:')) {
+                  controller.onChangeFilters({
+                    productId: value.slice('product:'.length),
+                    speciesId: '',
+                  });
+                } else if (value.startsWith('species:')) {
+                  controller.onChangeFilters({
+                    productId: '',
+                    speciesId: value.slice('species:'.length),
+                  });
+                }
+              } else {
+                controller.onChangeFilters({
+                  status:
+                    value === 'verified' || value === 'unverified' ? value : '',
+                });
+              }
+              setActiveFilterPanel(null);
+              setFilterQuery('');
+            }}
+            options={
+              activeFilterPanel === 'target' ? targetOptions : statusOptions
+            }
+            panel={activeFilterPanel}
+            query={filterQuery}
+            selectedValue={
+              activeFilterPanel === 'target'
+                ? targetFilterValue
+                : controller.filters.status || 'all'
+            }
+          />
+        ) : null}
       </View>
 
       <View style={styles.listBody} pointerEvents="box-none">
@@ -1182,6 +1214,120 @@ function KolamStockTransactionList({
       </KolamTableFooterControls>
     </View>
   );
+}
+
+function StockTxFilterTrigger({
+  active,
+  label,
+  onPress,
+}: {
+  active: boolean;
+  label: string;
+  onPress: () => void;
+}) {
+  return (
+    <KolamButton
+      icon={
+        <KolamChevronIcon
+          color={active ? V.colors.primaryFg : V.colors.success}
+          direction="down"
+          size="menu-sm"
+        />
+      }
+      intent={active ? 'primary' : 'secondary'}
+      label={label}
+      onPress={onPress}
+      style={[styles.filterTrigger, active && styles.filterTriggerActive]}
+      textStyle={[
+        styles.filterTriggerText,
+        active && styles.filterTriggerTextActive,
+      ]}
+    />
+  );
+}
+
+function StockTxFilterOverlayPanel({
+  onClose,
+  onQueryChange,
+  onSelect,
+  options,
+  panel,
+  query,
+  selectedValue,
+}: {
+  onClose: () => void;
+  onQueryChange: (value: string) => void;
+  onSelect: (value: string) => void;
+  options: Array<{ label: string; value: string }>;
+  panel: StockTxFilterPanel;
+  query: string;
+  selectedValue: string;
+}) {
+  const normalizedQuery = normalizeStockTxFilterQuery(query);
+  const filteredOptions = normalizedQuery
+    ? options.filter(option =>
+        normalizeStockTxFilterQuery(option.label).includes(normalizedQuery),
+      )
+    : options;
+
+  return (
+    <View
+      style={[
+        styles.filterOverlayPanel,
+        panel === 'target' ? styles.filterPanelTarget : styles.filterPanelStatus,
+      ]}
+    >
+      {panel === 'target' ? (
+        <KolamFormTextField
+          onChangeText={onQueryChange}
+          placeholder="Cari target…"
+          style={styles.filterPanelSearch}
+          value={query}
+        />
+      ) : null}
+      <ScrollView
+        contentContainerStyle={styles.filterPanelContent}
+        keyboardShouldPersistTaps="handled"
+        style={styles.filterPanelScroll}
+      >
+        {filteredOptions.length ? (
+          filteredOptions.map(option => {
+            const selected = option.value === selectedValue;
+            return (
+              <KolamButton
+                intent={selected ? 'primary' : 'plain'}
+                key={option.value}
+                label={option.label}
+                onPress={() => onSelect(option.value)}
+                style={styles.filterPanelOption}
+              />
+            );
+          })
+        ) : (
+          <Text style={styles.filterPanelEmpty}>Tidak ada hasil</Text>
+        )}
+      </ScrollView>
+      <View style={styles.filterPanelFooter}>
+        <KolamButton label="Tutup" onPress={onClose} />
+      </View>
+    </View>
+  );
+}
+
+function normalizeStockTxFilterQuery(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+function truncateFilterLabel(label: string, max = 22) {
+  const trimmed = label.trim();
+  if (trimmed.length <= max) {
+    return trimmed;
+  }
+  return `${trimmed.slice(0, max - 1)}…`;
 }
 
 function formatType(type: string) {
@@ -1314,9 +1460,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     overflow: 'visible',
     padding: 4,
-    position: 'relative',
-    zIndex: 100001,
-    elevation: 1001,
   },
   filterRow: {
     alignItems: 'center',
@@ -1326,9 +1469,6 @@ const styles = StyleSheet.create({
     gap: 4,
     minWidth: 280,
     overflow: 'visible',
-    position: 'relative',
-    zIndex: 100002,
-    elevation: 1002,
   },
   actionRow: {
     alignItems: 'center',
@@ -1340,7 +1480,6 @@ const styles = StyleSheet.create({
     gap: 6,
     justifyContent: 'flex-end',
     paddingLeft: 8,
-    zIndex: 1,
   },
   searchInput: {
     flexBasis: 140,
@@ -1348,30 +1487,87 @@ const styles = StyleSheet.create({
     maxWidth: 200,
     minWidth: 120,
   },
-  filterControl: {
-    flexBasis: 128,
-    flexGrow: 1,
-    minWidth: 128,
-    maxWidth: 220,
-    overflow: 'visible',
-    position: 'relative',
-    zIndex: 100003,
-    elevation: 1003,
-  },
-  filterControlFill: {
-    width: '100%',
-  },
   filterTrigger: {
+    backgroundColor: V.colors.successSoft,
+    borderColor: V.colors.success,
+    flexBasis: 0,
+    flexGrow: 1,
     minHeight: 34,
-    minWidth: 0,
-    width: '100%',
+    minWidth: 120,
     paddingHorizontal: 8,
   },
+  filterTriggerActive: {
+    backgroundColor: V.colors.success,
+    borderColor: V.colors.success,
+  },
+  filterTriggerText: {
+    color: V.colors.success,
+    fontWeight: '800',
+  },
+  filterTriggerTextActive: {
+    color: V.colors.primaryFg,
+  },
   dateField: {
-    width: '100%',
+    flexBasis: 0,
+    flexGrow: 1,
+    minWidth: 110,
+    maxWidth: 160,
+  },
+  filterOverlayPanel: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    elevation: 1200,
+    padding: 6,
+    position: 'absolute',
+    shadowColor: V.colors.fg,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    top: 48,
+    width: 280,
+    zIndex: 120000,
+  },
+  filterPanelTarget: {
+    left: 148,
+    width: 320,
+  },
+  filterPanelStatus: {
+    left: 300,
+    width: 220,
+  },
+  filterPanelSearch: {
+    marginBottom: 6,
+  },
+  filterPanelScroll: {
+    maxHeight: 260,
+  },
+  filterPanelContent: {
+    gap: 4,
+  },
+  filterPanelOption: {
+    justifyContent: 'flex-start',
+  },
+  filterPanelEmpty: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 18,
+    paddingHorizontal: 8,
+    paddingVertical: 10,
+  },
+  filterPanelFooter: {
+    alignItems: 'flex-end',
+    borderTopColor: V.colors.border,
+    borderTopWidth: 1,
+    marginTop: 6,
+    paddingTop: 6,
   },
   toolbarButton: {
     flexShrink: 0,
+    minHeight: 34,
+    paddingHorizontal: 10,
   },
   filterGrid: {
     flexDirection: 'row',
