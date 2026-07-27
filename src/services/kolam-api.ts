@@ -320,6 +320,43 @@ export interface KolamTeamChatRoom {
   category?: string;
   isGeneral?: boolean;
   isAiRoom?: boolean;
+  lastMessageAt?: string | null;
+  lastMessagePreview?: string;
+  unreadCount?: number;
+}
+
+export type KolamChatPlatform =
+  | 'tokopedia'
+  | 'shopee'
+  | 'store'
+  | 'tiktok'
+  | 'whatsapp'
+  | 'instagram';
+
+export type KolamChatConversationStatus = 'open' | 'closed';
+
+export interface KolamChatConversation {
+  _id: string;
+  platform?: KolamChatPlatform;
+  lastMessageAt?: string | null;
+  lastMessagePreview?: string;
+  unreadCount?: number;
+  status?: KolamChatConversationStatus;
+  contactId?:
+    | string
+    | {
+        _id?: string;
+        displayName?: string;
+        platform?: KolamChatPlatform;
+      };
+}
+
+export interface KolamChatConversationListParams
+  extends Record<string, string | number | boolean | undefined | null> {
+  status?: KolamChatConversationStatus | 'all';
+  unreadOnly?: boolean;
+  limit?: number;
+  page?: number;
 }
 
 export interface KolamUserPickerRow {
@@ -1535,6 +1572,42 @@ export async function getKolamTeamChatRooms(): Promise<KolamTeamChatRoom[]> {
     DataResponse<KolamTeamChatRoom[]> | { success?: boolean; data?: KolamTeamChatRoom[] }
   >('/team-chat/rooms');
   return response.data ?? [];
+}
+
+export async function getKolamChatConversations(
+  params: KolamChatConversationListParams = {},
+): Promise<KolamChatConversation[]> {
+  const response = await kolamGet<
+    | DataResponse<KolamChatConversation[]>
+    | {
+        success?: boolean;
+        data?: KolamChatConversation[];
+      }
+  >('/chat/conversations', cleanKolamListParams(params));
+
+  return response.data ?? [];
+}
+
+export async function getKolamChatUnreadTotal(): Promise<number> {
+  const conversations = await getKolamChatConversations({
+    status: 'open',
+    unreadOnly: true,
+    limit: 100,
+  });
+
+  return conversations.reduce(
+    (total, conversation) => total + Math.max(0, conversation.unreadCount ?? 0),
+    0,
+  );
+}
+
+export async function getKolamTeamChatUnreadTotal(): Promise<number> {
+  const rooms = await getKolamTeamChatRooms();
+
+  return rooms.reduce(
+    (total, room) => total + Math.max(0, room.unreadCount ?? 0),
+    0,
+  );
 }
 
 export function getKolamUserPickerRows(

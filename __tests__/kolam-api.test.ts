@@ -25,6 +25,8 @@ import {
   getKolamWebSettingVersion,
   getKolamWebSettingVersions,
   deleteKolamNotificationSound,
+  getKolamChatConversations,
+  getKolamChatUnreadTotal,
   reorderKolamHeroSlides,
   updateKolamBioactiveEcosystem,
   updateKolamCtaSection,
@@ -1115,6 +1117,51 @@ describe('Kolam Settings API contracts', () => {
       expect.objectContaining({
         method: 'GET',
       }),
+    );
+  });
+
+  it('requests chat unread conversations through the plugin backend contract', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        success: true,
+        data: [
+          {
+            _id: 'conv-1',
+            platform: 'tokopedia',
+            lastMessagePreview: 'Masih tersedia?',
+            unreadCount: 3,
+          },
+        ],
+      }),
+    );
+
+    await expect(getKolamChatUnreadTotal()).resolves.toBe(3);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${appConfig.kolamApiBaseUrl}/chat/conversations?status=open&unreadOnly=true&limit=100`,
+      expect.objectContaining({
+        method: 'GET',
+        headers: expect.objectContaining({
+          'x-source': appConfig.kolamSourceHeader,
+        }),
+      }),
+    );
+  });
+
+  it('omits empty chat conversation filters before hitting the backend', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({success: true, data: []}));
+
+    await expect(
+      getKolamChatConversations({
+        status: 'open',
+        page: 1,
+        limit: 50,
+      }),
+    ).resolves.toEqual([]);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${appConfig.kolamApiBaseUrl}/chat/conversations?status=open&page=1&limit=50`,
+      expect.objectContaining({method: 'GET'}),
     );
   });
 });
