@@ -27,6 +27,7 @@ import type {
   KolamSitemapChangeFrequency,
   KolamSitemapConfig,
   KolamSitemapSectionKey,
+  KolamStaffAttendanceWorkSite,
   KolamTeamChatRoom,
   KolamUserPickerRow,
 } from '../services/kolam-api';
@@ -97,7 +98,7 @@ type WebSettingDraft = {
   staffAttendanceRequireGps: boolean;
   staffAttendanceRequireFace: boolean;
   staffAttendanceFaceMatchThreshold: string;
-  staffAttendanceWorkSitesText: string;
+  staffAttendanceWorkSites: KolamStaffAttendanceWorkSite[];
   biteshipApiKey: string;
   googleMapsBrowserApiKey: string;
   originAddressLine1: string;
@@ -532,7 +533,10 @@ export function KolamSettingsWebConfigSurface({
     key: 'enabled' | 'priority' | 'changeFrequency',
     value: string | boolean,
   ) => void;
-  setDraftField: (key: keyof WebSettingDraft, value: string | boolean) => void;
+  setDraftField: (
+    key: keyof WebSettingDraft,
+    value: WebSettingDraft[keyof WebSettingDraft],
+  ) => void;
   sitemapChangeFrequencies: KolamSitemapChangeFrequency[];
   sitemapCustomUrlsText: string;
   sitemapDraft: KolamSitemapConfig;
@@ -666,6 +670,49 @@ export function KolamSettingsWebConfigSurface({
         .split(/\r?\n/)
         .filter((line, lineIndex) => line.trim() && lineIndex !== index)
         .join('\n'),
+    );
+  };
+  const updateStaffAttendanceWorkSite = (
+    index: number,
+    patch: Partial<KolamStaffAttendanceWorkSite>,
+  ) => {
+    if (disabled) {
+      return;
+    }
+
+    setDraftField(
+      'staffAttendanceWorkSites',
+      draft.staffAttendanceWorkSites.map((site, siteIndex) =>
+        siteIndex === index ? { ...site, ...patch } : site,
+      ),
+    );
+  };
+  const addStaffAttendanceWorkSite = () => {
+    if (disabled) {
+      return;
+    }
+
+    setDraftField('staffAttendanceWorkSites', [
+      ...draft.staffAttendanceWorkSites,
+      {
+        name: 'Kantor',
+        latitude: -6.2088,
+        longitude: 106.8456,
+        radiusMeters: 150,
+        active: true,
+      },
+    ]);
+  };
+  const removeStaffAttendanceWorkSite = (index: number) => {
+    if (disabled) {
+      return;
+    }
+
+    setDraftField(
+      'staffAttendanceWorkSites',
+      draft.staffAttendanceWorkSites.filter(
+        (_, siteIndex) => siteIndex !== index,
+      ),
     );
   };
   const roomSummary = operationalRooms.length
@@ -1856,18 +1903,150 @@ export function KolamSettingsWebConfigSurface({
             }
             placeholder="0.72"
           />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            label="Lokasi kerja (GPS + radius)"
-            description="Satu baris per lokasi: Nama|latitude|longitude|radiusMeter|aktif."
-            multiline
-            numberOfLines={5}
-            value={draft.staffAttendanceWorkSitesText}
-            onChangeText={value =>
-              setDraftField('staffAttendanceWorkSitesText', value)
-            }
-            placeholder="Kantor|-6.2088|106.8456|150|true"
-          />
+          <View style={styles.workSiteSection}>
+            <View style={styles.workSiteHeaderRow}>
+              <KolamCopyStack
+                containerStyle={styles.workSiteHeaderCopy}
+                items={[
+                  {
+                    id: 'work-site-title',
+                    text: 'Lokasi kerja (GPS + radius)',
+                    style: styles.marketplaceOverviewLabel,
+                  },
+                  {
+                    id: 'work-site-meta',
+                    text: 'Editor list native sederhana. Map belum dipasang; isi koordinat dan radius validasi check-in.',
+                    style: styles.marketplaceOverviewMeta,
+                  },
+                ]}
+              />
+              <KolamActionControlButton
+                label="Tambah lokasi"
+                disabled={disabled}
+                onPress={addStaffAttendanceWorkSite}
+              />
+            </View>
+            {draft.staffAttendanceWorkSites.length ? (
+              <View style={styles.workSiteList}>
+                {draft.staffAttendanceWorkSites.map((site, index) => {
+                  const siteKey =
+                    site._id ||
+                    `${index}-${site.name ?? 'lokasi'}-${site.latitude ?? ''}-${
+                      site.longitude ?? ''
+                    }`;
+
+                  return (
+                    <View key={siteKey} style={styles.workSiteRow}>
+                      <View style={styles.workSiteRowHeader}>
+                        <KolamCopyStack
+                          containerStyle={styles.workSiteHeaderCopy}
+                          items={[
+                            {
+                              id: `${siteKey}-title`,
+                              text: site.name?.trim()
+                                ? site.name
+                                : `Lokasi ${index + 1}`,
+                              style: styles.notificationSoundLabel,
+                            },
+                            {
+                              id: `${siteKey}-meta`,
+                              text: `${formatWorkSiteCoordinate(
+                                site.latitude,
+                              )}, ${formatWorkSiteCoordinate(
+                                site.longitude,
+                              )} - Radius ${formatWorkSiteRadius(
+                                site.radiusMeters,
+                              )} m`,
+                              style: styles.notificationSoundPath,
+                            },
+                          ]}
+                        />
+                        <KolamActionControlButton
+                          label="Hapus"
+                          intent="danger"
+                          disabled={disabled}
+                          onPress={() => removeStaffAttendanceWorkSite(index)}
+                        />
+                      </View>
+                      <KolamTextFieldRow
+                        variant="settingsForm"
+                        fieldWidth={settingsFieldWidth}
+                        label="Nama lokasi"
+                        description="Nama kantor, gudang, toko, atau area kerja."
+                        value={site.name ?? ''}
+                        onChangeText={value =>
+                          updateStaffAttendanceWorkSite(index, { name: value })
+                        }
+                        placeholder="Kantor"
+                      />
+                      <View style={styles.workSiteCoordinateGrid}>
+                        <KolamTextFieldRow
+                          variant="settingsForm"
+                          fieldWidth={220}
+                          label="Latitude"
+                          description="Koordinat lintang."
+                          value={formatWorkSiteInputValue(site.latitude)}
+                          onChangeText={value =>
+                            updateStaffAttendanceWorkSite(index, {
+                              latitude: parseWorkSiteNumber(value),
+                            })
+                          }
+                          placeholder="-6.2088"
+                        />
+                        <KolamTextFieldRow
+                          variant="settingsForm"
+                          fieldWidth={220}
+                          label="Longitude"
+                          description="Koordinat bujur."
+                          value={formatWorkSiteInputValue(site.longitude)}
+                          onChangeText={value =>
+                            updateStaffAttendanceWorkSite(index, {
+                              longitude: parseWorkSiteNumber(value),
+                            })
+                          }
+                          placeholder="106.8456"
+                        />
+                        <KolamTextFieldRow
+                          variant="settingsForm"
+                          fieldWidth={220}
+                          label="Radius absen (meter)"
+                          description="Minimum backend 20 meter."
+                          value={formatWorkSiteInputValue(site.radiusMeters)}
+                          onChangeText={value =>
+                            updateStaffAttendanceWorkSite(index, {
+                              radiusMeters: parseWorkSiteNumber(value),
+                            })
+                          }
+                          placeholder="150"
+                        />
+                      </View>
+                      <KolamToggleRow
+                        variant="settingsForm"
+                        label="Aktif"
+                        description="Lokasi aktif ikut dipakai validasi radius check-in."
+                        active={site.active !== false}
+                        onPress={() =>
+                          updateStaffAttendanceWorkSite(index, {
+                            active: site.active === false,
+                          })
+                        }
+                      />
+                    </View>
+                  );
+                })}
+              </View>
+            ) : (
+              <KolamCopyStack
+                items={[
+                  {
+                    id: 'work-sites-empty',
+                    text: 'Belum ada lokasi kerja.',
+                    style: styles.marketplaceOverviewMeta,
+                  },
+                ]}
+              />
+            )}
+          </View>
           <KolamTextFieldRow
             variant="settingsForm"
             label="Zona waktu absensi"
@@ -4961,6 +5140,34 @@ function getFirstTitles(values: string[]) {
   return visible.length ? visible.join(' | ') : '-';
 }
 
+function formatWorkSiteCoordinate(value: number | undefined) {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? value.toFixed(6)
+    : '-';
+}
+
+function formatWorkSiteInputValue(value: number | undefined) {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? String(value)
+    : '';
+}
+
+function formatWorkSiteRadius(value: number | undefined) {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? Math.max(20, value)
+    : 150;
+}
+
+function parseWorkSiteNumber(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+
+  const parsed = Number(trimmed);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
 function getTeamChatRoomLabel(room: KolamTeamChatRoom) {
   if (room.name) {
     return room.name;
@@ -5053,6 +5260,41 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   marketplaceControlSection: {
+    gap: 10,
+  },
+  workSiteCoordinateGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  workSiteHeaderCopy: {
+    flex: 1,
+    minWidth: 240,
+  },
+  workSiteHeaderRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    justifyContent: 'space-between',
+  },
+  workSiteList: {
+    gap: 10,
+  },
+  workSiteRow: {
+    borderColor: '#e5e7eb',
+    borderTopWidth: 1,
+    gap: 10,
+    paddingTop: 10,
+  },
+  workSiteRowHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    justifyContent: 'space-between',
+  },
+  workSiteSection: {
     gap: 10,
   },
   marketplaceNoticeList: {

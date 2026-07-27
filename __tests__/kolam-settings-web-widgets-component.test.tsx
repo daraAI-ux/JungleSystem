@@ -374,7 +374,7 @@ function createWebSettingDraft() {
     staffAttendanceRequireGps: true,
     staffAttendanceRequireFace: false,
     staffAttendanceFaceMatchThreshold: '0.72',
-    staffAttendanceWorkSitesText: '',
+    staffAttendanceWorkSites: [],
     biteshipApiKey: '',
     googleMapsBrowserApiKey: '',
     originAddressLine1: '',

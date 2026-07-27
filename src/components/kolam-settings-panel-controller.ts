@@ -281,7 +281,7 @@ interface WebSettingDraft {
   staffAttendanceRequireGps: boolean;
   staffAttendanceRequireFace: boolean;
   staffAttendanceFaceMatchThreshold: string;
-  staffAttendanceWorkSitesText: string;
+  staffAttendanceWorkSites: KolamStaffAttendanceWorkSite[];
   biteshipApiKey: string;
   googleMapsBrowserApiKey: string;
   originAddressLine1: string;
@@ -504,7 +504,7 @@ const emptyWebSettingDraft: WebSettingDraft = {
   staffAttendanceRequireGps: true,
   staffAttendanceRequireFace: false,
   staffAttendanceFaceMatchThreshold: '0.72',
-  staffAttendanceWorkSitesText: '',
+  staffAttendanceWorkSites: [],
   biteshipApiKey: '',
   googleMapsBrowserApiKey: '',
   originAddressLine1: '',
@@ -3201,7 +3201,7 @@ function createStaffAttendanceDraftFields(
     staffAttendanceFaceMatchThreshold: String(
       settings.faceMatchThreshold ?? 0.72,
     ),
-    staffAttendanceWorkSitesText: formatStaffAttendanceWorkSites(
+    staffAttendanceWorkSites: normalizeStaffAttendanceWorkSites(
       settings.workSites,
     ),
   } satisfies Partial<WebSettingDraft>;
@@ -3266,9 +3266,8 @@ function createStaffAttendanceUpdateBody(
       draft.staffAttendanceFaceMatchThreshold,
       0.72,
     ),
-    workSites: parseStaffAttendanceWorkSitesText(
-      draft.staffAttendanceWorkSitesText,
-      current?.workSites,
+    workSites: normalizeStaffAttendanceWorkSites(
+      draft.staffAttendanceWorkSites,
     ),
   };
 }
@@ -3943,64 +3942,41 @@ function parseIdList(value: string) {
     .filter(Boolean);
 }
 
-function formatStaffAttendanceWorkSites(
+function normalizeStaffAttendanceWorkSites(
   sites: KolamStaffAttendanceWorkSite[] | undefined,
 ) {
   return (sites ?? [])
-    .map(site =>
-      [
-        site.name ?? '',
-        formatNumber(site.latitude),
-        formatNumber(site.longitude),
-        formatNumber(site.radiusMeters),
-        site.active === false ? 'false' : 'true',
-      ].join('|'),
-    )
-    .join('\n');
-}
+    .map<KolamStaffAttendanceWorkSite | null>(site => {
+      const name = site.name?.trim() ?? '';
+      const latitude =
+        typeof site.latitude === 'number' && Number.isFinite(site.latitude)
+          ? site.latitude
+          : null;
+      const longitude =
+        typeof site.longitude === 'number' && Number.isFinite(site.longitude)
+          ? site.longitude
+          : null;
 
-function parseStaffAttendanceWorkSitesText(
-  value: string,
-  fallback: KolamStaffAttendanceWorkSite[] | undefined,
-) {
-  const lines = value
-    .split(/\r?\n/)
-    .map(line => line.trim())
-    .filter(Boolean);
-
-  if (!lines.length) {
-    return [];
-  }
-
-  const parsed = lines
-    .map<KolamStaffAttendanceWorkSite | null>(line => {
-      const [
-        name = '',
-        latitude = '',
-        longitude = '',
-        radius = '',
-        active = 'true',
-      ] = line.split('|');
-      const parsedLatitude = parseOptionalNumber(latitude);
-      const parsedLongitude = parseOptionalNumber(longitude);
-
-      if (!name.trim() || parsedLatitude === null || parsedLongitude === null) {
+      if (!name || latitude === null || longitude === null) {
         return null;
       }
 
-      const parsedRadius = parseOptionalNumber(radius);
+      const radius =
+        typeof site.radiusMeters === 'number' &&
+        Number.isFinite(site.radiusMeters)
+          ? Math.max(20, site.radiusMeters)
+          : 150;
 
       return {
-        name: name.trim(),
-        latitude: parsedLatitude,
-        longitude: parsedLongitude,
-        radiusMeters: parsedRadius ?? 150,
-        active: active.trim().toLowerCase() !== 'false',
+        ...(site._id ? { _id: site._id } : {}),
+        name,
+        latitude,
+        longitude,
+        radiusMeters: radius,
+        active: site.active !== false,
       };
     })
     .filter((site): site is KolamStaffAttendanceWorkSite => Boolean(site));
-
-  return parsed.length ? parsed : fallback ?? [];
 }
 
 function parseIntegerOrFallback(value: string, fallback: number) {
