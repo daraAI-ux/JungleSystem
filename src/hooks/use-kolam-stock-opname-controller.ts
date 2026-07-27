@@ -56,7 +56,7 @@ export function useKolamStockOpnameController(
   const [items, setItems] = useState<KolamStockOpname[]>([]);
   const [pagination, setPagination] = useState<KolamStockOpnamePagination>({
     page: 1,
-    limit: 20,
+    limit: 10,
     total: 0,
     totalPages: 1,
   });

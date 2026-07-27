@@ -325,7 +325,7 @@ export function createInitialStockOpnameListFilters(
     startDate: query.startDate ?? '',
     endDate: query.endDate ?? '',
     page: Math.max(1, Number(query.page || '1') || 1),
-    limit: Math.max(1, Number(query.limit || '20') || 20),
+    limit: Math.max(1, Number(query.limit || '10') || 10),
     sort: query.sort?.trim() || 'createdAt:desc',
   };
 }
@@ -781,7 +781,7 @@ function normalizePagination(
 ): KolamStockOpnamePagination {
   const record = asRecord(value);
   const page = getNumber(record, 'page') ?? 1;
-  const limit = getNumber(record, 'limit') ?? Math.max(1, fallbackTotal || 20);
+  const limit = getNumber(record, 'limit') ?? Math.max(1, fallbackTotal || 10);
   const total =
     getNumber(record, 'total') ?? getNumber(record, 'totalItems') ?? fallbackTotal;
   const totalPages =
