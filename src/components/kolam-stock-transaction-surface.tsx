@@ -34,6 +34,7 @@ import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamStatusBadge } from './kolam-status-badge';
+import { KolamStockCrossSyncObservabilityHost } from './kolam-stock-cross-sync-observability-host';
 
 const LIST_COLUMNS = [
   { id: 'target', label: 'Target', flex: 1.4 },
@@ -1001,6 +1002,8 @@ function KolamStockTransactionList({
           ) : null}
         </View>
       </View>
+
+      <KolamStockCrossSyncObservabilityHost onRouteChange={onRouteChange} />
 
       <KolamContentFrame style={styles.filterFrame} variant="settingsWebConfig">
         <KolamFormTextField
