@@ -11,6 +11,7 @@ import { formatRupiah } from '../lib/money';
 import { KolamBadge } from './kolam-badge';
 import { KolamButton } from './kolam-button';
 import { KolamContentFrame } from './kolam-content-frame';
+import { KolamControlTabList } from './kolam-control-tab-list';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDataTableHeader } from './kolam-data-table-header';
 import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
@@ -223,6 +224,15 @@ function TeranuraDetailShell({
   onBack: () => void;
   onEdit: (item: KolamTeranura) => void;
 }) {
+  const [activeTab, setActiveTab] = React.useState('catalog');
+  const tabItems = React.useMemo(
+    () => [
+      { id: 'catalog', label: 'Katalog' },
+      { id: 'iot', label: 'Perangkat IoT' },
+    ],
+    [],
+  );
+
   if (!item) {
     return (
       <View style={styles.detailRoot}>
@@ -261,6 +271,26 @@ function TeranuraDetailShell({
           <KolamButton disabled intent="danger" label="Hapus" onPress={() => undefined} />
         </View>
       </View>
+      <KolamControlTabList
+        accessibilityLabel="Tab detail Teranura"
+        items={tabItems}
+        onSelect={setActiveTab}
+        selectedId={activeTab}
+      />
+      <KolamContentFrame
+        style={styles.detailTabPanel}
+        variant="settingsWebConfig"
+      >
+        <KolamEmptyState
+          compact
+          message={
+            activeTab === 'iot'
+              ? 'Panel perangkat IoT akan diisi setelah audit endpoint dan payload IoT Teranura.'
+              : 'Ringkasan katalog Teranura akan diisi pada fase berikutnya.'
+          }
+          title={activeTab === 'iot' ? 'Perangkat IoT' : 'Katalog'}
+        />
+      </KolamContentFrame>
     </View>
   );
 }
@@ -569,5 +599,9 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'flex-end',
     gap: 8,
+  },
+  detailTabPanel: {
+    minHeight: 220,
+    padding: 16,
   },
 });
