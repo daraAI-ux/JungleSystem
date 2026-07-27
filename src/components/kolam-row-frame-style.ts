@@ -1,5 +1,5 @@
-import {rowFrameStyles as styles} from './kolam-row-frame-styles';
-import type {KolamRowFrameVariant} from './kolam-row-frame-types';
+import { rowFrameStyles as styles } from './kolam-row-frame-styles';
+import type { KolamRowFrameVariant } from './kolam-row-frame-types';
 
 export function getRowFrameStyle(variant: KolamRowFrameVariant) {
   switch (variant) {
@@ -23,6 +23,8 @@ export function getRowFrameStyle(variant: KolamRowFrameVariant) {
       return styles.settingsActivityHeader;
     case 'settingsActivity':
       return styles.settingsActivity;
+    case 'settingsForm':
+      return styles.settingsForm;
     case 'settingsPermission':
       return styles.settingsPermission;
     case 'form':

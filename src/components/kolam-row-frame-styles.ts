@@ -1,8 +1,8 @@
-import {StyleSheet} from 'react-native';
-import {getKolamTableVisualContract} from '../domain/kolam-table';
-import {kolamVisualTokens as V} from '../domain/kolam-visual';
-import {KOLAM_SALES_TABLE_VISUAL} from './kolam-sales-panel-visual';
-import {KOLAM_SETTINGS_ACTIVITY_TABLE_VISUAL} from './kolam-settings-activity-table-visual';
+import { StyleSheet } from 'react-native';
+import { getKolamTableVisualContract } from '../domain/kolam-table';
+import { kolamVisualTokens as V } from '../domain/kolam-visual';
+import { KOLAM_SALES_TABLE_VISUAL } from './kolam-sales-panel-visual';
+import { KOLAM_SETTINGS_ACTIVITY_TABLE_VISUAL } from './kolam-settings-activity-table-visual';
 
 const KOLAM_TABLE_VISUAL = getKolamTableVisualContract();
 
@@ -120,9 +120,18 @@ export const rowFrameStyles = StyleSheet.create({
     paddingHorizontal: KOLAM_SETTINGS_ACTIVITY_TABLE_VISUAL.body.cellPaddingX,
     paddingVertical: KOLAM_SETTINGS_ACTIVITY_TABLE_VISUAL.body.gutterY,
     borderBottomColor: V.colors.border,
-    borderBottomWidth:
-      KOLAM_SETTINGS_ACTIVITY_TABLE_VISUAL.body.rowBorderBottom ? 1 : 0,
+    borderBottomWidth: KOLAM_SETTINGS_ACTIVITY_TABLE_VISUAL.body.rowBorderBottom
+      ? 1
+      : 0,
     backgroundColor: V.colors.bg,
+  },
+  settingsForm: {
+    minHeight: V.layout.tableRowMinHeight,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingHorizontal: V.layout.tableCellPaddingX,
+    paddingVertical: V.layout.tableCellPaddingY,
   },
   settingsPermission: {
     minHeight: 58,

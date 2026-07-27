@@ -1,8 +1,8 @@
-﻿import {StyleSheet} from 'react-native';
-import {kolamVisualTokens as V} from '../domain/kolam-visual';
-import {getDashboardCustomerVisitConfirmationsVisualContract} from '../domain/dashboard-customer-visit-confirmations';
-import {KOLAM_CUSTOMER_CARD_CHROME} from './kolam-customer-module-visual';
-import {DASHBOARD_COUNT_VISUAL} from './kolam-dashboard-metric-visual';
+﻿import { StyleSheet } from 'react-native';
+import { kolamVisualTokens as V } from '../domain/kolam-visual';
+import { getDashboardCustomerVisitConfirmationsVisualContract } from '../domain/dashboard-customer-visit-confirmations';
+import { KOLAM_CUSTOMER_CARD_CHROME } from './kolam-customer-module-visual';
+import { DASHBOARD_COUNT_VISUAL } from './kolam-dashboard-metric-visual';
 import {
   DASHBOARD_RAIL_VISUAL,
   liveCardChrome as dashboardRailCardChrome,
@@ -15,7 +15,7 @@ import {
   DASHBOARD_SALES_GRAPH_VISUAL,
   liveCardChrome as salesGraphCardChrome,
 } from './kolam-dashboard-sales-graph-visual';
-import {salesPanelCardChrome} from './kolam-sales-panel-visual';
+import { salesPanelCardChrome } from './kolam-sales-panel-visual';
 
 const compactChrome = {
   padding: V.layout.cardCompactSpacing,
@@ -27,7 +27,7 @@ const compactChrome = {
 
 const liveCardShadow = {
   shadowColor: V.colors.fg,
-  shadowOffset: {width: 0, height: V.surface.cardShadow.offsetY},
+  shadowOffset: { width: 0, height: V.surface.cardShadow.offsetY },
   shadowOpacity: V.surface.cardShadow.opacity,
   shadowRadius: V.surface.cardShadow.radius,
   elevation: V.surface.cardShadow.elevation,
@@ -308,9 +308,6 @@ export const cardFrameStyles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 12,
     padding: 12,
-    borderRadius: V.radius.lg,
-    borderColor: V.colors.border,
-    borderWidth: 1,
     backgroundColor: V.colors.bg,
   },
   unifiedRuntimeFooter: {
@@ -334,4 +331,3 @@ export const cardFrameStyles = StyleSheet.create({
     backgroundColor: V.colors.muted,
   },
 });
-

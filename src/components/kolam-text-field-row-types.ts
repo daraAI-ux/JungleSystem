@@ -1,4 +1,5 @@
-﻿import type { TextInputProps } from 'react-native';
+import type { TextInputProps } from 'react-native';
+import type { KolamRowFrameVariant } from './kolam-row-frame-types';
 
 export interface KolamTextFieldRowProps {
   description: string;
@@ -8,5 +9,6 @@ export interface KolamTextFieldRowProps {
   numberOfLines?: number;
   onChangeText: TextInputProps['onChangeText'];
   placeholder?: string;
+  variant?: KolamRowFrameVariant;
   value: string;
 }

@@ -14,10 +14,11 @@ export function KolamTextFieldRow({
   numberOfLines,
   onChangeText,
   placeholder,
+  variant,
   value,
 }: KolamTextFieldRowProps) {
   return (
-    <KolamRowFrame>
+    <KolamRowFrame variant={variant}>
       <KolamTextFieldRowCopy description={description} label={label} />
       <KolamTextFieldRowInput
         fieldWidth={fieldWidth}

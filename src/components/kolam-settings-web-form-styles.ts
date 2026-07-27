@@ -6,8 +6,6 @@ export const settingsWebFormStyles = StyleSheet.create({
     paddingHorizontal: V.layout.tableCellPaddingX,
     paddingVertical: 16,
     gap: 16,
-    borderTopColor: V.colors.border,
-    borderTopWidth: 1,
     backgroundColor: V.colors.bg,
   },
   settingsWebFormHeader: {
@@ -34,8 +32,7 @@ export const settingsWebFormStyles = StyleSheet.create({
     gap: 12,
   },
   settingsWebSeparator: {
-    height: 1,
-    backgroundColor: V.colors.border,
+    height: 0,
   },
   settingsWebFormSectionHeader: {
     gap: 3,
@@ -103,9 +100,6 @@ export const settingsWebFormStyles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 12,
     padding: 12,
-    borderRadius: V.radius.lg,
-    borderColor: V.colors.border,
-    borderWidth: 1,
     backgroundColor: V.colors.bg,
   },
   settingsWebLogoRow: {

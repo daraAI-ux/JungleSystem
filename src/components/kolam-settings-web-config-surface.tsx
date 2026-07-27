@@ -727,6 +727,7 @@ export function KolamSettingsWebConfigSurface({
       {showGeneralSettings ? (
         <>
           <KolamTextFieldRow
+            variant="settingsForm"
             fieldWidth={settingsFieldWidth}
             label="Versi Kolam"
             description="Disimpan melalui PUT /websetting/version untuk app kolam."
@@ -735,6 +736,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="1.0.0"
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             fieldWidth={settingsFieldWidth}
             label="Versi Enclonura"
             description="Disimpan melalui endpoint version app enclonura."
@@ -743,6 +745,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="1.0.0"
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             fieldWidth={settingsFieldWidth}
             label="Versi POS"
             description="Disimpan melalui endpoint version app pos."
@@ -751,6 +754,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="1.0.0"
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             fieldWidth={settingsFieldWidth}
             label="Versi Marketplace"
             description="Disimpan melalui endpoint version app marketplace."
@@ -763,6 +767,7 @@ export function KolamSettingsWebConfigSurface({
             onUploadFile={onUploadMarketplaceLogo}
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             fieldWidth={settingsFieldWidth}
             label="Nama Perusahaan"
             description="Nama perusahaan dan branding storefront."
@@ -777,6 +782,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="Nama perusahaan"
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             fieldWidth={settingsFieldWidth}
             label="Tagline Perusahaan"
             description="Tagline branding yang tampil di storefront."
@@ -785,6 +791,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="Toko hewan terpercaya"
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             fieldWidth={settingsFieldWidth}
             label="Telepon"
             description="Nomor kontak customer."
@@ -793,6 +800,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="+62 812-3456-7890"
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             fieldWidth={settingsFieldWidth}
             label="Email"
             description="Email kontak customer."
@@ -801,6 +809,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="info@duniaanura.com"
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             fieldWidth={settingsFieldWidth}
             label="Alamat"
             description="Alamat bisnis utama."
@@ -813,6 +822,7 @@ export function KolamSettingsWebConfigSurface({
           {showOperationalSettings ? (
             <>
               <KolamToggleRow
+                variant="settingsForm"
                 label={fields[1].label}
                 description={fields[1].description}
                 active={draft.livechatOnline}
@@ -825,6 +835,7 @@ export function KolamSettingsWebConfigSurface({
                 }}
               />
               <KolamToggleRow
+                variant="settingsForm"
                 label={fields[2].label}
                 description={fields[2].description}
                 active={draft.maintenancePos}
@@ -837,6 +848,7 @@ export function KolamSettingsWebConfigSurface({
                 }}
               />
               <KolamToggleRow
+                variant="settingsForm"
                 label="Maintenance marketplace"
                 description="Aktifkan mode pemeliharaan untuk Marketplace."
                 active={draft.maintenanceMarketplace}
@@ -853,6 +865,7 @@ export function KolamSettingsWebConfigSurface({
           {showStoreShippingSettings ? (
             <>
               <KolamTextFieldRow
+                variant="settingsForm"
                 fieldWidth={settingsFieldWidth}
                 label="Alamat asal"
                 description="Alamat asal pengiriman."
@@ -865,6 +878,7 @@ export function KolamSettingsWebConfigSurface({
                 placeholder="Jl. Taman Ratu Raya No.34"
               />
               <KolamTextFieldRow
+                variant="settingsForm"
                 fieldWidth={settingsFieldWidth}
                 label="Kota asal"
                 description="Kota asal pengiriman."
@@ -873,6 +887,7 @@ export function KolamSettingsWebConfigSurface({
                 placeholder="Jakarta Barat"
               />
               <KolamTextFieldRow
+                variant="settingsForm"
                 fieldWidth={settingsFieldWidth}
                 label="Provinsi asal"
                 description="Provinsi asal pengiriman."
@@ -881,6 +896,7 @@ export function KolamSettingsWebConfigSurface({
                 placeholder="DKI Jakarta"
               />
               <KolamTextFieldRow
+                variant="settingsForm"
                 fieldWidth={settingsFieldWidth}
                 label="Kode pos asal"
                 description="Kode pos asal pengiriman."
@@ -889,6 +905,7 @@ export function KolamSettingsWebConfigSurface({
                 placeholder="11550"
               />
               <KolamTextFieldRow
+                variant="settingsForm"
                 fieldWidth={settingsFieldWidth}
                 label="Latitude asal"
                 description="Koordinat latitude origin."
@@ -897,6 +914,7 @@ export function KolamSettingsWebConfigSurface({
                 placeholder="-6.1687829"
               />
               <KolamTextFieldRow
+                variant="settingsForm"
                 fieldWidth={settingsFieldWidth}
                 label="Longitude asal"
                 description="Koordinat longitude origin."
@@ -907,6 +925,7 @@ export function KolamSettingsWebConfigSurface({
             </>
           ) : null}
           <KolamTextFieldRow
+            variant="settingsForm"
             fieldWidth={settingsFieldWidth}
             label="Facebook"
             description="Tautan Facebook storefront."
@@ -915,6 +934,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="https://facebook.com/..."
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             fieldWidth={settingsFieldWidth}
             label="Instagram"
             description="Tautan Instagram storefront."
@@ -923,6 +943,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="https://instagram.com/..."
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             fieldWidth={settingsFieldWidth}
             label="Twitter"
             description="Tautan Twitter/X storefront."
@@ -931,6 +952,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="https://twitter.com/..."
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             fieldWidth={settingsFieldWidth}
             label="YouTube"
             description="Tautan YouTube storefront."
@@ -939,6 +961,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="https://youtube.com/..."
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             fieldWidth={settingsFieldWidth}
             label="TikTok"
             description="Tautan TikTok storefront."
@@ -947,6 +970,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="https://tiktok.com/..."
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="Khusus desktop staff"
             description="Batasi staff ke aplikasi desktop sesuai policy BE."
             active={draft.staffDesktopOnlyEnabled}
@@ -959,6 +983,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             fieldWidth={settingsFieldWidth}
             label="URL redirect staff"
             description="URL redirect jika staff desktop-only aktif."
@@ -969,6 +994,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="https://..."
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="Akses MAC"
             description="Batasi akses Kolam berdasarkan daftar MAC address."
             active={draft.kolamMacAccessEnabled}
@@ -981,6 +1007,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="Izinkan browser web"
             description="Izinkan browser web tetap masuk saat MAC access aktif."
             active={draft.kolamMacAccessAllowWebBrowser}
@@ -993,6 +1020,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="Lewati super admin"
             description="Super admin tidak diblokir oleh validasi MAC."
             active={draft.kolamMacAccessBypassSuperAdmin}
@@ -1005,6 +1033,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             fieldWidth={settingsFieldWidth}
             label="Daftar MAC diizinkan"
             description="Pisahkan dengan koma atau baris baru."
@@ -1019,6 +1048,7 @@ export function KolamSettingsWebConfigSurface({
           {showNotificationSettings ? (
             <>
               <KolamToggleRow
+                variant="settingsForm"
                 label="OTP masuk staf"
                 description="Aktifkan OTP untuk masuk staf produksi."
                 active={draft.staffOtpLoginEnabled}
@@ -1031,6 +1061,7 @@ export function KolamSettingsWebConfigSurface({
                 }
               />
               <KolamTextFieldRow
+                variant="settingsForm"
                 label="Menit kedaluwarsa OTP"
                 description="Durasi OTP aktif sebelum kadaluarsa."
                 value={draft.staffOtpExpireMinutes}
@@ -1040,6 +1071,7 @@ export function KolamSettingsWebConfigSurface({
                 placeholder="10"
               />
               <KolamTextFieldRow
+                variant="settingsForm"
                 label="Jeda kirim ulang OTP"
                 description="Jeda detik sebelum OTP boleh dikirim ulang."
                 value={draft.staffOtpResendCooldownSeconds}
@@ -1049,6 +1081,7 @@ export function KolamSettingsWebConfigSurface({
                 placeholder="60"
               />
               <KolamTextFieldRow
+                variant="settingsForm"
                 label="Maks percobaan OTP"
                 description="Batas percobaan OTP sebelum lock."
                 value={draft.staffOtpMaxAttempts}
@@ -1058,6 +1091,7 @@ export function KolamSettingsWebConfigSurface({
                 placeholder="5"
               />
               <KolamTextFieldRow
+                variant="settingsForm"
                 label="Menit lock OTP"
                 description="Durasi lock setelah percobaan OTP melewati batas."
                 value={draft.staffOtpLockMinutes}
@@ -1067,6 +1101,7 @@ export function KolamSettingsWebConfigSurface({
                 placeholder="15"
               />
               <KolamTextFieldRow
+                variant="settingsForm"
                 label="Server SMTP"
                 description="Server SMTP untuk email sistem."
                 value={draft.smtpHost}
@@ -1074,6 +1109,7 @@ export function KolamSettingsWebConfigSurface({
                 placeholder="smtp.gmail.com"
               />
               <KolamTextFieldRow
+                variant="settingsForm"
                 label="SMTP port"
                 description="Port SMTP produksi."
                 value={draft.smtpPort}
@@ -1081,6 +1117,7 @@ export function KolamSettingsWebConfigSurface({
                 placeholder="465"
               />
               <KolamTextFieldRow
+                variant="settingsForm"
                 label="Pengguna SMTP"
                 description="Nama pengguna SMTP."
                 value={draft.smtpUser}
@@ -1088,6 +1125,7 @@ export function KolamSettingsWebConfigSurface({
                 placeholder="mailer@duniaanura.com"
               />
               <KolamTextFieldRow
+                variant="settingsForm"
                 label="Kata sandi SMTP"
                 description="Biarkan ******** agar secret BE tidak dikirim ulang."
                 value={draft.smtpPass}
@@ -1095,6 +1133,7 @@ export function KolamSettingsWebConfigSurface({
                 placeholder="********"
               />
               <KolamTextFieldRow
+                variant="settingsForm"
                 label="Email pengirim SMTP"
                 description="Alamat pengirim email sistem."
                 value={draft.smtpFromEmail}
@@ -1102,6 +1141,7 @@ export function KolamSettingsWebConfigSurface({
                 placeholder="no-reply@duniaanura.com"
               />
               <KolamTextFieldRow
+                variant="settingsForm"
                 label="Nama pengirim SMTP"
                 description="Nama pengirim email sistem."
                 value={draft.smtpFromName}
@@ -1109,6 +1149,7 @@ export function KolamSettingsWebConfigSurface({
                 placeholder="Kolam"
               />
               <KolamToggleRow
+                variant="settingsForm"
                 label="SMTP aman"
                 description="Gunakan koneksi SMTP aman."
                 active={draft.smtpSecure}
@@ -1117,6 +1158,7 @@ export function KolamSettingsWebConfigSurface({
                 }
               />
               <KolamToggleRow
+                variant="settingsForm"
                 label="Firebase"
                 description="Aktifkan Firebase Admin untuk notifikasi."
                 active={draft.firebaseEnabled}
@@ -1126,6 +1168,7 @@ export function KolamSettingsWebConfigSurface({
                 }
               />
               <KolamTextFieldRow
+                variant="settingsForm"
                 label="ID proyek Firebase"
                 description="ID proyek Firebase produksi."
                 value={draft.firebaseProjectId}
@@ -1135,6 +1178,7 @@ export function KolamSettingsWebConfigSurface({
                 placeholder="dunia-anura"
               />
               <KolamTextFieldRow
+                variant="settingsForm"
                 label="Email klien Firebase"
                 description="Email klien akun layanan."
                 value={draft.firebaseClientEmail}
@@ -1144,6 +1188,7 @@ export function KolamSettingsWebConfigSurface({
                 placeholder="firebase-adminsdk@..."
               />
               <KolamTextFieldRow
+                variant="settingsForm"
                 label="Kunci privat Firebase"
                 description="Biarkan ******** agar kunci privat BE tidak dikirim ulang."
                 value={draft.firebasePrivateKey}
@@ -1157,6 +1202,7 @@ export function KolamSettingsWebConfigSurface({
           {showAiSettings ? (
             <>
               <KolamToggleRow
+                variant="settingsForm"
                 label="Chat storefront"
                 description="Aktifkan chat pada storefront."
                 active={draft.chatStoreEnabled}
@@ -1166,6 +1212,7 @@ export function KolamSettingsWebConfigSurface({
                 }
               />
               <KolamToggleRow
+                variant="settingsForm"
                 label="Panggilan grup chat tim"
                 description="Aktifkan panggilan grup di chat tim."
                 active={draft.teamChatGroupCallEnabled}
@@ -1178,6 +1225,7 @@ export function KolamSettingsWebConfigSurface({
                 }
               />
               <KolamToggleRow
+                variant="settingsForm"
                 label="Bisnis DARA"
                 description="Aktifkan fitur bisnis DARA."
                 active={draft.daraBusinessEnabled}
@@ -1190,6 +1238,7 @@ export function KolamSettingsWebConfigSurface({
                 }
               />
               <KolamToggleRow
+                variant="settingsForm"
                 label="Tools DARA"
                 description="Aktifkan tool runtime DARA."
                 active={draft.daraToolsEnabled}
@@ -1199,6 +1248,7 @@ export function KolamSettingsWebConfigSurface({
                 }
               />
               <KolamToggleRow
+                variant="settingsForm"
                 label="Knowledge DARA"
                 description="Aktifkan knowledge base DARA."
                 active={draft.daraKnowledgeEnabled}
@@ -1211,6 +1261,7 @@ export function KolamSettingsWebConfigSurface({
                 }
               />
               <KolamToggleRow
+                variant="settingsForm"
                 label="Pajak DARA"
                 description="Aktifkan modul pajak DARA."
                 active={draft.daraTaxEnabled}
@@ -1220,6 +1271,7 @@ export function KolamSettingsWebConfigSurface({
                 }
               />
               <KolamToggleRow
+                variant="settingsForm"
                 label="DARA SEO"
                 description="Aktifkan fitur SEO DARA."
                 active={draft.daraSeoEnabled}
@@ -1229,6 +1281,7 @@ export function KolamSettingsWebConfigSurface({
                 }
               />
               <KolamToggleRow
+                variant="settingsForm"
                 label="Notifikasi alih tangan DARA"
                 description="Kirim notifikasi saat pelanggan dialihkan."
                 active={draft.daraHandoffNotifyEnabled}
@@ -1241,6 +1294,7 @@ export function KolamSettingsWebConfigSurface({
                 }
               />
               <KolamToggleRow
+                variant="settingsForm"
                 label="Insight DARA"
                 description="Aktifkan insight otomatis DARA."
                 active={draft.daraInsightsEnabled}
@@ -1253,6 +1307,7 @@ export function KolamSettingsWebConfigSurface({
                 }
               />
               <KolamToggleRow
+                variant="settingsForm"
                 label="Laporan otomatis DARA"
                 description="Aktifkan laporan otomatis DARA."
                 active={draft.daraAutoReportEnabled}
@@ -1265,6 +1320,7 @@ export function KolamSettingsWebConfigSurface({
                 }
               />
               <KolamToggleRow
+                variant="settingsForm"
                 label="Analisis gambar DARA"
                 description="Aktifkan analisis gambar DARA."
                 active={draft.daraImageAnalysisEnabled}
@@ -1277,6 +1333,7 @@ export function KolamSettingsWebConfigSurface({
                 }
               />
               <KolamToggleRow
+                variant="settingsForm"
                 label="Watcher pajak DARA"
                 description="Pantau regulasi pajak secara otomatis."
                 active={draft.daraTaxRegulationWatcherEnabled}
@@ -1289,6 +1346,7 @@ export function KolamSettingsWebConfigSurface({
                 }
               />
               <KolamToggleRow
+                variant="settingsForm"
                 label="DARA tax compliance"
                 description="Aktifkan job kepatuhan pajak."
                 active={draft.daraTaxComplianceJobEnabled}
@@ -1301,6 +1359,7 @@ export function KolamSettingsWebConfigSurface({
                 }
               />
               <KolamToggleRow
+                variant="settingsForm"
                 label="DARA tax narrative"
                 description="Aktifkan narasi LLM untuk pajak."
                 active={draft.daraTaxLlmNarrativeEnabled}
@@ -1313,6 +1372,7 @@ export function KolamSettingsWebConfigSurface({
                 }
               />
               <KolamToggleRow
+                variant="settingsForm"
                 label="DARA fulfillment"
                 description="Aktifkan fulfillment webstore DARA."
                 active={draft.daraWebstoreFulfillmentEnabled}
@@ -1325,6 +1385,7 @@ export function KolamSettingsWebConfigSurface({
                 }
               />
               <KolamToggleRow
+                variant="settingsForm"
                 label="DARA staff ops"
                 description="Aktifkan notifikasi operasional staff."
                 active={draft.daraStaffOpsNotifyEnabled}
@@ -1337,6 +1398,7 @@ export function KolamSettingsWebConfigSurface({
                 }
               />
               <KolamToggleRow
+                variant="settingsForm"
                 label="DARA staff WhatsApp"
                 description="Aktifkan notifikasi WhatsApp staff."
                 active={draft.daraStaffWaNotifyEnabled}
@@ -1349,6 +1411,7 @@ export function KolamSettingsWebConfigSurface({
                 }
               />
               <KolamToggleRow
+                variant="settingsForm"
                 label="DARA olshop notify"
                 description="Aktifkan notifikasi customer olshop."
                 active={draft.daraOlshopCustomerNotifyEnabled}
@@ -1361,6 +1424,7 @@ export function KolamSettingsWebConfigSurface({
                 }
               />
               <KolamToggleRow
+                variant="settingsForm"
                 label="DARA owner digest"
                 description="Aktifkan ringkasan owner."
                 active={draft.daraOwnerDigestEnabled}
@@ -1373,6 +1437,7 @@ export function KolamSettingsWebConfigSurface({
                 }
               />
               <KolamToggleRow
+                variant="settingsForm"
                 label="DARA owner WhatsApp"
                 description="Kirim digest owner melalui WhatsApp."
                 active={draft.daraOwnerDigestWaEnabled}
@@ -1385,6 +1450,7 @@ export function KolamSettingsWebConfigSurface({
                 }
               />
               <KolamToggleRow
+                variant="settingsForm"
                 label="DARA owner FCM"
                 description="Kirim digest owner melalui FCM."
                 active={draft.daraOwnerDigestFcmEnabled}
@@ -1397,6 +1463,7 @@ export function KolamSettingsWebConfigSurface({
                 }
               />
               <KolamToggleRow
+                variant="settingsForm"
                 label="DARA urgent FCM"
                 description="Kirim notifikasi urgent owner melalui FCM."
                 active={draft.daraOwnerFcmUrgentEnabled}
@@ -1462,6 +1529,7 @@ export function KolamSettingsWebConfigSurface({
       {showOperationalSettings ? (
         <>
           <KolamToggleRow
+            variant="settingsForm"
             label={fields[1].label}
             description={fields[1].description}
             active={draft.livechatOnline}
@@ -1474,6 +1542,7 @@ export function KolamSettingsWebConfigSurface({
             }}
           />
           <KolamToggleRow
+            variant="settingsForm"
             label={fields[2].label}
             description={fields[2].description}
             active={draft.maintenancePos}
@@ -1486,6 +1555,7 @@ export function KolamSettingsWebConfigSurface({
             }}
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="Maintenance marketplace"
             description="Aktifkan mode pemeliharaan untuk Marketplace."
             active={draft.maintenanceMarketplace}
@@ -1498,6 +1568,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="Google Sign-In webstore"
             description="Aktifkan OAuth Google untuk customer webstore."
             active={draft.webstoreGoogleAuthEnabled}
@@ -1510,6 +1581,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             label="Google OAuth client ID"
             description="OAuth 2.0 Web client ID untuk webstore."
             value={draft.googleOAuthClientId}
@@ -1529,6 +1601,7 @@ export function KolamSettingsWebConfigSurface({
             ]}
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             label="ID room penerimaan PO"
             description="Room Team Chat untuk alur penerimaan/QC PO."
             value={draft.poWorkflowReceivingRoomId}
@@ -1538,6 +1611,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="Team Chat room ID"
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="Notifikasi PO diterima"
             description="Kirim notifikasi saat barang PO diterima."
             active={draft.poWorkflowNotifyOnReceive}
@@ -1550,6 +1624,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="Notifikasi PO check"
             description="Kirim notifikasi saat QC/check PO berjalan."
             active={draft.poWorkflowNotifyOnCheck}
@@ -1562,6 +1637,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="Notifikasi PO parsial"
             description="Kirim notifikasi saat PO diterima sebagian."
             active={draft.poWorkflowNotifyOnPartial}
@@ -1574,6 +1650,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="Post bukti PO ke Team Chat"
             description="Posting bukti penerimaan/QC ke room Team Chat."
             active={draft.poWorkflowPostProofToTeamChat}
@@ -1586,6 +1663,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="PO parsial wajib admin"
             description="Penerimaan sebagian wajib approval admin."
             active={draft.poWorkflowPartialCompleteRequiresAdmin}
@@ -1598,6 +1676,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             label="User ID notif PO diterima"
             description="User ID penerima notif receive, pisahkan koma atau baris baru."
             value={draft.poWorkflowNotifyReceiveUserIds}
@@ -1607,6 +1686,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="userId1, userId2"
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             label="User ID notif PO check"
             description="User ID penerima notif check/QC."
             value={draft.poWorkflowNotifyCheckUserIds}
@@ -1616,6 +1696,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="userId1, userId2"
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             label="User ID notif PO selesai"
             description="User ID penerima notif complete."
             value={draft.poWorkflowNotifyCompleteUserIds}
@@ -1625,6 +1706,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="userId1, userId2"
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             label="Tanggal cutoff payroll absensi"
             description="Tanggal cutoff payroll bulanan."
             value={draft.staffAttendancePayrollCutoffDay}
@@ -1634,6 +1716,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="28"
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             label="Jam mulai kerja absensi"
             description="Jam mulai kerja default."
             value={draft.staffAttendanceWorkStartTime}
@@ -1643,6 +1726,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="08:00"
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             label="Jam selesai kerja absensi"
             description="Jam selesai kerja default."
             value={draft.staffAttendanceWorkEndTime}
@@ -1652,6 +1736,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="17:00"
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             label="Zona waktu absensi"
             description="Zona waktu untuk perhitungan absensi."
             value={draft.staffAttendanceTimezone}
@@ -1661,6 +1746,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="Asia/Jakarta"
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             label="Toleransi terlambat absensi"
             description="Menit toleransi keterlambatan."
             value={draft.staffAttendanceLateToleranceMinutes}
@@ -1670,6 +1756,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="15"
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             label="Maks tier 2 absensi"
             description="Batas menit tier keterlambatan kedua."
             value={draft.staffAttendanceLateTier2MaxMinutes}
@@ -1679,6 +1766,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="120"
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             label="Batas check-in absensi"
             description="Batas menit clock-in terlambat."
             value={draft.staffAttendanceLateCheckInDeadlineMinutes}
@@ -1688,6 +1776,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="240"
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             label="Denda telat absensi tier 2"
             description="Nominal denda tier 2."
             value={draft.staffAttendanceLateFineTier2}
@@ -1697,6 +1786,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="50000"
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             label="Denda telat absensi tier 3"
             description="Nominal denda tier 3."
             value={draft.staffAttendanceLateFineTier3}
@@ -1706,6 +1796,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="100000"
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             label="Pembagi absen"
             description="Pembagi harian untuk potongan absen."
             value={draft.staffAttendanceAbsentDailyDivisor}
@@ -1715,6 +1806,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="30"
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             label="Provider map absensi"
             description="Isi openstreetmap atau google."
             value={draft.staffAttendanceMapProvider}
@@ -1724,6 +1816,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="openstreetmap"
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="Absensi wajib GPS"
             description="Wajibkan lokasi GPS saat clock-in/out."
             active={draft.staffAttendanceRequireGps}
@@ -1736,6 +1829,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="Absensi wajib face match"
             description="Wajibkan face match saat clock-in/out."
             active={draft.staffAttendanceRequireFace}
@@ -1748,6 +1842,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             label="Threshold face match absensi"
             description="Ambang face match 0.5 sampai 0.99."
             value={draft.staffAttendanceFaceMatchThreshold}
@@ -1824,6 +1919,7 @@ export function KolamSettingsWebConfigSurface({
       {showSitemapSettings ? (
         <>
           <KolamToggleRow
+            variant="settingsForm"
             label="Sitemap enabled"
             description="Master switch untuk sitemap marketplace."
             active={sitemapDraft.enabled !== false}
@@ -1833,6 +1929,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="Include images"
             description="Sertakan image metadata pada sitemap jika tersedia."
             active={sitemapDraft.includeImages !== false}
@@ -1864,6 +1961,7 @@ export function KolamSettingsWebConfigSurface({
               return (
                 <View key={section} style={styles.storeHoursRow}>
                   <KolamToggleRow
+                    variant="settingsForm"
                     label={getSitemapSectionLabel(section)}
                     description="Aktifkan section dinamis pada sitemap."
                     active={item.enabled !== false}
@@ -1878,6 +1976,7 @@ export function KolamSettingsWebConfigSurface({
                   />
                   <View style={styles.storeHoursTimeGrid}>
                     <KolamTextFieldRow
+                      variant="settingsForm"
                       fieldWidth={140}
                       label="Priority"
                       description="Nilai 0 sampai 1."
@@ -1888,6 +1987,7 @@ export function KolamSettingsWebConfigSurface({
                       placeholder="0.7"
                     />
                     <KolamTextFieldRow
+                      variant="settingsForm"
                       fieldWidth={180}
                       label="Change frequency"
                       description="daily, weekly, monthly..."
@@ -1907,6 +2007,7 @@ export function KolamSettingsWebConfigSurface({
             })}
           </View>
           <KolamTextFieldRow
+            variant="settingsForm"
             label="Custom URLs"
             description="Satu baris per URL: /path|0.5|weekly."
             value={sitemapCustomUrlsText}
@@ -1915,6 +2016,7 @@ export function KolamSettingsWebConfigSurface({
           />
           {sitemapSectionKeys.map(section => (
             <KolamTextFieldRow
+              variant="settingsForm"
               key={`excluded-${section}`}
               label={`Excluded ${getSitemapSectionLabel(section)}`}
               description="Slug dipisah koma atau baris baru."
@@ -1977,6 +2079,7 @@ export function KolamSettingsWebConfigSurface({
           </View>
           <View style={styles.storeHoursTimeGrid}>
             <KolamTextFieldRow
+              variant="settingsForm"
               fieldWidth={170}
               label="Level"
               description="province, regency, district, village."
@@ -1985,6 +2088,7 @@ export function KolamSettingsWebConfigSurface({
               placeholder="province"
             />
             <KolamTextFieldRow
+              variant="settingsForm"
               fieldWidth={180}
               label="Parent code"
               description="Kode parent untuk city/district/village."
@@ -1993,6 +2097,7 @@ export function KolamSettingsWebConfigSurface({
               placeholder="32.73"
             />
             <KolamTextFieldRow
+              variant="settingsForm"
               fieldWidth={220}
               label="Search"
               description="Cari nama, kode, atau postal code."
@@ -2122,6 +2227,7 @@ export function KolamSettingsWebConfigSurface({
             ]}
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="Chat storefront"
             description="Aktifkan chat pada storefront."
             active={draft.chatStoreEnabled}
@@ -2131,6 +2237,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="Panggilan grup chat tim"
             description="Aktifkan panggilan grup di chat tim."
             active={draft.teamChatGroupCallEnabled}
@@ -2143,6 +2250,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="Balasan DARA Team Chat"
             description="Aktifkan balasan @dara di Team Chat."
             active={draft.teamChatDaraReplyEnabled}
@@ -2155,6 +2263,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="Bisnis DARA"
             description="Aktifkan fitur bisnis DARA."
             active={draft.daraBusinessEnabled}
@@ -2164,6 +2273,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="Tools DARA"
             description="Aktifkan tool runtime DARA."
             active={draft.daraToolsEnabled}
@@ -2173,6 +2283,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="Knowledge / SOP DARA"
             description="Aktifkan knowledge base dan SOP lookup DARA."
             active={draft.daraKnowledgeEnabled}
@@ -2182,6 +2293,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="Notifikasi alih tangan DARA"
             description="Kirim notifikasi saat pelanggan dialihkan."
             active={draft.daraHandoffNotifyEnabled}
@@ -2194,6 +2306,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="Insight DARA"
             description="Aktifkan insight otomatis DARA."
             active={draft.daraInsightsEnabled}
@@ -2203,6 +2316,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="Laporan otomatis DARA"
             description="Aktifkan laporan otomatis DARA."
             active={draft.daraAutoReportEnabled}
@@ -2215,6 +2329,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="Analisis gambar DARA"
             description="Aktifkan analisis gambar DARA."
             active={draft.daraImageAnalysisEnabled}
@@ -2227,6 +2342,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="Pajak DARA"
             description="Aktifkan modul pajak DARA."
             active={draft.daraTaxEnabled}
@@ -2236,6 +2352,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="DARA SEO"
             description="Aktifkan fitur SEO DARA."
             active={draft.daraSeoEnabled}
@@ -2245,6 +2362,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="Watcher pajak DARA"
             description="Pantau regulasi pajak secara otomatis."
             active={draft.daraTaxRegulationWatcherEnabled}
@@ -2257,6 +2375,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="Kepatuhan pajak DARA"
             description="Aktifkan job kepatuhan pajak."
             active={draft.daraTaxComplianceJobEnabled}
@@ -2269,6 +2388,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="Narasi pajak DARA"
             description="Aktifkan narasi LLM untuk pajak."
             active={draft.daraTaxLlmNarrativeEnabled}
@@ -2281,6 +2401,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="Fulfillment DARA"
             description="Aktifkan fulfillment webstore DARA."
             active={draft.daraWebstoreFulfillmentEnabled}
@@ -2293,6 +2414,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="Operasional staff DARA"
             description="Aktifkan notifikasi operasional staff."
             active={draft.daraStaffOpsNotifyEnabled}
@@ -2305,6 +2427,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="WhatsApp staff DARA"
             description="Aktifkan notifikasi WhatsApp staff."
             active={draft.daraStaffWaNotifyEnabled}
@@ -2317,6 +2440,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="Notifikasi olshop DARA"
             description="Aktifkan notifikasi customer olshop."
             active={draft.daraOlshopCustomerNotifyEnabled}
@@ -2329,6 +2453,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="Digest owner DARA"
             description="Aktifkan ringkasan owner."
             active={draft.daraOwnerDigestEnabled}
@@ -2341,6 +2466,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="WhatsApp owner DARA"
             description="Kirim digest owner melalui WhatsApp."
             active={draft.daraOwnerDigestWaEnabled}
@@ -2353,6 +2479,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="FCM owner DARA"
             description="Kirim digest owner melalui FCM."
             active={draft.daraOwnerDigestFcmEnabled}
@@ -2365,6 +2492,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="FCM urgent DARA"
             description="Kirim notifikasi urgent owner melalui FCM."
             active={draft.daraOwnerFcmUrgentEnabled}
@@ -2391,6 +2519,7 @@ export function KolamSettingsWebConfigSurface({
               ]}
             />
             <KolamTextFieldRow
+              variant="settingsForm"
               fieldWidth={settingsFieldWidth}
               label="Biteship API key"
               description="Webhook: https://amfibi.dunia-anura.com/api/biteship/webhook"
@@ -2399,6 +2528,7 @@ export function KolamSettingsWebConfigSurface({
               placeholder="********"
             />
             <KolamTextFieldRow
+              variant="settingsForm"
               fieldWidth={settingsFieldWidth}
               label="Alamat"
               description="Alamat asal pengiriman."
@@ -2409,6 +2539,7 @@ export function KolamSettingsWebConfigSurface({
               placeholder="Jl. Taman Ratu Raya No.34"
             />
             <KolamTextFieldRow
+              variant="settingsForm"
               fieldWidth={settingsFieldWidth}
               label="Kota"
               description="Kota asal pengiriman."
@@ -2417,6 +2548,7 @@ export function KolamSettingsWebConfigSurface({
               placeholder="Jakarta Barat"
             />
             <KolamTextFieldRow
+              variant="settingsForm"
               fieldWidth={settingsFieldWidth}
               label="Provinsi"
               description="Provinsi asal pengiriman."
@@ -2425,6 +2557,7 @@ export function KolamSettingsWebConfigSurface({
               placeholder="DKI Jakarta"
             />
             <KolamTextFieldRow
+              variant="settingsForm"
               fieldWidth={settingsFieldWidth}
               label="Kode pos"
               description="Kode pos asal pengiriman."
@@ -2433,6 +2566,7 @@ export function KolamSettingsWebConfigSurface({
               placeholder="11550"
             />
             <KolamTextFieldRow
+              variant="settingsForm"
               fieldWidth={settingsFieldWidth}
               label="Latitude"
               description="Koordinat latitude origin."
@@ -2441,6 +2575,7 @@ export function KolamSettingsWebConfigSurface({
               placeholder="-6.1687829"
             />
             <KolamTextFieldRow
+              variant="settingsForm"
               fieldWidth={settingsFieldWidth}
               label="Longitude"
               description="Koordinat longitude origin."
@@ -2449,6 +2584,7 @@ export function KolamSettingsWebConfigSurface({
               placeholder="106.7676678"
             />
             <KolamTextFieldRow
+              variant="settingsForm"
               fieldWidth={settingsFieldWidth}
               label="Google Maps API key (browser)"
               description="Biarkan ******** agar key browser tersimpan tidak dikirim ulang."
@@ -2490,6 +2626,7 @@ export function KolamSettingsWebConfigSurface({
               ]}
             />
             <KolamToggleRow
+              variant="settingsForm"
               label="Aktifkan jadwal operasional"
               description="Jika off, tidak ada banner jam tutup di marketplace dan DARA tidak mendapat konteks jam operasional."
               active={draft.storeOperatingHoursEnabled}
@@ -2502,6 +2639,7 @@ export function KolamSettingsWebConfigSurface({
               }
             />
             <KolamTextFieldRow
+              variant="settingsForm"
               fieldWidth={settingsFieldWidth}
               label="Zona waktu"
               description="Zona waktu jadwal toko."
@@ -2597,6 +2735,7 @@ export function KolamSettingsWebConfigSurface({
             />
             <View style={styles.storeHoursTimeGrid}>
               <KolamTextFieldRow
+                variant="settingsForm"
                 fieldWidth={220}
                 label="Tanggal libur khusus"
                 description="Format YYYY-MM-DD."
@@ -2607,6 +2746,7 @@ export function KolamSettingsWebConfigSurface({
                 placeholder="2026-04-10"
               />
               <KolamTextFieldRow
+                variant="settingsForm"
                 fieldWidth={settingsFieldWidth}
                 label="Keterangan libur"
                 description="Label libur yang ditampilkan ke pembeli."
@@ -2678,6 +2818,7 @@ export function KolamSettingsWebConfigSurface({
             />
             {storeOperatingMessageRows.map(row => (
               <KolamTextFieldRow
+                variant="settingsForm"
                 key={row.id}
                 fieldWidth={settingsFieldWidth}
                 label={row.label}
@@ -2698,6 +2839,7 @@ export function KolamSettingsWebConfigSurface({
             {notificationSoundItems.slice(0, 2).map(renderNotificationSoundRow)}
           </View>
           <KolamToggleRow
+            variant="settingsForm"
             label="Notifikasi alih tangan DARA"
             description="Kirim notifikasi saat pelanggan dialihkan."
             active={draft.daraHandoffNotifyEnabled}
@@ -2713,6 +2855,7 @@ export function KolamSettingsWebConfigSurface({
             {renderNotificationSoundRow(notificationSoundItems[2])}
           </View>
           <KolamToggleRow
+            variant="settingsForm"
             label="Panggilan grup chat tim"
             description="Aktifkan panggilan grup di chat tim."
             active={draft.teamChatGroupCallEnabled}
@@ -2741,6 +2884,7 @@ export function KolamSettingsWebConfigSurface({
             </View>
           ) : null}
           <KolamToggleRow
+            variant="settingsForm"
             label="Firebase"
             description="Aktifkan Firebase Admin untuk notifikasi."
             active={draft.firebaseEnabled}
@@ -2750,6 +2894,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             fieldWidth={settingsFieldWidth}
             label="ID proyek Firebase"
             description="ID proyek Firebase produksi."
@@ -2758,6 +2903,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="dunia-anura"
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             fieldWidth={settingsFieldWidth}
             label="Email klien Firebase"
             description="Email klien akun layanan."
@@ -2766,6 +2912,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="firebase-adminsdk@..."
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             fieldWidth={settingsFieldWidth}
             label="Kunci privat Firebase"
             description="Biarkan ******** agar kunci privat BE tidak dikirim ulang."
@@ -2774,6 +2921,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="********"
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             fieldWidth={settingsFieldWidth}
             label="Server SMTP"
             description="Server SMTP untuk email sistem."
@@ -2782,6 +2930,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="smtp.gmail.com"
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             fieldWidth={settingsFieldWidth}
             label="Port SMTP"
             description="Port SMTP produksi."
@@ -2790,6 +2939,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="465"
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             fieldWidth={settingsFieldWidth}
             label="Pengguna SMTP"
             description="Nama pengguna SMTP."
@@ -2798,6 +2948,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="mailer@duniaanura.com"
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             fieldWidth={settingsFieldWidth}
             label="Kata sandi SMTP"
             description="Biarkan ******** agar rahasia BE tidak dikirim ulang."
@@ -2806,6 +2957,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="********"
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             fieldWidth={settingsFieldWidth}
             label="Email pengirim SMTP"
             description="Alamat pengirim email sistem."
@@ -2814,6 +2966,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="no-reply@duniaanura.com"
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             fieldWidth={settingsFieldWidth}
             label="Nama pengirim SMTP"
             description="Nama pengirim email sistem."
@@ -2822,6 +2975,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="Kolam"
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="SMTP aman"
             description="Gunakan koneksi SMTP aman."
             active={draft.smtpSecure}
@@ -2830,6 +2984,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="OTP masuk staf"
             description="Aktifkan OTP untuk masuk staf produksi."
             active={draft.staffOtpLoginEnabled}
@@ -2839,6 +2994,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             fieldWidth={settingsFieldWidth}
             label="Menit kedaluwarsa OTP"
             description="Durasi OTP aktif sebelum kadaluarsa."
@@ -2849,6 +3005,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="10"
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             fieldWidth={settingsFieldWidth}
             label="Jeda kirim ulang OTP"
             description="Jeda detik sebelum OTP boleh dikirim ulang."
@@ -2859,6 +3016,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="60"
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             fieldWidth={settingsFieldWidth}
             label="Batas percobaan OTP"
             description="Batas percobaan OTP sebelum dikunci."
@@ -2867,6 +3025,7 @@ export function KolamSettingsWebConfigSurface({
             placeholder="5"
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             fieldWidth={settingsFieldWidth}
             label="Menit kunci OTP"
             description="Durasi penguncian setelah percobaan OTP melewati batas."
@@ -2905,6 +3064,7 @@ export function KolamSettingsWebConfigSurface({
       {showPluginControls ? (
         <>
           <KolamToggleRow
+            variant="settingsForm"
             label="Plugin Enclosure"
             description="Aktifkan route dan registry plugin enclosure."
             active={draft.pluginControls.enclosure}
@@ -2917,6 +3077,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="Plugin Task Manager"
             description="Aktifkan route dan registry plugin manajemen tugas."
             active={draft.pluginControls.taskManager}
@@ -2929,6 +3090,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="Plugin Layanan"
             description="Aktifkan route dan registry plugin layanan."
             active={draft.pluginControls.layanan}
@@ -2938,6 +3100,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="Plugin Freyer"
             description="Aktifkan route dan registry plugin Freyer."
             active={draft.pluginControls.freyer}
@@ -2947,6 +3110,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="Plugin KPI"
             description="Aktifkan route dan registry plugin KPI."
             active={draft.pluginControls.kpi}
@@ -2956,6 +3120,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="Plugin Chat"
             description="Aktifkan route dan registry plugin chat."
             active={draft.pluginControls.chat}
@@ -2965,6 +3130,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="Plugin DARA"
             description="Aktifkan route dan registry plugin DARA."
             active={draft.pluginControls.dara}
@@ -2974,6 +3140,7 @@ export function KolamSettingsWebConfigSurface({
             }
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="Plugin Proyek"
             description="Aktifkan route dan registry plugin proyek."
             active={draft.pluginControls.proyek}
@@ -3389,6 +3556,7 @@ function KpiSettingsPanel({
       </View>
       <View style={styles.storeHoursTimeGrid}>
         <KolamTextFieldRow
+          variant="settingsForm"
           fieldWidth={120}
           label="Task rendah"
           description="Poin dasar prioritas rendah."
@@ -3397,6 +3565,7 @@ function KpiSettingsPanel({
           placeholder="5"
         />
         <KolamTextFieldRow
+          variant="settingsForm"
           fieldWidth={120}
           label="Task sedang"
           description="Poin dasar prioritas sedang."
@@ -3405,6 +3574,7 @@ function KpiSettingsPanel({
           placeholder="10"
         />
         <KolamTextFieldRow
+          variant="settingsForm"
           fieldWidth={120}
           label="Task tinggi"
           description="Poin dasar prioritas tinggi."
@@ -3413,6 +3583,7 @@ function KpiSettingsPanel({
           placeholder="20"
         />
         <KolamTextFieldRow
+          variant="settingsForm"
           fieldWidth={120}
           label="Task urgent"
           description="Poin dasar prioritas urgent."
@@ -3421,6 +3592,7 @@ function KpiSettingsPanel({
           placeholder="30"
         />
         <KolamTextFieldRow
+          variant="settingsForm"
           fieldWidth={120}
           label="Rasio bantuan"
           description="Ratio points untuk assistedBy."
@@ -3431,6 +3603,7 @@ function KpiSettingsPanel({
       </View>
       <View style={styles.storeHoursTimeGrid}>
         <KolamTextFieldRow
+          variant="settingsForm"
           fieldWidth={130}
           label="Menit balasan cepat"
           description="Batas balasan cepat chat."
@@ -3439,6 +3612,7 @@ function KpiSettingsPanel({
           placeholder="5"
         />
         <KolamTextFieldRow
+          variant="settingsForm"
           fieldWidth={130}
           label="Poin balasan cepat"
           description="Poin balasan cepat."
@@ -3447,6 +3621,7 @@ function KpiSettingsPanel({
           placeholder="5"
         />
         <KolamTextFieldRow
+          variant="settingsForm"
           fieldWidth={130}
           label="Menit balasan telat"
           description="Batas balasan telat chat."
@@ -3455,6 +3630,7 @@ function KpiSettingsPanel({
           placeholder="14"
         />
         <KolamTextFieldRow
+          variant="settingsForm"
           fieldWidth={130}
           label="Poin balasan telat"
           description="Poin balasan telat."
@@ -3463,6 +3639,7 @@ function KpiSettingsPanel({
           placeholder="-10"
         />
         <KolamTextFieldRow
+          variant="settingsForm"
           fieldWidth={130}
           label="Poin tanpa balasan"
           description="Penalty chat tidak dibalas."
@@ -3473,6 +3650,7 @@ function KpiSettingsPanel({
       </View>
       <View style={styles.storeHoursTimeGrid}>
         <KolamTextFieldRow
+          variant="settingsForm"
           fieldWidth={120}
           label="Komplain ringan"
           description="Penalti komplain ringan."
@@ -3481,6 +3659,7 @@ function KpiSettingsPanel({
           placeholder="-10"
         />
         <KolamTextFieldRow
+          variant="settingsForm"
           fieldWidth={120}
           label="Komplain valid"
           description="Penalti komplain valid."
@@ -3489,6 +3668,7 @@ function KpiSettingsPanel({
           placeholder="-25"
         />
         <KolamTextFieldRow
+          variant="settingsForm"
           fieldWidth={120}
           label="Komplain berat"
           description="Penalti komplain berat."
@@ -3497,6 +3677,7 @@ function KpiSettingsPanel({
           placeholder="-50"
         />
         <KolamTextFieldRow
+          variant="settingsForm"
           fieldWidth={160}
           label="Absensi di luar radius"
           description="Penalty absensi di luar radius."
@@ -3507,6 +3688,7 @@ function KpiSettingsPanel({
       </View>
       <View style={styles.storeHoursTimeGrid}>
         <KolamTextFieldRow
+          variant="settingsForm"
           fieldWidth={120}
           label="Tepat waktu sebelum"
           description="Poin sebelum deadline."
@@ -3515,6 +3697,7 @@ function KpiSettingsPanel({
           placeholder="5"
         />
         <KolamTextFieldRow
+          variant="settingsForm"
           fieldWidth={120}
           label="Persen terlalu awal"
           description="Persen threshold terlalu awal."
@@ -3523,6 +3706,7 @@ function KpiSettingsPanel({
           placeholder="50"
         />
         <KolamTextFieldRow
+          variant="settingsForm"
           fieldWidth={120}
           label="Bonus terlalu awal"
           description="Bonus terlalu awal."
@@ -3531,6 +3715,7 @@ function KpiSettingsPanel({
           placeholder="10"
         />
         <KolamTextFieldRow
+          variant="settingsForm"
           fieldWidth={120}
           label="Task telat"
           description="Penalti task telat."
@@ -3541,6 +3726,7 @@ function KpiSettingsPanel({
       </View>
       <View style={styles.storeHoursTimeGrid}>
         <KolamTextFieldRow
+          variant="settingsForm"
           fieldWidth={120}
           label="QC lulus pertama"
           description="Poin QC pass pertama."
@@ -3549,6 +3735,7 @@ function KpiSettingsPanel({
           placeholder="10"
         />
         <KolamTextFieldRow
+          variant="settingsForm"
           fieldWidth={120}
           label="QC revision 1"
           description="Poin revisi pertama."
@@ -3557,6 +3744,7 @@ function KpiSettingsPanel({
           placeholder="0"
         />
         <KolamTextFieldRow
+          variant="settingsForm"
           fieldWidth={120}
           label="QC revisi banyak"
           description="Penalty banyak revisi."
@@ -3565,6 +3753,7 @@ function KpiSettingsPanel({
           placeholder="-5"
         />
         <KolamTextFieldRow
+          variant="settingsForm"
           fieldWidth={120}
           label="Bukti lengkap"
           description="Poin bukti task lengkap."
@@ -3573,6 +3762,7 @@ function KpiSettingsPanel({
           placeholder="5"
         />
         <KolamTextFieldRow
+          variant="settingsForm"
           fieldWidth={120}
           label="Tanpa bukti"
           description="Penalty bukti hilang."
@@ -3581,6 +3771,7 @@ function KpiSettingsPanel({
           placeholder="-10"
         />
         <KolamTextFieldRow
+          variant="settingsForm"
           fieldWidth={150}
           label="Task no-show"
           description="Penalty reassign/cancel."
@@ -3590,6 +3781,7 @@ function KpiSettingsPanel({
         />
       </View>
       <KolamTextFieldRow
+        variant="settingsForm"
         label="Level bulanan"
         description="Satu baris per level: id|label|min|max. Kosongkan max untuk open ended."
         value={draft.levelsText}
@@ -3597,6 +3789,7 @@ function KpiSettingsPanel({
         placeholder="gold|Gold|501|1000"
       />
       <KolamTextFieldRow
+        variant="settingsForm"
         label="Reward bulanan"
         description="Satu baris per reward: levelId|amountRp."
         value={draft.rewardsText}
@@ -3615,6 +3808,7 @@ function KpiSettingsPanel({
         />
         {ruleRows.map(([key, label]) => (
           <KolamToggleRow
+            variant="settingsForm"
             key={key}
             label={label}
             description={`Key rule ${key}`}
@@ -4304,6 +4498,7 @@ function MarketplaceLandingControlsPanel({
             ]}
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             label="Judul CTA"
             description="Judul section CTA marketplace."
             value={ctaDraft.title}
@@ -4311,6 +4506,7 @@ function MarketplaceLandingControlsPanel({
             placeholder="Jelajahi Dunia Species"
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             label="Deskripsi CTA"
             description="Deskripsi singkat CTA marketplace."
             value={ctaDraft.description}
@@ -4318,6 +4514,7 @@ function MarketplaceLandingControlsPanel({
             placeholder="Temukan koleksi lengkap..."
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             label="Teks tombol CTA"
             description="Label tombol CTA."
             value={ctaDraft.buttonText}
@@ -4325,6 +4522,7 @@ function MarketplaceLandingControlsPanel({
             placeholder="View All Species"
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             label="Link tombol CTA"
             description="Target URL tombol CTA."
             value={ctaDraft.buttonLink}
@@ -4332,6 +4530,7 @@ function MarketplaceLandingControlsPanel({
             placeholder="/species"
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="CTA aktif"
             description="Tampilkan CTA di marketplace landing."
             active={ctaDraft.isActive}
@@ -4361,6 +4560,7 @@ function MarketplaceLandingControlsPanel({
             ]}
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             label="Link YouTube"
             description="URL channel atau video YouTube."
             value={youtubeDraft.link}
@@ -4368,6 +4568,7 @@ function MarketplaceLandingControlsPanel({
             placeholder="https://www.youtube.com/@DuniaAnura"
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             label="Judul YouTube"
             description="Judul section YouTube."
             value={youtubeDraft.title}
@@ -4375,6 +4576,7 @@ function MarketplaceLandingControlsPanel({
             placeholder="Dunia Anura"
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             label="Subtitle YouTube"
             description="Subtitle section YouTube."
             value={youtubeDraft.subtitle}
@@ -4382,6 +4584,7 @@ function MarketplaceLandingControlsPanel({
             placeholder="YouTube"
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="YouTube aktif"
             description="Tampilkan YouTube section di marketplace landing."
             active={youtubeDraft.isActive}
@@ -4458,6 +4661,7 @@ function MarketplaceLandingControlsPanel({
             )}
           </View>
           <KolamTextFieldRow
+            variant="settingsForm"
             label="Key notice"
             description="Key unik notice. Untuk edit, pilih notice dari list."
             value={noticeDraft.key}
@@ -4465,6 +4669,7 @@ function MarketplaceLandingControlsPanel({
             placeholder="enclonura-migration-2026"
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             label="Judul notice"
             description="Judul singkat notice."
             value={noticeDraft.title}
@@ -4472,6 +4677,7 @@ function MarketplaceLandingControlsPanel({
             placeholder="Enclonura pindah ke Dunia Anura"
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             label="Pesan notice"
             description="Pesan teks untuk customer marketplace."
             value={noticeDraft.message}
@@ -4479,6 +4685,7 @@ function MarketplaceLandingControlsPanel({
             placeholder="Kelola kandang, Freyr, dan layanan..."
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             label="URL CTA notice"
             description="URL tombol opsional."
             value={noticeDraft.ctaUrl}
@@ -4486,6 +4693,7 @@ function MarketplaceLandingControlsPanel({
             placeholder="/dashboard"
           />
           <KolamTextFieldRow
+            variant="settingsForm"
             label="Label CTA notice"
             description="Label tombol opsional."
             value={noticeDraft.ctaLabel}
@@ -4493,6 +4701,7 @@ function MarketplaceLandingControlsPanel({
             placeholder="Buka dashboard"
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="Notice aktif"
             description="Aktifkan notice untuk customer."
             active={noticeDraft.isActive}
@@ -4502,6 +4711,7 @@ function MarketplaceLandingControlsPanel({
             }
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="Tampilkan di home"
             description="Tampilkan notice di homepage marketplace."
             active={noticeDraft.showOnHome}
@@ -4511,6 +4721,7 @@ function MarketplaceLandingControlsPanel({
             }
           />
           <KolamToggleRow
+            variant="settingsForm"
             label="Tampilkan di dashboard"
             description="Tampilkan notice di dashboard customer."
             active={noticeDraft.showOnDashboard}
@@ -4626,8 +4837,6 @@ const styles = StyleSheet.create({
   },
   marketplaceAssetRow: {
     alignItems: 'center',
-    borderTopColor: '#e5e7eb',
-    borderTopWidth: 1,
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
@@ -4648,8 +4857,6 @@ const styles = StyleSheet.create({
   },
   marketplaceNoticeRow: {
     alignItems: 'center',
-    borderTopColor: '#e5e7eb',
-    borderTopWidth: 1,
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
@@ -4683,8 +4890,6 @@ const styles = StyleSheet.create({
   },
   marketplaceOverviewRow: {
     alignItems: 'center',
-    borderColor: '#e5e7eb',
-    borderTopWidth: 1,
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
@@ -4692,7 +4897,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   marketplaceOverviewRows: {
-    gap: 0,
+    gap: 8,
   },
   marketplaceOverviewTitle: {
     color: '#111827',
@@ -4736,8 +4941,6 @@ const styles = StyleSheet.create({
   },
   notificationSoundRow: {
     alignItems: 'center',
-    borderTopColor: '#e5e7eb',
-    borderTopWidth: 1,
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
@@ -4753,24 +4956,18 @@ const styles = StyleSheet.create({
   storeHoursCompactHeader: {
     alignItems: 'center',
     backgroundColor: '#f3f4f6',
-    borderBottomColor: '#e5e7eb',
-    borderBottomWidth: 1,
     flexDirection: 'row',
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
   storeHoursCompactRow: {
     alignItems: 'center',
-    borderBottomColor: '#e5e7eb',
-    borderBottomWidth: 1,
     flexDirection: 'row',
     minHeight: 44,
     paddingHorizontal: 12,
     paddingVertical: 7,
   },
-  storeHoursCompactRowLast: {
-    borderBottomWidth: 0,
-  },
+  storeHoursCompactRowLast: {},
   storeHoursCompactTable: {
     overflow: 'hidden',
   },
@@ -4839,8 +5036,6 @@ const styles = StyleSheet.create({
   },
   storeClosureRow: {
     alignItems: 'center',
-    borderTopColor: '#e5e7eb',
-    borderTopWidth: 1,
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
@@ -4848,8 +5043,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   storeHoursRow: {
-    borderTopColor: '#e5e7eb',
-    borderTopWidth: 1,
     gap: 10,
     paddingVertical: 10,
   },

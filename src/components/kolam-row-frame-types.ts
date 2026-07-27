@@ -1,4 +1,4 @@
-import type {ReactNode} from 'react';
+import type { ReactNode } from 'react';
 import type {
   AccessibilityState,
   GestureResponderEvent,
@@ -18,6 +18,7 @@ export type KolamRowFrameVariant =
   | 'sales'
   | 'settingsActivityHeader'
   | 'settingsActivity'
+  | 'settingsForm'
   | 'settingsPermission';
 
 export interface KolamRowFrameProps {
