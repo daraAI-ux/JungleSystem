@@ -144,3 +144,33 @@ Komponen baru hanya jika **semua** ini benar, dan user sudah approve:
 1. Jangan menambah “satu set widget lokal” (button/row/field/dialog) jika shell/katalog sudah punya padanan.
 2. Jika ragu komponen mana yang benar: STOP, audit-only, tanya user — jangan menduplikasi “untuk amannya”.
 3. Dedup/extract massal hanya jika user meminta eksplisit sebagai task tersendiri.
+
+## WebView2 / TipTap (Windows performance)
+
+Aturan ini melengkapi proteksi di atas. Tidak menghapus atau melemahkan rule existing.
+
+Pada Windows, setiap `WebView` dengan `useWebView2` = **satu proses WebView2** (RAM/CPU mahal). TipTap editor memakai bundle besar (~438 KB) per mount.
+
+### Wajib sebelum menambah WebView2
+
+1. **Audit reuse dulu.** Cari host/pola existing:
+   - TipTap rich text: `KolamTipTapRichTextEditor` + bila banyak field: `KolamTipTapExclusiveGroup` / `KolamTipTapExclusiveField` (`src/components/kolam-tiptap-exclusive-host.tsx`)
+   - Media: `KolamMediaPlayer` / preview host
+   - Jangan buat WebView “sekalian” untuk HTML statis jika `KolamHtmlContent` / native View cukup
+2. Di proposal sebelum coding, sebutkan: berapa WebView2 yang akan hidup **bersamaan**, dan mengapa tidak bisa 1 host.
+3. **Default: maksimal satu TipTap WebView2 aktif per form/group.** Field rich-text lain memakai preview ringan sampai diaktifkan (pola exclusive host).
+4. Jangan mount N TipTap bersamaan hanya karena N field (contoh anti-pola: description + morfologis + habitat = 3 WebView2).
+
+### Batasan umum WebView2
+
+1. Jangan menambah WebView2 di shell chrome (sidebar/top nav) atau di list row yang di-virtualisasi/banyak.
+2. Unmount WebView saat dialog/surface tidak terlihat jika tidak wajib keep-alive.
+3. Jangan me-load TipTap bundle di WebView yang bukan editor TipTap.
+4. Media player / print WebView tetap terpisah dari TipTap host; jangan digabung sembarangan tanpa approval.
+5. Jika butuh WebView2 baru di luar pola di atas: STOP, audit-only, tanya user — sebutkan alternatif native dulu.
+
+### Agen halaman baru yang butuh editor kaya / WebView
+
+1. Rich text → `KolamTipTapRichTextEditor`; jika ≥2 field di layar yang sama → bungkus `KolamTipTapExclusiveGroup`.
+2. Preview HTML read-only → prefer `KolamHtmlContent` (bukan WebView2), kecuali requirement eksplisit.
+3. Jangan copy pola FE web yang me-mount banyak editor sekaligus tanpa mempertimbangkan biaya WebView2 di RNW.

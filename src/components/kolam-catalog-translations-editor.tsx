@@ -17,6 +17,7 @@ import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { KolamButton } from './kolam-button';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamFormTextField } from './kolam-form-text-field';
+import { KolamTipTapExclusiveField, KolamTipTapExclusiveGroup } from './kolam-tiptap-exclusive-host';
 import { KolamTipTapRichTextEditor } from './kolam-tiptap-rich-text-editor';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 
@@ -375,30 +376,35 @@ function SpeciesLocaleFields({
           value={block.shortDescription ?? ''}
         />
       </View>
-      <View style={settingsWebFormStyles.settingsWebFormField}>
-        <KolamTipTapRichTextEditor
-          editable={editable}
-          onChangeText={description => patch({ description })}
-          placeholder="Deskripsi spesies"
-          value={block.description ?? ''}
-        />
-      </View>
-      <View style={settingsWebFormStyles.settingsWebFormField}>
-        <KolamTipTapRichTextEditor
-          editable={editable}
-          onChangeText={morfologis => patch({ morfologis })}
-          placeholder="Morfologis"
-          value={block.morfologis ?? ''}
-        />
-      </View>
-      <View style={settingsWebFormStyles.settingsWebFormField}>
-        <KolamTipTapRichTextEditor
-          editable={editable}
-          onChangeText={habitat => patch({ habitat })}
-          placeholder="Habitat"
-          value={block.habitat ?? ''}
-        />
-      </View>
+      <KolamTipTapExclusiveGroup initialFieldId="description">
+        <View style={settingsWebFormStyles.settingsWebFormField}>
+          <KolamTipTapExclusiveField
+            editable={editable}
+            fieldId="description"
+            onChangeText={description => patch({ description })}
+            placeholder="Deskripsi spesies"
+            value={block.description ?? ''}
+          />
+        </View>
+        <View style={settingsWebFormStyles.settingsWebFormField}>
+          <KolamTipTapExclusiveField
+            editable={editable}
+            fieldId="morfologis"
+            onChangeText={morfologis => patch({ morfologis })}
+            placeholder="Morfologis"
+            value={block.morfologis ?? ''}
+          />
+        </View>
+        <View style={settingsWebFormStyles.settingsWebFormField}>
+          <KolamTipTapExclusiveField
+            editable={editable}
+            fieldId="habitat"
+            onChangeText={habitat => patch({ habitat })}
+            placeholder="Habitat"
+            value={block.habitat ?? ''}
+          />
+        </View>
+      </KolamTipTapExclusiveGroup>
       <View style={settingsWebFormStyles.settingsWebFormField}>
         <KolamFormTextField
           editable={editable}
