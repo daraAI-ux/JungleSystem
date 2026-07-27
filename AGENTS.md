@@ -78,6 +78,26 @@ Aturan ini melengkapi proteksi di atas. Tidak menghapus atau melemahkan rule exi
 3. Jika pola peletakan state tidak jelas: STOP, audit-only, tanya user — jangan menebak atau merombak App.
 4. Setelah batch perubahan disetujui dan selesai: **buat git commit** untuk batch itu (jangan menumpuk banyak fitur tak terkait dalam satu commit), kecuali user meminta menunda commit. Jangan `git push` kecuali diminta eksplisit.
 
+### App Context API (setelah state dipecah dari App)
+
+State bersama sudah dipecah ke Context. `App.tsx` hanya composition root (`KolamAppStateProvider` + `KolamAppRoot`). Definisi hook: `src/context/kolam-app-contexts.tsx`. Provider wiring: `src/context/kolam-app-state-provider.tsx`.
+
+| Hook | Pakai untuk |
+|------|-------------|
+| `useKolamAuthContext` | session user, credentials form, sign-in/out, device identity |
+| `useKolamDataContext` | `dataset`, sync activity, refresh unified data |
+| `useKolamNavigationContext` | module/route aktif, settings tab, chat rail |
+| `useKolamShellChromeContext` | sidebar / top nav / overlay / dashboard header (chrome saja) |
+| `useKolamWorkspaceViewContext` | props workspace + runtime surface |
+
+Wajib untuk agen halaman baru:
+
+1. Butuh data/session/nav bersama → **panggil Context hook di atas** dari surface/hook modul (atau host kecil modul itu).
+2. **Jangan** menambah `useState` / controller baru di `App.tsx` atau memperbesar `KolamAppStateProvider` hanya untuk state lokal halaman.
+3. **Jangan** meneruskan state halaman lewat prop bag baru dari `App` → shell → workspace jika Context atau state modul sudah cukup.
+4. State khusus halaman (list, form draft, pagination, search lokal) tetap di **surface / hook modul**, bukan di Context global, kecuali user menyetujui scope bersama secara eksplisit.
+5. Jangan menghapus / menggabungkan Context split atau memo shell/workspace tanpa approval.
+
 ## Component Reuse (anti-duplication)
 
 Aturan ini melengkapi proteksi di atas. Tidak menghapus atau melemahkan rule existing (termasuk larangan extract shared / ubah reusable tanpa approval).
