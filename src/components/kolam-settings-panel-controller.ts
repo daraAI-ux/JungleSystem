@@ -1454,6 +1454,18 @@ export function useKolamSettingsPanelController(
     }));
     setWebSettingSaveStatus('idle');
   };
+  const setWebSettingDraftFields = (
+    patch: Partial<WebSettingDraft>,
+    resetSaveStatus = true,
+  ) => {
+    setWebSettingDraft(current => ({
+      ...current,
+      ...patch,
+    }));
+    if (resetSaveStatus) {
+      setWebSettingSaveStatus('idle');
+    }
+  };
   const setWebSettingPluginControl = (
     key: KolamPluginConfigKey,
     enabled: boolean,
@@ -2585,6 +2597,181 @@ export function useKolamSettingsPanelController(
     }
   };
 
+  const saveOperationalMaintenance = async (
+    target: 'pos' | 'marketplace',
+    value: boolean,
+  ) => {
+    const previousDraft = {
+      maintenancePos: webSettingDraft.maintenancePos,
+      maintenanceMarketplace: webSettingDraft.maintenanceMarketplace,
+    };
+    const nextMaintenance = {
+      pos: target === 'pos' ? value : webSettingDraft.maintenancePos,
+      marketplace:
+        target === 'marketplace'
+          ? value
+          : webSettingDraft.maintenanceMarketplace,
+    };
+
+    setWebSettingSaveStatus('saving');
+    setWebSettingMessage('');
+    setWebSettingDraftFields(
+      {
+        maintenancePos: nextMaintenance.pos,
+        maintenanceMarketplace: nextMaintenance.marketplace,
+      },
+      false,
+    );
+    if (target === 'pos') {
+      setMaintenanceMode(value);
+    }
+
+    try {
+      const updated = await updateKolamWebSetting({
+        maintenanceMode: nextMaintenance,
+      });
+      setWebSetting({
+        ...updated,
+        maintenance: {
+          ...(updated.maintenance ?? {}),
+          pos: nextMaintenance.pos,
+          marketplace: nextMaintenance.marketplace,
+        },
+      });
+      setWebSettingSaveStatus('saved');
+      setWebSettingMessage(
+        target === 'pos'
+          ? 'Maintenance POS berhasil diperbarui.'
+          : 'Maintenance marketplace berhasil diperbarui.',
+      );
+    } catch (error) {
+      setWebSettingDraftFields(previousDraft, false);
+      if (target === 'pos') {
+        setMaintenanceMode(previousDraft.maintenancePos);
+      }
+      setWebSettingSaveStatus('error');
+      setWebSettingMessage(getWebSettingSaveErrorMessage(error));
+    }
+  };
+
+  const saveOperationalLivechat = async (value: boolean) => {
+    const previous = webSettingDraft.livechatOnline;
+
+    setWebSettingSaveStatus('saving');
+    setWebSettingMessage('');
+    setWebSettingDraftFields({ livechatOnline: value }, false);
+    setStorefrontEnabled(value);
+
+    try {
+      const updated = await updateKolamWebSetting({ livechatOnline: value });
+      setWebSetting({
+        ...updated,
+        livechatOnline: value,
+      });
+      setWebSettingSaveStatus('saved');
+      setWebSettingMessage('Livechat berhasil diperbarui.');
+    } catch (error) {
+      setWebSettingDraftFields({ livechatOnline: previous }, false);
+      setStorefrontEnabled(previous);
+      setWebSettingSaveStatus('error');
+      setWebSettingMessage(getWebSettingSaveErrorMessage(error));
+    }
+  };
+
+  const saveOperationalGoogleAuth = async (
+    patch: Partial<
+      Pick<WebSettingDraft, 'webstoreGoogleAuthEnabled' | 'googleOAuthClientId'>
+    >,
+  ) => {
+    const previous = {
+      webstoreGoogleAuthEnabled: webSettingDraft.webstoreGoogleAuthEnabled,
+      googleOAuthClientId: webSettingDraft.googleOAuthClientId,
+    };
+    const nextDraft = { ...previous, ...patch };
+
+    setWebSettingSaveStatus('saving');
+    setWebSettingMessage('');
+    setWebSettingDraftFields(nextDraft, false);
+
+    try {
+      const updated = await updateKolamWebSetting({
+        ...(patch.webstoreGoogleAuthEnabled !== undefined
+          ? { webstoreGoogleAuthEnabled: nextDraft.webstoreGoogleAuthEnabled }
+          : {}),
+        ...(patch.googleOAuthClientId !== undefined
+          ? { googleOAuthClientId: nextDraft.googleOAuthClientId.trim() }
+          : {}),
+      });
+      setWebSetting({
+        ...updated,
+        webstoreGoogleAuthEnabled: nextDraft.webstoreGoogleAuthEnabled,
+        googleOAuthClientId: nextDraft.googleOAuthClientId.trim(),
+      });
+      setWebSettingSaveStatus('saved');
+      setWebSettingMessage('Google Sign-In berhasil disimpan.');
+    } catch (error) {
+      setWebSettingDraftFields(previous, false);
+      setWebSettingSaveStatus('error');
+      setWebSettingMessage(getWebSettingSaveErrorMessage(error));
+    }
+  };
+
+  const saveOperationalPoWorkflow = async (patch: Partial<WebSettingDraft>) => {
+    const previous = pickPoWorkflowDraftFields(webSettingDraft);
+    const nextDraft = {
+      ...webSettingDraft,
+      ...patch,
+    };
+    const nextPoWorkflow = createPoWorkflowUpdateBody(nextDraft);
+
+    setWebSettingSaveStatus('saving');
+    setWebSettingMessage('');
+    setWebSettingDraftFields(patch, false);
+
+    try {
+      const updated = await updateKolamWebSetting({
+        poWorkflow: nextPoWorkflow,
+      });
+      setWebSetting({
+        ...updated,
+        poWorkflow: nextPoWorkflow,
+      });
+      setWebSettingSaveStatus('saved');
+      setWebSettingMessage('Alur PO berhasil diperbarui.');
+    } catch (error) {
+      setWebSettingDraftFields(previous, false);
+      setWebSettingSaveStatus('error');
+      setWebSettingMessage(getWebSettingSaveErrorMessage(error));
+    }
+  };
+
+  const saveOperationalStaffAttendance = async () => {
+    const previous = createStaffAttendanceDraftPatch(webSettingDraft);
+
+    setWebSettingSaveStatus('saving');
+    setWebSettingMessage('');
+
+    try {
+      const attendance = await updateKolamStaffAttendanceSettings(
+        createStaffAttendanceUpdateBody(
+          webSettingDraft,
+          staffAttendanceSettings,
+        ),
+      );
+      setStaffAttendanceSettings(attendance);
+      setWebSettingDraftFields(
+        createStaffAttendanceDraftFields(attendance),
+        false,
+      );
+      setWebSettingSaveStatus('saved');
+      setWebSettingMessage('Pengaturan absensi berhasil disimpan.');
+    } catch (error) {
+      setWebSettingDraftFields(previous, false);
+      setWebSettingSaveStatus('error');
+      setWebSettingMessage(getWebSettingSaveErrorMessage(error));
+    }
+  };
+
   const setRoleDraftField = <Key extends keyof RoleDraft>(
     key: Key,
     value: RoleDraft[Key],
@@ -2843,6 +3030,11 @@ export function useKolamSettingsPanelController(
     saveMarketplaceLandingYoutube,
     saveMarketplaceLandingNotice,
     saveKpiSettings,
+    saveOperationalGoogleAuth,
+    saveOperationalLivechat,
+    saveOperationalMaintenance,
+    saveOperationalPoWorkflow,
+    saveOperationalStaffAttendance,
     uploadMarketplaceAnnouncementImage,
     uploadMarketplaceBioactiveStepImage,
     uploadMarketplaceCategoryBannerImage,
@@ -3162,6 +3354,21 @@ function createPoWorkflowUpdateBody(draft: WebSettingDraft) {
   };
 }
 
+function pickPoWorkflowDraftFields(draft: WebSettingDraft) {
+  return {
+    poWorkflowReceivingRoomId: draft.poWorkflowReceivingRoomId,
+    poWorkflowNotifyOnReceive: draft.poWorkflowNotifyOnReceive,
+    poWorkflowNotifyOnCheck: draft.poWorkflowNotifyOnCheck,
+    poWorkflowNotifyOnPartial: draft.poWorkflowNotifyOnPartial,
+    poWorkflowPostProofToTeamChat: draft.poWorkflowPostProofToTeamChat,
+    poWorkflowPartialCompleteRequiresAdmin:
+      draft.poWorkflowPartialCompleteRequiresAdmin,
+    poWorkflowNotifyReceiveUserIds: draft.poWorkflowNotifyReceiveUserIds,
+    poWorkflowNotifyCheckUserIds: draft.poWorkflowNotifyCheckUserIds,
+    poWorkflowNotifyCompleteUserIds: draft.poWorkflowNotifyCompleteUserIds,
+  } satisfies Partial<WebSettingDraft>;
+}
+
 function createStaffAttendanceDraftFields(
   settings: KolamStaffAttendanceSettings,
 ) {
@@ -3204,6 +3411,37 @@ function createStaffAttendanceDraftFields(
     staffAttendanceWorkSites: normalizeStaffAttendanceWorkSites(
       settings.workSites,
     ),
+  } satisfies Partial<WebSettingDraft>;
+}
+
+function createStaffAttendanceDraftPatch(draft: WebSettingDraft) {
+  return {
+    staffAttendancePayrollCutoffDay: draft.staffAttendancePayrollCutoffDay,
+    staffAttendanceWorkStartTime: draft.staffAttendanceWorkStartTime,
+    staffAttendanceWorkEndTime: draft.staffAttendanceWorkEndTime,
+    staffAttendanceServiceCommissionInsideHoursPct:
+      draft.staffAttendanceServiceCommissionInsideHoursPct,
+    staffAttendanceServiceCommissionOutsideHoursPct:
+      draft.staffAttendanceServiceCommissionOutsideHoursPct,
+    staffAttendanceTimezone: draft.staffAttendanceTimezone,
+    staffAttendanceLateToleranceMinutes:
+      draft.staffAttendanceLateToleranceMinutes,
+    staffAttendanceLateTier2MaxMinutes:
+      draft.staffAttendanceLateTier2MaxMinutes,
+    staffAttendanceLateCheckInDeadlineMinutes:
+      draft.staffAttendanceLateCheckInDeadlineMinutes,
+    staffAttendanceLateFineTier2: draft.staffAttendanceLateFineTier2,
+    staffAttendanceLateFineTier3: draft.staffAttendanceLateFineTier3,
+    staffAttendanceAbsentDailyDivisor: draft.staffAttendanceAbsentDailyDivisor,
+    staffAttendanceMapProvider: draft.staffAttendanceMapProvider,
+    staffAttendanceOsmNominatimUrl: draft.staffAttendanceOsmNominatimUrl,
+    staffAttendanceOsmTileUrl: draft.staffAttendanceOsmTileUrl,
+    staffAttendanceGoogleMapsBrowserApiKey:
+      draft.staffAttendanceGoogleMapsBrowserApiKey,
+    staffAttendanceRequireGps: draft.staffAttendanceRequireGps,
+    staffAttendanceRequireFace: draft.staffAttendanceRequireFace,
+    staffAttendanceFaceMatchThreshold: draft.staffAttendanceFaceMatchThreshold,
+    staffAttendanceWorkSites: draft.staffAttendanceWorkSites,
   } satisfies Partial<WebSettingDraft>;
 }
 

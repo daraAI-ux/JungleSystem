@@ -135,12 +135,6 @@ export function KolamSettingsSurfaceBody({
         onUploadMarketplaceYoutubeBackground={() => {
           void controller.uploadMarketplaceYoutubeBackground();
         }}
-        onToggleMaintenanceMode={() =>
-          controller.setMaintenanceMode(current => !current)
-        }
-        onToggleStorefrontEnabled={() =>
-          controller.setStorefrontEnabled(current => !current)
-        }
         onSave={() => {
           void controller.saveWebSetting();
         }}
@@ -158,6 +152,21 @@ export function KolamSettingsSurfaceBody({
         }}
         onSaveKpiSettings={() => {
           void controller.saveKpiSettings();
+        }}
+        onSaveOperationalGoogleAuth={patch => {
+          void controller.saveOperationalGoogleAuth(patch);
+        }}
+        onSaveOperationalLivechat={value => {
+          void controller.saveOperationalLivechat(value);
+        }}
+        onSaveOperationalMaintenance={(target, value) => {
+          void controller.saveOperationalMaintenance(target, value);
+        }}
+        onSaveOperationalPoWorkflow={patch => {
+          void controller.saveOperationalPoWorkflow(patch);
+        }}
+        onSaveOperationalStaffAttendance={() => {
+          void controller.saveOperationalStaffAttendance();
         }}
         onWebTitleChange={controller.setWebTitle}
         setMarketplaceLandingCtaDraftField={

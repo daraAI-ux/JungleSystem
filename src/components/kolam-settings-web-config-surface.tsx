@@ -344,8 +344,11 @@ export function KolamSettingsWebConfigSurface({
   onRefreshKpiWeeklyPreview,
   onRunRegionSync,
   onSaveKpiSettings,
-  onToggleMaintenanceMode,
-  onToggleStorefrontEnabled,
+  onSaveOperationalGoogleAuth,
+  onSaveOperationalLivechat,
+  onSaveOperationalMaintenance,
+  onSaveOperationalPoWorkflow,
+  onSaveOperationalStaffAttendance,
   onSave,
   onDeleteNotificationSound,
   onPluginControlChange,
@@ -466,8 +469,18 @@ export function KolamSettingsWebConfigSurface({
   onRefreshKpiWeeklyPreview: () => void;
   onRunRegionSync: (scope: KolamRegionSyncScope) => void;
   onSaveKpiSettings: () => void;
-  onToggleMaintenanceMode: () => void;
-  onToggleStorefrontEnabled: () => void;
+  onSaveOperationalGoogleAuth: (
+    patch: Partial<
+      Pick<WebSettingDraft, 'webstoreGoogleAuthEnabled' | 'googleOAuthClientId'>
+    >,
+  ) => void;
+  onSaveOperationalLivechat: (value: boolean) => void;
+  onSaveOperationalMaintenance: (
+    target: 'pos' | 'marketplace',
+    value: boolean,
+  ) => void;
+  onSaveOperationalPoWorkflow: (patch: Partial<WebSettingDraft>) => void;
+  onSaveOperationalStaffAttendance: () => void;
   onSave: () => void;
   onDeleteNotificationSound: (type: KolamNotificationSoundType) => void;
   onPluginControlChange: (key: KolamPluginConfigKey, enabled: boolean) => void;
@@ -760,7 +773,9 @@ export function KolamSettingsWebConfigSurface({
     } else {
       current.add(userId);
     }
-    setDraftField(field, Array.from(current).join('\n'));
+    onSaveOperationalPoWorkflow({
+      [field]: Array.from(current).join('\n'),
+    } as Partial<WebSettingDraft>);
   };
   const renderPoWorkflowStaffPicker = (
     field:
@@ -1005,8 +1020,7 @@ export function KolamSettingsWebConfigSurface({
                   if (disabled) {
                     return;
                   }
-                  setDraftField('livechatOnline', !draft.livechatOnline);
-                  onToggleStorefrontEnabled();
+                  onSaveOperationalLivechat(!draft.livechatOnline);
                 }}
               />
               <KolamToggleRow
@@ -1018,8 +1032,7 @@ export function KolamSettingsWebConfigSurface({
                   if (disabled) {
                     return;
                   }
-                  setDraftField('maintenancePos', !draft.maintenancePos);
-                  onToggleMaintenanceMode();
+                  onSaveOperationalMaintenance('pos', !draft.maintenancePos);
                 }}
               />
               <KolamToggleRow
@@ -1029,8 +1042,8 @@ export function KolamSettingsWebConfigSurface({
                 active={draft.maintenanceMarketplace}
                 onPress={() =>
                   !disabled &&
-                  setDraftField(
-                    'maintenanceMarketplace',
+                  onSaveOperationalMaintenance(
+                    'marketplace',
                     !draft.maintenanceMarketplace,
                   )
                 }
@@ -1726,8 +1739,7 @@ export function KolamSettingsWebConfigSurface({
               if (disabled) {
                 return;
               }
-              setDraftField('maintenancePos', !draft.maintenancePos);
-              onToggleMaintenanceMode();
+              onSaveOperationalMaintenance('pos', !draft.maintenancePos);
             }}
           />
           <KolamToggleRow
@@ -1737,8 +1749,8 @@ export function KolamSettingsWebConfigSurface({
             active={draft.maintenanceMarketplace}
             onPress={() =>
               !disabled &&
-              setDraftField(
-                'maintenanceMarketplace',
+              onSaveOperationalMaintenance(
+                'marketplace',
                 !draft.maintenanceMarketplace,
               )
             }
@@ -1764,19 +1776,30 @@ export function KolamSettingsWebConfigSurface({
             active={draft.webstoreGoogleAuthEnabled}
             onPress={() =>
               !disabled &&
-              setDraftField(
-                'webstoreGoogleAuthEnabled',
-                !draft.webstoreGoogleAuthEnabled,
-              )
+              onSaveOperationalGoogleAuth({
+                webstoreGoogleAuthEnabled: !draft.webstoreGoogleAuthEnabled,
+              })
             }
           />
           <KolamTextFieldRow
             variant="settingsForm"
+            fieldWidth={settingsFieldWidth}
             label="Google OAuth client ID"
             description="OAuth 2.0 Web client ID untuk webstore."
             value={draft.googleOAuthClientId}
             onChangeText={value => setDraftField('googleOAuthClientId', value)}
             placeholder="xxxx.apps.googleusercontent.com"
+          />
+          <KolamActionControlButton
+            label="Simpan Client ID"
+            loading={saveStatus === 'saving'}
+            loadingLabel="Menyimpan..."
+            disabled={disabled}
+            onPress={() =>
+              onSaveOperationalGoogleAuth({
+                googleOAuthClientId: draft.googleOAuthClientId.trim(),
+              })
+            }
           />
           <KolamCopyStack
             items={[
@@ -2178,6 +2201,13 @@ export function KolamSettingsWebConfigSurface({
             }
             placeholder="Asia/Jakarta"
           />
+          <KolamActionControlButton
+            label="Simpan absensi"
+            loading={saveStatus === 'saving'}
+            loadingLabel="Menyimpan..."
+            disabled={disabled}
+            onPress={onSaveOperationalStaffAttendance}
+          />
           <KolamCopyStack
             items={[
               {
@@ -2201,8 +2231,7 @@ export function KolamSettingsWebConfigSurface({
               if (disabled) {
                 return;
               }
-              setDraftField('livechatOnline', !draft.livechatOnline);
-              onToggleStorefrontEnabled();
+              onSaveOperationalLivechat(!draft.livechatOnline);
             }}
           />
           <KolamCopyStack
@@ -2250,7 +2279,10 @@ export function KolamSettingsWebConfigSurface({
                 label="Pilih room"
                 selectedId={draft.poWorkflowReceivingRoomId}
                 onSelect={value =>
-                  !disabled && setDraftField('poWorkflowReceivingRoomId', value)
+                  !disabled &&
+                  onSaveOperationalPoWorkflow({
+                    poWorkflowReceivingRoomId: value,
+                  })
                 }
                 variant="button"
               />
@@ -2264,7 +2296,9 @@ export function KolamSettingsWebConfigSurface({
                   selectedId={draft.poWorkflowReceivingRoomId}
                   onSelect={value =>
                     !disabled &&
-                    setDraftField('poWorkflowReceivingRoomId', value)
+                    onSaveOperationalPoWorkflow({
+                      poWorkflowReceivingRoomId: value,
+                    })
                   }
                   variant="button"
                 />
@@ -2289,10 +2323,9 @@ export function KolamSettingsWebConfigSurface({
             active={draft.poWorkflowNotifyOnReceive}
             onPress={() =>
               !disabled &&
-              setDraftField(
-                'poWorkflowNotifyOnReceive',
-                !draft.poWorkflowNotifyOnReceive,
-              )
+              onSaveOperationalPoWorkflow({
+                poWorkflowNotifyOnReceive: !draft.poWorkflowNotifyOnReceive,
+              })
             }
           />
           <KolamToggleRow
@@ -2302,10 +2335,9 @@ export function KolamSettingsWebConfigSurface({
             active={draft.poWorkflowNotifyOnCheck}
             onPress={() =>
               !disabled &&
-              setDraftField(
-                'poWorkflowNotifyOnCheck',
-                !draft.poWorkflowNotifyOnCheck,
-              )
+              onSaveOperationalPoWorkflow({
+                poWorkflowNotifyOnCheck: !draft.poWorkflowNotifyOnCheck,
+              })
             }
           />
           <KolamToggleRow
@@ -2315,10 +2347,9 @@ export function KolamSettingsWebConfigSurface({
             active={draft.poWorkflowNotifyOnPartial}
             onPress={() =>
               !disabled &&
-              setDraftField(
-                'poWorkflowNotifyOnPartial',
-                !draft.poWorkflowNotifyOnPartial,
-              )
+              onSaveOperationalPoWorkflow({
+                poWorkflowNotifyOnPartial: !draft.poWorkflowNotifyOnPartial,
+              })
             }
           />
           <KolamToggleRow
@@ -2328,10 +2359,10 @@ export function KolamSettingsWebConfigSurface({
             active={draft.poWorkflowPostProofToTeamChat}
             onPress={() =>
               !disabled &&
-              setDraftField(
-                'poWorkflowPostProofToTeamChat',
-                !draft.poWorkflowPostProofToTeamChat,
-              )
+              onSaveOperationalPoWorkflow({
+                poWorkflowPostProofToTeamChat:
+                  !draft.poWorkflowPostProofToTeamChat,
+              })
             }
           />
           <KolamToggleRow
@@ -2341,10 +2372,10 @@ export function KolamSettingsWebConfigSurface({
             active={draft.poWorkflowPartialCompleteRequiresAdmin}
             onPress={() =>
               !disabled &&
-              setDraftField(
-                'poWorkflowPartialCompleteRequiresAdmin',
-                !draft.poWorkflowPartialCompleteRequiresAdmin,
-              )
+              onSaveOperationalPoWorkflow({
+                poWorkflowPartialCompleteRequiresAdmin:
+                  !draft.poWorkflowPartialCompleteRequiresAdmin,
+              })
             }
           />
           {renderPoWorkflowStaffPicker(
@@ -3544,7 +3575,6 @@ export function KolamSettingsWebConfigSurface({
         </>
       ) : null}
       {showGeneralSettings ||
-      showOperationalSettings ||
       showStoreShippingSettings ||
       showAiSettings ||
       showNotificationSettings ||
@@ -3568,6 +3598,16 @@ export function KolamSettingsWebConfigSurface({
             />
           ) : null}
         </>
+      ) : null}
+      {showOperationalSettings && saveMessage ? (
+        <KolamCopyStack
+          items={[
+            {
+              id: 'operational-save-message',
+              text: saveMessage,
+            },
+          ]}
+        />
       ) : null}
       {showPluginControls ? (
         <>

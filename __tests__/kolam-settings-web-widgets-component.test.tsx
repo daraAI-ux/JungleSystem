@@ -1,10 +1,13 @@
 import React from 'react';
 import { Text, View } from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
+import { KolamActionControlButton } from '../src/components/kolam-action-control-button';
+import { KolamChoiceSegment } from '../src/components/kolam-choice-segment';
 import { KolamSettingsWebConfigSurface } from '../src/components/kolam-settings-panel-surfaces';
 import { KolamRemoteImage } from '../src/components/kolam-remote-image';
 import { KolamSettingsWebFileField } from '../src/components/kolam-settings-web-file-field';
 import { KolamSettingsWebFormSections } from '../src/components/kolam-settings-web-widgets';
+import { KolamToggleRow } from '../src/components/kolam-toggle-row';
 import {
   getSettingsWebConfigFields,
   getSettingsWebFormSections,
@@ -253,8 +256,11 @@ describe('settings web widgets', () => {
           onRefreshKpiWeeklyPreview={jest.fn()}
           onRunRegionSync={jest.fn()}
           onSaveKpiSettings={jest.fn()}
-          onToggleMaintenanceMode={jest.fn()}
-          onToggleStorefrontEnabled={jest.fn()}
+          onSaveOperationalGoogleAuth={jest.fn()}
+          onSaveOperationalLivechat={jest.fn()}
+          onSaveOperationalMaintenance={jest.fn()}
+          onSaveOperationalPoWorkflow={jest.fn()}
+          onSaveOperationalStaffAttendance={jest.fn()}
           onUploadNotificationSound={jest.fn()}
           onWebTitleChange={jest.fn()}
           saveMessage=""
@@ -323,7 +329,261 @@ describe('settings web widgets', () => {
       ]),
     );
   });
+
+  it('routes operational controls through scoped save handlers', async () => {
+    const onSave = jest.fn();
+    const onSaveOperationalGoogleAuth = jest.fn();
+    const onSaveOperationalLivechat = jest.fn();
+    const onSaveOperationalMaintenance = jest.fn();
+    const onSaveOperationalPoWorkflow = jest.fn();
+    const onSaveOperationalStaffAttendance = jest.fn();
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamSettingsWebConfigSurface
+          {...createSurfaceProps({
+            activeTabId: 'operasional',
+            draft: {
+              ...createWebSettingDraft(),
+              googleOAuthClientId: 'client-1',
+              poWorkflowReceivingRoomId: 'room-a',
+            },
+            operationalRooms: [
+              {
+                _id: 'room-a',
+                name: 'Gudang',
+                category: 'warehouse',
+              },
+            ],
+            onSave,
+            onSaveOperationalGoogleAuth,
+            onSaveOperationalLivechat,
+            onSaveOperationalMaintenance,
+            onSaveOperationalPoWorkflow,
+            onSaveOperationalStaffAttendance,
+          })}
+        />,
+      );
+    });
+
+    const toggles = renderer!.root.findAllByType(KolamToggleRow);
+    const buttons = renderer!.root.findAllByType(KolamActionControlButton);
+    const choices = renderer!.root.findAllByType(KolamChoiceSegment);
+
+    await ReactTestRenderer.act(async () => {
+      toggles
+        .find(node => node.props.label === 'Maintenance marketplace')!
+        .props.onPress();
+      toggles
+        .find(node => node.props.label === 'Livechat Always Online')!
+        .props.onPress();
+      toggles
+        .find(node => node.props.label === 'Google Sign-In webstore')!
+        .props.onPress();
+      choices
+        .find(node => node.props.label === 'Pilih room')!
+        .props.onSelect('');
+      buttons
+        .find(node => node.props.label === 'Simpan Client ID')!
+        .props.onPress();
+      buttons
+        .find(node => node.props.label === 'Simpan absensi')!
+        .props.onPress();
+    });
+
+    expect(onSaveOperationalMaintenance).toHaveBeenCalledWith(
+      'marketplace',
+      true,
+    );
+    expect(onSaveOperationalLivechat).toHaveBeenCalledWith(false);
+    expect(onSaveOperationalGoogleAuth).toHaveBeenCalledWith({
+      webstoreGoogleAuthEnabled: true,
+    });
+    expect(onSaveOperationalGoogleAuth).toHaveBeenCalledWith({
+      googleOAuthClientId: 'client-1',
+    });
+    expect(onSaveOperationalPoWorkflow).toHaveBeenCalledWith({
+      poWorkflowReceivingRoomId: '',
+    });
+    expect(onSaveOperationalStaffAttendance).toHaveBeenCalledTimes(1);
+    expect(onSave).not.toHaveBeenCalled();
+  });
 });
+
+function createSurfaceProps(
+  overrides: Partial<
+    React.ComponentProps<typeof KolamSettingsWebConfigSurface>
+  > = {},
+) {
+  return {
+    activeTabId: 'konten',
+    draft: createWebSettingDraft(),
+    fields: getSettingsWebConfigFields(),
+    maintenanceMode: false,
+    marketplaceLandingCtaDraft: {
+      title: 'Jelajahi Dunia Species',
+      description: 'Temukan koleksi',
+      buttonText: 'View',
+      buttonLink: '/species',
+      isActive: true,
+    },
+    marketplaceLandingYoutubeDraft: {
+      link: 'https://youtube.com/@DuniaAnura',
+      title: 'Dunia Anura',
+      subtitle: 'YouTube',
+      isActive: true,
+    },
+    marketplaceLandingNoticeDraft: {
+      key: '',
+      title: '',
+      message: '',
+      ctaUrl: '',
+      ctaLabel: '',
+      showOnHome: true,
+      showOnDashboard: true,
+      isActive: true,
+    },
+    marketplaceLandingSaveStatus: 'idle',
+    marketplaceLandingMessage: '',
+    marketplaceLandingAssetStatus: {},
+    marketplaceLandingTabId: 'hero',
+    marketplaceLandingTabItems: [],
+    webContentLauncherItems: [],
+    webContentMessage: '',
+    webContentPanelId: 'marketplace',
+    webContentStatus: 'live',
+    blogRows: [],
+    blogTopicRows: [],
+    kpiMessage: '',
+    kpiPreview: null,
+    kpiSettingsDraft: createKpiSettingsDraft(),
+    kpiStatus: 'idle',
+    kpiSummaryRows: [],
+    financialSummaryRows: [],
+    operationalRooms: [],
+    operationalStaffRows: [],
+    regionLevel: 'province',
+    regionParentCode: '',
+    regionRows: [],
+    regionSearch: '',
+    regionSyncMessage: '',
+    regionSyncStatus: 'idle',
+    regionSyncSummaryRows: [],
+    marketplaceLandingOverview: {
+      status: 'live',
+      message: '',
+      heroSlides: [],
+      categoryBanners: [],
+      ctaSection: {
+        title: 'Jelajahi Dunia Species',
+        description: '',
+        buttonText: 'View',
+        buttonLink: '/species',
+        isActive: true,
+      },
+      youtubeSection: {
+        link: 'https://youtube.com/@DuniaAnura',
+        title: 'Dunia Anura',
+        subtitle: 'YouTube',
+        isActive: true,
+      },
+      announcementBanners: [],
+      customerNotices: [],
+      marketplaceContent: {
+        featuredCollections: [],
+        bioactiveEcosystem: { steps: [] },
+        logo: '',
+        daraAvatar: '',
+      },
+    },
+    notificationSoundStatus: {},
+    onClearMarketplaceLandingNoticeDraft: jest.fn(),
+    onDeleteMarketplaceAnnouncementBanner: jest.fn(),
+    onDeleteMarketplaceBioactiveStep: jest.fn(),
+    onDeleteMarketplaceCategoryBanner: jest.fn(),
+    onDeleteMarketplaceFeaturedCollection: jest.fn(),
+    onDeleteMarketplaceHeroSlide: jest.fn(),
+    onDeleteMarketplaceLandingNotice: jest.fn(),
+    onDeleteNotificationSound: jest.fn(),
+    onEditMarketplaceLandingNotice: jest.fn(),
+    onMoveMarketplaceAnnouncementBanner: jest.fn(),
+    onMoveMarketplaceBioactiveStep: jest.fn(),
+    onMoveMarketplaceCategoryBanner: jest.fn(),
+    onMoveMarketplaceFeaturedCollection: jest.fn(),
+    onMoveMarketplaceHeroSlide: jest.fn(),
+    onPluginControlChange: jest.fn(),
+    onSave: jest.fn(),
+    onSaveMarketplaceLandingCta: jest.fn(),
+    onSaveMarketplaceLandingYoutube: jest.fn(),
+    onSaveMarketplaceLandingNotice: jest.fn(),
+    onUploadMarketplaceAnnouncementImage: jest.fn(),
+    onUploadMarketplaceBioactiveStepImage: jest.fn(),
+    onUploadMarketplaceCategoryBannerImage: jest.fn(),
+    onUploadMarketplaceCtaBackground: jest.fn(),
+    onUploadMarketplaceDaraAvatar: jest.fn(),
+    onUploadMarketplaceFeaturedCollectionImage: jest.fn(),
+    onUploadMarketplaceHeroImage: jest.fn(),
+    onUploadMarketplaceLogo: jest.fn(),
+    onUploadMarketplaceYoutubeBackground: jest.fn(),
+    onRefreshRegionSync: jest.fn(),
+    onRefreshKpiWeeklyPreview: jest.fn(),
+    onRunRegionSync: jest.fn(),
+    onSaveKpiSettings: jest.fn(),
+    onSaveOperationalGoogleAuth: jest.fn(),
+    onSaveOperationalLivechat: jest.fn(),
+    onSaveOperationalMaintenance: jest.fn(),
+    onSaveOperationalPoWorkflow: jest.fn(),
+    onSaveOperationalStaffAttendance: jest.fn(),
+    onUploadNotificationSound: jest.fn(),
+    onWebTitleChange: jest.fn(),
+    saveMessage: '',
+    saveStatus: 'idle',
+    sections: [],
+    setMarketplaceLandingCtaDraftField: jest.fn(),
+    setMarketplaceLandingTabId: jest.fn(),
+    setKpiEnabledRule: jest.fn(),
+    setKpiSettingsDraftField: jest.fn(),
+    setMarketplaceLandingYoutubeDraftField: jest.fn(),
+    setMarketplaceLandingNoticeDraftField: jest.fn(),
+    setWebContentPanelId: jest.fn(),
+    setRegionFilter: jest.fn(),
+    setSitemapCustomUrlsDraftText: jest.fn(),
+    setSitemapExcludedSlugsDraftText: jest.fn(),
+    setSitemapMasterField: jest.fn(),
+    setSitemapSectionField: jest.fn(),
+    setDraftField: jest.fn(),
+    sitemapChangeFrequencies: [
+      'always',
+      'hourly',
+      'daily',
+      'weekly',
+      'monthly',
+      'yearly',
+      'never',
+    ],
+    sitemapCustomUrlsText: '',
+    sitemapDraft: {
+      enabled: true,
+      includeImages: true,
+      sections: {},
+      customUrls: [],
+      excludedSlugs: {},
+    },
+    sitemapExcludedSlugsText: {},
+    sitemapSectionKeys: [
+      'products',
+      'species',
+      'blog',
+      'brands',
+      'categories',
+      'tags',
+    ],
+    storefrontEnabled: true,
+    webTitle: 'Dunia Anura',
+    ...overrides,
+  } as React.ComponentProps<typeof KolamSettingsWebConfigSurface>;
+}
 
 function createWebSettingDraft() {
   return {
