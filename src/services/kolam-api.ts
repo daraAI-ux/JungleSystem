@@ -320,10 +320,157 @@ export interface KolamStaffAttendanceGeocodeResult {
   displayName?: string;
 }
 
+export type KolamTeamChatRoomCategory =
+  | 'general'
+  | 'meeting'
+  | 'project'
+  | 'ai'
+  | 'direct';
+
+export type KolamTeamChatAttachmentKind =
+  | 'image'
+  | 'video'
+  | 'audio'
+  | 'file';
+
+export interface KolamTeamChatAttachment {
+  url: string;
+  mimeType?: string;
+  fileName?: string;
+  kind: KolamTeamChatAttachmentKind;
+}
+
+export interface KolamTeamChatUserRef {
+  _id?: string;
+  first_name?: string;
+  last_name?: string;
+  username?: string;
+  email?: string;
+  profile_picture?: string;
+  online?: boolean;
+  lastReadAt?: string | null;
+  role?: 'admin' | 'member';
+  aiRoomAccess?: 'implicit' | 'granted';
+  canRemoveAiRoomAccess?: boolean;
+}
+
+export interface KolamTeamChatReaction {
+  emoji: string;
+  user: string | KolamTeamChatUserRef;
+  createdAt?: string;
+}
+
+export interface KolamTeamChatReadReceipt {
+  user: string | KolamTeamChatUserRef;
+  readAt?: string;
+}
+
+export interface KolamTeamChatReplyPreview {
+  _id?: string;
+  body?: string;
+  senderName?: string;
+  createdAt?: string;
+}
+
+export interface KolamTeamChatLinkPreview {
+  url: string;
+  title?: string;
+  description?: string;
+  image?: string;
+  siteName?: string;
+}
+
+export interface KolamTeamChatEmbedInput {
+  type: 'invoice' | 'task' | 'purchase_order';
+  refId: string;
+}
+
+export interface KolamTeamChatEmbed extends KolamTeamChatEmbedInput {
+  title?: string;
+  subtitle?: string;
+  url?: string;
+  meta?: Record<string, unknown>;
+}
+
+export interface KolamTeamChatSendMessageBody {
+  body?: string;
+  replyToMessageId?: string;
+  attachments?: KolamTeamChatAttachment[];
+  embeds?: KolamTeamChatEmbedInput[];
+}
+
+export interface KolamTeamChatPresence {
+  onlineCount: number;
+  viewingCount: number;
+  typingUserIds: string[];
+}
+
+export interface KolamTeamChatPresenceBody {
+  viewingRoomId?: string | null;
+  typing?: boolean;
+  typingRoomId?: string | null;
+}
+
+export type KolamTeamChatCallStatus = 'ringing' | 'active' | 'ended';
+
+export type KolamTeamChatCallParticipantStatus =
+  | 'invited'
+  | 'ringing'
+  | 'joined'
+  | 'declined'
+  | 'no_answer'
+  | 'left';
+
+export interface KolamTeamChatCallParticipant {
+  user: string | KolamTeamChatUserRef;
+  status: KolamTeamChatCallParticipantStatus;
+  joinedAt?: string | null;
+  leftAt?: string | null;
+  muted?: boolean;
+  handRaised?: boolean;
+}
+
+export interface KolamTeamChatCall {
+  _id: string;
+  roomId?: string;
+  status: KolamTeamChatCallStatus;
+  startedBy?: string | KolamTeamChatUserRef;
+  ringExpiresAt?: string | null;
+  startedAt?: string | null;
+  endedAt?: string | null;
+  participantCount?: number;
+  onlineInCall?: number;
+  participants?: KolamTeamChatCallParticipant[];
+  isHost?: boolean;
+  handover?: {
+    platform?: string;
+    startedAt?: string;
+    endedAt?: string;
+  };
+}
+
+export interface KolamTeamChatCallConfig {
+  enabled: boolean;
+  groupCallRingtone?: string;
+}
+
+export interface KolamChatAnalyticsParams {
+  from?: string;
+  to?: string;
+}
+
+export interface KolamChatAnalytics {
+  conversations?: unknown;
+  messages?: unknown;
+  responseTimes?: unknown;
+  byPlatform?: unknown;
+  [key: string]: unknown;
+}
+
 export interface KolamTeamChatRoom {
   _id: string;
   name?: string;
-  category?: string;
+  category?: KolamTeamChatRoomCategory | string;
   directPeerName?: string;
   isGeneral?: boolean;
   isAiRoom?: boolean;
@@ -336,17 +483,19 @@ export interface KolamTeamChatRoom {
 export interface KolamTeamChatMessage {
   _id: string;
   room?: string;
-  sender?: string | {
-    _id?: string;
-    first_name?: string;
-    last_name?: string;
-    username?: string;
-    email?: string;
-  } | null;
+  sender?: string | KolamTeamChatUserRef | null;
   senderType?: 'user' | 'ai';
   botKey?: string;
   botName?: string;
   body?: string;
+  attachments?: KolamTeamChatAttachment[];
+  reactions?: KolamTeamChatReaction[];
+  readReceipts?: KolamTeamChatReadReceipt[];
+  replyPreview?: KolamTeamChatReplyPreview | null;
+  linkPreviews?: KolamTeamChatLinkPreview[];
+  embeds?: KolamTeamChatEmbed[];
+  editedAt?: string | null;
+  editedByName?: string | null;
   createdAt?: string;
 }
 
@@ -1737,9 +1886,16 @@ export async function sendKolamTeamChatTextMessage(
   roomId: string,
   body: string,
 ): Promise<KolamTeamChatMessage> {
+  return sendKolamTeamChatMessage(roomId, {body});
+}
+
+export async function sendKolamTeamChatMessage(
+  roomId: string,
+  body: KolamTeamChatSendMessageBody,
+): Promise<KolamTeamChatMessage> {
   const response = await kolamPost<DataResponse<KolamTeamChatMessage>>(
     `/team-chat/rooms/${encodeURIComponent(roomId)}/messages`,
-    {body},
+    cleanKolamTeamChatMessageBody(body),
   );
 
   return response.data;
@@ -1750,6 +1906,199 @@ export async function markKolamTeamChatRoomRead(roomId: string): Promise<void> {
     `/team-chat/rooms/${encodeURIComponent(roomId)}/read`,
     {},
   );
+}
+
+export async function editKolamTeamChatMessage(
+  roomId: string,
+  messageId: string,
+  body: string,
+): Promise<KolamTeamChatMessage> {
+  const response = await kolamPatch<DataResponse<KolamTeamChatMessage>>(
+    `/team-chat/rooms/${encodeURIComponent(roomId)}/messages/${encodeURIComponent(
+      messageId,
+    )}`,
+    {body},
+  );
+
+  return response.data;
+}
+
+export async function toggleKolamTeamChatReaction(
+  roomId: string,
+  messageId: string,
+  emoji: string,
+): Promise<KolamTeamChatMessage> {
+  const response = await kolamPost<DataResponse<KolamTeamChatMessage>>(
+    `/team-chat/rooms/${encodeURIComponent(roomId)}/messages/${encodeURIComponent(
+      messageId,
+    )}/reactions`,
+    {emoji},
+  );
+
+  return response.data;
+}
+
+export async function postKolamTeamChatPresence(
+  body: KolamTeamChatPresenceBody,
+): Promise<KolamTeamChatPresence | null> {
+  const response = await kolamPost<
+    DataResponse<KolamTeamChatPresence | null> | KolamTeamChatPresence | null
+  >(
+    '/team-chat/presence',
+    cleanKolamListParams(
+      body as Record<string, string | number | boolean | undefined | null>,
+    ),
+  );
+
+  return unwrapData(response);
+}
+
+export async function uploadKolamTeamChatMedia(
+  localUri: string,
+): Promise<KolamTeamChatAttachment> {
+  const body = new FormData();
+  body.append('file', createTeamChatMediaFilePart(localUri) as unknown as Blob);
+
+  const response = await kolamPost<
+    DataResponse<KolamTeamChatAttachment> | KolamTeamChatAttachment
+  >('/team-chat/upload', body);
+
+  return unwrapData(response);
+}
+
+export async function searchKolamTeamChatMessages(
+  roomId: string,
+  query: string,
+  limit = 40,
+): Promise<KolamTeamChatMessage[]> {
+  const response = await kolamGet<
+    DataResponse<KolamTeamChatMessage[]> | {data?: KolamTeamChatMessage[]}
+  >(`/team-chat/rooms/${encodeURIComponent(roomId)}/messages/search`, {
+    q: query,
+    limit,
+  });
+
+  return response.data ?? [];
+}
+
+export async function getKolamTeamChatCallConfig(): Promise<KolamTeamChatCallConfig> {
+  const response = await kolamGet<
+    DataResponse<KolamTeamChatCallConfig> | KolamTeamChatCallConfig
+  >('/team-chat/calls/config');
+
+  return unwrapData(response);
+}
+
+export async function getKolamMyActiveTeamChatCalls(): Promise<
+  KolamTeamChatCall[]
+> {
+  const response = await kolamGet<
+    DataResponse<KolamTeamChatCall[]> | KolamTeamChatCall[]
+  >('/team-chat/calls/me/active');
+
+  return unwrapData(response);
+}
+
+export async function getKolamRoomActiveTeamChatCall(
+  roomId: string,
+): Promise<KolamTeamChatCall | null> {
+  const response = await kolamGet<
+    DataResponse<KolamTeamChatCall | null> | KolamTeamChatCall | null
+  >(`/team-chat/rooms/${encodeURIComponent(roomId)}/calls/active`);
+
+  return unwrapData(response);
+}
+
+export async function startKolamTeamChatCall(
+  roomId: string,
+): Promise<KolamTeamChatCall> {
+  const response = await kolamPost<
+    DataResponse<KolamTeamChatCall> | KolamTeamChatCall
+  >(`/team-chat/rooms/${encodeURIComponent(roomId)}/calls`, {});
+
+  return unwrapData(response);
+}
+
+export async function joinKolamTeamChatCall(
+  callId: string,
+): Promise<KolamTeamChatCall> {
+  return postKolamTeamChatCallAction(callId, 'join');
+}
+
+export async function declineKolamTeamChatCall(
+  callId: string,
+): Promise<KolamTeamChatCall> {
+  return postKolamTeamChatCallAction(callId, 'decline');
+}
+
+export async function endKolamTeamChatCall(
+  callId: string,
+): Promise<KolamTeamChatCall> {
+  return postKolamTeamChatCallAction(callId, 'end');
+}
+
+export async function redialKolamTeamChatCall(
+  callId: string,
+): Promise<KolamTeamChatCall> {
+  return postKolamTeamChatCallAction(callId, 'redial');
+}
+
+export async function raiseKolamTeamChatCallHand(
+  callId: string,
+): Promise<KolamTeamChatCall> {
+  return postKolamTeamChatCallAction(callId, 'hand/raise');
+}
+
+export async function lowerKolamTeamChatCallHand(
+  callId: string,
+): Promise<KolamTeamChatCall> {
+  return postKolamTeamChatCallAction(callId, 'hand/lower');
+}
+
+export async function muteKolamTeamChatCallParticipant(
+  callId: string,
+  userId: string,
+): Promise<KolamTeamChatCall> {
+  return postKolamTeamChatCallAction(
+    callId,
+    `participants/${encodeURIComponent(userId)}/mute`,
+  );
+}
+
+export async function unmuteKolamTeamChatCallParticipant(
+  callId: string,
+  userId: string,
+): Promise<KolamTeamChatCall> {
+  return postKolamTeamChatCallAction(
+    callId,
+    `participants/${encodeURIComponent(userId)}/unmute`,
+  );
+}
+
+export async function handoverKolamTeamChatCall(
+  callId: string,
+  platform: string,
+): Promise<KolamTeamChatCall> {
+  const response = await kolamPost<
+    DataResponse<KolamTeamChatCall> | KolamTeamChatCall
+  >(`/team-chat/calls/${encodeURIComponent(callId)}/handover`, {platform});
+
+  return unwrapData(response);
+}
+
+export async function getKolamChatAnalytics(
+  params: KolamChatAnalyticsParams = {},
+): Promise<KolamChatAnalytics> {
+  const response = await kolamGet<
+    DataResponse<KolamChatAnalytics> | KolamChatAnalytics
+  >(
+    '/chat/analytics',
+    cleanKolamListParams(
+      params as Record<string, string | number | boolean | undefined | null>,
+    ),
+  );
+
+  return unwrapData(response);
 }
 
 export function getKolamUserPickerRows(
@@ -1774,6 +2123,16 @@ function kolamGet<T>(
 function kolamPut<T>(path: string, body: unknown) {
   return apiRequest<T>({
     method: 'PUT',
+    path,
+    body,
+    baseUrl: appConfig.kolamApiBaseUrl,
+    sourceHeader: appConfig.kolamSourceHeader,
+  });
+}
+
+function kolamPatch<T>(path: string, body: unknown) {
+  return apiRequest<T>({
+    method: 'PATCH',
     path,
     body,
     baseUrl: appConfig.kolamApiBaseUrl,
@@ -1828,6 +2187,26 @@ function cleanKolamRegionSyncBody(body: {
 }) {
   const parentCode = body.parentCode?.trim();
   return parentCode ? {...body, parentCode} : {scope: body.scope};
+}
+
+function cleanKolamTeamChatMessageBody(body: KolamTeamChatSendMessageBody) {
+  return Object.fromEntries(
+    Object.entries(body).filter(([, value]) => {
+      if (value === undefined || value === null) {
+        return false;
+      }
+
+      if (typeof value === 'string') {
+        return value.trim().length > 0;
+      }
+
+      if (Array.isArray(value)) {
+        return value.length > 0;
+      }
+
+      return true;
+    }),
+  );
 }
 
 function unwrapData<T>(response: T | DataResponse<T>): T {
@@ -1894,6 +2273,17 @@ async function uploadMarketplaceImage<T = unknown>(
   return kolamPost<T>(path, body);
 }
 
+async function postKolamTeamChatCallAction(
+  callId: string,
+  action: string,
+): Promise<KolamTeamChatCall> {
+  const response = await kolamPost<
+    DataResponse<KolamTeamChatCall> | KolamTeamChatCall
+  >(`/team-chat/calls/${encodeURIComponent(callId)}/${action}`, {});
+
+  return unwrapData(response);
+}
+
 function getMarketplaceContentFromWebSetting(
   webSetting: KolamWebSetting,
   fallback: KolamMarketplaceContent = {},
@@ -1934,6 +2324,19 @@ function createImageFilePart(localUri: string) {
   };
 }
 
+function createTeamChatMediaFilePart(localUri: string) {
+  const normalizedUri = localUri.startsWith('file://')
+    ? localUri
+    : `file:///${localUri.replace(/\\/g, '/')}`;
+  const name = normalizedUri.split('/').pop() || 'team-chat-file';
+
+  return {
+    uri: normalizedUri,
+    name,
+    type: inferTeamChatMediaMimeType(name),
+  };
+}
+
 function inferImageMimeType(fileName: string) {
   const extension = fileName.split('.').pop()?.toLowerCase();
 
@@ -1954,6 +2357,39 @@ function inferImageMimeType(fileName: string) {
     case 'jpeg':
     default:
       return 'image/jpeg';
+  }
+}
+
+function inferTeamChatMediaMimeType(fileName: string) {
+  const extension = fileName.split('.').pop()?.toLowerCase();
+
+  switch (extension) {
+    case 'jpg':
+    case 'jpeg':
+    case 'png':
+    case 'webp':
+    case 'gif':
+    case 'svg':
+    case 'heic':
+    case 'heif':
+      return inferImageMimeType(fileName);
+    case 'mp4':
+      return 'video/mp4';
+    case 'mov':
+      return 'video/quicktime';
+    case 'webm':
+      return 'video/webm';
+    case 'wav':
+    case 'mp3':
+      return inferAudioMimeType(fileName);
+    case 'm4a':
+      return 'audio/mp4';
+    case 'aac':
+      return 'audio/aac';
+    case 'pdf':
+      return 'application/pdf';
+    default:
+      return 'application/octet-stream';
   }
 }
 

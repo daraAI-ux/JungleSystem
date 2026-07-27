@@ -26,15 +26,34 @@ import {
   getKolamWebSettingVersion,
   getKolamWebSettingVersions,
   deleteKolamNotificationSound,
+  declineKolamTeamChatCall,
+  editKolamTeamChatMessage,
+  endKolamTeamChatCall,
+  getKolamChatAnalytics,
   getKolamChatConversations,
   getKolamChatMessages,
   getKolamChatUnreadTotal,
+  getKolamMyActiveTeamChatCalls,
+  getKolamRoomActiveTeamChatCall,
+  getKolamTeamChatCallConfig,
   getKolamTeamChatMessages,
+  handoverKolamTeamChatCall,
+  joinKolamTeamChatCall,
+  lowerKolamTeamChatCallHand,
   markKolamChatConversationRead,
   markKolamTeamChatRoomRead,
+  muteKolamTeamChatCallParticipant,
+  postKolamTeamChatPresence,
+  raiseKolamTeamChatCallHand,
+  redialKolamTeamChatCall,
   reorderKolamHeroSlides,
+  searchKolamTeamChatMessages,
   sendKolamChatTextMessage,
+  sendKolamTeamChatMessage,
   sendKolamTeamChatTextMessage,
+  startKolamTeamChatCall,
+  toggleKolamTeamChatReaction,
+  unmuteKolamTeamChatCallParticipant,
   updateKolamBioactiveEcosystem,
   updateKolamCtaSection,
   updateKolamFeaturedCollections,
@@ -45,6 +64,7 @@ import {
   uploadKolamDaraAvatar,
   uploadKolamMarketplaceContentImage,
   uploadKolamNotificationSound,
+  uploadKolamTeamChatMedia,
   uploadKolamWebSettingLogo,
   upsertKolamCustomerNotice,
 } from '../src/services/kolam-api';
@@ -1303,6 +1323,307 @@ describe('Kolam Settings API contracts', () => {
         method: 'POST',
         body: JSON.stringify({body: 'Siap.'}),
       }),
+    );
+  });
+
+  it('maps advanced team chat message, reaction, presence, upload, and search endpoints', async () => {
+    const appendSpy = jest.spyOn(FormData.prototype, 'append');
+    fetchMock
+      .mockResolvedValueOnce(
+        jsonResponse({
+          success: true,
+          data: {
+            _id: 'team-msg-3',
+            body: 'Lihat lampiran',
+            attachments: [
+              {
+                url: '/uploads/team-chat/foto.png',
+                kind: 'image',
+                fileName: 'foto.png',
+              },
+            ],
+          },
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          success: true,
+          data: {_id: 'team-msg-3', reactions: [{emoji: '👍', user: 'u-1'}]},
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          success: true,
+          data: {onlineCount: 2, viewingCount: 1, typingUserIds: ['u-2']},
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          success: true,
+          data: {
+            url: '/uploads/team-chat/video.mp4',
+            kind: 'video',
+            fileName: 'video.mp4',
+          },
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          success: true,
+          data: [{_id: 'team-msg-4', body: 'hasil cari'}],
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          success: true,
+          data: {_id: 'team-msg-4', body: 'hasil edit'},
+        }),
+      );
+
+    await expect(
+      sendKolamTeamChatMessage('room-1', {
+        body: 'Lihat lampiran',
+        attachments: [
+          {
+            url: '/uploads/team-chat/foto.png',
+            kind: 'image',
+            fileName: 'foto.png',
+          },
+        ],
+        embeds: [{type: 'task', refId: 'task-1'}],
+      }),
+    ).resolves.toMatchObject({_id: 'team-msg-3'});
+    await expect(
+      toggleKolamTeamChatReaction('room-1', 'team-msg-3', '👍'),
+    ).resolves.toMatchObject({_id: 'team-msg-3'});
+    await expect(
+      postKolamTeamChatPresence({
+        viewingRoomId: 'room-1',
+        typing: true,
+        typingRoomId: 'room-1',
+      }),
+    ).resolves.toMatchObject({onlineCount: 2});
+    await expect(uploadKolamTeamChatMedia('C:\\media\\video.mp4')).resolves.toMatchObject({
+      kind: 'video',
+    });
+    await expect(searchKolamTeamChatMessages('room-1', 'hasil')).resolves.toEqual([
+      expect.objectContaining({_id: 'team-msg-4'}),
+    ]);
+    await expect(
+      editKolamTeamChatMessage('room-1', 'team-msg-4', 'hasil edit'),
+    ).resolves.toMatchObject({body: 'hasil edit'});
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      `${appConfig.kolamApiBaseUrl}/team-chat/rooms/room-1/messages`,
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          body: 'Lihat lampiran',
+          attachments: [
+            {
+              url: '/uploads/team-chat/foto.png',
+              kind: 'image',
+              fileName: 'foto.png',
+            },
+          ],
+          embeds: [{type: 'task', refId: 'task-1'}],
+        }),
+      }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      `${appConfig.kolamApiBaseUrl}/team-chat/rooms/room-1/messages/team-msg-3/reactions`,
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({emoji: '👍'}),
+      }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      `${appConfig.kolamApiBaseUrl}/team-chat/presence`,
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          viewingRoomId: 'room-1',
+          typing: true,
+          typingRoomId: 'room-1',
+        }),
+      }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      4,
+      `${appConfig.kolamApiBaseUrl}/team-chat/upload`,
+      expect.objectContaining({
+        method: 'POST',
+        body: expect.any(FormData),
+      }),
+    );
+    expect(appendSpy).toHaveBeenCalledWith(
+      'file',
+      expect.objectContaining({
+        name: 'video.mp4',
+        type: 'video/mp4',
+      }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      5,
+      `${appConfig.kolamApiBaseUrl}/team-chat/rooms/room-1/messages/search?q=hasil&limit=40`,
+      expect.objectContaining({method: 'GET'}),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      6,
+      `${appConfig.kolamApiBaseUrl}/team-chat/rooms/room-1/messages/team-msg-4`,
+      expect.objectContaining({
+        method: 'PATCH',
+        body: JSON.stringify({body: 'hasil edit'}),
+      }),
+    );
+
+    appendSpy.mockRestore();
+  });
+
+  it('maps team chat call endpoints', async () => {
+    fetchMock
+      .mockResolvedValueOnce(
+        jsonResponse({success: true, data: {enabled: true, groupCallRingtone: 'bell'}}),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({success: true, data: [{_id: 'call-1', status: 'active'}]}),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({success: true, data: {_id: 'call-1', status: 'active'}}),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({success: true, data: {_id: 'call-2', status: 'ringing'}}),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({success: true, data: {_id: 'call-2', status: 'active'}}),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({success: true, data: {_id: 'call-2', status: 'ended'}}),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({success: true, data: {_id: 'call-2', status: 'ended'}}),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({success: true, data: {_id: 'call-2', status: 'ringing'}}),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({success: true, data: {_id: 'call-2', status: 'active'}}),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({success: true, data: {_id: 'call-2', status: 'active'}}),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({success: true, data: {_id: 'call-2', status: 'active'}}),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({success: true, data: {_id: 'call-2', status: 'active'}}),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({success: true, data: {_id: 'call-2', status: 'active'}}),
+      );
+
+    await expect(getKolamTeamChatCallConfig()).resolves.toMatchObject({enabled: true});
+    await expect(getKolamMyActiveTeamChatCalls()).resolves.toEqual([
+      expect.objectContaining({_id: 'call-1'}),
+    ]);
+    await expect(getKolamRoomActiveTeamChatCall('room-1')).resolves.toMatchObject({
+      _id: 'call-1',
+    });
+    await expect(startKolamTeamChatCall('room-1')).resolves.toMatchObject({
+      _id: 'call-2',
+    });
+    await expect(joinKolamTeamChatCall('call-2')).resolves.toMatchObject({
+      status: 'active',
+    });
+    await expect(declineKolamTeamChatCall('call-2')).resolves.toMatchObject({
+      status: 'ended',
+    });
+    await expect(endKolamTeamChatCall('call-2')).resolves.toMatchObject({
+      status: 'ended',
+    });
+    await expect(redialKolamTeamChatCall('call-2')).resolves.toMatchObject({
+      status: 'ringing',
+    });
+    await expect(raiseKolamTeamChatCallHand('call-2')).resolves.toMatchObject({
+      status: 'active',
+    });
+    await expect(lowerKolamTeamChatCallHand('call-2')).resolves.toMatchObject({
+      status: 'active',
+    });
+    await expect(
+      muteKolamTeamChatCallParticipant('call-2', 'user-1'),
+    ).resolves.toMatchObject({status: 'active'});
+    await expect(
+      unmuteKolamTeamChatCallParticipant('call-2', 'user-1'),
+    ).resolves.toMatchObject({status: 'active'});
+    await expect(handoverKolamTeamChatCall('call-2', 'google-meet')).resolves.toMatchObject({
+      status: 'active',
+    });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      `${appConfig.kolamApiBaseUrl}/team-chat/calls/config`,
+      expect.objectContaining({method: 'GET'}),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      `${appConfig.kolamApiBaseUrl}/team-chat/calls/me/active`,
+      expect.objectContaining({method: 'GET'}),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      `${appConfig.kolamApiBaseUrl}/team-chat/rooms/room-1/calls/active`,
+      expect.objectContaining({method: 'GET'}),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      4,
+      `${appConfig.kolamApiBaseUrl}/team-chat/rooms/room-1/calls`,
+      expect.objectContaining({method: 'POST'}),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      5,
+      `${appConfig.kolamApiBaseUrl}/team-chat/calls/call-2/join`,
+      expect.objectContaining({method: 'POST'}),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      11,
+      `${appConfig.kolamApiBaseUrl}/team-chat/calls/call-2/participants/user-1/mute`,
+      expect.objectContaining({method: 'POST'}),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      13,
+      `${appConfig.kolamApiBaseUrl}/team-chat/calls/call-2/handover`,
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({platform: 'google-meet'}),
+      }),
+    );
+  });
+
+  it('maps chat analytics endpoint with date filters', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        success: true,
+        data: {
+          conversationCount: 2,
+          messageCount: 10,
+        },
+      }),
+    );
+
+    await expect(
+      getKolamChatAnalytics({
+        from: '2026-07-01',
+        to: '2026-07-31',
+      }),
+    ).resolves.toMatchObject({conversationCount: 2});
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${appConfig.kolamApiBaseUrl}/chat/analytics?from=2026-07-01&to=2026-07-31`,
+      expect.objectContaining({method: 'GET'}),
     );
   });
 });
