@@ -232,6 +232,30 @@ function TeranuraDetailShell({
     ],
     [],
   );
+  const tabPanel = (
+    <>
+      <KolamControlTabList
+        accessibilityLabel="Tab detail Teranura"
+        items={tabItems}
+        onSelect={setActiveTab}
+        selectedId={activeTab}
+      />
+      <KolamContentFrame
+        style={styles.detailTabPanel}
+        variant="settingsWebConfig"
+      >
+        <KolamEmptyState
+          compact
+          message={
+            activeTab === 'iot'
+              ? 'Panel perangkat IoT akan diisi setelah audit endpoint dan payload IoT Teranura.'
+              : 'Ringkasan katalog Teranura akan diisi pada fase berikutnya.'
+          }
+          title={activeTab === 'iot' ? 'Perangkat IoT' : 'Katalog'}
+        />
+      </KolamContentFrame>
+    </>
+  );
 
   if (!item) {
     return (
@@ -246,6 +270,7 @@ function TeranuraDetailShell({
           </View>
           <KolamButton label="Daftar" onPress={onBack} />
         </View>
+        {tabPanel}
       </View>
     );
   }
@@ -271,26 +296,7 @@ function TeranuraDetailShell({
           <KolamButton disabled intent="danger" label="Hapus" onPress={() => undefined} />
         </View>
       </View>
-      <KolamControlTabList
-        accessibilityLabel="Tab detail Teranura"
-        items={tabItems}
-        onSelect={setActiveTab}
-        selectedId={activeTab}
-      />
-      <KolamContentFrame
-        style={styles.detailTabPanel}
-        variant="settingsWebConfig"
-      >
-        <KolamEmptyState
-          compact
-          message={
-            activeTab === 'iot'
-              ? 'Panel perangkat IoT akan diisi setelah audit endpoint dan payload IoT Teranura.'
-              : 'Ringkasan katalog Teranura akan diisi pada fase berikutnya.'
-          }
-          title={activeTab === 'iot' ? 'Perangkat IoT' : 'Katalog'}
-        />
-      </KolamContentFrame>
+      {tabPanel}
     </View>
   );
 }
