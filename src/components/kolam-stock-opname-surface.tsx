@@ -27,7 +27,7 @@ import { KolamButton } from './kolam-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamChevronIcon } from './kolam-chevron-icon';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
-import { KolamContentFrame } from './kolam-content-frame';
+import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDateField } from './kolam-date-field';
 import {
@@ -399,7 +399,45 @@ function KolamStockOpnameList({
         ) : null}
       </View>
 
-      <KolamContentFrame style={styles.tableFrame} variant="settingsWebConfig">
+      <KolamCatalogListTableShell
+        footer={
+          <KolamTableFooterControls
+            onPageSizeChange={controller.onLimitChange}
+            page={controller.pagination.page}
+            pageSize={controller.pagination.limit}
+            total={controller.pagination.total}
+          >
+            {pageCount > 1 ? (
+              <View style={styles.paginationBar}>
+                <KolamButton
+                  disabled={safePage <= 1 || controller.loading}
+                  label="Sebelumnya"
+                  onPress={() =>
+                    controller.onPageChange(Math.max(1, safePage - 1))
+                  }
+                />
+                <KolamCopyStack
+                  items={[
+                    {
+                      id: 'page',
+                      text: `${safePage} / ${pageCount}`,
+                      style: styles.pageLabel,
+                    },
+                  ]}
+                />
+                <KolamButton
+                  disabled={safePage >= pageCount || controller.loading}
+                  label="Berikutnya"
+                  onPress={() =>
+                    controller.onPageChange(Math.min(pageCount, safePage + 1))
+                  }
+                />
+              </View>
+            ) : null}
+          </KolamTableFooterControls>
+        }
+        style={styles.tableFrame}
+      >
         <FlatList
           data={controller.items}
           keyExtractor={item => item.id}
@@ -433,40 +471,7 @@ function KolamStockOpnameList({
           renderItem={renderRow}
           style={styles.listFlatList}
         />
-      </KolamContentFrame>
-
-      <KolamTableFooterControls
-        onPageSizeChange={controller.onLimitChange}
-        page={controller.pagination.page}
-        pageSize={controller.pagination.limit}
-        total={controller.pagination.total}
-      >
-        {pageCount > 1 ? (
-          <View style={styles.paginationBar}>
-            <KolamButton
-              disabled={safePage <= 1 || controller.loading}
-              label="Sebelumnya"
-              onPress={() => controller.onPageChange(Math.max(1, safePage - 1))}
-            />
-            <KolamCopyStack
-              items={[
-                {
-                  id: 'page',
-                  text: `${safePage} / ${pageCount}`,
-                  style: styles.pageLabel,
-                },
-              ]}
-            />
-            <KolamButton
-              disabled={safePage >= pageCount || controller.loading}
-              label="Berikutnya"
-              onPress={() =>
-                controller.onPageChange(Math.min(pageCount, safePage + 1))
-              }
-            />
-          </View>
-        ) : null}
-      </KolamTableFooterControls>
+      </KolamCatalogListTableShell>
 
       <KolamConfirmDialog
         confirmLabel={controller.deleting ? 'Menghapus…' : 'Hapus'}

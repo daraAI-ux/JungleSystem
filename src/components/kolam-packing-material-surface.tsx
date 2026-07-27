@@ -22,6 +22,7 @@ import {
 } from '../hooks/use-kolam-packing-material-controller';
 import { KolamButton } from './kolam-button';
 import { KolamChevronIcon } from './kolam-chevron-icon';
+import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDataTableHeader } from './kolam-data-table-header';
@@ -296,7 +297,40 @@ function KolamPackingMaterialList({
           />
         ) : null}
       </View>
-      <KolamContentFrame variant="settingsWebConfig">
+      <KolamCatalogListTableShell
+        footer={
+          <KolamTableFooterControls
+            onPageSizeChange={setPageSize}
+            page={safePage}
+            pageSize={pageSize}
+            total={sortedMaterials.length}>
+            {pageCount > 1 ? (
+              <View style={styles.paginationBar}>
+                <KolamButton
+                  disabled={safePage <= 1}
+                  label="Sebelumnya"
+                  onPress={() => setPage(current => Math.max(1, current - 1))}
+                />
+                <KolamCopyStack
+                  items={[
+                    {
+                      id: 'page',
+                      text: `${safePage} / ${pageCount}`,
+                      style: styles.pageLabel,
+                    },
+                  ]}
+                />
+                <KolamButton
+                  disabled={safePage >= pageCount}
+                  label="Berikutnya"
+                  onPress={() =>
+                    setPage(current => Math.min(pageCount, current + 1))
+                  }
+                />
+              </View>
+            ) : null}
+          </KolamTableFooterControls>
+        }>
         <KolamDataTableHeader columns={getKolamTableColumns('packing-material')} />
         {pagedMaterials.length ? (
           pagedMaterials.map(item => (
@@ -327,40 +361,7 @@ function KolamPackingMaterialList({
             />
           </View>
         )}
-      </KolamContentFrame>
-      <View style={styles.footerWrap}>
-        <KolamTableFooterControls
-          onPageSizeChange={setPageSize}
-          page={safePage}
-          pageSize={pageSize}
-          total={sortedMaterials.length}>
-          {pageCount > 1 ? (
-            <View style={styles.paginationBar}>
-              <KolamButton
-                disabled={safePage <= 1}
-                label="Sebelumnya"
-                onPress={() => setPage(current => Math.max(1, current - 1))}
-              />
-              <KolamCopyStack
-                items={[
-                  {
-                    id: 'page',
-                    text: `${safePage} / ${pageCount}`,
-                    style: styles.pageLabel,
-                  },
-                ]}
-              />
-              <KolamButton
-                disabled={safePage >= pageCount}
-                label="Berikutnya"
-                onPress={() =>
-                  setPage(current => Math.min(pageCount, current + 1))
-                }
-              />
-            </View>
-          ) : null}
-        </KolamTableFooterControls>
-      </View>
+      </KolamCatalogListTableShell>
       <KolamDeleteConfirmDialog
         itemLabel={deleteCandidate?.name}
         itemType="bahan kemasan"

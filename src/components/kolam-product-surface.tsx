@@ -69,6 +69,7 @@ import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import { KolamExportDialog } from './kolam-export-dialog';
 import { KolamMarketplacePriceSyncDialog } from './kolam-marketplace-price-sync-dialog';
+import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
 import {
@@ -414,9 +415,44 @@ export function KolamProductSurface({
           />
         ) : null}
 
-        <KolamContentFrame
+        <KolamCatalogListTableShell
+          footer={
+            <KolamTableFooterControls
+              onPageSizeChange={controller.onLimitChange}
+              page={controller.pagination.page}
+              pageSize={controller.pagination.limit}
+              total={controller.pagination.total}
+            >
+              {pageCount > 1 ? (
+                <View style={styles.paginationBar}>
+                  <KolamButton
+                    disabled={safePage <= 1}
+                    label="Sebelumnya"
+                    onPress={() =>
+                      controller.onPageChange(Math.max(1, safePage - 1))
+                    }
+                  />
+                  <KolamCopyStack
+                    items={[
+                      {
+                        id: 'page',
+                        text: `${safePage} / ${pageCount}`,
+                        style: styles.pageLabel,
+                      },
+                    ]}
+                  />
+                  <KolamButton
+                    disabled={safePage >= pageCount}
+                    label="Berikutnya"
+                    onPress={() =>
+                      controller.onPageChange(Math.min(pageCount, safePage + 1))
+                    }
+                  />
+                </View>
+              ) : null}
+            </KolamTableFooterControls>
+          }
           style={[styles.tableFrame, styles.listTableFrame]}
-          variant="settingsWebConfig"
         >
           <FlatList
             data={controller.products}
@@ -472,44 +508,7 @@ export function KolamProductSurface({
             )}
             style={styles.listFlatList}
           />
-        </KolamContentFrame>
-
-        <View style={styles.footerWrap}>
-          <KolamTableFooterControls
-            onPageSizeChange={controller.onLimitChange}
-            page={controller.pagination.page}
-            pageSize={controller.pagination.limit}
-            total={controller.pagination.total}
-          >
-            {pageCount > 1 ? (
-              <View style={styles.paginationBar}>
-                <KolamButton
-                  disabled={safePage <= 1}
-                  label="Sebelumnya"
-                  onPress={() =>
-                    controller.onPageChange(Math.max(1, safePage - 1))
-                  }
-                />
-                <KolamCopyStack
-                  items={[
-                    {
-                      id: 'page',
-                      text: `${safePage} / ${pageCount}`,
-                      style: styles.pageLabel,
-                    },
-                  ]}
-                />
-                <KolamButton
-                  disabled={safePage >= pageCount}
-                  label="Berikutnya"
-                  onPress={() =>
-                    controller.onPageChange(Math.min(pageCount, safePage + 1))
-                  }
-                />
-              </View>
-            ) : null}
-          </KolamTableFooterControls>
-        </View>
+        </KolamCatalogListTableShell>
       </View>
 
       <KolamExportDialog

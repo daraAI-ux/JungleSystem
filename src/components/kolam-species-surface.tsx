@@ -47,6 +47,7 @@ import {
   type KolamCommercialPolicyEditorValue,
 } from './kolam-commercial-policy-editor';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
+import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamCustomFieldIcon } from './kolam-custom-field-icon';
@@ -531,9 +532,44 @@ function KolamSpeciesList({
           taxonomyFilter={taxonomyFilter}
         />
       ) : null}
-      <KolamContentFrame
+      <KolamCatalogListTableShell
+        footer={
+          <KolamTableFooterControls
+            onPageSizeChange={controller.onLimitChange}
+            page={controller.pagination.page}
+            pageSize={controller.pagination.limit}
+            total={controller.pagination.total}
+          >
+            {pageCount > 1 ? (
+              <View style={styles.paginationBar}>
+                <KolamButton
+                  disabled={safePage <= 1}
+                  label="Sebelumnya"
+                  onPress={() =>
+                    controller.onPageChange(Math.max(1, safePage - 1))
+                  }
+                />
+                <KolamCopyStack
+                  items={[
+                    {
+                      id: 'page',
+                      text: `${safePage} / ${pageCount}`,
+                      style: styles.pageLabel,
+                    },
+                  ]}
+                />
+                <KolamButton
+                  disabled={safePage >= pageCount}
+                  label="Berikutnya"
+                  onPress={() =>
+                    controller.onPageChange(Math.min(pageCount, safePage + 1))
+                  }
+                />
+              </View>
+            ) : null}
+          </KolamTableFooterControls>
+        }
         style={[styles.speciesTableFrame, styles.listTableFrame]}
-        variant="settingsWebConfig"
       >
         <FlatList
           data={listSpecies}
@@ -555,41 +591,7 @@ function KolamSpeciesList({
           renderItem={renderSpeciesRow}
           style={styles.listFlatList}
         />
-      </KolamContentFrame>
-      <KolamTableFooterControls
-        onPageSizeChange={controller.onLimitChange}
-        page={controller.pagination.page}
-        pageSize={controller.pagination.limit}
-        total={controller.pagination.total}
-      >
-        {pageCount > 1 ? (
-          <View style={styles.paginationBar}>
-            <KolamButton
-              disabled={safePage <= 1}
-              label="Sebelumnya"
-              onPress={() =>
-                controller.onPageChange(Math.max(1, safePage - 1))
-              }
-            />
-            <KolamCopyStack
-              items={[
-                {
-                  id: 'page',
-                  text: `${safePage} / ${pageCount}`,
-                  style: styles.pageLabel,
-                },
-              ]}
-            />
-            <KolamButton
-              disabled={safePage >= pageCount}
-              label="Berikutnya"
-              onPress={() =>
-                controller.onPageChange(Math.min(pageCount, safePage + 1))
-              }
-            />
-          </View>
-        ) : null}
-      </KolamTableFooterControls>
+      </KolamCatalogListTableShell>
     </View>
   );
 }

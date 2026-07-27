@@ -14,7 +14,7 @@ import {
   type KolamUnitController,
 } from '../hooks/use-kolam-unit-controller';
 import { KolamButton } from './kolam-button';
-import { KolamContentFrame } from './kolam-content-frame';
+import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDataTableHeader } from './kolam-data-table-header';
 import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
@@ -198,7 +198,42 @@ function KolamUnitList({
           />
         </View>
       </View>
-      <KolamContentFrame variant="settingsWebConfig">
+      <KolamCatalogListTableShell
+        footer={
+          <KolamTableFooterControls
+            onPageSizeChange={setPageSize}
+            page={safePage}
+            pageSize={pageSize}
+            total={sortedUnits.length}
+          >
+            {pageCount > 1 ? (
+              <View style={styles.paginationRow}>
+                <KolamButton
+                  disabled={safePage <= 1}
+                  label="Sebelumnya"
+                  onPress={() => setPage(current => Math.max(1, current - 1))}
+                />
+                <KolamCopyStack
+                  items={[
+                    {
+                      id: 'page',
+                      text: `${safePage} / ${pageCount}`,
+                      style: styles.pageLabel,
+                    },
+                  ]}
+                />
+                <KolamButton
+                  disabled={safePage >= pageCount}
+                  label="Berikutnya"
+                  onPress={() =>
+                    setPage(current => Math.min(pageCount, current + 1))
+                  }
+                />
+              </View>
+            ) : null}
+          </KolamTableFooterControls>
+        }
+      >
         <KolamDataTableHeader columns={getKolamTableColumns('unit')} />
         {pagedUnits.length ? (
           pagedUnits.map(unit => (
@@ -227,39 +262,7 @@ function KolamUnitList({
             />
           </View>
         )}
-      </KolamContentFrame>
-      <KolamTableFooterControls
-        onPageSizeChange={setPageSize}
-        page={safePage}
-        pageSize={pageSize}
-        total={sortedUnits.length}
-      >
-        {pageCount > 1 ? (
-          <View style={styles.paginationRow}>
-            <KolamButton
-              disabled={safePage <= 1}
-              label="Sebelumnya"
-              onPress={() => setPage(current => Math.max(1, current - 1))}
-            />
-            <KolamCopyStack
-              items={[
-                {
-                  id: 'page',
-                  text: `${safePage} / ${pageCount}`,
-                  style: styles.pageLabel,
-                },
-              ]}
-            />
-            <KolamButton
-              disabled={safePage >= pageCount}
-              label="Berikutnya"
-              onPress={() =>
-                setPage(current => Math.min(pageCount, current + 1))
-              }
-            />
-          </View>
-        ) : null}
-      </KolamTableFooterControls>
+      </KolamCatalogListTableShell>
       <KolamDeleteConfirmDialog
         itemLabel={deleteCandidate?.name}
         itemType="satuan"
