@@ -15,6 +15,9 @@ import {
   slugifySpeciesName,
   type KolamSpecies,
   type KolamSpeciesFormState,
+  type KolamSpeciesListResult,
+  type KolamSpeciesPagination,
+  type KolamSpeciesStockStatus,
 } from '../domain/kolam-species';
 import type { KolamTaxonomy } from '../domain/kolam-taxonomy';
 import type { KolamUnit } from '../domain/kolam-unit';
@@ -106,12 +109,22 @@ import {
 export type KolamSpeciesSurfaceMode = 'list' | 'detail' | 'edit' | 'new';
 export type KolamSpeciesDataSource = 'idle' | 'cache' | 'live' | 'error';
 
+export interface KolamSpeciesListFilters {
+  search: string;
+  categoryId: string;
+  taxonomyId: string;
+  stockStatus: KolamSpeciesStockStatus;
+  page: number;
+  limit: number;
+}
+
 export interface KolamSpeciesController {
   breadcrumbPath: string;
   categories: KolamCategory[];
   customFields: KolamCustomField[];
   dataSource: KolamSpeciesDataSource;
   error: string | null;
+  filters: KolamSpeciesListFilters;
   form: KolamSpeciesFormState;
   iucnStatuses: KolamIucnStatus[];
   isEditable: boolean;
@@ -119,6 +132,7 @@ export interface KolamSpeciesController {
   mediaManifestSummary: KolamMediaManifestSummary;
   mode: KolamSpeciesSurfaceMode;
   packingOptions: KolamPackingOption[];
+  pagination: KolamSpeciesPagination;
   productOptions: KolamProductOption[];
   rawMaterialProducts: KolamProductOption[];
   shippingMethods: KolamShippingMethod[];
@@ -135,6 +149,7 @@ export interface KolamSpeciesController {
   onAddAttachedItem: (body: KolamSpeciesAttachedItemPayload) => Promise<boolean>;
   onApplySpecies: (species: KolamSpecies) => Promise<void>;
   onBackToList: () => void;
+  onChangeFilters: (patch: Partial<KolamSpeciesListFilters>) => void;
   onChangeForm: (patch: Partial<KolamSpeciesFormState>) => void;
   onCreateNew: () => void;
   onDeletePhoto: (index: number) => Promise<boolean>;
@@ -146,6 +161,8 @@ export interface KolamSpeciesController {
   onDeleteVideo: (index: number) => Promise<boolean>;
   onDeleteVoice: () => Promise<boolean>;
   onEdit: () => void;
+  onLimitChange: (limit: number) => void;
+  onPageChange: (page: number) => void;
   onRemoveAttachedItem: (itemId: string) => Promise<boolean>;
   onPickPhoto: () => Promise<void>;
   onPickVariantPhoto: () => Promise<void>;
@@ -159,10 +176,18 @@ export interface KolamSpeciesController {
   onReorderVariantVideo: (variantId: string, index: number, direction: 'up' | 'down') => Promise<boolean>;
   onReorderVideo: (index: number, direction: 'up' | 'down') => Promise<boolean>;
   onSave: () => Promise<void>;
+  onSearchChange: (search: string) => void;
   onSelectSpecies: (species: KolamSpecies, nextMode?: KolamSpeciesSurfaceMode) => Promise<void>;
   onSyncPrice: (speciesIds?: string[]) => Promise<boolean>;
   onTogglePin: (species: KolamSpecies) => Promise<boolean>;
 }
+
+const DEFAULT_SPECIES_PAGINATION: KolamSpeciesPagination = {
+  page: 1,
+  limit: 10,
+  total: 0,
+  totalPages: 1,
+};
 
 export function useKolamSpeciesController(
   route: string,
@@ -173,6 +198,12 @@ export function useKolamSpeciesController(
     null,
   );
   const [mode, setMode] = useState<KolamSpeciesSurfaceMode>(initialMode);
+  const [filters, setFilters] = useState<KolamSpeciesListFilters>(() =>
+    createInitialSpeciesListFilters(),
+  );
+  const [pagination, setPagination] = useState<KolamSpeciesPagination>(
+    DEFAULT_SPECIES_PAGINATION,
+  );
   const [form, setForm] = useState<KolamSpeciesFormState>(() =>
     createEmptyKolamSpeciesFormState(),
   );
@@ -310,26 +341,34 @@ export function useKolamSpeciesController(
     setLoading(true);
     setError(null);
 
-    const cached = await readKolamSpeciesListCache();
-    if (cached?.value.length) {
-      setSpecies(cached.value);
+    const canUseCache = isDefaultSpeciesListFilters(filters);
+    const cached = canUseCache ? await readKolamSpeciesListCache() : null;
+    if (
+      cached?.value.data.length &&
+      cached.value.pagination.limit === filters.limit
+    ) {
+      applySpeciesListResult(cached.value, setSpecies, setPagination);
       setDataSource('cache');
     }
 
     try {
       await refreshOptions();
-      const liveSpecies = await getKolamSpeciesList({ limit: 1000 });
-      await writeKolamSpeciesListCache(liveSpecies);
-      setSpecies(liveSpecies);
+      const liveResult = await getKolamSpeciesList(
+        createSpeciesListRequest(filters),
+      );
+      if (canUseCache) {
+        await writeKolamSpeciesListCache(liveResult);
+      }
+      applySpeciesListResult(liveResult, setSpecies, setPagination);
       setDataSource('live');
-      void startKolamSpeciesDetailCacheHydration(liveSpecies);
+      void startKolamSpeciesDetailCacheHydration(liveResult.data);
     } catch (loadError) {
       setError(getErrorMessage(loadError));
-      setDataSource(cached?.value.length ? 'cache' : 'error');
+      setDataSource(cached?.value.data.length ? 'cache' : 'error');
     } finally {
       setLoading(false);
     }
-  }, [refreshOptions, route]);
+  }, [filters, refreshOptions, route]);
 
   useEffect(() => {
     setMode(initialMode);
@@ -449,14 +488,17 @@ export function useKolamSpeciesController(
     async (next: KolamSpecies) => {
       await writeKolamSpeciesDetailCache(next);
       const nextSpecies = upsertSpecies(species, next);
-      await writeKolamSpeciesListCache(nextSpecies);
+      await writeKolamSpeciesListCache({
+        data: nextSpecies,
+        pagination,
+      });
       setSpecies(nextSpecies);
       setSelectedSpecies(next);
       setForm(createKolamSpeciesFormState(next));
       setDataSource('live');
       void refreshSpeciesMediaManifestSummary(next, setMediaManifestSummary);
     },
-    [species],
+    [pagination, species],
   );
 
   const onAddAttachedItem = useCallback(
@@ -899,7 +941,10 @@ export function useKolamSpeciesController(
         setMediaManifestSummary,
       );
       const nextSpecies = upsertSpecies(species, syncedSpecies);
-      await writeKolamSpeciesListCache(nextSpecies);
+      await writeKolamSpeciesListCache({
+        data: nextSpecies,
+        pagination,
+      });
       setSpecies(nextSpecies);
       setSelectedSpecies(syncedSpecies);
       setForm(createKolamSpeciesFormState(syncedSpecies));
@@ -910,7 +955,7 @@ export function useKolamSpeciesController(
     } finally {
       setSaving(false);
     }
-  }, [form, mode, selectedSpecies, species]);
+  }, [form, mode, pagination, selectedSpecies, species]);
 
   const onDuplicateSpecies = useCallback(async (item: KolamSpecies) => {
     setSaving(true);
@@ -935,7 +980,17 @@ export function useKolamSpeciesController(
     try {
       await deleteKolamSpecies(item.id);
       const nextSpecies = species.filter(speciesItem => speciesItem.id !== item.id);
-      await writeKolamSpeciesListCache(nextSpecies);
+      await writeKolamSpeciesListCache({
+        data: nextSpecies,
+        pagination: {
+          ...pagination,
+          total: Math.max(0, pagination.total - 1),
+          totalPages: Math.max(
+            1,
+            Math.ceil(Math.max(0, pagination.total - 1) / pagination.limit),
+          ),
+        },
+      });
       setSpecies(nextSpecies);
       if (selectedSpecies?.id === item.id) {
         setSelectedSpecies(null);
@@ -949,7 +1004,7 @@ export function useKolamSpeciesController(
     } finally {
       setSaving(false);
     }
-  }, [refresh, selectedSpecies?.id, species]);
+  }, [pagination, refresh, selectedSpecies?.id, species]);
 
   const onTogglePin = useCallback(async (item: KolamSpecies) => {
     setError(null);
@@ -959,7 +1014,10 @@ export function useKolamSpeciesController(
         isPinned: !item.isPinned,
       });
       const nextSpecies = upsertSpecies(species, updated);
-      await writeKolamSpeciesListCache(nextSpecies);
+      await writeKolamSpeciesListCache({
+        data: nextSpecies,
+        pagination,
+      });
       await writeKolamSpeciesDetailCache(updated);
       setSpecies(nextSpecies);
       if (selectedSpecies?.id === item.id) {
@@ -972,7 +1030,7 @@ export function useKolamSpeciesController(
       setError(getErrorMessage(pinError));
       return false;
     }
-  }, [selectedSpecies?.id, species]);
+  }, [pagination, selectedSpecies?.id, species]);
 
   const onSyncPrice = useCallback(async (speciesIds?: string[]) => {
     setSyncingPrice(true);
@@ -998,6 +1056,22 @@ export function useKolamSpeciesController(
     }
   }, [refresh]);
 
+  const onChangeFilters = useCallback((patch: Partial<KolamSpeciesListFilters>) => {
+    setFilters(current => ({ ...current, ...patch, page: patch.page ?? 1 }));
+  }, []);
+
+  const onSearchChange = useCallback((search: string) => {
+    setFilters(current => ({ ...current, search, page: 1 }));
+  }, []);
+
+  const onPageChange = useCallback((page: number) => {
+    setFilters(current => ({ ...current, page: Math.max(1, page) }));
+  }, []);
+
+  const onLimitChange = useCallback((limit: number) => {
+    setFilters(current => ({ ...current, limit, page: 1 }));
+  }, []);
+
   const breadcrumbPath = useMemo(
     () => getKolamSpeciesBreadcrumbPath(mode, selectedSpecies),
     [mode, selectedSpecies],
@@ -1009,6 +1083,7 @@ export function useKolamSpeciesController(
     customFields,
     dataSource,
     error,
+    filters,
     form,
     iucnStatuses,
     isEditable: mode === 'edit' || mode === 'new',
@@ -1016,6 +1091,7 @@ export function useKolamSpeciesController(
     mediaManifestSummary,
     mode,
     packingOptions,
+    pagination,
     productOptions,
     rawMaterialProducts,
     shippingMethods,
@@ -1032,6 +1108,7 @@ export function useKolamSpeciesController(
     onAddAttachedItem,
     onApplySpecies: applyLiveSpecies,
     onBackToList,
+    onChangeFilters,
     onChangeForm,
     onCreateNew,
     onDeletePhoto,
@@ -1043,6 +1120,8 @@ export function useKolamSpeciesController(
     onDeleteVideo,
     onDeleteVoice,
     onEdit,
+    onLimitChange,
+    onPageChange,
     onRemoveAttachedItem,
     onPickPhoto,
     onPickThumbnail,
@@ -1056,10 +1135,53 @@ export function useKolamSpeciesController(
     onReorderVariantVideo,
     onReorderVideo,
     onSave,
+    onSearchChange,
     onSelectSpecies,
     onSyncPrice,
     onTogglePin,
   };
+}
+
+function createInitialSpeciesListFilters(): KolamSpeciesListFilters {
+  return {
+    search: '',
+    categoryId: '',
+    taxonomyId: '',
+    stockStatus: 'all',
+    page: 1,
+    limit: 10,
+  };
+}
+
+function createSpeciesListRequest(filters: KolamSpeciesListFilters) {
+  return {
+    page: filters.page,
+    limit: filters.limit,
+    search: filters.search.trim() || undefined,
+    category: filters.categoryId || undefined,
+    taxonomyId: filters.taxonomyId || undefined,
+    stockStatus: filters.stockStatus === 'all' ? undefined : filters.stockStatus,
+  };
+}
+
+function isDefaultSpeciesListFilters(filters: KolamSpeciesListFilters) {
+  return (
+    !filters.search.trim() &&
+    !filters.categoryId &&
+    !filters.taxonomyId &&
+    filters.stockStatus === 'all' &&
+    filters.page === 1 &&
+    filters.limit === 10
+  );
+}
+
+function applySpeciesListResult(
+  result: KolamSpeciesListResult,
+  setSpecies: (species: KolamSpecies[]) => void,
+  setPagination: (pagination: KolamSpeciesPagination) => void,
+) {
+  setSpecies(result.data);
+  setPagination(result.pagination);
 }
 
 function validateKolamSpeciesFormForSave(form: KolamSpeciesFormState) {

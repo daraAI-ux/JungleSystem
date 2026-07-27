@@ -3,6 +3,7 @@ import {
   createKolamSpeciesListRevision,
   slugifySpeciesName,
   type KolamSpecies,
+  type KolamSpeciesListResult,
 } from '../domain/kolam-species';
 import { getLocalDataStore } from './local-data-store';
 
@@ -20,19 +21,19 @@ export function getKolamSpeciesDetailCacheKey(
 }
 
 export async function readKolamSpeciesListCache(ownerId = SPECIES_OWNER) {
-  return getLocalDataStore().read<KolamSpecies[]>(
+  return getLocalDataStore().read<KolamSpeciesListResult>(
     getKolamSpeciesListCacheKey(ownerId),
   );
 }
 
 export async function writeKolamSpeciesListCache(
-  species: KolamSpecies[],
+  result: KolamSpeciesListResult,
   ownerId = SPECIES_OWNER,
 ) {
   const key = getKolamSpeciesListCacheKey(ownerId);
-  const revision = createKolamSpeciesListRevision(species);
-  const cacheSpecies = species.map(createKolamSpeciesLocalCacheValue);
-  const current = await getLocalDataStore().read<KolamSpecies[]>(key);
+  const revision = createKolamSpeciesListRevision(result);
+  const cacheValue = createKolamSpeciesListLocalCacheValue(result);
+  const current = await getLocalDataStore().read<KolamSpeciesListResult>(key);
 
   if (current?.revision === revision) {
     return false;
@@ -40,7 +41,7 @@ export async function writeKolamSpeciesListCache(
 
   await getLocalDataStore().write({
     key,
-    value: cacheSpecies,
+    value: cacheValue,
     revision,
     updatedAt: new Date().toISOString(),
   });
@@ -87,7 +88,7 @@ export async function readKolamSpeciesFromListCacheByRouteKey(
   const cached = await readKolamSpeciesListCache(ownerId);
   const routeKeySlug = slugifySpeciesName(routeKey);
   const routeKeyLower = routeKey.toLowerCase();
-  const species = cached?.value ?? [];
+  const species = cached?.value.data ?? [];
 
   return (
     species.find(item => {
@@ -106,6 +107,16 @@ export async function readKolamSpeciesFromListCacheByRouteKey(
     }) ?? null
   );
 }
+
+function createKolamSpeciesListLocalCacheValue(
+  result: KolamSpeciesListResult,
+): KolamSpeciesListResult {
+  return {
+    pagination: result.pagination,
+    data: result.data.map(createKolamSpeciesLocalCacheValue),
+  };
+}
+
 function createKolamSpeciesLocalCacheValue(species: KolamSpecies): KolamSpecies {
   return stripInlineMediaPayloads(species) as KolamSpecies;
 }
@@ -146,5 +157,3 @@ function isLikelyBinaryMediaField(key: string, value: string) {
 
   return /^(base64|buffer|blob|bytes|file)$/i.test(key);
 }
-
-

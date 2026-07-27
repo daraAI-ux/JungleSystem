@@ -256,8 +256,8 @@ export function useKolamProductController(
     }
 
     const cachedSpecies = await readKolamSpeciesListCache();
-    if (cachedSpecies?.value.length) {
-      setSpecies(cachedSpecies.value);
+    if (cachedSpecies?.value.data.length) {
+      setSpecies(cachedSpecies.value.data);
     }
 
     const cachedVendors = await readKolamVendorListCache();
@@ -340,7 +340,7 @@ export function useKolamProductController(
 
     if (speciesResult.status === 'fulfilled') {
       await writeKolamSpeciesListCache(speciesResult.value);
-      setSpecies(speciesResult.value);
+      setSpecies(speciesResult.value.data);
     }
 
     if (vendorResult.status === 'fulfilled') {

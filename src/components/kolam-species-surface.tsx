@@ -216,13 +216,6 @@ function KolamSpeciesList({
   controller: KolamSpeciesController;
   onRouteChange?: (route: string) => void;
 }) {
-  const [search, setSearch] = React.useState('');
-  const [taxonomyFilter, setTaxonomyFilter] = React.useState('all');
-  const [categoryFilter, setCategoryFilter] = React.useState('all');
-  const [stockFilter, setStockFilter] =
-    React.useState<KolamSpeciesStockStatus>('all');
-  const [pageSize, setPageSize] = React.useState(10);
-  const [page, setPage] = React.useState(1);
   const [activeFilterPanel, setActiveFilterPanel] =
     React.useState<SpeciesListFilterPanel | null>(null);
   const [filterPanelQuery, setFilterPanelQuery] = React.useState('');
@@ -239,27 +232,17 @@ function KolamSpeciesList({
     React.useState<SpeciesMarketplaceSyncSelection | null>(null);
   const [pendingAction, setPendingAction] =
     React.useState<SpeciesPendingAction | null>(null);
-  const filteredSpecies = React.useMemo(
-    () =>
-      filterSpecies(
-        controller.species,
-        search,
-        taxonomyFilter,
-        categoryFilter,
-        stockFilter,
-      ),
-    [categoryFilter, controller.species, search, stockFilter, taxonomyFilter],
-  );
-  const pageCount = Math.max(1, Math.ceil(filteredSpecies.length / pageSize));
-  const safePage = Math.min(page, pageCount);
-  const pagedSpecies = filteredSpecies.slice(
-    (safePage - 1) * pageSize,
-    safePage * pageSize,
-  );
-  const barcodeItems = createSpeciesBarcodeItems(filteredSpecies);
+  const taxonomyFilter = controller.filters.taxonomyId || 'all';
+  const categoryFilter = controller.filters.categoryId || 'all';
+  const stockFilter = controller.filters.stockStatus;
+  const pageCount = Math.max(1, controller.pagination.totalPages);
+  const safePage = Math.min(Math.max(controller.pagination.page, 1), pageCount);
+  const listSpecies = controller.species;
+  const barcodeItems = createSpeciesBarcodeItems(listSpecies);
   const barcodeItemCount = barcodeItems.length;
-  const syncPriceSpeciesIds = filteredSpecies.map(item => item.id);
-  const syncPriceItemCount = syncPriceSpeciesIds.length;
+  const syncPriceSpeciesIds = listSpecies.map(item => item.id);
+  const syncPriceItemCount =
+    controller.pagination.total || syncPriceSpeciesIds.length;
   const activeBarcodeItems = barcodeDialogItems ?? barcodeItems;
   const activeSyncPriceSpeciesIds = syncPriceSelection?.ids ?? syncPriceSpeciesIds;
   const activeSyncPriceItemCount =
@@ -287,19 +270,15 @@ function KolamSpeciesList({
     setFilterPanelQuery('');
   };
 
-  React.useEffect(() => {
-    setPage(1);
-  }, [categoryFilter, pageSize, search, stockFilter, taxonomyFilter]);
-
   return (
     <View style={styles.stack}>
       <View style={styles.speciesFilterToolbar}>
         <View style={styles.speciesFilterGrid}>
           <KolamFormTextField
-            onChangeText={setSearch}
+            onChangeText={controller.onSearchChange}
             placeholder="Cari"
             style={styles.speciesFilterSearch}
-            value={search}
+            value={controller.filters.search}
           />
           <SpeciesFilterTrigger
             active={activeFilterPanel === 'taxonomy'}
@@ -408,7 +387,7 @@ function KolamSpeciesList({
         description="Pilih field yang ingin di-export ke XLSX. Filter list saat ini akan diterapkan."
         downloadEndpoint="/species/export.xlsx"
         downloadParams={{
-          search: search.trim() || undefined,
+          search: controller.filters.search.trim() || undefined,
           category: categoryFilter === 'all' ? undefined : [categoryFilter],
           taxonomy: taxonomyFilter === 'all' ? undefined : taxonomyFilterLabel,
           taxonomyId: taxonomyFilter === 'all' ? undefined : taxonomyFilter,
@@ -469,17 +448,21 @@ function KolamSpeciesList({
           categories={controller.categories}
           categoryFilter={categoryFilter}
           onCategoryChange={value => {
-            setCategoryFilter(value);
+            controller.onChangeFilters({
+              categoryId: value === 'all' ? '' : value,
+            });
             closeFilterPanel();
           }}
           onClose={closeFilterPanel}
           onQueryChange={setFilterPanelQuery}
           onStockChange={value => {
-            setStockFilter(value);
+            controller.onChangeFilters({ stockStatus: value });
             closeFilterPanel();
           }}
           onTaxonomyChange={value => {
-            setTaxonomyFilter(value);
+            controller.onChangeFilters({
+              taxonomyId: value === 'all' ? '' : value,
+            });
             closeFilterPanel();
           }}
           query={filterPanelQuery}
@@ -493,8 +476,8 @@ function KolamSpeciesList({
         variant="settingsWebConfig"
       >
         <KolamDataTableHeader columns={getKolamTableColumns('species')} />
-        {pagedSpecies.length ? (
-          pagedSpecies.map(item => (
+        {listSpecies.length ? (
+          listSpecies.map(item => (
             <KolamSpeciesRow
               item={item}
               key={item.id}
@@ -549,17 +532,19 @@ function KolamSpeciesList({
         )}
       </KolamContentFrame>
       <KolamTableFooterControls
-        onPageSizeChange={setPageSize}
-        page={safePage}
-        pageSize={pageSize}
-        total={filteredSpecies.length}
+        onPageSizeChange={controller.onLimitChange}
+        page={controller.pagination.page}
+        pageSize={controller.pagination.limit}
+        total={controller.pagination.total}
       >
         {pageCount > 1 ? (
           <View style={styles.paginationBar}>
             <KolamButton
               disabled={safePage <= 1}
               label="Sebelumnya"
-              onPress={() => setPage(current => Math.max(1, current - 1))}
+              onPress={() =>
+                controller.onPageChange(Math.max(1, safePage - 1))
+              }
             />
             <KolamCopyStack
               items={[
@@ -574,7 +559,7 @@ function KolamSpeciesList({
               disabled={safePage >= pageCount}
               label="Berikutnya"
               onPress={() =>
-                setPage(current => Math.min(pageCount, current + 1))
+                controller.onPageChange(Math.min(pageCount, safePage + 1))
               }
             />
           </View>
@@ -5889,129 +5874,6 @@ function SummaryTile({ label, value }: { label: string; value: number }) {
   );
 }
 
-function filterSpecies(
-  species: KolamSpecies[],
-  search: string,
-  taxonomyFilter: string,
-  categoryFilter: string,
-  stockFilter: KolamSpeciesStockStatus,
-) {
-  const normalizedSearch = search.trim().toLowerCase();
-
-  return species.filter(item => {
-    if (
-      taxonomyFilter !== 'all' &&
-      !speciesMatchesTaxonomy(item, taxonomyFilter)
-    ) {
-      return false;
-    }
-
-    if (
-      categoryFilter !== 'all' &&
-      !speciesMatchesCategory(item, categoryFilter)
-    ) {
-      return false;
-    }
-
-    const totalStock = getSpeciesListTotalStock(item);
-    if (stockFilter === 'in_stock' && totalStock <= 0) {
-      return false;
-    }
-
-    if (stockFilter === 'out_of_stock' && totalStock > 0) {
-      return false;
-    }
-
-    if (!normalizedSearch) {
-      return true;
-    }
-
-    return [
-      item.scientificName,
-      item.commonName,
-      item.localName,
-      item.displayName,
-      item.sku,
-      item.taxonomy?.name ?? '',
-      item.taxonomyPath,
-      ...(Array.isArray(item.categories)
-        ? item.categories.map(category => category.name)
-        : []),
-      ...(Array.isArray(item.tags) ? item.tags.map(tag => tag.name) : []),
-    ]
-      .join(' ')
-      .toLowerCase()
-      .includes(normalizedSearch);
-  });
-}
-
-function speciesMatchesTaxonomy(item: KolamSpecies, taxonomyId: string) {
-  if (item.taxonomy?.id === taxonomyId) {
-    return true;
-  }
-
-  const raw =
-    item.raw && typeof item.raw === 'object'
-      ? (item.raw as Record<string, unknown>)
-      : {};
-  const taxonomy = raw.taxonomy;
-  const taxonomyRecord =
-    taxonomy && typeof taxonomy === 'object'
-      ? (taxonomy as Record<string, unknown>)
-      : null;
-  const rawTaxonomyId =
-    typeof taxonomy === 'string'
-      ? taxonomy
-      : String(taxonomyRecord?._id ?? taxonomyRecord?.id ?? '');
-
-  if (rawTaxonomyId === taxonomyId) {
-    return true;
-  }
-
-  const rawAncestors = Array.isArray(taxonomyRecord?.ancestors)
-    ? taxonomyRecord?.ancestors
-    : [];
-
-  return rawAncestors.some(ancestor => {
-    if (typeof ancestor === 'string') {
-      return ancestor === taxonomyId;
-    }
-
-    if (!ancestor || typeof ancestor !== 'object') {
-      return false;
-    }
-
-    const ancestorRecord = ancestor as Record<string, unknown>;
-    return String(ancestorRecord._id ?? ancestorRecord.id ?? '') === taxonomyId;
-  });
-}
-
-function speciesMatchesCategory(item: KolamSpecies, categoryId: string) {
-  const categories = Array.isArray(item.categories) ? item.categories : [];
-  if (categories.some(category => category.id === categoryId)) {
-    return true;
-  }
-
-  const raw =
-    item.raw && typeof item.raw === 'object'
-      ? (item.raw as Record<string, unknown>)
-      : {};
-  const rawCategories = raw.category ?? raw.categories;
-  const values = Array.isArray(rawCategories) ? rawCategories : [rawCategories];
-
-  return values.some(category => {
-    if (typeof category === 'string') {
-      return category === categoryId;
-    }
-
-    if (!category || typeof category !== 'object') {
-      return false;
-    }
-
-    const categoryRecord = category as Record<string, unknown>;
-    return String(categoryRecord._id ?? categoryRecord.id ?? '') === categoryId;
-  });
-}
 function getSpeciesRoute(item: KolamSpecies) {
   return `/species/${encodeURIComponent(
     item.slug || slugifySpeciesName(item.scientificName) || item.id,

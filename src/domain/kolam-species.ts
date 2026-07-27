@@ -13,6 +13,18 @@ export type KolamSpeciesStatus = 'active' | 'inactive' | 'draft';
 export type KolamSpeciesSellableFilter = 'all' | 'sellable' | 'not-sellable';
 export type KolamSpeciesStockStatus = 'all' | 'in_stock' | 'out_of_stock';
 
+export interface KolamSpeciesPagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface KolamSpeciesListResult {
+  data: KolamSpecies[];
+  pagination: KolamSpeciesPagination;
+}
+
 export interface KolamSpeciesRef {
   id: string;
   name: string;
@@ -1539,29 +1551,49 @@ export function normalizeKolamSpecies(payload: unknown): KolamSpecies {
   };
 }
 
-export function normalizeKolamSpeciesList(payload: unknown) {
-  const root = unwrapData(payload);
-  const rootRecord = asRecord(root);
-  const list: unknown[] = Array.isArray(root)
-    ? root
+export function normalizeKolamSpeciesList(payload: unknown): KolamSpeciesListResult {
+  const rootRecord = asRecord(payload);
+  const dataRecord = asRecord(rootRecord.data);
+  const list: unknown[] = Array.isArray(payload)
+    ? payload
     : Array.isArray(rootRecord.data)
     ? rootRecord.data
+    : Array.isArray(dataRecord.data)
+    ? dataRecord.data
     : Array.isArray(rootRecord.items)
     ? rootRecord.items
     : Array.isArray(rootRecord.species)
     ? rootRecord.species
     : [];
 
-  return list.map(normalizeKolamSpecies);
+  const data = list.map(normalizeKolamSpecies);
+
+  return {
+    data,
+    pagination: normalizeKolamSpeciesPagination(
+      rootRecord.pagination ?? dataRecord.pagination ?? rootRecord.meta,
+      data.length,
+    ),
+  };
 }
 
 export function normalizeKolamSpeciesDetail(payload: unknown) {
   return normalizeKolamSpecies(payload);
 }
 
-export function createKolamSpeciesListRevision(items: KolamSpecies[]) {
-  return createStableHash(
-    (Array.isArray(items) ? items : []).map(item => {
+export function createKolamSpeciesListRevision(
+  itemsOrResult: KolamSpecies[] | KolamSpeciesListResult,
+) {
+  const items = Array.isArray(itemsOrResult)
+    ? itemsOrResult
+    : itemsOrResult.data;
+  const pagination = Array.isArray(itemsOrResult)
+    ? undefined
+    : itemsOrResult.pagination;
+
+  return createStableHash({
+    pagination,
+    data: (Array.isArray(items) ? items : []).map(item => {
       const variants = Array.isArray(item.variants) ? item.variants : [];
 
       return {
@@ -1631,7 +1663,7 @@ export function createKolamSpeciesListRevision(items: KolamSpecies[]) {
         updatedAt: item.updatedAt,
       };
     }),
-  );
+  });
 }
 
 export function createKolamSpeciesDetailRevision(item: KolamSpecies) {
@@ -2606,6 +2638,24 @@ function unwrapData(payload: unknown): unknown {
   }
 
   return payload;
+}
+
+function normalizeKolamSpeciesPagination(
+  value: unknown,
+  fallbackTotal: number,
+): KolamSpeciesPagination {
+  const record = asRecord(value);
+  const page = getNumber(record, 'page') ?? getNumber(record, 'currentPage') ?? 1;
+  const limit =
+    getNumber(record, 'limit') ?? getNumber(record, 'perPage') ?? fallbackTotal;
+  const total =
+    getNumber(record, 'total') ?? getNumber(record, 'totalItems') ?? fallbackTotal;
+  const totalPages =
+    getNumber(record, 'totalPages') ??
+    getNumber(record, 'pages') ??
+    (limit > 0 ? Math.max(1, Math.ceil(total / limit)) : 1);
+
+  return {page, limit, total, totalPages};
 }
 
 function asRecord(value: unknown): Record<string, unknown> {

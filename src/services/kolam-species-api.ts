@@ -6,6 +6,7 @@ import {
   normalizeKolamSpeciesList,
   type KolamSpecies,
   type KolamSpeciesFormState,
+  type KolamSpeciesListResult,
   type KolamSpeciesSellableFilter,
   type KolamSpeciesStockStatus,
   type KolamSpeciesStatus,
@@ -27,11 +28,11 @@ export async function getKolamSpeciesList(options: {
   status?: 'all' | KolamSpeciesStatus;
   stockStatus?: KolamSpeciesStockStatus;
   taxonomyId?: string;
-} = {}): Promise<KolamSpecies[]> {
+} = {}): Promise<KolamSpeciesListResult> {
   const response = await kolamRequest<unknown>('/species', {
     query: {
       category: options.category,
-      limit: options.limit ?? 1000,
+      limit: options.limit ?? 10,
       page: options.page ?? 1,
       search: options.search,
       sellable:
