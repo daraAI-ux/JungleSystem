@@ -25,6 +25,14 @@ import {
   type UnifiedDataset,
 } from '../src/services/unified-data';
 
+jest.mock('react-native-webview', () => {
+  const ReactNative = require('react-native');
+  return {
+    __esModule: true,
+    default: ReactNative.View,
+  };
+});
+
 const fetchMock = jest.fn();
 const mountedRenderers: ReactTestRenderer.ReactTestRenderer[] = [];
 
