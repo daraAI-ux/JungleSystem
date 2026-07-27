@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import type {
   SettingsTabId,
   SettingsWebConfigField,
@@ -2512,78 +2512,73 @@ export function KolamSettingsWebConfigSurface({
               placeholder="Asia/Jakarta"
             />
             <View style={styles.storeHoursCompactTable}>
-              <KolamCopyStack
-                containerStyle={styles.storeHoursCompactHeader}
-                items={[
-                  {
-                    id: 'store-hours-day-header',
-                    text: 'Hari',
-                    style: styles.storeHoursHeaderDay,
-                  },
-                  {
-                    id: 'store-hours-open-header',
-                    text: 'Buka',
-                    style: styles.storeHoursHeaderCell,
-                  },
-                  {
-                    id: 'store-hours-open-at-header',
-                    text: 'Jam buka',
-                    style: styles.storeHoursHeaderCell,
-                  },
-                  {
-                    id: 'store-hours-close-at-header',
-                    text: 'Jam tutup',
-                    style: styles.storeHoursHeaderCell,
-                  },
-                ]}
-              />
-              {storeOperatingHourRows.map(row => {
+              <View style={styles.storeHoursCompactHeader}>
+                <Text style={styles.storeHoursHeaderDay}>Hari</Text>
+                <Text style={styles.storeHoursHeaderOpen}>Buka</Text>
+                <Text style={styles.storeHoursHeaderCell}>Jam buka</Text>
+                <Text style={styles.storeHoursHeaderCell}>Jam tutup</Text>
+              </View>
+              {storeOperatingHourRows.map((row, index) => {
                 const isOpen = draft[row.openField] === true;
+                const controlsDisabled =
+                  disabled || !draft.storeOperatingHoursEnabled;
+                const timeDisabled = controlsDisabled || !isOpen;
 
                 return (
-                  <View key={row.id} style={styles.storeHoursCompactRow}>
-                    <KolamCopyStack
-                      containerStyle={styles.storeHoursCompactDay}
-                      items={[
-                        {
-                          id: `${row.id}-day`,
-                          text: row.label,
-                          style: styles.notificationSoundLabel,
-                        },
+                  <View
+                    key={row.id}
+                    style={[
+                      styles.storeHoursCompactRow,
+                      index === storeOperatingHourRows.length - 1 &&
+                        styles.storeHoursCompactRowLast,
+                    ]}
+                  >
+                    <Text style={styles.storeHoursDayText}>{row.label}</Text>
+                    <Pressable
+                      accessibilityRole="switch"
+                      accessibilityState={{
+                        checked: isOpen,
+                        disabled: controlsDisabled,
+                      }}
+                      disabled={controlsDisabled}
+                      onPress={() => setDraftField(row.openField, !isOpen)}
+                      style={[
+                        styles.storeHoursSwitch,
+                        isOpen && styles.storeHoursSwitchActive,
+                        controlsDisabled && styles.storeHoursSwitchDisabled,
                       ]}
+                    >
+                      <View
+                        style={[
+                          styles.storeHoursSwitchKnob,
+                          isOpen && styles.storeHoursSwitchKnobActive,
+                        ]}
+                      />
+                    </Pressable>
+                    <TextInput
+                      editable={!timeDisabled}
+                      onChangeText={value =>
+                        setDraftField(row.openAtField, value)
+                      }
+                      placeholder="09:00"
+                      style={[
+                        styles.storeHoursTimeInput,
+                        timeDisabled && styles.storeHoursTimeInputDisabled,
+                      ]}
+                      value={String(draft[row.openAtField] ?? '')}
                     />
-                    <View style={styles.storeHoursCompactToggle}>
-                      <KolamToggleRow
-                        label="Buka"
-                        description="Status buka."
-                        active={isOpen}
-                        onPress={() =>
-                          !disabled && setDraftField(row.openField, !isOpen)
-                        }
-                      />
-                    </View>
-                    <View style={styles.storeHoursCompactTimes}>
-                      <KolamTextFieldRow
-                        fieldWidth={140}
-                        label="Jam buka"
-                        description="Format HH:mm."
-                        value={String(draft[row.openAtField] ?? '')}
-                        onChangeText={value =>
-                          setDraftField(row.openAtField, value)
-                        }
-                        placeholder="09:00"
-                      />
-                      <KolamTextFieldRow
-                        fieldWidth={140}
-                        label="Jam tutup"
-                        description="Format HH:mm."
-                        value={String(draft[row.closeAtField] ?? '')}
-                        onChangeText={value =>
-                          setDraftField(row.closeAtField, value)
-                        }
-                        placeholder="21:00"
-                      />
-                    </View>
+                    <TextInput
+                      editable={!timeDisabled}
+                      onChangeText={value =>
+                        setDraftField(row.closeAtField, value)
+                      }
+                      placeholder="21:00"
+                      style={[
+                        styles.storeHoursTimeInput,
+                        timeDisabled && styles.storeHoursTimeInputDisabled,
+                      ]}
+                      value={String(draft[row.closeAtField] ?? '')}
+                    />
                   </View>
                 );
               })}
@@ -4768,48 +4763,93 @@ const styles = StyleSheet.create({
   },
   storeHoursCompactHeader: {
     alignItems: 'center',
-    backgroundColor: '#f9fafb',
-    borderColor: '#e5e7eb',
-    borderRadius: 8,
-    borderWidth: 1,
+    backgroundColor: '#f3f4f6',
+    borderBottomColor: '#e5e7eb',
+    borderBottomWidth: 1,
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
     paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingVertical: 8,
   },
   storeHoursCompactRow: {
     alignItems: 'center',
+    borderBottomColor: '#e5e7eb',
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    minHeight: 44,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  storeHoursCompactRowLast: {
+    borderBottomWidth: 0,
+  },
+  storeHoursCompactTable: {
     borderColor: '#e5e7eb',
     borderRadius: 8,
     borderWidth: 1,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    padding: 10,
-  },
-  storeHoursCompactTable: {
-    gap: 8,
-  },
-  storeHoursCompactTimes: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  storeHoursCompactToggle: {
-    minWidth: 180,
+    overflow: 'hidden',
   },
   storeHoursHeaderCell: {
     color: '#6b7280',
     fontSize: 12,
     fontWeight: '800',
-    width: 140,
+    width: 116,
   },
   storeHoursHeaderDay: {
     color: '#6b7280',
     fontSize: 12,
     fontWeight: '800',
-    width: 96,
+    width: 126,
+  },
+  storeHoursHeaderOpen: {
+    color: '#6b7280',
+    fontSize: 12,
+    fontWeight: '800',
+    width: 76,
+  },
+  storeHoursDayText: {
+    color: '#1f2937',
+    fontSize: 13,
+    fontWeight: '800',
+    width: 126,
+  },
+  storeHoursSwitch: {
+    backgroundColor: '#d1d5db',
+    borderRadius: 999,
+    height: 22,
+    justifyContent: 'center',
+    marginRight: 54,
+    padding: 2,
+    width: 40,
+  },
+  storeHoursSwitchActive: {
+    backgroundColor: '#10b981',
+  },
+  storeHoursSwitchDisabled: {
+    opacity: 0.45,
+  },
+  storeHoursSwitchKnob: {
+    backgroundColor: '#ffffff',
+    borderRadius: 999,
+    height: 18,
+    width: 18,
+  },
+  storeHoursSwitchKnobActive: {
+    alignSelf: 'flex-end',
+  },
+  storeHoursTimeInput: {
+    borderColor: '#d1d5db',
+    borderRadius: 6,
+    borderWidth: 1,
+    color: '#111827',
+    fontSize: 13,
+    height: 32,
+    marginRight: 12,
+    paddingHorizontal: 8,
+    width: 104,
+  },
+  storeHoursTimeInputDisabled: {
+    backgroundColor: '#f3f4f6',
+    color: '#9ca3af',
   },
   storeClosureRow: {
     alignItems: 'center',
