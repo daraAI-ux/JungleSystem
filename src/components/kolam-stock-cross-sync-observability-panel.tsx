@@ -7,7 +7,7 @@ import {
 import { KOLAM_STOCK_TRANSACTION_ROOT } from '../domain/kolam-stock-transaction';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { KolamButton } from './kolam-button';
-import { KolamContentFrame } from './kolam-content-frame';
+import { KolamCardFrame } from './kolam-card-frame';
 import { KolamStatusBadge } from './kolam-status-badge';
 
 export function KolamStockCrossSyncObservabilityPanel({
@@ -27,15 +27,15 @@ export function KolamStockCrossSyncObservabilityPanel({
 }) {
   if (loading && !report) {
     return (
-      <KolamContentFrame style={styles.frame} variant="settingsWebConfig">
+      <KolamCardFrame style={styles.frame} variant="compact">
         <Text style={styles.muted}>Memuat observability cross-sync…</Text>
-      </KolamContentFrame>
+      </KolamCardFrame>
     );
   }
 
   if ((errorMessage || !report) && !loading) {
     return (
-      <KolamContentFrame style={styles.frame} variant="settingsWebConfig">
+      <KolamCardFrame style={styles.frame} variant="compact">
         <Text style={styles.title}>Observability sync AM</Text>
         <Text style={styles.muted}>
           Observability cross-sync tidak tersedia
@@ -50,7 +50,7 @@ export function KolamStockCrossSyncObservabilityPanel({
             void onRefresh();
           }}
         />
-      </KolamContentFrame>
+      </KolamCardFrame>
     );
   }
 
@@ -64,7 +64,7 @@ export function KolamStockCrossSyncObservabilityPanel({
   const orphans = report.orphanAmTasks.slice(0, 5);
 
   return (
-    <KolamContentFrame style={styles.frame} variant="settingsWebConfig">
+    <KolamCardFrame style={styles.frame} variant="compact">
       <View style={styles.header}>
         <View style={styles.headerCopy}>
           <View style={styles.titleRow}>
@@ -76,11 +76,6 @@ export function KolamStockCrossSyncObservabilityPanel({
               }
             />
           </View>
-          <Text style={styles.muted}>
-            Bandingkan marketplaceCrossSync vs task stock_sync AM (jendela{' '}
-            {report.windowHours} jam). Double task = &gt;1 taskId pending per
-            SKU+platform. Coalesce (1 task banyak tx) = normal.
-          </Text>
         </View>
         <KolamButton
           disabled={fetching}
@@ -156,7 +151,7 @@ export function KolamStockCrossSyncObservabilityPanel({
           Tidak ada race/double-task terdeteksi pada jendela ini.
         </Text>
       )}
-    </KolamContentFrame>
+    </KolamCardFrame>
   );
 }
 

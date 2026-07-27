@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { stockTransactionSourceLabel } from '../domain/kolam-stock-transaction';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { KolamHoverTooltip } from './kolam-hover-tooltip';
+import { KolamRemoteImage } from './kolam-remote-image';
 
 type SourceTone = 'default' | 'success' | 'warning' | 'danger' | 'info';
 
@@ -33,16 +34,39 @@ const SOURCE_BADGES: Record<
 
 export function KolamStockTransactionSourceIcon({
   label,
+  logoUri,
+  salesSourceName,
   source,
 }: {
   label?: string;
+  logoUri?: string | null;
+  salesSourceName?: string | null;
   source: string;
 }) {
-  const tooltip = label || stockTransactionSourceLabel(source) || source || '—';
-  const visual = resolveSourceVisual(source, tooltip);
+  const stockLabel = label || stockTransactionSourceLabel(source) || source || '—';
+  const tooltip = salesSourceName
+    ? `${salesSourceName} · ${stockLabel}`
+    : stockLabel;
+  const visual = resolveSourceVisual(source, stockLabel);
 
   if (!source) {
     return <Text style={styles.empty}>—</Text>;
+  }
+
+  if (logoUri) {
+    return (
+      <KolamHoverTooltip label={tooltip}>
+        <View accessibilityLabel={tooltip} style={styles.logoWrap}>
+          <KolamRemoteImage
+            accessibilityLabel={tooltip}
+            resizeMode="contain"
+            revision={logoUri}
+            sourceUri={logoUri}
+            style={styles.logo}
+          />
+        </View>
+      </KolamHoverTooltip>
+    );
   }
 
   return (
@@ -102,6 +126,22 @@ const styles = StyleSheet.create({
   empty: {
     color: V.colors.mutedFg,
     fontSize: 12,
+  },
+  logoWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: V.colors.border,
+    backgroundColor: V.colors.muted,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'flex-start',
+  },
+  logo: {
+    width: 28,
+    height: 28,
   },
   chip: {
     maxWidth: 88,

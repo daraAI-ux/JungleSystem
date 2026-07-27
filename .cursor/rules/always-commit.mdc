@@ -1,0 +1,14 @@
+---
+description: Wajib git commit setelah setiap batch kerja agen yang disetujui selesai
+alwaysApply: true
+---
+
+# Always commit after approved batches
+
+Setelah batch perubahan disetujui dan selesai dikerjakan:
+
+1. **Langsung buat git commit** untuk batch itu. Jangan biarkan working tree dirty dari pekerjaan agen, dan jangan menunggu user mengingatkan.
+2. Jangan menumpuk banyak fitur tak terkait dalam satu commit; pecah jika tema berbeda.
+3. Hanya tunda commit jika user meminta menunda secara eksplisit.
+4. Jangan `git push` kecuali diminta eksplisit. Ikuti Git Safety Policy (tidak force push, tidak destructive reset/clean).
+5. Jangan commit secrets (`.env`, credentials, dll.).

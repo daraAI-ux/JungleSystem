@@ -76,7 +76,7 @@ Aturan ini melengkapi proteksi di atas. Tidak menghapus atau melemahkan rule exi
 1. Anggap kontrak shell/workspace di atas sebagai source of truth untuk peletakan state.
 2. Jangan “meniru” menumpuk hook di `App.tsx` hanya karena file itu historis masih berisi banyak controller.
 3. Jika pola peletakan state tidak jelas: STOP, audit-only, tanya user — jangan menebak atau merombak App.
-4. Setelah batch perubahan disetujui dan selesai: **buat git commit** untuk batch itu (jangan menumpuk banyak fitur tak terkait dalam satu commit), kecuali user meminta menunda commit. Jangan `git push` kecuali diminta eksplisit.
+4. Setelah batch perubahan disetujui dan selesai: **wajib buat git commit** untuk batch itu segera (jangan menumpuk banyak fitur tak terkait dalam satu commit; jangan menunda sampai user mengingatkan). Hanya tunda jika user meminta menunda commit secara eksplisit. Jangan `git push` kecuali diminta eksplisit.
 
 ### App Context API (setelah state dipecah dari App)
 
@@ -193,3 +193,26 @@ Gambar remote **tidak** boleh disimpan sebagai blob/base64 besar di SQLite. Cach
 4. Jest: pakai `setKolamImageDiskBackend(getMemoryKolamImageDiskBackend())` + `MemoryLocalDataStore`; native bridge tidak ada di unit test.
 5. Setelah ubah native FilePicker cache API: perlu **rebuild Windows** (tanyakan approval build); reload Metro saja tidak cukup.
 6. Jika butuh cache video/audio disk: STOP, usulkan terpisah — pola saat ini khusus image; media besar lain tetap indeks via `kolam-media-manifest-cache` tanpa auto-download blob.
+
+## Module title / page header (anti-duplication)
+
+Aturan ini melengkapi proteksi di atas. Tidak menghapus atau melemahkan rule existing.
+
+Dashboard header shell sudah menampilkan **judul modul** (+ deskripsi dari navigasi, badge Live bila ada) untuk route aktif.
+
+### Wajib untuk surface / halaman modul
+
+1. **Jangan** mengulang judul modul yang sama di dalam workspace surface jika dashboard header sudah menampilkannya (contoh anti-pola: header shell "Transaksi Stok" + lagi "Transaksi Stok" di body list).
+2. Judul di dalam surface hanya untuk **konteks berbeda** dari judul modul: detail item (`Transaksi Stok #…`), sub-flow (`Opname cepat`), filter aktif, atau empty/error state — bukan salinan label modul.
+3. Deskripsi modul yang kanonik hidup di **navigasi** (`kolam-navigation` description), bukan diulang sebagai subtitle list yang bentrok dengan header shell.
+4. Di proposal sebelum coding halaman list baru: sebutkan apakah surface akan punya page title sendiri; default **tidak**, kecuali alasan konteks di atas.
+
+## Git commit (wajib setelah batch)
+
+Aturan ini melengkapi proteksi di atas. Tidak menghapus atau melemahkan rule existing.
+
+1. Setelah coding batch disetujui selesai (termasuk test/typecheck scope bila relevan): **langsung commit** — jangan biarkan working tree dirty dari pekerjaan agen.
+2. Satu batch ≈ satu commit (atau beberapa commit kecil terpisah jika batch mengandung tema yang jelas berbeda).
+3. Pesan commit fokus pada *why*; ikuti gaya pesan repo.
+4. Jangan `git push` / force / amend berbahaya kecuali user minta eksplisit.
+5. Jangan commit secrets (`.env`, credentials).

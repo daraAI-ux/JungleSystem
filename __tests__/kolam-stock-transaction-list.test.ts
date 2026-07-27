@@ -95,6 +95,7 @@ describe('Kolam stock transaction domain', () => {
       id: 'tx-1',
       type: 'out',
       sourceLabel: 'Penjualan',
+      salesSource: null,
       before: 12,
       after: 9,
       delta: -3,
@@ -135,5 +136,42 @@ describe('Kolam stock transaction domain', () => {
     expect(stockTransactionSourceLabel('stock-opname')).toBe('Stok opname');
     expect(stockTransactionSourceLabel('custom_project')).toBe('Proyek kustom');
     expect(stockTransactionSourceLabel('unknown_source')).toBe('unknown source');
+  });
+
+  it('normalizes Sale sourceRef logo into salesSource', () => {
+    const result = normalizeKolamStockTransactionList({
+      data: [
+        {
+          _id: 'tx-sale',
+          type: 'out',
+          source: 'sale',
+          sourceModel: 'Sale',
+          quantity: 1,
+          before: 5,
+          after: 4,
+          reference: {
+            _id: 'sale-1',
+            invoiceCode: 'INV-99',
+            sourceRef: {
+              _id: 'src-1',
+              name: 'Shopee',
+              logo: 'media/sources/shopee.png',
+              type: 'online',
+            },
+          },
+          productId: { _id: 'p1', name: 'Item', sku: 'SKU' },
+        },
+      ],
+      pagination: { page: 1, limit: 20, total: 1, totalPages: 1 },
+    });
+
+    expect(result.data[0].salesSource).toMatchObject({
+      id: 'src-1',
+      name: 'Shopee',
+      type: 'online',
+    });
+    expect(result.data[0].salesSource?.logoUri).toContain(
+      'media/sources/shopee.png',
+    );
   });
 });

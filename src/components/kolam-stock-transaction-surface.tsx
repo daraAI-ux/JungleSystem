@@ -906,6 +906,8 @@ function KolamStockTransactionList({
         <View style={[styles.cell, { flex: 0.75 }]}>
           <KolamStockTransactionSourceIcon
             label={item.sourceLabel}
+            logoUri={item.salesSource?.logoUri}
+            salesSourceName={item.salesSource?.name}
             source={item.source}
           />
         </View>
@@ -955,22 +957,12 @@ function KolamStockTransactionList({
   return (
     <View style={styles.listRoot}>
       <View style={styles.headerBlock}>
-        <KolamCopyStack
-          items={[
-            {
-              id: 'title',
-              text: 'Transaksi Stok',
-              style: styles.title,
-            },
-            {
-              id: 'desc',
-              text: controller.filters.stockOpnameId
-                ? `Difilter menurut dokumen stock opname (ID: ${controller.filters.stockOpnameId})`
-                : 'Daftar transaksi stok gudang',
-              style: styles.subtitle,
-            },
-          ]}
-        />
+        {controller.filters.stockOpnameId ? (
+          <Text style={styles.subtitle}>
+            Difilter menurut dokumen stock opname (ID:{' '}
+            {controller.filters.stockOpnameId})
+          </Text>
+        ) : null}
         <View style={styles.headerActions}>
           <KolamButton
             disabled={controller.loading}

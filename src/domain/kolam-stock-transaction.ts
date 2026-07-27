@@ -1,9 +1,19 @@
+import { getKolamFileUrl } from '../lib/file-url';
+
 export type KolamStockTransactionType = 'in' | 'out' | 'adjust';
 export type KolamStockTransactionStatus = 'unverified' | 'verified';
 export type KolamStockTransactionWalletConfirmStatus =
   | 'unconfirmed'
   | 'confirmed'
   | 'rejected';
+
+/** Sales channel Source (master) when stock tx reference is a Sale. */
+export interface KolamStockTransactionSalesSource {
+  id: string;
+  name: string;
+  logoUri: string | null;
+  type: string;
+}
 
 export interface KolamStockTransactionPagination {
   page: number;
@@ -89,6 +99,8 @@ export interface KolamStockTransaction {
   type: KolamStockTransactionType | string;
   source: string;
   sourceLabel: string;
+  /** Present when linked Sale has populated sourceRef (channel logo). */
+  salesSource: KolamStockTransactionSalesSource | null;
   quantity: number;
   before: number;
   after: number;
@@ -420,6 +432,7 @@ export function normalizeKolamStockTransaction(
     type: getString(record, 'type') || 'adjust',
     source,
     sourceLabel: stockTransactionSourceLabel(source),
+    salesSource: normalizeSalesSource(record),
     quantity: getNumber(record, 'quantity') ?? 0,
     before: displayBefore,
     after: displayAfter,
@@ -636,6 +649,34 @@ function normalizePerson(value: unknown): KolamStockTransactionPerson | null {
     return null;
   }
   return { id, name: name || 'Unknown' };
+}
+
+function normalizeSalesSource(
+  record: Record<string, unknown>,
+): KolamStockTransactionSalesSource | null {
+  const reference = asRecord(record.reference);
+  if (!Object.keys(reference).length) {
+    return null;
+  }
+  const sourceRef = asRecord(reference.sourceRef);
+  if (!Object.keys(sourceRef).length) {
+    return null;
+  }
+  const id = getString(sourceRef, '_id') || getString(sourceRef, 'id');
+  const name = getString(sourceRef, 'name');
+  const logoPath =
+    getString(sourceRef, 'logo') ||
+    getString(sourceRef, 'logoUrl') ||
+    getString(sourceRef, 'icon');
+  if (!id && !name && !logoPath) {
+    return null;
+  }
+  return {
+    id,
+    name: name || id || 'Sumber',
+    logoUri: getKolamFileUrl(logoPath),
+    type: getString(sourceRef, 'type'),
+  };
 }
 
 function normalizeReference(
