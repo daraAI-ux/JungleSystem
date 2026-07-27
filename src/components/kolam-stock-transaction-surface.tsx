@@ -24,6 +24,7 @@ import { KolamButton } from './kolam-button';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
+import { KolamDateField } from './kolam-date-field';
 import { KolamDescriptionList } from './kolam-description-list';
 import {
   KolamDropdownSelect,
@@ -1054,22 +1055,22 @@ function KolamStockTransactionList({
             />
           </View>
           <View style={styles.filterItem}>
-            <Text style={styles.filterLabel}>Mulai (YYYY-MM-DD)</Text>
-            <KolamFormTextField
-              onChangeText={value =>
-                controller.onChangeFilters({ startDate: value.trim() })
+            <KolamDateField
+              label="Mulai"
+              onChange={value =>
+                controller.onChangeFilters({ startDate: value })
               }
-              placeholder="2026-01-01"
+              placeholder="Dari tanggal"
               value={controller.filters.startDate}
             />
           </View>
           <View style={styles.filterItem}>
-            <Text style={styles.filterLabel}>Sampai (YYYY-MM-DD)</Text>
-            <KolamFormTextField
-              onChangeText={value =>
-                controller.onChangeFilters({ endDate: value.trim() })
+            <KolamDateField
+              label="Sampai"
+              onChange={value =>
+                controller.onChangeFilters({ endDate: value })
               }
-              placeholder="2026-12-31"
+              placeholder="Sampai tanggal"
               value={controller.filters.endDate}
             />
           </View>
