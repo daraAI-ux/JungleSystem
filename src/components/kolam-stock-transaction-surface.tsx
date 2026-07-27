@@ -962,167 +962,189 @@ function KolamStockTransactionList({
         </Text>
       ) : null}
 
-      <View style={styles.toolbarShell}>
-        <View style={styles.filterRow}>
-          <KolamFormTextField
-            onChangeText={setSearchInput}
-            placeholder="Cari"
-            style={styles.searchInput}
-            value={searchInput}
-          />
-          <KolamDropdownSelect
-            accessibilityLabel="Filter target"
-            label="Target"
-            onChange={value => {
-              if (value === 'all') {
-                controller.onChangeFilters({ productId: '', speciesId: '' });
-                return;
-              }
-              if (value.startsWith('product:')) {
-                controller.onChangeFilters({
-                  productId: value.slice('product:'.length),
-                  speciesId: '',
-                });
-                return;
-              }
-              if (value.startsWith('species:')) {
-                controller.onChangeFilters({
-                  productId: '',
-                  speciesId: value.slice('species:'.length),
-                });
-              }
-            }}
-            options={targetOptions}
-            searchable
-            searchPlaceholder="Cari…"
-            showLabelInTrigger={false}
-            triggerStyle={styles.filterTrigger}
-            value={targetFilterValue}
-          />
-          <KolamDropdownSelect
-            accessibilityLabel="Filter status"
-            label="Status"
-            onChange={value => {
-              controller.onChangeFilters({
-                status:
-                  value === 'verified' || value === 'unverified' ? value : '',
-              });
-            }}
-            options={[
-              { label: 'Status', value: 'all' },
-              { label: 'Terverifikasi', value: 'verified' },
-              { label: 'Belum verifikasi', value: 'unverified' },
-            ]}
-            showLabelInTrigger={false}
-            triggerStyle={styles.filterTrigger}
-            value={controller.filters.status || 'all'}
-          />
-          <KolamDateField
-            accessibilityLabel="Tanggal mulai"
-            label="Dari"
-            onChange={value =>
-              controller.onChangeFilters({ startDate: value })
-            }
-            placeholder="Dari"
-            showLabelInTrigger={false}
-            style={styles.dateTrigger}
-            value={controller.filters.startDate}
-          />
-          <KolamDateField
-            accessibilityLabel="Tanggal sampai"
-            label="Sampai"
-            onChange={value =>
-              controller.onChangeFilters({ endDate: value })
-            }
-            placeholder="Sampai"
-            showLabelInTrigger={false}
-            style={styles.dateTrigger}
-            value={controller.filters.endDate}
-          />
-        </View>
-        <View style={styles.actionRow}>
-          {filtersAppliedCount > 0 ? (
+      <View style={styles.toolbarWrap}>
+        <View style={styles.toolbarShell}>
+          <View style={styles.filterRow}>
+            <KolamFormTextField
+              onChangeText={setSearchInput}
+              placeholder="Cari"
+              style={styles.searchInput}
+              value={searchInput}
+            />
+            <View style={styles.filterControl}>
+              <KolamDropdownSelect
+                accessibilityLabel="Filter target"
+                label="Target"
+                onChange={value => {
+                  if (value === 'all') {
+                    controller.onChangeFilters({ productId: '', speciesId: '' });
+                    return;
+                  }
+                  if (value.startsWith('product:')) {
+                    controller.onChangeFilters({
+                      productId: value.slice('product:'.length),
+                      speciesId: '',
+                    });
+                    return;
+                  }
+                  if (value.startsWith('species:')) {
+                    controller.onChangeFilters({
+                      productId: '',
+                      speciesId: value.slice('species:'.length),
+                    });
+                  }
+                }}
+                options={targetOptions}
+                searchable
+                searchPlaceholder="Cari…"
+                showLabelInTrigger={false}
+                style={styles.filterControlFill}
+                triggerStyle={styles.filterTrigger}
+                value={targetFilterValue}
+              />
+            </View>
+            <View style={styles.filterControl}>
+              <KolamDropdownSelect
+                accessibilityLabel="Filter status"
+                label="Status"
+                onChange={value => {
+                  controller.onChangeFilters({
+                    status:
+                      value === 'verified' || value === 'unverified'
+                        ? value
+                        : '',
+                  });
+                }}
+                options={[
+                  { label: 'Status', value: 'all' },
+                  { label: 'Terverifikasi', value: 'verified' },
+                  { label: 'Belum verifikasi', value: 'unverified' },
+                ]}
+                showLabelInTrigger={false}
+                style={styles.filterControlFill}
+                triggerStyle={styles.filterTrigger}
+                value={controller.filters.status || 'all'}
+              />
+            </View>
+            <View style={styles.filterControl}>
+              <KolamDateField
+                accessibilityLabel="Tanggal mulai"
+                label="Dari"
+                onChange={value =>
+                  controller.onChangeFilters({ startDate: value })
+                }
+                placeholder="Dari"
+                showLabelInTrigger={false}
+                style={styles.dateField}
+                value={controller.filters.startDate}
+              />
+            </View>
+            <View style={styles.filterControl}>
+              <KolamDateField
+                accessibilityLabel="Tanggal sampai"
+                label="Sampai"
+                onChange={value =>
+                  controller.onChangeFilters({ endDate: value })
+                }
+                placeholder="Sampai"
+                showLabelInTrigger={false}
+                style={styles.dateField}
+                value={controller.filters.endDate}
+              />
+            </View>
+          </View>
+          <View style={styles.actionRow}>
+            {filtersAppliedCount > 0 ? (
+              <KolamButton
+                label="Reset"
+                muted
+                onPress={() => {
+                  setSearchInput('');
+                  controller.onClearFilters();
+                }}
+                style={styles.toolbarButton}
+              />
+            ) : null}
             <KolamButton
-              label="Reset"
-              muted
+              disabled={controller.loading}
+              label="Refresh"
               onPress={() => {
-                setSearchInput('');
-                controller.onClearFilters();
+                void controller.onRefresh();
               }}
               style={styles.toolbarButton}
             />
-          ) : null}
-          <KolamButton
-            disabled={controller.loading}
-            label="Refresh"
-            onPress={() => {
-              void controller.onRefresh();
-            }}
-            style={styles.toolbarButton}
-          />
-          <KolamButton
-            disabled={controller.exporting || controller.loading}
-            label={controller.exporting ? 'Mengekspor…' : 'Ekspor'}
-            onPress={() => {
-              void controller.onExport();
-            }}
-            style={styles.toolbarButton}
-          />
-          <KolamButton
-            intent="primary"
-            label="Opname cepat"
-            onPress={() =>
-              onRouteChange?.(`${KOLAM_STOCK_TRANSACTION_ROOT}/opname`)
-            }
-            style={styles.toolbarButton}
-          />
+            <KolamButton
+              disabled={controller.exporting || controller.loading}
+              label={controller.exporting ? 'Mengekspor…' : 'Ekspor'}
+              onPress={() => {
+                void controller.onExport();
+              }}
+              style={styles.toolbarButton}
+            />
+            <KolamButton
+              intent="primary"
+              label="Opname cepat"
+              onPress={() =>
+                onRouteChange?.(`${KOLAM_STOCK_TRANSACTION_ROOT}/opname`)
+              }
+              style={styles.toolbarButton}
+            />
+          </View>
         </View>
       </View>
 
-      <KolamStockCrossSyncObservabilityHost onRouteChange={onRouteChange} />
+      <View style={styles.listBody} pointerEvents="box-none">
+        <KolamStockCrossSyncObservabilityHost onRouteChange={onRouteChange} />
 
-      {controller.pendingReturns.length ? (
-        <KolamContentFrame style={styles.pendingFrame} variant="settingsWebConfig">
-          <Text style={styles.pendingTitle}>Ekspektasi retur tertunda</Text>
-          {controller.pendingReturns.map(item => (
-            <Text key={item.complaintId} style={styles.pendingRow}>
-              {item.ticketCode} · qty {formatNumber(item.quantity)}
-              {item.saleInvoiceCode ? ` · ${item.saleInvoiceCode}` : ''}
-            </Text>
-          ))}
+        {controller.pendingReturns.length ? (
+          <KolamContentFrame
+            style={styles.pendingFrame}
+            variant="settingsWebConfig"
+          >
+            <Text style={styles.pendingTitle}>Ekspektasi retur tertunda</Text>
+            {controller.pendingReturns.map(item => (
+              <Text key={item.complaintId} style={styles.pendingRow}>
+                {item.ticketCode} · qty {formatNumber(item.quantity)}
+                {item.saleInvoiceCode ? ` · ${item.saleInvoiceCode}` : ''}
+              </Text>
+            ))}
+          </KolamContentFrame>
+        ) : null}
+
+        <KolamContentFrame style={styles.tableFrame} variant="settingsWebConfig">
+          <FlatList
+            data={controller.transactions}
+            keyExtractor={item => item.id}
+            ListEmptyComponent={
+              <View style={styles.emptyWrap}>
+                <KolamEmptyState
+                  compact
+                  message="Sesuaikan filter atau muat ulang dari server."
+                  title={
+                    controller.loading
+                      ? 'Memuat transaksi stok…'
+                      : 'Belum ada transaksi'
+                  }
+                />
+              </View>
+            }
+            ListHeaderComponent={
+              <View style={styles.headerRow}>
+                {LIST_COLUMNS.map(column => (
+                  <View
+                    key={column.id}
+                    style={[styles.cell, { flex: column.flex }]}
+                  >
+                    <Text style={styles.headerCellText}>{column.label}</Text>
+                  </View>
+                ))}
+              </View>
+            }
+            renderItem={renderRow}
+            style={styles.listFlatList}
+          />
         </KolamContentFrame>
-      ) : null}
-
-      <KolamContentFrame style={styles.tableFrame} variant="settingsWebConfig">
-        <FlatList
-          data={controller.transactions}
-          keyExtractor={item => item.id}
-          ListEmptyComponent={
-            <View style={styles.emptyWrap}>
-              <KolamEmptyState
-                compact
-                message="Sesuaikan filter atau muat ulang dari server."
-                title={
-                  controller.loading
-                    ? 'Memuat transaksi stok…'
-                    : 'Belum ada transaksi'
-                }
-              />
-            </View>
-          }
-          ListHeaderComponent={
-            <View style={styles.headerRow}>
-              {LIST_COLUMNS.map(column => (
-                <View key={column.id} style={[styles.cell, { flex: column.flex }]}>
-                  <Text style={styles.headerCellText}>{column.label}</Text>
-                </View>
-              ))}
-            </View>
-          }
-          renderItem={renderRow}
-          style={styles.listFlatList}
-        />
-      </KolamContentFrame>
+      </View>
 
       <KolamTableFooterControls
         onPageSizeChange={controller.onLimitChange}
@@ -1236,11 +1258,20 @@ const styles = StyleSheet.create({
   listSurface: {
     flex: 1,
     minHeight: 0,
+    overflow: 'visible',
   },
   listRoot: {
     flex: 1,
     minHeight: 0,
     gap: 12,
+    overflow: 'visible',
+  },
+  listBody: {
+    flex: 1,
+    minHeight: 0,
+    gap: 12,
+    zIndex: 0,
+    elevation: 0,
   },
   detailRoot: {
     gap: 12,
@@ -1265,6 +1296,12 @@ const styles = StyleSheet.create({
     color: V.colors.mutedFg,
     fontSize: 13,
   },
+  toolbarWrap: {
+    position: 'relative',
+    zIndex: 100000,
+    elevation: 1000,
+    overflow: 'visible',
+  },
   toolbarShell: {
     alignItems: 'center',
     backgroundColor: V.colors.bg,
@@ -1272,26 +1309,26 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     flexDirection: 'row',
-    flexWrap: 'nowrap',
+    flexWrap: 'wrap',
     gap: 6,
     justifyContent: 'space-between',
     overflow: 'visible',
     padding: 4,
     position: 'relative',
-    zIndex: 100000,
-    elevation: 1000,
+    zIndex: 100001,
+    elevation: 1001,
   },
   filterRow: {
     alignItems: 'center',
     flex: 1,
     flexDirection: 'row',
-    flexWrap: 'nowrap',
+    flexWrap: 'wrap',
     gap: 4,
-    minWidth: 0,
+    minWidth: 280,
     overflow: 'visible',
     position: 'relative',
-    zIndex: 100001,
-    elevation: 1001,
+    zIndex: 100002,
+    elevation: 1002,
   },
   actionRow: {
     alignItems: 'center',
@@ -1299,10 +1336,11 @@ const styles = StyleSheet.create({
     borderLeftWidth: 1,
     flexDirection: 'row',
     flexShrink: 0,
-    flexWrap: 'nowrap',
+    flexWrap: 'wrap',
     gap: 6,
     justifyContent: 'flex-end',
     paddingLeft: 8,
+    zIndex: 1,
   },
   searchInput: {
     flexBasis: 140,
@@ -1310,17 +1348,27 @@ const styles = StyleSheet.create({
     maxWidth: 200,
     minWidth: 120,
   },
-  filterTrigger: {
-    flexBasis: 0,
+  filterControl: {
+    flexBasis: 128,
     flexGrow: 1,
+    minWidth: 128,
+    maxWidth: 220,
+    overflow: 'visible',
+    position: 'relative',
+    zIndex: 100003,
+    elevation: 1003,
+  },
+  filterControlFill: {
+    width: '100%',
+  },
+  filterTrigger: {
     minHeight: 34,
-    minWidth: 110,
+    minWidth: 0,
+    width: '100%',
     paddingHorizontal: 8,
   },
-  dateTrigger: {
-    flexBasis: 0,
-    flexGrow: 1,
-    minWidth: 100,
+  dateField: {
+    width: '100%',
   },
   toolbarButton: {
     flexShrink: 0,

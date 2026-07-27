@@ -34,6 +34,7 @@ export function KolamDropdownSelect<TValue extends string = string>({
   searchable = false,
   searchPlaceholder = 'Cari...',
   showLabelInTrigger = true,
+  style,
   triggerStyle,
   triggerTextStyle,
   value,
@@ -48,6 +49,7 @@ export function KolamDropdownSelect<TValue extends string = string>({
   searchable?: boolean;
   searchPlaceholder?: string;
   showLabelInTrigger?: boolean;
+  style?: StyleProp<ViewStyle>;
   triggerStyle?: StyleProp<ViewStyle>;
   triggerTextStyle?: StyleProp<TextStyle>;
   value: TValue;
@@ -175,7 +177,7 @@ export function KolamDropdownSelect<TValue extends string = string>({
   );
 
   return (
-    <View ref={triggerRef} style={[styles.root, open && styles.rootOpen]}>
+    <View ref={triggerRef} style={[styles.root, style, open && styles.rootOpen]}>
       <KolamInteractionFrame
         accessibilityLabel={accessibilityLabel ?? label}
         accessibilityState={{ expanded: open }}
@@ -453,20 +455,20 @@ const styles = StyleSheet.create({
   },
   portalBackdrop: {
     position: 'absolute',
-    top: -4096,
-    right: -4096,
-    bottom: -4096,
-    left: -4096,
-    zIndex: 2000001,
-    elevation: 2000001,
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    zIndex: 0,
+    elevation: 0,
     backgroundColor: 'transparent',
   },
   menu: {
     position: 'absolute',
     top: 38,
     left: 0,
-    zIndex: 2000002,
-    elevation: 2000002,
+    zIndex: 2,
+    elevation: 8,
     minWidth: 190,
     padding: 6,
     borderRadius: 8,
