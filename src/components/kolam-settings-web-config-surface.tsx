@@ -715,18 +715,139 @@ export function KolamSettingsWebConfigSurface({
       ),
     );
   };
-  const roomSummary = operationalRooms.length
-    ? operationalRooms
+  const selectableOperationalRooms = operationalRooms.filter(
+    room => room.category !== 'ai' && !room.isAiRoom,
+  );
+  const roomOptions =
+    draft.poWorkflowReceivingRoomId &&
+    !selectableOperationalRooms.some(
+      room => room._id === draft.poWorkflowReceivingRoomId,
+    )
+      ? [
+          {
+            _id: draft.poWorkflowReceivingRoomId,
+            name: 'Room tersimpan',
+          } satisfies KolamTeamChatRoom,
+          ...selectableOperationalRooms,
+        ]
+      : selectableOperationalRooms;
+  const roomSummary = roomOptions.length
+    ? roomOptions
         .slice(0, 5)
         .map(room => `${getTeamChatRoomLabel(room)} (${room._id})`)
         .join(' | ')
-    : 'Room list belum tersedia. Isi Team Chat room ID manual.';
+    : 'Room list belum tersedia.';
   const staffSummary = operationalStaffRows.length
     ? operationalStaffRows
         .slice(0, 5)
         .map(staff => `${getUserPickerLabel(staff)} (${staff._id})`)
         .join(' | ')
-    : 'Staff list belum tersedia. Isi user ID manual, pisahkan koma atau baris baru.';
+    : 'Staff list belum tersedia.';
+  const togglePoWorkflowStaffOverride = (
+    field:
+      | 'poWorkflowNotifyReceiveUserIds'
+      | 'poWorkflowNotifyCheckUserIds'
+      | 'poWorkflowNotifyCompleteUserIds',
+    userId: string,
+  ) => {
+    if (disabled) {
+      return;
+    }
+
+    const current = new Set(parseDelimitedIds(draft[field]));
+    if (current.has(userId)) {
+      current.delete(userId);
+    } else {
+      current.add(userId);
+    }
+    setDraftField(field, Array.from(current).join('\n'));
+  };
+  const renderPoWorkflowStaffPicker = (
+    field:
+      | 'poWorkflowNotifyReceiveUserIds'
+      | 'poWorkflowNotifyCheckUserIds'
+      | 'poWorkflowNotifyCompleteUserIds',
+    label: string,
+  ) => {
+    const selectedIds = new Set(parseDelimitedIds(draft[field]));
+
+    return (
+      <View style={styles.poStaffPicker} key={field}>
+        <KolamCopyStack
+          items={[
+            {
+              id: `${field}-label`,
+              text: label,
+              style: styles.marketplaceOverviewLabel,
+            },
+            {
+              id: `${field}-meta`,
+              text: 'Kosong = semua staff dengan permission tahap. Centang untuk override ke staff tertentu.',
+              style: styles.marketplaceOverviewMeta,
+            },
+          ]}
+        />
+        {operationalStaffRows.length ? (
+          <View style={styles.poStaffGrid}>
+            {operationalStaffRows.map(staff => {
+              const checked = selectedIds.has(staff._id);
+
+              return (
+                <Pressable
+                  key={`${field}-${staff._id}`}
+                  disabled={disabled}
+                  onPress={() =>
+                    togglePoWorkflowStaffOverride(field, staff._id)
+                  }
+                  style={[
+                    styles.poStaffCheckbox,
+                    checked && styles.poStaffCheckboxActive,
+                    disabled && styles.poStaffCheckboxDisabled,
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.poStaffCheckboxMark,
+                      checked && styles.poStaffCheckboxMarkActive,
+                    ]}
+                  >
+                    {checked ? (
+                      <Text style={styles.poStaffCheckboxMarkText}>x</Text>
+                    ) : null}
+                  </View>
+                  <KolamCopyStack
+                    containerStyle={styles.poStaffCheckboxCopy}
+                    items={[
+                      {
+                        id: `${field}-${staff._id}-name`,
+                        text: getUserPickerLabel(staff),
+                        style: styles.notificationSoundLabel,
+                      },
+                      {
+                        id: `${field}-${staff._id}-id`,
+                        text: staff._id,
+                        style: styles.notificationSoundPath,
+                      },
+                    ]}
+                  />
+                </Pressable>
+              );
+            })}
+          </View>
+        ) : (
+          <KolamCopyStack
+            items={[
+              {
+                id: `${field}-empty`,
+                text: 'Staff list belum tersedia.',
+                style: styles.marketplaceOverviewMeta,
+              },
+            ]}
+          />
+        )}
+      </View>
+    );
+  };
   const renderNotificationSoundRow = (
     item: (typeof notificationSoundItems)[number],
   ) => {
@@ -2108,16 +2229,59 @@ export function KolamSettingsWebConfigSurface({
               },
             ]}
           />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            label="Room penerimaan barang (Team Chat)"
-            description="Room Team Chat untuk alur penerimaan/QC PO."
-            value={draft.poWorkflowReceivingRoomId}
-            onChangeText={value =>
-              setDraftField('poWorkflowReceivingRoomId', value)
-            }
-            placeholder="Team Chat room ID"
-          />
+          <View style={styles.poRoomPicker}>
+            <KolamCopyStack
+              items={[
+                {
+                  id: 'po-room-picker-label',
+                  text: 'Room penerimaan barang (Team Chat)',
+                  style: styles.marketplaceOverviewLabel,
+                },
+                {
+                  id: 'po-room-picker-meta',
+                  text: 'Upload bukti PO otomatis diposting ke room ini. Room AI tidak ditampilkan.',
+                  style: styles.marketplaceOverviewMeta,
+                },
+              ]}
+            />
+            <View style={styles.poRoomChoices}>
+              <KolamChoiceSegment
+                id=""
+                label="Pilih room"
+                selectedId={draft.poWorkflowReceivingRoomId}
+                onSelect={value =>
+                  !disabled && setDraftField('poWorkflowReceivingRoomId', value)
+                }
+                variant="button"
+              />
+              {roomOptions.map(room => (
+                <KolamChoiceSegment
+                  key={room._id}
+                  id={room._id}
+                  label={`${getTeamChatRoomLabel(room)}${
+                    room.category ? ` (${room.category})` : ''
+                  }`}
+                  selectedId={draft.poWorkflowReceivingRoomId}
+                  onSelect={value =>
+                    !disabled &&
+                    setDraftField('poWorkflowReceivingRoomId', value)
+                  }
+                  variant="button"
+                />
+              ))}
+            </View>
+            {!roomOptions.length ? (
+              <KolamCopyStack
+                items={[
+                  {
+                    id: 'po-room-picker-empty',
+                    text: 'Room Team Chat belum tersedia.',
+                    style: styles.marketplaceOverviewMeta,
+                  },
+                ]}
+              />
+            ) : null}
+          </View>
           <KolamToggleRow
             variant="settingsForm"
             label="Notif saat PO siap diterima / sudah diterima"
@@ -2183,36 +2347,18 @@ export function KolamSettingsWebConfigSurface({
               )
             }
           />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            label="Notif terima - staff override"
-            description="Kosong = semua staff dengan permission tahap. Pisahkan dengan koma atau baris baru."
-            value={draft.poWorkflowNotifyReceiveUserIds}
-            onChangeText={value =>
-              setDraftField('poWorkflowNotifyReceiveUserIds', value)
-            }
-            placeholder="userId1, userId2"
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            label="Notif QC - staff override"
-            description="Kosong = semua staff dengan permission tahap."
-            value={draft.poWorkflowNotifyCheckUserIds}
-            onChangeText={value =>
-              setDraftField('poWorkflowNotifyCheckUserIds', value)
-            }
-            placeholder="userId1, userId2"
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            label="Notif masuk stok - staff override"
-            description="Kosong = semua staff dengan permission tahap."
-            value={draft.poWorkflowNotifyCompleteUserIds}
-            onChangeText={value =>
-              setDraftField('poWorkflowNotifyCompleteUserIds', value)
-            }
-            placeholder="userId1, userId2"
-          />
+          {renderPoWorkflowStaffPicker(
+            'poWorkflowNotifyReceiveUserIds',
+            'Notif terima - staff override',
+          )}
+          {renderPoWorkflowStaffPicker(
+            'poWorkflowNotifyCheckUserIds',
+            'Notif QC - staff override',
+          )}
+          {renderPoWorkflowStaffPicker(
+            'poWorkflowNotifyCompleteUserIds',
+            'Notif masuk stok - staff override',
+          )}
         </>
       ) : null}
       {showFinancialTaxSummary ? (
@@ -5168,6 +5314,13 @@ function parseWorkSiteNumber(value: string) {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
+function parseDelimitedIds(value: string) {
+  return value
+    .split(/[\n,]/)
+    .map(item => item.trim())
+    .filter(Boolean);
+}
+
 function getTeamChatRoomLabel(room: KolamTeamChatRoom) {
   if (room.name) {
     return room.name;
@@ -5261,6 +5414,61 @@ const styles = StyleSheet.create({
   },
   marketplaceControlSection: {
     gap: 10,
+  },
+  poRoomChoices: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  poRoomPicker: {
+    gap: 8,
+  },
+  poStaffCheckbox: {
+    alignItems: 'center',
+    borderColor: '#e5e7eb',
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 10,
+    minWidth: 260,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  poStaffCheckboxActive: {
+    backgroundColor: '#ecfdf5',
+    borderColor: '#10b981',
+  },
+  poStaffCheckboxCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  poStaffCheckboxDisabled: {
+    opacity: 0.6,
+  },
+  poStaffCheckboxMark: {
+    alignItems: 'center',
+    borderColor: '#9ca3af',
+    borderWidth: 1,
+    height: 18,
+    justifyContent: 'center',
+    width: 18,
+  },
+  poStaffCheckboxMarkActive: {
+    backgroundColor: '#10b981',
+    borderColor: '#10b981',
+  },
+  poStaffCheckboxMarkText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 14,
+  },
+  poStaffGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  poStaffPicker: {
+    gap: 8,
   },
   workSiteCoordinateGrid: {
     flexDirection: 'row',
