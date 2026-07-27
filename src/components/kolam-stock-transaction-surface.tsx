@@ -869,7 +869,7 @@ function KolamStockTransactionList({
       value: `species:${item.id}` as const,
     }));
     return [
-      { label: 'Semua produk & spesies', value: 'all' as const },
+      { label: 'Target', value: 'all' as const },
       ...productOpts,
       ...speciesOpts,
     ];
@@ -956,27 +956,109 @@ function KolamStockTransactionList({
 
   return (
     <View style={styles.listRoot}>
-      <View style={styles.headerBlock}>
-        {controller.filters.stockOpnameId ? (
-          <Text style={styles.subtitle}>
-            Difilter menurut dokumen stock opname (ID:{' '}
-            {controller.filters.stockOpnameId})
-          </Text>
-        ) : null}
-        <View style={styles.headerActions}>
+      {controller.filters.stockOpnameId ? (
+        <Text style={styles.subtitle}>
+          Filter stock opname: {controller.filters.stockOpnameId}
+        </Text>
+      ) : null}
+
+      <View style={styles.toolbarShell}>
+        <View style={styles.filterRow}>
+          <KolamFormTextField
+            onChangeText={setSearchInput}
+            placeholder="Cari"
+            style={styles.searchInput}
+            value={searchInput}
+          />
+          <KolamDropdownSelect
+            accessibilityLabel="Filter target"
+            label="Target"
+            onChange={value => {
+              if (value === 'all') {
+                controller.onChangeFilters({ productId: '', speciesId: '' });
+                return;
+              }
+              if (value.startsWith('product:')) {
+                controller.onChangeFilters({
+                  productId: value.slice('product:'.length),
+                  speciesId: '',
+                });
+                return;
+              }
+              if (value.startsWith('species:')) {
+                controller.onChangeFilters({
+                  productId: '',
+                  speciesId: value.slice('species:'.length),
+                });
+              }
+            }}
+            options={targetOptions}
+            searchable
+            searchPlaceholder="Cari…"
+            showLabelInTrigger={false}
+            triggerStyle={styles.filterTrigger}
+            value={targetFilterValue}
+          />
+          <KolamDropdownSelect
+            accessibilityLabel="Filter status"
+            label="Status"
+            onChange={value => {
+              controller.onChangeFilters({
+                status:
+                  value === 'verified' || value === 'unverified' ? value : '',
+              });
+            }}
+            options={[
+              { label: 'Status', value: 'all' },
+              { label: 'Terverifikasi', value: 'verified' },
+              { label: 'Belum verifikasi', value: 'unverified' },
+            ]}
+            showLabelInTrigger={false}
+            triggerStyle={styles.filterTrigger}
+            value={controller.filters.status || 'all'}
+          />
+          <KolamDateField
+            accessibilityLabel="Tanggal mulai"
+            label="Dari"
+            onChange={value =>
+              controller.onChangeFilters({ startDate: value })
+            }
+            placeholder="Dari"
+            showLabelInTrigger={false}
+            style={styles.dateTrigger}
+            value={controller.filters.startDate}
+          />
+          <KolamDateField
+            accessibilityLabel="Tanggal sampai"
+            label="Sampai"
+            onChange={value =>
+              controller.onChangeFilters({ endDate: value })
+            }
+            placeholder="Sampai"
+            showLabelInTrigger={false}
+            style={styles.dateTrigger}
+            value={controller.filters.endDate}
+          />
+        </View>
+        <View style={styles.actionRow}>
+          {filtersAppliedCount > 0 ? (
+            <KolamButton
+              label="Reset"
+              muted
+              onPress={() => {
+                setSearchInput('');
+                controller.onClearFilters();
+              }}
+              style={styles.toolbarButton}
+            />
+          ) : null}
           <KolamButton
             disabled={controller.loading}
             label="Refresh"
             onPress={() => {
               void controller.onRefresh();
             }}
-          />
-          <KolamButton
-            intent="primary"
-            label="Opname cepat"
-            onPress={() =>
-              onRouteChange?.(`${KOLAM_STOCK_TRANSACTION_ROOT}/opname`)
-            }
+            style={styles.toolbarButton}
           />
           <KolamButton
             disabled={controller.exporting || controller.loading}
@@ -984,95 +1066,20 @@ function KolamStockTransactionList({
             onPress={() => {
               void controller.onExport();
             }}
+            style={styles.toolbarButton}
           />
-          {filtersAppliedCount > 0 ? (
-            <KolamButton
-              label="Hapus filter"
-              onPress={() => {
-                setSearchInput('');
-                controller.onClearFilters();
-              }}
-            />
-          ) : null}
+          <KolamButton
+            intent="primary"
+            label="Opname cepat"
+            onPress={() =>
+              onRouteChange?.(`${KOLAM_STOCK_TRANSACTION_ROOT}/opname`)
+            }
+            style={styles.toolbarButton}
+          />
         </View>
       </View>
 
       <KolamStockCrossSyncObservabilityHost onRouteChange={onRouteChange} />
-
-      <KolamContentFrame style={styles.filterFrame} variant="settingsWebConfig">
-        <KolamFormTextField
-          onChangeText={setSearchInput}
-          placeholder="Cari nama, SKU, atau alasan…"
-          value={searchInput}
-        />
-        <View style={styles.filterGrid}>
-          <View style={styles.filterItem}>
-            <KolamDropdownSelect
-              label="Produk / spesies"
-              onChange={value => {
-                if (value === 'all') {
-                  controller.onChangeFilters({ productId: '', speciesId: '' });
-                  return;
-                }
-                if (value.startsWith('product:')) {
-                  controller.onChangeFilters({
-                    productId: value.slice('product:'.length),
-                    speciesId: '',
-                  });
-                  return;
-                }
-                if (value.startsWith('species:')) {
-                  controller.onChangeFilters({
-                    productId: '',
-                    speciesId: value.slice('species:'.length),
-                  });
-                }
-              }}
-              options={targetOptions}
-              searchable
-              searchPlaceholder="Cari produk atau spesies…"
-              value={targetFilterValue}
-            />
-          </View>
-          <View style={styles.filterItem}>
-            <KolamDropdownSelect
-              label="Status"
-              onChange={value => {
-                controller.onChangeFilters({
-                  status:
-                    value === 'verified' || value === 'unverified' ? value : '',
-                });
-              }}
-              options={[
-                { label: 'Semua status', value: 'all' },
-                { label: 'Terverifikasi', value: 'verified' },
-                { label: 'Belum terverifikasi', value: 'unverified' },
-              ]}
-              value={controller.filters.status || 'all'}
-            />
-          </View>
-          <View style={styles.filterItem}>
-            <KolamDateField
-              label="Mulai"
-              onChange={value =>
-                controller.onChangeFilters({ startDate: value })
-              }
-              placeholder="Dari tanggal"
-              value={controller.filters.startDate}
-            />
-          </View>
-          <View style={styles.filterItem}>
-            <KolamDateField
-              label="Sampai"
-              onChange={value =>
-                controller.onChangeFilters({ endDate: value })
-              }
-              placeholder="Sampai tanggal"
-              value={controller.filters.endDate}
-            />
-          </View>
-        </View>
-      </KolamContentFrame>
 
       {controller.pendingReturns.length ? (
         <KolamContentFrame style={styles.pendingFrame} variant="settingsWebConfig">
@@ -1258,8 +1265,65 @@ const styles = StyleSheet.create({
     color: V.colors.mutedFg,
     fontSize: 13,
   },
-  filterFrame: {
-    gap: 12,
+  toolbarShell: {
+    alignItems: 'center',
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    flexWrap: 'nowrap',
+    gap: 6,
+    justifyContent: 'space-between',
+    overflow: 'visible',
+    padding: 4,
+    position: 'relative',
+    zIndex: 100000,
+    elevation: 1000,
+  },
+  filterRow: {
+    alignItems: 'center',
+    flex: 1,
+    flexDirection: 'row',
+    flexWrap: 'nowrap',
+    gap: 4,
+    minWidth: 0,
+    overflow: 'visible',
+    position: 'relative',
+    zIndex: 100001,
+    elevation: 1001,
+  },
+  actionRow: {
+    alignItems: 'center',
+    borderLeftColor: V.colors.border,
+    borderLeftWidth: 1,
+    flexDirection: 'row',
+    flexShrink: 0,
+    flexWrap: 'nowrap',
+    gap: 6,
+    justifyContent: 'flex-end',
+    paddingLeft: 8,
+  },
+  searchInput: {
+    flexBasis: 140,
+    flexGrow: 1,
+    maxWidth: 200,
+    minWidth: 120,
+  },
+  filterTrigger: {
+    flexBasis: 0,
+    flexGrow: 1,
+    minHeight: 34,
+    minWidth: 110,
+    paddingHorizontal: 8,
+  },
+  dateTrigger: {
+    flexBasis: 0,
+    flexGrow: 1,
+    minWidth: 100,
+  },
+  toolbarButton: {
+    flexShrink: 0,
   },
   filterGrid: {
     flexDirection: 'row',

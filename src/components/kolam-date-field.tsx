@@ -27,6 +27,7 @@ export function KolamDateField({
   label,
   onChange,
   placeholder = 'Pilih tanggal',
+  showLabelInTrigger = true,
   style,
   value,
 }: {
@@ -34,6 +35,7 @@ export function KolamDateField({
   label: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  showLabelInTrigger?: boolean;
   style?: StyleProp<ViewStyle>;
   value: string;
 }) {
@@ -58,6 +60,9 @@ export function KolamDateField({
   );
   const todayIso = formatKolamIsoDate(new Date());
   const displayLabel = formatKolamDateLabel(value, placeholder);
+  const triggerLabel = showLabelInTrigger
+    ? `${label}: ${displayLabel}`
+    : displayLabel;
 
   const shiftMonth = (delta: number) => {
     const next = new Date(cursorYear, cursorMonth + delta, 1);
@@ -74,7 +79,7 @@ export function KolamDateField({
         style={styles.trigger}
       >
         <Text numberOfLines={1} style={styles.triggerText}>
-          {label}: {displayLabel}
+          {triggerLabel}
         </Text>
         <KolamChevronIcon direction="down" />
       </KolamInteractionFrame>
