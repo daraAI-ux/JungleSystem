@@ -7,6 +7,7 @@ import type {
 } from '../domain/settings-surface';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamActionControlButton } from './kolam-action-control-button';
+import { KolamChoiceSegment } from './kolam-choice-segment';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamSettingsWebFormSections } from './kolam-settings-web-widgets';
 import { KolamTextFieldRow } from './kolam-text-field-row';
@@ -92,6 +93,7 @@ type WebSettingDraft = {
   staffAttendanceMapProvider: string;
   staffAttendanceOsmNominatimUrl: string;
   staffAttendanceOsmTileUrl: string;
+  staffAttendanceGoogleMapsBrowserApiKey: string;
   staffAttendanceRequireGps: boolean;
   staffAttendanceRequireFace: boolean;
   staffAttendanceFaceMatchThreshold: string;
@@ -1764,36 +1766,86 @@ export function KolamSettingsWebConfigSurface({
               )
             }
           />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            label="Provider peta absen"
-            description="Isi openstreetmap atau google."
-            value={draft.staffAttendanceMapProvider}
-            onChangeText={value =>
-              setDraftField('staffAttendanceMapProvider', value)
-            }
-            placeholder="openstreetmap"
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            label="URL Nominatim (geocoding)"
-            description="Dipakai jika provider peta absen memakai OpenStreetMap."
-            value={draft.staffAttendanceOsmNominatimUrl}
-            onChangeText={value =>
-              setDraftField('staffAttendanceOsmNominatimUrl', value)
-            }
-            placeholder="https://nominatim.openstreetmap.org"
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            label="URL tile peta"
-            description="Dipakai jika provider peta absen memakai OpenStreetMap."
-            value={draft.staffAttendanceOsmTileUrl}
-            onChangeText={value =>
-              setDraftField('staffAttendanceOsmTileUrl', value)
-            }
-            placeholder="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
+          <View style={styles.attendanceProviderRow}>
+            <KolamCopyStack
+              containerStyle={styles.attendanceProviderCopy}
+              items={[
+                {
+                  id: 'attendance-provider-label',
+                  text: 'Peta lokasi absen',
+                  style: styles.notificationSoundLabel,
+                },
+                {
+                  id: 'attendance-provider-description',
+                  text: 'Pilih provider peta untuk lokasi kerja dan validasi radius check-in.',
+                  style: styles.marketplaceOverviewDetail,
+                },
+              ]}
+            />
+            <View style={styles.attendanceProviderChoices}>
+              <KolamChoiceSegment
+                id="openstreetmap"
+                label="OpenStreetMap (gratis, disarankan)"
+                selectedId={
+                  draft.staffAttendanceMapProvider === 'google'
+                    ? 'google'
+                    : 'openstreetmap'
+                }
+                onSelect={value =>
+                  !disabled &&
+                  setDraftField('staffAttendanceMapProvider', value)
+                }
+              />
+              <KolamChoiceSegment
+                id="google"
+                label="Google Maps (butuh API key)"
+                selectedId={
+                  draft.staffAttendanceMapProvider === 'google'
+                    ? 'google'
+                    : 'openstreetmap'
+                }
+                onSelect={value =>
+                  !disabled &&
+                  setDraftField('staffAttendanceMapProvider', value)
+                }
+              />
+            </View>
+          </View>
+          {draft.staffAttendanceMapProvider === 'google' ? (
+            <KolamTextFieldRow
+              variant="settingsForm"
+              label="Google Maps API key (browser)"
+              description="Opsional jika key yang sama sudah di tab Toko & Pengiriman. Kosongkan untuk pakai key Toko."
+              value={draft.staffAttendanceGoogleMapsBrowserApiKey}
+              onChangeText={value =>
+                setDraftField('staffAttendanceGoogleMapsBrowserApiKey', value)
+              }
+              placeholder="AIza..."
+            />
+          ) : (
+            <>
+              <KolamTextFieldRow
+                variant="settingsForm"
+                label="URL Nominatim (geocoding)"
+                description="Tanpa API key. Default server OSM; jangan spam request."
+                value={draft.staffAttendanceOsmNominatimUrl}
+                onChangeText={value =>
+                  setDraftField('staffAttendanceOsmNominatimUrl', value)
+                }
+                placeholder="https://nominatim.openstreetmap.org"
+              />
+              <KolamTextFieldRow
+                variant="settingsForm"
+                label="URL tile peta"
+                description="Dipakai jika provider peta absen memakai OpenStreetMap."
+                value={draft.staffAttendanceOsmTileUrl}
+                onChangeText={value =>
+                  setDraftField('staffAttendanceOsmTileUrl', value)
+                }
+                placeholder="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+            </>
+          )}
           <KolamTextFieldRow
             variant="settingsForm"
             label="Threshold face match"
@@ -4958,6 +5010,26 @@ function getRegionLevelLabel(level: KolamRegionLevel) {
 }
 
 const styles = StyleSheet.create({
+  attendanceProviderChoices: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'flex-end',
+  },
+  attendanceProviderCopy: {
+    flex: 1,
+    gap: 4,
+    minWidth: 260,
+  },
+  attendanceProviderRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
   marketplaceAssetActions: {
     flexDirection: 'row',
     flexWrap: 'wrap',

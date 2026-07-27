@@ -277,6 +277,7 @@ interface WebSettingDraft {
   staffAttendanceMapProvider: string;
   staffAttendanceOsmNominatimUrl: string;
   staffAttendanceOsmTileUrl: string;
+  staffAttendanceGoogleMapsBrowserApiKey: string;
   staffAttendanceRequireGps: boolean;
   staffAttendanceRequireFace: boolean;
   staffAttendanceFaceMatchThreshold: string;
@@ -499,6 +500,7 @@ const emptyWebSettingDraft: WebSettingDraft = {
   staffAttendanceMapProvider: 'openstreetmap',
   staffAttendanceOsmNominatimUrl: '',
   staffAttendanceOsmTileUrl: '',
+  staffAttendanceGoogleMapsBrowserApiKey: '',
   staffAttendanceRequireGps: true,
   staffAttendanceRequireFace: false,
   staffAttendanceFaceMatchThreshold: '0.72',
@@ -3192,6 +3194,8 @@ function createStaffAttendanceDraftFields(
       settings.attendanceMapProvider ?? 'openstreetmap',
     staffAttendanceOsmNominatimUrl: settings.osmNominatimUrl ?? '',
     staffAttendanceOsmTileUrl: settings.osmTileUrl ?? '',
+    staffAttendanceGoogleMapsBrowserApiKey:
+      settings.googleMapsBrowserApiKey ?? '',
     staffAttendanceRequireGps: settings.requireGps !== false,
     staffAttendanceRequireFace: settings.requireFace === true,
     staffAttendanceFaceMatchThreshold: String(
@@ -3254,6 +3258,8 @@ function createStaffAttendanceUpdateBody(
         : 'openstreetmap',
     osmNominatimUrl: draft.staffAttendanceOsmNominatimUrl.trim(),
     osmTileUrl: draft.staffAttendanceOsmTileUrl.trim(),
+    googleMapsBrowserApiKey:
+      draft.staffAttendanceGoogleMapsBrowserApiKey.trim(),
     requireGps: draft.staffAttendanceRequireGps,
     requireFace: draft.staffAttendanceRequireFace,
     faceMatchThreshold: parseNumberOrFallback(

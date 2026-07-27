@@ -370,6 +370,7 @@ function createWebSettingDraft() {
     staffAttendanceMapProvider: 'openstreetmap',
     staffAttendanceOsmNominatimUrl: '',
     staffAttendanceOsmTileUrl: '',
+    staffAttendanceGoogleMapsBrowserApiKey: '',
     staffAttendanceRequireGps: true,
     staffAttendanceRequireFace: false,
     staffAttendanceFaceMatchThreshold: '0.72',
