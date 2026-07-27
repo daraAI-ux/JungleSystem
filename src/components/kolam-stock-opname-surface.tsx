@@ -1,19 +1,65 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
 import {
+  FlatList,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import {
+  KOLAM_STOCK_OPNAME_LINE_TARGET_LABELS,
   KOLAM_STOCK_OPNAME_ROOT,
+  KOLAM_STOCK_OPNAME_STATUS_OPTIONS,
   stockOpnameUserDisplayName,
+  type KolamStockOpname,
+  type KolamStockOpnameLineTargetType,
+  type KolamStockOpnameStatus,
 } from '../domain/kolam-stock-opname';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
-import { useKolamStockOpnameController } from '../hooks/use-kolam-stock-opname-controller';
+import {
+  useKolamStockOpnameController,
+  type KolamStockOpnameController,
+} from '../hooks/use-kolam-stock-opname-controller';
+import { pickNativeAssetFile } from '../services/native-file-picker';
 import { KolamButton } from './kolam-button';
 import { KolamCardFrame } from './kolam-card-frame';
+import { KolamChevronIcon } from './kolam-chevron-icon';
+import { KolamConfirmDialog } from './kolam-confirm-dialog';
+import { KolamContentFrame } from './kolam-content-frame';
+import { KolamCopyStack } from './kolam-copy-stack';
+import { KolamDateField } from './kolam-date-field';
+import {
+  KolamOverflowMenuButton,
+  KolamTableFooterControls,
+} from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
+import { KolamFormTextField } from './kolam-form-text-field';
+import { KolamModalBackdrop } from './kolam-modal-backdrop';
 import { KolamStatusBadge } from './kolam-status-badge';
 
+const LIST_COLUMNS = [
+  { id: 'document', label: 'Dokumen', flex: 1.2 },
+  { id: 'status', label: 'Status', flex: 1 },
+  { id: 'created', label: 'Dibuat', flex: 1.1 },
+  { id: 'owner', label: 'Pemilik', flex: 1 },
+  { id: 'actions', label: '', flex: 0.45 },
+] as const;
+
+const IMPORT_TARGET_OPTIONS: Array<{
+  label: string;
+  value: KolamStockOpnameLineTargetType;
+}> = [
+  { label: KOLAM_STOCK_OPNAME_LINE_TARGET_LABELS.product, value: 'product' },
+  { label: KOLAM_STOCK_OPNAME_LINE_TARGET_LABELS.raw, value: 'raw' },
+  { label: KOLAM_STOCK_OPNAME_LINE_TARGET_LABELS.species, value: 'species' },
+  { label: KOLAM_STOCK_OPNAME_LINE_TARGET_LABELS.packing, value: 'packing' },
+];
+
 /**
- * Fondasi surface: route wiring + list fetch smoke.
- * UI list/new/detail lengkap = batch berikutnya (sama perilaku FE).
+ * List UI = batch 2 (paritas FE `/stock-opname`).
+ * New/detail form lengkap = batch berikutnya.
  */
 export function KolamStockOpnameSurface({
   onRouteChange,
@@ -25,7 +71,12 @@ export function KolamStockOpnameSurface({
   const controller = useKolamStockOpnameController(route);
 
   return (
-    <View style={styles.surface}>
+    <View
+      style={[
+        styles.surface,
+        controller.mode === 'list' ? styles.listSurface : null,
+      ]}
+    >
       {controller.error ? (
         <KolamStatusBadge
           intent="danger"
@@ -34,94 +85,20 @@ export function KolamStockOpnameSurface({
           style={styles.errorBadge}
         />
       ) : null}
+      {controller.statusMessage ? (
+        <KolamStatusBadge
+          intent="success"
+          label={controller.statusMessage}
+          numberOfLines={2}
+          style={styles.errorBadge}
+        />
+      ) : null}
 
       {controller.mode === 'list' ? (
-        <View style={styles.listRoot}>
-          <View style={styles.headerActions}>
-            <KolamButton
-              disabled={controller.loading}
-              label="Refresh"
-              onPress={() => {
-                void controller.onRefresh();
-              }}
-            />
-            <KolamButton
-              intent="primary"
-              label="Baru"
-              onPress={() =>
-                onRouteChange?.(`${KOLAM_STOCK_OPNAME_ROOT}/new`)
-              }
-            />
-          </View>
-
-          {controller.loading && controller.items.length === 0 ? (
-            <Text style={styles.muted}>Memuat dokumen stock opname…</Text>
-          ) : null}
-
-          {!controller.loading && controller.items.length === 0 ? (
-            <KolamEmptyState
-              title="Belum ada dokumen"
-              message="Buat draf baru atau impor Excel (UI impor di batch berikutnya)."
-            />
-          ) : null}
-
-          {controller.items.map(item => (
-            <KolamCardFrame
-              key={item.id}
-              style={styles.rowCard}
-              variant="compact"
-            >
-              <View style={styles.rowHeader}>
-                <Text style={styles.docNumber}>{item.documentNumber}</Text>
-                <KolamStatusBadge
-                  intent={statusIntent(item.status)}
-                  label={item.statusLabel}
-                />
-              </View>
-              <Text style={styles.muted}>
-                {item.createdAt || '—'} · PIC{' '}
-                {stockOpnameUserDisplayName(item.owner) || '—'}
-              </Text>
-              <KolamButton
-                label="Buka"
-                onPress={() =>
-                  onRouteChange?.(`${KOLAM_STOCK_OPNAME_ROOT}/${item.id}`)
-                }
-              />
-            </KolamCardFrame>
-          ))}
-
-          {controller.pagination.totalPages > 1 ? (
-            <View style={styles.headerActions}>
-              <KolamButton
-                disabled={controller.loading || controller.filters.page <= 1}
-                label="Sebelumnya"
-                onPress={() =>
-                  controller.onChangeFilters({
-                    page: Math.max(1, controller.filters.page - 1),
-                  })
-                }
-              />
-              <Text style={styles.muted}>
-                Halaman {controller.pagination.page}/
-                {controller.pagination.totalPages} · {controller.pagination.total}{' '}
-                dokumen
-              </Text>
-              <KolamButton
-                disabled={
-                  controller.loading ||
-                  controller.filters.page >= controller.pagination.totalPages
-                }
-                label="Berikutnya"
-                onPress={() =>
-                  controller.onChangeFilters({
-                    page: controller.filters.page + 1,
-                  })
-                }
-              />
-            </View>
-          ) : null}
-        </View>
+        <KolamStockOpnameList
+          controller={controller}
+          onRouteChange={onRouteChange}
+        />
       ) : null}
 
       {controller.mode === 'new' ? (
@@ -158,6 +135,508 @@ export function KolamStockOpnameSurface({
   );
 }
 
+function KolamStockOpnameList({
+  controller,
+  onRouteChange,
+}: {
+  controller: KolamStockOpnameController;
+  onRouteChange?: (route: string) => void;
+}) {
+  const [searchInput, setSearchInput] = React.useState(controller.filters.search);
+  const [statusPanelOpen, setStatusPanelOpen] = React.useState(false);
+  const [importOpen, setImportOpen] = React.useState(false);
+  const [deleteTarget, setDeleteTarget] = React.useState<KolamStockOpname | null>(
+    null,
+  );
+  const pageCount = Math.max(1, controller.pagination.totalPages);
+  const safePage = Math.min(Math.max(controller.pagination.page, 1), pageCount);
+  const filtersAppliedCount = [
+    controller.filters.search,
+    controller.filters.status,
+    controller.filters.startDate,
+    controller.filters.endDate,
+  ].filter(Boolean).length;
+
+  React.useEffect(() => {
+    setSearchInput(controller.filters.search);
+  }, [controller.filters.search]);
+
+  React.useEffect(() => {
+    const handle = setTimeout(() => {
+      if (searchInput !== controller.filters.search) {
+        controller.onChangeFilters({ search: searchInput });
+      }
+    }, 300);
+    return () => clearTimeout(handle);
+  }, [
+    controller.filters.search,
+    controller.onChangeFilters,
+    searchInput,
+  ]);
+
+  const statusFilterLabel = !controller.filters.status
+    ? 'Status'
+    : KOLAM_STOCK_OPNAME_STATUS_OPTIONS.find(
+        option => option.id === controller.filters.status,
+      )?.name ?? 'Status';
+
+  const statusOptions = React.useMemo(
+    () =>
+      KOLAM_STOCK_OPNAME_STATUS_OPTIONS.map(option => ({
+        label: option.name,
+        value: option.id,
+      })),
+    [],
+  );
+
+  const renderRow = React.useCallback(
+    ({ item }: { item: KolamStockOpname }) => (
+      <Pressable
+        accessibilityRole="button"
+        onPress={() =>
+          onRouteChange?.(`${KOLAM_STOCK_OPNAME_ROOT}/${item.id}`)
+        }
+        style={({ pressed }) => [styles.row, pressed ? styles.rowPressed : null]}
+      >
+        <View style={[styles.cell, { flex: 1.2 }]}>
+          <Text numberOfLines={2} style={styles.primaryText}>
+            {item.documentNumber || item.id}
+          </Text>
+        </View>
+        <View style={[styles.cell, { flex: 1 }]}>
+          <KolamStatusBadge
+            intent={statusIntent(item.status)}
+            label={item.statusLabel}
+          />
+        </View>
+        <View style={[styles.cell, { flex: 1.1 }]}>
+          <Text style={styles.secondaryText}>
+            {formatDateTime(item.createdAt)}
+          </Text>
+        </View>
+        <View style={[styles.cell, { flex: 1 }]}>
+          <Text numberOfLines={2} style={styles.secondaryText}>
+            {stockOpnameUserDisplayName(item.owner) || '—'}
+          </Text>
+        </View>
+        <View style={[styles.cell, styles.actionsCell, { flex: 0.45 }]}>
+          <KolamOverflowMenuButton
+            accessibilityLabel={`Aksi ${item.documentNumber}`}
+            actions={[
+              {
+                label: 'Lihat',
+                onPress: () =>
+                  onRouteChange?.(`${KOLAM_STOCK_OPNAME_ROOT}/${item.id}`),
+              },
+              ...(item.status === 'cancelled'
+                ? [
+                    {
+                      label: 'Hapus',
+                      tone: 'danger' as const,
+                      onPress: () => setDeleteTarget(item),
+                    },
+                  ]
+                : []),
+            ]}
+          />
+        </View>
+      </Pressable>
+    ),
+    [onRouteChange],
+  );
+
+  return (
+    <View style={styles.listRoot}>
+      <View style={styles.toolbarWrap}>
+        <View style={styles.toolbarShell}>
+          <View style={styles.filterRow}>
+            <KolamFormTextField
+              onChangeText={setSearchInput}
+              placeholder="Cari"
+              style={styles.searchInput}
+              value={searchInput}
+            />
+            <KolamButton
+              icon={
+                <KolamChevronIcon
+                  color={
+                    statusPanelOpen || controller.filters.status
+                      ? V.colors.primaryFg
+                      : V.colors.success
+                  }
+                  direction="down"
+                  size="menu-sm"
+                />
+              }
+              intent={
+                statusPanelOpen || controller.filters.status
+                  ? 'primary'
+                  : 'secondary'
+              }
+              label={statusFilterLabel}
+              onPress={() => setStatusPanelOpen(current => !current)}
+              style={[
+                styles.filterTrigger,
+                (statusPanelOpen || controller.filters.status) &&
+                  styles.filterTriggerActive,
+              ]}
+              textStyle={[
+                styles.filterTriggerText,
+                (statusPanelOpen || controller.filters.status) &&
+                  styles.filterTriggerTextActive,
+              ]}
+            />
+            <KolamDateField
+              accessibilityLabel="Tanggal mulai"
+              label="Dari"
+              onChange={value => {
+                setStatusPanelOpen(false);
+                controller.onChangeFilters({ startDate: value });
+              }}
+              placeholder="Dari"
+              showLabelInTrigger={false}
+              style={styles.dateField}
+              value={controller.filters.startDate}
+            />
+            <KolamDateField
+              accessibilityLabel="Tanggal sampai"
+              label="Sampai"
+              onChange={value => {
+                setStatusPanelOpen(false);
+                controller.onChangeFilters({ endDate: value });
+              }}
+              placeholder="Sampai"
+              showLabelInTrigger={false}
+              style={styles.dateField}
+              value={controller.filters.endDate}
+            />
+          </View>
+          <View style={styles.actionRow}>
+            {filtersAppliedCount > 0 ? (
+              <KolamButton
+                label="Reset"
+                muted
+                onPress={() => {
+                  setSearchInput('');
+                  setStatusPanelOpen(false);
+                  controller.onClearFilters();
+                }}
+                style={styles.toolbarButton}
+              />
+            ) : null}
+            <KolamButton
+              disabled={controller.loading}
+              label="Refresh"
+              onPress={() => {
+                void controller.onRefresh();
+              }}
+              style={styles.toolbarButton}
+            />
+            <KolamButton
+              disabled={controller.exporting || controller.loading}
+              label={controller.exporting ? 'Mengekspor…' : 'Ekspor'}
+              onPress={() => {
+                void controller.onExport();
+              }}
+              style={styles.toolbarButton}
+            />
+            <KolamButton
+              disabled={controller.importing}
+              label="Impor"
+              onPress={() => {
+                setStatusPanelOpen(false);
+                setImportOpen(true);
+              }}
+              style={styles.toolbarButton}
+            />
+            <KolamButton
+              intent="primary"
+              label="Baru"
+              onPress={() =>
+                onRouteChange?.(`${KOLAM_STOCK_OPNAME_ROOT}/new`)
+              }
+              style={styles.toolbarButton}
+            />
+          </View>
+        </View>
+
+        {statusPanelOpen ? (
+          <View style={styles.filterOverlayPanel}>
+            <ScrollView
+              contentContainerStyle={styles.filterPanelContent}
+              keyboardShouldPersistTaps="handled"
+              style={styles.filterPanelScroll}
+            >
+              {statusOptions.map(option => {
+                const selected =
+                  (controller.filters.status || 'all') === option.value;
+                return (
+                  <KolamButton
+                    intent={selected ? 'primary' : 'plain'}
+                    key={option.value}
+                    label={option.label}
+                    onPress={() => {
+                      controller.onChangeFilters({
+                        status:
+                          option.value === 'all'
+                            ? ''
+                            : (option.value as KolamStockOpnameStatus),
+                      });
+                      setStatusPanelOpen(false);
+                    }}
+                    style={styles.filterPanelOption}
+                  />
+                );
+              })}
+            </ScrollView>
+            <View style={styles.filterPanelFooter}>
+              <KolamButton
+                label="Tutup"
+                onPress={() => setStatusPanelOpen(false)}
+              />
+            </View>
+          </View>
+        ) : null}
+      </View>
+
+      <KolamContentFrame style={styles.tableFrame} variant="settingsWebConfig">
+        <FlatList
+          data={controller.items}
+          keyExtractor={item => item.id}
+          ListEmptyComponent={
+            <View style={styles.emptyWrap}>
+              <KolamEmptyState
+                compact
+                message="Buat draf baru atau impor Excel, atau sesuaikan filter."
+                title={
+                  controller.loading
+                    ? 'Memuat dokumen stock opname…'
+                    : 'Belum ada dokumen'
+                }
+              />
+            </View>
+          }
+          ListHeaderComponent={
+            <View style={styles.headerRow}>
+              {LIST_COLUMNS.map(column => (
+                <View
+                  key={column.id}
+                  style={[styles.cell, { flex: column.flex }]}
+                >
+                  {column.label ? (
+                    <Text style={styles.headerCellText}>{column.label}</Text>
+                  ) : null}
+                </View>
+              ))}
+            </View>
+          }
+          renderItem={renderRow}
+          style={styles.listFlatList}
+        />
+      </KolamContentFrame>
+
+      <KolamTableFooterControls
+        onPageSizeChange={controller.onLimitChange}
+        page={controller.pagination.page}
+        pageSize={controller.pagination.limit}
+        total={controller.pagination.total}
+      >
+        {pageCount > 1 ? (
+          <View style={styles.paginationBar}>
+            <KolamButton
+              disabled={safePage <= 1 || controller.loading}
+              label="Sebelumnya"
+              onPress={() => controller.onPageChange(Math.max(1, safePage - 1))}
+            />
+            <KolamCopyStack
+              items={[
+                {
+                  id: 'page',
+                  text: `${safePage} / ${pageCount}`,
+                  style: styles.pageLabel,
+                },
+              ]}
+            />
+            <KolamButton
+              disabled={safePage >= pageCount || controller.loading}
+              label="Berikutnya"
+              onPress={() =>
+                controller.onPageChange(Math.min(pageCount, safePage + 1))
+              }
+            />
+          </View>
+        ) : null}
+      </KolamTableFooterControls>
+
+      <KolamConfirmDialog
+        confirmLabel={controller.deleting ? 'Menghapus…' : 'Hapus'}
+        destructive
+        message={`Hapus dokumen ${
+          deleteTarget?.documentNumber || ''
+        } beserta seluruh barisnya? Tindakan ini tidak bisa dibatalkan.`}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={() => {
+          if (!deleteTarget) {
+            return;
+          }
+          void controller.onDelete(deleteTarget.id).then(ok => {
+            if (ok) {
+              setDeleteTarget(null);
+            }
+          });
+        }}
+        title="Hapus stock opname"
+        visible={Boolean(deleteTarget)}
+      />
+
+      <StockOpnameImportDialog
+        importing={controller.importing}
+        onImport={async input => {
+          const header = await controller.onImport(input);
+          if (header) {
+            setImportOpen(false);
+            onRouteChange?.(`${KOLAM_STOCK_OPNAME_ROOT}/${header.id}`);
+          }
+        }}
+        onOpenChange={setImportOpen}
+        visible={importOpen}
+      />
+    </View>
+  );
+}
+
+function StockOpnameImportDialog({
+  importing,
+  onImport,
+  onOpenChange,
+  visible,
+}: {
+  importing: boolean;
+  onImport: (input: {
+    fileUri: string;
+    fileName?: string;
+    targetType: KolamStockOpnameLineTargetType;
+  }) => Promise<void>;
+  onOpenChange: (open: boolean) => void;
+  visible: boolean;
+}) {
+  const [targetType, setTargetType] =
+    React.useState<KolamStockOpnameLineTargetType>('product');
+  const [fileUri, setFileUri] = React.useState('');
+  const [fileName, setFileName] = React.useState('');
+  const [pickError, setPickError] = React.useState('');
+
+  React.useEffect(() => {
+    if (!visible) {
+      setTargetType('product');
+      setFileUri('');
+      setFileName('');
+      setPickError('');
+    }
+  }, [visible]);
+
+  return (
+    <Modal
+      animationType="fade"
+      onRequestClose={() => onOpenChange(false)}
+      transparent
+      visible={visible}
+    >
+      <View style={styles.importOverlay}>
+        <KolamModalBackdrop onPress={() => onOpenChange(false)} />
+        <View
+          accessibilityLabel="Impor stock opname"
+          style={styles.importDialog}
+        >
+          <Text style={styles.sectionTitle}>Impor stock opname</Text>
+          <Text style={styles.muted}>
+            Unggah Excel untuk membuat draf baru. Kolom wajib: Name/Nama,
+            Stock/Jumlah.
+          </Text>
+
+          <Text style={styles.fieldLabel}>Tipe barang</Text>
+          <View style={styles.importTargetRow}>
+            {IMPORT_TARGET_OPTIONS.map(option => (
+              <KolamButton
+                intent={targetType === option.value ? 'primary' : 'secondary'}
+                key={option.value}
+                label={option.label}
+                onPress={() => setTargetType(option.value)}
+                style={styles.importTargetButton}
+              />
+            ))}
+          </View>
+
+          <Text style={styles.fieldLabel}>File Excel</Text>
+          {fileUri ? (
+            <View style={styles.fileRow}>
+              <Text numberOfLines={1} style={styles.fileName}>
+                {fileName || fileUri}
+              </Text>
+              <KolamButton
+                label="Ganti"
+                onPress={() => {
+                  setFileUri('');
+                  setFileName('');
+                }}
+              />
+            </View>
+          ) : (
+            <KolamButton
+              label="Pilih file .xlsx"
+              onPress={() => {
+                setPickError('');
+                void pickNativeAssetFile()
+                  .then(result => {
+                    if (result.cancelled) {
+                      return;
+                    }
+                    const uri = result.uri || result.path || '';
+                    if (!uri) {
+                      setPickError('File tidak valid');
+                      return;
+                    }
+                    setFileUri(uri);
+                    setFileName(result.name || 'stock-opname-import.xlsx');
+                  })
+                  .catch(err => {
+                    setPickError(
+                      err instanceof Error
+                        ? err.message
+                        : 'Gagal memilih file',
+                    );
+                  });
+              }}
+            />
+          )}
+          {pickError ? (
+            <Text style={styles.dangerText}>{pickError}</Text>
+          ) : null}
+
+          <View style={styles.importActions}>
+            <KolamButton
+              label="Batal"
+              onPress={() => onOpenChange(false)}
+            />
+            <KolamButton
+              disabled={!fileUri || importing}
+              intent="primary"
+              label={importing ? 'Mengimpor…' : 'Impor'}
+              onPress={() => {
+                void onImport({
+                  fileUri,
+                  fileName,
+                  targetType,
+                });
+              }}
+            />
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
 function statusIntent(
   status: string,
 ): 'success' | 'warning' | 'danger' | 'info' | 'secondary' {
@@ -177,36 +656,210 @@ function statusIntent(
   }
 }
 
+function formatDateTime(value: string) {
+  if (!value) {
+    return '—';
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+  return date.toLocaleString('id-ID', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  });
+}
+
 const styles = StyleSheet.create({
   surface: {
+    gap: 12,
+  },
+  listSurface: {
     flex: 1,
     minHeight: 0,
-    gap: 12,
+    overflow: 'visible',
   },
   listRoot: {
     flex: 1,
     minHeight: 0,
-    gap: 10,
+    gap: 12,
+    overflow: 'visible',
   },
-  headerActions: {
+  errorBadge: {
+    alignSelf: 'flex-start',
+  },
+  toolbarWrap: {
+    position: 'relative',
+    zIndex: 100000,
+    elevation: 1000,
+    overflow: 'visible',
+  },
+  toolbarShell: {
+    alignItems: 'center',
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
     flexDirection: 'row',
     flexWrap: 'wrap',
+    gap: 6,
+    justifyContent: 'space-between',
+    overflow: 'visible',
+    padding: 4,
+  },
+  filterRow: {
     alignItems: 'center',
-    gap: 8,
-  },
-  rowCard: {
-    gap: 8,
-  },
-  rowHeader: {
+    flex: 1,
     flexDirection: 'row',
     flexWrap: 'wrap',
-    alignItems: 'center',
-    gap: 8,
+    gap: 4,
+    minWidth: 280,
+    overflow: 'visible',
   },
-  docNumber: {
+  actionRow: {
+    alignItems: 'center',
+    borderLeftColor: V.colors.border,
+    borderLeftWidth: 1,
+    flexDirection: 'row',
+    flexShrink: 0,
+    flexWrap: 'wrap',
+    gap: 6,
+    justifyContent: 'flex-end',
+    paddingLeft: 8,
+  },
+  searchInput: {
+    flexBasis: 140,
+    flexGrow: 1,
+    maxWidth: 220,
+    minWidth: 120,
+  },
+  filterTrigger: {
+    backgroundColor: V.colors.successSoft,
+    borderColor: V.colors.success,
+    flexBasis: 0,
+    flexGrow: 1,
+    minHeight: 34,
+    minWidth: 120,
+    paddingHorizontal: 8,
+  },
+  filterTriggerActive: {
+    backgroundColor: V.colors.success,
+    borderColor: V.colors.success,
+  },
+  filterTriggerText: {
+    color: V.colors.success,
+    fontWeight: '800',
+  },
+  filterTriggerTextActive: {
+    color: V.colors.primaryFg,
+  },
+  dateField: {
+    flexBasis: 0,
+    flexGrow: 1,
+    minWidth: 110,
+    maxWidth: 160,
+  },
+  toolbarButton: {
+    flexShrink: 0,
+    minHeight: 34,
+    paddingHorizontal: 10,
+  },
+  filterOverlayPanel: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    elevation: 1200,
+    left: 148,
+    padding: 6,
+    position: 'absolute',
+    shadowColor: V.colors.fg,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    top: 48,
+    width: 240,
+    zIndex: 120000,
+  },
+  filterPanelScroll: {
+    maxHeight: 280,
+  },
+  filterPanelContent: {
+    gap: 4,
+  },
+  filterPanelOption: {
+    justifyContent: 'flex-start',
+  },
+  filterPanelFooter: {
+    alignItems: 'flex-end',
+    borderTopColor: V.colors.border,
+    borderTopWidth: 1,
+    marginTop: 6,
+    paddingTop: 6,
+  },
+  tableFrame: {
+    flex: 1,
+    minHeight: 0,
+  },
+  listFlatList: {
+    flex: 1,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: V.colors.border,
+    paddingVertical: 8,
+    paddingHorizontal: 8,
+    gap: 4,
+  },
+  headerCellText: {
+    color: V.colors.mutedFg,
+    fontSize: 11,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: V.colors.border,
+    paddingVertical: 8,
+    paddingHorizontal: 8,
+    gap: 4,
+  },
+  rowPressed: {
+    backgroundColor: V.colors.muted,
+  },
+  cell: {
+    minWidth: 0,
+  },
+  actionsCell: {
+    alignItems: 'flex-end',
+  },
+  primaryText: {
     color: V.colors.fg,
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
+  },
+  secondaryText: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+  },
+  emptyWrap: {
+    paddingVertical: 24,
+  },
+  paginationBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  pageLabel: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+  },
+  placeholderCard: {
+    gap: 10,
   },
   sectionTitle: {
     color: V.colors.fg,
@@ -218,10 +871,52 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 17,
   },
-  placeholderCard: {
-    gap: 10,
+  importOverlay: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  errorBadge: {
-    alignSelf: 'flex-start',
+  importDialog: {
+    width: 420,
+    maxWidth: '92%',
+    gap: 10,
+    padding: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: V.colors.border,
+    backgroundColor: V.colors.bg,
+  },
+  fieldLabel: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  importTargetRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  importTargetButton: {
+    minHeight: 32,
+  },
+  fileRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  fileName: {
+    flex: 1,
+    color: V.colors.fg,
+    fontSize: 12,
+  },
+  dangerText: {
+    color: V.colors.danger,
+    fontSize: 12,
+  },
+  importActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 8,
+    marginTop: 4,
   },
 });

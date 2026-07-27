@@ -1,15 +1,21 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   createInitialStockOpnameListFilters,
   getKolamStockOpnameRouteId,
   getKolamStockOpnameSurfaceMode,
   type KolamStockOpname,
+  type KolamStockOpnameLineTargetType,
   type KolamStockOpnameListFilters,
   type KolamStockOpnamePagination,
   type KolamStockOpnameSurfaceMode,
 } from '../domain/kolam-stock-opname';
-import { getKolamStockOpnameList } from '../services/kolam-stock-opname-api';
 import { ApiError } from '../lib/api-error';
+import {
+  deleteKolamStockOpname,
+  exportKolamStockOpnameList,
+  getKolamStockOpnameList,
+  importKolamStockOpname,
+} from '../services/kolam-stock-opname-api';
 
 export interface KolamStockOpnameController {
   mode: KolamStockOpnameSurfaceMode;
@@ -18,10 +24,25 @@ export interface KolamStockOpnameController {
   items: KolamStockOpname[];
   pagination: KolamStockOpnamePagination;
   loading: boolean;
+  exporting: boolean;
+  importing: boolean;
+  deleting: boolean;
   error: string;
+  statusMessage: string;
   onChangeFilters: (patch: Partial<KolamStockOpnameListFilters>) => void;
   onClearFilters: () => void;
+  onPageChange: (page: number) => void;
+  onLimitChange: (limit: number) => void;
   onRefresh: () => Promise<void>;
+  onExport: () => Promise<boolean>;
+  onDelete: (id: string) => Promise<boolean>;
+  onImport: (input: {
+    fileUri: string;
+    fileName?: string;
+    targetType: KolamStockOpnameLineTargetType;
+    note?: string;
+  }) => Promise<KolamStockOpname | null>;
+  clearStatusMessage: () => void;
 }
 
 export function useKolamStockOpnameController(
@@ -40,7 +61,13 @@ export function useKolamStockOpnameController(
     totalPages: 1,
   });
   const [loading, setLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState('');
+  const [statusMessage, setStatusMessage] = useState('');
+  const filtersRef = useRef(filters);
+  filtersRef.current = filters;
 
   useEffect(() => {
     setFilters(createInitialStockOpnameListFilters(route));
@@ -86,7 +113,11 @@ export function useKolamStockOpnameController(
       items,
       pagination,
       loading,
+      exporting,
+      importing,
+      deleting,
       error,
+      statusMessage,
       onChangeFilters: patch => {
         setFilters(prev => ({
           ...prev,
@@ -97,7 +128,8 @@ export function useKolamStockOpnameController(
               : patch.search != null ||
                 patch.status != null ||
                 patch.startDate != null ||
-                patch.endDate != null
+                patch.endDate != null ||
+                patch.limit != null
               ? 1
               : prev.page,
         }));
@@ -109,9 +141,19 @@ export function useKolamStockOpnameController(
           startDate: '',
           endDate: '',
           page: 1,
-          limit: filters.limit,
+          limit: filtersRef.current.limit,
           sort: 'createdAt:desc',
         });
+      },
+      onPageChange: page => {
+        setFilters(prev => ({ ...prev, page: Math.max(1, page) }));
+      },
+      onLimitChange: limit => {
+        setFilters(prev => ({
+          ...prev,
+          limit: Math.max(1, limit),
+          page: 1,
+        }));
       },
       onRefresh: async () => {
         if (mode !== 'list') {
@@ -120,7 +162,7 @@ export function useKolamStockOpnameController(
         setLoading(true);
         setError('');
         try {
-          const result = await getKolamStockOpnameList(filters);
+          const result = await getKolamStockOpnameList(filtersRef.current);
           setItems(result.data);
           setPagination(result.pagination);
         } catch (err) {
@@ -129,15 +171,84 @@ export function useKolamStockOpnameController(
           setLoading(false);
         }
       },
+      onExport: async () => {
+        setExporting(true);
+        setError('');
+        setStatusMessage('');
+        try {
+          const saved = await exportKolamStockOpnameList(filtersRef.current);
+          setStatusMessage(`Ekspor siap: ${saved.name}`);
+          return true;
+        } catch (err) {
+          setError(formatError(err));
+          return false;
+        } finally {
+          setExporting(false);
+        }
+      },
+      onDelete: async id => {
+        setDeleting(true);
+        setError('');
+        setStatusMessage('');
+        try {
+          const result = await deleteKolamStockOpname(id);
+          setStatusMessage(
+            result.documentNumber
+              ? `${result.documentNumber} dihapus`
+              : 'Dokumen dihapus',
+          );
+          const list = await getKolamStockOpnameList(filtersRef.current);
+          setItems(list.data);
+          setPagination(list.pagination);
+          return true;
+        } catch (err) {
+          setError(formatError(err));
+          return false;
+        } finally {
+          setDeleting(false);
+        }
+      },
+      onImport: async input => {
+        setImporting(true);
+        setError('');
+        setStatusMessage('');
+        try {
+          const result = await importKolamStockOpname(input);
+          const { summary, header } = result;
+          const note =
+            summary.errors.length > 0
+              ? `Impor: ${summary.imported} berhasil, ${summary.skipped} gagal`
+              : `Impor berhasil: ${summary.imported} baris`;
+          setStatusMessage(note);
+          return header;
+        } catch (err) {
+          setError(formatError(err));
+          return null;
+        } finally {
+          setImporting(false);
+        }
+      },
+      clearStatusMessage: () => setStatusMessage(''),
     }),
-    [mode, documentId, filters, items, pagination, loading, error],
+    [
+      mode,
+      documentId,
+      filters,
+      items,
+      pagination,
+      loading,
+      exporting,
+      importing,
+      deleting,
+      error,
+      statusMessage,
+    ],
   );
 }
 
 function formatError(err: unknown) {
   if (err instanceof ApiError) {
-    const payload = err.payload as { message?: string } | null;
-    return payload?.message || err.message || `HTTP ${err.status}`;
+    return err.message || `HTTP ${err.status}`;
   }
   if (err instanceof Error) {
     return err.message;

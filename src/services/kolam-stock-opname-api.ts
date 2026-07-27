@@ -25,7 +25,7 @@ import {
   getAccessToken,
   getNativeDeviceIdentity,
 } from '../lib/api-client';
-import { ApiError } from '../lib/api-error';
+import { ApiError, type ApiErrorPayload } from '../lib/api-error';
 import { saveNativeBase64File } from './native-file-saver';
 
 const BASE = '/stock-opnames';
@@ -590,7 +590,12 @@ async function downloadBinaryExport(
     } catch {
       payload = { message: await response.text() };
     }
-    throw new ApiError(response.status, payload);
+    throw new ApiError(
+      response.status,
+      (payload && typeof payload === 'object'
+        ? (payload as ApiErrorPayload)
+        : { message: String(payload ?? '') }),
+    );
   }
 
   const filename =
@@ -659,8 +664,14 @@ function arrayBufferToBase64(buffer: ArrayBuffer) {
   for (let i = 0; i < bytes.length; i += chunk) {
     binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
   }
-  if (typeof btoa === 'function') {
-    return btoa(binary);
+  const encode =
+    typeof globalThis !== 'undefined' &&
+    typeof (globalThis as { btoa?: (value: string) => string }).btoa ===
+      'function'
+      ? (globalThis as { btoa: (value: string) => string }).btoa
+      : null;
+  if (encode) {
+    return encode(binary);
   }
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const { Buffer } = require('buffer') as typeof import('buffer');
