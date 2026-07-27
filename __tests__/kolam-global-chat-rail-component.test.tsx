@@ -129,6 +129,10 @@ describe('KolamGlobalChatRail', () => {
     });
   });
 
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
   it('renders the inbox skeleton without loading chat data', async () => {
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
@@ -316,6 +320,7 @@ describe('KolamGlobalChatRail', () => {
   });
 
   it('refreshes list and active detail from live events without playing sound', async () => {
+    jest.useFakeTimers();
     const refreshList = jest.fn().mockResolvedValue(undefined);
     const refreshDetail = jest.fn().mockResolvedValue(undefined);
     let liveOptions:
@@ -378,6 +383,10 @@ describe('KolamGlobalChatRail', () => {
       });
     });
 
+    await ReactTestRenderer.act(async () => {
+      jest.advanceTimersByTime(250);
+    });
+
     expect(refreshList).toHaveBeenCalledTimes(1);
     expect(refreshDetail).toHaveBeenCalledTimes(1);
     expect(mockSoundPlay).toHaveBeenCalledWith({
@@ -387,9 +396,11 @@ describe('KolamGlobalChatRail', () => {
         unassignedNotificationSound: 'media/audios/unassigned.wav',
       },
     });
+    jest.useRealTimers();
   });
 
   it('plays configured headless sound for assigned inbound live messages', async () => {
+    jest.useFakeTimers();
     let liveOptions:
       | Parameters<typeof useKolamChatLiveStream>[0]
       | undefined;

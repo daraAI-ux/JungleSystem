@@ -8,6 +8,7 @@ import {
   useKolamChatLiveStream,
 } from '../hooks/use-kolam-chat-live-stream';
 import {useKolamChatRailDetail} from '../hooks/use-kolam-chat-rail-detail';
+import {useKolamChatRailLiveSync} from '../hooks/use-kolam-chat-rail-live-sync';
 import {useKolamChatRailReadonlyData} from '../hooks/use-kolam-chat-rail-readonly-data';
 import {useKolamNotificationSoundSettings} from '../hooks/use-kolam-notification-sound-settings';
 import {createKolamNotificationSoundService} from '../services/kolam-notification-sound-service';
@@ -39,8 +40,10 @@ export function KolamGlobalChatRail({
   const [composerText, setComposerText] = React.useState('');
   const selectedItem = items.find(item => item.id === selectedItemId) ?? null;
   const detail = useKolamChatRailDetail({mode, selectedId: selectedItemId});
-  const refreshData = data.refresh;
-  const refreshDetail = detail.refresh;
+  const {syncFromLiveClassification} = useKolamChatRailLiveSync({
+    refreshDetail: detail.refresh,
+    refreshList: data.refresh,
+  });
   const soundSettings = useKolamNotificationSoundSettings();
   const notificationSoundService = React.useMemo(
     () =>
@@ -56,13 +59,7 @@ export function KolamGlobalChatRail({
         selectedItemId,
       });
 
-      if (classification.refreshList) {
-        Promise.resolve(refreshData()).catch(() => undefined);
-      }
-
-      if (classification.refreshDetail) {
-        Promise.resolve(refreshDetail()).catch(() => undefined);
-      }
+      syncFromLiveClassification(classification);
 
       Promise.resolve(
         notificationSoundService.play({
@@ -74,10 +71,9 @@ export function KolamGlobalChatRail({
     [
       authUser?.id,
       notificationSoundService,
-      refreshData,
-      refreshDetail,
       selectedItemId,
       soundSettings.webSetting,
+      syncFromLiveClassification,
     ],
   );
 
