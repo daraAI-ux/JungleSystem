@@ -320,6 +320,12 @@ function KolamLocationRow({
           actions={[
             {label: 'Lihat', onPress: onSelect},
             {label: 'Rubah', onPress: onEdit},
+            {
+              disabled: true,
+              label: 'Hapus',
+              onPress: () => undefined,
+              tone: 'danger',
+            },
           ]}
           onOpenChange={setActionMenuOpen}
         />
