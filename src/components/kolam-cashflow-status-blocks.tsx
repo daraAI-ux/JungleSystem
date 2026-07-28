@@ -12,16 +12,16 @@ export function KolamCashflowStatusBlocks({
     <>
       <KolamInfoBlock
         label="Status"
-        primary={activeSession ? 'Open' : 'Closed'}
-        secondary={activeSession?.name ?? 'Belum ada session aktif'}
+        primary={activeSession ? 'Dibuka' : 'Ditutup'}
+        secondary={activeSession?.name ?? 'Belum ada sesi aktif'}
       />
       <KolamInfoBlock
         label="Kasir"
         primary={activeSession?.cashier ?? '-'}
         secondary={
           activeSession
-            ? `Opening cash ${formatRupiah(activeSession.openingBalance)}`
-            : 'Buka session dari backend POS lama.'
+            ? `Kas awal ${formatRupiah(activeSession.openingBalance)}`
+            : 'Buka sesi dari backend POS.'
         }
       />
     </>

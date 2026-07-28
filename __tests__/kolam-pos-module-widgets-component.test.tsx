@@ -72,7 +72,7 @@ describe('POS module widgets', () => {
     expect(renderText(renderer!)).toEqual(
       expect.arrayContaining([
         'Katalog',
-        'Cashflow',
+        'Arus Kas',
         'Customer',
         'Buat customer',
       ]),

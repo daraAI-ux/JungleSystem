@@ -19,7 +19,7 @@ export function KolamCashflowClosePreview({
     <KolamContentFrame variant="cashflowPreview">
       <KolamCopyStack
         items={[
-          {id: 'label', text: 'Close preview', style: styles.adjustmentLabel},
+          {id: 'label', text: 'Pratinjau penutupan', style: styles.adjustmentLabel},
         ]}
       />
       {isLoadingCashflowPreview ? (
@@ -27,7 +27,7 @@ export function KolamCashflowClosePreview({
           items={[
             {
               id: 'loading',
-              text: 'Memuat sales preview...',
+              text: 'Memuat pratinjau penjualan...',
               style: styles.cashflowPreviewMuted,
             },
           ]}
@@ -35,16 +35,16 @@ export function KolamCashflowClosePreview({
       ) : cashflowPreview ? (
         <>
           <KolamTotalRow
-            label="Opening cash"
+            label="Kas awal"
             value={formatRupiah(cashflowPreview.openingCash)}
           />
           <KolamTotalRow
-            label={`Cash sales (${cashflowPreview.cashSalesCount})`}
+            label={`Penjualan tunai (${cashflowPreview.cashSalesCount})`}
             value={formatRupiah(cashflowPreview.cashSalesTotal)}
           />
           <View style={styles.totalDivider} />
           <KolamTotalRow
-            label="Required deposit"
+            label="Setoran wajib"
             value={formatRupiah(getRequiredDeposit(cashflowPreview))}
             strong
           />
@@ -54,7 +54,7 @@ export function KolamCashflowClosePreview({
           items={[
             {
               id: 'unavailable',
-              text: 'Sales preview belum tersedia. Close tetap bisa dilakukan.',
+              text: 'Pratinjau penjualan belum tersedia. Penutupan tetap bisa dilakukan.',
               style: styles.cashflowPreviewMuted,
             },
           ]}

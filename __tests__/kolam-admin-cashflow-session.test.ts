@@ -39,17 +39,17 @@ describe('admin cashflow session domain', () => {
   it('routes admin cashflow to kolam and POS shift to cashflow module', () => {
     expect(
       getKolamNavigationRouteTarget({
-        label: 'Cashflow Sessions',
+        label: 'Sesi Tunai',
         route: '/cashflow-session',
-        description: 'Daily cash sessions',
+        description: 'Sesi kas harian',
         requiredAccess: ['kolam'],
       }).moduleId,
     ).toBe('kolam');
     expect(
       getKolamNavigationRouteTarget({
-        label: 'POS Cashflow Shift',
+        label: 'Shift Kasir POS',
         route: '/pos/cashflow',
-        description: 'POS shift',
+        description: 'Shift POS',
         requiredAccess: ['pos'],
       }).moduleId,
     ).toBe('cashflow');

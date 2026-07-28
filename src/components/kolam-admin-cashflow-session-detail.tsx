@@ -9,7 +9,11 @@ import {
 } from 'react-native';
 import {
   formatAdminCashflowOpenedBy,
+  formatAdminCashflowSourceLabel,
+  formatAdminCashflowStatusLabel,
   formatAdminCashflowWindowLabel,
+  formatDepositStatusLabel,
+  formatInvoiceConfirmStatusLabel,
   getAdminCashflowStatusIntent,
   getDepositStatusIntent,
   getInvoiceConfirmStatusIntent,
@@ -40,20 +44,30 @@ import { KolamModalBackdrop } from './kolam-modal-backdrop';
 import { KolamStatusBadge } from './kolam-status-badge';
 
 const DETAIL_TABS: Array<{ id: KolamAdminCashflowDetailTab; label: string }> = [
-  { id: 'overview', label: 'Overview' },
-  { id: 'review', label: 'Review' },
-  { id: 'deposits', label: 'Deposits' },
+  { id: 'overview', label: 'Ringkasan' },
+  { id: 'review', label: 'Tinjauan' },
+  { id: 'deposits', label: 'Setoran' },
 ];
 
 const INVOICE_FILTERS: Array<{
   id: KolamAdminCashflowInvoiceReviewFilter;
   label: string;
 }> = [
-  { id: 'pending', label: 'Pending' },
-  { id: 'confirmed', label: 'Confirmed' },
-  { id: 'rejected', label: 'Rejected' },
-  { id: 'all', label: 'All' },
+  { id: 'pending', label: 'Menunggu' },
+  { id: 'confirmed', label: 'Dikonfirmasi' },
+  { id: 'rejected', label: 'Ditolak' },
+  { id: 'all', label: 'Semua' },
 ];
+
+const INVOICE_FILTER_EMPTY_LABEL: Record<
+  KolamAdminCashflowInvoiceReviewFilter,
+  string
+> = {
+  pending: 'Menunggu',
+  confirmed: 'Dikonfirmasi',
+  rejected: 'Ditolak',
+  all: 'Semua',
+};
 
 /**
  * Admin cashflow session detail — FE `/cashflow-session/[id]`.
@@ -161,7 +175,7 @@ export function KolamAdminCashflowSessionDetail({
       <KolamConfirmDialog
         cancelLabel="Batal"
         confirmLabel={controller.acting ? 'Menutup…' : 'Tutup sesi'}
-        message="Sesi akan di-lock. Penjualan baru di jendela ini tidak lagi masuk sesi ini."
+        message="Sesi akan dikunci. Penjualan baru di jendela ini tidak lagi masuk sesi ini."
         onCancel={() => setCloseOpen(false)}
         onConfirm={() => {
           void controller.onCloseSession().then(ok => {
@@ -183,16 +197,16 @@ export function KolamAdminCashflowSessionDetail({
         <View style={styles.modalOverlay}>
           <KolamModalBackdrop onPress={() => setVoidOpen(false)} />
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Void session</Text>
+            <Text style={styles.modalTitle}>Batalkan sesi</Text>
             <Text style={styles.modalHint}>
-              Semua entry unconfirmed di-reject otomatis. Saldo wallet tidak
-              berubah. Tidak bisa di-undo.
+              Semua entri yang belum dikonfirmasi akan ditolak otomatis. Saldo
+              dompet tidak berubah. Tindakan ini tidak bisa dibatalkan.
             </Text>
             <KolamFormTextField
               multiline
               numberOfLines={4}
               onChangeText={setVoidReason}
-              placeholder="Alasan void (min 10 karakter)"
+              placeholder="Alasan pembatalan (min 10 karakter)"
               style={styles.multiline}
               value={voidReason}
             />
@@ -213,7 +227,7 @@ export function KolamAdminCashflowSessionDetail({
                   controller.acting || voidReason.trim().length < 10
                 }
                 intent="danger"
-                label={controller.acting ? 'Memproses…' : 'Konfirmasi void'}
+                label={controller.acting ? 'Memproses…' : 'Konfirmasi pembatalan'}
                 onPress={() => {
                   void controller.onVoidSession(voidReason).then(ok => {
                     if (ok) {
@@ -238,7 +252,7 @@ export function KolamAdminCashflowSessionDetail({
           <KolamModalBackdrop onPress={() => setRejectTarget(null)} />
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>
-              Reject {rejectTarget?.invoiceCode || 'invoice'}
+              Tolak {rejectTarget?.invoiceCode || 'invoice'}
             </Text>
             <KolamFormTextField
               multiline
@@ -257,7 +271,7 @@ export function KolamAdminCashflowSessionDetail({
               <KolamButton
                 disabled={controller.acting || !rejectNote.trim()}
                 intent="danger"
-                label={controller.acting ? 'Memproses…' : 'Reject'}
+                label={controller.acting ? 'Memproses…' : 'Tolak'}
                 onPress={() => {
                   if (!rejectTarget?.saleId) {
                     return;
@@ -311,7 +325,7 @@ function DetailHeader({
             <View style={styles.headerMetaRow}>
               <KolamStatusBadge
                 intent={getAdminCashflowStatusIntent(session.status)}
-                label={session.status}
+                label={formatAdminCashflowStatusLabel(session.status)}
               />
               <Text style={styles.metaText}>
                 {formatAdminCashflowWindowLabel(session)}
@@ -323,7 +337,7 @@ function DetailHeader({
           <KolamButton label="Daftar" muted onPress={onBack} />
           <KolamButton
             disabled={controller.loading || controller.acting}
-            label="Refresh"
+            label="Muat ulang"
             onPress={() => {
               void controller.onRefresh();
             }}
@@ -332,14 +346,14 @@ function DetailHeader({
             <KolamButton
               disabled={controller.acting}
               intent="primary"
-              label="Close"
+              label="Tutup"
               onPress={onClose}
             />
           ) : null}
           {controller.canRecheck ? (
             <KolamButton
               disabled={controller.acting}
-              label="Re-check"
+              label="Periksa ulang"
               onPress={onRecheck}
             />
           ) : null}
@@ -347,7 +361,7 @@ function DetailHeader({
             <KolamButton
               disabled={controller.acting}
               intent="danger"
-              label="Void"
+              label="Batalkan"
               onPress={onVoid}
             />
           ) : null}
@@ -372,8 +386,14 @@ function OverviewTab({
       <View style={styles.overviewGrid}>
         <KolamCardFrame style={styles.infoCard} variant="compact">
           <Text style={styles.sectionTitle}>Informasi sesi</Text>
-          <InfoRow label="Status" value={session.status} />
-          <InfoRow label="Sumber" value={session.source} />
+          <InfoRow
+            label="Status"
+            value={formatAdminCashflowStatusLabel(session.status)}
+          />
+          <InfoRow
+            label="Sumber"
+            value={formatAdminCashflowSourceLabel(session.source)}
+          />
           <InfoRow
             label="Dibuka oleh"
             value={formatAdminCashflowOpenedBy(
@@ -388,11 +408,11 @@ function OverviewTab({
           {session.snapshot ? (
             <>
               <InfoRow
-                label="Total sales"
+                label="Total penjualan"
                 value={String(session.snapshot.totalSalesCount)}
               />
               <InfoRow
-                label="Total amount"
+                label="Total nominal"
                 value={formatRupiah(session.snapshot.totalSalesAmount)}
               />
             </>
@@ -400,14 +420,14 @@ function OverviewTab({
         </KolamCardFrame>
 
         <KolamCardFrame style={styles.infoCard} variant="compact">
-          <Text style={styles.sectionTitle}>Ringkasan unconfirmed</Text>
+          <Text style={styles.sectionTitle}>Ringkasan belum dikonfirmasi</Text>
           <InfoRow
-            label="Entries"
+            label="Entri"
             value={String(summary.unconfirmedCount)}
           />
-          <InfoRow label="Cash" value={formatRupiah(summary.cashTotal)} />
+          <InfoRow label="Tunai" value={formatRupiah(summary.cashTotal)} />
           <InfoRow
-            label="Non-cash"
+            label="Non-tunai"
             value={formatRupiah(summary.nonCashTotal)}
           />
           <InfoRow
@@ -437,14 +457,14 @@ function ReviewTab({
     <ScrollView contentContainerStyle={styles.tabBody}>
       <View style={styles.reviewToolbar}>
         <Text style={styles.sectionTitle}>
-          Review per invoice · {controller.reviewSummary.unconfirmedCount}{' '}
-          unconfirmed
+          Tinjauan per invoice · {controller.reviewSummary.unconfirmedCount}{' '}
+          belum dikonfirmasi
         </Text>
         <View style={styles.headerActions}>
           {controller.canConfirmAll ? (
             <KolamButton
               disabled={controller.acting}
-              label="Confirm all non-cash"
+              label="Konfirmasi semua non-tunai"
               onPress={() => {
                 void controller.onConfirmAllNonCash();
               }}
@@ -454,7 +474,7 @@ function ReviewTab({
             <KolamButton
               disabled={controller.acting}
               intent="primary"
-              label="Submit deposit"
+              label="Kirim setoran"
               onPress={onOpenDeposit}
             />
           ) : null}
@@ -477,7 +497,7 @@ function ReviewTab({
 
       {controller.filteredInvoiceGroups.length === 0 ? (
         <KolamEmptyState
-          message={`Tidak ada invoice di filter "${controller.invoiceFilter}".`}
+          message={`Tidak ada invoice di filter "${INVOICE_FILTER_EMPTY_LABEL[controller.invoiceFilter]}".`}
           title="Kosong"
         />
       ) : (
@@ -511,13 +531,13 @@ function ReviewTab({
                       {group.invoiceCode || '(tanpa kode)'}
                     </Text>
                     <Text style={styles.metaText}>
-                      {isCash ? 'Cash' : 'Non-cash'} · net{' '}
+                      {isCash ? 'Tunai' : 'Non-tunai'} · bersih{' '}
                       {formatRupiah(group.netAmount)}
                     </Text>
                   </View>
                   <KolamStatusBadge
                     intent={getInvoiceConfirmStatusIntent(group.confirmStatus)}
-                    label={group.confirmStatus}
+                    label={formatInvoiceConfirmStatusLabel(group.confirmStatus)}
                   />
                 </View>
               </Pressable>
@@ -527,7 +547,7 @@ function ReviewTab({
                   <KolamButton
                     disabled={controller.acting}
                     intent="primary"
-                    label="ACC"
+                    label="Setujui"
                     onPress={() => {
                       if (group.saleId) {
                         void controller.onConfirmInvoice(group.saleId);
@@ -537,7 +557,7 @@ function ReviewTab({
                   <KolamButton
                     disabled={controller.acting}
                     intent="danger"
-                    label="Reject"
+                    label="Tolak"
                     onPress={() => onReject(group)}
                   />
                 </View>
@@ -545,7 +565,7 @@ function ReviewTab({
 
               {isCash && isPending && !controller.readOnlyReview ? (
                 <Text style={styles.metaText}>
-                  Invoice tunai diselesaikan lewat Submit deposit.
+                  Invoice tunai diselesaikan lewat Kirim setoran.
                 </Text>
               ) : null}
 
@@ -554,13 +574,14 @@ function ReviewTab({
                   {group.entries.map(entry => (
                     <View key={entry.id} style={styles.entryRow}>
                       <Text style={styles.entryMain}>
-                        {entry.type} · {entry.source} ·{' '}
-                        {formatRupiah(entry.amount)}
+                        {entry.type === 'credit' ? 'kredit' : 'debit'} ·{' '}
+                        {entry.source} · {formatRupiah(entry.amount)}
                       </Text>
                       <Text style={styles.metaText}>
-                        {entry.walletName} · {entry.confirmStatus}
+                        {entry.walletName} ·{' '}
+                        {formatInvoiceConfirmStatusLabel(entry.confirmStatus)}
                         {!isConfirmableCashflowSource(entry.source)
-                          ? ' · commission (excluded)'
+                          ? ' · komisi (dikecualikan)'
                           : ''}
                       </Text>
                     </View>
@@ -584,8 +605,8 @@ function DepositsTab({
     return (
       <View style={styles.tabBody}>
         <KolamEmptyState
-          message="Belum ada deposit untuk sesi ini."
-          title="Tidak ada deposit"
+          message="Belum ada setoran untuk sesi ini."
+          title="Tidak ada setoran"
         />
       </View>
     );
@@ -628,7 +649,7 @@ function DepositCard({
       <View style={styles.invoiceHeader}>
         <View style={styles.headerText}>
           <Text style={styles.metaText}>
-            {deposit.source === 'pos' ? 'POS deposit' : 'Cash deposit'}
+            {deposit.source === 'pos' ? 'Setoran POS' : 'Setoran tunai'}
           </Text>
           <Text style={styles.depositAmount}>
             {formatRupiah(deposit.headlineAmount)}
@@ -641,12 +662,12 @@ function DepositCard({
         </View>
         <KolamStatusBadge
           intent={getDepositStatusIntent(deposit.status)}
-          label={deposit.status}
+          label={formatDepositStatusLabel(deposit.status)}
         />
       </View>
       {deposit.allocationCount > 0 ? (
         <Text style={styles.metaText}>
-          {deposit.allocationCount} invoice · shortage{' '}
+          {deposit.allocationCount} invoice · selisih kurang{' '}
           {formatRupiah(deposit.totalShortageIdr)}
         </Text>
       ) : null}
@@ -657,7 +678,7 @@ function DepositCard({
         <KolamButton
           disabled={acting}
           intent="primary"
-          label="Verify"
+          label="Verifikasi"
           onPress={onVerify}
         />
       ) : null}
@@ -743,38 +764,37 @@ function DepositSubmitModal({
         <KolamModalBackdrop onPress={onClose} />
         <View style={[styles.modalCard, styles.depositModalCard]}>
           <ScrollView>
-            <Text style={styles.modalTitle}>Submit cash deposit</Text>
+            <Text style={styles.modalTitle}>Kirim setoran tunai</Text>
             <Text style={styles.modalHint}>
-              Pilih invoice tunai, isi actual amount, lalu kirim
-              submit-direct.
+              Pilih invoice tunai, isi nominal aktual, lalu kirim setoran.
             </Text>
 
             {cashOptions.length > 0 ? (
               <KolamDropdownSelect
-                label="Dari (cash)"
+                label="Dari (tunai)"
                 onChange={setFromWallet}
                 options={cashOptions}
                 value={fromWallet || cashOptions[0]?.value || ''}
               />
             ) : (
-              <Text style={styles.metaText}>Tidak ada dompet cash.</Text>
+              <Text style={styles.metaText}>Tidak ada dompet tunai.</Text>
             )}
 
             {nonCashOptions.length > 0 ? (
               <KolamDropdownSelect
-                label="Ke (non-cash)"
+                label="Ke (non-tunai)"
                 onChange={setToWallet}
                 options={nonCashOptions}
                 value={toWallet || nonCashOptions[0]?.value || ''}
               />
             ) : (
-              <Text style={styles.metaText}>Tidak ada dompet non-cash.</Text>
+              <Text style={styles.metaText}>Tidak ada dompet non-tunai.</Text>
             )}
 
             <Text style={styles.fieldLabel}>Invoice tunai</Text>
             {controller.cashInvoiceCandidates.length === 0 ? (
               <Text style={styles.metaText}>
-                Tidak ada invoice cash pending.
+                Tidak ada invoice tunai yang menunggu.
               </Text>
             ) : (
               controller.cashInvoiceCandidates.map(group => {
@@ -814,7 +834,7 @@ function DepositSubmitModal({
                             ),
                           );
                         }}
-                        placeholder="Actual amount"
+                        placeholder="Nominal aktual"
                         value={draft.actualAmountIdr}
                       />
                     ) : null}
@@ -843,7 +863,7 @@ function DepositSubmitModal({
                 allocations.length === 0
               }
               intent="primary"
-              label={controller.acting ? 'Mengirim…' : 'Kirim deposit'}
+              label={controller.acting ? 'Mengirim…' : 'Kirim setoran'}
               onPress={() => {
                 void controller
                   .onSubmitDirectDeposit({

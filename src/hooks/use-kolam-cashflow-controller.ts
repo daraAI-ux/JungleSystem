@@ -36,10 +36,10 @@ export function useKolamCashflowController({
     if (!canOpenCashflowSession) {
       onMessage(
         !signedIn
-          ? 'Login kasir dulu sebelum membuka cashflow.'
+          ? 'Login kasir dulu sebelum membuka arus kas.'
           : !hasPosAccess
-            ? 'User ini tidak punya akses POS untuk membuka cashflow.'
-            : 'Cashflow session sudah open.',
+            ? 'Pengguna ini tidak punya akses POS untuk membuka arus kas.'
+            : 'Sesi arus kas sudah dibuka.',
       );
       return;
     }
@@ -50,11 +50,11 @@ export function useKolamCashflowController({
         name: getCashflowShiftName(cashflowShiftName),
       });
       setCashflowShiftName('');
-      onMessage('Cashflow session berhasil dibuka.');
+      onMessage('Sesi arus kas berhasil dibuka.');
       await onRefresh();
     } catch (error) {
       onMessage(
-        error instanceof Error ? error.message : 'Gagal membuka cashflow.',
+        error instanceof Error ? error.message : 'Gagal membuka arus kas.',
       );
     } finally {
       setIsOpeningCashflow(false);
@@ -65,10 +65,10 @@ export function useKolamCashflowController({
     if (!canCloseCashflowSession) {
       onMessage(
         !signedIn
-          ? 'Login kasir dulu sebelum menutup cashflow.'
+          ? 'Login kasir dulu sebelum menutup arus kas.'
           : !hasPosAccess
-            ? 'User ini tidak punya akses POS untuk menutup cashflow.'
-            : 'Belum ada cashflow session yang open.',
+            ? 'Pengguna ini tidak punya akses POS untuk menutup arus kas.'
+            : 'Belum ada sesi arus kas yang dibuka.',
       );
       return;
     }
@@ -76,11 +76,11 @@ export function useKolamCashflowController({
     setIsClosingCashflow(true);
     try {
       await closeCashflowSession(activeSession!.id);
-      onMessage('Cashflow session berhasil ditutup.');
+      onMessage('Sesi arus kas berhasil ditutup.');
       await onRefresh();
     } catch (error) {
       onMessage(
-        error instanceof Error ? error.message : 'Gagal menutup cashflow.',
+        error instanceof Error ? error.message : 'Gagal menutup arus kas.',
       );
     } finally {
       setIsClosingCashflow(false);

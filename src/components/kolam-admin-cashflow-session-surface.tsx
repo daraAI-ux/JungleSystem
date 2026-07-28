@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   formatAdminCashflowOpenedBy,
+  formatAdminCashflowStatusLabel,
   formatAdminCashflowWindowLabel,
   getAdminCashflowStatusIntent,
   KOLAM_ADMIN_CASHFLOW_SESSION_ROOT,
@@ -143,7 +144,7 @@ function AdminCashflowList({
         <View style={[styles.cell, { flex: 0.8 }]}>
           <KolamStatusBadge
             intent={getAdminCashflowStatusIntent(item.status)}
-            label={item.status}
+            label={formatAdminCashflowStatusLabel(item.status)}
           />
         </View>
         <View style={[styles.cell, { flex: 1.4 }]}>
@@ -202,7 +203,7 @@ function AdminCashflowList({
           <View style={styles.actionRow}>
             {hasFilters ? (
               <KolamButton
-                label="Reset"
+                label="Atur ulang"
                 muted
                 onPress={() => {
                   setStatusPanelOpen(false);
@@ -214,7 +215,7 @@ function AdminCashflowList({
             ) : null}
             <KolamButton
               disabled={controller.loading}
-              label="Refresh"
+              label="Muat ulang"
               onPress={() => {
                 void controller.onRefresh();
               }}
@@ -267,7 +268,7 @@ function AdminCashflowList({
             items={[
               {
                 id: 'today',
-                text: `Sesi hari ini: ${controller.todaySession.name} (${controller.todaySession.status})`,
+                text: `Sesi hari ini: ${controller.todaySession.name} (${formatAdminCashflowStatusLabel(controller.todaySession.status)})`,
                 style: styles.todayText,
               },
             ]}
@@ -380,7 +381,7 @@ function AdminCashflowCreateForm({
         {blockedByToday ? (
           <KolamStatusBadge
             intent="warning"
-            label={`Sesi hari ini sudah ada: ${controller.todaySession?.name} (${controller.todaySession?.status}). Tidak bisa membuat sesi baru.`}
+            label={`Sesi hari ini sudah ada: ${controller.todaySession?.name} (${formatAdminCashflowStatusLabel(controller.todaySession?.status || 'open')}). Tidak bisa membuat sesi baru.`}
             numberOfLines={4}
             style={styles.banner}
           />
@@ -392,13 +393,13 @@ function AdminCashflowCreateForm({
           placeholder="mis. Shift pagi"
           value={name}
         />
-        <Text style={styles.fieldLabel}>Window start (ISO opsional)</Text>
+        <Text style={styles.fieldLabel}>Awal jendela (ISO, opsional)</Text>
         <KolamFormTextField
           onChangeText={setWindowStart}
           placeholder="2026-07-28T00:00:00.000Z"
           value={windowStart}
         />
-        <Text style={styles.fieldLabel}>Window end (ISO opsional)</Text>
+        <Text style={styles.fieldLabel}>Akhir jendela (ISO, opsional)</Text>
         <KolamFormTextField
           onChangeText={setWindowEnd}
           placeholder="2026-07-28T16:59:59.999Z"

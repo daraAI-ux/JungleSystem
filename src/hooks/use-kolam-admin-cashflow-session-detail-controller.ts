@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   computeAdminCashflowReviewSummary,
+  formatAdminCashflowStatusLabel,
   getGrossCashFromInvoiceGroup,
   invoiceReviewFilterMatches,
   isCashInvoiceGroup,
@@ -175,7 +176,7 @@ export function useKolamAdminCashflowSessionDetailController(
       .then(result => {
         if (result.transitioned) {
           setStatusMessage(
-            'Sesi auto-verified — semua entry confirmable sudah settled.',
+            'Sesi diverifikasi otomatis — semua entri yang bisa dikonfirmasi sudah selesai.',
           );
           return refresh();
         }
@@ -279,7 +280,7 @@ export function useKolamAdminCashflowSessionDetailController(
     }
     const result = await runAction(
       () => closeKolamAdminCashflowSession(resolvedSessionId),
-      'Sesi ditutup (locked).',
+      'Sesi ditutup (terkunci).',
       'Gagal menutup sesi.',
     );
     return Boolean(result);
@@ -292,19 +293,19 @@ export function useKolamAdminCashflowSessionDetailController(
       }
       const trimmed = reason.trim();
       if (trimmed.length < 10) {
-        setError('Alasan void minimal 10 karakter.');
+        setError('Alasan pembatalan minimal 10 karakter.');
         return false;
       }
       const result = await runAction(
         () => voidKolamAdminCashflowSession(resolvedSessionId, trimmed),
         null,
-        'Gagal void sesi.',
+        'Gagal membatalkan sesi.',
       );
       if (!result) {
         return false;
       }
       setStatusMessage(
-        `Sesi di-void · ${result.rejectedTransactionsCount} entry di-reject.`,
+        `Sesi dibatalkan · ${result.rejectedTransactionsCount} entri ditolak.`,
       );
       return true;
     },
@@ -321,18 +322,20 @@ export function useKolamAdminCashflowSessionDetailController(
     try {
       const result = await recheckKolamAdminCashflowSession(resolvedSessionId);
       if (result.transitioned) {
-        setStatusMessage('Sesi verified.');
+        setStatusMessage('Sesi terverifikasi.');
         await refresh();
       } else if (result.remainingConfirmable > 0) {
         setStatusMessage(
-          `Masih ada ${result.remainingConfirmable} entry confirmable belum settled.`,
+          `Masih ada ${result.remainingConfirmable} entri yang belum diselesaikan.`,
         );
       } else if (result.remainingExcluded > 0) {
         setStatusMessage(
-          `${result.remainingExcluded} entry commission tersisa. Status: ${result.sessionStatus}.`,
+          `${result.remainingExcluded} entri komisi tersisa. Status: ${formatAdminCashflowStatusLabel(result.sessionStatus)}.`,
         );
       } else {
-        setStatusMessage(`Status saat ini: ${result.sessionStatus}`);
+        setStatusMessage(
+          `Status saat ini: ${formatAdminCashflowStatusLabel(result.sessionStatus)}`,
+        );
       }
       if (result.transitioned) {
         // already refreshed
@@ -341,7 +344,7 @@ export function useKolamAdminCashflowSessionDetailController(
       }
       return result;
     } catch (err) {
-      setError(getErrorMessage(err, 'Gagal recheck sesi.'));
+      setError(getErrorMessage(err, 'Gagal memeriksa ulang sesi.'));
       return null;
     } finally {
       setActing(false);
@@ -355,8 +358,8 @@ export function useKolamAdminCashflowSessionDetailController(
       }
       const result = await runAction(
         () => confirmKolamAdminCashflowInvoice(resolvedSessionId, saleId),
-        'Invoice dikonfirmasi.',
-        'Gagal konfirmasi invoice.',
+        'Invoice disetujui.',
+        'Gagal menyetujui invoice.',
       );
       return Boolean(result);
     },
@@ -369,7 +372,7 @@ export function useKolamAdminCashflowSessionDetailController(
         return false;
       }
       if (!note.trim()) {
-        setError('Catatan reject wajib diisi.');
+        setError('Catatan penolakan wajib diisi.');
         return false;
       }
       const result = await runAction(
@@ -394,7 +397,7 @@ export function useKolamAdminCashflowSessionDetailController(
     const result = await runAction(
       () => confirmAllKolamAdminCashflowTransactions(resolvedSessionId),
       null,
-      'Gagal confirm all.',
+      'Gagal mengonfirmasi semua non-tunai.',
     );
     if (!result) {
       return null;
@@ -429,8 +432,8 @@ export function useKolamAdminCashflowSessionDetailController(
             sessionId: resolvedSessionId,
             ...input,
           }),
-        'Deposit dikirim.',
-        'Gagal mengirim deposit.',
+        'Setoran dikirim.',
+        'Gagal mengirim setoran.',
       );
       return Boolean(result);
     },
@@ -449,8 +452,8 @@ export function useKolamAdminCashflowSessionDetailController(
             depositId: deposit.id,
             source: deposit.source,
           }),
-        'Deposit diverifikasi.',
-        'Gagal verifikasi deposit.',
+        'Setoran diverifikasi.',
+        'Gagal memverifikasi setoran.',
       );
       return Boolean(result);
     },

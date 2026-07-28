@@ -232,7 +232,7 @@ export const shellModules: ShellModule[] = [
   {
     id: 'cashflow',
     area: 'pos',
-    label: 'Cashflow',
+    label: 'Arus Kas',
     iconKind: 'wallet',
     sourceRepo: 'E:\\Projects\\da-pos',
     summary: 'Sesi kasir, preview cash sales, close shift, dan deposit lanjutan.',

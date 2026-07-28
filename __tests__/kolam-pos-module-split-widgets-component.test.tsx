@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import {Text, View} from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 import {KolamCashflowClosePreview} from '../src/components/kolam-cashflow-close-preview';
@@ -75,8 +75,8 @@ describe('POS module split widgets', () => {
     expect(renderText(renderer!)).toEqual(
       expect.arrayContaining([
         'Katalog',
-        'Cashflow',
-        'Close preview',
+        'Arus Kas',
+        'Pratinjau penutupan',
         'Customer',
         'Buat customer',
       ]),

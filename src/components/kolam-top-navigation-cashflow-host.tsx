@@ -26,10 +26,10 @@ export function KolamTopNavigationCashflowHost({
 
   const tooltip =
     state === 'open'
-      ? session?.name || 'Cashflow session open'
+      ? session?.name || 'Sesi tunai dibuka'
       : state === 'locked'
-        ? 'Cashflow session locked'
-        : 'No active cashflow session';
+        ? 'Sesi tunai terkunci'
+        : 'Tidak ada sesi tunai aktif';
 
   return (
     <View style={styles.wrap}>

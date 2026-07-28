@@ -7,7 +7,7 @@ describe('getKolamFormSection', () => {
   it('defines live-style two-column form sections for Cashflow and Customer', () => {
     expect(getKolamFormSection('cashflow-open')).toMatchObject({
       id: 'cashflow-open',
-      title: 'Open Session',
+      title: 'Buka Sesi',
     });
     expect(getKolamFormSection('customer-create')).toMatchObject({
       id: 'customer-create',

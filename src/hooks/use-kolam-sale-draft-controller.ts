@@ -49,7 +49,7 @@ export function useKolamSaleDraftController({
     }
 
     if (!activeSession) {
-      onMessage('Cashflow session belum open.');
+      onMessage('Sesi arus kas belum dibuka.');
       return;
     }
 

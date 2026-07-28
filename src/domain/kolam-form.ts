@@ -85,9 +85,9 @@ const kolamFormSections: Record<KolamFormSectionId, KolamFormSection> = {
   },
   'cashflow-open': {
     id: 'cashflow-open',
-    title: 'Open Session',
+    title: 'Buka Sesi',
     description:
-      'Buat nama shift sebelum membuka cashflow supaya sale draft mengikuti sesi kasir aktif.',
+      'Buat nama shift sebelum membuka arus kas supaya draft penjualan mengikuti sesi kasir aktif.',
   },
   'custom-field-detail': {
     id: 'custom-field-detail',

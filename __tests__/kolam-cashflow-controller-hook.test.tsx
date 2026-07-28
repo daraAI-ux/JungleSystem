@@ -92,7 +92,7 @@ describe('Kolam cashflow controller hook', () => {
       await requireController(latest).handleOpenCashflow();
     });
 
-    expect(message).toBe('Login kasir dulu sebelum membuka cashflow.');
+    expect(message).toBe('Login kasir dulu sebelum membuka arus kas.');
     expect(openCashflowSessionMock).not.toHaveBeenCalled();
   });
 
@@ -126,7 +126,7 @@ describe('Kolam cashflow controller hook', () => {
     });
 
     expect(openCashflowSessionMock).toHaveBeenCalledWith({name: 'Sore'});
-    expect(messages).toContain('Cashflow session berhasil dibuka.');
+    expect(messages).toContain('Sesi arus kas berhasil dibuka.');
     expect(refreshCount).toBe(1);
     expect(requireController(latest).cashflowShiftName).toBe('');
     expect(requireController(latest).isOpeningCashflow).toBe(false);
@@ -158,7 +158,7 @@ describe('Kolam cashflow controller hook', () => {
     });
 
     expect(closeCashflowSessionMock).toHaveBeenCalledWith('cashflow-1');
-    expect(messages).toContain('Cashflow session berhasil ditutup.');
+    expect(messages).toContain('Sesi arus kas berhasil ditutup.');
     expect(refreshCount).toBe(1);
     expect(requireController(latest).isClosingCashflow).toBe(false);
   });

@@ -293,7 +293,7 @@ describe('topNavUserMenuItems', () => {
     expect(getTopNavRightControls()).toEqual([
       {
         id: 'cashflow',
-        label: 'Cashflow session',
+        label: 'Sesi tunai',
         sourceComponent:
           'E:\\Projects\\da-inventory-frontend\\src\\components\\header-quick-access-icons.tsx',
       },

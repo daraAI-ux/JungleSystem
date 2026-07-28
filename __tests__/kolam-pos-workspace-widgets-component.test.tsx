@@ -103,7 +103,7 @@ describe('POS workspace Kolam widgets', () => {
         'Katalog Sellable',
         'Checkout',
         'Katalog',
-        'Cashflow',
+        'Arus Kas',
         'Customer',
         'Buat customer',
       ]),

@@ -18,7 +18,7 @@ export function KolamCashflowOpenForm({
         <KolamFormTextField
           value={cashflowShiftName}
           onChangeText={onCashflowShiftNameChange}
-          placeholder="nama shift, contoh: Morning Shift"
+          placeholder="nama shift, contoh: Shift pagi"
           style={styles.formInput}
         />
       </KolamListFrame>

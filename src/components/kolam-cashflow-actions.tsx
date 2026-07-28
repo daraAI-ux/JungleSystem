@@ -19,15 +19,15 @@ export function KolamCashflowActions({
   return (
     <>
       <KolamCashflowActionButton
-        label="Open cashflow"
-        loadingLabel="Membuka session..."
+        label="Buka arus kas"
+        loadingLabel="Membuka sesi..."
         loading={isOpeningCashflow}
         canRun={canOpen}
         onPress={onOpenCashflow}
       />
       <KolamCashflowActionButton
-        label="Close cashflow"
-        loadingLabel="Menutup session..."
+        label="Tutup arus kas"
+        loadingLabel="Menutup sesi..."
         loading={isClosingCashflow}
         canRun={canClose}
         onPress={onCloseCashflow}

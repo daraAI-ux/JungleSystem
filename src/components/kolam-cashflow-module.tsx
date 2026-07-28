@@ -32,8 +32,8 @@ export function KolamCashflowModule({
 }) {
   return (
     <KolamModulePanel
-      title="Cashflow"
-      hint="Sale draft backend menolak transaksi jika tidak ada session open.">
+      title="Arus Kas"
+      hint="Backend draft penjualan menolak transaksi jika tidak ada sesi yang dibuka.">
       <KolamCashflowStatusBlocks activeSession={activeSession} />
       <KolamCashflowSessionBody
         activeSession={activeSession}

@@ -95,10 +95,10 @@ export const KOLAM_ADMIN_CASHFLOW_STATUS_OPTIONS: Array<{
   value: '' | KolamAdminCashflowSessionStatus;
 }> = [
   { label: 'Semua status', value: '' },
-  { label: 'Open', value: 'open' },
-  { label: 'Locked', value: 'locked' },
-  { label: 'In Review', value: 'in-review' },
-  { label: 'Verified', value: 'verified' },
+  { label: 'Dibuka', value: 'open' },
+  { label: 'Terkunci', value: 'locked' },
+  { label: 'Ditinjau', value: 'in-review' },
+  { label: 'Terverifikasi', value: 'verified' },
 ];
 
 export const KOLAM_ADMIN_CASHFLOW_SOURCE_OPTIONS: Array<{
@@ -109,6 +109,36 @@ export const KOLAM_ADMIN_CASHFLOW_SOURCE_OPTIONS: Array<{
   { label: 'Admin', value: 'admin' },
   { label: 'POS', value: 'pos' },
 ];
+
+export function formatAdminCashflowStatusLabel(
+  status: KolamAdminCashflowSessionStatus | string,
+): string {
+  switch (status) {
+    case 'open':
+      return 'Dibuka';
+    case 'locked':
+      return 'Terkunci';
+    case 'in-review':
+      return 'Ditinjau';
+    case 'verified':
+      return 'Terverifikasi';
+    default:
+      return String(status || '—');
+  }
+}
+
+export function formatAdminCashflowSourceLabel(
+  source: KolamAdminCashflowSessionSource | string,
+): string {
+  switch (source) {
+    case 'admin':
+      return 'Admin';
+    case 'pos':
+      return 'POS';
+    default:
+      return String(source || '—');
+  }
+}
 
 export function isKolamAdminCashflowSessionRoute(route: string) {
   const path = normalizeAdminCashflowRoutePath(route);
@@ -543,6 +573,48 @@ export function getDepositStatusIntent(
       return 'warning';
     default:
       return 'muted';
+  }
+}
+
+export function formatInvoiceConfirmStatusLabel(
+  status: KolamAdminCashflowInvoiceConfirmStatus | string,
+): string {
+  switch (status) {
+    case 'unconfirmed':
+      return 'Menunggu';
+    case 'confirmed':
+      return 'Dikonfirmasi';
+    case 'rejected':
+      return 'Ditolak';
+    case 'auto_confirmed':
+      return 'Otomatis';
+    case 'partial':
+      return 'Sebagian';
+    case 'unknown':
+      return 'Tidak diketahui';
+    default:
+      return String(status || '—');
+  }
+}
+
+export function formatDepositStatusLabel(
+  status: KolamAdminCashflowDepositStatus | string,
+): string {
+  switch (status) {
+    case 'draft':
+      return 'Draf';
+    case 'submitted':
+      return 'Dikirim';
+    case 'in-review':
+      return 'Ditinjau';
+    case 'verified':
+      return 'Terverifikasi';
+    case 'rejected':
+      return 'Ditolak';
+    case 'voided':
+      return 'Dibatalkan';
+    default:
+      return String(status || '—');
   }
 }
 
