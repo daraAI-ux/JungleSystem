@@ -343,7 +343,6 @@ export function KolamAppStateProvider({
       activeNavigationItem,
       activePluginRoute,
       activeSettingsTab,
-      activeSession: dataset.activeSession,
       attentionItems,
       collapsed: isSidebarCollapsed,
       commandSearch,

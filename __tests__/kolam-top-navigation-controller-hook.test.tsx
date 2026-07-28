@@ -77,6 +77,7 @@ describe('Kolam top navigation controller hook', () => {
     ]);
     expect(controller.topNavigation.displayInitials).toBe('DA');
     expect(controller.topNavigation.rightControls.map(control => control.id)).toEqual([
+      'cashflow',
       'chat-inbox',
       'chat-team',
       'notifications',

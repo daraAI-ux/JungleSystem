@@ -44,7 +44,6 @@ function ShellChromeHarness({
     accessScope,
     activeModule: 'kolam',
     activePluginRoute,
-    activeSession: seedUnifiedDataset.activeSession,
     attentionItems: [],
     collapsed: false,
     commandSearch: '',
@@ -103,8 +102,10 @@ describe('Kolam shell chrome controller hook', () => {
 
     const controller = requireController(latest);
     expect(controller.dashboardHeader.title).toContain('Kasir Kolam');
-    expect(controller.dashboardHeader.sessionOpen).toBe(true);
     expect(controller.topNavigation.attentionCount).toBe(0);
+    expect(controller.topNavigation.rightControls.map(c => c.id)[0]).toBe(
+      'cashflow',
+    );
     expect(controller.overlay.commandPalette.commands).toEqual([command]);
     expect(controller.overlay.userMenu.email).toBe('kasir@example.test');
     expect(controller.sidebar.expandedSections).toEqual({ inventory: true });

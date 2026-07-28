@@ -309,8 +309,10 @@ export function getDashboardTitle(
   return trimmedName ? `${greeting}, ${trimmedName}` : greeting;
 }
 
-export function shouldShowDashboardSessionPill(eyebrow?: string): boolean {
-  return eyebrow === 'Beranda';
+export function shouldShowDashboardSessionPill(_eyebrow?: string): boolean {
+  // Native session pill removed from dashboard header — FE surfaces cashflow
+  // as a top-nav quick-access icon instead.
+  return false;
 }
 
 export function getDashboardHeaderSyncIndicator({

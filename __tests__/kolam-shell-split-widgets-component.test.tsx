@@ -16,6 +16,14 @@ import {
 } from '../src/domain/top-nav';
 import { seedUnifiedDataset } from '../src/services/unified-data';
 
+jest.mock('../src/hooks/use-kolam-admin-cashflow-header-controller', () => ({
+  useKolamAdminCashflowHeaderController: () => ({
+    loading: false,
+    session: null,
+    state: 'none',
+  }),
+}));
+
 const seedHeaderSyncIndicator = getDashboardHeaderSyncIndicator({
   activeModule: 'kolam',
   dataset: seedUnifiedDataset,
@@ -60,9 +68,6 @@ describe('shell split widgets', () => {
             actions={getDashboardHeaderActions()}
             eyebrow="Beranda"
             onSelectModule={() => undefined}
-            sessionCashier="Kasir A"
-            sessionOpen
-            showSessionPill={false}
             syncIndicator={seedHeaderSyncIndicator}
             subtitle="Native Windows workspace"
             title="Kolam"

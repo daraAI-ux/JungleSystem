@@ -24,6 +24,14 @@ jest.mock('../src/hooks/use-kolam-server-metrics-controller', () => ({
   }),
 }));
 
+jest.mock('../src/hooks/use-kolam-admin-cashflow-header-controller', () => ({
+  useKolamAdminCashflowHeaderController: () => ({
+    loading: false,
+    session: null,
+    state: 'none',
+  }),
+}));
+
 const seedHeaderSyncIndicator = getDashboardHeaderSyncIndicator({
   activeModule: 'kolam',
   dataset: seedUnifiedDataset,
@@ -125,8 +133,6 @@ describe('KolamAppShellSurface', () => {
             actions: getDashboardHeaderActions(),
             title: 'Checkout',
             subtitle: 'Native POS workspace',
-            sessionOpen: false,
-            showSessionPill: true,
             syncIndicator: seedHeaderSyncIndicator,
             onSelectModule: () => undefined,
           }}
@@ -227,8 +233,6 @@ describe('KolamAppShellSurface', () => {
             eyebrow: 'Beranda',
             title: 'Selamat pagi',
             subtitle: 'Ringkasan performa toko hari ini.',
-            sessionOpen: false,
-            showSessionPill: false,
             syncIndicator: seedHeaderSyncIndicator,
             onSelectModule: () => undefined,
           }}
@@ -313,8 +317,6 @@ describe('KolamAppShellSurface', () => {
             actions: getDashboardHeaderActions(),
             title: 'Pengaturan',
             subtitle: 'Settings produksi',
-            sessionOpen: false,
-            showSessionPill: false,
             syncIndicator: seedHeaderSyncIndicator,
             onSelectModule: () => undefined,
           }}
@@ -393,8 +395,6 @@ describe('KolamAppShellSurface', () => {
             actions: getDashboardHeaderActions(),
             title: 'Species',
             subtitle: 'Daftar spesies',
-            sessionOpen: false,
-            showSessionPill: false,
             syncIndicator: seedHeaderSyncIndicator,
             onSelectModule: () => undefined,
           }}

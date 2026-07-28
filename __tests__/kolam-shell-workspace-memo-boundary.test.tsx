@@ -21,6 +21,14 @@ jest.mock('../src/hooks/use-kolam-server-metrics-controller', () => ({
   }),
 }));
 
+jest.mock('../src/hooks/use-kolam-admin-cashflow-header-controller', () => ({
+  useKolamAdminCashflowHeaderController: () => ({
+    loading: false,
+    session: null,
+    state: 'none',
+  }),
+}));
+
 describe('shell vs workspace memo boundaries', () => {
   it('exports a memoized app shell surface', () => {
     expect(
@@ -61,8 +69,6 @@ describe('shell vs workspace memo boundaries', () => {
       actions: getDashboardHeaderActions(),
       title: 'Checkout',
       subtitle: 'test',
-      sessionOpen: false,
-      showSessionPill: false,
       syncIndicator: seedHeaderSyncIndicator,
       onSelectModule: () => undefined,
     };

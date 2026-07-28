@@ -289,8 +289,14 @@ describe('topNavUserMenuItems', () => {
     ]);
   });
 
-  it('adds the chat plugin actions before the protected live top nav controls', () => {
+  it('adds cashflow then chat plugin actions before the protected live top nav controls', () => {
     expect(getTopNavRightControls()).toEqual([
+      {
+        id: 'cashflow',
+        label: 'Cashflow session',
+        sourceComponent:
+          'E:\\Projects\\da-inventory-frontend\\src\\components\\header-quick-access-icons.tsx',
+      },
       {
         id: 'chat-inbox',
         label: 'Pesan masuk',

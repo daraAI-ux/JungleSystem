@@ -6,7 +6,6 @@ import {
 } from '../domain/dashboard-header';
 import { KolamDashboardHeaderActions } from './kolam-dashboard-header-actions';
 import { KolamDashboardHeaderCopy } from './kolam-dashboard-header-copy';
-import { KolamDashboardSessionPill } from './kolam-dashboard-session-pill';
 import { KolamDashboardSyncIndicatorBadge } from './kolam-dashboard-sync-indicator-badge';
 import { KolamHeaderFrame } from './kolam-header-frame';
 import { dashboardHeaderStyles as styles } from './kolam-dashboard-header-styles';
@@ -15,9 +14,6 @@ export function KolamDashboardHeader({
   actions,
   eyebrow,
   onSelectModule,
-  sessionCashier,
-  sessionOpen,
-  showSessionPill,
   subtitle,
   syncIndicator,
   title,
@@ -25,9 +21,6 @@ export function KolamDashboardHeader({
   actions: DashboardHeaderAction[];
   eyebrow?: string;
   onSelectModule: (action: DashboardHeaderAction) => void;
-  sessionCashier?: string;
-  sessionOpen: boolean;
-  showSessionPill: boolean;
   subtitle: string;
   syncIndicator: DashboardHeaderSyncIndicator;
   title: string;
@@ -45,12 +38,6 @@ export function KolamDashboardHeader({
           actions={actions}
           onSelectModule={onSelectModule}
         />
-        {showSessionPill ? (
-          <KolamDashboardSessionPill
-            sessionCashier={sessionCashier}
-            sessionOpen={sessionOpen}
-          />
-        ) : null}
       </View>
     </KolamHeaderFrame>
   );

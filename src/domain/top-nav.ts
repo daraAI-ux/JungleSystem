@@ -40,7 +40,7 @@ export interface TopNavBreadcrumbItem {
 }
 
 export interface TopNavRightControl {
-  id: 'chat-inbox' | 'chat-team' | 'notifications' | 'avatar';
+  id: 'cashflow' | 'chat-inbox' | 'chat-team' | 'notifications' | 'avatar';
   label: string;
   sourceComponent?: string;
 }
@@ -131,6 +131,12 @@ export function getTopNavUserMenuPreview(
 
 export function getTopNavRightControls(): TopNavRightControl[] {
   return [
+    {
+      id: 'cashflow',
+      label: 'Cashflow session',
+      sourceComponent:
+        'E:\\Projects\\da-inventory-frontend\\src\\components\\header-quick-access-icons.tsx',
+    },
     {
       id: 'chat-inbox',
       label: 'Pesan masuk',

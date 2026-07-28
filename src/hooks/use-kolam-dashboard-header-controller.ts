@@ -10,7 +10,6 @@ import {
   getDashboardInitials,
   getDashboardSubtitle,
   getDashboardTitle,
-  shouldShowDashboardSessionPill,
 } from '../domain/dashboard-header';
 import type { KolamNavigationItem } from '../domain/kolam-navigation';
 import type { PluginRouteEntry, UnifiedSurface } from '../domain/unified';
@@ -26,7 +25,6 @@ export function useKolamDashboardHeaderController({
   activeModuleRoute,
   activeNavigationItem,
   activePluginRoute,
-  activeSession,
   displayName,
   dataset,
   onMessage,
@@ -41,7 +39,6 @@ export function useKolamDashboardHeaderController({
   activeModuleRoute?: ShellModuleRouteEntry | null;
   activeNavigationItem?: KolamNavigationItem | null;
   activePluginRoute?: PluginRouteEntry | null;
-  activeSession: UnifiedDataset['activeSession'];
   displayName: string;
   dataset: UnifiedDataset;
   onMessage: (message: string) => void;
@@ -79,13 +76,10 @@ export function useKolamDashboardHeaderController({
           ? getDashboardTitle(displayName, undefined, timezone)
           : activeTitle),
       subtitle: routeContext?.subtitle ?? getDashboardSubtitle(activeTitle),
-      sessionOpen: Boolean(activeSession),
-      sessionCashier: activeSession?.cashier,
       syncIndicator: getDashboardHeaderSyncIndicator({
         activeModule,
         dataset,
       }),
-      showSessionPill: isBeranda && shouldShowDashboardSessionPill(eyebrow),
       onSelectModule: action => {
         onSelectModule(action.targetModule);
         onRouteContext?.(action.sourceRoute);
@@ -100,7 +94,6 @@ export function useKolamDashboardHeaderController({
     activeModuleRoute,
     activeNavigationItem,
     activePluginRoute,
-    activeSession,
     dataset,
     displayName,
     onMessage,

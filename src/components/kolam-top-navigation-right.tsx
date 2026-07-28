@@ -8,6 +8,7 @@ export function KolamTopNavigationRight({
   attentionCount,
   displayInitials,
   onAvatarPress,
+  onCashflowNavigate,
   onChatControlPress,
   onNotificationPress,
   profilePhotoUrl,
@@ -16,6 +17,7 @@ export function KolamTopNavigationRight({
   attentionCount: number;
   displayInitials: string;
   onAvatarPress: () => void;
+  onCashflowNavigate?: (route: string) => void;
   onChatControlPress?: (control: TopNavRightControl) => void;
   onNotificationPress: () => void;
   profilePhotoUrl?: string | null;
@@ -32,6 +34,7 @@ export function KolamTopNavigationRight({
             control={control}
             displayInitials={displayInitials}
             onAvatarPress={onAvatarPress}
+            onCashflowNavigate={onCashflowNavigate}
             onChatControlPress={onChatControlPress}
             onNotificationPress={onNotificationPress}
             profilePhotoUrl={profilePhotoUrl}

@@ -33,6 +33,14 @@ jest.mock('../src/hooks/use-kolam-server-metrics-controller', () => ({
   }),
 }));
 
+jest.mock('../src/hooks/use-kolam-admin-cashflow-header-controller', () => ({
+  useKolamAdminCashflowHeaderController: () => ({
+    loading: false,
+    session: null,
+    state: 'none',
+  }),
+}));
+
 const seedHeaderSyncIndicator = getDashboardHeaderSyncIndicator({
   activeModule: 'kolam',
   dataset: seedUnifiedDataset,
@@ -105,8 +113,6 @@ describe('shell Kolam widgets', () => {
             actions={getDashboardHeaderActions()}
             title="Checkout"
             subtitle={getDashboardSubtitle('Checkout')}
-            sessionOpen={false}
-            showSessionPill
             syncIndicator={seedHeaderSyncIndicator}
             onSelectModule={() => undefined}
           />
@@ -145,8 +151,6 @@ describe('shell Kolam widgets', () => {
         'CPU 12%',
         'RAM 34%',
         'Disk 56%',
-        'Cashflow closed',
-        'Session',
         'Dunia Anura',
         'Masuk',
         'Sinkron',

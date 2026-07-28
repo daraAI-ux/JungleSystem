@@ -43,7 +43,6 @@ function HeaderHarness({
     accessScope: { kolam: true, pos: true },
     activeModule,
     activeModuleRoute,
-    activeSession: seedUnifiedDataset.activeSession,
     displayName: 'Offline Operator',
     dataset,
     onMessage: message => messages.push(message),
@@ -86,7 +85,6 @@ describe('Kolam dashboard header controller hook', () => {
     expect(controller.displayInitials).toBe('OO');
     expect(controller.dashboardHeader.eyebrow).toBe('Beranda');
     expect(controller.dashboardHeader.title).toContain('Offline Operator');
-    expect(controller.dashboardHeader.showSessionPill).toBe(true);
     expect(controller.dashboardHeader.actions.map(action => action.id)).toEqual(
       ['new-product', 'new-order'],
     );
@@ -123,7 +121,6 @@ describe('Kolam dashboard header controller hook', () => {
       expect.objectContaining({
         eyebrow: undefined,
         actions: [],
-        showSessionPill: false,
         title: 'Plugin Hub',
         subtitle: 'Plugin Hub workspace native Windows.',
       }),
@@ -159,7 +156,6 @@ describe('Kolam dashboard header controller hook', () => {
         title: 'sale-draft',
         subtitle: '',
         actions: [],
-        showSessionPill: false,
       }),
     );
   });

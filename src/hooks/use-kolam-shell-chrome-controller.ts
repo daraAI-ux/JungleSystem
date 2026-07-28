@@ -25,7 +25,6 @@ export function useKolamShellChromeController({
   activeNavigationItem,
   activePluginRoute,
   activeSettingsTab,
-  activeSession,
   attentionItems,
   collapsed,
   commandSearch,
@@ -72,7 +71,6 @@ export function useKolamShellChromeController({
   activeNavigationItem?: KolamNavigationItem | null;
   activePluginRoute?: PluginRouteEntry | null;
   activeSettingsTab?: SettingsTabItem | null;
-  activeSession: UnifiedDataset['activeSession'];
   attentionItems: AttentionPanelItem[];
   collapsed: boolean;
   commandSearch: string;
@@ -125,7 +123,6 @@ export function useKolamShellChromeController({
       activeModuleRoute,
       activeNavigationItem,
       activePluginRoute,
-      activeSession,
       dataset,
       displayName,
       onMessage,
@@ -146,6 +143,7 @@ export function useKolamShellChromeController({
     onAvatarPress,
     onBreadcrumbPress,
     onBreadcrumbDashboardPress,
+    onCashflowNavigate: onRouteContext,
     onChatControlPress,
     onNotificationPress,
     onToggleSidebar,

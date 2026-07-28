@@ -72,8 +72,8 @@ describe('dashboard header copy', () => {
     ).toBe('Selamat malam, Anura Staff');
   });
 
-  it('keeps native session status scoped to Beranda only', () => {
-    expect(shouldShowDashboardSessionPill('Beranda')).toBe(true);
+  it('does not show native cashflow session pill on dashboard (moved to top nav)', () => {
+    expect(shouldShowDashboardSessionPill('Beranda')).toBe(false);
     expect(shouldShowDashboardSessionPill()).toBe(false);
   });
 

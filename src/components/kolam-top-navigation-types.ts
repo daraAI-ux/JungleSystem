@@ -10,6 +10,7 @@ export interface KolamTopNavigationProps {
   onAvatarPress: () => void;
   onBreadcrumbPress?: (item: TopNavBreadcrumbItem) => void;
   onBreadcrumbDashboardPress: () => void;
+  onCashflowNavigate?: (route: string) => void;
   onChatControlPress?: (control: TopNavRightControl) => void;
   onNotificationPress: () => void;
   onToggleSidebar: () => void;

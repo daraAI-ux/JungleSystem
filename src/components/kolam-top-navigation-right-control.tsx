@@ -1,6 +1,7 @@
 import React from 'react';
 import type {TopNavRightControl} from '../domain/top-nav';
 import {KolamTopNavigationAvatarButton} from './kolam-top-navigation-avatar-button';
+import {KolamTopNavigationCashflowHost} from './kolam-top-navigation-cashflow-host';
 import {KolamTopNavigationChatButton} from './kolam-top-navigation-chat-button';
 import {KolamTopNavigationNotificationButton} from './kolam-top-navigation-notification-button';
 
@@ -9,6 +10,7 @@ export function KolamTopNavigationRightControl({
   control,
   displayInitials,
   onAvatarPress,
+  onCashflowNavigate,
   onChatControlPress,
   onNotificationPress,
   profilePhotoUrl,
@@ -17,10 +19,15 @@ export function KolamTopNavigationRightControl({
   control: TopNavRightControl;
   displayInitials: string;
   onAvatarPress: () => void;
+  onCashflowNavigate?: (route: string) => void;
   onChatControlPress?: (control: TopNavRightControl) => void;
   onNotificationPress: () => void;
   profilePhotoUrl?: string | null;
 }) {
+  if (control.id === 'cashflow') {
+    return <KolamTopNavigationCashflowHost onNavigate={onCashflowNavigate} />;
+  }
+
   if (control.id === 'chat-inbox' || control.id === 'chat-team') {
     return (
       <KolamTopNavigationChatButton
