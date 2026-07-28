@@ -107,8 +107,6 @@ export const contentFrameStyles = StyleSheet.create({
     paddingHorizontal: V.layout.tableCellPaddingX,
     paddingVertical: 16,
     gap: 16,
-    borderTopColor: V.colors.border,
-    borderTopWidth: 1,
     backgroundColor: V.colors.bg,
   },
   settingsWebFormSection: {

@@ -32,7 +32,9 @@ export const settingsWebFormStyles = StyleSheet.create({
     gap: 12,
   },
   settingsWebSeparator: {
-    height: 0,
+    height: 1,
+    backgroundColor: V.colors.border,
+    marginBottom: 4,
   },
   settingsWebFormSectionHeader: {
     gap: 3,
