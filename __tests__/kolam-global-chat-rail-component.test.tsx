@@ -8,6 +8,7 @@ import {useKolamChatLiveStream} from '../src/hooks/use-kolam-chat-live-stream';
 import {useKolamChatRailDetail} from '../src/hooks/use-kolam-chat-rail-detail';
 import {useKolamChatRailReadonlyData} from '../src/hooks/use-kolam-chat-rail-readonly-data';
 import {useKolamNotificationSoundSettings} from '../src/hooks/use-kolam-notification-sound-settings';
+import {getKolamChatAnalytics} from '../src/services/kolam-api';
 import {createKolamNotificationSoundService} from '../src/services/kolam-notification-sound-service';
 import {pickNativeAssetFile} from '../src/services/native-file-picker';
 
@@ -32,6 +33,14 @@ jest.mock('../src/hooks/use-kolam-chat-live-stream', () => ({
 jest.mock('../src/hooks/use-kolam-notification-sound-settings', () => ({
   useKolamNotificationSoundSettings: jest.fn(),
 }));
+
+jest.mock('../src/services/kolam-api', () => {
+  const actual = jest.requireActual('../src/services/kolam-api');
+  return {
+    ...actual,
+    getKolamChatAnalytics: jest.fn(),
+  };
+});
 
 jest.mock('../src/services/kolam-notification-sound-service', () => ({
   createKolamNotificationSoundService: jest.fn(() => ({
@@ -65,6 +74,9 @@ const useSoundSettingsMock =
   useKolamNotificationSoundSettings as jest.MockedFunction<
     typeof useKolamNotificationSoundSettings
   >;
+const getChatAnalyticsMock = getKolamChatAnalytics as jest.MockedFunction<
+  typeof getKolamChatAnalytics
+>;
 const createSoundServiceMock =
   createKolamNotificationSoundService as jest.MockedFunction<
     typeof createKolamNotificationSoundService
@@ -123,6 +135,13 @@ describe('KolamGlobalChatRail', () => {
   beforeEach(() => {
     mockSoundPlay.mockClear();
     createSoundServiceMock.mockClear();
+    getChatAnalyticsMock.mockClear();
+    getChatAnalyticsMock.mockResolvedValue({
+      avgReplyDelayMinutes: 4,
+      lateReplyCount: 1,
+      ratings: {average: 4.5},
+      totalChats: 12,
+    });
     useAuthContextMock.mockReturnValue({
       accessScope: {am: false, kolam: true, pos: false},
       authEmail: '',
@@ -193,7 +212,26 @@ describe('KolamGlobalChatRail', () => {
         'Read-only conversation unread sudah terhubung. Detail pesan dan aksi balas masuk di fase berikutnya.',
         '0',
         '0 conversation terpantau',
+        'Analisa chat',
+        '30 hari',
+        'Total',
+        '12',
+        'Rating',
+        '4.5',
+        'Delay',
+        '4m',
+        'Telat',
+        '1',
+        'Pengaturan chat',
+        'Label percakapan',
+        'Template chat',
       ]),
+    );
+    expect(getChatAnalyticsMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        from: expect.any(String),
+        to: expect.any(String),
+      }),
     );
   });
 

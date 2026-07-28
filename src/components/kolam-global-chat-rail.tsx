@@ -13,10 +13,12 @@ import {useKolamChatRailReadonlyData} from '../hooks/use-kolam-chat-rail-readonl
 import {useKolamNotificationSoundSettings} from '../hooks/use-kolam-notification-sound-settings';
 import {getKolamFileUrl} from '../lib/file-url';
 import type {
+  KolamChatAnalytics,
   KolamTeamChatAttachment,
   KolamTeamChatCallParticipant,
   KolamTeamChatPresence,
 } from '../services/kolam-api';
+import {getKolamChatAnalytics} from '../services/kolam-api';
 import {createKolamNotificationSoundService} from '../services/kolam-notification-sound-service';
 import {createKolamRuntimeNotificationSoundAdapter} from '../services/kolam-notification-sound-runtime';
 import {
@@ -36,6 +38,12 @@ export type KolamGlobalChatRailMode = 'inbox' | 'team-chat';
 
 const TEAM_CHAT_REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
 
+interface KolamChatRailAnalyticsState {
+  data: KolamChatAnalytics | null;
+  errorMessage?: string;
+  loading: boolean;
+}
+
 export function KolamGlobalChatRail({
   mode,
   onClose,
@@ -53,6 +61,11 @@ export function KolamGlobalChatRail({
   const [composerText, setComposerText] = React.useState('');
   const [pendingAttachment, setPendingAttachment] =
     React.useState<NativeImagePickerResult | null>(null);
+  const [analyticsState, setAnalyticsState] =
+    React.useState<KolamChatRailAnalyticsState>({
+      data: null,
+      loading: mode === 'inbox',
+    });
   const selectedItem = items.find(item => item.id === selectedItemId) ?? null;
   const detail = useKolamChatRailDetail({
     currentUserId: authUser?.id,
@@ -115,6 +128,49 @@ export function KolamGlobalChatRail({
     setSelectedItemId(null);
     setComposerText('');
     setPendingAttachment(null);
+  }, [mode]);
+
+  React.useEffect(() => {
+    if (mode !== 'inbox') {
+      setAnalyticsState({data: null, loading: false});
+      return;
+    }
+
+    let active = true;
+    const to = new Date();
+    const from = new Date(to);
+    from.setDate(from.getDate() - 30);
+
+    setAnalyticsState(current => ({
+      data: current.data,
+      loading: true,
+    }));
+
+    getKolamChatAnalytics({
+      from: from.toISOString(),
+      to: to.toISOString(),
+    })
+      .then(data => {
+        if (active) {
+          setAnalyticsState({data, loading: false});
+        }
+      })
+      .catch(error => {
+        if (active) {
+          setAnalyticsState({
+            data: null,
+            errorMessage:
+              error instanceof Error
+                ? error.message
+                : 'Analisa chat belum bisa dibaca.',
+            loading: false,
+          });
+        }
+      });
+
+    return () => {
+      active = false;
+    };
   }, [mode]);
 
   React.useEffect(() => {
@@ -205,6 +261,12 @@ export function KolamGlobalChatRail({
             ? 'Memuat data read-only...'
             : `${items.length} ${content.itemLabel} terpantau`}
         </Text>
+
+        {mode === 'inbox' ? (
+          <KolamChatRailAnalyticsPanel state={analyticsState} />
+        ) : null}
+
+        {mode === 'inbox' ? <KolamChatRailSettingsShortcuts /> : null}
 
         {selectedItem ? (
           <KolamChatRailDetailPanel
@@ -306,6 +368,65 @@ function KolamChatRailLiveHost({
   });
 
   return null;
+}
+
+function KolamChatRailAnalyticsPanel({
+  state,
+}: {
+  state: KolamChatRailAnalyticsState;
+}) {
+  const totalChats = getAnalyticsNumber(state.data, 'totalChats');
+  const avgRating = getAnalyticsNumber(state.data, 'ratings.average');
+  const avgReplyDelay = getAnalyticsNumber(state.data, 'avgReplyDelayMinutes');
+  const lateReplyCount = getAnalyticsNumber(state.data, 'lateReplyCount');
+
+  return (
+    <View style={styles.analyticsPanel}>
+      <View style={styles.analyticsHeader}>
+        <Text style={styles.analyticsTitle}>Analisa chat</Text>
+        <Text style={styles.analyticsPeriod}>30 hari</Text>
+      </View>
+      {state.loading ? (
+        <Text style={styles.metaText}>Memuat analisa...</Text>
+      ) : state.errorMessage ? (
+        <Text style={styles.errorText}>{state.errorMessage}</Text>
+      ) : (
+        <View style={styles.analyticsGrid}>
+          <KolamChatRailMetric label="Total" value={formatMetricNumber(totalChats)} />
+          <KolamChatRailMetric label="Rating" value={formatRating(avgRating)} />
+          <KolamChatRailMetric
+            label="Delay"
+            value={`${formatMetricNumber(avgReplyDelay)}m`}
+          />
+          <KolamChatRailMetric
+            label="Telat"
+            value={formatMetricNumber(lateReplyCount)}
+          />
+        </View>
+      )}
+    </View>
+  );
+}
+
+function KolamChatRailMetric({label, value}: {label: string; value: string}) {
+  return (
+    <View style={styles.analyticsMetric}>
+      <Text style={styles.analyticsMetricLabel}>{label}</Text>
+      <Text style={styles.analyticsMetricValue}>{value}</Text>
+    </View>
+  );
+}
+
+function KolamChatRailSettingsShortcuts() {
+  return (
+    <View style={styles.settingsPanel}>
+      <Text style={styles.settingsTitle}>Pengaturan chat</Text>
+      <View style={styles.settingsShortcutRow}>
+        <Text style={styles.settingsShortcut}>Label percakapan</Text>
+        <Text style={styles.settingsShortcut}>Template chat</Text>
+      </View>
+    </View>
+  );
 }
 
 function KolamChatRailDetailPanel({
@@ -1019,6 +1140,29 @@ function getAttachmentKindLabel(attachment: KolamTeamChatAttachment) {
   }
 }
 
+function getAnalyticsNumber(
+  data: KolamChatAnalytics | null,
+  path: string,
+): number {
+  const value = path.split('.').reduce<unknown>((current, key) => {
+    if (!current || typeof current !== 'object') {
+      return undefined;
+    }
+
+    return (current as Record<string, unknown>)[key];
+  }, data);
+
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0;
+}
+
+function formatMetricNumber(value: number) {
+  return String(Math.round(value));
+}
+
+function formatRating(value: number) {
+  return value > 0 ? value.toFixed(1) : '-';
+}
+
 function formatRelativeTime(iso?: string | null) {
   if (!iso) {
     return '';
@@ -1132,6 +1276,86 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 12,
     fontWeight: '700',
+  },
+  analyticsPanel: {
+    padding: 10,
+    borderRadius: V.radius.lg,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.mutedSoft,
+    gap: 8,
+  },
+  analyticsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  analyticsTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '900',
+  },
+  analyticsPeriod: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  analyticsGrid: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  analyticsMetric: {
+    minWidth: 0,
+    flex: 1,
+    padding: 7,
+    borderRadius: V.radius.md,
+    backgroundColor: V.colors.bg,
+    gap: 2,
+  },
+  analyticsMetricLabel: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  analyticsMetricValue: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 14,
+    fontWeight: '900',
+  },
+  settingsPanel: {
+    padding: 10,
+    borderRadius: V.radius.lg,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.bg,
+    gap: 8,
+  },
+  settingsTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '900',
+  },
+  settingsShortcutRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  settingsShortcut: {
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: V.radius.md,
+    overflow: 'hidden',
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '800',
+    backgroundColor: V.colors.mutedSoft,
   },
   selectedBanner: {
     padding: 10,
