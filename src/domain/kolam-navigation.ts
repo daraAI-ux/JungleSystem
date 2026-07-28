@@ -737,7 +737,11 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
       sidebarItem('/teranura', { group: 'Produk', label: 'Teranura' }),
       sidebarItem('/stock-transaction', { group: 'Stok', label: 'Transaksi Stok' }),
       sidebarItem('/stock-opname', { group: 'Stok', label: 'Stock Opname' }),
-      sidebarItem('/locations', { group: 'Inventory', label: 'Lokasi' }),
+      sidebarItem('/locations', {
+        description: 'Kelola lokasi gudang, lantai, rak, dan area penyimpanan',
+        group: 'Inventory',
+        label: 'Lokasi',
+      }),
       sidebarItem('/suppliers', { group: 'Pengadaan', label: 'Pemasok' }),
       sidebarItem('/purchase-order', { group: 'Pengadaan', label: 'Pesanan Pembelian' }),
       sidebarItem('/production', { group: 'Produksi', label: 'Produksi' }),
