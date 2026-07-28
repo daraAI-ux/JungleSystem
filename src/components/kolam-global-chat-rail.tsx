@@ -12,8 +12,11 @@ import {useKolamChatRailLiveSync} from '../hooks/use-kolam-chat-rail-live-sync';
 import {useKolamChatRailReadonlyData} from '../hooks/use-kolam-chat-rail-readonly-data';
 import {useKolamNotificationSoundSettings} from '../hooks/use-kolam-notification-sound-settings';
 import {getKolamFileUrl} from '../lib/file-url';
+import {formatRupiah} from '../lib/money';
 import type {
   KolamChatAnalytics,
+  KolamChatContactDetails,
+  KolamChatContactOrder,
   KolamChatLabel,
   KolamChatStaffRef,
   KolamChatTemplate,
@@ -23,6 +26,7 @@ import type {
 } from '../services/kolam-api';
 import {
   getKolamChatAnalytics,
+  getKolamChatContactDetails,
   getKolamChatLabels,
   getKolamChatTemplates,
 } from '../services/kolam-api';
@@ -60,6 +64,12 @@ interface KolamChatRailLabelsState {
 interface KolamChatRailTemplatesState {
   errorMessage?: string;
   items: KolamChatTemplate[];
+  loading: boolean;
+}
+
+interface KolamChatRailContactDetailsState {
+  data: KolamChatContactDetails | null;
+  errorMessage?: string;
   loading: boolean;
 }
 
@@ -561,6 +571,12 @@ function KolamChatRailDetailPanel({
 }) {
   const [templatePickerOpen, setTemplatePickerOpen] = React.useState(false);
   const [templateSearch, setTemplateSearch] = React.useState('');
+  const [contactDetailsOpen, setContactDetailsOpen] = React.useState(false);
+  const [contactDetailsState, setContactDetailsState] =
+    React.useState<KolamChatRailContactDetailsState>({
+      data: null,
+      loading: false,
+    });
   const canSend = Boolean(composerText.trim() || pendingAttachment);
   const attachmentLabel = pendingAttachment
     ? pendingAttachment.name ?? pendingAttachment.path ?? pendingAttachment.uri ?? 'File'
@@ -573,7 +589,44 @@ function KolamChatRailDetailPanel({
   React.useEffect(() => {
     setTemplatePickerOpen(false);
     setTemplateSearch('');
+    setContactDetailsOpen(false);
+    setContactDetailsState({data: null, loading: false});
   }, [selectedItem.id]);
+
+  React.useEffect(() => {
+    if (mode !== 'inbox' || !contactDetailsOpen) {
+      return;
+    }
+
+    let active = true;
+    setContactDetailsState(current => ({
+      data: current.data,
+      loading: true,
+    }));
+
+    getKolamChatContactDetails(selectedItem.id, {ordersLimit: 5})
+      .then(data => {
+        if (active) {
+          setContactDetailsState({data, loading: false});
+        }
+      })
+      .catch(error => {
+        if (active) {
+          setContactDetailsState({
+            data: null,
+            errorMessage:
+              error instanceof Error
+                ? error.message
+                : 'Detail kontak belum bisa dibaca.',
+            loading: false,
+          });
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [contactDetailsOpen, mode, selectedItem.id]);
 
   return (
     <View style={styles.detailPanel}>
@@ -596,10 +649,19 @@ function KolamChatRailDetailPanel({
           <KolamInboxActionStrip
             currentUserId={currentUserId}
             detail={detail}
+            detailsOpen={contactDetailsOpen}
             labels={labels}
+            onDetailsToggle={() => setContactDetailsOpen(current => !current)}
           />
         ) : null}
       </View>
+
+      {mode === 'inbox' && contactDetailsOpen ? (
+        <KolamChatContactDetailsPanel
+          conversation={detail.conversation}
+          state={contactDetailsState}
+        />
+      ) : null}
 
       <View style={styles.messagePane}>
         {detail.loading ? (
@@ -820,14 +882,171 @@ function KolamChatTemplatePicker({
   );
 }
 
+function KolamChatContactDetailsPanel({
+  conversation,
+  state,
+}: {
+  conversation: ReturnType<typeof useKolamChatRailDetail>['conversation'];
+  state: KolamChatRailContactDetailsState;
+}) {
+  const displayName = getConversationTitle({
+    contactId: conversation?.contactId,
+    platform: conversation?.platform,
+  });
+  const customer = state.data?.customer ?? null;
+  const metrics = state.data?.metrics ?? {
+    ordersCount: 0,
+    totalOrders: 0,
+    totalSpend: 0,
+  };
+  const recentOrders = state.data?.recentOrders ?? [];
+
+  return (
+    <View style={styles.contactDetailsPanel}>
+      <View style={styles.contactDetailsHeader}>
+        <View style={styles.contactAvatar}>
+          <Text style={styles.contactAvatarText}>{getContactInitial(displayName)}</Text>
+        </View>
+        <View style={styles.contactHeaderCopy}>
+          <Text numberOfLines={1} style={styles.contactName}>
+            {displayName}
+          </Text>
+          <Text numberOfLines={1} style={styles.contactPlatform}>
+            {formatInboxPlatform(conversation?.platform)}
+          </Text>
+        </View>
+      </View>
+
+      {state.loading ? (
+        <Text style={styles.contactDetailsMessage}>Memuat detail kontak...</Text>
+      ) : null}
+
+      {!state.loading && state.errorMessage ? (
+        <Text style={styles.contactDetailsError}>{state.errorMessage}</Text>
+      ) : null}
+
+      {!state.loading && !state.errorMessage ? (
+        <ScrollView style={styles.contactDetailsScroll} showsVerticalScrollIndicator>
+          <View style={styles.contactDetailsContent}>
+            <KolamContactDetailsSection title="CONTACT">
+              <KolamContactDetailRow label="Phone" value={customer?.phone || '-'} />
+              <KolamContactDetailRow label="Email" value={customer?.email || '-'} />
+              <KolamContactDetailRow
+                label="Joined"
+                value={customer?.createdAt ? formatJoinedMonth(customer.createdAt) : '-'}
+              />
+            </KolamContactDetailsSection>
+
+            {customer ? (
+              <KolamContactDetailsSection title="ACTIVITY">
+                <KolamContactDetailRow
+                  label="Total orders"
+                  value={formatInteger(metrics.totalOrders)}
+                />
+                <KolamContactDetailRow
+                  label="Total spend"
+                  value={formatRupiah(metrics.totalSpend)}
+                />
+              </KolamContactDetailsSection>
+            ) : null}
+
+            {recentOrders.length > 0 ? (
+              <KolamContactDetailsSection
+                title={`ORDER HISTORY (${metrics.ordersCount})`}>
+                <View style={styles.orderList}>
+                  <KolamMappedList
+                    items={recentOrders}
+                    getKey={order => order._id}
+                    renderItem={order => <KolamContactOrderRow order={order} />}
+                  />
+                </View>
+              </KolamContactDetailsSection>
+            ) : null}
+
+            {!customer ? (
+              <View style={styles.contactUnlinkedBox}>
+                <Text style={styles.contactUnlinkedTitle}>
+                  Kontak belum terhubung ke customer.
+                </Text>
+                <Text style={styles.contactUnlinkedCopy}>
+                  Hubungkan lewat halaman Customer untuk melihat riwayat order.
+                </Text>
+              </View>
+            ) : null}
+          </View>
+        </ScrollView>
+      ) : null}
+    </View>
+  );
+}
+
+function KolamContactDetailsSection({
+  children,
+  title,
+}: {
+  children: React.ReactNode;
+  title: string;
+}) {
+  return (
+    <View style={styles.contactSection}>
+      <Text style={styles.contactSectionTitle}>{title}</Text>
+      <View style={styles.contactSectionBody}>{children}</View>
+    </View>
+  );
+}
+
+function KolamContactDetailRow({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <View style={styles.contactDetailRow}>
+      <Text style={styles.contactDetailLabel}>{label}</Text>
+      <Text numberOfLines={1} style={styles.contactDetailValue}>
+        {value}
+      </Text>
+    </View>
+  );
+}
+
+function KolamContactOrderRow({order}: {order: KolamChatContactOrder}) {
+  return (
+    <View style={styles.orderRow}>
+      <View style={styles.orderCopy}>
+        <Text numberOfLines={1} style={styles.orderInvoice}>
+          {order.invoiceCode}
+        </Text>
+        <Text numberOfLines={1} style={styles.orderMeta}>
+          {[formatOrderDate(order.transactionDate), `${order.itemsCount ?? 0} item`]
+            .filter(Boolean)
+            .join(' | ')}
+        </Text>
+      </View>
+      <View style={styles.orderAmountGroup}>
+        <Text numberOfLines={1} style={styles.orderAmount}>
+          {formatRupiah(order.finalTotal ?? 0)}
+        </Text>
+        <Text style={styles.orderStatus}>{formatOrderStatus(order.status)}</Text>
+      </View>
+    </View>
+  );
+}
+
 function KolamInboxActionStrip({
   currentUserId,
   detail,
+  detailsOpen,
   labels,
+  onDetailsToggle,
 }: {
   currentUserId?: string;
   detail: ReturnType<typeof useKolamChatRailDetail>;
+  detailsOpen: boolean;
   labels: KolamChatLabel[];
+  onDetailsToggle: () => void;
 }) {
   const conversation = detail.conversation;
   if (!conversation) {
@@ -866,6 +1085,18 @@ function KolamInboxActionStrip({
         </Text>
       </View>
       <View style={styles.inboxActionButtons}>
+        <KolamPressable
+          accessibilityLabel="Toggle inbox contact details"
+          disabled={detail.sending}
+          onPress={onDetailsToggle}
+          style={[
+            styles.callButton,
+            styles.callButtonGhost,
+            detailsOpen && styles.callButtonActive,
+            detail.sending && styles.callButtonDisabled,
+          ]}>
+          <Text style={styles.callButtonGhostText}>Detail kontak</Text>
+        </KolamPressable>
         <KolamPressable
           accessibilityLabel="Toggle inbox conversation status"
           disabled={detail.sending}
@@ -1378,6 +1609,10 @@ function getPlatformLabel(platform: string) {
     .join(' ');
 }
 
+function formatInboxPlatform(platform?: string) {
+  return platform ? getPlatformLabel(platform) : 'Marketplace';
+}
+
 function getConversationDirectionPrefix(direction?: 'in' | 'out') {
   return direction === 'out' ? 'Anda: ' : '';
 }
@@ -1568,6 +1803,63 @@ function formatMetricNumber(value: number) {
 
 function formatRating(value: number) {
   return value > 0 ? value.toFixed(1) : '-';
+}
+
+function formatInteger(value: number) {
+  return new Intl.NumberFormat('id-ID', {
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+function formatJoinedMonth(iso: string) {
+  const timestamp = new Date(iso).getTime();
+  if (!Number.isFinite(timestamp)) {
+    return '-';
+  }
+
+  return new Date(iso).toLocaleDateString('id-ID', {
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+function formatOrderDate(iso?: string) {
+  if (!iso) {
+    return '';
+  }
+
+  const timestamp = new Date(iso).getTime();
+  if (!Number.isFinite(timestamp)) {
+    return '';
+  }
+
+  return new Date(iso).toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+function formatOrderStatus(status: KolamChatContactOrder['status']) {
+  switch (status) {
+    case 'partial_paid':
+      return 'Partial';
+    case 'cancelled':
+      return 'Cancelled';
+    case 'draft':
+      return 'Draft';
+    case 'paid':
+      return 'Paid';
+    case 'pending':
+      return 'Pending';
+    case 'sent':
+    default:
+      return 'Sent';
+  }
+}
+
+function getContactInitial(name: string) {
+  return name.trim().charAt(0).toUpperCase() || '?';
 }
 
 function formatRelativeTime(iso?: string | null) {
@@ -1922,6 +2214,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     backgroundColor: V.colors.bg,
   },
+  callButtonActive: {
+    borderColor: V.colors.primary,
+    backgroundColor: V.colors.primarySoft,
+  },
   callButtonDanger: {
     backgroundColor: V.colors.danger,
   },
@@ -1941,7 +2237,7 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   detailPanel: {
-    maxHeight: 330,
+    maxHeight: 560,
     borderRadius: V.radius.lg,
     borderColor: V.colors.border,
     borderWidth: 1,
@@ -2271,6 +2567,184 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '900',
     backgroundColor: V.colors.secondary,
+  },
+  contactDetailsPanel: {
+    marginHorizontal: 10,
+    marginTop: 10,
+    marginBottom: 8,
+    maxHeight: 230,
+    padding: 10,
+    borderRadius: V.radius.lg,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.mutedSoft,
+    gap: 8,
+  },
+  contactDetailsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 9,
+  },
+  contactAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: V.colors.primarySoft,
+  },
+  contactAvatarText: {
+    color: V.colors.primary,
+    fontFamily: V.fontFamily,
+    fontSize: 15,
+    fontWeight: '900',
+  },
+  contactHeaderCopy: {
+    minWidth: 0,
+    flex: 1,
+    gap: 2,
+  },
+  contactName: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '900',
+  },
+  contactPlatform: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  contactDetailsScroll: {
+    maxHeight: 166,
+  },
+  contactDetailsContent: {
+    gap: 10,
+    paddingBottom: 2,
+  },
+  contactDetailsMessage: {
+    paddingVertical: 10,
+    textAlign: 'center',
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  contactDetailsError: {
+    paddingVertical: 10,
+    textAlign: 'center',
+    color: V.colors.danger,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  contactSection: {
+    gap: 5,
+  },
+  contactSectionTitle: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0,
+  },
+  contactSectionBody: {
+    gap: 4,
+  },
+  contactDetailRow: {
+    minHeight: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  contactDetailLabel: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  contactDetailValue: {
+    minWidth: 0,
+    flex: 1,
+    textAlign: 'right',
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  orderList: {
+    gap: 5,
+  },
+  orderRow: {
+    minHeight: 48,
+    paddingVertical: 6,
+    borderTopColor: V.colors.border,
+    borderTopWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+  orderCopy: {
+    minWidth: 0,
+    flex: 1,
+    gap: 2,
+  },
+  orderInvoice: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  orderMeta: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  orderAmountGroup: {
+    maxWidth: 110,
+    alignItems: 'flex-end',
+    gap: 3,
+  },
+  orderAmount: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  orderStatus: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    overflow: 'hidden',
+    color: V.colors.secondaryFg,
+    fontFamily: V.fontFamily,
+    fontSize: 9,
+    fontWeight: '900',
+    backgroundColor: V.colors.secondary,
+  },
+  contactUnlinkedBox: {
+    padding: 10,
+    borderRadius: V.radius.md,
+    backgroundColor: V.colors.bg,
+    gap: 4,
+  },
+  contactUnlinkedTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '900',
+    textAlign: 'center',
+  },
+  contactUnlinkedCopy: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '700',
+    lineHeight: 14,
+    textAlign: 'center',
   },
   composer: {
     padding: 10,

@@ -10,6 +10,7 @@ import {useKolamChatRailReadonlyData} from '../src/hooks/use-kolam-chat-rail-rea
 import {useKolamNotificationSoundSettings} from '../src/hooks/use-kolam-notification-sound-settings';
 import {
   getKolamChatAnalytics,
+  getKolamChatContactDetails,
   getKolamChatLabels,
   getKolamChatTemplates,
 } from '../src/services/kolam-api';
@@ -43,6 +44,7 @@ jest.mock('../src/services/kolam-api', () => {
   return {
     ...actual,
     getKolamChatAnalytics: jest.fn(),
+    getKolamChatContactDetails: jest.fn(),
     getKolamChatLabels: jest.fn(),
     getKolamChatTemplates: jest.fn(),
   };
@@ -83,6 +85,10 @@ const useSoundSettingsMock =
 const getChatAnalyticsMock = getKolamChatAnalytics as jest.MockedFunction<
   typeof getKolamChatAnalytics
 >;
+const getChatContactDetailsMock =
+  getKolamChatContactDetails as jest.MockedFunction<
+    typeof getKolamChatContactDetails
+  >;
 const getChatLabelsMock = getKolamChatLabels as jest.MockedFunction<
   typeof getKolamChatLabels
 >;
@@ -153,6 +159,7 @@ describe('KolamGlobalChatRail', () => {
     mockSoundPlay.mockClear();
     createSoundServiceMock.mockClear();
     getChatAnalyticsMock.mockClear();
+    getChatContactDetailsMock.mockClear();
     getChatLabelsMock.mockClear();
     getChatTemplatesMock.mockClear();
     getChatAnalyticsMock.mockResolvedValue({
@@ -179,6 +186,35 @@ describe('KolamGlobalChatRail', () => {
         title: 'Cek invoice',
       },
     ]);
+    getChatContactDetailsMock.mockResolvedValue({
+      contact: {
+        _id: 'contact-1',
+        displayName: 'Buyer Tokopedia',
+        platform: 'tokopedia',
+      },
+      customer: {
+        _id: 'customer-1',
+        createdAt: '2026-07-01T00:00:00.000Z',
+        email: 'buyer@example.com',
+        name: 'Buyer Tokopedia',
+        phone: '08123456789',
+      },
+      metrics: {
+        ordersCount: 7,
+        totalOrders: 4,
+        totalSpend: 1250000,
+      },
+      recentOrders: [
+        {
+          _id: 'sale-1',
+          finalTotal: 250000,
+          invoiceCode: 'INV-001',
+          itemsCount: 2,
+          status: 'paid',
+          transactionDate: '2026-07-20T00:00:00.000Z',
+        },
+      ],
+    });
     useAuthContextMock.mockReturnValue({
       accessScope: {am: false, kolam: true, pos: false},
       authEmail: '',
@@ -596,6 +632,94 @@ describe('KolamGlobalChatRail', () => {
       .find(node => node.props.accessibilityLabel === 'Tulis pesan inbox');
 
     expect(composerInput!.props.value).toBe('Halo, stok masih tersedia.');
+  });
+
+  it('opens inbox contact details with customer activity and recent orders', async () => {
+    useReadonlyDataMock.mockReturnValue({
+      conversations: [
+        {
+          _id: 'conv-1',
+          platform: 'tokopedia',
+          contactId: {displayName: 'Buyer Tokopedia'},
+          lastMessagePreview: 'Apakah masih tersedia?',
+          unreadCount: 1,
+        },
+      ],
+      loading: false,
+      refresh: jest.fn(),
+      rooms: [],
+      totalUnread: 1,
+    });
+    useDetailMock.mockReturnValue({
+      ...getDefaultDetailMock(),
+      conversation: {
+        _id: 'conv-1',
+        assignedStaffId: null,
+        contactId: {
+          _id: 'contact-1',
+          displayName: 'Buyer Tokopedia',
+          platform: 'tokopedia',
+        },
+        isAiHandled: false,
+        platform: 'tokopedia',
+        status: 'open',
+      },
+      loading: false,
+      messages: [],
+      signalTyping: jest.fn(),
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamGlobalChatRail mode="inbox" onClose={() => undefined} />,
+      );
+    });
+
+    const selectButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Pilih conversation Buyer Tokopedia');
+
+    await ReactTestRenderer.act(async () => {
+      selectButton!.props.onPress();
+    });
+
+    const detailsButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Toggle inbox contact details');
+
+    await ReactTestRenderer.act(async () => {
+      detailsButton!.props.onPress();
+    });
+
+    await ReactTestRenderer.act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(getChatContactDetailsMock).toHaveBeenCalledWith('conv-1', {
+      ordersLimit: 5,
+    });
+    expect(renderText(renderer!)).toEqual(
+      expect.arrayContaining([
+        'Buyer Tokopedia',
+        'Tokopedia',
+        'CONTACT',
+        'Phone',
+        '08123456789',
+        'Email',
+        'buyer@example.com',
+        'ACTIVITY',
+        'Total orders',
+        '4',
+        'Total spend',
+        expect.stringContaining('1.250.000'),
+        'ORDER HISTORY (7)',
+        'INV-001',
+        expect.stringContaining('250.000'),
+        'Paid',
+      ]),
+    );
   });
 
   it('renders and toggles team chat reactions from message bubbles', async () => {

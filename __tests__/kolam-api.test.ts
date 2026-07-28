@@ -34,6 +34,7 @@ import {
   getKolamChatAssignableStaff,
   getKolamChatAnalytics,
   getKolamChatConversation,
+  getKolamChatContactDetails,
   getKolamChatConversations,
   getKolamChatLabels,
   getKolamChatMessages,
@@ -1795,6 +1796,60 @@ describe('Kolam Settings API contracts', () => {
 
     expect(fetchMock).toHaveBeenCalledWith(
       `${appConfig.kolamApiBaseUrl}/chat/templates?search=stok`,
+      expect.objectContaining({method: 'GET'}),
+    );
+  });
+
+  it('maps chat contact details endpoint from the live chat plugin', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        success: true,
+        data: {
+          contact: {
+            _id: 'contact-1',
+            displayName: 'Buyer Tokopedia',
+            platform: 'tokopedia',
+          },
+          customer: {
+            _id: 'customer-1',
+            createdAt: '2026-07-01T00:00:00.000Z',
+            email: 'buyer@example.com',
+            name: 'Buyer Tokopedia',
+            phone: '08123456789',
+          },
+          metrics: {
+            ordersCount: 7,
+            totalOrders: 4,
+            totalSpend: 1250000,
+          },
+          recentOrders: [
+            {
+              _id: 'sale-1',
+              finalTotal: 250000,
+              invoiceCode: 'INV-001',
+              itemsCount: 2,
+              status: 'paid',
+              transactionDate: '2026-07-20T00:00:00.000Z',
+            },
+          ],
+        },
+      }),
+    );
+
+    await expect(
+      getKolamChatContactDetails('conv-1', {ordersLimit: 5}),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        customer: expect.objectContaining({_id: 'customer-1'}),
+        metrics: expect.objectContaining({totalSpend: 1250000}),
+        recentOrders: [
+          expect.objectContaining({invoiceCode: 'INV-001'}),
+        ],
+      }),
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${appConfig.kolamApiBaseUrl}/chat/conversations/conv-1/contact-details?ordersLimit=5`,
       expect.objectContaining({method: 'GET'}),
     );
   });

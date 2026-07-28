@@ -538,6 +538,44 @@ export interface KolamChatTemplate {
   updatedAt?: string;
 }
 
+export interface KolamChatContactCustomer {
+  _id: string;
+  address?: string;
+  createdAt?: string;
+  email?: string;
+  name: string;
+  phone?: string;
+}
+
+export type KolamChatContactOrderStatus =
+  | 'draft'
+  | 'pending'
+  | 'sent'
+  | 'paid'
+  | 'partial_paid'
+  | 'cancelled';
+
+export interface KolamChatContactOrder {
+  _id: string;
+  deliveryStatus?: string;
+  finalTotal?: number;
+  invoiceCode: string;
+  itemsCount?: number;
+  status: KolamChatContactOrderStatus;
+  transactionDate?: string;
+}
+
+export interface KolamChatContactDetails {
+  contact: Extract<KolamChatConversation['contactId'], object> | null;
+  customer: KolamChatContactCustomer | null;
+  metrics: {
+    ordersCount: number;
+    totalOrders: number;
+    totalSpend: number;
+  };
+  recentOrders: KolamChatContactOrder[];
+}
+
 export interface KolamChatHandoverNote {
   createdAt?: string | null;
   createdByStaffId?: KolamChatStaffRef | string | null;
@@ -623,6 +661,11 @@ export interface KolamChatTemplateListParams
   extends Record<string, string | number | boolean | undefined | null> {
   category?: string;
   search?: string;
+}
+
+export interface KolamChatContactDetailsParams
+  extends Record<string, string | number | boolean | undefined | null> {
+  ordersLimit?: number;
 }
 
 export interface KolamChatMessageListParams
@@ -1990,6 +2033,20 @@ export async function getKolamChatTemplates(
   >('/chat/templates', cleanKolamListParams(params));
 
   return response.data ?? [];
+}
+
+export async function getKolamChatContactDetails(
+  conversationId: string,
+  params: KolamChatContactDetailsParams = {},
+): Promise<KolamChatContactDetails> {
+  const response = await kolamGet<
+    DataResponse<KolamChatContactDetails> | KolamChatContactDetails
+  >(
+    `/chat/conversations/${encodeURIComponent(conversationId)}/contact-details`,
+    cleanKolamListParams(params),
+  );
+
+  return unwrapData(response);
 }
 
 export async function getKolamChatAssignableStaff(
