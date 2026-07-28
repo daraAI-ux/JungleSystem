@@ -243,9 +243,10 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         requiredAccess: ['kolam'],
       },
       {
-        label: 'Locations',
+        label: 'Lokasi',
         route: '/locations',
-        description: 'Warehouse and stock storage locations',
+        description: 'Kelola lokasi gudang, lantai, rak, dan area penyimpanan',
+        group: 'Inventory',
         requiredAccess: ['kolam'],
       },
       {
@@ -736,7 +737,7 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
       sidebarItem('/teranura', { group: 'Produk', label: 'Teranura' }),
       sidebarItem('/stock-transaction', { group: 'Stok', label: 'Transaksi Stok' }),
       sidebarItem('/stock-opname', { group: 'Stok', label: 'Stock Opname' }),
-      sidebarItem('/locations', { label: 'Lokasi' }),
+      sidebarItem('/locations', { group: 'Inventory', label: 'Lokasi' }),
       sidebarItem('/suppliers', { group: 'Pengadaan', label: 'Pemasok' }),
       sidebarItem('/purchase-order', { group: 'Pengadaan', label: 'Pesanan Pembelian' }),
       sidebarItem('/production', { group: 'Produksi', label: 'Produksi' }),
@@ -1502,21 +1503,21 @@ const kolamNavigationRouteVariantSpecs: Array<{
   },
   {
     baseRoute: '/locations',
-    labelSuffix: 'Create',
+    labelSuffix: 'Tambah',
     route: '/locations/create',
-    description: 'Create location page from live Kolam',
+    description: 'Tambah lokasi gudang, lantai, rak, dan area penyimpanan',
   },
   {
     baseRoute: '/locations',
     labelSuffix: 'Detail',
     route: '/locations/:id',
-    description: 'Location detail page from live Kolam',
+    description: 'Detail lokasi gudang, lantai, rak, dan area penyimpanan',
   },
   {
     baseRoute: '/locations',
-    labelSuffix: 'Edit',
+    labelSuffix: 'Rubah',
     route: '/locations/:id/edit',
-    description: 'Edit location page from live Kolam',
+    description: 'Rubah lokasi gudang, lantai, rak, dan area penyimpanan',
   },
   {
     baseRoute: '/blogs',

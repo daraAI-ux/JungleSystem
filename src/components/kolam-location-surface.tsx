@@ -90,22 +90,7 @@ export function KolamLocationSurface({
 
   return (
     <View style={styles.surface}>
-      <KolamLocationListHeader />
       <KolamLocationList onRouteChange={onRouteChange} />
-    </View>
-  );
-}
-
-function KolamLocationListHeader() {
-  return (
-    <View style={styles.header}>
-      <View style={styles.heading}>
-        <Text style={styles.eyebrow}>Inventori</Text>
-        <Text style={styles.title}>Lokasi</Text>
-        <Text style={styles.description}>
-          Kelola lokasi gudang, lantai, rak, dan area penyimpanan
-        </Text>
-      </View>
     </View>
   );
 }
