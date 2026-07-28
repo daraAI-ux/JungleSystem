@@ -509,22 +509,65 @@ export type KolamChatPlatform =
 
 export type KolamChatConversationStatus = 'open' | 'closed';
 
+export interface KolamChatStaffRef {
+  _id: string;
+  first_name?: string;
+  last_name?: string;
+  username?: string;
+  profile_picture?: string | null;
+}
+
+export interface KolamChatLabel {
+  _id: string;
+  color: string;
+  createdAt?: string;
+  createdBy?: string | null;
+  name: string;
+  updatedAt?: string;
+}
+
+export interface KolamChatHandoverNote {
+  createdAt?: string | null;
+  createdByStaffId?: KolamChatStaffRef | string | null;
+  fromStaffId?: KolamChatStaffRef | string | null;
+  text?: string | null;
+  toStaffId?: KolamChatStaffRef | string | null;
+}
+
 export interface KolamChatConversation {
   _id: string;
+  aiHandoffAt?: string | null;
+  aiHandoffReason?: string | null;
+  assignedStaffId?: KolamChatStaffRef | string | null;
+  createdAt?: string;
+  externalId?: string;
+  hadHumanStaff?: boolean;
+  handoverNote?: KolamChatHandoverNote | null;
+  isAiHandled?: boolean;
+  labelIds?: Array<KolamChatLabel | string>;
+  labels?: KolamChatLabel[];
   platform?: KolamChatPlatform;
   lastMessageAt?: string | null;
   lastMessageDirection?: 'in' | 'out';
   lastMessagePreview?: string;
   lastMessageType?: string;
+  pendingRating?: {active?: boolean; requestedAt?: string | null};
+  reviewPending?: boolean;
+  reviewTarget?: string | null;
+  shopId?: string | null;
   unreadCount?: number;
   status?: KolamChatConversationStatus;
   contactId?:
     | string
     | {
         _id?: string;
+        avatarUrl?: string;
         displayName?: string;
+        externalId?: string;
+        linkedCustomerId?: string | {_id?: string; name?: string} | null;
         platform?: KolamChatPlatform;
       };
+  updatedAt?: string;
 }
 
 export interface KolamChatMessageContent {
@@ -548,10 +591,20 @@ export interface KolamChatMessage {
 
 export interface KolamChatConversationListParams
   extends Record<string, string | number | boolean | undefined | null> {
+  handoffOnly?: boolean;
+  labelId?: string;
   status?: KolamChatConversationStatus | 'all';
+  platform?: KolamChatPlatform | 'all';
+  reviewPendingOnly?: boolean;
+  search?: string;
   unreadOnly?: boolean;
   limit?: number;
   page?: number;
+}
+
+export interface KolamChatAssignableStaffParams
+  extends Record<string, string | number | boolean | undefined | null> {
+  limit?: number;
 }
 
 export interface KolamChatMessageListParams
@@ -1798,6 +1851,16 @@ export async function getKolamChatConversations(
   return response.data ?? [];
 }
 
+export async function getKolamChatConversation(
+  conversationId: string,
+): Promise<KolamChatConversation> {
+  const response = await kolamGet<
+    DataResponse<KolamChatConversation> | KolamChatConversation
+  >(`/chat/conversations/${encodeURIComponent(conversationId)}`);
+
+  return unwrapData(response);
+}
+
 export async function getKolamChatUnreadTotal(): Promise<number> {
   const conversations = await getKolamChatConversations({
     status: 'open',
@@ -1825,6 +1888,80 @@ export async function getKolamChatMessages(
     `/chat/conversations/${encodeURIComponent(conversationId)}/messages`,
     cleanKolamListParams(params),
   );
+
+  return response.data ?? [];
+}
+
+export async function updateKolamChatConversationStatus(
+  conversationId: string,
+  status: KolamChatConversationStatus,
+): Promise<KolamChatConversation> {
+  const response = await kolamPatch<
+    DataResponse<KolamChatConversation> | KolamChatConversation
+  >(`/chat/conversations/${encodeURIComponent(conversationId)}/status`, {
+    status,
+  });
+
+  return unwrapData(response);
+}
+
+export async function assignKolamChatConversation(
+  conversationId: string,
+  staffId: string,
+  handoverNote?: string,
+): Promise<KolamChatConversation> {
+  const response = await kolamPatch<
+    DataResponse<KolamChatConversation> | KolamChatConversation
+  >(`/chat/conversations/${encodeURIComponent(conversationId)}/assign`, {
+    staffId,
+    ...(handoverNote ? {handoverNote} : {}),
+  });
+
+  return unwrapData(response);
+}
+
+export async function forceUnassignKolamChatConversation(
+  conversationId: string,
+): Promise<KolamChatConversation> {
+  const response = await kolamPatch<
+    DataResponse<KolamChatConversation> | KolamChatConversation
+  >(`/chat/conversations/${encodeURIComponent(conversationId)}/force-unassign`, {});
+
+  return unwrapData(response);
+}
+
+export async function updateKolamChatConversationAiHandled(
+  conversationId: string,
+  isAiHandled: boolean,
+): Promise<KolamChatConversation> {
+  const response = await kolamPatch<
+    DataResponse<KolamChatConversation> | KolamChatConversation
+  >(`/chat/conversations/${encodeURIComponent(conversationId)}/ai-handled`, {
+    isAiHandled,
+  });
+
+  return unwrapData(response);
+}
+
+export async function updateKolamChatConversationLabels(
+  conversationId: string,
+  labelIds: string[],
+): Promise<KolamChatConversation> {
+  const response = await kolamPatch<
+    DataResponse<KolamChatConversation> | KolamChatConversation
+  >(`/chat/conversations/${encodeURIComponent(conversationId)}/labels`, {
+    labelIds,
+  });
+
+  return unwrapData(response);
+}
+
+export async function getKolamChatAssignableStaff(
+  params: KolamChatAssignableStaffParams = {},
+): Promise<KolamChatStaffRef[]> {
+  const response = await kolamGet<
+    DataResponse<KolamChatStaffRef[]> | {data?: KolamChatStaffRef[]}
+  >('/chat/assignable-staff', cleanKolamListParams(params));
 
   return response.data ?? [];
 }

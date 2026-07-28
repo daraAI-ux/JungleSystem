@@ -7,6 +7,7 @@ import {
   uploadKolamCategoryIcon,
 } from '../src/services/kolam-category-api';
 import {
+  assignKolamChatConversation,
   createKolamRole,
   createKolamHeroSlide,
   deleteKolamActivityLogs,
@@ -29,7 +30,10 @@ import {
   declineKolamTeamChatCall,
   editKolamTeamChatMessage,
   endKolamTeamChatCall,
+  forceUnassignKolamChatConversation,
+  getKolamChatAssignableStaff,
   getKolamChatAnalytics,
+  getKolamChatConversation,
   getKolamChatConversations,
   getKolamChatMessages,
   getKolamChatUnreadTotal,
@@ -54,6 +58,9 @@ import {
   startKolamTeamChatCall,
   toggleKolamTeamChatReaction,
   unmuteKolamTeamChatCallParticipant,
+  updateKolamChatConversationAiHandled,
+  updateKolamChatConversationLabels,
+  updateKolamChatConversationStatus,
   updateKolamBioactiveEcosystem,
   updateKolamCtaSection,
   updateKolamFeaturedCollections,
@@ -1624,6 +1631,116 @@ describe('Kolam Settings API contracts', () => {
     expect(fetchMock).toHaveBeenCalledWith(
       `${appConfig.kolamApiBaseUrl}/chat/analytics?from=2026-07-01&to=2026-07-31`,
       expect.objectContaining({method: 'GET'}),
+    );
+  });
+
+  it('maps inbox conversation action endpoints from the live chat plugin', async () => {
+    fetchMock
+      .mockResolvedValueOnce(
+        jsonResponse({success: true, data: {_id: 'conv-1', status: 'open'}}),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          success: true,
+          data: [{_id: 'staff-1', first_name: 'Maya'}],
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({success: true, data: {_id: 'conv-1', status: 'closed'}}),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          success: true,
+          data: {
+            _id: 'conv-1',
+            assignedStaffId: {_id: 'staff-1', first_name: 'Maya'},
+          },
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({success: true, data: {_id: 'conv-1', assignedStaffId: null}}),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({success: true, data: {_id: 'conv-1', isAiHandled: false}}),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          success: true,
+          data: {_id: 'conv-1', labelIds: ['label-1', 'label-2']},
+        }),
+      );
+
+    await expect(getKolamChatConversation('conv-1')).resolves.toMatchObject({
+      _id: 'conv-1',
+    });
+    await expect(getKolamChatAssignableStaff({limit: 20})).resolves.toEqual([
+      expect.objectContaining({_id: 'staff-1'}),
+    ]);
+    await expect(
+      updateKolamChatConversationStatus('conv-1', 'closed'),
+    ).resolves.toMatchObject({status: 'closed'});
+    await expect(
+      assignKolamChatConversation('conv-1', 'staff-1', 'Shift handover'),
+    ).resolves.toMatchObject({assignedStaffId: expect.any(Object)});
+    await expect(forceUnassignKolamChatConversation('conv-1')).resolves.toMatchObject({
+      assignedStaffId: null,
+    });
+    await expect(
+      updateKolamChatConversationAiHandled('conv-1', false),
+    ).resolves.toMatchObject({isAiHandled: false});
+    await expect(
+      updateKolamChatConversationLabels('conv-1', ['label-1', 'label-2']),
+    ).resolves.toMatchObject({labelIds: ['label-1', 'label-2']});
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      `${appConfig.kolamApiBaseUrl}/chat/conversations/conv-1`,
+      expect.objectContaining({method: 'GET'}),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      `${appConfig.kolamApiBaseUrl}/chat/assignable-staff?limit=20`,
+      expect.objectContaining({method: 'GET'}),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      `${appConfig.kolamApiBaseUrl}/chat/conversations/conv-1/status`,
+      expect.objectContaining({
+        body: JSON.stringify({status: 'closed'}),
+        method: 'PATCH',
+      }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      4,
+      `${appConfig.kolamApiBaseUrl}/chat/conversations/conv-1/assign`,
+      expect.objectContaining({
+        body: JSON.stringify({staffId: 'staff-1', handoverNote: 'Shift handover'}),
+        method: 'PATCH',
+      }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      5,
+      `${appConfig.kolamApiBaseUrl}/chat/conversations/conv-1/force-unassign`,
+      expect.objectContaining({
+        body: JSON.stringify({}),
+        method: 'PATCH',
+      }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      6,
+      `${appConfig.kolamApiBaseUrl}/chat/conversations/conv-1/ai-handled`,
+      expect.objectContaining({
+        body: JSON.stringify({isAiHandled: false}),
+        method: 'PATCH',
+      }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      7,
+      `${appConfig.kolamApiBaseUrl}/chat/conversations/conv-1/labels`,
+      expect.objectContaining({
+        body: JSON.stringify({labelIds: ['label-1', 'label-2']}),
+        method: 'PATCH',
+      }),
     );
   });
 });
