@@ -350,7 +350,14 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         route: '/cashflow-session',
         description: 'Daily cash sessions and reconciliation',
         group: 'Penjualan',
-        requiredAccess: ['kolam', 'pos'],
+        requiredAccess: ['kolam'],
+      },
+      {
+        label: 'POS Cashflow Shift',
+        route: '/pos/cashflow',
+        description: 'Open and close cashier POS cashflow shift',
+        group: 'Penjualan',
+        requiredAccess: ['pos'],
       },
       {
         label: 'Complaints',
@@ -2264,6 +2271,13 @@ export function getKolamNavigationRouteTarget(
   if (
     routePath === '/cashflow-session' ||
     routePath.startsWith('/cashflow-session/')
+  ) {
+    return routeTarget('kolam', item);
+  }
+
+  if (
+    routePath === '/pos/cashflow' ||
+    routePath.startsWith('/pos/cashflow/')
   ) {
     return routeTarget('cashflow', item);
   }

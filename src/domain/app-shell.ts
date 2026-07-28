@@ -238,6 +238,7 @@ export const shellModules: ShellModule[] = [
     summary: 'Sesi kasir, preview cash sales, close shift, dan deposit lanjutan.',
     routes: [
       'cashflow',
+      'pos/cashflow',
       'pos/cashflow/active',
       'pos/cashflow/open',
       'pos/cashflow/:id/close',

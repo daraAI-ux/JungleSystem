@@ -1,18 +1,17 @@
 import { appConfig } from '../config/app';
+import {
+  normalizeKolamAdminCashflowActiveProbe,
+  normalizeKolamAdminCashflowSession,
+  normalizeKolamAdminCashflowSessionList,
+  type ActiveAdminCashflowSession,
+  type KolamAdminCashflowActiveProbe,
+  type KolamAdminCashflowListFilters,
+  type KolamAdminCashflowOpenBody,
+  type KolamAdminCashflowSession,
+} from '../domain/kolam-admin-cashflow-session';
 import { apiRequest } from '../lib/api-client';
 
-export type AdminCashflowSessionStatus =
-  | 'open'
-  | 'locked'
-  | 'in-review'
-  | 'verified';
-
-export type ActiveAdminCashflowSession = {
-  id: string;
-  name?: string;
-  source?: 'admin' | 'pos';
-  status: AdminCashflowSessionStatus;
-};
+export type { ActiveAdminCashflowSession };
 
 type ActiveCashflowApiPayload = {
   data?: {
@@ -20,7 +19,7 @@ type ActiveCashflowApiPayload = {
     id?: string;
     name?: string;
     source?: 'admin' | 'pos';
-    status?: AdminCashflowSessionStatus;
+    status?: ActiveAdminCashflowSession['status'];
   } | null;
   todaySession?: unknown;
 };
@@ -30,33 +29,77 @@ type ActiveCashflowApiPayload = {
  * POS shifts are ignored by the header icon (match FE CashflowHeaderIcon).
  */
 export async function getActiveAdminCashflowSession(): Promise<ActiveAdminCashflowSession | null> {
-  const payload = await apiRequest<ActiveCashflowApiPayload>({
-    method: 'GET',
-    path: '/cashflow/active',
-    baseUrl: appConfig.kolamApiBaseUrl,
-    sourceHeader: appConfig.kolamSourceHeader,
-  });
-
-  const raw = payload?.data;
-  if (!raw) {
+  const probe = await getKolamAdminCashflowActiveProbe();
+  const active = probe.active;
+  if (!active) {
     return null;
   }
-
-  const id = String(raw.id || raw._id || '').trim();
-  if (!id || !raw.status) {
-    return null;
-  }
-
-  if (raw.source && raw.source !== 'admin') {
-    return null;
-  }
-
   return {
-    id,
-    name: raw.name,
-    source: raw.source ?? 'admin',
-    status: raw.status,
+    id: active.id,
+    name: active.name,
+    source: active.source,
+    status: active.status,
   };
+}
+
+export async function getKolamAdminCashflowActiveProbe(): Promise<KolamAdminCashflowActiveProbe> {
+  const payload = await kolamRequest<ActiveCashflowApiPayload>('/cashflow/active');
+  return normalizeKolamAdminCashflowActiveProbe(payload);
+}
+
+export async function getKolamAdminCashflowSessions(
+  filters: Pick<
+    KolamAdminCashflowListFilters,
+    'page' | 'limit' | 'status' | 'source'
+  >,
+) {
+  const payload = await kolamRequest<unknown>('/cashflow', {
+    query: {
+      page: filters.page,
+      limit: filters.limit,
+      status: filters.status || undefined,
+      source: filters.source || undefined,
+    },
+  });
+  return normalizeKolamAdminCashflowSessionList(payload);
+}
+
+export async function getKolamAdminCashflowSession(
+  id: string,
+): Promise<KolamAdminCashflowSession> {
+  const payload = await kolamRequest<unknown>(
+    `/cashflow/${encodeURIComponent(id)}`,
+  );
+  const row =
+    payload && typeof payload === 'object' && 'data' in (payload as object)
+      ? (payload as { data: unknown }).data
+      : payload;
+  return normalizeKolamAdminCashflowSession(row);
+}
+
+export async function openKolamAdminCashflowSession(
+  body: KolamAdminCashflowOpenBody,
+): Promise<KolamAdminCashflowSession> {
+  const payload: Record<string, string> = {};
+  if (body.name?.trim()) {
+    payload.name = body.name.trim();
+  }
+  if (body.windowStart?.trim()) {
+    payload.windowStart = body.windowStart.trim();
+  }
+  if (body.windowEnd?.trim()) {
+    payload.windowEnd = body.windowEnd.trim();
+  }
+
+  const response = await kolamRequest<{ data?: unknown; message?: string }>(
+    '/cashflow/session/open',
+    {
+      method: 'POST',
+      body: payload,
+    },
+  );
+
+  return normalizeKolamAdminCashflowSession(response?.data ?? response);
 }
 
 export function getAdminCashflowHeaderRoute(
@@ -71,4 +114,22 @@ export function getAdminCashflowHeaderRoute(
   }
 
   return '/cashflow-session/create';
+}
+
+function kolamRequest<T>(
+  path: string,
+  options: {
+    method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+    query?: Record<string, string | number | boolean | undefined | null>;
+    body?: unknown;
+  } = {},
+) {
+  return apiRequest<T>({
+    method: options.method ?? 'GET',
+    path,
+    query: options.query,
+    body: options.body,
+    baseUrl: appConfig.kolamApiBaseUrl,
+    sourceHeader: appConfig.kolamSourceHeader,
+  });
 }
