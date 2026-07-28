@@ -1,6 +1,17 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
+import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
+
+type SectionIconKind = 'bot' | 'cart' | 'package' | 'users' | 'wallet';
+
+const SECTION_ICON_KIND: Record<string, SectionIconKind> = {
+  finance: 'wallet',
+  inventory: 'package',
+  pusatAi: 'bot',
+  sales: 'cart',
+  user: 'users',
+};
 
 export function KolamMenuSectionIcon({
   active = false,
@@ -9,157 +20,73 @@ export function KolamMenuSectionIcon({
   active?: boolean;
   sectionId: string;
 }) {
-  const spec = getSectionIconSpec(sectionId);
-  const color = active ? V.colors.primary : spec.color;
+  const color = active ? V.colors.primary : V.colors.sidebarFg;
 
   return (
     <View
       testID={`kolam-menu-section-icon:${sectionId}`}
-      style={[styles.icon, { backgroundColor: spec.soft }]}
+      style={{ flexShrink: 0 }}
     >
-      <View style={[styles[spec.shape], { borderColor: color }]} />
-      <View
-        style={[styles.accent, styles[spec.accent], { backgroundColor: color }]}
-      />
+      <Svg
+        fill="none"
+        height={18}
+        stroke={color}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.8}
+        viewBox="0 0 24 24"
+        width={18}
+      >
+        {renderSectionIcon(SECTION_ICON_KIND[sectionId] ?? 'package')}
+      </Svg>
     </View>
   );
 }
 
-type SectionShape = 'leaf' | 'flow' | 'spark' | 'vault' | 'people' | 'stack';
-type SectionAccent =
-  | 'accentNorth'
-  | 'accentEast'
-  | 'accentSouth'
-  | 'accentWest';
-
-function getSectionIconSpec(sectionId: string): {
-  accent: SectionAccent;
-  color: string;
-  shape: SectionShape;
-  soft: string;
-} {
-  switch (sectionId) {
-    case 'inventory':
-      return {
-        accent: 'accentNorth',
-        color: V.colors.success,
-        shape: 'stack',
-        soft: V.colors.successSoft,
-      };
-    case 'sales':
-      return {
-        accent: 'accentEast',
-        color: V.colors.warning,
-        shape: 'flow',
-        soft: V.colors.warningSoft,
-      };
-    case 'pusatAi':
-      return {
-        accent: 'accentSouth',
-        color: V.colors.info,
-        shape: 'spark',
-        soft: V.colors.infoSoft,
-      };
-    case 'finance':
-      return {
-        accent: 'accentWest',
-        color: V.colors.primary,
-        shape: 'vault',
-        soft: V.colors.primarySoft,
-      };
-    case 'user':
-      return {
-        accent: 'accentNorth',
-        color: '#7c3aed',
-        shape: 'people',
-        soft: '#f3e8ff',
-      };
+function renderSectionIcon(iconKind: SectionIconKind) {
+  switch (iconKind) {
+    case 'bot':
+      return (
+        <>
+          <Rect height={10} rx={3} width={14} x={5} y={9} />
+          <Path d="M12 5v4" />
+          <Circle cx={9} cy={14} r={1} />
+          <Circle cx={15} cy={14} r={1} />
+          <Path d="M9 18h6" />
+        </>
+      );
+    case 'cart':
+      return (
+        <>
+          <Path d="M4 5h2l2 10h9l2-7H7" />
+          <Circle cx={10} cy={19} r={1.5} />
+          <Circle cx={17} cy={19} r={1.5} />
+        </>
+      );
+    case 'users':
+      return (
+        <>
+          <Circle cx={9} cy={8} r={3} />
+          <Path d="M3.5 20a6 6 0 0 1 11 0" />
+          <Path d="M16 11a3 3 0 1 0-1-5.8" />
+          <Path d="M15 17a5 5 0 0 1 5.5 3" />
+        </>
+      );
+    case 'wallet':
+      return (
+        <>
+          <Path d="M4 7h15a2 2 0 0 1 2 2v9H5a2 2 0 0 1-2-2V7a3 3 0 0 1 3-3h11" />
+          <Path d="M16 13h5" />
+          <Circle cx={17.5} cy={13} r={0.8} />
+        </>
+      );
+    case 'package':
     default:
-      return {
-        accent: 'accentEast',
-        color: '#0f766e',
-        shape: 'leaf',
-        soft: '#ccfbf1',
-      };
+      return (
+        <>
+          <Path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z" />
+          <Path d="M4 7.5 12 12l8-4.5M12 12v9" />
+        </>
+      );
   }
 }
-
-const styles = StyleSheet.create({
-  icon: {
-    width: 18,
-    height: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 5,
-  },
-  accent: {
-    position: 'absolute',
-    width: 4,
-    height: 4,
-    borderRadius: 999,
-  },
-  accentNorth: {
-    top: 2,
-    right: 3,
-  },
-  accentEast: {
-    right: 2,
-    bottom: 5,
-  },
-  accentSouth: {
-    left: 4,
-    bottom: 2,
-  },
-  accentWest: {
-    left: 2,
-    top: 5,
-  },
-  leaf: {
-    width: 10,
-    height: 12,
-    borderTopLeftRadius: 8,
-    borderTopRightRadius: 2,
-    borderBottomLeftRadius: 2,
-    borderBottomRightRadius: 8,
-    borderWidth: 2,
-    transform: [{ rotate: '35deg' }],
-  },
-  flow: {
-    width: 12,
-    height: 10,
-    borderTopWidth: 2,
-    borderRightWidth: 2,
-    borderBottomWidth: 2,
-    borderLeftWidth: 0,
-    borderTopRightRadius: 7,
-    borderBottomRightRadius: 7,
-  },
-  spark: {
-    width: 10,
-    height: 10,
-    borderRadius: 2,
-    borderWidth: 2,
-    transform: [{ rotate: '45deg' }],
-  },
-  vault: {
-    width: 12,
-    height: 10,
-    borderRadius: 999,
-    borderWidth: 2,
-  },
-  people: {
-    width: 12,
-    height: 8,
-    borderTopLeftRadius: 8,
-    borderTopRightRadius: 8,
-    borderBottomLeftRadius: 3,
-    borderBottomRightRadius: 3,
-    borderWidth: 2,
-  },
-  stack: {
-    width: 12,
-    height: 12,
-    borderRadius: 3,
-    borderWidth: 2,
-  },
-});

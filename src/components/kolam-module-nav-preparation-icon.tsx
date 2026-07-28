@@ -1,57 +1,31 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
+import Svg, { Path, Rect } from 'react-native-svg';
 import type { ModuleNavIconGlyphProps } from './kolam-module-nav-icon-types';
 
 export function ModuleNavPreparationIcon({
   tintStyle,
 }: ModuleNavIconGlyphProps) {
+  const color = getTintColor(tintStyle);
+
   return (
-    <View style={styles.preparationIcon}>
-      <View style={[styles.preparationBase, tintStyle]} />
-      <View style={[styles.preparationClip, tintStyle]} />
-      <View style={[styles.preparationLineTop, tintStyle]} />
-      <View style={[styles.preparationLineBottom, tintStyle]} />
-    </View>
+    <Svg
+      fill="none"
+      height={18}
+      stroke={color}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={1.9}
+      viewBox="0 0 24 24"
+      width={18}
+    >
+      <Rect height={15} rx={2} width={14} x={5} y={5} />
+      <Path d="M9 5a3 3 0 0 1 6 0" />
+      <Path d="M9 11h6M9 15h4" />
+    </Svg>
   );
 }
 
-const styles = StyleSheet.create({
-  preparationIcon: {
-    width: 17,
-    height: 18,
-  },
-  preparationBase: {
-    position: 'absolute',
-    left: 3,
-    top: 3,
-    width: 11,
-    height: 13,
-    borderRadius: 3,
-    borderWidth: 2,
-    backgroundColor: 'transparent',
-  },
-  preparationClip: {
-    position: 'absolute',
-    left: 6,
-    top: 1,
-    width: 5,
-    height: 4,
-    borderRadius: 2,
-  },
-  preparationLineTop: {
-    position: 'absolute',
-    left: 6,
-    top: 8,
-    width: 5,
-    height: 2,
-    borderRadius: 999,
-  },
-  preparationLineBottom: {
-    position: 'absolute',
-    left: 6,
-    top: 12,
-    width: 4,
-    height: 2,
-    borderRadius: 999,
-  },
-});
+function getTintColor(tintStyle: ModuleNavIconGlyphProps['tintStyle']) {
+  return String(StyleSheet.flatten(tintStyle)?.backgroundColor ?? '#64748b');
+}
