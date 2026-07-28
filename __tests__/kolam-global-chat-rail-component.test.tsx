@@ -98,10 +98,14 @@ function getDefaultDetailMock() {
     callConfig: {enabled: false},
     declineCall: jest.fn(),
     endCall: jest.fn(),
+    handoverCall: jest.fn(),
+    joinCall: jest.fn(),
     loading: false,
     messages: [],
+    muteCallParticipant: jest.fn(),
     presence: {onlineCount: 0, typingUserIds: [], viewingCount: 0},
     reactToMessage: jest.fn(),
+    redialCall: jest.fn(),
     refresh: jest.fn(),
     refreshCall: jest.fn(),
     sendAttachment: jest.fn(),
@@ -109,7 +113,8 @@ function getDefaultDetailMock() {
     signalTyping: jest.fn(),
     sending: false,
     startCall: jest.fn(),
-    joinCall: jest.fn(),
+    toggleCallHand: jest.fn(),
+    unmuteCallParticipant: jest.fn(),
     updatePresenceFromLive: jest.fn(),
   };
 }
@@ -545,7 +550,12 @@ describe('KolamGlobalChatRail', () => {
     const startCall = jest.fn().mockResolvedValue(undefined);
     const joinCall = jest.fn().mockResolvedValue(undefined);
     const endCall = jest.fn().mockResolvedValue(undefined);
+    const handoverCall = jest.fn().mockResolvedValue(undefined);
+    const muteCallParticipant = jest.fn().mockResolvedValue(undefined);
+    const redialCall = jest.fn().mockResolvedValue(undefined);
     const refreshCall = jest.fn().mockResolvedValue(undefined);
+    const toggleCallHand = jest.fn().mockResolvedValue(undefined);
+    const unmuteCallParticipant = jest.fn().mockResolvedValue(undefined);
     let liveOptions:
       | Parameters<typeof useKolamChatLiveStream>[0]
       | undefined;
@@ -573,15 +583,49 @@ describe('KolamGlobalChatRail', () => {
       activeCall: {
         _id: 'call-1',
         participantCount: 3,
+        participants: [
+          {
+            handRaised: false,
+            muted: false,
+            status: 'joined',
+            user: 'staff-1',
+          },
+          {
+            muted: false,
+            status: 'joined',
+            user: {
+              _id: 'staff-2',
+              first_name: 'Maya',
+            },
+          },
+          {
+            muted: true,
+            status: 'joined',
+            user: {
+              _id: 'staff-3',
+              first_name: 'Bima',
+            },
+          },
+          {
+            muted: false,
+            status: 'declined',
+            user: 'staff-4',
+          },
+        ],
         status: 'active',
       },
       callConfig: {enabled: true},
       endCall,
+      handoverCall,
       joinCall,
       loading: false,
       messages: [],
+      muteCallParticipant,
+      redialCall,
       refreshCall,
       startCall,
+      toggleCallHand,
+      unmuteCallParticipant,
     });
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
@@ -600,7 +644,18 @@ describe('KolamGlobalChatRail', () => {
     });
 
     expect(renderText(renderer!)).toEqual(
-      expect.arrayContaining(['Call aktif', '3 peserta', 'Join', 'End']),
+      expect.arrayContaining([
+        'Call aktif',
+        '3 peserta',
+        'Join',
+        'End',
+        'Raise',
+        'Handover',
+        'Maya',
+        'Mute',
+        'Bima',
+        'Unmute',
+      ]),
     );
 
     const joinButton = renderer!.root
@@ -609,14 +664,39 @@ describe('KolamGlobalChatRail', () => {
     const endButton = renderer!.root
       .findAllByType(KolamPressable)
       .find(node => node.props.accessibilityLabel === 'End team chat call');
+    const handButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Toggle team chat call hand');
+    const redialButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Redial team chat call');
+    const handoverButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Handover team chat call');
+    const muteButtons = renderer!.root
+      .findAllByType(KolamPressable)
+      .filter(node => node.props.accessibilityLabel === 'Mute team chat participant');
+    const unmuteButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Unmute team chat participant');
 
     await ReactTestRenderer.act(async () => {
       await joinButton!.props.onPress();
       await endButton!.props.onPress();
+      await handButton!.props.onPress();
+      await redialButton!.props.onPress();
+      await handoverButton!.props.onPress();
+      await muteButtons[0]!.props.onPress();
+      await unmuteButton!.props.onPress();
     });
 
     expect(joinCall).toHaveBeenCalledTimes(1);
     expect(endCall).toHaveBeenCalledTimes(1);
+    expect(toggleCallHand).toHaveBeenCalledTimes(1);
+    expect(redialCall).toHaveBeenCalledTimes(1);
+    expect(handoverCall).toHaveBeenCalledTimes(1);
+    expect(muteCallParticipant).toHaveBeenCalledWith('staff-2');
+    expect(unmuteCallParticipant).toHaveBeenCalledWith('staff-3');
 
     await ReactTestRenderer.act(async () => {
       liveOptions!.onEvent({

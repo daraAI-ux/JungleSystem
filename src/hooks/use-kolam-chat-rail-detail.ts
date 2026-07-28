@@ -7,10 +7,15 @@ import {
   getKolamRoomActiveTeamChatCall,
   getKolamTeamChatMessages,
   getKolamTeamChatCallConfig,
+  handoverKolamTeamChatCall,
   joinKolamTeamChatCall,
+  lowerKolamTeamChatCallHand,
   markKolamChatConversationRead,
   markKolamTeamChatRoomRead,
+  muteKolamTeamChatCallParticipant,
   postKolamTeamChatPresence,
+  raiseKolamTeamChatCallHand,
+  redialKolamTeamChatCall,
   sendKolamChatTextMessage,
   sendKolamTeamChatMessage,
   sendKolamTeamChatTextMessage,
@@ -19,10 +24,12 @@ import {
   type KolamChatMessage,
   type KolamTeamChatCall,
   type KolamTeamChatCallConfig,
+  type KolamTeamChatCallParticipant,
   type KolamTeamChatReaction,
   type KolamTeamChatAttachment,
   type KolamTeamChatMessage,
   type KolamTeamChatPresence,
+  unmuteKolamTeamChatCallParticipant,
   uploadKolamTeamChatMedia,
 } from '../services/kolam-api';
 import type {NativeImagePickerResult} from '../services/native-file-picker';
@@ -58,11 +65,14 @@ export interface KolamChatRailDetailState {
   declineCall: () => Promise<void>;
   endCall: () => Promise<void>;
   errorMessage?: string;
+  handoverCall: () => Promise<void>;
   joinCall: () => Promise<void>;
   loading: boolean;
   messages: KolamChatRailDetailMessage[];
+  muteCallParticipant: (userId: string) => Promise<void>;
   presence: KolamTeamChatPresence;
   reactToMessage: (messageId: string, emoji: string) => Promise<void>;
+  redialCall: () => Promise<void>;
   refreshCall: () => Promise<void>;
   sendAttachment: (file: NativeImagePickerResult, text?: string) => Promise<void>;
   refresh: () => Promise<void>;
@@ -70,6 +80,8 @@ export interface KolamChatRailDetailState {
   signalTyping: (typing: boolean) => void;
   sending: boolean;
   startCall: () => Promise<void>;
+  toggleCallHand: () => Promise<void>;
+  unmuteCallParticipant: (userId: string) => Promise<void>;
   updatePresenceFromLive: (presence: KolamTeamChatPresence) => void;
 }
 
@@ -397,6 +409,63 @@ export function useKolamChatRailDetail({
     await runCallAction(() => endKolamTeamChatCall(activeCall._id));
   }, [activeCall, runCallAction]);
 
+  const redialCall = useCallback(async () => {
+    if (!activeCall) {
+      return;
+    }
+
+    await runCallAction(() => redialKolamTeamChatCall(activeCall._id));
+  }, [activeCall, runCallAction]);
+
+  const toggleCallHand = useCallback(async () => {
+    if (!activeCall) {
+      return;
+    }
+
+    const myParticipant = activeCall.participants?.find(
+      participant => getCallParticipantUserId(participant) === currentUserId,
+    );
+    await runCallAction(() =>
+      myParticipant?.handRaised
+        ? lowerKolamTeamChatCallHand(activeCall._id)
+        : raiseKolamTeamChatCallHand(activeCall._id),
+    );
+  }, [activeCall, currentUserId, runCallAction]);
+
+  const handoverCall = useCallback(async () => {
+    if (!activeCall) {
+      return;
+    }
+
+    await runCallAction(() => handoverKolamTeamChatCall(activeCall._id, 'android'));
+  }, [activeCall, runCallAction]);
+
+  const muteCallParticipant = useCallback(
+    async (userId: string) => {
+      if (!activeCall) {
+        return;
+      }
+
+      await runCallAction(() =>
+        muteKolamTeamChatCallParticipant(activeCall._id, userId),
+      );
+    },
+    [activeCall, runCallAction],
+  );
+
+  const unmuteCallParticipant = useCallback(
+    async (userId: string) => {
+      if (!activeCall) {
+        return;
+      }
+
+      await runCallAction(() =>
+        unmuteKolamTeamChatCallParticipant(activeCall._id, userId),
+      );
+    },
+    [activeCall, runCallAction],
+  );
+
   return {
     activeCall,
     callBusy,
@@ -405,11 +474,14 @@ export function useKolamChatRailDetail({
     declineCall,
     endCall,
     errorMessage,
+    handoverCall,
     joinCall,
     loading,
     messages,
+    muteCallParticipant,
     presence,
     reactToMessage,
+    redialCall,
     refreshCall,
     refresh,
     sendAttachment,
@@ -417,8 +489,14 @@ export function useKolamChatRailDetail({
     signalTyping,
     sending,
     startCall,
+    toggleCallHand,
+    unmuteCallParticipant,
     updatePresenceFromLive,
   };
+}
+
+function getCallParticipantUserId(participant: KolamTeamChatCallParticipant) {
+  return typeof participant.user === 'string' ? participant.user : participant.user?._id;
 }
 
 function mapInboxMessage(message: KolamChatMessage): KolamChatRailDetailMessage {

@@ -14,6 +14,7 @@ import {useKolamNotificationSoundSettings} from '../hooks/use-kolam-notification
 import {getKolamFileUrl} from '../lib/file-url';
 import type {
   KolamTeamChatAttachment,
+  KolamTeamChatCallParticipant,
   KolamTeamChatPresence,
 } from '../services/kolam-api';
 import {createKolamNotificationSoundService} from '../services/kolam-notification-sound-service';
@@ -208,6 +209,7 @@ export function KolamGlobalChatRail({
         {selectedItem ? (
           <KolamChatRailDetailPanel
             composerText={composerText}
+            currentUserId={authUser?.id}
             detail={detail}
             mode={mode}
             onComposerTextChange={handleComposerTextChange}
@@ -308,6 +310,7 @@ function KolamChatRailLiveHost({
 
 function KolamChatRailDetailPanel({
   composerText,
+  currentUserId,
   detail,
   mode,
   onComposerTextChange,
@@ -318,6 +321,7 @@ function KolamChatRailDetailPanel({
   selectedItem,
 }: {
   composerText: string;
+  currentUserId?: string;
   detail: ReturnType<typeof useKolamChatRailDetail>;
   mode: KolamGlobalChatRailMode;
   onComposerTextChange: (value: string) => void;
@@ -347,7 +351,7 @@ function KolamChatRailDetailPanel({
           </Text>
         ) : null}
         {mode === 'team-chat' ? (
-          <KolamChatCallStrip detail={detail} />
+          <KolamChatCallStrip currentUserId={currentUserId} detail={detail} />
         ) : null}
       </View>
 
@@ -466,8 +470,10 @@ function KolamChatRailDetailPanel({
 }
 
 function KolamChatCallStrip({
+  currentUserId,
   detail,
 }: {
+  currentUserId?: string;
   detail: ReturnType<typeof useKolamChatRailDetail>;
 }) {
   if (!detail.callConfig.enabled) {
@@ -483,60 +489,157 @@ function KolamChatCallStrip({
   const secondaryLabel = activeCall
     ? `${activeCall.participantCount ?? activeCall.participants?.length ?? 0} peserta`
     : 'Siap mulai call grup';
+  const myParticipant = activeCall?.participants?.find(
+    participant => getCallParticipantUserId(participant) === currentUserId,
+  );
+  const handRaised = myParticipant?.handRaised === true;
+  const noAnswerCount =
+    activeCall?.participants?.filter(participant =>
+      ['declined', 'no_answer'].includes(participant.status),
+    ).length ?? 0;
+  const participantControls =
+    activeCall?.participants
+      ?.map(participant => ({
+        participant,
+        userId: getCallParticipantUserId(participant),
+      }))
+      .filter(item => item.userId && item.userId !== currentUserId)
+      .slice(0, 3) ?? [];
 
   return (
     <View style={styles.callStrip}>
-      <View style={styles.callCopy}>
-        <Text style={styles.callTitle}>{primaryLabel}</Text>
-        <Text numberOfLines={1} style={styles.callMeta}>
-          {detail.callErrorMessage || secondaryLabel}
-        </Text>
-      </View>
-      <View style={styles.callActions}>
-        {activeCall ? (
-          <>
-            <KolamPressable
-              accessibilityLabel="Join team chat call"
-              disabled={detail.callBusy}
-              onPress={detail.joinCall}
-              style={[styles.callButton, detail.callBusy && styles.callButtonDisabled]}>
-              <Text style={styles.callButtonText}>Join</Text>
-            </KolamPressable>
-            {activeCall.status === 'ringing' ? (
+      <View style={styles.callTopLine}>
+        <View style={styles.callCopy}>
+          <Text style={styles.callTitle}>{primaryLabel}</Text>
+          <Text numberOfLines={1} style={styles.callMeta}>
+            {detail.callErrorMessage || secondaryLabel}
+          </Text>
+        </View>
+        <View style={styles.callActions}>
+          {activeCall ? (
+            <>
               <KolamPressable
-                accessibilityLabel="Decline team chat call"
+                accessibilityLabel="Join team chat call"
                 disabled={detail.callBusy}
-                onPress={detail.declineCall}
+                onPress={detail.joinCall}
+                style={[styles.callButton, detail.callBusy && styles.callButtonDisabled]}>
+                <Text style={styles.callButtonText}>Join</Text>
+              </KolamPressable>
+              {activeCall.status === 'ringing' ? (
+                <KolamPressable
+                  accessibilityLabel="Decline team chat call"
+                  disabled={detail.callBusy}
+                  onPress={detail.declineCall}
+                  style={[
+                    styles.callButton,
+                    styles.callButtonGhost,
+                    detail.callBusy && styles.callButtonDisabled,
+                  ]}>
+                  <Text style={styles.callButtonGhostText}>Tolak</Text>
+                </KolamPressable>
+              ) : null}
+              <KolamPressable
+                accessibilityLabel="End team chat call"
+                disabled={detail.callBusy}
+                onPress={detail.endCall}
                 style={[
                   styles.callButton,
-                  styles.callButtonGhost,
+                  styles.callButtonDanger,
                   detail.callBusy && styles.callButtonDisabled,
                 ]}>
-                <Text style={styles.callButtonGhostText}>Tolak</Text>
+                <Text style={styles.callButtonText}>End</Text>
               </KolamPressable>
-            ) : null}
+            </>
+          ) : (
             <KolamPressable
-              accessibilityLabel="End team chat call"
+              accessibilityLabel="Start team chat call"
               disabled={detail.callBusy}
-              onPress={detail.endCall}
+              onPress={detail.startCall}
+              style={[styles.callButton, detail.callBusy && styles.callButtonDisabled]}>
+              <Text style={styles.callButtonText}>Call</Text>
+            </KolamPressable>
+          )}
+        </View>
+      </View>
+      {activeCall ? (
+        <View style={styles.callAdvancedActions}>
+          {myParticipant?.status === 'joined' ? (
+            <KolamPressable
+              accessibilityLabel="Toggle team chat call hand"
+              disabled={detail.callBusy}
+              onPress={detail.toggleCallHand}
               style={[
                 styles.callButton,
-                styles.callButtonDanger,
+                styles.callButtonGhost,
                 detail.callBusy && styles.callButtonDisabled,
               ]}>
-              <Text style={styles.callButtonText}>End</Text>
+              <Text style={styles.callButtonGhostText}>
+                {handRaised ? 'Turunkan' : 'Raise'}
+              </Text>
             </KolamPressable>
-          </>
-        ) : (
+          ) : null}
+          {noAnswerCount > 0 ? (
+            <KolamPressable
+              accessibilityLabel="Redial team chat call"
+              disabled={detail.callBusy}
+              onPress={detail.redialCall}
+              style={[
+                styles.callButton,
+                styles.callButtonGhost,
+                detail.callBusy && styles.callButtonDisabled,
+              ]}>
+              <Text style={styles.callButtonGhostText}>
+                Ulang {noAnswerCount}
+              </Text>
+            </KolamPressable>
+          ) : null}
           <KolamPressable
-            accessibilityLabel="Start team chat call"
+            accessibilityLabel="Handover team chat call"
             disabled={detail.callBusy}
-            onPress={detail.startCall}
-            style={[styles.callButton, detail.callBusy && styles.callButtonDisabled]}>
-            <Text style={styles.callButtonText}>Call</Text>
+            onPress={detail.handoverCall}
+            style={[
+              styles.callButton,
+              styles.callButtonGhost,
+              detail.callBusy && styles.callButtonDisabled,
+            ]}>
+            <Text style={styles.callButtonGhostText}>Handover</Text>
           </KolamPressable>
-        )}
-      </View>
+        </View>
+      ) : null}
+      {participantControls.length > 0 ? (
+        <View style={styles.callParticipantList}>
+          <KolamMappedList
+            items={participantControls}
+            getKey={item => item.userId ?? 'participant'}
+            renderItem={({participant, userId}) => (
+              <View style={styles.callParticipantRow}>
+                <Text numberOfLines={1} style={styles.callParticipantText}>
+                  {getCallParticipantLabel(participant)}
+                </Text>
+                <KolamPressable
+                  accessibilityLabel={`${participant.muted ? 'Unmute' : 'Mute'} team chat participant`}
+                  disabled={detail.callBusy || !userId}
+                  onPress={() =>
+                    userId
+                      ? participant.muted
+                        ? detail.unmuteCallParticipant(userId)
+                        : detail.muteCallParticipant(userId)
+                      : undefined
+                  }
+                  style={[
+                    styles.callButton,
+                    styles.callButtonGhost,
+                    detail.callBusy && styles.callButtonDisabled,
+                  ]}>
+                  <Text style={styles.callButtonGhostText}>
+                    {participant.muted ? 'Unmute' : 'Mute'}
+                  </Text>
+                </KolamPressable>
+              </View>
+            )}
+          />
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -878,6 +981,21 @@ function getCallStatusLabel(status: string) {
   }
 }
 
+function getCallParticipantUserId(participant: KolamTeamChatCallParticipant) {
+  return typeof participant.user === 'string' ? participant.user : participant.user?._id;
+}
+
+function getCallParticipantLabel(participant: KolamTeamChatCallParticipant) {
+  const user = typeof participant.user === 'object' ? participant.user : null;
+  const name = user
+    ? [user.first_name, user.last_name].filter(Boolean).join(' ').trim() ||
+      user.username ||
+      user.email
+    : '';
+
+  return name || getCallParticipantUserId(participant) || 'Participant';
+}
+
 function getAttachmentFileName(attachment: KolamTeamChatAttachment) {
   if (attachment.fileName?.trim()) {
     return attachment.fileName.trim();
@@ -1048,6 +1166,9 @@ const styles = StyleSheet.create({
     borderColor: V.colors.border,
     borderWidth: 1,
     backgroundColor: V.colors.bg,
+    gap: 6,
+  },
+  callTopLine: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
@@ -1073,6 +1194,31 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+  },
+  callAdvancedActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
+  },
+  callParticipantList: {
+    gap: 4,
+  },
+  callParticipantRow: {
+    minHeight: 30,
+    paddingLeft: 8,
+    borderLeftColor: V.colors.border,
+    borderLeftWidth: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  callParticipantText: {
+    minWidth: 0,
+    flex: 1,
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '800',
   },
   callButton: {
     minHeight: 28,
