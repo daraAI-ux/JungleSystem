@@ -26,6 +26,7 @@ export function KolamUnifiedDashboardCountSection({
     <KolamCardFrame variant="dashboardInventoryCounts" style={styles.section}>
       <KolamHeaderFrame variant="dashboardCountSection">
         <KolamCopyStack
+          containerStyle={styles.headerCopy}
           items={[
             {id: 'title', text: descriptor.title, style: styles.title},
             {
@@ -55,6 +56,10 @@ export function KolamUnifiedDashboardCountSection({
 const styles = StyleSheet.create({
   section: {
     marginBottom: DASHBOARD_LAYOUT_VISUAL.main.gapY,
+  },
+  headerCopy: {
+    flex: 1,
+    minWidth: 0,
   },
   title: {
     color: V.colors.fg,
