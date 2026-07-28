@@ -27,6 +27,8 @@ import {
   getSettingsTabItemById,
   getSettingsTabItems,
   getVisibleSettingsTabItems,
+  hasSettingsFinancialSectionPermission,
+  hasSettingsPermission,
   isSettingsTabId,
   getSettingsWebConfigFields,
   getSettingsWebFormSections,
@@ -126,10 +128,27 @@ import {
   type KolamWebSettingVersions,
   type KolamYoutubeSection,
 } from '../services/kolam-api';
+import {
+  createKolamPaymentMethod,
+  deleteKolamPaymentMethod,
+  deleteKolamPaymentMethodPhoto,
+  getKolamFinancialWallets,
+  getKolamPaymentMethods,
+  getKolamTaxCompanyProfile,
+  getKolamTaxPartyGaps,
+  updateKolamPaymentMethod,
+  updateKolamTaxCompanyProfile,
+  uploadKolamPaymentMethodPhoto,
+  type KolamFinancialPermissionKey,
+  type KolamFinancialWallet,
+  type KolamPaymentMethod,
+  type KolamPaymentMethodListParams,
+  type KolamPaymentMethodSaveBody,
+  type KolamTaxCompanyProfile,
+  type KolamTaxPartyGapsSummary,
+} from '../services/kolam-financial-settings-api';
 import { getCurrentUser } from '../services/auth-api';
 import { ApiError } from '../lib/api-error';
-import { getPaymentMethods } from '../services/pos-api';
-import type { PaymentMethod } from '../domain/pos';
 import {
   pickNativeAudioFile,
   pickNativeImageFile,
@@ -147,6 +166,7 @@ type MarketplaceLandingAssetStatus =
   | 'uploading'
   | 'deleting'
   | 'reordering';
+type FinancialDataStatus = 'idle' | 'loading' | 'live' | 'saving' | 'error';
 type WebContentPanelId = 'marketplace' | 'blog' | 'blog-topics';
 type MarketplaceLandingTabId =
   | 'hero'
@@ -161,6 +181,34 @@ export interface SettingsFinancialSummaryRow {
   label: string;
   value: string;
   detail: string;
+}
+export interface SettingsFinancialSectionVisibility {
+  paymentMethods: boolean;
+  taxProfile: boolean;
+  overtime: boolean;
+  enclosureCommission: boolean;
+  taxEdit: boolean;
+  any: boolean;
+}
+export interface SettingsPaymentMethodFilters {
+  search: string;
+  isAvailableOnWebstore: '' | 'true' | 'false';
+  page: number;
+  limit: number;
+}
+export interface SettingsPaymentMethodDraft {
+  id: string;
+  name: string;
+  type: KolamPaymentMethod['type'];
+  provider: string;
+  wallet: string;
+  accountNumber: string;
+  accountName: string;
+  notes: string;
+  isActive: boolean;
+  isAvailableOnWebstore: boolean;
+  requireSaleProof: boolean;
+  costsText: string;
 }
 export interface RegionSyncSummaryRow {
   id: string;
@@ -372,6 +420,18 @@ interface WebSettingDraft {
   handoffNotificationSound: string;
   groupCallRingtone: string;
   salesNotificationSound: string;
+  salePricesIncludeTax: boolean;
+  commissionPph21Enabled: boolean;
+  overtimeCalculationMode: 'per_hour' | 'per_day';
+  overtimeUseSalaryDerivedRate: boolean;
+  overtimeRatePerHour: string;
+  overtimeRatePerDay: string;
+  overtimeDefaultHoursPerRequest: string;
+  overtimeMidnightCutoff: string;
+  overtimeUseStoreCloseForPerDay: boolean;
+  enclosureSaleCommissionEnabled: boolean;
+  enclosureSaleCommissionType: 'percentage' | 'fixed';
+  enclosureSaleCommissionValue: string;
   pluginControls: Record<KolamPluginConfigKey, boolean>;
 }
 
@@ -595,6 +655,18 @@ const emptyWebSettingDraft: WebSettingDraft = {
   handoffNotificationSound: '',
   groupCallRingtone: '',
   salesNotificationSound: '',
+  salePricesIncludeTax: true,
+  commissionPph21Enabled: true,
+  overtimeCalculationMode: 'per_hour',
+  overtimeUseSalaryDerivedRate: true,
+  overtimeRatePerHour: '0',
+  overtimeRatePerDay: '0',
+  overtimeDefaultHoursPerRequest: '3',
+  overtimeMidnightCutoff: '23:59',
+  overtimeUseStoreCloseForPerDay: true,
+  enclosureSaleCommissionEnabled: false,
+  enclosureSaleCommissionType: 'percentage',
+  enclosureSaleCommissionValue: '0',
   pluginControls: {
     enclosure: true,
     taskManager: true,
@@ -611,6 +683,21 @@ const emptyRoleDraft: RoleDraft = {
   name: '',
   key: '',
   description: '',
+};
+
+const emptyPaymentMethodDraft: SettingsPaymentMethodDraft = {
+  id: '',
+  name: '',
+  type: 'transfer',
+  provider: '',
+  wallet: '',
+  accountNumber: '',
+  accountName: '',
+  notes: '',
+  isActive: true,
+  isAvailableOnWebstore: true,
+  requireSaleProof: false,
+  costsText: '',
 };
 
 const emptyMarketplaceLandingCtaDraft: MarketplaceLandingCtaDraft = {
@@ -850,7 +937,32 @@ export function useKolamSettingsPanelController(
   >([]);
   const [staffAttendanceSettings, setStaffAttendanceSettings] =
     useState<KolamStaffAttendanceSettings | null>(null);
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [paymentMethods, setPaymentMethods] = useState<KolamPaymentMethod[]>(
+    [],
+  );
+  const [paymentMethodFilters, setPaymentMethodFilters] =
+    useState<SettingsPaymentMethodFilters>({
+      search: '',
+      isAvailableOnWebstore: '',
+      page: 1,
+      limit: 10,
+    });
+  const [paymentMethodTotalPages, setPaymentMethodTotalPages] = useState(1);
+  const [paymentMethodTotal, setPaymentMethodTotal] = useState(0);
+  const [paymentMethodDraft, setPaymentMethodDraft] =
+    useState<SettingsPaymentMethodDraft>(emptyPaymentMethodDraft);
+  const [financialWallets, setFinancialWallets] = useState<
+    KolamFinancialWallet[]
+  >([]);
+  const [financialStatus, setFinancialStatus] =
+    useState<FinancialDataStatus>('idle');
+  const [financialMessage, setFinancialMessage] = useState('');
+  const [taxCompanyProfile, setTaxCompanyProfile] =
+    useState<KolamTaxCompanyProfile | null>(null);
+  const [taxCompanyProfileDraft, setTaxCompanyProfileDraft] =
+    useState<KolamTaxCompanyProfile>({});
+  const [taxPartyGaps, setTaxPartyGaps] =
+    useState<KolamTaxPartyGapsSummary | null>(null);
   const fallbackRoleRows = getSettingsRoleAccessRows();
   const [roles, setRoles] = useState<KolamRole[]>([]);
   const [roleStatus, setRoleStatus] = useState<RoleSaveStatus>('idle');
@@ -1122,23 +1234,64 @@ export function useKolamSettingsPanelController(
     }
 
     let mounted = true;
+    setFinancialStatus('loading');
+    setFinancialMessage('');
 
-    getPaymentMethods()
-      .then(methods => {
-        if (mounted) {
-          setPaymentMethods(methods);
+    Promise.allSettled([
+      getKolamPaymentMethods(createPaymentMethodListParams(paymentMethodFilters)),
+      getKolamFinancialWallets(),
+      getKolamTaxCompanyProfile(),
+      getKolamTaxPartyGaps(),
+    ])
+      .then(([methodsResult, walletsResult, profileResult, gapsResult]) => {
+        if (!mounted) {
+          return;
         }
-      })
-      .catch(() => {
-        if (mounted) {
+
+        if (methodsResult.status === 'fulfilled') {
+          setPaymentMethods(methodsResult.value.rows);
+          setPaymentMethodTotal(methodsResult.value.pagination.total);
+          setPaymentMethodTotalPages(methodsResult.value.pagination.totalPages);
+        } else {
           setPaymentMethods([]);
+          setPaymentMethodTotal(0);
+          setPaymentMethodTotalPages(1);
         }
+
+        if (walletsResult.status === 'fulfilled') {
+          setFinancialWallets(walletsResult.value);
+        }
+
+        if (profileResult.status === 'fulfilled') {
+          setTaxCompanyProfile(profileResult.value);
+          setTaxCompanyProfileDraft(profileResult.value);
+        }
+
+        if (gapsResult.status === 'fulfilled') {
+          setTaxPartyGaps(gapsResult.value);
+        }
+
+        setFinancialStatus('live');
+        setFinancialMessage(
+          methodsResult.status === 'rejected' &&
+            profileResult.status === 'rejected'
+            ? 'Gagal memuat data Finansial live.'
+            : '',
+        );
+      })
+      .catch(error => {
+        if (!mounted) {
+          return;
+        }
+
+        setFinancialStatus('error');
+        setFinancialMessage(getFinancialErrorMessage(error));
       });
 
     return () => {
       mounted = false;
     };
-  }, [activeSettingsTabId]);
+  }, [activeSettingsTabId, paymentMethodFilters]);
 
   useEffect(() => {
     if (activeSettingsTabId !== 'konten') {
@@ -1375,6 +1528,8 @@ export function useKolamSettingsPanelController(
     webSetting,
     paymentMethods,
   );
+  const financialSectionVisibility =
+    createFinancialSectionVisibility(settingsVisibilityContext);
   const regionSyncSummaryRows = createRegionSyncSummaryRows(
     regionStats,
     regionRows,
@@ -2923,6 +3078,210 @@ export function useKolamSettingsPanelController(
     'delete-role': deleteRole,
   };
 
+  const setPaymentMethodFilter = (
+    key: keyof SettingsPaymentMethodFilters,
+    value: string | number,
+  ) => {
+    setPaymentMethodFilters(current => ({
+      ...current,
+      [key]: value,
+      page: key === 'page' ? Number(value) : 1,
+    }));
+  };
+
+  const setPaymentMethodDraftField = <
+    Key extends keyof SettingsPaymentMethodDraft,
+  >(
+    key: Key,
+    value: SettingsPaymentMethodDraft[Key],
+  ) => {
+    setPaymentMethodDraft(current => ({ ...current, [key]: value }));
+  };
+
+  const editPaymentMethod = (method: KolamPaymentMethod) => {
+    setPaymentMethodDraft(createPaymentMethodDraft(method));
+  };
+
+  const clearPaymentMethodDraft = () => {
+    setPaymentMethodDraft(emptyPaymentMethodDraft);
+  };
+
+  const refreshPaymentMethods = async () => {
+    const result = await getKolamPaymentMethods(
+      createPaymentMethodListParams(paymentMethodFilters),
+    );
+    setPaymentMethods(result.rows);
+    setPaymentMethodTotal(result.pagination.total);
+    setPaymentMethodTotalPages(result.pagination.totalPages);
+  };
+
+  const savePaymentMethod = async () => {
+    setFinancialStatus('saving');
+    setFinancialMessage('');
+
+    try {
+      const body = createPaymentMethodSaveBody(paymentMethodDraft);
+      if (paymentMethodDraft.id) {
+        await updateKolamPaymentMethod(paymentMethodDraft.id, body);
+        setFinancialMessage('Metode pembayaran berhasil diperbarui.');
+      } else {
+        await createKolamPaymentMethod(body);
+        setFinancialMessage('Metode pembayaran berhasil dibuat.');
+      }
+      clearPaymentMethodDraft();
+      await refreshPaymentMethods();
+      setFinancialStatus('live');
+    } catch (error) {
+      setFinancialStatus('error');
+      setFinancialMessage(getFinancialErrorMessage(error));
+    }
+  };
+
+  const deletePaymentMethod = async (id: string) => {
+    setFinancialStatus('saving');
+    setFinancialMessage('');
+
+    try {
+      await deleteKolamPaymentMethod(id);
+      await refreshPaymentMethods();
+      setFinancialStatus('live');
+      setFinancialMessage('Metode pembayaran berhasil dihapus.');
+    } catch (error) {
+      setFinancialStatus('error');
+      setFinancialMessage(getFinancialErrorMessage(error));
+    }
+  };
+
+  const uploadPaymentMethodPhoto = async (id: string) => {
+    try {
+      const picked = await pickNativeImageFile();
+      const localUri = picked.uri ?? picked.path ?? '';
+      if (picked.cancelled || !localUri) {
+        return;
+      }
+
+      setFinancialStatus('saving');
+      await uploadKolamPaymentMethodPhoto(id, localUri);
+      await refreshPaymentMethods();
+      setFinancialStatus('live');
+      setFinancialMessage('Foto metode pembayaran berhasil diunggah.');
+    } catch (error) {
+      setFinancialStatus('error');
+      setFinancialMessage(getFinancialErrorMessage(error));
+    }
+  };
+
+  const deletePaymentMethodPhoto = async (id: string) => {
+    setFinancialStatus('saving');
+    setFinancialMessage('');
+
+    try {
+      await deleteKolamPaymentMethodPhoto(id);
+      await refreshPaymentMethods();
+      setFinancialStatus('live');
+      setFinancialMessage('Foto metode pembayaran berhasil dihapus.');
+    } catch (error) {
+      setFinancialStatus('error');
+      setFinancialMessage(getFinancialErrorMessage(error));
+    }
+  };
+
+  const setTaxCompanyProfileDraftField = <
+    Key extends keyof KolamTaxCompanyProfile,
+  >(
+    key: Key,
+    value: KolamTaxCompanyProfile[Key],
+  ) => {
+    setTaxCompanyProfileDraft(current => ({ ...current, [key]: value }));
+  };
+
+  const saveTaxCompanyProfile = async () => {
+    if (!taxCompanyProfileDraft.companyName?.trim()) {
+      setFinancialStatus('error');
+      setFinancialMessage('Nama perusahaan wajib diisi.');
+      return;
+    }
+
+    setFinancialStatus('saving');
+    setFinancialMessage('');
+
+    try {
+      const updated = await updateKolamTaxCompanyProfile(
+        createTaxCompanyProfileSaveBody(taxCompanyProfileDraft),
+      );
+      const gaps = await getKolamTaxPartyGaps().catch(() => taxPartyGaps);
+      setTaxCompanyProfile(updated);
+      setTaxCompanyProfileDraft(updated);
+      setTaxPartyGaps(gaps);
+      setFinancialStatus('live');
+      setFinancialMessage('Profil pajak berhasil disimpan.');
+    } catch (error) {
+      setFinancialStatus('error');
+      setFinancialMessage(getFinancialErrorMessage(error));
+    }
+  };
+
+  const saveFinancialWebSettingPatch = async (
+    patch: Partial<KolamWebSetting>,
+    message: string,
+  ) => {
+    const previous = webSetting;
+    setFinancialStatus('saving');
+    setFinancialMessage('');
+
+    try {
+      const updated = await updateKolamWebSetting(patch);
+      const merged = { ...(previous ?? {}), ...updated, ...patch };
+      setWebSetting(merged);
+      setWebSettingDraft(current => ({
+        ...current,
+        ...createFinancialDraftFields(merged),
+      }));
+      setFinancialStatus('live');
+      setFinancialMessage(message);
+    } catch (error) {
+      if (previous) {
+        setWebSetting(previous);
+        setWebSettingDraft(current => ({
+          ...current,
+          ...createFinancialDraftFields(previous),
+        }));
+      }
+      setFinancialStatus('error');
+      setFinancialMessage(getFinancialErrorMessage(error));
+    }
+  };
+
+  const saveFinancialTaxToggle = (
+    key: 'salePricesIncludeTax' | 'commissionPph21Enabled',
+    value: boolean,
+  ) => {
+    setWebSettingDraft(current => ({ ...current, [key]: value }));
+    void saveFinancialWebSettingPatch(
+      { [key]: value },
+      key === 'salePricesIncludeTax'
+        ? 'Toggle harga include PPN berhasil disimpan.'
+        : 'Toggle PPh 21 komisi berhasil disimpan.',
+    );
+  };
+
+  const saveOvertimeSettings = () => {
+    void saveFinancialWebSettingPatch(
+      { overtimeSettings: createOvertimeSettingsUpdateBody(webSettingDraft) },
+      'Pengaturan lembur berhasil disimpan.',
+    );
+  };
+
+  const saveEnclosureSaleCommission = () => {
+    void saveFinancialWebSettingPatch(
+      {
+        enclosureSaleCommission:
+          createEnclosureSaleCommissionUpdateBody(webSettingDraft),
+      },
+      'Komisi penjualan kandang berhasil disimpan.',
+    );
+  };
+
   return {
     activeSettingsTab: getSettingsTabItemById(activeSettingsTabId),
     activeSettingsTabId,
@@ -2938,6 +3297,10 @@ export function useKolamSettingsPanelController(
     detailRows,
     liveEndpoints,
     financialSummaryRows,
+    financialMessage,
+    financialSectionVisibility,
+    financialStatus,
+    financialWallets,
     kpiMessage,
     kpiPreview,
     kpiSettingsDraft,
@@ -2962,6 +3325,11 @@ export function useKolamSettingsPanelController(
     regionSyncMessage,
     regionSyncStatus,
     regionSyncSummaryRows,
+    paymentMethodDraft,
+    paymentMethodFilters,
+    paymentMethodTotal,
+    paymentMethodTotalPages,
+    paymentMethods,
     roleRows,
     roles,
     roleDraft,
@@ -2980,10 +3348,13 @@ export function useKolamSettingsPanelController(
     setKpiEnabledRule,
     setKpiSettingsDraftField,
     setMarketplaceLandingTabId,
+    setPaymentMethodDraftField,
+    setPaymentMethodFilter,
     setRegionFilter,
     setRoleDraftField,
     setSelectedActivityLogId,
     setSelectedRoleId,
+    setTaxCompanyProfileDraftField,
     setStorefrontEnabled,
     setWebContentPanelId,
     setWebTitle,
@@ -3033,6 +3404,15 @@ export function useKolamSettingsPanelController(
     saveMarketplaceLandingCta,
     saveMarketplaceLandingYoutube,
     saveMarketplaceLandingNotice,
+    clearPaymentMethodDraft,
+    deletePaymentMethod,
+    deletePaymentMethodPhoto,
+    editPaymentMethod,
+    saveEnclosureSaleCommission,
+    saveFinancialTaxToggle,
+    saveOvertimeSettings,
+    savePaymentMethod,
+    saveTaxCompanyProfile,
     saveKpiSettings,
     saveOperationalGoogleAuth,
     saveOperationalLivechat,
@@ -3048,6 +3428,10 @@ export function useKolamSettingsPanelController(
     uploadMarketplaceHeroImage,
     uploadMarketplaceLogo,
     uploadMarketplaceYoutubeBackground,
+    uploadPaymentMethodPhoto,
+    taxCompanyProfile,
+    taxCompanyProfileDraft,
+    taxPartyGaps,
     webSettingDraft,
     webSettingMessage,
     webSettingSaveStatus,
@@ -3289,6 +3673,7 @@ function createWebSettingDraft(
     handoffNotificationSound: setting.handoffNotificationSound ?? '',
     groupCallRingtone: setting.groupCallRingtone ?? '',
     salesNotificationSound: setting.salesNotificationSound ?? '',
+    ...createFinancialDraftFields(setting),
     pluginControls: {
       enclosure: setting.kolamPlugins?.enclosure?.enabled !== false,
       taskManager: setting.kolamPlugins?.taskManager?.enabled !== false,
@@ -3516,12 +3901,12 @@ function createStaffAttendanceUpdateBody(
 
 function createFinancialSummaryRows(
   setting: KolamWebSetting | null,
-  methods: PaymentMethod[],
+  methods: KolamPaymentMethod[],
 ): SettingsFinancialSummaryRow[] {
   const overtime = setting?.overtimeSettings ?? {};
   const commission = setting?.enclosureSaleCommission ?? {};
-  const activeMethods = methods.filter(method => method.active);
-  const inactiveMethods = methods.filter(method => !method.active);
+  const activeMethods = methods.filter(method => method.isActive);
+  const inactiveMethods = methods.filter(method => !method.isActive);
 
   return [
     {
@@ -3533,7 +3918,7 @@ function createFinancialSummaryRows(
       detail: methods.length
         ? methods
             .slice(0, 5)
-            .map(method => `${method.name} - ${method.wallet}`)
+            .map(method => `${method.name} - ${method.wallet?.name ?? '-'}`)
             .join(' | ')
         : 'Read-only dari endpoint payment method native.',
     },
@@ -3589,6 +3974,202 @@ function createFinancialSummaryRows(
       )}`,
     },
   ];
+}
+
+function createFinancialSectionVisibility(
+  context: SettingsTabVisibilityContext | null | undefined,
+): SettingsFinancialSectionVisibility {
+  if (context === undefined) {
+    return {
+      paymentMethods: true,
+      taxProfile: true,
+      overtime: true,
+      enclosureCommission: true,
+      taxEdit: false,
+      any: true,
+    };
+  }
+
+  const paymentMethods = hasSettingsFinancialSectionPermission(
+    context,
+    'payment-methods',
+  );
+  const taxProfile = hasSettingsFinancialSectionPermission(
+    context,
+    'tax-profile',
+  );
+  const overtime = hasSettingsFinancialSectionPermission(context, 'overtime');
+  const enclosureCommission = hasSettingsFinancialSectionPermission(
+    context,
+    'enclosure-commission',
+  );
+
+  return {
+    paymentMethods,
+    taxProfile,
+    overtime,
+    enclosureCommission,
+    taxEdit:
+      hasSettingsPermission(context, 'tax', 'draft') ||
+      hasSettingsPermission(context, 'tax', 'approve') ||
+      hasSettingsPermission(context, 'tax', '*') ||
+      hasSettingsPermission(context, '*', '*'),
+    any: paymentMethods || taxProfile || overtime || enclosureCommission,
+  };
+}
+
+function createPaymentMethodListParams(
+  filters: SettingsPaymentMethodFilters,
+): KolamPaymentMethodListParams {
+  return {
+    page: filters.page,
+    limit: filters.limit,
+    search: filters.search,
+    isAvailableOnWebstore:
+      filters.isAvailableOnWebstore === ''
+        ? ''
+        : filters.isAvailableOnWebstore === 'true',
+  };
+}
+
+function createPaymentMethodDraft(
+  method: KolamPaymentMethod,
+): SettingsPaymentMethodDraft {
+  return {
+    id: method.id,
+    name: method.name,
+    type: method.type,
+    provider: method.provider,
+    wallet: method.wallet?.id ?? '',
+    accountNumber: method.accountNumber,
+    accountName: method.accountName,
+    notes: method.notes,
+    isActive: method.isActive,
+    isAvailableOnWebstore: method.isAvailableOnWebstore,
+    requireSaleProof: method.requireSaleProof,
+    costsText: formatPaymentCostsText(method.costs),
+  };
+}
+
+function createPaymentMethodSaveBody(
+  draft: SettingsPaymentMethodDraft,
+): KolamPaymentMethodSaveBody {
+  if (!draft.wallet.trim()) {
+    throw new Error('Wallet wajib dipilih.');
+  }
+
+  return {
+    name: draft.name.trim(),
+    type: draft.type,
+    provider: draft.provider.trim(),
+    wallet: draft.wallet.trim(),
+    accountNumber: draft.accountNumber.trim(),
+    accountName: draft.accountName.trim(),
+    notes: cleanOptionalString(draft.notes),
+    isActive: draft.isActive,
+    isAvailableOnWebstore: draft.isAvailableOnWebstore,
+    requireSaleProof: draft.requireSaleProof,
+    costs: parsePaymentCostsText(draft.costsText),
+  };
+}
+
+function formatPaymentCostsText(costs: KolamPaymentMethod['costs']) {
+  return costs
+    .map(cost => `${cost.name}|${cost.type}|${cost.amount}`)
+    .join('\n');
+}
+
+function parsePaymentCostsText(
+  value: string,
+): KolamPaymentMethodSaveBody['costs'] {
+  return value
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(Boolean)
+    .map(line => {
+      const [name = '', type = 'percentage', amount = '0'] = line.split('|');
+      const costType = type.trim() === 'fixed' ? 'fixed' : 'percentage';
+      return {
+        name: name.trim(),
+        type: costType,
+        amount: Math.max(0, Number(amount) || 0),
+      };
+    });
+}
+
+function createTaxCompanyProfileSaveBody(profile: KolamTaxCompanyProfile) {
+  const { registeredAddress, completeness, ...body } = profile;
+  void registeredAddress;
+  void completeness;
+  return body;
+}
+
+function createFinancialDraftFields(setting: KolamWebSetting) {
+  const overtime = setting.overtimeSettings ?? {};
+  const commission = setting.enclosureSaleCommission ?? {};
+
+  return {
+    salePricesIncludeTax: setting.salePricesIncludeTax !== false,
+    commissionPph21Enabled: setting.commissionPph21Enabled !== false,
+    overtimeCalculationMode:
+      overtime.calculationMode === 'per_day' ? 'per_day' : 'per_hour',
+    overtimeUseSalaryDerivedRate: overtime.useSalaryDerivedRate !== false,
+    overtimeRatePerHour: String(overtime.ratePerHour ?? 0),
+    overtimeRatePerDay: String(overtime.ratePerDay ?? 0),
+    overtimeDefaultHoursPerRequest: String(
+      clampNumber(overtime.defaultHoursPerRequest ?? 3, 1, 12),
+    ),
+    overtimeMidnightCutoff: overtime.midnightCutoff ?? '23:59',
+    overtimeUseStoreCloseForPerDay: overtime.useStoreCloseForPerDay !== false,
+    enclosureSaleCommissionEnabled: commission.enabled === true,
+    enclosureSaleCommissionType:
+      commission.type === 'fixed' ? 'fixed' : 'percentage',
+    enclosureSaleCommissionValue: String(commission.value ?? 0),
+  } satisfies Partial<WebSettingDraft>;
+}
+
+function createOvertimeSettingsUpdateBody(draft: WebSettingDraft) {
+  return {
+    calculationMode: draft.overtimeCalculationMode,
+    useSalaryDerivedRate: draft.overtimeUseSalaryDerivedRate,
+    ratePerHour: Math.max(0, Number(draft.overtimeRatePerHour) || 0),
+    ratePerDay: Math.max(0, Number(draft.overtimeRatePerDay) || 0),
+    defaultHoursPerRequest: clampNumber(
+      Number(draft.overtimeDefaultHoursPerRequest) || 3,
+      1,
+      12,
+    ),
+    midnightCutoff: draft.overtimeMidnightCutoff.trim() || '23:59',
+    useStoreCloseForPerDay: draft.overtimeUseStoreCloseForPerDay,
+  } satisfies KolamWebSetting['overtimeSettings'];
+}
+
+function createEnclosureSaleCommissionUpdateBody(draft: WebSettingDraft) {
+  return {
+    enabled: draft.enclosureSaleCommissionEnabled,
+    type: draft.enclosureSaleCommissionType,
+    value: Math.max(0, Number(draft.enclosureSaleCommissionValue) || 0),
+  } satisfies KolamWebSetting['enclosureSaleCommission'];
+}
+
+function clampNumber(value: number, min: number, max: number) {
+  if (!Number.isFinite(value)) {
+    return min;
+  }
+
+  return Math.min(max, Math.max(min, value));
+}
+
+function getFinancialErrorMessage(error: unknown) {
+  if (error instanceof ApiError) {
+    return error.message || 'Gagal memproses pengaturan Finansial.';
+  }
+
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return 'Gagal memproses pengaturan Finansial.';
 }
 
 function normalizeSitemapConfig(

@@ -547,10 +547,7 @@ export function isSettingsTabVisible(
   }
 
   if (item.id === 'finansial') {
-    return (
-      hasSettingsPermission(context, 'wallet', 'view') ||
-      hasSettingsPermission(context, 'tax', 'view')
-    );
+    return hasAnySettingsFinancialPermission(context);
   }
 
   return hasSettingsPermission(context, 'websetting', 'view');
@@ -1721,7 +1718,45 @@ export function isSettingsAdminRoleKey(key?: string | null) {
   );
 }
 
-function hasSettingsPermission(
+export function hasSettingsFinancialSectionPermission(
+  context: SettingsTabVisibilityContext | null | undefined,
+  section:
+    | 'payment-methods'
+    | 'tax-profile'
+    | 'overtime'
+    | 'enclosure-commission',
+) {
+  if (isSettingsSuperAdminRoleKey(String(context?.roleKey ?? ''))) {
+    return true;
+  }
+
+  if (section === 'payment-methods') {
+    return hasSettingsPermission(context, 'wallet', 'view');
+  }
+
+  if (section === 'tax-profile') {
+    return hasSettingsPermission(context, 'tax', 'view');
+  }
+
+  if (section === 'overtime') {
+    return hasSettingsPermission(context, 'payroll', 'view');
+  }
+
+  return hasSettingsPermission(context, 'commission', 'view');
+}
+
+export function hasAnySettingsFinancialPermission(
+  context: SettingsTabVisibilityContext | null | undefined,
+) {
+  return (
+    hasSettingsFinancialSectionPermission(context, 'payment-methods') ||
+    hasSettingsFinancialSectionPermission(context, 'tax-profile') ||
+    hasSettingsFinancialSectionPermission(context, 'overtime') ||
+    hasSettingsFinancialSectionPermission(context, 'enclosure-commission')
+  );
+}
+
+export function hasSettingsPermission(
   context: SettingsTabVisibilityContext | null | undefined,
   resource: string,
   action: string,

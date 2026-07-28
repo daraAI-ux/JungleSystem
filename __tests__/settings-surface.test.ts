@@ -28,6 +28,7 @@ import {
   getVisibleSettingsTabItems,
   getSettingsWebConfigFields,
   getSettingsWebFormSections,
+  hasSettingsFinancialSectionPermission,
   isSettingsTabId,
   settingsTabItems,
   settingsSurfaceItems,
@@ -169,9 +170,72 @@ describe('settingsSurfaceItems', () => {
     expect(
       getVisibleSettingsTabItems({
         roleKey: 'staff',
+        permissions: [{ resource: 'payroll', actions: ['view'] }],
+      }).map(item => item.id),
+    ).toEqual(['finansial']);
+    expect(
+      getVisibleSettingsTabItems({
+        roleKey: 'staff',
+        permissions: [{ resource: 'commission', actions: ['view'] }],
+      }).map(item => item.id),
+    ).toEqual(['finansial']);
+    expect(
+      getVisibleSettingsTabItems({
+        roleKey: 'staff',
         permissions: [],
       }).map(item => item.id),
     ).toEqual([]);
+  });
+
+  it('maps financial section permissions like FE Settings Finansial', () => {
+    expect(
+      hasSettingsFinancialSectionPermission(
+        {
+          roleKey: 'staff',
+          permissions: [{ resource: 'wallet', actions: ['view'] }],
+        },
+        'payment-methods',
+      ),
+    ).toBe(true);
+    expect(
+      hasSettingsFinancialSectionPermission(
+        {
+          roleKey: 'staff',
+          permissions: [{ resource: 'tax', actions: ['view'] }],
+        },
+        'tax-profile',
+      ),
+    ).toBe(true);
+    expect(
+      hasSettingsFinancialSectionPermission(
+        {
+          roleKey: 'staff',
+          permissions: [{ resource: 'payroll', actions: ['view'] }],
+        },
+        'overtime',
+      ),
+    ).toBe(true);
+    expect(
+      hasSettingsFinancialSectionPermission(
+        {
+          roleKey: 'staff',
+          permissions: [{ resource: 'commission', actions: ['view'] }],
+        },
+        'enclosure-commission',
+      ),
+    ).toBe(true);
+    expect(
+      hasSettingsFinancialSectionPermission(
+        { roleKey: 'super-admin', permissions: [] },
+        'payment-methods',
+      ),
+    ).toBe(true);
+    expect(
+      hasSettingsFinancialSectionPermission(
+        { roleKey: 'staff', permissions: [] },
+        'payment-methods',
+      ),
+    ).toBe(false);
   });
 
   it('maps live Kolam settings routes into a native summary surface', () => {
@@ -810,7 +874,7 @@ describe('settingsSurfaceItems', () => {
         id: 'super-admin',
         label: 'Super Administrator',
         key: 'super-admin',
-        permissionCount: 231,
+        permissionCount: 233,
         defaultRole: true,
         fullAccess: true,
         sourceComponent: 'settings/roles/list.tsx',

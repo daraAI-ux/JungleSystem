@@ -34,6 +34,9 @@ import type {
 } from '../services/kolam-api';
 import type {
   SettingsFinancialSummaryRow,
+  SettingsFinancialSectionVisibility,
+  SettingsPaymentMethodDraft,
+  SettingsPaymentMethodFilters,
   MarketplaceLandingCtaDraft,
   MarketplaceLandingNoticeDraft,
   MarketplaceLandingOverview,
@@ -44,6 +47,12 @@ import type {
   RegionSyncSummaryRow,
   WebContentLauncherItem,
 } from './kolam-settings-panel-controller';
+import type {
+  KolamFinancialWallet,
+  KolamPaymentMethod,
+  KolamTaxCompanyProfile,
+  KolamTaxPartyGapsSummary,
+} from '../services/kolam-financial-settings-api';
 import type { KolamKpiWeeklyAnnouncePreview } from '../services/kolam-api';
 import { getKolamFileUrl } from '../lib/file-url';
 import { KolamMediaPlayer } from './kolam-media-player';
@@ -82,6 +91,43 @@ const financialShellSections: Array<{
     rowIds: ['enclosure-sale-commission'],
   },
 ] as const;
+
+const defaultPaymentMethodFilters: SettingsPaymentMethodFilters = {
+  search: '',
+  isAvailableOnWebstore: '',
+  page: 1,
+  limit: 10,
+};
+
+const defaultPaymentMethodDraft: SettingsPaymentMethodDraft = {
+  id: '',
+  name: '',
+  type: 'transfer',
+  provider: '',
+  wallet: '',
+  accountNumber: '',
+  accountName: '',
+  notes: '',
+  isActive: true,
+  isAvailableOnWebstore: true,
+  requireSaleProof: false,
+  costsText: '',
+};
+
+function noop() {}
+
+function noopSetPaymentMethodDraftField<
+  Key extends keyof SettingsPaymentMethodDraft,
+>(_key: Key, _value: SettingsPaymentMethodDraft[Key]) {}
+
+function noopSetPaymentMethodFilter(
+  _key: keyof SettingsPaymentMethodFilters,
+  _value: string | number,
+) {}
+
+function noopSetTaxCompanyProfileDraftField<
+  Key extends keyof KolamTaxCompanyProfile,
+>(_key: Key, _value: KolamTaxCompanyProfile[Key]) {}
 
 type WebSettingDraft = {
   versionKolam: string;
@@ -222,6 +268,18 @@ type WebSettingDraft = {
   handoffNotificationSound: string;
   groupCallRingtone: string;
   salesNotificationSound: string;
+  salePricesIncludeTax: boolean;
+  commissionPph21Enabled: boolean;
+  overtimeCalculationMode: 'per_hour' | 'per_day';
+  overtimeUseSalaryDerivedRate: boolean;
+  overtimeRatePerHour: string;
+  overtimeRatePerDay: string;
+  overtimeDefaultHoursPerRequest: string;
+  overtimeMidnightCutoff: string;
+  overtimeUseStoreCloseForPerDay: boolean;
+  enclosureSaleCommissionEnabled: boolean;
+  enclosureSaleCommissionType: 'percentage' | 'fixed';
+  enclosureSaleCommissionValue: string;
   pluginControls: Record<KolamPluginConfigKey, boolean>;
 };
 
@@ -320,6 +378,17 @@ export function KolamSettingsWebConfigSurface({
   maintenanceMode,
   marketplaceLandingOverview,
   financialSummaryRows,
+  financialMessage = '',
+  financialSectionVisibility = {
+    paymentMethods: false,
+    taxProfile: false,
+    overtime: false,
+    enclosureCommission: false,
+    taxEdit: false,
+    any: false,
+  },
+  financialStatus = 'idle',
+  financialWallets = [],
   operationalRooms,
   operationalStaffRows,
   regionLevel,
@@ -364,6 +433,15 @@ export function KolamSettingsWebConfigSurface({
   onSaveMarketplaceLandingCta,
   onSaveMarketplaceLandingYoutube,
   onSaveMarketplaceLandingNotice,
+  onClearPaymentMethodDraft = noop,
+  onDeletePaymentMethod = noop,
+  onDeletePaymentMethodPhoto = noop,
+  onEditPaymentMethod = noop,
+  onSaveEnclosureSaleCommission = noop,
+  onSaveFinancialTaxToggle = noop,
+  onSaveOvertimeSettings = noop,
+  onSavePaymentMethod = noop,
+  onSaveTaxCompanyProfile = noop,
   onUploadMarketplaceAnnouncementImage,
   onUploadMarketplaceBioactiveStepImage,
   onUploadMarketplaceCategoryBannerImage,
@@ -373,6 +451,7 @@ export function KolamSettingsWebConfigSurface({
   onUploadMarketplaceHeroImage,
   onUploadMarketplaceLogo,
   onUploadMarketplaceYoutubeBackground,
+  onUploadPaymentMethodPhoto = noop,
   onRefreshRegionSync,
   onRefreshKpiWeeklyPreview,
   onRunRegionSync,
@@ -398,14 +477,25 @@ export function KolamSettingsWebConfigSurface({
   setKpiSettingsDraftField,
   setMarketplaceLandingYoutubeDraftField,
   setMarketplaceLandingNoticeDraftField,
+  setPaymentMethodDraftField = noopSetPaymentMethodDraftField,
+  setPaymentMethodFilter = noopSetPaymentMethodFilter,
   setWebContentPanelId,
   setRegionFilter,
   setSitemapCustomUrlsDraftText,
   setSitemapExcludedSlugsDraftText,
   setSitemapMasterField,
   setSitemapSectionField,
+  setTaxCompanyProfileDraftField = noopSetTaxCompanyProfileDraftField,
   setDraftField,
   storefrontEnabled,
+  paymentMethodDraft = defaultPaymentMethodDraft,
+  paymentMethodFilters = defaultPaymentMethodFilters,
+  paymentMethodTotal = 0,
+  paymentMethodTotalPages = 1,
+  paymentMethods = [],
+  taxCompanyProfile = null,
+  taxCompanyProfileDraft = {},
+  taxPartyGaps = null,
   draft,
   notificationSoundStatus,
   sitemapChangeFrequencies,
@@ -420,6 +510,10 @@ export function KolamSettingsWebConfigSurface({
   maintenanceMode: boolean;
   marketplaceLandingOverview: MarketplaceLandingOverview;
   financialSummaryRows: SettingsFinancialSummaryRow[];
+  financialMessage?: string;
+  financialSectionVisibility?: SettingsFinancialSectionVisibility;
+  financialStatus?: 'idle' | 'loading' | 'live' | 'saving' | 'error';
+  financialWallets?: KolamFinancialWallet[];
   operationalRooms: KolamTeamChatRoom[];
   operationalStaffRows: KolamUserPickerRow[];
   regionLevel: KolamRegionLevel | '';
@@ -457,7 +551,16 @@ export function KolamSettingsWebConfigSurface({
   kpiSettingsDraft: KpiSettingsDraft;
   kpiStatus: 'idle' | 'loading' | 'live' | 'saving' | 'error' | 'disabled';
   kpiSummaryRows: KpiSettingsSummaryRow[];
+  paymentMethodDraft?: SettingsPaymentMethodDraft;
+  paymentMethodFilters?: SettingsPaymentMethodFilters;
+  paymentMethodTotal?: number;
+  paymentMethodTotalPages?: number;
+  paymentMethods?: KolamPaymentMethod[];
+  taxCompanyProfile?: KolamTaxCompanyProfile | null;
+  taxCompanyProfileDraft?: KolamTaxCompanyProfile;
+  taxPartyGaps?: KolamTaxPartyGapsSummary | null;
   onClearMarketplaceLandingNoticeDraft: () => void;
+  onClearPaymentMethodDraft?: () => void;
   onDeleteMarketplaceAnnouncementBanner: (
     banner: KolamAnnouncementBanner,
   ) => void;
@@ -466,7 +569,10 @@ export function KolamSettingsWebConfigSurface({
   onDeleteMarketplaceFeaturedCollection: (index: number) => void;
   onDeleteMarketplaceHeroSlide: (slide: KolamHeroSlide) => void;
   onDeleteMarketplaceLandingNotice: (key: string) => void;
+  onDeletePaymentMethod?: (id: string) => void;
+  onDeletePaymentMethodPhoto?: (id: string) => void;
   onEditMarketplaceLandingNotice: (notice: KolamCustomerTextNotice) => void;
+  onEditPaymentMethod?: (method: KolamPaymentMethod) => void;
   onMoveMarketplaceAnnouncementBanner: (
     banner: KolamAnnouncementBanner,
     direction: -1 | 1,
@@ -487,6 +593,14 @@ export function KolamSettingsWebConfigSurface({
   onSaveMarketplaceLandingCta: () => void;
   onSaveMarketplaceLandingYoutube: () => void;
   onSaveMarketplaceLandingNotice: () => void;
+  onSaveEnclosureSaleCommission?: () => void;
+  onSaveFinancialTaxToggle?: (
+    key: 'salePricesIncludeTax' | 'commissionPph21Enabled',
+    value: boolean,
+  ) => void;
+  onSaveOvertimeSettings?: () => void;
+  onSavePaymentMethod?: () => void;
+  onSaveTaxCompanyProfile?: () => void;
   onUploadMarketplaceAnnouncementImage: (
     banner: KolamAnnouncementBanner,
   ) => void;
@@ -498,6 +612,7 @@ export function KolamSettingsWebConfigSurface({
   onUploadMarketplaceHeroImage: (slide: KolamHeroSlide) => void;
   onUploadMarketplaceLogo: () => void;
   onUploadMarketplaceYoutubeBackground: () => void;
+  onUploadPaymentMethodPhoto?: (id: string) => void;
   onRefreshRegionSync: () => void;
   onRefreshKpiWeeklyPreview: () => void;
   onRunRegionSync: (scope: KolamRegionSyncScope) => void;
@@ -559,6 +674,18 @@ export function KolamSettingsWebConfigSurface({
   >(
     key: Key,
     value: MarketplaceLandingNoticeDraft[Key],
+  ) => void;
+  setPaymentMethodDraftField?: <Key extends keyof SettingsPaymentMethodDraft>(
+    key: Key,
+    value: SettingsPaymentMethodDraft[Key],
+  ) => void;
+  setPaymentMethodFilter?: (
+    key: keyof SettingsPaymentMethodFilters,
+    value: string | number,
+  ) => void;
+  setTaxCompanyProfileDraftField?: <Key extends keyof KolamTaxCompanyProfile>(
+    key: Key,
+    value: KolamTaxCompanyProfile[Key],
   ) => void;
   setWebContentPanelId: (id: 'marketplace' | 'blog' | 'blog-topics') => void;
   setRegionFilter: (
@@ -2483,76 +2610,38 @@ export function KolamSettingsWebConfigSurface({
         </>
       ) : null}
       {showFinancialTaxSummary ? (
-        <View style={styles.marketplaceOverview}>
-          <KolamCopyStack
-            items={[
-              {
-                id: 'financial-title',
-                text: 'Finansial',
-                style: styles.marketplaceOverviewTitle,
-              },
-              {
-                id: 'financial-status',
-                text: 'Shell native mengikuti urutan FE. Data live masih read-only sampai kontrak update final.',
-                style: styles.marketplaceOverviewMeta,
-              },
-            ]}
-          />
-          {financialShellSections.map(section => {
-            const rows = financialSummaryRows.filter(row =>
-              section.rowIds.includes(row.id),
-            );
-
-            return (
-              <View key={section.id} style={styles.marketplaceOverview}>
-                <KolamCopyStack
-                  items={[
-                    {
-                      id: `${section.id}-title`,
-                      text: section.title,
-                      style: styles.marketplaceOverviewLabel,
-                    },
-                    {
-                      id: `${section.id}-detail`,
-                      text: section.description,
-                      style: styles.marketplaceOverviewDetail,
-                    },
-                  ]}
-                />
-                <View style={styles.marketplaceOverviewRows}>
-                  {rows.map(row => (
-                    <View key={row.id} style={styles.marketplaceOverviewRow}>
-                      <KolamCopyStack
-                        containerStyle={styles.marketplaceOverviewCopy}
-                        items={[
-                          {
-                            id: `${row.id}-label`,
-                            text: row.label,
-                            style: styles.marketplaceOverviewLabel,
-                          },
-                          {
-                            id: `${row.id}-detail`,
-                            text: row.detail,
-                            style: styles.marketplaceOverviewDetail,
-                          },
-                        ]}
-                      />
-                      <KolamCopyStack
-                        items={[
-                          {
-                            id: `${row.id}-value`,
-                            text: row.value,
-                            style: styles.marketplaceOverviewValue,
-                          },
-                        ]}
-                      />
-                    </View>
-                  ))}
-                </View>
-              </View>
-            );
-          })}
-        </View>
+        <FinancialSettingsPanel
+          disabled={disabled || financialStatus === 'saving'}
+          draft={draft}
+          financialMessage={financialMessage}
+          financialSectionVisibility={financialSectionVisibility}
+          financialStatus={financialStatus}
+          financialSummaryRows={financialSummaryRows}
+          financialWallets={financialWallets}
+          onClearPaymentMethodDraft={onClearPaymentMethodDraft}
+          onDeletePaymentMethod={onDeletePaymentMethod}
+          onDeletePaymentMethodPhoto={onDeletePaymentMethodPhoto}
+          onEditPaymentMethod={onEditPaymentMethod}
+          onSaveEnclosureSaleCommission={onSaveEnclosureSaleCommission}
+          onSaveFinancialTaxToggle={onSaveFinancialTaxToggle}
+          onSaveOvertimeSettings={onSaveOvertimeSettings}
+          onSavePaymentMethod={onSavePaymentMethod}
+          onSaveTaxCompanyProfile={onSaveTaxCompanyProfile}
+          onUploadPaymentMethodPhoto={onUploadPaymentMethodPhoto}
+          paymentMethodDraft={paymentMethodDraft}
+          paymentMethodFilters={paymentMethodFilters}
+          paymentMethodTotal={paymentMethodTotal}
+          paymentMethodTotalPages={paymentMethodTotalPages}
+          paymentMethods={paymentMethods}
+          setDraftField={setDraftField}
+          setPaymentMethodDraftField={setPaymentMethodDraftField}
+          setPaymentMethodFilter={setPaymentMethodFilter}
+          setTaxCompanyProfileDraftField={setTaxCompanyProfileDraftField}
+          settingsFieldWidth={settingsFieldWidth}
+          taxCompanyProfile={taxCompanyProfile}
+          taxCompanyProfileDraft={taxCompanyProfileDraft}
+          taxPartyGaps={taxPartyGaps}
+        />
       ) : null}
       {showKpiSettings ? (
         <KpiSettingsPanel
@@ -5440,6 +5529,880 @@ function getFirstTitles(values: string[]) {
   return visible.length ? visible.join(' | ') : '-';
 }
 
+function FinancialSettingsPanel({
+  disabled,
+  draft,
+  financialMessage,
+  financialSectionVisibility,
+  financialStatus,
+  financialSummaryRows,
+  financialWallets,
+  onClearPaymentMethodDraft,
+  onDeletePaymentMethod,
+  onDeletePaymentMethodPhoto,
+  onEditPaymentMethod,
+  onSaveEnclosureSaleCommission,
+  onSaveFinancialTaxToggle,
+  onSaveOvertimeSettings,
+  onSavePaymentMethod,
+  onSaveTaxCompanyProfile,
+  onUploadPaymentMethodPhoto,
+  paymentMethodDraft,
+  paymentMethodFilters,
+  paymentMethodTotal,
+  paymentMethodTotalPages,
+  paymentMethods,
+  setDraftField,
+  setPaymentMethodDraftField,
+  setPaymentMethodFilter,
+  setTaxCompanyProfileDraftField,
+  settingsFieldWidth,
+  taxCompanyProfile,
+  taxCompanyProfileDraft,
+  taxPartyGaps,
+}: {
+  disabled: boolean;
+  draft: WebSettingDraft;
+  financialMessage: string;
+  financialSectionVisibility: SettingsFinancialSectionVisibility;
+  financialStatus: 'idle' | 'loading' | 'live' | 'saving' | 'error';
+  financialSummaryRows: SettingsFinancialSummaryRow[];
+  financialWallets: KolamFinancialWallet[];
+  paymentMethodDraft: SettingsPaymentMethodDraft;
+  paymentMethodFilters: SettingsPaymentMethodFilters;
+  paymentMethodTotal: number;
+  paymentMethodTotalPages: number;
+  paymentMethods: KolamPaymentMethod[];
+  settingsFieldWidth: number;
+  taxCompanyProfile: KolamTaxCompanyProfile | null;
+  taxCompanyProfileDraft: KolamTaxCompanyProfile;
+  taxPartyGaps: KolamTaxPartyGapsSummary | null;
+  onClearPaymentMethodDraft: () => void;
+  onDeletePaymentMethod: (id: string) => void;
+  onDeletePaymentMethodPhoto: (id: string) => void;
+  onEditPaymentMethod: (method: KolamPaymentMethod) => void;
+  onSaveEnclosureSaleCommission: () => void;
+  onSaveFinancialTaxToggle: (
+    key: 'salePricesIncludeTax' | 'commissionPph21Enabled',
+    value: boolean,
+  ) => void;
+  onSaveOvertimeSettings: () => void;
+  onSavePaymentMethod: () => void;
+  onSaveTaxCompanyProfile: () => void;
+  onUploadPaymentMethodPhoto: (id: string) => void;
+  setDraftField: (
+    key: keyof WebSettingDraft,
+    value: WebSettingDraft[keyof WebSettingDraft],
+  ) => void;
+  setPaymentMethodDraftField: <Key extends keyof SettingsPaymentMethodDraft>(
+    key: Key,
+    value: SettingsPaymentMethodDraft[Key],
+  ) => void;
+  setPaymentMethodFilter: (
+    key: keyof SettingsPaymentMethodFilters,
+    value: string | number,
+  ) => void;
+  setTaxCompanyProfileDraftField: <Key extends keyof KolamTaxCompanyProfile>(
+    key: Key,
+    value: KolamTaxCompanyProfile[Key],
+  ) => void;
+}) {
+  const busy = financialStatus === 'loading' || financialStatus === 'saving';
+  const paymentMethodCanSave =
+    paymentMethodDraft.name.trim() &&
+    paymentMethodDraft.type &&
+    paymentMethodDraft.wallet.trim();
+  const profileComplete =
+    taxCompanyProfileDraft.completeness?.complete ??
+    taxCompanyProfile?.completeness?.complete ??
+    false;
+  const missingFields =
+    taxCompanyProfileDraft.completeness?.missing ??
+    taxCompanyProfile?.completeness?.missing ??
+    [];
+
+  if (!financialSectionVisibility.any) {
+    return (
+      <KolamCopyStack
+        items={[
+          {
+            id: 'financial-denied',
+            text: 'Anda tidak memiliki izin Finansial untuk melihat pengaturan metode pembayaran, pajak, lembur, atau komisi.',
+            style: styles.marketplaceOverviewError,
+          },
+        ]}
+      />
+    );
+  }
+
+  return (
+    <View style={styles.marketplaceOverview}>
+      <KolamCopyStack
+        items={[
+          {
+            id: 'financial-title',
+            text: 'Finansial',
+            style: styles.marketplaceOverviewTitle,
+          },
+          {
+            id: 'financial-status',
+            text:
+              financialStatus === 'loading'
+                ? 'Memuat data live Finansial...'
+                : 'Data live dari backend Kolam.',
+            style: styles.marketplaceOverviewMeta,
+          },
+        ]}
+      />
+      {financialMessage ? (
+        <KolamCopyStack
+          items={[
+            {
+              id: 'financial-message',
+              text: financialMessage,
+              style:
+                financialStatus === 'error'
+                  ? styles.marketplaceOverviewError
+                  : styles.marketplaceOverviewMeta,
+            },
+          ]}
+        />
+      ) : null}
+
+      {financialSectionVisibility.paymentMethods ? (
+        <View style={styles.marketplaceOverview}>
+          <FinancialSectionHeader
+            detail="Channel pembayaran yang diterima toko dan wallet terkait."
+            title="Metode pembayaran"
+          />
+          <View style={styles.financialToolbar}>
+            <TextInput
+              accessibilityLabel="Cari metode pembayaran"
+              editable={!busy}
+              onChangeText={value => setPaymentMethodFilter('search', value)}
+              placeholder="Cari metode pembayaran"
+              style={styles.financialSearchInput}
+              value={paymentMethodFilters.search}
+            />
+            {[
+              ['', 'Semua'],
+              ['true', 'Webstore'],
+              ['false', 'Non-webstore'],
+            ].map(([value, label]) => (
+              <FinancialChoiceSegment
+                key={value || 'all'}
+                active={paymentMethodFilters.isAvailableOnWebstore === value}
+                label={label}
+                onPress={() =>
+                  setPaymentMethodFilter('isAvailableOnWebstore', value)
+                }
+              />
+            ))}
+          </View>
+          <View style={styles.marketplaceOverviewRows}>
+            {paymentMethods.length ? (
+              paymentMethods.map(method => (
+                <View key={method.id} style={styles.financialListRow}>
+                  <KolamCopyStack
+                    containerStyle={styles.marketplaceOverviewCopy}
+                    items={[
+                      {
+                        id: `${method.id}-name`,
+                        text: method.name || '-',
+                        style: styles.marketplaceOverviewLabel,
+                      },
+                      {
+                        id: `${method.id}-detail`,
+                        text: [
+                          method.type,
+                          method.provider || '-',
+                          method.wallet?.name || 'Tanpa wallet',
+                          method.requireSaleProof ? 'wajib proof' : '',
+                          `${method.costs.length} biaya`,
+                        ]
+                          .filter(Boolean)
+                          .join(' | '),
+                        style: styles.marketplaceOverviewDetail,
+                      },
+                    ]}
+                  />
+                  <KolamCopyStack
+                    items={[
+                      {
+                        id: `${method.id}-status`,
+                        text: `${method.isActive ? 'Aktif' : 'Nonaktif'} / ${
+                          method.isAvailableOnWebstore
+                            ? 'Webstore'
+                            : 'Non-webstore'
+                        }`,
+                        style: styles.marketplaceOverviewValue,
+                      },
+                    ]}
+                  />
+                  <View style={styles.financialActions}>
+                    <KolamActionControlButton
+                      disabled={disabled || busy}
+                      label="Edit"
+                      onPress={() => onEditPaymentMethod(method)}
+                    />
+                    <KolamActionControlButton
+                      disabled={disabled || busy}
+                      label={method.paymentIcon ? 'Ganti foto' : 'Upload foto'}
+                      onPress={() => onUploadPaymentMethodPhoto(method.id)}
+                    />
+                    {method.paymentIcon ? (
+                      <KolamActionControlButton
+                        disabled={disabled || busy}
+                        intent="danger"
+                        label="Hapus foto"
+                        onPress={() => onDeletePaymentMethodPhoto(method.id)}
+                      />
+                    ) : null}
+                    <KolamActionControlButton
+                      disabled={disabled || busy}
+                      intent="danger"
+                      label="Hapus"
+                      onPress={() => onDeletePaymentMethod(method.id)}
+                    />
+                  </View>
+                </View>
+              ))
+            ) : (
+              <KolamCopyStack
+                items={[
+                  {
+                    id: 'payment-method-empty',
+                    text: busy
+                      ? 'Memuat metode pembayaran...'
+                      : 'Belum ada metode pembayaran pada filter ini.',
+                    style: styles.marketplaceOverviewMeta,
+                  },
+                ]}
+              />
+            )}
+          </View>
+          <KolamCopyStack
+            items={[
+              {
+                id: 'payment-method-pagination',
+                text: `Total ${paymentMethodTotal} data | halaman ${paymentMethodFilters.page}/${paymentMethodTotalPages}`,
+                style: styles.marketplaceOverviewMeta,
+              },
+            ]}
+          />
+          <View style={styles.financialActions}>
+            <KolamActionControlButton
+              disabled={busy || paymentMethodFilters.page <= 1}
+              label="Sebelumnya"
+              onPress={() =>
+                setPaymentMethodFilter('page', paymentMethodFilters.page - 1)
+              }
+            />
+            <KolamActionControlButton
+              disabled={busy || paymentMethodFilters.page >= paymentMethodTotalPages}
+              label="Berikutnya"
+              onPress={() =>
+                setPaymentMethodFilter('page', paymentMethodFilters.page + 1)
+              }
+            />
+          </View>
+          <View style={styles.marketplaceOverview}>
+            <KolamCopyStack
+              items={[
+                {
+                  id: 'payment-method-form-title',
+                  text: paymentMethodDraft.id
+                    ? 'Edit metode pembayaran'
+                    : 'Metode pembayaran baru',
+                  style: styles.marketplaceOverviewLabel,
+                },
+              ]}
+            />
+            <KolamTextFieldRow
+              description="Nama channel pembayaran."
+              fieldWidth={settingsFieldWidth}
+              label="Nama"
+              onChangeText={value => setPaymentMethodDraftField('name', value)}
+              placeholder="BCA, QRIS, Tunai"
+              value={paymentMethodDraft.name}
+              variant="settingsForm"
+            />
+            <View style={styles.financialToolbar}>
+              {(['cash', 'transfer', 'ewallet', 'credit', 'debit', 'qris'] as const).map(
+                type => (
+                  <FinancialChoiceSegment
+                    key={type}
+                    active={paymentMethodDraft.type === type}
+                    label={type.toUpperCase()}
+                    onPress={() => setPaymentMethodDraftField('type', type)}
+                  />
+                ),
+              )}
+            </View>
+            <KolamTextFieldRow
+              description="Provider bank, e-wallet, atau gateway."
+              fieldWidth={settingsFieldWidth}
+              label="Provider"
+              onChangeText={value =>
+                setPaymentMethodDraftField('provider', value)
+              }
+              placeholder="BCA, DANA, CASH"
+              value={paymentMethodDraft.provider}
+              variant="settingsForm"
+            />
+            <View style={styles.financialToolbar}>
+              {financialWallets.map(wallet => (
+                <FinancialChoiceSegment
+                  key={wallet.id}
+                  active={paymentMethodDraft.wallet === wallet.id}
+                  label={`${wallet.name} (${wallet.type})`}
+                  onPress={() =>
+                    setPaymentMethodDraftField('wallet', wallet.id)
+                  }
+                />
+              ))}
+            </View>
+            <KolamTextFieldRow
+              description="Nomor rekening, nomor akun, atau ID provider."
+              fieldWidth={settingsFieldWidth}
+              label="Nomor akun"
+              onChangeText={value =>
+                setPaymentMethodDraftField('accountNumber', value)
+              }
+              placeholder="Nomor rekening / ID"
+              value={paymentMethodDraft.accountNumber}
+              variant="settingsForm"
+            />
+            <KolamTextFieldRow
+              description="Nama pemilik rekening atau akun."
+              fieldWidth={settingsFieldWidth}
+              label="Nama akun"
+              onChangeText={value =>
+                setPaymentMethodDraftField('accountName', value)
+              }
+              placeholder="Nama pemilik akun"
+              value={paymentMethodDraft.accountName}
+              variant="settingsForm"
+            />
+            <KolamTextFieldRow
+              description="Catatan internal untuk admin."
+              fieldWidth={settingsFieldWidth}
+              label="Catatan"
+              onChangeText={value => setPaymentMethodDraftField('notes', value)}
+              placeholder="Catatan internal"
+              value={paymentMethodDraft.notes}
+              variant="settingsForm"
+            />
+            <KolamTextFieldRow
+              description="Satu baris per biaya: nama|percentage/fixed|nilai."
+              fieldWidth={settingsFieldWidth}
+              label="Biaya"
+              multiline
+              numberOfLines={3}
+              onChangeText={value =>
+                setPaymentMethodDraftField('costsText', value)
+              }
+              placeholder="Admin QRIS|percentage|0.7"
+              value={paymentMethodDraft.costsText}
+              variant="settingsForm"
+            />
+            <KolamToggleRow
+              active={paymentMethodDraft.isActive}
+              description="Metode aktif bisa dipakai transaksi."
+              label="Aktif"
+              onPress={() =>
+                setPaymentMethodDraftField(
+                  'isActive',
+                  !paymentMethodDraft.isActive,
+                )
+              }
+              variant="settingsForm"
+            />
+            <KolamToggleRow
+              active={paymentMethodDraft.isAvailableOnWebstore}
+              description="Tampilkan sebagai opsi pembayaran webstore."
+              label="Tersedia di webstore"
+              onPress={() =>
+                setPaymentMethodDraftField(
+                  'isAvailableOnWebstore',
+                  !paymentMethodDraft.isAvailableOnWebstore,
+                )
+              }
+              variant="settingsForm"
+            />
+            <KolamToggleRow
+              active={paymentMethodDraft.requireSaleProof}
+              description="Pembeli wajib melampirkan bukti transfer."
+              label="Wajib bukti pembayaran"
+              onPress={() =>
+                setPaymentMethodDraftField(
+                  'requireSaleProof',
+                  !paymentMethodDraft.requireSaleProof,
+                )
+              }
+              variant="settingsForm"
+            />
+            <View style={styles.financialActions}>
+              <KolamActionControlButton
+                disabled={disabled || busy || !paymentMethodCanSave}
+                intent="primary"
+                label="Simpan metode"
+                loading={financialStatus === 'saving'}
+                loadingLabel="Menyimpan..."
+                onPress={onSavePaymentMethod}
+              />
+              <KolamActionControlButton
+                disabled={disabled || busy}
+                label="Reset"
+                onPress={onClearPaymentMethodDraft}
+              />
+            </View>
+          </View>
+        </View>
+      ) : null}
+
+      {financialSectionVisibility.taxProfile ? (
+        <View style={styles.marketplaceOverview}>
+          <FinancialSectionHeader
+            detail="NPWP, status PKP, alamat, dan data wajib pajak untuk Tax Intelligence."
+            title="Profil pajak perusahaan"
+          />
+          <KolamCopyStack
+            items={[
+              {
+                id: 'tax-completeness',
+                text: profileComplete ? 'Profil lengkap' : 'Belum lengkap',
+                style: profileComplete
+                  ? styles.marketplaceOverviewValue
+                  : styles.marketplaceOverviewError,
+              },
+              {
+                id: 'tax-missing',
+                text: missingFields.length
+                  ? `Perlu dilengkapi: ${missingFields.join(' | ')}`
+                  : 'Tidak ada field wajib yang hilang.',
+                style: styles.marketplaceOverviewMeta,
+              },
+            ]}
+          />
+          <KolamTextFieldRow
+            description="Nama profil pajak yang dipakai faktur."
+            fieldWidth={settingsFieldWidth}
+            label="Nama perusahaan / toko"
+            onChangeText={value =>
+              setTaxCompanyProfileDraftField('companyName', value)
+            }
+            placeholder="Dunia Anura"
+            value={taxCompanyProfileDraft.companyName ?? ''}
+            variant="settingsForm"
+          />
+          <KolamTextFieldRow
+            description="Nama legal sesuai akta atau SPT."
+            fieldWidth={settingsFieldWidth}
+            label="Nama legal"
+            onChangeText={value =>
+              setTaxCompanyProfileDraftField('legalName', value)
+            }
+            placeholder="PT Dunia Anura"
+            value={taxCompanyProfileDraft.legalName ?? ''}
+            variant="settingsForm"
+          />
+          <KolamTextFieldRow
+            description="NPWP lama 15 digit."
+            fieldWidth={settingsFieldWidth}
+            label="NPWP 15 digit"
+            onChangeText={value => setTaxCompanyProfileDraftField('npwp', value)}
+            placeholder="00.000.000.0-000.000"
+            value={taxCompanyProfileDraft.npwp ?? ''}
+            variant="settingsForm"
+          />
+          <KolamTextFieldRow
+            description="NPWP baru 16 digit."
+            fieldWidth={settingsFieldWidth}
+            label="NPWP 16 digit"
+            onChangeText={value =>
+              setTaxCompanyProfileDraftField('npwp16', value)
+            }
+            value={taxCompanyProfileDraft.npwp16 ?? ''}
+            variant="settingsForm"
+          />
+          <KolamTextFieldRow
+            description="NIK untuk wajib pajak perorangan."
+            fieldWidth={settingsFieldWidth}
+            label="NIK"
+            onChangeText={value => setTaxCompanyProfileDraftField('nik', value)}
+            value={taxCompanyProfileDraft.nik ?? ''}
+            variant="settingsForm"
+          />
+          <View style={styles.financialToolbar}>
+            {(['pt', 'cv', 'umkm', 'perorangan', 'other'] as const).map(type => (
+              <FinancialChoiceSegment
+                key={type}
+                active={(taxCompanyProfileDraft.taxpayerType ?? 'pt') === type}
+                label={type.toUpperCase()}
+                onPress={() =>
+                  setTaxCompanyProfileDraftField('taxpayerType', type)
+                }
+              />
+            ))}
+          </View>
+          <KolamToggleRow
+            active={taxCompanyProfileDraft.isPkp === true}
+            description="Aktif jika perusahaan terdaftar sebagai PKP."
+            label="Pengusaha Kena Pajak (PKP)"
+            onPress={() =>
+              setTaxCompanyProfileDraftField(
+                'isPkp',
+                taxCompanyProfileDraft.isPkp !== true,
+              )
+            }
+            variant="settingsForm"
+          />
+          <KolamTextFieldRow
+            description="Nomor pengukuhan PKP."
+            fieldWidth={settingsFieldWidth}
+            label="Nomor Sertifikat PKP (NPPKP)"
+            onChangeText={value =>
+              setTaxCompanyProfileDraftField('pkpCertificateNumber', value)
+            }
+            value={taxCompanyProfileDraft.pkpCertificateNumber ?? ''}
+            variant="settingsForm"
+          />
+          <KolamTextFieldRow
+            description="Kantor Pelayanan Pajak terdaftar."
+            fieldWidth={settingsFieldWidth}
+            label="KPP"
+            onChangeText={value =>
+              setTaxCompanyProfileDraftField('taxOffice', value)
+            }
+            value={taxCompanyProfileDraft.taxOffice ?? ''}
+            variant="settingsForm"
+          />
+          <KolamTextFieldRow
+            description="Tarif PPN default untuk estimasi DARA Tax."
+            fieldWidth={settingsFieldWidth}
+            label="PPN default (%)"
+            onChangeText={value =>
+              setTaxCompanyProfileDraftField(
+                'defaultPpnRate',
+                Number(value) || 0,
+              )
+            }
+            value={String(taxCompanyProfileDraft.defaultPpnRate ?? 11)}
+            variant="settingsForm"
+          />
+          <KolamTextFieldRow
+            description="Catatan internal pajak."
+            fieldWidth={settingsFieldWidth}
+            label="Catatan internal"
+            multiline
+            numberOfLines={3}
+            onChangeText={value =>
+              setTaxCompanyProfileDraftField('notes', value)
+            }
+            value={taxCompanyProfileDraft.notes ?? ''}
+            variant="settingsForm"
+          />
+          <KolamCopyStack
+            items={[
+              {
+                id: 'registered-address',
+                text: `Alamat terdaftar: ${
+                  taxCompanyProfileDraft.registeredAddress?.addressText || '-'
+                }`,
+                style: styles.marketplaceOverviewMeta,
+              },
+              {
+                id: 'party-gaps',
+                text: taxPartyGaps
+                  ? `Vendor NPWP ${taxPartyGaps.vendorWithNpwp}/${taxPartyGaps.vendorTotal} | Customer NPWP ${taxPartyGaps.customerWithNpwp}/${taxPartyGaps.customerTotal}`
+                  : 'Gap rekanan belum dimuat.',
+                style: styles.marketplaceOverviewMeta,
+              },
+            ]}
+          />
+          <KolamActionControlButton
+            disabled={disabled || busy || !financialSectionVisibility.taxEdit}
+            intent="primary"
+            label="Simpan profil pajak"
+            loading={financialStatus === 'saving'}
+            loadingLabel="Menyimpan..."
+            onPress={onSaveTaxCompanyProfile}
+          />
+          {!financialSectionVisibility.taxEdit ? (
+            <KolamCopyStack
+              items={[
+                {
+                  id: 'tax-read-only',
+                  text: 'Mode baca saja - butuh permission tax:draft.',
+                  style: styles.marketplaceOverviewMeta,
+                },
+              ]}
+            />
+          ) : null}
+        </View>
+      ) : null}
+
+      {financialSectionVisibility.overtime ? (
+        <View style={styles.marketplaceOverview}>
+          <FinancialSectionHeader
+            detail="Per jam atau per hari untuk pengajuan lembur karyawan."
+            title="Lembur karyawan"
+          />
+          <View style={styles.financialToolbar}>
+            <FinancialChoiceSegment
+              active={draft.overtimeCalculationMode === 'per_hour'}
+              label="Per jam"
+              onPress={() => setDraftField('overtimeCalculationMode', 'per_hour')}
+            />
+            <FinancialChoiceSegment
+              active={draft.overtimeCalculationMode === 'per_day'}
+              label="Per hari"
+              onPress={() => setDraftField('overtimeCalculationMode', 'per_day')}
+            />
+          </View>
+          <KolamToggleRow
+            active={draft.overtimeUseSalaryDerivedRate}
+            description="Jika tarif tetap 0, pakai gaji dibagi 173 atau 25."
+            label="Tarif dari gaji"
+            onPress={() =>
+              setDraftField(
+                'overtimeUseSalaryDerivedRate',
+                !draft.overtimeUseSalaryDerivedRate,
+              )
+            }
+            variant="settingsForm"
+          />
+          {draft.overtimeCalculationMode === 'per_hour' ? (
+            <>
+              <KolamTextFieldRow
+                description="Tarif tetap per jam; 0 memakai turunan gaji."
+                fieldWidth={settingsFieldWidth}
+                label="Tarif per jam"
+                onChangeText={value => setDraftField('overtimeRatePerHour', value)}
+                value={draft.overtimeRatePerHour}
+                variant="settingsForm"
+              />
+              <KolamTextFieldRow
+                description="Dibatasi 1 sampai 12 jam saat disimpan."
+                fieldWidth={settingsFieldWidth}
+                label="Jam default per pengajuan"
+                onChangeText={value =>
+                  setDraftField('overtimeDefaultHoursPerRequest', value)
+                }
+                value={draft.overtimeDefaultHoursPerRequest}
+                variant="settingsForm"
+              />
+            </>
+          ) : (
+            <KolamTextFieldRow
+              description="Tarif tetap per hari; 0 memakai turunan gaji."
+              fieldWidth={settingsFieldWidth}
+              label="Tarif per hari"
+              onChangeText={value => setDraftField('overtimeRatePerDay', value)}
+              value={draft.overtimeRatePerDay}
+              variant="settingsForm"
+            />
+          )}
+          <KolamTextFieldRow
+            description="Format HH:MM, mengikuti FE."
+            fieldWidth={settingsFieldWidth}
+            label="Batas akhir lembur"
+            onChangeText={value => setDraftField('overtimeMidnightCutoff', value)}
+            placeholder="23:59"
+            value={draft.overtimeMidnightCutoff}
+            variant="settingsForm"
+          />
+          <KolamToggleRow
+            active={draft.overtimeUseStoreCloseForPerDay}
+            description="Gunakan jam tutup toko sebagai awal lembur per hari."
+            label="Pakai jam tutup toko untuk mode per hari"
+            onPress={() =>
+              setDraftField(
+                'overtimeUseStoreCloseForPerDay',
+                !draft.overtimeUseStoreCloseForPerDay,
+              )
+            }
+            variant="settingsForm"
+          />
+          <KolamActionControlButton
+            disabled={disabled || busy}
+            intent="primary"
+            label="Simpan lembur"
+            onPress={onSaveOvertimeSettings}
+          />
+        </View>
+      ) : null}
+
+      {financialSectionVisibility.enclosureCommission ? (
+        <View style={styles.marketplaceOverview}>
+          <FinancialSectionHeader
+            detail="Tarif global untuk baris invoice itemType enclosure."
+            title="Komisi penjualan kandang"
+          />
+          <KolamToggleRow
+            active={draft.enclosureSaleCommissionEnabled}
+            description="Nonaktif berarti baris kandang tidak di-accrue."
+            label="Aktifkan komisi kandang"
+            onPress={() =>
+              setDraftField(
+                'enclosureSaleCommissionEnabled',
+                !draft.enclosureSaleCommissionEnabled,
+              )
+            }
+            variant="settingsForm"
+          />
+          {draft.enclosureSaleCommissionEnabled ? (
+            <>
+              <View style={styles.financialToolbar}>
+                <FinancialChoiceSegment
+                  active={draft.enclosureSaleCommissionType === 'percentage'}
+                  label="Persentase"
+                  onPress={() =>
+                    setDraftField('enclosureSaleCommissionType', 'percentage')
+                  }
+                />
+                <FinancialChoiceSegment
+                  active={draft.enclosureSaleCommissionType === 'fixed'}
+                  label="Nominal tetap"
+                  onPress={() =>
+                    setDraftField('enclosureSaleCommissionType', 'fixed')
+                  }
+                />
+              </View>
+              <KolamTextFieldRow
+                description="Nilai persen atau nominal sesuai tipe komisi."
+                fieldWidth={settingsFieldWidth}
+                label={
+                  draft.enclosureSaleCommissionType === 'fixed'
+                    ? 'Nominal per kandang'
+                    : 'Persentase'
+                }
+                onChangeText={value =>
+                  setDraftField('enclosureSaleCommissionValue', value)
+                }
+                value={draft.enclosureSaleCommissionValue}
+                variant="settingsForm"
+              />
+            </>
+          ) : null}
+          <KolamToggleRow
+            active={draft.salePricesIncludeTax}
+            description="Default true jika field BE kosong."
+            label="Harga jual include PPN"
+            onPress={() =>
+              onSaveFinancialTaxToggle(
+                'salePricesIncludeTax',
+                !draft.salePricesIncludeTax,
+              )
+            }
+            variant="settingsForm"
+          />
+          <KolamToggleRow
+            active={draft.commissionPph21Enabled}
+            description="Aktifkan perhitungan PPh 21 untuk komisi."
+            label="PPh 21 komisi"
+            onPress={() =>
+              onSaveFinancialTaxToggle(
+                'commissionPph21Enabled',
+                !draft.commissionPph21Enabled,
+              )
+            }
+            variant="settingsForm"
+          />
+          <KolamActionControlButton
+            disabled={disabled || busy}
+            intent="primary"
+            label="Simpan komisi kandang"
+            onPress={onSaveEnclosureSaleCommission}
+          />
+        </View>
+      ) : null}
+
+      <View style={styles.marketplaceOverviewRows}>
+        {financialShellSections.map(section => {
+          const rows = financialSummaryRows.filter(row =>
+            section.rowIds.includes(row.id),
+          );
+
+          return rows.map(row => (
+            <View key={row.id} style={styles.marketplaceOverviewRow}>
+              <KolamCopyStack
+                containerStyle={styles.marketplaceOverviewCopy}
+                items={[
+                  {
+                    id: `${row.id}-label`,
+                    text: row.label,
+                    style: styles.marketplaceOverviewLabel,
+                  },
+                  {
+                    id: `${row.id}-detail`,
+                    text: row.detail,
+                    style: styles.marketplaceOverviewDetail,
+                  },
+                ]}
+              />
+              <KolamCopyStack
+                items={[
+                  {
+                    id: `${row.id}-value`,
+                    text: row.value,
+                    style: styles.marketplaceOverviewValue,
+                  },
+                ]}
+              />
+            </View>
+          ));
+        })}
+      </View>
+    </View>
+  );
+}
+
+function FinancialSectionHeader({
+  detail,
+  title,
+}: {
+  detail: string;
+  title: string;
+}) {
+  return (
+    <KolamCopyStack
+      items={[
+        {
+          id: `${title}-title`,
+          text: title,
+          style: styles.marketplaceOverviewLabel,
+        },
+        {
+          id: `${title}-detail`,
+          text: detail,
+          style: styles.marketplaceOverviewDetail,
+        },
+      ]}
+    />
+  );
+}
+
+function FinancialChoiceSegment({
+  active,
+  label,
+  onPress,
+}: {
+  active: boolean;
+  label: string;
+  onPress: () => void;
+}) {
+  return (
+    <KolamChoiceSegment
+      id={label}
+      label={label}
+      onSelect={onPress}
+      selectedId={active ? label : ''}
+    />
+  );
+}
+
 function formatWorkSiteCoordinate(value: number | undefined) {
   return typeof value === 'number' && Number.isFinite(value)
     ? value.toFixed(6)
@@ -5558,6 +6521,38 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 12,
     paddingVertical: 10,
+  },
+  financialActions: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'flex-end',
+  },
+  financialListRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+  },
+  financialSearchInput: {
+    borderColor: '#d1d5db',
+    borderRadius: 6,
+    borderWidth: 1,
+    color: '#111827',
+    flexGrow: 1,
+    fontSize: 13,
+    height: 36,
+    minWidth: 260,
+    paddingHorizontal: 10,
+  },
+  financialToolbar: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
   },
   marketplaceAssetActions: {
     flexDirection: 'row',

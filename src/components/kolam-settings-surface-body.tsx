@@ -48,11 +48,20 @@ export function KolamSettingsSurfaceBody({
         blogRows={controller.blogRows}
         blogTopicRows={controller.blogTopicRows}
         financialSummaryRows={controller.financialSummaryRows}
+        financialMessage={controller.financialMessage}
+        financialSectionVisibility={controller.financialSectionVisibility}
+        financialStatus={controller.financialStatus}
+        financialWallets={controller.financialWallets}
         kpiMessage={controller.kpiMessage}
         kpiPreview={controller.kpiPreview}
         kpiSettingsDraft={controller.kpiSettingsDraft}
         kpiStatus={controller.kpiStatus}
         kpiSummaryRows={controller.kpiSummaryRows}
+        paymentMethodDraft={controller.paymentMethodDraft}
+        paymentMethodFilters={controller.paymentMethodFilters}
+        paymentMethodTotal={controller.paymentMethodTotal}
+        paymentMethodTotalPages={controller.paymentMethodTotalPages}
+        paymentMethods={controller.paymentMethods}
         operationalRooms={controller.operationalRooms}
         operationalStaffRows={controller.operationalStaffRows}
         regionLevel={controller.regionLevel}
@@ -83,7 +92,14 @@ export function KolamSettingsSurfaceBody({
         onDeleteMarketplaceLandingNotice={key => {
           void controller.deleteMarketplaceLandingNotice(key);
         }}
+        onDeletePaymentMethod={id => {
+          void controller.deletePaymentMethod(id);
+        }}
+        onDeletePaymentMethodPhoto={id => {
+          void controller.deletePaymentMethodPhoto(id);
+        }}
         onEditMarketplaceLandingNotice={controller.editMarketplaceLandingNotice}
+        onEditPaymentMethod={controller.editPaymentMethod}
         onMoveMarketplaceAnnouncementBanner={(banner, direction) => {
           void controller.moveMarketplaceAnnouncementBanner(banner, direction);
         }}
@@ -107,6 +123,22 @@ export function KolamSettingsSurfaceBody({
         }}
         onSaveMarketplaceLandingNotice={() => {
           void controller.saveMarketplaceLandingNotice();
+        }}
+        onClearPaymentMethodDraft={controller.clearPaymentMethodDraft}
+        onSaveEnclosureSaleCommission={() => {
+          void controller.saveEnclosureSaleCommission();
+        }}
+        onSaveFinancialTaxToggle={(key, value) => {
+          controller.saveFinancialTaxToggle(key, value);
+        }}
+        onSaveOvertimeSettings={() => {
+          void controller.saveOvertimeSettings();
+        }}
+        onSavePaymentMethod={() => {
+          void controller.savePaymentMethod();
+        }}
+        onSaveTaxCompanyProfile={() => {
+          void controller.saveTaxCompanyProfile();
         }}
         onUploadMarketplaceAnnouncementImage={banner => {
           void controller.uploadMarketplaceAnnouncementImage(banner);
@@ -134,6 +166,9 @@ export function KolamSettingsSurfaceBody({
         }}
         onUploadMarketplaceYoutubeBackground={() => {
           void controller.uploadMarketplaceYoutubeBackground();
+        }}
+        onUploadPaymentMethodPhoto={id => {
+          void controller.uploadPaymentMethodPhoto(id);
         }}
         onSave={() => {
           void controller.saveWebSetting();
@@ -181,6 +216,8 @@ export function KolamSettingsSurfaceBody({
         setMarketplaceLandingNoticeDraftField={
           controller.setMarketplaceLandingNoticeDraftField
         }
+        setPaymentMethodDraftField={controller.setPaymentMethodDraftField}
+        setPaymentMethodFilter={controller.setPaymentMethodFilter}
         setWebContentPanelId={controller.setWebContentPanelId}
         setRegionFilter={controller.setRegionFilter}
         setSitemapCustomUrlsDraftText={controller.setSitemapCustomUrlsDraftText}
@@ -189,6 +226,12 @@ export function KolamSettingsSurfaceBody({
         }
         setSitemapMasterField={controller.setSitemapMasterField}
         setSitemapSectionField={controller.setSitemapSectionField}
+        setTaxCompanyProfileDraftField={
+          controller.setTaxCompanyProfileDraftField
+        }
+        taxCompanyProfile={controller.taxCompanyProfile}
+        taxCompanyProfileDraft={controller.taxCompanyProfileDraft}
+        taxPartyGaps={controller.taxPartyGaps}
         draft={controller.webSettingDraft}
         notificationSoundStatus={controller.notificationSoundStatus}
         sitemapChangeFrequencies={controller.sitemapChangeFrequencies}
