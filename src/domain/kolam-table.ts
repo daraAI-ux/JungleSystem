@@ -5,6 +5,7 @@ export type KolamTableId =
   | 'custom-field'
   | 'customer'
   | 'iucn-status'
+  | 'location'
   | 'packing-material'
   | 'sales'
   | 'species'
@@ -223,6 +224,16 @@ const kolamTableColumns: Record<KolamTableId, KolamTableColumn[]> = {
     { id: 'amount', label: 'Urutan', align: 'right', width: 90 },
     { id: 'status', label: 'Status', align: 'right', width: 116 },
     { id: 'actions', label: '', align: 'right', width: 64 },
+  ],
+  location: [
+    { id: 'primary', label: 'Nama', align: 'left' },
+    { id: 'meta', label: 'Tipe', align: 'left', width: 112 },
+    { id: 'children', label: 'Tingkat', align: 'left', width: 104 },
+    { id: 'notes', label: 'Induk', align: 'left', width: 156 },
+    { id: 'marketplace', label: 'Telepon', align: 'left', width: 132 },
+    { id: 'status', label: 'Deskripsi', align: 'left', width: 220 },
+    { id: 'amount', label: 'Dibuat', align: 'right', width: 128 },
+    { id: 'actions', label: 'Aksi', align: 'right', width: 64 },
   ],
   species: [
     { id: 'primary', label: 'Nama', align: 'left' },
