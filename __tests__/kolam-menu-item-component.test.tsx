@@ -1,5 +1,5 @@
 import React from 'react';
-import {Text} from 'react-native';
+import { Text } from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 import {
   KolamMenuCountBadge,
@@ -15,7 +15,12 @@ describe('KolamMenuItem', () => {
 
     await ReactTestRenderer.act(async () => {
       renderer = ReactTestRenderer.create(
-        <KolamMenuItem grouped label="Activity Log" onPress={onPress} />,
+        <KolamMenuItem
+          grouped
+          label="Activity Log"
+          onPress={onPress}
+          route="/settings/activity-log"
+        />,
       );
     });
 
@@ -51,6 +56,7 @@ describe('KolamMenuItem', () => {
           icon={<Text>v</Text>}
           label="Inventory"
           onPress={onPress}
+          sectionId="inventory"
         />,
       );
     });
@@ -62,9 +68,9 @@ describe('KolamMenuItem', () => {
     pressable.props.onPress();
 
     expect(onPress).toHaveBeenCalledTimes(1);
-    expect(renderer!.root.findAllByType(Text).map(node => node.props.children)).toEqual(
-      ['v', 'Inventory'],
-    );
+    expect(
+      renderer!.root.findAllByType(Text).map(node => node.props.children),
+    ).toEqual(['v', 'Inventory']);
   });
 
   it('renders shared menu count badges', async () => {

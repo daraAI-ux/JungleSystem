@@ -1,16 +1,17 @@
 ﻿import React from 'react';
-import {StyleSheet} from 'react-native';
-import {type ShellModule} from '../domain/app-shell';
-import {kolamVisualTokens as V} from '../domain/kolam-visual';
-import {ModuleNavAutomationIcon} from './kolam-module-nav-automation-icon';
-import {ModuleNavCartIcon} from './kolam-module-nav-cart-icon';
-import {ModuleNavCatalogIcon} from './kolam-module-nav-catalog-icon';
-import {ModuleNavDashboardIcon} from './kolam-module-nav-dashboard-icon';
-import {ModuleNavPeopleIcon} from './kolam-module-nav-people-icon';
-import {ModuleNavPluginIcon} from './kolam-module-nav-plugin-icon';
-import {ModuleNavSalesIcon} from './kolam-module-nav-sales-icon';
-import {ModuleNavSettingsIcon} from './kolam-module-nav-settings-icon';
-import {ModuleNavWalletIcon} from './kolam-module-nav-wallet-icon';
+import { StyleSheet } from 'react-native';
+import { type ShellModule } from '../domain/app-shell';
+import { kolamVisualTokens as V } from '../domain/kolam-visual';
+import { ModuleNavAutomationIcon } from './kolam-module-nav-automation-icon';
+import { ModuleNavCartIcon } from './kolam-module-nav-cart-icon';
+import { ModuleNavCatalogIcon } from './kolam-module-nav-catalog-icon';
+import { ModuleNavDashboardIcon } from './kolam-module-nav-dashboard-icon';
+import { ModuleNavPeopleIcon } from './kolam-module-nav-people-icon';
+import { ModuleNavPluginIcon } from './kolam-module-nav-plugin-icon';
+import { ModuleNavPreparationIcon } from './kolam-module-nav-preparation-icon';
+import { ModuleNavSalesIcon } from './kolam-module-nav-sales-icon';
+import { ModuleNavSettingsIcon } from './kolam-module-nav-settings-icon';
+import { ModuleNavWalletIcon } from './kolam-module-nav-wallet-icon';
 
 export function ModuleNavIcon({
   kind,
@@ -51,6 +52,10 @@ export function ModuleNavIcon({
 
   if (kind === 'automation') {
     return <ModuleNavAutomationIcon tintStyle={tintStyle} />;
+  }
+
+  if (kind === 'preparation') {
+    return <ModuleNavPreparationIcon tintStyle={tintStyle} />;
   }
 
   return <ModuleNavPluginIcon tintStyle={tintStyle} />;
