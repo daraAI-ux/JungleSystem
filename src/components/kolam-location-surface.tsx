@@ -282,9 +282,10 @@ function KolamLocationRow({
   return (
     <KolamDataTableRowFrame style={actionMenuOpen && styles.activeActionRow}>
       <View style={styles.nameCell}>
-        <KolamDataTablePrimaryCell
-          subtitle={location.address || '-'}
-          title={location.name}
+        <KolamCopyStack
+          items={[
+            {id: 'name', text: location.name, style: styles.locationNameText},
+          ]}
         />
       </View>
       <View style={styles.typeCell}>
@@ -294,16 +295,21 @@ function KolamLocationRow({
         />
       </View>
       <KolamDataTableMetaCell style={styles.tierCell}>
-        {location.tier || '-'}
+        {getLocationTierLabel(location.tier)}
       </KolamDataTableMetaCell>
-      <KolamDataTableMetaCell style={styles.parentCell}>
-        {location.parent?.name || '-'}
-      </KolamDataTableMetaCell>
+      <View style={styles.parentCell}>
+        <KolamDataTablePrimaryCell
+          subtitle={
+            location.parent?.type ? getLocationTypeLabel(location.parent.type) : ''
+          }
+          title={location.parent?.name || '-'}
+        />
+      </View>
       <KolamDataTableMetaCell style={styles.phoneCell}>
         {location.phoneNumber || '-'}
       </KolamDataTableMetaCell>
       <KolamDataTableMetaCell style={styles.descriptionCell}>
-        {location.description || '-'}
+        {truncateLocationDescription(location.description)}
       </KolamDataTableMetaCell>
       <KolamDataTableAmountCell style={styles.createdCell}>
         {formatLocationDate(location.createdAt)}
@@ -343,6 +349,25 @@ function getLocationTypeIntent(type: string): KolamStatusBadgeIntent {
     default:
       return 'secondary';
   }
+}
+
+function getLocationTierLabel(tier: string) {
+  switch (tier) {
+    case 'main':
+      return 'Utama';
+    case 'sub':
+      return 'Sub';
+    case 'nested':
+      return 'Nested';
+    default:
+      return tier || '-';
+  }
+}
+
+function truncateLocationDescription(description: string) {
+  return description.length > 50
+    ? `${description.substring(0, 50)}...`
+    : description || '-';
 }
 
 function formatLocationDate(value: string) {
@@ -412,6 +437,12 @@ const styles = StyleSheet.create({
   nameCell: {
     flex: 1,
     minWidth: 0,
+  },
+  locationNameText: {
+    color: V.colors.fg,
+    fontSize: 14,
+    fontWeight: '600',
+    lineHeight: 24,
   },
   typeCell: {
     width: 112,

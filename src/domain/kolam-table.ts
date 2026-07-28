@@ -233,7 +233,7 @@ const kolamTableColumns: Record<KolamTableId, KolamTableColumn[]> = {
     { id: 'marketplace', label: 'Telepon', align: 'left', width: 132 },
     { id: 'status', label: 'Deskripsi', align: 'left', width: 220 },
     { id: 'amount', label: 'Dibuat', align: 'right', width: 128 },
-    { id: 'actions', label: 'Aksi', align: 'right', width: 64 },
+    { id: 'actions', label: '', align: 'right', width: 64 },
   ],
   species: [
     { id: 'primary', label: 'Nama', align: 'left' },
