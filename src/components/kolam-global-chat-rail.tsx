@@ -14,12 +14,13 @@ import {useKolamNotificationSoundSettings} from '../hooks/use-kolam-notification
 import {getKolamFileUrl} from '../lib/file-url';
 import type {
   KolamChatAnalytics,
+  KolamChatLabel,
   KolamChatStaffRef,
   KolamTeamChatAttachment,
   KolamTeamChatCallParticipant,
   KolamTeamChatPresence,
 } from '../services/kolam-api';
-import {getKolamChatAnalytics} from '../services/kolam-api';
+import {getKolamChatAnalytics, getKolamChatLabels} from '../services/kolam-api';
 import {createKolamNotificationSoundService} from '../services/kolam-notification-sound-service';
 import {createKolamRuntimeNotificationSoundAdapter} from '../services/kolam-notification-sound-runtime';
 import {
@@ -45,6 +46,12 @@ interface KolamChatRailAnalyticsState {
   loading: boolean;
 }
 
+interface KolamChatRailLabelsState {
+  errorMessage?: string;
+  items: KolamChatLabel[];
+  loading: boolean;
+}
+
 export function KolamGlobalChatRail({
   mode,
   onClose,
@@ -65,6 +72,11 @@ export function KolamGlobalChatRail({
   const [analyticsState, setAnalyticsState] =
     React.useState<KolamChatRailAnalyticsState>({
       data: null,
+      loading: mode === 'inbox',
+    });
+  const [labelsState, setLabelsState] =
+    React.useState<KolamChatRailLabelsState>({
+      items: [],
       loading: mode === 'inbox',
     });
   const selectedItem = items.find(item => item.id === selectedItemId) ?? null;
@@ -175,6 +187,42 @@ export function KolamGlobalChatRail({
   }, [mode]);
 
   React.useEffect(() => {
+    if (mode !== 'inbox') {
+      setLabelsState({items: [], loading: false});
+      return;
+    }
+
+    let active = true;
+    setLabelsState(current => ({
+      items: current.items,
+      loading: true,
+    }));
+
+    getKolamChatLabels()
+      .then(items => {
+        if (active) {
+          setLabelsState({items, loading: false});
+        }
+      })
+      .catch(error => {
+        if (active) {
+          setLabelsState({
+            errorMessage:
+              error instanceof Error
+                ? error.message
+                : 'Label chat belum bisa dibaca.',
+            items: [],
+            loading: false,
+          });
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [mode]);
+
+  React.useEffect(() => {
     if (selectedItemId && !items.some(item => item.id === selectedItemId)) {
       setSelectedItemId(null);
       setComposerText('');
@@ -274,6 +322,7 @@ export function KolamGlobalChatRail({
             composerText={composerText}
             currentUserId={authUser?.id}
             detail={detail}
+            labels={labelsState.items}
             mode={mode}
             onComposerTextChange={handleComposerTextChange}
             onPendingAttachmentClear={() => setPendingAttachment(null)}
@@ -434,6 +483,7 @@ function KolamChatRailDetailPanel({
   composerText,
   currentUserId,
   detail,
+  labels,
   mode,
   onComposerTextChange,
   onPendingAttachmentClear,
@@ -445,6 +495,7 @@ function KolamChatRailDetailPanel({
   composerText: string;
   currentUserId?: string;
   detail: ReturnType<typeof useKolamChatRailDetail>;
+  labels: KolamChatLabel[];
   mode: KolamGlobalChatRailMode;
   onComposerTextChange: (value: string) => void;
   onPendingAttachmentClear: () => void;
@@ -476,7 +527,11 @@ function KolamChatRailDetailPanel({
           <KolamChatCallStrip currentUserId={currentUserId} detail={detail} />
         ) : null}
         {mode === 'inbox' ? (
-          <KolamInboxActionStrip currentUserId={currentUserId} detail={detail} />
+          <KolamInboxActionStrip
+            currentUserId={currentUserId}
+            detail={detail}
+            labels={labels}
+          />
         ) : null}
       </View>
 
@@ -597,9 +652,11 @@ function KolamChatRailDetailPanel({
 function KolamInboxActionStrip({
   currentUserId,
   detail,
+  labels,
 }: {
   currentUserId?: string;
   detail: ReturnType<typeof useKolamChatRailDetail>;
+  labels: KolamChatLabel[];
 }) {
   const conversation = detail.conversation;
   if (!conversation) {
@@ -612,9 +669,19 @@ function KolamInboxActionStrip({
     currentUserId && assignedStaffId && assignedStaffId === currentUserId,
   );
   const assignedLabel = getChatStaffLabel(conversation.assignedStaffId);
+  const displayLabels = getConversationLabels(conversation, labels);
 
   return (
     <View style={styles.inboxActionStrip}>
+      {displayLabels.length > 0 ? (
+        <View style={styles.inboxLabelRow}>
+          <KolamMappedList
+            items={displayLabels}
+            getKey={label => label._id}
+            renderItem={label => <KolamChatLabelPill label={label} />}
+          />
+        </View>
+      ) : null}
       <View style={styles.inboxActionMeta}>
         <Text style={styles.inboxActionTitle}>
           {isClosed ? 'Ditutup' : 'Open'}
@@ -677,6 +744,22 @@ function KolamInboxActionStrip({
           </KolamPressable>
         ) : null}
       </View>
+    </View>
+  );
+}
+
+function KolamChatLabelPill({label}: {label: KolamChatLabel}) {
+  return (
+    <View style={styles.inboxLabelPill}>
+      <View
+        style={[
+          styles.inboxLabelDot,
+          {backgroundColor: normalizeChatLabelColor(label.color)},
+        ]}
+      />
+      <Text numberOfLines={1} style={styles.inboxLabelText}>
+        {label.name}
+      </Text>
     </View>
   );
 }
@@ -1224,6 +1307,35 @@ function getChatStaffLabel(staff?: KolamChatStaffRef | string | null) {
   );
 }
 
+function getConversationLabels(
+  conversation: NonNullable<
+    ReturnType<typeof useKolamChatRailDetail>['conversation']
+  >,
+  labels: KolamChatLabel[],
+) {
+  if (Array.isArray(conversation.labels) && conversation.labels.length > 0) {
+    return conversation.labels;
+  }
+
+  if (!Array.isArray(conversation.labelIds)) {
+    return [];
+  }
+
+  const labelMap = new Map(labels.map(label => [label._id, label]));
+  return conversation.labelIds
+    .map(label => (typeof label === 'string' ? labelMap.get(label) : label))
+    .filter((label): label is KolamChatLabel => Boolean(label));
+}
+
+function normalizeChatLabelColor(color?: string) {
+  const value = color?.trim();
+  if (!value) {
+    return V.colors.primary;
+  }
+
+  return value.startsWith('#') ? value : `#${value}`;
+}
+
 function getAttachmentFileName(attachment: KolamTeamChatAttachment) {
   if (attachment.fileName?.trim()) {
     return attachment.fileName.trim();
@@ -1507,6 +1619,35 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     backgroundColor: V.colors.bg,
     gap: 7,
+  },
+  inboxLabelRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 5,
+  },
+  inboxLabelPill: {
+    maxWidth: 130,
+    minHeight: 23,
+    paddingHorizontal: 7,
+    borderRadius: 12,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.mutedSoft,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  inboxLabelDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+  },
+  inboxLabelText: {
+    minWidth: 0,
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '800',
   },
   inboxActionMeta: {
     gap: 2,

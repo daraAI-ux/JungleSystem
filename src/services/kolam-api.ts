@@ -1956,6 +1956,14 @@ export async function updateKolamChatConversationLabels(
   return unwrapData(response);
 }
 
+export async function getKolamChatLabels(): Promise<KolamChatLabel[]> {
+  const response = await kolamGet<
+    DataResponse<KolamChatLabel[]> | {data?: KolamChatLabel[]}
+  >('/chat/labels');
+
+  return response.data ?? [];
+}
+
 export async function getKolamChatAssignableStaff(
   params: KolamChatAssignableStaffParams = {},
 ): Promise<KolamChatStaffRef[]> {

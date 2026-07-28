@@ -8,7 +8,10 @@ import {useKolamChatLiveStream} from '../src/hooks/use-kolam-chat-live-stream';
 import {useKolamChatRailDetail} from '../src/hooks/use-kolam-chat-rail-detail';
 import {useKolamChatRailReadonlyData} from '../src/hooks/use-kolam-chat-rail-readonly-data';
 import {useKolamNotificationSoundSettings} from '../src/hooks/use-kolam-notification-sound-settings';
-import {getKolamChatAnalytics} from '../src/services/kolam-api';
+import {
+  getKolamChatAnalytics,
+  getKolamChatLabels,
+} from '../src/services/kolam-api';
 import {createKolamNotificationSoundService} from '../src/services/kolam-notification-sound-service';
 import {pickNativeAssetFile} from '../src/services/native-file-picker';
 
@@ -39,6 +42,7 @@ jest.mock('../src/services/kolam-api', () => {
   return {
     ...actual,
     getKolamChatAnalytics: jest.fn(),
+    getKolamChatLabels: jest.fn(),
   };
 });
 
@@ -76,6 +80,9 @@ const useSoundSettingsMock =
   >;
 const getChatAnalyticsMock = getKolamChatAnalytics as jest.MockedFunction<
   typeof getKolamChatAnalytics
+>;
+const getChatLabelsMock = getKolamChatLabels as jest.MockedFunction<
+  typeof getKolamChatLabels
 >;
 const createSoundServiceMock =
   createKolamNotificationSoundService as jest.MockedFunction<
@@ -141,12 +148,17 @@ describe('KolamGlobalChatRail', () => {
     mockSoundPlay.mockClear();
     createSoundServiceMock.mockClear();
     getChatAnalyticsMock.mockClear();
+    getChatLabelsMock.mockClear();
     getChatAnalyticsMock.mockResolvedValue({
       avgReplyDelayMinutes: 4,
       lateReplyCount: 1,
       ratings: {average: 4.5},
       totalChats: 12,
     });
+    getChatLabelsMock.mockResolvedValue([
+      {_id: 'label-1', color: '#6fbd82', name: 'Prioritas'},
+      {_id: 'label-2', color: 'd8c7a0', name: 'Follow up'},
+    ]);
     useAuthContextMock.mockReturnValue({
       accessScope: {am: false, kolam: true, pos: false},
       authEmail: '',
@@ -368,6 +380,7 @@ describe('KolamGlobalChatRail', () => {
           first_name: 'Maya',
         },
         isAiHandled: false,
+        labelIds: ['label-1', 'label-2'],
         status: 'open',
       },
       loading: false,
@@ -425,6 +438,8 @@ describe('KolamGlobalChatRail', () => {
         'invoice.pdf',
         'application/pdf',
         'Open',
+        'Prioritas',
+        'Follow up',
         'CS: Maya',
         'Resolve',
         'Assign saya',

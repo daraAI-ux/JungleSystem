@@ -35,6 +35,7 @@ import {
   getKolamChatAnalytics,
   getKolamChatConversation,
   getKolamChatConversations,
+  getKolamChatLabels,
   getKolamChatMessages,
   getKolamChatUnreadTotal,
   getKolamMyActiveTeamChatCalls,
@@ -1741,6 +1742,30 @@ describe('Kolam Settings API contracts', () => {
         body: JSON.stringify({labelIds: ['label-1', 'label-2']}),
         method: 'PATCH',
       }),
+    );
+  });
+
+  it('maps chat labels list endpoint from the live chat plugin', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        success: true,
+        data: [
+          {
+            _id: 'label-1',
+            color: '#6fbd82',
+            name: 'Prioritas',
+          },
+        ],
+      }),
+    );
+
+    await expect(getKolamChatLabels()).resolves.toEqual([
+      expect.objectContaining({_id: 'label-1', name: 'Prioritas'}),
+    ]);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${appConfig.kolamApiBaseUrl}/chat/labels`,
+      expect.objectContaining({method: 'GET'}),
     );
   });
 });
