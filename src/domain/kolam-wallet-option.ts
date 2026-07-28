@@ -2,6 +2,8 @@ export interface KolamWalletOption {
   id: string;
   name: string;
   type: string;
+  /** Optional provider code (e.g. CASH) — used by cashflow deposit filters. */
+  provider?: string;
   currentBalance: number;
 }
 
@@ -27,6 +29,7 @@ function normalizeKolamWalletOption(payload: unknown): KolamWalletOption {
     id: getString(record, '_id') || getString(record, 'id'),
     name: getString(record, 'name') || 'Dompet',
     type: getString(record, 'type') || 'regular',
+    provider: getString(record, 'provider') || undefined,
     currentBalance:
       getNumber(record, 'currentBalance') ??
       getNumber(record, 'balance') ??

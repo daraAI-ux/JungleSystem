@@ -296,6 +296,514 @@ export function getAdminCashflowStatusIntent(
   }
 }
 
+/* ─── Detail: review / by-invoice / deposits ─── */
+
+export const EXCLUDED_FROM_INVOICE_CONFIRM_SOURCES = ['commission'] as const;
+
+export type KolamAdminCashflowDetailTab =
+  | 'overview'
+  | 'review'
+  | 'deposits';
+
+export type KolamAdminCashflowInvoiceConfirmStatus =
+  | 'unconfirmed'
+  | 'confirmed'
+  | 'rejected'
+  | 'auto_confirmed'
+  | 'partial'
+  | 'unknown';
+
+export type KolamAdminCashflowEntryConfirmStatus =
+  | 'unconfirmed'
+  | 'confirmed'
+  | 'rejected'
+  | 'auto_confirmed'
+  | 'voided';
+
+export type KolamAdminCashflowInvoiceGroupEntry = {
+  id: string;
+  type: 'credit' | 'debit';
+  source: string;
+  amount: number;
+  note: string;
+  confirmStatus: KolamAdminCashflowEntryConfirmStatus;
+  walletId: string;
+  walletName: string;
+  walletType: string;
+  walletProvider: string;
+  paymentMethodType: string;
+  createdAt: string;
+};
+
+export type KolamAdminCashflowInvoiceGroup = {
+  saleId: string | null;
+  invoiceCode: string | null;
+  entries: KolamAdminCashflowInvoiceGroupEntry[];
+  confirmableEntries: KolamAdminCashflowInvoiceGroupEntry[];
+  excludedCount: number;
+  netAmount: number;
+  confirmStatus: KolamAdminCashflowInvoiceConfirmStatus;
+  firstAt: string | null;
+};
+
+export type KolamAdminCashflowReviewEntry = {
+  id: string;
+  type: 'credit' | 'debit';
+  source: string;
+  amount: number;
+  confirmStatus: string;
+  walletType: string;
+  walletProvider: string;
+  paymentMethodType: string;
+  sourceModel: string;
+};
+
+export type KolamAdminCashflowReviewSummary = {
+  unconfirmedCount: number;
+  cashTotal: number;
+  nonCashTotal: number;
+  totalUnconfirmed: number;
+};
+
+export type KolamAdminCashflowDepositStatus =
+  | 'draft'
+  | 'submitted'
+  | 'in-review'
+  | 'verified'
+  | 'rejected'
+  | 'voided';
+
+export type KolamAdminCashflowDeposit = {
+  id: string;
+  sessionId: string;
+  fromWalletId: string;
+  fromWalletName: string;
+  toWalletId: string;
+  toWalletName: string;
+  amount: number;
+  headlineAmount: number;
+  status: KolamAdminCashflowDepositStatus;
+  note: string;
+  source: KolamAdminCashflowSessionSource;
+  allocationCount: number;
+  totalExpectedIdr: number;
+  totalActualIdr: number;
+  totalShortageIdr: number;
+  expectedAmount: number | null;
+  shortageIdr: number | null;
+  overageIdr: number | null;
+  verifiedAt: string;
+  createdAt: string;
+  raw: unknown;
+};
+
+export type KolamAdminCashflowRecheckResult = {
+  sessionId: string;
+  previousStatus: string;
+  sessionStatus: KolamAdminCashflowSessionStatus;
+  transitioned: boolean;
+  remainingUnconfirmed: number;
+  remainingConfirmable: number;
+  remainingExcluded: number;
+};
+
+export type KolamAdminCashflowConfirmAllResult = {
+  confirmedCount: number;
+  remainingUnconfirmed: number;
+  sessionStatus: KolamAdminCashflowSessionStatus;
+};
+
+export type KolamAdminCashflowSubmitDirectAllocation = {
+  saleId: string;
+  actualAmountIdr: number;
+  note?: string;
+};
+
+export type KolamAdminCashflowInvoiceReviewFilter =
+  | 'pending'
+  | 'confirmed'
+  | 'rejected'
+  | 'all';
+
+export function isConfirmableCashflowSource(source: string) {
+  return !(EXCLUDED_FROM_INVOICE_CONFIRM_SOURCES as readonly string[]).includes(
+    source,
+  );
+}
+
+export function isCashInvoiceGroup(group: KolamAdminCashflowInvoiceGroup) {
+  const candidates =
+    group.confirmableEntries.length > 0
+      ? group.confirmableEntries
+      : group.entries;
+  return candidates.some(isCashReviewEntryLike);
+}
+
+export function getGrossCashFromInvoiceGroup(
+  group: KolamAdminCashflowInvoiceGroup,
+) {
+  const entries =
+    group.confirmableEntries.length > 0
+      ? group.confirmableEntries
+      : group.entries;
+  let total = 0;
+  for (const entry of entries) {
+    if (entry.type !== 'credit') {
+      continue;
+    }
+    if (!isCashWalletFields(entry.walletType, entry.walletProvider)) {
+      continue;
+    }
+    total += entry.amount;
+  }
+  return total;
+}
+
+export function computeAdminCashflowReviewSummary(
+  entries: KolamAdminCashflowReviewEntry[],
+): KolamAdminCashflowReviewSummary {
+  let cashTotal = 0;
+  let nonCashTotal = 0;
+  let totalUnconfirmed = 0;
+
+  for (const entry of entries) {
+    const delta = entry.type === 'credit' ? entry.amount : -entry.amount;
+    const positive = Math.max(delta, 0);
+    totalUnconfirmed += positive;
+    if (isCashReviewEntryLike(entry)) {
+      cashTotal += positive;
+    } else {
+      nonCashTotal += positive;
+    }
+  }
+
+  return {
+    unconfirmedCount: entries.length,
+    cashTotal,
+    nonCashTotal,
+    totalUnconfirmed,
+  };
+}
+
+export function invoiceReviewFilterMatches(
+  group: KolamAdminCashflowInvoiceGroup,
+  filter: KolamAdminCashflowInvoiceReviewFilter,
+) {
+  if (filter === 'all') {
+    return true;
+  }
+  if (filter === 'pending') {
+    return (
+      group.confirmStatus === 'unconfirmed' ||
+      group.confirmStatus === 'partial'
+    );
+  }
+  if (filter === 'confirmed') {
+    return (
+      group.confirmStatus === 'confirmed' ||
+      group.confirmStatus === 'auto_confirmed'
+    );
+  }
+  if (filter === 'rejected') {
+    return group.confirmStatus === 'rejected';
+  }
+  return true;
+}
+
+export function getInvoiceConfirmStatusIntent(
+  status: KolamAdminCashflowInvoiceConfirmStatus,
+): 'success' | 'warning' | 'danger' | 'primary' | 'muted' {
+  switch (status) {
+    case 'confirmed':
+    case 'auto_confirmed':
+      return 'success';
+    case 'rejected':
+      return 'danger';
+    case 'unconfirmed':
+    case 'partial':
+      return 'warning';
+    case 'unknown':
+      return 'muted';
+    default:
+      return 'primary';
+  }
+}
+
+export function getDepositStatusIntent(
+  status: KolamAdminCashflowDepositStatus,
+): 'success' | 'warning' | 'danger' | 'muted' {
+  switch (status) {
+    case 'verified':
+      return 'success';
+    case 'rejected':
+    case 'voided':
+      return 'danger';
+    case 'submitted':
+    case 'in-review':
+      return 'warning';
+    default:
+      return 'muted';
+  }
+}
+
+export function normalizeKolamAdminCashflowReviewEntries(
+  raw: unknown,
+): KolamAdminCashflowReviewEntry[] {
+  const payload = asRecord(raw);
+  const rows = Array.isArray(raw)
+    ? raw
+    : Array.isArray(payload?.data)
+      ? payload.data
+      : [];
+  return rows
+    .map(normalizeReviewEntry)
+    .filter(entry => Boolean(entry.id));
+}
+
+export function normalizeKolamAdminCashflowInvoiceGroups(
+  raw: unknown,
+): KolamAdminCashflowInvoiceGroup[] {
+  const payload = asRecord(raw);
+  const rows = Array.isArray(raw)
+    ? raw
+    : Array.isArray(payload?.data)
+      ? payload.data
+      : [];
+  return rows.map(normalizeInvoiceGroup);
+}
+
+export function normalizeKolamAdminCashflowDeposits(
+  raw: unknown,
+): KolamAdminCashflowDeposit[] {
+  const payload = asRecord(raw);
+  const rows = Array.isArray(raw)
+    ? raw
+    : Array.isArray(payload?.data)
+      ? payload.data
+      : [];
+  return rows
+    .map(normalizeDeposit)
+    .filter(item => Boolean(item.id) && item.status !== 'draft');
+}
+
+export function normalizeKolamAdminCashflowRecheckResult(
+  raw: unknown,
+): KolamAdminCashflowRecheckResult {
+  const payload = asRecord(raw);
+  const data = asRecord(payload?.data) ?? payload ?? {};
+  const remaining = asRecord(data.remainingByExclusion);
+  return {
+    sessionId: String(data.sessionId || '').trim(),
+    previousStatus: String(data.previousStatus || '').trim(),
+    sessionStatus: normalizeStatus(data.sessionStatus),
+    transitioned: Boolean(data.transitioned),
+    remainingUnconfirmed: Number(data.remainingUnconfirmed) || 0,
+    remainingConfirmable: Number(remaining?.confirmable) || 0,
+    remainingExcluded: Number(remaining?.excluded) || 0,
+  };
+}
+
+export function normalizeKolamAdminCashflowConfirmAllResult(
+  raw: unknown,
+): KolamAdminCashflowConfirmAllResult {
+  const payload = asRecord(raw) ?? {};
+  return {
+    confirmedCount: Number(payload.confirmedCount) || 0,
+    remainingUnconfirmed: Number(payload.remainingUnconfirmed) || 0,
+    sessionStatus: normalizeStatus(payload.sessionStatus),
+  };
+}
+
+function isCashWalletFields(type: string, provider: string) {
+  return (
+    type.toLowerCase() === 'cash' || provider.toUpperCase() === 'CASH'
+  );
+}
+
+function isCashReviewEntryLike(entry: {
+  walletType: string;
+  walletProvider: string;
+  paymentMethodType: string;
+  source?: string;
+}) {
+  return (
+    isCashWalletFields(entry.walletType, entry.walletProvider) ||
+    entry.paymentMethodType === 'cash'
+  );
+}
+
+function normalizeReviewEntry(raw: unknown): KolamAdminCashflowReviewEntry {
+  const row = asRecord(raw) ?? {};
+  const wallet = asRecord(row.wallet);
+  const reference = asRecord(row.reference);
+  const paymentMethod = asRecord(reference?.paymentMethod);
+  return {
+    id: String(row.id || row._id || '').trim(),
+    type: row.type === 'debit' ? 'debit' : 'credit',
+    source: String(row.source || '').trim(),
+    amount: Number(row.amount) || 0,
+    confirmStatus: String(row.confirmStatus || '').trim(),
+    walletType: String(wallet?.type || '').trim(),
+    walletProvider: String(wallet?.provider || '').trim(),
+    paymentMethodType: String(paymentMethod?.type || '').trim(),
+    sourceModel: String(row.sourceModel || '').trim(),
+  };
+}
+
+function normalizeInvoiceGroupEntry(
+  raw: unknown,
+): KolamAdminCashflowInvoiceGroupEntry {
+  const row = asRecord(raw) ?? {};
+  const wallet = asRecord(row.wallet);
+  const reference = asRecord(row.reference);
+  const paymentMethod = asRecord(reference?.paymentMethod);
+  const confirmStatus = normalizeEntryConfirmStatus(row.confirmStatus);
+  return {
+    id: String(row.id || row._id || '').trim(),
+    type: row.type === 'debit' ? 'debit' : 'credit',
+    source: String(row.source || '').trim(),
+    amount: Number(row.amount) || 0,
+    note: String(row.note || '').trim(),
+    confirmStatus,
+    walletId: String(wallet?.id || wallet?._id || row.wallet || '').trim(),
+    walletName: String(wallet?.name || '').trim() || '—',
+    walletType: String(wallet?.type || '').trim(),
+    walletProvider: String(wallet?.provider || '').trim(),
+    paymentMethodType: String(paymentMethod?.type || '').trim(),
+    createdAt: stringifyDate(row.createdAt),
+  };
+}
+
+function normalizeInvoiceGroup(raw: unknown): KolamAdminCashflowInvoiceGroup {
+  const row = asRecord(raw) ?? {};
+  const entries = Array.isArray(row.entries)
+    ? row.entries.map(normalizeInvoiceGroupEntry)
+    : [];
+  const confirmableEntries = Array.isArray(row.confirmableEntries)
+    ? row.confirmableEntries.map(normalizeInvoiceGroupEntry)
+    : entries.filter(entry => isConfirmableCashflowSource(entry.source));
+  return {
+    saleId: row.saleId ? String(row.saleId).trim() : null,
+    invoiceCode: row.invoiceCode ? String(row.invoiceCode).trim() : null,
+    entries,
+    confirmableEntries,
+    excludedCount: Number(row.excludedCount) || 0,
+    netAmount: Number(row.netAmount) || 0,
+    confirmStatus: normalizeInvoiceConfirmStatus(row.confirmStatus),
+    firstAt: row.firstAt ? stringifyDate(row.firstAt) : null,
+  };
+}
+
+function normalizeDeposit(raw: unknown): KolamAdminCashflowDeposit {
+  const row = asRecord(raw) ?? {};
+  const fromWallet = asRecord(row.fromWallet);
+  const toWallet = asRecord(row.toWallet);
+  const allocations = Array.isArray(row.invoiceAllocations)
+    ? row.invoiceAllocations
+    : [];
+  const amount = Number(row.amount) || 0;
+  const totalActualIdr = parseMoneyish(row.totalActualIdr);
+  const headlineAmount =
+    allocations.length > 0 ? totalActualIdr || amount : amount;
+  return {
+    id: String(row.id || row._id || '').trim(),
+    sessionId: String(
+      asRecord(row.session)?.id ||
+        asRecord(row.session)?._id ||
+        row.session ||
+        '',
+    ).trim(),
+    fromWalletId: String(
+      fromWallet?.id || fromWallet?._id || row.fromWallet || '',
+    ).trim(),
+    fromWalletName: String(fromWallet?.name || '').trim(),
+    toWalletId: String(
+      toWallet?.id || toWallet?._id || row.toWallet || '',
+    ).trim(),
+    toWalletName: String(toWallet?.name || '').trim(),
+    amount,
+    headlineAmount,
+    status: normalizeDepositStatus(row.status),
+    note: String(row.note || '').trim(),
+    source: row.source === 'pos' ? 'pos' : 'admin',
+    allocationCount: allocations.length,
+    totalExpectedIdr: parseMoneyish(row.totalExpectedIdr),
+    totalActualIdr,
+    totalShortageIdr: parseMoneyish(row.totalShortageIdr),
+    expectedAmount:
+      row.expectedAmount == null ? null : Number(row.expectedAmount) || 0,
+    shortageIdr:
+      row.shortageIdr == null ? null : Number(row.shortageIdr) || 0,
+    overageIdr: row.overageIdr == null ? null : Number(row.overageIdr) || 0,
+    verifiedAt: stringifyDate(row.verifiedAt),
+    createdAt: stringifyDate(row.createdAt),
+    raw,
+  };
+}
+
+function normalizeEntryConfirmStatus(
+  value: unknown,
+): KolamAdminCashflowEntryConfirmStatus {
+  if (
+    value === 'unconfirmed' ||
+    value === 'confirmed' ||
+    value === 'rejected' ||
+    value === 'auto_confirmed' ||
+    value === 'voided'
+  ) {
+    return value;
+  }
+  return 'unconfirmed';
+}
+
+function normalizeInvoiceConfirmStatus(
+  value: unknown,
+): KolamAdminCashflowInvoiceConfirmStatus {
+  if (
+    value === 'unconfirmed' ||
+    value === 'confirmed' ||
+    value === 'rejected' ||
+    value === 'auto_confirmed' ||
+    value === 'partial' ||
+    value === 'unknown'
+  ) {
+    return value;
+  }
+  return 'unknown';
+}
+
+function normalizeDepositStatus(
+  value: unknown,
+): KolamAdminCashflowDepositStatus {
+  if (
+    value === 'draft' ||
+    value === 'submitted' ||
+    value === 'in-review' ||
+    value === 'verified' ||
+    value === 'rejected' ||
+    value === 'voided'
+  ) {
+    return value;
+  }
+  return 'submitted';
+}
+
+function parseMoneyish(value: unknown): number {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === 'string' && value.trim()) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  const record = asRecord(value);
+  if (record?.$numberDecimal != null) {
+    const parsed = Number(record.$numberDecimal);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
+}
+
 function normalizeAdminCashflowRoutePath(route: string) {
   const path = (route.split('?')[0] || '/').trim();
   return ('/' + path.replace(/^\/+/, '')).replace(/\/+$/, '') || '/';

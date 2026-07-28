@@ -16,6 +16,7 @@ import {
   useKolamAdminCashflowSessionController,
   type KolamAdminCashflowSessionController,
 } from '../hooks/use-kolam-admin-cashflow-session-controller';
+import { KolamAdminCashflowSessionDetail } from './kolam-admin-cashflow-session-detail';
 import { KolamButton } from './kolam-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
@@ -36,8 +37,7 @@ const LIST_COLUMNS = [
 ] as const;
 
 /**
- * Admin cashflow sessions — MVP list + create (FE `/cashflow-session`).
- * Detail lifecycle (close/void/review/deposits) = batch berikutnya.
+ * Admin cashflow sessions — list + create + detail ops (FE `/cashflow-session`).
  */
 export function KolamAdminCashflowSessionSurface({
   onRouteChange,
@@ -85,7 +85,7 @@ export function KolamAdminCashflowSessionSurface({
         />
       ) : null}
       {controller.mode === 'detail' ? (
-        <AdminCashflowDetailPlaceholder
+        <KolamAdminCashflowSessionDetail
           documentId={controller.documentId}
           onRouteChange={onRouteChange}
         />
@@ -432,33 +432,6 @@ function AdminCashflowCreateForm({
                   }
                 });
             }}
-          />
-        </View>
-      </KolamCardFrame>
-    </View>
-  );
-}
-
-function AdminCashflowDetailPlaceholder({
-  documentId,
-  onRouteChange,
-}: {
-  documentId: string | null;
-  onRouteChange?: (route: string) => void;
-}) {
-  return (
-    <View style={styles.formRoot}>
-      <KolamCardFrame style={styles.formCard} variant="compact">
-        <Text style={styles.formTitle}>Detail sesi tunai</Text>
-        <Text style={styles.formHint}>
-          Overview, close, void, review, dan deposit akan menyusul di batch
-          berikutnya.
-        </Text>
-        <Text style={styles.metaText}>ID: {documentId || '—'}</Text>
-        <View style={styles.formActions}>
-          <KolamButton
-            label="Kembali ke daftar"
-            onPress={() => onRouteChange?.(KOLAM_ADMIN_CASHFLOW_SESSION_ROOT)}
           />
         </View>
       </KolamCardFrame>

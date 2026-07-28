@@ -1,9 +1,15 @@
 import {
+  computeAdminCashflowReviewSummary,
+  getGrossCashFromInvoiceGroup,
   getKolamAdminCashflowSurfaceMode,
+  isCashInvoiceGroup,
   isKolamAdminCashflowSessionRoute,
   isKolamPosCashflowShiftRoute,
   normalizeKolamAdminCashflowActiveProbe,
+  normalizeKolamAdminCashflowDeposits,
+  normalizeKolamAdminCashflowInvoiceGroups,
   normalizeKolamAdminCashflowSession,
+  type KolamAdminCashflowReviewEntry,
 } from '../src/domain/kolam-admin-cashflow-session';
 import { getKolamNavigationRouteTarget } from '../src/domain/kolam-navigation';
 
@@ -70,5 +76,106 @@ describe('admin cashflow session domain', () => {
     });
     expect(probe.active?.id).toBe('sess-1');
     expect(probe.todaySession?.id).toBe('sess-1');
+  });
+
+  it('computes review summary and cash invoice helpers', () => {
+    const entries: KolamAdminCashflowReviewEntry[] = [
+      {
+        id: '1',
+        type: 'credit',
+        source: 'sale_revenue',
+        amount: 100_000,
+        confirmStatus: 'unconfirmed',
+        walletType: 'cash',
+        walletProvider: 'CASH',
+        paymentMethodType: 'cash',
+        sourceModel: 'Sale',
+      },
+      {
+        id: '2',
+        type: 'credit',
+        source: 'sale_revenue',
+        amount: 50_000,
+        confirmStatus: 'unconfirmed',
+        walletType: 'bank',
+        walletProvider: 'BCA',
+        paymentMethodType: 'transfer',
+        sourceModel: 'Sale',
+      },
+    ];
+    const summary = computeAdminCashflowReviewSummary(entries);
+    expect(summary.cashTotal).toBe(100_000);
+    expect(summary.nonCashTotal).toBe(50_000);
+    expect(summary.unconfirmedCount).toBe(2);
+
+    const groups = normalizeKolamAdminCashflowInvoiceGroups({
+      data: [
+        {
+          saleId: 'sale-1',
+          invoiceCode: 'INV-1',
+          confirmStatus: 'unconfirmed',
+          netAmount: '100000',
+          excludedCount: 0,
+          entries: [
+            {
+              _id: 'e1',
+              type: 'credit',
+              source: 'sale_revenue',
+              amount: 100_000,
+              confirmStatus: 'unconfirmed',
+              wallet: {
+                _id: 'w1',
+                name: 'Cash',
+                type: 'cash',
+                provider: 'CASH',
+              },
+            },
+          ],
+          confirmableEntries: [
+            {
+              _id: 'e1',
+              type: 'credit',
+              source: 'sale_revenue',
+              amount: 100_000,
+              confirmStatus: 'unconfirmed',
+              wallet: {
+                _id: 'w1',
+                name: 'Cash',
+                type: 'cash',
+                provider: 'CASH',
+              },
+            },
+          ],
+        },
+      ],
+    });
+    expect(isCashInvoiceGroup(groups[0]!)).toBe(true);
+    expect(getGrossCashFromInvoiceGroup(groups[0]!)).toBe(100_000);
+  });
+
+  it('normalizes deposits and hides drafts', () => {
+    const deposits = normalizeKolamAdminCashflowDeposits({
+      data: [
+        {
+          _id: 'd1',
+          status: 'draft',
+          amount: 1,
+        },
+        {
+          _id: 'd2',
+          status: 'submitted',
+          amount: 250_000,
+          fromWallet: { _id: 'w1', name: 'Cash Drawer' },
+          toWallet: { _id: 'w2', name: 'Bank' },
+          invoiceAllocations: [{ sale: 's1', invoiceCode: 'INV-1' }],
+          totalActualIdr: '250000',
+          totalShortageIdr: '0',
+        },
+      ],
+    });
+    expect(deposits).toHaveLength(1);
+    expect(deposits[0]?.id).toBe('d2');
+    expect(deposits[0]?.headlineAmount).toBe(250_000);
+    expect(deposits[0]?.allocationCount).toBe(1);
   });
 });
