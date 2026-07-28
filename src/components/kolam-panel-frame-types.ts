@@ -7,6 +7,7 @@ export type KolamPanelFrameVariant =
   | 'commandPalette'
   | 'detail'
   | 'module'
+  | 'settingsSurface'
   | 'status'
   | 'surface'
   | 'userMenu';

@@ -13,6 +13,8 @@ export function getPanelFrameStyle(variant: KolamPanelFrameVariant) {
       return styles.detail;
     case 'module':
       return styles.module;
+    case 'settingsSurface':
+      return styles.settingsSurface;
     case 'status':
       return styles.status;
     case 'surface':

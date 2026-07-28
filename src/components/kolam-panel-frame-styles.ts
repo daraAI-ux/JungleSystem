@@ -76,6 +76,10 @@ export const panelFrameStyles = StyleSheet.create({
     marginTop: V.layout.cardCompactSpacing,
     ...borderedPanelChrome,
   },
+  settingsSurface: {
+    marginTop: V.layout.cardCompactSpacing,
+    backgroundColor: V.colors.bg,
+  },
   userMenu: {
     position: 'absolute',
     top: V.layout.topNavHeight - 1,

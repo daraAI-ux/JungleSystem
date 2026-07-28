@@ -16,7 +16,7 @@ export function KolamSettingsSurfaceFrame({
     controller.activeSurface.description;
 
   return (
-    <KolamPanelFrame variant="surface">
+    <KolamPanelFrame variant="settingsSurface">
       <KolamSurfacePanelCopy title={title} description={description} />
       <KolamSettingsSurfaceBody controller={controller} />
     </KolamPanelFrame>
