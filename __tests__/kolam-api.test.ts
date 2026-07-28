@@ -37,6 +37,7 @@ import {
   getKolamChatConversations,
   getKolamChatLabels,
   getKolamChatMessages,
+  getKolamChatTemplates,
   getKolamChatUnreadTotal,
   getKolamMyActiveTeamChatCalls,
   getKolamRoomActiveTeamChatCall,
@@ -1765,6 +1766,35 @@ describe('Kolam Settings API contracts', () => {
 
     expect(fetchMock).toHaveBeenCalledWith(
       `${appConfig.kolamApiBaseUrl}/chat/labels`,
+      expect.objectContaining({method: 'GET'}),
+    );
+  });
+
+  it('maps chat templates list endpoint from the live chat plugin', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        success: true,
+        data: [
+          {
+            _id: 'template-1',
+            body: 'Halo, stok masih tersedia.',
+            category: 'general',
+            title: 'Stok tersedia',
+          },
+        ],
+      }),
+    );
+
+    await expect(getKolamChatTemplates({search: 'stok'})).resolves.toEqual([
+      expect.objectContaining({
+        _id: 'template-1',
+        body: 'Halo, stok masih tersedia.',
+        title: 'Stok tersedia',
+      }),
+    ]);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${appConfig.kolamApiBaseUrl}/chat/templates?search=stok`,
       expect.objectContaining({method: 'GET'}),
     );
   });

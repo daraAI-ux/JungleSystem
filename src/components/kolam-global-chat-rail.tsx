@@ -16,11 +16,16 @@ import type {
   KolamChatAnalytics,
   KolamChatLabel,
   KolamChatStaffRef,
+  KolamChatTemplate,
   KolamTeamChatAttachment,
   KolamTeamChatCallParticipant,
   KolamTeamChatPresence,
 } from '../services/kolam-api';
-import {getKolamChatAnalytics, getKolamChatLabels} from '../services/kolam-api';
+import {
+  getKolamChatAnalytics,
+  getKolamChatLabels,
+  getKolamChatTemplates,
+} from '../services/kolam-api';
 import {createKolamNotificationSoundService} from '../services/kolam-notification-sound-service';
 import {createKolamRuntimeNotificationSoundAdapter} from '../services/kolam-notification-sound-runtime';
 import {
@@ -52,6 +57,12 @@ interface KolamChatRailLabelsState {
   loading: boolean;
 }
 
+interface KolamChatRailTemplatesState {
+  errorMessage?: string;
+  items: KolamChatTemplate[];
+  loading: boolean;
+}
+
 export function KolamGlobalChatRail({
   mode,
   onClose,
@@ -76,6 +87,11 @@ export function KolamGlobalChatRail({
     });
   const [labelsState, setLabelsState] =
     React.useState<KolamChatRailLabelsState>({
+      items: [],
+      loading: mode === 'inbox',
+    });
+  const [templatesState, setTemplatesState] =
+    React.useState<KolamChatRailTemplatesState>({
       items: [],
       loading: mode === 'inbox',
     });
@@ -223,6 +239,42 @@ export function KolamGlobalChatRail({
   }, [mode]);
 
   React.useEffect(() => {
+    if (mode !== 'inbox') {
+      setTemplatesState({items: [], loading: false});
+      return;
+    }
+
+    let active = true;
+    setTemplatesState(current => ({
+      items: current.items,
+      loading: true,
+    }));
+
+    getKolamChatTemplates()
+      .then(items => {
+        if (active) {
+          setTemplatesState({items, loading: false});
+        }
+      })
+      .catch(error => {
+        if (active) {
+          setTemplatesState({
+            errorMessage:
+              error instanceof Error
+                ? error.message
+                : 'Template chat belum bisa dibaca.',
+            items: [],
+            loading: false,
+          });
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [mode]);
+
+  React.useEffect(() => {
     if (selectedItemId && !items.some(item => item.id === selectedItemId)) {
       setSelectedItemId(null);
       setComposerText('');
@@ -330,6 +382,7 @@ export function KolamGlobalChatRail({
             onSend={handleSend}
             pendingAttachment={pendingAttachment}
             selectedItem={selectedItem}
+            templatesState={templatesState}
           />
         ) : null}
 
@@ -491,6 +544,7 @@ function KolamChatRailDetailPanel({
   onSend,
   pendingAttachment,
   selectedItem,
+  templatesState,
 }: {
   composerText: string;
   currentUserId?: string;
@@ -503,11 +557,23 @@ function KolamChatRailDetailPanel({
   onSend: () => void;
   pendingAttachment: NativeImagePickerResult | null;
   selectedItem: ReturnType<typeof getChatRailItems>[number];
+  templatesState: KolamChatRailTemplatesState;
 }) {
+  const [templatePickerOpen, setTemplatePickerOpen] = React.useState(false);
+  const [templateSearch, setTemplateSearch] = React.useState('');
   const canSend = Boolean(composerText.trim() || pendingAttachment);
   const attachmentLabel = pendingAttachment
     ? pendingAttachment.name ?? pendingAttachment.path ?? pendingAttachment.uri ?? 'File'
     : '';
+  const filteredTemplates = React.useMemo(
+    () => filterChatTemplates(templatesState.items, templateSearch),
+    [templateSearch, templatesState.items],
+  );
+
+  React.useEffect(() => {
+    setTemplatePickerOpen(false);
+    setTemplateSearch('');
+  }, [selectedItem.id]);
 
   return (
     <View style={styles.detailPanel}>
@@ -605,6 +671,20 @@ function KolamChatRailDetailPanel({
         </View>
       ) : null}
 
+      {mode === 'inbox' && templatePickerOpen ? (
+        <KolamChatTemplatePicker
+          onClose={() => setTemplatePickerOpen(false)}
+          onPick={template => {
+            onComposerTextChange(template.body);
+            setTemplatePickerOpen(false);
+          }}
+          onSearchChange={setTemplateSearch}
+          search={templateSearch}
+          state={templatesState}
+          templates={filteredTemplates}
+        />
+      ) : null}
+
       <View style={styles.composer}>
         {mode === 'team-chat' ? (
           <KolamPressable
@@ -616,6 +696,19 @@ function KolamChatRailDetailPanel({
               detail.sending && styles.attachButtonDisabled,
             ]}>
             <Text style={styles.attachButtonText}>+</Text>
+          </KolamPressable>
+        ) : null}
+        {mode === 'inbox' ? (
+          <KolamPressable
+            accessibilityLabel="Buka template chat"
+            disabled={detail.sending}
+            onPress={() => setTemplatePickerOpen(current => !current)}
+            style={[
+              styles.templateButton,
+              templatePickerOpen && styles.templateButtonActive,
+              detail.sending && styles.attachButtonDisabled,
+            ]}>
+            <Text style={styles.templateButtonText}>T</Text>
           </KolamPressable>
         ) : null}
         <TextInput
@@ -645,6 +738,84 @@ function KolamChatRailDetailPanel({
           </Text>
         </KolamPressable>
       </View>
+    </View>
+  );
+}
+
+function KolamChatTemplatePicker({
+  onClose,
+  onPick,
+  onSearchChange,
+  search,
+  state,
+  templates,
+}: {
+  onClose: () => void;
+  onPick: (template: KolamChatTemplate) => void;
+  onSearchChange: (value: string) => void;
+  search: string;
+  state: KolamChatRailTemplatesState;
+  templates: KolamChatTemplate[];
+}) {
+  return (
+    <View style={styles.templatePicker}>
+      <View style={styles.templatePickerHeader}>
+        <View style={styles.templatePickerCopy}>
+          <Text style={styles.templatePickerTitle}>Templates</Text>
+          <Text style={styles.templatePickerMeta}>
+            Pilih template untuk mengisi composer
+          </Text>
+        </View>
+        <KolamPressable
+          accessibilityLabel="Tutup template chat"
+          onPress={onClose}
+          style={styles.templatePickerClose}>
+          <Text style={styles.templatePickerCloseText}>x</Text>
+        </KolamPressable>
+      </View>
+      <TextInput
+        accessibilityLabel="Cari template chat"
+        onChangeText={onSearchChange}
+        placeholder="Cari template..."
+        placeholderTextColor={V.colors.mutedFg}
+        style={styles.templateSearchInput}
+        value={search}
+      />
+      {state.loading ? (
+        <Text style={styles.templatePickerMessage}>Loading...</Text>
+      ) : null}
+      {!state.loading && state.errorMessage ? (
+        <Text style={styles.templatePickerError}>{state.errorMessage}</Text>
+      ) : null}
+      {!state.loading && !state.errorMessage && templates.length === 0 ? (
+        <Text style={styles.templatePickerMessage}>Tidak ada template.</Text>
+      ) : null}
+      {!state.loading && !state.errorMessage && templates.length > 0 ? (
+        <ScrollView style={styles.templateListScroll} showsVerticalScrollIndicator>
+          <KolamMappedList
+            items={templates}
+            getKey={template => template._id}
+            renderItem={template => (
+              <KolamPressable
+                accessibilityLabel={`Pilih template ${template.title}`}
+                onPress={() => onPick(template)}
+                style={styles.templateRow}>
+                <View style={styles.templateRowCopy}>
+                  <Text numberOfLines={1} style={styles.templateRowTitle}>
+                    {template.title}
+                  </Text>
+                  <Text numberOfLines={2} style={styles.templateRowBody}>
+                    {template.body}
+                  </Text>
+                </View>
+                <Text numberOfLines={1} style={styles.templateCategory}>
+                  {template.category}
+                </Text>
+              </KolamPressable>
+            )}
+          />
+        </ScrollView>
+      ) : null}
     </View>
   );
 }
@@ -1327,6 +1498,23 @@ function getConversationLabels(
     .filter((label): label is KolamChatLabel => Boolean(label));
 }
 
+function filterChatTemplates(
+  templates: KolamChatTemplate[],
+  search: string,
+): KolamChatTemplate[] {
+  const needle = search.trim().toLowerCase();
+  if (!needle) {
+    return templates;
+  }
+
+  return templates.filter(template => {
+    return (
+      template.title.toLowerCase().includes(needle) ||
+      template.body.toLowerCase().includes(needle)
+    );
+  });
+}
+
 function normalizeChatLabelColor(color?: string) {
   const value = color?.trim();
   if (!value) {
@@ -1965,6 +2153,125 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '900',
   },
+  templatePicker: {
+    marginHorizontal: 10,
+    marginBottom: 8,
+    maxHeight: 230,
+    padding: 10,
+    borderRadius: V.radius.lg,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.mutedSoft,
+    gap: 8,
+  },
+  templatePickerHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  templatePickerCopy: {
+    minWidth: 0,
+    flex: 1,
+    gap: 2,
+  },
+  templatePickerTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '900',
+  },
+  templatePickerMeta: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  templatePickerClose: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: V.colors.secondary,
+  },
+  templatePickerCloseText: {
+    color: V.colors.secondaryFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '900',
+  },
+  templateSearchInput: {
+    minHeight: 34,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: V.radius.md,
+    borderColor: V.colors.input,
+    borderWidth: 1,
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    backgroundColor: V.colors.bg,
+  },
+  templatePickerMessage: {
+    paddingVertical: 10,
+    textAlign: 'center',
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  templatePickerError: {
+    paddingVertical: 10,
+    textAlign: 'center',
+    color: V.colors.danger,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  templateListScroll: {
+    maxHeight: 126,
+  },
+  templateRow: {
+    minHeight: 52,
+    padding: 8,
+    borderRadius: V.radius.md,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.bg,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+  templateRowCopy: {
+    minWidth: 0,
+    flex: 1,
+    gap: 3,
+  },
+  templateRowTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  templateRowBody: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    lineHeight: 14,
+    fontWeight: '700',
+  },
+  templateCategory: {
+    maxWidth: 76,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 9,
+    color: V.colors.secondaryFg,
+    fontFamily: V.fontFamily,
+    fontSize: 9,
+    fontWeight: '900',
+    backgroundColor: V.colors.secondary,
+  },
   composer: {
     padding: 10,
     borderTopColor: V.colors.border,
@@ -1992,6 +2299,26 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '900',
     lineHeight: 22,
+  },
+  templateButton: {
+    width: 38,
+    height: 38,
+    borderRadius: V.radius.lg,
+    borderColor: V.colors.input,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: V.colors.bg,
+  },
+  templateButtonActive: {
+    borderColor: V.colors.primary,
+    backgroundColor: V.colors.primarySoft,
+  },
+  templateButtonText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 14,
+    fontWeight: '900',
   },
   composerInput: {
     minHeight: 38,

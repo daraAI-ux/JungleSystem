@@ -11,6 +11,7 @@ import {useKolamNotificationSoundSettings} from '../src/hooks/use-kolam-notifica
 import {
   getKolamChatAnalytics,
   getKolamChatLabels,
+  getKolamChatTemplates,
 } from '../src/services/kolam-api';
 import {createKolamNotificationSoundService} from '../src/services/kolam-notification-sound-service';
 import {pickNativeAssetFile} from '../src/services/native-file-picker';
@@ -43,6 +44,7 @@ jest.mock('../src/services/kolam-api', () => {
     ...actual,
     getKolamChatAnalytics: jest.fn(),
     getKolamChatLabels: jest.fn(),
+    getKolamChatTemplates: jest.fn(),
   };
 });
 
@@ -83,6 +85,9 @@ const getChatAnalyticsMock = getKolamChatAnalytics as jest.MockedFunction<
 >;
 const getChatLabelsMock = getKolamChatLabels as jest.MockedFunction<
   typeof getKolamChatLabels
+>;
+const getChatTemplatesMock = getKolamChatTemplates as jest.MockedFunction<
+  typeof getKolamChatTemplates
 >;
 const createSoundServiceMock =
   createKolamNotificationSoundService as jest.MockedFunction<
@@ -149,6 +154,7 @@ describe('KolamGlobalChatRail', () => {
     createSoundServiceMock.mockClear();
     getChatAnalyticsMock.mockClear();
     getChatLabelsMock.mockClear();
+    getChatTemplatesMock.mockClear();
     getChatAnalyticsMock.mockResolvedValue({
       avgReplyDelayMinutes: 4,
       lateReplyCount: 1,
@@ -158,6 +164,20 @@ describe('KolamGlobalChatRail', () => {
     getChatLabelsMock.mockResolvedValue([
       {_id: 'label-1', color: '#6fbd82', name: 'Prioritas'},
       {_id: 'label-2', color: 'd8c7a0', name: 'Follow up'},
+    ]);
+    getChatTemplatesMock.mockResolvedValue([
+      {
+        _id: 'template-1',
+        body: 'Halo, stok masih tersedia.',
+        category: 'general',
+        title: 'Stok tersedia',
+      },
+      {
+        _id: 'template-2',
+        body: 'Baik, kami bantu cek invoice.',
+        category: 'billing',
+        title: 'Cek invoice',
+      },
     ]);
     useAuthContextMock.mockReturnValue({
       accessScope: {am: false, kolam: true, pos: false},
@@ -495,6 +515,87 @@ describe('KolamGlobalChatRail', () => {
     });
 
     expect(sendMessage).toHaveBeenCalledWith('Siap, masih tersedia.');
+  });
+
+  it('opens inbox templates and injects the selected body into the composer', async () => {
+    const sendMessage = jest.fn().mockResolvedValue(undefined);
+    useReadonlyDataMock.mockReturnValue({
+      conversations: [
+        {
+          _id: 'conv-1',
+          platform: 'tokopedia',
+          contactId: {displayName: 'Buyer Tokopedia'},
+          lastMessagePreview: 'Apakah masih tersedia?',
+          unreadCount: 1,
+        },
+      ],
+      loading: false,
+      refresh: jest.fn(),
+      rooms: [],
+      totalUnread: 1,
+    });
+    useDetailMock.mockReturnValue({
+      ...getDefaultDetailMock(),
+      conversation: {
+        _id: 'conv-1',
+        assignedStaffId: null,
+        isAiHandled: false,
+        status: 'open',
+      },
+      loading: false,
+      messages: [],
+      sendMessage,
+      signalTyping: jest.fn(),
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamGlobalChatRail mode="inbox" onClose={() => undefined} />,
+      );
+    });
+
+    const selectButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Pilih conversation Buyer Tokopedia');
+
+    await ReactTestRenderer.act(async () => {
+      selectButton!.props.onPress();
+    });
+
+    const templateButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Buka template chat');
+
+    await ReactTestRenderer.act(async () => {
+      templateButton!.props.onPress();
+    });
+
+    expect(renderText(renderer!)).toEqual(
+      expect.arrayContaining([
+        'Templates',
+        'Pilih template untuk mengisi composer',
+        'Stok tersedia',
+        'Halo, stok masih tersedia.',
+        'general',
+        'Cek invoice',
+      ]),
+    );
+    expect(getChatTemplatesMock).toHaveBeenCalledTimes(1);
+
+    const templateRow = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Pilih template Stok tersedia');
+
+    await ReactTestRenderer.act(async () => {
+      templateRow!.props.onPress();
+    });
+
+    const composerInput = renderer!.root
+      .findAllByType(TextInput)
+      .find(node => node.props.accessibilityLabel === 'Tulis pesan inbox');
+
+    expect(composerInput!.props.value).toBe('Halo, stok masih tersedia.');
   });
 
   it('renders and toggles team chat reactions from message bubbles', async () => {

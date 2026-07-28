@@ -526,6 +526,18 @@ export interface KolamChatLabel {
   updatedAt?: string;
 }
 
+export interface KolamChatTemplate {
+  _id: string;
+  body: string;
+  category: string;
+  createdAt?: string;
+  createdBy?: string | null;
+  isSystem?: boolean;
+  systemKey?: string | null;
+  title: string;
+  updatedAt?: string;
+}
+
 export interface KolamChatHandoverNote {
   createdAt?: string | null;
   createdByStaffId?: KolamChatStaffRef | string | null;
@@ -605,6 +617,12 @@ export interface KolamChatConversationListParams
 export interface KolamChatAssignableStaffParams
   extends Record<string, string | number | boolean | undefined | null> {
   limit?: number;
+}
+
+export interface KolamChatTemplateListParams
+  extends Record<string, string | number | boolean | undefined | null> {
+  category?: string;
+  search?: string;
 }
 
 export interface KolamChatMessageListParams
@@ -1960,6 +1978,16 @@ export async function getKolamChatLabels(): Promise<KolamChatLabel[]> {
   const response = await kolamGet<
     DataResponse<KolamChatLabel[]> | {data?: KolamChatLabel[]}
   >('/chat/labels');
+
+  return response.data ?? [];
+}
+
+export async function getKolamChatTemplates(
+  params: KolamChatTemplateListParams = {},
+): Promise<KolamChatTemplate[]> {
+  const response = await kolamGet<
+    DataResponse<KolamChatTemplate[]> | {data?: KolamChatTemplate[]}
+  >('/chat/templates', cleanKolamListParams(params));
 
   return response.data ?? [];
 }
