@@ -1,8 +1,11 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
 import type {KolamGlobalChatRailMode} from '../components/kolam-global-chat-rail';
 import {
+  assignKolamChatConversation,
   declineKolamTeamChatCall,
   endKolamTeamChatCall,
+  forceUnassignKolamChatConversation,
+  getKolamChatConversation,
   getKolamChatMessages,
   getKolamRoomActiveTeamChatCall,
   getKolamTeamChatMessages,
@@ -21,6 +24,7 @@ import {
   sendKolamTeamChatTextMessage,
   startKolamTeamChatCall,
   toggleKolamTeamChatReaction,
+  type KolamChatConversation,
   type KolamChatMessage,
   type KolamTeamChatCall,
   type KolamTeamChatCallConfig,
@@ -30,6 +34,8 @@ import {
   type KolamTeamChatMessage,
   type KolamTeamChatPresence,
   unmuteKolamTeamChatCallParticipant,
+  updateKolamChatConversationAiHandled,
+  updateKolamChatConversationStatus,
   uploadKolamTeamChatMedia,
 } from '../services/kolam-api';
 import type {NativeImagePickerResult} from '../services/native-file-picker';
@@ -59,9 +65,11 @@ export interface KolamChatRailDetailMessage {
 
 export interface KolamChatRailDetailState {
   activeCall: KolamTeamChatCall | null;
+  assignInboxToMe: () => Promise<void>;
   callBusy: boolean;
   callConfig: KolamTeamChatCallConfig;
   callErrorMessage?: string;
+  conversation: KolamChatConversation | null;
   declineCall: () => Promise<void>;
   endCall: () => Promise<void>;
   errorMessage?: string;
@@ -80,7 +88,10 @@ export interface KolamChatRailDetailState {
   signalTyping: (typing: boolean) => void;
   sending: boolean;
   startCall: () => Promise<void>;
+  toggleInboxAiHandled: () => Promise<void>;
+  toggleInboxStatus: () => Promise<void>;
   toggleCallHand: () => Promise<void>;
+  unassignInbox: () => Promise<void>;
   unmuteCallParticipant: (userId: string) => Promise<void>;
   updatePresenceFromLive: (presence: KolamTeamChatPresence) => void;
 }
@@ -97,6 +108,9 @@ export function useKolamChatRailDetail({
   const [messages, setMessages] = useState<KolamChatRailDetailMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
+  const [conversation, setConversation] = useState<KolamChatConversation | null>(
+    null,
+  );
   const [callBusy, setCallBusy] = useState(false);
   const [activeCall, setActiveCall] = useState<KolamTeamChatCall | null>(null);
   const [callConfig, setCallConfig] = useState<KolamTeamChatCallConfig>({
@@ -112,6 +126,7 @@ export function useKolamChatRailDetail({
   const refresh = useCallback(async () => {
     if (!selectedId) {
       setMessages([]);
+      setConversation(null);
       setPresence(EMPTY_TEAM_CHAT_PRESENCE);
       setActiveCall(null);
       setErrorMessage(undefined);
@@ -124,6 +139,7 @@ export function useKolamChatRailDetail({
 
     try {
       if (mode === 'team-chat') {
+        setConversation(null);
         const nextMessages = await getKolamTeamChatMessages(selectedId, {
           limit: 80,
         });
@@ -134,14 +150,19 @@ export function useKolamChatRailDetail({
         return;
       }
 
-      const nextMessages = await getKolamChatMessages(selectedId, {limit: 50});
+      const [nextConversation, nextMessages] = await Promise.all([
+        getKolamChatConversation(selectedId),
+        getKolamChatMessages(selectedId, {limit: 50}),
+      ]);
       await markKolamChatConversationRead(selectedId).catch(() => undefined);
+      setConversation(nextConversation);
       setMessages([...nextMessages].reverse().map(mapInboxMessage));
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : 'Detail chat belum bisa dibaca.',
       );
       setMessages([]);
+      setConversation(null);
     } finally {
       setLoading(false);
     }
@@ -354,6 +375,75 @@ export function useKolamChatRailDetail({
     [currentUserId, mode, selectedId, sending],
   );
 
+  const runInboxConversationAction = useCallback(
+    async (action: () => Promise<KolamChatConversation>) => {
+      if (mode !== 'inbox' || !selectedId || sending) {
+        return;
+      }
+
+      setSending(true);
+      setErrorMessage(undefined);
+
+      try {
+        const nextConversation = await action();
+        setConversation(nextConversation);
+      } catch (error) {
+        setErrorMessage(
+          error instanceof Error
+            ? error.message
+            : 'Aksi conversation gagal diproses.',
+        );
+      } finally {
+        setSending(false);
+      }
+    },
+    [mode, selectedId, sending],
+  );
+
+  const toggleInboxStatus = useCallback(async () => {
+    if (!selectedId || !conversation) {
+      return;
+    }
+
+    const nextStatus = conversation.status === 'closed' ? 'open' : 'closed';
+    await runInboxConversationAction(() =>
+      updateKolamChatConversationStatus(selectedId, nextStatus),
+    );
+  }, [conversation, runInboxConversationAction, selectedId]);
+
+  const assignInboxToMe = useCallback(async () => {
+    if (!selectedId || !currentUserId) {
+      return;
+    }
+
+    await runInboxConversationAction(() =>
+      assignKolamChatConversation(selectedId, currentUserId),
+    );
+  }, [currentUserId, runInboxConversationAction, selectedId]);
+
+  const unassignInbox = useCallback(async () => {
+    if (!selectedId) {
+      return;
+    }
+
+    await runInboxConversationAction(() =>
+      forceUnassignKolamChatConversation(selectedId),
+    );
+  }, [runInboxConversationAction, selectedId]);
+
+  const toggleInboxAiHandled = useCallback(async () => {
+    if (!selectedId || !conversation) {
+      return;
+    }
+
+    await runInboxConversationAction(() =>
+      updateKolamChatConversationAiHandled(
+        selectedId,
+        conversation.isAiHandled !== true,
+      ),
+    );
+  }, [conversation, runInboxConversationAction, selectedId]);
+
   const runCallAction = useCallback(
     async (action: () => Promise<KolamTeamChatCall>) => {
       if (mode !== 'team-chat' || !selectedId || callBusy) {
@@ -468,9 +558,11 @@ export function useKolamChatRailDetail({
 
   return {
     activeCall,
+    assignInboxToMe,
     callBusy,
     callConfig,
     callErrorMessage,
+    conversation,
     declineCall,
     endCall,
     errorMessage,
@@ -489,7 +581,10 @@ export function useKolamChatRailDetail({
     signalTyping,
     sending,
     startCall,
+    toggleInboxAiHandled,
+    toggleInboxStatus,
     toggleCallHand,
+    unassignInbox,
     unmuteCallParticipant,
     updatePresenceFromLive,
   };

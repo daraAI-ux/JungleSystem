@@ -14,6 +14,7 @@ import {useKolamNotificationSoundSettings} from '../hooks/use-kolam-notification
 import {getKolamFileUrl} from '../lib/file-url';
 import type {
   KolamChatAnalytics,
+  KolamChatStaffRef,
   KolamTeamChatAttachment,
   KolamTeamChatCallParticipant,
   KolamTeamChatPresence,
@@ -474,6 +475,9 @@ function KolamChatRailDetailPanel({
         {mode === 'team-chat' ? (
           <KolamChatCallStrip currentUserId={currentUserId} detail={detail} />
         ) : null}
+        {mode === 'inbox' ? (
+          <KolamInboxActionStrip currentUserId={currentUserId} detail={detail} />
+        ) : null}
       </View>
 
       <View style={styles.messagePane}>
@@ -585,6 +589,93 @@ function KolamChatRailDetailPanel({
             {detail.sending ? 'Mengirim' : 'Kirim'}
           </Text>
         </KolamPressable>
+      </View>
+    </View>
+  );
+}
+
+function KolamInboxActionStrip({
+  currentUserId,
+  detail,
+}: {
+  currentUserId?: string;
+  detail: ReturnType<typeof useKolamChatRailDetail>;
+}) {
+  const conversation = detail.conversation;
+  if (!conversation) {
+    return null;
+  }
+
+  const isClosed = conversation.status === 'closed';
+  const assignedStaffId = getChatStaffId(conversation.assignedStaffId);
+  const assignedToMe = Boolean(
+    currentUserId && assignedStaffId && assignedStaffId === currentUserId,
+  );
+  const assignedLabel = getChatStaffLabel(conversation.assignedStaffId);
+
+  return (
+    <View style={styles.inboxActionStrip}>
+      <View style={styles.inboxActionMeta}>
+        <Text style={styles.inboxActionTitle}>
+          {isClosed ? 'Ditutup' : 'Open'}
+        </Text>
+        <Text numberOfLines={1} style={styles.inboxActionCopy}>
+          {assignedLabel
+            ? `CS: ${assignedLabel}`
+            : conversation.isAiHandled
+              ? 'DARA menangani'
+              : 'Belum ditugaskan'}
+        </Text>
+      </View>
+      <View style={styles.inboxActionButtons}>
+        <KolamPressable
+          accessibilityLabel="Toggle inbox conversation status"
+          disabled={detail.sending}
+          onPress={detail.toggleInboxStatus}
+          style={[styles.callButton, detail.sending && styles.callButtonDisabled]}>
+          <Text style={styles.callButtonText}>{isClosed ? 'Reopen' : 'Resolve'}</Text>
+        </KolamPressable>
+        {!isClosed && !assignedToMe && currentUserId ? (
+          <KolamPressable
+            accessibilityLabel="Assign inbox conversation to me"
+            disabled={detail.sending}
+            onPress={detail.assignInboxToMe}
+            style={[
+              styles.callButton,
+              styles.callButtonGhost,
+              detail.sending && styles.callButtonDisabled,
+            ]}>
+            <Text style={styles.callButtonGhostText}>Assign saya</Text>
+          </KolamPressable>
+        ) : null}
+        {!isClosed && assignedStaffId ? (
+          <KolamPressable
+            accessibilityLabel="Unassign inbox conversation"
+            disabled={detail.sending}
+            onPress={detail.unassignInbox}
+            style={[
+              styles.callButton,
+              styles.callButtonGhost,
+              detail.sending && styles.callButtonDisabled,
+            ]}>
+            <Text style={styles.callButtonGhostText}>Unassign</Text>
+          </KolamPressable>
+        ) : null}
+        {!isClosed ? (
+          <KolamPressable
+            accessibilityLabel="Toggle inbox AI handled"
+            disabled={detail.sending}
+            onPress={detail.toggleInboxAiHandled}
+            style={[
+              styles.callButton,
+              styles.callButtonGhost,
+              detail.sending && styles.callButtonDisabled,
+            ]}>
+            <Text style={styles.callButtonGhostText}>
+              {conversation.isAiHandled ? 'AI off' : 'AI on'}
+            </Text>
+          </KolamPressable>
+        ) : null}
       </View>
     </View>
   );
@@ -1117,6 +1208,22 @@ function getCallParticipantLabel(participant: KolamTeamChatCallParticipant) {
   return name || getCallParticipantUserId(participant) || 'Participant';
 }
 
+function getChatStaffId(staff?: KolamChatStaffRef | string | null) {
+  return typeof staff === 'string' ? staff : staff?._id;
+}
+
+function getChatStaffLabel(staff?: KolamChatStaffRef | string | null) {
+  if (!staff || typeof staff === 'string') {
+    return '';
+  }
+
+  return (
+    [staff.first_name, staff.last_name].filter(Boolean).join(' ').trim() ||
+    staff.username ||
+    staff._id
+  );
+}
+
 function getAttachmentFileName(attachment: KolamTeamChatAttachment) {
   if (attachment.fileName?.trim()) {
     return attachment.fileName.trim();
@@ -1391,6 +1498,35 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     backgroundColor: V.colors.bg,
     gap: 6,
+  },
+  inboxActionStrip: {
+    marginTop: 6,
+    padding: 8,
+    borderRadius: V.radius.lg,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.bg,
+    gap: 7,
+  },
+  inboxActionMeta: {
+    gap: 2,
+  },
+  inboxActionTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  inboxActionCopy: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  inboxActionButtons: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
   },
   callTopLine: {
     flexDirection: 'row',

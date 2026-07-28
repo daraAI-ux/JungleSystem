@@ -106,8 +106,10 @@ function flattenText(value: React.ReactNode): string[] {
 function getDefaultDetailMock() {
   return {
     activeCall: null,
+    assignInboxToMe: jest.fn(),
     callBusy: false,
     callConfig: {enabled: false},
+    conversation: null,
     declineCall: jest.fn(),
     endCall: jest.fn(),
     handoverCall: jest.fn(),
@@ -125,7 +127,10 @@ function getDefaultDetailMock() {
     signalTyping: jest.fn(),
     sending: false,
     startCall: jest.fn(),
+    toggleInboxAiHandled: jest.fn(),
+    toggleInboxStatus: jest.fn(),
     toggleCallHand: jest.fn(),
+    unassignInbox: jest.fn(),
     unmuteCallParticipant: jest.fn(),
     updatePresenceFromLive: jest.fn(),
   };
@@ -333,7 +338,11 @@ describe('KolamGlobalChatRail', () => {
   });
 
   it('opens selected conversation details and sends a text message', async () => {
+    const assignInboxToMe = jest.fn().mockResolvedValue(undefined);
     const sendMessage = jest.fn().mockResolvedValue(undefined);
+    const toggleInboxAiHandled = jest.fn().mockResolvedValue(undefined);
+    const toggleInboxStatus = jest.fn().mockResolvedValue(undefined);
+    const unassignInbox = jest.fn().mockResolvedValue(undefined);
     useReadonlyDataMock.mockReturnValue({
       conversations: [
         {
@@ -351,6 +360,16 @@ describe('KolamGlobalChatRail', () => {
     });
     useDetailMock.mockReturnValue({
       ...getDefaultDetailMock(),
+      assignInboxToMe,
+      conversation: {
+        _id: 'conv-1',
+        assignedStaffId: {
+          _id: 'staff-2',
+          first_name: 'Maya',
+        },
+        isAiHandled: false,
+        status: 'open',
+      },
       loading: false,
       messages: [
         {
@@ -377,6 +396,9 @@ describe('KolamGlobalChatRail', () => {
       sendMessage,
       signalTyping: jest.fn(),
       sending: false,
+      toggleInboxAiHandled,
+      toggleInboxStatus,
+      unassignInbox,
       updatePresenceFromLive: jest.fn(),
     });
     let renderer: ReactTestRenderer.ReactTestRenderer;
@@ -402,8 +424,47 @@ describe('KolamGlobalChatRail', () => {
         'File',
         'invoice.pdf',
         'application/pdf',
+        'Open',
+        'CS: Maya',
+        'Resolve',
+        'Assign saya',
+        'Unassign',
+        'AI on',
       ]),
     );
+
+    const statusButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(
+        node =>
+          node.props.accessibilityLabel === 'Toggle inbox conversation status',
+      );
+    const assignButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(
+        node =>
+          node.props.accessibilityLabel === 'Assign inbox conversation to me',
+      );
+    const unassignButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(
+        node => node.props.accessibilityLabel === 'Unassign inbox conversation',
+      );
+    const aiButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Toggle inbox AI handled');
+
+    await ReactTestRenderer.act(async () => {
+      await statusButton!.props.onPress();
+      await assignButton!.props.onPress();
+      await unassignButton!.props.onPress();
+      await aiButton!.props.onPress();
+    });
+
+    expect(toggleInboxStatus).toHaveBeenCalledTimes(1);
+    expect(assignInboxToMe).toHaveBeenCalledTimes(1);
+    expect(unassignInbox).toHaveBeenCalledTimes(1);
+    expect(toggleInboxAiHandled).toHaveBeenCalledTimes(1);
 
     const input = renderer!.root.findByType(TextInput);
     await ReactTestRenderer.act(async () => {
