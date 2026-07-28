@@ -470,6 +470,7 @@ function KolamStockOpnameList({
           }
           renderItem={renderRow}
           style={styles.listFlatList}
+          contentContainerStyle={styles.listContent}
         />
       </KolamCatalogListTableShell>
 
@@ -803,11 +804,13 @@ const styles = StyleSheet.create({
     paddingTop: 6,
   },
   tableFrame: {
-    flex: 1,
     minHeight: 0,
   },
   listFlatList: {
-    flex: 1,
+    flexGrow: 0,
+  },
+  listContent: {
+    flexGrow: 0,
   },
   headerRow: {
     flexDirection: 'row',

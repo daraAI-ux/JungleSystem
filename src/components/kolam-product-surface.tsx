@@ -507,6 +507,7 @@ export function KolamProductSurface({
               />
             )}
             style={styles.listFlatList}
+            contentContainerStyle={styles.listContent}
           />
         </KolamCatalogListTableShell>
       </View>
@@ -7439,11 +7440,13 @@ const styles = StyleSheet.create({
     minHeight: 0,
   },
   listTableFrame: {
-    flex: 1,
     minHeight: 0,
   },
   listFlatList: {
-    flex: 1,
+    flexGrow: 0,
+  },
+  listContent: {
+    flexGrow: 0,
   },
   toolbarShell: {
     alignItems: 'center',

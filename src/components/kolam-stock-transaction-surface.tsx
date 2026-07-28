@@ -1213,6 +1213,7 @@ function KolamStockTransactionList({
             }
             renderItem={renderRow}
             style={styles.listFlatList}
+            contentContainerStyle={styles.listContent}
           />
         </KolamCatalogListTableShell>
       </View>
@@ -1602,11 +1603,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   tableFrame: {
-    flex: 1,
     minHeight: 0,
   },
   listFlatList: {
-    flex: 1,
+    flexGrow: 0,
+  },
+  listContent: {
+    flexGrow: 0,
   },
   headerRow: {
     flexDirection: 'row',

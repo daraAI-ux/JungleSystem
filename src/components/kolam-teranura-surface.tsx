@@ -205,6 +205,7 @@ export function KolamTeranuraSurface({
               />
             )}
             style={styles.list}
+            contentContainerStyle={styles.listContent}
           />
         </KolamCatalogListTableShell>
       </View>
@@ -454,11 +455,13 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   tableFrame: {
-    flex: 1,
     minHeight: 0,
   },
   list: {
-    flex: 1,
+    flexGrow: 0,
+  },
+  listContent: {
+    flexGrow: 0,
   },
   emptyWrap: {
     minHeight: 240,
