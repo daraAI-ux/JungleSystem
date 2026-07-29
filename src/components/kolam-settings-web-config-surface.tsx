@@ -1410,12 +1410,7 @@ export function KolamSettingsWebConfigSurface({
                       {
                         id: `${field}-${staff._id}-name`,
                         text: getUserPickerLabel(staff),
-                        style: styles.notificationSoundLabel,
-                      },
-                      {
-                        id: `${field}-${staff._id}-id`,
-                        text: staff._id,
-                        style: styles.notificationSoundPath,
+                        style: styles.poStaffCheckboxLabel,
                       },
                     ]}
                   />
@@ -3166,6 +3161,10 @@ export function KolamSettingsWebConfigSurface({
                   'poWorkflowNotifyReceiveUserIds',
                   'Notif terima - staff override',
                 )}
+                {renderPoWorkflowStaffPicker(
+                  'poWorkflowNotifyCheckUserIds',
+                  'Notif QC - staff override',
+                )}
               </View>
               <View style={styles.operationalAttendanceBox}>
                 <KolamToggleRow
@@ -3232,10 +3231,6 @@ export function KolamSettingsWebConfigSurface({
                     })
                   }
                 />
-                {renderPoWorkflowStaffPicker(
-                  'poWorkflowNotifyCheckUserIds',
-                  'Notif QC - staff override',
-                )}
                 {renderPoWorkflowStaffPicker(
                   'poWorkflowNotifyCompleteUserIds',
                   'Notif masuk stok - staff override',
@@ -8088,11 +8083,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderColor: '#e5e7eb',
     borderWidth: 1,
+    flexBasis: '31%',
+    flexGrow: 1,
     flexDirection: 'row',
-    gap: 10,
-    minWidth: 260,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    gap: 6,
+    minWidth: 112,
+    paddingHorizontal: 8,
+    paddingVertical: 7,
   },
   poStaffCheckboxActive: {
     backgroundColor: '#ecfdf5',
@@ -8102,6 +8099,12 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
   },
+  poStaffCheckboxLabel: {
+    color: V.colors.text,
+    fontSize: 11,
+    fontWeight: '700',
+    lineHeight: 14,
+  },
   poStaffCheckboxDisabled: {
     opacity: 0.6,
   },
@@ -8109,9 +8112,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderColor: '#9ca3af',
     borderWidth: 1,
-    height: 18,
+    height: 14,
     justifyContent: 'center',
-    width: 18,
+    width: 14,
   },
   poStaffCheckboxMarkActive: {
     backgroundColor: '#10b981',
@@ -8119,9 +8122,9 @@ const styles = StyleSheet.create({
   },
   poStaffCheckboxMarkText: {
     color: '#ffffff',
-    fontSize: 12,
+    fontSize: 9,
     fontWeight: '700',
-    lineHeight: 14,
+    lineHeight: 10,
   },
   poStaffGrid: {
     flexDirection: 'row',
