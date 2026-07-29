@@ -17,7 +17,10 @@ import {KolamButton} from './kolam-button';
 import {KolamCatalogListTableShell} from './kolam-catalog-list-table-shell';
 import {KolamCopyStack} from './kolam-copy-stack';
 import {KolamDataTableRowFrame} from './kolam-data-table-row-frame';
-import {KolamTableFooterControls} from './kolam-dropdown-select';
+import {
+  KolamOverflowMenuButton,
+  KolamTableFooterControls,
+} from './kolam-dropdown-select';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamFormTextField} from './kolam-form-text-field';
 import {KolamCustomerModule} from './kolam-pos-workspace-widgets';
@@ -281,7 +284,11 @@ function KolamCustomerListSurface({
               ))}
             </View>
             {visibleItems.map(customer => (
-              <KolamCustomerListRow customer={customer} key={customer.id} />
+              <KolamCustomerListRow
+                customer={customer}
+                key={customer.id}
+                onRouteChange={onRouteChange}
+              />
             ))}
           </>
         )}
@@ -294,10 +301,17 @@ function normalizeCustomerSearch(value: string) {
   return value.trim().toLowerCase();
 }
 
-function KolamCustomerListRow({customer}: {customer: KolamCustomer}) {
+function KolamCustomerListRow({
+  customer,
+  onRouteChange,
+}: {
+  customer: KolamCustomer;
+  onRouteChange?: (route: string) => void;
+}) {
   const photoUri = getKolamFileUrl(customer.photos[0]);
   const gender = getCustomerGenderSymbol(customer.gender);
   const points = customer.points.availablePoints;
+  const customerRouteId = encodeURIComponent(customer.id);
 
   return (
     <KolamDataTableRowFrame style={styles.customerListRow}>
@@ -407,7 +421,28 @@ function KolamCustomerListRow({customer}: {customer: KolamCustomer}) {
           {formatCustomerDate(customer.createdAt)}
         </Text>
       </View>
-      <View style={getCustomerListCellStyle('actions')} />
+      <View style={getCustomerListCellStyle('actions')}>
+        <KolamOverflowMenuButton
+          accessibilityLabel={`Menu ${customer.name}`}
+          actions={[
+            {
+              label: 'Lihat',
+              onPress: () => onRouteChange?.(`/customers/${customerRouteId}`),
+            },
+            {
+              label: 'Rubah',
+              onPress: () =>
+                onRouteChange?.(`/customers/${customerRouteId}/edit`),
+            },
+            {
+              disabled: true,
+              label: 'Hapus',
+              onPress: () => undefined,
+              tone: 'danger',
+            },
+          ]}
+        />
+      </View>
     </KolamDataTableRowFrame>
   );
 }
