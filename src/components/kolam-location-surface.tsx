@@ -56,7 +56,7 @@ import {
   KolamStatusBadge,
   type KolamStatusBadgeIntent,
 } from './kolam-status-badge';
-import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
+import {KolamTableFilterTrigger} from './kolam-table-filter-trigger';
 
 type LocationTypeFilterValue = KolamLocationListTypeFilter | '';
 
@@ -995,6 +995,8 @@ function KolamLocationList({
   const [shouldSearchApi, setShouldSearchApi] = React.useState(false);
   const [typeFilter, setTypeFilter] =
     React.useState<LocationTypeFilterValue>('');
+  const [activeFilterPanel, setActiveFilterPanel] =
+    React.useState<'type' | null>(null);
   const [parentLookup, setParentLookup] = React.useState<
     Record<string, KolamLocationOption>
   >({});
@@ -1095,6 +1097,10 @@ function KolamLocationList({
   const pageCount = clientSearchActive ? 1 : Math.max(1, pagination.totalPages);
   const safePage = Math.min(page, pageCount);
   const searchEmpty = Boolean(normalizedSearch) && !loading && !visibleItems.length;
+  const filtersAppliedCount = Number(Boolean(search)) + Number(Boolean(typeFilter));
+  const typeFilterLabel = typeFilter
+    ? getKolamLocationTypeLabel(typeFilter)
+    : 'Tipe';
   const handleConfirmDelete = async () => {
     if (!deleteTarget) {
       return;
@@ -1124,44 +1130,72 @@ function KolamLocationList({
 
   return (
     <View style={styles.stack}>
-      <View style={kolamTableToolbarStyles.row}>
-        <KolamFormTextField
-          onChangeText={next => {
-            setSearch(next);
-            setShouldSearchApi(false);
-            setPage(1);
-          }}
-          placeholder="Cari"
-          style={kolamTableToolbarStyles.searchInput}
-          value={search}
-        />
-        <View style={kolamTableToolbarStyles.controls}>
-          {search ? (
-            <KolamButton
-              label="Bersihkan"
-              onPress={() => {
-                setSearch('');
+      <View style={styles.toolbarWrap}>
+        <View style={styles.toolbarShell}>
+          <View style={styles.filterRow}>
+            <KolamFormTextField
+              onChangeText={next => {
+                setSearch(next);
                 setShouldSearchApi(false);
                 setPage(1);
               }}
+              placeholder="Cari lokasi..."
+              style={styles.searchInput}
+              value={search}
             />
-          ) : null}
-          <KolamDropdownSelect<LocationTypeFilterValue>
-            label="Tipe"
-            onChange={next => {
-              setTypeFilter(next);
-              setShouldSearchApi(false);
-              setPage(1);
-            }}
-            options={LOCATION_TYPE_OPTIONS}
-            value={typeFilter}
-          />
-          <KolamButton
-            intent="primary"
-            label="Baru"
-            onPress={() => onRouteChange?.('/locations/create')}
-          />
+            <KolamTableFilterTrigger
+              active={activeFilterPanel === 'type' || Boolean(typeFilter)}
+              label={typeFilterLabel}
+              onPress={() =>
+                setActiveFilterPanel(current =>
+                  current === 'type' ? null : 'type',
+                )
+              }
+            />
+          </View>
+          <View style={styles.actionRow}>
+            {filtersAppliedCount > 0 ? (
+              <KolamButton
+                label="Reset"
+                muted
+                onPress={() => {
+                  setSearch('');
+                  setTypeFilter('');
+                  setShouldSearchApi(false);
+                  setActiveFilterPanel(null);
+                  setPage(1);
+                }}
+                style={styles.toolbarButton}
+              />
+            ) : null}
+            <KolamButton
+              intent="primary"
+              label="Baru"
+              onPress={() => onRouteChange?.('/locations/create')}
+              style={styles.toolbarButton}
+            />
+          </View>
         </View>
+        {activeFilterPanel === 'type' ? (
+          <View style={[styles.filterOverlayPanel, styles.filterPanelType]}>
+            <View style={styles.filterPanelContent}>
+              {LOCATION_TYPE_OPTIONS.map(option => (
+                <KolamButton
+                  key={option.value || 'all'}
+                  intent={option.value === typeFilter ? 'primary' : 'plain'}
+                  label={option.label}
+                  onPress={() => {
+                    setTypeFilter(option.value);
+                    setShouldSearchApi(false);
+                    setActiveFilterPanel(null);
+                    setPage(1);
+                  }}
+                  style={styles.filterPanelOption}
+                />
+              ))}
+            </View>
+          </View>
+        ) : null}
       </View>
       {error ? (
         <KolamStatusBadge
@@ -1878,6 +1912,81 @@ const styles = StyleSheet.create({
   },
   stack: {
     gap: 12,
+  },
+  toolbarWrap: {
+    elevation: 1000,
+    overflow: 'visible',
+    position: 'relative',
+    zIndex: 100000,
+  },
+  toolbarShell: {
+    alignItems: 'center',
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    justifyContent: 'space-between',
+    overflow: 'visible',
+    padding: 4,
+  },
+  filterRow: {
+    alignItems: 'center',
+    flex: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
+    minWidth: 280,
+    overflow: 'visible',
+  },
+  actionRow: {
+    alignItems: 'center',
+    borderLeftColor: V.colors.border,
+    borderLeftWidth: 1,
+    flexDirection: 'row',
+    flexShrink: 0,
+    flexWrap: 'wrap',
+    gap: 6,
+    justifyContent: 'flex-end',
+    paddingLeft: 8,
+  },
+  searchInput: {
+    flexBasis: 140,
+    flexGrow: 1,
+    maxWidth: 240,
+    minWidth: 140,
+  },
+  toolbarButton: {
+    flexShrink: 0,
+    minHeight: 34,
+    paddingHorizontal: 10,
+  },
+  filterOverlayPanel: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    elevation: 1200,
+    padding: 6,
+    position: 'absolute',
+    shadowColor: V.colors.fg,
+    shadowOffset: {width: 0, height: 8},
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    top: 48,
+    width: 220,
+    zIndex: 120000,
+  },
+  filterPanelType: {
+    left: 150,
+  },
+  filterPanelContent: {
+    gap: 4,
+  },
+  filterPanelOption: {
+    justifyContent: 'flex-start',
   },
   errorBadge: {
     alignSelf: 'flex-start',

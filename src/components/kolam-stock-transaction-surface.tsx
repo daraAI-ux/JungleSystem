@@ -20,7 +20,6 @@ import {
   type KolamStockTransactionController,
 } from '../hooks/use-kolam-stock-transaction-controller';
 import { KolamButton } from './kolam-button';
-import { KolamChevronIcon } from './kolam-chevron-icon';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamContentFrame } from './kolam-content-frame';
@@ -38,6 +37,7 @@ import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamStockCrossSyncObservabilityHost } from './kolam-stock-cross-sync-observability-host';
 import { KolamStockTransactionSourceIcon } from './kolam-stock-transaction-source-icon';
 import { KolamMarketplaceSyncPlatformList } from './kolam-marketplace-sync-platform-list';
+import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 
 type StockTxFilterPanel = 'target' | 'status';
 
@@ -984,14 +984,14 @@ function KolamStockTransactionList({
               style={styles.searchInput}
               value={searchInput}
             />
-            <StockTxFilterTrigger
+            <KolamTableFilterTrigger
               active={
                 activeFilterPanel === 'target' || targetFilterValue !== 'all'
               }
               label={targetFilterLabel}
               onPress={() => openFilterPanel('target')}
             />
-            <StockTxFilterTrigger
+            <KolamTableFilterTrigger
               active={
                 activeFilterPanel === 'status' ||
                 Boolean(controller.filters.status)
@@ -1198,36 +1198,6 @@ function KolamStockTransactionList({
         </KolamCatalogListTableShell>
       </View>
     </View>
-  );
-}
-
-function StockTxFilterTrigger({
-  active,
-  label,
-  onPress,
-}: {
-  active: boolean;
-  label: string;
-  onPress: () => void;
-}) {
-  return (
-    <KolamButton
-      icon={
-        <KolamChevronIcon
-          color={active ? V.colors.primaryFg : V.colors.success}
-          direction="down"
-          size="menu-sm"
-        />
-      }
-      intent={active ? 'primary' : 'secondary'}
-      label={label}
-      onPress={onPress}
-      style={[styles.filterTrigger, active && styles.filterTriggerActive]}
-      textStyle={[
-        styles.filterTriggerText,
-        active && styles.filterTriggerTextActive,
-      ]}
-    />
   );
 }
 
@@ -1480,26 +1450,6 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     maxWidth: 200,
     minWidth: 120,
-  },
-  filterTrigger: {
-    backgroundColor: V.colors.successSoft,
-    borderColor: V.colors.success,
-    flexBasis: 0,
-    flexGrow: 1,
-    minHeight: 34,
-    minWidth: 120,
-    paddingHorizontal: 8,
-  },
-  filterTriggerActive: {
-    backgroundColor: V.colors.success,
-    borderColor: V.colors.success,
-  },
-  filterTriggerText: {
-    color: V.colors.success,
-    fontWeight: '800',
-  },
-  filterTriggerTextActive: {
-    color: V.colors.primaryFg,
   },
   dateField: {
     flexBasis: 0,
