@@ -277,56 +277,14 @@ function KolamStockOpnameList({
 
   const renderRow = React.useCallback(
     ({ item }: { item: KolamStockOpname }) => (
-      <Pressable
-        accessibilityRole="button"
-        onPress={() =>
+      <StockOpnameListRow
+        canDelete={canDelete}
+        item={item}
+        onDelete={() => setDeleteTarget(item)}
+        onOpen={() =>
           onRouteChange?.(`${KOLAM_STOCK_OPNAME_ROOT}/${item.id}`)
         }
-        style={({ pressed }) => [styles.row, pressed ? styles.rowPressed : null]}
-      >
-        <View style={[styles.cell, { flex: 1.2 }]}>
-          <Text numberOfLines={2} style={styles.primaryText}>
-            {item.documentNumber || item.id}
-          </Text>
-        </View>
-        <View style={[styles.cell, { flex: 1 }]}>
-          <KolamStatusBadge
-            intent={statusIntent(item.status)}
-            label={item.statusLabel}
-          />
-        </View>
-        <View style={[styles.cell, { flex: 1.1 }]}>
-          <Text style={styles.secondaryText}>
-            {formatDateTime(item.createdAt)}
-          </Text>
-        </View>
-        <View style={[styles.cell, { flex: 1 }]}>
-          <Text numberOfLines={2} style={styles.secondaryText}>
-            {stockOpnameUserDisplayName(item.owner) || '—'}
-          </Text>
-        </View>
-        <View style={[styles.cell, styles.actionsCell, { flex: 0.45 }]}>
-          <KolamOverflowMenuButton
-            accessibilityLabel={`Aksi ${item.documentNumber}`}
-            actions={[
-              {
-                label: 'Lihat',
-                onPress: () =>
-                  onRouteChange?.(`${KOLAM_STOCK_OPNAME_ROOT}/${item.id}`),
-              },
-              ...(item.status === 'cancelled' && canDelete
-                ? [
-                    {
-                      label: 'Hapus',
-                      tone: 'danger' as const,
-                      onPress: () => setDeleteTarget(item),
-                    },
-                  ]
-                : []),
-            ]}
-          />
-        </View>
-      </Pressable>
+      />
     ),
     [canDelete, onRouteChange],
   );
@@ -558,6 +516,7 @@ function KolamStockOpnameList({
               ))}
             </View>
           }
+          removeClippedSubviews={false}
           renderItem={renderRow}
           style={styles.listFlatList}
           contentContainerStyle={styles.listContent}
@@ -597,6 +556,76 @@ function KolamStockOpnameList({
         onOpenChange={setImportOpen}
         visible={importOpen}
       />
+    </View>
+  );
+}
+
+function StockOpnameListRow({
+  canDelete,
+  item,
+  onDelete,
+  onOpen,
+}: {
+  canDelete: boolean;
+  item: KolamStockOpname;
+  onDelete: () => void;
+  onOpen: () => void;
+}) {
+  const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
+
+  return (
+    <View style={[styles.row, actionMenuOpen ? styles.activeActionRow : null]}>
+      <Pressable
+        accessibilityRole="button"
+        onPress={onOpen}
+        style={({ pressed }) => [
+          styles.rowMain,
+          pressed ? styles.rowPressed : null,
+        ]}
+      >
+        <View style={[styles.cell, { flex: 1.2 }]}>
+          <Text numberOfLines={2} style={styles.primaryText}>
+            {item.documentNumber || item.id}
+          </Text>
+        </View>
+        <View style={[styles.cell, { flex: 1 }]}>
+          <KolamStatusBadge
+            intent={statusIntent(item.status)}
+            label={item.statusLabel}
+          />
+        </View>
+        <View style={[styles.cell, { flex: 1.1 }]}>
+          <Text style={styles.secondaryText}>
+            {formatDateTime(item.createdAt)}
+          </Text>
+        </View>
+        <View style={[styles.cell, { flex: 1 }]}>
+          <Text numberOfLines={2} style={styles.secondaryText}>
+            {stockOpnameUserDisplayName(item.owner) || '—'}
+          </Text>
+        </View>
+      </Pressable>
+      <View style={styles.overflowCell}>
+        <KolamOverflowMenuButton
+          accessibilityLabel={`Aksi ${item.documentNumber}`}
+          actions={[
+            {
+              label: 'Lihat',
+              onPress: onOpen,
+            },
+            ...(item.status === 'cancelled' && canDelete
+              ? [
+                  {
+                    label: 'Hapus',
+                    tone: 'danger' as const,
+                    onPress: onDelete,
+                  },
+                ]
+              : []),
+          ]}
+          onOpenChange={setActionMenuOpen}
+        />
+      </View>
     </View>
   );
 }
@@ -925,6 +954,19 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 8,
     gap: 4,
+    overflow: 'visible',
+    zIndex: 1,
+  },
+  activeActionRow: {
+    zIndex: 1000,
+    elevation: 30,
+  },
+  rowMain: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    minWidth: 0,
   },
   rowPressed: {
     backgroundColor: V.colors.muted,
@@ -932,8 +974,11 @@ const styles = StyleSheet.create({
   cell: {
     minWidth: 0,
   },
-  actionsCell: {
+  overflowCell: {
+    width: 48,
     alignItems: 'flex-end',
+    zIndex: 1100,
+    elevation: 30,
   },
   primaryText: {
     color: V.colors.fg,
