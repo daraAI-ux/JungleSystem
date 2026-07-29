@@ -357,7 +357,11 @@ const kolamTableColumns: Record<KolamTableId, KolamTableColumn[]> = {
 export function getKolamTableColumns(
   tableId: KolamTableId,
 ): KolamTableColumn[] {
-  return kolamTableColumns[tableId].map(column => ({ ...column }));
+  const columns = kolamTableColumns[tableId];
+  if (!columns) {
+    throw new Error(`Unknown Kolam table columns for "${tableId}"`);
+  }
+  return columns.map(column => ({ ...column }));
 }
 
 export function applyKolamAdaptiveColumnWidths(
