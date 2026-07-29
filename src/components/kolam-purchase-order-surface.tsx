@@ -172,8 +172,7 @@ function KolamPurchaseOrderList({
         onDelete={() => setDeleteCandidate(item)}
         onMenuOpenChange={open => setOpenActionRowId(open ? item.id : null)}
         onRestore={() => {
-          void controller.onSelectPO(item).then(() => controller.onRestoreToDraft());
-          onRouteChange?.(`${KOLAM_PURCHASE_ORDER_ROOT}/${item.id}`);
+          void controller.onRestorePO(item);
         }}
         onSelect={() => {
           void controller.onSelectPO(item);
@@ -344,7 +343,7 @@ function KolamPurchaseOrderList({
         footer={
           <KolamTableFooterControls
             onPageSizeChange={controller.onLimitChange}
-            page={controller.pagination.page}
+            page={safePage}
             pageSize={controller.pagination.limit}
             total={controller.pagination.total}
           >
@@ -382,8 +381,18 @@ function KolamPurchaseOrderList({
             <View style={styles.emptyWrap}>
               <KolamEmptyState
                 compact
-                message="Coba ubah pencarian atau filter status/pembayaran."
-                title={controller.loading ? 'Memuat purchase order…' : 'Belum ada purchase order'}
+                message={
+                  controller.filters.search.trim()
+                    ? `Tidak ada pesanan pembelian untuk "${controller.filters.search.trim()}". Coba kata kunci atau filter lain.`
+                    : 'Coba ubah pencarian atau filter status/pembayaran.'
+                }
+                title={
+                  controller.loading
+                    ? 'Memuat purchase order…'
+                    : controller.filters.search.trim()
+                      ? 'Tidak ditemukan'
+                      : 'Belum ada purchase order'
+                }
               />
             </View>
           }
@@ -430,21 +439,14 @@ function KolamPurchaseOrderRow({
   const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
   const canDelete = po.status === 'draft' || po.status === 'cancelled';
   const canRestore = po.status === 'cancelled';
-  const total = po.finalTotal || po.total;
+  const total = po.total;
 
   return (
     <KolamDataTableRowFrame style={actionMenuOpen ? styles.activeActionRow : undefined}>
       <Pressable onPress={onSelect} style={[styles.cell, styles.primaryCell]}>
-        <KolamCopyStack
-          items={[
-            { id: 'code', text: po.poCode || '—', style: styles.rowTitle },
-            {
-              id: 'created',
-              text: `${po.items.length} item · ${formatPODateTime(po.createdAt)}`,
-              style: styles.rowMeta,
-            },
-          ]}
-        />
+        <Text numberOfLines={1} style={styles.rowTitle}>
+          {po.poCode || '—'}
+        </Text>
       </Pressable>
       <View style={[styles.cell, { width: 180 }]}>
         <Text numberOfLines={2} style={styles.cellText}>
@@ -462,18 +464,22 @@ function KolamPurchaseOrderRow({
           intent={getKolamPOStatusIntent(po.status)}
           label={getKolamPOStatusLabel(po.status)}
         />
+        {po.isPartial ? (
+          <KolamStatusBadge
+            intent="warning"
+            label="Sebagian"
+            textStyle={styles.badgeTextSm}
+          />
+        ) : null}
         <KolamStatusBadge
           intent={getKolamPOPaymentStatusIntent(po.paymentStatus)}
           label={getKolamPOPaymentStatusLabel(po.paymentStatus)}
           textStyle={styles.badgeTextSm}
         />
-        {po.isPartial ? (
-          <KolamStatusBadge intent="warning" label="Partial" textStyle={styles.badgeTextSm} />
-        ) : null}
       </View>
       <View style={[styles.cell, { width: 140 }]}>
         <Text numberOfLines={2} style={styles.cellText}>
-          {formatPODate(po.createdAt)}
+          {formatPODateTime(po.createdAt)}
         </Text>
       </View>
       <View style={styles.overflowCell}>

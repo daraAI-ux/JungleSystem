@@ -53,6 +53,20 @@ describe('getKolamTableColumns', () => {
     ]);
   });
 
+  it('defines purchase order list table headers', () => {
+    expect(
+      getKolamTableColumns('purchase-order').map(column => column.label),
+    ).toEqual([
+      'Kode PO',
+      'Pemasok',
+      'Total Item',
+      'Total Biaya',
+      'Status',
+      'Dibuat',
+      '',
+    ]);
+  });
+
   it('returns cloned column definitions so render code cannot mutate the contract', () => {
     const first = getKolamTableColumns('sales');
     first[0].label = 'Changed';

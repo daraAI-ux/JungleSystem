@@ -117,6 +117,7 @@ export interface KolamPurchaseOrderController {
   onConfirmRefund: (localProofUri: string) => Promise<boolean>;
   onCreateNew: () => void;
   onDeletePO: (po: KolamPurchaseOrder) => Promise<boolean>;
+  onRestorePO: (po: KolamPurchaseOrder) => Promise<boolean>;
   onEdit: () => boolean;
   onEditCheckItems: (params: {
     items: KolamPOCheckItemInput[];
@@ -582,6 +583,14 @@ export function useKolamPurchaseOrderController(
       try {
         await deleteKolamPurchaseOrder(po.id);
         setOrders(current => current.filter(item => item.id !== po.id));
+        setPagination(current => ({
+          ...current,
+          total: Math.max(0, current.total - 1),
+          totalPages: Math.max(
+            1,
+            Math.ceil(Math.max(0, current.total - 1) / current.limit),
+          ),
+        }));
         if (selectedPO?.id === po.id) {
           setMode('list');
           setSelectedPO(null);
@@ -591,6 +600,31 @@ export function useKolamPurchaseOrderController(
         return true;
       } catch (deleteError) {
         setError(getErrorMessage(deleteError));
+        return false;
+      } finally {
+        setMutating(false);
+      }
+    },
+    [selectedPO],
+  );
+
+  const onRestorePO = useCallback(
+    async (po: KolamPurchaseOrder): Promise<boolean> => {
+      setMutating(true);
+      setError(null);
+      try {
+        const updated = await updateKolamPurchaseOrderStatus(po.id, {
+          status: 'draft',
+        });
+        setOrders(current => upsertPO(current, updated));
+        if (selectedPO?.id === po.id) {
+          setSelectedPO(updated);
+          setForm(createKolamPOFormStateFromPO(updated));
+        }
+        setStatusMessage('PO dikembalikan ke draf');
+        return true;
+      } catch (restoreError) {
+        setError(getErrorMessage(restoreError));
         return false;
       } finally {
         setMutating(false);
@@ -1116,6 +1150,7 @@ export function useKolamPurchaseOrderController(
     onConfirmRefund,
     onCreateNew,
     onDeletePO,
+    onRestorePO,
     onEdit,
     onEditCheckItems,
     onExportList,
