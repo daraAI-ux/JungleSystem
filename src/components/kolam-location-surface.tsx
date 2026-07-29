@@ -1891,8 +1891,7 @@ const styles = StyleSheet.create({
     elevation: 90,
   },
   nameCell: {
-    flex: 1,
-    minWidth: 220,
+    width: 220,
   },
   locationNameText: {
     color: V.colors.fg,

@@ -230,7 +230,7 @@ const kolamTableColumns: Record<KolamTableId, KolamTableColumn[]> = {
     { id: 'actions', label: '', align: 'right', width: 64 },
   ],
   location: [
-    { id: 'primary', label: 'Nama Lokasi', align: 'left' },
+    { id: 'primary', label: 'Nama Lokasi', align: 'left', width: 220 },
     { id: 'meta', label: 'Tipe', align: 'left', width: 112 },
     { id: 'children', label: 'Tingkat', align: 'left', width: 104 },
     { id: 'notes', label: 'Induk', align: 'left', width: 156 },
