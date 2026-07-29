@@ -2,7 +2,7 @@ import React from 'react';
 import { Text, TextInput, View } from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 import { KolamActionControlButton } from '../src/components/kolam-action-control-button';
-import { KolamChoiceSegment } from '../src/components/kolam-choice-segment';
+import { KolamDropdownSelect } from '../src/components/kolam-dropdown-select';
 import { KolamSettingsWebConfigSurface } from '../src/components/kolam-settings-panel-surfaces';
 import { KolamRemoteImage } from '../src/components/kolam-remote-image';
 import { KolamSettingsWebFileField } from '../src/components/kolam-settings-web-file-field';
@@ -444,7 +444,7 @@ describe('settings web widgets', () => {
 
     const toggles = renderer!.root.findAllByType(KolamToggleRow);
     const buttons = renderer!.root.findAllByType(KolamActionControlButton);
-    const choices = renderer!.root.findAllByType(KolamChoiceSegment);
+    const dropdowns = renderer!.root.findAllByType(KolamDropdownSelect);
 
     await ReactTestRenderer.act(async () => {
       toggles.find(node => node.props.label === 'Marketplace')!.props.onPress();
@@ -454,9 +454,9 @@ describe('settings web widgets', () => {
       toggles
         .find(node => node.props.label === 'Google Sign-In webstore')!
         .props.onPress();
-      choices
-        .find(node => node.props.label === 'Pilih room')!
-        .props.onSelect('');
+      dropdowns
+        .find(node => node.props.label === 'Room penerimaan barang (Team Chat)')!
+        .props.onChange('');
       buttons
         .find(node => node.props.label === 'Simpan Client ID')!
         .props.onPress();
