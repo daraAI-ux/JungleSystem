@@ -14,7 +14,10 @@ import {
   normalizeKolamStockOpnameLine,
   normalizeKolamStockOpnameList,
   opnameMinusReasonLabel,
+  stockOpnameLineDiff,
+  stockOpnameLineNeedsMinusReason,
   stockOpnameLineStatusLabel,
+  stockOpnameLineSystemBaseline,
   stockOpnameLineTargetLabel,
   stockOpnameStatusLabel,
   stockOpnameUserDisplayName,
@@ -174,6 +177,28 @@ describe('Kolam stock opname domain', () => {
     expect(needsOpnameMinusReason('product', -1)).toBe(true);
     expect(needsOpnameMinusReason('product', 1)).toBe(false);
     expect(needsOpnameMinusReason('packing', -1)).toBe(false);
+    expect(
+      stockOpnameLineNeedsMinusReason({
+        targetType: 'product',
+        physicalQty: 3,
+        systemQty: null,
+        liveSystemQty: 5,
+      }),
+    ).toBe(true);
+    expect(
+      stockOpnameLineSystemBaseline({
+        systemQty: null,
+        liveSystemQty: 5,
+      }),
+    ).toBe(5);
+    expect(
+      stockOpnameLineDiff({
+        targetType: 'product',
+        physicalQty: 3,
+        systemQty: null,
+        liveSystemQty: 5,
+      }),
+    ).toBe(-2);
   });
 
   it('extracts variants only when variantConfig is present', () => {

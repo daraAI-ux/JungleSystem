@@ -14,6 +14,10 @@ import {
   KOLAM_STOCK_OPNAME_ROOT,
   formatStockOpnameLineCounts,
   hasKolamStockOpnamePermission,
+  needsOpnameMinusReason,
+  stockOpnameLineDiff,
+  stockOpnameLineNeedsMinusReason,
+  stockOpnameLineSystemBaseline,
   stockOpnameLineTargetLabel,
   stockOpnameUserDisplayName,
   type KolamOpnameMinusReason,
@@ -459,6 +463,13 @@ export function KolamStockOpnameDetail({
               onResubmit={() => {
                 void controller.onResubmitLine(line.id);
               }}
+              onSaveMinusReason={reason => {
+                void controller.onUpdateLine({
+                  lineId: line.id,
+                  minusReason: reason,
+                  keepPhotos: line.photos,
+                });
+              }}
             />
           ))
         )}
@@ -573,20 +584,33 @@ export function KolamStockOpnameDetail({
               onChangeText={setEditQty}
               value={editQty}
             />
-            <KolamDropdownSelect
-              label="Alasan minus"
-              onChange={value =>
-                setEditMinus(value as KolamOpnameMinusReason | '')
-              }
-              options={[
-                { label: '—', value: '' },
-                ...KOLAM_OPNAME_MINUS_REASON_OPTIONS.map(option => ({
-                  label: option.label,
-                  value: option.value,
-                })),
-              ]}
-              value={editMinus}
-            />
+            {editLine &&
+            needsOpnameMinusReason(
+              editLine.targetType,
+              (() => {
+                const baseline = stockOpnameLineSystemBaseline(editLine);
+                const qty = Number(editQty);
+                if (baseline == null || !Number.isFinite(qty)) {
+                  return null;
+                }
+                return qty - baseline;
+              })(),
+            ) ? (
+              <KolamDropdownSelect
+                label="Alasan selisih minus"
+                onChange={value =>
+                  setEditMinus(value as KolamOpnameMinusReason | '')
+                }
+                options={[
+                  { label: '— Pilih —', value: '' },
+                  ...KOLAM_OPNAME_MINUS_REASON_OPTIONS.map(option => ({
+                    label: option.label,
+                    value: option.value,
+                  })),
+                ]}
+                value={editMinus}
+              />
+            ) : null}
             <KolamFormTextField
               multiline
               numberOfLines={2}
@@ -602,18 +626,47 @@ export function KolamStockOpnameDetail({
                 onPress={() => setEditLine(null)}
               />
               <KolamButton
-                disabled={controller.acting}
+                disabled={
+                  controller.acting ||
+                  (editLine != null &&
+                    needsOpnameMinusReason(
+                      editLine.targetType,
+                      (() => {
+                        const baseline =
+                          stockOpnameLineSystemBaseline(editLine);
+                        const qty = Number(editQty);
+                        if (baseline == null || !Number.isFinite(qty)) {
+                          return null;
+                        }
+                        return qty - baseline;
+                      })(),
+                    ) &&
+                    !editMinus)
+                }
                 intent="primary"
                 label="Simpan"
                 onPress={() => {
                   if (!editLine) {
                     return;
                   }
+                  const needsMinus = needsOpnameMinusReason(
+                    editLine.targetType,
+                    (() => {
+                      const baseline = stockOpnameLineSystemBaseline(editLine);
+                      const qty = Number(editQty);
+                      if (baseline == null || !Number.isFinite(qty)) {
+                        return null;
+                      }
+                      return qty - baseline;
+                    })(),
+                  );
                   void controller
                     .onUpdateLine({
                       lineId: editLine.id,
                       physicalQty: Number(editQty) || 0,
-                      minusReason: editMinus || null,
+                      minusReason: needsMinus
+                        ? editMinus || null
+                        : null,
                       lineNote: editNote,
                       keepPhotos: editLine.photos,
                     })
@@ -721,7 +774,7 @@ function AddLineForm({
       />
       {controller.addLineNeedsMinusReason ? (
         <KolamDropdownSelect
-          label="Alasan minus"
+          label="Alasan selisih minus"
           onChange={value =>
             controller.setAddDraft({
               minusReason: value as KolamOpnameMinusReason | '',
@@ -789,6 +842,7 @@ function LineCard({
   onRemove,
   onRequestRevision,
   onResubmit,
+  onSaveMinusReason,
 }: {
   canApprove: boolean;
   canEdit: boolean;
@@ -802,10 +856,15 @@ function LineCard({
   onRemove: () => void;
   onRequestRevision: () => void;
   onResubmit: () => void;
+  onSaveMinusReason: (reason: KolamOpnameMinusReason | null) => void;
 }) {
   const label = stockOpnameLineTargetLabel(line);
-  const diff =
-    line.systemQty != null ? line.physicalQty - line.systemQty : null;
+  const systemBaseline = stockOpnameLineSystemBaseline(line);
+  const diff = stockOpnameLineDiff(line);
+  const needsMinus = stockOpnameLineNeedsMinusReason(line);
+  const usingLiveSystem =
+    (line.systemQty == null || !Number.isFinite(line.systemQty)) &&
+    line.liveSystemQty != null;
 
   return (
     <View style={styles.lineCard}>
@@ -818,10 +877,39 @@ function LineCard({
             <Text style={styles.meta}>Varian: {line.variantLabel}</Text>
           ) : null}
           <Text style={styles.meta}>
-            Sistem {line.systemQty ?? '—'} → Fisik {line.physicalQty}
+            {usingLiveSystem ? 'Sistem (live) ' : 'Sistem '}
+            {systemBaseline ?? '—'} → Fisik {line.physicalQty}
             {diff != null ? ` (selisih ${diff})` : ''}
           </Text>
-          {line.minusReasonLabel ? (
+          {needsMinus ? (
+            canEdit ? (
+              <KolamDropdownSelect
+                label="Alasan selisih minus"
+                onChange={value =>
+                  onSaveMinusReason(
+                    value ? (value as KolamOpnameMinusReason) : null,
+                  )
+                }
+                options={[
+                  { label: '— Pilih —', value: '' },
+                  ...KOLAM_OPNAME_MINUS_REASON_OPTIONS.map(option => ({
+                    label: option.label,
+                    value: option.value,
+                  })),
+                ]}
+                value={line.minusReason || ''}
+              />
+            ) : (
+              <Text
+                style={
+                  line.minusReasonLabel ? styles.meta : styles.minusMissing
+                }
+              >
+                Alasan:{' '}
+                {line.minusReasonLabel || 'Belum diisi'}
+              </Text>
+            )
+          ) : line.minusReasonLabel ? (
             <Text style={styles.meta}>Alasan: {line.minusReasonLabel}</Text>
           ) : null}
           {line.rejectReason ? (
@@ -956,6 +1044,11 @@ const styles = StyleSheet.create({
     color: V.colors.mutedFg,
     fontSize: 12,
     fontWeight: '600',
+  },
+  minusMissing: {
+    color: V.colors.danger,
+    fontSize: 12,
+    fontWeight: '700',
   },
   linkText: {
     color: V.colors.primary,

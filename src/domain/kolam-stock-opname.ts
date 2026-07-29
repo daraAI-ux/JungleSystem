@@ -469,6 +469,42 @@ export function needsOpnameMinusReason(
   return diff != null && diff < 0;
 }
 
+/** Qty sistem untuk hitung Δ — freeze `systemQty`, atau live di draf. */
+export function stockOpnameLineSystemBaseline(line: {
+  systemQty?: number | null;
+  liveSystemQty?: number | null;
+}) {
+  if (line.systemQty != null && Number.isFinite(line.systemQty)) {
+    return line.systemQty;
+  }
+  if (line.liveSystemQty != null && Number.isFinite(line.liveSystemQty)) {
+    return line.liveSystemQty;
+  }
+  return null;
+}
+
+export function stockOpnameLineDiff(line: {
+  targetType: string;
+  physicalQty: number;
+  systemQty?: number | null;
+  liveSystemQty?: number | null;
+}) {
+  const baseline = stockOpnameLineSystemBaseline(line);
+  if (baseline == null) {
+    return null;
+  }
+  return line.physicalQty - baseline;
+}
+
+export function stockOpnameLineNeedsMinusReason(line: {
+  targetType: string;
+  physicalQty: number;
+  systemQty?: number | null;
+  liveSystemQty?: number | null;
+}) {
+  return needsOpnameMinusReason(line.targetType, stockOpnameLineDiff(line));
+}
+
 export type KolamStockOpnameVariantOption = {
   id: string;
   label: string;
