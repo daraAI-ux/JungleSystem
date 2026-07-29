@@ -1062,6 +1062,19 @@ export function KolamSettingsWebConfigSurface({
     showNotificationSettings ||
     showSitemapSettings ||
     showPluginControls;
+  const sharedSaveTitle = showGeneralSettings
+    ? 'Umum'
+    : showStoreShippingSettings
+    ? 'Pengiriman'
+    : showNotificationSettings
+    ? 'Notifikasi'
+    : showAiSettings
+    ? 'AI / DARA'
+    : showSitemapSettings
+    ? 'Sitemap'
+    : showPluginControls
+    ? 'Plugin'
+    : '';
   const generalFormSections = sections.filter(section => section.id === 'logo');
   const settingsFieldWidth = 460;
   const umumFieldWidth = 240;
@@ -1477,9 +1490,28 @@ export function KolamSettingsWebConfigSurface({
     );
   };
 
-  return (
-    <KolamContentFrame variant="settingsWebConfig">
-      {showSharedSaveAction ? (
+  const renderSharedSaveAction = () =>
+    showSharedSaveAction ? (
+      <View style={styles.settingsTitleActionRow}>
+        <KolamCopyStack
+          containerStyle={styles.settingsTitleCopy}
+          items={[
+            {
+              id: 'settings-active-title',
+              text: sharedSaveTitle,
+              style: styles.marketplaceOverviewTitle,
+            },
+            ...(saveMessage
+              ? [
+                  {
+                    id: 'save-message',
+                    text: saveMessage,
+                    style: styles.marketplaceOverviewMeta,
+                  },
+                ]
+              : []),
+          ]}
+        />
         <View style={styles.settingsTopActions}>
           <KolamActionControlButton
             label="Simpan"
@@ -1488,19 +1520,13 @@ export function KolamSettingsWebConfigSurface({
             intent="primary"
             onPress={disabled ? undefined : onSave}
           />
-          {saveMessage ? (
-            <KolamCopyStack
-              containerStyle={styles.settingsTopMessage}
-              items={[
-                {
-                  id: 'save-message',
-                  text: saveMessage,
-                },
-              ]}
-            />
-          ) : null}
         </View>
-      ) : null}
+      </View>
+    ) : null;
+
+  return (
+    <KolamContentFrame variant="settingsWebConfig">
+      {renderSharedSaveAction()}
       {showGeneralSettings ? (
         <>
           <View style={styles.umumTopRow}>
@@ -7433,6 +7459,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
+    marginBottom: 10,
   },
   umumCard: {
     backgroundColor: V.colors.bg,
@@ -7763,8 +7790,17 @@ const styles = StyleSheet.create({
     gap: 8,
     justifyContent: 'flex-end',
   },
-  settingsTopMessage: {
-    maxWidth: 360,
+  settingsTitleActionRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  settingsTitleCopy: {
+    flex: 1,
+    minWidth: 180,
   },
   storeHoursList: {
     gap: 10,
