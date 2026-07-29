@@ -6,12 +6,15 @@ import {
   type KolamCustomerAddress,
   type KolamCustomerExternalAccount,
   type KolamCustomerListResult,
+  type KolamCustomerSavePayload,
 } from '../domain/kolam-customer';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {getKolamFileUrl} from '../lib/file-url';
 import {
+  createKolamCustomer,
   getKolamCustomerDetail,
   getKolamCustomerList,
+  updateKolamCustomer,
 } from '../services/kolam-customer-api';
 import type {
   KolamCustomerList,
@@ -27,6 +30,7 @@ import {
   type KolamDetailMediaItem,
 } from './kolam-detail-media-preview';
 import {
+  KolamDropdownSelect,
   KolamOverflowMenuButton,
   KolamTableFooterControls,
 } from './kolam-dropdown-select';
@@ -47,6 +51,12 @@ const CUSTOMER_LIST_COLUMNS = [
 ] as const;
 
 type CustomerListColumnId = (typeof CUSTOMER_LIST_COLUMNS)[number]['id'];
+type CustomerFormGender = 'male' | 'female';
+
+const CUSTOMER_GENDER_OPTIONS = [
+  {label: 'Laki-laki', value: 'male'},
+  {label: 'Perempuan', value: 'female'},
+] as const;
 
 const INITIAL_CUSTOMER_LIST: KolamCustomerListResult = {
   items: [],
@@ -71,9 +81,23 @@ export function KolamCustomerSurface({
 }) {
   const routePath = route?.split('?')[0] ?? '';
   const detailMatch = routePath.match(/^\/customers\/([^/]+)$/);
+  const editMatch = routePath.match(/^\/customers\/([^/]+)\/edit$/);
 
   if (routePath === '/customers') {
     return <KolamCustomerListSurface onRouteChange={onRouteChange} />;
+  }
+
+  if (routePath === '/customers/create') {
+    return <KolamCustomerFormSurface onRouteChange={onRouteChange} />;
+  }
+
+  if (editMatch?.[1]) {
+    return (
+      <KolamCustomerFormSurface
+        customerId={decodeURIComponent(editMatch[1])}
+        onRouteChange={onRouteChange}
+      />
+    );
   }
 
   if (detailMatch?.[1]) {
@@ -575,6 +599,242 @@ function KolamCustomerDetailSurface({
           ) : null}
         </View>
       </View>
+    </View>
+  );
+}
+
+function KolamCustomerFormSurface({
+  customerId,
+  onRouteChange,
+}: {
+  customerId?: string;
+  onRouteChange?: (route: string) => void;
+}) {
+  const isEdit = Boolean(customerId);
+  const [name, setName] = React.useState('');
+  const [phone, setPhone] = React.useState('');
+  const [email, setEmail] = React.useState('');
+  const [address, setAddress] = React.useState('');
+  const [notes, setNotes] = React.useState('');
+  const [gender, setGender] = React.useState<CustomerFormGender>('male');
+  const [loading, setLoading] = React.useState(false);
+  const [saving, setSaving] = React.useState(false);
+  const [error, setError] = React.useState('');
+
+  React.useEffect(() => {
+    let active = true;
+
+    if (!customerId) {
+      setName('');
+      setPhone('');
+      setEmail('');
+      setAddress('');
+      setNotes('');
+      setGender('male');
+      setError('');
+      return () => {
+        active = false;
+      };
+    }
+
+    setLoading(true);
+    setError('');
+    void getKolamCustomerDetail(customerId)
+      .then(customer => {
+        if (!active) {
+          return;
+        }
+
+        setName(customer.name);
+        setPhone(customer.phone);
+        setEmail(customer.email);
+        setAddress(customer.address);
+        setNotes(customer.notes);
+        setGender(customer.gender === 'female' ? 'female' : 'male');
+      })
+      .catch(errorResult => {
+        if (active) {
+          setError(
+            errorResult instanceof Error
+              ? errorResult.message
+              : 'Gagal memuat pelanggan.',
+          );
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [customerId]);
+
+  const handleCancel = () => {
+    onRouteChange?.(customerId ? `/customers/${customerId}` : '/customers');
+  };
+
+  const handleSave = () => {
+    const payload: KolamCustomerSavePayload = {
+      address: address.trim(),
+      email: email.trim(),
+      gender,
+      name: name.trim(),
+      notes: notes.trim(),
+      phone: phone.trim(),
+    };
+
+    if (!payload.name || !payload.phone || !payload.address) {
+      setError('Nama lengkap, nomor telepon, dan alamat wajib diisi.');
+      return;
+    }
+
+    setSaving(true);
+    setError('');
+    const request =
+      customerId != null
+        ? updateKolamCustomer(customerId, payload)
+        : createKolamCustomer(payload);
+
+    void request
+      .then(customer => {
+        onRouteChange?.(`/customers/${customer.id}`);
+      })
+      .catch(errorResult => {
+        setError(
+          errorResult instanceof Error
+            ? errorResult.message
+            : isEdit
+              ? 'Gagal memperbarui pelanggan.'
+              : 'Gagal membuat pelanggan.',
+        );
+      })
+      .finally(() => {
+        setSaving(false);
+      });
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.detailSurface}>
+        <KolamEmptyState
+          message="Mengambil data pelanggan dari server."
+          title="Memuat form pelanggan..."
+        />
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.detailSurface}>
+      <View style={styles.detailHeader}>
+        <View style={styles.detailHeading}>
+          <Text style={styles.detailTitle}>
+            {isEdit ? 'Rubah Pelanggan' : 'Pelanggan Baru'}
+          </Text>
+          <Text style={styles.detailSubtitle}>
+            {isEdit
+              ? 'Perbarui informasi kontak dan data pribadi pelanggan.'
+              : 'Isi informasi pribadi dan kontak pelanggan.'}
+          </Text>
+        </View>
+        <View style={styles.detailActions}>
+          <KolamButton disabled={saving} label="Batal" onPress={handleCancel} />
+          <KolamButton
+            disabled={saving}
+            intent="primary"
+            label={saving ? 'Menyimpan...' : 'Simpan'}
+            onPress={handleSave}
+          />
+        </View>
+      </View>
+
+      {error ? (
+        <KolamStatusBadge
+          intent="danger"
+          label={error}
+          numberOfLines={2}
+          style={styles.errorBadge}
+        />
+      ) : null}
+
+      <KolamContentFrame style={styles.formCard} variant="settingsWebConfig">
+        <SectionTitle
+          description={
+            isEdit
+              ? 'Perbarui informasi kontak dan data pribadi pelanggan.'
+              : 'Isi informasi pribadi dan kontak pelanggan.'
+          }
+          title="Detail"
+        />
+        <View style={styles.formGrid}>
+          <CustomerTextField
+            label="Nama lengkap"
+            onChangeText={setName}
+            placeholder="Nama lengkap"
+            value={name}
+          />
+          <CustomerTextField
+            label="Nomor telepon"
+            onChangeText={setPhone}
+            placeholder="Nomor telepon"
+            value={phone}
+          />
+          <CustomerTextField
+            label="Email"
+            mode="email"
+            onChangeText={setEmail}
+            placeholder="Alamat email"
+            value={email}
+          />
+          <CustomerTextField
+            label="Alamat"
+            multiline
+            onChangeText={setAddress}
+            placeholder="Alamat lengkap"
+            value={address}
+          />
+          <CustomerTextField
+            label="Catatan"
+            multiline
+            onChangeText={setNotes}
+            placeholder="Catatan (opsional)"
+            value={notes}
+          />
+          <View style={styles.formField}>
+            <Text style={styles.formFieldLabel}>Jenis kelamin</Text>
+            <KolamDropdownSelect<CustomerFormGender>
+              label="Jenis kelamin"
+              onChange={setGender}
+              options={[...CUSTOMER_GENDER_OPTIONS]}
+              showLabelInTrigger={false}
+              style={styles.formDropdown}
+              value={gender}
+            />
+          </View>
+        </View>
+      </KolamContentFrame>
+    </View>
+  );
+}
+
+function CustomerTextField({
+  label,
+  multiline = false,
+  ...props
+}: React.ComponentProps<typeof KolamFormTextField> & {
+  label: string;
+}) {
+  return (
+    <View style={styles.formField}>
+      <Text style={styles.formFieldLabel}>{label}</Text>
+      <KolamFormTextField
+        {...props}
+        multiline={multiline}
+        style={[styles.formInput, multiline ? styles.formTextarea : null]}
+      />
     </View>
   );
 }
@@ -1333,6 +1593,41 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '800',
     lineHeight: 18,
+  },
+  formCard: {
+    gap: 14,
+    padding: 14,
+  },
+  formGrid: {
+    gap: 12,
+  },
+  formField: {
+    gap: 6,
+  },
+  formFieldLabel: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    fontWeight: '800',
+    lineHeight: 18,
+  },
+  formInput: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    color: V.colors.fg,
+    fontSize: 13,
+    minHeight: 38,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  formTextarea: {
+    minHeight: 92,
+    textAlignVertical: 'top',
+  },
+  formDropdown: {
+    alignSelf: 'flex-start',
+    minWidth: 220,
   },
   paginationRow: {
     alignItems: 'center',

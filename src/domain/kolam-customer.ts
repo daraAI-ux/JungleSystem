@@ -68,6 +68,15 @@ export interface KolamCustomerListResult {
   pagination: KolamCustomerPagination;
 }
 
+export interface KolamCustomerSavePayload {
+  address: string;
+  email: string;
+  gender: 'male' | 'female';
+  name: string;
+  notes: string;
+  phone: string;
+}
+
 export function normalizeKolamCustomerListResult(
   payload: unknown,
   fallback: Required<Pick<KolamCustomerListQuery, 'limit' | 'page'>>,

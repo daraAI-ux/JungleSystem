@@ -5,6 +5,7 @@ import {
   type KolamCustomer,
   type KolamCustomerListQuery,
   type KolamCustomerListResult,
+  type KolamCustomerSavePayload,
 } from '../domain/kolam-customer';
 import {apiRequest} from '../lib/api-client';
 
@@ -38,6 +39,42 @@ export async function getKolamCustomerDetail(
 
   if (!customer) {
     throw new Error('Detail pelanggan tidak ditemukan.');
+  }
+
+  return customer;
+}
+
+export async function createKolamCustomer(
+  payload: KolamCustomerSavePayload,
+): Promise<KolamCustomer> {
+  const response = await kolamRequest<unknown>('/customer', {
+    method: 'POST',
+    body: payload,
+  });
+  const customer = normalizeKolamCustomerDetail(response);
+
+  if (!customer) {
+    throw new Error('Pelanggan berhasil dibuat, tetapi respons tidak valid.');
+  }
+
+  return customer;
+}
+
+export async function updateKolamCustomer(
+  id: string,
+  payload: KolamCustomerSavePayload,
+): Promise<KolamCustomer> {
+  const response = await kolamRequest<unknown>(
+    `/customer/${encodeURIComponent(id)}`,
+    {
+      method: 'PUT',
+      body: payload,
+    },
+  );
+  const customer = normalizeKolamCustomerDetail(response);
+
+  if (!customer) {
+    throw new Error('Pelanggan berhasil diperbarui, tetapi respons tidak valid.');
   }
 
   return customer;
