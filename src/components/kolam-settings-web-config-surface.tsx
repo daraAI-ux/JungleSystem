@@ -2512,52 +2512,62 @@ export function KolamSettingsWebConfigSurface({
               </View>
             </View>
           </View>
-          <KolamCopyStack
-            items={[
-              {
-                id: 'operational-google-title',
-                text: 'Google Sign-In (Webstore)',
-                style: styles.marketplaceOverviewTitle,
-              },
-              {
-                id: 'operational-google-meta',
-                text: 'Izinkan pembeli daftar atau masuk dengan akun Google di webstore.',
-                style: styles.marketplaceOverviewMeta,
-              },
+          <View
+            style={[
+              styles.marketplaceControlSection,
+              styles.notificationSettingsCard,
             ]}
-          />
-          <KolamToggleRow
-            variant="settingsForm"
-            label="Google Sign-In webstore"
-            description="Aktifkan OAuth Google untuk customer webstore."
-            active={draft.webstoreGoogleAuthEnabled}
-            onPress={() =>
-              !disabled &&
-              onSaveOperationalGoogleAuth({
-                webstoreGoogleAuthEnabled: !draft.webstoreGoogleAuthEnabled,
-              })
-            }
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            fieldWidth={settingsFieldWidth}
-            label="Google OAuth client ID"
-            description="OAuth 2.0 Web client ID untuk webstore."
-            value={draft.googleOAuthClientId}
-            onChangeText={value => setDraftField('googleOAuthClientId', value)}
-            placeholder="xxxx.apps.googleusercontent.com"
-          />
-          <KolamActionControlButton
-            label="Simpan Client ID"
-            loading={saveStatus === 'saving'}
-            loadingLabel="Menyimpan..."
-            disabled={disabled}
-            onPress={() =>
-              onSaveOperationalGoogleAuth({
-                googleOAuthClientId: draft.googleOAuthClientId.trim(),
-              })
-            }
-          />
+          >
+            <View style={styles.operationalCardHeaderRow}>
+              <KolamCopyStack
+                containerStyle={styles.operationalCardHeaderCopy}
+                items={[
+                  {
+                    id: 'operational-google-title',
+                    text: 'Google Sign-In (Webstore)',
+                    style: styles.marketplaceOverviewTitle,
+                  },
+                  {
+                    id: 'operational-google-meta',
+                    text: 'Izinkan pembeli daftar atau masuk dengan akun Google di webstore.',
+                    style: styles.marketplaceOverviewMeta,
+                  },
+                ]}
+              />
+              <KolamActionControlButton
+                label="Simpan Client ID"
+                loading={saveStatus === 'saving'}
+                loadingLabel="Menyimpan..."
+                disabled={disabled}
+                onPress={() =>
+                  onSaveOperationalGoogleAuth({
+                    googleOAuthClientId: draft.googleOAuthClientId.trim(),
+                  })
+                }
+              />
+            </View>
+            <KolamToggleRow
+              variant="settingsForm"
+              label="Google Sign-In webstore"
+              description="Aktifkan OAuth Google untuk customer webstore."
+              active={draft.webstoreGoogleAuthEnabled}
+              onPress={() =>
+                !disabled &&
+                onSaveOperationalGoogleAuth({
+                  webstoreGoogleAuthEnabled: !draft.webstoreGoogleAuthEnabled,
+                })
+              }
+            />
+            <KolamTextFieldRow
+              variant="settingsForm"
+              fieldWidth={settingsFieldWidth}
+              label="Google OAuth client ID"
+              description="OAuth 2.0 Web client ID untuk webstore."
+              value={draft.googleOAuthClientId}
+              onChangeText={value => setDraftField('googleOAuthClientId', value)}
+              placeholder="xxxx.apps.googleusercontent.com"
+            />
+          </View>
           <KolamCopyStack
             items={[
               {
@@ -8146,6 +8156,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#f9fafb',
     height: 300,
     overflow: 'hidden',
+  },
+  operationalCardHeaderCopy: {
+    flex: 1,
+    gap: 4,
+    minWidth: 260,
+  },
+  operationalCardHeaderRow: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    justifyContent: 'space-between',
   },
   workSiteCoordinateGrid: {
     flexDirection: 'row',
