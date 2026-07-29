@@ -230,7 +230,7 @@ describe('kolam vendor / supplier domain', () => {
       vendor.products,
       vendor.id,
     );
-    expect(productRows.map(row => row.key)).toEqual(['p1', 'p2', 'p2-v1']);
+    expect(productRows.map(row => row.key)).toEqual(['p1', 'p2-v1']);
     expect(productRows[0]).toMatchObject({
       title: 'Produk A',
       code: 'SKU-A',
@@ -238,12 +238,51 @@ describe('kolam vendor / supplier domain', () => {
       vendorPrice: 9000,
       isVariantRow: false,
     });
-    expect(productRows[2]).toMatchObject({
-      title: 'S',
+    expect(productRows[1]).toMatchObject({
+      title: 'Produk B - S',
       code: 'B-S',
+      brandLabel: 'Merek B',
       vendorPrice: 12000,
-      isVariantRow: true,
+      isVariantRow: false,
     });
+
+    const codeOnlyRows = flattenKolamSupplierProductRows(
+      [
+        {
+          id: 'p3',
+          name: 'Exo Terra',
+          sku: '',
+          productCode: '',
+          type: 'product',
+          price: 0,
+          brandNames: [],
+          photos: [],
+          photoUrls: [],
+          vendorPrices: [],
+          variants: [
+            {
+              id: 'v3',
+              tier1Value: '',
+              tier2Value: '',
+              sku: 'EXO07C',
+              productCode: 'EXO07C',
+              vendorPrices: [
+                { vendorId: 'sup1', price: 25000, shippingCost: 0, link: '' },
+              ],
+            },
+          ],
+        },
+      ],
+      'sup1',
+    );
+    expect(codeOnlyRows).toMatchObject([
+      {
+        key: 'p3-v3',
+        title: 'Exo Terra - EXO07C',
+        code: 'EXO07C',
+        vendorPrice: 25000,
+      },
+    ]);
 
     const speciesRows = flattenKolamSupplierSpeciesRows(
       vendor.species,

@@ -1100,10 +1100,8 @@ function KolamSupplierCatalogTabs({
             .join(' · '),
           photoUrl: row.photoUrl,
           price: row.vendorPrice,
-          isVariantRow: row.isVariantRow,
-          onPress: row.isVariantRow
-            ? undefined
-            : () => onRouteChange?.(`/products/${row.productId}`),
+          isVariantRow: false,
+          onPress: () => onRouteChange?.(`/products/${row.productId}`),
         })),
         purchaseStats,
         { appendUnmatched: true },
@@ -1123,11 +1121,9 @@ function KolamSupplierCatalogTabs({
             .join(' · '),
           photoUrl: row.photoUrl,
           price: row.vendorPrice,
-          isVariantRow: row.isVariantRow,
-          italic: !row.isVariantRow,
-          onPress: row.isVariantRow
-            ? undefined
-            : () => onRouteChange?.(`/species/${row.speciesId}`),
+          isVariantRow: false,
+          italic: true,
+          onPress: () => onRouteChange?.(`/species/${row.speciesId}`),
         })),
         purchaseStats,
       ),

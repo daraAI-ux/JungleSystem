@@ -482,6 +482,17 @@ export function resolveKolamSupplierItemCode(
   return pick(item.productCode, item.sku);
 }
 
+function formatKolamSupplierVariantSuffix(
+  variant: { tier1Value?: string; tier2Value?: string },
+  code: string,
+) {
+  const tierLabel = [variant.tier1Value, variant.tier2Value]
+    .map(part => part?.trim())
+    .filter(Boolean)
+    .join(' / ');
+  return tierLabel || code || 'Varian';
+}
+
 export function flattenKolamSupplierProductRows(
   products: KolamVendorCatalogProduct[] | null | undefined,
   supplierId: string,
@@ -509,17 +520,7 @@ export function flattenKolamSupplierProductRows(
       continue;
     }
 
-    rows.push({
-      key: product.id,
-      productId: product.id,
-      title: product.name,
-      code: '',
-      brandLabel,
-      photoUrl,
-      vendorPrice: null,
-      isVariantRow: false,
-    });
-
+    const variantRows: KolamSupplierCatalogProductRow[] = [];
     for (const variant of product.variants ?? []) {
       const vp = (variant.vendorPrices ?? []).find(
         item => item.vendorId === supplierId,
@@ -527,20 +528,38 @@ export function flattenKolamSupplierProductRows(
       if (!vp) {
         continue;
       }
-      const variantLabel = variant.tier2Value
-        ? `${variant.tier1Value} / ${variant.tier2Value}`
-        : variant.tier1Value;
-      rows.push({
+      const code = resolveKolamSupplierItemCode(product, variant);
+      const suffix = formatKolamSupplierVariantSuffix(variant, code);
+      variantRows.push({
         key: `${product.id}-${variant.id}`,
         productId: product.id,
-        title: variantLabel,
-        code: resolveKolamSupplierItemCode(product, variant),
-        brandLabel: '',
+        title: `${product.name} - ${suffix}`,
+        code,
+        brandLabel,
         photoUrl,
         vendorPrice: vp.price,
-        isVariantRow: true,
+        isVariantRow: false,
       });
     }
+
+    if (variantRows.length) {
+      rows.push(...variantRows);
+      continue;
+    }
+
+    const vp = (product.vendorPrices ?? []).find(
+      item => item.vendorId === supplierId,
+    );
+    rows.push({
+      key: product.id,
+      productId: product.id,
+      title: product.name,
+      code: resolveKolamSupplierItemCode(product),
+      brandLabel,
+      photoUrl,
+      vendorPrice: vp?.price ?? product.price ?? null,
+      isVariantRow: false,
+    });
   }
 
   return rows;
@@ -573,35 +592,43 @@ export function flattenKolamSupplierSpeciesRows(
       continue;
     }
 
+    const variantRows: KolamSupplierCatalogSpeciesRow[] = [];
+    for (const variant of item.variants ?? []) {
+      const vp = (variant.vendorPrices ?? []).find(
+        price => price.vendorId === supplierId,
+      );
+      const code = resolveKolamSupplierItemCode(item, variant);
+      const suffix = formatKolamSupplierVariantSuffix(variant, code);
+      variantRows.push({
+        key: `${item.id}-${variant.id}`,
+        speciesId: item.id,
+        title: `${item.scientificName} - ${suffix}`,
+        commonName,
+        code,
+        photoUrl,
+        vendorPrice: vp?.price ?? null,
+        isVariantRow: false,
+      });
+    }
+
+    if (variantRows.length) {
+      rows.push(...variantRows);
+      continue;
+    }
+
+    const vp = (item.vendorPrices ?? []).find(
+      price => price.vendorId === supplierId,
+    );
     rows.push({
       key: item.id,
       speciesId: item.id,
       title: item.scientificName,
       commonName,
-      code: '',
+      code: resolveKolamSupplierItemCode(item),
       photoUrl,
-      vendorPrice: null,
+      vendorPrice: vp?.price ?? null,
       isVariantRow: false,
     });
-
-    for (const variant of item.variants ?? []) {
-      const vp = (variant.vendorPrices ?? []).find(
-        price => price.vendorId === supplierId,
-      );
-      const variantLabel = variant.tier2Value
-        ? `${variant.tier1Value} / ${variant.tier2Value}`
-        : variant.tier1Value;
-      rows.push({
-        key: `${item.id}-${variant.id}`,
-        speciesId: item.id,
-        title: variantLabel,
-        commonName: '',
-        code: resolveKolamSupplierItemCode(item, variant),
-        photoUrl,
-        vendorPrice: vp?.price ?? null,
-        isVariantRow: true,
-      });
-    }
   }
 
   return rows;
