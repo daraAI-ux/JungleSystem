@@ -34,6 +34,7 @@ import type {
   KolamPOItemForSelectionVariant,
 } from '../services/kolam-purchase-order-api';
 import { KolamButton } from './kolam-button';
+import { KolamCardFrame } from './kolam-card-frame';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamContentFrame } from './kolam-content-frame';
@@ -70,6 +71,14 @@ const PO_STATUS_OPTIONS: KolamPOStatus[] = [
   'cancelled',
 ];
 const PO_PAYMENT_STATUS_OPTIONS = ['unpaid', 'partial_paid', 'paid'] as const;
+/** Mirror FE `INVOICE_UPLOAD_STATUSES` on purchase-order detail. */
+const PO_VENDOR_INVOICE_UPLOAD_STATUSES: KolamPOStatus[] = [
+  'sent',
+  'delivery',
+  'received',
+  'on_check',
+  'completed',
+];
 
 export function KolamPurchaseOrderSurface({
   onRouteChange,
@@ -1061,6 +1070,9 @@ function KolamPurchaseOrderDetail({
     (po.status === 'draft' || po.status === 'sent') &&
     hasKolamPurchaseOrderPermission(authUser?.permissions, 'update', authUser?.roleKey);
   const canSyncMarketplace = po.status === 'received' || po.status === 'completed';
+  const canUploadVendorInvoice =
+    isKolamPOStatus(po.status) &&
+    PO_VENDOR_INVOICE_UPLOAD_STATUSES.includes(po.status);
 
   const handleTransitionPress = (next: string) => {
     if (next === 'received') {
@@ -1086,60 +1098,70 @@ function KolamPurchaseOrderDetail({
 
   return (
     <View style={styles.detailRoot}>
-      <View style={styles.toolbarWrap}>
-        <View style={kolamTableToolbarStyles.row}>
-          <View style={kolamTableToolbarStyles.controls}>
+      <KolamCardFrame style={styles.detailToolbarCard} variant="compact">
+        <View style={styles.detailActionWrap}>
+          <KolamButton
+            label="Daftar"
+            muted
+            onPress={() => {
+              controller.onBackToList();
+              onRouteChange?.(KOLAM_PURCHASE_ORDER_ROOT);
+            }}
+          />
+          <KolamButton
+            disabled={controller.loading || controller.mutating}
+            label="Muat ulang"
+            onPress={() => void controller.onRefresh()}
+          />
+          {canEdit ? (
             <KolamButton
-              disabled={controller.loading || controller.mutating}
-              label="Refresh"
-              onPress={() => void controller.onRefresh()}
-            />
-            <KolamButton
-              label="Daftar"
-              muted
+              label="Edit"
               onPress={() => {
-                controller.onBackToList();
-                onRouteChange?.(KOLAM_PURCHASE_ORDER_ROOT);
+                if (controller.onEdit()) {
+                  onRouteChange?.(`${KOLAM_PURCHASE_ORDER_ROOT}/${po.id}/edit`);
+                }
               }}
             />
-            {canEdit ? (
-              <KolamButton
-                label="Edit"
-                onPress={() => {
-                  if (controller.onEdit()) {
-                    onRouteChange?.(`${KOLAM_PURCHASE_ORDER_ROOT}/${po.id}/edit`);
-                  }
-                }}
-              />
-            ) : null}
+          ) : null}
+          <KolamButton
+            disabled={controller.exporting}
+            label={controller.exporting ? 'Mengekspor…' : 'PDF'}
+            onPress={() => void controller.onExportPdf()}
+          />
+          {canUploadVendorInvoice ? (
             <KolamButton
-              disabled={controller.exporting}
-              label={controller.exporting ? 'Mengekspor…' : 'PDF'}
-              onPress={() => void controller.onExportPdf()}
+              disabled={controller.mutating}
+              label={po.vendorInvoice ? 'Ganti invoice vendor' : 'Unggah invoice vendor'}
+              onPress={async () => {
+                const uri = await controller.onPickImage();
+                if (uri) {
+                  void controller.onUploadVendorInvoice(uri);
+                }
+              }}
             />
-            {canSyncMarketplace ? (
-              <KolamButton
-                label="Sinkron marketplace"
-                onPress={() => setActiveDialog('marketplace')}
-              />
-            ) : null}
-            {po.status === 'cancelled' ? (
-              <KolamButton
-                label="Kembalikan ke draf"
-                onPress={() => void controller.onRestoreToDraft()}
-              />
-            ) : null}
-            {allowedNext.map(next => (
-              <KolamButton
-                intent="primary"
-                key={next}
-                label={getKolamPOStatusLabel(next)}
-                onPress={() => handleTransitionPress(next)}
-              />
-            ))}
-          </View>
+          ) : null}
+          {canSyncMarketplace ? (
+            <KolamButton
+              label="Sinkron marketplace"
+              onPress={() => setActiveDialog('marketplace')}
+            />
+          ) : null}
+          {po.status === 'cancelled' ? (
+            <KolamButton
+              label="Kembalikan ke draf"
+              onPress={() => void controller.onRestoreToDraft()}
+            />
+          ) : null}
+          {allowedNext.map(next => (
+            <KolamButton
+              intent="primary"
+              key={next}
+              label={getKolamPOStatusLabel(next)}
+              onPress={() => handleTransitionPress(next)}
+            />
+          ))}
         </View>
-      </View>
+      </KolamCardFrame>
 
       <View style={styles.formSplitRow}>
         <View style={[styles.formSplitCell, styles.detailSplitCell]}>
@@ -1215,18 +1237,6 @@ function KolamPurchaseOrderDetail({
                 { id: 'cancelled', label: 'Dibatalkan', value: formatPODateTime(po.cancelledAt), meta: '', tone: 'default' },
               ]}
             />
-            <View style={styles.headerActions}>
-              <KolamButton
-                disabled={controller.mutating}
-                label={po.vendorInvoice ? 'Ganti invoice vendor' : 'Unggah invoice vendor'}
-                onPress={async () => {
-                  const uri = await controller.onPickImage();
-                  if (uri) {
-                    void controller.onUploadVendorInvoice(uri);
-                  }
-                }}
-              />
-            </View>
             {po.vendorInvoice ? (
               <ProofImageRow label="Invoice vendor" uri={po.vendorInvoice} />
             ) : null}
@@ -2402,6 +2412,14 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 12,
     paddingBottom: 24,
+  },
+  detailToolbarCard: {
+    gap: 8,
+  },
+  detailActionWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
   },
   detailContent: {
     gap: 12,
