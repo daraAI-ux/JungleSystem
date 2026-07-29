@@ -27,7 +27,10 @@ import {
   startKolamTeamChatCall,
   toggleKolamTeamChatReaction,
   type KolamChatConversation,
+  type KolamChatDaraMessageMeta,
   type KolamChatMessage,
+  type KolamChatMessageContent,
+  type KolamChatReplyContent,
   type KolamTeamChatCall,
   type KolamTeamChatCallConfig,
   type KolamTeamChatCallParticipant,
@@ -71,6 +74,8 @@ export interface KolamChatRailDetailReactionGroup {
 
 export interface KolamChatRailDetailMessage {
   attachments: KolamTeamChatAttachment[];
+  content?: KolamChatMessageContent | null;
+  daraMeta?: KolamChatDaraMessageMeta | null;
   embeds: KolamTeamChatEmbed[];
   id: string;
   author: string;
@@ -78,6 +83,7 @@ export interface KolamChatRailDetailMessage {
   linkPreviews: KolamTeamChatLinkPreview[];
   mine: boolean;
   reactions: KolamChatRailDetailReactionGroup[];
+  replyContent?: KolamChatReplyContent | null;
   replyPreview?: KolamTeamChatReplyPreview | null;
   senderId?: string | null;
   sentAt?: string;
@@ -786,6 +792,8 @@ function getCallParticipantUserId(participant: KolamTeamChatCallParticipant) {
 function mapInboxMessage(message: KolamChatMessage): KolamChatRailDetailMessage {
   return {
     attachments: [],
+    content: message.content ?? null,
+    daraMeta: message.daraMeta ?? null,
     embeds: [],
     id: message._id,
     author: getInboxAuthor(message),
@@ -793,9 +801,12 @@ function mapInboxMessage(message: KolamChatMessage): KolamChatRailDetailMessage 
     linkPreviews: [],
     mine: message.direction === 'out',
     reactions: [],
+    replyContent: message.replyContent ?? null,
     replyPreview: null,
     senderId: null,
     sentAt: message.sentAt ?? message.createdAt,
+    editedAt: message.editedAt ?? null,
+    editedByName: message.editedByName ?? null,
     status: message.deliveryStatus,
   };
 }

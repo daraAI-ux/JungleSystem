@@ -1672,12 +1672,15 @@ function KolamChatRailDetailPanel({
                       </View>
                     ) : (
                       <>
-                        {message.body ? (
-                          mode === 'team-chat' ? (
+                        {mode === 'team-chat' ? (
+                          message.body ? (
                             <KolamTeamMentionText body={message.body} />
-                          ) : (
-                            <Text style={styles.messageBody}>{message.body}</Text>
-                          )
+                          ) : null
+                        ) : message.body ||
+                          message.content ||
+                          message.replyContent ||
+                          message.daraMeta ? (
+                            <KolamInboxRichMessageContent message={message} />
                         ) : null}
                         {message.attachments.length > 0 ? (
                           <KolamChatAttachmentList
@@ -2059,6 +2062,188 @@ function getTeamChatEditedLabel(
 
   const editorName = message.editedByName?.trim();
   return editorName ? `Diedit oleh ${editorName}` : 'Diedit';
+}
+
+function KolamInboxRichMessageContent({
+  message,
+}: {
+  message: ReturnType<typeof useKolamChatRailDetail>['messages'][number];
+}) {
+  const content = message.content;
+  const replyContent = message.replyContent;
+  const imageUri = resolveInboxImageUri(content, message.body);
+  const youtube = resolveInboxYoutube(content, message.body);
+  const card = resolveInboxCard(content, message.body);
+  const linkedCard = resolveInboxLinkedCard(message.body);
+
+  return (
+    <View style={styles.inboxRichStack}>
+      {replyContent?.text || replyContent?.imageUrl ? (
+        <KolamInboxReplyPreview reply={replyContent} />
+      ) : null}
+      {youtube ? (
+        <KolamInboxYoutubeCard youtube={youtube} />
+      ) : card ? (
+        <KolamInboxProductCard card={card} />
+      ) : linkedCard ? (
+        <KolamInboxLinkedCard card={linkedCard} />
+      ) : imageUri ? (
+        <KolamRemoteImage
+          accessibilityLabel={content?.fileName || 'Gambar inbox'}
+          resizeMode="cover"
+          scope="chat-inbox"
+          sourceUri={imageUri}
+          style={styles.inboxRichImage}
+        />
+      ) : (
+        <Text style={styles.messageBody}>{message.body}</Text>
+      )}
+      {message.daraMeta ? (
+        <KolamInboxDaraMeta meta={message.daraMeta} />
+      ) : null}
+    </View>
+  );
+}
+
+function KolamInboxReplyPreview({
+  reply,
+}: {
+  reply: NonNullable<
+    ReturnType<typeof useKolamChatRailDetail>['messages'][number]['replyContent']
+  >;
+}) {
+  const imageUri = normalizeChatMediaUri(reply.imageUrl);
+  const label = reply.senderName?.trim() || 'Reply';
+
+  return (
+    <View accessibilityLabel={`Reply ${label}`} style={styles.inboxReplyCard}>
+      <Text numberOfLines={1} style={styles.replyPreviewSender}>
+        {label}
+      </Text>
+      {imageUri ? (
+        <KolamRemoteImage
+          accessibilityLabel={`Gambar reply ${label}`}
+          resizeMode="cover"
+          scope="chat-inbox-reply"
+          sourceUri={imageUri}
+          style={styles.inboxReplyImage}
+        />
+      ) : null}
+      <Text numberOfLines={2} style={styles.replyPreviewBody}>
+        {reply.text?.trim() || formatReplyContentType(reply.type)}
+      </Text>
+    </View>
+  );
+}
+
+function KolamInboxYoutubeCard({
+  youtube,
+}: {
+  youtube: {title?: string; url: string; videoId?: string};
+}) {
+  return (
+    <View accessibilityLabel="Preview YouTube inbox" style={styles.inboxRichCard}>
+      <View style={styles.inboxRichCardIcon}>
+        <Text style={styles.inboxRichCardIconText}>YT</Text>
+      </View>
+      <View style={styles.inboxRichCardCopy}>
+        <Text style={styles.chatPreviewKicker}>YouTube</Text>
+        <Text numberOfLines={2} style={styles.chatPreviewTitle}>
+          {youtube.title || youtube.videoId || 'Video YouTube'}
+        </Text>
+        <Text numberOfLines={1} style={styles.chatPreviewUrl}>
+          {youtube.url}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+function KolamInboxProductCard({card}: {card: KolamInboxResolvedCard}) {
+  return (
+    <View accessibilityLabel={`Card ${card.title}`} style={styles.inboxRichCard}>
+      {card.imageUrl ? (
+        <KolamRemoteImage
+          accessibilityLabel={`Gambar ${card.title}`}
+          resizeMode="cover"
+          scope="chat-inbox-card"
+          sourceUri={card.imageUrl}
+          style={styles.inboxRichCardImage}
+        />
+      ) : (
+        <View style={styles.inboxRichCardIcon}>
+          <Text style={styles.inboxRichCardIconText}>
+            {card.kind === 'species' ? 'SP' : 'PR'}
+          </Text>
+        </View>
+      )}
+      <View style={styles.inboxRichCardCopy}>
+        <Text style={styles.chatPreviewKicker}>{card.label}</Text>
+        <Text numberOfLines={2} style={styles.chatPreviewTitle}>
+          {card.title}
+        </Text>
+        {card.priceLabel ? (
+          <Text numberOfLines={1} style={styles.inboxRichCardStrong}>
+            {card.priceLabel}
+          </Text>
+        ) : null}
+        {typeof card.stock === 'number' ? (
+          <Text numberOfLines={1} style={styles.chatPreviewDescription}>
+            Stok: {formatMetricNumber(card.stock)}
+          </Text>
+        ) : null}
+      </View>
+    </View>
+  );
+}
+
+function KolamInboxLinkedCard({card}: {card: KolamInboxLinkedCardData}) {
+  return (
+    <View accessibilityLabel={`Linked card ${card.title}`} style={styles.inboxRichCard}>
+      <View style={styles.inboxRichCardIcon}>
+        <Text style={styles.inboxRichCardIconText}>{card.icon}</Text>
+      </View>
+      <View style={styles.inboxRichCardCopy}>
+        <Text style={styles.chatPreviewKicker}>{card.label}</Text>
+        <Text numberOfLines={2} style={styles.chatPreviewTitle}>
+          {card.title}
+        </Text>
+        {card.subtitle ? (
+          <Text numberOfLines={1} style={styles.chatPreviewDescription}>
+            {card.subtitle}
+          </Text>
+        ) : null}
+      </View>
+    </View>
+  );
+}
+
+function KolamInboxDaraMeta({
+  meta,
+}: {
+  meta: NonNullable<
+    ReturnType<typeof useKolamChatRailDetail>['messages'][number]['daraMeta']
+  >;
+}) {
+  const title = formatDaraMetaTitle(meta);
+  const subtitle = [
+    meta.matchStatus ? `Match: ${meta.matchStatus}` : '',
+    meta.suggestedDisplayName || meta.suggestedScientificName || '',
+    meta.invoiceCode ? `Invoice ${meta.invoiceCode}` : '',
+  ]
+    .filter(Boolean)
+    .join(' | ');
+
+  return (
+    <View accessibilityLabel="Metadata DARA inbox" style={styles.inboxDaraMeta}>
+      <Text style={styles.chatPreviewKicker}>{title}</Text>
+      {subtitle ? (
+        <Text numberOfLines={2} style={styles.chatPreviewDescription}>
+          {subtitle}
+        </Text>
+      ) : null}
+    </View>
+  );
 }
 
 function KolamTeamChatReplyComposerStrip({
@@ -3003,6 +3188,290 @@ function conversationFitsAssignmentFilter(
 
   const assigned = Boolean(getChatStaffId(conversation.assignedStaffId));
   return filter === 'assigned' ? assigned : !assigned;
+}
+
+interface KolamInboxResolvedCard {
+  imageUrl?: string;
+  kind: 'product' | 'species' | 'marketplace';
+  label: string;
+  priceLabel?: string;
+  stock?: number;
+  title: string;
+}
+
+interface KolamInboxLinkedCardData {
+  icon: string;
+  label: string;
+  subtitle?: string;
+  title: string;
+}
+
+function resolveInboxImageUri(
+  content:
+    | ReturnType<typeof useKolamChatRailDetail>['messages'][number]['content']
+    | undefined,
+  body: string,
+) {
+  if (content?.type === 'image') {
+    return normalizeChatMediaUri(
+      content.imageUrl || content.thumbnailUrl || content.text,
+    );
+  }
+
+  const legacy = parseInboxLegacyImageText(body);
+  return legacy ? normalizeChatMediaUri(legacy) : null;
+}
+
+function resolveInboxYoutube(
+  content:
+    | ReturnType<typeof useKolamChatRailDetail>['messages'][number]['content']
+    | undefined,
+  body: string,
+) {
+  if (content?.youtube?.videoId || content?.youtube?.url) {
+    return {
+      title: content.youtube.title,
+      url:
+        content.youtube.url ||
+        `https://www.youtube.com/watch?v=${content.youtube.videoId}`,
+      videoId: content.youtube.videoId,
+    };
+  }
+
+  const text = content?.text || body;
+  const videoId = extractYoutubeVideoId(text);
+  if (!videoId) {
+    return null;
+  }
+
+  return {
+    url: text.trim(),
+    videoId,
+  };
+}
+
+function resolveInboxCard(
+  content:
+    | ReturnType<typeof useKolamChatRailDetail>['messages'][number]['content']
+    | undefined,
+  body: string,
+): KolamInboxResolvedCard | null {
+  const card = content?.card;
+  if (card?.name || card?.marketplace?.listingName) {
+    const kind =
+      content?.type === 'marketplace_product_card' || card.marketplace
+        ? 'marketplace'
+        : card.entityType === 'species'
+          ? 'species'
+          : 'product';
+    return {
+      imageUrl: normalizeChatMediaUri(card.imageUrl) ?? undefined,
+      kind,
+      label: getInboxCardLabel(kind, card.marketplace?.platform),
+      priceLabel:
+        card.priceLabel ||
+        (typeof card.price === 'number' ? formatRupiah(card.price) : undefined),
+      stock: typeof card.stock === 'number' ? card.stock : undefined,
+      title: card.marketplace?.listingName || card.name || 'Item',
+    };
+  }
+
+  if (
+    content?.type === 'product_card' ||
+    content?.type === 'species_card' ||
+    content?.type === 'marketplace_product_card'
+  ) {
+    const title = content.text?.trim();
+    if (title) {
+      return {
+        kind:
+          content.type === 'species_card'
+            ? 'species'
+            : content.type === 'marketplace_product_card'
+              ? 'marketplace'
+              : 'product',
+        label: getInboxCardLabel(
+          content.type === 'species_card'
+            ? 'species'
+            : content.type === 'marketplace_product_card'
+              ? 'marketplace'
+              : 'product',
+        ),
+        title,
+      };
+    }
+  }
+
+  return parseInboxLegacyProductText(body);
+}
+
+function parseInboxLegacyImageText(text: string) {
+  const trimmed = text.trim();
+  if (!trimmed.startsWith('[Image]')) {
+    return null;
+  }
+
+  const url = trimmed.replace(/^\[Image\]\s*/, '').trim();
+  return /^https?:\/\//i.test(url) ? url : null;
+}
+
+function parseInboxLegacyProductText(text: string): KolamInboxResolvedCard | null {
+  const trimmed = text.trim();
+  if (!trimmed.startsWith('[Product]')) {
+    return null;
+  }
+
+  const lines = trimmed.split('\n').map(line => line.trim());
+  const head = lines[0]?.replace(/^\[Product\]\s*/, '') ?? '';
+  const parts = head
+    .split(/\s*[-—]\s*/)
+    .map(part => part.trim())
+    .filter(Boolean);
+  if (parts.length === 0) {
+    return null;
+  }
+
+  const imageLine = lines
+    .slice(1)
+    .find(line => /^https?:\/\//i.test(line) && !line.startsWith('[Link]'));
+  const priceLabel = parts.find(part => /^Rp/i.test(part));
+  const extra = parts
+    .slice(1)
+    .filter(part => part !== priceLabel && !/(sold|terjual)/i.test(part));
+
+  return {
+    imageUrl: normalizeChatMediaUri(imageLine) ?? undefined,
+    kind: 'product',
+    label: 'Product',
+    priceLabel,
+    title: [parts[0], ...extra].filter(Boolean).join(' - '),
+  };
+}
+
+function resolveInboxLinkedCard(body: string): KolamInboxLinkedCardData | null {
+  const invoice = parseInboxTaggedCard(body, 'Invoice');
+  if (invoice) {
+    return {...invoice, icon: 'INV', label: 'Invoice'};
+  }
+
+  const project = parseInboxTaggedCard(body, 'Project');
+  if (project) {
+    return {...project, icon: 'PRJ', label: 'Proyek'};
+  }
+
+  const complaint = parseInboxTaggedCard(body, 'Complaint');
+  if (complaint) {
+    return {...complaint, icon: 'CMP', label: 'Komplain'};
+  }
+
+  return null;
+}
+
+function parseInboxTaggedCard(body: string, tag: string) {
+  const trimmed = body.trim();
+  if (!trimmed.startsWith(`[${tag}]`)) {
+    return null;
+  }
+
+  const head = trimmed
+    .split('\n')[0]
+    ?.replace(new RegExp(`^\\[${tag}\\]\\s*`), '')
+    .trim();
+  const parts = (head || '')
+    .split(/\s*[-—]\s*/)
+    .map(part => part.trim())
+    .filter(Boolean);
+
+  if (parts.length === 0) {
+    return null;
+  }
+
+  return {
+    subtitle: parts[1],
+    title: parts[0],
+  };
+}
+
+function normalizeChatMediaUri(uri?: string | null) {
+  const value = uri?.trim();
+  if (!value) {
+    return null;
+  }
+
+  return getKolamFileUrl(value) ?? value;
+}
+
+function extractYoutubeVideoId(text: string) {
+  const value = text.trim();
+  const match =
+    value.match(/[?&]v=([a-zA-Z0-9_-]{6,})/) ??
+    value.match(/youtu\.be\/([a-zA-Z0-9_-]{6,})/) ??
+    value.match(/youtube\.com\/shorts\/([a-zA-Z0-9_-]{6,})/);
+
+  return match?.[1] ?? null;
+}
+
+function getInboxCardLabel(
+  kind: KolamInboxResolvedCard['kind'],
+  platform?: 'shopee' | 'tokopedia',
+) {
+  if (platform === 'shopee') {
+    return 'Shopee';
+  }
+
+  if (platform === 'tokopedia') {
+    return 'Tokopedia';
+  }
+
+  if (kind === 'species') {
+    return 'Livestock';
+  }
+
+  return kind === 'marketplace' ? 'Marketplace' : 'Product';
+}
+
+function formatReplyContentType(type?: string) {
+  if (type === 'image') {
+    return 'Foto';
+  }
+  if (type === 'audio') {
+    return 'Audio';
+  }
+  if (type === 'video') {
+    return 'Video';
+  }
+  if (type === 'document') {
+    return 'Dokumen';
+  }
+  if (type === 'sticker') {
+    return 'Stiker';
+  }
+  if (type === 'story') {
+    return 'Story';
+  }
+  return 'Reply';
+}
+
+function formatDaraMetaTitle(
+  meta: NonNullable<
+    ReturnType<typeof useKolamChatRailDetail>['messages'][number]['daraMeta']
+  >,
+) {
+  if (meta.kind === 'vision' || meta.kind === 'image_clarify') {
+    return 'DARA vision';
+  }
+
+  if (meta.kind === 'fulfillment') {
+    return meta.fulfillmentPhase
+      ? `DARA fulfillment ${meta.fulfillmentPhase}`
+      : 'DARA fulfillment';
+  }
+
+  if (meta.kind === 'payment_proof') {
+    return 'DARA payment proof';
+  }
+
+  return 'DARA search';
 }
 
 function getConversationTitle({
@@ -4438,6 +4907,82 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 12,
     lineHeight: 17,
+  },
+  inboxRichStack: {
+    gap: 7,
+  },
+  inboxRichImage: {
+    width: 220,
+    height: 132,
+    borderRadius: V.radius.lg,
+    backgroundColor: V.colors.bg,
+  },
+  inboxRichCard: {
+    width: 230,
+    minHeight: 64,
+    padding: 8,
+    borderRadius: V.radius.lg,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.bg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  inboxRichCardImage: {
+    width: 54,
+    height: 54,
+    borderRadius: V.radius.md,
+    backgroundColor: V.colors.mutedSoft,
+  },
+  inboxRichCardIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: V.radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: V.colors.secondary,
+  },
+  inboxRichCardIconText: {
+    color: V.colors.secondaryFg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '900',
+  },
+  inboxRichCardCopy: {
+    minWidth: 0,
+    flex: 1,
+    gap: 2,
+  },
+  inboxRichCardStrong: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '900',
+  },
+  inboxReplyCard: {
+    width: 220,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderLeftColor: V.colors.primary,
+    borderLeftWidth: 2,
+    borderRadius: V.radius.md,
+    backgroundColor: V.colors.secondary,
+    gap: 4,
+  },
+  inboxReplyImage: {
+    width: 88,
+    height: 52,
+    borderRadius: V.radius.sm,
+  },
+  inboxDaraMeta: {
+    width: 220,
+    padding: 7,
+    borderRadius: V.radius.md,
+    borderColor: V.colors.primary,
+    borderWidth: 1,
+    backgroundColor: V.colors.primarySoft,
+    gap: 2,
   },
   messageMention: {
     color: V.colors.primary,

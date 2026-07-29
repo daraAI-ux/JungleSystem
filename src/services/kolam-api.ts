@@ -671,8 +671,60 @@ export interface KolamChatConversation {
 export interface KolamChatMessageContent {
   type: string;
   text?: string;
+  thumbnailUrl?: string;
   imageUrl?: string;
   fileName?: string;
+  fileSize?: number;
+  mimeType?: string;
+  card?: {
+    entityId?: string;
+    entityType?: 'product' | 'species';
+    name?: string;
+    price?: number;
+    priceLabel?: string;
+    stock?: number;
+    imageUrl?: string;
+    detailHref?: string;
+    marketplace?: {
+      platform?: 'shopee' | 'tokopedia';
+      productId?: string;
+      listingName?: string;
+      sku?: string;
+    };
+  };
+  youtube?: {
+    videoId?: string;
+    url?: string;
+    title?: string;
+  };
+}
+
+export interface KolamChatReplyContent {
+  senderName?: string;
+  text?: string;
+  type?: 'text' | 'image' | 'audio' | 'video' | 'document' | 'sticker' | 'story' | 'unknown';
+  imageUrl?: string;
+}
+
+export interface KolamChatDaraMessageMeta {
+  buyerImageUrl?: string;
+  buyerMessageId?: string;
+  candidates?: Array<{
+    displayName?: string;
+    entityId?: string;
+    entityType?: 'species' | 'product';
+    scientificName?: string;
+    score?: number | null;
+  }>;
+  fulfillmentPhase?: 'consent_prompt' | 'consent_grant_ack' | 'consent_decline_ack' | 'status';
+  invoiceCode?: string;
+  kind?: 'vision' | 'search' | 'fulfillment' | 'image_clarify' | 'payment_proof';
+  matchStatus?: 'match' | 'ambiguous' | 'weak' | 'error' | 'unknown';
+  saleId?: string;
+  suggestedDisplayName?: string;
+  suggestedEntityId?: string;
+  suggestedEntityType?: 'species' | 'product';
+  suggestedScientificName?: string;
 }
 
 export interface KolamChatMessage {
@@ -682,7 +734,12 @@ export interface KolamChatMessage {
   senderName?: string;
   senderType?: 'buyer' | 'staff' | 'system' | 'ai_agent';
   content?: KolamChatMessageContent;
+  daraMeta?: KolamChatDaraMessageMeta | null;
   deliveryStatus?: string;
+  editedAt?: string | null;
+  editedByName?: string | null;
+  editedByType?: 'staff' | 'buyer' | '' | null;
+  replyContent?: KolamChatReplyContent | null;
   sentAt?: string;
   createdAt?: string;
 }

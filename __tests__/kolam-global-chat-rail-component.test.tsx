@@ -68,6 +68,15 @@ jest.mock('../src/services/kolam-notification-sound-runtime', () => ({
   })),
 }));
 
+jest.mock('../src/components/kolam-remote-image', () => {
+  const ReactForMock = require('react');
+  const {Text: TextForMock} = require('react-native');
+  return {
+    KolamRemoteImage: ({accessibilityLabel}: {accessibilityLabel: string}) =>
+      ReactForMock.createElement(TextForMock, null, accessibilityLabel),
+  };
+});
+
 jest.mock('../src/services/native-file-picker', () => ({
   pickNativeAssetFile: jest.fn(),
 }));
@@ -888,6 +897,152 @@ describe('KolamGlobalChatRail', () => {
     });
 
     expect(sendMessage).toHaveBeenCalledWith('Siap, masih tersedia.');
+  });
+
+  it('renders rich inbox message content from live plugin payloads', async () => {
+    useReadonlyDataMock.mockReturnValue({
+      conversations: [
+        {
+          _id: 'conv-rich',
+          assignedStaffId: null,
+          platform: 'tokopedia',
+          contactId: {displayName: 'Buyer Tokopedia'},
+          lastMessagePreview: 'Kirim katalog',
+          unreadCount: 1,
+        },
+      ],
+      loading: false,
+      refresh: jest.fn(),
+      rooms: [],
+      totalUnread: 1,
+    });
+    useDetailMock.mockReturnValue({
+      ...getDefaultDetailMock(),
+      conversation: {
+        _id: 'conv-rich',
+        assignedStaffId: null,
+        isAiHandled: true,
+        labelIds: [],
+        platform: 'tokopedia',
+        status: 'open',
+      },
+      loading: false,
+      messages: [
+        {
+          attachments: [],
+          content: {
+            text: 'https://www.youtube.com/watch?v=abc123XYZ',
+            type: 'youtube',
+            youtube: {
+              title: 'Panduan acclimation',
+              url: 'https://www.youtube.com/watch?v=abc123XYZ',
+              videoId: 'abc123XYZ',
+            },
+          },
+          embeds: [],
+          id: 'msg-youtube',
+          author: 'Buyer',
+          body: 'https://www.youtube.com/watch?v=abc123XYZ',
+          linkPreviews: [],
+          mine: false,
+          reactions: [],
+          replyPreview: null,
+          sentAt: '2026-07-28T08:00:00.000Z',
+        },
+        {
+          attachments: [],
+          content: {
+            card: {
+              entityType: 'species',
+              imageUrl: '/uploads/species/anemon.jpg',
+              name: 'Bubble Tip Anemone',
+              price: 175000,
+              stock: 8,
+            },
+            type: 'species_card',
+          },
+          embeds: [],
+          id: 'msg-card',
+          author: 'Anda',
+          body: 'Bubble Tip Anemone',
+          linkPreviews: [],
+          mine: true,
+          reactions: [],
+          replyContent: {
+            senderName: 'Buyer',
+            text: 'Ada warna merah?',
+            type: 'text',
+          },
+          replyPreview: null,
+          sentAt: '2026-07-28T08:05:00.000Z',
+          editedAt: '2026-07-28T08:06:00.000Z',
+          editedByName: 'Maya',
+          status: 'sent',
+        },
+        {
+          attachments: [],
+          content: {
+            fileName: 'proof.jpg',
+            imageUrl: '/uploads/chat/proof.jpg',
+            type: 'image',
+          },
+          daraMeta: {
+            kind: 'vision',
+            matchStatus: 'ambiguous',
+            suggestedDisplayName: 'Bukti transfer BCA',
+          },
+          embeds: [],
+          id: 'msg-image',
+          author: 'DARA',
+          body: 'proof.jpg',
+          linkPreviews: [],
+          mine: false,
+          reactions: [],
+          replyPreview: null,
+          sentAt: '2026-07-28T08:10:00.000Z',
+        },
+      ],
+      sending: false,
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamGlobalChatRail mode="inbox" onClose={() => undefined} />,
+      );
+    });
+
+    const conversationButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(
+        node =>
+          node.props.accessibilityLabel ===
+          'Pilih conversation Buyer Tokopedia',
+      );
+
+    await ReactTestRenderer.act(async () => {
+      conversationButton!.props.onPress();
+    });
+
+    const textNodes = renderText(renderer!);
+    const normalizedText = textNodes.join(' ').replace(/\s+/g, ' ');
+
+    expect(textNodes).toEqual(
+      expect.arrayContaining([
+        'YouTube',
+        'Panduan acclimation',
+        'Livestock',
+        'Bubble Tip Anemone',
+        'Stok: ',
+        '8',
+        'Buyer',
+        'Ada warna merah?',
+        'DARA vision',
+        'Match: ambiguous | Bukti transfer BCA',
+      ]),
+    );
+    expect(normalizedText).toContain('Rp 175.000');
+    expect(normalizedText).toContain('Diedit oleh Maya');
   });
 
   it('toggles inbox labels from the selected conversation action strip', async () => {
