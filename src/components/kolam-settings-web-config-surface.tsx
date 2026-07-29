@@ -15,6 +15,7 @@ import { KolamSettingsWebFormSectionHeader } from './kolam-settings-web-form-sec
 import { KolamSettingsWebFormSections } from './kolam-settings-web-widgets';
 import { KolamTextFieldRow } from './kolam-text-field-row';
 import { KolamToggleRow } from './kolam-toggle-row';
+import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { geocodeKolamStaffAttendanceWorkSite } from '../services/kolam-api';
 import type {
@@ -6492,29 +6493,34 @@ function FinancialSettingsPanel({
             detail="Channel pembayaran yang diterima toko dan wallet terkait."
             title="Metode pembayaran"
           />
-          <View style={styles.financialToolbar}>
+          <View style={kolamTableToolbarStyles.row}>
             <TextInput
               accessibilityLabel="Cari metode pembayaran"
               editable={!busy}
               onChangeText={value => setPaymentMethodFilter('search', value)}
               placeholder="Cari metode pembayaran"
-              style={styles.financialSearchInput}
+              style={[
+                kolamTableToolbarStyles.searchInput,
+                styles.financialSearchInput,
+              ]}
               value={paymentMethodFilters.search}
             />
-            {[
-              ['', 'Semua'],
-              ['true', 'Webstore'],
-              ['false', 'Non-webstore'],
-            ].map(([value, label]) => (
-              <FinancialChoiceSegment
-                key={value || 'all'}
-                active={paymentMethodFilters.isAvailableOnWebstore === value}
-                label={label}
-                onPress={() =>
-                  setPaymentMethodFilter('isAvailableOnWebstore', value)
-                }
-              />
-            ))}
+            <View style={kolamTableToolbarStyles.controls}>
+              {[
+                ['', 'Semua'],
+                ['true', 'Webstore'],
+                ['false', 'Non-webstore'],
+              ].map(([value, label]) => (
+                <FinancialChoiceSegment
+                  key={value || 'all'}
+                  active={paymentMethodFilters.isAvailableOnWebstore === value}
+                  label={label}
+                  onPress={() =>
+                    setPaymentMethodFilter('isAvailableOnWebstore', value)
+                  }
+                />
+              ))}
+            </View>
           </View>
           <View style={styles.marketplaceOverviewRows}>
             {paymentMethods.length ? (
@@ -6544,6 +6550,7 @@ function FinancialSettingsPanel({
                     ]}
                   />
                   <KolamCopyStack
+                    containerStyle={styles.financialStatusCopy}
                     items={[
                       {
                         id: `${method.id}-status`,
@@ -7441,8 +7448,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     flexWrap: 'wrap',
+    flexShrink: 1,
     gap: 8,
     justifyContent: 'flex-end',
+    minWidth: 0,
   },
   financialListRow: {
     alignItems: 'center',
@@ -7450,18 +7459,24 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 10,
     justifyContent: 'space-between',
+    minWidth: 0,
     paddingVertical: 10,
+    width: '100%',
   },
   financialSearchInput: {
     borderColor: '#d1d5db',
     borderRadius: 6,
     borderWidth: 1,
     color: '#111827',
-    flexGrow: 1,
+    flexShrink: 1,
     fontSize: 13,
     height: 36,
-    minWidth: 260,
+    minWidth: 220,
     paddingHorizontal: 10,
+  },
+  financialStatusCopy: {
+    flexShrink: 1,
+    minWidth: 140,
   },
   financialToolbar: {
     alignItems: 'center',
