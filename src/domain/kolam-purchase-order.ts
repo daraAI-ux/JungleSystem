@@ -1184,6 +1184,7 @@ export interface KolamPOItemBody {
   packing?: string;
   quantity: number;
   variant?: string;
+  unitPrice?: number;
 }
 
 export interface KolamCreatePOBody {
@@ -1249,6 +1250,7 @@ function buildKolamPOItemBodies(form: KolamPOFormState): KolamPOItemBody[] {
       ...(item.itemType === 'packing' ? { packing: item.refId } : {}),
       quantity: Number(item.quantity) || 0,
       ...(item.variantId ? { variant: item.variantId } : {}),
+      ...(item.unitPrice > 0 ? { unitPrice: item.unitPrice } : {}),
     }));
 }
 
@@ -1279,7 +1281,46 @@ function buildKolamPOPaymentConfig(
   }
 
   if (form.paymentType === 'cicilan') {
-    config.installmentCount = Number(form.installmentCount) || 1;
+    const count = Math.max(2, Math.min(24, Number(form.installmentCount) || 2));
+    config.installmentCount = count;
+    const breakdown = calculateKolamPOBreakdown({
+      items: form.items.map(item => ({
+        unitPrice: item.unitPrice,
+        quantity: Number(item.quantity) || 0,
+      })),
+      shippingCost: Number(form.shippingCost) || 0,
+      discount: {
+        type: form.discountType,
+        value: Number(form.discountValue) || 0,
+      },
+    });
+    let dpAmount = 0;
+    if (form.downPaymentEnabled) {
+      const raw = Number(form.downPaymentValue) || 0;
+      dpAmount =
+        form.downPaymentInputType === 'percent'
+          ? (breakdown.finalTotal * Math.min(100, Math.max(0, raw))) / 100
+          : Math.max(0, raw);
+    }
+    const principal = Math.max(0, breakdown.finalTotal - dpAmount);
+    const base = Math.floor(principal / count);
+    let remainder = principal - base * count;
+    const start = new Date();
+    config.schedule = Array.from({ length: count }, (_, index) => {
+      const due = new Date(start);
+      due.setMonth(due.getMonth() + index + 1);
+      const amount = base + (remainder > 0 ? 1 : 0);
+      if (remainder > 0) {
+        remainder -= 1;
+      }
+      return {
+        installmentNumber: index + 1,
+        percentage: null,
+        amount,
+        dueDate: due.toISOString().slice(0, 10),
+        notes: '',
+      };
+    });
   }
 
   if (form.downPaymentEnabled) {
