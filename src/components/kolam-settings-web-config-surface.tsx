@@ -3097,10 +3097,10 @@ export function KolamSettingsWebConfigSurface({
               ]}
             />
             <View style={styles.operationalAttendanceGrid}>
-              <View style={styles.operationalAttendanceBox}>
+              <View style={styles.poNotificationToggleBox}>
                 <KolamToggleRow
                   variant="settingsForm"
-                  label="Livechat Always Online"
+                  label="Live chat selalu online"
                   description="Jika off, jam operasional mengatur banner tutup/libur di dunia-anura.com."
                   active={draft.livechatOnline}
                   onPress={() => {
@@ -3110,56 +3110,6 @@ export function KolamSettingsWebConfigSurface({
                     onSaveOperationalLivechat(!draft.livechatOnline);
                   }}
                 />
-                <View style={styles.poRoomPicker}>
-                  <KolamDropdownSelect
-                    accessibilityLabel="Room penerimaan barang"
-                    label="Room Team Chat"
-                    menuPlacement="inline"
-                    options={[
-                      { label: 'Pilih room', value: '' },
-                      ...roomOptions.map(room => ({
-                        label: `${getTeamChatRoomLabel(room)}${
-                          room.category ? ` (${room.category})` : ''
-                        }`,
-                        value: room._id,
-                      })),
-                    ]}
-                    searchable
-                    searchPlaceholder="Cari room..."
-                    showLabelInTrigger={false}
-                    style={styles.poRoomDropdown}
-                    triggerStyle={styles.shippingTimezoneTrigger}
-                    value={draft.poWorkflowReceivingRoomId}
-                    onChange={value => {
-                      if (!disabled) {
-                        onSaveOperationalPoWorkflow({
-                          poWorkflowReceivingRoomId: value,
-                        });
-                      }
-                    }}
-                  />
-                  <KolamCopyStack
-                    items={[
-                      {
-                        id: 'po-room-picker-meta',
-                        text: roomOptions.length
-                          ? 'Upload bukti PO otomatis diposting ke room ini. Room AI tidak ditampilkan.'
-                          : 'Room Team Chat belum tersedia.',
-                        style: styles.marketplaceOverviewMeta,
-                      },
-                    ]}
-                  />
-                </View>
-                {renderPoWorkflowStaffPicker(
-                  'poWorkflowNotifyReceiveUserIds',
-                  'Notif terima - staff override',
-                )}
-                {renderPoWorkflowStaffPicker(
-                  'poWorkflowNotifyCheckUserIds',
-                  'Notif QC - staff override',
-                )}
-              </View>
-              <View style={styles.operationalAttendanceBox}>
                 <KolamToggleRow
                   variant="settingsForm"
                   label="Notif saat PO siap diterima / sudah diterima"
@@ -3224,6 +3174,62 @@ export function KolamSettingsWebConfigSurface({
                     })
                   }
                 />
+              </View>
+            </View>
+            <View style={styles.poRoomPicker}>
+              <KolamDropdownSelect
+                accessibilityLabel="Room penerimaan barang"
+                label="Room Team Chat"
+                menuPlacement="inline"
+                options={[
+                  { label: 'Pilih room', value: '' },
+                  ...roomOptions.map(room => ({
+                    label: `${getTeamChatRoomLabel(room)}${
+                      room.category ? ` (${room.category})` : ''
+                    }`,
+                    value: room._id,
+                  })),
+                ]}
+                searchable
+                searchPlaceholder="Cari room..."
+                showLabelInTrigger={false}
+                style={styles.poRoomDropdown}
+                triggerStyle={styles.shippingTimezoneTrigger}
+                value={draft.poWorkflowReceivingRoomId}
+                onChange={value => {
+                  if (!disabled) {
+                    onSaveOperationalPoWorkflow({
+                      poWorkflowReceivingRoomId: value,
+                    });
+                  }
+                }}
+              />
+              <KolamCopyStack
+                items={[
+                  {
+                    id: 'po-room-picker-meta',
+                    text: roomOptions.length
+                      ? 'Upload bukti PO otomatis diposting ke room ini. Room AI tidak ditampilkan.'
+                      : 'Room Team Chat belum tersedia.',
+                    style: styles.marketplaceOverviewMeta,
+                  },
+                ]}
+              />
+            </View>
+            <View style={styles.poStaffOverrideGrid}>
+              <View style={styles.poStaffOverrideBox}>
+                {renderPoWorkflowStaffPicker(
+                  'poWorkflowNotifyReceiveUserIds',
+                  'Notif terima - staff override',
+                )}
+              </View>
+              <View style={styles.poStaffOverrideBox}>
+                {renderPoWorkflowStaffPicker(
+                  'poWorkflowNotifyCheckUserIds',
+                  'Notif QC - staff override',
+                )}
+              </View>
+              <View style={styles.poStaffOverrideBox}>
                 {renderPoWorkflowStaffPicker(
                   'poWorkflowNotifyCompleteUserIds',
                   'Notif masuk stok - staff override',
@@ -7922,9 +7928,22 @@ function getTeamChatRoomLabel(room: KolamTeamChatRoom) {
 }
 
 function getUserPickerLabel(user: KolamUserPickerRow) {
+  const extended = user as KolamUserPickerRow & {
+    displayName?: string;
+    email?: string;
+    name?: string;
+  };
+  const fullName = [user.first_name, user.last_name]
+    .map(value => String(value ?? '').trim())
+    .filter(Boolean)
+    .join(' ');
+
   return (
-    [user.first_name, user.last_name].filter(Boolean).join(' ').trim() ||
-    user.username ||
+    fullName ||
+    String(extended.name ?? '').trim() ||
+    String(extended.displayName ?? '').trim() ||
+    String(user.username ?? '').trim() ||
+    String(extended.email ?? '').trim() ||
     'Staff'
   );
 }
@@ -8071,6 +8090,33 @@ const styles = StyleSheet.create({
   poRoomDropdown: {
     maxWidth: 520,
     width: '100%',
+  },
+  poNotificationToggleBox: {
+    backgroundColor: '#f9fafb',
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexGrow: 1,
+    gap: 10,
+    padding: 12,
+    width: '100%',
+  },
+  poStaffOverrideBox: {
+    backgroundColor: '#f9fafb',
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexBasis: 260,
+    flexGrow: 1,
+    gap: 8,
+    minWidth: 220,
+    padding: 10,
+  },
+  poStaffOverrideGrid: {
+    alignItems: 'stretch',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
   },
   poStaffCheckbox: {
     alignItems: 'center',

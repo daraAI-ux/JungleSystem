@@ -449,7 +449,7 @@ describe('settings web widgets', () => {
     await ReactTestRenderer.act(async () => {
       toggles.find(node => node.props.label === 'Marketplace')!.props.onPress();
       toggles
-        .find(node => node.props.label === 'Livechat Always Online')!
+        .find(node => node.props.label === 'Live chat selalu online')!
         .props.onPress();
       toggles
         .find(node => node.props.label === 'Google Sign-In webstore')!
