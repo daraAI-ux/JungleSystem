@@ -18,6 +18,7 @@ import { KolamContentFrame } from './kolam-content-frame';
 import { KolamActionControlButton } from './kolam-action-control-button';
 import { KolamChoiceSegment } from './kolam-choice-segment';
 import { KolamCopyStack } from './kolam-copy-stack';
+import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamSettingsWebFormFields } from './kolam-settings-web-form-fields';
 import { KolamSettingsWebFormSectionHeader } from './kolam-settings-web-form-section-header';
 import { KolamSettingsWebFormSections } from './kolam-settings-web-widgets';
@@ -70,6 +71,10 @@ import type {
   KolamTaxCompanyProfile,
   KolamTaxPartyGapsSummary,
 } from '../services/kolam-financial-settings-api';
+import {
+  ensureKolamTimezoneDatabase,
+  type KolamTimezoneOption,
+} from '../services/kolam-timezone-local-cache';
 import type { KolamKpiWeeklyAnnouncePreview } from '../services/kolam-api';
 import { getKolamFileUrl } from '../lib/file-url';
 import { KolamMediaPlayer } from './kolam-media-player';
@@ -1077,6 +1082,9 @@ export function KolamSettingsWebConfigSurface({
     'idle' | 'loading' | 'ready' | 'error'
   >('idle');
   const [mapsBrowserKeyMessage, setMapsBrowserKeyMessage] = React.useState('');
+  const [timezoneOptions, setTimezoneOptions] = React.useState<
+    KolamTimezoneOption[]
+  >([]);
   const umumFieldWidth = 240;
   const chatPluginEnabled = draft.pluginControls.chat;
   const daraPluginEnabled = draft.pluginControls.dara;
@@ -1617,6 +1625,56 @@ export function KolamSettingsWebConfigSurface({
       cancelled = true;
     };
   }, [shouldFetchStoredMapsBrowserKey]);
+
+  React.useEffect(() => {
+    let cancelled = false;
+
+    if (!showStoreShippingSettings) {
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    ensureKolamTimezoneDatabase()
+      .then(options => {
+        if (!cancelled) {
+          setTimezoneOptions(options);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setTimezoneOptions([
+            {
+              id: draft.storeOperatingHoursTimezone || 'Asia/Jakarta',
+              label: draft.storeOperatingHoursTimezone || 'Asia/Jakarta',
+              region: 'Local',
+            },
+          ]);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [draft.storeOperatingHoursTimezone, showStoreShippingSettings]);
+
+  const timezoneDropdownOptions = React.useMemo(() => {
+    const currentTimezone =
+      draft.storeOperatingHoursTimezone.trim() || 'Asia/Jakarta';
+    const options = timezoneOptions.map(option => ({
+      label: option.label,
+      value: option.id,
+    }));
+
+    if (!options.some(option => option.value === currentTimezone)) {
+      options.unshift({
+        label: currentTimezone,
+        value: currentTimezone,
+      });
+    }
+
+    return options;
+  }, [draft.storeOperatingHoursTimezone, timezoneOptions]);
 
   const handleOriginPinpointMessage = React.useCallback(
     (event: { nativeEvent?: { data?: string } }) => {
@@ -4233,19 +4291,22 @@ export function KolamSettingsWebConfigSurface({
                 )}
               </View>
               <View style={styles.shippingStoreHoursBox}>
-                <TextInput
+                <KolamDropdownSelect
                   accessibilityLabel="Zona waktu jadwal toko"
-                  editable={!disabled}
+                  label="Zona waktu jadwal toko"
+                  menuPlacement="inline"
+                  options={timezoneDropdownOptions}
+                  searchable
+                  searchPlaceholder="Cari timezone IANA..."
+                  showLabelInTrigger={false}
+                  style={styles.shippingTimezonePicker}
+                  triggerStyle={styles.shippingTimezoneTrigger}
                   value={draft.storeOperatingHoursTimezone}
-                  onChangeText={value =>
-                    setDraftField('storeOperatingHoursTimezone', value)
-                  }
-                  placeholder="Asia/Jakarta"
-                  style={[
-                    styles.financialSearchInput,
-                    styles.shippingTimezoneInput,
-                    disabled && styles.storeHoursTimeInputDisabled,
-                  ]}
+                  onChange={value => {
+                    if (!disabled) {
+                      setDraftField('storeOperatingHoursTimezone', value);
+                    }
+                  }}
                 />
                 <View style={styles.storeHoursCompactTable}>
                   <View style={styles.storeHoursCompactHeader}>
@@ -8040,7 +8101,11 @@ const styles = StyleSheet.create({
   shippingSpecialClosureActions: {
     alignItems: 'flex-start',
   },
-  shippingTimezoneInput: {
+  shippingTimezonePicker: {
+    width: '100%',
+  },
+  shippingTimezoneTrigger: {
+    minWidth: 0,
     width: '100%',
   },
   originPinpointMap: {
