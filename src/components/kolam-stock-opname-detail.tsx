@@ -14,6 +14,7 @@ import {
   KOLAM_STOCK_OPNAME_ROOT,
   formatStockOpnameLineCounts,
   hasKolamStockOpnamePermission,
+  stockOpnameLineTargetLabel,
   stockOpnameUserDisplayName,
   type KolamOpnameMinusReason,
   type KolamStockOpnameLine,
@@ -802,11 +803,7 @@ function LineCard({
   onRequestRevision: () => void;
   onResubmit: () => void;
 }) {
-  const label =
-    line.product?.name ||
-    line.species?.name ||
-    line.packing?.name ||
-    line.targetTypeLabel;
+  const label = stockOpnameLineTargetLabel(line);
   const diff =
     line.systemQty != null ? line.physicalQty - line.systemQty : null;
 

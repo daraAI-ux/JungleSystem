@@ -425,6 +425,30 @@ export function stockOpnameTargetTypeLabel(targetType?: string) {
   return targetType;
 }
 
+/** Label item baris — mirror FE `lineTargetLabel` (species → scientificName). */
+export function stockOpnameLineTargetLabel(line: {
+  targetType: KolamStockOpnameLineTargetType | string;
+  product?: KolamStockOpnameTargetRef | null;
+  species?: KolamStockOpnameTargetRef | null;
+  packing?: KolamStockOpnamePackingRef | null;
+}) {
+  if (line.targetType === 'product' || line.targetType === 'raw') {
+    return line.product?.name || line.product?.sku || 'Produk';
+  }
+  if (line.targetType === 'species') {
+    return (
+      line.species?.scientificName ||
+      line.species?.name ||
+      line.species?.sku ||
+      'Livestock'
+    );
+  }
+  if (line.targetType === 'packing') {
+    return line.packing?.name || 'Kemasan';
+  }
+  return stockOpnameTargetTypeLabel(line.targetType);
+}
+
 export function opnameMinusReasonLabel(value?: string | null) {
   if (!value) {
     return '';
@@ -839,8 +863,12 @@ function normalizeTargetRef(value: unknown): KolamStockOpnameTargetRef | null {
   }
   return {
     id,
-    name: getString(record, 'name'),
-    sku: getString(record, 'sku'),
+    name:
+      getString(record, 'name') ||
+      getString(record, 'commonName') ||
+      getString(record, 'localName') ||
+      getString(record, 'scientificName'),
+    sku: getString(record, 'sku') || getString(record, 'productCode'),
     scientificName: getString(record, 'scientificName'),
     productCode: getString(record, 'productCode'),
     unitLabel,

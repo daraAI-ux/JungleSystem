@@ -15,6 +15,7 @@ import {
   normalizeKolamStockOpnameList,
   opnameMinusReasonLabel,
   stockOpnameLineStatusLabel,
+  stockOpnameLineTargetLabel,
   stockOpnameStatusLabel,
   stockOpnameUserDisplayName,
 } from '../src/domain/kolam-stock-opname';
@@ -137,6 +138,33 @@ describe('Kolam stock opname domain', () => {
       lineStatusLabel: 'Menunggu review',
       photos: ['a.jpg'],
     });
+    expect(stockOpnameLineTargetLabel(line)).toBe('Produk A');
+  });
+
+  it('labels species lines with scientificName like FE', () => {
+    const line = normalizeKolamStockOpnameLine({
+      _id: 'line-sp',
+      stockOpnameId: 'op-1',
+      lineNo: 1,
+      targetType: 'species',
+      speciesId: {
+        _id: 'sp1',
+        scientificName: 'Dendrobates tinctorius',
+        units: { initial: 'ekor' },
+      },
+      systemQty: 4,
+      physicalQty: 4,
+      lineStatus: 'draft',
+    });
+
+    expect(line.species).toMatchObject({
+      id: 'sp1',
+      scientificName: 'Dendrobates tinctorius',
+      name: 'Dendrobates tinctorius',
+      unitLabel: 'ekor',
+    });
+    expect(stockOpnameLineTargetLabel(line)).toBe('Dendrobates tinctorius');
+    expect(stockOpnameLineTargetLabel(line)).not.toBe('Livestock');
   });
 
   it('maps status and minus-reason helpers like FE', () => {
