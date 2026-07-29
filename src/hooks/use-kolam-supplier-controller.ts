@@ -16,9 +16,11 @@ import { getKolamBrands } from '../services/kolam-brand-api';
 import {
   createKolamVendor,
   deleteKolamVendor,
+  deleteKolamVendorPhoto,
   getKolamVendor,
   getKolamVendors,
   updateKolamVendor,
+  uploadKolamVendorPhotos,
 } from '../services/kolam-vendor-api';
 import {
   readKolamVendorDetailCache,
@@ -28,6 +30,7 @@ import {
   writeKolamVendorDetailCache,
   writeKolamVendorListCache,
 } from '../services/kolam-vendor-local-cache';
+import { pickNativeImageFile } from '../services/native-file-picker';
 
 export type KolamSupplierSurfaceMode = 'list' | 'detail' | 'edit' | 'new';
 export type KolamSupplierDataSource = 'idle' | 'cache' | 'live' | 'error';
@@ -41,15 +44,19 @@ export interface KolamSupplierController {
   isEditable: boolean;
   loading: boolean;
   mode: KolamSupplierSurfaceMode;
+  pendingPhotoUris: string[];
   saving: boolean;
   selectedVendor: KolamVendor | null;
   vendors: KolamVendor[];
   onBackToList: () => void;
   onChangeForm: (patch: Partial<KolamVendorFormState>) => void;
   onCreateNew: () => void;
+  onDeleteExistingPhoto: (index: number) => Promise<boolean>;
   onDeleteVendor: (vendor: KolamVendor) => Promise<boolean>;
   onEdit: () => void;
+  onPickPhoto: () => Promise<boolean>;
   onRefresh: () => Promise<void>;
+  onRemovePendingPhoto: (index: number) => void;
   onSave: () => Promise<string | null>;
   onSelectVendor: (vendor: KolamVendor) => Promise<void>;
 }
@@ -67,6 +74,7 @@ export function useKolamSupplierController(
   const [form, setForm] = useState<KolamVendorFormState>(() =>
     createEmptyKolamVendorFormState(),
   );
+  const [pendingPhotoUris, setPendingPhotoUris] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -109,6 +117,7 @@ export function useKolamSupplierController(
     if (initialMode === 'new') {
       setSelectedVendor(null);
       setForm(createEmptyKolamVendorFormState());
+      setPendingPhotoUris([]);
     }
   }, [initialMode]);
 
@@ -124,6 +133,7 @@ export function useKolamSupplierController(
       setMode(nextMode);
       setSelectedVendor(vendor);
       setForm(createKolamVendorFormState(vendor));
+      setPendingPhotoUris([]);
       setError(null);
 
       const cached = await readKolamVendorDetailCache(vendor.id);
@@ -188,6 +198,7 @@ export function useKolamSupplierController(
     setMode('list');
     setSelectedVendor(null);
     setForm(createEmptyKolamVendorFormState());
+    setPendingPhotoUris([]);
     setError(null);
   }, []);
 
@@ -195,6 +206,7 @@ export function useKolamSupplierController(
     setMode('new');
     setSelectedVendor(null);
     setForm(createEmptyKolamVendorFormState());
+    setPendingPhotoUris([]);
     setError(null);
   }, []);
 
@@ -202,12 +214,86 @@ export function useKolamSupplierController(
     if (selectedVendor) {
       setMode('edit');
       setForm(createKolamVendorFormState(selectedVendor));
+      setPendingPhotoUris([]);
     }
   }, [selectedVendor]);
 
   const onChangeForm = useCallback((patch: Partial<KolamVendorFormState>) => {
     setForm(current => ({ ...current, ...patch }));
   }, []);
+
+  const onPickPhoto = useCallback(async () => {
+    if (pendingPhotoUris.length >= 5) {
+      setError('Maksimal 5 foto baru per unggahan.');
+      return false;
+    }
+
+    try {
+      setError(null);
+      const picked = await pickNativeImageFile();
+      if (picked.cancelled) {
+        return false;
+      }
+
+      const photoLocalUri = picked.uri ?? picked.path ?? '';
+      if (!photoLocalUri) {
+        setError('File foto tidak memiliki path yang bisa dibaca.');
+        return false;
+      }
+
+      setPendingPhotoUris(current =>
+        current.length >= 5 ? current : [...current, photoLocalUri],
+      );
+      return true;
+    } catch (pickError) {
+      setError(getErrorMessage(pickError));
+      return false;
+    }
+  }, [pendingPhotoUris.length]);
+
+  const onRemovePendingPhoto = useCallback((index: number) => {
+    setPendingPhotoUris(current => current.filter((_, i) => i !== index));
+  }, []);
+
+  const applyVendor = useCallback(
+    async (vendor: KolamVendor) => {
+      await writeKolamVendorDetailCache(vendor);
+      setSelectedVendor(vendor);
+      setForm(createKolamVendorFormState(vendor));
+      setVendors(current => {
+        const next = upsertVendor(current, vendor);
+        void writeKolamVendorListCache(next);
+        return next;
+      });
+      setDataSource('live');
+    },
+    [],
+  );
+
+  const onDeleteExistingPhoto = useCallback(
+    async (index: number) => {
+      const vendorId = selectedVendor?.id ?? form.id;
+      if (!vendorId) {
+        setError('Simpan pemasok dulu sebelum menghapus foto.');
+        return false;
+      }
+
+      setSaving(true);
+      setError(null);
+
+      try {
+        const updated = await deleteKolamVendorPhoto(vendorId, index);
+        await applyVendor(updated);
+        return true;
+      } catch (deleteError) {
+        setError(getErrorMessage(deleteError));
+        return false;
+      } finally {
+        setSaving(false);
+      }
+    },
+    [applyVendor, form.id, selectedVendor],
+  );
 
   const onDeleteVendor = useCallback(
     async (vendor: KolamVendor) => {
@@ -223,6 +309,7 @@ export function useKolamSupplierController(
         setMode('list');
         setSelectedVendor(null);
         setForm(createEmptyKolamVendorFormState());
+        setPendingPhotoUris([]);
         setDataSource('live');
         return true;
       } catch (deleteError) {
@@ -245,7 +332,7 @@ export function useKolamSupplierController(
     setError(null);
 
     try {
-      const savedVendor =
+      let savedVendor =
         mode === 'new'
           ? await createKolamVendor(form)
           : await updateKolamVendor(
@@ -257,14 +344,16 @@ export function useKolamSupplierController(
         throw new Error('Respons simpan pemasok tidak valid.');
       }
 
-      await writeKolamVendorDetailCache(savedVendor);
-      setSelectedVendor(savedVendor);
-      setForm(createKolamVendorFormState(savedVendor));
+      if (pendingPhotoUris.length) {
+        savedVendor = await uploadKolamVendorPhotos(
+          savedVendor.id,
+          pendingPhotoUris,
+        );
+      }
+
+      setPendingPhotoUris([]);
+      await applyVendor(savedVendor);
       setMode('detail');
-      const nextVendors = upsertVendor(vendors, savedVendor);
-      setVendors(nextVendors);
-      await writeKolamVendorListCache(nextVendors);
-      setDataSource('live');
       return savedVendor.id;
     } catch (saveError) {
       setError(getErrorMessage(saveError));
@@ -272,7 +361,7 @@ export function useKolamSupplierController(
     } finally {
       setSaving(false);
     }
-  }, [form, mode, selectedVendor, vendors]);
+  }, [applyVendor, form, mode, pendingPhotoUris, selectedVendor]);
 
   const breadcrumbPath = useMemo(
     () => getKolamSupplierBreadcrumbPath(mode, selectedVendor),
@@ -288,15 +377,19 @@ export function useKolamSupplierController(
     isEditable: mode === 'edit' || mode === 'new',
     loading,
     mode,
+    pendingPhotoUris,
     saving,
     selectedVendor,
     vendors,
     onBackToList,
     onChangeForm,
     onCreateNew,
+    onDeleteExistingPhoto,
     onDeleteVendor,
     onEdit,
+    onPickPhoto,
     onRefresh: refresh,
+    onRemovePendingPhoto,
     onSave,
     onSelectVendor,
   };

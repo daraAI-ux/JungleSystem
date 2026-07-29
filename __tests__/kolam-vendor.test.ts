@@ -54,6 +54,7 @@ describe('kolam vendor / supplier domain', () => {
         link: ['https://a.example', 'https://b.example'],
         isOfficialDistributor: true,
         warrantyContactNote: 'WA 0811',
+        photos: ['uploads/vendors/a.jpg', 'uploads/vendors/b.jpg'],
       }),
     );
 
@@ -68,6 +69,14 @@ describe('kolam vendor / supplier domain', () => {
       isOfficialDistributor: true,
       warrantyContactNote: 'WA 0811',
     });
+
+    const vendor = normalizeKolamVendor({
+      _id: 'v1',
+      name: 'Pemasok Satu',
+      photos: ['uploads/vendors/a.jpg'],
+    });
+    expect(vendor.photos).toEqual(['uploads/vendors/a.jpg']);
+    expect(vendor.photoUrls[0]).toContain('uploads/vendors/a.jpg');
 
     expect(createKolamVendorSavePayload(form)).toMatchObject({
       name: 'Pemasok Satu',

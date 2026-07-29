@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { getKolamFormSection } from '../domain/kolam-form';
 import { getKolamTableColumns } from '../domain/kolam-table';
 import {
@@ -842,6 +842,72 @@ function KolamSupplierForm({
               value={form.linkText}
             />
           </FieldShell>
+
+          <FieldShell label="Foto">
+            <View style={styles.photoEditor}>
+              <Text style={styles.switchHint}>
+                Pilih hingga 5 foto baru. Foto tersimpan dihapus langsung; foto baru diunggah saat Simpan.
+              </Text>
+              <KolamButton
+                disabled={
+                  controller.saving || controller.pendingPhotoUris.length >= 5
+                }
+                label="Tambah foto"
+                onPress={() => {
+                  void controller.onPickPhoto();
+                }}
+              />
+              {controller.pendingPhotoUris.length ? (
+                <View style={styles.photoGrid}>
+                  {controller.pendingPhotoUris.map((uri, index) => (
+                    <View key={`pending-${uri}-${index}`} style={styles.photoItem}>
+                      <Image
+                        accessibilityLabel={`Foto baru ${index + 1}`}
+                        resizeMode="cover"
+                        source={{ uri: toLocalImageUri(uri) }}
+                        style={styles.photoThumb}
+                      />
+                      <KolamButton
+                        disabled={controller.saving}
+                        intent="danger"
+                        label="Buang"
+                        onPress={() => controller.onRemovePendingPhoto(index)}
+                        style={styles.photoRemove}
+                      />
+                    </View>
+                  ))}
+                </View>
+              ) : null}
+              {controller.selectedVendor?.photoUrls.length ? (
+                <View style={styles.photoGrid}>
+                  {controller.selectedVendor.photoUrls.map((uri, index) => (
+                    <View key={`existing-${uri}-${index}`} style={styles.photoItem}>
+                      <KolamRemoteImage
+                        accessibilityLabel={`Foto tersimpan ${index + 1}`}
+                        resizeMode="cover"
+                        scope="vendor"
+                        sourceUri={uri}
+                        style={styles.photoThumb}
+                      />
+                      <KolamButton
+                        disabled={controller.saving}
+                        intent="danger"
+                        label="Hapus"
+                        onPress={() => {
+                          void controller.onDeleteExistingPhoto(index);
+                        }}
+                        style={styles.photoRemove}
+                      />
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <Text style={styles.switchHint}>
+                  Belum ada foto tersimpan untuk pemasok ini.
+                </Text>
+              )}
+            </View>
+          </FieldShell>
         </View>
 
         <View style={styles.formActions}>
@@ -886,6 +952,13 @@ function FieldShell({
       {children}
     </View>
   );
+}
+
+function toLocalImageUri(uri: string) {
+  if (uri.startsWith('file://') || uri.startsWith('http://') || uri.startsWith('https://')) {
+    return uri;
+  }
+  return `file:///${uri.replace(/\\/g, '/')}`;
 }
 
 function SummaryTile({ label, value }: { label: string; value: number }) {
@@ -1136,6 +1209,16 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     height: 88,
     width: 120,
+  },
+  photoEditor: {
+    gap: 8,
+  },
+  photoItem: {
+    gap: 6,
+    width: 120,
+  },
+  photoRemove: {
+    minHeight: 30,
   },
   formSplitRow: {
     flexDirection: 'row',
