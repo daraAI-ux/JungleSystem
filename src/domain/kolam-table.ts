@@ -277,6 +277,7 @@ const kolamTableColumns: Record<KolamTableId, KolamTableColumn[]> = {
     { id: 'notes', label: 'Email', align: 'left', width: 180 },
     { id: 'children', label: 'Total PO', align: 'right', width: 100 },
     { id: 'status', label: 'Status', align: 'left', width: 120 },
+    { id: 'actions', label: '', align: 'right', width: 64 },
   ],
   teranura: [
     { id: 'primary', label: 'Nama', align: 'left' },
@@ -392,4 +393,3 @@ function stringifyKolamColumnValue(value: number | string | null | undefined) {
 
   return String(value);
 }
-

@@ -64,14 +64,126 @@ export function getKolamSupplierRouteId(route: string) {
   return match?.[1] ? decodeURIComponent(match[1]) : null;
 }
 
+export function getKolamSupplierEditRouteId(route: string) {
+  const path = normalizeSupplierRoutePath(route);
+  const match = /^\/suppliers\/([^/]+)\/edit$/.exec(path);
+  return match?.[1] ? decodeURIComponent(match[1]) : null;
+}
+
+export function isKolamSupplierCreateRoute(route: string) {
+  const path = normalizeSupplierRoutePath(route);
+  return path === `${KOLAM_SUPPLIER_ROOT}/create`;
+}
+
 export function getKolamSupplierBreadcrumbPath(
-  mode: 'list' | 'detail',
+  mode: 'list' | 'detail' | 'edit' | 'new',
   vendor?: Pick<KolamVendor, 'name' | 'id'> | null,
 ) {
-  if (mode === 'detail' && vendor?.id) {
-    return `${KOLAM_SUPPLIER_ROOT}/${vendor.id}`;
+  if (mode === 'new') {
+    return `${KOLAM_SUPPLIER_ROOT}/create`;
+  }
+  if ((mode === 'detail' || mode === 'edit') && vendor?.id) {
+    return mode === 'edit'
+      ? `${KOLAM_SUPPLIER_ROOT}/${vendor.id}/edit`
+      : `${KOLAM_SUPPLIER_ROOT}/${vendor.id}`;
   }
   return KOLAM_SUPPLIER_ROOT;
+}
+
+export interface KolamVendorFormState {
+  id?: string;
+  name: string;
+  description: string;
+  email: string;
+  phone: string;
+  address: string;
+  province: string;
+  city: string;
+  state: string;
+  country: string;
+  postalCode: string;
+  bankName: string;
+  bankAccountNumber: string;
+  status: KolamVendorStatus;
+  isOfficialDistributor: boolean;
+  warrantyContactNote: string;
+  brandIds: string[];
+  linkText: string;
+}
+
+export function createEmptyKolamVendorFormState(): KolamVendorFormState {
+  return {
+    name: '',
+    description: '',
+    email: '',
+    phone: '',
+    address: '',
+    province: '',
+    city: '',
+    state: '',
+    country: 'Indonesia',
+    postalCode: '',
+    bankName: '',
+    bankAccountNumber: '',
+    status: 'active',
+    isOfficialDistributor: false,
+    warrantyContactNote: '',
+    brandIds: [],
+    linkText: '',
+  };
+}
+
+export function createKolamVendorFormState(
+  vendor: KolamVendor,
+): KolamVendorFormState {
+  return {
+    id: vendor.id,
+    name: vendor.name,
+    description: vendor.description,
+    email: vendor.email === '-' ? '' : vendor.email,
+    phone: vendor.phone === '-' ? '' : vendor.phone,
+    address: vendor.address,
+    province: vendor.province,
+    city: vendor.city,
+    state: vendor.state,
+    country: vendor.country || 'Indonesia',
+    postalCode: vendor.postalCode,
+    bankName: vendor.bankName,
+    bankAccountNumber:
+      vendor.bankAccountNumber === '-' ? '' : vendor.bankAccountNumber,
+    status: coerceVendorStatus(String(vendor.status)),
+    isOfficialDistributor: vendor.isOfficialDistributor,
+    warrantyContactNote: vendor.warrantyContactNote,
+    brandIds: vendor.brands.map(brand => brand.id).filter(Boolean),
+    linkText: vendor.links.join('\n'),
+  };
+}
+
+export function createKolamVendorSavePayload(form: KolamVendorFormState) {
+  const links = form.linkText
+    .split(/\r?\n/)
+    .map(link => link.trim())
+    .filter(Boolean);
+
+  return {
+    name: form.name.trim(),
+    description: form.description.trim(),
+    brands: form.brandIds,
+    email: form.email.trim() || '-',
+    phone: form.phone.trim() || '-',
+    address: form.address.trim(),
+    province: form.province.trim(),
+    city: form.city.trim(),
+    state: form.state.trim(),
+    country: form.country.trim() || 'Indonesia',
+    postalCode: form.postalCode.trim(),
+    bankName: form.bankName.trim(),
+    bankAccountNumber: form.bankAccountNumber.trim() || '-',
+    status: form.status,
+    isOfficialDistributor: form.isOfficialDistributor,
+    warrantyContactNote: form.warrantyContactNote.trim(),
+    link: links,
+  };
 }
 
 export function normalizeKolamVendorList(payload: unknown): KolamVendor[] {
@@ -210,6 +322,13 @@ function normalizeVendorStatus(value: string): KolamVendorStatus | string {
     return normalized;
   }
   return value.trim() || 'active';
+}
+
+function coerceVendorStatus(value: string): KolamVendorStatus {
+  const normalized = normalizeVendorStatus(value);
+  return normalized === 'inactive' || normalized === 'blacklisted'
+    ? normalized
+    : 'active';
 }
 
 function normalizeBrandRefs(value: unknown): KolamVendorBrandRef[] {

@@ -1,7 +1,13 @@
 import {
+  createEmptyKolamVendorFormState,
+  createKolamVendorFormState,
+  createKolamVendorSavePayload,
   formatKolamVendorAddress,
+  getKolamSupplierBreadcrumbPath,
+  getKolamSupplierEditRouteId,
   getKolamSupplierRouteId,
   getKolamVendorStatusLabel,
+  isKolamSupplierCreateRoute,
   isKolamSupplierRoute,
   normalizeKolamVendor,
   normalizeKolamVendorDetail,
@@ -17,6 +23,62 @@ describe('kolam vendor / supplier domain', () => {
     expect(getKolamSupplierRouteId('/suppliers/abc')).toBe('abc');
     expect(getKolamSupplierRouteId('/suppliers')).toBe(null);
     expect(getKolamSupplierRouteId('/suppliers/create')).toBe(null);
+    expect(getKolamSupplierEditRouteId('/suppliers/abc/edit')).toBe('abc');
+    expect(getKolamSupplierEditRouteId('/suppliers/abc')).toBe(null);
+    expect(isKolamSupplierCreateRoute('/suppliers/create')).toBe(true);
+    expect(getKolamSupplierBreadcrumbPath('new')).toBe('/suppliers/create');
+    expect(
+      getKolamSupplierBreadcrumbPath('edit', { id: 'abc', name: 'X' }),
+    ).toBe('/suppliers/abc/edit');
+  });
+
+  it('builds form state and save payload', () => {
+    const empty = createEmptyKolamVendorFormState();
+    expect(empty).toMatchObject({
+      name: '',
+      status: 'active',
+      country: 'Indonesia',
+      brandIds: [],
+      linkText: '',
+      isOfficialDistributor: false,
+    });
+
+    const form = createKolamVendorFormState(
+      normalizeKolamVendor({
+        _id: 'v1',
+        name: 'Pemasok Satu',
+        email: '-',
+        phone: '0812',
+        status: 'inactive',
+        brands: [{ _id: 'b1', name: 'Merek A' }],
+        link: ['https://a.example', 'https://b.example'],
+        isOfficialDistributor: true,
+        warrantyContactNote: 'WA 0811',
+      }),
+    );
+
+    expect(form).toMatchObject({
+      id: 'v1',
+      name: 'Pemasok Satu',
+      email: '',
+      phone: '0812',
+      status: 'inactive',
+      brandIds: ['b1'],
+      linkText: 'https://a.example\nhttps://b.example',
+      isOfficialDistributor: true,
+      warrantyContactNote: 'WA 0811',
+    });
+
+    expect(createKolamVendorSavePayload(form)).toMatchObject({
+      name: 'Pemasok Satu',
+      email: '-',
+      phone: '0812',
+      brands: ['b1'],
+      link: ['https://a.example', 'https://b.example'],
+      status: 'inactive',
+      isOfficialDistributor: true,
+      warrantyContactNote: 'WA 0811',
+    });
   });
 
   it('normalizes list and detail vendor payloads', () => {

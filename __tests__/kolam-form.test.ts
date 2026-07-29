@@ -15,6 +15,13 @@ describe('getKolamFormSection', () => {
     });
   });
 
+  it('defines supplier detail form section', () => {
+    expect(getKolamFormSection('supplier-detail')).toMatchObject({
+      id: 'supplier-detail',
+      title: 'Data Pemasok',
+    });
+  });
+
   it('returns cloned section descriptors for render safety', () => {
     const first = getKolamFormSection('customer-create');
     first.title = 'Changed';

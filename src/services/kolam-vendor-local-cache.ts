@@ -73,3 +73,12 @@ export async function readKolamVendorFromListCacheById(
   const cached = await readKolamVendorListCache(ownerId);
   return cached?.value.find(vendor => vendor.id === vendorId) ?? null;
 }
+
+export async function removeKolamVendorDetailCache(
+  vendorId: string,
+  ownerId = VENDOR_OWNER,
+) {
+  await getLocalDataStore().remove(
+    getKolamVendorDetailCacheKey(vendorId, ownerId),
+  );
+}

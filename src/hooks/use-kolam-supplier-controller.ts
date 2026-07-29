@@ -1,33 +1,56 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  createEmptyKolamVendorFormState,
+  createKolamVendorFormState,
   getKolamSupplierBreadcrumbPath,
+  getKolamSupplierEditRouteId,
   getKolamSupplierRouteId,
+  isKolamSupplierCreateRoute,
   isKolamSupplierListRoute,
   isKolamSupplierRoute,
   type KolamVendor,
+  type KolamVendorFormState,
 } from '../domain/kolam-vendor';
-import { getKolamVendor, getKolamVendors } from '../services/kolam-vendor-api';
+import type { KolamBrand } from '../domain/kolam-brand';
+import { getKolamBrands } from '../services/kolam-brand-api';
+import {
+  createKolamVendor,
+  deleteKolamVendor,
+  getKolamVendor,
+  getKolamVendors,
+  updateKolamVendor,
+} from '../services/kolam-vendor-api';
 import {
   readKolamVendorDetailCache,
   readKolamVendorFromListCacheById,
   readKolamVendorListCache,
+  removeKolamVendorDetailCache,
   writeKolamVendorDetailCache,
   writeKolamVendorListCache,
 } from '../services/kolam-vendor-local-cache';
 
-export type KolamSupplierSurfaceMode = 'list' | 'detail' | 'unsupported';
+export type KolamSupplierSurfaceMode = 'list' | 'detail' | 'edit' | 'new';
 export type KolamSupplierDataSource = 'idle' | 'cache' | 'live' | 'error';
 
 export interface KolamSupplierController {
+  brands: KolamBrand[];
   breadcrumbPath: string;
   dataSource: KolamSupplierDataSource;
   error: string | null;
+  form: KolamVendorFormState;
+  isEditable: boolean;
   loading: boolean;
   mode: KolamSupplierSurfaceMode;
+  saving: boolean;
   selectedVendor: KolamVendor | null;
   vendors: KolamVendor[];
   onBackToList: () => void;
+  onChangeForm: (patch: Partial<KolamVendorFormState>) => void;
+  onCreateNew: () => void;
+  onDeleteVendor: (vendor: KolamVendor) => Promise<boolean>;
+  onEdit: () => void;
   onRefresh: () => Promise<void>;
+  onSave: () => Promise<string | null>;
   onSelectVendor: (vendor: KolamVendor) => Promise<void>;
 }
 
@@ -36,11 +59,16 @@ export function useKolamSupplierController(
 ): KolamSupplierController {
   const initialMode = getInitialMode(route);
   const [vendors, setVendors] = useState<KolamVendor[]>([]);
+  const [brands, setBrands] = useState<KolamBrand[]>([]);
   const [selectedVendor, setSelectedVendor] = useState<KolamVendor | null>(
     null,
   );
   const [mode, setMode] = useState<KolamSupplierSurfaceMode>(initialMode);
+  const [form, setForm] = useState<KolamVendorFormState>(() =>
+    createEmptyKolamVendorFormState(),
+  );
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dataSource, setDataSource] =
     useState<KolamSupplierDataSource>('idle');
@@ -60,9 +88,13 @@ export function useKolamSupplierController(
     }
 
     try {
-      const liveVendors = await getKolamVendors();
+      const [liveVendors, liveBrands] = await Promise.all([
+        getKolamVendors(),
+        getKolamBrands().catch(() => [] as KolamBrand[]),
+      ]);
       await writeKolamVendorListCache(liveVendors);
       setVendors(liveVendors);
+      setBrands(liveBrands);
       setDataSource('live');
     } catch (loadError) {
       setError(getErrorMessage(loadError));
@@ -74,8 +106,9 @@ export function useKolamSupplierController(
 
   useEffect(() => {
     setMode(initialMode);
-    if (initialMode === 'list' || initialMode === 'unsupported') {
+    if (initialMode === 'new') {
       setSelectedVendor(null);
+      setForm(createEmptyKolamVendorFormState());
     }
   }, [initialMode]);
 
@@ -83,34 +116,51 @@ export function useKolamSupplierController(
     void refresh();
   }, [refresh]);
 
-  const onSelectVendor = useCallback(async (vendor: KolamVendor) => {
-    setMode('detail');
-    setSelectedVendor(vendor);
-    setError(null);
+  const loadVendor = useCallback(
+    async (
+      vendor: KolamVendor,
+      nextMode: 'detail' | 'edit' = 'detail',
+    ) => {
+      setMode(nextMode);
+      setSelectedVendor(vendor);
+      setForm(createKolamVendorFormState(vendor));
+      setError(null);
 
-    const cached = await readKolamVendorDetailCache(vendor.id);
-    if (cached?.value) {
-      setSelectedVendor(cached.value);
-      setDataSource('cache');
-    }
+      const cached = await readKolamVendorDetailCache(vendor.id);
+      if (cached?.value) {
+        setSelectedVendor(cached.value);
+        setForm(createKolamVendorFormState(cached.value));
+        setDataSource('cache');
+      }
 
-    try {
-      const liveVendor = await getKolamVendor(vendor.id);
-      await writeKolamVendorDetailCache(liveVendor);
-      setSelectedVendor(liveVendor);
-      setDataSource('live');
-    } catch (detailError) {
-      setError(getErrorMessage(detailError));
-      setDataSource(cached?.value || vendor ? 'cache' : 'error');
-    }
-  }, []);
+      try {
+        const liveVendor = await getKolamVendor(vendor.id);
+        await writeKolamVendorDetailCache(liveVendor);
+        setSelectedVendor(liveVendor);
+        setForm(createKolamVendorFormState(liveVendor));
+        setDataSource('live');
+      } catch (detailError) {
+        setError(getErrorMessage(detailError));
+        setDataSource(cached?.value || vendor ? 'cache' : 'error');
+      }
+    },
+    [],
+  );
+
+  const onSelectVendor = useCallback(
+    async (vendor: KolamVendor) => {
+      await loadVendor(vendor, 'detail');
+    },
+    [loadVendor],
+  );
 
   useEffect(() => {
-    if (mode !== 'detail') {
+    if (mode === 'new' || mode === 'list') {
       return;
     }
 
-    const routeId = getKolamSupplierRouteId(route);
+    const routeId =
+      getKolamSupplierEditRouteId(route) || getKolamSupplierRouteId(route);
     if (!routeId) {
       return;
     }
@@ -119,39 +169,135 @@ export function useKolamSupplierController(
       return;
     }
 
+    const preferEdit =
+      mode === 'edit' || Boolean(getKolamSupplierEditRouteId(route));
+
     let active = true;
     void resolveRouteVendor(routeId, vendors).then(vendor => {
       if (active) {
-        void onSelectVendor(vendor);
+        void loadVendor(vendor, preferEdit ? 'edit' : 'detail');
       }
     });
 
     return () => {
       active = false;
     };
-  }, [mode, onSelectVendor, route, selectedVendor, vendors]);
+  }, [loadVendor, mode, route, selectedVendor, vendors]);
 
   const onBackToList = useCallback(() => {
     setMode('list');
     setSelectedVendor(null);
+    setForm(createEmptyKolamVendorFormState());
     setError(null);
   }, []);
 
+  const onCreateNew = useCallback(() => {
+    setMode('new');
+    setSelectedVendor(null);
+    setForm(createEmptyKolamVendorFormState());
+    setError(null);
+  }, []);
+
+  const onEdit = useCallback(() => {
+    if (selectedVendor) {
+      setMode('edit');
+      setForm(createKolamVendorFormState(selectedVendor));
+    }
+  }, [selectedVendor]);
+
+  const onChangeForm = useCallback((patch: Partial<KolamVendorFormState>) => {
+    setForm(current => ({ ...current, ...patch }));
+  }, []);
+
+  const onDeleteVendor = useCallback(
+    async (vendor: KolamVendor) => {
+      setSaving(true);
+      setError(null);
+
+      try {
+        await deleteKolamVendor(vendor.id);
+        const nextVendors = vendors.filter(item => item.id !== vendor.id);
+        await writeKolamVendorListCache(nextVendors);
+        await removeKolamVendorDetailCache(vendor.id);
+        setVendors(nextVendors);
+        setMode('list');
+        setSelectedVendor(null);
+        setForm(createEmptyKolamVendorFormState());
+        setDataSource('live');
+        return true;
+      } catch (deleteError) {
+        setError(getErrorMessage(deleteError));
+        return false;
+      } finally {
+        setSaving(false);
+      }
+    },
+    [vendors],
+  );
+
+  const onSave = useCallback(async () => {
+    if (!form.name.trim()) {
+      setError('Nama pemasok wajib diisi.');
+      return null;
+    }
+
+    setSaving(true);
+    setError(null);
+
+    try {
+      const savedVendor =
+        mode === 'new'
+          ? await createKolamVendor(form)
+          : await updateKolamVendor(
+              selectedVendor?.id ?? form.id ?? '',
+              form,
+            );
+
+      if (!savedVendor.id) {
+        throw new Error('Respons simpan pemasok tidak valid.');
+      }
+
+      await writeKolamVendorDetailCache(savedVendor);
+      setSelectedVendor(savedVendor);
+      setForm(createKolamVendorFormState(savedVendor));
+      setMode('detail');
+      const nextVendors = upsertVendor(vendors, savedVendor);
+      setVendors(nextVendors);
+      await writeKolamVendorListCache(nextVendors);
+      setDataSource('live');
+      return savedVendor.id;
+    } catch (saveError) {
+      setError(getErrorMessage(saveError));
+      return null;
+    } finally {
+      setSaving(false);
+    }
+  }, [form, mode, selectedVendor, vendors]);
+
   const breadcrumbPath = useMemo(
-    () => getKolamSupplierBreadcrumbPath(mode === 'detail' ? 'detail' : 'list', selectedVendor),
+    () => getKolamSupplierBreadcrumbPath(mode, selectedVendor),
     [mode, selectedVendor],
   );
 
   return {
+    brands,
     breadcrumbPath,
     dataSource,
     error,
+    form,
+    isEditable: mode === 'edit' || mode === 'new',
     loading,
     mode,
+    saving,
     selectedVendor,
     vendors,
     onBackToList,
+    onChangeForm,
+    onCreateNew,
+    onDeleteVendor,
+    onEdit,
     onRefresh: refresh,
+    onSave,
     onSelectVendor,
   };
 }
@@ -160,9 +306,11 @@ function getInitialMode(route: string): KolamSupplierSurfaceMode {
   if (!isKolamSupplierRoute(route)) {
     return 'list';
   }
-  const path = route.trim().split('?')[0] || '';
-  if (path.endsWith('/create') || path.endsWith('/edit')) {
-    return 'unsupported';
+  if (isKolamSupplierCreateRoute(route)) {
+    return 'new';
+  }
+  if (getKolamSupplierEditRouteId(route)) {
+    return 'edit';
   }
   if (isKolamSupplierListRoute(route)) {
     return 'list';
@@ -215,6 +363,16 @@ async function resolveRouteVendor(routeId: string, vendors: KolamVendor[]) {
     updatedAt: '',
     createdByName: '',
   } satisfies KolamVendor;
+}
+
+function upsertVendor(vendors: KolamVendor[], vendor: KolamVendor) {
+  const index = vendors.findIndex(item => item.id === vendor.id);
+  if (index < 0) {
+    return [vendor, ...vendors];
+  }
+  const next = [...vendors];
+  next[index] = vendor;
+  return next;
 }
 
 function getErrorMessage(error: unknown) {

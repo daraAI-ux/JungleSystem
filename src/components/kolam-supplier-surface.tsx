@@ -1,5 +1,6 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { getKolamFormSection } from '../domain/kolam-form';
 import { getKolamTableColumns } from '../domain/kolam-table';
 import {
   formatKolamVendorAddress,
@@ -7,6 +8,7 @@ import {
   getKolamVendorStatusLabel,
   KOLAM_SUPPLIER_ROOT,
   type KolamVendor,
+  type KolamVendorStatus,
 } from '../domain/kolam-vendor';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import {
@@ -19,16 +21,22 @@ import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDataTableHeader } from './kolam-data-table-header';
 import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
+import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import { KolamDescriptionList } from './kolam-description-list';
 import {
   KolamDropdownSelect,
+  KolamOverflowMenuButton,
   KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamLabelFieldDetailOverview } from './kolam-label-field-detail-overview';
+import { KolamNativeFormSection } from './kolam-native-form-section';
 import { KolamRemoteImage } from './kolam-remote-image';
+import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
+import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamStatusBadge } from './kolam-status-badge';
+import { KolamSwitch } from './kolam-switch';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 
 type SupplierSortMode = 'name-asc' | 'name-desc' | 'po-desc' | 'newest';
@@ -54,7 +62,17 @@ export function KolamSupplierSurface({
           }}
           style={styles.toolbarButton}
         />
-        {controller.mode === 'list' ? null : (
+        {controller.mode === 'list' ? (
+          <KolamButton
+            intent="primary"
+            label="Buat Baru"
+            onPress={() => {
+              controller.onCreateNew();
+              onRouteChange?.(`${KOLAM_SUPPLIER_ROOT}/create`);
+            }}
+            style={styles.toolbarButton}
+          />
+        ) : (
           <KolamButton
             label="Daftar"
             muted
@@ -79,16 +97,10 @@ export function KolamSupplierSurface({
           controller={controller}
           onRouteChange={onRouteChange}
         />
-      ) : controller.mode === 'detail' ? (
+      ) : (
         <KolamSupplierDetail
           controller={controller}
           onRouteChange={onRouteChange}
-        />
-      ) : (
-        <KolamEmptyState
-          compact
-          message="Buat dan ubah pemasok akan tersedia di fase berikutnya. Sementara ini gunakan daftar dan detil baca."
-          title="Form pemasok belum tersedia"
         />
       )}
     </View>
@@ -108,6 +120,8 @@ function KolamSupplierList({
     React.useState<SupplierStatusFilter>('all');
   const [pageSize, setPageSize] = React.useState(10);
   const [page, setPage] = React.useState(1);
+  const [deleteCandidate, setDeleteCandidate] =
+    React.useState<KolamVendor | null>(null);
 
   const summary = React.useMemo(
     () => getVendorSummary(controller.vendors),
@@ -204,6 +218,12 @@ function KolamSupplierList({
           paged.map(vendor => (
             <KolamSupplierRow
               key={vendor.id}
+              onDelete={() => setDeleteCandidate(vendor)}
+              onEdit={() => {
+                onRouteChange?.(
+                  `${KOLAM_SUPPLIER_ROOT}/${vendor.id}/edit`,
+                );
+              }}
               onSelect={() => {
                 void controller.onSelectVendor(vendor);
                 onRouteChange?.(`${KOLAM_SUPPLIER_ROOT}/${vendor.id}`);
@@ -223,72 +243,107 @@ function KolamSupplierList({
           </View>
         )}
       </KolamCatalogListTableShell>
+      <KolamDeleteConfirmDialog
+        itemLabel={deleteCandidate?.name}
+        itemType="pemasok"
+        visible={Boolean(deleteCandidate)}
+        onCancel={() => setDeleteCandidate(null)}
+        onConfirm={() => {
+          const vendor = deleteCandidate;
+          setDeleteCandidate(null);
+          if (!vendor) {
+            return;
+          }
+          void controller.onDeleteVendor(vendor).then(deleted => {
+            if (deleted) {
+              onRouteChange?.(KOLAM_SUPPLIER_ROOT);
+            }
+          });
+        }}
+      />
     </View>
   );
 }
 
 function KolamSupplierRow({
+  onDelete,
+  onEdit,
   onSelect,
   vendor,
 }: {
+  onDelete: () => void;
+  onEdit: () => void;
   onSelect: () => void;
   vendor: KolamVendor;
 }) {
+  const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
   const thumb = vendor.photoUrls[0] || vendor.photos[0] || '';
+
   return (
-    <Pressable onPress={onSelect}>
-      <KolamDataTableRowFrame>
-        <View style={[styles.cell, styles.primaryCell]}>
-          <View style={styles.identity}>
-            {thumb ? (
-              <KolamRemoteImage
-                accessibilityLabel={`Foto ${vendor.name}`}
-                resizeMode="cover"
-                scope="vendor"
-                sourceUri={thumb}
-                style={styles.thumb}
-              />
-            ) : (
-              <View style={styles.thumbFallback}>
-                <Text style={styles.thumbFallbackText}>
-                  {vendor.name.slice(0, 1).toUpperCase()}
-                </Text>
-              </View>
-            )}
-            <KolamCopyStack
-              containerStyle={styles.identityCopy}
-              items={[
-                { id: 'name', text: vendor.name, style: styles.rowTitle },
-                {
-                  id: 'meta',
-                  text: [vendor.city, vendor.country].filter(Boolean).join(' · ') || '—',
-                  style: styles.rowMeta,
-                },
-              ]}
+    <KolamDataTableRowFrame style={actionMenuOpen ? styles.activeActionRow : undefined}>
+      <Pressable onPress={onSelect} style={[styles.cell, styles.primaryCell]}>
+        <View style={styles.identity}>
+          {thumb ? (
+            <KolamRemoteImage
+              accessibilityLabel={`Foto ${vendor.name}`}
+              resizeMode="cover"
+              scope="vendor"
+              sourceUri={thumb}
+              style={styles.thumb}
             />
-          </View>
-        </View>
-        <View style={[styles.cell, { width: 140 }]}>
-          <Text numberOfLines={2} style={styles.cellText}>
-            {vendor.phone || '—'}
-          </Text>
-        </View>
-        <View style={[styles.cell, { width: 180 }]}>
-          <Text numberOfLines={2} style={styles.cellText}>
-            {vendor.email || '—'}
-          </Text>
-        </View>
-        <View style={[styles.cell, { width: 100 }]}>
-          <Text style={styles.numText}>{vendor.poCount}</Text>
-        </View>
-        <View style={[styles.cell, { width: 120 }]}>
-          <KolamStatusBadge
-            intent={getKolamVendorStatusIntent(vendor.status)}
-            label={getKolamVendorStatusLabel(vendor.status)}
+          ) : (
+            <View style={styles.thumbFallback}>
+              <Text style={styles.thumbFallbackText}>
+                {vendor.name.slice(0, 1).toUpperCase()}
+              </Text>
+            </View>
+          )}
+          <KolamCopyStack
+            containerStyle={styles.identityCopy}
+            items={[
+              { id: 'name', text: vendor.name, style: styles.rowTitle },
+              {
+                id: 'meta',
+                text:
+                  [vendor.city, vendor.country].filter(Boolean).join(' · ') ||
+                  '—',
+                style: styles.rowMeta,
+              },
+            ]}
           />
         </View>
-      </KolamDataTableRowFrame>
-    </Pressable>
+      </Pressable>
+      <View style={[styles.cell, { width: 140 }]}>
+        <Text numberOfLines={2} style={styles.cellText}>
+          {vendor.phone || '—'}
+        </Text>
+      </View>
+      <View style={[styles.cell, { width: 180 }]}>
+        <Text numberOfLines={2} style={styles.cellText}>
+          {vendor.email || '—'}
+        </Text>
+      </View>
+      <View style={[styles.cell, { width: 100 }]}>
+        <Text style={styles.numText}>{vendor.poCount}</Text>
+      </View>
+      <View style={[styles.cell, { width: 120 }]}>
+        <KolamStatusBadge
+          intent={getKolamVendorStatusIntent(vendor.status)}
+          label={getKolamVendorStatusLabel(vendor.status)}
+        />
+      </View>
+      <View style={styles.overflowCell}>
+        <KolamOverflowMenuButton
+          accessibilityLabel={`Menu ${vendor.name}`}
+          onOpenChange={setActionMenuOpen}
+          actions={[
+            { label: 'Lihat', onPress: onSelect },
+            { label: 'Rubah', onPress: onEdit },
+            { label: 'Hapus', onPress: onDelete, tone: 'danger' },
+          ]}
+        />
+      </View>
+    </KolamDataTableRowFrame>
   );
 }
 
@@ -300,6 +355,18 @@ function KolamSupplierDetail({
   onRouteChange?: (route: string) => void;
 }) {
   const vendor = controller.selectedVendor;
+  const editable = controller.isEditable;
+  const [deleteCandidate, setDeleteCandidate] =
+    React.useState<KolamVendor | null>(null);
+
+  if (editable) {
+    return (
+      <KolamSupplierForm
+        controller={controller}
+        onRouteChange={onRouteChange}
+      />
+    );
+  }
 
   if (!vendor) {
     return (
@@ -316,6 +383,23 @@ function KolamSupplierDetail({
 
   return (
     <View style={styles.stack}>
+      <View style={styles.detailActions}>
+        <KolamButton
+          intent="primary"
+          label="Edit"
+          onPress={() => {
+            controller.onEdit();
+            onRouteChange?.(
+              `${KOLAM_SUPPLIER_ROOT}/${vendor.id}/edit`,
+            );
+          }}
+        />
+        <KolamButton
+          intent="danger"
+          label="Hapus"
+          onPress={() => setDeleteCandidate(vendor)}
+        />
+      </View>
       <KolamLabelFieldDetailOverview
         hero={
           heroUri ? (
@@ -448,6 +532,358 @@ function KolamSupplierDetail({
           </View>
         </KolamContentFrame>
       ) : null}
+
+      <KolamDeleteConfirmDialog
+        itemLabel={deleteCandidate?.name}
+        itemType="pemasok"
+        visible={Boolean(deleteCandidate)}
+        onCancel={() => setDeleteCandidate(null)}
+        onConfirm={() => {
+          const target = deleteCandidate;
+          setDeleteCandidate(null);
+          if (!target) {
+            return;
+          }
+          void controller.onDeleteVendor(target).then(deleted => {
+            if (deleted) {
+              onRouteChange?.(KOLAM_SUPPLIER_ROOT);
+            }
+          });
+        }}
+      />
+    </View>
+  );
+}
+
+function KolamSupplierForm({
+  controller,
+  onRouteChange,
+}: {
+  controller: KolamSupplierController;
+  onRouteChange?: (route: string) => void;
+}) {
+  const form = controller.form;
+  const selectedBrands = controller.brands.filter(brand =>
+    form.brandIds.includes(brand.id),
+  );
+  const brandOptions = controller.brands.filter(
+    brand => !form.brandIds.includes(brand.id),
+  );
+
+  return (
+    <KolamNativeFormSection section={getKolamFormSection('supplier-detail')}>
+      <View style={settingsWebFormStyles.settingsWebFormFields}>
+        <View style={settingsWebFormStyles.settingsWebFormFieldsGrid}>
+          <FieldShell label="Nama pemasok" required>
+            <KolamFormTextField
+              editable={!controller.saving}
+              onChangeText={name => controller.onChangeForm({ name })}
+              placeholder="Nama perusahaan / pemasok"
+              style={settingsWebFormStyles.settingsWebFormFieldValue}
+              value={form.name}
+            />
+          </FieldShell>
+
+          <View style={styles.formSplitRow}>
+            <View style={styles.formSplitCell}>
+              <FieldShell label="Telepon">
+                <KolamFormTextField
+                  editable={!controller.saving}
+                  onChangeText={phone => controller.onChangeForm({ phone })}
+                  placeholder="Nomor telepon"
+                  style={settingsWebFormStyles.settingsWebFormFieldValue}
+                  value={form.phone}
+                />
+              </FieldShell>
+            </View>
+            <View style={styles.formSplitCell}>
+              <FieldShell label="Email">
+                <KolamFormTextField
+                  editable={!controller.saving}
+                  mode="email"
+                  onChangeText={email => controller.onChangeForm({ email })}
+                  placeholder="email@contoh.com"
+                  style={settingsWebFormStyles.settingsWebFormFieldValue}
+                  value={form.email}
+                />
+              </FieldShell>
+            </View>
+          </View>
+
+          <FieldShell label="Deskripsi">
+            <KolamFormTextField
+              editable={!controller.saving}
+              multiline
+              onChangeText={description =>
+                controller.onChangeForm({ description })
+              }
+              placeholder="Deskripsi singkat"
+              style={[
+                settingsWebFormStyles.settingsWebFormFieldValue,
+                settingsWebFormStyles.settingsWebFormFieldValueTextarea,
+              ]}
+              value={form.description}
+            />
+          </FieldShell>
+
+          <FieldShell label="Alamat">
+            <KolamFormTextField
+              editable={!controller.saving}
+              multiline
+              onChangeText={address => controller.onChangeForm({ address })}
+              placeholder="Alamat lengkap"
+              style={[
+                settingsWebFormStyles.settingsWebFormFieldValue,
+                settingsWebFormStyles.settingsWebFormFieldValueTextarea,
+              ]}
+              value={form.address}
+            />
+          </FieldShell>
+
+          <View style={styles.formSplitRow}>
+            <View style={styles.formSplitCell}>
+              <FieldShell label="Kota">
+                <KolamFormTextField
+                  editable={!controller.saving}
+                  onChangeText={city => controller.onChangeForm({ city })}
+                  placeholder="Kota"
+                  style={settingsWebFormStyles.settingsWebFormFieldValue}
+                  value={form.city}
+                />
+              </FieldShell>
+            </View>
+            <View style={styles.formSplitCell}>
+              <FieldShell label="Provinsi">
+                <KolamFormTextField
+                  editable={!controller.saving}
+                  onChangeText={province =>
+                    controller.onChangeForm({ province })
+                  }
+                  placeholder="Provinsi"
+                  style={settingsWebFormStyles.settingsWebFormFieldValue}
+                  value={form.province}
+                />
+              </FieldShell>
+            </View>
+          </View>
+
+          <View style={styles.formSplitRow}>
+            <View style={styles.formSplitCell}>
+              <FieldShell label="Negara bagian / state">
+                <KolamFormTextField
+                  editable={!controller.saving}
+                  onChangeText={state => controller.onChangeForm({ state })}
+                  placeholder="State"
+                  style={settingsWebFormStyles.settingsWebFormFieldValue}
+                  value={form.state}
+                />
+              </FieldShell>
+            </View>
+            <View style={styles.formSplitCell}>
+              <FieldShell label="Kode pos">
+                <KolamFormTextField
+                  editable={!controller.saving}
+                  onChangeText={postalCode =>
+                    controller.onChangeForm({ postalCode })
+                  }
+                  placeholder="Kode pos"
+                  style={settingsWebFormStyles.settingsWebFormFieldValue}
+                  value={form.postalCode}
+                />
+              </FieldShell>
+            </View>
+          </View>
+
+          <FieldShell label="Negara">
+            <KolamFormTextField
+              editable={!controller.saving}
+              onChangeText={country => controller.onChangeForm({ country })}
+              placeholder="Indonesia"
+              style={settingsWebFormStyles.settingsWebFormFieldValue}
+              value={form.country}
+            />
+          </FieldShell>
+
+          <View style={styles.formSplitRow}>
+            <View style={styles.formSplitCell}>
+              <FieldShell label="Bank">
+                <KolamFormTextField
+                  editable={!controller.saving}
+                  onChangeText={bankName =>
+                    controller.onChangeForm({ bankName })
+                  }
+                  placeholder="Nama bank"
+                  style={settingsWebFormStyles.settingsWebFormFieldValue}
+                  value={form.bankName}
+                />
+              </FieldShell>
+            </View>
+            <View style={styles.formSplitCell}>
+              <FieldShell label="Nomor rekening">
+                <KolamFormTextField
+                  editable={!controller.saving}
+                  onChangeText={bankAccountNumber =>
+                    controller.onChangeForm({ bankAccountNumber })
+                  }
+                  placeholder="Nomor rekening"
+                  style={settingsWebFormStyles.settingsWebFormFieldValue}
+                  value={form.bankAccountNumber}
+                />
+              </FieldShell>
+            </View>
+          </View>
+
+          <FieldShell label="Status" required>
+            <View style={styles.segmentRow}>
+              {(
+                ['active', 'inactive', 'blacklisted'] as KolamVendorStatus[]
+              ).map(status => (
+                <KolamButton
+                  intent={form.status === status ? 'primary' : 'outline'}
+                  key={status}
+                  label={getKolamVendorStatusLabel(status)}
+                  onPress={() => controller.onChangeForm({ status })}
+                />
+              ))}
+            </View>
+          </FieldShell>
+
+          <FieldShell label="Distributor resmi">
+            <View style={styles.switchRow}>
+              <Text style={styles.switchHint}>
+                Tandai jika pemasok adalah distributor resmi merek.
+              </Text>
+              <KolamSwitch
+                active={form.isOfficialDistributor}
+                disabled={controller.saving}
+                onPress={() =>
+                  controller.onChangeForm({
+                    isOfficialDistributor: !form.isOfficialDistributor,
+                  })
+                }
+              />
+            </View>
+          </FieldShell>
+
+          {form.isOfficialDistributor ? (
+            <FieldShell label="Catatan kontak garansi">
+              <KolamFormTextField
+                editable={!controller.saving}
+                multiline
+                onChangeText={warrantyContactNote =>
+                  controller.onChangeForm({ warrantyContactNote })
+                }
+                placeholder="Kontak / catatan garansi"
+                style={[
+                  settingsWebFormStyles.settingsWebFormFieldValue,
+                  settingsWebFormStyles.settingsWebFormFieldValueTextarea,
+                ]}
+                value={form.warrantyContactNote}
+              />
+            </FieldShell>
+          ) : null}
+
+          <FieldShell label="Merek">
+            <View style={styles.brandPicker}>
+              {selectedBrands.length ? (
+                <View style={styles.brandChipRow}>
+                  {selectedBrands.map(brand => (
+                    <KolamButton
+                      key={brand.id}
+                      label={`× ${brand.name}`}
+                      muted
+                      onPress={() =>
+                        controller.onChangeForm({
+                          brandIds: form.brandIds.filter(id => id !== brand.id),
+                        })
+                      }
+                      style={styles.brandChip}
+                    />
+                  ))}
+                </View>
+              ) : (
+                <Text style={styles.switchHint}>Belum ada merek dipilih.</Text>
+              )}
+              <KolamDropdownSelect
+                label="Tambah merek"
+                onChange={brandId => {
+                  if (!brandId || form.brandIds.includes(brandId)) {
+                    return;
+                  }
+                  controller.onChangeForm({
+                    brandIds: [...form.brandIds, brandId],
+                  });
+                }}
+                options={[
+                  { label: 'Pilih merek…', value: '' },
+                  ...brandOptions.map(brand => ({
+                    label: brand.name,
+                    value: brand.id,
+                  })),
+                ]}
+                searchable
+                searchPlaceholder="Cari merek…"
+                showLabelInTrigger={false}
+                value=""
+              />
+            </View>
+          </FieldShell>
+
+          <FieldShell label="Tautan">
+            <KolamFormTextField
+              editable={!controller.saving}
+              multiline
+              onChangeText={linkText => controller.onChangeForm({ linkText })}
+              placeholder="Satu tautan per baris"
+              style={[
+                settingsWebFormStyles.settingsWebFormFieldValue,
+                settingsWebFormStyles.settingsWebFormFieldValueTextarea,
+              ]}
+              value={form.linkText}
+            />
+          </FieldShell>
+        </View>
+
+        <View style={styles.formActions}>
+          <KolamButton
+            disabled={controller.saving}
+            label="Batal"
+            onPress={() => {
+              controller.onBackToList();
+              onRouteChange?.(KOLAM_SUPPLIER_ROOT);
+            }}
+          />
+          <KolamButton
+            disabled={controller.saving}
+            intent="primary"
+            label={controller.saving ? 'Menyimpan…' : 'Simpan'}
+            onPress={() => {
+              void controller.onSave().then(id => {
+                if (id) {
+                  onRouteChange?.(`${KOLAM_SUPPLIER_ROOT}/${id}`);
+                }
+              });
+            }}
+          />
+        </View>
+      </View>
+    </KolamNativeFormSection>
+  );
+}
+
+function FieldShell({
+  children,
+  label,
+  required = false,
+}: {
+  children: React.ReactNode;
+  label: string;
+  required?: boolean;
+}) {
+  return (
+    <View style={settingsWebFormStyles.settingsWebFormField}>
+      <KolamSettingsWebFieldLabel label={label} required={required} />
+      {children}
     </View>
   );
 }
@@ -640,6 +1076,20 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'right',
   },
+  overflowCell: {
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+    width: 64,
+  },
+  activeActionRow: {
+    zIndex: 20,
+  },
+  detailActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
   detailCard: {
     gap: 8,
   },
@@ -674,6 +1124,9 @@ const styles = StyleSheet.create({
   brandChip: {
     minHeight: 32,
   },
+  brandPicker: {
+    gap: 8,
+  },
   photoGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -683,5 +1136,36 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     height: 88,
     width: 120,
+  },
+  formSplitRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  formSplitCell: {
+    flexGrow: 1,
+    minWidth: 220,
+  },
+  segmentRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  switchRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+  },
+  switchHint: {
+    color: V.colors.mutedFg,
+    flex: 1,
+    fontSize: 13,
+  },
+  formActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'flex-end',
   },
 });

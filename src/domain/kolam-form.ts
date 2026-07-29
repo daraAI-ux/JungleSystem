@@ -7,6 +7,7 @@ export type KolamFormSectionId =
   | 'iucn-status-detail'
   | 'packing-material-detail'
   | 'species-detail'
+  | 'supplier-detail'
   | 'tag-detail'
   | 'taxonomy-detail'
   | 'unit-detail';
@@ -118,6 +119,12 @@ const kolamFormSections: Record<KolamFormSectionId, KolamFormSection> = {
     title: 'Data Spesies',
     description:
       'Kelola data utama, relasi master, penjualan, dan deskripsi spesies.',
+  },
+  'supplier-detail': {
+    id: 'supplier-detail',
+    title: 'Data Pemasok',
+    description:
+      'Kelola kontak, alamat, bank, merek, tautan, status, dan catatan distributor.',
   },
   'tag-detail': {
     id: 'tag-detail',

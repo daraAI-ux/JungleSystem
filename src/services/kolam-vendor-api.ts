@@ -1,8 +1,10 @@
 import { appConfig } from '../config/app';
 import {
+  createKolamVendorSavePayload,
   normalizeKolamVendorDetail,
   normalizeKolamVendorList,
   type KolamVendor,
+  type KolamVendorFormState,
 } from '../domain/kolam-vendor';
 import { apiRequest } from '../lib/api-client';
 
@@ -27,6 +29,36 @@ export async function getKolamVendor(id: string): Promise<KolamVendor> {
     `/vendor/${encodeURIComponent(id)}`,
   );
   return normalizeKolamVendorDetail(response);
+}
+
+export async function createKolamVendor(
+  form: KolamVendorFormState,
+): Promise<KolamVendor> {
+  const response = await kolamRequest<unknown>('/vendor', {
+    method: 'POST',
+    body: createKolamVendorSavePayload(form),
+  });
+  return normalizeKolamVendorDetail(response);
+}
+
+export async function updateKolamVendor(
+  id: string,
+  form: KolamVendorFormState,
+): Promise<KolamVendor> {
+  const response = await kolamRequest<unknown>(
+    `/vendor/${encodeURIComponent(id)}`,
+    {
+      method: 'PUT',
+      body: createKolamVendorSavePayload(form),
+    },
+  );
+  return normalizeKolamVendorDetail(response);
+}
+
+export async function deleteKolamVendor(id: string): Promise<void> {
+  await kolamRequest<unknown>(`/vendor/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+  });
 }
 
 function kolamRequest<T>(
