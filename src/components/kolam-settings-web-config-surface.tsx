@@ -1404,16 +1404,9 @@ export function KolamSettingsWebConfigSurface({
                       <Text style={styles.poStaffCheckboxMarkText}>x</Text>
                     ) : null}
                   </View>
-                  <KolamCopyStack
-                    containerStyle={styles.poStaffCheckboxCopy}
-                    items={[
-                      {
-                        id: `${field}-${staff._id}-name`,
-                        text: getUserPickerLabel(staff),
-                        style: styles.poStaffCheckboxLabel,
-                      },
-                    ]}
-                  />
+                  <Text numberOfLines={1} style={styles.poStaffCheckboxLabel}>
+                    {getUserPickerLabel(staff)}
+                  </Text>
                 </Pressable>
               );
             })}
@@ -8095,15 +8088,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#ecfdf5',
     borderColor: '#10b981',
   },
-  poStaffCheckboxCopy: {
-    flex: 1,
-    minWidth: 0,
-  },
   poStaffCheckboxLabel: {
     color: V.colors.text,
+    flex: 1,
     fontSize: 11,
     fontWeight: '700',
     lineHeight: 14,
+    minWidth: 0,
   },
   poStaffCheckboxDisabled: {
     opacity: 0.6,
