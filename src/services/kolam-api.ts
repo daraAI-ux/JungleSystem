@@ -442,6 +442,11 @@ export interface KolamTeamChatCreateRoomBody {
   memberIds?: string[];
 }
 
+export interface KolamTeamChatDirectBody {
+  dara?: boolean;
+  userId?: string;
+}
+
 export interface KolamTeamChatPresence {
   onlineCount: number;
   viewingCount: number;
@@ -1960,6 +1965,17 @@ export async function createKolamTeamChatRoom(
       ...(body.description?.trim() ? {description: body.description.trim()} : {}),
       ...(body.memberIds?.length ? {memberIds: body.memberIds} : {}),
     },
+  );
+
+  return response.data;
+}
+
+export async function openKolamTeamChatDirect(
+  body: KolamTeamChatDirectBody,
+): Promise<KolamTeamChatRoom> {
+  const response = await kolamPost<DataResponse<KolamTeamChatRoom>>(
+    '/team-chat/direct',
+    body.dara ? {dara: true} : {userId: body.userId},
   );
 
   return response.data;

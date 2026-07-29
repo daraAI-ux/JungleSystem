@@ -29,6 +29,7 @@ import type {
   KolamTeamChatPresence,
   KolamTeamChatReplyPreview,
   KolamTeamChatUserRef,
+  KolamUserPickerRow,
 } from '../services/kolam-api';
 import {
   createKolamTeamChatRoom,
@@ -36,6 +37,8 @@ import {
   getKolamChatContactDetails,
   getKolamChatLabels,
   getKolamChatTemplates,
+  getKolamUserPickerRows,
+  openKolamTeamChatDirect,
 } from '../services/kolam-api';
 import {createKolamNotificationSoundService} from '../services/kolam-notification-sound-service';
 import {createKolamRuntimeNotificationSoundAdapter} from '../services/kolam-notification-sound-runtime';
@@ -90,6 +93,16 @@ interface KolamTeamChatCreateRoomDraft {
   category: KolamTeamChatCreateRoomCategory;
   description: string;
   name: string;
+}
+
+interface KolamTeamChatDirectState {
+  busyTarget?: string;
+  errorMessage?: string;
+  loading: boolean;
+  message?: string;
+  open: boolean;
+  search: string;
+  users: KolamUserPickerRow[];
 }
 
 interface KolamTeamMentionOption {
@@ -169,6 +182,13 @@ export function KolamGlobalChatRail({
   const [createRoomError, setCreateRoomError] = React.useState<
     string | undefined
   >();
+  const [directState, setDirectState] =
+    React.useState<KolamTeamChatDirectState>({
+      loading: false,
+      open: false,
+      search: '',
+      users: [],
+    });
   const selectedItem = items.find(item => item.id === selectedItemId) ?? null;
   const detail = useKolamChatRailDetail({
     currentUserId: authUser?.id,
@@ -247,6 +267,12 @@ export function KolamGlobalChatRail({
     setCreateRoomBusy(false);
     setCreateRoomMessage(undefined);
     setCreateRoomError(undefined);
+    setDirectState({
+      loading: false,
+      open: false,
+      search: '',
+      users: [],
+    });
   }, [mode]);
 
   React.useEffect(() => {
@@ -460,6 +486,92 @@ export function KolamGlobalChatRail({
     }
   }, [createRoomBusy, createRoomDraft, data, mode]);
 
+  React.useEffect(() => {
+    if (mode !== 'team-chat' || !directState.open) {
+      return;
+    }
+
+    let cancelled = false;
+    const search = directState.search.trim();
+    setDirectState(current => ({...current, loading: true}));
+
+    const timer = setTimeout(() => {
+      getKolamUserPickerRows(search)
+        .then(users => {
+          if (!cancelled) {
+            setDirectState(current => ({
+              ...current,
+              loading: false,
+              users,
+            }));
+          }
+        })
+        .catch(error => {
+          if (!cancelled) {
+            setDirectState(current => ({
+              ...current,
+              errorMessage:
+                error instanceof Error
+                  ? error.message
+                  : 'Daftar staff belum bisa dimuat.',
+              loading: false,
+              users: [],
+            }));
+          }
+        });
+    }, 250);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [directState.open, directState.search, mode]);
+
+  const handleOpenDirect = React.useCallback(
+    async (target: {dara?: boolean; user?: KolamUserPickerRow}) => {
+      if (mode !== 'team-chat' || directState.busyTarget) {
+        return;
+      }
+
+      const userId = target.user?._id;
+      if (!target.dara && (!userId || userId === authUser?.id)) {
+        return;
+      }
+
+      const targetKey = target.dara ? 'dara' : userId;
+      setDirectState(current => ({
+        ...current,
+        busyTarget: targetKey,
+        errorMessage: undefined,
+        message: undefined,
+      }));
+
+      try {
+        const room = await openKolamTeamChatDirect(
+          target.dara ? {dara: true} : {userId},
+        );
+        await data.refresh();
+        setSelectedItemId(room._id);
+        setDirectState(current => ({
+          ...current,
+          busyTarget: undefined,
+          message: `Chat pribadi ${getRoomTitle(room)} siap.`,
+          open: false,
+        }));
+      } catch (error) {
+        setDirectState(current => ({
+          ...current,
+          busyTarget: undefined,
+          errorMessage:
+            error instanceof Error
+              ? error.message
+              : 'Chat pribadi belum bisa dibuka.',
+        }));
+      }
+    },
+    [authUser?.id, data, directState.busyTarget, mode],
+  );
+
   return (
     <View accessibilityLabel={content.accessibilityLabel} style={styles.rail}>
       <KolamChatRailLiveHost mode={mode} onEvent={handleLiveEvent} />
@@ -523,6 +635,34 @@ export function KolamGlobalChatRail({
               setCreateRoomMessage(undefined);
             }}
             open={createRoomOpen}
+          />
+        ) : null}
+
+        {mode === 'team-chat' ? (
+          <KolamTeamChatDirectPanel
+            currentUserId={authUser?.id}
+            onChangeSearch={search =>
+              setDirectState(current => ({
+                ...current,
+                errorMessage: undefined,
+                search,
+              }))
+            }
+            onOpenDara={() => {
+              handleOpenDirect({dara: true}).catch(() => undefined);
+            }}
+            onOpenUser={user => {
+              handleOpenDirect({user}).catch(() => undefined);
+            }}
+            onToggle={() =>
+              setDirectState(current => ({
+                ...current,
+                errorMessage: undefined,
+                message: undefined,
+                open: !current.open,
+              }))
+            }
+            state={directState}
           />
         ) : null}
 
@@ -795,6 +935,112 @@ function KolamTeamChatCreateRoomPanel({
               {busy ? 'Membuat...' : 'Simpan room'}
             </Text>
           </KolamPressable>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+function KolamTeamChatDirectPanel({
+  currentUserId,
+  onChangeSearch,
+  onOpenDara,
+  onOpenUser,
+  onToggle,
+  state,
+}: {
+  currentUserId?: string;
+  onChangeSearch: (search: string) => void;
+  onOpenDara: () => void;
+  onOpenUser: (user: KolamUserPickerRow) => void;
+  onToggle: () => void;
+  state: KolamTeamChatDirectState;
+}) {
+  const visibleUsers = state.users.filter(user => user._id !== currentUserId);
+
+  return (
+    <View style={styles.createRoomPanel}>
+      <View style={styles.createRoomHeader}>
+        <View style={styles.createRoomCopy}>
+          <Text style={styles.createRoomTitle}>Chat pribadi</Text>
+          <Text style={styles.createRoomMeta}>Staff atau DARA</Text>
+        </View>
+        <KolamPressable
+          accessibilityLabel="Toggle panel chat pribadi team chat"
+          disabled={Boolean(state.busyTarget)}
+          onPress={onToggle}
+          style={[
+            styles.createRoomToggle,
+            state.busyTarget && styles.attachButtonDisabled,
+          ]}>
+          <Text style={styles.createRoomToggleText}>
+            {state.open ? 'Tutup' : 'Direct'}
+          </Text>
+        </KolamPressable>
+      </View>
+
+      {state.message ? (
+        <Text style={styles.createRoomMessage}>{state.message}</Text>
+      ) : null}
+      {state.errorMessage ? (
+        <Text style={styles.createRoomError}>{state.errorMessage}</Text>
+      ) : null}
+
+      {state.open ? (
+        <View style={styles.createRoomForm}>
+          <KolamPressable
+            accessibilityLabel="Buka chat pribadi DARA"
+            disabled={Boolean(state.busyTarget)}
+            onPress={onOpenDara}
+            style={[
+              styles.directPrimaryButton,
+              state.busyTarget && styles.attachButtonDisabled,
+            ]}>
+            <Text style={styles.createRoomSubmitText}>
+              {state.busyTarget === 'dara' ? 'Membuka DARA...' : 'Chat DARA'}
+            </Text>
+          </KolamPressable>
+
+          <TextInput
+            accessibilityLabel="Cari staff chat pribadi"
+            editable={!state.busyTarget}
+            onChangeText={onChangeSearch}
+            placeholder="Cari staff"
+            placeholderTextColor={V.colors.mutedFg}
+            style={styles.createRoomInput}
+            value={state.search}
+          />
+
+          {state.loading ? (
+            <Text style={styles.createRoomMeta}>Memuat staff...</Text>
+          ) : null}
+          {!state.loading && visibleUsers.length === 0 ? (
+            <Text style={styles.createRoomMeta}>Staff belum ditemukan.</Text>
+          ) : null}
+          {visibleUsers.slice(0, 8).map(user => {
+            const label = getUserPickerDisplayName(user);
+            return (
+              <KolamPressable
+                key={user._id}
+                accessibilityLabel={`Buka chat pribadi ${label}`}
+                disabled={Boolean(state.busyTarget)}
+                onPress={() => onOpenUser(user)}
+                style={[
+                  styles.directUserRow,
+                  state.busyTarget && styles.attachButtonDisabled,
+                ]}>
+                <View style={styles.directUserCopy}>
+                  <Text style={styles.directUserName}>{label}</Text>
+                  {user.username ? (
+                    <Text style={styles.createRoomMeta}>@{user.username}</Text>
+                  ) : null}
+                </View>
+                <Text style={styles.directUserActionText}>
+                  {state.busyTarget === user._id ? 'Membuka...' : 'Buka'}
+                </Text>
+              </KolamPressable>
+            );
+          })}
         </View>
       ) : null}
     </View>
@@ -2522,6 +2768,15 @@ function getRoomTitle({
   return name?.trim() || 'Room tanpa nama';
 }
 
+function getUserPickerDisplayName(user: KolamUserPickerRow) {
+  const fullName = [user.first_name, user.last_name]
+    .map(value => value?.trim())
+    .filter(Boolean)
+    .join(' ');
+
+  return fullName || user.username?.trim() || 'Staff tanpa nama';
+}
+
 function getRoomCategoryLabel({
   category,
   isAiRoom,
@@ -3417,6 +3672,43 @@ const styles = StyleSheet.create({
     color: V.colors.primaryFg,
     fontFamily: V.fontFamily,
     fontSize: 12,
+    fontWeight: '900',
+  },
+  directPrimaryButton: {
+    minHeight: 32,
+    borderRadius: V.radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: V.colors.primary,
+  },
+  directUserRow: {
+    minHeight: 42,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: V.radius.md,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.mutedSoft,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  directUserCopy: {
+    minWidth: 0,
+    flex: 1,
+    gap: 2,
+  },
+  directUserName: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '900',
+  },
+  directUserActionText: {
+    color: V.colors.primary,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
     fontWeight: '900',
   },
   selectedBanner: {

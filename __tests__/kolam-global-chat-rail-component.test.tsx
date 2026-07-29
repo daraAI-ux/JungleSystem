@@ -14,6 +14,8 @@ import {
   getKolamChatContactDetails,
   getKolamChatLabels,
   getKolamChatTemplates,
+  getKolamUserPickerRows,
+  openKolamTeamChatDirect,
 } from '../src/services/kolam-api';
 import {createKolamNotificationSoundService} from '../src/services/kolam-notification-sound-service';
 import {pickNativeAssetFile} from '../src/services/native-file-picker';
@@ -49,6 +51,8 @@ jest.mock('../src/services/kolam-api', () => {
     getKolamChatContactDetails: jest.fn(),
     getKolamChatLabels: jest.fn(),
     getKolamChatTemplates: jest.fn(),
+    getKolamUserPickerRows: jest.fn(),
+    openKolamTeamChatDirect: jest.fn(),
   };
 });
 
@@ -87,6 +91,13 @@ const useSoundSettingsMock =
 const createTeamChatRoomMock =
   createKolamTeamChatRoom as jest.MockedFunction<
     typeof createKolamTeamChatRoom
+  >;
+const getUserPickerRowsMock = getKolamUserPickerRows as jest.MockedFunction<
+  typeof getKolamUserPickerRows
+>;
+const openTeamChatDirectMock =
+  openKolamTeamChatDirect as jest.MockedFunction<
+    typeof openKolamTeamChatDirect
   >;
 const getChatAnalyticsMock = getKolamChatAnalytics as jest.MockedFunction<
   typeof getKolamChatAnalytics
@@ -178,6 +189,8 @@ describe('KolamGlobalChatRail', () => {
   beforeEach(() => {
     mockSoundPlay.mockClear();
     createTeamChatRoomMock.mockClear();
+    getUserPickerRowsMock.mockClear();
+    openTeamChatDirectMock.mockClear();
     createSoundServiceMock.mockClear();
     getChatAnalyticsMock.mockClear();
     getChatContactDetailsMock.mockClear();
@@ -295,6 +308,12 @@ describe('KolamGlobalChatRail', () => {
       _id: 'room-created',
       category: 'meeting',
       name: 'Room baru',
+    });
+    getUserPickerRowsMock.mockResolvedValue([]);
+    openTeamChatDirectMock.mockResolvedValue({
+      _id: 'room-direct',
+      category: 'direct',
+      directPeerName: 'Maya',
     });
   });
 
@@ -461,6 +480,109 @@ describe('KolamGlobalChatRail', () => {
     expect(renderText(renderer!)).toEqual(
       expect.arrayContaining(['Room "Launch Ops" dibuat.']),
     );
+  });
+
+  it('opens DARA and staff direct team chat rooms from the rail', async () => {
+    jest.useFakeTimers();
+    const refresh = jest.fn().mockResolvedValue(undefined);
+    getUserPickerRowsMock.mockResolvedValue([
+      {_id: 'staff-1', first_name: 'Current', username: 'current'},
+      {_id: 'staff-2', first_name: 'Maya', username: 'maya'},
+    ]);
+    openTeamChatDirectMock
+      .mockResolvedValueOnce({
+        _id: 'room-dara',
+        category: 'direct',
+        directPeerName: 'DARA',
+        isDaraDirect: true,
+      })
+      .mockResolvedValueOnce({
+        _id: 'room-staff',
+        category: 'direct',
+        directPeerName: 'Maya',
+      });
+    useReadonlyDataMock.mockReturnValue({
+      conversations: [],
+      loading: false,
+      refresh,
+      rooms: [],
+      totalUnread: 0,
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamGlobalChatRail mode="team-chat" onClose={() => undefined} />,
+      );
+    });
+
+    const directToggle = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(
+        node =>
+          node.props.accessibilityLabel ===
+          'Toggle panel chat pribadi team chat',
+      );
+
+    await ReactTestRenderer.act(async () => {
+      directToggle!.props.onPress();
+    });
+
+    await ReactTestRenderer.act(async () => {
+      jest.advanceTimersByTime(260);
+      await Promise.resolve();
+    });
+
+    expect(getUserPickerRowsMock).toHaveBeenCalledWith('');
+
+    const daraButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Buka chat pribadi DARA');
+
+    await ReactTestRenderer.act(async () => {
+      await daraButton!.props.onPress();
+    });
+
+    expect(openTeamChatDirectMock).toHaveBeenCalledWith({dara: true});
+    expect(refresh).toHaveBeenCalledTimes(1);
+
+    await ReactTestRenderer.act(async () => {
+      directToggle!.props.onPress();
+    });
+
+    const searchInput = renderer!.root
+      .findAllByType(TextInput)
+      .find(node => node.props.accessibilityLabel === 'Cari staff chat pribadi');
+
+    await ReactTestRenderer.act(async () => {
+      searchInput!.props.onChangeText('maya');
+    });
+
+    await ReactTestRenderer.act(async () => {
+      jest.advanceTimersByTime(260);
+      await Promise.resolve();
+    });
+
+    expect(getUserPickerRowsMock).toHaveBeenLastCalledWith('maya');
+    expect(renderText(renderer!)).toEqual(expect.arrayContaining(['Maya']));
+    expect(renderText(renderer!)).not.toEqual(
+      expect.arrayContaining(['Current']),
+    );
+
+    const staffButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(
+        node => node.props.accessibilityLabel === 'Buka chat pribadi Maya',
+      );
+
+    await ReactTestRenderer.act(async () => {
+      await staffButton!.props.onPress();
+    });
+
+    expect(openTeamChatDirectMock).toHaveBeenLastCalledWith({
+      userId: 'staff-2',
+    });
+    expect(refresh).toHaveBeenCalledTimes(2);
   });
 
   it('renders a scrollable read-only inbox conversation list without loading message details', async () => {
