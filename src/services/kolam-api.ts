@@ -2210,9 +2210,14 @@ export async function getKolamChatAssignableStaff(
   return response.data ?? [];
 }
 
+export interface KolamChatSendMessageOptions {
+  replyToMessageId?: string | null;
+}
+
 export async function sendKolamChatTextMessage(
   conversationId: string,
   text: string,
+  options: KolamChatSendMessageOptions = {},
 ): Promise<KolamChatMessage> {
   const response = await kolamPost<DataResponse<KolamChatMessage>>(
     `/chat/conversations/${encodeURIComponent(conversationId)}/messages`,
@@ -2221,6 +2226,9 @@ export async function sendKolamChatTextMessage(
         type: 'text',
         text,
       },
+      ...(options.replyToMessageId
+        ? {replyToMessageId: options.replyToMessageId}
+        : {}),
     },
   );
 

@@ -903,6 +903,102 @@ describe('KolamGlobalChatRail', () => {
     expect(sendMessage).toHaveBeenCalledWith('Siap, masih tersedia.');
   });
 
+  it('replies to a selected inbox message with reply metadata', async () => {
+    const sendMessage = jest.fn().mockResolvedValue(undefined);
+    useReadonlyDataMock.mockReturnValue({
+      conversations: [
+        {
+          _id: 'conv-1',
+          platform: 'tokopedia',
+          contactId: {displayName: 'Buyer Tokopedia'},
+          lastMessagePreview: 'Apakah masih tersedia?',
+          unreadCount: 1,
+        },
+      ],
+      loading: false,
+      refresh: jest.fn(),
+      rooms: [],
+      totalUnread: 1,
+    });
+    useDetailMock.mockReturnValue({
+      ...getDefaultDetailMock(),
+      conversation: {
+        _id: 'conv-1',
+        assignedStaffId: null,
+        isAiHandled: false,
+        status: 'open',
+      },
+      loading: false,
+      messages: [
+        {
+          attachments: [],
+          embeds: [],
+          id: 'msg-1',
+          author: 'Buyer',
+          body: 'Apakah masih tersedia?',
+          linkPreviews: [],
+          mine: false,
+          reactions: [],
+          sentAt: '2026-07-28T08:00:00.000Z',
+        },
+      ],
+      sendMessage,
+      signalTyping: jest.fn(),
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamGlobalChatRail mode="inbox" onClose={() => undefined} />,
+      );
+    });
+
+    const selectButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Pilih conversation Buyer Tokopedia');
+
+    await ReactTestRenderer.act(async () => {
+      selectButton!.props.onPress();
+    });
+
+    const replyButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Balas pesan Buyer');
+
+    await ReactTestRenderer.act(async () => {
+      replyButton!.props.onPress();
+    });
+
+    expect(
+      renderer!.root
+        .findAllByType(View)
+        .some(node => node.props.accessibilityLabel === 'Membalas pesan Buyer'),
+    ).toBe(true);
+    expect(renderText(renderer!)).toEqual(
+      expect.arrayContaining(['Buyer', 'Apakah masih tersedia?']),
+    );
+
+    const input = renderer!.root
+      .findAllByType(TextInput)
+      .find(node => node.props.accessibilityLabel === 'Tulis pesan inbox');
+
+    await ReactTestRenderer.act(async () => {
+      input!.props.onChangeText('Saya balas pesan ini.');
+    });
+
+    const sendButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Kirim pesan');
+
+    await ReactTestRenderer.act(async () => {
+      await sendButton!.props.onPress();
+    });
+
+    expect(sendMessage).toHaveBeenCalledWith('Saya balas pesan ini.', {
+      replyToMessageId: 'msg-1',
+    });
+  });
+
   it('renders rich inbox message content from live plugin payloads', async () => {
     useReadonlyDataMock.mockReturnValue({
       conversations: [

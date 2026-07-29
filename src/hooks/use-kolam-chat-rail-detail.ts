@@ -373,7 +373,9 @@ export function useKolamChatRailDetail({
           return;
         }
 
-        const message = await sendKolamChatTextMessage(selectedId, body);
+        const message = await sendKolamChatTextMessage(selectedId, body, {
+          replyToMessageId: options?.replyToMessageId ?? undefined,
+        });
         setMessages(current => [...current, mapInboxMessage(message)]);
       } catch (error) {
         setErrorMessage(

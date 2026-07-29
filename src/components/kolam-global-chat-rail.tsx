@@ -474,10 +474,9 @@ export function KolamGlobalChatRail({
       return;
     }
 
-    const sendOptions =
-      mode === 'team-chat' && replyTarget
-        ? {replyToMessageId: replyTarget.id}
-        : undefined;
+    const sendOptions = replyTarget
+      ? {replyToMessageId: replyTarget.id}
+      : undefined;
 
     if (pendingAttachment) {
       if (sendOptions) {
@@ -500,7 +499,7 @@ export function KolamGlobalChatRail({
     setReplyTarget(null);
     setComposerText('');
     detail.signalTyping(false);
-  }, [composerText, detail, mode, pendingAttachment, replyTarget]);
+  }, [composerText, detail, pendingAttachment, replyTarget]);
 
   const handleComposerTextChange = React.useCallback(
     (value: string) => {
@@ -1722,6 +1721,19 @@ function KolamChatRailDetailPanel({
                             }
                           />
                         ) : null}
+                        {mode === 'inbox' ? (
+                          <KolamInboxMessageActions
+                            disabled={detail.sending}
+                            message={message}
+                            onReply={() =>
+                              onReplyToMessage({
+                                author: message.author,
+                                body: getInboxReplyTargetBody(message),
+                                id: message.id,
+                              })
+                            }
+                          />
+                        ) : null}
                       </>
                     )}
                     <Text style={styles.messageMeta}>
@@ -1760,8 +1772,8 @@ function KolamChatRailDetailPanel({
         </View>
       ) : null}
 
-      {mode === 'team-chat' && replyTarget ? (
-        <KolamTeamChatReplyComposerStrip
+      {replyTarget ? (
+        <KolamChatReplyComposerStrip
           disabled={detail.sending}
           onCancel={onReplyCancel}
           replyTarget={replyTarget}
@@ -2044,6 +2056,39 @@ function getTeamChatReplyTargetBody(
 
   if (message.linkPreviews.length > 0) {
     return message.linkPreviews[0]?.title ?? message.linkPreviews[0]?.url ?? 'Link';
+  }
+
+  return 'Pesan';
+}
+
+function getInboxReplyTargetBody(
+  message: ReturnType<typeof useKolamChatRailDetail>['messages'][number],
+) {
+  const body = message.body.trim();
+  if (body) {
+    return body;
+  }
+
+  const content = message.content;
+  if (content?.text?.trim()) {
+    return content.text.trim();
+  }
+
+  const card = resolveInboxCard(content, message.body);
+  if (card?.title) {
+    return card.title;
+  }
+
+  if (message.attachments.length > 0) {
+    return message.attachments[0]?.fileName ?? 'Lampiran';
+  }
+
+  if (content?.type === 'image') {
+    return content.fileName?.trim() || 'Gambar';
+  }
+
+  if (content?.type === 'youtube') {
+    return content.youtube?.title?.trim() || 'Video YouTube';
   }
 
   return 'Pesan';
@@ -2340,7 +2385,7 @@ function KolamInboxDaraMeta({
   );
 }
 
-function KolamTeamChatReplyComposerStrip({
+function KolamChatReplyComposerStrip({
   disabled,
   onCancel,
   replyTarget,
@@ -2362,7 +2407,7 @@ function KolamTeamChatReplyComposerStrip({
         </Text>
       </View>
       <KolamPressable
-        accessibilityLabel="Batalkan balasan team chat"
+        accessibilityLabel="Batalkan balasan chat"
         disabled={disabled}
         onPress={onCancel}
         style={[
@@ -3092,6 +3137,28 @@ function KolamChatEmbedCard({embed}: {embed: KolamTeamChatEmbed}) {
           </Text>
         ) : null}
       </View>
+    </View>
+  );
+}
+
+function KolamInboxMessageActions({
+  disabled,
+  message,
+  onReply,
+}: {
+  disabled: boolean;
+  message: ReturnType<typeof useKolamChatRailDetail>['messages'][number];
+  onReply: () => void;
+}) {
+  return (
+    <View style={styles.messageActionRow}>
+      <KolamPressable
+        accessibilityLabel={`Balas pesan ${message.author}`}
+        disabled={disabled}
+        onPress={onReply}
+        style={[styles.replyActionButton, disabled && styles.attachButtonDisabled]}>
+        <Text style={styles.replyActionText}>Balas</Text>
+      </KolamPressable>
     </View>
   );
 }
