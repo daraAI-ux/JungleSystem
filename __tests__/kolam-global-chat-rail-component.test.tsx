@@ -369,6 +369,12 @@ describe('KolamGlobalChatRail', () => {
         '0 conversation terpantau',
       ]),
     );
+    const skeletonText = renderText(renderer!);
+    ['Store', 'Tokped', 'Shopee', 'Tiktok', 'Whatsapp', 'Instagram'].forEach(
+      label => {
+        expect(skeletonText).not.toContain(label);
+      },
+    );
     expect(getChatAnalyticsMock).toHaveBeenCalledWith(
       expect.objectContaining({
         from: expect.any(String),

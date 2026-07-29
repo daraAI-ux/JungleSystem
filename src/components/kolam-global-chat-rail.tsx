@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  Image,
   Linking,
   Modal,
   ScrollView,
@@ -91,6 +92,8 @@ const INBOX_ASSIGNMENT_FILTERS: KolamChatRailInboxAssignmentFilter[] = [
   'assigned',
   'unassigned',
 ];
+const SHOPEE_LOGO = require('../assets/marketplace/shopee.jpg');
+const TOKOPEDIA_LOGO = require('../assets/marketplace/tokopedia.png');
 const DARA_THINKING_DEFAULT_LINE = 'DARA sedang berpikir...';
 const DARA_THINKING_ACTIVE_EVENTS = new Set([
   'dara.thinking',
@@ -901,10 +904,10 @@ function KolamInboxFilterPanel({
             items={INBOX_PLATFORM_FILTERS}
             getKey={platform => platform}
             renderItem={platform => (
-              <KolamFilterChip
+              <KolamPlatformFilterChip
                 active={filter.platform === platform}
-                label={formatInboxPlatformFilterLabel(platform)}
                 onPress={() => onChange({...filter, platform})}
+                platform={platform}
               />
             )}
           />
@@ -1000,6 +1003,94 @@ function KolamFilterChip({
         {label}
       </Text>
     </KolamPressable>
+  );
+}
+
+function KolamPlatformFilterChip({
+  active,
+  onPress,
+  platform,
+}: {
+  active: boolean;
+  onPress: () => void;
+  platform: KolamChatPlatform | 'all';
+}) {
+  const label = formatInboxPlatformFilterLabel(platform);
+
+  return (
+    <KolamPressable
+      accessibilityLabel={`Filter ${label}`}
+      accessibilityState={{selected: active}}
+      onPress={onPress}
+      style={[
+        styles.platformFilterChip,
+        active && styles.platformFilterChipActive,
+      ]}>
+      <KolamPlatformFilterLogo platform={platform} />
+    </KolamPressable>
+  );
+}
+
+function KolamPlatformFilterLogo({
+  platform,
+}: {
+  platform: KolamChatPlatform | 'all';
+}) {
+  if (platform === 'tokopedia' || platform === 'shopee') {
+    return (
+      <Image
+        resizeMode="contain"
+        source={platform === 'tokopedia' ? TOKOPEDIA_LOGO : SHOPEE_LOGO}
+        style={styles.platformLogoImage}
+      />
+    );
+  }
+
+  if (platform === 'store') {
+    return (
+      <View style={styles.storeLogoBag}>
+        <View style={styles.storeLogoHandle} />
+      </View>
+    );
+  }
+
+  if (platform === 'tiktok') {
+    return (
+      <View style={styles.tiktokLogo}>
+        <View style={styles.tiktokStemAccent} />
+        <View style={styles.tiktokStem} />
+        <View style={styles.tiktokBar} />
+        <View style={styles.tiktokDotAccent} />
+        <View style={styles.tiktokDot} />
+      </View>
+    );
+  }
+
+  if (platform === 'instagram') {
+    return (
+      <View style={styles.instagramLogo}>
+        <View style={styles.instagramLens} />
+        <View style={styles.instagramFlash} />
+      </View>
+    );
+  }
+
+  if (platform === 'whatsapp') {
+    return (
+      <View style={styles.whatsappLogo}>
+        <View style={styles.whatsappTail} />
+        <View style={styles.whatsappPhone} />
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.allPlatformLogo}>
+      <View style={styles.allPlatformDot} />
+      <View style={styles.allPlatformDot} />
+      <View style={styles.allPlatformDot} />
+      <View style={styles.allPlatformDot} />
+    </View>
   );
 }
 
@@ -4682,6 +4773,165 @@ const styles = StyleSheet.create({
   },
   filterChipTextActive: {
     color: V.colors.primary,
+  },
+  platformFilterChip: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: V.colors.bg,
+  },
+  platformFilterChipActive: {
+    borderColor: V.colors.primary,
+    backgroundColor: V.colors.primarySoft,
+  },
+  platformLogoImage: {
+    width: 21,
+    height: 21,
+    borderRadius: 5,
+  },
+  allPlatformLogo: {
+    width: 15,
+    height: 15,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 3,
+  },
+  allPlatformDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: V.colors.mutedFg,
+  },
+  storeLogoBag: {
+    width: 18,
+    height: 16,
+    marginTop: 4,
+    borderRadius: 4,
+    borderColor: '#0f9f6e',
+    borderWidth: 2,
+    backgroundColor: '#e8fff5',
+  },
+  storeLogoHandle: {
+    position: 'absolute',
+    top: -6,
+    left: 4,
+    width: 7,
+    height: 7,
+    borderTopColor: '#0f9f6e',
+    borderLeftColor: '#0f9f6e',
+    borderRightColor: '#0f9f6e',
+    borderTopWidth: 2,
+    borderLeftWidth: 2,
+    borderRightWidth: 2,
+    borderTopLeftRadius: 6,
+    borderTopRightRadius: 6,
+  },
+  tiktokLogo: {
+    width: 20,
+    height: 22,
+  },
+  tiktokStemAccent: {
+    position: 'absolute',
+    left: 8,
+    top: 1,
+    width: 5,
+    height: 15,
+    borderRadius: 3,
+    backgroundColor: '#25f4ee',
+  },
+  tiktokStem: {
+    position: 'absolute',
+    left: 10,
+    top: 0,
+    width: 5,
+    height: 15,
+    borderRadius: 3,
+    backgroundColor: '#111111',
+  },
+  tiktokBar: {
+    position: 'absolute',
+    left: 10,
+    top: 0,
+    width: 10,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: '#111111',
+  },
+  tiktokDotAccent: {
+    position: 'absolute',
+    left: 1,
+    bottom: 0,
+    width: 11,
+    height: 11,
+    borderRadius: 6,
+    backgroundColor: '#fe2c55',
+  },
+  tiktokDot: {
+    position: 'absolute',
+    left: 3,
+    bottom: 1,
+    width: 11,
+    height: 11,
+    borderRadius: 6,
+    backgroundColor: '#111111',
+  },
+  instagramLogo: {
+    width: 20,
+    height: 20,
+    borderRadius: 6,
+    borderColor: '#e1306c',
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff0f6',
+  },
+  instagramLens: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    borderColor: '#e1306c',
+    borderWidth: 2,
+  },
+  instagramFlash: {
+    position: 'absolute',
+    right: 3,
+    top: 3,
+    width: 3,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: '#e1306c',
+  },
+  whatsappLogo: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#25d366',
+  },
+  whatsappTail: {
+    position: 'absolute',
+    left: 2,
+    bottom: -1,
+    width: 7,
+    height: 7,
+    borderRadius: 1,
+    backgroundColor: '#25d366',
+    transform: [{rotate: '45deg'}],
+  },
+  whatsappPhone: {
+    width: 9,
+    height: 9,
+    borderLeftColor: '#ffffff',
+    borderBottomColor: '#ffffff',
+    borderLeftWidth: 2,
+    borderBottomWidth: 2,
+    borderBottomLeftRadius: 8,
+    transform: [{rotate: '-35deg'}],
   },
   filterResetButton: {
     minHeight: 28,
