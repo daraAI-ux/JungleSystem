@@ -2786,7 +2786,7 @@ export function KolamSettingsWebConfigSurface({
                   <View style={styles.attendanceProviderChoices}>
                     <KolamChoiceSegment
                       id="openstreetmap"
-                      label="OpenStreetMap (gratis, disarankan)"
+                      label="OpenStreetMap"
                       selectedId={
                         draft.staffAttendanceMapProvider === 'google'
                           ? 'google'
@@ -2799,7 +2799,7 @@ export function KolamSettingsWebConfigSurface({
                     />
                     <KolamChoiceSegment
                       id="google"
-                      label="Google Maps (butuh API key)"
+                      label="Google Maps"
                       selectedId={
                         draft.staffAttendanceMapProvider === 'google'
                           ? 'google'
@@ -8018,7 +8018,7 @@ const styles = StyleSheet.create({
   },
   attendanceProviderChoices: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexWrap: 'nowrap',
     gap: 8,
     justifyContent: 'flex-end',
   },
