@@ -1521,7 +1521,7 @@ export function KolamSettingsWebConfigSurface({
 
             <View style={styles.umumCard}>
               <KolamSettingsWebFormSectionHeader
-                description="Logo, nama, tagline, dan kontak perusahaan untuk branding storefront."
+                description="Logo, nama, tagline, kontak, dan alamat perusahaan untuk branding storefront."
                 title="Identitas perusahaan"
               />
               {generalFormSections.map(section => (
@@ -1574,19 +1574,19 @@ export function KolamSettingsWebConfigSurface({
                 onChangeText={value => setDraftField('email', value)}
                 placeholder="info@duniaanura.com"
               />
+              <KolamTextFieldRow
+                variant="settingsForm"
+                fieldWidth={umumFieldWidth}
+                label="Alamat"
+                description="Alamat bisnis utama."
+                multiline
+                numberOfLines={4}
+                value={draft.address}
+                onChangeText={value => setDraftField('address', value)}
+                placeholder="Jl. Contoh No. 1"
+              />
             </View>
           </View>
-          <KolamTextFieldRow
-            variant="settingsForm"
-            fieldWidth={settingsFieldWidth}
-            label="Alamat"
-            description="Alamat bisnis utama."
-            multiline
-            numberOfLines={4}
-            value={draft.address}
-            onChangeText={value => setDraftField('address', value)}
-            placeholder="Jl. Contoh No. 1"
-          />
           {showStoreShippingSettings ? (
             <>
               <KolamTextFieldRow
