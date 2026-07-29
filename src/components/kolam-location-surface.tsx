@@ -13,6 +13,7 @@ import {getKolamTableColumns} from '../domain/kolam-table';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {
   createKolamLocation,
+  deleteKolamLocation,
   getKolamLocationAssets,
   getKolamLocationEnclosures,
   getKolamLocationParentLookup,
@@ -34,6 +35,7 @@ import {
 import {getKolamFileUrl} from '../lib/file-url';
 import {KolamButton} from './kolam-button';
 import {KolamCatalogListTableShell} from './kolam-catalog-list-table-shell';
+import {KolamConfirmDialog} from './kolam-confirm-dialog';
 import {KolamContentFrame} from './kolam-content-frame';
 import {KolamCopyStack} from './kolam-copy-stack';
 import {
@@ -998,6 +1000,10 @@ function KolamLocationList({
   >({});
   const [pageSize, setPageSize] = React.useState(10);
   const [page, setPage] = React.useState(1);
+  const [refreshKey, setRefreshKey] = React.useState(0);
+  const [deleteTarget, setDeleteTarget] =
+    React.useState<KolamLocationListItem | null>(null);
+  const [deleting, setDeleting] = React.useState(false);
   const [pagination, setPagination] =
     React.useState<KolamLocationPagination>(INITIAL_PAGINATION);
 
@@ -1060,7 +1066,7 @@ function KolamLocationList({
       active = false;
       clearTimeout(handle);
     };
-  }, [page, pageSize, search, shouldSearchApi, typeFilter]);
+  }, [page, pageSize, refreshKey, search, shouldSearchApi, typeFilter]);
 
   const normalizedSearch = normalizeLocationSearch(search);
   const clientFilteredItems = React.useMemo(
@@ -1089,6 +1095,32 @@ function KolamLocationList({
   const pageCount = clientSearchActive ? 1 : Math.max(1, pagination.totalPages);
   const safePage = Math.min(page, pageCount);
   const searchEmpty = Boolean(normalizedSearch) && !loading && !visibleItems.length;
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) {
+      return;
+    }
+
+    setDeleting(true);
+    setError('');
+
+    try {
+      await deleteKolamLocation(deleteTarget.id);
+      setDeleteTarget(null);
+      if (visibleItems.length <= 1 && page > 1) {
+        setPage(current => Math.max(1, current - 1));
+      } else {
+        setRefreshKey(current => current + 1);
+      }
+    } catch (deleteError) {
+      setError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : 'Gagal menghapus lokasi.',
+      );
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   return (
     <View style={styles.stack}>
@@ -1182,6 +1214,7 @@ function KolamLocationList({
             <KolamLocationRow
               key={location.id}
               location={location}
+              onDelete={() => setDeleteTarget(location)}
               onEdit={() => onRouteChange?.(`/locations/${location.id}/edit`)}
               onSelect={() => onRouteChange?.(`/locations/${location.id}`)}
               parentLookup={parentLookup}
@@ -1209,17 +1242,40 @@ function KolamLocationList({
           </View>
         )}
       </KolamCatalogListTableShell>
+      <KolamConfirmDialog
+        confirmLabel={deleting ? 'Menghapus...' : 'Hapus'}
+        destructive
+        message={
+          deleteTarget
+            ? `Yakin ingin menghapus lokasi "${deleteTarget.name}"? Tindakan ini tidak dapat dibatalkan.`
+            : 'Yakin ingin menghapus lokasi ini? Tindakan ini tidak dapat dibatalkan.'
+        }
+        onCancel={() => {
+          if (!deleting) {
+            setDeleteTarget(null);
+          }
+        }}
+        onConfirm={() => {
+          if (!deleting) {
+            void handleConfirmDelete();
+          }
+        }}
+        title="Hapus Lokasi"
+        visible={Boolean(deleteTarget)}
+      />
     </View>
   );
 }
 
 function KolamLocationRow({
   location,
+  onDelete,
   onEdit,
   onSelect,
   parentLookup,
 }: {
   location: KolamLocationListItem;
+  onDelete: () => void;
   onEdit: () => void;
   onSelect: () => void;
   parentLookup: Record<string, KolamLocationOption>;
@@ -1281,9 +1337,8 @@ function KolamLocationRow({
             {label: 'Lihat', onPress: onSelect},
             {label: 'Rubah', onPress: onEdit},
             {
-              disabled: true,
               label: 'Hapus',
-              onPress: () => undefined,
+              onPress: onDelete,
               tone: 'danger',
             },
           ]}

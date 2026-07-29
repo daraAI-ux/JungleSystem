@@ -215,6 +215,12 @@ export async function updateKolamLocation(
   return location;
 }
 
+export async function deleteKolamLocation(locationId: string): Promise<void> {
+  await kolamRequest<unknown>(`/location/${locationId}`, {
+    method: 'DELETE',
+  });
+}
+
 export async function getKolamLocationProducts(
   locationId: string,
 ): Promise<KolamLocationInventoryResult<KolamLocationProductRow>> {
