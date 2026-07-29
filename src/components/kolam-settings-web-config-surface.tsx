@@ -117,6 +117,41 @@ const financialShellSections: Array<{
   },
 ] as const;
 
+const paymentMethodTypeOptions: Array<{
+  description: string;
+  label: string;
+  value: SettingsPaymentMethodDraft['type'];
+}> = [
+  {value: 'cash', label: 'Cash', description: 'Pembayaran tunai fisik.'},
+  {
+    value: 'transfer',
+    label: 'Bank Transfer',
+    description: 'Transfer langsung antar bank.',
+  },
+  {value: 'ewallet', label: 'E-Wallet', description: 'Dompet digital.'},
+  {value: 'credit', label: 'Credit Card', description: 'Kartu kredit.'},
+  {value: 'debit', label: 'Debit Card', description: 'Kartu debit.'},
+  {value: 'qris', label: 'QRIS', description: 'Pembayaran kode QR.'},
+];
+
+const paymentMethodProviderOptions = [
+  {value: 'BCA', label: 'Bank Central Asia (BCA)'},
+  {value: 'Mandiri', label: 'Bank Mandiri'},
+  {value: 'BRI', label: 'Bank Rakyat Indonesia (BRI)'},
+  {value: 'BNI', label: 'Bank Negara Indonesia (BNI)'},
+  {value: 'CIMB', label: 'CIMB Niaga'},
+  {value: 'Permata', label: 'Bank Permata'},
+  {value: 'Danamon', label: 'Bank Danamon'},
+  {value: 'BTN', label: 'Bank Tabungan Negara (BTN)'},
+  {value: 'GoPay', label: 'GoPay'},
+  {value: 'OVO', label: 'OVO'},
+  {value: 'DANA', label: 'DANA'},
+  {value: 'LinkAja', label: 'LinkAja'},
+  {value: 'ShopeePay', label: 'ShopeePay'},
+  {value: 'Cash', label: 'Cash'},
+  {value: 'Other', label: 'Other'},
+];
+
 const defaultPaymentMethodFilters: SettingsPaymentMethodFilters = {
   search: '',
   isAvailableOnWebstore: '',
@@ -128,7 +163,7 @@ const defaultPaymentMethodDraft: SettingsPaymentMethodDraft = {
   id: '',
   name: '',
   type: 'transfer',
-  provider: '',
+  provider: 'BCA',
   wallet: '',
   accountNumber: '',
   accountName: '',
@@ -3315,7 +3350,7 @@ export function KolamSettingsWebConfigSurface({
               )
             }
           />
-          <View style={styles.marketplaceOverview}>
+          <View style={styles.financialNestedCard}>
             <KolamCopyStack
               items={[
                 {
@@ -7198,35 +7233,40 @@ function FinancialSettingsPanel({
               value={paymentMethodDraft.name}
               variant="settingsForm"
             />
-            <View style={styles.financialToolbar}>
-              {(
-                [
-                  'cash',
-                  'transfer',
-                  'ewallet',
-                  'credit',
-                  'debit',
-                  'qris',
-                ] as const
-              ).map(type => (
-                <FinancialChoiceSegment
-                  key={type}
-                  active={paymentMethodDraft.type === type}
-                  label={type.toUpperCase()}
-                  onPress={() => setPaymentMethodDraftField('type', type)}
-                />
-              ))}
-            </View>
-            <KolamTextFieldRow
-              description="Provider bank, e-wallet, atau gateway."
-              fieldWidth={settingsFieldWidth}
+            <KolamDropdownSelect
+              accessibilityLabel="Tipe metode pembayaran"
+              label="Tipe pembayaran"
+              menuPlacement="inline"
+              options={paymentMethodTypeOptions.map(option => ({
+                label: `${option.label} - ${option.description}`,
+                value: option.value,
+              }))}
+              showLabelInTrigger={false}
+              style={styles.financialDropdown}
+              triggerStyle={styles.shippingTimezoneTrigger}
+              value={paymentMethodDraft.type}
+              onChange={value => setPaymentMethodDraftField('type', value)}
+            />
+            <KolamDropdownSelect
+              accessibilityLabel="Provider metode pembayaran"
               label="Provider"
-              onChangeText={value =>
+              menuPlacement="inline"
+              options={paymentMethodProviderOptions}
+              searchable
+              searchPlaceholder="Cari provider..."
+              showLabelInTrigger={false}
+              style={styles.financialDropdown}
+              triggerStyle={styles.shippingTimezoneTrigger}
+              value={
+                paymentMethodProviderOptions.some(
+                  option => option.value === paymentMethodDraft.provider,
+                )
+                  ? paymentMethodDraft.provider
+                  : 'Other'
+              }
+              onChange={value =>
                 setPaymentMethodDraftField('provider', value)
               }
-              placeholder="BCA, DANA, CASH"
-              value={paymentMethodDraft.provider}
-              variant="settingsForm"
             />
             <View style={styles.financialToolbar}>
               {financialWallets.map(wallet => (
@@ -8014,6 +8054,10 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     minWidth: 0,
   },
+  financialDropdown: {
+    maxWidth: 520,
+    width: '100%',
+  },
   financialListRow: {
     alignItems: 'center',
     borderBottomColor: V.colors.border,
@@ -8040,6 +8084,14 @@ const styles = StyleSheet.create({
   financialStatusCopy: {
     flexShrink: 1,
     minWidth: 140,
+  },
+  financialNestedCard: {
+    backgroundColor: '#f9fafb',
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 10,
+    padding: 12,
   },
   financialToolbar: {
     alignItems: 'center',

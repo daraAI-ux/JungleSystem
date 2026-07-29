@@ -401,6 +401,11 @@ describe('settings web widgets', () => {
     expect(text).toContain('Metode pembayaran');
     expect(text).not.toContain('Finansial');
     expect(text).not.toContain('Data live dari backend Kolam.');
+    expect(
+      renderer!.root
+        .findAllByType(KolamDropdownSelect)
+        .map(node => node.props.label),
+    ).toEqual(expect.arrayContaining(['Tipe pembayaran', 'Provider']));
   });
 
   it('renders Umum social media and staff access cards', async () => {
