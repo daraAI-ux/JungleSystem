@@ -2388,6 +2388,8 @@ const styles = StyleSheet.create({
   },
   detailRoot: {
     flex: 1,
+    gap: 12,
+    paddingBottom: 24,
   },
   detailContent: {
     gap: 12,
