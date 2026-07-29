@@ -72,6 +72,19 @@ const LOCATION_FORM_TYPE_OPTIONS = KOLAM_LOCATION_TYPE_OPTIONS.filter(
   option => option.value !== 'bin',
 );
 
+const LOCATION_LIST_COLUMNS = [
+  {id: 'name', label: 'Nama Lokasi', flex: 1.35, align: 'left'},
+  {id: 'type', label: 'Tipe', flex: 0.75, align: 'left'},
+  {id: 'tier', label: 'Tingkat', flex: 0.7, align: 'left'},
+  {id: 'parent', label: 'Induk', flex: 1.05, align: 'left'},
+  {id: 'phone', label: 'Telepon', flex: 0.9, align: 'left'},
+  {id: 'description', label: 'Deskripsi', flex: 1.25, align: 'left'},
+  {id: 'created', label: 'Dibuat', flex: 0.9, align: 'right'},
+  {id: 'actions', label: '', flex: 0.35, align: 'right'},
+] as const;
+
+type LocationListColumnId = (typeof LOCATION_LIST_COLUMNS)[number]['id'];
+
 const INITIAL_PAGINATION: KolamLocationPagination = {
   limit: 10,
   page: 1,
@@ -1242,7 +1255,27 @@ function KolamLocationList({
             ) : null}
           </KolamTableFooterControls>
         }>
-        <KolamDataTableHeader columns={getKolamTableColumns('location')} />
+        <View style={styles.locationHeaderRow}>
+          {LOCATION_LIST_COLUMNS.map(column => (
+            <View
+              key={column.id}
+              style={[
+                styles.locationListCell,
+                {flex: column.flex},
+                column.align === 'right' && styles.locationListCellRight,
+              ]}>
+              {column.label ? (
+                <Text
+                  style={[
+                    styles.locationHeaderCellText,
+                    column.align === 'right' && styles.locationTextRight,
+                  ]}>
+                  {column.label}
+                </Text>
+              ) : null}
+            </View>
+          ))}
+        </View>
         {visibleItems.length ? (
           visibleItems.map(location => (
             <KolamLocationRow
@@ -1318,30 +1351,39 @@ function KolamLocationRow({
   const parent = resolveLocationParent(location, parentLookup);
 
   return (
-    <KolamDataTableRowFrame style={actionMenuOpen && styles.activeActionRow}>
-      <View style={styles.nameCell}>
+    <KolamDataTableRowFrame
+      style={[styles.locationListRow, actionMenuOpen && styles.activeActionRow]}>
+      <View style={getLocationListCellStyle('name')}>
         <KolamCopyStack
           items={[
-            {id: 'name', text: location.name, style: styles.locationNameText},
+            {
+              id: 'name',
+              text: location.name,
+              style: styles.locationNameText,
+              textProps: {numberOfLines: 2},
+            },
           ]}
         />
       </View>
-      <View style={styles.typeCell}>
+      <View style={getLocationListCellStyle('type')}>
         <KolamStatusBadge
           intent={getLocationTypeIntent(location.type)}
           label={getKolamLocationTypeLabel(location.type)}
         />
       </View>
-      <KolamDataTableMetaCell style={styles.tierCell}>
-        {getKolamLocationTierLabel(location.tier)}
-      </KolamDataTableMetaCell>
-      <View style={styles.parentCell}>
+      <View style={getLocationListCellStyle('tier')}>
+        <Text style={styles.locationMetaText}>
+          {getKolamLocationTierLabel(location.tier)}
+        </Text>
+      </View>
+      <View style={getLocationListCellStyle('parent')}>
         <KolamCopyStack
           items={[
             {
               id: 'parent-name',
               text: parent?.name || '-',
               style: styles.parentNameText,
+              textProps: {numberOfLines: 1},
             },
             ...(parent?.type
               ? [
@@ -1349,22 +1391,29 @@ function KolamLocationRow({
                     id: 'parent-type',
                     text: getKolamLocationTypeLabel(parent.type),
                     style: styles.parentTypeText,
+                    textProps: {numberOfLines: 1},
                   },
                 ]
               : []),
           ]}
         />
       </View>
-      <KolamDataTableMetaCell style={styles.phoneCell}>
-        {location.phoneNumber || '-'}
-      </KolamDataTableMetaCell>
-      <KolamDataTableMetaCell style={styles.descriptionCell}>
-        {truncateLocationDescription(location.description)}
-      </KolamDataTableMetaCell>
-      <KolamDataTableAmountCell style={styles.createdCell}>
-        {formatLocationDateTime(location.createdAt)}
-      </KolamDataTableAmountCell>
-      <View style={styles.overflowCell}>
+      <View style={getLocationListCellStyle('phone')}>
+        <Text numberOfLines={1} style={styles.locationMetaText}>
+          {location.phoneNumber || '-'}
+        </Text>
+      </View>
+      <View style={getLocationListCellStyle('description')}>
+        <Text numberOfLines={2} style={styles.locationMetaText}>
+          {truncateLocationDescription(location.description)}
+        </Text>
+      </View>
+      <View style={getLocationListCellStyle('created')}>
+        <Text style={[styles.locationMetaText, styles.locationTextRight]}>
+          {formatLocationDateTime(location.createdAt)}
+        </Text>
+      </View>
+      <View style={getLocationListCellStyle('actions')}>
         <KolamOverflowMenuButton
           accessibilityLabel={`Menu ${location.name}`}
           actions={[
@@ -1381,6 +1430,15 @@ function KolamLocationRow({
       </View>
     </KolamDataTableRowFrame>
   );
+}
+
+function getLocationListCellStyle(columnId: LocationListColumnId) {
+  const column = LOCATION_LIST_COLUMNS.find(item => item.id === columnId);
+  return [
+    styles.locationListCell,
+    {flex: column?.flex ?? 1},
+    column?.align === 'right' && styles.locationListCellRight,
+  ];
 }
 
 function SectionTitle({
@@ -1998,6 +2056,44 @@ const styles = StyleSheet.create({
   activeActionRow: {
     zIndex: 9000,
     elevation: 90,
+  },
+  locationHeaderRow: {
+    alignItems: 'center',
+    backgroundColor: V.colors.tableHeader,
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: 1,
+    borderTopColor: V.colors.border,
+    borderTopWidth: 1,
+    flexDirection: 'row',
+    gap: 8,
+    minHeight: 52,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+  },
+  locationHeaderCellText: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 18,
+  },
+  locationListRow: {
+    alignItems: 'center',
+    gap: 8,
+  },
+  locationListCell: {
+    minWidth: 0,
+  },
+  locationListCellRight: {
+    alignItems: 'flex-end',
+  },
+  locationMetaText: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '500',
+    lineHeight: 20,
+  },
+  locationTextRight: {
+    textAlign: 'right',
   },
   nameCell: {
     width: 220,
