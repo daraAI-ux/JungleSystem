@@ -641,6 +641,7 @@ describe('KolamGlobalChatRail', () => {
         },
         {
           _id: 'conv-3',
+          isAiHandled: true,
           platform: 'tiktok',
           contactId: {displayName: 'Buyer TikTok'},
           lastMessagePreview: 'Masih ready?',
@@ -712,6 +713,11 @@ describe('KolamGlobalChatRail', () => {
     expect(
       renderer!.root.findAll(
         node => node.props.accessibilityLabel === 'Staff menangani Maya Sari',
+      ),
+    ).not.toHaveLength(0);
+    expect(
+      renderer!.root.findAll(
+        node => node.props.accessibilityLabel === 'DARA menangani chat',
       ),
     ).not.toHaveLength(0);
 

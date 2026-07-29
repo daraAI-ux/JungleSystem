@@ -181,6 +181,7 @@ interface KolamChatRailInboxFilter {
 
 interface KolamChatRailItem {
   assignedStaff?: KolamChatStaffRef | string | null;
+  handledByDara?: boolean;
   id: string;
   labels?: KolamChatLabel[];
   metaLabel: string;
@@ -861,7 +862,9 @@ export function KolamGlobalChatRail({
                       </View>
                     ) : null}
                   </View>
-                  {mode === 'inbox' && item.assignedStaff ? (
+                  {mode === 'inbox' && item.handledByDara ? (
+                    <KolamInboxDaraAvatar />
+                  ) : mode === 'inbox' && item.assignedStaff ? (
                     <KolamInboxAssignedStaffAvatar staff={item.assignedStaff} />
                   ) : null}
                   {item.unreadCount > 0 ? (
@@ -1187,6 +1190,18 @@ function KolamInboxAssignedStaffAvatar({
           initials={initials}
           textStyle={styles.rowStaffAvatarText}
         />
+      </View>
+    </KolamHoverTooltip>
+  );
+}
+
+function KolamInboxDaraAvatar() {
+  return (
+    <KolamHoverTooltip containerStyle={styles.rowStaffTooltip} label="DARA">
+      <View
+        accessibilityLabel="DARA menangani chat"
+        style={[styles.rowStaffAvatar, styles.rowDaraAvatar]}>
+        <Text style={styles.rowDaraAvatarText}>DA</Text>
       </View>
     </KolamHoverTooltip>
   );
@@ -3539,6 +3554,7 @@ function getChatRailItems(
   if (mode === 'team-chat') {
     return data.rooms.map(room => ({
       assignedStaff: null,
+      handledByDara: false,
       id: room._id,
       labels: [],
       metaLabel: getRoomCategoryLabel(room),
@@ -3557,6 +3573,7 @@ function getChatRailItems(
     )
     .map(conversation => ({
       assignedStaff: conversation.assignedStaffId ?? null,
+      handledByDara: conversation.isAiHandled === true,
       id: conversation._id,
       labels: getConversationLabels(conversation, labels),
       metaLabel: conversation.platform
@@ -6703,6 +6720,16 @@ const styles = StyleSheet.create({
     color: V.colors.primary,
     fontFamily: V.fontFamily,
     fontSize: 10,
+    fontWeight: '900',
+  },
+  rowDaraAvatar: {
+    backgroundColor: V.colors.primary,
+    borderColor: V.colors.primary,
+  },
+  rowDaraAvatarText: {
+    color: V.colors.primaryFg,
+    fontFamily: V.fontFamily,
+    fontSize: 9,
     fontWeight: '900',
   },
   rowUnread: {
