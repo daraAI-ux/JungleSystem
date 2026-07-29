@@ -1,4 +1,8 @@
 import { appConfig } from '../config/app';
+import type {
+  KolamLocationTier,
+  KolamLocationType,
+} from '../domain/kolam-location';
 import { apiRequest } from '../lib/api-client';
 
 interface DataResponse<T> {
@@ -9,22 +13,18 @@ export interface KolamLocationOption {
   id: string;
   name: string;
   label: string;
-  type: string;
-  tier: string;
+  type: KolamLocationType | string;
+  tier: KolamLocationTier | string;
 }
 
-export type KolamLocationListTypeFilter =
-  | 'warehouse'
-  | 'floor'
-  | 'rack'
-  | 'store'
-  | 'area';
+export type KolamLocationListTypeFilter = KolamLocationType;
+export type KolamLocationListTierFilter = KolamLocationTier;
 
 export interface KolamLocationParentRef {
   id: string;
   name: string;
-  type: string;
-  tier: string;
+  type: KolamLocationType | string;
+  tier: KolamLocationTier | string;
 }
 
 export interface KolamLocationListItem {
@@ -35,6 +35,7 @@ export interface KolamLocationListItem {
   parent: KolamLocationParentRef | null;
   description: string;
   address: string;
+  capacitySlots: number | null;
   mapsUrl: string;
   phoneNumber: string;
   createdAt: string;
@@ -52,6 +53,8 @@ export interface KolamLocationListQuery {
   limit?: number;
   name?: string;
   page?: number;
+  parent?: string | null;
+  tier?: KolamLocationListTierFilter | '';
   type?: KolamLocationListTypeFilter | '';
 }
 
@@ -71,10 +74,30 @@ export async function getKolamLocations(): Promise<KolamLocationOption[]> {
   return normalizeKolamLocationList(response);
 }
 
+export async function getKolamLocationParentLookup(): Promise<
+  Record<string, KolamLocationOption>
+> {
+  return createKolamLocationLookup(await getKolamLocations());
+}
+
+export function createKolamLocationLookup(
+  locations: KolamLocationOption[],
+): Record<string, KolamLocationOption> {
+  return locations.reduce<Record<string, KolamLocationOption>>(
+    (lookup, location) => {
+      lookup[location.id] = location;
+      return lookup;
+    },
+    {},
+  );
+}
+
 export async function getKolamLocationList({
   limit = 20,
   name,
   page = 1,
+  parent,
+  tier,
   type,
 }: KolamLocationListQuery = {}): Promise<KolamLocationListResult> {
   const response = await kolamRequest<unknown>('/location', {
@@ -82,6 +105,11 @@ export async function getKolamLocationList({
       limit,
       page,
       ...(name?.trim() ? {name: name.trim()} : {}),
+      ...(typeof parent === 'string' && parent.trim()
+        ? {parent: parent.trim()}
+        : {}),
+      ...(parent === null ? {parent: 'null'} : {}),
+      ...(tier ? {tier} : {}),
       ...(type ? {type} : {}),
     },
   });
@@ -131,8 +159,9 @@ function normalizeKolamLocationListItem(
     parent: normalizeKolamLocationParent(record.parent),
     description: getString(record, 'description'),
     address: getString(record, 'address'),
+    capacitySlots: getNumber(record, 'capacitySlots') ?? null,
     mapsUrl: getString(record, 'mapsUrl'),
-    phoneNumber: getString(record, 'phoneNumber'),
+    phoneNumber: getString(record, 'phoneNumber') || getString(record, 'phone'),
     createdAt: getString(record, 'createdAt'),
     updatedAt: getString(record, 'updatedAt'),
   };
