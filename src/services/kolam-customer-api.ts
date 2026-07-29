@@ -1,6 +1,8 @@
 import {appConfig} from '../config/app';
 import {
+  normalizeKolamCustomerDetail,
   normalizeKolamCustomerListResult,
+  type KolamCustomer,
   type KolamCustomerListQuery,
   type KolamCustomerListResult,
 } from '../domain/kolam-customer';
@@ -24,6 +26,21 @@ export async function getKolamCustomerList({
   });
 
   return normalizeKolamCustomerListResult(response, {limit, page});
+}
+
+export async function getKolamCustomerDetail(
+  id: string,
+): Promise<KolamCustomer> {
+  const response = await kolamRequest<unknown>(
+    `/customer/${encodeURIComponent(id)}`,
+  );
+  const customer = normalizeKolamCustomerDetail(response);
+
+  if (!customer) {
+    throw new Error('Detail pelanggan tidak ditemukan.');
+  }
+
+  return customer;
 }
 
 function kolamRequest<T>(

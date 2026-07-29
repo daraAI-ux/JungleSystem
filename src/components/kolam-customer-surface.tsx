@@ -3,20 +3,29 @@ import {StyleSheet, Text, View} from 'react-native';
 import {
   getKolamCustomerLocationText,
   type KolamCustomer,
+  type KolamCustomerAddress,
   type KolamCustomerExternalAccount,
   type KolamCustomerListResult,
 } from '../domain/kolam-customer';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {getKolamFileUrl} from '../lib/file-url';
-import {getKolamCustomerList} from '../services/kolam-customer-api';
+import {
+  getKolamCustomerDetail,
+  getKolamCustomerList,
+} from '../services/kolam-customer-api';
 import type {
   KolamCustomerList,
   KolamCustomerSurfaceProps,
 } from './kolam-workspace-module-surface-types';
 import {KolamButton} from './kolam-button';
 import {KolamCatalogListTableShell} from './kolam-catalog-list-table-shell';
+import {KolamContentFrame} from './kolam-content-frame';
 import {KolamCopyStack} from './kolam-copy-stack';
 import {KolamDataTableRowFrame} from './kolam-data-table-row-frame';
+import {
+  KolamDetailMediaPreview,
+  type KolamDetailMediaItem,
+} from './kolam-detail-media-preview';
 import {
   KolamOverflowMenuButton,
   KolamTableFooterControls,
@@ -60,8 +69,20 @@ export function KolamCustomerSurface({
   onRouteChange?: (route: string) => void;
   route?: string;
 }) {
-  if (route?.split('?')[0] === '/customers') {
+  const routePath = route?.split('?')[0] ?? '';
+  const detailMatch = routePath.match(/^\/customers\/([^/]+)$/);
+
+  if (routePath === '/customers') {
     return <KolamCustomerListSurface onRouteChange={onRouteChange} />;
+  }
+
+  if (detailMatch?.[1]) {
+    return (
+      <KolamCustomerDetailSurface
+        customerId={decodeURIComponent(detailMatch[1])}
+        onRouteChange={onRouteChange}
+      />
+    );
   }
 
   return <KolamCustomerModule customers={customers} {...customer} />;
@@ -297,6 +318,267 @@ function KolamCustomerListSurface({
   );
 }
 
+function KolamCustomerDetailSurface({
+  customerId,
+  onRouteChange,
+}: {
+  customerId: string;
+  onRouteChange?: (route: string) => void;
+}) {
+  const [customer, setCustomer] = React.useState<KolamCustomer | null>(null);
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState('');
+
+  React.useEffect(() => {
+    let active = true;
+
+    if (!customerId) {
+      setCustomer(null);
+      setError('ID pelanggan tidak valid.');
+      return () => {
+        active = false;
+      };
+    }
+
+    setLoading(true);
+    setError('');
+    void getKolamCustomerDetail(customerId)
+      .then(nextCustomer => {
+        if (active) {
+          setCustomer(nextCustomer);
+        }
+      })
+      .catch(errorResult => {
+        if (active) {
+          setCustomer(null);
+          setError(
+            errorResult instanceof Error
+              ? errorResult.message
+              : 'Gagal memuat detail pelanggan.',
+          );
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [customerId]);
+
+  if (loading && !customer) {
+    return (
+      <View style={styles.detailSurface}>
+        <KolamEmptyState
+          message="Mengambil detail pelanggan dari server."
+          title="Memuat pelanggan..."
+        />
+      </View>
+    );
+  }
+
+  if (!customer) {
+    return (
+      <View style={styles.detailSurface}>
+        <KolamEmptyState
+          message={error || 'Pelanggan tidak ditemukan dari server.'}
+          title="Detail pelanggan belum tersedia"
+        />
+        <KolamButton
+          label="Daftar"
+          onPress={() => onRouteChange?.('/customers')}
+          style={styles.detailBackButton}
+        />
+      </View>
+    );
+  }
+
+  const mediaItems = createCustomerMediaItems(customer);
+  const primaryAddress = getKolamCustomerLocationText(customer);
+
+  return (
+    <View style={styles.detailSurface}>
+      <View style={styles.detailHeader}>
+        <View style={styles.detailHeading}>
+          <View style={styles.detailTitleRow}>
+            <Text style={styles.detailTitle}>{customer.name}</Text>
+            <KolamStatusBadge
+              intent={getCustomerStatusIntent(customer.status)}
+              label={getCustomerStatusLabel(customer.status)}
+              numberOfLines={1}
+            />
+            {customer.verifiedStatus ? (
+              <KolamStatusBadge
+                intent="success"
+                label="Terverifikasi"
+                numberOfLines={1}
+              />
+            ) : null}
+            {customer.accountRestricted ? (
+              <KolamStatusBadge
+                intent="danger"
+                label="Dibatasi"
+                numberOfLines={1}
+              />
+            ) : null}
+          </View>
+          {customer.notes ? (
+            <Text numberOfLines={2} style={styles.detailSubtitle}>
+              {customer.notes}
+            </Text>
+          ) : null}
+        </View>
+        <View style={styles.detailActions}>
+          <KolamButton
+            intent="primary"
+            label="Rubah"
+            onPress={() => onRouteChange?.(`/customers/${customer.id}/edit`)}
+          />
+          <KolamButton
+            label="Daftar"
+            onPress={() => onRouteChange?.('/customers')}
+          />
+        </View>
+      </View>
+
+      {error ? (
+        <KolamStatusBadge
+          intent="danger"
+          label={error}
+          numberOfLines={2}
+          style={styles.errorBadge}
+        />
+      ) : null}
+
+      <View style={styles.detailGrid}>
+        <View style={styles.detailMainColumn}>
+          <KolamContentFrame
+            style={styles.detailCard}
+            variant="settingsWebConfig">
+            <SectionTitle
+              description="Foto pelanggan dari server Kolam"
+              title="Foto"
+            />
+            {mediaItems.length ? (
+              <KolamDetailMediaPreview
+                items={mediaItems}
+                title={customer.name}
+              />
+            ) : (
+              <View style={styles.detailEmptyBox}>
+                <Text style={styles.customerSubText}>
+                  Foto pelanggan belum tersedia.
+                </Text>
+              </View>
+            )}
+          </KolamContentFrame>
+
+          <KolamContentFrame
+            style={styles.detailCard}
+            variant="settingsWebConfig">
+            <SectionTitle
+              description="Ringkasan saldo poin member"
+              title="Poin Member"
+            />
+            <View style={styles.pointsGrid}>
+              <CustomerPointMetric
+                label="Poin Tersedia"
+                value={customer.points.availablePoints}
+              />
+              <CustomerPointMetric
+                label="Total Poin"
+                value={customer.points.totalPoints}
+              />
+              <CustomerPointMetric
+                label="Poin Lifetime"
+                value={customer.points.lifetimePoints}
+              />
+            </View>
+          </KolamContentFrame>
+        </View>
+
+        <View style={styles.detailSideColumn}>
+          <KolamContentFrame
+            style={styles.detailCard}
+            variant="settingsWebConfig">
+            <SectionTitle
+              description="Data profil utama pelanggan"
+              title="Informasi Pelanggan"
+            />
+            <View style={styles.detailRows}>
+              <CustomerDetailRow
+                label="Jenis Kelamin"
+                value={formatCustomerGenderLabel(customer.gender)}
+              />
+              <CustomerDetailRow
+                label="Alamat"
+                value={primaryAddress || customer.address || '-'}
+              />
+              <CustomerDetailRow label="Telepon" value={customer.phone || '-'} />
+              <CustomerDetailRow label="Email" value={customer.email || '-'} />
+              <CustomerDetailRow
+                label="Username"
+                value={customer.username ? `@${customer.username}` : '-'}
+              />
+              <CustomerDetailRow
+                label="Status"
+                value={
+                  <KolamStatusBadge
+                    intent={getCustomerStatusIntent(customer.status)}
+                    label={getCustomerStatusLabel(customer.status)}
+                  />
+                }
+              />
+              <CustomerDetailRow
+                label="Dibuat Pada"
+                value={formatCustomerDateTime(customer.createdAt)}
+              />
+              <CustomerDetailRow
+                label="Diperbarui Pada"
+                value={formatCustomerDateTime(customer.updatedAt)}
+              />
+            </View>
+          </KolamContentFrame>
+
+          {customer.addresses.length ? (
+            <KolamContentFrame
+              style={styles.detailCard}
+              variant="settingsWebConfig">
+              <SectionTitle
+                description="Alamat tersimpan dari payload pelanggan"
+                title="Alamat"
+              />
+              <View style={styles.addressStack}>
+                {customer.addresses.map(address => (
+                  <View key={address.id} style={styles.addressCard}>
+                    <View style={styles.addressHeader}>
+                      <Text style={styles.addressTitle}>
+                        {address.label || address.recipientName || 'Alamat'}
+                      </Text>
+                      {address.isDefault ? (
+                        <KolamStatusBadge intent="success" label="Utama" />
+                      ) : null}
+                    </View>
+                    <Text style={styles.customerMetaText}>
+                      {formatCustomerAddress(address)}
+                    </Text>
+                    {address.phone ? (
+                      <Text style={styles.customerSubText}>{address.phone}</Text>
+                    ) : null}
+                  </View>
+                ))}
+              </View>
+            </KolamContentFrame>
+          ) : null}
+        </View>
+      </View>
+    </View>
+  );
+}
+
 function normalizeCustomerSearch(value: string) {
   return value.trim().toLowerCase();
 }
@@ -457,6 +739,51 @@ function getCustomerListCellStyle(columnId: CustomerListColumnId) {
   ];
 }
 
+function SectionTitle({
+  description,
+  title,
+}: {
+  description: string;
+  title: string;
+}) {
+  return (
+    <View style={styles.sectionTitleBlock}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      {description ? (
+        <Text style={styles.sectionDescription}>{description}</Text>
+      ) : null}
+    </View>
+  );
+}
+
+function CustomerDetailRow({
+  label,
+  value,
+}: {
+  label: string;
+  value: React.ReactNode;
+}) {
+  return (
+    <View style={styles.detailRow}>
+      <Text style={styles.detailRowLabel}>{label}</Text>
+      {typeof value === 'string' || typeof value === 'number' ? (
+        <Text style={styles.detailRowValue}>{value}</Text>
+      ) : (
+        <View style={styles.detailRowValueBox}>{value}</View>
+      )}
+    </View>
+  );
+}
+
+function CustomerPointMetric({label, value}: {label: string; value: number}) {
+  return (
+    <View style={styles.pointMetric}>
+      <Text style={styles.pointMetricValue}>{formatCustomerNumber(value)}</Text>
+      <Text style={styles.pointMetricLabel}>{label}</Text>
+    </View>
+  );
+}
+
 function doesCustomerMatchSearch(
   customer: KolamCustomer,
   normalizedSearch: string,
@@ -476,6 +803,41 @@ function doesCustomerMatchSearch(
     .includes(normalizedSearch);
 }
 
+function createCustomerMediaItems(customer: KolamCustomer): KolamDetailMediaItem[] {
+  return customer.photos.reduce<KolamDetailMediaItem[]>((items, photo, index) => {
+    const uri = getKolamFileUrl(photo);
+
+    if (!uri) {
+      return items;
+    }
+
+    items.push({
+      badgeLabel: `${index + 1} / ${customer.photos.length}`,
+      id: `${customer.id}-${index}`,
+      label: customer.name,
+      revision: photo,
+      scope: 'customer',
+      type: 'image',
+      uri,
+    });
+
+    return items;
+  }, []);
+}
+
+function formatCustomerAddress(address: KolamCustomerAddress) {
+  return [
+    address.addressLine1,
+    address.addressLine2,
+    address.city,
+    address.province,
+    address.postalCode,
+    address.country,
+  ]
+    .filter(Boolean)
+    .join(', ') || '-';
+}
+
 function formatCustomerDate(value: string) {
   if (!value) {
     return '-';
@@ -491,6 +853,25 @@ function formatCustomerDate(value: string) {
   }).format(date);
 
   return `${weekday}, ${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
+}
+
+function formatCustomerDateTime(value: string) {
+  if (!value) {
+    return '-';
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return '-';
+  }
+
+  return new Intl.DateTimeFormat('id-ID', {
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).format(date);
 }
 
 function formatCustomerNumber(value: number) {
@@ -521,6 +902,50 @@ function getCustomerGenderSymbol(gender: string) {
   }
 
   return '';
+}
+
+function formatCustomerGenderLabel(gender: string) {
+  if (gender === 'male') {
+    return 'Laki-laki';
+  }
+
+  if (gender === 'female') {
+    return 'Perempuan';
+  }
+
+  if (gender === 'other') {
+    return 'Lainnya';
+  }
+
+  return gender || '-';
+}
+
+function getCustomerStatusLabel(status: string) {
+  if (status === 'active') {
+    return 'Aktif';
+  }
+
+  if (status === 'inactive') {
+    return 'Nonaktif';
+  }
+
+  if (status === 'blacklisted') {
+    return 'Diblokir';
+  }
+
+  return status || '-';
+}
+
+function getCustomerStatusIntent(status: string) {
+  if (status === 'active') {
+    return 'success' as const;
+  }
+
+  if (status === 'blacklisted') {
+    return 'danger' as const;
+  }
+
+  return 'muted' as const;
 }
 
 function getCustomerExternalLabel(account: KolamCustomerExternalAccount) {
@@ -744,6 +1169,170 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '900',
     lineHeight: 14,
+  },
+  detailSurface: {
+    gap: 14,
+    paddingBottom: 20,
+  },
+  detailHeader: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+  },
+  detailHeading: {
+    flex: 1,
+    gap: 4,
+    minWidth: 0,
+  },
+  detailTitleRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  detailTitle: {
+    color: V.colors.fg,
+    flexShrink: 1,
+    fontSize: 24,
+    fontWeight: '900',
+    lineHeight: 30,
+  },
+  detailSubtitle: {
+    color: V.colors.mutedFg,
+    fontSize: 13,
+    lineHeight: 20,
+  },
+  detailActions: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexShrink: 0,
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'flex-end',
+  },
+  detailBackButton: {
+    alignSelf: 'flex-start',
+  },
+  errorBadge: {
+    alignSelf: 'flex-start',
+  },
+  detailGrid: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    gap: 14,
+  },
+  detailMainColumn: {
+    flex: 1.2,
+    gap: 14,
+    minWidth: 0,
+  },
+  detailSideColumn: {
+    flex: 1,
+    gap: 14,
+    minWidth: 300,
+  },
+  detailCard: {
+    gap: 12,
+    padding: 14,
+  },
+  sectionTitleBlock: {
+    gap: 3,
+  },
+  sectionTitle: {
+    color: V.colors.fg,
+    fontSize: 16,
+    fontWeight: '900',
+    lineHeight: 22,
+  },
+  sectionDescription: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  detailEmptyBox: {
+    alignItems: 'center',
+    backgroundColor: V.colors.muted,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    minHeight: 120,
+    justifyContent: 'center',
+    padding: 14,
+  },
+  pointsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  pointMetric: {
+    backgroundColor: V.colors.primarySoft,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexBasis: 150,
+    flexGrow: 1,
+    gap: 4,
+    padding: 12,
+  },
+  pointMetricValue: {
+    color: V.colors.primary,
+    fontSize: 22,
+    fontWeight: '900',
+    lineHeight: 28,
+  },
+  pointMetricLabel: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 18,
+  },
+  detailRows: {
+    gap: 0,
+  },
+  detailRow: {
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: 1,
+    gap: 6,
+    paddingVertical: 10,
+  },
+  detailRowLabel: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    fontWeight: '800',
+    lineHeight: 18,
+  },
+  detailRowValue: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 20,
+  },
+  detailRowValueBox: {
+    alignItems: 'flex-start',
+  },
+  addressStack: {
+    gap: 8,
+  },
+  addressCard: {
+    backgroundColor: V.colors.mutedSoft,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 6,
+    padding: 10,
+  },
+  addressHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  addressTitle: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '800',
+    lineHeight: 18,
   },
   paginationRow: {
     alignItems: 'center',

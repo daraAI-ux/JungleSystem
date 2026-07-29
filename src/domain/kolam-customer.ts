@@ -93,6 +93,11 @@ export function normalizeKolamCustomerListResult(
   };
 }
 
+export function normalizeKolamCustomerDetail(payload: unknown) {
+  const record = asRecord(payload);
+  return normalizeKolamCustomer(record.data ?? payload);
+}
+
 export function normalizeKolamCustomer(value: unknown): KolamCustomer | null {
   const record = asRecord(value);
   const id = getString(record, '_id') || getString(record, 'id');
