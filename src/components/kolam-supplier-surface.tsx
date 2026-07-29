@@ -72,7 +72,12 @@ export function KolamSupplierSurface({
   const controller = useKolamSupplierController(route);
 
   return (
-    <View style={styles.surface}>
+    <View
+      style={[
+        styles.surface,
+        controller.mode === 'list' ? styles.listSurface : null,
+      ]}
+    >
       {controller.error ? (
         <KolamStatusBadge
           intent="danger"
@@ -530,7 +535,9 @@ function KolamSupplierDetail({
   }
 
   const address = formatKolamVendorAddress(vendor);
-  const heroUri = vendor.photoUrls[0] || vendor.photos[0] || '';
+  const heroUri = vendor.photoUrls?.[0] || vendor.photos?.[0] || '';
+  const brands = vendor.brands ?? [];
+  const photoUrls = vendor.photoUrls ?? [];
 
   return (
     <View style={styles.stack}>
@@ -542,7 +549,7 @@ function KolamSupplierDetail({
               disabled={controller.loading}
               label="Muat ulang"
               onPress={() => {
-                void controller.onRefresh();
+                void controller.onSelectVendor(vendor);
               }}
               style={styles.toolbarButton}
             />
@@ -615,8 +622,8 @@ function KolamSupplierDetail({
             title: 'Merek',
             description: 'Merek yang terkait dengan pemasok ini',
             emptyText: 'Belum ada merek tertaut.',
-            total: vendor.brands.length,
-            items: vendor.brands.map(brand => ({
+            total: brands.length,
+            items: brands.map(brand => ({
               title: brand.name,
               meta: brand.id,
               value: 'Buka merek',
@@ -626,8 +633,8 @@ function KolamSupplierDetail({
             title: 'Tautan',
             description: 'URL eksternal pemasok',
             emptyText: 'Belum ada tautan.',
-            total: vendor.links.length,
-            items: vendor.links.map((link, index) => ({
+            total: vendor.links?.length ?? 0,
+            items: (vendor.links ?? []).map((link, index) => ({
               title: link,
               meta: `Tautan ${index + 1}`,
             })),
@@ -685,9 +692,9 @@ function KolamSupplierDetail({
         />
       </KolamContentFrame>
 
-      {vendor.brands.length ? (
+      {brands.length ? (
         <View style={styles.brandChipRow}>
-          {vendor.brands.map(brand => (
+          {brands.map(brand => (
             <KolamButton
               key={brand.id}
               label={brand.name}
@@ -699,11 +706,11 @@ function KolamSupplierDetail({
         </View>
       ) : null}
 
-      {vendor.photoUrls.length > 1 ? (
+      {photoUrls.length > 1 ? (
         <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
           <Text style={styles.sectionTitle}>Foto</Text>
           <View style={styles.photoGrid}>
-            {vendor.photoUrls.map((uri, index) => (
+            {photoUrls.map((uri, index) => (
               <KolamRemoteImage
                 key={`${uri}-${index}`}
                 accessibilityLabel={`Foto pemasok ${index + 1}`}
@@ -747,13 +754,16 @@ function KolamSupplierCatalogTabs({
   vendor: KolamVendor;
 }) {
   const [tab, setTab] = React.useState<KolamSupplierCatalogTab>('products');
+  const products = vendor.products ?? [];
+  const species = vendor.species ?? [];
+  const packings = vendor.packings ?? [];
   const productRows = React.useMemo(
-    () => flattenKolamSupplierProductRows(vendor.products, vendor.id),
-    [vendor.id, vendor.products],
+    () => flattenKolamSupplierProductRows(products, vendor.id),
+    [products, vendor.id],
   );
   const speciesRows = React.useMemo(
-    () => flattenKolamSupplierSpeciesRows(vendor.species, vendor.id),
-    [vendor.id, vendor.species],
+    () => flattenKolamSupplierSpeciesRows(species, vendor.id),
+    [species, vendor.id],
   );
 
   return (
@@ -910,9 +920,9 @@ function KolamSupplierCatalogTabs({
       ) : null}
 
       {tab === 'packings' ? (
-        vendor.packings.length ? (
+        packings.length ? (
           <View style={styles.catalogList}>
-            {vendor.packings.map(packing => (
+            {packings.map(packing => (
               <Pressable
                 key={packing.id}
                 onPress={() =>
@@ -1829,8 +1839,11 @@ function sortVendors(vendors: KolamVendor[], mode: SupplierSortMode) {
 const styles = StyleSheet.create({
   surface: {
     gap: 12,
-    minHeight: 0,
+  },
+  listSurface: {
     flex: 1,
+    minHeight: 0,
+    overflow: 'visible',
   },
   listRoot: {
     flex: 1,
@@ -1940,8 +1953,6 @@ const styles = StyleSheet.create({
   },
   stack: {
     gap: 12,
-    minHeight: 0,
-    flex: 1,
   },
   summaryGrid: {
     flexDirection: 'row',

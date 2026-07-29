@@ -477,17 +477,19 @@ export function resolveKolamSupplierItemCode(
 }
 
 export function flattenKolamSupplierProductRows(
-  products: KolamVendorCatalogProduct[],
+  products: KolamVendorCatalogProduct[] | null | undefined,
   supplierId: string,
 ): KolamSupplierCatalogProductRow[] {
   const rows: KolamSupplierCatalogProductRow[] = [];
 
-  for (const product of products) {
-    const photoUrl = product.photoUrls[0] || '';
-    const brandLabel = product.brandNames.filter(Boolean).join(', ');
+  for (const product of products ?? []) {
+    const photoUrl = product.photoUrls?.[0] || '';
+    const brandLabel = (product.brandNames ?? []).filter(Boolean).join(', ');
 
-    if (!product.variants.length) {
-      const vp = product.vendorPrices.find(item => item.vendorId === supplierId);
+    if (!(product.variants ?? []).length) {
+      const vp = (product.vendorPrices ?? []).find(
+        item => item.vendorId === supplierId,
+      );
       rows.push({
         key: product.id,
         productId: product.id,
@@ -512,8 +514,10 @@ export function flattenKolamSupplierProductRows(
       isVariantRow: false,
     });
 
-    for (const variant of product.variants) {
-      const vp = variant.vendorPrices.find(item => item.vendorId === supplierId);
+    for (const variant of product.variants ?? []) {
+      const vp = (variant.vendorPrices ?? []).find(
+        item => item.vendorId === supplierId,
+      );
       if (!vp) {
         continue;
       }
@@ -537,17 +541,19 @@ export function flattenKolamSupplierProductRows(
 }
 
 export function flattenKolamSupplierSpeciesRows(
-  species: KolamVendorCatalogSpecies[],
+  species: KolamVendorCatalogSpecies[] | null | undefined,
   supplierId: string,
 ): KolamSupplierCatalogSpeciesRow[] {
   const rows: KolamSupplierCatalogSpeciesRow[] = [];
 
-  for (const item of species) {
-    const photoUrl = item.photoUrls[0] || '';
+  for (const item of species ?? []) {
+    const photoUrl = item.photoUrls?.[0] || '';
     const commonName = item.commonName || item.localName || '';
 
-    if (!item.variants.length) {
-      const vp = item.vendorPrices.find(price => price.vendorId === supplierId);
+    if (!(item.variants ?? []).length) {
+      const vp = (item.vendorPrices ?? []).find(
+        price => price.vendorId === supplierId,
+      );
       rows.push({
         key: item.id,
         speciesId: item.id,
@@ -572,8 +578,10 @@ export function flattenKolamSupplierSpeciesRows(
       isVariantRow: false,
     });
 
-    for (const variant of item.variants) {
-      const vp = variant.vendorPrices.find(price => price.vendorId === supplierId);
+    for (const variant of item.variants ?? []) {
+      const vp = (variant.vendorPrices ?? []).find(
+        price => price.vendorId === supplierId,
+      );
       const variantLabel = variant.tier2Value
         ? `${variant.tier1Value} / ${variant.tier2Value}`
         : variant.tier1Value;
