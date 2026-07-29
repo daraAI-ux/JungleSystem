@@ -182,6 +182,7 @@ interface KolamChatRailInboxFilter {
 interface KolamChatRailItem {
   assignedStaff?: KolamChatStaffRef | string | null;
   id: string;
+  labels?: KolamChatLabel[];
   metaLabel: string;
   platform?: KolamChatPlatform;
   preview: string;
@@ -226,7 +227,6 @@ export function KolamGlobalChatRail({
     [inboxFilter],
   );
   const data = useKolamChatRailReadonlyData({inboxParams, mode});
-  const items = getChatRailItems(mode, data, inboxFilter.assignment);
   const [selectedItemId, setSelectedItemId] = React.useState<string | null>(
     null,
   );
@@ -248,6 +248,12 @@ export function KolamGlobalChatRail({
       items: [],
       loading: mode === 'inbox',
     });
+  const items = getChatRailItems(
+    mode,
+    data,
+    inboxFilter.assignment,
+    labelsState.items,
+  );
   const [templatesState, setTemplatesState] =
     React.useState<KolamChatRailTemplatesState>({
       items: [],
@@ -843,6 +849,17 @@ export function KolamGlobalChatRail({
                         </Text>
                       ) : null}
                     </View>
+                    {mode === 'inbox' && item.labels?.length ? (
+                      <View style={styles.rowLabelLine}>
+                        <KolamMappedList
+                          items={item.labels}
+                          getKey={label => label._id}
+                          renderItem={label => (
+                            <KolamChatLabelPill label={label} />
+                          )}
+                        />
+                      </View>
+                    ) : null}
                   </View>
                   {mode === 'inbox' && item.assignedStaff ? (
                     <KolamInboxAssignedStaffAvatar staff={item.assignedStaff} />
@@ -3517,11 +3534,13 @@ function getChatRailItems(
   mode: KolamGlobalChatRailMode,
   data: ReturnType<typeof useKolamChatRailReadonlyData>,
   inboxAssignmentFilter: KolamChatRailInboxFilter['assignment'] = 'all',
+  labels: KolamChatLabel[] = [],
 ): KolamChatRailItem[] {
   if (mode === 'team-chat') {
     return data.rooms.map(room => ({
       assignedStaff: null,
       id: room._id,
+      labels: [],
       metaLabel: getRoomCategoryLabel(room),
       platform: undefined,
       preview: room.lastMessagePreview || 'Belum ada preview pesan.',
@@ -3539,6 +3558,7 @@ function getChatRailItems(
     .map(conversation => ({
       assignedStaff: conversation.assignedStaffId ?? null,
       id: conversation._id,
+      labels: getConversationLabels(conversation, labels),
       metaLabel: conversation.platform
         ? getPlatformLabel(conversation.platform)
         : 'Marketplace',
@@ -4351,9 +4371,10 @@ function getChatStaffInitials(staff?: KolamChatStaffRef | string | null) {
 }
 
 function getConversationLabels(
-  conversation: NonNullable<
-    ReturnType<typeof useKolamChatRailDetail>['conversation']
-  >,
+  conversation: {
+    labelIds?: Array<KolamChatLabel | string>;
+    labels?: KolamChatLabel[];
+  },
   labels: KolamChatLabel[],
 ) {
   if (Array.isArray(conversation.labels) && conversation.labels.length > 0) {
@@ -6728,6 +6749,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+  },
+  rowLabelLine: {
+    minWidth: 0,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
   },
   rowSubMeta: {
     minWidth: 0,
