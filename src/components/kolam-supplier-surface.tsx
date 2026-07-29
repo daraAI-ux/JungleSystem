@@ -710,11 +710,10 @@ function KolamSupplierDetail({
       </View>
 
       <KolamSupplierCatalogTabs
+        controller={controller}
         onRouteChange={onRouteChange}
         vendor={vendor}
       />
-
-      <KolamSupplierPurchaseAnalytics controller={controller} />
 
       <KolamSupplierTaxProfileCard controller={controller} />
 
@@ -759,13 +758,15 @@ function KolamSupplierDetail({
 }
 
 function KolamSupplierCatalogTabs({
+  controller,
   onRouteChange,
   vendor,
 }: {
+  controller: KolamSupplierController;
   onRouteChange?: (route: string) => void;
   vendor: KolamVendor;
 }) {
-  const [tab, setTab] = React.useState<KolamSupplierCatalogTab>('products');
+  const [tab, setTab] = React.useState<KolamSupplierCatalogTab>('analytics');
   const products = vendor.products ?? [];
   const species = vendor.species ?? [];
   const packings = vendor.packings ?? [];
@@ -786,6 +787,7 @@ function KolamSupplierCatalogTabs({
       <View style={styles.segmentRow}>
         {(
           [
+            { id: 'analytics', label: 'Analitik' },
             { id: 'products', label: 'Produk & Raw' },
             { id: 'species', label: 'Species' },
             { id: 'packings', label: 'Bahan Kemasan' },
@@ -801,6 +803,10 @@ function KolamSupplierCatalogTabs({
           />
         ))}
       </View>
+
+      {tab === 'analytics' ? (
+        <KolamSupplierPurchaseAnalytics controller={controller} embedded />
+      ) : null}
 
       {tab === 'products' ? (
         productRows.length ? (
@@ -1128,8 +1134,10 @@ function KolamSupplierTaxProfileCard({
 
 function KolamSupplierPurchaseAnalytics({
   controller,
+  embedded = false,
 }: {
   controller: KolamSupplierController;
+  embedded?: boolean;
 }) {
   const stats = controller.selectedVendor?.purchaseStatistics ?? null;
   const filters = controller.analyticsFilters;
@@ -1173,9 +1181,11 @@ function KolamSupplierPurchaseAnalytics({
     void controller.onChangeAnalyticsFilters(next);
   };
 
-  return (
-    <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
-      <Text style={styles.sectionTitle}>Analitik pembelian</Text>
+  const body = (
+    <View style={styles.analyticsStack}>
+      {embedded ? null : (
+        <Text style={styles.sectionTitle}>Analitik pembelian</Text>
+      )}
       <Text style={styles.switchHint}>
         Statistik PO dari pemasok ini. Filter memuat ulang data dari server.
       </Text>
@@ -1380,6 +1390,16 @@ function KolamSupplierPurchaseAnalytics({
           ) : null}
         </View>
       ) : null}
+    </View>
+  );
+
+  if (embedded) {
+    return body;
+  }
+
+  return (
+    <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
+      {body}
     </KolamContentFrame>
   );
 }

@@ -61,6 +61,7 @@ export interface KolamVendorCatalogPacking {
 }
 
 export type KolamSupplierCatalogTab =
+  | 'analytics'
   | 'products'
   | 'species'
   | 'packings'
