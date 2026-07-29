@@ -22,6 +22,7 @@ import {
   type KolamSupplierAnalyticsFilters,
   type KolamSupplierCatalogTab,
   type KolamVendor,
+  type KolamVendorPurchaseProductStat,
   type KolamVendorStatus,
 } from '../domain/kolam-vendor';
 import { buildDashboardSalesGraphPoints } from '../domain/dashboard-sales-graph';
@@ -882,10 +883,33 @@ function KolamSupplierDetail({
         }
         meta={[]}
         metrics={[
-          { label: 'Total PO', value: vendor.poCount },
-          { label: 'Produk', value: vendor.productCount },
-          { label: 'Species', value: vendor.speciesCount },
-          { label: 'Packing', value: vendor.packingCount },
+          {
+            label: 'Total PO',
+            value:
+              vendor.purchaseStatistics?.overall.totalOrders ?? vendor.poCount,
+          },
+          {
+            label: 'Nilai total',
+            value: vendor.purchaseStatistics
+              ? formatRupiah(vendor.purchaseStatistics.overall.totalValue)
+              : '—',
+          },
+          {
+            label: 'Rata-rata PO',
+            value: vendor.purchaseStatistics
+              ? formatRupiah(
+                  vendor.purchaseStatistics.overall.averageOrderValue,
+                )
+              : '—',
+          },
+          {
+            label: 'Pertumbuhan',
+            value: vendor.purchaseStatistics
+              ? `${
+                  vendor.purchaseStatistics.yearly.growthRate > 0 ? '+' : ''
+                }${vendor.purchaseStatistics.yearly.growthRate.toFixed(1)}%`
+              : '—',
+          },
         ]}
         sections={[]}
         status={{
@@ -1050,6 +1074,8 @@ function KolamSupplierCatalogTabs({
   const packings = vendor.packings ?? [];
   const brands = vendor.brands ?? [];
   const links = vendor.links ?? [];
+  const purchaseStats =
+    vendor.purchaseStatistics?.productStats ?? [];
   const productRows = React.useMemo(
     () => flattenKolamSupplierProductRows(products, vendor.id),
     [products, vendor.id],
@@ -1057,6 +1083,77 @@ function KolamSupplierCatalogTabs({
   const speciesRows = React.useMemo(
     () => flattenKolamSupplierSpeciesRows(species, vendor.id),
     [species, vendor.id],
+  );
+  const productPurchaseRows = React.useMemo(
+    () =>
+      mergeCatalogRowsWithPurchaseStats(
+        productRows.map(row => ({
+          key: row.key,
+          id: row.productId,
+          title: row.title,
+          code: row.code,
+          meta: [row.code || null, row.brandLabel || null]
+            .filter(Boolean)
+            .join(' · '),
+          photoUrl: row.photoUrl,
+          price: row.vendorPrice,
+          isVariantRow: row.isVariantRow,
+          onPress: row.isVariantRow
+            ? undefined
+            : () => onRouteChange?.(`/products/${row.productId}`),
+        })),
+        purchaseStats,
+        { appendUnmatched: true },
+      ),
+    [onRouteChange, productRows, purchaseStats],
+  );
+  const speciesPurchaseRows = React.useMemo(
+    () =>
+      mergeCatalogRowsWithPurchaseStats(
+        speciesRows.map(row => ({
+          key: row.key,
+          id: row.speciesId,
+          title: row.title,
+          code: row.code,
+          meta: [row.code || null, row.commonName || null]
+            .filter(Boolean)
+            .join(' · '),
+          photoUrl: row.photoUrl,
+          price: row.vendorPrice,
+          isVariantRow: row.isVariantRow,
+          italic: !row.isVariantRow,
+          onPress: row.isVariantRow
+            ? undefined
+            : () => onRouteChange?.(`/species/${row.speciesId}`),
+        })),
+        purchaseStats,
+      ),
+    [onRouteChange, purchaseStats, speciesRows],
+  );
+  const packingPurchaseRows = React.useMemo(
+    () =>
+      mergeCatalogRowsWithPurchaseStats(
+        packings.map(packing => ({
+          key: packing.id,
+          id: packing.id,
+          title: packing.name,
+          code: '',
+          meta: [
+            packing.category || null,
+            `Stok ${packing.stock}`,
+            packing.cost > 0 ? `HPP ${formatRupiah(packing.cost)}` : null,
+          ]
+            .filter(Boolean)
+            .join(' · '),
+          photoUrl: '',
+          price: packing.price,
+          isVariantRow: false,
+          onPress: () =>
+            onRouteChange?.(`/packing-materials/${packing.id}`),
+        })),
+        purchaseStats,
+      ),
+    [onRouteChange, packings, purchaseStats],
   );
 
   return (
@@ -1079,7 +1176,7 @@ function KolamSupplierCatalogTabs({
             },
             {
               id: 'packings',
-              label: `Bahan Kemasan (${vendor.packingCount})`,
+              label: `Bahan Kemasan / Packing (${vendor.packingCount})`,
             },
             {
               id: 'brands',
@@ -1105,60 +1202,14 @@ function KolamSupplierCatalogTabs({
       ) : null}
 
       {tab === 'products' ? (
-        productRows.length ? (
+        productPurchaseRows.length ? (
           <View style={styles.catalogList}>
-            {productRows.map(row => (
-              <Pressable
+            {productPurchaseRows.map(row => (
+              <SupplierCatalogPurchaseRow
                 key={row.key}
-                onPress={() =>
-                  row.isVariantRow
-                    ? undefined
-                    : onRouteChange?.(`/products/${row.productId}`)
-                }
-                style={[
-                  styles.catalogRow,
-                  row.isVariantRow ? styles.catalogRowVariant : null,
-                ]}
-              >
-                {!row.isVariantRow && row.photoUrl ? (
-                  <KolamRemoteImage
-                    accessibilityLabel={row.title}
-                    resizeMode="cover"
-                    scope="product"
-                    sourceUri={row.photoUrl}
-                    style={styles.catalogThumb}
-                  />
-                ) : !row.isVariantRow ? (
-                  <View style={styles.catalogThumbFallback}>
-                    <Text style={styles.thumbFallbackText}>
-                      {row.title.slice(0, 1).toUpperCase()}
-                    </Text>
-                  </View>
-                ) : (
-                  <Text style={styles.catalogVariantMark}>↳</Text>
-                )}
-                <View style={styles.catalogCopy}>
-                  <Text
-                    numberOfLines={2}
-                    style={[
-                      styles.catalogTitle,
-                      row.isVariantRow ? styles.catalogVariantTitle : null,
-                    ]}
-                  >
-                    {row.title}
-                  </Text>
-                  <Text numberOfLines={1} style={styles.rowMeta}>
-                    {[row.code || null, row.brandLabel || null]
-                      .filter(Boolean)
-                      .join(' · ') || '—'}
-                  </Text>
-                </View>
-                <Text style={styles.catalogPrice}>
-                  {row.vendorPrice != null
-                    ? formatRupiah(row.vendorPrice)
-                    : '—'}
-                </Text>
-              </Pressable>
+                row={row}
+                scope="product"
+              />
             ))}
           </View>
         ) : (
@@ -1171,61 +1222,14 @@ function KolamSupplierCatalogTabs({
       ) : null}
 
       {tab === 'species' ? (
-        speciesRows.length ? (
+        speciesPurchaseRows.length ? (
           <View style={styles.catalogList}>
-            {speciesRows.map(row => (
-              <Pressable
+            {speciesPurchaseRows.map(row => (
+              <SupplierCatalogPurchaseRow
                 key={row.key}
-                onPress={() =>
-                  row.isVariantRow
-                    ? undefined
-                    : onRouteChange?.(`/species/${row.speciesId}`)
-                }
-                style={[
-                  styles.catalogRow,
-                  row.isVariantRow ? styles.catalogRowVariant : null,
-                ]}
-              >
-                {!row.isVariantRow && row.photoUrl ? (
-                  <KolamRemoteImage
-                    accessibilityLabel={row.title}
-                    resizeMode="cover"
-                    scope="species"
-                    sourceUri={row.photoUrl}
-                    style={styles.catalogThumb}
-                  />
-                ) : !row.isVariantRow ? (
-                  <View style={styles.catalogThumbFallback}>
-                    <Text style={styles.thumbFallbackText}>
-                      {row.title.slice(0, 1).toUpperCase()}
-                    </Text>
-                  </View>
-                ) : (
-                  <Text style={styles.catalogVariantMark}>↳</Text>
-                )}
-                <View style={styles.catalogCopy}>
-                  <Text
-                    numberOfLines={2}
-                    style={[
-                      styles.catalogTitle,
-                      row.isVariantRow ? styles.catalogVariantTitle : null,
-                      !row.isVariantRow ? styles.catalogItalic : null,
-                    ]}
-                  >
-                    {row.title}
-                  </Text>
-                  <Text numberOfLines={1} style={styles.rowMeta}>
-                    {[row.code || null, row.commonName || null]
-                      .filter(Boolean)
-                      .join(' · ') || '—'}
-                  </Text>
-                </View>
-                <Text style={styles.catalogPrice}>
-                  {row.vendorPrice != null
-                    ? formatRupiah(row.vendorPrice)
-                    : '—'}
-                </Text>
-              </Pressable>
+                row={row}
+                scope="species"
+              />
             ))}
           </View>
         ) : (
@@ -1238,43 +1242,21 @@ function KolamSupplierCatalogTabs({
       ) : null}
 
       {tab === 'packings' ? (
-        packings.length ? (
+        packingPurchaseRows.length ? (
           <View style={styles.catalogList}>
-            {packings.map(packing => (
-              <Pressable
-                key={packing.id}
-                onPress={() =>
-                  onRouteChange?.(`/packing-materials/${packing.id}`)
-                }
-                style={styles.catalogRow}
-              >
-                <View style={styles.catalogCopy}>
-                  <Text numberOfLines={2} style={styles.catalogTitle}>
-                    {packing.name}
-                  </Text>
-                  <Text numberOfLines={1} style={styles.rowMeta}>
-                    {[
-                      packing.category || null,
-                      `Stok ${packing.stock}`,
-                      packing.cost > 0
-                        ? `HPP ${formatRupiah(packing.cost)}`
-                        : null,
-                    ]
-                      .filter(Boolean)
-                      .join(' · ')}
-                  </Text>
-                </View>
-                <Text style={styles.catalogPrice}>
-                  {formatRupiah(packing.price)}
-                </Text>
-              </Pressable>
+            {packingPurchaseRows.map(row => (
+              <SupplierCatalogPurchaseRow
+                key={row.key}
+                row={row}
+                scope="product"
+              />
             ))}
           </View>
         ) : (
           <KolamEmptyState
             compact
-            message="Belum ada bahan kemasan dari pemasok ini."
-            title="Tidak ada kemasan"
+            message="Belum ada bahan kemasan / packing dari pemasok ini."
+            title="Tidak ada packing"
           />
         )
       ) : null}
@@ -1465,105 +1447,24 @@ function KolamSupplierPurchaseAnalytics({
           title="Tidak ada data pembelian"
         />
       ) : stats ? (
-        <View style={styles.analyticsStack}>
-          <View style={styles.summaryGrid}>
-            <SummaryTile
-              label="Total PO"
-              value={stats.overall.totalOrders}
-            />
-            <SummaryTile
-              label="Nilai total"
-              valueLabel={formatRupiah(stats.overall.totalValue)}
-            />
-            <SummaryTile
-              label="Rata-rata PO"
-              valueLabel={formatRupiah(stats.overall.averageOrderValue)}
-            />
-          </View>
-
-          <KolamDescriptionList
-            accessibilityLabel="Ringkasan pembelian"
-            rows={[
-              {
-                id: 'types',
-                label: 'Jenis produk',
-                value: String(stats.summary.totalProductTypes),
-                meta: '',
-                tone: 'default',
-              },
-              {
-                id: 'year-orders',
-                label: `PO tahun ${stats.yearly.year}`,
-                value: String(stats.yearly.totalOrdersThisYear),
-                meta: '',
-                tone: 'default',
-              },
-              {
-                id: 'year-value',
-                label: `Nilai tahun ${stats.yearly.year}`,
-                value: formatRupiah(stats.yearly.totalValueThisYear),
-                meta: '',
-                tone: 'default',
-              },
-              {
-                id: 'growth',
-                label: 'Pertumbuhan',
-                value: `${stats.yearly.growthRate > 0 ? '+' : ''}${stats.yearly.growthRate.toFixed(1)}%`,
-                meta: '',
-                tone:
-                  stats.yearly.growthRate >= 0 ? 'success' : 'danger',
-              },
-            ]}
-          />
-
-          <View style={styles.analyticsBlock}>
-            <Text style={styles.sectionTitle}>
-              Tren bulanan ({stats.yearly.year})
-            </Text>
-            <Text style={styles.switchHint}>
-              Nilai pembelian (IDR) per bulan
-            </Text>
-            {monthlyTrendPoints.length ? (
-              <View style={styles.trendChartFrame}>
-                <KolamDashboardSalesGraphPlot points={monthlyTrendPoints} />
-              </View>
-            ) : (
-              <KolamEmptyState
-                compact
-                message="Belum ada tren bulanan untuk tahun ini."
-                title="Grafik kosong"
-              />
-            )}
-          </View>
-
-          {stats.productStats.length ? (
-            <View style={styles.analyticsBlock}>
-              <Text style={styles.sectionTitle}>Detil produk dibeli</Text>
-              <View style={styles.catalogList}>
-                {stats.productStats.map(product => (
-                  <View key={product.id} style={styles.catalogRow}>
-                    <View style={styles.catalogCopy}>
-                      <Text numberOfLines={2} style={styles.catalogTitle}>
-                        {product.productName}
-                      </Text>
-                      <Text numberOfLines={2} style={styles.rowMeta}>
-                        SKU {product.productSku || '—'} · qty{' '}
-                        {product.totalQuantityOrdered.toLocaleString('id-ID')} /{' '}
-                        {product.totalQuantityReceived.toLocaleString('id-ID')} ·{' '}
-                        {product.orderCount} PO
-                        {product.lastPurchase
-                          ? ` · ${formatSupplierDateTime(product.lastPurchase)}`
-                          : ''}
-                      </Text>
-                    </View>
-                    <Text style={styles.catalogPrice}>
-                      {formatRupiah(product.totalValue)}
-                    </Text>
-                  </View>
-                ))}
-              </View>
+        <View style={styles.analyticsBlock}>
+          <Text style={styles.sectionTitle}>
+            Tren bulanan ({stats.yearly.year})
+          </Text>
+          <Text style={styles.switchHint}>
+            Nilai pembelian (IDR) per bulan
+          </Text>
+          {monthlyTrendPoints.length ? (
+            <View style={styles.trendChartFrame}>
+              <KolamDashboardSalesGraphPlot points={monthlyTrendPoints} />
             </View>
-          ) : null}
+          ) : (
+            <KolamEmptyState
+              compact
+              message="Belum ada tren bulanan untuk tahun ini."
+              title="Grafik kosong"
+            />
+          )}
         </View>
       ) : null}
     </View>
@@ -1590,6 +1491,168 @@ function formatSupplierDateTime(value: string) {
     month: 'short',
     year: 'numeric',
   });
+}
+
+type SupplierCatalogPurchaseRowData = {
+  key: string;
+  id: string;
+  title: string;
+  code: string;
+  meta: string;
+  photoUrl: string;
+  price: number | null;
+  isVariantRow: boolean;
+  italic?: boolean;
+  onPress?: () => void;
+  purchase?: KolamVendorPurchaseProductStat | null;
+};
+
+function mergeCatalogRowsWithPurchaseStats(
+  rows: Omit<SupplierCatalogPurchaseRowData, 'purchase'>[],
+  purchaseStats: KolamVendorPurchaseProductStat[],
+  options?: { appendUnmatched?: boolean },
+): SupplierCatalogPurchaseRowData[] {
+  const used = new Set<string>();
+  const merged = rows.map(row => {
+    const purchase = findPurchaseStatForCatalogRow(purchaseStats, row);
+    if (purchase) {
+      used.add(purchase.id);
+    }
+    return { ...row, purchase };
+  });
+
+  if (!options?.appendUnmatched) {
+    return merged;
+  }
+
+  purchaseStats.forEach(stat => {
+    if (used.has(stat.id)) {
+      return;
+    }
+    const alreadyListed = merged.some(
+      row =>
+        row.id === stat.id ||
+        (row.code &&
+          stat.productSku &&
+          row.code.toLowerCase() === stat.productSku.toLowerCase()) ||
+        row.title.toLowerCase() === stat.productName.toLowerCase(),
+    );
+    if (alreadyListed) {
+      return;
+    }
+    merged.push({
+      key: `purchase-${stat.id}`,
+      id: stat.id,
+      title: stat.productName,
+      code: stat.productSku,
+      meta: stat.productSku ? `SKU ${stat.productSku}` : '',
+      photoUrl: '',
+      price: null,
+      isVariantRow: false,
+      purchase: stat,
+    });
+  });
+
+  return merged;
+}
+
+function findPurchaseStatForCatalogRow(
+  purchaseStats: KolamVendorPurchaseProductStat[],
+  row: { id: string; title: string; code: string },
+) {
+  const byId = purchaseStats.find(stat => stat.id === row.id);
+  if (byId) {
+    return byId;
+  }
+  if (row.code) {
+    const bySku = purchaseStats.find(
+      stat =>
+        stat.productSku &&
+        stat.productSku.toLowerCase() === row.code.toLowerCase(),
+    );
+    if (bySku) {
+      return bySku;
+    }
+  }
+  return (
+    purchaseStats.find(
+      stat =>
+        stat.productName.trim().toLowerCase() ===
+        row.title.trim().toLowerCase(),
+    ) ?? null
+  );
+}
+
+function SupplierCatalogPurchaseRow({
+  row,
+  scope,
+}: {
+  row: SupplierCatalogPurchaseRowData;
+  scope: 'product' | 'species';
+}) {
+  const purchaseMeta = row.purchase
+    ? [
+        `qty ${row.purchase.totalQuantityOrdered.toLocaleString('id-ID')} / ${row.purchase.totalQuantityReceived.toLocaleString('id-ID')}`,
+        `${row.purchase.orderCount} PO`,
+        row.purchase.lastPurchase
+          ? formatSupplierDateTime(row.purchase.lastPurchase)
+          : null,
+      ]
+        .filter(Boolean)
+        .join(' · ')
+    : '';
+
+  return (
+    <Pressable
+      onPress={row.onPress}
+      style={[
+        styles.catalogRow,
+        row.isVariantRow ? styles.catalogRowVariant : null,
+      ]}
+    >
+      {row.isVariantRow ? (
+        <Text style={styles.catalogVariantMark}>↳</Text>
+      ) : row.photoUrl ? (
+        <KolamRemoteImage
+          accessibilityLabel={row.title}
+          resizeMode="cover"
+          scope={scope}
+          sourceUri={row.photoUrl}
+          style={styles.catalogThumb}
+        />
+      ) : (
+        <View style={styles.catalogThumbFallback}>
+          <Text style={styles.thumbFallbackText}>
+            {row.title.slice(0, 1).toUpperCase()}
+          </Text>
+        </View>
+      )}
+      <View style={styles.catalogCopy}>
+        <Text
+          numberOfLines={2}
+          style={[
+            styles.catalogTitle,
+            row.isVariantRow ? styles.catalogVariantTitle : null,
+            row.italic ? styles.catalogItalic : null,
+          ]}
+        >
+          {row.title}
+        </Text>
+        <Text numberOfLines={2} style={styles.rowMeta}>
+          {[row.meta || null, purchaseMeta || null]
+            .filter(Boolean)
+            .join(' · ') || '—'}
+        </Text>
+      </View>
+      <Text style={styles.catalogPrice}>
+        {row.purchase
+          ? formatRupiah(row.purchase.totalValue)
+          : row.price != null
+          ? formatRupiah(row.price)
+          : '—'}
+      </Text>
+    </Pressable>
+  );
 }
 
 function KolamSupplierForm({
