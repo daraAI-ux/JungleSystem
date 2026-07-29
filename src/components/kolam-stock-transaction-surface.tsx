@@ -9,10 +9,9 @@ import {
   crossSyncOriginLabel,
   crossSyncPlatformLabel,
   crossSyncSummaryLabel,
-  crossSyncTargetStatusLabel,
-  hasStockTransactionCrossSyncAudit,
   hasStockTransactionFinanceVerification,
   isKolamStockTransactionListRoute,
+  resolveStockTxCrossSyncDisplay,
 } from '../domain/kolam-stock-transaction';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { getKolamFileUrl } from '../lib/file-url';
@@ -668,31 +667,46 @@ function KolamStockTransactionDetail({
         />
       </KolamContentFrame>
 
-      {hasStockTransactionCrossSyncAudit(tx.crossSync) && tx.crossSync ? (
-        <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
-          <Text style={styles.sectionTitle}>Sinkron marketplace</Text>
-          <Text style={styles.cellText}>
-            {crossSyncSummaryLabel(tx.crossSync.summary)}
-          </Text>
-          {tx.crossSync.originPlatform ? (
-            <Text style={styles.metaText}>
-              Asal: {crossSyncOriginLabel(tx.crossSync.originPlatform)}
-            </Text>
-          ) : null}
-          {tx.crossSync.sku ? (
-            <Text style={styles.metaText}>
-              SKU {tx.crossSync.sku}
-              {tx.crossSync.targetStock != null
-                ? ` → stok target ${tx.crossSync.targetStock}`
-                : ''}
-            </Text>
-          ) : null}
-          {tx.crossSync.targets.length ? (
-            tx.crossSync.targets.map(target => (
+      {(() => {
+        const crossSyncDisplay = resolveStockTxCrossSyncDisplay(
+          tx.crossSync,
+          tx.reason,
+        );
+        if (!crossSyncDisplay) {
+          return null;
+        }
+        return (
+          <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
+            <Text style={styles.sectionTitle}>Sinkron marketplace</Text>
+            <Text style={styles.cellText}>{crossSyncDisplay.summaryLabel}</Text>
+            {crossSyncDisplay.originPlatform ? (
+              <Text style={styles.metaText}>
+                Asal: {crossSyncOriginLabel(crossSyncDisplay.originPlatform)}
+              </Text>
+            ) : null}
+            {crossSyncDisplay.sku ? (
+              <Text style={styles.metaText}>
+                SKU {crossSyncDisplay.sku}
+                {crossSyncDisplay.targetStock != null
+                  ? ` → stok target ${crossSyncDisplay.targetStock}`
+                  : ''}
+              </Text>
+            ) : null}
+            {crossSyncDisplay.syncNote ? (
+              <Text style={styles.metaText}>
+                Catatan: {crossSyncDisplay.syncNote}
+              </Text>
+            ) : null}
+            {crossSyncDisplay.usedFallbackPlatforms ? (
+              <Text style={styles.metaText}>
+                Target platform dari catatan sync (audit kosong).
+              </Text>
+            ) : null}
+            {crossSyncDisplay.targets.map(target => (
               <View key={target.platform} style={styles.crossSyncTarget}>
                 <Text style={styles.cellText}>
                   {crossSyncPlatformLabel(target.platform)} ·{' '}
-                  {crossSyncTargetStatusLabel(target.status)}
+                  {target.statusLabel}
                 </Text>
                 {target.taskId ? (
                   <Text style={styles.metaText}>Task: {target.taskId}</Text>
@@ -710,14 +724,10 @@ function KolamStockTransactionDetail({
                   </Text>
                 ) : null}
               </View>
-            ))
-          ) : (
-            <Text style={styles.metaText}>
-              Belum ada target platform tercatat.
-            </Text>
-          )}
-        </KolamContentFrame>
-      ) : null}
+            ))}
+          </KolamContentFrame>
+        );
+      })()}
 
       {showFinance ? (
         <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">

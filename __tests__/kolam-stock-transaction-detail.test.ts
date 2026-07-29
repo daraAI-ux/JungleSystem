@@ -6,6 +6,8 @@ import {
   hasStockTransactionCrossSyncAudit,
   isKolamStockTransactionDetailRoute,
   normalizeKolamStockTransaction,
+  parseStockTxMarketplaceSyncNote,
+  resolveStockTxCrossSyncDisplay,
 } from '../src/domain/kolam-stock-transaction';
 
 describe('Kolam stock transaction detail domain', () => {
@@ -77,6 +79,94 @@ describe('Kolam stock transaction detail domain', () => {
     expect(canVerifyStockTransaction(tx)).toBe(true);
     expect(canCancelFinanceStockTransaction(tx)).toBe(true);
     expect(tx.target?.href).toBe('/products/p1');
+
+    const display = resolveStockTxCrossSyncDisplay(tx.crossSync, tx.reason);
+    expect(display?.usedFallbackPlatforms).toBe(false);
+    expect(display?.targets).toEqual([
+      expect.objectContaining({
+        platform: 'tokopedia',
+        statusLabel: 'Menunggu AM',
+        fromFallback: false,
+      }),
+    ]);
+  });
+
+  it('falls back to reason sync note and expected platforms when audit targets empty', () => {
+    const tx = normalizeKolamStockTransaction({
+      _id: 'tx-sync-empty',
+      source: 'stock-opname',
+      reason:
+        'Opname rak A | Sync ke semua platform: sukses (SKU-A) | lain-lain',
+      marketplaceCrossSync: {
+        summary: 'unknown',
+        targets: [],
+      },
+    });
+
+    expect(parseStockTxMarketplaceSyncNote(tx.reason)).toBe('sukses (SKU-A)');
+    expect(hasStockTransactionCrossSyncAudit(tx.crossSync, tx.reason)).toBe(
+      true,
+    );
+    expect(hasStockTransactionCrossSyncAudit(tx.crossSync)).toBe(false);
+
+    const display = resolveStockTxCrossSyncDisplay(tx.crossSync, tx.reason);
+    expect(display).toMatchObject({
+      summaryLabel: 'Sync OK',
+      syncNote: 'sukses (SKU-A)',
+      usedFallbackPlatforms: true,
+    });
+    expect(display?.targets).toEqual([
+      expect.objectContaining({
+        platform: 'tokopedia',
+        statusLabel: 'Berhasil',
+        fromFallback: true,
+      }),
+      expect.objectContaining({
+        platform: 'shopee',
+        statusLabel: 'Berhasil',
+        fromFallback: true,
+      }),
+    ]);
+  });
+
+  it('hides empty unknown audit without sync note', () => {
+    const tx = normalizeKolamStockTransaction({
+      _id: 'tx-empty',
+      source: 'stock-opname',
+      reason: 'Tanpa sync',
+      marketplaceCrossSync: {
+        summary: 'unknown',
+        targets: [],
+      },
+    });
+    expect(hasStockTransactionCrossSyncAudit(tx.crossSync, tx.reason)).toBe(
+      false,
+    );
+    expect(resolveStockTxCrossSyncDisplay(tx.crossSync, tx.reason)).toBeNull();
+  });
+
+  it('parses partial sync note per platform', () => {
+    const display = resolveStockTxCrossSyncDisplay(
+      {
+        summary: 'unknown',
+        originPlatform: '',
+        sku: '',
+        targetStock: null,
+        targets: [],
+      },
+      'Sync ke semua platform: sebagian — ok: tokopedia; gagal: shopee (timeout)',
+    );
+    expect(display?.summaryLabel).toBe('Sync sebagian');
+    expect(display?.targets).toEqual([
+      expect.objectContaining({
+        platform: 'tokopedia',
+        statusLabel: 'Berhasil',
+      }),
+      expect.objectContaining({
+        platform: 'shopee',
+        statusLabel: 'Gagal',
+      }),
+    ]);
   });
 
   it('hides verify/cancel when already verified or finance cancelled', () => {
