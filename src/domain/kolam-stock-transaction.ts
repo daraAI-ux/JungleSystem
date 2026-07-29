@@ -667,8 +667,17 @@ export function normalizeKolamStockTransaction(
     financeCancelled,
     financeCancelledAt,
     statusLabel: getStatusLabel(status, source, financeCancelled),
-    financeNote: getFinanceNote(source, status, financeCancelled),
-    verificationHint: getVerificationHint(status, financeCancelled),
+    financeNote: getFinanceNote(
+      source,
+      status,
+      financeCancelled,
+      walletTransaction,
+    ),
+    verificationHint: getVerificationHint(
+      status,
+      financeCancelled,
+      walletTransaction,
+    ),
     financeStatusLabel: getFinanceStatusLabel(
       financeCancelled,
       walletTransaction,
@@ -1021,6 +1030,7 @@ function getFinanceNote(
   source: string,
   status: KolamStockTransactionStatus | '',
   financeCancelled: boolean,
+  wallet: KolamStockTransactionWallet | null,
 ) {
   if (!hasStockTransactionFinanceVerification(source)) {
     return '';
@@ -1028,23 +1038,38 @@ function getFinanceNote(
   if (financeCancelled) {
     return 'Hanya perubahan stok';
   }
-  if (status === 'verified') {
-    return 'Debit dompet dikonfirmasi';
+  if (!wallet) {
+    return 'Tidak ada debit dompet';
   }
-  return 'Debit dompet tertunda atau tidak ada';
+  const debit = formatWalletDebitSummary(wallet);
+  if (status === 'verified' || wallet.confirmStatus === 'confirmed') {
+    return `Debit dikonfirmasi: ${debit}`;
+  }
+  if (wallet.confirmStatus === 'rejected') {
+    return `Debit ditolak: ${debit}`;
+  }
+  return `Debit tertunda: ${debit}`;
 }
 
 function getVerificationHint(
   status: KolamStockTransactionStatus | '',
   financeCancelled: boolean,
+  wallet: KolamStockTransactionWallet | null,
 ) {
   if (status === 'verified' || financeCancelled) {
-    return financeCancelled
-      ? 'Selesai; debit dompet dibatalkan (hanya perubahan stok).'
-      : 'Disetujui; debit dompet (jika ada) sudah diterapkan.';
+    if (financeCancelled) {
+      return 'Selesai; debit dompet dibatalkan (hanya perubahan stok).';
+    }
+    if (wallet) {
+      return `Disetujui; debit ${formatWalletDebitSummary(wallet)} sudah diterapkan.`;
+    }
+    return 'Disetujui; tidak ada debit dompet.';
   }
   if (status === 'unverified') {
-    return 'Stok berubah; debit dompet belum dikonfirmasi atau dibatalkan.';
+    if (wallet) {
+      return `Stok berubah; debit ${formatWalletDebitSummary(wallet)} belum dikonfirmasi.`;
+    }
+    return 'Stok berubah; tidak ada debit dompet tertaut.';
   }
   return '';
 }
@@ -1057,15 +1082,15 @@ function getFinanceStatusLabel(
     return 'Dibatalkan';
   }
   if (!wallet) {
-    return 'Tidak ada';
+    return 'Tidak ada debit dompet';
   }
   if (wallet.confirmStatus === 'confirmed') {
-    return 'Dikonfirmasi (dompet didebit)';
+    return 'Dikonfirmasi';
   }
   if (wallet.confirmStatus === 'rejected') {
     return 'Ditolak';
   }
-  return 'Tertunda (belum dikonfirmasi)';
+  return 'Tertunda';
 }
 
 function getFinanceStatusHint(
@@ -1076,12 +1101,18 @@ function getFinanceStatusHint(
     return 'Finance diputus. Hanya stok yang berubah; tidak ada uang masuk/keluar.';
   }
   if (!wallet) {
-    return 'Hanya stok (tidak ada transaksi dompet tertaut).';
+    return 'Tidak ada transaksi dompet tertaut pada transaksi ini.';
   }
-  if (wallet.confirmStatus === 'confirmed') {
-    return 'Jumlah sudah dipotong dari dompet.';
-  }
-  return 'Klik Verifikasi untuk mengonfirmasi, atau Batalkan Finance untuk memutus tautan.';
+  return formatWalletDebitSummary(wallet);
+}
+
+function formatWalletDebitSummary(wallet: KolamStockTransactionWallet) {
+  const name = wallet.walletName?.trim() || 'Dompet';
+  return `${name} · ${formatWalletAmount(wallet.amount)}`;
+}
+
+function formatWalletAmount(amount: number) {
+  return `Rp ${Math.round(Number(amount) || 0).toLocaleString('id-ID')}`;
 }
 
 function normalizeStatus(value: string): KolamStockTransactionStatus | '' {

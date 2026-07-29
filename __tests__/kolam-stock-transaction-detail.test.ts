@@ -79,6 +79,10 @@ describe('Kolam stock transaction detail domain', () => {
     expect(canVerifyStockTransaction(tx)).toBe(true);
     expect(canCancelFinanceStockTransaction(tx)).toBe(true);
     expect(tx.target?.href).toBe('/products/p1');
+    expect(tx.financeNote).toBe('Debit tertunda: Kas utama · Rp 15.000');
+    expect(tx.verificationHint).toContain('Kas utama');
+    expect(tx.financeStatusLabel).toBe('Tertunda');
+    expect(tx.financeStatusHint).toBe('Kas utama · Rp 15.000');
 
     const display = resolveStockTxCrossSyncDisplay(tx.crossSync, tx.reason);
     expect(display?.usedFallbackPlatforms).toBe(false);

@@ -998,6 +998,14 @@ function KolamProductDetailView({
     [controller.selectedProduct],
   );
   const shellLabels = getProductDetailShellLabels(product?.type === 'raw' || isRawCatalog);
+  const mediaItems = React.useMemo(
+    () => (product ? createProductMediaItems(product) : []),
+    [product],
+  );
+  const photos = React.useMemo(
+    () => mediaItems.filter(item => item.type === 'image').map(item => item.uri),
+    [mediaItems],
+  );
 
   if (controller.mode === 'new') {
     return <ProductEditFormPage controller={controller} onCancel={onBack} />;
@@ -1022,11 +1030,6 @@ function KolamProductDetailView({
     );
   }
 
-  const mediaItems = React.useMemo(() => createProductMediaItems(product), [product]);
-  const photos = React.useMemo(
-    () => mediaItems.filter(item => item.type === 'image').map(item => item.uri),
-    [mediaItems],
-  );
   const statusIntent = product.stock <= 0 ? 'danger' : product.stock <= product.lowStockThreshold ? 'warning' : 'success';
   const productCode = getProductCode(product);
 

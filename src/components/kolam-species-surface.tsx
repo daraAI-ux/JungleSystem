@@ -4795,7 +4795,7 @@ function KolamSpeciesDetail({
             value: getMarketplaceSyncLabel(item),
             valueNode: (
               <KolamMarketplaceSyncPlatformList
-                platforms={item.marketplaceSync.platforms}
+                platforms={item.marketplaceSync?.platforms ?? []}
               />
             ),
           },
@@ -5216,6 +5216,16 @@ function normalizeSpeciesDetailItem(item: KolamSpecies): KolamSpecies {
       : [],
     links: Array.isArray(item.links) ? item.links : [],
     locales: Array.isArray(item.locales) ? item.locales : [],
+    marketplaceSync: {
+      label: item.marketplaceSync?.label || 'Belum sinkron',
+      lastSyncedAt: item.marketplaceSync?.lastSyncedAt,
+      platforms: Array.isArray(item.marketplaceSync?.platforms)
+        ? item.marketplaceSync.platforms
+        : [],
+      pricePlatforms: Array.isArray(item.marketplaceSync?.pricePlatforms)
+        ? item.marketplaceSync.pricePlatforms
+        : [],
+    },
     packings: Array.isArray(item.packings) ? item.packings : [],
     photoUris: Array.isArray(item.photoUris) ? item.photoUris : [],
     tags: Array.isArray(item.tags) ? item.tags : [],

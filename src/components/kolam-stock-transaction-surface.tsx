@@ -548,29 +548,47 @@ function KolamStockTransactionDetail({
   );
 
   if (showFinance) {
-    infoRows.push(
-      {
-        id: 'verification',
-        label: 'Status verifikasi',
-        value: tx.statusLabel,
-        meta: tx.verificationHint || '',
-        tone:
-          tx.status === 'verified' || tx.financeCancelled
-            ? 'success'
-            : 'warning',
-      },
-      {
-        id: 'finance-status',
-        label: 'Status finance',
-        value: tx.financeStatusLabel,
-        meta: tx.financeStatusHint || '',
-        tone: tx.financeCancelled
-          ? 'warning'
-          : tx.walletTransaction?.confirmStatus === 'confirmed'
+    infoRows.push({
+      id: 'verification',
+      label: 'Status verifikasi',
+      value: tx.statusLabel,
+      meta: tx.verificationHint || '',
+      tone:
+        tx.status === 'verified' || tx.financeCancelled
           ? 'success'
-          : 'default',
-      },
-    );
+          : 'warning',
+    });
+
+    if (tx.financeCancelled) {
+      infoRows.push({
+        id: 'wallet-debit',
+        label: 'Debit dompet',
+        value: 'Dibatalkan',
+        meta: 'Hanya perubahan stok; tidak ada uang masuk/keluar.',
+        tone: 'warning',
+      });
+    } else if (tx.walletTransaction) {
+      infoRows.push({
+        id: 'wallet-debit',
+        label: 'Debit dompet',
+        value: tx.walletTransaction.walletName || 'Dompet',
+        meta: `${formatCurrency(tx.walletTransaction.amount)} · ${tx.financeStatusLabel}`,
+        tone:
+          tx.walletTransaction.confirmStatus === 'confirmed'
+            ? 'success'
+            : tx.walletTransaction.confirmStatus === 'rejected'
+            ? 'danger'
+            : 'warning',
+      });
+    } else {
+      infoRows.push({
+        id: 'wallet-debit',
+        label: 'Debit dompet',
+        value: 'Tidak ada',
+        meta: 'Tidak ada transaksi dompet tertaut pada transaksi ini.',
+        tone: 'default',
+      });
+    }
   }
 
   if (showFinance && tx.verifiedAt) {
@@ -735,64 +753,6 @@ function KolamStockTransactionDetail({
           </KolamContentFrame>
         );
       })()}
-
-      {showFinance ? (
-        <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
-          <Text style={styles.sectionTitle}>Finance</Text>
-          {tx.financeCancelled ? (
-            <View style={styles.warningBox}>
-              <Text style={styles.warningTitle}>Finance dibatalkan</Text>
-              <Text style={styles.metaText}>
-                {formatDateTime(tx.financeCancelledAt)}
-                {tx.financeCancelledBy
-                  ? ` · ${tx.financeCancelledBy.name}`
-                  : ''}
-              </Text>
-            </View>
-          ) : tx.walletTransaction ? (
-            <>
-              <KolamDescriptionList
-                accessibilityLabel="Detail finance transaksi stok"
-                rows={[
-                  {
-                    id: 'wallet',
-                    label: 'Dompet',
-                    value: tx.walletTransaction.walletName,
-                    meta: '',
-                    tone: 'default',
-                  },
-                  {
-                    id: 'amount',
-                    label: 'Jumlah',
-                    value: formatCurrency(tx.walletTransaction.amount),
-                    meta: '',
-                    tone: 'default',
-                  },
-                  {
-                    id: 'wallet-status',
-                    label: 'Status',
-                    value: tx.walletTransaction.confirmStatus,
-                    meta: '',
-                    tone:
-                      tx.walletTransaction.confirmStatus === 'confirmed'
-                        ? 'success'
-                        : tx.walletTransaction.confirmStatus === 'rejected'
-                        ? 'danger'
-                        : 'warning',
-                  },
-                ]}
-              />
-              <Text style={styles.metaText}>
-                Data dompet di atas hanya catatan legacy/audit.
-              </Text>
-            </>
-          ) : (
-            <Text style={styles.metaText}>
-              Lanjutkan proses verifikasi finance.
-            </Text>
-          )}
-        </KolamContentFrame>
-      ) : null}
 
       {photoItems.length ? (
         <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
@@ -1741,19 +1701,6 @@ const styles = StyleSheet.create({
   },
   crossSyncExtraRow: {
     gap: 2,
-  },
-  warningBox: {
-    gap: 4,
-    padding: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: V.colors.warning,
-    backgroundColor: V.colors.warningSoft,
-  },
-  warningTitle: {
-    color: V.colors.warning,
-    fontSize: 13,
-    fontWeight: '600',
   },
   photoGrid: {
     flexDirection: 'row',
