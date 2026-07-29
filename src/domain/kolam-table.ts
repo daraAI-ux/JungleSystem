@@ -6,6 +6,9 @@ export type KolamTableId =
   | 'customer'
   | 'iucn-status'
   | 'location'
+  | 'location-asset'
+  | 'location-enclosure'
+  | 'location-product'
   | 'packing-material'
   | 'sales'
   | 'species'
@@ -233,6 +236,29 @@ const kolamTableColumns: Record<KolamTableId, KolamTableColumn[]> = {
     { id: 'marketplace', label: 'Telepon', align: 'left', width: 132 },
     { id: 'status', label: 'Deskripsi', align: 'left', width: 220 },
     { id: 'amount', label: 'Dibuat', align: 'right', width: 128 },
+    { id: 'actions', label: '', align: 'right', width: 64 },
+  ],
+  'location-product': [
+    { id: 'meta', label: '', align: 'left', width: 64 },
+    { id: 'primary', label: 'Nama', align: 'left' },
+    { id: 'children', label: 'SKU', align: 'left', width: 118 },
+    { id: 'amount', label: 'Stok', align: 'right', width: 90 },
+    { id: 'status', label: 'Status', align: 'left', width: 126 },
+    { id: 'actions', label: '', align: 'right', width: 64 },
+  ],
+  'location-enclosure': [
+    { id: 'meta', label: '', align: 'left', width: 64 },
+    { id: 'children', label: 'Kode', align: 'left', width: 104 },
+    { id: 'primary', label: 'Nama', align: 'left' },
+    { id: 'notes', label: 'Tipe', align: 'left', width: 120 },
+    { id: 'marketplace', label: 'PIC', align: 'left', width: 140 },
+    { id: 'status', label: 'Status', align: 'left', width: 126 },
+    { id: 'actions', label: '', align: 'right', width: 64 },
+  ],
+  'location-asset': [
+    { id: 'primary', label: 'Nama', align: 'left' },
+    { id: 'meta', label: 'Kode', align: 'left', width: 126 },
+    { id: 'status', label: 'Status', align: 'left', width: 126 },
     { id: 'actions', label: '', align: 'right', width: 64 },
   ],
   species: [

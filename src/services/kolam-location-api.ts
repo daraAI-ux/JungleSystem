@@ -49,6 +49,40 @@ export interface KolamLocationDetailItem extends KolamLocationListItem {
   tertiary: KolamLocationListItem[];
 }
 
+export interface KolamLocationProductRow {
+  id: string;
+  name: string;
+  sku: string;
+  sellable: boolean | null;
+  stock: number;
+  status: string;
+  thumbnailImage: string;
+  type: string;
+}
+
+export interface KolamLocationEnclosureRow {
+  id: string;
+  code: string;
+  name: string;
+  type: string;
+  assignedToName: string;
+  coverPhotoUrl: string;
+  status: string;
+}
+
+export interface KolamLocationAssetRow {
+  id: string;
+  code: string;
+  name: string;
+  purchasePrice: number | null;
+  status: string;
+}
+
+export interface KolamLocationInventoryResult<TItem> {
+  items: TItem[];
+  total: number;
+}
+
 export interface KolamLocationPagination {
   page: number;
   limit: number;
@@ -137,6 +171,38 @@ export async function getKolamLocationDetail(
   return location;
 }
 
+export async function getKolamLocationProducts(
+  locationId: string,
+): Promise<KolamLocationInventoryResult<KolamLocationProductRow>> {
+  const response = await kolamRequest<unknown>(`/location/${locationId}/products`);
+  return normalizeKolamLocationInventoryResult(
+    response,
+    normalizeKolamLocationProductRow,
+  );
+}
+
+export async function getKolamLocationEnclosures(
+  locationId: string,
+): Promise<KolamLocationInventoryResult<KolamLocationEnclosureRow>> {
+  const response = await kolamRequest<unknown>(
+    `/location/${locationId}/enclosures`,
+  );
+  return normalizeKolamLocationInventoryResult(
+    response,
+    normalizeKolamLocationEnclosureRow,
+  );
+}
+
+export async function getKolamLocationAssets(
+  locationId: string,
+): Promise<KolamLocationInventoryResult<KolamLocationAssetRow>> {
+  const response = await kolamRequest<unknown>(`/location/${locationId}/assets`);
+  return normalizeKolamLocationInventoryResult(
+    response,
+    normalizeKolamLocationAssetRow,
+  );
+}
+
 function normalizeKolamLocationListResult(
   payload: unknown,
   fallback: Required<Pick<KolamLocationListQuery, 'limit' | 'page'>>,
@@ -217,6 +283,101 @@ function normalizeKolamLocationChildList(value: unknown) {
         .map(normalizeKolamLocationListItem)
         .filter((item): item is KolamLocationListItem => Boolean(item))
     : [];
+}
+
+function normalizeKolamLocationInventoryResult<TItem>(
+  payload: unknown,
+  normalizeItem: (value: unknown) => TItem | null,
+): KolamLocationInventoryResult<TItem> {
+  const record = asRecord(payload);
+  const meta = asRecord(record.meta);
+  const rows = Array.isArray(record.data)
+    ? record.data
+    : Array.isArray(payload)
+      ? payload
+      : [];
+  const items = rows
+    .map(normalizeItem)
+    .filter((item): item is TItem => Boolean(item));
+
+  return {
+    items,
+    total: getNumber(meta, 'total') ?? items.length,
+  };
+}
+
+function normalizeKolamLocationProductRow(
+  value: unknown,
+): KolamLocationProductRow | null {
+  const record = asRecord(value);
+  const id = getString(record, '_id') || getString(record, 'id');
+  const name = getString(record, 'name');
+
+  if (!id || !name) {
+    return null;
+  }
+
+  return {
+    id,
+    name,
+    sellable: getBoolean(record, 'sellable'),
+    sku: getString(record, 'sku'),
+    status: getString(record, 'status'),
+    stock: getNumber(record, 'stock') ?? 0,
+    thumbnailImage: getString(record, 'thumbnailImage'),
+    type: getString(record, 'type'),
+  };
+}
+
+function normalizeKolamLocationEnclosureRow(
+  value: unknown,
+): KolamLocationEnclosureRow | null {
+  const record = asRecord(value);
+  const id = getString(record, '_id') || getString(record, 'id');
+  const name =
+    getString(record, 'enclosure_name') ||
+    getString(record, 'enclosureName') ||
+    getString(record, 'name');
+
+  if (!id || !name) {
+    return null;
+  }
+
+  return {
+    assignedToName: getAssignedToName(record.assignedTo),
+    code:
+      getString(record, 'enclosure_code') ||
+      getString(record, 'enclosureCode') ||
+      getString(record, 'code'),
+    coverPhotoUrl: getString(record, 'coverPhotoUrl'),
+    id,
+    name,
+    status: getString(record, 'status'),
+    type:
+      getString(record, 'enclosure_type') ||
+      getString(record, 'enclosureType') ||
+      getString(record, 'type'),
+  };
+}
+
+function normalizeKolamLocationAssetRow(
+  value: unknown,
+): KolamLocationAssetRow | null {
+  const record = asRecord(value);
+  const id = getString(record, '_id') || getString(record, 'id');
+  const name = getString(record, 'name');
+
+  if (!id || !name) {
+    return null;
+  }
+
+  return {
+    code: getString(record, 'code'),
+    id,
+    name,
+    purchasePrice: getNumber(record, 'purchasePrice') ?? null,
+    status: getString(record, 'status'),
+  };
 }
 
 function normalizeKolamLocationParent(
@@ -317,6 +478,24 @@ function getNumber(record: Record<string, unknown>, key: string) {
   }
 
   return undefined;
+}
+
+function getBoolean(record: Record<string, unknown>, key: string) {
+  const value = record[key];
+
+  return typeof value === 'boolean' ? value : null;
+}
+
+function getAssignedToName(value: unknown) {
+  const record = asRecord(value);
+
+  return (
+    getString(record, 'name') ||
+    getString(record, 'fullName') ||
+    [getString(record, 'firstName'), getString(record, 'lastName')]
+      .filter(Boolean)
+      .join(' ')
+  );
 }
 
 function kolamRequest<T>(

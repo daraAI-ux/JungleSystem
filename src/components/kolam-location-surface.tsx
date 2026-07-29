@@ -9,15 +9,22 @@ import {
 import {getKolamTableColumns} from '../domain/kolam-table';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {
+  getKolamLocationAssets,
+  getKolamLocationEnclosures,
   getKolamLocationParentLookup,
   getKolamLocationDetail,
   getKolamLocationList,
+  getKolamLocationProducts,
+  type KolamLocationAssetRow,
   type KolamLocationDetailItem,
+  type KolamLocationEnclosureRow,
   type KolamLocationListItem,
   type KolamLocationListTypeFilter,
   type KolamLocationOption,
   type KolamLocationPagination,
+  type KolamLocationProductRow,
 } from '../services/kolam-location-api';
+import {getKolamFileUrl} from '../lib/file-url';
 import {KolamButton} from './kolam-button';
 import {KolamCatalogListTableShell} from './kolam-catalog-list-table-shell';
 import {KolamContentFrame} from './kolam-content-frame';
@@ -35,6 +42,7 @@ import {
 } from './kolam-dropdown-select';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamFormTextField} from './kolam-form-text-field';
+import {KolamRemoteImage} from './kolam-remote-image';
 import {
   KolamStatusBadge,
   type KolamStatusBadgeIntent,
@@ -234,6 +242,10 @@ function KolamLocationDetail({
           <KolamLocationTimestampsCard location={location} />
         </View>
       </View>
+      <KolamLocationInventorySection
+        locationId={location.id}
+        onRouteChange={onRouteChange}
+      />
     </View>
   );
 }
@@ -432,6 +444,130 @@ function KolamLocationTimestampsCard({
           label="Diperbarui"
           value={formatLocationDateTime(location.updatedAt)}
         />
+      </View>
+    </KolamContentFrame>
+  );
+}
+
+function KolamLocationInventorySection({
+  locationId,
+  onRouteChange,
+}: {
+  locationId: string;
+  onRouteChange?: (route: string) => void;
+}) {
+  const [products, setProducts] = React.useState<KolamLocationProductRow[]>([]);
+  const [enclosures, setEnclosures] = React.useState<KolamLocationEnclosureRow[]>([]);
+  const [assets, setAssets] = React.useState<KolamLocationAssetRow[]>([]);
+  const [totals, setTotals] = React.useState({
+    assets: 0,
+    enclosures: 0,
+    products: 0,
+  });
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState('');
+
+  React.useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setError('');
+
+    void Promise.all([
+      getKolamLocationProducts(locationId),
+      getKolamLocationEnclosures(locationId),
+      getKolamLocationAssets(locationId),
+    ])
+      .then(([productResult, enclosureResult, assetResult]) => {
+        if (!active) {
+          return;
+        }
+
+        setProducts(productResult.items);
+        setEnclosures(enclosureResult.items);
+        setAssets(assetResult.items);
+        setTotals({
+          assets: assetResult.total,
+          enclosures: enclosureResult.total,
+          products: productResult.total,
+        });
+      })
+      .catch(() => {
+        if (active) {
+          setProducts([]);
+          setEnclosures([]);
+          setAssets([]);
+          setTotals({assets: 0, enclosures: 0, products: 0});
+          setError('Gagal memuat inventaris lokasi.');
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [locationId]);
+
+  return (
+    <KolamContentFrame variant="settingsWebConfig" style={styles.detailCard}>
+      <SectionTitle
+        description="Produk, enclosure, dan aset yang terhubung ke lokasi ini."
+        title="Inventaris di lokasi"
+      />
+      {error ? (
+        <KolamStatusBadge
+          intent="danger"
+          label={error}
+          numberOfLines={2}
+          style={styles.errorBadge}
+        />
+      ) : null}
+      <View style={styles.inventoryStack}>
+        <InventoryTableBlock
+          empty={products.length === 0}
+          loading={loading}
+          subtitle={`${totals.products || products.length} item`}
+          tableId="location-product"
+          title="Produk">
+          {products.map(product => (
+            <LocationProductInventoryRow
+              key={product.id}
+              onRouteChange={onRouteChange}
+              product={product}
+            />
+          ))}
+        </InventoryTableBlock>
+        <InventoryTableBlock
+          empty={enclosures.length === 0}
+          loading={loading}
+          subtitle={`${totals.enclosures || enclosures.length} unit`}
+          tableId="location-enclosure"
+          title="Enclosure">
+          {enclosures.map(enclosure => (
+            <LocationEnclosureInventoryRow
+              enclosure={enclosure}
+              key={enclosure.id}
+              onRouteChange={onRouteChange}
+            />
+          ))}
+        </InventoryTableBlock>
+        <InventoryTableBlock
+          empty={assets.length === 0}
+          loading={loading}
+          subtitle={`${totals.assets || assets.length} item`}
+          tableId="location-asset"
+          title="Aset">
+          {assets.map(asset => (
+            <LocationAssetInventoryRow
+              asset={asset}
+              key={asset.id}
+              onRouteChange={onRouteChange}
+            />
+          ))}
+        </InventoryTableBlock>
       </View>
     </KolamContentFrame>
   );
@@ -870,6 +1006,171 @@ function ContactBlock({
   );
 }
 
+function InventoryTableBlock({
+  children,
+  empty,
+  loading,
+  subtitle,
+  tableId,
+  title,
+}: {
+  children: React.ReactNode;
+  empty: boolean;
+  loading: boolean;
+  subtitle: string;
+  tableId: Parameters<typeof getKolamTableColumns>[0];
+  title: string;
+}) {
+  return (
+    <View style={styles.inventoryBlock}>
+      <View>
+        <Text style={styles.inventoryTitle}>{title}</Text>
+        <Text style={styles.inventorySubtitle}>{subtitle}</Text>
+      </View>
+      <View style={styles.inventoryTable}>
+        <KolamDataTableHeader columns={getKolamTableColumns(tableId)} />
+        {loading ? (
+          <View style={styles.inventoryEmpty}>
+            <Text style={styles.mutedText}>Memuat {title.toLowerCase()}...</Text>
+          </View>
+        ) : empty ? (
+          <View style={styles.inventoryEmpty}>
+            <Text style={styles.mutedText}>{title}: tidak ada data.</Text>
+          </View>
+        ) : (
+          children
+        )}
+      </View>
+    </View>
+  );
+}
+
+function LocationProductInventoryRow({
+  onRouteChange,
+  product,
+}: {
+  onRouteChange?: (route: string) => void;
+  product: KolamLocationProductRow;
+}) {
+  const imageUri = getKolamFileUrl(product.thumbnailImage);
+
+  return (
+    <KolamDataTableRowFrame>
+      <View style={styles.inventoryPhotoCell}>
+        {imageUri ? (
+          <KolamRemoteImage
+            accessibilityLabel={`Foto ${product.name}`}
+            resizeMode="cover"
+            scope="location-product"
+            sourceUri={imageUri}
+            style={styles.inventoryPhoto}
+          />
+        ) : (
+          <Text style={styles.mutedText}>-</Text>
+        )}
+      </View>
+      <View style={styles.inventoryNameCell}>
+        <Text style={styles.inventoryNameText}>{product.name}</Text>
+      </View>
+      <KolamDataTableMetaCell style={styles.inventoryCodeCell}>
+        {product.sku || '-'}
+      </KolamDataTableMetaCell>
+      <KolamDataTableAmountCell style={styles.inventoryStockCell}>
+        {product.stock}
+      </KolamDataTableAmountCell>
+      <View style={styles.inventoryStatusCell}>
+        <KolamStatusBadge
+          intent={product.sellable ? 'success' : 'secondary'}
+          label={product.sellable ? 'Layak Jual' : 'Tidak Layak Jual'}
+        />
+      </View>
+      <View style={styles.inventoryActionCell}>
+        <KolamButton
+          label="Lihat"
+          onPress={() => onRouteChange?.(`/products/${product.id}`)}
+        />
+      </View>
+    </KolamDataTableRowFrame>
+  );
+}
+
+function LocationEnclosureInventoryRow({
+  enclosure,
+  onRouteChange,
+}: {
+  enclosure: KolamLocationEnclosureRow;
+  onRouteChange?: (route: string) => void;
+}) {
+  const imageUri = getKolamFileUrl(enclosure.coverPhotoUrl);
+
+  return (
+    <KolamDataTableRowFrame>
+      <View style={styles.inventoryPhotoCell}>
+        {imageUri ? (
+          <KolamRemoteImage
+            accessibilityLabel={`Foto ${enclosure.name}`}
+            resizeMode="cover"
+            scope="location-enclosure"
+            sourceUri={imageUri}
+            style={styles.inventoryPhoto}
+          />
+        ) : (
+          <Text style={styles.mutedText}>-</Text>
+        )}
+      </View>
+      <KolamDataTableMetaCell style={styles.enclosureCodeCell}>
+        {enclosure.code || '-'}
+      </KolamDataTableMetaCell>
+      <View style={styles.inventoryNameCell}>
+        <Text style={styles.inventoryNameText}>{enclosure.name}</Text>
+      </View>
+      <KolamDataTableMetaCell style={styles.enclosureTypeCell}>
+        {enclosure.type || '-'}
+      </KolamDataTableMetaCell>
+      <KolamDataTableMetaCell style={styles.enclosurePicCell}>
+        {enclosure.assignedToName || '-'}
+      </KolamDataTableMetaCell>
+      <KolamDataTableMetaCell style={styles.inventoryStatusTextCell}>
+        {enclosure.status || '-'}
+      </KolamDataTableMetaCell>
+      <View style={styles.inventoryActionCell}>
+        <KolamButton
+          label="Lihat"
+          onPress={() => onRouteChange?.(`/enclosures/${enclosure.id}`)}
+        />
+      </View>
+    </KolamDataTableRowFrame>
+  );
+}
+
+function LocationAssetInventoryRow({
+  asset,
+  onRouteChange,
+}: {
+  asset: KolamLocationAssetRow;
+  onRouteChange?: (route: string) => void;
+}) {
+  return (
+    <KolamDataTableRowFrame>
+      <View style={styles.inventoryNameCell}>
+        <Text style={styles.inventoryNameText}>{asset.name}</Text>
+      </View>
+      <KolamDataTableMetaCell style={styles.inventoryCodeCell}>
+        {asset.code || '-'}
+      </KolamDataTableMetaCell>
+      <KolamDataTableMetaCell style={styles.inventoryStatusTextCell}>
+        {asset.status || '-'}
+      </KolamDataTableMetaCell>
+      <View style={styles.inventoryActionCell}>
+        <KolamButton
+          label="Lihat"
+          onPress={() => onRouteChange?.(`/assets/${asset.id}`)}
+        />
+      </View>
+    </KolamDataTableRowFrame>
+  );
+}
+
 function getLocationDescendants(location: KolamLocationDetailItem) {
   const byId = new Map<string, KolamLocationListItem>();
   [
@@ -1241,6 +1542,80 @@ const styles = StyleSheet.create({
   },
   contactButton: {
     alignSelf: 'flex-start',
+  },
+  inventoryStack: {
+    gap: 16,
+  },
+  inventoryBlock: {
+    gap: 8,
+  },
+  inventoryTitle: {
+    color: V.colors.fg,
+    fontSize: 14,
+    fontWeight: '800',
+    lineHeight: 22,
+  },
+  inventorySubtitle: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  inventoryTable: {
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  inventoryEmpty: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 92,
+    padding: 16,
+  },
+  inventoryPhotoCell: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 64,
+  },
+  inventoryPhoto: {
+    borderRadius: 8,
+    height: 40,
+    width: 40,
+  },
+  inventoryNameCell: {
+    flex: 1,
+    minWidth: 0,
+  },
+  inventoryNameText: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '700',
+    lineHeight: 20,
+  },
+  inventoryCodeCell: {
+    width: 118,
+  },
+  inventoryStockCell: {
+    width: 90,
+  },
+  inventoryStatusCell: {
+    width: 126,
+  },
+  inventoryStatusTextCell: {
+    width: 126,
+  },
+  inventoryActionCell: {
+    alignItems: 'flex-end',
+    width: 64,
+  },
+  enclosureCodeCell: {
+    width: 104,
+  },
+  enclosureTypeCell: {
+    width: 120,
+  },
+  enclosurePicCell: {
+    width: 140,
   },
   mutedText: {
     color: V.colors.mutedFg,
