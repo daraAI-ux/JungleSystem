@@ -4227,156 +4227,197 @@ export function KolamSettingsWebConfigSurface({
               />
             </View>
           ) : null}
-          <KolamToggleRow
-            variant="settingsForm"
-            label="Firebase"
-            description="Aktifkan Firebase Admin untuk notifikasi."
-            active={draft.firebaseEnabled}
-            onPress={() =>
-              !disabled &&
-              setDraftField('firebaseEnabled', !draft.firebaseEnabled)
-            }
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            fieldWidth={settingsFieldWidth}
-            label="ID proyek Firebase"
-            description="ID proyek Firebase produksi."
-            value={draft.firebaseProjectId}
-            onChangeText={value => setDraftField('firebaseProjectId', value)}
-            placeholder="dunia-anura"
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            fieldWidth={settingsFieldWidth}
-            label="Email klien Firebase"
-            description="Email klien akun layanan."
-            value={draft.firebaseClientEmail}
-            onChangeText={value => setDraftField('firebaseClientEmail', value)}
-            placeholder="firebase-adminsdk@..."
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            fieldWidth={settingsFieldWidth}
-            label="Kunci privat Firebase"
-            description="Biarkan ******** agar kunci privat BE tidak dikirim ulang."
-            value={draft.firebasePrivateKey}
-            onChangeText={value => setDraftField('firebasePrivateKey', value)}
-            placeholder="********"
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            fieldWidth={settingsFieldWidth}
-            label="Server SMTP"
-            description="Server SMTP untuk email sistem."
-            value={draft.smtpHost}
-            onChangeText={value => setDraftField('smtpHost', value)}
-            placeholder="smtp.gmail.com"
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            fieldWidth={settingsFieldWidth}
-            label="Port SMTP"
-            description="Port SMTP produksi."
-            value={draft.smtpPort}
-            onChangeText={value => setDraftField('smtpPort', value)}
-            placeholder="465"
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            fieldWidth={settingsFieldWidth}
-            label="Pengguna SMTP"
-            description="Nama pengguna SMTP."
-            value={draft.smtpUser}
-            onChangeText={value => setDraftField('smtpUser', value)}
-            placeholder="mailer@duniaanura.com"
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            fieldWidth={settingsFieldWidth}
-            label="Kata sandi SMTP"
-            description="Biarkan ******** agar rahasia BE tidak dikirim ulang."
-            value={draft.smtpPass}
-            onChangeText={value => setDraftField('smtpPass', value)}
-            placeholder="********"
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            fieldWidth={settingsFieldWidth}
-            label="Email pengirim SMTP"
-            description="Alamat pengirim email sistem."
-            value={draft.smtpFromEmail}
-            onChangeText={value => setDraftField('smtpFromEmail', value)}
-            placeholder="no-reply@duniaanura.com"
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            fieldWidth={settingsFieldWidth}
-            label="Nama pengirim SMTP"
-            description="Nama pengirim email sistem."
-            value={draft.smtpFromName}
-            onChangeText={value => setDraftField('smtpFromName', value)}
-            placeholder="Kolam"
-          />
-          <KolamToggleRow
-            variant="settingsForm"
-            label="SMTP aman"
-            description="Gunakan koneksi SMTP aman."
-            active={draft.smtpSecure}
-            onPress={() =>
-              !disabled && setDraftField('smtpSecure', !draft.smtpSecure)
-            }
-          />
-          <KolamToggleRow
-            variant="settingsForm"
-            label="OTP masuk staf"
-            description="Aktifkan OTP untuk masuk staf produksi."
-            active={draft.staffOtpLoginEnabled}
-            onPress={() =>
-              !disabled &&
-              setDraftField('staffOtpLoginEnabled', !draft.staffOtpLoginEnabled)
-            }
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            fieldWidth={settingsFieldWidth}
-            label="Menit kedaluwarsa OTP"
-            description="Durasi OTP aktif sebelum kadaluarsa."
-            value={draft.staffOtpExpireMinutes}
-            onChangeText={value =>
-              setDraftField('staffOtpExpireMinutes', value)
-            }
-            placeholder="10"
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            fieldWidth={settingsFieldWidth}
-            label="Jeda kirim ulang OTP"
-            description="Jeda detik sebelum OTP boleh dikirim ulang."
-            value={draft.staffOtpResendCooldownSeconds}
-            onChangeText={value =>
-              setDraftField('staffOtpResendCooldownSeconds', value)
-            }
-            placeholder="60"
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            fieldWidth={settingsFieldWidth}
-            label="Batas percobaan OTP"
-            description="Batas percobaan OTP sebelum dikunci."
-            value={draft.staffOtpMaxAttempts}
-            onChangeText={value => setDraftField('staffOtpMaxAttempts', value)}
-            placeholder="5"
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            fieldWidth={settingsFieldWidth}
-            label="Menit kunci OTP"
-            description="Durasi penguncian setelah percobaan OTP melewati batas."
-            value={draft.staffOtpLockMinutes}
-            onChangeText={value => setDraftField('staffOtpLockMinutes', value)}
-            placeholder="15"
-          />
+          <View style={styles.marketplaceControlSection}>
+            <KolamCopyStack
+              items={[
+                {
+                  id: 'firebase-settings-title',
+                  text: 'Firebase push',
+                  style: styles.marketplaceOverviewLabel,
+                },
+                {
+                  id: 'firebase-settings-meta',
+                  text: 'Konfigurasi Firebase Admin untuk push notification produksi.',
+                  style: styles.marketplaceOverviewMeta,
+                },
+              ]}
+            />
+            <KolamToggleRow
+              variant="settingsForm"
+              label="Firebase"
+              description="Aktifkan Firebase Admin untuk notifikasi."
+              active={draft.firebaseEnabled}
+              onPress={() =>
+                !disabled &&
+                setDraftField('firebaseEnabled', !draft.firebaseEnabled)
+              }
+            />
+            <KolamTextFieldRow
+              variant="settingsForm"
+              fieldWidth={settingsFieldWidth}
+              label="ID proyek Firebase"
+              description="ID proyek Firebase produksi."
+              value={draft.firebaseProjectId}
+              onChangeText={value => setDraftField('firebaseProjectId', value)}
+              placeholder="dunia-anura"
+            />
+            <KolamTextFieldRow
+              variant="settingsForm"
+              fieldWidth={settingsFieldWidth}
+              label="Email klien Firebase"
+              description="Email klien akun layanan."
+              value={draft.firebaseClientEmail}
+              onChangeText={value =>
+                setDraftField('firebaseClientEmail', value)
+              }
+              placeholder="firebase-adminsdk@..."
+            />
+            <KolamTextFieldRow
+              variant="settingsForm"
+              fieldWidth={settingsFieldWidth}
+              label="Kunci privat Firebase"
+              description="Biarkan ******** agar kunci privat BE tidak dikirim ulang."
+              value={draft.firebasePrivateKey}
+              onChangeText={value => setDraftField('firebasePrivateKey', value)}
+              placeholder="********"
+            />
+          </View>
+          <View style={styles.marketplaceControlSection}>
+            <KolamCopyStack
+              items={[
+                {
+                  id: 'smtp-settings-title',
+                  text: 'SMTP / OTP staf',
+                  style: styles.marketplaceOverviewLabel,
+                },
+                {
+                  id: 'smtp-settings-meta',
+                  text: 'Email sistem dan OTP staf untuk akses produksi.',
+                  style: styles.marketplaceOverviewMeta,
+                },
+              ]}
+            />
+            <KolamTextFieldRow
+              variant="settingsForm"
+              fieldWidth={settingsFieldWidth}
+              label="Server SMTP"
+              description="Server SMTP untuk email sistem."
+              value={draft.smtpHost}
+              onChangeText={value => setDraftField('smtpHost', value)}
+              placeholder="smtp.gmail.com"
+            />
+            <KolamTextFieldRow
+              variant="settingsForm"
+              fieldWidth={settingsFieldWidth}
+              label="Port SMTP"
+              description="Port SMTP produksi."
+              value={draft.smtpPort}
+              onChangeText={value => setDraftField('smtpPort', value)}
+              placeholder="465"
+            />
+            <KolamTextFieldRow
+              variant="settingsForm"
+              fieldWidth={settingsFieldWidth}
+              label="Pengguna SMTP"
+              description="Nama pengguna SMTP."
+              value={draft.smtpUser}
+              onChangeText={value => setDraftField('smtpUser', value)}
+              placeholder="mailer@duniaanura.com"
+            />
+            <KolamTextFieldRow
+              variant="settingsForm"
+              fieldWidth={settingsFieldWidth}
+              label="Kata sandi SMTP"
+              description="Biarkan ******** agar rahasia BE tidak dikirim ulang."
+              value={draft.smtpPass}
+              onChangeText={value => setDraftField('smtpPass', value)}
+              placeholder="********"
+            />
+            <KolamTextFieldRow
+              variant="settingsForm"
+              fieldWidth={settingsFieldWidth}
+              label="Email pengirim SMTP"
+              description="Alamat pengirim email sistem."
+              value={draft.smtpFromEmail}
+              onChangeText={value => setDraftField('smtpFromEmail', value)}
+              placeholder="no-reply@duniaanura.com"
+            />
+            <KolamTextFieldRow
+              variant="settingsForm"
+              fieldWidth={settingsFieldWidth}
+              label="Nama pengirim SMTP"
+              description="Nama pengirim email sistem."
+              value={draft.smtpFromName}
+              onChangeText={value => setDraftField('smtpFromName', value)}
+              placeholder="Kolam"
+            />
+            <KolamToggleRow
+              variant="settingsForm"
+              label="SMTP aman"
+              description="Gunakan koneksi SMTP aman."
+              active={draft.smtpSecure}
+              onPress={() =>
+                !disabled && setDraftField('smtpSecure', !draft.smtpSecure)
+              }
+            />
+            <KolamToggleRow
+              variant="settingsForm"
+              label="OTP masuk staf"
+              description="Aktifkan OTP untuk masuk staf produksi."
+              active={draft.staffOtpLoginEnabled}
+              onPress={() =>
+                !disabled &&
+                setDraftField(
+                  'staffOtpLoginEnabled',
+                  !draft.staffOtpLoginEnabled,
+                )
+              }
+            />
+            <KolamTextFieldRow
+              variant="settingsForm"
+              fieldWidth={settingsFieldWidth}
+              label="Menit kedaluwarsa OTP"
+              description="Durasi OTP aktif sebelum kadaluarsa."
+              value={draft.staffOtpExpireMinutes}
+              onChangeText={value =>
+                setDraftField('staffOtpExpireMinutes', value)
+              }
+              placeholder="10"
+            />
+            <KolamTextFieldRow
+              variant="settingsForm"
+              fieldWidth={settingsFieldWidth}
+              label="Jeda kirim ulang OTP"
+              description="Jeda detik sebelum OTP boleh dikirim ulang."
+              value={draft.staffOtpResendCooldownSeconds}
+              onChangeText={value =>
+                setDraftField('staffOtpResendCooldownSeconds', value)
+              }
+              placeholder="60"
+            />
+            <KolamTextFieldRow
+              variant="settingsForm"
+              fieldWidth={settingsFieldWidth}
+              label="Batas percobaan OTP"
+              description="Batas percobaan OTP sebelum dikunci."
+              value={draft.staffOtpMaxAttempts}
+              onChangeText={value =>
+                setDraftField('staffOtpMaxAttempts', value)
+              }
+              placeholder="5"
+            />
+            <KolamTextFieldRow
+              variant="settingsForm"
+              fieldWidth={settingsFieldWidth}
+              label="Menit kunci OTP"
+              description="Durasi penguncian setelah percobaan OTP melewati batas."
+              value={draft.staffOtpLockMinutes}
+              onChangeText={value =>
+                setDraftField('staffOtpLockMinutes', value)
+              }
+              placeholder="15"
+            />
+          </View>
         </>
       ) : null}
       {showOperationalSettings && saveMessage ? (
