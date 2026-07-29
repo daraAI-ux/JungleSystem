@@ -11,6 +11,7 @@ import {
 import { getKolamFormSection } from '../domain/kolam-form';
 import { getKolamTableColumns } from '../domain/kolam-table';
 import {
+  buildKolamSupplierMonthlyTrendGraphItems,
   flattenKolamSupplierProductRows,
   flattenKolamSupplierSpeciesRows,
   formatKolamVendorAddress,
@@ -23,6 +24,7 @@ import {
   type KolamVendor,
   type KolamVendorStatus,
 } from '../domain/kolam-vendor';
+import { buildDashboardSalesGraphPoints } from '../domain/dashboard-sales-graph';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import {
   canEditKolamTaxPartyProfile,
@@ -38,6 +40,7 @@ import { KolamButton } from './kolam-button';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
+import { KolamDashboardSalesGraphPlot } from './kolam-dashboard-sales-graph-plot';
 import { KolamDataTableHeader } from './kolam-data-table-header';
 import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
@@ -1085,6 +1088,15 @@ function KolamSupplierPurchaseAnalytics({
       })),
     [],
   );
+  const monthlyTrendPoints = React.useMemo(
+    () =>
+      buildDashboardSalesGraphPoints(
+        buildKolamSupplierMonthlyTrendGraphItems(
+          stats?.yearly.monthlyStatistics,
+        ),
+      ),
+    [stats?.yearly.monthlyStatistics],
+  );
 
   const patchFilters = (patch: KolamSupplierAnalyticsFilters) => {
     const next: KolamSupplierAnalyticsFilters = {
@@ -1286,22 +1298,20 @@ function KolamSupplierPurchaseAnalytics({
             <Text style={styles.sectionTitle}>
               Tren bulanan ({stats.yearly.year})
             </Text>
-            <View style={styles.catalogList}>
-              {stats.yearly.monthlyStatistics.map(month => (
-                <View key={month.month} style={styles.catalogRow}>
-                  <View style={styles.catalogCopy}>
-                    <Text style={styles.catalogTitle}>{month.monthName}</Text>
-                    <Text style={styles.rowMeta}>
-                      {month.totalOrders} PO · rata-rata{' '}
-                      {formatRupiah(month.averageOrderValue)}
-                    </Text>
-                  </View>
-                  <Text style={styles.catalogPrice}>
-                    {formatRupiah(month.totalValue)}
-                  </Text>
-                </View>
-              ))}
-            </View>
+            <Text style={styles.switchHint}>
+              Nilai pembelian (IDR) per bulan
+            </Text>
+            {monthlyTrendPoints.length ? (
+              <View style={styles.trendChartFrame}>
+                <KolamDashboardSalesGraphPlot points={monthlyTrendPoints} />
+              </View>
+            ) : (
+              <KolamEmptyState
+                compact
+                message="Belum ada tren bulanan untuk tahun ini."
+                title="Grafik kosong"
+              />
+            )}
           </View>
 
           {stats.productStats.length ? (
@@ -2161,6 +2171,12 @@ const styles = StyleSheet.create({
   },
   analyticsBlock: {
     gap: 8,
+  },
+  trendChartFrame: {
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    overflow: 'hidden',
   },
   taxHeader: {
     alignItems: 'center',

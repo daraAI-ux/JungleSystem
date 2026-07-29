@@ -364,18 +364,34 @@ function normalizeGraphPoints(
   points: KolamSalesGraphPoint[],
   range: DashboardSalesGraphRange,
 ): DashboardSalesGraphPoint[] {
-  const maxValue = Math.max(...points.map(point => point.value), 0);
-  const plotHeight = dashboardSalesGraphVisualContract.chart.innerPlotHeight;
+  return buildDashboardSalesGraphPoints(
+    points
+      .slice(-dashboardSalesGraphVisualContract.chart.maxPoints)
+      .map(point => ({
+        id: point.timestamp,
+        label: formatGraphLabel(point.timestamp, range),
+        value: point.value,
+      })),
+  );
+}
 
-  return points
-    .slice(-dashboardSalesGraphVisualContract.chart.maxPoints)
-    .map(point => ({
-      id: point.timestamp,
-      label: formatGraphLabel(point.timestamp, range),
-      value: point.value,
-      valueLabel: formatRupiahShort(point.value),
-      ...getGraphPointGeometry(point.value, maxValue, plotHeight),
-    }));
+/** Shared native plot points for reuse outside the dashboard sales card. */
+export function buildDashboardSalesGraphPoints(
+  items: Array<{id: string; label: string; value: number}>,
+): DashboardSalesGraphPoint[] {
+  const plotHeight = dashboardSalesGraphVisualContract.chart.innerPlotHeight;
+  const capped = items.slice(
+    -dashboardSalesGraphVisualContract.chart.maxPoints,
+  );
+  const maxValue = Math.max(...capped.map(item => item.value), 0);
+
+  return capped.map(item => ({
+    id: item.id,
+    label: item.label,
+    value: item.value,
+    valueLabel: formatRupiahShort(item.value),
+    ...getGraphPointGeometry(item.value, maxValue, plotHeight),
+  }));
 }
 
 function getGraphPointGeometry(

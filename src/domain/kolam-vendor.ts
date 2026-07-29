@@ -607,6 +607,25 @@ export function hasKolamVendorPurchaseAnalytics(
   return Boolean(stats && stats.overall.totalOrders > 0);
 }
 
+/** Map monthly purchase stats to native dashboard plot series (nilai PO). */
+export function buildKolamSupplierMonthlyTrendGraphItems(
+  months: KolamVendorPurchaseMonthlyStat[] | null | undefined,
+): Array<{id: string; label: string; value: number}> {
+  return (months ?? []).map(month => ({
+    id: `month-${month.month}`,
+    label: shortenSupplierMonthLabel(month.monthName, month.month),
+    value: month.totalValue,
+  }));
+}
+
+function shortenSupplierMonthLabel(monthName: string, month: number) {
+  const trimmed = monthName.trim();
+  if (trimmed.length <= 3) {
+    return trimmed || String(month);
+  }
+  return trimmed.slice(0, 3);
+}
+
 export function buildKolamSupplierAnalyticsQuery(
   filters: KolamSupplierAnalyticsFilters,
 ): Record<string, string | number | undefined> {

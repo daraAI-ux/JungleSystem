@@ -1,5 +1,6 @@
 import {
   buildKolamSupplierAnalyticsQuery,
+  buildKolamSupplierMonthlyTrendGraphItems,
   createEmptyKolamVendorFormState,
   createKolamVendorFormState,
   createKolamVendorSavePayload,
@@ -394,5 +395,16 @@ describe('kolam vendor / supplier domain', () => {
         totalOrders: 2,
       },
     );
+    expect(
+      buildKolamSupplierMonthlyTrendGraphItems(
+        vendor.purchaseStatistics?.yearly.monthlyStatistics,
+      ),
+    ).toEqual([
+      {
+        id: 'month-1',
+        label: 'Jan',
+        value: 200000,
+      },
+    ]);
   });
 });

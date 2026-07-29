@@ -1,4 +1,5 @@
 ﻿import {
+  buildDashboardSalesGraphPoints,
   getDashboardSalesGraph,
   getDashboardSalesGraphVisualContract,
 } from '../src/domain/dashboard-sales-graph';
@@ -266,6 +267,18 @@ describe('getDashboardSalesGraph', () => {
     expect(next.point.dotSize).toBe(8);
     expect(next.rangeTrigger.alignSelf).toBe('flex-start');
     expect(next.rangeTrigger.borderWidth).toBe(1);
+  });
+
+  it('builds reusable plot points from arbitrary value series', () => {
+    const points = buildDashboardSalesGraphPoints([
+      {id: 'm1', label: 'Jan', value: 100_000},
+      {id: 'm2', label: 'Feb', value: 200_000},
+    ]);
+
+    expect(points).toHaveLength(2);
+    expect(points[0].label).toBe('Jan');
+    expect(points[1].areaHeight).toBeGreaterThan(points[0].areaHeight);
+    expect(points[1].valueLabel).toBe('200Rb');
   });
 });
 
