@@ -269,6 +269,76 @@ export async function getKolamTaxPartyGaps(): Promise<KolamTaxPartyGapsSummary> 
   );
 }
 
+export type KolamTaxPartyType = 'vendor' | 'customer';
+
+export interface KolamTaxPartyProfile {
+  partyType: KolamTaxPartyType;
+  partyId: string;
+  npwp: string;
+  npwp16: string;
+  legalName: string;
+  isPkp: boolean;
+}
+
+export async function getKolamTaxPartyProfile(
+  partyType: KolamTaxPartyType,
+  partyId: string,
+): Promise<KolamTaxPartyProfile> {
+  const response = await kolamRequest<
+    DataResponse<KolamTaxPartyProfile> | KolamTaxPartyProfile
+  >(`/dara-tax/party-profiles/${partyType}/${encodeURIComponent(partyId)}`);
+  const raw =
+    response && typeof response === 'object' && 'data' in response
+      ? (response as DataResponse<KolamTaxPartyProfile>).data
+      : (response as KolamTaxPartyProfile);
+  return normalizeTaxPartyProfile(raw, partyType, partyId);
+}
+
+export async function upsertKolamTaxPartyProfile(
+  partyType: KolamTaxPartyType,
+  partyId: string,
+  body: {
+    npwp?: string;
+    npwp16?: string;
+    legalName?: string;
+    isPkp?: boolean;
+  },
+): Promise<KolamTaxPartyProfile> {
+  const response = await kolamRequest<
+    DataResponse<KolamTaxPartyProfile> | KolamTaxPartyProfile
+  >(`/dara-tax/party-profiles/${partyType}/${encodeURIComponent(partyId)}`, {
+    method: 'PUT',
+    body,
+  });
+  const raw =
+    response && typeof response === 'object' && 'data' in response
+      ? (response as DataResponse<KolamTaxPartyProfile>).data
+      : (response as KolamTaxPartyProfile);
+  return normalizeTaxPartyProfile(raw, partyType, partyId);
+}
+
+function normalizeTaxPartyProfile(
+  value: unknown,
+  partyType: KolamTaxPartyType,
+  partyId: string,
+): KolamTaxPartyProfile {
+  const record =
+    value && typeof value === 'object' && !Array.isArray(value)
+      ? (value as Record<string, unknown>)
+      : {};
+  return {
+    partyType:
+      record.partyType === 'customer' || record.partyType === 'vendor'
+        ? record.partyType
+        : partyType,
+    partyId: String(record.partyId ?? partyId),
+    npwp: String(record.npwp ?? ''),
+    npwp16: String(record.npwp16 ?? ''),
+    legalName: String(record.legalName ?? ''),
+    isPkp: record.isPkp === true,
+  };
+}
+
 function kolamRequest<T>(
   path: string,
   options: {

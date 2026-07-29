@@ -12,8 +12,16 @@ import {
   type KolamVendor,
   type KolamVendorFormState,
 } from '../domain/kolam-vendor';
+import {
+  createEmptyKolamTaxPartyProfileFormState,
+  type KolamTaxPartyProfileFormState,
+} from '../domain/kolam-tax-party';
 import type { KolamBrand } from '../domain/kolam-brand';
 import { getKolamBrands } from '../services/kolam-brand-api';
+import {
+  getKolamTaxPartyProfile,
+  upsertKolamTaxPartyProfile,
+} from '../services/kolam-financial-settings-api';
 import {
   createKolamVendor,
   deleteKolamVendor,
@@ -50,12 +58,16 @@ export interface KolamSupplierController {
   pendingPhotoUris: string[];
   saving: boolean;
   selectedVendor: KolamVendor | null;
+  taxProfile: KolamTaxPartyProfileFormState;
+  taxProfileLoaded: boolean;
+  taxProfileSaving: boolean;
   vendors: KolamVendor[];
   onBackToList: () => void;
   onChangeAnalyticsFilters: (
     filters: KolamSupplierAnalyticsFilters,
   ) => Promise<void>;
   onChangeForm: (patch: Partial<KolamVendorFormState>) => void;
+  onChangeTaxProfile: (patch: Partial<KolamTaxPartyProfileFormState>) => void;
   onCreateNew: () => void;
   onDeleteExistingPhoto: (index: number) => Promise<boolean>;
   onDeleteVendor: (vendor: KolamVendor) => Promise<boolean>;
@@ -64,6 +76,7 @@ export interface KolamSupplierController {
   onRefresh: () => Promise<void>;
   onRemovePendingPhoto: (index: number) => void;
   onSave: () => Promise<string | null>;
+  onSaveTaxProfile: () => Promise<boolean>;
   onSelectVendor: (vendor: KolamVendor) => Promise<void>;
 }
 
@@ -84,6 +97,11 @@ export function useKolamSupplierController(
   const [analyticsFilters, setAnalyticsFilters] =
     useState<KolamSupplierAnalyticsFilters>({});
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [taxProfile, setTaxProfile] = useState<KolamTaxPartyProfileFormState>(
+    () => createEmptyKolamTaxPartyProfileFormState(),
+  );
+  const [taxProfileLoaded, setTaxProfileLoaded] = useState(false);
+  const [taxProfileSaving, setTaxProfileSaving] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -134,6 +152,26 @@ export function useKolamSupplierController(
     void refresh();
   }, [refresh]);
 
+  const loadTaxProfile = useCallback(
+    async (vendorId: string, vendorName: string) => {
+      setTaxProfileLoaded(false);
+      setTaxProfile(createEmptyKolamTaxPartyProfileFormState(vendorName));
+      try {
+        const profile = await getKolamTaxPartyProfile('vendor', vendorId);
+        setTaxProfile({
+          npwp: profile.npwp,
+          npwp16: profile.npwp16,
+          legalName: profile.legalName || vendorName,
+        });
+      } catch {
+        setTaxProfile(createEmptyKolamTaxPartyProfileFormState(vendorName));
+      } finally {
+        setTaxProfileLoaded(true);
+      }
+    },
+    [],
+  );
+
   const loadVendor = useCallback(
     async (
       vendor: KolamVendor,
@@ -144,6 +182,8 @@ export function useKolamSupplierController(
       setForm(createKolamVendorFormState(vendor));
       setPendingPhotoUris([]);
       setAnalyticsFilters({});
+      setTaxProfile(createEmptyKolamTaxPartyProfileFormState(vendor.name));
+      setTaxProfileLoaded(false);
       setError(null);
 
       const cached = await readKolamVendorDetailCache(vendor.id);
@@ -159,12 +199,14 @@ export function useKolamSupplierController(
         setSelectedVendor(liveVendor);
         setForm(createKolamVendorFormState(liveVendor));
         setDataSource('live');
+        void loadTaxProfile(liveVendor.id, liveVendor.name);
       } catch (detailError) {
         setError(getErrorMessage(detailError));
         setDataSource(cached?.value || vendor ? 'cache' : 'error');
+        void loadTaxProfile(vendor.id, vendor.name);
       }
     },
-    [],
+    [loadTaxProfile],
   );
 
   const onSelectVendor = useCallback(
@@ -210,6 +252,8 @@ export function useKolamSupplierController(
     setForm(createEmptyKolamVendorFormState());
     setPendingPhotoUris([]);
     setAnalyticsFilters({});
+    setTaxProfile(createEmptyKolamTaxPartyProfileFormState());
+    setTaxProfileLoaded(false);
     setError(null);
   }, []);
 
@@ -219,6 +263,8 @@ export function useKolamSupplierController(
     setForm(createEmptyKolamVendorFormState());
     setPendingPhotoUris([]);
     setAnalyticsFilters({});
+    setTaxProfile(createEmptyKolamTaxPartyProfileFormState());
+    setTaxProfileLoaded(false);
     setError(null);
   }, []);
 
@@ -233,6 +279,55 @@ export function useKolamSupplierController(
   const onChangeForm = useCallback((patch: Partial<KolamVendorFormState>) => {
     setForm(current => ({ ...current, ...patch }));
   }, []);
+
+  const onChangeTaxProfile = useCallback(
+    (patch: Partial<KolamTaxPartyProfileFormState>) => {
+      setTaxProfile(current => ({ ...current, ...patch }));
+    },
+    [],
+  );
+
+  const onSaveTaxProfile = useCallback(async () => {
+    const vendorId = selectedVendor?.id;
+    if (!vendorId) {
+      setError('Pilih pemasok sebelum menyimpan NPWP.');
+      return false;
+    }
+
+    const npwpDigits = taxProfile.npwp.replace(/\D/g, '');
+    const npwp16Digits = taxProfile.npwp16.replace(/\D/g, '');
+    if (npwpDigits && npwpDigits.length !== 15) {
+      setError('NPWP harus 15 digit.');
+      return false;
+    }
+    if (npwp16Digits && npwp16Digits.length !== 16) {
+      setError('NPWP 16 digit harus 16 angka.');
+      return false;
+    }
+
+    setTaxProfileSaving(true);
+    setError(null);
+
+    try {
+      const saved = await upsertKolamTaxPartyProfile('vendor', vendorId, {
+        npwp: npwpDigits || undefined,
+        npwp16: npwp16Digits || undefined,
+        legalName: taxProfile.legalName.trim() || undefined,
+      });
+      setTaxProfile({
+        npwp: saved.npwp,
+        npwp16: saved.npwp16,
+        legalName: saved.legalName || selectedVendor?.name || '',
+      });
+      setTaxProfileLoaded(true);
+      return true;
+    } catch (saveError) {
+      setError(getErrorMessage(saveError));
+      return false;
+    } finally {
+      setTaxProfileSaving(false);
+    }
+  }, [selectedVendor, taxProfile]);
 
   const onChangeAnalyticsFilters = useCallback(
     async (filters: KolamSupplierAnalyticsFilters) => {
@@ -420,10 +515,14 @@ export function useKolamSupplierController(
     pendingPhotoUris,
     saving,
     selectedVendor,
+    taxProfile,
+    taxProfileLoaded,
+    taxProfileSaving,
     vendors,
     onBackToList,
     onChangeAnalyticsFilters,
     onChangeForm,
+    onChangeTaxProfile,
     onCreateNew,
     onDeleteExistingPhoto,
     onDeleteVendor,
@@ -432,6 +531,7 @@ export function useKolamSupplierController(
     onRefresh: refresh,
     onRemovePendingPhoto,
     onSave,
+    onSaveTaxProfile,
     onSelectVendor,
   };
 }

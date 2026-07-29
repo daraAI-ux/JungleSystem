@@ -16,7 +16,12 @@ import {
   type KolamVendorStatus,
 } from '../domain/kolam-vendor';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
+import {
+  canEditKolamTaxPartyProfile,
+  hasKolamTaxPartyNpwp,
+} from '../domain/kolam-tax-party';
 import { formatRupiah } from '../lib/money';
+import { useKolamAuthContext } from '../context/kolam-app-contexts';
 import {
   useKolamSupplierController,
   type KolamSupplierController,
@@ -477,6 +482,8 @@ function KolamSupplierDetail({
 
       <KolamSupplierPurchaseAnalytics controller={controller} />
 
+      <KolamSupplierTaxProfileCard controller={controller} />
+
       <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
         <Text style={styles.sectionTitle}>Informasi pemasok</Text>
         <KolamDescriptionList
@@ -779,6 +786,107 @@ function KolamSupplierCatalogTabs({
           />
         )
       ) : null}
+    </KolamContentFrame>
+  );
+}
+
+function KolamSupplierTaxProfileCard({
+  controller,
+}: {
+  controller: KolamSupplierController;
+}) {
+  const { authUser } = useKolamAuthContext();
+  const canEdit = canEditKolamTaxPartyProfile({
+    roleKey: authUser?.roleKey,
+    permissions: authUser?.permissions,
+  });
+  const form = controller.taxProfile;
+  const hasNpwp =
+    controller.taxProfileLoaded && hasKolamTaxPartyNpwp(form);
+
+  return (
+    <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
+      <View style={styles.taxHeader}>
+        <Text style={styles.sectionTitle}>Profil pajak pemasok</Text>
+        {controller.taxProfileLoaded ? (
+          <KolamStatusBadge
+            intent={hasNpwp ? 'success' : 'warning'}
+            label={hasNpwp ? 'NPWP tercatat' : 'Belum NPWP'}
+          />
+        ) : null}
+      </View>
+
+      {!controller.taxProfileLoaded ? (
+        <KolamEmptyState
+          compact
+          message="Memuat profil pajak dari Dara Tax…"
+          title="Memuat NPWP"
+        />
+      ) : (
+        <View style={settingsWebFormStyles.settingsWebFormFields}>
+          <View style={settingsWebFormStyles.settingsWebFormFieldsGrid}>
+            <View style={styles.formSplitRow}>
+              <View style={styles.formSplitCell}>
+                <FieldShell label="NPWP 15 digit">
+                  <KolamFormTextField
+                    editable={canEdit && !controller.taxProfileSaving}
+                    mode="numeric"
+                    onChangeText={npwp =>
+                      controller.onChangeTaxProfile({ npwp })
+                    }
+                    placeholder="15 digit"
+                    style={settingsWebFormStyles.settingsWebFormFieldValue}
+                    value={form.npwp}
+                  />
+                </FieldShell>
+              </View>
+              <View style={styles.formSplitCell}>
+                <FieldShell label="NPWP 16 digit">
+                  <KolamFormTextField
+                    editable={canEdit && !controller.taxProfileSaving}
+                    mode="numeric"
+                    onChangeText={npwp16 =>
+                      controller.onChangeTaxProfile({ npwp16 })
+                    }
+                    placeholder="16 digit"
+                    style={settingsWebFormStyles.settingsWebFormFieldValue}
+                    value={form.npwp16}
+                  />
+                </FieldShell>
+              </View>
+            </View>
+            <FieldShell label="Nama legal vendor (faktur)">
+              <KolamFormTextField
+                editable={canEdit && !controller.taxProfileSaving}
+                onChangeText={legalName =>
+                  controller.onChangeTaxProfile({ legalName })
+                }
+                placeholder="Nama legal untuk faktur"
+                style={settingsWebFormStyles.settingsWebFormFieldValue}
+                value={form.legalName}
+              />
+            </FieldShell>
+          </View>
+          {canEdit ? (
+            <View style={styles.formActions}>
+              <KolamButton
+                disabled={controller.taxProfileSaving}
+                intent="primary"
+                label={
+                  controller.taxProfileSaving ? 'Menyimpan…' : 'Simpan NPWP'
+                }
+                onPress={() => {
+                  void controller.onSaveTaxProfile();
+                }}
+              />
+            </View>
+          ) : (
+            <Text style={styles.switchHint}>
+              Mode baca saja — butuh permission tax:draft.
+            </Text>
+          )}
+        </View>
+      )}
     </KolamContentFrame>
   );
 }
@@ -1784,6 +1892,13 @@ const styles = StyleSheet.create({
   },
   analyticsBlock: {
     gap: 8,
+  },
+  taxHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'space-between',
   },
   photoGrid: {
     flexDirection: 'row',
