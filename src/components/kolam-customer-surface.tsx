@@ -12,10 +12,13 @@ import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {getKolamFileUrl} from '../lib/file-url';
 import {
   createKolamCustomer,
+  deleteKolamCustomerPhoto,
   getKolamCustomerDetail,
   getKolamCustomerList,
   updateKolamCustomer,
+  uploadKolamCustomerPhoto,
 } from '../services/kolam-customer-api';
+import {pickNativeImageFile} from '../services/native-file-picker';
 import type {
   KolamCustomerList,
   KolamCustomerSurfaceProps,
@@ -352,6 +355,7 @@ function KolamCustomerDetailSurface({
   const [customer, setCustomer] = React.useState<KolamCustomer | null>(null);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState('');
+  const [photoSaving, setPhotoSaving] = React.useState(false);
 
   React.useEffect(() => {
     let active = true;
@@ -422,6 +426,53 @@ function KolamCustomerDetailSurface({
 
   const mediaItems = createCustomerMediaItems(customer);
   const primaryAddress = getKolamCustomerLocationText(customer);
+  const handleUploadPhoto = async () => {
+    try {
+      setError('');
+      const picked = await pickNativeImageFile();
+      if (picked.cancelled) {
+        return;
+      }
+
+      const localUri = picked.uri ?? picked.path ?? '';
+      if (!localUri) {
+        setError('File foto pelanggan tidak memiliki path yang bisa dibaca.');
+        return;
+      }
+
+      setPhotoSaving(true);
+      const photos = await uploadKolamCustomerPhoto(customer.id, localUri);
+      setCustomer(current =>
+        current?.id === customer.id ? {...current, photos} : current,
+      );
+    } catch (errorResult) {
+      setError(
+        errorResult instanceof Error
+          ? errorResult.message
+          : 'Gagal mengunggah foto pelanggan.',
+      );
+    } finally {
+      setPhotoSaving(false);
+    }
+  };
+  const handleDeletePhoto = async (index: number) => {
+    try {
+      setError('');
+      setPhotoSaving(true);
+      const photos = await deleteKolamCustomerPhoto(customer.id, index);
+      setCustomer(current =>
+        current?.id === customer.id ? {...current, photos} : current,
+      );
+    } catch (errorResult) {
+      setError(
+        errorResult instanceof Error
+          ? errorResult.message
+          : 'Gagal menghapus foto pelanggan.',
+      );
+    } finally {
+      setPhotoSaving(false);
+    }
+  };
 
   return (
     <View style={styles.detailSurface}>
@@ -482,15 +533,40 @@ function KolamCustomerDetailSurface({
           <KolamContentFrame
             style={styles.detailCard}
             variant="settingsWebConfig">
-            <SectionTitle
-              description="Foto pelanggan dari server Kolam"
-              title="Foto"
-            />
-            {mediaItems.length ? (
-              <KolamDetailMediaPreview
-                items={mediaItems}
-                title={customer.name}
+            <View style={styles.photoSectionHeader}>
+              <SectionTitle
+                description="Foto pelanggan dari server Kolam"
+                title="Foto"
               />
+              <KolamButton
+                disabled={photoSaving}
+                label={photoSaving ? 'Memproses...' : 'Upload Foto'}
+                onPress={() => void handleUploadPhoto()}
+              />
+            </View>
+            {mediaItems.length ? (
+              <>
+                <KolamDetailMediaPreview
+                  items={mediaItems}
+                  title={customer.name}
+                />
+                <View style={styles.photoActionList}>
+                  {customer.photos.map((photo, index) => (
+                    <View key={`${photo}-${index}`} style={styles.photoActionRow}>
+                      <Text numberOfLines={1} style={styles.customerSubText}>
+                        Foto {index + 1}
+                      </Text>
+                      <KolamButton
+                        disabled={photoSaving}
+                        intent="danger"
+                        label="Hapus"
+                        onPress={() => void handleDeletePhoto(index)}
+                        style={styles.photoDeleteButton}
+                      />
+                    </View>
+                  ))}
+                </View>
+              </>
             ) : (
               <View style={styles.detailEmptyBox}>
                 <Text style={styles.customerSubText}>
@@ -1519,6 +1595,31 @@ const styles = StyleSheet.create({
     minHeight: 120,
     justifyContent: 'center',
     padding: 14,
+  },
+  photoSectionHeader: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    gap: 10,
+    justifyContent: 'space-between',
+  },
+  photoActionList: {
+    gap: 6,
+  },
+  photoActionRow: {
+    alignItems: 'center',
+    backgroundColor: V.colors.mutedSoft,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'space-between',
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  photoDeleteButton: {
+    minHeight: 30,
+    paddingHorizontal: 10,
   },
   pointsGrid: {
     flexDirection: 'row',

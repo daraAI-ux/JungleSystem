@@ -80,6 +80,41 @@ export async function updateKolamCustomer(
   return customer;
 }
 
+export async function uploadKolamCustomerPhoto(
+  id: string,
+  localUri: string,
+): Promise<string[]> {
+  const body = new FormData();
+  body.append(
+    'photos',
+    createReactNativeFilePart(localUri, 'customer-photo') as unknown as Blob,
+  );
+
+  const response = await kolamRequest<unknown>(
+    `/customer/${encodeURIComponent(id)}/photos`,
+    {
+      method: 'POST',
+      body,
+    },
+  );
+
+  return normalizeCustomerPhotoResponse(response, 'photos');
+}
+
+export async function deleteKolamCustomerPhoto(
+  id: string,
+  index: number,
+): Promise<string[]> {
+  const response = await kolamRequest<unknown>(
+    `/customer/${encodeURIComponent(id)}/photos/${index}`,
+    {
+      method: 'DELETE',
+    },
+  );
+
+  return normalizeCustomerPhotoResponse(response, 'remaining');
+}
+
 function kolamRequest<T>(
   path: string,
   options: {
@@ -96,4 +131,56 @@ function kolamRequest<T>(
     baseUrl: appConfig.kolamApiBaseUrl,
     sourceHeader: appConfig.kolamSourceHeader,
   }) as Promise<T>;
+}
+
+function normalizeCustomerPhotoResponse(payload: unknown, key: string) {
+  const record = asRecord(payload);
+  const data = asRecord(record.data);
+  const value = record[key] ?? data[key];
+
+  if (Array.isArray(value)) {
+    return value.filter((item): item is string => typeof item === 'string');
+  }
+
+  throw new Error('Respons foto pelanggan tidak valid.');
+}
+
+function createReactNativeFilePart(
+  localUri: string,
+  fallbackName = 'customer-photo',
+) {
+  const normalizedUri = localUri.startsWith('file://')
+    ? localUri
+    : `file:///${localUri.replace(/\\/g, '/')}`;
+  const name = normalizedUri.split('/').pop() || fallbackName;
+
+  return {
+    name,
+    type: inferFileMimeType(name),
+    uri: normalizedUri,
+  };
+}
+
+function inferFileMimeType(fileName: string) {
+  const extension = fileName.split('.').pop()?.toLowerCase();
+
+  switch (extension) {
+    case 'png':
+      return 'image/png';
+    case 'webp':
+      return 'image/webp';
+    case 'gif':
+      return 'image/gif';
+    case 'jpg':
+    case 'jpeg':
+      return 'image/jpeg';
+    default:
+      return 'application/octet-stream';
+  }
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object'
+    ? (value as Record<string, unknown>)
+    : {};
 }
