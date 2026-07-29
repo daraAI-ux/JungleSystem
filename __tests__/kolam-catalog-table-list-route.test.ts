@@ -10,6 +10,9 @@ describe('isCatalogTableListRoute', () => {
     expect(isCatalogTableListRoute('/stock-transaction?productId=abc')).toBe(
       true,
     );
+    expect(isCatalogTableListRoute('/suppliers')).toBe(true);
+    expect(isCatalogTableListRoute('/customers')).toBe(true);
+    expect(isCatalogTableListRoute('/purchase-order')).toBe(true);
   });
 
   it('keeps detail and edit routes on shell ScrollView', () => {
@@ -21,6 +24,8 @@ describe('isCatalogTableListRoute', () => {
     );
     expect(isCatalogTableListRoute('/raw-materials/create')).toBe(false);
     expect(isCatalogTableListRoute('/stock-transaction/tx-1')).toBe(false);
+    expect(isCatalogTableListRoute('/purchase-order/create')).toBe(false);
+    expect(isCatalogTableListRoute('/purchase-order/po-1')).toBe(false);
     expect(isCatalogTableListRoute('/pengaturan')).toBe(false);
   });
 });
