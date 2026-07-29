@@ -956,7 +956,10 @@ function KolamStockTransactionList({
         </View>
         <View style={[styles.cell, { flex: 0.8 }]}>
           <Text numberOfLines={2} style={styles.metaText}>
-            {crossSyncSummaryLabel(item.crossSync?.summary) || '—'}
+            {resolveStockTxCrossSyncDisplay(item.crossSync, item.reason)
+              ?.summaryLabel ||
+              crossSyncSummaryLabel(item.crossSync?.summary) ||
+              '—'}
           </Text>
         </View>
         <View style={[styles.cell, { flex: 1 }]}>
