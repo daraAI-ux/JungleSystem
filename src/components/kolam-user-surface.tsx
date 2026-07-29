@@ -27,6 +27,7 @@ import {
   getKolamUserList,
   getKolamUserRoles,
   updateKolamUser,
+  updateKolamUserSalary,
 } from '../services/kolam-user-api';
 import {KolamButton} from './kolam-button';
 import {KolamCatalogListTableShell} from './kolam-catalog-list-table-shell';
@@ -99,7 +100,12 @@ const EMPTY_USER_BIODATA: KolamUserBiodata = {
   taxNumber: '',
 };
 
-type KolamUserEmployeeForm = Omit<KolamUserEmployeeProfile, 'yearIn'> & {
+type KolamUserEmployeeForm = Omit<
+  KolamUserEmployeeProfile,
+  'salary' | 'salaryDate' | 'yearIn'
+> & {
+  salary: string;
+  salaryDate: string;
   yearIn: string;
 };
 
@@ -111,6 +117,8 @@ const EMPTY_USER_EMPLOYEE: KolamUserEmployeeForm = {
   isPkp: false,
   pkpNotes: '',
   position: '',
+  salary: '',
+  salaryDate: '',
   schedule: {
     shiftEnd: '18:00',
     shiftStart: '09:00',
@@ -1000,6 +1008,12 @@ function KolamUserEditSurface({
   const canToggleEmployee =
     canToggleOwner ||
     hasSettingsPermission(permissionContext, 'user', 'flag_employee');
+  const currentUserId = String(authUser?.id ?? '');
+  const canViewSalary =
+    Boolean(user.id) &&
+    currentUserId !== String(user.id) &&
+    (canToggleOwner ||
+      hasSettingsPermission(permissionContext, 'user', 'view_salary'));
   const setField = (field: keyof KolamUserEditForm, value: string) => {
     setForm(current => ({...current, [field]: value}));
     setError('');
@@ -1115,6 +1129,29 @@ function KolamUserEditSurface({
       return;
     }
 
+    const salaryValue = getOptionalEmployeeSalary(form.employee.salary);
+    const salaryDateValue = getOptionalEmployeeSalaryDate(
+      form.employee.salaryDate,
+    );
+
+    if (
+      canViewSalary &&
+      form.employee.salary.trim() &&
+      salaryValue === undefined
+    ) {
+      setError('Gaji bulanan harus berupa angka tidak negatif');
+      return;
+    }
+
+    if (
+      canViewSalary &&
+      form.employee.salaryDate.trim() &&
+      salaryDateValue === undefined
+    ) {
+      setError('Tanggal pembayaran gaji harus antara 1 sampai 31');
+      return;
+    }
+
     setSaving(true);
     setError('');
     setMessage('');
@@ -1132,7 +1169,11 @@ function KolamUserEditSurface({
         first_name: form.first_name.trim(),
         ...(canToggleEmployee ? {isEmployee: form.isEmployee} : {}),
         ...(canToggleEmployee && form.isEmployee
-          ? {employee: getUserEmployeePayload(form.employee)}
+          ? {
+              employee: getUserEmployeePayload(form.employee, {
+                includeSalaryDate: canViewSalary,
+              }),
+            }
           : {}),
         ...(canToggleOwner ? {isOwner: form.isOwner} : {}),
         last_name: form.last_name.trim(),
@@ -1142,7 +1183,12 @@ function KolamUserEditSurface({
         username: form.username.trim() || undefined,
         ...(form.password.trim() ? {password: form.password} : {}),
       });
-      const nextUser = updated ?? user;
+      let nextUser = updated ?? user;
+
+      if (canViewSalary && form.isEmployee && salaryValue !== undefined) {
+        await updateKolamUserSalary({salary: salaryValue, userId: user.id});
+        nextUser = (await getKolamUserDetail(user.id)) ?? nextUser;
+      }
 
       setUser(nextUser);
       setForm(getUserEditFormFromUser(nextUser));
@@ -1409,6 +1455,32 @@ function KolamUserEditSurface({
                   value={form.employee.yearIn}
                 />
               </UserFormField>
+              {canViewSalary ? (
+                <>
+                  <UserFormField label="Gaji Bulanan (IDR)">
+                    <KolamFormTextField
+                      editable={!saving}
+                      mode="numeric"
+                      onChangeText={value => setEmployeeField('salary', value)}
+                      placeholder="mis. 5000000"
+                      style={styles.formInput}
+                      value={form.employee.salary}
+                    />
+                  </UserFormField>
+                  <UserFormField label="Tanggal Pembayaran Gaji">
+                    <KolamFormTextField
+                      editable={!saving}
+                      mode="numeric"
+                      onChangeText={value =>
+                        setEmployeeField('salaryDate', value)
+                      }
+                      placeholder="mis. 25"
+                      style={styles.formInput}
+                      value={form.employee.salaryDate}
+                    />
+                  </UserFormField>
+                </>
+              ) : null}
               <View style={styles.formFieldWide}>
                 <KolamToggleRow
                   active={form.employee.firstTimeWorking}
@@ -1897,11 +1969,16 @@ function getUserEmployeeFormFromUser(
 ): KolamUserEmployeeForm {
   return {
     ...employee,
+    salary: employee.salary == null ? '' : String(employee.salary),
+    salaryDate: employee.salaryDate == null ? '' : String(employee.salaryDate),
     yearIn: employee.yearIn == null ? '' : String(employee.yearIn),
   };
 }
 
-function getUserEmployeePayload(employee: KolamUserEmployeeForm) {
+function getUserEmployeePayload(
+  employee: KolamUserEmployeeForm,
+  options: {includeSalaryDate?: boolean} = {},
+) {
   return {
     department: cleanOptionalUserString(employee.department),
     employeeNumber: cleanOptionalUserString(employee.employeeNumber),
@@ -1918,6 +1995,9 @@ function getUserEmployeePayload(employee: KolamUserEmployeeForm) {
     },
     status: employee.status || 'active',
     yearIn: getOptionalEmployeeYear(employee.yearIn),
+    ...(options.includeSalaryDate
+      ? {salaryDate: getOptionalEmployeeSalaryDate(employee.salaryDate)}
+      : {}),
   };
 }
 
@@ -1929,6 +2009,28 @@ function getOptionalEmployeeYear(value: string) {
   const parsed = Number(value);
 
   return Number.isInteger(parsed) ? parsed : undefined;
+}
+
+function getOptionalEmployeeSalary(value: string) {
+  if (!value.trim()) {
+    return undefined;
+  }
+
+  const parsed = Number(value);
+
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : undefined;
+}
+
+function getOptionalEmployeeSalaryDate(value: string) {
+  if (!value.trim()) {
+    return undefined;
+  }
+
+  const parsed = Number(value);
+
+  return Number.isInteger(parsed) && parsed >= 1 && parsed <= 31
+    ? parsed
+    : undefined;
 }
 
 function getUserBiodataPayload(biodata: KolamUserBiodata) {

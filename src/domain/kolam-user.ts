@@ -145,6 +145,8 @@ export interface KolamUserEmployeeProfile {
   hireDate: string;
   yearIn: number | null;
   firstTimeWorking: boolean;
+  salary: number | null;
+  salaryDate: number | null;
   schedule: KolamUserEmployeeSchedule;
   isPkp: boolean;
   pkpNotes: string;
@@ -158,6 +160,7 @@ export interface KolamUserEmployeePayload {
   hireDate?: string;
   yearIn?: number;
   firstTimeWorking?: boolean;
+  salaryDate?: number;
   schedule?: KolamUserEmployeeSchedule;
   isPkp?: boolean;
   pkpNotes?: string;
@@ -402,6 +405,8 @@ function normalizeKolamUserEmployee(value: unknown): KolamUserEmployeeProfile {
     isPkp: getBoolean(record, 'isPkp') ?? false,
     pkpNotes: getString(record, 'pkpNotes'),
     position: getString(record, 'position'),
+    salary: getNumber(record, 'salary') ?? null,
+    salaryDate: getNumber(record, 'salaryDate') ?? null,
     schedule: {
       shiftEnd: getString(schedule, 'shiftEnd') || '18:00',
       shiftStart: getString(schedule, 'shiftStart') || '09:00',

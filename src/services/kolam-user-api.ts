@@ -94,6 +94,16 @@ export async function updateKolamUser(
   return normalizeKolamUserDetail(record.data ?? response);
 }
 
+export async function updateKolamUserSalary(payload: {
+  salary: number;
+  userId: string;
+}) {
+  return kolamRequest<unknown>('/salary/update', {
+    body: payload,
+    method: 'POST',
+  });
+}
+
 function kolamRequest<T>(
   path: string,
   options: {
