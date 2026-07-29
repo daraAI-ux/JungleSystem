@@ -60,7 +60,12 @@ export interface KolamVendorCatalogPacking {
   enabled: boolean;
 }
 
-export type KolamSupplierCatalogTab = 'products' | 'species' | 'packings';
+export type KolamSupplierCatalogTab =
+  | 'products'
+  | 'species'
+  | 'packings'
+  | 'brands'
+  | 'links';
 
 export type KolamSupplierAnalyticsFilterType = 'all_time' | 'yearly' | 'monthly';
 

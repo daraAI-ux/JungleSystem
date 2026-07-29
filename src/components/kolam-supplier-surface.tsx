@@ -539,7 +539,6 @@ function KolamSupplierDetail({
 
   const address = formatKolamVendorAddress(vendor);
   const heroUri = vendor.photoUrls?.[0] || vendor.photos?.[0] || '';
-  const brands = vendor.brands ?? [];
   const photoUrls = vendor.photoUrls ?? [];
 
   return (
@@ -585,6 +584,11 @@ function KolamSupplierDetail({
           </View>
         </View>
       </View>
+      <KolamSupplierCatalogTabs
+        onRouteChange={onRouteChange}
+        vendor={vendor}
+      />
+
       <KolamLabelFieldDetailOverview
         hero={
           heroUri ? (
@@ -710,74 +714,6 @@ function KolamSupplierDetail({
         </KolamContentFrame>
       </View>
 
-      <View style={styles.detailInfoRow}>
-        <KolamContentFrame
-          style={[styles.detailCard, styles.detailInfoCard]}
-          variant="settingsWebConfig"
-        >
-          <Text style={styles.sectionTitle}>
-            Merek ({brands.length})
-          </Text>
-          <Text style={styles.switchHint}>
-            Merek yang terkait dengan pemasok ini
-          </Text>
-          {brands.length ? (
-            <View style={styles.brandChipRow}>
-              {brands.map(brand => (
-                <KolamButton
-                  key={brand.id}
-                  label={brand.name}
-                  muted
-                  onPress={() => onRouteChange?.(`/brands/${brand.id}`)}
-                  style={styles.brandChip}
-                />
-              ))}
-            </View>
-          ) : (
-            <KolamEmptyState
-              compact
-              message="Belum ada merek tertaut."
-              title="Tidak ada merek"
-            />
-          )}
-        </KolamContentFrame>
-
-        <KolamContentFrame
-          style={[styles.detailCard, styles.detailInfoCard]}
-          variant="settingsWebConfig"
-        >
-          <Text style={styles.sectionTitle}>
-            Tautan ({vendor.links?.length ?? 0})
-          </Text>
-          <Text style={styles.switchHint}>URL eksternal pemasok</Text>
-          {(vendor.links?.length ?? 0) > 0 ? (
-            <View style={styles.catalogList}>
-              {(vendor.links ?? []).map((link, index) => (
-                <View key={`${link}-${index}`} style={styles.catalogRow}>
-                  <View style={styles.catalogCopy}>
-                    <Text numberOfLines={2} style={styles.catalogTitle}>
-                      {link}
-                    </Text>
-                    <Text style={styles.rowMeta}>Tautan {index + 1}</Text>
-                  </View>
-                </View>
-              ))}
-            </View>
-          ) : (
-            <KolamEmptyState
-              compact
-              message="Belum ada tautan."
-              title="Tidak ada tautan"
-            />
-          )}
-        </KolamContentFrame>
-      </View>
-
-      <KolamSupplierCatalogTabs
-        onRouteChange={onRouteChange}
-        vendor={vendor}
-      />
-
       <KolamSupplierPurchaseAnalytics controller={controller} />
 
       <KolamSupplierTaxProfileCard controller={controller} />
@@ -833,6 +769,8 @@ function KolamSupplierCatalogTabs({
   const products = vendor.products ?? [];
   const species = vendor.species ?? [];
   const packings = vendor.packings ?? [];
+  const brands = vendor.brands ?? [];
+  const links = vendor.links ?? [];
   const productRows = React.useMemo(
     () => flattenKolamSupplierProductRows(products, vendor.id),
     [products, vendor.id],
@@ -851,6 +789,8 @@ function KolamSupplierCatalogTabs({
             { id: 'products', label: 'Produk & Raw' },
             { id: 'species', label: 'Species' },
             { id: 'packings', label: 'Bahan Kemasan' },
+            { id: 'brands', label: 'Merek' },
+            { id: 'links', label: 'Tautan' },
           ] as const
         ).map(item => (
           <KolamButton
@@ -1033,6 +973,51 @@ function KolamSupplierCatalogTabs({
             compact
             message="Belum ada bahan kemasan dari pemasok ini."
             title="Tidak ada kemasan"
+          />
+        )
+      ) : null}
+
+      {tab === 'brands' ? (
+        brands.length ? (
+          <View style={styles.brandChipRow}>
+            {brands.map(brand => (
+              <KolamButton
+                key={brand.id}
+                label={brand.name}
+                muted
+                onPress={() => onRouteChange?.(`/brands/${brand.id}`)}
+                style={styles.brandChip}
+              />
+            ))}
+          </View>
+        ) : (
+          <KolamEmptyState
+            compact
+            message="Belum ada merek tertaut."
+            title="Tidak ada merek"
+          />
+        )
+      ) : null}
+
+      {tab === 'links' ? (
+        links.length ? (
+          <View style={styles.catalogList}>
+            {links.map((link, index) => (
+              <View key={`${link}-${index}`} style={styles.catalogRow}>
+                <View style={styles.catalogCopy}>
+                  <Text numberOfLines={2} style={styles.catalogTitle}>
+                    {link}
+                  </Text>
+                  <Text style={styles.rowMeta}>Tautan {index + 1}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        ) : (
+          <KolamEmptyState
+            compact
+            message="Belum ada tautan."
+            title="Tidak ada tautan"
           />
         )
       ) : null}
@@ -1344,28 +1329,6 @@ function KolamSupplierPurchaseAnalytics({
               },
             ]}
           />
-
-          {stats.summary.topProduct ? (
-            <View style={styles.analyticsBlock}>
-              <Text style={styles.sectionTitle}>Produk teratas</Text>
-              <Text style={styles.catalogTitle}>
-                {stats.summary.topProduct.productName}
-              </Text>
-              <Text style={styles.rowMeta}>
-                SKU: {stats.summary.topProduct.productSku || '—'}
-              </Text>
-              <Text style={styles.rowMeta}>
-                Qty {stats.summary.topProduct.totalQuantityOrdered.toLocaleString('id-ID')} ·{' '}
-                {formatRupiah(stats.summary.topProduct.totalValue)} ·{' '}
-                {stats.summary.topProduct.orderCount} PO
-              </Text>
-              {stats.summary.topProduct.lastPurchase ? (
-                <Text style={styles.rowMeta}>
-                  Terakhir: {formatSupplierDateTime(stats.summary.topProduct.lastPurchase)}
-                </Text>
-              ) : null}
-            </View>
-          ) : null}
 
           <View style={styles.analyticsBlock}>
             <Text style={styles.sectionTitle}>
