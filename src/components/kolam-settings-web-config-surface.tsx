@@ -1055,6 +1055,13 @@ export function KolamSettingsWebConfigSurface({
   const showSitemapSettings = activeTabId === 'sitemap';
   const showSyncSettings = activeTabId === 'sync';
   const showKpiSettings = activeTabId === 'kpi';
+  const showSharedSaveAction =
+    showGeneralSettings ||
+    showStoreShippingSettings ||
+    showAiSettings ||
+    showNotificationSettings ||
+    showSitemapSettings ||
+    showPluginControls;
   const generalFormSections = sections.filter(section => section.id === 'logo');
   const settingsFieldWidth = 460;
   const umumFieldWidth = 240;
@@ -1472,6 +1479,28 @@ export function KolamSettingsWebConfigSurface({
 
   return (
     <KolamContentFrame variant="settingsWebConfig">
+      {showSharedSaveAction ? (
+        <View style={styles.settingsTopActions}>
+          <KolamActionControlButton
+            label="Simpan"
+            loading={saveStatus === 'saving'}
+            loadingLabel="Menyimpan..."
+            intent="primary"
+            onPress={disabled ? undefined : onSave}
+          />
+          {saveMessage ? (
+            <KolamCopyStack
+              containerStyle={styles.settingsTopMessage}
+              items={[
+                {
+                  id: 'save-message',
+                  text: saveMessage,
+                },
+              ]}
+            />
+          ) : null}
+        </View>
+      ) : null}
       {showGeneralSettings ? (
         <>
           <View style={styles.umumTopRow}>
@@ -4366,31 +4395,6 @@ export function KolamSettingsWebConfigSurface({
           />
         </>
       ) : null}
-      {showGeneralSettings ||
-      showStoreShippingSettings ||
-      showAiSettings ||
-      showNotificationSettings ||
-      showSitemapSettings ? (
-        <>
-          <KolamActionControlButton
-            label="Simpan"
-            loading={saveStatus === 'saving'}
-            loadingLabel="Menyimpan..."
-            intent="primary"
-            onPress={disabled ? undefined : onSave}
-          />
-          {saveMessage ? (
-            <KolamCopyStack
-              items={[
-                {
-                  id: 'save-message',
-                  text: saveMessage,
-                },
-              ]}
-            />
-          ) : null}
-        </>
-      ) : null}
       {showOperationalSettings && saveMessage ? (
         <KolamCopyStack
           items={[
@@ -4489,23 +4493,6 @@ export function KolamSettingsWebConfigSurface({
               onPluginControlChange('proyek', !draft.pluginControls.proyek)
             }
           />
-          <KolamActionControlButton
-            label="Simpan"
-            loading={saveStatus === 'saving'}
-            loadingLabel="Menyimpan..."
-            intent="primary"
-            onPress={disabled ? undefined : onSave}
-          />
-          {saveMessage ? (
-            <KolamCopyStack
-              items={[
-                {
-                  id: 'save-message',
-                  text: saveMessage,
-                },
-              ]}
-            />
-          ) : null}
         </>
       ) : null}
       {showMarketplaceLanding ? (
@@ -7768,6 +7755,16 @@ const styles = StyleSheet.create({
     gap: 12,
     justifyContent: 'space-between',
     paddingVertical: 12,
+  },
+  settingsTopActions: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'flex-end',
+  },
+  settingsTopMessage: {
+    maxWidth: 360,
   },
   storeHoursList: {
     gap: 10,
