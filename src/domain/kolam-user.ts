@@ -84,11 +84,49 @@ export interface KolamUserUpdatePayload {
   timezone: string;
   role: string;
   password?: string;
+  biodata?: KolamUserBiodataPayload;
 }
 
 export interface KolamUserAccessBadge {
   id: KolamUserAccessId;
   label: string;
+}
+
+export interface KolamUserBiodataAddress {
+  street: string;
+  city: string;
+  province: string;
+  postalCode: string;
+}
+
+export interface KolamUserBiodataEmergencyContact {
+  name: string;
+  relation: string;
+  phone: string;
+}
+
+export interface KolamUserBiodata {
+  gender: string;
+  dateOfBirth: string;
+  placeOfBirth: string;
+  address: KolamUserBiodataAddress;
+  nationalId: string;
+  taxNumber: string;
+  maritalStatus: string;
+  religion: string;
+  emergencyContact: KolamUserBiodataEmergencyContact;
+}
+
+export interface KolamUserBiodataPayload {
+  gender?: string;
+  dateOfBirth?: string;
+  placeOfBirth?: string;
+  address?: Partial<KolamUserBiodataAddress>;
+  nationalId?: string;
+  taxNumber?: string;
+  maritalStatus?: string;
+  religion?: string;
+  emergencyContact?: Partial<KolamUserBiodataEmergencyContact>;
 }
 
 export interface KolamUserListItem {
@@ -116,6 +154,7 @@ export interface KolamUserListItem {
   resignedAt: string;
   createdAt: string;
   updatedAt: string;
+  biodata: KolamUserBiodata;
 }
 
 export interface KolamUserListPagination {
@@ -230,6 +269,7 @@ export function normalizeKolamUserListItem(
     timezone: getString(record, 'timezone'),
     updatedAt: getString(record, 'updatedAt') || getString(record, 'updated_at'),
     username,
+    biodata: normalizeKolamUserBiodata(record.biodata),
   };
 }
 
@@ -282,6 +322,44 @@ function normalizeKolamUserRole(value: unknown): KolamUserRole | null {
   }
 
   return {id, key, name};
+}
+
+function normalizeKolamUserBiodata(value: unknown): KolamUserBiodata {
+  const record = asRecord(value);
+  const address = asRecord(record.address);
+  const emergencyContact = asRecord(record.emergencyContact);
+
+  return {
+    address: {
+      city: getString(address, 'city'),
+      postalCode: getString(address, 'postalCode'),
+      province: getString(address, 'province'),
+      street: getString(address, 'street'),
+    },
+    dateOfBirth: normalizeKolamUserDateString(record.dateOfBirth),
+    emergencyContact: {
+      name: getString(emergencyContact, 'name'),
+      phone: getString(emergencyContact, 'phone'),
+      relation: getString(emergencyContact, 'relation'),
+    },
+    gender: getString(record, 'gender'),
+    maritalStatus: getString(record, 'maritalStatus'),
+    nationalId: getString(record, 'nationalId'),
+    placeOfBirth: getString(record, 'placeOfBirth'),
+    religion: getString(record, 'religion'),
+    taxNumber: getString(record, 'taxNumber'),
+  };
+}
+
+function normalizeKolamUserDateString(value: unknown) {
+  if (typeof value !== 'string' || !value.trim()) {
+    return '';
+  }
+
+  const trimmed = value.trim();
+  const [datePart] = trimmed.split('T');
+
+  return /^\d{4}-\d{2}-\d{2}$/.test(datePart) ? datePart : '';
 }
 
 function getKolamUserRoleLabel(role: KolamUserRole | null, rawRole: unknown) {

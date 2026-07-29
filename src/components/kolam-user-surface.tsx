@@ -6,6 +6,9 @@ import {
   getKolamUserIdFromRoute,
   getKolamUserRouteMode,
   type KolamUserBooleanFilter,
+  type KolamUserBiodata,
+  type KolamUserBiodataAddress,
+  type KolamUserBiodataEmergencyContact,
   type KolamUserCreatePayload,
   type KolamUserListItem,
   type KolamUserListPagination,
@@ -33,6 +36,7 @@ import {
   KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import {KolamDataTableRowFrame} from './kolam-data-table-row-frame';
+import {KolamDateField} from './kolam-date-field';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamFormTextField} from './kolam-form-text-field';
 import {KolamStatusBadge} from './kolam-status-badge';
@@ -72,11 +76,33 @@ const EMPTY_CREATE_USER_FORM: KolamUserCreatePayload = {
   username: '',
 };
 
+const EMPTY_USER_BIODATA: KolamUserBiodata = {
+  address: {
+    city: '',
+    postalCode: '',
+    province: '',
+    street: '',
+  },
+  dateOfBirth: '',
+  emergencyContact: {
+    name: '',
+    phone: '',
+    relation: '',
+  },
+  gender: '',
+  maritalStatus: '',
+  nationalId: '',
+  placeOfBirth: '',
+  religion: '',
+  taxNumber: '',
+};
+
 type KolamUserEditForm = {
   account_restricted: boolean;
   access_am: boolean;
   access_inventory: boolean;
   access_pos: boolean;
+  biodata: KolamUserBiodata;
   csActive: boolean;
   email: string;
   first_name: string;
@@ -814,6 +840,7 @@ function KolamUserEditSurface({
     access_am: false,
     access_inventory: false,
     access_pos: false,
+    biodata: EMPTY_USER_BIODATA,
     csActive: false,
     email: '',
     first_name: '',
@@ -959,6 +986,48 @@ function KolamUserEditSurface({
     setError('');
     setMessage('');
   };
+  const setBiodataField = (
+    field: Exclude<keyof KolamUserBiodata, 'address' | 'emergencyContact'>,
+    value: string,
+  ) => {
+    setForm(current => ({
+      ...current,
+      biodata: {...current.biodata, [field]: value},
+    }));
+    setError('');
+    setMessage('');
+  };
+  const setBiodataAddressField = (
+    field: keyof KolamUserBiodataAddress,
+    value: string,
+  ) => {
+    setForm(current => ({
+      ...current,
+      biodata: {
+        ...current.biodata,
+        address: {...current.biodata.address, [field]: value},
+      },
+    }));
+    setError('');
+    setMessage('');
+  };
+  const setBiodataEmergencyContactField = (
+    field: keyof KolamUserBiodataEmergencyContact,
+    value: string,
+  ) => {
+    setForm(current => ({
+      ...current,
+      biodata: {
+        ...current.biodata,
+        emergencyContact: {
+          ...current.biodata.emergencyContact,
+          [field]: value,
+        },
+      },
+    }));
+    setError('');
+    setMessage('');
+  };
 
   const handleSubmit = async () => {
     const validationError = validateEditUserForm(form);
@@ -980,6 +1049,7 @@ function KolamUserEditSurface({
         access_inventory: form.access_inventory,
         access_pos: form.access_pos,
         csActive: form.csActive,
+        biodata: getUserBiodataPayload(form.biodata),
         email: form.email.trim(),
         first_name: form.first_name.trim(),
         ...(canToggleEmployee ? {isEmployee: form.isEmployee} : {}),
@@ -1191,6 +1261,150 @@ function KolamUserEditSurface({
               ) : null}
             </View>
           </View>
+          <View style={styles.formFieldWide}>
+            <View style={styles.accessSectionHeader}>
+              <Text style={styles.detailPanelTitle}>Data Pribadi</Text>
+              <Text style={styles.detailSubtitle}>
+                Biodata dan informasi identitas pengguna.
+              </Text>
+            </View>
+          </View>
+          <View style={styles.formField}>
+            <UserFormField label="Jenis Kelamin">
+              <KolamDropdownSelect
+                label="Jenis Kelamin"
+                onChange={value => setBiodataField('gender', value)}
+                options={[
+                  {label: 'Pilih jenis kelamin', value: ''},
+                  {label: 'Laki-laki', value: 'male'},
+                  {label: 'Perempuan', value: 'female'},
+                ]}
+                value={form.biodata.gender}
+              />
+            </UserFormField>
+          </View>
+          <View style={styles.formField}>
+            <UserFormField label="Status Pernikahan">
+              <KolamDropdownSelect
+                label="Status Pernikahan"
+                onChange={value => setBiodataField('maritalStatus', value)}
+                options={[
+                  {label: 'Pilih status', value: ''},
+                  {label: 'Belum menikah', value: 'single'},
+                  {label: 'Menikah', value: 'married'},
+                ]}
+                value={form.biodata.maritalStatus}
+              />
+            </UserFormField>
+          </View>
+          <UserFormField label="Tanggal Lahir">
+            <KolamDateField
+              label="Tanggal Lahir"
+              onChange={value => setBiodataField('dateOfBirth', value)}
+              showLabelInTrigger={false}
+              value={form.biodata.dateOfBirth}
+            />
+          </UserFormField>
+          <UserFormField label="Tempat Lahir">
+            <KolamFormTextField
+              editable={!saving}
+              onChangeText={value => setBiodataField('placeOfBirth', value)}
+              style={styles.formInput}
+              value={form.biodata.placeOfBirth}
+            />
+          </UserFormField>
+          <UserFormField label="Agama">
+            <KolamFormTextField
+              editable={!saving}
+              onChangeText={value => setBiodataField('religion', value)}
+              style={styles.formInput}
+              value={form.biodata.religion}
+            />
+          </UserFormField>
+          <UserFormField label="No. KTP">
+            <KolamFormTextField
+              editable={!saving}
+              onChangeText={value => setBiodataField('nationalId', value)}
+              style={styles.formInput}
+              value={form.biodata.nationalId}
+            />
+          </UserFormField>
+          <UserFormField label="No. NPWP">
+            <KolamFormTextField
+              editable={!saving}
+              onChangeText={value => setBiodataField('taxNumber', value)}
+              style={styles.formInput}
+              value={form.biodata.taxNumber}
+            />
+          </UserFormField>
+          <View style={styles.formFieldWide}>
+            <Text style={styles.formSubsectionTitle}>Alamat</Text>
+          </View>
+          <UserFormField label="Jalan">
+            <KolamFormTextField
+              editable={!saving}
+              onChangeText={value => setBiodataAddressField('street', value)}
+              style={styles.formInput}
+              value={form.biodata.address.street}
+            />
+          </UserFormField>
+          <UserFormField label="Kota">
+            <KolamFormTextField
+              editable={!saving}
+              onChangeText={value => setBiodataAddressField('city', value)}
+              style={styles.formInput}
+              value={form.biodata.address.city}
+            />
+          </UserFormField>
+          <UserFormField label="Provinsi">
+            <KolamFormTextField
+              editable={!saving}
+              onChangeText={value => setBiodataAddressField('province', value)}
+              style={styles.formInput}
+              value={form.biodata.address.province}
+            />
+          </UserFormField>
+          <UserFormField label="Kode Pos">
+            <KolamFormTextField
+              editable={!saving}
+              onChangeText={value => setBiodataAddressField('postalCode', value)}
+              style={styles.formInput}
+              value={form.biodata.address.postalCode}
+            />
+          </UserFormField>
+          <View style={styles.formFieldWide}>
+            <Text style={styles.formSubsectionTitle}>Kontak Darurat</Text>
+          </View>
+          <UserFormField label="Nama">
+            <KolamFormTextField
+              editable={!saving}
+              onChangeText={value =>
+                setBiodataEmergencyContactField('name', value)
+              }
+              style={styles.formInput}
+              value={form.biodata.emergencyContact.name}
+            />
+          </UserFormField>
+          <UserFormField label="Hubungan">
+            <KolamFormTextField
+              editable={!saving}
+              onChangeText={value =>
+                setBiodataEmergencyContactField('relation', value)
+              }
+              style={styles.formInput}
+              value={form.biodata.emergencyContact.relation}
+            />
+          </UserFormField>
+          <UserFormField label="Telepon">
+            <KolamFormTextField
+              editable={!saving}
+              onChangeText={value =>
+                setBiodataEmergencyContactField('phone', value)
+              }
+              style={styles.formInput}
+              value={form.biodata.emergencyContact.phone}
+            />
+          </UserFormField>
         </View>
       </KolamContentFrame>
     </View>
@@ -1424,6 +1638,7 @@ function getUserEditFormFromUser(user: KolamUserListItem): KolamUserEditForm {
     access_am: user.accessAm,
     access_inventory: user.accessInventory,
     access_pos: user.accessPos,
+    biodata: user.biodata,
     csActive: user.csActive,
     email: user.email,
     first_name: user.firstName,
@@ -1436,6 +1651,45 @@ function getUserEditFormFromUser(user: KolamUserListItem): KolamUserEditForm {
     timezone: user.timezone || 'UTC+08:00',
     username: user.username,
   };
+}
+
+function getUserBiodataPayload(biodata: KolamUserBiodata) {
+  return {
+    address: {
+      city: cleanOptionalUserString(biodata.address.city),
+      postalCode: cleanOptionalUserString(biodata.address.postalCode),
+      province: cleanOptionalUserString(biodata.address.province),
+      street: cleanOptionalUserString(biodata.address.street),
+    },
+    dateOfBirth: getUserBiodataDatePayload(biodata.dateOfBirth),
+    emergencyContact: {
+      name: cleanOptionalUserString(biodata.emergencyContact.name),
+      phone: cleanOptionalUserString(biodata.emergencyContact.phone),
+      relation: cleanOptionalUserString(biodata.emergencyContact.relation),
+    },
+    gender: cleanOptionalUserString(biodata.gender),
+    maritalStatus: cleanOptionalUserString(biodata.maritalStatus),
+    nationalId: cleanOptionalUserString(biodata.nationalId),
+    placeOfBirth: cleanOptionalUserString(biodata.placeOfBirth),
+    religion: cleanOptionalUserString(biodata.religion),
+    taxNumber: cleanOptionalUserString(biodata.taxNumber),
+  };
+}
+
+function getUserBiodataDatePayload(value: string) {
+  if (!value.trim()) {
+    return undefined;
+  }
+
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+
+  return Number.isNaN(parsed.getTime()) ? undefined : parsed.toISOString();
+}
+
+function cleanOptionalUserString(value: string) {
+  const trimmed = value.trim();
+
+  return trimmed || undefined;
 }
 
 function validateEditUserForm(form: KolamUserEditForm) {
@@ -1715,6 +1969,13 @@ const styles = StyleSheet.create({
   formFieldWide: {
     flexBasis: '100%',
     flexGrow: 1,
+  },
+  formSubsectionTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 14,
+    fontWeight: '900',
+    lineHeight: 20,
   },
   accessSectionHeader: {
     gap: 2,
