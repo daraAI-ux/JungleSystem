@@ -315,7 +315,7 @@ describe('KolamWorkspaceSurface', () => {
         'npm run verify:live-routes',
         'Sync Kolam saat ini: seed.',
         'Finance workbench',
-        'Daily Cashflow',
+        'Sesi Tunai Harian',
       ]),
     );
   });

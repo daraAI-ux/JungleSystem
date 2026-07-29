@@ -58,24 +58,32 @@ describe('admin cashflow session domain', () => {
   it('normalizes session and active probe payloads', () => {
     const session = normalizeKolamAdminCashflowSession({
       _id: 'sess-1',
-      name: 'Hari ini',
+      name: 'Daily Cashflow',
       source: 'admin',
       status: 'open',
       openedBy: { first_name: 'Ada', last_name: 'Lovelace', _id: 'u1' },
     });
     expect(session.id).toBe('sess-1');
+    expect(session.name).toBe('Sesi Tunai Harian');
     expect(session.openedBy?.name).toBe('Ada Lovelace');
 
     const probe = normalizeKolamAdminCashflowActiveProbe({
-      data: { _id: 'sess-1', status: 'open', source: 'admin', name: 'Hari ini' },
+      data: {
+        _id: 'sess-1',
+        status: 'open',
+        source: 'admin',
+        name: 'Auto Daily Cashflow - 28 Jul 2026',
+      },
       todaySession: {
         _id: 'sess-1',
-        name: 'Hari ini',
+        name: 'Daily Cashflow',
         status: 'open',
       },
     });
     expect(probe.active?.id).toBe('sess-1');
+    expect(probe.active?.name).toBe('Sesi Tunai Harian Otomatis - 28 Jul 2026');
     expect(probe.todaySession?.id).toBe('sess-1');
+    expect(probe.todaySession?.name).toBe('Sesi Tunai Harian');
   });
 
   it('computes review summary and cash invoice helpers', () => {

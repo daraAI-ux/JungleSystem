@@ -5,6 +5,8 @@
  * Source of truth: FE `types/cashflow.ts` + BE `/api/cashflow`.
  */
 
+import { formatCashflowSessionDisplayName } from '../lib/cashflow';
+
 export const KOLAM_ADMIN_CASHFLOW_SESSION_ROOT = '/cashflow-session';
 export const KOLAM_POS_CASHFLOW_SHIFT_ROOT = '/pos/cashflow';
 
@@ -212,7 +214,10 @@ export function normalizeKolamAdminCashflowSession(
 
   return {
     id: String(row.id || row._id || '').trim(),
-    name: String(row.name || '').trim() || 'Sesi tunai',
+    name: formatCashflowSessionDisplayName(
+      String(row.name || '').trim(),
+      'Sesi Tunai Harian',
+    ),
     source: row.source === 'pos' ? 'pos' : 'admin',
     status: normalizeStatus(row.status),
     windowStart: stringifyDate(row.windowStart),
@@ -275,7 +280,10 @@ export function normalizeKolamAdminCashflowActiveProbe(
   const todaySession: KolamAdminCashflowTodaySession | null = todayId
     ? {
         id: todayId,
-        name: String(todayRaw?.name || '').trim() || 'Sesi hari ini',
+        name: formatCashflowSessionDisplayName(
+          String(todayRaw?.name || '').trim(),
+          'Sesi hari ini',
+        ),
         status: normalizeStatus(todayRaw?.status),
         windowStart: stringifyDate(todayRaw?.windowStart),
         windowEnd: stringifyDate(todayRaw?.windowEnd),

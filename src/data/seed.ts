@@ -88,7 +88,7 @@ export const paymentMethods: PaymentMethod[] = [
 
 export const activeCashflowSession: CashflowSession = {
   id: 'cashflow-today',
-  name: 'Daily Cashflow',
+  name: 'Sesi Tunai Harian',
   openedAt: '2026-07-11T09:00:00+07:00',
   openingBalance: 750000,
   cashier: 'Kasir Dunia Anura',

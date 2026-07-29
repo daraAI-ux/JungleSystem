@@ -8,6 +8,7 @@ import type {
   SaleSummary,
 } from '../domain/pos';
 import {apiGet, apiPost, apiRequest} from '../lib/api-client';
+import {formatCashflowSessionDisplayName} from '../lib/cashflow';
 
 interface ListResponse<T> {
   data: T[];
@@ -309,7 +310,7 @@ function mapCashflowSession(session: BackendCashflowSession): CashflowSession {
 
   return {
     id: session._id,
-    name: session.name ?? 'Daily Cashflow',
+    name: formatCashflowSessionDisplayName(session.name, 'Sesi Tunai Harian'),
     openedAt: session.openedAt,
     openingBalance: session.openingCash ?? 0,
     snapshot: session.snapshot,
