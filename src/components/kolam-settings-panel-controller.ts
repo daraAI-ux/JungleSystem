@@ -147,6 +147,10 @@ import {
   type KolamTaxCompanyProfile,
   type KolamTaxPartyGapsSummary,
 } from '../services/kolam-financial-settings-api';
+import {
+  createKolamDaraKnowledge,
+  uploadKolamKatakTerbangWorkerPhoto,
+} from '../services/kolam-ai-dara-settings-api';
 import { getCurrentUser } from '../services/auth-api';
 import { ApiError } from '../lib/api-error';
 import {
@@ -167,6 +171,7 @@ type MarketplaceLandingAssetStatus =
   | 'deleting'
   | 'reordering';
 type FinancialDataStatus = 'idle' | 'loading' | 'live' | 'saving' | 'error';
+type DaraKnowledgeSaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 type WebContentPanelId = 'marketplace' | 'blog' | 'blog-topics';
 type MarketplaceLandingTabId =
   | 'hero'
@@ -209,6 +214,11 @@ export interface SettingsPaymentMethodDraft {
   isAvailableOnWebstore: boolean;
   requireSaleProof: boolean;
   costsText: string;
+}
+export interface DaraKnowledgeDraft {
+  title: string;
+  category: string;
+  body: string;
 }
 export interface RegionSyncSummaryRow {
   id: string;
@@ -395,26 +405,53 @@ interface WebSettingDraft {
   chatStoreEnabled: boolean;
   teamChatDaraReplyEnabled: boolean;
   teamChatGroupCallEnabled: boolean;
+  inboxAiReplyStore: boolean;
+  inboxAiReplyWhatsapp: boolean;
+  inboxAiReplyTiktok: boolean;
+  inboxAiReplyInstagram: boolean;
+  inboxAiReplyTokopedia: boolean;
+  inboxAiReplyShopee: boolean;
+  daraFulfillmentTeamRoomId: string;
   daraBusinessEnabled: boolean;
   daraToolsEnabled: boolean;
   daraKnowledgeEnabled: boolean;
   daraHandoffNotifyEnabled: boolean;
   daraInsightsEnabled: boolean;
+  daraInsightsCronSchedule: string;
   daraAutoReportEnabled: boolean;
   daraImageAnalysisEnabled: boolean;
   daraTaxEnabled: boolean;
   daraSeoEnabled: boolean;
+  daraSeoMonitorEnabled: boolean;
+  daraSeoSentimentLlmEnabled: boolean;
+  daraMarketScanCronEnabled: boolean;
   daraTaxRegulationWatcherEnabled: boolean;
   daraTaxComplianceJobEnabled: boolean;
   daraTaxLlmNarrativeEnabled: boolean;
+  autoOlshopFulfillmentEnabled: boolean;
+  autoOlshopShopeeEnabled: boolean;
+  autoOlshopTokopediaEnabled: boolean;
   daraWebstoreFulfillmentEnabled: boolean;
+  daraFulfillmentPackingMinutes: string;
+  daraFulfillmentPackingMaxExtensions: string;
+  katakTerbangWorkerName: string;
   daraStaffOpsNotifyEnabled: boolean;
   daraStaffWaNotifyEnabled: boolean;
+  daraPenjualanTeamRoomId: string;
   daraOlshopCustomerNotifyEnabled: boolean;
+  daraOlshopDeferredCron: string;
+  daraOlshopDeferredBatch: string;
+  daraOlshopStockGateEnabled: boolean;
+  daraOlshopStockSyncMaxAgeMs: string;
+  daraOlshopStockGateCron: string;
+  daraOlshopStockGateBatch: string;
+  daraOpsAuditEnabled: boolean;
   daraOwnerDigestEnabled: boolean;
+  daraOwnerDigestCron: string;
   daraOwnerDigestWaEnabled: boolean;
   daraOwnerDigestFcmEnabled: boolean;
   daraOwnerFcmUrgentEnabled: boolean;
+  daraOpsDigestLookbackHours: string;
   notificationSound: string;
   unassignedNotificationSound: string;
   handoffNotificationSound: string;
@@ -630,26 +667,53 @@ const emptyWebSettingDraft: WebSettingDraft = {
   chatStoreEnabled: true,
   teamChatDaraReplyEnabled: true,
   teamChatGroupCallEnabled: false,
+  inboxAiReplyStore: false,
+  inboxAiReplyWhatsapp: true,
+  inboxAiReplyTiktok: true,
+  inboxAiReplyInstagram: true,
+  inboxAiReplyTokopedia: false,
+  inboxAiReplyShopee: false,
+  daraFulfillmentTeamRoomId: '',
   daraBusinessEnabled: true,
   daraToolsEnabled: true,
   daraKnowledgeEnabled: true,
   daraHandoffNotifyEnabled: true,
   daraInsightsEnabled: true,
+  daraInsightsCronSchedule: '0 8,14 * * *',
   daraAutoReportEnabled: true,
   daraImageAnalysisEnabled: true,
   daraTaxEnabled: true,
   daraSeoEnabled: true,
+  daraSeoMonitorEnabled: true,
+  daraSeoSentimentLlmEnabled: false,
+  daraMarketScanCronEnabled: true,
   daraTaxRegulationWatcherEnabled: false,
   daraTaxComplianceJobEnabled: true,
   daraTaxLlmNarrativeEnabled: false,
+  autoOlshopFulfillmentEnabled: false,
+  autoOlshopShopeeEnabled: false,
+  autoOlshopTokopediaEnabled: false,
   daraWebstoreFulfillmentEnabled: true,
+  daraFulfillmentPackingMinutes: '30',
+  daraFulfillmentPackingMaxExtensions: '1',
+  katakTerbangWorkerName: '',
   daraStaffOpsNotifyEnabled: true,
   daraStaffWaNotifyEnabled: true,
+  daraPenjualanTeamRoomId: '',
   daraOlshopCustomerNotifyEnabled: true,
+  daraOlshopDeferredCron: '*/10 * * * *',
+  daraOlshopDeferredBatch: '20',
+  daraOlshopStockGateEnabled: true,
+  daraOlshopStockSyncMaxAgeMs: '21600000',
+  daraOlshopStockGateCron: '*/5 * * * *',
+  daraOlshopStockGateBatch: '20',
+  daraOpsAuditEnabled: true,
   daraOwnerDigestEnabled: true,
+  daraOwnerDigestCron: '0 7 * * *',
   daraOwnerDigestWaEnabled: true,
   daraOwnerDigestFcmEnabled: true,
   daraOwnerFcmUrgentEnabled: true,
+  daraOpsDigestLookbackHours: '12',
   notificationSound: '',
   unassignedNotificationSound: '',
   handoffNotificationSound: '',
@@ -698,6 +762,12 @@ const emptyPaymentMethodDraft: SettingsPaymentMethodDraft = {
   isAvailableOnWebstore: true,
   requireSaleProof: false,
   costsText: '',
+};
+
+const emptyDaraKnowledgeDraft: DaraKnowledgeDraft = {
+  title: '',
+  category: 'sop_kasir',
+  body: '',
 };
 
 const emptyMarketplaceLandingCtaDraft: MarketplaceLandingCtaDraft = {
@@ -912,6 +982,11 @@ export function useKolamSettingsPanelController(
   const [kpiMessage, setKpiMessage] = useState('');
   const [webSettingDraft, setWebSettingDraft] =
     useState<WebSettingDraft>(emptyWebSettingDraft);
+  const [daraKnowledgeDraft, setDaraKnowledgeDraft] =
+    useState<DaraKnowledgeDraft>(emptyDaraKnowledgeDraft);
+  const [daraKnowledgeSaveStatus, setDaraKnowledgeSaveStatus] =
+    useState<DaraKnowledgeSaveStatus>('idle');
+  const [daraKnowledgeMessage, setDaraKnowledgeMessage] = useState('');
   const [sitemapDraft, setSitemapDraft] =
     useState<KolamSitemapConfig>(defaultSitemapConfig);
   const [sitemapCustomUrlsText, setSitemapCustomUrlsText] = useState('');
@@ -1191,26 +1266,35 @@ export function useKolamSettingsPanelController(
   }, [activeSurfaceId]);
 
   useEffect(() => {
-    if (activeSettingsTabId !== 'operasional') {
+    if (activeSettingsTabId !== 'operasional' && activeSettingsTabId !== 'ai') {
       return;
     }
 
     let mounted = true;
 
     Promise.allSettled([
-      getKolamStaffAttendanceSettings(),
+      activeSettingsTabId === 'operasional'
+        ? getKolamStaffAttendanceSettings()
+        : Promise.resolve(null),
       getKolamTeamChatRooms(),
-      getKolamUserPickerRows(),
+      activeSettingsTabId === 'operasional'
+        ? getKolamUserPickerRows()
+        : Promise.resolve([]),
     ]).then(([attendanceResult, roomsResult, staffResult]) => {
       if (!mounted) {
         return;
       }
 
-      if (attendanceResult.status === 'fulfilled') {
-        setStaffAttendanceSettings(attendanceResult.value);
+      if (
+        activeSettingsTabId === 'operasional' &&
+        attendanceResult.status === 'fulfilled' &&
+        attendanceResult.value
+      ) {
+        const attendanceSettings = attendanceResult.value;
+        setStaffAttendanceSettings(attendanceSettings);
         setWebSettingDraft(current => ({
           ...current,
-          ...createStaffAttendanceDraftFields(attendanceResult.value),
+          ...createStaffAttendanceDraftFields(attendanceSettings),
         }));
       }
 
@@ -1218,7 +1302,10 @@ export function useKolamSettingsPanelController(
         setOperationalRooms(roomsResult.value);
       }
 
-      if (staffResult.status === 'fulfilled') {
+      if (
+        activeSettingsTabId === 'operasional' &&
+        staffResult.status === 'fulfilled'
+      ) {
         setOperationalStaffRows(staffResult.value);
       }
     });
@@ -1624,6 +1711,17 @@ export function useKolamSettingsPanelController(
     if (resetSaveStatus) {
       setWebSettingSaveStatus('idle');
     }
+  };
+  const setDaraKnowledgeDraftField = <Key extends keyof DaraKnowledgeDraft>(
+    key: Key,
+    value: DaraKnowledgeDraft[Key],
+  ) => {
+    setDaraKnowledgeDraft(current => ({
+      ...current,
+      [key]: value,
+    }));
+    setDaraKnowledgeSaveStatus('idle');
+    setDaraKnowledgeMessage('');
   };
   const setWebSettingPluginControl = (
     key: KolamPluginConfigKey,
@@ -2361,6 +2459,7 @@ export function useKolamSettingsPanelController(
         );
       }
       setMarketplaceLandingMessage('DARA avatar berhasil diupload.');
+      setWebSettingMessage('Avatar DARA berhasil diupload.');
     });
   const uploadMarketplaceAsset = async (
     key: string,
@@ -2404,6 +2503,75 @@ export function useKolamSettingsPanelController(
         ...current,
         [key]: 'idle',
       }));
+    }
+  };
+  const uploadDaraWorkerPhoto = async () => {
+    setWebSettingMessage('');
+
+    try {
+      const picked = await pickNativeImageFile();
+      if (picked.cancelled) {
+        return;
+      }
+
+      const localUri = picked.uri || picked.path || '';
+      if (!localUri) {
+        setWebSettingMessage('File image tidak valid.');
+        return;
+      }
+
+      if (!isAllowedMarketplaceImageFile(localUri, picked.extension)) {
+        setWebSettingMessage(
+          'Foto hanya menerima JPG, PNG, WEBP, GIF, SVG, HEIC, atau HEIF.',
+        );
+        return;
+      }
+
+      setWebSettingSaveStatus('saving');
+      const response = await uploadKolamKatakTerbangWorkerPhoto(localUri);
+      if (response.katakTerbangWorkerPhotoUrl) {
+        setWebSetting(current =>
+          current
+            ? ({
+                ...current,
+                katakTerbangWorkerPhotoUrl:
+                  response.katakTerbangWorkerPhotoUrl,
+              } as KolamWebSetting)
+            : current,
+        );
+      }
+      setWebSettingSaveStatus('saved');
+      setWebSettingMessage('Foto Katak Terbang berhasil diupload.');
+    } catch (error) {
+      setWebSettingSaveStatus('error');
+      setWebSettingMessage(getWebSettingSaveErrorMessage(error));
+    }
+  };
+  const saveDaraKnowledge = async () => {
+    const title = daraKnowledgeDraft.title.trim();
+    const contentMarkdown = daraKnowledgeDraft.body.trim();
+
+    if (!title || !contentMarkdown) {
+      setDaraKnowledgeSaveStatus('error');
+      setDaraKnowledgeMessage('Judul dan isi SOP wajib diisi.');
+      return;
+    }
+
+    setDaraKnowledgeSaveStatus('saving');
+    setDaraKnowledgeMessage('');
+
+    try {
+      await createKolamDaraKnowledge({
+        title,
+        category: daraKnowledgeDraft.category,
+        contentMarkdown,
+      });
+      setDaraKnowledgeDraft(emptyDaraKnowledgeDraft);
+      setDaraKnowledgeSaveStatus('saved');
+      setDaraKnowledgeMessage('SOP berhasil disimpan ke knowledge DARA.');
+    } catch (error) {
+      setDaraKnowledgeSaveStatus('error');
+      setDaraKnowledgeMessage(getWebSettingSaveErrorMessage(error));
     }
   };
   const uploadNotificationSound = async (type: KolamNotificationSoundType) => {
@@ -2565,30 +2733,100 @@ export function useKolamSettingsPanelController(
         firebase: createFirebaseUpdateBody(webSettingDraft),
         teamChatDaraReplyEnabled: webSettingDraft.teamChatDaraReplyEnabled,
         teamChatGroupCallEnabled: webSettingDraft.teamChatGroupCallEnabled,
+        inboxAiReplyPlatforms: {
+          store: webSettingDraft.inboxAiReplyStore,
+          whatsapp: webSettingDraft.inboxAiReplyWhatsapp,
+          tiktok: webSettingDraft.inboxAiReplyTiktok,
+          instagram: webSettingDraft.inboxAiReplyInstagram,
+          tokopedia: webSettingDraft.inboxAiReplyTokopedia,
+          shopee: webSettingDraft.inboxAiReplyShopee,
+        },
+        daraFulfillmentTeamRoomId:
+          webSettingDraft.daraFulfillmentTeamRoomId.trim(),
         daraBusinessEnabled: webSettingDraft.daraBusinessEnabled,
         daraToolsEnabled: webSettingDraft.daraToolsEnabled,
         daraKnowledgeEnabled: webSettingDraft.daraKnowledgeEnabled,
         daraHandoffNotifyEnabled: webSettingDraft.daraHandoffNotifyEnabled,
         daraInsightsEnabled: webSettingDraft.daraInsightsEnabled,
+        daraInsightsCronSchedule:
+          webSettingDraft.daraInsightsCronSchedule.trim(),
         daraAutoReportEnabled: webSettingDraft.daraAutoReportEnabled,
         daraImageAnalysisEnabled: webSettingDraft.daraImageAnalysisEnabled,
         daraTaxEnabled: webSettingDraft.daraTaxEnabled,
         daraSeoEnabled: webSettingDraft.daraSeoEnabled,
+        daraSeoMonitorEnabled: webSettingDraft.daraSeoMonitorEnabled,
+        daraSeoSentimentLlmEnabled:
+          webSettingDraft.daraSeoSentimentLlmEnabled,
+        daraMarketScanCronEnabled: webSettingDraft.daraMarketScanCronEnabled,
         daraTaxRegulationWatcherEnabled:
           webSettingDraft.daraTaxRegulationWatcherEnabled,
         daraTaxComplianceJobEnabled:
           webSettingDraft.daraTaxComplianceJobEnabled,
         daraTaxLlmNarrativeEnabled: webSettingDraft.daraTaxLlmNarrativeEnabled,
+        autoOlshopFulfillmentEnabled:
+          webSettingDraft.autoOlshopFulfillmentEnabled,
+        autoOlshopShopeeEnabled: webSettingDraft.autoOlshopShopeeEnabled,
+        autoOlshopTokopediaEnabled: webSettingDraft.autoOlshopTokopediaEnabled,
         daraWebstoreFulfillmentEnabled:
           webSettingDraft.daraWebstoreFulfillmentEnabled,
+        daraFulfillmentPackingMinutes: clampNumber(
+          parseIntegerOrFallback(
+            webSettingDraft.daraFulfillmentPackingMinutes,
+            30,
+          ),
+          5,
+          240,
+        ),
+        daraFulfillmentPackingMaxExtensions: clampNumber(
+          parseIntegerOrFallback(
+            webSettingDraft.daraFulfillmentPackingMaxExtensions,
+            1,
+          ),
+          0,
+          5,
+        ),
+        katakTerbangWorkerName: webSettingDraft.katakTerbangWorkerName
+          .trim()
+          .slice(0, 80),
         daraStaffOpsNotifyEnabled: webSettingDraft.daraStaffOpsNotifyEnabled,
         daraStaffWaNotifyEnabled: webSettingDraft.daraStaffWaNotifyEnabled,
+        daraPenjualanTeamRoomId:
+          webSettingDraft.daraPenjualanTeamRoomId.trim(),
         daraOlshopCustomerNotifyEnabled:
           webSettingDraft.daraOlshopCustomerNotifyEnabled,
+        daraOlshopDeferredCron: webSettingDraft.daraOlshopDeferredCron.trim(),
+        daraOlshopDeferredBatch: clampNumber(
+          parseIntegerOrFallback(webSettingDraft.daraOlshopDeferredBatch, 20),
+          1,
+          200,
+        ),
+        daraOlshopStockGateEnabled:
+          webSettingDraft.daraOlshopStockGateEnabled,
+        daraOlshopStockSyncMaxAgeMs: Math.max(
+          60000,
+          parseIntegerOrFallback(
+            webSettingDraft.daraOlshopStockSyncMaxAgeMs,
+            21600000,
+          ),
+        ),
+        daraOlshopStockGateCron:
+          webSettingDraft.daraOlshopStockGateCron.trim(),
+        daraOlshopStockGateBatch: clampNumber(
+          parseIntegerOrFallback(webSettingDraft.daraOlshopStockGateBatch, 20),
+          1,
+          200,
+        ),
+        daraOpsAuditEnabled: webSettingDraft.daraOpsAuditEnabled,
         daraOwnerDigestEnabled: webSettingDraft.daraOwnerDigestEnabled,
+        daraOwnerDigestCron: webSettingDraft.daraOwnerDigestCron.trim(),
         daraOwnerDigestWaEnabled: webSettingDraft.daraOwnerDigestWaEnabled,
         daraOwnerDigestFcmEnabled: webSettingDraft.daraOwnerDigestFcmEnabled,
         daraOwnerFcmUrgentEnabled: webSettingDraft.daraOwnerFcmUrgentEnabled,
+        daraOpsDigestLookbackHours: clampNumber(
+          parseIntegerOrFallback(webSettingDraft.daraOpsDigestLookbackHours, 12),
+          1,
+          72,
+        ),
         kolamPlugins: createKolamPluginsUpdateBody(
           webSettingDraft.pluginControls,
           webSetting?.kolamPlugins,
@@ -2709,30 +2947,100 @@ export function useKolamSettingsPanelController(
         },
         teamChatDaraReplyEnabled: webSettingDraft.teamChatDaraReplyEnabled,
         teamChatGroupCallEnabled: webSettingDraft.teamChatGroupCallEnabled,
+        inboxAiReplyPlatforms: {
+          store: webSettingDraft.inboxAiReplyStore,
+          whatsapp: webSettingDraft.inboxAiReplyWhatsapp,
+          tiktok: webSettingDraft.inboxAiReplyTiktok,
+          instagram: webSettingDraft.inboxAiReplyInstagram,
+          tokopedia: webSettingDraft.inboxAiReplyTokopedia,
+          shopee: webSettingDraft.inboxAiReplyShopee,
+        },
+        daraFulfillmentTeamRoomId:
+          webSettingDraft.daraFulfillmentTeamRoomId.trim(),
         daraBusinessEnabled: webSettingDraft.daraBusinessEnabled,
         daraToolsEnabled: webSettingDraft.daraToolsEnabled,
         daraKnowledgeEnabled: webSettingDraft.daraKnowledgeEnabled,
         daraHandoffNotifyEnabled: webSettingDraft.daraHandoffNotifyEnabled,
         daraInsightsEnabled: webSettingDraft.daraInsightsEnabled,
+        daraInsightsCronSchedule:
+          webSettingDraft.daraInsightsCronSchedule.trim(),
         daraAutoReportEnabled: webSettingDraft.daraAutoReportEnabled,
         daraImageAnalysisEnabled: webSettingDraft.daraImageAnalysisEnabled,
         daraTaxEnabled: webSettingDraft.daraTaxEnabled,
         daraSeoEnabled: webSettingDraft.daraSeoEnabled,
+        daraSeoMonitorEnabled: webSettingDraft.daraSeoMonitorEnabled,
+        daraSeoSentimentLlmEnabled:
+          webSettingDraft.daraSeoSentimentLlmEnabled,
+        daraMarketScanCronEnabled: webSettingDraft.daraMarketScanCronEnabled,
         daraTaxRegulationWatcherEnabled:
           webSettingDraft.daraTaxRegulationWatcherEnabled,
         daraTaxComplianceJobEnabled:
           webSettingDraft.daraTaxComplianceJobEnabled,
         daraTaxLlmNarrativeEnabled: webSettingDraft.daraTaxLlmNarrativeEnabled,
+        autoOlshopFulfillmentEnabled:
+          webSettingDraft.autoOlshopFulfillmentEnabled,
+        autoOlshopShopeeEnabled: webSettingDraft.autoOlshopShopeeEnabled,
+        autoOlshopTokopediaEnabled: webSettingDraft.autoOlshopTokopediaEnabled,
         daraWebstoreFulfillmentEnabled:
           webSettingDraft.daraWebstoreFulfillmentEnabled,
+        daraFulfillmentPackingMinutes: clampNumber(
+          parseIntegerOrFallback(
+            webSettingDraft.daraFulfillmentPackingMinutes,
+            30,
+          ),
+          5,
+          240,
+        ),
+        daraFulfillmentPackingMaxExtensions: clampNumber(
+          parseIntegerOrFallback(
+            webSettingDraft.daraFulfillmentPackingMaxExtensions,
+            1,
+          ),
+          0,
+          5,
+        ),
+        katakTerbangWorkerName: webSettingDraft.katakTerbangWorkerName
+          .trim()
+          .slice(0, 80),
         daraStaffOpsNotifyEnabled: webSettingDraft.daraStaffOpsNotifyEnabled,
         daraStaffWaNotifyEnabled: webSettingDraft.daraStaffWaNotifyEnabled,
+        daraPenjualanTeamRoomId:
+          webSettingDraft.daraPenjualanTeamRoomId.trim(),
         daraOlshopCustomerNotifyEnabled:
           webSettingDraft.daraOlshopCustomerNotifyEnabled,
+        daraOlshopDeferredCron: webSettingDraft.daraOlshopDeferredCron.trim(),
+        daraOlshopDeferredBatch: clampNumber(
+          parseIntegerOrFallback(webSettingDraft.daraOlshopDeferredBatch, 20),
+          1,
+          200,
+        ),
+        daraOlshopStockGateEnabled:
+          webSettingDraft.daraOlshopStockGateEnabled,
+        daraOlshopStockSyncMaxAgeMs: Math.max(
+          60000,
+          parseIntegerOrFallback(
+            webSettingDraft.daraOlshopStockSyncMaxAgeMs,
+            21600000,
+          ),
+        ),
+        daraOlshopStockGateCron:
+          webSettingDraft.daraOlshopStockGateCron.trim(),
+        daraOlshopStockGateBatch: clampNumber(
+          parseIntegerOrFallback(webSettingDraft.daraOlshopStockGateBatch, 20),
+          1,
+          200,
+        ),
+        daraOpsAuditEnabled: webSettingDraft.daraOpsAuditEnabled,
         daraOwnerDigestEnabled: webSettingDraft.daraOwnerDigestEnabled,
+        daraOwnerDigestCron: webSettingDraft.daraOwnerDigestCron.trim(),
         daraOwnerDigestWaEnabled: webSettingDraft.daraOwnerDigestWaEnabled,
         daraOwnerDigestFcmEnabled: webSettingDraft.daraOwnerDigestFcmEnabled,
         daraOwnerFcmUrgentEnabled: webSettingDraft.daraOwnerFcmUrgentEnabled,
+        daraOpsDigestLookbackHours: clampNumber(
+          parseIntegerOrFallback(webSettingDraft.daraOpsDigestLookbackHours, 12),
+          1,
+          72,
+        ),
         kolamPlugins: createKolamPluginsUpdateBody(
           webSettingDraft.pluginControls,
           updated.kolamPlugins,
@@ -3301,6 +3609,9 @@ export function useKolamSettingsPanelController(
     financialSectionVisibility,
     financialStatus,
     financialWallets,
+    daraKnowledgeDraft,
+    daraKnowledgeMessage,
+    daraKnowledgeSaveStatus,
     kpiMessage,
     kpiPreview,
     kpiSettingsDraft,
@@ -3350,6 +3661,7 @@ export function useKolamSettingsPanelController(
     setMarketplaceLandingTabId,
     setPaymentMethodDraftField,
     setPaymentMethodFilter,
+    setDaraKnowledgeDraftField,
     setRegionFilter,
     setRoleDraftField,
     setSelectedActivityLogId,
@@ -3404,6 +3716,7 @@ export function useKolamSettingsPanelController(
     saveMarketplaceLandingCta,
     saveMarketplaceLandingYoutube,
     saveMarketplaceLandingNotice,
+    saveDaraKnowledge,
     clearPaymentMethodDraft,
     deletePaymentMethod,
     deletePaymentMethodPhoto,
@@ -3428,6 +3741,7 @@ export function useKolamSettingsPanelController(
     uploadMarketplaceHeroImage,
     uploadMarketplaceLogo,
     uploadMarketplaceYoutubeBackground,
+    uploadDaraWorkerPhoto,
     uploadPaymentMethodPhoto,
     taxCompanyProfile,
     taxCompanyProfileDraft,
@@ -3505,6 +3819,10 @@ function createWebSettingDraft(
   const fridayHours = weeklyHours.friday ?? {};
   const saturdayHours = weeklyHours.saturday ?? {};
   const sundayHours = weeklyHours.sunday ?? {};
+  const inboxAiReplyPlatforms =
+    (setting.inboxAiReplyPlatforms as
+      | Record<string, unknown>
+      | undefined) ?? {};
 
   return {
     versionKolam:
@@ -3645,29 +3963,90 @@ function createWebSettingDraft(
     chatStoreEnabled: setting.kolamPlugins?.chat?.storeEnabled !== false,
     teamChatDaraReplyEnabled: setting.teamChatDaraReplyEnabled !== false,
     teamChatGroupCallEnabled: setting.teamChatGroupCallEnabled === true,
+    inboxAiReplyStore: inboxAiReplyPlatforms.store === true,
+    inboxAiReplyWhatsapp: inboxAiReplyPlatforms.whatsapp !== false,
+    inboxAiReplyTiktok: inboxAiReplyPlatforms.tiktok !== false,
+    inboxAiReplyInstagram: inboxAiReplyPlatforms.instagram !== false,
+    inboxAiReplyTokopedia: inboxAiReplyPlatforms.tokopedia === true,
+    inboxAiReplyShopee: inboxAiReplyPlatforms.shopee === true,
+    daraFulfillmentTeamRoomId:
+      typeof setting.daraFulfillmentTeamRoomId === 'string'
+        ? setting.daraFulfillmentTeamRoomId
+        : '',
     daraBusinessEnabled: setting.daraBusinessEnabled !== false,
     daraToolsEnabled: setting.daraToolsEnabled !== false,
     daraKnowledgeEnabled: setting.daraKnowledgeEnabled !== false,
     daraHandoffNotifyEnabled: setting.daraHandoffNotifyEnabled !== false,
     daraInsightsEnabled: setting.daraInsightsEnabled !== false,
+    daraInsightsCronSchedule:
+      typeof setting.daraInsightsCronSchedule === 'string'
+        ? setting.daraInsightsCronSchedule
+        : emptyWebSettingDraft.daraInsightsCronSchedule,
     daraAutoReportEnabled: setting.daraAutoReportEnabled !== false,
     daraImageAnalysisEnabled: setting.daraImageAnalysisEnabled !== false,
     daraTaxEnabled: setting.daraTaxEnabled !== false,
     daraSeoEnabled: setting.daraSeoEnabled !== false,
+    daraSeoMonitorEnabled: setting.daraSeoMonitorEnabled !== false,
+    daraSeoSentimentLlmEnabled:
+      setting.daraSeoSentimentLlmEnabled === true,
+    daraMarketScanCronEnabled: setting.daraMarketScanCronEnabled !== false,
     daraTaxRegulationWatcherEnabled:
       setting.daraTaxRegulationWatcherEnabled === true,
     daraTaxComplianceJobEnabled: setting.daraTaxComplianceJobEnabled !== false,
     daraTaxLlmNarrativeEnabled: setting.daraTaxLlmNarrativeEnabled === true,
+    autoOlshopFulfillmentEnabled:
+      setting.autoOlshopFulfillmentEnabled === true,
+    autoOlshopShopeeEnabled: setting.autoOlshopShopeeEnabled === true,
+    autoOlshopTokopediaEnabled: setting.autoOlshopTokopediaEnabled === true,
     daraWebstoreFulfillmentEnabled:
       setting.daraWebstoreFulfillmentEnabled !== false,
+    daraFulfillmentPackingMinutes: String(
+      setting.daraFulfillmentPackingMinutes ?? 30,
+    ),
+    daraFulfillmentPackingMaxExtensions: String(
+      setting.daraFulfillmentPackingMaxExtensions ?? 1,
+    ),
+    katakTerbangWorkerName:
+      typeof setting.katakTerbangWorkerName === 'string'
+        ? setting.katakTerbangWorkerName
+        : '',
     daraStaffOpsNotifyEnabled: setting.daraStaffOpsNotifyEnabled !== false,
     daraStaffWaNotifyEnabled: setting.daraStaffWaNotifyEnabled !== false,
+    daraPenjualanTeamRoomId:
+      typeof setting.daraPenjualanTeamRoomId === 'string'
+        ? setting.daraPenjualanTeamRoomId
+        : '',
     daraOlshopCustomerNotifyEnabled:
       setting.daraOlshopCustomerNotifyEnabled !== false,
+    daraOlshopDeferredCron:
+      typeof setting.daraOlshopDeferredCron === 'string'
+        ? setting.daraOlshopDeferredCron
+        : emptyWebSettingDraft.daraOlshopDeferredCron,
+    daraOlshopDeferredBatch: String(setting.daraOlshopDeferredBatch ?? 20),
+    daraOlshopStockGateEnabled:
+      setting.daraOlshopStockGateEnabled !== false,
+    daraOlshopStockSyncMaxAgeMs: String(
+      setting.daraOlshopStockSyncMaxAgeMs ?? 21600000,
+    ),
+    daraOlshopStockGateCron:
+      typeof setting.daraOlshopStockGateCron === 'string'
+        ? setting.daraOlshopStockGateCron
+        : emptyWebSettingDraft.daraOlshopStockGateCron,
+    daraOlshopStockGateBatch: String(
+      setting.daraOlshopStockGateBatch ?? 20,
+    ),
+    daraOpsAuditEnabled: setting.daraOpsAuditEnabled !== false,
     daraOwnerDigestEnabled: setting.daraOwnerDigestEnabled !== false,
+    daraOwnerDigestCron:
+      typeof setting.daraOwnerDigestCron === 'string'
+        ? setting.daraOwnerDigestCron
+        : emptyWebSettingDraft.daraOwnerDigestCron,
     daraOwnerDigestWaEnabled: setting.daraOwnerDigestWaEnabled !== false,
     daraOwnerDigestFcmEnabled: setting.daraOwnerDigestFcmEnabled !== false,
     daraOwnerFcmUrgentEnabled: setting.daraOwnerFcmUrgentEnabled !== false,
+    daraOpsDigestLookbackHours: String(
+      setting.daraOpsDigestLookbackHours ?? 12,
+    ),
     notificationSound: setting.notificationSound ?? '',
     unassignedNotificationSound: setting.unassignedNotificationSound ?? '',
     handoffNotificationSound: setting.handoffNotificationSound ?? '',

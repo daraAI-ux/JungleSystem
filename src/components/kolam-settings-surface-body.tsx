@@ -52,6 +52,9 @@ export function KolamSettingsSurfaceBody({
         financialSectionVisibility={controller.financialSectionVisibility}
         financialStatus={controller.financialStatus}
         financialWallets={controller.financialWallets}
+        daraKnowledgeDraft={controller.daraKnowledgeDraft}
+        daraKnowledgeMessage={controller.daraKnowledgeMessage}
+        daraKnowledgeSaveStatus={controller.daraKnowledgeSaveStatus}
         kpiMessage={controller.kpiMessage}
         kpiPreview={controller.kpiPreview}
         kpiSettingsDraft={controller.kpiSettingsDraft}
@@ -124,6 +127,9 @@ export function KolamSettingsSurfaceBody({
         onSaveMarketplaceLandingNotice={() => {
           void controller.saveMarketplaceLandingNotice();
         }}
+        onSaveDaraKnowledge={() => {
+          void controller.saveDaraKnowledge();
+        }}
         onClearPaymentMethodDraft={controller.clearPaymentMethodDraft}
         onSaveEnclosureSaleCommission={() => {
           void controller.saveEnclosureSaleCommission();
@@ -166,6 +172,9 @@ export function KolamSettingsSurfaceBody({
         }}
         onUploadMarketplaceYoutubeBackground={() => {
           void controller.uploadMarketplaceYoutubeBackground();
+        }}
+        onUploadDaraWorkerPhoto={() => {
+          void controller.uploadDaraWorkerPhoto();
         }}
         onUploadPaymentMethodPhoto={id => {
           void controller.uploadPaymentMethodPhoto(id);
@@ -218,6 +227,7 @@ export function KolamSettingsSurfaceBody({
         }
         setPaymentMethodDraftField={controller.setPaymentMethodDraftField}
         setPaymentMethodFilter={controller.setPaymentMethodFilter}
+        setDaraKnowledgeDraftField={controller.setDaraKnowledgeDraftField}
         setWebContentPanelId={controller.setWebContentPanelId}
         setRegionFilter={controller.setRegionFilter}
         setSitemapCustomUrlsDraftText={controller.setSitemapCustomUrlsDraftText}

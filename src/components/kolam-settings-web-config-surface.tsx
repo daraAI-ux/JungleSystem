@@ -37,6 +37,7 @@ import type {
   SettingsFinancialSectionVisibility,
   SettingsPaymentMethodDraft,
   SettingsPaymentMethodFilters,
+  DaraKnowledgeDraft,
   MarketplaceLandingCtaDraft,
   MarketplaceLandingNoticeDraft,
   MarketplaceLandingOverview,
@@ -128,6 +129,17 @@ function noopSetPaymentMethodFilter(
 function noopSetTaxCompanyProfileDraftField<
   Key extends keyof KolamTaxCompanyProfile,
 >(_key: Key, _value: KolamTaxCompanyProfile[Key]) {}
+
+function noopSetDaraKnowledgeDraftField<Key extends keyof DaraKnowledgeDraft>(
+  _key: Key,
+  _value: DaraKnowledgeDraft[Key],
+) {}
+
+const defaultDaraKnowledgeDraft: DaraKnowledgeDraft = {
+  title: '',
+  category: 'sop_kasir',
+  body: '',
+};
 
 type WebSettingDraft = {
   versionKolam: string;
@@ -243,26 +255,53 @@ type WebSettingDraft = {
   chatStoreEnabled: boolean;
   teamChatDaraReplyEnabled: boolean;
   teamChatGroupCallEnabled: boolean;
+  inboxAiReplyStore: boolean;
+  inboxAiReplyWhatsapp: boolean;
+  inboxAiReplyTiktok: boolean;
+  inboxAiReplyInstagram: boolean;
+  inboxAiReplyTokopedia: boolean;
+  inboxAiReplyShopee: boolean;
+  daraFulfillmentTeamRoomId: string;
   daraBusinessEnabled: boolean;
   daraToolsEnabled: boolean;
   daraKnowledgeEnabled: boolean;
   daraHandoffNotifyEnabled: boolean;
   daraInsightsEnabled: boolean;
+  daraInsightsCronSchedule: string;
   daraAutoReportEnabled: boolean;
   daraImageAnalysisEnabled: boolean;
   daraTaxEnabled: boolean;
   daraSeoEnabled: boolean;
+  daraSeoMonitorEnabled: boolean;
+  daraSeoSentimentLlmEnabled: boolean;
+  daraMarketScanCronEnabled: boolean;
   daraTaxRegulationWatcherEnabled: boolean;
   daraTaxComplianceJobEnabled: boolean;
   daraTaxLlmNarrativeEnabled: boolean;
+  autoOlshopFulfillmentEnabled: boolean;
+  autoOlshopShopeeEnabled: boolean;
+  autoOlshopTokopediaEnabled: boolean;
   daraWebstoreFulfillmentEnabled: boolean;
+  daraFulfillmentPackingMinutes: string;
+  daraFulfillmentPackingMaxExtensions: string;
+  katakTerbangWorkerName: string;
   daraStaffOpsNotifyEnabled: boolean;
   daraStaffWaNotifyEnabled: boolean;
+  daraPenjualanTeamRoomId: string;
   daraOlshopCustomerNotifyEnabled: boolean;
+  daraOlshopDeferredCron: string;
+  daraOlshopDeferredBatch: string;
+  daraOlshopStockGateEnabled: boolean;
+  daraOlshopStockSyncMaxAgeMs: string;
+  daraOlshopStockGateCron: string;
+  daraOlshopStockGateBatch: string;
+  daraOpsAuditEnabled: boolean;
   daraOwnerDigestEnabled: boolean;
+  daraOwnerDigestCron: string;
   daraOwnerDigestWaEnabled: boolean;
   daraOwnerDigestFcmEnabled: boolean;
   daraOwnerFcmUrgentEnabled: boolean;
+  daraOpsDigestLookbackHours: string;
   notificationSound: string;
   unassignedNotificationSound: string;
   handoffNotificationSound: string;
@@ -373,6 +412,273 @@ const storeOperatingMessageRows: Array<{
   },
 ];
 
+const aiInboxPlatformRows: Array<{
+  id: string;
+  label: string;
+  description: string;
+  field: keyof WebSettingDraft;
+}> = [
+  {
+    id: 'store',
+    label: 'Chat web',
+    description: 'PM marketplace tamu dan My Chat di dunia-anura.com.',
+    field: 'inboxAiReplyStore',
+  },
+  {
+    id: 'whatsapp',
+    label: 'WhatsApp',
+    description: 'Pesan masuk melalui integrasi AM.',
+    field: 'inboxAiReplyWhatsapp',
+  },
+  {
+    id: 'tiktok',
+    label: 'TikTok Shop',
+    description: 'Inbox TikTok Shop.',
+    field: 'inboxAiReplyTiktok',
+  },
+  {
+    id: 'instagram',
+    label: 'Instagram',
+    description: 'Direct Message Instagram.',
+    field: 'inboxAiReplyInstagram',
+  },
+  {
+    id: 'tokopedia',
+    label: 'Tokopedia',
+    description: 'Chat Tokopedia.',
+    field: 'inboxAiReplyTokopedia',
+  },
+  {
+    id: 'shopee',
+    label: 'Shopee',
+    description: 'Chat Shopee.',
+    field: 'inboxAiReplyShopee',
+  },
+];
+
+const aiModuleToggleRows: Array<{
+  id: string;
+  label: string;
+  description: string;
+  field: keyof WebSettingDraft;
+}> = [
+  {
+    id: 'tools',
+    label: 'Tool analitik',
+    description: 'Penjualan, source, stok, margin, wallet, dan cashflow.',
+    field: 'daraToolsEnabled',
+  },
+  {
+    id: 'knowledge',
+    label: 'Knowledge SOP',
+    description: 'Jawaban prosedur dari dokumen internal.',
+    field: 'daraKnowledgeEnabled',
+  },
+  {
+    id: 'handoff',
+    label: 'Notifikasi handoff inbox',
+    description: 'Badge butuh handover dan SSE saat AI menyerahkan ke CS.',
+    field: 'daraHandoffNotifyEnabled',
+  },
+  {
+    id: 'insights',
+    label: 'Insight otomatis',
+    description: 'Stok kritis, penjualan turun, dan tugas jatuh tempo.',
+    field: 'daraInsightsEnabled',
+  },
+  {
+    id: 'report',
+    label: 'Laporan harian otomatis',
+    description: 'Ringkasan bisnis ke room Chat dengan DARA.',
+    field: 'daraAutoReportEnabled',
+  },
+  {
+    id: 'vision',
+    label: 'Analisis gambar',
+    description: 'Analisis katalog dan gambar dari inbox.',
+    field: 'daraImageAnalysisEnabled',
+  },
+];
+
+const daraSeoToggleRows: Array<{
+  id: string;
+  label: string;
+  description: string;
+  field: keyof WebSettingDraft;
+}> = [
+  {
+    id: 'seo',
+    label: 'DARA SEO',
+    description: 'Aktifkan SEO dan market intelligence.',
+    field: 'daraSeoEnabled',
+  },
+  {
+    id: 'monitor',
+    label: 'Monitor SEO',
+    description: 'Pantau performa halaman dan peluang konten.',
+    field: 'daraSeoMonitorEnabled',
+  },
+  {
+    id: 'sentiment',
+    label: 'Sentiment LLM',
+    description: 'Analisis sentimen marketplace memakai LLM.',
+    field: 'daraSeoSentimentLlmEnabled',
+  },
+  {
+    id: 'market-scan',
+    label: 'Market scan cron',
+    description: 'Job scan pasar otomatis.',
+    field: 'daraMarketScanCronEnabled',
+  },
+];
+
+const daraTaxToggleRows: Array<{
+  id: string;
+  label: string;
+  description: string;
+  field: keyof WebSettingDraft;
+}> = [
+  {
+    id: 'tax',
+    label: 'DARA Tax',
+    description: 'Aktifkan tax intelligence.',
+    field: 'daraTaxEnabled',
+  },
+  {
+    id: 'watcher',
+    label: 'Watcher regulasi pajak',
+    description: 'Pantau perubahan regulasi pajak otomatis.',
+    field: 'daraTaxRegulationWatcherEnabled',
+  },
+  {
+    id: 'compliance',
+    label: 'Compliance job',
+    description: 'Job pemeriksaan kepatuhan pajak.',
+    field: 'daraTaxComplianceJobEnabled',
+  },
+  {
+    id: 'narrative',
+    label: 'Narasi pajak LLM',
+    description: 'Aktifkan narasi LLM untuk pajak.',
+    field: 'daraTaxLlmNarrativeEnabled',
+  },
+  {
+    id: 'include-tax',
+    label: 'Harga jual termasuk PPN',
+    description: 'Default true jika backend belum mengirim nilai.',
+    field: 'salePricesIncludeTax',
+  },
+  {
+    id: 'commission-pph21',
+    label: 'PPh 21 komisi',
+    description: 'Potong PPh 21 pada komisi penjualan.',
+    field: 'commissionPph21Enabled',
+  },
+];
+
+const daraFulfillmentToggleRows: Array<{
+  id: string;
+  label: string;
+  description: string;
+  field: keyof WebSettingDraft;
+}> = [
+  {
+    id: 'auto',
+    label: 'Auto fulfillment olshop',
+    description: 'Aktifkan autopilot packing marketplace.',
+    field: 'autoOlshopFulfillmentEnabled',
+  },
+  {
+    id: 'shopee',
+    label: 'Shopee',
+    description: 'Autopilot fulfillment untuk Shopee.',
+    field: 'autoOlshopShopeeEnabled',
+  },
+  {
+    id: 'tokopedia',
+    label: 'Tokopedia',
+    description: 'Autopilot fulfillment untuk Tokopedia.',
+    field: 'autoOlshopTokopediaEnabled',
+  },
+  {
+    id: 'webstore',
+    label: 'Webstore DARA',
+    description: 'Aktifkan fulfillment webstore DARA.',
+    field: 'daraWebstoreFulfillmentEnabled',
+  },
+];
+
+const daraNightOpsToggleRows: Array<{
+  id: string;
+  label: string;
+  description: string;
+  field: keyof WebSettingDraft;
+}> = [
+  {
+    id: 'staff-ops',
+    label: 'Notifikasi operasional staff',
+    description: 'Aktifkan notifikasi operasional internal.',
+    field: 'daraStaffOpsNotifyEnabled',
+  },
+  {
+    id: 'staff-wa',
+    label: 'WhatsApp staff',
+    description: 'Kirim notifikasi staff melalui WhatsApp.',
+    field: 'daraStaffWaNotifyEnabled',
+  },
+  {
+    id: 'customer',
+    label: 'Notifikasi customer olshop',
+    description: 'Kirim konteks tertunda ke customer olshop.',
+    field: 'daraOlshopCustomerNotifyEnabled',
+  },
+  {
+    id: 'stock-gate',
+    label: 'Stock gate olshop',
+    description: 'Cek umur sinkronisasi stok sebelum proses tertunda.',
+    field: 'daraOlshopStockGateEnabled',
+  },
+  {
+    id: 'ops-audit',
+    label: 'Audit operasional',
+    description: 'Catat audit untuk proses operasional DARA.',
+    field: 'daraOpsAuditEnabled',
+  },
+  {
+    id: 'owner-digest',
+    label: 'Digest owner',
+    description: 'Ringkasan owner harian.',
+    field: 'daraOwnerDigestEnabled',
+  },
+  {
+    id: 'owner-wa',
+    label: 'Digest owner WhatsApp',
+    description: 'Kirim digest owner melalui WhatsApp.',
+    field: 'daraOwnerDigestWaEnabled',
+  },
+  {
+    id: 'owner-fcm',
+    label: 'Digest owner FCM',
+    description: 'Kirim digest owner melalui FCM.',
+    field: 'daraOwnerDigestFcmEnabled',
+  },
+  {
+    id: 'urgent-fcm',
+    label: 'FCM urgent owner',
+    description: 'Kirim notifikasi urgent owner melalui FCM.',
+    field: 'daraOwnerFcmUrgentEnabled',
+  },
+];
+
+const daraKnowledgeCategories = [
+  ['sop_kasir', 'SOP Kasir'],
+  ['sop_retur', 'SOP Retur'],
+  ['sop_opname', 'SOP Opname'],
+  ['sop_stok', 'SOP Stok'],
+  ['kebijakan', 'Kebijakan'],
+  ['panduan_operasional', 'Panduan operasional'],
+] as const;
+
 export function KolamSettingsWebConfigSurface({
   fields,
   maintenanceMode,
@@ -389,6 +695,9 @@ export function KolamSettingsWebConfigSurface({
   },
   financialStatus = 'idle',
   financialWallets = [],
+  daraKnowledgeDraft = defaultDaraKnowledgeDraft,
+  daraKnowledgeMessage = '',
+  daraKnowledgeSaveStatus = 'idle',
   operationalRooms,
   operationalStaffRows,
   regionLevel,
@@ -433,6 +742,7 @@ export function KolamSettingsWebConfigSurface({
   onSaveMarketplaceLandingCta,
   onSaveMarketplaceLandingYoutube,
   onSaveMarketplaceLandingNotice,
+  onSaveDaraKnowledge = noop,
   onClearPaymentMethodDraft = noop,
   onDeletePaymentMethod = noop,
   onDeletePaymentMethodPhoto = noop,
@@ -451,6 +761,7 @@ export function KolamSettingsWebConfigSurface({
   onUploadMarketplaceHeroImage,
   onUploadMarketplaceLogo,
   onUploadMarketplaceYoutubeBackground,
+  onUploadDaraWorkerPhoto = noop,
   onUploadPaymentMethodPhoto = noop,
   onRefreshRegionSync,
   onRefreshKpiWeeklyPreview,
@@ -479,6 +790,7 @@ export function KolamSettingsWebConfigSurface({
   setMarketplaceLandingNoticeDraftField,
   setPaymentMethodDraftField = noopSetPaymentMethodDraftField,
   setPaymentMethodFilter = noopSetPaymentMethodFilter,
+  setDaraKnowledgeDraftField = noopSetDaraKnowledgeDraftField,
   setWebContentPanelId,
   setRegionFilter,
   setSitemapCustomUrlsDraftText,
@@ -514,6 +826,9 @@ export function KolamSettingsWebConfigSurface({
   financialSectionVisibility?: SettingsFinancialSectionVisibility;
   financialStatus?: 'idle' | 'loading' | 'live' | 'saving' | 'error';
   financialWallets?: KolamFinancialWallet[];
+  daraKnowledgeDraft?: DaraKnowledgeDraft;
+  daraKnowledgeMessage?: string;
+  daraKnowledgeSaveStatus?: 'idle' | 'saving' | 'saved' | 'error';
   operationalRooms: KolamTeamChatRoom[];
   operationalStaffRows: KolamUserPickerRow[];
   regionLevel: KolamRegionLevel | '';
@@ -593,6 +908,7 @@ export function KolamSettingsWebConfigSurface({
   onSaveMarketplaceLandingCta: () => void;
   onSaveMarketplaceLandingYoutube: () => void;
   onSaveMarketplaceLandingNotice: () => void;
+  onSaveDaraKnowledge?: () => void;
   onSaveEnclosureSaleCommission?: () => void;
   onSaveFinancialTaxToggle?: (
     key: 'salePricesIncludeTax' | 'commissionPph21Enabled',
@@ -612,6 +928,7 @@ export function KolamSettingsWebConfigSurface({
   onUploadMarketplaceHeroImage: (slide: KolamHeroSlide) => void;
   onUploadMarketplaceLogo: () => void;
   onUploadMarketplaceYoutubeBackground: () => void;
+  onUploadDaraWorkerPhoto?: () => void;
   onUploadPaymentMethodPhoto?: (id: string) => void;
   onRefreshRegionSync: () => void;
   onRefreshKpiWeeklyPreview: () => void;
@@ -682,6 +999,10 @@ export function KolamSettingsWebConfigSurface({
   setPaymentMethodFilter?: (
     key: keyof SettingsPaymentMethodFilters,
     value: string | number,
+  ) => void;
+  setDaraKnowledgeDraftField?: <Key extends keyof DaraKnowledgeDraft>(
+    key: Key,
+    value: DaraKnowledgeDraft[Key],
   ) => void;
   setTaxCompanyProfileDraftField?: <Key extends keyof KolamTaxCompanyProfile>(
     key: Key,
@@ -960,6 +1281,28 @@ export function KolamSettingsWebConfigSurface({
         .map(room => `${getTeamChatRoomLabel(room)} (${room._id})`)
         .join(' | ')
     : 'Room list belum tersedia.';
+  const daraRoomOptions =
+    draft.daraFulfillmentTeamRoomId &&
+    !operationalRooms.some(room => room._id === draft.daraFulfillmentTeamRoomId)
+      ? [
+          {
+            _id: draft.daraFulfillmentTeamRoomId,
+            name: 'Room fulfillment tersimpan',
+          } satisfies KolamTeamChatRoom,
+          ...operationalRooms,
+        ]
+      : operationalRooms;
+  const daraPenjualanRoomOptions =
+    draft.daraPenjualanTeamRoomId &&
+    !daraRoomOptions.some(room => room._id === draft.daraPenjualanTeamRoomId)
+      ? [
+          {
+            _id: draft.daraPenjualanTeamRoomId,
+            name: 'Room penjualan tersimpan',
+          } satisfies KolamTeamChatRoom,
+          ...daraRoomOptions,
+        ]
+      : daraRoomOptions;
   const staffSummary = operationalStaffRows.length
     ? operationalStaffRows
         .slice(0, 5)
@@ -2965,9 +3308,65 @@ export function KolamSettingsWebConfigSurface({
                       }${
                         daraPluginEnabled ? '' : 'Plugin DARA nonaktif. '
                       }Aktifkan dari tab Plugin untuk mengubah kontrol terkait.`,
+                style: styles.marketplaceOverviewMeta,
               },
             ]}
           />
+          <View style={styles.marketplaceControlSection}>
+            <KolamCopyStack
+              items={[
+                {
+                  id: 'ai-profile-title',
+                  text: 'Profil DARA',
+                  style: styles.marketplaceOverviewLabel,
+                },
+                {
+                  id: 'ai-profile-meta',
+                  text: 'Avatar DARA dipakai di Kolam dan webstore. Foto worker Katak Terbang dipakai untuk autopilot packing.',
+                  style: styles.marketplaceOverviewMeta,
+                },
+              ]}
+            />
+            <View style={styles.notificationSoundActions}>
+              <KolamActionControlButton
+                label="Unggah avatar DARA"
+                disabled={daraControlsDisabled}
+                onPress={onUploadMarketplaceDaraAvatar}
+              />
+              <KolamActionControlButton
+                label="Unggah foto Katak Terbang"
+                disabled={daraControlsDisabled}
+                onPress={onUploadDaraWorkerPhoto}
+              />
+            </View>
+            <KolamTextFieldRow
+              variant="settingsForm"
+              fieldWidth={settingsFieldWidth}
+              label="Nama worker Katak Terbang"
+              description="Nama PIC yang tampil pada flow autopilot packing."
+              value={draft.katakTerbangWorkerName}
+              onChangeText={value =>
+                setDraftField('katakTerbangWorkerName', value)
+              }
+              placeholder="Katak Terbang"
+            />
+          </View>
+
+          <View style={styles.marketplaceControlSection}>
+            <KolamCopyStack
+              items={[
+                {
+                  id: 'chat-ai-title',
+                  text: 'Pengaturan Chat AI',
+                  style: styles.marketplaceOverviewLabel,
+                },
+                {
+                  id: 'chat-ai-meta',
+                  text: 'Kontrol Chat storefront, group call, dan balasan otomatis inbox lintas platform.',
+                  style: styles.marketplaceOverviewMeta,
+                },
+              ]}
+            />
           <KolamToggleRow
             variant="settingsForm"
             label="Chat storefront"
@@ -3004,6 +3403,36 @@ export function KolamSettingsWebConfigSurface({
               )
             }
           />
+            {aiInboxPlatformRows.map(row => (
+              <KolamToggleRow
+                key={row.id}
+                variant="settingsForm"
+                label={row.label}
+                description={row.description}
+                active={draft[row.field] === true}
+                onPress={() =>
+                  !daraChatControlsDisabled &&
+                  setDraftField(row.field, !(draft[row.field] === true))
+                }
+              />
+            ))}
+          </View>
+
+          <View style={styles.marketplaceControlSection}>
+            <KolamCopyStack
+              items={[
+                {
+                  id: 'dara-business-title',
+                  text: 'DARA Business',
+                  style: styles.marketplaceOverviewLabel,
+                },
+                {
+                  id: 'dara-business-meta',
+                  text: 'Master switch untuk modul bisnis DARA. Jika off, kontrol turunan tetap tampil tetapi tidak bisa diubah.',
+                  style: styles.marketplaceOverviewMeta,
+                },
+              ]}
+            />
           <KolamToggleRow
             variant="settingsForm"
             label="Bisnis DARA"
@@ -3014,238 +3443,359 @@ export function KolamSettingsWebConfigSurface({
               setDraftField('daraBusinessEnabled', !draft.daraBusinessEnabled)
             }
           />
-          <KolamToggleRow
-            variant="settingsForm"
-            label="Tools DARA"
-            description="Aktifkan tool runtime DARA."
-            active={draft.daraToolsEnabled}
-            onPress={() =>
-              !daraControlsDisabled &&
-              setDraftField('daraToolsEnabled', !draft.daraToolsEnabled)
-            }
-          />
-          <KolamToggleRow
-            variant="settingsForm"
-            label="Knowledge / SOP DARA"
-            description="Aktifkan knowledge base dan SOP lookup DARA."
-            active={draft.daraKnowledgeEnabled}
-            onPress={() =>
-              !daraControlsDisabled &&
-              setDraftField('daraKnowledgeEnabled', !draft.daraKnowledgeEnabled)
-            }
-          />
-          <KolamToggleRow
-            variant="settingsForm"
-            label="Notifikasi alih tangan DARA"
-            description="Kirim notifikasi saat pelanggan dialihkan."
-            active={draft.daraHandoffNotifyEnabled}
-            onPress={() =>
-              !daraControlsDisabled &&
-              setDraftField(
-                'daraHandoffNotifyEnabled',
-                !draft.daraHandoffNotifyEnabled,
-              )
-            }
-          />
-          <KolamToggleRow
-            variant="settingsForm"
-            label="Insight DARA"
-            description="Aktifkan insight otomatis DARA."
-            active={draft.daraInsightsEnabled}
-            onPress={() =>
-              !daraControlsDisabled &&
-              setDraftField('daraInsightsEnabled', !draft.daraInsightsEnabled)
-            }
-          />
-          <KolamToggleRow
-            variant="settingsForm"
-            label="Laporan otomatis DARA"
-            description="Aktifkan laporan otomatis DARA."
-            active={draft.daraAutoReportEnabled}
-            onPress={() =>
-              !daraControlsDisabled &&
-              setDraftField(
-                'daraAutoReportEnabled',
-                !draft.daraAutoReportEnabled,
-              )
-            }
-          />
-          <KolamToggleRow
-            variant="settingsForm"
-            label="Analisis gambar DARA"
-            description="Aktifkan analisis gambar DARA."
-            active={draft.daraImageAnalysisEnabled}
-            onPress={() =>
-              !daraControlsDisabled &&
-              setDraftField(
-                'daraImageAnalysisEnabled',
-                !draft.daraImageAnalysisEnabled,
-              )
-            }
-          />
-          <KolamToggleRow
-            variant="settingsForm"
-            label="Pajak DARA"
-            description="Aktifkan modul pajak DARA."
-            active={draft.daraTaxEnabled}
-            onPress={() =>
-              !daraControlsDisabled &&
-              setDraftField('daraTaxEnabled', !draft.daraTaxEnabled)
-            }
-          />
-          <KolamToggleRow
-            variant="settingsForm"
-            label="DARA SEO"
-            description="Aktifkan fitur SEO DARA."
-            active={draft.daraSeoEnabled}
-            onPress={() =>
-              !daraControlsDisabled &&
-              setDraftField('daraSeoEnabled', !draft.daraSeoEnabled)
-            }
-          />
-          <KolamToggleRow
-            variant="settingsForm"
-            label="Watcher pajak DARA"
-            description="Pantau regulasi pajak secara otomatis."
-            active={draft.daraTaxRegulationWatcherEnabled}
-            onPress={() =>
-              !daraControlsDisabled &&
-              setDraftField(
-                'daraTaxRegulationWatcherEnabled',
-                !draft.daraTaxRegulationWatcherEnabled,
-              )
-            }
-          />
-          <KolamToggleRow
-            variant="settingsForm"
-            label="Kepatuhan pajak DARA"
-            description="Aktifkan job kepatuhan pajak."
-            active={draft.daraTaxComplianceJobEnabled}
-            onPress={() =>
-              !daraControlsDisabled &&
-              setDraftField(
-                'daraTaxComplianceJobEnabled',
-                !draft.daraTaxComplianceJobEnabled,
-              )
-            }
-          />
-          <KolamToggleRow
-            variant="settingsForm"
-            label="Narasi pajak DARA"
-            description="Aktifkan narasi LLM untuk pajak."
-            active={draft.daraTaxLlmNarrativeEnabled}
-            onPress={() =>
-              !daraControlsDisabled &&
-              setDraftField(
-                'daraTaxLlmNarrativeEnabled',
-                !draft.daraTaxLlmNarrativeEnabled,
-              )
-            }
-          />
-          <KolamToggleRow
-            variant="settingsForm"
-            label="Fulfillment DARA"
-            description="Aktifkan fulfillment webstore DARA."
-            active={draft.daraWebstoreFulfillmentEnabled}
-            onPress={() =>
-              !daraControlsDisabled &&
-              setDraftField(
-                'daraWebstoreFulfillmentEnabled',
-                !draft.daraWebstoreFulfillmentEnabled,
-              )
-            }
-          />
-          <KolamToggleRow
-            variant="settingsForm"
-            label="Operasional staff DARA"
-            description="Aktifkan notifikasi operasional staff."
-            active={draft.daraStaffOpsNotifyEnabled}
-            onPress={() =>
-              !daraControlsDisabled &&
-              setDraftField(
-                'daraStaffOpsNotifyEnabled',
-                !draft.daraStaffOpsNotifyEnabled,
-              )
-            }
-          />
-          <KolamToggleRow
-            variant="settingsForm"
-            label="WhatsApp staff DARA"
-            description="Aktifkan notifikasi WhatsApp staff."
-            active={draft.daraStaffWaNotifyEnabled}
-            onPress={() =>
-              !daraControlsDisabled &&
-              setDraftField(
-                'daraStaffWaNotifyEnabled',
-                !draft.daraStaffWaNotifyEnabled,
-              )
-            }
-          />
-          <KolamToggleRow
-            variant="settingsForm"
-            label="Notifikasi olshop DARA"
-            description="Aktifkan notifikasi customer olshop."
-            active={draft.daraOlshopCustomerNotifyEnabled}
-            onPress={() =>
-              !daraControlsDisabled &&
-              setDraftField(
-                'daraOlshopCustomerNotifyEnabled',
-                !draft.daraOlshopCustomerNotifyEnabled,
-              )
-            }
-          />
-          <KolamToggleRow
-            variant="settingsForm"
-            label="Digest owner DARA"
-            description="Aktifkan ringkasan owner."
-            active={draft.daraOwnerDigestEnabled}
-            onPress={() =>
-              !daraControlsDisabled &&
-              setDraftField(
-                'daraOwnerDigestEnabled',
-                !draft.daraOwnerDigestEnabled,
-              )
-            }
-          />
-          <KolamToggleRow
-            variant="settingsForm"
-            label="WhatsApp owner DARA"
-            description="Kirim digest owner melalui WhatsApp."
-            active={draft.daraOwnerDigestWaEnabled}
-            onPress={() =>
-              !daraControlsDisabled &&
-              setDraftField(
-                'daraOwnerDigestWaEnabled',
-                !draft.daraOwnerDigestWaEnabled,
-              )
-            }
-          />
-          <KolamToggleRow
-            variant="settingsForm"
-            label="FCM owner DARA"
-            description="Kirim digest owner melalui FCM."
-            active={draft.daraOwnerDigestFcmEnabled}
-            onPress={() =>
-              !daraControlsDisabled &&
-              setDraftField(
-                'daraOwnerDigestFcmEnabled',
-                !draft.daraOwnerDigestFcmEnabled,
-              )
-            }
-          />
-          <KolamToggleRow
-            variant="settingsForm"
-            label="FCM urgent DARA"
-            description="Kirim notifikasi urgent owner melalui FCM."
-            active={draft.daraOwnerFcmUrgentEnabled}
-            onPress={() =>
-              !daraControlsDisabled &&
-              setDraftField(
-                'daraOwnerFcmUrgentEnabled',
-                !draft.daraOwnerFcmUrgentEnabled,
-              )
-            }
-          />
+            {aiModuleToggleRows.map(row => (
+              <KolamToggleRow
+                key={row.id}
+                variant="settingsForm"
+                label={row.label}
+                description={row.description}
+                active={draft[row.field] === true}
+                onPress={() =>
+                  !daraControlsDisabled &&
+                  draft.daraBusinessEnabled &&
+                  setDraftField(row.field, !(draft[row.field] === true))
+                }
+              />
+            ))}
+            <KolamTextFieldRow
+              variant="settingsForm"
+              fieldWidth={settingsFieldWidth}
+              label="Jadwal cron insight"
+              description="Jadwal insight otomatis dalam WIB."
+              value={draft.daraInsightsCronSchedule}
+              onChangeText={value =>
+                setDraftField('daraInsightsCronSchedule', value)
+              }
+              placeholder="0 8,14 * * *"
+            />
+          </View>
+
+          <View style={styles.marketplaceControlSection}>
+            <KolamCopyStack
+              items={[
+                {
+                  id: 'dara-fulfillment-room-title',
+                  text: 'Autopilot packing',
+                  style: styles.marketplaceOverviewLabel,
+                },
+                {
+                  id: 'dara-fulfillment-room-meta',
+                  text: 'Pilih room Team Chat untuk konteks packing. Kosong berarti memakai Chat dengan DARA default.',
+                  style: styles.marketplaceOverviewMeta,
+                },
+              ]}
+            />
+            <View style={styles.poRoomChoices}>
+              <KolamChoiceSegment
+                id=""
+                label="Chat dengan DARA (default)"
+                selectedId={draft.daraFulfillmentTeamRoomId}
+                onSelect={() =>
+                  !daraControlsDisabled &&
+                  setDraftField('daraFulfillmentTeamRoomId', '')
+                }
+              />
+              {daraRoomOptions.map(room => (
+                <KolamChoiceSegment
+                  key={room._id}
+                  id={room._id}
+                  label={getTeamChatRoomLabel(room)}
+                  selectedId={draft.daraFulfillmentTeamRoomId}
+                  onSelect={() =>
+                    !daraControlsDisabled &&
+                    setDraftField('daraFulfillmentTeamRoomId', room._id)
+                  }
+                />
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.marketplaceControlSection}>
+            <KolamCopyStack
+              items={[
+                {
+                  id: 'dara-seo-title',
+                  text: 'DARA SEO & Market Intelligence',
+                  style: styles.marketplaceOverviewLabel,
+                },
+              ]}
+            />
+            {daraSeoToggleRows.map(row => (
+              <KolamToggleRow
+                key={row.id}
+                variant="settingsForm"
+                label={row.label}
+                description={row.description}
+                active={draft[row.field] === true}
+                onPress={() =>
+                  !daraControlsDisabled &&
+                  draft.daraBusinessEnabled &&
+                  setDraftField(row.field, !(draft[row.field] === true))
+                }
+              />
+            ))}
+          </View>
+
+          <View style={styles.marketplaceControlSection}>
+            <KolamCopyStack
+              items={[
+                {
+                  id: 'dara-tax-title',
+                  text: 'DARA Tax Intelligence',
+                  style: styles.marketplaceOverviewLabel,
+                },
+              ]}
+            />
+            {daraTaxToggleRows.map(row => (
+              <KolamToggleRow
+                key={row.id}
+                variant="settingsForm"
+                label={row.label}
+                description={row.description}
+                active={draft[row.field] === true}
+                onPress={() =>
+                  !daraControlsDisabled &&
+                  draft.daraBusinessEnabled &&
+                  setDraftField(row.field, !(draft[row.field] === true))
+                }
+              />
+            ))}
+          </View>
+
+          <View style={styles.marketplaceControlSection}>
+            <KolamCopyStack
+              items={[
+                {
+                  id: 'dara-shipping-title',
+                  text: 'Pengiriman dan marketplace',
+                  style: styles.marketplaceOverviewLabel,
+                },
+              ]}
+            />
+            {daraFulfillmentToggleRows.map(row => (
+              <KolamToggleRow
+                key={row.id}
+                variant="settingsForm"
+                label={row.label}
+                description={row.description}
+                active={draft[row.field] === true}
+                onPress={() =>
+                  !daraControlsDisabled &&
+                  draft.daraBusinessEnabled &&
+                  setDraftField(row.field, !(draft[row.field] === true))
+                }
+              />
+            ))}
+            <KolamTextFieldRow
+              variant="settingsForm"
+              fieldWidth={settingsFieldWidth}
+              label="Menit packing"
+              description="Validasi BE: 5 sampai 240 menit."
+              value={draft.daraFulfillmentPackingMinutes}
+              onChangeText={value =>
+                setDraftField('daraFulfillmentPackingMinutes', value)
+              }
+              placeholder="30"
+            />
+            <KolamTextFieldRow
+              variant="settingsForm"
+              fieldWidth={settingsFieldWidth}
+              label="Maksimal perpanjangan packing"
+              description="Validasi BE: 0 sampai 5 kali."
+              value={draft.daraFulfillmentPackingMaxExtensions}
+              onChangeText={value =>
+                setDraftField('daraFulfillmentPackingMaxExtensions', value)
+              }
+              placeholder="1"
+            />
+          </View>
+
+          <View style={styles.marketplaceControlSection}>
+            <KolamCopyStack
+              items={[
+                {
+                  id: 'dara-night-ops-title',
+                  text: 'Night Ops',
+                  style: styles.marketplaceOverviewLabel,
+                },
+              ]}
+            />
+            {daraNightOpsToggleRows.map(row => (
+              <KolamToggleRow
+                key={row.id}
+                variant="settingsForm"
+                label={row.label}
+                description={row.description}
+                active={draft[row.field] === true}
+                onPress={() =>
+                  !daraControlsDisabled &&
+                  draft.daraBusinessEnabled &&
+                  setDraftField(row.field, !(draft[row.field] === true))
+                }
+              />
+            ))}
+            <View style={styles.poRoomChoices}>
+              <KolamChoiceSegment
+                id=""
+                label="Room penjualan default"
+                selectedId={draft.daraPenjualanTeamRoomId}
+                onSelect={() =>
+                  !daraControlsDisabled &&
+                  setDraftField('daraPenjualanTeamRoomId', '')
+                }
+              />
+              {daraPenjualanRoomOptions.map(room => (
+                <KolamChoiceSegment
+                  key={room._id}
+                  id={room._id}
+                  label={getTeamChatRoomLabel(room)}
+                  selectedId={draft.daraPenjualanTeamRoomId}
+                  onSelect={() =>
+                    !daraControlsDisabled &&
+                    setDraftField('daraPenjualanTeamRoomId', room._id)
+                  }
+                />
+              ))}
+            </View>
+            <KolamTextFieldRow
+              variant="settingsForm"
+              fieldWidth={settingsFieldWidth}
+              label="Cron deferred olshop"
+              description="Jadwal proses pesan customer tertunda."
+              value={draft.daraOlshopDeferredCron}
+              onChangeText={value =>
+                setDraftField('daraOlshopDeferredCron', value)
+              }
+              placeholder="*/10 * * * *"
+            />
+            <KolamTextFieldRow
+              variant="settingsForm"
+              fieldWidth={settingsFieldWidth}
+              label="Batch deferred olshop"
+              description="Validasi BE: 1 sampai 200."
+              value={draft.daraOlshopDeferredBatch}
+              onChangeText={value =>
+                setDraftField('daraOlshopDeferredBatch', value)
+              }
+              placeholder="20"
+            />
+            <KolamTextFieldRow
+              variant="settingsForm"
+              fieldWidth={settingsFieldWidth}
+              label="Maksimal umur sync stok"
+              description="Dalam milidetik, minimal 60000."
+              value={draft.daraOlshopStockSyncMaxAgeMs}
+              onChangeText={value =>
+                setDraftField('daraOlshopStockSyncMaxAgeMs', value)
+              }
+              placeholder="21600000"
+            />
+            <KolamTextFieldRow
+              variant="settingsForm"
+              fieldWidth={settingsFieldWidth}
+              label="Cron stock gate"
+              description="Jadwal pemeriksaan stock gate."
+              value={draft.daraOlshopStockGateCron}
+              onChangeText={value =>
+                setDraftField('daraOlshopStockGateCron', value)
+              }
+              placeholder="*/5 * * * *"
+            />
+            <KolamTextFieldRow
+              variant="settingsForm"
+              fieldWidth={settingsFieldWidth}
+              label="Batch stock gate"
+              description="Validasi BE: 1 sampai 200."
+              value={draft.daraOlshopStockGateBatch}
+              onChangeText={value =>
+                setDraftField('daraOlshopStockGateBatch', value)
+              }
+              placeholder="20"
+            />
+            <KolamTextFieldRow
+              variant="settingsForm"
+              fieldWidth={settingsFieldWidth}
+              label="Cron digest owner"
+              description="Jadwal digest owner."
+              value={draft.daraOwnerDigestCron}
+              onChangeText={value =>
+                setDraftField('daraOwnerDigestCron', value)
+              }
+              placeholder="0 7 * * *"
+            />
+            <KolamTextFieldRow
+              variant="settingsForm"
+              fieldWidth={settingsFieldWidth}
+              label="Lookback digest"
+              description="Dalam jam, validasi BE: 1 sampai 72."
+              value={draft.daraOpsDigestLookbackHours}
+              onChangeText={value =>
+                setDraftField('daraOpsDigestLookbackHours', value)
+              }
+              placeholder="12"
+            />
+          </View>
+
+          <View style={styles.marketplaceControlSection}>
+            <KolamCopyStack
+              items={[
+                {
+                  id: 'dara-knowledge-title',
+                  text: 'Unggah SOP',
+                  style: styles.marketplaceOverviewLabel,
+                },
+                {
+                  id: 'dara-knowledge-meta',
+                  text: 'Simpan SOP ke knowledge DARA melalui endpoint /dara/knowledge.',
+                  style: styles.marketplaceOverviewMeta,
+                },
+              ]}
+            />
+            <KolamTextFieldRow
+              variant="settingsForm"
+              fieldWidth={settingsFieldWidth}
+              label="Judul SOP"
+              description="Judul dokumen SOP."
+              value={daraKnowledgeDraft.title}
+              onChangeText={value =>
+                setDaraKnowledgeDraftField('title', value)
+              }
+              placeholder="SOP Kasir Harian"
+            />
+            <View style={styles.financialToolbar}>
+              {daraKnowledgeCategories.map(([id, label]) => (
+                <FinancialChoiceSegment
+                  key={id}
+                  active={daraKnowledgeDraft.category === id}
+                  label={label}
+                  onPress={() => setDaraKnowledgeDraftField('category', id)}
+                />
+              ))}
+            </View>
+            <KolamTextFieldRow
+              variant="settingsForm"
+              fieldWidth={settingsFieldWidth}
+              label="Isi SOP"
+              description="Markdown SOP yang akan dipakai knowledge DARA."
+              multiline
+              numberOfLines={6}
+              value={daraKnowledgeDraft.body}
+              onChangeText={value => setDaraKnowledgeDraftField('body', value)}
+              placeholder="Tuliskan SOP produksi di sini."
+            />
+            {daraKnowledgeMessage ? (
+              <Text style={styles.marketplaceOverviewMeta}>
+                {daraKnowledgeMessage}
+              </Text>
+            ) : null}
+            <KolamActionControlButton
+              label="Simpan SOP"
+              loading={daraKnowledgeSaveStatus === 'saving'}
+              loadingLabel="Menyimpan..."
+              disabled={daraControlsDisabled}
+              onPress={onSaveDaraKnowledge}
+            />
+          </View>
         </>
       ) : null}
       {showStoreShippingSettings ? (

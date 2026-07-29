@@ -524,6 +524,32 @@ describe('KolamSettingsPanel', () => {
   });
 
   it('renders AI settings with plugin gate aware controls', async () => {
+    const fetchMock = jest
+      .fn()
+      .mockResolvedValueOnce(
+        jsonResponse({
+          data: {
+            _id: 'websetting-1',
+            kolamPlugins: {
+              chat: { enabled: true, storeEnabled: true },
+              dara: { enabled: true },
+            },
+          },
+        }),
+      )
+      .mockResolvedValueOnce(jsonResponse({ app: 'kolam', version: '1.0.0' }))
+      .mockResolvedValueOnce(jsonResponse({ versions: { kolam: '1.0.0' } }))
+      .mockResolvedValueOnce(jsonResponse({ data: [] }))
+      .mockResolvedValueOnce(jsonResponse({ data: [] }))
+      .mockResolvedValueOnce(jsonResponse({ data: null }))
+      .mockResolvedValueOnce(jsonResponse({ data: null }))
+      .mockResolvedValueOnce(jsonResponse({ data: [] }))
+      .mockResolvedValueOnce(jsonResponse({ data: [] }))
+      .mockResolvedValueOnce(
+        jsonResponse({ data: { marketplaceContent: {} } }),
+      );
+    globalThis.fetch = fetchMock;
+
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
     await ReactTestRenderer.act(async () => {
@@ -535,26 +561,37 @@ describe('KolamSettingsPanel', () => {
     });
 
     await ReactTestRenderer.act(async () => {
+      await Promise.resolve();
+    });
+
+    await ReactTestRenderer.act(async () => {
       findTabByText(renderer!, 'AI / DARA').props.onPress();
+      await Promise.resolve();
     });
 
     const text = renderText(renderer!);
 
-    expect(text).toEqual(
-      expect.arrayContaining([
-        'AI / DARA',
-        'Plugin Chat dan DARA aktif. Kontrol AI siap disimpan ke Pengaturan Web.',
-        'Chat storefront',
-        'Balasan DARA Team Chat',
-        'Bisnis DARA',
-        'Tools DARA',
-        'Knowledge / SOP DARA',
-        'Notifikasi alih tangan DARA',
-        'Laporan otomatis DARA',
-        'Fulfillment DARA',
-        'Simpan',
-      ]),
-    );
+    const expectedAiTexts = [
+      'AI / DARA',
+      'Plugin Chat dan DARA aktif. Kontrol AI siap disimpan ke Pengaturan Web.',
+      'Pengaturan Chat AI',
+      'Chat storefront',
+      'Balasan DARA Team Chat',
+      'WhatsApp',
+      'Bisnis DARA',
+      'Tool analitik',
+      'Knowledge SOP',
+      'Notifikasi handoff inbox',
+      'Laporan harian otomatis',
+      'Autopilot packing',
+      'DARA SEO & Market Intelligence',
+      'DARA Tax Intelligence',
+      'Pengiriman dan marketplace',
+      'Night Ops',
+      'Unggah SOP',
+      'Simpan',
+    ];
+    expect(expectedAiTexts.filter(item => !text.includes(item))).toEqual([]);
     expect(text).not.toEqual(
       expect.arrayContaining([
         'Tagline Perusahaan',
@@ -616,7 +653,7 @@ describe('KolamSettingsPanel', () => {
         'AI / DARA',
         'State nonaktif: Plugin Chat nonaktif. Plugin DARA nonaktif. Aktifkan dari tab Plugin untuk mengubah kontrol terkait.',
         'Chat storefront',
-        'Knowledge / SOP DARA',
+        'Knowledge SOP',
       ]),
     );
   });
