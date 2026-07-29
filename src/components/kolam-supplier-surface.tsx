@@ -122,6 +122,9 @@ function KolamSupplierList({
   const [page, setPage] = React.useState(1);
   const [deleteCandidate, setDeleteCandidate] =
     React.useState<KolamVendor | null>(null);
+  const [openActionRowId, setOpenActionRowId] = React.useState<string | null>(
+    null,
+  );
 
   const summary = React.useMemo(
     () => getVendorSummary(controller.vendors),
@@ -166,6 +169,9 @@ function KolamSupplierList({
         onDelete={() => setDeleteCandidate(item)}
         onEdit={() => {
           onRouteChange?.(`${KOLAM_SUPPLIER_ROOT}/${item.id}/edit`);
+        }}
+        onMenuOpenChange={open => {
+          setOpenActionRowId(open ? item.id : null);
         }}
         onSelect={() => {
           void controller.onSelectVendor(item);
@@ -362,7 +368,10 @@ function KolamSupplierList({
         style={styles.tableFrame}
       >
         <FlatList
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[
+            styles.listContent,
+            openActionRowId ? styles.listContentMenuOpen : null,
+          ]}
           data={paged}
           keyExtractor={item => item.id}
           ListEmptyComponent={
@@ -410,19 +419,23 @@ function KolamSupplierList({
 function KolamSupplierRow({
   onDelete,
   onEdit,
+  onMenuOpenChange,
   onSelect,
   vendor,
 }: {
   onDelete: () => void;
   onEdit: () => void;
+  onMenuOpenChange?: (open: boolean) => void;
   onSelect: () => void;
   vendor: KolamVendor;
 }) {
   const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
-  const thumb = vendor.photoUrls[0] || vendor.photos[0] || '';
+  const thumb = vendor.photoUrls?.[0] || vendor.photos?.[0] || '';
 
   return (
-    <KolamDataTableRowFrame style={actionMenuOpen ? styles.activeActionRow : undefined}>
+    <KolamDataTableRowFrame
+      style={actionMenuOpen ? styles.activeActionRow : undefined}
+    >
       <Pressable onPress={onSelect} style={[styles.cell, styles.primaryCell]}>
         <View style={styles.identity}>
           {thumb ? (
@@ -477,7 +490,10 @@ function KolamSupplierRow({
       <View style={styles.overflowCell}>
         <KolamOverflowMenuButton
           accessibilityLabel={`Menu ${vendor.name}`}
-          onOpenChange={setActionMenuOpen}
+          onOpenChange={open => {
+            setActionMenuOpen(open);
+            onMenuOpenChange?.(open);
+          }}
           actions={[
             { label: 'Lihat', onPress: onSelect },
             { label: 'Rubah', onPress: onEdit },
@@ -2176,12 +2192,19 @@ const styles = StyleSheet.create({
   },
   tableFrame: {
     minHeight: 0,
+    overflow: 'visible',
+    zIndex: 2,
   },
   listFlatList: {
     flexGrow: 0,
+    overflow: 'visible',
   },
   listContent: {
     flexGrow: 0,
+    overflow: 'visible',
+  },
+  listContentMenuOpen: {
+    paddingBottom: 140,
   },
   errorBadge: {
     alignSelf: 'stretch',
@@ -2287,11 +2310,15 @@ const styles = StyleSheet.create({
   overflowCell: {
     alignItems: 'flex-end',
     justifyContent: 'center',
+    overflow: 'visible',
     paddingHorizontal: 8,
     width: 64,
+    zIndex: 9000,
   },
   activeActionRow: {
-    zIndex: 20,
+    elevation: 96,
+    overflow: 'visible',
+    zIndex: 9000,
   },
   detailActions: {
     flexDirection: 'row',
