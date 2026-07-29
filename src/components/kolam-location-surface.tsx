@@ -1892,7 +1892,7 @@ const styles = StyleSheet.create({
   },
   nameCell: {
     flex: 1,
-    minWidth: 0,
+    minWidth: 220,
   },
   locationNameText: {
     color: V.colors.fg,
