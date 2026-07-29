@@ -557,6 +557,23 @@ function KolamSupplierDetail({
               style={styles.toolbarButton}
             />
             <KolamButton
+              intent="primary"
+              label="Edit"
+              onPress={() => {
+                controller.onEdit();
+                onRouteChange?.(
+                  `${KOLAM_SUPPLIER_ROOT}/${vendor.id}/edit`,
+                );
+              }}
+              style={styles.toolbarButton}
+            />
+            <KolamButton
+              intent="danger"
+              label="Hapus"
+              onPress={() => setDeleteCandidate(vendor)}
+              style={styles.toolbarButton}
+            />
+            <KolamButton
               label="Daftar"
               muted
               onPress={() => {
@@ -567,23 +584,6 @@ function KolamSupplierDetail({
             />
           </View>
         </View>
-      </View>
-      <View style={styles.detailActions}>
-        <KolamButton
-          intent="primary"
-          label="Edit"
-          onPress={() => {
-            controller.onEdit();
-            onRouteChange?.(
-              `${KOLAM_SUPPLIER_ROOT}/${vendor.id}/edit`,
-            );
-          }}
-        />
-        <KolamButton
-          intent="danger"
-          label="Hapus"
-          onPress={() => setDeleteCandidate(vendor)}
-        />
       </View>
       <KolamLabelFieldDetailOverview
         hero={
