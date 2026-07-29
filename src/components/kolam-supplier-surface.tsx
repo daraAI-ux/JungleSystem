@@ -1155,6 +1155,35 @@ function KolamSupplierCatalogTabs({
     [onRouteChange, packings, purchaseStats],
   );
 
+  const [catalogPageSize, setCatalogPageSize] = React.useState(10);
+  const [catalogPage, setCatalogPage] = React.useState(1);
+  const activeCatalogRows =
+    tab === 'products'
+      ? productPurchaseRows
+      : tab === 'species'
+        ? speciesPurchaseRows
+        : tab === 'packings'
+          ? packingPurchaseRows
+          : null;
+  const catalogTotal = activeCatalogRows?.length ?? 0;
+  const catalogPageCount = Math.max(
+    1,
+    Math.ceil(catalogTotal / catalogPageSize),
+  );
+  const safeCatalogPage = Math.min(catalogPage, catalogPageCount);
+  const pagedCatalogRows = activeCatalogRows
+    ? activeCatalogRows.slice(
+        (safeCatalogPage - 1) * catalogPageSize,
+        safeCatalogPage * catalogPageSize,
+      )
+    : [];
+  const catalogRowScope: 'product' | 'species' =
+    tab === 'species' ? 'species' : 'product';
+
+  React.useEffect(() => {
+    setCatalogPage(1);
+  }, [tab, catalogPageSize, vendor.id]);
+
   return (
     <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
       <Text style={styles.sectionTitle}>Katalog pemasok</Text>
@@ -1200,71 +1229,75 @@ function KolamSupplierCatalogTabs({
         <KolamSupplierPurchaseAnalytics controller={controller} embedded />
       ) : null}
 
-      {tab === 'products' ? (
-        productPurchaseRows.length ? (
-          <View style={styles.catalogTable}>
-            <KolamDataTableHeader
-              columns={getKolamTableColumns('supplier-catalog')}
-            />
-            {productPurchaseRows.map(row => (
-              <SupplierCatalogPurchaseRow
-                key={row.key}
-                row={row}
-                scope="product"
+      {activeCatalogRows ? (
+        catalogTotal ? (
+          <View style={styles.catalogTableBlock}>
+            <View style={styles.catalogTable}>
+              <KolamDataTableHeader
+                columns={getKolamTableColumns('supplier-catalog')}
               />
-            ))}
+              {pagedCatalogRows.map(row => (
+                <SupplierCatalogPurchaseRow
+                  key={row.key}
+                  row={row}
+                  scope={catalogRowScope}
+                />
+              ))}
+            </View>
+            <KolamTableFooterControls
+              onPageSizeChange={setCatalogPageSize}
+              page={safeCatalogPage}
+              pageSize={catalogPageSize}
+              total={catalogTotal}
+            >
+              {catalogPageCount > 1 ? (
+                <View style={styles.paginationRow}>
+                  <KolamButton
+                    disabled={safeCatalogPage <= 1}
+                    label="Sebelumnya"
+                    onPress={() =>
+                      setCatalogPage(current => Math.max(1, current - 1))
+                    }
+                  />
+                  <KolamCopyStack
+                    items={[
+                      {
+                        id: 'catalog-page',
+                        text: `${safeCatalogPage} / ${catalogPageCount}`,
+                        style: styles.pageLabel,
+                      },
+                    ]}
+                  />
+                  <KolamButton
+                    disabled={safeCatalogPage >= catalogPageCount}
+                    label="Berikutnya"
+                    onPress={() =>
+                      setCatalogPage(current =>
+                        Math.min(catalogPageCount, current + 1),
+                      )
+                    }
+                  />
+                </View>
+              ) : null}
+            </KolamTableFooterControls>
           </View>
         ) : (
           <KolamEmptyState
             compact
-            message="Belum ada produk atau bahan baku tertaut ke pemasok ini."
-            title="Tidak ada produk"
-          />
-        )
-      ) : null}
-
-      {tab === 'species' ? (
-        speciesPurchaseRows.length ? (
-          <View style={styles.catalogTable}>
-            <KolamDataTableHeader
-              columns={getKolamTableColumns('supplier-catalog')}
-            />
-            {speciesPurchaseRows.map(row => (
-              <SupplierCatalogPurchaseRow
-                key={row.key}
-                row={row}
-                scope="species"
-              />
-            ))}
-          </View>
-        ) : (
-          <KolamEmptyState
-            compact
-            message="Belum ada species tertaut ke pemasok ini."
-            title="Tidak ada species"
-          />
-        )
-      ) : null}
-
-      {tab === 'packings' ? (
-        packingPurchaseRows.length ? (
-          <View style={styles.catalogTable}>
-            <KolamDataTableHeader
-              columns={getKolamTableColumns('supplier-catalog')}
-            />
-            {packingPurchaseRows.map(row => (
-              <SupplierCatalogPurchaseRow
-                key={row.key}
-                row={row}
-                scope="product"
-              />
-            ))}
-          </View>
-        ) : (
-          <KolamEmptyState
-            compact
-            message="Belum ada bahan kemasan / packing dari pemasok ini."
-            title="Tidak ada packing"
+            message={
+              tab === 'products'
+                ? 'Belum ada produk atau bahan baku tertaut ke pemasok ini.'
+                : tab === 'species'
+                  ? 'Belum ada species tertaut ke pemasok ini.'
+                  : 'Belum ada bahan kemasan / packing dari pemasok ini.'
+            }
+            title={
+              tab === 'products'
+                ? 'Tidak ada produk'
+                : tab === 'species'
+                  ? 'Tidak ada species'
+                  : 'Tidak ada packing'
+            }
           />
         )
       ) : null}
@@ -2468,6 +2501,10 @@ const styles = StyleSheet.create({
   catalogTable: {
     gap: 0,
     overflow: 'visible',
+    width: '100%',
+  },
+  catalogTableBlock: {
+    gap: 8,
     width: '100%',
   },
   catalogTableRowVariant: {
