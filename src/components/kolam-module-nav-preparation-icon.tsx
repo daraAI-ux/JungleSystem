@@ -1,31 +1,60 @@
 import React from 'react';
-import { StyleSheet } from 'react-native';
-import Svg, { Path, Rect } from 'react-native-svg';
-import type { ModuleNavIconGlyphProps } from './kolam-module-nav-icon-types';
+import { StyleSheet, View } from 'react-native';
+import {
+  transparent,
+  type ModuleNavIconGlyphProps,
+} from './kolam-module-nav-icon-types';
 
 export function ModuleNavPreparationIcon({
   tintStyle,
 }: ModuleNavIconGlyphProps) {
-  const color = getTintColor(tintStyle);
-
   return (
-    <Svg
-      fill="none"
-      height={18}
-      stroke={color}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={1.9}
-      viewBox="0 0 24 24"
-      width={18}
-    >
-      <Rect height={15} rx={2} width={14} x={5} y={5} />
-      <Path d="M9 5a3 3 0 0 1 6 0" />
-      <Path d="M9 11h6M9 15h4" />
-    </Svg>
+    <View style={styles.preparationIcon}>
+      <View style={[styles.preparationBoard, tintStyle]} />
+      <View style={[styles.preparationClip, tintStyle]} />
+      <View style={[styles.preparationLineTop, tintStyle]} />
+      <View style={[styles.preparationLineBottom, tintStyle]} />
+    </View>
   );
 }
 
-function getTintColor(tintStyle: ModuleNavIconGlyphProps['tintStyle']) {
-  return String(StyleSheet.flatten(tintStyle)?.backgroundColor ?? '#64748b');
-}
+const styles = StyleSheet.create({
+  preparationIcon: {
+    width: 17,
+    height: 18,
+  },
+  preparationBoard: {
+    position: 'absolute',
+    left: 3,
+    top: 4,
+    width: 11,
+    height: 12,
+    borderRadius: 3,
+    borderWidth: 2,
+    backgroundColor: transparent,
+  },
+  preparationClip: {
+    position: 'absolute',
+    left: 6,
+    top: 2,
+    width: 5,
+    height: 3,
+    borderRadius: 2,
+  },
+  preparationLineTop: {
+    position: 'absolute',
+    left: 6,
+    top: 9,
+    width: 6,
+    height: 2,
+    borderRadius: 999,
+  },
+  preparationLineBottom: {
+    position: 'absolute',
+    left: 6,
+    top: 13,
+    width: 4,
+    height: 2,
+    borderRadius: 999,
+  },
+});
