@@ -45,6 +45,7 @@ import {
   getKolamTeamChatCallConfig,
   getKolamTeamChatMembers,
   getKolamTeamChatMessages,
+  getKolamUserPickerRows,
   handoverKolamTeamChatCall,
   joinKolamTeamChatCall,
   lowerKolamTeamChatCallHand,
@@ -375,6 +376,47 @@ describe('Kolam Settings API contracts', () => {
             dara: {enabled: true, installedVersion: '0.1.44'},
             proyek: {enabled: true, installedVersion: '0.4.0'},
           },
+        }),
+      }),
+    );
+  });
+
+  it('loads staff picker rows from the full user list endpoint', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        data: [
+          {
+            _id: 'staff-1',
+            email: 'maya@dunia-anura.test',
+            first_name: 'Maya',
+            last_name: 'Staff',
+            username: 'maya',
+          },
+        ],
+        pagination: {
+          currentPage: 1,
+          totalPages: 1,
+          totalDocuments: 1,
+          limit: 200,
+        },
+      }),
+    );
+
+    await expect(getKolamUserPickerRows()).resolves.toEqual([
+      expect.objectContaining({
+        _id: 'staff-1',
+        email: 'maya@dunia-anura.test',
+        first_name: 'Maya',
+        last_name: 'Staff',
+      }),
+    ]);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${appConfig.kolamApiBaseUrl}/auth/get-all-user?limit=200`,
+      expect.objectContaining({
+        method: 'GET',
+        headers: expect.objectContaining({
+          'x-source': appConfig.kolamSourceHeader,
         }),
       }),
     );

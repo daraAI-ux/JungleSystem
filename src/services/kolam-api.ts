@@ -781,9 +781,18 @@ export interface KolamChatMessageListParams
 
 export interface KolamUserPickerRow {
   _id: string;
+  displayName?: string;
+  email?: string;
   username?: string;
   first_name?: string;
   last_name?: string;
+  name?: string;
+  isEmployee?: boolean;
+  isOwner?: boolean;
+}
+
+interface KolamUserPickerListResponse {
+  data?: KolamUserPickerRow[];
 }
 
 export type KolamPluginSettings = Partial<
@@ -2493,7 +2502,19 @@ export async function getKolamChatAnalytics(
 export function getKolamUserPickerRows(
   search = '',
 ): Promise<KolamUserPickerRow[]> {
-  return kolamGet<KolamUserPickerRow[]>('/auth/users', { search });
+  return kolamGet<KolamUserPickerRow[] | KolamUserPickerListResponse>(
+    '/auth/get-all-user',
+    {
+      limit: 200,
+      search,
+    },
+  ).then(response =>
+    Array.isArray(response)
+      ? response
+      : Array.isArray(response.data)
+        ? response.data
+        : [],
+  );
 }
 
 function kolamGet<T>(

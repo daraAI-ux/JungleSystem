@@ -431,6 +431,18 @@ describe('settings web widgets', () => {
                 category: 'warehouse',
               },
             ],
+            operationalStaffRows: [
+              {
+                _id: 'staff-1',
+                first_name: 'Maya',
+                last_name: 'Staff',
+                username: 'maya',
+              },
+              {
+                _id: 'staff-2',
+                email: 'bima@dunia-anura.test',
+              },
+            ],
             onSave,
             onSaveOperationalGoogleAuth,
             onSaveOperationalLivechat,
@@ -445,6 +457,12 @@ describe('settings web widgets', () => {
     const toggles = renderer!.root.findAllByType(KolamToggleRow);
     const buttons = renderer!.root.findAllByType(KolamActionControlButton);
     const dropdowns = renderer!.root.findAllByType(KolamDropdownSelect);
+    const text = renderText(renderer!);
+
+    expect(text).toContain('Maya Staff');
+    expect(text).toContain('bima@dunia-anura.test');
+    expect(text).not.toContain('staff-1');
+    expect(text).not.toContain('staff-2');
 
     await ReactTestRenderer.act(async () => {
       toggles.find(node => node.props.label === 'Marketplace')!.props.onPress();
