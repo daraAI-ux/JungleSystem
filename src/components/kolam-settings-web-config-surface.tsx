@@ -1055,26 +1055,6 @@ export function KolamSettingsWebConfigSurface({
   const showSitemapSettings = activeTabId === 'sitemap';
   const showSyncSettings = activeTabId === 'sync';
   const showKpiSettings = activeTabId === 'kpi';
-  const showSharedSaveAction =
-    showGeneralSettings ||
-    showStoreShippingSettings ||
-    showAiSettings ||
-    showNotificationSettings ||
-    showSitemapSettings ||
-    showPluginControls;
-  const sharedSaveTitle = showGeneralSettings
-    ? 'Umum'
-    : showStoreShippingSettings
-    ? 'Pengiriman'
-    : showNotificationSettings
-    ? 'Notifikasi'
-    : showAiSettings
-    ? 'AI / DARA'
-    : showSitemapSettings
-    ? 'Sitemap'
-    : showPluginControls
-    ? 'Plugin'
-    : '';
   const generalFormSections = sections.filter(section => section.id === 'logo');
   const settingsFieldWidth = 460;
   const umumFieldWidth = 240;
@@ -1490,43 +1470,8 @@ export function KolamSettingsWebConfigSurface({
     );
   };
 
-  const renderSharedSaveAction = () =>
-    showSharedSaveAction ? (
-      <View style={styles.settingsTitleActionRow}>
-        <KolamCopyStack
-          containerStyle={styles.settingsTitleCopy}
-          items={[
-            {
-              id: 'settings-active-title',
-              text: sharedSaveTitle,
-              style: styles.marketplaceOverviewTitle,
-            },
-            ...(saveMessage
-              ? [
-                  {
-                    id: 'save-message',
-                    text: saveMessage,
-                    style: styles.marketplaceOverviewMeta,
-                  },
-                ]
-              : []),
-          ]}
-        />
-        <View style={styles.settingsTopActions}>
-          <KolamActionControlButton
-            label="Simpan"
-            loading={saveStatus === 'saving'}
-            loadingLabel="Menyimpan..."
-            intent="primary"
-            onPress={disabled ? undefined : onSave}
-          />
-        </View>
-      </View>
-    ) : null;
-
   return (
     <KolamContentFrame variant="settingsWebConfig">
-      {renderSharedSaveAction()}
       {showGeneralSettings ? (
         <>
           <View style={styles.umumTopRow}>
@@ -7782,25 +7727,6 @@ const styles = StyleSheet.create({
     gap: 12,
     justifyContent: 'space-between',
     paddingVertical: 12,
-  },
-  settingsTopActions: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    justifyContent: 'flex-end',
-  },
-  settingsTitleActionRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    justifyContent: 'space-between',
-    marginBottom: 10,
-  },
-  settingsTitleCopy: {
-    flex: 1,
-    minWidth: 180,
   },
   storeHoursList: {
     gap: 10,
