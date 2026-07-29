@@ -628,6 +628,13 @@ describe('KolamGlobalChatRail', () => {
           lastMessagePreview: 'Baik, kami cek stok dulu.',
           unreadCount: 0,
         },
+        {
+          _id: 'conv-3',
+          platform: 'tiktok',
+          contactId: {displayName: 'Buyer TikTok'},
+          lastMessagePreview: 'Masih ready?',
+          unreadCount: 0,
+        },
       ],
       loading: false,
       refresh: jest.fn(),
@@ -651,11 +658,29 @@ describe('KolamGlobalChatRail', () => {
         'Buyer Shopee',
         'Anda: Baik, kami cek stok dulu.',
         'Shopee',
+        'Buyer TikTok',
+        'Masih ready?',
+        'Tiktok',
       ]),
     );
     expect(renderText(renderer!)).not.toEqual(
       expect.arrayContaining(['2 conversation terpantau']),
     );
+    expect(
+      renderer!.root.findAll(
+        node => node.props.accessibilityLabel === 'Logo platform Tokopedia',
+      ),
+    ).not.toHaveLength(0);
+    expect(
+      renderer!.root.findAll(
+        node => node.props.accessibilityLabel === 'Logo platform Shopee',
+      ),
+    ).not.toHaveLength(0);
+    expect(
+      renderer!.root.findAll(
+        node => node.props.accessibilityLabel === 'Logo platform Tiktok',
+      ),
+    ).not.toHaveLength(0);
 
     const unreadRow = renderer!.root
       .findAllByType(KolamPressable)

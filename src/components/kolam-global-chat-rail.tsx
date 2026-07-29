@@ -94,6 +94,7 @@ const INBOX_ASSIGNMENT_FILTERS: KolamChatRailInboxAssignmentFilter[] = [
   'unassigned',
 ];
 const SHOPEE_LOGO = require('../assets/marketplace/shopee.jpg');
+const TIKTOK_LOGO = require('../assets/marketplace/tiktok.webp');
 const TOKOPEDIA_LOGO = require('../assets/marketplace/tokopedia.png');
 const DARA_THINKING_DEFAULT_LINE = 'DARA sedang berpikir...';
 const DARA_THINKING_ACTIVE_EVENTS = new Set([
@@ -173,6 +174,17 @@ interface KolamChatRailInboxFilter {
   platform: KolamChatPlatform | 'all';
   search: string;
   status: KolamChatConversationStatus | 'all';
+}
+
+interface KolamChatRailItem {
+  id: string;
+  metaLabel: string;
+  platform?: KolamChatPlatform;
+  preview: string;
+  secondaryMetaLabel?: string;
+  timeLabel: string;
+  title: string;
+  unreadCount: number;
 }
 
 type KolamTeamMentionTextPart =
@@ -796,6 +808,13 @@ export function KolamGlobalChatRail({
                       styles.rowUnread,
                     item.id === selectedItemId && styles.rowSelected,
                   ]}>
+                  {mode === 'inbox' && item.platform ? (
+                    <View
+                      accessibilityLabel={`Logo platform ${item.metaLabel}`}
+                      style={styles.rowPlatformLogoShell}>
+                      <KolamPlatformFilterLogo platform={item.platform} />
+                    </View>
+                  ) : null}
                   <View style={styles.rowCopy}>
                     <View style={styles.rowTopLine}>
                       <Text numberOfLines={1} style={styles.rowTitle}>
@@ -1025,11 +1044,21 @@ function KolamPlatformFilterLogo({
 }: {
   platform: KolamChatPlatform | 'all';
 }) {
-  if (platform === 'tokopedia' || platform === 'shopee') {
+  if (
+    platform === 'tokopedia' ||
+    platform === 'shopee' ||
+    platform === 'tiktok'
+  ) {
     return (
       <Image
         resizeMode="contain"
-        source={platform === 'tokopedia' ? TOKOPEDIA_LOGO : SHOPEE_LOGO}
+        source={
+          platform === 'tokopedia'
+            ? TOKOPEDIA_LOGO
+            : platform === 'shopee'
+              ? SHOPEE_LOGO
+              : TIKTOK_LOGO
+        }
         style={styles.platformLogoImage}
       />
     );
@@ -1039,18 +1068,6 @@ function KolamPlatformFilterLogo({
     return (
       <View style={styles.storeLogoBag}>
         <View style={styles.storeLogoHandle} />
-      </View>
-    );
-  }
-
-  if (platform === 'tiktok') {
-    return (
-      <View style={styles.tiktokLogo}>
-        <View style={styles.tiktokStemAccent} />
-        <View style={styles.tiktokStem} />
-        <View style={styles.tiktokBar} />
-        <View style={styles.tiktokDotAccent} />
-        <View style={styles.tiktokDot} />
       </View>
     );
   }
@@ -3472,11 +3489,12 @@ function getChatRailItems(
   mode: KolamGlobalChatRailMode,
   data: ReturnType<typeof useKolamChatRailReadonlyData>,
   inboxAssignmentFilter: KolamChatRailInboxFilter['assignment'] = 'all',
-) {
+): KolamChatRailItem[] {
   if (mode === 'team-chat') {
     return data.rooms.map(room => ({
       id: room._id,
       metaLabel: getRoomCategoryLabel(room),
+      platform: undefined,
       preview: room.lastMessagePreview || 'Belum ada preview pesan.',
       secondaryMetaLabel: getRoomSecondaryMeta(room),
       timeLabel: formatRelativeTime(room.lastMessageAt),
@@ -3494,6 +3512,7 @@ function getChatRailItems(
       metaLabel: conversation.platform
         ? getPlatformLabel(conversation.platform)
         : 'Marketplace',
+      platform: conversation.platform,
       preview: getConversationPreview(conversation),
       secondaryMetaLabel: conversation.status === 'closed' ? 'Closed' : 'Open',
       timeLabel: formatRelativeTime(conversation.lastMessageAt),
@@ -6605,6 +6624,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
+  },
+  rowPlatformLogoShell: {
+    width: 30,
+    height: 30,
+    borderRadius: V.radius.md,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.bg,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   rowUnread: {
     borderColor: 'rgba(220, 38, 38, 0.28)',
