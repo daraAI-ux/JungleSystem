@@ -37,7 +37,6 @@ export function KolamMenuSection({
     <View style={styles.kolamMenuSection}>
       <KolamHeaderFrame variant="menuSection">
         <KolamMenuSectionToggle
-          expanded={expanded}
           icon={
             <KolamChevronIcon
               direction={getKolamChevronDirection(
@@ -50,7 +49,6 @@ export function KolamMenuSection({
           }
           label={section.title}
           onPress={() => onToggle(section.id)}
-          sectionId={section.id}
         />
         <KolamMenuSectionActions
           onMove={direction => onMove(section.id, direction)}

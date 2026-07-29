@@ -15,12 +15,7 @@ describe('KolamMenuItem', () => {
 
     await ReactTestRenderer.act(async () => {
       renderer = ReactTestRenderer.create(
-        <KolamMenuItem
-          grouped
-          label="Activity Log"
-          onPress={onPress}
-          route="/settings/activity-log"
-        />,
+        <KolamMenuItem grouped label="Activity Log" onPress={onPress} />,
       );
     });
 
@@ -56,7 +51,6 @@ describe('KolamMenuItem', () => {
           icon={<Text>v</Text>}
           label="Inventory"
           onPress={onPress}
-          sectionId="inventory"
         />,
       );
     });

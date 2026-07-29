@@ -55,18 +55,5 @@ describe('sidebar menu split widgets', () => {
         firstSection.items[0].label,
       ]),
     );
-    expect(
-      renderer!.root.findAll(
-        node =>
-          node.props.testID === `kolam-menu-section-icon:${firstSection.id}`,
-      ).length,
-    ).toBeGreaterThan(0);
-    expect(
-      renderer!.root.findAll(
-        node =>
-          node.props.testID ===
-          `kolam-menu-item-icon:${firstSection.items[0].route}`,
-      ).length,
-    ).toBeGreaterThan(0);
   });
 });

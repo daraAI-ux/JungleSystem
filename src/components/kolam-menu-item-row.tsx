@@ -1,8 +1,7 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { KolamCopyStack } from './kolam-copy-stack';
-import { KolamMenuItemIcon } from './kolam-menu-item-icon';
 import { KolamMenuPressableFrame } from './kolam-menu-pressable-frame';
 
 export interface KolamMenuItemProps {
@@ -10,7 +9,6 @@ export interface KolamMenuItemProps {
   grouped?: boolean;
   label: string;
   onPress: () => void;
-  route: string;
 }
 
 export function KolamMenuItem({
@@ -18,7 +16,6 @@ export function KolamMenuItem({
   grouped = false,
   label,
   onPress,
-  route,
 }: KolamMenuItemProps) {
   return (
     <KolamMenuPressableFrame
@@ -26,33 +23,20 @@ export function KolamMenuItem({
       onPress={onPress}
       variant={grouped ? 'groupedItem' : 'item'}
     >
-      <View style={styles.itemBody}>
-        <KolamMenuItemIcon active={active} route={route} />
-        <KolamCopyStack
-          containerStyle={styles.itemCopy}
-          items={[
-            {
-              id: 'label',
-              text: label,
-              style: [styles.itemLabel, active && styles.itemLabelActive],
-            },
-          ]}
-        />
-      </View>
+      <KolamCopyStack
+        items={[
+          {
+            id: 'label',
+            text: label,
+            style: [styles.itemLabel, active && styles.itemLabelActive],
+          },
+        ]}
+      />
     </KolamMenuPressableFrame>
   );
 }
 
 const styles = StyleSheet.create({
-  itemBody: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  itemCopy: {
-    flex: 1,
-    minWidth: 0,
-  },
   itemLabel: {
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,

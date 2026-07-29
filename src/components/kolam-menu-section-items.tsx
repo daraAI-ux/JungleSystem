@@ -33,7 +33,6 @@ export function KolamMenuSectionItems({
                 grouped={Boolean(group.label)}
                 label={item.label}
                 onPress={() => onSelectItem(item)}
-                route={item.route}
               />
             )}
           />
