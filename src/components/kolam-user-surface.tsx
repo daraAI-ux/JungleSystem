@@ -9,6 +9,7 @@ import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {getKolamUserList} from '../services/kolam-user-api';
 import {KolamButton} from './kolam-button';
 import {KolamCatalogListTableShell} from './kolam-catalog-list-table-shell';
+import {KolamConfirmDialog} from './kolam-confirm-dialog';
 import {
   KolamOverflowMenuButton,
   KolamTableFooterControls,
@@ -71,6 +72,8 @@ export function KolamUserSurface({
   const [activeFilterPanel, setActiveFilterPanel] = React.useState<
     'employee' | null
   >(null);
+  const [deleteTarget, setDeleteTarget] =
+    React.useState<KolamUserListItem | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState('');
 
@@ -243,6 +246,7 @@ export function KolamUserSurface({
           items.map(user => (
             <KolamUserListRow
               key={user.id}
+              onDeleteRequest={setDeleteTarget}
               onRouteChange={onRouteChange}
               user={user}
             />
@@ -257,14 +261,30 @@ export function KolamUserSurface({
           </View>
         )}
       </KolamCatalogListTableShell>
+      <KolamConfirmDialog
+        cancelLabel="Batal"
+        confirmLabel="Tutup"
+        destructive
+        message={
+          deleteTarget
+            ? `Penghapusan pengguna "${deleteTarget.displayName}" belum diaktifkan karena backend melakukan pembersihan permanen. Aksi ini membutuhkan approval khusus sebelum disambungkan.`
+            : 'Penghapusan pengguna belum diaktifkan karena backend melakukan pembersihan permanen.'
+        }
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={() => setDeleteTarget(null)}
+        title="Konfirmasi hapus pengguna"
+        visible={Boolean(deleteTarget)}
+      />
     </View>
   );
 }
 
 function KolamUserListRow({
+  onDeleteRequest,
   onRouteChange,
   user,
 }: {
+  onDeleteRequest: (user: KolamUserListItem) => void;
   onRouteChange?: (route: string) => void;
   user: KolamUserListItem;
 }) {
@@ -338,9 +358,8 @@ function KolamUserListRow({
                 onRouteChange?.(`/list-of-users/users/${userRouteId}/edit`),
             },
             {
-              disabled: true,
               label: 'Hapus',
-              onPress: () => undefined,
+              onPress: () => onDeleteRequest(user),
               tone: 'danger',
             },
           ]}
