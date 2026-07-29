@@ -1085,7 +1085,7 @@ function KolamPurchaseOrderDetail({
   };
 
   return (
-    <ScrollView style={styles.detailRoot} contentContainerStyle={styles.detailContent}>
+    <View style={styles.detailRoot}>
       <View style={styles.toolbarWrap}>
         <View style={kolamTableToolbarStyles.row}>
           <View style={kolamTableToolbarStyles.controls}>
@@ -1263,10 +1263,12 @@ function KolamPurchaseOrderDetail({
             <KolamDataTableHeader
               columns={getKolamTableColumns('purchase-order-items')}
             />
-            {po.items.map(item => {
+            {po.items.map((item, index) => {
               const href = getKolamPOItemHref(item);
               return (
-                <KolamDataTableRowFrame key={item.id}>
+                <KolamDataTableRowFrame
+                  key={item.id || `${item.itemType}-${item.refId}-${index}`}
+                >
                   <Pressable
                     disabled={!href}
                     onPress={() => {
@@ -1389,7 +1391,7 @@ function KolamPurchaseOrderDetail({
         title="Konfirmasi perubahan status"
         visible={Boolean(pendingSimpleTransition)}
       />
-    </ScrollView>
+    </View>
   );
 }
 
@@ -1661,39 +1663,49 @@ function KolamPOFakturPajakSection({
       <Text style={styles.metaText}>
         Catatan internal DJP (bukan e-Faktur Coretax).
       </Text>
-      <KolamFormTextField
-        label="Nomor seri faktur"
-        onChangeText={setSerialNumber}
-        value={serialNumber}
-      />
-      <KolamDropdownSelect
-        label="Status faktur"
-        onChange={value =>
-          setStatus(value as 'none' | 'draft' | 'issued' | 'cancelled')
-        }
-        options={[
-          { label: 'Belum ada', value: 'none' },
-          { label: 'Draft', value: 'draft' },
-          { label: 'Terbit', value: 'issued' },
-          { label: 'Batal', value: 'cancelled' },
-        ]}
-        value={status}
-      />
-      <KolamFormTextField
-        label="NPWP vendor"
-        onChangeText={setVendorNpwp}
-        value={vendorNpwp}
-      />
-      <KolamFormTextField
-        label="Nama vendor (faktur)"
-        onChangeText={setVendorName}
-        value={vendorName}
-      />
-      <KolamFormTextField
-        label="Catatan"
-        onChangeText={setNotes}
-        value={notes}
-      />
+      <FieldShell label="Nomor seri faktur">
+        <KolamFormTextField
+          onChangeText={setSerialNumber}
+          placeholder="Nomor seri faktur"
+          value={serialNumber}
+        />
+      </FieldShell>
+      <FieldShell label="Status faktur">
+        <KolamDropdownSelect
+          label="Status faktur"
+          onChange={value =>
+            setStatus(value as 'none' | 'draft' | 'issued' | 'cancelled')
+          }
+          options={[
+            { label: 'Belum ada', value: 'none' },
+            { label: 'Draft', value: 'draft' },
+            { label: 'Terbit', value: 'issued' },
+            { label: 'Batal', value: 'cancelled' },
+          ]}
+          value={status}
+        />
+      </FieldShell>
+      <FieldShell label="NPWP vendor">
+        <KolamFormTextField
+          onChangeText={setVendorNpwp}
+          placeholder="NPWP vendor"
+          value={vendorNpwp}
+        />
+      </FieldShell>
+      <FieldShell label="Nama vendor (faktur)">
+        <KolamFormTextField
+          onChangeText={setVendorName}
+          placeholder="Nama vendor pada faktur"
+          value={vendorName}
+        />
+      </FieldShell>
+      <FieldShell label="Catatan">
+        <KolamFormTextField
+          onChangeText={setNotes}
+          placeholder="Catatan faktur"
+          value={notes}
+        />
+      </FieldShell>
       <KolamButton
         disabled={controller.mutating}
         intent="primary"
