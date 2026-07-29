@@ -1,5 +1,13 @@
 import React from 'react';
-import {ScrollView, StyleSheet, Text, TextInput, View} from 'react-native';
+import {
+  Linking,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import {useKolamAuthContext} from '../context/kolam-app-contexts';
 import {classifyKolamChatLiveEvent} from '../domain/kolam-chat-live-classifier';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
@@ -53,6 +61,7 @@ import {KolamBadge} from './kolam-badge';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamIconButton} from './kolam-icon-button';
 import {KolamMappedList} from './kolam-mapped-list';
+import {KolamModalBackdrop} from './kolam-modal-backdrop';
 import {KolamPressable} from './kolam-pressable';
 import {KolamRemoteImage} from './kolam-remote-image';
 import {KolamTopNavigationChatIcon} from './kolam-top-navigation-chat-icon';
@@ -2069,6 +2078,7 @@ function KolamInboxRichMessageContent({
 }: {
   message: ReturnType<typeof useKolamChatRailDetail>['messages'][number];
 }) {
+  const [lightboxUri, setLightboxUri] = React.useState<string | null>(null);
   const content = message.content;
   const replyContent = message.replyContent;
   const imageUri = resolveInboxImageUri(content, message.body);
@@ -2088,13 +2098,25 @@ function KolamInboxRichMessageContent({
       ) : linkedCard ? (
         <KolamInboxLinkedCard card={linkedCard} />
       ) : imageUri ? (
-        <KolamRemoteImage
-          accessibilityLabel={content?.fileName || 'Gambar inbox'}
-          resizeMode="cover"
-          scope="chat-inbox"
-          sourceUri={imageUri}
-          style={styles.inboxRichImage}
-        />
+        <>
+          <KolamPressable
+            accessibilityLabel={`Buka gambar inbox ${content?.fileName || 'Gambar'}`}
+            onPress={() => setLightboxUri(imageUri)}
+            style={styles.inboxRichImagePressable}>
+            <KolamRemoteImage
+              accessibilityLabel={content?.fileName || 'Gambar inbox'}
+              resizeMode="cover"
+              scope="chat-inbox"
+              sourceUri={imageUri}
+              style={styles.inboxRichImage}
+            />
+          </KolamPressable>
+          <KolamInboxImageLightbox
+            onClose={() => setLightboxUri(null)}
+            title={content?.fileName || 'Gambar inbox'}
+            uri={lightboxUri}
+          />
+        </>
       ) : (
         <Text style={styles.messageBody}>{message.body}</Text>
       )}
@@ -2142,7 +2164,10 @@ function KolamInboxYoutubeCard({
   youtube: {title?: string; url: string; videoId?: string};
 }) {
   return (
-    <View accessibilityLabel="Preview YouTube inbox" style={styles.inboxRichCard}>
+    <KolamPressable
+      accessibilityLabel="Buka YouTube inbox"
+      onPress={() => openInboxExternalUrl(youtube.url)}
+      style={styles.inboxRichCard}>
       <View style={styles.inboxRichCardIcon}>
         <Text style={styles.inboxRichCardIconText}>YT</Text>
       </View>
@@ -2155,13 +2180,13 @@ function KolamInboxYoutubeCard({
           {youtube.url}
         </Text>
       </View>
-    </View>
+    </KolamPressable>
   );
 }
 
 function KolamInboxProductCard({card}: {card: KolamInboxResolvedCard}) {
-  return (
-    <View accessibilityLabel={`Card ${card.title}`} style={styles.inboxRichCard}>
+  const content = (
+    <>
       {card.imageUrl ? (
         <KolamRemoteImage
           accessibilityLabel={`Gambar ${card.title}`}
@@ -2193,13 +2218,30 @@ function KolamInboxProductCard({card}: {card: KolamInboxResolvedCard}) {
           </Text>
         ) : null}
       </View>
+    </>
+  );
+
+  if (card.actionUrl) {
+    return (
+      <KolamPressable
+        accessibilityLabel={`Buka card ${card.title}`}
+        onPress={() => openInboxExternalUrl(card.actionUrl)}
+        style={styles.inboxRichCard}>
+        {content}
+      </KolamPressable>
+    );
+  }
+
+  return (
+    <View accessibilityLabel={`Card ${card.title}`} style={styles.inboxRichCard}>
+      {content}
     </View>
   );
 }
 
 function KolamInboxLinkedCard({card}: {card: KolamInboxLinkedCardData}) {
-  return (
-    <View accessibilityLabel={`Linked card ${card.title}`} style={styles.inboxRichCard}>
+  const content = (
+    <>
       <View style={styles.inboxRichCardIcon}>
         <Text style={styles.inboxRichCardIconText}>{card.icon}</Text>
       </View>
@@ -2214,7 +2256,59 @@ function KolamInboxLinkedCard({card}: {card: KolamInboxLinkedCardData}) {
           </Text>
         ) : null}
       </View>
+    </>
+  );
+
+  if (card.actionUrl) {
+    return (
+      <KolamPressable
+        accessibilityLabel={`Buka linked card ${card.title}`}
+        onPress={() => openInboxExternalUrl(card.actionUrl)}
+        style={styles.inboxRichCard}>
+        {content}
+      </KolamPressable>
+    );
+  }
+
+  return (
+    <View accessibilityLabel={`Linked card ${card.title}`} style={styles.inboxRichCard}>
+      {content}
     </View>
+  );
+}
+
+function KolamInboxImageLightbox({
+  onClose,
+  title,
+  uri,
+}: {
+  onClose: () => void;
+  title: string;
+  uri: string | null;
+}) {
+  return (
+    <Modal animationType="fade" onRequestClose={onClose} transparent visible={Boolean(uri)}>
+      <View style={styles.inboxLightboxRoot}>
+        <KolamModalBackdrop onPress={onClose} />
+        <View style={styles.inboxLightboxFrame}>
+          {uri ? (
+            <KolamRemoteImage
+              accessibilityLabel={`Preview ${title}`}
+              resizeMode="contain"
+              scope="chat-inbox-lightbox"
+              sourceUri={uri}
+              style={styles.inboxLightboxImage}
+            />
+          ) : null}
+          <KolamPressable
+            accessibilityLabel="Tutup gambar inbox"
+            onPress={onClose}
+            style={styles.inboxLightboxClose}>
+            <Text style={styles.inboxLightboxCloseText}>Tutup</Text>
+          </KolamPressable>
+        </View>
+      </View>
+    </Modal>
   );
 }
 
@@ -3191,6 +3285,7 @@ function conversationFitsAssignmentFilter(
 }
 
 interface KolamInboxResolvedCard {
+  actionUrl?: string;
   imageUrl?: string;
   kind: 'product' | 'species' | 'marketplace';
   label: string;
@@ -3200,6 +3295,7 @@ interface KolamInboxResolvedCard {
 }
 
 interface KolamInboxLinkedCardData {
+  actionUrl?: string;
   icon: string;
   label: string;
   subtitle?: string;
@@ -3265,6 +3361,7 @@ function resolveInboxCard(
           ? 'species'
           : 'product';
     return {
+      actionUrl: normalizeInboxActionUrl(card.detailHref || card.imageUrl),
       imageUrl: normalizeChatMediaUri(card.imageUrl) ?? undefined,
       kind,
       label: getInboxCardLabel(kind, card.marketplace?.platform),
@@ -3340,6 +3437,7 @@ function parseInboxLegacyProductText(text: string): KolamInboxResolvedCard | nul
     .filter(part => part !== priceLabel && !/(sold|terjual)/i.test(part));
 
   return {
+    actionUrl: normalizeInboxActionUrl(imageLine),
     imageUrl: normalizeChatMediaUri(imageLine) ?? undefined,
     kind: 'product',
     label: 'Product',
@@ -3387,9 +3485,38 @@ function parseInboxTaggedCard(body: string, tag: string) {
   }
 
   return {
+    actionUrl: normalizeInboxActionUrl(
+      trimmed
+        .split('\n')
+        .map(line => line.trim())
+        .find(line => line.startsWith('[Link]'))
+        ?.replace(/^\[Link\]\s*/, ''),
+    ),
     subtitle: parts[1],
     title: parts[0],
   };
+}
+
+function normalizeInboxActionUrl(url?: string | null) {
+  const value = url?.trim();
+  if (!value) {
+    return undefined;
+  }
+
+  if (/^(https?:|mailto:|tel:)/i.test(value)) {
+    return value;
+  }
+
+  return getKolamFileUrl(value) ?? undefined;
+}
+
+function openInboxExternalUrl(url?: string | null) {
+  const target = normalizeInboxActionUrl(url);
+  if (!target) {
+    return;
+  }
+
+  Linking.openURL(target).catch(() => undefined);
 }
 
 function normalizeChatMediaUri(uri?: string | null) {
@@ -4917,6 +5044,12 @@ const styles = StyleSheet.create({
     borderRadius: V.radius.lg,
     backgroundColor: V.colors.bg,
   },
+  inboxRichImagePressable: {
+    width: 220,
+    height: 132,
+    borderRadius: V.radius.lg,
+    overflow: 'hidden',
+  },
   inboxRichCard: {
     width: 230,
     minHeight: 64,
@@ -4983,6 +5116,47 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     backgroundColor: V.colors.primarySoft,
     gap: 2,
+  },
+  inboxLightboxRoot: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 28,
+  },
+  inboxLightboxFrame: {
+    width: '92%',
+    height: '82%',
+    maxWidth: 920,
+    maxHeight: 720,
+    borderRadius: V.radius.lg,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.bg,
+    overflow: 'hidden',
+  },
+  inboxLightboxImage: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: V.colors.mutedSoft,
+  },
+  inboxLightboxClose: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    minHeight: 32,
+    paddingHorizontal: 12,
+    borderRadius: V.radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+  },
+  inboxLightboxCloseText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '900',
   },
   messageMention: {
     color: V.colors.primary,

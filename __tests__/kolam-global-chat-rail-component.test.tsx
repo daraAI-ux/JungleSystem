@@ -1,5 +1,5 @@
 import React from 'react';
-import {Text, TextInput, View} from 'react-native';
+import {Linking, Text, TextInput, View} from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 import {KolamGlobalChatRail} from '../src/components/kolam-global-chat-rail';
 import {KolamPressable} from '../src/components/kolam-pressable';
@@ -21,6 +21,9 @@ import {createKolamNotificationSoundService} from '../src/services/kolam-notific
 import {pickNativeAssetFile} from '../src/services/native-file-picker';
 
 const mockSoundPlay = jest.fn();
+const openUrlMock = jest
+  .spyOn(Linking, 'openURL')
+  .mockResolvedValue(undefined);
 
 jest.mock('../src/context/kolam-app-contexts', () => ({
   useKolamAuthContext: jest.fn(),
@@ -197,6 +200,7 @@ function getDefaultDetailMock() {
 describe('KolamGlobalChatRail', () => {
   beforeEach(() => {
     mockSoundPlay.mockClear();
+    openUrlMock.mockClear();
     createTeamChatRoomMock.mockClear();
     getUserPickerRowsMock.mockClear();
     openTeamChatDirectMock.mockClear();
@@ -953,6 +957,7 @@ describe('KolamGlobalChatRail', () => {
           attachments: [],
           content: {
             card: {
+              detailHref: 'https://store.example.test/species/anemon',
               entityType: 'species',
               imageUrl: '/uploads/species/anemon.jpg',
               name: 'Bubble Tip Anemone',
@@ -1043,6 +1048,50 @@ describe('KolamGlobalChatRail', () => {
     );
     expect(normalizedText).toContain('Rp 175.000');
     expect(normalizedText).toContain('Diedit oleh Maya');
+
+    const youtubeButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Buka YouTube inbox');
+    const cardButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(
+        node =>
+          node.props.accessibilityLabel === 'Buka card Bubble Tip Anemone',
+      );
+    const imageButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(
+        node =>
+          node.props.accessibilityLabel === 'Buka gambar inbox proof.jpg',
+      );
+
+    await ReactTestRenderer.act(async () => {
+      youtubeButton!.props.onPress();
+      cardButton!.props.onPress();
+      imageButton!.props.onPress();
+    });
+
+    expect(openUrlMock).toHaveBeenCalledWith(
+      'https://www.youtube.com/watch?v=abc123XYZ',
+    );
+    expect(openUrlMock).toHaveBeenCalledWith(
+      'https://store.example.test/species/anemon',
+    );
+    expect(renderText(renderer!)).toEqual(
+      expect.arrayContaining(['Preview proof.jpg', 'Tutup']),
+    );
+
+    const closeLightbox = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Tutup gambar inbox');
+
+    await ReactTestRenderer.act(async () => {
+      closeLightbox!.props.onPress();
+    });
+
+    expect(renderText(renderer!)).not.toEqual(
+      expect.arrayContaining(['Preview proof.jpg']),
+    );
   });
 
   it('toggles inbox labels from the selected conversation action strip', async () => {
