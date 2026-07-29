@@ -10,6 +10,8 @@ import {
   type KolamUserBiodataAddress,
   type KolamUserBiodataEmergencyContact,
   type KolamUserCreatePayload,
+  type KolamUserEmployeeProfile,
+  type KolamUserEmployeeSchedule,
   type KolamUserListItem,
   type KolamUserListPagination,
   type KolamUserRoleOption,
@@ -97,6 +99,38 @@ const EMPTY_USER_BIODATA: KolamUserBiodata = {
   taxNumber: '',
 };
 
+type KolamUserEmployeeForm = Omit<KolamUserEmployeeProfile, 'yearIn'> & {
+  yearIn: string;
+};
+
+const EMPTY_USER_EMPLOYEE: KolamUserEmployeeForm = {
+  department: '',
+  employeeNumber: '',
+  firstTimeWorking: false,
+  hireDate: '',
+  isPkp: false,
+  pkpNotes: '',
+  position: '',
+  schedule: {
+    shiftEnd: '18:00',
+    shiftStart: '09:00',
+    type: 'full_time',
+    workDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+  },
+  status: 'active',
+  yearIn: '',
+};
+
+const EMPLOYEE_WORK_DAYS = [
+  {id: 'Mon', label: 'Sen'},
+  {id: 'Tue', label: 'Sel'},
+  {id: 'Wed', label: 'Rab'},
+  {id: 'Thu', label: 'Kam'},
+  {id: 'Fri', label: 'Jum'},
+  {id: 'Sat', label: 'Sab'},
+  {id: 'Sun', label: 'Min'},
+] as const;
+
 type KolamUserEditForm = {
   account_restricted: boolean;
   access_am: boolean;
@@ -105,6 +139,7 @@ type KolamUserEditForm = {
   biodata: KolamUserBiodata;
   csActive: boolean;
   email: string;
+  employee: KolamUserEmployeeForm;
   first_name: string;
   isEmployee: boolean;
   isOwner: boolean;
@@ -843,6 +878,7 @@ function KolamUserEditSurface({
     biodata: EMPTY_USER_BIODATA,
     csActive: false,
     email: '',
+    employee: EMPTY_USER_EMPLOYEE,
     first_name: '',
     isEmployee: false,
     isOwner: false,
@@ -1028,6 +1064,48 @@ function KolamUserEditSurface({
     setError('');
     setMessage('');
   };
+  const setEmployeeField = (
+    field: Exclude<keyof KolamUserEmployeeForm, 'schedule'>,
+    value: string | boolean,
+  ) => {
+    setForm(current => ({
+      ...current,
+      employee: {...current.employee, [field]: value},
+    }));
+    setError('');
+    setMessage('');
+  };
+  const setEmployeeScheduleField = (
+    field: Exclude<keyof KolamUserEmployeeSchedule, 'workDays'>,
+    value: string,
+  ) => {
+    setForm(current => ({
+      ...current,
+      employee: {
+        ...current.employee,
+        schedule: {...current.employee.schedule, [field]: value},
+      },
+    }));
+    setError('');
+    setMessage('');
+  };
+  const toggleEmployeeWorkDay = (day: string) => {
+    setForm(current => {
+      const workDays = current.employee.schedule.workDays.includes(day)
+        ? current.employee.schedule.workDays.filter(item => item !== day)
+        : [...current.employee.schedule.workDays, day];
+
+      return {
+        ...current,
+        employee: {
+          ...current.employee,
+          schedule: {...current.employee.schedule, workDays},
+        },
+      };
+    });
+    setError('');
+    setMessage('');
+  };
 
   const handleSubmit = async () => {
     const validationError = validateEditUserForm(form);
@@ -1053,6 +1131,9 @@ function KolamUserEditSurface({
         email: form.email.trim(),
         first_name: form.first_name.trim(),
         ...(canToggleEmployee ? {isEmployee: form.isEmployee} : {}),
+        ...(canToggleEmployee && form.isEmployee
+          ? {employee: getUserEmployeePayload(form.employee)}
+          : {}),
         ...(canToggleOwner ? {isOwner: form.isOwner} : {}),
         last_name: form.last_name.trim(),
         phone_number: form.phone_number.trim(),
@@ -1261,6 +1342,163 @@ function KolamUserEditSurface({
               ) : null}
             </View>
           </View>
+          {canToggleEmployee && form.isEmployee ? (
+            <>
+              <View style={styles.formFieldWide}>
+                <View style={styles.accessSectionHeader}>
+                  <Text style={styles.detailPanelTitle}>Detail Karyawan</Text>
+                  <Text style={styles.detailSubtitle}>
+                    Informasi organisasi dan jadwal kerja.
+                  </Text>
+                </View>
+              </View>
+              <UserFormField label="Nomor Karyawan">
+                <KolamFormTextField
+                  editable={!saving}
+                  onChangeText={value =>
+                    setEmployeeField('employeeNumber', value)
+                  }
+                  style={styles.formInput}
+                  value={form.employee.employeeNumber}
+                />
+              </UserFormField>
+              <View style={styles.formField}>
+                <UserFormField label="Status Kepegawaian">
+                  <KolamDropdownSelect
+                    label="Status Kepegawaian"
+                    onChange={value => setEmployeeField('status', value)}
+                    options={[
+                      {label: 'Aktif', value: 'active'},
+                      {label: 'Nonaktif', value: 'inactive'},
+                      {label: 'Diberhentikan', value: 'terminated'},
+                    ]}
+                    value={form.employee.status}
+                  />
+                </UserFormField>
+              </View>
+              <UserFormField label="Jabatan">
+                <KolamFormTextField
+                  editable={!saving}
+                  onChangeText={value => setEmployeeField('position', value)}
+                  style={styles.formInput}
+                  value={form.employee.position}
+                />
+              </UserFormField>
+              <UserFormField label="Departemen">
+                <KolamFormTextField
+                  editable={!saving}
+                  onChangeText={value => setEmployeeField('department', value)}
+                  style={styles.formInput}
+                  value={form.employee.department}
+                />
+              </UserFormField>
+              <UserFormField label="Tanggal Mulai Bekerja">
+                <KolamDateField
+                  label="Tanggal Mulai Bekerja"
+                  onChange={value => setEmployeeField('hireDate', value)}
+                  showLabelInTrigger={false}
+                  value={form.employee.hireDate}
+                />
+              </UserFormField>
+              <UserFormField label="Tahun Masuk">
+                <KolamFormTextField
+                  editable={!saving}
+                  mode="numeric"
+                  onChangeText={value => setEmployeeField('yearIn', value)}
+                  style={styles.formInput}
+                  value={form.employee.yearIn}
+                />
+              </UserFormField>
+              <View style={styles.formFieldWide}>
+                <KolamToggleRow
+                  active={form.employee.firstTimeWorking}
+                  description="Ini adalah pekerjaan pertama mereka"
+                  disabled={saving}
+                  label="Pekerjaan Pertama"
+                  onPress={() =>
+                    setEmployeeField(
+                      'firstTimeWorking',
+                      !form.employee.firstTimeWorking,
+                    )
+                  }
+                />
+              </View>
+              <View style={styles.formFieldWide}>
+                <KolamToggleRow
+                  active={form.employee.isPkp}
+                  description="Tandai jika karyawan memiliki PKP aktif"
+                  disabled={saving}
+                  label="Status PKP Berlaku"
+                  onPress={() =>
+                    setEmployeeField('isPkp', !form.employee.isPkp)
+                  }
+                />
+              </View>
+              {form.employee.isPkp ? (
+                <UserFormField label="Catatan PKP">
+                  <KolamFormTextField
+                    editable={!saving}
+                    onChangeText={value => setEmployeeField('pkpNotes', value)}
+                    style={styles.formInput}
+                    value={form.employee.pkpNotes}
+                  />
+                </UserFormField>
+              ) : null}
+              <View style={styles.formField}>
+                <UserFormField label="Tipe Jadwal">
+                  <KolamDropdownSelect
+                    label="Tipe Jadwal"
+                    onChange={value => setEmployeeScheduleField('type', value)}
+                    options={[
+                      {label: 'Penuh Waktu', value: 'full_time'},
+                      {label: 'Paruh Waktu', value: 'part_time'},
+                      {label: 'Kontrak', value: 'contract'},
+                    ]}
+                    value={form.employee.schedule.type}
+                  />
+                </UserFormField>
+              </View>
+              <UserFormField label="Mulai Shift">
+                <KolamFormTextField
+                  editable={!saving}
+                  onChangeText={value =>
+                    setEmployeeScheduleField('shiftStart', value)
+                  }
+                  style={styles.formInput}
+                  value={form.employee.schedule.shiftStart}
+                />
+              </UserFormField>
+              <UserFormField label="Selesai Shift">
+                <KolamFormTextField
+                  editable={!saving}
+                  onChangeText={value =>
+                    setEmployeeScheduleField('shiftEnd', value)
+                  }
+                  style={styles.formInput}
+                  value={form.employee.schedule.shiftEnd}
+                />
+              </UserFormField>
+              <View style={styles.formFieldWide}>
+                <Text style={styles.formSubsectionTitle}>Hari Kerja</Text>
+                <View style={styles.workDayRow}>
+                  {EMPLOYEE_WORK_DAYS.map(day => {
+                    const selected =
+                      form.employee.schedule.workDays.includes(day.id);
+
+                    return (
+                      <KolamButton
+                        intent={selected ? 'primary' : 'secondary'}
+                        key={day.id}
+                        label={day.label}
+                        onPress={() => toggleEmployeeWorkDay(day.id)}
+                        style={styles.workDayButton}
+                      />
+                    );
+                  })}
+                </View>
+              </View>
+            </>
+          ) : null}
           <View style={styles.formFieldWide}>
             <View style={styles.accessSectionHeader}>
               <Text style={styles.detailPanelTitle}>Data Pribadi</Text>
@@ -1641,6 +1879,7 @@ function getUserEditFormFromUser(user: KolamUserListItem): KolamUserEditForm {
     biodata: user.biodata,
     csActive: user.csActive,
     email: user.email,
+    employee: getUserEmployeeFormFromUser(user.employee),
     first_name: user.firstName,
     isEmployee: user.isEmployee,
     isOwner: user.isOwner,
@@ -1651,6 +1890,45 @@ function getUserEditFormFromUser(user: KolamUserListItem): KolamUserEditForm {
     timezone: user.timezone || 'UTC+08:00',
     username: user.username,
   };
+}
+
+function getUserEmployeeFormFromUser(
+  employee: KolamUserEmployeeProfile,
+): KolamUserEmployeeForm {
+  return {
+    ...employee,
+    yearIn: employee.yearIn == null ? '' : String(employee.yearIn),
+  };
+}
+
+function getUserEmployeePayload(employee: KolamUserEmployeeForm) {
+  return {
+    department: cleanOptionalUserString(employee.department),
+    employeeNumber: cleanOptionalUserString(employee.employeeNumber),
+    firstTimeWorking: employee.firstTimeWorking,
+    hireDate: getUserBiodataDatePayload(employee.hireDate),
+    isPkp: employee.isPkp,
+    pkpNotes: cleanOptionalUserString(employee.pkpNotes),
+    position: cleanOptionalUserString(employee.position),
+    schedule: {
+      shiftEnd: employee.schedule.shiftEnd || '18:00',
+      shiftStart: employee.schedule.shiftStart || '09:00',
+      type: employee.schedule.type || 'full_time',
+      workDays: employee.schedule.workDays,
+    },
+    status: employee.status || 'active',
+    yearIn: getOptionalEmployeeYear(employee.yearIn),
+  };
+}
+
+function getOptionalEmployeeYear(value: string) {
+  if (!value.trim()) {
+    return undefined;
+  }
+
+  const parsed = Number(value);
+
+  return Number.isInteger(parsed) ? parsed : undefined;
 }
 
 function getUserBiodataPayload(biodata: KolamUserBiodata) {
@@ -1976,6 +2254,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '900',
     lineHeight: 20,
+  },
+  workDayRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 8,
+  },
+  workDayButton: {
+    minWidth: 52,
   },
   accessSectionHeader: {
     gap: 2,

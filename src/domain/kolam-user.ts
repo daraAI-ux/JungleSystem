@@ -85,6 +85,7 @@ export interface KolamUserUpdatePayload {
   role: string;
   password?: string;
   biodata?: KolamUserBiodataPayload;
+  employee?: KolamUserEmployeePayload;
 }
 
 export interface KolamUserAccessBadge {
@@ -129,6 +130,39 @@ export interface KolamUserBiodataPayload {
   emergencyContact?: Partial<KolamUserBiodataEmergencyContact>;
 }
 
+export interface KolamUserEmployeeSchedule {
+  type: string;
+  shiftStart: string;
+  shiftEnd: string;
+  workDays: string[];
+}
+
+export interface KolamUserEmployeeProfile {
+  employeeNumber: string;
+  position: string;
+  department: string;
+  status: string;
+  hireDate: string;
+  yearIn: number | null;
+  firstTimeWorking: boolean;
+  schedule: KolamUserEmployeeSchedule;
+  isPkp: boolean;
+  pkpNotes: string;
+}
+
+export interface KolamUserEmployeePayload {
+  employeeNumber?: string;
+  position?: string;
+  department?: string;
+  status?: string;
+  hireDate?: string;
+  yearIn?: number;
+  firstTimeWorking?: boolean;
+  schedule?: KolamUserEmployeeSchedule;
+  isPkp?: boolean;
+  pkpNotes?: string;
+}
+
 export interface KolamUserListItem {
   id: string;
   username: string;
@@ -155,6 +189,7 @@ export interface KolamUserListItem {
   createdAt: string;
   updatedAt: string;
   biodata: KolamUserBiodata;
+  employee: KolamUserEmployeeProfile;
 }
 
 export interface KolamUserListPagination {
@@ -270,6 +305,7 @@ export function normalizeKolamUserListItem(
     updatedAt: getString(record, 'updatedAt') || getString(record, 'updated_at'),
     username,
     biodata: normalizeKolamUserBiodata(record.biodata),
+    employee: normalizeKolamUserEmployee(record.employee),
   };
 }
 
@@ -348,6 +384,32 @@ function normalizeKolamUserBiodata(value: unknown): KolamUserBiodata {
     placeOfBirth: getString(record, 'placeOfBirth'),
     religion: getString(record, 'religion'),
     taxNumber: getString(record, 'taxNumber'),
+  };
+}
+
+function normalizeKolamUserEmployee(value: unknown): KolamUserEmployeeProfile {
+  const record = asRecord(value);
+  const schedule = asRecord(record.schedule);
+  const workDays = Array.isArray(schedule.workDays)
+    ? schedule.workDays.filter((item): item is string => typeof item === 'string')
+    : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+
+  return {
+    department: getString(record, 'department'),
+    employeeNumber: getString(record, 'employeeNumber'),
+    firstTimeWorking: getBoolean(record, 'firstTimeWorking') ?? false,
+    hireDate: normalizeKolamUserDateString(record.hireDate),
+    isPkp: getBoolean(record, 'isPkp') ?? false,
+    pkpNotes: getString(record, 'pkpNotes'),
+    position: getString(record, 'position'),
+    schedule: {
+      shiftEnd: getString(schedule, 'shiftEnd') || '18:00',
+      shiftStart: getString(schedule, 'shiftStart') || '09:00',
+      type: getString(schedule, 'type') || 'full_time',
+      workDays,
+    },
+    status: getString(record, 'status') || 'active',
+    yearIn: getNumber(record, 'yearIn') ?? null,
   };
 }
 
