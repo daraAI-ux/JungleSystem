@@ -505,6 +505,39 @@ export function stockOpnameLineNeedsMinusReason(line: {
   return needsOpnameMinusReason(line.targetType, stockOpnameLineDiff(line));
 }
 
+/** ID produk/species untuk retry sync marketplace (skip raw + packing). */
+export function collectStockOpnameMarketplaceSyncTargets(
+  lines: Array<{
+    lineStatus?: string;
+    postedStockTransactionId?: string;
+    productId?: string;
+    speciesId?: string;
+    targetType: string;
+  }>,
+) {
+  const productIds = new Set<string>();
+  const speciesIds = new Set<string>();
+
+  for (const line of lines) {
+    const posted =
+      Boolean(line.postedStockTransactionId) || line.lineStatus === 'approved';
+    if (!posted) {
+      continue;
+    }
+    if (line.targetType === 'product' && line.productId?.trim()) {
+      productIds.add(line.productId.trim());
+    }
+    if (line.targetType === 'species' && line.speciesId?.trim()) {
+      speciesIds.add(line.speciesId.trim());
+    }
+  }
+
+  return {
+    productIds: Array.from(productIds),
+    speciesIds: Array.from(speciesIds),
+  };
+}
+
 export type KolamStockOpnameVariantOption = {
   id: string;
   label: string;

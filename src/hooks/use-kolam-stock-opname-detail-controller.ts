@@ -467,8 +467,8 @@ export function useKolamStockOpnameDetailController(
     }
     setStatusMessage(
       result.continuation
-        ? `Diposting ${result.postedCount} baris. Draf lanjutan: ${result.continuation.documentNumber}`
-        : `Diposting ${result.postedCount} baris.`,
+        ? `Diposting ${result.postedCount} baris. Sinkron AM dijadwalkan otomatis. Draf lanjutan: ${result.continuation.documentNumber}`
+        : `Diposting ${result.postedCount} baris. Sinkron AM dijadwalkan otomatis; pakai Samakan stok bila perlu retry.`,
     );
     return { continuationId: result.continuation?.id ?? null };
   }, [resolvedId, runAction]);

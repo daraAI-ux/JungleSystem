@@ -12,6 +12,7 @@ import {
   KOLAM_OPNAME_MINUS_REASON_OPTIONS,
   KOLAM_STOCK_OPNAME_LINE_TARGET_LABELS,
   KOLAM_STOCK_OPNAME_ROOT,
+  collectStockOpnameMarketplaceSyncTargets,
   formatStockOpnameLineCounts,
   hasKolamStockOpnamePermission,
   needsOpnameMinusReason,
@@ -38,6 +39,7 @@ import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
+import { KolamMarketplacePriceSyncDialog } from './kolam-marketplace-price-sync-dialog';
 import { KolamModalBackdrop } from './kolam-modal-backdrop';
 import { KolamStatusBadge } from './kolam-status-badge';
 
@@ -92,6 +94,9 @@ export function KolamStockOpnameDetail({
   const [editQty, setEditQty] = useState('');
   const [editMinus, setEditMinus] = useState<KolamOpnameMinusReason | ''>('');
   const [editNote, setEditNote] = useState('');
+  const [syncRetry, setSyncRetry] = useState<'products' | 'species' | null>(
+    null,
+  );
 
   React.useEffect(() => {
     if (!controller.header) {
@@ -105,7 +110,13 @@ export function KolamStockOpnameDetail({
 
   React.useEffect(() => {
     setNoteSynced(false);
+    setSyncRetry(null);
   }, [documentId]);
+
+  const marketplaceSyncTargets = useMemo(
+    () => collectStockOpnameMarketplaceSyncTargets(controller.lines),
+    [controller.lines],
+  );
 
   const staffOptions = useMemo(
     () => [
@@ -174,6 +185,7 @@ export function KolamStockOpnameDetail({
   const lineCountsLabel = formatStockOpnameLineCounts(header.lineCounts);
 
   return (
+    <>
     <ScrollView contentContainerStyle={styles.root}>
       {controller.error ? (
         <KolamStatusBadge
@@ -257,6 +269,20 @@ export function KolamStockOpnameDetail({
                   )}`,
                 )
               }
+            />
+          ) : null}
+          {controller.isPosted &&
+          marketplaceSyncTargets.productIds.length > 0 ? (
+            <KolamButton
+              label={`Samakan stok produk (${marketplaceSyncTargets.productIds.length})`}
+              onPress={() => setSyncRetry('products')}
+            />
+          ) : null}
+          {controller.isPosted &&
+          marketplaceSyncTargets.speciesIds.length > 0 ? (
+            <KolamButton
+              label={`Samakan stok livestock (${marketplaceSyncTargets.speciesIds.length})`}
+              onPress={() => setSyncRetry('species')}
             />
           ) : null}
           {controller.isDraft &&
@@ -682,6 +708,33 @@ export function KolamStockOpnameDetail({
         </View>
       </Modal>
     </ScrollView>
+    <KolamMarketplacePriceSyncDialog
+      itemCount={marketplaceSyncTargets.productIds.length}
+      onOpenChange={open => {
+        if (!open) {
+          setSyncRetry(null);
+        }
+      }}
+      productIds={marketplaceSyncTargets.productIds}
+      source="products"
+      syncKind="stock"
+      title="Samakan stok produk (retry setelah opname)"
+      visible={syncRetry === 'products'}
+    />
+    <KolamMarketplacePriceSyncDialog
+      itemCount={marketplaceSyncTargets.speciesIds.length}
+      onOpenChange={open => {
+        if (!open) {
+          setSyncRetry(null);
+        }
+      }}
+      source="species"
+      speciesIds={marketplaceSyncTargets.speciesIds}
+      syncKind="stock"
+      title="Samakan stok livestock (retry setelah opname)"
+      visible={syncRetry === 'species'}
+    />
+    </>
   );
 }
 

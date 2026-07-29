@@ -1,4 +1,5 @@
 import {
+  collectStockOpnameMarketplaceSyncTargets,
   createInitialStockOpnameListFilters,
   extractStockOpnameVariantsFromRaw,
   formatStockOpnameLineCounts,
@@ -199,6 +200,45 @@ describe('Kolam stock opname domain', () => {
         liveSystemQty: 5,
       }),
     ).toBe(-2);
+  });
+
+  it('collects marketplace sync targets from posted product/species lines', () => {
+    expect(
+      collectStockOpnameMarketplaceSyncTargets([
+        {
+          targetType: 'product',
+          productId: 'p1',
+          postedStockTransactionId: 'tx1',
+        },
+        {
+          targetType: 'raw',
+          productId: 'raw1',
+          postedStockTransactionId: 'tx2',
+        },
+        {
+          targetType: 'species',
+          speciesId: 'sp1',
+          lineStatus: 'approved',
+        },
+        {
+          targetType: 'packing',
+          postedStockTransactionId: 'tx3',
+        },
+        {
+          targetType: 'product',
+          productId: 'p1',
+          postedStockTransactionId: 'tx4',
+        },
+        {
+          targetType: 'product',
+          productId: 'p2',
+          lineStatus: 'draft',
+        },
+      ]),
+    ).toEqual({
+      productIds: ['p1'],
+      speciesIds: ['sp1'],
+    });
   });
 
   it('extracts variants only when variantConfig is present', () => {
