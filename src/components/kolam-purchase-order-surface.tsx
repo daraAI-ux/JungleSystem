@@ -50,6 +50,7 @@ import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamSwitch } from './kolam-switch';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
+import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 
 type POStatusFilterPanel = 'status' | 'payment' | null;
 type POStatusIntent = 'primary' | 'success' | 'warning' | 'danger' | 'muted';
@@ -186,14 +187,14 @@ function KolamPurchaseOrderList({
   return (
     <View style={styles.listRoot}>
       <View style={styles.toolbarWrap}>
-        <View style={styles.toolbarShell}>
-          <View style={styles.filterRow}>
-            <KolamFormTextField
-              onChangeText={setSearchInput}
-              placeholder="Cari kode PO / pemasok"
-              style={styles.searchInput}
-              value={searchInput}
-            />
+        <View style={kolamTableToolbarStyles.row}>
+          <KolamFormTextField
+            onChangeText={setSearchInput}
+            placeholder="Cari kode PO / pemasok"
+            style={kolamTableToolbarStyles.searchInput}
+            value={searchInput}
+          />
+          <View style={kolamTableToolbarStyles.controls}>
             <KolamTableFilterTrigger
               active={activeFilterPanel === 'status' || Boolean(controller.filters.status)}
               label={statusFilterLabel}
@@ -228,8 +229,6 @@ function KolamPurchaseOrderList({
               style={styles.dateField}
               value={controller.filters.endDate}
             />
-          </View>
-          <View style={styles.actionRow}>
             {filtersAppliedCount > 0 ? (
               <KolamButton
                 label="Reset"
@@ -239,20 +238,17 @@ function KolamPurchaseOrderList({
                   setActiveFilterPanel(null);
                   controller.onClearFilters();
                 }}
-                style={styles.toolbarButton}
               />
             ) : null}
             <KolamButton
               disabled={controller.loading}
               label="Refresh"
               onPress={() => void controller.onRefresh()}
-              style={styles.toolbarButton}
             />
             <KolamButton
               disabled={controller.exporting || controller.loading}
               label={controller.exporting ? 'Mengekspor…' : 'Ekspor'}
               onPress={() => void controller.onExportList()}
-              style={styles.toolbarButton}
             />
             {canCreate ? (
               <KolamButton
@@ -262,7 +258,6 @@ function KolamPurchaseOrderList({
                   controller.onCreateNew();
                   onRouteChange?.(`${KOLAM_PURCHASE_ORDER_ROOT}/create`);
                 }}
-                style={styles.toolbarButton}
               />
             ) : null}
           </View>
@@ -1066,13 +1061,12 @@ function KolamPurchaseOrderDetail({
   return (
     <ScrollView style={styles.detailRoot} contentContainerStyle={styles.detailContent}>
       <View style={styles.toolbarWrap}>
-        <View style={styles.toolbarShell}>
-          <View style={styles.detailActionRow}>
+        <View style={kolamTableToolbarStyles.row}>
+          <View style={kolamTableToolbarStyles.controls}>
             <KolamButton
               disabled={controller.loading || controller.mutating}
               label="Refresh"
               onPress={() => void controller.onRefresh()}
-              style={styles.toolbarButton}
             />
             <KolamButton
               label="Daftar"
@@ -1081,7 +1075,6 @@ function KolamPurchaseOrderDetail({
                 controller.onBackToList();
                 onRouteChange?.(KOLAM_PURCHASE_ORDER_ROOT);
               }}
-              style={styles.toolbarButton}
             />
             {canEdit ? (
               <KolamButton
@@ -1091,27 +1084,23 @@ function KolamPurchaseOrderDetail({
                     onRouteChange?.(`${KOLAM_PURCHASE_ORDER_ROOT}/${po.id}/edit`);
                   }
                 }}
-                style={styles.toolbarButton}
               />
             ) : null}
             <KolamButton
               disabled={controller.exporting}
               label={controller.exporting ? 'Mengekspor…' : 'PDF'}
               onPress={() => void controller.onExportPdf()}
-              style={styles.toolbarButton}
             />
             {canSyncMarketplace ? (
               <KolamButton
                 label="Sinkron marketplace"
                 onPress={() => setActiveDialog('marketplace')}
-                style={styles.toolbarButton}
               />
             ) : null}
             {po.status === 'cancelled' ? (
               <KolamButton
                 label="Kembalikan ke draf"
                 onPress={() => void controller.onRestoreToDraft()}
-                style={styles.toolbarButton}
               />
             ) : null}
             {allowedNext.map(next => (
@@ -1120,7 +1109,6 @@ function KolamPurchaseOrderDetail({
                 key={next}
                 label={getKolamPOStatusLabel(next)}
                 onPress={() => handleTransitionPress(next)}
-                style={styles.toolbarButton}
               />
             ))}
           </View>
@@ -2135,52 +2123,11 @@ const styles = StyleSheet.create({
     position: 'relative',
     zIndex: 100000,
   },
-  toolbarShell: {
-    alignItems: 'center',
-    backgroundColor: V.colors.bg,
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    justifyContent: 'space-between',
-    overflow: 'visible',
-    padding: 4,
-  },
-  filterRow: {
-    alignItems: 'center',
-    flex: 1,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 4,
-    minWidth: 280,
-    overflow: 'visible',
-  },
   filterRowInline: {
     alignItems: 'center',
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-  },
-  actionRow: {
-    alignItems: 'center',
-    borderLeftColor: V.colors.border,
-    borderLeftWidth: 1,
-    flexDirection: 'row',
-    flexShrink: 0,
-    flexWrap: 'wrap',
-    gap: 6,
-    justifyContent: 'flex-end',
-    paddingLeft: 8,
-  },
-  detailActionRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexShrink: 0,
-    flexWrap: 'wrap',
-    gap: 6,
-    justifyContent: 'flex-end',
   },
   searchInput: {
     flexBasis: 140,
@@ -2189,15 +2136,9 @@ const styles = StyleSheet.create({
     minWidth: 120,
   },
   dateField: {
-    flexBasis: 0,
-    flexGrow: 1,
-    maxWidth: 150,
+    maxWidth: 140,
     minWidth: 108,
-  },
-  toolbarButton: {
-    flexShrink: 0,
-    minHeight: 34,
-    paddingHorizontal: 10,
+    width: 120,
   },
   filterOverlayPanel: {
     backgroundColor: V.colors.bg,
@@ -2216,10 +2157,10 @@ const styles = StyleSheet.create({
     zIndex: 120000,
   },
   filterPanelStatus: {
-    left: 148,
+    right: 220,
   },
   filterPanelPayment: {
-    left: 300,
+    right: 8,
   },
   filterPanelScroll: {
     maxHeight: 280,
