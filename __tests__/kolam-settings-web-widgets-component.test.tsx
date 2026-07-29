@@ -373,6 +373,38 @@ describe('settings web widgets', () => {
     );
   });
 
+  it('renders Umum social media and staff access cards', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamSettingsWebConfigSurface
+          {...createSurfaceProps({
+            activeTabId: 'umum',
+          })}
+        />,
+      );
+    });
+
+    expect(renderText(renderer!)).toEqual(
+      expect.arrayContaining([
+        'Sosial media',
+        'Facebook',
+        'Instagram',
+        'Twitter / X',
+        'YouTube',
+        'TikTok',
+        'Kebijakan akses staff',
+        'Khusus desktop staff',
+        'Akses MAC',
+        'Izinkan browser web',
+        'Lewati super admin',
+        'URL redirect staff',
+        'Daftar MAC diizinkan',
+      ]),
+    );
+  });
+
   it('routes operational controls through scoped save handlers', async () => {
     const onSave = jest.fn();
     const onSaveOperationalGoogleAuth = jest.fn();

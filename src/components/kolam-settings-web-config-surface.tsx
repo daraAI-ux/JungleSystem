@@ -1,5 +1,6 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { SvgXml } from 'react-native-svg';
 import type {
   SettingsTabId,
   SettingsWebConfigField,
@@ -1649,127 +1650,142 @@ export function KolamSettingsWebConfigSurface({
               />
             </>
           ) : null}
-          <KolamTextFieldRow
-            variant="settingsForm"
-            fieldWidth={settingsFieldWidth}
-            label="Facebook"
-            description="Tautan Facebook storefront."
-            value={draft.facebook}
-            onChangeText={value => setDraftField('facebook', value)}
-            placeholder="https://facebook.com/..."
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            fieldWidth={settingsFieldWidth}
-            label="Instagram"
-            description="Tautan Instagram storefront."
-            value={draft.instagram}
-            onChangeText={value => setDraftField('instagram', value)}
-            placeholder="https://instagram.com/..."
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            fieldWidth={settingsFieldWidth}
-            label="Twitter"
-            description="Tautan Twitter/X storefront."
-            value={draft.twitter}
-            onChangeText={value => setDraftField('twitter', value)}
-            placeholder="https://twitter.com/..."
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            fieldWidth={settingsFieldWidth}
-            label="YouTube"
-            description="Tautan YouTube storefront."
-            value={draft.youtube}
-            onChangeText={value => setDraftField('youtube', value)}
-            placeholder="https://youtube.com/..."
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            fieldWidth={settingsFieldWidth}
-            label="TikTok"
-            description="Tautan TikTok storefront."
-            value={draft.tiktok}
-            onChangeText={value => setDraftField('tiktok', value)}
-            placeholder="https://tiktok.com/..."
-          />
-          <KolamToggleRow
-            variant="settingsForm"
-            label="Khusus desktop staff"
-            description="Batasi staff ke aplikasi desktop sesuai policy BE."
-            active={draft.staffDesktopOnlyEnabled}
-            onPress={() =>
-              !disabled &&
-              setDraftField(
-                'staffDesktopOnlyEnabled',
-                !draft.staffDesktopOnlyEnabled,
-              )
-            }
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            fieldWidth={settingsFieldWidth}
-            label="URL redirect staff"
-            description="URL redirect jika staff desktop-only aktif."
-            value={draft.staffDesktopOnlyRedirectUrl}
-            onChangeText={value =>
-              setDraftField('staffDesktopOnlyRedirectUrl', value)
-            }
-            placeholder="https://..."
-          />
-          <KolamToggleRow
-            variant="settingsForm"
-            label="Akses MAC"
-            description="Batasi akses Kolam berdasarkan daftar MAC address."
-            active={draft.kolamMacAccessEnabled}
-            onPress={() =>
-              !disabled &&
-              setDraftField(
-                'kolamMacAccessEnabled',
-                !draft.kolamMacAccessEnabled,
-              )
-            }
-          />
-          <KolamToggleRow
-            variant="settingsForm"
-            label="Izinkan browser web"
-            description="Izinkan browser web tetap masuk saat MAC access aktif."
-            active={draft.kolamMacAccessAllowWebBrowser}
-            onPress={() =>
-              !disabled &&
-              setDraftField(
-                'kolamMacAccessAllowWebBrowser',
-                !draft.kolamMacAccessAllowWebBrowser,
-              )
-            }
-          />
-          <KolamToggleRow
-            variant="settingsForm"
-            label="Lewati super admin"
-            description="Super admin tidak diblokir oleh validasi MAC."
-            active={draft.kolamMacAccessBypassSuperAdmin}
-            onPress={() =>
-              !disabled &&
-              setDraftField(
-                'kolamMacAccessBypassSuperAdmin',
-                !draft.kolamMacAccessBypassSuperAdmin,
-              )
-            }
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            fieldWidth={settingsFieldWidth}
-            label="Daftar MAC diizinkan"
-            description="Pisahkan dengan koma atau baris baru."
-            multiline
-            numberOfLines={4}
-            value={draft.kolamMacAccessAllowedMacAddresses}
-            onChangeText={value =>
-              setDraftField('kolamMacAccessAllowedMacAddresses', value)
-            }
-            placeholder="AA:BB:CC:DD:EE:FF"
-          />
+          <View style={styles.umumTopRow}>
+            <View style={styles.umumCard}>
+              <KolamSettingsWebFormSectionHeader
+                description="Tautan sosial media yang tampil di storefront."
+                title="Sosial media"
+              />
+              <SocialMediaFieldRow
+                accentColor="#1877f2"
+                fieldWidth={umumFieldWidth}
+                label="Facebook"
+                logoXml={getSocialMediaLogoXml('facebook')}
+                onChangeText={value => setDraftField('facebook', value)}
+                placeholder="https://facebook.com/..."
+                value={draft.facebook}
+              />
+              <SocialMediaFieldRow
+                accentColor="#e4405f"
+                fieldWidth={umumFieldWidth}
+                label="Instagram"
+                logoXml={getSocialMediaLogoXml('instagram')}
+                onChangeText={value => setDraftField('instagram', value)}
+                placeholder="https://instagram.com/..."
+                value={draft.instagram}
+              />
+              <SocialMediaFieldRow
+                accentColor="#000000"
+                fieldWidth={umumFieldWidth}
+                label="Twitter / X"
+                logoXml={getSocialMediaLogoXml('x')}
+                onChangeText={value => setDraftField('twitter', value)}
+                placeholder="https://twitter.com/..."
+                value={draft.twitter}
+              />
+              <SocialMediaFieldRow
+                accentColor="#ff0000"
+                fieldWidth={umumFieldWidth}
+                label="YouTube"
+                logoXml={getSocialMediaLogoXml('youtube')}
+                onChangeText={value => setDraftField('youtube', value)}
+                placeholder="https://youtube.com/..."
+                value={draft.youtube}
+              />
+              <SocialMediaFieldRow
+                accentColor="#111827"
+                fieldWidth={umumFieldWidth}
+                label="TikTok"
+                logoXml={getSocialMediaLogoXml('tiktok')}
+                onChangeText={value => setDraftField('tiktok', value)}
+                placeholder="https://tiktok.com/..."
+                value={draft.tiktok}
+              />
+            </View>
+
+            <View style={styles.umumCard}>
+              <KolamSettingsWebFormSectionHeader
+                description="Policy akses staff desktop dan validasi MAC address."
+                title="Kebijakan akses staff"
+              />
+              <KolamToggleRow
+                variant="settingsForm"
+                label="Khusus desktop staff"
+                description="Batasi staff ke aplikasi desktop sesuai policy BE."
+                active={draft.staffDesktopOnlyEnabled}
+                onPress={() =>
+                  !disabled &&
+                  setDraftField(
+                    'staffDesktopOnlyEnabled',
+                    !draft.staffDesktopOnlyEnabled,
+                  )
+                }
+              />
+              <KolamToggleRow
+                variant="settingsForm"
+                label="Akses MAC"
+                description="Batasi akses Kolam berdasarkan daftar MAC address."
+                active={draft.kolamMacAccessEnabled}
+                onPress={() =>
+                  !disabled &&
+                  setDraftField(
+                    'kolamMacAccessEnabled',
+                    !draft.kolamMacAccessEnabled,
+                  )
+                }
+              />
+              <KolamToggleRow
+                variant="settingsForm"
+                label="Izinkan browser web"
+                description="Izinkan browser web tetap masuk saat MAC access aktif."
+                active={draft.kolamMacAccessAllowWebBrowser}
+                onPress={() =>
+                  !disabled &&
+                  setDraftField(
+                    'kolamMacAccessAllowWebBrowser',
+                    !draft.kolamMacAccessAllowWebBrowser,
+                  )
+                }
+              />
+              <KolamToggleRow
+                variant="settingsForm"
+                label="Lewati super admin"
+                description="Super admin tidak diblokir oleh validasi MAC."
+                active={draft.kolamMacAccessBypassSuperAdmin}
+                onPress={() =>
+                  !disabled &&
+                  setDraftField(
+                    'kolamMacAccessBypassSuperAdmin',
+                    !draft.kolamMacAccessBypassSuperAdmin,
+                  )
+                }
+              />
+              <KolamTextFieldRow
+                variant="settingsForm"
+                fieldWidth={umumFieldWidth}
+                label="URL redirect staff"
+                description="URL redirect jika staff desktop-only aktif."
+                value={draft.staffDesktopOnlyRedirectUrl}
+                onChangeText={value =>
+                  setDraftField('staffDesktopOnlyRedirectUrl', value)
+                }
+                placeholder="https://..."
+              />
+              <KolamTextFieldRow
+                variant="settingsForm"
+                fieldWidth={umumFieldWidth}
+                label="Daftar MAC diizinkan"
+                description="Pisahkan dengan koma atau baris baru."
+                multiline
+                numberOfLines={4}
+                value={draft.kolamMacAccessAllowedMacAddresses}
+                onChangeText={value =>
+                  setDraftField('kolamMacAccessAllowedMacAddresses', value)
+                }
+                placeholder="AA:BB:CC:DD:EE:FF"
+              />
+            </View>
+          </View>
           {showNotificationSettings ? (
             <>
               <KolamToggleRow
@@ -7269,6 +7285,63 @@ function FinancialChoiceSegment({
   );
 }
 
+function SocialMediaFieldRow({
+  accentColor,
+  fieldWidth,
+  label,
+  logoXml,
+  onChangeText,
+  placeholder,
+  value,
+}: {
+  accentColor: string;
+  fieldWidth: number;
+  label: string;
+  logoXml: string;
+  onChangeText: (value: string) => void;
+  placeholder: string;
+  value: string;
+}) {
+  return (
+    <View style={styles.socialMediaFieldRow}>
+      <View style={[styles.socialMediaLogo, { backgroundColor: accentColor }]}>
+        <SvgXml height={20} width={20} xml={logoXml} />
+      </View>
+      <View style={styles.socialMediaField}>
+        <KolamTextFieldRow
+          variant="settingsForm"
+          fieldWidth={fieldWidth}
+          label={label}
+          description={`Tautan ${label} storefront.`}
+          value={value}
+          onChangeText={onChangeText}
+          placeholder={placeholder}
+        />
+      </View>
+    </View>
+  );
+}
+
+function getSocialMediaLogoXml(
+  platform: 'facebook' | 'instagram' | 'x' | 'youtube' | 'tiktok',
+) {
+  const fill = '#ffffff';
+
+  switch (platform) {
+    case 'facebook':
+      return `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="${fill}" d="M15.1 8.2h-2V6.8c0-.5.3-.6.6-.6h1.4V3.8h-2c-2.3 0-3.5 1.3-3.5 3.7v.7H7.8v2.7h1.8v7.3h3.5v-7.3h1.7l.3-2.7Z"/></svg>`;
+    case 'instagram':
+      return `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="4.2" y="4.2" width="15.6" height="15.6" rx="4.4" fill="none" stroke="${fill}" stroke-width="2"/><circle cx="12" cy="12" r="3.6" fill="none" stroke="${fill}" stroke-width="2"/><circle cx="16.7" cy="7.3" r="1.1" fill="${fill}"/></svg>`;
+    case 'x':
+      return `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="${fill}" d="M14.2 10.6 20.2 4h-2.1l-4.9 5.4L9.2 4H4l6.4 8.6L4 20h2.1l5.3-6 4.4 6H21l-6.8-9.4Zm-1.9 2.1-.8-1.1-4.8-6h1.5l4 5.1.8 1.1 5 6.4h-1.5l-4.2-5.5Z"/></svg>`;
+    case 'youtube':
+      return `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="${fill}" d="M21 8.1a3 3 0 0 0-2.1-2.1C17 5.5 12 5.5 12 5.5s-5 0-6.9.5A3 3 0 0 0 3 8.1 31 31 0 0 0 2.5 12c0 1.3.2 2.6.5 3.9A3 3 0 0 0 5.1 18c1.9.5 6.9.5 6.9.5s5 0 6.9-.5a3 3 0 0 0 2.1-2.1c.3-1.3.5-2.6.5-3.9s-.2-2.6-.5-3.9ZM10.1 15.1V8.9l5.4 3.1-5.4 3.1Z"/></svg>`;
+    case 'tiktok':
+    default:
+      return `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="${fill}" d="M15.6 4c.3 2.2 1.6 3.5 3.8 3.7v3.1a6.7 6.7 0 0 1-3.7-1.1v5.4c0 3-2 5-5 5-2.9 0-5-1.9-5-4.7 0-3.3 3-5.5 6.1-4.8v3.3c-1.4-.5-2.8.4-2.8 1.7 0 1 .8 1.7 1.8 1.7 1.1 0 1.8-.7 1.8-2V4h3Z"/></svg>`;
+  }
+}
+
 function formatWorkSiteCoordinate(value: number | undefined) {
   return typeof value === 'number' && Number.isFinite(value)
     ? value.toFixed(6)
@@ -7516,6 +7589,22 @@ const styles = StyleSheet.create({
   },
   poStaffPicker: {
     gap: 8,
+  },
+  socialMediaField: {
+    flex: 1,
+    minWidth: 0,
+  },
+  socialMediaFieldRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 10,
+  },
+  socialMediaLogo: {
+    alignItems: 'center',
+    borderRadius: 10,
+    height: 34,
+    justifyContent: 'center',
+    width: 34,
   },
   workSiteCoordinateGrid: {
     flexDirection: 'row',
