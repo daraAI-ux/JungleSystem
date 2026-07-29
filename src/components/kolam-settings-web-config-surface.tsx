@@ -4140,6 +4140,20 @@ export function KolamSettingsWebConfigSurface({
                     )
                   }
                 />
+                <KolamCopyStack
+                  items={[
+                    {
+                      id: 'special-closure-label',
+                      text: 'Keterangan libur',
+                      style: styles.shippingStoreHoursSectionLabel,
+                    },
+                    {
+                      id: 'special-closure-meta',
+                      text: 'Tambahkan tanggal libur khusus yang akan ditampilkan ke pembeli.',
+                      style: styles.marketplaceOverviewMeta,
+                    },
+                  ]}
+                />
                 <KolamTextFieldRow
                   variant="settingsForm"
                   fieldWidth={220}
@@ -4168,14 +4182,16 @@ export function KolamSettingsWebConfigSurface({
                   }
                   placeholder="Libur Idul Fitri"
                 />
-                <KolamActionControlButton
-                  label="Tambah"
-                  disabled={
-                    disabled ||
-                    !draft.storeOperatingHoursSpecialClosureDate.trim()
-                  }
-                  onPress={addStoreSpecialClosure}
-                />
+                <View style={styles.shippingSpecialClosureActions}>
+                  <KolamActionControlButton
+                    label="Tambah"
+                    disabled={
+                      disabled ||
+                      !draft.storeOperatingHoursSpecialClosureDate.trim()
+                    }
+                    onPress={addStoreSpecialClosure}
+                  />
+                </View>
                 {storeSpecialClosureRows.length ? (
                   <View style={styles.storeHoursList}>
                     {storeSpecialClosureRows.map(row => (
@@ -8015,6 +8031,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
+  },
+  shippingStoreHoursSectionLabel: {
+    color: '#111827',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  shippingSpecialClosureActions: {
+    alignItems: 'flex-start',
   },
   shippingTimezoneInput: {
     width: '100%',
