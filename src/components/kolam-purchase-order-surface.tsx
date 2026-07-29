@@ -35,7 +35,6 @@ import type {
   KolamPOItemForSelectionVariant,
 } from '../services/kolam-purchase-order-api';
 import { KolamButton } from './kolam-button';
-import { KolamCardFrame } from './kolam-card-frame';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamContentFrame } from './kolam-content-frame';
@@ -1099,70 +1098,80 @@ function KolamPurchaseOrderDetail({
 
   return (
     <View style={styles.detailRoot}>
-      <KolamCardFrame style={styles.detailToolbarCard} variant="compact">
-        <View style={styles.detailActionWrap}>
-          <KolamButton
-            label="Daftar"
-            muted
-            onPress={() => {
-              controller.onBackToList();
-              onRouteChange?.(KOLAM_PURCHASE_ORDER_ROOT);
-            }}
-          />
-          <KolamButton
-            disabled={controller.loading || controller.mutating}
-            label="Muat ulang"
-            onPress={() => void controller.onRefresh()}
-          />
-          {canEdit ? (
+      <View style={styles.toolbarWrap}>
+        <View style={styles.toolbarShell}>
+          <View style={styles.detailActionRow}>
             <KolamButton
-              label="Edit"
+              label="Daftar"
+              muted
               onPress={() => {
-                if (controller.onEdit()) {
-                  onRouteChange?.(`${KOLAM_PURCHASE_ORDER_ROOT}/${po.id}/edit`);
-                }
+                controller.onBackToList();
+                onRouteChange?.(KOLAM_PURCHASE_ORDER_ROOT);
               }}
+              style={styles.toolbarButton}
             />
-          ) : null}
-          <KolamButton
-            disabled={controller.exporting}
-            label={controller.exporting ? 'Mengekspor…' : 'PDF'}
-            onPress={() => void controller.onExportPdf()}
-          />
-          {canUploadVendorInvoice ? (
             <KolamButton
-              disabled={controller.mutating}
-              label={po.vendorInvoice ? 'Ganti invoice vendor' : 'Unggah invoice vendor'}
-              onPress={async () => {
-                const uri = await controller.onPickImage();
-                if (uri) {
-                  void controller.onUploadVendorInvoice(uri);
-                }
-              }}
+              disabled={controller.loading || controller.mutating}
+              label="Muat ulang"
+              onPress={() => void controller.onRefresh()}
+              style={styles.toolbarButton}
             />
-          ) : null}
-          {canSyncMarketplace ? (
+            {canEdit ? (
+              <KolamButton
+                label="Edit"
+                onPress={() => {
+                  if (controller.onEdit()) {
+                    onRouteChange?.(`${KOLAM_PURCHASE_ORDER_ROOT}/${po.id}/edit`);
+                  }
+                }}
+                style={styles.toolbarButton}
+              />
+            ) : null}
             <KolamButton
-              label="Sinkron marketplace"
-              onPress={() => setActiveDialog('marketplace')}
+              disabled={controller.exporting}
+              label={controller.exporting ? 'Mengekspor…' : 'PDF'}
+              onPress={() => void controller.onExportPdf()}
+              style={styles.toolbarButton}
             />
-          ) : null}
-          {po.status === 'cancelled' ? (
-            <KolamButton
-              label="Kembalikan ke draf"
-              onPress={() => void controller.onRestoreToDraft()}
-            />
-          ) : null}
-          {allowedNext.map(next => (
-            <KolamButton
-              intent="primary"
-              key={next}
-              label={getKolamPOStatusLabel(next)}
-              onPress={() => handleTransitionPress(next)}
-            />
-          ))}
+            {canUploadVendorInvoice ? (
+              <KolamButton
+                disabled={controller.mutating}
+                label={po.vendorInvoice ? 'Ganti invoice vendor' : 'Unggah invoice vendor'}
+                onPress={async () => {
+                  const uri = await controller.onPickImage();
+                  if (uri) {
+                    void controller.onUploadVendorInvoice(uri);
+                  }
+                }}
+                style={styles.toolbarButton}
+              />
+            ) : null}
+            {canSyncMarketplace ? (
+              <KolamButton
+                label="Sinkron marketplace"
+                onPress={() => setActiveDialog('marketplace')}
+                style={styles.toolbarButton}
+              />
+            ) : null}
+            {po.status === 'cancelled' ? (
+              <KolamButton
+                label="Kembalikan ke draf"
+                onPress={() => void controller.onRestoreToDraft()}
+                style={styles.toolbarButton}
+              />
+            ) : null}
+            {allowedNext.map(next => (
+              <KolamButton
+                intent="primary"
+                key={next}
+                label={getKolamPOStatusLabel(next)}
+                onPress={() => handleTransitionPress(next)}
+                style={styles.toolbarButton}
+              />
+            ))}
+          </View>
         </View>
-      </KolamCardFrame>
+      </View>
 
       <View style={styles.formSplitRow}>
         <View style={[styles.formSplitCell, styles.detailSplitCell]}>
@@ -2414,13 +2423,32 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingBottom: 24,
   },
-  detailToolbarCard: {
-    gap: 8,
-  },
-  detailActionWrap: {
+  toolbarShell: {
+    alignItems: 'center',
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
+    justifyContent: 'space-between',
+    overflow: 'visible',
+    padding: 4,
+  },
+  detailActionRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexShrink: 0,
+    flexWrap: 'wrap',
+    gap: 6,
+    justifyContent: 'flex-end',
+    marginLeft: 'auto',
+  },
+  toolbarButton: {
+    flexShrink: 0,
+    minHeight: 34,
+    paddingHorizontal: 10,
   },
   detailContent: {
     gap: 12,
