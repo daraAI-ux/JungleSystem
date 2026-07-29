@@ -1,5 +1,5 @@
 import React from 'react';
-import {Pressable, Text} from 'react-native';
+import {Text} from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 import {KolamBadge} from '../src/components/kolam-badge';
 import {KolamDescriptionList} from '../src/components/kolam-description-list';
@@ -74,7 +74,7 @@ describe('KolamDescriptionList', () => {
     });
 
     const link = renderer!.root.findByProps({accessibilityRole: 'link'});
-    expect(link.type).toBe(Pressable);
+    expect(link.props.accessibilityLabel).toBe('Java petco');
     await ReactTestRenderer.act(async () => {
       link.props.onPress();
     });
