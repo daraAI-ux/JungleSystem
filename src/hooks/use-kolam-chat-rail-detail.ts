@@ -21,6 +21,7 @@ import {
   postKolamTeamChatPresence,
   raiseKolamTeamChatCallHand,
   redialKolamTeamChatCall,
+  searchKolamTeamChatMessages,
   sendKolamChatTextMessage,
   sendKolamTeamChatMessage,
   startKolamTeamChatCall,
@@ -111,12 +112,17 @@ export interface KolamChatRailDetailState {
   joinCall: () => Promise<void>;
   loading: boolean;
   messages: KolamChatRailDetailMessage[];
+  messageSearchLoading: boolean;
+  messageSearchQuery: string;
+  messageSearchResults: KolamChatRailDetailMessage[] | null;
   muteCallParticipant: (userId: string) => Promise<void>;
   presence: KolamTeamChatPresence;
+  clearTeamMessageSearch: () => void;
   editMessage: (messageId: string, body: string) => Promise<void>;
   reactToMessage: (messageId: string, emoji: string) => Promise<void>;
   redialCall: () => Promise<void>;
   refreshCall: () => Promise<void>;
+  searchTeamMessages: (query: string) => Promise<void>;
   sendAttachment: (
     file: NativeImagePickerResult,
     text?: string,
@@ -150,6 +156,11 @@ export function useKolamChatRailDetail({
   selectedId: string | null;
 }): KolamChatRailDetailState {
   const [messages, setMessages] = useState<KolamChatRailDetailMessage[]>([]);
+  const [messageSearchResults, setMessageSearchResults] = useState<
+    KolamChatRailDetailMessage[] | null
+  >(null);
+  const [messageSearchQuery, setMessageSearchQuery] = useState('');
+  const [messageSearchLoading, setMessageSearchLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [conversation, setConversation] = useState<KolamChatConversation | null>(
@@ -172,6 +183,9 @@ export function useKolamChatRailDetail({
   const refresh = useCallback(async () => {
     if (!selectedId) {
       setMessages([]);
+      setMessageSearchResults(null);
+      setMessageSearchQuery('');
+      setMessageSearchLoading(false);
       setConversation(null);
       setPresence(EMPTY_TEAM_CHAT_PRESENCE);
       setTeamRoomMetadata(EMPTY_TEAM_ROOM_METADATA);
@@ -222,6 +236,12 @@ export function useKolamChatRailDetail({
   useEffect(() => {
     refresh();
   }, [refresh]);
+
+  useEffect(() => {
+    setMessageSearchResults(null);
+    setMessageSearchQuery('');
+    setMessageSearchLoading(false);
+  }, [mode, selectedId]);
 
   const refreshCall = useCallback(async () => {
     if (mode !== 'team-chat' || !selectedId) {
@@ -423,6 +443,15 @@ export function useKolamChatRailDetail({
               : item,
           ),
         );
+        setMessageSearchResults(current =>
+          current
+            ? current.map(item =>
+                item.id === messageId
+                  ? mapTeamChatMessage(message, currentUserId)
+                  : item,
+              )
+            : current,
+        );
       } catch (error) {
         setErrorMessage(
           error instanceof Error ? error.message : 'Reaksi gagal dikirim.',
@@ -457,6 +486,15 @@ export function useKolamChatRailDetail({
               : item,
           ),
         );
+        setMessageSearchResults(current =>
+          current
+            ? current.map(item =>
+                item.id === messageId
+                  ? mapTeamChatMessage(message, currentUserId)
+                  : item,
+              )
+            : current,
+        );
       } catch (error) {
         setErrorMessage(
           error instanceof Error ? error.message : 'Pesan gagal diedit.',
@@ -467,6 +505,43 @@ export function useKolamChatRailDetail({
     },
     [currentUserId, mode, selectedId, sending],
   );
+
+  const searchTeamMessages = useCallback(
+    async (query: string) => {
+      const trimmedQuery = query.trim();
+      if (!selectedId || mode !== 'team-chat' || !trimmedQuery) {
+        return;
+      }
+
+      setMessageSearchLoading(true);
+      setErrorMessage(undefined);
+
+      try {
+        const results = await searchKolamTeamChatMessages(
+          selectedId,
+          trimmedQuery,
+          40,
+        );
+        setMessageSearchQuery(trimmedQuery);
+        setMessageSearchResults(
+          results.map(message => mapTeamChatMessage(message, currentUserId)),
+        );
+      } catch (error) {
+        setErrorMessage(
+          error instanceof Error ? error.message : 'Pencarian pesan gagal.',
+        );
+      } finally {
+        setMessageSearchLoading(false);
+      }
+    },
+    [currentUserId, mode, selectedId],
+  );
+
+  const clearTeamMessageSearch = useCallback(() => {
+    setMessageSearchResults(null);
+    setMessageSearchQuery('');
+    setMessageSearchLoading(false);
+  }, []);
 
   const runInboxConversationAction = useCallback(
     async (action: () => Promise<KolamChatConversation>) => {
@@ -669,6 +744,7 @@ export function useKolamChatRailDetail({
     callConfig,
     callErrorMessage,
     conversation,
+    clearTeamMessageSearch,
     declineCall,
     editMessage,
     endCall,
@@ -677,12 +753,16 @@ export function useKolamChatRailDetail({
     joinCall,
     loading,
     messages,
+    messageSearchLoading,
+    messageSearchQuery,
+    messageSearchResults,
     muteCallParticipant,
     presence,
     reactToMessage,
     redialCall,
     refreshCall,
     refresh,
+    searchTeamMessages,
     sendAttachment,
     sendMessage,
     setInboxLabels,

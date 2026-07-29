@@ -662,6 +662,7 @@ function KolamChatRailDetailPanel({
     null,
   );
   const [editingDraft, setEditingDraft] = React.useState('');
+  const [messageSearchDraft, setMessageSearchDraft] = React.useState('');
   const [contactDetailsState, setContactDetailsState] =
     React.useState<KolamChatRailContactDetailsState>({
       data: null,
@@ -675,6 +676,12 @@ function KolamChatRailDetailPanel({
     () => filterChatTemplates(templatesState.items, templateSearch),
     [templateSearch, templatesState.items],
   );
+  const displayedMessages =
+    mode === 'team-chat' && detail.messageSearchResults
+      ? detail.messageSearchResults
+      : detail.messages;
+  const isMessageSearchActive =
+    mode === 'team-chat' && detail.messageSearchResults !== null;
   const mentionQuery =
     mode === 'team-chat' ? getTrailingMentionQuery(composerText) : null;
   const mentionOptions = React.useMemo(
@@ -702,6 +709,7 @@ function KolamChatRailDetailPanel({
     setDaraThinkingLine('');
     setEditingMessageId(null);
     setEditingDraft('');
+    setMessageSearchDraft('');
     setContactDetailsOpen(false);
     setContactDetailsState({data: null, loading: false});
   }, [selectedItem.id]);
@@ -794,6 +802,20 @@ function KolamChatRailDetailPanel({
     [detail, editingDraft],
   );
 
+  const handleSearchMessages = React.useCallback(async () => {
+    const query = messageSearchDraft.trim();
+    if (!query) {
+      return;
+    }
+
+    await detail.searchTeamMessages(query);
+  }, [detail, messageSearchDraft]);
+
+  const handleClearMessageSearch = React.useCallback(() => {
+    setMessageSearchDraft('');
+    detail.clearTeamMessageSearch();
+  }, [detail]);
+
   React.useEffect(() => {
     if (mode !== 'inbox' || !contactDetailsOpen) {
       return;
@@ -846,6 +868,46 @@ function KolamChatRailDetailPanel({
         {mode === 'team-chat' ? (
           <KolamChatCallStrip currentUserId={currentUserId} detail={detail} />
         ) : null}
+        {mode === 'team-chat' ? (
+          <View style={styles.messageSearchBar}>
+            <TextInput
+              accessibilityLabel="Cari pesan team chat"
+              editable={!detail.messageSearchLoading}
+              onChangeText={setMessageSearchDraft}
+              onSubmitEditing={() => void handleSearchMessages()}
+              placeholder="Cari pesan..."
+              placeholderTextColor={V.colors.mutedFg}
+              style={styles.messageSearchInput}
+              value={messageSearchDraft}
+            />
+            <KolamPressable
+              accessibilityLabel="Jalankan pencarian pesan team chat"
+              disabled={!messageSearchDraft.trim() || detail.messageSearchLoading}
+              onPress={() => void handleSearchMessages()}
+              style={[
+                styles.messageSearchButton,
+                (!messageSearchDraft.trim() || detail.messageSearchLoading) &&
+                  styles.attachButtonDisabled,
+              ]}>
+              <Text style={styles.messageSearchButtonText}>
+                {detail.messageSearchLoading ? '...' : 'Cari'}
+              </Text>
+            </KolamPressable>
+            {isMessageSearchActive ? (
+              <KolamPressable
+                accessibilityLabel="Bersihkan pencarian pesan team chat"
+                disabled={detail.messageSearchLoading}
+                onPress={handleClearMessageSearch}
+                style={[
+                  styles.messageSearchButton,
+                  styles.messageSearchButtonGhost,
+                  detail.messageSearchLoading && styles.attachButtonDisabled,
+                ]}>
+                <Text style={styles.messageSearchButtonGhostText}>Reset</Text>
+              </KolamPressable>
+            ) : null}
+          </View>
+        ) : null}
         {mode === 'inbox' ? (
           <KolamInboxActionStrip
             currentUserId={currentUserId}
@@ -875,17 +937,27 @@ function KolamChatRailDetailPanel({
 
         {!detail.loading &&
         !detail.errorMessage &&
-        detail.messages.length === 0 ? (
-          <Text style={styles.emptyDetailText}>Belum ada pesan.</Text>
+        displayedMessages.length === 0 ? (
+          <Text style={styles.emptyDetailText}>
+            {isMessageSearchActive
+              ? `Tidak ada hasil untuk "${detail.messageSearchQuery}".`
+              : 'Belum ada pesan.'}
+          </Text>
         ) : null}
 
-        {detail.messages.length > 0 ? (
+        {isMessageSearchActive ? (
+          <Text style={styles.messageSearchMeta}>
+            {`${displayedMessages.length} hasil untuk "${detail.messageSearchQuery}"`}
+          </Text>
+        ) : null}
+
+        {displayedMessages.length > 0 ? (
           <ScrollView
             style={styles.messageScroll}
             contentContainerStyle={styles.messageList}
             showsVerticalScrollIndicator>
             <KolamMappedList
-              items={detail.messages}
+              items={displayedMessages}
               getKey={message => message.id}
               renderItem={message => {
                 const isEditing = editingMessageId === message.id;
@@ -3073,6 +3145,51 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '800',
   },
+  messageSearchBar: {
+    marginTop: 6,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  messageSearchInput: {
+    minWidth: 0,
+    flex: 1,
+    minHeight: 32,
+    borderRadius: V.radius.md,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '700',
+    backgroundColor: V.colors.bg,
+  },
+  messageSearchButton: {
+    minHeight: 32,
+    paddingHorizontal: 10,
+    borderRadius: V.radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: V.colors.primary,
+  },
+  messageSearchButtonGhost: {
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.bg,
+  },
+  messageSearchButtonText: {
+    color: V.colors.primaryFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  messageSearchButtonGhostText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '900',
+  },
   callStrip: {
     marginTop: 6,
     padding: 8,
@@ -3295,6 +3412,12 @@ const styles = StyleSheet.create({
     borderTopColor: V.colors.border,
     borderTopWidth: 1,
     gap: 8,
+  },
+  messageSearchMeta: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '800',
   },
   messageScroll: {
     maxHeight: 170,

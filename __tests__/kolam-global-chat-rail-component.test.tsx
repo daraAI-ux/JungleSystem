@@ -135,12 +135,17 @@ function getDefaultDetailMock() {
     joinCall: jest.fn(),
     loading: false,
     messages: [],
+    messageSearchLoading: false,
+    messageSearchQuery: '',
+    messageSearchResults: null,
     muteCallParticipant: jest.fn(),
     presence: {onlineCount: 0, typingUserIds: [], viewingCount: 0},
+    clearTeamMessageSearch: jest.fn(),
     reactToMessage: jest.fn(),
     redialCall: jest.fn(),
     refresh: jest.fn(),
     refreshCall: jest.fn(),
+    searchTeamMessages: jest.fn(),
     sendAttachment: jest.fn(),
     sendMessage: jest.fn(),
     setInboxLabels: jest.fn(),
@@ -558,9 +563,11 @@ describe('KolamGlobalChatRail', () => {
     expect(unassignInbox).toHaveBeenCalledTimes(1);
     expect(toggleInboxAiHandled).toHaveBeenCalledTimes(1);
 
-    const input = renderer!.root.findByType(TextInput);
+    const input = renderer!.root
+      .findAllByType(TextInput)
+      .find(node => node.props.accessibilityLabel === 'Tulis pesan inbox');
     await ReactTestRenderer.act(async () => {
-      input.props.onChangeText('Siap, masih tersedia.');
+      input!.props.onChangeText('Siap, masih tersedia.');
     });
 
     const sendButton = renderer!.root
@@ -1001,9 +1008,11 @@ describe('KolamGlobalChatRail', () => {
       selectButton!.props.onPress();
     });
 
-    const input = renderer!.root.findByType(TextInput);
+    const input = renderer!.root
+      .findAllByType(TextInput)
+      .find(node => node.props.accessibilityLabel === 'Tulis pesan team chat');
     await ReactTestRenderer.act(async () => {
-      input.props.onChangeText('Halo tim');
+      input!.props.onChangeText('Halo tim');
     });
 
     expect(signalTyping).toHaveBeenCalledWith(true);
@@ -1100,12 +1109,14 @@ describe('KolamGlobalChatRail', () => {
       selectButton!.props.onPress();
     });
 
-    const input = renderer!.root.findByType(TextInput);
+    const input = renderer!.root
+      .findAllByType(TextInput)
+      .find(node => node.props.accessibilityLabel === 'Tulis pesan team chat');
     await ReactTestRenderer.act(async () => {
-      input.props.onChangeText('Halo @');
+      input!.props.onChangeText('Halo @');
     });
 
-    expect(renderer!.root.findByType(TextInput).props.value).toBe('Halo @');
+    expect(input!.props.value).toBe('Halo @');
 
     const mayaMention = renderer!.root
       .findAllByType(KolamPressable)
@@ -1115,8 +1126,10 @@ describe('KolamGlobalChatRail', () => {
       mayaMention!.props.onPress();
     });
 
-    const composerInput = renderer!.root.findByType(TextInput);
-    expect(composerInput.props.value).toBe('Halo @maya ');
+    const composerInput = renderer!.root
+      .findAllByType(TextInput)
+      .find(node => node.props.accessibilityLabel === 'Tulis pesan team chat');
+    expect(composerInput!.props.value).toBe('Halo @maya ');
   });
 
   it('shows a DARA thinking bubble after sending a team message that mentions DARA', async () => {
@@ -1174,9 +1187,11 @@ describe('KolamGlobalChatRail', () => {
       selectButton!.props.onPress();
     });
 
-    const input = renderer!.root.findByType(TextInput);
+    const input = renderer!.root
+      .findAllByType(TextInput)
+      .find(node => node.props.accessibilityLabel === 'Tulis pesan team chat');
     await ReactTestRenderer.act(async () => {
-      input.props.onChangeText('@dara cek stok');
+      input!.props.onChangeText('@dara cek stok');
     });
 
     const sendButton = renderer!.root
@@ -1268,9 +1283,11 @@ describe('KolamGlobalChatRail', () => {
       expect.arrayContaining(['Siap dicek dari gudang.']),
     );
 
-    const input = renderer!.root.findByType(TextInput);
+    const input = renderer!.root
+      .findAllByType(TextInput)
+      .find(node => node.props.accessibilityLabel === 'Tulis pesan team chat');
     await ReactTestRenderer.act(async () => {
-      input.props.onChangeText('Baik, saya lanjutkan.');
+      input!.props.onChangeText('Baik, saya lanjutkan.');
     });
 
     const sendButton = renderer!.root
@@ -1394,6 +1411,123 @@ describe('KolamGlobalChatRail', () => {
     });
 
     expect(editMessage).toHaveBeenCalledWith('team-msg-own', 'Draft baru');
+  });
+
+  it('searches team chat messages and can reset the temporary results', async () => {
+    const searchTeamMessages = jest.fn().mockResolvedValue(undefined);
+    const clearTeamMessageSearch = jest.fn();
+    useReadonlyDataMock.mockReturnValue({
+      conversations: [],
+      loading: false,
+      refresh: jest.fn(),
+      rooms: [
+        {
+          _id: 'room-1',
+          name: 'Operasional',
+          category: 'general',
+          lastMessagePreview: 'Barang siap dikirim',
+          unreadCount: 0,
+        },
+      ],
+      totalUnread: 0,
+    });
+    useDetailMock.mockReturnValue({
+      ...getDefaultDetailMock(),
+      clearTeamMessageSearch,
+      loading: false,
+      messageSearchQuery: 'gudang',
+      messageSearchResults: [
+        {
+          attachments: [],
+          embeds: [],
+          id: 'team-msg-hit',
+          author: 'Maya',
+          body: 'Gudang sudah cek stok.',
+          linkPreviews: [],
+          mine: false,
+          reactions: [],
+          senderId: 'staff-2',
+          sentAt: '2026-07-28T08:03:00.000Z',
+        },
+      ],
+      messages: [
+        {
+          attachments: [],
+          embeds: [],
+          id: 'team-msg-normal',
+          author: 'Staff',
+          body: 'Pesan normal di room.',
+          linkPreviews: [],
+          mine: true,
+          reactions: [],
+          senderId: 'staff-1',
+          sentAt: '2026-07-28T08:00:00.000Z',
+        },
+      ],
+      presence: {onlineCount: 1, typingUserIds: [], viewingCount: 1},
+      searchTeamMessages,
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamGlobalChatRail mode="team-chat" onClose={() => undefined} />,
+      );
+    });
+
+    const selectButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Pilih room Operasional');
+
+    await ReactTestRenderer.act(async () => {
+      selectButton!.props.onPress();
+    });
+
+    expect(renderText(renderer!)).toEqual(
+      expect.arrayContaining([
+        '1 hasil untuk "gudang"',
+        'Gudang sudah cek stok.',
+      ]),
+    );
+    expect(renderText(renderer!)).not.toEqual(
+      expect.arrayContaining(['Pesan normal di room.']),
+    );
+
+    const searchInput = renderer!.root
+      .findAllByType(TextInput)
+      .find(node => node.props.accessibilityLabel === 'Cari pesan team chat');
+
+    await ReactTestRenderer.act(async () => {
+      searchInput!.props.onChangeText('invoice');
+    });
+
+    const searchButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(
+        node =>
+          node.props.accessibilityLabel ===
+          'Jalankan pencarian pesan team chat',
+      );
+
+    await ReactTestRenderer.act(async () => {
+      await searchButton!.props.onPress();
+    });
+
+    expect(searchTeamMessages).toHaveBeenCalledWith('invoice');
+
+    const resetButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(
+        node =>
+          node.props.accessibilityLabel ===
+          'Bersihkan pencarian pesan team chat',
+      );
+
+    await ReactTestRenderer.act(async () => {
+      resetButton!.props.onPress();
+    });
+
+    expect(clearTeamMessageSearch).toHaveBeenCalledTimes(1);
   });
 
   it('updates and clears the DARA thinking bubble from team chat live events', async () => {
