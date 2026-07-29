@@ -64,6 +64,7 @@ import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 type SupplierSortMode = 'name-asc' | 'name-desc' | 'po-desc' | 'newest';
 type SupplierStatusFilter = 'all' | 'active' | 'inactive' | 'blacklisted';
 type SupplierFilterPanel = 'status' | 'sort' | null;
+type SupplierAnalyticsFilterPanel = 'period' | 'year' | 'month' | null;
 
 export function KolamSupplierSurface({
   onRouteChange,
@@ -540,13 +541,117 @@ function KolamSupplierDetail({
   const address = formatKolamVendorAddress(vendor);
   const heroUri = vendor.photoUrls?.[0] || vendor.photos?.[0] || '';
   const photoUrls = vendor.photoUrls ?? [];
+  const [activeAnalyticsFilter, setActiveAnalyticsFilter] =
+    React.useState<SupplierAnalyticsFilterPanel>(null);
+  const analyticsFilters = controller.analyticsFilters;
+  const analyticsYears = React.useMemo(
+    () =>
+      Array.from({ length: 10 }, (_, index) => new Date().getFullYear() - index),
+    [],
+  );
+  const analyticsMonths = React.useMemo(
+    () =>
+      Array.from({ length: 12 }, (_, index) => ({
+        id: index + 1,
+        name: new Date(2000, index).toLocaleString('id-ID', { month: 'short' }),
+      })),
+    [],
+  );
+  const periodLabel =
+    analyticsFilters.filterType === 'yearly'
+      ? 'Tahunan'
+      : analyticsFilters.filterType === 'monthly'
+      ? 'Bulanan'
+      : 'Semua waktu';
+  const yearLabel = analyticsFilters.year
+    ? String(analyticsFilters.year)
+    : 'Semua tahun';
+  const monthLabel =
+    analyticsFilters.filterType === 'yearly'
+      ? 'Semua bulan'
+      : analyticsFilters.month
+      ? analyticsMonths.find(month => month.id === analyticsFilters.month)
+          ?.name ?? `Bln ${analyticsFilters.month}`
+      : 'Semua bulan';
+  const analyticsFiltersApplied =
+    Boolean(analyticsFilters.filterType) ||
+    Boolean(analyticsFilters.year) ||
+    Boolean(analyticsFilters.month);
+
+  const patchAnalyticsFilters = (patch: KolamSupplierAnalyticsFilters) => {
+    const next: KolamSupplierAnalyticsFilters = {
+      ...analyticsFilters,
+      ...patch,
+    };
+    if (!next.filterType) {
+      delete next.filterType;
+    }
+    if (!next.year) {
+      delete next.year;
+    }
+    if (next.filterType !== 'monthly' || !next.month) {
+      delete next.month;
+    }
+    void controller.onChangeAnalyticsFilters(next);
+  };
 
   return (
     <View style={styles.stack}>
       <View style={styles.toolbarWrap}>
         <View style={styles.toolbarShell}>
-          <View style={styles.filterRow} />
+          <View style={styles.filterRow}>
+            <KolamTableFilterTrigger
+              active={
+                activeAnalyticsFilter === 'period' ||
+                Boolean(analyticsFilters.filterType)
+              }
+              label={periodLabel}
+              onPress={() =>
+                setActiveAnalyticsFilter(current =>
+                  current === 'period' ? null : 'period',
+                )
+              }
+            />
+            <KolamTableFilterTrigger
+              active={
+                activeAnalyticsFilter === 'year' ||
+                Boolean(analyticsFilters.year)
+              }
+              label={yearLabel}
+              onPress={() =>
+                setActiveAnalyticsFilter(current =>
+                  current === 'year' ? null : 'year',
+                )
+              }
+            />
+            <KolamTableFilterTrigger
+              active={
+                activeAnalyticsFilter === 'month' ||
+                Boolean(
+                  analyticsFilters.month &&
+                    analyticsFilters.filterType !== 'yearly',
+                )
+              }
+              label={monthLabel}
+              onPress={() =>
+                setActiveAnalyticsFilter(current =>
+                  current === 'month' ? null : 'month',
+                )
+              }
+            />
+          </View>
           <View style={styles.actionRow}>
+            {analyticsFiltersApplied ? (
+              <KolamButton
+                label="Reset"
+                muted
+                onPress={() => {
+                  setActiveAnalyticsFilter(null);
+                  void controller.onChangeAnalyticsFilters({});
+                }}
+                style={styles.toolbarButton}
+              />
+            ) : null}
             <KolamButton
               disabled={controller.loading}
               label="Muat ulang"
@@ -583,6 +688,163 @@ function KolamSupplierDetail({
             />
           </View>
         </View>
+
+        {activeAnalyticsFilter === 'period' ? (
+          <View
+            style={[styles.filterOverlayPanel, styles.filterPanelAnalyticsPeriod]}
+          >
+            <ScrollView
+              contentContainerStyle={styles.filterPanelContent}
+              keyboardShouldPersistTaps="handled"
+              style={styles.filterPanelScroll}
+            >
+              {(
+                [
+                  { label: 'Semua waktu', value: '' as const },
+                  { label: 'Tahunan', value: 'yearly' as const },
+                  { label: 'Bulanan', value: 'monthly' as const },
+                ]
+              ).map(option => (
+                <KolamButton
+                  intent={
+                    (analyticsFilters.filterType ?? '') === option.value
+                      ? 'primary'
+                      : 'plain'
+                  }
+                  key={option.label}
+                  label={option.label}
+                  onPress={() => {
+                    if (!option.value) {
+                      patchAnalyticsFilters({
+                        filterType: undefined,
+                        month: undefined,
+                      });
+                    } else {
+                      patchAnalyticsFilters({
+                        filterType: option.value,
+                        month:
+                          option.value === 'yearly'
+                            ? undefined
+                            : analyticsFilters.month,
+                        year:
+                          analyticsFilters.year ?? new Date().getFullYear(),
+                      });
+                    }
+                    setActiveAnalyticsFilter(null);
+                  }}
+                  style={styles.filterPanelOption}
+                />
+              ))}
+            </ScrollView>
+            <View style={styles.filterPanelFooter}>
+              <KolamButton
+                label="Tutup"
+                onPress={() => setActiveAnalyticsFilter(null)}
+              />
+            </View>
+          </View>
+        ) : null}
+
+        {activeAnalyticsFilter === 'year' ? (
+          <View
+            style={[styles.filterOverlayPanel, styles.filterPanelAnalyticsYear]}
+          >
+            <ScrollView
+              contentContainerStyle={styles.filterPanelContent}
+              keyboardShouldPersistTaps="handled"
+              style={styles.filterPanelScroll}
+            >
+              <KolamButton
+                intent={!analyticsFilters.year ? 'primary' : 'plain'}
+                label="Semua tahun"
+                onPress={() => {
+                  patchAnalyticsFilters({ year: undefined });
+                  setActiveAnalyticsFilter(null);
+                }}
+                style={styles.filterPanelOption}
+              />
+              {analyticsYears.map(year => (
+                <KolamButton
+                  intent={
+                    analyticsFilters.year === year ? 'primary' : 'plain'
+                  }
+                  key={year}
+                  label={String(year)}
+                  onPress={() => {
+                    patchAnalyticsFilters({
+                      year,
+                      filterType:
+                        analyticsFilters.filterType ?? 'yearly',
+                    });
+                    setActiveAnalyticsFilter(null);
+                  }}
+                  style={styles.filterPanelOption}
+                />
+              ))}
+            </ScrollView>
+            <View style={styles.filterPanelFooter}>
+              <KolamButton
+                label="Tutup"
+                onPress={() => setActiveAnalyticsFilter(null)}
+              />
+            </View>
+          </View>
+        ) : null}
+
+        {activeAnalyticsFilter === 'month' ? (
+          <View
+            style={[styles.filterOverlayPanel, styles.filterPanelAnalyticsMonth]}
+          >
+            <ScrollView
+              contentContainerStyle={styles.filterPanelContent}
+              keyboardShouldPersistTaps="handled"
+              style={styles.filterPanelScroll}
+            >
+              <KolamButton
+                intent={
+                  !analyticsFilters.month ||
+                  analyticsFilters.filterType === 'yearly'
+                    ? 'primary'
+                    : 'plain'
+                }
+                label="Semua bulan"
+                onPress={() => {
+                  patchAnalyticsFilters({ month: undefined });
+                  setActiveAnalyticsFilter(null);
+                }}
+                style={styles.filterPanelOption}
+              />
+              {analyticsMonths.map(month => (
+                <KolamButton
+                  intent={
+                    analyticsFilters.month === month.id &&
+                    analyticsFilters.filterType !== 'yearly'
+                      ? 'primary'
+                      : 'plain'
+                  }
+                  key={month.id}
+                  label={month.name}
+                  onPress={() => {
+                    patchAnalyticsFilters({
+                      month: month.id,
+                      filterType: 'monthly',
+                      year:
+                        analyticsFilters.year ?? new Date().getFullYear(),
+                    });
+                    setActiveAnalyticsFilter(null);
+                  }}
+                  style={styles.filterPanelOption}
+                />
+              ))}
+            </ScrollView>
+            <View style={styles.filterPanelFooter}>
+              <KolamButton
+                label="Tutup"
+                onPress={() => setActiveAnalyticsFilter(null)}
+              />
+            </View>
+          </View>
+        ) : null}
       </View>
       <KolamLabelFieldDetailOverview
         hero={
@@ -1158,20 +1420,6 @@ function KolamSupplierPurchaseAnalytics({
   embedded?: boolean;
 }) {
   const stats = controller.selectedVendor?.purchaseStatistics ?? null;
-  const filters = controller.analyticsFilters;
-  const years = React.useMemo(
-    () =>
-      Array.from({ length: 10 }, (_, index) => new Date().getFullYear() - index),
-    [],
-  );
-  const months = React.useMemo(
-    () =>
-      Array.from({ length: 12 }, (_, index) => ({
-        id: index + 1,
-        name: new Date(2000, index).toLocaleString('id-ID', { month: 'long' }),
-      })),
-    [],
-  );
   const monthlyTrendPoints = React.useMemo(
     () =>
       buildDashboardSalesGraphPoints(
@@ -1182,116 +1430,10 @@ function KolamSupplierPurchaseAnalytics({
     [stats?.yearly.monthlyStatistics],
   );
 
-  const patchFilters = (patch: KolamSupplierAnalyticsFilters) => {
-    const next: KolamSupplierAnalyticsFilters = {
-      ...filters,
-      ...patch,
-    };
-    if (!next.filterType) {
-      delete next.filterType;
-    }
-    if (!next.year) {
-      delete next.year;
-    }
-    if (next.filterType !== 'monthly' || !next.month) {
-      delete next.month;
-    }
-    void controller.onChangeAnalyticsFilters(next);
-  };
-
   const body = (
     <View style={styles.analyticsStack}>
       {embedded ? null : (
         <Text style={styles.sectionTitle}>Analitik pembelian</Text>
-      )}
-      <Text style={styles.switchHint}>
-        Statistik PO dari pemasok ini. Filter memuat ulang data dari server.
-      </Text>
-
-      <View style={styles.formSplitRow}>
-        <View style={styles.formSplitCell}>
-          <KolamDropdownSelect<string>
-            label="Periode"
-            onChange={value => {
-              if (!value) {
-                patchFilters({
-                  filterType: undefined,
-                  month: undefined,
-                });
-                return;
-              }
-              patchFilters({
-                filterType: value as 'yearly' | 'monthly',
-                month: value === 'yearly' ? undefined : filters.month,
-                year: filters.year ?? new Date().getFullYear(),
-              });
-            }}
-            options={[
-              { label: 'Semua waktu', value: '' },
-              { label: 'Tahunan', value: 'yearly' },
-              { label: 'Bulanan', value: 'monthly' },
-            ]}
-            value={filters.filterType ?? ''}
-          />
-        </View>
-        <View style={styles.formSplitCell}>
-          <KolamDropdownSelect<string>
-            label="Tahun"
-            onChange={value => {
-              patchFilters({
-                year: value ? Number(value) : undefined,
-                filterType:
-                  filters.filterType ?? (value ? 'yearly' : undefined),
-              });
-            }}
-            options={[
-              { label: 'Semua tahun', value: '' },
-              ...years.map(year => ({
-                label: String(year),
-                value: String(year),
-              })),
-            ]}
-            value={filters.year ? String(filters.year) : ''}
-          />
-        </View>
-        <View style={styles.formSplitCell}>
-          <KolamDropdownSelect<string>
-            label="Bulan"
-            onChange={value => {
-              patchFilters({
-                month: value ? Number(value) : undefined,
-                filterType: value ? 'monthly' : filters.filterType,
-                year: filters.year ?? new Date().getFullYear(),
-              });
-            }}
-            options={[
-              { label: 'Semua bulan', value: '' },
-              ...months.map(month => ({
-                label: month.name,
-                value: String(month.id),
-              })),
-            ]}
-            value={
-              filters.filterType === 'yearly'
-                ? ''
-                : filters.month
-                ? String(filters.month)
-                : ''
-            }
-          />
-        </View>
-      </View>
-
-      {(filters.filterType || filters.year || filters.month) && (
-        <View style={styles.detailActions}>
-          <KolamButton
-            label="Hapus filter"
-            muted
-            onPress={() => {
-              void controller.onChangeAnalyticsFilters({});
-            }}
-          />
-        </View>
       )}
 
       {controller.analyticsLoading ? (
@@ -2006,6 +2148,15 @@ const styles = StyleSheet.create({
   },
   filterPanelSort: {
     left: 280,
+  },
+  filterPanelAnalyticsPeriod: {
+    left: 4,
+  },
+  filterPanelAnalyticsYear: {
+    left: 140,
+  },
+  filterPanelAnalyticsMonth: {
+    left: 276,
   },
   filterPanelScroll: {
     maxHeight: 280,
