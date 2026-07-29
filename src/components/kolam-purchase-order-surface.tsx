@@ -4,7 +4,11 @@ import {
   KOLAM_PURCHASE_ORDER_ROOT,
   filterPoStatusOptions,
   getAllowedNextPOStatuses,
+  getKolamPOItemCode,
   getKolamPOItemDisplayTitle,
+  getKolamPOItemHref,
+  getKolamPOItemUnitLabel,
+  getKolamPOItemVariantLabel,
   getKolamPOPaymentStatusLabel,
   getKolamPORefundStatusLabel,
   getKolamPOStatusLabel,
@@ -656,7 +660,7 @@ function KolamPurchaseOrderForm({
       <KolamPOPaymentConfigCard controller={controller} />
 
       <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
-        <Text style={styles.sectionTitle}>Item purchase order</Text>
+        <Text style={styles.sectionTitle}>Detail Item</Text>
         <KolamPOItemPicker controller={controller} />
         <KolamPOItemLinesTable controller={controller} />
       </KolamContentFrame>
@@ -931,47 +935,69 @@ function KolamPOItemPicker({ controller }: { controller: KolamPurchaseOrderContr
 
 function KolamPOItemLinesTable({ controller }: { controller: KolamPurchaseOrderController }) {
   return (
-    <View style={styles.lineTable}>
+    <View style={styles.catalogTable}>
+      <KolamDataTableHeader columns={getKolamTableColumns('purchase-order-form-items')} />
       {controller.form.items.length ? (
         controller.form.items.map(item => (
-          <View key={item.key} style={styles.lineRow}>
-            <KolamCopyStack
-              containerStyle={styles.lineInfo}
-              items={[
-                { id: 'title', text: item.title, style: styles.rowTitle },
-                {
-                  id: 'meta',
-                  text: [item.sku, item.unitLabel].filter(Boolean).join(' · ') || '—',
-                  style: styles.rowMeta,
-                },
-              ]}
-            />
-            <KolamFormTextField
-              mode="numeric"
-              onChangeText={quantity => controller.onChangeItemLine(item.key, { quantity })}
-              style={styles.qtyInput}
-              value={item.quantity}
-            />
-            <KolamFormTextField
-              mode="numeric"
-              onChangeText={value =>
-                controller.onChangeItemLine(item.key, { unitPrice: Number(value) || 0 })
-              }
-              style={styles.priceInput}
-              value={String(item.unitPrice)}
-            />
-            <Text style={styles.numText}>
-              {formatRupiah((Number(item.quantity) || 0) * item.unitPrice)}
-            </Text>
-            <KolamButton
-              intent="danger"
-              label="Hapus"
-              onPress={() => controller.onRemoveItemLine(item.key)}
-            />
-          </View>
+          <KolamDataTableRowFrame key={item.key}>
+            <View style={[styles.cell, styles.primaryCell]}>
+              <Text numberOfLines={2} style={styles.rowTitle}>
+                {item.title || '—'}
+              </Text>
+            </View>
+            <View style={[styles.cell, { width: 110 }]}>
+              <Text numberOfLines={2} style={styles.cellText}>
+                {item.sku || '—'}
+              </Text>
+            </View>
+            <View style={[styles.cell, { width: 110 }]}>
+              <Text numberOfLines={2} style={styles.cellText}>
+                {item.variantLabel || '—'}
+              </Text>
+            </View>
+            <View style={[styles.cell, { width: 90 }]}>
+              <KolamFormTextField
+                mode="numeric"
+                onChangeText={quantity =>
+                  controller.onChangeItemLine(item.key, { quantity })
+                }
+                style={styles.qtyInput}
+                value={item.quantity}
+              />
+            </View>
+            <View style={[styles.cell, { width: 80 }]}>
+              <Text style={styles.cellText}>{item.unitLabel || '—'}</Text>
+            </View>
+            <View style={[styles.cell, { width: 120 }]}>
+              <KolamFormTextField
+                mode="numeric"
+                onChangeText={value =>
+                  controller.onChangeItemLine(item.key, {
+                    unitPrice: Number(value) || 0,
+                  })
+                }
+                style={styles.priceInput}
+                value={String(item.unitPrice)}
+              />
+            </View>
+            <View style={[styles.cell, { width: 120 }]}>
+              <Text style={styles.numText}>
+                {formatRupiah((Number(item.quantity) || 0) * item.unitPrice)}
+              </Text>
+            </View>
+            <View style={[styles.cell, { width: 72 }]}>
+              <KolamButton
+                intent="danger"
+                label="Hapus"
+                onPress={() => controller.onRemoveItemLine(item.key)}
+              />
+            </View>
+          </KolamDataTableRowFrame>
         ))
       ) : (
-        <Text style={styles.metaText}>Belum ada item ditambahkan.</Text>
+        <View style={styles.emptyWrap}>
+          <Text style={styles.metaText}>Belum ada item ditambahkan.</Text>
+        </View>
       )}
     </View>
   );
@@ -1224,28 +1250,78 @@ function KolamPurchaseOrderDetail({
 
       <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
         <View style={styles.itemsHeaderRow}>
-          <Text style={styles.sectionTitle}>Item purchase order</Text>
+          <Text style={styles.sectionTitle}>Detail Item</Text>
           {po.status === 'on_check' ? (
-            <KolamButton label="Edit item pemeriksaan" onPress={() => setActiveDialog('editCheck')} />
+            <KolamButton
+              label="Edit jumlah diterima"
+              onPress={() => setActiveDialog('editCheck')}
+            />
           ) : null}
         </View>
-        {po.items.map(item => (
-          <View key={item.id} style={styles.poItemRow}>
-            <KolamCopyStack
-              containerStyle={styles.lineInfo}
-              items={[
-                { id: 'title', text: getKolamPOItemDisplayTitle(item), style: styles.rowTitle },
-                { id: 'sku', text: item.sku || '—', style: styles.rowMeta },
-              ]}
+        {po.items.length ? (
+          <View style={styles.catalogTable}>
+            <KolamDataTableHeader
+              columns={getKolamTableColumns('purchase-order-items')}
             />
-            <Text style={styles.numText}>{item.quantity}</Text>
-            <Text style={styles.numText}>{formatRupiah(item.unitPrice)}</Text>
-            <Text style={styles.numText}>
-              {item.receivedQuantity != null ? item.receivedQuantity : '—'}
-            </Text>
-            <Text style={styles.numText}>{formatRupiah(item.lineTotal)}</Text>
+            {po.items.map(item => {
+              const href = getKolamPOItemHref(item);
+              return (
+                <KolamDataTableRowFrame key={item.id}>
+                  <Pressable
+                    disabled={!href}
+                    onPress={() => {
+                      if (href) {
+                        onRouteChange?.(href);
+                      }
+                    }}
+                    style={[styles.cell, styles.primaryCell]}
+                  >
+                    <Text numberOfLines={2} style={styles.rowTitle}>
+                      {getKolamPOItemDisplayTitle(item)}
+                    </Text>
+                  </Pressable>
+                  <View style={[styles.cell, { width: 120 }]}>
+                    <Text numberOfLines={2} style={styles.cellText}>
+                      {getKolamPOItemCode(item)}
+                    </Text>
+                  </View>
+                  <View style={[styles.cell, { width: 120 }]}>
+                    <Text numberOfLines={2} style={styles.cellText}>
+                      {getKolamPOItemVariantLabel(item.variant)}
+                    </Text>
+                  </View>
+                  <View style={[styles.cell, { width: 80 }]}>
+                    <Text style={styles.numText}>{item.quantity}</Text>
+                  </View>
+                  <View style={[styles.cell, { width: 80 }]}>
+                    <Text style={styles.cellText}>
+                      {getKolamPOItemUnitLabel(item)}
+                    </Text>
+                  </View>
+                  <View style={[styles.cell, { width: 120 }]}>
+                    <Text style={styles.numText}>
+                      {formatRupiah(item.unitPrice)}
+                    </Text>
+                  </View>
+                  <View style={[styles.cell, { width: 90 }]}>
+                    <Text style={styles.numText}>
+                      {item.receivedQuantity != null
+                        ? item.receivedQuantity
+                        : '—'}
+                    </Text>
+                  </View>
+                  <View style={[styles.cell, { width: 130 }]}>
+                    <Text style={styles.numText}>
+                      {formatRupiah(item.lineTotal)}
+                    </Text>
+                  </View>
+                </KolamDataTableRowFrame>
+              );
+            })}
           </View>
-        ))}
+        ) : (
+          <Text style={styles.metaText}>Belum ada item pada purchase order ini.</Text>
+        )}
       </KolamContentFrame>
 
       <KolamPOProofsCard po={po} />
@@ -1725,8 +1801,22 @@ function KolamPOCheckDialog({
           <KolamCopyStack
             containerStyle={styles.lineInfo}
             items={[
-              { id: 'title', text: getKolamPOItemDisplayTitle(item), style: styles.rowTitle },
-              { id: 'meta', text: `Dipesan: ${item.quantity}`, style: styles.rowMeta },
+              {
+                id: 'title',
+                text: getKolamPOItemDisplayTitle(item),
+                style: styles.rowTitle,
+              },
+              {
+                id: 'meta',
+                text: [
+                  getKolamPOItemCode(item),
+                  getKolamPOItemVariantLabel(item.variant),
+                  `Dipesan ${item.quantity} ${getKolamPOItemUnitLabel(item)}`,
+                ]
+                  .filter(part => part && part !== '—')
+                  .join(' · '),
+                style: styles.rowMeta,
+              },
             ]}
           />
           <KolamFormTextField
@@ -1840,8 +1930,22 @@ function KolamPOEditCheckItemsDialog({
           <KolamCopyStack
             containerStyle={styles.lineInfo}
             items={[
-              { id: 'title', text: getKolamPOItemDisplayTitle(item), style: styles.rowTitle },
-              { id: 'meta', text: `Dipesan: ${item.quantity}`, style: styles.rowMeta },
+              {
+                id: 'title',
+                text: getKolamPOItemDisplayTitle(item),
+                style: styles.rowTitle,
+              },
+              {
+                id: 'meta',
+                text: [
+                  getKolamPOItemCode(item),
+                  getKolamPOItemVariantLabel(item.variant),
+                  `Dipesan ${item.quantity} ${getKolamPOItemUnitLabel(item)}`,
+                ]
+                  .filter(part => part && part !== '—')
+                  .join(' · '),
+                style: styles.rowMeta,
+              },
             ]}
           />
           <KolamFormTextField
@@ -2206,6 +2310,11 @@ const styles = StyleSheet.create({
   },
   emptyWrap: {
     padding: 16,
+  },
+  catalogTable: {
+    gap: 0,
+    overflow: 'visible',
+    width: '100%',
   },
   cell: {
     justifyContent: 'center',

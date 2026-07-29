@@ -11,6 +11,8 @@ export type KolamTableId =
   | 'location-product'
   | 'packing-material'
   | 'purchase-order'
+  | 'purchase-order-items'
+  | 'purchase-order-form-items'
   | 'sales'
   | 'species'
   | 'supplier'
@@ -296,6 +298,26 @@ const kolamTableColumns: Record<KolamTableId, KolamTableColumn[]> = {
     { id: 'status', label: 'Status', align: 'right', width: 120 },
     { id: 'marketplace', label: 'Dibuat', align: 'left', width: 140 },
     { id: 'actions', label: '', align: 'right', width: 64 },
+  ],
+  'purchase-order-items': [
+    { id: 'primary', label: 'Produk', align: 'left' },
+    { id: 'meta', label: 'SKU / Kode', align: 'left', width: 120 },
+    { id: 'notes', label: 'Varian', align: 'left', width: 120 },
+    { id: 'children', label: 'Jumlah', align: 'right', width: 80 },
+    { id: 'products', label: 'Satuan', align: 'left', width: 80 },
+    { id: 'price', label: 'Harga Satuan', align: 'right', width: 120 },
+    { id: 'raws', label: 'Diterima', align: 'right', width: 90 },
+    { id: 'amount', label: 'Total', align: 'right', width: 130 },
+  ],
+  'purchase-order-form-items': [
+    { id: 'primary', label: 'Produk', align: 'left' },
+    { id: 'meta', label: 'SKU / Kode', align: 'left', width: 110 },
+    { id: 'notes', label: 'Varian', align: 'left', width: 110 },
+    { id: 'children', label: 'Jumlah', align: 'right', width: 90 },
+    { id: 'products', label: 'Satuan', align: 'left', width: 80 },
+    { id: 'price', label: 'Harga Satuan', align: 'right', width: 120 },
+    { id: 'amount', label: 'Total', align: 'right', width: 120 },
+    { id: 'actions', label: '', align: 'right', width: 72 },
   ],
   teranura: [
     { id: 'primary', label: 'Nama', align: 'left' },

@@ -67,6 +67,35 @@ describe('getKolamTableColumns', () => {
     ]);
   });
 
+  it('defines purchase order item table headers in Indonesian', () => {
+    expect(
+      getKolamTableColumns('purchase-order-items').map(column => column.label),
+    ).toEqual([
+      'Produk',
+      'SKU / Kode',
+      'Varian',
+      'Jumlah',
+      'Satuan',
+      'Harga Satuan',
+      'Diterima',
+      'Total',
+    ]);
+    expect(
+      getKolamTableColumns('purchase-order-form-items').map(
+        column => column.label,
+      ),
+    ).toEqual([
+      'Produk',
+      'SKU / Kode',
+      'Varian',
+      'Jumlah',
+      'Satuan',
+      'Harga Satuan',
+      'Total',
+      '',
+    ]);
+  });
+
   it('returns cloned column definitions so render code cannot mutate the contract', () => {
     const first = getKolamTableColumns('sales');
     first[0].label = 'Changed';

@@ -3,6 +3,8 @@ import {
   calculateKolamPOBreakdown,
   getAllowedNextPOStatuses,
   getKolamPOItemDisplayTitle,
+  getKolamPOItemCode,
+  getKolamPOItemVariantLabel,
   getKolamPOPaymentStatusLabel,
   getKolamPOStatusLabel,
   getKolamPurchaseOrderBreadcrumbPath,
@@ -148,7 +150,9 @@ describe('kolam purchase order domain', () => {
       title: 'Rana sp.',
       receivedQuantity: 2,
     });
-    expect(getKolamPOItemDisplayTitle(po.items[0])).toBe('Rana sp. - S');
+    expect(getKolamPOItemDisplayTitle(po.items[0])).toBe('Rana sp.');
+    expect(getKolamPOItemVariantLabel(po.items[0].variant)).toBe('S');
+    expect(getKolamPOItemCode(po.items[0])).toBe('RANA-S');
   });
 
   it('resolves allowed next statuses matching backend transitions', () => {

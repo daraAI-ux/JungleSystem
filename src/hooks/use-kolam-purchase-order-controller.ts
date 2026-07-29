@@ -437,9 +437,17 @@ export function useKolamPurchaseOrderController(
           itemType: item.itemType,
           refId: item.id,
           variantId: variant?.id ?? '',
+          variantLabel: variant
+            ? [variant.tier1Value, variant.tier2Value]
+                .map(part => part?.trim())
+                .filter(Boolean)
+                .join(' – ') ||
+              variant.sku ||
+              '—'
+            : '—',
           title: item.title,
-          sku: variant?.sku || item.sku,
-          unitLabel: item.unitLabel,
+          sku: variant?.sku || item.sku || '—',
+          unitLabel: item.unitLabel || '—',
           quantity: '1',
           unitPrice: variant?.price || item.price || 0,
         };

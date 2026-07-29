@@ -496,18 +496,74 @@ export function filterPoStatusOptions(
 export function getKolamPOItemDisplayTitle(
   item: Pick<KolamPurchaseOrderItem, 'title' | 'variant'>,
 ) {
-  const title = item.title || 'Item';
-  if (!item.variant) {
-    return title;
+  return item.title || 'Item';
+}
+
+/** Mirror FE variant cell: `tier1 – tier2` (or —). */
+export function getKolamPOItemVariantLabel(
+  variant: KolamPurchaseOrderItem['variant'] | null | undefined,
+) {
+  if (!variant) {
+    return '—';
   }
-  const variantLabel =
-    [item.variant.tier1Value, item.variant.tier2Value]
+  return (
+    [variant.tier1Value, variant.tier2Value]
       .map(part => part?.trim())
       .filter(Boolean)
-      .join(' / ') ||
-    item.variant.sku ||
-    'Varian';
-  return `${title} - ${variantLabel}`;
+      .join(' – ') ||
+    variant.sku ||
+    '—'
+  );
+}
+
+/** Mirror FE SKU / Kode cell. */
+export function getKolamPOItemCode(
+  item: Pick<
+    KolamPurchaseOrderItem,
+    'sku' | 'productCode' | 'variant' | 'itemType'
+  >,
+) {
+  const variantSku = item.variant?.sku?.trim();
+  if (variantSku && variantSku !== '-') {
+    return variantSku;
+  }
+  const sku = item.sku?.trim();
+  if (sku && sku !== '-') {
+    return sku;
+  }
+  const code = item.productCode?.trim();
+  if (code && code !== '-') {
+    return code;
+  }
+  return '—';
+}
+
+export function getKolamPOItemHref(
+  item: Pick<KolamPurchaseOrderItem, 'itemType' | 'refId'>,
+) {
+  if (!item.refId) {
+    return null;
+  }
+  if (item.itemType === 'product') {
+    return `/products/${item.refId}`;
+  }
+  if (item.itemType === 'species') {
+    return `/species/${item.refId}`;
+  }
+  if (item.itemType === 'packing') {
+    return `/packing-materials/${item.refId}`;
+  }
+  return null;
+}
+
+export function getKolamPOItemUnitLabel(
+  item: Pick<KolamPurchaseOrderItem, 'unit' | 'itemType'>,
+) {
+  return (
+    item.unit?.initial ||
+    item.unit?.name ||
+    (item.itemType === 'packing' ? 'pcs' : '—')
+  );
 }
 
 /* ──────────────────────────────────────────
@@ -685,7 +741,8 @@ function normalizePOItem(value: unknown): KolamPurchaseOrderItem | null {
 
   const title =
     itemType === 'species'
-      ? getString(refRecord, 'scientificName')
+      ? getString(refRecord, 'commonName') ||
+        getString(refRecord, 'scientificName')
       : getString(refRecord, 'name');
 
   const unitSnapshot = asRecord(record.unit);
@@ -1123,6 +1180,7 @@ export interface KolamPOFormLineItem {
   itemType: KolamPurchaseOrderItemType;
   refId: string;
   variantId: string;
+  variantLabel: string;
   title: string;
   sku: string;
   unitLabel: string;
@@ -1194,9 +1252,10 @@ export function createKolamPOFormStateFromPO(
       itemType: item.itemType,
       refId: item.refId,
       variantId: item.variant?.id ?? '',
+      variantLabel: getKolamPOItemVariantLabel(item.variant),
       title: getKolamPOItemDisplayTitle(item),
-      sku: item.sku,
-      unitLabel: item.unit?.initial || item.unit?.name || '',
+      sku: getKolamPOItemCode(item),
+      unitLabel: getKolamPOItemUnitLabel(item),
       quantity: String(item.quantity),
       unitPrice: item.unitPrice,
     })),
