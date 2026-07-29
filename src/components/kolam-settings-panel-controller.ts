@@ -955,10 +955,9 @@ export function useKolamSettingsPanelController(
     settingsVisibilityContext === undefined ||
     settingsVisibilityContext === null ||
     !Array.isArray(settingsVisibilityContext.permissions);
-  const visibleSettingsTabItems =
-    settingsVisibilityPending
-      ? allSettingsTabItems
-      : getVisibleSettingsTabItems(settingsVisibilityContext);
+  const visibleSettingsTabItems = settingsVisibilityPending
+    ? allSettingsTabItems
+    : getVisibleSettingsTabItems(settingsVisibilityContext);
   const visibleSettingsTabIdSignature = visibleSettingsTabItems
     .map(item => item.id)
     .join('|');
@@ -1325,7 +1324,9 @@ export function useKolamSettingsPanelController(
     setFinancialMessage('');
 
     Promise.allSettled([
-      getKolamPaymentMethods(createPaymentMethodListParams(paymentMethodFilters)),
+      getKolamPaymentMethods(
+        createPaymentMethodListParams(paymentMethodFilters),
+      ),
       getKolamFinancialWallets(),
       getKolamTaxCompanyProfile(),
       getKolamTaxPartyGaps(),
@@ -1615,8 +1616,9 @@ export function useKolamSettingsPanelController(
     webSetting,
     paymentMethods,
   );
-  const financialSectionVisibility =
-    createFinancialSectionVisibility(settingsVisibilityContext);
+  const financialSectionVisibility = createFinancialSectionVisibility(
+    settingsVisibilityContext,
+  );
   const regionSyncSummaryRows = createRegionSyncSummaryRows(
     regionStats,
     regionRows,
@@ -1876,6 +1878,8 @@ export function useKolamSettingsPanelController(
       return;
     }
 
+    const previousSettings = kpiSettings;
+    const previousDraft = kpiSettingsDraft;
     setKpiStatus('saving');
     setKpiMessage('');
 
@@ -1889,6 +1893,8 @@ export function useKolamSettingsPanelController(
       setKpiStatus('live');
       setKpiMessage('Pengaturan KPI berhasil disimpan.');
     } catch (error) {
+      setKpiSettings(previousSettings);
+      setKpiSettingsDraft(previousDraft);
       setKpiStatus('error');
       setKpiMessage(getKpiSettingsErrorMessage(error));
     }
@@ -2534,8 +2540,7 @@ export function useKolamSettingsPanelController(
           current
             ? ({
                 ...current,
-                katakTerbangWorkerPhotoUrl:
-                  response.katakTerbangWorkerPhotoUrl,
+                katakTerbangWorkerPhotoUrl: response.katakTerbangWorkerPhotoUrl,
               } as KolamWebSetting)
             : current,
         );
@@ -2755,8 +2760,7 @@ export function useKolamSettingsPanelController(
         daraTaxEnabled: webSettingDraft.daraTaxEnabled,
         daraSeoEnabled: webSettingDraft.daraSeoEnabled,
         daraSeoMonitorEnabled: webSettingDraft.daraSeoMonitorEnabled,
-        daraSeoSentimentLlmEnabled:
-          webSettingDraft.daraSeoSentimentLlmEnabled,
+        daraSeoSentimentLlmEnabled: webSettingDraft.daraSeoSentimentLlmEnabled,
         daraMarketScanCronEnabled: webSettingDraft.daraMarketScanCronEnabled,
         daraTaxRegulationWatcherEnabled:
           webSettingDraft.daraTaxRegulationWatcherEnabled,
@@ -2790,8 +2794,7 @@ export function useKolamSettingsPanelController(
           .slice(0, 80),
         daraStaffOpsNotifyEnabled: webSettingDraft.daraStaffOpsNotifyEnabled,
         daraStaffWaNotifyEnabled: webSettingDraft.daraStaffWaNotifyEnabled,
-        daraPenjualanTeamRoomId:
-          webSettingDraft.daraPenjualanTeamRoomId.trim(),
+        daraPenjualanTeamRoomId: webSettingDraft.daraPenjualanTeamRoomId.trim(),
         daraOlshopCustomerNotifyEnabled:
           webSettingDraft.daraOlshopCustomerNotifyEnabled,
         daraOlshopDeferredCron: webSettingDraft.daraOlshopDeferredCron.trim(),
@@ -2800,8 +2803,7 @@ export function useKolamSettingsPanelController(
           1,
           200,
         ),
-        daraOlshopStockGateEnabled:
-          webSettingDraft.daraOlshopStockGateEnabled,
+        daraOlshopStockGateEnabled: webSettingDraft.daraOlshopStockGateEnabled,
         daraOlshopStockSyncMaxAgeMs: Math.max(
           60000,
           parseIntegerOrFallback(
@@ -2809,8 +2811,7 @@ export function useKolamSettingsPanelController(
             21600000,
           ),
         ),
-        daraOlshopStockGateCron:
-          webSettingDraft.daraOlshopStockGateCron.trim(),
+        daraOlshopStockGateCron: webSettingDraft.daraOlshopStockGateCron.trim(),
         daraOlshopStockGateBatch: clampNumber(
           parseIntegerOrFallback(webSettingDraft.daraOlshopStockGateBatch, 20),
           1,
@@ -2823,7 +2824,10 @@ export function useKolamSettingsPanelController(
         daraOwnerDigestFcmEnabled: webSettingDraft.daraOwnerDigestFcmEnabled,
         daraOwnerFcmUrgentEnabled: webSettingDraft.daraOwnerFcmUrgentEnabled,
         daraOpsDigestLookbackHours: clampNumber(
-          parseIntegerOrFallback(webSettingDraft.daraOpsDigestLookbackHours, 12),
+          parseIntegerOrFallback(
+            webSettingDraft.daraOpsDigestLookbackHours,
+            12,
+          ),
           1,
           72,
         ),
@@ -2969,8 +2973,7 @@ export function useKolamSettingsPanelController(
         daraTaxEnabled: webSettingDraft.daraTaxEnabled,
         daraSeoEnabled: webSettingDraft.daraSeoEnabled,
         daraSeoMonitorEnabled: webSettingDraft.daraSeoMonitorEnabled,
-        daraSeoSentimentLlmEnabled:
-          webSettingDraft.daraSeoSentimentLlmEnabled,
+        daraSeoSentimentLlmEnabled: webSettingDraft.daraSeoSentimentLlmEnabled,
         daraMarketScanCronEnabled: webSettingDraft.daraMarketScanCronEnabled,
         daraTaxRegulationWatcherEnabled:
           webSettingDraft.daraTaxRegulationWatcherEnabled,
@@ -3004,8 +3007,7 @@ export function useKolamSettingsPanelController(
           .slice(0, 80),
         daraStaffOpsNotifyEnabled: webSettingDraft.daraStaffOpsNotifyEnabled,
         daraStaffWaNotifyEnabled: webSettingDraft.daraStaffWaNotifyEnabled,
-        daraPenjualanTeamRoomId:
-          webSettingDraft.daraPenjualanTeamRoomId.trim(),
+        daraPenjualanTeamRoomId: webSettingDraft.daraPenjualanTeamRoomId.trim(),
         daraOlshopCustomerNotifyEnabled:
           webSettingDraft.daraOlshopCustomerNotifyEnabled,
         daraOlshopDeferredCron: webSettingDraft.daraOlshopDeferredCron.trim(),
@@ -3014,8 +3016,7 @@ export function useKolamSettingsPanelController(
           1,
           200,
         ),
-        daraOlshopStockGateEnabled:
-          webSettingDraft.daraOlshopStockGateEnabled,
+        daraOlshopStockGateEnabled: webSettingDraft.daraOlshopStockGateEnabled,
         daraOlshopStockSyncMaxAgeMs: Math.max(
           60000,
           parseIntegerOrFallback(
@@ -3023,8 +3024,7 @@ export function useKolamSettingsPanelController(
             21600000,
           ),
         ),
-        daraOlshopStockGateCron:
-          webSettingDraft.daraOlshopStockGateCron.trim(),
+        daraOlshopStockGateCron: webSettingDraft.daraOlshopStockGateCron.trim(),
         daraOlshopStockGateBatch: clampNumber(
           parseIntegerOrFallback(webSettingDraft.daraOlshopStockGateBatch, 20),
           1,
@@ -3037,7 +3037,10 @@ export function useKolamSettingsPanelController(
         daraOwnerDigestFcmEnabled: webSettingDraft.daraOwnerDigestFcmEnabled,
         daraOwnerFcmUrgentEnabled: webSettingDraft.daraOwnerFcmUrgentEnabled,
         daraOpsDigestLookbackHours: clampNumber(
-          parseIntegerOrFallback(webSettingDraft.daraOpsDigestLookbackHours, 12),
+          parseIntegerOrFallback(
+            webSettingDraft.daraOpsDigestLookbackHours,
+            12,
+          ),
           1,
           72,
         ),
@@ -3820,9 +3823,8 @@ function createWebSettingDraft(
   const saturdayHours = weeklyHours.saturday ?? {};
   const sundayHours = weeklyHours.sunday ?? {};
   const inboxAiReplyPlatforms =
-    (setting.inboxAiReplyPlatforms as
-      | Record<string, unknown>
-      | undefined) ?? {};
+    (setting.inboxAiReplyPlatforms as Record<string, unknown> | undefined) ??
+    {};
 
   return {
     versionKolam:
@@ -3987,15 +3989,13 @@ function createWebSettingDraft(
     daraTaxEnabled: setting.daraTaxEnabled !== false,
     daraSeoEnabled: setting.daraSeoEnabled !== false,
     daraSeoMonitorEnabled: setting.daraSeoMonitorEnabled !== false,
-    daraSeoSentimentLlmEnabled:
-      setting.daraSeoSentimentLlmEnabled === true,
+    daraSeoSentimentLlmEnabled: setting.daraSeoSentimentLlmEnabled === true,
     daraMarketScanCronEnabled: setting.daraMarketScanCronEnabled !== false,
     daraTaxRegulationWatcherEnabled:
       setting.daraTaxRegulationWatcherEnabled === true,
     daraTaxComplianceJobEnabled: setting.daraTaxComplianceJobEnabled !== false,
     daraTaxLlmNarrativeEnabled: setting.daraTaxLlmNarrativeEnabled === true,
-    autoOlshopFulfillmentEnabled:
-      setting.autoOlshopFulfillmentEnabled === true,
+    autoOlshopFulfillmentEnabled: setting.autoOlshopFulfillmentEnabled === true,
     autoOlshopShopeeEnabled: setting.autoOlshopShopeeEnabled === true,
     autoOlshopTokopediaEnabled: setting.autoOlshopTokopediaEnabled === true,
     daraWebstoreFulfillmentEnabled:
@@ -4023,8 +4023,7 @@ function createWebSettingDraft(
         ? setting.daraOlshopDeferredCron
         : emptyWebSettingDraft.daraOlshopDeferredCron,
     daraOlshopDeferredBatch: String(setting.daraOlshopDeferredBatch ?? 20),
-    daraOlshopStockGateEnabled:
-      setting.daraOlshopStockGateEnabled !== false,
+    daraOlshopStockGateEnabled: setting.daraOlshopStockGateEnabled !== false,
     daraOlshopStockSyncMaxAgeMs: String(
       setting.daraOlshopStockSyncMaxAgeMs ?? 21600000,
     ),
@@ -4032,9 +4031,7 @@ function createWebSettingDraft(
       typeof setting.daraOlshopStockGateCron === 'string'
         ? setting.daraOlshopStockGateCron
         : emptyWebSettingDraft.daraOlshopStockGateCron,
-    daraOlshopStockGateBatch: String(
-      setting.daraOlshopStockGateBatch ?? 20,
-    ),
+    daraOlshopStockGateBatch: String(setting.daraOlshopStockGateBatch ?? 20),
     daraOpsAuditEnabled: setting.daraOpsAuditEnabled !== false,
     daraOwnerDigestEnabled: setting.daraOwnerDigestEnabled !== false,
     daraOwnerDigestCron:
@@ -4883,7 +4880,7 @@ function createKpiSettingsSummaryRows(
   return [
     {
       id: 'task-points',
-      label: 'Task points',
+      label: 'Poin task',
       value: settings
         ? `${settings.basePoints?.low ?? 0}/${
             settings.basePoints?.medium ?? 0
@@ -4891,7 +4888,7 @@ function createKpiSettingsSummaryRows(
             settings.basePoints?.urgent ?? 0
           }`
         : 'Belum dimuat',
-      detail: 'low / medium / high / urgent base points.',
+      detail: 'Rendah / sedang / tinggi / urgent.',
     },
     {
       id: 'chat-sla',
@@ -4901,30 +4898,30 @@ function createKpiSettingsSummaryRows(
             settings.chat?.lateReplyMinutes ?? 0
           }m`
         : 'Belum dimuat',
-      detail: `Fast ${settings?.chat?.fastReplyPoints ?? 0}, late ${
+      detail: `Cepat ${settings?.chat?.fastReplyPoints ?? 0}, telat ${
         settings?.chat?.lateReplyPoints ?? 0
-      }, no reply ${settings?.chat?.noReplyPoints ?? 0}.`,
+      }, tidak dibalas ${settings?.chat?.noReplyPoints ?? 0}.`,
     },
     {
       id: 'complaint',
-      label: 'Complaint points',
+      label: 'Poin komplain',
       value: settings
         ? `${settings.complaint?.light ?? 0}/${
             settings.complaint?.valid ?? 0
           }/${settings.complaint?.severe ?? 0}`
         : 'Belum dimuat',
-      detail: 'light / valid / severe penalty.',
+      detail: 'Ringan / valid / berat.',
     },
     {
       id: 'attendance',
-      label: 'Attendance',
+      label: 'Absensi',
       value: String(settings?.attendance?.outsideRadius ?? 0),
-      detail: 'Penalty outside radius.',
+      detail: 'Penalti absen di luar radius.',
     },
     {
       id: 'monthly-level',
-      label: 'Monthly level',
-      value: `${settings?.levels?.length ?? 0} levels`,
+      label: 'Level bulanan',
+      value: `${settings?.levels?.length ?? 0} level`,
       detail:
         settings?.levels
           ?.map(level => `${level.label} ${level.min}-${level.max ?? '∞'}`)
@@ -4932,7 +4929,7 @@ function createKpiSettingsSummaryRows(
     },
     {
       id: 'weekly-preview',
-      label: 'DARA weekly announcement preview',
+      label: 'Preview pengumuman DARA',
       value: preview?.weekKey ?? 'Belum dimuat',
       detail: preview?.body?.replace(/\s+/g, ' ').slice(0, 180) ?? '-',
     },

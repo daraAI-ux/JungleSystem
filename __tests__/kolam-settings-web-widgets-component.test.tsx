@@ -336,6 +336,43 @@ describe('settings web widgets', () => {
     );
   });
 
+  it('renders KPI staff settings with native level and reward editors', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamSettingsWebConfigSurface
+          {...createSurfaceProps({
+            activeTabId: 'kpi',
+            kpiSummaryRows: [
+              {
+                id: 'task-points',
+                label: 'Poin task',
+                value: '5/10/20/30',
+                detail: 'Rendah / sedang / tinggi / urgent.',
+              },
+            ],
+          })}
+        />,
+      );
+    });
+
+    expect(renderText(renderer!)).toEqual(
+      expect.arrayContaining([
+        'KPI Staff',
+        'Poin dasar prioritas task',
+        'Waktu, QC, dan bukti task',
+        'Chat Inbox (SLA CS)',
+        'Penalti komplain dan absensi',
+        'Level bulanan dan bonus Rp',
+        'ID level',
+        'Nominal bonus',
+        'Muat ulang preview',
+        'Simpan KPI',
+      ]),
+    );
+  });
+
   it('routes operational controls through scoped save handlers', async () => {
     const onSave = jest.fn();
     const onSaveOperationalGoogleAuth = jest.fn();
@@ -378,9 +415,7 @@ describe('settings web widgets', () => {
     const choices = renderer!.root.findAllByType(KolamChoiceSegment);
 
     await ReactTestRenderer.act(async () => {
-      toggles
-        .find(node => node.props.label === 'Marketplace')!
-        .props.onPress();
+      toggles.find(node => node.props.label === 'Marketplace')!.props.onPress();
       toggles
         .find(node => node.props.label === 'Livechat Always Online')!
         .props.onPress();

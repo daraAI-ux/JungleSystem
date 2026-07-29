@@ -3367,42 +3367,42 @@ export function KolamSettingsWebConfigSurface({
                 },
               ]}
             />
-          <KolamToggleRow
-            variant="settingsForm"
-            label="Chat storefront"
-            description="Aktifkan chat pada storefront."
-            active={draft.chatStoreEnabled}
-            onPress={() =>
-              !chatControlsDisabled &&
-              setDraftField('chatStoreEnabled', !draft.chatStoreEnabled)
-            }
-          />
-          <KolamToggleRow
-            variant="settingsForm"
-            label="Panggilan grup chat tim"
-            description="Aktifkan panggilan grup di chat tim."
-            active={draft.teamChatGroupCallEnabled}
-            onPress={() =>
-              !chatControlsDisabled &&
-              setDraftField(
-                'teamChatGroupCallEnabled',
-                !draft.teamChatGroupCallEnabled,
-              )
-            }
-          />
-          <KolamToggleRow
-            variant="settingsForm"
-            label="Balasan DARA Team Chat"
-            description="Aktifkan balasan @dara di Team Chat."
-            active={draft.teamChatDaraReplyEnabled}
-            onPress={() =>
-              !daraChatControlsDisabled &&
-              setDraftField(
-                'teamChatDaraReplyEnabled',
-                !draft.teamChatDaraReplyEnabled,
-              )
-            }
-          />
+            <KolamToggleRow
+              variant="settingsForm"
+              label="Chat storefront"
+              description="Aktifkan chat pada storefront."
+              active={draft.chatStoreEnabled}
+              onPress={() =>
+                !chatControlsDisabled &&
+                setDraftField('chatStoreEnabled', !draft.chatStoreEnabled)
+              }
+            />
+            <KolamToggleRow
+              variant="settingsForm"
+              label="Panggilan grup chat tim"
+              description="Aktifkan panggilan grup di chat tim."
+              active={draft.teamChatGroupCallEnabled}
+              onPress={() =>
+                !chatControlsDisabled &&
+                setDraftField(
+                  'teamChatGroupCallEnabled',
+                  !draft.teamChatGroupCallEnabled,
+                )
+              }
+            />
+            <KolamToggleRow
+              variant="settingsForm"
+              label="Balasan DARA Team Chat"
+              description="Aktifkan balasan @dara di Team Chat."
+              active={draft.teamChatDaraReplyEnabled}
+              onPress={() =>
+                !daraChatControlsDisabled &&
+                setDraftField(
+                  'teamChatDaraReplyEnabled',
+                  !draft.teamChatDaraReplyEnabled,
+                )
+              }
+            />
             {aiInboxPlatformRows.map(row => (
               <KolamToggleRow
                 key={row.id}
@@ -3433,16 +3433,16 @@ export function KolamSettingsWebConfigSurface({
                 },
               ]}
             />
-          <KolamToggleRow
-            variant="settingsForm"
-            label="Bisnis DARA"
-            description="Aktifkan fitur bisnis DARA."
-            active={draft.daraBusinessEnabled}
-            onPress={() =>
-              !daraControlsDisabled &&
-              setDraftField('daraBusinessEnabled', !draft.daraBusinessEnabled)
-            }
-          />
+            <KolamToggleRow
+              variant="settingsForm"
+              label="Bisnis DARA"
+              description="Aktifkan fitur bisnis DARA."
+              active={draft.daraBusinessEnabled}
+              onPress={() =>
+                !daraControlsDisabled &&
+                setDraftField('daraBusinessEnabled', !draft.daraBusinessEnabled)
+              }
+            />
             {aiModuleToggleRows.map(row => (
               <KolamToggleRow
                 key={row.id}
@@ -3757,9 +3757,7 @@ export function KolamSettingsWebConfigSurface({
               label="Judul SOP"
               description="Judul dokumen SOP."
               value={daraKnowledgeDraft.title}
-              onChangeText={value =>
-                setDaraKnowledgeDraftField('title', value)
-              }
+              onChangeText={value => setDaraKnowledgeDraftField('title', value)}
               placeholder="SOP Kasir Harian"
             />
             <View style={styles.financialToolbar}>
@@ -4788,6 +4786,8 @@ function KpiSettingsPanel({
   summaryRows: KpiSettingsSummaryRow[];
 }) {
   const busy = status === 'loading' || status === 'saving';
+  const levelRows = parseKpiLevelEditorRows(draft.levelsText);
+  const rewardRows = parseKpiRewardEditorRows(draft.rewardsText);
   const ruleRows = [
     ['task.base', 'Poin dasar task'],
     ['task.on_time', 'Task tepat waktu'],
@@ -4802,6 +4802,66 @@ function KpiSettingsPanel({
     ['chat.late_reply', 'Balasan chat terlambat'],
     ['chat.no_reply', 'Chat tidak dibalas'],
   ] as const;
+  const setDraftField = <Key extends keyof KpiSettingsDraft>(
+    key: Key,
+    value: KpiSettingsDraft[Key],
+  ) => {
+    if (!disabled) {
+      onSetField(key, value);
+    }
+  };
+  const setLevelRow = (index: number, patch: Partial<KpiLevelEditorRow>) => {
+    const next = levelRows.map((row, rowIndex) =>
+      rowIndex === index ? { ...row, ...patch } : row,
+    );
+    setDraftField('levelsText', serializeKpiLevelEditorRows(next));
+  };
+  const setRewardRow = (index: number, patch: Partial<KpiRewardEditorRow>) => {
+    const next = rewardRows.map((row, rowIndex) =>
+      rowIndex === index ? { ...row, ...patch } : row,
+    );
+    setDraftField('rewardsText', serializeKpiRewardEditorRows(next));
+  };
+  const removeLevelRow = (index: number) => {
+    setDraftField(
+      'levelsText',
+      serializeKpiLevelEditorRows(
+        levelRows.filter((_, rowIndex) => rowIndex !== index),
+      ),
+    );
+  };
+  const removeRewardRow = (index: number) => {
+    setDraftField(
+      'rewardsText',
+      serializeKpiRewardEditorRows(
+        rewardRows.filter((_, rowIndex) => rowIndex !== index),
+      ),
+    );
+  };
+  const addLevelRow = () => {
+    const number = levelRows.length + 1;
+    setDraftField(
+      'levelsText',
+      serializeKpiLevelEditorRows([
+        ...levelRows,
+        {
+          id: `level_${number}`,
+          label: `Level ${number}`,
+          min: '0',
+          max: '',
+        },
+      ]),
+    );
+  };
+  const addRewardRow = () => {
+    setDraftField(
+      'rewardsText',
+      serializeKpiRewardEditorRows([
+        ...rewardRows,
+        { levelId: levelRows[0]?.id ?? 'bronze', amountRp: '0' },
+      ]),
+    );
+  };
 
   return (
     <>
@@ -4810,13 +4870,13 @@ function KpiSettingsPanel({
           items={[
             {
               id: 'kpi-title',
-              text: 'Pengaturan Plugin KPI Staff',
+              text: 'KPI Staff',
               style: styles.marketplaceOverviewTitle,
             },
             {
               id: 'kpi-gate',
               text: pluginEnabled
-                ? 'Plugin KPI aktif. Pengaturan dibaca dari /kpi/settings.'
+                ? 'Plugin aktif. Pengaturan dibaca langsung dari /kpi/settings.'
                 : 'Plugin KPI nonaktif. Aktifkan dari tab Plugin untuk mengubah pengaturan.',
               style: pluginEnabled
                 ? styles.marketplaceOverviewMeta
@@ -4855,254 +4915,390 @@ function KpiSettingsPanel({
           ))}
         </View>
       </View>
+      <KolamCopyStack
+        items={[
+          {
+            id: 'task-points-title',
+            text: 'Poin dasar prioritas task',
+            style: styles.kpiSectionTitle,
+          },
+        ]}
+      />
       <View style={styles.storeHoursTimeGrid}>
         <KolamTextFieldRow
           variant="settingsForm"
-          fieldWidth={120}
-          label="Task rendah"
+          fieldWidth={150}
+          label="Rendah"
           description="Poin dasar prioritas rendah."
           value={draft.taskBaseLow}
-          onChangeText={value => onSetField('taskBaseLow', value)}
+          onChangeText={value => setDraftField('taskBaseLow', value)}
           placeholder="5"
         />
         <KolamTextFieldRow
           variant="settingsForm"
-          fieldWidth={120}
-          label="Task sedang"
+          fieldWidth={150}
+          label="Sedang"
           description="Poin dasar prioritas sedang."
           value={draft.taskBaseMedium}
-          onChangeText={value => onSetField('taskBaseMedium', value)}
+          onChangeText={value => setDraftField('taskBaseMedium', value)}
           placeholder="10"
         />
         <KolamTextFieldRow
           variant="settingsForm"
-          fieldWidth={120}
-          label="Task tinggi"
+          fieldWidth={150}
+          label="Tinggi"
           description="Poin dasar prioritas tinggi."
           value={draft.taskBaseHigh}
-          onChangeText={value => onSetField('taskBaseHigh', value)}
+          onChangeText={value => setDraftField('taskBaseHigh', value)}
           placeholder="20"
         />
         <KolamTextFieldRow
           variant="settingsForm"
-          fieldWidth={120}
+          fieldWidth={150}
           label="Task urgent"
           description="Poin dasar prioritas urgent."
           value={draft.taskBaseUrgent}
-          onChangeText={value => onSetField('taskBaseUrgent', value)}
+          onChangeText={value => setDraftField('taskBaseUrgent', value)}
           placeholder="30"
         />
         <KolamTextFieldRow
           variant="settingsForm"
-          fieldWidth={120}
+          fieldWidth={150}
           label="Rasio bantuan"
-          description="Ratio points untuk assistedBy."
+          description="Rasio poin untuk assistedBy."
           value={draft.assistedByRatio}
-          onChangeText={value => onSetField('assistedByRatio', value)}
+          onChangeText={value => setDraftField('assistedByRatio', value)}
           placeholder="0.5"
         />
       </View>
+      <KolamCopyStack
+        items={[
+          {
+            id: 'time-qc-proof-title',
+            text: 'Waktu, QC, dan bukti task',
+            style: styles.kpiSectionTitle,
+          },
+        ]}
+      />
       <View style={styles.storeHoursTimeGrid}>
         <KolamTextFieldRow
           variant="settingsForm"
-          fieldWidth={130}
-          label="Menit balasan cepat"
-          description="Batas balasan cepat chat."
-          value={draft.chatFastReplyMinutes}
-          onChangeText={value => onSetField('chatFastReplyMinutes', value)}
-          placeholder="5"
-        />
-        <KolamTextFieldRow
-          variant="settingsForm"
-          fieldWidth={130}
-          label="Poin balasan cepat"
-          description="Poin balasan cepat."
-          value={draft.chatFastReplyPoints}
-          onChangeText={value => onSetField('chatFastReplyPoints', value)}
-          placeholder="5"
-        />
-        <KolamTextFieldRow
-          variant="settingsForm"
-          fieldWidth={130}
-          label="Menit balasan telat"
-          description="Batas balasan telat chat."
-          value={draft.chatLateReplyMinutes}
-          onChangeText={value => onSetField('chatLateReplyMinutes', value)}
-          placeholder="14"
-        />
-        <KolamTextFieldRow
-          variant="settingsForm"
-          fieldWidth={130}
-          label="Poin balasan telat"
-          description="Poin balasan telat."
-          value={draft.chatLateReplyPoints}
-          onChangeText={value => onSetField('chatLateReplyPoints', value)}
-          placeholder="-10"
-        />
-        <KolamTextFieldRow
-          variant="settingsForm"
-          fieldWidth={130}
-          label="Poin tanpa balasan"
-          description="Penalty chat tidak dibalas."
-          value={draft.chatNoReplyPoints}
-          onChangeText={value => onSetField('chatNoReplyPoints', value)}
-          placeholder="-15"
-        />
-      </View>
-      <View style={styles.storeHoursTimeGrid}>
-        <KolamTextFieldRow
-          variant="settingsForm"
-          fieldWidth={120}
-          label="Komplain ringan"
-          description="Penalti komplain ringan."
-          value={draft.complaintLight}
-          onChangeText={value => onSetField('complaintLight', value)}
-          placeholder="-10"
-        />
-        <KolamTextFieldRow
-          variant="settingsForm"
-          fieldWidth={120}
-          label="Komplain valid"
-          description="Penalti komplain valid."
-          value={draft.complaintValid}
-          onChangeText={value => onSetField('complaintValid', value)}
-          placeholder="-25"
-        />
-        <KolamTextFieldRow
-          variant="settingsForm"
-          fieldWidth={120}
-          label="Komplain berat"
-          description="Penalti komplain berat."
-          value={draft.complaintSevere}
-          onChangeText={value => onSetField('complaintSevere', value)}
-          placeholder="-50"
-        />
-        <KolamTextFieldRow
-          variant="settingsForm"
-          fieldWidth={160}
-          label="Absensi di luar radius"
-          description="Penalty absensi di luar radius."
-          value={draft.attendanceOutsideRadius}
-          onChangeText={value => onSetField('attendanceOutsideRadius', value)}
-          placeholder="-20"
-        />
-      </View>
-      <View style={styles.storeHoursTimeGrid}>
-        <KolamTextFieldRow
-          variant="settingsForm"
-          fieldWidth={120}
-          label="Tepat waktu sebelum"
-          description="Poin sebelum deadline."
+          fieldWidth={150}
+          label="Sebelum deadline"
+          description="Poin selesai sebelum deadline."
           value={draft.onTimeBeforeDeadline}
-          onChangeText={value => onSetField('onTimeBeforeDeadline', value)}
+          onChangeText={value => setDraftField('onTimeBeforeDeadline', value)}
           placeholder="5"
         />
         <KolamTextFieldRow
           variant="settingsForm"
-          fieldWidth={120}
-          label="Persen terlalu awal"
-          description="Persen threshold terlalu awal."
+          fieldWidth={150}
+          label="Persen sangat awal"
+          description="Ambang persen sisa waktu."
           value={draft.onTimeFarEarlyPct}
-          onChangeText={value => onSetField('onTimeFarEarlyPct', value)}
+          onChangeText={value => setDraftField('onTimeFarEarlyPct', value)}
           placeholder="50"
         />
         <KolamTextFieldRow
           variant="settingsForm"
-          fieldWidth={120}
-          label="Bonus terlalu awal"
-          description="Bonus terlalu awal."
+          fieldWidth={150}
+          label="Bonus sangat awal"
+          description="Bonus bila melewati ambang."
           value={draft.onTimeFarEarlyBonus}
-          onChangeText={value => onSetField('onTimeFarEarlyBonus', value)}
+          onChangeText={value => setDraftField('onTimeFarEarlyBonus', value)}
           placeholder="10"
         />
         <KolamTextFieldRow
           variant="settingsForm"
-          fieldWidth={120}
-          label="Task telat"
-          description="Penalti task telat."
+          fieldWidth={150}
+          label="Task terlambat"
+          description="Penalti task terlambat."
           value={draft.onTimeLate}
-          onChangeText={value => onSetField('onTimeLate', value)}
+          onChangeText={value => setDraftField('onTimeLate', value)}
           placeholder="-5"
         />
-      </View>
-      <View style={styles.storeHoursTimeGrid}>
         <KolamTextFieldRow
           variant="settingsForm"
-          fieldWidth={120}
+          fieldWidth={150}
           label="QC lulus pertama"
           description="Poin QC pass pertama."
           value={draft.qcPassFirst}
-          onChangeText={value => onSetField('qcPassFirst', value)}
+          onChangeText={value => setDraftField('qcPassFirst', value)}
           placeholder="10"
         />
         <KolamTextFieldRow
           variant="settingsForm"
-          fieldWidth={120}
-          label="QC revision 1"
+          fieldWidth={150}
+          label="QC revisi pertama"
           description="Poin revisi pertama."
           value={draft.qcRevision1}
-          onChangeText={value => onSetField('qcRevision1', value)}
+          onChangeText={value => setDraftField('qcRevision1', value)}
           placeholder="0"
         />
         <KolamTextFieldRow
           variant="settingsForm"
-          fieldWidth={120}
+          fieldWidth={150}
           label="QC revisi banyak"
-          description="Penalty banyak revisi."
+          description="Penalti banyak revisi."
           value={draft.qcRevisionMany}
-          onChangeText={value => onSetField('qcRevisionMany', value)}
+          onChangeText={value => setDraftField('qcRevisionMany', value)}
           placeholder="-5"
         />
         <KolamTextFieldRow
           variant="settingsForm"
-          fieldWidth={120}
+          fieldWidth={150}
           label="Bukti lengkap"
           description="Poin bukti task lengkap."
           value={draft.proofComplete}
-          onChangeText={value => onSetField('proofComplete', value)}
+          onChangeText={value => setDraftField('proofComplete', value)}
           placeholder="5"
         />
         <KolamTextFieldRow
           variant="settingsForm"
-          fieldWidth={120}
+          fieldWidth={150}
           label="Tanpa bukti"
-          description="Penalty bukti hilang."
+          description="Penalti bukti hilang."
           value={draft.noProofMissing}
-          onChangeText={value => onSetField('noProofMissing', value)}
+          onChangeText={value => setDraftField('noProofMissing', value)}
+          placeholder="-10"
+        />
+        <KolamTextFieldRow
+          variant="settingsForm"
+          fieldWidth={170}
+          label="Task no-show"
+          description="Penalti reassign/cancel."
+          value={draft.noShowReassignOrCancel}
+          onChangeText={value => setDraftField('noShowReassignOrCancel', value)}
+          placeholder="-25"
+        />
+      </View>
+      <KolamCopyStack
+        items={[
+          {
+            id: 'chat-sla-title',
+            text: 'Chat Inbox (SLA CS)',
+            style: styles.kpiSectionTitle,
+          },
+          {
+            id: 'chat-sla-desc',
+            text: 'DARA eskalasi operasional tetap terpisah; KPI memakai ambang poin di bawah ini.',
+            style: styles.marketplaceOverviewDetail,
+          },
+        ]}
+      />
+      <View style={styles.storeHoursTimeGrid}>
+        <KolamTextFieldRow
+          variant="settingsForm"
+          fieldWidth={150}
+          label="Cepat (menit)"
+          description="Batas balasan cepat chat."
+          value={draft.chatFastReplyMinutes}
+          onChangeText={value => setDraftField('chatFastReplyMinutes', value)}
+          placeholder="5"
+        />
+        <KolamTextFieldRow
+          variant="settingsForm"
+          fieldWidth={150}
+          label="Poin balas cepat"
+          description="Poin balasan cepat."
+          value={draft.chatFastReplyPoints}
+          onChangeText={value => setDraftField('chatFastReplyPoints', value)}
+          placeholder="5"
+        />
+        <KolamTextFieldRow
+          variant="settingsForm"
+          fieldWidth={150}
+          label="Telat (menit)"
+          description="Batas balasan terlambat."
+          value={draft.chatLateReplyMinutes}
+          onChangeText={value => setDraftField('chatLateReplyMinutes', value)}
+          placeholder="14"
+        />
+        <KolamTextFieldRow
+          variant="settingsForm"
+          fieldWidth={150}
+          label="Poin balas telat"
+          description="Poin balasan terlambat."
+          value={draft.chatLateReplyPoints}
+          onChangeText={value => setDraftField('chatLateReplyPoints', value)}
           placeholder="-10"
         />
         <KolamTextFieldRow
           variant="settingsForm"
           fieldWidth={150}
-          label="Task no-show"
-          description="Penalty reassign/cancel."
-          value={draft.noShowReassignOrCancel}
-          onChangeText={value => onSetField('noShowReassignOrCancel', value)}
-          placeholder="-25"
+          label="Tidak dibalas"
+          description="Penalti chat tidak dibalas."
+          value={draft.chatNoReplyPoints}
+          onChangeText={value => setDraftField('chatNoReplyPoints', value)}
+          placeholder="-15"
         />
       </View>
-      <KolamTextFieldRow
-        variant="settingsForm"
-        label="Level bulanan"
-        description="Satu baris per level: id|label|min|max. Kosongkan max untuk open ended."
-        value={draft.levelsText}
-        onChangeText={value => onSetField('levelsText', value)}
-        placeholder="gold|Gold|501|1000"
+      <KolamCopyStack
+        items={[
+          {
+            id: 'penalty-title',
+            text: 'Penalti komplain dan absensi',
+            style: styles.kpiSectionTitle,
+          },
+        ]}
       />
-      <KolamTextFieldRow
-        variant="settingsForm"
-        label="Reward bulanan"
-        description="Satu baris per reward: levelId|amountRp."
-        value={draft.rewardsText}
-        onChangeText={value => onSetField('rewardsText', value)}
-        placeholder="gold|250000"
+      <View style={styles.storeHoursTimeGrid}>
+        <KolamTextFieldRow
+          variant="settingsForm"
+          fieldWidth={150}
+          label="Komplain ringan"
+          description="Penalti komplain ringan."
+          value={draft.complaintLight}
+          onChangeText={value => setDraftField('complaintLight', value)}
+          placeholder="-10"
+        />
+        <KolamTextFieldRow
+          variant="settingsForm"
+          fieldWidth={150}
+          label="Komplain valid"
+          description="Penalti komplain valid."
+          value={draft.complaintValid}
+          onChangeText={value => setDraftField('complaintValid', value)}
+          placeholder="-25"
+        />
+        <KolamTextFieldRow
+          variant="settingsForm"
+          fieldWidth={150}
+          label="Komplain berat"
+          description="Penalti komplain berat."
+          value={draft.complaintSevere}
+          onChangeText={value => setDraftField('complaintSevere', value)}
+          placeholder="-50"
+        />
+        <KolamTextFieldRow
+          variant="settingsForm"
+          fieldWidth={170}
+          label="Absen luar radius"
+          description="Penalti absensi di luar radius."
+          value={draft.attendanceOutsideRadius}
+          onChangeText={value =>
+            setDraftField('attendanceOutsideRadius', value)
+          }
+          placeholder="-20"
+        />
+      </View>
+      <KolamCopyStack
+        items={[
+          {
+            id: 'levels-title',
+            text: 'Level bulanan dan bonus Rp',
+            style: styles.kpiSectionTitle,
+          },
+        ]}
       />
+      <View style={styles.kpiEditorList}>
+        {levelRows.map((row, index) => (
+          <View
+            key={`${row.id || 'level'}-${index}`}
+            style={styles.kpiEditorRow}
+          >
+            <View style={styles.kpiEditorFields}>
+              <KolamTextFieldRow
+                variant="settingsForm"
+                fieldWidth={150}
+                label="ID level"
+                description="Key level untuk reward."
+                value={row.id}
+                onChangeText={value => setLevelRow(index, { id: value })}
+                placeholder="gold"
+              />
+              <KolamTextFieldRow
+                variant="settingsForm"
+                fieldWidth={180}
+                label="Label"
+                description="Nama level yang tampil."
+                value={row.label}
+                onChangeText={value => setLevelRow(index, { label: value })}
+                placeholder="Gold"
+              />
+              <KolamTextFieldRow
+                variant="settingsForm"
+                fieldWidth={120}
+                label="Min poin"
+                description="Batas bawah."
+                value={row.min}
+                onChangeText={value => setLevelRow(index, { min: value })}
+                placeholder="501"
+              />
+              <KolamTextFieldRow
+                variant="settingsForm"
+                fieldWidth={120}
+                label="Max poin"
+                description="Kosong untuk tanpa batas."
+                value={row.max}
+                onChangeText={value => setLevelRow(index, { max: value })}
+                placeholder="1000"
+              />
+            </View>
+            <KolamActionControlButton
+              disabled={disabled || busy}
+              intent="danger"
+              label="Hapus"
+              onPress={() => removeLevelRow(index)}
+            />
+          </View>
+        ))}
+        <View style={styles.notificationSoundActions}>
+          <KolamActionControlButton
+            disabled={disabled || busy}
+            label="Tambah level"
+            onPress={addLevelRow}
+          />
+        </View>
+      </View>
+      <View style={styles.kpiEditorList}>
+        {rewardRows.map((row, index) => (
+          <View
+            key={`${row.levelId || 'reward'}-${index}`}
+            style={styles.kpiEditorRow}
+          >
+            <View style={styles.kpiEditorFields}>
+              <KolamTextFieldRow
+                variant="settingsForm"
+                fieldWidth={180}
+                label="Level reward"
+                description="ID level yang mendapat bonus."
+                value={row.levelId}
+                onChangeText={value => setRewardRow(index, { levelId: value })}
+                placeholder="gold"
+              />
+              <KolamTextFieldRow
+                variant="settingsForm"
+                fieldWidth={180}
+                label="Nominal bonus"
+                description="Nominal bonus rupiah."
+                value={row.amountRp}
+                onChangeText={value => setRewardRow(index, { amountRp: value })}
+                placeholder="250000"
+              />
+            </View>
+            <KolamActionControlButton
+              disabled={disabled || busy}
+              intent="danger"
+              label="Hapus"
+              onPress={() => removeRewardRow(index)}
+            />
+          </View>
+        ))}
+        <View style={styles.notificationSoundActions}>
+          <KolamActionControlButton
+            disabled={disabled || busy}
+            label="Tambah reward"
+            onPress={addRewardRow}
+          />
+        </View>
+      </View>
       <View style={styles.marketplaceOverview}>
         <KolamCopyStack
           items={[
             {
               id: 'rules-title',
-              text: 'Rule Aktif',
+              text: 'Rule aktif',
               style: styles.marketplaceOverviewLabel,
             },
           ]}
@@ -5112,7 +5308,7 @@ function KpiSettingsPanel({
             variant="settingsForm"
             key={key}
             label={label}
-            description={`Key rule ${key}`}
+            description={`Key rule: ${key}`}
             active={draft.enabledRules[key] !== false}
             onPress={() =>
               !disabled && onToggleRule(key, draft.enabledRules[key] === false)
@@ -5125,20 +5321,29 @@ function KpiSettingsPanel({
           items={[
             {
               id: 'preview-title',
-              text: 'Preview Pengumuman Mingguan DARA',
+              text: 'Preview pengumuman mingguan DARA',
               style: styles.marketplaceOverviewLabel,
+            },
+            {
+              id: 'preview-meta',
+              text: preview
+                ? `Minggu ${preview.weekKey} | ${
+                    preview.alreadySent ? 'sudah terkirim' : 'belum terkirim'
+                  }`
+                : 'Klik muat ulang preview untuk melihat isi broadcast.',
+              style: styles.marketplaceOverviewDetail,
             },
             {
               id: 'preview-body',
               text: preview?.body ?? 'Preview belum dimuat.',
-              style: styles.marketplaceOverviewDetail,
+              style: styles.kpiPreviewBody,
             },
           ]}
         />
         <View style={styles.notificationSoundActions}>
           <KolamActionControlButton
             disabled={disabled || busy}
-            label="Refresh preview"
+            label="Muat ulang preview"
             loading={status === 'loading'}
             loadingLabel="Memuat..."
             onPress={onRefreshPreview}
@@ -5169,6 +5374,69 @@ function KpiSettingsPanel({
       </View>
     </>
   );
+}
+
+type KpiLevelEditorRow = {
+  id: string;
+  label: string;
+  min: string;
+  max: string;
+};
+
+type KpiRewardEditorRow = {
+  levelId: string;
+  amountRp: string;
+};
+
+function parseKpiLevelEditorRows(text: string): KpiLevelEditorRow[] {
+  return text
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(Boolean)
+    .map(line => {
+      const [id = '', label = '', min = '0', max = ''] = line.split('|');
+      const cleanId = id.trim();
+      return {
+        id: cleanId,
+        label: label.trim() || cleanId,
+        min: min.trim() || '0',
+        max: max.trim(),
+      };
+    })
+    .filter(row => row.id);
+}
+
+function serializeKpiLevelEditorRows(rows: KpiLevelEditorRow[]) {
+  return rows
+    .map(row =>
+      [row.id, row.label, row.min || '0', row.max]
+        .map(value => value.trim())
+        .join('|'),
+    )
+    .join('\n');
+}
+
+function parseKpiRewardEditorRows(text: string): KpiRewardEditorRow[] {
+  return text
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(Boolean)
+    .map(line => {
+      const [levelId = '', amountRp = '0'] = line.split('|');
+      return {
+        levelId: levelId.trim(),
+        amountRp: amountRp.trim() || '0',
+      };
+    })
+    .filter(row => row.levelId);
+}
+
+function serializeKpiRewardEditorRows(rows: KpiRewardEditorRow[]) {
+  return rows
+    .map(row =>
+      [row.levelId, row.amountRp || '0'].map(value => value.trim()).join('|'),
+    )
+    .join('\n');
 }
 
 function MarketplaceLandingOverviewPanel({
@@ -6349,7 +6617,9 @@ function FinancialSettingsPanel({
               }
             />
             <KolamActionControlButton
-              disabled={busy || paymentMethodFilters.page >= paymentMethodTotalPages}
+              disabled={
+                busy || paymentMethodFilters.page >= paymentMethodTotalPages
+              }
               label="Berikutnya"
               onPress={() =>
                 setPaymentMethodFilter('page', paymentMethodFilters.page + 1)
@@ -6378,16 +6648,23 @@ function FinancialSettingsPanel({
               variant="settingsForm"
             />
             <View style={styles.financialToolbar}>
-              {(['cash', 'transfer', 'ewallet', 'credit', 'debit', 'qris'] as const).map(
-                type => (
-                  <FinancialChoiceSegment
-                    key={type}
-                    active={paymentMethodDraft.type === type}
-                    label={type.toUpperCase()}
-                    onPress={() => setPaymentMethodDraftField('type', type)}
-                  />
-                ),
-              )}
+              {(
+                [
+                  'cash',
+                  'transfer',
+                  'ewallet',
+                  'credit',
+                  'debit',
+                  'qris',
+                ] as const
+              ).map(type => (
+                <FinancialChoiceSegment
+                  key={type}
+                  active={paymentMethodDraft.type === type}
+                  label={type.toUpperCase()}
+                  onPress={() => setPaymentMethodDraftField('type', type)}
+                />
+              ))}
             </View>
             <KolamTextFieldRow
               description="Provider bank, e-wallet, atau gateway."
@@ -6561,7 +6838,9 @@ function FinancialSettingsPanel({
             description="NPWP lama 15 digit."
             fieldWidth={settingsFieldWidth}
             label="NPWP 15 digit"
-            onChangeText={value => setTaxCompanyProfileDraftField('npwp', value)}
+            onChangeText={value =>
+              setTaxCompanyProfileDraftField('npwp', value)
+            }
             placeholder="00.000.000.0-000.000"
             value={taxCompanyProfileDraft.npwp ?? ''}
             variant="settingsForm"
@@ -6585,16 +6864,20 @@ function FinancialSettingsPanel({
             variant="settingsForm"
           />
           <View style={styles.financialToolbar}>
-            {(['pt', 'cv', 'umkm', 'perorangan', 'other'] as const).map(type => (
-              <FinancialChoiceSegment
-                key={type}
-                active={(taxCompanyProfileDraft.taxpayerType ?? 'pt') === type}
-                label={type.toUpperCase()}
-                onPress={() =>
-                  setTaxCompanyProfileDraftField('taxpayerType', type)
-                }
-              />
-            ))}
+            {(['pt', 'cv', 'umkm', 'perorangan', 'other'] as const).map(
+              type => (
+                <FinancialChoiceSegment
+                  key={type}
+                  active={
+                    (taxCompanyProfileDraft.taxpayerType ?? 'pt') === type
+                  }
+                  label={type.toUpperCase()}
+                  onPress={() =>
+                    setTaxCompanyProfileDraftField('taxpayerType', type)
+                  }
+                />
+              ),
+            )}
           </View>
           <KolamToggleRow
             active={taxCompanyProfileDraft.isPkp === true}
@@ -6703,12 +6986,16 @@ function FinancialSettingsPanel({
             <FinancialChoiceSegment
               active={draft.overtimeCalculationMode === 'per_hour'}
               label="Per jam"
-              onPress={() => setDraftField('overtimeCalculationMode', 'per_hour')}
+              onPress={() =>
+                setDraftField('overtimeCalculationMode', 'per_hour')
+              }
             />
             <FinancialChoiceSegment
               active={draft.overtimeCalculationMode === 'per_day'}
               label="Per hari"
-              onPress={() => setDraftField('overtimeCalculationMode', 'per_day')}
+              onPress={() =>
+                setDraftField('overtimeCalculationMode', 'per_day')
+              }
             />
           </View>
           <KolamToggleRow
@@ -6729,7 +7016,9 @@ function FinancialSettingsPanel({
                 description="Tarif tetap per jam; 0 memakai turunan gaji."
                 fieldWidth={settingsFieldWidth}
                 label="Tarif per jam"
-                onChangeText={value => setDraftField('overtimeRatePerHour', value)}
+                onChangeText={value =>
+                  setDraftField('overtimeRatePerHour', value)
+                }
                 value={draft.overtimeRatePerHour}
                 variant="settingsForm"
               />
@@ -6758,7 +7047,9 @@ function FinancialSettingsPanel({
             description="Format HH:MM, mengikuti FE."
             fieldWidth={settingsFieldWidth}
             label="Batas akhir lembur"
-            onChangeText={value => setDraftField('overtimeMidnightCutoff', value)}
+            onChangeText={value =>
+              setDraftField('overtimeMidnightCutoff', value)
+            }
             placeholder="23:59"
             value={draft.overtimeMidnightCutoff}
             variant="settingsForm"
@@ -7224,6 +7515,33 @@ const styles = StyleSheet.create({
   },
   workSiteSection: {
     gap: 10,
+  },
+  kpiEditorFields: {
+    flex: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    minWidth: 260,
+  },
+  kpiEditorList: {
+    gap: 10,
+  },
+  kpiEditorRow: {
+    alignItems: 'flex-end',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  kpiPreviewBody: {
+    color: '#111827',
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 18,
+  },
+  kpiSectionTitle: {
+    color: '#111827',
+    fontSize: 13,
+    fontWeight: '800',
   },
   marketplaceNoticeList: {
     gap: 8,
