@@ -1063,6 +1063,7 @@ describe('KolamGlobalChatRail', () => {
   });
 
   it('blocks inbox send until the conversation is assigned to the current staff', async () => {
+    const assignInboxToMe = jest.fn().mockResolvedValue(undefined);
     const sendMessage = jest.fn().mockResolvedValue(undefined);
     useReadonlyDataMock.mockReturnValue({
       conversations: [
@@ -1087,6 +1088,7 @@ describe('KolamGlobalChatRail', () => {
         isAiHandled: false,
         status: 'open',
       },
+      assignInboxToMe,
       loading: false,
       messages: [],
       sendMessage,
@@ -1119,6 +1121,44 @@ describe('KolamGlobalChatRail', () => {
       .findAllByType(TextInput)
       .find(node => node.props.accessibilityLabel === 'Tulis pesan inbox');
     expect(input!.props.editable).toBe(false);
+
+    const assignButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(
+        node =>
+          node.props.accessibilityLabel === 'Assign inbox conversation to me',
+      );
+
+    await ReactTestRenderer.act(async () => {
+      assignButton!.props.onPress();
+    });
+
+    expect(renderText(renderer!)).toEqual(
+      expect.arrayContaining(['Catatan handover', 'Assign']),
+    );
+
+    const handoverNoteInput = renderer!.root
+      .findAllByType(TextInput)
+      .find(node => node.props.accessibilityLabel === 'Catatan handover inbox');
+
+    await ReactTestRenderer.act(async () => {
+      handoverNoteInput!.props.onChangeText('Buyer minta follow up stok sore ini.');
+    });
+
+    const submitHandoverButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(
+        node =>
+          node.props.accessibilityLabel === 'Kirim catatan handover inbox',
+      );
+
+    await ReactTestRenderer.act(async () => {
+      await submitHandoverButton!.props.onPress();
+    });
+
+    expect(assignInboxToMe).toHaveBeenCalledWith(
+      'Buyer minta follow up stok sore ini.',
+    );
 
     await ReactTestRenderer.act(async () => {
       input!.props.onChangeText('Siap, masih tersedia.');

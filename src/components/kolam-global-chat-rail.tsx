@@ -2871,6 +2871,8 @@ function KolamInboxActionStrip({
   onDetailsToggle: () => void;
 }) {
   const [labelPickerOpen, setLabelPickerOpen] = React.useState(false);
+  const [handoverNoteOpen, setHandoverNoteOpen] = React.useState(false);
+  const [handoverNoteDraft, setHandoverNoteDraft] = React.useState('');
   const conversation = detail.conversation;
   if (!conversation) {
     return null;
@@ -2890,6 +2892,12 @@ function KolamInboxActionStrip({
       : [...Array.from(activeLabelIds), labelId];
 
     void detail.setInboxLabels(nextLabelIds);
+  };
+  const handleSubmitHandoverNote = async () => {
+    const note = handoverNoteDraft.trim();
+    await detail.assignInboxToMe(note || undefined);
+    setHandoverNoteDraft('');
+    setHandoverNoteOpen(false);
   };
 
   return (
@@ -2951,10 +2959,14 @@ function KolamInboxActionStrip({
           <KolamPressable
             accessibilityLabel="Assign inbox conversation to me"
             disabled={detail.sending}
-            onPress={detail.assignInboxToMe}
+            onPress={() => {
+              setHandoverNoteOpen(current => !current);
+              setLabelPickerOpen(false);
+            }}
             style={[
               styles.callButton,
               styles.callButtonGhost,
+              handoverNoteOpen && styles.callButtonActive,
               detail.sending && styles.callButtonDisabled,
             ]}>
             <Text style={styles.callButtonGhostText}>Assign saya</Text>
@@ -2989,6 +3001,49 @@ function KolamInboxActionStrip({
           </KolamPressable>
         ) : null}
       </View>
+      {handoverNoteOpen ? (
+        <View style={styles.inboxHandoverNotePanel}>
+          <Text style={styles.inboxHandoverNoteTitle}>Catatan handover</Text>
+          <TextInput
+            accessibilityLabel="Catatan handover inbox"
+            editable={!detail.sending}
+            multiline
+            onChangeText={setHandoverNoteDraft}
+            placeholder="Tulis konteks singkat untuk CS berikutnya"
+            placeholderTextColor={V.colors.mutedFg}
+            style={styles.inboxHandoverNoteInput}
+            value={handoverNoteDraft}
+          />
+          <View style={styles.inboxHandoverNoteActions}>
+            <KolamPressable
+              accessibilityLabel="Batalkan catatan handover inbox"
+              disabled={detail.sending}
+              onPress={() => {
+                setHandoverNoteDraft('');
+                setHandoverNoteOpen(false);
+              }}
+              style={[
+                styles.callButton,
+                styles.callButtonGhost,
+                detail.sending && styles.callButtonDisabled,
+              ]}>
+              <Text style={styles.callButtonGhostText}>Batal</Text>
+            </KolamPressable>
+            <KolamPressable
+              accessibilityLabel="Kirim catatan handover inbox"
+              disabled={detail.sending}
+              onPress={() => void handleSubmitHandoverNote()}
+              style={[
+                styles.callButton,
+                detail.sending && styles.callButtonDisabled,
+              ]}>
+              <Text style={styles.callButtonText}>
+                {detail.sending ? 'Mengirim...' : 'Assign'}
+              </Text>
+            </KolamPressable>
+          </View>
+        </View>
+      ) : null}
       {labelPickerOpen ? (
         <KolamInboxLabelPicker
           activeLabelIds={activeLabelIds}
@@ -5428,6 +5483,40 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 10,
     fontWeight: '700',
+  },
+  inboxHandoverNotePanel: {
+    padding: 8,
+    borderRadius: V.radius.md,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.bg,
+    gap: 7,
+  },
+  inboxHandoverNoteTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '900',
+  },
+  inboxHandoverNoteInput: {
+    minHeight: 62,
+    borderRadius: V.radius.md,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.secondary,
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '700',
+    paddingHorizontal: 9,
+    paddingVertical: 7,
+    textAlignVertical: 'top',
+  },
+  inboxHandoverNoteActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-end',
+    gap: 7,
   },
   inboxLabelOptionList: {
     gap: 5,

@@ -107,7 +107,7 @@ export interface KolamChatRailTeamRoomMetadata {
 
 export interface KolamChatRailDetailState {
   activeCall: KolamTeamChatCall | null;
-  assignInboxToMe: () => Promise<void>;
+  assignInboxToMe: (handoverNote?: string) => Promise<void>;
   callBusy: boolean;
   callConfig: KolamTeamChatCallConfig;
   callErrorMessage?: string;
@@ -602,13 +602,13 @@ export function useKolamChatRailDetail({
     );
   }, [conversation, runInboxConversationAction, selectedId]);
 
-  const assignInboxToMe = useCallback(async () => {
+  const assignInboxToMe = useCallback(async (handoverNote?: string) => {
     if (!selectedId || !currentUserId) {
       return;
     }
 
     await runInboxConversationAction(() =>
-      assignKolamChatConversation(selectedId, currentUserId),
+      assignKolamChatConversation(selectedId, currentUserId, handoverNote),
     );
   }, [currentUserId, runInboxConversationAction, selectedId]);
 
