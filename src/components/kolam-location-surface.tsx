@@ -4,17 +4,23 @@ import {
   getKolamLocationRouteMode,
   getKolamLocationTierLabel,
   getKolamLocationTypeLabel,
+  KOLAM_LOCATION_TIER_OPTIONS,
   KOLAM_LOCATION_TYPE_OPTIONS,
+  type KolamLocationTier,
+  type KolamLocationType,
 } from '../domain/kolam-location';
 import {getKolamTableColumns} from '../domain/kolam-table';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {
+  createKolamLocation,
   getKolamLocationAssets,
   getKolamLocationEnclosures,
   getKolamLocationParentLookup,
   getKolamLocationDetail,
   getKolamLocationList,
   getKolamLocationProducts,
+  getKolamLocations,
+  updateKolamLocation,
   type KolamLocationAssetRow,
   type KolamLocationDetailItem,
   type KolamLocationEnclosureRow,
@@ -23,6 +29,7 @@ import {
   type KolamLocationOption,
   type KolamLocationPagination,
   type KolamLocationProductRow,
+  type KolamLocationSavePayload,
 } from '../services/kolam-location-api';
 import {getKolamFileUrl} from '../lib/file-url';
 import {KolamButton} from './kolam-button';
@@ -59,11 +66,55 @@ const LOCATION_TYPE_OPTIONS: Array<{
   ...KOLAM_LOCATION_TYPE_OPTIONS,
 ];
 
+const LOCATION_FORM_TYPE_OPTIONS = KOLAM_LOCATION_TYPE_OPTIONS.filter(
+  option => option.value !== 'bin',
+);
+
 const INITIAL_PAGINATION: KolamLocationPagination = {
   limit: 10,
   page: 1,
   total: 0,
   totalPages: 1,
+};
+
+const EMPTY_LOCATION_FORM: KolamLocationFormState = {
+  address: '',
+  description: '',
+  mapsUrl: '',
+  name: '',
+  parent: '',
+  phoneNumber: '',
+  tier: 'primary',
+  type: 'warehouse',
+};
+
+const LOCATION_TIER_NOTES: Record<
+  KolamLocationTier,
+  {description: string; example: string; marker: string}
+> = {
+  primary: {
+    description: 'Lokasi utama seperti gudang atau toko.',
+    example: 'Contoh: Gudang Utama, Toko Cabang Jakarta',
+    marker: '1',
+  },
+  secondary: {
+    description: 'Bagian dari lokasi utama.',
+    example: 'Contoh: Lantai 1, Area Penyimpanan A',
+    marker: '2',
+  },
+  tertiary: {
+    description: 'Bagian dari lokasi sekunder.',
+    example: 'Contoh: Rak A1, Rak B2',
+    marker: '3',
+  },
+};
+
+type KolamLocationFormState = KolamLocationSavePayload & {
+  address: string;
+  description: string;
+  mapsUrl: string;
+  parent: string;
+  phoneNumber: string;
 };
 
 export function KolamLocationSurface({
@@ -86,27 +137,11 @@ export function KolamLocationSurface({
     }
 
     return (
-      <View style={styles.surface}>
-        <View style={styles.header}>
-          <View style={styles.heading}>
-            <Text style={styles.eyebrow}>Inventori</Text>
-            <Text style={styles.title}>
-              {mode === 'new' ? 'Tambah Lokasi' : 'Lokasi'}
-            </Text>
-            <Text style={styles.description}>
-              Kelola lokasi gudang, lantai, rak, dan area penyimpanan
-            </Text>
-          </View>
-          <KolamButton
-            label="Daftar"
-            onPress={() => onRouteChange?.('/locations')}
-          />
-        </View>
-        <KolamEmptyState
-          message="Form dan detail lokasi belum masuk fase ini."
-          title="Belum tersedia"
-        />
-      </View>
+      <KolamLocationForm
+        locationId={mode === 'edit' ? getKolamLocationIdFromRoute(route) : ''}
+        mode={mode}
+        onRouteChange={onRouteChange}
+      />
     );
   }
 
@@ -121,6 +156,379 @@ function getKolamLocationIdFromRoute(route: string) {
   const path = route.split('?')[0];
   const match = path.match(/^\/locations\/([^/]+)(?:\/edit)?$/);
   return match ? decodeURIComponent(match[1]) : '';
+}
+
+function KolamLocationForm({
+  locationId,
+  mode,
+  onRouteChange,
+}: {
+  locationId: string;
+  mode: 'edit' | 'new';
+  onRouteChange?: (route: string) => void;
+}) {
+  const isEdit = mode === 'edit';
+  const [form, setForm] = React.useState<KolamLocationFormState>({
+    ...EMPTY_LOCATION_FORM,
+  });
+  const [parentOptions, setParentOptions] = React.useState<
+    KolamLocationOption[]
+  >([]);
+  const [loading, setLoading] = React.useState(isEdit);
+  const [saving, setSaving] = React.useState(false);
+  const [error, setError] = React.useState('');
+
+  React.useEffect(() => {
+    let active = true;
+
+    void getKolamLocations()
+      .then(locations => {
+        if (active) {
+          setParentOptions(
+            locations.filter(location => location.id !== locationId),
+          );
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setParentOptions([]);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [locationId]);
+
+  React.useEffect(() => {
+    if (!isEdit) {
+      setForm({...EMPTY_LOCATION_FORM});
+      setLoading(false);
+      return;
+    }
+
+    let active = true;
+    setLoading(true);
+    setError('');
+
+    void getKolamLocationDetail(locationId)
+      .then(location => {
+        if (!active) {
+          return;
+        }
+
+        setForm({
+          address: location.address,
+          description: location.description,
+          mapsUrl: location.mapsUrl,
+          name: location.name,
+          parent: location.parent?.id ?? '',
+          phoneNumber: location.phoneNumber,
+          tier: normalizeLocationTier(location.tier),
+          type: normalizeLocationType(location.type),
+        });
+      })
+      .catch(() => {
+        if (active) {
+          setError('Gagal memuat lokasi.');
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [isEdit, locationId]);
+
+  const availableParents = React.useMemo(
+    () => getLocationParentOptions(parentOptions, form.tier),
+    [form.tier, parentOptions],
+  );
+  const requiresParent = form.tier !== 'primary';
+  const parentDropdownOptions = [
+    {label: 'Pilih lokasi induk', value: ''},
+    ...availableParents.map(parent => ({
+      label: [
+        parent.name,
+        getKolamLocationTypeLabel(parent.type),
+        getKolamLocationTierLabel(parent.tier),
+      ]
+        .filter(Boolean)
+        .join(' - '),
+      value: parent.id,
+    })),
+  ];
+  const selectedParent = availableParents.find(
+    parent => parent.id === form.parent,
+  );
+  const parentValidation = validateLocationParent(form, selectedParent);
+
+  const updateField = <TKey extends keyof KolamLocationFormState>(
+    key: TKey,
+    value: KolamLocationFormState[TKey],
+  ) => {
+    setForm(current => {
+      const next = {...current, [key]: value};
+
+      if (key === 'tier') {
+        const tier = value as KolamLocationTier;
+        next.parent =
+          tier === 'primary' ||
+          !getLocationParentOptions(parentOptions, tier).some(
+            parent => parent.id === current.parent,
+          )
+            ? ''
+            : current.parent;
+      }
+
+      return next;
+    });
+    setError('');
+  };
+
+  const handleSave = async () => {
+    const name = form.name.trim();
+    const validationMessage =
+      !name
+        ? 'Nama lokasi wajib diisi.'
+        : parentValidation
+          ? parentValidation
+          : '';
+
+    if (validationMessage) {
+      setError(validationMessage);
+      return;
+    }
+
+    setSaving(true);
+    setError('');
+
+    const payload: KolamLocationSavePayload = {
+      address: normalizeOptionalLocationField(form.address),
+      description: normalizeOptionalLocationField(form.description),
+      mapsUrl: normalizeOptionalLocationField(form.mapsUrl),
+      name,
+      parent: form.parent || (isEdit ? null : undefined),
+      phoneNumber: normalizeOptionalLocationField(form.phoneNumber),
+      tier: form.tier,
+      type: form.type,
+    };
+
+    try {
+      const saved = isEdit
+        ? await updateKolamLocation(locationId, payload)
+        : await createKolamLocation(payload);
+      onRouteChange?.(isEdit ? `/locations/${saved.id}` : '/locations');
+    } catch (saveError) {
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : isEdit
+            ? 'Gagal menyimpan lokasi.'
+            : 'Gagal membuat lokasi.',
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <View style={styles.surface}>
+      <View style={styles.header}>
+        <View style={styles.heading}>
+          <Text style={styles.eyebrow}>Inventori</Text>
+          <Text style={styles.title}>
+            {isEdit ? 'Rubah Lokasi' : 'Tambah Lokasi'}
+          </Text>
+          <Text style={styles.description}>
+            Kelola lokasi gudang, lantai, rak, dan area penyimpanan
+          </Text>
+        </View>
+        <KolamButton label="Daftar" onPress={() => onRouteChange?.('/locations')} />
+      </View>
+
+      {error ? (
+        <KolamStatusBadge
+          intent="danger"
+          label={error}
+          numberOfLines={2}
+          style={styles.errorBadge}
+        />
+      ) : null}
+
+      {loading ? (
+        <KolamEmptyState message="Memuat form lokasi..." title="Memuat" />
+      ) : (
+        <View style={styles.formStack}>
+          <KolamContentFrame variant="settingsWebConfig" style={styles.detailCard}>
+            <SectionTitle
+              description={
+                isEdit
+                  ? 'Perbarui nama dan tipe untuk lokasi ini.'
+                  : 'Masukkan nama dan tipe untuk lokasi ini.'
+              }
+              title="Informasi Dasar"
+            />
+            <View style={styles.formGrid}>
+              <LabeledFormField label="Nama Lokasi">
+                <KolamFormTextField
+                  onChangeText={value => updateField('name', value)}
+                  placeholder="mis. Gudang Utama, Lantai Toko 2"
+                  style={styles.formInput}
+                  value={form.name}
+                />
+              </LabeledFormField>
+              <LabeledFormField label="Tipe Lokasi">
+                <KolamDropdownSelect
+                  label="Tipe Lokasi"
+                  onChange={value =>
+                    updateField('type', value as KolamLocationType)
+                  }
+                  options={getLocationFormTypeOptions(form.type)}
+                  style={styles.formDropdown}
+                  value={form.type}
+                />
+              </LabeledFormField>
+            </View>
+            <LabeledFormField label="Deskripsi">
+              <KolamFormTextField
+                multiline
+                onChangeText={value => updateField('description', value)}
+                placeholder="Deskripsi singkat lokasi ini (opsional)"
+                style={[styles.formInput, styles.formTextarea]}
+                textAlignVertical="top"
+                value={form.description}
+              />
+            </LabeledFormField>
+          </KolamContentFrame>
+
+          <KolamContentFrame variant="settingsWebConfig" style={styles.detailCard}>
+            <SectionTitle
+              description="Tentukan posisi lokasi ini dalam struktur organisasi."
+              title="Hierarki Lokasi"
+            />
+            <Text style={styles.formLabel}>Tingkat Lokasi</Text>
+            <View style={styles.tierCardGrid}>
+              {KOLAM_LOCATION_TIER_OPTIONS.map(option => (
+                <LocationTierCard
+                  key={option.value}
+                  selected={form.tier === option.value}
+                  tier={option.value}
+                  onPress={() => updateField('tier', option.value)}
+                />
+              ))}
+            </View>
+            <Text style={styles.helpText}>
+              {LOCATION_TIER_NOTES[form.tier].example}
+            </Text>
+            {requiresParent ? (
+              <View style={styles.parentSelectStack}>
+                <View style={styles.noteBox}>
+                  <Text style={styles.noteText}>
+                    Lokasi {getKolamLocationTierLabel(form.tier)} harus berada
+                    di dalam lokasi{' '}
+                    {form.tier === 'secondary'
+                      ? 'Utama'
+                      : 'Utama atau Sekunder'}
+                    .
+                  </Text>
+                </View>
+                <LabeledFormField label="Lokasi Induk">
+                  <KolamDropdownSelect
+                    label="Lokasi Induk"
+                    menuPlacement="inline"
+                    onChange={value => updateField('parent', value)}
+                    options={parentDropdownOptions}
+                    searchable
+                    style={styles.formDropdown}
+                    value={form.parent}
+                  />
+                </LabeledFormField>
+              </View>
+            ) : null}
+          </KolamContentFrame>
+
+          <KolamContentFrame variant="settingsWebConfig" style={styles.detailCard}>
+            <SectionTitle
+              description={
+                isEdit
+                  ? 'Perbarui alamat fisik dan informasi kontak (opsional).'
+                  : 'Tambahkan alamat fisik dan informasi kontak (opsional).'
+              }
+              title="Kontak & Alamat"
+            />
+            <LabeledFormField label="Alamat Fisik">
+              <KolamFormTextField
+                onChangeText={value => updateField('address', value)}
+                placeholder="Masukkan alamat lengkap"
+                style={styles.formInput}
+                value={form.address}
+              />
+            </LabeledFormField>
+            <View style={styles.formGrid}>
+              <LabeledFormField label="Nomor Telepon">
+                <KolamFormTextField
+                  keyboardType="phone-pad"
+                  onChangeText={value => updateField('phoneNumber', value)}
+                  placeholder="mis. 089666263522"
+                  style={styles.formInput}
+                  value={form.phoneNumber}
+                />
+              </LabeledFormField>
+              <LabeledFormField label="URL Google Maps">
+                <KolamFormTextField
+                  mode="url"
+                  onChangeText={value => updateField('mapsUrl', value)}
+                  placeholder="Tempel tautan Google Maps"
+                  style={styles.formInput}
+                  value={form.mapsUrl}
+                />
+              </LabeledFormField>
+            </View>
+            {form.mapsUrl ? (
+              <View style={styles.mapsPreviewBox}>
+                <Text style={styles.mapsPreviewText} numberOfLines={2}>
+                  {form.mapsUrl}
+                </Text>
+                <KolamButton
+                  label="Buka Maps"
+                  onPress={() => Linking.openURL(form.mapsUrl)}
+                />
+              </View>
+            ) : null}
+          </KolamContentFrame>
+
+          <View style={styles.formActions}>
+            <KolamButton
+              disabled={saving}
+              label="Batal"
+              onPress={() =>
+                onRouteChange?.(isEdit ? `/locations/${locationId}` : '/locations')
+              }
+            />
+            <KolamButton
+              disabled={saving}
+              intent="primary"
+              label={
+                saving
+                  ? isEdit
+                    ? 'Menyimpan...'
+                    : 'Membuat...'
+                  : isEdit
+                    ? 'Simpan Perubahan'
+                    : 'Buat Lokasi'
+              }
+              onPress={handleSave}
+            />
+          </View>
+        </View>
+      )}
+    </View>
+  );
 }
 
 function KolamLocationDetail({
@@ -1006,6 +1414,44 @@ function ContactBlock({
   );
 }
 
+function LabeledFormField({
+  children,
+  label,
+}: {
+  children: React.ReactNode;
+  label: string;
+}) {
+  return (
+    <View style={styles.formField}>
+      <Text style={styles.formLabel}>{label}</Text>
+      {children}
+    </View>
+  );
+}
+
+function LocationTierCard({
+  onPress,
+  selected,
+  tier,
+}: {
+  onPress: () => void;
+  selected: boolean;
+  tier: KolamLocationTier;
+}) {
+  const note = LOCATION_TIER_NOTES[tier];
+
+  return (
+    <KolamButton
+      accessibilityLabel={`Pilih tingkat ${getKolamLocationTierLabel(tier)}`}
+      intent={selected ? 'primary' : 'secondary'}
+      label={`${note.marker}. ${getKolamLocationTierLabel(tier)}\n${note.description}`}
+      onPress={onPress}
+      style={styles.tierCard}
+      textStyle={styles.tierCardText}
+    />
+  );
+}
+
 function InventoryTableBlock({
   children,
   empty,
@@ -1169,6 +1615,74 @@ function LocationAssetInventoryRow({
       </View>
     </KolamDataTableRowFrame>
   );
+}
+
+function getLocationParentOptions(
+  locations: KolamLocationOption[],
+  tier: KolamLocationTier,
+) {
+  if (tier === 'primary') {
+    return [];
+  }
+
+  if (tier === 'secondary') {
+    return locations.filter(location => location.tier === 'primary');
+  }
+
+  return locations.filter(
+    location => location.tier === 'primary' || location.tier === 'secondary',
+  );
+}
+
+function validateLocationParent(
+  form: KolamLocationFormState,
+  parent?: KolamLocationOption,
+) {
+  if (form.tier !== 'primary' && !form.parent) {
+    return 'Silakan pilih lokasi induk.';
+  }
+
+  if (!form.parent || !parent) {
+    return '';
+  }
+
+  const validParentType: Partial<Record<KolamLocationType, KolamLocationType>> =
+    {
+      area: 'store',
+      bin: 'rack',
+      floor: 'warehouse',
+      rack: 'floor',
+    };
+  const expectedParentType = validParentType[form.type];
+
+  if (expectedParentType && parent.type !== expectedParentType) {
+    return `Induk untuk ${getKolamLocationTypeLabel(
+      form.type,
+    )} harus bertipe ${getKolamLocationTypeLabel(expectedParentType)}.`;
+  }
+
+  return '';
+}
+
+function normalizeOptionalLocationField(value: string) {
+  const normalized = value.trim();
+  return normalized || null;
+}
+
+function normalizeLocationTier(value: string): KolamLocationTier {
+  return value === 'secondary' || value === 'tertiary' ? value : 'primary';
+}
+
+function normalizeLocationType(value: string): KolamLocationType {
+  return KOLAM_LOCATION_TYPE_OPTIONS.some(option => option.value === value)
+    ? (value as KolamLocationType)
+    : 'warehouse';
+}
+
+function getLocationFormTypeOptions(currentType: KolamLocationType) {
+  return currentType === 'bin'
+    ? KOLAM_LOCATION_TYPE_OPTIONS
+    : LOCATION_FORM_TYPE_OPTIONS;
 }
 
 function getLocationDescendants(location: KolamLocationDetailItem) {
@@ -1542,6 +2056,103 @@ const styles = StyleSheet.create({
   },
   contactButton: {
     alignSelf: 'flex-start',
+  },
+  formStack: {
+    gap: 12,
+  },
+  formGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  formField: {
+    flex: 1,
+    gap: 6,
+    minWidth: 260,
+  },
+  formLabel: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    fontWeight: '800',
+    lineHeight: 18,
+  },
+  formInput: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    color: V.colors.fg,
+    fontSize: 13,
+    lineHeight: 20,
+    minHeight: 42,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  formTextarea: {
+    minHeight: 104,
+  },
+  formDropdown: {
+    alignSelf: 'stretch',
+  },
+  tierCardGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  tierCard: {
+    alignItems: 'center',
+    flex: 1,
+    minHeight: 86,
+    minWidth: 180,
+    paddingHorizontal: 12,
+  },
+  tierCardText: {
+    lineHeight: 18,
+    textAlign: 'center',
+  },
+  helpText: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  parentSelectStack: {
+    gap: 10,
+  },
+  noteBox: {
+    backgroundColor: V.colors.infoSoft,
+    borderColor: V.colors.info,
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  noteText: {
+    color: V.colors.fg,
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  mapsPreviewBox: {
+    alignItems: 'center',
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 10,
+    justifyContent: 'space-between',
+    padding: 12,
+  },
+  mapsPreviewText: {
+    color: V.colors.mutedFg,
+    flex: 1,
+    fontSize: 12,
+    lineHeight: 18,
+    minWidth: 0,
+  },
+  formActions: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'flex-end',
   },
   inventoryStack: {
     gap: 16,

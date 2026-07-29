@@ -104,6 +104,17 @@ export interface KolamLocationListResult {
   pagination: KolamLocationPagination;
 }
 
+export interface KolamLocationSavePayload {
+  address?: string | null;
+  description?: string | null;
+  mapsUrl?: string | null;
+  name: string;
+  parent?: string | null;
+  phoneNumber?: string | null;
+  tier: KolamLocationTier;
+  type: KolamLocationType;
+}
+
 export async function getKolamLocations(): Promise<KolamLocationOption[]> {
   const response = await kolamRequest<unknown>('/location', {
     query: {
@@ -166,6 +177,39 @@ export async function getKolamLocationDetail(
 
   if (!location) {
     throw new Error('Lokasi tidak ditemukan.');
+  }
+
+  return location;
+}
+
+export async function createKolamLocation(
+  payload: KolamLocationSavePayload,
+): Promise<KolamLocationDetailItem> {
+  const response = await kolamRequest<unknown>('/location', {
+    body: payload,
+    method: 'POST',
+  });
+  const location = normalizeKolamLocationDetailItem(response);
+
+  if (!location) {
+    throw new Error('Lokasi gagal dibuat.');
+  }
+
+  return location;
+}
+
+export async function updateKolamLocation(
+  locationId: string,
+  payload: KolamLocationSavePayload,
+): Promise<KolamLocationDetailItem> {
+  const response = await kolamRequest<unknown>(`/location/${locationId}`, {
+    body: payload,
+    method: 'PUT',
+  });
+  const location = normalizeKolamLocationDetailItem(response);
+
+  if (!location) {
+    throw new Error('Lokasi gagal diperbarui.');
   }
 
   return location;
