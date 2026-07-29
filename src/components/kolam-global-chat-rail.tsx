@@ -577,7 +577,7 @@ function KolamChatRailDetailPanel({
   onComposerTextChange: (value: string) => void;
   onPendingAttachmentClear: () => void;
   onPendingAttachmentPick: () => void;
-  onSend: () => void;
+  onSend: () => Promise<void> | void;
   pendingAttachment: NativeImagePickerResult | null;
   selectedItem: ReturnType<typeof getChatRailItems>[number];
   templatesState: KolamChatRailTemplatesState;
@@ -585,6 +585,7 @@ function KolamChatRailDetailPanel({
   const [templatePickerOpen, setTemplatePickerOpen] = React.useState(false);
   const [templateSearch, setTemplateSearch] = React.useState('');
   const [contactDetailsOpen, setContactDetailsOpen] = React.useState(false);
+  const [daraThinking, setDaraThinking] = React.useState(false);
   const [contactDetailsState, setContactDetailsState] =
     React.useState<KolamChatRailContactDetailsState>({
       data: null,
@@ -622,9 +623,19 @@ function KolamChatRailDetailPanel({
   React.useEffect(() => {
     setTemplatePickerOpen(false);
     setTemplateSearch('');
+    setDaraThinking(false);
     setContactDetailsOpen(false);
     setContactDetailsState({data: null, loading: false});
   }, [selectedItem.id]);
+
+  React.useEffect(() => {
+    if (
+      daraThinking &&
+      detail.messages.some(message => !message.mine && message.author === 'DARA')
+    ) {
+      setDaraThinking(false);
+    }
+  }, [daraThinking, detail.messages]);
 
   const handleComposerInputChange = React.useCallback(
     (value: string) => {
@@ -645,6 +656,19 @@ function KolamChatRailDetailPanel({
     },
     [composerText, onComposerTextChange],
   );
+
+  const handleSendFromComposer = React.useCallback(async () => {
+    if (
+      shouldShowDaraThinking({
+        body: composerText,
+        daraReplyEnabled: detail.teamRoomMetadata.daraReplyEnabled,
+      })
+    ) {
+      setDaraThinking(true);
+    }
+
+    await onSend();
+  }, [composerText, detail.teamRoomMetadata.daraReplyEnabled, onSend]);
 
   React.useEffect(() => {
     if (mode !== 'inbox' || !contactDetailsOpen) {
@@ -773,6 +797,8 @@ function KolamChatRailDetailPanel({
             />
           </ScrollView>
         ) : null}
+
+        {daraThinking ? <KolamDaraThinkingBubble /> : null}
       </View>
 
       {pendingAttachment ? (
@@ -859,7 +885,7 @@ function KolamChatRailDetailPanel({
         <KolamPressable
           accessibilityLabel="Kirim pesan"
           disabled={!canSend || detail.sending}
-          onPress={onSend}
+          onPress={handleSendFromComposer}
           style={[
             styles.sendButton,
             (!canSend || detail.sending) && styles.sendButtonDisabled,
@@ -1023,6 +1049,20 @@ function KolamTeamMentionText({body}: {body: string}) {
         );
       })}
     </Text>
+  );
+}
+
+function KolamDaraThinkingBubble() {
+  return (
+    <View accessibilityLabel="DARA thinking bubble" style={styles.daraThinkingRow}>
+      <View style={styles.daraThinkingAvatar}>
+        <Text style={styles.daraThinkingAvatarText}>DA</Text>
+      </View>
+      <View style={styles.daraThinkingCopy}>
+        <Text style={styles.daraThinkingAuthor}>DARA</Text>
+        <Text style={styles.daraThinkingText}>DARA sedang berpikir...</Text>
+      </View>
+    </View>
   );
 }
 
@@ -2038,6 +2078,20 @@ function splitTeamChatMentionText(body: string): KolamTeamMentionTextPart[] {
   return parts.length > 0 ? parts : [{type: 'text', value: text}];
 }
 
+function shouldShowDaraThinking({
+  body,
+  daraReplyEnabled,
+}: {
+  body: string;
+  daraReplyEnabled: boolean;
+}) {
+  if (!daraReplyEnabled) {
+    return false;
+  }
+
+  return /@dara\b/i.test(String(body || ''));
+}
+
 function buildTeamMentionOptions(
   members: KolamTeamChatUserRef[],
   query: string,
@@ -2708,6 +2762,48 @@ const styles = StyleSheet.create({
   },
   messageMentionAi: {
     color: V.colors.danger,
+  },
+  daraThinkingRow: {
+    maxWidth: '86%',
+    padding: 9,
+    borderRadius: V.radius.lg,
+    borderColor: V.colors.primary,
+    borderWidth: 1,
+    backgroundColor: V.colors.primarySoft,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+  daraThinkingAvatar: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: V.colors.primary,
+  },
+  daraThinkingAvatarText: {
+    color: V.colors.primaryFg,
+    fontFamily: V.fontFamily,
+    fontSize: 9,
+    fontWeight: '900',
+  },
+  daraThinkingCopy: {
+    minWidth: 0,
+    flex: 1,
+    gap: 2,
+  },
+  daraThinkingAuthor: {
+    color: V.colors.primary,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '900',
+  },
+  daraThinkingText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '800',
   },
   attachmentList: {
     gap: 6,
