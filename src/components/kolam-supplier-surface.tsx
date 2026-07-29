@@ -8,7 +8,9 @@ import {
   formatKolamVendorAddress,
   getKolamVendorStatusIntent,
   getKolamVendorStatusLabel,
+  hasKolamVendorPurchaseAnalytics,
   KOLAM_SUPPLIER_ROOT,
+  type KolamSupplierAnalyticsFilters,
   type KolamSupplierCatalogTab,
   type KolamVendor,
   type KolamVendorStatus,
@@ -473,6 +475,8 @@ function KolamSupplierDetail({
         vendor={vendor}
       />
 
+      <KolamSupplierPurchaseAnalytics controller={controller} />
+
       <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
         <Text style={styles.sectionTitle}>Informasi pemasok</Text>
         <KolamDescriptionList
@@ -777,6 +781,291 @@ function KolamSupplierCatalogTabs({
       ) : null}
     </KolamContentFrame>
   );
+}
+
+function KolamSupplierPurchaseAnalytics({
+  controller,
+}: {
+  controller: KolamSupplierController;
+}) {
+  const stats = controller.selectedVendor?.purchaseStatistics ?? null;
+  const filters = controller.analyticsFilters;
+  const years = React.useMemo(
+    () =>
+      Array.from({ length: 10 }, (_, index) => new Date().getFullYear() - index),
+    [],
+  );
+  const months = React.useMemo(
+    () =>
+      Array.from({ length: 12 }, (_, index) => ({
+        id: index + 1,
+        name: new Date(2000, index).toLocaleString('id-ID', { month: 'long' }),
+      })),
+    [],
+  );
+
+  const patchFilters = (patch: KolamSupplierAnalyticsFilters) => {
+    const next: KolamSupplierAnalyticsFilters = {
+      ...filters,
+      ...patch,
+    };
+    if (!next.filterType) {
+      delete next.filterType;
+    }
+    if (!next.year) {
+      delete next.year;
+    }
+    if (next.filterType !== 'monthly' || !next.month) {
+      delete next.month;
+    }
+    void controller.onChangeAnalyticsFilters(next);
+  };
+
+  return (
+    <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
+      <Text style={styles.sectionTitle}>Analitik pembelian</Text>
+      <Text style={styles.switchHint}>
+        Statistik PO dari pemasok ini. Filter memuat ulang data dari server.
+      </Text>
+
+      <View style={styles.formSplitRow}>
+        <View style={styles.formSplitCell}>
+          <KolamDropdownSelect<string>
+            label="Periode"
+            onChange={value => {
+              if (!value) {
+                patchFilters({
+                  filterType: undefined,
+                  month: undefined,
+                });
+                return;
+              }
+              patchFilters({
+                filterType: value as 'yearly' | 'monthly',
+                month: value === 'yearly' ? undefined : filters.month,
+                year: filters.year ?? new Date().getFullYear(),
+              });
+            }}
+            options={[
+              { label: 'Semua waktu', value: '' },
+              { label: 'Tahunan', value: 'yearly' },
+              { label: 'Bulanan', value: 'monthly' },
+            ]}
+            value={filters.filterType ?? ''}
+          />
+        </View>
+        <View style={styles.formSplitCell}>
+          <KolamDropdownSelect<string>
+            label="Tahun"
+            onChange={value => {
+              patchFilters({
+                year: value ? Number(value) : undefined,
+                filterType:
+                  filters.filterType ?? (value ? 'yearly' : undefined),
+              });
+            }}
+            options={[
+              { label: 'Semua tahun', value: '' },
+              ...years.map(year => ({
+                label: String(year),
+                value: String(year),
+              })),
+            ]}
+            value={filters.year ? String(filters.year) : ''}
+          />
+        </View>
+        <View style={styles.formSplitCell}>
+          <KolamDropdownSelect<string>
+            label="Bulan"
+            onChange={value => {
+              patchFilters({
+                month: value ? Number(value) : undefined,
+                filterType: value ? 'monthly' : filters.filterType,
+                year: filters.year ?? new Date().getFullYear(),
+              });
+            }}
+            options={[
+              { label: 'Semua bulan', value: '' },
+              ...months.map(month => ({
+                label: month.name,
+                value: String(month.id),
+              })),
+            ]}
+            value={
+              filters.filterType === 'yearly'
+                ? ''
+                : filters.month
+                ? String(filters.month)
+                : ''
+            }
+          />
+        </View>
+      </View>
+
+      {(filters.filterType || filters.year || filters.month) && (
+        <View style={styles.detailActions}>
+          <KolamButton
+            label="Hapus filter"
+            muted
+            onPress={() => {
+              void controller.onChangeAnalyticsFilters({});
+            }}
+          />
+        </View>
+      )}
+
+      {controller.analyticsLoading ? (
+        <KolamEmptyState
+          compact
+          message="Memuat ulang statistik pembelian…"
+          title="Memuat analitik"
+        />
+      ) : !hasKolamVendorPurchaseAnalytics(stats) ? (
+        <KolamEmptyState
+          compact
+          message="Belum ada purchase order untuk filter ini."
+          title="Tidak ada data pembelian"
+        />
+      ) : stats ? (
+        <View style={styles.analyticsStack}>
+          <View style={styles.summaryGrid}>
+            <SummaryTile
+              label="Total PO"
+              value={stats.overall.totalOrders}
+            />
+            <SummaryTile
+              label="Nilai total"
+              valueLabel={formatRupiah(stats.overall.totalValue)}
+            />
+            <SummaryTile
+              label="Rata-rata PO"
+              valueLabel={formatRupiah(stats.overall.averageOrderValue)}
+            />
+          </View>
+
+          <KolamDescriptionList
+            accessibilityLabel="Ringkasan pembelian"
+            rows={[
+              {
+                id: 'types',
+                label: 'Jenis produk',
+                value: String(stats.summary.totalProductTypes),
+                meta: '',
+                tone: 'default',
+              },
+              {
+                id: 'year-orders',
+                label: `PO tahun ${stats.yearly.year}`,
+                value: String(stats.yearly.totalOrdersThisYear),
+                meta: '',
+                tone: 'default',
+              },
+              {
+                id: 'year-value',
+                label: `Nilai tahun ${stats.yearly.year}`,
+                value: formatRupiah(stats.yearly.totalValueThisYear),
+                meta: '',
+                tone: 'default',
+              },
+              {
+                id: 'growth',
+                label: 'Pertumbuhan',
+                value: `${stats.yearly.growthRate > 0 ? '+' : ''}${stats.yearly.growthRate.toFixed(1)}%`,
+                meta: '',
+                tone:
+                  stats.yearly.growthRate >= 0 ? 'success' : 'danger',
+              },
+            ]}
+          />
+
+          {stats.summary.topProduct ? (
+            <View style={styles.analyticsBlock}>
+              <Text style={styles.sectionTitle}>Produk teratas</Text>
+              <Text style={styles.catalogTitle}>
+                {stats.summary.topProduct.productName}
+              </Text>
+              <Text style={styles.rowMeta}>
+                SKU: {stats.summary.topProduct.productSku || '—'}
+              </Text>
+              <Text style={styles.rowMeta}>
+                Qty {stats.summary.topProduct.totalQuantityOrdered.toLocaleString('id-ID')} ·{' '}
+                {formatRupiah(stats.summary.topProduct.totalValue)} ·{' '}
+                {stats.summary.topProduct.orderCount} PO
+              </Text>
+              {stats.summary.topProduct.lastPurchase ? (
+                <Text style={styles.rowMeta}>
+                  Terakhir: {formatSupplierDateTime(stats.summary.topProduct.lastPurchase)}
+                </Text>
+              ) : null}
+            </View>
+          ) : null}
+
+          <View style={styles.analyticsBlock}>
+            <Text style={styles.sectionTitle}>
+              Tren bulanan ({stats.yearly.year})
+            </Text>
+            <View style={styles.catalogList}>
+              {stats.yearly.monthlyStatistics.map(month => (
+                <View key={month.month} style={styles.catalogRow}>
+                  <View style={styles.catalogCopy}>
+                    <Text style={styles.catalogTitle}>{month.monthName}</Text>
+                    <Text style={styles.rowMeta}>
+                      {month.totalOrders} PO · rata-rata{' '}
+                      {formatRupiah(month.averageOrderValue)}
+                    </Text>
+                  </View>
+                  <Text style={styles.catalogPrice}>
+                    {formatRupiah(month.totalValue)}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </View>
+
+          {stats.productStats.length ? (
+            <View style={styles.analyticsBlock}>
+              <Text style={styles.sectionTitle}>Detil produk dibeli</Text>
+              <View style={styles.catalogList}>
+                {stats.productStats.map(product => (
+                  <View key={product.id} style={styles.catalogRow}>
+                    <View style={styles.catalogCopy}>
+                      <Text numberOfLines={2} style={styles.catalogTitle}>
+                        {product.productName}
+                      </Text>
+                      <Text numberOfLines={2} style={styles.rowMeta}>
+                        SKU {product.productSku || '—'} · qty{' '}
+                        {product.totalQuantityOrdered.toLocaleString('id-ID')} /{' '}
+                        {product.totalQuantityReceived.toLocaleString('id-ID')} ·{' '}
+                        {product.orderCount} PO
+                        {product.lastPurchase
+                          ? ` · ${formatSupplierDateTime(product.lastPurchase)}`
+                          : ''}
+                      </Text>
+                    </View>
+                    <Text style={styles.catalogPrice}>
+                      {formatRupiah(product.totalValue)}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          ) : null}
+        </View>
+      ) : null}
+    </KolamContentFrame>
+  );
+}
+
+function formatSupplierDateTime(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+  return date.toLocaleString('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
 }
 
 function KolamSupplierForm({
@@ -1185,11 +1474,21 @@ function toLocalImageUri(uri: string) {
   return `file:///${uri.replace(/\\/g, '/')}`;
 }
 
-function SummaryTile({ label, value }: { label: string; value: number }) {
+function SummaryTile({
+  label,
+  value,
+  valueLabel,
+}: {
+  label: string;
+  value?: number;
+  valueLabel?: string;
+}) {
   return (
     <View style={styles.summaryTile}>
       <Text style={styles.summaryLabel}>{label}</Text>
-      <Text style={styles.summaryValue}>{value}</Text>
+      <Text style={styles.summaryValue}>
+        {valueLabel ?? String(value ?? 0)}
+      </Text>
     </View>
   );
 }
@@ -1479,6 +1778,12 @@ const styles = StyleSheet.create({
     color: V.colors.fg,
     fontSize: 12,
     fontWeight: '600',
+  },
+  analyticsStack: {
+    gap: 12,
+  },
+  analyticsBlock: {
+    gap: 8,
   },
   photoGrid: {
     flexDirection: 'row',

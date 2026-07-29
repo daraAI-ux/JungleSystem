@@ -1,8 +1,10 @@
 import { appConfig } from '../config/app';
 import {
   createKolamVendorSavePayload,
+  buildKolamSupplierAnalyticsQuery,
   normalizeKolamVendorDetail,
   normalizeKolamVendorList,
+  type KolamSupplierAnalyticsFilters,
   type KolamVendor,
   type KolamVendorFormState,
 } from '../domain/kolam-vendor';
@@ -24,9 +26,15 @@ export async function getKolamVendors(): Promise<KolamVendor[]> {
   return normalizeKolamVendorList(response);
 }
 
-export async function getKolamVendor(id: string): Promise<KolamVendor> {
+export async function getKolamVendor(
+  id: string,
+  filters: KolamSupplierAnalyticsFilters = {},
+): Promise<KolamVendor> {
   const response = await kolamRequest<unknown>(
     `/vendor/${encodeURIComponent(id)}`,
+    {
+      query: buildKolamSupplierAnalyticsQuery(filters),
+    },
   );
   return normalizeKolamVendorDetail(response);
 }

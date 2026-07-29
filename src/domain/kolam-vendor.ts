@@ -62,6 +62,60 @@ export interface KolamVendorCatalogPacking {
 
 export type KolamSupplierCatalogTab = 'products' | 'species' | 'packings';
 
+export type KolamSupplierAnalyticsFilterType = 'all_time' | 'yearly' | 'monthly';
+
+export interface KolamSupplierAnalyticsFilters {
+  filterType?: 'yearly' | 'monthly';
+  year?: number;
+  month?: number;
+}
+
+export interface KolamVendorPurchaseProductStat {
+  id: string;
+  productName: string;
+  productSku: string;
+  totalQuantityOrdered: number;
+  totalQuantityReceived: number;
+  totalValue: number;
+  averagePrice: number;
+  orderCount: number;
+  lastPurchase: string;
+}
+
+export interface KolamVendorPurchaseMonthlyStat {
+  month: number;
+  monthName: string;
+  totalOrders: number;
+  totalValue: number;
+  averageOrderValue: number;
+}
+
+export interface KolamVendorPurchaseStatistics {
+  filterApplied: {
+    type: KolamSupplierAnalyticsFilterType | string;
+    year: number;
+    month: number | null;
+  };
+  overall: {
+    totalOrders: number;
+    totalValue: number;
+    averageOrderValue: number;
+  };
+  productStats: KolamVendorPurchaseProductStat[];
+  summary: {
+    totalProductTypes: number;
+    totalProductsWithPurchases: number;
+    topProduct: KolamVendorPurchaseProductStat | null;
+  };
+  yearly: {
+    year: number;
+    monthlyStatistics: KolamVendorPurchaseMonthlyStat[];
+    totalOrdersThisYear: number;
+    totalValueThisYear: number;
+    growthRate: number;
+  };
+}
+
 export interface KolamSupplierCatalogProductRow {
   key: string;
   productId: string;
@@ -107,6 +161,7 @@ export interface KolamVendor {
   products: KolamVendorCatalogProduct[];
   species: KolamVendorCatalogSpecies[];
   packings: KolamVendorCatalogPacking[];
+  purchaseStatistics: KolamVendorPurchaseStatistics | null;
   warrantyContactNote: string;
   poCount: number;
   productCount: number;
@@ -326,6 +381,7 @@ export function normalizeKolamVendor(value: unknown): KolamVendor {
     products: normalizeCatalogProducts(record.products),
     species: normalizeCatalogSpecies(record.species),
     packings: normalizeCatalogPackings(record.packings),
+    purchaseStatistics: normalizePurchaseStatistics(record.purchaseStatistics),
     warrantyContactNote: getString(record, 'warrantyContactNote'),
     poCount: getNumber(record, 'poCount') ?? 0,
     productCount: getNumber(record, 'productCount') ?? 0,
@@ -537,6 +593,22 @@ export function flattenKolamSupplierSpeciesRows(
   return rows;
 }
 
+export function hasKolamVendorPurchaseAnalytics(
+  stats: KolamVendorPurchaseStatistics | null | undefined,
+) {
+  return Boolean(stats && stats.overall.totalOrders > 0);
+}
+
+export function buildKolamSupplierAnalyticsQuery(
+  filters: KolamSupplierAnalyticsFilters,
+): Record<string, string | number | undefined> {
+  return {
+    filterType: filters.filterType,
+    year: filters.year,
+    month: filters.filterType === 'monthly' ? filters.month : undefined,
+  };
+}
+
 function normalizeVendorStatus(value: string): KolamVendorStatus | string {
   const normalized = value.trim().toLowerCase();
   if (
@@ -729,6 +801,116 @@ function normalizeBrandNames(value: unknown): string[] {
   const record = asRecord(value);
   const name = getString(record, 'name');
   return name ? [name] : [];
+}
+
+function normalizePurchaseStatistics(
+  value: unknown,
+): KolamVendorPurchaseStatistics | null {
+  const root = asRecord(value);
+  if (!Object.keys(root).length) {
+    return null;
+  }
+
+  const filterApplied = asRecord(root.filterApplied);
+  const filteredStats = asRecord(root.filteredStats);
+  const overallStats = asRecord(filteredStats.overallStats);
+  const summary = asRecord(filteredStats.summary);
+  const yearlyAnalysis = asRecord(root.yearlyAnalysis);
+  const yearlySummary = asRecord(yearlyAnalysis.summary);
+  const productStats = normalizePurchaseProductStats(
+    filteredStats.productPurchaseStats,
+  );
+  const topProductRaw = summary.topProduct;
+  const topProduct = topProductRaw
+    ? normalizePurchaseProductStat(topProductRaw)
+    : productStats[0] ?? null;
+
+  return {
+    filterApplied: {
+      type: getString(filterApplied, 'type') || 'all_time',
+      year: getNumber(filterApplied, 'year') ?? new Date().getFullYear(),
+      month: getNumber(filterApplied, 'month'),
+    },
+    overall: {
+      totalOrders: getNumber(overallStats, 'totalOrders') ?? 0,
+      totalValue: getNumber(overallStats, 'totalValue') ?? 0,
+      averageOrderValue: getNumber(overallStats, 'averageOrderValue') ?? 0,
+    },
+    productStats,
+    summary: {
+      totalProductTypes: getNumber(summary, 'totalProductTypes') ?? productStats.length,
+      totalProductsWithPurchases:
+        getNumber(summary, 'totalProductsWithPurchases') ?? productStats.length,
+      topProduct,
+    },
+    yearly: {
+      year:
+        getNumber(yearlyAnalysis, 'year') ??
+        getNumber(filterApplied, 'year') ??
+        new Date().getFullYear(),
+      monthlyStatistics: normalizeMonthlyStats(yearlyAnalysis.monthlyStatistics),
+      totalOrdersThisYear: getNumber(yearlySummary, 'totalOrdersThisYear') ?? 0,
+      totalValueThisYear: getNumber(yearlySummary, 'totalValueThisYear') ?? 0,
+      growthRate: getNumber(yearlySummary, 'growthRate') ?? 0,
+    },
+  };
+}
+
+function normalizePurchaseProductStats(
+  value: unknown,
+): KolamVendorPurchaseProductStat[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value
+    .map(normalizePurchaseProductStat)
+    .filter((item): item is KolamVendorPurchaseProductStat => Boolean(item));
+}
+
+function normalizePurchaseProductStat(
+  value: unknown,
+): KolamVendorPurchaseProductStat | null {
+  const record = asRecord(value);
+  const id = getString(record, '_id') || getString(record, 'id');
+  const productName = getString(record, 'productName');
+  if (!id && !productName) {
+    return null;
+  }
+  return {
+    id: id || productName,
+    productName: productName || id,
+    productSku: getString(record, 'productSku'),
+    totalQuantityOrdered: getNumber(record, 'totalQuantityOrdered') ?? 0,
+    totalQuantityReceived: getNumber(record, 'totalQuantityReceived') ?? 0,
+    totalValue: getNumber(record, 'totalValue') ?? 0,
+    averagePrice: getNumber(record, 'averagePrice') ?? 0,
+    orderCount: getNumber(record, 'orderCount') ?? 0,
+    lastPurchase: getString(record, 'lastPurchase'),
+  };
+}
+
+function normalizeMonthlyStats(value: unknown): KolamVendorPurchaseMonthlyStat[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value
+    .map(item => {
+      const record = asRecord(item);
+      const month = getNumber(record, 'month');
+      if (!month) {
+        return null;
+      }
+      return {
+        month,
+        monthName:
+          getString(record, 'monthName') ||
+          new Date(2000, month - 1).toLocaleString('id-ID', { month: 'long' }),
+        totalOrders: getNumber(record, 'totalOrders') ?? 0,
+        totalValue: getNumber(record, 'totalValue') ?? 0,
+        averageOrderValue: getNumber(record, 'averageOrderValue') ?? 0,
+      } satisfies KolamVendorPurchaseMonthlyStat;
+    })
+    .filter((item): item is KolamVendorPurchaseMonthlyStat => Boolean(item));
 }
 
 function normalizeStringArray(value: unknown) {

@@ -1,4 +1,5 @@
 import {
+  buildKolamSupplierAnalyticsQuery,
   createEmptyKolamVendorFormState,
   createKolamVendorFormState,
   createKolamVendorSavePayload,
@@ -9,6 +10,7 @@ import {
   getKolamSupplierEditRouteId,
   getKolamSupplierRouteId,
   getKolamVendorStatusLabel,
+  hasKolamVendorPurchaseAnalytics,
   isKolamSupplierCreateRoute,
   isKolamSupplierRoute,
   normalizeKolamVendor,
@@ -271,8 +273,126 @@ describe('kolam vendor / supplier domain', () => {
       products: [],
       species: [],
       packings: [],
+      purchaseStatistics: null,
       photos: [],
       poCount: 0,
     });
+  });
+
+  it('normalizes purchase statistics and analytics query', () => {
+    expect(buildKolamSupplierAnalyticsQuery({})).toEqual({
+      filterType: undefined,
+      year: undefined,
+      month: undefined,
+    });
+    expect(
+      buildKolamSupplierAnalyticsQuery({
+        filterType: 'monthly',
+        year: 2025,
+        month: 3,
+      }),
+    ).toEqual({
+      filterType: 'monthly',
+      year: 2025,
+      month: 3,
+    });
+    expect(
+      buildKolamSupplierAnalyticsQuery({
+        filterType: 'yearly',
+        year: 2025,
+        month: 3,
+      }),
+    ).toEqual({
+      filterType: 'yearly',
+      year: 2025,
+      month: undefined,
+    });
+
+    const vendor = normalizeKolamVendorDetail({
+      _id: 'sup1',
+      name: 'Pemasok Analytics',
+      purchaseStatistics: {
+        filterApplied: { type: 'all_time', year: 2026, month: null },
+        filteredStats: {
+          overallStats: {
+            totalOrders: 4,
+            totalValue: 400000,
+            averageOrderValue: 100000,
+          },
+          productPurchaseStats: [
+            {
+              _id: 'p1',
+              productName: 'Produk A',
+              productSku: 'A-1',
+              totalQuantityOrdered: 10,
+              totalQuantityReceived: 8,
+              totalValue: 250000,
+              averagePrice: 25000,
+              orderCount: 2,
+              lastPurchase: '2026-01-15T00:00:00.000Z',
+            },
+          ],
+          summary: {
+            totalProductTypes: 1,
+            topProduct: {
+              _id: 'p1',
+              productName: 'Produk A',
+              productSku: 'A-1',
+              totalQuantityOrdered: 10,
+              totalQuantityReceived: 8,
+              totalValue: 250000,
+              averagePrice: 25000,
+              orderCount: 2,
+              lastPurchase: '2026-01-15T00:00:00.000Z',
+            },
+            totalProductsWithPurchases: 1,
+          },
+        },
+        yearlyAnalysis: {
+          year: 2026,
+          monthlyStatistics: [
+            {
+              month: 1,
+              monthName: 'January',
+              totalOrders: 2,
+              totalValue: 200000,
+              averageOrderValue: 100000,
+            },
+          ],
+          summary: {
+            totalOrdersThisYear: 4,
+            totalValueThisYear: 400000,
+            growthRate: 12.5,
+          },
+        },
+      },
+    });
+
+    expect(hasKolamVendorPurchaseAnalytics(vendor.purchaseStatistics)).toBe(
+      true,
+    );
+    expect(vendor.purchaseStatistics).toMatchObject({
+      overall: {
+        totalOrders: 4,
+        totalValue: 400000,
+        averageOrderValue: 100000,
+      },
+      summary: {
+        totalProductTypes: 1,
+        topProduct: { productName: 'Produk A', productSku: 'A-1' },
+      },
+      yearly: {
+        year: 2026,
+        totalOrdersThisYear: 4,
+        growthRate: 12.5,
+      },
+    });
+    expect(vendor.purchaseStatistics?.productStats).toHaveLength(1);
+    expect(vendor.purchaseStatistics?.yearly.monthlyStatistics[0]).toMatchObject(
+      {
+        month: 1,
+        totalOrders: 2,
+      },
+    );
   });
 });

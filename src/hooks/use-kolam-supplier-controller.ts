@@ -8,6 +8,7 @@ import {
   isKolamSupplierCreateRoute,
   isKolamSupplierListRoute,
   isKolamSupplierRoute,
+  type KolamSupplierAnalyticsFilters,
   type KolamVendor,
   type KolamVendorFormState,
 } from '../domain/kolam-vendor';
@@ -36,6 +37,8 @@ export type KolamSupplierSurfaceMode = 'list' | 'detail' | 'edit' | 'new';
 export type KolamSupplierDataSource = 'idle' | 'cache' | 'live' | 'error';
 
 export interface KolamSupplierController {
+  analyticsFilters: KolamSupplierAnalyticsFilters;
+  analyticsLoading: boolean;
   brands: KolamBrand[];
   breadcrumbPath: string;
   dataSource: KolamSupplierDataSource;
@@ -49,6 +52,9 @@ export interface KolamSupplierController {
   selectedVendor: KolamVendor | null;
   vendors: KolamVendor[];
   onBackToList: () => void;
+  onChangeAnalyticsFilters: (
+    filters: KolamSupplierAnalyticsFilters,
+  ) => Promise<void>;
   onChangeForm: (patch: Partial<KolamVendorFormState>) => void;
   onCreateNew: () => void;
   onDeleteExistingPhoto: (index: number) => Promise<boolean>;
@@ -75,6 +81,9 @@ export function useKolamSupplierController(
     createEmptyKolamVendorFormState(),
   );
   const [pendingPhotoUris, setPendingPhotoUris] = useState<string[]>([]);
+  const [analyticsFilters, setAnalyticsFilters] =
+    useState<KolamSupplierAnalyticsFilters>({});
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -134,6 +143,7 @@ export function useKolamSupplierController(
       setSelectedVendor(vendor);
       setForm(createKolamVendorFormState(vendor));
       setPendingPhotoUris([]);
+      setAnalyticsFilters({});
       setError(null);
 
       const cached = await readKolamVendorDetailCache(vendor.id);
@@ -199,6 +209,7 @@ export function useKolamSupplierController(
     setSelectedVendor(null);
     setForm(createEmptyKolamVendorFormState());
     setPendingPhotoUris([]);
+    setAnalyticsFilters({});
     setError(null);
   }, []);
 
@@ -207,6 +218,7 @@ export function useKolamSupplierController(
     setSelectedVendor(null);
     setForm(createEmptyKolamVendorFormState());
     setPendingPhotoUris([]);
+    setAnalyticsFilters({});
     setError(null);
   }, []);
 
@@ -221,6 +233,32 @@ export function useKolamSupplierController(
   const onChangeForm = useCallback((patch: Partial<KolamVendorFormState>) => {
     setForm(current => ({ ...current, ...patch }));
   }, []);
+
+  const onChangeAnalyticsFilters = useCallback(
+    async (filters: KolamSupplierAnalyticsFilters) => {
+      const vendorId = selectedVendor?.id;
+      if (!vendorId) {
+        setAnalyticsFilters(filters);
+        return;
+      }
+
+      setAnalyticsFilters(filters);
+      setAnalyticsLoading(true);
+      setError(null);
+
+      try {
+        const liveVendor = await getKolamVendor(vendorId, filters);
+        await writeKolamVendorDetailCache(liveVendor);
+        setSelectedVendor(liveVendor);
+        setDataSource('live');
+      } catch (loadError) {
+        setError(getErrorMessage(loadError));
+      } finally {
+        setAnalyticsLoading(false);
+      }
+    },
+    [selectedVendor?.id],
+  );
 
   const onPickPhoto = useCallback(async () => {
     if (pendingPhotoUris.length >= 5) {
@@ -369,6 +407,8 @@ export function useKolamSupplierController(
   );
 
   return {
+    analyticsFilters,
+    analyticsLoading,
     brands,
     breadcrumbPath,
     dataSource,
@@ -382,6 +422,7 @@ export function useKolamSupplierController(
     selectedVendor,
     vendors,
     onBackToList,
+    onChangeAnalyticsFilters,
     onChangeForm,
     onCreateNew,
     onDeleteExistingPhoto,
@@ -450,6 +491,7 @@ async function resolveRouteVendor(routeId: string, vendors: KolamVendor[]) {
     products: [],
     species: [],
     packings: [],
+    purchaseStatistics: null,
     warrantyContactNote: '',
     poCount: 0,
     productCount: 0,
