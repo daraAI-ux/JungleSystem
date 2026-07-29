@@ -179,12 +179,12 @@ const STOCK_TX_REF_ROUTE: Record<string, string> = {
 };
 
 const CROSS_SYNC_SUMMARY_LABELS: Record<string, string> = {
-  ok: 'Sync OK',
-  partial: 'Sync sebagian',
-  failed: 'Sync gagal',
-  pending: 'Menunggu sync',
-  skipped: 'Sync dilewati',
-  unknown: 'Status sync tidak lengkap',
+  ok: 'Sinkron OK',
+  partial: 'Sinkron sebagian',
+  failed: 'Sinkron gagal',
+  pending: 'Menunggu sinkron',
+  skipped: 'Sinkron dilewati',
+  unknown: 'Status sinkron tidak lengkap',
 };
 
 const CROSS_SYNC_ORIGIN_LABELS: Record<string, string> = {
@@ -204,7 +204,10 @@ const CROSS_SYNC_TARGET_STATUS_LABELS: Record<string, string> = {
   pending: 'Menunggu AM',
   dispatch_failed: 'Gagal kirim task',
   not_found: 'SKU tidak ditemukan',
+  notFound: 'SKU tidak ditemukan',
   failed: 'Gagal',
+  partial: 'Sebagian',
+  unknown: 'Belum sinkron',
 };
 
 /** Prefix yang ditulis BE di `reason` setelah scheduleStockTxPlatformSync. */
@@ -214,6 +217,8 @@ const DEFAULT_CROSS_SYNC_PLATFORMS = ['tokopedia', 'shopee'] as const;
 
 export type KolamStockTxCrossSyncDisplayTarget = {
   platform: string;
+  /** Raw status for KolamMarketplaceSyncPlatformList (AM sync indicator). */
+  status: string;
   statusLabel: string;
   taskId: string;
   error: string;
@@ -429,15 +434,19 @@ export function resolveStockTxCrossSyncDisplay(
       sku: crossSync.sku,
       targetStock: crossSync.targetStock,
       syncNote,
-      targets: crossSync.targets.map(target => ({
-        platform: target.platform,
-        statusLabel: crossSyncTargetStatusLabel(target.status),
-        taskId: target.taskId,
-        error: target.error,
-        dispatchedAt: target.dispatchedAt,
-        completedAt: target.completedAt,
-        fromFallback: false,
-      })),
+      targets: crossSync.targets.map(target => {
+        const status = normalizeCrossSyncPlatformStatus(target.status);
+        return {
+          platform: target.platform,
+          status,
+          statusLabel: crossSyncTargetStatusLabel(target.status),
+          taskId: target.taskId,
+          error: target.error,
+          dispatchedAt: target.dispatchedAt,
+          completedAt: target.completedAt,
+          fromFallback: false,
+        };
+      }),
       usedFallbackPlatforms: false,
     };
   }
@@ -470,39 +479,70 @@ function summaryLabelFromSyncNote(note: string | null) {
   if (lower.startsWith('dilewati')) {
     return CROSS_SYNC_SUMMARY_LABELS.skipped;
   }
-  return `Sync: ${note}`;
+  return `Sinkron: ${note}`;
 }
 
 function buildFallbackPlatformTargets(
   syncNote: string | null,
 ): KolamStockTxCrossSyncDisplayTarget[] {
-  return DEFAULT_CROSS_SYNC_PLATFORMS.map(platform => ({
-    platform,
-    statusLabel: platformStatusFromSyncNote(syncNote, platform),
-    taskId: '',
-    error: '',
-    dispatchedAt: '',
-    completedAt: '',
-    fromFallback: true,
-  }));
+  return DEFAULT_CROSS_SYNC_PLATFORMS.map(platform => {
+    const status = platformStatusKeyFromSyncNote(syncNote, platform);
+    return {
+      platform,
+      status,
+      statusLabel:
+        status === 'unknown'
+          ? syncNote
+            ? `Sinkron: ${syncNote}`
+            : 'Belum tercatat di audit'
+          : crossSyncTargetStatusLabel(status),
+      taskId: '',
+      error: '',
+      dispatchedAt: '',
+      completedAt: '',
+      fromFallback: true,
+    };
+  });
 }
 
-function platformStatusFromSyncNote(
+function normalizeCrossSyncPlatformStatus(status?: string | null) {
+  const normalized = String(status || '')
+    .trim()
+    .toLowerCase();
+  if (normalized === 'not_found' || normalized === 'notfound') {
+    return 'notFound';
+  }
+  if (normalized === 'dispatch_failed') {
+    return 'failed';
+  }
+  if (
+    normalized === 'synced' ||
+    normalized === 'pending' ||
+    normalized === 'skipped' ||
+    normalized === 'failed' ||
+    normalized === 'partial'
+  ) {
+    return normalized;
+  }
+  return 'unknown';
+}
+
+function platformStatusKeyFromSyncNote(
   note: string | null,
   platform: string,
 ): string {
   if (!note) {
-    return 'Belum tercatat di audit';
+    return 'unknown';
   }
   const lower = note.toLowerCase();
   if (lower.startsWith('sukses')) {
-    return CROSS_SYNC_TARGET_STATUS_LABELS.synced;
+    return 'synced';
   }
   if (lower.startsWith('dilewati')) {
-    return CROSS_SYNC_TARGET_STATUS_LABELS.skipped;
+    return 'skipped';
   }
   if (lower.startsWith('gagal')) {
-    return CROSS_SYNC_TARGET_STATUS_LABELS.failed;
+    return 'failed';
   }
   if (lower.startsWith('sebagian')) {
     const okMatch = /ok:\s*([^;]+)/i.exec(note);
@@ -516,14 +556,14 @@ function platformStatusFromSyncNote(
       .map(item => item.trim().toLowerCase())
       .filter(Boolean);
     if (okList.some(item => item.includes(platform))) {
-      return CROSS_SYNC_TARGET_STATUS_LABELS.synced;
+      return 'synced';
     }
     if (failList.some(item => item.includes(platform))) {
-      return CROSS_SYNC_TARGET_STATUS_LABELS.failed;
+      return 'failed';
     }
-    return CROSS_SYNC_SUMMARY_LABELS.partial;
+    return 'partial';
   }
-  return note;
+  return 'unknown';
 }
 
 export function normalizeKolamStockTransactionList(

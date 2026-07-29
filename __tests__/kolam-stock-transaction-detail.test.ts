@@ -75,7 +75,7 @@ describe('Kolam stock transaction detail domain', () => {
       targets: [{ platform: 'tokopedia', status: 'pending', taskId: 'task-1' }],
     });
     expect(hasStockTransactionCrossSyncAudit(tx.crossSync)).toBe(true);
-    expect(crossSyncSummaryLabel(tx.crossSync?.summary)).toBe('Sync sebagian');
+    expect(crossSyncSummaryLabel(tx.crossSync?.summary)).toBe('Sinkron sebagian');
     expect(canVerifyStockTransaction(tx)).toBe(true);
     expect(canCancelFinanceStockTransaction(tx)).toBe(true);
     expect(tx.target?.href).toBe('/products/p1');
@@ -111,18 +111,20 @@ describe('Kolam stock transaction detail domain', () => {
 
     const display = resolveStockTxCrossSyncDisplay(tx.crossSync, tx.reason);
     expect(display).toMatchObject({
-      summaryLabel: 'Sync OK',
+      summaryLabel: 'Sinkron OK',
       syncNote: 'sukses (SKU-A)',
       usedFallbackPlatforms: true,
     });
     expect(display?.targets).toEqual([
       expect.objectContaining({
         platform: 'tokopedia',
+        status: 'synced',
         statusLabel: 'Berhasil',
         fromFallback: true,
       }),
       expect.objectContaining({
         platform: 'shopee',
+        status: 'synced',
         statusLabel: 'Berhasil',
         fromFallback: true,
       }),
@@ -156,14 +158,16 @@ describe('Kolam stock transaction detail domain', () => {
       },
       'Sync ke semua platform: sebagian — ok: tokopedia; gagal: shopee (timeout)',
     );
-    expect(display?.summaryLabel).toBe('Sync sebagian');
+    expect(display?.summaryLabel).toBe('Sinkron sebagian');
     expect(display?.targets).toEqual([
       expect.objectContaining({
         platform: 'tokopedia',
+        status: 'synced',
         statusLabel: 'Berhasil',
       }),
       expect.objectContaining({
         platform: 'shopee',
+        status: 'failed',
         statusLabel: 'Gagal',
       }),
     ]);

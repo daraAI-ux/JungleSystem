@@ -37,6 +37,7 @@ import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamStockCrossSyncObservabilityHost } from './kolam-stock-cross-sync-observability-host';
 import { KolamStockTransactionSourceIcon } from './kolam-stock-transaction-source-icon';
+import { KolamMarketplaceSyncPlatformList } from './kolam-marketplace-sync-platform-list';
 
 type StockTxFilterPanel = 'target' | 'status';
 
@@ -601,68 +602,59 @@ function KolamStockTransactionDetail({
 
   return (
     <View style={styles.detailRoot}>
-      <View style={styles.headerBlock}>
-        <KolamCopyStack
-          items={[
-            {
-              id: 'title',
-              text: `Transaksi Stok #${tx.id.slice(-8)}`,
-              style: styles.title,
-            },
-            {
-              id: 'desc',
-              text: tx.reason || 'Detail transaksi stok dan informasi terkait',
-              style: styles.subtitle,
-            },
-          ]}
-        />
-        <View style={styles.headerActions}>
-          <KolamButton
-            disabled={controller.loading || controller.mutating}
-            label="Refresh"
-            onPress={() => {
-              void controller.onRefresh();
-            }}
-          />
-          <KolamButton
-            label="Daftar"
-            onPress={() => onRouteChange?.(KOLAM_STOCK_TRANSACTION_ROOT)}
-          />
-          {showVerify ? (
+      <View style={styles.toolbarWrap}>
+        <View style={styles.toolbarShell}>
+          <View style={styles.detailActionRow}>
             <KolamButton
-              disabled={controller.mutating}
-              intent="primary"
-              label={
-                controller.mutating ? 'Memproses…' : 'Verifikasi Finance'
-              }
+              disabled={controller.loading || controller.mutating}
+              label="Refresh"
               onPress={() => {
-                void controller.onVerify();
+                void controller.onRefresh();
               }}
+              style={styles.toolbarButton}
             />
-          ) : null}
-          {showCancelFinance ? (
             <KolamButton
-              disabled={controller.mutating}
-              label="Batalkan Finance"
-              onPress={() => setCancelConfirmOpen(true)}
+              label="Daftar"
+              muted
+              onPress={() => onRouteChange?.(KOLAM_STOCK_TRANSACTION_ROOT)}
+              style={styles.toolbarButton}
             />
-          ) : null}
+            {tx.target?.href ? (
+              <KolamButton
+                label={`Buka ${targetKindLabel(tx.target.kind)}`}
+                onPress={() => onRouteChange?.(tx.target!.href!)}
+                style={styles.toolbarButton}
+              />
+            ) : null}
+            {showVerify ? (
+              <KolamButton
+                disabled={controller.mutating}
+                intent="primary"
+                label={
+                  controller.mutating ? 'Memproses…' : 'Verifikasi Finance'
+                }
+                onPress={() => {
+                  void controller.onVerify();
+                }}
+                style={styles.toolbarButton}
+              />
+            ) : null}
+            {showCancelFinance ? (
+              <KolamButton
+                disabled={controller.mutating}
+                label="Batalkan Finance"
+                onPress={() => setCancelConfirmOpen(true)}
+                style={styles.toolbarButton}
+              />
+            ) : null}
+          </View>
         </View>
       </View>
-
-      {tx.target?.href ? (
-        <View style={styles.headerActions}>
-          <KolamButton
-            label={`Buka ${targetKindLabel(tx.target.kind)}`}
-            onPress={() => onRouteChange?.(tx.target!.href!)}
-          />
-        </View>
-      ) : null}
 
       <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
         <Text style={styles.sectionTitle}>Informasi transaksi</Text>
         <KolamDescriptionList
-          accessibilityLabel="Detail transaksi stok"
+          accessibilityLabel="Detil transaksi stok"
           rows={infoRows}
         />
       </KolamContentFrame>
@@ -677,54 +669,69 @@ function KolamStockTransactionDetail({
         }
         return (
           <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
-            <Text style={styles.sectionTitle}>Sinkron marketplace</Text>
-            <Text style={styles.cellText}>{crossSyncDisplay.summaryLabel}</Text>
-            {crossSyncDisplay.originPlatform ? (
-              <Text style={styles.metaText}>
-                Asal: {crossSyncOriginLabel(crossSyncDisplay.originPlatform)}
-              </Text>
-            ) : null}
-            {crossSyncDisplay.sku ? (
-              <Text style={styles.metaText}>
-                SKU {crossSyncDisplay.sku}
-                {crossSyncDisplay.targetStock != null
-                  ? ` → stok target ${crossSyncDisplay.targetStock}`
-                  : ''}
-              </Text>
-            ) : null}
-            {crossSyncDisplay.syncNote ? (
-              <Text style={styles.metaText}>
-                Catatan: {crossSyncDisplay.syncNote}
-              </Text>
-            ) : null}
-            {crossSyncDisplay.usedFallbackPlatforms ? (
-              <Text style={styles.metaText}>
-                Target platform dari catatan sync (audit kosong).
-              </Text>
-            ) : null}
-            {crossSyncDisplay.targets.map(target => (
-              <View key={target.platform} style={styles.crossSyncTarget}>
-                <Text style={styles.cellText}>
-                  {crossSyncPlatformLabel(target.platform)} ·{' '}
-                  {target.statusLabel}
+            <Text style={styles.sectionTitle}>Sinkron ke marketplace</Text>
+            <View style={styles.crossSyncBox}>
+              <Text style={styles.cellText}>{crossSyncDisplay.summaryLabel}</Text>
+              {crossSyncDisplay.originPlatform ? (
+                <Text style={styles.metaText}>
+                  Asal: {crossSyncOriginLabel(crossSyncDisplay.originPlatform)}
                 </Text>
-                {target.taskId ? (
-                  <Text style={styles.metaText}>Task: {target.taskId}</Text>
-                ) : null}
-                {target.error ? (
-                  <Text style={styles.dangerText}>{target.error}</Text>
-                ) : null}
-                {target.completedAt ? (
-                  <Text style={styles.metaText}>
-                    Selesai: {formatDateTime(target.completedAt)}
-                  </Text>
-                ) : target.dispatchedAt ? (
-                  <Text style={styles.metaText}>
-                    Dikirim: {formatDateTime(target.dispatchedAt)}
-                  </Text>
-                ) : null}
+              ) : null}
+              {crossSyncDisplay.sku ? (
+                <Text style={styles.metaText}>
+                  SKU {crossSyncDisplay.sku}
+                  {crossSyncDisplay.targetStock != null
+                    ? ` → stok target ${crossSyncDisplay.targetStock}`
+                    : ''}
+                </Text>
+              ) : null}
+              {crossSyncDisplay.syncNote ? (
+                <Text style={styles.metaText}>
+                  Catatan: {crossSyncDisplay.syncNote}
+                </Text>
+              ) : null}
+              {crossSyncDisplay.usedFallbackPlatforms ? (
+                <Text style={styles.metaText}>
+                  Target platform dari catatan sinkron (audit kosong).
+                </Text>
+              ) : null}
+              <View style={styles.crossSyncPlatformWrap}>
+                <KolamMarketplaceSyncPlatformList
+                  emptyText="Belum ada target platform"
+                  formatTime={formatDateTime}
+                  platforms={crossSyncDisplay.targets.map(target => ({
+                    label: crossSyncPlatformLabel(target.platform),
+                    lastSyncedAt: target.completedAt || target.dispatchedAt,
+                    platform: target.platform,
+                    status: target.status,
+                    statusLabel: target.statusLabel,
+                  }))}
+                  showTime
+                />
               </View>
-            ))}
+              {crossSyncDisplay.targets.some(
+                target => target.error || target.taskId,
+              ) ? (
+                <View style={styles.crossSyncExtraWrap}>
+                  {crossSyncDisplay.targets.map(target => {
+                    if (!target.error && !target.taskId) {
+                      return null;
+                    }
+                    return (
+                      <View key={target.platform} style={styles.crossSyncExtraRow}>
+                        <Text style={styles.metaText}>
+                          {crossSyncPlatformLabel(target.platform)}
+                          {target.taskId ? ` · Task ${target.taskId}` : ''}
+                        </Text>
+                        {target.error ? (
+                          <Text style={styles.dangerText}>{target.error}</Text>
+                        ) : null}
+                      </View>
+                    );
+                  })}
+                </View>
+              ) : null}
+            </View>
           </KolamContentFrame>
         );
       })()}
@@ -1499,6 +1506,15 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     paddingLeft: 8,
   },
+  detailActionRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexShrink: 0,
+    flexWrap: 'wrap',
+    gap: 6,
+    justifyContent: 'flex-end',
+    marginLeft: 'auto',
+  },
   searchInput: {
     flexBasis: 140,
     flexGrow: 1,
@@ -1706,11 +1722,25 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
   },
-  crossSyncTarget: {
-    gap: 2,
-    paddingTop: 6,
+  crossSyncBox: {
+    gap: 8,
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: V.colors.border,
+    backgroundColor: V.colors.bg,
+  },
+  crossSyncPlatformWrap: {
+    paddingTop: 4,
+  },
+  crossSyncExtraWrap: {
+    gap: 4,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: V.colors.border,
+    paddingTop: 6,
+  },
+  crossSyncExtraRow: {
+    gap: 2,
   },
   warningBox: {
     gap: 4,

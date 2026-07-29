@@ -879,6 +879,8 @@ const dashboardRuntimeRouteContexts: KolamNavigationItem[] = [
 const kolamNavigationRouteVariantSpecs: Array<{
   baseRoute: string;
   labelSuffix: string;
+  /** When set, replaces `${baseLabel} ${labelSuffix}` for the shell title. */
+  label?: string;
   route: string;
   description: string;
 }> = [
@@ -1502,9 +1504,10 @@ const kolamNavigationRouteVariantSpecs: Array<{
   },
   {
     baseRoute: '/stock-transaction',
+    label: 'Detil Transaksi Stok',
     labelSuffix: 'Detail',
     route: '/stock-transaction/:id',
-    description: 'Stock transaction detail page from live Kolam',
+    description: 'Rincian pergerakan stok, target, dan status sinkron marketplace',
   },
   {
     baseRoute: '/stock-transaction',
@@ -1935,7 +1938,7 @@ export function getKolamNavigationRouteVariants(
       {
         ...baseItem,
         baseRoute: spec.baseRoute,
-        label: `${baseItem.label} ${spec.labelSuffix}`,
+        label: spec.label ?? `${baseItem.label} ${spec.labelSuffix}`,
         route: spec.route,
         routePattern: spec.route,
         description: spec.description,

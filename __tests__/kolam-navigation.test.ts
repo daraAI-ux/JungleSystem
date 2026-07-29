@@ -423,6 +423,33 @@ describe('kolamNavigationSections', () => {
     ).toBe('customer');
   });
 
+  it('labels stock transaction detail as Detil Transaksi Stok', () => {
+    const detail = getKolamNavigationRouteVariants().find(
+      variant => variant.route === '/stock-transaction/:id',
+    );
+    expect(detail).toEqual(
+      expect.objectContaining({
+        baseRoute: '/stock-transaction',
+        label: 'Detil Transaksi Stok',
+        description:
+          'Rincian pergerakan stok, target, dan status sinkron marketplace',
+        route: '/stock-transaction/:id',
+        routePattern: '/stock-transaction/:id',
+      }),
+    );
+    expect(
+      getKolamNavigationItemByRuntimeRoute('/stock-transaction/abc123'),
+    ).toEqual(
+      expect.objectContaining({
+        label: 'Detil Transaksi Stok',
+        description:
+          'Rincian pergerakan stok, target, dan status sinkron marketplace',
+        route: '/stock-transaction/abc123',
+        routePattern: '/stock-transaction/:id',
+      }),
+    );
+  });
+
   it('resolves dashboard runtime routes to live menu route context', () => {
     expect(
       getKolamNavigationItemByRuntimeRoute('/products?stockStatus=low_stock'),
