@@ -82,6 +82,10 @@ interface KolamTeamMentionOption {
   username: string;
 }
 
+type KolamTeamMentionTextPart =
+  | {type: 'text'; value: string}
+  | {type: 'mention'; raw: string; username: string};
+
 export function KolamGlobalChatRail({
   mode,
   onClose,
@@ -743,7 +747,11 @@ function KolamChatRailDetailPanel({
                   ]}>
                   <Text style={styles.messageAuthor}>{message.author}</Text>
                   {message.body ? (
-                    <Text style={styles.messageBody}>{message.body}</Text>
+                    mode === 'team-chat' ? (
+                      <KolamTeamMentionText body={message.body} />
+                    ) : (
+                      <Text style={styles.messageBody}>{message.body}</Text>
+                    )
                   ) : null}
                   {message.attachments.length > 0 ? (
                     <KolamChatAttachmentList attachments={message.attachments} />
@@ -987,6 +995,34 @@ function KolamTeamMentionPicker({
         />
       </View>
     </View>
+  );
+}
+
+function KolamTeamMentionText({body}: {body: string}) {
+  const parts = splitTeamChatMentionText(body);
+
+  return (
+    <Text style={styles.messageBody}>
+      {parts.map((part, index) => {
+        if (part.type === 'text') {
+          return part.value;
+        }
+
+        const isDara = part.username.toLowerCase() === 'dara';
+        return (
+          <Text
+            key={`m-${index}-${part.username}`}
+            accessibilityLabel={
+              isDara
+                ? 'Mention DARA'
+                : `Mention ${part.username}`
+            }
+            style={[styles.messageMention, isDara && styles.messageMentionAi]}>
+            {part.raw}
+          </Text>
+        );
+      })}
+    </Text>
   );
 }
 
@@ -1970,6 +2006,38 @@ function getTrailingMentionQuery(text: string): string | null {
   return match ? match[1] : null;
 }
 
+function splitTeamChatMentionText(body: string): KolamTeamMentionTextPart[] {
+  const text = String(body ?? '');
+  if (!text) {
+    return [];
+  }
+
+  const parts: KolamTeamMentionTextPart[] = [];
+  const mentionPattern = /@([a-zA-Z0-9_.-]{1,32})/g;
+  let last = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = mentionPattern.exec(text)) !== null) {
+    const start = match.index;
+    if (start > last) {
+      parts.push({type: 'text', value: text.slice(last, start)});
+    }
+
+    parts.push({
+      raw: match[0],
+      type: 'mention',
+      username: match[1],
+    });
+    last = start + match[0].length;
+  }
+
+  if (last < text.length) {
+    parts.push({type: 'text', value: text.slice(last)});
+  }
+
+  return parts.length > 0 ? parts : [{type: 'text', value: text}];
+}
+
 function buildTeamMentionOptions(
   members: KolamTeamChatUserRef[],
   query: string,
@@ -2631,6 +2699,15 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 12,
     lineHeight: 17,
+  },
+  messageMention: {
+    color: V.colors.primary,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '900',
+  },
+  messageMentionAi: {
+    color: V.colors.danger,
   },
   attachmentList: {
     gap: 6,
