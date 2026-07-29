@@ -830,11 +830,13 @@ export function KolamGlobalChatRail({
                       {item.preview}
                     </Text>
                     <View style={styles.rowMetaLine}>
-                      <KolamBadge
-                        intent="muted"
-                        label={item.metaLabel}
-                        shape="square"
-                      />
+                      {mode === 'team-chat' ? (
+                        <KolamBadge
+                          intent="muted"
+                          label={item.metaLabel}
+                          shape="square"
+                        />
+                      ) : null}
                       {item.secondaryMetaLabel ? (
                         <Text numberOfLines={1} style={styles.rowSubMeta}>
                           {item.secondaryMetaLabel}

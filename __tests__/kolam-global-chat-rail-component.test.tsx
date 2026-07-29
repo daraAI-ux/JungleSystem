@@ -666,21 +666,20 @@ describe('KolamGlobalChatRail', () => {
       expect.arrayContaining([
         'Buyer Tokopedia',
         'Apakah masih tersedia?',
-        'Tokopedia',
         'Open',
         'Buyer Shopee',
         'Anda: Baik, kami cek stok dulu.',
-        'Shopee',
         'Buyer TikTok',
         'Masih ready?',
-        'Tiktok',
         'Buyer WhatsApp',
         'Halo admin',
-        'Whatsapp',
       ]),
     );
     expect(renderText(renderer!)).not.toEqual(
       expect.arrayContaining(['2 conversation terpantau']),
+    );
+    expect(renderText(renderer!)).not.toEqual(
+      expect.arrayContaining(['Tokopedia', 'Shopee', 'Tiktok', 'Whatsapp']),
     );
     expect(
       renderer!.root.findAll(
