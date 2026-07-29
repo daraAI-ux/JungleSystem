@@ -84,8 +84,11 @@ KolamAppShellSurface.displayName = 'KolamAppShellSurface';
 function isKolamCenteredRoute(route?: string | null) {
   const routePath = route?.split('?')[0] ?? '';
 
-  return KOLAM_CENTERED_ROUTE_PREFIXES.some(prefix =>
-    routePath === prefix || routePath.startsWith(`${prefix}/`),
+  return (
+    KOLAM_CENTERED_EXACT_ROUTES.includes(routePath) ||
+    KOLAM_CENTERED_ROUTE_PREFIXES.some(prefix =>
+      routePath === prefix || routePath.startsWith(`${prefix}/`),
+    )
   );
 }
 
@@ -103,9 +106,12 @@ export function isCatalogTableListRoute(route?: string | null) {
     routePath === '/stock-opname' ||
     routePath === '/suppliers' ||
     routePath === '/customers' ||
-    routePath === '/purchase-order'
+    routePath === '/purchase-order' ||
+    routePath === '/list-of-users'
   );
 }
+
+const KOLAM_CENTERED_EXACT_ROUTES = ['/list-of-users'];
 
 const KOLAM_CENTERED_ROUTE_PREFIXES = [
   '/pengaturan',

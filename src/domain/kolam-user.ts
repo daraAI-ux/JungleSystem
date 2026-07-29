@@ -2,6 +2,14 @@ export type KolamUserSortOrder = 'asc' | 'desc';
 export type KolamUserBooleanFilter = 'true' | 'false' | 'all';
 export type KolamUserAccessId = 'inventory' | 'pos' | 'am';
 
+export const KOLAM_USER_LIST_ROUTE = '/list-of-users';
+
+export function isKolamUserListRoute(route?: string | null) {
+  const routePath = (route?.split('?')[0] ?? '').replace(/\/+$/, '') || '/';
+
+  return routePath === KOLAM_USER_LIST_ROUTE;
+}
+
 export interface KolamUserRole {
   id: string;
   key: string;

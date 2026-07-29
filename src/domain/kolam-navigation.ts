@@ -602,7 +602,8 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
       {
         label: 'Daftar Pengguna',
         route: '/list-of-users',
-        description: 'System users and access rights',
+        description:
+          'Kelola semua pengguna sistem, termasuk data pribadi, peran, dan status akun.',
         requiredAccess: ['kolam'],
       },
       {

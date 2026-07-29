@@ -24,6 +24,7 @@ import { isKolamSupplierRoute } from '../domain/kolam-vendor';
 import { isKolamTaxonomyRoute } from '../domain/kolam-taxonomy';
 import { isKolamTeranuraNativeRoute } from '../domain/kolam-teranura';
 import { isKolamUnitRoute } from '../domain/kolam-unit';
+import { isKolamUserListRoute } from '../domain/kolam-user';
 import type { KolamNavigationItem } from '../domain/kolam-navigation';
 import {
   getSettingsSurfaceItemByRoute,
@@ -50,6 +51,7 @@ import { KolamTagSurface } from './kolam-tag-surface';
 import { KolamTeranuraSurface } from './kolam-teranura-surface';
 import { KolamTaxonomySurface } from './kolam-taxonomy-surface';
 import { KolamUnitSurface } from './kolam-unit-surface';
+import { KolamUserSurface } from './kolam-user-surface';
 import { KolamNavigationRouteSurface } from './kolam-navigation-route-surface';
 import { KolamModuleRouteLauncher } from './kolam-module-route-launcher';
 import { KolamModuleRouteSurface } from './kolam-module-route-surface';
@@ -294,6 +296,15 @@ export function KolamWorkspaceSurfaceComponent({
         if (isKolamUnitRoute(activeNavigationItem.route.split('?')[0])) {
           return (
             <KolamUnitSurface
+              onRouteChange={onDashboardRoute}
+              route={activeNavigationItem.route}
+            />
+          );
+        }
+
+        if (isKolamUserListRoute(activeNavigationItem.route)) {
+          return (
+            <KolamUserSurface
               onRouteChange={onDashboardRoute}
               route={activeNavigationItem.route}
             />
