@@ -38,6 +38,7 @@ import {
   type KolamTeamChatLinkPreview,
   type KolamTeamChatMessage,
   type KolamTeamChatPresence,
+  type KolamTeamChatReplyPreview,
   type KolamTeamChatUserRef,
   unmuteKolamTeamChatCallParticipant,
   updateKolamChatConversationAiHandled,
@@ -76,6 +77,7 @@ export interface KolamChatRailDetailMessage {
   linkPreviews: KolamTeamChatLinkPreview[];
   mine: boolean;
   reactions: KolamChatRailDetailReactionGroup[];
+  replyPreview?: KolamTeamChatReplyPreview | null;
   sentAt?: string;
   status?: string;
 }
@@ -653,6 +655,7 @@ function mapInboxMessage(message: KolamChatMessage): KolamChatRailDetailMessage 
     linkPreviews: [],
     mine: message.direction === 'out',
     reactions: [],
+    replyPreview: null,
     sentAt: message.sentAt ?? message.createdAt,
     status: message.deliveryStatus,
   };
@@ -677,6 +680,7 @@ function mapTeamChatMessage(
       : [],
     mine: message.senderType !== 'ai',
     reactions: groupTeamChatReactions(message.reactions, currentUserId),
+    replyPreview: message.replyPreview ?? null,
     sentAt: message.createdAt,
   };
 }

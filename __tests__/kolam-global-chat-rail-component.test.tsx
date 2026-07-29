@@ -864,6 +864,11 @@ describe('KolamGlobalChatRail', () => {
           ],
           mine: true,
           reactions: [{count: 2, emoji: '👍', mine: true}],
+          replyPreview: {
+            _id: 'team-msg-parent',
+            body: 'Siap dicek dari gudang.',
+            senderName: 'Maya',
+          },
           sentAt: '2026-07-28T08:00:00.000Z',
         },
       ],
@@ -896,6 +901,8 @@ describe('KolamGlobalChatRail', () => {
       expect.arrayContaining([
         '3 online · 2 melihat · 1 mengetik...',
         'Staff',
+        'Maya',
+        'Siap dicek dari gudang.',
         'Barang siap dikirim ',
         '@dara',
         ' cc ',
@@ -921,6 +928,11 @@ describe('KolamGlobalChatRail', () => {
       renderer!.root
         .findAllByType(Text)
         .some(node => node.props.accessibilityLabel === 'Mention maya'),
+    ).toBe(true);
+    expect(
+      renderer!.root
+        .findAllByType(View)
+        .some(node => node.props.accessibilityLabel === 'Reply preview Maya'),
     ).toBe(true);
 
     const reactionButton = renderer!.root

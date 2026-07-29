@@ -26,6 +26,7 @@ import type {
   KolamTeamChatEmbed,
   KolamTeamChatLinkPreview,
   KolamTeamChatPresence,
+  KolamTeamChatReplyPreview,
   KolamTeamChatUserRef,
 } from '../services/kolam-api';
 import {
@@ -822,6 +823,11 @@ function KolamChatRailDetailPanel({
                     message.mine ? styles.messageBubbleMine : styles.messageBubbleOther,
                   ]}>
                   <Text style={styles.messageAuthor}>{message.author}</Text>
+                  {mode === 'team-chat' && message.replyPreview?.body ? (
+                    <KolamTeamChatReplyPreviewCard
+                      replyPreview={message.replyPreview}
+                    />
+                  ) : null}
                   {message.body ? (
                     mode === 'team-chat' ? (
                       <KolamTeamMentionText body={message.body} />
@@ -1109,6 +1115,28 @@ function KolamTeamMentionText({body}: {body: string}) {
         );
       })}
     </Text>
+  );
+}
+
+function KolamTeamChatReplyPreviewCard({
+  replyPreview,
+}: {
+  replyPreview: KolamTeamChatReplyPreview;
+}) {
+  const senderName = replyPreview.senderName?.trim() || 'Pesan';
+  const body = replyPreview.body?.trim() || 'Lampiran';
+
+  return (
+    <View
+      accessibilityLabel={`Reply preview ${senderName}`}
+      style={styles.replyPreviewCard}>
+      <Text numberOfLines={1} style={styles.replyPreviewSender}>
+        {senderName}
+      </Text>
+      <Text numberOfLines={2} style={styles.replyPreviewBody}>
+        {body}
+      </Text>
+    </View>
   );
 }
 
@@ -3148,6 +3176,28 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   attachmentFileMeta: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  replyPreviewCard: {
+    width: 220,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderLeftColor: V.colors.primary,
+    borderLeftWidth: 2,
+    borderRadius: V.radius.md,
+    backgroundColor: V.colors.secondary,
+    gap: 2,
+  },
+  replyPreviewSender: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '900',
+  },
+  replyPreviewBody: {
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 10,
