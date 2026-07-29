@@ -51,6 +51,7 @@ import {
   replaceKolamPurchaseOrderPaymentProof,
   replaceKolamPurchaseOrderRefundProof,
   updateKolamPurchaseOrder,
+  updateKolamPurchaseOrderFakturPajak,
   updateKolamPurchaseOrderPayment,
   updateKolamPurchaseOrderStatus,
   uploadKolamPurchaseOrderCheckProof,
@@ -147,6 +148,13 @@ export interface KolamPurchaseOrderController {
   }) => Promise<boolean>;
   onReceivePO: (localProofUris: string[]) => Promise<boolean>;
   onSave: () => Promise<string | null>;
+  onSaveFakturPajak: (input: {
+    serialNumber: string;
+    status: 'none' | 'draft' | 'issued' | 'cancelled';
+    vendorNpwp: string;
+    vendorName: string;
+    notes: string;
+  }) => Promise<boolean>;
   onSearchChange: (search: string) => void;
   onSearchItemsForPO: (params: {
     search?: string;
@@ -535,6 +543,37 @@ export function useKolamPurchaseOrderController(
       setMutating(false);
     }
   }, [form, loadPayableInstallments, mode, selectedPO]);
+
+  const onSaveFakturPajak = useCallback(
+    async (input: {
+      serialNumber: string;
+      status: 'none' | 'draft' | 'issued' | 'cancelled';
+      vendorNpwp: string;
+      vendorName: string;
+      notes: string;
+    }): Promise<boolean> => {
+      if (!selectedPO) {
+        return false;
+      }
+      setMutating(true);
+      setError(null);
+      try {
+        const saved = await updateKolamPurchaseOrderFakturPajak(
+          selectedPO.id,
+          input,
+        );
+        setSelectedPO(saved);
+        setStatusMessage('Faktur pajak disimpan');
+        return true;
+      } catch (saveError) {
+        setError(getErrorMessage(saveError));
+        return false;
+      } finally {
+        setMutating(false);
+      }
+    },
+    [selectedPO],
+  );
 
   const onDeletePO = useCallback(
     async (po: KolamPurchaseOrder): Promise<boolean> => {
@@ -1095,6 +1134,7 @@ export function useKolamPurchaseOrderController(
     onCheckPO,
     onReceivePO,
     onSave,
+    onSaveFakturPajak,
     onSearchChange,
     onSearchItemsForPO,
     onSelectPO,

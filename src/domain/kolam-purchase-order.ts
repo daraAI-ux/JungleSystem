@@ -103,6 +103,21 @@ export interface KolamPurchaseOrderPayableRef {
   status: string;
 }
 
+export type KolamPOFakturPajakStatus =
+  | 'none'
+  | 'draft'
+  | 'issued'
+  | 'cancelled';
+
+export interface KolamPOFakturPajak {
+  serialNumber: string;
+  status: KolamPOFakturPajakStatus | string;
+  vendorNpwp: string;
+  vendorName: string;
+  notes: string;
+  issuedAt: string;
+}
+
 export interface KolamPurchaseOrder {
   id: string;
   poCode: string;
@@ -156,6 +171,9 @@ export interface KolamPurchaseOrder {
   vendorInvoice: string;
   vendorInvoiceUploadedAt: string;
   vendorInvoiceUploadedByName: string;
+
+  /** Internal DJP note snapshot (not Coretax e-Faktur). */
+  taxFaktur: KolamPOFakturPajak | null;
 
   orderedAt: string;
   deliveryAt: string;
@@ -599,6 +617,8 @@ export function normalizeKolamPurchaseOrder(payload: unknown): KolamPurchaseOrde
     vendorInvoiceUploadedAt: getString(record, 'vendorInvoiceUploadedAt'),
     vendorInvoiceUploadedByName: resolvePOPersonName(record.vendorInvoiceUploadedBy),
 
+    taxFaktur: normalizePOFakturPajak(record.tax),
+
     orderedAt: getString(record, 'orderedAt'),
     deliveryAt: getString(record, 'deliveryAt'),
     receivedAt: getString(record, 'receivedAt'),
@@ -792,6 +812,22 @@ function normalizePayableRef(value: unknown): KolamPurchaseOrderPayableRef | nul
     return null;
   }
   return { id, code: getString(record, 'code'), status: getString(record, 'status') };
+}
+
+function normalizePOFakturPajak(taxValue: unknown): KolamPOFakturPajak | null {
+  const tax = asRecord(taxValue);
+  const faktur = asRecord(tax.fakturPajak);
+  if (!Object.keys(faktur).length) {
+    return null;
+  }
+  return {
+    serialNumber: getString(faktur, 'serialNumber'),
+    status: getString(faktur, 'status') || 'none',
+    vendorNpwp: getString(faktur, 'vendorNpwp'),
+    vendorName: getString(faktur, 'vendorName'),
+    notes: getString(faktur, 'notes'),
+    issuedAt: getString(faktur, 'issuedAt'),
+  };
 }
 
 function normalizePODiscount(value: unknown): KolamPODiscount | null {

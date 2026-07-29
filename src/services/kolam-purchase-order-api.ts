@@ -123,6 +123,26 @@ export async function updateKolamPurchaseOrder(
   return normalizeKolamPurchaseOrder(response);
 }
 
+export async function updateKolamPurchaseOrderFakturPajak(
+  id: string,
+  body: {
+    serialNumber?: string;
+    status?: 'none' | 'draft' | 'issued' | 'cancelled';
+    vendorNpwp?: string;
+    vendorName?: string;
+    notes?: string;
+  },
+): Promise<KolamPurchaseOrder> {
+  await kolamRequest<unknown>(
+    `/dara-tax/faktur-pajak/po/${encodeURIComponent(id)}`,
+    {
+      method: 'PUT',
+      body,
+    },
+  );
+  return getKolamPurchaseOrder(id);
+}
+
 export async function deleteKolamPurchaseOrder(id: string): Promise<void> {
   await kolamRequest<unknown>(`/po/${encodeURIComponent(id)}`, {
     method: 'DELETE',

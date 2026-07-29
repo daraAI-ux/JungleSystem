@@ -1257,6 +1257,7 @@ function KolamPurchaseOrderDetail({
       <KolamPOProofsCard po={po} />
       <KolamPOPaymentSection controller={controller} po={po} />
       <KolamPOInstallmentSection controller={controller} po={po} />
+      <KolamPOFakturPajakSection controller={controller} po={po} />
 
       <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
         <Text style={styles.sectionTitle}>Riwayat status</Text>
@@ -1548,6 +1549,95 @@ function KolamPOInstallmentSection({
           </View>
         );
       })}
+    </KolamContentFrame>
+  );
+}
+
+function KolamPOFakturPajakSection({
+  controller,
+  po,
+}: {
+  controller: KolamPurchaseOrderController;
+  po: KolamPurchaseOrder;
+}) {
+  const [serialNumber, setSerialNumber] = React.useState(
+    po.taxFaktur?.serialNumber ?? '',
+  );
+  const [status, setStatus] = React.useState<
+    'none' | 'draft' | 'issued' | 'cancelled'
+  >((po.taxFaktur?.status as 'none' | 'draft' | 'issued' | 'cancelled') || 'none');
+  const [vendorNpwp, setVendorNpwp] = React.useState(
+    po.taxFaktur?.vendorNpwp ?? '',
+  );
+  const [vendorName, setVendorName] = React.useState(
+    po.taxFaktur?.vendorName || po.vendor?.name || '',
+  );
+  const [notes, setNotes] = React.useState(po.taxFaktur?.notes ?? '');
+
+  React.useEffect(() => {
+    setSerialNumber(po.taxFaktur?.serialNumber ?? '');
+    setStatus(
+      (po.taxFaktur?.status as 'none' | 'draft' | 'issued' | 'cancelled') ||
+        'none',
+    );
+    setVendorNpwp(po.taxFaktur?.vendorNpwp ?? '');
+    setVendorName(po.taxFaktur?.vendorName || po.vendor?.name || '');
+    setNotes(po.taxFaktur?.notes ?? '');
+  }, [po.id, po.taxFaktur, po.vendor?.name]);
+
+  return (
+    <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
+      <Text style={styles.sectionTitle}>Faktur Pajak</Text>
+      <Text style={styles.metaText}>
+        Catatan internal DJP (bukan e-Faktur Coretax).
+      </Text>
+      <KolamFormTextField
+        label="Nomor seri faktur"
+        onChangeText={setSerialNumber}
+        value={serialNumber}
+      />
+      <KolamDropdownSelect
+        label="Status faktur"
+        onChange={value =>
+          setStatus(value as 'none' | 'draft' | 'issued' | 'cancelled')
+        }
+        options={[
+          { label: 'Belum ada', value: 'none' },
+          { label: 'Draft', value: 'draft' },
+          { label: 'Terbit', value: 'issued' },
+          { label: 'Batal', value: 'cancelled' },
+        ]}
+        value={status}
+      />
+      <KolamFormTextField
+        label="NPWP vendor"
+        onChangeText={setVendorNpwp}
+        value={vendorNpwp}
+      />
+      <KolamFormTextField
+        label="Nama vendor (faktur)"
+        onChangeText={setVendorName}
+        value={vendorName}
+      />
+      <KolamFormTextField
+        label="Catatan"
+        onChangeText={setNotes}
+        value={notes}
+      />
+      <KolamButton
+        disabled={controller.mutating}
+        intent="primary"
+        label="Simpan faktur"
+        onPress={() =>
+          void controller.onSaveFakturPajak({
+            serialNumber,
+            status,
+            vendorNpwp,
+            vendorName,
+            notes,
+          })
+        }
+      />
     </KolamContentFrame>
   );
 }

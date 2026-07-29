@@ -232,4 +232,37 @@ describe('kolam purchase order domain', () => {
     expect(getKolamPOPaymentStatusLabel('partial_paid')).toBe('Dibayar sebagian');
     expect(getKolamPOPaymentStatusLabel('paid')).toBe('Lunas');
   });
+
+  it('normalizes tax faktur pajak snapshot from PO detail', () => {
+    const po = normalizeKolamPurchaseOrder({
+      _id: 'po-tax',
+      poCode: 'PO-TAX',
+      vendor: { _id: 'v1', name: 'Vendor' },
+      items: [],
+      total: 0,
+      finalTotal: 0,
+      status: 'completed',
+      paymentStatus: 'paid',
+      refundStatus: 'none',
+      tax: {
+        fakturPajak: {
+          serialNumber: '010.001',
+          status: 'draft',
+          vendorNpwp: '123',
+          vendorName: 'Vendor PT',
+          notes: 'catatan',
+        },
+      },
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    });
+
+    expect(po.taxFaktur).toMatchObject({
+      serialNumber: '010.001',
+      status: 'draft',
+      vendorNpwp: '123',
+      vendorName: 'Vendor PT',
+      notes: 'catatan',
+    });
+  });
 });
