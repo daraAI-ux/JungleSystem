@@ -1141,86 +1141,98 @@ function KolamPurchaseOrderDetail({
         </View>
       </View>
 
-      <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
-        <Text style={styles.sectionTitle}>Informasi purchase order</Text>
-        <KolamDescriptionList
-          accessibilityLabel="Informasi purchase order"
-          rows={[
-            { id: 'code', label: 'Kode PO', value: po.poCode || '—', meta: '', tone: 'default' },
-            {
-              id: 'vendor',
-              label: 'Pemasok',
-              value: po.vendor?.name || '—',
-              meta: '',
-              tone: 'default',
-              ...(po.vendor?.id
-                ? {
-                    onPress: () =>
-                      onRouteChange?.(`${KOLAM_SUPPLIER_ROOT}/${po.vendor!.id}`),
-                  }
-                : {}),
-            },
-            {
-              id: 'wallet',
-              label: 'Dompet',
-              value: po.wallet?.name || '—',
-              meta: po.wallet?.type || '',
-              tone: 'default',
-            },
-            {
-              id: 'status',
-              label: 'Status',
-              value: getKolamPOStatusLabel(po.status),
-              meta: po.isPartial ? 'Partial' : '',
-              tone: po.isPartial ? 'warning' : 'default',
-            },
-            {
-              id: 'notes',
-              label: 'Catatan',
-              value: po.notes || '—',
-              meta: '',
-              tone: 'default',
-            },
-            {
-              id: 'created',
-              label: 'Dibuat',
-              value: formatPODateTime(po.createdAt),
-              meta: po.createdByName || '',
-              tone: 'default',
-            },
-          ]}
-        />
-      </KolamContentFrame>
-
-      <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
-        <Text style={styles.sectionTitle}>Timeline pengadaan</Text>
-        <KolamDescriptionList
-          accessibilityLabel="Timeline pengadaan"
-          rows={[
-            { id: 'ordered', label: 'Dipesan', value: formatPODateTime(po.orderedAt), meta: '', tone: 'default' },
-            { id: 'delivery', label: 'Pengiriman', value: formatPODateTime(po.deliveryAt), meta: '', tone: 'default' },
-            { id: 'received', label: 'Diterima', value: formatPODateTime(po.receivedAt), meta: po.receivedByName || '', tone: 'default' },
-            { id: 'checked', label: 'Diperiksa', value: formatPODateTime(po.onCheckAt), meta: po.checkedByName || '', tone: 'default' },
-            { id: 'completed', label: 'Selesai', value: formatPODateTime(po.completedAt), meta: '', tone: 'default' },
-            { id: 'cancelled', label: 'Dibatalkan', value: formatPODateTime(po.cancelledAt), meta: '', tone: 'default' },
-          ]}
-        />
-        <View style={styles.headerActions}>
-          <KolamButton
-            disabled={controller.mutating}
-            label={po.vendorInvoice ? 'Ganti invoice vendor' : 'Unggah invoice vendor'}
-            onPress={async () => {
-              const uri = await controller.onPickImage();
-              if (uri) {
-                void controller.onUploadVendorInvoice(uri);
-              }
-            }}
-          />
+      <View style={styles.formSplitRow}>
+        <View style={[styles.formSplitCell, styles.detailSplitCell]}>
+          <KolamContentFrame
+            style={[styles.detailCard, styles.detailSplitCard]}
+            variant="settingsWebConfig"
+          >
+            <Text style={styles.sectionTitle}>Informasi purchase order</Text>
+            <KolamDescriptionList
+              accessibilityLabel="Informasi purchase order"
+              rows={[
+                { id: 'code', label: 'Kode PO', value: po.poCode || '—', meta: '', tone: 'default' },
+                {
+                  id: 'vendor',
+                  label: 'Pemasok',
+                  value: po.vendor?.name || '—',
+                  meta: '',
+                  tone: 'default',
+                  ...(po.vendor?.id
+                    ? {
+                        onPress: () =>
+                          onRouteChange?.(`${KOLAM_SUPPLIER_ROOT}/${po.vendor!.id}`),
+                      }
+                    : {}),
+                },
+                {
+                  id: 'wallet',
+                  label: 'Dompet',
+                  value: po.wallet?.name || '—',
+                  meta: po.wallet?.type || '',
+                  tone: 'default',
+                },
+                {
+                  id: 'status',
+                  label: 'Status',
+                  value: getKolamPOStatusLabel(po.status),
+                  meta: po.isPartial ? 'Partial' : '',
+                  tone: po.isPartial ? 'warning' : 'default',
+                },
+                {
+                  id: 'notes',
+                  label: 'Catatan',
+                  value: po.notes || '—',
+                  meta: '',
+                  tone: 'default',
+                },
+                {
+                  id: 'created',
+                  label: 'Dibuat',
+                  value: formatPODateTime(po.createdAt),
+                  meta: po.createdByName || '',
+                  tone: 'default',
+                },
+              ]}
+            />
+          </KolamContentFrame>
         </View>
-        {po.vendorInvoice ? (
-          <ProofImageRow label="Invoice vendor" uri={po.vendorInvoice} />
-        ) : null}
-      </KolamContentFrame>
+
+        <View style={[styles.formSplitCell, styles.detailSplitCell]}>
+          <KolamContentFrame
+            style={[styles.detailCard, styles.detailSplitCard]}
+            variant="settingsWebConfig"
+          >
+            <Text style={styles.sectionTitle}>Timeline pengadaan</Text>
+            <KolamDescriptionList
+              accessibilityLabel="Timeline pengadaan"
+              rows={[
+                { id: 'ordered', label: 'Dipesan', value: formatPODateTime(po.orderedAt), meta: '', tone: 'default' },
+                { id: 'delivery', label: 'Pengiriman', value: formatPODateTime(po.deliveryAt), meta: '', tone: 'default' },
+                { id: 'received', label: 'Diterima', value: formatPODateTime(po.receivedAt), meta: po.receivedByName || '', tone: 'default' },
+                { id: 'checked', label: 'Diperiksa', value: formatPODateTime(po.onCheckAt), meta: po.checkedByName || '', tone: 'default' },
+                { id: 'completed', label: 'Selesai', value: formatPODateTime(po.completedAt), meta: '', tone: 'default' },
+                { id: 'cancelled', label: 'Dibatalkan', value: formatPODateTime(po.cancelledAt), meta: '', tone: 'default' },
+              ]}
+            />
+            <View style={styles.headerActions}>
+              <KolamButton
+                disabled={controller.mutating}
+                label={po.vendorInvoice ? 'Ganti invoice vendor' : 'Unggah invoice vendor'}
+                onPress={async () => {
+                  const uri = await controller.onPickImage();
+                  if (uri) {
+                    void controller.onUploadVendorInvoice(uri);
+                  }
+                }}
+              />
+            </View>
+            {po.vendorInvoice ? (
+              <ProofImageRow label="Invoice vendor" uri={po.vendorInvoice} />
+            ) : null}
+          </KolamContentFrame>
+        </View>
+      </View>
 
       <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
         <Text style={styles.sectionTitle}>Ringkasan biaya</Text>
@@ -2439,6 +2451,13 @@ const styles = StyleSheet.create({
   formSplitCell: {
     flexGrow: 1,
     minWidth: 220,
+  },
+  detailSplitCell: {
+    flex: 1,
+    minWidth: 280,
+  },
+  detailSplitCard: {
+    flex: 1,
   },
   segmentRow: {
     flexDirection: 'row',
