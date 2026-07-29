@@ -60,6 +60,7 @@ import {
 } from '../services/native-file-picker';
 import {KolamBadge} from './kolam-badge';
 import {KolamEmptyState} from './kolam-empty-state';
+import {KolamDropdownSelect} from './kolam-dropdown-select';
 import {KolamIconButton} from './kolam-icon-button';
 import {KolamMappedList} from './kolam-mapped-list';
 import {KolamModalBackdrop} from './kolam-modal-backdrop';
@@ -846,6 +847,32 @@ function KolamInboxFilterPanel({
   onChange: (next: KolamChatRailInboxFilter) => void;
 }) {
   const [searchDraft, setSearchDraft] = React.useState(filter.search);
+  const statusOptions = React.useMemo(
+    () =>
+      INBOX_STATUS_FILTERS.map(status => ({
+        label: formatInboxStatusFilterLabel(status),
+        value: status,
+      })),
+    [],
+  );
+  const assignmentOptions = React.useMemo(
+    () =>
+      INBOX_ASSIGNMENT_FILTERS.map(assignment => ({
+        label: formatInboxAssignmentFilterLabel(assignment),
+        value: assignment,
+      })),
+    [],
+  );
+  const labelOptions = React.useMemo(
+    () => [
+      {label: 'Semua label', value: 'all'},
+      ...labels.map(label => ({
+        label: label.name,
+        value: label._id,
+      })),
+    ],
+    [labels],
+  );
 
   React.useEffect(() => {
     setSearchDraft(filter.search);
@@ -878,21 +905,41 @@ function KolamInboxFilterPanel({
         style={styles.filterSearchInput}
         value={searchDraft}
       />
-      <View style={styles.filterGroup}>
-        <Text style={styles.filterGroupLabel}>Status</Text>
-        <View style={styles.filterChipRow}>
-          <KolamMappedList
-            items={INBOX_STATUS_FILTERS}
-            getKey={status => status}
-            renderItem={status => (
-              <KolamFilterChip
-                active={filter.status === status}
-                label={formatInboxStatusFilterLabel(status)}
-                onPress={() => onChange({...filter, status})}
-              />
-            )}
-          />
-        </View>
+      <View style={styles.filterDropdownGrid}>
+        <KolamDropdownSelect
+          accessibilityLabel="Filter status inbox"
+          label="Status"
+          menuPlacement="inline"
+          onChange={status => onChange({...filter, status})}
+          options={statusOptions}
+          style={styles.filterDropdown}
+          triggerStyle={styles.filterDropdownTrigger}
+          triggerTextStyle={styles.filterDropdownText}
+          value={filter.status}
+        />
+        <KolamDropdownSelect
+          accessibilityLabel="Filter tugas inbox"
+          label="Tugas"
+          menuPlacement="inline"
+          onChange={assignment => onChange({...filter, assignment})}
+          options={assignmentOptions}
+          style={styles.filterDropdown}
+          triggerStyle={styles.filterDropdownTrigger}
+          triggerTextStyle={styles.filterDropdownText}
+          value={filter.assignment}
+        />
+        <KolamDropdownSelect
+          accessibilityLabel="Filter label inbox"
+          label="Label"
+          menuPlacement="inline"
+          onChange={labelId => onChange({...filter, labelId})}
+          options={labelOptions}
+          searchable={labels.length > 6}
+          style={styles.filterDropdownWide}
+          triggerStyle={styles.filterDropdownTrigger}
+          triggerTextStyle={styles.filterDropdownText}
+          value={filter.labelId}
+        />
       </View>
       <View style={styles.filterGroup}>
         <Text style={styles.filterGroupLabel}>Platform</Text>
@@ -913,46 +960,7 @@ function KolamInboxFilterPanel({
           />
         </ScrollView>
       </View>
-      <View style={styles.filterGroup}>
-        <Text style={styles.filterGroupLabel}>Tugas</Text>
-        <View style={styles.filterChipRow}>
-          <KolamMappedList
-            items={INBOX_ASSIGNMENT_FILTERS}
-            getKey={assignment => assignment}
-            renderItem={assignment => (
-              <KolamFilterChip
-                active={filter.assignment === assignment}
-                label={formatInboxAssignmentFilterLabel(assignment)}
-                onPress={() => onChange({...filter, assignment})}
-              />
-            )}
-          />
-        </View>
-      </View>
       <View style={styles.filterBottomRow}>
-        {labels.length > 0 ? (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.filterChipRow}>
-            <KolamFilterChip
-              active={filter.labelId === 'all'}
-              label="Semua label"
-              onPress={() => onChange({...filter, labelId: 'all'})}
-            />
-            <KolamMappedList
-              items={labels}
-              getKey={label => label._id}
-              renderItem={label => (
-                <KolamFilterChip
-                  active={filter.labelId === label._id}
-                  label={label.name}
-                  onPress={() => onChange({...filter, labelId: label._id})}
-                />
-              )}
-            />
-          </ScrollView>
-        ) : null}
         {hasActiveFilter ? (
           <KolamPressable
             accessibilityLabel="Reset filter inbox chat"
@@ -971,32 +979,6 @@ function KolamInboxFilterPanel({
         ) : null}
       </View>
     </View>
-  );
-}
-
-function KolamFilterChip({
-  active,
-  label,
-  onPress,
-}: {
-  active: boolean;
-  label: string;
-  onPress: () => void;
-}) {
-  return (
-    <KolamPressable
-      accessibilityLabel={`Filter ${label}`}
-      accessibilityState={{selected: active}}
-      onPress={onPress}
-      style={[styles.filterChip, active && styles.filterChipActive]}>
-      <Text
-        style={[
-          styles.filterChipText,
-          active && styles.filterChipTextActive,
-        ]}>
-        {label}
-      </Text>
-    </KolamPressable>
   );
 }
 
@@ -4732,6 +4714,30 @@ const styles = StyleSheet.create({
     letterSpacing: 0,
     textTransform: 'uppercase',
   },
+  filterDropdownGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  filterDropdown: {
+    minWidth: 118,
+    flex: 1,
+  },
+  filterDropdownWide: {
+    minWidth: 160,
+    flex: 1,
+  },
+  filterDropdownTrigger: {
+    minHeight: 32,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: V.radius.md,
+    backgroundColor: V.colors.bg,
+  },
+  filterDropdownText: {
+    fontSize: 10,
+    fontWeight: '900',
+  },
   filterChipRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -4742,30 +4748,6 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     alignItems: 'center',
     gap: 6,
-  },
-  filterChip: {
-    minHeight: 28,
-    paddingHorizontal: 9,
-    paddingVertical: 5,
-    borderRadius: 14,
-    borderColor: V.colors.border,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: V.colors.bg,
-  },
-  filterChipActive: {
-    borderColor: V.colors.primary,
-    backgroundColor: V.colors.primarySoft,
-  },
-  filterChipText: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 10,
-    fontWeight: '900',
-  },
-  filterChipTextActive: {
-    color: V.colors.primary,
   },
   platformFilterChip: {
     width: 32,

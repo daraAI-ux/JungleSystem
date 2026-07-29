@@ -720,27 +720,57 @@ describe('KolamGlobalChatRail', () => {
     const tokopediaButton = renderer!.root
       .findAllByType(KolamPressable)
       .find(node => node.props.accessibilityLabel === 'Filter Tokped');
-    const closedButton = renderer!.root
-      .findAllByType(KolamPressable)
-      .find(node => node.props.accessibilityLabel === 'Filter Ditutup');
-    const assignedButton = renderer!.root
-      .findAllByType(KolamPressable)
-      .find(node => node.props.accessibilityLabel === 'Filter Ditugaskan');
-    const followUpButton = renderer!.root
-      .findAllByType(KolamPressable)
-      .find(node => node.props.accessibilityLabel === 'Filter Follow up');
+    const statusDropdown = renderer!.root
+      .findAll(
+        node =>
+          node.props.accessibilityLabel === 'Filter status inbox' &&
+          typeof node.props.onPress === 'function',
+      )
+      [0];
+    const assignmentDropdown = renderer!.root
+      .findAll(
+        node =>
+          node.props.accessibilityLabel === 'Filter tugas inbox' &&
+          typeof node.props.onPress === 'function',
+      )
+      [0];
+    const labelDropdown = renderer!.root
+      .findAll(
+        node =>
+          node.props.accessibilityLabel === 'Filter label inbox' &&
+          typeof node.props.onPress === 'function',
+      )
+      [0];
 
     await ReactTestRenderer.act(async () => {
       tokopediaButton!.props.onPress();
     });
     await ReactTestRenderer.act(async () => {
-      closedButton!.props.onPress();
+      statusDropdown!.props.onPress();
+    });
+    const closedOption = renderer!.root
+      .findAll(node => node.props.accessibilityLabel === 'Ditutup')
+      [0];
+    await ReactTestRenderer.act(async () => {
+      closedOption!.props.onPress();
     });
     await ReactTestRenderer.act(async () => {
-      assignedButton!.props.onPress();
+      assignmentDropdown!.props.onPress();
+    });
+    const assignedOption = renderer!.root
+      .findAll(node => node.props.accessibilityLabel === 'Ditugaskan')
+      [0];
+    await ReactTestRenderer.act(async () => {
+      assignedOption!.props.onPress();
     });
     await ReactTestRenderer.act(async () => {
-      followUpButton!.props.onPress();
+      labelDropdown!.props.onPress();
+    });
+    const followUpOption = renderer!.root
+      .findAll(node => node.props.accessibilityLabel === 'Follow up')
+      [0];
+    await ReactTestRenderer.act(async () => {
+      followUpOption!.props.onPress();
     });
     await ReactTestRenderer.act(async () => {
       searchInput!.props.onChangeText('buyer');
