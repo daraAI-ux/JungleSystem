@@ -3,9 +3,11 @@ import {StyleSheet, Text, View} from 'react-native';
 import {
   getKolamCustomerLocationText,
   type KolamCustomer,
+  type KolamCustomerExternalAccount,
   type KolamCustomerListResult,
 } from '../domain/kolam-customer';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
+import {getKolamFileUrl} from '../lib/file-url';
 import {getKolamCustomerList} from '../services/kolam-customer-api';
 import type {
   KolamCustomerList,
@@ -19,6 +21,8 @@ import {KolamTableFooterControls} from './kolam-dropdown-select';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamFormTextField} from './kolam-form-text-field';
 import {KolamCustomerModule} from './kolam-pos-workspace-widgets';
+import {KolamRemoteImage} from './kolam-remote-image';
+import {KolamStatusBadge} from './kolam-status-badge';
 
 const CUSTOMER_LIST_COLUMNS = [
   {id: 'customer', label: 'Pelanggan', flex: 1.55, align: 'left'},
@@ -291,17 +295,50 @@ function normalizeCustomerSearch(value: string) {
 }
 
 function KolamCustomerListRow({customer}: {customer: KolamCustomer}) {
+  const photoUri = getKolamFileUrl(customer.photos[0]);
+  const gender = getCustomerGenderSymbol(customer.gender);
+  const points = customer.points.availablePoints;
+
   return (
     <KolamDataTableRowFrame style={styles.customerListRow}>
       <View style={getCustomerListCellStyle('customer')}>
-        <Text numberOfLines={2} style={styles.customerNameText}>
-          {customer.name}
-        </Text>
-        {customer.username ? (
-          <Text numberOfLines={1} style={styles.customerSubText}>
-            @{customer.username}
-          </Text>
-        ) : null}
+        <View style={styles.customerIdentityRow}>
+          <View style={styles.customerAvatar}>
+            {photoUri ? (
+              <KolamRemoteImage
+                accessibilityLabel={`Foto ${customer.name}`}
+                previewItems={customer.photos.map((photo, index) => ({
+                  id: `${customer.id}-${index}`,
+                  title: customer.name,
+                  uri: getKolamFileUrl(photo) ?? '',
+                }))}
+                resizeMode="cover"
+                scope="customer"
+                sourceUri={photoUri}
+                style={styles.customerAvatarImage}
+              />
+            ) : (
+              <Text style={styles.customerAvatarText}>
+                {getCustomerInitials(customer.name)}
+              </Text>
+            )}
+          </View>
+          <View style={styles.customerIdentityCopy}>
+            <View style={styles.customerNameRow}>
+              <Text numberOfLines={2} style={styles.customerNameText}>
+                {customer.name}
+              </Text>
+              {gender ? (
+                <Text style={styles.customerGenderText}>{gender}</Text>
+              ) : null}
+            </View>
+            {customer.username ? (
+              <Text numberOfLines={1} style={styles.customerSubText}>
+                @{customer.username}
+              </Text>
+            ) : null}
+          </View>
+        </View>
       </View>
       <View style={getCustomerListCellStyle('contact')}>
         <Text numberOfLines={1} style={styles.customerMetaText}>
@@ -319,14 +356,51 @@ function KolamCustomerListRow({customer}: {customer: KolamCustomer}) {
         </Text>
       </View>
       <View style={getCustomerListCellStyle('points')}>
-        <Text style={[styles.customerMetaText, styles.customerTextRight]}>
-          {formatCustomerNumber(customer.points.availablePoints)}
-        </Text>
+        {points > 0 ? (
+          <KolamStatusBadge
+            intent="warning"
+            label={formatCustomerNumber(points)}
+            style={styles.customerPointBadge}
+          />
+        ) : (
+          <Text style={[styles.customerSubText, styles.customerTextRight]}>
+            0
+          </Text>
+        )}
       </View>
       <View style={getCustomerListCellStyle('status')}>
-        <Text numberOfLines={2} style={styles.customerMetaText}>
-          {formatCustomerStatus(customer)}
-        </Text>
+        <View style={styles.customerStatusStack}>
+          <View style={styles.customerStatusRow}>
+            <KolamStatusBadge
+              intent={customer.verifiedStatus ? 'success' : 'warning'}
+              label={customer.verifiedStatus ? 'Aktif' : 'Perlu Verifikasi'}
+              numberOfLines={1}
+            />
+            {customer.accountRestricted ? (
+              <KolamStatusBadge
+                intent="danger"
+                label="Dibatasi"
+                numberOfLines={1}
+              />
+            ) : null}
+          </View>
+          {customer.externalAccounts.length ? (
+            <View style={styles.customerExternalRow}>
+              {customer.externalAccounts.map(account => (
+                <View
+                  key={`${account.platform}-${account.externalId}`}
+                  style={[
+                    styles.customerExternalDot,
+                    getCustomerExternalDotStyle(account),
+                  ]}>
+                  <Text style={styles.customerExternalDotText}>
+                    {getCustomerExternalLabel(account)}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          ) : null}
+        </View>
       </View>
       <View style={getCustomerListCellStyle('created')}>
         <Text style={[styles.customerSubText, styles.customerTextRight]}>
@@ -367,12 +441,6 @@ function doesCustomerMatchSearch(
     .includes(normalizedSearch);
 }
 
-function formatCustomerStatus(customer: KolamCustomer) {
-  const status = customer.verifiedStatus ? 'Aktif' : 'Perlu Verifikasi';
-
-  return customer.accountRestricted ? `${status}, Dibatasi` : status;
-}
-
 function formatCustomerDate(value: string) {
   if (!value) {
     return '-';
@@ -392,6 +460,56 @@ function formatCustomerDate(value: string) {
 
 function formatCustomerNumber(value: number) {
   return new Intl.NumberFormat('id-ID').format(value);
+}
+
+function getCustomerInitials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+
+  if (!parts.length) {
+    return '?';
+  }
+
+  if (parts.length === 1) {
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+}
+
+function getCustomerGenderSymbol(gender: string) {
+  if (gender === 'male') {
+    return 'L';
+  }
+
+  if (gender === 'female') {
+    return 'P';
+  }
+
+  return '';
+}
+
+function getCustomerExternalLabel(account: KolamCustomerExternalAccount) {
+  if (account.platform === 'tokopedia') {
+    return 'T';
+  }
+
+  if (account.platform === 'shopee') {
+    return 'S';
+  }
+
+  return account.platform[0]?.toUpperCase() ?? '?';
+}
+
+function getCustomerExternalDotStyle(account: KolamCustomerExternalAccount) {
+  if (account.platform === 'tokopedia') {
+    return styles.customerExternalTokopedia;
+  }
+
+  if (account.platform === 'shopee') {
+    return styles.customerExternalShopee;
+  }
+
+  return styles.customerExternalOther;
 }
 
 const styles = StyleSheet.create({
@@ -486,11 +604,56 @@ const styles = StyleSheet.create({
   customerListCellRight: {
     alignItems: 'flex-end',
   },
+  customerIdentityRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 10,
+    minWidth: 0,
+  },
+  customerAvatar: {
+    alignItems: 'center',
+    backgroundColor: V.colors.primarySoft,
+    borderColor: V.colors.border,
+    borderRadius: 18,
+    borderWidth: 1,
+    height: 36,
+    justifyContent: 'center',
+    overflow: 'hidden',
+    width: 36,
+  },
+  customerAvatarImage: {
+    height: 36,
+    width: 36,
+  },
+  customerAvatarText: {
+    color: V.colors.primary,
+    fontSize: 12,
+    fontWeight: '900',
+    lineHeight: 16,
+  },
+  customerIdentityCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  customerNameRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 6,
+    minWidth: 0,
+  },
   customerNameText: {
     color: V.colors.fg,
+    flexShrink: 1,
     fontSize: 14,
     fontWeight: '700',
     lineHeight: 20,
+  },
+  customerGenderText: {
+    color: V.colors.mutedFg,
+    flexShrink: 0,
+    fontSize: 11,
+    fontWeight: '800',
+    lineHeight: 16,
   },
   customerMetaText: {
     color: V.colors.fg,
@@ -505,6 +668,47 @@ const styles = StyleSheet.create({
   },
   customerTextRight: {
     textAlign: 'right',
+  },
+  customerPointBadge: {
+    alignSelf: 'flex-end',
+  },
+  customerStatusStack: {
+    gap: 4,
+    minWidth: 0,
+  },
+  customerStatusRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
+  },
+  customerExternalRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
+  },
+  customerExternalDot: {
+    alignItems: 'center',
+    borderRadius: 10,
+    height: 20,
+    justifyContent: 'center',
+    width: 20,
+  },
+  customerExternalTokopedia: {
+    backgroundColor: V.colors.successSoft,
+  },
+  customerExternalShopee: {
+    backgroundColor: V.colors.warningSoft,
+  },
+  customerExternalOther: {
+    backgroundColor: V.colors.secondary,
+  },
+  customerExternalDotText: {
+    color: V.colors.fg,
+    fontSize: 10,
+    fontWeight: '900',
+    lineHeight: 14,
   },
   paginationRow: {
     alignItems: 'center',
