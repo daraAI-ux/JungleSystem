@@ -373,6 +373,36 @@ describe('settings web widgets', () => {
     );
   });
 
+  it('renders financial payment methods without duplicate financial title', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamSettingsWebConfigSurface
+          {...createSurfaceProps({
+            activeTabId: 'finansial',
+            financialSectionVisibility: {
+              paymentMethods: true,
+              taxProfile: false,
+              overtime: false,
+              enclosureCommission: false,
+              taxEdit: false,
+              any: true,
+            },
+            financialStatus: 'live',
+            paymentMethods: [],
+          })}
+        />,
+      );
+    });
+
+    const text = renderText(renderer!);
+
+    expect(text).toContain('Metode pembayaran');
+    expect(text).not.toContain('Finansial');
+    expect(text).not.toContain('Data live dari backend Kolam.');
+  });
+
   it('renders Umum social media and staff access cards', async () => {
     let renderer: ReactTestRenderer.ReactTestRenderer;
 

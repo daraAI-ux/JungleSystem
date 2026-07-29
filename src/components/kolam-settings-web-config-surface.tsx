@@ -7011,23 +7011,6 @@ function FinancialSettingsPanel({
 
   return (
     <View style={styles.marketplaceOverview}>
-      <KolamCopyStack
-        items={[
-          {
-            id: 'financial-title',
-            text: 'Finansial',
-            style: styles.marketplaceOverviewTitle,
-          },
-          {
-            id: 'financial-status',
-            text:
-              financialStatus === 'loading'
-                ? 'Memuat data live Finansial...'
-                : 'Data live dari backend Kolam.',
-            style: styles.marketplaceOverviewMeta,
-          },
-        ]}
-      />
       {financialMessage ? (
         <KolamCopyStack
           items={[
@@ -7044,7 +7027,13 @@ function FinancialSettingsPanel({
       ) : null}
 
       {financialSectionVisibility.paymentMethods ? (
-        <View style={styles.marketplaceOverview}>
+        <View
+          style={[
+            styles.marketplaceControlSection,
+            styles.notificationSettingsCard,
+            styles.settingsTabCardSpacing,
+          ]}
+        >
           <FinancialSectionHeader
             detail="Channel pembayaran yang diterima toko dan wallet terkait."
             title="Metode pembayaran"
@@ -8027,12 +8016,14 @@ const styles = StyleSheet.create({
   },
   financialListRow: {
     alignItems: 'center',
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: 1,
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
     justifyContent: 'space-between',
     minWidth: 0,
-    paddingVertical: 10,
+    paddingVertical: 12,
     width: '100%',
   },
   financialSearchInput: {
