@@ -603,17 +603,7 @@ function KolamSupplierDetail({
             </View>
           )
         }
-        meta={[
-          { label: 'Telepon', value: vendor.phone || '—' },
-          { label: 'Email', value: vendor.email || '—' },
-          { label: 'Alamat', value: address || '—' },
-          ...(vendor.isOfficialDistributor
-            ? [{ label: 'Distributor', value: 'Resmi' }]
-            : []),
-          ...(vendor.createdByName
-            ? [{ label: 'Dibuat oleh', value: vendor.createdByName }]
-            : []),
-        ]}
+        meta={[]}
         metrics={[
           { label: 'Total PO', value: vendor.poCount },
           { label: 'Produk', value: vendor.productCount },
@@ -649,6 +639,99 @@ function KolamSupplierDetail({
         }}
       />
 
+      <View style={styles.detailInfoRow}>
+        <KolamContentFrame
+          style={[styles.detailCard, styles.detailInfoCard]}
+          variant="settingsWebConfig"
+        >
+          <Text style={styles.sectionTitle}>Informasi pemasok</Text>
+          <KolamDescriptionList
+            accessibilityLabel="Informasi pemasok"
+            rows={[
+              {
+                id: 'name',
+                label: 'Nama',
+                value: vendor.name,
+                meta: '',
+                tone: 'default',
+              },
+              {
+                id: 'description',
+                label: 'Deskripsi',
+                value: vendor.description || '—',
+                meta: '',
+                tone: 'default',
+              },
+              {
+                id: 'bank',
+                label: 'Bank',
+                value: vendor.bankName || '—',
+                meta: vendor.bankAccountNumber || '',
+                tone: 'default',
+              },
+              {
+                id: 'warranty',
+                label: 'Catatan garansi',
+                value: vendor.warrantyContactNote || '—',
+                meta: '',
+                tone: 'default',
+              },
+              ...(vendor.isOfficialDistributor
+                ? [
+                    {
+                      id: 'distributor',
+                      label: 'Distributor',
+                      value: 'Resmi',
+                      meta: '',
+                      tone: 'default' as const,
+                    },
+                  ]
+                : []),
+            ]}
+          />
+        </KolamContentFrame>
+
+        <KolamContentFrame
+          style={[styles.detailCard, styles.detailInfoCard]}
+          variant="settingsWebConfig"
+        >
+          <Text style={styles.sectionTitle}>Kontak</Text>
+          <KolamDescriptionList
+            accessibilityLabel="Kontak pemasok"
+            rows={[
+              {
+                id: 'phone',
+                label: 'Telepon',
+                value: vendor.phone || '—',
+                meta: '',
+                tone: 'default',
+              },
+              {
+                id: 'email',
+                label: 'Email',
+                value: vendor.email || '—',
+                meta: '',
+                tone: 'default',
+              },
+              {
+                id: 'address',
+                label: 'Alamat',
+                value: address || '—',
+                meta: '',
+                tone: 'default',
+              },
+              {
+                id: 'created-by',
+                label: 'Dibuat oleh',
+                value: vendor.createdByName || '—',
+                meta: '',
+                tone: 'default',
+              },
+            ]}
+          />
+        </KolamContentFrame>
+      </View>
+
       <KolamSupplierCatalogTabs
         onRouteChange={onRouteChange}
         vendor={vendor}
@@ -657,43 +740,6 @@ function KolamSupplierDetail({
       <KolamSupplierPurchaseAnalytics controller={controller} />
 
       <KolamSupplierTaxProfileCard controller={controller} />
-
-      <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
-        <Text style={styles.sectionTitle}>Informasi pemasok</Text>
-        <KolamDescriptionList
-          accessibilityLabel="Detil pemasok"
-          rows={[
-            {
-              id: 'name',
-              label: 'Nama',
-              value: vendor.name,
-              meta: '',
-              tone: 'default',
-            },
-            {
-              id: 'description',
-              label: 'Deskripsi',
-              value: vendor.description || '—',
-              meta: '',
-              tone: 'default',
-            },
-            {
-              id: 'bank',
-              label: 'Bank',
-              value: vendor.bankName || '—',
-              meta: vendor.bankAccountNumber || '',
-              tone: 'default',
-            },
-            {
-              id: 'warranty',
-              label: 'Catatan garansi',
-              value: vendor.warrantyContactNote || '—',
-              meta: '',
-              tone: 'default',
-            },
-          ]}
-        />
-      </KolamContentFrame>
 
       {brands.length ? (
         <View style={styles.brandChipRow}>
@@ -2072,6 +2118,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+  },
+  detailInfoRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  detailInfoCard: {
+    flexGrow: 1,
+    flexBasis: 280,
+    minWidth: 260,
   },
   detailCard: {
     gap: 8,
