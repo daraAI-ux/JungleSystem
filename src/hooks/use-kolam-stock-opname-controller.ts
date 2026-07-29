@@ -15,6 +15,7 @@ import {
   exportKolamStockOpnameList,
   getKolamStockOpnameList,
   importKolamStockOpname,
+  createKolamStockOpnameDocument,
 } from '../services/kolam-stock-opname-api';
 
 export interface KolamStockOpnameController {
@@ -27,6 +28,7 @@ export interface KolamStockOpnameController {
   exporting: boolean;
   importing: boolean;
   deleting: boolean;
+  creating: boolean;
   error: string;
   statusMessage: string;
   onChangeFilters: (patch: Partial<KolamStockOpnameListFilters>) => void;
@@ -36,6 +38,7 @@ export interface KolamStockOpnameController {
   onRefresh: () => Promise<void>;
   onExport: () => Promise<boolean>;
   onDelete: (id: string) => Promise<boolean>;
+  onCreate: (note?: string) => Promise<KolamStockOpname | null>;
   onImport: (input: {
     fileUri: string;
     fileName?: string;
@@ -64,6 +67,7 @@ export function useKolamStockOpnameController(
   const [exporting, setExporting] = useState(false);
   const [importing, setImporting] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
   const [statusMessage, setStatusMessage] = useState('');
   const filtersRef = useRef(filters);
@@ -116,6 +120,7 @@ export function useKolamStockOpnameController(
       exporting,
       importing,
       deleting,
+      creating,
       error,
       statusMessage,
       onChangeFilters: patch => {
@@ -208,6 +213,27 @@ export function useKolamStockOpnameController(
           setDeleting(false);
         }
       },
+      onCreate: async note => {
+        setCreating(true);
+        setError('');
+        setStatusMessage('');
+        try {
+          const doc = await createKolamStockOpnameDocument({
+            note: note?.trim() || undefined,
+          });
+          setStatusMessage(
+            doc.documentNumber
+              ? `Draf dibuat: ${doc.documentNumber}`
+              : 'Draf stock opname dibuat',
+          );
+          return doc;
+        } catch (err) {
+          setError(formatError(err));
+          return null;
+        } finally {
+          setCreating(false);
+        }
+      },
       onImport: async input => {
         setImporting(true);
         setError('');
@@ -240,6 +266,7 @@ export function useKolamStockOpnameController(
       exporting,
       importing,
       deleting,
+      creating,
       error,
       statusMessage,
     ],

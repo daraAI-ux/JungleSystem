@@ -1,7 +1,10 @@
 import {
   createInitialStockOpnameListFilters,
+  extractStockOpnameVariantsFromRaw,
+  formatStockOpnameLineCounts,
   getKolamStockOpnameRouteId,
   getKolamStockOpnameSurfaceMode,
+  hasKolamStockOpnamePermission,
   isKolamStockOpnameDetailRoute,
   isKolamStockOpnameListRoute,
   isKolamStockOpnameNewRoute,
@@ -11,6 +14,7 @@ import {
   normalizeKolamStockOpnameLine,
   normalizeKolamStockOpnameList,
   opnameMinusReasonLabel,
+  stockOpnameLineStatusLabel,
   stockOpnameStatusLabel,
   stockOpnameUserDisplayName,
 } from '../src/domain/kolam-stock-opname';
@@ -137,10 +141,65 @@ describe('Kolam stock opname domain', () => {
 
   it('maps status and minus-reason helpers like FE', () => {
     expect(stockOpnameStatusLabel('ready_to_post')).toBe('Siap posting');
+    expect(stockOpnameLineStatusLabel('draft')).toBe('Draf');
     expect(opnameMinusReasonLabel('damaged')).toBe('Rusak');
     expect(needsOpnameMinusReason('product', -1)).toBe(true);
     expect(needsOpnameMinusReason('product', 1)).toBe(false);
     expect(needsOpnameMinusReason('packing', -1)).toBe(false);
+  });
+
+  it('extracts variants only when variantConfig is present', () => {
+    expect(
+      extractStockOpnameVariantsFromRaw({
+        variants: [{ _id: 'v1', name: 'Merah', stock: 3 }],
+      }),
+    ).toEqual([]);
+
+    expect(
+      extractStockOpnameVariantsFromRaw({
+        variantConfig: { enabled: true },
+        variants: [
+          { _id: 'v1', name: 'Merah', stock: 3 },
+          { id: 'v2', label: 'Biru', currentStock: 1 },
+        ],
+      }),
+    ).toEqual([
+      { id: 'v1', label: 'Merah', stock: 3 },
+      { id: 'v2', label: 'Biru', stock: 1 },
+    ]);
+  });
+
+  it('gates stock-opname actions by role permissions', () => {
+    expect(
+      hasKolamStockOpnamePermission(undefined, 'create', 'staff'),
+    ).toBe(true);
+    expect(
+      hasKolamStockOpnamePermission([], 'create', 'staff'),
+    ).toBe(false);
+    expect(
+      hasKolamStockOpnamePermission(
+        [{ resource: 'stock-opname', actions: ['view', 'create'] }],
+        'create',
+        'staff',
+      ),
+    ).toBe(true);
+    expect(
+      hasKolamStockOpnamePermission(
+        [{ resource: 'stock-opname', actions: ['view'] }],
+        'post',
+        'staff',
+      ),
+    ).toBe(false);
+    expect(
+      hasKolamStockOpnamePermission([], 'post', 'super_administrator'),
+    ).toBe(true);
+    expect(
+      formatStockOpnameLineCounts({
+        draft: 2,
+        pending_review: 1,
+        approved: 0,
+      }),
+    ).toBe('Draf: 2 · Menunggu review: 1');
   });
 
   it('normalizes single document with parent/continuation refs', () => {

@@ -248,7 +248,7 @@ const STATUS_LABELS: Record<KolamStockOpnameStatus, string> = {
 };
 
 const LINE_STATUS_LABELS: Record<KolamStockOpnameLineStatus, string> = {
-  draft: 'Draft',
+  draft: 'Draf',
   pending_review: 'Menunggu review',
   revision: 'Revisi',
   approved: 'Disetujui',
@@ -350,6 +350,69 @@ export function stockOpnameLineStatusLabel(status?: string) {
   return status.replace(/_/g, ' ');
 }
 
+export type KolamStockOpnamePermissionAction =
+  | 'view'
+  | 'create'
+  | 'update'
+  | 'delete'
+  | 'submit'
+  | 'review'
+  | 'post';
+
+export type KolamStockOpnamePermissionEntry = {
+  resource?: string;
+  actions?: string[];
+};
+
+/** Mirror FE `hasPermission("stock-opname", action)` + super-admin wildcard. */
+export function hasKolamStockOpnamePermission(
+  permissions: KolamStockOpnamePermissionEntry[] | null | undefined,
+  action: KolamStockOpnamePermissionAction,
+  roleKey?: string | null,
+) {
+  const normalizedRole = String(roleKey ?? '')
+    .trim()
+    .toLowerCase();
+  if (
+    normalizedRole === 'super_administrator' ||
+    normalizedRole === 'super_admin' ||
+    normalizedRole === 'super-admin'
+  ) {
+    return true;
+  }
+
+  // Sesi tanpa payload permission (legacy): biarkan UI status-gated; BE tetap enforce.
+  if (permissions == null) {
+    return true;
+  }
+
+  const wanted = action.toLowerCase();
+  return permissions.some(permission => {
+    const resource = String(permission.resource ?? '')
+      .trim()
+      .toLowerCase();
+    const actions = (permission.actions ?? []).map(item =>
+      String(item).trim().toLowerCase(),
+    );
+    return (
+      (resource === 'stock-opname' || resource === '*') &&
+      (actions.includes(wanted) || actions.includes('*'))
+    );
+  });
+}
+
+export function formatStockOpnameLineCounts(
+  lineCounts: Record<string, number> | null | undefined,
+) {
+  if (!lineCounts) {
+    return '';
+  }
+  const parts = Object.entries(lineCounts)
+    .filter(([, count]) => Number.isFinite(count) && count > 0)
+    .map(([status, count]) => `${stockOpnameLineStatusLabel(status)}: ${count}`);
+  return parts.join(' · ');
+}
+
 export function stockOpnameTargetTypeLabel(targetType?: string) {
   if (!targetType) {
     return '—';
@@ -380,6 +443,40 @@ export function needsOpnameMinusReason(
     return false;
   }
   return diff != null && diff < 0;
+}
+
+export type KolamStockOpnameVariantOption = {
+  id: string;
+  label: string;
+  stock: number;
+};
+
+/** Ambil opsi varian dari payload produk/species mentah (FE variantConfig). */
+export function extractStockOpnameVariantsFromRaw(
+  raw: unknown,
+): KolamStockOpnameVariantOption[] {
+  const record = asRecord(raw);
+  const hasConfig = Boolean(record.variantConfig);
+  const variants = Array.isArray(record.variants) ? record.variants : [];
+  if (!hasConfig || variants.length === 0) {
+    return [];
+  }
+  return variants
+    .map(item => {
+      const row = asRecord(item);
+      const id = getString(row, '_id') || getString(row, 'id');
+      const label =
+        getString(row, 'name') ||
+        getString(row, 'label') ||
+        getString(row, 'sku') ||
+        id;
+      const stock =
+        getNumber(row, 'stock') ??
+        getNumber(row, 'currentStock') ??
+        0;
+      return { id, label, stock };
+    })
+    .filter(item => Boolean(item.id));
 }
 
 export function stockOpnameUserDisplayName(

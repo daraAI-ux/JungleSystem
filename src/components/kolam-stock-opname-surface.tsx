@@ -12,12 +12,14 @@ import {
   KOLAM_STOCK_OPNAME_LINE_TARGET_LABELS,
   KOLAM_STOCK_OPNAME_ROOT,
   KOLAM_STOCK_OPNAME_STATUS_OPTIONS,
+  hasKolamStockOpnamePermission,
   stockOpnameUserDisplayName,
   type KolamStockOpname,
   type KolamStockOpnameLineTargetType,
   type KolamStockOpnameStatus,
 } from '../domain/kolam-stock-opname';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
+import { useKolamAuthContext } from '../context/kolam-app-contexts';
 import {
   useKolamStockOpnameController,
   type KolamStockOpnameController,
@@ -38,12 +40,13 @@ import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamModalBackdrop } from './kolam-modal-backdrop';
 import { KolamStatusBadge } from './kolam-status-badge';
+import { KolamStockOpnameDetail } from './kolam-stock-opname-detail';
 
 const LIST_COLUMNS = [
   { id: 'document', label: 'Dokumen', flex: 1.2 },
   { id: 'status', label: 'Status', flex: 1 },
   { id: 'created', label: 'Dibuat', flex: 1.1 },
-  { id: 'owner', label: 'Pemilik', flex: 1 },
+  { id: 'owner', label: 'PIC', flex: 1 },
   { id: 'actions', label: '', flex: 0.45 },
 ] as const;
 
@@ -58,8 +61,7 @@ const IMPORT_TARGET_OPTIONS: Array<{
 ];
 
 /**
- * List UI = batch 2 (paritas FE `/stock-opname`).
- * New/detail form lengkap = batch berikutnya.
+ * Stock Opname dokumen — list + create + detail (paritas FE `/stock-opname`).
  */
 export function KolamStockOpnameSurface({
   onRouteChange,
@@ -102,35 +104,108 @@ export function KolamStockOpnameSurface({
       ) : null}
 
       {controller.mode === 'new' ? (
-        <KolamCardFrame style={styles.placeholderCard} variant="compact">
-          <Text style={styles.sectionTitle}>Stock opname baru</Text>
-          <Text style={styles.muted}>
-            Form buat draf (catatan + Buat draf) menyusul di batch berikutnya —
-            perilaku sama FE `/stock-opname/new`.
-          </Text>
-          <KolamButton
-            label="Kembali ke daftar"
-            onPress={() => onRouteChange?.(KOLAM_STOCK_OPNAME_ROOT)}
-          />
-        </KolamCardFrame>
+        <KolamStockOpnameCreateForm
+          controller={controller}
+          onRouteChange={onRouteChange}
+        />
       ) : null}
 
       {controller.mode === 'detail' ? (
-        <KolamCardFrame style={styles.placeholderCard} variant="compact">
-          <Text style={styles.sectionTitle}>Detail dokumen</Text>
-          <Text style={styles.muted}>
-            ID: {controller.documentId || '—'}
-          </Text>
-          <Text style={styles.muted}>
-            Header, baris, review, dan posting menyusul di batch berikutnya —
-            perilaku sama FE `/stock-opname/[id]`.
+        <KolamStockOpnameDetail
+          documentId={controller.documentId}
+          onRouteChange={onRouteChange}
+        />
+      ) : null}
+    </View>
+  );
+}
+
+function KolamStockOpnameCreateForm({
+  controller,
+  onRouteChange,
+}: {
+  controller: KolamStockOpnameController;
+  onRouteChange?: (route: string) => void;
+}) {
+  const { authUser } = useKolamAuthContext();
+  const canCreate = hasKolamStockOpnamePermission(
+    authUser?.permissions,
+    'create',
+    authUser?.roleKey,
+  );
+  const [note, setNote] = React.useState('');
+
+  if (!canCreate) {
+    return (
+      <View style={styles.createRoot}>
+        <KolamCardFrame style={styles.createCard} variant="compact">
+          <Text style={styles.createTitle}>Tidak diizinkan</Text>
+          <Text style={styles.createHint}>
+            Anda tidak punya izin membuat draf stock opname.
           </Text>
           <KolamButton
             label="Kembali ke daftar"
             onPress={() => onRouteChange?.(KOLAM_STOCK_OPNAME_ROOT)}
           />
         </KolamCardFrame>
-      ) : null}
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.createRoot}>
+      <KolamCardFrame style={styles.createCard} variant="compact">
+        <Text style={styles.createTitle}>Stock opname baru</Text>
+        <Text style={styles.createHint}>
+          Halaman ini hanya membuat nomor dokumen (draf). Barang / SKU diisi di
+          langkah berikutnya.
+        </Text>
+        <View style={styles.createSteps}>
+          <Text style={styles.createStep}>
+            1. Isi catatan (opsional) lalu klik Buat draf.
+          </Text>
+          <Text style={styles.createStep}>
+            2. Isi PIC dan pelaksana, lalu tambah baris barang.
+          </Text>
+          <Text style={styles.createStep}>
+            3. Kirim untuk review, lalu posting ke stok saat siap.
+          </Text>
+        </View>
+        <Text style={styles.fieldLabel}>Catatan (opsional)</Text>
+        <KolamFormTextField
+          multiline
+          numberOfLines={4}
+          onChangeText={setNote}
+          placeholder="Contoh: Opname rak A1 / minggu ke-14"
+          style={styles.createNote}
+          value={note}
+        />
+        <View style={styles.createActions}>
+          <KolamButton
+            label="Batal"
+            muted
+            onPress={() => onRouteChange?.(KOLAM_STOCK_OPNAME_ROOT)}
+          />
+          <KolamButton
+            disabled={controller.creating}
+            intent="primary"
+            label={
+              controller.creating
+                ? 'Membuat…'
+                : 'Buat draf & lanjut isi barang'
+            }
+            onPress={() => {
+              void controller.onCreate(note).then(doc => {
+                if (doc) {
+                  onRouteChange?.(
+                    `${KOLAM_STOCK_OPNAME_ROOT}/${encodeURIComponent(doc.id)}`,
+                  );
+                }
+              });
+            }}
+          />
+        </View>
+      </KolamCardFrame>
     </View>
   );
 }
@@ -147,6 +222,17 @@ function KolamStockOpnameList({
   const [importOpen, setImportOpen] = React.useState(false);
   const [deleteTarget, setDeleteTarget] = React.useState<KolamStockOpname | null>(
     null,
+  );
+  const { authUser } = useKolamAuthContext();
+  const canCreate = hasKolamStockOpnamePermission(
+    authUser?.permissions,
+    'create',
+    authUser?.roleKey,
+  );
+  const canDelete = hasKolamStockOpnamePermission(
+    authUser?.permissions,
+    'delete',
+    authUser?.roleKey,
   );
   const pageCount = Math.max(1, controller.pagination.totalPages);
   const safePage = Math.min(Math.max(controller.pagination.page, 1), pageCount);
@@ -228,7 +314,7 @@ function KolamStockOpnameList({
                 onPress: () =>
                   onRouteChange?.(`${KOLAM_STOCK_OPNAME_ROOT}/${item.id}`),
               },
-              ...(item.status === 'cancelled'
+              ...(item.status === 'cancelled' && canDelete
                 ? [
                     {
                       label: 'Hapus',
@@ -242,7 +328,7 @@ function KolamStockOpnameList({
         </View>
       </Pressable>
     ),
-    [onRouteChange],
+    [canDelete, onRouteChange],
   );
 
   return (
@@ -326,7 +412,7 @@ function KolamStockOpnameList({
             ) : null}
             <KolamButton
               disabled={controller.loading}
-              label="Refresh"
+              label="Muat ulang"
               onPress={() => {
                 void controller.onRefresh();
               }}
@@ -340,23 +426,27 @@ function KolamStockOpnameList({
               }}
               style={styles.toolbarButton}
             />
-            <KolamButton
-              disabled={controller.importing}
-              label="Impor"
-              onPress={() => {
-                setStatusPanelOpen(false);
-                setImportOpen(true);
-              }}
-              style={styles.toolbarButton}
-            />
-            <KolamButton
-              intent="primary"
-              label="Baru"
-              onPress={() =>
-                onRouteChange?.(`${KOLAM_STOCK_OPNAME_ROOT}/new`)
-              }
-              style={styles.toolbarButton}
-            />
+            {canCreate ? (
+              <KolamButton
+                disabled={controller.importing}
+                label="Impor"
+                onPress={() => {
+                  setStatusPanelOpen(false);
+                  setImportOpen(true);
+                }}
+                style={styles.toolbarButton}
+              />
+            ) : null}
+            {canCreate ? (
+              <KolamButton
+                intent="primary"
+                label="Baru"
+                onPress={() =>
+                  onRouteChange?.(`${KOLAM_STOCK_OPNAME_ROOT}/new`)
+                }
+                style={styles.toolbarButton}
+              />
+            ) : null}
           </View>
         </View>
 
@@ -866,8 +956,45 @@ const styles = StyleSheet.create({
     color: V.colors.mutedFg,
     fontSize: 12,
   },
-  placeholderCard: {
-    gap: 10,
+  createRoot: {
+    gap: 12,
+    maxWidth: 560,
+  },
+  createCard: {
+    gap: 12,
+  },
+  createTitle: {
+    color: V.colors.fg,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  createHint: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    lineHeight: 17,
+  },
+  createSteps: {
+    gap: 4,
+  },
+  createStep: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    lineHeight: 17,
+  },
+  fieldLabel: {
+    color: V.colors.fg,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  createNote: {
+    minHeight: 88,
+    textAlignVertical: 'top',
+  },
+  createActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'flex-end',
   },
   sectionTitle: {
     color: V.colors.fg,
@@ -893,11 +1020,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: V.colors.border,
     backgroundColor: V.colors.bg,
-  },
-  fieldLabel: {
-    color: V.colors.mutedFg,
-    fontSize: 12,
-    fontWeight: '600',
   },
   importTargetRow: {
     flexDirection: 'row',
