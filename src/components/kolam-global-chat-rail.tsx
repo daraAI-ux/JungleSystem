@@ -172,7 +172,6 @@ interface KolamChatRailInboxFilter {
   platform: KolamChatPlatform | 'all';
   search: string;
   status: KolamChatConversationStatus | 'all';
-  unreadOnly: boolean;
 }
 
 type KolamTeamMentionTextPart =
@@ -204,7 +203,6 @@ export function KolamGlobalChatRail({
       platform: 'all',
       search: '',
       status: 'open',
-      unreadOnly: true,
     });
   const inboxParams = React.useMemo(
     () => buildInboxListParams(inboxFilter),
@@ -779,6 +777,9 @@ export function KolamGlobalChatRail({
                   onPress={() => setSelectedItemId(item.id)}
                   style={[
                     styles.row,
+                    mode === 'inbox' &&
+                      item.unreadCount > 0 &&
+                      styles.rowUnread,
                     item.id === selectedItemId && styles.rowSelected,
                   ]}>
                   <View style={styles.rowCopy}>
@@ -865,8 +866,7 @@ function KolamInboxFilterPanel({
     filter.labelId !== 'all' ||
     filter.platform !== 'all' ||
     filter.search.trim().length > 0 ||
-    filter.status !== 'open' ||
-    !filter.unreadOnly;
+    filter.status !== 'open';
 
   return (
     <View accessibilityLabel="Filter inbox chat" style={styles.filterPanel}>
@@ -930,11 +930,6 @@ function KolamInboxFilterPanel({
         </View>
       </View>
       <View style={styles.filterBottomRow}>
-        <KolamFilterChip
-          active={filter.unreadOnly}
-          label="Unread"
-          onPress={() => onChange({...filter, unreadOnly: !filter.unreadOnly})}
-        />
         {labels.length > 0 ? (
           <ScrollView
             horizontal
@@ -968,7 +963,6 @@ function KolamInboxFilterPanel({
                 platform: 'all',
                 search: '',
                 status: 'open',
-                unreadOnly: true,
               })
             }
             style={styles.filterResetButton}>
@@ -3507,7 +3501,6 @@ function buildInboxListParams(
   const params: KolamChatConversationListParams = {
     limit: 100,
     page: 1,
-    unreadOnly: filter.unreadOnly,
   };
 
   if (filter.status !== 'all') {
@@ -6581,6 +6574,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
+  },
+  rowUnread: {
+    borderColor: 'rgba(220, 38, 38, 0.28)',
+    backgroundColor: 'rgba(254, 226, 226, 0.72)',
   },
   rowSelected: {
     borderColor: V.colors.primary,

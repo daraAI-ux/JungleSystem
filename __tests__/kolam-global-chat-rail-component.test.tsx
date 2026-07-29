@@ -1,5 +1,5 @@
 import React from 'react';
-import {Linking, Text, TextInput, View} from 'react-native';
+import {Linking, StyleSheet, Text, TextInput, View} from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 import {KolamGlobalChatRail} from '../src/components/kolam-global-chat-rail';
 import {KolamPressable} from '../src/components/kolam-pressable';
@@ -656,6 +656,12 @@ describe('KolamGlobalChatRail', () => {
     expect(renderText(renderer!)).not.toEqual(
       expect.arrayContaining(['2 conversation terpantau']),
     );
+
+    const unreadRow = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Pilih conversation Buyer Tokopedia');
+    const unreadRowStyle = StyleSheet.flatten(unreadRow!.props.style);
+    expect(unreadRowStyle.backgroundColor).toBe('rgba(254, 226, 226, 0.72)');
   });
 
   it('passes inbox filter parity params to the rail data hook', async () => {
@@ -699,10 +705,14 @@ describe('KolamGlobalChatRail', () => {
         limit: 100,
         page: 1,
         status: 'open',
-        unreadOnly: true,
       },
       mode: 'inbox',
     });
+    expect(
+      renderer!.root
+        .findAllByType(KolamPressable)
+        .some(node => node.props.accessibilityLabel === 'Filter Unread'),
+    ).toBe(false);
 
     const searchInput = renderer!.root
       .findAllByType(TextInput)
@@ -713,9 +723,6 @@ describe('KolamGlobalChatRail', () => {
     const closedButton = renderer!.root
       .findAllByType(KolamPressable)
       .find(node => node.props.accessibilityLabel === 'Filter Ditutup');
-    const unreadButton = renderer!.root
-      .findAllByType(KolamPressable)
-      .find(node => node.props.accessibilityLabel === 'Filter Unread');
     const assignedButton = renderer!.root
       .findAllByType(KolamPressable)
       .find(node => node.props.accessibilityLabel === 'Filter Ditugaskan');
@@ -728,9 +735,6 @@ describe('KolamGlobalChatRail', () => {
     });
     await ReactTestRenderer.act(async () => {
       closedButton!.props.onPress();
-    });
-    await ReactTestRenderer.act(async () => {
-      unreadButton!.props.onPress();
     });
     await ReactTestRenderer.act(async () => {
       assignedButton!.props.onPress();
@@ -754,7 +758,6 @@ describe('KolamGlobalChatRail', () => {
         platform: 'tokopedia',
         search: 'buyer',
         status: 'closed',
-        unreadOnly: false,
       },
       mode: 'inbox',
     });
