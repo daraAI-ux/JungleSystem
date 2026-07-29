@@ -1927,14 +1927,13 @@ const styles = StyleSheet.create({
     paddingTop: 6,
   },
   tableFrame: {
-    flex: 1,
     minHeight: 0,
   },
   listFlatList: {
-    flexGrow: 1,
+    flexGrow: 0,
   },
   listContent: {
-    flexGrow: 1,
+    flexGrow: 0,
   },
   errorBadge: {
     alignSelf: 'stretch',
