@@ -1009,6 +1009,11 @@ function KolamSupplierDetail({
             ]}
           />
         </KolamContentFrame>
+
+        <KolamSupplierTaxProfileCard
+          controller={controller}
+          style={[styles.detailCard, styles.detailInfoCard]}
+        />
       </View>
 
       <KolamSupplierCatalogTabs
@@ -1016,8 +1021,6 @@ function KolamSupplierDetail({
         onRouteChange={onRouteChange}
         vendor={vendor}
       />
-
-      <KolamSupplierTaxProfileCard controller={controller} />
 
       {photoUrls.length > 1 ? (
         <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
@@ -1311,8 +1314,10 @@ function KolamSupplierCatalogTabs({
 
 function KolamSupplierTaxProfileCard({
   controller,
+  style,
 }: {
   controller: KolamSupplierController;
+  style?: React.ComponentProps<typeof KolamContentFrame>['style'];
 }) {
   const { authUser } = useKolamAuthContext();
   const canEdit = canEditKolamTaxPartyProfile({
@@ -1324,9 +1329,12 @@ function KolamSupplierTaxProfileCard({
     controller.taxProfileLoaded && hasKolamTaxPartyNpwp(form);
 
   return (
-    <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
+    <KolamContentFrame
+      style={style ?? styles.detailCard}
+      variant="settingsWebConfig"
+    >
       <View style={styles.taxHeader}>
-        <Text style={styles.sectionTitle}>Profil pajak pemasok</Text>
+        <Text style={styles.sectionTitle}>Profil pajak</Text>
         {controller.taxProfileLoaded ? (
           <KolamStatusBadge
             intent={hasNpwp ? 'success' : 'warning'}
@@ -1344,37 +1352,31 @@ function KolamSupplierTaxProfileCard({
       ) : (
         <View style={settingsWebFormStyles.settingsWebFormFields}>
           <View style={settingsWebFormStyles.settingsWebFormFieldsGrid}>
-            <View style={styles.formSplitRow}>
-              <View style={styles.formSplitCell}>
-                <FieldShell label="NPWP 15 digit">
-                  <KolamFormTextField
-                    editable={canEdit && !controller.taxProfileSaving}
-                    mode="numeric"
-                    onChangeText={npwp =>
-                      controller.onChangeTaxProfile({ npwp })
-                    }
-                    placeholder="15 digit"
-                    style={settingsWebFormStyles.settingsWebFormFieldValue}
-                    value={form.npwp}
-                  />
-                </FieldShell>
-              </View>
-              <View style={styles.formSplitCell}>
-                <FieldShell label="NPWP 16 digit">
-                  <KolamFormTextField
-                    editable={canEdit && !controller.taxProfileSaving}
-                    mode="numeric"
-                    onChangeText={npwp16 =>
-                      controller.onChangeTaxProfile({ npwp16 })
-                    }
-                    placeholder="16 digit"
-                    style={settingsWebFormStyles.settingsWebFormFieldValue}
-                    value={form.npwp16}
-                  />
-                </FieldShell>
-              </View>
-            </View>
-            <FieldShell label="Nama legal vendor (faktur)">
+            <FieldShell label="NPWP 15 digit">
+              <KolamFormTextField
+                editable={canEdit && !controller.taxProfileSaving}
+                mode="numeric"
+                onChangeText={npwp =>
+                  controller.onChangeTaxProfile({ npwp })
+                }
+                placeholder="15 digit"
+                style={settingsWebFormStyles.settingsWebFormFieldValue}
+                value={form.npwp}
+              />
+            </FieldShell>
+            <FieldShell label="NPWP 16 digit">
+              <KolamFormTextField
+                editable={canEdit && !controller.taxProfileSaving}
+                mode="numeric"
+                onChangeText={npwp16 =>
+                  controller.onChangeTaxProfile({ npwp16 })
+                }
+                placeholder="16 digit"
+                style={settingsWebFormStyles.settingsWebFormFieldValue}
+                value={form.npwp16}
+              />
+            </FieldShell>
+            <FieldShell label="Nama legal (faktur)">
               <KolamFormTextField
                 editable={canEdit && !controller.taxProfileSaving}
                 onChangeText={legalName =>
