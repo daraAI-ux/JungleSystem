@@ -36,10 +36,17 @@ export interface KolamLocationListItem {
   description: string;
   address: string;
   capacitySlots: number | null;
+  children?: KolamLocationListItem[];
   mapsUrl: string;
   phoneNumber: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface KolamLocationDetailItem extends KolamLocationListItem {
+  children: KolamLocationListItem[];
+  secondary: KolamLocationListItem[];
+  tertiary: KolamLocationListItem[];
 }
 
 export interface KolamLocationPagination {
@@ -117,6 +124,19 @@ export async function getKolamLocationList({
   return normalizeKolamLocationListResult(response, {limit, page});
 }
 
+export async function getKolamLocationDetail(
+  locationId: string,
+): Promise<KolamLocationDetailItem> {
+  const response = await kolamRequest<unknown>(`/location/${locationId}`);
+  const location = normalizeKolamLocationDetailItem(response);
+
+  if (!location) {
+    throw new Error('Lokasi tidak ditemukan.');
+  }
+
+  return location;
+}
+
 function normalizeKolamLocationListResult(
   payload: unknown,
   fallback: Required<Pick<KolamLocationListQuery, 'limit' | 'page'>>,
@@ -160,11 +180,43 @@ function normalizeKolamLocationListItem(
     description: getString(record, 'description'),
     address: getString(record, 'address'),
     capacitySlots: getNumber(record, 'capacitySlots') ?? null,
+    children: normalizeKolamLocationChildList(record.children),
     mapsUrl: getString(record, 'mapsUrl'),
     phoneNumber: getString(record, 'phoneNumber') || getString(record, 'phone'),
     createdAt: getString(record, 'createdAt'),
     updatedAt: getString(record, 'updatedAt'),
   };
+}
+
+function normalizeKolamLocationDetailItem(
+  payload: unknown,
+): KolamLocationDetailItem | null {
+  const record = asRecord(payload);
+  const raw = asRecord(record.data);
+  const base = normalizeKolamLocationListItem(
+    Object.keys(raw).length ? raw : payload,
+  );
+
+  if (!base) {
+    return null;
+  }
+
+  const source = Object.keys(raw).length ? raw : record;
+
+  return {
+    ...base,
+    children: normalizeKolamLocationChildList(source.children),
+    secondary: normalizeKolamLocationChildList(source.secondary),
+    tertiary: normalizeKolamLocationChildList(source.tertiary),
+  };
+}
+
+function normalizeKolamLocationChildList(value: unknown) {
+  return Array.isArray(value)
+    ? value
+        .map(normalizeKolamLocationListItem)
+        .filter((item): item is KolamLocationListItem => Boolean(item))
+    : [];
 }
 
 function normalizeKolamLocationParent(
