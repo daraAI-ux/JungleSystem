@@ -28,6 +28,7 @@ import {
   getKolamWebSettingVersions,
   deleteKolamNotificationSound,
   declineKolamTeamChatCall,
+  editKolamChatMessage,
   editKolamTeamChatMessage,
   endKolamTeamChatCall,
   forceUnassignKolamChatConversation,
@@ -1300,6 +1301,16 @@ describe('Kolam Settings API contracts', () => {
             content: {type: 'text', text: 'Masih tersedia.'},
           },
         }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          success: true,
+          data: {
+            _id: 'msg-2',
+            direction: 'out',
+            content: {type: 'text', text: 'Masih tersedia, kak.'},
+          },
+        }),
       );
 
     await expect(getKolamChatMessages('conv-1')).resolves.toEqual([
@@ -1308,6 +1319,9 @@ describe('Kolam Settings API contracts', () => {
     await expect(markKolamChatConversationRead('conv-1')).resolves.toBeUndefined();
     await expect(
       sendKolamChatTextMessage('conv-1', 'Masih tersedia.'),
+    ).resolves.toEqual(expect.objectContaining({_id: 'msg-2'}));
+    await expect(
+      editKolamChatMessage('conv-1', 'msg-2', 'Masih tersedia, kak.'),
     ).resolves.toEqual(expect.objectContaining({_id: 'msg-2'}));
 
     expect(fetchMock).toHaveBeenNthCalledWith(
@@ -1331,6 +1345,14 @@ describe('Kolam Settings API contracts', () => {
             text: 'Masih tersedia.',
           },
         }),
+      }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      4,
+      `${appConfig.kolamApiBaseUrl}/chat/conversations/conv-1/messages/msg-2`,
+      expect.objectContaining({
+        method: 'PATCH',
+        body: JSON.stringify({text: 'Masih tersedia, kak.'}),
       }),
     );
   });

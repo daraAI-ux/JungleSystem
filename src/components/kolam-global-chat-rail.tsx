@@ -1621,7 +1621,13 @@ function KolamChatRailDetailPanel({
               getKey={message => message.id}
               renderItem={message => {
                 const isEditing = editingMessageId === message.id;
-                const canEdit = canEditTeamChatMessage(message, currentUserId);
+                const canEdit =
+                  mode === 'team-chat'
+                    ? canEditTeamChatMessage(message, currentUserId)
+                    : canEditInboxMessage(message, currentUserId);
+                const canReply =
+                  mode === 'team-chat' ||
+                  canReplyToInboxConversation(detail.conversation);
 
                 return (
                   <View
@@ -1637,7 +1643,7 @@ function KolamChatRailDetailPanel({
                         replyPreview={message.replyPreview}
                       />
                     ) : null}
-                    {mode === 'team-chat' && isEditing ? (
+                    {isEditing ? (
                       <View style={styles.editMessageComposer}>
                         <TextInput
                           accessibilityLabel={`Edit pesan ${message.author}`}
@@ -1651,7 +1657,7 @@ function KolamChatRailDetailPanel({
                         />
                         <View style={styles.editMessageActions}>
                           <KolamPressable
-                            accessibilityLabel="Batalkan edit pesan team chat"
+                            accessibilityLabel="Batalkan edit pesan chat"
                             disabled={detail.sending}
                             onPress={handleCancelEditMessage}
                             style={[
@@ -1663,7 +1669,7 @@ function KolamChatRailDetailPanel({
                             </Text>
                           </KolamPressable>
                           <KolamPressable
-                            accessibilityLabel="Simpan edit pesan team chat"
+                            accessibilityLabel="Simpan edit pesan chat"
                             disabled={!editingDraft.trim() || detail.sending}
                             onPress={() => handleSaveEditMessage(message.id)}
                             style={[
@@ -1723,8 +1729,11 @@ function KolamChatRailDetailPanel({
                         ) : null}
                         {mode === 'inbox' ? (
                           <KolamInboxMessageActions
+                            canEdit={canEdit}
+                            canReply={canReply}
                             disabled={detail.sending}
                             message={message}
+                            onEdit={() => handleStartEditMessage(message)}
                             onReply={() =>
                               onReplyToMessage({
                                 author: message.author,
@@ -2104,6 +2113,28 @@ function canEditTeamChatMessage(
       message.senderId === currentUserId &&
       message.author !== 'DARA' &&
       message.body.trim(),
+  );
+}
+
+function canEditInboxMessage(
+  message: ReturnType<typeof useKolamChatRailDetail>['messages'][number],
+  currentUserId?: string,
+) {
+  return Boolean(
+    currentUserId &&
+      message.mine &&
+      message.senderId &&
+      message.senderId === currentUserId &&
+      message.content?.type === 'text' &&
+      message.body.trim(),
+  );
+}
+
+function canReplyToInboxConversation(
+  conversation: ReturnType<typeof useKolamChatRailDetail>['conversation'],
+) {
+  return (
+    conversation?.platform === 'store' || conversation?.platform === 'whatsapp'
   );
 }
 
@@ -3142,23 +3173,48 @@ function KolamChatEmbedCard({embed}: {embed: KolamTeamChatEmbed}) {
 }
 
 function KolamInboxMessageActions({
+  canEdit,
+  canReply,
   disabled,
   message,
+  onEdit,
   onReply,
 }: {
+  canEdit: boolean;
+  canReply: boolean;
   disabled: boolean;
   message: ReturnType<typeof useKolamChatRailDetail>['messages'][number];
+  onEdit: () => void;
   onReply: () => void;
 }) {
+  if (!canEdit && !canReply) {
+    return null;
+  }
+
   return (
     <View style={styles.messageActionRow}>
-      <KolamPressable
-        accessibilityLabel={`Balas pesan ${message.author}`}
-        disabled={disabled}
-        onPress={onReply}
-        style={[styles.replyActionButton, disabled && styles.attachButtonDisabled]}>
-        <Text style={styles.replyActionText}>Balas</Text>
-      </KolamPressable>
+      {canReply ? (
+        <KolamPressable
+          accessibilityLabel={`Balas pesan ${message.author}`}
+          disabled={disabled}
+          onPress={onReply}
+          style={[styles.replyActionButton, disabled && styles.attachButtonDisabled]}>
+          <Text style={styles.replyActionText}>Balas</Text>
+        </KolamPressable>
+      ) : null}
+      {canEdit ? (
+        <KolamPressable
+          accessibilityLabel={`Edit pesan ${message.author}`}
+          disabled={disabled}
+          onPress={onEdit}
+          style={[
+            styles.replyActionButton,
+            styles.editActionButton,
+            disabled && styles.attachButtonDisabled,
+          ]}>
+          <Text style={styles.replyActionText}>Edit</Text>
+        </KolamPressable>
+      ) : null}
     </View>
   );
 }

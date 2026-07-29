@@ -909,8 +909,8 @@ describe('KolamGlobalChatRail', () => {
       conversations: [
         {
           _id: 'conv-1',
-          platform: 'tokopedia',
-          contactId: {displayName: 'Buyer Tokopedia'},
+          platform: 'store',
+          contactId: {displayName: 'Buyer Store'},
           lastMessagePreview: 'Apakah masih tersedia?',
           unreadCount: 1,
         },
@@ -926,6 +926,7 @@ describe('KolamGlobalChatRail', () => {
         _id: 'conv-1',
         assignedStaffId: null,
         isAiHandled: false,
+        platform: 'store',
         status: 'open',
       },
       loading: false,
@@ -955,7 +956,7 @@ describe('KolamGlobalChatRail', () => {
 
     const selectButton = renderer!.root
       .findAllByType(KolamPressable)
-      .find(node => node.props.accessibilityLabel === 'Pilih conversation Buyer Tokopedia');
+      .find(node => node.props.accessibilityLabel === 'Pilih conversation Buyer Store');
 
     await ReactTestRenderer.act(async () => {
       selectButton!.props.onPress();
@@ -997,6 +998,184 @@ describe('KolamGlobalChatRail', () => {
     expect(sendMessage).toHaveBeenCalledWith('Saya balas pesan ini.', {
       replyToMessageId: 'msg-1',
     });
+  });
+
+  it('hides inbox reply action for marketplace conversations', async () => {
+    useReadonlyDataMock.mockReturnValue({
+      conversations: [
+        {
+          _id: 'conv-1',
+          platform: 'tokopedia',
+          contactId: {displayName: 'Buyer Tokopedia'},
+          lastMessagePreview: 'Apakah masih tersedia?',
+          unreadCount: 1,
+        },
+      ],
+      loading: false,
+      refresh: jest.fn(),
+      rooms: [],
+      totalUnread: 1,
+    });
+    useDetailMock.mockReturnValue({
+      ...getDefaultDetailMock(),
+      conversation: {
+        _id: 'conv-1',
+        assignedStaffId: null,
+        isAiHandled: false,
+        platform: 'tokopedia',
+        status: 'open',
+      },
+      loading: false,
+      messages: [
+        {
+          attachments: [],
+          embeds: [],
+          id: 'msg-1',
+          author: 'Buyer',
+          body: 'Apakah masih tersedia?',
+          linkPreviews: [],
+          mine: false,
+          reactions: [],
+          sentAt: '2026-07-28T08:00:00.000Z',
+        },
+      ],
+      signalTyping: jest.fn(),
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamGlobalChatRail mode="inbox" onClose={() => undefined} />,
+      );
+    });
+
+    const selectButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Pilih conversation Buyer Tokopedia');
+
+    await ReactTestRenderer.act(async () => {
+      selectButton!.props.onPress();
+    });
+
+    expect(
+      renderer!.root
+        .findAllByType(KolamPressable)
+        .some(node => node.props.accessibilityLabel === 'Balas pesan Buyer'),
+    ).toBe(false);
+  });
+
+  it('edits only current staff outgoing inbox text messages', async () => {
+    const editMessage = jest.fn().mockResolvedValue(undefined);
+    useReadonlyDataMock.mockReturnValue({
+      conversations: [
+        {
+          _id: 'conv-1',
+          platform: 'store',
+          contactId: {displayName: 'Buyer Store'},
+          lastMessagePreview: 'Draft lama',
+          unreadCount: 0,
+        },
+      ],
+      loading: false,
+      refresh: jest.fn(),
+      rooms: [],
+      totalUnread: 0,
+    });
+    useDetailMock.mockReturnValue({
+      ...getDefaultDetailMock(),
+      conversation: {
+        _id: 'conv-1',
+        assignedStaffId: {
+          _id: 'staff-1',
+          first_name: 'Staff',
+        },
+        isAiHandled: false,
+        platform: 'store',
+        status: 'open',
+      },
+      editMessage,
+      loading: false,
+      messages: [
+        {
+          attachments: [],
+          content: {type: 'text', text: 'Draft lama'},
+          editedAt: '2026-07-28T08:05:00.000Z',
+          editedByName: 'Staff',
+          embeds: [],
+          id: 'msg-own',
+          author: 'Staff',
+          body: 'Draft lama',
+          linkPreviews: [],
+          mine: true,
+          reactions: [],
+          senderId: 'staff-1',
+          sentAt: '2026-07-28T08:00:00.000Z',
+        },
+        {
+          attachments: [],
+          content: {type: 'text', text: 'Pesan Buyer'},
+          embeds: [],
+          id: 'msg-buyer',
+          author: 'Buyer',
+          body: 'Pesan Buyer',
+          linkPreviews: [],
+          mine: false,
+          reactions: [],
+          sentAt: '2026-07-28T08:01:00.000Z',
+        },
+      ],
+      signalTyping: jest.fn(),
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamGlobalChatRail mode="inbox" onClose={() => undefined} />,
+      );
+    });
+
+    const selectButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Pilih conversation Buyer Store');
+
+    await ReactTestRenderer.act(async () => {
+      selectButton!.props.onPress();
+    });
+
+    expect(
+      renderText(renderer!).some(text => text.includes('Diedit oleh Staff')),
+    ).toBe(true);
+    expect(
+      renderer!.root
+        .findAllByType(KolamPressable)
+        .some(node => node.props.accessibilityLabel === 'Edit pesan Buyer'),
+    ).toBe(false);
+
+    const editButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Edit pesan Staff');
+
+    await ReactTestRenderer.act(async () => {
+      editButton!.props.onPress();
+    });
+
+    const editInput = renderer!.root
+      .findAllByType(TextInput)
+      .find(node => node.props.accessibilityLabel === 'Edit pesan Staff');
+
+    await ReactTestRenderer.act(async () => {
+      editInput!.props.onChangeText('Draft baru inbox');
+    });
+
+    const saveButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Simpan edit pesan chat');
+
+    await ReactTestRenderer.act(async () => {
+      await saveButton!.props.onPress();
+    });
+
+    expect(editMessage).toHaveBeenCalledWith('msg-own', 'Draft baru inbox');
   });
 
   it('renders rich inbox message content from live plugin payloads', async () => {
@@ -2012,7 +2191,7 @@ describe('KolamGlobalChatRail', () => {
     const saveButton = renderer!.root
       .findAllByType(KolamPressable)
       .find(
-        node => node.props.accessibilityLabel === 'Simpan edit pesan team chat',
+        node => node.props.accessibilityLabel === 'Simpan edit pesan chat',
       );
 
     await ReactTestRenderer.act(async () => {

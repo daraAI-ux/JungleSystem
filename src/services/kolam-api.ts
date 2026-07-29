@@ -731,6 +731,7 @@ export interface KolamChatMessage {
   _id: string;
   conversationId?: string;
   direction?: 'in' | 'out';
+  senderStaffId?: string | KolamChatStaffRef | null;
   senderName?: string;
   senderType?: 'buyer' | 'staff' | 'system' | 'ai_agent';
   content?: KolamChatMessageContent;
@@ -2239,6 +2240,21 @@ export async function sendKolamChatTextMessage(
         ? {replyToMessageId: options.replyToMessageId}
         : {}),
     },
+  );
+
+  return response.data;
+}
+
+export async function editKolamChatMessage(
+  conversationId: string,
+  messageId: string,
+  text: string,
+): Promise<KolamChatMessage> {
+  const response = await kolamPatch<DataResponse<KolamChatMessage>>(
+    `/chat/conversations/${encodeURIComponent(
+      conversationId,
+    )}/messages/${encodeURIComponent(messageId)}`,
+    {text},
   );
 
   return response.data;

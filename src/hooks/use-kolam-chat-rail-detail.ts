@@ -4,6 +4,7 @@ import {
   assignKolamChatConversation,
   declineKolamTeamChatCall,
   endKolamTeamChatCall,
+  editKolamChatMessage,
   editKolamTeamChatMessage,
   forceUnassignKolamChatConversation,
   getKolamChatConversation,
@@ -474,7 +475,7 @@ export function useKolamChatRailDetail({
   const editMessage = useCallback(
     async (messageId: string, text: string) => {
       const body = text.trim();
-      if (!selectedId || mode !== 'team-chat' || !body || sending) {
+      if (!selectedId || !body || sending) {
         return;
       }
 
@@ -482,6 +483,20 @@ export function useKolamChatRailDetail({
       setErrorMessage(undefined);
 
       try {
+        if (mode === 'inbox') {
+          const message = await editKolamChatMessage(
+            selectedId,
+            messageId,
+            body,
+          );
+          setMessages(current =>
+            current.map(item =>
+              item.id === messageId ? mapInboxMessage(message) : item,
+            ),
+          );
+          return;
+        }
+
         const message = await editKolamTeamChatMessage(
           selectedId,
           messageId,
@@ -805,12 +820,17 @@ function mapInboxMessage(message: KolamChatMessage): KolamChatRailDetailMessage 
     reactions: [],
     replyContent: message.replyContent ?? null,
     replyPreview: null,
-    senderId: null,
+    senderId: getInboxSenderStaffId(message),
     sentAt: message.sentAt ?? message.createdAt,
     editedAt: message.editedAt ?? null,
     editedByName: message.editedByName ?? null,
     status: message.deliveryStatus,
   };
+}
+
+function getInboxSenderStaffId(message: KolamChatMessage) {
+  const sender = message.senderStaffId;
+  return typeof sender === 'string' ? sender : sender?._id ?? null;
 }
 
 function mapTeamChatMessage(
