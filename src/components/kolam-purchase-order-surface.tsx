@@ -1374,23 +1374,6 @@ function KolamPurchaseOrderDetail({
       <KolamPOInstallmentSection controller={controller} po={po} />
       <KolamPOFakturPajakSection controller={controller} po={po} />
 
-      <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
-        <Text style={styles.sectionTitle}>Riwayat status</Text>
-        {po.histories.length ? (
-          po.histories.map(history => (
-            <View key={history.id} style={styles.historyRow}>
-              <Text style={styles.rowTitle}>{getKolamPOStatusLabel(history.status)}</Text>
-              <Text style={styles.rowMeta}>{history.note || '—'}</Text>
-              <Text style={styles.metaText}>
-                {history.changedByName || '—'} · {formatPODateTime(history.changedAt)}
-              </Text>
-            </View>
-          ))
-        ) : (
-          <Text style={styles.metaText}>Belum ada riwayat status.</Text>
-        )}
-      </KolamContentFrame>
-
       {activeDialog === 'receive' ? (
         <KolamPOReceiveDialog controller={controller} onClose={() => setActiveDialog(null)} />
       ) : null}
@@ -2755,12 +2738,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
     gap: 8,
-    paddingVertical: 8,
-  },
-  historyRow: {
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    gap: 2,
     paddingVertical: 8,
   },
 });
