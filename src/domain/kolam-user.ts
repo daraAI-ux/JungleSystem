@@ -67,6 +67,18 @@ export interface KolamUserCreatePayload {
   role: string;
 }
 
+export interface KolamUserUpdatePayload {
+  id: string;
+  username?: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone_number: string;
+  timezone: string;
+  role: string;
+  password?: string;
+}
+
 export interface KolamUserAccessBadge {
   id: KolamUserAccessId;
   label: string;

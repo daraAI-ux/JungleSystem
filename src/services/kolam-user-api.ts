@@ -8,6 +8,7 @@ import {
   type KolamUserListQuery,
   type KolamUserListResult,
   type KolamUserRoleOption,
+  type KolamUserUpdatePayload,
 } from '../domain/kolam-user';
 import {apiRequest} from '../lib/api-client';
 
@@ -69,6 +70,20 @@ export async function createKolamUser(
   payload: KolamUserCreatePayload,
 ): Promise<KolamUserListItem | null> {
   const response = await kolamRequest<unknown>('/auth/create-user-by-admin', {
+    body: payload,
+    method: 'POST',
+  });
+  const record = response && typeof response === 'object'
+    ? (response as Record<string, unknown>)
+    : {};
+
+  return normalizeKolamUserDetail(record.data ?? response);
+}
+
+export async function updateKolamUser(
+  payload: KolamUserUpdatePayload,
+): Promise<KolamUserListItem | null> {
+  const response = await kolamRequest<unknown>('/auth/update-profile-by-admin', {
     body: payload,
     method: 'POST',
   });

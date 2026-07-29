@@ -16,6 +16,7 @@ import {
   getKolamUserDetail,
   getKolamUserList,
   getKolamUserRoles,
+  updateKolamUser,
 } from '../services/kolam-user-api';
 import {KolamButton} from './kolam-button';
 import {KolamCatalogListTableShell} from './kolam-catalog-list-table-shell';
@@ -64,6 +65,59 @@ const EMPTY_CREATE_USER_FORM: KolamUserCreatePayload = {
   role: '',
   username: '',
 };
+
+type KolamUserEditForm = {
+  email: string;
+  first_name: string;
+  last_name: string;
+  password: string;
+  phone_number: string;
+  role: string;
+  timezone: string;
+  username: string;
+};
+
+const TIMEZONE_OPTIONS = [
+  {value: 'UTC-12:00', label: 'UTC-12:00 - Baker Island'},
+  {value: 'UTC-11:00', label: 'UTC-11:00 - American Samoa, Niue'},
+  {value: 'UTC-10:00', label: 'UTC-10:00 - Hawaii, Cook Islands'},
+  {value: 'UTC-09:30', label: 'UTC-09:30 - Marquesas Islands'},
+  {value: 'UTC-09:00', label: 'UTC-09:00 - Alaska, Gambier Islands'},
+  {value: 'UTC-08:00', label: 'UTC-08:00 - Pacific Time (US & Canada)'},
+  {value: 'UTC-07:00', label: 'UTC-07:00 - Mountain Time (US & Canada), Mexico'},
+  {value: 'UTC-06:00', label: 'UTC-06:00 - Central Time (US & Canada), Mexico'},
+  {value: 'UTC-05:00', label: 'UTC-05:00 - Eastern Time (US & Canada), Colombia'},
+  {value: 'UTC-04:00', label: 'UTC-04:00 - Atlantic Time, Venezuela, Bolivia'},
+  {value: 'UTC-03:30', label: 'UTC-03:30 - Newfoundland'},
+  {value: 'UTC-03:00', label: 'UTC-03:00 - Brazil, Argentina, Uruguay'},
+  {value: 'UTC-02:00', label: 'UTC-02:00 - South Georgia Islands'},
+  {value: 'UTC-01:00', label: 'UTC-01:00 - Azores, Cape Verde'},
+  {value: 'UTC+00:00', label: 'UTC+00:00 - London, Dublin, Lisbon, Morocco'},
+  {value: 'UTC+01:00', label: 'UTC+01:00 - Central Europe, West Africa'},
+  {value: 'UTC+02:00', label: 'UTC+02:00 - Eastern Europe, South Africa'},
+  {value: 'UTC+03:00', label: 'UTC+03:00 - Moscow, Turkey, East Africa'},
+  {value: 'UTC+03:30', label: 'UTC+03:30 - Iran'},
+  {value: 'UTC+04:00', label: 'UTC+04:00 - UAE, Azerbaijan, Mauritius'},
+  {value: 'UTC+04:30', label: 'UTC+04:30 - Afghanistan'},
+  {value: 'UTC+05:00', label: 'UTC+05:00 - Pakistan, Kazakhstan, Uzbekistan'},
+  {value: 'UTC+05:30', label: 'UTC+05:30 - India, Sri Lanka'},
+  {value: 'UTC+05:45', label: 'UTC+05:45 - Nepal'},
+  {value: 'UTC+06:00', label: 'UTC+06:00 - Bangladesh, Bhutan, Kyrgyzstan'},
+  {value: 'UTC+06:30', label: 'UTC+06:30 - Myanmar, Cocos Islands'},
+  {value: 'UTC+07:00', label: 'UTC+07:00 - Thailand, Vietnam, Cambodia, Laos'},
+  {value: 'UTC+08:00', label: 'UTC+08:00 - China, Singapore, Malaysia, Indonesia (West)'},
+  {value: 'UTC+08:30', label: 'UTC+08:30 - North Korea'},
+  {value: 'UTC+08:45', label: 'UTC+08:45 - Eucla, Australia'},
+  {value: 'UTC+09:00', label: 'UTC+09:00 - Japan, South Korea, Indonesia (Central)'},
+  {value: 'UTC+09:30', label: 'UTC+09:30 - Australia (Central)'},
+  {value: 'UTC+10:00', label: 'UTC+10:00 - Australia (East), Papua New Guinea'},
+  {value: 'UTC+10:30', label: 'UTC+10:30 - Lord Howe Island'},
+  {value: 'UTC+11:00', label: 'UTC+11:00 - Solomon Islands, New Caledonia'},
+  {value: 'UTC+12:00', label: 'UTC+12:00 - New Zealand, Fiji, Marshall Islands'},
+  {value: 'UTC+12:45', label: 'UTC+12:45 - Chatham Islands'},
+  {value: 'UTC+13:00', label: 'UTC+13:00 - Samoa, Tonga'},
+  {value: 'UTC+14:00', label: 'UTC+14:00 - Line Islands, Kiribati'},
+] as const;
 
 const INITIAL_PAGINATION: KolamUserListPagination = {
   hasMore: false,
@@ -741,7 +795,21 @@ function KolamUserEditSurface({
   userId: string;
 }) {
   const [user, setUser] = React.useState<KolamUserListItem | null>(null);
+  const [form, setForm] = React.useState<KolamUserEditForm>({
+    email: '',
+    first_name: '',
+    last_name: '',
+    password: '',
+    phone_number: '',
+    role: '',
+    timezone: 'UTC+08:00',
+    username: '',
+  });
+  const [roles, setRoles] = React.useState<KolamUserRoleOption[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [rolesLoading, setRolesLoading] = React.useState(true);
+  const [saving, setSaving] = React.useState(false);
+  const [message, setMessage] = React.useState('');
   const [error, setError] = React.useState('');
 
   React.useEffect(() => {
@@ -758,6 +826,7 @@ function KolamUserEditSurface({
 
     setLoading(true);
     setError('');
+    setMessage('');
 
     void getKolamUserDetail(userId)
       .then(result => {
@@ -765,6 +834,9 @@ function KolamUserEditSurface({
           return;
         }
         setUser(result);
+        if (result) {
+          setForm(getUserEditFormFromUser(result));
+        }
         if (!result) {
           setError('Pengguna tidak ditemukan.');
         }
@@ -785,6 +857,34 @@ function KolamUserEditSurface({
       active = false;
     };
   }, [userId]);
+
+  React.useEffect(() => {
+    let active = true;
+
+    setRolesLoading(true);
+
+    void getKolamUserRoles()
+      .then(result => {
+        if (active) {
+          setRoles(result);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setRoles([]);
+          setError('Gagal memuat daftar peran.');
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setRolesLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   if (loading || error || !user) {
     return (
@@ -808,21 +908,69 @@ function KolamUserEditSurface({
   }
 
   const encodedUserId = encodeURIComponent(user.id);
+  const setField = (field: keyof KolamUserEditForm, value: string) => {
+    setForm(current => ({...current, [field]: value}));
+    setError('');
+    setMessage('');
+  };
+
+  const handleSubmit = async () => {
+    const validationError = validateEditUserForm(form);
+
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    setSaving(true);
+    setError('');
+    setMessage('');
+
+    try {
+      const updated = await updateKolamUser({
+        id: user.id,
+        email: form.email.trim(),
+        first_name: form.first_name.trim(),
+        last_name: form.last_name.trim(),
+        phone_number: form.phone_number.trim(),
+        role: form.role.trim(),
+        timezone: form.timezone.trim(),
+        username: form.username.trim() || undefined,
+        ...(form.password.trim() ? {password: form.password} : {}),
+      });
+      const nextUser = updated ?? user;
+
+      setUser(nextUser);
+      setForm(getUserEditFormFromUser(nextUser));
+      setMessage('Pengguna berhasil diperbarui.');
+    } catch (err) {
+      setError(getUserFormErrorMessage(err, 'Gagal memperbarui pengguna.'));
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <View style={styles.detailSurface}>
       <View style={styles.detailActionRow}>
         <KolamButton
+          disabled={saving}
           label="Daftar"
           onPress={() => onRouteChange?.('/list-of-users')}
         />
         <KolamButton
+          disabled={saving}
           label="Detail"
           onPress={() =>
             onRouteChange?.(`/list-of-users/users/${encodedUserId}`)
           }
         />
-        <KolamButton disabled intent="primary" label="Simpan" />
+        <KolamButton
+          disabled={saving}
+          intent="primary"
+          label={saving ? 'Menyimpan...' : 'Simpan'}
+          onPress={handleSubmit}
+        />
       </View>
 
       <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
@@ -833,50 +981,89 @@ function KolamUserEditSurface({
           </Text>
         </View>
 
+        {error ? <Text style={styles.formErrorText}>{error}</Text> : null}
+        {message ? <Text style={styles.formSuccessText}>{message}</Text> : null}
+
         <View style={styles.formGrid}>
           <UserFormField label="Username">
             <KolamFormTextField
-              editable={false}
-              style={[styles.formInput, styles.formInputReadOnly]}
-              value={user.username}
+              editable={!saving}
+              onChangeText={value => setField('username', value)}
+              style={styles.formInput}
+              value={form.username}
             />
           </UserFormField>
-          <UserFormField label="Nama Depan">
+          <View style={styles.formFieldWide}>
+            <UserFormField label="Zona Waktu" required>
+              <KolamDropdownSelect
+                label="Zona Waktu"
+                onChange={value => setField('timezone', value)}
+                options={TIMEZONE_OPTIONS.map(timezone => ({
+                  label: timezone.label,
+                  value: timezone.value,
+                }))}
+                value={form.timezone}
+              />
+            </UserFormField>
+          </View>
+          <UserFormField label="Nama Depan" required>
             <KolamFormTextField
-              editable={false}
-              style={[styles.formInput, styles.formInputReadOnly]}
-              value={user.firstName}
+              editable={!saving}
+              onChangeText={value => setField('first_name', value)}
+              style={styles.formInput}
+              value={form.first_name}
             />
           </UserFormField>
-          <UserFormField label="Nama Belakang">
+          <UserFormField label="Nama Belakang" required>
             <KolamFormTextField
-              editable={false}
-              style={[styles.formInput, styles.formInputReadOnly]}
-              value={user.lastName}
+              editable={!saving}
+              onChangeText={value => setField('last_name', value)}
+              style={styles.formInput}
+              value={form.last_name}
             />
           </UserFormField>
-          <UserFormField label="Email">
+          <UserFormField label="Email" required>
             <KolamFormTextField
-              editable={false}
+              editable={!saving}
               mode="email"
-              style={[styles.formInput, styles.formInputReadOnly]}
-              value={user.email}
+              onChangeText={value => setField('email', value)}
+              style={styles.formInput}
+              value={form.email}
             />
           </UserFormField>
-          <UserFormField label="Nomor Telepon">
+          <UserFormField label="Nomor Telepon" required>
             <KolamFormTextField
-              editable={false}
-              style={[styles.formInput, styles.formInputReadOnly]}
-              value={user.phoneNumber}
+              editable={!saving}
+              onChangeText={value => setField('phone_number', value)}
+              style={styles.formInput}
+              value={form.phone_number}
             />
           </UserFormField>
-          <UserFormField label="Peran">
+          <UserFormField label="Kata Sandi">
             <KolamFormTextField
-              editable={false}
-              style={[styles.formInput, styles.formInputReadOnly]}
-              value={user.roleLabel}
+              editable={!saving}
+              mode="password"
+              onChangeText={value => setField('password', value)}
+              style={styles.formInput}
+              value={form.password}
             />
           </UserFormField>
+          <View style={styles.formFieldWide}>
+            <UserFormField label="Peran" required>
+              <KolamDropdownSelect
+                label="Peran"
+                onChange={value => setField('role', value)}
+                options={[
+                  {label: rolesLoading ? 'Memuat peran...' : 'Pilih Role', value: ''},
+                  ...roles.map(role => ({
+                    label: role.name || role.key,
+                    value: role.key,
+                  })),
+                ]}
+                value={form.role}
+              />
+            </UserFormField>
+          </View>
         </View>
       </KolamContentFrame>
     </View>
@@ -1099,6 +1286,51 @@ function validateCreateUserForm(form: KolamUserCreatePayload) {
 
   if (!form.role.trim()) {
     return 'Peran wajib dipilih';
+  }
+
+  return '';
+}
+
+function getUserEditFormFromUser(user: KolamUserListItem): KolamUserEditForm {
+  return {
+    email: user.email,
+    first_name: user.firstName,
+    last_name: user.lastName,
+    password: '',
+    phone_number: user.phoneNumber,
+    role: user.role?.key ?? '',
+    timezone: user.timezone || 'UTC+08:00',
+    username: user.username,
+  };
+}
+
+function validateEditUserForm(form: KolamUserEditForm) {
+  if (!form.first_name.trim()) {
+    return 'Nama depan wajib diisi';
+  }
+
+  if (!form.last_name.trim()) {
+    return 'Nama belakang wajib diisi';
+  }
+
+  if (!form.email.trim()) {
+    return 'Email wajib diisi';
+  }
+
+  if (!form.phone_number.trim()) {
+    return 'Nomor telepon wajib diisi';
+  }
+
+  if (!form.timezone.trim()) {
+    return 'Zona waktu wajib dipilih';
+  }
+
+  if (!form.role.trim()) {
+    return 'Peran wajib dipilih';
+  }
+
+  if (form.password.trim() && form.password.length < 6) {
+    return 'Kata sandi minimal 6 karakter';
   }
 
   return '';
