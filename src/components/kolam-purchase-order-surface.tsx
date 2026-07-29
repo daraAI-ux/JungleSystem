@@ -1777,8 +1777,28 @@ function KolamPOFakturPajakSection({
   }, [po.id, po.taxFaktur, po.vendor?.name]);
 
   return (
-    <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
-      <Text style={styles.sectionTitle}>Faktur Pajak</Text>
+    <KolamContentFrame
+      style={[styles.detailCard, styles.proofBorderCard]}
+      variant="settingsWebConfig"
+    >
+      <View style={styles.itemsHeaderRow}>
+        <Text style={styles.sectionTitle}>Faktur Pajak</Text>
+        <KolamButton
+          disabled={controller.mutating}
+          intent="primary"
+          label="Simpan faktur"
+          onPress={() =>
+            void controller.onSaveFakturPajak({
+              serialNumber,
+              status,
+              vendorNpwp,
+              vendorName,
+              notes,
+            })
+          }
+          size="sm"
+        />
+      </View>
       <Text style={styles.metaText}>
         Catatan internal DJP (bukan e-Faktur Coretax).
       </Text>
@@ -1825,20 +1845,6 @@ function KolamPOFakturPajakSection({
           value={notes}
         />
       </FieldShell>
-      <KolamButton
-        disabled={controller.mutating}
-        intent="primary"
-        label="Simpan faktur"
-        onPress={() =>
-          void controller.onSaveFakturPajak({
-            serialNumber,
-            status,
-            vendorNpwp,
-            vendorName,
-            notes,
-          })
-        }
-      />
     </KolamContentFrame>
   );
 }
