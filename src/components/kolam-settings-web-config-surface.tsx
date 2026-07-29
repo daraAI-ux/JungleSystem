@@ -9,9 +9,12 @@ import { KolamContentFrame } from './kolam-content-frame';
 import { KolamActionControlButton } from './kolam-action-control-button';
 import { KolamChoiceSegment } from './kolam-choice-segment';
 import { KolamCopyStack } from './kolam-copy-stack';
+import { KolamSettingsWebFormFields } from './kolam-settings-web-form-fields';
+import { KolamSettingsWebFormSectionHeader } from './kolam-settings-web-form-section-header';
 import { KolamSettingsWebFormSections } from './kolam-settings-web-widgets';
 import { KolamTextFieldRow } from './kolam-text-field-row';
 import { KolamToggleRow } from './kolam-toggle-row';
+import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { geocodeKolamStaffAttendanceWorkSite } from '../services/kolam-api';
 import type {
   KolamAnnouncementBanner,
@@ -1053,6 +1056,7 @@ export function KolamSettingsWebConfigSurface({
   const showKpiSettings = activeTabId === 'kpi';
   const generalFormSections = sections.filter(section => section.id === 'logo');
   const settingsFieldWidth = 460;
+  const umumFieldWidth = 240;
   const chatPluginEnabled = draft.pluginControls.chat;
   const daraPluginEnabled = draft.pluginControls.dara;
   const kpiPluginEnabled = draft.pluginControls.kpi;
@@ -1469,88 +1473,109 @@ export function KolamSettingsWebConfigSurface({
     <KolamContentFrame variant="settingsWebConfig">
       {showGeneralSettings ? (
         <>
-          <KolamTextFieldRow
-            variant="settingsForm"
-            fieldWidth={settingsFieldWidth}
-            label="Versi Kolam"
-            description="Disimpan melalui PUT /websetting/version untuk app kolam."
-            value={draft.versionKolam}
-            onChangeText={value => setDraftField('versionKolam', value)}
-            placeholder="1.0.0"
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            fieldWidth={settingsFieldWidth}
-            label="Versi Enclonura"
-            description="Disimpan melalui endpoint version app enclonura."
-            value={draft.versionEnclonura}
-            onChangeText={value => setDraftField('versionEnclonura', value)}
-            placeholder="1.0.0"
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            fieldWidth={settingsFieldWidth}
-            label="Versi POS"
-            description="Disimpan melalui endpoint version app pos."
-            value={draft.versionPos}
-            onChangeText={value => setDraftField('versionPos', value)}
-            placeholder="1.0.0"
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            fieldWidth={settingsFieldWidth}
-            label="Versi Marketplace"
-            description="Disimpan melalui endpoint version app marketplace."
-            value={draft.versionMarketplace}
-            onChangeText={value => setDraftField('versionMarketplace', value)}
-            placeholder="1.0.0"
-          />
-          <KolamSettingsWebFormSections
-            sections={generalFormSections}
-            onUploadFile={onUploadMarketplaceLogo}
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            fieldWidth={settingsFieldWidth}
-            label="Nama Perusahaan"
-            description="Nama perusahaan dan branding storefront."
-            value={draft.companyName || webTitle}
-            onChangeText={value => {
-              if (disabled) {
-                return;
-              }
-              setDraftField('companyName', value);
-              onWebTitleChange(value);
-            }}
-            placeholder="Nama perusahaan"
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            fieldWidth={settingsFieldWidth}
-            label="Tagline Perusahaan"
-            description="Tagline branding yang tampil di storefront."
-            value={draft.companyTagline}
-            onChangeText={value => setDraftField('companyTagline', value)}
-            placeholder="Toko hewan terpercaya"
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            fieldWidth={settingsFieldWidth}
-            label="Telepon"
-            description="Nomor kontak customer."
-            value={draft.phone}
-            onChangeText={value => setDraftField('phone', value)}
-            placeholder="+62 812-3456-7890"
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            fieldWidth={settingsFieldWidth}
-            label="Email"
-            description="Email kontak customer."
-            value={draft.email}
-            onChangeText={value => setDraftField('email', value)}
-            placeholder="info@duniaanura.com"
-          />
+          <View style={styles.umumTopRow}>
+            <View style={styles.umumCard}>
+              <KolamSettingsWebFormSectionHeader
+                description="Nomor versi per aplikasi. Disimpan lewat endpoint version WebSetting."
+                title="Versi aplikasi"
+              />
+              <KolamTextFieldRow
+                variant="settingsForm"
+                fieldWidth={umumFieldWidth}
+                label="Versi Kolam"
+                description="App Kolam"
+                value={draft.versionKolam}
+                onChangeText={value => setDraftField('versionKolam', value)}
+                placeholder="1.0.0"
+              />
+              <KolamTextFieldRow
+                variant="settingsForm"
+                fieldWidth={umumFieldWidth}
+                label="Versi Enclonura"
+                description="App Enclonura"
+                value={draft.versionEnclonura}
+                onChangeText={value => setDraftField('versionEnclonura', value)}
+                placeholder="1.0.0"
+              />
+              <KolamTextFieldRow
+                variant="settingsForm"
+                fieldWidth={umumFieldWidth}
+                label="Versi POS"
+                description="App POS"
+                value={draft.versionPos}
+                onChangeText={value => setDraftField('versionPos', value)}
+                placeholder="1.0.0"
+              />
+              <KolamTextFieldRow
+                variant="settingsForm"
+                fieldWidth={umumFieldWidth}
+                label="Versi Marketplace"
+                description="App marketplace"
+                value={draft.versionMarketplace}
+                onChangeText={value =>
+                  setDraftField('versionMarketplace', value)
+                }
+                placeholder="1.0.0"
+              />
+            </View>
+
+            <View style={styles.umumCard}>
+              <KolamSettingsWebFormSectionHeader
+                description="Logo, nama, tagline, dan kontak perusahaan untuk branding storefront."
+                title="Identitas perusahaan"
+              />
+              {generalFormSections.map(section => (
+                <KolamSettingsWebFormFields
+                  key={section.id}
+                  fields={section.fields}
+                  layout={section.layout}
+                  onUploadFile={onUploadMarketplaceLogo}
+                />
+              ))}
+              <KolamTextFieldRow
+                variant="settingsForm"
+                fieldWidth={umumFieldWidth}
+                label="Nama perusahaan"
+                description="Nama branding storefront."
+                value={draft.companyName || webTitle}
+                onChangeText={value => {
+                  if (disabled) {
+                    return;
+                  }
+                  setDraftField('companyName', value);
+                  onWebTitleChange(value);
+                }}
+                placeholder="Nama perusahaan"
+              />
+              <KolamTextFieldRow
+                variant="settingsForm"
+                fieldWidth={umumFieldWidth}
+                label="Tagline"
+                description="Tagline branding."
+                value={draft.companyTagline}
+                onChangeText={value => setDraftField('companyTagline', value)}
+                placeholder="Toko hewan terpercaya"
+              />
+              <KolamTextFieldRow
+                variant="settingsForm"
+                fieldWidth={umumFieldWidth}
+                label="Telepon"
+                description="Nomor kontak customer."
+                value={draft.phone}
+                onChangeText={value => setDraftField('phone', value)}
+                placeholder="+62 812-3456-7890"
+              />
+              <KolamTextFieldRow
+                variant="settingsForm"
+                fieldWidth={umumFieldWidth}
+                label="Email"
+                description="Email kontak customer."
+                value={draft.email}
+                onChangeText={value => setDraftField('email', value)}
+                placeholder="info@duniaanura.com"
+              />
+            </View>
+          </View>
           <KolamTextFieldRow
             variant="settingsForm"
             fieldWidth={settingsFieldWidth}
@@ -7343,6 +7368,23 @@ function getRegionLevelLabel(level: KolamRegionLevel) {
 }
 
 const styles = StyleSheet.create({
+  umumTopRow: {
+    alignItems: 'stretch',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  umumCard: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 10,
+    borderWidth: 1,
+    flexBasis: 340,
+    flexGrow: 1,
+    gap: 12,
+    minWidth: 280,
+    padding: 12,
+  },
   attendanceProviderChoices: {
     flexDirection: 'row',
     flexWrap: 'wrap',
