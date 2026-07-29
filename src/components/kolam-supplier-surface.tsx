@@ -584,11 +584,6 @@ function KolamSupplierDetail({
           </View>
         </View>
       </View>
-      <KolamSupplierCatalogTabs
-        onRouteChange={onRouteChange}
-        vendor={vendor}
-      />
-
       <KolamLabelFieldDetailOverview
         hero={
           heroUri ? (
@@ -713,6 +708,11 @@ function KolamSupplierDetail({
           />
         </KolamContentFrame>
       </View>
+
+      <KolamSupplierCatalogTabs
+        onRouteChange={onRouteChange}
+        vendor={vendor}
+      />
 
       <KolamSupplierPurchaseAnalytics controller={controller} />
 
