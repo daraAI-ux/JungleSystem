@@ -632,6 +632,110 @@ describe('KolamGlobalChatRail', () => {
     );
   });
 
+  it('passes inbox filter parity params to the rail data hook', async () => {
+    jest.useFakeTimers();
+    useReadonlyDataMock.mockReturnValue({
+      conversations: [
+        {
+          _id: 'conv-1',
+          assignedStaffId: 'staff-1',
+          contactId: {displayName: 'Buyer Tokopedia'},
+          lastMessagePreview: 'Apakah masih tersedia?',
+          platform: 'tokopedia',
+          status: 'open',
+          unreadCount: 2,
+        },
+        {
+          _id: 'conv-2',
+          assignedStaffId: null,
+          contactId: {displayName: 'Buyer Shopee'},
+          lastMessagePreview: 'Butuh dibantu',
+          platform: 'shopee',
+          status: 'open',
+          unreadCount: 1,
+        },
+      ],
+      loading: false,
+      refresh: jest.fn(),
+      rooms: [],
+      totalUnread: 3,
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamGlobalChatRail mode="inbox" onClose={() => undefined} />,
+      );
+    });
+
+    expect(useReadonlyDataMock).toHaveBeenLastCalledWith({
+      inboxParams: {
+        limit: 100,
+        page: 1,
+        status: 'open',
+        unreadOnly: true,
+      },
+      mode: 'inbox',
+    });
+
+    const searchInput = renderer!.root
+      .findAllByType(TextInput)
+      .find(node => node.props.accessibilityLabel === 'Cari conversation inbox');
+    const tokopediaButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Filter Tokped');
+    const closedButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Filter Ditutup');
+    const unreadButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Filter Unread');
+    const assignedButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Filter Ditugaskan');
+    const followUpButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Filter Follow up');
+
+    await ReactTestRenderer.act(async () => {
+      tokopediaButton!.props.onPress();
+    });
+    await ReactTestRenderer.act(async () => {
+      closedButton!.props.onPress();
+    });
+    await ReactTestRenderer.act(async () => {
+      unreadButton!.props.onPress();
+    });
+    await ReactTestRenderer.act(async () => {
+      assignedButton!.props.onPress();
+    });
+    await ReactTestRenderer.act(async () => {
+      followUpButton!.props.onPress();
+    });
+    await ReactTestRenderer.act(async () => {
+      searchInput!.props.onChangeText('buyer');
+    });
+    await ReactTestRenderer.act(async () => {
+      jest.advanceTimersByTime(260);
+      await Promise.resolve();
+    });
+
+    expect(useReadonlyDataMock).toHaveBeenLastCalledWith({
+      inboxParams: {
+        labelId: 'label-2',
+        limit: 100,
+        page: 1,
+        platform: 'tokopedia',
+        search: 'buyer',
+        status: 'closed',
+        unreadOnly: false,
+      },
+      mode: 'inbox',
+    });
+    expect(renderText(renderer!)).toEqual(expect.arrayContaining(['Buyer Tokopedia']));
+    expect(renderText(renderer!)).not.toEqual(expect.arrayContaining(['Buyer Shopee']));
+  });
+
   it('opens selected conversation details and sends a text message', async () => {
     const assignInboxToMe = jest.fn().mockResolvedValue(undefined);
     const sendMessage = jest.fn().mockResolvedValue(undefined);

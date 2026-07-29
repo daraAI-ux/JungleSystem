@@ -18,6 +18,9 @@ import type {
   KolamChatContactDetails,
   KolamChatContactOrder,
   KolamChatLabel,
+  KolamChatConversationListParams,
+  KolamChatConversationStatus,
+  KolamChatPlatform,
   KolamChatStaffRef,
   KolamChatTemplate,
   KolamTeamChatAttachment,
@@ -56,8 +59,28 @@ import {KolamTopNavigationChatIcon} from './kolam-top-navigation-chat-icon';
 import {KolamXIcon} from './kolam-x-icon';
 
 export type KolamGlobalChatRailMode = 'inbox' | 'team-chat';
+type KolamChatRailInboxAssignmentFilter = 'all' | 'assigned' | 'unassigned';
 
 const TEAM_CHAT_REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
+const INBOX_PLATFORM_FILTERS: Array<KolamChatPlatform | 'all'> = [
+  'all',
+  'store',
+  'tokopedia',
+  'shopee',
+  'tiktok',
+  'whatsapp',
+  'instagram',
+];
+const INBOX_STATUS_FILTERS: Array<KolamChatConversationStatus | 'all'> = [
+  'open',
+  'closed',
+  'all',
+];
+const INBOX_ASSIGNMENT_FILTERS: KolamChatRailInboxAssignmentFilter[] = [
+  'all',
+  'assigned',
+  'unassigned',
+];
 const DARA_THINKING_DEFAULT_LINE = 'DARA sedang berpikir...';
 const DARA_THINKING_ACTIVE_EVENTS = new Set([
   'dara.thinking',
@@ -118,6 +141,15 @@ interface KolamChatRailReplyTarget {
   id: string;
 }
 
+interface KolamChatRailInboxFilter {
+  assignment: KolamChatRailInboxAssignmentFilter;
+  labelId: string;
+  platform: KolamChatPlatform | 'all';
+  search: string;
+  status: KolamChatConversationStatus | 'all';
+  unreadOnly: boolean;
+}
+
 type KolamTeamMentionTextPart =
   | {type: 'text'; value: string}
   | {type: 'mention'; raw: string; username: string};
@@ -140,8 +172,21 @@ export function KolamGlobalChatRail({
 }) {
   const {authUser} = useKolamAuthContext();
   const content = getChatRailContent(mode);
-  const data = useKolamChatRailReadonlyData({mode});
-  const items = getChatRailItems(mode, data);
+  const [inboxFilter, setInboxFilter] =
+    React.useState<KolamChatRailInboxFilter>({
+      assignment: 'all',
+      labelId: 'all',
+      platform: 'all',
+      search: '',
+      status: 'open',
+      unreadOnly: true,
+    });
+  const inboxParams = React.useMemo(
+    () => buildInboxListParams(inboxFilter),
+    [inboxFilter],
+  );
+  const data = useKolamChatRailReadonlyData({inboxParams, mode});
+  const items = getChatRailItems(mode, data, inboxFilter.assignment);
   const [selectedItemId, setSelectedItemId] = React.useState<string | null>(
     null,
   );
@@ -616,6 +661,14 @@ export function KolamGlobalChatRail({
         </Text>
 
         {mode === 'inbox' ? (
+          <KolamInboxFilterPanel
+            filter={inboxFilter}
+            labels={labelsState.items}
+            onChange={setInboxFilter}
+          />
+        ) : null}
+
+        {mode === 'inbox' ? (
           <KolamChatRailAnalyticsPanel state={analyticsState} />
         ) : null}
 
@@ -772,6 +825,177 @@ function KolamChatRailLiveHost({
   });
 
   return null;
+}
+
+function KolamInboxFilterPanel({
+  filter,
+  labels,
+  onChange,
+}: {
+  filter: KolamChatRailInboxFilter;
+  labels: KolamChatLabel[];
+  onChange: (next: KolamChatRailInboxFilter) => void;
+}) {
+  const [searchDraft, setSearchDraft] = React.useState(filter.search);
+
+  React.useEffect(() => {
+    setSearchDraft(filter.search);
+  }, [filter.search]);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchDraft !== filter.search) {
+        onChange({...filter, search: searchDraft});
+      }
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [filter, onChange, searchDraft]);
+
+  const hasActiveFilter =
+    filter.assignment !== 'all' ||
+    filter.labelId !== 'all' ||
+    filter.platform !== 'all' ||
+    filter.search.trim().length > 0 ||
+    filter.status !== 'open' ||
+    !filter.unreadOnly;
+
+  return (
+    <View accessibilityLabel="Filter inbox chat" style={styles.filterPanel}>
+      <TextInput
+        accessibilityLabel="Cari conversation inbox"
+        onChangeText={setSearchDraft}
+        placeholder="Cari contact atau pesan"
+        placeholderTextColor={V.colors.mutedFg}
+        style={styles.filterSearchInput}
+        value={searchDraft}
+      />
+      <View style={styles.filterGroup}>
+        <Text style={styles.filterGroupLabel}>Status</Text>
+        <View style={styles.filterChipRow}>
+          <KolamMappedList
+            items={INBOX_STATUS_FILTERS}
+            getKey={status => status}
+            renderItem={status => (
+              <KolamFilterChip
+                active={filter.status === status}
+                label={formatInboxStatusFilterLabel(status)}
+                onPress={() => onChange({...filter, status})}
+              />
+            )}
+          />
+        </View>
+      </View>
+      <View style={styles.filterGroup}>
+        <Text style={styles.filterGroupLabel}>Platform</Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterChipRow}>
+          <KolamMappedList
+            items={INBOX_PLATFORM_FILTERS}
+            getKey={platform => platform}
+            renderItem={platform => (
+              <KolamFilterChip
+                active={filter.platform === platform}
+                label={formatInboxPlatformFilterLabel(platform)}
+                onPress={() => onChange({...filter, platform})}
+              />
+            )}
+          />
+        </ScrollView>
+      </View>
+      <View style={styles.filterGroup}>
+        <Text style={styles.filterGroupLabel}>Tugas</Text>
+        <View style={styles.filterChipRow}>
+          <KolamMappedList
+            items={INBOX_ASSIGNMENT_FILTERS}
+            getKey={assignment => assignment}
+            renderItem={assignment => (
+              <KolamFilterChip
+                active={filter.assignment === assignment}
+                label={formatInboxAssignmentFilterLabel(assignment)}
+                onPress={() => onChange({...filter, assignment})}
+              />
+            )}
+          />
+        </View>
+      </View>
+      <View style={styles.filterBottomRow}>
+        <KolamFilterChip
+          active={filter.unreadOnly}
+          label="Unread"
+          onPress={() => onChange({...filter, unreadOnly: !filter.unreadOnly})}
+        />
+        {labels.length > 0 ? (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filterChipRow}>
+            <KolamFilterChip
+              active={filter.labelId === 'all'}
+              label="Semua label"
+              onPress={() => onChange({...filter, labelId: 'all'})}
+            />
+            <KolamMappedList
+              items={labels}
+              getKey={label => label._id}
+              renderItem={label => (
+                <KolamFilterChip
+                  active={filter.labelId === label._id}
+                  label={label.name}
+                  onPress={() => onChange({...filter, labelId: label._id})}
+                />
+              )}
+            />
+          </ScrollView>
+        ) : null}
+        {hasActiveFilter ? (
+          <KolamPressable
+            accessibilityLabel="Reset filter inbox chat"
+            onPress={() =>
+              onChange({
+                assignment: 'all',
+                labelId: 'all',
+                platform: 'all',
+                search: '',
+                status: 'open',
+                unreadOnly: true,
+              })
+            }
+            style={styles.filterResetButton}>
+            <Text style={styles.filterResetText}>Reset</Text>
+          </KolamPressable>
+        ) : null}
+      </View>
+    </View>
+  );
+}
+
+function KolamFilterChip({
+  active,
+  label,
+  onPress,
+}: {
+  active: boolean;
+  label: string;
+  onPress: () => void;
+}) {
+  return (
+    <KolamPressable
+      accessibilityLabel={`Filter ${label}`}
+      accessibilityState={{selected: active}}
+      onPress={onPress}
+      style={[styles.filterChip, active && styles.filterChipActive]}>
+      <Text
+        style={[
+          styles.filterChipText,
+          active && styles.filterChipTextActive,
+        ]}>
+        {label}
+      </Text>
+    </KolamPressable>
+  );
 }
 
 function KolamChatRailAnalyticsPanel({
@@ -2709,6 +2933,7 @@ function getChatRailContent(mode: KolamGlobalChatRailMode) {
 function getChatRailItems(
   mode: KolamGlobalChatRailMode,
   data: ReturnType<typeof useKolamChatRailReadonlyData>,
+  inboxAssignmentFilter: KolamChatRailInboxFilter['assignment'] = 'all',
 ) {
   if (mode === 'team-chat') {
     return data.rooms.map(room => ({
@@ -2722,17 +2947,62 @@ function getChatRailItems(
     }));
   }
 
-  return data.conversations.map(conversation => ({
-    id: conversation._id,
-    metaLabel: conversation.platform
-      ? getPlatformLabel(conversation.platform)
-      : 'Marketplace',
-    preview: getConversationPreview(conversation),
-    secondaryMetaLabel: conversation.status === 'closed' ? 'Closed' : 'Open',
-    timeLabel: formatRelativeTime(conversation.lastMessageAt),
-    title: getConversationTitle(conversation),
-    unreadCount: conversation.unreadCount ?? 0,
-  }));
+  return data.conversations
+    .filter(conversation =>
+      conversationFitsAssignmentFilter(conversation, inboxAssignmentFilter),
+    )
+    .map(conversation => ({
+      id: conversation._id,
+      metaLabel: conversation.platform
+        ? getPlatformLabel(conversation.platform)
+        : 'Marketplace',
+      preview: getConversationPreview(conversation),
+      secondaryMetaLabel: conversation.status === 'closed' ? 'Closed' : 'Open',
+      timeLabel: formatRelativeTime(conversation.lastMessageAt),
+      title: getConversationTitle(conversation),
+      unreadCount: conversation.unreadCount ?? 0,
+    }));
+}
+
+function buildInboxListParams(
+  filter: KolamChatRailInboxFilter,
+): KolamChatConversationListParams {
+  const params: KolamChatConversationListParams = {
+    limit: 100,
+    page: 1,
+    unreadOnly: filter.unreadOnly,
+  };
+
+  if (filter.status !== 'all') {
+    params.status = filter.status;
+  }
+
+  if (filter.platform !== 'all') {
+    params.platform = filter.platform;
+  }
+
+  const search = filter.search.trim();
+  if (search) {
+    params.search = search;
+  }
+
+  if (filter.labelId !== 'all') {
+    params.labelId = filter.labelId;
+  }
+
+  return params;
+}
+
+function conversationFitsAssignmentFilter(
+  conversation: {assignedStaffId?: KolamChatStaffRef | string | null},
+  filter: KolamChatRailInboxFilter['assignment'],
+) {
+  if (filter === 'all') {
+    return true;
+  }
+
+  const assigned = Boolean(getChatStaffId(conversation.assignedStaffId));
+  return filter === 'assigned' ? assigned : !assigned;
 }
 
 function getConversationTitle({
@@ -2837,6 +3107,46 @@ function getPlatformLabel(platform: string) {
     .filter(Boolean)
     .map(part => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
     .join(' ');
+}
+
+function formatInboxPlatformFilterLabel(platform: KolamChatPlatform | 'all') {
+  if (platform === 'all') {
+    return 'Semua';
+  }
+
+  if (platform === 'tokopedia') {
+    return 'Tokped';
+  }
+
+  return getPlatformLabel(platform);
+}
+
+function formatInboxStatusFilterLabel(
+  status: KolamChatConversationStatus | 'all',
+) {
+  if (status === 'open') {
+    return 'Buka';
+  }
+
+  if (status === 'closed') {
+    return 'Ditutup';
+  }
+
+  return 'Semua';
+}
+
+function formatInboxAssignmentFilterLabel(
+  assignment: KolamChatRailInboxFilter['assignment'],
+) {
+  if (assignment === 'assigned') {
+    return 'Ditugaskan';
+  }
+
+  if (assignment === 'unassigned') {
+    return 'Belum tugas';
+  }
+
+  return 'Semua';
 }
 
 function formatInboxPlatform(platform?: string) {
@@ -3475,6 +3785,88 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 12,
     fontWeight: '700',
+  },
+  filterPanel: {
+    padding: 10,
+    borderRadius: V.radius.lg,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.mutedSoft,
+    gap: 8,
+  },
+  filterSearchInput: {
+    minHeight: 34,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: V.radius.md,
+    borderColor: V.colors.input,
+    borderWidth: 1,
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '700',
+    backgroundColor: V.colors.bg,
+  },
+  filterGroup: {
+    gap: 5,
+  },
+  filterGroupLabel: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0,
+    textTransform: 'uppercase',
+  },
+  filterChipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 5,
+  },
+  filterBottomRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 6,
+  },
+  filterChip: {
+    minHeight: 28,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 14,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: V.colors.bg,
+  },
+  filterChipActive: {
+    borderColor: V.colors.primary,
+    backgroundColor: V.colors.primarySoft,
+  },
+  filterChipText: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '900',
+  },
+  filterChipTextActive: {
+    color: V.colors.primary,
+  },
+  filterResetButton: {
+    minHeight: 28,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: V.colors.secondary,
+  },
+  filterResetText: {
+    color: V.colors.secondaryFg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '900',
   },
   analyticsPanel: {
     padding: 10,

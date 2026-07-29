@@ -4,6 +4,7 @@ import {
   getKolamChatConversations,
   getKolamTeamChatRooms,
   type KolamChatConversation,
+  type KolamChatConversationListParams,
   type KolamTeamChatRoom,
 } from '../services/kolam-api';
 
@@ -17,9 +18,11 @@ export interface KolamChatRailReadonlyDataState {
 }
 
 export function useKolamChatRailReadonlyData({
+  inboxParams,
   intervalMs = 30_000,
   mode,
 }: {
+  inboxParams?: KolamChatConversationListParams;
   intervalMs?: number;
   mode: KolamGlobalChatRailMode;
 }): KolamChatRailReadonlyDataState {
@@ -57,9 +60,10 @@ export function useKolamChatRailReadonlyData({
       }
 
       const conversations = await getKolamChatConversations({
+        limit: 100,
         status: 'open',
         unreadOnly: true,
-        limit: 100,
+        ...inboxParams,
       });
       if (!mountedRef.current) {
         return;
@@ -87,7 +91,7 @@ export function useKolamChatRailReadonlyData({
         refresh,
       }));
     }
-  }, [mode]);
+  }, [inboxParams, mode]);
 
   useEffect(() => {
     let timer: ReturnType<typeof setInterval> | undefined;
