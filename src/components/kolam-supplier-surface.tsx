@@ -1,5 +1,13 @@
 import React from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  FlatList,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { getKolamFormSection } from '../domain/kolam-form';
 import { getKolamTableColumns } from '../domain/kolam-table';
 import {
@@ -48,10 +56,11 @@ import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamSwitch } from './kolam-switch';
-import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
+import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 
 type SupplierSortMode = 'name-asc' | 'name-desc' | 'po-desc' | 'newest';
 type SupplierStatusFilter = 'all' | 'active' | 'inactive' | 'blacklisted';
+type SupplierFilterPanel = 'status' | 'sort' | null;
 
 export function KolamSupplierSurface({
   onRouteChange,
@@ -64,37 +73,6 @@ export function KolamSupplierSurface({
 
   return (
     <View style={styles.surface}>
-      <View style={styles.headerActions}>
-        <KolamButton
-          disabled={controller.loading}
-          label="Refresh"
-          onPress={() => {
-            void controller.onRefresh();
-          }}
-          style={styles.toolbarButton}
-        />
-        {controller.mode === 'list' ? (
-          <KolamButton
-            intent="primary"
-            label="Buat Baru"
-            onPress={() => {
-              controller.onCreateNew();
-              onRouteChange?.(`${KOLAM_SUPPLIER_ROOT}/create`);
-            }}
-            style={styles.toolbarButton}
-          />
-        ) : (
-          <KolamButton
-            label="Daftar"
-            muted
-            onPress={() => {
-              controller.onBackToList();
-              onRouteChange?.(KOLAM_SUPPLIER_ROOT);
-            }}
-            style={styles.toolbarButton}
-          />
-        )}
-      </View>
       {controller.error ? (
         <KolamStatusBadge
           intent="danger"
@@ -129,6 +107,8 @@ function KolamSupplierList({
   const [sortMode, setSortMode] = React.useState<SupplierSortMode>('name-asc');
   const [statusFilter, setStatusFilter] =
     React.useState<SupplierStatusFilter>('all');
+  const [activeFilterPanel, setActiveFilterPanel] =
+    React.useState<SupplierFilterPanel>(null);
   const [pageSize, setPageSize] = React.useState(10);
   const [page, setPage] = React.useState(1);
   const [deleteCandidate, setDeleteCandidate] =
@@ -149,51 +129,192 @@ function KolamSupplierList({
   const pageCount = Math.max(1, Math.ceil(sorted.length / pageSize));
   const safePage = Math.min(page, pageCount);
   const paged = sorted.slice((safePage - 1) * pageSize, safePage * pageSize);
+  const filtersAppliedCount =
+    Number(Boolean(search.trim())) +
+    Number(statusFilter !== 'all') +
+    Number(sortMode !== 'name-asc');
+
+  const statusFilterLabel =
+    statusFilter === 'all'
+      ? 'Status'
+      : getKolamVendorStatusLabel(statusFilter);
+  const sortFilterLabel =
+    sortMode === 'name-asc'
+      ? 'Urutan'
+      : sortMode === 'name-desc'
+      ? 'Nama Z-A'
+      : sortMode === 'po-desc'
+      ? 'Total PO'
+      : 'Terbaru';
 
   React.useEffect(() => {
     setPage(1);
   }, [pageSize, search, sortMode, statusFilter]);
 
+  const renderRow = React.useCallback(
+    ({ item }: { item: KolamVendor }) => (
+      <KolamSupplierRow
+        onDelete={() => setDeleteCandidate(item)}
+        onEdit={() => {
+          onRouteChange?.(`${KOLAM_SUPPLIER_ROOT}/${item.id}/edit`);
+        }}
+        onSelect={() => {
+          void controller.onSelectVendor(item);
+          onRouteChange?.(`${KOLAM_SUPPLIER_ROOT}/${item.id}`);
+        }}
+        vendor={item}
+      />
+    ),
+    [controller, onRouteChange],
+  );
+
   return (
-    <View style={styles.stack}>
+    <View style={styles.listRoot}>
       <View style={styles.summaryGrid}>
         <SummaryTile label="Total" value={controller.vendors.length} />
         <SummaryTile label="Aktif" value={summary.active} />
         <SummaryTile label="Nonaktif" value={summary.inactive} />
         <SummaryTile label="Blacklist" value={summary.blacklisted} />
       </View>
-      <View style={kolamTableToolbarStyles.row}>
-        <KolamFormTextField
-          onChangeText={setSearch}
-          placeholder="Cari pemasok…"
-          style={kolamTableToolbarStyles.searchInput}
-          value={search}
-        />
-        <View style={kolamTableToolbarStyles.controls}>
-          <KolamDropdownSelect<SupplierSortMode>
-            label="Urutan"
-            onChange={setSortMode}
-            options={[
-              { label: 'Nama A-Z', value: 'name-asc' },
-              { label: 'Nama Z-A', value: 'name-desc' },
-              { label: 'Total PO', value: 'po-desc' },
-              { label: 'Terbaru', value: 'newest' },
-            ]}
-            value={sortMode}
-          />
-          <KolamDropdownSelect<SupplierStatusFilter>
-            label="Status"
-            onChange={setStatusFilter}
-            options={[
-              { label: 'Semua', value: 'all' },
-              { label: 'Aktif', value: 'active' },
-              { label: 'Nonaktif', value: 'inactive' },
-              { label: 'Blacklist', value: 'blacklisted' },
-            ]}
-            value={statusFilter}
-          />
+
+      <View style={styles.toolbarWrap}>
+        <View style={styles.toolbarShell}>
+          <View style={styles.filterRow}>
+            <KolamFormTextField
+              onChangeText={setSearch}
+              placeholder="Cari"
+              style={styles.searchInput}
+              value={search}
+            />
+            <KolamTableFilterTrigger
+              active={activeFilterPanel === 'status' || statusFilter !== 'all'}
+              label={statusFilterLabel}
+              onPress={() =>
+                setActiveFilterPanel(current =>
+                  current === 'status' ? null : 'status',
+                )
+              }
+            />
+            <KolamTableFilterTrigger
+              active={activeFilterPanel === 'sort' || sortMode !== 'name-asc'}
+              label={sortFilterLabel}
+              onPress={() =>
+                setActiveFilterPanel(current =>
+                  current === 'sort' ? null : 'sort',
+                )
+              }
+            />
+          </View>
+          <View style={styles.actionRow}>
+            {filtersAppliedCount > 0 ? (
+              <KolamButton
+                label="Reset"
+                muted
+                onPress={() => {
+                  setSearch('');
+                  setStatusFilter('all');
+                  setSortMode('name-asc');
+                  setActiveFilterPanel(null);
+                  setPage(1);
+                }}
+                style={styles.toolbarButton}
+              />
+            ) : null}
+            <KolamButton
+              disabled={controller.loading}
+              label="Muat ulang"
+              onPress={() => {
+                void controller.onRefresh();
+              }}
+              style={styles.toolbarButton}
+            />
+            <KolamButton
+              intent="primary"
+              label="Baru"
+              onPress={() => {
+                controller.onCreateNew();
+                onRouteChange?.(`${KOLAM_SUPPLIER_ROOT}/create`);
+              }}
+              style={styles.toolbarButton}
+            />
+          </View>
         </View>
+
+        {activeFilterPanel === 'status' ? (
+          <View style={[styles.filterOverlayPanel, styles.filterPanelStatus]}>
+            <ScrollView
+              contentContainerStyle={styles.filterPanelContent}
+              keyboardShouldPersistTaps="handled"
+              style={styles.filterPanelScroll}
+            >
+              {(
+                [
+                  { label: 'Semua', value: 'all' },
+                  { label: 'Aktif', value: 'active' },
+                  { label: 'Nonaktif', value: 'inactive' },
+                  { label: 'Blacklist', value: 'blacklisted' },
+                ] as const
+              ).map(option => (
+                <KolamButton
+                  intent={statusFilter === option.value ? 'primary' : 'plain'}
+                  key={option.value}
+                  label={option.label}
+                  onPress={() => {
+                    setStatusFilter(option.value);
+                    setActiveFilterPanel(null);
+                    setPage(1);
+                  }}
+                  style={styles.filterPanelOption}
+                />
+              ))}
+            </ScrollView>
+            <View style={styles.filterPanelFooter}>
+              <KolamButton
+                label="Tutup"
+                onPress={() => setActiveFilterPanel(null)}
+              />
+            </View>
+          </View>
+        ) : null}
+
+        {activeFilterPanel === 'sort' ? (
+          <View style={[styles.filterOverlayPanel, styles.filterPanelSort]}>
+            <ScrollView
+              contentContainerStyle={styles.filterPanelContent}
+              keyboardShouldPersistTaps="handled"
+              style={styles.filterPanelScroll}
+            >
+              {(
+                [
+                  { label: 'Nama A-Z', value: 'name-asc' },
+                  { label: 'Nama Z-A', value: 'name-desc' },
+                  { label: 'Total PO', value: 'po-desc' },
+                  { label: 'Terbaru', value: 'newest' },
+                ] as const
+              ).map(option => (
+                <KolamButton
+                  intent={sortMode === option.value ? 'primary' : 'plain'}
+                  key={option.value}
+                  label={option.label}
+                  onPress={() => {
+                    setSortMode(option.value);
+                    setActiveFilterPanel(null);
+                    setPage(1);
+                  }}
+                  style={styles.filterPanelOption}
+                />
+              ))}
+            </ScrollView>
+            <View style={styles.filterPanelFooter}>
+              <KolamButton
+                label="Tutup"
+                onPress={() => setActiveFilterPanel(null)}
+              />
+            </View>
+          </View>
+        ) : null}
       </View>
+
       <KolamCatalogListTableShell
         footer={
           <KolamTableFooterControls
@@ -209,9 +330,15 @@ function KolamSupplierList({
                   label="Sebelumnya"
                   onPress={() => setPage(current => Math.max(1, current - 1))}
                 />
-                <Text style={styles.pageLabel}>
-                  {safePage} / {pageCount}
-                </Text>
+                <KolamCopyStack
+                  items={[
+                    {
+                      id: 'page',
+                      text: `${safePage} / ${pageCount}`,
+                      style: styles.pageLabel,
+                    },
+                  ]}
+                />
                 <KolamButton
                   disabled={safePage >= pageCount}
                   label="Berikutnya"
@@ -223,37 +350,32 @@ function KolamSupplierList({
             ) : null}
           </KolamTableFooterControls>
         }
+        style={styles.tableFrame}
       >
-        <KolamDataTableHeader columns={getKolamTableColumns('supplier')} />
-        {paged.length ? (
-          paged.map(vendor => (
-            <KolamSupplierRow
-              key={vendor.id}
-              onDelete={() => setDeleteCandidate(vendor)}
-              onEdit={() => {
-                onRouteChange?.(
-                  `${KOLAM_SUPPLIER_ROOT}/${vendor.id}/edit`,
-                );
-              }}
-              onSelect={() => {
-                void controller.onSelectVendor(vendor);
-                onRouteChange?.(`${KOLAM_SUPPLIER_ROOT}/${vendor.id}`);
-              }}
-              vendor={vendor}
-            />
-          ))
-        ) : (
-          <View style={styles.emptyWrap}>
-            <KolamEmptyState
-              compact
-              message="Coba ubah pencarian atau filter status."
-              title={
-                controller.loading ? 'Memuat pemasok…' : 'Belum ada pemasok'
-              }
-            />
-          </View>
-        )}
+        <FlatList
+          contentContainerStyle={styles.listContent}
+          data={paged}
+          keyExtractor={item => item.id}
+          ListEmptyComponent={
+            <View style={styles.emptyWrap}>
+              <KolamEmptyState
+                compact
+                message="Coba ubah pencarian atau filter status."
+                title={
+                  controller.loading ? 'Memuat pemasok…' : 'Belum ada pemasok'
+                }
+              />
+            </View>
+          }
+          ListHeaderComponent={
+            <KolamDataTableHeader columns={getKolamTableColumns('supplier')} />
+          }
+          removeClippedSubviews={false}
+          renderItem={renderRow}
+          style={styles.listFlatList}
+        />
       </KolamCatalogListTableShell>
+
       <KolamDeleteConfirmDialog
         itemLabel={deleteCandidate?.name}
         itemType="pemasok"
@@ -372,10 +494,28 @@ function KolamSupplierDetail({
 
   if (editable) {
     return (
-      <KolamSupplierForm
-        controller={controller}
-        onRouteChange={onRouteChange}
-      />
+      <View style={styles.stack}>
+        <View style={styles.toolbarWrap}>
+          <View style={styles.toolbarShell}>
+            <View style={styles.filterRow} />
+            <View style={styles.actionRow}>
+              <KolamButton
+                label="Daftar"
+                muted
+                onPress={() => {
+                  controller.onBackToList();
+                  onRouteChange?.(KOLAM_SUPPLIER_ROOT);
+                }}
+                style={styles.toolbarButton}
+              />
+            </View>
+          </View>
+        </View>
+        <KolamSupplierForm
+          controller={controller}
+          onRouteChange={onRouteChange}
+        />
+      </View>
     );
   }
 
@@ -394,6 +534,30 @@ function KolamSupplierDetail({
 
   return (
     <View style={styles.stack}>
+      <View style={styles.toolbarWrap}>
+        <View style={styles.toolbarShell}>
+          <View style={styles.filterRow} />
+          <View style={styles.actionRow}>
+            <KolamButton
+              disabled={controller.loading}
+              label="Muat ulang"
+              onPress={() => {
+                void controller.onRefresh();
+              }}
+              style={styles.toolbarButton}
+            />
+            <KolamButton
+              label="Daftar"
+              muted
+              onPress={() => {
+                controller.onBackToList();
+                onRouteChange?.(KOLAM_SUPPLIER_ROOT);
+              }}
+              style={styles.toolbarButton}
+            />
+          </View>
+        </View>
+      </View>
       <View style={styles.detailActions}>
         <KolamButton
           intent="primary"
@@ -1668,14 +1832,109 @@ const styles = StyleSheet.create({
     minHeight: 0,
     flex: 1,
   },
-  headerActions: {
+  listRoot: {
+    flex: 1,
+    gap: 12,
+    minHeight: 0,
+    overflow: 'visible',
+  },
+  toolbarWrap: {
+    elevation: 1000,
+    overflow: 'visible',
+    position: 'relative',
+    zIndex: 100000,
+  },
+  toolbarShell: {
+    alignItems: 'center',
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 6,
+    justifyContent: 'space-between',
+    overflow: 'visible',
+    padding: 4,
+  },
+  filterRow: {
+    alignItems: 'center',
+    flex: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
+    minWidth: 280,
+    overflow: 'visible',
+  },
+  actionRow: {
+    alignItems: 'center',
+    borderLeftColor: V.colors.border,
+    borderLeftWidth: 1,
+    flexDirection: 'row',
+    flexShrink: 0,
+    flexWrap: 'wrap',
+    gap: 6,
     justifyContent: 'flex-end',
+    paddingLeft: 8,
+  },
+  searchInput: {
+    flexBasis: 140,
+    flexGrow: 1,
+    maxWidth: 220,
+    minWidth: 120,
   },
   toolbarButton: {
+    flexShrink: 0,
     minHeight: 34,
+    paddingHorizontal: 10,
+  },
+  filterOverlayPanel: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    elevation: 1200,
+    padding: 6,
+    position: 'absolute',
+    shadowColor: V.colors.fg,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    top: 48,
+    width: 240,
+    zIndex: 120000,
+  },
+  filterPanelStatus: {
+    left: 148,
+  },
+  filterPanelSort: {
+    left: 280,
+  },
+  filterPanelScroll: {
+    maxHeight: 280,
+  },
+  filterPanelContent: {
+    gap: 4,
+  },
+  filterPanelOption: {
+    justifyContent: 'flex-start',
+  },
+  filterPanelFooter: {
+    alignItems: 'flex-end',
+    borderTopColor: V.colors.border,
+    borderTopWidth: 1,
+    marginTop: 6,
+    paddingTop: 6,
+  },
+  tableFrame: {
+    flex: 1,
+    minHeight: 0,
+  },
+  listFlatList: {
+    flexGrow: 1,
+  },
+  listContent: {
+    flexGrow: 1,
   },
   errorBadge: {
     alignSelf: 'stretch',
