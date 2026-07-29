@@ -101,7 +101,9 @@ export function isCatalogTableListRoute(route?: string | null) {
     routePath === '/teranura' ||
     routePath === '/stock-transaction' ||
     routePath === '/stock-opname' ||
-    routePath === '/suppliers'
+    routePath === '/suppliers' ||
+    routePath === '/customers' ||
+    routePath === '/purchase-order'
   );
 }
 
