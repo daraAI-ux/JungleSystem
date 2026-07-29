@@ -1,5 +1,12 @@
 import React from 'react';
-import { Dimensions, Image, StyleSheet, Text, View } from 'react-native';
+import {
+  Dimensions,
+  Image,
+  type LayoutChangeEvent,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { SvgXml } from 'react-native-svg';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { KolamButton } from './kolam-button';
@@ -95,6 +102,24 @@ function clampIndex(index: number, length: number) {
   return Math.max(0, Math.min(index, length - 1));
 }
 
+export function getKolamImagePreviewSize(bounds: {
+  height: number;
+  width: number;
+}) {
+  const safeWidth = Number.isFinite(bounds.width) ? bounds.width : 0;
+  const safeHeight = Number.isFinite(bounds.height) ? bounds.height : 0;
+  const dialogWidth = Math.max(360, Math.min(safeWidth - 32, 1320));
+  const dialogHeight = Math.max(360, Math.min(safeHeight - 32, 960));
+  const imageStageWidth = Math.max(320, dialogWidth - 24);
+
+  return {
+    dialogHeight,
+    dialogWidth,
+    imageStageHeight: Math.max(280, dialogHeight - 74),
+    imageStageWidth,
+  };
+}
+
 export function KolamImagePreviewHost() {
   const state = React.useSyncExternalStore(
     subscribeImagePreview,
@@ -125,28 +150,38 @@ function KolamImagePreviewDialog({
   onClose: () => void;
 }) {
   const [currentIndex, setCurrentIndex] = React.useState(initialIndex);
+  const [hostSize, setHostSize] = React.useState(() =>
+    Dimensions.get('window'),
+  );
   const galleryKey = React.useMemo(
     () => items.map(item => item.uri).join('|'),
     [items],
   );
   const safeIndex = clampIndex(currentIndex, items.length);
   const current = items[safeIndex];
-  const previewSize = React.useMemo(() => {
-    const windowSize = Dimensions.get('window');
-    const dialogWidth = Math.max(320, Math.min(windowSize.width - 32, 1280));
-    const dialogHeight = Math.max(320, Math.min(windowSize.height - 32, 920));
-    const imageStageWidth = Math.max(280, dialogWidth - 24);
-
-    return {
-      dialogHeight,
-      dialogWidth,
-      imageStageHeight: Math.max(240, dialogHeight - 74),
-      imageStageWidth,
-    };
-  }, [galleryKey]);
+  const previewSize = React.useMemo(
+    () => getKolamImagePreviewSize(hostSize),
+    [hostSize],
+  );
   const resolvedUri = current?.uri ?? null;
   const usesSvg = Boolean(resolvedUri && isSvgUri(resolvedUri));
   const svgXml = usePreviewSvgXml(resolvedUri);
+
+  const handleHostLayout = React.useCallback((event: LayoutChangeEvent) => {
+    const { height, width } = event.nativeEvent.layout;
+
+    setHostSize(previous =>
+      Math.round(previous.width) === Math.round(width) &&
+      Math.round(previous.height) === Math.round(height)
+        ? previous
+        : {
+            fontScale: previous.fontScale,
+            height,
+            scale: previous.scale,
+            width,
+          },
+    );
+  }, []);
 
   React.useEffect(() => {
     setCurrentIndex(initialIndex);
@@ -164,7 +199,11 @@ function KolamImagePreviewDialog({
   };
 
   return (
-    <View style={styles.host} pointerEvents="box-none">
+    <View
+      onLayout={handleHostLayout}
+      style={styles.host}
+      pointerEvents="box-none"
+    >
       <KolamInteractionFrame
         accessibilityLabel="Tutup preview gambar"
         onPress={onClose}
