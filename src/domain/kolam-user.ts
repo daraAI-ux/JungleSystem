@@ -69,6 +69,11 @@ export interface KolamUserCreatePayload {
 
 export interface KolamUserUpdatePayload {
   id: string;
+  account_restricted?: boolean;
+  access_am?: boolean;
+  access_inventory?: boolean;
+  access_pos?: boolean;
+  csActive?: boolean;
   username?: string;
   first_name: string;
   last_name: string;

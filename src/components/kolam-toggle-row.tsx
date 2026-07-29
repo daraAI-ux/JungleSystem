@@ -9,6 +9,7 @@ export type { KolamToggleRowProps } from './kolam-toggle-row-types';
 export function KolamToggleRow({
   active,
   description,
+  disabled = false,
   label,
   onPress,
   variant,
@@ -16,7 +17,7 @@ export function KolamToggleRow({
   return (
     <KolamRowFrame variant={variant}>
       <KolamToggleRowCopy description={description} label={label} />
-      <KolamSwitch active={active} onPress={onPress} />
+      <KolamSwitch active={active} disabled={disabled} onPress={onPress} />
     </KolamRowFrame>
   );
 }

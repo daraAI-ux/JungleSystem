@@ -32,6 +32,7 @@ import {KolamEmptyState} from './kolam-empty-state';
 import {KolamFormTextField} from './kolam-form-text-field';
 import {KolamStatusBadge} from './kolam-status-badge';
 import {KolamTableFilterTrigger} from './kolam-table-filter-trigger';
+import {KolamToggleRow} from './kolam-toggle-row';
 
 const SEARCH_DEBOUNCE_MS = 350;
 
@@ -67,6 +68,11 @@ const EMPTY_CREATE_USER_FORM: KolamUserCreatePayload = {
 };
 
 type KolamUserEditForm = {
+  account_restricted: boolean;
+  access_am: boolean;
+  access_inventory: boolean;
+  access_pos: boolean;
+  csActive: boolean;
   email: string;
   first_name: string;
   last_name: string;
@@ -796,6 +802,11 @@ function KolamUserEditSurface({
 }) {
   const [user, setUser] = React.useState<KolamUserListItem | null>(null);
   const [form, setForm] = React.useState<KolamUserEditForm>({
+    account_restricted: false,
+    access_am: false,
+    access_inventory: false,
+    access_pos: false,
+    csActive: false,
     email: '',
     first_name: '',
     last_name: '',
@@ -913,6 +924,21 @@ function KolamUserEditSurface({
     setError('');
     setMessage('');
   };
+  const setBooleanField = (
+    field: Extract<
+      keyof KolamUserEditForm,
+      | 'account_restricted'
+      | 'access_am'
+      | 'access_inventory'
+      | 'access_pos'
+      | 'csActive'
+    >,
+    value: boolean,
+  ) => {
+    setForm(current => ({...current, [field]: value}));
+    setError('');
+    setMessage('');
+  };
 
   const handleSubmit = async () => {
     const validationError = validateEditUserForm(form);
@@ -929,6 +955,11 @@ function KolamUserEditSurface({
     try {
       const updated = await updateKolamUser({
         id: user.id,
+        account_restricted: form.account_restricted,
+        access_am: form.access_am,
+        access_inventory: form.access_inventory,
+        access_pos: form.access_pos,
+        csActive: form.csActive,
         email: form.email.trim(),
         first_name: form.first_name.trim(),
         last_name: form.last_name.trim(),
@@ -1063,6 +1094,60 @@ function KolamUserEditSurface({
                 value={form.role}
               />
             </UserFormField>
+          </View>
+          <View style={styles.formFieldWide}>
+            <View style={styles.accessSectionHeader}>
+              <Text style={styles.detailPanelTitle}>Status dan Akses</Text>
+              <Text style={styles.detailSubtitle}>
+                Perubahan akses akan langsung memengaruhi kemampuan pengguna.
+              </Text>
+            </View>
+            <View style={styles.accessToggleGrid}>
+              <KolamToggleRow
+                active={!form.account_restricted}
+                description={
+                  form.account_restricted ? 'Akun dibatasi' : 'Akun aktif'
+                }
+                disabled={saving}
+                label="Status Akun"
+                onPress={() =>
+                  setBooleanField(
+                    'account_restricted',
+                    !form.account_restricted,
+                  )
+                }
+              />
+              <KolamToggleRow
+                active={form.access_pos}
+                description="Izinkan pengguna mengakses sistem Point of Sale"
+                disabled={saving}
+                label="Akses POS"
+                onPress={() => setBooleanField('access_pos', !form.access_pos)}
+              />
+              <KolamToggleRow
+                active={form.access_inventory}
+                description="Izinkan pengguna mengakses Manajemen Inventori"
+                disabled={saving}
+                label="Akses Inventori"
+                onPress={() =>
+                  setBooleanField('access_inventory', !form.access_inventory)
+                }
+              />
+              <KolamToggleRow
+                active={form.access_am}
+                description="Izinkan pengguna mengakses Automation Management"
+                disabled={saving}
+                label="Akses AM"
+                onPress={() => setBooleanField('access_am', !form.access_am)}
+              />
+              <KolamToggleRow
+                active={form.csActive}
+                description="Izinkan pengguna membalas chat pelanggan di Inbox"
+                disabled={saving}
+                label="CS Aktif"
+                onPress={() => setBooleanField('csActive', !form.csActive)}
+              />
+            </View>
           </View>
         </View>
       </KolamContentFrame>
@@ -1293,6 +1378,11 @@ function validateCreateUserForm(form: KolamUserCreatePayload) {
 
 function getUserEditFormFromUser(user: KolamUserListItem): KolamUserEditForm {
   return {
+    account_restricted: user.accountRestricted,
+    access_am: user.accessAm,
+    access_inventory: user.accessInventory,
+    access_pos: user.accessPos,
+    csActive: user.csActive,
     email: user.email,
     first_name: user.firstName,
     last_name: user.lastName,
@@ -1581,6 +1671,13 @@ const styles = StyleSheet.create({
   formFieldWide: {
     flexBasis: '100%',
     flexGrow: 1,
+  },
+  accessSectionHeader: {
+    gap: 2,
+    marginBottom: 8,
+  },
+  accessToggleGrid: {
+    gap: 8,
   },
   formLabel: {
     color: V.colors.mutedFg,
