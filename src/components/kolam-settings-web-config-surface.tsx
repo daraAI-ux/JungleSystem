@@ -1424,6 +1424,11 @@ export function KolamSettingsWebConfigSurface({
   };
   const renderNotificationSoundRow = (
     item: (typeof notificationSoundItems)[number],
+    toggle?: {
+      active: boolean;
+      label: string;
+      onPress: () => void;
+    },
   ) => {
     const status = notificationSoundStatus[item.type] ?? 'idle';
     const busy = status === 'uploading' || status === 'deleting';
@@ -1445,12 +1450,14 @@ export function KolamSettingsWebConfigSurface({
             },
           ]}
         />
-        <View style={styles.notificationSoundActions}>
+        <View style={styles.notificationSoundActionCell}>
           <KolamActionControlButton
             label="Tes suara"
             disabled={busy}
             onPress={() => playNotificationSound(item)}
           />
+        </View>
+        <View style={styles.notificationSoundActionCell}>
           <KolamActionControlButton
             label="Unggah"
             loading={status === 'uploading'}
@@ -1458,6 +1465,8 @@ export function KolamSettingsWebConfigSurface({
             disabled={disabled || busy}
             onPress={() => onUploadNotificationSound(item.type)}
           />
+        </View>
+        <View style={styles.notificationSoundActionCell}>
           <KolamActionControlButton
             label="Atur ulang"
             intent="danger"
@@ -1466,6 +1475,33 @@ export function KolamSettingsWebConfigSurface({
             disabled={disabled || busy || !item.value}
             onPress={() => onDeleteNotificationSound(item.type)}
           />
+        </View>
+        <View style={styles.notificationSoundToggleCell}>
+          {toggle ? (
+            <Pressable
+              accessibilityLabel={toggle.label}
+              disabled={disabled}
+              onPress={() => {
+                if (!disabled) {
+                  toggle.onPress();
+                }
+              }}
+              style={[
+                styles.notificationSoundSwitch,
+                toggle.active && styles.notificationSoundSwitchActive,
+                disabled && styles.notificationSoundSwitchDisabled,
+              ]}
+            >
+              <View
+                style={[
+                  styles.notificationSoundSwitchKnob,
+                  toggle.active && styles.notificationSoundSwitchKnobActive,
+                ]}
+              />
+            </Pressable>
+          ) : (
+            <Text style={styles.notificationSoundToggleEmpty}>-</Text>
+          )}
         </View>
       </View>
     );
@@ -2217,53 +2253,6 @@ export function KolamSettingsWebConfigSurface({
                   )
                 }
               />
-            </>
-          ) : null}
-          {showNotificationSettings ? (
-            <>
-              <View style={styles.notificationSoundList}>
-                {notificationSoundItems.map(item => {
-                  const status = notificationSoundStatus[item.type] ?? 'idle';
-                  const busy = status === 'uploading' || status === 'deleting';
-
-                  return (
-                    <View key={item.id} style={styles.notificationSoundRow}>
-                      <KolamCopyStack
-                        containerStyle={styles.notificationSoundCopy}
-                        items={[
-                          {
-                            id: `${item.id}-label`,
-                            text: item.label,
-                            style: styles.notificationSoundLabel,
-                          },
-                          {
-                            id: `${item.id}-path`,
-                            text: item.value || '-',
-                            style: styles.notificationSoundPath,
-                          },
-                        ]}
-                      />
-                      <View style={styles.notificationSoundActions}>
-                        <KolamActionControlButton
-                          label="Unggah"
-                          loading={status === 'uploading'}
-                          loadingLabel="Mengunggah..."
-                          disabled={disabled || busy}
-                          onPress={() => onUploadNotificationSound(item.type)}
-                        />
-                        <KolamActionControlButton
-                          label="Reset"
-                          intent="danger"
-                          loading={status === 'deleting'}
-                          loadingLabel="Mereset..."
-                          disabled={disabled || busy || !item.value}
-                          onPress={() => onDeleteNotificationSound(item.type)}
-                        />
-                      </View>
-                    </View>
-                  );
-                })}
-              </View>
             </>
           ) : null}
         </>
@@ -4167,41 +4156,64 @@ export function KolamSettingsWebConfigSurface({
       ) : null}
       {showNotificationSettings ? (
         <>
-          <View style={styles.notificationSoundList}>
-            {notificationSoundItems.slice(0, 2).map(renderNotificationSoundRow)}
-          </View>
-          <KolamToggleRow
-            variant="settingsForm"
-            label="Notifikasi alih tangan DARA"
-            description="Kirim notifikasi saat pelanggan dialihkan."
-            active={draft.daraHandoffNotifyEnabled}
-            onPress={() =>
-              !disabled &&
-              setDraftField(
-                'daraHandoffNotifyEnabled',
-                !draft.daraHandoffNotifyEnabled,
-              )
-            }
-          />
-          <View style={styles.notificationSoundList}>
-            {renderNotificationSoundRow(notificationSoundItems[2])}
-          </View>
-          <KolamToggleRow
-            variant="settingsForm"
-            label="Panggilan grup chat tim"
-            description="Aktifkan panggilan grup di chat tim."
-            active={draft.teamChatGroupCallEnabled}
-            onPress={() =>
-              !disabled &&
-              setDraftField(
-                'teamChatGroupCallEnabled',
-                !draft.teamChatGroupCallEnabled,
-              )
-            }
-          />
-          <View style={styles.notificationSoundList}>
-            {renderNotificationSoundRow(notificationSoundItems[3])}
-            {renderNotificationSoundRow(notificationSoundItems[4])}
+          <View style={styles.marketplaceControlSection}>
+            <KolamCopyStack
+              items={[
+                {
+                  id: 'notification-sound-table-title',
+                  text: 'Suara notifikasi',
+                  style: styles.marketplaceOverviewLabel,
+                },
+                {
+                  id: 'notification-sound-table-meta',
+                  text: 'Tes suara, unggah file, atur ulang, dan aktif/nonaktifkan fitur terkait dari satu baris.',
+                  style: styles.marketplaceOverviewMeta,
+                },
+              ]}
+            />
+            <View style={styles.notificationSoundTable}>
+              <View style={styles.notificationSoundHeaderRow}>
+                <Text
+                  style={[
+                    styles.notificationSoundHeaderText,
+                    styles.notificationSoundHeaderName,
+                  ]}
+                >
+                  Suara notifikasi
+                </Text>
+                <Text style={styles.notificationSoundHeaderText}>
+                  Tes suara
+                </Text>
+                <Text style={styles.notificationSoundHeaderText}>Unggah</Text>
+                <Text style={styles.notificationSoundHeaderText}>
+                  Atur ulang
+                </Text>
+                <Text style={styles.notificationSoundHeaderText}>On/off</Text>
+              </View>
+              <View style={styles.notificationSoundList}>
+                {renderNotificationSoundRow(notificationSoundItems[0])}
+                {renderNotificationSoundRow(notificationSoundItems[1])}
+                {renderNotificationSoundRow(notificationSoundItems[2], {
+                  active: draft.daraHandoffNotifyEnabled,
+                  label: 'Notifikasi alih tangan DARA',
+                  onPress: () =>
+                    setDraftField(
+                      'daraHandoffNotifyEnabled',
+                      !draft.daraHandoffNotifyEnabled,
+                    ),
+                })}
+                {renderNotificationSoundRow(notificationSoundItems[3], {
+                  active: draft.teamChatGroupCallEnabled,
+                  label: 'Panggilan grup chat tim',
+                  onPress: () =>
+                    setDraftField(
+                      'teamChatGroupCallEnabled',
+                      !draft.teamChatGroupCallEnabled,
+                    ),
+                })}
+                {renderNotificationSoundRow(notificationSoundItems[4])}
+              </View>
+            </View>
           </View>
           {previewNotificationSound ? (
             <View style={styles.notificationSoundPlayer}>
@@ -7711,10 +7723,35 @@ const styles = StyleSheet.create({
     gap: 8,
     justifyContent: 'flex-end',
   },
+  notificationSoundActionCell: {
+    alignItems: 'flex-end',
+    width: 104,
+  },
   notificationSoundCopy: {
     flex: 1,
     gap: 4,
-    minWidth: 260,
+    minWidth: 240,
+  },
+  notificationSoundHeaderName: {
+    flex: 1,
+    minWidth: 240,
+    textAlign: 'left',
+  },
+  notificationSoundHeaderRow: {
+    alignItems: 'center',
+    backgroundColor: '#f3f4f6',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  notificationSoundHeaderText: {
+    color: '#6b7280',
+    fontSize: 12,
+    fontWeight: '800',
+    textAlign: 'right',
+    width: 104,
   },
   notificationSoundLabel: {
     color: '#1f2937',
@@ -7741,7 +7778,44 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 12,
     justifyContent: 'space-between',
+    minWidth: 0,
+    paddingHorizontal: 12,
     paddingVertical: 12,
+  },
+  notificationSoundSwitch: {
+    backgroundColor: '#d1d5db',
+    borderRadius: 999,
+    height: 22,
+    justifyContent: 'center',
+    padding: 2,
+    width: 40,
+  },
+  notificationSoundSwitchActive: {
+    backgroundColor: '#10b981',
+  },
+  notificationSoundSwitchDisabled: {
+    opacity: 0.45,
+  },
+  notificationSoundSwitchKnob: {
+    backgroundColor: '#ffffff',
+    borderRadius: 999,
+    height: 18,
+    width: 18,
+  },
+  notificationSoundSwitchKnobActive: {
+    alignSelf: 'flex-end',
+  },
+  notificationSoundTable: {
+    overflow: 'hidden',
+  },
+  notificationSoundToggleCell: {
+    alignItems: 'center',
+    width: 104,
+  },
+  notificationSoundToggleEmpty: {
+    color: '#9ca3af',
+    fontSize: 13,
+    fontWeight: '700',
   },
   storeHoursList: {
     gap: 10,
