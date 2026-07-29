@@ -664,25 +664,6 @@ export function KolamGlobalChatRail({
       </View>
 
       <View style={styles.body}>
-        <View style={styles.summaryRow}>
-          <View style={styles.summaryCopy}>
-            <Text style={styles.placeholderTitle}>
-              {content.placeholderTitle}
-            </Text>
-            <Text style={styles.placeholderCopy}>{content.placeholderCopy}</Text>
-          </View>
-          <KolamBadge
-            intent={data.totalUnread > 0 ? 'primary' : 'muted'}
-            label={data.totalUnread > 99 ? '99+' : data.totalUnread}
-          />
-        </View>
-
-        <Text style={styles.metaText}>
-          {data.loading
-            ? 'Memuat data read-only...'
-            : `${items.length} ${content.itemLabel} terpantau`}
-        </Text>
-
         {mode === 'inbox' ? (
           <KolamInboxFilterPanel
             filter={inboxFilter}
@@ -3376,9 +3357,6 @@ function getChatRailContent(mode: KolamGlobalChatRailMode) {
     return {
       accessibilityLabel: 'Panel kanan Team chat',
       iconKind: 'team' as const,
-      placeholderTitle: 'Team chat siap dipasang',
-      placeholderCopy:
-        'Read-only room dan unread sudah terhubung. Stream realtime dan detail pesan masuk di fase berikutnya.',
       emptyTitle: 'Belum ada room aktif',
       emptyMessage: 'Room team chat akan muncul di sini setelah backend mengirim data.',
       itemLabel: 'room',
@@ -3390,9 +3368,6 @@ function getChatRailContent(mode: KolamGlobalChatRailMode) {
   return {
     accessibilityLabel: 'Panel kanan Pesan masuk',
     iconKind: 'inbox' as const,
-    placeholderTitle: 'Inbox siap dipasang',
-    placeholderCopy:
-      'Read-only conversation unread sudah terhubung. Detail pesan dan aksi balas masuk di fase berikutnya.',
     emptyTitle: 'Tidak ada pesan unread',
     emptyMessage: 'Conversation unread dari marketplace akan muncul di sini.',
     itemLabel: 'conversation',
@@ -4634,27 +4609,6 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     gap: 12,
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-  },
-  summaryCopy: {
-    minWidth: 0,
-    flex: 1,
-  },
-  placeholderTitle: {
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 14,
-    fontWeight: '800',
-  },
-  placeholderCopy: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 13,
-    lineHeight: 19,
   },
   metaText: {
     color: V.colors.mutedFg,

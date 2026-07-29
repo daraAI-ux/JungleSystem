@@ -347,10 +347,6 @@ describe('KolamGlobalChatRail', () => {
       expect.arrayContaining([
         'Chat',
         'Pesan masuk',
-        'Inbox siap dipasang',
-        'Read-only conversation unread sudah terhubung. Detail pesan dan aksi balas masuk di fase berikutnya.',
-        '0',
-        '0 conversation terpantau',
         'Analisa chat',
         '30 hari',
         'Total',
@@ -364,6 +360,13 @@ describe('KolamGlobalChatRail', () => {
         'Pengaturan chat',
         'Label percakapan',
         'Template chat',
+      ]),
+    );
+    expect(renderText(renderer!)).not.toEqual(
+      expect.arrayContaining([
+        'Inbox siap dipasang',
+        'Read-only conversation unread sudah terhubung. Detail pesan dan aksi balas masuk di fase berikutnya.',
+        '0 conversation terpantau',
       ]),
     );
     expect(getChatAnalyticsMock).toHaveBeenCalledWith(
@@ -410,16 +413,19 @@ describe('KolamGlobalChatRail', () => {
       expect.arrayContaining([
         'Chat',
         'Team chat',
-        'Team chat siap dipasang',
-        'Read-only room dan unread sudah terhubung. Stream realtime dan detail pesan masuk di fase berikutnya.',
-        '4',
-        '2 room terpantau',
         'Operasional',
         'Barang siap dikirim',
         'General',
         'Room utama',
         'CS Tokopedia',
         'Follow up buyer',
+      ]),
+    );
+    expect(renderText(renderer!)).not.toEqual(
+      expect.arrayContaining([
+        'Team chat siap dipasang',
+        'Read-only room dan unread sudah terhubung. Stream realtime dan detail pesan masuk di fase berikutnya.',
+        '2 room terpantau',
       ]),
     );
   });
@@ -632,8 +638,6 @@ describe('KolamGlobalChatRail', () => {
 
     expect(renderText(renderer!)).toEqual(
       expect.arrayContaining([
-        '2',
-        '2 conversation terpantau',
         'Buyer Tokopedia',
         'Apakah masih tersedia?',
         'Tokopedia',
@@ -642,6 +646,9 @@ describe('KolamGlobalChatRail', () => {
         'Anda: Baik, kami cek stok dulu.',
         'Shopee',
       ]),
+    );
+    expect(renderText(renderer!)).not.toEqual(
+      expect.arrayContaining(['2 conversation terpantau']),
     );
   });
 
