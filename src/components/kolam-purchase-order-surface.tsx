@@ -1255,31 +1255,42 @@ function KolamPurchaseOrderDetail({
         </View>
       </View>
 
-      <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
-        <Text style={styles.sectionTitle}>Ringkasan biaya</Text>
-        <KolamDescriptionList
-          accessibilityLabel="Ringkasan biaya PO"
-          rows={[
-            { id: 'total', label: 'Total', value: formatRupiah(po.total), meta: '', tone: 'default' },
-            { id: 'shipping', label: 'Ongkos kirim', value: formatRupiah(po.shippingCost), meta: '', tone: 'default' },
-            {
-              id: 'discount',
-              label: 'Diskon',
-              value: po.discount ? `${po.discount.value}${po.discount.type === 'percent' ? '%' : ''}` : '—',
-              meta: '',
-              tone: 'default',
-            },
-            { id: 'final', label: 'Total akhir', value: formatRupiah(po.finalTotal), meta: '', tone: 'success' },
-            {
-              id: 'actual',
-              label: 'Total aktual (setelah cek)',
-              value: po.actualTotal ? formatRupiah(po.actualTotal) : '—',
-              meta: '',
-              tone: 'default',
-            },
-          ]}
-        />
-      </KolamContentFrame>
+      <View style={styles.formSplitRow}>
+        <View style={[styles.formSplitCell, styles.detailSplitCell]}>
+          <KolamContentFrame
+            style={[styles.detailCard, styles.detailSplitCard, styles.proofBorderCard]}
+            variant="settingsWebConfig"
+          >
+            <Text style={styles.sectionTitle}>Ringkasan biaya</Text>
+            <KolamDescriptionList
+              accessibilityLabel="Ringkasan biaya PO"
+              rows={[
+                { id: 'total', label: 'Total', value: formatRupiah(po.total), meta: '', tone: 'default' },
+                { id: 'shipping', label: 'Ongkos kirim', value: formatRupiah(po.shippingCost), meta: '', tone: 'default' },
+                {
+                  id: 'discount',
+                  label: 'Diskon',
+                  value: po.discount ? `${po.discount.value}${po.discount.type === 'percent' ? '%' : ''}` : '—',
+                  meta: '',
+                  tone: 'default',
+                },
+                { id: 'final', label: 'Total akhir', value: formatRupiah(po.finalTotal), meta: '', tone: 'success' },
+                {
+                  id: 'actual',
+                  label: 'Total aktual (setelah cek)',
+                  value: po.actualTotal ? formatRupiah(po.actualTotal) : '—',
+                  meta: '',
+                  tone: 'default',
+                },
+              ]}
+            />
+          </KolamContentFrame>
+        </View>
+
+        <View style={[styles.formSplitCell, styles.detailSplitCell]}>
+          <KolamPOPaymentSection controller={controller} po={po} />
+        </View>
+      </View>
 
       <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
         <View style={styles.itemsHeaderRow}>
@@ -1360,7 +1371,6 @@ function KolamPurchaseOrderDetail({
       </KolamContentFrame>
 
       <KolamPOProofsCard po={po} />
-      <KolamPOPaymentSection controller={controller} po={po} />
       <KolamPOInstallmentSection controller={controller} po={po} />
       <KolamPOFakturPajakSection controller={controller} po={po} />
 
@@ -1576,7 +1586,10 @@ function KolamPOPaymentSection({
   const downPayment = po.paymentConfig?.downPayment;
 
   return (
-    <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
+    <KolamContentFrame
+      style={[styles.detailCard, styles.detailSplitCard, styles.proofBorderCard]}
+      variant="settingsWebConfig"
+    >
       <Text style={styles.sectionTitle}>Pembayaran</Text>
       <KolamDescriptionList
         accessibilityLabel="Detail pembayaran PO"
