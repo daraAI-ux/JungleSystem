@@ -787,12 +787,30 @@ function KolamSupplierCatalogTabs({
       <View style={styles.segmentRow}>
         {(
           [
-            { id: 'analytics', label: 'Analitik' },
-            { id: 'products', label: 'Produk & Raw' },
-            { id: 'species', label: 'Species' },
-            { id: 'packings', label: 'Bahan Kemasan' },
-            { id: 'brands', label: 'Merek' },
-            { id: 'links', label: 'Tautan' },
+            {
+              id: 'analytics',
+              label: 'Analitik',
+            },
+            {
+              id: 'products',
+              label: `Produk & Raw (${vendor.productCount})`,
+            },
+            {
+              id: 'species',
+              label: `Species (${vendor.speciesCount})`,
+            },
+            {
+              id: 'packings',
+              label: `Bahan Kemasan (${vendor.packingCount})`,
+            },
+            {
+              id: 'brands',
+              label: 'Merek',
+            },
+            {
+              id: 'links',
+              label: 'Tautan',
+            },
           ] as const
         ).map(item => (
           <KolamButton
