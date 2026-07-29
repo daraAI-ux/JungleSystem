@@ -129,6 +129,7 @@ function getDefaultDetailMock() {
     callConfig: {enabled: false},
     conversation: null,
     declineCall: jest.fn(),
+    editMessage: jest.fn(),
     endCall: jest.fn(),
     handoverCall: jest.fn(),
     joinCall: jest.fn(),
@@ -1288,6 +1289,111 @@ describe('KolamGlobalChatRail', () => {
         .findAllByType(View)
         .some(node => node.props.accessibilityLabel === 'Membalas pesan Maya'),
     ).toBe(false);
+  });
+
+  it('edits only current user team chat messages inline', async () => {
+    const editMessage = jest.fn().mockResolvedValue(undefined);
+    useReadonlyDataMock.mockReturnValue({
+      conversations: [],
+      loading: false,
+      refresh: jest.fn(),
+      rooms: [
+        {
+          _id: 'room-1',
+          name: 'Operasional',
+          category: 'general',
+          lastMessagePreview: 'Barang siap dikirim',
+          unreadCount: 0,
+        },
+      ],
+      totalUnread: 0,
+    });
+    useDetailMock.mockReturnValue({
+      ...getDefaultDetailMock(),
+      editMessage,
+      loading: false,
+      messages: [
+        {
+          attachments: [],
+          editedAt: '2026-07-28T08:05:00.000Z',
+          editedByName: 'Staff',
+          embeds: [],
+          id: 'team-msg-own',
+          author: 'Staff',
+          body: 'Draft lama',
+          linkPreviews: [],
+          mine: true,
+          reactions: [],
+          senderId: 'staff-1',
+          sentAt: '2026-07-28T08:00:00.000Z',
+        },
+        {
+          attachments: [],
+          embeds: [],
+          id: 'team-msg-other',
+          author: 'Maya',
+          body: 'Pesan Maya',
+          linkPreviews: [],
+          mine: false,
+          reactions: [],
+          senderId: 'staff-2',
+          sentAt: '2026-07-28T08:01:00.000Z',
+        },
+      ],
+      presence: {onlineCount: 1, typingUserIds: [], viewingCount: 1},
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamGlobalChatRail mode="team-chat" onClose={() => undefined} />,
+      );
+    });
+
+    const selectButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Pilih room Operasional');
+
+    await ReactTestRenderer.act(async () => {
+      selectButton!.props.onPress();
+    });
+
+    expect(
+      renderText(renderer!).some(text => text.includes('Diedit oleh Staff')),
+    ).toBe(true);
+    expect(
+      renderer!.root
+        .findAllByType(KolamPressable)
+        .some(node => node.props.accessibilityLabel === 'Edit pesan Maya'),
+    ).toBe(false);
+
+    const editButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Edit pesan Staff');
+
+    await ReactTestRenderer.act(async () => {
+      editButton!.props.onPress();
+    });
+
+    const editInput = renderer!.root
+      .findAllByType(TextInput)
+      .find(node => node.props.accessibilityLabel === 'Edit pesan Staff');
+
+    await ReactTestRenderer.act(async () => {
+      editInput!.props.onChangeText('Draft baru');
+    });
+
+    const saveButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(
+        node => node.props.accessibilityLabel === 'Simpan edit pesan team chat',
+      );
+
+    await ReactTestRenderer.act(async () => {
+      await saveButton!.props.onPress();
+    });
+
+    expect(editMessage).toHaveBeenCalledWith('team-msg-own', 'Draft baru');
   });
 
   it('updates and clears the DARA thinking bubble from team chat live events', async () => {

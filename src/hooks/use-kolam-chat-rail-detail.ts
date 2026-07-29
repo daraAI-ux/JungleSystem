@@ -4,6 +4,7 @@ import {
   assignKolamChatConversation,
   declineKolamTeamChatCall,
   endKolamTeamChatCall,
+  editKolamTeamChatMessage,
   forceUnassignKolamChatConversation,
   getKolamChatConversation,
   getKolamChatMessages,
@@ -77,7 +78,10 @@ export interface KolamChatRailDetailMessage {
   mine: boolean;
   reactions: KolamChatRailDetailReactionGroup[];
   replyPreview?: KolamTeamChatReplyPreview | null;
+  senderId?: string | null;
   sentAt?: string;
+  editedAt?: string | null;
+  editedByName?: string | null;
   status?: string;
 }
 
@@ -109,6 +113,7 @@ export interface KolamChatRailDetailState {
   messages: KolamChatRailDetailMessage[];
   muteCallParticipant: (userId: string) => Promise<void>;
   presence: KolamTeamChatPresence;
+  editMessage: (messageId: string, body: string) => Promise<void>;
   reactToMessage: (messageId: string, emoji: string) => Promise<void>;
   redialCall: () => Promise<void>;
   refreshCall: () => Promise<void>;
@@ -429,6 +434,40 @@ export function useKolamChatRailDetail({
     [currentUserId, mode, selectedId, sending],
   );
 
+  const editMessage = useCallback(
+    async (messageId: string, text: string) => {
+      const body = text.trim();
+      if (!selectedId || mode !== 'team-chat' || !body || sending) {
+        return;
+      }
+
+      setSending(true);
+      setErrorMessage(undefined);
+
+      try {
+        const message = await editKolamTeamChatMessage(
+          selectedId,
+          messageId,
+          body,
+        );
+        setMessages(current =>
+          current.map(item =>
+            item.id === messageId
+              ? mapTeamChatMessage(message, currentUserId)
+              : item,
+          ),
+        );
+      } catch (error) {
+        setErrorMessage(
+          error instanceof Error ? error.message : 'Pesan gagal diedit.',
+        );
+      } finally {
+        setSending(false);
+      }
+    },
+    [currentUserId, mode, selectedId, sending],
+  );
+
   const runInboxConversationAction = useCallback(
     async (action: () => Promise<KolamChatConversation>) => {
       if (mode !== 'inbox' || !selectedId || sending) {
@@ -631,6 +670,7 @@ export function useKolamChatRailDetail({
     callErrorMessage,
     conversation,
     declineCall,
+    editMessage,
     endCall,
     errorMessage,
     handoverCall,
@@ -674,6 +714,7 @@ function mapInboxMessage(message: KolamChatMessage): KolamChatRailDetailMessage 
     mine: message.direction === 'out',
     reactions: [],
     replyPreview: null,
+    senderId: null,
     sentAt: message.sentAt ?? message.createdAt,
     status: message.deliveryStatus,
   };
@@ -699,8 +740,17 @@ function mapTeamChatMessage(
     mine: message.senderType !== 'ai',
     reactions: groupTeamChatReactions(message.reactions, currentUserId),
     replyPreview: message.replyPreview ?? null,
+    senderId: getTeamChatSenderId(message),
     sentAt: message.createdAt,
+    editedAt: message.editedAt ?? null,
+    editedByName: message.editedByName ?? null,
   };
+}
+
+function getTeamChatSenderId(message: KolamTeamChatMessage) {
+  return typeof message.sender === 'string'
+    ? message.sender
+    : message.sender?._id ?? null;
 }
 
 function groupTeamChatReactions(

@@ -658,6 +658,10 @@ function KolamChatRailDetailPanel({
   const [templateSearch, setTemplateSearch] = React.useState('');
   const [contactDetailsOpen, setContactDetailsOpen] = React.useState(false);
   const [daraThinkingLine, setDaraThinkingLine] = React.useState('');
+  const [editingMessageId, setEditingMessageId] = React.useState<string | null>(
+    null,
+  );
+  const [editingDraft, setEditingDraft] = React.useState('');
   const [contactDetailsState, setContactDetailsState] =
     React.useState<KolamChatRailContactDetailsState>({
       data: null,
@@ -696,6 +700,8 @@ function KolamChatRailDetailPanel({
     setTemplatePickerOpen(false);
     setTemplateSearch('');
     setDaraThinkingLine('');
+    setEditingMessageId(null);
+    setEditingDraft('');
     setContactDetailsOpen(false);
     setContactDetailsState({data: null, loading: false});
   }, [selectedItem.id]);
@@ -760,6 +766,33 @@ function KolamChatRailDetailPanel({
 
     await onSend();
   }, [composerText, detail.teamRoomMetadata.daraReplyEnabled, onSend]);
+
+  const handleStartEditMessage = React.useCallback(
+    (message: ReturnType<typeof useKolamChatRailDetail>['messages'][number]) => {
+      setEditingMessageId(message.id);
+      setEditingDraft(message.body);
+    },
+    [],
+  );
+
+  const handleCancelEditMessage = React.useCallback(() => {
+    setEditingMessageId(null);
+    setEditingDraft('');
+  }, []);
+
+  const handleSaveEditMessage = React.useCallback(
+    async (messageId: string) => {
+      const body = editingDraft.trim();
+      if (!body) {
+        return;
+      }
+
+      await detail.editMessage(messageId, body);
+      setEditingMessageId(null);
+      setEditingDraft('');
+    },
+    [detail, editingDraft],
+  );
 
   React.useEffect(() => {
     if (mode !== 'inbox' || !contactDetailsOpen) {
@@ -854,55 +887,119 @@ function KolamChatRailDetailPanel({
             <KolamMappedList
               items={detail.messages}
               getKey={message => message.id}
-              renderItem={message => (
-                <View
-                  style={[
-                    styles.messageBubble,
-                    message.mine ? styles.messageBubbleMine : styles.messageBubbleOther,
-                  ]}>
-                  <Text style={styles.messageAuthor}>{message.author}</Text>
-                  {mode === 'team-chat' && message.replyPreview?.body ? (
-                    <KolamTeamChatReplyPreviewCard
-                      replyPreview={message.replyPreview}
-                    />
-                  ) : null}
-                  {message.body ? (
-                    mode === 'team-chat' ? (
-                      <KolamTeamMentionText body={message.body} />
+              renderItem={message => {
+                const isEditing = editingMessageId === message.id;
+                const canEdit = canEditTeamChatMessage(message, currentUserId);
+
+                return (
+                  <View
+                    style={[
+                      styles.messageBubble,
+                      message.mine
+                        ? styles.messageBubbleMine
+                        : styles.messageBubbleOther,
+                    ]}>
+                    <Text style={styles.messageAuthor}>{message.author}</Text>
+                    {mode === 'team-chat' && message.replyPreview?.body ? (
+                      <KolamTeamChatReplyPreviewCard
+                        replyPreview={message.replyPreview}
+                      />
+                    ) : null}
+                    {mode === 'team-chat' && isEditing ? (
+                      <View style={styles.editMessageComposer}>
+                        <TextInput
+                          accessibilityLabel={`Edit pesan ${message.author}`}
+                          editable={!detail.sending}
+                          multiline
+                          onChangeText={setEditingDraft}
+                          placeholder="Edit pesan"
+                          placeholderTextColor={V.colors.mutedFg}
+                          style={styles.editMessageInput}
+                          value={editingDraft}
+                        />
+                        <View style={styles.editMessageActions}>
+                          <KolamPressable
+                            accessibilityLabel="Batalkan edit pesan team chat"
+                            disabled={detail.sending}
+                            onPress={handleCancelEditMessage}
+                            style={[
+                              styles.editMessageButton,
+                              detail.sending && styles.attachButtonDisabled,
+                            ]}>
+                            <Text style={styles.editMessageButtonText}>
+                              Batal
+                            </Text>
+                          </KolamPressable>
+                          <KolamPressable
+                            accessibilityLabel="Simpan edit pesan team chat"
+                            disabled={!editingDraft.trim() || detail.sending}
+                            onPress={() => handleSaveEditMessage(message.id)}
+                            style={[
+                              styles.editMessageButton,
+                              styles.editMessageButtonPrimary,
+                              (!editingDraft.trim() || detail.sending) &&
+                                styles.attachButtonDisabled,
+                            ]}>
+                            <Text style={styles.editMessageButtonPrimaryText}>
+                              {detail.sending ? 'Menyimpan' : 'Simpan'}
+                            </Text>
+                          </KolamPressable>
+                        </View>
+                      </View>
                     ) : (
-                      <Text style={styles.messageBody}>{message.body}</Text>
-                    )
-                  ) : null}
-                  {message.attachments.length > 0 ? (
-                    <KolamChatAttachmentList attachments={message.attachments} />
-                  ) : null}
-                  {mode === 'team-chat' && message.linkPreviews.length > 0 ? (
-                    <KolamChatLinkPreviewList previews={message.linkPreviews} />
-                  ) : null}
-                  {mode === 'team-chat' && message.embeds.length > 0 ? (
-                    <KolamChatEmbedList embeds={message.embeds} />
-                  ) : null}
-                  {mode === 'team-chat' ? (
-                    <KolamChatReactionControls
-                      disabled={detail.sending}
-                      message={message}
-                      onReact={emoji => detail.reactToMessage(message.id, emoji)}
-                      onReply={() =>
-                        onReplyToMessage({
-                          author: message.author,
-                          body: getTeamChatReplyTargetBody(message),
-                          id: message.id,
-                        })
-                      }
-                    />
-                  ) : null}
-                  <Text style={styles.messageMeta}>
-                    {[formatRelativeTime(message.sentAt), message.status]
-                      .filter(Boolean)
-                      .join(' | ')}
-                  </Text>
-                </View>
-              )}
+                      <>
+                        {message.body ? (
+                          mode === 'team-chat' ? (
+                            <KolamTeamMentionText body={message.body} />
+                          ) : (
+                            <Text style={styles.messageBody}>{message.body}</Text>
+                          )
+                        ) : null}
+                        {message.attachments.length > 0 ? (
+                          <KolamChatAttachmentList
+                            attachments={message.attachments}
+                          />
+                        ) : null}
+                        {mode === 'team-chat' && message.linkPreviews.length > 0 ? (
+                          <KolamChatLinkPreviewList
+                            previews={message.linkPreviews}
+                          />
+                        ) : null}
+                        {mode === 'team-chat' && message.embeds.length > 0 ? (
+                          <KolamChatEmbedList embeds={message.embeds} />
+                        ) : null}
+                        {mode === 'team-chat' ? (
+                          <KolamChatReactionControls
+                            canEdit={canEdit}
+                            disabled={detail.sending}
+                            message={message}
+                            onEdit={() => handleStartEditMessage(message)}
+                            onReact={emoji =>
+                              detail.reactToMessage(message.id, emoji)
+                            }
+                            onReply={() =>
+                              onReplyToMessage({
+                                author: message.author,
+                                body: getTeamChatReplyTargetBody(message),
+                                id: message.id,
+                              })
+                            }
+                          />
+                        ) : null}
+                      </>
+                    )}
+                    <Text style={styles.messageMeta}>
+                      {[
+                        formatRelativeTime(message.sentAt),
+                        getTeamChatEditedLabel(message),
+                        message.status,
+                      ]
+                        .filter(Boolean)
+                        .join(' | ')}
+                    </Text>
+                  </View>
+                );
+              }}
             />
           </ScrollView>
         ) : null}
@@ -1214,6 +1311,30 @@ function getTeamChatReplyTargetBody(
   }
 
   return 'Pesan';
+}
+
+function canEditTeamChatMessage(
+  message: ReturnType<typeof useKolamChatRailDetail>['messages'][number],
+  currentUserId?: string,
+) {
+  return Boolean(
+    currentUserId &&
+      message.senderId &&
+      message.senderId === currentUserId &&
+      message.author !== 'DARA' &&
+      message.body.trim(),
+  );
+}
+
+function getTeamChatEditedLabel(
+  message: ReturnType<typeof useKolamChatRailDetail>['messages'][number],
+) {
+  if (!message.editedAt) {
+    return '';
+  }
+
+  const editorName = message.editedByName?.trim();
+  return editorName ? `Diedit oleh ${editorName}` : 'Diedit';
 }
 
 function KolamTeamChatReplyComposerStrip({
@@ -1973,25 +2094,44 @@ function KolamChatEmbedCard({embed}: {embed: KolamTeamChatEmbed}) {
 }
 
 function KolamChatReactionControls({
+  canEdit,
   disabled,
   message,
+  onEdit,
   onReact,
   onReply,
 }: {
+  canEdit: boolean;
   disabled: boolean;
   message: ReturnType<typeof useKolamChatRailDetail>['messages'][number];
+  onEdit: () => void;
   onReact: (emoji: string) => void;
   onReply: () => void;
 }) {
   return (
     <View style={styles.reactionControls}>
-      <KolamPressable
-        accessibilityLabel={`Balas pesan ${message.author}`}
-        disabled={disabled}
-        onPress={onReply}
-        style={[styles.replyActionButton, disabled && styles.attachButtonDisabled]}>
-        <Text style={styles.replyActionText}>Balas</Text>
-      </KolamPressable>
+      <View style={styles.messageActionRow}>
+        <KolamPressable
+          accessibilityLabel={`Balas pesan ${message.author}`}
+          disabled={disabled}
+          onPress={onReply}
+          style={[styles.replyActionButton, disabled && styles.attachButtonDisabled]}>
+          <Text style={styles.replyActionText}>Balas</Text>
+        </KolamPressable>
+        {canEdit ? (
+          <KolamPressable
+            accessibilityLabel={`Edit pesan ${message.author}`}
+            disabled={disabled}
+            onPress={onEdit}
+            style={[
+              styles.replyActionButton,
+              styles.editActionButton,
+              disabled && styles.attachButtonDisabled,
+            ]}>
+            <Text style={styles.replyActionText}>Edit</Text>
+          </KolamPressable>
+        ) : null}
+      </View>
       {message.reactions.length > 0 ? (
         <View style={styles.reactionPills}>
           <KolamMappedList
@@ -3474,6 +3614,11 @@ const styles = StyleSheet.create({
   reactionControls: {
     gap: 5,
   },
+  messageActionRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
   replyActionButton: {
     alignSelf: 'flex-start',
     minHeight: 24,
@@ -3483,8 +3628,62 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: V.colors.secondary,
   },
+  editActionButton: {
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.bg,
+  },
   replyActionText: {
     color: V.colors.secondaryFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  editMessageComposer: {
+    gap: 8,
+  },
+  editMessageInput: {
+    minHeight: 64,
+    borderRadius: 8,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+    backgroundColor: V.colors.bg,
+    textAlignVertical: 'top',
+  },
+  editMessageActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-end',
+    gap: 8,
+  },
+  editMessageButton: {
+    minHeight: 28,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.bg,
+  },
+  editMessageButtonPrimary: {
+    borderColor: V.colors.primary,
+    backgroundColor: V.colors.primary,
+  },
+  editMessageButtonText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  editMessageButtonPrimaryText: {
+    color: V.colors.primaryFg,
     fontFamily: V.fontFamily,
     fontSize: 11,
     fontWeight: '900',
