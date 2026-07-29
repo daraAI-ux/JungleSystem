@@ -1,5 +1,5 @@
 import React from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
   KOLAM_PURCHASE_ORDER_ROOT,
   filterPoStatusOptions,
@@ -369,18 +369,14 @@ function KolamPurchaseOrderList({
         }
         style={styles.tableFrame}
       >
-        <View
-          style={[
+        <FlatList
+          contentContainerStyle={[
             styles.listContent,
             openActionRowId ? styles.listContentMenuOpen : null,
           ]}
-        >
-          <KolamDataTableHeader columns={getKolamTableColumns('purchase-order')} />
-          {controller.orders.length ? (
-            controller.orders.map(item => (
-              <React.Fragment key={item.id}>{renderRow({ item })}</React.Fragment>
-            ))
-          ) : (
+          data={controller.orders}
+          keyExtractor={item => item.id}
+          ListEmptyComponent={
             <View style={styles.emptyWrap}>
               <KolamEmptyState
                 compact
@@ -398,8 +394,14 @@ function KolamPurchaseOrderList({
                 }
               />
             </View>
-          )}
-        </View>
+          }
+          ListHeaderComponent={
+            <KolamDataTableHeader columns={getKolamTableColumns('purchase-order')} />
+          }
+          removeClippedSubviews={false}
+          renderItem={renderRow}
+          style={styles.listFlatList}
+        />
       </KolamCatalogListTableShell>
 
       <KolamDeleteConfirmDialog
