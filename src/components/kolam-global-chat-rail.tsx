@@ -203,7 +203,7 @@ export function KolamGlobalChatRail({
       labelId: 'all',
       platform: 'all',
       search: '',
-      status: 'open',
+      status: 'all',
     });
   const inboxParams = React.useMemo(
     () => buildInboxListParams(inboxFilter),
@@ -893,7 +893,7 @@ function KolamInboxFilterPanel({
     filter.labelId !== 'all' ||
     filter.platform !== 'all' ||
     filter.search.trim().length > 0 ||
-    filter.status !== 'open';
+    filter.status !== 'all';
 
   return (
     <View accessibilityLabel="Filter inbox chat" style={styles.filterPanel}>
@@ -905,7 +905,7 @@ function KolamInboxFilterPanel({
         style={styles.filterSearchInput}
         value={searchDraft}
       />
-      <View style={styles.filterDropdownGrid}>
+      <View style={styles.filterDropdownStack}>
         <KolamDropdownSelect
           accessibilityLabel="Filter status inbox"
           label="Status"
@@ -935,7 +935,7 @@ function KolamInboxFilterPanel({
           onChange={labelId => onChange({...filter, labelId})}
           options={labelOptions}
           searchable={labels.length > 6}
-          style={styles.filterDropdownWide}
+          style={styles.filterDropdown}
           triggerStyle={styles.filterDropdownTrigger}
           triggerTextStyle={styles.filterDropdownText}
           value={filter.labelId}
@@ -970,7 +970,7 @@ function KolamInboxFilterPanel({
                 labelId: 'all',
                 platform: 'all',
                 search: '',
-                status: 'open',
+                status: 'all',
               })
             }
             style={styles.filterResetButton}>
@@ -4714,18 +4714,11 @@ const styles = StyleSheet.create({
     letterSpacing: 0,
     textTransform: 'uppercase',
   },
-  filterDropdownGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+  filterDropdownStack: {
     gap: 6,
   },
   filterDropdown: {
-    minWidth: 118,
-    flex: 1,
-  },
-  filterDropdownWide: {
-    minWidth: 160,
-    flex: 1,
+    width: '100%',
   },
   filterDropdownTrigger: {
     minHeight: 32,

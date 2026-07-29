@@ -704,7 +704,6 @@ describe('KolamGlobalChatRail', () => {
       inboxParams: {
         limit: 100,
         page: 1,
-        status: 'open',
       },
       mode: 'inbox',
     });

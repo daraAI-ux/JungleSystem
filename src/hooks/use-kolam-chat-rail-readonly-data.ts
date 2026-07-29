@@ -61,8 +61,6 @@ export function useKolamChatRailReadonlyData({
 
       const conversations = await getKolamChatConversations({
         limit: 100,
-        status: 'open',
-        unreadOnly: true,
         ...inboxParams,
       });
       if (!mountedRef.current) {
