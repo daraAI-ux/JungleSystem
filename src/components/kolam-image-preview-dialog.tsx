@@ -133,14 +133,15 @@ function KolamImagePreviewDialog({
   const current = items[safeIndex];
   const previewSize = React.useMemo(() => {
     const windowSize = Dimensions.get('window');
-    const dialogWidth = Math.max(280, Math.min(windowSize.width - 80, 1040));
-    const dialogHeight = Math.max(260, Math.min(windowSize.height - 80, 760));
+    const dialogWidth = Math.max(320, Math.min(windowSize.width - 32, 1280));
+    const dialogHeight = Math.max(320, Math.min(windowSize.height - 32, 920));
+    const imageStageWidth = Math.max(280, dialogWidth - 24);
 
     return {
       dialogHeight,
       dialogWidth,
-      imageStageHeight: Math.max(180, dialogHeight - 72),
-      imageStageWidth: dialogWidth,
+      imageStageHeight: Math.max(240, dialogHeight - 74),
+      imageStageWidth,
     };
   }, [galleryKey]);
   const resolvedUri = current?.uri ?? null;
@@ -321,13 +322,12 @@ function decodeSvgDataUri(uri: string) {
   }
 }
 
-
 const styles = StyleSheet.create({
   host: {
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 28,
+    padding: 16,
     zIndex: 9999,
   },
   backdrop: {
@@ -393,4 +393,3 @@ const styles = StyleSheet.create({
     lineHeight: 30,
   },
 });
-
