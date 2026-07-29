@@ -1629,7 +1629,7 @@ export function KolamSettingsWebConfigSurface({
   React.useEffect(() => {
     let cancelled = false;
 
-    if (!showStoreShippingSettings) {
+    if (!showStoreShippingSettings && !showOperationalSettings) {
       return () => {
         cancelled = true;
       };
@@ -1656,7 +1656,11 @@ export function KolamSettingsWebConfigSurface({
     return () => {
       cancelled = true;
     };
-  }, [draft.storeOperatingHoursTimezone, showStoreShippingSettings]);
+  }, [
+    draft.storeOperatingHoursTimezone,
+    showOperationalSettings,
+    showStoreShippingSettings,
+  ]);
 
   const timezoneDropdownOptions = React.useMemo(() => {
     const currentTimezone =
@@ -1675,6 +1679,22 @@ export function KolamSettingsWebConfigSurface({
 
     return options;
   }, [draft.storeOperatingHoursTimezone, timezoneOptions]);
+  const attendanceTimezoneDropdownOptions = React.useMemo(() => {
+    const currentTimezone = draft.staffAttendanceTimezone.trim() || 'Asia/Jakarta';
+    const options = timezoneOptions.map(option => ({
+      label: option.label,
+      value: option.id,
+    }));
+
+    if (!options.some(option => option.value === currentTimezone)) {
+      options.unshift({
+        label: currentTimezone,
+        value: currentTimezone,
+      });
+    }
+
+    return options;
+  }, [draft.staffAttendanceTimezone, timezoneOptions]);
 
   const handleOriginPinpointMessage = React.useCallback(
     (event: { nativeEvent?: { data?: string } }) => {
@@ -2568,461 +2588,500 @@ export function KolamSettingsWebConfigSurface({
               placeholder="xxxx.apps.googleusercontent.com"
             />
           </View>
-          <KolamCopyStack
-            items={[
-              {
-                id: 'operational-attendance-title',
-                text: 'Absensi karyawan',
-                style: styles.marketplaceOverviewTitle,
-              },
-              {
-                id: 'operational-attendance-meta',
-                text: 'Cut-off gaji, jam kerja, toleransi telat, komisi layanan, lokasi GPS, dan verifikasi wajah.',
-                style: styles.marketplaceOverviewMeta,
-              },
+          <View
+            style={[
+              styles.marketplaceControlSection,
+              styles.notificationSettingsCard,
             ]}
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            label="Tanggal cut-off gaji"
-            description="Tanggal cut-off payroll bulanan."
-            value={draft.staffAttendancePayrollCutoffDay}
-            onChangeText={value =>
-              setDraftField('staffAttendancePayrollCutoffDay', value)
-            }
-            placeholder="28"
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            label="Jam mulai kerja (WIB)"
-            description="Jam mulai kerja default."
-            value={draft.staffAttendanceWorkStartTime}
-            onChangeText={value =>
-              setDraftField('staffAttendanceWorkStartTime', value)
-            }
-            placeholder="08:00"
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            label="Jam selesai kerja (WIB)"
-            description="Jam selesai kerja default."
-            value={draft.staffAttendanceWorkEndTime}
-            onChangeText={value =>
-              setDraftField('staffAttendanceWorkEndTime', value)
-            }
-            placeholder="17:00"
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            label="Komisi layanan dalam jam kerja (%)"
-            description="Persentase komisi layanan saat masih dalam jam kerja."
-            value={draft.staffAttendanceServiceCommissionInsideHoursPct}
-            onChangeText={value =>
-              setDraftField(
-                'staffAttendanceServiceCommissionInsideHoursPct',
-                value,
-              )
-            }
-            placeholder="0"
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            label="Komisi layanan luar jam kerja (%)"
-            description="Persentase komisi layanan saat di luar jam kerja."
-            value={draft.staffAttendanceServiceCommissionOutsideHoursPct}
-            onChangeText={value =>
-              setDraftField(
-                'staffAttendanceServiceCommissionOutsideHoursPct',
-                value,
-              )
-            }
-            placeholder="0"
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            label="Toleransi telat (menit)"
-            description="Menit toleransi keterlambatan."
-            value={draft.staffAttendanceLateToleranceMinutes}
-            onChangeText={value =>
-              setDraftField('staffAttendanceLateToleranceMinutes', value)
-            }
-            placeholder="15"
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            label="Maks tier 2 absensi"
-            description="Batas menit tier keterlambatan kedua."
-            value={draft.staffAttendanceLateTier2MaxMinutes}
-            onChangeText={value =>
-              setDraftField('staffAttendanceLateTier2MaxMinutes', value)
-            }
-            placeholder="120"
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            label="Batas check-in absensi"
-            description="Batas menit clock-in terlambat."
-            value={draft.staffAttendanceLateCheckInDeadlineMinutes}
-            onChangeText={value =>
-              setDraftField('staffAttendanceLateCheckInDeadlineMinutes', value)
-            }
-            placeholder="240"
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            label="Denda telat tier 2 (Rp)"
-            description="Nominal denda tier 2."
-            value={draft.staffAttendanceLateFineTier2}
-            onChangeText={value =>
-              setDraftField('staffAttendanceLateFineTier2', value)
-            }
-            placeholder="50000"
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            label="Denda telat tier 3 (Rp)"
-            description="Nominal denda tier 3."
-            value={draft.staffAttendanceLateFineTier3}
-            onChangeText={value =>
-              setDraftField('staffAttendanceLateFineTier3', value)
-            }
-            placeholder="100000"
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            label="Pembagi gaji harian (absen)"
-            description="Pembagi harian untuk potongan absen."
-            value={draft.staffAttendanceAbsentDailyDivisor}
-            onChangeText={value =>
-              setDraftField('staffAttendanceAbsentDailyDivisor', value)
-            }
-            placeholder="30"
-          />
-          <KolamToggleRow
-            variant="settingsForm"
-            label="Wajib GPS"
-            description="Wajibkan lokasi GPS saat clock-in/out."
-            active={draft.staffAttendanceRequireGps}
-            onPress={() =>
-              !disabled &&
-              setDraftField(
-                'staffAttendanceRequireGps',
-                !draft.staffAttendanceRequireGps,
-              )
-            }
-          />
-          <KolamToggleRow
-            variant="settingsForm"
-            label="Wajib verifikasi wajah"
-            description="Wajibkan face match saat clock-in/out."
-            active={draft.staffAttendanceRequireFace}
-            onPress={() =>
-              !disabled &&
-              setDraftField(
-                'staffAttendanceRequireFace',
-                !draft.staffAttendanceRequireFace,
-              )
-            }
-          />
-          <View style={styles.attendanceProviderRow}>
-            <KolamCopyStack
-              containerStyle={styles.attendanceProviderCopy}
-              items={[
-                {
-                  id: 'attendance-provider-label',
-                  text: 'Peta lokasi absen',
-                  style: styles.notificationSoundLabel,
-                },
-                {
-                  id: 'attendance-provider-description',
-                  text: 'Pilih provider peta untuk lokasi kerja dan validasi radius check-in.',
-                  style: styles.marketplaceOverviewDetail,
-                },
-              ]}
-            />
-            <View style={styles.attendanceProviderChoices}>
-              <KolamChoiceSegment
-                id="openstreetmap"
-                label="OpenStreetMap (gratis, disarankan)"
-                selectedId={
-                  draft.staffAttendanceMapProvider === 'google'
-                    ? 'google'
-                    : 'openstreetmap'
-                }
-                onSelect={value =>
-                  !disabled &&
-                  setDraftField('staffAttendanceMapProvider', value)
-                }
-              />
-              <KolamChoiceSegment
-                id="google"
-                label="Google Maps (butuh API key)"
-                selectedId={
-                  draft.staffAttendanceMapProvider === 'google'
-                    ? 'google'
-                    : 'openstreetmap'
-                }
-                onSelect={value =>
-                  !disabled &&
-                  setDraftField('staffAttendanceMapProvider', value)
-                }
-              />
-            </View>
-          </View>
-          {draft.staffAttendanceMapProvider === 'google' ? (
-            <KolamTextFieldRow
-              variant="settingsForm"
-              label="Google Maps API key (browser)"
-              description="Opsional jika key yang sama sudah di tab Pengiriman. Kosongkan untuk pakai key Toko."
-              value={draft.staffAttendanceGoogleMapsBrowserApiKey}
-              onChangeText={value =>
-                setDraftField('staffAttendanceGoogleMapsBrowserApiKey', value)
-              }
-              placeholder="AIza..."
-            />
-          ) : (
-            <>
-              <KolamTextFieldRow
-                variant="settingsForm"
-                label="URL Nominatim (geocoding)"
-                description="Tanpa API key. Default server OSM; jangan spam request."
-                value={draft.staffAttendanceOsmNominatimUrl}
-                onChangeText={value =>
-                  setDraftField('staffAttendanceOsmNominatimUrl', value)
-                }
-                placeholder="https://nominatim.openstreetmap.org"
-              />
-              <KolamTextFieldRow
-                variant="settingsForm"
-                label="URL tile peta"
-                description="Dipakai jika provider peta absen memakai OpenStreetMap."
-                value={draft.staffAttendanceOsmTileUrl}
-                onChangeText={value =>
-                  setDraftField('staffAttendanceOsmTileUrl', value)
-                }
-                placeholder="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-            </>
-          )}
-          <KolamTextFieldRow
-            variant="settingsForm"
-            label="Threshold face match"
-            description="Ambang face match 0.5 sampai 0.99."
-            value={draft.staffAttendanceFaceMatchThreshold}
-            onChangeText={value =>
-              setDraftField('staffAttendanceFaceMatchThreshold', value)
-            }
-            placeholder="0.72"
-          />
-          <View style={styles.workSiteSection}>
-            <View style={styles.workSiteHeaderRow}>
+          >
+            <View style={styles.operationalCardHeaderRow}>
               <KolamCopyStack
-                containerStyle={styles.workSiteHeaderCopy}
+                containerStyle={styles.operationalCardHeaderCopy}
                 items={[
                   {
-                    id: 'work-site-title',
-                    text: 'Lokasi kerja (GPS + radius)',
-                    style: styles.marketplaceOverviewLabel,
+                    id: 'operational-attendance-title',
+                    text: 'Absensi karyawan',
+                    style: styles.marketplaceOverviewTitle,
                   },
                   {
-                    id: 'work-site-meta',
-                    text: 'Editor list native sederhana. Map belum dipasang; isi koordinat dan radius validasi check-in.',
+                    id: 'operational-attendance-meta',
+                    text: 'Cut-off gaji, jam kerja, toleransi telat, komisi layanan, lokasi GPS, dan verifikasi wajah.',
                     style: styles.marketplaceOverviewMeta,
                   },
                 ]}
               />
               <KolamActionControlButton
-                label="Tambah lokasi"
+                label="Simpan absensi"
+                loading={saveStatus === 'saving'}
+                loadingLabel="Menyimpan..."
                 disabled={disabled}
-                onPress={addStaffAttendanceWorkSite}
+                onPress={onSaveOperationalStaffAttendance}
               />
             </View>
-            {draft.staffAttendanceWorkSites.length ? (
-              <View style={styles.workSiteList}>
-                {draft.staffAttendanceWorkSites.map((site, index) => {
-                  const siteKey = getWorkSiteDraftKey(site, index);
-                  const geocodeStatus = workSiteGeocodeStatus[siteKey];
-                  const geocodeQuery =
-                    workSiteGeocodeQueries[siteKey] ?? site.name ?? '';
-                  const geocodeLoading = geocodeStatus?.status === 'loading';
-                  const geocodeDisabled =
-                    disabled ||
-                    geocodeLoading ||
-                    !geocodeQuery.trim() ||
-                    draft.staffAttendanceMapProvider === 'google';
-
-                  return (
-                    <View key={siteKey} style={styles.workSiteRow}>
-                      <View style={styles.workSiteRowHeader}>
-                        <KolamCopyStack
-                          containerStyle={styles.workSiteHeaderCopy}
-                          items={[
-                            {
-                              id: `${siteKey}-title`,
-                              text: site.name?.trim()
-                                ? site.name
-                                : `Lokasi ${index + 1}`,
-                              style: styles.notificationSoundLabel,
-                            },
-                            {
-                              id: `${siteKey}-meta`,
-                              text: `${formatWorkSiteCoordinate(
-                                site.latitude,
-                              )}, ${formatWorkSiteCoordinate(
-                                site.longitude,
-                              )} - Radius ${formatWorkSiteRadius(
-                                site.radiusMeters,
-                              )} m`,
-                              style: styles.notificationSoundPath,
-                            },
-                          ]}
-                        />
-                        <KolamActionControlButton
-                          label="Hapus"
-                          intent="danger"
-                          disabled={disabled}
-                          onPress={() => removeStaffAttendanceWorkSite(index)}
-                        />
-                      </View>
-                      <KolamTextFieldRow
-                        variant="settingsForm"
-                        fieldWidth={settingsFieldWidth}
-                        label="Nama lokasi"
-                        description="Nama kantor, gudang, toko, atau area kerja."
-                        value={site.name ?? ''}
-                        onChangeText={value =>
-                          updateStaffAttendanceWorkSite(index, { name: value })
-                        }
-                        placeholder="Kantor"
-                      />
-                      <View style={styles.workSiteGeocodeRow}>
-                        <KolamTextFieldRow
-                          variant="settingsForm"
-                          fieldWidth={settingsFieldWidth}
-                          label="Cari alamat"
-                          description={
-                            draft.staffAttendanceMapProvider === 'google'
-                              ? 'Pencarian server tersedia untuk OpenStreetMap. Map Google native belum dipasang.'
-                              : 'Cari alamat via endpoint geocode backend, lalu isi latitude/longitude otomatis.'
-                          }
-                          value={geocodeQuery}
-                          onChangeText={value =>
-                            setWorkSiteGeocodeQueries(current => ({
-                              ...current,
-                              [siteKey]: value,
-                            }))
-                          }
-                          placeholder="Alamat kantor / toko"
-                        />
-                        <KolamActionControlButton
-                          label="Cari koordinat"
-                          loading={geocodeLoading}
-                          loadingLabel="Mencari..."
-                          disabled={geocodeDisabled}
-                          onPress={() =>
-                            void geocodeStaffAttendanceWorkSite(index, site)
-                          }
-                        />
-                      </View>
-                      {geocodeStatus?.message ? (
-                        <KolamCopyStack
-                          items={[
-                            {
-                              id: `${siteKey}-geocode-message`,
-                              text: geocodeStatus.message,
-                              style:
-                                geocodeStatus.status === 'error'
-                                  ? styles.marketplaceOverviewError
-                                  : styles.marketplaceOverviewMeta,
-                            },
-                          ]}
-                        />
-                      ) : null}
-                      <View style={styles.workSiteCoordinateGrid}>
-                        <KolamTextFieldRow
-                          variant="settingsForm"
-                          fieldWidth={220}
-                          label="Latitude"
-                          description="Koordinat lintang."
-                          value={formatWorkSiteInputValue(site.latitude)}
-                          onChangeText={value =>
-                            updateStaffAttendanceWorkSite(index, {
-                              latitude: parseWorkSiteNumber(value),
-                            })
-                          }
-                          placeholder="-6.2088"
-                        />
-                        <KolamTextFieldRow
-                          variant="settingsForm"
-                          fieldWidth={220}
-                          label="Longitude"
-                          description="Koordinat bujur."
-                          value={formatWorkSiteInputValue(site.longitude)}
-                          onChangeText={value =>
-                            updateStaffAttendanceWorkSite(index, {
-                              longitude: parseWorkSiteNumber(value),
-                            })
-                          }
-                          placeholder="106.8456"
-                        />
-                        <KolamTextFieldRow
-                          variant="settingsForm"
-                          fieldWidth={220}
-                          label="Radius absen (meter)"
-                          description="Minimum backend 20 meter."
-                          value={formatWorkSiteInputValue(site.radiusMeters)}
-                          onChangeText={value =>
-                            updateStaffAttendanceWorkSite(index, {
-                              radiusMeters: parseWorkSiteNumber(value),
-                            })
-                          }
-                          placeholder="150"
-                        />
-                      </View>
-                      <KolamToggleRow
-                        variant="settingsForm"
-                        label="Aktif"
-                        description="Lokasi aktif ikut dipakai validasi radius check-in."
-                        active={site.active !== false}
-                        onPress={() =>
-                          updateStaffAttendanceWorkSite(index, {
-                            active: site.active === false,
-                          })
-                        }
-                      />
-                    </View>
-                  );
-                })}
+            <View style={styles.operationalAttendanceGrid}>
+              <View style={styles.operationalAttendanceBox}>
+                <KolamTextFieldRow
+                  variant="settingsForm"
+                  label="Tanggal cut-off gaji"
+                  description="Tanggal cut-off payroll bulanan."
+                  value={draft.staffAttendancePayrollCutoffDay}
+                  onChangeText={value =>
+                    setDraftField('staffAttendancePayrollCutoffDay', value)
+                  }
+                  placeholder="28"
+                />
+                <KolamTextFieldRow
+                  variant="settingsForm"
+                  label="Jam mulai kerja (WIB)"
+                  description="Jam mulai kerja default."
+                  value={draft.staffAttendanceWorkStartTime}
+                  onChangeText={value =>
+                    setDraftField('staffAttendanceWorkStartTime', value)
+                  }
+                  placeholder="08:00"
+                />
+                <KolamTextFieldRow
+                  variant="settingsForm"
+                  label="Jam selesai kerja (WIB)"
+                  description="Jam selesai kerja default."
+                  value={draft.staffAttendanceWorkEndTime}
+                  onChangeText={value =>
+                    setDraftField('staffAttendanceWorkEndTime', value)
+                  }
+                  placeholder="17:00"
+                />
+                <KolamTextFieldRow
+                  variant="settingsForm"
+                  label="Komisi layanan dalam jam kerja (%)"
+                  description="Persentase komisi layanan saat masih dalam jam kerja."
+                  value={draft.staffAttendanceServiceCommissionInsideHoursPct}
+                  onChangeText={value =>
+                    setDraftField(
+                      'staffAttendanceServiceCommissionInsideHoursPct',
+                      value,
+                    )
+                  }
+                  placeholder="0"
+                />
+                <KolamTextFieldRow
+                  variant="settingsForm"
+                  label="Komisi layanan luar jam kerja (%)"
+                  description="Persentase komisi layanan saat di luar jam kerja."
+                  value={draft.staffAttendanceServiceCommissionOutsideHoursPct}
+                  onChangeText={value =>
+                    setDraftField(
+                      'staffAttendanceServiceCommissionOutsideHoursPct',
+                      value,
+                    )
+                  }
+                  placeholder="0"
+                />
+                <KolamTextFieldRow
+                  variant="settingsForm"
+                  label="Toleransi telat (menit)"
+                  description="Menit toleransi keterlambatan."
+                  value={draft.staffAttendanceLateToleranceMinutes}
+                  onChangeText={value =>
+                    setDraftField('staffAttendanceLateToleranceMinutes', value)
+                  }
+                  placeholder="15"
+                />
+                <KolamTextFieldRow
+                  variant="settingsForm"
+                  label="Maks tier 2 absensi"
+                  description="Batas menit tier keterlambatan kedua."
+                  value={draft.staffAttendanceLateTier2MaxMinutes}
+                  onChangeText={value =>
+                    setDraftField('staffAttendanceLateTier2MaxMinutes', value)
+                  }
+                  placeholder="120"
+                />
+                <KolamTextFieldRow
+                  variant="settingsForm"
+                  label="Batas check-in absensi"
+                  description="Batas menit clock-in terlambat."
+                  value={draft.staffAttendanceLateCheckInDeadlineMinutes}
+                  onChangeText={value =>
+                    setDraftField(
+                      'staffAttendanceLateCheckInDeadlineMinutes',
+                      value,
+                    )
+                  }
+                  placeholder="240"
+                />
+                <KolamTextFieldRow
+                  variant="settingsForm"
+                  label="Denda telat tier 2 (Rp)"
+                  description="Nominal denda tier 2."
+                  value={draft.staffAttendanceLateFineTier2}
+                  onChangeText={value =>
+                    setDraftField('staffAttendanceLateFineTier2', value)
+                  }
+                  placeholder="50000"
+                />
+                <KolamTextFieldRow
+                  variant="settingsForm"
+                  label="Denda telat tier 3 (Rp)"
+                  description="Nominal denda tier 3."
+                  value={draft.staffAttendanceLateFineTier3}
+                  onChangeText={value =>
+                    setDraftField('staffAttendanceLateFineTier3', value)
+                  }
+                  placeholder="100000"
+                />
+                <KolamTextFieldRow
+                  variant="settingsForm"
+                  label="Pembagi gaji harian (absen)"
+                  description="Pembagi harian untuk potongan absen."
+                  value={draft.staffAttendanceAbsentDailyDivisor}
+                  onChangeText={value =>
+                    setDraftField('staffAttendanceAbsentDailyDivisor', value)
+                  }
+                  placeholder="30"
+                />
               </View>
-            ) : (
-              <KolamCopyStack
-                items={[
-                  {
-                    id: 'work-sites-empty',
-                    text: 'Belum ada lokasi kerja.',
-                    style: styles.marketplaceOverviewMeta,
-                  },
-                ]}
-              />
-            )}
+              <View style={styles.operationalAttendanceBox}>
+                <KolamToggleRow
+                  variant="settingsForm"
+                  label="Wajib GPS"
+                  description="Wajibkan lokasi GPS saat clock-in/out."
+                  active={draft.staffAttendanceRequireGps}
+                  onPress={() =>
+                    !disabled &&
+                    setDraftField(
+                      'staffAttendanceRequireGps',
+                      !draft.staffAttendanceRequireGps,
+                    )
+                  }
+                />
+                <KolamToggleRow
+                  variant="settingsForm"
+                  label="Wajib verifikasi wajah"
+                  description="Wajibkan face match saat clock-in/out."
+                  active={draft.staffAttendanceRequireFace}
+                  onPress={() =>
+                    !disabled &&
+                    setDraftField(
+                      'staffAttendanceRequireFace',
+                      !draft.staffAttendanceRequireFace,
+                    )
+                  }
+                />
+                <View style={styles.attendanceProviderRow}>
+                  <KolamCopyStack
+                    containerStyle={styles.attendanceProviderCopy}
+                    items={[
+                      {
+                        id: 'attendance-provider-label',
+                        text: 'Peta lokasi absen',
+                        style: styles.notificationSoundLabel,
+                      },
+                      {
+                        id: 'attendance-provider-description',
+                        text: 'Pilih provider peta untuk lokasi kerja dan validasi radius check-in.',
+                        style: styles.marketplaceOverviewDetail,
+                      },
+                    ]}
+                  />
+                  <View style={styles.attendanceProviderChoices}>
+                    <KolamChoiceSegment
+                      id="openstreetmap"
+                      label="OpenStreetMap (gratis, disarankan)"
+                      selectedId={
+                        draft.staffAttendanceMapProvider === 'google'
+                          ? 'google'
+                          : 'openstreetmap'
+                      }
+                      onSelect={value =>
+                        !disabled &&
+                        setDraftField('staffAttendanceMapProvider', value)
+                      }
+                    />
+                    <KolamChoiceSegment
+                      id="google"
+                      label="Google Maps (butuh API key)"
+                      selectedId={
+                        draft.staffAttendanceMapProvider === 'google'
+                          ? 'google'
+                          : 'openstreetmap'
+                      }
+                      onSelect={value =>
+                        !disabled &&
+                        setDraftField('staffAttendanceMapProvider', value)
+                      }
+                    />
+                  </View>
+                </View>
+                {draft.staffAttendanceMapProvider === 'google' ? (
+                  <KolamTextFieldRow
+                    variant="settingsForm"
+                    label="Google Maps API key (browser)"
+                    description="Opsional jika key yang sama sudah di tab Pengiriman. Kosongkan untuk pakai key Toko."
+                    value={draft.staffAttendanceGoogleMapsBrowserApiKey}
+                    onChangeText={value =>
+                      setDraftField(
+                        'staffAttendanceGoogleMapsBrowserApiKey',
+                        value,
+                      )
+                    }
+                    placeholder="AIza..."
+                  />
+                ) : (
+                  <>
+                    <KolamTextFieldRow
+                      variant="settingsForm"
+                      label="URL Nominatim (geocoding)"
+                      description="Tanpa API key. Default server OSM; jangan spam request."
+                      value={draft.staffAttendanceOsmNominatimUrl}
+                      onChangeText={value =>
+                        setDraftField('staffAttendanceOsmNominatimUrl', value)
+                      }
+                      placeholder="https://nominatim.openstreetmap.org"
+                    />
+                    <KolamTextFieldRow
+                      variant="settingsForm"
+                      label="URL tile peta"
+                      description="Dipakai jika provider peta absen memakai OpenStreetMap."
+                      value={draft.staffAttendanceOsmTileUrl}
+                      onChangeText={value =>
+                        setDraftField('staffAttendanceOsmTileUrl', value)
+                      }
+                      placeholder="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    />
+                  </>
+                )}
+                <KolamTextFieldRow
+                  variant="settingsForm"
+                  label="Threshold face match"
+                  description="Ambang face match 0.5 sampai 0.99."
+                  value={draft.staffAttendanceFaceMatchThreshold}
+                  onChangeText={value =>
+                    setDraftField('staffAttendanceFaceMatchThreshold', value)
+                  }
+                  placeholder="0.72"
+                />
+                <View style={styles.workSiteSection}>
+                  <View style={styles.workSiteHeaderRow}>
+                    <KolamCopyStack
+                      containerStyle={styles.workSiteHeaderCopy}
+                      items={[
+                        {
+                          id: 'work-site-title',
+                          text: 'Lokasi kerja (GPS + radius)',
+                          style: styles.marketplaceOverviewLabel,
+                        },
+                        {
+                          id: 'work-site-meta',
+                          text: 'Editor list native sederhana. Map belum dipasang; isi koordinat dan radius validasi check-in.',
+                          style: styles.marketplaceOverviewMeta,
+                        },
+                      ]}
+                    />
+                    <KolamActionControlButton
+                      label="Tambah lokasi"
+                      disabled={disabled}
+                      onPress={addStaffAttendanceWorkSite}
+                    />
+                  </View>
+                  {draft.staffAttendanceWorkSites.length ? (
+                    <View style={styles.workSiteList}>
+                      {draft.staffAttendanceWorkSites.map((site, index) => {
+                        const siteKey = getWorkSiteDraftKey(site, index);
+                        const geocodeStatus = workSiteGeocodeStatus[siteKey];
+                        const geocodeQuery =
+                          workSiteGeocodeQueries[siteKey] ?? site.name ?? '';
+                        const geocodeLoading =
+                          geocodeStatus?.status === 'loading';
+                        const geocodeDisabled =
+                          disabled ||
+                          geocodeLoading ||
+                          !geocodeQuery.trim() ||
+                          draft.staffAttendanceMapProvider === 'google';
+
+                        return (
+                          <View key={siteKey} style={styles.workSiteRow}>
+                            <View style={styles.workSiteRowHeader}>
+                              <KolamCopyStack
+                                containerStyle={styles.workSiteHeaderCopy}
+                                items={[
+                                  {
+                                    id: `${siteKey}-title`,
+                                    text: site.name?.trim()
+                                      ? site.name
+                                      : `Lokasi ${index + 1}`,
+                                    style: styles.notificationSoundLabel,
+                                  },
+                                  {
+                                    id: `${siteKey}-meta`,
+                                    text: `${formatWorkSiteCoordinate(
+                                      site.latitude,
+                                    )}, ${formatWorkSiteCoordinate(
+                                      site.longitude,
+                                    )} - Radius ${formatWorkSiteRadius(
+                                      site.radiusMeters,
+                                    )} m`,
+                                    style: styles.notificationSoundPath,
+                                  },
+                                ]}
+                              />
+                              <KolamActionControlButton
+                                label="Hapus"
+                                intent="danger"
+                                disabled={disabled}
+                                onPress={() =>
+                                  removeStaffAttendanceWorkSite(index)
+                                }
+                              />
+                            </View>
+                            <KolamTextFieldRow
+                              variant="settingsForm"
+                              fieldWidth={settingsFieldWidth}
+                              label="Nama lokasi"
+                              description="Nama kantor, gudang, toko, atau area kerja."
+                              value={site.name ?? ''}
+                              onChangeText={value =>
+                                updateStaffAttendanceWorkSite(index, {
+                                  name: value,
+                                })
+                              }
+                              placeholder="Kantor"
+                            />
+                            <View style={styles.workSiteGeocodeRow}>
+                              <KolamTextFieldRow
+                                variant="settingsForm"
+                                fieldWidth={settingsFieldWidth}
+                                label="Cari alamat"
+                                description={
+                                  draft.staffAttendanceMapProvider === 'google'
+                                    ? 'Pencarian server tersedia untuk OpenStreetMap. Map Google native belum dipasang.'
+                                    : 'Cari alamat via endpoint geocode backend, lalu isi latitude/longitude otomatis.'
+                                }
+                                value={geocodeQuery}
+                                onChangeText={value =>
+                                  setWorkSiteGeocodeQueries(current => ({
+                                    ...current,
+                                    [siteKey]: value,
+                                  }))
+                                }
+                                placeholder="Alamat kantor / toko"
+                              />
+                              <KolamActionControlButton
+                                label="Cari koordinat"
+                                loading={geocodeLoading}
+                                loadingLabel="Mencari..."
+                                disabled={geocodeDisabled}
+                                onPress={() =>
+                                  void geocodeStaffAttendanceWorkSite(
+                                    index,
+                                    site,
+                                  )
+                                }
+                              />
+                            </View>
+                            {geocodeStatus?.message ? (
+                              <KolamCopyStack
+                                items={[
+                                  {
+                                    id: `${siteKey}-geocode-message`,
+                                    text: geocodeStatus.message,
+                                    style:
+                                      geocodeStatus.status === 'error'
+                                        ? styles.marketplaceOverviewError
+                                        : styles.marketplaceOverviewMeta,
+                                  },
+                                ]}
+                              />
+                            ) : null}
+                            <View style={styles.workSiteCoordinateGrid}>
+                              <KolamTextFieldRow
+                                variant="settingsForm"
+                                fieldWidth={220}
+                                label="Latitude"
+                                description="Koordinat lintang."
+                                value={formatWorkSiteInputValue(site.latitude)}
+                                onChangeText={value =>
+                                  updateStaffAttendanceWorkSite(index, {
+                                    latitude: parseWorkSiteNumber(value),
+                                  })
+                                }
+                                placeholder="-6.2088"
+                              />
+                              <KolamTextFieldRow
+                                variant="settingsForm"
+                                fieldWidth={220}
+                                label="Longitude"
+                                description="Koordinat bujur."
+                                value={formatWorkSiteInputValue(site.longitude)}
+                                onChangeText={value =>
+                                  updateStaffAttendanceWorkSite(index, {
+                                    longitude: parseWorkSiteNumber(value),
+                                  })
+                                }
+                                placeholder="106.8456"
+                              />
+                              <KolamTextFieldRow
+                                variant="settingsForm"
+                                fieldWidth={220}
+                                label="Radius absen (meter)"
+                                description="Minimum backend 20 meter."
+                                value={formatWorkSiteInputValue(
+                                  site.radiusMeters,
+                                )}
+                                onChangeText={value =>
+                                  updateStaffAttendanceWorkSite(index, {
+                                    radiusMeters: parseWorkSiteNumber(value),
+                                  })
+                                }
+                                placeholder="150"
+                              />
+                            </View>
+                            <KolamToggleRow
+                              variant="settingsForm"
+                              label="Aktif"
+                              description="Lokasi aktif ikut dipakai validasi radius check-in."
+                              active={site.active !== false}
+                              onPress={() =>
+                                updateStaffAttendanceWorkSite(index, {
+                                  active: site.active === false,
+                                })
+                              }
+                            />
+                          </View>
+                        );
+                      })}
+                    </View>
+                  ) : (
+                    <KolamCopyStack
+                      items={[
+                        {
+                          id: 'work-sites-empty',
+                          text: 'Belum ada lokasi kerja.',
+                          style: styles.marketplaceOverviewMeta,
+                        },
+                      ]}
+                    />
+                  )}
+                </View>
+                <KolamDropdownSelect
+                  accessibilityLabel="Zona waktu absensi"
+                  label="Zona waktu absensi"
+                  menuPlacement="inline"
+                  options={attendanceTimezoneDropdownOptions}
+                  searchable
+                  searchPlaceholder="Cari timezone IANA..."
+                  showLabelInTrigger={false}
+                  style={styles.shippingTimezonePicker}
+                  triggerStyle={styles.shippingTimezoneTrigger}
+                  value={draft.staffAttendanceTimezone}
+                  onChange={value => {
+                    if (!disabled) {
+                      setDraftField('staffAttendanceTimezone', value);
+                    }
+                  }}
+                />
+              </View>
+            </View>
           </View>
-          <KolamTextFieldRow
-            variant="settingsForm"
-            label="Zona waktu absensi"
-            description="Zona waktu untuk perhitungan absensi."
-            value={draft.staffAttendanceTimezone}
-            onChangeText={value =>
-              setDraftField('staffAttendanceTimezone', value)
-            }
-            placeholder="Asia/Jakarta"
-          />
-          <KolamActionControlButton
-            label="Simpan absensi"
-            loading={saveStatus === 'saving'}
-            loadingLabel="Menyimpan..."
-            disabled={disabled}
-            onPress={onSaveOperationalStaffAttendance}
-          />
           <KolamCopyStack
             items={[
               {
@@ -8168,6 +8227,23 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 10,
     justifyContent: 'space-between',
+  },
+  operationalAttendanceBox: {
+    backgroundColor: '#f9fafb',
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexBasis: 420,
+    flexGrow: 1,
+    gap: 10,
+    minWidth: 320,
+    padding: 12,
+  },
+  operationalAttendanceGrid: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
   },
   workSiteCoordinateGrid: {
     flexDirection: 'row',
