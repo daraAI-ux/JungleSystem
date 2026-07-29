@@ -496,7 +496,7 @@ export const settingsTabItems: SettingsTabItem[] = [
     description:
       'Task points, chat SLA, complaint, attendance, monthly level, dan DARA weekly preview.',
     permission: 'websetting:update',
-    status: 'planned',
+    status: 'native-summary',
     surfaceId: 'web-settings',
     sourceComponent: 'settings/system/page.tsx',
   },
