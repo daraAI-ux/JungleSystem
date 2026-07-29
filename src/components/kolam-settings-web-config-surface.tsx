@@ -2484,6 +2484,7 @@ export function KolamSettingsWebConfigSurface({
             style={[
               styles.marketplaceControlSection,
               styles.notificationSettingsCard,
+              styles.settingsTabCardSpacing,
             ]}
           >
             <KolamCopyStack
@@ -2536,6 +2537,7 @@ export function KolamSettingsWebConfigSurface({
             style={[
               styles.marketplaceControlSection,
               styles.notificationSettingsCard,
+              styles.settingsTabCardSpacing,
             ]}
           >
             <View style={styles.operationalCardHeaderRow}>
@@ -2592,6 +2594,7 @@ export function KolamSettingsWebConfigSurface({
             style={[
               styles.marketplaceControlSection,
               styles.notificationSettingsCard,
+              styles.settingsTabCardSpacing,
             ]}
           >
             <View style={styles.operationalCardHeaderRow}>
@@ -4130,6 +4133,7 @@ export function KolamSettingsWebConfigSurface({
             style={[
               styles.marketplaceControlSection,
               styles.notificationSettingsCard,
+              styles.settingsTabCardSpacing,
             ]}
           >
             <KolamCopyStack
@@ -4263,6 +4267,7 @@ export function KolamSettingsWebConfigSurface({
             style={[
               styles.marketplaceControlSection,
               styles.notificationSettingsCard,
+              styles.settingsTabCardSpacing,
             ]}
           >
             <KolamCopyStack
@@ -4486,6 +4491,7 @@ export function KolamSettingsWebConfigSurface({
             style={[
               styles.marketplaceControlSection,
               styles.notificationSettingsCard,
+              styles.settingsTabCardSpacing,
             ]}
           >
             <KolamCopyStack
@@ -7998,6 +8004,9 @@ function getRegionLevelLabel(level: KolamRegionLevel) {
 }
 
 const styles = StyleSheet.create({
+  settingsTabCardSpacing: {
+    marginBottom: 14,
+  },
   umumTopRow: {
     alignItems: 'stretch',
     flexDirection: 'row',
