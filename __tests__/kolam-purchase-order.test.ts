@@ -114,6 +114,23 @@ describe('kolam purchase order domain', () => {
     });
   });
 
+  it('falls back singular receive/check proof into proofs arrays', () => {
+    const po = normalizeKolamPurchaseOrder({
+      data: {
+        _id: 'po-proofs',
+        poCode: 'PO-PROOF',
+        receiveProof: '/uploads/receive-1.jpg',
+        checkProof: '/uploads/check-1.jpg',
+        receivedAt: '2026-07-12T10:00:00.000Z',
+        onCheckAt: '2026-07-12T12:00:00.000Z',
+        status: 'on_check',
+      },
+    });
+
+    expect(po.receiveProofs).toEqual(['/uploads/receive-1.jpg']);
+    expect(po.checkProofs).toEqual(['/uploads/check-1.jpg']);
+  });
+
   it('normalizes a purchase order detail payload with species item + variant', () => {
     const po = normalizeKolamPurchaseOrder({
       data: {

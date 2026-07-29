@@ -656,12 +656,18 @@ export function normalizeKolamPurchaseOrder(payload: unknown): KolamPurchaseOrde
 
     receivedByName: resolvePOPersonName(record.receivedBy),
     receiveProof: getString(record, 'receiveProof'),
-    receiveProofs: normalizeStringList(record.receiveProofs),
+    receiveProofs: normalizePOProofPaths(
+      record.receiveProofs,
+      getString(record, 'receiveProof'),
+    ),
     receiveProofUploadedAt: getString(record, 'receiveProofUploadedAt'),
 
     checkedByName: resolvePOPersonName(record.checkedBy),
     checkProof: getString(record, 'checkProof'),
-    checkProofs: normalizeStringList(record.checkProofs),
+    checkProofs: normalizePOProofPaths(
+      record.checkProofs,
+      getString(record, 'checkProof'),
+    ),
     checkProofUploadedAt: getString(record, 'checkProofUploadedAt'),
 
     isPartial: getBoolean(record, 'isPartial'),
@@ -955,6 +961,15 @@ function normalizeStringList(value: unknown): string[] {
   return value
     .map(item => (typeof item === 'string' ? item.trim() : ''))
     .filter(Boolean);
+}
+
+/** Mirror FE detail: prefer `*Proofs[]`, else fall back to singular `*Proof`. */
+function normalizePOProofPaths(listValue: unknown, singular: string): string[] {
+  const list = normalizeStringList(listValue);
+  if (list.length) {
+    return list;
+  }
+  return singular ? [singular] : [];
 }
 
 function resolvePOPersonName(value: unknown): string {

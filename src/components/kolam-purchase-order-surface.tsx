@@ -24,6 +24,7 @@ import { KOLAM_SUPPLIER_ROOT } from '../domain/kolam-vendor';
 import { getKolamTableColumns } from '../domain/kolam-table';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { formatRupiah } from '../lib/money';
+import { getKolamFileUrl } from '../lib/file-url';
 import { useKolamAuthContext } from '../context/kolam-app-contexts';
 import {
   useKolamPurchaseOrderController,
@@ -1428,47 +1429,127 @@ function KolamPurchaseOrderDetail({
 }
 
 function KolamPOProofsCard({ po }: { po: KolamPurchaseOrder }) {
-  const proofGroups: Array<{ id: string; label: string; uris: string[] }> = [
-    { id: 'receive', label: 'Bukti penerimaan', uris: po.receiveProofs },
-    { id: 'check', label: 'Bukti pemeriksaan', uris: po.checkProofs },
-    { id: 'partial', label: 'Bukti partial', uris: po.partialProofs },
-  ].filter(group => group.uris.length);
-
-  if (!proofGroups.length) {
+  const showCard = Boolean(po.receivedAt || po.onCheckAt || po.isPartial);
+  if (!showCard) {
     return null;
   }
 
   return (
     <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
-      <Text style={styles.sectionTitle}>Bukti proses</Text>
-      {proofGroups.map(group => (
-        <View key={group.id} style={styles.proofGroup}>
-          <Text style={styles.rowMeta}>{group.label}</Text>
-          <View style={styles.photoGrid}>
-            {group.uris.map((uri, index) => (
-              <KolamRemoteImage
-                key={`${group.id}-${uri}-${index}`}
-                accessibilityLabel={`${group.label} ${index + 1}`}
-                resizeMode="cover"
-                sourceUri={uri}
-                style={styles.photoThumb}
-              />
-            ))}
-          </View>
+      <Text style={styles.sectionTitle}>Penerimaan & Pemeriksaan</Text>
+
+      {po.receivedAt ? (
+        <View style={styles.proofGroup}>
+          <KolamDescriptionList
+            accessibilityLabel="Penerimaan barang"
+            rows={[
+              {
+                id: 'receivedAt',
+                label: 'Diterima Pada',
+                value: formatPODateTime(po.receivedAt),
+                meta: '',
+                tone: 'default',
+              },
+              {
+                id: 'receivedBy',
+                label: 'Diterima Oleh',
+                value: po.receivedByName || '—',
+                meta: '',
+                tone: 'default',
+              },
+            ]}
+          />
+          {po.receiveProofs.length ? (
+            <ProofGallery label="Bukti Penerimaan" paths={po.receiveProofs} />
+          ) : null}
         </View>
-      ))}
+      ) : null}
+
+      {po.onCheckAt ? (
+        <View style={styles.proofGroup}>
+          <KolamDescriptionList
+            accessibilityLabel="Pemeriksaan barang"
+            rows={[
+              {
+                id: 'checkedAt',
+                label: 'Diperiksa Pada',
+                value: formatPODateTime(po.onCheckAt),
+                meta: '',
+                tone: 'default',
+              },
+              {
+                id: 'checkedBy',
+                label: 'Diperiksa Oleh',
+                value: po.checkedByName || '—',
+                meta: '',
+                tone: 'default',
+              },
+            ]}
+          />
+          {po.checkProofs.length ? (
+            <ProofGallery label="Bukti Pemeriksaan" paths={po.checkProofs} />
+          ) : null}
+        </View>
+      ) : null}
+
+      {po.isPartial ? (
+        <View style={styles.partialNoteBox}>
+          <Text style={styles.partialNoteTitle}>Catatan Sebagian</Text>
+          <Text style={styles.partialNoteBody}>{po.partialNote || '—'}</Text>
+          {po.partialProofUploadedAt ? (
+            <Text style={styles.metaText}>
+              Dicatat {formatPODateTime(po.partialProofUploadedAt)}
+            </Text>
+          ) : null}
+          {po.partialProofs.length ? (
+            <ProofGallery
+              label="Foto bukti sebagian"
+              paths={po.partialProofs}
+            />
+          ) : null}
+        </View>
+      ) : null}
     </KolamContentFrame>
   );
 }
 
+function ProofGallery({
+  label,
+  paths,
+}: {
+  label: string;
+  paths: string[];
+}) {
+  return (
+    <View style={styles.proofGroup}>
+      <Text style={styles.rowMeta}>{label}</Text>
+      <View style={styles.photoGrid}>
+        {paths.map((path, index) => {
+          const uri = getKolamFileUrl(path) ?? path;
+          return (
+            <KolamRemoteImage
+              key={`${label}-${path}-${index}`}
+              accessibilityLabel={`${label} ${index + 1}`}
+              resizeMode="cover"
+              sourceUri={uri}
+              style={styles.photoThumb}
+            />
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
 function ProofImageRow({ label, uri }: { label: string; uri: string }) {
+  const resolved = getKolamFileUrl(uri) ?? uri;
   return (
     <View style={styles.proofGroup}>
       <Text style={styles.rowMeta}>{label}</Text>
       <KolamRemoteImage
         accessibilityLabel={label}
         resizeMode="cover"
-        sourceUri={uri}
+        sourceUri={resolved}
         style={styles.photoThumb}
       />
     </View>
@@ -2593,6 +2674,25 @@ const styles = StyleSheet.create({
   },
   proofGroup: {
     gap: 6,
+  },
+  partialNoteBox: {
+    backgroundColor: V.colors.warningSoft,
+    borderColor: V.colors.warning,
+    borderLeftWidth: 4,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    gap: 6,
+    padding: 10,
+  },
+  partialNoteTitle: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  partialNoteBody: {
+    color: V.colors.fg,
+    fontSize: 13,
+    lineHeight: 18,
   },
   photoGrid: {
     flexDirection: 'row',
