@@ -1,12 +1,19 @@
 import React from 'react';
 import {StyleSheet, Text, View} from 'react-native';
-import {getKolamLocationRouteMode} from '../domain/kolam-location';
+import {
+  getKolamLocationRouteMode,
+  getKolamLocationTierLabel,
+  getKolamLocationTypeLabel,
+  KOLAM_LOCATION_TYPE_OPTIONS,
+} from '../domain/kolam-location';
 import {getKolamTableColumns} from '../domain/kolam-table';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {
+  getKolamLocationParentLookup,
   getKolamLocationList,
   type KolamLocationListItem,
   type KolamLocationListTypeFilter,
+  type KolamLocationOption,
   type KolamLocationPagination,
 } from '../services/kolam-location-api';
 import {KolamButton} from './kolam-button';
@@ -17,7 +24,6 @@ import {
   KolamDataTableMetaCell,
 } from './kolam-data-table-text-cell';
 import {KolamDataTableHeader} from './kolam-data-table-header';
-import {KolamDataTablePrimaryCell} from './kolam-data-table-primary-cell';
 import {KolamDataTableRowFrame} from './kolam-data-table-row-frame';
 import {
   KolamDropdownSelect,
@@ -39,11 +45,7 @@ const LOCATION_TYPE_OPTIONS: Array<{
   value: LocationTypeFilterValue;
 }> = [
   {label: 'Semua Tipe', value: ''},
-  {label: 'Gudang', value: 'warehouse'},
-  {label: 'Lantai', value: 'floor'},
-  {label: 'Rak', value: 'rack'},
-  {label: 'Toko', value: 'store'},
-  {label: 'Area', value: 'area'},
+  ...KOLAM_LOCATION_TYPE_OPTIONS,
 ];
 
 const INITIAL_PAGINATION: KolamLocationPagination = {
@@ -104,8 +106,12 @@ function KolamLocationList({
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState('');
   const [search, setSearch] = React.useState('');
+  const [shouldSearchApi, setShouldSearchApi] = React.useState(false);
   const [typeFilter, setTypeFilter] =
     React.useState<LocationTypeFilterValue>('');
+  const [parentLookup, setParentLookup] = React.useState<
+    Record<string, KolamLocationOption>
+  >({});
   const [pageSize, setPageSize] = React.useState(10);
   const [page, setPage] = React.useState(1);
   const [pagination, setPagination] =
@@ -113,12 +119,32 @@ function KolamLocationList({
 
   React.useEffect(() => {
     let active = true;
+    void getKolamLocationParentLookup()
+      .then(lookup => {
+        if (active) {
+          setParentLookup(lookup);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setParentLookup({});
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  React.useEffect(() => {
+    let active = true;
+    const normalizedSearch = search.trim();
     const handle = setTimeout(() => {
       setLoading(true);
       setError('');
       void getKolamLocationList({
         limit: pageSize,
-        name: search,
+        name: shouldSearchApi ? normalizedSearch : undefined,
         page,
         type: typeFilter,
       })
@@ -150,10 +176,35 @@ function KolamLocationList({
       active = false;
       clearTimeout(handle);
     };
-  }, [page, pageSize, search, typeFilter]);
+  }, [page, pageSize, search, shouldSearchApi, typeFilter]);
 
-  const pageCount = Math.max(1, pagination.totalPages);
+  const normalizedSearch = normalizeLocationSearch(search);
+  const clientFilteredItems = React.useMemo(
+    () =>
+      normalizedSearch
+        ? items.filter(item => doesLocationMatchSearch(item, normalizedSearch))
+        : items,
+    [items, normalizedSearch],
+  );
+  const shouldTriggerApiSearch =
+    Boolean(normalizedSearch) &&
+    !shouldSearchApi &&
+    !loading &&
+    clientFilteredItems.length === 0;
+
+  React.useEffect(() => {
+    if (shouldTriggerApiSearch) {
+      setShouldSearchApi(true);
+    }
+  }, [shouldTriggerApiSearch]);
+
+  const visibleItems =
+    normalizedSearch && !shouldSearchApi ? clientFilteredItems : items;
+  const clientSearchActive = Boolean(normalizedSearch) && !shouldSearchApi;
+  const tableTotal = clientSearchActive ? visibleItems.length : pagination.total;
+  const pageCount = clientSearchActive ? 1 : Math.max(1, pagination.totalPages);
   const safePage = Math.min(page, pageCount);
+  const searchEmpty = Boolean(normalizedSearch) && !loading && !visibleItems.length;
 
   return (
     <View style={styles.stack}>
@@ -161,6 +212,7 @@ function KolamLocationList({
         <KolamFormTextField
           onChangeText={next => {
             setSearch(next);
+            setShouldSearchApi(false);
             setPage(1);
           }}
           placeholder="Cari"
@@ -168,10 +220,21 @@ function KolamLocationList({
           value={search}
         />
         <View style={kolamTableToolbarStyles.controls}>
+          {search ? (
+            <KolamButton
+              label="Bersihkan"
+              onPress={() => {
+                setSearch('');
+                setShouldSearchApi(false);
+                setPage(1);
+              }}
+            />
+          ) : null}
           <KolamDropdownSelect<LocationTypeFilterValue>
             label="Tipe"
             onChange={next => {
               setTypeFilter(next);
+              setShouldSearchApi(false);
               setPage(1);
             }}
             options={LOCATION_TYPE_OPTIONS}
@@ -201,7 +264,7 @@ function KolamLocationList({
             }}
             page={safePage}
             pageSize={pageSize}
-            total={pagination.total}>
+            total={tableTotal}>
             {pageCount > 1 ? (
               <View style={styles.paginationRow}>
                 <KolamButton
@@ -230,22 +293,35 @@ function KolamLocationList({
           </KolamTableFooterControls>
         }>
         <KolamDataTableHeader columns={getKolamTableColumns('location')} />
-        {items.length ? (
-          items.map(location => (
+        {visibleItems.length ? (
+          visibleItems.map(location => (
             <KolamLocationRow
               key={location.id}
               location={location}
               onEdit={() => onRouteChange?.(`/locations/${location.id}/edit`)}
               onSelect={() => onRouteChange?.(`/locations/${location.id}`)}
+              parentLookup={parentLookup}
             />
           ))
         ) : (
           <View style={styles.emptyWrap}>
-            <KolamEmptyState
-              compact
-              message="Data lokasi belum tersedia dari server."
-              title={loading ? 'Memuat lokasi...' : 'Belum ada lokasi'}
-            />
+            {searchEmpty ? (
+              <KolamEmptyState
+                compact
+                message={
+                  shouldSearchApi
+                    ? 'Coba kata kunci lain'
+                    : 'Mencari lebih banyak hasil...'
+                }
+                title={`Tidak ada lokasi untuk "${search.trim()}"`}
+              />
+            ) : (
+              <KolamEmptyState
+                compact
+                message="Data lokasi belum tersedia dari server."
+                title={loading ? 'Memuat lokasi...' : 'Belum ada lokasi'}
+              />
+            )}
           </View>
         )}
       </KolamCatalogListTableShell>
@@ -257,12 +333,15 @@ function KolamLocationRow({
   location,
   onEdit,
   onSelect,
+  parentLookup,
 }: {
   location: KolamLocationListItem;
   onEdit: () => void;
   onSelect: () => void;
+  parentLookup: Record<string, KolamLocationOption>;
 }) {
   const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
+  const parent = resolveLocationParent(location, parentLookup);
 
   return (
     <KolamDataTableRowFrame style={actionMenuOpen && styles.activeActionRow}>
@@ -276,18 +355,30 @@ function KolamLocationRow({
       <View style={styles.typeCell}>
         <KolamStatusBadge
           intent={getLocationTypeIntent(location.type)}
-          label={getLocationTypeLabel(location.type)}
+          label={getKolamLocationTypeLabel(location.type)}
         />
       </View>
       <KolamDataTableMetaCell style={styles.tierCell}>
-        {getLocationTierLabel(location.tier)}
+        {getKolamLocationTierLabel(location.tier)}
       </KolamDataTableMetaCell>
       <View style={styles.parentCell}>
-        <KolamDataTablePrimaryCell
-          subtitle={
-            location.parent?.type ? getLocationTypeLabel(location.parent.type) : ''
-          }
-          title={location.parent?.name || '-'}
+        <KolamCopyStack
+          items={[
+            {
+              id: 'parent-name',
+              text: parent?.name || '-',
+              style: styles.parentNameText,
+            },
+            ...(parent?.type
+              ? [
+                  {
+                    id: 'parent-type',
+                    text: getKolamLocationTypeLabel(parent.type),
+                    style: styles.parentTypeText,
+                  },
+                ]
+              : []),
+          ]}
         />
       </View>
       <KolamDataTableMetaCell style={styles.phoneCell}>
@@ -297,7 +388,7 @@ function KolamLocationRow({
         {truncateLocationDescription(location.description)}
       </KolamDataTableMetaCell>
       <KolamDataTableAmountCell style={styles.createdCell}>
-        {formatLocationDate(location.createdAt)}
+        {formatLocationDateTime(location.createdAt)}
       </KolamDataTableAmountCell>
       <View style={styles.overflowCell}>
         <KolamOverflowMenuButton
@@ -319,39 +410,20 @@ function KolamLocationRow({
   );
 }
 
-function getLocationTypeLabel(type: string) {
-  return (
-    (LOCATION_TYPE_OPTIONS.find(option => option.value === type)?.label ??
-      type) ||
-    '-'
-  );
-}
-
 function getLocationTypeIntent(type: string): KolamStatusBadgeIntent {
   switch (type) {
     case 'warehouse':
-      return 'success';
-    case 'floor':
-      return 'info';
-    case 'rack':
       return 'primary';
+    case 'floor':
+      return 'success';
+    case 'rack':
+      return 'secondary';
     case 'store':
       return 'warning';
+    case 'area':
+      return 'info';
     default:
       return 'secondary';
-  }
-}
-
-function getLocationTierLabel(tier: string) {
-  switch (tier) {
-    case 'main':
-      return 'Utama';
-    case 'sub':
-      return 'Sub';
-    case 'nested':
-      return 'Nested';
-    default:
-      return tier || '-';
   }
 }
 
@@ -361,18 +433,54 @@ function truncateLocationDescription(description: string) {
     : description || '-';
 }
 
-function formatLocationDate(value: string) {
+function formatLocationDateTime(value: string) {
   const timestamp = Date.parse(value);
 
   if (!Number.isFinite(timestamp)) {
     return '-';
   }
 
-  return new Date(timestamp).toLocaleDateString('id-ID', {
+  return new Date(timestamp).toLocaleString('id-ID', {
     day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
     month: 'short',
     year: 'numeric',
   });
+}
+
+function normalizeLocationSearch(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function doesLocationMatchSearch(
+  location: KolamLocationListItem,
+  normalizedSearch: string,
+) {
+  return [
+    location.name,
+    location.description,
+    location.type,
+    getKolamLocationTypeLabel(location.type),
+  ]
+    .join(' ')
+    .toLowerCase()
+    .includes(normalizedSearch);
+}
+
+function resolveLocationParent(
+  location: KolamLocationListItem,
+  parentLookup: Record<string, KolamLocationOption>,
+) {
+  if (!location.parent) {
+    return null;
+  }
+
+  if (location.parent.name) {
+    return location.parent;
+  }
+
+  return parentLookup[location.parent.id] ?? location.parent;
 }
 
 const styles = StyleSheet.create({
@@ -443,6 +551,18 @@ const styles = StyleSheet.create({
   },
   parentCell: {
     width: 156,
+  },
+  parentNameText: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 20,
+  },
+  parentTypeText: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: 2,
   },
   phoneCell: {
     width: 132,
