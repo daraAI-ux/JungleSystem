@@ -88,7 +88,7 @@ export function KolamCustomerSurface({
 
   if (routePath === '/customers') {
     return (
-      <View style={styles.surface}>
+      <View style={[styles.surface, styles.listSurface]}>
         <KolamCustomerListSurface onRouteChange={onRouteChange} />
       </View>
     );
@@ -1322,11 +1322,11 @@ function getCustomerExternalDotStyle(account: KolamCustomerExternalAccount) {
 
 const styles = StyleSheet.create({
   surface: {
-    alignSelf: 'center',
     gap: 16,
-    maxWidth: 1280,
-    padding: 24,
-    width: '100%',
+  },
+  listSurface: {
+    flex: 1,
+    minHeight: 0,
   },
   stack: {
     gap: 12,
