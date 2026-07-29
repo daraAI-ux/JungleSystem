@@ -7250,69 +7250,77 @@ function FinancialSettingsPanel({
                   value={paymentMethodDraft.name}
                   variant="settingsForm"
                 />
-                <KolamCopyStack
-                  items={[
-                    {
-                      id: 'payment-method-type-field-title',
-                      text: 'Tipe Pembayaran',
-                      style: styles.marketplaceOverviewLabel,
-                    },
-                    {
-                      id: 'payment-method-type-field-detail',
-                      text: 'Pilih tunai, transfer bank, dompet digital, kartu, atau QRIS.',
-                      style: styles.marketplaceOverviewMeta,
-                    },
-                  ]}
-                />
-                <KolamDropdownSelect
-                  accessibilityLabel="Tipe metode pembayaran"
-                  label="Tipe Pembayaran"
-                  menuPlacement="inline"
-                  options={paymentMethodTypeOptions.map(option => ({
-                    label: `${option.label} - ${option.description}`,
-                    value: option.value,
-                  }))}
-                  showLabelInTrigger={false}
-                  style={styles.financialDropdown}
-                  triggerStyle={styles.shippingTimezoneTrigger}
-                  value={paymentMethodDraft.type}
-                  onChange={value => setPaymentMethodDraftField('type', value)}
-                />
-                <KolamCopyStack
-                  items={[
-                    {
-                      id: 'payment-method-provider-field-title',
-                      text: 'Provider Pembayaran',
-                      style: styles.marketplaceOverviewLabel,
-                    },
-                    {
-                      id: 'payment-method-provider-field-detail',
-                      text: 'Pilih bank, dompet digital, tunai, atau provider lainnya.',
-                      style: styles.marketplaceOverviewMeta,
-                    },
-                  ]}
-                />
-                <KolamDropdownSelect
-                  accessibilityLabel="Provider metode pembayaran"
-                  label="Provider Pembayaran"
-                  menuPlacement="inline"
-                  options={paymentMethodProviderOptions}
-                  searchable
-                  searchPlaceholder="Cari provider..."
-                  showLabelInTrigger={false}
-                  style={styles.financialDropdown}
-                  triggerStyle={styles.shippingTimezoneTrigger}
-                  value={
-                    paymentMethodProviderOptions.some(
-                      option => option.value === paymentMethodDraft.provider,
-                    )
-                      ? paymentMethodDraft.provider
-                      : 'Other'
-                  }
-                  onChange={value =>
-                    setPaymentMethodDraftField('provider', value)
-                  }
-                />
+                <View style={styles.financialSelectorRow}>
+                  <KolamCopyStack
+                    containerStyle={styles.financialSelectorCopy}
+                    items={[
+                      {
+                        id: 'payment-method-type-field-title',
+                        text: 'Tipe Pembayaran',
+                        style: styles.marketplaceOverviewLabel,
+                      },
+                      {
+                        id: 'payment-method-type-field-detail',
+                        text: 'Pilih tunai, transfer bank, dompet digital, kartu, atau QRIS.',
+                        style: styles.marketplaceOverviewMeta,
+                      },
+                    ]}
+                  />
+                  <KolamDropdownSelect
+                    accessibilityLabel="Tipe metode pembayaran"
+                    label="Tipe Pembayaran"
+                    menuPlacement="inline"
+                    options={paymentMethodTypeOptions.map(option => ({
+                      label: `${option.label} - ${option.description}`,
+                      value: option.value,
+                    }))}
+                    showLabelInTrigger={false}
+                    style={styles.financialSelectorControl}
+                    triggerStyle={styles.shippingTimezoneTrigger}
+                    value={paymentMethodDraft.type}
+                    onChange={value =>
+                      setPaymentMethodDraftField('type', value)
+                    }
+                  />
+                </View>
+                <View style={styles.financialSelectorRow}>
+                  <KolamCopyStack
+                    containerStyle={styles.financialSelectorCopy}
+                    items={[
+                      {
+                        id: 'payment-method-provider-field-title',
+                        text: 'Provider Pembayaran',
+                        style: styles.marketplaceOverviewLabel,
+                      },
+                      {
+                        id: 'payment-method-provider-field-detail',
+                        text: 'Pilih bank, dompet digital, tunai, atau provider lainnya.',
+                        style: styles.marketplaceOverviewMeta,
+                      },
+                    ]}
+                  />
+                  <KolamDropdownSelect
+                    accessibilityLabel="Provider metode pembayaran"
+                    label="Provider Pembayaran"
+                    menuPlacement="inline"
+                    options={paymentMethodProviderOptions}
+                    searchable
+                    searchPlaceholder="Cari provider..."
+                    showLabelInTrigger={false}
+                    style={styles.financialSelectorControl}
+                    triggerStyle={styles.shippingTimezoneTrigger}
+                    value={
+                      paymentMethodProviderOptions.some(
+                        option => option.value === paymentMethodDraft.provider,
+                      )
+                        ? paymentMethodDraft.provider
+                        : 'Other'
+                    }
+                    onChange={value =>
+                      setPaymentMethodDraftField('provider', value)
+                    }
+                  />
+                </View>
               </View>
               <View style={styles.financialFormBox}>
                 <KolamCopyStack
@@ -8186,6 +8194,24 @@ const styles = StyleSheet.create({
     height: 36,
     minWidth: 220,
     paddingHorizontal: 10,
+  },
+  financialSelectorControl: {
+    maxWidth: 520,
+    minWidth: 260,
+    width: '48%',
+  },
+  financialSelectorCopy: {
+    flex: 1,
+    gap: 3,
+    minWidth: 240,
+  },
+  financialSelectorRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    justifyContent: 'space-between',
+    width: '100%',
   },
   financialStatusCopy: {
     flexShrink: 1,
