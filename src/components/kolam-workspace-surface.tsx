@@ -392,17 +392,14 @@ export function KolamWorkspaceSurfaceComponent({
         onModuleRouteSelect,
       );
     case 'customer':
-      if (activeNavigationItem?.route.split('?')[0] === '/customers') {
-        return renderWithNavigationRoute(
-          dataset,
-          activeNavigationItem,
+      if (activeNavigationItem?.route.split('?')[0]?.startsWith('/customers')) {
+        return (
           <KolamCustomerSurface
             customer={customer}
             customers={dataset.customers}
             onRouteChange={onDashboardRoute}
             route={activeNavigationItem.route}
-          />,
-          onDashboardRoute,
+          />
         );
       }
 
