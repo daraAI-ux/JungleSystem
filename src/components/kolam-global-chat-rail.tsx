@@ -1486,6 +1486,9 @@ function KolamChatRailDetailPanel({
       data: null,
       loading: false,
     });
+  const messageScrollRef = React.useRef<React.ElementRef<typeof ScrollView> | null>(
+    null,
+  );
   const inboxComposerAccess =
     mode === 'inbox'
       ? getInboxComposerAccess(detail.conversation, currentUserId, {
@@ -1511,6 +1514,10 @@ function KolamChatRailDetailPanel({
     mode === 'team-chat' && detail.messageSearchResults
       ? detail.messageSearchResults
       : detail.messages;
+  const displayedMessageScrollKey = React.useMemo(
+    () => displayedMessages.map(message => message.id).join('|'),
+    [displayedMessages],
+  );
   const isMessageSearchActive =
     mode === 'team-chat' && detail.messageSearchResults !== null;
   const mentionQuery =
@@ -1553,6 +1560,14 @@ function KolamChatRailDetailPanel({
       setDaraThinkingLine('');
     }
   }, [daraThinkingLine, detail.messages]);
+
+  const scrollMessagesToEnd = React.useCallback(() => {
+    messageScrollRef.current?.scrollToEnd({animated: false});
+  }, []);
+
+  React.useEffect(() => {
+    scrollMessagesToEnd();
+  }, [displayedMessageScrollKey, scrollMessagesToEnd, selectedItem.id]);
 
   React.useEffect(() => {
     if (
@@ -1803,8 +1818,11 @@ function KolamChatRailDetailPanel({
 
         {displayedMessages.length > 0 ? (
           <ScrollView
+            ref={messageScrollRef}
             style={[styles.messageScroll, fullPage && styles.messageScrollFull]}
             contentContainerStyle={styles.messageList}
+            onContentSizeChange={scrollMessagesToEnd}
+            onLayout={scrollMessagesToEnd}
             showsVerticalScrollIndicator>
             <KolamMappedList
               items={displayedMessages}

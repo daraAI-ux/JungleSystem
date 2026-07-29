@@ -1,5 +1,12 @@
 import React from 'react';
-import {Linking, StyleSheet, Text, TextInput, View} from 'react-native';
+import {
+  Linking,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 import {KolamGlobalChatRail} from '../src/components/kolam-global-chat-rail';
 import {KolamPressable} from '../src/components/kolam-pressable';
@@ -969,6 +976,14 @@ describe('KolamGlobalChatRail', () => {
         'AI on',
       ]),
     );
+    const messageScroll = renderer!.root
+      .findAllByType(ScrollView)
+      .find(
+        node =>
+          typeof node.props.onContentSizeChange === 'function' &&
+          typeof node.props.onLayout === 'function',
+      );
+    expect(messageScroll).toBeTruthy();
 
     const statusButton = renderer!.root
       .findAllByType(KolamPressable)
