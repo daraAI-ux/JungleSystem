@@ -1383,6 +1383,8 @@ export function KolamSettingsWebConfigSurface({
 
               return (
                 <Pressable
+                  accessibilityRole="checkbox"
+                  accessibilityState={{checked, disabled}}
                   key={`${field}-${staff._id}`}
                   disabled={disabled}
                   onPress={() =>
@@ -8120,7 +8122,8 @@ const styles = StyleSheet.create({
   },
   poStaffCheckbox: {
     alignItems: 'center',
-    borderColor: '#e5e7eb',
+    backgroundColor: '#ffffff',
+    borderColor: '#d1d5db',
     borderWidth: 1,
     flexBasis: '31%',
     flexGrow: 1,
@@ -8131,37 +8134,39 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
   },
   poStaffCheckboxActive: {
-    backgroundColor: '#ecfdf5',
-    borderColor: '#10b981',
+    backgroundColor: '#dcfce7',
+    borderColor: '#16a34a',
   },
   poStaffCheckboxLabel: {
-    color: V.colors.text,
+    color: V.colors.fg,
     flex: 1,
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
-    lineHeight: 14,
+    lineHeight: 16,
     minWidth: 0,
   },
   poStaffCheckboxDisabled: {
-    opacity: 0.6,
+    backgroundColor: '#f3f4f6',
+    borderColor: '#d1d5db',
   },
   poStaffCheckboxMark: {
     alignItems: 'center',
-    borderColor: '#9ca3af',
+    backgroundColor: '#ffffff',
+    borderColor: '#6b7280',
     borderWidth: 1,
-    height: 14,
+    height: 16,
     justifyContent: 'center',
-    width: 14,
+    width: 16,
   },
   poStaffCheckboxMarkActive: {
-    backgroundColor: '#10b981',
-    borderColor: '#10b981',
+    backgroundColor: '#16a34a',
+    borderColor: '#16a34a',
   },
   poStaffCheckboxMarkText: {
     color: '#ffffff',
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '700',
-    lineHeight: 10,
+    lineHeight: 12,
   },
   poStaffGrid: {
     flexDirection: 'row',

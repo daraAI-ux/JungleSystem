@@ -463,6 +463,11 @@ describe('settings web widgets', () => {
     expect(text).toContain('bima@dunia-anura.test');
     expect(text).not.toContain('staff-1');
     expect(text).not.toContain('staff-2');
+    const staffCheckboxes = renderer!.root.findAll(
+      node => node.props.accessibilityRole === 'checkbox',
+    );
+
+    expect(staffCheckboxes.length).toBeGreaterThanOrEqual(6);
 
     await ReactTestRenderer.act(async () => {
       toggles.find(node => node.props.label === 'Marketplace')!.props.onPress();
@@ -475,6 +480,7 @@ describe('settings web widgets', () => {
       dropdowns
         .find(node => node.props.label === 'Room Team Chat')!
         .props.onChange('');
+      staffCheckboxes[0].props.onPress();
       buttons
         .find(node => node.props.label === 'Simpan Client ID')!
         .props.onPress();
@@ -496,6 +502,9 @@ describe('settings web widgets', () => {
     });
     expect(onSaveOperationalPoWorkflow).toHaveBeenCalledWith({
       poWorkflowReceivingRoomId: '',
+    });
+    expect(onSaveOperationalPoWorkflow).toHaveBeenCalledWith({
+      poWorkflowNotifyReceiveUserIds: 'staff-1',
     });
     expect(onSaveOperationalStaffAttendance).toHaveBeenCalledTimes(1);
     expect(onSave).not.toHaveBeenCalled();
