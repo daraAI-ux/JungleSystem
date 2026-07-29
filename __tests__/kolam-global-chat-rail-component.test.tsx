@@ -146,6 +146,13 @@ function getDefaultDetailMock() {
     signalTyping: jest.fn(),
     sending: false,
     startCall: jest.fn(),
+    teamRoomMetadata: {
+      bots: [],
+      canManageAiRoomAccess: false,
+      dara: null,
+      daraReplyEnabled: true,
+      members: [],
+    },
     toggleInboxAiHandled: jest.fn(),
     toggleInboxStatus: jest.fn(),
     toggleCallHand: jest.fn(),
@@ -246,6 +253,13 @@ describe('KolamGlobalChatRail', () => {
       setInboxLabels: jest.fn(),
       signalTyping: jest.fn(),
       sending: false,
+      teamRoomMetadata: {
+        bots: [],
+        canManageAiRoomAccess: false,
+        dara: null,
+        daraReplyEnabled: true,
+        members: [],
+      },
       updatePresenceFromLive: jest.fn(),
     });
     useReadonlyDataMock.mockReturnValue({

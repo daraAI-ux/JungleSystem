@@ -354,6 +354,37 @@ export interface KolamTeamChatUserRef {
   canRemoveAiRoomAccess?: boolean;
 }
 
+export interface KolamTeamChatDaraPresence {
+  id: string;
+  displayName: string;
+  username: string;
+  online: boolean;
+  isAi: boolean;
+  profile_picture: string | null;
+}
+
+export interface KolamTeamChatBotPresence {
+  botKey: string;
+  displayName: string;
+  username?: string;
+  online: boolean;
+  isAi: boolean;
+  isBot: true;
+  botRole?: string;
+  profile_picture: string | null;
+  activeRoomId?: string | null;
+  activeRoomName?: string | null;
+  webHref?: string | null;
+}
+
+export interface KolamTeamChatMembersPayload {
+  members: KolamTeamChatUserRef[];
+  dara: KolamTeamChatDaraPresence;
+  bots: KolamTeamChatBotPresence[];
+  daraReplyEnabled: boolean;
+  canManageAiRoomAccess: boolean;
+}
+
 export interface KolamTeamChatReaction {
   emoji: string;
   user: string | KolamTeamChatUserRef;
@@ -1898,6 +1929,17 @@ export async function getKolamTeamChatRooms(): Promise<KolamTeamChatRoom[]> {
   return response.data ?? [];
 }
 
+export async function getKolamTeamChatMembers(
+  roomId: string,
+): Promise<KolamTeamChatMembersPayload> {
+  const response = await kolamGet<
+    | DataResponse<Partial<KolamTeamChatMembersPayload>>
+    | Partial<KolamTeamChatMembersPayload>
+  >(`/team-chat/rooms/${encodeURIComponent(roomId)}/members`);
+
+  return normalizeKolamTeamChatMembersPayload(unwrapData(response));
+}
+
 export async function getKolamChatConversations(
   params: KolamChatConversationListParams = {},
 ): Promise<KolamChatConversation[]> {
@@ -2445,6 +2487,25 @@ function unwrapData<T>(response: T | DataResponse<T>): T {
   }
 
   return response as T;
+}
+
+function normalizeKolamTeamChatMembersPayload(
+  payload?: Partial<KolamTeamChatMembersPayload> | null,
+): KolamTeamChatMembersPayload {
+  return {
+    members: Array.isArray(payload?.members) ? payload.members : [],
+    dara: payload?.dara ?? {
+      id: 'dara',
+      displayName: 'DARA',
+      username: 'dara',
+      online: true,
+      isAi: true,
+      profile_picture: '/images/dara-avatar.png?v=20260602pp',
+    },
+    bots: Array.isArray(payload?.bots) ? payload.bots : [],
+    daraReplyEnabled: payload?.daraReplyEnabled !== false,
+    canManageAiRoomAccess: payload?.canManageAiRoomAccess === true,
+  };
 }
 
 async function createMarketplaceLandingItem<T>(

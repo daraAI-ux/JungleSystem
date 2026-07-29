@@ -8,6 +8,7 @@ import {
   getKolamChatConversation,
   getKolamChatMessages,
   getKolamRoomActiveTeamChatCall,
+  getKolamTeamChatMembers,
   getKolamTeamChatMessages,
   getKolamTeamChatCallConfig,
   handoverKolamTeamChatCall,
@@ -31,8 +32,11 @@ import {
   type KolamTeamChatCallParticipant,
   type KolamTeamChatReaction,
   type KolamTeamChatAttachment,
+  type KolamTeamChatBotPresence,
+  type KolamTeamChatDaraPresence,
   type KolamTeamChatMessage,
   type KolamTeamChatPresence,
+  type KolamTeamChatUserRef,
   unmuteKolamTeamChatCallParticipant,
   updateKolamChatConversationAiHandled,
   updateKolamChatConversationLabels,
@@ -45,6 +49,14 @@ const EMPTY_TEAM_CHAT_PRESENCE: KolamTeamChatPresence = {
   onlineCount: 0,
   typingUserIds: [],
   viewingCount: 0,
+};
+
+const EMPTY_TEAM_ROOM_METADATA: KolamChatRailTeamRoomMetadata = {
+  bots: [],
+  canManageAiRoomAccess: false,
+  dara: null,
+  daraReplyEnabled: true,
+  members: [],
 };
 
 export interface KolamChatRailDetailReactionGroup {
@@ -62,6 +74,14 @@ export interface KolamChatRailDetailMessage {
   reactions: KolamChatRailDetailReactionGroup[];
   sentAt?: string;
   status?: string;
+}
+
+export interface KolamChatRailTeamRoomMetadata {
+  bots: KolamTeamChatBotPresence[];
+  canManageAiRoomAccess: boolean;
+  dara: KolamTeamChatDaraPresence | null;
+  daraReplyEnabled: boolean;
+  members: KolamTeamChatUserRef[];
 }
 
 export interface KolamChatRailDetailState {
@@ -90,6 +110,7 @@ export interface KolamChatRailDetailState {
   signalTyping: (typing: boolean) => void;
   sending: boolean;
   startCall: () => Promise<void>;
+  teamRoomMetadata: KolamChatRailTeamRoomMetadata;
   toggleInboxAiHandled: () => Promise<void>;
   toggleInboxStatus: () => Promise<void>;
   toggleCallHand: () => Promise<void>;
@@ -123,6 +144,8 @@ export function useKolamChatRailDetail({
   const [presence, setPresence] = useState<KolamTeamChatPresence>(
     EMPTY_TEAM_CHAT_PRESENCE,
   );
+  const [teamRoomMetadata, setTeamRoomMetadata] =
+    useState<KolamChatRailTeamRoomMetadata>(EMPTY_TEAM_ROOM_METADATA);
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const refresh = useCallback(async () => {
@@ -130,6 +153,7 @@ export function useKolamChatRailDetail({
       setMessages([]);
       setConversation(null);
       setPresence(EMPTY_TEAM_CHAT_PRESENCE);
+      setTeamRoomMetadata(EMPTY_TEAM_ROOM_METADATA);
       setActiveCall(null);
       setErrorMessage(undefined);
       setLoading(false);
@@ -142,10 +166,12 @@ export function useKolamChatRailDetail({
     try {
       if (mode === 'team-chat') {
         setConversation(null);
-        const nextMessages = await getKolamTeamChatMessages(selectedId, {
-          limit: 80,
-        });
+        const [nextMessages, nextMetadata] = await Promise.all([
+          getKolamTeamChatMessages(selectedId, {limit: 80}),
+          getKolamTeamChatMembers(selectedId).catch(() => EMPTY_TEAM_ROOM_METADATA),
+        ]);
         await markKolamTeamChatRoomRead(selectedId).catch(() => undefined);
+        setTeamRoomMetadata(nextMetadata);
         setMessages(
           nextMessages.map(message => mapTeamChatMessage(message, currentUserId)),
         );
@@ -158,6 +184,7 @@ export function useKolamChatRailDetail({
       ]);
       await markKolamChatConversationRead(selectedId).catch(() => undefined);
       setConversation(nextConversation);
+      setTeamRoomMetadata(EMPTY_TEAM_ROOM_METADATA);
       setMessages([...nextMessages].reverse().map(mapInboxMessage));
     } catch (error) {
       setErrorMessage(
@@ -165,6 +192,7 @@ export function useKolamChatRailDetail({
       );
       setMessages([]);
       setConversation(null);
+      setTeamRoomMetadata(EMPTY_TEAM_ROOM_METADATA);
     } finally {
       setLoading(false);
     }
@@ -597,6 +625,7 @@ export function useKolamChatRailDetail({
     signalTyping,
     sending,
     startCall,
+    teamRoomMetadata,
     toggleInboxAiHandled,
     toggleInboxStatus,
     toggleCallHand,

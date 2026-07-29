@@ -43,6 +43,7 @@ import {
   getKolamMyActiveTeamChatCalls,
   getKolamRoomActiveTeamChatCall,
   getKolamTeamChatCallConfig,
+  getKolamTeamChatMembers,
   getKolamTeamChatMessages,
   handoverKolamTeamChatCall,
   joinKolamTeamChatCall,
@@ -1333,6 +1334,64 @@ describe('Kolam Settings API contracts', () => {
         method: 'POST',
         body: JSON.stringify({body: 'Siap.'}),
       }),
+    );
+  });
+
+  it('maps team chat members metadata with DARA and bot fallbacks', async () => {
+    fetchMock
+      .mockResolvedValueOnce(
+        jsonResponse({
+          success: true,
+          data: {
+            members: [
+              {
+                _id: 'staff-1',
+                first_name: 'Maya',
+                username: 'maya',
+                role: 'admin',
+              },
+            ],
+            bots: [
+              {
+                botKey: 'katak_terbang',
+                displayName: 'Katak Terbang',
+                online: true,
+                isAi: true,
+                isBot: true,
+                profile_picture: null,
+              },
+            ],
+            daraReplyEnabled: false,
+            canManageAiRoomAccess: true,
+          },
+        }),
+      )
+      .mockResolvedValueOnce(jsonResponse({success: true, data: {members: []}}));
+
+    await expect(getKolamTeamChatMembers('room-1')).resolves.toEqual({
+      members: [expect.objectContaining({_id: 'staff-1', username: 'maya'})],
+      bots: [expect.objectContaining({botKey: 'katak_terbang'})],
+      dara: expect.objectContaining({username: 'dara', isAi: true}),
+      daraReplyEnabled: false,
+      canManageAiRoomAccess: true,
+    });
+    await expect(getKolamTeamChatMembers('room-2')).resolves.toEqual({
+      members: [],
+      bots: [],
+      dara: expect.objectContaining({username: 'dara', isAi: true}),
+      daraReplyEnabled: true,
+      canManageAiRoomAccess: false,
+    });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      `${appConfig.kolamApiBaseUrl}/team-chat/rooms/room-1/members`,
+      expect.objectContaining({method: 'GET'}),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      `${appConfig.kolamApiBaseUrl}/team-chat/rooms/room-2/members`,
+      expect.objectContaining({method: 'GET'}),
     );
   });
 
