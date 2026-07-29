@@ -1,5 +1,6 @@
 import React from 'react';
 import {StyleSheet, Text, View} from 'react-native';
+import {useKolamAuthContext} from '../context/kolam-app-contexts';
 import {
   getKolamUserAccountStatusLabel,
   getKolamUserIdFromRoute,
@@ -11,6 +12,10 @@ import {
   type KolamUserRoleOption,
 } from '../domain/kolam-user';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
+import {
+  hasSettingsPermission,
+  isSettingsSuperAdminRoleKey,
+} from '../domain/settings-surface';
 import {
   createKolamUser,
   getKolamUserDetail,
@@ -75,6 +80,8 @@ type KolamUserEditForm = {
   csActive: boolean;
   email: string;
   first_name: string;
+  isEmployee: boolean;
+  isOwner: boolean;
   last_name: string;
   password: string;
   phone_number: string;
@@ -800,6 +807,7 @@ function KolamUserEditSurface({
   onRouteChange?: (route: string) => void;
   userId: string;
 }) {
+  const {authUser} = useKolamAuthContext();
   const [user, setUser] = React.useState<KolamUserListItem | null>(null);
   const [form, setForm] = React.useState<KolamUserEditForm>({
     account_restricted: false,
@@ -809,6 +817,8 @@ function KolamUserEditSurface({
     csActive: false,
     email: '',
     first_name: '',
+    isEmployee: false,
+    isOwner: false,
     last_name: '',
     password: '',
     phone_number: '',
@@ -919,6 +929,14 @@ function KolamUserEditSurface({
   }
 
   const encodedUserId = encodeURIComponent(user.id);
+  const permissionContext = {
+    permissions: authUser?.permissions,
+    roleKey: authUser?.roleKey,
+  };
+  const canToggleOwner = isSettingsSuperAdminRoleKey(authUser?.roleKey ?? '');
+  const canToggleEmployee =
+    canToggleOwner ||
+    hasSettingsPermission(permissionContext, 'user', 'flag_employee');
   const setField = (field: keyof KolamUserEditForm, value: string) => {
     setForm(current => ({...current, [field]: value}));
     setError('');
@@ -932,6 +950,8 @@ function KolamUserEditSurface({
       | 'access_inventory'
       | 'access_pos'
       | 'csActive'
+      | 'isEmployee'
+      | 'isOwner'
     >,
     value: boolean,
   ) => {
@@ -962,6 +982,8 @@ function KolamUserEditSurface({
         csActive: form.csActive,
         email: form.email.trim(),
         first_name: form.first_name.trim(),
+        ...(canToggleEmployee ? {isEmployee: form.isEmployee} : {}),
+        ...(canToggleOwner ? {isOwner: form.isOwner} : {}),
         last_name: form.last_name.trim(),
         phone_number: form.phone_number.trim(),
         role: form.role.trim(),
@@ -1140,6 +1162,17 @@ function KolamUserEditSurface({
                 label="Akses AM"
                 onPress={() => setBooleanField('access_am', !form.access_am)}
               />
+              {canToggleEmployee ? (
+                <KolamToggleRow
+                  active={form.isEmployee}
+                  description="Tandai pengguna ini sebagai karyawan perusahaan"
+                  disabled={saving}
+                  label="Status Karyawan"
+                  onPress={() =>
+                    setBooleanField('isEmployee', !form.isEmployee)
+                  }
+                />
+              ) : null}
               <KolamToggleRow
                 active={form.csActive}
                 description="Izinkan pengguna membalas chat pelanggan di Inbox"
@@ -1147,6 +1180,15 @@ function KolamUserEditSurface({
                 label="CS Aktif"
                 onPress={() => setBooleanField('csActive', !form.csActive)}
               />
+              {canToggleOwner ? (
+                <KolamToggleRow
+                  active={form.isOwner}
+                  description="Tandai pengguna ini sebagai pemilik perusahaan"
+                  disabled={saving}
+                  label="Status Pemilik"
+                  onPress={() => setBooleanField('isOwner', !form.isOwner)}
+                />
+              ) : null}
             </View>
           </View>
         </View>
@@ -1385,6 +1427,8 @@ function getUserEditFormFromUser(user: KolamUserListItem): KolamUserEditForm {
     csActive: user.csActive,
     email: user.email,
     first_name: user.firstName,
+    isEmployee: user.isEmployee,
+    isOwner: user.isOwner,
     last_name: user.lastName,
     password: '',
     phone_number: user.phoneNumber,

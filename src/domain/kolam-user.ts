@@ -74,6 +74,8 @@ export interface KolamUserUpdatePayload {
   access_inventory?: boolean;
   access_pos?: boolean;
   csActive?: boolean;
+  isEmployee?: boolean;
+  isOwner?: boolean;
   username?: string;
   first_name: string;
   last_name: string;
