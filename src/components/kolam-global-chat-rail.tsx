@@ -50,6 +50,12 @@ import {KolamXIcon} from './kolam-x-icon';
 export type KolamGlobalChatRailMode = 'inbox' | 'team-chat';
 
 const TEAM_CHAT_REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
+const DARA_THINKING_DEFAULT_LINE = 'DARA sedang berpikir...';
+const DARA_THINKING_ACTIVE_EVENTS = new Set([
+  'dara.thinking',
+  'dara.thinking.chunk',
+]);
+const DARA_THINKING_DONE_EVENTS = new Set(['dara.thinking.done']);
 
 interface KolamChatRailAnalyticsState {
   data: KolamChatAnalytics | null;
@@ -86,6 +92,15 @@ type KolamTeamMentionTextPart =
   | {type: 'text'; value: string}
   | {type: 'mention'; raw: string; username: string};
 
+interface KolamDaraThinkingLiveSignal {
+  key: number;
+  line: string;
+  roomId: string;
+  state: 'active' | 'done';
+}
+
+type KolamDaraThinkingLivePatch = Omit<KolamDaraThinkingLiveSignal, 'key'>;
+
 export function KolamGlobalChatRail({
   mode,
   onClose,
@@ -103,6 +118,9 @@ export function KolamGlobalChatRail({
   const [composerText, setComposerText] = React.useState('');
   const [pendingAttachment, setPendingAttachment] =
     React.useState<NativeImagePickerResult | null>(null);
+  const [daraThinkingLiveSignal, setDaraThinkingLiveSignal] =
+    React.useState<KolamDaraThinkingLiveSignal | null>(null);
+  const daraThinkingSignalKeyRef = React.useRef(0);
   const [analyticsState, setAnalyticsState] =
     React.useState<KolamChatRailAnalyticsState>({
       data: null,
@@ -142,8 +160,17 @@ export function KolamGlobalChatRail({
         currentUserId: authUser?.id,
         selectedItemId,
       });
+      const daraThinkingPatch = getDaraThinkingLivePatch(event, selectedItemId);
 
       syncFromLiveClassification(classification);
+
+      if (daraThinkingPatch) {
+        daraThinkingSignalKeyRef.current += 1;
+        setDaraThinkingLiveSignal({
+          ...daraThinkingPatch,
+          key: daraThinkingSignalKeyRef.current,
+        });
+      }
 
       if (
         classification.refreshPresence &&
@@ -180,6 +207,7 @@ export function KolamGlobalChatRail({
     setSelectedItemId(null);
     setComposerText('');
     setPendingAttachment(null);
+    setDaraThinkingLiveSignal(null);
   }, [mode]);
 
   React.useEffect(() => {
@@ -396,6 +424,7 @@ export function KolamGlobalChatRail({
           <KolamChatRailDetailPanel
             composerText={composerText}
             currentUserId={authUser?.id}
+            daraThinkingLiveSignal={daraThinkingLiveSignal}
             detail={detail}
             labels={labelsState.items}
             mode={mode}
@@ -558,6 +587,7 @@ function KolamChatRailSettingsShortcuts() {
 function KolamChatRailDetailPanel({
   composerText,
   currentUserId,
+  daraThinkingLiveSignal,
   detail,
   labels,
   mode,
@@ -571,6 +601,7 @@ function KolamChatRailDetailPanel({
 }: {
   composerText: string;
   currentUserId?: string;
+  daraThinkingLiveSignal: KolamDaraThinkingLiveSignal | null;
   detail: ReturnType<typeof useKolamChatRailDetail>;
   labels: KolamChatLabel[];
   mode: KolamGlobalChatRailMode;
@@ -585,7 +616,7 @@ function KolamChatRailDetailPanel({
   const [templatePickerOpen, setTemplatePickerOpen] = React.useState(false);
   const [templateSearch, setTemplateSearch] = React.useState('');
   const [contactDetailsOpen, setContactDetailsOpen] = React.useState(false);
-  const [daraThinking, setDaraThinking] = React.useState(false);
+  const [daraThinkingLine, setDaraThinkingLine] = React.useState('');
   const [contactDetailsState, setContactDetailsState] =
     React.useState<KolamChatRailContactDetailsState>({
       data: null,
@@ -623,19 +654,38 @@ function KolamChatRailDetailPanel({
   React.useEffect(() => {
     setTemplatePickerOpen(false);
     setTemplateSearch('');
-    setDaraThinking(false);
+    setDaraThinkingLine('');
     setContactDetailsOpen(false);
     setContactDetailsState({data: null, loading: false});
   }, [selectedItem.id]);
 
   React.useEffect(() => {
     if (
-      daraThinking &&
+      daraThinkingLine &&
       detail.messages.some(message => !message.mine && message.author === 'DARA')
     ) {
-      setDaraThinking(false);
+      setDaraThinkingLine('');
     }
-  }, [daraThinking, detail.messages]);
+  }, [daraThinkingLine, detail.messages]);
+
+  React.useEffect(() => {
+    if (
+      mode !== 'team-chat' ||
+      !daraThinkingLiveSignal ||
+      daraThinkingLiveSignal.roomId !== selectedItem.id
+    ) {
+      return;
+    }
+
+    if (daraThinkingLiveSignal.state === 'done') {
+      setDaraThinkingLine('');
+      return;
+    }
+
+    setDaraThinkingLine(
+      daraThinkingLiveSignal.line || DARA_THINKING_DEFAULT_LINE,
+    );
+  }, [daraThinkingLiveSignal, mode, selectedItem.id]);
 
   const handleComposerInputChange = React.useCallback(
     (value: string) => {
@@ -664,7 +714,7 @@ function KolamChatRailDetailPanel({
         daraReplyEnabled: detail.teamRoomMetadata.daraReplyEnabled,
       })
     ) {
-      setDaraThinking(true);
+      setDaraThinkingLine(DARA_THINKING_DEFAULT_LINE);
     }
 
     await onSend();
@@ -798,7 +848,9 @@ function KolamChatRailDetailPanel({
           </ScrollView>
         ) : null}
 
-        {daraThinking ? <KolamDaraThinkingBubble /> : null}
+        {daraThinkingLine ? (
+          <KolamDaraThinkingBubble line={daraThinkingLine} />
+        ) : null}
       </View>
 
       {pendingAttachment ? (
@@ -1052,7 +1104,7 @@ function KolamTeamMentionText({body}: {body: string}) {
   );
 }
 
-function KolamDaraThinkingBubble() {
+function KolamDaraThinkingBubble({line}: {line: string}) {
   return (
     <View accessibilityLabel="DARA thinking bubble" style={styles.daraThinkingRow}>
       <View style={styles.daraThinkingAvatar}>
@@ -1060,7 +1112,9 @@ function KolamDaraThinkingBubble() {
       </View>
       <View style={styles.daraThinkingCopy}>
         <Text style={styles.daraThinkingAuthor}>DARA</Text>
-        <Text style={styles.daraThinkingText}>DARA sedang berpikir...</Text>
+        <Text style={styles.daraThinkingText}>
+          {line || DARA_THINKING_DEFAULT_LINE}
+        </Text>
       </View>
     </View>
   );
@@ -1923,6 +1977,89 @@ function getTeamChatPresenceFromLiveEvent(
       ? record.viewingCount ?? 0
       : 0,
   };
+}
+
+function getDaraThinkingLivePatch(
+  event: KolamChatLiveEvent,
+  selectedItemId: string | null,
+): KolamDaraThinkingLivePatch | null {
+  if (!selectedItemId) {
+    return null;
+  }
+
+  const eventName = event.contract.eventName;
+  if (
+    !DARA_THINKING_ACTIVE_EVENTS.has(eventName) &&
+    !DARA_THINKING_DONE_EVENTS.has(eventName)
+  ) {
+    return null;
+  }
+
+  const payload =
+    event.payload && typeof event.payload === 'object'
+      ? (event.payload as Record<string, unknown>)
+      : {};
+  const roomId = getStringRecordValue(payload, ['roomId', 'room_id', 'room']);
+  if (roomId && roomId !== selectedItemId) {
+    return null;
+  }
+
+  if (DARA_THINKING_DONE_EVENTS.has(eventName)) {
+    return {
+      line: '',
+      roomId: roomId || selectedItemId,
+      state: 'done',
+    };
+  }
+
+  return {
+    line:
+      typeof event.payload === 'string' && event.payload.trim()
+        ? event.payload.trim()
+        : getDaraThinkingLine(payload),
+    roomId: roomId || selectedItemId,
+    state: 'active',
+  };
+}
+
+function getDaraThinkingLine(payload: Record<string, unknown>) {
+  const directLine = getStringRecordValue(payload, [
+    'line',
+    'text',
+    'chunk',
+    'message',
+    'status',
+  ]);
+
+  if (directLine) {
+    return directLine;
+  }
+
+  const reasoningLines = payload.reasoningLines;
+  if (Array.isArray(reasoningLines)) {
+    const lastLine = [...reasoningLines]
+      .reverse()
+      .find(line => typeof line === 'string' && line.trim());
+    if (typeof lastLine === 'string') {
+      return lastLine.trim();
+    }
+  }
+
+  return DARA_THINKING_DEFAULT_LINE;
+}
+
+function getStringRecordValue(
+  record: Record<string, unknown>,
+  keys: string[],
+): string {
+  for (const key of keys) {
+    const value = record[key];
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim();
+    }
+  }
+
+  return '';
 }
 
 function formatTeamChatPresence(presence: KolamTeamChatPresence) {

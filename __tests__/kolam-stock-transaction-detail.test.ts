@@ -56,12 +56,19 @@ describe('Kolam stock transaction detail domain', () => {
             },
           ],
         },
-        createdBy: { _id: 'u1', name: 'Staff A' },
+        createdBy: {
+          _id: 'u1',
+          email: 'staff@example.com',
+          first_name: 'Staff',
+          last_name: 'A',
+          username: 'staffa',
+        },
         createdAt: '2026-07-01T10:00:00.000Z',
       },
     });
 
     expect(tx.id).toBe('tx-detail-1');
+    expect(tx.createdBy).toEqual({ id: 'u1', name: 'Staff A' });
     expect(tx.photos).toEqual(['uploads/a.jpg', 'uploads/b.jpg']);
     expect(tx.walletTransaction).toMatchObject({
       id: 'w1',

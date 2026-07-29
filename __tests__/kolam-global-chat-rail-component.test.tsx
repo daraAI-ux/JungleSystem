@@ -1157,6 +1157,118 @@ describe('KolamGlobalChatRail', () => {
     ).toBe(true);
   });
 
+  it('updates and clears the DARA thinking bubble from team chat live events', async () => {
+    let liveOptions:
+      | Parameters<typeof useKolamChatLiveStream>[0]
+      | undefined;
+
+    useLiveStreamMock.mockImplementation(options => {
+      liveOptions = options;
+    });
+    useReadonlyDataMock.mockReturnValue({
+      conversations: [],
+      loading: false,
+      refresh: jest.fn(),
+      rooms: [
+        {
+          _id: 'room-1',
+          name: 'Operasional',
+          category: 'general',
+          lastMessagePreview: 'Barang siap dikirim',
+          unreadCount: 0,
+        },
+      ],
+      totalUnread: 0,
+    });
+    useDetailMock.mockReturnValue({
+      ...getDefaultDetailMock(),
+      loading: false,
+      messages: [],
+      presence: {onlineCount: 1, typingUserIds: [], viewingCount: 1},
+      sendMessage: jest.fn(),
+      signalTyping: jest.fn(),
+      teamRoomMetadata: {
+        bots: [],
+        canManageAiRoomAccess: false,
+        dara: {
+          displayName: 'DARA',
+          id: 'dara',
+          isAi: true,
+          online: true,
+          profile_picture: null,
+          username: 'dara',
+        },
+        daraReplyEnabled: true,
+        members: [],
+      },
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamGlobalChatRail mode="team-chat" onClose={() => undefined} />,
+      );
+    });
+
+    const selectButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Pilih room Operasional');
+
+    await ReactTestRenderer.act(async () => {
+      selectButton!.props.onPress();
+    });
+
+    await ReactTestRenderer.act(async () => {
+      liveOptions!.onEvent({
+        contract: {
+          eventName: 'dara.thinking.chunk',
+          legacySources: [],
+          note: '',
+          refreshTargets: ['team-room-detail'],
+          route: '/team-chat/stream',
+          soundIntent: 'none',
+          stream: 'team-chat',
+        },
+        payload: {
+          roomId: 'room-1',
+          text: 'Membaca konteks stok',
+        },
+      });
+    });
+
+    expect(renderText(renderer!)).toEqual(
+      expect.arrayContaining(['DARA', 'Membaca konteks stok']),
+    );
+    expect(
+      renderer!.root
+        .findAllByType(View)
+        .some(node => node.props.accessibilityLabel === 'DARA thinking bubble'),
+    ).toBe(true);
+
+    await ReactTestRenderer.act(async () => {
+      liveOptions!.onEvent({
+        contract: {
+          eventName: 'dara.thinking.done',
+          legacySources: [],
+          note: '',
+          refreshTargets: ['team-room-detail'],
+          route: '/team-chat/stream',
+          soundIntent: 'none',
+          stream: 'team-chat',
+        },
+        payload: {
+          roomId: 'room-1',
+        },
+      });
+    });
+
+    expect(
+      renderer!.root
+        .findAllByType(View)
+        .some(node => node.props.accessibilityLabel === 'DARA thinking bubble'),
+    ).toBe(false);
+  });
+
   it('renders minimal team chat call actions and refreshes call state from live events', async () => {
     const startCall = jest.fn().mockResolvedValue(undefined);
     const joinCall = jest.fn().mockResolvedValue(undefined);

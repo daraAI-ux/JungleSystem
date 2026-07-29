@@ -874,14 +874,20 @@ function normalizeWallet(
 function normalizePerson(value: unknown): KolamStockTransactionPerson | null {
   const record = asRecord(value);
   const id = getString(record, '_id') || getString(record, 'id');
+  const fullName = [getString(record, 'first_name'), getString(record, 'last_name')]
+    .filter(Boolean)
+    .join(' ')
+    .trim();
   const name =
+    fullName ||
     getString(record, 'name') ||
     getString(record, 'displayName') ||
+    getString(record, 'username') ||
     getString(record, 'email');
   if (!id && !name) {
     return null;
   }
-  return { id, name: name || 'Unknown' };
+  return { id, name: name || 'Tidak diketahui' };
 }
 
 function normalizeSalesSource(
