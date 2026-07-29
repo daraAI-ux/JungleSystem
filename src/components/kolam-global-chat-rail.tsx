@@ -21,8 +21,10 @@ import type {
   KolamChatStaffRef,
   KolamChatTemplate,
   KolamTeamChatAttachment,
+  KolamTeamChatBotPresence,
   KolamTeamChatCallParticipant,
   KolamTeamChatPresence,
+  KolamTeamChatUserRef,
 } from '../services/kolam-api';
 import {
   getKolamChatAnalytics,
@@ -71,6 +73,13 @@ interface KolamChatRailContactDetailsState {
   data: KolamChatContactDetails | null;
   errorMessage?: string;
   loading: boolean;
+}
+
+interface KolamTeamMentionOption {
+  id: string;
+  isAi?: boolean;
+  label: string;
+  username: string;
 }
 
 export function KolamGlobalChatRail({
@@ -585,6 +594,26 @@ function KolamChatRailDetailPanel({
     () => filterChatTemplates(templatesState.items, templateSearch),
     [templateSearch, templatesState.items],
   );
+  const mentionQuery =
+    mode === 'team-chat' ? getTrailingMentionQuery(composerText) : null;
+  const mentionOptions = React.useMemo(
+    () =>
+      mode === 'team-chat' && mentionQuery !== null
+        ? buildTeamMentionOptions(
+            detail.teamRoomMetadata.members,
+            mentionQuery,
+            detail.teamRoomMetadata.daraReplyEnabled,
+            detail.teamRoomMetadata.bots,
+          )
+        : [],
+    [
+      detail.teamRoomMetadata.bots,
+      detail.teamRoomMetadata.daraReplyEnabled,
+      detail.teamRoomMetadata.members,
+      mentionQuery,
+      mode,
+    ],
+  );
 
   React.useEffect(() => {
     setTemplatePickerOpen(false);
@@ -592,6 +621,26 @@ function KolamChatRailDetailPanel({
     setContactDetailsOpen(false);
     setContactDetailsState({data: null, loading: false});
   }, [selectedItem.id]);
+
+  const handleComposerInputChange = React.useCallback(
+    (value: string) => {
+      onComposerTextChange(value);
+    },
+    [onComposerTextChange],
+  );
+
+  const handlePickMention = React.useCallback(
+    (username: string) => {
+      const tag = `@${username} `;
+      const nextText =
+        composerText.match(/@([a-zA-Z0-9_.-]{0,32})$/) !== null
+          ? composerText.replace(/@([a-zA-Z0-9_.-]{0,32})$/, tag)
+          : `${composerText}${composerText.endsWith(' ') || !composerText ? '' : ' '}${tag}`;
+
+      onComposerTextChange(nextText);
+    },
+    [composerText, onComposerTextChange],
+  );
 
   React.useEffect(() => {
     if (mode !== 'inbox' || !contactDetailsOpen) {
@@ -747,6 +796,14 @@ function KolamChatRailDetailPanel({
         />
       ) : null}
 
+      {mode === 'team-chat' && mentionOptions.length > 0 ? (
+        <KolamTeamMentionPicker
+          disabled={detail.sending}
+          onPick={handlePickMention}
+          options={mentionOptions}
+        />
+      ) : null}
+
       <View style={styles.composer}>
         {mode === 'team-chat' ? (
           <KolamPressable
@@ -781,8 +838,12 @@ function KolamChatRailDetailPanel({
           }
           editable={!detail.sending}
           multiline
-          onChangeText={onComposerTextChange}
-          placeholder="Tulis pesan..."
+          onChangeText={handleComposerInputChange}
+          placeholder={
+            mode === 'team-chat' && !detail.teamRoomMetadata.daraReplyEnabled
+              ? 'Tulis pesan... @dara nonaktif'
+              : 'Tulis pesan...'
+          }
           placeholderTextColor={V.colors.mutedFg}
           style={styles.composerInput}
           value={composerText}
@@ -878,6 +939,53 @@ function KolamChatTemplatePicker({
           />
         </ScrollView>
       ) : null}
+    </View>
+  );
+}
+
+function KolamTeamMentionPicker({
+  disabled,
+  onPick,
+  options,
+}: {
+  disabled: boolean;
+  onPick: (username: string) => void;
+  options: KolamTeamMentionOption[];
+}) {
+  return (
+    <View style={styles.mentionPicker}>
+      <Text style={styles.mentionPickerTitle}>Tag anggota</Text>
+      <View style={styles.mentionOptionList}>
+        <KolamMappedList
+          items={options}
+          getKey={option => option.id}
+          renderItem={option => (
+            <KolamPressable
+              accessibilityLabel={`Pilih mention ${option.username}`}
+              disabled={disabled}
+              onPress={() => onPick(option.username)}
+              style={[
+                styles.mentionOption,
+                option.isAi && styles.mentionOptionAi,
+                disabled && styles.attachButtonDisabled,
+              ]}>
+              <View style={[styles.mentionAvatar, option.isAi && styles.mentionAvatarAi]}>
+                <Text style={styles.mentionAvatarText}>
+                  {getMentionInitials(option.label)}
+                </Text>
+              </View>
+              <View style={styles.mentionOptionCopy}>
+                <Text numberOfLines={1} style={styles.mentionOptionLabel}>
+                  {option.label}
+                </Text>
+                <Text numberOfLines={1} style={styles.mentionOptionUsername}>
+                  @{option.username}
+                </Text>
+              </View>
+            </KolamPressable>
+          )}
+        />
+      </View>
     </View>
   );
 }
@@ -1857,6 +1965,82 @@ function filterChatTemplates(
   });
 }
 
+function getTrailingMentionQuery(text: string): string | null {
+  const match = text.match(/@([a-zA-Z0-9_.-]{0,32})$/);
+  return match ? match[1] : null;
+}
+
+function buildTeamMentionOptions(
+  members: KolamTeamChatUserRef[],
+  query: string,
+  includeDara: boolean,
+  bots: KolamTeamChatBotPresence[] = [],
+): KolamTeamMentionOption[] {
+  const q = query.toLowerCase();
+  const options: KolamTeamMentionOption[] = [];
+
+  if (includeDara && (!q || 'dara'.includes(q) || q.includes('dar'))) {
+    options.push({id: 'dara', isAi: true, label: 'DARA', username: 'dara'});
+  }
+
+  bots.forEach(bot => {
+    const username = (bot.username || bot.botKey || '').trim();
+    if (!username || username === 'dara' || bot.botKey === 'raja_anemon') {
+      return;
+    }
+
+    const label = (bot.displayName || username).trim();
+    const key = `${username} ${label} ${bot.botKey || ''}`.toLowerCase();
+    if (q && !key.includes(q)) {
+      return;
+    }
+
+    options.push({
+      id: bot.botKey || username,
+      isAi: true,
+      label,
+      username,
+    });
+  });
+
+  members.forEach(member => {
+    const username = (member.username || '').trim();
+    if (!username) {
+      return;
+    }
+
+    const label = getTeamChatUserLabel(member);
+    const key = `${username} ${label}`.toLowerCase();
+    if (q && !key.includes(q)) {
+      return;
+    }
+
+    options.push({id: member._id || username, label, username});
+  });
+
+  return options.slice(0, 12);
+}
+
+function getTeamChatUserLabel(user: KolamTeamChatUserRef) {
+  return (
+    [user.first_name, user.last_name].filter(Boolean).join(' ').trim() ||
+    user.username ||
+    user.email ||
+    'User'
+  );
+}
+
+function getMentionInitials(label: string) {
+  const words = label.trim().split(/\s+/).filter(Boolean);
+  const initials = words
+    .slice(0, 2)
+    .map(word => word[0])
+    .join('')
+    .toUpperCase();
+
+  return initials || '@';
+}
+
 function normalizeChatLabelColor(color?: string) {
   const value = color?.trim();
   if (!value) {
@@ -2572,6 +2756,75 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 12,
     fontWeight: '700',
+  },
+  mentionPicker: {
+    marginHorizontal: 10,
+    marginBottom: 8,
+    padding: 8,
+    borderRadius: V.radius.lg,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.bg,
+    gap: 6,
+  },
+  mentionPickerTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '900',
+  },
+  mentionOptionList: {
+    gap: 5,
+  },
+  mentionOption: {
+    minHeight: 38,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: V.radius.md,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.mutedSoft,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  mentionOptionAi: {
+    borderColor: V.colors.primary,
+    backgroundColor: V.colors.primarySoft,
+  },
+  mentionAvatar: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: V.colors.secondary,
+  },
+  mentionAvatarAi: {
+    backgroundColor: V.colors.primary,
+  },
+  mentionAvatarText: {
+    color: V.colors.primaryFg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '900',
+  },
+  mentionOptionCopy: {
+    minWidth: 0,
+    flex: 1,
+    gap: 1,
+  },
+  mentionOptionLabel: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  mentionOptionUsername: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '800',
   },
   pendingAttachment: {
     marginHorizontal: 10,

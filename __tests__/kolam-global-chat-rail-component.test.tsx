@@ -979,6 +979,92 @@ describe('KolamGlobalChatRail', () => {
     });
   });
 
+  it('opens a team mention picker from room metadata and inserts the selected username', async () => {
+    useReadonlyDataMock.mockReturnValue({
+      conversations: [],
+      loading: false,
+      refresh: jest.fn(),
+      rooms: [
+        {
+          _id: 'room-1',
+          name: 'Operasional',
+          category: 'general',
+          lastMessagePreview: 'Barang siap dikirim',
+          unreadCount: 0,
+        },
+      ],
+      totalUnread: 0,
+    });
+    useDetailMock.mockReturnValue({
+      ...getDefaultDetailMock(),
+      loading: false,
+      messages: [],
+      presence: {onlineCount: 1, typingUserIds: [], viewingCount: 1},
+      sendMessage: jest.fn(),
+      signalTyping: jest.fn(),
+      teamRoomMetadata: {
+        bots: [
+          {
+            botKey: 'katak_terbang',
+            displayName: 'Katak Terbang',
+            isAi: true,
+            isBot: true,
+            online: true,
+            profile_picture: null,
+            username: 'katak_terbang',
+          },
+        ],
+        canManageAiRoomAccess: false,
+        dara: {
+          displayName: 'DARA',
+          id: 'dara',
+          isAi: true,
+          online: true,
+          profile_picture: null,
+          username: 'dara',
+        },
+        daraReplyEnabled: true,
+        members: [
+          {_id: 'staff-2', first_name: 'Maya', username: 'maya'},
+          {_id: 'staff-3', first_name: 'Rio', username: 'rio'},
+        ],
+      },
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamGlobalChatRail mode="team-chat" onClose={() => undefined} />,
+      );
+    });
+
+    const selectButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Pilih room Operasional');
+
+    await ReactTestRenderer.act(async () => {
+      selectButton!.props.onPress();
+    });
+
+    const input = renderer!.root.findByType(TextInput);
+    await ReactTestRenderer.act(async () => {
+      input.props.onChangeText('Halo @');
+    });
+
+    expect(renderer!.root.findByType(TextInput).props.value).toBe('Halo @');
+
+    const mayaMention = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Pilih mention maya');
+
+    await ReactTestRenderer.act(async () => {
+      mayaMention!.props.onPress();
+    });
+
+    const composerInput = renderer!.root.findByType(TextInput);
+    expect(composerInput.props.value).toBe('Halo @maya ');
+  });
+
   it('renders minimal team chat call actions and refreshes call state from live events', async () => {
     const startCall = jest.fn().mockResolvedValue(undefined);
     const joinCall = jest.fn().mockResolvedValue(undefined);
