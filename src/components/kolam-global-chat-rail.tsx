@@ -23,6 +23,8 @@ import type {
   KolamTeamChatAttachment,
   KolamTeamChatBotPresence,
   KolamTeamChatCallParticipant,
+  KolamTeamChatEmbed,
+  KolamTeamChatLinkPreview,
   KolamTeamChatPresence,
   KolamTeamChatUserRef,
 } from '../services/kolam-api';
@@ -829,6 +831,12 @@ function KolamChatRailDetailPanel({
                   ) : null}
                   {message.attachments.length > 0 ? (
                     <KolamChatAttachmentList attachments={message.attachments} />
+                  ) : null}
+                  {mode === 'team-chat' && message.linkPreviews.length > 0 ? (
+                    <KolamChatLinkPreviewList previews={message.linkPreviews} />
+                  ) : null}
+                  {mode === 'team-chat' && message.embeds.length > 0 ? (
+                    <KolamChatEmbedList embeds={message.embeds} />
                   ) : null}
                   {mode === 'team-chat' ? (
                     <KolamChatReactionControls
@@ -1722,6 +1730,109 @@ function KolamChatAttachmentPreview({
   );
 }
 
+function KolamChatLinkPreviewList({
+  previews,
+}: {
+  previews: KolamTeamChatLinkPreview[];
+}) {
+  return (
+    <View style={styles.chatPreviewList}>
+      <KolamMappedList
+        items={previews}
+        getKey={(preview, index) => `${preview.url}-${index}`}
+        renderItem={preview => <KolamChatLinkPreview preview={preview} />}
+      />
+    </View>
+  );
+}
+
+function KolamChatLinkPreview({
+  preview,
+}: {
+  preview: KolamTeamChatLinkPreview;
+}) {
+  const previewImage = getTeamChatLinkPreviewImage(preview);
+  const imageUri = previewImage ? getKolamFileUrl(previewImage) ?? previewImage : '';
+  const title = preview.title?.trim() || preview.url;
+  const description = preview.description?.trim();
+  const siteName = preview.siteName?.trim();
+
+  return (
+    <View accessibilityLabel={`Link preview ${title}`} style={styles.chatPreviewCard}>
+      {imageUri ? (
+        <KolamRemoteImage
+          accessibilityLabel={`Gambar link preview ${title}`}
+          sourceUri={imageUri}
+          style={styles.chatPreviewImage}
+        />
+      ) : null}
+      <View style={styles.chatPreviewCopy}>
+        {siteName ? (
+          <Text numberOfLines={1} style={styles.chatPreviewKicker}>
+            {siteName}
+          </Text>
+        ) : null}
+        <Text numberOfLines={2} style={styles.chatPreviewTitle}>
+          {title}
+        </Text>
+        {description ? (
+          <Text numberOfLines={2} style={styles.chatPreviewDescription}>
+            {description}
+          </Text>
+        ) : null}
+        <Text numberOfLines={1} style={styles.chatPreviewUrl}>
+          {preview.url}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+function KolamChatEmbedList({embeds}: {embeds: KolamTeamChatEmbed[]}) {
+  return (
+    <View style={styles.chatEmbedList}>
+      <KolamMappedList
+        items={embeds}
+        getKey={(embed, index) => `${embed.type}-${embed.refId}-${index}`}
+        renderItem={embed => <KolamChatEmbedCard embed={embed} />}
+      />
+    </View>
+  );
+}
+
+function KolamChatEmbedCard({embed}: {embed: KolamTeamChatEmbed}) {
+  const label = getTeamChatEmbedTypeLabel(embed.type);
+  const title = embed.title?.trim() || embed.refId;
+  const subtitle = embed.subtitle?.trim();
+  const href = getTeamChatEmbedHref(embed);
+
+  return (
+    <View accessibilityLabel={`Embed ${label} ${title}`} style={styles.chatEmbedCard}>
+      <View style={styles.chatEmbedIcon}>
+        <Text style={styles.chatEmbedIconText}>{getTeamChatEmbedInitial(label)}</Text>
+      </View>
+      <View style={styles.chatEmbedCopy}>
+        <Text numberOfLines={1} style={styles.chatEmbedKicker}>
+          {label}
+        </Text>
+        <Text numberOfLines={1} style={styles.chatEmbedTitle}>
+          {title}
+        </Text>
+        {subtitle ? (
+          <Text numberOfLines={1} style={styles.chatEmbedSubtitle}>
+            {subtitle}
+          </Text>
+        ) : null}
+        {href ? (
+          <Text numberOfLines={1} style={styles.chatEmbedUrl}>
+            {href}
+          </Text>
+        ) : null}
+      </View>
+    </View>
+  );
+}
+
 function KolamChatReactionControls({
   disabled,
   message,
@@ -2331,6 +2442,47 @@ function getAttachmentKindLabel(attachment: KolamTeamChatAttachment) {
     default:
       return 'File';
   }
+}
+
+function getTeamChatEmbedTypeLabel(type: KolamTeamChatEmbed['type']) {
+  switch (type) {
+    case 'invoice':
+      return 'Invoice';
+    case 'task':
+      return 'Tugas';
+    case 'purchase_order':
+      return 'Purchase Order';
+    default:
+      return 'Embed';
+  }
+}
+
+function getTeamChatEmbedInitial(label: string) {
+  return label
+    .split(/\s+/)
+    .filter(Boolean)
+    .map(part => part.charAt(0))
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+function getTeamChatLinkPreviewImage(preview: KolamTeamChatLinkPreview) {
+  const maybeImageUrl = (preview as {imageUrl?: unknown}).imageUrl;
+  if (typeof maybeImageUrl === 'string' && maybeImageUrl.trim()) {
+    return maybeImageUrl.trim();
+  }
+
+  return preview.image?.trim() ?? '';
+}
+
+function getTeamChatEmbedHref(embed: KolamTeamChatEmbed) {
+  const maybeHref = (embed as {href?: unknown}).href;
+  if (typeof maybeHref === 'string' && maybeHref.trim()) {
+    return maybeHref.trim();
+  }
+
+  return embed.url?.trim() ?? '';
 }
 
 function getAnalyticsNumber(
@@ -2999,6 +3151,109 @@ const styles = StyleSheet.create({
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 10,
+    fontWeight: '700',
+  },
+  chatPreviewList: {
+    gap: 6,
+  },
+  chatPreviewCard: {
+    width: 220,
+    borderRadius: V.radius.lg,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    overflow: 'hidden',
+    backgroundColor: V.colors.bg,
+  },
+  chatPreviewImage: {
+    width: 220,
+    height: 92,
+  },
+  chatPreviewCopy: {
+    padding: 8,
+    gap: 3,
+  },
+  chatPreviewKicker: {
+    color: V.colors.primary,
+    fontFamily: V.fontFamily,
+    fontSize: 9,
+    fontWeight: '900',
+    textTransform: 'uppercase',
+  },
+  chatPreviewTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '900',
+  },
+  chatPreviewDescription: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  chatPreviewUrl: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 9,
+    fontWeight: '700',
+  },
+  chatEmbedList: {
+    gap: 6,
+  },
+  chatEmbedCard: {
+    width: 220,
+    minHeight: 54,
+    padding: 8,
+    borderRadius: V.radius.lg,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.bg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  chatEmbedIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: V.radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: V.colors.secondary,
+  },
+  chatEmbedIconText: {
+    color: V.colors.secondaryFg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '900',
+  },
+  chatEmbedCopy: {
+    minWidth: 0,
+    flex: 1,
+    gap: 2,
+  },
+  chatEmbedKicker: {
+    color: V.colors.primary,
+    fontFamily: V.fontFamily,
+    fontSize: 9,
+    fontWeight: '900',
+    textTransform: 'uppercase',
+  },
+  chatEmbedTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '900',
+  },
+  chatEmbedSubtitle: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  chatEmbedUrl: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 9,
     fontWeight: '700',
   },
   reactionControls: {

@@ -34,6 +34,8 @@ import {
   type KolamTeamChatAttachment,
   type KolamTeamChatBotPresence,
   type KolamTeamChatDaraPresence,
+  type KolamTeamChatEmbed,
+  type KolamTeamChatLinkPreview,
   type KolamTeamChatMessage,
   type KolamTeamChatPresence,
   type KolamTeamChatUserRef,
@@ -67,9 +69,11 @@ export interface KolamChatRailDetailReactionGroup {
 
 export interface KolamChatRailDetailMessage {
   attachments: KolamTeamChatAttachment[];
+  embeds: KolamTeamChatEmbed[];
   id: string;
   author: string;
   body: string;
+  linkPreviews: KolamTeamChatLinkPreview[];
   mine: boolean;
   reactions: KolamChatRailDetailReactionGroup[];
   sentAt?: string;
@@ -642,9 +646,11 @@ function getCallParticipantUserId(participant: KolamTeamChatCallParticipant) {
 function mapInboxMessage(message: KolamChatMessage): KolamChatRailDetailMessage {
   return {
     attachments: [],
+    embeds: [],
     id: message._id,
     author: getInboxAuthor(message),
     body: getInboxMessageBody(message),
+    linkPreviews: [],
     mine: message.direction === 'out',
     reactions: [],
     sentAt: message.sentAt ?? message.createdAt,
@@ -658,9 +664,17 @@ function mapTeamChatMessage(
 ): KolamChatRailDetailMessage {
   return {
     attachments: Array.isArray(message.attachments) ? message.attachments : [],
+    embeds: Array.isArray(message.embeds) ? message.embeds : [],
     id: message._id,
     author: getTeamChatAuthor(message),
-    body: message.body?.trim() || (message.attachments?.length ? '' : 'Pesan'),
+    body:
+      message.body?.trim() ||
+      (message.attachments?.length || message.embeds?.length || message.linkPreviews?.length
+        ? ''
+        : 'Pesan'),
+    linkPreviews: Array.isArray(message.linkPreviews)
+      ? message.linkPreviews
+      : [],
     mine: message.senderType !== 'ai',
     reactions: groupTeamChatReactions(message.reactions, currentUserId),
     sentAt: message.createdAt,
