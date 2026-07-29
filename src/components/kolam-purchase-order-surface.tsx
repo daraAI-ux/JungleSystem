@@ -1435,62 +1435,72 @@ function KolamPOProofsCard({ po }: { po: KolamPurchaseOrder }) {
   }
 
   return (
-    <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
+    <View style={styles.proofSection}>
       <Text style={styles.sectionTitle}>Penerimaan & Pemeriksaan</Text>
 
-      {po.receivedAt ? (
-        <View style={styles.proofGroup}>
-          <KolamDescriptionList
-            accessibilityLabel="Penerimaan barang"
-            rows={[
-              {
-                id: 'receivedAt',
-                label: 'Diterima Pada',
-                value: formatPODateTime(po.receivedAt),
-                meta: '',
-                tone: 'default',
-              },
-              {
-                id: 'receivedBy',
-                label: 'Diterima Oleh',
-                value: po.receivedByName || '—',
-                meta: '',
-                tone: 'default',
-              },
-            ]}
-          />
-          {po.receiveProofs.length ? (
-            <ProofGallery label="Bukti Penerimaan" paths={po.receiveProofs} />
-          ) : null}
+      <View style={styles.formSplitRow}>
+        <View style={[styles.formSplitCell, styles.detailSplitCell]}>
+          <KolamContentFrame
+            style={[styles.detailCard, styles.detailSplitCard, styles.proofBorderCard]}
+            variant="settingsWebConfig"
+          >
+            <Text style={styles.sectionTitle}>Penerimaan</Text>
+            <KolamDescriptionList
+              accessibilityLabel="Penerimaan barang"
+              rows={[
+                {
+                  id: 'receivedAt',
+                  label: 'Diterima Pada',
+                  value: formatPODateTime(po.receivedAt),
+                  meta: '',
+                  tone: 'default',
+                },
+                {
+                  id: 'receivedBy',
+                  label: 'Diterima Oleh',
+                  value: po.receivedByName || '—',
+                  meta: '',
+                  tone: 'default',
+                },
+              ]}
+            />
+            {po.receiveProofs.length ? (
+              <ProofGallery label="Bukti Penerimaan" paths={po.receiveProofs} />
+            ) : null}
+          </KolamContentFrame>
         </View>
-      ) : null}
 
-      {po.onCheckAt ? (
-        <View style={styles.proofGroup}>
-          <KolamDescriptionList
-            accessibilityLabel="Pemeriksaan barang"
-            rows={[
-              {
-                id: 'checkedAt',
-                label: 'Diperiksa Pada',
-                value: formatPODateTime(po.onCheckAt),
-                meta: '',
-                tone: 'default',
-              },
-              {
-                id: 'checkedBy',
-                label: 'Diperiksa Oleh',
-                value: po.checkedByName || '—',
-                meta: '',
-                tone: 'default',
-              },
-            ]}
-          />
-          {po.checkProofs.length ? (
-            <ProofGallery label="Bukti Pemeriksaan" paths={po.checkProofs} />
-          ) : null}
+        <View style={[styles.formSplitCell, styles.detailSplitCell]}>
+          <KolamContentFrame
+            style={[styles.detailCard, styles.detailSplitCard, styles.proofBorderCard]}
+            variant="settingsWebConfig"
+          >
+            <Text style={styles.sectionTitle}>Pemeriksaan</Text>
+            <KolamDescriptionList
+              accessibilityLabel="Pemeriksaan barang"
+              rows={[
+                {
+                  id: 'checkedAt',
+                  label: 'Diperiksa Pada',
+                  value: formatPODateTime(po.onCheckAt),
+                  meta: '',
+                  tone: 'default',
+                },
+                {
+                  id: 'checkedBy',
+                  label: 'Diperiksa Oleh',
+                  value: po.checkedByName || '—',
+                  meta: '',
+                  tone: 'default',
+                },
+              ]}
+            />
+            {po.checkProofs.length ? (
+              <ProofGallery label="Bukti Pemeriksaan" paths={po.checkProofs} />
+            ) : null}
+          </KolamContentFrame>
         </View>
-      ) : null}
+      </View>
 
       {po.isPartial ? (
         <View style={styles.partialNoteBox}>
@@ -1509,7 +1519,7 @@ function KolamPOProofsCard({ po }: { po: KolamPurchaseOrder }) {
           ) : null}
         </View>
       ) : null}
-    </KolamContentFrame>
+    </View>
   );
 }
 
@@ -2671,6 +2681,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     paddingVertical: 8,
+  },
+  proofSection: {
+    gap: 12,
+  },
+  proofBorderCard: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    padding: 12,
   },
   proofGroup: {
     gap: 6,
