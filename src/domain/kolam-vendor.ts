@@ -7,6 +7,83 @@ export interface KolamVendorBrandRef {
   name: string;
 }
 
+export interface KolamVendorPriceRef {
+  vendorId: string;
+  price: number;
+  shippingCost: number;
+  link: string;
+}
+
+export interface KolamVendorCatalogVariant {
+  id: string;
+  tier1Value: string;
+  tier2Value: string;
+  sku: string;
+  productCode: string;
+  vendorPrices: KolamVendorPriceRef[];
+}
+
+export interface KolamVendorCatalogProduct {
+  id: string;
+  name: string;
+  sku: string;
+  productCode: string;
+  type: string;
+  photos: string[];
+  photoUrls: string[];
+  brandNames: string[];
+  price: number;
+  vendorPrices: KolamVendorPriceRef[];
+  variants: KolamVendorCatalogVariant[];
+}
+
+export interface KolamVendorCatalogSpecies {
+  id: string;
+  scientificName: string;
+  commonName: string;
+  localName: string;
+  sku: string;
+  productCode: string;
+  photos: string[];
+  photoUrls: string[];
+  vendorPrices: KolamVendorPriceRef[];
+  variants: KolamVendorCatalogVariant[];
+}
+
+export interface KolamVendorCatalogPacking {
+  id: string;
+  name: string;
+  category: string;
+  price: number;
+  cost: number;
+  stock: number;
+  enabled: boolean;
+}
+
+export type KolamSupplierCatalogTab = 'products' | 'species' | 'packings';
+
+export interface KolamSupplierCatalogProductRow {
+  key: string;
+  productId: string;
+  title: string;
+  code: string;
+  brandLabel: string;
+  photoUrl: string;
+  vendorPrice: number | null;
+  isVariantRow: boolean;
+}
+
+export interface KolamSupplierCatalogSpeciesRow {
+  key: string;
+  speciesId: string;
+  title: string;
+  commonName: string;
+  code: string;
+  photoUrl: string;
+  vendorPrice: number | null;
+  isVariantRow: boolean;
+}
+
 export interface KolamVendor {
   id: string;
   name: string;
@@ -27,6 +104,9 @@ export interface KolamVendor {
   photos: string[];
   photoUrls: string[];
   brands: KolamVendorBrandRef[];
+  products: KolamVendorCatalogProduct[];
+  species: KolamVendorCatalogSpecies[];
+  packings: KolamVendorCatalogPacking[];
   warrantyContactNote: string;
   poCount: number;
   productCount: number;
@@ -243,6 +323,9 @@ export function normalizeKolamVendor(value: unknown): KolamVendor {
       .map(photo => getKolamFileUrl(photo) ?? photo)
       .filter(Boolean),
     brands,
+    products: normalizeCatalogProducts(record.products),
+    species: normalizeCatalogSpecies(record.species),
+    packings: normalizeCatalogPackings(record.packings),
     warrantyContactNote: getString(record, 'warrantyContactNote'),
     poCount: getNumber(record, 'poCount') ?? 0,
     productCount: getNumber(record, 'productCount') ?? 0,
@@ -312,6 +395,148 @@ export function formatKolamVendorAddress(vendor: KolamVendor) {
     .join(', ');
 }
 
+export function resolveKolamSupplierItemCode(
+  item: { productCode?: string; sku?: string; type?: string },
+  variant?: { productCode?: string; sku?: string } | null,
+) {
+  const pick = (...values: Array<string | null | undefined>) => {
+    for (const value of values) {
+      const trimmed = value?.trim();
+      if (trimmed) {
+        return trimmed;
+      }
+    }
+    return '';
+  };
+
+  if (variant) {
+    return pick(variant.productCode, variant.sku, item.productCode, item.sku);
+  }
+
+  if (item.type === 'product') {
+    return pick(item.productCode, item.sku);
+  }
+
+  return pick(item.productCode, item.sku);
+}
+
+export function flattenKolamSupplierProductRows(
+  products: KolamVendorCatalogProduct[],
+  supplierId: string,
+): KolamSupplierCatalogProductRow[] {
+  const rows: KolamSupplierCatalogProductRow[] = [];
+
+  for (const product of products) {
+    const photoUrl = product.photoUrls[0] || '';
+    const brandLabel = product.brandNames.filter(Boolean).join(', ');
+
+    if (!product.variants.length) {
+      const vp = product.vendorPrices.find(item => item.vendorId === supplierId);
+      rows.push({
+        key: product.id,
+        productId: product.id,
+        title: product.name,
+        code: resolveKolamSupplierItemCode(product),
+        brandLabel,
+        photoUrl,
+        vendorPrice: vp?.price ?? product.price ?? null,
+        isVariantRow: false,
+      });
+      continue;
+    }
+
+    rows.push({
+      key: product.id,
+      productId: product.id,
+      title: product.name,
+      code: '',
+      brandLabel,
+      photoUrl,
+      vendorPrice: null,
+      isVariantRow: false,
+    });
+
+    for (const variant of product.variants) {
+      const vp = variant.vendorPrices.find(item => item.vendorId === supplierId);
+      if (!vp) {
+        continue;
+      }
+      const variantLabel = variant.tier2Value
+        ? `${variant.tier1Value} / ${variant.tier2Value}`
+        : variant.tier1Value;
+      rows.push({
+        key: `${product.id}-${variant.id}`,
+        productId: product.id,
+        title: variantLabel,
+        code: resolveKolamSupplierItemCode(product, variant),
+        brandLabel: '',
+        photoUrl,
+        vendorPrice: vp.price,
+        isVariantRow: true,
+      });
+    }
+  }
+
+  return rows;
+}
+
+export function flattenKolamSupplierSpeciesRows(
+  species: KolamVendorCatalogSpecies[],
+  supplierId: string,
+): KolamSupplierCatalogSpeciesRow[] {
+  const rows: KolamSupplierCatalogSpeciesRow[] = [];
+
+  for (const item of species) {
+    const photoUrl = item.photoUrls[0] || '';
+    const commonName = item.commonName || item.localName || '';
+
+    if (!item.variants.length) {
+      const vp = item.vendorPrices.find(price => price.vendorId === supplierId);
+      rows.push({
+        key: item.id,
+        speciesId: item.id,
+        title: item.scientificName,
+        commonName,
+        code: resolveKolamSupplierItemCode(item),
+        photoUrl,
+        vendorPrice: vp?.price ?? null,
+        isVariantRow: false,
+      });
+      continue;
+    }
+
+    rows.push({
+      key: item.id,
+      speciesId: item.id,
+      title: item.scientificName,
+      commonName,
+      code: '',
+      photoUrl,
+      vendorPrice: null,
+      isVariantRow: false,
+    });
+
+    for (const variant of item.variants) {
+      const vp = variant.vendorPrices.find(price => price.vendorId === supplierId);
+      const variantLabel = variant.tier2Value
+        ? `${variant.tier1Value} / ${variant.tier2Value}`
+        : variant.tier1Value;
+      rows.push({
+        key: `${item.id}-${variant.id}`,
+        speciesId: item.id,
+        title: variantLabel,
+        commonName: '',
+        code: resolveKolamSupplierItemCode(item, variant),
+        photoUrl,
+        vendorPrice: vp?.price ?? null,
+        isVariantRow: true,
+      });
+    }
+  }
+
+  return rows;
+}
+
 function normalizeVendorStatus(value: string): KolamVendorStatus | string {
   const normalized = value.trim().toLowerCase();
   if (
@@ -349,6 +574,161 @@ function normalizeBrandRefs(value: unknown): KolamVendorBrandRef[] {
       return { id: id || name, name: name || id };
     })
     .filter((item): item is KolamVendorBrandRef => Boolean(item));
+}
+
+function normalizeCatalogProducts(value: unknown): KolamVendorCatalogProduct[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value
+    .map(item => {
+      const record = asRecord(item);
+      const id = getString(record, '_id') || getString(record, 'id');
+      const name = getString(record, 'name');
+      if (!id || !name) {
+        return null;
+      }
+      const photos = normalizeStringArray(record.photos);
+      return {
+        id,
+        name,
+        sku: getString(record, 'sku'),
+        productCode: getString(record, 'productCode'),
+        type: getString(record, 'type'),
+        photos,
+        photoUrls: photos
+          .map(photo => getKolamFileUrl(photo) ?? photo)
+          .filter(Boolean),
+        brandNames: normalizeBrandNames(record.brand),
+        price: getNumber(record, 'price') ?? 0,
+        vendorPrices: normalizeVendorPrices(record.vendorPrices),
+        variants: normalizeCatalogVariants(record.variants),
+      } satisfies KolamVendorCatalogProduct;
+    })
+    .filter((item): item is KolamVendorCatalogProduct => Boolean(item));
+}
+
+function normalizeCatalogSpecies(value: unknown): KolamVendorCatalogSpecies[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value
+    .map(item => {
+      const record = asRecord(item);
+      const id = getString(record, '_id') || getString(record, 'id');
+      const scientificName = getString(record, 'scientificName');
+      if (!id || !scientificName) {
+        return null;
+      }
+      const photos = normalizeStringArray(record.photos);
+      return {
+        id,
+        scientificName,
+        commonName: getString(record, 'commonName'),
+        localName: getString(record, 'localName'),
+        sku: getString(record, 'sku'),
+        productCode: getString(record, 'productCode'),
+        photos,
+        photoUrls: photos
+          .map(photo => getKolamFileUrl(photo) ?? photo)
+          .filter(Boolean),
+        vendorPrices: normalizeVendorPrices(record.vendorPrices),
+        variants: normalizeCatalogVariants(record.variants),
+      } satisfies KolamVendorCatalogSpecies;
+    })
+    .filter((item): item is KolamVendorCatalogSpecies => Boolean(item));
+}
+
+function normalizeCatalogPackings(value: unknown): KolamVendorCatalogPacking[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value
+    .map(item => {
+      const record = asRecord(item);
+      const id = getString(record, '_id') || getString(record, 'id');
+      const name = getString(record, 'name');
+      if (!id || !name) {
+        return null;
+      }
+      return {
+        id,
+        name,
+        category: getString(record, 'category'),
+        price: getNumber(record, 'price') ?? 0,
+        cost: getNumber(record, 'cost') ?? 0,
+        stock: getNumber(record, 'stock') ?? 0,
+        enabled: record.enabled !== false,
+      } satisfies KolamVendorCatalogPacking;
+    })
+    .filter((item): item is KolamVendorCatalogPacking => Boolean(item));
+}
+
+function normalizeCatalogVariants(value: unknown): KolamVendorCatalogVariant[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value
+    .map(item => {
+      const record = asRecord(item);
+      const id = getString(record, '_id') || getString(record, 'id');
+      const tier1Value = getString(record, 'tier1Value');
+      if (!id || !tier1Value) {
+        return null;
+      }
+      return {
+        id,
+        tier1Value,
+        tier2Value: getString(record, 'tier2Value'),
+        sku: getString(record, 'sku'),
+        productCode: getString(record, 'productCode'),
+        vendorPrices: normalizeVendorPrices(record.vendorPrices),
+      } satisfies KolamVendorCatalogVariant;
+    })
+    .filter((item): item is KolamVendorCatalogVariant => Boolean(item));
+}
+
+function normalizeVendorPrices(value: unknown): KolamVendorPriceRef[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value
+    .map(item => {
+      const record = asRecord(item);
+      const vendor = record.vendor;
+      const vendorId =
+        typeof vendor === 'string'
+          ? vendor.trim()
+          : getString(asRecord(vendor), '_id') ||
+            getString(asRecord(vendor), 'id');
+      if (!vendorId) {
+        return null;
+      }
+      return {
+        vendorId,
+        price: getNumber(record, 'price') ?? 0,
+        shippingCost: getNumber(record, 'shippingCost') ?? 0,
+        link: getString(record, 'link'),
+      } satisfies KolamVendorPriceRef;
+    })
+    .filter((item): item is KolamVendorPriceRef => Boolean(item));
+}
+
+function normalizeBrandNames(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value
+      .map(item => {
+        if (typeof item === 'string') {
+          return item.trim();
+        }
+        const record = asRecord(item);
+        return getString(record, 'name');
+      })
+      .filter(Boolean);
+  }
+  const record = asRecord(value);
+  const name = getString(record, 'name');
+  return name ? [name] : [];
 }
 
 function normalizeStringArray(value: unknown) {

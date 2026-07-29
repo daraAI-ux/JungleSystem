@@ -2,6 +2,8 @@ import {
   createEmptyKolamVendorFormState,
   createKolamVendorFormState,
   createKolamVendorSavePayload,
+  flattenKolamSupplierProductRows,
+  flattenKolamSupplierSpeciesRows,
   formatKolamVendorAddress,
   getKolamSupplierBreadcrumbPath,
   getKolamSupplierEditRouteId,
@@ -153,6 +155,106 @@ describe('kolam vendor / supplier domain', () => {
     expect(getKolamVendorStatusLabel(detail.status)).toBe('Diblacklist');
   });
 
+  it('flattens catalog product and species rows for detail tabs', () => {
+    const vendor = normalizeKolamVendorDetail({
+      data: {
+        _id: 'sup1',
+        name: 'Pemasok Katalog',
+        products: [
+          {
+            _id: 'p1',
+            name: 'Produk A',
+            sku: 'SKU-A',
+            type: 'product',
+            price: 10000,
+            brand: { _id: 'b1', name: 'Merek A' },
+            photos: ['uploads/p1.jpg'],
+            vendorPrices: [{ vendor: 'sup1', price: 9000, shippingCost: 0 }],
+          },
+          {
+            _id: 'p2',
+            name: 'Produk B',
+            brand: [{ name: 'Merek B' }],
+            variants: [
+              {
+                _id: 'v1',
+                tier1Value: 'S',
+                sku: 'B-S',
+                vendorPrices: [
+                  { vendor: { _id: 'sup1' }, price: 12000, shippingCost: 0 },
+                ],
+              },
+              {
+                _id: 'v2',
+                tier1Value: 'L',
+                sku: 'B-L',
+                vendorPrices: [
+                  { vendor: { _id: 'other' }, price: 15000, shippingCost: 0 },
+                ],
+              },
+            ],
+          },
+        ],
+        species: [
+          {
+            _id: 's1',
+            scientificName: 'Rana sp.',
+            commonName: 'Katak',
+            productCode: 'SP-1',
+            vendorPrices: [{ vendor: 'sup1', price: 5000 }],
+          },
+        ],
+        packings: [
+          {
+            _id: 'pk1',
+            name: 'Box Kecil',
+            category: 'Box',
+            price: 2000,
+            cost: 1000,
+            stock: 4,
+          },
+        ],
+      },
+    });
+
+    expect(vendor.products).toHaveLength(2);
+    expect(vendor.species).toHaveLength(1);
+    expect(vendor.packings).toMatchObject([
+      { id: 'pk1', name: 'Box Kecil', category: 'Box', stock: 4 },
+    ]);
+
+    const productRows = flattenKolamSupplierProductRows(
+      vendor.products,
+      vendor.id,
+    );
+    expect(productRows.map(row => row.key)).toEqual(['p1', 'p2', 'p2-v1']);
+    expect(productRows[0]).toMatchObject({
+      title: 'Produk A',
+      code: 'SKU-A',
+      brandLabel: 'Merek A',
+      vendorPrice: 9000,
+      isVariantRow: false,
+    });
+    expect(productRows[2]).toMatchObject({
+      title: 'S',
+      code: 'B-S',
+      vendorPrice: 12000,
+      isVariantRow: true,
+    });
+
+    const speciesRows = flattenKolamSupplierSpeciesRows(
+      vendor.species,
+      vendor.id,
+    );
+    expect(speciesRows).toHaveLength(1);
+    expect(speciesRows[0]).toMatchObject({
+      title: 'Rana sp.',
+      commonName: 'Katak',
+      code: 'SP-1',
+      vendorPrice: 5000,
+    });
+  });
+
   it('keeps picker-safe defaults when optional fields missing', () => {
     const vendor = normalizeKolamVendor({
       _id: 'v3',
@@ -166,6 +268,9 @@ describe('kolam vendor / supplier domain', () => {
       status: 'active',
       isOfficialDistributor: false,
       brands: [],
+      products: [],
+      species: [],
+      packings: [],
       photos: [],
       poCount: 0,
     });

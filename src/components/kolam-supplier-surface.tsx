@@ -3,14 +3,18 @@ import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { getKolamFormSection } from '../domain/kolam-form';
 import { getKolamTableColumns } from '../domain/kolam-table';
 import {
+  flattenKolamSupplierProductRows,
+  flattenKolamSupplierSpeciesRows,
   formatKolamVendorAddress,
   getKolamVendorStatusIntent,
   getKolamVendorStatusLabel,
   KOLAM_SUPPLIER_ROOT,
+  type KolamSupplierCatalogTab,
   type KolamVendor,
   type KolamVendorStatus,
 } from '../domain/kolam-vendor';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
+import { formatRupiah } from '../lib/money';
 import {
   useKolamSupplierController,
   type KolamSupplierController,
@@ -464,6 +468,11 @@ function KolamSupplierDetail({
         }}
       />
 
+      <KolamSupplierCatalogTabs
+        onRouteChange={onRouteChange}
+        vendor={vendor}
+      />
+
       <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
         <Text style={styles.sectionTitle}>Informasi pemasok</Text>
         <KolamDescriptionList
@@ -552,6 +561,221 @@ function KolamSupplierDetail({
         }}
       />
     </View>
+  );
+}
+
+function KolamSupplierCatalogTabs({
+  onRouteChange,
+  vendor,
+}: {
+  onRouteChange?: (route: string) => void;
+  vendor: KolamVendor;
+}) {
+  const [tab, setTab] = React.useState<KolamSupplierCatalogTab>('products');
+  const productRows = React.useMemo(
+    () => flattenKolamSupplierProductRows(vendor.products, vendor.id),
+    [vendor.id, vendor.products],
+  );
+  const speciesRows = React.useMemo(
+    () => flattenKolamSupplierSpeciesRows(vendor.species, vendor.id),
+    [vendor.id, vendor.species],
+  );
+
+  return (
+    <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
+      <Text style={styles.sectionTitle}>Katalog pemasok</Text>
+      <View style={styles.segmentRow}>
+        {(
+          [
+            { id: 'products', label: 'Produk & Raw' },
+            { id: 'species', label: 'Species' },
+            { id: 'packings', label: 'Bahan Kemasan' },
+          ] as const
+        ).map(item => (
+          <KolamButton
+            intent={tab === item.id ? 'primary' : 'outline'}
+            key={item.id}
+            label={item.label}
+            onPress={() => setTab(item.id)}
+          />
+        ))}
+      </View>
+
+      {tab === 'products' ? (
+        productRows.length ? (
+          <View style={styles.catalogList}>
+            {productRows.map(row => (
+              <Pressable
+                key={row.key}
+                onPress={() =>
+                  row.isVariantRow
+                    ? undefined
+                    : onRouteChange?.(`/products/${row.productId}`)
+                }
+                style={[
+                  styles.catalogRow,
+                  row.isVariantRow ? styles.catalogRowVariant : null,
+                ]}
+              >
+                {!row.isVariantRow && row.photoUrl ? (
+                  <KolamRemoteImage
+                    accessibilityLabel={row.title}
+                    resizeMode="cover"
+                    scope="product"
+                    sourceUri={row.photoUrl}
+                    style={styles.catalogThumb}
+                  />
+                ) : !row.isVariantRow ? (
+                  <View style={styles.catalogThumbFallback}>
+                    <Text style={styles.thumbFallbackText}>
+                      {row.title.slice(0, 1).toUpperCase()}
+                    </Text>
+                  </View>
+                ) : (
+                  <Text style={styles.catalogVariantMark}>↳</Text>
+                )}
+                <View style={styles.catalogCopy}>
+                  <Text
+                    numberOfLines={2}
+                    style={[
+                      styles.catalogTitle,
+                      row.isVariantRow ? styles.catalogVariantTitle : null,
+                    ]}
+                  >
+                    {row.title}
+                  </Text>
+                  <Text numberOfLines={1} style={styles.rowMeta}>
+                    {[row.code || null, row.brandLabel || null]
+                      .filter(Boolean)
+                      .join(' · ') || '—'}
+                  </Text>
+                </View>
+                <Text style={styles.catalogPrice}>
+                  {row.vendorPrice != null
+                    ? formatRupiah(row.vendorPrice)
+                    : '—'}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        ) : (
+          <KolamEmptyState
+            compact
+            message="Belum ada produk atau bahan baku tertaut ke pemasok ini."
+            title="Tidak ada produk"
+          />
+        )
+      ) : null}
+
+      {tab === 'species' ? (
+        speciesRows.length ? (
+          <View style={styles.catalogList}>
+            {speciesRows.map(row => (
+              <Pressable
+                key={row.key}
+                onPress={() =>
+                  row.isVariantRow
+                    ? undefined
+                    : onRouteChange?.(`/species/${row.speciesId}`)
+                }
+                style={[
+                  styles.catalogRow,
+                  row.isVariantRow ? styles.catalogRowVariant : null,
+                ]}
+              >
+                {!row.isVariantRow && row.photoUrl ? (
+                  <KolamRemoteImage
+                    accessibilityLabel={row.title}
+                    resizeMode="cover"
+                    scope="species"
+                    sourceUri={row.photoUrl}
+                    style={styles.catalogThumb}
+                  />
+                ) : !row.isVariantRow ? (
+                  <View style={styles.catalogThumbFallback}>
+                    <Text style={styles.thumbFallbackText}>
+                      {row.title.slice(0, 1).toUpperCase()}
+                    </Text>
+                  </View>
+                ) : (
+                  <Text style={styles.catalogVariantMark}>↳</Text>
+                )}
+                <View style={styles.catalogCopy}>
+                  <Text
+                    numberOfLines={2}
+                    style={[
+                      styles.catalogTitle,
+                      row.isVariantRow ? styles.catalogVariantTitle : null,
+                      !row.isVariantRow ? styles.catalogItalic : null,
+                    ]}
+                  >
+                    {row.title}
+                  </Text>
+                  <Text numberOfLines={1} style={styles.rowMeta}>
+                    {[row.code || null, row.commonName || null]
+                      .filter(Boolean)
+                      .join(' · ') || '—'}
+                  </Text>
+                </View>
+                <Text style={styles.catalogPrice}>
+                  {row.vendorPrice != null
+                    ? formatRupiah(row.vendorPrice)
+                    : '—'}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        ) : (
+          <KolamEmptyState
+            compact
+            message="Belum ada species tertaut ke pemasok ini."
+            title="Tidak ada species"
+          />
+        )
+      ) : null}
+
+      {tab === 'packings' ? (
+        vendor.packings.length ? (
+          <View style={styles.catalogList}>
+            {vendor.packings.map(packing => (
+              <Pressable
+                key={packing.id}
+                onPress={() =>
+                  onRouteChange?.(`/packing-materials/${packing.id}`)
+                }
+                style={styles.catalogRow}
+              >
+                <View style={styles.catalogCopy}>
+                  <Text numberOfLines={2} style={styles.catalogTitle}>
+                    {packing.name}
+                  </Text>
+                  <Text numberOfLines={1} style={styles.rowMeta}>
+                    {[
+                      packing.category || null,
+                      `Stok ${packing.stock}`,
+                      packing.cost > 0
+                        ? `HPP ${formatRupiah(packing.cost)}`
+                        : null,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </Text>
+                </View>
+                <Text style={styles.catalogPrice}>
+                  {formatRupiah(packing.price)}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        ) : (
+          <KolamEmptyState
+            compact
+            message="Belum ada bahan kemasan dari pemasok ini."
+            title="Tidak ada kemasan"
+          />
+        )
+      ) : null}
+    </KolamContentFrame>
   );
 }
 
@@ -1199,6 +1423,62 @@ const styles = StyleSheet.create({
   },
   brandPicker: {
     gap: 8,
+  },
+  catalogList: {
+    gap: 6,
+  },
+  catalogRow: {
+    alignItems: 'center',
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  catalogRowVariant: {
+    backgroundColor: V.colors.muted,
+    marginLeft: 18,
+  },
+  catalogThumb: {
+    borderRadius: 6,
+    height: 36,
+    width: 36,
+  },
+  catalogThumbFallback: {
+    alignItems: 'center',
+    backgroundColor: V.colors.muted,
+    borderRadius: 6,
+    height: 36,
+    justifyContent: 'center',
+    width: 36,
+  },
+  catalogVariantMark: {
+    color: V.colors.mutedFg,
+    fontSize: 14,
+    textAlign: 'center',
+    width: 36,
+  },
+  catalogCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  catalogTitle: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  catalogVariantTitle: {
+    fontWeight: '500',
+  },
+  catalogItalic: {
+    fontStyle: 'italic',
+  },
+  catalogPrice: {
+    color: V.colors.fg,
+    fontSize: 12,
+    fontWeight: '600',
   },
   photoGrid: {
     flexDirection: 'row',
