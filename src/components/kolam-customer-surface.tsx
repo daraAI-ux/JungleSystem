@@ -87,7 +87,11 @@ export function KolamCustomerSurface({
   const editMatch = routePath.match(/^\/customers\/([^/]+)\/edit$/);
 
   if (routePath === '/customers') {
-    return <KolamCustomerListSurface onRouteChange={onRouteChange} />;
+    return (
+      <View style={styles.surface}>
+        <KolamCustomerListSurface onRouteChange={onRouteChange} />
+      </View>
+    );
   }
 
   if (routePath === '/customers/create') {
@@ -164,7 +168,7 @@ function KolamCustomerListSurface({
           setError(
             errorResult instanceof Error
               ? errorResult.message
-              : 'Gagal memuat pelanggan dari server.',
+              : 'Gagal memuat pelanggan.',
           );
         })
         .finally(() => {
@@ -296,8 +300,8 @@ function KolamCustomerListSurface({
                 searchEmpty
                   ? shouldSearchApi
                     ? 'Coba kata kunci lain'
-                    : 'Mencari di server untuk hasil lainnya...'
-                  : 'Data pelanggan belum tersedia dari server.'
+                    : 'Mencari pelanggan lain...'
+                  : 'Belum ada data pelanggan.'
               }
               title={
                 loading
@@ -401,7 +405,7 @@ function KolamCustomerDetailSurface({
     return (
       <View style={styles.detailSurface}>
         <KolamEmptyState
-          message="Mengambil detail pelanggan dari server."
+          message="Memuat detail pelanggan."
           title="Memuat pelanggan..."
         />
       </View>
@@ -412,7 +416,7 @@ function KolamCustomerDetailSurface({
     return (
       <View style={styles.detailSurface}>
         <KolamEmptyState
-          message={error || 'Pelanggan tidak ditemukan dari server.'}
+          message={error || 'Pelanggan tidak ditemukan.'}
           title="Detail pelanggan belum tersedia"
         />
         <KolamButton
@@ -535,12 +539,12 @@ function KolamCustomerDetailSurface({
             variant="settingsWebConfig">
             <View style={styles.photoSectionHeader}>
               <SectionTitle
-                description="Foto pelanggan dari server Kolam"
+                description="Foto pelanggan"
                 title="Foto"
               />
               <KolamButton
                 disabled={photoSaving}
-                label={photoSaving ? 'Memproses...' : 'Upload Foto'}
+                label={photoSaving ? 'Memproses...' : 'Unggah Foto'}
                 onPress={() => void handleUploadPhoto()}
               />
             </View>
@@ -796,7 +800,7 @@ function KolamCustomerFormSurface({
     return (
       <View style={styles.detailSurface}>
         <KolamEmptyState
-          message="Mengambil data pelanggan dari server."
+          message="Memuat data pelanggan."
           title="Memuat form pelanggan..."
         />
       </View>
@@ -1309,6 +1313,13 @@ function getCustomerExternalDotStyle(account: KolamCustomerExternalAccount) {
 }
 
 const styles = StyleSheet.create({
+  surface: {
+    alignSelf: 'center',
+    gap: 16,
+    maxWidth: 1280,
+    padding: 24,
+    width: '100%',
+  },
   stack: {
     gap: 12,
   },
