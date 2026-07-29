@@ -1,6 +1,14 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { SvgXml } from 'react-native-svg';
+import WebView from 'react-native-webview';
 import type {
   SettingsTabId,
   SettingsWebConfigField,
@@ -17,7 +25,10 @@ import { KolamTextFieldRow } from './kolam-text-field-row';
 import { KolamToggleRow } from './kolam-toggle-row';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
-import { geocodeKolamStaffAttendanceWorkSite } from '../services/kolam-api';
+import {
+  geocodeKolamStaffAttendanceWorkSite,
+  getKolamGoogleMapsBrowserKey,
+} from '../services/kolam-api';
 import type {
   KolamAnnouncementBanner,
   KolamBlog,
@@ -65,6 +76,9 @@ import { KolamMediaPlayer } from './kolam-media-player';
 
 const DEFAULT_NOTIFICATION_BEEP_URI =
   'data:audio/wav;base64,UklGRqQMAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YYAMAAAAAOEdCy4UKUERhPFs2H/R6d8P/Y0bZy1qKvUTWPQU2jjR1N0g+h4ZlSyVK5UWN/fi2yDR4ts395UWlSuVLB4ZIPrU3TjRFNpY9PUTaipnLY0bD/3p33/RbNiE8UERFCkLLuEdAAAf4vXR7Na/7nwOlCeBLhcg8QJz5JnSltUL7KgL7CXILiwi4AXi5mvTa9Rr6ckIHiTgLh4kyQhr6WvUa9Pi5uAFLCLILuwlqAsL7JbVmdJz5PECFyCBLpQnfA6/7uzW9dEf4gAA4R0LLhQpQRGE8WzYf9Hp3w/9jRtnLWoq9RNY9BTaONHU3SD6HhmVLJUrlRY39+LbINHi2zf3lRaVK5UsHhkg+tTdONEU2lj09RNqKmctjRsP/enff9Fs2ITxQREUKQsu4R0AAB/i9dHs1r/ufA6UJ4EuFyDxAnPkmdKW1QvsqAvsJcguLCLgBeLma9Nr1GvpyQgeJOAuHiTJCGvpa9Rr0+Lm4AUsIsgu7CWoCwvsltWZ0nPk8QIXIIEulCd8Dr/u7Nb10R/iAADhHQsuFClBEYTxbNh/0enfD/2NG2ctair1E1j0FNo40dTdIPoeGZUslSuVFjf34tsg0eLbN/eVFpUrlSweGSD61N040RTaWPT1E2oqZy2NGw/96d9/0WzYhPFBERQpCy7hHQAAH+L10ezWv+58DpQngS4XIPECc+SZ0pbVC+yoC+wlyC4sIuAF4uZr02vUa+nJCB4k4C4eJMkIa+lr1GvT4ubgBSwiyC7sJagLC+yW1ZnSc+TxAhcggS6UJ3wOv+7s1vXRH+IAAOEdCy4UKUERhPFs2H/R6d8P/Y0bZy1qKvUTWPQU2jjR1N0g+h4ZlSyVK5UWN/fi2yDR4ts395UWlSuVLB4ZIPrU3TjRFNpY9PUTaipnLY0bD/3p33/RbNiE8UERFCkLLuEdAAAf4vXR7Na/7nwOlCeBLhcg8QJz5JnSltUL7KgL7CXILiwi4AXi5mvTa9Rr6ckIHiTgLh4kyQhr6WvUa9Pi5uAFLCLILuwlqAsL7JbVmdJz5PECFyCBLpQnfA6/7uzW9dEf4g==';
+
+const KolamWebView = WebView as unknown as React.ComponentType<any>;
+const MASKED_SECRET_PLACEHOLDER = '********';
 
 const financialShellSections: Array<{
   id: string;
@@ -1058,6 +1072,11 @@ export function KolamSettingsWebConfigSurface({
   const showKpiSettings = activeTabId === 'kpi';
   const generalFormSections = sections.filter(section => section.id === 'logo');
   const settingsFieldWidth = 460;
+  const [storedMapsBrowserKey, setStoredMapsBrowserKey] = React.useState('');
+  const [mapsBrowserKeyStatus, setMapsBrowserKeyStatus] = React.useState<
+    'idle' | 'loading' | 'ready' | 'error'
+  >('idle');
+  const [mapsBrowserKeyMessage, setMapsBrowserKeyMessage] = React.useState('');
   const umumFieldWidth = 240;
   const chatPluginEnabled = draft.pluginControls.chat;
   const daraPluginEnabled = draft.pluginControls.dara;
@@ -1506,6 +1525,130 @@ export function KolamSettingsWebConfigSurface({
       </View>
     );
   };
+
+  const originPinpointCoordinates = React.useMemo(() => {
+    const latitude = parseOriginCoordinate(draft.originLatitude);
+    const longitude = parseOriginCoordinate(draft.originLongitude);
+
+    if (latitude === null || longitude === null) {
+      return null;
+    }
+
+    return { latitude, longitude };
+  }, [draft.originLatitude, draft.originLongitude]);
+  const originAddressLabel = React.useMemo(
+    () =>
+      [
+        draft.originAddressLine1,
+        draft.originCity,
+        draft.originProvince,
+        draft.originPostalCode,
+      ]
+        .map(value => value.trim())
+        .filter(Boolean)
+        .join(', ') || 'Asal pengiriman',
+    [
+      draft.originAddressLine1,
+      draft.originCity,
+      draft.originPostalCode,
+      draft.originProvince,
+    ],
+  );
+  const mapsBrowserKeyFromDraft = stripMaskedSecret(
+    draft.googleMapsBrowserApiKey,
+  );
+  const activeMapsBrowserKey =
+    mapsBrowserKeyFromDraft || storedMapsBrowserKey.trim();
+  const originPinpointMapHtml = React.useMemo(() => {
+    if (!originPinpointCoordinates || !activeMapsBrowserKey) {
+      return '';
+    }
+
+    return createOriginPinpointMapHtml({
+      address: originAddressLabel,
+      apiKey: activeMapsBrowserKey,
+      coordinates: originPinpointCoordinates,
+    });
+  }, [activeMapsBrowserKey, originAddressLabel, originPinpointCoordinates]);
+  const shouldFetchStoredMapsBrowserKey =
+    showStoreShippingSettings &&
+    draft.googleMapsBrowserApiKey === MASKED_SECRET_PLACEHOLDER &&
+    !storedMapsBrowserKey;
+
+  React.useEffect(() => {
+    let cancelled = false;
+
+    if (!shouldFetchStoredMapsBrowserKey) {
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    setMapsBrowserKeyStatus('loading');
+    setMapsBrowserKeyMessage('Memuat Google Maps API key tersimpan...');
+    getKolamGoogleMapsBrowserKey()
+      .then(key => {
+        if (cancelled) {
+          return;
+        }
+
+        setStoredMapsBrowserKey(key);
+        setMapsBrowserKeyStatus(key ? 'ready' : 'idle');
+        setMapsBrowserKeyMessage(
+          key
+            ? ''
+            : 'Google Maps API key browser belum aktif. Isi key di field Pengiriman untuk menampilkan peta.',
+        );
+      })
+      .catch(error => {
+        if (cancelled) {
+          return;
+        }
+
+        setMapsBrowserKeyStatus('error');
+        setMapsBrowserKeyMessage(
+          error instanceof Error
+            ? error.message
+            : 'Gagal memuat Google Maps API key browser.',
+        );
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [shouldFetchStoredMapsBrowserKey]);
+
+  const handleOriginPinpointMessage = React.useCallback(
+    (event: { nativeEvent?: { data?: string } }) => {
+      if (disabled) {
+        return;
+      }
+
+      try {
+        const payload = JSON.parse(event.nativeEvent?.data ?? '{}') as {
+          latitude?: unknown;
+          longitude?: unknown;
+          type?: string;
+        };
+        const latitude = Number(payload.latitude);
+        const longitude = Number(payload.longitude);
+
+        if (
+          payload.type !== 'origin-pinpoint-change' ||
+          !Number.isFinite(latitude) ||
+          !Number.isFinite(longitude)
+        ) {
+          return;
+        }
+
+        setDraftField('originLatitude', latitude.toFixed(7));
+        setDraftField('originLongitude', longitude.toFixed(7));
+      } catch {
+        // Ignore malformed messages from the WebView boundary.
+      }
+    },
+    [disabled, setDraftField],
+  );
 
   return (
     <KolamContentFrame variant="settingsWebConfig">
@@ -3923,12 +4066,38 @@ export function KolamSettingsWebConfigSurface({
                   style: styles.marketplaceOverviewLabel,
                 },
                 {
-                  id: 'native-map-planned',
-                  text: 'Map native planned: gunakan latitude/longitude sebagai fallback koordinat produksi.',
+                  id: 'pinpoint-map-meta',
+                  text: 'Klik peta atau geser pin untuk mengubah koordinat asal pengiriman.',
                   style: styles.marketplaceOverviewMeta,
                 },
               ]}
             />
+            {originPinpointMapHtml ? (
+              <View style={styles.originPinpointMapFrame}>
+                <KolamWebView
+                  javaScriptEnabled
+                  originWhitelist={['*']}
+                  source={{ html: originPinpointMapHtml }}
+                  style={styles.originPinpointMap}
+                  useWebView2={Platform.OS === 'windows'}
+                  onMessage={handleOriginPinpointMessage}
+                />
+              </View>
+            ) : (
+              <View style={styles.originPinpointMapEmpty}>
+                <Text style={styles.originPinpointMapEmptyTitle}>
+                  Peta belum bisa ditampilkan
+                </Text>
+                <Text style={styles.originPinpointMapEmptyText}>
+                  {originPinpointCoordinates
+                    ? mapsBrowserKeyStatus === 'loading'
+                      ? mapsBrowserKeyMessage
+                      : mapsBrowserKeyMessage ||
+                        'Aktifkan Google Maps API key browser di tab Pengiriman.'
+                    : 'Isi latitude dan longitude asal pengiriman untuk menampilkan peta.'}
+                </Text>
+              </View>
+            )}
           </View>
 
           <View style={styles.marketplaceControlSection}>
@@ -5455,6 +5624,157 @@ function KpiSettingsPanel({
       </View>
     </>
   );
+}
+
+function parseOriginCoordinate(value: string) {
+  const coordinate = Number(value.trim().replace(',', '.'));
+
+  return Number.isFinite(coordinate) ? coordinate : null;
+}
+
+function stripMaskedSecret(value: string) {
+  const trimmed = value.trim();
+
+  return trimmed && trimmed !== MASKED_SECRET_PLACEHOLDER ? trimmed : '';
+}
+
+function createOriginPinpointMapHtml({
+  address,
+  apiKey,
+  coordinates,
+}: {
+  address: string;
+  apiKey: string;
+  coordinates: { latitude: number; longitude: number };
+}) {
+  const safeAddress = JSON.stringify(address);
+  const safeApiKey = encodeURIComponent(apiKey);
+  const latitude = Number(coordinates.latitude.toFixed(7));
+  const longitude = Number(coordinates.longitude.toFixed(7));
+
+  return `<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    html, body, #map { height: 100%; margin: 0; padding: 0; }
+    body { background: #f9fafb; color: #111827; font-family: Arial, sans-serif; overflow: hidden; }
+    #map { width: 100%; }
+    .label {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      right: 12px;
+      z-index: 2;
+      background: rgba(255,255,255,0.94);
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      box-shadow: 0 8px 20px rgba(15,23,42,0.10);
+      color: #111827;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 16px;
+      max-width: 420px;
+      padding: 8px 10px;
+    }
+    .footer {
+      position: absolute;
+      left: 12px;
+      right: 12px;
+      bottom: 12px;
+      z-index: 2;
+      align-items: center;
+      background: rgba(255,255,255,0.94);
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      box-shadow: 0 8px 20px rgba(15,23,42,0.10);
+      color: #4b5563;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 12px;
+      line-height: 16px;
+      padding: 8px 10px;
+    }
+    .coords { color: #111827; font-variant-numeric: tabular-nums; font-weight: 700; white-space: nowrap; }
+    .error {
+      align-items: center;
+      display: flex;
+      height: 100%;
+      justify-content: center;
+      padding: 18px;
+      text-align: center;
+    }
+    .error div { max-width: 420px; }
+    .error strong { color: #991b1b; display: block; font-size: 14px; margin-bottom: 6px; }
+    .error span { color: #6b7280; font-size: 12px; line-height: 18px; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <div class="label" id="address"></div>
+  <div class="footer">
+    <span>Klik peta atau geser pin untuk mengubah koordinat.</span>
+    <span class="coords" id="coords"></span>
+  </div>
+  <script>
+    const address = ${safeAddress};
+    const initialPosition = { lat: ${latitude}, lng: ${longitude} };
+    let map;
+    let marker;
+
+    document.getElementById('address').textContent = address || 'Asal pengiriman';
+
+    function setCoords(position, notifyNative) {
+      const lat = Number(position.lat);
+      const lng = Number(position.lng);
+      document.getElementById('coords').textContent = lat.toFixed(7) + ', ' + lng.toFixed(7);
+      if (notifyNative && window.ReactNativeWebView) {
+        window.ReactNativeWebView.postMessage(JSON.stringify({
+          type: 'origin-pinpoint-change',
+          latitude: lat,
+          longitude: lng
+        }));
+      }
+    }
+
+    function initOriginPinpointMap() {
+      map = new google.maps.Map(document.getElementById('map'), {
+        center: initialPosition,
+        zoom: 17,
+        disableDefaultUI: true,
+        zoomControl: true,
+        clickableIcons: false,
+        gestureHandling: 'greedy'
+      });
+      marker = new google.maps.Marker({
+        position: initialPosition,
+        map,
+        draggable: true,
+        title: address || 'Asal pengiriman'
+      });
+      marker.addListener('dragend', function() {
+        const next = marker.getPosition();
+        if (!next) return;
+        setCoords({ lat: next.lat(), lng: next.lng() }, true);
+      });
+      map.addListener('click', function(event) {
+        if (!event.latLng) return;
+        marker.setPosition(event.latLng);
+        map.panTo(event.latLng);
+        setCoords({ lat: event.latLng.lat(), lng: event.latLng.lng() }, true);
+      });
+      setCoords(initialPosition, false);
+    }
+
+    function showMapError() {
+      document.body.innerHTML = '<div class="error"><div><strong>Gagal memuat Google Maps</strong><span>Periksa Google Maps API key browser, billing, dan koneksi jaringan.</span></div></div>';
+    }
+  </script>
+  <script async defer src="https://maps.googleapis.com/maps/api/js?key=${safeApiKey}&v=weekly&callback=initOriginPinpointMap" onerror="showMapError()"></script>
+</body>
+</html>`;
 }
 
 type KpiLevelEditorRow = {
@@ -7660,6 +7980,32 @@ const styles = StyleSheet.create({
     height: 34,
     justifyContent: 'center',
     width: 34,
+  },
+  originPinpointMap: {
+    backgroundColor: '#f9fafb',
+    flex: 1,
+  },
+  originPinpointMapEmpty: {
+    backgroundColor: '#f9fafb',
+    gap: 4,
+    minHeight: 160,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+  },
+  originPinpointMapEmptyText: {
+    color: '#6b7280',
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  originPinpointMapEmptyTitle: {
+    color: '#111827',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  originPinpointMapFrame: {
+    backgroundColor: '#f9fafb',
+    height: 300,
+    overflow: 'hidden',
   },
   workSiteCoordinateGrid: {
     flexDirection: 'row',

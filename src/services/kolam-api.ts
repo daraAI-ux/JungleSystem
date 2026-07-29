@@ -1467,6 +1467,14 @@ export function getKolamWebSettingVersions(): Promise<KolamWebSettingVersions> {
   return kolamGet<KolamWebSettingVersions>('/websetting/version/all');
 }
 
+export async function getKolamGoogleMapsBrowserKey(): Promise<string> {
+  const response = await kolamGet<{googleMapsBrowserApiKey?: string}>(
+    '/websetting/google-maps-browser-key',
+  );
+
+  return String(response.googleMapsBrowserApiKey ?? '').trim();
+}
+
 export async function updateKolamWebSetting(
   body: UpdateKolamWebSettingBody,
 ): Promise<KolamWebSetting> {
