@@ -4217,90 +4217,95 @@ export function KolamSettingsWebConfigSurface({
                 )}
               </View>
               <View style={styles.shippingStoreHoursBox}>
-                <KolamTextFieldRow
-                  variant="settingsForm"
-                  fieldWidth={settingsFieldWidth}
-                  label="Zona waktu"
-                  description="Zona waktu jadwal toko."
+                <TextInput
+                  accessibilityLabel="Zona waktu jadwal toko"
+                  editable={!disabled}
                   value={draft.storeOperatingHoursTimezone}
                   onChangeText={value =>
                     setDraftField('storeOperatingHoursTimezone', value)
                   }
                   placeholder="Asia/Jakarta"
+                  style={[
+                    styles.financialSearchInput,
+                    styles.shippingTimezoneInput,
+                    disabled && styles.storeHoursTimeInputDisabled,
+                  ]}
                 />
-              </View>
-            </View>
-            <View style={styles.storeHoursCompactTable}>
-              <View style={styles.storeHoursCompactHeader}>
-                <Text style={styles.storeHoursHeaderDay}>Hari</Text>
-                <Text style={styles.storeHoursHeaderOpen}>Buka</Text>
-                <Text style={styles.storeHoursHeaderCell}>Jam buka</Text>
-                <Text style={styles.storeHoursHeaderCell}>Jam tutup</Text>
-              </View>
-              {storeOperatingHourRows.map((row, index) => {
-                const isOpen = draft[row.openField] === true;
-                const controlsDisabled =
-                  disabled || !draft.storeOperatingHoursEnabled;
-                const timeDisabled = controlsDisabled || !isOpen;
-
-                return (
-                  <View
-                    key={row.id}
-                    style={[
-                      styles.storeHoursCompactRow,
-                      index === storeOperatingHourRows.length - 1 &&
-                        styles.storeHoursCompactRowLast,
-                    ]}
-                  >
-                    <Text style={styles.storeHoursDayText}>{row.label}</Text>
-                    <Pressable
-                      accessibilityRole="switch"
-                      accessibilityState={{
-                        checked: isOpen,
-                        disabled: controlsDisabled,
-                      }}
-                      disabled={controlsDisabled}
-                      onPress={() => setDraftField(row.openField, !isOpen)}
-                      style={[
-                        styles.storeHoursSwitch,
-                        isOpen && styles.storeHoursSwitchActive,
-                        controlsDisabled && styles.storeHoursSwitchDisabled,
-                      ]}
-                    >
-                      <View
-                        style={[
-                          styles.storeHoursSwitchKnob,
-                          isOpen && styles.storeHoursSwitchKnobActive,
-                        ]}
-                      />
-                    </Pressable>
-                    <TextInput
-                      editable={!timeDisabled}
-                      onChangeText={value =>
-                        setDraftField(row.openAtField, value)
-                      }
-                      placeholder="09:00"
-                      style={[
-                        styles.storeHoursTimeInput,
-                        timeDisabled && styles.storeHoursTimeInputDisabled,
-                      ]}
-                      value={String(draft[row.openAtField] ?? '')}
-                    />
-                    <TextInput
-                      editable={!timeDisabled}
-                      onChangeText={value =>
-                        setDraftField(row.closeAtField, value)
-                      }
-                      placeholder="21:00"
-                      style={[
-                        styles.storeHoursTimeInput,
-                        timeDisabled && styles.storeHoursTimeInputDisabled,
-                      ]}
-                      value={String(draft[row.closeAtField] ?? '')}
-                    />
+                <View style={styles.storeHoursCompactTable}>
+                  <View style={styles.storeHoursCompactHeader}>
+                    <Text style={styles.storeHoursHeaderDay}>Hari</Text>
+                    <Text style={styles.storeHoursHeaderOpen}>Buka</Text>
+                    <Text style={styles.storeHoursHeaderCell}>Jam buka</Text>
+                    <Text style={styles.storeHoursHeaderCell}>Jam tutup</Text>
                   </View>
-                );
-              })}
+                  {storeOperatingHourRows.map((row, index) => {
+                    const isOpen = draft[row.openField] === true;
+                    const controlsDisabled =
+                      disabled || !draft.storeOperatingHoursEnabled;
+                    const timeDisabled = controlsDisabled || !isOpen;
+
+                    return (
+                      <View
+                        key={row.id}
+                        style={[
+                          styles.storeHoursCompactRow,
+                          index === storeOperatingHourRows.length - 1 &&
+                            styles.storeHoursCompactRowLast,
+                        ]}
+                      >
+                        <Text style={styles.storeHoursDayText}>
+                          {row.label}
+                        </Text>
+                        <Pressable
+                          accessibilityRole="switch"
+                          accessibilityState={{
+                            checked: isOpen,
+                            disabled: controlsDisabled,
+                          }}
+                          disabled={controlsDisabled}
+                          onPress={() => setDraftField(row.openField, !isOpen)}
+                          style={[
+                            styles.storeHoursSwitch,
+                            isOpen && styles.storeHoursSwitchActive,
+                            controlsDisabled && styles.storeHoursSwitchDisabled,
+                          ]}
+                        >
+                          <View
+                            style={[
+                              styles.storeHoursSwitchKnob,
+                              isOpen && styles.storeHoursSwitchKnobActive,
+                            ]}
+                          />
+                        </Pressable>
+                        <TextInput
+                          editable={!timeDisabled}
+                          onChangeText={value =>
+                            setDraftField(row.openAtField, value)
+                          }
+                          placeholder="09:00"
+                          style={[
+                            styles.storeHoursTimeInput,
+                            timeDisabled && styles.storeHoursTimeInputDisabled,
+                          ]}
+                          value={String(draft[row.openAtField] ?? '')}
+                        />
+                        <TextInput
+                          editable={!timeDisabled}
+                          onChangeText={value =>
+                            setDraftField(row.closeAtField, value)
+                          }
+                          placeholder="21:00"
+                          style={[
+                            styles.storeHoursTimeInput,
+                            timeDisabled && styles.storeHoursTimeInputDisabled,
+                          ]}
+                          value={String(draft[row.closeAtField] ?? '')}
+                        />
+                      </View>
+                    );
+                  })}
+                </View>
+              </View>
             </View>
           </View>
 
@@ -8010,6 +8015,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
+  },
+  shippingTimezoneInput: {
+    width: '100%',
   },
   originPinpointMap: {
     backgroundColor: '#f9fafb',
