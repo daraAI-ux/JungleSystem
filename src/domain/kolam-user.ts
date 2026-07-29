@@ -1,7 +1,12 @@
 export type KolamUserSortOrder = 'asc' | 'desc';
 export type KolamUserBooleanFilter = 'true' | 'false' | 'all';
 export type KolamUserAccessId = 'inventory' | 'pos' | 'am';
-export type KolamUserRouteMode = 'create' | 'detail' | 'list' | 'unknown';
+export type KolamUserRouteMode =
+  | 'create'
+  | 'detail'
+  | 'edit'
+  | 'list'
+  | 'unknown';
 
 export const KOLAM_USER_LIST_ROUTE = '/list-of-users';
 
@@ -26,6 +31,10 @@ export function getKolamUserRouteMode(route?: string | null): KolamUserRouteMode
     return 'create';
   }
 
+  if (/^\/list-of-users\/users\/[^/]+\/edit$/.test(routePath)) {
+    return 'edit';
+  }
+
   if (/^\/list-of-users\/users\/[^/]+$/.test(routePath)) {
     return 'detail';
   }
@@ -35,7 +44,7 @@ export function getKolamUserRouteMode(route?: string | null): KolamUserRouteMode
 
 export function getKolamUserIdFromRoute(route?: string | null) {
   const routePath = (route?.split('?')[0] ?? '').replace(/\/+$/, '') || '/';
-  const match = routePath.match(/^\/list-of-users\/users\/([^/]+)$/);
+  const match = routePath.match(/^\/list-of-users\/users\/([^/]+)(?:\/edit)?$/);
 
   return match ? decodeURIComponent(match[1]) : '';
 }

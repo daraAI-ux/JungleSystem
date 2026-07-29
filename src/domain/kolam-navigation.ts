@@ -1391,9 +1391,9 @@ const kolamNavigationRouteVariantSpecs: Array<{
   },
   {
     baseRoute: '/list-of-users',
-    labelSuffix: 'User Edit',
+    labelSuffix: 'Rubah Pengguna',
     route: '/list-of-users/users/:id/edit',
-    description: 'Edit user page from live Kolam',
+    description: '',
   },
   {
     baseRoute: '/list-of-users',

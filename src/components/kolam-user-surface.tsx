@@ -97,6 +97,15 @@ export function KolamUserSurface({
     );
   }
 
+  if (routeMode === 'edit') {
+    return (
+      <KolamUserEditSurface
+        onRouteChange={onRouteChange}
+        userId={getKolamUserIdFromRoute(route)}
+      />
+    );
+  }
+
   return <KolamUserListSurface onRouteChange={onRouteChange} />;
 }
 
@@ -724,6 +733,156 @@ function KolamUserDetailSurface({
   );
 }
 
+function KolamUserEditSurface({
+  onRouteChange,
+  userId,
+}: {
+  onRouteChange?: (route: string) => void;
+  userId: string;
+}) {
+  const [user, setUser] = React.useState<KolamUserListItem | null>(null);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState('');
+
+  React.useEffect(() => {
+    let active = true;
+
+    if (!userId) {
+      setUser(null);
+      setError('ID pengguna tidak valid.');
+      setLoading(false);
+      return () => {
+        active = false;
+      };
+    }
+
+    setLoading(true);
+    setError('');
+
+    void getKolamUserDetail(userId)
+      .then(result => {
+        if (!active) {
+          return;
+        }
+        setUser(result);
+        if (!result) {
+          setError('Pengguna tidak ditemukan.');
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setUser(null);
+          setError('Gagal memuat data pengguna.');
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [userId]);
+
+  if (loading || error || !user) {
+    return (
+      <View style={styles.detailSurface}>
+        <KolamContentFrame
+          style={styles.detailCard}
+          variant="settingsWebConfig"
+        >
+          <KolamEmptyState
+            compact
+            message={error || 'Mengambil data pengguna dari server.'}
+            title={
+              loading
+                ? 'Memuat form pengguna'
+                : error || 'Pengguna tidak ditemukan'
+            }
+          />
+        </KolamContentFrame>
+      </View>
+    );
+  }
+
+  const encodedUserId = encodeURIComponent(user.id);
+
+  return (
+    <View style={styles.detailSurface}>
+      <View style={styles.detailActionRow}>
+        <KolamButton
+          label="Daftar"
+          onPress={() => onRouteChange?.('/list-of-users')}
+        />
+        <KolamButton
+          label="Detail"
+          onPress={() =>
+            onRouteChange?.(`/list-of-users/users/${encodedUserId}`)
+          }
+        />
+        <KolamButton disabled intent="primary" label="Simpan" />
+      </View>
+
+      <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
+        <View style={styles.detailTitleBlock}>
+          <Text style={styles.detailTitle}>Rubah Pengguna</Text>
+          <Text style={styles.detailSubtitle}>
+            Data pengguna dari server.
+          </Text>
+        </View>
+
+        <View style={styles.formGrid}>
+          <UserFormField label="Username">
+            <KolamFormTextField
+              editable={false}
+              style={[styles.formInput, styles.formInputReadOnly]}
+              value={user.username}
+            />
+          </UserFormField>
+          <UserFormField label="Nama Depan">
+            <KolamFormTextField
+              editable={false}
+              style={[styles.formInput, styles.formInputReadOnly]}
+              value={user.firstName}
+            />
+          </UserFormField>
+          <UserFormField label="Nama Belakang">
+            <KolamFormTextField
+              editable={false}
+              style={[styles.formInput, styles.formInputReadOnly]}
+              value={user.lastName}
+            />
+          </UserFormField>
+          <UserFormField label="Email">
+            <KolamFormTextField
+              editable={false}
+              mode="email"
+              style={[styles.formInput, styles.formInputReadOnly]}
+              value={user.email}
+            />
+          </UserFormField>
+          <UserFormField label="Nomor Telepon">
+            <KolamFormTextField
+              editable={false}
+              style={[styles.formInput, styles.formInputReadOnly]}
+              value={user.phoneNumber}
+            />
+          </UserFormField>
+          <UserFormField label="Peran">
+            <KolamFormTextField
+              editable={false}
+              style={[styles.formInput, styles.formInputReadOnly]}
+              value={user.roleLabel}
+            />
+          </UserFormField>
+        </View>
+      </KolamContentFrame>
+    </View>
+  );
+}
+
 function DetailRow({label, value}: {label: string; value: string}) {
   return (
     <View style={styles.detailRow}>
@@ -1212,6 +1371,10 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     paddingHorizontal: 12,
     paddingVertical: 8,
+  },
+  formInputReadOnly: {
+    backgroundColor: V.colors.tableHeader,
+    color: V.colors.mutedFg,
   },
   formErrorText: {
     borderColor: V.colors.danger,
