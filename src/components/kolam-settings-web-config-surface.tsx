@@ -7224,7 +7224,7 @@ function FinancialSettingsPanel({
                 },
               ]}
             />
-            <View style={styles.financialFormGrid}>
+            <View style={styles.financialFormStack}>
               <View style={styles.financialFormBox}>
                 <KolamCopyStack
                   items={[
@@ -7287,23 +7287,11 @@ function FinancialSettingsPanel({
                   items={[
                     {
                       id: 'payment-method-account-title',
-                      text: 'Akun dan wallet',
+                      text: 'Informasi akun',
                       style: styles.marketplaceOverviewLabel,
                     },
                   ]}
                 />
-                <View style={styles.financialToolbar}>
-                  {financialWallets.map(wallet => (
-                    <FinancialChoiceSegment
-                      key={wallet.id}
-                      active={paymentMethodDraft.wallet === wallet.id}
-                      label={`${wallet.name} (${wallet.type})`}
-                      onPress={() =>
-                        setPaymentMethodDraftField('wallet', wallet.id)
-                      }
-                    />
-                  ))}
-                </View>
                 <KolamTextFieldRow
                   description="Nomor rekening, nomor akun, atau ID provider."
                   fieldWidth={settingsFieldWidth}
@@ -7342,8 +7330,31 @@ function FinancialSettingsPanel({
                 <KolamCopyStack
                   items={[
                     {
-                      id: 'payment-method-rules-title',
-                      text: 'Aturan pembayaran',
+                      id: 'payment-method-wallet-title',
+                      text: 'Wallet',
+                      style: styles.marketplaceOverviewLabel,
+                    },
+                  ]}
+                />
+                <View style={styles.financialToolbar}>
+                  {financialWallets.map(wallet => (
+                    <FinancialChoiceSegment
+                      key={wallet.id}
+                      active={paymentMethodDraft.wallet === wallet.id}
+                      label={`${wallet.name} (${wallet.type})`}
+                      onPress={() =>
+                        setPaymentMethodDraftField('wallet', wallet.id)
+                      }
+                    />
+                  ))}
+                </View>
+              </View>
+              <View style={styles.financialFormBox}>
+                <KolamCopyStack
+                  items={[
+                    {
+                      id: 'payment-method-cost-title',
+                      text: 'Biaya Payment Method',
                       style: styles.marketplaceOverviewLabel,
                     },
                   ]}
@@ -7360,6 +7371,17 @@ function FinancialSettingsPanel({
                   placeholder="Admin QRIS|percentage|0.7"
                   value={paymentMethodDraft.costsText}
                   variant="settingsForm"
+                />
+              </View>
+              <View style={styles.financialFormBox}>
+                <KolamCopyStack
+                  items={[
+                    {
+                      id: 'payment-method-rules-title',
+                      text: 'Pengaturan',
+                      style: styles.marketplaceOverviewLabel,
+                    },
+                  ]}
                 />
                 <KolamToggleRow
                   active={paymentMethodDraft.isActive}
@@ -7397,21 +7419,21 @@ function FinancialSettingsPanel({
                   }
                   variant="settingsForm"
                 />
-                <View style={styles.financialActions}>
-                  <KolamActionControlButton
-                    disabled={disabled || busy || !paymentMethodCanSave}
-                    intent="primary"
-                    label="Simpan metode"
-                    loading={financialStatus === 'saving'}
-                    loadingLabel="Menyimpan..."
-                    onPress={onSavePaymentMethod}
-                  />
-                  <KolamActionControlButton
-                    disabled={disabled || busy}
-                    label="Reset"
-                    onPress={onClearPaymentMethodDraft}
-                  />
-                </View>
+              </View>
+              <View style={styles.financialActions}>
+                <KolamActionControlButton
+                  disabled={disabled || busy || !paymentMethodCanSave}
+                  intent="primary"
+                  label="Simpan metode"
+                  loading={financialStatus === 'saving'}
+                  loadingLabel="Menyimpan..."
+                  onPress={onSavePaymentMethod}
+                />
+                <KolamActionControlButton
+                  disabled={disabled || busy}
+                  label="Reset"
+                  onPress={onClearPaymentMethodDraft}
+                />
               </View>
             </View>
           </View>
@@ -8102,17 +8124,13 @@ const styles = StyleSheet.create({
     borderColor: V.colors.border,
     borderRadius: 8,
     borderWidth: 1,
-    flexBasis: 300,
-    flexGrow: 1,
     gap: 10,
-    minWidth: 260,
     padding: 12,
+    width: '100%',
   },
-  financialFormGrid: {
-    alignItems: 'stretch',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+  financialFormStack: {
     gap: 12,
+    width: '100%',
   },
   financialListRow: {
     alignItems: 'center',
