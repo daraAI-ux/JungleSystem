@@ -14,10 +14,23 @@ import type {
 import {KolamButton} from './kolam-button';
 import {KolamCatalogListTableShell} from './kolam-catalog-list-table-shell';
 import {KolamCopyStack} from './kolam-copy-stack';
+import {KolamDataTableRowFrame} from './kolam-data-table-row-frame';
 import {KolamTableFooterControls} from './kolam-dropdown-select';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamFormTextField} from './kolam-form-text-field';
 import {KolamCustomerModule} from './kolam-pos-workspace-widgets';
+
+const CUSTOMER_LIST_COLUMNS = [
+  {id: 'customer', label: 'Pelanggan', flex: 1.55, align: 'left'},
+  {id: 'contact', label: 'Kontak', flex: 1.25, align: 'left'},
+  {id: 'location', label: 'Lokasi', flex: 1.25, align: 'left'},
+  {id: 'points', label: 'Poin', flex: 0.65, align: 'right'},
+  {id: 'status', label: 'Status', flex: 1.05, align: 'left'},
+  {id: 'created', label: 'Dibuat', flex: 0.95, align: 'right'},
+  {id: 'actions', label: '', flex: 0.35, align: 'right'},
+] as const;
+
+type CustomerListColumnId = (typeof CUSTOMER_LIST_COLUMNS)[number]['id'];
 
 const INITIAL_CUSTOMER_LIST: KolamCustomerListResult = {
   items: [],
@@ -241,16 +254,32 @@ function KolamCustomerListSurface({
             />
           </View>
         ) : (
-          <View style={styles.summaryPanel}>
-            <Text style={styles.summaryTitle}>
-              {visibleItems.length} pelanggan dimuat
-            </Text>
-            <Text style={styles.summaryDescription}>
-              {clientSearchActive
-                ? 'Hasil dari pencarian lokal.'
-                : 'Data live dari server.'}
-            </Text>
-          </View>
+          <>
+            <View style={styles.customerHeaderRow}>
+              {CUSTOMER_LIST_COLUMNS.map(column => (
+                <View
+                  key={column.id}
+                  style={[
+                    styles.customerListCell,
+                    {flex: column.flex},
+                    column.align === 'right' && styles.customerListCellRight,
+                  ]}>
+                  {column.label ? (
+                    <Text
+                      style={[
+                        styles.customerHeaderCellText,
+                        column.align === 'right' && styles.customerTextRight,
+                      ]}>
+                      {column.label}
+                    </Text>
+                  ) : null}
+                </View>
+              ))}
+            </View>
+            {visibleItems.map(customer => (
+              <KolamCustomerListRow customer={customer} key={customer.id} />
+            ))}
+          </>
         )}
       </KolamCatalogListTableShell>
     </View>
@@ -259,6 +288,64 @@ function KolamCustomerListSurface({
 
 function normalizeCustomerSearch(value: string) {
   return value.trim().toLowerCase();
+}
+
+function KolamCustomerListRow({customer}: {customer: KolamCustomer}) {
+  return (
+    <KolamDataTableRowFrame style={styles.customerListRow}>
+      <View style={getCustomerListCellStyle('customer')}>
+        <Text numberOfLines={2} style={styles.customerNameText}>
+          {customer.name}
+        </Text>
+        {customer.username ? (
+          <Text numberOfLines={1} style={styles.customerSubText}>
+            @{customer.username}
+          </Text>
+        ) : null}
+      </View>
+      <View style={getCustomerListCellStyle('contact')}>
+        <Text numberOfLines={1} style={styles.customerMetaText}>
+          {customer.phone || '-'}
+        </Text>
+        {customer.email ? (
+          <Text numberOfLines={1} style={styles.customerSubText}>
+            {customer.email}
+          </Text>
+        ) : null}
+      </View>
+      <View style={getCustomerListCellStyle('location')}>
+        <Text numberOfLines={2} style={styles.customerMetaText}>
+          {getKolamCustomerLocationText(customer) || '-'}
+        </Text>
+      </View>
+      <View style={getCustomerListCellStyle('points')}>
+        <Text style={[styles.customerMetaText, styles.customerTextRight]}>
+          {formatCustomerNumber(customer.points.availablePoints)}
+        </Text>
+      </View>
+      <View style={getCustomerListCellStyle('status')}>
+        <Text numberOfLines={2} style={styles.customerMetaText}>
+          {formatCustomerStatus(customer)}
+        </Text>
+      </View>
+      <View style={getCustomerListCellStyle('created')}>
+        <Text style={[styles.customerSubText, styles.customerTextRight]}>
+          {formatCustomerDate(customer.createdAt)}
+        </Text>
+      </View>
+      <View style={getCustomerListCellStyle('actions')} />
+    </KolamDataTableRowFrame>
+  );
+}
+
+function getCustomerListCellStyle(columnId: CustomerListColumnId) {
+  const column = CUSTOMER_LIST_COLUMNS.find(item => item.id === columnId);
+
+  return [
+    styles.customerListCell,
+    {flex: column?.flex ?? 1},
+    column?.align === 'right' && styles.customerListCellRight,
+  ];
 }
 
 function doesCustomerMatchSearch(
@@ -278,6 +365,33 @@ function doesCustomerMatchSearch(
     .join(' ')
     .toLowerCase()
     .includes(normalizedSearch);
+}
+
+function formatCustomerStatus(customer: KolamCustomer) {
+  const status = customer.verifiedStatus ? 'Aktif' : 'Perlu Verifikasi';
+
+  return customer.accountRestricted ? `${status}, Dibatasi` : status;
+}
+
+function formatCustomerDate(value: string) {
+  if (!value) {
+    return '-';
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return '-';
+  }
+
+  const weekday = new Intl.DateTimeFormat('id-ID', {
+    weekday: 'long',
+  }).format(date);
+
+  return `${weekday}, ${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
+}
+
+function formatCustomerNumber(value: number) {
+  return new Intl.NumberFormat('id-ID').format(value);
 }
 
 const styles = StyleSheet.create({
@@ -343,22 +457,54 @@ const styles = StyleSheet.create({
   placeholderBody: {
     padding: 12,
   },
-  summaryPanel: {
-    gap: 4,
-    minHeight: 120,
+  customerHeaderRow: {
+    alignItems: 'center',
+    backgroundColor: V.colors.tableHeader,
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: 1,
+    borderTopColor: V.colors.border,
+    borderTopWidth: 1,
+    flexDirection: 'row',
+    gap: 8,
+    minHeight: 52,
     paddingHorizontal: 20,
-    paddingVertical: 18,
+    paddingVertical: 10,
   },
-  summaryTitle: {
-    color: V.colors.fg,
-    fontSize: 16,
-    fontWeight: '800',
-    lineHeight: 24,
-  },
-  summaryDescription: {
+  customerHeaderCellText: {
     color: V.colors.mutedFg,
-    fontSize: 13,
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 18,
+  },
+  customerListRow: {
+    alignItems: 'center',
+    gap: 8,
+  },
+  customerListCell: {
+    minWidth: 0,
+  },
+  customerListCellRight: {
+    alignItems: 'flex-end',
+  },
+  customerNameText: {
+    color: V.colors.fg,
+    fontSize: 14,
+    fontWeight: '700',
     lineHeight: 20,
+  },
+  customerMetaText: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '500',
+    lineHeight: 20,
+  },
+  customerSubText: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  customerTextRight: {
+    textAlign: 'right',
   },
   paginationRow: {
     alignItems: 'center',
