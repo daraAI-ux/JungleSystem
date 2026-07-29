@@ -270,9 +270,9 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         requiredAccess: ['kolam'],
       },
       {
-        label: 'Suppliers',
+        label: 'Pemasok',
         route: '/suppliers',
-        description: 'List of suppliers and vendors',
+        description: 'Daftar pemasok dan vendor pengadaan',
         group: 'Pengadaan',
         requiredAccess: ['kolam'],
       },
@@ -1432,21 +1432,22 @@ const kolamNavigationRouteVariantSpecs: Array<{
   },
   {
     baseRoute: '/suppliers',
-    labelSuffix: 'Create',
+    labelSuffix: 'Baru',
     route: '/suppliers/create',
-    description: 'Create supplier page from live Kolam',
+    description: 'Tambah pemasok baru (fase berikutnya)',
   },
   {
     baseRoute: '/suppliers',
+    label: 'Detil Pemasok',
     labelSuffix: 'Detail',
     route: '/suppliers/:id',
-    description: 'Supplier detail page from live Kolam',
+    description: 'Rincian kontak, status, dan katalog terkait pemasok',
   },
   {
     baseRoute: '/suppliers',
     labelSuffix: 'Edit',
     route: '/suppliers/:id/edit',
-    description: 'Edit supplier page from live Kolam',
+    description: 'Ubah data pemasok (fase berikutnya)',
   },
   {
     baseRoute: '/purchase-order',

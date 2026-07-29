@@ -1,5 +1,6 @@
 import { appConfig } from '../config/app';
 import {
+  normalizeKolamVendorDetail,
   normalizeKolamVendorList,
   type KolamVendor,
 } from '../domain/kolam-vendor';
@@ -9,6 +10,7 @@ interface DataResponse<T> {
   data: T;
 }
 
+/** Picker-grade list (product/species HPP). */
 export async function getKolamVendors(): Promise<KolamVendor[]> {
   const response = await kolamRequest<unknown>('/vendor', {
     query: {
@@ -18,6 +20,13 @@ export async function getKolamVendors(): Promise<KolamVendor[]> {
   });
 
   return normalizeKolamVendorList(response);
+}
+
+export async function getKolamVendor(id: string): Promise<KolamVendor> {
+  const response = await kolamRequest<unknown>(
+    `/vendor/${encodeURIComponent(id)}`,
+  );
+  return normalizeKolamVendorDetail(response);
 }
 
 function kolamRequest<T>(

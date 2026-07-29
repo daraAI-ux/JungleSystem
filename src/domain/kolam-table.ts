@@ -12,6 +12,7 @@ export type KolamTableId =
   | 'packing-material'
   | 'sales'
   | 'species'
+  | 'supplier'
   | 'tag'
   | 'teranura'
   | 'taxonomy'
@@ -229,7 +230,7 @@ const kolamTableColumns: Record<KolamTableId, KolamTableColumn[]> = {
     { id: 'actions', label: '', align: 'right', width: 64 },
   ],
   location: [
-    { id: 'primary', label: 'Nama', align: 'left' },
+    { id: 'primary', label: 'Nama Lokasi', align: 'left' },
     { id: 'meta', label: 'Tipe', align: 'left', width: 112 },
     { id: 'children', label: 'Tingkat', align: 'left', width: 104 },
     { id: 'notes', label: 'Induk', align: 'left', width: 156 },
@@ -269,6 +270,13 @@ const kolamTableColumns: Record<KolamTableId, KolamTableColumn[]> = {
     { id: 'marketplace', label: 'Sinkron Terakhir', align: 'left', width: 168 },
     { id: 'notes', label: 'Informasi', align: 'right', width: 136 },
     { id: 'actions', label: '', align: 'right', width: 64 },
+  ],
+  supplier: [
+    { id: 'primary', label: 'Nama', align: 'left' },
+    { id: 'meta', label: 'Telepon', align: 'left', width: 140 },
+    { id: 'notes', label: 'Email', align: 'left', width: 180 },
+    { id: 'children', label: 'Total PO', align: 'right', width: 100 },
+    { id: 'status', label: 'Status', align: 'left', width: 120 },
   ],
   teranura: [
     { id: 'primary', label: 'Nama', align: 'left' },

@@ -37,3 +37,39 @@ export async function writeKolamVendorListCache(
 
   return true;
 }
+
+export function getKolamVendorDetailCacheKey(
+  vendorId: string,
+  ownerId = VENDOR_OWNER,
+) {
+  return `vendor:detail:${ownerId}:${vendorId}`;
+}
+
+export async function readKolamVendorDetailCache(
+  vendorId: string,
+  ownerId = VENDOR_OWNER,
+) {
+  return getLocalDataStore().read<KolamVendor>(
+    getKolamVendorDetailCacheKey(vendorId, ownerId),
+  );
+}
+
+export async function writeKolamVendorDetailCache(
+  vendor: KolamVendor,
+  ownerId = VENDOR_OWNER,
+) {
+  await getLocalDataStore().write({
+    key: getKolamVendorDetailCacheKey(vendor.id, ownerId),
+    value: vendor,
+    revision: vendor.updatedAt || vendor.id,
+    updatedAt: new Date().toISOString(),
+  });
+}
+
+export async function readKolamVendorFromListCacheById(
+  vendorId: string,
+  ownerId = VENDOR_OWNER,
+) {
+  const cached = await readKolamVendorListCache(ownerId);
+  return cached?.value.find(vendor => vendor.id === vendorId) ?? null;
+}
