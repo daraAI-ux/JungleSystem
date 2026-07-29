@@ -500,6 +500,22 @@ function KolamSupplierDetail({
   const editable = controller.isEditable;
   const [deleteCandidate, setDeleteCandidate] =
     React.useState<KolamVendor | null>(null);
+  const [activeAnalyticsFilter, setActiveAnalyticsFilter] =
+    React.useState<SupplierAnalyticsFilterPanel>(null);
+  const analyticsFilters = controller.analyticsFilters;
+  const analyticsYears = React.useMemo(
+    () =>
+      Array.from({ length: 10 }, (_, index) => new Date().getFullYear() - index),
+    [],
+  );
+  const analyticsMonths = React.useMemo(
+    () =>
+      Array.from({ length: 12 }, (_, index) => ({
+        id: index + 1,
+        name: new Date(2000, index).toLocaleString('id-ID', { month: 'short' }),
+      })),
+    [],
+  );
 
   if (editable) {
     return (
@@ -541,22 +557,6 @@ function KolamSupplierDetail({
   const address = formatKolamVendorAddress(vendor);
   const heroUri = vendor.photoUrls?.[0] || vendor.photos?.[0] || '';
   const photoUrls = vendor.photoUrls ?? [];
-  const [activeAnalyticsFilter, setActiveAnalyticsFilter] =
-    React.useState<SupplierAnalyticsFilterPanel>(null);
-  const analyticsFilters = controller.analyticsFilters;
-  const analyticsYears = React.useMemo(
-    () =>
-      Array.from({ length: 10 }, (_, index) => new Date().getFullYear() - index),
-    [],
-  );
-  const analyticsMonths = React.useMemo(
-    () =>
-      Array.from({ length: 12 }, (_, index) => ({
-        id: index + 1,
-        name: new Date(2000, index).toLocaleString('id-ID', { month: 'short' }),
-      })),
-    [],
-  );
   const periodLabel =
     analyticsFilters.filterType === 'yearly'
       ? 'Tahunan'
