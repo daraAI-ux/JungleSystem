@@ -19,7 +19,7 @@ export function KolamDataTableHeaderCell({
           textProps: { numberOfLines: 2 },
           style: [
             styles.text,
-            column.id === 'primary' && styles.primary,
+            column.id === 'primary' && !column.width && styles.primary,
             headerAlign === 'center' && styles.center,
             headerAlign === 'right' && styles.right,
             column.width ? { width: column.width } : null,
