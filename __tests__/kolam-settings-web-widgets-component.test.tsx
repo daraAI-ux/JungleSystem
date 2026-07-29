@@ -455,7 +455,7 @@ describe('settings web widgets', () => {
         .find(node => node.props.label === 'Google Sign-In webstore')!
         .props.onPress();
       dropdowns
-        .find(node => node.props.label === 'Room penerimaan barang (Team Chat)')!
+        .find(node => node.props.label === 'Room Team Chat')!
         .props.onChange('');
       buttons
         .find(node => node.props.label === 'Simpan Client ID')!

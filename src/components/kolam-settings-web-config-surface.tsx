@@ -3108,147 +3108,141 @@ export function KolamSettingsWebConfigSurface({
                 },
               ]}
             />
-            <View style={styles.poRoomPicker}>
-              <KolamDropdownSelect
-                accessibilityLabel="Room penerimaan barang"
-                label="Room penerimaan barang (Team Chat)"
-                menuPlacement="inline"
-                options={[
-                  { label: 'Pilih room', value: '' },
-                  ...roomOptions.map(room => ({
-                    label: `${getTeamChatRoomLabel(room)}${
-                      room.category ? ` (${room.category})` : ''
-                    }`,
-                    value: room._id,
-                  })),
-                ]}
-                searchable
-                searchPlaceholder="Cari room..."
-                showLabelInTrigger={false}
-                style={styles.poRoomDropdown}
-                triggerStyle={styles.shippingTimezoneTrigger}
-                value={draft.poWorkflowReceivingRoomId}
-                onChange={value => {
-                  if (!disabled) {
+            <View style={styles.operationalAttendanceGrid}>
+              <View style={styles.operationalAttendanceBox}>
+                <KolamToggleRow
+                  variant="settingsForm"
+                  label="Livechat Always Online"
+                  description="Jika off, jam operasional mengatur banner tutup/libur di dunia-anura.com."
+                  active={draft.livechatOnline}
+                  onPress={() => {
+                    if (disabled) {
+                      return;
+                    }
+                    onSaveOperationalLivechat(!draft.livechatOnline);
+                  }}
+                />
+                <View style={styles.poRoomPicker}>
+                  <KolamDropdownSelect
+                    accessibilityLabel="Room penerimaan barang"
+                    label="Room Team Chat"
+                    menuPlacement="inline"
+                    options={[
+                      { label: 'Pilih room', value: '' },
+                      ...roomOptions.map(room => ({
+                        label: `${getTeamChatRoomLabel(room)}${
+                          room.category ? ` (${room.category})` : ''
+                        }`,
+                        value: room._id,
+                      })),
+                    ]}
+                    searchable
+                    searchPlaceholder="Cari room..."
+                    showLabelInTrigger={false}
+                    style={styles.poRoomDropdown}
+                    triggerStyle={styles.shippingTimezoneTrigger}
+                    value={draft.poWorkflowReceivingRoomId}
+                    onChange={value => {
+                      if (!disabled) {
+                        onSaveOperationalPoWorkflow({
+                          poWorkflowReceivingRoomId: value,
+                        });
+                      }
+                    }}
+                  />
+                  <KolamCopyStack
+                    items={[
+                      {
+                        id: 'po-room-picker-meta',
+                        text: roomOptions.length
+                          ? 'Upload bukti PO otomatis diposting ke room ini. Room AI tidak ditampilkan.'
+                          : 'Room Team Chat belum tersedia.',
+                        style: styles.marketplaceOverviewMeta,
+                      },
+                    ]}
+                  />
+                </View>
+                {renderPoWorkflowStaffPicker(
+                  'poWorkflowNotifyReceiveUserIds',
+                  'Notif terima - staff override',
+                )}
+              </View>
+              <View style={styles.operationalAttendanceBox}>
+                <KolamToggleRow
+                  variant="settingsForm"
+                  label="Notif saat PO siap diterima / sudah diterima"
+                  description="Kirim notifikasi saat barang PO diterima."
+                  active={draft.poWorkflowNotifyOnReceive}
+                  onPress={() =>
+                    !disabled &&
                     onSaveOperationalPoWorkflow({
-                      poWorkflowReceivingRoomId: value,
-                    });
+                      poWorkflowNotifyOnReceive:
+                        !draft.poWorkflowNotifyOnReceive,
+                    })
                   }
-                }}
-              />
-              <KolamCopyStack
-                items={[
-                  {
-                    id: 'po-room-picker-meta',
-                    text: roomOptions.length
-                      ? 'Upload bukti PO otomatis diposting ke room ini. Room AI tidak ditampilkan.'
-                      : 'Room Team Chat belum tersedia.',
-                    style: styles.marketplaceOverviewMeta,
-                  },
-                ]}
-              />
+                />
+                <KolamToggleRow
+                  variant="settingsForm"
+                  label="Notif saat PO siap quality check"
+                  description="Kirim notifikasi saat QC/check PO berjalan."
+                  active={draft.poWorkflowNotifyOnCheck}
+                  onPress={() =>
+                    !disabled &&
+                    onSaveOperationalPoWorkflow({
+                      poWorkflowNotifyOnCheck: !draft.poWorkflowNotifyOnCheck,
+                    })
+                  }
+                />
+                <KolamToggleRow
+                  variant="settingsForm"
+                  label="Notif saat partial receive"
+                  description="Kirim notifikasi saat PO diterima sebagian."
+                  active={draft.poWorkflowNotifyOnPartial}
+                  onPress={() =>
+                    !disabled &&
+                    onSaveOperationalPoWorkflow({
+                      poWorkflowNotifyOnPartial:
+                        !draft.poWorkflowNotifyOnPartial,
+                    })
+                  }
+                />
+                <KolamToggleRow
+                  variant="settingsForm"
+                  label="Post bukti ke Team Chat"
+                  description="Posting bukti penerimaan/QC ke room Team Chat."
+                  active={draft.poWorkflowPostProofToTeamChat}
+                  onPress={() =>
+                    !disabled &&
+                    onSaveOperationalPoWorkflow({
+                      poWorkflowPostProofToTeamChat:
+                        !draft.poWorkflowPostProofToTeamChat,
+                    })
+                  }
+                />
+                <KolamToggleRow
+                  variant="settingsForm"
+                  label="Partial: complete stok hanya admin/purchasing"
+                  description="Penerimaan sebagian wajib approval admin."
+                  active={draft.poWorkflowPartialCompleteRequiresAdmin}
+                  onPress={() =>
+                    !disabled &&
+                    onSaveOperationalPoWorkflow({
+                      poWorkflowPartialCompleteRequiresAdmin:
+                        !draft.poWorkflowPartialCompleteRequiresAdmin,
+                    })
+                  }
+                />
+                {renderPoWorkflowStaffPicker(
+                  'poWorkflowNotifyCheckUserIds',
+                  'Notif QC - staff override',
+                )}
+                {renderPoWorkflowStaffPicker(
+                  'poWorkflowNotifyCompleteUserIds',
+                  'Notif masuk stok - staff override',
+                )}
+              </View>
             </View>
-            <KolamToggleRow
-              variant="settingsForm"
-              label="Notif saat PO siap diterima / sudah diterima"
-              description="Kirim notifikasi saat barang PO diterima."
-              active={draft.poWorkflowNotifyOnReceive}
-              onPress={() =>
-                !disabled &&
-                onSaveOperationalPoWorkflow({
-                  poWorkflowNotifyOnReceive: !draft.poWorkflowNotifyOnReceive,
-                })
-              }
-            />
-            <KolamToggleRow
-              variant="settingsForm"
-              label="Notif saat PO siap quality check"
-              description="Kirim notifikasi saat QC/check PO berjalan."
-              active={draft.poWorkflowNotifyOnCheck}
-              onPress={() =>
-                !disabled &&
-                onSaveOperationalPoWorkflow({
-                  poWorkflowNotifyOnCheck: !draft.poWorkflowNotifyOnCheck,
-                })
-              }
-            />
-            <KolamToggleRow
-              variant="settingsForm"
-              label="Notif saat partial receive"
-              description="Kirim notifikasi saat PO diterima sebagian."
-              active={draft.poWorkflowNotifyOnPartial}
-              onPress={() =>
-                !disabled &&
-                onSaveOperationalPoWorkflow({
-                  poWorkflowNotifyOnPartial: !draft.poWorkflowNotifyOnPartial,
-                })
-              }
-            />
-            <KolamToggleRow
-              variant="settingsForm"
-              label="Post bukti ke Team Chat"
-              description="Posting bukti penerimaan/QC ke room Team Chat."
-              active={draft.poWorkflowPostProofToTeamChat}
-              onPress={() =>
-                !disabled &&
-                onSaveOperationalPoWorkflow({
-                  poWorkflowPostProofToTeamChat:
-                    !draft.poWorkflowPostProofToTeamChat,
-                })
-              }
-            />
-            <KolamToggleRow
-              variant="settingsForm"
-              label="Partial: complete stok hanya admin/purchasing"
-              description="Penerimaan sebagian wajib approval admin."
-              active={draft.poWorkflowPartialCompleteRequiresAdmin}
-              onPress={() =>
-                !disabled &&
-                onSaveOperationalPoWorkflow({
-                  poWorkflowPartialCompleteRequiresAdmin:
-                    !draft.poWorkflowPartialCompleteRequiresAdmin,
-                })
-              }
-            />
-            {renderPoWorkflowStaffPicker(
-              'poWorkflowNotifyReceiveUserIds',
-              'Notif terima - staff override',
-            )}
-            {renderPoWorkflowStaffPicker(
-              'poWorkflowNotifyCheckUserIds',
-              'Notif QC - staff override',
-            )}
-            {renderPoWorkflowStaffPicker(
-              'poWorkflowNotifyCompleteUserIds',
-              'Notif masuk stok - staff override',
-            )}
           </View>
-          <KolamCopyStack
-            items={[
-              {
-                id: 'operational-livechat-title',
-                text: 'Livechat',
-                style: styles.marketplaceOverviewTitle,
-              },
-              {
-                id: 'operational-livechat-meta',
-                text: 'Override darurat agar banner chat tampil online meski di luar jam buka.',
-                style: styles.marketplaceOverviewMeta,
-              },
-            ]}
-          />
-          <KolamToggleRow
-            variant="settingsForm"
-            label="Livechat Always Online"
-            description="Jika off, jam operasional mengatur banner tutup/libur di dunia-anura.com."
-            active={draft.livechatOnline}
-            onPress={() => {
-              if (disabled) {
-                return;
-              }
-              onSaveOperationalLivechat(!draft.livechatOnline);
-            }}
-          />
         </>
       ) : null}
       {showFinancialTaxSummary ? (
