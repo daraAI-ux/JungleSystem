@@ -4105,7 +4105,12 @@ export function KolamSettingsWebConfigSurface({
             )}
           </View>
 
-          <View style={styles.marketplaceControlSection}>
+          <View
+            style={[
+              styles.marketplaceControlSection,
+              styles.notificationSettingsCard,
+            ]}
+          >
             <KolamCopyStack
               items={[
                 {
@@ -4120,30 +4125,111 @@ export function KolamSettingsWebConfigSurface({
                 },
               ]}
             />
-            <KolamToggleRow
-              variant="settingsForm"
-              label="Aktifkan jadwal operasional"
-              description="Jika off, tidak ada banner jam tutup di marketplace dan DARA tidak mendapat konteks jam operasional."
-              active={draft.storeOperatingHoursEnabled}
-              onPress={() =>
-                !disabled &&
-                setDraftField(
-                  'storeOperatingHoursEnabled',
-                  !draft.storeOperatingHoursEnabled,
-                )
-              }
-            />
-            <KolamTextFieldRow
-              variant="settingsForm"
-              fieldWidth={settingsFieldWidth}
-              label="Zona waktu"
-              description="Zona waktu jadwal toko."
-              value={draft.storeOperatingHoursTimezone}
-              onChangeText={value =>
-                setDraftField('storeOperatingHoursTimezone', value)
-              }
-              placeholder="Asia/Jakarta"
-            />
+            <View style={styles.shippingStoreHoursGrid}>
+              <View style={styles.shippingStoreHoursBox}>
+                <KolamToggleRow
+                  variant="settingsForm"
+                  label="Aktifkan jadwal operasional"
+                  description="Jika off, tidak ada banner jam tutup di marketplace dan DARA tidak mendapat konteks jam operasional."
+                  active={draft.storeOperatingHoursEnabled}
+                  onPress={() =>
+                    !disabled &&
+                    setDraftField(
+                      'storeOperatingHoursEnabled',
+                      !draft.storeOperatingHoursEnabled,
+                    )
+                  }
+                />
+                <KolamTextFieldRow
+                  variant="settingsForm"
+                  fieldWidth={220}
+                  label="Tanggal libur khusus"
+                  description="Format YYYY-MM-DD."
+                  value={draft.storeOperatingHoursSpecialClosureDate}
+                  onChangeText={value =>
+                    setDraftField(
+                      'storeOperatingHoursSpecialClosureDate',
+                      value,
+                    )
+                  }
+                  placeholder="2026-04-10"
+                />
+                <KolamTextFieldRow
+                  variant="settingsForm"
+                  fieldWidth={settingsFieldWidth}
+                  label="Keterangan libur"
+                  description="Label libur yang ditampilkan ke pembeli."
+                  value={draft.storeOperatingHoursSpecialClosureLabel}
+                  onChangeText={value =>
+                    setDraftField(
+                      'storeOperatingHoursSpecialClosureLabel',
+                      value,
+                    )
+                  }
+                  placeholder="Libur Idul Fitri"
+                />
+                <KolamActionControlButton
+                  label="Tambah"
+                  disabled={
+                    disabled ||
+                    !draft.storeOperatingHoursSpecialClosureDate.trim()
+                  }
+                  onPress={addStoreSpecialClosure}
+                />
+                {storeSpecialClosureRows.length ? (
+                  <View style={styles.storeHoursList}>
+                    {storeSpecialClosureRows.map(row => (
+                      <View key={row.id} style={styles.storeClosureRow}>
+                        <KolamCopyStack
+                          containerStyle={styles.notificationSoundCopy}
+                          items={[
+                            {
+                              id: `${row.id}-date`,
+                              text: row.date,
+                              style: styles.notificationSoundLabel,
+                            },
+                            {
+                              id: `${row.id}-label`,
+                              text: row.label || '-',
+                              style: styles.notificationSoundPath,
+                            },
+                          ]}
+                        />
+                        <KolamActionControlButton
+                          label="Hapus"
+                          intent="danger"
+                          disabled={disabled}
+                          onPress={() => removeStoreSpecialClosure(row.index)}
+                        />
+                      </View>
+                    ))}
+                  </View>
+                ) : (
+                  <KolamCopyStack
+                    items={[
+                      {
+                        id: 'no-special-closure',
+                        text: 'Belum ada libur khusus.',
+                        style: styles.marketplaceOverviewMeta,
+                      },
+                    ]}
+                  />
+                )}
+              </View>
+              <View style={styles.shippingStoreHoursBox}>
+                <KolamTextFieldRow
+                  variant="settingsForm"
+                  fieldWidth={settingsFieldWidth}
+                  label="Zona waktu"
+                  description="Zona waktu jadwal toko."
+                  value={draft.storeOperatingHoursTimezone}
+                  onChangeText={value =>
+                    setDraftField('storeOperatingHoursTimezone', value)
+                  }
+                  placeholder="Asia/Jakarta"
+                />
+              </View>
+            </View>
             <View style={styles.storeHoursCompactTable}>
               <View style={styles.storeHoursCompactHeader}>
                 <Text style={styles.storeHoursHeaderDay}>Hari</Text>
@@ -4218,90 +4304,12 @@ export function KolamSettingsWebConfigSurface({
             </View>
           </View>
 
-          <View style={styles.marketplaceControlSection}>
-            <KolamCopyStack
-              items={[
-                {
-                  id: 'special-closures-title',
-                  text: 'Libur khusus (tanggal)',
-                  style: styles.marketplaceOverviewLabel,
-                },
-              ]}
-            />
-            <View style={styles.storeHoursTimeGrid}>
-              <KolamTextFieldRow
-                variant="settingsForm"
-                fieldWidth={220}
-                label="Tanggal libur khusus"
-                description="Format YYYY-MM-DD."
-                value={draft.storeOperatingHoursSpecialClosureDate}
-                onChangeText={value =>
-                  setDraftField('storeOperatingHoursSpecialClosureDate', value)
-                }
-                placeholder="2026-04-10"
-              />
-              <KolamTextFieldRow
-                variant="settingsForm"
-                fieldWidth={settingsFieldWidth}
-                label="Keterangan libur"
-                description="Label libur yang ditampilkan ke pembeli."
-                value={draft.storeOperatingHoursSpecialClosureLabel}
-                onChangeText={value =>
-                  setDraftField('storeOperatingHoursSpecialClosureLabel', value)
-                }
-                placeholder="Libur Idul Fitri"
-              />
-              <KolamActionControlButton
-                label="Tambah"
-                disabled={
-                  disabled ||
-                  !draft.storeOperatingHoursSpecialClosureDate.trim()
-                }
-                onPress={addStoreSpecialClosure}
-              />
-            </View>
-            {storeSpecialClosureRows.length ? (
-              <View style={styles.storeHoursList}>
-                {storeSpecialClosureRows.map(row => (
-                  <View key={row.id} style={styles.storeClosureRow}>
-                    <KolamCopyStack
-                      containerStyle={styles.notificationSoundCopy}
-                      items={[
-                        {
-                          id: `${row.id}-date`,
-                          text: row.date,
-                          style: styles.notificationSoundLabel,
-                        },
-                        {
-                          id: `${row.id}-label`,
-                          text: row.label || '-',
-                          style: styles.notificationSoundPath,
-                        },
-                      ]}
-                    />
-                    <KolamActionControlButton
-                      label="Hapus"
-                      intent="danger"
-                      disabled={disabled}
-                      onPress={() => removeStoreSpecialClosure(row.index)}
-                    />
-                  </View>
-                ))}
-              </View>
-            ) : (
-              <KolamCopyStack
-                items={[
-                  {
-                    id: 'no-special-closure',
-                    text: 'Belum ada libur khusus.',
-                    style: styles.marketplaceOverviewMeta,
-                  },
-                ]}
-              />
-            )}
-          </View>
-
-          <View style={styles.marketplaceControlSection}>
+          <View
+            style={[
+              styles.marketplaceControlSection,
+              styles.notificationSettingsCard,
+            ]}
+          >
             <KolamCopyStack
               items={[
                 {
@@ -7985,6 +7993,23 @@ const styles = StyleSheet.create({
     height: 34,
     justifyContent: 'center',
     width: 34,
+  },
+  shippingStoreHoursBox: {
+    backgroundColor: '#f9fafb',
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexBasis: 320,
+    flexGrow: 1,
+    gap: 10,
+    minWidth: 280,
+    padding: 12,
+  },
+  shippingStoreHoursGrid: {
+    alignItems: 'stretch',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
   },
   originPinpointMap: {
     backgroundColor: '#f9fafb',
