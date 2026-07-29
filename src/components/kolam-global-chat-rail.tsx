@@ -66,6 +66,7 @@ import {KolamPressable} from './kolam-pressable';
 import {KolamRemoteImage} from './kolam-remote-image';
 import {KolamTopNavigationChatIcon} from './kolam-top-navigation-chat-icon';
 import {KolamXIcon} from './kolam-x-icon';
+import type {SignedInUser} from '../services/auth-api';
 
 export type KolamGlobalChatRailMode = 'inbox' | 'team-chat';
 type KolamChatRailInboxAssignmentFilter = 'all' | 'assigned' | 'unassigned';
@@ -96,6 +97,12 @@ const DARA_THINKING_ACTIVE_EVENTS = new Set([
   'dara.thinking.chunk',
 ]);
 const DARA_THINKING_DONE_EVENTS = new Set(['dara.thinking.done']);
+const CHAT_ADMIN_ROLE_KEYS = new Set([
+  'super_admin',
+  'super_administrator',
+  'super-admin',
+  'admin',
+]);
 
 interface KolamChatRailAnalyticsState {
   data: KolamChatAnalytics | null;
@@ -119,6 +126,12 @@ interface KolamChatRailContactDetailsState {
   data: KolamChatContactDetails | null;
   errorMessage?: string;
   loading: boolean;
+}
+
+interface KolamInboxComposerAccess {
+  blockedReason: string | null;
+  disabled: boolean;
+  lockedBy: string | null;
 }
 
 interface KolamTeamChatCreateRoomDraft {
@@ -243,9 +256,11 @@ export function KolamGlobalChatRail({
       search: '',
       users: [],
     });
+  const currentUserId = authUser?.id;
+  const inboxCanReply = canSignedInUserReplyCustomerChat(authUser);
   const selectedItem = items.find(item => item.id === selectedItemId) ?? null;
   const detail = useKolamChatRailDetail({
-    currentUserId: authUser?.id,
+    currentUserId,
     mode,
     selectedId: selectedItemId,
   });
@@ -264,7 +279,7 @@ export function KolamGlobalChatRail({
   const handleLiveEvent = React.useCallback(
     (event: KolamChatLiveEvent) => {
       const classification = classifyKolamChatLiveEvent(event, {
-        currentUserId: authUser?.id,
+        currentUserId,
         selectedItemId,
       });
       const daraThinkingPatch = getDaraThinkingLivePatch(event, selectedItemId);
@@ -301,7 +316,7 @@ export function KolamGlobalChatRail({
       ).catch(() => undefined);
     },
     [
-      authUser?.id,
+      currentUserId,
       detail,
       notificationSoundService,
       selectedItemId,
@@ -587,7 +602,7 @@ export function KolamGlobalChatRail({
       }
 
       const userId = target.user?._id;
-      if (!target.dara && (!userId || userId === authUser?.id)) {
+      if (!target.dara && (!userId || userId === currentUserId)) {
         return;
       }
 
@@ -622,7 +637,7 @@ export function KolamGlobalChatRail({
         }));
       }
     },
-    [authUser?.id, data, directState.busyTarget, mode],
+    [currentUserId, data, directState.busyTarget, mode],
   );
 
   return (
@@ -701,7 +716,7 @@ export function KolamGlobalChatRail({
 
         {mode === 'team-chat' ? (
           <KolamTeamChatDirectPanel
-            currentUserId={authUser?.id}
+            currentUserId={currentUserId}
             onChangeSearch={search =>
               setDirectState(current => ({
                 ...current,
@@ -730,9 +745,10 @@ export function KolamGlobalChatRail({
         {selectedItem ? (
           <KolamChatRailDetailPanel
             composerText={composerText}
-            currentUserId={authUser?.id}
+            currentUserId={currentUserId}
             daraThinkingLiveSignal={daraThinkingLiveSignal}
             detail={detail}
+            inboxCanReply={inboxCanReply}
             labels={labelsState.items}
             mode={mode}
             onComposerTextChange={handleComposerTextChange}
@@ -1284,6 +1300,7 @@ function KolamChatRailDetailPanel({
   currentUserId,
   daraThinkingLiveSignal,
   detail,
+  inboxCanReply,
   labels,
   mode,
   onComposerTextChange,
@@ -1301,6 +1318,7 @@ function KolamChatRailDetailPanel({
   currentUserId?: string;
   daraThinkingLiveSignal: KolamDaraThinkingLiveSignal | null;
   detail: ReturnType<typeof useKolamChatRailDetail>;
+  inboxCanReply: boolean;
   labels: KolamChatLabel[];
   mode: KolamGlobalChatRailMode;
   onComposerTextChange: (value: string) => void;
@@ -1328,7 +1346,20 @@ function KolamChatRailDetailPanel({
       data: null,
       loading: false,
     });
-  const canSend = Boolean(composerText.trim() || pendingAttachment);
+  const inboxComposerAccess =
+    mode === 'inbox'
+      ? getInboxComposerAccess(detail.conversation, currentUserId, {
+          csCanReply: inboxCanReply,
+        })
+      : null;
+  const inboxComposerBlocked = Boolean(
+    inboxComposerAccess &&
+      (inboxComposerAccess.disabled ||
+        inboxComposerAccess.blockedReason ||
+        inboxComposerAccess.lockedBy),
+  );
+  const canSend =
+    Boolean(composerText.trim() || pendingAttachment) && !inboxComposerBlocked;
   const attachmentLabel = pendingAttachment
     ? pendingAttachment.name ?? pendingAttachment.path ?? pendingAttachment.uri ?? 'File'
     : '';
@@ -1423,6 +1454,10 @@ function KolamChatRailDetailPanel({
   );
 
   const handleSendFromComposer = React.useCallback(async () => {
+    if (inboxComposerBlocked) {
+      return;
+    }
+
     if (
       shouldShowDaraThinking({
         body: composerText,
@@ -1433,7 +1468,12 @@ function KolamChatRailDetailPanel({
     }
 
     await onSend();
-  }, [composerText, detail.teamRoomMetadata.daraReplyEnabled, onSend]);
+  }, [
+    composerText,
+    detail.teamRoomMetadata.daraReplyEnabled,
+    inboxComposerBlocked,
+    onSend,
+  ]);
 
   const handleStartEditMessage = React.useCallback(
     (message: ReturnType<typeof useKolamChatRailDetail>['messages'][number]) => {
@@ -1803,6 +1843,10 @@ function KolamChatRailDetailPanel({
         />
       ) : null}
 
+      {inboxComposerBlocked ? (
+        <KolamInboxComposerGate access={inboxComposerAccess} />
+      ) : null}
+
       {mode === 'team-chat' && mentionOptions.length > 0 ? (
         <KolamTeamMentionPicker
           disabled={detail.sending}
@@ -1827,12 +1871,13 @@ function KolamChatRailDetailPanel({
         {mode === 'inbox' ? (
           <KolamPressable
             accessibilityLabel="Buka template chat"
-            disabled={detail.sending}
+            disabled={detail.sending || inboxComposerBlocked}
             onPress={() => setTemplatePickerOpen(current => !current)}
             style={[
               styles.templateButton,
               templatePickerOpen && styles.templateButtonActive,
-              detail.sending && styles.attachButtonDisabled,
+              (detail.sending || inboxComposerBlocked) &&
+                styles.attachButtonDisabled,
             ]}>
             <Text style={styles.templateButtonText}>T</Text>
           </KolamPressable>
@@ -1843,12 +1888,14 @@ function KolamChatRailDetailPanel({
               ? 'Tulis pesan team chat'
               : 'Tulis pesan inbox'
           }
-          editable={!detail.sending}
+          editable={!detail.sending && !inboxComposerBlocked}
           multiline
           onChangeText={handleComposerInputChange}
           placeholder={
             mode === 'team-chat' && !detail.teamRoomMetadata.daraReplyEnabled
               ? 'Tulis pesan... @dara nonaktif'
+              : inboxComposerBlocked
+                ? 'Chat belum bisa dibalas'
               : 'Tulis pesan...'
           }
           placeholderTextColor={V.colors.mutedFg}
@@ -1857,11 +1904,12 @@ function KolamChatRailDetailPanel({
         />
         <KolamPressable
           accessibilityLabel="Kirim pesan"
-          disabled={!canSend || detail.sending}
+          disabled={!canSend || detail.sending || inboxComposerBlocked}
           onPress={handleSendFromComposer}
           style={[
             styles.sendButton,
-            (!canSend || detail.sending) && styles.sendButtonDisabled,
+            (!canSend || detail.sending || inboxComposerBlocked) &&
+              styles.sendButtonDisabled,
           ]}>
           <Text style={styles.sendButtonText}>
             {detail.sending ? 'Mengirim' : 'Kirim'}
@@ -1946,6 +1994,27 @@ function KolamChatTemplatePicker({
           />
         </ScrollView>
       ) : null}
+    </View>
+  );
+}
+
+function KolamInboxComposerGate({
+  access,
+}: {
+  access: KolamInboxComposerAccess | null;
+}) {
+  if (!access) {
+    return null;
+  }
+
+  const message =
+    access.lockedBy !== null
+      ? `Already handle by: ${access.lockedBy}`
+      : access.blockedReason ?? 'Chat belum bisa dibalas.';
+
+  return (
+    <View style={styles.composerGate}>
+      <Text style={styles.composerGateText}>{message}</Text>
     </View>
   );
 }
@@ -3405,6 +3474,94 @@ function conversationFitsAssignmentFilter(
 
   const assigned = Boolean(getChatStaffId(conversation.assignedStaffId));
   return filter === 'assigned' ? assigned : !assigned;
+}
+
+function canSignedInUserReplyCustomerChat(user?: SignedInUser | null) {
+  if (!user) {
+    return false;
+  }
+
+  const roleKey = String(user.roleKey ?? '').toLowerCase();
+  if (CHAT_ADMIN_ROLE_KEYS.has(roleKey)) {
+    return true;
+  }
+
+  return user.csActive === true;
+}
+
+function getInboxComposerAccess(
+  conversation:
+    | ReturnType<typeof useKolamChatRailDetail>['conversation']
+    | null
+    | undefined,
+  currentUserId?: string,
+  options: {csCanReply: boolean} = {csCanReply: false},
+): KolamInboxComposerAccess {
+  if (!conversation) {
+    return {
+      blockedReason: null,
+      disabled: true,
+      lockedBy: null,
+    };
+  }
+
+  if (!options.csCanReply) {
+    return {
+      blockedReason:
+        'Mode baca saja - aktifkan CS Aktif di admin untuk membalas chat customer.',
+      disabled: false,
+      lockedBy: null,
+    };
+  }
+
+  if (conversation.status === 'closed') {
+    if (conversation.pendingRating?.active) {
+      return {
+        blockedReason:
+          'Menunggu rating customer. Thread tetap terlihat, tetapi belum bisa dibalas.',
+        disabled: true,
+        lockedBy: null,
+      };
+    }
+
+    return {
+      blockedReason: 'Chat ditutup. Reopen conversation sebelum membalas.',
+      disabled: true,
+      lockedBy: null,
+    };
+  }
+
+  const assigneeId = getChatStaffId(conversation.assignedStaffId);
+  const assignedToMe = Boolean(
+    currentUserId && assigneeId && String(currentUserId) === String(assigneeId),
+  );
+
+  if (assigneeId && !assignedToMe) {
+    return {
+      blockedReason: null,
+      disabled: false,
+      lockedBy: getChatStaffLabel(conversation.assignedStaffId) || 'CS Agent',
+    };
+  }
+
+  if (!assigneeId && conversation.status === 'open') {
+    const isDaraSession =
+      conversation.isAiHandled !== false || Boolean(conversation.aiHandoffAt);
+
+    return {
+      blockedReason: isDaraSession
+        ? 'Chat ditangani DARA. Klik Assign saya di header inbox untuk mengambil chat sebagai CS.'
+        : 'Chat belum ditugaskan. Klik Assign saya di header inbox untuk mengambil chat sebagai CS, lalu balas pesan.',
+      disabled: false,
+      lockedBy: null,
+    };
+  }
+
+  return {
+    blockedReason: null,
+    disabled: false,
+    lockedBy: null,
+  };
 }
 
 interface KolamInboxResolvedCard {
@@ -6110,6 +6267,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-end',
     gap: 8,
+  },
+  composerGate: {
+    marginHorizontal: 10,
+    marginTop: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: V.radius.md,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.primarySoft,
+  },
+  composerGateText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '800',
+    lineHeight: 16,
+    textAlign: 'center',
   },
   attachButton: {
     width: 38,

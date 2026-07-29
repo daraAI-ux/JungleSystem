@@ -269,7 +269,7 @@ describe('KolamGlobalChatRail', () => {
       authPassword: '',
       authSource: 'kolam',
       authSourceHint: '',
-      authUser: {id: 'staff-1'},
+      authUser: {csActive: true, id: 'staff-1'},
       deviceIdentityStatus: 'missing',
       displayName: 'Staff',
       handleSignIn: jest.fn(),
@@ -777,8 +777,8 @@ describe('KolamGlobalChatRail', () => {
       conversation: {
         _id: 'conv-1',
         assignedStaffId: {
-          _id: 'staff-2',
-          first_name: 'Maya',
+          _id: 'staff-1',
+          first_name: 'Staff',
         },
         isAiHandled: false,
         labelIds: ['label-1', 'label-2'],
@@ -844,9 +844,8 @@ describe('KolamGlobalChatRail', () => {
         'Open',
         'Prioritas',
         'Follow up',
-        'CS: Maya',
+        'CS: Staff',
         'Resolve',
-        'Assign saya',
         'Unassign',
         'AI on',
       ]),
@@ -857,12 +856,6 @@ describe('KolamGlobalChatRail', () => {
       .find(
         node =>
           node.props.accessibilityLabel === 'Toggle inbox conversation status',
-      );
-    const assignButton = renderer!.root
-      .findAllByType(KolamPressable)
-      .find(
-        node =>
-          node.props.accessibilityLabel === 'Assign inbox conversation to me',
       );
     const unassignButton = renderer!.root
       .findAllByType(KolamPressable)
@@ -875,13 +868,12 @@ describe('KolamGlobalChatRail', () => {
 
     await ReactTestRenderer.act(async () => {
       await statusButton!.props.onPress();
-      await assignButton!.props.onPress();
       await unassignButton!.props.onPress();
       await aiButton!.props.onPress();
     });
 
     expect(toggleInboxStatus).toHaveBeenCalledTimes(1);
-    expect(assignInboxToMe).toHaveBeenCalledTimes(1);
+    expect(assignInboxToMe).not.toHaveBeenCalled();
     expect(unassignInbox).toHaveBeenCalledTimes(1);
     expect(toggleInboxAiHandled).toHaveBeenCalledTimes(1);
 
@@ -901,6 +893,81 @@ describe('KolamGlobalChatRail', () => {
     });
 
     expect(sendMessage).toHaveBeenCalledWith('Siap, masih tersedia.');
+  });
+
+  it('blocks inbox send until the conversation is assigned to the current staff', async () => {
+    const sendMessage = jest.fn().mockResolvedValue(undefined);
+    useReadonlyDataMock.mockReturnValue({
+      conversations: [
+        {
+          _id: 'conv-1',
+          platform: 'tokopedia',
+          contactId: {displayName: 'Buyer Tokopedia'},
+          lastMessagePreview: 'Apakah masih tersedia?',
+          unreadCount: 2,
+        },
+      ],
+      loading: false,
+      refresh: jest.fn(),
+      rooms: [],
+      totalUnread: 2,
+    });
+    useDetailMock.mockReturnValue({
+      ...getDefaultDetailMock(),
+      conversation: {
+        _id: 'conv-1',
+        assignedStaffId: null,
+        isAiHandled: false,
+        status: 'open',
+      },
+      loading: false,
+      messages: [],
+      sendMessage,
+      sending: false,
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamGlobalChatRail mode="inbox" onClose={() => undefined} />,
+      );
+    });
+
+    const selectButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Pilih conversation Buyer Tokopedia');
+
+    await ReactTestRenderer.act(async () => {
+      selectButton!.props.onPress();
+    });
+
+    expect(renderText(renderer!)).toEqual(
+      expect.arrayContaining([
+        'Assign saya',
+        'Chat belum ditugaskan. Klik Assign saya di header inbox untuk mengambil chat sebagai CS, lalu balas pesan.',
+      ]),
+    );
+
+    const input = renderer!.root
+      .findAllByType(TextInput)
+      .find(node => node.props.accessibilityLabel === 'Tulis pesan inbox');
+    expect(input!.props.editable).toBe(false);
+
+    await ReactTestRenderer.act(async () => {
+      input!.props.onChangeText('Siap, masih tersedia.');
+    });
+
+    const sendButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Kirim pesan');
+
+    expect(sendButton!.props.disabled).toBe(true);
+
+    await ReactTestRenderer.act(async () => {
+      await sendButton!.props.onPress();
+    });
+
+    expect(sendMessage).not.toHaveBeenCalled();
   });
 
   it('replies to a selected inbox message with reply metadata', async () => {
@@ -924,7 +991,10 @@ describe('KolamGlobalChatRail', () => {
       ...getDefaultDetailMock(),
       conversation: {
         _id: 'conv-1',
-        assignedStaffId: null,
+        assignedStaffId: {
+          _id: 'staff-1',
+          first_name: 'Staff',
+        },
         isAiHandled: false,
         platform: 'store',
         status: 'open',
@@ -1466,7 +1536,10 @@ describe('KolamGlobalChatRail', () => {
       ...getDefaultDetailMock(),
       conversation: {
         _id: 'conv-1',
-        assignedStaffId: null,
+        assignedStaffId: {
+          _id: 'staff-1',
+          first_name: 'Staff',
+        },
         isAiHandled: false,
         status: 'open',
       },

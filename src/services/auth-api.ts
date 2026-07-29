@@ -32,6 +32,7 @@ export interface SignedInUser {
   profilePhotoUrl?: string | null;
   timezone?: string;
   roleKey?: string;
+  csActive?: boolean;
   accessPos?: boolean;
   accessInventory?: boolean;
   accessAm?: boolean;
@@ -56,6 +57,7 @@ interface SignInResponse {
   access_pos?: boolean;
   access_inventory?: boolean;
   access_am?: boolean;
+  csActive?: boolean;
   account_restricted?: boolean;
   resignedAt?: string | null;
   user?: {
@@ -70,6 +72,7 @@ interface SignInResponse {
     access_pos?: boolean;
     access_inventory?: boolean;
     access_am?: boolean;
+    csActive?: boolean;
     account_restricted?: boolean;
     resignedAt?: string | null;
   };
@@ -95,6 +98,7 @@ interface BackendUserPayload {
   access_pos?: boolean;
   access_inventory?: boolean;
   access_am?: boolean;
+  csActive?: boolean;
   account_restricted?: boolean;
   resignedAt?: string | null;
   role?: {
@@ -223,6 +227,7 @@ function mapSignedInUser(
     profilePhotoUrl: resolveProfilePhotoUrl(payload.profile_picture),
     timezone: payload.timezone,
     roleKey,
+    csActive: payload.csActive,
     accessPos: payload.access_pos,
     accessInventory: payload.access_inventory,
     accessAm: payload.access_am,
@@ -321,7 +326,3 @@ export function getUserDisplayName(user: SignedInUser | null): string {
   const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ');
   return fullName || user.username || user.email || 'User POS';
 }
-
-
-
-
