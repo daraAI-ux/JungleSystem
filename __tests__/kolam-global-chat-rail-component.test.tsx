@@ -142,6 +142,7 @@ function getDefaultDetailMock() {
     refreshCall: jest.fn(),
     sendAttachment: jest.fn(),
     sendMessage: jest.fn(),
+    setInboxLabels: jest.fn(),
     signalTyping: jest.fn(),
     sending: false,
     startCall: jest.fn(),
@@ -242,6 +243,7 @@ describe('KolamGlobalChatRail', () => {
       refresh: jest.fn(),
       sendAttachment: jest.fn(),
       sendMessage: jest.fn(),
+      setInboxLabels: jest.fn(),
       signalTyping: jest.fn(),
       sending: false,
       updatePresenceFromLive: jest.fn(),
@@ -408,6 +410,7 @@ describe('KolamGlobalChatRail', () => {
   it('opens selected conversation details and sends a text message', async () => {
     const assignInboxToMe = jest.fn().mockResolvedValue(undefined);
     const sendMessage = jest.fn().mockResolvedValue(undefined);
+    const setInboxLabels = jest.fn().mockResolvedValue(undefined);
     const toggleInboxAiHandled = jest.fn().mockResolvedValue(undefined);
     const toggleInboxStatus = jest.fn().mockResolvedValue(undefined);
     const unassignInbox = jest.fn().mockResolvedValue(undefined);
@@ -463,6 +466,7 @@ describe('KolamGlobalChatRail', () => {
       refresh: jest.fn(),
       sendAttachment: jest.fn(),
       sendMessage,
+      setInboxLabels,
       signalTyping: jest.fn(),
       sending: false,
       toggleInboxAiHandled,
@@ -551,6 +555,82 @@ describe('KolamGlobalChatRail', () => {
     });
 
     expect(sendMessage).toHaveBeenCalledWith('Siap, masih tersedia.');
+  });
+
+  it('toggles inbox labels from the selected conversation action strip', async () => {
+    const setInboxLabels = jest.fn().mockResolvedValue(undefined);
+    useReadonlyDataMock.mockReturnValue({
+      conversations: [
+        {
+          _id: 'conv-1',
+          platform: 'tokopedia',
+          contactId: {displayName: 'Buyer Tokopedia'},
+          lastMessagePreview: 'Apakah masih tersedia?',
+          unreadCount: 1,
+        },
+      ],
+      loading: false,
+      refresh: jest.fn(),
+      rooms: [],
+      totalUnread: 1,
+    });
+    useDetailMock.mockReturnValue({
+      ...getDefaultDetailMock(),
+      conversation: {
+        _id: 'conv-1',
+        assignedStaffId: null,
+        isAiHandled: false,
+        labelIds: ['label-1'],
+        status: 'open',
+      },
+      loading: false,
+      messages: [],
+      setInboxLabels,
+      signalTyping: jest.fn(),
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamGlobalChatRail mode="inbox" onClose={() => undefined} />,
+      );
+    });
+
+    const selectButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Pilih conversation Buyer Tokopedia');
+
+    await ReactTestRenderer.act(async () => {
+      selectButton!.props.onPress();
+    });
+
+    const labelButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Toggle inbox label picker');
+
+    await ReactTestRenderer.act(async () => {
+      labelButton!.props.onPress();
+    });
+
+    expect(renderText(renderer!)).toEqual(
+      expect.arrayContaining([
+        'Label percakapan',
+        'Prioritas',
+        'Follow up',
+        'On',
+        'Off',
+      ]),
+    );
+
+    const followUpLabel = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Toggle label Follow up');
+
+    await ReactTestRenderer.act(async () => {
+      followUpLabel!.props.onPress();
+    });
+
+    expect(setInboxLabels).toHaveBeenCalledWith(['label-1', 'label-2']);
   });
 
   it('opens inbox templates and injects the selected body into the composer', async () => {

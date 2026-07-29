@@ -35,6 +35,7 @@ import {
   type KolamTeamChatPresence,
   unmuteKolamTeamChatCallParticipant,
   updateKolamChatConversationAiHandled,
+  updateKolamChatConversationLabels,
   updateKolamChatConversationStatus,
   uploadKolamTeamChatMedia,
 } from '../services/kolam-api';
@@ -85,6 +86,7 @@ export interface KolamChatRailDetailState {
   sendAttachment: (file: NativeImagePickerResult, text?: string) => Promise<void>;
   refresh: () => Promise<void>;
   sendMessage: (text: string) => Promise<void>;
+  setInboxLabels: (labelIds: string[]) => Promise<void>;
   signalTyping: (typing: boolean) => void;
   sending: boolean;
   startCall: () => Promise<void>;
@@ -444,6 +446,19 @@ export function useKolamChatRailDetail({
     );
   }, [conversation, runInboxConversationAction, selectedId]);
 
+  const setInboxLabels = useCallback(
+    async (labelIds: string[]) => {
+      if (!selectedId) {
+        return;
+      }
+
+      await runInboxConversationAction(() =>
+        updateKolamChatConversationLabels(selectedId, labelIds),
+      );
+    },
+    [runInboxConversationAction, selectedId],
+  );
+
   const runCallAction = useCallback(
     async (action: () => Promise<KolamTeamChatCall>) => {
       if (mode !== 'team-chat' || !selectedId || callBusy) {
@@ -578,6 +593,7 @@ export function useKolamChatRailDetail({
     refresh,
     sendAttachment,
     sendMessage,
+    setInboxLabels,
     signalTyping,
     sending,
     startCall,

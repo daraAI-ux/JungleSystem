@@ -1048,6 +1048,7 @@ function KolamInboxActionStrip({
   labels: KolamChatLabel[];
   onDetailsToggle: () => void;
 }) {
+  const [labelPickerOpen, setLabelPickerOpen] = React.useState(false);
   const conversation = detail.conversation;
   if (!conversation) {
     return null;
@@ -1060,6 +1061,14 @@ function KolamInboxActionStrip({
   );
   const assignedLabel = getChatStaffLabel(conversation.assignedStaffId);
   const displayLabels = getConversationLabels(conversation, labels);
+  const activeLabelIds = new Set(getConversationLabelIds(conversation));
+  const handleToggleLabel = (labelId: string) => {
+    const nextLabelIds = activeLabelIds.has(labelId)
+      ? Array.from(activeLabelIds).filter(id => id !== labelId)
+      : [...Array.from(activeLabelIds), labelId];
+
+    void detail.setInboxLabels(nextLabelIds);
+  };
 
   return (
     <View style={styles.inboxActionStrip}>
@@ -1085,6 +1094,18 @@ function KolamInboxActionStrip({
         </Text>
       </View>
       <View style={styles.inboxActionButtons}>
+        <KolamPressable
+          accessibilityLabel="Toggle inbox label picker"
+          disabled={detail.sending}
+          onPress={() => setLabelPickerOpen(current => !current)}
+          style={[
+            styles.callButton,
+            styles.callButtonGhost,
+            labelPickerOpen && styles.callButtonActive,
+            detail.sending && styles.callButtonDisabled,
+          ]}>
+          <Text style={styles.callButtonGhostText}>Label</Text>
+        </KolamPressable>
         <KolamPressable
           accessibilityLabel="Toggle inbox contact details"
           disabled={detail.sending}
@@ -1146,6 +1167,14 @@ function KolamInboxActionStrip({
           </KolamPressable>
         ) : null}
       </View>
+      {labelPickerOpen ? (
+        <KolamInboxLabelPicker
+          activeLabelIds={activeLabelIds}
+          disabled={detail.sending}
+          labels={labels}
+          onToggleLabel={handleToggleLabel}
+        />
+      ) : null}
     </View>
   );
 }
@@ -1162,6 +1191,61 @@ function KolamChatLabelPill({label}: {label: KolamChatLabel}) {
       <Text numberOfLines={1} style={styles.inboxLabelText}>
         {label.name}
       </Text>
+    </View>
+  );
+}
+
+function KolamInboxLabelPicker({
+  activeLabelIds,
+  disabled,
+  labels,
+  onToggleLabel,
+}: {
+  activeLabelIds: Set<string>;
+  disabled: boolean;
+  labels: KolamChatLabel[];
+  onToggleLabel: (labelId: string) => void;
+}) {
+  return (
+    <View style={styles.inboxLabelPicker}>
+      <Text style={styles.inboxLabelPickerTitle}>Label percakapan</Text>
+      {labels.length === 0 ? (
+        <Text style={styles.inboxLabelPickerEmpty}>Belum ada label.</Text>
+      ) : (
+        <View style={styles.inboxLabelOptionList}>
+          <KolamMappedList
+            items={labels}
+            getKey={label => label._id}
+            renderItem={label => {
+              const active = activeLabelIds.has(label._id);
+              return (
+                <KolamPressable
+                  accessibilityLabel={`Toggle label ${label.name}`}
+                  disabled={disabled}
+                  onPress={() => onToggleLabel(label._id)}
+                  style={[
+                    styles.inboxLabelOption,
+                    active && styles.inboxLabelOptionActive,
+                    disabled && styles.callButtonDisabled,
+                  ]}>
+                  <View
+                    style={[
+                      styles.inboxLabelDot,
+                      {backgroundColor: normalizeChatLabelColor(label.color)},
+                    ]}
+                  />
+                  <Text numberOfLines={1} style={styles.inboxLabelOptionText}>
+                    {label.name}
+                  </Text>
+                  <Text style={styles.inboxLabelOptionMark}>
+                    {active ? 'On' : 'Off'}
+                  </Text>
+                </KolamPressable>
+              );
+            }}
+          />
+        </View>
+      )}
     </View>
   );
 }
@@ -1733,6 +1817,29 @@ function getConversationLabels(
     .filter((label): label is KolamChatLabel => Boolean(label));
 }
 
+function getConversationLabelIds(
+  conversation: NonNullable<
+    ReturnType<typeof useKolamChatRailDetail>['conversation']
+  >,
+) {
+  const rawLabels =
+    Array.isArray(conversation.labelIds) && conversation.labelIds.length > 0
+      ? conversation.labelIds
+      : conversation.labels;
+
+  if (!Array.isArray(rawLabels)) {
+    return [];
+  }
+
+  return Array.from(
+    new Set(
+      rawLabels
+        .map(label => (typeof label === 'string' ? label : label._id))
+        .filter((labelId): labelId is string => Boolean(labelId)),
+    ),
+  );
+}
+
 function filterChatTemplates(
   templates: KolamChatTemplate[],
   search: string,
@@ -2128,6 +2235,59 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 10,
     fontWeight: '800',
+  },
+  inboxLabelPicker: {
+    padding: 8,
+    borderRadius: V.radius.md,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.bg,
+    gap: 6,
+  },
+  inboxLabelPickerTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '900',
+  },
+  inboxLabelPickerEmpty: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  inboxLabelOptionList: {
+    gap: 5,
+  },
+  inboxLabelOption: {
+    minHeight: 30,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: V.radius.md,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.mutedSoft,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+  },
+  inboxLabelOptionActive: {
+    borderColor: V.colors.primary,
+    backgroundColor: V.colors.primarySoft,
+  },
+  inboxLabelOptionText: {
+    minWidth: 0,
+    flex: 1,
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  inboxLabelOptionMark: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 9,
+    fontWeight: '900',
   },
   inboxActionMeta: {
     gap: 2,
