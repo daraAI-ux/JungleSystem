@@ -405,7 +405,9 @@ describe('settings web widgets', () => {
       renderer!.root
         .findAllByType(KolamDropdownSelect)
         .map(node => node.props.label),
-    ).toEqual(expect.arrayContaining(['Tipe pembayaran', 'Provider']));
+    ).toEqual(
+      expect.arrayContaining(['Tipe Pembayaran', 'Provider Pembayaran']),
+    );
   });
 
   it('renders Umum social media and staff access cards', async () => {

@@ -122,34 +122,38 @@ const paymentMethodTypeOptions: Array<{
   label: string;
   value: SettingsPaymentMethodDraft['type'];
 }> = [
-  {value: 'cash', label: 'Cash', description: 'Pembayaran tunai fisik.'},
+  {value: 'cash', label: 'Tunai', description: 'Pembayaran tunai fisik.'},
   {
     value: 'transfer',
-    label: 'Bank Transfer',
+    label: 'Transfer Bank',
     description: 'Transfer langsung antar bank.',
   },
-  {value: 'ewallet', label: 'E-Wallet', description: 'Dompet digital.'},
-  {value: 'credit', label: 'Credit Card', description: 'Kartu kredit.'},
-  {value: 'debit', label: 'Debit Card', description: 'Kartu debit.'},
+  {
+    value: 'ewallet',
+    label: 'Dompet Digital',
+    description: 'GoPay, OVO, DANA, dan layanan sejenis.',
+  },
+  {value: 'credit', label: 'Kartu Kredit', description: 'Pembayaran kartu kredit.'},
+  {value: 'debit', label: 'Kartu Debit', description: 'Pembayaran kartu debit.'},
   {value: 'qris', label: 'QRIS', description: 'Pembayaran kode QR.'},
 ];
 
 const paymentMethodProviderOptions = [
-  {value: 'BCA', label: 'Bank Central Asia (BCA)'},
-  {value: 'Mandiri', label: 'Bank Mandiri'},
-  {value: 'BRI', label: 'Bank Rakyat Indonesia (BRI)'},
-  {value: 'BNI', label: 'Bank Negara Indonesia (BNI)'},
-  {value: 'CIMB', label: 'CIMB Niaga'},
-  {value: 'Permata', label: 'Bank Permata'},
-  {value: 'Danamon', label: 'Bank Danamon'},
-  {value: 'BTN', label: 'Bank Tabungan Negara (BTN)'},
-  {value: 'GoPay', label: 'GoPay'},
-  {value: 'OVO', label: 'OVO'},
-  {value: 'DANA', label: 'DANA'},
-  {value: 'LinkAja', label: 'LinkAja'},
-  {value: 'ShopeePay', label: 'ShopeePay'},
-  {value: 'Cash', label: 'Cash'},
-  {value: 'Other', label: 'Other'},
+  {value: 'BCA', label: 'Bank Central Asia (BCA) - Bank'},
+  {value: 'Mandiri', label: 'Bank Mandiri - Bank'},
+  {value: 'BRI', label: 'Bank Rakyat Indonesia (BRI) - Bank'},
+  {value: 'BNI', label: 'Bank Negara Indonesia (BNI) - Bank'},
+  {value: 'CIMB', label: 'CIMB Niaga - Bank'},
+  {value: 'Permata', label: 'Bank Permata - Bank'},
+  {value: 'Danamon', label: 'Bank Danamon - Bank'},
+  {value: 'BTN', label: 'Bank Tabungan Negara (BTN) - Bank'},
+  {value: 'GoPay', label: 'GoPay - Dompet digital'},
+  {value: 'OVO', label: 'OVO - Dompet digital'},
+  {value: 'DANA', label: 'DANA - Dompet digital'},
+  {value: 'LinkAja', label: 'LinkAja - Dompet digital'},
+  {value: 'ShopeePay', label: 'ShopeePay - Dompet digital'},
+  {value: 'Cash', label: 'Tunai - Cash'},
+  {value: 'Other', label: 'Lainnya - Other'},
 ];
 
 const defaultPaymentMethodFilters: SettingsPaymentMethodFilters = {
@@ -7246,9 +7250,23 @@ function FinancialSettingsPanel({
                   value={paymentMethodDraft.name}
                   variant="settingsForm"
                 />
+                <KolamCopyStack
+                  items={[
+                    {
+                      id: 'payment-method-type-field-title',
+                      text: 'Tipe Pembayaran',
+                      style: styles.marketplaceOverviewLabel,
+                    },
+                    {
+                      id: 'payment-method-type-field-detail',
+                      text: 'Pilih tunai, transfer bank, dompet digital, kartu, atau QRIS.',
+                      style: styles.marketplaceOverviewMeta,
+                    },
+                  ]}
+                />
                 <KolamDropdownSelect
                   accessibilityLabel="Tipe metode pembayaran"
-                  label="Tipe pembayaran"
+                  label="Tipe Pembayaran"
                   menuPlacement="inline"
                   options={paymentMethodTypeOptions.map(option => ({
                     label: `${option.label} - ${option.description}`,
@@ -7260,9 +7278,23 @@ function FinancialSettingsPanel({
                   value={paymentMethodDraft.type}
                   onChange={value => setPaymentMethodDraftField('type', value)}
                 />
+                <KolamCopyStack
+                  items={[
+                    {
+                      id: 'payment-method-provider-field-title',
+                      text: 'Provider Pembayaran',
+                      style: styles.marketplaceOverviewLabel,
+                    },
+                    {
+                      id: 'payment-method-provider-field-detail',
+                      text: 'Pilih bank, dompet digital, tunai, atau provider lainnya.',
+                      style: styles.marketplaceOverviewMeta,
+                    },
+                  ]}
+                />
                 <KolamDropdownSelect
                   accessibilityLabel="Provider metode pembayaran"
-                  label="Provider"
+                  label="Provider Pembayaran"
                   menuPlacement="inline"
                   options={paymentMethodProviderOptions}
                   searchable
@@ -7441,7 +7473,7 @@ function FinancialSettingsPanel({
       ) : null}
 
       {financialSectionVisibility.taxProfile ? (
-        <View style={styles.marketplaceOverview}>
+        <View style={styles.financialNestedCard}>
           <FinancialSectionHeader
             detail="NPWP, status PKP, alamat, dan data wajib pajak untuk Tax Intelligence."
             title="Profil pajak perusahaan"
