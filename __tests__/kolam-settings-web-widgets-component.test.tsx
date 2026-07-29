@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, View } from 'react-native';
+import { Text, TextInput, View } from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 import { KolamActionControlButton } from '../src/components/kolam-action-control-button';
 import { KolamChoiceSegment } from '../src/components/kolam-choice-segment';
@@ -519,8 +519,8 @@ describe('settings web widgets', () => {
 
     expect(
       renderer!.root
-        .findAllByType(KolamTextFieldRow)
-        .some(node => node.props.label === 'Cari alamat'),
+        .findAllByType(TextInput)
+        .some(node => node.props.placeholder === 'Cari alamat kantor / toko'),
     ).toBe(true);
 
     await ReactTestRenderer.act(async () => {

@@ -2872,7 +2872,7 @@ export function KolamSettingsWebConfigSurface({
                         },
                         {
                           id: 'work-site-meta',
-                          text: 'Editor list native sederhana. Map belum dipasang; isi koordinat dan radius validasi check-in.',
+                          text: 'Cari alamat, lalu isi koordinat dan radius validasi check-in.',
                           style: styles.marketplaceOverviewMeta,
                         },
                       ]}
@@ -2899,7 +2899,7 @@ export function KolamSettingsWebConfigSurface({
                           draft.staffAttendanceMapProvider === 'google';
 
                         return (
-                          <View key={siteKey} style={styles.workSiteRow}>
+                          <View key={siteKey} style={styles.workSiteCard}>
                             <View style={styles.workSiteRowHeader}>
                               <KolamCopyStack
                                 containerStyle={styles.workSiteHeaderCopy}
@@ -2933,38 +2933,45 @@ export function KolamSettingsWebConfigSurface({
                                 }
                               />
                             </View>
-                            <KolamTextFieldRow
-                              variant="settingsForm"
-                              fieldWidth={settingsFieldWidth}
-                              label="Nama lokasi"
-                              description="Nama kantor, gudang, toko, atau area kerja."
-                              value={site.name ?? ''}
-                              onChangeText={value =>
-                                updateStaffAttendanceWorkSite(index, {
-                                  name: value,
-                                })
-                              }
-                              placeholder="Kantor"
-                            />
-                            <View style={styles.workSiteGeocodeRow}>
-                              <KolamTextFieldRow
-                                variant="settingsForm"
-                                fieldWidth={settingsFieldWidth}
-                                label="Cari alamat"
-                                description={
-                                  draft.staffAttendanceMapProvider === 'google'
-                                    ? 'Pencarian server tersedia untuk OpenStreetMap. Map Google native belum dipasang.'
-                                    : 'Cari alamat via endpoint geocode backend, lalu isi latitude/longitude otomatis.'
-                                }
-                                value={geocodeQuery}
+                            <View style={styles.workSiteCompactFields}>
+                              <TextInput
+                                editable={!disabled}
                                 onChangeText={value =>
-                                  setWorkSiteGeocodeQueries(current => ({
-                                    ...current,
-                                    [siteKey]: value,
-                                  }))
+                                  updateStaffAttendanceWorkSite(index, {
+                                    name: value,
+                                  })
                                 }
-                                placeholder="Alamat kantor / toko"
+                                placeholder="Nama lokasi"
+                                style={[
+                                  styles.financialSearchInput,
+                                  styles.workSiteFullInput,
+                                ]}
+                                value={site.name ?? ''}
                               />
+                              <View style={styles.workSiteSearchRow}>
+                                <TextInput
+                                  editable={
+                                    !disabled &&
+                                    draft.staffAttendanceMapProvider !==
+                                      'google'
+                                  }
+                                  onChangeText={value =>
+                                    setWorkSiteGeocodeQueries(current => ({
+                                      ...current,
+                                      [siteKey]: value,
+                                    }))
+                                  }
+                                  placeholder="Cari alamat kantor / toko"
+                                  style={[
+                                    styles.financialSearchInput,
+                                    styles.workSiteSearchInput,
+                                    (disabled ||
+                                      draft.staffAttendanceMapProvider ===
+                                        'google') &&
+                                      styles.storeHoursTimeInputDisabled,
+                                  ]}
+                                  value={geocodeQuery}
+                                />
                               <KolamActionControlButton
                                 label="Cari koordinat"
                                 loading={geocodeLoading}
@@ -2977,6 +2984,7 @@ export function KolamSettingsWebConfigSurface({
                                   )
                                 }
                               />
+                              </View>
                             </View>
                             {geocodeStatus?.message ? (
                               <KolamCopyStack
@@ -2993,11 +3001,13 @@ export function KolamSettingsWebConfigSurface({
                               />
                             ) : null}
                             <View style={styles.workSiteCoordinateGrid}>
-                              <KolamTextFieldRow
-                                variant="settingsForm"
-                                fieldWidth={220}
-                                label="Latitude"
-                                description="Koordinat lintang."
+                              <TextInput
+                                editable={!disabled}
+                                accessibilityLabel="Latitude lokasi kerja"
+                                style={[
+                                  styles.financialSearchInput,
+                                  styles.workSiteCoordinateInput,
+                                ]}
                                 value={formatWorkSiteInputValue(site.latitude)}
                                 onChangeText={value =>
                                   updateStaffAttendanceWorkSite(index, {
@@ -3006,11 +3016,13 @@ export function KolamSettingsWebConfigSurface({
                                 }
                                 placeholder="-6.2088"
                               />
-                              <KolamTextFieldRow
-                                variant="settingsForm"
-                                fieldWidth={220}
-                                label="Longitude"
-                                description="Koordinat bujur."
+                              <TextInput
+                                editable={!disabled}
+                                accessibilityLabel="Longitude lokasi kerja"
+                                style={[
+                                  styles.financialSearchInput,
+                                  styles.workSiteCoordinateInput,
+                                ]}
                                 value={formatWorkSiteInputValue(site.longitude)}
                                 onChangeText={value =>
                                   updateStaffAttendanceWorkSite(index, {
@@ -3019,11 +3031,13 @@ export function KolamSettingsWebConfigSurface({
                                 }
                                 placeholder="106.8456"
                               />
-                              <KolamTextFieldRow
-                                variant="settingsForm"
-                                fieldWidth={220}
-                                label="Radius absen (meter)"
-                                description="Minimum backend 20 meter."
+                              <TextInput
+                                editable={!disabled}
+                                accessibilityLabel="Radius absen meter"
+                                style={[
+                                  styles.financialSearchInput,
+                                  styles.workSiteCoordinateInput,
+                                ]}
                                 value={formatWorkSiteInputValue(
                                   site.radiusMeters,
                                 )}
@@ -8248,7 +8262,18 @@ const styles = StyleSheet.create({
   workSiteCoordinateGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    gap: 8,
+  },
+  workSiteCoordinateInput: {
+    flexBasis: 120,
+    flexGrow: 1,
+    minWidth: 104,
+  },
+  workSiteCompactFields: {
+    gap: 8,
+  },
+  workSiteFullInput: {
+    width: '100%',
   },
   workSiteGeocodeRow: {
     alignItems: 'flex-end',
@@ -8270,6 +8295,14 @@ const styles = StyleSheet.create({
   workSiteList: {
     gap: 10,
   },
+  workSiteCard: {
+    backgroundColor: V.colors.bg,
+    borderColor: '#e5e7eb',
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 10,
+    padding: 10,
+  },
   workSiteRow: {
     borderColor: '#e5e7eb',
     borderTopWidth: 1,
@@ -8282,6 +8315,16 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 10,
     justifyContent: 'space-between',
+  },
+  workSiteSearchInput: {
+    flex: 1,
+    minWidth: 180,
+  },
+  workSiteSearchRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
   },
   workSiteSection: {
     gap: 10,
