@@ -879,8 +879,18 @@ describe('KolamGlobalChatRail', () => {
       selectButton!.props.onPress();
     });
 
+    expect(
+      renderer!.root
+        .findAllByType(KolamPressable)
+        .some(
+          node =>
+            node.props.accessibilityLabel ===
+            'Pilih conversation Buyer Tokopedia',
+        ),
+    ).toBe(false);
     expect(renderText(renderer!)).toEqual(
       expect.arrayContaining([
+        'Kembali',
         'Buyer',
         'Apakah masih tersedia?',
         'File',
@@ -921,6 +931,39 @@ describe('KolamGlobalChatRail', () => {
     expect(assignInboxToMe).not.toHaveBeenCalled();
     expect(unassignInbox).toHaveBeenCalledTimes(1);
     expect(toggleInboxAiHandled).toHaveBeenCalledTimes(1);
+
+    const backButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(
+        node =>
+          node.props.accessibilityLabel === 'Kembali ke daftar inbox chat',
+      );
+
+    await ReactTestRenderer.act(async () => {
+      backButton!.props.onPress();
+    });
+
+    expect(
+      renderer!.root
+        .findAllByType(KolamPressable)
+        .some(
+          node =>
+            node.props.accessibilityLabel ===
+            'Pilih conversation Buyer Tokopedia',
+        ),
+    ).toBe(true);
+
+    const reopenedSelectButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(
+        node =>
+          node.props.accessibilityLabel ===
+          'Pilih conversation Buyer Tokopedia',
+      );
+
+    await ReactTestRenderer.act(async () => {
+      reopenedSelectButton!.props.onPress();
+    });
 
     const input = renderer!.root
       .findAllByType(TextInput)

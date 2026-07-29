@@ -278,6 +278,7 @@ export function KolamGlobalChatRail({
       }),
     [],
   );
+  const inboxDetailOpen = mode === 'inbox' && selectedItem !== null;
   const handleLiveEvent = React.useCallback(
     (event: KolamChatLiveEvent) => {
       const classification = classifyKolamChatLiveEvent(event, {
@@ -666,7 +667,7 @@ export function KolamGlobalChatRail({
       </View>
 
       <View style={styles.body}>
-        {mode === 'inbox' ? (
+        {mode === 'inbox' && !inboxDetailOpen ? (
           <KolamInboxFilterPanel
             filter={inboxFilter}
             labels={labelsState.items}
@@ -674,11 +675,13 @@ export function KolamGlobalChatRail({
           />
         ) : null}
 
-        {mode === 'inbox' ? (
+        {mode === 'inbox' && !inboxDetailOpen ? (
           <KolamChatRailAnalyticsPanel state={analyticsState} />
         ) : null}
 
-        {mode === 'inbox' ? <KolamChatRailSettingsShortcuts /> : null}
+        {mode === 'inbox' && !inboxDetailOpen ? (
+          <KolamChatRailSettingsShortcuts />
+        ) : null}
 
         {mode === 'team-chat' ? (
           <KolamTeamChatCreateRoomPanel
@@ -739,6 +742,16 @@ export function KolamGlobalChatRail({
             onPendingAttachmentPick={handleChooseAttachment}
             onReplyCancel={() => setReplyTarget(null)}
             onReplyToMessage={setReplyTarget}
+            onBack={
+              mode === 'inbox'
+                ? () => {
+                    setSelectedItemId(null);
+                    setComposerText('');
+                    setPendingAttachment(null);
+                    setReplyTarget(null);
+                  }
+                : undefined
+            }
             onSend={handleSend}
             pendingAttachment={pendingAttachment}
             replyTarget={replyTarget}
@@ -763,7 +776,7 @@ export function KolamGlobalChatRail({
           />
         ) : null}
 
-        {!data.errorMessage && items.length > 0 ? (
+        {!data.errorMessage && items.length > 0 && !inboxDetailOpen ? (
           <ScrollView
             style={styles.listScroll}
             contentContainerStyle={styles.list}
@@ -1356,6 +1369,7 @@ function KolamChatRailDetailPanel({
   onPendingAttachmentPick,
   onReplyCancel,
   onReplyToMessage,
+  onBack,
   onSend,
   pendingAttachment,
   replyTarget,
@@ -1374,6 +1388,7 @@ function KolamChatRailDetailPanel({
   onPendingAttachmentPick: () => void;
   onReplyCancel: () => void;
   onReplyToMessage: (message: KolamChatRailReplyTarget) => void;
+  onBack?: () => void;
   onSend: () => Promise<void> | void;
   pendingAttachment: NativeImagePickerResult | null;
   replyTarget: KolamChatRailReplyTarget | null;
@@ -1599,9 +1614,19 @@ function KolamChatRailDetailPanel({
     };
   }, [contactDetailsOpen, mode, selectedItem.id]);
 
+  const fullPage = Boolean(onBack);
+
   return (
-    <View style={styles.detailPanel}>
+    <View style={[styles.detailPanel, fullPage && styles.detailPanelFull]}>
       <View style={styles.selectedBanner}>
+        {onBack ? (
+          <KolamPressable
+            accessibilityLabel="Kembali ke daftar inbox chat"
+            onPress={onBack}
+            style={styles.detailBackButton}>
+            <Text style={styles.detailBackButtonText}>Kembali</Text>
+          </KolamPressable>
+        ) : null}
         <Text numberOfLines={1} style={styles.selectedTitle}>
           {selectedItem.title}
         </Text>
@@ -1674,7 +1699,7 @@ function KolamChatRailDetailPanel({
         />
       ) : null}
 
-      <View style={styles.messagePane}>
+      <View style={[styles.messagePane, fullPage && styles.messagePaneFull]}>
         {detail.loading ? (
           <Text style={styles.metaText}>Memuat pesan...</Text>
         ) : null}
@@ -1701,7 +1726,7 @@ function KolamChatRailDetailPanel({
 
         {displayedMessages.length > 0 ? (
           <ScrollView
-            style={styles.messageScroll}
+            style={[styles.messageScroll, fullPage && styles.messageScrollFull]}
             contentContainerStyle={styles.messageList}
             showsVerticalScrollIndicator>
             <KolamMappedList
@@ -5159,6 +5184,22 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     gap: 3,
   },
+  detailBackButton: {
+    minHeight: 28,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: V.radius.md,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.bg,
+  },
+  detailBackButtonText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '900',
+  },
   selectedTitle: {
     color: V.colors.primary,
     fontFamily: V.fontFamily,
@@ -5437,6 +5478,11 @@ const styles = StyleSheet.create({
     backgroundColor: V.colors.bg,
     overflow: 'hidden',
   },
+  detailPanelFull: {
+    minHeight: 0,
+    maxHeight: undefined,
+    flex: 1,
+  },
   messagePane: {
     minHeight: 120,
     maxHeight: 190,
@@ -5444,6 +5490,11 @@ const styles = StyleSheet.create({
     borderTopColor: V.colors.border,
     borderTopWidth: 1,
     gap: 8,
+  },
+  messagePaneFull: {
+    minHeight: 0,
+    maxHeight: undefined,
+    flex: 1,
   },
   messageSearchMeta: {
     color: V.colors.mutedFg,
@@ -5453,6 +5504,11 @@ const styles = StyleSheet.create({
   },
   messageScroll: {
     maxHeight: 170,
+  },
+  messageScrollFull: {
+    minHeight: 0,
+    maxHeight: undefined,
+    flex: 1,
   },
   messageList: {
     gap: 8,
