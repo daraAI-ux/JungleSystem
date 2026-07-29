@@ -2460,45 +2460,58 @@ export function KolamSettingsWebConfigSurface({
       ) : null}
       {showOperationalSettings ? (
         <>
-          <KolamCopyStack
-            items={[
-              {
-                id: 'operational-maintenance-title',
-                text: 'Mode pemeliharaan',
-                style: styles.marketplaceOverviewTitle,
-              },
-              {
-                id: 'operational-maintenance-meta',
-                text: 'Aktifkan atau nonaktifkan mode pemeliharaan untuk POS dan Marketplace.',
-                style: styles.marketplaceOverviewMeta,
-              },
+          <View
+            style={[
+              styles.marketplaceControlSection,
+              styles.notificationSettingsCard,
             ]}
-          />
-          <KolamToggleRow
-            variant="settingsForm"
-            label="POS"
-            description="Maintenance POS."
-            active={draft.maintenancePos}
-            onPress={() => {
-              if (disabled) {
-                return;
-              }
-              onSaveOperationalMaintenance('pos', !draft.maintenancePos);
-            }}
-          />
-          <KolamToggleRow
-            variant="settingsForm"
-            label="Marketplace"
-            description="Maintenance web toko."
-            active={draft.maintenanceMarketplace}
-            onPress={() =>
-              !disabled &&
-              onSaveOperationalMaintenance(
-                'marketplace',
-                !draft.maintenanceMarketplace,
-              )
-            }
-          />
+          >
+            <KolamCopyStack
+              items={[
+                {
+                  id: 'operational-maintenance-title',
+                  text: 'Mode pemeliharaan',
+                  style: styles.marketplaceOverviewTitle,
+                },
+                {
+                  id: 'operational-maintenance-meta',
+                  text: 'Aktifkan atau nonaktifkan mode pemeliharaan untuk POS dan Marketplace.',
+                  style: styles.marketplaceOverviewMeta,
+                },
+              ]}
+            />
+            <View style={styles.notificationToggleGrid}>
+              <View style={styles.notificationToggleBox}>
+                <KolamToggleRow
+                  variant="settingsForm"
+                  label="POS"
+                  description="Maintenance POS."
+                  active={draft.maintenancePos}
+                  onPress={() => {
+                    if (disabled) {
+                      return;
+                    }
+                    onSaveOperationalMaintenance('pos', !draft.maintenancePos);
+                  }}
+                />
+              </View>
+              <View style={styles.notificationToggleBox}>
+                <KolamToggleRow
+                  variant="settingsForm"
+                  label="Marketplace"
+                  description="Maintenance web toko."
+                  active={draft.maintenanceMarketplace}
+                  onPress={() =>
+                    !disabled &&
+                    onSaveOperationalMaintenance(
+                      'marketplace',
+                      !draft.maintenanceMarketplace,
+                    )
+                  }
+                />
+              </View>
+            </View>
+          </View>
           <KolamCopyStack
             items={[
               {
