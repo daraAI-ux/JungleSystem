@@ -95,24 +95,32 @@ export function KolamCustomerSurface({
   }
 
   if (routePath === '/customers/create') {
-    return <KolamCustomerFormSurface onRouteChange={onRouteChange} />;
+    return (
+      <View style={styles.surface}>
+        <KolamCustomerFormSurface onRouteChange={onRouteChange} />
+      </View>
+    );
   }
 
   if (editMatch?.[1]) {
     return (
-      <KolamCustomerFormSurface
-        customerId={decodeURIComponent(editMatch[1])}
-        onRouteChange={onRouteChange}
-      />
+      <View style={styles.surface}>
+        <KolamCustomerFormSurface
+          customerId={decodeURIComponent(editMatch[1])}
+          onRouteChange={onRouteChange}
+        />
+      </View>
     );
   }
 
   if (detailMatch?.[1]) {
     return (
-      <KolamCustomerDetailSurface
-        customerId={decodeURIComponent(detailMatch[1])}
-        onRouteChange={onRouteChange}
-      />
+      <View style={styles.surface}>
+        <KolamCustomerDetailSurface
+          customerId={decodeURIComponent(detailMatch[1])}
+          onRouteChange={onRouteChange}
+        />
+      </View>
     );
   }
 

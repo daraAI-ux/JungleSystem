@@ -125,6 +125,7 @@ const KOLAM_CENTERED_ROUTE_PREFIXES = [
   '/stock-opname',
   '/locations',
   '/suppliers',
+  '/customers',
   '/purchase-order',
 ];
 const styles = StyleSheet.create({
