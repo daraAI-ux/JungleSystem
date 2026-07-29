@@ -41,6 +41,18 @@ describe('getKolamTableColumns', () => {
     ]);
   });
 
+  it('defines supplier catalog purchase table headers', () => {
+    expect(
+      getKolamTableColumns('supplier-catalog').map(column => column.label),
+    ).toEqual([
+      'Nama',
+      'Harga',
+      'Total order',
+      'Total value order',
+      'Terakhir purchase',
+    ]);
+  });
+
   it('returns cloned column definitions so render code cannot mutate the contract', () => {
     const first = getKolamTableColumns('sales');
     first[0].label = 'Changed';

@@ -1206,7 +1206,10 @@ function KolamSupplierCatalogTabs({
 
       {tab === 'products' ? (
         productPurchaseRows.length ? (
-          <View style={styles.catalogList}>
+          <View style={styles.catalogTable}>
+            <KolamDataTableHeader
+              columns={getKolamTableColumns('supplier-catalog')}
+            />
             {productPurchaseRows.map(row => (
               <SupplierCatalogPurchaseRow
                 key={row.key}
@@ -1226,7 +1229,10 @@ function KolamSupplierCatalogTabs({
 
       {tab === 'species' ? (
         speciesPurchaseRows.length ? (
-          <View style={styles.catalogList}>
+          <View style={styles.catalogTable}>
+            <KolamDataTableHeader
+              columns={getKolamTableColumns('supplier-catalog')}
+            />
             {speciesPurchaseRows.map(row => (
               <SupplierCatalogPurchaseRow
                 key={row.key}
@@ -1246,7 +1252,10 @@ function KolamSupplierCatalogTabs({
 
       {tab === 'packings' ? (
         packingPurchaseRows.length ? (
-          <View style={styles.catalogList}>
+          <View style={styles.catalogTable}>
+            <KolamDataTableHeader
+              columns={getKolamTableColumns('supplier-catalog')}
+            />
             {packingPurchaseRows.map(row => (
               <SupplierCatalogPurchaseRow
                 key={row.key}
@@ -1592,68 +1601,88 @@ function SupplierCatalogPurchaseRow({
   row: SupplierCatalogPurchaseRowData;
   scope: 'product' | 'species';
 }) {
-  const purchaseMeta = row.purchase
-    ? [
-        `qty ${row.purchase.totalQuantityOrdered.toLocaleString('id-ID')} / ${row.purchase.totalQuantityReceived.toLocaleString('id-ID')}`,
-        `${row.purchase.orderCount} PO`,
-        row.purchase.lastPurchase
-          ? formatSupplierDateTime(row.purchase.lastPurchase)
-          : null,
-      ]
-        .filter(Boolean)
-        .join(' · ')
-    : '';
+  const harga =
+    row.price != null
+      ? formatRupiah(row.price)
+      : row.purchase?.averagePrice
+      ? formatRupiah(row.purchase.averagePrice)
+      : '—';
+  const totalOrder = row.purchase
+    ? String(row.purchase.orderCount)
+    : '—';
+  const totalValue = row.purchase
+    ? formatRupiah(row.purchase.totalValue)
+    : '—';
+  const lastPurchase = row.purchase?.lastPurchase
+    ? formatSupplierDateTime(row.purchase.lastPurchase)
+    : '—';
 
   return (
-    <Pressable
-      onPress={row.onPress}
-      style={[
-        styles.catalogRow,
-        row.isVariantRow ? styles.catalogRowVariant : null,
-      ]}
+    <KolamDataTableRowFrame
+      style={row.isVariantRow ? styles.catalogTableRowVariant : undefined}
     >
-      {row.isVariantRow ? (
-        <Text style={styles.catalogVariantMark}>↳</Text>
-      ) : row.photoUrl ? (
-        <KolamRemoteImage
-          accessibilityLabel={row.title}
-          resizeMode="cover"
-          scope={scope}
-          sourceUri={row.photoUrl}
-          style={styles.catalogThumb}
-        />
-      ) : (
-        <View style={styles.catalogThumbFallback}>
-          <Text style={styles.thumbFallbackText}>
-            {row.title.slice(0, 1).toUpperCase()}
-          </Text>
+      <Pressable
+        onPress={row.onPress}
+        style={[styles.cell, styles.primaryCell]}
+      >
+        <View style={styles.identity}>
+          {row.isVariantRow ? (
+            <Text style={styles.catalogVariantMark}>↳</Text>
+          ) : row.photoUrl ? (
+            <KolamRemoteImage
+              accessibilityLabel={row.title}
+              resizeMode="cover"
+              scope={scope}
+              sourceUri={row.photoUrl}
+              style={styles.thumb}
+            />
+          ) : (
+            <View style={styles.thumbFallback}>
+              <Text style={styles.thumbFallbackText}>
+                {row.title.slice(0, 1).toUpperCase()}
+              </Text>
+            </View>
+          )}
+          <KolamCopyStack
+            containerStyle={styles.identityCopy}
+            items={[
+              {
+                id: 'name',
+                text: row.title,
+                style: [
+                  styles.rowTitle,
+                  row.isVariantRow ? styles.catalogVariantTitle : null,
+                  row.italic ? styles.catalogItalic : null,
+                ],
+              },
+              ...(row.meta
+                ? [
+                    {
+                      id: 'meta',
+                      text: row.meta,
+                      style: styles.rowMeta,
+                    },
+                  ]
+                : []),
+            ]}
+          />
         </View>
-      )}
-      <View style={styles.catalogCopy}>
-        <Text
-          numberOfLines={2}
-          style={[
-            styles.catalogTitle,
-            row.isVariantRow ? styles.catalogVariantTitle : null,
-            row.italic ? styles.catalogItalic : null,
-          ]}
-        >
-          {row.title}
-        </Text>
-        <Text numberOfLines={2} style={styles.rowMeta}>
-          {[row.meta || null, purchaseMeta || null]
-            .filter(Boolean)
-            .join(' · ') || '—'}
+      </Pressable>
+      <View style={[styles.cell, { width: 120 }]}>
+        <Text style={styles.numText}>{harga}</Text>
+      </View>
+      <View style={[styles.cell, { width: 110 }]}>
+        <Text style={styles.numText}>{totalOrder}</Text>
+      </View>
+      <View style={[styles.cell, { width: 140 }]}>
+        <Text style={styles.numText}>{totalValue}</Text>
+      </View>
+      <View style={[styles.cell, { width: 140 }]}>
+        <Text numberOfLines={2} style={styles.cellText}>
+          {lastPurchase}
         </Text>
       </View>
-      <Text style={styles.catalogPrice}>
-        {row.purchase
-          ? formatRupiah(row.purchase.totalValue)
-          : row.price != null
-          ? formatRupiah(row.price)
-          : '—'}
-      </Text>
-    </Pressable>
+    </KolamDataTableRowFrame>
   );
 }
 
@@ -2439,6 +2468,14 @@ const styles = StyleSheet.create({
   },
   catalogList: {
     gap: 6,
+  },
+  catalogTable: {
+    gap: 0,
+    overflow: 'visible',
+    width: '100%',
+  },
+  catalogTableRowVariant: {
+    backgroundColor: V.colors.muted,
   },
   catalogRow: {
     alignItems: 'center',

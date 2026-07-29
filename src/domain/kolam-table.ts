@@ -13,6 +13,7 @@ export type KolamTableId =
   | 'sales'
   | 'species'
   | 'supplier'
+  | 'supplier-catalog'
   | 'tag'
   | 'teranura'
   | 'taxonomy'
@@ -278,6 +279,13 @@ const kolamTableColumns: Record<KolamTableId, KolamTableColumn[]> = {
     { id: 'children', label: 'Total PO', align: 'right', width: 100 },
     { id: 'status', label: 'Status', align: 'left', width: 120 },
     { id: 'actions', label: '', align: 'right', width: 64 },
+  ],
+  'supplier-catalog': [
+    { id: 'primary', label: 'Nama', align: 'left' },
+    { id: 'price', label: 'Harga', align: 'right', width: 120 },
+    { id: 'children', label: 'Total order', align: 'right', width: 110 },
+    { id: 'amount', label: 'Total value order', align: 'right', width: 140 },
+    { id: 'notes', label: 'Terakhir purchase', align: 'left', width: 140 },
   ],
   teranura: [
     { id: 'primary', label: 'Nama', align: 'left' },
