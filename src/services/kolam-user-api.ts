@@ -2,9 +2,12 @@ import {appConfig} from '../config/app';
 import {
   normalizeKolamUserDetail,
   normalizeKolamUserListResult,
+  normalizeKolamUserRoles,
+  type KolamUserCreatePayload,
   type KolamUserListItem,
   type KolamUserListQuery,
   type KolamUserListResult,
+  type KolamUserRoleOption,
 } from '../domain/kolam-user';
 import {apiRequest} from '../lib/api-client';
 
@@ -56,16 +59,38 @@ export async function getKolamUserDetail(
   return normalizeKolamUserDetail(response);
 }
 
+export async function getKolamUserRoles(): Promise<KolamUserRoleOption[]> {
+  const response = await kolamRequest<unknown>('/roles');
+
+  return normalizeKolamUserRoles(response);
+}
+
+export async function createKolamUser(
+  payload: KolamUserCreatePayload,
+): Promise<KolamUserListItem | null> {
+  const response = await kolamRequest<unknown>('/auth/create-user-by-admin', {
+    body: payload,
+    method: 'POST',
+  });
+  const record = response && typeof response === 'object'
+    ? (response as Record<string, unknown>)
+    : {};
+
+  return normalizeKolamUserDetail(record.data ?? response);
+}
+
 function kolamRequest<T>(
   path: string,
   options: {
-    method?: 'GET';
+    body?: unknown;
+    method?: 'GET' | 'POST';
     query?: Record<string, string | number | boolean | undefined | null>;
   } = {},
 ) {
   return apiRequest<T>({
     method: options.method ?? 'GET',
     path,
+    body: options.body,
     query: options.query,
     baseUrl: appConfig.kolamApiBaseUrl,
     sourceHeader: appConfig.kolamSourceHeader,

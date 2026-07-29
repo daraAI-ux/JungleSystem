@@ -1379,6 +1379,12 @@ const kolamNavigationRouteVariantSpecs: Array<{
   },
   {
     baseRoute: '/list-of-users',
+    labelSuffix: 'Tambah Pengguna',
+    route: '/list-of-users/users/create',
+    description: '',
+  },
+  {
+    baseRoute: '/list-of-users',
     labelSuffix: 'Detail Pengguna',
     route: '/list-of-users/users/:id',
     description: '',

@@ -5,16 +5,24 @@ import {
   getKolamUserIdFromRoute,
   getKolamUserRouteMode,
   type KolamUserBooleanFilter,
+  type KolamUserCreatePayload,
   type KolamUserListItem,
   type KolamUserListPagination,
+  type KolamUserRoleOption,
 } from '../domain/kolam-user';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
-import {getKolamUserDetail, getKolamUserList} from '../services/kolam-user-api';
+import {
+  createKolamUser,
+  getKolamUserDetail,
+  getKolamUserList,
+  getKolamUserRoles,
+} from '../services/kolam-user-api';
 import {KolamButton} from './kolam-button';
 import {KolamCatalogListTableShell} from './kolam-catalog-list-table-shell';
 import {KolamConfirmDialog} from './kolam-confirm-dialog';
 import {KolamContentFrame} from './kolam-content-frame';
 import {
+  KolamDropdownSelect,
   KolamOverflowMenuButton,
   KolamTableFooterControls,
 } from './kolam-dropdown-select';
@@ -47,6 +55,16 @@ const USER_LIST_COLUMNS = [
 
 type UserListColumnId = (typeof USER_LIST_COLUMNS)[number]['id'];
 
+const EMPTY_CREATE_USER_FORM: KolamUserCreatePayload = {
+  email: '',
+  first_name: '',
+  last_name: '',
+  password: '',
+  phone_number: '',
+  role: '',
+  username: '',
+};
+
 const INITIAL_PAGINATION: KolamUserListPagination = {
   hasMore: false,
   limit: 10,
@@ -66,6 +84,10 @@ export function KolamUserSurface({
 }) {
   const routeMode = getKolamUserRouteMode(route);
 
+  if (routeMode === 'create') {
+    return <KolamUserCreateSurface onRouteChange={onRouteChange} />;
+  }
+
   if (routeMode === 'detail') {
     return (
       <KolamUserDetailSurface
@@ -76,6 +98,186 @@ export function KolamUserSurface({
   }
 
   return <KolamUserListSurface onRouteChange={onRouteChange} />;
+}
+
+function KolamUserCreateSurface({
+  onRouteChange,
+}: {
+  onRouteChange?: (route: string) => void;
+}) {
+  const [form, setForm] = React.useState<KolamUserCreatePayload>({
+    ...EMPTY_CREATE_USER_FORM,
+  });
+  const [roles, setRoles] = React.useState<KolamUserRoleOption[]>([]);
+  const [rolesLoading, setRolesLoading] = React.useState(true);
+  const [saving, setSaving] = React.useState(false);
+  const [message, setMessage] = React.useState('');
+  const [error, setError] = React.useState('');
+
+  React.useEffect(() => {
+    let active = true;
+
+    setRolesLoading(true);
+
+    void getKolamUserRoles()
+      .then(result => {
+        if (active) {
+          setRoles(result);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setRoles([]);
+          setError('Gagal memuat daftar peran.');
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setRolesLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const setField = (field: keyof KolamUserCreatePayload, value: string) => {
+    setForm(current => ({...current, [field]: value}));
+    setError('');
+    setMessage('');
+  };
+
+  const handleSubmit = async () => {
+    const validationError = validateCreateUserForm(form);
+
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    setSaving(true);
+    setError('');
+    setMessage('');
+
+    try {
+      await createKolamUser({
+        email: form.email.trim(),
+        first_name: form.first_name.trim(),
+        last_name: form.last_name.trim(),
+        password: form.password,
+        phone_number: form.phone_number.trim(),
+        role: form.role.trim(),
+        username: form.username.trim(),
+      });
+      setMessage('Pengguna berhasil dibuat.');
+      setForm({...EMPTY_CREATE_USER_FORM});
+      onRouteChange?.('/list-of-users');
+    } catch (err) {
+      setError(getUserFormErrorMessage(err, 'Gagal membuat pengguna.'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <View style={styles.detailSurface}>
+      <View style={styles.detailActionRow}>
+        <KolamButton
+          disabled={saving}
+          label="Daftar"
+          onPress={() => onRouteChange?.('/list-of-users')}
+        />
+        <KolamButton
+          disabled={saving}
+          intent="primary"
+          label={saving ? 'Membuat...' : 'Buat Pengguna'}
+          onPress={handleSubmit}
+        />
+      </View>
+
+      <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
+        <View style={styles.detailTitleBlock}>
+          <Text style={styles.detailTitle}>Buat Pengguna Baru</Text>
+          <Text style={styles.detailSubtitle}>
+            Tambahkan pengguna baru ke sistem
+          </Text>
+        </View>
+
+        {error ? <Text style={styles.formErrorText}>{error}</Text> : null}
+        {message ? <Text style={styles.formSuccessText}>{message}</Text> : null}
+
+        <View style={styles.formGrid}>
+          <UserFormField label="Username" required>
+            <KolamFormTextField
+              editable={!saving}
+              onChangeText={value => setField('username', value)}
+              style={styles.formInput}
+              value={form.username}
+            />
+          </UserFormField>
+          <UserFormField label="Nama Depan" required>
+            <KolamFormTextField
+              editable={!saving}
+              onChangeText={value => setField('first_name', value)}
+              style={styles.formInput}
+              value={form.first_name}
+            />
+          </UserFormField>
+          <UserFormField label="Nama Belakang" required>
+            <KolamFormTextField
+              editable={!saving}
+              onChangeText={value => setField('last_name', value)}
+              style={styles.formInput}
+              value={form.last_name}
+            />
+          </UserFormField>
+          <UserFormField label="Email" required>
+            <KolamFormTextField
+              editable={!saving}
+              mode="email"
+              onChangeText={value => setField('email', value)}
+              style={styles.formInput}
+              value={form.email}
+            />
+          </UserFormField>
+          <UserFormField label="Kata Sandi" required>
+            <KolamFormTextField
+              editable={!saving}
+              mode="password"
+              onChangeText={value => setField('password', value)}
+              style={styles.formInput}
+              value={form.password}
+            />
+          </UserFormField>
+          <UserFormField label="Nomor Telepon" required>
+            <KolamFormTextField
+              editable={!saving}
+              onChangeText={value => setField('phone_number', value)}
+              style={styles.formInput}
+              value={form.phone_number}
+            />
+          </UserFormField>
+          <View style={styles.formFieldWide}>
+            <UserFormField label="Peran" required>
+              <KolamDropdownSelect
+                label="Peran"
+                onChange={value => setField('role', value)}
+                options={[
+                  {label: rolesLoading ? 'Memuat peran...' : 'Pilih Role', value: ''},
+                  ...roles.map(role => ({
+                    label: role.name || role.key,
+                    value: role.key,
+                  })),
+                ]}
+                value={form.role}
+              />
+            </UserFormField>
+          </View>
+        </View>
+      </KolamContentFrame>
+    </View>
+  );
 }
 
 function KolamUserListSurface({
@@ -560,6 +762,26 @@ function DetailBadgeRow({
   );
 }
 
+function UserFormField({
+  children,
+  label,
+  required = false,
+}: {
+  children: React.ReactNode;
+  label: string;
+  required?: boolean;
+}) {
+  return (
+    <View style={styles.formField}>
+      <Text style={styles.formLabel}>
+        {label}
+        {required ? <Text style={styles.formRequired}> *</Text> : null}
+      </Text>
+      {children}
+    </View>
+  );
+}
+
 function KolamUserListRow({
   onDeleteRequest,
   onRouteChange,
@@ -685,6 +907,50 @@ function formatUserDateTime(value?: string | null) {
     dateStyle: 'medium',
     timeStyle: 'short',
   });
+}
+
+function validateCreateUserForm(form: KolamUserCreatePayload) {
+  if (!form.username.trim()) {
+    return 'Username wajib diisi';
+  }
+
+  if (!form.first_name.trim()) {
+    return 'Nama depan wajib diisi';
+  }
+
+  if (!form.last_name.trim()) {
+    return 'Nama belakang wajib diisi';
+  }
+
+  if (!form.email.trim()) {
+    return 'Email wajib diisi';
+  }
+
+  if (!form.password.trim()) {
+    return 'Kata sandi wajib diisi';
+  }
+
+  if (form.password.length < 6) {
+    return 'Kata sandi minimal 6 karakter';
+  }
+
+  if (!form.phone_number.trim()) {
+    return 'Nomor telepon wajib diisi';
+  }
+
+  if (!form.role.trim()) {
+    return 'Peran wajib dipilih';
+  }
+
+  return '';
+}
+
+function getUserFormErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message.trim();
+  }
+
+  return fallback;
 }
 
 const styles = StyleSheet.create({
@@ -910,5 +1176,65 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
+  },
+  formGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  formField: {
+    flexBasis: 280,
+    flexGrow: 1,
+    gap: 6,
+  },
+  formFieldWide: {
+    flexBasis: '100%',
+    flexGrow: 1,
+  },
+  formLabel: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '800',
+    lineHeight: 16,
+  },
+  formRequired: {
+    color: V.colors.danger,
+  },
+  formInput: {
+    minHeight: 38,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  formErrorText: {
+    borderColor: V.colors.danger,
+    borderRadius: 8,
+    borderWidth: 1,
+    color: V.colors.danger,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+    lineHeight: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  formSuccessText: {
+    borderColor: V.colors.success,
+    borderRadius: 8,
+    borderWidth: 1,
+    color: V.colors.success,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+    lineHeight: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
 });

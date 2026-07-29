@@ -1,7 +1,7 @@
 export type KolamUserSortOrder = 'asc' | 'desc';
 export type KolamUserBooleanFilter = 'true' | 'false' | 'all';
 export type KolamUserAccessId = 'inventory' | 'pos' | 'am';
-export type KolamUserRouteMode = 'detail' | 'list' | 'unknown';
+export type KolamUserRouteMode = 'create' | 'detail' | 'list' | 'unknown';
 
 export const KOLAM_USER_LIST_ROUTE = '/list-of-users';
 
@@ -22,6 +22,10 @@ export function getKolamUserRouteMode(route?: string | null): KolamUserRouteMode
     return 'list';
   }
 
+  if (routePath === '/list-of-users/users/create') {
+    return 'create';
+  }
+
   if (/^\/list-of-users\/users\/[^/]+$/.test(routePath)) {
     return 'detail';
   }
@@ -40,6 +44,18 @@ export interface KolamUserRole {
   id: string;
   key: string;
   name: string;
+}
+
+export interface KolamUserRoleOption extends KolamUserRole {}
+
+export interface KolamUserCreatePayload {
+  username: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  password: string;
+  phone_number: string;
+  role: string;
 }
 
 export interface KolamUserAccessBadge {
@@ -191,6 +207,17 @@ export function normalizeKolamUserListItem(
 
 export function normalizeKolamUserDetail(payload: unknown) {
   return normalizeKolamUserListItem(payload);
+}
+
+export function normalizeKolamUserRoles(payload: unknown): KolamUserRoleOption[] {
+  const record = asRecord(payload);
+  const rows = Array.isArray(record.data)
+    ? record.data
+    : Array.isArray(payload)
+      ? payload
+      : [];
+
+  return rows.map(normalizeKolamUserRole).filter(Boolean) as KolamUserRoleOption[];
 }
 
 export function getKolamUserEmployeeStatusLabel(user: KolamUserListItem) {
