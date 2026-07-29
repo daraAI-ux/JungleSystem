@@ -1151,8 +1151,14 @@ function KolamPurchaseOrderDetail({
               id: 'vendor',
               label: 'Pemasok',
               value: po.vendor?.name || '—',
-              meta: po.vendor?.id ? 'Ketuk untuk lihat pemasok' : '',
+              meta: '',
               tone: 'default',
+              ...(po.vendor?.id
+                ? {
+                    onPress: () =>
+                      onRouteChange?.(`${KOLAM_SUPPLIER_ROOT}/${po.vendor!.id}`),
+                  }
+                : {}),
             },
             {
               id: 'wallet',
@@ -1184,12 +1190,6 @@ function KolamPurchaseOrderDetail({
             },
           ]}
         />
-        {po.vendor?.id ? (
-          <KolamButton
-            label="Lihat pemasok"
-            onPress={() => onRouteChange?.(`${KOLAM_SUPPLIER_ROOT}/${po.vendor!.id}`)}
-          />
-        ) : null}
       </KolamContentFrame>
 
       <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">

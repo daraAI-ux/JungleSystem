@@ -49,6 +49,9 @@ export const descriptionListStyles = StyleSheet.create({
     color: V.colors.fg,
     backgroundColor: V.colors.secondary,
   },
+  valueLink: {
+    textDecorationLine: 'underline',
+  },
   meta: {
     marginTop: 6,
     color: V.colors.fg,
