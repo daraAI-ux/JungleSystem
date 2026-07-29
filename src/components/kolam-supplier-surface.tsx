@@ -610,29 +610,7 @@ function KolamSupplierDetail({
           { label: 'Species', value: vendor.speciesCount },
           { label: 'Packing', value: vendor.packingCount },
         ]}
-        sections={[
-          {
-            title: 'Merek',
-            description: 'Merek yang terkait dengan pemasok ini',
-            emptyText: 'Belum ada merek tertaut.',
-            total: brands.length,
-            items: brands.map(brand => ({
-              title: brand.name,
-              meta: brand.id,
-              value: 'Buka merek',
-            })),
-          },
-          {
-            title: 'Tautan',
-            description: 'URL eksternal pemasok',
-            emptyText: 'Belum ada tautan.',
-            total: vendor.links?.length ?? 0,
-            items: (vendor.links ?? []).map((link, index) => ({
-              title: link,
-              meta: `Tautan ${index + 1}`,
-            })),
-          },
-        ]}
+        sections={[]}
         status={{
           intent: getKolamVendorStatusIntent(vendor.status),
           label: getKolamVendorStatusLabel(vendor.status),
@@ -732,6 +710,69 @@ function KolamSupplierDetail({
         </KolamContentFrame>
       </View>
 
+      <View style={styles.detailInfoRow}>
+        <KolamContentFrame
+          style={[styles.detailCard, styles.detailInfoCard]}
+          variant="settingsWebConfig"
+        >
+          <Text style={styles.sectionTitle}>
+            Merek ({brands.length})
+          </Text>
+          <Text style={styles.switchHint}>
+            Merek yang terkait dengan pemasok ini
+          </Text>
+          {brands.length ? (
+            <View style={styles.brandChipRow}>
+              {brands.map(brand => (
+                <KolamButton
+                  key={brand.id}
+                  label={brand.name}
+                  muted
+                  onPress={() => onRouteChange?.(`/brands/${brand.id}`)}
+                  style={styles.brandChip}
+                />
+              ))}
+            </View>
+          ) : (
+            <KolamEmptyState
+              compact
+              message="Belum ada merek tertaut."
+              title="Tidak ada merek"
+            />
+          )}
+        </KolamContentFrame>
+
+        <KolamContentFrame
+          style={[styles.detailCard, styles.detailInfoCard]}
+          variant="settingsWebConfig"
+        >
+          <Text style={styles.sectionTitle}>
+            Tautan ({vendor.links?.length ?? 0})
+          </Text>
+          <Text style={styles.switchHint}>URL eksternal pemasok</Text>
+          {(vendor.links?.length ?? 0) > 0 ? (
+            <View style={styles.catalogList}>
+              {(vendor.links ?? []).map((link, index) => (
+                <View key={`${link}-${index}`} style={styles.catalogRow}>
+                  <View style={styles.catalogCopy}>
+                    <Text numberOfLines={2} style={styles.catalogTitle}>
+                      {link}
+                    </Text>
+                    <Text style={styles.rowMeta}>Tautan {index + 1}</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          ) : (
+            <KolamEmptyState
+              compact
+              message="Belum ada tautan."
+              title="Tidak ada tautan"
+            />
+          )}
+        </KolamContentFrame>
+      </View>
+
       <KolamSupplierCatalogTabs
         onRouteChange={onRouteChange}
         vendor={vendor}
@@ -740,20 +781,6 @@ function KolamSupplierDetail({
       <KolamSupplierPurchaseAnalytics controller={controller} />
 
       <KolamSupplierTaxProfileCard controller={controller} />
-
-      {brands.length ? (
-        <View style={styles.brandChipRow}>
-          {brands.map(brand => (
-            <KolamButton
-              key={brand.id}
-              label={brand.name}
-              muted
-              onPress={() => onRouteChange?.(`/brands/${brand.id}`)}
-              style={styles.brandChip}
-            />
-          ))}
-        </View>
-      ) : null}
 
       {photoUrls.length > 1 ? (
         <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
