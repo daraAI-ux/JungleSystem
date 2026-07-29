@@ -28,7 +28,9 @@ import {
   getKolamUserRoles,
   updateKolamUser,
   updateKolamUserSalary,
+  uploadKolamUserBiodataKtp,
 } from '../services/kolam-user-api';
+import {pickNativeImageFile} from '../services/native-file-picker';
 import {KolamButton} from './kolam-button';
 import {KolamCatalogListTableShell} from './kolam-catalog-list-table-shell';
 import {KolamConfirmDialog} from './kolam-confirm-dialog';
@@ -42,6 +44,7 @@ import {KolamDataTableRowFrame} from './kolam-data-table-row-frame';
 import {KolamDateField} from './kolam-date-field';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamFormTextField} from './kolam-form-text-field';
+import {KolamRemoteImage} from './kolam-remote-image';
 import {KolamStatusBadge} from './kolam-status-badge';
 import {KolamTableFilterTrigger} from './kolam-table-filter-trigger';
 import {KolamToggleRow} from './kolam-toggle-row';
@@ -95,6 +98,8 @@ const EMPTY_USER_BIODATA: KolamUserBiodata = {
   gender: '',
   maritalStatus: '',
   nationalId: '',
+  photoKTP: '',
+  photoKtpUri: '',
   placeOfBirth: '',
   religion: '',
   taxNumber: '',
@@ -901,6 +906,8 @@ function KolamUserEditSurface({
   const [loading, setLoading] = React.useState(true);
   const [rolesLoading, setRolesLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
+  const [uploadingKtp, setUploadingKtp] = React.useState(false);
+  const [ktpPreviewUri, setKtpPreviewUri] = React.useState('');
   const [message, setMessage] = React.useState('');
   const [error, setError] = React.useState('');
 
@@ -977,6 +984,10 @@ function KolamUserEditSurface({
       active = false;
     };
   }, []);
+
+  React.useEffect(() => {
+    setKtpPreviewUri(user?.biodata.photoKtpUri ?? '');
+  }, [user?.biodata.photoKtpUri]);
 
   if (loading || error || !user) {
     return (
@@ -1119,6 +1130,41 @@ function KolamUserEditSurface({
     });
     setError('');
     setMessage('');
+  };
+
+  const handleUploadKtp = async () => {
+    if (saving || uploadingKtp) {
+      return;
+    }
+
+    try {
+      const picked = await pickNativeImageFile();
+      const localUri =
+        picked.uri ||
+        (picked.path ? `file:///${picked.path.replace(/\\/g, '/')}` : '');
+
+      if (picked.cancelled || !localUri) {
+        return;
+      }
+
+      setUploadingKtp(true);
+      setError('');
+      setMessage('');
+      setKtpPreviewUri(localUri);
+
+      const uploaded = await uploadKolamUserBiodataKtp(user.id, localUri);
+      const nextUser = uploaded ?? (await getKolamUserDetail(user.id)) ?? user;
+
+      setUser(nextUser);
+      setForm(getUserEditFormFromUser(nextUser));
+      setKtpPreviewUri(nextUser.biodata.photoKtpUri);
+      setMessage('Foto KTP berhasil diunggah.');
+    } catch (err) {
+      setKtpPreviewUri(user.biodata.photoKtpUri);
+      setError(getUserFormErrorMessage(err, 'Gagal mengunggah foto KTP.'));
+    } finally {
+      setUploadingKtp(false);
+    }
   };
 
   const handleSubmit = async () => {
@@ -1639,6 +1685,39 @@ function KolamUserEditSurface({
               value={form.biodata.nationalId}
             />
           </UserFormField>
+          <View style={styles.formFieldWide}>
+            <View style={styles.ktpUploadCard}>
+              <View style={styles.ktpUploadCopy}>
+                <Text style={styles.formSubsectionTitle}>
+                  Foto KTP (boleh fotokopi)
+                </Text>
+                <Text style={styles.detailSubtitle}>
+                  Unggahan foto KTP disimpan terpisah dari submit form biodata.
+                </Text>
+              </View>
+              {ktpPreviewUri ? (
+                <KolamRemoteImage
+                  accessibilityLabel="Foto KTP"
+                  previewItems={[
+                    {
+                      title: 'Foto KTP',
+                      uri: ktpPreviewUri,
+                    },
+                  ]}
+                  resizeMode="cover"
+                  scope="user-ktp"
+                  sourceUri={ktpPreviewUri}
+                  style={styles.ktpPreviewImage}
+                />
+              ) : null}
+              <KolamButton
+                disabled={saving || uploadingKtp}
+                label={uploadingKtp ? 'Mengunggah...' : 'Unggah'}
+                onPress={handleUploadKtp}
+                style={styles.ktpUploadButton}
+              />
+            </View>
+          </View>
           <UserFormField label="No. NPWP">
             <KolamFormTextField
               editable={!saving}
@@ -2365,6 +2444,25 @@ const styles = StyleSheet.create({
   },
   workDayButton: {
     minWidth: 52,
+  },
+  ktpUploadCard: {
+    alignItems: 'flex-start',
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 10,
+    padding: 12,
+  },
+  ktpUploadCopy: {
+    gap: 2,
+  },
+  ktpPreviewImage: {
+    aspectRatio: 1.6,
+    borderRadius: 8,
+    width: 220,
+  },
+  ktpUploadButton: {
+    minWidth: 96,
   },
   accessSectionHeader: {
     gap: 2,

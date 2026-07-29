@@ -1,3 +1,5 @@
+import { getKolamFileUrl } from '../lib/file-url';
+
 export type KolamUserSortOrder = 'asc' | 'desc';
 export type KolamUserBooleanFilter = 'true' | 'false' | 'all';
 export type KolamUserAccessId = 'inventory' | 'pos' | 'am';
@@ -112,6 +114,8 @@ export interface KolamUserBiodata {
   placeOfBirth: string;
   address: KolamUserBiodataAddress;
   nationalId: string;
+  photoKTP: string;
+  photoKtpUri: string;
   taxNumber: string;
   maritalStatus: string;
   religion: string;
@@ -367,6 +371,7 @@ function normalizeKolamUserBiodata(value: unknown): KolamUserBiodata {
   const record = asRecord(value);
   const address = asRecord(record.address);
   const emergencyContact = asRecord(record.emergencyContact);
+  const photoKTP = getString(record, 'photoKTP');
 
   return {
     address: {
@@ -385,6 +390,8 @@ function normalizeKolamUserBiodata(value: unknown): KolamUserBiodata {
     maritalStatus: getString(record, 'maritalStatus'),
     nationalId: getString(record, 'nationalId'),
     placeOfBirth: getString(record, 'placeOfBirth'),
+    photoKTP,
+    photoKtpUri: getKolamFileUrl(photoKTP) ?? '',
     religion: getString(record, 'religion'),
     taxNumber: getString(record, 'taxNumber'),
   };

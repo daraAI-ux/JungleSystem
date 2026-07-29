@@ -104,6 +104,30 @@ export async function updateKolamUserSalary(payload: {
   });
 }
 
+export async function uploadKolamUserBiodataKtp(
+  userId: string,
+  localUri: string,
+): Promise<KolamUserListItem | null> {
+  const body = new FormData();
+  body.append(
+    'photos',
+    createReactNativeFilePart(localUri, 'user-ktp-photo') as unknown as Blob,
+  );
+
+  const response = await kolamRequest<unknown>(
+    `/auth/upload-biodata-ktp/${encodeURIComponent(userId)}`,
+    {
+      body,
+      method: 'POST',
+    },
+  );
+  const record = response && typeof response === 'object'
+    ? (response as Record<string, unknown>)
+    : {};
+
+  return normalizeKolamUserDetail(record.data ?? response);
+}
+
 function kolamRequest<T>(
   path: string,
   options: {
@@ -120,4 +144,35 @@ function kolamRequest<T>(
     baseUrl: appConfig.kolamApiBaseUrl,
     sourceHeader: appConfig.kolamSourceHeader,
   });
+}
+
+function createReactNativeFilePart(localUri: string, fallbackName: string) {
+  const normalizedUri = localUri.startsWith('file://')
+    ? localUri
+    : `file:///${localUri.replace(/\\/g, '/')}`;
+  const name = normalizedUri.split('/').pop() || fallbackName;
+
+  return {
+    name,
+    type: inferFileMimeType(name),
+    uri: normalizedUri,
+  };
+}
+
+function inferFileMimeType(fileName: string) {
+  const extension = fileName.split('.').pop()?.toLowerCase();
+
+  switch (extension) {
+    case 'png':
+      return 'image/png';
+    case 'webp':
+      return 'image/webp';
+    case 'gif':
+      return 'image/gif';
+    case 'jpg':
+    case 'jpeg':
+      return 'image/jpeg';
+    default:
+      return 'image/jpeg';
+  }
 }
