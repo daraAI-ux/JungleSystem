@@ -430,6 +430,18 @@ export interface KolamTeamChatSendMessageBody {
   embeds?: KolamTeamChatEmbedInput[];
 }
 
+export type KolamTeamChatCreateRoomCategory = Extract<
+  KolamTeamChatRoomCategory,
+  'meeting' | 'project'
+>;
+
+export interface KolamTeamChatCreateRoomBody {
+  name: string;
+  category: KolamTeamChatCreateRoomCategory;
+  description?: string;
+  memberIds?: string[];
+}
+
 export interface KolamTeamChatPresence {
   onlineCount: number;
   viewingCount: number;
@@ -1935,6 +1947,22 @@ export async function getKolamTeamChatRooms(): Promise<KolamTeamChatRoom[]> {
     DataResponse<KolamTeamChatRoom[]> | { success?: boolean; data?: KolamTeamChatRoom[] }
   >('/team-chat/rooms');
   return response.data ?? [];
+}
+
+export async function createKolamTeamChatRoom(
+  body: KolamTeamChatCreateRoomBody,
+): Promise<KolamTeamChatRoom> {
+  const response = await kolamPost<DataResponse<KolamTeamChatRoom>>(
+    '/team-chat/rooms',
+    {
+      name: body.name.trim(),
+      category: body.category,
+      ...(body.description?.trim() ? {description: body.description.trim()} : {}),
+      ...(body.memberIds?.length ? {memberIds: body.memberIds} : {}),
+    },
+  );
+
+  return response.data;
 }
 
 export async function getKolamTeamChatMembers(

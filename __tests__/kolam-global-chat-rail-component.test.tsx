@@ -9,6 +9,7 @@ import {useKolamChatRailDetail} from '../src/hooks/use-kolam-chat-rail-detail';
 import {useKolamChatRailReadonlyData} from '../src/hooks/use-kolam-chat-rail-readonly-data';
 import {useKolamNotificationSoundSettings} from '../src/hooks/use-kolam-notification-sound-settings';
 import {
+  createKolamTeamChatRoom,
   getKolamChatAnalytics,
   getKolamChatContactDetails,
   getKolamChatLabels,
@@ -43,6 +44,7 @@ jest.mock('../src/services/kolam-api', () => {
   const actual = jest.requireActual('../src/services/kolam-api');
   return {
     ...actual,
+    createKolamTeamChatRoom: jest.fn(),
     getKolamChatAnalytics: jest.fn(),
     getKolamChatContactDetails: jest.fn(),
     getKolamChatLabels: jest.fn(),
@@ -81,6 +83,10 @@ const useLiveStreamMock = useKolamChatLiveStream as jest.MockedFunction<
 const useSoundSettingsMock =
   useKolamNotificationSoundSettings as jest.MockedFunction<
     typeof useKolamNotificationSoundSettings
+  >;
+const createTeamChatRoomMock =
+  createKolamTeamChatRoom as jest.MockedFunction<
+    typeof createKolamTeamChatRoom
   >;
 const getChatAnalyticsMock = getKolamChatAnalytics as jest.MockedFunction<
   typeof getKolamChatAnalytics
@@ -171,6 +177,7 @@ function getDefaultDetailMock() {
 describe('KolamGlobalChatRail', () => {
   beforeEach(() => {
     mockSoundPlay.mockClear();
+    createTeamChatRoomMock.mockClear();
     createSoundServiceMock.mockClear();
     getChatAnalyticsMock.mockClear();
     getChatContactDetailsMock.mockClear();
@@ -284,6 +291,11 @@ describe('KolamGlobalChatRail', () => {
       },
     });
     pickNativeAssetFileMock.mockResolvedValue({cancelled: true});
+    createTeamChatRoomMock.mockResolvedValue({
+      _id: 'room-created',
+      category: 'meeting',
+      name: 'Room baru',
+    });
   });
 
   afterEach(() => {
@@ -377,6 +389,77 @@ describe('KolamGlobalChatRail', () => {
         'CS Tokopedia',
         'Follow up buyer',
       ]),
+    );
+  });
+
+  it('creates a minimal meeting or project team chat room from the rail', async () => {
+    const refresh = jest.fn().mockResolvedValue(undefined);
+    createTeamChatRoomMock.mockResolvedValue({
+      _id: 'room-project',
+      category: 'project',
+      name: 'Launch Ops',
+    });
+    useReadonlyDataMock.mockReturnValue({
+      conversations: [],
+      loading: false,
+      refresh,
+      rooms: [],
+      totalUnread: 0,
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamGlobalChatRail mode="team-chat" onClose={() => undefined} />,
+      );
+    });
+
+    const toggleButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(
+        node => node.props.accessibilityLabel === 'Toggle form room team chat',
+      );
+
+    await ReactTestRenderer.act(async () => {
+      toggleButton!.props.onPress();
+    });
+
+    const nameInput = renderer!.root
+      .findAllByType(TextInput)
+      .find(node => node.props.accessibilityLabel === 'Nama room team chat');
+    const descriptionInput = renderer!.root
+      .findAllByType(TextInput)
+      .find(
+        node => node.props.accessibilityLabel === 'Deskripsi room team chat',
+      );
+    const projectButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(
+        node => node.props.accessibilityLabel === 'Pilih kategori room project',
+      );
+
+    await ReactTestRenderer.act(async () => {
+      nameInput!.props.onChangeText('Launch Ops');
+      descriptionInput!.props.onChangeText('Koordinasi launch');
+      projectButton!.props.onPress();
+    });
+
+    const saveButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Simpan room team chat');
+
+    await ReactTestRenderer.act(async () => {
+      await saveButton!.props.onPress();
+    });
+
+    expect(createTeamChatRoomMock).toHaveBeenCalledWith({
+      category: 'project',
+      description: 'Koordinasi launch',
+      name: 'Launch Ops',
+    });
+    expect(refresh).toHaveBeenCalledTimes(1);
+    expect(renderText(renderer!)).toEqual(
+      expect.arrayContaining(['Room "Launch Ops" dibuat.']),
     );
   });
 

@@ -23,6 +23,7 @@ import type {
   KolamTeamChatAttachment,
   KolamTeamChatBotPresence,
   KolamTeamChatCallParticipant,
+  KolamTeamChatCreateRoomCategory,
   KolamTeamChatEmbed,
   KolamTeamChatLinkPreview,
   KolamTeamChatPresence,
@@ -30,6 +31,7 @@ import type {
   KolamTeamChatUserRef,
 } from '../services/kolam-api';
 import {
+  createKolamTeamChatRoom,
   getKolamChatAnalytics,
   getKolamChatContactDetails,
   getKolamChatLabels,
@@ -82,6 +84,12 @@ interface KolamChatRailContactDetailsState {
   data: KolamChatContactDetails | null;
   errorMessage?: string;
   loading: boolean;
+}
+
+interface KolamTeamChatCreateRoomDraft {
+  category: KolamTeamChatCreateRoomCategory;
+  description: string;
+  name: string;
 }
 
 interface KolamTeamMentionOption {
@@ -147,6 +155,20 @@ export function KolamGlobalChatRail({
       items: [],
       loading: mode === 'inbox',
     });
+  const [createRoomOpen, setCreateRoomOpen] = React.useState(false);
+  const [createRoomDraft, setCreateRoomDraft] =
+    React.useState<KolamTeamChatCreateRoomDraft>({
+      category: 'meeting',
+      description: '',
+      name: '',
+    });
+  const [createRoomBusy, setCreateRoomBusy] = React.useState(false);
+  const [createRoomMessage, setCreateRoomMessage] = React.useState<
+    string | undefined
+  >();
+  const [createRoomError, setCreateRoomError] = React.useState<
+    string | undefined
+  >();
   const selectedItem = items.find(item => item.id === selectedItemId) ?? null;
   const detail = useKolamChatRailDetail({
     currentUserId: authUser?.id,
@@ -220,6 +242,11 @@ export function KolamGlobalChatRail({
     setPendingAttachment(null);
     setReplyTarget(null);
     setDaraThinkingLiveSignal(null);
+    setCreateRoomOpen(false);
+    setCreateRoomDraft({category: 'meeting', description: '', name: ''});
+    setCreateRoomBusy(false);
+    setCreateRoomMessage(undefined);
+    setCreateRoomError(undefined);
   }, [mode]);
 
   React.useEffect(() => {
@@ -403,6 +430,36 @@ export function KolamGlobalChatRail({
     [detail],
   );
 
+  const handleCreateRoom = React.useCallback(async () => {
+    const name = createRoomDraft.name.trim();
+    if (mode !== 'team-chat' || createRoomBusy || !name) {
+      setCreateRoomError(name ? undefined : 'Nama room wajib diisi.');
+      return;
+    }
+
+    setCreateRoomBusy(true);
+    setCreateRoomError(undefined);
+    setCreateRoomMessage(undefined);
+
+    try {
+      const room = await createKolamTeamChatRoom({
+        category: createRoomDraft.category,
+        description: createRoomDraft.description,
+        name,
+      });
+      await data.refresh();
+      setCreateRoomOpen(false);
+      setCreateRoomDraft({category: 'meeting', description: '', name: ''});
+      setCreateRoomMessage(`Room "${getRoomTitle(room)}" dibuat.`);
+    } catch (error) {
+      setCreateRoomError(
+        error instanceof Error ? error.message : 'Room belum bisa dibuat.',
+      );
+    } finally {
+      setCreateRoomBusy(false);
+    }
+  }, [createRoomBusy, createRoomDraft, data, mode]);
+
   return (
     <View accessibilityLabel={content.accessibilityLabel} style={styles.rail}>
       <KolamChatRailLiveHost mode={mode} onEvent={handleLiveEvent} />
@@ -451,6 +508,23 @@ export function KolamGlobalChatRail({
         ) : null}
 
         {mode === 'inbox' ? <KolamChatRailSettingsShortcuts /> : null}
+
+        {mode === 'team-chat' ? (
+          <KolamTeamChatCreateRoomPanel
+            busy={createRoomBusy}
+            draft={createRoomDraft}
+            errorMessage={createRoomError}
+            message={createRoomMessage}
+            onChange={setCreateRoomDraft}
+            onSubmit={handleCreateRoom}
+            onToggle={() => {
+              setCreateRoomOpen(current => !current);
+              setCreateRoomError(undefined);
+              setCreateRoomMessage(undefined);
+            }}
+            open={createRoomOpen}
+          />
+        ) : null}
 
         {selectedItem ? (
           <KolamChatRailDetailPanel
@@ -615,6 +689,114 @@ function KolamChatRailSettingsShortcuts() {
         <Text style={styles.settingsShortcut}>Label percakapan</Text>
         <Text style={styles.settingsShortcut}>Template chat</Text>
       </View>
+    </View>
+  );
+}
+
+function KolamTeamChatCreateRoomPanel({
+  busy,
+  draft,
+  errorMessage,
+  message,
+  onChange,
+  onSubmit,
+  onToggle,
+  open,
+}: {
+  busy: boolean;
+  draft: KolamTeamChatCreateRoomDraft;
+  errorMessage?: string;
+  message?: string;
+  onChange: React.Dispatch<React.SetStateAction<KolamTeamChatCreateRoomDraft>>;
+  onSubmit: () => Promise<void> | void;
+  onToggle: () => void;
+  open: boolean;
+}) {
+  return (
+    <View style={styles.createRoomPanel}>
+      <View style={styles.createRoomHeader}>
+        <View style={styles.createRoomCopy}>
+          <Text style={styles.createRoomTitle}>Room team</Text>
+          <Text style={styles.createRoomMeta}>Meeting atau project</Text>
+        </View>
+        <KolamPressable
+          accessibilityLabel="Toggle form room team chat"
+          disabled={busy}
+          onPress={onToggle}
+          style={[styles.createRoomToggle, busy && styles.attachButtonDisabled]}>
+          <Text style={styles.createRoomToggleText}>
+            {open ? 'Tutup' : 'Buat'}
+          </Text>
+        </KolamPressable>
+      </View>
+
+      {message ? <Text style={styles.createRoomMessage}>{message}</Text> : null}
+      {errorMessage ? (
+        <Text style={styles.createRoomError}>{errorMessage}</Text>
+      ) : null}
+
+      {open ? (
+        <View style={styles.createRoomForm}>
+          <TextInput
+            accessibilityLabel="Nama room team chat"
+            editable={!busy}
+            onChangeText={name => onChange(current => ({...current, name}))}
+            placeholder="Nama room"
+            placeholderTextColor={V.colors.mutedFg}
+            style={styles.createRoomInput}
+            value={draft.name}
+          />
+          <View style={styles.createRoomCategoryRow}>
+            {(['meeting', 'project'] as const).map(category => (
+              <KolamPressable
+                key={category}
+                accessibilityLabel={`Pilih kategori room ${category}`}
+                accessibilityState={{selected: draft.category === category}}
+                disabled={busy}
+                onPress={() => onChange(current => ({...current, category}))}
+                style={[
+                  styles.createRoomCategoryButton,
+                  draft.category === category &&
+                    styles.createRoomCategoryButtonActive,
+                  busy && styles.attachButtonDisabled,
+                ]}>
+                <Text
+                  style={[
+                    styles.createRoomCategoryText,
+                    draft.category === category &&
+                      styles.createRoomCategoryTextActive,
+                  ]}>
+                  {category === 'meeting' ? 'Meeting' : 'Project'}
+                </Text>
+              </KolamPressable>
+            ))}
+          </View>
+          <TextInput
+            accessibilityLabel="Deskripsi room team chat"
+            editable={!busy}
+            multiline
+            onChangeText={description =>
+              onChange(current => ({...current, description}))
+            }
+            placeholder="Deskripsi"
+            placeholderTextColor={V.colors.mutedFg}
+            style={[styles.createRoomInput, styles.createRoomDescriptionInput]}
+            value={draft.description}
+          />
+          <KolamPressable
+            accessibilityLabel="Simpan room team chat"
+            disabled={busy || !draft.name.trim()}
+            onPress={() => void onSubmit()}
+            style={[
+              styles.createRoomSubmit,
+              (busy || !draft.name.trim()) && styles.attachButtonDisabled,
+            ]}>
+            <Text style={styles.createRoomSubmitText}>
+              {busy ? 'Membuat...' : 'Simpan room'}
+            </Text>
+          </KolamPressable>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -3118,6 +3300,124 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '800',
     backgroundColor: V.colors.mutedSoft,
+  },
+  createRoomPanel: {
+    padding: 10,
+    borderRadius: V.radius.lg,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.bg,
+    gap: 8,
+  },
+  createRoomHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  createRoomCopy: {
+    minWidth: 0,
+    flex: 1,
+    gap: 2,
+  },
+  createRoomTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '900',
+  },
+  createRoomMeta: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  createRoomToggle: {
+    minHeight: 28,
+    paddingHorizontal: 10,
+    borderRadius: V.radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: V.colors.primary,
+  },
+  createRoomToggleText: {
+    color: V.colors.primaryFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  createRoomMessage: {
+    color: V.colors.success,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  createRoomError: {
+    color: V.colors.danger,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  createRoomForm: {
+    gap: 8,
+  },
+  createRoomInput: {
+    minHeight: 32,
+    borderRadius: V.radius.md,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '700',
+    backgroundColor: V.colors.bg,
+  },
+  createRoomDescriptionInput: {
+    minHeight: 56,
+    paddingVertical: 8,
+    textAlignVertical: 'top',
+  },
+  createRoomCategoryRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  createRoomCategoryButton: {
+    minHeight: 28,
+    paddingHorizontal: 10,
+    borderRadius: V.radius.md,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: V.colors.bg,
+  },
+  createRoomCategoryButtonActive: {
+    borderColor: V.colors.primary,
+    backgroundColor: V.colors.primarySoft,
+  },
+  createRoomCategoryText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  createRoomCategoryTextActive: {
+    color: V.colors.primary,
+  },
+  createRoomSubmit: {
+    minHeight: 32,
+    borderRadius: V.radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: V.colors.primary,
+  },
+  createRoomSubmitText: {
+    color: V.colors.primaryFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '900',
   },
   selectedBanner: {
     padding: 10,
