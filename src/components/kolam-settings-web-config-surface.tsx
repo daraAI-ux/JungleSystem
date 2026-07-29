@@ -4156,7 +4156,12 @@ export function KolamSettingsWebConfigSurface({
       ) : null}
       {showNotificationSettings ? (
         <>
-          <View style={styles.marketplaceControlSection}>
+          <View
+            style={[
+              styles.marketplaceControlSection,
+              styles.notificationSettingsCard,
+            ]}
+          >
             <KolamCopyStack
               items={[
                 {
@@ -4227,7 +4232,12 @@ export function KolamSettingsWebConfigSurface({
               />
             </View>
           ) : null}
-          <View style={styles.marketplaceControlSection}>
+          <View
+            style={[
+              styles.marketplaceControlSection,
+              styles.notificationSettingsCard,
+            ]}
+          >
             <KolamCopyStack
               items={[
                 {
@@ -4282,7 +4292,12 @@ export function KolamSettingsWebConfigSurface({
               placeholder="********"
             />
           </View>
-          <View style={styles.marketplaceControlSection}>
+          <View
+            style={[
+              styles.marketplaceControlSection,
+              styles.notificationSettingsCard,
+            ]}
+          >
             <KolamCopyStack
               items={[
                 {
@@ -7848,6 +7863,13 @@ const styles = StyleSheet.create({
   },
   notificationSoundTable: {
     overflow: 'hidden',
+  },
+  notificationSettingsCard: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 10,
+    borderWidth: 1,
+    padding: 12,
   },
   notificationSoundToggleCell: {
     alignItems: 'center',
