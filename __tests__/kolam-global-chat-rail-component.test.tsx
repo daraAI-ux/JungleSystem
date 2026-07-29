@@ -1248,6 +1248,28 @@ describe('KolamGlobalChatRail', () => {
     await ReactTestRenderer.act(async () => {
       liveOptions!.onEvent({
         contract: {
+          eventName: 'dara.thinking.chunk',
+          legacySources: [],
+          note: '',
+          refreshTargets: ['team-room-detail'],
+          route: '/team-chat/stream',
+          soundIntent: 'none',
+          stream: 'team-chat',
+        },
+        payload: {
+          reasoningLine: 'Menyiapkan jawaban stok',
+          roomId: 'room-1',
+        },
+      });
+    });
+
+    expect(renderText(renderer!)).toEqual(
+      expect.arrayContaining(['Menyiapkan jawaban stok']),
+    );
+
+    await ReactTestRenderer.act(async () => {
+      liveOptions!.onEvent({
+        contract: {
           eventName: 'dara.thinking.done',
           legacySources: [],
           note: '',

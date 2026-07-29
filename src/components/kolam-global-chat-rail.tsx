@@ -2025,6 +2025,7 @@ function getDaraThinkingLivePatch(
 function getDaraThinkingLine(payload: Record<string, unknown>) {
   const directLine = getStringRecordValue(payload, [
     'line',
+    'reasoningLine',
     'text',
     'chunk',
     'message',
