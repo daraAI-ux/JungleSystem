@@ -908,6 +908,7 @@ function KolamUserEditSurface({
   const [saving, setSaving] = React.useState(false);
   const [uploadingKtp, setUploadingKtp] = React.useState(false);
   const [ktpPreviewUri, setKtpPreviewUri] = React.useState('');
+  const [resignGuardVisible, setResignGuardVisible] = React.useState(false);
   const [message, setMessage] = React.useState('');
   const [error, setError] = React.useState('');
 
@@ -1025,6 +1026,10 @@ function KolamUserEditSurface({
     currentUserId !== String(user.id) &&
     (canToggleOwner ||
       hasSettingsPermission(permissionContext, 'user', 'view_salary'));
+  const isResigned = Boolean(user.resignedAt);
+  const isSelfUser = currentUserId === String(user.id);
+  const isTargetSuperAdmin = isSettingsSuperAdminRoleKey(user.role?.key ?? '');
+  const canShowResignGuard = !isResigned && !isSelfUser && !isTargetSuperAdmin;
   const setField = (field: keyof KolamUserEditForm, value: string) => {
     setForm(current => ({...current, [field]: value}));
     setError('');
@@ -1279,6 +1284,16 @@ function KolamUserEditSurface({
 
         {error ? <Text style={styles.formErrorText}>{error}</Text> : null}
         {message ? <Text style={styles.formSuccessText}>{message}</Text> : null}
+        {isResigned ? (
+          <View style={styles.resignStatusCard}>
+            <Text style={styles.resignStatusTitle}>Sudah resign</Text>
+            <Text style={styles.resignStatusText}>
+              Akses pengguna sudah dicabut sejak{' '}
+              {formatUserDateTime(user.resignedAt)}. Akun tidak dihapus agar
+              histori tetap tersimpan.
+            </Text>
+          </View>
+        ) : null}
 
         <View style={styles.formGrid}>
           <UserFormField label="Username">
@@ -1794,8 +1809,44 @@ function KolamUserEditSurface({
               value={form.biodata.emergencyContact.phone}
             />
           </UserFormField>
+          {canShowResignGuard ? (
+            <View style={styles.formFieldWide}>
+              <View style={styles.resignGuardCard}>
+                <View style={styles.resignGuardCopy}>
+                  <Text style={styles.formSubsectionTitle}>
+                    Resign karyawan
+                  </Text>
+                  <Text style={styles.detailSubtitle}>
+                    Aksi ini mencabut akses dan dapat membatalkan komisi
+                    accrued. Endpoint belum diaktifkan di JungleSystem sebelum
+                    ada approval khusus.
+                  </Text>
+                </View>
+                <KolamButton
+                  disabled={saving}
+                  intent="danger"
+                  label="Resign karyawan"
+                  onPress={() => setResignGuardVisible(true)}
+                  style={styles.resignGuardButton}
+                />
+              </View>
+            </View>
+          ) : null}
         </View>
       </KolamContentFrame>
+      <KolamConfirmDialog
+        cancelLabel="Batal"
+        confirmLabel="Saya mengerti"
+        destructive
+        message={`Resign ${form.first_name} ${form.last_name} belum dijalankan. Endpoint resign mencabut akses dan melakukan forfeit komisi accrued, jadi harus ada approval khusus sebelum tombol ini disambungkan ke backend.`}
+        onCancel={() => setResignGuardVisible(false)}
+        onConfirm={() => {
+          setResignGuardVisible(false);
+          setMessage('Resign belum dijalankan karena butuh approval khusus.');
+        }}
+        title="Resign membutuhkan approval khusus"
+        visible={resignGuardVisible}
+      />
     </View>
   );
 }
@@ -2429,6 +2480,28 @@ const styles = StyleSheet.create({
     flexBasis: '100%',
     flexGrow: 1,
   },
+  resignStatusCard: {
+    backgroundColor: V.colors.dangerSoft,
+    borderColor: V.colors.danger,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 4,
+    padding: 12,
+  },
+  resignStatusTitle: {
+    color: V.colors.danger,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 18,
+  },
+  resignStatusText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 18,
+  },
   formSubsectionTitle: {
     color: V.colors.fg,
     fontFamily: V.fontFamily,
@@ -2463,6 +2536,25 @@ const styles = StyleSheet.create({
   },
   ktpUploadButton: {
     minWidth: 96,
+  },
+  resignGuardCard: {
+    alignItems: 'center',
+    borderColor: V.colors.danger,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    justifyContent: 'space-between',
+    padding: 12,
+  },
+  resignGuardCopy: {
+    flexBasis: 360,
+    flexGrow: 1,
+    gap: 4,
+  },
+  resignGuardButton: {
+    minWidth: 132,
   },
   accessSectionHeader: {
     gap: 2,
