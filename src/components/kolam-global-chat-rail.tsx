@@ -61,10 +61,12 @@ import {
 import {KolamBadge} from './kolam-badge';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamDropdownSelect} from './kolam-dropdown-select';
+import {KolamHoverTooltip} from './kolam-hover-tooltip';
 import {KolamIconButton} from './kolam-icon-button';
 import {KolamMappedList} from './kolam-mapped-list';
 import {KolamModalBackdrop} from './kolam-modal-backdrop';
 import {KolamPressable} from './kolam-pressable';
+import {KolamProfileAvatarContent} from './kolam-profile-avatar-content';
 import {KolamRemoteImage} from './kolam-remote-image';
 import {KolamTopNavigationChatIcon} from './kolam-top-navigation-chat-icon';
 import {KolamXIcon} from './kolam-x-icon';
@@ -96,6 +98,7 @@ const INBOX_ASSIGNMENT_FILTERS: KolamChatRailInboxAssignmentFilter[] = [
 const SHOPEE_LOGO = require('../assets/marketplace/shopee.jpg');
 const TIKTOK_LOGO = require('../assets/marketplace/tiktok.webp');
 const TOKOPEDIA_LOGO = require('../assets/marketplace/tokopedia.png');
+const WHATSAPP_LOGO = require('../assets/marketplace/whatsapp.png');
 const DARA_THINKING_DEFAULT_LINE = 'DARA sedang berpikir...';
 const DARA_THINKING_ACTIVE_EVENTS = new Set([
   'dara.thinking',
@@ -177,6 +180,7 @@ interface KolamChatRailInboxFilter {
 }
 
 interface KolamChatRailItem {
+  assignedStaff?: KolamChatStaffRef | string | null;
   id: string;
   metaLabel: string;
   platform?: KolamChatPlatform;
@@ -838,6 +842,9 @@ export function KolamGlobalChatRail({
                       ) : null}
                     </View>
                   </View>
+                  {mode === 'inbox' && item.assignedStaff ? (
+                    <KolamInboxAssignedStaffAvatar staff={item.assignedStaff} />
+                  ) : null}
                   {item.unreadCount > 0 ? (
                     <KolamBadge
                       intent="primary"
@@ -1047,7 +1054,8 @@ function KolamPlatformFilterLogo({
   if (
     platform === 'tokopedia' ||
     platform === 'shopee' ||
-    platform === 'tiktok'
+    platform === 'tiktok' ||
+    platform === 'whatsapp'
   ) {
     return (
       <Image
@@ -1057,7 +1065,9 @@ function KolamPlatformFilterLogo({
             ? TOKOPEDIA_LOGO
             : platform === 'shopee'
               ? SHOPEE_LOGO
-              : TIKTOK_LOGO
+              : platform === 'tiktok'
+                ? TIKTOK_LOGO
+                : WHATSAPP_LOGO
         }
         style={styles.platformLogoImage}
       />
@@ -1077,15 +1087,6 @@ function KolamPlatformFilterLogo({
       <View style={styles.instagramLogo}>
         <View style={styles.instagramLens} />
         <View style={styles.instagramFlash} />
-      </View>
-    );
-  }
-
-  if (platform === 'whatsapp') {
-    return (
-      <View style={styles.whatsappLogo}>
-        <View style={styles.whatsappTail} />
-        <View style={styles.whatsappPhone} />
       </View>
     );
   }
@@ -1144,6 +1145,31 @@ function KolamChatRailMetric({label, value}: {label: string; value: string}) {
       <Text style={styles.analyticsMetricLabel}>{label}</Text>
       <Text style={styles.analyticsMetricValue}>{value}</Text>
     </View>
+  );
+}
+
+function KolamInboxAssignedStaffAvatar({
+  staff,
+}: {
+  staff: KolamChatStaffRef | string;
+}) {
+  const label = getChatStaffLabel(staff) || 'Staff menangani';
+  const photoUri = getChatStaffPhotoUri(staff);
+  const initials = getChatStaffInitials(staff);
+
+  return (
+    <KolamHoverTooltip containerStyle={styles.rowStaffTooltip} label={label}>
+      <View
+        accessibilityLabel={`Staff menangani ${label}`}
+        style={styles.rowStaffAvatar}>
+        <KolamProfileAvatarContent
+          imageStyle={styles.rowStaffAvatarImage}
+          imageUrl={photoUri}
+          initials={initials}
+          textStyle={styles.rowStaffAvatarText}
+        />
+      </View>
+    </KolamHoverTooltip>
   );
 }
 
@@ -3492,6 +3518,7 @@ function getChatRailItems(
 ): KolamChatRailItem[] {
   if (mode === 'team-chat') {
     return data.rooms.map(room => ({
+      assignedStaff: null,
       id: room._id,
       metaLabel: getRoomCategoryLabel(room),
       platform: undefined,
@@ -3508,6 +3535,7 @@ function getChatRailItems(
       conversationFitsAssignmentFilter(conversation, inboxAssignmentFilter),
     )
     .map(conversation => ({
+      assignedStaff: conversation.assignedStaffId ?? null,
       id: conversation._id,
       metaLabel: conversation.platform
         ? getPlatformLabel(conversation.platform)
@@ -4298,6 +4326,28 @@ function getChatStaffLabel(staff?: KolamChatStaffRef | string | null) {
   );
 }
 
+function getChatStaffPhotoUri(staff?: KolamChatStaffRef | string | null) {
+  if (!staff || typeof staff === 'string' || !staff.profile_picture) {
+    return null;
+  }
+
+  return getKolamFileUrl(staff.profile_picture);
+}
+
+function getChatStaffInitials(staff?: KolamChatStaffRef | string | null) {
+  const label = getChatStaffLabel(staff);
+  if (!label) {
+    return 'CS';
+  }
+
+  return label
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(part => part.charAt(0).toUpperCase())
+    .join('');
+}
+
 function getConversationLabels(
   conversation: NonNullable<
     ReturnType<typeof useKolamChatRailDetail>['conversation']
@@ -4916,34 +4966,6 @@ const styles = StyleSheet.create({
     height: 3,
     borderRadius: 2,
     backgroundColor: '#e1306c',
-  },
-  whatsappLogo: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#25d366',
-  },
-  whatsappTail: {
-    position: 'absolute',
-    left: 2,
-    bottom: -1,
-    width: 7,
-    height: 7,
-    borderRadius: 1,
-    backgroundColor: '#25d366',
-    transform: [{rotate: '45deg'}],
-  },
-  whatsappPhone: {
-    width: 9,
-    height: 9,
-    borderLeftColor: '#ffffff',
-    borderBottomColor: '#ffffff',
-    borderLeftWidth: 2,
-    borderBottomWidth: 2,
-    borderBottomLeftRadius: 8,
-    transform: [{rotate: '-35deg'}],
   },
   filterResetButton: {
     minHeight: 28,
@@ -6634,6 +6656,31 @@ const styles = StyleSheet.create({
     backgroundColor: V.colors.bg,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  rowStaffTooltip: {
+    alignSelf: 'center',
+  },
+  rowStaffAvatar: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  rowStaffAvatarImage: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+  },
+  rowStaffAvatarText: {
+    color: V.colors.primary,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '900',
   },
   rowUnread: {
     borderColor: 'rgba(220, 38, 38, 0.28)',

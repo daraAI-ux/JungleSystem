@@ -615,6 +615,12 @@ describe('KolamGlobalChatRail', () => {
       conversations: [
         {
           _id: 'conv-1',
+          assignedStaffId: {
+            _id: 'staff-2',
+            first_name: 'Maya',
+            last_name: 'Sari',
+            profile_picture: '/uploads/staff/maya.jpg',
+          },
           platform: 'tokopedia',
           contactId: {displayName: 'Buyer Tokopedia'},
           lastMessagePreview: 'Apakah masih tersedia?',
@@ -633,6 +639,13 @@ describe('KolamGlobalChatRail', () => {
           platform: 'tiktok',
           contactId: {displayName: 'Buyer TikTok'},
           lastMessagePreview: 'Masih ready?',
+          unreadCount: 0,
+        },
+        {
+          _id: 'conv-4',
+          platform: 'whatsapp',
+          contactId: {displayName: 'Buyer WhatsApp'},
+          lastMessagePreview: 'Halo admin',
           unreadCount: 0,
         },
       ],
@@ -661,6 +674,9 @@ describe('KolamGlobalChatRail', () => {
         'Buyer TikTok',
         'Masih ready?',
         'Tiktok',
+        'Buyer WhatsApp',
+        'Halo admin',
+        'Whatsapp',
       ]),
     );
     expect(renderText(renderer!)).not.toEqual(
@@ -679,6 +695,16 @@ describe('KolamGlobalChatRail', () => {
     expect(
       renderer!.root.findAll(
         node => node.props.accessibilityLabel === 'Logo platform Tiktok',
+      ),
+    ).not.toHaveLength(0);
+    expect(
+      renderer!.root.findAll(
+        node => node.props.accessibilityLabel === 'Logo platform Whatsapp',
+      ),
+    ).not.toHaveLength(0);
+    expect(
+      renderer!.root.findAll(
+        node => node.props.accessibilityLabel === 'Staff menangani Maya Sari',
       ),
     ).not.toHaveLength(0);
 
