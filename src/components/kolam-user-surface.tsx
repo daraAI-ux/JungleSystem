@@ -1,15 +1,19 @@
 import React from 'react';
 import {StyleSheet, Text, View} from 'react-native';
 import {
+  getKolamUserAccountStatusLabel,
+  getKolamUserIdFromRoute,
+  getKolamUserRouteMode,
   type KolamUserBooleanFilter,
   type KolamUserListItem,
   type KolamUserListPagination,
 } from '../domain/kolam-user';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
-import {getKolamUserList} from '../services/kolam-user-api';
+import {getKolamUserDetail, getKolamUserList} from '../services/kolam-user-api';
 import {KolamButton} from './kolam-button';
 import {KolamCatalogListTableShell} from './kolam-catalog-list-table-shell';
 import {KolamConfirmDialog} from './kolam-confirm-dialog';
+import {KolamContentFrame} from './kolam-content-frame';
 import {
   KolamOverflowMenuButton,
   KolamTableFooterControls,
@@ -55,10 +59,29 @@ const INITIAL_PAGINATION: KolamUserListPagination = {
 
 export function KolamUserSurface({
   onRouteChange,
-  route: _route,
+  route,
 }: {
   onRouteChange?: (route: string) => void;
   route: string;
+}) {
+  const routeMode = getKolamUserRouteMode(route);
+
+  if (routeMode === 'detail') {
+    return (
+      <KolamUserDetailSurface
+        onRouteChange={onRouteChange}
+        userId={getKolamUserIdFromRoute(route)}
+      />
+    );
+  }
+
+  return <KolamUserListSurface onRouteChange={onRouteChange} />;
+}
+
+function KolamUserListSurface({
+  onRouteChange,
+}: {
+  onRouteChange?: (route: string) => void;
 }) {
   const [items, setItems] = React.useState<KolamUserListItem[]>([]);
   const [pagination, setPagination] =
@@ -279,6 +302,264 @@ export function KolamUserSurface({
   );
 }
 
+function KolamUserDetailSurface({
+  onRouteChange,
+  userId,
+}: {
+  onRouteChange?: (route: string) => void;
+  userId: string;
+}) {
+  const [user, setUser] = React.useState<KolamUserListItem | null>(null);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState('');
+
+  React.useEffect(() => {
+    let active = true;
+
+    if (!userId) {
+      setUser(null);
+      setError('ID pengguna tidak valid.');
+      setLoading(false);
+      return () => {
+        active = false;
+      };
+    }
+
+    setLoading(true);
+    setError('');
+
+    void getKolamUserDetail(userId)
+      .then(result => {
+        if (!active) {
+          return;
+        }
+        setUser(result);
+        if (!result) {
+          setError('Pengguna tidak ditemukan.');
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setUser(null);
+          setError('Gagal memuat detail pengguna.');
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [userId]);
+
+  if (loading || error || !user) {
+    return (
+      <View style={styles.detailSurface}>
+        <KolamContentFrame
+          style={styles.detailCard}
+          variant="settingsWebConfig"
+        >
+          <KolamEmptyState
+            compact
+            message={error || 'Mengambil data pengguna dari server.'}
+            title={
+              loading
+                ? 'Memuat detail pengguna'
+                : error || 'Pengguna tidak ditemukan'
+            }
+          />
+        </KolamContentFrame>
+      </View>
+    );
+  }
+
+  const encodedUserId = encodeURIComponent(user.id);
+
+  return (
+    <View style={styles.detailSurface}>
+      <View style={styles.detailActionRow}>
+        <KolamButton
+          label="Daftar"
+          onPress={() => onRouteChange?.('/list-of-users')}
+        />
+        <KolamButton
+          intent="primary"
+          label="Rubah"
+          onPress={() =>
+            onRouteChange?.(`/list-of-users/users/${encodedUserId}/edit`)
+          }
+        />
+      </View>
+
+      <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
+        <View style={styles.detailTitleBlock}>
+          <Text style={styles.detailTitle}>{user.displayName}</Text>
+          {user.username ? (
+            <Text style={styles.detailSubtitle}>@{user.username}</Text>
+          ) : null}
+        </View>
+        <View style={styles.detailGrid}>
+          <View style={styles.detailPanel}>
+            <Text style={styles.detailPanelTitle}>Identitas</Text>
+            <DetailRow label="Nama" value={user.displayName} />
+            <DetailRow label="Username" value={user.username || '-'} />
+            <DetailRow label="Email" value={user.email || '-'} />
+            <DetailRow label="Nomor Telepon" value={user.phoneNumber || '-'} />
+            <DetailRow label="Zona Waktu" value={user.timezone || '-'} />
+          </View>
+
+          <View style={styles.detailPanel}>
+            <Text style={styles.detailPanelTitle}>Peran dan Flag</Text>
+            <DetailBadgeRow
+              label="Peran"
+              badges={[{intent: 'secondary', label: user.roleLabel || '-'}]}
+            />
+            <DetailBadgeRow
+              label="Status Karyawan"
+              badges={[
+                {
+                  intent: user.isEmployee ? 'success' : 'secondary',
+                  label: user.isEmployee ? 'Karyawan' : 'Bukan karyawan',
+                },
+              ]}
+            />
+            <DetailBadgeRow
+              label="Flag"
+              badges={[
+                ...(user.isOwner
+                  ? [{intent: 'primary' as const, label: 'Pemilik'}]
+                  : []),
+                ...(user.csActive
+                  ? [{intent: 'success' as const, label: 'CS Aktif'}]
+                  : []),
+                ...(!user.isOwner && !user.csActive
+                  ? [{intent: 'secondary' as const, label: '-'}]
+                  : []),
+              ]}
+            />
+          </View>
+
+          <View style={styles.detailPanel}>
+            <Text style={styles.detailPanelTitle}>Akses</Text>
+            <DetailBadgeRow
+              label="Akses POS"
+              badges={[
+                {
+                  intent: user.accessPos ? 'success' : 'danger',
+                  label: user.accessPos ? 'Memiliki Akses' : 'Tidak Ada Akses',
+                },
+              ]}
+            />
+            <DetailBadgeRow
+              label="Akses Inventori"
+              badges={[
+                {
+                  intent: user.accessInventory ? 'success' : 'danger',
+                  label: user.accessInventory
+                    ? 'Memiliki Akses'
+                    : 'Tidak Ada Akses',
+                },
+              ]}
+            />
+            <DetailBadgeRow
+              label="Akses AM"
+              badges={[
+                {
+                  intent: user.accessAm ? 'success' : 'danger',
+                  label: user.accessAm ? 'Memiliki Akses' : 'Tidak Ada Akses',
+                },
+              ]}
+            />
+          </View>
+
+          <View style={styles.detailPanel}>
+            <Text style={styles.detailPanelTitle}>Status Akun</Text>
+            <DetailBadgeRow
+              label="Status Akun"
+              badges={[
+                {
+                  intent: getUserAccountStatusIntent(user),
+                  label: getKolamUserAccountStatusLabel(user),
+                },
+              ]}
+            />
+            <DetailBadgeRow
+              label="Status Online"
+              badges={[
+                {
+                  intent: user.statusOnline ? 'success' : 'secondary',
+                  label: user.statusOnline ? 'Online' : 'Offline',
+                },
+              ]}
+            />
+            <DetailRow
+              label="Tanggal Resign"
+              value={formatUserDateTime(user.resignedAt)}
+            />
+            <DetailRow
+              label="Terakhir Online"
+              value={formatUserDateTime(user.lastOnline)}
+            />
+          </View>
+
+          <View style={styles.detailPanel}>
+            <Text style={styles.detailPanelTitle}>Timestamps</Text>
+            <DetailRow
+              label="Dibuat Pada"
+              value={formatUserDateTime(user.createdAt)}
+            />
+            <DetailRow
+              label="Terakhir Diperbarui"
+              value={formatUserDateTime(user.updatedAt)}
+            />
+          </View>
+        </View>
+      </KolamContentFrame>
+    </View>
+  );
+}
+
+function DetailRow({label, value}: {label: string; value: string}) {
+  return (
+    <View style={styles.detailRow}>
+      <Text style={styles.detailLabel}>{label}</Text>
+      <Text numberOfLines={2} style={styles.detailValue}>
+        {value || '-'}
+      </Text>
+    </View>
+  );
+}
+
+function DetailBadgeRow({
+  badges,
+  label,
+}: {
+  badges: Array<{
+    intent: React.ComponentProps<typeof KolamStatusBadge>['intent'];
+    label: string;
+  }>;
+  label: string;
+}) {
+  return (
+    <View style={styles.detailRow}>
+      <Text style={styles.detailLabel}>{label}</Text>
+      <View style={styles.detailBadgeRow}>
+        {badges.map((badge, index) => (
+          <KolamStatusBadge
+            intent={badge.intent}
+            key={`${badge.label}-${index}`}
+            label={badge.label}
+            numberOfLines={1}
+          />
+        ))}
+      </View>
+    </View>
+  );
+}
+
 function KolamUserListRow({
   onDeleteRequest,
   onRouteChange,
@@ -377,6 +658,33 @@ function getUserListCellStyle(columnId: UserListColumnId) {
     {flex: column?.flex ?? 1},
     column?.align === 'right' && styles.userListCellRight,
   ];
+}
+
+function getUserAccountStatusIntent(
+  user: KolamUserListItem,
+): React.ComponentProps<typeof KolamStatusBadge>['intent'] {
+  if (user.resignedAt || user.accountRestricted) {
+    return 'danger';
+  }
+
+  return 'success';
+}
+
+function formatUserDateTime(value?: string | null) {
+  if (!value) {
+    return '-';
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return '-';
+  }
+
+  return date.toLocaleString('id-ID', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  });
 }
 
 const styles = StyleSheet.create({
@@ -526,5 +834,81 @@ const styles = StyleSheet.create({
   emptyWrap: {
     paddingHorizontal: 12,
     paddingVertical: 12,
+  },
+  detailSurface: {
+    gap: 12,
+    width: '100%',
+  },
+  detailActionRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'flex-end',
+  },
+  detailCard: {
+    gap: 18,
+    padding: 18,
+  },
+  detailTitleBlock: {
+    gap: 4,
+  },
+  detailTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 22,
+    fontWeight: '900',
+    lineHeight: 28,
+  },
+  detailSubtitle: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+    lineHeight: 20,
+  },
+  detailGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  detailPanel: {
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexBasis: 320,
+    flexGrow: 1,
+    gap: 10,
+    padding: 14,
+  },
+  detailPanelTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 15,
+    fontWeight: '900',
+    lineHeight: 22,
+  },
+  detailRow: {
+    gap: 4,
+  },
+  detailLabel: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '800',
+    lineHeight: 16,
+    textTransform: 'uppercase',
+  },
+  detailValue: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+    lineHeight: 20,
+  },
+  detailBadgeRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
   },
 });

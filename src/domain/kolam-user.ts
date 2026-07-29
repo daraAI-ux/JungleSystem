@@ -1,6 +1,7 @@
 export type KolamUserSortOrder = 'asc' | 'desc';
 export type KolamUserBooleanFilter = 'true' | 'false' | 'all';
 export type KolamUserAccessId = 'inventory' | 'pos' | 'am';
+export type KolamUserRouteMode = 'detail' | 'list' | 'unknown';
 
 export const KOLAM_USER_LIST_ROUTE = '/list-of-users';
 
@@ -8,6 +9,31 @@ export function isKolamUserListRoute(route?: string | null) {
   const routePath = (route?.split('?')[0] ?? '').replace(/\/+$/, '') || '/';
 
   return routePath === KOLAM_USER_LIST_ROUTE;
+}
+
+export function isKolamUserRoute(route?: string | null) {
+  return getKolamUserRouteMode(route) !== 'unknown';
+}
+
+export function getKolamUserRouteMode(route?: string | null): KolamUserRouteMode {
+  const routePath = (route?.split('?')[0] ?? '').replace(/\/+$/, '') || '/';
+
+  if (routePath === KOLAM_USER_LIST_ROUTE) {
+    return 'list';
+  }
+
+  if (/^\/list-of-users\/users\/[^/]+$/.test(routePath)) {
+    return 'detail';
+  }
+
+  return 'unknown';
+}
+
+export function getKolamUserIdFromRoute(route?: string | null) {
+  const routePath = (route?.split('?')[0] ?? '').replace(/\/+$/, '') || '/';
+  const match = routePath.match(/^\/list-of-users\/users\/([^/]+)$/);
+
+  return match ? decodeURIComponent(match[1]) : '';
 }
 
 export interface KolamUserRole {
@@ -34,6 +60,7 @@ export interface KolamUserListItem {
   profilePicture: string;
   timezone: string;
   statusOnline: boolean;
+  lastOnline: string;
   accountRestricted: boolean;
   accessInventory: boolean;
   accessPos: boolean;
@@ -153,11 +180,17 @@ export function normalizeKolamUserListItem(
     resignedAt: getString(record, 'resignedAt'),
     role,
     roleLabel: getKolamUserRoleLabel(role, record.role),
+    lastOnline:
+      getString(record, 'last_online') || getString(record, 'lastOnline'),
     statusOnline: getBoolean(record, 'status_online') ?? false,
     timezone: getString(record, 'timezone'),
     updatedAt: getString(record, 'updatedAt') || getString(record, 'updated_at'),
     username,
   };
+}
+
+export function normalizeKolamUserDetail(payload: unknown) {
+  return normalizeKolamUserListItem(payload);
 }
 
 export function getKolamUserEmployeeStatusLabel(user: KolamUserListItem) {

@@ -1,6 +1,8 @@
 import {appConfig} from '../config/app';
 import {
+  normalizeKolamUserDetail,
   normalizeKolamUserListResult,
+  type KolamUserListItem,
   type KolamUserListQuery,
   type KolamUserListResult,
 } from '../domain/kolam-user';
@@ -42,6 +44,16 @@ export async function getKolamUserList({
   });
 
   return normalizeKolamUserListResult(response, {limit, page});
+}
+
+export async function getKolamUserDetail(
+  userId: string,
+): Promise<KolamUserListItem | null> {
+  const response = await kolamRequest<unknown>(
+    `/auth/detail-user/${encodeURIComponent(userId)}`,
+  );
+
+  return normalizeKolamUserDetail(response);
 }
 
 function kolamRequest<T>(

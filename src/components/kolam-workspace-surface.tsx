@@ -24,7 +24,7 @@ import { isKolamSupplierRoute } from '../domain/kolam-vendor';
 import { isKolamTaxonomyRoute } from '../domain/kolam-taxonomy';
 import { isKolamTeranuraNativeRoute } from '../domain/kolam-teranura';
 import { isKolamUnitRoute } from '../domain/kolam-unit';
-import { isKolamUserListRoute } from '../domain/kolam-user';
+import { isKolamUserRoute } from '../domain/kolam-user';
 import type { KolamNavigationItem } from '../domain/kolam-navigation';
 import {
   getSettingsSurfaceItemByRoute,
@@ -302,7 +302,7 @@ export function KolamWorkspaceSurfaceComponent({
           );
         }
 
-        if (isKolamUserListRoute(activeNavigationItem.route)) {
+        if (isKolamUserRoute(activeNavigationItem.route)) {
           return (
             <KolamUserSurface
               onRouteChange={onDashboardRoute}
