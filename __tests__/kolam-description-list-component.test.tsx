@@ -1,5 +1,5 @@
 import React from 'react';
-import {Text} from 'react-native';
+import {Pressable, Text} from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 import {KolamBadge} from '../src/components/kolam-badge';
 import {KolamDescriptionList} from '../src/components/kolam-description-list';
@@ -49,5 +49,35 @@ describe('KolamDescriptionList', () => {
       'native',
       'Windows desktop',
     ]);
+  });
+
+  it('wraps value in a pressable link when row onPress is set', async () => {
+    const onPress = jest.fn();
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamDescriptionList
+          accessibilityLabel="po vendor link"
+          rows={[
+            {
+              id: 'vendor',
+              label: 'Pemasok',
+              value: 'Java petco',
+              meta: '',
+              tone: 'default',
+              onPress,
+            },
+          ]}
+        />,
+      );
+    });
+
+    const link = renderer!.root.findByProps({accessibilityRole: 'link'});
+    expect(link.type).toBe(Pressable);
+    await ReactTestRenderer.act(async () => {
+      link.props.onPress();
+    });
+    expect(onPress).toHaveBeenCalledTimes(1);
   });
 });
