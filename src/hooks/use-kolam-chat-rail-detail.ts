@@ -22,7 +22,6 @@ import {
   redialKolamTeamChatCall,
   sendKolamChatTextMessage,
   sendKolamTeamChatMessage,
-  sendKolamTeamChatTextMessage,
   startKolamTeamChatCall,
   toggleKolamTeamChatReaction,
   type KolamChatConversation,
@@ -82,6 +81,10 @@ export interface KolamChatRailDetailMessage {
   status?: string;
 }
 
+export interface KolamChatRailSendMessageOptions {
+  replyToMessageId?: string | null;
+}
+
 export interface KolamChatRailTeamRoomMetadata {
   bots: KolamTeamChatBotPresence[];
   canManageAiRoomAccess: boolean;
@@ -109,9 +112,16 @@ export interface KolamChatRailDetailState {
   reactToMessage: (messageId: string, emoji: string) => Promise<void>;
   redialCall: () => Promise<void>;
   refreshCall: () => Promise<void>;
-  sendAttachment: (file: NativeImagePickerResult, text?: string) => Promise<void>;
+  sendAttachment: (
+    file: NativeImagePickerResult,
+    text?: string,
+    options?: KolamChatRailSendMessageOptions,
+  ) => Promise<void>;
   refresh: () => Promise<void>;
-  sendMessage: (text: string) => Promise<void>;
+  sendMessage: (
+    text: string,
+    options?: KolamChatRailSendMessageOptions,
+  ) => Promise<void>;
   setInboxLabels: (labelIds: string[]) => Promise<void>;
   signalTyping: (typing: boolean) => void;
   sending: boolean;
@@ -310,7 +320,7 @@ export function useKolamChatRailDetail({
   );
 
   const sendMessage = useCallback(
-    async (text: string) => {
+    async (text: string, options?: KolamChatRailSendMessageOptions) => {
       const body = text.trim();
       if (!selectedId || !body || sending) {
         return;
@@ -321,7 +331,10 @@ export function useKolamChatRailDetail({
 
       try {
         if (mode === 'team-chat') {
-          const message = await sendKolamTeamChatTextMessage(selectedId, body);
+          const message = await sendKolamTeamChatMessage(selectedId, {
+            body,
+            replyToMessageId: options?.replyToMessageId ?? undefined,
+          });
           setMessages(current => [
             ...current,
             mapTeamChatMessage(message, currentUserId),
@@ -343,7 +356,11 @@ export function useKolamChatRailDetail({
   );
 
   const sendAttachment = useCallback(
-    async (file: NativeImagePickerResult, text = '') => {
+    async (
+      file: NativeImagePickerResult,
+      text = '',
+      options?: KolamChatRailSendMessageOptions,
+    ) => {
       if (!selectedId || mode !== 'team-chat' || sending) {
         return;
       }
@@ -362,6 +379,7 @@ export function useKolamChatRailDetail({
         const message = await sendKolamTeamChatMessage(selectedId, {
           body: text.trim(),
           attachments: [attachment],
+          replyToMessageId: options?.replyToMessageId ?? undefined,
         });
         setMessages(current => [
           ...current,

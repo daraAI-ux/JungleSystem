@@ -1197,6 +1197,99 @@ describe('KolamGlobalChatRail', () => {
     ).toBe(true);
   });
 
+  it('selects a team chat message as reply target and sends replyToMessageId', async () => {
+    const sendMessage = jest.fn().mockResolvedValue(undefined);
+    useReadonlyDataMock.mockReturnValue({
+      conversations: [],
+      loading: false,
+      refresh: jest.fn(),
+      rooms: [
+        {
+          _id: 'room-1',
+          name: 'Operasional',
+          category: 'general',
+          lastMessagePreview: 'Barang siap dikirim',
+          unreadCount: 0,
+        },
+      ],
+      totalUnread: 0,
+    });
+    useDetailMock.mockReturnValue({
+      ...getDefaultDetailMock(),
+      loading: false,
+      messages: [
+        {
+          attachments: [],
+          embeds: [],
+          id: 'team-msg-1',
+          author: 'Maya',
+          body: 'Siap dicek dari gudang.',
+          linkPreviews: [],
+          mine: false,
+          reactions: [],
+          sentAt: '2026-07-28T08:00:00.000Z',
+        },
+      ],
+      presence: {onlineCount: 1, typingUserIds: [], viewingCount: 1},
+      sendMessage,
+      signalTyping: jest.fn(),
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamGlobalChatRail mode="team-chat" onClose={() => undefined} />,
+      );
+    });
+
+    const selectButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Pilih room Operasional');
+
+    await ReactTestRenderer.act(async () => {
+      selectButton!.props.onPress();
+    });
+
+    const replyButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Balas pesan Maya');
+
+    await ReactTestRenderer.act(async () => {
+      replyButton!.props.onPress();
+    });
+
+    expect(
+      renderer!.root
+        .findAllByType(View)
+        .some(node => node.props.accessibilityLabel === 'Membalas pesan Maya'),
+    ).toBe(true);
+    expect(renderText(renderer!)).toEqual(
+      expect.arrayContaining(['Siap dicek dari gudang.']),
+    );
+
+    const input = renderer!.root.findByType(TextInput);
+    await ReactTestRenderer.act(async () => {
+      input.props.onChangeText('Baik, saya lanjutkan.');
+    });
+
+    const sendButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Kirim pesan');
+
+    await ReactTestRenderer.act(async () => {
+      await sendButton!.props.onPress();
+    });
+
+    expect(sendMessage).toHaveBeenCalledWith('Baik, saya lanjutkan.', {
+      replyToMessageId: 'team-msg-1',
+    });
+    expect(
+      renderer!.root
+        .findAllByType(View)
+        .some(node => node.props.accessibilityLabel === 'Membalas pesan Maya'),
+    ).toBe(false);
+  });
+
   it('updates and clears the DARA thinking bubble from team chat live events', async () => {
     let liveOptions:
       | Parameters<typeof useKolamChatLiveStream>[0]

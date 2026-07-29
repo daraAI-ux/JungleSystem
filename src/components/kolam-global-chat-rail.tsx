@@ -91,6 +91,12 @@ interface KolamTeamMentionOption {
   username: string;
 }
 
+interface KolamChatRailReplyTarget {
+  author: string;
+  body: string;
+  id: string;
+}
+
 type KolamTeamMentionTextPart =
   | {type: 'text'; value: string}
   | {type: 'mention'; raw: string; username: string};
@@ -121,6 +127,8 @@ export function KolamGlobalChatRail({
   const [composerText, setComposerText] = React.useState('');
   const [pendingAttachment, setPendingAttachment] =
     React.useState<NativeImagePickerResult | null>(null);
+  const [replyTarget, setReplyTarget] =
+    React.useState<KolamChatRailReplyTarget | null>(null);
   const [daraThinkingLiveSignal, setDaraThinkingLiveSignal] =
     React.useState<KolamDaraThinkingLiveSignal | null>(null);
   const daraThinkingSignalKeyRef = React.useRef(0);
@@ -210,6 +218,7 @@ export function KolamGlobalChatRail({
     setSelectedItemId(null);
     setComposerText('');
     setPendingAttachment(null);
+    setReplyTarget(null);
     setDaraThinkingLiveSignal(null);
   }, [mode]);
 
@@ -333,8 +342,13 @@ export function KolamGlobalChatRail({
       setSelectedItemId(null);
       setComposerText('');
       setPendingAttachment(null);
+      setReplyTarget(null);
     }
   }, [items, selectedItemId]);
+
+  React.useEffect(() => {
+    setReplyTarget(null);
+  }, [selectedItemId]);
 
   const handleChooseAttachment = React.useCallback(async () => {
     if (mode !== 'team-chat' || detail.sending) {
@@ -353,18 +367,33 @@ export function KolamGlobalChatRail({
       return;
     }
 
+    const sendOptions =
+      mode === 'team-chat' && replyTarget
+        ? {replyToMessageId: replyTarget.id}
+        : undefined;
+
     if (pendingAttachment) {
-      await detail.sendAttachment(pendingAttachment, body);
+      if (sendOptions) {
+        await detail.sendAttachment(pendingAttachment, body, sendOptions);
+      } else {
+        await detail.sendAttachment(pendingAttachment, body);
+      }
       setPendingAttachment(null);
+      setReplyTarget(null);
       setComposerText('');
       detail.signalTyping(false);
       return;
     }
 
-    await detail.sendMessage(body);
+    if (sendOptions) {
+      await detail.sendMessage(body, sendOptions);
+    } else {
+      await detail.sendMessage(body);
+    }
+    setReplyTarget(null);
     setComposerText('');
     detail.signalTyping(false);
-  }, [composerText, detail, pendingAttachment]);
+  }, [composerText, detail, mode, pendingAttachment, replyTarget]);
 
   const handleComposerTextChange = React.useCallback(
     (value: string) => {
@@ -434,8 +463,11 @@ export function KolamGlobalChatRail({
             onComposerTextChange={handleComposerTextChange}
             onPendingAttachmentClear={() => setPendingAttachment(null)}
             onPendingAttachmentPick={handleChooseAttachment}
+            onReplyCancel={() => setReplyTarget(null)}
+            onReplyToMessage={setReplyTarget}
             onSend={handleSend}
             pendingAttachment={pendingAttachment}
+            replyTarget={replyTarget}
             selectedItem={selectedItem}
             templatesState={templatesState}
           />
@@ -597,8 +629,11 @@ function KolamChatRailDetailPanel({
   onComposerTextChange,
   onPendingAttachmentClear,
   onPendingAttachmentPick,
+  onReplyCancel,
+  onReplyToMessage,
   onSend,
   pendingAttachment,
+  replyTarget,
   selectedItem,
   templatesState,
 }: {
@@ -611,8 +646,11 @@ function KolamChatRailDetailPanel({
   onComposerTextChange: (value: string) => void;
   onPendingAttachmentClear: () => void;
   onPendingAttachmentPick: () => void;
+  onReplyCancel: () => void;
+  onReplyToMessage: (message: KolamChatRailReplyTarget) => void;
   onSend: () => Promise<void> | void;
   pendingAttachment: NativeImagePickerResult | null;
+  replyTarget: KolamChatRailReplyTarget | null;
   selectedItem: ReturnType<typeof getChatRailItems>[number];
   templatesState: KolamChatRailTemplatesState;
 }) {
@@ -849,6 +887,13 @@ function KolamChatRailDetailPanel({
                       disabled={detail.sending}
                       message={message}
                       onReact={emoji => detail.reactToMessage(message.id, emoji)}
+                      onReply={() =>
+                        onReplyToMessage({
+                          author: message.author,
+                          body: getTeamChatReplyTargetBody(message),
+                          id: message.id,
+                        })
+                      }
                     />
                   ) : null}
                   <Text style={styles.messageMeta}>
@@ -880,6 +925,14 @@ function KolamChatRailDetailPanel({
             <Text style={styles.pendingAttachmentRemoveText}>x</Text>
           </KolamPressable>
         </View>
+      ) : null}
+
+      {mode === 'team-chat' && replyTarget ? (
+        <KolamTeamChatReplyComposerStrip
+          disabled={detail.sending}
+          onCancel={onReplyCancel}
+          replyTarget={replyTarget}
+        />
       ) : null}
 
       {mode === 'inbox' && templatePickerOpen ? (
@@ -1136,6 +1189,64 @@ function KolamTeamChatReplyPreviewCard({
       <Text numberOfLines={2} style={styles.replyPreviewBody}>
         {body}
       </Text>
+    </View>
+  );
+}
+
+function getTeamChatReplyTargetBody(
+  message: ReturnType<typeof useKolamChatRailDetail>['messages'][number],
+) {
+  const body = message.body.trim();
+  if (body) {
+    return body;
+  }
+
+  if (message.attachments.length > 0) {
+    return message.attachments[0]?.fileName ?? 'Lampiran';
+  }
+
+  if (message.embeds.length > 0) {
+    return message.embeds[0]?.title?.trim() || message.embeds[0]?.refId || 'Embed';
+  }
+
+  if (message.linkPreviews.length > 0) {
+    return message.linkPreviews[0]?.title ?? message.linkPreviews[0]?.url ?? 'Link';
+  }
+
+  return 'Pesan';
+}
+
+function KolamTeamChatReplyComposerStrip({
+  disabled,
+  onCancel,
+  replyTarget,
+}: {
+  disabled: boolean;
+  onCancel: () => void;
+  replyTarget: KolamChatRailReplyTarget;
+}) {
+  return (
+    <View
+      accessibilityLabel={`Membalas pesan ${replyTarget.author}`}
+      style={styles.replyComposerStrip}>
+      <View style={styles.replyComposerCopy}>
+        <Text numberOfLines={1} style={styles.replyComposerTitle}>
+          Balas {replyTarget.author}
+        </Text>
+        <Text numberOfLines={2} style={styles.replyComposerBody}>
+          {replyTarget.body}
+        </Text>
+      </View>
+      <KolamPressable
+        accessibilityLabel="Batalkan balasan team chat"
+        disabled={disabled}
+        onPress={onCancel}
+        style={[
+          styles.replyComposerCancel,
+          disabled && styles.attachButtonDisabled,
+        ]}>
+        <Text style={styles.replyComposerCancelText}>x</Text>
+      </KolamPressable>
     </View>
   );
 }
@@ -1865,13 +1976,22 @@ function KolamChatReactionControls({
   disabled,
   message,
   onReact,
+  onReply,
 }: {
   disabled: boolean;
   message: ReturnType<typeof useKolamChatRailDetail>['messages'][number];
   onReact: (emoji: string) => void;
+  onReply: () => void;
 }) {
   return (
     <View style={styles.reactionControls}>
+      <KolamPressable
+        accessibilityLabel={`Balas pesan ${message.author}`}
+        disabled={disabled}
+        onPress={onReply}
+        style={[styles.replyActionButton, disabled && styles.attachButtonDisabled]}>
+        <Text style={styles.replyActionText}>Balas</Text>
+      </KolamPressable>
       {message.reactions.length > 0 ? (
         <View style={styles.reactionPills}>
           <KolamMappedList
@@ -3203,6 +3323,51 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
   },
+  replyComposerStrip: {
+    marginHorizontal: 10,
+    marginBottom: 8,
+    minHeight: 44,
+    paddingVertical: 7,
+    paddingHorizontal: 10,
+    borderLeftColor: V.colors.primary,
+    borderLeftWidth: 3,
+    borderRadius: 8,
+    backgroundColor: V.colors.secondary,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  replyComposerCopy: {
+    minWidth: 0,
+    flex: 1,
+    gap: 2,
+  },
+  replyComposerTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  replyComposerBody: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  replyComposerCancel: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: V.colors.bg,
+  },
+  replyComposerCancelText: {
+    color: V.colors.secondaryFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '900',
+  },
   chatPreviewList: {
     gap: 6,
   },
@@ -3308,6 +3473,21 @@ const styles = StyleSheet.create({
   },
   reactionControls: {
     gap: 5,
+  },
+  replyActionButton: {
+    alignSelf: 'flex-start',
+    minHeight: 24,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: V.colors.secondary,
+  },
+  replyActionText: {
+    color: V.colors.secondaryFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '900',
   },
   reactionPills: {
     flexDirection: 'row',
