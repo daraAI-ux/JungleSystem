@@ -297,39 +297,13 @@ export function KolamOverflowMenuButton({
   onOpenChange?: (open: boolean) => void;
 }) {
   const [open, setOpen] = React.useState(false);
-  const triggerRef = React.useRef<View>(null);
-  const viewport = useWindowDimensions();
-  const [triggerFrame, setTriggerFrame] = React.useState({
-    height: 34,
-    width: 38,
-    x: 0,
-    y: 0,
-  });
-  const measureOverflowTrigger = () => {
-    triggerRef.current?.measureInWindow((x, y, width, height) => {
-      setTriggerFrame({
-        height: height || 34,
-        width: width || 38,
-        x,
-        y,
-      });
-    });
-  };
   const setMenuOpen = (next: boolean) => {
-    if (next) {
-      requestAnimationFrame(measureOverflowTrigger);
-    }
-
     setOpen(next);
     onOpenChange?.(next);
   };
 
   return (
-    <View
-      collapsable={false}
-      ref={triggerRef}
-      style={styles.overflowRoot}
-    >
+    <View style={styles.overflowRoot}>
       <KolamButton
         accessibilityLabel={accessibilityLabel}
         intent="outline"
@@ -339,78 +313,29 @@ export function KolamOverflowMenuButton({
         textStyle={styles.overflowText}
       />
       {open ? (
-        <Modal
-          animationType="none"
-          onRequestClose={() => setMenuOpen(false)}
-          transparent
-          visible={open}
-        >
-          <View style={styles.portalOverlay}>
-            <Pressable
-              accessibilityLabel="Tutup menu aksi"
-              accessibilityRole="button"
-              onPress={() => setMenuOpen(false)}
-              style={styles.portalBackdrop}
-            />
-            <View
-              style={[
-                styles.overflowMenu,
-                getOverflowPortalMenuStyle(
-                  triggerFrame,
-                  viewport,
-                  actions.length,
-                ),
-              ]}
-            >
-              {actions.map(action => (
-                <KolamButton
-                  disabled={action.disabled}
-                  intent={action.tone === 'danger' ? 'danger' : 'plain'}
-                  key={action.label}
-                  label={action.label}
-                  onPress={() => {
-                    if (action.disabled) {
-                      return;
-                    }
+        <View style={styles.overflowMenu}>
+          {actions.map(action => (
+            <KolamButton
+              disabled={action.disabled}
+              intent={action.tone === 'danger' ? 'danger' : 'plain'}
+              key={action.label}
+              label={action.label}
+              onPress={() => {
+                if (action.disabled) {
+                  return;
+                }
 
-                    setMenuOpen(false);
-                    action.onPress();
-                  }}
-                  style={styles.overflowOption}
-                  textStyle={styles.overflowOptionText}
-                />
-              ))}
-            </View>
-          </View>
-        </Modal>
+                setMenuOpen(false);
+                action.onPress();
+              }}
+              style={styles.overflowOption}
+              textStyle={styles.overflowOptionText}
+            />
+          ))}
+        </View>
       ) : null}
     </View>
   );
-}
-
-function getOverflowPortalMenuStyle(
-  frame: { height: number; width: number; x: number; y: number },
-  viewport: { height: number; width: number },
-  itemCount: number,
-): ViewStyle {
-  const menuWidth = 156;
-  const menuHeight = Math.max(46, itemCount * 35 + 14);
-  const left = Math.min(
-    Math.max(12, frame.x + frame.width - menuWidth),
-    Math.max(12, viewport.width - menuWidth - 12),
-  );
-  const belowTop = frame.y + frame.height + 4;
-  const top =
-    belowTop + menuHeight > viewport.height - 12
-      ? Math.max(12, frame.y - menuHeight - 4)
-      : belowTop;
-
-  return {
-    left,
-    minWidth: menuWidth,
-    top,
-    width: menuWidth,
-  };
 }
 
 export function KolamPaginationSummaryLabel({
@@ -628,6 +553,8 @@ const styles = StyleSheet.create({
   },
   overflowMenu: {
     position: 'absolute',
+    top: 34,
+    right: 42,
     zIndex: 1200,
     elevation: 32,
     minWidth: 156,
@@ -683,5 +610,3 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
 });
-
-
