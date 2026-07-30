@@ -2204,16 +2204,6 @@ export async function assignKolamChatConversation(
   return unwrapData(response);
 }
 
-export async function forceUnassignKolamChatConversation(
-  conversationId: string,
-): Promise<KolamChatConversation> {
-  const response = await kolamPatch<
-    DataResponse<KolamChatConversation> | KolamChatConversation
-  >(`/chat/conversations/${encodeURIComponent(conversationId)}/force-unassign`, {});
-
-  return unwrapData(response);
-}
-
 export async function updateKolamChatConversationAiHandled(
   conversationId: string,
   isAiHandled: boolean,

@@ -7,7 +7,6 @@ import {
   endKolamTeamChatCall,
   editKolamChatMessage,
   editKolamTeamChatMessage,
-  forceUnassignKolamChatConversation,
   getKolamChatConversation,
   getKolamChatMessages,
   getKolamRoomActiveTeamChatCall,
@@ -163,7 +162,6 @@ export interface KolamChatRailDetailState {
   toggleInboxAiHandled: () => Promise<void>;
   toggleInboxStatus: () => Promise<void>;
   toggleCallHand: () => Promise<void>;
-  unassignInbox: () => Promise<void>;
   unmuteCallParticipant: (userId: string) => Promise<void>;
   updatePresenceFromLive: (presence: KolamTeamChatPresence) => void;
 }
@@ -720,16 +718,6 @@ export function useKolamChatRailDetail({
     );
   }, [currentUserId, runInboxConversationAction, selectedId]);
 
-  const unassignInbox = useCallback(async () => {
-    if (!selectedId) {
-      return;
-    }
-
-    await runInboxConversationAction(() =>
-      forceUnassignKolamChatConversation(selectedId),
-    );
-  }, [runInboxConversationAction, selectedId]);
-
   const toggleInboxAiHandled = useCallback(async () => {
     if (!selectedId || !conversation) {
       return;
@@ -907,7 +895,6 @@ export function useKolamChatRailDetail({
     toggleInboxAiHandled,
     toggleInboxStatus,
     toggleCallHand,
-    unassignInbox,
     unmuteCallParticipant,
     updatePresenceFromLive,
   };

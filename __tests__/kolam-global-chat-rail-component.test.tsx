@@ -245,7 +245,6 @@ function getDefaultDetailMock() {
     toggleInboxAiHandled: jest.fn(),
     toggleInboxStatus: jest.fn(),
     toggleCallHand: jest.fn(),
-    unassignInbox: jest.fn(),
     unmuteCallParticipant: jest.fn(),
     updatePresenceFromLive: jest.fn(),
   };
@@ -948,7 +947,6 @@ describe('KolamGlobalChatRail', () => {
     const setInboxLabels = jest.fn().mockResolvedValue(undefined);
     const toggleInboxAiHandled = jest.fn().mockResolvedValue(undefined);
     const toggleInboxStatus = jest.fn().mockResolvedValue(undefined);
-    const unassignInbox = jest.fn().mockResolvedValue(undefined);
     useReadonlyDataMock.mockReturnValue({
       conversations: [
         {
@@ -1014,7 +1012,6 @@ describe('KolamGlobalChatRail', () => {
       sending: false,
       toggleInboxAiHandled,
       toggleInboxStatus,
-      unassignInbox,
       updatePresenceFromLive: jest.fn(),
     });
     let renderer: ReactTestRenderer.ReactTestRenderer;
@@ -1057,7 +1054,6 @@ describe('KolamGlobalChatRail', () => {
         'Follow up',
         'CS: Staff',
         'Resolve',
-        'Unassign',
         'AI on',
       ]),
     );
@@ -1085,24 +1081,17 @@ describe('KolamGlobalChatRail', () => {
         node =>
           node.props.accessibilityLabel === 'Toggle inbox conversation status',
       );
-    const unassignButton = renderer!.root
-      .findAllByType(KolamPressable)
-      .find(
-        node => node.props.accessibilityLabel === 'Unassign inbox conversation',
-      );
     const aiButton = renderer!.root
       .findAllByType(KolamPressable)
       .find(node => node.props.accessibilityLabel === 'Toggle inbox AI handled');
 
     await ReactTestRenderer.act(async () => {
       await statusButton!.props.onPress();
-      await unassignButton!.props.onPress();
       await aiButton!.props.onPress();
     });
 
     expect(toggleInboxStatus).toHaveBeenCalledTimes(1);
     expect(assignInboxToMe).not.toHaveBeenCalled();
-    expect(unassignInbox).toHaveBeenCalledTimes(1);
     expect(toggleInboxAiHandled).toHaveBeenCalledTimes(1);
 
     const backButton = renderer!.root
@@ -1181,95 +1170,6 @@ describe('KolamGlobalChatRail', () => {
     });
 
     expect(sendMessage).toHaveBeenCalledWith('Siap, masih tersedia. 🙂');
-  });
-
-  it('allows administrator override to unassign an inbox conversation handled by another staff', async () => {
-    const unassignInbox = jest.fn().mockResolvedValue(undefined);
-    useAuthContextMock.mockReturnValue({
-      accessScope: {am: false, kolam: true, pos: false},
-      authEmail: '',
-      authMessage: '',
-      authPassword: '',
-      authSource: 'kolam',
-      authSourceHint: '',
-      authUser: {
-        csActive: false,
-        id: 'admin-1',
-        roleKey: 'administrator',
-      },
-      deviceIdentityStatus: 'missing',
-      displayName: 'Administrator',
-      handleSignIn: jest.fn(),
-      handleSignOut: jest.fn(),
-      isSigningIn: false,
-      setAuthEmail: jest.fn(),
-      setAuthMessage: jest.fn(),
-      setAuthPassword: jest.fn(),
-      setAuthSource: jest.fn(),
-    });
-    useReadonlyDataMock.mockReturnValue({
-      conversations: [
-        {
-          _id: 'conv-admin-unassign',
-          platform: 'tokopedia',
-          contactId: {displayName: 'Buyer Admin'},
-          lastMessagePreview: 'Tolong unlock chat',
-          unreadCount: 0,
-        },
-      ],
-      loading: false,
-      refresh: jest.fn(),
-      rooms: [],
-      totalUnread: 0,
-    });
-    useDetailMock.mockReturnValue({
-      ...getDefaultDetailMock(),
-      conversation: {
-        _id: 'conv-admin-unassign',
-        assignedStaffId: {
-          _id: 'staff-2',
-          first_name: 'Staff Dua',
-        },
-        isAiHandled: false,
-        platform: 'tokopedia',
-        status: 'open',
-      },
-      loading: false,
-      messages: [],
-      sending: false,
-      unassignInbox,
-    });
-    let renderer: ReactTestRenderer.ReactTestRenderer;
-
-    await ReactTestRenderer.act(async () => {
-      renderer = ReactTestRenderer.create(
-        <KolamGlobalChatRail mode="inbox" onClose={() => undefined} />,
-      );
-    });
-
-    const selectButton = renderer!.root
-      .findAllByType(KolamPressable)
-      .find(
-        node =>
-          node.props.accessibilityLabel ===
-          'Pilih conversation Buyer Admin',
-      );
-    await ReactTestRenderer.act(async () => {
-      selectButton!.props.onPress();
-    });
-
-    const unassignButton = renderer!.root
-      .findAllByType(KolamPressable)
-      .find(
-        node => node.props.accessibilityLabel === 'Unassign inbox conversation',
-      );
-    expect(unassignButton).toBeTruthy();
-
-    await ReactTestRenderer.act(async () => {
-      await unassignButton!.props.onPress();
-    });
-
-    expect(unassignInbox).toHaveBeenCalledTimes(1);
   });
 
   it('keeps Shift+Enter as a newline affordance in the chat composer', async () => {

@@ -31,7 +31,6 @@ import {
   editKolamChatMessage,
   editKolamTeamChatMessage,
   endKolamTeamChatCall,
-  forceUnassignKolamChatConversation,
   getKolamChatAssignableStaff,
   getKolamChatAnalytics,
   getKolamChatConversation,
@@ -1851,9 +1850,6 @@ describe('Kolam Settings API contracts', () => {
         }),
       )
       .mockResolvedValueOnce(
-        jsonResponse({success: true, data: {_id: 'conv-1', assignedStaffId: null}}),
-      )
-      .mockResolvedValueOnce(
         jsonResponse({success: true, data: {_id: 'conv-1', isAiHandled: false}}),
       )
       .mockResolvedValueOnce(
@@ -1875,9 +1871,6 @@ describe('Kolam Settings API contracts', () => {
     await expect(
       assignKolamChatConversation('conv-1', 'staff-1', 'Shift handover'),
     ).resolves.toMatchObject({assignedStaffId: expect.any(Object)});
-    await expect(forceUnassignKolamChatConversation('conv-1')).resolves.toMatchObject({
-      assignedStaffId: null,
-    });
     await expect(
       updateKolamChatConversationAiHandled('conv-1', false),
     ).resolves.toMatchObject({isAiHandled: false});
@@ -1913,14 +1906,6 @@ describe('Kolam Settings API contracts', () => {
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       5,
-      `${appConfig.kolamApiBaseUrl}/chat/conversations/conv-1/force-unassign`,
-      expect.objectContaining({
-        body: JSON.stringify({}),
-        method: 'PATCH',
-      }),
-    );
-    expect(fetchMock).toHaveBeenNthCalledWith(
-      6,
       `${appConfig.kolamApiBaseUrl}/chat/conversations/conv-1/ai-handled`,
       expect.objectContaining({
         body: JSON.stringify({isAiHandled: false}),
@@ -1928,7 +1913,7 @@ describe('Kolam Settings API contracts', () => {
       }),
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
-      7,
+      6,
       `${appConfig.kolamApiBaseUrl}/chat/conversations/conv-1/labels`,
       expect.objectContaining({
         body: JSON.stringify({labelIds: ['label-1', 'label-2']}),
