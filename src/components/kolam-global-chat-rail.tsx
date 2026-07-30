@@ -3581,9 +3581,21 @@ function KolamInboxProductCard({card}: {card: KolamInboxResolvedCard}) {
             {card.priceLabel}
           </Text>
         ) : null}
+        {card.sku || card.marketplaceId ? (
+          <Text numberOfLines={1} style={styles.chatPreviewDescription}>
+            {[card.sku ? `SKU ${card.sku}` : '', card.marketplaceId]
+              .filter(Boolean)
+              .join(' | ')}
+          </Text>
+        ) : null}
         {typeof card.stock === 'number' ? (
           <Text numberOfLines={1} style={styles.chatPreviewDescription}>
             Stok: {formatMetricNumber(card.stock)}
+          </Text>
+        ) : null}
+        {card.actionUrl ? (
+          <Text numberOfLines={1} style={styles.chatPreviewUrl}>
+            {card.actionUrl}
           </Text>
         ) : null}
       </View>
@@ -4879,7 +4891,9 @@ interface KolamInboxResolvedCard {
   imageUrl?: string;
   kind: 'product' | 'species' | 'marketplace';
   label: string;
+  marketplaceId?: string;
   priceLabel?: string;
+  sku?: string;
   stock?: number;
   title: string;
 }
@@ -5009,9 +5023,11 @@ function resolveInboxCard(
       imageUrl: normalizeChatMediaUri(card.imageUrl) ?? undefined,
       kind,
       label: getInboxCardLabel(kind, card.marketplace?.platform),
+      marketplaceId: getInboxMarketplaceCardId(card.marketplace),
       priceLabel:
         card.priceLabel ||
         (typeof card.price === 'number' ? formatRupiah(card.price) : undefined),
+      sku: card.marketplace?.sku?.trim() || undefined,
       stock: typeof card.stock === 'number' ? card.stock : undefined,
       title: card.marketplace?.listingName || card.name || 'Item',
     };
@@ -5199,6 +5215,31 @@ function getInboxCardLabel(
   }
 
   return kind === 'marketplace' ? 'Marketplace' : 'Product';
+}
+
+function getInboxMarketplaceCardId(
+  marketplace?: NonNullable<
+    NonNullable<KolamChatMessage['content']>['card']
+  >['marketplace'],
+) {
+  if (!marketplace) {
+    return undefined;
+  }
+
+  const productId = marketplace.productId?.trim();
+  const goodsId = marketplace.goodsId?.trim();
+  const value =
+    marketplace.platform === 'tokopedia'
+      ? goodsId || productId
+      : productId || goodsId;
+
+  if (!value) {
+    return undefined;
+  }
+
+  return marketplace.platform === 'tokopedia'
+    ? `Goods ID ${value}`
+    : `Product ID ${value}`;
 }
 
 function formatReplyContentType(type?: string) {
