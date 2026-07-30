@@ -67,6 +67,20 @@ describe('getKolamTableColumns', () => {
     ]);
   });
 
+  it('defines production list table headers matching FE', () => {
+    expect(getKolamTableColumns('production').map(column => column.label)).toEqual([
+      'Target',
+      'Varian',
+      'Kemajuan',
+      'Est. Biaya',
+      'Batch ID',
+      'Status',
+      'Penanggung Jawab',
+      'Tanggal Produksi',
+      '',
+    ]);
+  });
+
   it('defines purchase order item table headers in Indonesian', () => {
     expect(
       getKolamTableColumns('purchase-order-items').map(column => column.label),

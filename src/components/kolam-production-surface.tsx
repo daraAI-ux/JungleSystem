@@ -331,37 +331,99 @@ function KolamProductionRow({
   onDelete: () => void;
 }) {
   const columns = getKolamTableColumns('production');
+  const planned = production.plannedQuantity || production.quantity || 0;
+  const completed = production.completedQuantity || 0;
+  const linked = production.linkedPurchaseOrders ?? [];
+  const linkedTotal = linked.length;
+  const linkedDone = linked.filter(link =>
+    ['completed', 'cancelled', 'rejected'].includes(String(link.status || '')),
+  ).length;
+  const assignedName =
+    production.assignedTo?.name ||
+    production.assignedTo?.email ||
+    '—';
+  const productionDateLabel = formatProductionListDate(production.productionDate);
+  const variantSku = production.variant?.sku?.trim();
+
   const actions = [
+    { label: 'Lihat', onPress: onSelect },
     ...(production.status === 'cancelled' ? [{ label: 'Pulihkan', onPress: onRestore }] : []),
     ...(production.status === 'cancelled' && canDelete
-      ? [{ label: 'Hapus permanen', onPress: onDelete, tone: 'danger' as const }]
+      ? [{ label: 'Hapus', onPress: onDelete, tone: 'danger' as const }]
       : []),
   ];
 
   return (
     <Pressable onPress={onSelect}>
       <KolamDataTableRowFrame columns={columns}>
-        <Text numberOfLines={1} style={styles.cellPrimary}>{production.batchId || '—'}</Text>
-        <Text numberOfLines={1} style={styles.cellMeta}>{getKolamProductionTargetLabel(production)}</Text>
-        <Text style={styles.cellChildren}>{production.plannedQuantity || production.quantity}</Text>
-        <Text style={styles.cellAmount}>{formatRupiah(production.estimatedCost)}</Text>
-        <View style={styles.cellStatus}>
+        <View style={styles.cellStack}>
+          <Text numberOfLines={2} style={styles.cellPrimary}>
+            {getKolamProductionTargetLabel(production)}
+          </Text>
+          <Text numberOfLines={1} style={styles.cellMeta}>
+            {getKolamProductionTargetTypeLabel(production.targetType)}
+          </Text>
+        </View>
+        <View style={styles.cellStack}>
+          <Text numberOfLines={2} style={styles.cellMeta}>
+            {getKolamProductionVariantLabel(production.variant)}
+          </Text>
+          {variantSku ? (
+            <Text numberOfLines={1} style={styles.cellMeta}>{variantSku}</Text>
+          ) : null}
+        </View>
+        <View style={styles.cellStack}>
+          <Text style={styles.cellProducts}>
+            {completed} / {planned}
+          </Text>
+          {production.status === 'completed' && completed < planned ? (
+            <Text style={styles.warningText}>sebagian</Text>
+          ) : null}
+        </View>
+        <Text style={styles.cellAmount}>{formatRupiah(production.estimatedCost || 0)}</Text>
+        <Text numberOfLines={1} style={styles.cellNotes}>
+          {production.batchId || '—'}
+        </Text>
+        <View style={[styles.cellStack, styles.cellStatus]}>
           <KolamStatusBadge
             intent={productionStatusIntent(production.status)}
             label={getKolamProductionStatusLabel(production.status)}
           />
+          {production.status === 'waiting_for_po' && linkedTotal > 0 ? (
+            <Text style={styles.warningText}>
+              {linkedDone}/{linkedTotal} PO
+            </Text>
+          ) : null}
         </View>
+        <Text numberOfLines={2} style={styles.cellProducts}>
+          {assignedName}
+        </Text>
         <Text numberOfLines={1} style={styles.cellMarketplace}>
-          {production.createdAt ? production.createdAt.slice(0, 10) : '—'}
+          {productionDateLabel}
         </Text>
         <View style={styles.cellActions}>
-          {actions.length ? (
-            <KolamOverflowMenuButton actions={actions} accessibilityLabel={`Menu ${production.batchId}`} />
-          ) : null}
+          <KolamOverflowMenuButton
+            actions={actions}
+            accessibilityLabel={`Menu ${production.batchId || 'produksi'}`}
+          />
         </View>
       </KolamDataTableRowFrame>
     </Pressable>
   );
+}
+
+function formatProductionListDate(value?: string) {
+  if (!value) {
+    return '—';
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value.slice(0, 10);
+  }
+  const dd = String(date.getDate()).padStart(2, '0');
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const yyyy = date.getFullYear();
+  return `${dd}/${mm}/${yyyy}`;
 }
 
 function KolamProductionForm({
@@ -1340,11 +1402,12 @@ const styles = StyleSheet.create({
   cellMeta: { color: V.colors.mutedFg, fontSize: 13 },
   cellChildren: { color: V.colors.fg, fontSize: 13, textAlign: 'right' },
   cellAmount: { color: V.colors.fg, fontSize: 13, textAlign: 'right' },
-  cellStatus: { alignItems: 'flex-end' },
+  cellStatus: { alignItems: 'flex-start', gap: 4 },
   cellMarketplace: { color: V.colors.mutedFg, fontSize: 12 },
   cellActions: { alignItems: 'flex-end' },
-  cellNotes: { color: V.colors.mutedFg, fontSize: 13 },
+  cellNotes: { color: V.colors.fg, fontSize: 13 },
   cellProducts: { color: V.colors.fg, fontSize: 13 },
+  cellStack: { gap: 2, minWidth: 0 },
   cellRaws: { color: V.colors.fg, fontSize: 13, textAlign: 'right' },
   cellPrice: { color: V.colors.fg, fontSize: 13, textAlign: 'right' },
   formScroll: { paddingBottom: 24 },
