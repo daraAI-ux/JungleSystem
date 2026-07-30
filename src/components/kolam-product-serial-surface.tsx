@@ -32,6 +32,7 @@ import { KolamModalBackdrop } from './kolam-modal-backdrop';
 import { KolamOverflowMenuButton, KolamTableFooterControls } from './kolam-dropdown-select';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
+import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 
 const PRODUCT_TYPE_OPTIONS: KolamProductSerialProductType[] = [
   'freyer',
@@ -160,14 +161,14 @@ function KolamProductSerialList({
       ) : null}
 
       <View style={styles.toolbarWrap}>
-        <View style={styles.toolbarShell}>
-          <View style={styles.filterRow}>
-            <KolamFormTextField
-              onChangeText={setSearchInput}
-              placeholder="Cari nomor seri"
-              style={styles.searchInput}
-              value={searchInput}
-            />
+        <View style={kolamTableToolbarStyles.row}>
+          <KolamFormTextField
+            onChangeText={setSearchInput}
+            placeholder="Cari nomor seri"
+            style={kolamTableToolbarStyles.searchInput}
+            value={searchInput}
+          />
+          <View style={kolamTableToolbarStyles.controls}>
             <KolamTableFilterTrigger
               active={
                 activeFilterPanel === 'type' || Boolean(controller.filters.productType)
@@ -176,7 +177,6 @@ function KolamProductSerialList({
               onPress={() =>
                 setActiveFilterPanel(current => (current === 'type' ? null : 'type'))
               }
-              style={styles.filterTrigger}
             />
             <KolamTableFilterTrigger
               active={
@@ -188,10 +188,7 @@ function KolamProductSerialList({
                   current === 'status' ? null : 'status',
                 )
               }
-              style={styles.filterTrigger}
             />
-          </View>
-          <View style={styles.actionRow}>
             {hasActiveFilters ? (
               <KolamButton
                 label="Bersihkan"
@@ -200,55 +197,90 @@ function KolamProductSerialList({
                   setActiveFilterPanel(null);
                   controller.onClearFilters();
                 }}
-                style={styles.toolbarButton}
               />
             ) : null}
             <KolamButton
               disabled={controller.loading}
               label="Muat ulang"
               onPress={() => void controller.onRefresh()}
-              style={styles.toolbarButton}
             />
             {canOpname ? (
               <KolamButton
                 intent="primary"
                 label="Opname Serial"
                 onPress={() => onRouteChange?.(`${KOLAM_PRODUCT_SERIAL_ROOT}/opname`)}
-                style={styles.toolbarButton}
               />
             ) : null}
           </View>
         </View>
+
         {activeFilterPanel === 'type' ? (
-          <View style={styles.filterPanel}>
-            {PRODUCT_TYPE_OPTIONS.map(type => (
+          <View style={[styles.filterOverlayPanel, styles.filterPanelType]}>
+            <ScrollView
+              contentContainerStyle={styles.filterPanelContent}
+              keyboardShouldPersistTaps="handled"
+              style={styles.filterPanelScroll}
+            >
               <KolamButton
-                key={type}
-                intent={controller.filters.productType === type ? 'primary' : 'plain'}
-                label={getKolamProductSerialTypeLabel(type)}
-                onPress={() =>
-                  controller.onChangeFilters({
-                    productType: controller.filters.productType === type ? '' : type,
-                  })
-                }
+                intent={!controller.filters.productType ? 'primary' : 'plain'}
+                label="Semua tipe"
+                onPress={() => {
+                  controller.onChangeFilters({ productType: '' });
+                  setActiveFilterPanel(null);
+                }}
+                style={styles.filterPanelOption}
               />
-            ))}
+              {PRODUCT_TYPE_OPTIONS.map(type => (
+                <KolamButton
+                  intent={controller.filters.productType === type ? 'primary' : 'plain'}
+                  key={type}
+                  label={getKolamProductSerialTypeLabel(type)}
+                  onPress={() => {
+                    controller.onChangeFilters({ productType: type });
+                    setActiveFilterPanel(null);
+                  }}
+                  style={styles.filterPanelOption}
+                />
+              ))}
+            </ScrollView>
+            <View style={styles.filterPanelFooter}>
+              <KolamButton label="Tutup" onPress={() => setActiveFilterPanel(null)} />
+            </View>
           </View>
         ) : null}
+
         {activeFilterPanel === 'status' ? (
-          <View style={styles.filterPanel}>
-            {STATUS_OPTIONS.map(status => (
+          <View style={[styles.filterOverlayPanel, styles.filterPanelStatus]}>
+            <ScrollView
+              contentContainerStyle={styles.filterPanelContent}
+              keyboardShouldPersistTaps="handled"
+              style={styles.filterPanelScroll}
+            >
               <KolamButton
-                key={status}
-                intent={controller.filters.status === status ? 'primary' : 'plain'}
-                label={getKolamProductSerialStatusLabel(status)}
-                onPress={() =>
-                  controller.onChangeFilters({
-                    status: controller.filters.status === status ? '' : status,
-                  })
-                }
+                intent={!controller.filters.status ? 'primary' : 'plain'}
+                label="Semua status"
+                onPress={() => {
+                  controller.onChangeFilters({ status: '' });
+                  setActiveFilterPanel(null);
+                }}
+                style={styles.filterPanelOption}
               />
-            ))}
+              {STATUS_OPTIONS.map(status => (
+                <KolamButton
+                  intent={controller.filters.status === status ? 'primary' : 'plain'}
+                  key={status}
+                  label={getKolamProductSerialStatusLabel(status)}
+                  onPress={() => {
+                    controller.onChangeFilters({ status });
+                    setActiveFilterPanel(null);
+                  }}
+                  style={styles.filterPanelOption}
+                />
+              ))}
+            </ScrollView>
+            <View style={styles.filterPanelFooter}>
+              <KolamButton label="Tutup" onPress={() => setActiveFilterPanel(null)} />
+            </View>
           </View>
         ) : null}
       </View>
@@ -453,24 +485,25 @@ function KolamProductSerialOpname({
   return (
     <View style={styles.opnameRoot}>
       <View style={styles.toolbarWrap}>
-        <View style={styles.toolbarShell}>
-          <KolamButton
-            label="Daftar"
-            muted
-            onPress={() => onRouteChange?.(KOLAM_PRODUCT_SERIAL_ROOT)}
-            style={styles.toolbarButton}
-          />
-          <View style={styles.opnameStatsRow}>
+        <View style={kolamTableToolbarStyles.row}>
+          <View style={kolamTableToolbarStyles.controls}>
+            <KolamButton
+              label="Daftar"
+              muted
+              onPress={() => onRouteChange?.(KOLAM_PRODUCT_SERIAL_ROOT)}
+            />
             <KolamStatusBadge intent="success" label={`Ditemukan: ${foundCount}`} />
             <KolamStatusBadge intent="danger" label={`Hilang: ${missingCount}`} />
-            <KolamStatusBadge intent="muted" label={`Total pindai: ${controller.sessionItems.length}`} />
+            <KolamStatusBadge
+              intent="muted"
+              label={`Total pindai: ${controller.sessionItems.length}`}
+            />
+            <KolamButton
+              disabled={!controller.sessionItems.length}
+              label="Reset sesi"
+              onPress={() => controller.onResetSession()}
+            />
           </View>
-          <KolamButton
-            disabled={!controller.sessionItems.length}
-            label="Reset sesi"
-            onPress={() => controller.onResetSession()}
-            style={styles.toolbarButton}
-          />
         </View>
       </View>
 
@@ -594,57 +627,44 @@ const styles = StyleSheet.create({
     position: 'relative',
     zIndex: 100000,
   },
-  toolbarShell: {
-    alignItems: 'center',
+  filterOverlayPanel: {
     backgroundColor: V.colors.bg,
     borderColor: V.colors.border,
     borderRadius: 8,
     borderWidth: 1,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    justifyContent: 'space-between',
-    overflow: 'visible',
-    padding: 4,
+    elevation: 1200,
+    padding: 6,
+    position: 'absolute',
+    shadowColor: V.colors.fg,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    top: 48,
+    width: 240,
+    zIndex: 120000,
   },
-  filterRow: {
-    alignItems: 'center',
-    flex: 1,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+  filterPanelType: {
+    right: 280,
+  },
+  filterPanelStatus: {
+    right: 160,
+  },
+  filterPanelScroll: {
+    maxHeight: 280,
+  },
+  filterPanelContent: {
     gap: 4,
-    minWidth: 280,
-    overflow: 'visible',
   },
-  searchInput: {
-    flexBasis: 140,
-    flexGrow: 1,
-    maxWidth: 220,
-    minWidth: 120,
+  filterPanelOption: {
+    justifyContent: 'flex-start',
   },
-  filterTrigger: {
-    flexBasis: 'auto',
-    flexGrow: 0,
-    flexShrink: 0,
-    minWidth: 108,
+  filterPanelFooter: {
+    alignItems: 'flex-end',
+    borderTopColor: V.colors.border,
+    borderTopWidth: 1,
+    marginTop: 6,
+    paddingTop: 6,
   },
-  actionRow: {
-    alignItems: 'center',
-    borderLeftColor: V.colors.border,
-    borderLeftWidth: 1,
-    flexDirection: 'row',
-    flexShrink: 0,
-    flexWrap: 'wrap',
-    gap: 6,
-    justifyContent: 'flex-end',
-    paddingLeft: 8,
-  },
-  toolbarButton: {
-    flexShrink: 0,
-    minHeight: 34,
-    paddingHorizontal: 10,
-  },
-  filterPanel: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
   tableShell: {
     backgroundColor: V.colors.bg,
     borderColor: V.colors.border,
@@ -756,12 +776,6 @@ const styles = StyleSheet.create({
     height: 220,
   },
   opnameRoot: { flex: 1, gap: 12, minHeight: 0 },
-  opnameStatsRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
   opnameInputRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
