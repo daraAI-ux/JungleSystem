@@ -709,13 +709,6 @@ const kolamTableColumns: Record<KolamTableId, KolamTableColumn[]> = {
       width: 100,
     },
     {
-      id: 'children',
-      label: 'Batch',
-      align: 'center',
-      headerAlign: 'center',
-      width: 130,
-    },
-    {
       id: 'marketplace',
       label: 'Tanggal Produksi',
       align: 'center',

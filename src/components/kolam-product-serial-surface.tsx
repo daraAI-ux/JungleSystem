@@ -464,7 +464,6 @@ function KolamProductSerialRow({
   const primaryColumn = columnOf('primary');
   const metaColumn = columnOf('meta');
   const notesColumn = columnOf('notes');
-  const childrenColumn = columnOf('children');
   const marketplaceColumn = columnOf('marketplace');
   const statusColumn = columnOf('status');
   const productsColumn = columnOf('products');
@@ -525,17 +524,6 @@ function KolamProductSerialRow({
             label={getKolamProductSerialTypeLabel(serial.productType)}
             style={styles.centerBadge}
           />
-        </View>
-
-        <View
-          style={[
-            styles.listCell,
-            childrenColumn ? getKolamDataTableColumnStyle(childrenColumn) : null,
-          ]}
-        >
-          <Text numberOfLines={1} style={styles.rowMetaMono}>
-            {serial.production?.batchId || '—'}
-          </Text>
         </View>
 
         <View
