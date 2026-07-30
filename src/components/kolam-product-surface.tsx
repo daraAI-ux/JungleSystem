@@ -1028,16 +1028,25 @@ function ProductRow({
               ) : null}
             </View>
             <View style={styles.productCopy}>
-              <Text numberOfLines={1} style={styles.productName}>
-                {product.name}
-              </Text>
-              {labels.length ? (
-                <View style={styles.infoBadges}>
-                  {labels.map(label => (
-                    <KolamBadge key={label} intent="secondary" label={label} />
-                  ))}
-                </View>
-              ) : null}
+              <View style={styles.rawNameRow}>
+                {labels.length ? (
+                  <View style={styles.rawLabelBadges}>
+                    {labels.map(label => {
+                      const resolved = resolveProductListLabel(label);
+                      return (
+                        <KolamBadge
+                          intent={resolved.intent}
+                          key={label}
+                          label={resolved.label}
+                        />
+                      );
+                    })}
+                  </View>
+                ) : null}
+                <Text numberOfLines={1} style={styles.productName}>
+                  {product.name}
+                </Text>
+              </View>
             </View>
           </View>
 
@@ -7684,6 +7693,30 @@ function getVisibleProductLabels(product: KolamProduct) {
   return product.labels.map(label => label.trim()).filter(Boolean);
 }
 
+function resolveProductListLabel(rawLabel: string): {
+  intent: 'success' | 'warning' | 'danger' | 'primary' | 'secondary';
+  label: string;
+} {
+  const normalized = rawLabel.trim().toLowerCase().replace(/[_-]+/g, ' ');
+  if (normalized === 'new' || normalized === 'baru') {
+    return { intent: 'success', label: 'Baru' };
+  }
+  if (
+    normalized === 'low stock' ||
+    normalized === 'stok rendah' ||
+    normalized === 'stok menipis'
+  ) {
+    return { intent: 'warning', label: 'Stok Rendah' };
+  }
+  if (normalized === 'top selling' || normalized === 'terlaris') {
+    return { intent: 'success', label: 'Terlaris' };
+  }
+  if (normalized === 'hot' || normalized === 'populer') {
+    return { intent: 'danger', label: 'Populer' };
+  }
+  return { intent: 'secondary', label: rawLabel.trim() };
+}
+
 function getProductStockStatusLabel(product: KolamProduct) {
   if (product.stock <= 0) {
     return 'Stok Habis';
@@ -8428,11 +8461,29 @@ const styles = StyleSheet.create({
     minWidth: 0,
     overflow: 'hidden',
   },
+  rawNameRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    justifyContent: 'flex-start',
+    minWidth: 0,
+  },
+  rawLabelBadges: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexShrink: 0,
+    flexWrap: 'wrap',
+    gap: 4,
+    justifyContent: 'flex-start',
+  },
   productName: {
     color: V.colors.fg,
+    flexShrink: 1,
     fontSize: 13,
     fontWeight: '800',
     lineHeight: 18,
+    minWidth: 0,
   },
   productCategory: {
     color: V.colors.mutedFg,
