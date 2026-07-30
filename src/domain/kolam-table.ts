@@ -403,7 +403,7 @@ const kolamTableColumns: Record<KolamTableId, KolamTableColumn[]> = {
       label: 'Nama',
       align: 'left',
       headerAlign: 'left',
-      width: 220,
+      width: 320,
     },
     {
       id: 'meta',

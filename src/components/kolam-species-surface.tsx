@@ -878,26 +878,44 @@ function fitSpeciesListColumns(containerWidth: number): KolamTableColumn[] {
     containerWidth - paddingX - gapsTotal - actionsWidth,
   );
   const contentColumns = base.filter(column => column.id !== 'actions');
-  const equalWidth = Math.max(
-    72,
-    Math.floor(contentBudget / Math.max(1, contentColumns.length)),
+  const secondaryColumns = contentColumns.filter(
+    column => column.id !== 'primary',
   );
-  let remainder = contentBudget - equalWidth * contentColumns.length;
-  const lastContentId = contentColumns[contentColumns.length - 1]?.id;
+  // Nama needs more room than equal-fit (scientific + common names truncate).
+  const primaryWeight = 2.4;
+  const secondaryWeight = 1;
+  const totalWeight =
+    primaryWeight + secondaryWeight * Math.max(1, secondaryColumns.length);
+  const unit = contentBudget / totalWeight;
+  const primaryWidth = Math.max(220, Math.floor(unit * primaryWeight));
+  const secondaryWidth = Math.max(
+    72,
+    Math.floor(unit * secondaryWeight),
+  );
+  let remainder =
+    contentBudget -
+    primaryWidth -
+    secondaryWidth * secondaryColumns.length;
+  const lastSecondaryId =
+    secondaryColumns[secondaryColumns.length - 1]?.id;
 
   return base.map(column => {
     if (column.id === 'actions') {
       return { ...column, width: actionsWidth };
     }
 
-    const extra = column.id === lastContentId ? remainder : 0;
-    if (column.id === lastContentId) {
+    if (column.id === 'primary') {
+      return { ...column, width: primaryWidth };
+    }
+
+    const extra = column.id === lastSecondaryId ? remainder : 0;
+    if (column.id === lastSecondaryId) {
       remainder = 0;
     }
 
     return {
       ...column,
-      width: equalWidth + extra,
+      width: secondaryWidth + extra,
     };
   });
 }
