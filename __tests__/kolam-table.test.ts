@@ -75,7 +75,7 @@ describe('getKolamTableColumns', () => {
       'Est. Biaya',
       'Batch ID',
       'Status',
-      'PIC',
+      'Penanggung Jawab',
       'Tanggal Produksi',
       '',
     ]);

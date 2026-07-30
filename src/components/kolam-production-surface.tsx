@@ -206,7 +206,7 @@ function KolamProductionList({
             {canCreate ? (
               <KolamButton
                 intent="primary"
-                label="Buat Produksi"
+                label="Produksi Baru"
                 onPress={() => {
                   controller.onCreateNew();
                   onRouteChange?.(`${KOLAM_PRODUCTION_ROOT}/create`);
@@ -511,7 +511,7 @@ function KolamProductionForm({
   return (
     <ScrollView contentContainerStyle={styles.formScroll}>
       <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
-        <Text style={styles.sectionTitle}>{isEdit ? 'Edit Produksi' : 'Buat Produksi'}</Text>
+        <Text style={styles.sectionTitle}>{isEdit ? 'Edit Produksi' : 'Produksi Baru'}</Text>
 
         {!isEdit ? (
           <View style={styles.formSection}>
@@ -921,8 +921,10 @@ function KolamProductionDetail({
               />
             </View>
             <Text style={styles.helperText}>
-              {getKolamProductionTargetTypeLabel(production.targetType)} ·{' '}
-              {production.createdAt ? production.createdAt.slice(0, 16).replace('T', ' ') : '—'}
+              {getKolamProductionTargetTypeLabel(production.targetType)} · Dibuat{' '}
+              {production.createdAt
+                ? production.createdAt.slice(0, 16).replace('T', ' ')
+                : '—'}
             </Text>
 
             <KolamDescriptionList
