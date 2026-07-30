@@ -2861,6 +2861,7 @@ function KolamUserListRow({
   user: KolamUserListItem;
 }) {
   const userRouteId = encodeURIComponent(user.id);
+  const profilePhotoUrl = resolveProfilePhotoUrl(user.profilePicture);
   const deleteDisabled =
     !canDeleteUser ||
     currentUserId === String(user.id) ||
@@ -2869,22 +2870,41 @@ function KolamUserListRow({
   return (
     <KolamDataTableRowFrame style={styles.userListRow}>
       <View style={getUserListCellStyle('name')}>
-        <Text numberOfLines={2} style={styles.userNameText}>
-          {user.displayName}
-        </Text>
-        {user.username ? (
-          <Text numberOfLines={1} style={styles.userSubText}>
-            @{user.username}
-          </Text>
-        ) : null}
-        {user.isEmployee && pendingKasbonCount > 0 ? (
-          <KolamStatusBadge
-            intent="danger"
-            label={`${pendingKasbonCount} kasbon`}
-            numberOfLines={1}
-            style={styles.userKasbonBadge}
-          />
-        ) : null}
+        <View style={styles.userNameCellContent}>
+          {profilePhotoUrl ? (
+            <KolamRemoteImage
+              accessibilityLabel={`Foto profil ${user.displayName}`}
+              resizeMode="cover"
+              scope="user-profile-list"
+              sourceUri={profilePhotoUrl}
+              style={styles.userListAvatarImage}
+            />
+          ) : (
+            <View style={styles.userListAvatarFallback}>
+              <Text numberOfLines={1} style={styles.userListAvatarInitials}>
+                {getUserInitials(user.displayName)}
+              </Text>
+            </View>
+          )}
+          <View style={styles.userNameCopy}>
+            <Text numberOfLines={2} style={styles.userNameText}>
+              {user.displayName}
+            </Text>
+            {user.username ? (
+              <Text numberOfLines={1} style={styles.userSubText}>
+                @{user.username}
+              </Text>
+            ) : null}
+            {user.isEmployee && pendingKasbonCount > 0 ? (
+              <KolamStatusBadge
+                intent="danger"
+                label={`${pendingKasbonCount} kasbon`}
+                numberOfLines={1}
+                style={styles.userKasbonBadge}
+              />
+            ) : null}
+          </View>
+        </View>
       </View>
       <View style={getUserListCellStyle('email')}>
         <Text numberOfLines={1} style={styles.userMetaText}>
@@ -3681,6 +3701,38 @@ const styles = StyleSheet.create({
   },
   userTextRight: {
     textAlign: 'right',
+  },
+  userNameCellContent: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 10,
+    minWidth: 0,
+  },
+  userListAvatarImage: {
+    borderRadius: 8,
+    height: 36,
+    width: 36,
+  },
+  userListAvatarFallback: {
+    alignItems: 'center',
+    backgroundColor: V.colors.tableHeader,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    height: 36,
+    justifyContent: 'center',
+    width: 36,
+  },
+  userListAvatarInitials: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '900',
+    lineHeight: 16,
+  },
+  userNameCopy: {
+    flex: 1,
+    minWidth: 0,
   },
   userNameText: {
     color: V.colors.fg,
