@@ -557,6 +557,54 @@ export type KolamChatPlatform =
 
 export type KolamChatConversationStatus = 'open' | 'closed';
 
+export type KolamChatPlatformHealthState =
+  | 'healthy'
+  | 'starting'
+  | 'stale'
+  | 'down'
+  | 'inactive'
+  | 'unconfigured'
+  | 'unknown';
+
+export interface KolamChatPlatformHealthSignals {
+  dbLog?: boolean;
+  inbound?: boolean;
+  pigeonAuthCaptured?: boolean;
+  pigeonWsConnected?: boolean;
+  ready?: boolean;
+  recentFatal?: boolean;
+  scan?: boolean;
+}
+
+export interface KolamChatPlatformHealthRow {
+  platform: Exclude<KolamChatPlatform, 'store'> | 'store' | string;
+  label?: string | null;
+  serviceAccountId?: string | null;
+  accountStatus?: string | null;
+  deviceId?: string | null;
+  chatCaptureMode?: string | null;
+  processRunning?: boolean;
+  state: KolamChatPlatformHealthState;
+  healthy: boolean;
+  reason?: string | null;
+  lastActivityAt?: string | null;
+  lastChatReadyAt?: string | null;
+  lastChatScanAt?: string | null;
+  lastInboundAt?: string | null;
+  lastErrorAt?: string | null;
+  lastError?: string | null;
+  signals?: KolamChatPlatformHealthSignals;
+}
+
+export interface KolamChatPlatformHealth {
+  checkedAt?: string;
+  platforms: KolamChatPlatformHealthRow[];
+  amConfigured?: boolean;
+  amReachable?: boolean;
+  dbReachable?: boolean;
+  message?: string;
+}
+
 export interface KolamChatStaffRef {
   _id: string;
   first_name?: string;
@@ -2071,6 +2119,18 @@ export async function getKolamChatConversations(
   >('/chat/conversations', cleanKolamListParams(params));
 
   return response.data ?? [];
+}
+
+export async function getKolamChatPlatformHealth(): Promise<KolamChatPlatformHealth> {
+  const response = await kolamGet<
+    DataResponse<KolamChatPlatformHealth> | KolamChatPlatformHealth
+  >('/marketplace/platform-chat-health');
+
+  const data = unwrapData(response);
+  return {
+    ...data,
+    platforms: data.platforms ?? [],
+  };
 }
 
 export async function getKolamChatConversation(
