@@ -2174,11 +2174,6 @@ function KolamChatRailDetailPanel({
                 </KolamPressable>
               ) : null}
             </View>
-            <View style={styles.composerShortcut}>
-              <Text style={styles.composerKeycap}>Shift</Text>
-              <Text style={styles.composerShortcutPlus}>+</Text>
-              <Text style={styles.composerKeycap}>Enter</Text>
-            </View>
             <KolamPressable
               accessibilityLabel="Kirim pesan chat"
               disabled={!composerCanSend}
@@ -6908,38 +6903,13 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     lineHeight: 14,
   },
-  composerShortcut: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  composerKeycap: {
-    minWidth: 32,
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: V.radius.sm,
-    borderColor: V.colors.border,
-    borderWidth: 1,
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 9,
-    fontWeight: '800',
-    textAlign: 'center',
-    overflow: 'hidden',
-  },
-  composerShortcutPlus: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 10,
-    fontWeight: '900',
-  },
   composerSendButton: {
     width: 28,
     height: 28,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: V.colors.primarySoft,
+    backgroundColor: 'transparent',
   },
   composerSendButtonDisabled: {
     opacity: 0.5,
