@@ -2279,8 +2279,9 @@ export function getKolamNavigationRouteTarget(
     return routeTarget('kolam', item);
   }
 
+  // Kolam backoffice penjualan (FE `/sales`). POS kasir tetap module terpisah.
   if (routePath === '/sales' || routePath.startsWith('/sales/')) {
-    return routeTarget('sales', item);
+    return routeTarget('kolam', item);
   }
 
   if (

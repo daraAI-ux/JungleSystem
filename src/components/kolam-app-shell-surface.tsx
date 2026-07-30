@@ -104,6 +104,7 @@ export function isCatalogTableListRoute(route?: string | null) {
     routePath === '/teranura' ||
     routePath === '/stock-transaction' ||
     routePath === '/stock-opname' ||
+    routePath === '/sales' ||
     routePath === '/suppliers' ||
     routePath === '/customers' ||
     routePath === '/purchase-order' ||
@@ -133,6 +134,7 @@ const KOLAM_CENTERED_ROUTE_PREFIXES = [
   '/teranura',
   '/stock-transaction',
   '/stock-opname',
+  '/sales',
   '/locations',
   '/suppliers',
   '/customers',
