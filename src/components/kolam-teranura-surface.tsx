@@ -314,9 +314,10 @@ function TeranuraRow({
 }) {
   const code = item.sku || item.productCode || '-';
   const variantLabel = item.variants.length ? 'Produk varian' : 'Produk standar';
+  const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
 
   return (
-    <KolamDataTableRowFrame>
+    <KolamDataTableRowFrame style={actionMenuOpen && styles.activeActionRow}>
       <View style={styles.primaryCell}>
         <View style={styles.photoBox}>
           <KolamRemoteImage
@@ -371,6 +372,8 @@ function TeranuraRow({
       </View>
       <View style={[styles.actionsCell, getCellWidth(columns, 'actions')]}>
         <KolamOverflowMenuButton
+          accessibilityLabel={`Menu ${item.name}`}
+          onOpenChange={setActionMenuOpen}
           actions={[
             { label: 'Lihat', onPress: onSelect },
             { label: 'Rubah', onPress: onEdit },
@@ -541,8 +544,14 @@ const styles = StyleSheet.create({
   statusCell: {
     alignItems: 'flex-end',
   },
+  activeActionRow: {
+    zIndex: 1000,
+    elevation: 96,
+  },
   actionsCell: {
     alignItems: 'flex-end',
+    zIndex: 1100,
+    elevation: 30,
   },
   footerWrap: {
     paddingBottom: 8,
