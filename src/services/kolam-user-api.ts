@@ -1,8 +1,10 @@
 import {appConfig} from '../config/app';
 import {
+  normalizeKolamKasbonPendingSummary,
   normalizeKolamUserDetail,
   normalizeKolamUserListResult,
   normalizeKolamUserRoles,
+  type KolamKasbonPendingSummary,
   type KolamUserCreatePayload,
   type KolamUserListItem,
   type KolamUserListQuery,
@@ -64,6 +66,12 @@ export async function getKolamUserRoles(): Promise<KolamUserRoleOption[]> {
   const response = await kolamRequest<unknown>('/roles');
 
   return normalizeKolamUserRoles(response);
+}
+
+export async function getKolamKasbonPendingSummary(): Promise<KolamKasbonPendingSummary> {
+  const response = await kolamRequest<unknown>('/salary/kasbon/pending-summary');
+
+  return normalizeKolamKasbonPendingSummary(response);
 }
 
 export async function createKolamUser(

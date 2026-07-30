@@ -230,6 +230,11 @@ export interface KolamUserListResult {
   pagination: KolamUserListPagination;
 }
 
+export interface KolamKasbonPendingSummary {
+  byUser: Record<string, number>;
+  total: number;
+}
+
 export function normalizeKolamUserListResult(
   payload: unknown,
   fallback: Required<Pick<KolamUserListQuery, 'limit' | 'page'>>,
@@ -329,6 +334,31 @@ export function normalizeKolamUserRoles(payload: unknown): KolamUserRoleOption[]
       : [];
 
   return rows.map(normalizeKolamUserRole).filter(Boolean) as KolamUserRoleOption[];
+}
+
+export function normalizeKolamKasbonPendingSummary(
+  payload: unknown,
+): KolamKasbonPendingSummary {
+  const record = asRecord(payload);
+  const data = asRecord(record.data ?? payload);
+  const byUserRecord = asRecord(data.byUser);
+  const byUser = Object.entries(byUserRecord).reduce<Record<string, number>>(
+    (acc, [key, value]) => {
+      const count = typeof value === 'number' ? value : Number(value);
+
+      if (key && Number.isFinite(count) && count > 0) {
+        acc[key] = count;
+      }
+
+      return acc;
+    },
+    {},
+  );
+
+  return {
+    byUser,
+    total: getNumber(data, 'total') ?? 0,
+  };
 }
 
 export function getKolamUserEmployeeStatusLabel(user: KolamUserListItem) {

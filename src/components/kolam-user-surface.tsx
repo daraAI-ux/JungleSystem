@@ -5,6 +5,7 @@ import {
   getKolamUserAccountStatusLabel,
   getKolamUserIdFromRoute,
   getKolamUserRouteMode,
+  type KolamKasbonPendingSummary,
   type KolamUserBooleanFilter,
   type KolamUserBiodata,
   type KolamUserBiodataAddress,
@@ -23,6 +24,7 @@ import {
 } from '../domain/settings-surface';
 import {
   createKolamUser,
+  getKolamKasbonPendingSummary,
   getKolamUserDetail,
   getKolamUserList,
   getKolamUserRoles,
@@ -80,6 +82,11 @@ const EMPTY_CREATE_USER_FORM: KolamUserCreatePayload = {
   phone_number: '',
   role: '',
   username: '',
+};
+
+const EMPTY_KASBON_PENDING_SUMMARY: KolamKasbonPendingSummary = {
+  byUser: {},
+  total: 0,
 };
 
 const EMPTY_USER_BIODATA: KolamUserBiodata = {
@@ -435,6 +442,7 @@ function KolamUserListSurface({
 }: {
   onRouteChange?: (route: string) => void;
 }) {
+  const {authUser} = useKolamAuthContext();
   const [items, setItems] = React.useState<KolamUserListItem[]>([]);
   const [pagination, setPagination] =
     React.useState<KolamUserListPagination>(INITIAL_PAGINATION);
@@ -449,8 +457,20 @@ function KolamUserListSurface({
   >(null);
   const [deleteTarget, setDeleteTarget] =
     React.useState<KolamUserListItem | null>(null);
+  const [kasbonPendingSummary, setKasbonPendingSummary] =
+    React.useState<KolamKasbonPendingSummary>(EMPTY_KASBON_PENDING_SUMMARY);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState('');
+  const permissionContext = React.useMemo(
+    () => ({
+      permissions: authUser?.permissions,
+      roleKey: authUser?.roleKey,
+    }),
+    [authUser?.permissions, authUser?.roleKey],
+  );
+  const canVerifyKasbon =
+    isSettingsSuperAdminRoleKey(authUser?.roleKey ?? '') ||
+    hasSettingsPermission(permissionContext, 'kasbon', 'verify');
 
   React.useEffect(() => {
     const timeout = setTimeout(() => {
@@ -470,8 +490,10 @@ function KolamUserListSurface({
     void getKolamUserList({
       isEmployee: employeeFilter,
       limit: pageSize,
+      order: 'asc',
       page,
       search: debouncedSearch || undefined,
+      sort: 'first_name',
     })
       .then(result => {
         if (!active) {
@@ -498,6 +520,39 @@ function KolamUserListSurface({
       active = false;
     };
   }, [debouncedSearch, employeeFilter, page, pageSize]);
+
+  React.useEffect(() => {
+    let active = true;
+
+    if (!canVerifyKasbon) {
+      setKasbonPendingSummary(EMPTY_KASBON_PENDING_SUMMARY);
+      return () => {
+        active = false;
+      };
+    }
+
+    const loadPendingSummary = () => {
+      void getKolamKasbonPendingSummary()
+        .then(result => {
+          if (active) {
+            setKasbonPendingSummary(result);
+          }
+        })
+        .catch(() => {
+          if (active) {
+            setKasbonPendingSummary(EMPTY_KASBON_PENDING_SUMMARY);
+          }
+        });
+    };
+
+    loadPendingSummary();
+    const interval = setInterval(loadPendingSummary, 60000);
+
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, [canVerifyKasbon]);
 
   const emptyTitle = loading
     ? 'Memuat pengguna'
@@ -542,6 +597,14 @@ function KolamUserListSurface({
             />
           </View>
           <View style={styles.actionRow}>
+            {canVerifyKasbon && kasbonPendingSummary.total > 0 ? (
+              <KolamStatusBadge
+                intent="danger"
+                label={`${kasbonPendingSummary.total} kasbon`}
+                numberOfLines={1}
+                style={styles.kasbonSummaryBadge}
+              />
+            ) : null}
             {filtersAppliedCount > 0 ? (
               <KolamButton
                 label="Reset"
@@ -621,6 +684,7 @@ function KolamUserListSurface({
           items.map(user => (
             <KolamUserListRow
               key={user.id}
+              pendingKasbonCount={kasbonPendingSummary.byUser[user.id] ?? 0}
               onDeleteRequest={setDeleteTarget}
               onRouteChange={onRouteChange}
               user={user}
@@ -1912,10 +1976,12 @@ function UserFormField({
 function KolamUserListRow({
   onDeleteRequest,
   onRouteChange,
+  pendingKasbonCount = 0,
   user,
 }: {
   onDeleteRequest: (user: KolamUserListItem) => void;
   onRouteChange?: (route: string) => void;
+  pendingKasbonCount?: number;
   user: KolamUserListItem;
 }) {
   const userRouteId = encodeURIComponent(user.id);
@@ -1930,6 +1996,14 @@ function KolamUserListRow({
           <Text numberOfLines={1} style={styles.userSubText}>
             @{user.username}
           </Text>
+        ) : null}
+        {user.isEmployee && pendingKasbonCount > 0 ? (
+          <KolamStatusBadge
+            intent="danger"
+            label={`${pendingKasbonCount} kasbon`}
+            numberOfLines={1}
+            style={styles.userKasbonBadge}
+          />
         ) : null}
       </View>
       <View style={getUserListCellStyle('email')}>
@@ -2297,6 +2371,10 @@ const styles = StyleSheet.create({
     minHeight: 34,
     paddingHorizontal: 10,
   },
+  kasbonSummaryBadge: {
+    flexShrink: 0,
+    minHeight: 28,
+  },
   filterOverlayPanel: {
     backgroundColor: V.colors.bg,
     borderColor: V.colors.border,
@@ -2376,6 +2454,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     lineHeight: 18,
     marginTop: 2,
+  },
+  userKasbonBadge: {
+    alignSelf: 'flex-start',
+    marginTop: 4,
   },
   accessBadgeRow: {
     alignItems: 'center',
