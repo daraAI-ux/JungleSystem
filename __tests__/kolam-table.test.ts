@@ -257,10 +257,10 @@ describe('getKolamTableColumns', () => {
       tableId: 'brand',
       containerWidth: 1100,
       columnValues: {
-        primary: ['Logo'],
+        primary: ['Acme Frog Co'],
         meta: ['Indonesia'],
-        products: [12, 3],
-        raws: [4, 0],
+        products: ['12', '3'],
+        raws: ['4', '0'],
         notes: ['Catatan merek cukup panjang untuk preferensi lebar'],
         status: ['Aktif'],
         actions: ['...'],

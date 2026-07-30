@@ -1,5 +1,5 @@
 import React from 'react';
-import { Linking, StyleSheet, View } from 'react-native';
+import { Linking, StyleSheet, Text, View } from 'react-native';
 import {
   createKolamDetailItemsFromRawArray,
   getKolamRawArray,
@@ -36,10 +36,6 @@ import {
   KolamDataTableActionsTrack,
   KolamDataTableMainTrack,
 } from './kolam-data-table-tracks';
-import {
-  KolamDataTableAmountCell,
-  KolamDataTableMetaCell,
-} from './kolam-data-table-text-cell';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import {
   KolamDropdownSelect,
@@ -175,16 +171,16 @@ function KolamBrandList({
         gap: KOLAM_DATA_TABLE_COLUMN_GAP,
         paddingX: getKolamTableVisualContract().body.cellPaddingX * 2,
         columnValues: {
-          // Logo box is fixed; keep preferred width near list logo, not name text.
-          primary: ['Logo merek'],
+          primary: pagedBrands.map(brand => brand.name),
           meta: pagedBrands.map(
             brand => getKolamBrandFlagByCountry(brand.originCountry).country,
           ),
-          products: pagedBrands.map(brand => brand.productCount),
-          raws: pagedBrands.map(brand => brand.rawMaterialCount),
-          notes: pagedBrands.map(
-            brand => brand.notes || brand.description || '-',
-          ),
+          products: pagedBrands.map(brand => String(brand.productCount ?? 0)),
+          raws: pagedBrands.map(brand => String(brand.rawMaterialCount ?? 0)),
+          notes: pagedBrands.map(brand => {
+            const notes = (brand.notes || brand.description || '-').trim();
+            return notes.length > 48 ? `${notes.slice(0, 48)}…` : notes;
+          }),
           status: pagedBrands.map(brand => getBrandStatusLabel(brand.status)),
           actions: ['...'],
         },
@@ -464,48 +460,71 @@ function KolamBrandRow({
       <KolamDataTableMainTrack>
         <View
           style={[
-            styles.brandIdentityCell,
+            styles.listCell,
             primaryColumn ? getKolamDataTableColumnStyle(primaryColumn) : null,
           ]}
         >
           <KolamHoverTooltip label={brand.name}>
             <View style={styles.brandIdentity}>
               <KolamBrandLogo brand={brand} />
+              <Text numberOfLines={1} style={styles.brandName}>
+                {brand.name}
+              </Text>
             </View>
           </KolamHoverTooltip>
         </View>
         <View
           style={[
+            styles.listCell,
             styles.countryFlagCell,
             metaColumn ? getKolamDataTableColumnStyle(metaColumn) : null,
           ]}
         >
           <KolamHoverTooltip label={flag.country}>
-            <KolamFlagIcon option={flag} />
+            <View style={styles.countryRow}>
+              <KolamFlagIcon option={flag} />
+              <Text numberOfLines={1} style={styles.countryText}>
+                {flag.country}
+              </Text>
+            </View>
           </KolamHoverTooltip>
         </View>
         <View
-          style={productsColumn ? getKolamDataTableColumnStyle(productsColumn) : null}
+          style={[
+            styles.listCell,
+            styles.countCell,
+            productsColumn ? getKolamDataTableColumnStyle(productsColumn) : null,
+          ]}
         >
-          <KolamDataTableAmountCell>{brand.productCount}</KolamDataTableAmountCell>
-        </View>
-        <View style={rawsColumn ? getKolamDataTableColumnStyle(rawsColumn) : null}>
-          <KolamDataTableAmountCell>
-            {brand.rawMaterialCount}
-          </KolamDataTableAmountCell>
+          <Text numberOfLines={1} style={styles.countText}>
+            {String(brand.productCount ?? 0)}
+          </Text>
         </View>
         <View
           style={[
+            styles.listCell,
+            styles.countCell,
+            rawsColumn ? getKolamDataTableColumnStyle(rawsColumn) : null,
+          ]}
+        >
+          <Text numberOfLines={1} style={styles.countText}>
+            {String(brand.rawMaterialCount ?? 0)}
+          </Text>
+        </View>
+        <View
+          style={[
+            styles.listCell,
             styles.notesCell,
             notesColumn ? getKolamDataTableColumnStyle(notesColumn) : null,
           ]}
         >
-          <KolamDataTableMetaCell style={styles.notesText}>
+          <Text numberOfLines={2} style={styles.notesText}>
             {brand.notes || brand.description || '-'}
-          </KolamDataTableMetaCell>
+          </Text>
         </View>
         <View
           style={[
+            styles.listCell,
             styles.statusCell,
             statusColumn ? getKolamDataTableColumnStyle(statusColumn) : null,
           ]}
@@ -1022,25 +1041,62 @@ const styles = StyleSheet.create({
     zIndex: 1000,
     elevation: 30,
   },
-  brandIdentityCell: {
-    minWidth: 0,
+  listCell: {
     justifyContent: 'center',
+    minWidth: 0,
+    overflow: 'hidden',
+    paddingVertical: 4,
   },
   brandIdentity: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
+    flexDirection: 'column',
+    gap: 4,
+    maxWidth: '100%',
+    minWidth: 0,
+  },
+  brandName: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
     maxWidth: '100%',
   },
   countryFlagCell: {
     alignItems: 'flex-start',
-    justifyContent: 'center',
+  },
+  countryRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    maxWidth: '100%',
+    minWidth: 0,
+  },
+  countryText: {
+    color: V.colors.fg,
+    flexShrink: 1,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    minWidth: 0,
+  },
+  countCell: {
+    alignItems: 'flex-end',
+  },
+  countText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+    textAlign: 'right',
+    width: '100%',
   },
   notesCell: {
     minWidth: 0,
-    justifyContent: 'center',
   },
   notesText: {
-    maxWidth: '100%',
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    lineHeight: 18,
   },
   statusCell: {
     alignItems: 'flex-end',
