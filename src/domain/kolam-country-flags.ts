@@ -520,6 +520,7 @@ const COUNTRY_CODE_ALIASES: Record<string, KolamCountryCode> = {
   hongkong: 'HK',
   indonesia: 'ID',
   inggris: 'GB',
+  japan: 'JP',
   jepang: 'JP',
   jerman: 'DE',
   korea: 'KR',

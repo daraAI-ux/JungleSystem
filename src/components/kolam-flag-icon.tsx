@@ -203,6 +203,8 @@ const styles = StyleSheet.create({
     height: 18,
     overflow: 'hidden',
     borderRadius: 3,
+    borderColor: '#d1d5db',
+    borderWidth: 1,
     backgroundColor: '#f8fafc',
     alignItems: 'center',
     justifyContent: 'center',
@@ -244,10 +246,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  // Pixel sizes: RNW often drops %-width + aspectRatio circles (JP looked blank).
   jpCircle: {
-    width: '44%',
-    aspectRatio: 1,
-    borderRadius: 999,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
     backgroundColor: '#bc002d',
   },
   blueCanton: {
