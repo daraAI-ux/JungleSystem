@@ -43,6 +43,8 @@ import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 
 type SalesFilterPanel = 'lifecycle' | 'status' | 'delivery' | null;
 
+const FILTER_PANEL_WIDTH = 260;
+
 const LIST_COLUMNS = [
   { id: 'invoice', label: 'Invoice', flex: 1.1 },
   { id: 'buyer', label: 'Pembeli', flex: 1.2 },
@@ -113,6 +115,11 @@ function KolamSalesOpsList({
   const [searchInput, setSearchInput] = useState(controller.filters.search);
   const [activeFilterPanel, setActiveFilterPanel] =
     useState<SalesFilterPanel>(null);
+  const [panelAnchor, setPanelAnchor] = useState({ left: 0, top: 48 });
+  const toolbarRef = React.useRef<View>(null);
+  const lifecycleTriggerRef = React.useRef<View>(null);
+  const statusTriggerRef = React.useRef<View>(null);
+  const deliveryTriggerRef = React.useRef<View>(null);
 
   const pageCount = Math.max(1, controller.pagination.totalPages);
   const safePage = Math.min(Math.max(controller.pagination.page, 1), pageCount);
@@ -140,6 +147,54 @@ function KolamSalesOpsList({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchInput]);
 
+  const anchorFilterPanel = React.useCallback(
+    (panel: Exclude<SalesFilterPanel, null>) => {
+      const triggerRef =
+        panel === 'lifecycle'
+          ? lifecycleTriggerRef
+          : panel === 'status'
+            ? statusTriggerRef
+            : deliveryTriggerRef;
+      const toolbar = toolbarRef.current;
+      const trigger = triggerRef.current;
+      if (!toolbar || !trigger) {
+        return;
+      }
+      toolbar.measureInWindow((toolbarX, toolbarY, toolbarWidth) => {
+        trigger.measureInWindow((x, y, width, height) => {
+          const maxLeft = Math.max(0, toolbarWidth - FILTER_PANEL_WIDTH);
+          const preferredLeft = x - toolbarX;
+          const left = Math.min(Math.max(0, preferredLeft), maxLeft);
+          setPanelAnchor({
+            left,
+            top: y - toolbarY + height + 4,
+          });
+        });
+      });
+    },
+    [],
+  );
+
+  const toggleFilterPanel = React.useCallback(
+    (panel: Exclude<SalesFilterPanel, null>) => {
+      setActiveFilterPanel(prev => {
+        const next = prev === panel ? null : panel;
+        if (next) {
+          requestAnimationFrame(() => anchorFilterPanel(next));
+        }
+        return next;
+      });
+    },
+    [anchorFilterPanel],
+  );
+
+  React.useEffect(() => {
+    if (!activeFilterPanel) {
+      return;
+    }
+    requestAnimationFrame(() => anchorFilterPanel(activeFilterPanel));
+  }, [activeFilterPanel, anchorFilterPanel]);
+
   const renderRow = React.useCallback(
     ({ item }: { item: KolamSale }) => (
       <KolamSalesOpsRow
@@ -155,7 +210,7 @@ function KolamSalesOpsList({
 
   return (
     <View style={styles.listRoot}>
-      <View style={styles.toolbarWrap}>
+      <View ref={toolbarRef} style={styles.toolbarWrap}>
         <View style={kolamTableToolbarStyles.row}>
           <KolamFormTextField
             onChangeText={setSearchInput}
@@ -164,56 +219,50 @@ function KolamSalesOpsList({
             value={searchInput}
           />
           <View style={kolamTableToolbarStyles.controls}>
-            <KolamTableFilterTrigger
-              active={
-                activeFilterPanel === 'lifecycle' ||
-                controller.filters.lifecycle !== 'active'
-              }
-              label={
-                KOLAM_SALE_LIFECYCLE_OPTIONS.find(
-                  option => option.value === controller.filters.lifecycle,
-                )?.label ?? 'Berjalan'
-              }
-              onPress={() =>
-                setActiveFilterPanel(prev =>
-                  prev === 'lifecycle' ? null : 'lifecycle',
-                )
-              }
-            />
-            <KolamTableFilterTrigger
-              active={
-                activeFilterPanel === 'status' ||
-                Boolean(controller.filters.status)
-              }
-              label={
-                controller.filters.status
-                  ? formatKolamSalePaymentStatusLabel(controller.filters.status)
-                  : 'Status bayar'
-              }
-              onPress={() =>
-                setActiveFilterPanel(prev =>
-                  prev === 'status' ? null : 'status',
-                )
-              }
-            />
-            <KolamTableFilterTrigger
-              active={
-                activeFilterPanel === 'delivery' ||
-                Boolean(controller.filters.deliveryStatus)
-              }
-              label={
-                controller.filters.deliveryStatus
-                  ? formatKolamSaleDeliveryStatusLabel(
-                      controller.filters.deliveryStatus,
-                    )
-                  : 'Pengiriman'
-              }
-              onPress={() =>
-                setActiveFilterPanel(prev =>
-                  prev === 'delivery' ? null : 'delivery',
-                )
-              }
-            />
+            <View ref={lifecycleTriggerRef} collapsable={false}>
+              <KolamTableFilterTrigger
+                active={
+                  activeFilterPanel === 'lifecycle' ||
+                  controller.filters.lifecycle !== 'active'
+                }
+                label={
+                  KOLAM_SALE_LIFECYCLE_OPTIONS.find(
+                    option => option.value === controller.filters.lifecycle,
+                  )?.label ?? 'Berjalan'
+                }
+                onPress={() => toggleFilterPanel('lifecycle')}
+              />
+            </View>
+            <View ref={statusTriggerRef} collapsable={false}>
+              <KolamTableFilterTrigger
+                active={
+                  activeFilterPanel === 'status' ||
+                  Boolean(controller.filters.status)
+                }
+                label={
+                  controller.filters.status
+                    ? formatKolamSalePaymentStatusLabel(controller.filters.status)
+                    : 'Status bayar'
+                }
+                onPress={() => toggleFilterPanel('status')}
+              />
+            </View>
+            <View ref={deliveryTriggerRef} collapsable={false}>
+              <KolamTableFilterTrigger
+                active={
+                  activeFilterPanel === 'delivery' ||
+                  Boolean(controller.filters.deliveryStatus)
+                }
+                label={
+                  controller.filters.deliveryStatus
+                    ? formatKolamSaleDeliveryStatusLabel(
+                        controller.filters.deliveryStatus,
+                      )
+                    : 'Pengiriman'
+                }
+                onPress={() => toggleFilterPanel('delivery')}
+              />
+            </View>
             <KolamDateField
               accessibilityLabel="Tanggal mulai"
               label="Dari"
@@ -266,6 +315,7 @@ function KolamSalesOpsList({
 
         {activeFilterPanel === 'lifecycle' ? (
           <FilterPanel
+            anchor={panelAnchor}
             onClose={() => setActiveFilterPanel(null)}
             onSelect={value => {
               controller.onChangeFilters({
@@ -280,6 +330,7 @@ function KolamSalesOpsList({
         ) : null}
         {activeFilterPanel === 'status' ? (
           <FilterPanel
+            anchor={panelAnchor}
             onClose={() => setActiveFilterPanel(null)}
             onSelect={value => {
               controller.onChangeFilters({
@@ -293,6 +344,7 @@ function KolamSalesOpsList({
         ) : null}
         {activeFilterPanel === 'delivery' ? (
           <FilterPanel
+            anchor={panelAnchor}
             onClose={() => setActiveFilterPanel(null)}
             onSelect={value => {
               controller.onChangeFilters({
@@ -783,11 +835,13 @@ function KolamSalesOpsDetail({
 }
 
 function FilterPanel({
+  anchor,
   onClose,
   onSelect,
   options,
   selectedValue,
 }: {
+  anchor: { left: number; top: number };
   onClose: () => void;
   onSelect: (value: string) => void;
   options: Array<{ label: string; value: string }>;
@@ -795,7 +849,12 @@ function FilterPanel({
 }) {
   const rows = useMemo(() => options, [options]);
   return (
-    <View style={styles.filterOverlayPanel}>
+    <View
+      style={[
+        styles.filterOverlayPanel,
+        { left: anchor.left, top: anchor.top, width: FILTER_PANEL_WIDTH },
+      ]}
+    >
       <ScrollView
         contentContainerStyle={styles.filterPanelContent}
         keyboardShouldPersistTaps="handled"
@@ -887,13 +946,10 @@ const styles = StyleSheet.create({
     elevation: 1200,
     padding: 6,
     position: 'absolute',
-    right: 8,
     shadowColor: V.colors.fg,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.12,
     shadowRadius: 16,
-    top: 48,
-    width: 260,
     zIndex: 120000,
   },
   filterPanelScroll: {
