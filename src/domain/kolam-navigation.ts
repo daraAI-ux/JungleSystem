@@ -362,9 +362,9 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         requiredAccess: ['pos'],
       },
       {
-        label: 'Complaints',
+        label: 'Komplain',
         route: '/complaints',
-        description: 'Manage complaint tickets and returns',
+        description: 'Kelola semua tiket komplain dan penyelesaiannya.',
         group: 'Penjualan',
         requiredAccess: ['kolam'],
       },
@@ -1140,15 +1140,17 @@ const kolamNavigationRouteVariantSpecs: Array<{
   },
   {
     baseRoute: '/complaints',
-    labelSuffix: 'Create',
+    labelSuffix: 'Baru',
+    label: 'Komplain Baru',
     route: '/complaints/create',
-    description: 'Create complaint page from live Kolam',
+    description: 'Buat tiket komplain baru dari invoice penjualan.',
   },
   {
     baseRoute: '/complaints',
     labelSuffix: 'Detail',
+    label: 'Detail Komplain',
     route: '/complaints/:id',
-    description: 'Complaint detail page from live Kolam',
+    description: '',
   },
   {
     baseRoute: '/campaign',
