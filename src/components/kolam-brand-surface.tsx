@@ -148,7 +148,6 @@ function KolamBrandList({
   const [deleteCandidate, setDeleteCandidate] =
     React.useState<KolamBrand | null>(null);
   const [tableBodyWidth, setTableBodyWidth] = React.useState(0);
-  const summary = getBrandSummary(controller.brands);
   const filteredBrands = React.useMemo(
     () => filterBrands(controller.brands, search),
     [controller.brands, search],
@@ -217,12 +216,6 @@ function KolamBrandList({
 
   return (
     <View style={styles.stack}>
-      <View style={styles.summaryGrid}>
-        <SummaryTile label="Total Merek" value={controller.brands.length} />
-        <SummaryTile label="Aktif" value={summary.active} />
-        <SummaryTile label="Nonaktif" value={summary.inactive} />
-        <SummaryTile label="Blacklisted" value={summary.blacklisted} />
-      </View>
       <View ref={toolbarRef} collapsable={false} style={styles.toolbarWrap}>
         <View style={kolamTableToolbarStyles.shell}>
           <View style={kolamTableToolbarStyles.row}>
@@ -810,19 +803,6 @@ function FieldShell({
   );
 }
 
-function SummaryTile({ label, value }: { label: string; value: number }) {
-  return (
-    <View style={styles.summaryTile}>
-      <KolamCopyStack
-        items={[
-          { id: 'value', text: value, style: styles.summaryValue },
-          { id: 'label', text: label, style: styles.summaryLabel },
-        ]}
-      />
-    </View>
-  );
-}
-
 function fitBrandListColumns(containerWidth: number): KolamTableColumn[] {
   const base = getKolamTableColumns('brand');
   if (containerWidth <= 0) {
@@ -860,16 +840,6 @@ function fitBrandListColumns(containerWidth: number): KolamTableColumn[] {
       width: equalWidth + extra,
     };
   });
-}
-
-function getBrandSummary(brands: KolamBrand[]) {
-  return brands.reduce(
-    (summary, brand) => {
-      summary[brand.status] += 1;
-      return summary;
-    },
-    { active: 0, inactive: 0, blacklisted: 0 },
-  );
 }
 
 function filterBrands(brands: KolamBrand[], search: string) {
@@ -1030,33 +1000,6 @@ const styles = StyleSheet.create({
   },
   stack: {
     gap: 14,
-  },
-  summaryGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  summaryTile: {
-    minWidth: 150,
-    flexGrow: 1,
-    padding: 14,
-    borderRadius: 8,
-    borderColor: V.colors.border,
-    borderWidth: 1,
-    backgroundColor: V.colors.bg,
-  },
-  summaryValue: {
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 22,
-    fontWeight: '900',
-  },
-  summaryLabel: {
-    marginTop: 3,
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
-    fontWeight: '700',
   },
   activeActionRow: {
     zIndex: 1000,
