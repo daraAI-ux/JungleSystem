@@ -15,7 +15,10 @@ import {kolamVisualTokens as V} from '../domain/kolam-visual';
  *     </View>
  *   </View>
  *
- * Search fills leftover width inside filters; actions stay right behind a divider.
+ * Search fills leftover width inside filters so filter triggers sit flush
+ * before the actions divider (right side of the filters zone). Do not cap
+ * search with maxWidth — that parks filters on the left with a hollow gap.
+ * Actions stay right behind a divider.
  */
 export const kolamTableToolbarStyles = StyleSheet.create({
   shell: {

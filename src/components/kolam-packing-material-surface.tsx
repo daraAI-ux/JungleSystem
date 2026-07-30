@@ -2178,7 +2178,6 @@ const styles = StyleSheet.create({
   listToolbarSearch: {
     flexGrow: 1,
     flexShrink: 1,
-    maxWidth: 260,
     minWidth: 120,
   },
   filterOverlayPanel: {
