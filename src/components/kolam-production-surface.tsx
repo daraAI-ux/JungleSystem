@@ -55,6 +55,8 @@ import {
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
+import { KolamHoverTooltip } from './kolam-hover-tooltip';
+import { KolamProfileAvatarContent } from './kolam-profile-avatar-content';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamSwitch } from './kolam-switch';
@@ -338,10 +340,6 @@ function KolamProductionRow({
   const linkedDone = linked.filter(link =>
     ['completed', 'cancelled', 'rejected'].includes(String(link.status || '')),
   ).length;
-  const assignedName =
-    production.assignedTo?.name ||
-    production.assignedTo?.email ||
-    '—';
   const productionDateLabel = formatProductionListDate(production.productionDate);
   const variantSku = production.variant?.sku?.trim();
 
@@ -355,7 +353,7 @@ function KolamProductionRow({
 
   return (
     <KolamDataTableRowFrame style={actionMenuOpen ? styles.activeActionRow : undefined}>
-      <Pressable onPress={onSelect} style={[styles.cell, styles.primaryCell]}>
+      <Pressable onPress={onSelect} style={[styles.listCell, styles.primaryCell]}>
         <Text numberOfLines={2} style={styles.rowTitle}>
           {getKolamProductionTargetLabel(production)}
         </Text>
@@ -364,7 +362,7 @@ function KolamProductionRow({
         </Text>
       </Pressable>
 
-      <View style={[styles.cell, { width: 140 }]}>
+      <View style={[styles.listCell, { width: 140 }]}>
         <Text numberOfLines={2} style={styles.cellText}>
           {getKolamProductionVariantLabel(production.variant)}
         </Text>
@@ -375,7 +373,7 @@ function KolamProductionRow({
         ) : null}
       </View>
 
-      <View style={[styles.cell, { width: 100 }]}>
+      <View style={[styles.listCell, { width: 100 }]}>
         <Text style={styles.cellText}>
           {completed} / {planned}
         </Text>
@@ -384,17 +382,17 @@ function KolamProductionRow({
         ) : null}
       </View>
 
-      <View style={[styles.cell, { width: 130 }]}>
+      <View style={[styles.listCell, { width: 120 }]}>
         <Text style={styles.numText}>{formatRupiah(production.estimatedCost || 0)}</Text>
       </View>
 
-      <View style={[styles.cell, { width: 150 }]}>
+      <View style={[styles.listCell, { width: 140 }]}>
         <Text numberOfLines={1} style={styles.cellText}>
           {production.batchId || '—'}
         </Text>
       </View>
 
-      <View style={[styles.cell, styles.statusCell, { width: 130 }]}>
+      <View style={[styles.listCell, styles.statusCell, { width: 120 }]}>
         <KolamStatusBadge
           intent={productionStatusIntent(production.status)}
           label={getKolamProductionStatusLabel(production.status)}
@@ -406,13 +404,11 @@ function KolamProductionRow({
         ) : null}
       </View>
 
-      <View style={[styles.cell, { width: 150 }]}>
-        <Text numberOfLines={2} style={styles.cellText}>
-          {assignedName}
-        </Text>
+      <View style={[styles.listCell, styles.picCell, { width: 56 }]}>
+        <KolamProductionPicAvatar production={production} />
       </View>
 
-      <View style={[styles.cell, { width: 130 }]}>
+      <View style={[styles.listCell, { width: 120 }]}>
         <Text numberOfLines={1} style={styles.cellText}>
           {productionDateLabel}
         </Text>
@@ -428,6 +424,33 @@ function KolamProductionRow({
         />
       </View>
     </KolamDataTableRowFrame>
+  );
+}
+
+function KolamProductionPicAvatar({ production }: { production: KolamProduction }) {
+  const name =
+    production.assignedTo?.name ||
+    production.assignedTo?.email ||
+    'Tanpa PIC';
+  const photoUri = getKolamFileUrl(production.assignedTo?.photo);
+  const initials = name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(part => part.charAt(0).toUpperCase())
+    .join('') || '?';
+
+  return (
+    <KolamHoverTooltip containerStyle={styles.picTooltip} label={name}>
+      <View accessibilityLabel={`PIC ${name}`} style={styles.picAvatar}>
+        <KolamProfileAvatarContent
+          imageStyle={styles.picAvatarImage}
+          imageUrl={photoUri}
+          initials={initials}
+          textStyle={styles.picAvatarText}
+        />
+      </View>
+    </KolamHoverTooltip>
   );
 }
 
@@ -1458,18 +1481,54 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 10,
   },
+  listCell: {
+    justifyContent: 'center',
+    minWidth: 0,
+    paddingHorizontal: 0,
+    paddingVertical: 4,
+  },
   primaryCell: {
     flex: 1,
+    minWidth: 160,
   },
   statusCell: {
     gap: 4,
+  },
+  picCell: {
+    alignItems: 'center',
+    overflow: 'visible',
+  },
+  picTooltip: {
+    alignSelf: 'center',
+  },
+  picAvatar: {
+    alignItems: 'center',
+    backgroundColor: V.colors.primarySoft,
+    borderColor: V.colors.border,
+    borderRadius: 16,
+    borderWidth: 1,
+    height: 32,
+    justifyContent: 'center',
+    overflow: 'hidden',
+    width: 32,
+  },
+  picAvatarImage: {
+    borderRadius: 16,
+    height: 32,
+    width: 32,
+  },
+  picAvatarText: {
+    color: V.colors.primary,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '800',
   },
   overflowCell: {
     alignItems: 'flex-end',
     justifyContent: 'center',
     overflow: 'visible',
-    paddingHorizontal: 8,
-    width: 64,
+    paddingHorizontal: 0,
+    width: 48,
     zIndex: 9000,
   },
   activeActionRow: {

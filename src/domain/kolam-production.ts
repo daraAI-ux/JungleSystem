@@ -84,6 +84,8 @@ export interface KolamProductionUserRef {
   id: string;
   email: string;
   name: string;
+  /** Absolute or relative media path for profile/HR photo. */
+  photo: string;
 }
 
 export interface KolamProductionLinkedPO {
@@ -1198,17 +1200,22 @@ function normalizeProductionUserRef(
     return null;
   }
   if (typeof value === 'string') {
-    return { id: value, email: '', name: '' };
+    return { id: value, email: '', name: '', photo: '' };
   }
   const record = asRecord(value);
   const id = getString(record, '_id') || getString(record, 'id');
   if (!id) {
     return null;
   }
+  const hr = asRecord(record.hr);
   return {
     id,
     email: getString(record, 'email'),
     name: resolveProductionPersonName(record),
+    photo:
+      getString(record, 'profile_picture') ||
+      getString(record, 'photo') ||
+      getString(hr, 'photo'),
   };
 }
 
