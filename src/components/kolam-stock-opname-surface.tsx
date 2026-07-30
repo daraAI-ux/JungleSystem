@@ -564,7 +564,7 @@ function StockOpnameListRow({
     <KolamDataTableRowFrame
       style={actionMenuOpen ? styles.activeActionRow : undefined}
     >
-      <KolamDataTableMainTrack>
+      <KolamDataTableMainTrack style={styles.mainTrackVisible}>
         <Pressable
           accessibilityRole="button"
           onPress={onOpen}
@@ -609,6 +609,7 @@ function StockOpnameListRow({
             styles.listCell,
             styles.picCell,
             picColumn ? getKolamDataTableColumnStyle(picColumn) : null,
+            styles.overflowVisible,
           ]}
         >
           <StockOpnamePicAvatar item={item} />
@@ -965,12 +966,23 @@ const styles = StyleSheet.create({
   centerBadge: {
     alignSelf: 'center',
   },
+  mainTrackVisible: {
+    overflow: 'visible',
+  },
+  overflowVisible: {
+    overflow: 'visible',
+    zIndex: 9000,
+  },
   picCell: {
     alignItems: 'center',
-    overflow: 'visible',
   },
   picTooltip: {
     alignSelf: 'center',
+  },
+  activeActionRow: {
+    elevation: 30,
+    overflow: 'visible',
+    zIndex: 1000,
   },
   picAvatar: {
     alignItems: 'center',
@@ -996,10 +1008,6 @@ const styles = StyleSheet.create({
   },
   actionsTrack: {
     justifyContent: 'center',
-  },
-  activeActionRow: {
-    elevation: 30,
-    zIndex: 1000,
   },
   primaryText: {
     color: V.colors.fg,
