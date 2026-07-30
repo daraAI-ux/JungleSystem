@@ -511,6 +511,15 @@ describe('settings web widgets', () => {
     expect(buttons.map(node => node.props.label)).toEqual(
       expect.arrayContaining(['Simpan Firebase', 'Simpan OTP & SMTP']),
     );
+    expect(renderText(renderer!)).toEqual(
+      expect.arrayContaining([
+        'Chat terassign',
+        'Chat belum assign',
+        'Suara butuh handover',
+        'Nada dering call grup',
+        'Penjualan & bell',
+      ]),
+    );
 
     await ReactTestRenderer.act(async () => {
       buttons
@@ -529,12 +538,12 @@ describe('settings web widgets', () => {
       renderer!.root
         .findAll(
           node =>
-            node.props.accessibilityLabel === 'Notifikasi alih tangan DARA',
+            node.props.accessibilityLabel === 'Notifikasi handover DARA',
         )[0]
         .props.onPress();
       renderer!.root
         .findAll(
-          node => node.props.accessibilityLabel === 'Panggilan grup chat tim',
+          node => node.props.accessibilityLabel === 'Call grup Team Chat',
         )[0]
         .props.onPress();
     });

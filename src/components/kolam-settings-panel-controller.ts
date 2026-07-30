@@ -2603,6 +2603,11 @@ export function useKolamSettingsPanelController(
         return;
       }
 
+      if (!isAllowedNotificationSoundSize(picked)) {
+        setWebSettingMessage('Notification sound maksimal 5 MB.');
+        return;
+      }
+
       setNotificationSoundStatus(current => ({
         ...current,
         [type]: 'uploading',
@@ -3291,6 +3296,22 @@ export function useKolamSettingsPanelController(
       firebasePrivateKey: webSettingDraft.firebasePrivateKey,
     };
     const firebase = createFirebaseUpdateBody(webSettingDraft);
+    const hasConfiguredPrivateKey =
+      webSetting?.firebase?.privateKeyConfigured === true ||
+      Boolean(firebase.privateKey?.trim());
+
+    if (
+      firebase.enabled &&
+      (!firebase.projectId?.trim() ||
+        !firebase.clientEmail?.trim() ||
+        !hasConfiguredPrivateKey)
+    ) {
+      setWebSettingSaveStatus('error');
+      setWebSettingMessage(
+        'Project ID, client email, dan private key Firebase wajib diisi saat Firebase aktif.',
+      );
+      return;
+    }
 
     setWebSettingSaveStatus('saving');
     setWebSettingMessage('');
@@ -3348,19 +3369,30 @@ export function useKolamSettingsPanelController(
     };
     const staffOtpLogin = {
       enabled: webSettingDraft.staffOtpLoginEnabled,
-      otpExpireMinutes: parseIntegerOrFallback(
+      otpExpireMinutes: clampIntegerOrFallback(
         webSettingDraft.staffOtpExpireMinutes,
         10,
-      ),
-      resendCooldownSeconds: parseIntegerOrFallback(
-        webSettingDraft.staffOtpResendCooldownSeconds,
+        1,
         60,
       ),
-      maxAttempts: parseIntegerOrFallback(
+      resendCooldownSeconds: clampIntegerOrFallback(
+        webSettingDraft.staffOtpResendCooldownSeconds,
+        60,
+        30,
+        600,
+      ),
+      maxAttempts: clampIntegerOrFallback(
         webSettingDraft.staffOtpMaxAttempts,
         5,
+        1,
+        10,
       ),
-      lockMinutes: parseIntegerOrFallback(webSettingDraft.staffOtpLockMinutes, 15),
+      lockMinutes: clampIntegerOrFallback(
+        webSettingDraft.staffOtpLockMinutes,
+        15,
+        1,
+        120,
+      ),
     };
     const smtp = createSmtpUpdateBody(webSettingDraft);
 
@@ -5363,6 +5395,16 @@ function parseIntegerOrFallback(value: string, fallback: number) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function clampIntegerOrFallback(
+  value: string,
+  fallback: number,
+  min: number,
+  max: number,
+) {
+  const parsed = parseIntegerOrFallback(value, fallback);
+  return Math.min(max, Math.max(min, parsed));
+}
+
 function parseNumberOrFallback(value: string, fallback: number) {
   const parsed = Number(value.trim());
   return Number.isFinite(parsed) ? parsed : fallback;
@@ -5388,12 +5430,13 @@ function getRegionLevelLabel(level: KolamRegionLevel) {
 }
 
 function createSmtpUpdateBody(draft: WebSettingDraft) {
+  const user = draft.smtpUser.trim();
   const smtp: KolamWebSetting['smtp'] = {
     host: draft.smtpHost.trim(),
     port: parseIntegerOrFallback(draft.smtpPort, 465),
-    user: draft.smtpUser.trim(),
-    fromEmail: draft.smtpFromEmail.trim(),
-    fromName: draft.smtpFromName.trim(),
+    user,
+    fromEmail: draft.smtpFromEmail.trim() || user,
+    fromName: draft.smtpFromName.trim() || 'Kolam',
     secure: draft.smtpSecure,
   };
 
@@ -5430,6 +5473,21 @@ function isAllowedNotificationSoundFile(localUri: string, extension?: string) {
       ?.toLowerCase();
 
   return inferredExtension === 'mp3' || inferredExtension === 'wav';
+}
+
+function isAllowedNotificationSoundSize(file: unknown) {
+  const maybeFile = file as {
+    fileSize?: unknown;
+    size?: unknown;
+  };
+  const rawSize =
+    typeof maybeFile.size === 'number'
+      ? maybeFile.size
+      : typeof maybeFile.fileSize === 'number'
+        ? maybeFile.fileSize
+        : null;
+
+  return rawSize === null || rawSize <= 5 * 1024 * 1024;
 }
 
 function isAllowedMarketplaceImageFile(localUri: string, extension?: string) {

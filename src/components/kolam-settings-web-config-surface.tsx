@@ -1215,31 +1215,31 @@ export function KolamSettingsWebConfigSurface({
   const notificationSoundItems = [
     {
       id: 'notification-sound',
-      label: 'Suara notifikasi',
+      label: 'Chat terassign',
       type: 'assigned' as const,
       value: draft.notificationSound,
     },
     {
       id: 'unassigned-notification-sound',
-      label: 'Suara chat belum ditugaskan',
+      label: 'Chat belum assign',
       type: 'unassigned' as const,
       value: draft.unassignedNotificationSound,
     },
     {
       id: 'handoff-notification-sound',
-      label: 'Suara alih tangan',
+      label: 'Suara butuh handover',
       type: 'handoff' as const,
       value: draft.handoffNotificationSound,
     },
     {
       id: 'group-call-ringtone',
-      label: 'Nada panggilan grup',
+      label: 'Nada dering call grup',
       type: 'group-call' as const,
       value: draft.groupCallRingtone,
     },
     {
       id: 'sales-notification-sound',
-      label: 'Suara notifikasi penjualan',
+      label: 'Penjualan & bell',
       type: 'sales' as const,
       value: draft.salesNotificationSound,
     },
@@ -4690,7 +4690,7 @@ export function KolamSettingsWebConfigSurface({
                   {renderNotificationSoundRow(notificationSoundItems[1])}
                   {renderNotificationSoundRow(notificationSoundItems[2], {
                     active: draft.daraHandoffNotifyEnabled,
-                    label: 'Notifikasi alih tangan DARA',
+                    label: 'Notifikasi handover DARA',
                     onPress: () =>
                       onSaveNotificationToggle(
                         'daraHandoffNotifyEnabled',
@@ -4699,7 +4699,7 @@ export function KolamSettingsWebConfigSurface({
                   })}
                   {renderNotificationSoundRow(notificationSoundItems[3], {
                     active: draft.teamChatGroupCallEnabled,
-                    label: 'Panggilan grup chat tim',
+                    label: 'Call grup Team Chat',
                     onPress: () =>
                       onSaveNotificationToggle(
                         'teamChatGroupCallEnabled',
