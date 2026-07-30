@@ -1028,25 +1028,23 @@ function ProductRow({
               ) : null}
             </View>
             <View style={styles.productCopy}>
-              <View style={styles.rawNameRow}>
-                {labels.length ? (
-                  <View style={styles.rawLabelBadges}>
-                    {labels.map(label => {
-                      const resolved = resolveProductListLabel(label);
-                      return (
-                        <KolamBadge
-                          intent={resolved.intent}
-                          key={label}
-                          label={resolved.label}
-                        />
-                      );
-                    })}
-                  </View>
-                ) : null}
-                <Text numberOfLines={1} style={styles.productName}>
-                  {product.name}
-                </Text>
-              </View>
+              <Text numberOfLines={1} style={styles.productName}>
+                {product.name}
+              </Text>
+              {labels.length ? (
+                <View style={styles.rawLabelBadges}>
+                  {labels.map(label => {
+                    const resolved = resolveProductListLabel(label);
+                    return (
+                      <KolamBadge
+                        intent={resolved.intent}
+                        key={label}
+                        label={resolved.label}
+                      />
+                    );
+                  })}
+                </View>
+              ) : null}
             </View>
           </View>
 
@@ -8458,32 +8456,23 @@ const styles = StyleSheet.create({
   },
   productCopy: {
     flex: 1,
+    gap: 4,
     minWidth: 0,
     overflow: 'hidden',
   },
-  rawNameRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    justifyContent: 'flex-start',
-    minWidth: 0,
-  },
   rawLabelBadges: {
     alignItems: 'center',
+    alignSelf: 'flex-start',
     flexDirection: 'row',
-    flexShrink: 0,
     flexWrap: 'wrap',
     gap: 4,
     justifyContent: 'flex-start',
   },
   productName: {
     color: V.colors.fg,
-    flexShrink: 1,
     fontSize: 13,
     fontWeight: '800',
     lineHeight: 18,
-    minWidth: 0,
   },
   productCategory: {
     color: V.colors.mutedFg,
