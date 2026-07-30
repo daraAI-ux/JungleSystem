@@ -100,8 +100,12 @@ jest.mock('../src/components/kolam-remote-image', () => {
   const ReactForMock = require('react');
   const {Text: TextForMock} = require('react-native');
   return {
-    KolamRemoteImage: ({accessibilityLabel}: {accessibilityLabel: string}) =>
-      ReactForMock.createElement(TextForMock, null, accessibilityLabel),
+    KolamRemoteImage: (props: {accessibilityLabel: string}) =>
+      ReactForMock.createElement(
+        TextForMock,
+        props,
+        props.accessibilityLabel,
+      ),
   };
 });
 
@@ -1715,6 +1719,8 @@ describe('KolamGlobalChatRail', () => {
           content: {
             fileName: 'proof.jpg',
             imageUrl: '/uploads/chat/proof.jpg',
+            thumbnailUrl: '/uploads/chat/proof-thumb.jpg',
+            text: 'Bukti transfer jam 08.10',
             type: 'image',
           },
           daraMeta: {
@@ -1770,6 +1776,7 @@ describe('KolamGlobalChatRail', () => {
         'Ada warna merah?',
         'DARA vision',
         'Match: ambiguous | Bukti transfer BCA',
+        'Bukti transfer jam 08.10',
       ]),
     );
     expect(normalizedText).toContain('Rp 175.000');
@@ -1805,6 +1812,25 @@ describe('KolamGlobalChatRail', () => {
     );
     expect(renderText(renderer!)).toEqual(
       expect.arrayContaining(['Preview proof.jpg', 'Tutup']),
+    );
+    const inboxImages = renderer!.root.findAll(
+      node =>
+        node.props.accessibilityLabel === 'proof.jpg' ||
+        node.props.accessibilityLabel === 'Preview proof.jpg',
+    );
+    expect(inboxImages).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          props: expect.objectContaining({
+            sourceUri: expect.stringContaining('/uploads/chat/proof-thumb.jpg'),
+          }),
+        }),
+        expect.objectContaining({
+          props: expect.objectContaining({
+            sourceUri: expect.stringContaining('/uploads/chat/proof.jpg'),
+          }),
+        }),
+      ]),
     );
 
     const closeLightbox = renderer!.root

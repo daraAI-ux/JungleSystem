@@ -2584,7 +2584,7 @@ function KolamInboxRichMessageContent({
   const [lightboxUri, setLightboxUri] = React.useState<string | null>(null);
   const content = message.content;
   const replyContent = message.replyContent;
-  const imageUri = resolveInboxImageUri(content, message.body);
+  const image = resolveInboxImageContent(content, message.body);
   const youtube = resolveInboxYoutube(content, message.body);
   const card = resolveInboxCard(content, message.body);
   const linkedCard = resolveInboxLinkedCard(message.body);
@@ -2600,20 +2600,23 @@ function KolamInboxRichMessageContent({
         <KolamInboxProductCard card={card} />
       ) : linkedCard ? (
         <KolamInboxLinkedCard card={linkedCard} />
-      ) : imageUri ? (
+      ) : image ? (
         <>
           <KolamPressable
             accessibilityLabel={`Buka gambar inbox ${content?.fileName || 'Gambar'}`}
-            onPress={() => setLightboxUri(imageUri)}
+            onPress={() => setLightboxUri(image.previewUri)}
             style={styles.inboxRichImagePressable}>
             <KolamRemoteImage
               accessibilityLabel={content?.fileName || 'Gambar inbox'}
-              resizeMode="cover"
+              resizeMode="contain"
               scope="chat-inbox"
-              sourceUri={imageUri}
+              sourceUri={image.thumbnailUri}
               style={styles.inboxRichImage}
             />
           </KolamPressable>
+          {image.caption ? (
+            <Text style={styles.inboxRichImageCaption}>{image.caption}</Text>
+          ) : null}
           <KolamInboxImageLightbox
             onClose={() => setLightboxUri(null)}
             title={content?.fileName || 'Gambar inbox'}
@@ -4026,20 +4029,74 @@ interface KolamInboxLinkedCardData {
   title: string;
 }
 
-function resolveInboxImageUri(
+interface KolamInboxImageContent {
+  caption: string;
+  previewUri: string;
+  thumbnailUri: string;
+}
+
+function resolveInboxImageContent(
   content:
     | ReturnType<typeof useKolamChatRailDetail>['messages'][number]['content']
     | undefined,
   body: string,
-) {
+): KolamInboxImageContent | null {
   if (content?.type === 'image') {
-    return normalizeChatMediaUri(
+    const thumbnailUri = normalizeChatMediaUri(
+      content.thumbnailUrl || content.imageUrl || content.text,
+    );
+    const previewUri = normalizeChatMediaUri(
       content.imageUrl || content.thumbnailUrl || content.text,
     );
+
+    if (!thumbnailUri || !previewUri) {
+      return null;
+    }
+
+    return {
+      caption: getInboxImageCaption(content),
+      previewUri,
+      thumbnailUri,
+    };
   }
 
   const legacy = parseInboxLegacyImageText(body);
-  return legacy ? normalizeChatMediaUri(legacy) : null;
+  const legacyUri = legacy ? normalizeChatMediaUri(legacy) : null;
+  return legacyUri
+    ? {caption: '', previewUri: legacyUri, thumbnailUri: legacyUri}
+    : null;
+}
+
+function getInboxImageCaption(
+  content: NonNullable<
+    ReturnType<typeof useKolamChatRailDetail>['messages'][number]['content']
+  >,
+) {
+  const caption = content.text?.trim() ?? '';
+  if (!caption) {
+    return '';
+  }
+
+  const duplicateValues = [
+    content.fileName,
+    content.imageUrl,
+    content.thumbnailUrl,
+  ]
+    .map(value => value?.trim())
+    .filter(Boolean);
+
+  if (
+    duplicateValues.some(value => value === caption) ||
+    isLikelyChatMediaReference(caption)
+  ) {
+    return '';
+  }
+
+  return caption;
+}
+
+function isLikelyChatMediaReference(value: string) {
+  return /^(https?:|file:|ms-appx:|ms-appdata:|data:|\/)/i.test(value.trim());
 }
 
 function resolveInboxYoutube(
@@ -5964,6 +6021,14 @@ const styles = StyleSheet.create({
     height: 132,
     borderRadius: V.radius.lg,
     overflow: 'hidden',
+    backgroundColor: V.colors.bg,
+  },
+  inboxRichImageCaption: {
+    width: 220,
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    lineHeight: 17,
   },
   inboxRichCard: {
     width: 230,
