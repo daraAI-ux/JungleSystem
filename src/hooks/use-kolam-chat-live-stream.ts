@@ -65,6 +65,30 @@ type EventSourceGlobal = {
   ): KolamEventSourceLike;
 };
 
+type KolamXmlHttpRequestLike = {
+  DONE: number;
+  LOADING: number;
+  HEADERS_RECEIVED: number;
+  readyState: number;
+  responseText: string;
+  status: number;
+  abort: () => void;
+  getResponseHeader?: (header: string) => string | null;
+  onreadystatechange?: (() => void) | null;
+  onerror?: (() => void) | null;
+  onprogress?: (() => void) | null;
+  ontimeout?: (() => void) | null;
+  open: (method: string, url: string, async?: boolean) => void;
+  send: () => void;
+  setRequestHeader: (header: string, value: string) => void;
+  timeout?: number;
+  withCredentials?: boolean;
+};
+
+type XmlHttpRequestGlobal = {
+  new (): KolamXmlHttpRequestLike;
+};
+
 export function useKolamChatLiveStream({
   enabled = true,
   eventSourceFactory,
@@ -91,41 +115,83 @@ export function useKolamChatLiveStream({
       return undefined;
     }
 
-    const stream = factory(buildKolamChatLiveStreamUrl(mode), {
-      headers: buildKolamChatLiveStreamHeaders(),
-      withCredentials: true,
-    });
     const seenEventIds = new Set<string>();
+    let closed = false;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    let stream: KolamEventSourceLike | null = null;
 
-    stream.onopen = () => {
-      onStatusChangeRef.current?.('open');
+    const closeStream = () => {
+      stream?.close();
+      stream = null;
     };
 
-    stream.onerror = () => {
-      onStatusChangeRef.current?.('error');
-    };
+    const connect = () => {
+      if (closed) {
+        return;
+      }
 
-    contracts.forEach(contract => {
-      stream.addEventListener(contract.eventName, event => {
-        const eventId = event.lastEventId || undefined;
-        if (eventId) {
-          if (seenEventIds.has(eventId)) {
-            return;
-          }
-          seenEventIds.add(eventId);
+      closeStream();
+      stream = factory(buildKolamChatLiveStreamUrl(mode), {
+        headers: buildKolamChatLiveStreamHeaders(),
+        withCredentials: true,
+      });
+
+      stream.onopen = () => {
+        if (closed) {
+          return;
         }
 
-        onEventRef.current({
-          contract,
-          eventId,
-          payload: parseKolamChatLiveEventPayload(event.data),
+        if (reconnectTimer) {
+          clearTimeout(reconnectTimer);
+          reconnectTimer = null;
+        }
+        onStatusChangeRef.current?.('open');
+      };
+
+      stream.onerror = () => {
+        if (closed) {
+          return;
+        }
+
+        onStatusChangeRef.current?.('error');
+        if (reconnectTimer) {
+          return;
+        }
+
+        reconnectTimer = setTimeout(() => {
+          reconnectTimer = null;
+          connect();
+        }, 2000);
+      };
+
+      contracts.forEach(contract => {
+        stream?.addEventListener(contract.eventName, event => {
+          const eventId = event.lastEventId || undefined;
+          if (eventId) {
+            if (seenEventIds.has(eventId)) {
+              return;
+            }
+            seenEventIds.add(eventId);
+          }
+
+          onEventRef.current({
+            contract,
+            eventId,
+            payload: parseKolamChatLiveEventPayload(event.data),
+          });
         });
       });
-    });
+    };
+
+    connect();
 
     return () => {
+      closed = true;
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+      }
       onStatusChangeRef.current?.('closed');
-      stream.close();
+      closeStream();
     };
   }, [contracts, enabled, eventSourceFactory, mode]);
 }
@@ -154,11 +220,183 @@ export function buildKolamChatLiveStreamHeaders() {
 function getGlobalEventSourceFactory(): KolamEventSourceFactory | undefined {
   const eventSource = (globalThis as {EventSource?: EventSourceGlobal})
     .EventSource;
-  if (!eventSource) {
+  if (eventSource) {
+    return (url, options) => new eventSource(url, options);
+  }
+
+  return getXmlHttpRequestEventSourceFactory();
+}
+
+function getXmlHttpRequestEventSourceFactory():
+  | KolamEventSourceFactory
+  | undefined {
+  const XmlHttpRequest = (
+    globalThis as {XMLHttpRequest?: XmlHttpRequestGlobal}
+  ).XMLHttpRequest;
+
+  if (!XmlHttpRequest) {
     return undefined;
   }
 
-  return (url, options) => new eventSource(url, options);
+  return (url, options) =>
+    createXmlHttpRequestEventSource(url, options, XmlHttpRequest);
+}
+
+function createXmlHttpRequestEventSource(
+  url: string,
+  options: Parameters<KolamEventSourceFactory>[1],
+  XmlHttpRequest: XmlHttpRequestGlobal,
+): KolamEventSourceLike {
+  const listeners = new Map<string, Set<KolamEventSourceListener>>();
+  const xhr = new XmlHttpRequest();
+  let closed = false;
+  let opened = false;
+  let processedLength = 0;
+  let pendingChunk = '';
+
+  const source: KolamEventSourceLike = {
+    addEventListener(eventName, listener) {
+      const existing = listeners.get(eventName) ?? new Set();
+      existing.add(listener);
+      listeners.set(eventName, existing);
+    },
+    close() {
+      if (closed) {
+        return;
+      }
+
+      closed = true;
+      xhr.abort();
+    },
+    onerror: null,
+    onopen: null,
+  };
+
+  xhr.open('GET', url, true);
+  xhr.withCredentials = options?.withCredentials === true;
+  Object.entries(options?.headers ?? {}).forEach(([header, value]) => {
+    xhr.setRequestHeader(header, value);
+  });
+
+  const readAvailableText = () => {
+    if (closed || !xhr.responseText) {
+      return;
+    }
+
+    const nextText = xhr.responseText.slice(processedLength);
+    processedLength = xhr.responseText.length;
+    if (!nextText) {
+      return;
+    }
+
+    pendingChunk = parseKolamSseText(
+      `${pendingChunk}${nextText}`,
+      (eventName, data, eventId) => {
+        listeners.get(eventName)?.forEach(listener => {
+          listener({data, lastEventId: eventId});
+        });
+      },
+    );
+  };
+
+  const markOpen = () => {
+    if (opened || closed) {
+      return;
+    }
+
+    opened = true;
+    source.onopen?.();
+  };
+
+  const markError = () => {
+    if (closed) {
+      return;
+    }
+
+    source.onerror?.();
+  };
+
+  xhr.onreadystatechange = () => {
+    if (
+      xhr.readyState === xhr.HEADERS_RECEIVED ||
+      xhr.readyState === xhr.LOADING
+    ) {
+      markOpen();
+      readAvailableText();
+      return;
+    }
+
+    if (xhr.readyState === xhr.DONE) {
+      readAvailableText();
+      if (!closed) {
+        markError();
+      }
+    }
+  };
+  xhr.onprogress = () => {
+    markOpen();
+    readAvailableText();
+  };
+  xhr.onerror = markError;
+  xhr.ontimeout = markError;
+  xhr.send();
+
+  return source;
+}
+
+function parseKolamSseText(
+  text: string,
+  emit: (eventName: string, data: string, eventId?: string) => void,
+) {
+  const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  const blocks = normalized.split('\n\n');
+  const pending = blocks.pop() ?? '';
+
+  blocks.forEach(block => {
+    const event = parseKolamSseEventBlock(block);
+    if (event) {
+      emit(event.eventName, event.data, event.eventId);
+    }
+  });
+
+  return pending;
+}
+
+function parseKolamSseEventBlock(block: string) {
+  let eventName = 'message';
+  let eventId: string | undefined;
+  const dataLines: string[] = [];
+
+  block.split('\n').forEach(line => {
+    if (!line || line.startsWith(':')) {
+      return;
+    }
+
+    const separatorIndex = line.indexOf(':');
+    const field =
+      separatorIndex >= 0 ? line.slice(0, separatorIndex) : line;
+    const rawValue =
+      separatorIndex >= 0 ? line.slice(separatorIndex + 1) : '';
+    const value = rawValue.startsWith(' ') ? rawValue.slice(1) : rawValue;
+
+    if (field === 'event') {
+      eventName = value || 'message';
+    } else if (field === 'id') {
+      eventId = value || undefined;
+    } else if (field === 'data') {
+      dataLines.push(value);
+    }
+  });
+
+  if (!dataLines.length) {
+    return null;
+  }
+
+  return {
+    data: dataLines.join('\n'),
+    eventId,
+    eventName,
+  };
 }
 
 function parseKolamChatLiveEventPayload(data: string | undefined) {
