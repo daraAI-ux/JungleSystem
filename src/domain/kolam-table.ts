@@ -41,7 +41,7 @@ export interface KolamTableColumn {
     | 'status'
     | 'actions';
   label: string;
-  align: Exclude<KolamTableColumnAlign, 'center'>;
+  align: KolamTableColumnAlign;
   headerAlign?: KolamTableColumnAlign;
   width?: number;
 }
@@ -150,13 +150,44 @@ export const kolamTableVisualContract: KolamTableVisualContract = {
 
 const kolamTableColumns: Record<KolamTableId, KolamTableColumn[]> = {
   brand: [
-    { id: 'primary', label: 'Merek', align: 'left' },
-    { id: 'meta', label: 'Negara', align: 'left', width: 96 },
-    { id: 'products', label: 'Produk', align: 'right', width: 92 },
-    { id: 'raws', label: 'Bahan', align: 'right', width: 92 },
-    { id: 'notes', label: 'Catatan', align: 'left', width: 180 },
-    { id: 'status', label: 'Status', align: 'right', width: 116 },
-    { id: 'actions', label: '', align: 'right', width: 64 },
+    { id: 'primary', label: 'Merek', align: 'center', headerAlign: 'center' },
+    {
+      id: 'meta',
+      label: 'Negara',
+      align: 'center',
+      headerAlign: 'center',
+      width: 96,
+    },
+    {
+      id: 'products',
+      label: 'Produk',
+      align: 'center',
+      headerAlign: 'center',
+      width: 92,
+    },
+    {
+      id: 'raws',
+      label: 'Bahan',
+      align: 'center',
+      headerAlign: 'center',
+      width: 92,
+    },
+    {
+      id: 'notes',
+      label: 'Catatan',
+      align: 'center',
+      headerAlign: 'center',
+      width: 180,
+    },
+    {
+      id: 'status',
+      label: 'Status',
+      align: 'center',
+      headerAlign: 'center',
+      width: 116,
+    },
+    // Actions header stays blank; body still hosts the overflow menu.
+    { id: 'actions', label: '', align: 'center', headerAlign: 'center', width: 64 },
   ],
   catalog: [
     { id: 'primary', label: 'Catalog', align: 'left' },

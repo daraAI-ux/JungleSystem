@@ -8,7 +8,8 @@ import {
 
 describe('getKolamTableColumns', () => {
   it('defines brand table headers for logo identity, country flag, and backend counts', () => {
-    expect(getKolamTableColumns('brand').map(column => column.label)).toEqual([
+    const columns = getKolamTableColumns('brand');
+    expect(columns.map(column => column.label)).toEqual([
       'Merek',
       'Negara',
       'Produk',
@@ -17,6 +18,25 @@ describe('getKolamTableColumns', () => {
       'Status',
       '',
     ]);
+    expect(columns.map(column => column.align)).toEqual([
+      'center',
+      'center',
+      'center',
+      'center',
+      'center',
+      'center',
+      'center',
+    ]);
+    expect(columns.map(column => column.headerAlign ?? column.align)).toEqual([
+      'center',
+      'center',
+      'center',
+      'center',
+      'center',
+      'center',
+      'center',
+    ]);
+    expect(columns.find(column => column.id === 'actions')?.label).toBe('');
   });
 
   it('defines live-style table headers for catalog, customer, and sales surfaces', () => {

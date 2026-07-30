@@ -536,6 +536,7 @@ function KolamBrandRow({
         </View>
       </KolamDataTableMainTrack>
       <KolamDataTableActionsTrack
+        style={styles.actionsTrack}
         width={Math.max(
           actionsColumn?.width ?? KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
           KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
@@ -1042,17 +1043,19 @@ const styles = StyleSheet.create({
     elevation: 30,
   },
   listCell: {
+    alignItems: 'center',
     justifyContent: 'center',
     minWidth: 0,
     overflow: 'hidden',
     paddingVertical: 4,
   },
   brandIdentity: {
-    alignItems: 'flex-start',
+    alignItems: 'center',
     flexDirection: 'column',
     gap: 4,
     maxWidth: '100%',
     minWidth: 0,
+    width: '100%',
   },
   brandName: {
     color: V.colors.fg,
@@ -1060,14 +1063,16 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     maxWidth: '100%',
+    textAlign: 'center',
   },
   countryFlagCell: {
-    alignItems: 'flex-start',
+    alignItems: 'center',
   },
   countryRow: {
     alignItems: 'center',
     flexDirection: 'row',
     gap: 8,
+    justifyContent: 'center',
     maxWidth: '100%',
     minWidth: 0,
   },
@@ -1077,19 +1082,21 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 13,
     minWidth: 0,
+    textAlign: 'center',
   },
   countCell: {
-    alignItems: 'flex-end',
+    alignItems: 'center',
   },
   countText: {
     color: V.colors.fg,
     fontFamily: V.fontFamily,
     fontSize: 13,
     fontWeight: '700',
-    textAlign: 'right',
+    textAlign: 'center',
     width: '100%',
   },
   notesCell: {
+    alignItems: 'center',
     minWidth: 0,
   },
   notesText: {
@@ -1097,10 +1104,15 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 13,
     lineHeight: 18,
+    textAlign: 'center',
+    width: '100%',
   },
   statusCell: {
-    alignItems: 'flex-end',
+    alignItems: 'center',
     justifyContent: 'center',
+  },
+  actionsTrack: {
+    alignItems: 'center',
   },
   paginationRow: {
     minHeight: 42,
