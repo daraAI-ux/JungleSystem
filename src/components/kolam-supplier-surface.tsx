@@ -9,7 +9,12 @@ import {
   View,
 } from 'react-native';
 import { getKolamFormSection } from '../domain/kolam-form';
-import { getKolamTableColumns } from '../domain/kolam-table';
+import {
+  fitKolamDataTableColumns,
+  getKolamTableColumns,
+  getKolamTableVisualContract,
+  type KolamTableColumn,
+} from '../domain/kolam-table';
 import {
   buildKolamSupplierMonthlyTrendGraphItems,
   flattenKolamSupplierProductRows,
@@ -42,8 +47,17 @@ import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDashboardSalesGraphPlot } from './kolam-dashboard-sales-graph-plot';
+import {
+  getKolamDataTableColumnStyle,
+  KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+  KOLAM_DATA_TABLE_COLUMN_GAP,
+} from './kolam-data-table-column-style';
 import { KolamDataTableHeader } from './kolam-data-table-header';
 import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
+import {
+  KolamDataTableActionsTrack,
+  KolamDataTableMainTrack,
+} from './kolam-data-table-tracks';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import { KolamDescriptionList } from './kolam-description-list';
 import {
@@ -56,11 +70,13 @@ import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamLabelFieldDetailOverview } from './kolam-label-field-detail-overview';
 import { KolamNativeFormSection } from './kolam-native-form-section';
 import { KolamRemoteImage } from './kolam-remote-image';
+import { KolamSearchField } from './kolam-search-field';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamSwitch } from './kolam-switch';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
+import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 
 type SupplierSortMode = 'name-asc' | 'name-desc' | 'po-desc' | 'newest';
 type SupplierStatusFilter = 'all' | 'active' | 'inactive' | 'blacklisted';
@@ -126,6 +142,11 @@ function KolamSupplierList({
   const [openActionRowId, setOpenActionRowId] = React.useState<string | null>(
     null,
   );
+  const [tableBodyWidth, setTableBodyWidth] = React.useState(0);
+  const listColumns = React.useMemo(
+    () => fitSupplierListColumns(tableBodyWidth),
+    [tableBodyWidth],
+  );
 
   const summary = React.useMemo(
     () => getVendorSummary(controller.vendors),
@@ -167,6 +188,7 @@ function KolamSupplierList({
   const renderRow = React.useCallback(
     ({ item }: { item: KolamVendor }) => (
       <KolamSupplierRow
+        columns={listColumns}
         onDelete={() => setDeleteCandidate(item)}
         onEdit={() => {
           onRouteChange?.(`${KOLAM_SUPPLIER_ROOT}/${item.id}/edit`);
@@ -181,7 +203,7 @@ function KolamSupplierList({
         vendor={item}
       />
     ),
-    [controller, onRouteChange],
+    [controller, listColumns, onRouteChange],
   );
 
   return (
@@ -194,65 +216,71 @@ function KolamSupplierList({
       </View>
 
       <View style={styles.toolbarWrap}>
-        <View style={styles.toolbarShell}>
-          <View style={styles.filterRow}>
-            <KolamFormTextField
-              onChangeText={setSearch}
-              placeholder="Cari"
-              style={styles.searchInput}
-              value={search}
-            />
-            <KolamTableFilterTrigger
-              active={activeFilterPanel === 'status' || statusFilter !== 'all'}
-              label={statusFilterLabel}
-              onPress={() =>
-                setActiveFilterPanel(current =>
-                  current === 'status' ? null : 'status',
-                )
-              }
-            />
-            <KolamTableFilterTrigger
-              active={activeFilterPanel === 'sort' || sortMode !== 'name-asc'}
-              label={sortFilterLabel}
-              onPress={() =>
-                setActiveFilterPanel(current =>
-                  current === 'sort' ? null : 'sort',
-                )
-              }
-            />
-          </View>
-          <View style={styles.actionRow}>
-            {filtersAppliedCount > 0 ? (
+        <View style={kolamTableToolbarStyles.shell}>
+          <View style={kolamTableToolbarStyles.row}>
+            <View style={kolamTableToolbarStyles.filters}>
+              <KolamSearchField
+                containerStyle={kolamTableToolbarStyles.searchInput}
+                onChangeText={setSearch}
+                placeholder="Cari"
+                value={search}
+              />
+              <KolamTableFilterTrigger
+                active={activeFilterPanel === 'status' || statusFilter !== 'all'}
+                label={statusFilterLabel}
+                onPress={() =>
+                  setActiveFilterPanel(current =>
+                    current === 'status' ? null : 'status',
+                  )
+                }
+                open={activeFilterPanel === 'status'}
+                variant="quiet"
+              />
+              <KolamTableFilterTrigger
+                active={activeFilterPanel === 'sort' || sortMode !== 'name-asc'}
+                label={sortFilterLabel}
+                onPress={() =>
+                  setActiveFilterPanel(current =>
+                    current === 'sort' ? null : 'sort',
+                  )
+                }
+                open={activeFilterPanel === 'sort'}
+                variant="quiet"
+              />
+            </View>
+            <View style={kolamTableToolbarStyles.actions}>
+              {filtersAppliedCount > 0 ? (
+                <KolamButton
+                  label="Reset"
+                  muted
+                  onPress={() => {
+                    setSearch('');
+                    setStatusFilter('all');
+                    setSortMode('name-asc');
+                    setActiveFilterPanel(null);
+                    setPage(1);
+                  }}
+                  style={styles.toolbarButton}
+                />
+              ) : null}
               <KolamButton
-                label="Reset"
-                muted
+                disabled={controller.loading}
+                label="Muat ulang"
                 onPress={() => {
-                  setSearch('');
-                  setStatusFilter('all');
-                  setSortMode('name-asc');
-                  setActiveFilterPanel(null);
-                  setPage(1);
+                  void controller.onRefresh();
                 }}
                 style={styles.toolbarButton}
               />
-            ) : null}
-            <KolamButton
-              disabled={controller.loading}
-              label="Muat ulang"
-              onPress={() => {
-                void controller.onRefresh();
-              }}
-              style={styles.toolbarButton}
-            />
-            <KolamButton
-              intent="primary"
-              label="Baru"
-              onPress={() => {
-                controller.onCreateNew();
-                onRouteChange?.(`${KOLAM_SUPPLIER_ROOT}/create`);
-              }}
-              style={styles.toolbarButton}
-            />
+              <KolamButton
+                intent="primary"
+                label="Baru"
+                onPress={() => {
+                  controller.onCreateNew();
+                  onRouteChange?.(`${KOLAM_SUPPLIER_ROOT}/create`);
+                }}
+                style={styles.toolbarButton}
+              />
+            </View>
           </View>
         </View>
 
@@ -367,6 +395,7 @@ function KolamSupplierList({
           </KolamTableFooterControls>
         }
         style={styles.tableFrame}
+        onBodyWidthChange={setTableBodyWidth}
       >
         <FlatList
           contentContainerStyle={[
@@ -387,7 +416,7 @@ function KolamSupplierList({
             </View>
           }
           ListHeaderComponent={
-            <KolamDataTableHeader columns={getKolamTableColumns('supplier')} />
+            <KolamDataTableHeader columns={listColumns} />
           }
           removeClippedSubviews={false}
           renderItem={renderRow}
@@ -418,12 +447,14 @@ function KolamSupplierList({
 }
 
 function KolamSupplierRow({
+  columns,
   onDelete,
   onEdit,
   onMenuOpenChange,
   onSelect,
   vendor,
 }: {
+  columns: ReturnType<typeof getKolamTableColumns>;
   onDelete: () => void;
   onEdit: () => void;
   onMenuOpenChange?: (open: boolean) => void;
@@ -432,63 +463,118 @@ function KolamSupplierRow({
 }) {
   const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
   const thumb = vendor.photoUrls?.[0] || vendor.photos?.[0] || '';
+  const columnOf = React.useCallback(
+    (id: (typeof columns)[number]['id']) =>
+      columns.find(column => column.id === id),
+    [columns],
+  );
+  const primaryColumn = columnOf('primary');
+  const phoneColumn = columnOf('meta');
+  const emailColumn = columnOf('notes');
+  const poColumn = columnOf('children');
+  const statusColumn = columnOf('status');
+  const actionsColumn = columnOf('actions');
 
   return (
     <KolamDataTableRowFrame
       style={actionMenuOpen ? styles.activeActionRow : undefined}
     >
-      <Pressable onPress={onSelect} style={[styles.cell, styles.primaryCell]}>
-        <View style={styles.identity}>
-          {thumb ? (
-            <KolamRemoteImage
-              accessibilityLabel={`Foto ${vendor.name}`}
-              resizeMode="cover"
-              scope="vendor"
-              sourceUri={thumb}
-              style={styles.thumb}
+      <KolamDataTableMainTrack>
+        <Pressable
+          onPress={onSelect}
+          style={[
+            styles.listCell,
+            styles.identityCell,
+            primaryColumn ? getKolamDataTableColumnStyle(primaryColumn) : null,
+          ]}
+        >
+          <View style={styles.identity}>
+            {thumb ? (
+              <KolamRemoteImage
+                accessibilityLabel={`Foto ${vendor.name}`}
+                resizeMode="cover"
+                scope="vendor"
+                sourceUri={thumb}
+                style={styles.thumb}
+              />
+            ) : (
+              <View style={styles.thumbFallback}>
+                <Text style={styles.thumbFallbackText}>
+                  {vendor.name.slice(0, 1).toUpperCase()}
+                </Text>
+              </View>
+            )}
+            <KolamCopyStack
+              containerStyle={styles.identityCopy}
+              items={[
+                {
+                  id: 'name',
+                  text: vendor.name,
+                  style: styles.rowTitle,
+                  textProps: { numberOfLines: 1 },
+                },
+                {
+                  id: 'meta',
+                  text:
+                    [vendor.city, vendor.country].filter(Boolean).join(' · ') ||
+                    '—',
+                  style: styles.rowMeta,
+                  textProps: { numberOfLines: 1 },
+                },
+              ]}
             />
-          ) : (
-            <View style={styles.thumbFallback}>
-              <Text style={styles.thumbFallbackText}>
-                {vendor.name.slice(0, 1).toUpperCase()}
-              </Text>
-            </View>
-          )}
-          <KolamCopyStack
-            containerStyle={styles.identityCopy}
-            items={[
-              { id: 'name', text: vendor.name, style: styles.rowTitle },
-              {
-                id: 'meta',
-                text:
-                  [vendor.city, vendor.country].filter(Boolean).join(' · ') ||
-                  '—',
-                style: styles.rowMeta,
-              },
-            ]}
+          </View>
+        </Pressable>
+        <View
+          style={[
+            styles.listCell,
+            phoneColumn ? getKolamDataTableColumnStyle(phoneColumn) : null,
+          ]}
+        >
+          <Text numberOfLines={1} style={styles.cellText}>
+            {vendor.phone || '—'}
+          </Text>
+        </View>
+        <View
+          style={[
+            styles.listCell,
+            emailColumn ? getKolamDataTableColumnStyle(emailColumn) : null,
+          ]}
+        >
+          <Text numberOfLines={1} style={styles.cellText}>
+            {vendor.email || '—'}
+          </Text>
+        </View>
+        <View
+          style={[
+            styles.listCell,
+            poColumn ? getKolamDataTableColumnStyle(poColumn) : null,
+          ]}
+        >
+          <Text numberOfLines={1} style={styles.numText}>
+            {String(vendor.poCount)}
+          </Text>
+        </View>
+        <View
+          style={[
+            styles.listCell,
+            statusColumn ? getKolamDataTableColumnStyle(statusColumn) : null,
+          ]}
+        >
+          <KolamStatusBadge
+            intent={getKolamVendorStatusIntent(vendor.status)}
+            label={getKolamVendorStatusLabel(vendor.status)}
+            style={styles.centerBadge}
           />
         </View>
-      </Pressable>
-      <View style={[styles.cell, { width: 140 }]}>
-        <Text numberOfLines={2} style={styles.cellText}>
-          {vendor.phone || '—'}
-        </Text>
-      </View>
-      <View style={[styles.cell, { width: 180 }]}>
-        <Text numberOfLines={2} style={styles.cellText}>
-          {vendor.email || '—'}
-        </Text>
-      </View>
-      <View style={[styles.cell, { width: 100 }]}>
-        <Text style={styles.numText}>{vendor.poCount}</Text>
-      </View>
-      <View style={[styles.cell, { width: 120 }]}>
-        <KolamStatusBadge
-          intent={getKolamVendorStatusIntent(vendor.status)}
-          label={getKolamVendorStatusLabel(vendor.status)}
-        />
-      </View>
-      <View style={styles.overflowCell}>
+      </KolamDataTableMainTrack>
+      <KolamDataTableActionsTrack
+        style={styles.actionsTrack}
+        width={Math.max(
+          actionsColumn?.width ?? KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+          KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+        )}
+      >
         <KolamOverflowMenuButton
           accessibilityLabel={`Menu ${vendor.name}`}
           onOpenChange={open => {
@@ -501,7 +587,7 @@ function KolamSupplierRow({
             { label: 'Hapus', onPress: onDelete, tone: 'danger' },
           ]}
         />
-      </View>
+      </KolamDataTableActionsTrack>
     </KolamDataTableRowFrame>
   );
 }
@@ -535,15 +621,23 @@ function KolamSupplierDetail({
   );
 
   if (editable) {
+    const contextLabel =
+      controller.mode === 'new'
+        ? 'Pemasok baru'
+        : `Edit · ${controller.form.name?.trim() || vendor?.name || 'Pemasok'}`;
+
     return (
-      <View style={styles.stack}>
-        <View style={styles.toolbarWrap}>
-          <View style={styles.toolbarShell}>
-            <View style={styles.filterRow} />
-            <View style={styles.actionRow}>
+      <View style={styles.detailSurface}>
+        <View style={kolamTableToolbarStyles.shell}>
+          <View style={kolamTableToolbarStyles.row}>
+            <View style={kolamTableToolbarStyles.filters}>
+              <Text numberOfLines={1} style={styles.detailToolbarContext}>
+                {contextLabel}
+              </Text>
+            </View>
+            <View style={kolamTableToolbarStyles.actions}>
               <KolamButton
                 label="Daftar"
-                muted
                 onPress={() => {
                   controller.onBackToList();
                   onRouteChange?.(KOLAM_SUPPLIER_ROOT);
@@ -613,96 +707,106 @@ function KolamSupplierDetail({
   };
 
   return (
-    <View style={styles.stack}>
+    <View style={styles.detailSurface}>
       <View style={styles.toolbarWrap}>
-        <View style={styles.toolbarShell}>
-          <View style={styles.filterRow}>
-            <KolamTableFilterTrigger
-              active={
-                activeAnalyticsFilter === 'period' ||
-                Boolean(analyticsFilters.filterType)
-              }
-              label={periodLabel}
-              onPress={() =>
-                setActiveAnalyticsFilter(current =>
-                  current === 'period' ? null : 'period',
-                )
-              }
-            />
-            <KolamTableFilterTrigger
-              active={
-                activeAnalyticsFilter === 'year' ||
-                Boolean(analyticsFilters.year)
-              }
-              label={yearLabel}
-              onPress={() =>
-                setActiveAnalyticsFilter(current =>
-                  current === 'year' ? null : 'year',
-                )
-              }
-            />
-            <KolamTableFilterTrigger
-              active={
-                activeAnalyticsFilter === 'month' ||
-                Boolean(
-                  analyticsFilters.month &&
-                    analyticsFilters.filterType !== 'yearly',
-                )
-              }
-              label={monthLabel}
-              onPress={() =>
-                setActiveAnalyticsFilter(current =>
-                  current === 'month' ? null : 'month',
-                )
-              }
-            />
-          </View>
-          <View style={styles.actionRow}>
-            {analyticsFiltersApplied ? (
+        <View style={kolamTableToolbarStyles.shell}>
+          <View style={kolamTableToolbarStyles.row}>
+            <View style={kolamTableToolbarStyles.filters}>
+              <Text numberOfLines={1} style={styles.detailToolbarContext}>
+                {vendor.name}
+              </Text>
+              <KolamTableFilterTrigger
+                active={
+                  activeAnalyticsFilter === 'period' ||
+                  Boolean(analyticsFilters.filterType)
+                }
+                label={periodLabel}
+                onPress={() =>
+                  setActiveAnalyticsFilter(current =>
+                    current === 'period' ? null : 'period',
+                  )
+                }
+                open={activeAnalyticsFilter === 'period'}
+                variant="quiet"
+              />
+              <KolamTableFilterTrigger
+                active={
+                  activeAnalyticsFilter === 'year' ||
+                  Boolean(analyticsFilters.year)
+                }
+                label={yearLabel}
+                onPress={() =>
+                  setActiveAnalyticsFilter(current =>
+                    current === 'year' ? null : 'year',
+                  )
+                }
+                open={activeAnalyticsFilter === 'year'}
+                variant="quiet"
+              />
+              <KolamTableFilterTrigger
+                active={
+                  activeAnalyticsFilter === 'month' ||
+                  Boolean(
+                    analyticsFilters.month &&
+                      analyticsFilters.filterType !== 'yearly',
+                  )
+                }
+                label={monthLabel}
+                onPress={() =>
+                  setActiveAnalyticsFilter(current =>
+                    current === 'month' ? null : 'month',
+                  )
+                }
+                open={activeAnalyticsFilter === 'month'}
+                variant="quiet"
+              />
+            </View>
+            <View style={kolamTableToolbarStyles.actions}>
+              {analyticsFiltersApplied ? (
+                <KolamButton
+                  label="Reset"
+                  muted
+                  onPress={() => {
+                    setActiveAnalyticsFilter(null);
+                    void controller.onChangeAnalyticsFilters({});
+                  }}
+                  style={styles.toolbarButton}
+                />
+              ) : null}
               <KolamButton
-                label="Reset"
-                muted
+                disabled={controller.loading}
+                label="Refresh"
                 onPress={() => {
-                  setActiveAnalyticsFilter(null);
-                  void controller.onChangeAnalyticsFilters({});
+                  void controller.onSelectVendor(vendor);
                 }}
                 style={styles.toolbarButton}
               />
-            ) : null}
-            <KolamButton
-              disabled={controller.loading}
-              label="Muat ulang"
-              onPress={() => {
-                void controller.onSelectVendor(vendor);
-              }}
-              style={styles.toolbarButton}
-            />
-            <KolamButton
-              intent="primary"
-              label="Edit"
-              onPress={() => {
-                controller.onEdit();
-                onRouteChange?.(
-                  `${KOLAM_SUPPLIER_ROOT}/${vendor.id}/edit`,
-                );
-              }}
-              style={styles.toolbarButton}
-            />
-            <KolamButton
-              intent="danger"
-              label="Hapus"
-              onPress={() => setDeleteCandidate(vendor)}
-              style={styles.toolbarButton}
-            />
-            <KolamButton
-              label="Daftar"
-              muted
-              onPress={() => {
-                controller.onBackToList();
-                onRouteChange?.(KOLAM_SUPPLIER_ROOT);
-              }}
-              style={styles.toolbarButton}
-            />
+              <KolamButton
+                label="Daftar"
+                onPress={() => {
+                  controller.onBackToList();
+                  onRouteChange?.(KOLAM_SUPPLIER_ROOT);
+                }}
+                style={styles.toolbarButton}
+              />
+              <KolamButton
+                intent="primary"
+                label="Edit"
+                onPress={() => {
+                  controller.onEdit();
+                  onRouteChange?.(
+                    `${KOLAM_SUPPLIER_ROOT}/${vendor.id}/edit`,
+                  );
+                }}
+                style={styles.toolbarButton}
+              />
+              <KolamButton
+                intent="danger"
+                label="Hapus"
+                onPress={() => setDeleteCandidate(vendor)}
+                style={styles.toolbarButton}
+              />
+            </View>
           </View>
         </View>
 
@@ -2201,9 +2305,36 @@ function sortVendors(vendors: KolamVendor[], mode: SupplierSortMode) {
   return next;
 }
 
+function fitSupplierListColumns(containerWidth: number): KolamTableColumn[] {
+  return fitKolamDataTableColumns(
+    getKolamTableColumns('supplier'),
+    containerWidth,
+    {
+      actionsMinWidth: KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+      gap: KOLAM_DATA_TABLE_COLUMN_GAP,
+      paddingX: getKolamTableVisualContract().body.cellPaddingX * 2,
+      primaryMinWidth: 160,
+      secondaryMinWidth: 56,
+    },
+  );
+}
+
 const styles = StyleSheet.create({
   surface: {
-    gap: 12,
+    gap: 14,
+  },
+  detailSurface: {
+    gap: 14,
+  },
+  detailToolbarContext: {
+    color: V.colors.fg,
+    flexShrink: 1,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+    minWidth: 0,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
   },
   listSurface: {
     flex: 1,
@@ -2212,7 +2343,7 @@ const styles = StyleSheet.create({
   },
   listRoot: {
     flex: 1,
-    gap: 12,
+    gap: 14,
     minHeight: 0,
     overflow: 'visible',
   },
@@ -2221,45 +2352,6 @@ const styles = StyleSheet.create({
     overflow: 'visible',
     position: 'relative',
     zIndex: 100000,
-  },
-  toolbarShell: {
-    alignItems: 'center',
-    backgroundColor: V.colors.bg,
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    justifyContent: 'space-between',
-    overflow: 'visible',
-    padding: 4,
-  },
-  filterRow: {
-    alignItems: 'center',
-    flex: 1,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 4,
-    minWidth: 280,
-    overflow: 'visible',
-  },
-  actionRow: {
-    alignItems: 'center',
-    borderLeftColor: V.colors.border,
-    borderLeftWidth: 1,
-    flexDirection: 'row',
-    flexShrink: 0,
-    flexWrap: 'wrap',
-    gap: 6,
-    justifyContent: 'flex-end',
-    paddingLeft: 8,
-  },
-  searchInput: {
-    flexBasis: 140,
-    flexGrow: 1,
-    maxWidth: 220,
-    minWidth: 120,
   },
   toolbarButton: {
     flexShrink: 0,
@@ -2332,9 +2424,6 @@ const styles = StyleSheet.create({
   errorBadge: {
     alignSelf: 'stretch',
   },
-  stack: {
-    gap: 12,
-  },
   summaryGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -2373,6 +2462,23 @@ const styles = StyleSheet.create({
   },
   emptyWrap: {
     padding: 16,
+  },
+  listCell: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 0,
+    overflow: 'hidden',
+    paddingVertical: 4,
+  },
+  identityCell: {
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+  },
+  centerBadge: {
+    alignSelf: 'center',
+  },
+  actionsTrack: {
+    alignItems: 'center',
   },
   cell: {
     justifyContent: 'center',
@@ -2413,30 +2519,31 @@ const styles = StyleSheet.create({
   },
   rowTitle: {
     color: V.colors.fg,
-    fontSize: 14,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
     fontWeight: '700',
+    textAlign: 'left',
   },
   rowMeta: {
     color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
     fontSize: 12,
+    textAlign: 'left',
   },
   cellText: {
     color: V.colors.fg,
+    fontFamily: V.fontFamily,
     fontSize: 13,
+    textAlign: 'center',
+    width: '100%',
   },
   numText: {
     color: V.colors.fg,
+    fontFamily: V.fontFamily,
     fontSize: 13,
     fontWeight: '600',
-    textAlign: 'right',
-  },
-  overflowCell: {
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-    overflow: 'visible',
-    paddingHorizontal: 8,
-    width: 64,
-    zIndex: 9000,
+    textAlign: 'center',
+    width: '100%',
   },
   activeActionRow: {
     elevation: 96,
