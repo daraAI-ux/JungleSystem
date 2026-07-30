@@ -43,10 +43,14 @@ import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamHoverTooltip } from './kolam-hover-tooltip';
 import { KolamLabelFieldDetailOverview } from './kolam-label-field-detail-overview';
 import { KolamStatusBadge } from './kolam-status-badge';
+import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 
 type BrandSortMode = 'name-asc' | 'name-desc';
 type BrandAssetMode = 'none' | 'products-desc' | 'raws-desc';
+type BrandListFilterPanel = 'sort' | 'asset';
+
+const BRAND_FILTER_PANEL_WIDTH = 220;
 
 export function KolamBrandSurface({
   onRouteChange,
@@ -77,27 +81,20 @@ function KolamModuleShell({
   controller: KolamBrandController;
   onRouteChange?: (route: string) => void;
 }) {
+  const showDetailHeader = controller.mode !== 'list';
+
   return (
     <View style={styles.surface}>
-      <View style={styles.header}>
-        <View style={styles.headerActions}>
-          <KolamButton
-            disabled={controller.loading}
-            label="Refresh"
-            onPress={() => {
-              void controller.onRefresh();
-            }}
-          />
-          {controller.mode === 'list' ? (
+      {showDetailHeader ? (
+        <View style={styles.header}>
+          <View style={styles.headerActions}>
             <KolamButton
-              intent="primary"
-              label="Buat Baru"
+              disabled={controller.loading}
+              label="Refresh"
               onPress={() => {
-                controller.onCreateNew();
-                onRouteChange?.('/label-dan-field/merek/baru');
+                void controller.onRefresh();
               }}
             />
-          ) : (
             <KolamButton
               label="Daftar"
               onPress={() => {
@@ -105,9 +102,9 @@ function KolamModuleShell({
                 onRouteChange?.('/label-dan-field/merek');
               }}
             />
-          )}
+          </View>
         </View>
-      </View>
+      ) : null}
       {controller.error ? (
         <KolamStatusBadge
           intent="danger"
@@ -133,6 +130,12 @@ function KolamBrandList({
   const [search, setSearch] = React.useState('');
   const [pageSize, setPageSize] = React.useState(10);
   const [page, setPage] = React.useState(1);
+  const [activeFilterPanel, setActiveFilterPanel] =
+    React.useState<BrandListFilterPanel | null>(null);
+  const [panelAnchor, setPanelAnchor] = React.useState({ left: 0, top: 40 });
+  const toolbarRef = React.useRef<View>(null);
+  const sortTriggerRef = React.useRef<View>(null);
+  const assetTriggerRef = React.useRef<View>(null);
   const [deleteCandidate, setDeleteCandidate] =
     React.useState<KolamBrand | null>(null);
   const summary = getBrandSummary(controller.brands);
@@ -150,10 +153,53 @@ function KolamBrandList({
     (safePage - 1) * pageSize,
     safePage * pageSize,
   );
+  const sortFilterLabel = sortMode === 'name-desc' ? 'Nama Z-A' : 'Nama A-Z';
+  const assetFilterLabel =
+    assetMode === 'products-desc'
+      ? 'Produk'
+      : assetMode === 'raws-desc'
+        ? 'Bahan'
+        : 'Aset terbanyak';
+
+  const anchorFilterPanel = React.useCallback((panel: BrandListFilterPanel) => {
+    const toolbar = toolbarRef.current;
+    const trigger =
+      panel === 'asset' ? assetTriggerRef.current : sortTriggerRef.current;
+    if (!toolbar || !trigger) {
+      return;
+    }
+    toolbar.measureInWindow((toolbarX, toolbarY, toolbarWidth) => {
+      trigger.measureInWindow((x, y, _width, height) => {
+        const maxLeft = Math.max(0, toolbarWidth - BRAND_FILTER_PANEL_WIDTH);
+        const preferredLeft = x - toolbarX;
+        setPanelAnchor({
+          left: Math.min(Math.max(0, preferredLeft), maxLeft),
+          top: y - toolbarY + height + 4,
+        });
+      });
+    });
+  }, []);
+
+  const openFilterPanel = (panel: BrandListFilterPanel) => {
+    setActiveFilterPanel(current => {
+      const next = current === panel ? null : panel;
+      if (next) {
+        requestAnimationFrame(() => anchorFilterPanel(next));
+      }
+      return next;
+    });
+  };
 
   React.useEffect(() => {
     setPage(1);
   }, [assetMode, pageSize, search, sortMode]);
+
+  React.useEffect(() => {
+    if (!activeFilterPanel) {
+      return;
+    }
+    requestAnimationFrame(() => anchorFilterPanel(activeFilterPanel));
+  }, [activeFilterPanel, anchorFilterPanel]);
 
   return (
     <View style={styles.stack}>
@@ -163,34 +209,97 @@ function KolamBrandList({
         <SummaryTile label="Nonaktif" value={summary.inactive} />
         <SummaryTile label="Blacklisted" value={summary.blacklisted} />
       </View>
-      <View style={kolamTableToolbarStyles.row}>
-        <KolamFormTextField
-          onChangeText={setSearch}
-          placeholder="Cari merek..."
-          style={kolamTableToolbarStyles.searchInput}
-          value={search}
-        />
-        <View style={kolamTableToolbarStyles.controls}>
-          <KolamDropdownSelect<BrandSortMode>
-            label="Urutan"
-            onChange={setSortMode}
-            options={[
-              { label: 'Nama A-Z', value: 'name-asc' },
-              { label: 'Nama Z-A', value: 'name-desc' },
-            ]}
-            value={sortMode}
+      <View ref={toolbarRef} collapsable={false} style={styles.toolbarWrap}>
+        <View style={kolamTableToolbarStyles.row}>
+          <KolamFormTextField
+            onChangeText={setSearch}
+            placeholder="Cari merek..."
+            style={kolamTableToolbarStyles.searchInput}
+            value={search}
           />
-          <KolamDropdownSelect<BrandAssetMode>
-            label="Aset terbanyak"
-            onChange={setAssetMode}
-            options={[
-              { label: 'Semua', value: 'none' },
-              { label: 'Produk', value: 'products-desc' },
-              { label: 'Bahan', value: 'raws-desc' },
-            ]}
-            value={assetMode}
-          />
+          <View style={kolamTableToolbarStyles.controls}>
+            <View ref={sortTriggerRef} collapsable={false}>
+              <KolamTableFilterTrigger
+                active={activeFilterPanel === 'sort' || sortMode !== 'name-asc'}
+                label={sortFilterLabel}
+                onPress={() => openFilterPanel('sort')}
+              />
+            </View>
+            <View ref={assetTriggerRef} collapsable={false}>
+              <KolamTableFilterTrigger
+                active={activeFilterPanel === 'asset' || assetMode !== 'none'}
+                label={assetFilterLabel}
+                onPress={() => openFilterPanel('asset')}
+              />
+            </View>
+            <KolamButton
+              disabled={controller.loading}
+              label="Refresh"
+              onPress={() => {
+                void controller.onRefresh();
+              }}
+            />
+            <KolamButton
+              intent="primary"
+              label="Baru"
+              onPress={() => {
+                controller.onCreateNew();
+                onRouteChange?.('/label-dan-field/merek/baru');
+              }}
+            />
+          </View>
         </View>
+        {activeFilterPanel ? (
+          <View
+            style={[
+              styles.filterOverlayPanel,
+              {
+                left: panelAnchor.left,
+                top: panelAnchor.top,
+                width: BRAND_FILTER_PANEL_WIDTH,
+              },
+            ]}
+          >
+            {(activeFilterPanel === 'sort'
+              ? [
+                  { label: 'Nama A-Z', value: 'name-asc' as BrandSortMode },
+                  { label: 'Nama Z-A', value: 'name-desc' as BrandSortMode },
+                ]
+              : [
+                  { label: 'Semua', value: 'none' as BrandAssetMode },
+                  { label: 'Produk', value: 'products-desc' as BrandAssetMode },
+                  { label: 'Bahan', value: 'raws-desc' as BrandAssetMode },
+                ]
+            ).map(option => {
+              const selected =
+                activeFilterPanel === 'sort'
+                  ? option.value === sortMode
+                  : option.value === assetMode;
+              return (
+                <KolamButton
+                  intent={selected ? 'primary' : 'plain'}
+                  key={`${activeFilterPanel}-${option.value}`}
+                  label={option.label}
+                  onPress={() => {
+                    if (activeFilterPanel === 'sort') {
+                      setSortMode(option.value as BrandSortMode);
+                    } else {
+                      setAssetMode(option.value as BrandAssetMode);
+                    }
+                    setActiveFilterPanel(null);
+                  }}
+                  style={styles.filterPanelOption}
+                />
+              );
+            })}
+            <View style={styles.filterPanelFooter}>
+              <KolamButton
+                label="Tutup"
+                onPress={() => setActiveFilterPanel(null)}
+              />
+            </View>
+          </View>
+        ) : null}
       </View>
       <KolamCatalogListTableShell
         footer={
@@ -872,6 +981,36 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 12,
     fontWeight: '800',
+  },
+  toolbarWrap: {
+    elevation: 1000,
+    overflow: 'visible',
+    position: 'relative',
+    zIndex: 100000,
+  },
+  filterOverlayPanel: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    elevation: 1200,
+    gap: 4,
+    padding: 6,
+    position: 'absolute',
+    shadowColor: V.colors.fg,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    zIndex: 120000,
+  },
+  filterPanelOption: {
+    justifyContent: 'flex-start',
+  },
+  filterPanelFooter: {
+    borderTopColor: V.colors.border,
+    borderTopWidth: 1,
+    marginTop: 4,
+    paddingTop: 6,
   },
   emptyWrap: {
     padding: 16,
