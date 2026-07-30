@@ -10,6 +10,7 @@ export type KolamTableId =
   | 'location-enclosure'
   | 'location-product'
   | 'packing-material'
+  | 'product'
   | 'product-serial'
   | 'production'
   | 'production-materials'
@@ -355,6 +356,60 @@ const kolamTableColumns: Record<KolamTableId, KolamTableColumn[]> = {
     { id: 'raws', label: 'Stok', align: 'right', width: 72 },
     { id: 'status', label: 'Status', align: 'right', width: 104 },
     { id: 'actions', label: 'Aksi', align: 'right', width: 56 },
+  ],
+  product: [
+    // Manual widths (preferred); fitProductListColumns fills the measured body.
+    {
+      id: 'primary',
+      label: 'Nama',
+      align: 'left',
+      headerAlign: 'left',
+      width: 260,
+    },
+    {
+      id: 'meta',
+      label: 'SKU',
+      align: 'center',
+      headerAlign: 'center',
+      width: 110,
+    },
+    {
+      id: 'price',
+      label: 'Merek',
+      align: 'center',
+      headerAlign: 'center',
+      width: 130,
+    },
+    {
+      id: 'amount',
+      label: 'Harga Jual',
+      align: 'center',
+      headerAlign: 'center',
+      width: 130,
+    },
+    {
+      id: 'products',
+      label: 'Stok',
+      align: 'center',
+      headerAlign: 'center',
+      width: 100,
+    },
+    {
+      id: 'marketplace',
+      label: 'Sinkron Terakhir',
+      align: 'center',
+      headerAlign: 'center',
+      width: 150,
+    },
+    {
+      id: 'children',
+      label: 'Informasi',
+      align: 'center',
+      headerAlign: 'center',
+      width: 120,
+    },
+    // 8th column: blank header, overflow actions in the body.
+    { id: 'actions', label: '', align: 'center', headerAlign: 'center', width: 64 },
   ],
   'iucn-status': [
     {

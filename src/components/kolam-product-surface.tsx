@@ -14,7 +14,11 @@ import {
   getCustomFieldTypeLabel,
   type KolamCustomField,
 } from '../domain/kolam-custom-field';
-import type { KolamTableColumn } from '../domain/kolam-table';
+import {
+  getKolamTableColumns,
+  getKolamTableVisualContract,
+  type KolamTableColumn,
+} from '../domain/kolam-table';
 import {
   createEmptyKolamProductVendorPriceFormRow,
   getKolamProductCatalogKind,
@@ -63,8 +67,17 @@ import {
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamControlTabList } from './kolam-control-tab-list';
 import { KolamCustomFieldIcon } from './kolam-custom-field-icon';
+import {
+  getKolamDataTableColumnStyle,
+  KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+  KOLAM_DATA_TABLE_COLUMN_GAP,
+} from './kolam-data-table-column-style';
 import { KolamDataTableHeader } from './kolam-data-table-header';
 import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
+import {
+  KolamDataTableActionsTrack,
+  KolamDataTableMainTrack,
+} from './kolam-data-table-tracks';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import { KolamExportDialog } from './kolam-export-dialog';
 import { KolamMarketplacePriceSyncDialog } from './kolam-marketplace-price-sync-dialog';
@@ -108,6 +121,7 @@ import {
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamGrocerPricingTiersEditor } from './kolam-grocer-pricing-tiers-editor';
+import { KolamSearchField } from './kolam-search-field';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
@@ -129,17 +143,6 @@ const PRODUCT_EXTERNAL_LINK_OPTIONS: Array<{
   { label: 'Tautan Lain', value: 'other_link' },
 ];
 
-const PRODUCT_COLUMNS: KolamTableColumn[] = [
-  { id: 'primary', label: 'Nama', align: 'left' },
-  { id: 'meta', label: 'SKU', align: 'left', width: 86 },
-  { id: 'price', label: 'Merek', align: 'left', width: 130 },
-  { id: 'amount', label: 'Harga Jual', align: 'right', width: 112 },
-  { id: 'products', label: 'Stok', align: 'right', width: 86 },
-  { id: 'marketplace', label: 'Sinkron Terakhir', align: 'left', width: 132 },
-  { id: 'children', label: 'Informasi', align: 'left', width: 96 },
-  { id: 'actions', label: '', align: 'right', width: 54 },
-];
-
 const RAW_COLUMNS: KolamTableColumn[] = [
   { id: 'primary', label: 'Nama', align: 'left' },
   { id: 'meta', label: 'Kode Produk', align: 'left', width: 118 },
@@ -156,6 +159,57 @@ const STOCK_OPTIONS = [
   { label: 'Stok habis', value: 'out_of_stock' },
   { label: 'Stok rendah', value: 'low_stock' },
 ];
+
+function fitProductListColumns(containerWidth: number): KolamTableColumn[] {
+  const base = getKolamTableColumns('product');
+  if (containerWidth <= 0) {
+    return base;
+  }
+
+  const gap = KOLAM_DATA_TABLE_COLUMN_GAP;
+  const paddingX = getKolamTableVisualContract().body.cellPaddingX * 2;
+  const actionsWidth = KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH;
+  const gapsTotal = gap * Math.max(0, base.length - 1);
+  const contentBudget = Math.max(
+    0,
+    containerWidth - paddingX - gapsTotal - actionsWidth,
+  );
+  const contentColumns = base.filter(column => column.id !== 'actions');
+  const secondaryColumns = contentColumns.filter(
+    column => column.id !== 'primary',
+  );
+  // Nama produk (varian panjang) butuh ruang lebih dari equal-fit.
+  const primaryWeight = 2.2;
+  const secondaryWeight = 1;
+  const totalWeight =
+    primaryWeight + secondaryWeight * Math.max(1, secondaryColumns.length);
+  const unit = contentBudget / totalWeight;
+  const primaryWidth = Math.max(220, Math.floor(unit * primaryWeight));
+  const secondaryWidth = Math.max(72, Math.floor(unit * secondaryWeight));
+  let remainder =
+    contentBudget - primaryWidth - secondaryWidth * secondaryColumns.length;
+  const lastSecondaryId = secondaryColumns[secondaryColumns.length - 1]?.id;
+
+  return base.map(column => {
+    if (column.id === 'actions') {
+      return { ...column, width: actionsWidth };
+    }
+
+    if (column.id === 'primary') {
+      return { ...column, width: primaryWidth };
+    }
+
+    const extra = column.id === lastSecondaryId ? remainder : 0;
+    if (column.id === lastSecondaryId) {
+      remainder = 0;
+    }
+
+    return {
+      ...column,
+      width: secondaryWidth + extra,
+    };
+  });
+}
 
 type ProductListFilterPanel = 'category' | 'brand' | 'stock';
 
@@ -199,7 +253,12 @@ export function KolamProductSurface({
   const isRawCatalog = catalogKind === 'raw';
   const listRoute = isRawCatalog ? '/raw-materials' : '/products';
   const createRoute = isRawCatalog ? '/raw-materials/create' : '/products/create';
-  const tableColumns = isRawCatalog ? RAW_COLUMNS : PRODUCT_COLUMNS;
+  const [tableBodyWidth, setTableBodyWidth] = React.useState(0);
+  const productListColumns = React.useMemo(
+    () => fitProductListColumns(tableBodyWidth),
+    [tableBodyWidth],
+  );
+  const tableColumns = isRawCatalog ? RAW_COLUMNS : productListColumns;
   const exportTitle = isRawCatalog ? 'Ekspor Bahan Baku' : 'Ekspor Produk';
   const exportStorageKey = isRawCatalog ? 'export.raw-materials.v1' : 'export.products.v1';
   const exportFilenameHint = isRawCatalog ? 'raw-materials' : 'products';
@@ -367,10 +426,10 @@ export function KolamProductSurface({
           <View style={kolamTableToolbarStyles.shell}>
             <View style={kolamTableToolbarStyles.row}>
               <View style={kolamTableToolbarStyles.filters}>
-                <KolamFormTextField
+                <KolamSearchField
+                  containerStyle={kolamTableToolbarStyles.searchInput}
                   onChangeText={controller.onSearchChange}
                   placeholder="Cari"
-                  style={kolamTableToolbarStyles.searchInput}
                   value={controller.filters.search}
                 />
                 <View ref={categoryTriggerRef} collapsable={false}>
@@ -381,6 +440,7 @@ export function KolamProductSurface({
                     }
                     label={categoryFilterLabel}
                     onPress={() => openFilterPanel('category')}
+                    variant="quiet"
                   />
                 </View>
                 <View ref={brandTriggerRef} collapsable={false}>
@@ -390,6 +450,7 @@ export function KolamProductSurface({
                     }
                     label={brandFilterLabel}
                     onPress={() => openFilterPanel('brand')}
+                    variant="quiet"
                   />
                 </View>
                 {!isRawCatalog ? (
@@ -400,11 +461,19 @@ export function KolamProductSurface({
                       }
                       label={stockFilterLabel}
                       onPress={() => openFilterPanel('stock')}
+                      variant="quiet"
                     />
                   </View>
                 ) : null}
               </View>
               <View style={kolamTableToolbarStyles.actions}>
+                <KolamButton
+                  disabled={controller.loading}
+                  label="Refresh"
+                  onPress={() => {
+                    void controller.onRefresh();
+                  }}
+                />
                 {hasActiveListFilters ? (
                   <KolamButton
                     label="Reset"
@@ -528,6 +597,7 @@ export function KolamProductSurface({
               ) : null}
             </KolamTableFooterControls>
           }
+          onBodyWidthChange={setTableBodyWidth}
           style={[styles.tableFrame, styles.listTableFrame]}
         >
           <FlatList
@@ -551,6 +621,7 @@ export function KolamProductSurface({
             }
             renderItem={({ item: product }) => (
               <ProductRow
+                columns={tableColumns}
                 isRawCatalog={isRawCatalog}
                 onArchive={() => setPendingAction({ type: 'archive', product })}
                 onBarcode={() => {
@@ -845,6 +916,7 @@ function normalizeProductFilterQuery(value: string) {
 }
 
 function ProductRow({
+  columns,
   isRawCatalog,
   onArchive,
   onBarcode,
@@ -857,6 +929,7 @@ function ProductRow({
   onTogglePin,
   product,
 }: {
+  columns: KolamTableColumn[];
   isRawCatalog: boolean;
   onArchive: () => void;
   onBarcode: () => void;
@@ -869,29 +942,31 @@ function ProductRow({
   onTogglePin: () => void;
   product: KolamProduct;
 }) {
-  const thumbnailUri = isRawCatalog
-    ? getRawListThumbnailUri(product)
-    : product.thumbnailUri || product.photoUris[0] || '';
+  const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
   const productCode = getProductCode(product);
   const rawProductCode = product.productCode.trim();
-  const labels = getVisibleProductLabels(product);
 
-  return (
-    <KolamDataTableRowFrame style={styles.tableRow}>
-      <View style={styles.productPrimaryCell}>
-        <View style={styles.thumbnailFrame}>
-          {thumbnailUri ? (
-            <KolamRemoteImage
-              accessibilityLabel={`Foto ${product.name}`}
-              resizeMode="cover"
-              revision={product.updatedAt || thumbnailUri || product.id}
-              scope="product"
-              sourceUri={thumbnailUri}
-              style={styles.thumbnail}
-            />
-          ) : null}
-        </View>
-        {isRawCatalog ? (
+  // Raw material (Bahan Baku) list shares this row renderer but keeps its own
+  // untouched chrome; only the Product branch below was restyled.
+  if (isRawCatalog) {
+    const thumbnailUri = getRawListThumbnailUri(product);
+    const labels = getVisibleProductLabels(product);
+
+    return (
+      <KolamDataTableRowFrame style={styles.tableRow}>
+        <View style={styles.productPrimaryCell}>
+          <View style={styles.thumbnailFrame}>
+            {thumbnailUri ? (
+              <KolamRemoteImage
+                accessibilityLabel={`Foto ${product.name}`}
+                resizeMode="cover"
+                revision={product.updatedAt || thumbnailUri || product.id}
+                scope="product"
+                sourceUri={thumbnailUri}
+                style={styles.thumbnail}
+              />
+            ) : null}
+          </View>
           <View style={styles.productCopy}>
             <Text style={styles.productName}>{product.name}</Text>
             {labels.length ? (
@@ -902,7 +977,105 @@ function ProductRow({
               </View>
             ) : null}
           </View>
-        ) : (
+        </View>
+        <Text selectable style={styles.rawCodeCell}>
+          {product.productCode || '-'}
+        </Text>
+        <View style={styles.brandCell}>
+          {product.brands.length ? (
+            <View style={styles.brandLogoRow}>
+              {product.brands.slice(0, 3).map(brand => (
+                <View key={brand.id || brand.name} style={styles.brandLogoFrame}>
+                  {brand.logoUri ? (
+                    <KolamRemoteImage
+                      accessibilityLabel={`Logo ${brand.name}`}
+                      resizeMode="contain"
+                      revision={brand.logoUri}
+                      scope="product-brand"
+                      sourceUri={brand.logoUri}
+                      style={styles.brandLogoImage}
+                    />
+                  ) : (
+                    <Text style={styles.brandLogoInitials} numberOfLines={1}>
+                      {getBrandInitials(brand.name)}
+                    </Text>
+                  )}
+                </View>
+              ))}
+              {product.brands.length > 3 ? (
+                <Text style={styles.brandLogoOverflowText}>+{product.brands.length - 3}</Text>
+              ) : null}
+            </View>
+          ) : (
+            <Text style={styles.mutedText}>-</Text>
+          )}
+        </View>
+        <View style={styles.rawVariantCell}>
+          <Text style={styles.mutedText}>
+            {product.hasVariants ? 'Produk varian' : 'Produk standar'}
+          </Text>
+        </View>
+        <Text style={styles.rawStockCell}>{formatRawListStock(product)}</Text>
+        <View style={styles.rawStatusCell}>
+          <KolamBadge
+            intent={product.sellable ? 'success' : 'secondary'}
+            label={product.sellable ? 'Dapat dijual' : 'Tidak dijual'}
+          />
+        </View>
+        <View style={styles.actionCell}>
+          <KolamOverflowMenuButton
+            actions={[
+              { label: 'Lihat', onPress: onDetail },
+              { label: 'Rubah', onPress: onEdit },
+              {
+                disabled: !rawProductCode,
+                label: 'Salin Kode Produk',
+                onPress: () => void copyTextToClipboard(rawProductCode),
+              },
+              { label: 'Duplikat Data', onPress: onDuplicate },
+              { label: 'Hapus', onPress: onDelete, tone: 'danger' },
+            ]}
+          />
+        </View>
+      </KolamDataTableRowFrame>
+    );
+  }
+
+  const thumbnailUri = product.thumbnailUri || product.photoUris[0] || '';
+  const columnOf = (id: KolamTableColumn['id']) =>
+    columns.find(column => column.id === id);
+  const primaryColumn = columnOf('primary');
+  const metaColumn = columnOf('meta');
+  const priceColumn = columnOf('price');
+  const amountColumn = columnOf('amount');
+  const stockColumn = columnOf('products');
+  const marketplaceColumn = columnOf('marketplace');
+  const infoColumn = columnOf('children');
+  const actionsColumn = columnOf('actions');
+
+  return (
+    <KolamDataTableRowFrame
+      style={actionMenuOpen ? styles.activeActionRow : styles.tableRow}
+    >
+      <KolamDataTableMainTrack style={styles.mainTrackVisible}>
+        <View
+          style={[
+            styles.primaryCell,
+            primaryColumn ? getKolamDataTableColumnStyle(primaryColumn) : null,
+          ]}
+        >
+          <View style={styles.thumbnailFrame}>
+            {thumbnailUri ? (
+              <KolamRemoteImage
+                accessibilityLabel={`Foto ${product.name}`}
+                resizeMode="cover"
+                revision={product.updatedAt || thumbnailUri || product.id}
+                scope="product"
+                sourceUri={thumbnailUri}
+                style={styles.thumbnail}
+              />
+            ) : null}
+          </View>
           <KolamCopyStack
             containerStyle={styles.productCopy}
             items={[
@@ -914,99 +1087,118 @@ function ProductRow({
               },
             ]}
           />
+        </View>
+        <View
+          style={[
+            styles.cell,
+            metaColumn ? getKolamDataTableColumnStyle(metaColumn) : null,
+          ]}
+        >
+          <Text numberOfLines={1} selectable style={styles.skuCell}>
+            {product.sku || product.productCode || '-'}
+          </Text>
+        </View>
+        <View
+          style={[
+            styles.cell,
+            priceColumn ? getKolamDataTableColumnStyle(priceColumn) : null,
+          ]}
+        >
+          {product.brands.length ? (
+            <View style={styles.brandLogoRow}>
+              {product.brands.slice(0, 3).map(brand => (
+                <View key={brand.id || brand.name} style={styles.brandLogoFrame}>
+                  {brand.logoUri ? (
+                    <KolamRemoteImage
+                      accessibilityLabel={`Logo ${brand.name}`}
+                      resizeMode="contain"
+                      revision={brand.logoUri}
+                      scope="product-brand"
+                      sourceUri={brand.logoUri}
+                      style={styles.brandLogoImage}
+                    />
+                  ) : (
+                    <Text style={styles.brandLogoInitials} numberOfLines={1}>
+                      {getBrandInitials(brand.name)}
+                    </Text>
+                  )}
+                </View>
+              ))}
+              {product.brands.length > 3 ? (
+                <Text style={styles.brandLogoOverflowText}>+{product.brands.length - 3}</Text>
+              ) : null}
+            </View>
+          ) : (
+            <Text style={styles.mutedText}>-</Text>
+          )}
+        </View>
+        <View
+          style={[
+            styles.cell,
+            amountColumn ? getKolamDataTableColumnStyle(amountColumn) : null,
+          ]}
+        >
+          <Text numberOfLines={1} style={styles.rowTextCenter}>
+            {formatCurrency(product.priceToSell)}
+          </Text>
+        </View>
+        <View
+          style={[
+            styles.cell,
+            stockColumn ? getKolamDataTableColumnStyle(stockColumn) : null,
+          ]}
+        >
+          <Text numberOfLines={1} style={styles.rowTextCenter}>
+            {formatStock(product)}
+          </Text>
+        </View>
+        <View
+          style={[
+            styles.cell,
+            marketplaceColumn ? getKolamDataTableColumnStyle(marketplaceColumn) : null,
+          ]}
+        >
+          {renderSyncCell(product)}
+        </View>
+        <View
+          style={[
+            styles.cell,
+            infoColumn ? getKolamDataTableColumnStyle(infoColumn) : null,
+          ]}
+        >
+          {renderInfoBadges(product)}
+        </View>
+      </KolamDataTableMainTrack>
+      <KolamDataTableActionsTrack
+        style={styles.actionsTrack}
+        width={Math.max(
+          actionsColumn?.width ?? KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+          KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
         )}
-      </View>
-      <Text selectable style={isRawCatalog ? styles.rawCodeCell : styles.skuCell}>
-        {isRawCatalog ? product.productCode || '-' : product.sku || product.productCode || '-'}
-      </Text>
-      <View style={styles.brandCell}>
-        {product.brands.length ? (
-          <View style={styles.brandLogoRow}>
-            {product.brands.slice(0, 3).map(brand => (
-              <View key={brand.id || brand.name} style={styles.brandLogoFrame}>
-                {brand.logoUri ? (
-                  <KolamRemoteImage
-                    accessibilityLabel={`Logo ${brand.name}`}
-                    resizeMode="contain"
-                    revision={brand.logoUri}
-                    scope="product-brand"
-                    sourceUri={brand.logoUri}
-                    style={styles.brandLogoImage}
-                  />
-                ) : (
-                  <Text style={styles.brandLogoInitials} numberOfLines={1}>
-                    {getBrandInitials(brand.name)}
-                  </Text>
-                )}
-              </View>
-            ))}
-            {product.brands.length > 3 ? (
-              <Text style={styles.brandLogoOverflowText}>+{product.brands.length - 3}</Text>
-            ) : null}
-          </View>
-        ) : (
-          <Text style={styles.mutedText}>-</Text>
-        )}
-      </View>
-      {isRawCatalog ? (
-        <>
-          <View style={styles.rawVariantCell}>
-            <Text style={styles.mutedText}>
-              {product.hasVariants ? 'Produk varian' : 'Produk standar'}
-            </Text>
-          </View>
-          <Text style={styles.rawStockCell}>{formatRawListStock(product)}</Text>
-          <View style={styles.rawStatusCell}>
-            <KolamBadge
-              intent={product.sellable ? 'success' : 'secondary'}
-              label={product.sellable ? 'Dapat dijual' : 'Tidak dijual'}
-            />
-          </View>
-        </>
-      ) : (
-        <>
-          <Text style={styles.amountCell}>{formatCurrency(product.priceToSell)}</Text>
-          <Text style={styles.stockCell}>{formatStock(product)}</Text>
-          <View style={styles.syncCell}>{renderSyncCell(product)}</View>
-          <View style={styles.infoCell}>{renderInfoBadges(product)}</View>
-        </>
-      )}
-      <View style={styles.actionCell}>
+      >
         <KolamOverflowMenuButton
-          actions={
-            isRawCatalog
-              ? [
-                  { label: 'Lihat', onPress: onDetail },
-                  { label: 'Rubah', onPress: onEdit },
-                  {
-                    disabled: !rawProductCode,
-                    label: 'Salin Kode Produk',
-                    onPress: () => void copyTextToClipboard(rawProductCode),
-                  },
-                  { label: 'Duplikat Data', onPress: onDuplicate },
-                  { label: 'Hapus', onPress: onDelete, tone: 'danger' },
-                ]
-              : [
-                  { label: 'Lihat', onPress: onDetail },
-                  { label: 'Lihat lisensi / stok', onPress: onLicense },
-                  { label: 'Rubah', onPress: onEdit },
-                  { label: 'Sinkron ke Tokopedia', onPress: () => onSyncStock(['tokopedia']) },
-                  { label: 'Sinkron ke Shopee', onPress: () => onSyncStock(['shopee']) },
-                  { label: 'Sinkron ke Keduanya', onPress: () => onSyncStock(['tokopedia', 'shopee']) },
-                  {
-                    disabled: !productCode,
-                    label: product.type === 'raw' ? 'Salin Kode Produk' : 'Salin SKU',
-                    onPress: () => void copyTextToClipboard(productCode),
-                  },
-                  { disabled: !productCode, label: 'Buat Barcode', onPress: onBarcode },
-                  { label: 'Duplikat Data', onPress: onDuplicate },
-                  { label: product.isPinned ? 'Lepas Pin' : 'Pin', onPress: onTogglePin },
-                  { label: 'Arsipkan', onPress: onArchive },
-                  { label: 'Hapus', onPress: onDelete, tone: 'danger' },
-                ]
-          }
+          accessibilityLabel={`Menu ${product.name}`}
+          onOpenChange={setActionMenuOpen}
+          actions={[
+            { label: 'Lihat', onPress: onDetail },
+            { label: 'Lihat lisensi / stok', onPress: onLicense },
+            { label: 'Rubah', onPress: onEdit },
+            { label: 'Sinkron ke Tokopedia', onPress: () => onSyncStock(['tokopedia']) },
+            { label: 'Sinkron ke Shopee', onPress: () => onSyncStock(['shopee']) },
+            { label: 'Sinkron ke Keduanya', onPress: () => onSyncStock(['tokopedia', 'shopee']) },
+            {
+              disabled: !productCode,
+              label: product.type === 'raw' ? 'Salin Kode Produk' : 'Salin SKU',
+              onPress: () => void copyTextToClipboard(productCode),
+            },
+            { disabled: !productCode, label: 'Buat Barcode', onPress: onBarcode },
+            { label: 'Duplikat Data', onPress: onDuplicate },
+            { label: product.isPinned ? 'Lepas Pin' : 'Pin', onPress: onTogglePin },
+            { label: 'Arsipkan', onPress: onArchive },
+            { label: 'Hapus', onPress: onDelete, tone: 'danger' },
+          ]}
         />
-      </View>
+      </KolamDataTableActionsTrack>
     </KolamDataTableRowFrame>
   );
 }
@@ -8049,12 +8241,46 @@ const styles = StyleSheet.create({
   tableRow: {
     alignItems: 'stretch',
   },
+  activeActionRow: {
+    elevation: 30,
+    overflow: 'visible',
+    zIndex: 1000,
+  },
+  mainTrackVisible: {
+    overflow: 'visible',
+  },
+  cell: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 0,
+    overflow: 'hidden',
+    paddingVertical: 4,
+  },
+  actionsTrack: {
+    alignItems: 'center',
+  },
   productPrimaryCell: {
     alignItems: 'center',
     flex: 1,
     flexDirection: 'row',
     gap: 12,
     minWidth: 0,
+  },
+  primaryCell: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'flex-start',
+    minWidth: 0,
+    paddingVertical: 4,
+  },
+  rowTextCenter: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '700',
+    lineHeight: 20,
+    textAlign: 'center',
+    width: '100%',
   },
   thumbnailFrame: {
     backgroundColor: V.colors.secondary,
@@ -8089,7 +8315,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     lineHeight: 18,
-    width: 86,
+    textAlign: 'center',
   },
   rawCodeCell: {
     color: V.colors.fg,
@@ -8133,22 +8359,6 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     lineHeight: 14,
   },
-  amountCell: {
-    color: V.colors.fg,
-    fontSize: 13,
-    fontWeight: '700',
-    lineHeight: 20,
-    textAlign: 'right',
-    width: 112,
-  },
-  stockCell: {
-    color: V.colors.fg,
-    fontSize: 13,
-    fontWeight: '700',
-    lineHeight: 20,
-    textAlign: 'right',
-    width: 86,
-  },
   rawVariantCell: {
     justifyContent: 'center',
     width: 122,
@@ -8165,10 +8375,6 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     width: 118,
   },
-  syncCell: {
-    gap: 4,
-    width: 132,
-  },
   syncLine: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -8179,9 +8385,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '800',
     width: 22,
-  },
-  infoCell: {
-    width: 96,
   },
   infoBadges: {
     alignItems: 'center',
