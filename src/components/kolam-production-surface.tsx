@@ -29,7 +29,12 @@ import {
   type KolamProductForProduction,
   type KolamSubmitCheckBreakdownEntry,
 } from '../domain/kolam-production';
-import { applyKolamAdaptiveColumnWidths, getKolamTableColumns } from '../domain/kolam-table';
+import {
+  applyKolamAdaptiveColumnWidths,
+  fitKolamDataTableColumns,
+  getKolamTableColumns,
+  getKolamTableVisualContract,
+} from '../domain/kolam-table';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { useKolamAuthContext } from '../context/kolam-app-contexts';
 import { formatRupiah } from '../lib/money';
@@ -43,7 +48,12 @@ import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
-import { getKolamDataTableColumnStyle } from './kolam-data-table-column-style';
+import {
+  getKolamDataTableColumnStyle,
+  KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+  KOLAM_DATA_TABLE_COLUMN_GAP,
+  KOLAM_DATA_TABLE_PRIMARY_MIN_WIDTH,
+} from './kolam-data-table-column-style';
 import { KolamDataTableHeader } from './kolam-data-table-header';
 import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
 import { KolamDateField } from './kolam-date-field';
@@ -128,6 +138,7 @@ function KolamProductionList({
   const [activeStatusPanel, setActiveStatusPanel] = React.useState(false);
   const [deleteCandidate, setDeleteCandidate] = React.useState<KolamProduction | null>(null);
   const [restoreCandidate, setRestoreCandidate] = React.useState<KolamProduction | null>(null);
+  const [tableBodyWidth, setTableBodyWidth] = React.useState(0);
 
   React.useEffect(() => {
     setSearchInput(controller.filters.search);
@@ -148,9 +159,10 @@ function KolamProductionList({
     ? getKolamProductionStatusLabel(controller.filters.status)
     : 'Status';
 
-  const listColumns = React.useMemo(
-    () =>
-      applyKolamAdaptiveColumnWidths(getKolamTableColumns('production'), [
+  const listColumns = React.useMemo(() => {
+    const preferred = applyKolamAdaptiveColumnWidths(
+      getKolamTableColumns('production'),
+      [
         {
           id: 'meta',
           values: controller.productions.map(item =>
@@ -218,9 +230,17 @@ function KolamProductionList({
           maxWidth: 64,
           padding: 0,
         },
-      ]),
-    [controller.productions],
-  );
+      ],
+    );
+
+    return fitKolamDataTableColumns(preferred, tableBodyWidth, {
+      actionsMinWidth: KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+      gap: KOLAM_DATA_TABLE_COLUMN_GAP,
+      paddingX: getKolamTableVisualContract().body.cellPaddingX * 2,
+      primaryMinWidth: KOLAM_DATA_TABLE_PRIMARY_MIN_WIDTH,
+      secondaryMinWidth: 48,
+    });
+  }, [controller.productions, tableBodyWidth]);
 
   const renderRow = React.useCallback(
     ({ item }: { item: KolamProduction }) => (
@@ -336,6 +356,7 @@ function KolamProductionList({
             ) : null}
           </KolamTableFooterControls>
         }
+        onBodyWidthChange={setTableBodyWidth}
         style={styles.tableFrame}
       >
         <FlatList

@@ -425,6 +425,123 @@ export function applyKolamAdaptiveColumnWidths(
   });
 }
 
+export interface FitKolamDataTableColumnsOptions {
+  /** Row gap between cells. */
+  gap?: number;
+  /** Total horizontal padding on the row (left + right). */
+  paddingX?: number;
+  /** Minimum width reserved for the primary/name column. */
+  primaryMinWidth?: number;
+  /** Minimum width reserved for the overflow-actions column. */
+  actionsMinWidth?: number;
+  /** Floor when shrinking secondary columns. */
+  secondaryMinWidth?: number;
+}
+
+/**
+ * Fit preferred column widths into the measured table body width (no horizontal scroll).
+ * Reserves actions + primary min first, then scales secondary columns down if needed.
+ * Primary keeps `width` unset so the shared cell style can flex into remaining space.
+ */
+export function fitKolamDataTableColumns(
+  columns: KolamTableColumn[],
+  containerWidth: number,
+  options: FitKolamDataTableColumnsOptions = {},
+): KolamTableColumn[] {
+  if (containerWidth <= 0 || columns.length === 0) {
+    return columns.map(column => ({ ...column }));
+  }
+
+  const gap = options.gap ?? 16;
+  const paddingX = options.paddingX ?? 40;
+  const primaryMinWidth = options.primaryMinWidth ?? 180;
+  const actionsMinWidth = options.actionsMinWidth ?? 64;
+  const secondaryMinWidth = options.secondaryMinWidth ?? 48;
+
+  const gapsTotal = gap * Math.max(0, columns.length - 1);
+  const budget = Math.max(0, containerWidth - paddingX - gapsTotal);
+
+  const actionsPreferred =
+    columns.find(column => column.id === 'actions')?.width ?? actionsMinWidth;
+  const actionsWidth = Math.max(actionsPreferred, actionsMinWidth);
+  const contentBudget = Math.max(0, budget - actionsWidth);
+  const secondaryBudget = Math.max(0, contentBudget - primaryMinWidth);
+
+  const secondaryColumns = columns.filter(
+    column => column.id !== 'primary' && column.id !== 'actions',
+  );
+  const secondaryPreferredTotal = secondaryColumns.reduce(
+    (sum, column) => sum + (column.width ?? secondaryMinWidth),
+    0,
+  );
+
+  let scale =
+    secondaryPreferredTotal > secondaryBudget && secondaryPreferredTotal > 0
+      ? secondaryBudget / secondaryPreferredTotal
+      : 1;
+
+  let fittedSecondaryWidths = new Map(
+    secondaryColumns.map(column => {
+      const preferred = column.width ?? secondaryMinWidth;
+      return [
+        column.id,
+        Math.max(secondaryMinWidth, Math.floor(preferred * scale)),
+      ] as const;
+    }),
+  );
+
+  let fittedSecondaryTotal = Array.from(fittedSecondaryWidths.values()).reduce(
+    (sum, width) => sum + width,
+    0,
+  );
+
+  if (fittedSecondaryTotal > secondaryBudget && secondaryColumns.length > 0) {
+    const fixScale = secondaryBudget / fittedSecondaryTotal;
+    fittedSecondaryWidths = new Map(
+      secondaryColumns.map(column => {
+        const current = fittedSecondaryWidths.get(column.id) ?? secondaryMinWidth;
+        return [
+          column.id,
+          Math.max(32, Math.floor(current * fixScale)),
+        ] as const;
+      }),
+    );
+    fittedSecondaryTotal = Array.from(fittedSecondaryWidths.values()).reduce(
+      (sum, width) => sum + width,
+      0,
+    );
+  }
+
+  if (fittedSecondaryTotal > secondaryBudget && secondaryColumns.length > 0) {
+    const equalWidth = Math.max(
+      32,
+      Math.floor(secondaryBudget / secondaryColumns.length),
+    );
+    fittedSecondaryWidths = new Map(
+      secondaryColumns.map(column => [column.id, equalWidth] as const),
+    );
+  }
+
+  return columns.map(column => {
+    if (column.id === 'primary') {
+      const { width: _ignored, ...rest } = column;
+      return { ...rest };
+    }
+
+    if (column.id === 'actions') {
+      return { ...column, width: actionsWidth };
+    }
+
+    return {
+      ...column,
+      width:
+        fittedSecondaryWidths.get(column.id) ??
+        column.width ??
+        secondaryMinWidth,
+    };
+  });
+}
+
 /** Exported for unit tests and surfaces that need a single-column estimate. */
 export function estimateKolamAdaptiveColumnWidth(
   label: string,

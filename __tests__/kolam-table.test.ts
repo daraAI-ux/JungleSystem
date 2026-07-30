@@ -1,5 +1,6 @@
 import {
   applyKolamAdaptiveColumnWidths,
+  fitKolamDataTableColumns,
   getKolamTableColumns,
   getKolamTableVisualContract,
 } from '../src/domain/kolam-table';
@@ -111,6 +112,52 @@ describe('getKolamTableColumns', () => {
     expect(batch?.width).toBeGreaterThan(140);
     expect(pic?.width).toBeGreaterThanOrEqual(56);
     expect(pic?.width).toBeLessThanOrEqual(72);
+  });
+
+  it('fits preferred column widths into the measured container without dropping actions', () => {
+    const preferred = applyKolamAdaptiveColumnWidths(getKolamTableColumns('production'), [
+      {
+        id: 'notes',
+        values: ['PRD-20260703080531-VERY-LONG-BATCH'],
+        minWidth: 120,
+        maxWidth: 280,
+        charWidth: 9,
+      },
+      {
+        id: 'amount',
+        values: ['Rp 1.234.567'],
+        minWidth: 100,
+        maxWidth: 180,
+      },
+      {
+        id: 'actions',
+        values: ['...'],
+        minWidth: 64,
+        maxWidth: 64,
+        padding: 0,
+      },
+    ]);
+
+    const fitted = fitKolamDataTableColumns(preferred, 900, {
+      actionsMinWidth: 64,
+      gap: 16,
+      paddingX: 40,
+      primaryMinWidth: 180,
+      secondaryMinWidth: 48,
+    });
+
+    const actions = fitted.find(column => column.id === 'actions');
+    const primary = fitted.find(column => column.id === 'primary');
+    const secondaryTotal = fitted.reduce((sum, column) => {
+      if (column.id === 'primary' || column.id === 'actions') {
+        return sum;
+      }
+      return sum + (column.width ?? 0);
+    }, 0);
+
+    expect(primary?.width).toBeUndefined();
+    expect(actions?.width).toBe(64);
+    expect(secondaryTotal + 64 + 180).toBeLessThanOrEqual(900 - 40 - 16 * 8);
   });
 
   it('defines product serial list table headers matching FE', () => {
