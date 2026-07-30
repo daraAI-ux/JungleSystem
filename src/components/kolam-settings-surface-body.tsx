@@ -197,6 +197,15 @@ export function KolamSettingsSurfaceBody({
         onSaveKpiSettings={() => {
           void controller.saveKpiSettings();
         }}
+        onSaveNotificationFirebase={() => {
+          void controller.saveNotificationFirebase();
+        }}
+        onSaveNotificationOtpSmtp={() => {
+          void controller.saveNotificationOtpSmtp();
+        }}
+        onSaveNotificationToggle={(key, value) => {
+          void controller.saveNotificationToggle(key, value);
+        }}
         onSaveOperationalGoogleAuth={patch => {
           void controller.saveOperationalGoogleAuth(patch);
         }}

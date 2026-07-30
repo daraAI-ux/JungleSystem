@@ -485,6 +485,70 @@ describe('settings web widgets', () => {
     );
   });
 
+  it('routes notification sections through scoped save handlers', async () => {
+    const onSave = jest.fn();
+    const onSaveNotificationFirebase = jest.fn();
+    const onSaveNotificationOtpSmtp = jest.fn();
+    const onSaveNotificationToggle = jest.fn();
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamSettingsWebConfigSurface
+          {...createSurfaceProps({
+            activeTabId: 'notifikasi',
+            onSave,
+            onSaveNotificationFirebase,
+            onSaveNotificationOtpSmtp,
+            onSaveNotificationToggle,
+          })}
+        />,
+      );
+    });
+
+    const buttons = renderer!.root.findAllByType(KolamActionControlButton);
+
+    expect(buttons.map(node => node.props.label)).toEqual(
+      expect.arrayContaining(['Simpan Firebase', 'Simpan OTP & SMTP']),
+    );
+
+    await ReactTestRenderer.act(async () => {
+      buttons
+        .find(node => node.props.label === 'Simpan Firebase')!
+        .props.onPress();
+      buttons
+        .find(node => node.props.label === 'Simpan OTP & SMTP')!
+        .props.onPress();
+    });
+
+    expect(onSaveNotificationFirebase).toHaveBeenCalledTimes(1);
+    expect(onSaveNotificationOtpSmtp).toHaveBeenCalledTimes(1);
+    expect(onSave).not.toHaveBeenCalled();
+
+    await ReactTestRenderer.act(async () => {
+      renderer!.root
+        .findAll(
+          node =>
+            node.props.accessibilityLabel === 'Notifikasi alih tangan DARA',
+        )[0]
+        .props.onPress();
+      renderer!.root
+        .findAll(
+          node => node.props.accessibilityLabel === 'Panggilan grup chat tim',
+        )[0]
+        .props.onPress();
+    });
+
+    expect(onSaveNotificationToggle).toHaveBeenCalledWith(
+      'daraHandoffNotifyEnabled',
+      false,
+    );
+    expect(onSaveNotificationToggle).toHaveBeenCalledWith(
+      'teamChatGroupCallEnabled',
+      true,
+    );
+  });
+
   it('routes operational controls through scoped save handlers', async () => {
     const onSave = jest.fn();
     const onSaveOperationalGoogleAuth = jest.fn();

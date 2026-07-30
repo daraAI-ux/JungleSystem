@@ -184,6 +184,11 @@ const defaultPaymentMethodDraft: SettingsPaymentMethodDraft = {
 
 function noop() {}
 
+function noopSaveNotificationToggle(
+  _key: 'daraHandoffNotifyEnabled' | 'teamChatGroupCallEnabled',
+  _value: boolean,
+) {}
+
 function noopSetPaymentMethodDraftField<
   Key extends keyof SettingsPaymentMethodDraft,
 >(_key: Key, _value: SettingsPaymentMethodDraft[Key]) {}
@@ -834,6 +839,9 @@ export function KolamSettingsWebConfigSurface({
   onRefreshKpiWeeklyPreview,
   onRunRegionSync,
   onSaveKpiSettings,
+  onSaveNotificationFirebase = noop,
+  onSaveNotificationOtpSmtp = noop,
+  onSaveNotificationToggle = noopSaveNotificationToggle,
   onSaveOperationalGoogleAuth,
   onSaveOperationalLivechat,
   onSaveOperationalMaintenance,
@@ -1001,6 +1009,12 @@ export function KolamSettingsWebConfigSurface({
   onRefreshKpiWeeklyPreview: () => void;
   onRunRegionSync: (scope: KolamRegionSyncScope) => void;
   onSaveKpiSettings: () => void;
+  onSaveNotificationFirebase?: () => void;
+  onSaveNotificationOtpSmtp?: () => void;
+  onSaveNotificationToggle?: (
+    key: 'daraHandoffNotifyEnabled' | 'teamChatGroupCallEnabled',
+    value: boolean,
+  ) => void;
   onSaveOperationalGoogleAuth: (
     patch: Partial<
       Pick<WebSettingDraft, 'webstoreGoogleAuthEnabled' | 'googleOAuthClientId'>
@@ -4678,7 +4692,7 @@ export function KolamSettingsWebConfigSurface({
                     active: draft.daraHandoffNotifyEnabled,
                     label: 'Notifikasi alih tangan DARA',
                     onPress: () =>
-                      setDraftField(
+                      onSaveNotificationToggle(
                         'daraHandoffNotifyEnabled',
                         !draft.daraHandoffNotifyEnabled,
                       ),
@@ -4687,7 +4701,7 @@ export function KolamSettingsWebConfigSurface({
                     active: draft.teamChatGroupCallEnabled,
                     label: 'Panggilan grup chat tim',
                     onPress: () =>
-                      setDraftField(
+                      onSaveNotificationToggle(
                         'teamChatGroupCallEnabled',
                         !draft.teamChatGroupCallEnabled,
                       ),
@@ -4714,20 +4728,30 @@ export function KolamSettingsWebConfigSurface({
                 styles.notificationSettingsCard,
               ]}
             >
-              <KolamCopyStack
-                items={[
-                  {
-                    id: 'firebase-settings-title',
-                    text: 'Firebase push',
-                    style: styles.marketplaceOverviewLabel,
-                  },
-                  {
-                    id: 'firebase-settings-meta',
-                    text: 'Konfigurasi Firebase Admin untuk push notification produksi.',
-                    style: styles.marketplaceOverviewMeta,
-                  },
-                ]}
-              />
+              <View style={styles.operationalCardHeaderRow}>
+                <KolamCopyStack
+                  containerStyle={styles.operationalCardHeaderCopy}
+                  items={[
+                    {
+                      id: 'firebase-settings-title',
+                      text: 'Firebase push',
+                      style: styles.marketplaceOverviewLabel,
+                    },
+                    {
+                      id: 'firebase-settings-meta',
+                      text: 'Konfigurasi Firebase Admin untuk push notification produksi.',
+                      style: styles.marketplaceOverviewMeta,
+                    },
+                  ]}
+                />
+                <KolamActionControlButton
+                  label="Simpan Firebase"
+                  loading={saveStatus === 'saving'}
+                  loadingLabel="Menyimpan..."
+                  disabled={disabled}
+                  onPress={onSaveNotificationFirebase}
+                />
+              </View>
               <KolamToggleRow
                 variant="settingsForm"
                 label="Firebase"
@@ -4778,20 +4802,30 @@ export function KolamSettingsWebConfigSurface({
                 styles.notificationSettingsCard,
               ]}
             >
-              <KolamCopyStack
-                items={[
-                  {
-                    id: 'smtp-settings-title',
-                    text: 'SMTP / OTP staf',
-                    style: styles.marketplaceOverviewLabel,
-                  },
-                  {
-                    id: 'smtp-settings-meta',
-                    text: 'Email sistem dan OTP staf untuk akses produksi.',
-                    style: styles.marketplaceOverviewMeta,
-                  },
-                ]}
-              />
+              <View style={styles.operationalCardHeaderRow}>
+                <KolamCopyStack
+                  containerStyle={styles.operationalCardHeaderCopy}
+                  items={[
+                    {
+                      id: 'smtp-settings-title',
+                      text: 'SMTP / OTP staf',
+                      style: styles.marketplaceOverviewLabel,
+                    },
+                    {
+                      id: 'smtp-settings-meta',
+                      text: 'Email sistem dan OTP staf untuk akses produksi.',
+                      style: styles.marketplaceOverviewMeta,
+                    },
+                  ]}
+                />
+                <KolamActionControlButton
+                  label="Simpan OTP & SMTP"
+                  loading={saveStatus === 'saving'}
+                  loadingLabel="Menyimpan..."
+                  disabled={disabled}
+                  onPress={onSaveNotificationOtpSmtp}
+                />
+              </View>
               <View style={styles.notificationToggleGrid}>
                 <View style={styles.notificationToggleBox}>
                   <KolamToggleRow
@@ -4923,11 +4957,13 @@ export function KolamSettingsWebConfigSurface({
           </View>
         </>
       ) : null}
-      {showOperationalSettings && saveMessage ? (
+      {(showOperationalSettings || showNotificationSettings) && saveMessage ? (
         <KolamCopyStack
           items={[
             {
-              id: 'operational-save-message',
+              id: showNotificationSettings
+                ? 'notification-save-message'
+                : 'operational-save-message',
               text: saveMessage,
             },
           ]}

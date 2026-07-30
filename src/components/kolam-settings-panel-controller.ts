@@ -3251,6 +3251,172 @@ export function useKolamSettingsPanelController(
     }
   };
 
+  const saveNotificationToggle = async (
+    key: 'daraHandoffNotifyEnabled' | 'teamChatGroupCallEnabled',
+    value: boolean,
+  ) => {
+    const previous = webSettingDraft[key];
+
+    setWebSettingSaveStatus('saving');
+    setWebSettingMessage('');
+    setWebSettingDraftFields({ [key]: value } as Partial<WebSettingDraft>, false);
+
+    try {
+      const updated = await updateKolamWebSetting({ [key]: value });
+      setWebSetting({
+        ...updated,
+        [key]: value,
+      } as KolamWebSetting);
+      setWebSettingSaveStatus('saved');
+      setWebSettingMessage(
+        key === 'daraHandoffNotifyEnabled'
+          ? 'Notifikasi alih tangan DARA berhasil diperbarui.'
+          : 'Panggilan grup chat tim berhasil diperbarui.',
+      );
+    } catch (error) {
+      setWebSettingDraftFields(
+        { [key]: previous } as Partial<WebSettingDraft>,
+        false,
+      );
+      setWebSettingSaveStatus('error');
+      setWebSettingMessage(getWebSettingSaveErrorMessage(error));
+    }
+  };
+
+  const saveNotificationFirebase = async () => {
+    const previous = {
+      firebaseEnabled: webSettingDraft.firebaseEnabled,
+      firebaseProjectId: webSettingDraft.firebaseProjectId,
+      firebaseClientEmail: webSettingDraft.firebaseClientEmail,
+      firebasePrivateKey: webSettingDraft.firebasePrivateKey,
+    };
+    const firebase = createFirebaseUpdateBody(webSettingDraft);
+
+    setWebSettingSaveStatus('saving');
+    setWebSettingMessage('');
+
+    try {
+      const updated = await updateKolamWebSetting({ firebase });
+      const nextFirebase = {
+        ...(updated.firebase ?? {}),
+        ...firebase,
+        privateKeyConfigured:
+          updated.firebase?.privateKeyConfigured ??
+          webSetting?.firebase?.privateKeyConfigured ??
+          Boolean(firebase.privateKey),
+      };
+
+      setWebSetting({
+        ...updated,
+        firebase: nextFirebase,
+      });
+      setWebSettingDraftFields(
+        {
+          firebaseEnabled: nextFirebase.enabled === true,
+          firebaseProjectId: nextFirebase.projectId ?? '',
+          firebaseClientEmail: nextFirebase.clientEmail ?? '',
+          firebasePrivateKey: nextFirebase.privateKeyConfigured
+            ? maskedSecretPlaceholder
+            : '',
+        },
+        false,
+      );
+      setWebSettingSaveStatus('saved');
+      setWebSettingMessage('Firebase push berhasil disimpan.');
+    } catch (error) {
+      setWebSettingDraftFields(previous, false);
+      setWebSettingSaveStatus('error');
+      setWebSettingMessage(getWebSettingSaveErrorMessage(error));
+    }
+  };
+
+  const saveNotificationOtpSmtp = async () => {
+    const previous = {
+      staffOtpLoginEnabled: webSettingDraft.staffOtpLoginEnabled,
+      staffOtpExpireMinutes: webSettingDraft.staffOtpExpireMinutes,
+      staffOtpResendCooldownSeconds:
+        webSettingDraft.staffOtpResendCooldownSeconds,
+      staffOtpMaxAttempts: webSettingDraft.staffOtpMaxAttempts,
+      staffOtpLockMinutes: webSettingDraft.staffOtpLockMinutes,
+      smtpHost: webSettingDraft.smtpHost,
+      smtpPort: webSettingDraft.smtpPort,
+      smtpUser: webSettingDraft.smtpUser,
+      smtpPass: webSettingDraft.smtpPass,
+      smtpFromEmail: webSettingDraft.smtpFromEmail,
+      smtpFromName: webSettingDraft.smtpFromName,
+      smtpSecure: webSettingDraft.smtpSecure,
+    };
+    const staffOtpLogin = {
+      enabled: webSettingDraft.staffOtpLoginEnabled,
+      otpExpireMinutes: parseIntegerOrFallback(
+        webSettingDraft.staffOtpExpireMinutes,
+        10,
+      ),
+      resendCooldownSeconds: parseIntegerOrFallback(
+        webSettingDraft.staffOtpResendCooldownSeconds,
+        60,
+      ),
+      maxAttempts: parseIntegerOrFallback(
+        webSettingDraft.staffOtpMaxAttempts,
+        5,
+      ),
+      lockMinutes: parseIntegerOrFallback(webSettingDraft.staffOtpLockMinutes, 15),
+    };
+    const smtp = createSmtpUpdateBody(webSettingDraft);
+
+    setWebSettingSaveStatus('saving');
+    setWebSettingMessage('');
+
+    try {
+      const updated = await updateKolamWebSetting({
+        staffOtpLogin,
+        smtp,
+      });
+      const nextSmtp = {
+        ...(updated.smtp ?? {}),
+        ...smtp,
+        passConfigured:
+          updated.smtp?.passConfigured ??
+          webSetting?.smtp?.passConfigured ??
+          Boolean(smtp.pass),
+      };
+
+      setWebSetting({
+        ...updated,
+        staffOtpLogin: {
+          ...(updated.staffOtpLogin ?? {}),
+          ...staffOtpLogin,
+        },
+        smtp: nextSmtp,
+      });
+      setWebSettingDraftFields(
+        {
+          staffOtpLoginEnabled: staffOtpLogin.enabled,
+          staffOtpExpireMinutes: String(staffOtpLogin.otpExpireMinutes),
+          staffOtpResendCooldownSeconds: String(
+            staffOtpLogin.resendCooldownSeconds,
+          ),
+          staffOtpMaxAttempts: String(staffOtpLogin.maxAttempts),
+          staffOtpLockMinutes: String(staffOtpLogin.lockMinutes),
+          smtpHost: nextSmtp.host ?? '',
+          smtpPort: String(nextSmtp.port ?? 465),
+          smtpUser: nextSmtp.user ?? '',
+          smtpPass: nextSmtp.passConfigured ? maskedSecretPlaceholder : '',
+          smtpFromEmail: nextSmtp.fromEmail ?? '',
+          smtpFromName: nextSmtp.fromName ?? 'Kolam',
+          smtpSecure: nextSmtp.secure !== false,
+        },
+        false,
+      );
+      setWebSettingSaveStatus('saved');
+      setWebSettingMessage('OTP staf dan SMTP berhasil disimpan.');
+    } catch (error) {
+      setWebSettingDraftFields(previous, false);
+      setWebSettingSaveStatus('error');
+      setWebSettingMessage(getWebSettingSaveErrorMessage(error));
+    }
+  };
+
   const setRoleDraftField = <Key extends keyof RoleDraft>(
     key: Key,
     value: RoleDraft[Key],
@@ -3739,6 +3905,9 @@ export function useKolamSettingsPanelController(
     savePaymentMethod,
     saveTaxCompanyProfile,
     saveKpiSettings,
+    saveNotificationFirebase,
+    saveNotificationOtpSmtp,
+    saveNotificationToggle,
     saveOperationalGoogleAuth,
     saveOperationalLivechat,
     saveOperationalMaintenance,
