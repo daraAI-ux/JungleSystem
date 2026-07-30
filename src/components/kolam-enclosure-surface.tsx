@@ -32,8 +32,8 @@ import {
   KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import {KolamEmptyState} from './kolam-empty-state';
-import {KolamFormTextField} from './kolam-form-text-field';
 import {KolamRemoteImage} from './kolam-remote-image';
+import {KolamSearchField} from './kolam-search-field';
 import {KolamStatusBadge} from './kolam-status-badge';
 import {KolamTableFilterTrigger} from './kolam-table-filter-trigger';
 import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
@@ -235,10 +235,10 @@ function KolamEnclosureList({
         <View style={kolamTableToolbarStyles.shell}>
           <View style={kolamTableToolbarStyles.row}>
             <View style={kolamTableToolbarStyles.filters}>
-              <KolamFormTextField
+              <KolamSearchField
+                containerStyle={kolamTableToolbarStyles.searchInput}
                 onChangeText={setSearchInput}
                 placeholder="Cari kode / nama enclosure"
-                style={kolamTableToolbarStyles.searchInput}
                 value={searchInput}
               />
               <View ref={typeTriggerRef} collapsable={false}>
@@ -276,12 +276,14 @@ function KolamEnclosureList({
                     setActiveFilterPanel(null);
                     controller.onClearFilters();
                   }}
+                  style={styles.toolbarButton}
                 />
               ) : null}
               <KolamButton
                 disabled={controller.loading}
                 label="Refresh"
                 onPress={() => void controller.onRefresh()}
+                style={styles.toolbarButton}
               />
             </View>
           </View>
@@ -1229,6 +1231,11 @@ const styles = StyleSheet.create({
     overflow: 'visible',
     position: 'relative',
     zIndex: 100000,
+  },
+  toolbarButton: {
+    flexShrink: 0,
+    minHeight: 34,
+    paddingHorizontal: 10,
   },
   tabRow: {
     alignItems: 'center',
