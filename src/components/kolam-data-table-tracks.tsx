@@ -6,8 +6,8 @@ import {
 } from './kolam-data-table-column-style';
 
 /**
- * Left track for data-table cells (everything except row actions).
- * Content columns keep content-based widths; trailing spacer absorbs leftover space.
+ * Left track for data-table content cells (everything except row actions).
+ * Hugs content widths — does not absorb leftover row space.
  */
 export function KolamDataTableMainTrack({
   children,
@@ -16,17 +16,12 @@ export function KolamDataTableMainTrack({
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
 }) {
-  return (
-    <View style={[styles.mainTrack, style]}>
-      {children}
-      <View style={styles.spacer} />
-    </View>
-  );
+  return <View style={[styles.mainTrack, style]}>{children}</View>;
 }
 
 /**
- * Right-pinned actions track for overflow menu ("...").
- * Always reserved — never participates in content shrink/clip of the main track.
+ * Compact actions track for overflow menu ("...").
+ * Sits immediately after content columns — leftover space goes to TrailingSpacer.
  */
 export function KolamDataTableActionsTrack({
   children,
@@ -38,24 +33,44 @@ export function KolamDataTableActionsTrack({
   width?: number;
 }) {
   return (
-    <View style={[styles.actionsTrack, {width}, style]}>{children}</View>
+    <View
+      style={[
+        styles.actionsTrack,
+        {
+          width,
+          minWidth: width,
+          maxWidth: width,
+          flexBasis: width,
+        },
+        style,
+      ]}
+    >
+      {children}
+    </View>
   );
+}
+
+/**
+ * Absorbs leftover row width AFTER actions so "..." stays next to the last column
+ * (FE-like), instead of floating at the far right with a gulf of empty space.
+ */
+export function KolamDataTableTrailingSpacer({
+  style,
+}: {
+  style?: StyleProp<ViewStyle>;
+}) {
+  return <View style={[styles.trailingSpacer, style]} />;
 }
 
 const styles = StyleSheet.create({
   mainTrack: {
     alignItems: 'center',
-    flex: 1,
     flexDirection: 'row',
+    flexGrow: 0,
     flexShrink: 1,
     gap: KOLAM_DATA_TABLE_COLUMN_GAP,
     minWidth: 0,
     overflow: 'hidden',
-  },
-  spacer: {
-    flexGrow: 1,
-    flexShrink: 1,
-    minWidth: 0,
   },
   actionsTrack: {
     alignItems: 'flex-end',
@@ -64,5 +79,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     overflow: 'visible',
     zIndex: 9000,
+  },
+  trailingSpacer: {
+    flexGrow: 1,
+    flexShrink: 1,
+    minWidth: 0,
   },
 });

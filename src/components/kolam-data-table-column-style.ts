@@ -37,7 +37,8 @@ function lockKolamDataTableColumnWidth(
  * Shared column layout for header + body cells.
  *
  * Content columns (including primary) use explicit content-based widths.
- * Leftover row space is absorbed by `KolamDataTableMainTrack` spacer — not by stretching Target.
+ * Leftover row space is absorbed by `KolamDataTableTrailingSpacer` after actions —
+ * not by stretching Target, and not by a gulf before "...".
  */
 export function getKolamDataTableColumnStyle(
   column: Pick<KolamTableColumn, 'id' | 'width' | 'align' | 'headerAlign'>,
