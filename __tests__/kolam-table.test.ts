@@ -165,9 +165,58 @@ describe('getKolamTableColumns', () => {
     }, 0);
 
     expect(primary?.width).toBeDefined();
-    expect(primary?.width).toBeLessThanOrEqual(200);
     expect(actions?.width).toBe(64);
-    expect(contentTotal + 64).toBeLessThanOrEqual(900 - 40 - 16 * 8);
+    expect(contentTotal + 64).toBe(900 - 40 - 16 * 8);
+  });
+
+  it('distributes leftover body width into content columns instead of leaving a right gap', () => {
+    const preferred = applyKolamAdaptiveColumnWidths(getKolamTableColumns('production'), [
+      {
+        id: 'primary',
+        values: ['Frog Soil'],
+        minWidth: 88,
+        maxWidth: 120,
+        charWidth: 8,
+        padding: 20,
+      },
+      {
+        id: 'notes',
+        values: ['SHORT'],
+        minWidth: 80,
+        maxWidth: 100,
+      },
+      {
+        id: 'actions',
+        values: ['...'],
+        minWidth: 64,
+        maxWidth: 64,
+        padding: 0,
+      },
+    ]);
+
+    const fitted = fitKolamDataTableColumns(preferred, 1200, {
+      actionsMinWidth: 64,
+      gap: 16,
+      paddingX: 40,
+      primaryMinWidth: 88,
+      secondaryMinWidth: 48,
+    });
+
+    const contentBudget = 1200 - 40 - 16 * 8 - 64;
+    const contentTotal = fitted.reduce((sum, column) => {
+      if (column.id === 'actions') {
+        return sum;
+      }
+      return sum + (column.width ?? 0);
+    }, 0);
+    const primary = fitted.find(column => column.id === 'primary');
+    const notes = fitted.find(column => column.id === 'notes');
+
+    expect(contentTotal).toBe(contentBudget);
+    expect(primary?.width ?? 0).toBeGreaterThan(88);
+    expect(notes?.width ?? 0).toBeGreaterThan(80);
+    expect(primary?.width ?? 0).toBeGreaterThan(preferred.find(c => c.id === 'primary')?.width ?? 0);
+    expect(notes?.width ?? 0).toBeGreaterThan(preferred.find(c => c.id === 'notes')?.width ?? 0);
   });
 
   it('resolves production columns from shared presets without per-module size patches', () => {
@@ -190,10 +239,17 @@ describe('getKolamTableColumns', () => {
     const primary = columns.find(column => column.id === 'primary');
     const notes = columns.find(column => column.id === 'notes');
     const actions = columns.find(column => column.id === 'actions');
+    const contentTotal = columns.reduce((sum, column) => {
+      if (column.id === 'actions') {
+        return sum;
+      }
+      return sum + (column.width ?? 0);
+    }, 0);
 
     expect(primary?.width).toBeDefined();
     expect(primary?.width).toBeLessThan(notes?.width ?? 0);
     expect(actions?.width).toBe(64);
+    expect(contentTotal + 64).toBe(1100 - 40 - 16 * 8);
   });
 
   it('defines product serial list table headers matching FE', () => {

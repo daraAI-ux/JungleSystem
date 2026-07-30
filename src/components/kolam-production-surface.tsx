@@ -56,7 +56,6 @@ import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
 import {
   KolamDataTableActionsTrack,
   KolamDataTableMainTrack,
-  KolamDataTableTrailingSpacer,
 } from './kolam-data-table-tracks';
 import { KolamDateField } from './kolam-date-field';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
@@ -541,7 +540,6 @@ function KolamProductionRow({
           }}
         />
       </KolamDataTableActionsTrack>
-      <KolamDataTableTrailingSpacer />
     </KolamDataTableRowFrame>
   );
 }

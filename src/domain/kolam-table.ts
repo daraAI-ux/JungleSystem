@@ -525,9 +525,8 @@ export interface FitKolamDataTableColumnsOptions {
 
 /**
  * Fit preferred column widths into the measured table body width (no horizontal scroll).
- * Every content column (including primary) keeps a content-based width.
- * Leftover space is NOT given to primary — UI spacer absorbs it.
- * Actions width is reserved and never dropped.
+ * Content columns start from char-based preferred widths, then scale to fill the budget
+ * (grow when there is leftover, shrink when too wide). Actions stay fixed and reserved.
  */
 export function fitKolamDataTableColumns(
   columns: KolamTableColumn[],
@@ -553,49 +552,25 @@ export function fitKolamDataTableColumns(
   const contentBudget = Math.max(0, budget - actionsWidth);
 
   const contentColumns = columns.filter(column => column.id !== 'actions');
-  const preferredTotal = contentColumns.reduce((sum, column) => {
-    if (column.id === 'primary') {
-      return sum + (column.width ?? primaryMinWidth);
-    }
-    return sum + (column.width ?? secondaryMinWidth);
-  }, 0);
-
-  let scale =
-    preferredTotal > contentBudget && preferredTotal > 0
-      ? contentBudget / preferredTotal
-      : 1;
-
-  let fittedWidths = new Map(
+  const preferredById = new Map(
     contentColumns.map(column => {
       const preferred =
         column.width ??
         (column.id === 'primary' ? primaryMinWidth : secondaryMinWidth);
-      const floor =
-        column.id === 'primary' ? Math.min(primaryMinWidth, 72) : secondaryMinWidth;
-      return [column.id, Math.max(floor, Math.floor(preferred * scale))] as const;
+      return [column.id, preferred] as const;
     }),
   );
 
-  let fittedTotal = Array.from(fittedWidths.values()).reduce(
+  const preferredTotal = Array.from(preferredById.values()).reduce(
     (sum, width) => sum + width,
     0,
   );
 
-  if (fittedTotal > contentBudget && contentColumns.length > 0) {
-    const fixScale = contentBudget / fittedTotal;
-    fittedWidths = new Map(
-      contentColumns.map(column => {
-        const current = fittedWidths.get(column.id) ?? secondaryMinWidth;
-        return [column.id, Math.max(32, Math.floor(current * fixScale))] as const;
-      }),
-    );
-    fittedTotal = Array.from(fittedWidths.values()).reduce(
-      (sum, width) => sum + width,
-      0,
-    );
-  }
+  let fittedWidths: Map<string, number>;
 
-  if (fittedTotal > contentBudget && contentColumns.length > 0) {
+  if (contentColumns.length === 0) {
+    fittedWidths = new Map();
+  } else if (preferredTotal <= 0) {
     const equalWidth = Math.max(
       32,
       Math.floor(contentBudget / contentColumns.length),
@@ -603,6 +578,42 @@ export function fitKolamDataTableColumns(
     fittedWidths = new Map(
       contentColumns.map(column => [column.id, equalWidth] as const),
     );
+  } else {
+    // Grow or shrink proportionally so content columns fill the body budget.
+    const scale = contentBudget / preferredTotal;
+    fittedWidths = new Map(
+      contentColumns.map(column => {
+        const preferred = preferredById.get(column.id) ?? secondaryMinWidth;
+        const floor =
+          column.id === 'primary'
+            ? Math.min(primaryMinWidth, 72)
+            : Math.min(secondaryMinWidth, 32);
+        return [
+          column.id,
+          Math.max(floor, Math.floor(preferred * scale)),
+        ] as const;
+      }),
+    );
+  }
+
+  let fittedTotal = Array.from(fittedWidths.values()).reduce(
+    (sum, width) => sum + width,
+    0,
+  );
+
+  // Absorb rounding remainder into the widest content column so the row fills exactly.
+  if (contentColumns.length > 0 && fittedTotal !== contentBudget) {
+    const delta = contentBudget - fittedTotal;
+    let widestId = contentColumns[0].id;
+    let widestWidth = fittedWidths.get(widestId) ?? 0;
+    for (const column of contentColumns) {
+      const width = fittedWidths.get(column.id) ?? 0;
+      if (width > widestWidth) {
+        widestId = column.id;
+        widestWidth = width;
+      }
+    }
+    fittedWidths.set(widestId, Math.max(32, widestWidth + delta));
   }
 
   return columns.map(column => {

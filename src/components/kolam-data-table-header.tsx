@@ -4,7 +4,6 @@ import type {KolamDataTableHeaderProps} from './kolam-data-table-header-types';
 import {
   KolamDataTableActionsTrack,
   KolamDataTableMainTrack,
-  KolamDataTableTrailingSpacer,
 } from './kolam-data-table-tracks';
 import {KolamMappedList} from './kolam-mapped-list';
 import {KolamRowFrame} from './kolam-row-frame';
@@ -34,7 +33,6 @@ export function KolamDataTableHeader({columns}: KolamDataTableHeaderProps) {
           <KolamDataTableHeaderCell column={actionsColumn} />
         </KolamDataTableActionsTrack>
       ) : null}
-      <KolamDataTableTrailingSpacer />
     </KolamRowFrame>
   );
 }

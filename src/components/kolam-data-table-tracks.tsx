@@ -7,7 +7,8 @@ import {
 
 /**
  * Left track for data-table content cells (everything except row actions).
- * Hugs content widths — does not absorb leftover row space.
+ * Column widths come from fit/resolve — leftover space is distributed into those
+ * widths, not absorbed by a trailing empty spacer.
  */
 export function KolamDataTableMainTrack({
   children,
@@ -21,7 +22,7 @@ export function KolamDataTableMainTrack({
 
 /**
  * Compact actions track for overflow menu ("...").
- * Sits immediately after content columns — leftover space goes to TrailingSpacer.
+ * Sits immediately after content columns at the end of the fitted row.
  */
 export function KolamDataTableActionsTrack({
   children,
@@ -50,18 +51,6 @@ export function KolamDataTableActionsTrack({
   );
 }
 
-/**
- * Absorbs leftover row width AFTER actions so "..." stays next to the last column
- * (FE-like), instead of floating at the far right with a gulf of empty space.
- */
-export function KolamDataTableTrailingSpacer({
-  style,
-}: {
-  style?: StyleProp<ViewStyle>;
-}) {
-  return <View style={[styles.trailingSpacer, style]} />;
-}
-
 const styles = StyleSheet.create({
   mainTrack: {
     alignItems: 'center',
@@ -79,10 +68,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     overflow: 'visible',
     zIndex: 9000,
-  },
-  trailingSpacer: {
-    flexGrow: 1,
-    flexShrink: 1,
-    minWidth: 0,
   },
 });
