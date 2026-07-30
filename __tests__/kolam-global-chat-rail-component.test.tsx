@@ -28,7 +28,10 @@ import {
   openKolamTeamChatDirect,
 } from '../src/services/kolam-api';
 import {createKolamNotificationSoundService} from '../src/services/kolam-notification-sound-service';
-import {pickNativeAssetFile} from '../src/services/native-file-picker';
+import {
+  pickNativeAssetFile,
+  pickNativeImageFile,
+} from '../src/services/native-file-picker';
 
 const mockSoundPlay = jest.fn();
 const openUrlMock = jest
@@ -104,6 +107,7 @@ jest.mock('../src/components/kolam-remote-image', () => {
 
 jest.mock('../src/services/native-file-picker', () => ({
   pickNativeAssetFile: jest.fn(),
+  pickNativeImageFile: jest.fn(),
 }));
 
 const useAuthContextMock = useKolamAuthContext as jest.MockedFunction<
@@ -156,6 +160,9 @@ const createSoundServiceMock =
 const pickNativeAssetFileMock = pickNativeAssetFile as jest.MockedFunction<
   typeof pickNativeAssetFile
 >;
+const pickNativeImageFileMock = pickNativeImageFile as jest.MockedFunction<
+  typeof pickNativeImageFile
+>;
 
 function renderText(renderer: ReactTestRenderer.ReactTestRenderer) {
   return renderer.root
@@ -201,6 +208,7 @@ function getDefaultDetailMock() {
     refreshCall: jest.fn(),
     searchTeamMessages: jest.fn(),
     sendAttachment: jest.fn(),
+    sendInboxImage: jest.fn(),
     sendMessage: jest.fn(),
     setInboxLabels: jest.fn(),
     signalTyping: jest.fn(),
@@ -318,6 +326,7 @@ describe('KolamGlobalChatRail', () => {
       reactToMessage: jest.fn(),
       refresh: jest.fn(),
       sendAttachment: jest.fn(),
+      sendInboxImage: jest.fn(),
       sendMessage: jest.fn(),
       setInboxLabels: jest.fn(),
       signalTyping: jest.fn(),
@@ -347,6 +356,7 @@ describe('KolamGlobalChatRail', () => {
       },
     });
     pickNativeAssetFileMock.mockResolvedValue({cancelled: true});
+    pickNativeImageFileMock.mockResolvedValue({cancelled: true});
     createTeamChatRoomMock.mockResolvedValue({
       _id: 'room-created',
       category: 'meeting',
@@ -1142,6 +1152,92 @@ describe('KolamGlobalChatRail', () => {
     });
 
     expect(sendMessage).toHaveBeenCalledWith('Siap, masih tersedia. 🙂');
+  });
+
+  it('picks and sends an inbox image from the composer when reply gate allows it', async () => {
+    const sendInboxImage = jest.fn().mockResolvedValue(undefined);
+    pickNativeImageFileMock.mockResolvedValue({
+      cancelled: false,
+      mimeType: 'image/jpeg',
+      name: 'proof.jpg',
+      path: 'C:\\media\\proof.jpg',
+    });
+    useReadonlyDataMock.mockReturnValue({
+      conversations: [
+        {
+          _id: 'conv-1',
+          platform: 'whatsapp',
+          contactId: {displayName: 'Buyer WA'},
+          lastMessagePreview: 'Saya kirim bukti',
+          unreadCount: 0,
+        },
+      ],
+      loading: false,
+      refresh: jest.fn(),
+      rooms: [],
+      totalUnread: 0,
+    });
+    useDetailMock.mockReturnValue({
+      ...getDefaultDetailMock(),
+      conversation: {
+        _id: 'conv-1',
+        assignedStaffId: {
+          _id: 'staff-1',
+          first_name: 'Staff',
+        },
+        isAiHandled: false,
+        status: 'open',
+      },
+      loading: false,
+      messages: [],
+      presence: {onlineCount: 0, typingUserIds: [], viewingCount: 0},
+      refresh: jest.fn(),
+      sendAttachment: jest.fn(),
+      sendInboxImage,
+      sendMessage: jest.fn(),
+      signalTyping: jest.fn(),
+      sending: false,
+      updatePresenceFromLive: jest.fn(),
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamGlobalChatRail mode="inbox" onClose={() => undefined} />,
+      );
+    });
+
+    const selectButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Pilih conversation Buyer WA');
+
+    await ReactTestRenderer.act(async () => {
+      selectButton!.props.onPress();
+    });
+
+    const attachButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Lampirkan gambar inbox');
+
+    await ReactTestRenderer.act(async () => {
+      await attachButton!.props.onPress();
+    });
+
+    expect(pickNativeImageFileMock).toHaveBeenCalledTimes(1);
+    expect(renderText(renderer!)).toEqual(expect.arrayContaining(['proof.jpg']));
+
+    const input = renderer!.root
+      .findAllByType(TextInput)
+      .find(node => node.props.accessibilityLabel === 'Tulis pesan inbox');
+
+    await ReactTestRenderer.act(async () => {
+      await input!.props.onSubmitEditing();
+    });
+
+    expect(sendInboxImage).toHaveBeenCalledWith(
+      expect.objectContaining({name: 'proof.jpg'}),
+      undefined,
+    );
   });
 
   it('blocks inbox send until the conversation is assigned to the current staff', async () => {

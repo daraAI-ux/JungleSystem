@@ -23,6 +23,7 @@ import {
   raiseKolamTeamChatCallHand,
   redialKolamTeamChatCall,
   searchKolamTeamChatMessages,
+  sendKolamChatImageMessage,
   sendKolamChatTextMessage,
   sendKolamTeamChatMessage,
   startKolamTeamChatCall,
@@ -49,6 +50,7 @@ import {
   updateKolamChatConversationAiHandled,
   updateKolamChatConversationLabels,
   updateKolamChatConversationStatus,
+  uploadKolamChatImage,
   uploadKolamTeamChatMedia,
 } from '../services/kolam-api';
 import type {NativeImagePickerResult} from '../services/native-file-picker';
@@ -133,6 +135,10 @@ export interface KolamChatRailDetailState {
   sendAttachment: (
     file: NativeImagePickerResult,
     text?: string,
+    options?: KolamChatRailSendMessageOptions,
+  ) => Promise<void>;
+  sendInboxImage: (
+    file: NativeImagePickerResult,
     options?: KolamChatRailSendMessageOptions,
   ) => Promise<void>;
   refresh: () => Promise<void>;
@@ -428,6 +434,41 @@ export function useKolamChatRailDetail({
       }
     },
     [currentUserId, mode, selectedId, sending],
+  );
+
+  const sendInboxImage = useCallback(
+    async (
+      file: NativeImagePickerResult,
+      options?: KolamChatRailSendMessageOptions,
+    ) => {
+      if (!selectedId || mode !== 'inbox' || sending) {
+        return;
+      }
+
+      const localUri = file.uri ?? file.path ?? '';
+      if (!localUri) {
+        setErrorMessage('Gambar belum bisa dibaca.');
+        return;
+      }
+
+      setSending(true);
+      setErrorMessage(undefined);
+
+      try {
+        const uploaded = await uploadKolamChatImage(localUri);
+        const message = await sendKolamChatImageMessage(selectedId, uploaded, {
+          replyToMessageId: options?.replyToMessageId ?? undefined,
+        });
+        setMessages(current => [...current, mapInboxMessage(message)]);
+      } catch (error) {
+        setErrorMessage(
+          error instanceof Error ? error.message : 'Gambar gagal dikirim.',
+        );
+      } finally {
+        setSending(false);
+      }
+    },
+    [mode, selectedId, sending],
   );
 
   const reactToMessage = useCallback(
@@ -787,6 +828,7 @@ export function useKolamChatRailDetail({
     refresh,
     searchTeamMessages,
     sendAttachment,
+    sendInboxImage,
     sendMessage,
     setInboxLabels,
     signalTyping,

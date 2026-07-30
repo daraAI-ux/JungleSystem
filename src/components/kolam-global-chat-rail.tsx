@@ -57,6 +57,7 @@ import {createKolamNotificationSoundService} from '../services/kolam-notificatio
 import {createKolamRuntimeNotificationSoundAdapter} from '../services/kolam-notification-sound-runtime';
 import {
   pickNativeAssetFile,
+  pickNativeImageFile,
   type NativeImagePickerResult,
 } from '../services/native-file-picker';
 import {KolamBadge} from './kolam-badge';
@@ -583,15 +584,31 @@ export function KolamGlobalChatRail({
   }, [selectedItemId]);
 
   const handleChooseAttachment = React.useCallback(async () => {
-    if (mode !== 'team-chat' || detail.sending) {
+    if (detail.sending) {
       return;
     }
 
-    const file = await pickNativeAssetFile();
+    if (mode === 'inbox') {
+      const access = getInboxComposerAccess(detail.conversation, currentUserId, {
+        csCanReply: inboxCanReply,
+      });
+      const blocked = Boolean(
+        access.disabled || access.blockedReason || access.lockedBy,
+      );
+
+      if (blocked) {
+        return;
+      }
+    }
+
+    const file =
+      mode === 'inbox'
+        ? await pickNativeImageFile()
+        : await pickNativeAssetFile();
     if (!file.cancelled) {
       setPendingAttachment(file);
     }
-  }, [detail.sending, mode]);
+  }, [currentUserId, detail.conversation, detail.sending, inboxCanReply, mode]);
 
   const handleSend = React.useCallback(async () => {
     const body = composerText.trim();
@@ -604,10 +621,14 @@ export function KolamGlobalChatRail({
       : undefined;
 
     if (pendingAttachment) {
-      if (sendOptions) {
-        await detail.sendAttachment(pendingAttachment, body, sendOptions);
+      if (mode === 'inbox') {
+        await detail.sendInboxImage(pendingAttachment, sendOptions);
       } else {
-        await detail.sendAttachment(pendingAttachment, body);
+        if (sendOptions) {
+          await detail.sendAttachment(pendingAttachment, body, sendOptions);
+        } else {
+          await detail.sendAttachment(pendingAttachment, body);
+        }
       }
       setPendingAttachment(null);
       setReplyTarget(null);
@@ -624,7 +645,7 @@ export function KolamGlobalChatRail({
     setReplyTarget(null);
     setComposerText('');
     detail.signalTyping(false);
-  }, [composerText, detail, pendingAttachment, replyTarget]);
+  }, [composerText, detail, mode, pendingAttachment, replyTarget]);
 
   const handleComposerTextChange = React.useCallback(
     (value: string) => {
@@ -2174,6 +2195,19 @@ function KolamChatRailDetailPanel({
                   style={[
                     styles.composerIconButton,
                     detail.sending && styles.composerIconButtonDisabled,
+                  ]}>
+                  <Text style={styles.composerIconButtonText}>+</Text>
+                </KolamPressable>
+              ) : null}
+              {mode === 'inbox' ? (
+                <KolamPressable
+                  accessibilityLabel="Lampirkan gambar inbox"
+                  disabled={detail.sending || inboxComposerBlocked}
+                  onPress={onPendingAttachmentPick}
+                  style={[
+                    styles.composerIconButton,
+                    (detail.sending || inboxComposerBlocked) &&
+                      styles.composerIconButtonDisabled,
                   ]}>
                   <Text style={styles.composerIconButtonText}>+</Text>
                 </KolamPressable>

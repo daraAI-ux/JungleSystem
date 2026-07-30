@@ -2224,6 +2224,14 @@ export interface KolamChatSendMessageOptions {
   replyToMessageId?: string | null;
 }
 
+export interface KolamChatUploadImageResult {
+  imageUrl: string;
+  thumbnailUrl?: string;
+  fileName?: string;
+  fileSize?: number;
+  mimeType?: string;
+}
+
 export async function sendKolamChatTextMessage(
   conversationId: string,
   text: string,
@@ -2235,6 +2243,31 @@ export async function sendKolamChatTextMessage(
       content: {
         type: 'text',
         text,
+      },
+      ...(options.replyToMessageId
+        ? {replyToMessageId: options.replyToMessageId}
+        : {}),
+    },
+  );
+
+  return response.data;
+}
+
+export async function sendKolamChatImageMessage(
+  conversationId: string,
+  content: KolamChatUploadImageResult,
+  options: KolamChatSendMessageOptions = {},
+): Promise<KolamChatMessage> {
+  const response = await kolamPost<DataResponse<KolamChatMessage>>(
+    `/chat/conversations/${encodeURIComponent(conversationId)}/messages`,
+    {
+      content: {
+        type: 'image',
+        imageUrl: content.imageUrl,
+        thumbnailUrl: content.thumbnailUrl,
+        fileName: content.fileName,
+        fileSize: content.fileSize,
+        mimeType: content.mimeType,
       },
       ...(options.replyToMessageId
         ? {replyToMessageId: options.replyToMessageId}
@@ -2376,6 +2409,19 @@ export async function uploadKolamTeamChatMedia(
   const response = await kolamPost<
     DataResponse<KolamTeamChatAttachment> | KolamTeamChatAttachment
   >('/team-chat/upload', body);
+
+  return unwrapData(response);
+}
+
+export async function uploadKolamChatImage(
+  localUri: string,
+): Promise<KolamChatUploadImageResult> {
+  const body = new FormData();
+  body.append('image', createImageFilePart(localUri) as unknown as Blob);
+
+  const response = await kolamPost<
+    DataResponse<KolamChatUploadImageResult> | KolamChatUploadImageResult
+  >('/chat/upload-image', body);
 
   return unwrapData(response);
 }

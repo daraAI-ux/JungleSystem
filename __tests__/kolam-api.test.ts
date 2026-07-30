@@ -58,6 +58,7 @@ import {
   redialKolamTeamChatCall,
   reorderKolamHeroSlides,
   searchKolamTeamChatMessages,
+  sendKolamChatImageMessage,
   sendKolamChatTextMessage,
   sendKolamTeamChatMessage,
   sendKolamTeamChatTextMessage,
@@ -77,6 +78,7 @@ import {
   uploadKolamDaraAvatar,
   uploadKolamMarketplaceContentImage,
   uploadKolamNotificationSound,
+  uploadKolamChatImage,
   uploadKolamTeamChatMedia,
   uploadKolamWebSettingLogo,
   upsertKolamCustomerNotice,
@@ -1306,6 +1308,35 @@ describe('Kolam Settings API contracts', () => {
         jsonResponse({
           success: true,
           data: {
+            imageUrl: '/uploads/chat/proof.jpg',
+            thumbnailUrl: '/uploads/chat/proof-thumb.jpg',
+            fileName: 'proof.jpg',
+            fileSize: 12345,
+            mimeType: 'image/jpeg',
+          },
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          success: true,
+          data: {
+            _id: 'msg-3',
+            direction: 'out',
+            content: {
+              type: 'image',
+              imageUrl: '/uploads/chat/proof.jpg',
+              thumbnailUrl: '/uploads/chat/proof-thumb.jpg',
+              fileName: 'proof.jpg',
+              fileSize: 12345,
+              mimeType: 'image/jpeg',
+            },
+          },
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          success: true,
+          data: {
             _id: 'msg-2',
             direction: 'out',
             content: {type: 'text', text: 'Masih tersedia, kak.'},
@@ -1320,6 +1351,16 @@ describe('Kolam Settings API contracts', () => {
     await expect(
       sendKolamChatTextMessage('conv-1', 'Masih tersedia.'),
     ).resolves.toEqual(expect.objectContaining({_id: 'msg-2'}));
+    const uploadedImage = await uploadKolamChatImage('C:\\media\\proof.jpg');
+    expect(uploadedImage).toMatchObject({
+      imageUrl: '/uploads/chat/proof.jpg',
+      mimeType: 'image/jpeg',
+    });
+    await expect(
+      sendKolamChatImageMessage('conv-1', uploadedImage, {
+        replyToMessageId: 'msg-1',
+      }),
+    ).resolves.toEqual(expect.objectContaining({_id: 'msg-3'}));
     await expect(
       editKolamChatMessage('conv-1', 'msg-2', 'Masih tersedia, kak.'),
     ).resolves.toEqual(expect.objectContaining({_id: 'msg-2'}));
@@ -1349,6 +1390,32 @@ describe('Kolam Settings API contracts', () => {
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       4,
+      `${appConfig.kolamApiBaseUrl}/chat/upload-image`,
+      expect.objectContaining({
+        method: 'POST',
+        body: expect.any(FormData),
+      }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      5,
+      `${appConfig.kolamApiBaseUrl}/chat/conversations/conv-1/messages`,
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          content: {
+            type: 'image',
+            imageUrl: '/uploads/chat/proof.jpg',
+            thumbnailUrl: '/uploads/chat/proof-thumb.jpg',
+            fileName: 'proof.jpg',
+            fileSize: 12345,
+            mimeType: 'image/jpeg',
+          },
+          replyToMessageId: 'msg-1',
+        }),
+      }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      6,
       `${appConfig.kolamApiBaseUrl}/chat/conversations/conv-1/messages/msg-2`,
       expect.objectContaining({
         method: 'PATCH',
