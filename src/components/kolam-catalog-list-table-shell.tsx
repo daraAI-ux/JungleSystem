@@ -41,7 +41,7 @@ export function KolamCatalogListTableShell({
   );
 
   return (
-    <KolamContentFrame style={[style, styles.shell]} variant={variant}>
+    <KolamContentFrame style={[styles.shell, style]} variant={variant}>
       <View onLayout={handleBodyLayout} style={styles.body}>
         {children}
       </View>

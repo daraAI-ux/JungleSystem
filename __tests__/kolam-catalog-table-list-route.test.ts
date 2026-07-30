@@ -27,5 +27,8 @@ describe('isCatalogTableListRoute', () => {
     expect(isCatalogTableListRoute('/purchase-order/create')).toBe(false);
     expect(isCatalogTableListRoute('/purchase-order/po-1')).toBe(false);
     expect(isCatalogTableListRoute('/pengaturan')).toBe(false);
+    // Mapped-row catalogs (Packing/Teranura) use shell ScrollView — not owned FlatList viewport.
+    expect(isCatalogTableListRoute('/teranura')).toBe(false);
+    expect(isCatalogTableListRoute('/packing-materials')).toBe(false);
   });
 });

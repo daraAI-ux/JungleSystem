@@ -79,7 +79,7 @@ function KolamTeranuraShell({
 }) {
   if (controller.mode === 'list') {
     return (
-      <View style={[styles.surface, styles.listSurface]}>
+      <View style={styles.surface}>
         {controller.error ? <Text style={styles.error}>{controller.error}</Text> : null}
         {children}
       </View>
@@ -248,7 +248,7 @@ function KolamTeranuraList({
   }, [activeFilterPanel, anchorFilterPanel]);
 
   return (
-    <View style={[styles.stack, styles.listStack]}>
+    <View style={styles.stack}>
       <View ref={toolbarRef} collapsable={false} style={styles.toolbarWrap}>
         <View style={kolamTableToolbarStyles.shell}>
           <View style={kolamTableToolbarStyles.row}>
@@ -393,7 +393,7 @@ function KolamTeranuraList({
           </KolamTableFooterControls>
         }
         onBodyWidthChange={setTableBodyWidth}
-        style={[styles.tableFrame, styles.listTableFrame]}
+        style={styles.tableFrame}
       >
         <KolamDataTableHeader columns={listColumns} />
         {controller.items.length ? (
@@ -829,10 +829,6 @@ const styles = StyleSheet.create({
   surface: {
     gap: 16,
   },
-  listSurface: {
-    flex: 1,
-    minHeight: 0,
-  },
   detailToolbarContext: {
     color: V.colors.fg,
     flexShrink: 1,
@@ -847,10 +843,6 @@ const styles = StyleSheet.create({
     gap: 16,
     overflow: 'visible',
     position: 'relative',
-  },
-  listStack: {
-    flex: 1,
-    minHeight: 0,
   },
   toolbarWrap: {
     elevation: 1000,
@@ -915,12 +907,10 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   tableFrame: {
-    overflow: 'visible',
-  },
-  listTableFrame: {
     flexGrow: 0,
-    flexShrink: 1,
-    minHeight: 0,
+    flexShrink: 0,
+    overflow: 'visible',
+    width: '100%',
   },
   emptyWrap: {
     minHeight: 240,
