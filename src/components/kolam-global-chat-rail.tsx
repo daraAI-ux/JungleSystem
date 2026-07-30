@@ -994,17 +994,9 @@ export function KolamGlobalChatRail({
                     ) : null}
                   </View>
                   {mode === 'inbox' && item.handledByDara ? (
-                    <View style={styles.rowStaffSlot}>
-                      <KolamInboxDaraAvatar
-                        imageUrl={daraAvatarState.imageUrl}
-                      />
-                    </View>
+                    <KolamInboxDaraAvatar imageUrl={daraAvatarState.imageUrl} />
                   ) : mode === 'inbox' && item.assignedStaff ? (
-                    <View style={styles.rowStaffSlot}>
-                      <KolamInboxAssignedStaffAvatar
-                        staff={item.assignedStaff}
-                      />
-                    </View>
+                    <KolamInboxAssignedStaffAvatar staff={item.assignedStaff} />
                   ) : null}
                 </KolamPressable>
               )}
@@ -1318,7 +1310,7 @@ function KolamInboxAssignedStaffAvatar({
         accessibilityLabel={`Staff menangani ${label}`}
         style={styles.rowStaffAvatar}>
         <KolamProfileAvatarContent
-          imageStyle={styles.rowStaffAvatarImage}
+          imageStyle={styles.rowAssignedStaffAvatarImage}
           imageUrl={photoUri}
           initials={initials}
           textStyle={styles.rowStaffAvatarText}
@@ -7327,13 +7319,6 @@ const styles = StyleSheet.create({
   rowStaffTooltip: {
     alignSelf: 'center',
   },
-  rowStaffSlot: {
-    width: 30,
-    flexShrink: 0,
-    alignSelf: 'flex-start',
-    alignItems: 'center',
-    paddingTop: 2,
-  },
   rowStaffAvatar: {
     width: 30,
     height: 30,
@@ -7349,6 +7334,12 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 15,
+  },
+  rowAssignedStaffAvatarImage: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    transform: [{rotate: '-90deg'}],
   },
   rowStaffAvatarText: {
     color: V.colors.primary,
