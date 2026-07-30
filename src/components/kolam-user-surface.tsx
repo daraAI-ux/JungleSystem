@@ -6,6 +6,8 @@ import {
   getKolamUserIdFromRoute,
   getKolamUserRouteMode,
   type KolamKasbonPendingSummary,
+  type KolamUserAttendanceRecord,
+  type KolamUserAttendanceSettings,
   type KolamUserBonusItem,
   type KolamUserBooleanFilter,
   type KolamUserBiodata,
@@ -15,9 +17,12 @@ import {
   type KolamUserDeductionItem,
   type KolamUserEmployeeProfile,
   type KolamUserEmployeeSchedule,
+  type KolamUserFaceEnrollment,
   type KolamUserKasbonItem,
   type KolamUserListItem,
   type KolamUserListPagination,
+  type KolamUserRatingListResult,
+  type KolamUserRatingSummary,
   type KolamUserRoleOption,
 } from '../domain/kolam-user';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
@@ -29,11 +34,16 @@ import {getKolamFileUrl} from '../lib/file-url';
 import {
   createKolamUser,
   getKolamKasbonPendingSummary,
+  getKolamUserAttendanceRecords,
+  getKolamUserAttendanceSettings,
   getKolamUserBonusList,
   getKolamUserDeductionList,
   getKolamUserDetail,
+  getKolamUserFaceEnrollment,
   getKolamUserKasbonList,
   getKolamUserList,
+  getKolamUserRatingList,
+  getKolamUserRatingSummary,
   getKolamUserRoles,
   updateKolamUser,
   updateKolamUserSalary,
@@ -100,6 +110,26 @@ const EMPTY_USER_PAYROLL_SUMMARY = {
   bonuses: [] as KolamUserBonusItem[],
   deductions: [] as KolamUserDeductionItem[],
   kasbons: [] as KolamUserKasbonItem[],
+};
+
+const EMPTY_USER_RATING_SUMMARY: KolamUserRatingSummary = {
+  averageRating: 0,
+  counts: [1, 2, 3, 4, 5].map(rating => ({count: 0, rating})),
+  totalRatings: 0,
+};
+
+const EMPTY_USER_RATING_LIST: KolamUserRatingListResult = {
+  items: [],
+  limit: 10,
+  page: 1,
+  total: 0,
+};
+
+const EMPTY_USER_ATTENDANCE_SETTINGS: KolamUserAttendanceSettings = {
+  payrollCutoffDay: 28,
+  requireFace: false,
+  timezone: '',
+  workStartTime: '',
 };
 
 const EMPTY_USER_BIODATA: KolamUserBiodata = {
@@ -745,6 +775,23 @@ function KolamUserDetailSurface({
   );
   const [payrollLoading, setPayrollLoading] = React.useState(false);
   const [payrollError, setPayrollError] = React.useState('');
+  const [ratingSummary, setRatingSummary] = React.useState(
+    EMPTY_USER_RATING_SUMMARY,
+  );
+  const [ratingList, setRatingList] = React.useState(EMPTY_USER_RATING_LIST);
+  const [ratingLoading, setRatingLoading] = React.useState(false);
+  const [ratingError, setRatingError] = React.useState('');
+  const [attendanceSettings, setAttendanceSettings] = React.useState(
+    EMPTY_USER_ATTENDANCE_SETTINGS,
+  );
+  const [attendanceRecords, setAttendanceRecords] = React.useState<
+    KolamUserAttendanceRecord[]
+  >([]);
+  const [faceEnrollment, setFaceEnrollment] =
+    React.useState<KolamUserFaceEnrollment | null>(null);
+  const [attendancePeriodKey, setAttendancePeriodKey] = React.useState('');
+  const [attendanceLoading, setAttendanceLoading] = React.useState(false);
+  const [attendanceError, setAttendanceError] = React.useState('');
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState('');
   const permissionContext = React.useMemo(
@@ -773,6 +820,14 @@ function KolamUserDetailSurface({
     Boolean(user?.isEmployee) &&
     (isSuperAdmin ||
       hasSettingsPermission(permissionContext, 'salary_deduction', 'view'));
+  const canViewRating =
+    Boolean(user?.isEmployee) &&
+    (isSuperAdmin || hasSettingsPermission(permissionContext, 'chat', 'view'));
+  const canViewAttendance =
+    Boolean(user?.isEmployee) &&
+    (isSuperAdmin ||
+      hasSettingsPermission(permissionContext, 'salary', 'view') ||
+      hasSettingsPermission(permissionContext, 'staff_attendance', 'view'));
 
   React.useEffect(() => {
     let active = true;
@@ -882,6 +937,109 @@ function KolamUserDetailSurface({
     user?.id,
     user?.isEmployee,
   ]);
+
+  React.useEffect(() => {
+    let active = true;
+
+    if (!user?.id || !canViewRating) {
+      setRatingSummary(EMPTY_USER_RATING_SUMMARY);
+      setRatingList(EMPTY_USER_RATING_LIST);
+      setRatingLoading(false);
+      setRatingError('');
+      return () => {
+        active = false;
+      };
+    }
+
+    setRatingLoading(true);
+    setRatingError('');
+
+    void Promise.all([
+      getKolamUserRatingSummary(user.id),
+      getKolamUserRatingList(user.id, {limit: 10, page: 1}),
+    ])
+      .then(([summary, list]) => {
+        if (active) {
+          setRatingSummary(summary);
+          setRatingList(list);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setRatingSummary(EMPTY_USER_RATING_SUMMARY);
+          setRatingList(EMPTY_USER_RATING_LIST);
+          setRatingError('Gagal memuat data rating chat.');
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setRatingLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [canViewRating, user?.id]);
+
+  React.useEffect(() => {
+    let active = true;
+
+    if (!user?.id || !canViewAttendance) {
+      setAttendanceSettings(EMPTY_USER_ATTENDANCE_SETTINGS);
+      setAttendanceRecords([]);
+      setFaceEnrollment(null);
+      setAttendancePeriodKey('');
+      setAttendanceLoading(false);
+      setAttendanceError('');
+      return () => {
+        active = false;
+      };
+    }
+
+    setAttendanceLoading(true);
+    setAttendanceError('');
+
+    void getKolamUserAttendanceSettings()
+      .then(settings => {
+        const periodKey = getCurrentAttendancePeriodKey(
+          settings.payrollCutoffDay,
+        );
+
+        return Promise.all([
+          Promise.resolve(settings),
+          Promise.resolve(periodKey),
+          getKolamUserAttendanceRecords(user.id, periodKey),
+          getKolamUserFaceEnrollment(user.id).catch(() => null),
+        ]);
+      })
+      .then(([settings, periodKey, records, enrollment]) => {
+        if (active) {
+          setAttendanceSettings(settings);
+          setAttendancePeriodKey(periodKey);
+          setAttendanceRecords(records);
+          setFaceEnrollment(enrollment);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setAttendanceSettings(EMPTY_USER_ATTENDANCE_SETTINGS);
+          setAttendanceRecords([]);
+          setFaceEnrollment(null);
+          setAttendancePeriodKey('');
+          setAttendanceError('Gagal memuat data absensi karyawan.');
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setAttendanceLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [canViewAttendance, user?.id]);
 
   if (loading || error || !user) {
     return (
@@ -1327,6 +1485,170 @@ function KolamUserDetailSurface({
             ) : null}
             {payrollError ? (
               <Text style={styles.formErrorText}>{payrollError}</Text>
+            ) : null}
+          </View>
+        ) : null}
+
+        {user.isEmployee && (canViewRating || canViewAttendance) ? (
+          <View style={styles.detailGrid}>
+            {canViewRating ? (
+              <View style={styles.detailPanel}>
+                <Text style={styles.detailPanelTitle}>Chat Rating</Text>
+                {ratingLoading ? (
+                  <Text style={styles.detailSubtitle}>Memuat rating chat...</Text>
+                ) : ratingSummary.totalRatings > 0 ? (
+                  <>
+                    <View style={styles.ratingSummaryRow}>
+                      <Text style={styles.ratingScore}>
+                        {ratingSummary.averageRating.toFixed(1)}
+                      </Text>
+                      <View style={styles.ratingSummaryCopy}>
+                        <Text style={styles.ratingStars}>
+                          {formatUserRatingStars(ratingSummary.averageRating)}
+                        </Text>
+                        <Text style={styles.detailSubtitle}>
+                          {ratingSummary.totalRatings} rating
+                        </Text>
+                      </View>
+                    </View>
+                    {ratingSummary.counts
+                      .slice()
+                      .sort((a, b) => b.rating - a.rating)
+                      .map(item => (
+                        <View key={item.rating} style={styles.ratingCountRow}>
+                          <Text style={styles.ratingCountLabel}>
+                            {item.rating} bintang
+                          </Text>
+                          <View style={styles.ratingBarTrack}>
+                            <View
+                              style={[
+                                styles.ratingBarFill,
+                                {
+                                  width: `${Math.min(
+                                    100,
+                                    ratingSummary.totalRatings
+                                      ? (item.count /
+                                          ratingSummary.totalRatings) *
+                                          100
+                                      : 0,
+                                  )}%`,
+                                },
+                              ]}
+                            />
+                          </View>
+                          <Text style={styles.ratingCountValue}>
+                            {item.count}
+                          </Text>
+                        </View>
+                      ))}
+                  </>
+                ) : (
+                  <Text style={styles.detailSubtitle}>Belum ada rating.</Text>
+                )}
+                {ratingError ? (
+                  <Text style={styles.formErrorText}>{ratingError}</Text>
+                ) : null}
+              </View>
+            ) : null}
+
+            {canViewRating && ratingList.items.length ? (
+              <View style={styles.detailPanel}>
+                <Text style={styles.detailPanelTitle}>Rating Terbaru</Text>
+                {ratingList.items.map(item => (
+                  <View key={item.id || item.createdAt} style={styles.payrollEntry}>
+                    <View style={styles.payrollEntryHeader}>
+                      <Text style={styles.payrollEntryTitle}>
+                        {formatUserRatingStars(item.rating)}
+                      </Text>
+                      <Text style={styles.payrollEntryDate}>
+                        {formatUserDateTime(item.createdAt)}
+                      </Text>
+                    </View>
+                    <Text numberOfLines={3} style={styles.detailValue}>
+                      {item.comment || 'Tanpa komentar'}
+                    </Text>
+                    <Text numberOfLines={2} style={styles.detailSubtitle}>
+                      {[item.contactName, item.platform, item.lastMessagePreview]
+                        .filter(Boolean)
+                        .join(' - ') || '-'}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            ) : null}
+
+            {canViewAttendance ? (
+              <View style={styles.detailPanel}>
+                <Text style={styles.detailPanelTitle}>Absensi Karyawan</Text>
+                {attendanceLoading ? (
+                  <Text style={styles.detailSubtitle}>Memuat absensi...</Text>
+                ) : (
+                  <>
+                    <DetailRow
+                      label="Periode Gaji"
+                      value={
+                        attendancePeriodKey
+                          ? formatAttendancePeriodLabel(
+                              attendancePeriodKey,
+                              attendanceSettings.payrollCutoffDay,
+                            )
+                          : '-'
+                      }
+                    />
+                    <DetailRow
+                      label="Face Enrollment"
+                      value={formatFaceEnrollment(faceEnrollment)}
+                    />
+                    {faceEnrollment?.photoPath ? (
+                      <DetailRow
+                        label="Foto Referensi"
+                        numberOfLines={2}
+                        value={faceEnrollment.photoPath}
+                      />
+                    ) : null}
+                    {attendanceRecords.length ? (
+                      attendanceRecords.map(item => (
+                        <View
+                          key={item.id || item.dateKey}
+                          style={styles.attendanceEntry}
+                        >
+                          <View style={styles.payrollEntryHeader}>
+                            <Text style={styles.payrollEntryTitle}>
+                              {formatAttendanceDate(item.dateKey)}
+                            </Text>
+                            <KolamStatusBadge
+                              intent={getAttendanceStatusIntent(item.status)}
+                              label={formatAttendanceStatus(item.status)}
+                              numberOfLines={1}
+                            />
+                          </View>
+                          <View style={styles.attendanceMetaGrid}>
+                            <DetailRow
+                              label="Check-in"
+                              value={formatUserDateTime(item.checkInAt)}
+                            />
+                            <DetailRow
+                              label="Check-out"
+                              value={formatUserDateTime(item.checkOutAt)}
+                            />
+                            <DetailRow
+                              label="Potongan"
+                              value={formatAttendanceDeduction(item)}
+                            />
+                          </View>
+                        </View>
+                      ))
+                    ) : (
+                      <Text style={styles.detailSubtitle}>
+                        Belum ada catatan absensi pada periode ini.
+                      </Text>
+                    )}
+                  </>
+                )}
+                {attendanceError ? (
+                  <Text style={styles.formErrorText}>{attendanceError}</Text>
+                ) : null}
+              </View>
             ) : null}
           </View>
         ) : null}
@@ -2966,6 +3288,129 @@ function getUserFormErrorMessage(error: unknown, fallback: string) {
   return fallback;
 }
 
+function getCurrentAttendancePeriodKey(cutoffDay = 28) {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = today.getMonth() + 1;
+  const safeCutoff = clampAttendanceCutoffDay(year, month, cutoffDay);
+
+  if (today.getDate() > safeCutoff) {
+    const nextMonth = month === 12 ? 1 : month + 1;
+    const nextYear = month === 12 ? year + 1 : year;
+    return `${nextYear}-${String(nextMonth).padStart(2, '0')}`;
+  }
+
+  return `${year}-${String(month).padStart(2, '0')}`;
+}
+
+function formatAttendancePeriodLabel(periodKey: string, cutoffDay = 28) {
+  const [year, month] = periodKey.split('-').map(Number);
+
+  if (!year || !month) {
+    return periodKey || '-';
+  }
+
+  const safeCutoff = clampAttendanceCutoffDay(year, month, cutoffDay);
+  const monthName = new Date(year, month - 1, 1).toLocaleString('id-ID', {
+    month: 'long',
+    year: 'numeric',
+  });
+
+  return `${monthName} (cut-off tgl ${safeCutoff})`;
+}
+
+function clampAttendanceCutoffDay(year: number, month: number, cutoffDay = 28) {
+  const lastDay = new Date(year, month, 0).getDate();
+  const parsedCutoff = Number.isFinite(cutoffDay) ? cutoffDay : 28;
+
+  return Math.min(Math.max(1, parsedCutoff || 28), lastDay);
+}
+
+function formatUserRatingStars(value: number) {
+  const rounded = Math.max(0, Math.min(5, Math.round(value || 0)));
+
+  return `${'★'.repeat(rounded)}${'☆'.repeat(5 - rounded)}`;
+}
+
+function formatFaceEnrollment(value: KolamUserFaceEnrollment | null) {
+  if (!value) {
+    return 'Belum terdaftar';
+  }
+
+  const dateText = formatUserDateTime(value.enrolledAt);
+  const dimensionText =
+    value.embeddingLength > 0 ? ` (${value.embeddingLength} dimensi)` : '';
+
+  return `Terdaftar sejak ${dateText}${dimensionText}`;
+}
+
+function formatAttendanceDate(value: string) {
+  if (!value) {
+    return '-';
+  }
+
+  const date = new Date(`${value}T00:00:00`);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+function formatAttendanceStatus(value?: string | null) {
+  switch ((value ?? '').toLowerCase()) {
+    case 'present':
+      return 'Hadir';
+    case 'late_tier2':
+      return 'Telat (Rp 50rb)';
+    case 'late_tier3':
+      return 'Telat >=2j (Rp 100rb)';
+    case 'absent':
+      return 'Absen';
+    case 'holiday':
+      return 'Libur';
+    case 'leave':
+      return 'Cuti/Ijin';
+    case 'sick':
+      return 'Sakit';
+    default:
+      return value || '-';
+  }
+}
+
+function getAttendanceStatusIntent(
+  value?: string | null,
+): React.ComponentProps<typeof KolamStatusBadge>['intent'] {
+  switch ((value ?? '').toLowerCase()) {
+    case 'present':
+      return 'success';
+    case 'late_tier2':
+    case 'late_tier3':
+      return 'warning';
+    case 'absent':
+      return 'danger';
+    default:
+      return 'secondary';
+  }
+}
+
+function formatAttendanceDeduction(item: KolamUserAttendanceRecord) {
+  if (item.salaryDeduction) {
+    const code = item.salaryDeduction.code || 'Potongan';
+    const amount = formatUserCurrency(item.salaryDeduction.amount);
+    const status = item.salaryDeduction.status || '-';
+
+    return `${code} - ${amount} (${status})`;
+  }
+
+  return item.fineAmount > 0 ? formatUserCurrency(item.fineAmount) : '-';
+}
+
 const styles = StyleSheet.create({
   surface: {
     gap: 12,
@@ -3265,6 +3710,75 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     lineHeight: 16,
+  },
+  ratingSummaryRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 12,
+  },
+  ratingScore: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 32,
+    fontWeight: '900',
+    lineHeight: 38,
+  },
+  ratingSummaryCopy: {
+    flex: 1,
+    gap: 2,
+  },
+  ratingStars: {
+    color: V.colors.warning,
+    fontFamily: V.fontFamily,
+    fontSize: 16,
+    fontWeight: '900',
+    lineHeight: 22,
+  },
+  ratingCountRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  ratingCountLabel: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '800',
+    lineHeight: 16,
+    width: 64,
+  },
+  ratingBarTrack: {
+    backgroundColor: V.colors.tableHeader,
+    borderRadius: 999,
+    flex: 1,
+    height: 8,
+    overflow: 'hidden',
+  },
+  ratingBarFill: {
+    backgroundColor: V.colors.warning,
+    borderRadius: 999,
+    height: 8,
+  },
+  ratingCountValue: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '800',
+    lineHeight: 16,
+    textAlign: 'right',
+    width: 28,
+  },
+  attendanceEntry: {
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 8,
+    padding: 10,
+  },
+  attendanceMetaGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
   },
   formGrid: {
     flexDirection: 'row',

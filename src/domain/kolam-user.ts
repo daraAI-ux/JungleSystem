@@ -276,6 +276,67 @@ export interface KolamUserKasbonItem {
   updatedAt: string;
 }
 
+export interface KolamUserRatingCount {
+  count: number;
+  rating: number;
+}
+
+export interface KolamUserRatingSummary {
+  averageRating: number;
+  counts: KolamUserRatingCount[];
+  totalRatings: number;
+}
+
+export interface KolamUserRatingItem {
+  comment: string;
+  contactName: string;
+  createdAt: string;
+  id: string;
+  lastMessagePreview: string;
+  platform: string;
+  rating: number;
+}
+
+export interface KolamUserRatingListResult {
+  items: KolamUserRatingItem[];
+  limit: number;
+  page: number;
+  total: number;
+}
+
+export interface KolamUserAttendanceSettings {
+  payrollCutoffDay: number;
+  requireFace: boolean;
+  timezone: string;
+  workStartTime: string;
+}
+
+export interface KolamUserAttendanceDeduction {
+  amount: number;
+  code: string;
+  reason: string;
+  status: string;
+}
+
+export interface KolamUserAttendanceRecord {
+  checkInAt: string;
+  checkOutAt: string;
+  dateKey: string;
+  fineAmount: number;
+  id: string;
+  lateMinutes: number | null;
+  periodKey: string;
+  salaryDeduction: KolamUserAttendanceDeduction | null;
+  status: string;
+}
+
+export interface KolamUserFaceEnrollment {
+  enrolledAt: string;
+  embeddingLength: number;
+  id: string;
+  photoPath: string;
+}
+
 export function normalizeKolamUserListResult(
   payload: unknown,
   fallback: Required<Pick<KolamUserListQuery, 'limit' | 'page'>>,
@@ -412,6 +473,89 @@ export function normalizeKolamUserDeductionList(payload: unknown) {
 
 export function normalizeKolamUserKasbonList(payload: unknown) {
   return getKolamPayloadRows(payload).map(normalizeKolamUserKasbonItem);
+}
+
+export function normalizeKolamUserRatingSummary(
+  payload: unknown,
+): KolamUserRatingSummary {
+  const record = asRecord(payload);
+  const data = asRecord(record.data ?? payload);
+  const rawCounts = Array.isArray(data.counts) ? data.counts : [];
+  const normalizedCounts = rawCounts
+    .map(value => {
+      const countRecord = asRecord(value);
+      const rating = getNumber(countRecord, 'rating') ?? 0;
+      const count = getNumber(countRecord, 'count') ?? 0;
+
+      return {count, rating};
+    })
+    .filter(item => item.rating >= 1 && item.rating <= 5);
+
+  return {
+    averageRating: getNumber(data, 'averageRating') ?? 0,
+    counts: [1, 2, 3, 4, 5].map(rating => ({
+      count: normalizedCounts.find(item => item.rating === rating)?.count ?? 0,
+      rating,
+    })),
+    totalRatings: getNumber(data, 'totalRatings') ?? 0,
+  };
+}
+
+export function normalizeKolamUserRatingList(
+  payload: unknown,
+  fallback: {limit: number; page: number},
+): KolamUserRatingListResult {
+  const record = asRecord(payload);
+  const rows = getKolamPayloadRows(payload);
+
+  return {
+    items: rows.map(normalizeKolamUserRatingItem),
+    limit: getNumber(record, 'limit') ?? fallback.limit,
+    page: getNumber(record, 'page') ?? fallback.page,
+    total: getNumber(record, 'total') ?? rows.length,
+  };
+}
+
+export function normalizeKolamUserAttendanceSettings(
+  payload: unknown,
+): KolamUserAttendanceSettings {
+  const record = asRecord(payload);
+  const data = asRecord(record.data ?? payload);
+
+  return {
+    payrollCutoffDay: getNumber(data, 'payrollCutoffDay') ?? 28,
+    requireFace: getBoolean(data, 'requireFace') ?? false,
+    timezone: getString(data, 'timezone'),
+    workStartTime: getString(data, 'workStartTime'),
+  };
+}
+
+export function normalizeKolamUserAttendanceRecords(
+  payload: unknown,
+): KolamUserAttendanceRecord[] {
+  return getKolamPayloadRows(payload).map(normalizeKolamUserAttendanceRecord);
+}
+
+export function normalizeKolamUserFaceEnrollment(
+  payload: unknown,
+): KolamUserFaceEnrollment | null {
+  const record = asRecord(payload);
+  const data = asRecord(record.data ?? payload);
+  const id = getString(data, '_id') || getString(data, 'id');
+  const embedding = Array.isArray(data.embedding) ? data.embedding : [];
+  const enrolledAt = getString(data, 'enrolledAt') || getString(data, 'createdAt');
+  const photoPath = getString(data, 'photoPath');
+
+  if (!id && !enrolledAt && !photoPath && embedding.length === 0) {
+    return null;
+  }
+
+  return {
+    enrolledAt,
+    embeddingLength: embedding.length,
+    id,
+    photoPath,
+  };
 }
 
 export function getKolamUserEmployeeStatusLabel(user: KolamUserListItem) {
@@ -558,6 +702,54 @@ function normalizeKolamUserKasbonItem(value: unknown): KolamUserKasbonItem {
     reviewedAt: getString(record, 'reviewedAt'),
     status: getString(record, 'status'),
     updatedAt: getString(record, 'updatedAt') || getString(record, 'updated_at'),
+  };
+}
+
+function normalizeKolamUserRatingItem(value: unknown): KolamUserRatingItem {
+  const record = asRecord(value);
+  const conversation = asRecord(record.conversationId);
+  const contact = asRecord(conversation.contactId);
+
+  return {
+    comment: getString(record, 'comment'),
+    contactName: getString(contact, 'displayName'),
+    createdAt: getString(record, 'createdAt'),
+    id: getString(record, '_id') || getString(record, 'id'),
+    lastMessagePreview: getString(conversation, 'lastMessagePreview'),
+    platform: getString(conversation, 'platform'),
+    rating: getNumber(record, 'rating') ?? 0,
+  };
+}
+
+function normalizeKolamUserAttendanceRecord(
+  value: unknown,
+): KolamUserAttendanceRecord {
+  const record = asRecord(value);
+  const deduction = asRecord(record.salaryDeduction);
+  const hasDeduction = Boolean(
+    getString(deduction, '_id') ||
+      getString(deduction, 'id') ||
+      getString(deduction, 'code') ||
+      getNumber(deduction, 'amount'),
+  );
+
+  return {
+    checkInAt: getString(record, 'checkInAt'),
+    checkOutAt: getString(record, 'checkOutAt'),
+    dateKey: getString(record, 'dateKey'),
+    fineAmount: getNumber(record, 'fineAmount') ?? 0,
+    id: getString(record, '_id') || getString(record, 'id'),
+    lateMinutes: getNumber(record, 'lateMinutes') ?? null,
+    periodKey: getString(record, 'periodKey'),
+    salaryDeduction: hasDeduction
+      ? {
+          amount: getNumber(deduction, 'amount') ?? 0,
+          code: getString(deduction, 'code'),
+          reason: getString(deduction, 'reason'),
+          status: getString(deduction, 'status'),
+        }
+      : null,
+    status: getString(record, 'status'),
   };
 }
 

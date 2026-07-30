@@ -3,18 +3,28 @@ import {
   normalizeKolamKasbonPendingSummary,
   normalizeKolamUserBonusList,
   normalizeKolamUserDeductionList,
+  normalizeKolamUserAttendanceRecords,
+  normalizeKolamUserAttendanceSettings,
   normalizeKolamUserDetail,
+  normalizeKolamUserFaceEnrollment,
   normalizeKolamUserKasbonList,
   normalizeKolamUserListResult,
+  normalizeKolamUserRatingList,
+  normalizeKolamUserRatingSummary,
   normalizeKolamUserRoles,
   type KolamKasbonPendingSummary,
+  type KolamUserAttendanceRecord,
+  type KolamUserAttendanceSettings,
   type KolamUserBonusItem,
   type KolamUserCreatePayload,
   type KolamUserDeductionItem,
+  type KolamUserFaceEnrollment,
   type KolamUserKasbonItem,
   type KolamUserListItem,
   type KolamUserListQuery,
   type KolamUserListResult,
+  type KolamUserRatingListResult,
+  type KolamUserRatingSummary,
   type KolamUserRoleOption,
   type KolamUserUpdatePayload,
 } from '../domain/kolam-user';
@@ -108,6 +118,62 @@ export async function getKolamUserKasbonList(
   });
 
   return normalizeKolamUserKasbonList(response);
+}
+
+export async function getKolamUserRatingSummary(
+  staffId: string,
+): Promise<KolamUserRatingSummary> {
+  const response = await kolamRequest<unknown>(
+    `/chat/ratings/staff/${encodeURIComponent(staffId)}/summary`,
+  );
+
+  return normalizeKolamUserRatingSummary(response);
+}
+
+export async function getKolamUserRatingList(
+  staffId: string,
+  options: {limit?: number; page?: number} = {},
+): Promise<KolamUserRatingListResult> {
+  const limit = options.limit ?? 10;
+  const page = options.page ?? 1;
+  const response = await kolamRequest<unknown>(
+    `/chat/ratings/staff/${encodeURIComponent(staffId)}`,
+    {
+      query: {limit, page},
+    },
+  );
+
+  return normalizeKolamUserRatingList(response, {limit, page});
+}
+
+export async function getKolamUserAttendanceSettings(): Promise<KolamUserAttendanceSettings> {
+  const response = await kolamRequest<unknown>('/staff-attendance/settings');
+
+  return normalizeKolamUserAttendanceSettings(response);
+}
+
+export async function getKolamUserAttendanceRecords(
+  userId: string,
+  periodKey: string,
+): Promise<KolamUserAttendanceRecord[]> {
+  const response = await kolamRequest<unknown>(
+    `/staff-attendance/users/${encodeURIComponent(userId)}/records`,
+    {
+      query: {periodKey},
+    },
+  );
+
+  return normalizeKolamUserAttendanceRecords(response);
+}
+
+export async function getKolamUserFaceEnrollment(
+  userId: string,
+): Promise<KolamUserFaceEnrollment | null> {
+  const response = await kolamRequest<unknown>(
+    `/staff-attendance/users/${encodeURIComponent(userId)}/face-enrollment`,
+  );
+
+  return normalizeKolamUserFaceEnrollment(response);
 }
 
 export async function createKolamUser(
