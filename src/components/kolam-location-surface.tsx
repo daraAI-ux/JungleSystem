@@ -163,11 +163,7 @@ export function KolamLocationSurface({
     );
   }
 
-  return (
-    <View style={styles.surface}>
-      <KolamLocationList onRouteChange={onRouteChange} />
-    </View>
-  );
+  return <KolamLocationList onRouteChange={onRouteChange} />;
 }
 
 function getKolamLocationIdFromRoute(route: string) {
@@ -1150,7 +1146,7 @@ function KolamLocationList({
   };
 
   return (
-    <View style={styles.stack}>
+    <View style={styles.listStack}>
       <View style={styles.toolbarWrap}>
         <View style={kolamTableToolbarStyles.shell}>
           <View style={kolamTableToolbarStyles.row}>
@@ -1375,7 +1371,7 @@ function KolamLocationRow({
                 id: 'name',
                 text: location.name,
                 style: styles.locationNameText,
-                textProps: {numberOfLines: 2},
+                textProps: {numberOfLines: 1},
               },
             ]}
           />
@@ -1991,6 +1987,9 @@ const styles = StyleSheet.create({
     gap: 16,
     padding: 24,
   },
+  listStack: {
+    gap: 14,
+  },
   header: {
     alignItems: 'flex-start',
     flexDirection: 'row',
@@ -2021,9 +2020,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 22,
     marginTop: 4,
-  },
-  stack: {
-    gap: 12,
   },
   toolbarWrap: {
     elevation: 1000,
@@ -2083,20 +2079,22 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     justifyContent: 'center',
   },
+  locationNameText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+    lineHeight: 20,
+    textAlign: 'left',
+  },
   locationMetaText: {
     color: V.colors.fg,
+    fontFamily: V.fontFamily,
     fontSize: 13,
     fontWeight: '500',
     lineHeight: 20,
     textAlign: 'center',
     width: '100%',
-  },
-  locationNameText: {
-    color: V.colors.fg,
-    fontSize: 14,
-    fontWeight: '600',
-    lineHeight: 24,
-    textAlign: 'left',
   },
   parentCopy: {
     alignItems: 'center',
