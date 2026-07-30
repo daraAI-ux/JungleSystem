@@ -416,6 +416,7 @@ function KolamBrandRow({
 }) {
   const flag = getKolamBrandFlagByCountry(brand.originCountry);
   const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
+  const [nameTooltipOpen, setNameTooltipOpen] = React.useState(false);
   const columnOf = React.useCallback(
     (id: (typeof columns)[number]['id']) => columns.find(column => column.id === id),
     [columns],
@@ -427,17 +428,27 @@ function KolamBrandRow({
   const notesColumn = columnOf('notes');
   const statusColumn = columnOf('status');
   const actionsColumn = columnOf('actions');
+  const raiseRow = actionMenuOpen || nameTooltipOpen;
 
   return (
-    <KolamDataTableRowFrame style={actionMenuOpen && styles.activeActionRow}>
-      <KolamDataTableMainTrack>
+    <KolamDataTableRowFrame
+      style={raiseRow ? styles.activeActionRow : undefined}
+    >
+      <KolamDataTableMainTrack style={styles.mainTrackVisible}>
         <View
           style={[
             styles.listCell,
+            styles.logoCell,
             primaryColumn ? getKolamDataTableColumnStyle(primaryColumn) : null,
+            styles.overflowVisible,
           ]}
         >
-          <KolamHoverTooltip align="center" label={brand.name}>
+          <KolamHoverTooltip
+            align="center"
+            label={brand.name}
+            onOpenChange={setNameTooltipOpen}
+            placement="bottom"
+          >
             <View style={styles.brandIdentity}>
               <KolamBrandLogo brand={brand} />
             </View>
@@ -1001,6 +1012,10 @@ const styles = StyleSheet.create({
   activeActionRow: {
     zIndex: 1000,
     elevation: 30,
+    overflow: 'visible',
+  },
+  mainTrackVisible: {
+    overflow: 'visible',
   },
   listCell: {
     alignItems: 'center',
@@ -1008,6 +1023,12 @@ const styles = StyleSheet.create({
     minWidth: 0,
     overflow: 'hidden',
     paddingVertical: 4,
+  },
+  logoCell: {
+    zIndex: 2,
+  },
+  overflowVisible: {
+    overflow: 'visible',
   },
   brandIdentity: {
     alignItems: 'center',
