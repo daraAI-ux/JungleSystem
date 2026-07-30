@@ -33,6 +33,7 @@ import {
   isKolamSalesRoute,
   isMarketplaceSalesSource,
   pickDefaultOfflinePosSourceId,
+  resolveKolamSaleSourceLogoUri,
   saleHasUnsupportedEditItemTypes,
   validateKolamSaleAddItemsPayload,
   validateKolamSaleCreatePayload,
@@ -412,13 +413,26 @@ export function useKolamSalesController(route: string): KolamSalesController {
     setLoading(true);
     setError(null);
     try {
-      const [sale, allocations] = await Promise.all([
+      const [sale, allocations, sourceRows] = await Promise.all([
         getKolamSale(id),
         getKolamSalePendingLivestockAllocations(id).catch(
           () => [] as KolamSaleLivestockAllocationRow[],
         ),
+        getKolamSalesActiveSources().catch(
+          () => [] as KolamSaleSourceOption[],
+        ),
       ]);
-      setSelectedSale(sale);
+      setSources(sourceRows);
+      // Detail GET omits sourceRef.logo — attach Sales Source master logo.
+      const logoUri = resolveKolamSaleSourceLogoUri(sale, sourceRows);
+      setSelectedSale(
+        sale.sourceRef && logoUri
+          ? {
+              ...sale,
+              sourceRef: { ...sale.sourceRef, logoUri },
+            }
+          : sale,
+      );
       setLivestockAllocations(allocations);
       setDataSource('live');
     } catch (loadError) {
