@@ -10,26 +10,33 @@ export const KOLAM_DATA_TABLE_COLUMN_GAP = 12;
 const CELL_PADDING_X = 6;
 const CELL_PADDING_RIGHT_ALIGNED = 10;
 
+function getKolamDataTableCellPadding(align: KolamTableColumn['align'] | KolamTableColumn['headerAlign']) {
+  if (align === 'right') {
+    return {
+      paddingLeft: CELL_PADDING_X,
+      paddingRight: CELL_PADDING_RIGHT_ALIGNED,
+    };
+  }
+
+  return {
+    paddingLeft: CELL_PADDING_X,
+    paddingRight: CELL_PADDING_X,
+  };
+}
+
 /**
  * Shared column layout for header + body cells.
  * Primary without an explicit width grows (`flex: 1`) but keeps a readable min width.
- * Secondary columns use adaptive/fixed `column.width` from the table contract.
- * Overflow is clipped so right-aligned amounts cannot bleed into the next column.
+ * Secondary `column.width` is treated as the **content** width from adaptive sizing;
+ * horizontal padding is added outside that content so clip/overflow cannot eat characters.
  */
 export function getKolamDataTableColumnStyle(
   column: Pick<KolamTableColumn, 'id' | 'width' | 'align' | 'headerAlign'>,
 ): StyleProp<ViewStyle> {
   const align = column.headerAlign ?? column.align;
   const isPrimaryFlex = column.id === 'primary' && column.width == null;
-  const paddingStyle: ViewStyle =
-    align === 'right'
-      ? {
-          paddingLeft: CELL_PADDING_X,
-          paddingRight: CELL_PADDING_RIGHT_ALIGNED,
-        }
-      : {
-          paddingHorizontal: CELL_PADDING_X,
-        };
+  const paddingStyle = getKolamDataTableCellPadding(align);
+  const horizontalPadding = paddingStyle.paddingLeft + paddingStyle.paddingRight;
 
   const base: ViewStyle = {
     overflow: 'hidden',
@@ -40,14 +47,14 @@ export function getKolamDataTableColumnStyle(
     return {
       ...base,
       flex: 1,
-      minWidth: KOLAM_DATA_TABLE_PRIMARY_MIN_WIDTH,
+      minWidth: KOLAM_DATA_TABLE_PRIMARY_MIN_WIDTH + horizontalPadding,
     };
   }
 
   if (column.width != null) {
     return {
       ...base,
-      width: column.width,
+      width: column.width + horizontalPadding,
       minWidth: 0,
     };
   }
