@@ -10,19 +10,17 @@ import {
   type KolamSaleAnalyticsSourceRow,
 } from '../domain/kolam-sales';
 import { getDashboardCountVisualContract } from '../domain/dashboard-counts';
-import { getDashboardSalesGraphVisualContract } from '../domain/dashboard-sales-graph';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { KolamCardFrame } from './kolam-card-frame';
-import { KolamContentFrame } from './kolam-content-frame';
 import { DASHBOARD_COUNT_VISUAL } from './kolam-dashboard-metric-visual';
 import { KolamDashboardSalesGraphRangeTrigger } from './kolam-dashboard-sales-graph-range-trigger';
 import { KolamHeaderFrame } from './kolam-header-frame';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamStatusBadge } from './kolam-status-badge';
 
-const GRAPH_VISUAL = getDashboardSalesGraphVisualContract();
 const COUNT_VISUAL = getDashboardCountVisualContract();
-const PLOT_HEIGHT = GRAPH_VISUAL.chart.innerPlotHeight;
+/** Compact plot — full beranda graph height would push the sales table off-screen. */
+const PLOT_HEIGHT = 72;
 
 /** FE beranda kanal order — POS / Website / Tokopedia / Shopee first. */
 const SOURCE_DISPLAY_PRIORITY = [
@@ -205,78 +203,76 @@ export function KolamSalesOpsAnalyticsPanel({
         )}
       </KolamCardFrame>
 
-      <KolamCardFrame variant="dashboardSalesGraph">
-        <View style={styles.chartHeader}>
-          <Text style={styles.sectionTitle}>Berhasil vs Tidak Berhasil</Text>
-          <Text style={styles.sectionDesc}>
-            Total pesanan (rentang dipilih)
-          </Text>
-          <Text style={styles.totalValue}>
-            {safeAnalytics.totals.orders.toLocaleString('id-ID')} pesanan
-          </Text>
-          <Text style={styles.sectionDesc}>
-            {rangeHint} · Berhasil{' '}
-            {safeAnalytics.totals.success.toLocaleString('id-ID')} · Tidak
-            berhasil {safeAnalytics.totals.failed.toLocaleString('id-ID')}
-          </Text>
-          <View style={styles.legendRow}>
-            <View style={[styles.legendSwatch, styles.legendSuccess]} />
-            <Text style={styles.legendText}>Berhasil</Text>
-            <View style={[styles.legendSwatch, styles.legendFailed]} />
-            <Text style={styles.legendText}>Tidak berhasil</Text>
+      <KolamCardFrame style={styles.chartCard} variant="dashboardInventoryCounts">
+        <View style={styles.chartRow}>
+          <View style={styles.chartSummary}>
+            <Text style={styles.sectionTitle}>Berhasil vs Tidak Berhasil</Text>
+            <Text style={styles.sectionDesc}>
+              Total pesanan (rentang dipilih)
+            </Text>
+            <Text style={styles.totalValue}>
+              {safeAnalytics.totals.orders.toLocaleString('id-ID')} pesanan
+            </Text>
+            <Text numberOfLines={2} style={styles.sectionDesc}>
+              {rangeHint} · Berhasil{' '}
+              {safeAnalytics.totals.success.toLocaleString('id-ID')} · Tidak
+              berhasil {safeAnalytics.totals.failed.toLocaleString('id-ID')}
+            </Text>
+            <View style={styles.legendRow}>
+              <View style={[styles.legendSwatch, styles.legendSuccess]} />
+              <Text style={styles.legendText}>Berhasil</Text>
+              <View style={[styles.legendSwatch, styles.legendFailed]} />
+              <Text style={styles.legendText}>Tidak berhasil</Text>
+            </View>
+          </View>
+
+          <View style={styles.chartPlot}>
+            {loading && safeAnalytics.timeline.length === 0 ? (
+              <Text style={styles.plotEmptyText}>Memuat…</Text>
+            ) : safeAnalytics.timeline.length === 0 ? (
+              <Text style={styles.plotEmptyText}>
+                Belum ada pesanan pada rentang ini.
+              </Text>
+            ) : (
+              safeAnalytics.timeline.map((point, index) => {
+                const successCount = Number(point.successCount) || 0;
+                const failedCount = Number(point.failedCount) || 0;
+                const successHeight = Math.max(
+                  3,
+                  Math.round((successCount / maxBucket) * PLOT_HEIGHT),
+                );
+                const failedHeight =
+                  failedCount > 0
+                    ? Math.max(
+                        3,
+                        Math.round((failedCount / maxBucket) * PLOT_HEIGHT),
+                      )
+                    : 0;
+                const key = point.timestamp || `bucket-${index}`;
+                return (
+                  <View key={key} style={styles.bucket}>
+                    <View style={styles.bucketBars}>
+                      <View
+                        style={[styles.barSuccess, { height: successHeight }]}
+                      />
+                      {failedHeight > 0 ? (
+                        <View
+                          style={[styles.barFailed, { height: failedHeight }]}
+                        />
+                      ) : null}
+                    </View>
+                    <Text numberOfLines={1} style={styles.bucketLabel}>
+                      {formatKolamSaleAnalyticsBucketLabel(
+                        point.timestamp || '',
+                        range,
+                      )}
+                    </Text>
+                  </View>
+                );
+              })
+            )}
           </View>
         </View>
-
-        {loading && safeAnalytics.timeline.length === 0 ? (
-          <KolamContentFrame variant="dashboardSalesGraphEmpty">
-            <Text style={styles.loadingText}>Memuat data…</Text>
-          </KolamContentFrame>
-        ) : safeAnalytics.timeline.length === 0 ? (
-          <KolamContentFrame variant="dashboardSalesGraphEmpty">
-            <Text style={styles.loadingText}>
-              Belum ada pesanan pada rentang ini.
-            </Text>
-          </KolamContentFrame>
-        ) : (
-          <KolamContentFrame variant="dashboardSalesGraphPlot">
-            {safeAnalytics.timeline.map((point, index) => {
-              const successCount = Number(point.successCount) || 0;
-              const failedCount = Number(point.failedCount) || 0;
-              const successHeight = Math.max(
-                4,
-                Math.round((successCount / maxBucket) * PLOT_HEIGHT),
-              );
-              const failedHeight =
-                failedCount > 0
-                  ? Math.max(
-                      4,
-                      Math.round((failedCount / maxBucket) * PLOT_HEIGHT),
-                    )
-                  : 0;
-              const key = point.timestamp || `bucket-${index}`;
-              return (
-                <View key={key} style={styles.bucket}>
-                  <View style={styles.bucketBars}>
-                    <View
-                      style={[styles.barSuccess, { height: successHeight }]}
-                    />
-                    {failedHeight > 0 ? (
-                      <View
-                        style={[styles.barFailed, { height: failedHeight }]}
-                      />
-                    ) : null}
-                  </View>
-                  <Text numberOfLines={1} style={styles.bucketLabel}>
-                    {formatKolamSaleAnalyticsBucketLabel(
-                      point.timestamp || '',
-                      range,
-                    )}
-                  </Text>
-                </View>
-              );
-            })}
-          </KolamContentFrame>
-        )}
       </KolamCardFrame>
     </View>
   );
@@ -284,18 +280,43 @@ export function KolamSalesOpsAnalyticsPanel({
 
 const styles = StyleSheet.create({
   root: {
-    gap: 12,
+    gap: 8,
   },
   headerCopy: {
     flex: 1,
     minWidth: 0,
   },
-  chartHeader: {
-    gap: 0,
-    paddingHorizontal: GRAPH_VISUAL.header.paddingX,
-    paddingVertical: GRAPH_VISUAL.header.paddingY,
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: GRAPH_VISUAL.header.borderBottom ? 1 : 0,
+  chartCard: {
+    overflow: 'hidden',
+  },
+  chartRow: {
+    alignItems: 'stretch',
+    flexDirection: 'row',
+    gap: 12,
+    paddingBottom: 10,
+    paddingHorizontal: COUNT_VISUAL.section.gridPaddingX,
+    paddingTop: 10,
+  },
+  chartSummary: {
+    flexGrow: 0,
+    flexShrink: 1,
+    maxWidth: 280,
+    minWidth: 180,
+  },
+  chartPlot: {
+    alignItems: 'flex-end',
+    flex: 1,
+    flexDirection: 'row',
+    gap: 6,
+    minHeight: PLOT_HEIGHT + 18,
+    minWidth: 0,
+  },
+  plotEmptyText: {
+    alignSelf: 'center',
+    color: V.colors.mutedFg,
+    flex: 1,
+    fontSize: 12,
+    textAlign: 'center',
   },
   sectionTitle: {
     color: V.colors.fg,
@@ -306,21 +327,21 @@ const styles = StyleSheet.create({
   sectionDesc: {
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
-    fontSize: COUNT_VISUAL.section.descriptionFontSize,
-    marginTop: COUNT_VISUAL.section.descriptionGapY,
+    fontSize: 12,
+    marginTop: 2,
   },
   totalValue: {
     color: V.colors.fg,
     fontFamily: V.fontFamily,
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '800',
-    marginTop: 4,
+    marginTop: 2,
   },
   loadingText: {
     color: V.colors.mutedFg,
     fontSize: 13,
     paddingHorizontal: 16,
-    paddingVertical: 24,
+    paddingVertical: 16,
     textAlign: 'center',
   },
   sourceStrip: {
@@ -380,7 +401,7 @@ const styles = StyleSheet.create({
     color: V.colors.mutedFg,
     fontSize: 13,
     paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingVertical: 12,
     textAlign: 'center',
     width: '100%',
   },
@@ -389,7 +410,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-    marginTop: 10,
+    marginTop: 6,
   },
   legendSwatch: {
     borderRadius: 2,
@@ -411,32 +432,32 @@ const styles = StyleSheet.create({
   bucket: {
     alignItems: 'center',
     flex: 1,
-    gap: 6,
-    minWidth: 28,
+    gap: 4,
+    minWidth: 22,
   },
   bucketBars: {
     alignItems: 'flex-end',
     flexDirection: 'row',
-    gap: 3,
+    gap: 2,
     height: PLOT_HEIGHT,
     justifyContent: 'center',
   },
   barSuccess: {
     backgroundColor: V.colors.success,
-    borderTopLeftRadius: 3,
-    borderTopRightRadius: 3,
-    minHeight: 4,
-    width: 8,
+    borderTopLeftRadius: 2,
+    borderTopRightRadius: 2,
+    minHeight: 3,
+    width: 7,
   },
   barFailed: {
     backgroundColor: V.colors.danger,
-    borderTopLeftRadius: 3,
-    borderTopRightRadius: 3,
-    width: 8,
+    borderTopLeftRadius: 2,
+    borderTopRightRadius: 2,
+    width: 7,
   },
   bucketLabel: {
     color: V.colors.mutedFg,
-    fontSize: 10,
+    fontSize: 9,
     textAlign: 'center',
   },
 });
