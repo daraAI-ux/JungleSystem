@@ -2205,6 +2205,9 @@ function KolamChatRailDetailPanel({
     mode === 'inbox'
       ? getInboxMarketplaceAttachPlatform(detail.conversation?.platform)
       : null;
+  const marketplaceAttachLabel = marketplaceAttachPlatform
+    ? formatMarketplaceComposerToolLabel(marketplaceAttachPlatform)
+    : '';
   const attachmentLabel = pendingAttachment
     ? getPendingChatAttachmentLabel(pendingAttachment)
     : '';
@@ -2894,9 +2897,7 @@ function KolamChatRailDetailPanel({
               ) : null}
               {marketplaceAttachPlatform ? (
                 <KolamPressable
-                  accessibilityLabel={`Buka produk ${formatInboxPlatform(
-                    marketplaceAttachPlatform,
-                  )}`}
+                  accessibilityLabel={marketplaceAttachLabel}
                   disabled={detail.sending || inboxComposerBlocked}
                   onPress={() => {
                     setMarketplacePickerOpen(current => !current);
@@ -2909,7 +2910,7 @@ function KolamChatRailDetailPanel({
                     (detail.sending || inboxComposerBlocked) &&
                       styles.composerIconButtonDisabled,
                   ]}>
-                  <Text style={styles.composerIconButtonText}>M</Text>
+                  <KolamPlatformFilterLogo platform={marketplaceAttachPlatform} />
                 </KolamPressable>
               ) : null}
               <KolamPressable
@@ -5379,6 +5380,12 @@ function getInboxMarketplaceAttachPlatform(
   }
 
   return null;
+}
+
+function formatMarketplaceComposerToolLabel(platform: 'shopee' | 'tokopedia') {
+  return platform === 'tokopedia'
+    ? 'Buka produk Tokopedia'
+    : 'Buka produk Shopee';
 }
 
 function formatMarketplaceListingMeta(item: KolamChatMarketplaceListingHit) {
