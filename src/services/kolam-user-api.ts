@@ -1,11 +1,17 @@
 import {appConfig} from '../config/app';
 import {
   normalizeKolamKasbonPendingSummary,
+  normalizeKolamUserBonusList,
+  normalizeKolamUserDeductionList,
   normalizeKolamUserDetail,
+  normalizeKolamUserKasbonList,
   normalizeKolamUserListResult,
   normalizeKolamUserRoles,
   type KolamKasbonPendingSummary,
+  type KolamUserBonusItem,
   type KolamUserCreatePayload,
+  type KolamUserDeductionItem,
+  type KolamUserKasbonItem,
   type KolamUserListItem,
   type KolamUserListQuery,
   type KolamUserListResult,
@@ -72,6 +78,36 @@ export async function getKolamKasbonPendingSummary(): Promise<KolamKasbonPending
   const response = await kolamRequest<unknown>('/salary/kasbon/pending-summary');
 
   return normalizeKolamKasbonPendingSummary(response);
+}
+
+export async function getKolamUserBonusList(
+  userId: string,
+): Promise<KolamUserBonusItem[]> {
+  const response = await kolamRequest<unknown>(
+    `/salary/bonus/${encodeURIComponent(userId)}`,
+  );
+
+  return normalizeKolamUserBonusList(response);
+}
+
+export async function getKolamUserDeductionList(
+  userId: string,
+): Promise<KolamUserDeductionItem[]> {
+  const response = await kolamRequest<unknown>('/salary/deduction', {
+    query: {userId},
+  });
+
+  return normalizeKolamUserDeductionList(response);
+}
+
+export async function getKolamUserKasbonList(
+  userId: string,
+): Promise<KolamUserKasbonItem[]> {
+  const response = await kolamRequest<unknown>('/salary/kasbon', {
+    query: {userId},
+  });
+
+  return normalizeKolamUserKasbonList(response);
 }
 
 export async function createKolamUser(

@@ -6,13 +6,16 @@ import {
   getKolamUserIdFromRoute,
   getKolamUserRouteMode,
   type KolamKasbonPendingSummary,
+  type KolamUserBonusItem,
   type KolamUserBooleanFilter,
   type KolamUserBiodata,
   type KolamUserBiodataAddress,
   type KolamUserBiodataEmergencyContact,
   type KolamUserCreatePayload,
+  type KolamUserDeductionItem,
   type KolamUserEmployeeProfile,
   type KolamUserEmployeeSchedule,
+  type KolamUserKasbonItem,
   type KolamUserListItem,
   type KolamUserListPagination,
   type KolamUserRoleOption,
@@ -26,7 +29,10 @@ import {getKolamFileUrl} from '../lib/file-url';
 import {
   createKolamUser,
   getKolamKasbonPendingSummary,
+  getKolamUserBonusList,
+  getKolamUserDeductionList,
   getKolamUserDetail,
+  getKolamUserKasbonList,
   getKolamUserList,
   getKolamUserRoles,
   updateKolamUser,
@@ -88,6 +94,12 @@ const EMPTY_CREATE_USER_FORM: KolamUserCreatePayload = {
 const EMPTY_KASBON_PENDING_SUMMARY: KolamKasbonPendingSummary = {
   byUser: {},
   total: 0,
+};
+
+const EMPTY_USER_PAYROLL_SUMMARY = {
+  bonuses: [] as KolamUserBonusItem[],
+  deductions: [] as KolamUserDeductionItem[],
+  kasbons: [] as KolamUserKasbonItem[],
 };
 
 const EMPTY_USER_BIODATA: KolamUserBiodata = {
@@ -726,9 +738,41 @@ function KolamUserDetailSurface({
   onRouteChange?: (route: string) => void;
   userId: string;
 }) {
+  const {authUser} = useKolamAuthContext();
   const [user, setUser] = React.useState<KolamUserListItem | null>(null);
+  const [payrollSummary, setPayrollSummary] = React.useState(
+    EMPTY_USER_PAYROLL_SUMMARY,
+  );
+  const [payrollLoading, setPayrollLoading] = React.useState(false);
+  const [payrollError, setPayrollError] = React.useState('');
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState('');
+  const permissionContext = React.useMemo(
+    () => ({
+      permissions: authUser?.permissions,
+      roleKey: authUser?.roleKey,
+    }),
+    [authUser?.permissions, authUser?.roleKey],
+  );
+  const currentUserId = String(authUser?.id ?? '');
+  const isSuperAdmin = isSettingsSuperAdminRoleKey(authUser?.roleKey ?? '');
+  const canViewSalary =
+    Boolean(user?.id) &&
+    (currentUserId === String(user?.id) ||
+      isSuperAdmin ||
+      hasSettingsPermission(permissionContext, 'user', 'view_salary'));
+  const canViewKasbon =
+    Boolean(user?.id) &&
+    (currentUserId === String(user?.id) ||
+      isSuperAdmin ||
+      hasSettingsPermission(permissionContext, 'kasbon', 'view'));
+  const canViewBonus =
+    Boolean(user?.isEmployee) &&
+    (isSuperAdmin || hasSettingsPermission(permissionContext, 'salary', 'view'));
+  const canViewDeductions =
+    Boolean(user?.isEmployee) &&
+    (isSuperAdmin ||
+      hasSettingsPermission(permissionContext, 'salary_deduction', 'view'));
 
   React.useEffect(() => {
     let active = true;
@@ -771,6 +815,73 @@ function KolamUserDetailSurface({
       active = false;
     };
   }, [userId]);
+
+  React.useEffect(() => {
+    let active = true;
+
+    if (!user?.id || !user.isEmployee) {
+      setPayrollSummary(EMPTY_USER_PAYROLL_SUMMARY);
+      setPayrollLoading(false);
+      setPayrollError('');
+      return () => {
+        active = false;
+      };
+    }
+
+    const requests = [
+      canViewBonus
+        ? getKolamUserBonusList(user.id).catch(() => [] as KolamUserBonusItem[])
+        : Promise.resolve([] as KolamUserBonusItem[]),
+      canViewDeductions
+        ? getKolamUserDeductionList(user.id).catch(
+            () => [] as KolamUserDeductionItem[],
+          )
+        : Promise.resolve([] as KolamUserDeductionItem[]),
+      canViewKasbon
+        ? getKolamUserKasbonList(user.id).catch(() => [] as KolamUserKasbonItem[])
+        : Promise.resolve([] as KolamUserKasbonItem[]),
+    ] as const;
+
+    if (!canViewBonus && !canViewDeductions && !canViewKasbon) {
+      setPayrollSummary(EMPTY_USER_PAYROLL_SUMMARY);
+      setPayrollLoading(false);
+      setPayrollError('');
+      return () => {
+        active = false;
+      };
+    }
+
+    setPayrollLoading(true);
+    setPayrollError('');
+
+    void Promise.all(requests)
+      .then(([bonuses, deductions, kasbons]) => {
+        if (active) {
+          setPayrollSummary({bonuses, deductions, kasbons});
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setPayrollSummary(EMPTY_USER_PAYROLL_SUMMARY);
+          setPayrollError('Gagal memuat data payroll.');
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setPayrollLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [
+    canViewBonus,
+    canViewDeductions,
+    canViewKasbon,
+    user?.id,
+    user?.isEmployee,
+  ]);
 
   if (loading || error || !user) {
     return (
@@ -1056,6 +1167,22 @@ function KolamUserDetailSurface({
                 numberOfLines={3}
                 value={formatUserWorkDays(user.employee.schedule.workDays)}
               />
+              {canViewSalary ? (
+                <>
+                  <DetailRow
+                    label="Gaji Bulanan"
+                    value={formatUserCurrency(user.employee.salary)}
+                  />
+                  <DetailRow
+                    label="Tanggal Gajian"
+                    value={
+                      user.employee.salaryDate == null
+                        ? '-'
+                        : `Tanggal ${user.employee.salaryDate} setiap bulan`
+                    }
+                  />
+                </>
+              ) : null}
               <DetailBadgeRow
                 label="Status PKP"
                 badges={[
@@ -1073,6 +1200,136 @@ function KolamUserDetailSurface({
             </View>
           ) : null}
         </View>
+
+        {user.isEmployee &&
+        (canViewBonus || canViewDeductions || canViewKasbon) ? (
+          <View style={styles.detailGrid}>
+            {canViewBonus ? (
+              <View style={styles.detailPanel}>
+                <Text style={styles.detailPanelTitle}>Riwayat Bonus</Text>
+                {payrollLoading ? (
+                  <Text style={styles.detailSubtitle}>Memuat bonus...</Text>
+                ) : payrollSummary.bonuses.length ? (
+                  payrollSummary.bonuses.map(item => (
+                    <View key={item.id || item.code} style={styles.payrollEntry}>
+                      <View style={styles.payrollEntryHeader}>
+                        <Text numberOfLines={1} style={styles.payrollEntryTitle}>
+                          {item.code || 'Bonus'}
+                        </Text>
+                        <KolamStatusBadge
+                          intent={getPayrollStatusIntent(item.status)}
+                          label={formatPayrollStatus(item.status)}
+                          numberOfLines={1}
+                        />
+                      </View>
+                      <Text style={styles.payrollEntryAmount}>
+                        {formatUserCurrency(item.amount)}
+                      </Text>
+                      <Text numberOfLines={2} style={styles.detailSubtitle}>
+                        {item.reason || '-'}
+                      </Text>
+                      <Text style={styles.payrollEntryDate}>
+                        {formatUserDateTime(item.executedAt || item.createdAt)}
+                      </Text>
+                    </View>
+                  ))
+                ) : (
+                  <Text style={styles.detailSubtitle}>
+                    Belum ada bonus yang diberikan.
+                  </Text>
+                )}
+              </View>
+            ) : null}
+
+            {canViewDeductions ? (
+              <View style={styles.detailPanel}>
+                <Text style={styles.detailPanelTitle}>Potongan Gaji</Text>
+                {payrollLoading ? (
+                  <Text style={styles.detailSubtitle}>
+                    Memuat potongan gaji...
+                  </Text>
+                ) : payrollSummary.deductions.length ? (
+                  payrollSummary.deductions.map(item => (
+                    <View key={item.id || item.code} style={styles.payrollEntry}>
+                      <View style={styles.payrollEntryHeader}>
+                        <Text numberOfLines={1} style={styles.payrollEntryTitle}>
+                          {item.code || 'Potongan'}
+                        </Text>
+                        <KolamStatusBadge
+                          intent={getPayrollStatusIntent(item.status)}
+                          label={formatPayrollStatus(item.status)}
+                          numberOfLines={1}
+                        />
+                      </View>
+                      <Text style={styles.payrollEntryAmount}>
+                        {formatUserCurrency(item.amount)}
+                      </Text>
+                      <Text numberOfLines={2} style={styles.detailSubtitle}>
+                        {item.reason || item.rejectionReason || '-'}
+                      </Text>
+                      <Text style={styles.payrollEntryDate}>
+                        {formatUserDateTime(item.reviewedAt || item.createdAt)}
+                      </Text>
+                    </View>
+                  ))
+                ) : (
+                  <Text style={styles.detailSubtitle}>
+                    Tidak ada pengajuan potongan gaji.
+                  </Text>
+                )}
+              </View>
+            ) : null}
+
+            {canViewKasbon ? (
+              <View style={styles.detailPanel}>
+                <Text style={styles.detailPanelTitle}>
+                  Kasbon (Uang Muka Gaji)
+                </Text>
+                {payrollLoading ? (
+                  <Text style={styles.detailSubtitle}>Memuat kasbon...</Text>
+                ) : payrollSummary.kasbons.length ? (
+                  payrollSummary.kasbons.map(item => (
+                    <View key={item.id || item.code} style={styles.payrollEntry}>
+                      <View style={styles.payrollEntryHeader}>
+                        <Text numberOfLines={1} style={styles.payrollEntryTitle}>
+                          {item.code || 'Kasbon'}
+                        </Text>
+                        <KolamStatusBadge
+                          intent={getPayrollStatusIntent(item.status)}
+                          label={formatPayrollStatus(item.status)}
+                          numberOfLines={1}
+                        />
+                      </View>
+                      <Text style={styles.payrollEntryAmount}>
+                        {formatUserCurrency(item.amount)}
+                      </Text>
+                      <Text numberOfLines={2} style={styles.detailSubtitle}>
+                        {formatKasbonPaymentInfo(item)}
+                      </Text>
+                      {item.reason ? (
+                        <Text numberOfLines={2} style={styles.detailSubtitle}>
+                          {item.reason}
+                        </Text>
+                      ) : null}
+                      <Text style={styles.payrollEntryDate}>
+                        {item.forMonth
+                          ? formatUserLongDate(item.forMonth)
+                          : formatUserDateTime(item.createdAt)}
+                      </Text>
+                    </View>
+                  ))
+                ) : (
+                  <Text style={styles.detailSubtitle}>
+                    Tidak ada pengajuan kasbon.
+                  </Text>
+                )}
+              </View>
+            ) : null}
+            {payrollError ? (
+              <Text style={styles.formErrorText}>{payrollError}</Text>
+            ) : null}
+          </View>
+        ) : null}
       </KolamContentFrame>
     </View>
   );
@@ -2272,6 +2529,70 @@ function formatUserLongDate(value?: string | null) {
   return date.toLocaleDateString('id-ID', {dateStyle: 'long'});
 }
 
+function formatUserCurrency(value?: number | null) {
+  if (value == null || !Number.isFinite(value)) {
+    return '-';
+  }
+
+  return new Intl.NumberFormat('id-ID', {
+    currency: 'IDR',
+    maximumFractionDigits: 0,
+    style: 'currency',
+  }).format(value);
+}
+
+function formatPayrollStatus(value?: string | null) {
+  switch ((value ?? '').toLowerCase()) {
+    case 'pending':
+      return 'Menunggu';
+    case 'verified':
+      return 'Terverifikasi';
+    case 'rejected':
+      return 'Ditolak';
+    case 'paid':
+      return 'Dibayar';
+    default:
+      return value || '-';
+  }
+}
+
+function getPayrollStatusIntent(
+  value?: string | null,
+): React.ComponentProps<typeof KolamStatusBadge>['intent'] {
+  switch ((value ?? '').toLowerCase()) {
+    case 'verified':
+    case 'paid':
+      return 'success';
+    case 'pending':
+      return 'warning';
+    case 'rejected':
+      return 'danger';
+    default:
+      return 'secondary';
+  }
+}
+
+function formatKasbonPaymentInfo(item: KolamUserKasbonItem) {
+  if (item.paymentType === 'cicilan') {
+    const paid =
+      item.paidInstallments == null || item.installmentDuration == null
+        ? ''
+        : ` (${item.paidInstallments}/${item.installmentDuration})`;
+    const amount =
+      item.installmentAmount == null
+        ? ''
+        : `, ${formatUserCurrency(item.installmentAmount)} per cicilan`;
+    const remaining =
+      item.remainingBalance == null
+        ? ''
+        : `, sisa ${formatUserCurrency(item.remainingBalance)}`;
+
+    return `Cicilan${paid}${amount}${remaining}`;
+  }
+
+  return 'Lunas penuh';
+}
+
 function getUserInitials(name: string) {
   const initials = name
     .split(/\s+/)
@@ -2909,6 +3230,41 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
+  },
+  payrollEntry: {
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 4,
+    padding: 10,
+  },
+  payrollEntryHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'space-between',
+  },
+  payrollEntryTitle: {
+    color: V.colors.fg,
+    flex: 1,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 18,
+  },
+  payrollEntryAmount: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 15,
+    fontWeight: '900',
+    lineHeight: 22,
+  },
+  payrollEntryDate: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '700',
+    lineHeight: 16,
   },
   formGrid: {
     flexDirection: 'row',

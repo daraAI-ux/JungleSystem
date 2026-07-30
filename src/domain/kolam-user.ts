@@ -235,6 +235,47 @@ export interface KolamKasbonPendingSummary {
   total: number;
 }
 
+export interface KolamUserBonusItem {
+  amount: number;
+  code: string;
+  createdAt: string;
+  executedAt: string;
+  id: string;
+  reason: string;
+  status: string;
+}
+
+export interface KolamUserDeductionItem {
+  amount: number;
+  code: string;
+  createdAt: string;
+  id: string;
+  reason: string;
+  rejectionReason: string;
+  reviewedAt: string;
+  status: string;
+  updatedAt: string;
+}
+
+export interface KolamUserKasbonItem {
+  amount: number;
+  cicilanStatus: string;
+  code: string;
+  createdAt: string;
+  forMonth: string;
+  id: string;
+  installmentAmount: number | null;
+  installmentDuration: number | null;
+  paidInstallments: number | null;
+  paymentType: string;
+  reason: string;
+  rejectionReason: string;
+  remainingBalance: number | null;
+  reviewedAt: string;
+  status: string;
+  updatedAt: string;
+}
+
 export function normalizeKolamUserListResult(
   payload: unknown,
   fallback: Required<Pick<KolamUserListQuery, 'limit' | 'page'>>,
@@ -361,6 +402,18 @@ export function normalizeKolamKasbonPendingSummary(
   };
 }
 
+export function normalizeKolamUserBonusList(payload: unknown) {
+  return getKolamPayloadRows(payload).map(normalizeKolamUserBonusItem);
+}
+
+export function normalizeKolamUserDeductionList(payload: unknown) {
+  return getKolamPayloadRows(payload).map(normalizeKolamUserDeductionItem);
+}
+
+export function normalizeKolamUserKasbonList(payload: unknown) {
+  return getKolamPayloadRows(payload).map(normalizeKolamUserKasbonItem);
+}
+
 export function getKolamUserEmployeeStatusLabel(user: KolamUserListItem) {
   return user.isEmployee ? 'Karyawan' : 'Bukan karyawan';
 }
@@ -453,6 +506,69 @@ function normalizeKolamUserEmployee(value: unknown): KolamUserEmployeeProfile {
     status: getString(record, 'status') || 'active',
     yearIn: getNumber(record, 'yearIn') ?? null,
   };
+}
+
+function normalizeKolamUserBonusItem(value: unknown): KolamUserBonusItem {
+  const record = asRecord(value);
+
+  return {
+    amount: getNumber(record, 'amount') ?? 0,
+    code: getString(record, 'code'),
+    createdAt: getString(record, 'createdAt') || getString(record, 'created_at'),
+    executedAt: getString(record, 'executedAt'),
+    id: getString(record, '_id') || getString(record, 'id'),
+    reason: getString(record, 'reason'),
+    status: getString(record, 'status'),
+  };
+}
+
+function normalizeKolamUserDeductionItem(value: unknown): KolamUserDeductionItem {
+  const record = asRecord(value);
+
+  return {
+    amount: getNumber(record, 'amount') ?? 0,
+    code: getString(record, 'code'),
+    createdAt: getString(record, 'createdAt') || getString(record, 'created_at'),
+    id: getString(record, '_id') || getString(record, 'id'),
+    reason: getString(record, 'reason'),
+    rejectionReason: getString(record, 'rejectionReason'),
+    reviewedAt: getString(record, 'reviewedAt'),
+    status: getString(record, 'status'),
+    updatedAt: getString(record, 'updatedAt') || getString(record, 'updated_at'),
+  };
+}
+
+function normalizeKolamUserKasbonItem(value: unknown): KolamUserKasbonItem {
+  const record = asRecord(value);
+
+  return {
+    amount: getNumber(record, 'amount') ?? 0,
+    cicilanStatus: getString(record, 'cicilanStatus'),
+    code: getString(record, 'code'),
+    createdAt: getString(record, 'createdAt') || getString(record, 'created_at'),
+    forMonth: getString(record, 'forMonth'),
+    id: getString(record, '_id') || getString(record, 'id'),
+    installmentAmount: getNumber(record, 'installmentAmount') ?? null,
+    installmentDuration: getNumber(record, 'installmentDuration') ?? null,
+    paidInstallments: getNumber(record, 'paidInstallments') ?? null,
+    paymentType: getString(record, 'paymentType'),
+    reason: getString(record, 'reason'),
+    rejectionReason: getString(record, 'rejectionReason'),
+    remainingBalance: getNumber(record, 'remainingBalance') ?? null,
+    reviewedAt: getString(record, 'reviewedAt'),
+    status: getString(record, 'status'),
+    updatedAt: getString(record, 'updatedAt') || getString(record, 'updated_at'),
+  };
+}
+
+function getKolamPayloadRows(payload: unknown) {
+  const record = asRecord(payload);
+
+  return Array.isArray(record.data)
+    ? record.data
+    : Array.isArray(payload)
+      ? payload
+      : [];
 }
 
 function normalizeKolamUserDateString(value: unknown) {
