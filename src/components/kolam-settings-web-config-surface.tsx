@@ -7836,11 +7836,30 @@ function FinancialSettingsPanel({
       ) : null}
 
       {financialSectionVisibility.enclosureCommission ? (
-        <View style={styles.marketplaceOverview}>
-          <FinancialSectionHeader
-            detail="Tarif global untuk baris invoice itemType enclosure."
-            title="Komisi penjualan kandang"
-          />
+        <View style={styles.financialNestedCard}>
+          <View style={styles.operationalCardHeaderRow}>
+            <KolamCopyStack
+              containerStyle={styles.operationalCardHeaderCopy}
+              items={[
+                {
+                  id: 'enclosure-commission-title',
+                  text: 'Komisi penjualan kandang',
+                  style: styles.marketplaceOverviewTitle,
+                },
+                {
+                  id: 'enclosure-commission-detail',
+                  text: 'Tarif global untuk baris invoice itemType enclosure.',
+                  style: styles.marketplaceOverviewMeta,
+                },
+              ]}
+            />
+            <KolamActionControlButton
+              disabled={disabled || busy}
+              intent="primary"
+              label="Simpan komisi kandang"
+              onPress={onSaveEnclosureSaleCommission}
+            />
+          </View>
           <KolamToggleRow
             active={draft.enclosureSaleCommissionEnabled}
             description="Nonaktif berarti baris kandang tidak di-accrue."
@@ -7910,12 +7929,6 @@ function FinancialSettingsPanel({
               )
             }
             variant="settingsForm"
-          />
-          <KolamActionControlButton
-            disabled={disabled || busy}
-            intent="primary"
-            label="Simpan komisi kandang"
-            onPress={onSaveEnclosureSaleCommission}
           />
         </View>
       ) : null}
