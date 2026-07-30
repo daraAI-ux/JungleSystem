@@ -19,10 +19,12 @@ import { KolamActionControlButton } from './kolam-action-control-button';
 import { KolamChoiceSegment } from './kolam-choice-segment';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
+import { KolamRowFrame } from './kolam-row-frame';
 import { KolamSettingsWebFormFields } from './kolam-settings-web-form-fields';
 import { KolamSettingsWebFormSectionHeader } from './kolam-settings-web-form-section-header';
 import { KolamSettingsWebFormSections } from './kolam-settings-web-widgets';
 import { KolamTextFieldRow } from './kolam-text-field-row';
+import { KolamTextFieldRowCopy } from './kolam-text-field-row-copy';
 import { KolamToggleRow } from './kolam-toggle-row';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
@@ -7263,21 +7265,10 @@ function FinancialSettingsPanel({
                   value={paymentMethodDraft.name}
                   variant="settingsForm"
                 />
-                <View style={styles.financialSelectorRow}>
-                  <KolamCopyStack
-                    containerStyle={styles.financialSelectorCopy}
-                    items={[
-                      {
-                        id: 'payment-method-type-field-title',
-                        text: 'Tipe Pembayaran',
-                        style: styles.marketplaceOverviewLabel,
-                      },
-                      {
-                        id: 'payment-method-type-field-detail',
-                        text: 'Pilih tunai, transfer bank, dompet digital, kartu, atau QRIS.',
-                        style: styles.marketplaceOverviewMeta,
-                      },
-                    ]}
+                <KolamRowFrame variant="settingsForm">
+                  <KolamTextFieldRowCopy
+                    description="Pilih tunai, transfer bank, dompet digital, kartu, atau QRIS."
+                    label="Tipe Pembayaran"
                   />
                   <KolamDropdownSelect
                     accessibilityLabel="Tipe metode pembayaran"
@@ -7298,22 +7289,11 @@ function FinancialSettingsPanel({
                       setPaymentMethodDraftField('type', value)
                     }
                   />
-                </View>
-                <View style={styles.financialSelectorRow}>
-                  <KolamCopyStack
-                    containerStyle={styles.financialSelectorCopy}
-                    items={[
-                      {
-                        id: 'payment-method-provider-field-title',
-                        text: 'Provider Pembayaran',
-                        style: styles.marketplaceOverviewLabel,
-                      },
-                      {
-                        id: 'payment-method-provider-field-detail',
-                        text: 'Pilih bank, dompet digital, tunai, atau provider lainnya.',
-                        style: styles.marketplaceOverviewMeta,
-                      },
-                    ]}
+                </KolamRowFrame>
+                <KolamRowFrame variant="settingsForm">
+                  <KolamTextFieldRowCopy
+                    description="Pilih bank, dompet digital, tunai, atau provider lainnya."
+                    label="Provider Pembayaran"
                   />
                   <KolamDropdownSelect
                     accessibilityLabel="Provider metode pembayaran"
@@ -7339,7 +7319,7 @@ function FinancialSettingsPanel({
                       setPaymentMethodDraftField('provider', value)
                     }
                   />
-                </View>
+                </KolamRowFrame>
               </View>
               <View style={styles.financialFormBox}>
                 <KolamCopyStack
@@ -7386,21 +7366,10 @@ function FinancialSettingsPanel({
                 />
               </View>
               <View style={styles.financialFormBox}>
-                <View style={styles.financialSelectorRow}>
-                  <KolamCopyStack
-                    containerStyle={styles.financialSelectorCopy}
-                    items={[
-                      {
-                        id: 'payment-method-wallet-title',
-                        text: 'Wallet',
-                        style: styles.marketplaceOverviewLabel,
-                      },
-                      {
-                        id: 'payment-method-wallet-detail',
-                        text: 'Pilih wallet penerima transaksi metode pembayaran ini.',
-                        style: styles.marketplaceOverviewMeta,
-                      },
-                    ]}
+                <KolamRowFrame variant="settingsForm">
+                  <KolamTextFieldRowCopy
+                    description="Pilih wallet penerima transaksi metode pembayaran ini."
+                    label="Wallet"
                   />
                   <KolamDropdownSelect
                     accessibilityLabel="Wallet metode pembayaran"
@@ -7426,7 +7395,7 @@ function FinancialSettingsPanel({
                       setPaymentMethodDraftField('wallet', value)
                     }
                   />
-                </View>
+                </KolamRowFrame>
               </View>
               <View style={styles.financialFormBox}>
                 <KolamCopyStack
@@ -7594,21 +7563,10 @@ function FinancialSettingsPanel({
             value={taxCompanyProfileDraft.nik ?? ''}
             variant="settingsForm"
           />
-          <View style={styles.financialSelectorRow}>
-            <KolamCopyStack
-              containerStyle={styles.financialSelectorCopy}
-              items={[
-                {
-                  id: 'taxpayer-type-title',
-                  text: 'Jenis wajib pajak',
-                  style: styles.marketplaceOverviewLabel,
-                },
-                {
-                  id: 'taxpayer-type-detail',
-                  text: 'Pilih bentuk wajib pajak perusahaan.',
-                  style: styles.marketplaceOverviewMeta,
-                },
-              ]}
+          <KolamRowFrame variant="settingsForm">
+            <KolamTextFieldRowCopy
+              description="Pilih bentuk wajib pajak perusahaan."
+              label="Jenis wajib pajak"
             />
             <KolamDropdownSelect
               accessibilityLabel="Jenis wajib pajak"
@@ -7626,7 +7584,7 @@ function FinancialSettingsPanel({
                 setTaxCompanyProfileDraftField('taxpayerType', value)
               }
             />
-          </View>
+          </KolamRowFrame>
           <KolamToggleRow
             active={taxCompanyProfileDraft.isPkp === true}
             description="Aktif jika perusahaan terdaftar sebagai PKP."
@@ -8252,22 +8210,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   financialSelectorControl: {
-    maxWidth: 520,
-    minWidth: 260,
-    width: '48%',
-  },
-  financialSelectorCopy: {
-    flex: 1,
-    gap: 3,
-    minWidth: 240,
-  },
-  financialSelectorRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    justifyContent: 'space-between',
-    width: '100%',
+    flexShrink: 0,
   },
   financialStatusCopy: {
     flexShrink: 1,
