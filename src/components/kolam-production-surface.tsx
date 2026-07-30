@@ -206,7 +206,7 @@ function KolamProductionList({
             {canCreate ? (
               <KolamButton
                 intent="primary"
-                label="Produksi Baru"
+                label="Baru"
                 onPress={() => {
                   controller.onCreateNew();
                   onRouteChange?.(`${KOLAM_PRODUCTION_ROOT}/create`);
