@@ -365,77 +365,93 @@ export function KolamProductSurface({
       <View style={[styles.stack, styles.listStack]}>
         <View ref={toolbarRef} collapsable={false} style={styles.toolbarShell}>
           <View style={kolamTableToolbarStyles.shell}>
-          <View style={kolamTableToolbarStyles.row}>
-            <KolamFormTextField
-              onChangeText={controller.onSearchChange}
-              placeholder="Cari"
-              style={kolamTableToolbarStyles.searchInput}
-              value={controller.filters.search}
-            />
-            <View style={kolamTableToolbarStyles.controls}>
-              <View ref={categoryTriggerRef} collapsable={false}>
-                <KolamTableFilterTrigger
-                  active={activeFilterPanel === 'category' || selectedCategory !== 'all'}
-                  label={categoryFilterLabel}
-                  onPress={() => openFilterPanel('category')}
+            <View style={kolamTableToolbarStyles.row}>
+              <View style={kolamTableToolbarStyles.filters}>
+                <KolamFormTextField
+                  onChangeText={controller.onSearchChange}
+                  placeholder="Cari"
+                  style={kolamTableToolbarStyles.searchInput}
+                  value={controller.filters.search}
                 />
-              </View>
-              <View ref={brandTriggerRef} collapsable={false}>
-                <KolamTableFilterTrigger
-                  active={activeFilterPanel === 'brand' || selectedBrand !== 'all'}
-                  label={brandFilterLabel}
-                  onPress={() => openFilterPanel('brand')}
-                />
-              </View>
-              {!isRawCatalog ? (
-                <View ref={stockTriggerRef} collapsable={false}>
+                <View ref={categoryTriggerRef} collapsable={false}>
                   <KolamTableFilterTrigger
-                    active={activeFilterPanel === 'stock' || selectedStock !== 'all'}
-                    label={stockFilterLabel}
-                    onPress={() => openFilterPanel('stock')}
+                    active={
+                      activeFilterPanel === 'category' ||
+                      selectedCategory !== 'all'
+                    }
+                    label={categoryFilterLabel}
+                    onPress={() => openFilterPanel('category')}
                   />
                 </View>
-              ) : null}
-              {hasActiveListFilters ? (
-                <KolamButton label="Reset" muted onPress={resetListFilters} />
-              ) : null}
-              <KolamButton label="Ekspor" onPress={() => setExportOpen(true)} />
-              {!isRawCatalog ? (
-                <>
-                  <KolamButton
-                    label={`Cetak barcode (${barcodeItems.length})`}
-                    onPress={() => {
-                      setBarcodeDialogItems(null);
-                      setBarcodeOpen(true);
-                    }}
+                <View ref={brandTriggerRef} collapsable={false}>
+                  <KolamTableFilterTrigger
+                    active={
+                      activeFilterPanel === 'brand' || selectedBrand !== 'all'
+                    }
+                    label={brandFilterLabel}
+                    onPress={() => openFilterPanel('brand')}
                   />
-                  <KolamButton label="SEO audit" muted />
+                </View>
+                {!isRawCatalog ? (
+                  <View ref={stockTriggerRef} collapsable={false}>
+                    <KolamTableFilterTrigger
+                      active={
+                        activeFilterPanel === 'stock' || selectedStock !== 'all'
+                      }
+                      label={stockFilterLabel}
+                      onPress={() => openFilterPanel('stock')}
+                    />
+                  </View>
+                ) : null}
+              </View>
+              <View style={kolamTableToolbarStyles.actions}>
+                {hasActiveListFilters ? (
                   <KolamButton
-                    label="Sinkron Harga"
-                    onPress={() => setSyncPriceOpen(true)}
+                    label="Reset"
+                    muted
+                    onPress={resetListFilters}
                   />
-                  <KolamButton
-                    label="Sinkron Stok"
-                    onPress={() => {
-                      setSyncStockSelection({
-                        ids: productIds,
-                        title: 'Samakan Stok Produk ke Marketplace',
-                      });
-                      setSyncStockOpen(true);
-                    }}
-                  />
-                </>
-              ) : null}
-              <KolamButton
-                intent="primary"
-                label="Baru"
-                onPress={() => {
-                  controller.onCreateNew();
-                  onRouteChange?.(createRoute);
-                }}
-              />
+                ) : null}
+                <KolamButton
+                  label="Ekspor"
+                  onPress={() => setExportOpen(true)}
+                />
+                {!isRawCatalog ? (
+                  <>
+                    <KolamButton
+                      label={`Cetak barcode (${barcodeItems.length})`}
+                      onPress={() => {
+                        setBarcodeDialogItems(null);
+                        setBarcodeOpen(true);
+                      }}
+                    />
+                    <KolamButton label="SEO audit" muted />
+                    <KolamButton
+                      label="Sinkron Harga"
+                      onPress={() => setSyncPriceOpen(true)}
+                    />
+                    <KolamButton
+                      label="Sinkron Stok"
+                      onPress={() => {
+                        setSyncStockSelection({
+                          ids: productIds,
+                          title: 'Samakan Stok Produk ke Marketplace',
+                        });
+                        setSyncStockOpen(true);
+                      }}
+                    />
+                  </>
+                ) : null}
+                <KolamButton
+                  intent="primary"
+                  label="Baru"
+                  onPress={() => {
+                    controller.onCreateNew();
+                    onRouteChange?.(createRoute);
+                  }}
+                />
+              </View>
             </View>
-          </View>
           </View>
           {activeFilterPanel ? (
             <ProductFilterOverlayPanel

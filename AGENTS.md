@@ -163,10 +163,10 @@ Reuse primitif saja **tidak cukup** — list/filter harus **seragam secara kompo
 3. **Default komposisi toolbar:**
    - `View` + `kolamTableToolbarStyles.shell` (**kotak pembungkus** — border/radius/padding, pola Stock Opname / Species)
    - di dalam shell: `kolamTableToolbarStyles.row`
-   - search: `KolamFormTextField` + `kolamTableToolbarStyles.searchInput` (**paling kiri**, `flexGrow: 1` mengisi sisa lebar — jangan fixed 240)
-   - filter/aksi: bungkus di `kolamTableToolbarStyles.controls` (**rata kanan**, hug ke label — jangan `flexGrow` merata lebar)
+   - kiri: `kolamTableToolbarStyles.filters` = search (`searchInput`, `flexGrow: 1`) + filter triggers hug
+   - kanan: `kolamTableToolbarStyles.actions` = tombol aksi hug, dengan **`borderLeft` pembatas** vs filter (pola FE Species / Stock Opname)
    - `KolamTableFilterTrigger` ukuran **pas ke tulisan** (shared default hug)
-4. **Jangan** invent komponen toolbar baru / `toolbarShell` layout lokal hanya karena sibling lain memakai varian berbeda — pakai `kolamTableToolbarStyles.shell` (bukan copy border lokal). Deviasi butuh approval.
+4. **Jangan** invent komponen toolbar baru / `toolbarShell` layout lokal hanya karena sibling lain memakai varian berbeda — pakai `kolamTableToolbarStyles.shell` + `filters` + `actions` (bukan copy border lokal). Deviasi butuh approval.
 5. Panel opsi filter (overlay `KolamTableFilterTrigger`): bentuk mengikuti sibling PO/serial (list opsi + Tutup). **Posisi wajib menempel di bawah trigger yang diklik** (`measureInWindow` relatif toolbar) — jangan hardcode `right`/`left`. Jangan ganti ke `KolamDropdownSelect` hanya karena “mirip dropdown” jika chrome list sibling memakai filter-trigger panel.
 6. Panel opsi filter (overlay): ikut pola sibling yang dipilih (absolute overlay + scroll + Tutup), bukan panel inline ad-hoc yang mengubah hierarki visual.
 

@@ -391,13 +391,13 @@ function KolamSpeciesList({
       <View ref={toolbarRef} collapsable={false} style={styles.speciesToolbarWrap}>
         <View style={kolamTableToolbarStyles.shell}>
           <View style={kolamTableToolbarStyles.row}>
-            <KolamFormTextField
-              onChangeText={controller.onSearchChange}
-              placeholder="Cari"
-              style={kolamTableToolbarStyles.searchInput}
-              value={controller.filters.search}
-            />
-            <View style={kolamTableToolbarStyles.controls}>
+            <View style={kolamTableToolbarStyles.filters}>
+              <KolamFormTextField
+                onChangeText={controller.onSearchChange}
+                placeholder="Cari"
+                style={kolamTableToolbarStyles.searchInput}
+                value={controller.filters.search}
+              />
               <View ref={taxonomyTriggerRef} collapsable={false}>
                 <KolamTableFilterTrigger
                   active={
@@ -423,6 +423,8 @@ function KolamSpeciesList({
                   onPress={() => openFilterPanel('stock')}
                 />
               </View>
+            </View>
+            <View style={kolamTableToolbarStyles.actions}>
               <KolamButton
                 label="Export"
                 onPress={() => setExportDialogOpen(true)}

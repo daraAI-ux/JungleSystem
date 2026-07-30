@@ -212,13 +212,13 @@ function KolamBrandList({
       <View ref={toolbarRef} collapsable={false} style={styles.toolbarWrap}>
         <View style={kolamTableToolbarStyles.shell}>
           <View style={kolamTableToolbarStyles.row}>
-            <KolamFormTextField
-              onChangeText={setSearch}
-              placeholder="Cari merek..."
-              style={kolamTableToolbarStyles.searchInput}
-              value={search}
-            />
-            <View style={kolamTableToolbarStyles.controls}>
+            <View style={kolamTableToolbarStyles.filters}>
+              <KolamFormTextField
+                onChangeText={setSearch}
+                placeholder="Cari merek..."
+                style={kolamTableToolbarStyles.searchInput}
+                value={search}
+              />
               <View ref={sortTriggerRef} collapsable={false}>
                 <KolamTableFilterTrigger
                   active={activeFilterPanel === 'sort' || sortMode !== 'name-asc'}
@@ -233,6 +233,8 @@ function KolamBrandList({
                   onPress={() => openFilterPanel('asset')}
                 />
               </View>
+            </View>
+            <View style={kolamTableToolbarStyles.actions}>
               <KolamButton
                 disabled={controller.loading}
                 label="Refresh"
