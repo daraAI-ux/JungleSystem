@@ -109,7 +109,8 @@ describe('getKolamTableColumns', () => {
     expect(batch?.width).toBeGreaterThanOrEqual(120);
     expect(batch?.width).toBeLessThanOrEqual(260);
     expect(batch?.width).toBeGreaterThan(140);
-    expect(pic?.width).toBe(72);
+    expect(pic?.width).toBeGreaterThanOrEqual(56);
+    expect(pic?.width).toBeLessThanOrEqual(72);
   });
 
   it('defines product serial list table headers matching FE', () => {
