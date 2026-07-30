@@ -6,11 +6,14 @@ const KOLAM_BADGE_VISUAL = getKolamBadgeVisualContract();
 
 export const statusBadgeStyles = StyleSheet.create({
   badge: {
+    alignSelf: 'flex-start',
     overflow: 'hidden',
     flexDirection: 'row',
     alignItems: 'center',
+    flexShrink: 1,
     gap: KOLAM_BADGE_VISUAL.base.gapX,
-    paddingHorizontal: KOLAM_BADGE_VISUAL.circle.paddingX,
+    // Compact text-hugging padding (square token), not circle icon padding.
+    paddingHorizontal: KOLAM_BADGE_VISUAL.square.paddingX,
     paddingVertical: KOLAM_BADGE_VISUAL.base.paddingY,
     borderRadius: V.control.badgeRadius,
   },
@@ -20,6 +23,7 @@ export const statusBadgeStyles = StyleSheet.create({
     lineHeight: KOLAM_BADGE_VISUAL.base.lineHeight,
     fontWeight:
       KOLAM_BADGE_VISUAL.base.fontWeight === 'medium' ? '500' : '700',
+    flexShrink: 1,
   },
   primary: {
     backgroundColor: V.colors.primarySoft,

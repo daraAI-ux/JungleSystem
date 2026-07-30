@@ -26,9 +26,11 @@ describe('KolamStatusBadge', () => {
     expect(badge?.props.style).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
+          alignSelf: 'flex-start',
           flexDirection: 'row',
+          flexShrink: 1,
           gap: 6,
-          paddingHorizontal: 8,
+          paddingHorizontal: 6,
           paddingVertical: 2,
         }),
         expect.objectContaining({

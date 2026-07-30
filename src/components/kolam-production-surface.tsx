@@ -1492,6 +1492,7 @@ const styles = StyleSheet.create({
     minWidth: 160,
   },
   statusCell: {
+    alignItems: 'flex-start',
     gap: 4,
   },
   picCell: {
