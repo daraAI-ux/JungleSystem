@@ -171,6 +171,14 @@ const taxPayerTypeOptions: Array<{
   {value: 'other', label: 'Lainnya'},
 ];
 
+const overtimeCalculationModeOptions: Array<{
+  label: string;
+  value: WebSettingDraft['overtimeCalculationMode'];
+}> = [
+  {value: 'per_hour', label: 'Per jam'},
+  {value: 'per_day', label: 'Per hari'},
+];
+
 const defaultPaymentMethodFilters: SettingsPaymentMethodFilters = {
   search: '',
   isAvailableOnWebstore: '',
@@ -7720,22 +7728,28 @@ function FinancialSettingsPanel({
               onPress={onSaveOvertimeSettings}
             />
           </View>
-          <View style={styles.financialToolbar}>
-            <FinancialChoiceSegment
-              active={draft.overtimeCalculationMode === 'per_hour'}
-              label="Per jam"
-              onPress={() =>
-                setDraftField('overtimeCalculationMode', 'per_hour')
+          <KolamRowFrame variant="settingsForm">
+            <KolamTextFieldRowCopy
+              description="Pilih dasar hitung lembur untuk pengajuan karyawan."
+              label="Mode perhitungan lembur"
+            />
+            <KolamDropdownSelect
+              accessibilityLabel="Mode perhitungan lembur"
+              label="Mode perhitungan lembur"
+              menuPlacement="inline"
+              options={overtimeCalculationModeOptions}
+              showLabelInTrigger={false}
+              style={[
+                styles.financialSelectorControl,
+                {width: settingsFieldWidth},
+              ]}
+              triggerStyle={styles.shippingTimezoneTrigger}
+              value={draft.overtimeCalculationMode}
+              onChange={value =>
+                setDraftField('overtimeCalculationMode', value)
               }
             />
-            <FinancialChoiceSegment
-              active={draft.overtimeCalculationMode === 'per_day'}
-              label="Per hari"
-              onPress={() =>
-                setDraftField('overtimeCalculationMode', 'per_day')
-              }
-            />
-          </View>
+          </KolamRowFrame>
           <KolamToggleRow
             active={draft.overtimeUseSalaryDerivedRate}
             description="Jika tarif tetap 0, pakai gaji dibagi 173 atau 25."
