@@ -51,7 +51,12 @@ export function KolamProductSerialSurface({
   const controller = useKolamProductSerialController(route);
 
   return (
-    <View style={styles.surface}>
+    <View
+      style={[
+        styles.surface,
+        controller.mode === 'list' ? styles.listSurface : null,
+      ]}
+    >
       {controller.error ? (
         <KolamStatusBadge
           intent="danger"
@@ -282,7 +287,7 @@ function KolamProductSerialList({
         <FlatList
           contentContainerStyle={styles.listContent}
           data={controller.serials}
-          keyExtractor={item => item.id}
+          keyExtractor={item => item.id || item.serialNumber}
           ListEmptyComponent={
             <View style={styles.emptyWrap}>
               <KolamEmptyState
@@ -297,6 +302,7 @@ function KolamProductSerialList({
             </View>
           }
           ListHeaderComponent={<KolamDataTableHeader columns={getKolamTableColumns('product-serial')} />}
+          removeClippedSubviews={false}
           renderItem={renderRow}
           style={styles.listFlatList}
         />
@@ -556,6 +562,7 @@ function formatProductSerialDateTime(value?: string) {
 
 const styles = StyleSheet.create({
   surface: { gap: 12 },
+  listSurface: { flex: 1, minHeight: 0, overflow: 'visible' },
   statusBadge: { alignSelf: 'stretch' },
   listRoot: { flex: 1, gap: 12, minHeight: 0, overflow: 'visible' },
   productFilterBanner: {
@@ -632,9 +639,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   filterPanel: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
-  tableFrame: { minHeight: 0, overflow: 'visible' },
-  listFlatList: { flexGrow: 0, overflow: 'visible' },
-  listContent: { flexGrow: 0, overflow: 'visible' },
+  tableFrame: { flex: 1, minHeight: 0, overflow: 'visible' },
+  listFlatList: { flexGrow: 1, minHeight: 0, overflow: 'visible' },
+  listContent: { flexGrow: 1, overflow: 'visible' },
   emptyWrap: { paddingVertical: 24 },
   paginationRow: { alignItems: 'center', flexDirection: 'row', gap: 8 },
   pageLabel: { color: V.colors.mutedFg, fontSize: 13 },

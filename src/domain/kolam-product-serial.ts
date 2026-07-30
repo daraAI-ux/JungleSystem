@@ -443,7 +443,31 @@ function asRecord(value: unknown): Record<string, unknown> {
 
 function getString(record: Record<string, unknown>, key: string) {
   const value = record[key];
-  return typeof value === 'string' ? value.trim() : '';
+  if (typeof value === 'string') {
+    return value.trim();
+  }
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return String(value);
+  }
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return value.toISOString();
+  }
+  if (value && typeof value === 'object') {
+    const recordValue = value as {toString?: () => string; $oid?: string};
+    if (typeof recordValue.$oid === 'string' && recordValue.$oid.trim()) {
+      return recordValue.$oid.trim();
+    }
+    if (
+      typeof recordValue.toString === 'function' &&
+      recordValue.toString !== Object.prototype.toString
+    ) {
+      const text = String(recordValue.toString()).trim();
+      if (text && text !== '[object Object]') {
+        return text;
+      }
+    }
+  }
+  return '';
 }
 
 function getNumber(record: Record<string, unknown>, key: string): number | null {
