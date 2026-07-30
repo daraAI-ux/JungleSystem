@@ -1709,6 +1709,11 @@ function KolamChatRailDetailPanel({
   const handleSubmitComposer = React.useCallback(() => {
     handleSendFromComposer();
   }, [handleSendFromComposer]);
+  const composerCanSend = Boolean(
+    !detail.sending &&
+      !inboxComposerBlocked &&
+      (composerText.trim() || pendingAttachment),
+  );
 
   const handleStartEditMessage = React.useCallback(
     (message: ReturnType<typeof useKolamChatRailDetail>['messages'][number]) => {
@@ -2104,54 +2109,88 @@ function KolamChatRailDetailPanel({
       ) : null}
 
       <View style={styles.composer}>
-        {mode === 'team-chat' ? (
-          <KolamPressable
-            accessibilityLabel="Lampirkan file team chat"
-            disabled={detail.sending}
-            onPress={onPendingAttachmentPick}
-            style={[
-              styles.attachButton,
-              detail.sending && styles.attachButtonDisabled,
-            ]}>
-            <Text style={styles.attachButtonText}>+</Text>
-          </KolamPressable>
-        ) : null}
-        {mode === 'inbox' ? (
-          <KolamPressable
-            accessibilityLabel="Buka template chat"
-            disabled={detail.sending || inboxComposerBlocked}
-            onPress={() => setTemplatePickerOpen(current => !current)}
-            style={[
-              styles.templateButton,
-              templatePickerOpen && styles.templateButtonActive,
-              (detail.sending || inboxComposerBlocked) &&
-                styles.attachButtonDisabled,
-            ]}>
-            <Text style={styles.templateButtonText}>T</Text>
-          </KolamPressable>
-        ) : null}
-        <TextInput
-          accessibilityLabel={
-            mode === 'team-chat'
-              ? 'Tulis pesan team chat'
-              : 'Tulis pesan inbox'
-          }
-          editable={!detail.sending && !inboxComposerBlocked}
-          multiline
-          onChangeText={handleComposerInputChange}
-          onSubmitEditing={handleSubmitComposer}
-          placeholder={
-            mode === 'team-chat' && !detail.teamRoomMetadata.daraReplyEnabled
-              ? 'Tulis pesan... @dara nonaktif'
-              : inboxComposerBlocked
-                ? 'Chat belum bisa dibalas'
-              : 'Tulis pesan...'
-          }
-          placeholderTextColor={V.colors.mutedFg}
-          style={styles.composerInput}
-          submitBehavior="submit"
-          value={composerText}
-        />
+        <View
+          style={[
+            styles.composerShell,
+            inboxComposerBlocked && styles.composerShellBlocked,
+          ]}>
+          <TextInput
+            accessibilityLabel={
+              mode === 'team-chat'
+                ? 'Tulis pesan team chat'
+                : 'Tulis pesan inbox'
+            }
+            editable={!detail.sending && !inboxComposerBlocked}
+            multiline
+            onChangeText={handleComposerInputChange}
+            onSubmitEditing={handleSubmitComposer}
+            placeholder={
+              mode === 'team-chat' && !detail.teamRoomMetadata.daraReplyEnabled
+                ? 'Tulis pesan... @dara nonaktif'
+                : inboxComposerBlocked
+                  ? 'Chat belum bisa dibalas'
+                  : 'Tulis pesan...'
+            }
+            placeholderTextColor={V.colors.mutedFg}
+            style={styles.composerInput}
+            submitBehavior="submit"
+            value={composerText}
+          />
+          <View style={styles.composerToolbar}>
+            <View style={styles.composerToolGroup}>
+              {mode === 'team-chat' ? (
+                <KolamPressable
+                  accessibilityLabel="Lampirkan file team chat"
+                  disabled={detail.sending}
+                  onPress={onPendingAttachmentPick}
+                  style={[
+                    styles.composerIconButton,
+                    detail.sending && styles.composerIconButtonDisabled,
+                  ]}>
+                  <Text style={styles.composerIconButtonText}>+</Text>
+                </KolamPressable>
+              ) : null}
+              <KolamPressable
+                accessibilityLabel="Buka emoji chat"
+                disabled
+                style={[
+                  styles.composerIconButton,
+                  styles.composerIconButtonDisabled,
+                ]}>
+                <Text style={styles.composerIconButtonText}>:)</Text>
+              </KolamPressable>
+              {mode === 'inbox' ? (
+                <KolamPressable
+                  accessibilityLabel="Buka template chat"
+                  disabled={detail.sending || inboxComposerBlocked}
+                  onPress={() => setTemplatePickerOpen(current => !current)}
+                  style={[
+                    styles.composerIconButton,
+                    templatePickerOpen && styles.composerIconButtonActive,
+                    (detail.sending || inboxComposerBlocked) &&
+                      styles.composerIconButtonDisabled,
+                  ]}>
+                  <Text style={styles.composerIconButtonText}>T</Text>
+                </KolamPressable>
+              ) : null}
+            </View>
+            <View style={styles.composerShortcut}>
+              <Text style={styles.composerKeycap}>Shift</Text>
+              <Text style={styles.composerShortcutPlus}>+</Text>
+              <Text style={styles.composerKeycap}>Enter</Text>
+            </View>
+            <KolamPressable
+              accessibilityLabel="Kirim pesan chat"
+              disabled={!composerCanSend}
+              onPress={handleSendFromComposer}
+              style={[
+                styles.composerSendButton,
+                !composerCanSend && styles.composerSendButtonDisabled,
+              ]}>
+              <View style={styles.composerSendIcon} />
+            </KolamPressable>
+          </View>
+        </View>
       </View>
     </View>
   );
@@ -6749,9 +6788,20 @@ const styles = StyleSheet.create({
     padding: 10,
     borderTopColor: V.colors.border,
     borderTopWidth: 1,
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 8,
+  },
+  composerShell: {
+    minHeight: 82,
+    paddingHorizontal: 10,
+    paddingTop: 8,
+    paddingBottom: 8,
+    borderRadius: V.radius.lg,
+    borderColor: V.colors.input,
+    borderWidth: 1,
+    backgroundColor: V.colors.bg,
+    gap: 6,
+  },
+  composerShellBlocked: {
+    backgroundColor: V.colors.mutedSoft,
   },
   composerGate: {
     marginHorizontal: 10,
@@ -6812,19 +6862,98 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   composerInput: {
-    minHeight: 38,
-    maxHeight: 84,
+    minHeight: 34,
+    maxHeight: 86,
     minWidth: 0,
-    flex: 1,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderRadius: V.radius.lg,
-    borderColor: V.colors.input,
-    borderWidth: 1,
+    paddingHorizontal: 0,
+    paddingVertical: 3,
     color: V.colors.fg,
     fontFamily: V.fontFamily,
     fontSize: 13,
-    backgroundColor: V.colors.bg,
+    lineHeight: 18,
+    backgroundColor: 'transparent',
+  },
+  composerToolbar: {
+    minHeight: 26,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  composerToolGroup: {
+    minWidth: 0,
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  composerIconButton: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: V.colors.mutedSoft,
+  },
+  composerIconButtonActive: {
+    backgroundColor: V.colors.primarySoft,
+  },
+  composerIconButtonDisabled: {
+    opacity: 0.52,
+  },
+  composerIconButtonText: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '900',
+    lineHeight: 14,
+  },
+  composerShortcut: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  composerKeycap: {
+    minWidth: 32,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: V.radius.sm,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 9,
+    fontWeight: '800',
+    textAlign: 'center',
+    overflow: 'hidden',
+  },
+  composerShortcutPlus: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '900',
+  },
+  composerSendButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: V.colors.primarySoft,
+  },
+  composerSendButtonDisabled: {
+    opacity: 0.5,
+  },
+  composerSendIcon: {
+    width: 0,
+    height: 0,
+    borderTopWidth: 6,
+    borderBottomWidth: 6,
+    borderLeftWidth: 11,
+    borderTopColor: 'transparent',
+    borderBottomColor: 'transparent',
+    borderLeftColor: V.colors.primary,
+    transform: [{translateX: 1}],
   },
   listScroll: {
     flex: 1,
