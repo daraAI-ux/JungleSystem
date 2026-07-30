@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import {
   createKolamDetailItemsFromRawArray,
   getKolamRawArray,
@@ -17,10 +17,9 @@ import {
   createCategoryLocaleAuditItems,
 } from '../domain/kolam-locale-audit';
 import {
-  applyKolamAdaptiveColumnWidths,
-  getKolamTableColumnWidthMap,
   getKolamTableColumns,
-  type KolamTableColumnWidthMap,
+  getKolamTableVisualContract,
+  type KolamTableColumn,
 } from '../domain/kolam-table';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { getKolamFileUrl } from '../lib/file-url';
@@ -29,16 +28,21 @@ import {
   type KolamCategoryController,
 } from '../hooks/use-kolam-category-controller';
 import { KolamButton } from './kolam-button';
+import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamCatalogTranslationsEditor } from './kolam-catalog-translations-editor';
 import { KolamCategoryIcon } from './kolam-category-icon';
-import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamCopyStack } from './kolam-copy-stack';
-import { KolamDataTableHeader } from './kolam-data-table-header';
 import {
-  KolamDataTableAmountCell,
-  KolamDataTableMetaCell,
-} from './kolam-data-table-text-cell';
+  getKolamDataTableColumnStyle,
+  KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+  KOLAM_DATA_TABLE_COLUMN_GAP,
+} from './kolam-data-table-column-style';
+import { KolamDataTableHeader } from './kolam-data-table-header';
 import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
+import {
+  KolamDataTableActionsTrack,
+  KolamDataTableMainTrack,
+} from './kolam-data-table-tracks';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import {
   KolamDropdownSelect,
@@ -47,12 +51,15 @@ import {
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
+import { KolamHoverTooltip } from './kolam-hover-tooltip';
 import { KolamLabelFieldDetailOverview } from './kolam-label-field-detail-overview';
 import { KolamNativeFormSection } from './kolam-native-form-section';
 import { KolamRemoteImage } from './kolam-remote-image';
+import { KolamSearchField } from './kolam-search-field';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamStatusBadge } from './kolam-status-badge';
+import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 
 export function KolamCategorySurface({
@@ -87,27 +94,46 @@ function KolamCategoryShell({
   controller: KolamCategoryController;
   onRouteChange?: (route: string) => void;
 }) {
+  if (controller.mode === 'list') {
+    return (
+      <View style={styles.surface}>
+        {controller.error ? (
+          <KolamStatusBadge
+            intent="danger"
+            label={controller.error}
+            numberOfLines={2}
+            style={styles.errorBadge}
+          />
+        ) : null}
+        {children}
+      </View>
+    );
+  }
+
+  const contextLabel =
+    controller.mode === 'new'
+      ? 'Kategori baru'
+      : controller.mode === 'edit'
+        ? `Edit · ${controller.selectedCategory?.name || controller.form.name || 'Kategori'}`
+        : controller.selectedCategory?.name || 'Detail kategori';
+
   return (
     <View style={styles.surface}>
-      <View style={styles.header}>
-        <View style={styles.headerActions}>
-          <KolamButton
-            disabled={controller.loading}
-            label="Refresh"
-            onPress={() => {
-              void controller.onRefresh();
-            }}
-          />
-          {controller.mode === 'list' ? (
+      <View style={kolamTableToolbarStyles.shell}>
+        <View style={kolamTableToolbarStyles.row}>
+          <View style={kolamTableToolbarStyles.filters}>
+            <Text numberOfLines={1} style={styles.detailToolbarContext}>
+              {contextLabel}
+            </Text>
+          </View>
+          <View style={kolamTableToolbarStyles.actions}>
             <KolamButton
-              intent="primary"
-              label="Buat Baru"
+              disabled={controller.loading}
+              label="Refresh"
               onPress={() => {
-                controller.onCreateNew();
-                onRouteChange?.('/label-dan-field/kategori/baru');
+                void controller.onRefresh();
               }}
             />
-          ) : (
             <KolamButton
               label="Daftar"
               onPress={() => {
@@ -115,7 +141,14 @@ function KolamCategoryShell({
                 onRouteChange?.('/label-dan-field/kategori');
               }}
             />
-          )}
+            {controller.mode === 'detail' ? (
+              <KolamButton
+                intent="primary"
+                label="Edit"
+                onPress={controller.onEdit}
+              />
+            ) : null}
+          </View>
         </View>
       </View>
       {controller.error ? (
@@ -146,7 +179,7 @@ function KolamCategoryList({
   const [page, setPage] = React.useState(1);
   const [deleteCandidate, setDeleteCandidate] =
     React.useState<KolamCategory | null>(null);
-  const allCategories = flattenAllCategories(controller.categories);
+  const [tableBodyWidth, setTableBodyWidth] = React.useState(0);
   const filteredTree = React.useMemo(
     () => filterKolamCategoryTree(controller.categories, search),
     [controller.categories, search],
@@ -161,48 +194,12 @@ function KolamCategoryList({
     (safePage - 1) * pageSize,
     safePage * pageSize,
   );
-  const summary = getCategorySummary(allCategories);
-  const categoryColumns = React.useMemo(
-    () =>
-      applyKolamAdaptiveColumnWidths(getKolamTableColumns('category'), [
-        {
-          id: 'children',
-          values: allCategories.map(
-            category => category.childrenCount || category.children.length,
-          ),
-          minWidth: 92,
-          maxWidth: 132,
-        },
-        {
-          id: 'products',
-          values: allCategories.map(category => category.productCount),
-          minWidth: 76,
-          maxWidth: 104,
-        },
-        {
-          id: 'meta',
-          values: allCategories.map(category => category.speciesCount),
-          minWidth: 76,
-          maxWidth: 104,
-        },
-        {
-          id: 'marketplace',
-          values: allCategories.map(category =>
-            category.showInMarketplace
-              ? `Tampil Urutan ${category.marketplaceOrder}`
-              : 'Tersembunyi',
-          ),
-          minWidth: 112,
-          maxWidth: 132,
-          charWidth: 7,
-        },
-      ]),
-    [allCategories],
+  const listColumns = React.useMemo(
+    () => fitCategoryListColumns(tableBodyWidth),
+    [tableBodyWidth],
   );
-  const columnWidths = React.useMemo(
-    () => getKolamTableColumnWidthMap(categoryColumns),
-    [categoryColumns],
-  );
+  const expandAllLabel = expandedIds.size > 0 ? 'Tutup Semua' : 'Buka Semua';
+
   React.useEffect(() => {
     setPage(1);
   }, [pageSize, search]);
@@ -225,24 +222,40 @@ function KolamCategoryList({
 
   return (
     <View style={styles.stack}>
-      <View style={styles.summaryGrid}>
-        <SummaryTile label="Total Kategori" value={allCategories.length} />
-        <SummaryTile label="Root" value={summary.root} />
-        <SummaryTile label="Produk" value={summary.products} />
-        <SummaryTile label="Species" value={summary.species} />
-      </View>
-      <View style={kolamTableToolbarStyles.row}>
-        <KolamFormTextField
-          onChangeText={setSearch}
-          placeholder="Cari kategori..."
-          style={kolamTableToolbarStyles.searchInput}
-          value={search}
-        />
-        <View style={kolamTableToolbarStyles.controls}>
-          <KolamButton
-            label={expandedIds.size ? 'Tutup Semua' : 'Buka Semua'}
-            onPress={toggleAll}
-          />
+      <View style={kolamTableToolbarStyles.shell}>
+        <View style={kolamTableToolbarStyles.row}>
+          <View style={kolamTableToolbarStyles.filters}>
+            <KolamSearchField
+              containerStyle={kolamTableToolbarStyles.searchInput}
+              onChangeText={setSearch}
+              placeholder="Cari kategori..."
+              value={search}
+            />
+            <KolamTableFilterTrigger
+              active={expandedIds.size > 0}
+              label={expandAllLabel}
+              onPress={toggleAll}
+              open={expandedIds.size > 0}
+              variant="quiet"
+            />
+          </View>
+          <View style={kolamTableToolbarStyles.actions}>
+            <KolamButton
+              disabled={controller.loading}
+              label="Refresh"
+              onPress={() => {
+                void controller.onRefresh();
+              }}
+            />
+            <KolamButton
+              intent="primary"
+              label="Baru"
+              onPress={() => {
+                controller.onCreateNew();
+                onRouteChange?.('/label-dan-field/kategori/baru');
+              }}
+            />
+          </View>
         </View>
       </View>
       <KolamCatalogListTableShell
@@ -280,61 +293,58 @@ function KolamCategoryList({
             ) : null}
           </KolamTableFooterControls>
         }
+        onBodyWidthChange={setTableBodyWidth}
       >
-        <KolamDataTableHeader columns={categoryColumns} />
-        <View style={styles.tableBody}>
-          {pagedRows.length ? (
-            pagedRows.map(category => (
-              <KolamCategoryRow
-                category={category}
-                columnWidths={columnWidths}
-                expanded={expandedIds.has(category.id)}
-                key={category.id}
-                onAddChild={() => {
-                  controller.onCreateNew();
-                  controller.onChangeForm({ parentId: category.id });
-                  onRouteChange?.(
-                    `/label-dan-field/kategori/baru?parent=${encodeURIComponent(
-                      category.id,
-                    )}`,
-                  );
-                }}
-                onDelete={() => setDeleteCandidate(category)}
-                onEdit={() => {
-                  void controller.onSelectCategory(category);
-                  onRouteChange?.(`${getCategoryRoute(category)}/edit`);
-                }}
-                onSelect={() => {
-                  void controller.onSelectCategory(category);
-                  onRouteChange?.(getCategoryRoute(category));
-                }}
-                onToggle={() =>
-                  setExpandedIds(current => {
-                    const next = new Set(current);
-                    if (next.has(category.id)) {
-                      next.delete(category.id);
-                    } else {
-                      next.add(category.id);
-                    }
-                    return next;
-                  })
-                }
-              />
-            ))
-          ) : (
-            <View style={styles.emptyWrap}>
-              <KolamEmptyState
-                compact
-                message="Data Kategori belum tersedia dari cache atau backend."
-                title={
-                  controller.loading
-                    ? 'Memuat kategori...'
-                    : 'Belum ada kategori'
-                }
-              />
-            </View>
-          )}
-        </View>
+        <KolamDataTableHeader columns={listColumns} />
+        {pagedRows.length ? (
+          pagedRows.map(category => (
+            <KolamCategoryRow
+              category={category}
+              columns={listColumns}
+              expanded={expandedIds.has(category.id)}
+              key={category.id}
+              onAddChild={() => {
+                controller.onCreateNew();
+                controller.onChangeForm({ parentId: category.id });
+                onRouteChange?.(
+                  `/label-dan-field/kategori/baru?parent=${encodeURIComponent(
+                    category.id,
+                  )}`,
+                );
+              }}
+              onDelete={() => setDeleteCandidate(category)}
+              onEdit={() => {
+                void controller.onSelectCategory(category);
+                onRouteChange?.(`${getCategoryRoute(category)}/edit`);
+              }}
+              onSelect={() => {
+                void controller.onSelectCategory(category);
+                onRouteChange?.(getCategoryRoute(category));
+              }}
+              onToggle={() =>
+                setExpandedIds(current => {
+                  const next = new Set(current);
+                  if (next.has(category.id)) {
+                    next.delete(category.id);
+                  } else {
+                    next.add(category.id);
+                  }
+                  return next;
+                })
+              }
+            />
+          ))
+        ) : (
+          <View style={styles.emptyWrap}>
+            <KolamEmptyState
+              compact
+              message="Data Kategori belum tersedia dari cache atau backend."
+              title={
+                controller.loading ? 'Memuat kategori...' : 'Belum ada kategori'
+              }
+            />
+          </View>
+        )}
       </KolamCatalogListTableShell>
       <KolamDeleteConfirmDialog
         itemLabel={deleteCandidate?.name}
@@ -362,7 +372,7 @@ function KolamCategoryList({
 
 function KolamCategoryRow({
   category,
-  columnWidths,
+  columns,
   expanded,
   onAddChild,
   onDelete,
@@ -371,7 +381,7 @@ function KolamCategoryRow({
   onToggle,
 }: {
   category: KolamCategory;
-  columnWidths: KolamTableColumnWidthMap;
+  columns: ReturnType<typeof getKolamTableColumns>;
   expanded: boolean;
   onAddChild: () => void;
   onDelete: () => void;
@@ -380,78 +390,110 @@ function KolamCategoryRow({
   onToggle: () => void;
 }) {
   const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
+  const [nameTooltipOpen, setNameTooltipOpen] = React.useState(false);
   const hasChildren = category.children.length > 0;
   const canAddChild = category.level < 2;
-  const rowDescription = truncateCategoryRowDescription(
-    category.description || 'Tanpa deskripsi',
+  const columnOf = React.useCallback(
+    (id: (typeof columns)[number]['id']) => columns.find(column => column.id === id),
+    [columns],
   );
+  const primaryColumn = columnOf('primary');
+  const childrenColumn = columnOf('children');
+  const productsColumn = columnOf('products');
+  const metaColumn = columnOf('meta');
+  const marketplaceColumn = columnOf('marketplace');
+  const actionsColumn = columnOf('actions');
+  const raiseRow = actionMenuOpen || nameTooltipOpen;
 
   return (
     <KolamDataTableRowFrame
-      style={[
-        styles.categoryRow,
-        actionMenuOpen ? styles.activeActionRow : null,
-      ]}
+      style={raiseRow ? styles.activeActionRow : undefined}
     >
-      <View style={styles.categoryIdentityCell}>
-        <View style={[styles.treeIndent, { width: category.level * 24 }]} />
-        <KolamButton
-          disabled={!hasChildren}
-          label={hasChildren ? (expanded ? 'v' : '>') : '-'}
-          onPress={onToggle}
-          style={styles.treeButton}
-          textStyle={styles.treeButtonText}
-        />
-        <View style={styles.categoryIdentity}>
-          <KolamCategoryIcon category={category} />
-          <KolamCopyStack
-            containerStyle={styles.categoryCopy}
-            items={[
-              { id: 'name', text: category.name, style: styles.rowTitle },
-              {
-                id: 'description',
-                text: rowDescription,
-                style: styles.rowMeta,
-              },
-            ]}
+      <KolamDataTableMainTrack style={styles.mainTrackVisible}>
+        <View
+          style={[
+            styles.listCell,
+            styles.identityCell,
+            primaryColumn ? getKolamDataTableColumnStyle(primaryColumn) : null,
+            styles.overflowVisible,
+          ]}
+        >
+          <View style={styles.identityRow}>
+            <View style={[styles.treeIndent, { width: category.level * 24 }]} />
+            <KolamButton
+              disabled={!hasChildren}
+              label={hasChildren ? (expanded ? 'v' : '>') : '-'}
+              onPress={onToggle}
+              style={styles.treeButton}
+              textStyle={styles.treeButtonText}
+            />
+            <KolamHoverTooltip
+              align="center"
+              label={category.description || category.name}
+              onOpenChange={setNameTooltipOpen}
+              placement="bottom"
+            >
+              <View style={styles.categoryIdentity}>
+                <KolamCategoryIcon category={category} />
+                <Text numberOfLines={1} style={styles.rowTitle}>
+                  {category.name}
+                </Text>
+              </View>
+            </KolamHoverTooltip>
+          </View>
+        </View>
+        <View
+          style={[
+            styles.listCell,
+            childrenColumn ? getKolamDataTableColumnStyle(childrenColumn) : null,
+          ]}
+        >
+          <Text numberOfLines={1} style={styles.countText}>
+            {String(category.childrenCount || category.children.length)}
+          </Text>
+        </View>
+        <View
+          style={[
+            styles.listCell,
+            productsColumn ? getKolamDataTableColumnStyle(productsColumn) : null,
+          ]}
+        >
+          <Text numberOfLines={1} style={styles.countText}>
+            {String(category.productCount)}
+          </Text>
+        </View>
+        <View
+          style={[
+            styles.listCell,
+            metaColumn ? getKolamDataTableColumnStyle(metaColumn) : null,
+          ]}
+        >
+          <Text numberOfLines={1} style={styles.countText}>
+            {String(category.speciesCount)}
+          </Text>
+        </View>
+        <View
+          style={[
+            styles.listCell,
+            marketplaceColumn
+              ? getKolamDataTableColumnStyle(marketplaceColumn)
+              : null,
+          ]}
+        >
+          <KolamStatusBadge
+            intent={category.showInMarketplace ? 'success' : 'muted'}
+            label={category.showInMarketplace ? 'Tampil' : 'Tersembunyi'}
+            style={styles.statusBadge}
           />
         </View>
-      </View>
-      <View style={[styles.childrenCell, { width: columnWidths.children }]}>
-        <KolamDataTableMetaCell style={{ width: columnWidths.children }}>
-          {category.childrenCount || category.children.length}
-        </KolamDataTableMetaCell>
-      </View>
-      <KolamDataTableAmountCell
-        style={[styles.countCell, { width: columnWidths.products }]}
+      </KolamDataTableMainTrack>
+      <KolamDataTableActionsTrack
+        style={styles.actionsTrack}
+        width={Math.max(
+          actionsColumn?.width ?? KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+          KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+        )}
       >
-        {category.productCount}
-      </KolamDataTableAmountCell>
-      <KolamDataTableAmountCell
-        style={[styles.countCell, { width: columnWidths.meta }]}
-      >
-        {category.speciesCount}
-      </KolamDataTableAmountCell>
-      <View
-        style={[styles.marketplaceCell, { width: columnWidths.marketplace }]}
-      >
-        <KolamStatusBadge
-          intent={category.showInMarketplace ? 'success' : 'muted'}
-          label={category.showInMarketplace ? 'Tampil' : 'Tersembunyi'}
-        />
-        {category.showInMarketplace ? (
-          <KolamCopyStack
-            items={[
-              {
-                id: 'order',
-                text: `Urutan ${category.marketplaceOrder}`,
-                style: styles.marketplaceMeta,
-              },
-            ]}
-          />
-        ) : null}
-      </View>
-      <View style={styles.overflowCell}>
         <KolamOverflowMenuButton
           accessibilityLabel={`Menu ${category.name}`}
           onOpenChange={setActionMenuOpen}
@@ -466,10 +508,11 @@ function KolamCategoryRow({
             { label: 'Hapus', onPress: onDelete, tone: 'danger' },
           ]}
         />
-      </View>
+      </KolamDataTableActionsTrack>
     </KolamDataTableRowFrame>
   );
 }
+
 function KolamCategoryDetail({
   controller,
 }: {
@@ -499,13 +542,6 @@ function KolamCategoryDetail({
     <View style={styles.stack}>
       {!editable && category ? (
         <>
-          <View style={styles.detailActions}>
-            <KolamButton
-              intent="primary"
-              label="Edit"
-              onPress={controller.onEdit}
-            />
-          </View>
           <KolamLabelFieldDetailOverview
             hero={<KolamCategoryIcon category={category} variant="detail" />}
             status={{
@@ -723,38 +759,43 @@ function FieldShell({
   );
 }
 
-function SummaryTile({ label, value }: { label: string; value: number }) {
-  return (
-    <View style={styles.summaryTile}>
-      <KolamCopyStack
-        items={[
-          { id: 'value', text: value, style: styles.summaryValue },
-          { id: 'label', text: label, style: styles.summaryLabel },
-        ]}
-      />
-    </View>
-  );
-}
+function fitCategoryListColumns(containerWidth: number): KolamTableColumn[] {
+  const base = getKolamTableColumns('category');
+  if (containerWidth <= 0) {
+    return base;
+  }
 
-function getCategorySummary(categories: KolamCategory[]) {
-  return categories.reduce(
-    (summary, category) => {
-      if (category.level === 0) {
-        summary.root += 1;
-      }
-      summary.products += category.productCount;
-      summary.species += category.speciesCount;
-      return summary;
-    },
-    { products: 0, root: 0, species: 0 },
+  const gap = KOLAM_DATA_TABLE_COLUMN_GAP;
+  const paddingX = getKolamTableVisualContract().body.cellPaddingX * 2;
+  const actionsWidth = KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH;
+  const gapsTotal = gap * Math.max(0, base.length - 1);
+  const contentBudget = Math.max(
+    0,
+    containerWidth - paddingX - gapsTotal - actionsWidth,
   );
-}
+  const contentColumns = base.filter(column => column.id !== 'actions');
+  const equalWidth = Math.max(
+    72,
+    Math.floor(contentBudget / Math.max(1, contentColumns.length)),
+  );
+  let remainder = contentBudget - equalWidth * contentColumns.length;
+  const lastContentId = contentColumns[contentColumns.length - 1]?.id;
 
-function truncateCategoryRowDescription(description: string) {
-  const normalized = description.replace(/\s+/g, ' ').trim();
-  return normalized.length > 86
-    ? `${normalized.slice(0, 83).trimEnd()}...`
-    : normalized;
+  return base.map(column => {
+    if (column.id === 'actions') {
+      return { ...column, width: actionsWidth };
+    }
+
+    const extra = column.id === lastContentId ? remainder : 0;
+    if (column.id === lastContentId) {
+      remainder = 0;
+    }
+
+    return {
+      ...column,
+      width: equalWidth + extra,
+    };
+  });
 }
 
 function getCategoryRoute(category: KolamCategory) {
@@ -883,19 +924,15 @@ const styles = StyleSheet.create({
   surface: {
     gap: 14,
   },
-  header: {
-    minHeight: 40,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'flex-end',
-    gap: 16,
-  },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    justifyContent: 'flex-end',
-    gap: 8,
+  detailToolbarContext: {
+    color: V.colors.fg,
+    flexShrink: 1,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+    minWidth: 0,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
   },
   errorBadge: {
     alignSelf: 'flex-start',
@@ -904,44 +941,34 @@ const styles = StyleSheet.create({
   stack: {
     gap: 14,
   },
-  summaryGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
+  activeActionRow: {
+    zIndex: 1000,
+    elevation: 30,
+    overflow: 'visible',
   },
-  summaryTile: {
-    minWidth: 150,
-    flexGrow: 1,
-    padding: 14,
-    borderRadius: 8,
-    borderColor: V.colors.border,
-    borderWidth: 1,
-    backgroundColor: V.colors.bg,
+  mainTrackVisible: {
+    overflow: 'visible',
   },
-  summaryValue: {
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 22,
-    fontWeight: '900',
-  },
-  summaryLabel: {
-    marginTop: 3,
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  tableBody: {
-    width: '100%',
-  },
-  categoryRow: {
-    width: '100%',
-  },
-  categoryIdentityCell: {
-    flex: 1,
-    minWidth: 0,
-    flexDirection: 'row',
+  listCell: {
     alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 0,
+    overflow: 'hidden',
+    paddingVertical: 4,
+  },
+  identityCell: {
+    zIndex: 2,
+  },
+  overflowVisible: {
+    overflow: 'visible',
+  },
+  identityRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    maxWidth: '100%',
+    minWidth: 0,
+    width: '100%',
   },
   treeIndent: {
     flexShrink: 0,
@@ -956,48 +983,33 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   categoryIdentity: {
-    flex: 1,
-    minWidth: 0,
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-  },
-  categoryCopy: {
-    flex: 1,
+    flexDirection: 'row',
+    gap: 8,
+    maxWidth: '100%',
     minWidth: 0,
   },
   rowTitle: {
     color: V.colors.fg,
+    flexShrink: 1,
     fontFamily: V.fontFamily,
     fontSize: 13,
-    fontWeight: '900',
-  },
-  rowMeta: {
-    marginTop: 3,
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 11,
-    lineHeight: 16,
-  },
-  childrenCell: {
-    width: 132,
-    alignItems: 'flex-end',
-  },
-  countCell: {
-    width: 92,
-  },
-  marketplaceCell: {
-    width: 132,
-    alignItems: 'flex-end',
-    gap: 2,
-  },
-  marketplaceMeta: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 10,
     fontWeight: '700',
-    lineHeight: 13,
-    textAlign: 'right',
+    minWidth: 0,
+  },
+  countText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+    textAlign: 'center',
+    width: '100%',
+  },
+  statusBadge: {
+    alignSelf: 'center',
+  },
+  actionsTrack: {
+    alignItems: 'center',
   },
   detailThumbnail: {
     width: 38,
@@ -1006,16 +1018,6 @@ const styles = StyleSheet.create({
     backgroundColor: V.colors.muted,
     borderColor: V.colors.border,
     borderWidth: 1,
-  },
-  activeActionRow: {
-    zIndex: 1000,
-    elevation: 96,
-  },
-  overflowCell: {
-    width: 64,
-    alignItems: 'flex-end',
-    zIndex: 1100,
-    elevation: 30,
   },
   emptyWrap: {
     padding: 16,
@@ -1032,10 +1034,6 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 12,
     fontWeight: '800',
-  },
-  detailActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
   },
   longDropdownMenu: {
     maxHeight: 280,
