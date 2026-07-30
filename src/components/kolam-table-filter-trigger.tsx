@@ -57,10 +57,12 @@ export function KolamTableFilterTrigger({
           {label}
         </Text>
         <View style={styles.quietDivider} />
-        <QuietCaret
-          color={active || open ? V.colors.primary : V.colors.mutedFg}
-          open={open}
-        />
+        <View style={styles.caretSlot}>
+          <QuietCaret
+            color={active || open ? V.colors.primary : V.colors.mutedFg}
+            open={open}
+          />
+        </View>
       </KolamInteractionFrame>
     );
   }
@@ -87,19 +89,12 @@ export function KolamTableFilterTrigger({
   );
 }
 
+/** Solid ∨ caret — border-triangle tricks often render blank on RNW. */
 function QuietCaret({color, open}: {color: string; open: boolean}) {
   return (
     <View style={[styles.caretWrap, open ? styles.caretWrapOpen : null]}>
-      <View
-        style={[
-          styles.caretTriangle,
-          {
-            borderLeftColor: 'transparent',
-            borderRightColor: 'transparent',
-            borderTopColor: color,
-          },
-        ]}
-      />
+      <View style={[styles.caretArm, styles.caretArmLeft, {backgroundColor: color}]} />
+      <View style={[styles.caretArm, styles.caretArmRight, {backgroundColor: color}]} />
     </View>
   );
 }
@@ -133,12 +128,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexGrow: 0,
     flexShrink: 0,
-    gap: 8,
-    maxWidth: 220,
+    gap: 0,
+    maxWidth: 240,
     minHeight: 34,
+    overflow: 'hidden',
     paddingLeft: 12,
-    paddingRight: 8,
-    paddingVertical: 6,
   },
   quietRootActive: {
     backgroundColor: V.colors.secondary,
@@ -154,6 +148,7 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 13,
     fontWeight: '600',
+    paddingRight: 10,
   },
   quietLabelActive: {
     color: V.colors.primary,
@@ -162,24 +157,38 @@ const styles = StyleSheet.create({
   quietDivider: {
     alignSelf: 'stretch',
     backgroundColor: V.colors.border,
-    marginVertical: 2,
     width: StyleSheet.hairlineWidth,
+  },
+  caretSlot: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 32,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
   },
   caretWrap: {
     alignItems: 'center',
-    height: 16,
+    height: 12,
     justifyContent: 'center',
-    width: 16,
+    position: 'relative',
+    width: 12,
   },
   caretWrapOpen: {
     transform: [{rotate: '180deg'}],
   },
-  caretTriangle: {
-    borderLeftWidth: 4,
-    borderRightWidth: 4,
-    borderTopWidth: 5,
-    height: 0,
-    marginTop: 2,
-    width: 0,
+  caretArm: {
+    borderRadius: 1,
+    height: 2,
+    position: 'absolute',
+    top: 4,
+    width: 7,
+  },
+  caretArmLeft: {
+    left: 0,
+    transform: [{rotate: '40deg'}],
+  },
+  caretArmRight: {
+    right: 0,
+    transform: [{rotate: '-40deg'}],
   },
 });
