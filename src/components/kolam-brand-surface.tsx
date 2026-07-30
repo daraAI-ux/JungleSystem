@@ -24,6 +24,7 @@ import {
 import { KolamBrandLogo } from './kolam-brand-logo';
 import { KolamButton } from './kolam-button';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
+import { KolamCheckmarkIcon } from './kolam-checkmark-icon';
 import { KolamCopyStack } from './kolam-copy-stack';
 import {
   getKolamDataTableColumnStyle,
@@ -50,6 +51,7 @@ import { KolamTipTapRichTextEditor } from './kolam-tiptap-rich-text-editor';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamHoverTooltip } from './kolam-hover-tooltip';
+import { KolamInteractionFrame } from './kolam-interaction-frame';
 import { KolamLabelFieldDetailOverview } from './kolam-label-field-detail-overview';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
@@ -231,6 +233,7 @@ function KolamBrandList({
                   active={activeFilterPanel === 'sort' || sortMode !== 'name-asc'}
                   label={sortFilterLabel}
                   onPress={() => openFilterPanel('sort')}
+                  variant="quiet"
                 />
               </View>
               <View ref={assetTriggerRef} collapsable={false}>
@@ -238,6 +241,7 @@ function KolamBrandList({
                   active={activeFilterPanel === 'asset' || assetMode !== 'none'}
                   label={assetFilterLabel}
                   onPress={() => openFilterPanel('asset')}
+                  variant="quiet"
                 />
               </View>
             </View>
@@ -287,10 +291,9 @@ function KolamBrandList({
                   ? option.value === sortMode
                   : option.value === assetMode;
               return (
-                <KolamButton
-                  intent={selected ? 'primary' : 'plain'}
+                <KolamInteractionFrame
+                  accessibilityLabel={option.label}
                   key={`${activeFilterPanel}-${option.value}`}
-                  label={option.label}
                   onPress={() => {
                     if (activeFilterPanel === 'sort') {
                       setSortMode(option.value as BrandSortMode);
@@ -299,16 +302,29 @@ function KolamBrandList({
                     }
                     setActiveFilterPanel(null);
                   }}
-                  style={styles.filterPanelOption}
-                />
+                  selected={selected}
+                  style={[
+                    styles.filterMenuItem,
+                    selected ? styles.filterMenuItemSelected : null,
+                  ]}
+                >
+                  <Text
+                    numberOfLines={1}
+                    style={[
+                      styles.filterMenuItemLabel,
+                      selected ? styles.filterMenuItemLabelSelected : null,
+                    ]}
+                  >
+                    {option.label}
+                  </Text>
+                  {selected ? (
+                    <KolamCheckmarkIcon color={V.colors.primary} size="sm" />
+                  ) : (
+                    <View style={styles.filterMenuItemCheckSpacer} />
+                  )}
+                </KolamInteractionFrame>
               );
             })}
-            <View style={styles.filterPanelFooter}>
-              <KolamButton
-                label="Tutup"
-                onPress={() => setActiveFilterPanel(null)}
-              />
-            </View>
           </View>
         ) : null}
       </View>
@@ -1109,26 +1125,45 @@ const styles = StyleSheet.create({
   filterOverlayPanel: {
     backgroundColor: V.colors.bg,
     borderColor: V.colors.border,
-    borderRadius: 8,
+    borderRadius: 10,
     borderWidth: 1,
     elevation: 1200,
-    gap: 4,
+    gap: 2,
     padding: 6,
     position: 'absolute',
     shadowColor: V.colors.fg,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 18,
     zIndex: 120000,
   },
-  filterPanelOption: {
-    justifyContent: 'flex-start',
+  filterMenuItem: {
+    alignItems: 'center',
+    borderRadius: 8,
+    flexDirection: 'row',
+    gap: 10,
+    justifyContent: 'space-between',
+    minHeight: 36,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
   },
-  filterPanelFooter: {
-    borderTopColor: V.colors.border,
-    borderTopWidth: 1,
-    marginTop: 4,
-    paddingTop: 6,
+  filterMenuItemSelected: {
+    backgroundColor: V.colors.primarySoft,
+  },
+  filterMenuItemLabel: {
+    color: V.colors.fg,
+    flex: 1,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  filterMenuItemLabelSelected: {
+    color: V.colors.primary,
+    fontWeight: '800',
+  },
+  filterMenuItemCheckSpacer: {
+    height: 14,
+    width: 14,
   },
   emptyWrap: {
     padding: 16,
