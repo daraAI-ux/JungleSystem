@@ -681,15 +681,6 @@ export function KolamSalesOpsDetail({
                   </Text>
                 </View>
                 <View style={styles.shippingField}>
-                  <Text style={styles.shippingFieldLabel}>Status kirim</Text>
-                  <Text style={styles.shippingFieldValue}>
-                    {formatKolamSaleDeliveryStatusLabel(
-                      sale.deliveryStatus,
-                      sale.status,
-                    )}
-                  </Text>
-                </View>
-                <View style={styles.shippingField}>
                   <Text style={styles.shippingFieldLabel}>Total pengiriman</Text>
                   <Text style={styles.shippingFieldValue}>
                     {formatRupiah(sale.shippingCost)}
