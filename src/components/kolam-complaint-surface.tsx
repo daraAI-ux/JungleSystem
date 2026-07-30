@@ -294,10 +294,16 @@ function KolamComplaintList({
                   value as typeof controller.sourceFilter,
                 )
               }
-              options={KOLAM_COMPLAINT_SOURCE_OPTIONS.map(option => ({
-                label: option.label,
-                value: option.id,
-              }))}
+              options={[
+                { label: 'Sumber', value: 'all' },
+                ...KOLAM_COMPLAINT_SOURCE_OPTIONS.filter(
+                  option => option.id !== 'all',
+                ).map(option => ({
+                  label: option.label,
+                  value: option.id,
+                })),
+              ]}
+              showLabelInTrigger={false}
               value={controller.sourceFilter}
             />
             <KolamDropdownSelect
@@ -308,12 +314,13 @@ function KolamComplaintList({
                 )
               }
               options={[
-                { label: 'Semua status', value: 'all' },
+                { label: 'Status', value: 'all' },
                 ...KOLAM_COMPLAINT_STATUS_OPTIONS.map(option => ({
                   label: option.label,
                   value: option.id,
                 })),
               ]}
+              showLabelInTrigger={false}
               value={controller.statusFilter}
             />
             <KolamDropdownSelect
@@ -324,12 +331,13 @@ function KolamComplaintList({
                 )
               }
               options={[
-                { label: 'Semua keputusan', value: 'all' },
+                { label: 'Keputusan', value: 'all' },
                 ...KOLAM_COMPLAINT_DECISION_OPTIONS.map(option => ({
                   label: option.label,
                   value: option.id,
                 })),
               ]}
+              showLabelInTrigger={false}
               value={controller.decisionFilter}
             />
           </View>
