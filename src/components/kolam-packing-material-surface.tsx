@@ -575,7 +575,7 @@ function KolamPackingMaterialRow({
     <KolamDataTableRowFrame
       style={actionMenuOpen ? styles.activeActionRow : undefined}
     >
-      <KolamDataTableMainTrack style={styles.mainTrackVisible}>
+      <KolamDataTableMainTrack>
         <View
           style={[
             styles.listCell,
@@ -611,13 +611,19 @@ function KolamPackingMaterialRow({
           <KolamCopyStack
             containerStyle={styles.nameCopy}
             items={[
-              { id: 'name', text: item.name, style: styles.rowTitle },
+              {
+                id: 'name',
+                text: item.name,
+                style: styles.rowTitle,
+                textProps: { numberOfLines: 1 },
+              },
               ...(description
                 ? [
                     {
                       id: 'description',
                       text: description,
                       style: styles.rowMeta,
+                      textProps: { numberOfLines: 1 },
                     },
                   ]
                 : []),
@@ -2225,9 +2231,6 @@ const styles = StyleSheet.create({
   activeActionRow: {
     zIndex: 2000,
     elevation: 100,
-  },
-  mainTrackVisible: {
-    overflow: 'visible',
   },
   listCell: {
     alignItems: 'center',
