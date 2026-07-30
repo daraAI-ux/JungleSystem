@@ -82,7 +82,6 @@ import {KolamProfileAvatarContent} from './kolam-profile-avatar-content';
 import {KolamRemoteImage} from './kolam-remote-image';
 import {KolamStatusIndicatorIcon} from './kolam-status-indicator-icon';
 import {KolamTopNavigationChatIcon} from './kolam-top-navigation-chat-icon';
-import {KolamXIcon} from './kolam-x-icon';
 import {resolveProfilePhotoUrl, type SignedInUser} from '../services/auth-api';
 
 export type KolamGlobalChatRailMode = 'inbox' | 'team-chat';
@@ -905,10 +904,13 @@ export function KolamGlobalChatRail({
           <KolamIconButton
             accessibilityLabel="Tutup panel chat"
             onPress={onClose}
-            size={32}
+            size={28}
             radius="full"
             variant="ghost">
-            <KolamXIcon color={V.colors.mutedFg} />
+            <KolamStatusIndicatorIcon
+              color={V.colors.mutedFg}
+              kind="triangle-left"
+            />
           </KolamIconButton>
         </View>
       </View>
