@@ -179,6 +179,14 @@ const overtimeCalculationModeOptions: Array<{
   {value: 'per_day', label: 'Per hari'},
 ];
 
+const enclosureSaleCommissionTypeOptions: Array<{
+  label: string;
+  value: WebSettingDraft['enclosureSaleCommissionType'];
+}> = [
+  {value: 'percentage', label: 'Persentase'},
+  {value: 'fixed', label: 'Nominal tetap'},
+];
+
 const defaultPaymentMethodFilters: SettingsPaymentMethodFilters = {
   search: '',
   isAvailableOnWebstore: '',
@@ -7860,36 +7868,74 @@ function FinancialSettingsPanel({
               onPress={onSaveEnclosureSaleCommission}
             />
           </View>
-          <KolamToggleRow
-            active={draft.enclosureSaleCommissionEnabled}
-            description="Nonaktif berarti baris kandang tidak di-accrue."
-            label="Aktifkan komisi kandang"
-            onPress={() =>
-              setDraftField(
-                'enclosureSaleCommissionEnabled',
-                !draft.enclosureSaleCommissionEnabled,
-              )
-            }
-            variant="settingsForm"
-          />
+          <View style={styles.notificationToggleGrid}>
+            <View style={styles.notificationToggleBox}>
+              <KolamToggleRow
+                active={draft.enclosureSaleCommissionEnabled}
+                description="Nonaktif berarti baris kandang tidak di-accrue."
+                label="Aktifkan komisi kandang"
+                onPress={() =>
+                  setDraftField(
+                    'enclosureSaleCommissionEnabled',
+                    !draft.enclosureSaleCommissionEnabled,
+                  )
+                }
+                variant="settingsForm"
+              />
+            </View>
+            <View style={styles.notificationToggleBox}>
+              <KolamToggleRow
+                active={draft.salePricesIncludeTax}
+                description="Default true jika field BE kosong."
+                label="Harga jual include PPN"
+                onPress={() =>
+                  onSaveFinancialTaxToggle(
+                    'salePricesIncludeTax',
+                    !draft.salePricesIncludeTax,
+                  )
+                }
+                variant="settingsForm"
+              />
+            </View>
+            <View style={styles.notificationToggleBox}>
+              <KolamToggleRow
+                active={draft.commissionPph21Enabled}
+                description="Aktifkan perhitungan PPh 21 untuk komisi."
+                label="PPh 21 komisi"
+                onPress={() =>
+                  onSaveFinancialTaxToggle(
+                    'commissionPph21Enabled',
+                    !draft.commissionPph21Enabled,
+                  )
+                }
+                variant="settingsForm"
+              />
+            </View>
+          </View>
           {draft.enclosureSaleCommissionEnabled ? (
             <>
-              <View style={styles.financialToolbar}>
-                <FinancialChoiceSegment
-                  active={draft.enclosureSaleCommissionType === 'percentage'}
-                  label="Persentase"
-                  onPress={() =>
-                    setDraftField('enclosureSaleCommissionType', 'percentage')
+              <KolamRowFrame variant="settingsForm">
+                <KolamTextFieldRowCopy
+                  description="Pilih apakah komisi dihitung persen atau nominal tetap."
+                  label="Tipe komisi kandang"
+                />
+                <KolamDropdownSelect
+                  accessibilityLabel="Tipe komisi kandang"
+                  label="Tipe komisi kandang"
+                  menuPlacement="inline"
+                  options={enclosureSaleCommissionTypeOptions}
+                  showLabelInTrigger={false}
+                  style={[
+                    styles.financialSelectorControl,
+                    {width: settingsFieldWidth},
+                  ]}
+                  triggerStyle={styles.shippingTimezoneTrigger}
+                  value={draft.enclosureSaleCommissionType}
+                  onChange={value =>
+                    setDraftField('enclosureSaleCommissionType', value)
                   }
                 />
-                <FinancialChoiceSegment
-                  active={draft.enclosureSaleCommissionType === 'fixed'}
-                  label="Nominal tetap"
-                  onPress={() =>
-                    setDraftField('enclosureSaleCommissionType', 'fixed')
-                  }
-                />
-              </View>
+              </KolamRowFrame>
               <KolamTextFieldRow
                 description="Nilai persen atau nominal sesuai tipe komisi."
                 fieldWidth={settingsFieldWidth}
@@ -7906,30 +7952,6 @@ function FinancialSettingsPanel({
               />
             </>
           ) : null}
-          <KolamToggleRow
-            active={draft.salePricesIncludeTax}
-            description="Default true jika field BE kosong."
-            label="Harga jual include PPN"
-            onPress={() =>
-              onSaveFinancialTaxToggle(
-                'salePricesIncludeTax',
-                !draft.salePricesIncludeTax,
-              )
-            }
-            variant="settingsForm"
-          />
-          <KolamToggleRow
-            active={draft.commissionPph21Enabled}
-            description="Aktifkan perhitungan PPh 21 untuk komisi."
-            label="PPh 21 komisi"
-            onPress={() =>
-              onSaveFinancialTaxToggle(
-                'commissionPph21Enabled',
-                !draft.commissionPph21Enabled,
-              )
-            }
-            variant="settingsForm"
-          />
         </View>
       ) : null}
 
