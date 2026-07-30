@@ -38,6 +38,8 @@ import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
 
 type EnclosureFilterPanel = 'type' | 'livestock' | null;
 
+const ENCLOSURE_FILTER_PANEL_WIDTH = 232;
+
 const ENCLOSURE_TABLE_COLUMNS: KolamTableColumn[] = [
   {id: 'meta', label: '', align: 'left', width: 64},
   {id: 'children', label: 'Kode', align: 'left', width: 118},
@@ -105,6 +107,10 @@ function KolamEnclosureList({
   );
   const [activeFilterPanel, setActiveFilterPanel] =
     React.useState<EnclosureFilterPanel>(null);
+  const [panelAnchor, setPanelAnchor] = React.useState({left: 0, top: 48});
+  const toolbarRef = React.useRef<View>(null);
+  const typeTriggerRef = React.useRef<View>(null);
+  const livestockTriggerRef = React.useRef<View>(null);
 
   React.useEffect(() => {
     setSearchInput(controller.filters.search);
@@ -140,9 +146,55 @@ function KolamEnclosureList({
       ? 'Livestock'
       : getLivestockPurposeLabel(controller.filters.livestockPurpose);
 
+  const anchorFilterPanel = React.useCallback((panel: EnclosureFilterPanel) => {
+    if (!panel) {
+      return;
+    }
+    const triggerRef =
+      panel === 'type' ? typeTriggerRef : livestockTriggerRef;
+    const toolbar = toolbarRef.current;
+    const trigger = triggerRef.current;
+    if (!toolbar || !trigger) {
+      return;
+    }
+    toolbar.measureInWindow((toolbarX, toolbarY, toolbarWidth) => {
+      trigger.measureInWindow((x, y, _width, height) => {
+        const maxLeft = Math.max(
+          0,
+          toolbarWidth - ENCLOSURE_FILTER_PANEL_WIDTH,
+        );
+        const preferredLeft = x - toolbarX;
+        setPanelAnchor({
+          left: Math.min(Math.max(0, preferredLeft), maxLeft),
+          top: y - toolbarY + height + 4,
+        });
+      });
+    });
+  }, []);
+
+  const toggleFilterPanel = React.useCallback(
+    (panel: Exclude<EnclosureFilterPanel, null>) => {
+      setActiveFilterPanel(current => {
+        const next = current === panel ? null : panel;
+        if (next) {
+          requestAnimationFrame(() => anchorFilterPanel(next));
+        }
+        return next;
+      });
+    },
+    [anchorFilterPanel],
+  );
+
+  React.useEffect(() => {
+    if (!activeFilterPanel) {
+      return;
+    }
+    requestAnimationFrame(() => anchorFilterPanel(activeFilterPanel));
+  }, [activeFilterPanel, anchorFilterPanel]);
+
   return (
     <View style={styles.listRoot}>
-      <View style={styles.toolbarWrap}>
+      <View ref={toolbarRef} collapsable={false} style={styles.toolbarWrap}>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -159,59 +211,71 @@ function KolamEnclosureList({
           ))}
         </ScrollView>
 
-        <View style={kolamTableToolbarStyles.row}>
-          <KolamFormTextField
-            onChangeText={setSearchInput}
-            placeholder="Cari kode / nama enclosure"
-            style={kolamTableToolbarStyles.searchInput}
-            value={searchInput}
-          />
-          <View style={kolamTableToolbarStyles.controls}>
-            <KolamTableFilterTrigger
-              active={
-                activeFilterPanel === 'type' ||
-                controller.filters.enclosureType !== 'all'
-              }
-              label={typeFilterLabel}
-              onPress={() =>
-                setActiveFilterPanel(current =>
-                  current === 'type' ? null : 'type',
-                )
-              }
-            />
-            <KolamTableFilterTrigger
-              active={
-                activeFilterPanel === 'livestock' ||
-                controller.filters.livestockPurpose !== 'all'
-              }
-              label={livestockFilterLabel}
-              onPress={() =>
-                setActiveFilterPanel(current =>
-                  current === 'livestock' ? null : 'livestock',
-                )
-              }
-            />
-            {filtersAppliedCount > 0 ? (
-              <KolamButton
-                label="Reset"
-                muted={!listTabActive}
-                onPress={() => {
-                  setSearchInput('');
-                  setActiveFilterPanel(null);
-                  controller.onClearFilters();
-                }}
+        <View style={kolamTableToolbarStyles.shell}>
+          <View style={kolamTableToolbarStyles.row}>
+            <View style={kolamTableToolbarStyles.filters}>
+              <KolamFormTextField
+                onChangeText={setSearchInput}
+                placeholder="Cari kode / nama enclosure"
+                style={kolamTableToolbarStyles.searchInput}
+                value={searchInput}
               />
-            ) : null}
-            <KolamButton
-              disabled={controller.loading}
-              label="Refresh"
-              onPress={() => void controller.onRefresh()}
-            />
+              <View ref={typeTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={
+                    activeFilterPanel === 'type' ||
+                    controller.filters.enclosureType !== 'all'
+                  }
+                  label={typeFilterLabel}
+                  onPress={() => toggleFilterPanel('type')}
+                  open={activeFilterPanel === 'type'}
+                  variant="quiet"
+                />
+              </View>
+              <View ref={livestockTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={
+                    activeFilterPanel === 'livestock' ||
+                    controller.filters.livestockPurpose !== 'all'
+                  }
+                  label={livestockFilterLabel}
+                  onPress={() => toggleFilterPanel('livestock')}
+                  open={activeFilterPanel === 'livestock'}
+                  variant="quiet"
+                />
+              </View>
+            </View>
+            <View style={kolamTableToolbarStyles.actions}>
+              {filtersAppliedCount > 0 ? (
+                <KolamButton
+                  label="Reset"
+                  muted={!listTabActive}
+                  onPress={() => {
+                    setSearchInput('');
+                    setActiveFilterPanel(null);
+                    controller.onClearFilters();
+                  }}
+                />
+              ) : null}
+              <KolamButton
+                disabled={controller.loading}
+                label="Refresh"
+                onPress={() => void controller.onRefresh()}
+              />
+            </View>
           </View>
         </View>
 
         {activeFilterPanel === 'type' ? (
-          <View style={[styles.filterOverlayPanel, styles.filterPanelType]}>
+          <View
+            style={[
+              styles.filterOverlayPanel,
+              {
+                left: panelAnchor.left,
+                top: panelAnchor.top,
+              },
+            ]}
+          >
             <ScrollView
               contentContainerStyle={styles.filterPanelContent}
               keyboardShouldPersistTaps="handled"
@@ -257,7 +321,15 @@ function KolamEnclosureList({
         ) : null}
 
         {activeFilterPanel === 'livestock' ? (
-          <View style={[styles.filterOverlayPanel, styles.filterPanelLivestock]}>
+          <View
+            style={[
+              styles.filterOverlayPanel,
+              {
+                left: panelAnchor.left,
+                top: panelAnchor.top,
+              },
+            ]}
+          >
             <ScrollView
               contentContainerStyle={styles.filterPanelContent}
               keyboardShouldPersistTaps="handled"
@@ -714,12 +786,6 @@ const styles = StyleSheet.create({
     top: 88,
     width: 232,
     zIndex: 120000,
-  },
-  filterPanelType: {
-    right: 124,
-  },
-  filterPanelLivestock: {
-    right: 8,
   },
   filterPanelScroll: {
     maxHeight: 280,
