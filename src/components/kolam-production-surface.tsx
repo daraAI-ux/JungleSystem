@@ -56,6 +56,10 @@ import {
 } from './kolam-data-table-column-style';
 import { KolamDataTableHeader } from './kolam-data-table-header';
 import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
+import {
+  KolamDataTableActionsTrack,
+  KolamDataTableMainTrack,
+} from './kolam-data-table-tracks';
 import { KolamDateField } from './kolam-date-field';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import { KolamDescriptionList } from './kolam-description-list';
@@ -465,117 +469,117 @@ function KolamProductionRow({
 
   return (
     <KolamDataTableRowFrame style={actionMenuOpen ? styles.activeActionRow : undefined}>
-      <Pressable
-        onPress={onSelect}
-        style={[
-          styles.listCell,
-          primaryColumn ? getKolamDataTableColumnStyle(primaryColumn) : styles.primaryCell,
-        ]}
-      >
-        <Text numberOfLines={2} style={styles.rowTitle}>
-          {getKolamProductionTargetLabel(production)}
-        </Text>
-        <Text numberOfLines={1} style={styles.rowMeta}>
-          {getKolamProductionTargetTypeLabel(production.targetType)}
-        </Text>
-      </Pressable>
-
-      <View
-        style={[
-          styles.listCell,
-          metaColumn ? getKolamDataTableColumnStyle(metaColumn) : null,
-        ]}
-      >
-        <Text numberOfLines={2} style={styles.cellText}>
-          {getKolamProductionVariantLabel(production.variant)}
-        </Text>
-        {variantSku ? (
+      <KolamDataTableMainTrack>
+        <Pressable
+          onPress={onSelect}
+          style={[
+            styles.listCell,
+            primaryColumn ? getKolamDataTableColumnStyle(primaryColumn) : styles.primaryCell,
+          ]}
+        >
+          <Text numberOfLines={2} style={styles.rowTitle}>
+            {getKolamProductionTargetLabel(production)}
+          </Text>
           <Text numberOfLines={1} style={styles.rowMeta}>
-            {variantSku}
+            {getKolamProductionTargetTypeLabel(production.targetType)}
           </Text>
-        ) : null}
-      </View>
+        </Pressable>
 
-      <View
-        style={[
-          styles.listCell,
-          childrenColumn ? getKolamDataTableColumnStyle(childrenColumn) : null,
-        ]}
-      >
-        <Text style={styles.cellText}>
-          {completed} / {planned}
-        </Text>
-        {production.status === 'completed' && completed < planned ? (
-          <Text style={styles.warningText}>sebagian</Text>
-        ) : null}
-      </View>
-
-      <View
-        style={[
-          styles.listCell,
-          amountColumn ? getKolamDataTableColumnStyle(amountColumn) : null,
-        ]}
-      >
-        <Text style={styles.numText}>{formatRupiah(production.estimatedCost || 0)}</Text>
-      </View>
-
-      <View
-        style={[
-          styles.listCell,
-          notesColumn ? getKolamDataTableColumnStyle(notesColumn) : null,
-        ]}
-      >
-        <Text numberOfLines={1} style={styles.cellText}>
-          {production.batchId || '—'}
-        </Text>
-      </View>
-
-      <View
-        style={[
-          styles.listCell,
-          styles.statusCell,
-          statusColumn ? getKolamDataTableColumnStyle(statusColumn) : null,
-        ]}
-      >
-        <KolamStatusBadge
-          intent={productionStatusIntent(production.status)}
-          label={getKolamProductionStatusLabel(production.status)}
-        />
-        {production.status === 'waiting_for_po' && linkedTotal > 0 ? (
-          <Text style={styles.warningText}>
-            {linkedDone}/{linkedTotal} PO
+        <View
+          style={[
+            styles.listCell,
+            metaColumn ? getKolamDataTableColumnStyle(metaColumn) : null,
+          ]}
+        >
+          <Text numberOfLines={2} style={styles.cellText}>
+            {getKolamProductionVariantLabel(production.variant)}
           </Text>
-        ) : null}
-      </View>
+          {variantSku ? (
+            <Text numberOfLines={1} style={styles.rowMeta}>
+              {variantSku}
+            </Text>
+          ) : null}
+        </View>
 
-      <View
-        style={[
-          styles.listCell,
-          styles.picCell,
-          productsColumn ? getKolamDataTableColumnStyle(productsColumn) : null,
-        ]}
-      >
-        <KolamProductionPicAvatar production={production} />
-      </View>
+        <View
+          style={[
+            styles.listCell,
+            childrenColumn ? getKolamDataTableColumnStyle(childrenColumn) : null,
+          ]}
+        >
+          <Text style={styles.cellText}>
+            {completed} / {planned}
+          </Text>
+          {production.status === 'completed' && completed < planned ? (
+            <Text style={styles.warningText}>sebagian</Text>
+          ) : null}
+        </View>
 
-      <View
-        style={[
-          styles.listCell,
-          marketplaceColumn ? getKolamDataTableColumnStyle(marketplaceColumn) : null,
-        ]}
-      >
-        <Text numberOfLines={1} style={styles.cellText}>
-          {productionDateLabel}
-        </Text>
-      </View>
+        <View
+          style={[
+            styles.listCell,
+            amountColumn ? getKolamDataTableColumnStyle(amountColumn) : null,
+          ]}
+        >
+          <Text style={styles.numText}>{formatRupiah(production.estimatedCost || 0)}</Text>
+        </View>
 
-      <View
-        style={[
-          styles.overflowCell,
-          actionsColumn
-            ? getKolamDataTableColumnStyle(actionsColumn)
-            : { width: 48 },
-        ]}
+        <View
+          style={[
+            styles.listCell,
+            notesColumn ? getKolamDataTableColumnStyle(notesColumn) : null,
+          ]}
+        >
+          <Text numberOfLines={1} style={styles.cellText}>
+            {production.batchId || '—'}
+          </Text>
+        </View>
+
+        <View
+          style={[
+            styles.listCell,
+            styles.statusCell,
+            statusColumn ? getKolamDataTableColumnStyle(statusColumn) : null,
+          ]}
+        >
+          <KolamStatusBadge
+            intent={productionStatusIntent(production.status)}
+            label={getKolamProductionStatusLabel(production.status)}
+          />
+          {production.status === 'waiting_for_po' && linkedTotal > 0 ? (
+            <Text style={styles.warningText}>
+              {linkedDone}/{linkedTotal} PO
+            </Text>
+          ) : null}
+        </View>
+
+        <View
+          style={[
+            styles.listCell,
+            styles.picCell,
+            productsColumn ? getKolamDataTableColumnStyle(productsColumn) : null,
+          ]}
+        >
+          <KolamProductionPicAvatar production={production} />
+        </View>
+
+        <View
+          style={[
+            styles.listCell,
+            marketplaceColumn ? getKolamDataTableColumnStyle(marketplaceColumn) : null,
+          ]}
+        >
+          <Text numberOfLines={1} style={styles.cellText}>
+            {productionDateLabel}
+          </Text>
+        </View>
+      </KolamDataTableMainTrack>
+
+      <KolamDataTableActionsTrack
+        width={Math.max(
+          actionsColumn?.width ?? KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+          KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+        )}
       >
         <KolamOverflowMenuButton
           accessibilityLabel={`Menu ${production.batchId || 'produksi'}`}
@@ -584,7 +588,7 @@ function KolamProductionRow({
             setActionMenuOpen(open);
           }}
         />
-      </View>
+      </KolamDataTableActionsTrack>
     </KolamDataTableRowFrame>
   );
 }
