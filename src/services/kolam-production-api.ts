@@ -86,6 +86,14 @@ export interface KolamCreateProductionWithPOResult {
   }>;
 }
 
+export interface KolamGeneratePoFromPlanResult {
+  message: string;
+  productionProductName: string;
+  productionProductId: string;
+  created: Array<{ id: string; poCode: string; vendorId: string; vendorName: string }>;
+  failed: KolamCreateProductionWithPOResult['failedPOs'];
+}
+
 export async function getKolamProductionList(
   filters: KolamProductionListFilters,
 ): Promise<KolamProductionListResult> {
@@ -150,6 +158,49 @@ export async function createKolamProductionWithPO(
     })),
     failedPOs: response.failedPOs ?? [],
     shortfallNoVendor: response.shortfallNoVendor ?? [],
+  };
+}
+
+export async function generateKolamPoFromPlan(
+  body: KolamCreateProductionBody,
+): Promise<KolamGeneratePoFromPlanResult> {
+  const response = await kolamRequest<{
+    message?: string;
+    productionProductName?: string;
+    productionProductId?: string;
+    created?: Array<{
+      _id?: string;
+      poCode?: string;
+      vendorId?: string;
+      vendorName?: string;
+    }>;
+    failed?: KolamCreateProductionWithPOResult['failedPOs'];
+    autoCreatedPOs?: Array<{
+      _id?: string;
+      poCode?: string;
+      vendorId?: string;
+      vendorName?: string;
+    }>;
+  }>('/production/generate-po', {
+    method: 'POST',
+    body,
+  });
+
+  const createdRaw = response.created?.length
+    ? response.created
+    : response.autoCreatedPOs ?? [];
+
+  return {
+    message: response.message ?? '',
+    productionProductName: response.productionProductName ?? '',
+    productionProductId: response.productionProductId ?? '',
+    created: createdRaw.map(po => ({
+      id: po._id ?? '',
+      poCode: po.poCode ?? '',
+      vendorId: po.vendorId ?? '',
+      vendorName: po.vendorName ?? '',
+    })),
+    failed: response.failed ?? [],
   };
 }
 
@@ -227,9 +278,10 @@ export async function submitKolamProductionCheck(
   if (body.note?.trim()) {
     formData.append('note', body.note.trim());
   }
+  // BE multer: uploadProductionProof.single("file") — field name must be `file`.
   if (body.completedProofLocalUri?.trim()) {
     formData.append(
-      'completedProof',
+      'file',
       createReactNativeFilePart(
         body.completedProofLocalUri,
         'completed-proof.jpg',

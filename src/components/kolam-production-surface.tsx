@@ -65,7 +65,7 @@ const PRODUCTION_STATUS_OPTIONS: KolamProductionStatus[] = [
   'waiting_for_po',
   'pending',
   'in_progress',
-  'on_check',
+  // FE list filter intentionally omits on_check — keep parity.
   'completed',
   'cancelled',
 ];
@@ -561,6 +561,74 @@ function KolamProductionForm({
             options={assigneeOptions}
             value={form.assignedToId || assigneeOptions[0]?.value || ''}
           />
+        ) : null}
+
+        {isEdit && controller.selectedProduction ? (
+          <View style={styles.formSection}>
+            <Text style={styles.sectionSubtitle}>Foto produksi</Text>
+            <View style={styles.photoGrid}>
+              {controller.selectedProduction.photos.map((photo, index) => (
+                <View key={`${photo}-${index}`} style={styles.photoEditCell}>
+                  <KolamRemoteImage
+                    accessibilityLabel={`Foto ${index + 1}`}
+                    resizeMode="cover"
+                    sourceUri={getKolamFileUrl(photo)}
+                    style={styles.photoThumb}
+                  />
+                  <KolamButton
+                    disabled={controller.mutating}
+                    label="Hapus"
+                    onPress={() => void controller.onDeletePhoto(index)}
+                    size="sm"
+                  />
+                </View>
+              ))}
+            </View>
+            <KolamButton
+              disabled={controller.mutating}
+              label="Unggah foto"
+              onPress={() => {
+                void controller.onPickImage().then(uri => {
+                  if (uri) {
+                    void controller.onUploadPhotos([uri]);
+                  }
+                });
+              }}
+              size="sm"
+            />
+          </View>
+        ) : null}
+
+        {!isEdit && controller.insufficientStock.length ? (
+          <View style={styles.warningBox}>
+            <Text style={styles.warningTitle}>Stok bahan kurang</Text>
+            {controller.insufficientStock.map(item => (
+              <Text key={item} style={styles.warningText}>
+                {item}
+              </Text>
+            ))}
+            <View style={styles.formActions}>
+              <KolamButton
+                disabled={controller.mutating}
+                label="Generate PO"
+                onPress={() => void controller.onGeneratePo()}
+              />
+              {(form.targetType === 'product' || form.serialEnabled) && form.productId ? (
+                <KolamButton
+                  disabled={controller.mutating}
+                  intent="primary"
+                  label="Buat produksi + PO"
+                  onPress={() =>
+                    void controller.onCreateWithPO().then(id => {
+                      if (id) {
+                        onRouteChange?.(`${KOLAM_PRODUCTION_ROOT}/${id}`);
+                      }
+                    })
+                  }
+                />
+              ) : null}
+            </View>
+          </View>
         ) : null}
 
         <View style={styles.formActions}>
@@ -1289,6 +1357,17 @@ const styles = StyleSheet.create({
   componentRow: { gap: 8, marginBottom: 8 },
   helperText: { color: V.colors.mutedFg, fontFamily: V.fontFamily, fontSize: 12, lineHeight: 18 },
   warningText: { color: V.colors.warning, fontFamily: V.fontFamily, fontSize: 12, lineHeight: 18 },
+  warningTitle: { color: V.colors.warning, fontFamily: V.fontFamily, fontSize: 13, fontWeight: '700' },
+  warningBox: {
+    backgroundColor: V.colors.warningSoft,
+    borderColor: V.colors.warning,
+    borderLeftWidth: 4,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    gap: 6,
+    padding: 10,
+  },
+  photoEditCell: { gap: 6 },
   formActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
   detailScroll: { gap: 12, paddingBottom: 24 },
   detailActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginVertical: 8 },

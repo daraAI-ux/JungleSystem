@@ -1,7 +1,9 @@
 import {
   KOLAM_PRODUCTION_ROOT,
+  buildCreateProductionBody,
   canCancelKolamProduction,
   canRecalculateKolamProduction,
+  createEmptyKolamProductionFormState,
   getAllowedNextProductionStatuses,
   getKolamProductionBreadcrumbPath,
   getKolamProductionEditRouteId,
@@ -164,5 +166,24 @@ describe('kolam production domain', () => {
     expect(hasKolamProductionPermission(permissions, 'delete')).toBe(false);
     expect(hasKolamProductionPermission(permissions, 'update', 'super_admin')).toBe(true);
     expect(hasKolamProductionPermission(null, 'view')).toBe(true);
+  });
+
+  it('builds create body with product for serial freyer mode', () => {
+    const form = {
+      ...createEmptyKolamProductionFormState(),
+      serialEnabled: true,
+      productId: 'prod-serial-1',
+      quantity: '2',
+      description: 'Batch serial',
+      assignedToId: 'user-1',
+    };
+    const body = buildCreateProductionBody(form);
+    expect(body).toMatchObject({
+      targetType: 'freyer',
+      product: 'prod-serial-1',
+      serialEnabled: true,
+      quantity: 2,
+    });
+    expect(body).not.toHaveProperty('freyer');
   });
 });

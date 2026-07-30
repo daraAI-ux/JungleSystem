@@ -26,7 +26,7 @@ import {
   type KolamUpdateProductionBody,
 } from '../domain/kolam-production';
 import type { KolamSpecies } from '../domain/kolam-species';
-import { getErrorMessage } from '../lib/api-error';
+import { getErrorMessage, ApiError } from '../lib/api-error';
 import {
   cancelKolamProduction,
   createKolamProduction,
@@ -37,6 +37,7 @@ import {
   downloadKolamProductionListExport,
   downloadKolamProductionPdf,
   finalizeKolamProduction,
+  generateKolamPoFromPlan,
   getKolamFreyersForProduction,
   getKolamProduction,
   getKolamProductionList,
@@ -48,6 +49,7 @@ import {
   submitKolamProductionCheck,
   updateKolamProduction,
   uploadKolamProductionPhotos,
+  type KolamGeneratePoFromPlanResult,
   type KolamRecalculateProductionResult,
   type KolamRestoreProductionResult,
 } from '../services/kolam-production-api';
@@ -72,6 +74,7 @@ export interface KolamProductionController {
   filters: KolamProductionListFilters;
   form: KolamProductionFormState;
   freyersForProduction: KolamProductForProduction[];
+  insufficientStock: string[];
   loading: boolean;
   mode: KolamProductionSurfaceMode;
   mutating: boolean;
@@ -90,8 +93,9 @@ export interface KolamProductionController {
   onChangeFilters: (patch: Partial<KolamProductionListFilters>) => void;
   onChangeForm: (patch: Partial<KolamProductionFormState>) => void;
   onClearFilters: () => void;
+  onClearInsufficientStock: () => void;
   onCreateNew: () => void;
-  onCreateWithPO: (body: KolamCreateProductionWithPOBody) => Promise<boolean>;
+  onCreateWithPO: () => Promise<string | null>;
   onDeletePhoto: (index: number) => Promise<boolean>;
   onDeleteProduction: () => Promise<boolean>;
   onEdit: () => boolean;
@@ -99,6 +103,7 @@ export interface KolamProductionController {
   onExportList: () => Promise<void>;
   onExportPdf: () => Promise<void>;
   onFinalize: (body: KolamFinalizeProductionBody) => Promise<boolean>;
+  onGeneratePo: () => Promise<KolamGeneratePoFromPlanResult | null>;
   onLimitChange: (limit: number) => void;
   onPageChange: (page: number) => void;
   onPickImage: () => Promise<string | null>;
@@ -149,6 +154,7 @@ export function useKolamProductionController(
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [insufficientStock, setInsufficientStock] = useState<string[]>([]);
   const [dataSource, setDataSource] =
     useState<KolamProductionDataSource>('idle');
 
@@ -164,6 +170,7 @@ export function useKolamProductionController(
       setSelectedProduction(null);
       setForm(createEmptyKolamProductionFormState());
       setSerials([]);
+      setInsufficientStock([]);
     }
     setError(null);
     setStatusMessage(null);
@@ -410,6 +417,7 @@ export function useKolamProductionController(
     setMutating(true);
     setError(null);
     setStatusMessage(null);
+    setInsufficientStock([]);
     try {
       if (mode === 'create') {
         const created = await createKolamProduction(buildCreateProductionBody(form));
@@ -429,30 +437,73 @@ export function useKolamProductionController(
       return null;
     } catch (saveError) {
       setError(getErrorMessage(saveError));
+      if (
+        saveError instanceof ApiError &&
+        saveError.code === 'INSUFFICIENT_STOCK'
+      ) {
+        setInsufficientStock(['Stok bahan tidak mencukupi']);
+      }
       return null;
     } finally {
       setMutating(false);
     }
   }, [form, mode, selectedProduction]);
 
-  const onCreateWithPO = useCallback(
-    async (body: KolamCreateProductionWithPOBody): Promise<boolean> => {
-      setMutating(true);
-      setError(null);
-      try {
-        const result = await createKolamProductionWithPO(body);
-        setSelectedProduction(result.production);
-        setStatusMessage(result.message || 'Produksi + PO berhasil dibuat.');
-        return true;
-      } catch (createError) {
-        setError(getErrorMessage(createError));
-        return false;
-      } finally {
-        setMutating(false);
+  const onClearInsufficientStock = useCallback(() => {
+    setInsufficientStock([]);
+  }, []);
+
+  const onGeneratePo = useCallback(async (): Promise<KolamGeneratePoFromPlanResult | null> => {
+    setMutating(true);
+    setError(null);
+    try {
+      const result = await generateKolamPoFromPlan(buildCreateProductionBody(form));
+      setStatusMessage(result.message || 'PO berhasil digenerate.');
+      if (result.created.length) {
+        setInsufficientStock([]);
       }
-    },
-    [],
-  );
+      return result;
+    } catch (generateError) {
+      setError(getErrorMessage(generateError));
+      return null;
+    } finally {
+      setMutating(false);
+    }
+  }, [form]);
+
+  const onCreateWithPO = useCallback(async (): Promise<string | null> => {
+    if (form.targetType !== 'product' && !form.serialEnabled) {
+      setError('Fitur Buat + PO khusus target Produk.');
+      return null;
+    }
+    if (!form.productId || !form.description.trim() || !form.assignedToId) {
+      setError('Produk, deskripsi, dan penanggung jawab wajib diisi.');
+      return null;
+    }
+    setMutating(true);
+    setError(null);
+    setInsufficientStock([]);
+    try {
+      const body: KolamCreateProductionWithPOBody = {
+        product: form.productId,
+        serialEnabled: form.serialEnabled || undefined,
+        variant: form.variantId || undefined,
+        quantity: Math.max(1, Number(form.quantity) || 1),
+        description: form.description.trim(),
+        assignedTo: form.assignedToId,
+        productionDate: form.productionDate || undefined,
+      };
+      const result = await createKolamProductionWithPO(body);
+      setSelectedProduction(result.production);
+      setStatusMessage(result.message || 'Produksi + PO berhasil dibuat.');
+      return result.production.id;
+    } catch (createError) {
+      setError(getErrorMessage(createError));
+      return null;
+    } finally {
+      setMutating(false);
+    }
+  }, [form]);
 
   const onStartProduction = useCallback(
     async (note?: string): Promise<boolean> => {
@@ -752,6 +803,7 @@ export function useKolamProductionController(
     filters,
     form,
     freyersForProduction,
+    insufficientStock,
     loading,
     mode,
     mutating,
@@ -770,6 +822,7 @@ export function useKolamProductionController(
     onChangeFilters,
     onChangeForm,
     onClearFilters,
+    onClearInsufficientStock,
     onCreateNew,
     onCreateWithPO,
     onDeletePhoto,
@@ -779,6 +832,7 @@ export function useKolamProductionController(
     onExportList,
     onExportPdf,
     onFinalize,
+    onGeneratePo,
     onLimitChange,
     onPageChange,
     onPickImage,

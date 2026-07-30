@@ -724,17 +724,10 @@ export function buildCreateProductionBody(
     };
   }
 
-  if (form.serialEnabled) {
-    return {
-      targetType: 'freyer',
-      freyer: form.productId,
-      components: [],
-      ...base,
-    };
-  }
-
+  // Mirror FE create form: serial product still posts `product` + targetType freyer.
+  // Do not send bare `freyer` id — BE createProduction requires `product`.
   return {
-    targetType: 'product',
+    targetType: form.serialEnabled ? 'freyer' : 'product',
     product: form.productId,
     ...base,
   };
