@@ -87,38 +87,6 @@ const DEFAULT_NOTIFICATION_BEEP_URI =
 const KolamWebView = WebView as unknown as React.ComponentType<any>;
 const MASKED_SECRET_PLACEHOLDER = '********';
 
-const financialShellSections: Array<{
-  id: string;
-  title: string;
-  description: string;
-  rowIds: string[];
-}> = [
-  {
-    id: 'payment-methods',
-    title: 'Metode pembayaran',
-    description: 'Ringkasan channel pembayaran live dari backend Kolam.',
-    rowIds: ['payment-methods', 'payment-methods-inactive'],
-  },
-  {
-    id: 'tax-profile',
-    title: 'Profil pajak perusahaan',
-    description: 'Status harga include PPN dan PPh 21 komisi.',
-    rowIds: ['tax-sale-prices', 'tax-commission-pph21'],
-  },
-  {
-    id: 'overtime',
-    title: 'Lembur karyawan',
-    description: 'Mode hitung lembur dan kebijakan minimum pembayaran.',
-    rowIds: ['overtime-mode', 'overtime-policy'],
-  },
-  {
-    id: 'enclosure-commission',
-    title: 'Komisi penjualan kandang',
-    description: 'Status komisi global untuk penjualan enclosure.',
-    rowIds: ['enclosure-sale-commission'],
-  },
-] as const;
-
 const paymentMethodTypeOptions: Array<{
   description: string;
   label: string;
@@ -3318,7 +3286,6 @@ export function KolamSettingsWebConfigSurface({
           financialMessage={financialMessage}
           financialSectionVisibility={financialSectionVisibility}
           financialStatus={financialStatus}
-          financialSummaryRows={financialSummaryRows}
           financialWallets={financialWallets}
           onClearPaymentMethodDraft={onClearPaymentMethodDraft}
           onDeletePaymentMethod={onDeletePaymentMethod}
@@ -6979,7 +6946,6 @@ function FinancialSettingsPanel({
   financialMessage,
   financialSectionVisibility,
   financialStatus,
-  financialSummaryRows,
   financialWallets,
   onClearPaymentMethodDraft,
   onDeletePaymentMethod,
@@ -7010,7 +6976,6 @@ function FinancialSettingsPanel({
   financialMessage: string;
   financialSectionVisibility: SettingsFinancialSectionVisibility;
   financialStatus: 'idle' | 'loading' | 'live' | 'saving' | 'error';
-  financialSummaryRows: SettingsFinancialSummaryRow[];
   financialWallets: KolamFinancialWallet[];
   paymentMethodDraft: SettingsPaymentMethodDraft;
   paymentMethodFilters: SettingsPaymentMethodFilters;
@@ -7955,42 +7920,6 @@ function FinancialSettingsPanel({
         </View>
       ) : null}
 
-      <View style={styles.marketplaceOverviewRows}>
-        {financialShellSections.map(section => {
-          const rows = financialSummaryRows.filter(row =>
-            section.rowIds.includes(row.id),
-          );
-
-          return rows.map(row => (
-            <View key={row.id} style={styles.marketplaceOverviewRow}>
-              <KolamCopyStack
-                containerStyle={styles.marketplaceOverviewCopy}
-                items={[
-                  {
-                    id: `${row.id}-label`,
-                    text: row.label,
-                    style: styles.marketplaceOverviewLabel,
-                  },
-                  {
-                    id: `${row.id}-detail`,
-                    text: row.detail,
-                    style: styles.marketplaceOverviewDetail,
-                  },
-                ]}
-              />
-              <KolamCopyStack
-                items={[
-                  {
-                    id: `${row.id}-value`,
-                    text: row.value,
-                    style: styles.marketplaceOverviewValue,
-                  },
-                ]}
-              />
-            </View>
-          ));
-        })}
-      </View>
     </View>
   );
 }
