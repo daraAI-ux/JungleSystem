@@ -558,12 +558,6 @@ const aiModuleToggleRows: Array<{
     field: 'daraKnowledgeEnabled',
   },
   {
-    id: 'handoff',
-    label: 'Notifikasi handoff inbox',
-    description: 'Badge butuh handover dan SSE saat AI menyerahkan ke CS.',
-    field: 'daraHandoffNotifyEnabled',
-  },
-  {
     id: 'insights',
     label: 'Insight otomatis',
     description: 'Stok kritis, penjualan turun, dan tugas jatuh tempo.',
@@ -3844,12 +3838,12 @@ export function KolamSettingsWebConfigSurface({
               items={[
                 {
                   id: 'dara-business-title',
-                  text: 'DARA Business',
+                  text: 'DARA Bisnis',
                   style: styles.marketplaceOverviewLabel,
                 },
                 {
                   id: 'dara-business-meta',
-                  text: 'Master switch untuk modul bisnis DARA. Jika off, kontrol turunan tetap tampil tetapi tidak bisa diubah.',
+                  text: 'Kontrol utama untuk tool bisnis, knowledge, insight, laporan, dan analisis gambar.',
                   style: styles.marketplaceOverviewMeta,
                 },
               ]}
@@ -3864,20 +3858,23 @@ export function KolamSettingsWebConfigSurface({
                 setDraftField('daraBusinessEnabled', !draft.daraBusinessEnabled)
               }
             />
-            {aiModuleToggleRows.map(row => (
-              <KolamToggleRow
-                key={row.id}
-                variant="settingsForm"
-                label={row.label}
-                description={row.description}
-                active={draft[row.field] === true}
-                onPress={() =>
-                  !daraControlsDisabled &&
-                  draft.daraBusinessEnabled &&
-                  setDraftField(row.field, !(draft[row.field] === true))
-                }
-              />
-            ))}
+            <View style={styles.notificationToggleGrid}>
+              {aiModuleToggleRows.map(row => (
+                <View key={row.id} style={styles.notificationToggleBox}>
+                  <KolamToggleRow
+                    variant="settingsForm"
+                    label={row.label}
+                    description={row.description}
+                    active={draft[row.field] === true}
+                    onPress={() =>
+                      !daraControlsDisabled &&
+                      draft.daraBusinessEnabled &&
+                      setDraftField(row.field, !(draft[row.field] === true))
+                    }
+                  />
+                </View>
+              ))}
+            </View>
             <KolamTextFieldRow
               variant="settingsForm"
               fieldWidth={settingsFieldWidth}
