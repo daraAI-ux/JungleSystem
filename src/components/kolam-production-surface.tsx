@@ -803,7 +803,105 @@ function KolamProductionDetail({
   const nextStatuses = getAllowedNextProductionStatuses(production.status);
 
   return (
-    <ScrollView contentContainerStyle={styles.detailScroll}>
+    <View style={styles.detailRoot}>
+      <View style={styles.toolbarWrap}>
+        <View style={styles.toolbarShell}>
+          <View style={styles.detailActionRow}>
+            <KolamButton
+              label="Daftar"
+              muted
+              onPress={() => {
+                controller.onBackToList();
+                onRouteChange?.(KOLAM_PRODUCTION_ROOT);
+              }}
+              style={styles.toolbarButton}
+            />
+            <KolamButton
+              disabled={controller.loading || controller.mutating}
+              label="Muat ulang"
+              onPress={() => void controller.onRefresh()}
+              style={styles.toolbarButton}
+            />
+            {canEditKolamProduction(production.status) && canUpdate ? (
+              <KolamButton
+                label="Edit"
+                onPress={() => {
+                  controller.onEdit();
+                  onRouteChange?.(`${KOLAM_PRODUCTION_ROOT}/${production.id}/edit`);
+                }}
+                style={styles.toolbarButton}
+              />
+            ) : null}
+            <KolamButton
+              disabled={controller.exporting}
+              label={controller.exporting ? 'Mengekspor…' : 'PDF Perintah'}
+              onPress={() => void controller.onExportPdf()}
+              style={styles.toolbarButton}
+            />
+            <KolamButton
+              disabled={controller.exporting}
+              label={controller.exporting ? 'Mengekspor…' : 'PDF Detail'}
+              onPress={() => void controller.onExportDetailPdf()}
+              style={styles.toolbarButton}
+            />
+            {canRecalculateKolamProduction(production.status) && canUpdate ? (
+              <KolamButton
+                disabled={controller.mutating}
+                label="Hitung Ulang"
+                onPress={() => void controller.onRecalculate()}
+                style={styles.toolbarButton}
+              />
+            ) : null}
+            {nextStatuses.includes('in_progress') && canUpdate ? (
+              <KolamButton
+                label="Mulai Produksi"
+                onPress={() => void controller.onStartProduction()}
+                style={styles.toolbarButton}
+              />
+            ) : null}
+            {production.status === 'in_progress' && canUpdate ? (
+              <KolamButton
+                label="Kirim Pemeriksaan"
+                onPress={() => setShowSubmitCheck(true)}
+                style={styles.toolbarButton}
+              />
+            ) : null}
+            {production.status === 'on_check' && canUpdate ? (
+              <KolamButton
+                intent="primary"
+                label="Finalisasi"
+                onPress={() => setShowFinalize(true)}
+                style={styles.toolbarButton}
+              />
+            ) : null}
+            {canCancelKolamProduction(production.status) && canUpdate ? (
+              <KolamButton
+                intent="danger"
+                label="Batalkan"
+                onPress={() => setShowCancel(true)}
+                style={styles.toolbarButton}
+              />
+            ) : null}
+            {production.status === 'cancelled' && canUpdate ? (
+              <KolamButton
+                label="Pulihkan"
+                onPress={() => setShowRestore(true)}
+                style={styles.toolbarButton}
+              />
+            ) : null}
+            {production.status === 'cancelled' && canDelete ? (
+              <KolamButton
+                intent="danger"
+                label="Hapus"
+                onPress={() => setShowDelete(true)}
+                style={styles.toolbarButton}
+              />
+            ) : null}
+          </View>
+        </View>
+      </View>
+
+      <ScrollView contentContainerStyle={styles.detailScroll}>
       <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
         <View style={styles.detailHeaderRow}>
           <Text style={styles.sectionTitle}>{production.batchId}</Text>
@@ -816,48 +914,6 @@ function KolamProductionDetail({
           {getKolamProductionTargetTypeLabel(production.targetType)} ·{' '}
           {production.createdAt ? production.createdAt.slice(0, 16).replace('T', ' ') : '—'}
         </Text>
-
-        <View style={styles.detailActions}>
-          {canRecalculateKolamProduction(production.status) && canUpdate ? (
-            <KolamButton disabled={controller.mutating} label="Hitung Ulang" onPress={() => void controller.onRecalculate()} />
-          ) : null}
-          <KolamButton disabled={controller.exporting} label="PDF Perintah" onPress={() => void controller.onExportPdf()} />
-          <KolamButton disabled={controller.exporting} label="PDF Detail" onPress={() => void controller.onExportDetailPdf()} />
-          {production.status === 'in_progress' && canUpdate ? (
-            <KolamButton label="Kirim Pemeriksaan" onPress={() => setShowSubmitCheck(true)} />
-          ) : null}
-          {production.status === 'on_check' && canUpdate ? (
-            <KolamButton intent="primary" label="Finalisasi" onPress={() => setShowFinalize(true)} />
-          ) : null}
-          {nextStatuses.includes('in_progress') && canUpdate ? (
-            <KolamButton label="Mulai Produksi" onPress={() => void controller.onStartProduction()} />
-          ) : null}
-          {canCancelKolamProduction(production.status) && canUpdate ? (
-            <KolamButton intent="danger" label="Batalkan" onPress={() => setShowCancel(true)} />
-          ) : null}
-          {production.status === 'cancelled' && canUpdate ? (
-            <KolamButton label="Pulihkan" onPress={() => setShowRestore(true)} />
-          ) : null}
-          {production.status === 'cancelled' && canDelete ? (
-            <KolamButton intent="danger" label="Hapus" onPress={() => setShowDelete(true)} />
-          ) : null}
-          {canEditKolamProduction(production.status) && canUpdate ? (
-            <KolamButton
-              label="Edit"
-              onPress={() => {
-                controller.onEdit();
-                onRouteChange?.(`${KOLAM_PRODUCTION_ROOT}/${production.id}/edit`);
-              }}
-            />
-          ) : null}
-          <KolamButton
-            label="Kembali"
-            onPress={() => {
-              controller.onBackToList();
-              onRouteChange?.(KOLAM_PRODUCTION_ROOT);
-            }}
-          />
-        </View>
 
         <KolamDescriptionList
           accessibilityLabel="Detail produksi"
@@ -1046,6 +1102,7 @@ function KolamProductionDetail({
         }}
       />
     </ScrollView>
+    </View>
   );
 }
 
@@ -1472,7 +1529,44 @@ const styles = StyleSheet.create({
   listSurface: { flex: 1, minHeight: 0, overflow: 'visible' },
   errorBadge: { alignSelf: 'stretch' },
   listRoot: { flex: 1, gap: 12, minHeight: 0, overflow: 'visible' },
-  toolbarWrap: { position: 'relative', zIndex: 10 },
+  toolbarWrap: {
+    elevation: 1000,
+    overflow: 'visible',
+    position: 'relative',
+    zIndex: 100000,
+  },
+  toolbarShell: {
+    alignItems: 'center',
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    justifyContent: 'space-between',
+    overflow: 'visible',
+    padding: 4,
+  },
+  detailActionRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexShrink: 0,
+    flexWrap: 'wrap',
+    gap: 6,
+    justifyContent: 'flex-end',
+    marginLeft: 'auto',
+  },
+  toolbarButton: {
+    flexShrink: 0,
+    minHeight: 34,
+    paddingHorizontal: 10,
+  },
+  detailRoot: {
+    flex: 1,
+    gap: 12,
+    minHeight: 0,
+  },
   filterPanel: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
   dateField: { maxWidth: 140, minWidth: 108, width: 120 },
   tableFrame: { minHeight: 0, overflow: 'visible' },
@@ -1601,7 +1695,6 @@ const styles = StyleSheet.create({
   },
   formActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
   detailScroll: { gap: 12, paddingBottom: 24 },
-  detailActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginVertical: 8 },
   detailHeaderRow: { alignItems: 'center', flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   linkText: { color: V.colors.primary, fontFamily: V.fontFamily, fontSize: 13, fontWeight: '600' },
   linkedPoRow: {
