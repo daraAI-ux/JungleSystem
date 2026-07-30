@@ -152,6 +152,13 @@ const PLATFORM_GLOW_STALE: KolamPlatformGlowState = {
   scale: 1,
   tone: 'stale',
 };
+const PLATFORM_GLOW_DOWN: KolamPlatformGlowState = {
+  animated: false,
+  color: '#ef4444',
+  opacity: 0.36,
+  scale: 1,
+  tone: 'down',
+};
 const PLATFORM_GLOW_OFFLINE: KolamPlatformGlowState = {
   animated: false,
   color: '#9ca3af',
@@ -335,6 +342,7 @@ export function KolamGlobalChatRail({
       search: '',
       status: 'all',
     });
+  const [healthMenuOpen, setHealthMenuOpen] = React.useState(false);
   const inboxParams = React.useMemo(
     () => buildInboxListParams(inboxFilter),
     [inboxFilter],
@@ -852,7 +860,16 @@ export function KolamGlobalChatRail({
           </View>
           <View style={styles.copyGroup}>
             <Text style={styles.eyebrow}>Chat</Text>
-            <Text style={styles.title}>{content.title}</Text>
+            <View style={styles.titleInlineRow}>
+              <Text style={styles.title}>{content.title}</Text>
+              {mode === 'inbox' ? (
+                <KolamChatHealthMenu
+                  healthState={platformHealth}
+                  open={healthMenuOpen}
+                  onToggle={() => setHealthMenuOpen(current => !current)}
+                />
+              ) : null}
+            </View>
           </View>
         </View>
         <KolamIconButton
@@ -869,7 +886,6 @@ export function KolamGlobalChatRail({
         {mode === 'inbox' && !inboxDetailOpen ? (
           <KolamInboxFilterPanel
             filter={inboxFilter}
-            healthByPlatform={platformHealth.healthByPlatform}
             labels={labelsState.items}
             onChange={setInboxFilter}
           />
@@ -1081,14 +1097,10 @@ function KolamChatRailLiveHost({
 
 function KolamInboxFilterPanel({
   filter,
-  healthByPlatform,
   labels,
   onChange,
 }: {
   filter: KolamChatRailInboxFilter;
-  healthByPlatform: Partial<
-    Record<KolamChatPlatform, KolamChatPlatformHealthRow>
-  >;
   labels: KolamChatLabel[];
   onChange: (next: KolamChatRailInboxFilter) => void;
 }) {
@@ -1199,9 +1211,6 @@ function KolamInboxFilterPanel({
             renderItem={platform => (
               <KolamPlatformFilterChip
                 active={filter.platform === platform}
-                health={
-                  platform === 'all' ? undefined : healthByPlatform[platform]
-                }
                 onPress={() => onChange({...filter, platform})}
                 platform={platform}
               />
@@ -1231,34 +1240,131 @@ function KolamInboxFilterPanel({
   );
 }
 
+function KolamChatHealthMenu({
+  healthState,
+  onToggle,
+  open,
+}: {
+  healthState: ReturnType<typeof useKolamChatPlatformHealth>;
+  onToggle: () => void;
+  open: boolean;
+}) {
+  const aggregateState = getAggregatePlatformGlowState(healthState);
+  const summaryLabel = getChatHealthSummaryLabel(healthState);
+
+  return (
+    <View style={styles.chatHealthMenuHost}>
+      <KolamPressable
+        accessibilityLabel={`Analisa koneksi chat. ${summaryLabel}`}
+        accessibilityState={{expanded: open}}
+        onPress={onToggle}
+        style={[
+          styles.chatHealthButton,
+          open && styles.chatHealthButtonActive,
+        ]}>
+        <KolamPlatformHealthGlow state={aggregateState} />
+        <View style={styles.chatHealthRadarIcon}>
+          <View style={styles.chatHealthRadarDotPrimary} />
+          <View
+            style={[styles.chatHealthRadarDot, styles.chatHealthRadarDotTop]}
+          />
+          <View
+            style={[styles.chatHealthRadarDot, styles.chatHealthRadarDotSide]}
+          />
+        </View>
+      </KolamPressable>
+
+      {open ? (
+        <View style={styles.chatHealthPopover}>
+          <View style={styles.chatHealthPopoverHeader}>
+            <Text style={styles.chatHealthPopoverTitle}>Analisa chat</Text>
+            <Text style={styles.chatHealthPopoverMeta}>{summaryLabel}</Text>
+          </View>
+
+          {healthState.errorMessage ? (
+            <Text style={styles.chatHealthErrorText}>
+              {healthState.errorMessage}
+            </Text>
+          ) : null}
+
+          <KolamMappedList
+            items={healthState.platforms}
+            getKey={row => String(row.platform)}
+            renderItem={row => (
+              <KolamChatHealthPlatformRow row={row} />
+            )}
+          />
+
+          {!healthState.platforms.length ? (
+            <Text style={styles.chatHealthEmptyText}>
+              Status platform sedang dimuat.
+            </Text>
+          ) : null}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+function KolamChatHealthPlatformRow({
+  row,
+}: {
+  row: KolamChatPlatformHealthRow;
+}) {
+  const platform = isKnownChatPlatform(row.platform) ? row.platform : 'all';
+  const state = getPlatformGlowState(platform, row);
+
+  return (
+    <View style={styles.chatHealthPlatformRow}>
+      <View style={styles.chatHealthPlatformIcon}>
+        <KolamPlatformHealthGlow state={state} />
+        <KolamPlatformFilterLogo platform={platform} state={state} />
+      </View>
+      <View style={styles.chatHealthPlatformCopy}>
+        <View style={styles.chatHealthPlatformTitleRow}>
+          <Text style={styles.chatHealthPlatformTitle}>
+            {formatInboxPlatformFilterLabel(platform)}
+          </Text>
+          <Text
+            style={[
+              styles.chatHealthStatusPill,
+              getChatHealthStatusPillStyle(row.state),
+            ]}>
+            {formatChatHealthState(row.state)}
+          </Text>
+        </View>
+        <Text numberOfLines={2} style={styles.chatHealthReasonText}>
+          {row.reason || 'Belum ada keterangan health.'}
+        </Text>
+        <Text style={styles.chatHealthActivityText}>
+          {formatChatHealthActivity(row)}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
 function KolamPlatformFilterChip({
   active,
-  health,
   onPress,
   platform,
 }: {
   active: boolean;
-  health?: KolamChatPlatformHealthRow;
   onPress: () => void;
   platform: KolamChatPlatform | 'all';
 }) {
   const label = formatInboxPlatformFilterLabel(platform);
-  const glowState = getPlatformGlowState(platform, health);
-  const healthLabel = getPlatformHealthTooltip(label, glowState, health);
 
   return (
     <KolamPressable
-      accessibilityLabel={`Filter ${label}. ${healthLabel}`}
+      accessibilityLabel={`Filter ${label}`}
       accessibilityState={{selected: active}}
       onPress={onPress}
       style={[
         styles.platformFilterChip,
-        styles.platformFilterChipLayered,
         active && styles.platformFilterChipActive,
-        glowState.tone === 'offline' && styles.platformFilterChipOffline,
       ]}>
-      <KolamPlatformHealthGlow state={glowState} />
-      <KolamPlatformFilterLogo platform={platform} state={glowState} />
+      <KolamPlatformFilterLogo platform={platform} />
     </KolamPressable>
   );
 }
@@ -1347,6 +1453,7 @@ type KolamPlatformGlowTone =
   | 'active'
   | 'starting'
   | 'stale'
+  | 'down'
   | 'offline'
   | 'neutral'
   | 'unknown';
@@ -1491,20 +1598,121 @@ function isRecentPlatformInbound(value?: string | null) {
   return Date.now() - time < 90_000;
 }
 
-function getPlatformHealthTooltip(
-  label: string,
-  state: KolamPlatformGlowState,
-  health?: KolamChatPlatformHealthRow,
-) {
-  if (state.tone === 'neutral') {
-    return 'Semua platform';
+function getAggregatePlatformGlowState(
+  healthState: ReturnType<typeof useKolamChatPlatformHealth>,
+): KolamPlatformGlowState {
+  const rows = healthState.platforms;
+  if (!rows.length) {
+    return PLATFORM_GLOW_UNKNOWN;
   }
-  if (!health) {
-    return 'Status koneksi chat sedang dimuat';
+  if (
+    rows.some(row =>
+      ['down', 'inactive', 'unconfigured', 'unknown'].includes(row.state),
+    )
+  ) {
+    return PLATFORM_GLOW_DOWN;
+  }
+  if (rows.some(row => row.state === 'stale')) {
+    return PLATFORM_GLOW_STALE;
+  }
+  if (rows.some(row => row.state === 'starting')) {
+    return PLATFORM_GLOW_STARTING;
+  }
+  if (rows.some(row => isRecentPlatformInbound(row.lastInboundAt))) {
+    return PLATFORM_GLOW_ACTIVE;
+  }
+  if (rows.every(row => row.healthy || row.state === 'healthy')) {
+    return PLATFORM_GLOW_HEALTHY;
+  }
+  return PLATFORM_GLOW_UNKNOWN;
+}
+
+function getChatHealthSummaryLabel(
+  healthState: ReturnType<typeof useKolamChatPlatformHealth>,
+) {
+  if (healthState.loading && !healthState.platforms.length) {
+    return 'Memuat status koneksi';
+  }
+  if (healthState.errorMessage) {
+    return 'Health belum terbaca';
+  }
+  if (!healthState.platforms.length) {
+    return 'Belum ada data health';
   }
 
-  const reason = health.reason || 'Status chat belum ada keterangan';
-  return `${label}: ${reason}`;
+  const healthy = healthState.platforms.filter(row => row.healthy).length;
+  const total = healthState.platforms.length;
+  const attention = healthState.platforms.filter(
+    row => !row.healthy && row.state !== 'healthy',
+  ).length;
+
+  if (!attention) {
+    return `${healthy}/${total} platform aktif`;
+  }
+
+  return `${healthy}/${total} aktif, ${attention} perlu dicek`;
+}
+
+function isKnownChatPlatform(platform: string): platform is KolamChatPlatform {
+  return (
+    platform === 'tokopedia' ||
+    platform === 'shopee' ||
+    platform === 'store' ||
+    platform === 'tiktok' ||
+    platform === 'whatsapp' ||
+    platform === 'instagram'
+  );
+}
+
+function formatChatHealthState(state: KolamChatPlatformHealthRow['state']) {
+  if (state === 'healthy') {
+    return 'Aktif';
+  }
+  if (state === 'starting') {
+    return 'Mulai';
+  }
+  if (state === 'stale') {
+    return 'Stale';
+  }
+  if (state === 'down') {
+    return 'Putus';
+  }
+  if (state === 'inactive') {
+    return 'Nonaktif';
+  }
+  if (state === 'unconfigured') {
+    return 'Belum set';
+  }
+  return 'Unknown';
+}
+
+function getChatHealthStatusPillStyle(
+  state: KolamChatPlatformHealthRow['state'],
+) {
+  if (state === 'healthy') {
+    return styles.chatHealthStatusHealthy;
+  }
+  if (state === 'starting') {
+    return styles.chatHealthStatusStarting;
+  }
+  if (state === 'stale') {
+    return styles.chatHealthStatusStale;
+  }
+  return styles.chatHealthStatusDown;
+}
+
+function formatChatHealthActivity(row: KolamChatPlatformHealthRow) {
+  const value =
+    row.lastInboundAt ||
+    row.lastChatScanAt ||
+    row.lastChatReadyAt ||
+    row.lastActivityAt;
+
+  if (!value) {
+    return row.chatCaptureMode || 'Belum ada aktivitas';
+  }
+
+  return `${row.chatCaptureMode || 'chat'} • ${formatRelativeTime(value)}`;
 }
 
 function KolamChatRailAnalyticsPanel({
@@ -5522,6 +5730,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 12,
+    zIndex: 20,
   },
   titleGroup: {
     minWidth: 0,
@@ -5555,6 +5764,175 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 14,
     fontWeight: '800',
+  },
+  titleInlineRow: {
+    minWidth: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+  },
+  chatHealthMenuHost: {
+    position: 'relative',
+  },
+  chatHealthButton: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: V.colors.bg,
+  },
+  chatHealthButtonActive: {
+    borderColor: V.colors.primary,
+    backgroundColor: V.colors.primarySoft,
+  },
+  chatHealthRadarIcon: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    borderColor: V.colors.mutedFg,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  chatHealthRadarDotPrimary: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: V.colors.fg,
+  },
+  chatHealthRadarDot: {
+    position: 'absolute',
+    width: 3,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: V.colors.mutedFg,
+  },
+  chatHealthRadarDotTop: {
+    top: 2,
+    right: 3,
+  },
+  chatHealthRadarDotSide: {
+    bottom: 3,
+    left: 3,
+  },
+  chatHealthPopover: {
+    position: 'absolute',
+    top: 30,
+    left: -128,
+    width: 286,
+    padding: 10,
+    borderRadius: V.radius.lg,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.bg,
+    gap: 8,
+    zIndex: 40,
+    shadowColor: '#111827',
+    shadowOpacity: 0.16,
+    shadowRadius: 14,
+    shadowOffset: {width: 0, height: 8},
+  },
+  chatHealthPopoverHeader: {
+    gap: 2,
+  },
+  chatHealthPopoverTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '900',
+  },
+  chatHealthPopoverMeta: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  chatHealthPlatformRow: {
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'center',
+    paddingVertical: 7,
+    borderTopColor: V.colors.border,
+    borderTopWidth: 1,
+  },
+  chatHealthPlatformIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: V.colors.bg,
+  },
+  chatHealthPlatformCopy: {
+    minWidth: 0,
+    flex: 1,
+    gap: 2,
+  },
+  chatHealthPlatformTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  chatHealthPlatformTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  chatHealthStatusPill: {
+    minWidth: 48,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 999,
+    overflow: 'hidden',
+    textAlign: 'center',
+    fontFamily: V.fontFamily,
+    fontSize: 9,
+    fontWeight: '900',
+  },
+  chatHealthStatusHealthy: {
+    color: '#047857',
+    backgroundColor: '#d1fae5',
+  },
+  chatHealthStatusStarting: {
+    color: '#92400e',
+    backgroundColor: '#fef3c7',
+  },
+  chatHealthStatusStale: {
+    color: '#9a3412',
+    backgroundColor: '#ffedd5',
+  },
+  chatHealthStatusDown: {
+    color: '#991b1b',
+    backgroundColor: '#fee2e2',
+  },
+  chatHealthReasonText: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  chatHealthActivityText: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 9,
+    fontWeight: '700',
+  },
+  chatHealthErrorText: {
+    color: V.colors.danger,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  chatHealthEmptyText: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '700',
   },
   body: {
     flex: 1,
@@ -5637,16 +6015,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: V.colors.bg,
   },
-  platformFilterChipLayered: {
-    overflow: 'visible',
-  },
   platformFilterChipActive: {
     borderColor: V.colors.primary,
     backgroundColor: V.colors.primarySoft,
-  },
-  platformFilterChipOffline: {
-    borderColor: '#d1d5db',
-    backgroundColor: '#f3f4f6',
   },
   platformHealthGlow: {
     position: 'absolute',
