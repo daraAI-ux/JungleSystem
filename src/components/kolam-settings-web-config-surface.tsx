@@ -21,6 +21,7 @@ import { KolamActionControlButton } from './kolam-action-control-button';
 import { KolamChoiceSegment } from './kolam-choice-segment';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
+import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamRowFrame } from './kolam-row-frame';
 import { KolamSettingsWebFormFields } from './kolam-settings-web-form-fields';
 import { KolamSettingsWebFormSectionHeader } from './kolam-settings-web-form-section-header';
@@ -1132,6 +1133,17 @@ export function KolamSettingsWebConfigSurface({
   const daraControlsDisabled = disabled || !daraPluginEnabled;
   const daraChatControlsDisabled =
     disabled || !chatPluginEnabled || !daraPluginEnabled;
+  const daraAvatarPreviewUri = React.useMemo(() => {
+    const value = String(
+      marketplaceLandingOverview.marketplaceContent.daraAvatar ?? '',
+    ).trim();
+
+    if (!value) {
+      return null;
+    }
+
+    return getKolamFileUrl(value) ?? value;
+  }, [marketplaceLandingOverview.marketplaceContent.daraAvatar]);
   const notificationSoundItems = [
     {
       id: 'notification-sound',
@@ -3639,21 +3651,50 @@ export function KolamSettingsWebConfigSurface({
               },
             ]}
           />
-          <View style={styles.marketplaceControlSection}>
-            <KolamCopyStack
-              items={[
-                {
-                  id: 'ai-profile-title',
-                  text: 'Profil DARA',
-                  style: styles.marketplaceOverviewLabel,
-                },
-                {
-                  id: 'ai-profile-meta',
-                  text: 'Avatar DARA dipakai di Kolam dan webstore.',
-                  style: styles.marketplaceOverviewMeta,
-                },
-              ]}
-            />
+          <View
+            style={[
+              styles.marketplaceControlSection,
+              styles.notificationSettingsCard,
+            ]}
+          >
+            <View style={styles.aiDaraProfileRow}>
+              <View style={styles.aiDaraAvatarFrame}>
+                {daraAvatarPreviewUri ? (
+                  <KolamRemoteImage
+                    accessibilityLabel="Avatar DARA"
+                    resizeMode="cover"
+                    revision={daraAvatarPreviewUri}
+                    scope="dara-avatar"
+                    sourceUri={daraAvatarPreviewUri}
+                    style={styles.aiDaraAvatarImage}
+                  />
+                ) : (
+                  <Text style={styles.aiDaraAvatarFallback}>
+                    Avatar belum diatur
+                  </Text>
+                )}
+              </View>
+              <KolamCopyStack
+                containerStyle={styles.aiDaraProfileCopy}
+                items={[
+                  {
+                    id: 'ai-profile-title',
+                    text: 'Profil DARA',
+                    style: styles.marketplaceOverviewLabel,
+                  },
+                  {
+                    id: 'ai-profile-name',
+                    text: 'DARA',
+                    style: styles.marketplaceOverviewValue,
+                  },
+                  {
+                    id: 'ai-profile-meta',
+                    text: 'Avatar DARA dipakai di Kolam dan webstore.',
+                    style: styles.marketplaceOverviewMeta,
+                  },
+                ]}
+              />
+            </View>
             <View style={styles.notificationSoundActions}>
               <KolamActionControlButton
                 label="Unggah avatar DARA"
@@ -8197,6 +8238,39 @@ const styles = StyleSheet.create({
     gap: 12,
     minWidth: 280,
     padding: 12,
+  },
+  aiDaraAvatarFallback: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 16,
+    textAlign: 'center',
+  },
+  aiDaraAvatarFrame: {
+    alignItems: 'center',
+    backgroundColor: '#f9fafb',
+    borderColor: V.colors.border,
+    borderRadius: 10,
+    borderWidth: 1,
+    height: 96,
+    justifyContent: 'center',
+    overflow: 'hidden',
+    width: 96,
+  },
+  aiDaraAvatarImage: {
+    height: 96,
+    width: 96,
+  },
+  aiDaraProfileCopy: {
+    flex: 1,
+    gap: 4,
+    minWidth: 220,
+  },
+  aiDaraProfileRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
   },
   attendanceProviderChoices: {
     flexDirection: 'row',
