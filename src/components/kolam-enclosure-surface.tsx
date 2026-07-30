@@ -593,22 +593,43 @@ function KolamEnclosureDashboardPanel({
   return (
     <ScrollView contentContainerStyle={styles.dashboardContent}>
       <View style={styles.summaryGrid}>
-        <SummaryTile label="Jumlah enclosure" value={stats.totals.enclosures} />
+        <SummaryTile
+          icon="E"
+          label="Jumlah enclosure"
+          value={stats.totals.enclosures}
+        />
         <SummaryTile
           hint={`${stats.totals.individuals} ekor total`}
+          icon="S"
           label="Species di enclosure"
           value={stats.totals.speciesDistinct}
         />
         <SummaryTile
           accent="primary"
           hint={`${stats.production.speciesDistinct} jenis`}
+          icon="P"
           label="Indukan produksi"
           value={stats.production.totalQty}
         />
         <SummaryTile
           hint={`${stats.saleable.speciesDistinct} jenis`}
+          icon="J"
           label="Stok jual di enclosure"
           value={stats.saleable.totalQty}
+        />
+        <SummaryTile
+          accent="warning"
+          hint={`${stats.deaths.reportedAnimals} ekor / ada alasan atau foto`}
+          icon="!"
+          label="Kematian dilaporkan"
+          value={stats.deaths.reportedCases}
+        />
+        <SummaryTile
+          accent="primary"
+          hint={`${stats.births.totalCases} event / alasan KELAHIRAN`}
+          icon="+"
+          label="Total kelahiran indukan"
+          value={stats.births.totalAnimals}
         />
       </View>
 
@@ -628,21 +649,6 @@ function KolamEnclosureDashboardPanel({
             <Text style={styles.mutedText}>Belum ada data tipe enclosure.</Text>
           )}
         </View>
-      </View>
-
-      <View style={styles.summaryGrid}>
-        <SummaryTile
-          accent="warning"
-          hint={`${stats.deaths.reportedAnimals} ekor / ada alasan atau foto`}
-          label="Kematian dilaporkan"
-          value={stats.deaths.reportedCases}
-        />
-        <SummaryTile
-          accent="primary"
-          hint={`${stats.births.totalCases} event / alasan KELAHIRAN`}
-          label="Total kelahiran indukan"
-          value={stats.births.totalAnimals}
-        />
       </View>
 
       <DashboardSpeciesTable
@@ -1076,11 +1082,13 @@ function InlineState({message, title}: {message?: string; title: string}) {
 function SummaryTile({
   accent,
   hint,
+  icon,
   label,
   value,
 }: {
   accent?: 'primary' | 'warning';
   hint?: string;
+  icon: string;
   label: string;
   value: number;
 }) {
@@ -1092,8 +1100,21 @@ function SummaryTile({
         accent === 'warning' ? styles.summaryTileWarning : null,
       ]}
     >
-      <Text style={styles.summaryValue}>{value}</Text>
-      <Text style={styles.summaryLabel}>{label}</Text>
+      <View style={styles.summaryTileHeader}>
+        <View
+          style={[
+            styles.summaryIcon,
+            accent === 'primary' ? styles.summaryIconPrimary : null,
+            accent === 'warning' ? styles.summaryIconWarning : null,
+          ]}
+        >
+          <Text style={styles.summaryIconText}>{icon}</Text>
+        </View>
+        <Text style={styles.summaryValue}>{value}</Text>
+      </View>
+      <Text numberOfLines={2} style={styles.summaryLabel}>
+        {label}
+      </Text>
       {hint ? <Text style={styles.summaryHint}>{hint}</Text> : null}
     </View>
   );
@@ -1420,7 +1441,8 @@ const styles = StyleSheet.create({
     borderColor: V.colors.border,
     borderRadius: 8,
     borderWidth: 1,
-    minWidth: 148,
+    flexGrow: 1,
+    minWidth: 168,
     padding: 14,
   },
   summaryTilePrimary: {
@@ -1430,6 +1452,37 @@ const styles = StyleSheet.create({
   summaryTileWarning: {
     backgroundColor: V.colors.warningSoft,
     borderColor: V.colors.warning,
+  },
+  summaryTileHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 10,
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  summaryIcon: {
+    alignItems: 'center',
+    backgroundColor: V.colors.secondary,
+    borderColor: V.colors.border,
+    borderRadius: 16,
+    borderWidth: 1,
+    height: 32,
+    justifyContent: 'center',
+    width: 32,
+  },
+  summaryIconPrimary: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.primary,
+  },
+  summaryIconWarning: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.warning,
+  },
+  summaryIconText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '900',
   },
   summaryValue: {
     color: V.colors.fg,
