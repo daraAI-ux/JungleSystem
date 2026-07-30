@@ -736,6 +736,8 @@ export interface KolamChatMessageContent {
     marketplace?: {
       platform?: 'shopee' | 'tokopedia';
       productId?: string;
+      goodsId?: string;
+      shopId?: string;
       listingName?: string;
       sku?: string;
     };
@@ -2292,6 +2294,37 @@ export interface KolamChatUploadImageResult {
   mimeType?: string;
 }
 
+export interface KolamChatMarketplaceListingHit {
+  entityType: 'product' | 'species';
+  entityId: string;
+  name: string;
+  sku?: string | null;
+  platform: 'shopee' | 'tokopedia';
+  productId: string;
+  goodsId?: string | null;
+  shopId?: string | null;
+  listingName?: string | null;
+  listingUrl?: string | null;
+}
+
+export interface KolamChatMarketplaceListingSearchParams {
+  platform: 'shopee' | 'tokopedia';
+  q?: string;
+  limit?: number;
+}
+
+export interface KolamChatMarketplaceListingSearchResult {
+  platform: 'shopee' | 'tokopedia';
+  items: KolamChatMarketplaceListingHit[];
+}
+
+export interface KolamChatMarketplaceProductAttachBody {
+  productId?: string;
+  speciesId?: string;
+  sku?: string;
+  entityType?: 'product' | 'species';
+}
+
 export async function sendKolamChatTextMessage(
   conversationId: string,
   text: string,
@@ -2333,6 +2366,38 @@ export async function sendKolamChatImageMessage(
         ? {replyToMessageId: options.replyToMessageId}
         : {}),
     },
+  );
+
+  return response.data;
+}
+
+export async function searchKolamChatMarketplaceListings(
+  params: KolamChatMarketplaceListingSearchParams,
+): Promise<KolamChatMarketplaceListingSearchResult> {
+  const response = await kolamGet<
+    | DataResponse<KolamChatMarketplaceListingSearchResult>
+    | KolamChatMarketplaceListingSearchResult
+  >(
+    '/chat/marketplace-listings/search',
+    cleanKolamListParams({
+      platform: params.platform,
+      q: params.q,
+      limit: params.limit,
+    }),
+  );
+
+  return unwrapData(response);
+}
+
+export async function attachKolamChatMarketplaceProduct(
+  conversationId: string,
+  body: KolamChatMarketplaceProductAttachBody,
+): Promise<KolamChatMessage> {
+  const response = await kolamPost<DataResponse<KolamChatMessage>>(
+    `/chat/conversations/${encodeURIComponent(
+      conversationId,
+    )}/marketplace-product`,
+    body,
   );
 
   return response.data;
