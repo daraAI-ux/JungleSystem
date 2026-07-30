@@ -76,7 +76,7 @@ import {KolamProfileAvatarContent} from './kolam-profile-avatar-content';
 import {KolamRemoteImage} from './kolam-remote-image';
 import {KolamTopNavigationChatIcon} from './kolam-top-navigation-chat-icon';
 import {KolamXIcon} from './kolam-x-icon';
-import type {SignedInUser} from '../services/auth-api';
+import {resolveProfilePhotoUrl, type SignedInUser} from '../services/auth-api';
 
 export type KolamGlobalChatRailMode = 'inbox' | 'team-chat';
 type KolamChatRailInboxAssignmentFilter = 'all' | 'assigned' | 'unassigned';
@@ -1303,39 +1303,18 @@ function KolamInboxAssignedStaffAvatar({
   const label = getChatStaffLabel(staff) || 'Staff menangani';
   const photoUri = getChatStaffPhotoUri(staff);
   const initials = getChatStaffInitials(staff);
-  const [failedPhotoUri, setFailedPhotoUri] = React.useState<string | null>(
-    null,
-  );
-  const visiblePhotoUri =
-    photoUri && photoUri !== failedPhotoUri ? photoUri : null;
-
-  React.useEffect(() => {
-    setFailedPhotoUri(null);
-  }, [photoUri]);
 
   return (
     <KolamHoverTooltip containerStyle={styles.rowStaffTooltip} label={label}>
       <View
         accessibilityLabel={`Staff menangani ${label}`}
         style={styles.rowStaffAvatar}>
-        {visiblePhotoUri ? (
-          <View style={styles.rowAssignedStaffAvatarRotation}>
-            <Image
-              accessibilityIgnoresInvertColors
-              resizeMode="cover"
-              source={{uri: visiblePhotoUri}}
-              style={styles.rowStaffAvatarImage}
-              onError={() => setFailedPhotoUri(visiblePhotoUri)}
-            />
-          </View>
-        ) : (
-          <KolamProfileAvatarContent
-            imageStyle={styles.rowStaffAvatarImage}
-            imageUrl={null}
-            initials={initials}
-            textStyle={styles.rowStaffAvatarText}
-          />
-        )}
+        <KolamProfileAvatarContent
+          imageStyle={styles.rowStaffAvatarImage}
+          imageUrl={photoUri}
+          initials={initials}
+          textStyle={styles.rowStaffAvatarText}
+        />
       </View>
     </KolamHoverTooltip>
   );
@@ -4883,7 +4862,7 @@ function getChatStaffPhotoUri(staff?: KolamChatStaffRef | string | null) {
     return null;
   }
 
-  return getKolamFileUrl(staff.profile_picture);
+  return resolveProfilePhotoUrl(staff.profile_picture);
 }
 
 function getChatStaffInitials(staff?: KolamChatStaffRef | string | null) {
@@ -7355,12 +7334,6 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 15,
-  },
-  rowAssignedStaffAvatarRotation: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    transform: [{rotate: '-90deg'}],
   },
   rowStaffAvatarText: {
     color: V.colors.primary,
