@@ -12,6 +12,8 @@ import {
   KOLAM_ENCLOSURE_TYPES,
   KOLAM_ENCLOSURE_ROOT,
   type KolamEnclosure,
+  type KolamEnclosureDashboardDeathEvent,
+  type KolamEnclosureDashboardSpeciesRow,
   type KolamEnclosureLivestockFilter,
 } from '../domain/kolam-enclosure';
 import type {KolamTableColumn} from '../domain/kolam-table';
@@ -39,6 +41,8 @@ import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
 type EnclosureFilterPanel = 'type' | 'livestock' | null;
 
 const ENCLOSURE_FILTER_PANEL_WIDTH = 232;
+const DASHBOARD_SPECIES_PAGE_SIZE = 12;
+const DASHBOARD_DEATH_PAGE_SIZE = 10;
 
 const ENCLOSURE_TABLE_COLUMNS: KolamTableColumn[] = [
   {id: 'meta', label: '', align: 'left', width: 64},
@@ -49,6 +53,23 @@ const ENCLOSURE_TABLE_COLUMNS: KolamTableColumn[] = [
   {id: 'marketplace', label: 'PIC', align: 'left', width: 150},
   {id: 'status', label: 'Status', align: 'left', width: 112},
   {id: 'actions', label: '', align: 'right', width: 64},
+];
+
+const DASHBOARD_SPECIES_COLUMNS: KolamTableColumn[] = [
+  {id: 'meta', label: '', align: 'left', width: 56},
+  {id: 'primary', label: 'Species', align: 'left'},
+  {id: 'notes', label: 'Varian', align: 'left', width: 180},
+  {id: 'children', label: 'Qty', align: 'right', width: 112},
+  {id: 'amount', label: 'Enclosure', align: 'right', width: 112},
+];
+
+const DASHBOARD_DEATH_COLUMNS: KolamTableColumn[] = [
+  {id: 'meta', label: 'Waktu', align: 'left', width: 142},
+  {id: 'children', label: 'Enclosure', align: 'left', width: 120},
+  {id: 'primary', label: 'Species', align: 'left'},
+  {id: 'amount', label: 'Qty', align: 'right', width: 80},
+  {id: 'status', label: 'Status', align: 'left', width: 132},
+  {id: 'actions', label: 'Stok', align: 'right', width: 80},
 ];
 
 const LIVESTOCK_FILTER_OPTIONS: Array<{
@@ -370,7 +391,10 @@ function KolamEnclosureList({
           onRouteChange={onRouteChange}
         />
       ) : controller.activeTab === 'dashboard' ? (
-        <KolamEnclosureDashboardPanel controller={controller} />
+        <KolamEnclosureDashboardPanel
+          controller={controller}
+          onRouteChange={onRouteChange}
+        />
       ) : controller.activeTab === 'pending' ? (
         <KolamEnclosurePendingPanel controller={controller} />
       ) : (
@@ -553,8 +577,10 @@ function KolamEnclosureRow({
 
 function KolamEnclosureDashboardPanel({
   controller,
+  onRouteChange,
 }: {
   controller: KolamEnclosureController;
+  onRouteChange?: (route: string) => void;
 }) {
   if (controller.loading && controller.dataSource === 'idle') {
     return <InlineState title="Memuat dashboard..." />;
@@ -565,11 +591,390 @@ function KolamEnclosureDashboardPanel({
 
   const stats = controller.dashboardStats;
   return (
-    <View style={styles.summaryGrid}>
-      <SummaryTile label="Enclosure" value={stats.totals.enclosures} />
-      <SummaryTile label="Species" value={stats.totals.speciesDistinct} />
-      <SummaryTile label="Individu" value={stats.totals.individuals} />
-      <SummaryTile label="Births" value={stats.births.totalAnimals} />
+    <ScrollView contentContainerStyle={styles.dashboardContent}>
+      <View style={styles.summaryGrid}>
+        <SummaryTile label="Jumlah enclosure" value={stats.totals.enclosures} />
+        <SummaryTile
+          hint={`${stats.totals.individuals} ekor total`}
+          label="Species di enclosure"
+          value={stats.totals.speciesDistinct}
+        />
+        <SummaryTile
+          accent="primary"
+          hint={`${stats.production.speciesDistinct} jenis`}
+          label="Indukan produksi"
+          value={stats.production.totalQty}
+        />
+        <SummaryTile
+          hint={`${stats.saleable.speciesDistinct} jenis`}
+          label="Stok jual di enclosure"
+          value={stats.saleable.totalQty}
+        />
+      </View>
+
+      <View style={styles.dashboardSection}>
+        <SectionHeading title="Enclosure per tipe" />
+        <View style={styles.typeGrid}>
+          {stats.byType.length ? (
+            stats.byType.map(row => (
+              <View key={row.type || 'unknown'} style={styles.typeTile}>
+                <Text numberOfLines={1} style={styles.summaryLabel}>
+                  {row.type || '-'}
+                </Text>
+                <Text style={styles.summaryValue}>{row.count}</Text>
+              </View>
+            ))
+          ) : (
+            <Text style={styles.mutedText}>Belum ada data tipe enclosure.</Text>
+          )}
+        </View>
+      </View>
+
+      <View style={styles.summaryGrid}>
+        <SummaryTile
+          accent="warning"
+          hint={`${stats.deaths.reportedAnimals} ekor / ada alasan atau foto`}
+          label="Kematian dilaporkan"
+          value={stats.deaths.reportedCases}
+        />
+        <SummaryTile
+          accent="primary"
+          hint={`${stats.births.totalCases} event / alasan KELAHIRAN`}
+          label="Total kelahiran indukan"
+          value={stats.births.totalAnimals}
+        />
+      </View>
+
+      <DashboardSpeciesTable
+        rows={stats.production.rows}
+        speciesDistinct={stats.production.speciesDistinct}
+        subtitle="Breakdown per species - kandang produksi."
+        title="Indukan produksi (tidak dijual)"
+        totalQty={stats.production.totalQty}
+      />
+      <DashboardSpeciesTable
+        rows={stats.saleable.rows}
+        speciesDistinct={stats.saleable.speciesDistinct}
+        subtitle="Breakdown per species - kandang siap jual."
+        title="Stok jual"
+        totalQty={stats.saleable.totalQty}
+      />
+      <DashboardDeathTable
+        events={stats.deaths.recent}
+        onRouteChange={onRouteChange}
+      />
+    </ScrollView>
+  );
+}
+
+function SectionHeading({
+  action,
+  meta,
+  subtitle,
+  title,
+}: {
+  action?: React.ReactNode;
+  meta?: string;
+  subtitle?: string;
+  title: string;
+}) {
+  return (
+    <View style={styles.sectionHeading}>
+      <View style={styles.sectionHeadingCopy}>
+        <Text style={styles.sectionTitle}>{title}</Text>
+        {subtitle ? <Text style={styles.sectionSubtitle}>{subtitle}</Text> : null}
+        {meta ? <Text style={styles.sectionMeta}>{meta}</Text> : null}
+      </View>
+      {action ? <View style={styles.sectionAction}>{action}</View> : null}
+    </View>
+  );
+}
+
+function DashboardSpeciesTable({
+  rows,
+  speciesDistinct,
+  subtitle,
+  title,
+  totalQty,
+}: {
+  rows: KolamEnclosureDashboardSpeciesRow[];
+  speciesDistinct: number;
+  subtitle: string;
+  title: string;
+  totalQty: number;
+}) {
+  const [page, setPage] = React.useState(1);
+  const totalPages = Math.max(
+    1,
+    Math.ceil(rows.length / DASHBOARD_SPECIES_PAGE_SIZE),
+  );
+  const safePage = Math.min(page, totalPages);
+  const pageRows = rows.slice(
+    (safePage - 1) * DASHBOARD_SPECIES_PAGE_SIZE,
+    safePage * DASHBOARD_SPECIES_PAGE_SIZE,
+  );
+
+  React.useEffect(() => {
+    setPage(1);
+  }, [rows]);
+
+  return (
+    <View style={styles.dashboardTableBlock}>
+      <SectionHeading
+        meta={`${speciesDistinct} jenis / ${totalQty} ekor total`}
+        subtitle={subtitle}
+        title={title}
+      />
+      <KolamCatalogListTableShell
+        footer={
+          rows.length > DASHBOARD_SPECIES_PAGE_SIZE ? (
+            <SimpleDashboardPagination
+              onPageChange={setPage}
+              page={safePage}
+              totalItems={rows.length}
+              totalPages={totalPages}
+            />
+          ) : (
+            <Text style={styles.sectionMeta}>{rows.length} baris</Text>
+          )
+        }
+        style={styles.tableFrame}
+      >
+        <View style={styles.dashboardTable}>
+          <KolamDataTableHeader columns={DASHBOARD_SPECIES_COLUMNS} />
+          {pageRows.length ? (
+            pageRows.map(row => (
+              <DashboardSpeciesRow
+                key={`${row.speciesId}:${row.variantId || ''}`}
+                row={row}
+              />
+            ))
+          ) : (
+            <View style={styles.emptyWrap}>
+              <KolamEmptyState
+                compact
+                message="Belum ada livestock."
+                title="Belum ada livestock"
+              />
+            </View>
+          )}
+        </View>
+      </KolamCatalogListTableShell>
+    </View>
+  );
+}
+
+function DashboardSpeciesRow({
+  row,
+}: {
+  row: KolamEnclosureDashboardSpeciesRow;
+}) {
+  const imageUri = getKolamFileUrl(row.thumbnailUrl);
+
+  return (
+    <KolamDataTableRowFrame>
+      <View style={styles.speciesThumbCell}>
+        {imageUri ? (
+          <KolamRemoteImage
+            accessibilityLabel={`Foto ${row.speciesName || 'species'}`}
+            resizeMode="cover"
+            scope="enclosure-dashboard-species"
+            sourceUri={imageUri}
+            style={styles.speciesThumb}
+          />
+        ) : (
+          <Text style={styles.mutedText}>-</Text>
+        )}
+      </View>
+      <View style={[styles.cell, styles.primaryCell]}>
+        <Text numberOfLines={1} style={styles.rowTitle}>
+          {row.speciesName || '-'}
+        </Text>
+        {row.scientificName ? (
+          <Text numberOfLines={1} style={styles.scientificText}>
+            {row.scientificName}
+          </Text>
+        ) : null}
+      </View>
+      <View style={[styles.cell, {width: dashboardWidthOf('notes')}]}>
+        <Text numberOfLines={2} style={styles.cellText}>
+          {row.variantLabel || '-'}
+        </Text>
+      </View>
+      <View style={[styles.cell, {width: dashboardWidthOf('children')}]}>
+        <Text style={styles.numText}>
+          {row.qty} {row.unit}
+        </Text>
+      </View>
+      <View style={[styles.cell, {width: dashboardWidthOf('amount')}]}>
+        <Text style={styles.numText}>{row.enclosureCount}</Text>
+      </View>
+    </KolamDataTableRowFrame>
+  );
+}
+
+function DashboardDeathTable({
+  events,
+  onRouteChange,
+}: {
+  events: KolamEnclosureDashboardDeathEvent[];
+  onRouteChange?: (route: string) => void;
+}) {
+  const [page, setPage] = React.useState(1);
+  const totalPages = Math.max(
+    1,
+    Math.ceil(events.length / DASHBOARD_DEATH_PAGE_SIZE),
+  );
+  const safePage = Math.min(page, totalPages);
+  const pageEvents = events.slice(
+    (safePage - 1) * DASHBOARD_DEATH_PAGE_SIZE,
+    safePage * DASHBOARD_DEATH_PAGE_SIZE,
+  );
+
+  React.useEffect(() => {
+    setPage(1);
+  }, [events]);
+
+  return (
+    <View style={styles.dashboardTableBlock}>
+      <SectionHeading
+        action={
+          <KolamButton
+            label="Pergerakan stok"
+            onPress={() => onRouteChange?.('/stock-transaction')}
+          />
+        }
+        subtitle="Event death - link ke pergerakan stok bila tersedia."
+        title="Riwayat kematian"
+      />
+      <KolamCatalogListTableShell
+        footer={
+          events.length > DASHBOARD_DEATH_PAGE_SIZE ? (
+            <SimpleDashboardPagination
+              onPageChange={setPage}
+              page={safePage}
+              totalItems={events.length}
+              totalPages={totalPages}
+            />
+          ) : (
+            <Text style={styles.sectionMeta}>{events.length} baris</Text>
+          )
+        }
+        style={styles.tableFrame}
+      >
+        <View style={styles.dashboardTable}>
+          <KolamDataTableHeader columns={DASHBOARD_DEATH_COLUMNS} />
+          {pageEvents.length ? (
+            pageEvents.map((event, index) => (
+              <DashboardDeathRow
+                event={event}
+                key={`${event.enclosureId}:${event.createdAt || index}`}
+                onRouteChange={onRouteChange}
+              />
+            ))
+          ) : (
+            <View style={styles.emptyWrap}>
+              <KolamEmptyState
+                compact
+                message="Belum ada catatan kematian."
+                title="Belum ada catatan kematian"
+              />
+            </View>
+          )}
+        </View>
+      </KolamCatalogListTableShell>
+    </View>
+  );
+}
+
+function DashboardDeathRow({
+  event,
+  onRouteChange,
+}: {
+  event: KolamEnclosureDashboardDeathEvent;
+  onRouteChange?: (route: string) => void;
+}) {
+  const stockRoute = event.stockTransactionId
+    ? `/stock-transaction/${event.stockTransactionId}`
+    : event.speciesId
+      ? `/stock-transaction?speciesId=${encodeURIComponent(event.speciesId)}`
+      : '/stock-transaction';
+
+  return (
+    <KolamDataTableRowFrame>
+      <View style={[styles.cell, {width: deathWidthOf('meta')}]}>
+        <Text numberOfLines={2} style={styles.cellText}>
+          {formatDashboardDateTime(event.createdAt)}
+        </Text>
+      </View>
+      <Pressable
+        onPress={() =>
+          event.enclosureId
+            ? onRouteChange?.(`${KOLAM_ENCLOSURE_ROOT}/${event.enclosureId}`)
+            : undefined
+        }
+        style={[styles.cell, {width: deathWidthOf('children')}]}
+      >
+        <Text numberOfLines={1} style={styles.linkText}>
+          {event.enclosureCode || event.enclosureId.slice(-8) || '-'}
+        </Text>
+      </Pressable>
+      <View style={[styles.cell, styles.primaryCell]}>
+        <Text numberOfLines={1} style={styles.cellText}>
+          {event.speciesName || '-'}
+        </Text>
+        {event.scientificName ? (
+          <Text numberOfLines={1} style={styles.scientificText}>
+            {event.scientificName}
+          </Text>
+        ) : null}
+      </View>
+      <View style={[styles.cell, {width: deathWidthOf('amount')}]}>
+        <Text style={styles.numText}>{event.qty}</Text>
+      </View>
+      <View style={[styles.cell, {width: deathWidthOf('status')}]}>
+        <KolamStatusBadge
+          intent={event.reported ? 'warning' : 'muted'}
+          label={event.reported ? 'Dilaporkan' : 'Tanpa laporan'}
+          textStyle={styles.badgeTextSm}
+        />
+      </View>
+      <View style={[styles.actionCell, {width: deathWidthOf('actions')}]}>
+        <KolamButton label="Lihat" onPress={() => onRouteChange?.(stockRoute)} />
+      </View>
+    </KolamDataTableRowFrame>
+  );
+}
+
+function SimpleDashboardPagination({
+  onPageChange,
+  page,
+  totalItems,
+  totalPages,
+}: {
+  onPageChange: (page: number) => void;
+  page: number;
+  totalItems: number;
+  totalPages: number;
+}) {
+  return (
+    <View style={styles.dashboardPagination}>
+      <Text style={styles.sectionMeta}>{totalItems} baris</Text>
+      <View style={styles.paginationRow}>
+        <KolamButton
+          disabled={page <= 1}
+          label="Sebelumnya"
+          onPress={() => onPageChange(Math.max(1, page - 1))}
+        />
+        <Text style={styles.pageLabel}>
+          {page} / {totalPages}
+        </Text>
+        <KolamButton
+          disabled={page >= totalPages}
+          label="Berikutnya"
+          onPress={() => onPageChange(Math.min(totalPages, page + 1))}
+        />
+      </View>
     </View>
   );
 }
@@ -668,11 +1073,28 @@ function InlineState({message, title}: {message?: string; title: string}) {
   );
 }
 
-function SummaryTile({label, value}: {label: string; value: number}) {
+function SummaryTile({
+  accent,
+  hint,
+  label,
+  value,
+}: {
+  accent?: 'primary' | 'warning';
+  hint?: string;
+  label: string;
+  value: number;
+}) {
   return (
-    <View style={styles.summaryTile}>
+    <View
+      style={[
+        styles.summaryTile,
+        accent === 'primary' ? styles.summaryTilePrimary : null,
+        accent === 'warning' ? styles.summaryTileWarning : null,
+      ]}
+    >
       <Text style={styles.summaryValue}>{value}</Text>
       <Text style={styles.summaryLabel}>{label}</Text>
+      {hint ? <Text style={styles.summaryHint}>{hint}</Text> : null}
     </View>
   );
 }
@@ -692,6 +1114,31 @@ function getListEmptyMessage(controller: KolamEnclosureController) {
 
 function widthOf(id: KolamTableColumn['id']) {
   return ENCLOSURE_TABLE_COLUMNS.find(column => column.id === id)?.width;
+}
+
+function dashboardWidthOf(id: KolamTableColumn['id']) {
+  return DASHBOARD_SPECIES_COLUMNS.find(column => column.id === id)?.width;
+}
+
+function deathWidthOf(id: KolamTableColumn['id']) {
+  return DASHBOARD_DEATH_COLUMNS.find(column => column.id === id)?.width;
+}
+
+function formatDashboardDateTime(value: string) {
+  if (!value) {
+    return '-';
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+  return date.toLocaleString('id-ID', {
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    month: '2-digit',
+    year: '2-digit',
+  });
 }
 
 function getLivestockPurposeLabel(value: KolamEnclosureLivestockFilter | string) {
@@ -879,6 +1326,25 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
   },
+  numText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+    textAlign: 'right',
+  },
+  linkText: {
+    color: V.colors.primary,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  scientificText: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontStyle: 'italic',
+  },
   mutedText: {
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
@@ -892,6 +1358,63 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 12,
   },
+  dashboardContent: {
+    gap: 14,
+    paddingBottom: 24,
+  },
+  dashboardSection: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 10,
+    padding: 12,
+  },
+  sectionHeading: {
+    alignItems: 'flex-end',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'space-between',
+  },
+  sectionHeadingCopy: {
+    flex: 1,
+    gap: 2,
+    minWidth: 0,
+  },
+  sectionTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  sectionSubtitle: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+  },
+  sectionMeta: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  sectionAction: {
+    flexShrink: 0,
+  },
+  typeGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  typeTile: {
+    backgroundColor: V.colors.secondary,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    minWidth: 132,
+    padding: 12,
+  },
   summaryTile: {
     backgroundColor: V.colors.bg,
     borderColor: V.colors.border,
@@ -899,6 +1422,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     minWidth: 148,
     padding: 14,
+  },
+  summaryTilePrimary: {
+    backgroundColor: V.colors.primarySoft,
+    borderColor: V.colors.primary,
+  },
+  summaryTileWarning: {
+    backgroundColor: V.colors.warningSoft,
+    borderColor: V.colors.warning,
   },
   summaryValue: {
     color: V.colors.fg,
@@ -911,6 +1442,36 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 12,
     fontWeight: '700',
+  },
+  summaryHint: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    marginTop: 4,
+  },
+  dashboardTableBlock: {
+    gap: 8,
+  },
+  dashboardTable: {
+    gap: 0,
+    overflow: 'visible',
+  },
+  speciesThumbCell: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: dashboardWidthOf('meta'),
+  },
+  speciesThumb: {
+    borderRadius: 6,
+    height: 36,
+    width: 36,
+  },
+  dashboardPagination: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    justifyContent: 'space-between',
   },
   panelList: {
     backgroundColor: V.colors.bg,

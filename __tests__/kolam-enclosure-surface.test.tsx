@@ -203,6 +203,55 @@ describe('Kolam enclosure surface', () => {
     ).toBeGreaterThan(0);
     expect(renderer!.root.findAllByProps({label: 'backend down'}).length).toBeGreaterThan(0);
   });
+
+  it('renders the plugin-parity dashboard sections', async () => {
+    const onRouteChange = jest.fn();
+    const controller = createController({
+      activeTab: 'dashboard',
+      dashboardStats: createDashboardStats(),
+      filters: {
+        enclosureType: 'all',
+        limit: 20,
+        livestockPurpose: 'all',
+        page: 1,
+        scope: 'dashboard',
+        search: '',
+      },
+    });
+    useControllerMock.mockReturnValue(controller);
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamEnclosureSurface
+          onRouteChange={onRouteChange}
+          route="/enclosures?scope=dashboard"
+        />,
+      );
+    });
+
+    const root = renderer!.root;
+    expect(root.findAllByProps({children: 'Jumlah enclosure'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Species di enclosure'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Indukan produksi'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Stok jual di enclosure'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Enclosure per tipe'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Kematian dilaporkan'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Total kelahiran indukan'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Indukan produksi (tidak dijual)'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Stok jual'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Riwayat kematian'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Ranitomeya'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'ENC-A'}).length).toBeGreaterThan(0);
+
+    await ReactTestRenderer.act(async () => {
+      root.findAllByProps({label: 'Pergerakan stok'})[0].props.onPress();
+      root.findAllByProps({label: 'Lihat'})[0].props.onPress();
+    });
+
+    expect(onRouteChange).toHaveBeenCalledWith('/stock-transaction');
+    expect(onRouteChange).toHaveBeenCalledWith('/stock-transaction/tx-1');
+  });
 });
 
 function createController(
@@ -267,6 +316,73 @@ function createController(
     onSearchChange: jest.fn(),
     onTabChange: jest.fn(),
     ...patch,
+  };
+}
+
+function createDashboardStats(): KolamEnclosureController['dashboardStats'] {
+  return {
+    births: {totalAnimals: 4, totalCases: 2},
+    byType: [
+      {count: 3, type: 'Aquarium'},
+      {count: 2, type: 'Terrarium'},
+    ],
+    deaths: {
+      recent: [
+        {
+          createdAt: '2026-07-30T08:00:00.000Z',
+          enclosureCode: 'ENC-A',
+          enclosureId: 'enc-a',
+          livestockPurpose: 'saleable',
+          qty: 1,
+          reason: 'death',
+          reported: true,
+          scientificName: 'Ranitomeya imitator',
+          speciesId: 'sp-1',
+          speciesName: 'Ranitomeya',
+          stockTransactionId: 'tx-1',
+          variantId: '',
+        },
+      ],
+      reportedAnimals: 1,
+      reportedCases: 1,
+      totalAnimals: 1,
+      totalCases: 1,
+    },
+    production: {
+      rows: [
+        {
+          enclosureCount: 2,
+          qty: 5,
+          scientificName: 'Ranitomeya imitator',
+          speciesId: 'sp-1',
+          speciesName: 'Ranitomeya',
+          thumbnailUrl: '',
+          unit: 'ekor',
+          variantId: '',
+          variantLabel: 'Orange',
+        },
+      ],
+      speciesDistinct: 1,
+      totalQty: 5,
+    },
+    saleable: {
+      rows: [
+        {
+          enclosureCount: 1,
+          qty: 2,
+          scientificName: 'Dendrobates tinctorius',
+          speciesId: 'sp-2',
+          speciesName: 'Tinctorius',
+          thumbnailUrl: '',
+          unit: 'ekor',
+          variantId: '',
+          variantLabel: 'Azureus',
+        },
+      ],
+      speciesDistinct: 1,
+      totalQty: 2,
+    },
+    totals: {enclosures: 5, individuals: 7, speciesDistinct: 2},
   };
 }
 
