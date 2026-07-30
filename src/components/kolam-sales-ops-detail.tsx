@@ -289,6 +289,21 @@ export function KolamSalesOpsDetail({
               <Text style={styles.stripValue}>{sale.marketplaceOrderId}</Text>
             </View>
           ) : null}
+          {sale.sourceRef?.logoUri || sale.sourceRef?.name ? (
+            <View style={styles.stripItem}>
+              <Text style={styles.stripLabel}>Sumber</Text>
+              {sale.sourceRef.logoUri ? (
+                <KolamRemoteImage
+                  accessibilityLabel={sale.sourceRef.name || 'Sumber penjualan'}
+                  resizeMode="contain"
+                  sourceUri={sale.sourceRef.logoUri}
+                  style={styles.stripSourceLogo}
+                />
+              ) : (
+                <Text style={styles.stripValue}>{sale.sourceRef.name}</Text>
+              )}
+            </View>
+          ) : null}
         </View>
       </KolamCardFrame>
 
@@ -318,13 +333,6 @@ export function KolamSalesOpsDetail({
                 label: 'PIC',
                 value: sale.createdByName || '—',
                 meta: '',
-                tone: 'default',
-              },
-              {
-                id: 'source',
-                label: 'Sumber',
-                value: sale.sourceRef?.name || '—',
-                meta: sale.sourceRef?.type || '',
                 tone: 'default',
               },
               {
@@ -372,15 +380,6 @@ export function KolamSalesOpsDetail({
                 : []),
             ]}
           />
-
-          {sale.sourceRef?.logoUri ? (
-            <KolamRemoteImage
-              accessibilityLabel={sale.sourceRef.name}
-              resizeMode="contain"
-              sourceUri={sale.sourceRef.logoUri}
-              style={styles.sourceLogo}
-            />
-          ) : null}
 
           <Text style={styles.sectionTitle}>Aksi status</Text>
           {marketplaceManaged ? (
@@ -1395,9 +1394,9 @@ const styles = StyleSheet.create({
     color: V.colors.mutedFg,
     fontSize: 12,
   },
-  sourceLogo: {
-    height: 36,
-    width: 36,
+  stripSourceLogo: {
+    height: 28,
+    width: 28,
   },
   outstandingCard: {
     gap: 4,
