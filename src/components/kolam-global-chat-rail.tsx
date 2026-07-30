@@ -65,6 +65,7 @@ import {KolamDropdownSelect} from './kolam-dropdown-select';
 import {KolamHoverTooltip} from './kolam-hover-tooltip';
 import {KolamIconButton} from './kolam-icon-button';
 import {KolamMappedList} from './kolam-mapped-list';
+import {openKolamMediaPreview} from './kolam-media-preview-dialog';
 import {KolamModalBackdrop} from './kolam-modal-backdrop';
 import {KolamPressable} from './kolam-pressable';
 import {KolamProfileAvatarContent} from './kolam-profile-avatar-content';
@@ -3497,6 +3498,35 @@ function KolamChatAttachmentPreview({
     );
   }
 
+  if (attachment.kind === 'video') {
+    return (
+      <KolamPressable
+        accessibilityLabel={`Buka video ${fileName}`}
+        onPress={() =>
+          openKolamMediaPreview({
+            kind: 'video',
+            title: fileName,
+            uri: sourceUri,
+          })
+        }
+        style={styles.attachmentVideoRow}
+      >
+        <View style={styles.attachmentVideoThumb}>
+          <Text style={styles.attachmentVideoText}>Video</Text>
+        </View>
+        <View style={styles.attachmentFileCopy}>
+          <Text numberOfLines={1} style={styles.attachmentFileName}>
+            {fileName}
+          </Text>
+          <Text numberOfLines={1} style={styles.attachmentFileMeta}>
+            {attachment.mimeType || sourceUri}
+          </Text>
+        </View>
+        <Text style={styles.attachmentOpenText}>Open</Text>
+      </KolamPressable>
+    );
+  }
+
   return (
     <View style={styles.attachmentFileRow}>
       <View style={styles.attachmentKindBadge}>
@@ -6075,6 +6105,39 @@ const styles = StyleSheet.create({
   attachmentImage: {
     width: 180,
     height: 118,
+  },
+  attachmentVideoRow: {
+    minHeight: 72,
+    padding: 8,
+    borderRadius: V.radius.lg,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.bg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  attachmentVideoThumb: {
+    width: 72,
+    height: 48,
+    borderRadius: V.radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: V.colors.muted,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+  },
+  attachmentVideoText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  attachmentOpenText: {
+    color: V.colors.primary,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '900',
   },
   attachmentFileRow: {
     minHeight: 44,

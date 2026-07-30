@@ -35,6 +35,17 @@ const openUrlMock = jest
   .spyOn(Linking, 'openURL')
   .mockResolvedValue(undefined);
 
+jest.mock('react-native-webview', () => {
+  const mockReact = require('react');
+  const {View: MockView} = require('react-native');
+
+  return {
+    __esModule: true,
+    default: (props: Record<string, unknown>) =>
+      mockReact.createElement(MockView, props),
+  };
+});
+
 jest.mock('../src/context/kolam-app-contexts', () => ({
   useKolamAuthContext: jest.fn(),
 }));
@@ -939,6 +950,12 @@ describe('KolamGlobalChatRail', () => {
               mimeType: 'application/pdf',
               url: '/uploads/team-chat/invoice.pdf',
             },
+            {
+              fileName: 'handover-clip.mp4',
+              kind: 'video',
+              mimeType: 'video/mp4',
+              url: '/uploads/team-chat/handover-clip.mp4',
+            },
           ],
           embeds: [],
           id: 'msg-1',
@@ -996,6 +1013,9 @@ describe('KolamGlobalChatRail', () => {
         'File',
         'invoice.pdf',
         'application/pdf',
+        'Video',
+        'handover-clip.mp4',
+        'video/mp4',
         'Open',
         'Prioritas',
         'Follow up',
@@ -1005,6 +1025,15 @@ describe('KolamGlobalChatRail', () => {
         'AI on',
       ]),
     );
+    expect(
+      renderer!.root
+        .findAllByType(KolamPressable)
+        .some(
+          node =>
+            node.props.accessibilityLabel ===
+            'Buka video handover-clip.mp4',
+        ),
+    ).toBe(true);
     const messageScroll = renderer!.root
       .findAllByType(ScrollView)
       .find(
