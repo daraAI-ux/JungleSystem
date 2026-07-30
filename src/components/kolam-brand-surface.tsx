@@ -512,6 +512,7 @@ function KolamBrandRow({
           <KolamStatusBadge
             intent={getBrandStatusIntent(brand.status)}
             label={getBrandStatusLabel(brand.status)}
+            style={styles.statusBadge}
           />
         </View>
       </KolamDataTableMainTrack>
@@ -1129,6 +1130,9 @@ const styles = StyleSheet.create({
   statusCell: {
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  statusBadge: {
+    alignSelf: 'center',
   },
   actionsTrack: {
     alignItems: 'center',
