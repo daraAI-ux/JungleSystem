@@ -7729,12 +7729,6 @@ function FinancialSettingsPanel({
                 },
               ]}
             />
-            <KolamActionControlButton
-              disabled={disabled || busy}
-              intent="primary"
-              label="Simpan lembur"
-              onPress={onSaveOvertimeSettings}
-            />
           </View>
           <KolamRowFrame variant="settingsForm">
             <KolamTextFieldRowCopy
@@ -7758,18 +7752,36 @@ function FinancialSettingsPanel({
               }
             />
           </KolamRowFrame>
-          <KolamToggleRow
-            active={draft.overtimeUseSalaryDerivedRate}
-            description="Jika tarif tetap 0, pakai gaji dibagi 173 atau 25."
-            label="Tarif dari gaji"
-            onPress={() =>
-              setDraftField(
-                'overtimeUseSalaryDerivedRate',
-                !draft.overtimeUseSalaryDerivedRate,
-              )
-            }
-            variant="settingsForm"
-          />
+          <View style={styles.notificationToggleGrid}>
+            <View style={styles.notificationToggleBox}>
+              <KolamToggleRow
+                active={draft.overtimeUseSalaryDerivedRate}
+                description="Jika tarif tetap 0, pakai gaji dibagi 173 atau 25."
+                label="Tarif dari gaji"
+                onPress={() =>
+                  setDraftField(
+                    'overtimeUseSalaryDerivedRate',
+                    !draft.overtimeUseSalaryDerivedRate,
+                  )
+                }
+                variant="settingsForm"
+              />
+            </View>
+            <View style={styles.notificationToggleBox}>
+              <KolamToggleRow
+                active={draft.overtimeUseStoreCloseForPerDay}
+                description="Gunakan jam tutup toko sebagai awal lembur per hari."
+                label="Pakai jam tutup toko"
+                onPress={() =>
+                  setDraftField(
+                    'overtimeUseStoreCloseForPerDay',
+                    !draft.overtimeUseStoreCloseForPerDay,
+                  )
+                }
+                variant="settingsForm"
+              />
+            </View>
+          </View>
           {draft.overtimeCalculationMode === 'per_hour' ? (
             <>
               <KolamTextFieldRow
@@ -7814,18 +7826,14 @@ function FinancialSettingsPanel({
             value={draft.overtimeMidnightCutoff}
             variant="settingsForm"
           />
-          <KolamToggleRow
-            active={draft.overtimeUseStoreCloseForPerDay}
-            description="Gunakan jam tutup toko sebagai awal lembur per hari."
-            label="Pakai jam tutup toko untuk mode per hari"
-            onPress={() =>
-              setDraftField(
-                'overtimeUseStoreCloseForPerDay',
-                !draft.overtimeUseStoreCloseForPerDay,
-              )
-            }
-            variant="settingsForm"
-          />
+          <View style={styles.financialActions}>
+            <KolamActionControlButton
+              disabled={disabled || busy}
+              intent="primary"
+              label="Simpan lembur"
+              onPress={onSaveOvertimeSettings}
+            />
+          </View>
         </View>
       ) : null}
 
