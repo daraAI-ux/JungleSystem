@@ -1134,16 +1134,14 @@ export function KolamSettingsWebConfigSurface({
   const daraChatControlsDisabled =
     disabled || !chatPluginEnabled || !daraPluginEnabled;
   const daraAvatarPreviewUri = React.useMemo(() => {
-    const value = String(
-      marketplaceLandingOverview.marketplaceContent.daraAvatar ?? '',
-    ).trim();
+    const value = String(draft.daraAvatarUrl ?? '').trim();
 
     if (!value) {
       return null;
     }
 
     return getKolamFileUrl(value) ?? value;
-  }, [marketplaceLandingOverview.marketplaceContent.daraAvatar]);
+  }, [draft.daraAvatarUrl]);
   const notificationSoundItems = [
     {
       id: 'notification-sound',
