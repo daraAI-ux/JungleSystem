@@ -27,6 +27,7 @@ import {
   isKolamSalesRoute,
   isMarketplaceSalesSource,
   normalizeKolamSale,
+  normalizeKolamSaleAnalyticsOverview,
   normalizeKolamSaleList,
   pickDefaultOfflinePosSourceId,
   validateKolamSaleCreatePayload,
@@ -301,6 +302,40 @@ describe('kolam sales domain', () => {
         customer: null,
       }).errors[0],
     ).toBe('Customer atau nama pembeli wajib diisi');
+  });
+
+  it('normalizes sales analytics overview from beranda-style payload', () => {
+    const overview = normalizeKolamSaleAnalyticsOverview(
+      {
+        data: {
+          range: 'week',
+          bySource: [
+            {
+              sourceId: 's1',
+              name: 'POS',
+              logo: '/logos/pos.png',
+              type: 'offline',
+              orderCount: 12,
+            },
+          ],
+          timeline: [
+            {
+              timestamp: '2026-07-24T00:00:00.000Z',
+              successCount: 4,
+              failedCount: 1,
+            },
+          ],
+          totals: { orders: 12, success: 4, failed: 1 },
+        },
+      },
+      'month',
+    );
+    expect(overview.range).toBe('week');
+    expect(overview.bySource).toHaveLength(1);
+    expect(overview.bySource[0].orderCount).toBe(12);
+    expect(overview.bySource[0].logoUri).toContain('/logos/pos.png');
+    expect(overview.totals.orders).toBe(12);
+    expect(overview.timeline[0].failedCount).toBe(1);
   });
 
   it('keeps list rows even when a sale document has a nested data field', () => {

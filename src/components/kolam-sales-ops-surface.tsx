@@ -48,6 +48,7 @@ import {
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamRemoteImage } from './kolam-remote-image';
+import { KolamSalesOpsAnalyticsPanel } from './kolam-sales-ops-analytics-panel';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
@@ -417,24 +418,16 @@ function KolamSalesOpsList({
         ) : null}
       </View>
 
-      <View style={styles.analyticsStrip}>
-        <Text style={styles.analyticsText}>
-          {controller.analytics.totalSales} invoice ·{' '}
-          {formatRupiah(controller.analytics.totalRevenue)}
-        </Text>
-        {controller.notificationSummary.pendingApproval > 0 ? (
-          <Pressable
-            onPress={() =>
-              onRouteChange?.(KOLAM_SALES_DISCOUNT_APPROVAL_ROUTE)
-            }
-          >
-            <KolamStatusBadge
-              intent="warning"
-              label={`${controller.notificationSummary.pendingApproval} menunggu persetujuan diskon`}
-            />
-          </Pressable>
-        ) : null}
-      </View>
+      <KolamSalesOpsAnalyticsPanel
+        analytics={controller.analytics}
+        loading={controller.analyticsLoading}
+        onOpenApproval={() =>
+          onRouteChange?.(KOLAM_SALES_DISCOUNT_APPROVAL_ROUTE)
+        }
+        onRangeChange={controller.onAnalyticsRangeChange}
+        pendingApproval={controller.notificationSummary.pendingApproval}
+        range={controller.analyticsRange}
+      />
 
       <KolamCatalogListTableShell
         footer={
@@ -1907,18 +1900,6 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     marginTop: 6,
     paddingTop: 6,
-  },
-  analyticsStrip: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    paddingHorizontal: 4,
-  },
-  analyticsText: {
-    color: V.colors.mutedFg,
-    fontSize: 12,
-    fontWeight: '600',
   },
   tableFrame: {
     minHeight: 0,

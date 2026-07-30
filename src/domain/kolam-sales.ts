@@ -753,10 +753,172 @@ export type KolamSaleSourceFilterInput = {
   name: string;
 } | null | undefined;
 
+/** Same ranges as FE beranda / sales analytics (`SalesGraphRange` minus `today`). */
+export type KolamSaleAnalyticsRange = 'week' | 'month' | 'year' | 'all';
+
+export interface KolamSaleAnalyticsSourceRow {
+  sourceId: string;
+  name: string;
+  logoUri: string | null;
+  type: string;
+  orderCount: number;
+}
+
+export interface KolamSaleAnalyticsTimelinePoint {
+  timestamp: string;
+  successCount: number;
+  failedCount: number;
+}
+
+/** `GET /sales/analytics/overview` — FE `SalesAnalyticsOverview`. */
 export interface KolamSaleAnalyticsOverview {
-  totalSales: number;
-  totalRevenue: number;
-  bySource: Array<{ name: string; count: number; revenue: number }>;
+  range: KolamSaleAnalyticsRange;
+  bySource: KolamSaleAnalyticsSourceRow[];
+  timeline: KolamSaleAnalyticsTimelinePoint[];
+  totals: {
+    orders: number;
+    success: number;
+    failed: number;
+  };
+}
+
+export const KOLAM_SALE_ANALYTICS_RANGE_OPTIONS: Array<{
+  id: KolamSaleAnalyticsRange;
+  label: string;
+  hint: string;
+}> = [
+  {
+    id: 'week',
+    label: '7 Hari',
+    hint: 'Per hari — 7 hari terakhir',
+  },
+  {
+    id: 'month',
+    label: 'Bulan Ini',
+    hint: 'Per minggu — seluruh minggu dalam bulan berjalan',
+  },
+  {
+    id: 'year',
+    label: 'Tahun Ini',
+    hint: 'Per bulan — Jan–Des tahun ini',
+  },
+  {
+    id: 'all',
+    label: 'Sepanjang Waktu',
+    hint: 'Per tahun — sejak toko mulai berjualan',
+  },
+];
+
+export const EMPTY_KOLAM_SALE_ANALYTICS: KolamSaleAnalyticsOverview = {
+  range: 'month',
+  bySource: [],
+  timeline: [],
+  totals: { orders: 0, success: 0, failed: 0 },
+};
+
+export function getKolamSaleAnalyticsRangeHint(
+  range: KolamSaleAnalyticsRange,
+): string {
+  return (
+    KOLAM_SALE_ANALYTICS_RANGE_OPTIONS.find(option => option.id === range)
+      ?.hint ?? KOLAM_SALE_ANALYTICS_RANGE_OPTIONS[1].hint
+  );
+}
+
+export function formatKolamSaleAnalyticsBucketLabel(
+  timestamp: string,
+  range: KolamSaleAnalyticsRange,
+): string {
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) {
+    return timestamp;
+  }
+  if (range === 'all') {
+    return date.toLocaleDateString('id-ID', { year: 'numeric' });
+  }
+  if (range === 'year') {
+    return date.toLocaleDateString('id-ID', { month: 'short' });
+  }
+  if (range === 'month') {
+    const day = Number(
+      new Intl.DateTimeFormat('en-US', {
+        day: 'numeric',
+        timeZone: 'Asia/Jakarta',
+      }).format(date),
+    );
+    const week = Math.floor((day - 1) / 7) + 1;
+    return `Mgu ${week}`;
+  }
+  return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+}
+
+export function normalizeKolamSaleAnalyticsOverview(
+  payload: unknown,
+  rangeFallback: KolamSaleAnalyticsRange = 'month',
+): KolamSaleAnalyticsOverview {
+  const root = asRecord(payload);
+  const nested = asRecord(root.data);
+  const record =
+    Object.keys(nested).length > 0 &&
+    (Array.isArray(nested.bySource) || Array.isArray(nested.timeline))
+      ? nested
+      : root;
+
+  const rangeRaw = getString(record, 'range').toLowerCase();
+  const range: KolamSaleAnalyticsRange =
+    rangeRaw === 'week' ||
+    rangeRaw === 'month' ||
+    rangeRaw === 'year' ||
+    rangeRaw === 'all'
+      ? rangeRaw
+      : rangeFallback;
+
+  const bySourceRaw = Array.isArray(record.bySource) ? record.bySource : [];
+  const bySource = bySourceRaw.map((row, index) => {
+    const item = asRecord(row);
+    const sourceId =
+      getMongoId(item, 'sourceId') ||
+      getMongoId(item, '_id') ||
+      getMongoId(item, 'id') ||
+      `source-${index}`;
+    const logo = getString(item, 'logo');
+    return {
+      sourceId,
+      name: getString(item, 'name') || '—',
+      logoUri: logo ? getKolamFileUrl(logo) : null,
+      type: getString(item, 'type'),
+      orderCount:
+        getNumber(item, 'orderCount') ??
+        getNumber(item, 'count') ??
+        0,
+    } satisfies KolamSaleAnalyticsSourceRow;
+  });
+
+  const timelineRaw = Array.isArray(record.timeline) ? record.timeline : [];
+  const timeline = timelineRaw.map(row => {
+    const item = asRecord(row);
+    return {
+      timestamp:
+        getString(item, 'timestamp') || stringifyDate(item.timestamp) || '',
+      successCount: getNumber(item, 'successCount') ?? 0,
+      failedCount: getNumber(item, 'failedCount') ?? 0,
+    } satisfies KolamSaleAnalyticsTimelinePoint;
+  });
+
+  const totalsRecord = asRecord(record.totals);
+  const totals = {
+    orders:
+      getNumber(totalsRecord, 'orders') ??
+      bySource.reduce((sum, row) => sum + row.orderCount, 0),
+    success:
+      getNumber(totalsRecord, 'success') ??
+      timeline.reduce((sum, row) => sum + row.successCount, 0),
+    failed:
+      getNumber(totalsRecord, 'failed') ??
+      timeline.reduce((sum, row) => sum + row.failedCount, 0),
+  };
+
+  return { range, bySource, timeline, totals };
 }
 
 export interface KolamSaleNotificationSummary {

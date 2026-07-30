@@ -4,6 +4,7 @@ import type {
   KolamSale,
   KolamSaleAddItemsBody,
   KolamSaleAnalyticsOverview,
+  KolamSaleAnalyticsRange,
   KolamSaleCatalogOption,
   KolamSaleCreateBody,
   KolamSaleDeliveryTransitionTarget,
@@ -17,6 +18,7 @@ import type {
 } from '../domain/kolam-sales';
 import {
   normalizeKolamSale,
+  normalizeKolamSaleAnalyticsOverview,
   normalizeKolamSaleList,
 } from '../domain/kolam-sales';
 import {
@@ -316,32 +318,13 @@ export async function exportKolamSalesListXlsx(
   );
 }
 
-export async function getKolamSalesAnalyticsOverview(): Promise<KolamSaleAnalyticsOverview> {
-  const payload = await kolamRequest<unknown>('/sales/analytics/overview');
-  const root =
-    payload && typeof payload === 'object' && 'data' in (payload as object)
-      ? (payload as { data: unknown }).data
-      : payload;
-  const record =
-    root && typeof root === 'object' ? (root as Record<string, unknown>) : {};
-  const bySourceRaw = Array.isArray(record.bySource)
-    ? record.bySource
-    : Array.isArray(record.sources)
-      ? record.sources
-      : [];
-  return {
-    totalSales: Number(record.totalSales ?? record.count ?? 0) || 0,
-    totalRevenue: Number(record.totalRevenue ?? record.revenue ?? 0) || 0,
-    bySource: bySourceRaw.map(row => {
-      const item =
-        row && typeof row === 'object' ? (row as Record<string, unknown>) : {};
-      return {
-        name: String(item.name ?? item.source ?? '—'),
-        count: Number(item.count ?? item.total ?? 0) || 0,
-        revenue: Number(item.revenue ?? item.totalRevenue ?? 0) || 0,
-      };
-    }),
-  };
+export async function getKolamSalesAnalyticsOverview(
+  range: KolamSaleAnalyticsRange = 'month',
+): Promise<KolamSaleAnalyticsOverview> {
+  const payload = await kolamRequest<unknown>('/sales/analytics/overview', {
+    query: { range },
+  });
+  return normalizeKolamSaleAnalyticsOverview(payload, range);
 }
 
 export async function getKolamSalesNotificationSummary(): Promise<KolamSaleNotificationSummary> {

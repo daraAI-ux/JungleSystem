@@ -13,6 +13,7 @@ import {
   createEmptyKolamSaleCustomCost,
   createInitialKolamSaleCreateForm,
   createInitialKolamSaleListFilters,
+  EMPTY_KOLAM_SALE_ANALYTICS,
   filterOptionsBySalesSource,
   formatKolamSaleMutationError,
   getKolamSaleAllowedDeliveryTransitions,
@@ -38,6 +39,7 @@ import {
   validateKolamSaleUpdatePayload,
   type KolamSale,
   type KolamSaleAnalyticsOverview,
+  type KolamSaleAnalyticsRange,
   type KolamSaleCatalogOption,
   type KolamSaleCreateFormState,
   type KolamSaleCreateItemForm,
@@ -94,11 +96,7 @@ const DEFAULT_PAGINATION: KolamSalePagination = {
 
 const CREATE_OPTIONS_LIMIT = 200;
 
-const EMPTY_ANALYTICS: KolamSaleAnalyticsOverview = {
-  totalSales: 0,
-  totalRevenue: 0,
-  bySource: [],
-};
+const EMPTY_ANALYTICS = EMPTY_KOLAM_SALE_ANALYTICS;
 
 const EMPTY_NOTIFICATIONS: KolamSaleNotificationSummary = {
   pendingApproval: 0,
@@ -108,6 +106,8 @@ const EMPTY_NOTIFICATIONS: KolamSaleNotificationSummary = {
 
 export interface KolamSalesController {
   analytics: KolamSaleAnalyticsOverview;
+  analyticsLoading: boolean;
+  analyticsRange: KolamSaleAnalyticsRange;
   breadcrumbPath: string;
   customers: KolamCustomer[];
   dataSource: KolamSalesDataSource;
@@ -138,6 +138,7 @@ export interface KolamSalesController {
   useBuyerInfo: boolean;
   onAddCreateItem: (itemType?: KolamSaleCreateItemForm['itemType']) => void;
   onAddCustomCost: () => void;
+  onAnalyticsRangeChange: (range: KolamSaleAnalyticsRange) => void;
   onChangeCreateItem: (
     key: string,
     patch: Partial<KolamSaleCreateItemForm>,
@@ -199,6 +200,9 @@ export function useKolamSalesController(route: string): KolamSalesController {
   >([]);
   const [analytics, setAnalytics] =
     useState<KolamSaleAnalyticsOverview>(EMPTY_ANALYTICS);
+  const [analyticsRange, setAnalyticsRange] =
+    useState<KolamSaleAnalyticsRange>('month');
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [notificationSummary, setNotificationSummary] =
     useState<KolamSaleNotificationSummary>(EMPTY_NOTIFICATIONS);
   const [loading, setLoading] = useState(false);
@@ -211,6 +215,8 @@ export function useKolamSalesController(route: string): KolamSalesController {
   const [dataSource, setDataSource] = useState<KolamSalesDataSource>('idle');
   const filtersRef = useRef(filters);
   filtersRef.current = filters;
+  const analyticsRangeRef = useRef(analyticsRange);
+  analyticsRangeRef.current = analyticsRange;
 
   const documentId = useMemo(() => {
     return (
@@ -314,6 +320,23 @@ export function useKolamSalesController(route: string): KolamSalesController {
     return sourceRows;
   }, []);
 
+  const refreshAnalytics = useCallback(async (range: KolamSaleAnalyticsRange) => {
+    setAnalyticsLoading(true);
+    try {
+      const [overview, summary] = await Promise.all([
+        getKolamSalesAnalyticsOverview(range).catch(() => ({
+          ...EMPTY_ANALYTICS,
+          range,
+        })),
+        getKolamSalesNotificationSummary().catch(() => EMPTY_NOTIFICATIONS),
+      ]);
+      setAnalytics(overview);
+      setNotificationSummary(summary);
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  }, []);
+
   const refreshList = useCallback(async () => {
     if (getKolamSaleSurfaceMode(route) !== 'list') {
       return;
@@ -341,14 +364,16 @@ export function useKolamSalesController(route: string): KolamSalesController {
       setLoading(false);
     }
 
-    void Promise.all([
-      getKolamSalesAnalyticsOverview().catch(() => EMPTY_ANALYTICS),
-      getKolamSalesNotificationSummary().catch(() => EMPTY_NOTIFICATIONS),
-    ]).then(([overview, summary]) => {
-      setAnalytics(overview);
-      setNotificationSummary(summary);
-    });
-  }, [route]);
+    void refreshAnalytics(analyticsRangeRef.current);
+  }, [refreshAnalytics, route]);
+
+  const onAnalyticsRangeChange = useCallback(
+    (range: KolamSaleAnalyticsRange) => {
+      setAnalyticsRange(range);
+      void refreshAnalytics(range);
+    },
+    [refreshAnalytics],
+  );
 
   const refreshApproval = useCallback(async () => {
     if (!isKolamSalesDiscountApprovalRoute(route)) {
@@ -960,6 +985,8 @@ export function useKolamSalesController(route: string): KolamSalesController {
 
   return {
     analytics,
+    analyticsLoading,
+    analyticsRange,
     breadcrumbPath: getKolamSaleBreadcrumbPath(mode),
     customers,
     dataSource,
@@ -990,6 +1017,7 @@ export function useKolamSalesController(route: string): KolamSalesController {
     useBuyerInfo,
     onAddCreateItem,
     onAddCustomCost,
+    onAnalyticsRangeChange,
     onChangeCreateItem,
     onChangeCustomCost,
     onChangeFilters,
