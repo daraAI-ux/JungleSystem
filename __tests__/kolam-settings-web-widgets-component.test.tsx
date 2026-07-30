@@ -336,6 +336,39 @@ describe('settings web widgets', () => {
     );
   });
 
+  it('renders DARA avatar from websetting draft in AI settings', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamSettingsWebConfigSurface
+          {...createSurfaceProps({
+            activeTabId: 'ai',
+            draft: {
+              ...createWebSettingDraft(),
+              daraAvatarUrl: '/media/dara/avatar.png',
+            },
+          })}
+        />,
+      );
+    });
+
+    const daraAvatar = renderer!.root
+      .findAllByType(KolamRemoteImage)
+      .find(node => node.props.accessibilityLabel === 'Avatar DARA');
+
+    expect(daraAvatar?.props).toEqual(
+      expect.objectContaining({
+        scope: 'dara-avatar',
+      }),
+    );
+    expect(renderText(renderer!)).not.toContain('Avatar belum diatur');
+
+    await ReactTestRenderer.act(async () => {
+      renderer!.unmount();
+    });
+  });
+
   it('renders KPI staff settings with native level and reward editors', async () => {
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
@@ -937,6 +970,7 @@ function createWebSettingDraft() {
     daraWebstoreFulfillmentEnabled: true,
     daraFulfillmentPackingMinutes: '30',
     daraFulfillmentPackingMaxExtensions: '1',
+    daraAvatarUrl: '',
     katakTerbangWorkerName: '',
     daraStaffOpsNotifyEnabled: true,
     daraStaffWaNotifyEnabled: true,

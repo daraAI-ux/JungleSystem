@@ -434,6 +434,7 @@ interface WebSettingDraft {
   daraWebstoreFulfillmentEnabled: boolean;
   daraFulfillmentPackingMinutes: string;
   daraFulfillmentPackingMaxExtensions: string;
+  daraAvatarUrl: string;
   katakTerbangWorkerName: string;
   daraStaffOpsNotifyEnabled: boolean;
   daraStaffWaNotifyEnabled: boolean;
@@ -696,6 +697,7 @@ const emptyWebSettingDraft: WebSettingDraft = {
   daraWebstoreFulfillmentEnabled: true,
   daraFulfillmentPackingMinutes: '30',
   daraFulfillmentPackingMaxExtensions: '1',
+  daraAvatarUrl: '',
   katakTerbangWorkerName: '',
   daraStaffOpsNotifyEnabled: true,
   daraStaffWaNotifyEnabled: true,
@@ -4006,6 +4008,8 @@ function createWebSettingDraft(
     daraFulfillmentPackingMaxExtensions: String(
       setting.daraFulfillmentPackingMaxExtensions ?? 1,
     ),
+    daraAvatarUrl:
+      typeof setting.daraAvatarUrl === 'string' ? setting.daraAvatarUrl : '',
     katakTerbangWorkerName:
       typeof setting.katakTerbangWorkerName === 'string'
         ? setting.katakTerbangWorkerName

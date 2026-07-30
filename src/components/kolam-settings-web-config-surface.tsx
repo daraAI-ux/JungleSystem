@@ -349,6 +349,7 @@ type WebSettingDraft = {
   daraWebstoreFulfillmentEnabled: boolean;
   daraFulfillmentPackingMinutes: string;
   daraFulfillmentPackingMaxExtensions: string;
+  daraAvatarUrl: string;
   katakTerbangWorkerName: string;
   daraStaffOpsNotifyEnabled: boolean;
   daraStaffWaNotifyEnabled: boolean;
