@@ -33,6 +33,7 @@ import type {
   KolamChatLabel,
   KolamChatConversationListParams,
   KolamChatConversationStatus,
+  KolamChatMarketplaceListingHit,
   KolamChatPlatform,
   KolamChatPlatformHealthRow,
   KolamChatMessage,
@@ -58,6 +59,7 @@ import {
   getKolamWebSetting,
   getKolamUserPickerRows,
   openKolamTeamChatDirect,
+  searchKolamChatMarketplaceListings,
 } from '../services/kolam-api';
 import {createKolamNotificationSoundService} from '../services/kolam-notification-sound-service';
 import {createKolamRuntimeNotificationSoundAdapter} from '../services/kolam-notification-sound-runtime';
@@ -208,6 +210,12 @@ interface KolamChatRailLabelsState {
 interface KolamChatRailTemplatesState {
   errorMessage?: string;
   items: KolamChatTemplate[];
+  loading: boolean;
+}
+
+interface KolamChatRailMarketplacePickerState {
+  errorMessage?: string;
+  items: KolamChatMarketplaceListingHit[];
   loading: boolean;
 }
 
@@ -2156,8 +2164,11 @@ function KolamChatRailDetailPanel({
   templatesState: KolamChatRailTemplatesState;
 }) {
   const [templatePickerOpen, setTemplatePickerOpen] = React.useState(false);
+  const [marketplacePickerOpen, setMarketplacePickerOpen] =
+    React.useState(false);
   const [emojiPickerOpen, setEmojiPickerOpen] = React.useState(false);
   const [templateSearch, setTemplateSearch] = React.useState('');
+  const [marketplaceSearch, setMarketplaceSearch] = React.useState('');
   const [contactDetailsOpen, setContactDetailsOpen] = React.useState(false);
   const [daraThinkingLine, setDaraThinkingLine] = React.useState('');
   const [editingMessageId, setEditingMessageId] = React.useState<string | null>(
@@ -2168,6 +2179,11 @@ function KolamChatRailDetailPanel({
   const [contactDetailsState, setContactDetailsState] =
     React.useState<KolamChatRailContactDetailsState>({
       data: null,
+      loading: false,
+    });
+  const [marketplacePickerState, setMarketplacePickerState] =
+    React.useState<KolamChatRailMarketplacePickerState>({
+      items: [],
       loading: false,
     });
   const messageScrollRef = React.useRef<React.ElementRef<typeof ScrollView> | null>(
@@ -2185,6 +2201,10 @@ function KolamChatRailDetailPanel({
         inboxComposerAccess.blockedReason ||
         inboxComposerAccess.lockedBy),
   );
+  const marketplaceAttachPlatform =
+    mode === 'inbox'
+      ? getInboxMarketplaceAttachPlatform(detail.conversation?.platform)
+      : null;
   const attachmentLabel = pendingAttachment
     ? getPendingChatAttachmentLabel(pendingAttachment)
     : '';
@@ -2225,8 +2245,11 @@ function KolamChatRailDetailPanel({
 
   React.useEffect(() => {
     setTemplatePickerOpen(false);
+    setMarketplacePickerOpen(false);
     setEmojiPickerOpen(false);
     setTemplateSearch('');
+    setMarketplaceSearch('');
+    setMarketplacePickerState({items: [], loading: false});
     setDaraThinkingLine('');
     setEditingMessageId(null);
     setEditingDraft('');
@@ -2234,6 +2257,64 @@ function KolamChatRailDetailPanel({
     setContactDetailsOpen(false);
     setContactDetailsState({data: null, loading: false});
   }, [selectedItem.id]);
+
+  React.useEffect(() => {
+    if (!marketplaceAttachPlatform) {
+      setMarketplacePickerOpen(false);
+      setMarketplaceSearch('');
+      setMarketplacePickerState({items: [], loading: false});
+    }
+  }, [marketplaceAttachPlatform]);
+
+  React.useEffect(() => {
+    if (!marketplacePickerOpen || !marketplaceAttachPlatform) {
+      return;
+    }
+
+    let active = true;
+    setMarketplacePickerState(current => ({
+      ...current,
+      errorMessage: undefined,
+      loading: true,
+    }));
+
+    const timer = setTimeout(() => {
+      searchKolamChatMarketplaceListings({
+        limit: 20,
+        platform: marketplaceAttachPlatform,
+        q: marketplaceSearch,
+      })
+        .then(result => {
+          if (!active) {
+            return;
+          }
+
+          setMarketplacePickerState({
+            items: result.items,
+            loading: false,
+          });
+        })
+        .catch(error => {
+          if (!active) {
+            return;
+          }
+
+          setMarketplacePickerState({
+            errorMessage:
+              error instanceof Error
+                ? error.message
+                : 'Listing marketplace belum bisa dibaca.',
+            items: [],
+            loading: false,
+          });
+        });
+    }, 300);
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [marketplaceAttachPlatform, marketplacePickerOpen, marketplaceSearch]);
 
   React.useEffect(() => {
     if (
@@ -2726,6 +2807,16 @@ function KolamChatRailDetailPanel({
         />
       ) : null}
 
+      {marketplaceAttachPlatform && marketplacePickerOpen ? (
+        <KolamChatMarketplaceProductPicker
+          onClose={() => setMarketplacePickerOpen(false)}
+          onSearchChange={setMarketplaceSearch}
+          platform={marketplaceAttachPlatform}
+          search={marketplaceSearch}
+          state={marketplacePickerState}
+        />
+      ) : null}
+
       {emojiPickerOpen ? (
         <KolamChatComposerEmojiPicker
           disabled={detail.sending || inboxComposerBlocked}
@@ -2801,12 +2892,33 @@ function KolamChatRailDetailPanel({
                   <Text style={styles.composerIconButtonText}>+</Text>
                 </KolamPressable>
               ) : null}
+              {marketplaceAttachPlatform ? (
+                <KolamPressable
+                  accessibilityLabel={`Buka produk ${formatInboxPlatform(
+                    marketplaceAttachPlatform,
+                  )}`}
+                  disabled={detail.sending || inboxComposerBlocked}
+                  onPress={() => {
+                    setMarketplacePickerOpen(current => !current);
+                    setEmojiPickerOpen(false);
+                    setTemplatePickerOpen(false);
+                  }}
+                  style={[
+                    styles.composerIconButton,
+                    marketplacePickerOpen && styles.composerIconButtonActive,
+                    (detail.sending || inboxComposerBlocked) &&
+                      styles.composerIconButtonDisabled,
+                  ]}>
+                  <Text style={styles.composerIconButtonText}>M</Text>
+                </KolamPressable>
+              ) : null}
               <KolamPressable
                 accessibilityLabel="Buka emoji chat"
                 disabled={detail.sending || inboxComposerBlocked}
                 onPress={() => {
                   setEmojiPickerOpen(current => !current);
                   setTemplatePickerOpen(false);
+                  setMarketplacePickerOpen(false);
                 }}
                 style={[
                   styles.composerIconButton,
@@ -2820,7 +2932,11 @@ function KolamChatRailDetailPanel({
                 <KolamPressable
                   accessibilityLabel="Buka template chat"
                   disabled={detail.sending || inboxComposerBlocked}
-                  onPress={() => setTemplatePickerOpen(current => !current)}
+                  onPress={() => {
+                    setTemplatePickerOpen(current => !current);
+                    setEmojiPickerOpen(false);
+                    setMarketplacePickerOpen(false);
+                  }}
                   style={[
                     styles.composerIconButton,
                     templatePickerOpen && styles.composerIconButtonActive,
@@ -2908,6 +3024,87 @@ function KolamChatTemplatePicker({
                   {template.category}
                 </Text>
               </KolamPressable>
+            )}
+          />
+        </ScrollView>
+      ) : null}
+    </View>
+  );
+}
+
+function KolamChatMarketplaceProductPicker({
+  onClose,
+  onSearchChange,
+  platform,
+  search,
+  state,
+}: {
+  onClose: () => void;
+  onSearchChange: (value: string) => void;
+  platform: 'shopee' | 'tokopedia';
+  search: string;
+  state: KolamChatRailMarketplacePickerState;
+}) {
+  const platformLabel = formatInboxPlatform(platform);
+
+  return (
+    <View style={styles.marketplacePicker}>
+      <View style={styles.templatePickerHeader}>
+        <View style={styles.templatePickerCopy}>
+          <Text style={styles.templatePickerTitle}>
+            Produk {platformLabel}
+          </Text>
+          <Text style={styles.templatePickerMeta}>
+            Listing ter-map sync. Attach aktif di fase berikutnya.
+          </Text>
+        </View>
+        <KolamPressable
+          accessibilityLabel="Tutup produk marketplace"
+          onPress={onClose}
+          style={styles.templatePickerClose}>
+          <Text style={styles.templatePickerCloseText}>x</Text>
+        </KolamPressable>
+      </View>
+      <TextInput
+        accessibilityLabel={`Cari produk ${platformLabel}`}
+        onChangeText={onSearchChange}
+        placeholder="Cari nama atau SKU..."
+        placeholderTextColor={V.colors.mutedFg}
+        style={styles.templateSearchInput}
+        value={search}
+      />
+      {state.loading ? (
+        <Text style={styles.templatePickerMessage}>Loading...</Text>
+      ) : null}
+      {!state.loading && state.errorMessage ? (
+        <Text style={styles.templatePickerError}>{state.errorMessage}</Text>
+      ) : null}
+      {!state.loading && !state.errorMessage && state.items.length === 0 ? (
+        <Text style={styles.templatePickerMessage}>
+          {search.trim()
+            ? 'Tidak ada listing ter-map untuk pencarian ini.'
+            : `Ketik nama/SKU atau tunggu daftar ${platformLabel}.`}
+        </Text>
+      ) : null}
+      {!state.loading && !state.errorMessage && state.items.length > 0 ? (
+        <ScrollView style={styles.marketplaceListScroll} showsVerticalScrollIndicator>
+          <KolamMappedList
+            items={state.items}
+            getKey={item =>
+              `${item.platform}-${item.entityType}-${item.entityId}-${item.productId}`
+            }
+            renderItem={item => (
+              <View style={styles.marketplaceListingRow}>
+                <View style={styles.marketplaceListingCopy}>
+                  <Text numberOfLines={2} style={styles.marketplaceListingTitle}>
+                    {item.listingName || item.name}
+                  </Text>
+                  <Text numberOfLines={1} style={styles.marketplaceListingMeta}>
+                    {formatMarketplaceListingMeta(item)}
+                  </Text>
+                </View>
+                <Text style={styles.marketplaceListingState}>Preview</Text>
+              </View>
             )}
           />
         </ScrollView>
@@ -5172,6 +5369,26 @@ function formatInboxAssignmentFilterLabel(
 
 function formatInboxPlatform(platform?: string) {
   return platform ? getPlatformLabel(platform) : 'Marketplace';
+}
+
+function getInboxMarketplaceAttachPlatform(
+  platform?: string | null,
+): 'shopee' | 'tokopedia' | null {
+  if (platform === 'shopee' || platform === 'tokopedia') {
+    return platform;
+  }
+
+  return null;
+}
+
+function formatMarketplaceListingMeta(item: KolamChatMarketplaceListingHit) {
+  const parts = [
+    item.sku ? `SKU ${item.sku}` : '',
+    item.goodsId || item.productId ? `ID ${item.goodsId || item.productId}` : '',
+    item.entityType === 'species' ? 'Species' : 'Product',
+  ].filter(Boolean);
+
+  return parts.join(' | ');
 }
 
 function getConversationDirectionPrefix(direction?: 'in' | 'out') {
@@ -7782,6 +7999,60 @@ const styles = StyleSheet.create({
   },
   templateCategory: {
     maxWidth: 76,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 9,
+    color: V.colors.secondaryFg,
+    fontFamily: V.fontFamily,
+    fontSize: 9,
+    fontWeight: '900',
+    backgroundColor: V.colors.secondary,
+  },
+  marketplacePicker: {
+    marginHorizontal: 10,
+    marginBottom: 8,
+    maxHeight: 260,
+    padding: 10,
+    borderRadius: V.radius.lg,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.mutedSoft,
+    gap: 8,
+  },
+  marketplaceListScroll: {
+    maxHeight: 156,
+  },
+  marketplaceListingRow: {
+    minHeight: 54,
+    padding: 8,
+    borderRadius: V.radius.md,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.bg,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+  marketplaceListingCopy: {
+    minWidth: 0,
+    flex: 1,
+    gap: 4,
+  },
+  marketplaceListingTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '900',
+    lineHeight: 15,
+  },
+  marketplaceListingMeta: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  marketplaceListingState: {
+    maxWidth: 64,
     paddingHorizontal: 6,
     paddingVertical: 3,
     borderRadius: 9,
