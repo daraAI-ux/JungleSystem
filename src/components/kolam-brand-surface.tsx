@@ -417,6 +417,7 @@ function KolamBrandRow({
   const flag = getKolamBrandFlagByCountry(brand.originCountry);
   const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
   const [nameTooltipOpen, setNameTooltipOpen] = React.useState(false);
+  const [countryTooltipOpen, setCountryTooltipOpen] = React.useState(false);
   const columnOf = React.useCallback(
     (id: (typeof columns)[number]['id']) => columns.find(column => column.id === id),
     [columns],
@@ -428,7 +429,7 @@ function KolamBrandRow({
   const notesColumn = columnOf('notes');
   const statusColumn = columnOf('status');
   const actionsColumn = columnOf('actions');
-  const raiseRow = actionMenuOpen || nameTooltipOpen;
+  const raiseRow = actionMenuOpen || nameTooltipOpen || countryTooltipOpen;
 
   return (
     <KolamDataTableRowFrame
@@ -458,15 +459,19 @@ function KolamBrandRow({
           style={[
             styles.listCell,
             styles.countryFlagCell,
+            styles.logoCell,
             metaColumn ? getKolamDataTableColumnStyle(metaColumn) : null,
+            styles.overflowVisible,
           ]}
         >
-          <KolamHoverTooltip align="center" label={flag.country}>
+          <KolamHoverTooltip
+            align="center"
+            label={flag.country}
+            onOpenChange={setCountryTooltipOpen}
+            placement="bottom"
+          >
             <View style={styles.countryRow}>
               <KolamFlagIcon option={flag} />
-              <Text numberOfLines={1} style={styles.countryText}>
-                {flag.country}
-              </Text>
             </View>
           </KolamHoverTooltip>
         </View>
