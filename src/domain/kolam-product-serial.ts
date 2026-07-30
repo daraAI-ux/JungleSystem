@@ -120,7 +120,7 @@ export function createInitialProductSerialListFilters(
   const query = parseProductSerialRouteQuery(route);
   return {
     page: Math.max(1, Number(query.page || '1') || 1),
-    limit: 20,
+    limit: 10,
     search: query.search ?? '',
     productType: isKolamProductSerialProductType(query.productType)
       ? query.productType
@@ -421,7 +421,7 @@ function normalizeProductSerialPagination(
 ): KolamProductSerialPagination {
   const record = asRecord(value);
   const page = getNumber(record, 'page') ?? 1;
-  const limit = getNumber(record, 'limit') ?? (fallbackTotal || 20);
+  const limit = getNumber(record, 'limit') ?? (fallbackTotal || 10);
   const total = getNumber(record, 'total') ?? fallbackTotal;
   const totalPages =
     getNumber(record, 'totalPages') ??

@@ -16,7 +16,7 @@ import {
 
 const DEFAULT_PAGINATION: KolamProductSerialPagination = {
   page: 1,
-  limit: 20,
+  limit: 10,
   total: 0,
   totalPages: 1,
 };
@@ -148,7 +148,7 @@ export function useKolamProductSerialController(
   const onClearFilters = useCallback(() => {
     setFilters({
       page: 1,
-      limit: 20,
+      limit: 10,
       search: '',
       productType: '',
       status: '',

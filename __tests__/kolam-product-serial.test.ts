@@ -129,7 +129,7 @@ describe('kolam product serial domain', () => {
     );
     expect(filters).toMatchObject({
       page: 2,
-      limit: 20,
+      limit: 10,
       search: 'FRY',
       productType: 'freyer',
       status: 'in-stock',
@@ -141,7 +141,7 @@ describe('kolam product serial domain', () => {
     const filters = createInitialProductSerialListFilters(KOLAM_PRODUCT_SERIAL_ROOT);
     expect(filters).toEqual({
       page: 1,
-      limit: 20,
+      limit: 10,
       search: '',
       productType: '',
       status: '',
