@@ -7253,31 +7253,34 @@ function FinancialSettingsPanel({
                 <KolamModalBackdrop
                   onPress={() => setPaymentMethodFormOpen(false)}
                 />
-                <ScrollView
-                  contentContainerStyle={styles.financialPaymentModalScroll}
-                  keyboardShouldPersistTaps="handled"
+                <View
+                  accessibilityLabel="Form metode pembayaran"
                   style={styles.financialPaymentModalPanel}
                 >
-                  <View style={styles.financialNestedCard}>
-                    <View style={styles.operationalCardHeaderRow}>
-                      <KolamCopyStack
-                        containerStyle={styles.operationalCardHeaderCopy}
-                        items={[
-                          {
-                            id: 'payment-method-form-title',
-                            text: paymentMethodDraft.id
-                              ? 'Edit metode pembayaran'
-                              : 'Metode pembayaran baru',
-                            style: styles.marketplaceOverviewLabel,
-                          },
-                        ]}
-                      />
-                      <KolamActionControlButton
-                        disabled={busy}
-                        label="Tutup"
-                        onPress={() => setPaymentMethodFormOpen(false)}
-                      />
-                    </View>
+                  <View style={styles.operationalCardHeaderRow}>
+                    <KolamCopyStack
+                      containerStyle={styles.operationalCardHeaderCopy}
+                      items={[
+                        {
+                          id: 'payment-method-form-title',
+                          text: paymentMethodDraft.id
+                            ? 'Edit metode pembayaran'
+                            : 'Metode pembayaran baru',
+                          style: styles.marketplaceOverviewLabel,
+                        },
+                      ]}
+                    />
+                    <KolamActionControlButton
+                      disabled={busy}
+                      label="Tutup"
+                      onPress={() => setPaymentMethodFormOpen(false)}
+                    />
+                  </View>
+                  <ScrollView
+                    contentContainerStyle={styles.financialPaymentModalScroll}
+                    keyboardShouldPersistTaps="handled"
+                    style={styles.financialPaymentModalBody}
+                  >
                     <View style={styles.financialFormStack}>
                       <View style={styles.financialFormBox}>
                         <KolamCopyStack
@@ -7528,8 +7531,8 @@ function FinancialSettingsPanel({
                         />
                       </View>
                     </View>
-                  </View>
-                </ScrollView>
+                  </ScrollView>
+                </View>
               </View>
             </Modal>
           ) : null}
@@ -8305,15 +8308,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
     justifyContent: 'center',
-    padding: 18,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+  },
+  financialPaymentModalBody: {
+    flex: 1,
+    minHeight: 0,
   },
   financialPaymentModalPanel: {
-    maxHeight: '92%',
+    backgroundColor: '#f9fafb',
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flex: 1,
+    gap: 10,
+    maxHeight: 760,
     maxWidth: 980,
-    width: '100%',
+    padding: 12,
+    width: '94%',
   },
   financialPaymentModalScroll: {
-    paddingVertical: 4,
+    gap: 12,
+    paddingBottom: 6,
   },
   financialToolbar: {
     alignItems: 'center',
