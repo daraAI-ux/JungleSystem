@@ -252,13 +252,13 @@ export const headerFrameStyles = StyleSheet.create({
     backgroundColor: V.colors.bg,
   },
   userMenuHeader: {
-    minHeight: 76,
+    minHeight: 58,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: V.layout.cardCompactSpacing,
-    paddingVertical: 12,
-    borderBottomColor: V.colors.border,
+    gap: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 9,
+    borderBottomColor: 'rgba(255,255,255,0.1)',
     borderBottomWidth: 1,
   },
   statusPanelTitleRow: {

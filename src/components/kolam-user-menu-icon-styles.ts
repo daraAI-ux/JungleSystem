@@ -1,10 +1,11 @@
 ﻿import {StyleSheet} from 'react-native';
-import {kolamVisualTokens as V} from '../domain/kolam-visual';
+const USER_MENU_ICON_COLOR = '#9a9a9a';
+const USER_MENU_ICON_DANGER_COLOR = '#f87171';
 
 export const userMenuIconStyles = StyleSheet.create({
   dangerTint: {
-    backgroundColor: V.colors.danger,
-    borderColor: V.colors.danger,
+    backgroundColor: USER_MENU_ICON_DANGER_COLOR,
+    borderColor: USER_MENU_ICON_DANGER_COLOR,
   },
   dashboardIcon: {
     width: 15,
@@ -17,7 +18,7 @@ export const userMenuIconStyles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 2,
-    backgroundColor: V.colors.fg,
+    backgroundColor: USER_MENU_ICON_COLOR,
   },
   settingsIcon: {
     width: 17,
@@ -29,7 +30,7 @@ export const userMenuIconStyles = StyleSheet.create({
     width: 11,
     height: 11,
     borderRadius: 6,
-    borderColor: V.colors.fg,
+    borderColor: USER_MENU_ICON_COLOR,
     borderWidth: 2,
   },
   settingsToothVertical: {
@@ -37,14 +38,14 @@ export const userMenuIconStyles = StyleSheet.create({
     width: 3,
     height: 17,
     borderRadius: 999,
-    backgroundColor: V.colors.fg,
+    backgroundColor: USER_MENU_ICON_COLOR,
   },
   settingsToothHorizontal: {
     position: 'absolute',
     width: 17,
     height: 3,
     borderRadius: 999,
-    backgroundColor: V.colors.fg,
+    backgroundColor: USER_MENU_ICON_COLOR,
   },
   commandIcon: {
     width: 17,
@@ -57,7 +58,7 @@ export const userMenuIconStyles = StyleSheet.create({
     width: 7,
     height: 7,
     borderRadius: 3,
-    borderColor: V.colors.fg,
+    borderColor: USER_MENU_ICON_COLOR,
     borderWidth: 2,
   },
   commandCornerTopRight: {
@@ -83,7 +84,7 @@ export const userMenuIconStyles = StyleSheet.create({
     width: 15,
     height: 15,
     borderRadius: 8,
-    borderColor: V.colors.fg,
+    borderColor: USER_MENU_ICON_COLOR,
     borderWidth: 2,
   },
   supportLine: {
@@ -92,7 +93,7 @@ export const userMenuIconStyles = StyleSheet.create({
     width: 5,
     height: 2,
     borderRadius: 999,
-    backgroundColor: V.colors.fg,
+    backgroundColor: USER_MENU_ICON_COLOR,
     transform: [{rotate: '-25deg'}],
   },
   supportDot: {
@@ -101,7 +102,7 @@ export const userMenuIconStyles = StyleSheet.create({
     width: 3,
     height: 3,
     borderRadius: 2,
-    backgroundColor: V.colors.fg,
+    backgroundColor: USER_MENU_ICON_COLOR,
   },
   logoutIcon: {
     width: 17,
@@ -114,7 +115,7 @@ export const userMenuIconStyles = StyleSheet.create({
     width: 8,
     height: 13,
     borderRadius: 2,
-    borderColor: V.colors.fg,
+    borderColor: USER_MENU_ICON_COLOR,
     borderWidth: 2,
   },
   logoutArrow: {
@@ -124,7 +125,7 @@ export const userMenuIconStyles = StyleSheet.create({
     width: 10,
     height: 2,
     borderRadius: 999,
-    backgroundColor: V.colors.fg,
+    backgroundColor: USER_MENU_ICON_COLOR,
   },
   logoutArrowHead: {
     position: 'absolute',
@@ -132,9 +133,9 @@ export const userMenuIconStyles = StyleSheet.create({
     top: 5,
     width: 7,
     height: 7,
-    borderRightColor: V.colors.fg,
+    borderRightColor: USER_MENU_ICON_COLOR,
     borderRightWidth: 2,
-    borderTopColor: V.colors.fg,
+    borderTopColor: USER_MENU_ICON_COLOR,
     borderTopWidth: 2,
     transform: [{rotate: '45deg'}],
   },

@@ -9,7 +9,7 @@ export interface KolamUserMenuItemProps {
   icon: ReactNode;
   label: string;
   onPress: () => void;
-  routeHint: string;
+  routeHint?: string;
   sectionStart?: boolean;
   trailing?: ReactNode;
 }
@@ -19,7 +19,7 @@ export function KolamUserMenuItem({
   icon,
   label,
   onPress,
-  routeHint,
+  routeHint: _routeHint,
   sectionStart = false,
   trailing,
 }: KolamUserMenuItemProps) {
@@ -36,7 +36,6 @@ export function KolamUserMenuItem({
             text: label,
             style: [styles.label, danger && styles.labelDanger],
           },
-          {id: 'route', text: routeHint, style: styles.route},
         ]}
       />
       {trailing}
@@ -46,46 +45,41 @@ export function KolamUserMenuItem({
 
 const styles = StyleSheet.create({
   item: {
-    minHeight: 48,
+    minHeight: 32,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: V.layout.cardCompactSpacing,
-    paddingVertical: 9,
+    gap: 9,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
   },
   itemSectionStart: {
-    borderTopColor: V.colors.border,
+    borderTopColor: 'rgba(255,255,255,0.1)',
     borderTopWidth: 1,
+    marginTop: 4,
+    paddingTop: 8,
   },
   icon: {
-    width: 28,
-    height: 28,
-    borderRadius: 7,
+    width: 20,
+    height: 20,
+    borderRadius: 5,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: V.colors.muted,
+    backgroundColor: 'transparent',
   },
   iconDanger: {
-    backgroundColor: V.colors.warningSoft,
+    backgroundColor: 'transparent',
   },
   copy: {
     flex: 1,
     minWidth: 0,
   },
   label: {
-    color: V.colors.fg,
+    color: '#d6d6d6',
     fontFamily: V.fontFamily,
-    fontSize: 13,
-    fontWeight: '900',
+    fontSize: 12,
+    fontWeight: '700',
   },
   labelDanger: {
-    color: V.colors.danger,
-  },
-  route: {
-    marginTop: 3,
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 10,
-    fontWeight: '800',
+    color: '#f87171',
   },
 });

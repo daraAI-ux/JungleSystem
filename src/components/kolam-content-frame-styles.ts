@@ -36,7 +36,8 @@ export const contentFrameStyles = StyleSheet.create({
     borderTopWidth: 1,
   },
   userMenuList: {
-    paddingVertical: 4,
+    backgroundColor: '#1f1f1f',
+    padding: 4,
   },
   commandPaletteSection: {
     marginBottom: 22,

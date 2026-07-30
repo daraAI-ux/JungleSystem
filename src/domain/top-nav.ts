@@ -9,16 +9,16 @@ import type { PluginRouteEntry, UnifiedSurface } from './unified';
 
 export interface TopNavUserMenuItem {
   id:
-    | 'dashboard'
-    | 'settings'
+    | 'portal'
+    | 'web-settings'
     | 'command-menu'
-    | 'support'
+    | 'employee-help'
     | 'logout';
   label: string;
   routeHint: string;
   iconKind: TopNavUserMenuIconKind;
   trailingIconKind?: 'chevron';
-  section: 'main' | 'command' | 'support' | 'session';
+  section: 'main' | 'command' | 'help' | 'session';
   sourceComponent: string;
   adminOnly?: boolean;
 }
@@ -67,20 +67,21 @@ export interface TopNavUserMenuCloseControl {
 
 export const topNavUserMenuItems: TopNavUserMenuItem[] = [
   {
-    id: 'dashboard',
-    label: 'Dashboard',
-    routeHint: '/',
-    iconKind: 'dashboard',
+    id: 'portal',
+    label: 'Portal Saya',
+    routeHint: '/portal',
+    iconKind: 'support',
     section: 'main',
     sourceComponent:
       'E:\\Projects\\da-inventory-frontend\\src\\components\\app-sidebar-nav.tsx',
   },
   {
-    id: 'settings',
-    label: 'Pengaturan',
-    routeHint: '/pengaturan',
+    id: 'web-settings',
+    label: 'Web Settings',
+    routeHint: '/settings/websetting',
     iconKind: 'settings',
     section: 'main',
+    adminOnly: true,
     sourceComponent:
       'E:\\Projects\\da-inventory-frontend\\src\\components\\app-sidebar-nav.tsx',
   },
@@ -94,11 +95,11 @@ export const topNavUserMenuItems: TopNavUserMenuItem[] = [
       'E:\\Projects\\da-inventory-frontend\\src\\components\\app-sidebar-nav.tsx',
   },
   {
-    id: 'support',
-    label: 'Contact Support',
-    routeHint: '#contact-s',
+    id: 'employee-help',
+    label: 'Bantuan & informasi karyawan',
+    routeHint: '/portal',
     iconKind: 'support',
-    section: 'support',
+    section: 'help',
     sourceComponent:
       'E:\\Projects\\da-inventory-frontend\\src\\components\\app-sidebar-nav.tsx',
   },
@@ -114,9 +115,11 @@ export const topNavUserMenuItems: TopNavUserMenuItem[] = [
 ];
 
 export function getTopNavUserMenuItems(
-  _roleKey?: string,
+  roleKey?: string,
 ): TopNavUserMenuItem[] {
-  return topNavUserMenuItems;
+  return topNavUserMenuItems.filter(
+    item => !item.adminOnly || isTopNavAdminRole(roleKey),
+  );
 }
 
 export function getTopNavUserMenuPreview(

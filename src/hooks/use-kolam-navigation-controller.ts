@@ -204,21 +204,29 @@ export function useKolamNavigationController({
       return;
     }
 
-    if (item.id === 'dashboard') {
-      handleModuleSelect('kolam');
-      onMessage('Dashboard Kolam dibuka dari user menu native.');
+    if (item.id === 'portal' || item.id === 'employee-help') {
+      const portalItem = getKolamNavigationItemByRuntimeRoute('/portal');
+
+      setActiveModule('kolam');
+      setActiveNavigationItem(portalItem ?? null);
+      setActivePluginRoute(null);
+      setActiveAmSurface(null);
+      setActiveKolamSurface(null);
+      setActiveModuleRoute(null);
+      setCommandSearch('portal');
+      onMessage('Portal karyawan dibuka dari user menu native.');
       return;
     }
 
-    if (item.id === 'settings') {
+    if (item.id === 'web-settings') {
       setActiveModule('settings');
       setActiveNavigationItem(getSettingsNavigationItem());
       setActivePluginRoute(null);
       setActiveAmSurface(null);
       setActiveKolamSurface(null);
       setActiveModuleRoute(null);
-      setCommandSearch('settings');
-      onMessage('Settings Kolam dibuka sebagai surface native.');
+      setCommandSearch('websetting');
+      onMessage('Web Settings Kolam dibuka dari user menu native.');
       return;
     }
 
@@ -229,9 +237,16 @@ export function useKolamNavigationController({
       return;
     }
 
-    handleModuleSelect('plugins');
-    setPluginSearch('bantuan');
-    onMessage('Contact Support diarahkan ke Plugin Bantuan native.');
+    const routeItem = getKolamNavigationItemByRuntimeRoute(item.routeHint);
+
+    setActiveModule('kolam');
+    setActiveNavigationItem(routeItem ?? null);
+    setActivePluginRoute(null);
+    setActiveAmSurface(null);
+    setActiveKolamSurface(null);
+    setActiveModuleRoute(null);
+    setCommandSearch(item.label);
+    onMessage(`${item.label} dibuka dari user menu native.`);
   };
 
   const handleCommand = async (
