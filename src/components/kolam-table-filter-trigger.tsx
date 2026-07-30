@@ -89,12 +89,14 @@ export function KolamTableFilterTrigger({
   );
 }
 
-/** Real triangle glyph — bar-chevrons look like scratches on RNW. */
+/** Solid triangle caret — shared KolamChevronIcon (SVG Path). */
 function QuietCaret({color, open}: {color: string; open: boolean}) {
   return (
-    <View style={[styles.caretWrap, open ? styles.caretWrapOpen : null]}>
-      <Text style={[styles.caretGlyph, {color}]}>▾</Text>
-    </View>
+    <KolamChevronIcon
+      color={color}
+      direction={open ? 'up' : 'down'}
+      size="menu-sm"
+    />
   );
 }
 
@@ -164,21 +166,5 @@ const styles = StyleSheet.create({
     minWidth: 32,
     paddingHorizontal: 10,
     paddingVertical: 8,
-  },
-  caretWrap: {
-    alignItems: 'center',
-    height: 14,
-    justifyContent: 'center',
-    width: 14,
-  },
-  caretWrapOpen: {
-    transform: [{rotate: '180deg'}],
-  },
-  caretGlyph: {
-    fontSize: 11,
-    fontWeight: '700',
-    includeFontPadding: false,
-    lineHeight: 14,
-    textAlign: 'center',
   },
 });
