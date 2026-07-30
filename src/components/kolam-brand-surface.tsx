@@ -12,9 +12,9 @@ import {
 } from '../domain/kolam-brand';
 import { getKolamFormSection } from '../domain/kolam-form';
 import {
+  fitKolamDataTableColumns,
   getKolamTableColumns,
   getKolamTableVisualContract,
-  resolveKolamDataTableColumns,
 } from '../domain/kolam-table';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import {
@@ -165,27 +165,14 @@ function KolamBrandList({
   );
   const listColumns = React.useMemo(
     () =>
-      resolveKolamDataTableColumns({
-        tableId: 'brand',
-        containerWidth: tableBodyWidth,
+      fitKolamDataTableColumns(getKolamTableColumns('brand'), tableBodyWidth, {
         gap: KOLAM_DATA_TABLE_COLUMN_GAP,
         paddingX: getKolamTableVisualContract().body.cellPaddingX * 2,
-        columnValues: {
-          primary: pagedBrands.map(brand => brand.name),
-          meta: pagedBrands.map(
-            brand => getKolamBrandFlagByCountry(brand.originCountry).country,
-          ),
-          products: pagedBrands.map(brand => String(brand.productCount ?? 0)),
-          raws: pagedBrands.map(brand => String(brand.rawMaterialCount ?? 0)),
-          notes: pagedBrands.map(brand => {
-            const notes = (brand.notes || brand.description || '-').trim();
-            return notes.length > 48 ? `${notes.slice(0, 48)}…` : notes;
-          }),
-          status: pagedBrands.map(brand => getBrandStatusLabel(brand.status)),
-          actions: ['...'],
-        },
+        actionsMinWidth: 64,
+        primaryMinWidth: 160,
+        secondaryMinWidth: 72,
       }),
-    [pagedBrands, tableBodyWidth],
+    [tableBodyWidth],
   );
   const sortFilterLabel = sortMode === 'name-desc' ? 'Nama Z-A' : 'Nama A-Z';
   const assetFilterLabel =

@@ -150,43 +150,50 @@ export const kolamTableVisualContract: KolamTableVisualContract = {
 
 const kolamTableColumns: Record<KolamTableId, KolamTableColumn[]> = {
   brand: [
-    { id: 'primary', label: 'Merek', align: 'center', headerAlign: 'center' },
+    // Manual widths (preferred); fit still fills the measured body.
+    {
+      id: 'primary',
+      label: 'Merek',
+      align: 'center',
+      headerAlign: 'center',
+      width: 200,
+    },
     {
       id: 'meta',
       label: 'Negara',
       align: 'center',
       headerAlign: 'center',
-      width: 96,
+      width: 120,
     },
     {
       id: 'products',
       label: 'Produk',
       align: 'center',
       headerAlign: 'center',
-      width: 92,
+      width: 88,
     },
     {
       id: 'raws',
       label: 'Bahan',
       align: 'center',
       headerAlign: 'center',
-      width: 92,
+      width: 88,
     },
     {
       id: 'notes',
       label: 'Catatan',
       align: 'center',
       headerAlign: 'center',
-      width: 180,
+      width: 160,
     },
     {
       id: 'status',
       label: 'Status',
       align: 'center',
       headerAlign: 'center',
-      width: 116,
+      width: 100,
     },
-    // Actions header stays blank; body still hosts the overflow menu.
+    // 7th column: blank header, overflow actions in the body.
     { id: 'actions', label: '', align: 'center', headerAlign: 'center', width: 64 },
   ],
   catalog: [

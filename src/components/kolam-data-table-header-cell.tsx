@@ -1,6 +1,5 @@
 import React from 'react';
-import { View } from 'react-native';
-import { KolamCopyStack } from './kolam-copy-stack';
+import { Text, View } from 'react-native';
 import type { KolamTableColumn } from '../domain/kolam-table';
 import { getKolamDataTableColumnStyle } from './kolam-data-table-column-style';
 import { dataTableHeaderStyles as styles } from './kolam-data-table-header-styles';
@@ -11,6 +10,7 @@ export function KolamDataTableHeaderCell({
   column: KolamTableColumn;
 }) {
   const headerAlign = column.headerAlign ?? column.align;
+  const label = column.label.trim();
 
   return (
     <View
@@ -21,20 +21,20 @@ export function KolamDataTableHeaderCell({
         headerAlign === 'right' ? styles.cellRight : null,
       ]}
     >
-      <KolamCopyStack
-        items={[
-          {
-            id: column.id,
-            text: column.label,
-            textProps: { numberOfLines: 2 },
-            style: [
-              styles.text,
-              headerAlign === 'center' && styles.center,
-              headerAlign === 'right' && styles.right,
-            ],
-          },
-        ]}
-      />
+      {label ? (
+        <Text
+          numberOfLines={2}
+          style={[
+            styles.text,
+            styles.labelFill,
+            headerAlign === 'center' ? styles.center : null,
+            headerAlign === 'right' ? styles.right : null,
+            headerAlign === 'left' ? styles.left : null,
+          ]}
+        >
+          {column.label}
+        </Text>
+      ) : null}
     </View>
   );
 }

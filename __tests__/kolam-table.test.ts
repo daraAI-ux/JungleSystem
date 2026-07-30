@@ -18,6 +18,7 @@ describe('getKolamTableColumns', () => {
       'Status',
       '',
     ]);
+    expect(columns.filter(column => column.id !== 'actions')).toHaveLength(6);
     expect(columns.map(column => column.align)).toEqual([
       'center',
       'center',
@@ -37,6 +38,41 @@ describe('getKolamTableColumns', () => {
       'center',
     ]);
     expect(columns.find(column => column.id === 'actions')?.label).toBe('');
+  });
+
+  it('fits brand columns from manual widths while keeping six labeled headers centered', () => {
+    const columns = fitKolamDataTableColumns(
+      getKolamTableColumns('brand'),
+      1100,
+      {
+        actionsMinWidth: 64,
+        gap: 16,
+        paddingX: 40,
+        primaryMinWidth: 160,
+        secondaryMinWidth: 72,
+      },
+    );
+
+    expect(columns.map(column => column.label)).toEqual([
+      'Merek',
+      'Negara',
+      'Produk',
+      'Bahan',
+      'Catatan',
+      'Status',
+      '',
+    ]);
+    expect(columns.every(column => (column.headerAlign ?? column.align) === 'center')).toBe(
+      true,
+    );
+    expect(columns.find(column => column.id === 'actions')?.width).toBe(64);
+    const contentTotal = columns.reduce((sum, column) => {
+      if (column.id === 'actions') {
+        return sum;
+      }
+      return sum + (column.width ?? 0);
+    }, 0);
+    expect(contentTotal + 64).toBe(1100 - 40 - 16 * 6);
   });
 
   it('defines live-style table headers for catalog, customer, and sales surfaces', () => {

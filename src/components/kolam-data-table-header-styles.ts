@@ -30,6 +30,9 @@ export const dataTableHeaderStyles = StyleSheet.create({
   cellRight: {
     alignItems: 'flex-end',
   },
+  labelFill: {
+    width: '100%',
+  },
   text: {
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
@@ -41,6 +44,9 @@ export const dataTableHeaderStyles = StyleSheet.create({
   primary: {
     flex: 1,
     minWidth: 180,
+  },
+  left: {
+    textAlign: 'left',
   },
   center: {
     textAlign: 'center',
