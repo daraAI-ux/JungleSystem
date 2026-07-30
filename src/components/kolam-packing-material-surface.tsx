@@ -1,5 +1,5 @@
 import React from 'react';
-import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, StyleSheet, Text, View } from 'react-native';
 import {
   formatPackingDimension,
   formatPackingWeight,
@@ -12,7 +12,12 @@ import {
 } from '../domain/kolam-packing-option';
 import type { KolamUnit } from '../domain/kolam-unit';
 import { getKolamFormSection } from '../domain/kolam-form';
-import { getKolamTableColumns } from '../domain/kolam-table';
+import {
+  fitKolamDataTableColumns,
+  getKolamTableColumns,
+  getKolamTableVisualContract,
+  type KolamTableColumn,
+} from '../domain/kolam-table';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { formatRupiah } from '../lib/money';
 import { getKolamFileUrl } from '../lib/file-url';
@@ -21,16 +26,21 @@ import {
   type KolamPackingMaterialController,
 } from '../hooks/use-kolam-packing-material-controller';
 import { KolamButton } from './kolam-button';
-import { KolamChevronIcon } from './kolam-chevron-icon';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
+import { KolamCheckmarkIcon } from './kolam-checkmark-icon';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
-import { KolamDataTableHeader } from './kolam-data-table-header';
 import {
-  KolamDataTableAmountCell,
-  KolamDataTableMetaCell,
-} from './kolam-data-table-text-cell';
+  getKolamDataTableColumnStyle,
+  KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+  KOLAM_DATA_TABLE_COLUMN_GAP,
+} from './kolam-data-table-column-style';
+import { KolamDataTableHeader } from './kolam-data-table-header';
 import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
+import {
+  KolamDataTableActionsTrack,
+  KolamDataTableMainTrack,
+} from './kolam-data-table-tracks';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import {
   KolamDetailMediaPreview,
@@ -47,6 +57,7 @@ import {
   type KolamEntityDetailAsset,
 } from './kolam-entity-detail-assets-panel';
 import { KolamFormTextField } from './kolam-form-text-field';
+import { KolamInteractionFrame } from './kolam-interaction-frame';
 import { KolamNativeFormSection } from './kolam-native-form-section';
 import { KolamRemoteImage } from './kolam-remote-image';
 import {
@@ -57,14 +68,19 @@ import { appConfig } from '../config/app';
 import { getKolamPackingMaterialUsedIn, uploadKolamPackingMaterialAsset, deleteKolamPackingMaterialAsset } from '../services/kolam-packing-option-api';
 import { KolamControlTabList } from './kolam-control-tab-list';
 import { containsHtmlMarkup, KolamHtmlContent } from './kolam-html-content';
+import { KolamSearchField } from './kolam-search-field';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamStatusBadge } from './kolam-status-badge';
+import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
+import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 
 type PackingSortMode = 'newest' | 'name-asc' | 'name-desc' | 'stock-desc';
 type PackingStatusFilter = 'all' | 'active' | 'inactive';
 type PackingCategoryFilter = 'all' | string;
-type PackingToolbarFilterPanel = 'sort' | 'category' | 'status';
+type PackingListFilterPanel = 'sort' | 'category' | 'status';
+
+const PACKING_FILTER_PANEL_WIDTH = 220;
 
 export function KolamPackingMaterialSurface({
   onRouteChange,
@@ -103,19 +119,63 @@ function KolamPackingMaterialShell({
   controller: KolamPackingMaterialController;
   onRouteChange?: (route: string) => void;
 }) {
+  if (controller.mode === 'list') {
+    return (
+      <View style={styles.surface}>
+        {controller.error ? (
+          <KolamStatusBadge
+            intent="danger"
+            label={controller.error}
+            numberOfLines={2}
+            style={styles.errorBadge}
+          />
+        ) : null}
+        {children}
+      </View>
+    );
+  }
+
+  const contextLabel =
+    controller.mode === 'new'
+      ? 'Bahan kemasan baru'
+      : controller.mode === 'edit'
+        ? `Edit · ${controller.selectedMaterial?.name || controller.form.name || 'Bahan kemasan'}`
+        : controller.selectedMaterial?.name || 'Detail bahan kemasan';
+
   return (
     <View style={styles.surface}>
-      {controller.mode === 'edit' || controller.mode === 'new' ? (
-        <View style={styles.headerActions}>
-          <KolamButton
-            label="Daftar"
-            onPress={() => {
-              controller.onBackToList();
-              onRouteChange?.('/packing-materials');
-            }}
-          />
+      <View style={kolamTableToolbarStyles.shell}>
+        <View style={kolamTableToolbarStyles.row}>
+          <View style={kolamTableToolbarStyles.filters}>
+            <Text numberOfLines={1} style={styles.detailToolbarContext}>
+              {contextLabel}
+            </Text>
+          </View>
+          <View style={kolamTableToolbarStyles.actions}>
+            <KolamButton
+              disabled={controller.loading}
+              label="Refresh"
+              onPress={() => {
+                void controller.onRefresh();
+              }}
+            />
+            <KolamButton
+              label="Daftar"
+              onPress={() => {
+                controller.onBackToList();
+                onRouteChange?.('/packing-materials');
+              }}
+            />
+            {controller.mode === 'detail' ? (
+              <KolamButton
+                intent="primary"
+                label="Edit"
+                onPress={controller.onEdit}
+              />
+            ) : null}
+          </View>
         </View>
-      ) : null}
+      </View>
       {controller.error ? (
         <KolamStatusBadge
           intent="danger"
@@ -140,15 +200,20 @@ function KolamPackingMaterialList({
   const [sortMode, setSortMode] = React.useState<PackingSortMode>('newest');
   const [categoryFilter, setCategoryFilter] =
     React.useState<PackingCategoryFilter>('all');
-  const [activeFilterPanel, setActiveFilterPanel] =
-    React.useState<PackingToolbarFilterPanel | null>(null);
   const [statusFilter, setStatusFilter] =
     React.useState<PackingStatusFilter>('all');
   const [pageSize, setPageSize] = React.useState(10);
   const [page, setPage] = React.useState(1);
+  const [activeFilterPanel, setActiveFilterPanel] =
+    React.useState<PackingListFilterPanel | null>(null);
+  const [panelAnchor, setPanelAnchor] = React.useState({ left: 0, top: 40 });
+  const toolbarRef = React.useRef<View>(null);
+  const sortTriggerRef = React.useRef<View>(null);
+  const categoryTriggerRef = React.useRef<View>(null);
+  const statusTriggerRef = React.useRef<View>(null);
   const [deleteCandidate, setDeleteCandidate] =
     React.useState<KolamPackingMaterial | null>(null);
-  const summary = getPackingSummary(controller.materials);
+  const [tableBodyWidth, setTableBodyWidth] = React.useState(0);
   const filteredMaterials = React.useMemo(
     () =>
       filterPackings(
@@ -169,6 +234,10 @@ function KolamPackingMaterialList({
     (safePage - 1) * pageSize,
     safePage * pageSize,
   );
+  const listColumns = React.useMemo(
+    () => fitPackingListColumns(tableBodyWidth),
+    [tableBodyWidth],
+  );
   const sortFilterOptions = React.useMemo<Array<{ label: string; value: PackingSortMode }>>(
     () => [
       { label: 'Terbaru', value: 'newest' },
@@ -187,7 +256,7 @@ function KolamPackingMaterialList({
   );
   const statusFilterOptions = React.useMemo<Array<{ label: string; value: PackingStatusFilter }>>(
     () => [
-      { label: 'Semua', value: 'all' },
+      { label: 'Semua Status', value: 'all' },
       { label: 'Aktif', value: 'active' },
       { label: 'Nonaktif', value: 'inactive' },
     ],
@@ -205,96 +274,179 @@ function KolamPackingMaterialList({
       ? 'Status'
       : statusFilterOptions.find(option => option.value === statusFilter)
           ?.label ?? 'Status';
-  const toggleFilterPanel = (panel: PackingToolbarFilterPanel) => {
-    setActiveFilterPanel(current => (current === panel ? null : panel));
+
+  const anchorFilterPanel = React.useCallback((panel: PackingListFilterPanel) => {
+    const toolbar = toolbarRef.current;
+    const trigger =
+      panel === 'category'
+        ? categoryTriggerRef.current
+        : panel === 'status'
+          ? statusTriggerRef.current
+          : sortTriggerRef.current;
+    if (!toolbar || !trigger) {
+      return;
+    }
+    toolbar.measureInWindow((toolbarX, toolbarY, toolbarWidth) => {
+      trigger.measureInWindow((x, y, _width, height) => {
+        const maxLeft = Math.max(0, toolbarWidth - PACKING_FILTER_PANEL_WIDTH);
+        const preferredLeft = x - toolbarX;
+        setPanelAnchor({
+          left: Math.min(Math.max(0, preferredLeft), maxLeft),
+          top: y - toolbarY + height + 4,
+        });
+      });
+    });
+  }, []);
+
+  const openFilterPanel = (panel: PackingListFilterPanel) => {
+    setActiveFilterPanel(current => {
+      const next = current === panel ? null : panel;
+      if (next) {
+        requestAnimationFrame(() => anchorFilterPanel(next));
+      }
+      return next;
+    });
   };
 
   React.useEffect(() => {
     setPage(1);
   }, [categoryFilter, pageSize, search, sortMode, statusFilter]);
 
+  React.useEffect(() => {
+    if (!activeFilterPanel) {
+      return;
+    }
+    requestAnimationFrame(() => anchorFilterPanel(activeFilterPanel));
+  }, [activeFilterPanel, anchorFilterPanel]);
+
+  const activeFilterOptions =
+    activeFilterPanel === 'sort'
+      ? sortFilterOptions
+      : activeFilterPanel === 'category'
+        ? categoryFilterOptions
+        : statusFilterOptions;
+  const activeFilterValue =
+    activeFilterPanel === 'sort'
+      ? sortMode
+      : activeFilterPanel === 'category'
+        ? categoryFilter
+        : statusFilter;
+
   return (
     <View style={styles.stack}>
-      <View style={styles.summaryGrid}>
-        <SummaryTile label="Total Kemasan" value={controller.materials.length} />
-        <SummaryTile label="Aktif" value={summary.active} />
-        <SummaryTile label="Nonaktif" value={summary.inactive} />
-        <SummaryTile label="Stok" value={summary.stock} />
-      </View>
-      <View style={styles.toolbarWrap}>
-        <View style={styles.toolbarShell}>
-          <View style={styles.filterRow}>
-            <KolamFormTextField
-              onChangeText={setSearch}
-              placeholder="Cari bahan kemasan..."
-              style={styles.searchInput}
-              value={search}
-            />
-            <PackingFilterTrigger
-              active={activeFilterPanel === 'sort' || sortMode !== 'newest'}
-              label={sortFilterLabel}
-              onPress={() => toggleFilterPanel('sort')}
-            />
-            <PackingFilterTrigger
-              active={activeFilterPanel === 'category' || categoryFilter !== 'all'}
-              label={categoryFilterLabel}
-              onPress={() => toggleFilterPanel('category')}
-            />
-            <PackingFilterTrigger
-              active={activeFilterPanel === 'status' || statusFilter !== 'all'}
-              label={statusFilterLabel}
-              onPress={() => toggleFilterPanel('status')}
-            />
-          </View>
-          <View style={styles.actionRow}>
-            <KolamButton
-              disabled={controller.loading}
-              label="Muat Ulang"
-              onPress={() => {
-                void controller.onRefresh();
-              }}
-              style={styles.toolbarButton}
-            />
-            <KolamButton
-              intent="primary"
-              label="Tambah Kemasan"
-              onPress={() => {
-                controller.onCreateNew();
-                onRouteChange?.('/packing-materials/baru');
-              }}
-              style={styles.toolbarButton}
-            />
+      <View ref={toolbarRef} collapsable={false} style={styles.toolbarWrap}>
+        <View style={kolamTableToolbarStyles.shell}>
+          <View style={kolamTableToolbarStyles.row}>
+            <View
+              style={[kolamTableToolbarStyles.filters, styles.listToolbarFilters]}
+            >
+              <KolamSearchField
+                containerStyle={[
+                  kolamTableToolbarStyles.searchInput,
+                  styles.listToolbarSearch,
+                ]}
+                onChangeText={setSearch}
+                placeholder="Cari bahan kemasan..."
+                value={search}
+              />
+              <View ref={sortTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={sortMode !== 'newest'}
+                  label={sortFilterLabel}
+                  onPress={() => openFilterPanel('sort')}
+                  open={activeFilterPanel === 'sort'}
+                  variant="quiet"
+                />
+              </View>
+              <View ref={categoryTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={categoryFilter !== 'all'}
+                  label={categoryFilterLabel}
+                  onPress={() => openFilterPanel('category')}
+                  open={activeFilterPanel === 'category'}
+                  variant="quiet"
+                />
+              </View>
+              <View ref={statusTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={statusFilter !== 'all'}
+                  label={statusFilterLabel}
+                  onPress={() => openFilterPanel('status')}
+                  open={activeFilterPanel === 'status'}
+                  variant="quiet"
+                />
+              </View>
+            </View>
+            <View style={kolamTableToolbarStyles.actions}>
+              <KolamButton
+                disabled={controller.loading}
+                label="Refresh"
+                onPress={() => {
+                  void controller.onRefresh();
+                }}
+              />
+              <KolamButton
+                intent="primary"
+                label="Baru"
+                onPress={() => {
+                  controller.onCreateNew();
+                  onRouteChange?.('/packing-materials/baru');
+                }}
+              />
+            </View>
           </View>
         </View>
         {activeFilterPanel ? (
-          <PackingFilterPanel
-            onClose={() => setActiveFilterPanel(null)}
-            onSelect={value => {
-              if (activeFilterPanel === 'sort') {
-                setSortMode(value as PackingSortMode);
-              } else if (activeFilterPanel === 'category') {
-                setCategoryFilter(value);
-              } else {
-                setStatusFilter(value as PackingStatusFilter);
-              }
-              setActiveFilterPanel(null);
-            }}
-            options={
-              activeFilterPanel === 'sort'
-                ? sortFilterOptions
-                : activeFilterPanel === 'category'
-                ? categoryFilterOptions
-                : statusFilterOptions
-            }
-            panel={activeFilterPanel}
-            selectedValue={
-              activeFilterPanel === 'sort'
-                ? sortMode
-                : activeFilterPanel === 'category'
-                ? categoryFilter
-                : statusFilter
-            }
-          />
+          <View
+            style={[
+              styles.filterOverlayPanel,
+              {
+                left: panelAnchor.left,
+                top: panelAnchor.top,
+                width: PACKING_FILTER_PANEL_WIDTH,
+              },
+            ]}
+          >
+            {activeFilterOptions.map(option => {
+              const selected = option.value === activeFilterValue;
+              return (
+                <KolamInteractionFrame
+                  accessibilityLabel={option.label}
+                  key={`${activeFilterPanel}-${option.value}`}
+                  onPress={() => {
+                    if (activeFilterPanel === 'sort') {
+                      setSortMode(option.value as PackingSortMode);
+                    } else if (activeFilterPanel === 'category') {
+                      setCategoryFilter(option.value);
+                    } else {
+                      setStatusFilter(option.value as PackingStatusFilter);
+                    }
+                    setActiveFilterPanel(null);
+                  }}
+                  selected={selected}
+                  style={[
+                    styles.filterMenuItem,
+                    selected ? styles.filterMenuItemSelected : null,
+                  ]}
+                >
+                  <Text
+                    numberOfLines={1}
+                    style={[
+                      styles.filterMenuItemLabel,
+                      selected ? styles.filterMenuItemLabelSelected : null,
+                    ]}
+                  >
+                    {option.label}
+                  </Text>
+                  {selected ? (
+                    <KolamCheckmarkIcon color={V.colors.primary} size="sm" />
+                  ) : (
+                    <View style={styles.filterMenuItemCheckSpacer} />
+                  )}
+                </KolamInteractionFrame>
+              );
+            })}
+          </View>
         ) : null}
       </View>
       <KolamCatalogListTableShell
@@ -330,11 +482,13 @@ function KolamPackingMaterialList({
               </View>
             ) : null}
           </KolamTableFooterControls>
-        }>
-        <KolamDataTableHeader columns={getKolamTableColumns('packing-material')} />
+        }
+        onBodyWidthChange={setTableBodyWidth}>
+        <KolamDataTableHeader columns={listColumns} />
         {pagedMaterials.length ? (
           pagedMaterials.map(item => (
             <KolamPackingMaterialRow
+              columns={listColumns}
               item={item}
               key={item.id}
               onDelete={() => setDeleteCandidate(item)}
@@ -385,95 +539,14 @@ function KolamPackingMaterialList({
   );
 }
 
-function PackingFilterTrigger({
-  active,
-  label,
-  onPress,
-}: {
-  active: boolean;
-  label: string;
-  onPress: () => void;
-}) {
-  return (
-    <KolamButton
-      icon={
-        <KolamChevronIcon
-          color={active ? V.colors.primaryFg : V.colors.success}
-          direction="down"
-          size="menu-sm"
-        />
-      }
-      intent={active ? 'primary' : 'secondary'}
-      label={label}
-      onPress={onPress}
-      style={[styles.filterTrigger, active && styles.filterTriggerActive]}
-      textStyle={[
-        styles.filterTriggerText,
-        active && styles.filterTriggerTextActive,
-      ]}
-    />
-  );
-}
-
-function PackingFilterPanel({
-  onClose,
-  onSelect,
-  options,
-  panel,
-  selectedValue,
-}: {
-  onClose: () => void;
-  onSelect: (value: string) => void;
-  options: Array<{ label: string; value: string }>;
-  panel: PackingToolbarFilterPanel;
-  selectedValue: string;
-}) {
-  return (
-    <View
-      style={[styles.filterOverlayPanel, getPackingFilterOverlayStyle(panel)]}>
-      <ScrollView
-        contentContainerStyle={styles.filterPanelContent}
-        keyboardShouldPersistTaps="handled"
-        style={styles.filterPanelScroll}>
-        {options.map(option => {
-          const selected = option.value === selectedValue;
-
-          return (
-            <KolamButton
-              intent={selected ? 'primary' : 'plain'}
-              key={option.value}
-              label={option.label}
-              onPress={() => onSelect(option.value)}
-              style={styles.filterPanelOption}
-            />
-          );
-        })}
-      </ScrollView>
-      <View style={styles.filterPanelFooter}>
-        <KolamButton label="Tutup" onPress={onClose} />
-      </View>
-    </View>
-  );
-}
-
-function getPackingFilterOverlayStyle(panel: PackingToolbarFilterPanel) {
-  switch (panel) {
-    case 'sort':
-      return styles.filterPanelSort;
-    case 'status':
-      return styles.filterPanelStatus;
-    case 'category':
-    default:
-      return styles.filterPanelCategory;
-  }
-}
-
 function KolamPackingMaterialRow({
+  columns,
   item,
   onDelete,
   onEdit,
   onSelect,
 }: {
+  columns: KolamTableColumn[];
   item: KolamPackingMaterial;
   onDelete: () => void;
   onEdit: () => void;
@@ -483,70 +556,146 @@ function KolamPackingMaterialRow({
   const photoUri = getKolamFileUrl(item.photos[0]);
   const description = item.description.trim();
   const effectiveHpp = getPackingEffectiveHpp(item);
+  const columnOf = React.useCallback(
+    (id: (typeof columns)[number]['id']) =>
+      columns.find(column => column.id === id),
+    [columns],
+  );
+  const photoColumn = columnOf('meta');
+  const primaryColumn = columnOf('primary');
+  const categoryColumn = columnOf('children');
+  const dimensionColumn = columnOf('notes');
+  const weightColumn = columnOf('marketplace');
+  const hppColumn = columnOf('amount');
+  const stockColumn = columnOf('raws');
+  const statusColumn = columnOf('status');
+  const actionsColumn = columnOf('actions');
 
   return (
-    <KolamDataTableRowFrame style={actionMenuOpen && styles.activeActionRow}>
-      <View style={styles.photoCell}>
-        {photoUri ? (
-          <KolamRemoteImage
-            accessibilityLabel={`Foto ${item.name}`}
-            previewItems={item.photos.map((photo, index) => ({
-              id: `${item.id}-${index}`,
-              title: `${item.name} ${index + 1}`,
-              uri: getKolamFileUrl(photo) ?? '',
-            }))}
-            resizeMode="cover"
-            scope="packing-material"
-            sourceUri={photoUri}
-            style={styles.photoThumb}
-          />
-        ) : (
-          <View style={styles.photoPlaceholder}>
-            <Text style={styles.photoPlaceholderText}>-</Text>
-          </View>
-        )}
-      </View>
-      <View style={styles.nameCell}>
-        <KolamCopyStack
-          items={[
-            { id: 'name', text: item.name, style: styles.rowTitle },
-            ...(description
-              ? [
-                  {
-                    id: 'description',
-                    text: description,
-                    style: styles.rowMeta,
-                  },
-                ]
-              : []),
+    <KolamDataTableRowFrame
+      style={actionMenuOpen ? styles.activeActionRow : undefined}
+    >
+      <KolamDataTableMainTrack style={styles.mainTrackVisible}>
+        <View
+          style={[
+            styles.listCell,
+            photoColumn ? getKolamDataTableColumnStyle(photoColumn) : null,
           ]}
-        />
-      </View>
-      <View style={styles.categoryCell}>
-        <KolamStatusBadge
-          intent={getCategoryIntent(item.category)}
-          label={getPackingCategoryLabel(item.category)}
-        />
-      </View>
-      <KolamDataTableMetaCell style={styles.dimensionCell}>
-        {formatPackingDimension(item)}
-      </KolamDataTableMetaCell>
-      <KolamDataTableMetaCell style={styles.weightCell}>
-        {formatPackingWeight(item)}
-      </KolamDataTableMetaCell>
-      <KolamDataTableAmountCell style={styles.hppCell}>
-        {effectiveHpp > 0 ? formatRupiah(effectiveHpp) : '-'}
-      </KolamDataTableAmountCell>
-      <KolamDataTableAmountCell style={styles.stockCell}>
-        {item.stock}
-      </KolamDataTableAmountCell>
-      <View style={styles.statusCell}>
-        <KolamStatusBadge
-          intent={item.status === 'active' ? 'success' : 'warning'}
-          label={item.status === 'active' ? 'Aktif' : 'Nonaktif'}
-        />
-      </View>
-      <View style={styles.overflowCell}>
+        >
+          {photoUri ? (
+            <KolamRemoteImage
+              accessibilityLabel={`Foto ${item.name}`}
+              previewItems={item.photos.map((photo, index) => ({
+                id: `${item.id}-${index}`,
+                title: `${item.name} ${index + 1}`,
+                uri: getKolamFileUrl(photo) ?? '',
+              }))}
+              resizeMode="cover"
+              scope="packing-material"
+              sourceUri={photoUri}
+              style={styles.photoThumb}
+            />
+          ) : (
+            <View style={styles.photoPlaceholder}>
+              <Text style={styles.photoPlaceholderText}>-</Text>
+            </View>
+          )}
+        </View>
+        <View
+          style={[
+            styles.listCell,
+            styles.identityCell,
+            primaryColumn ? getKolamDataTableColumnStyle(primaryColumn) : null,
+          ]}
+        >
+          <KolamCopyStack
+            containerStyle={styles.nameCopy}
+            items={[
+              { id: 'name', text: item.name, style: styles.rowTitle },
+              ...(description
+                ? [
+                    {
+                      id: 'description',
+                      text: description,
+                      style: styles.rowMeta,
+                    },
+                  ]
+                : []),
+            ]}
+          />
+        </View>
+        <View
+          style={[
+            styles.listCell,
+            categoryColumn ? getKolamDataTableColumnStyle(categoryColumn) : null,
+          ]}
+        >
+          <KolamStatusBadge
+            intent={getCategoryIntent(item.category)}
+            label={getPackingCategoryLabel(item.category)}
+            style={styles.centerBadge}
+          />
+        </View>
+        <View
+          style={[
+            styles.listCell,
+            dimensionColumn ? getKolamDataTableColumnStyle(dimensionColumn) : null,
+          ]}
+        >
+          <Text numberOfLines={1} style={styles.cellText}>
+            {formatPackingDimension(item)}
+          </Text>
+        </View>
+        <View
+          style={[
+            styles.listCell,
+            weightColumn ? getKolamDataTableColumnStyle(weightColumn) : null,
+          ]}
+        >
+          <Text numberOfLines={1} style={styles.cellText}>
+            {formatPackingWeight(item)}
+          </Text>
+        </View>
+        <View
+          style={[
+            styles.listCell,
+            hppColumn ? getKolamDataTableColumnStyle(hppColumn) : null,
+          ]}
+        >
+          <Text numberOfLines={1} style={styles.cellText}>
+            {effectiveHpp > 0 ? formatRupiah(effectiveHpp) : '-'}
+          </Text>
+        </View>
+        <View
+          style={[
+            styles.listCell,
+            stockColumn ? getKolamDataTableColumnStyle(stockColumn) : null,
+          ]}
+        >
+          <Text numberOfLines={1} style={styles.cellText}>
+            {String(item.stock)}
+          </Text>
+        </View>
+        <View
+          style={[
+            styles.listCell,
+            statusColumn ? getKolamDataTableColumnStyle(statusColumn) : null,
+          ]}
+        >
+          <KolamStatusBadge
+            intent={item.status === 'active' ? 'success' : 'warning'}
+            label={item.status === 'active' ? 'Aktif' : 'Nonaktif'}
+            style={styles.centerBadge}
+          />
+        </View>
+      </KolamDataTableMainTrack>
+      <KolamDataTableActionsTrack
+        style={styles.actionsTrack}
+        width={Math.max(
+          actionsColumn?.width ?? KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+          KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+        )}
+      >
         <KolamOverflowMenuButton
           accessibilityLabel={`Menu ${item.name}`}
           actions={[
@@ -556,7 +705,7 @@ function KolamPackingMaterialRow({
           ]}
           onOpenChange={setActionMenuOpen}
         />
-      </View>
+      </KolamDataTableActionsTrack>
     </KolamDataTableRowFrame>
   );
 }
@@ -601,18 +750,6 @@ function KolamPackingMaterialDetail({
           </Text>
         </View>
         <View style={styles.detailTopActions}>
-          <KolamButton
-            label="Daftar"
-            onPress={() => {
-              controller.onBackToList();
-              onRouteChange?.('/packing-materials');
-            }}
-          />
-          <KolamButton
-            intent="primary"
-            label="Rubah"
-            onPress={controller.onEdit}
-          />
           <KolamButton
             disabled={item.status !== 'active' || controller.saving}
             intent="danger"
@@ -1436,19 +1573,6 @@ function openPackingAssetDownload(packingId: string, assetId: string) {
   );
 }
 
-function SummaryTile({ label, value }: { label: string; value: number }) {
-  return (
-    <View style={styles.summaryTile}>
-      <KolamCopyStack
-        items={[
-          { id: 'value', text: value, style: styles.summaryValue },
-          { id: 'label', text: label, style: styles.summaryLabel },
-        ]}
-      />
-    </View>
-  );
-}
-
 function FieldShell({
   children,
   label,
@@ -1471,21 +1595,6 @@ function FormDivider({ title }: { title: string }) {
     <KolamCopyStack
       items={[{ id: 'title', text: title, style: styles.formDividerTitle }]}
     />
-  );
-}
-
-function getPackingSummary(items: KolamPackingMaterial[]) {
-  return items.reduce(
-    (summary, item) => {
-      if (item.status === 'active') {
-        summary.active += 1;
-      } else {
-        summary.inactive += 1;
-      }
-      summary.stock += item.stock;
-      return summary;
-    },
-    { active: 0, inactive: 0, stock: 0 },
   );
 }
 
@@ -1549,6 +1658,23 @@ function getPackingTime(item: KolamPackingMaterial) {
 
 function getPackingRoute(item: KolamPackingMaterial) {
   return `/packing-materials/${encodeURIComponent(item.name || item.id)}`;
+}
+
+function fitPackingListColumns(containerWidth: number): KolamTableColumn[] {
+  // Prefer shared fitter so floors cannot exceed body budget (weighted Math.max
+  // floors previously overflowed MainTrack → cells piled onto neighbors).
+  // Preferred widths in `packing-material` columns already bias Nama.
+  return fitKolamDataTableColumns(
+    getKolamTableColumns('packing-material'),
+    containerWidth,
+    {
+      actionsMinWidth: KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+      gap: KOLAM_DATA_TABLE_COLUMN_GAP,
+      paddingX: getKolamTableVisualContract().body.cellPaddingX * 2,
+      primaryMinWidth: 160,
+      secondaryMinWidth: 56,
+    },
+  );
 }
 
 function createUnitOptions(units: KolamUnit[]) {
@@ -2017,10 +2143,15 @@ const styles = StyleSheet.create({
   surface: {
     gap: 16,
   },
-  headerActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 8,
+  detailToolbarContext: {
+    color: V.colors.fg,
+    flexShrink: 1,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+    minWidth: 0,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
   },
   errorBadge: {
     alignSelf: 'flex-start',
@@ -2030,148 +2161,62 @@ const styles = StyleSheet.create({
     overflow: 'visible',
     position: 'relative',
   },
-  summaryGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  summaryTile: {
-    minWidth: 220,
-    flex: 1,
-    padding: 16,
-    borderRadius: V.radius.lg,
-    borderColor: V.colors.border,
-    borderWidth: 1,
-    backgroundColor: V.colors.bg,
-  },
-  summaryValue: {
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 24,
-    fontWeight: '800',
-    lineHeight: 30,
-  },
-  summaryLabel: {
-    marginTop: 4,
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
-    fontWeight: '700',
-    lineHeight: 16,
-  },
   toolbarWrap: {
     position: 'relative',
     zIndex: 100000,
     elevation: 1000,
   },
-  toolbarShell: {
-    position: 'relative',
-    zIndex: 100001,
-    elevation: 1001,
-    flexDirection: 'row',
+  listToolbarFilters: {
     flexWrap: 'nowrap',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 6,
-    padding: 4,
-    borderWidth: 1,
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    backgroundColor: V.colors.bg,
   },
-  filterRow: {
-    position: 'relative',
-    zIndex: 1001,
-    elevation: 101,
-    flexDirection: 'row',
-    flexWrap: 'nowrap',
-    alignItems: 'center',
-    flex: 1,
-    gap: 6,
-    minWidth: 0,
-  },
-  actionRow: {
-    flexDirection: 'row',
-    flexShrink: 0,
-    flexWrap: 'nowrap',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: 6,
-    paddingLeft: 8,
-    borderLeftWidth: 1,
-    borderLeftColor: V.colors.border,
-  },
-  searchInput: {
-    flexBasis: 180,
+  listToolbarSearch: {
     flexGrow: 1,
+    flexShrink: 1,
     maxWidth: 260,
-    minWidth: 150,
-  },
-  filterTrigger: {
-    backgroundColor: V.colors.successSoft,
-    borderColor: V.colors.success,
-    flexBasis: 0,
-    flexGrow: 1,
-    minHeight: 34,
-    minWidth: 128,
-    paddingHorizontal: 8,
-  },
-  filterTriggerActive: {
-    backgroundColor: V.colors.success,
-    borderColor: V.colors.success,
-  },
-  filterTriggerText: {
-    color: V.colors.success,
-    fontWeight: '800',
-  },
-  filterTriggerTextActive: {
-    color: V.colors.primaryFg,
+    minWidth: 120,
   },
   filterOverlayPanel: {
     backgroundColor: V.colors.bg,
     borderColor: V.colors.border,
-    borderRadius: 8,
+    borderRadius: 10,
     borderWidth: 1,
     elevation: 1200,
+    gap: 2,
     padding: 6,
     position: 'absolute',
     shadowColor: V.colors.fg,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-    top: 48,
-    width: 240,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 18,
     zIndex: 120000,
   },
-  filterPanelSort: {
-    left: 236,
-  },
-  filterPanelCategory: {
-    left: 390,
-  },
-  filterPanelStatus: {
-    left: 544,
-    width: 220,
-  },
-  filterPanelScroll: {
-    maxHeight: 240,
-  },
-  filterPanelContent: {
-    gap: 4,
-  },
-  filterPanelOption: {
-    justifyContent: 'flex-start',
-  },
-  filterPanelFooter: {
-    alignItems: 'flex-end',
-    borderTopColor: V.colors.border,
-    borderTopWidth: 1,
-    marginTop: 6,
-    paddingTop: 6,
-  },
-  toolbarButton: {
-    minHeight: 34,
+  filterMenuItem: {
+    alignItems: 'center',
+    borderRadius: 8,
+    flexDirection: 'row',
+    gap: 10,
+    justifyContent: 'space-between',
+    minHeight: 36,
     paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  filterMenuItemSelected: {
+    backgroundColor: V.colors.primarySoft,
+  },
+  filterMenuItemLabel: {
+    color: V.colors.fg,
+    flex: 1,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  filterMenuItemLabelSelected: {
+    color: V.colors.primary,
+    fontWeight: '800',
+  },
+  filterMenuItemCheckSpacer: {
+    height: 14,
+    width: 14,
   },
   emptyWrap: {
     minHeight: 260,
@@ -2181,8 +2226,22 @@ const styles = StyleSheet.create({
     zIndex: 2000,
     elevation: 100,
   },
-  photoCell: {
-    width: 72,
+  mainTrackVisible: {
+    overflow: 'visible',
+  },
+  listCell: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 0,
+    overflow: 'hidden',
+    paddingVertical: 4,
+  },
+  identityCell: {
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+  },
+  actionsTrack: {
+    alignItems: 'center',
   },
   photoThumb: {
     width: 46,
@@ -2204,9 +2263,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '800',
   },
-  nameCell: {
-    flex: 1,
-    minWidth: 220,
+  nameCopy: {
+    minWidth: 0,
+    width: '100%',
   },
   rowTitle: {
     color: V.colors.fg,
@@ -2214,6 +2273,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '800',
     lineHeight: 18,
+    textAlign: 'left',
   },
   rowMeta: {
     marginTop: 2,
@@ -2222,30 +2282,18 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     lineHeight: 15,
+    textAlign: 'left',
   },
-  categoryCell: {
-    width: 120,
-    alignItems: 'flex-start',
+  cellText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+    textAlign: 'center',
+    width: '100%',
   },
-  dimensionCell: {
-    width: 128,
-  },
-  weightCell: {
-    width: 96,
-  },
-  hppCell: {
-    width: 116,
-  },
-  stockCell: {
-    width: 72,
-  },
-  statusCell: {
-    width: 104,
-    alignItems: 'flex-end',
-  },
-  overflowCell: {
-    width: 56,
-    alignItems: 'flex-end',
+  centerBadge: {
+    alignSelf: 'center',
   },
   footerWrap: {
     marginTop: 14,
