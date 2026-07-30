@@ -14,6 +14,7 @@ import { isKolamIucnStatusRoute } from '../domain/kolam-iucn-status';
 import { isKolamLocationRoute } from '../domain/kolam-location';
 import { isKolamPackingMaterialRoute } from '../domain/kolam-packing-option';
 import { isKolamProductRoute } from '../domain/kolam-product';
+import { isKolamProductionRoute } from '../domain/kolam-production';
 import { isKolamPurchaseOrderRoute } from '../domain/kolam-purchase-order';
 import { isKolamTagRoute } from '../domain/kolam-tag';
 import { isKolamSpeciesRoute } from '../domain/kolam-species';
@@ -41,6 +42,7 @@ import { KolamIucnStatusSurface } from './kolam-iucn-status-surface';
 import { KolamLocationSurface } from './kolam-location-surface';
 import { KolamPackingMaterialSurface } from './kolam-packing-material-surface';
 import { KolamProductSurface } from './kolam-product-surface';
+import { KolamProductionSurface } from './kolam-production-surface';
 import { KolamPurchaseOrderSurface } from './kolam-purchase-order-surface';
 import { KolamSpeciesSurface } from './kolam-species-surface';
 import { KolamStockTransactionSurface } from './kolam-stock-transaction-surface';
@@ -229,6 +231,14 @@ export function KolamWorkspaceSurfaceComponent({
         if (isKolamPurchaseOrderRoute(activeNavigationItem.route.split('?')[0])) {
           return (
             <KolamPurchaseOrderSurface
+              onRouteChange={onDashboardRoute}
+              route={activeNavigationItem.route}
+            />
+          );
+        }
+        if (isKolamProductionRoute(activeNavigationItem.route.split('?')[0])) {
+          return (
+            <KolamProductionSurface
               onRouteChange={onDashboardRoute}
               route={activeNavigationItem.route}
             />

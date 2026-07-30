@@ -10,6 +10,8 @@ export type KolamTableId =
   | 'location-enclosure'
   | 'location-product'
   | 'packing-material'
+  | 'production'
+  | 'production-materials'
   | 'purchase-order'
   | 'purchase-order-items'
   | 'purchase-order-form-items'
@@ -289,6 +291,26 @@ const kolamTableColumns: Record<KolamTableId, KolamTableColumn[]> = {
     { id: 'children', label: 'Total order', align: 'right', width: 110 },
     { id: 'amount', label: 'Total value order', align: 'right', width: 140 },
     { id: 'notes', label: 'Terakhir purchase', align: 'left', width: 140 },
+  ],
+  production: [
+    { id: 'primary', label: 'Batch ID', align: 'left' },
+    { id: 'meta', label: 'Target', align: 'left', width: 180 },
+    { id: 'children', label: 'Qty', align: 'right', width: 80 },
+    { id: 'amount', label: 'Estimasi Biaya', align: 'right', width: 140 },
+    { id: 'status', label: 'Status', align: 'right', width: 120 },
+    { id: 'marketplace', label: 'Dibuat', align: 'left', width: 140 },
+    { id: 'actions', label: '', align: 'right', width: 64 },
+  ],
+  'production-materials': [
+    { id: 'primary', label: 'Komponen', align: 'left' },
+    { id: 'meta', label: 'Varian', align: 'left', width: 120 },
+    { id: 'notes', label: 'SKU / Kode', align: 'left', width: 120 },
+    { id: 'products', label: 'Satuan', align: 'left', width: 80 },
+    { id: 'children', label: 'Qty Dibutuhkan', align: 'right', width: 100 },
+    { id: 'raws', label: 'Stok Tersedia', align: 'right', width: 100 },
+    { id: 'status', label: 'Kecukupan', align: 'right', width: 100 },
+    { id: 'price', label: 'Harga / Satuan', align: 'right', width: 120 },
+    { id: 'amount', label: 'Subtotal', align: 'right', width: 130 },
   ],
   'purchase-order': [
     { id: 'primary', label: 'Kode PO', align: 'left' },
