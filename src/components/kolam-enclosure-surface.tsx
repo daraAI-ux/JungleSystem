@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  FlatList,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -16,7 +15,11 @@ import {
   type KolamEnclosureDashboardSpeciesRow,
   type KolamEnclosureLivestockFilter,
 } from '../domain/kolam-enclosure';
-import type {KolamTableColumn} from '../domain/kolam-table';
+import {
+  getKolamTableColumns,
+  getKolamTableVisualContract,
+  type KolamTableColumn,
+} from '../domain/kolam-table';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {getKolamFileUrl} from '../lib/file-url';
 import {
@@ -26,9 +29,19 @@ import {
 import {KolamButton} from './kolam-button';
 import {KolamCatalogListTableShell} from './kolam-catalog-list-table-shell';
 import {KolamCopyStack} from './kolam-copy-stack';
+import {
+  getKolamDataTableColumnStyle,
+  KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+  KOLAM_DATA_TABLE_COLUMN_GAP,
+} from './kolam-data-table-column-style';
 import {KolamDataTableHeader} from './kolam-data-table-header';
 import {KolamDataTableRowFrame} from './kolam-data-table-row-frame';
 import {
+  KolamDataTableActionsTrack,
+  KolamDataTableMainTrack,
+} from './kolam-data-table-tracks';
+import {
+  KolamOverflowMenuButton,
   KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import {KolamEmptyState} from './kolam-empty-state';
@@ -43,17 +56,6 @@ type EnclosureFilterPanel = 'type' | 'livestock' | null;
 const ENCLOSURE_FILTER_PANEL_WIDTH = 232;
 const DASHBOARD_SPECIES_PAGE_SIZE = 12;
 const DASHBOARD_DEATH_PAGE_SIZE = 10;
-
-const ENCLOSURE_TABLE_COLUMNS: KolamTableColumn[] = [
-  {id: 'meta', label: '', align: 'left', width: 64},
-  {id: 'children', label: 'Kode', align: 'left', width: 118},
-  {id: 'primary', label: 'Nama', align: 'left'},
-  {id: 'notes', label: 'Tipe', align: 'left', width: 132},
-  {id: 'products', label: 'Livestock', align: 'left', width: 116},
-  {id: 'marketplace', label: 'PIC', align: 'left', width: 150},
-  {id: 'status', label: 'Status', align: 'left', width: 112},
-  {id: 'actions', label: '', align: 'right', width: 64},
-];
 
 const DASHBOARD_SPECIES_COLUMNS: KolamTableColumn[] = [
   {id: 'meta', label: '', align: 'left', width: 56},
@@ -406,17 +408,13 @@ function KolamEnclosureTable({
   controller: KolamEnclosureController;
   onRouteChange?: (route: string) => void;
 }) {
+  const [tableBodyWidth, setTableBodyWidth] = React.useState(0);
+  const listColumns = React.useMemo(
+    () => fitEnclosureListColumns(tableBodyWidth),
+    [tableBodyWidth],
+  );
   const pageCount = Math.max(1, controller.pagination.totalPages);
   const safePage = Math.min(Math.max(controller.pagination.page, 1), pageCount);
-  const renderRow = React.useCallback(
-    ({item}: {item: KolamEnclosure}) => (
-      <KolamEnclosureRow
-        enclosure={item}
-        onSelect={() => onRouteChange?.(`${KOLAM_ENCLOSURE_ROOT}/${item.id}`)}
-      />
-    ),
-    [onRouteChange],
-  );
 
   return (
     <KolamCatalogListTableShell
@@ -456,116 +454,195 @@ function KolamEnclosureTable({
           ) : null}
         </KolamTableFooterControls>
       }
+      onBodyWidthChange={setTableBodyWidth}
       style={styles.tableFrame}
     >
-      <FlatList
-        contentContainerStyle={styles.listContent}
-        data={controller.enclosures}
-        keyExtractor={item => item.id || item.code}
-        ListEmptyComponent={
-          <View style={styles.emptyWrap}>
-            <KolamEmptyState
-              compact
-              message={getListEmptyMessage(controller)}
-              title={
-                controller.loading
-                  ? 'Memuat enclosure...'
-                  : controller.error
-                    ? 'Gagal memuat enclosure'
-                    : 'Belum ada enclosure'
-              }
-            />
-          </View>
-        }
-        ListHeaderComponent={
-          <KolamDataTableHeader columns={ENCLOSURE_TABLE_COLUMNS} />
-        }
-        renderItem={renderRow}
-        style={styles.listFlatList}
-      />
+      <KolamDataTableHeader columns={listColumns} />
+      {controller.enclosures.length ? (
+        controller.enclosures.map(item => (
+          <KolamEnclosureRow
+            columns={listColumns}
+            enclosure={item}
+            key={item.id || item.code}
+            onSelect={() =>
+              onRouteChange?.(`${KOLAM_ENCLOSURE_ROOT}/${item.id}`)
+            }
+          />
+        ))
+      ) : (
+        <View style={styles.emptyWrap}>
+          <KolamEmptyState
+            compact
+            message={getListEmptyMessage(controller)}
+            title={
+              controller.loading
+                ? 'Memuat enclosure…'
+                : controller.error
+                  ? 'Gagal memuat enclosure'
+                  : 'Belum ada enclosure'
+            }
+          />
+        </View>
+      )}
     </KolamCatalogListTableShell>
   );
 }
 
 function KolamEnclosureRow({
+  columns,
   enclosure,
   onSelect,
 }: {
+  columns: ReturnType<typeof getKolamTableColumns>;
   enclosure: KolamEnclosure;
   onSelect: () => void;
 }) {
+  const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
   const imageUri = getKolamFileUrl(enclosure.coverPhotoUrl);
   const sizeText = formatEnclosureSize(enclosure);
+  const columnOf = React.useCallback(
+    (id: (typeof columns)[number]['id']) =>
+      columns.find(column => column.id === id),
+    [columns],
+  );
+  const photoColumn = columnOf('meta');
+  const codeColumn = columnOf('children');
+  const primaryColumn = columnOf('primary');
+  const typeColumn = columnOf('notes');
+  const livestockColumn = columnOf('products');
+  const picColumn = columnOf('marketplace');
+  const statusColumn = columnOf('status');
+  const actionsColumn = columnOf('actions');
 
   return (
-    <KolamDataTableRowFrame>
-      <View style={styles.photoCell}>
-        {imageUri ? (
-          <KolamRemoteImage
-            accessibilityLabel={`Foto ${enclosure.name || enclosure.code}`}
-            resizeMode="cover"
-            scope="enclosure-list"
-            sourceUri={imageUri}
-            style={styles.photo}
-          />
-        ) : (
-          <Text style={styles.mutedText}>-</Text>
-        )}
-      </View>
-      <View style={[styles.cell, {width: widthOf('children')}]}>
-        <Text numberOfLines={1} style={styles.cellTextStrong}>
-          {enclosure.code || '-'}
-        </Text>
-      </View>
-      <Pressable onPress={onSelect} style={[styles.cell, styles.primaryCell]}>
-        <Text numberOfLines={1} style={styles.rowTitle}>
-          {enclosure.name || enclosure.code || '-'}
-        </Text>
-        <Text numberOfLines={1} style={styles.rowMeta}>
-          {[
-            enclosure.location?.name,
-            sizeText,
-          ]
-            .filter(Boolean)
-            .join(' / ') || '-'}
-        </Text>
-      </Pressable>
-      <View style={[styles.cell, {width: widthOf('notes')}]}>
-        <Text numberOfLines={1} style={styles.cellText}>
-          {enclosure.type || '-'}
-        </Text>
-        {enclosure.aquariumWaterType ? (
-          <Text numberOfLines={1} style={styles.rowMeta}>
-            {getAquariumWaterLabel(enclosure.aquariumWaterType)}
+    <KolamDataTableRowFrame
+      style={actionMenuOpen ? styles.activeActionRow : undefined}
+    >
+      <KolamDataTableMainTrack>
+        <View
+          style={[
+            styles.listCell,
+            styles.photoCell,
+            photoColumn ? getKolamDataTableColumnStyle(photoColumn) : null,
+          ]}
+        >
+          {imageUri ? (
+            <KolamRemoteImage
+              accessibilityLabel={`Foto ${enclosure.name || enclosure.code}`}
+              resizeMode="cover"
+              scope="enclosure-list"
+              sourceUri={imageUri}
+              style={styles.photo}
+            />
+          ) : (
+            <Text style={styles.mutedText}>-</Text>
+          )}
+        </View>
+
+        <View
+          style={[
+            styles.listCell,
+            codeColumn ? getKolamDataTableColumnStyle(codeColumn) : null,
+          ]}
+        >
+          <Text numberOfLines={1} style={styles.cellTextStrong}>
+            {enclosure.code || '-'}
           </Text>
-        ) : null}
-      </View>
-      <View style={[styles.cell, {width: widthOf('products')}]}>
-        <Text numberOfLines={1} style={styles.cellText}>
-          {getLivestockPurposeLabel(enclosure.livestockPurpose)}
-        </Text>
-      </View>
-      <View style={[styles.cell, {width: widthOf('marketplace')}]}>
-        <Text numberOfLines={2} style={styles.cellText}>
-          {enclosure.assignedTo?.displayName || '-'}
-        </Text>
-      </View>
-      <View style={[styles.cell, styles.statusCell, {width: widthOf('status')}]}>
-        <KolamStatusBadge
-          intent={getEnclosureStatusIntent(enclosure.status)}
-          label={enclosure.status || 'active'}
-        />
-        {enclosure.customer ? (
+        </View>
+
+        <Pressable
+          onPress={onSelect}
+          style={[
+            styles.listCell,
+            styles.identityCell,
+            primaryColumn ? getKolamDataTableColumnStyle(primaryColumn) : null,
+          ]}
+        >
+          <Text numberOfLines={1} style={styles.rowTitle}>
+            {enclosure.name || enclosure.code || '-'}
+          </Text>
+          <Text numberOfLines={1} style={styles.rowMeta}>
+            {[enclosure.location?.name, sizeText].filter(Boolean).join(' / ') ||
+              '-'}
+          </Text>
+        </Pressable>
+
+        <View
+          style={[
+            styles.listCell,
+            typeColumn ? getKolamDataTableColumnStyle(typeColumn) : null,
+          ]}
+        >
+          <Text numberOfLines={1} style={styles.cellText}>
+            {enclosure.type || '-'}
+          </Text>
+          {enclosure.aquariumWaterType ? (
+            <Text numberOfLines={1} style={styles.rowMeta}>
+              {getAquariumWaterLabel(enclosure.aquariumWaterType)}
+            </Text>
+          ) : null}
+        </View>
+
+        <View
+          style={[
+            styles.listCell,
+            livestockColumn
+              ? getKolamDataTableColumnStyle(livestockColumn)
+              : null,
+          ]}
+        >
+          <Text numberOfLines={1} style={styles.cellText}>
+            {getLivestockPurposeLabel(enclosure.livestockPurpose)}
+          </Text>
+        </View>
+
+        <View
+          style={[
+            styles.listCell,
+            picColumn ? getKolamDataTableColumnStyle(picColumn) : null,
+          ]}
+        >
+          <Text numberOfLines={2} style={styles.cellText}>
+            {enclosure.assignedTo?.displayName || '-'}
+          </Text>
+        </View>
+
+        <View
+          style={[
+            styles.listCell,
+            styles.statusCell,
+            statusColumn ? getKolamDataTableColumnStyle(statusColumn) : null,
+          ]}
+        >
           <KolamStatusBadge
-            intent="success"
-            label="Customer"
-            textStyle={styles.badgeTextSm}
+            intent={getEnclosureStatusIntent(enclosure.status)}
+            label={enclosure.status || 'active'}
+            style={styles.centerBadge}
           />
-        ) : null}
-      </View>
-      <View style={[styles.actionCell, {width: widthOf('actions')}]}>
-        <KolamButton label="Lihat" onPress={onSelect} />
-      </View>
+          {enclosure.customer ? (
+            <KolamStatusBadge
+              intent="success"
+              label="Customer"
+              style={styles.centerBadge}
+              textStyle={styles.badgeTextSm}
+            />
+          ) : null}
+        </View>
+      </KolamDataTableMainTrack>
+
+      <KolamDataTableActionsTrack
+        style={styles.actionsTrack}
+        width={Math.max(
+          actionsColumn?.width ?? KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+          KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+        )}
+      >
+        <KolamOverflowMenuButton
+          accessibilityLabel={`Aksi ${enclosure.name || enclosure.code}`}
+          actions={[{label: 'Lihat', onPress: onSelect}]}
+          onOpenChange={setActionMenuOpen}
+        />
+      </KolamDataTableActionsTrack>
     </KolamDataTableRowFrame>
   );
 }
@@ -1128,8 +1205,43 @@ function getListEmptyMessage(controller: KolamEnclosureController) {
   return 'Coba ubah tab, pencarian, atau filter.';
 }
 
-function widthOf(id: KolamTableColumn['id']) {
-  return ENCLOSURE_TABLE_COLUMNS.find(column => column.id === id)?.width;
+function fitEnclosureListColumns(containerWidth: number): KolamTableColumn[] {
+  const base = getKolamTableColumns('enclosure');
+  if (containerWidth <= 0) {
+    return base;
+  }
+
+  const gap = KOLAM_DATA_TABLE_COLUMN_GAP;
+  const paddingX = getKolamTableVisualContract().body.cellPaddingX * 2;
+  const actionsWidth = KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH;
+  const gapsTotal = gap * Math.max(0, base.length - 1);
+  const contentBudget = Math.max(
+    0,
+    containerWidth - paddingX - gapsTotal - actionsWidth,
+  );
+  const contentColumns = base.filter(column => column.id !== 'actions');
+  const equalWidth = Math.max(
+    72,
+    Math.floor(contentBudget / Math.max(1, contentColumns.length)),
+  );
+  let remainder = contentBudget - equalWidth * contentColumns.length;
+  const lastContentId = contentColumns[contentColumns.length - 1]?.id;
+
+  return base.map(column => {
+    if (column.id === 'actions') {
+      return {...column, width: actionsWidth};
+    }
+
+    const extra = column.id === lastContentId ? remainder : 0;
+    if (column.id === lastContentId) {
+      remainder = 0;
+    }
+
+    return {
+      ...column,
+      width: equalWidth + extra,
+    };
+  });
 }
 
 function dashboardWidthOf(id: KolamTableColumn['id']) {
@@ -1204,18 +1316,13 @@ function formatEnclosureSize(enclosure: KolamEnclosure) {
 
 const styles = StyleSheet.create({
   surface: {
-    flex: 1,
-    gap: 12,
-    minHeight: 0,
-    overflow: 'visible',
+    gap: 14,
   },
   errorBadge: {
     alignSelf: 'stretch',
   },
   listRoot: {
-    flex: 1,
-    gap: 12,
-    minHeight: 0,
+    gap: 14,
     overflow: 'visible',
   },
   toolbarWrap: {
@@ -1266,14 +1373,6 @@ const styles = StyleSheet.create({
     minHeight: 0,
     overflow: 'visible',
   },
-  listFlatList: {
-    flexGrow: 0,
-    overflow: 'visible',
-  },
-  listContent: {
-    flexGrow: 0,
-    overflow: 'visible',
-  },
   emptyWrap: {
     padding: 16,
   },
@@ -1287,10 +1386,16 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
   },
+  listCell: {
+    gap: 2,
+    justifyContent: 'center',
+    minWidth: 0,
+  },
+  identityCell: {
+    alignItems: 'flex-start',
+  },
   photoCell: {
     alignItems: 'center',
-    justifyContent: 'center',
-    width: widthOf('meta'),
   },
   photo: {
     borderRadius: 6,
@@ -1308,8 +1413,17 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   statusCell: {
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: 4,
+  },
+  centerBadge: {
+    alignSelf: 'center',
+  },
+  actionsTrack: {
+    justifyContent: 'center',
+  },
+  activeActionRow: {
+    zIndex: 40,
   },
   actionCell: {
     alignItems: 'flex-end',

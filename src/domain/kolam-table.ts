@@ -4,6 +4,7 @@ export type KolamTableId =
   | 'category'
   | 'custom-field'
   | 'customer'
+  | 'enclosure'
   | 'iucn-status'
   | 'location'
   | 'location-asset'
@@ -579,6 +580,64 @@ const kolamTableColumns: Record<KolamTableId, KolamTableColumn[]> = {
     { id: 'marketplace', label: 'PIC', align: 'left', width: 140 },
     { id: 'status', label: 'Status', align: 'left', width: 126 },
     { id: 'actions', label: '', align: 'right', width: 64 },
+  ],
+  /** Backoffice `/enclosures` Internal staff + Customer tabs. */
+  enclosure: [
+    {
+      id: 'meta',
+      label: '',
+      align: 'center',
+      headerAlign: 'center',
+      width: 64,
+    },
+    {
+      id: 'children',
+      label: 'Kode',
+      align: 'center',
+      headerAlign: 'center',
+      width: 118,
+    },
+    {
+      id: 'primary',
+      label: 'Nama',
+      align: 'left',
+      headerAlign: 'center',
+    },
+    {
+      id: 'notes',
+      label: 'Tipe',
+      align: 'center',
+      headerAlign: 'center',
+      width: 132,
+    },
+    {
+      id: 'products',
+      label: 'Livestock',
+      align: 'center',
+      headerAlign: 'center',
+      width: 116,
+    },
+    {
+      id: 'marketplace',
+      label: 'PIC',
+      align: 'center',
+      headerAlign: 'center',
+      width: 150,
+    },
+    {
+      id: 'status',
+      label: 'Status',
+      align: 'center',
+      headerAlign: 'center',
+      width: 112,
+    },
+    {
+      id: 'actions',
+      label: '',
+      align: 'center',
+      headerAlign: 'center',
+      width: 64,
+    },
   ],
   'location-asset': [
     { id: 'primary', label: 'Nama', align: 'left' },
