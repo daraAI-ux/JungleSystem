@@ -1,6 +1,7 @@
 import { StyleSheet } from 'react-native';
 import { getKolamTableVisualContract } from '../domain/kolam-table';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
+import { KOLAM_DATA_TABLE_COLUMN_GAP } from './kolam-data-table-column-style';
 import { KOLAM_SALES_TABLE_VISUAL } from './kolam-sales-panel-visual';
 import { KOLAM_SETTINGS_ACTIVITY_TABLE_VISUAL } from './kolam-settings-activity-table-visual';
 
@@ -11,7 +12,7 @@ export const rowFrameStyles = StyleSheet.create({
     minHeight: KOLAM_TABLE_VISUAL.body.rowMinHeight,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: KOLAM_DATA_TABLE_COLUMN_GAP,
     paddingHorizontal: KOLAM_TABLE_VISUAL.header.columnPaddingX,
     paddingVertical: KOLAM_TABLE_VISUAL.header.gutterY,
     backgroundColor: V.colors.tableHeader,
@@ -24,7 +25,7 @@ export const rowFrameStyles = StyleSheet.create({
     minHeight: KOLAM_TABLE_VISUAL.body.rowMinHeight,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: KOLAM_DATA_TABLE_COLUMN_GAP,
     paddingHorizontal: KOLAM_TABLE_VISUAL.body.cellPaddingX,
     paddingVertical: KOLAM_TABLE_VISUAL.body.gutterY,
     backgroundColor: V.colors.bg,

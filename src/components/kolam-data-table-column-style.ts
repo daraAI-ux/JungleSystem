@@ -5,62 +5,43 @@ import type {KolamTableColumn} from '../domain/kolam-table';
 export const KOLAM_DATA_TABLE_PRIMARY_MIN_WIDTH = 180;
 
 /** Shared horizontal gap for data-table header/body rows. */
-export const KOLAM_DATA_TABLE_COLUMN_GAP = 12;
-
-const CELL_PADDING_X = 6;
-const CELL_PADDING_RIGHT_ALIGNED = 10;
-
-function getKolamDataTableCellPadding(align: KolamTableColumn['align'] | KolamTableColumn['headerAlign']) {
-  if (align === 'right') {
-    return {
-      paddingLeft: CELL_PADDING_X,
-      paddingRight: CELL_PADDING_RIGHT_ALIGNED,
-    };
-  }
-
-  return {
-    paddingLeft: CELL_PADDING_X,
-    paddingRight: CELL_PADDING_X,
-  };
-}
+export const KOLAM_DATA_TABLE_COLUMN_GAP = 16;
 
 /**
  * Shared column layout for header + body cells.
- * Primary without an explicit width grows (`flex: 1`) but keeps a readable min width.
- * Secondary `column.width` is treated as the **content** width from adaptive sizing;
- * horizontal padding is added outside that content so clip/overflow cannot eat characters.
+ *
+ * - Adaptive `column.width` is the full cell box (no inner horizontal padding).
+ *   Gutter between columns comes from row `gap` only — padding inside width was
+ *   crushing primary and fighting char-based sizing.
+ * - Fixed columns use `flexShrink: 0` so Yoga cannot squeeze them into neighbors.
+ * - Primary grows with `flex: 1` and a readable min width.
  */
 export function getKolamDataTableColumnStyle(
   column: Pick<KolamTableColumn, 'id' | 'width' | 'align' | 'headerAlign'>,
 ): StyleProp<ViewStyle> {
-  const align = column.headerAlign ?? column.align;
   const isPrimaryFlex = column.id === 'primary' && column.width == null;
-  const paddingStyle = getKolamDataTableCellPadding(align);
-  const horizontalPadding = paddingStyle.paddingLeft + paddingStyle.paddingRight;
-
-  const base: ViewStyle = {
-    overflow: 'hidden',
-    ...paddingStyle,
-  };
 
   if (isPrimaryFlex) {
     return {
-      ...base,
       flex: 1,
-      minWidth: KOLAM_DATA_TABLE_PRIMARY_MIN_WIDTH + horizontalPadding,
+      flexShrink: 1,
+      minWidth: KOLAM_DATA_TABLE_PRIMARY_MIN_WIDTH,
+      overflow: 'hidden',
     };
   }
 
   if (column.width != null) {
     return {
-      ...base,
-      width: column.width + horizontalPadding,
-      minWidth: 0,
+      width: column.width,
+      flexGrow: 0,
+      flexShrink: 0,
+      overflow: 'hidden',
     };
   }
 
   return {
-    ...base,
+    flexShrink: 0,
     minWidth: 0,
+    overflow: 'hidden',
   };
 }

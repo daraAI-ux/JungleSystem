@@ -4,28 +4,28 @@ import {
 } from '../src/components/kolam-data-table-column-style';
 
 describe('getKolamDataTableColumnStyle', () => {
-  it('keeps adaptive content width and adds horizontal padding outside it', () => {
+  it('uses adaptive width as the full cell box without inner horizontal padding', () => {
     const style = getKolamDataTableColumnStyle({
       id: 'amount',
       width: 120,
       align: 'right',
     }) as Record<string, number | string>;
 
-    expect(style.width).toBe(120 + 6 + 10);
-    expect(style.paddingLeft).toBe(6);
-    expect(style.paddingRight).toBe(10);
+    expect(style.width).toBe(120);
+    expect(style.flexShrink).toBe(0);
     expect(style.overflow).toBe('hidden');
+    expect(style.paddingLeft).toBeUndefined();
+    expect(style.paddingRight).toBeUndefined();
   });
 
-  it('protects primary flex columns with padded min width', () => {
+  it('protects primary flex columns with a readable min width', () => {
     const style = getKolamDataTableColumnStyle({
       id: 'primary',
       align: 'left',
     }) as Record<string, number | string>;
 
     expect(style.flex).toBe(1);
-    expect(style.minWidth).toBe(KOLAM_DATA_TABLE_PRIMARY_MIN_WIDTH + 12);
-    expect(style.paddingLeft).toBe(6);
-    expect(style.paddingRight).toBe(6);
+    expect(style.minWidth).toBe(KOLAM_DATA_TABLE_PRIMARY_MIN_WIDTH);
+    expect(style.overflow).toBe('hidden');
   });
 });

@@ -1,6 +1,7 @@
 ﻿import {StyleSheet} from 'react-native';
 import {getKolamTableVisualContract} from '../domain/kolam-table';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
+import {KOLAM_DATA_TABLE_COLUMN_GAP} from './kolam-data-table-column-style';
 
 const KOLAM_TABLE_VISUAL = getKolamTableVisualContract();
 
@@ -9,7 +10,7 @@ export const dataTableRowStyles = StyleSheet.create({
     minHeight: KOLAM_TABLE_VISUAL.body.rowMinHeight,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: KOLAM_DATA_TABLE_COLUMN_GAP,
     paddingHorizontal: KOLAM_TABLE_VISUAL.body.cellPaddingX,
     paddingVertical: KOLAM_TABLE_VISUAL.body.gutterY,
     backgroundColor: V.colors.bg,
