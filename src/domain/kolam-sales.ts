@@ -144,6 +144,11 @@ export type KolamSaleHistory = {
   changedAt: string;
 };
 
+export type KolamSaleCustomCost = {
+  name: string;
+  amount: number;
+};
+
 export type KolamSale = {
   id: string;
   invoiceCode: string;
@@ -161,8 +166,16 @@ export type KolamSale = {
   sourceRef: KolamSaleSourceRef | null;
   /** Marketplace channel source (shopee/tokopedia) when present. */
   marketplaceSource: string;
+  marketplaceOrderId: string;
   paymentProofs: KolamSalePaymentProof[];
   saleHistories: KolamSaleHistory[];
+  customCosts: KolamSaleCustomCost[];
+  discountType: string;
+  notes: string;
+  pointsEarned: number;
+  shippingAddressText: string;
+  createdByName: string;
+  openLivestockPendingCount: number;
   paidAt: string;
   sentAt: string;
   cancelledAt: string;
@@ -361,6 +374,14 @@ export function canEditKolamSaleDraft(sale: {
   return String(sale.status ?? '').toLowerCase() === 'draft';
 }
 
+/** FE header “Ubah” — draft atau pending. */
+export function canShowKolamSaleEditAction(sale: {
+  status?: string | null;
+}): boolean {
+  const status = String(sale.status ?? '').toLowerCase();
+  return status === 'draft' || status === 'pending';
+}
+
 export function canAddItemsToKolamSale(sale: {
   status?: string | null;
   deliveryStatus?: string | null;
@@ -368,8 +389,76 @@ export function canAddItemsToKolamSale(sale: {
   const status = String(sale.status ?? '').toLowerCase();
   const delivery = String(sale.deliveryStatus ?? 'none').toLowerCase();
   return (
-    (status === 'paid' || status === 'partial_paid') && delivery === 'none'
+    (status === 'paid' || status === 'partial_paid') &&
+    (!delivery || delivery === 'none')
   );
+}
+
+export function isKolamServiceOnlySale(sale: {
+  items?: Array<{ itemType?: string | null }>;
+}): boolean {
+  const items = sale.items ?? [];
+  if (!items.length) {
+    return false;
+  }
+  return items.every(
+    item => String(item.itemType ?? '').toLowerCase() === 'service',
+  );
+}
+
+export function isKolamPosSale(sale: {
+  sourceRef?: { type?: string | null; name?: string | null } | null;
+}): boolean {
+  const type = String(sale.sourceRef?.type ?? '').toLowerCase();
+  if (type === 'offline') {
+    return true;
+  }
+  return /^pos$/i.test(String(sale.sourceRef?.name ?? '').trim());
+}
+
+/** Hide shipping progress/card (service-only or POS) — FE `saleSkipsShippingFlow`. */
+export function kolamSaleSkipsShippingFlow(sale: {
+  items?: Array<{ itemType?: string | null }>;
+  sourceRef?: { type?: string | null; name?: string | null } | null;
+}): boolean {
+  return isKolamServiceOnlySale(sale) || isKolamPosSale(sale);
+}
+
+export function getKolamNoShippingDeliveryLabel(sale: {
+  items?: Array<{ itemType?: string | null }>;
+  sourceRef?: { type?: string | null; name?: string | null } | null;
+}): string {
+  if (isKolamServiceOnlySale(sale)) {
+    return 'Layanan (tanpa kirim)';
+  }
+  if (isKolamPosSale(sale)) {
+    return 'POS (tanpa kirim)';
+  }
+  return 'Layanan (tanpa kirim)';
+}
+
+/** FE `canDownloadShippingResi` — paid + (marketplace or webstore-like). */
+export function canDownloadKolamSaleShippingResi(sale: {
+  status?: string | null;
+  marketplaceSource?: string | null;
+  sourceRef?: { type?: string | null } | null;
+}): boolean {
+  if (String(sale.status ?? '').toLowerCase() !== 'paid') {
+    return false;
+  }
+  if (isKolamSaleMarketplaceManaged(sale)) {
+    return true;
+  }
+  // Webstore-like: online source without marketplace externalRef
+  const type = String(sale.sourceRef?.type ?? '').toLowerCase();
+  return type === 'online' && !sale.marketplaceSource;
+}
+
+export function getKolamSaleOutstandingAmount(sale: {
+  finalTotal?: number | null;
+  paidAmount?: number | null;
+}): number {
+  return Math.max(0, (sale.finalTotal ?? 0) - (sale.paidAmount ?? 0));
 }
 
 export function saleHasUnsupportedEditItemTypes(
@@ -1500,6 +1589,16 @@ export function normalizeKolamSale(payload: unknown): KolamSale {
   const sourceRef = normalizeSourceRef(record.sourceRef);
   const paymentMethod = normalizePaymentMethodRef(record.paymentMethod);
   const externalRef = asRecord(record.externalRef);
+  const pointsConfig = asRecord(record.pointsConfig);
+  const marketplaceSource = getString(externalRef, 'source').toLowerCase();
+  const shopee = asRecord(externalRef.shopee);
+  const tokopedia = asRecord(externalRef.tokopedia);
+  const marketplaceOrderId =
+    marketplaceSource === 'shopee'
+      ? getString(shopee, 'mainOrderId') || getString(shopee, 'orderId')
+      : marketplaceSource === 'tokopedia'
+        ? getString(tokopedia, 'mainOrderId') || getString(tokopedia, 'orderId')
+        : getString(externalRef, 'orderId');
 
   return {
     id: getMongoId(record, '_id') || getMongoId(record, 'id'),
@@ -1516,9 +1615,24 @@ export function normalizeKolamSale(payload: unknown): KolamSale {
     paidAmount: getNumber(record, 'paidAmount') ?? 0,
     paymentMethod,
     sourceRef,
-    marketplaceSource: getString(externalRef, 'source').toLowerCase(),
+    marketplaceSource,
+    marketplaceOrderId,
     paymentProofs: normalizePaymentProofs(record.paymentProofs),
     saleHistories: normalizeSaleHistories(record.saleHistories),
+    customCosts: normalizeCustomCosts(record.customCosts),
+    discountType: getString(record, 'discountType'),
+    notes: getString(record, 'notes'),
+    pointsEarned:
+      getNumber(pointsConfig, 'pointsEarned') ??
+      getNumber(record, 'pointsEarned') ??
+      0,
+    shippingAddressText: normalizeShippingAddressText(
+      record.shippingAddress,
+      buyerInfo,
+    ),
+    createdByName: resolveActorName(record.createdBy),
+    openLivestockPendingCount:
+      getNumber(record, 'openLivestockPendingCount') ?? 0,
     paidAt: stringifyDate(record.paidAt),
     sentAt: stringifyDate(record.sentAt),
     cancelledAt: stringifyDate(record.cancelledAt),
@@ -1561,6 +1675,47 @@ export function normalizeKolamSaleList(payload: unknown): KolamSaleListResult {
     data,
     pagination: normalizePagination(paginationSource, list.length),
   };
+}
+
+function normalizeCustomCosts(value: unknown): KolamSaleCustomCost[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value
+    .map(row => {
+      const record = asRecord(row);
+      const name = getString(record, 'name') || getString(record, 'label');
+      const amount = getNumber(record, 'amount') ?? getNumber(record, 'value');
+      if (!name && amount == null) {
+        return null;
+      }
+      return {
+        name: name || 'Biaya',
+        amount: amount ?? 0,
+      } satisfies KolamSaleCustomCost;
+    })
+    .filter((row): row is KolamSaleCustomCost => Boolean(row));
+}
+
+function normalizeShippingAddressText(
+  value: unknown,
+  buyerInfo: KolamSaleBuyerInfo | null,
+): string {
+  if (typeof value === 'string' && value.trim()) {
+    return value.trim();
+  }
+  const record = asRecord(value);
+  const parts = [
+    getString(record, 'address') || getString(record, 'fullAddress'),
+    getString(record, 'district'),
+    getString(record, 'city'),
+    getString(record, 'province'),
+    getString(record, 'postalCode') || getString(record, 'zip'),
+  ].filter(Boolean);
+  if (parts.length) {
+    return parts.join(', ');
+  }
+  return buyerInfo?.address?.trim() || '';
 }
 
 function normalizeSaleItems(value: unknown): KolamSaleItem[] {

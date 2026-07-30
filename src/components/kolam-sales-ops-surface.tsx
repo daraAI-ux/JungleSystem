@@ -1,17 +1,10 @@
-import React, { useMemo, useState } from 'react';
+﻿import React, { useMemo, useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
-  canAddItemsToKolamSale,
-  canEditKolamSaleDraft,
-  canUploadKolamSalePaymentProof,
   formatKolamSaleDeliveryStatusLabel,
-  formatKolamSaleItemTypeLabel,
   formatKolamSalePaymentStatusLabel,
-  getKolamSaleAllowedDeliveryTransitions,
-  getKolamSaleAllowedStatusTransitions,
   getKolamSaleDeliveryStatusIntent,
   getKolamSalePaymentStatusIntent,
-  isKolamSaleMarketplaceManaged,
   isKolamSalesAddItemsRoute,
   isKolamSalesDiscountApprovalRoute,
   isKolamSalesEditRoute,
@@ -23,7 +16,6 @@ import {
   type KolamSale,
   type KolamSaleCreateItemType,
   type KolamSaleDeliveryStatus,
-  type KolamSaleDeliveryTransitionTarget,
   type KolamSaleLifecycle,
   type KolamSalePaymentStatus,
   type KolamSaleStatusTransitionTarget,
@@ -49,6 +41,7 @@ import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamSalesOpsAnalyticsPanel } from './kolam-sales-ops-analytics-panel';
+import { KolamSalesOpsDetail } from './kolam-sales-ops-detail';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
@@ -353,7 +346,7 @@ function KolamSalesOpsList({
             ) : null}
             <KolamButton
               disabled={controller.exporting}
-              label={controller.exporting ? 'Mengekspor…' : 'Export'}
+              label={controller.exporting ? 'Mengeksporâ€¦' : 'Export'}
               onPress={() => {
                 void controller.onExportList();
               }}
@@ -480,7 +473,7 @@ function KolamSalesOpsList({
                 }
                 title={
                   controller.loading
-                    ? 'Memuat penjualan…'
+                    ? 'Memuat penjualanâ€¦'
                     : 'Belum ada penjualan'
                 }
               />
@@ -542,7 +535,7 @@ function KolamSalesOpsRow({
           />
         ) : null}
         <Text numberOfLines={2} style={styles.primaryText}>
-          {sale.sourceRef?.name || '—'}
+          {sale.sourceRef?.name || 'â€”'}
         </Text>
       </View>
       <View style={[styles.cell, { flex: LIST_COLUMNS[3].flex }]}>
@@ -626,7 +619,7 @@ function KolamSalesOpsCreateForm({
           <KolamButton
             disabled={controller.mutating || controller.optionsLoading}
             intent="primary"
-            label={controller.mutating ? 'Menyimpan…' : 'Simpan'}
+            label={controller.mutating ? 'Menyimpanâ€¦' : 'Simpan'}
             onPress={() => {
               void controller.onSave().then(id => {
                 if (id) {
@@ -648,14 +641,14 @@ function KolamSalesOpsCreateForm({
                 label="Sumber"
                 onChange={sourceRefId => controller.onChangeForm({ sourceRefId })}
                 options={[
-                  { label: 'Pilih sumber…', value: '' },
+                  { label: 'Pilih sumberâ€¦', value: '' },
                   ...controller.sources.map(source => ({
                     label: `${source.name} (${source.type})`,
                     value: source.id,
                   })),
                 ]}
                 searchable
-                searchPlaceholder="Cari sumber…"
+                searchPlaceholder="Cari sumberâ€¦"
                 value={form.sourceRefId}
               />
             </FieldShell>
@@ -675,14 +668,14 @@ function KolamSalesOpsCreateForm({
                   label="Pelanggan"
                   onChange={customerId => controller.onChangeForm({ customerId })}
                   options={[
-                    { label: 'Pilih pelanggan…', value: '' },
+                    { label: 'Pilih pelangganâ€¦', value: '' },
                     ...controller.filteredCustomers.map(customer => ({
                       label: customer.name,
                       value: customer.id,
                     })),
                   ]}
                   searchable
-                  searchPlaceholder="Cari pelanggan…"
+                  searchPlaceholder="Cari pelangganâ€¦"
                   value={form.customerId}
                 />
               </FieldShell>
@@ -750,14 +743,14 @@ function KolamSalesOpsCreateForm({
                   controller.onChangeForm({ paymentMethodId })
                 }
                 options={[
-                  { label: 'Pilih metode…', value: '' },
+                  { label: 'Pilih metodeâ€¦', value: '' },
                   ...controller.filteredPaymentMethods.map(method => ({
                     label: method.name,
                     value: method.id,
                   })),
                 ]}
                 searchable
-                searchPlaceholder="Cari metode…"
+                searchPlaceholder="Cari metodeâ€¦"
                 value={form.paymentMethodId}
               />
             </FieldShell>
@@ -826,7 +819,7 @@ function KolamSalesOpsCreateForm({
         </View>
 
         {controller.optionsLoading ? (
-          <Text style={styles.detailSubtitle}>Memuat opsi form…</Text>
+          <Text style={styles.detailSubtitle}>Memuat opsi formâ€¦</Text>
         ) : null}
       </KolamContentFrame>
 
@@ -892,7 +885,7 @@ function KolamSalesOpsCreateForm({
                     controller.onChangeCreateItem(item.key, { productId })
                   }
                   options={[
-                    { label: 'Pilih produk…', value: '' },
+                    { label: 'Pilih produkâ€¦', value: '' },
                     ...controller.products.map(product => ({
                       label: product.sku
                         ? `${product.name} (${product.sku})`
@@ -901,7 +894,7 @@ function KolamSalesOpsCreateForm({
                     })),
                   ]}
                   searchable
-                  searchPlaceholder="Cari produk…"
+                  searchPlaceholder="Cari produkâ€¦"
                   value={item.productId}
                 />
               </FieldShell>
@@ -916,7 +909,7 @@ function KolamSalesOpsCreateForm({
                     controller.onChangeCreateItem(item.key, { speciesId })
                   }
                   options={[
-                    { label: 'Pilih spesies…', value: '' },
+                    { label: 'Pilih spesiesâ€¦', value: '' },
                     ...controller.species.map(row => ({
                       label:
                         row.displayName ||
@@ -927,7 +920,7 @@ function KolamSalesOpsCreateForm({
                     })),
                   ]}
                   searchable
-                  searchPlaceholder="Cari spesies…"
+                  searchPlaceholder="Cari spesiesâ€¦"
                   value={item.speciesId}
                 />
               </FieldShell>
@@ -942,14 +935,14 @@ function KolamSalesOpsCreateForm({
                     controller.onChangeCreateItem(item.key, { serviceId })
                   }
                   options={[
-                    { label: 'Pilih layanan…', value: '' },
+                    { label: 'Pilih layananâ€¦', value: '' },
                     ...controller.services.map(service => ({
                       label: service.name,
                       value: service.id,
                     })),
                   ]}
                   searchable
-                  searchPlaceholder="Cari layanan…"
+                  searchPlaceholder="Cari layananâ€¦"
                   value={item.serviceId}
                 />
               </FieldShell>
@@ -964,14 +957,14 @@ function KolamSalesOpsCreateForm({
                     controller.onChangeCreateItem(item.key, { enclosureId })
                   }
                   options={[
-                    { label: 'Pilih enclosure…', value: '' },
+                    { label: 'Pilih enclosureâ€¦', value: '' },
                     ...controller.enclosures.map(enclosure => ({
                       label: enclosure.name,
                       value: enclosure.id,
                     })),
                   ]}
                   searchable
-                  searchPlaceholder="Cari enclosure…"
+                  searchPlaceholder="Cari enclosureâ€¦"
                   value={item.enclosureId}
                 />
               </FieldShell>
@@ -1134,480 +1127,6 @@ function FieldShell({
   );
 }
 
-function KolamSalesOpsDetail({
-  controller,
-  onRouteChange,
-}: {
-  controller: KolamSalesController;
-  onRouteChange?: (route: string) => void;
-}) {
-  const sale = controller.selectedSale;
-  const [pendingStatus, setPendingStatus] =
-    useState<KolamSaleStatusTransitionTarget | null>(null);
-  const [pendingDelivery, setPendingDelivery] =
-    useState<KolamSaleDeliveryTransitionTarget | null>(null);
-
-  if (controller.loading && !sale) {
-    return (
-      <KolamContentFrame variant="settingsWebConfig">
-        <KolamEmptyState
-          message="Mengambil invoice dari server Kolam."
-          title="Memuat detail…"
-        />
-      </KolamContentFrame>
-    );
-  }
-
-  if (!sale) {
-    return (
-      <KolamContentFrame style={styles.detailMissing} variant="settingsWebConfig">
-        <KolamEmptyState
-          message={controller.error || 'Data penjualan tidak tersedia.'}
-          title="Invoice tidak ditemukan"
-        />
-        <KolamButton
-          label="Kembali ke daftar"
-          onPress={() => onRouteChange?.(KOLAM_SALES_ROOT)}
-        />
-      </KolamContentFrame>
-    );
-  }
-
-  const marketplaceManaged = isKolamSaleMarketplaceManaged(sale);
-  const allowedTransitions = marketplaceManaged
-    ? []
-    : getKolamSaleAllowedStatusTransitions(sale.status);
-  const canUploadProof =
-    !marketplaceManaged && canUploadKolamSalePaymentProof(sale.status);
-  const pendingLabel = pendingStatus
-    ? formatKolamSalePaymentStatusLabel(pendingStatus)
-    : '';
-  const isOfflineSource = sale.sourceRef?.type === 'offline';
-  const showDeliverySection =
-    !marketplaceManaged &&
-    (sale.status === 'paid' || sale.status === 'partial_paid');
-  const allowedDeliveryTransitions = showDeliverySection
-    ? getKolamSaleAllowedDeliveryTransitions(sale.deliveryStatus, {
-        isOfflineSource,
-      })
-    : [];
-  const canRequestBiteshipPickup =
-    !marketplaceManaged &&
-    isOfflineSource &&
-    sale.status === 'paid' &&
-    (!sale.deliveryStatus || sale.deliveryStatus === 'none');
-
-  return (
-    <ScrollView
-      contentContainerStyle={styles.detailContent}
-      style={styles.detailRoot}
-    >
-      <View style={styles.detailHeader}>
-        <KolamCopyStack
-          items={[
-            {
-              id: 'title',
-              text: sale.invoiceCode,
-              style: styles.detailTitle,
-            },
-            {
-              id: 'buyer',
-              text: sale.buyerLabel,
-              style: styles.detailSubtitle,
-            },
-          ]}
-        />
-        <View style={styles.headerActions}>
-          <KolamButton
-            label="Kembali"
-            onPress={() => onRouteChange?.(KOLAM_SALES_ROOT)}
-          />
-          <KolamButton
-            disabled={controller.loading || controller.mutating}
-            label="Refresh"
-            onPress={() => {
-              void controller.onRefresh();
-            }}
-          />
-          {canEditKolamSaleDraft(sale) ? (
-            <KolamButton
-              label="Ubah"
-              onPress={() =>
-                onRouteChange?.(`${KOLAM_SALES_ROOT}/${sale.id}/edit`)
-              }
-            />
-          ) : null}
-          {canAddItemsToKolamSale(sale) ? (
-            <KolamButton
-              label="Tambah item"
-              onPress={() =>
-                onRouteChange?.(
-                  `${KOLAM_SALES_ROOT}/${sale.id}/edit?mode=add-items`,
-                )
-              }
-            />
-          ) : null}
-          <KolamButton
-            disabled={controller.downloadingInvoice || controller.mutating}
-            intent="primary"
-            label={
-              controller.downloadingInvoice
-                ? 'Mengunduh…'
-                : 'Unduh invoice PDF'
-            }
-            onPress={() => {
-              void controller.onDownloadInvoice();
-            }}
-          />
-          <KolamButton
-            disabled={controller.downloadingInvoice || controller.mutating}
-            label={controller.downloadingInvoice ? 'Mengunduh…' : 'Unduh resi'}
-            onPress={() => {
-              void controller.onDownloadResi();
-            }}
-          />
-        </View>
-      </View>
-
-      <View style={styles.badgeRow}>
-        <KolamStatusBadge
-          intent={getKolamSalePaymentStatusIntent(sale.status)}
-          label={formatKolamSalePaymentStatusLabel(sale.status)}
-        />
-        <KolamStatusBadge
-          intent={getKolamSaleDeliveryStatusIntent(
-            sale.deliveryStatus,
-            sale.status,
-          )}
-          label={formatKolamSaleDeliveryStatusLabel(
-            sale.deliveryStatus,
-            sale.status,
-          )}
-        />
-        {marketplaceManaged ? (
-          <KolamStatusBadge
-            intent="info"
-            label="Marketplace otomatis"
-          />
-        ) : null}
-      </View>
-
-      <Text style={styles.sectionTitle}>Aksi status</Text>
-      {marketplaceManaged ? (
-        <Text style={styles.metaText}>
-          Status pembayaran marketplace dikelola otomatis dari platform.
-        </Text>
-      ) : allowedTransitions.length === 0 ? (
-        <>
-          <Text style={styles.metaText}>
-            {sale.status === 'pending'
-              ? 'Menunggu persetujuan finance (ubah via Persetujuan Diskon).'
-              : 'Tidak ada transisi status yang tersedia.'}
-          </Text>
-          {sale.status === 'pending' ? (
-            <KolamButton
-              label="Ke persetujuan diskon"
-              onPress={() =>
-                onRouteChange?.(KOLAM_SALES_DISCOUNT_APPROVAL_ROUTE)
-              }
-            />
-          ) : null}
-        </>
-      ) : (
-        <View style={styles.actionButtons}>
-          {allowedTransitions.map(status => (
-            <KolamButton
-              disabled={controller.mutating}
-              intent={status === 'cancelled' ? 'danger' : 'primary'}
-              key={status}
-              label={formatKolamSalePaymentStatusLabel(status)}
-              onPress={() => setPendingStatus(status)}
-            />
-          ))}
-        </View>
-      )}
-
-      <KolamDescriptionList
-        accessibilityLabel="Ringkasan penjualan"
-        rows={[
-          {
-            id: 'buyer',
-            label: 'Pembeli',
-            value: sale.buyerLabel,
-            meta: sale.customer?.phone || sale.buyerInfo?.phone || '',
-            tone: 'default',
-          },
-          {
-            id: 'source',
-            label: 'Sumber',
-            value: sale.sourceRef?.name || '—',
-            meta: sale.sourceRef?.type || '',
-            tone: 'default',
-          },
-          {
-            id: 'payment-method',
-            label: 'Metode bayar',
-            value: sale.paymentMethod?.name || '—',
-            meta: sale.paymentMethod?.type || '',
-            tone: 'default',
-          },
-          {
-            id: 'created',
-            label: 'Dibuat',
-            value: formatShortDateTime(sale.createdAt) || '—',
-            meta: '',
-            tone: 'default',
-          },
-          {
-            id: 'transaction',
-            label: 'Tanggal transaksi',
-            value: formatShortDateTime(sale.transactionDate) || '—',
-            meta: '',
-            tone: 'default',
-          },
-        ]}
-      />
-
-      <Text style={styles.sectionTitle}>Item</Text>
-      {sale.items.length === 0 ? (
-        <Text style={styles.metaText}>Tidak ada item.</Text>
-      ) : (
-        sale.items.map(item => (
-          <View key={item.id} style={styles.itemCard}>
-            <Text style={styles.primaryText}>{item.title}</Text>
-            <Text style={styles.metaText}>
-              {formatKolamSaleItemTypeLabel(item.itemType)}
-              {item.variantLabel ? ` · ${item.variantLabel}` : ''}
-              {item.sku ? ` · ${item.sku}` : ''}
-              {item.voucherCode ? ` · Voucher: ${item.voucherCode}` : ''}
-            </Text>
-            <Text style={styles.metaText}>
-              {item.quantity} × {formatRupiah(item.unitPrice)} ={' '}
-              {formatRupiah(item.subtotal)}
-            </Text>
-          </View>
-        ))
-      )}
-
-      <Text style={styles.sectionTitle}>Total</Text>
-      <KolamDescriptionList
-        accessibilityLabel="Total penjualan"
-        rows={[
-          {
-            id: 'subtotal',
-            label: 'Subtotal',
-            value: formatRupiah(sale.total),
-            meta: '',
-            tone: 'default',
-          },
-          {
-            id: 'shipping',
-            label: 'Ongkir',
-            value: formatRupiah(sale.shippingCost),
-            meta: '',
-            tone: 'default',
-          },
-          {
-            id: 'final',
-            label: 'Total akhir',
-            value: formatRupiah(sale.finalTotal),
-            meta: '',
-            tone: 'success',
-          },
-          {
-            id: 'paid',
-            label: 'Sudah dibayar',
-            value: formatRupiah(sale.paidAmount),
-            meta: '',
-            tone: 'default',
-          },
-        ]}
-      />
-
-      {showDeliverySection ? (
-        <>
-          <Text style={styles.sectionTitle}>Pengiriman</Text>
-          {allowedDeliveryTransitions.length === 0 ? (
-            <Text style={styles.metaText}>
-              Tidak ada transisi pengiriman yang tersedia.
-            </Text>
-          ) : (
-            <View style={styles.actionButtons}>
-              {allowedDeliveryTransitions.map(target => (
-                <KolamButton
-                  disabled={controller.mutating}
-                  intent="primary"
-                  key={target}
-                  label={formatKolamSaleDeliveryStatusLabel(target)}
-                  onPress={() => setPendingDelivery(target)}
-                />
-              ))}
-            </View>
-          )}
-          {canRequestBiteshipPickup ? (
-            <KolamButton
-              disabled={controller.mutating}
-              label="Request pickup Biteship"
-              onPress={() => {
-                void controller.onRequestBiteshipPickup();
-              }}
-            />
-          ) : null}
-        </>
-      ) : marketplaceManaged ? (
-        <Text style={styles.metaText}>
-          Fulfillment pengiriman marketplace berjalan otomatis dari platform.
-        </Text>
-      ) : null}
-
-      <View style={styles.proofHeader}>
-        <Text style={styles.sectionTitle}>
-          Bukti pembayaran ({sale.paymentProofs.length})
-        </Text>
-        {canUploadProof ? (
-          <KolamButton
-            disabled={controller.mutating}
-            label={controller.mutating ? 'Mengunggah…' : 'Unggah bukti'}
-            onPress={() => {
-              void (async () => {
-                const uri = await controller.onPickImage();
-                if (uri) {
-                  await controller.onUploadPaymentProof(uri);
-                }
-              })();
-            }}
-          />
-        ) : null}
-      </View>
-      {!canUploadProof && !marketplaceManaged ? (
-        <Text style={styles.metaText}>
-          Unggah bukti tersedia saat status Menunggu bayar / Bayar sebagian.
-        </Text>
-      ) : null}
-      {sale.paymentProofs.length === 0 ? (
-        <Text style={styles.metaText}>Belum ada bukti pembayaran.</Text>
-      ) : (
-        <View style={styles.proofRow}>
-          {sale.paymentProofs.map(proof => (
-            <View key={proof.id} style={styles.proofCard}>
-              {proof.uri ? (
-                <KolamRemoteImage
-                  accessibilityLabel={proof.note || 'Bukti pembayaran'}
-                  sourceUri={proof.uri}
-                  style={styles.proofImage}
-                />
-              ) : (
-                <Text style={styles.metaText}>{proof.path}</Text>
-              )}
-              {!marketplaceManaged ? (
-                <View style={styles.proofActions}>
-                  <KolamButton
-                    disabled={controller.mutating}
-                    label="Hapus"
-                    muted
-                    onPress={() => {
-                      void controller.onDeletePaymentProof(proof.id);
-                    }}
-                  />
-                  <KolamButton
-                    disabled={controller.mutating}
-                    label="Ganti"
-                    onPress={() => {
-                      void (async () => {
-                        const uri = await controller.onPickImage();
-                        if (uri) {
-                          await controller.onReplacePaymentProof(proof.id, uri);
-                        }
-                      })();
-                    }}
-                  />
-                </View>
-              ) : null}
-            </View>
-          ))}
-        </View>
-      )}
-
-      {controller.livestockAllocations.length > 0 ? (
-        <>
-          <Text style={styles.sectionTitle}>Alokasi livestock pending</Text>
-          {controller.livestockAllocations.map(row => (
-            <Text key={row.id} style={styles.metaText}>
-              {row.label}
-              {row.status ? ` · ${row.status}` : ''}
-            </Text>
-          ))}
-        </>
-      ) : null}
-
-      {sale.saleHistories.length > 0 ? (
-        <>
-          <Text style={styles.sectionTitle}>Riwayat status</Text>
-          {sale.saleHistories.map(history => (
-            <View key={history.id} style={styles.historyRow}>
-              <Text style={styles.primaryText}>
-                {formatKolamSalePaymentStatusLabel(history.status) ||
-                  history.status}
-              </Text>
-              <Text style={styles.metaText}>
-                {formatShortDateTime(history.changedAt)}
-                {history.changedByName ? ` · ${history.changedByName}` : ''}
-              </Text>
-              {history.note ? (
-                <Text style={styles.metaText}>{history.note}</Text>
-              ) : null}
-            </View>
-          ))}
-        </>
-      ) : null}
-
-      <KolamConfirmDialog
-        cancelLabel="Batal"
-        confirmLabel={
-          pendingStatus === 'cancelled' ? 'Batalkan penjualan' : 'Ubah status'
-        }
-        destructive={pendingStatus === 'cancelled'}
-        message={
-          pendingStatus === 'paid'
-            ? `Ubah status ${sale.invoiceCode} menjadi Lunas? Stok dan wallet akan diproses di server.`
-            : pendingStatus === 'cancelled'
-              ? `Batalkan ${sale.invoiceCode}? Stok/wallet dapat dikembalikan sesuai aturan backend.`
-              : `Ubah status ${sale.invoiceCode} menjadi ${pendingLabel}?`
-        }
-        onCancel={() => setPendingStatus(null)}
-        onConfirm={() => {
-          const next = pendingStatus;
-          setPendingStatus(null);
-          if (next) {
-            void controller.onUpdateStatus(next);
-          }
-        }}
-        title="Konfirmasi status"
-        visible={Boolean(pendingStatus)}
-      />
-
-      <KolamConfirmDialog
-        cancelLabel="Batal"
-        confirmLabel="Ubah pengiriman"
-        message={`Ubah status pengiriman ${sale.invoiceCode} menjadi ${
-          pendingDelivery
-            ? formatKolamSaleDeliveryStatusLabel(pendingDelivery)
-            : ''
-        }?`}
-        onCancel={() => setPendingDelivery(null)}
-        onConfirm={() => {
-          const next = pendingDelivery;
-          setPendingDelivery(null);
-          if (next) {
-            void controller.onUpdateDelivery(next);
-          }
-        }}
-        title="Konfirmasi pengiriman"
-        visible={Boolean(pendingDelivery)}
-      />
-    </ScrollView>
-  );
-}
 
 function KolamSalesOpsApproval({
   controller,
@@ -1702,7 +1221,7 @@ function KolamSalesOpsApproval({
                   : 'Tidak ada invoice yang menunggu persetujuan diskon.'
               }
               title={
-                controller.loading ? 'Memuat…' : 'Semua invoice sudah diproses'
+                controller.loading ? 'Memuatâ€¦' : 'Semua invoice sudah diproses'
               }
             />
           </View>
@@ -1810,7 +1329,7 @@ function FilterPanel({
 
 function formatShortDate(value: string) {
   if (!value) {
-    return '—';
+    return 'â€”';
   }
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {

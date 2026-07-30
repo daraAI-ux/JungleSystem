@@ -3,6 +3,7 @@ import {
   canAddItemsToKolamSale,
   canEditKolamSaleDraft,
   canMarkKolamSalePaid,
+  canShowKolamSaleEditAction,
   canUploadKolamSalePaymentProof,
   createInitialKolamSaleCreateForm,
   createInitialKolamSaleListFilters,
@@ -13,6 +14,7 @@ import {
   getKolamSaleAllowedDeliveryTransitions,
   getKolamSaleAllowedStatusTransitions,
   getKolamSaleEditRouteId,
+  getKolamSaleOutstandingAmount,
   getKolamSalePaymentStatusIntent,
   getKolamSaleRouteId,
   getKolamSaleSurfaceMode,
@@ -26,6 +28,7 @@ import {
   isKolamSalesListRoute,
   isKolamSalesRoute,
   isMarketplaceSalesSource,
+  kolamSaleSkipsShippingFlow,
   normalizeKolamSale,
   normalizeKolamSaleAnalyticsOverview,
   normalizeKolamSaleList,
@@ -167,6 +170,57 @@ describe('kolam sales domain', () => {
     expect(detail.paymentMethod?.name).toBe('Transfer');
     expect(detail.paymentProofs).toHaveLength(1);
     expect(detail.paymentProofs[0].uri).toContain('/proofs/a.jpg');
+    expect(detail.marketplaceOrderId).toBe('');
+  });
+
+  it('normalizes detail Batch A fields and shipping skip helpers', () => {
+    const detail = normalizeKolamSale({
+      _id: 'sale-3',
+      invoiceCode: 'INV-3',
+      status: 'paid',
+      deliveryStatus: 'none',
+      buyerInfo: {
+        name: 'Buyer',
+        phone: '081',
+        address: 'Jl. Mawar 1',
+      },
+      externalRef: {
+        source: 'shopee',
+        shopee: { mainOrderId: 'SPX-99' },
+      },
+      pointsConfig: { pointsEarned: 12 },
+      customCosts: [{ name: 'Asuransi', amount: 5000 }],
+      discountType: 'percentage',
+      shippingAddress: {
+        address: 'Jl. Melati',
+        city: 'Jakarta',
+      },
+      createdBy: { name: 'Admin' },
+      openLivestockPendingCount: 2,
+      items: [{ _id: 'i1', itemType: 'service', customName: 'Jasa', quantity: 1 }],
+      sourceRef: { _id: 's1', name: 'Website', type: 'online' },
+    });
+    expect(detail.marketplaceOrderId).toBe('SPX-99');
+    expect(detail.pointsEarned).toBe(12);
+    expect(detail.customCosts[0].amount).toBe(5000);
+    expect(detail.shippingAddressText).toContain('Jl. Melati');
+    expect(detail.createdByName).toBe('Admin');
+    expect(detail.openLivestockPendingCount).toBe(2);
+    expect(getKolamSaleOutstandingAmount({ finalTotal: 100, paidAmount: 40 })).toBe(
+      60,
+    );
+    expect(
+      kolamSaleSkipsShippingFlow({
+        items: [{ itemType: 'service' }],
+        sourceRef: { type: 'online', name: 'Web' },
+      }),
+    ).toBe(true);
+    expect(
+      kolamSaleSkipsShippingFlow({
+        items: [{ itemType: 'product' }],
+        sourceRef: { type: 'offline', name: 'POS' },
+      }),
+    ).toBe(true);
   });
 
   it('formats payment and delivery labels for list badges', () => {
@@ -189,6 +243,7 @@ describe('kolam sales domain', () => {
     expect(getKolamSaleAllowedStatusTransitions('pending')).toEqual([]);
     expect(canEditKolamSaleDraft({ status: 'draft' })).toBe(true);
     expect(canEditKolamSaleDraft({ status: 'pending' })).toBe(false);
+    expect(canShowKolamSaleEditAction({ status: 'pending' })).toBe(true);
     expect(
       canAddItemsToKolamSale({ status: 'paid', deliveryStatus: 'none' }),
     ).toBe(true);
