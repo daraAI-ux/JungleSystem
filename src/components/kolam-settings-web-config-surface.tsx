@@ -1213,7 +1213,6 @@ export function KolamSettingsWebConfigSurface({
   const chatPluginEnabled = draft.pluginControls.chat;
   const daraPluginEnabled = draft.pluginControls.dara;
   const kpiPluginEnabled = draft.pluginControls.kpi;
-  const chatControlsDisabled = disabled || !chatPluginEnabled;
   const daraControlsDisabled = disabled || !daraPluginEnabled;
   const daraChatControlsDisabled =
     disabled || !chatPluginEnabled || !daraPluginEnabled;
@@ -2349,29 +2348,6 @@ export function KolamSettingsWebConfigSurface({
           ) : null}
           {showAiSettings ? (
             <>
-              <KolamToggleRow
-                variant="settingsForm"
-                label="Chat storefront"
-                description="Aktifkan chat pada storefront."
-                active={draft.chatStoreEnabled}
-                onPress={() =>
-                  !disabled &&
-                  setDraftField('chatStoreEnabled', !draft.chatStoreEnabled)
-                }
-              />
-              <KolamToggleRow
-                variant="settingsForm"
-                label="Panggilan grup chat tim"
-                description="Aktifkan panggilan grup di chat tim."
-                active={draft.teamChatGroupCallEnabled}
-                onPress={() =>
-                  !disabled &&
-                  setDraftField(
-                    'teamChatGroupCallEnabled',
-                    !draft.teamChatGroupCallEnabled,
-                  )
-                }
-              />
               <KolamToggleRow
                 variant="settingsForm"
                 label="Bisnis DARA"
@@ -3820,59 +3796,17 @@ export function KolamSettingsWebConfigSurface({
               items={[
                 {
                   id: 'chat-ai-title',
-                  text: 'Pengaturan Chat AI',
+                  text: 'Balasan otomatis Inbox & chat web',
                   style: styles.marketplaceOverviewLabel,
                 },
                 {
                   id: 'chat-ai-meta',
-                  text: 'Kontrol Chat storefront, group call, dan balasan otomatis inbox lintas platform.',
+                  text: 'DARA menjawab pesan pembeli per saluran. Matikan saluran yang ingin ditangani CS manusia saja.',
                   style: styles.marketplaceOverviewMeta,
                 },
               ]}
             />
             <View style={styles.notificationToggleGrid}>
-              <View style={styles.notificationToggleBox}>
-                <KolamToggleRow
-                  variant="settingsForm"
-                  label="Chat storefront"
-                  description="Aktifkan chat pada storefront."
-                  active={draft.chatStoreEnabled}
-                  onPress={() =>
-                    !chatControlsDisabled &&
-                    setDraftField('chatStoreEnabled', !draft.chatStoreEnabled)
-                  }
-                />
-              </View>
-              <View style={styles.notificationToggleBox}>
-                <KolamToggleRow
-                  variant="settingsForm"
-                  label="Panggilan grup chat tim"
-                  description="Aktifkan panggilan grup di chat tim."
-                  active={draft.teamChatGroupCallEnabled}
-                  onPress={() =>
-                    !chatControlsDisabled &&
-                    setDraftField(
-                      'teamChatGroupCallEnabled',
-                      !draft.teamChatGroupCallEnabled,
-                    )
-                  }
-                />
-              </View>
-              <View style={styles.notificationToggleBox}>
-                <KolamToggleRow
-                  variant="settingsForm"
-                  label="Balasan DARA Team Chat"
-                  description="Aktifkan balasan @dara di Team Chat."
-                  active={draft.teamChatDaraReplyEnabled}
-                  onPress={() =>
-                    !daraChatControlsDisabled &&
-                    setDraftField(
-                      'teamChatDaraReplyEnabled',
-                      !draft.teamChatDaraReplyEnabled,
-                    )
-                  }
-                />
-              </View>
               {aiInboxPlatformRows.map(row => (
                 <View key={row.id} style={styles.notificationToggleBox}>
                   <KolamToggleRow
@@ -3888,6 +3822,15 @@ export function KolamSettingsWebConfigSurface({
                 </View>
               ))}
             </View>
+            <KolamCopyStack
+              items={[
+                {
+                  id: 'chat-ai-cache-note',
+                  text: 'Jika belum pernah disimpan, backend memakai env ALLOWLIST_AI_REPLY. Perubahan berlaku sekitar 5 detik karena cache backend.',
+                  style: styles.marketplaceOverviewMeta,
+                },
+              ]}
+            />
           </View>
 
           <View

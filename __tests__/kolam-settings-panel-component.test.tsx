@@ -575,9 +575,8 @@ describe('KolamSettingsPanel', () => {
 
     const expectedAiTexts = [
       'AI / DARA',
-      'Pengaturan Chat AI',
-      'Chat storefront',
-      'Balasan DARA Team Chat',
+      'Balasan otomatis Inbox & chat web',
+      'Chat web',
       'WhatsApp',
       'Bisnis DARA',
       'Tool analitik',
@@ -600,6 +599,9 @@ describe('KolamSettingsPanel', () => {
         'Plugin Chat dan DARA aktif. Kontrol AI siap disimpan ke Pengaturan Web.',
         'State nonaktif: Plugin Chat nonaktif. Plugin DARA nonaktif. Aktifkan dari tab Plugin untuk mengubah kontrol terkait.',
         'Autopilot packing',
+        'Chat storefront',
+        'Panggilan grup chat tim',
+        'Balasan DARA Team Chat',
         'Tagline Perusahaan',
         'Biteship API key',
         'Ringkasan Landing Marketplace',
@@ -657,7 +659,8 @@ describe('KolamSettingsPanel', () => {
     expect(text).toEqual(
       expect.arrayContaining([
         'AI / DARA',
-        'Chat storefront',
+        'Balasan otomatis Inbox & chat web',
+        'Chat web',
         'Knowledge SOP',
       ]),
     );
