@@ -3,10 +3,12 @@ import {
   Image,
   Linking,
   Modal,
+  type NativeSyntheticEvent,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
+  type TextInputKeyPressEventData,
   View,
 } from 'react-native';
 import {useKolamAuthContext} from '../context/kolam-app-contexts';
@@ -1757,6 +1759,22 @@ function KolamChatRailDetailPanel({
     handleSendFromComposer();
   }, [handleSendFromComposer]);
 
+  const handleComposerKeyPress = React.useCallback(
+    (event: NativeSyntheticEvent<TextInputKeyPressEventData>) => {
+      const nativeEvent = event.nativeEvent as TextInputKeyPressEventData & {
+        shiftKey?: boolean;
+      };
+
+      if (nativeEvent.key !== 'Enter' || nativeEvent.shiftKey) {
+        return;
+      }
+
+      event.preventDefault();
+      handleSendFromComposer().catch(() => undefined);
+    },
+    [handleSendFromComposer],
+  );
+
   const handleStartEditMessage = React.useCallback(
     (message: ReturnType<typeof useKolamChatRailDetail>['messages'][number]) => {
       setEditingMessageId(message.id);
@@ -2172,6 +2190,7 @@ function KolamChatRailDetailPanel({
             editable={!detail.sending && !inboxComposerBlocked}
             multiline
             onChangeText={handleComposerInputChange}
+            onKeyPress={handleComposerKeyPress}
             onSubmitEditing={handleSubmitComposer}
             placeholder={
               mode === 'team-chat' && !detail.teamRoomMetadata.daraReplyEnabled

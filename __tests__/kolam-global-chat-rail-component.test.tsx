@@ -1152,10 +1152,85 @@ describe('KolamGlobalChatRail', () => {
     ).toBe(false);
 
     await ReactTestRenderer.act(async () => {
-      await input!.props.onSubmitEditing();
+      await input!.props.onKeyPress({
+        nativeEvent: {key: 'Enter'},
+        preventDefault: jest.fn(),
+      });
     });
 
     expect(sendMessage).toHaveBeenCalledWith('Siap, masih tersedia. 🙂');
+  });
+
+  it('keeps Shift+Enter as a newline affordance in the chat composer', async () => {
+    const sendMessage = jest.fn().mockResolvedValue(undefined);
+    useReadonlyDataMock.mockReturnValue({
+      conversations: [
+        {
+          _id: 'conv-1',
+          platform: 'whatsapp',
+          contactId: {displayName: 'Buyer WA'},
+          lastMessagePreview: 'Halo',
+          unreadCount: 0,
+        },
+      ],
+      loading: false,
+      refresh: jest.fn(),
+      rooms: [],
+      totalUnread: 0,
+    });
+    useDetailMock.mockReturnValue({
+      ...getDefaultDetailMock(),
+      conversation: {
+        _id: 'conv-1',
+        assignedStaffId: {
+          _id: 'staff-1',
+          first_name: 'Staff',
+        },
+        isAiHandled: false,
+        status: 'open',
+      },
+      loading: false,
+      messages: [],
+      presence: {onlineCount: 0, typingUserIds: [], viewingCount: 0},
+      refresh: jest.fn(),
+      sendAttachment: jest.fn(),
+      sendInboxImage: jest.fn(),
+      sendMessage,
+      signalTyping: jest.fn(),
+      sending: false,
+      updatePresenceFromLive: jest.fn(),
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamGlobalChatRail mode="inbox" onClose={() => undefined} />,
+      );
+    });
+
+    const selectButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Pilih conversation Buyer WA');
+
+    await ReactTestRenderer.act(async () => {
+      selectButton!.props.onPress();
+    });
+
+    const input = renderer!.root
+      .findAllByType(TextInput)
+      .find(node => node.props.accessibilityLabel === 'Tulis pesan inbox');
+    const preventDefault = jest.fn();
+
+    await ReactTestRenderer.act(async () => {
+      await input!.props.onChangeText('Baris satu');
+      await input!.props.onKeyPress({
+        nativeEvent: {key: 'Enter', shiftKey: true},
+        preventDefault,
+      });
+    });
+
+    expect(preventDefault).not.toHaveBeenCalled();
+    expect(sendMessage).not.toHaveBeenCalled();
   });
 
   it('picks and sends an inbox image from the composer when reply gate allows it', async () => {
