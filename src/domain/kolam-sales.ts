@@ -7,6 +7,7 @@
 
 import type { KolamBadgeIntent } from './kolam-badge';
 import { getKolamFileUrl } from '../lib/file-url';
+import { crossSyncSummaryLabel } from './kolam-stock-transaction';
 
 export type KolamSaleStatusIntent = KolamBadgeIntent | 'muted';
 
@@ -194,6 +195,32 @@ export type KolamSaleMarketplaceLogistics = {
   lastUpdate: string;
 };
 
+/** Embedded wallet txs on sale detail (FE `walletTransactions`). */
+export type KolamSaleWalletTransactionRef = {
+  id: string;
+  type: string;
+  source: string;
+  amount: number;
+  confirmStatus: string;
+  note: string;
+  walletName: string;
+  walletType: string;
+  createdAt: string;
+};
+
+/** Embedded stock txs on sale detail (FE `stockTransactions`). */
+export type KolamSaleStockTransactionRef = {
+  id: string;
+  source: string;
+  type: string;
+  quantity: number;
+  before: number | null;
+  after: number | null;
+  reason: string;
+  createdAt: string;
+  crossSyncSummary: string;
+};
+
 export type KolamSale = {
   id: string;
   invoiceCode: string;
@@ -221,6 +248,8 @@ export type KolamSale = {
   shippingAddressText: string;
   shippingService: KolamSaleShippingService | null;
   marketplaceLogistics: KolamSaleMarketplaceLogistics | null;
+  walletTransactions: KolamSaleWalletTransactionRef[];
+  stockTransactions: KolamSaleStockTransactionRef[];
   createdByName: string;
   openLivestockPendingCount: number;
   hppTotalAtSale: number | null;
@@ -1068,6 +1097,88 @@ export function formatKolamSaleLogisticsTime(
     dateStyle: 'short',
     timeStyle: 'short',
   });
+}
+
+export function formatKolamSaleWalletTxTypeLabel(type?: string | null): string {
+  if (type === 'credit') {
+    return 'Kredit';
+  }
+  if (type === 'debit') {
+    return 'Debit';
+  }
+  return type?.trim() || '—';
+}
+
+export function formatKolamSaleWalletConfirmStatusLabel(
+  status?: string | null,
+): string {
+  switch (String(status || '').toLowerCase()) {
+    case 'confirmed':
+      return 'Dikonfirmasi';
+    case 'rejected':
+      return 'Ditolak';
+    case 'unconfirmed':
+      return 'Menunggu';
+    default:
+      return status?.trim() || 'Menunggu';
+  }
+}
+
+export function getKolamSaleWalletConfirmStatusIntent(
+  status?: string | null,
+): KolamSaleStatusIntent {
+  switch (String(status || '').toLowerCase()) {
+    case 'confirmed':
+      return 'success';
+    case 'rejected':
+      return 'danger';
+    default:
+      return 'warning';
+  }
+}
+
+/** FE WalletTransactionsSection `getSourceLabel` (sale-related subset + fallback). */
+export function formatKolamSaleWalletSourceLabel(source?: string | null): string {
+  if (!source) {
+    return 'Tidak diketahui';
+  }
+  const labels: Record<string, string> = {
+    deposit: 'Drop Dana',
+    withdraw: 'Tarik Dana',
+    transfer: 'Transfer',
+    initial_deposit: 'Saldo Awal',
+    adjustment: 'Penyesuaian',
+    sale: 'Penjualan',
+    sale_revenue: 'Pendapatan penjualan',
+    custom_project: 'Proyek kustom',
+    commission: 'Komisi',
+    refund: 'Pengembalian',
+    complaint: 'Komplain',
+    shipping_collected: 'Ongkir (titipan)',
+    shipping_passthrough: 'Ongkir (auto-pass)',
+    shipping_settlement: 'Ongkir (settlement)',
+    cost_of_sale: 'Biaya penjualan',
+    unexpected_income: 'Pendapatan lain',
+    payable: 'Hutang',
+    payable_payment: 'Bayar hutang',
+    receivable_payment: 'Terima piutang',
+  };
+  return labels[source] || source.replace(/_/g, ' ');
+}
+
+export function formatKolamSaleWalletTypeLabel(type?: string | null): string {
+  switch (String(type || '').toLowerCase()) {
+    case 'main':
+      return 'Utama';
+    case 'regular':
+      return 'Reguler';
+    case 'virtual':
+      return 'Virtual';
+    case 'cash':
+      return 'Tunai';
+    default:
+      return type?.trim() || '—';
+  }
 }
 
 export function getKolamSaleAllowedStatusTransitions(
@@ -2061,6 +2172,12 @@ export function normalizeKolamSale(payload: unknown): KolamSale {
     ),
     shippingService,
     marketplaceLogistics,
+    walletTransactions: normalizeSaleWalletTransactions(
+      record.walletTransactions,
+    ),
+    stockTransactions: normalizeSaleStockTransactions(
+      record.stockTransactions,
+    ),
     createdByName: resolveActorName(record.createdBy),
     openLivestockPendingCount:
       getNumber(record, 'openLivestockPendingCount') ?? 0,
@@ -2213,6 +2330,72 @@ function normalizeLogisticsTimeline(value: unknown): KolamSaleLogisticsEvent[] {
       } satisfies KolamSaleLogisticsEvent;
     })
     .filter((row): row is KolamSaleLogisticsEvent => Boolean(row));
+}
+
+function normalizeSaleWalletTransactions(
+  value: unknown,
+): KolamSaleWalletTransactionRef[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value
+    .map(row => {
+      const record = asRecord(row);
+      const id = getMongoId(record, '_id') || getMongoId(record, 'id');
+      if (!id) {
+        return null;
+      }
+      const wallet = asRecord(record.wallet);
+      return {
+        id,
+        type: getString(record, 'type'),
+        source: getString(record, 'source'),
+        amount: getNumber(record, 'amount') ?? 0,
+        confirmStatus: getString(record, 'confirmStatus') || 'unconfirmed',
+        note: getString(record, 'note'),
+        walletName:
+          getString(wallet, 'name') || getString(record, 'walletName'),
+        walletType:
+          getString(wallet, 'type') || getString(record, 'walletType'),
+        createdAt: stringifyDate(record.createdAt),
+      } satisfies KolamSaleWalletTransactionRef;
+    })
+    .filter((row): row is KolamSaleWalletTransactionRef => Boolean(row));
+}
+
+function normalizeSaleStockTransactions(
+  value: unknown,
+): KolamSaleStockTransactionRef[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value
+    .map(row => {
+      const record = asRecord(row);
+      const id = getMongoId(record, '_id') || getMongoId(record, 'id');
+      if (!id) {
+        return null;
+      }
+      const crossSync = asRecord(
+        record.marketplaceCrossSync ?? record.crossSync,
+      );
+      const summaryRaw = getString(crossSync, 'summary');
+      const crossSyncSummary = summaryRaw
+        ? crossSyncSummaryLabel(summaryRaw)
+        : '';
+      return {
+        id,
+        source: getString(record, 'source'),
+        type: getString(record, 'type'),
+        quantity: getNumber(record, 'quantity') ?? 0,
+        before: getNumber(record, 'before'),
+        after: getNumber(record, 'after'),
+        reason: getString(record, 'reason'),
+        createdAt: stringifyDate(record.createdAt),
+        crossSyncSummary,
+      } satisfies KolamSaleStockTransactionRef;
+    })
+    .filter((row): row is KolamSaleStockTransactionRef => Boolean(row));
 }
 
 function resolveShippingMethodName(value: unknown): string {

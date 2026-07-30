@@ -1,5 +1,12 @@
 import React, { useState } from 'react';
-import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import {
   canAddItemsToKolamSale,
   canDownloadKolamSaleShippingResi,
@@ -7,7 +14,12 @@ import {
   canUploadKolamSalePaymentProof,
   formatKolamSaleDeliveryStatusLabel,
   formatKolamSaleItemTypeLabel,
+  formatKolamSaleLogisticsTime,
   formatKolamSalePaymentStatusLabel,
+  formatKolamSaleWalletConfirmStatusLabel,
+  formatKolamSaleWalletSourceLabel,
+  formatKolamSaleWalletTxTypeLabel,
+  formatKolamSaleWalletTypeLabel,
   getKolamNoShippingDeliveryLabel,
   getKolamSaleAllowedDeliveryTransitions,
   getKolamSaleAllowedStatusTransitions,
@@ -19,7 +31,7 @@ import {
   getKolamSalePaymentStatusIntent,
   getKolamSaleServiceLabel,
   getKolamSaleTrackingNumber,
-  formatKolamSaleLogisticsTime,
+  getKolamSaleWalletConfirmStatusIntent,
   isKolamPosSale,
   isKolamSaleMarketplaceManaged,
   kolamSaleSkipsShippingFlow,
@@ -28,6 +40,7 @@ import {
   type KolamSaleDeliveryTransitionTarget,
   type KolamSaleStatusTransitionTarget,
 } from '../domain/kolam-sales';
+import { stockTransactionSourceLabel } from '../domain/kolam-stock-transaction';
 import { getKolamCourierLogoSource } from '../domain/kolam-courier-logos';
 import {
   computeKolamSaleProfitSummary,
@@ -683,6 +696,105 @@ export function KolamSalesOpsDetail({
               </View>
             ))
           )}
+
+          {sale.walletTransactions.length > 0 ? (
+            <>
+              <Text style={styles.sectionTitle}>
+                Transaksi Dompet ({sale.walletTransactions.length})
+              </Text>
+              {sale.walletTransactions.map(tx => {
+                const isCredit = tx.type === 'credit';
+                return (
+                  <Pressable
+                    accessibilityRole="button"
+                    key={tx.id}
+                    onPress={() => onRouteChange?.(`/wallet/${tx.id}`)}
+                    style={styles.relatedTxCard}
+                  >
+                    <View style={styles.relatedTxHeader}>
+                      <Text style={styles.primaryText}>
+                        {formatKolamSaleWalletTxTypeLabel(tx.type)}
+                        {tx.walletName ? ` · ${tx.walletName}` : ''}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.relatedTxAmount,
+                          isCredit
+                            ? styles.profitPositive
+                            : styles.profitNegative,
+                        ]}
+                      >
+                        {isCredit ? '+' : '-'}
+                        {formatRupiah(tx.amount)}
+                      </Text>
+                    </View>
+                    <Text style={styles.metaText}>
+                      {formatKolamSaleWalletSourceLabel(tx.source)}
+                      {tx.walletType
+                        ? ` · ${formatKolamSaleWalletTypeLabel(tx.walletType)}`
+                        : ''}
+                    </Text>
+                    <View style={styles.relatedTxFooter}>
+                      <KolamStatusBadge
+                        intent={getKolamSaleWalletConfirmStatusIntent(
+                          tx.confirmStatus,
+                        )}
+                        label={formatKolamSaleWalletConfirmStatusLabel(
+                          tx.confirmStatus,
+                        )}
+                      />
+                      {tx.createdAt ? (
+                        <Text style={styles.metaText}>
+                          {formatShortDateTime(tx.createdAt)}
+                        </Text>
+                      ) : null}
+                    </View>
+                    {tx.note ? (
+                      <Text style={styles.metaText}>{tx.note}</Text>
+                    ) : null}
+                  </Pressable>
+                );
+              })}
+            </>
+          ) : null}
+
+          {sale.stockTransactions.length > 0 ? (
+            <>
+              <Text style={styles.sectionTitle}>Alur Stok</Text>
+              <Text style={styles.metaText}>
+                Pergerakan stok terkait invoice ini (stok Kolam = acuan utama).
+              </Text>
+              {sale.stockTransactions.map(tx => (
+                <Pressable
+                  accessibilityRole="button"
+                  key={tx.id}
+                  onPress={() =>
+                    onRouteChange?.(`/stock-transaction/${tx.id}`)
+                  }
+                  style={styles.relatedTxCard}
+                >
+                  <Text style={[styles.primaryText, styles.relatedTxLink]}>
+                    {stockTransactionSourceLabel(tx.source)} ·{' '}
+                    {tx.type || '—'} · qty {tx.quantity}
+                  </Text>
+                  <Text style={styles.metaText}>
+                    {tx.before ?? '—'} → {tx.after ?? '—'}
+                    {tx.reason ? ` · ${tx.reason}` : ''}
+                  </Text>
+                  {tx.crossSyncSummary ? (
+                    <Text style={styles.metaText}>
+                      Cross-sync: {tx.crossSyncSummary}
+                    </Text>
+                  ) : null}
+                  {tx.createdAt ? (
+                    <Text style={styles.metaText}>
+                      {formatShortDateTime(tx.createdAt)}
+                    </Text>
+                  ) : null}
+                </Pressable>
+              ))}
+            </>
+          ) : null}
         </View>
 
         <View style={styles.columnSide}>
@@ -1290,6 +1402,40 @@ const styles = StyleSheet.create({
   outstandingCard: {
     gap: 4,
     padding: 12,
+  },
+  relatedTxCard: {
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  relatedTxHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'space-between',
+  },
+  relatedTxAmount: {
+    fontSize: 13,
+    fontVariant: ['tabular-nums'],
+    fontWeight: '700',
+  },
+  relatedTxFooter: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  relatedTxLink: {
+    color: V.colors.success,
+  },
+  profitPositive: {
+    color: V.colors.success,
+  },
+  profitNegative: {
+    color: V.colors.danger,
   },
   proofRow: {
     flexDirection: 'row',

@@ -15,6 +15,7 @@ import {
   getKolamSaleAllowedDeliveryTransitions,
   getKolamSaleAllowedStatusTransitions,
   getKolamSaleEditRouteId,
+  formatKolamSaleWalletSourceLabel,
   getKolamSaleCouriers,
   getKolamSaleEstimatedMargin,
   getKolamSaleInternalNetProfit,
@@ -340,6 +341,54 @@ describe('kolam sales domain', () => {
     const view = getKolamSaleMarketplaceLogistics(detail);
     expect(view?.lastUpdate).toContain('Bandung');
     expect(formatKolamSaleLogisticsTime('2026-07-30T10:00:00.000Z')).toBeTruthy();
+  });
+
+  it('normalizes embedded wallet and stock transactions on sale detail', () => {
+    const detail = normalizeKolamSale({
+      _id: 'sale-tx',
+      invoiceCode: 'INV-TX',
+      status: 'paid',
+      walletTransactions: [
+        {
+          _id: 'w1',
+          type: 'credit',
+          source: 'sale_revenue',
+          amount: 150_000,
+          confirmStatus: 'confirmed',
+          note: 'Pendapatan',
+          wallet: { name: 'Kas Tokopedia', type: 'virtual' },
+          createdAt: '2026-07-30T12:00:00.000Z',
+        },
+      ],
+      stockTransactions: [
+        {
+          _id: 'st1',
+          source: 'sale',
+          type: 'out',
+          quantity: 2,
+          before: 10,
+          after: 8,
+          reason: 'Penjualan INV-TX',
+          marketplaceCrossSync: { summary: 'synced' },
+          createdAt: '2026-07-30T12:01:00.000Z',
+        },
+      ],
+      items: [],
+    });
+
+    expect(detail.walletTransactions).toHaveLength(1);
+    expect(detail.walletTransactions[0].id).toBe('w1');
+    expect(detail.walletTransactions[0].amount).toBe(150_000);
+    expect(detail.walletTransactions[0].walletName).toBe('Kas Tokopedia');
+    expect(formatKolamSaleWalletSourceLabel('sale_revenue')).toBe(
+      'Pendapatan penjualan',
+    );
+    expect(detail.stockTransactions).toHaveLength(1);
+    expect(detail.stockTransactions[0].id).toBe('st1');
+    expect(detail.stockTransactions[0].quantity).toBe(2);
+    expect(detail.stockTransactions[0].before).toBe(10);
+    expect(detail.stockTransactions[0].after).toBe(8);
+    expect(detail.stockTransactions[0].crossSyncSummary).toBeTruthy();
   });
 
   it('computes Tokopedia/Shopee olshop profit like FE (not internal PM path)', () => {
