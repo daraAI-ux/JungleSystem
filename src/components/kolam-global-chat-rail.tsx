@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  Animated,
   Image,
   Linking,
   Modal,
@@ -19,6 +20,7 @@ import {
   useKolamChatLiveStream,
 } from '../hooks/use-kolam-chat-live-stream';
 import {useKolamChatRailDetail} from '../hooks/use-kolam-chat-rail-detail';
+import {useKolamChatPlatformHealth} from '../hooks/use-kolam-chat-platform-health';
 import {useKolamChatRailLiveSync} from '../hooks/use-kolam-chat-rail-live-sync';
 import {useKolamChatRailReadonlyData} from '../hooks/use-kolam-chat-rail-readonly-data';
 import {useKolamNotificationSoundSettings} from '../hooks/use-kolam-notification-sound-settings';
@@ -32,6 +34,7 @@ import type {
   KolamChatConversationListParams,
   KolamChatConversationStatus,
   KolamChatPlatform,
+  KolamChatPlatformHealthRow,
   KolamChatMessage,
   KolamChatStaffRef,
   KolamChatTemplate,
@@ -121,6 +124,48 @@ const TOKOPEDIA_LOGO = require('../assets/marketplace/tokopedia.png');
 const WHATSAPP_LOGO = require('../assets/marketplace/whatsapp.png');
 const DARA_AVATAR_DEFAULT_PATH = '/images/dara-avatar.png';
 const DARA_THINKING_DEFAULT_LINE = 'DARA sedang berpikir...';
+const PLATFORM_GLOW_HEALTHY: KolamPlatformGlowState = {
+  animated: false,
+  color: '#19b66a',
+  opacity: 0.28,
+  scale: 1,
+  tone: 'healthy',
+};
+const PLATFORM_GLOW_ACTIVE: KolamPlatformGlowState = {
+  animated: true,
+  color: '#16a34a',
+  opacity: 0.48,
+  scale: 1.2,
+  tone: 'active',
+};
+const PLATFORM_GLOW_STARTING: KolamPlatformGlowState = {
+  animated: true,
+  color: '#f59e0b',
+  opacity: 0.35,
+  scale: 1.12,
+  tone: 'starting',
+};
+const PLATFORM_GLOW_STALE: KolamPlatformGlowState = {
+  animated: false,
+  color: '#f97316',
+  opacity: 0.26,
+  scale: 1,
+  tone: 'stale',
+};
+const PLATFORM_GLOW_OFFLINE: KolamPlatformGlowState = {
+  animated: false,
+  color: '#9ca3af',
+  opacity: 0,
+  scale: 1,
+  tone: 'offline',
+};
+const PLATFORM_GLOW_NEUTRAL: KolamPlatformGlowState = {
+  animated: false,
+  color: 'transparent',
+  opacity: 0,
+  scale: 1,
+  tone: 'neutral',
+};
 const DARA_THINKING_ACTIVE_EVENTS = new Set([
   'dara.thinking',
   'dara.thinking.chunk',
@@ -288,6 +333,9 @@ export function KolamGlobalChatRail({
     [inboxFilter],
   );
   const data = useKolamChatRailReadonlyData({inboxParams, mode});
+  const platformHealth = useKolamChatPlatformHealth({
+    enabled: mode === 'inbox',
+  });
   const [selectedItemId, setSelectedItemId] = React.useState<string | null>(
     null,
   );
@@ -814,6 +862,7 @@ export function KolamGlobalChatRail({
         {mode === 'inbox' && !inboxDetailOpen ? (
           <KolamInboxFilterPanel
             filter={inboxFilter}
+            healthByPlatform={platformHealth.healthByPlatform}
             labels={labelsState.items}
             onChange={setInboxFilter}
           />
@@ -1025,10 +1074,14 @@ function KolamChatRailLiveHost({
 
 function KolamInboxFilterPanel({
   filter,
+  healthByPlatform,
   labels,
   onChange,
 }: {
   filter: KolamChatRailInboxFilter;
+  healthByPlatform: Partial<
+    Record<KolamChatPlatform, KolamChatPlatformHealthRow>
+  >;
   labels: KolamChatLabel[];
   onChange: (next: KolamChatRailInboxFilter) => void;
 }) {
@@ -1139,6 +1192,9 @@ function KolamInboxFilterPanel({
             renderItem={platform => (
               <KolamPlatformFilterChip
                 active={filter.platform === platform}
+                health={
+                  platform === 'all' ? undefined : healthByPlatform[platform]
+                }
                 onPress={() => onChange({...filter, platform})}
                 platform={platform}
               />
@@ -1170,34 +1226,45 @@ function KolamInboxFilterPanel({
 
 function KolamPlatformFilterChip({
   active,
+  health,
   onPress,
   platform,
 }: {
   active: boolean;
+  health?: KolamChatPlatformHealthRow;
   onPress: () => void;
   platform: KolamChatPlatform | 'all';
 }) {
   const label = formatInboxPlatformFilterLabel(platform);
+  const glowState = getPlatformGlowState(platform, health);
+  const healthLabel = getPlatformHealthTooltip(label, glowState, health);
 
   return (
     <KolamPressable
-      accessibilityLabel={`Filter ${label}`}
+      accessibilityLabel={`Filter ${label}. ${healthLabel}`}
       accessibilityState={{selected: active}}
       onPress={onPress}
       style={[
         styles.platformFilterChip,
+        styles.platformFilterChipLayered,
         active && styles.platformFilterChipActive,
+        glowState.tone === 'offline' && styles.platformFilterChipOffline,
       ]}>
-      <KolamPlatformFilterLogo platform={platform} />
+      <KolamPlatformHealthGlow state={glowState} />
+      <KolamPlatformFilterLogo platform={platform} state={glowState} />
     </KolamPressable>
   );
 }
 
 function KolamPlatformFilterLogo({
   platform,
+  state,
 }: {
   platform: KolamChatPlatform | 'all';
+  state?: KolamPlatformGlowState;
 }) {
+  const offline = state?.tone === 'offline';
+
   if (
     platform === 'tokopedia' ||
     platform === 'shopee' ||
@@ -1216,24 +1283,44 @@ function KolamPlatformFilterLogo({
                 ? TIKTOK_LOGO
                 : WHATSAPP_LOGO
         }
-        style={styles.platformLogoImage}
+        style={[
+          styles.platformLogoImage,
+          offline && styles.platformLogoImageOffline,
+        ]}
       />
     );
   }
 
   if (platform === 'store') {
     return (
-      <View style={styles.storeLogoBag}>
-        <View style={styles.storeLogoHandle} />
+      <View
+        style={[styles.storeLogoBag, offline && styles.storeLogoBagOffline]}>
+        <View
+          style={[
+            styles.storeLogoHandle,
+            offline && styles.storeLogoHandleOffline,
+          ]}
+        />
       </View>
     );
   }
 
   if (platform === 'instagram') {
     return (
-      <View style={styles.instagramLogo}>
-        <View style={styles.instagramLens} />
-        <View style={styles.instagramFlash} />
+      <View
+        style={[styles.instagramLogo, offline && styles.instagramLogoOffline]}>
+        <View
+          style={[
+            styles.instagramLens,
+            offline && styles.instagramLensOffline,
+          ]}
+        />
+        <View
+          style={[
+            styles.instagramFlash,
+            offline && styles.instagramFlashOffline,
+          ]}
+        />
       </View>
     );
   }
@@ -1246,6 +1333,141 @@ function KolamPlatformFilterLogo({
       <View style={styles.allPlatformDot} />
     </View>
   );
+}
+
+type KolamPlatformGlowTone =
+  | 'healthy'
+  | 'active'
+  | 'starting'
+  | 'stale'
+  | 'offline'
+  | 'neutral';
+
+interface KolamPlatformGlowState {
+  animated: boolean;
+  color: string;
+  opacity: number;
+  scale: number;
+  tone: KolamPlatformGlowTone;
+}
+
+function KolamPlatformHealthGlow({state}: {state: KolamPlatformGlowState}) {
+  const pulse = React.useRef(new Animated.Value(0)).current;
+
+  React.useEffect(() => {
+    if (!state.animated) {
+      pulse.stopAnimation();
+      pulse.setValue(0);
+      return;
+    }
+
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, {
+          duration: state.tone === 'starting' ? 1100 : 650,
+          toValue: 1,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulse, {
+          duration: state.tone === 'starting' ? 1100 : 650,
+          toValue: 0,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+
+    loop.start();
+    return () => loop.stop();
+  }, [pulse, state.animated, state.tone]);
+
+  if (state.tone === 'neutral' || state.tone === 'offline') {
+    return null;
+  }
+
+  const opacity = state.animated
+    ? pulse.interpolate({
+        inputRange: [0, 1],
+        outputRange: [state.opacity * 0.45, state.opacity],
+      })
+    : state.opacity;
+  const scale = state.animated
+    ? pulse.interpolate({
+        inputRange: [0, 1],
+        outputRange: [state.scale * 0.88, state.scale],
+      })
+    : state.scale;
+
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={[
+        styles.platformHealthGlow,
+        {
+          backgroundColor: state.color,
+          opacity,
+          transform: [{scale}],
+        },
+      ]}
+    />
+  );
+}
+
+function getPlatformGlowState(
+  platform: KolamChatPlatform | 'all',
+  health?: KolamChatPlatformHealthRow,
+): KolamPlatformGlowState {
+  if (platform === 'all') {
+    return PLATFORM_GLOW_NEUTRAL;
+  }
+
+  if (!health) {
+    return PLATFORM_GLOW_OFFLINE;
+  }
+
+  if (isRecentPlatformInbound(health.lastInboundAt)) {
+    return PLATFORM_GLOW_ACTIVE;
+  }
+
+  if (health.state === 'healthy' && health.healthy) {
+    return PLATFORM_GLOW_HEALTHY;
+  }
+
+  if (health.state === 'starting') {
+    return PLATFORM_GLOW_STARTING;
+  }
+
+  if (health.state === 'stale') {
+    return PLATFORM_GLOW_STALE;
+  }
+
+  return PLATFORM_GLOW_OFFLINE;
+}
+
+function isRecentPlatformInbound(value?: string | null) {
+  if (!value) {
+    return false;
+  }
+  const time = new Date(value).getTime();
+  if (Number.isNaN(time)) {
+    return false;
+  }
+  return Date.now() - time < 90_000;
+}
+
+function getPlatformHealthTooltip(
+  label: string,
+  state: KolamPlatformGlowState,
+  health?: KolamChatPlatformHealthRow,
+) {
+  if (state.tone === 'neutral') {
+    return 'Semua platform';
+  }
+  if (!health) {
+    return 'Status koneksi chat belum tersedia';
+  }
+
+  const reason = health.reason || 'Status chat belum ada keterangan';
+  return `${label}: ${reason}`;
 }
 
 function KolamChatRailAnalyticsPanel({
@@ -5378,14 +5600,30 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: V.colors.bg,
   },
+  platformFilterChipLayered: {
+    overflow: 'hidden',
+  },
   platformFilterChipActive: {
     borderColor: V.colors.primary,
     backgroundColor: V.colors.primarySoft,
+  },
+  platformFilterChipOffline: {
+    borderColor: '#d1d5db',
+    backgroundColor: '#f3f4f6',
+  },
+  platformHealthGlow: {
+    position: 'absolute',
+    width: 30,
+    height: 30,
+    borderRadius: 15,
   },
   platformLogoImage: {
     width: 21,
     height: 21,
     borderRadius: 5,
+  },
+  platformLogoImageOffline: {
+    opacity: 0.28,
   },
   allPlatformLogo: {
     width: 15,
@@ -5409,6 +5647,11 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     backgroundColor: '#e8fff5',
   },
+  storeLogoBagOffline: {
+    borderColor: '#9ca3af',
+    backgroundColor: '#f3f4f6',
+    opacity: 0.62,
+  },
   storeLogoHandle: {
     position: 'absolute',
     top: -6,
@@ -5423,6 +5666,11 @@ const styles = StyleSheet.create({
     borderRightWidth: 2,
     borderTopLeftRadius: 6,
     borderTopRightRadius: 6,
+  },
+  storeLogoHandleOffline: {
+    borderTopColor: '#9ca3af',
+    borderLeftColor: '#9ca3af',
+    borderRightColor: '#9ca3af',
   },
   tiktokLogo: {
     width: 20,
@@ -5483,12 +5731,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: '#fff0f6',
   },
+  instagramLogoOffline: {
+    borderColor: '#9ca3af',
+    backgroundColor: '#f3f4f6',
+    opacity: 0.62,
+  },
   instagramLens: {
     width: 8,
     height: 8,
     borderRadius: 4,
     borderColor: '#e1306c',
     borderWidth: 2,
+  },
+  instagramLensOffline: {
+    borderColor: '#9ca3af',
   },
   instagramFlash: {
     position: 'absolute',
@@ -5498,6 +5754,9 @@ const styles = StyleSheet.create({
     height: 3,
     borderRadius: 2,
     backgroundColor: '#e1306c',
+  },
+  instagramFlashOffline: {
+    backgroundColor: '#9ca3af',
   },
   filterResetButton: {
     minHeight: 28,
