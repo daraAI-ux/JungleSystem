@@ -673,36 +673,28 @@ export function KolamSalesOpsDetail({
           {!skipShipping ? (
             <>
               <Text style={styles.sectionTitle}>Informasi Pengiriman</Text>
-              <KolamCardFrame style={styles.shippingCard} variant="compact">
-                <KolamDescriptionList
-                  accessibilityLabel="Informasi pengiriman"
-                  rows={[
-                    {
-                      id: 'address',
-                      label: 'Alamat',
-                      value: sale.shippingAddressText || '—',
-                      meta: '',
-                      tone: 'default',
-                    },
-                    {
-                      id: 'delivery-status',
-                      label: 'Status kirim',
-                      value: formatKolamSaleDeliveryStatusLabel(
-                        sale.deliveryStatus,
-                        sale.status,
-                      ),
-                      meta: '',
-                      tone: 'default',
-                    },
-                    {
-                      id: 'shipping-cost',
-                      label: 'Total pengiriman',
-                      value: formatRupiah(sale.shippingCost),
-                      meta: '',
-                      tone: 'default',
-                    },
-                  ]}
-                />
+              <View style={styles.shippingBlock}>
+                <View style={styles.shippingField}>
+                  <Text style={styles.shippingFieldLabel}>Alamat</Text>
+                  <Text style={styles.shippingFieldValue}>
+                    {sale.shippingAddressText || '—'}
+                  </Text>
+                </View>
+                <View style={styles.shippingField}>
+                  <Text style={styles.shippingFieldLabel}>Status kirim</Text>
+                  <Text style={styles.shippingFieldValue}>
+                    {formatKolamSaleDeliveryStatusLabel(
+                      sale.deliveryStatus,
+                      sale.status,
+                    )}
+                  </Text>
+                </View>
+                <View style={styles.shippingField}>
+                  <Text style={styles.shippingFieldLabel}>Total pengiriman</Text>
+                  <Text style={styles.shippingFieldValue}>
+                    {formatRupiah(sale.shippingCost)}
+                  </Text>
+                </View>
                 {showDeliveryActions ? (
                   <>
                     {allowedDeliveryTransitions.length === 0 ? (
@@ -744,7 +736,7 @@ export function KolamSalesOpsDetail({
                     Transisi pengiriman tersedia setelah status Lunas.
                   </Text>
                 ) : null}
-              </KolamCardFrame>
+              </View>
             </>
           ) : null}
 
@@ -1232,9 +1224,21 @@ const styles = StyleSheet.create({
     gap: 6,
     minWidth: 160,
   },
-  shippingCard: {
+  shippingBlock: {
     gap: 10,
-    padding: 12,
+  },
+  shippingField: {
+    gap: 2,
+  },
+  shippingFieldLabel: {
+    color: V.colors.mutedFg,
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  shippingFieldValue: {
+    color: V.colors.fg,
+    fontSize: 13,
+    lineHeight: 18,
   },
   historyRow: {
     borderBottomColor: V.colors.border,

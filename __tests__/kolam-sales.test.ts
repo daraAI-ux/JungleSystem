@@ -38,6 +38,7 @@ import {
   normalizeKolamSale,
   normalizeKolamSaleAnalyticsOverview,
   normalizeKolamSaleList,
+  sanitizeKolamPlatformMaskedText,
   pickDefaultOfflinePosSourceId,
   validateKolamSaleCreatePayload,
   validateKolamSaleUpdatePayload,
@@ -228,6 +229,29 @@ describe('kolam sales domain', () => {
         sourceRef: { type: 'offline', name: 'POS' },
       }),
     ).toBe(true);
+  });
+
+  it('strips marketplace ***** masks from shipping address text', () => {
+    expect(
+      sanitizeKolamPlatformMaskedText(
+        'Jl. Melati ***** No. 12 RT ** / RW **, Jakarta Selatan',
+      ),
+    ).toBe('Jl. Melati No. 12 RT / RW, Jakarta Selatan');
+
+    const detail = normalizeKolamSale({
+      _id: 'sale-mask',
+      invoiceCode: 'INV-M',
+      status: 'paid',
+      shippingAddress: {
+        address: 'Jl. ****** Mawar No. **',
+        city: 'Bandung',
+        province: 'Jawa Barat',
+      },
+      items: [],
+    });
+    expect(detail.shippingAddressText).toBe(
+      'Jl. Mawar No, Bandung, Jawa Barat',
+    );
   });
 
   it('computes Tokopedia/Shopee olshop profit like FE (not internal PM path)', () => {

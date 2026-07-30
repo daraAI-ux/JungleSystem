@@ -1987,20 +1987,49 @@ function normalizeShippingAddressText(
   buyerInfo: KolamSaleBuyerInfo | null,
 ): string {
   if (typeof value === 'string' && value.trim()) {
-    return value.trim();
+    return sanitizeKolamPlatformMaskedText(value);
   }
   const record = asRecord(value);
   const parts = [
-    getString(record, 'address') || getString(record, 'fullAddress'),
+    getString(record, 'recipientName') || getString(record, 'name'),
+    getString(record, 'phone'),
+    getString(record, 'address') ||
+      getString(record, 'fullAddress') ||
+      getString(record, 'addressLine1'),
+    getString(record, 'addressLine2'),
     getString(record, 'district'),
     getString(record, 'city'),
     getString(record, 'province'),
     getString(record, 'postalCode') || getString(record, 'zip'),
-  ].filter(Boolean);
+  ]
+    .map(part => sanitizeKolamPlatformMaskedText(part))
+    .filter(Boolean);
   if (parts.length) {
     return parts.join(', ');
   }
-  return buyerInfo?.address?.trim() || '';
+  return sanitizeKolamPlatformMaskedText(buyerInfo?.address?.trim() || '');
+}
+
+/**
+ * Marketplace (Tokopedia/Shopee) often masks PII with `***` / `*****`.
+ * Keep only readable characters so the address isn't a wall of asterisks.
+ */
+export function sanitizeKolamPlatformMaskedText(value: string): string {
+  if (!value) {
+    return '';
+  }
+  return value
+    .replace(/\*{2,}/g, '')
+    .replace(/•{2,}/g, '')
+    .replace(/x{3,}/gi, '')
+    .replace(/\(\s*\)/g, '')
+    .replace(/\[\s*\]/g, '')
+    .replace(/\s*[|/]\s*(?=[,/]|$)/g, '')
+    .replace(/\s+,/g, ',')
+    .replace(/,\s*,+/g, ',')
+    .replace(/^[,\s./\-–—]+|[,\s./\-–—]+$/g, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
 }
 
 function normalizeSaleItems(value: unknown): KolamSaleItem[] {
