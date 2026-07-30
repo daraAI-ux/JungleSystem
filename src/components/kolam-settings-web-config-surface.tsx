@@ -7022,11 +7022,6 @@ function FinancialSettingsPanel({
 }) {
   const busy = financialStatus === 'loading' || financialStatus === 'saving';
   const {height: windowHeight, width: windowWidth} = useWindowDimensions();
-  const paymentMethodModalWidth = Math.max(
-    320,
-    Math.min(980, windowWidth - 56),
-  );
-  const paymentMethodModalHeight = Math.max(360, windowHeight - 56);
   const [paymentMethodFormOpen, setPaymentMethodFormOpen] =
     React.useState(false);
   const paymentMethodCanSave =
@@ -7265,8 +7260,8 @@ function FinancialSettingsPanel({
                   style={[
                     styles.financialPaymentModalPanel,
                     {
-                      height: paymentMethodModalHeight,
-                      width: paymentMethodModalWidth,
+                      height: windowHeight,
+                      width: windowWidth,
                     },
                   ]}
                 >
@@ -8318,11 +8313,7 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   financialPaymentModalOverlay: {
-    alignItems: 'center',
     flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 18,
-    paddingVertical: 14,
   },
   financialPaymentModalBody: {
     flex: 1,
@@ -8330,9 +8321,6 @@ const styles = StyleSheet.create({
   },
   financialPaymentModalPanel: {
     backgroundColor: '#f9fafb',
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
     gap: 10,
     padding: 12,
   },
