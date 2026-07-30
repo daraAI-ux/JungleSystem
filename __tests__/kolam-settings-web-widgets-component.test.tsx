@@ -423,6 +423,15 @@ describe('settings web widgets', () => {
               any: true,
             },
             financialStatus: 'live',
+            financialWallets: [
+              {id: 'wallet-cash', name: 'Kas Utama', type: 'cash', provider: ''},
+              {
+                id: 'wallet-bank',
+                name: 'Main Wallet',
+                type: 'bank',
+                provider: 'BCA',
+              },
+            ],
             paymentMethods: [],
           })}
         />,
@@ -449,6 +458,64 @@ describe('settings web widgets', () => {
     ).toEqual(
       expect.arrayContaining(['Tipe Pembayaran', 'Provider Pembayaran']),
     );
+    const walletSelect = renderer!.root
+      .findAllByType(KolamDropdownSelect)
+      .find(node => node.props.label === 'Wallet')!;
+    expect(walletSelect.props.options).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({value: 'wallet-bank'}),
+      ]),
+    );
+    expect(walletSelect.props.options).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({value: 'wallet-cash'}),
+      ]),
+    );
+  });
+
+  it('renders financial tax profile fields from Kolam FE contract', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamSettingsWebConfigSurface
+          {...createSurfaceProps({
+            activeTabId: 'finansial',
+            financialSectionVisibility: {
+              paymentMethods: false,
+              taxProfile: true,
+              overtime: false,
+              enclosureCommission: false,
+              taxEdit: true,
+              any: true,
+            },
+            financialStatus: 'live',
+            taxCompanyProfileDraft: {
+              companyName: 'Dunia Anura',
+              taxpayerType: 'pt',
+              umkmScheme: 'none',
+              pricesIncludeTax: true,
+              completeness: {complete: false, missing: ['npwpOrNpwp16']},
+            },
+          })}
+        />,
+      );
+    });
+
+    const text = renderText(renderer!);
+    expect(text).toEqual(
+      expect.arrayContaining([
+        'Profil pajak perusahaan',
+        'Jenis wajib pajak',
+        'Skema UMKM',
+        'Harga include PPN (profil pajak)',
+      ]),
+    );
+    expect(
+      renderer!.root
+        .findAllByType(KolamDropdownSelect)
+        .map(node => node.props.label),
+    ).toEqual(expect.arrayContaining(['Jenis wajib pajak', 'Skema UMKM']));
   });
 
   it('renders Umum social media and staff access cards', async () => {

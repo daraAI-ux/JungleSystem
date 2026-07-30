@@ -3731,7 +3731,16 @@ export function useKolamSettingsPanelController(
         await updateKolamPaymentMethod(paymentMethodDraft.id, body);
         setFinancialMessage('Metode pembayaran berhasil diperbarui.');
       } else {
-        await createKolamPaymentMethod(body);
+        const created = await createKolamPaymentMethod(body);
+        if (
+          body.requireSaleProof === true &&
+          created.id &&
+          created.requireSaleProof !== true
+        ) {
+          await updateKolamPaymentMethod(created.id, {
+            requireSaleProof: true,
+          });
+        }
         setFinancialMessage('Metode pembayaran berhasil dibuat.');
       }
       clearPaymentMethodDraft();

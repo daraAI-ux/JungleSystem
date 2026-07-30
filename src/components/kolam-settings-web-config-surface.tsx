@@ -132,6 +132,7 @@ const paymentMethodProviderOptions = [
 ];
 
 type TaxPayerTypeOptionValue = 'pt' | 'cv' | 'umkm' | 'perorangan' | 'other';
+type TaxUmkmSchemeOptionValue = 'none' | 'pp_55_2022' | 'other';
 
 const taxPayerTypeOptions: Array<{
   label: string;
@@ -141,6 +142,15 @@ const taxPayerTypeOptions: Array<{
   {value: 'cv', label: 'CV - Commanditaire Vennootschap'},
   {value: 'umkm', label: 'UMKM'},
   {value: 'perorangan', label: 'Perorangan'},
+  {value: 'other', label: 'Lainnya'},
+];
+
+const taxUmkmSchemeOptions: Array<{
+  label: string;
+  value: TaxUmkmSchemeOptionValue;
+}> = [
+  {value: 'none', label: 'Tidak ada'},
+  {value: 'pp_55_2022', label: 'PP 55/2022'},
   {value: 'other', label: 'Lainnya'},
 ];
 
@@ -7207,6 +7217,9 @@ function FinancialSettingsPanel({
     taxCompanyProfileDraft.completeness?.missing ??
     taxCompanyProfile?.completeness?.missing ??
     [];
+  const compatibleFinancialWallets = financialWallets.filter(wallet =>
+    isPaymentWalletCompatible(paymentMethodDraft.type, wallet.type),
+  );
 
   if (!financialSectionVisibility.any) {
     return (
@@ -7492,9 +7505,21 @@ function FinancialSettingsPanel({
                             ]}
                             triggerStyle={styles.shippingTimezoneTrigger}
                             value={paymentMethodDraft.type}
-                            onChange={value =>
-                              setPaymentMethodDraftField('type', value)
-                            }
+                            onChange={value => {
+                              setPaymentMethodDraftField('type', value);
+                              const selectedWallet = financialWallets.find(
+                                wallet => wallet.id === paymentMethodDraft.wallet,
+                              );
+                              if (
+                                selectedWallet &&
+                                !isPaymentWalletCompatible(
+                                  value,
+                                  selectedWallet.type,
+                                )
+                              ) {
+                                setPaymentMethodDraftField('wallet', '');
+                              }
+                            }}
                           />
                         </KolamRowFrame>
                         <KolamRowFrame variant="settingsForm">
@@ -7585,7 +7610,7 @@ function FinancialSettingsPanel({
                             menuPlacement="inline"
                             options={[
                               {value: '', label: 'Pilih wallet'},
-                              ...financialWallets.map(wallet => ({
+                              ...compatibleFinancialWallets.map(wallet => ({
                                 value: wallet.id,
                                 label: `${wallet.name} (${wallet.type})`,
                               })),
@@ -7826,6 +7851,28 @@ function FinancialSettingsPanel({
               }
             />
           </KolamRowFrame>
+          <KolamRowFrame variant="settingsForm">
+            <KolamTextFieldRowCopy
+              description="Pilih skema UMKM untuk estimasi dan dokumen pajak."
+              label="Skema UMKM"
+            />
+            <KolamDropdownSelect
+              accessibilityLabel="Skema UMKM"
+              label="Skema UMKM"
+              menuPlacement="inline"
+              options={taxUmkmSchemeOptions}
+              showLabelInTrigger={false}
+              style={[
+                styles.financialSelectorControl,
+                {width: settingsFieldWidth},
+              ]}
+              triggerStyle={styles.shippingTimezoneTrigger}
+              value={taxCompanyProfileDraft.umkmScheme ?? 'none'}
+              onChange={value =>
+                setTaxCompanyProfileDraftField('umkmScheme', value)
+              }
+            />
+          </KolamRowFrame>
           <KolamToggleRow
             active={taxCompanyProfileDraft.isPkp === true}
             description="Aktif jika perusahaan terdaftar sebagai PKP."
@@ -7869,6 +7916,18 @@ function FinancialSettingsPanel({
               )
             }
             value={String(taxCompanyProfileDraft.defaultPpnRate ?? 11)}
+            variant="settingsForm"
+          />
+          <KolamToggleRow
+            active={taxCompanyProfileDraft.pricesIncludeTax !== false}
+            description="Harga pada profil pajak dianggap sudah termasuk PPN."
+            label="Harga include PPN (profil pajak)"
+            onPress={() =>
+              setTaxCompanyProfileDraftField(
+                'pricesIncludeTax',
+                taxCompanyProfileDraft.pricesIncludeTax === false,
+              )
+            }
             variant="settingsForm"
           />
           <KolamTextFieldRow
@@ -8197,6 +8256,18 @@ function FinancialChoiceSegment({
       selectedId={active ? label : ''}
     />
   );
+}
+
+function isPaymentWalletCompatible(
+  paymentType: SettingsPaymentMethodDraft['type'],
+  walletType: string,
+) {
+  const normalizedWalletType = walletType.toLowerCase();
+  if (paymentType === 'cash') {
+    return normalizedWalletType === 'cash';
+  }
+
+  return normalizedWalletType !== 'cash';
 }
 
 function SocialMediaFieldRow({
