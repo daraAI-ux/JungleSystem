@@ -1415,10 +1415,6 @@ const styles = StyleSheet.create({
     color: V.colors.mutedFg,
     fontSize: 12,
   },
-  stripSourceLogo: {
-    height: 28,
-    width: 28,
-  },
   outstandingCard: {
     gap: 4,
     padding: 12,
