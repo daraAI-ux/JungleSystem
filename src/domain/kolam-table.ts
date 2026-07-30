@@ -443,6 +443,16 @@ type KolamTableAdaptivePreset = Partial<
 const KOLAM_TABLE_ADAPTIVE_PRESETS: Partial<
   Record<KolamTableId, KolamTableAdaptivePreset>
 > = {
+  brand: {
+    // List logo box is 132×40 — keep primary near that, not name-text flex.
+    primary: { minWidth: 132, maxWidth: 160, charWidth: 8, padding: 20 },
+    meta: { minWidth: 48, maxWidth: 96, charWidth: 8, padding: 16 },
+    products: { minWidth: 56, maxWidth: 92, charWidth: 8, padding: 16 },
+    raws: { minWidth: 56, maxWidth: 92, charWidth: 8, padding: 16 },
+    notes: { minWidth: 100, maxWidth: 220, charWidth: 8, padding: 16 },
+    status: { minWidth: 88, maxWidth: 120, charWidth: 8, padding: 16 },
+    actions: { minWidth: 64, maxWidth: 64, padding: 0 },
+  },
   production: {
     primary: { minWidth: 88, maxWidth: 200, charWidth: 8, padding: 20 },
     meta: { minWidth: 56, maxWidth: 120, charWidth: 8, padding: 16 },

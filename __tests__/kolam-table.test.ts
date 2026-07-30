@@ -252,6 +252,37 @@ describe('getKolamTableColumns', () => {
     expect(contentTotal + 64).toBe(1100 - 40 - 16 * 8);
   });
 
+  it('resolves brand columns from shared presets without per-module size patches', () => {
+    const columns = resolveKolamDataTableColumns({
+      tableId: 'brand',
+      containerWidth: 1100,
+      columnValues: {
+        primary: ['Logo'],
+        meta: ['Indonesia'],
+        products: [12, 3],
+        raws: [4, 0],
+        notes: ['Catatan merek cukup panjang untuk preferensi lebar'],
+        status: ['Aktif'],
+        actions: ['...'],
+      },
+    });
+
+    const primary = columns.find(column => column.id === 'primary');
+    const notes = columns.find(column => column.id === 'notes');
+    const actions = columns.find(column => column.id === 'actions');
+    const contentTotal = columns.reduce((sum, column) => {
+      if (column.id === 'actions') {
+        return sum;
+      }
+      return sum + (column.width ?? 0);
+    }, 0);
+
+    expect(primary?.width).toBeDefined();
+    expect(notes?.width ?? 0).toBeGreaterThan(primary?.width ?? 0);
+    expect(actions?.width).toBe(64);
+    expect(contentTotal + 64).toBe(1100 - 40 - 16 * 6);
+  });
+
   it('defines product serial list table headers matching FE', () => {
     expect(getKolamTableColumns('product-serial').map(column => column.label)).toEqual([
       'Nomor Seri',
