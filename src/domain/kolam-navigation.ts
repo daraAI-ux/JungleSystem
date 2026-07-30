@@ -1105,12 +1105,14 @@ const kolamNavigationRouteVariantSpecs: Array<{
   {
     baseRoute: '/sales',
     labelSuffix: 'Detail',
+    label: 'Detail Penjualan',
     route: '/sales/:id',
     description: '',
   },
   {
     baseRoute: '/sales',
     labelSuffix: 'Ubah',
+    label: 'Ubah Penjualan',
     route: '/sales/:id/edit',
     description: 'Perbarui transaksi penjualan dan kelola pesanan pelanggan.',
   },
