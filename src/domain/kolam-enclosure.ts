@@ -41,6 +41,8 @@ export interface KolamEnclosureStaffRef {
   username: string;
   email: string;
   displayName: string;
+  /** Absolute or relative media path for profile/HR photo. */
+  photo: string;
 }
 
 export interface KolamEnclosureCustomerRef {
@@ -710,8 +712,20 @@ function normalizeKolamEnclosureStaff(
     username ||
     email ||
     id;
+  const hr = asRecord(record.hr);
 
-  return { id, firstName, lastName, username, email, displayName };
+  return {
+    id,
+    firstName,
+    lastName,
+    username,
+    email,
+    displayName,
+    photo:
+      getString(record, 'profile_picture') ||
+      getString(record, 'photo') ||
+      getString(hr, 'photo'),
+  };
 }
 
 function normalizeKolamEnclosureCustomer(

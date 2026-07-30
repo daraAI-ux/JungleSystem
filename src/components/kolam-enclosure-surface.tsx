@@ -45,6 +45,8 @@ import {
   KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import {KolamEmptyState} from './kolam-empty-state';
+import {KolamHoverTooltip} from './kolam-hover-tooltip';
+import {KolamProfileAvatarContent} from './kolam-profile-avatar-content';
 import {KolamRemoteImage} from './kolam-remote-image';
 import {KolamSearchField} from './kolam-search-field';
 import {KolamStatusBadge} from './kolam-status-badge';
@@ -599,12 +601,11 @@ function KolamEnclosureRow({
         <View
           style={[
             styles.listCell,
+            styles.picCell,
             picColumn ? getKolamDataTableColumnStyle(picColumn) : null,
           ]}
         >
-          <Text numberOfLines={2} style={styles.cellText}>
-            {enclosure.assignedTo?.displayName || '-'}
-          </Text>
+          <KolamEnclosurePicAvatar enclosure={enclosure} />
         </View>
 
         <View
@@ -644,6 +645,38 @@ function KolamEnclosureRow({
         />
       </KolamDataTableActionsTrack>
     </KolamDataTableRowFrame>
+  );
+}
+
+function KolamEnclosurePicAvatar({enclosure}: {enclosure: KolamEnclosure}) {
+  const name =
+    enclosure.assignedTo?.displayName ||
+    enclosure.assignedTo?.email ||
+    'Tanpa PIC';
+  const photoUri = getKolamFileUrl(enclosure.assignedTo?.photo);
+  const initials =
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map(part => part.charAt(0).toUpperCase())
+      .join('') || '?';
+
+  return (
+    <KolamHoverTooltip
+      align="center"
+      containerStyle={styles.picTooltip}
+      label={name}
+    >
+      <View accessibilityLabel={`PIC ${name}`} style={styles.picAvatar}>
+        <KolamProfileAvatarContent
+          imageStyle={styles.picAvatarImage}
+          imageUrl={photoUri}
+          initials={initials}
+          textStyle={styles.picAvatarText}
+        />
+      </View>
+    </KolamHoverTooltip>
   );
 }
 
@@ -1393,6 +1426,35 @@ const styles = StyleSheet.create({
   },
   identityCell: {
     alignItems: 'flex-start',
+  },
+  picCell: {
+    alignItems: 'center',
+    overflow: 'visible',
+  },
+  picTooltip: {
+    alignSelf: 'center',
+  },
+  picAvatar: {
+    alignItems: 'center',
+    backgroundColor: V.colors.primarySoft,
+    borderColor: V.colors.border,
+    borderRadius: 16,
+    borderWidth: 1,
+    height: 32,
+    justifyContent: 'center',
+    overflow: 'hidden',
+    width: 32,
+  },
+  picAvatarImage: {
+    borderRadius: 16,
+    height: 32,
+    width: 32,
+  },
+  picAvatarText: {
+    color: V.colors.primary,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '800',
   },
   photoCell: {
     alignItems: 'center',
