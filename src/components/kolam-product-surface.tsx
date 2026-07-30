@@ -15,6 +15,7 @@ import {
   type KolamCustomField,
 } from '../domain/kolam-custom-field';
 import {
+  fitKolamDataTableColumns,
   getKolamTableColumns,
   getKolamTableVisualContract,
   type KolamTableColumn,
@@ -161,54 +162,20 @@ const STOCK_OPTIONS = [
 ];
 
 function fitProductListColumns(containerWidth: number): KolamTableColumn[] {
-  const base = getKolamTableColumns('product');
-  if (containerWidth <= 0) {
-    return base;
-  }
-
-  const gap = KOLAM_DATA_TABLE_COLUMN_GAP;
-  const paddingX = getKolamTableVisualContract().body.cellPaddingX * 2;
-  const actionsWidth = KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH;
-  const gapsTotal = gap * Math.max(0, base.length - 1);
-  const contentBudget = Math.max(
-    0,
-    containerWidth - paddingX - gapsTotal - actionsWidth,
+  // Prefer shared fitter so floors cannot exceed body budget (weighted Math.max
+  // floors previously overflowed MainTrack → cells piled onto neighbors).
+  // Preferred widths in `product` columns already bias Nama (~2× secondary).
+  return fitKolamDataTableColumns(
+    getKolamTableColumns('product'),
+    containerWidth,
+    {
+      actionsMinWidth: KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+      gap: KOLAM_DATA_TABLE_COLUMN_GAP,
+      paddingX: getKolamTableVisualContract().body.cellPaddingX * 2,
+      primaryMinWidth: 160,
+      secondaryMinWidth: 56,
+    },
   );
-  const contentColumns = base.filter(column => column.id !== 'actions');
-  const secondaryColumns = contentColumns.filter(
-    column => column.id !== 'primary',
-  );
-  // Nama produk (varian panjang) butuh ruang lebih dari equal-fit.
-  const primaryWeight = 2.2;
-  const secondaryWeight = 1;
-  const totalWeight =
-    primaryWeight + secondaryWeight * Math.max(1, secondaryColumns.length);
-  const unit = contentBudget / totalWeight;
-  const primaryWidth = Math.max(220, Math.floor(unit * primaryWeight));
-  const secondaryWidth = Math.max(72, Math.floor(unit * secondaryWeight));
-  let remainder =
-    contentBudget - primaryWidth - secondaryWidth * secondaryColumns.length;
-  const lastSecondaryId = secondaryColumns[secondaryColumns.length - 1]?.id;
-
-  return base.map(column => {
-    if (column.id === 'actions') {
-      return { ...column, width: actionsWidth };
-    }
-
-    if (column.id === 'primary') {
-      return { ...column, width: primaryWidth };
-    }
-
-    const extra = column.id === lastSecondaryId ? remainder : 0;
-    if (column.id === lastSecondaryId) {
-      remainder = 0;
-    }
-
-    return {
-      ...column,
-      width: secondaryWidth + extra,
-    };
-  });
 }
 
 type ProductListFilterPanel = 'category' | 'brand' | 'stock';
@@ -1060,9 +1027,10 @@ function ProductRow({
     <KolamDataTableRowFrame
       style={actionMenuOpen ? styles.activeActionRow : styles.tableRow}
     >
-      <KolamDataTableMainTrack style={styles.mainTrackVisible}>
+      <KolamDataTableMainTrack>
         <View
           style={[
+            styles.cell,
             styles.primaryCell,
             primaryColumn ? getKolamDataTableColumnStyle(primaryColumn) : null,
           ]}
@@ -1082,11 +1050,17 @@ function ProductRow({
           <KolamCopyStack
             containerStyle={styles.productCopy}
             items={[
-              { id: 'name', text: product.name, style: styles.productName },
+              {
+                id: 'name',
+                text: product.name,
+                style: styles.productName,
+                textProps: { numberOfLines: 1 },
+              },
               {
                 id: 'category',
                 text: product.categories.map(category => category.name).join(', ') || '-',
                 style: styles.productCategory,
+                textProps: { numberOfLines: 1 },
               },
             ]}
           />
@@ -8249,9 +8223,6 @@ const styles = StyleSheet.create({
     overflow: 'visible',
     zIndex: 1000,
   },
-  mainTrackVisible: {
-    overflow: 'visible',
-  },
   cell: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -8275,6 +8246,7 @@ const styles = StyleSheet.create({
     gap: 12,
     justifyContent: 'flex-start',
     minWidth: 0,
+    overflow: 'hidden',
     paddingVertical: 4,
   },
   rowTextCenter: {
@@ -8288,6 +8260,7 @@ const styles = StyleSheet.create({
   thumbnailFrame: {
     backgroundColor: V.colors.secondary,
     borderRadius: 6,
+    flexShrink: 0,
     height: 44,
     overflow: 'hidden',
     width: 44,
@@ -8299,6 +8272,7 @@ const styles = StyleSheet.create({
   productCopy: {
     flex: 1,
     minWidth: 0,
+    overflow: 'hidden',
   },
   productName: {
     color: V.colors.fg,
@@ -8333,7 +8307,11 @@ const styles = StyleSheet.create({
   brandLogoRow: {
     alignItems: 'center',
     flexDirection: 'row',
+    flexShrink: 1,
     gap: 6,
+    maxWidth: '100%',
+    minWidth: 0,
+    overflow: 'hidden',
   },
   brandLogoFrame: {
     alignItems: 'center',
@@ -8341,6 +8319,7 @@ const styles = StyleSheet.create({
     borderColor: V.colors.border,
     borderRadius: 6,
     borderWidth: 1,
+    flexShrink: 0,
     height: 28,
     justifyContent: 'center',
     overflow: 'hidden',
@@ -8392,8 +8371,12 @@ const styles = StyleSheet.create({
   infoBadges: {
     alignItems: 'center',
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexWrap: 'nowrap',
     gap: 6,
+    justifyContent: 'center',
+    maxWidth: '100%',
+    minWidth: 0,
+    overflow: 'hidden',
   },
   actionCell: {
     alignItems: 'flex-end',
