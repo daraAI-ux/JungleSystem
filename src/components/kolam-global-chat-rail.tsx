@@ -5813,7 +5813,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 12,
-    zIndex: 20,
+    zIndex: 200,
+    elevation: 20,
+    overflow: 'visible',
   },
   titleGroup: {
     minWidth: 0,
@@ -5821,6 +5823,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
+    zIndex: 210,
+    elevation: 21,
   },
   iconShell: {
     width: 32,
@@ -5835,6 +5839,8 @@ const styles = StyleSheet.create({
   copyGroup: {
     minWidth: 0,
     flex: 1,
+    zIndex: 220,
+    elevation: 22,
   },
   eyebrow: {
     color: V.colors.mutedFg,
@@ -5861,9 +5867,13 @@ const styles = StyleSheet.create({
   },
   chatHeaderMenuHost: {
     position: 'relative',
+    zIndex: 230,
+    elevation: 23,
   },
   chatHealthMenuHost: {
     position: 'relative',
+    zIndex: 230,
+    elevation: 23,
   },
   chatHealthButton: {
     width: 26,
@@ -5953,7 +5963,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     backgroundColor: V.colors.bg,
     gap: 8,
-    zIndex: 40,
+    zIndex: 400,
+    elevation: 40,
     shadowColor: '#111827',
     shadowOpacity: 0.16,
     shadowRadius: 14,
@@ -5970,7 +5981,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     backgroundColor: V.colors.bg,
     gap: 8,
-    zIndex: 40,
+    zIndex: 400,
+    elevation: 40,
     shadowColor: '#111827',
     shadowOpacity: 0.16,
     shadowRadius: 14,
@@ -6079,6 +6091,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     gap: 12,
+    zIndex: 1,
   },
   metaText: {
     color: V.colors.mutedFg,
@@ -6093,6 +6106,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     backgroundColor: V.colors.mutedSoft,
     gap: 8,
+    zIndex: 1,
   },
   filterSearchInput: {
     minHeight: 34,
