@@ -1709,11 +1709,6 @@ function KolamChatRailDetailPanel({
   const handleSubmitComposer = React.useCallback(() => {
     handleSendFromComposer();
   }, [handleSendFromComposer]);
-  const composerCanSend = Boolean(
-    !detail.sending &&
-      !inboxComposerBlocked &&
-      (composerText.trim() || pendingAttachment),
-  );
 
   const handleStartEditMessage = React.useCallback(
     (message: ReturnType<typeof useKolamChatRailDetail>['messages'][number]) => {
@@ -2174,16 +2169,6 @@ function KolamChatRailDetailPanel({
                 </KolamPressable>
               ) : null}
             </View>
-            <KolamPressable
-              accessibilityLabel="Kirim pesan chat"
-              disabled={!composerCanSend}
-              onPress={handleSendFromComposer}
-              style={[
-                styles.composerSendButton,
-                !composerCanSend && styles.composerSendButtonDisabled,
-              ]}>
-              <View style={styles.composerSendIcon} />
-            </KolamPressable>
           </View>
         </View>
       </View>
@@ -6902,28 +6887,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '900',
     lineHeight: 14,
-  },
-  composerSendButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'transparent',
-  },
-  composerSendButtonDisabled: {
-    opacity: 0.5,
-  },
-  composerSendIcon: {
-    width: 0,
-    height: 0,
-    borderTopWidth: 6,
-    borderBottomWidth: 6,
-    borderLeftWidth: 11,
-    borderTopColor: 'transparent',
-    borderBottomColor: 'transparent',
-    borderLeftColor: V.colors.primary,
-    transform: [{translateX: 1}],
   },
   listScroll: {
     flex: 1,
