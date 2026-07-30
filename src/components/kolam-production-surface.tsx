@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  FlatList,
   Image,
   Pressable,
   ScrollView,
@@ -30,8 +29,9 @@ import {
   type KolamSubmitCheckBreakdownEntry,
 } from '../domain/kolam-production';
 import {
+  getKolamTableColumns,
   getKolamTableVisualContract,
-  resolveKolamDataTableColumns,
+  type KolamTableColumn,
 } from '../domain/kolam-table';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { useKolamAuthContext } from '../context/kolam-app-contexts';
@@ -70,6 +70,7 @@ import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamHoverTooltip } from './kolam-hover-tooltip';
 import { KolamProfileAvatarContent } from './kolam-profile-avatar-content';
 import { KolamRemoteImage } from './kolam-remote-image';
+import { KolamSearchField } from './kolam-search-field';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamSwitch } from './kolam-switch';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
@@ -86,6 +87,7 @@ const PRODUCTION_STATUS_OPTIONS: KolamProductionStatus[] = [
 
 const WAITING_PO_POLL_MS = 20_000;
 
+type ProductionStatusFilterPanel = 'status' | null;
 type ProductionStatusIntent = 'primary' | 'success' | 'warning' | 'danger' | 'muted';
 
 function productionStatusIntent(status?: string): ProductionStatusIntent {
@@ -107,7 +109,7 @@ export function KolamProductionSurface({
   const controller = useKolamProductionController(route);
 
   return (
-    <View style={[styles.surface, controller.mode === 'list' ? styles.listSurface : null]}>
+    <View style={styles.surface}>
       {controller.error ? (
         <KolamStatusBadge intent="danger" label={controller.error} numberOfLines={3} style={styles.errorBadge} />
       ) : null}
@@ -136,7 +138,8 @@ function KolamProductionList({
   const canCreate = hasKolamProductionPermission(authUser?.permissions, 'create', authUser?.roleKey);
   const canDelete = hasKolamProductionPermission(authUser?.permissions, 'delete', authUser?.roleKey);
   const [searchInput, setSearchInput] = React.useState(controller.filters.search);
-  const [activeStatusPanel, setActiveStatusPanel] = React.useState(false);
+  const [activeFilterPanel, setActiveFilterPanel] =
+    React.useState<ProductionStatusFilterPanel>(null);
   const [deleteCandidate, setDeleteCandidate] = React.useState<KolamProduction | null>(null);
   const [restoreCandidate, setRestoreCandidate] = React.useState<KolamProduction | null>(null);
   const [tableBodyWidth, setTableBodyWidth] = React.useState(0);
@@ -156,130 +159,135 @@ function KolamProductionList({
 
   const pageCount = Math.max(1, controller.pagination.totalPages);
   const safePage = Math.min(Math.max(controller.pagination.page, 1), pageCount);
+  const filtersAppliedCount = [
+    controller.filters.search,
+    controller.filters.status,
+    controller.filters.startDate,
+    controller.filters.endDate,
+  ].filter(Boolean).length;
   const statusFilterLabel = controller.filters.status
     ? getKolamProductionStatusLabel(controller.filters.status)
     : 'Status';
 
   const listColumns = React.useMemo(
-    () =>
-      resolveKolamDataTableColumns({
-        tableId: 'production',
-        containerWidth: tableBodyWidth,
-        gap: KOLAM_DATA_TABLE_COLUMN_GAP,
-        paddingX: getKolamTableVisualContract().body.cellPaddingX * 2,
-        columnValues: {
-          primary: controller.productions.flatMap(item => [
-            getKolamProductionTargetLabel(item),
-            getKolamProductionTargetTypeLabel(item.targetType),
-          ]),
-          meta: controller.productions.map(item =>
-            getKolamProductionVariantLabel(item.variant),
-          ),
-          children: controller.productions.map(item => {
-            const planned = item.plannedQuantity || item.quantity || 0;
-            const completed = item.completedQuantity || 0;
-            return `${completed} / ${planned}`;
-          }),
-          amount: controller.productions.map(item =>
-            formatRupiah(item.estimatedCost || 0),
-          ),
-          notes: controller.productions.map(item => item.batchId || '—'),
-          status: controller.productions.map(item =>
-            getKolamProductionStatusLabel(item.status),
-          ),
-          products: ['••'],
-          marketplace: controller.productions.map(item =>
-            formatProductionListDate(item.productionDate),
-          ),
-          actions: ['...'],
-        },
-      }),
-    [controller.productions, tableBodyWidth],
-  );
-
-  const renderRow = React.useCallback(
-    ({ item }: { item: KolamProduction }) => (
-      <KolamProductionRow
-        canDelete={canDelete}
-        columns={listColumns}
-        production={item}
-        onDelete={() => setDeleteCandidate(item)}
-        onRestore={() => setRestoreCandidate(item)}
-        onSelect={() => {
-          void controller.onSelectProduction(item);
-          onRouteChange?.(`${KOLAM_PRODUCTION_ROOT}/${item.id}`);
-        }}
-      />
-    ),
-    [canDelete, controller, listColumns, onRouteChange],
+    () => fitProductionListColumns(tableBodyWidth),
+    [tableBodyWidth],
   );
 
   return (
     <View style={styles.listRoot}>
       <View style={styles.toolbarWrap}>
-        <View style={kolamTableToolbarStyles.row}>
-          <KolamFormTextField
-            onChangeText={setSearchInput}
-            placeholder="Cari batch / target / deskripsi"
-            style={kolamTableToolbarStyles.searchInput}
-            value={searchInput}
-          />
-          <View style={kolamTableToolbarStyles.controls}>
-            <KolamTableFilterTrigger
-              active={activeStatusPanel || Boolean(controller.filters.status)}
-              label={statusFilterLabel}
-              onPress={() => setActiveStatusPanel(current => !current)}
-            />
-            <KolamDateField
-              accessibilityLabel="Tanggal mulai"
-              label="Dari"
-              onChange={value => controller.onChangeFilters({ startDate: value })}
-              placeholder="Dari"
-              showLabelInTrigger={false}
-              style={styles.dateField}
-              value={controller.filters.startDate}
-            />
-            <KolamDateField
-              accessibilityLabel="Tanggal sampai"
-              label="Sampai"
-              onChange={value => controller.onChangeFilters({ endDate: value })}
-              placeholder="Sampai"
-              showLabelInTrigger={false}
-              style={styles.dateField}
-              value={controller.filters.endDate}
-            />
-            <KolamButton disabled={controller.loading} label="Refresh" onPress={() => void controller.onRefresh()} />
-            <KolamButton
-              disabled={controller.exporting || controller.loading}
-              label={controller.exporting ? 'Mengekspor…' : 'Ekspor'}
-              onPress={() => void controller.onExportList()}
-            />
-            {canCreate ? (
-              <KolamButton
-                intent="primary"
-                label="Baru"
-                onPress={() => {
-                  controller.onCreateNew();
-                  onRouteChange?.(`${KOLAM_PRODUCTION_ROOT}/create`);
-                }}
+        <View style={kolamTableToolbarStyles.shell}>
+          <View style={kolamTableToolbarStyles.row}>
+            <View style={kolamTableToolbarStyles.filters}>
+              <KolamSearchField
+                containerStyle={kolamTableToolbarStyles.searchInput}
+                onChangeText={setSearchInput}
+                placeholder="Cari batch / target / deskripsi"
+                value={searchInput}
               />
-            ) : null}
+              <KolamTableFilterTrigger
+                active={activeFilterPanel === 'status' || Boolean(controller.filters.status)}
+                label={statusFilterLabel}
+                onPress={() =>
+                  setActiveFilterPanel(current => (current === 'status' ? null : 'status'))
+                }
+                open={activeFilterPanel === 'status'}
+                variant="quiet"
+              />
+              <KolamDateField
+                accessibilityLabel="Tanggal mulai"
+                label="Dari"
+                onChange={value => controller.onChangeFilters({ startDate: value })}
+                placeholder="Dari"
+                showLabelInTrigger={false}
+                style={styles.dateField}
+                value={controller.filters.startDate}
+              />
+              <KolamDateField
+                accessibilityLabel="Tanggal sampai"
+                label="Sampai"
+                onChange={value => controller.onChangeFilters({ endDate: value })}
+                placeholder="Sampai"
+                showLabelInTrigger={false}
+                style={styles.dateField}
+                value={controller.filters.endDate}
+              />
+            </View>
+            <View style={kolamTableToolbarStyles.actions}>
+              {filtersAppliedCount > 0 ? (
+                <KolamButton
+                  label="Reset"
+                  muted
+                  onPress={() => {
+                    setSearchInput('');
+                    setActiveFilterPanel(null);
+                    controller.onClearFilters();
+                  }}
+                  style={styles.toolbarButton}
+                />
+              ) : null}
+              <KolamButton
+                disabled={controller.loading}
+                label="Muat ulang"
+                onPress={() => void controller.onRefresh()}
+                style={styles.toolbarButton}
+              />
+              <KolamButton
+                disabled={controller.exporting || controller.loading}
+                label={controller.exporting ? 'Mengekspor…' : 'Ekspor'}
+                onPress={() => void controller.onExportList()}
+                style={styles.toolbarButton}
+              />
+              {canCreate ? (
+                <KolamButton
+                  intent="primary"
+                  label="Baru"
+                  onPress={() => {
+                    controller.onCreateNew();
+                    onRouteChange?.(`${KOLAM_PRODUCTION_ROOT}/create`);
+                  }}
+                  style={styles.toolbarButton}
+                />
+              ) : null}
+            </View>
           </View>
         </View>
-        {activeStatusPanel ? (
-          <View style={styles.filterPanel}>
-            {PRODUCTION_STATUS_OPTIONS.map(status => (
+
+        {activeFilterPanel === 'status' ? (
+          <View style={[styles.filterOverlayPanel, styles.filterPanelStatus]}>
+            <ScrollView
+              contentContainerStyle={styles.filterPanelContent}
+              keyboardShouldPersistTaps="handled"
+              style={styles.filterPanelScroll}
+            >
               <KolamButton
-                key={status}
-                intent={controller.filters.status === status ? 'primary' : 'plain'}
-                label={getKolamProductionStatusLabel(status)}
-                onPress={() =>
-                  controller.onChangeFilters({
-                    status: controller.filters.status === status ? '' : status,
-                  })
-                }
+                intent={!controller.filters.status ? 'primary' : 'plain'}
+                label="Semua status"
+                onPress={() => {
+                  controller.onChangeFilters({ status: '' });
+                  setActiveFilterPanel(null);
+                }}
+                style={styles.filterPanelOption}
               />
-            ))}
+              {PRODUCTION_STATUS_OPTIONS.map(status => (
+                <KolamButton
+                  intent={controller.filters.status === status ? 'primary' : 'plain'}
+                  key={status}
+                  label={getKolamProductionStatusLabel(status)}
+                  onPress={() => {
+                    controller.onChangeFilters({
+                      status: controller.filters.status === status ? '' : status,
+                    });
+                    setActiveFilterPanel(null);
+                  }}
+                  style={styles.filterPanelOption}
+                />
+              ))}
+            </ScrollView>
+            <View style={styles.filterPanelFooter}>
+              <KolamButton label="Tutup" onPress={() => setActiveFilterPanel(null)} />
+            </View>
           </View>
         ) : null}
       </View>
@@ -312,25 +320,32 @@ function KolamProductionList({
           </KolamTableFooterControls>
         }
         onBodyWidthChange={setTableBodyWidth}
-        style={styles.tableFrame}
       >
-        <FlatList
-          contentContainerStyle={styles.listContent}
-          data={controller.productions}
-          keyExtractor={item => item.id}
-          ListEmptyComponent={
-            <View style={styles.emptyWrap}>
-              <KolamEmptyState
-                compact
-                message="Coba ubah pencarian atau filter status."
-                title={controller.loading ? 'Memuat produksi…' : 'Belum ada produksi'}
-              />
-            </View>
-          }
-          ListHeaderComponent={<KolamDataTableHeader columns={listColumns} />}
-          renderItem={renderRow}
-          style={styles.listFlatList}
-        />
+        <KolamDataTableHeader columns={listColumns} />
+        {controller.productions.length ? (
+          controller.productions.map(item => (
+            <KolamProductionRow
+              canDelete={canDelete}
+              columns={listColumns}
+              key={item.id}
+              production={item}
+              onDelete={() => setDeleteCandidate(item)}
+              onRestore={() => setRestoreCandidate(item)}
+              onSelect={() => {
+                void controller.onSelectProduction(item);
+                onRouteChange?.(`${KOLAM_PRODUCTION_ROOT}/${item.id}`);
+              }}
+            />
+          ))
+        ) : (
+          <View style={styles.emptyWrap}>
+            <KolamEmptyState
+              compact
+              message="Coba ubah pencarian atau filter status."
+              title={controller.loading ? 'Memuat produksi…' : 'Belum ada produksi'}
+            />
+          </View>
+        )}
       </KolamCatalogListTableShell>
 
       <KolamDeleteConfirmDialog
@@ -425,6 +440,7 @@ function KolamProductionRow({
           onPress={onSelect}
           style={[
             styles.listCell,
+            styles.identityCell,
             primaryColumn ? getKolamDataTableColumnStyle(primaryColumn) : styles.primaryCell,
           ]}
         >
@@ -496,6 +512,7 @@ function KolamProductionRow({
           <KolamStatusBadge
             intent={productionStatusIntent(production.status)}
             label={getKolamProductionStatusLabel(production.status)}
+            style={styles.centerBadge}
           />
           {production.status === 'waiting_for_po' && linkedTotal > 0 ? (
             <Text style={styles.warningText}>
@@ -527,6 +544,7 @@ function KolamProductionRow({
       </KolamDataTableMainTrack>
 
       <KolamDataTableActionsTrack
+        style={styles.actionsTrack}
         width={Math.max(
           actionsColumn?.width ?? KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
           KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
@@ -619,8 +637,38 @@ function KolamProductionForm({
       }]
     : [];
 
+  const contextLabel =
+    controller.mode === 'create'
+      ? 'Produksi baru'
+      : `Edit · ${controller.selectedProduction?.batchId ?? ''}`;
+
   return (
-    <ScrollView contentContainerStyle={styles.formScroll}>
+    <View style={styles.detailSurface}>
+      <View style={kolamTableToolbarStyles.shell}>
+        <View style={kolamTableToolbarStyles.row}>
+          <View style={kolamTableToolbarStyles.filters}>
+            <Text numberOfLines={1} style={styles.detailToolbarContext}>
+              {contextLabel}
+            </Text>
+          </View>
+          <View style={kolamTableToolbarStyles.actions}>
+            <KolamButton
+              label="Daftar"
+              onPress={() => {
+                if (isEdit && controller.selectedProduction) {
+                  onRouteChange?.(`${KOLAM_PRODUCTION_ROOT}/${controller.selectedProduction.id}`);
+                  return;
+                }
+                controller.onBackToList();
+                onRouteChange?.(KOLAM_PRODUCTION_ROOT);
+              }}
+              style={styles.toolbarButton}
+            />
+          </View>
+        </View>
+      </View>
+
+      <ScrollView contentContainerStyle={styles.formScroll}>
       <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
         <Text style={styles.sectionTitle}>{isEdit ? 'Edit Produksi' : 'Produksi Baru'}</Text>
 
@@ -877,6 +925,7 @@ function KolamProductionForm({
         </View>
       </KolamContentFrame>
     </ScrollView>
+    </View>
   );
 }
 
@@ -914,10 +963,15 @@ function KolamProductionDetail({
   const nextStatuses = getAllowedNextProductionStatuses(production.status);
 
   return (
-    <View style={styles.detailRoot}>
-      <View style={styles.toolbarWrap}>
-        <View style={styles.toolbarShell}>
-          <View style={styles.detailActionRow}>
+    <View style={styles.detailSurface}>
+      <View style={kolamTableToolbarStyles.shell}>
+        <View style={kolamTableToolbarStyles.row}>
+          <View style={kolamTableToolbarStyles.filters}>
+            <Text numberOfLines={1} style={styles.detailToolbarContext}>
+              {production.batchId || getKolamProductionTargetLabel(production)}
+            </Text>
+          </View>
+          <View style={kolamTableToolbarStyles.actions}>
             <KolamButton
               label="Daftar"
               muted
@@ -1662,57 +1716,116 @@ function resolveActiveComponents(product: KolamProductForProduction, variantId: 
   return product.components;
 }
 
+function fitProductionListColumns(containerWidth: number): KolamTableColumn[] {
+  const base = getKolamTableColumns('production');
+  if (containerWidth <= 0) {
+    return base;
+  }
+
+  const gap = KOLAM_DATA_TABLE_COLUMN_GAP;
+  const paddingX = getKolamTableVisualContract().body.cellPaddingX * 2;
+  const actionsWidth = KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH;
+  const gapsTotal = gap * Math.max(0, base.length - 1);
+  const contentBudget = Math.max(
+    0,
+    containerWidth - paddingX - gapsTotal - actionsWidth,
+  );
+  const contentColumns = base.filter(column => column.id !== 'actions');
+  const equalWidth = Math.max(
+    72,
+    Math.floor(contentBudget / Math.max(1, contentColumns.length)),
+  );
+  let remainder = contentBudget - equalWidth * contentColumns.length;
+  const lastContentId = contentColumns[contentColumns.length - 1]?.id;
+
+  return base.map(column => {
+    if (column.id === 'actions') {
+      return { ...column, width: actionsWidth };
+    }
+
+    const extra = column.id === lastContentId ? remainder : 0;
+    if (column.id === lastContentId) {
+      remainder = 0;
+    }
+
+    return {
+      ...column,
+      width: equalWidth + extra,
+    };
+  });
+}
+
 const styles = StyleSheet.create({
-  surface: { gap: 12 },
-  listSurface: { flex: 1, minHeight: 0, overflow: 'visible' },
+  surface: { gap: 14 },
+  detailSurface: { gap: 14 },
+  detailToolbarContext: {
+    color: V.colors.fg,
+    flexShrink: 1,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+    minWidth: 0,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+  },
   errorBadge: { alignSelf: 'stretch' },
-  listRoot: { flex: 1, gap: 12, minHeight: 0, overflow: 'visible' },
+  listRoot: { gap: 14 },
   toolbarWrap: {
     elevation: 1000,
     overflow: 'visible',
     position: 'relative',
     zIndex: 100000,
   },
-  toolbarShell: {
-    alignItems: 'center',
-    backgroundColor: V.colors.bg,
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    justifyContent: 'space-between',
-    overflow: 'visible',
-    padding: 4,
-  },
-  detailActionRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexShrink: 0,
-    flexWrap: 'wrap',
-    gap: 6,
-    justifyContent: 'flex-end',
-    marginLeft: 'auto',
-  },
   toolbarButton: {
     flexShrink: 0,
     minHeight: 34,
     paddingHorizontal: 10,
   },
-  detailRoot: {
-    flex: 1,
-    gap: 12,
-    minHeight: 0,
+  filterOverlayPanel: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    elevation: 1200,
+    padding: 6,
+    position: 'absolute',
+    shadowColor: V.colors.fg,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    top: 48,
+    width: 240,
+    zIndex: 120000,
   },
-  filterPanel: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
-  dateField: { maxWidth: 140, minWidth: 108, width: 120 },
-  tableFrame: { minHeight: 0, overflow: 'visible' },
-  listFlatList: { flexGrow: 0, overflow: 'visible' },
-  listContent: { flexGrow: 0, overflow: 'visible' },
-  emptyWrap: { paddingVertical: 24 },
+  filterPanelStatus: {
+    left: 148,
+  },
+  filterPanelScroll: {
+    maxHeight: 280,
+  },
+  filterPanelContent: {
+    gap: 4,
+  },
+  filterPanelOption: {
+    justifyContent: 'flex-start',
+  },
+  filterPanelFooter: {
+    alignItems: 'flex-end',
+    borderTopColor: V.colors.border,
+    borderTopWidth: 1,
+    marginTop: 6,
+    paddingTop: 6,
+  },
+  dateField: {
+    flexGrow: 0,
+    flexShrink: 0,
+    maxWidth: 140,
+    minWidth: 108,
+    width: 120,
+  },
+  emptyWrap: { padding: 16 },
   paginationRow: { alignItems: 'center', flexDirection: 'row', gap: 8 },
-  pageLabel: { color: V.colors.mutedFg, fontSize: 13 },
+  pageLabel: { color: V.colors.mutedFg, fontSize: 12, fontWeight: '600' },
   cell: {
     justifyContent: 'center',
     minWidth: 0,
@@ -1720,19 +1833,29 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   listCell: {
+    alignItems: 'center',
     justifyContent: 'center',
     minWidth: 0,
     overflow: 'hidden',
-    paddingHorizontal: 0,
     paddingVertical: 4,
+  },
+  identityCell: {
+    alignItems: 'flex-start',
+    justifyContent: 'center',
   },
   primaryCell: {
     minWidth: 0,
     width: 96,
   },
   statusCell: {
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: 4,
+  },
+  centerBadge: {
+    alignSelf: 'center',
+  },
+  actionsTrack: {
+    alignItems: 'center',
   },
   picCell: {
     alignItems: 'center',
@@ -1787,12 +1910,15 @@ const styles = StyleSheet.create({
   cellText: {
     color: V.colors.fg,
     fontSize: 13,
+    textAlign: 'center',
+    width: '100%',
   },
   numText: {
     color: V.colors.fg,
     fontSize: 13,
     fontWeight: '600',
-    textAlign: 'right',
+    textAlign: 'center',
+    width: '100%',
   },
   cellPrimary: { color: V.colors.fg, fontSize: 13, fontWeight: '600' },
   cellMeta: { color: V.colors.mutedFg, fontSize: 13 },
