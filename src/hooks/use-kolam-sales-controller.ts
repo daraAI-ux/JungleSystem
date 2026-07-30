@@ -315,28 +315,39 @@ export function useKolamSalesController(route: string): KolamSalesController {
   }, []);
 
   const refreshList = useCallback(async () => {
-    if (!isKolamSalesListRoute(route)) {
+    if (getKolamSaleSurfaceMode(route) !== 'list') {
       return;
     }
     setLoading(true);
     setError(null);
     try {
-      const [result, overview, summary] = await Promise.all([
-        getKolamSalesList(filtersRef.current),
-        getKolamSalesAnalyticsOverview().catch(() => EMPTY_ANALYTICS),
-        getKolamSalesNotificationSummary().catch(() => EMPTY_NOTIFICATIONS),
-      ]);
+      const result = await getKolamSalesList(filtersRef.current);
       setSales(result.data);
       setPagination(result.pagination);
-      setAnalytics(overview);
-      setNotificationSummary(summary);
       setDataSource('live');
+      if (
+        result.pagination.total > 0 &&
+        result.data.length === 0 &&
+        filtersRef.current.page === 1
+      ) {
+        setError(
+          'Server mengembalikan penjualan, tetapi baris gagal dibaca. Coba Refresh.',
+        );
+      }
     } catch (loadError) {
       setError(getErrorMessage(loadError));
       setDataSource('error');
     } finally {
       setLoading(false);
     }
+
+    void Promise.all([
+      getKolamSalesAnalyticsOverview().catch(() => EMPTY_ANALYTICS),
+      getKolamSalesNotificationSummary().catch(() => EMPTY_NOTIFICATIONS),
+    ]).then(([overview, summary]) => {
+      setAnalytics(overview);
+      setNotificationSummary(summary);
+    });
   }, [route]);
 
   const refreshApproval = useCallback(async () => {

@@ -1324,9 +1324,14 @@ export function getKolamSaleAllowedDeliveryTransitions(
 
 export function normalizeKolamSale(payload: unknown): KolamSale {
   const root = asRecord(payload);
-  const record = Object.keys(asRecord(root.data)).length
-    ? asRecord(root.data)
-    : root;
+  // Detail API may wrap as `{ data: sale }`. List rows are already sales — do
+  // NOT treat a sale's own `data` field (if present) as an envelope.
+  const nested = asRecord(root.data);
+  const looksLikeSale = Boolean(
+    root._id || root.id || root.invoiceCode || root.status,
+  );
+  const record =
+    !looksLikeSale && Object.keys(nested).length > 0 ? nested : root;
 
   const customer = normalizeCustomerRef(record.customer);
   const buyerInfo = normalizeBuyerInfo(record.buyerInfo);
@@ -1335,7 +1340,7 @@ export function normalizeKolamSale(payload: unknown): KolamSale {
   const externalRef = asRecord(record.externalRef);
 
   return {
-    id: getString(record, '_id') || getString(record, 'id'),
+    id: getMongoId(record, '_id') || getMongoId(record, 'id'),
     invoiceCode: getString(record, 'invoiceCode') || '—',
     status: normalizePaymentStatus(getString(record, 'status')),
     deliveryStatus: getString(record, 'deliveryStatus') || 'none',
@@ -1363,17 +1368,28 @@ export function normalizeKolamSale(payload: unknown): KolamSale {
 
 export function normalizeKolamSaleList(payload: unknown): KolamSaleListResult {
   const root = asRecord(payload);
-  const list: unknown[] = Array.isArray(payload)
+  let list: unknown[] = Array.isArray(payload)
     ? payload
     : Array.isArray(root.data)
       ? root.data
       : [];
 
+  // Some gateways wrap again: `{ data: { data: Sale[], pagination } }`
+  if (!list.length) {
+    const nested = asRecord(root.data);
+    if (Array.isArray(nested.data)) {
+      list = nested.data;
+    }
+  }
+
+  const paginationSource =
+    root.pagination ?? asRecord(root.data).pagination ?? root;
+
   const data = list.map(normalizeKolamSale).filter(item => Boolean(item.id));
 
   return {
     data,
-    pagination: normalizePagination(root.pagination, data.length),
+    pagination: normalizePagination(paginationSource, data.length),
   };
 }
 
@@ -1432,7 +1448,7 @@ function normalizeSaleItem(value: unknown, index: number): KolamSaleItem {
       : null;
 
   return {
-    id: getString(record, '_id') || getString(record, 'id') || `item-${index}`,
+    id: getMongoId(record, '_id') || getMongoId(record, 'id') || `item-${index}`,
     itemType,
     title,
     sku,
@@ -1443,20 +1459,20 @@ function normalizeSaleItem(value: unknown, index: number): KolamSaleItem {
     shippingCost: getNumber(record, 'shippingCost') ?? 0,
     variantLabel,
     productId:
-      getString(product, '_id') ||
-      getString(product, 'id') ||
+      getMongoId(product, '_id') ||
+      getMongoId(product, 'id') ||
       (typeof record.product === 'string' ? record.product.trim() : ''),
     speciesId:
-      getString(species, '_id') ||
-      getString(species, 'id') ||
+      getMongoId(species, '_id') ||
+      getMongoId(species, 'id') ||
       (typeof record.species === 'string' ? record.species.trim() : ''),
     serviceId:
-      getString(service, '_id') ||
-      getString(service, 'id') ||
+      getMongoId(service, '_id') ||
+      getMongoId(service, 'id') ||
       (typeof record.service === 'string' ? record.service.trim() : ''),
     enclosureId:
-      getString(enclosure, '_id') ||
-      getString(enclosure, 'id') ||
+      getMongoId(enclosure, '_id') ||
+      getMongoId(enclosure, 'id') ||
       (typeof record.enclosure === 'string' ? record.enclosure.trim() : ''),
     customName: getString(record, 'customName'),
     customUnit: getString(record, 'customUnit') || 'pcs',
@@ -1508,7 +1524,7 @@ function normalizeCustomerRef(value: unknown): KolamSaleCustomerRef | null {
     return { id: value.trim(), name: '', phone: '', email: '' };
   }
   const record = asRecord(value);
-  const id = getString(record, '_id') || getString(record, 'id');
+  const id = getMongoId(record, '_id') || getMongoId(record, 'id');
   if (!id) {
     return null;
   }
@@ -1546,7 +1562,7 @@ function normalizeSourceRef(value: unknown): KolamSaleSourceRef | null {
     return { id: value.trim(), name: '', type: '', logoUri: null };
   }
   const record = asRecord(value);
-  const id = getString(record, '_id') || getString(record, 'id');
+  const id = getMongoId(record, '_id') || getMongoId(record, 'id');
   if (!id) {
     return null;
   }
@@ -1566,7 +1582,7 @@ function normalizePaymentMethodRef(
     return { id: value.trim(), name: '', type: '' };
   }
   const record = asRecord(value);
-  const id = getString(record, '_id') || getString(record, 'id');
+  const id = getMongoId(record, '_id') || getMongoId(record, 'id');
   if (!id) {
     return null;
   }
@@ -1655,6 +1671,31 @@ function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : {};
+}
+
+function getMongoId(record: Record<string, unknown>, key: string): string {
+  const value = record[key];
+  if (typeof value === 'string' && value.trim()) {
+    return value.trim();
+  }
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return String(value);
+  }
+  if (value && typeof value === 'object') {
+    const oid = (value as { $oid?: unknown }).$oid;
+    if (typeof oid === 'string' && oid.trim()) {
+      return oid.trim();
+    }
+    if (
+      typeof (value as { toString?: () => string }).toString === 'function'
+    ) {
+      const text = String(value);
+      if (text && text !== '[object Object]') {
+        return text;
+      }
+    }
+  }
+  return '';
 }
 
 function getString(record: Record<string, unknown>, key: string) {

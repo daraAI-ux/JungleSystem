@@ -303,6 +303,30 @@ describe('kolam sales domain', () => {
     ).toBe('Customer atau nama pembeli wajib diisi');
   });
 
+  it('keeps list rows even when a sale document has a nested data field', () => {
+    const list = normalizeKolamSaleList({
+      data: [
+        {
+          _id: '507f1f77bcf86cd799439011',
+          invoiceCode: 'INV-NEST',
+          status: 'draft',
+          data: { leftover: true, meta: 1 },
+          items: [],
+        },
+        {
+          _id: { $oid: '507f1f77bcf86cd799439012' },
+          invoiceCode: 'INV-OID',
+          status: 'sent',
+          items: [],
+        },
+      ],
+      pagination: { page: 1, limit: 10, total: 2, totalPages: 1 },
+    });
+    expect(list.data).toHaveLength(2);
+    expect(list.data[0].invoiceCode).toBe('INV-NEST');
+    expect(list.data[1].id).toBe('507f1f77bcf86cd799439012');
+  });
+
   it('hydrates edit form and validates update payload sourceRef', () => {
     const sale = normalizeKolamSale({
       _id: 'sale-edit',

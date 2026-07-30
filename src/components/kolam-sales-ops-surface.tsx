@@ -472,6 +472,7 @@ function KolamSalesOpsList({
         <FlatList
           contentContainerStyle={styles.listContent}
           data={controller.sales}
+          extraData={controller.sales}
           keyExtractor={item => item.id}
           ListEmptyComponent={
             <View style={styles.emptyWrap}>
