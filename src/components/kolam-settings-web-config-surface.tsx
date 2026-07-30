@@ -156,6 +156,19 @@ const paymentMethodProviderOptions = [
   {value: 'Other', label: 'Lainnya - Other'},
 ];
 
+type TaxPayerTypeOptionValue = 'pt' | 'cv' | 'umkm' | 'perorangan' | 'other';
+
+const taxPayerTypeOptions: Array<{
+  label: string;
+  value: TaxPayerTypeOptionValue;
+}> = [
+  {value: 'pt', label: 'PT - Perseroan Terbatas'},
+  {value: 'cv', label: 'CV - Commanditaire Vennootschap'},
+  {value: 'umkm', label: 'UMKM'},
+  {value: 'perorangan', label: 'Perorangan'},
+  {value: 'other', label: 'Lainnya'},
+];
+
 const defaultPaymentMethodFilters: SettingsPaymentMethodFilters = {
   search: '',
   isAvailableOnWebstore: '',
@@ -7275,7 +7288,10 @@ function FinancialSettingsPanel({
                       value: option.value,
                     }))}
                     showLabelInTrigger={false}
-                    style={styles.financialSelectorControl}
+                    style={[
+                      styles.financialSelectorControl,
+                      {width: settingsFieldWidth},
+                    ]}
                     triggerStyle={styles.shippingTimezoneTrigger}
                     value={paymentMethodDraft.type}
                     onChange={value =>
@@ -7307,7 +7323,10 @@ function FinancialSettingsPanel({
                     searchable
                     searchPlaceholder="Cari provider..."
                     showLabelInTrigger={false}
-                    style={styles.financialSelectorControl}
+                    style={[
+                      styles.financialSelectorControl,
+                      {width: settingsFieldWidth},
+                    ]}
                     triggerStyle={styles.shippingTimezoneTrigger}
                     value={
                       paymentMethodProviderOptions.some(
@@ -7367,26 +7386,46 @@ function FinancialSettingsPanel({
                 />
               </View>
               <View style={styles.financialFormBox}>
-                <KolamCopyStack
-                  items={[
-                    {
-                      id: 'payment-method-wallet-title',
-                      text: 'Wallet',
-                      style: styles.marketplaceOverviewLabel,
-                    },
-                  ]}
-                />
-                <View style={styles.financialToolbar}>
-                  {financialWallets.map(wallet => (
-                    <FinancialChoiceSegment
-                      key={wallet.id}
-                      active={paymentMethodDraft.wallet === wallet.id}
-                      label={`${wallet.name} (${wallet.type})`}
-                      onPress={() =>
-                        setPaymentMethodDraftField('wallet', wallet.id)
-                      }
-                    />
-                  ))}
+                <View style={styles.financialSelectorRow}>
+                  <KolamCopyStack
+                    containerStyle={styles.financialSelectorCopy}
+                    items={[
+                      {
+                        id: 'payment-method-wallet-title',
+                        text: 'Wallet',
+                        style: styles.marketplaceOverviewLabel,
+                      },
+                      {
+                        id: 'payment-method-wallet-detail',
+                        text: 'Pilih wallet penerima transaksi metode pembayaran ini.',
+                        style: styles.marketplaceOverviewMeta,
+                      },
+                    ]}
+                  />
+                  <KolamDropdownSelect
+                    accessibilityLabel="Wallet metode pembayaran"
+                    label="Wallet"
+                    menuPlacement="inline"
+                    options={[
+                      {value: '', label: 'Pilih wallet'},
+                      ...financialWallets.map(wallet => ({
+                        value: wallet.id,
+                        label: `${wallet.name} (${wallet.type})`,
+                      })),
+                    ]}
+                    searchable
+                    searchPlaceholder="Cari wallet..."
+                    showLabelInTrigger={false}
+                    style={[
+                      styles.financialSelectorControl,
+                      {width: settingsFieldWidth},
+                    ]}
+                    triggerStyle={styles.shippingTimezoneTrigger}
+                    value={paymentMethodDraft.wallet}
+                    onChange={value =>
+                      setPaymentMethodDraftField('wallet', value)
+                    }
+                  />
                 </View>
               </View>
               <View style={styles.financialFormBox}>
@@ -7555,21 +7594,38 @@ function FinancialSettingsPanel({
             value={taxCompanyProfileDraft.nik ?? ''}
             variant="settingsForm"
           />
-          <View style={styles.financialToolbar}>
-            {(['pt', 'cv', 'umkm', 'perorangan', 'other'] as const).map(
-              type => (
-                <FinancialChoiceSegment
-                  key={type}
-                  active={
-                    (taxCompanyProfileDraft.taxpayerType ?? 'pt') === type
-                  }
-                  label={type.toUpperCase()}
-                  onPress={() =>
-                    setTaxCompanyProfileDraftField('taxpayerType', type)
-                  }
-                />
-              ),
-            )}
+          <View style={styles.financialSelectorRow}>
+            <KolamCopyStack
+              containerStyle={styles.financialSelectorCopy}
+              items={[
+                {
+                  id: 'taxpayer-type-title',
+                  text: 'Jenis wajib pajak',
+                  style: styles.marketplaceOverviewLabel,
+                },
+                {
+                  id: 'taxpayer-type-detail',
+                  text: 'Pilih bentuk wajib pajak perusahaan.',
+                  style: styles.marketplaceOverviewMeta,
+                },
+              ]}
+            />
+            <KolamDropdownSelect
+              accessibilityLabel="Jenis wajib pajak"
+              label="Jenis wajib pajak"
+              menuPlacement="inline"
+              options={taxPayerTypeOptions}
+              showLabelInTrigger={false}
+              style={[
+                styles.financialSelectorControl,
+                {width: settingsFieldWidth},
+              ]}
+              triggerStyle={styles.shippingTimezoneTrigger}
+              value={taxCompanyProfileDraft.taxpayerType ?? 'pt'}
+              onChange={value =>
+                setTaxCompanyProfileDraftField('taxpayerType', value)
+              }
+            />
           </View>
           <KolamToggleRow
             active={taxCompanyProfileDraft.isPkp === true}
