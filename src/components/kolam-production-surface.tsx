@@ -30,10 +30,8 @@ import {
   type KolamSubmitCheckBreakdownEntry,
 } from '../domain/kolam-production';
 import {
-  applyKolamAdaptiveColumnWidths,
-  fitKolamDataTableColumns,
-  getKolamTableColumns,
   getKolamTableVisualContract,
+  resolveKolamDataTableColumns,
 } from '../domain/kolam-table';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { useKolamAuthContext } from '../context/kolam-app-contexts';
@@ -52,7 +50,6 @@ import {
   getKolamDataTableColumnStyle,
   KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
   KOLAM_DATA_TABLE_COLUMN_GAP,
-  KOLAM_DATA_TABLE_PRIMARY_MIN_WIDTH,
 } from './kolam-data-table-column-style';
 import { KolamDataTableHeader } from './kolam-data-table-header';
 import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
@@ -163,88 +160,42 @@ function KolamProductionList({
     ? getKolamProductionStatusLabel(controller.filters.status)
     : 'Status';
 
-  const listColumns = React.useMemo(() => {
-    const preferred = applyKolamAdaptiveColumnWidths(
-      getKolamTableColumns('production'),
-      [
-        {
-          id: 'meta',
-          values: controller.productions.map(item =>
+  const listColumns = React.useMemo(
+    () =>
+      resolveKolamDataTableColumns({
+        tableId: 'production',
+        containerWidth: tableBodyWidth,
+        gap: KOLAM_DATA_TABLE_COLUMN_GAP,
+        paddingX: getKolamTableVisualContract().body.cellPaddingX * 2,
+        columnValues: {
+          primary: controller.productions.flatMap(item => [
+            getKolamProductionTargetLabel(item),
+            getKolamProductionTargetTypeLabel(item.targetType),
+          ]),
+          meta: controller.productions.map(item =>
             getKolamProductionVariantLabel(item.variant),
           ),
-          minWidth: 72,
-          maxWidth: 160,
-        },
-        {
-          id: 'children',
-          values: controller.productions.map(item => {
+          children: controller.productions.map(item => {
             const planned = item.plannedQuantity || item.quantity || 0;
             const completed = item.completedQuantity || 0;
             return `${completed} / ${planned}`;
           }),
-          minWidth: 80,
-          maxWidth: 110,
-        },
-        {
-          id: 'amount',
-          values: controller.productions.map(item =>
+          amount: controller.productions.map(item =>
             formatRupiah(item.estimatedCost || 0),
           ),
-          minWidth: 100,
-          maxWidth: 132,
-          charWidth: 8,
-          padding: 20,
-        },
-        {
-          id: 'notes',
-          values: controller.productions.map(item => item.batchId || '—'),
-          minWidth: 120,
-          maxWidth: 180,
-          charWidth: 8,
-          padding: 20,
-        },
-        {
-          id: 'status',
-          values: controller.productions.map(item =>
+          notes: controller.productions.map(item => item.batchId || '—'),
+          status: controller.productions.map(item =>
             getKolamProductionStatusLabel(item.status),
           ),
-          minWidth: 88,
-          maxWidth: 120,
-        },
-        {
-          id: 'products',
-          values: ['••'],
-          minWidth: 56,
-          maxWidth: 64,
-          charWidth: 8,
-          padding: 12,
-        },
-        {
-          id: 'marketplace',
-          values: controller.productions.map(item =>
+          products: ['••'],
+          marketplace: controller.productions.map(item =>
             formatProductionListDate(item.productionDate),
           ),
-          minWidth: 88,
-          maxWidth: 104,
+          actions: ['...'],
         },
-        {
-          id: 'actions',
-          values: ['...'],
-          minWidth: 64,
-          maxWidth: 64,
-          padding: 0,
-        },
-      ],
-    );
-
-    return fitKolamDataTableColumns(preferred, tableBodyWidth, {
-      actionsMinWidth: KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-      gap: KOLAM_DATA_TABLE_COLUMN_GAP,
-      paddingX: getKolamTableVisualContract().body.cellPaddingX * 2,
-      primaryMinWidth: KOLAM_DATA_TABLE_PRIMARY_MIN_WIDTH,
-      secondaryMinWidth: 48,
-    });
-  }, [controller.productions, tableBodyWidth]);
+      }),
+    [controller.productions, tableBodyWidth],
+  );
 
   const renderRow = React.useCallback(
     ({ item }: { item: KolamProduction }) => (
@@ -1776,8 +1727,8 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   primaryCell: {
-    flex: 1,
     minWidth: 0,
+    width: 96,
   },
   statusCell: {
     alignItems: 'flex-start',

@@ -3,6 +3,7 @@ import {
   fitKolamDataTableColumns,
   getKolamTableColumns,
   getKolamTableVisualContract,
+  resolveKolamDataTableColumns,
 } from '../src/domain/kolam-table';
 
 describe('getKolamTableColumns', () => {
@@ -34,7 +35,7 @@ describe('getKolamTableColumns', () => {
     );
     expect(
       getKolamTableColumns('customer').map(column => column.label),
-    ).toEqual(['Customer', 'Phone', 'Email']);
+    ).toEqual(['Pelanggan', 'Phone', 'Email']);
     expect(getKolamTableColumns('sales').map(column => column.label)).toEqual([
       'Sale',
       'Status',
@@ -117,6 +118,14 @@ describe('getKolamTableColumns', () => {
   it('fits preferred column widths into the measured container without dropping actions', () => {
     const preferred = applyKolamAdaptiveColumnWidths(getKolamTableColumns('production'), [
       {
+        id: 'primary',
+        values: ['Frog Soil'],
+        minWidth: 88,
+        maxWidth: 200,
+        charWidth: 8,
+        padding: 20,
+      },
+      {
         id: 'notes',
         values: ['PRD-20260703080531-VERY-LONG-BATCH'],
         minWidth: 120,
@@ -142,22 +151,49 @@ describe('getKolamTableColumns', () => {
       actionsMinWidth: 64,
       gap: 16,
       paddingX: 40,
-      primaryMinWidth: 180,
+      primaryMinWidth: 88,
       secondaryMinWidth: 48,
     });
 
     const actions = fitted.find(column => column.id === 'actions');
     const primary = fitted.find(column => column.id === 'primary');
-    const secondaryTotal = fitted.reduce((sum, column) => {
-      if (column.id === 'primary' || column.id === 'actions') {
+    const contentTotal = fitted.reduce((sum, column) => {
+      if (column.id === 'actions') {
         return sum;
       }
       return sum + (column.width ?? 0);
     }, 0);
 
-    expect(primary?.width).toBeUndefined();
+    expect(primary?.width).toBeDefined();
+    expect(primary?.width).toBeLessThanOrEqual(200);
     expect(actions?.width).toBe(64);
-    expect(secondaryTotal + 64 + 180).toBeLessThanOrEqual(900 - 40 - 16 * 8);
+    expect(contentTotal + 64).toBeLessThanOrEqual(900 - 40 - 16 * 8);
+  });
+
+  it('resolves production columns from shared presets without per-module size patches', () => {
+    const columns = resolveKolamDataTableColumns({
+      tableId: 'production',
+      containerWidth: 1100,
+      columnValues: {
+        primary: ['Frog Soil', 'Produk'],
+        meta: ['—'],
+        children: ['30 / 30'],
+        amount: ['Rp 101.460'],
+        notes: ['LEGACY-FREYER-69df9361cc86ee4987ba7f94'],
+        status: ['Selesai'],
+        products: ['••'],
+        marketplace: ['03/07/2026'],
+        actions: ['...'],
+      },
+    });
+
+    const primary = columns.find(column => column.id === 'primary');
+    const notes = columns.find(column => column.id === 'notes');
+    const actions = columns.find(column => column.id === 'actions');
+
+    expect(primary?.width).toBeDefined();
+    expect(primary?.width).toBeLessThan(notes?.width ?? 0);
+    expect(actions?.width).toBe(64);
   });
 
   it('defines product serial list table headers matching FE', () => {

@@ -7,7 +7,7 @@ import {
 
 /**
  * Left track for data-table cells (everything except row actions).
- * Flexes and clips so the pinned actions column can stay on-screen.
+ * Content columns keep content-based widths; trailing spacer absorbs leftover space.
  */
 export function KolamDataTableMainTrack({
   children,
@@ -16,7 +16,12 @@ export function KolamDataTableMainTrack({
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
 }) {
-  return <View style={[styles.mainTrack, style]}>{children}</View>;
+  return (
+    <View style={[styles.mainTrack, style]}>
+      {children}
+      <View style={styles.spacer} />
+    </View>
+  );
 }
 
 /**
@@ -46,6 +51,11 @@ const styles = StyleSheet.create({
     gap: KOLAM_DATA_TABLE_COLUMN_GAP,
     minWidth: 0,
     overflow: 'hidden',
+  },
+  spacer: {
+    flexGrow: 1,
+    flexShrink: 1,
+    minWidth: 0,
   },
   actionsTrack: {
     alignItems: 'flex-end',

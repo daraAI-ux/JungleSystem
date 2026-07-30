@@ -17,14 +17,15 @@ describe('getKolamDataTableColumnStyle', () => {
     expect(style.overflow).toBe('hidden');
   });
 
-  it('protects primary flex columns with a readable min width', () => {
+  it('sizes primary by content width instead of flex-fill leftover space', () => {
     const style = getKolamDataTableColumnStyle({
       id: 'primary',
       align: 'left',
     }) as Record<string, number | string>;
 
-    expect(style.flex).toBe(1);
-    expect(style.minWidth).toBe(KOLAM_DATA_TABLE_PRIMARY_MIN_WIDTH);
+    expect(style.width).toBe(KOLAM_DATA_TABLE_PRIMARY_MIN_WIDTH);
+    expect(style.flexGrow).toBe(0);
+    expect(style.flexShrink).toBe(0);
     expect(style.overflow).toBe('hidden');
   });
 

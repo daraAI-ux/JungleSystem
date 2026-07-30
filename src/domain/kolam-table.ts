@@ -425,23 +425,109 @@ export function applyKolamAdaptiveColumnWidths(
   });
 }
 
+export type KolamTableColumnValueMap = Partial<
+  Record<KolamTableColumn['id'], Array<string | number | null | undefined>>
+>;
+
+type KolamTableAdaptivePreset = Partial<
+  Record<
+    KolamTableColumn['id'],
+    Pick<KolamTableColumnSizing, 'minWidth' | 'maxWidth' | 'charWidth' | 'padding'>
+  >
+>;
+
+/**
+ * Shared per-table adaptive bounds. Surfaces only pass cell text values —
+ * they should not hand-tune min/max/charWidth per screen.
+ */
+const KOLAM_TABLE_ADAPTIVE_PRESETS: Partial<
+  Record<KolamTableId, KolamTableAdaptivePreset>
+> = {
+  production: {
+    primary: { minWidth: 88, maxWidth: 200, charWidth: 8, padding: 20 },
+    meta: { minWidth: 56, maxWidth: 120, charWidth: 8, padding: 16 },
+    children: { minWidth: 72, maxWidth: 100, charWidth: 8, padding: 16 },
+    amount: { minWidth: 88, maxWidth: 128, charWidth: 8, padding: 16 },
+    notes: { minWidth: 100, maxWidth: 200, charWidth: 8, padding: 16 },
+    status: { minWidth: 88, maxWidth: 120, charWidth: 8, padding: 16 },
+    products: { minWidth: 56, maxWidth: 64, charWidth: 8, padding: 12 },
+    marketplace: { minWidth: 88, maxWidth: 104, charWidth: 8, padding: 16 },
+    actions: { minWidth: 64, maxWidth: 64, padding: 0 },
+  },
+};
+
+export interface ResolveKolamDataTableColumnsInput {
+  tableId: KolamTableId;
+  containerWidth: number;
+  /** Longest-content samples per column (usually current page rows). */
+  columnValues?: KolamTableColumnValueMap;
+  gap?: number;
+  paddingX?: number;
+}
+
+/**
+ * One-shot shared resolver: base columns → char-based preferred widths → fit to body.
+ * Modules pass data values only; sizing bounds live in shared presets.
+ */
+export function resolveKolamDataTableColumns({
+  tableId,
+  containerWidth,
+  columnValues = {},
+  gap,
+  paddingX,
+}: ResolveKolamDataTableColumnsInput): KolamTableColumn[] {
+  const base = getKolamTableColumns(tableId);
+  const preset = KOLAM_TABLE_ADAPTIVE_PRESETS[tableId] ?? {};
+
+  const sizing: KolamTableColumnSizing[] = base.map(column => {
+    const columnPreset = preset[column.id];
+    const fallbackMin =
+      column.id === 'primary' ? 88 : column.id === 'actions' ? 64 : 48;
+    const fallbackMax =
+      column.id === 'primary'
+        ? 200
+        : column.id === 'actions'
+          ? 64
+          : column.width ?? 160;
+
+    return {
+      id: column.id,
+      values: columnValues[column.id] ?? [],
+      minWidth: columnPreset?.minWidth ?? fallbackMin,
+      maxWidth: columnPreset?.maxWidth ?? fallbackMax,
+      charWidth: columnPreset?.charWidth,
+      padding: columnPreset?.padding,
+    };
+  });
+
+  const preferred = applyKolamAdaptiveColumnWidths(base, sizing);
+  return fitKolamDataTableColumns(preferred, containerWidth, {
+    actionsMinWidth: 64,
+    gap,
+    paddingX,
+    primaryMinWidth: preset.primary?.minWidth ?? 88,
+    secondaryMinWidth: 48,
+  });
+}
+
 export interface FitKolamDataTableColumnsOptions {
   /** Row gap between cells. */
   gap?: number;
   /** Total horizontal padding on the row (left + right). */
   paddingX?: number;
-  /** Minimum width reserved for the primary/name column. */
+  /** Minimum width for the primary/name column when preferred width is missing. */
   primaryMinWidth?: number;
   /** Minimum width reserved for the overflow-actions column. */
   actionsMinWidth?: number;
-  /** Floor when shrinking secondary columns. */
+  /** Floor when shrinking content columns. */
   secondaryMinWidth?: number;
 }
 
 /**
  * Fit preferred column widths into the measured table body width (no horizontal scroll).
- * Reserves actions + primary min first, then scales secondary columns down if needed.
- * Primary keeps `width` unset so the shared cell style can flex into remaining space.
+ * Every content column (including primary) keeps a content-based width.
+ * Leftover space is NOT given to primary — UI spacer absorbs it.
+ * Actions width is reserved and never dropped.
  */
 export function fitKolamDataTableColumns(
   columns: KolamTableColumn[],
@@ -454,7 +540,7 @@ export function fitKolamDataTableColumns(
 
   const gap = options.gap ?? 16;
   const paddingX = options.paddingX ?? 40;
-  const primaryMinWidth = options.primaryMinWidth ?? 180;
+  const primaryMinWidth = options.primaryMinWidth ?? 88;
   const actionsMinWidth = options.actionsMinWidth ?? 64;
   const secondaryMinWidth = options.secondaryMinWidth ?? 48;
 
@@ -465,69 +551,61 @@ export function fitKolamDataTableColumns(
     columns.find(column => column.id === 'actions')?.width ?? actionsMinWidth;
   const actionsWidth = Math.max(actionsPreferred, actionsMinWidth);
   const contentBudget = Math.max(0, budget - actionsWidth);
-  const secondaryBudget = Math.max(0, contentBudget - primaryMinWidth);
 
-  const secondaryColumns = columns.filter(
-    column => column.id !== 'primary' && column.id !== 'actions',
-  );
-  const secondaryPreferredTotal = secondaryColumns.reduce(
-    (sum, column) => sum + (column.width ?? secondaryMinWidth),
-    0,
-  );
+  const contentColumns = columns.filter(column => column.id !== 'actions');
+  const preferredTotal = contentColumns.reduce((sum, column) => {
+    if (column.id === 'primary') {
+      return sum + (column.width ?? primaryMinWidth);
+    }
+    return sum + (column.width ?? secondaryMinWidth);
+  }, 0);
 
   let scale =
-    secondaryPreferredTotal > secondaryBudget && secondaryPreferredTotal > 0
-      ? secondaryBudget / secondaryPreferredTotal
+    preferredTotal > contentBudget && preferredTotal > 0
+      ? contentBudget / preferredTotal
       : 1;
 
-  let fittedSecondaryWidths = new Map(
-    secondaryColumns.map(column => {
-      const preferred = column.width ?? secondaryMinWidth;
-      return [
-        column.id,
-        Math.max(secondaryMinWidth, Math.floor(preferred * scale)),
-      ] as const;
+  let fittedWidths = new Map(
+    contentColumns.map(column => {
+      const preferred =
+        column.width ??
+        (column.id === 'primary' ? primaryMinWidth : secondaryMinWidth);
+      const floor =
+        column.id === 'primary' ? Math.min(primaryMinWidth, 72) : secondaryMinWidth;
+      return [column.id, Math.max(floor, Math.floor(preferred * scale))] as const;
     }),
   );
 
-  let fittedSecondaryTotal = Array.from(fittedSecondaryWidths.values()).reduce(
+  let fittedTotal = Array.from(fittedWidths.values()).reduce(
     (sum, width) => sum + width,
     0,
   );
 
-  if (fittedSecondaryTotal > secondaryBudget && secondaryColumns.length > 0) {
-    const fixScale = secondaryBudget / fittedSecondaryTotal;
-    fittedSecondaryWidths = new Map(
-      secondaryColumns.map(column => {
-        const current = fittedSecondaryWidths.get(column.id) ?? secondaryMinWidth;
-        return [
-          column.id,
-          Math.max(32, Math.floor(current * fixScale)),
-        ] as const;
+  if (fittedTotal > contentBudget && contentColumns.length > 0) {
+    const fixScale = contentBudget / fittedTotal;
+    fittedWidths = new Map(
+      contentColumns.map(column => {
+        const current = fittedWidths.get(column.id) ?? secondaryMinWidth;
+        return [column.id, Math.max(32, Math.floor(current * fixScale))] as const;
       }),
     );
-    fittedSecondaryTotal = Array.from(fittedSecondaryWidths.values()).reduce(
+    fittedTotal = Array.from(fittedWidths.values()).reduce(
       (sum, width) => sum + width,
       0,
     );
   }
 
-  if (fittedSecondaryTotal > secondaryBudget && secondaryColumns.length > 0) {
+  if (fittedTotal > contentBudget && contentColumns.length > 0) {
     const equalWidth = Math.max(
       32,
-      Math.floor(secondaryBudget / secondaryColumns.length),
+      Math.floor(contentBudget / contentColumns.length),
     );
-    fittedSecondaryWidths = new Map(
-      secondaryColumns.map(column => [column.id, equalWidth] as const),
+    fittedWidths = new Map(
+      contentColumns.map(column => [column.id, equalWidth] as const),
     );
   }
 
   return columns.map(column => {
-    if (column.id === 'primary') {
-      const { width: _ignored, ...rest } = column;
-      return { ...rest };
-    }
-
     if (column.id === 'actions') {
       return { ...column, width: actionsWidth };
     }
@@ -535,9 +613,9 @@ export function fitKolamDataTableColumns(
     return {
       ...column,
       width:
-        fittedSecondaryWidths.get(column.id) ??
+        fittedWidths.get(column.id) ??
         column.width ??
-        secondaryMinWidth,
+        (column.id === 'primary' ? primaryMinWidth : secondaryMinWidth),
     };
   });
 }
