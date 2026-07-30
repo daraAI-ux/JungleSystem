@@ -1,14 +1,17 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import {
   getIucnConservationInfo,
   getIucnStatusLabel,
-  type KolamIucnSpeciesUsageItem,
   type KolamIucnStatus,
   type KolamIucnStatusState,
 } from '../domain/kolam-iucn-status';
 import { getKolamFormSection } from '../domain/kolam-form';
-import { getKolamTableColumns } from '../domain/kolam-table';
+import {
+  getKolamTableColumns,
+  getKolamTableVisualContract,
+  type KolamTableColumn,
+} from '../domain/kolam-table';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import {
   useKolamIucnStatusController,
@@ -16,28 +19,40 @@ import {
 } from '../hooks/use-kolam-iucn-status-controller';
 import { KolamButton } from './kolam-button';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
+import { KolamCheckmarkIcon } from './kolam-checkmark-icon';
 import { KolamCopyStack } from './kolam-copy-stack';
+import {
+  getKolamDataTableColumnStyle,
+  KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+  KOLAM_DATA_TABLE_COLUMN_GAP,
+} from './kolam-data-table-column-style';
 import { KolamDataTableHeader } from './kolam-data-table-header';
 import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
-import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import {
-  KolamDropdownSelect,
-  KolamOverflowMenuButton,
-  KolamTableFooterControls,
-} from './kolam-dropdown-select';
+  KolamDataTableActionsTrack,
+  KolamDataTableMainTrack,
+} from './kolam-data-table-tracks';
+import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
+import { KolamOverflowMenuButton, KolamTableFooterControls } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
+import { KolamInteractionFrame } from './kolam-interaction-frame';
 import { KolamLabelFieldDetailOverview } from './kolam-label-field-detail-overview';
 import { KolamNativeFormSection } from './kolam-native-form-section';
 import { KolamRemoteImage } from './kolam-remote-image';
+import { KolamSearchField } from './kolam-search-field';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamStatusBadge } from './kolam-status-badge';
+import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 
 type IucnSortMode = 'order-asc' | 'name-asc' | 'name-desc' | 'newest';
 type IucnStatusFilter = 'all' | KolamIucnStatusState;
 type IucnImageFilter = 'all' | 'with-image' | 'without-image';
+type IucnListFilterPanel = 'sort' | 'status' | 'image';
+
+const IUCN_FILTER_PANEL_WIDTH = 220;
 
 export function KolamIucnStatusSurface({
   onRouteChange,
@@ -68,27 +83,46 @@ function KolamIucnShell({
   controller: KolamIucnStatusController;
   onRouteChange?: (route: string) => void;
 }) {
+  if (controller.mode === 'list') {
+    return (
+      <View style={styles.surface}>
+        {controller.error ? (
+          <KolamStatusBadge
+            intent="danger"
+            label={controller.error}
+            numberOfLines={2}
+            style={styles.errorBadge}
+          />
+        ) : null}
+        {children}
+      </View>
+    );
+  }
+
+  const contextLabel =
+    controller.mode === 'new'
+      ? 'Status IUCN baru'
+      : controller.mode === 'edit'
+        ? `Edit · ${controller.selectedItem?.name || controller.form.name || 'Status IUCN'}`
+        : controller.selectedItem?.name || 'Detail status IUCN';
+
   return (
     <View style={styles.surface}>
-      <View style={styles.header}>
-        <View style={styles.headerActions}>
-          <KolamButton
-            disabled={controller.loading}
-            label="Refresh"
-            onPress={() => {
-              void controller.onRefresh();
-            }}
-          />
-          {controller.mode === 'list' ? (
+      <View style={kolamTableToolbarStyles.shell}>
+        <View style={kolamTableToolbarStyles.row}>
+          <View style={kolamTableToolbarStyles.filters}>
+            <Text numberOfLines={1} style={styles.detailToolbarContext}>
+              {contextLabel}
+            </Text>
+          </View>
+          <View style={kolamTableToolbarStyles.actions}>
             <KolamButton
-              intent="primary"
-              label="Buat Baru"
+              disabled={controller.loading}
+              label="Refresh"
               onPress={() => {
-                controller.onCreateNew();
-                onRouteChange?.('/iucn-status/baru');
+                void controller.onRefresh();
               }}
             />
-          ) : (
             <KolamButton
               label="Daftar"
               onPress={() => {
@@ -96,7 +130,14 @@ function KolamIucnShell({
                 onRouteChange?.('/iucn-status');
               }}
             />
-          )}
+            {controller.mode === 'detail' ? (
+              <KolamButton
+                intent="primary"
+                label="Edit"
+                onPress={controller.onEdit}
+              />
+            ) : null}
+          </View>
         </View>
       </View>
       {controller.error ? (
@@ -126,9 +167,16 @@ function KolamIucnList({
   const [imageFilter, setImageFilter] = React.useState<IucnImageFilter>('all');
   const [pageSize, setPageSize] = React.useState(10);
   const [page, setPage] = React.useState(1);
+  const [activeFilterPanel, setActiveFilterPanel] =
+    React.useState<IucnListFilterPanel | null>(null);
+  const [panelAnchor, setPanelAnchor] = React.useState({ left: 0, top: 40 });
+  const toolbarRef = React.useRef<View>(null);
+  const sortTriggerRef = React.useRef<View>(null);
+  const statusTriggerRef = React.useRef<View>(null);
+  const imageTriggerRef = React.useRef<View>(null);
   const [deleteCandidate, setDeleteCandidate] =
     React.useState<KolamIucnStatus | null>(null);
-  const summary = getIucnSummary(controller.items);
+  const [tableBodyWidth, setTableBodyWidth] = React.useState(0);
   const filteredItems = React.useMemo(
     () => filterIucnItems(controller.items, search, statusFilter, imageFilter),
     [controller.items, imageFilter, search, statusFilter],
@@ -143,59 +191,199 @@ function KolamIucnList({
     (safePage - 1) * pageSize,
     safePage * pageSize,
   );
+  const listColumns = React.useMemo(
+    () => fitIucnStatusListColumns(tableBodyWidth),
+    [tableBodyWidth],
+  );
+  const sortFilterLabel =
+    sortMode === 'name-asc'
+      ? 'Nama A-Z'
+      : sortMode === 'name-desc'
+        ? 'Nama Z-A'
+        : sortMode === 'newest'
+          ? 'Terbaru'
+          : 'Urutan IUCN';
+  const statusFilterLabel =
+    statusFilter === 'active'
+      ? 'Aktif'
+      : statusFilter === 'inactive'
+        ? 'Nonaktif'
+        : 'Semua Status';
+  const imageFilterLabel =
+    imageFilter === 'with-image'
+      ? 'Dengan gambar'
+      : imageFilter === 'without-image'
+        ? 'Tanpa gambar'
+        : 'Semua Gambar';
+
+  const getFilterTriggerRef = (panel: IucnListFilterPanel) => {
+    switch (panel) {
+      case 'status':
+        return statusTriggerRef;
+      case 'image':
+        return imageTriggerRef;
+      case 'sort':
+      default:
+        return sortTriggerRef;
+    }
+  };
+
+  const anchorFilterPanel = React.useCallback((panel: IucnListFilterPanel) => {
+    const toolbar = toolbarRef.current;
+    const trigger = getFilterTriggerRef(panel).current;
+    if (!toolbar || !trigger) {
+      return;
+    }
+    toolbar.measureInWindow((toolbarX, toolbarY, toolbarWidth) => {
+      trigger.measureInWindow((x, y, _width, height) => {
+        const maxLeft = Math.max(0, toolbarWidth - IUCN_FILTER_PANEL_WIDTH);
+        const preferredLeft = x - toolbarX;
+        setPanelAnchor({
+          left: Math.min(Math.max(0, preferredLeft), maxLeft),
+          top: y - toolbarY + height + 4,
+        });
+      });
+    });
+  }, []);
+
+  const openFilterPanel = (panel: IucnListFilterPanel) => {
+    setActiveFilterPanel(current => {
+      const next = current === panel ? null : panel;
+      if (next) {
+        requestAnimationFrame(() => anchorFilterPanel(next));
+      }
+      return next;
+    });
+  };
 
   React.useEffect(() => {
     setPage(1);
   }, [imageFilter, pageSize, search, sortMode, statusFilter]);
 
+  React.useEffect(() => {
+    if (!activeFilterPanel) {
+      return;
+    }
+    requestAnimationFrame(() => anchorFilterPanel(activeFilterPanel));
+  }, [activeFilterPanel, anchorFilterPanel]);
+
   return (
     <View style={styles.stack}>
-      <View style={styles.summaryGrid}>
-        <SummaryTile label="Total Status" value={controller.items.length} />
-        <SummaryTile label="Aktif" value={summary.active} />
-        <SummaryTile label="Nonaktif" value={summary.inactive} />
-        <SummaryTile label="Dengan Gambar" value={summary.withImage} />
-      </View>
-      <View style={kolamTableToolbarStyles.row}>
-        <KolamFormTextField
-          onChangeText={setSearch}
-          placeholder="Cari status IUCN..."
-          style={kolamTableToolbarStyles.searchInput}
-          value={search}
-        />
-        <View style={kolamTableToolbarStyles.controls}>
-          <KolamDropdownSelect<IucnSortMode>
-            label="Urutan"
-            onChange={setSortMode}
-            options={[
-              { label: 'Urutan IUCN', value: 'order-asc' },
-              { label: 'Nama A-Z', value: 'name-asc' },
-              { label: 'Nama Z-A', value: 'name-desc' },
-              { label: 'Terbaru', value: 'newest' },
-            ]}
-            value={sortMode}
-          />
-          <KolamDropdownSelect<IucnStatusFilter>
-            label="Status"
-            onChange={setStatusFilter}
-            options={[
-              { label: 'Semua', value: 'all' },
-              { label: 'Aktif', value: 'active' },
-              { label: 'Nonaktif', value: 'inactive' },
-            ]}
-            value={statusFilter}
-          />
-          <KolamDropdownSelect<IucnImageFilter>
-            label="Gambar"
-            onChange={setImageFilter}
-            options={[
-              { label: 'Semua', value: 'all' },
-              { label: 'Dengan gambar', value: 'with-image' },
-              { label: 'Tanpa gambar', value: 'without-image' },
-            ]}
-            value={imageFilter}
-          />
+      <View ref={toolbarRef} collapsable={false} style={styles.toolbarWrap}>
+        <View style={kolamTableToolbarStyles.shell}>
+          <View style={kolamTableToolbarStyles.row}>
+            <View style={kolamTableToolbarStyles.filters}>
+              <KolamSearchField
+                containerStyle={kolamTableToolbarStyles.searchInput}
+                onChangeText={setSearch}
+                placeholder="Cari status IUCN..."
+                value={search}
+              />
+              <View ref={sortTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={sortMode !== 'order-asc'}
+                  label={sortFilterLabel}
+                  onPress={() => openFilterPanel('sort')}
+                  open={activeFilterPanel === 'sort'}
+                  variant="quiet"
+                />
+              </View>
+              <View ref={statusTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={statusFilter !== 'all'}
+                  label={statusFilterLabel}
+                  onPress={() => openFilterPanel('status')}
+                  open={activeFilterPanel === 'status'}
+                  variant="quiet"
+                />
+              </View>
+              <View ref={imageTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={imageFilter !== 'all'}
+                  label={imageFilterLabel}
+                  onPress={() => openFilterPanel('image')}
+                  open={activeFilterPanel === 'image'}
+                  variant="quiet"
+                />
+              </View>
+            </View>
+            <View style={kolamTableToolbarStyles.actions}>
+              <KolamButton
+                disabled={controller.loading}
+                label="Refresh"
+                onPress={() => {
+                  void controller.onRefresh();
+                }}
+              />
+              <KolamButton
+                intent="primary"
+                label="Baru"
+                onPress={() => {
+                  controller.onCreateNew();
+                  onRouteChange?.('/iucn-status/baru');
+                }}
+              />
+            </View>
+          </View>
         </View>
+        {activeFilterPanel ? (
+          <View
+            style={[
+              styles.filterOverlayPanel,
+              {
+                left: panelAnchor.left,
+                top: panelAnchor.top,
+                width: IUCN_FILTER_PANEL_WIDTH,
+              },
+            ]}
+          >
+            {getFilterPanelOptions(activeFilterPanel).map(option => {
+              const selected = isFilterOptionSelected(
+                activeFilterPanel,
+                option.value,
+                sortMode,
+                statusFilter,
+                imageFilter,
+              );
+              return (
+                <KolamInteractionFrame
+                  accessibilityLabel={option.label}
+                  key={`${activeFilterPanel}-${option.value}`}
+                  onPress={() => {
+                    if (activeFilterPanel === 'sort') {
+                      setSortMode(option.value as IucnSortMode);
+                    } else if (activeFilterPanel === 'status') {
+                      setStatusFilter(option.value as IucnStatusFilter);
+                    } else {
+                      setImageFilter(option.value as IucnImageFilter);
+                    }
+                    setActiveFilterPanel(null);
+                  }}
+                  selected={selected}
+                  style={[
+                    styles.filterMenuItem,
+                    selected ? styles.filterMenuItemSelected : null,
+                  ]}
+                >
+                  <Text
+                    numberOfLines={1}
+                    style={[
+                      styles.filterMenuItemLabel,
+                      selected ? styles.filterMenuItemLabelSelected : null,
+                    ]}
+                  >
+                    {option.label}
+                  </Text>
+                  {selected ? (
+                    <KolamCheckmarkIcon color={V.colors.primary} size="sm" />
+                  ) : (
+                    <View style={styles.filterMenuItemCheckSpacer} />
+                  )}
+                </KolamInteractionFrame>
+              );
+            })}
+          </View>
+        ) : null}
       </View>
       <KolamCatalogListTableShell
         footer={
@@ -232,11 +420,13 @@ function KolamIucnList({
             ) : null}
           </KolamTableFooterControls>
         }
+        onBodyWidthChange={setTableBodyWidth}
       >
-        <KolamDataTableHeader columns={getKolamTableColumns('iucn-status')} />
+        <KolamDataTableHeader columns={listColumns} />
         {pagedItems.length ? (
           pagedItems.map(item => (
             <KolamIucnRow
+              columns={listColumns}
               item={item}
               key={item.id}
               onDelete={() => setDeleteCandidate(item)}
@@ -289,11 +479,13 @@ function KolamIucnList({
 }
 
 function KolamIucnRow({
+  columns,
   item,
   onDelete,
   onEdit,
   onSelect,
 }: {
+  columns: ReturnType<typeof getKolamTableColumns>;
   item: KolamIucnStatus;
   onDelete: () => void;
   onEdit: () => void;
@@ -301,53 +493,93 @@ function KolamIucnRow({
 }) {
   const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
   const info = getIucnConservationInfo(item.abbreviation);
+  const columnOf = React.useCallback(
+    (id: (typeof columns)[number]['id']) =>
+      columns.find(column => column.id === id),
+    [columns],
+  );
+  const metaColumn = columnOf('meta');
+  const childrenColumn = columnOf('children');
+  const primaryColumn = columnOf('primary');
+  const amountColumn = columnOf('amount');
+  const statusColumn = columnOf('status');
+  const actionsColumn = columnOf('actions');
 
   return (
-    <KolamDataTableRowFrame style={actionMenuOpen && styles.activeActionRow}>
-      <View style={styles.imageCell}>
-        <IucnImageBadge item={item} size="small" />
-      </View>
-      <View style={styles.abbreviationCell}>
-        <View style={[styles.abbreviationBadge, { borderColor: info.color }]}>
+    <KolamDataTableRowFrame
+      style={actionMenuOpen ? styles.activeActionRow : undefined}
+    >
+      <KolamDataTableMainTrack style={styles.mainTrackVisible}>
+        <View
+          style={[
+            styles.listCell,
+            metaColumn ? getKolamDataTableColumnStyle(metaColumn) : null,
+          ]}
+        >
+          <IucnImageBadge item={item} size="small" />
+        </View>
+        <View
+          style={[
+            styles.listCell,
+            childrenColumn ? getKolamDataTableColumnStyle(childrenColumn) : null,
+          ]}
+        >
+          <View style={[styles.abbreviationBadge, { borderColor: info.color }]}>
+            <Text numberOfLines={1} style={styles.abbreviationText}>
+              {item.abbreviation || '-'}
+            </Text>
+          </View>
+        </View>
+        <View
+          style={[
+            styles.listCell,
+            styles.identityCell,
+            primaryColumn ? getKolamDataTableColumnStyle(primaryColumn) : null,
+          ]}
+        >
           <KolamCopyStack
+            containerStyle={styles.identityCopy}
             items={[
+              { id: 'name', text: item.name, style: styles.rowTitle },
               {
-                id: 'abbr',
-                text: item.abbreviation || '-',
-                style: styles.abbreviationText,
+                id: 'label',
+                text: info.label || '-',
+                style: styles.rowMeta,
+                textProps: { ellipsizeMode: 'tail', numberOfLines: 1 },
               },
             ]}
           />
         </View>
-      </View>
-      <View style={styles.identityCell}>
-        <KolamCopyStack
-          containerStyle={styles.identityCopy}
-          items={[
-            { id: 'name', text: item.name, style: styles.rowTitle },
-            {
-              id: 'label',
-              text: info.label || '-',
-              style: styles.rowMeta,
-              textProps: { ellipsizeMode: 'tail', numberOfLines: 1 },
-            },
+        <View
+          style={[
+            styles.listCell,
+            amountColumn ? getKolamDataTableColumnStyle(amountColumn) : null,
           ]}
-        />
-      </View>
-      <View style={styles.orderCell}>
-        <KolamCopyStack
-          items={[
-            { id: 'order', text: String(item.order), style: styles.amountText },
+        >
+          <Text numberOfLines={1} style={styles.countText}>
+            {String(item.order)}
+          </Text>
+        </View>
+        <View
+          style={[
+            styles.listCell,
+            statusColumn ? getKolamDataTableColumnStyle(statusColumn) : null,
           ]}
-        />
-      </View>
-      <View style={styles.statusCell}>
-        <KolamStatusBadge
-          intent={item.status === 'active' ? 'success' : 'warning'}
-          label={getIucnStatusLabel(item.status)}
-        />
-      </View>
-      <View style={styles.overflowCell}>
+        >
+          <KolamStatusBadge
+            intent={item.status === 'active' ? 'success' : 'warning'}
+            label={getIucnStatusLabel(item.status)}
+            style={styles.centerBadge}
+          />
+        </View>
+      </KolamDataTableMainTrack>
+      <KolamDataTableActionsTrack
+        style={styles.actionsTrack}
+        width={Math.max(
+          actionsColumn?.width ?? KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+          KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+        )}
+      >
         <KolamOverflowMenuButton
           accessibilityLabel={`Menu ${item.name}`}
           actions={[
@@ -357,7 +589,7 @@ function KolamIucnRow({
           ]}
           onOpenChange={setActionMenuOpen}
         />
-      </View>
+      </KolamDataTableActionsTrack>
     </KolamDataTableRowFrame>
   );
 }
@@ -382,78 +614,67 @@ function KolamIucnDetail({
   return (
     <View style={styles.stack}>
       {!editable && item ? (
-        <>
-          <View style={styles.detailActions}>
-            <KolamButton
-              intent="primary"
-              label="Edit"
-              onPress={controller.onEdit}
-            />
-          </View>
-          <KolamLabelFieldDetailOverview
-            hero={<IucnHero item={item} />}
-            meta={[
-              { label: 'Singkatan', value: item.abbreviation || '-' },
-              {
-                label: 'Label IUCN',
-                value: getIucnConservationInfo(item.abbreviation).label,
-              },
-              {
-                label: 'Gambar',
-                value: item.image
-                  ? 'Tersimpan lokal/cache'
-                  : 'Belum ada gambar',
-              },
-              ...(item.createdBy
-                ? [{ label: 'Pembuat', value: item.createdBy }]
-                : []),
-              ...(item.updatedAt
-                ? [
-                    {
-                      label: 'Diperbarui',
-                      value: formatDateTime(item.updatedAt),
-                    },
-                  ]
-                : []),
-            ]}
-            metrics={[
-              { label: 'Urutan', value: item.order },
-              { label: 'Species', value: item.species.length },
-              { label: 'Gambar', value: item.image ? 1 : 0 },
-            ]}
-            sections={[
-              {
-                description:
-                  'Keterangan status konservasi berdasarkan singkatan IUCN.',
-                emptyText: 'Belum ada keterangan konservasi.',
-                items: getConservationItems(item),
-                title: 'Konservasi',
-                total: getConservationItems(item).length,
-              },
-              {
-                description:
-                  'Spesies yang diklasifikasikan dengan status IUCN ini.',
-                emptyText: 'Belum ada spesies dengan status ini.',
-                items: item.species.map(species => ({
-                  meta: [
-                    species.commonName,
-                    species.sku ? `SKU: ${species.sku}` : '',
-                  ]
-                    .filter(Boolean)
-                    .join('\n'),
-                  title:
-                    species.scientificName || species.commonName || species.id,
-                })),
-                title: 'Species',
-                total: item.species.length,
-              },
-            ]}
-            status={{
-              intent: item.status === 'active' ? 'success' : 'warning',
-              label: getIucnStatusLabel(item.status),
-            }}
-          />
-        </>
+        <KolamLabelFieldDetailOverview
+          hero={<IucnHero item={item} />}
+          meta={[
+            { label: 'Singkatan', value: item.abbreviation || '-' },
+            {
+              label: 'Label IUCN',
+              value: getIucnConservationInfo(item.abbreviation).label,
+            },
+            {
+              label: 'Gambar',
+              value: item.image ? 'Tersimpan lokal/cache' : 'Belum ada gambar',
+            },
+            ...(item.createdBy
+              ? [{ label: 'Pembuat', value: item.createdBy }]
+              : []),
+            ...(item.updatedAt
+              ? [
+                  {
+                    label: 'Diperbarui',
+                    value: formatDateTime(item.updatedAt),
+                  },
+                ]
+              : []),
+          ]}
+          metrics={[
+            { label: 'Urutan', value: item.order },
+            { label: 'Species', value: item.species.length },
+            { label: 'Gambar', value: item.image ? 1 : 0 },
+          ]}
+          sections={[
+            {
+              description:
+                'Keterangan status konservasi berdasarkan singkatan IUCN.',
+              emptyText: 'Belum ada keterangan konservasi.',
+              items: getConservationItems(item),
+              title: 'Konservasi',
+              total: getConservationItems(item).length,
+            },
+            {
+              description:
+                'Spesies yang diklasifikasikan dengan status IUCN ini.',
+              emptyText: 'Belum ada spesies dengan status ini.',
+              items: item.species.map(species => ({
+                meta: [
+                  species.commonName,
+                  species.sku ? `SKU: ${species.sku}` : '',
+                ]
+                  .filter(Boolean)
+                  .join('\n'),
+                title:
+                  species.scientificName || species.commonName || species.id,
+              })),
+              title: 'Species',
+              total: item.species.length,
+            },
+          ]}
+          status={{
+            intent: item.status === 'active' ? 'success' : 'warning',
+            label: getIucnStatusLabel(item.status),
+          }}
+        />
       ) : (
         <KolamIucnForm controller={controller} />
       )}
@@ -576,19 +797,6 @@ function FieldShell({
   );
 }
 
-function SummaryTile({ label, value }: { label: string; value: number }) {
-  return (
-    <View style={styles.summaryTile}>
-      <KolamCopyStack
-        items={[
-          { id: 'value', text: String(value), style: styles.summaryValue },
-          { id: 'label', text: label, style: styles.summaryLabel },
-        ]}
-      />
-    </View>
-  );
-}
-
 function IucnImageBadge({
   item,
   size,
@@ -643,6 +851,45 @@ function IucnHero({ item }: { item: KolamIucnStatus }) {
   );
 }
 
+function fitIucnStatusListColumns(containerWidth: number): KolamTableColumn[] {
+  const base = getKolamTableColumns('iucn-status');
+  if (containerWidth <= 0) {
+    return base;
+  }
+
+  const gap = KOLAM_DATA_TABLE_COLUMN_GAP;
+  const paddingX = getKolamTableVisualContract().body.cellPaddingX * 2;
+  const actionsWidth = KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH;
+  const gapsTotal = gap * Math.max(0, base.length - 1);
+  const contentBudget = Math.max(
+    0,
+    containerWidth - paddingX - gapsTotal - actionsWidth,
+  );
+  const contentColumns = base.filter(column => column.id !== 'actions');
+  const equalWidth = Math.max(
+    72,
+    Math.floor(contentBudget / Math.max(1, contentColumns.length)),
+  );
+  let remainder = contentBudget - equalWidth * contentColumns.length;
+  const lastContentId = contentColumns[contentColumns.length - 1]?.id;
+
+  return base.map(column => {
+    if (column.id === 'actions') {
+      return { ...column, width: actionsWidth };
+    }
+
+    const extra = column.id === lastContentId ? remainder : 0;
+    if (column.id === lastContentId) {
+      remainder = 0;
+    }
+
+    return {
+      ...column,
+      width: equalWidth + extra,
+    };
+  });
+}
+
 function getConservationItems(item: KolamIucnStatus) {
   const info = getIucnConservationInfo(item.abbreviation);
   return [
@@ -660,15 +907,47 @@ function getIucnRoute(item: KolamIucnStatus) {
   )}`;
 }
 
-function getIucnSummary(items: KolamIucnStatus[]) {
-  return items.reduce(
-    (summary, item) => ({
-      active: summary.active + (item.status === 'active' ? 1 : 0),
-      inactive: summary.inactive + (item.status === 'inactive' ? 1 : 0),
-      withImage: summary.withImage + (item.image ? 1 : 0),
-    }),
-    { active: 0, inactive: 0, withImage: 0 },
-  );
+function getFilterPanelOptions(panel: IucnListFilterPanel) {
+  if (panel === 'sort') {
+    return [
+      { label: 'Urutan IUCN', value: 'order-asc' as IucnSortMode },
+      { label: 'Nama A-Z', value: 'name-asc' as IucnSortMode },
+      { label: 'Nama Z-A', value: 'name-desc' as IucnSortMode },
+      { label: 'Terbaru', value: 'newest' as IucnSortMode },
+    ];
+  }
+
+  if (panel === 'status') {
+    return [
+      { label: 'Semua Status', value: 'all' as IucnStatusFilter },
+      { label: 'Aktif', value: 'active' as IucnStatusFilter },
+      { label: 'Nonaktif', value: 'inactive' as IucnStatusFilter },
+    ];
+  }
+
+  return [
+    { label: 'Semua Gambar', value: 'all' as IucnImageFilter },
+    { label: 'Dengan gambar', value: 'with-image' as IucnImageFilter },
+    { label: 'Tanpa gambar', value: 'without-image' as IucnImageFilter },
+  ];
+}
+
+function isFilterOptionSelected(
+  panel: IucnListFilterPanel,
+  value: string,
+  sortMode: IucnSortMode,
+  statusFilter: IucnStatusFilter,
+  imageFilter: IucnImageFilter,
+) {
+  if (panel === 'sort') {
+    return value === sortMode;
+  }
+
+  if (panel === 'status') {
+    return value === statusFilter;
+  }
+
+  return value === imageFilter;
 }
 
 function filterIucnItems(
@@ -741,67 +1020,67 @@ const styles = StyleSheet.create({
   surface: {
     gap: 14,
   },
-  header: {
-    alignItems: 'flex-end',
-  },
-  headerActions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    justifyContent: 'flex-end',
+  detailToolbarContext: {
+    color: V.colors.fg,
+    flexShrink: 1,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+    minWidth: 0,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
   },
   errorBadge: {
     alignSelf: 'flex-start',
+    maxWidth: 760,
   },
   stack: {
     gap: 14,
-  },
-  summaryGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  summaryTile: {
-    minWidth: 170,
-    flexGrow: 1,
-    gap: 6,
-    padding: 14,
-    borderRadius: 8,
-    borderColor: V.colors.border,
-    borderWidth: 1,
-    backgroundColor: V.colors.bg,
-  },
-  summaryValue: {
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 22,
-    fontWeight: '900',
-  },
-  summaryLabel: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
-    fontWeight: '800',
   },
   emptyWrap: {
     minHeight: 220,
     justifyContent: 'center',
   },
   activeActionRow: {
-    zIndex: 20,
+    zIndex: 1000,
+    elevation: 30,
+    overflow: 'visible',
   },
-  imageCell: {
-    width: 72,
-    justifyContent: 'center',
-    paddingHorizontal: 16,
+  mainTrackVisible: {
+    overflow: 'visible',
   },
-  abbreviationCell: {
-    width: 118,
+  listCell: {
+    alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 16,
+    minWidth: 0,
+    overflow: 'hidden',
+    paddingVertical: 4,
+  },
+  identityCell: {
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+  },
+  identityCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  rowTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '900',
+    textAlign: 'left',
+  },
+  rowMeta: {
+    marginTop: 2,
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '700',
+    textAlign: 'left',
   },
   abbreviationBadge: {
-    alignSelf: 'flex-start',
+    alignSelf: 'center',
     minWidth: 46,
     alignItems: 'center',
     paddingHorizontal: 8,
@@ -816,55 +1095,22 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '900',
   },
-  identityCell: {
-    flex: 1,
-    minWidth: 220,
-    justifyContent: 'center',
-    paddingHorizontal: 16,
-  },
-  identityCopy: {
-    flex: 1,
-    minWidth: 0,
-  },
-  rowTitle: {
+  countText: {
     color: V.colors.fg,
     fontFamily: V.fontFamily,
     fontSize: 13,
     fontWeight: '900',
+    textAlign: 'center',
+    width: '100%',
   },
-  rowMeta: {
-    marginTop: 2,
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
-    fontWeight: '700',
+  centerBadge: {
+    alignSelf: 'center',
   },
-  orderCell: {
-    width: 90,
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-    paddingHorizontal: 16,
-  },
-  amountText: {
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 13,
-    fontWeight: '900',
-    textAlign: 'right',
-  },
-  statusCell: {
-    width: 116,
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-    paddingHorizontal: 16,
-  },
-  overflowCell: {
-    width: 64,
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-    paddingHorizontal: 10,
+  actionsTrack: {
+    alignItems: 'center',
   },
   paginationRow: {
+    minHeight: 42,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
@@ -873,11 +1119,57 @@ const styles = StyleSheet.create({
   pageLabel: {
     color: V.colors.fg,
     fontFamily: V.fontFamily,
-    fontSize: 13,
-    fontWeight: '900',
+    fontSize: 12,
+    fontWeight: '800',
   },
-  detailActions: {
-    alignItems: 'flex-end',
+  toolbarWrap: {
+    elevation: 1000,
+    overflow: 'visible',
+    position: 'relative',
+    zIndex: 100000,
+  },
+  filterOverlayPanel: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 10,
+    borderWidth: 1,
+    elevation: 1200,
+    gap: 2,
+    padding: 6,
+    position: 'absolute',
+    shadowColor: V.colors.fg,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 18,
+    zIndex: 120000,
+  },
+  filterMenuItem: {
+    alignItems: 'center',
+    borderRadius: 8,
+    flexDirection: 'row',
+    gap: 10,
+    justifyContent: 'space-between',
+    minHeight: 36,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  filterMenuItemSelected: {
+    backgroundColor: V.colors.primarySoft,
+  },
+  filterMenuItemLabel: {
+    color: V.colors.fg,
+    flex: 1,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  filterMenuItemLabelSelected: {
+    color: V.colors.primary,
+    fontWeight: '800',
+  },
+  filterMenuItemCheckSpacer: {
+    height: 14,
+    width: 14,
   },
   formSplitRow: {
     flexDirection: 'row',
