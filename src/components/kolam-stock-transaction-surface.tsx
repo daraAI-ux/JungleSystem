@@ -33,11 +33,13 @@ import {
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamRemoteImage } from './kolam-remote-image';
+import { KolamSearchField } from './kolam-search-field';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamStockCrossSyncObservabilityHost } from './kolam-stock-cross-sync-observability-host';
 import { KolamStockTransactionSourceIcon } from './kolam-stock-transaction-source-icon';
 import { KolamMarketplaceSyncPlatformList } from './kolam-marketplace-sync-platform-list';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
+import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 
 type StockTxFilterPanel = 'target' | 'status';
 
@@ -976,91 +978,97 @@ function KolamStockTransactionList({
       ) : null}
 
       <View style={styles.toolbarWrap}>
-        <View style={styles.toolbarShell}>
-          <View style={styles.filterRow}>
-            <KolamFormTextField
-              onChangeText={setSearchInput}
-              placeholder="Cari"
-              style={styles.searchInput}
-              value={searchInput}
-            />
-            <KolamTableFilterTrigger
-              active={
-                activeFilterPanel === 'target' || targetFilterValue !== 'all'
-              }
-              label={targetFilterLabel}
-              onPress={() => openFilterPanel('target')}
-            />
-            <KolamTableFilterTrigger
-              active={
-                activeFilterPanel === 'status' ||
-                Boolean(controller.filters.status)
-              }
-              label={statusFilterLabel}
-              onPress={() => openFilterPanel('status')}
-            />
-            <KolamDateField
-              accessibilityLabel="Tanggal mulai"
-              label="Dari"
-              onChange={value => {
-                setActiveFilterPanel(null);
-                controller.onChangeFilters({ startDate: value });
-              }}
-              placeholder="Dari"
-              showLabelInTrigger={false}
-              style={styles.dateField}
-              value={controller.filters.startDate}
-            />
-            <KolamDateField
-              accessibilityLabel="Tanggal sampai"
-              label="Sampai"
-              onChange={value => {
-                setActiveFilterPanel(null);
-                controller.onChangeFilters({ endDate: value });
-              }}
-              placeholder="Sampai"
-              showLabelInTrigger={false}
-              style={styles.dateField}
-              value={controller.filters.endDate}
-            />
-          </View>
-          <View style={styles.actionRow}>
-            {filtersAppliedCount > 0 ? (
-              <KolamButton
-                label="Reset"
-                muted
-                onPress={() => {
-                  setSearchInput('');
+        <View style={kolamTableToolbarStyles.shell}>
+          <View style={kolamTableToolbarStyles.row}>
+            <View style={kolamTableToolbarStyles.filters}>
+              <KolamSearchField
+                containerStyle={kolamTableToolbarStyles.searchInput}
+                onChangeText={setSearchInput}
+                placeholder="Cari"
+                value={searchInput}
+              />
+              <KolamTableFilterTrigger
+                active={
+                  activeFilterPanel === 'target' || targetFilterValue !== 'all'
+                }
+                label={targetFilterLabel}
+                onPress={() => openFilterPanel('target')}
+                open={activeFilterPanel === 'target'}
+                variant="quiet"
+              />
+              <KolamTableFilterTrigger
+                active={
+                  activeFilterPanel === 'status' ||
+                  Boolean(controller.filters.status)
+                }
+                label={statusFilterLabel}
+                onPress={() => openFilterPanel('status')}
+                open={activeFilterPanel === 'status'}
+                variant="quiet"
+              />
+              <KolamDateField
+                accessibilityLabel="Tanggal mulai"
+                label="Dari"
+                onChange={value => {
                   setActiveFilterPanel(null);
-                  controller.onClearFilters();
+                  controller.onChangeFilters({ startDate: value });
+                }}
+                placeholder="Dari"
+                showLabelInTrigger={false}
+                style={styles.dateField}
+                value={controller.filters.startDate}
+              />
+              <KolamDateField
+                accessibilityLabel="Tanggal sampai"
+                label="Sampai"
+                onChange={value => {
+                  setActiveFilterPanel(null);
+                  controller.onChangeFilters({ endDate: value });
+                }}
+                placeholder="Sampai"
+                showLabelInTrigger={false}
+                style={styles.dateField}
+                value={controller.filters.endDate}
+              />
+            </View>
+            <View style={kolamTableToolbarStyles.actions}>
+              {filtersAppliedCount > 0 ? (
+                <KolamButton
+                  label="Reset"
+                  muted
+                  onPress={() => {
+                    setSearchInput('');
+                    setActiveFilterPanel(null);
+                    controller.onClearFilters();
+                  }}
+                  style={styles.toolbarButton}
+                />
+              ) : null}
+              <KolamButton
+                disabled={controller.loading}
+                label="Refresh"
+                onPress={() => {
+                  void controller.onRefresh();
                 }}
                 style={styles.toolbarButton}
               />
-            ) : null}
-            <KolamButton
-              disabled={controller.loading}
-              label="Refresh"
-              onPress={() => {
-                void controller.onRefresh();
-              }}
-              style={styles.toolbarButton}
-            />
-            <KolamButton
-              disabled={controller.exporting || controller.loading}
-              label={controller.exporting ? 'Mengekspor…' : 'Ekspor'}
-              onPress={() => {
-                void controller.onExport();
-              }}
-              style={styles.toolbarButton}
-            />
-            <KolamButton
-              intent="primary"
-              label="Opname cepat"
-              onPress={() =>
-                onRouteChange?.(`${KOLAM_STOCK_TRANSACTION_ROOT}/opname`)
-              }
-              style={styles.toolbarButton}
-            />
+              <KolamButton
+                disabled={controller.exporting || controller.loading}
+                label={controller.exporting ? 'Mengekspor…' : 'Ekspor'}
+                onPress={() => {
+                  void controller.onExport();
+                }}
+                style={styles.toolbarButton}
+              />
+              <KolamButton
+                intent="primary"
+                label="Opname cepat"
+                onPress={() =>
+                  onRouteChange?.(`${KOLAM_STOCK_TRANSACTION_ROOT}/opname`)
+                }
+                style={styles.toolbarButton}
+              />
+            </View>
           </View>
         </View>
 
@@ -1416,26 +1424,6 @@ const styles = StyleSheet.create({
     overflow: 'visible',
     padding: 4,
   },
-  filterRow: {
-    alignItems: 'center',
-    flex: 1,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 4,
-    minWidth: 280,
-    overflow: 'visible',
-  },
-  actionRow: {
-    alignItems: 'center',
-    borderLeftColor: V.colors.border,
-    borderLeftWidth: 1,
-    flexDirection: 'row',
-    flexShrink: 0,
-    flexWrap: 'wrap',
-    gap: 6,
-    justifyContent: 'flex-end',
-    paddingLeft: 8,
-  },
   detailActionRow: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -1445,15 +1433,9 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     marginLeft: 'auto',
   },
-  searchInput: {
-    flexBasis: 140,
-    flexGrow: 1,
-    maxWidth: 200,
-    minWidth: 120,
-  },
   dateField: {
-    flexBasis: 0,
-    flexGrow: 1,
+    flexGrow: 0,
+    flexShrink: 0,
     minWidth: 110,
     maxWidth: 160,
   },
