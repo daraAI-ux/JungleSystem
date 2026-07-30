@@ -7439,42 +7439,50 @@ function FinancialSettingsPanel({
                     },
                   ]}
                 />
-                <KolamToggleRow
-                  active={paymentMethodDraft.isActive}
-                  description="Metode aktif bisa dipakai transaksi."
-                  label="Aktif"
-                  onPress={() =>
-                    setPaymentMethodDraftField(
-                      'isActive',
-                      !paymentMethodDraft.isActive,
-                    )
-                  }
-                  variant="settingsForm"
-                />
-                <KolamToggleRow
-                  active={paymentMethodDraft.isAvailableOnWebstore}
-                  description="Tampilkan sebagai opsi pembayaran webstore."
-                  label="Tersedia di webstore"
-                  onPress={() =>
-                    setPaymentMethodDraftField(
-                      'isAvailableOnWebstore',
-                      !paymentMethodDraft.isAvailableOnWebstore,
-                    )
-                  }
-                  variant="settingsForm"
-                />
-                <KolamToggleRow
-                  active={paymentMethodDraft.requireSaleProof}
-                  description="Pembeli wajib melampirkan bukti transfer."
-                  label="Wajib bukti pembayaran"
-                  onPress={() =>
-                    setPaymentMethodDraftField(
-                      'requireSaleProof',
-                      !paymentMethodDraft.requireSaleProof,
-                    )
-                  }
-                  variant="settingsForm"
-                />
+                <View style={styles.notificationToggleGrid}>
+                  <View style={styles.notificationToggleBox}>
+                    <KolamToggleRow
+                      active={paymentMethodDraft.isActive}
+                      description="Metode aktif bisa dipakai transaksi."
+                      label="Metode aktif"
+                      onPress={() =>
+                        setPaymentMethodDraftField(
+                          'isActive',
+                          !paymentMethodDraft.isActive,
+                        )
+                      }
+                      variant="settingsForm"
+                    />
+                  </View>
+                  <View style={styles.notificationToggleBox}>
+                    <KolamToggleRow
+                      active={paymentMethodDraft.isAvailableOnWebstore}
+                      description="Tampilkan sebagai opsi pembayaran webstore."
+                      label="Tersedia di webstore"
+                      onPress={() =>
+                        setPaymentMethodDraftField(
+                          'isAvailableOnWebstore',
+                          !paymentMethodDraft.isAvailableOnWebstore,
+                        )
+                      }
+                      variant="settingsForm"
+                    />
+                  </View>
+                  <View style={styles.notificationToggleBox}>
+                    <KolamToggleRow
+                      active={paymentMethodDraft.requireSaleProof}
+                      description="Pembeli wajib melampirkan bukti transfer."
+                      label="Wajib bukti pembayaran"
+                      onPress={() =>
+                        setPaymentMethodDraftField(
+                          'requireSaleProof',
+                          !paymentMethodDraft.requireSaleProof,
+                        )
+                      }
+                      variant="settingsForm"
+                    />
+                  </View>
+                </View>
               </View>
               <View style={styles.financialActions}>
                 <KolamActionControlButton
