@@ -166,6 +166,13 @@ const PLATFORM_GLOW_NEUTRAL: KolamPlatformGlowState = {
   scale: 1,
   tone: 'neutral',
 };
+const PLATFORM_GLOW_UNKNOWN: KolamPlatformGlowState = {
+  animated: false,
+  color: 'transparent',
+  opacity: 0,
+  scale: 1,
+  tone: 'unknown',
+};
 const DARA_THINKING_ACTIVE_EVENTS = new Set([
   'dara.thinking',
   'dara.thinking.chunk',
@@ -1341,7 +1348,8 @@ type KolamPlatformGlowTone =
   | 'starting'
   | 'stale'
   | 'offline'
-  | 'neutral';
+  | 'neutral'
+  | 'unknown';
 
 interface KolamPlatformGlowState {
   animated: boolean;
@@ -1380,7 +1388,11 @@ function KolamPlatformHealthGlow({state}: {state: KolamPlatformGlowState}) {
     return () => loop.stop();
   }, [pulse, state.animated, state.tone]);
 
-  if (state.tone === 'neutral' || state.tone === 'offline') {
+  if (
+    state.tone === 'neutral' ||
+    state.tone === 'offline' ||
+    state.tone === 'unknown'
+  ) {
     return null;
   }
 
@@ -1421,7 +1433,7 @@ function getPlatformGlowState(
   }
 
   if (!health) {
-    return PLATFORM_GLOW_OFFLINE;
+    return PLATFORM_GLOW_UNKNOWN;
   }
 
   if (isRecentPlatformInbound(health.lastInboundAt)) {
@@ -1463,7 +1475,7 @@ function getPlatformHealthTooltip(
     return 'Semua platform';
   }
   if (!health) {
-    return 'Status koneksi chat belum tersedia';
+    return 'Status koneksi chat sedang dimuat';
   }
 
   const reason = health.reason || 'Status chat belum ada keterangan';
