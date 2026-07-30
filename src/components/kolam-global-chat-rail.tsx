@@ -863,37 +863,39 @@ export function KolamGlobalChatRail({
             <Text style={styles.eyebrow}>Chat</Text>
             <View style={styles.titleInlineRow}>
               <Text style={styles.title}>{content.title}</Text>
-              {mode === 'inbox' ? (
-                <View style={styles.titleActionRow}>
-                  <KolamChatHealthMenu
-                    healthState={platformHealth}
-                    open={healthMenuOpen}
-                    onToggle={() => {
-                      setAnalyticsMenuOpen(false);
-                      setHealthMenuOpen(current => !current);
-                    }}
-                  />
-                  <KolamChatAnalyticsMenu
-                    open={analyticsMenuOpen}
-                    onToggle={() => {
-                      setHealthMenuOpen(false);
-                      setAnalyticsMenuOpen(current => !current);
-                    }}
-                    state={analyticsState}
-                  />
-                </View>
-              ) : null}
             </View>
           </View>
         </View>
-        <KolamIconButton
-          accessibilityLabel="Tutup panel chat"
-          onPress={onClose}
-          size={32}
-          radius="full"
-          variant="ghost">
-          <KolamXIcon color={V.colors.mutedFg} />
-        </KolamIconButton>
+        <View style={styles.headerActionRow}>
+          {mode === 'inbox' ? (
+            <>
+              <KolamChatHealthMenu
+                healthState={platformHealth}
+                open={healthMenuOpen}
+                onToggle={() => {
+                  setAnalyticsMenuOpen(false);
+                  setHealthMenuOpen(current => !current);
+                }}
+              />
+              <KolamChatAnalyticsMenu
+                open={analyticsMenuOpen}
+                onToggle={() => {
+                  setHealthMenuOpen(false);
+                  setAnalyticsMenuOpen(current => !current);
+                }}
+                state={analyticsState}
+              />
+            </>
+          ) : null}
+          <KolamIconButton
+            accessibilityLabel="Tutup panel chat"
+            onPress={onClose}
+            size={32}
+            radius="full"
+            variant="ghost">
+            <KolamXIcon color={V.colors.mutedFg} />
+          </KolamIconButton>
+        </View>
       </View>
 
       <View style={styles.body}>
@@ -2425,7 +2427,7 @@ function KolamChatRailDetailPanel({
             accessibilityLabel="Kembali ke daftar inbox chat"
             onPress={onBack}
             style={styles.detailBackButton}>
-            <Text style={styles.detailBackButtonText}>Kembali</Text>
+            <View style={styles.detailBackArrow} />
           </KolamPressable>
         ) : null}
         <Text numberOfLines={1} style={styles.selectedTitle}>
@@ -5860,10 +5862,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 7,
   },
-  titleActionRow: {
+  headerActionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    justifyContent: 'flex-end',
+    gap: 7,
+    flexShrink: 0,
+    zIndex: 230,
+    elevation: 23,
   },
   chatHeaderMenuHost: {
     position: 'relative',
@@ -6587,20 +6593,26 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   detailBackButton: {
-    minHeight: 28,
+    width: 30,
+    height: 30,
     alignSelf: 'flex-start',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: V.radius.md,
-    borderColor: V.colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 15,
+    borderColor: V.colors.primary,
     borderWidth: 1,
     backgroundColor: V.colors.bg,
   },
-  detailBackButtonText: {
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 11,
-    fontWeight: '900',
+  detailBackArrow: {
+    width: 0,
+    height: 0,
+    marginLeft: -2,
+    borderTopWidth: 5,
+    borderBottomWidth: 5,
+    borderRightWidth: 8,
+    borderTopColor: 'transparent',
+    borderBottomColor: 'transparent',
+    borderRightColor: V.colors.primary,
   },
   selectedTitle: {
     color: V.colors.primary,
