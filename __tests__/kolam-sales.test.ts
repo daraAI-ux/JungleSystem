@@ -327,6 +327,26 @@ describe('kolam sales domain', () => {
     expect(list.data[1].id).toBe('507f1f77bcf86cd799439012');
   });
 
+  it('skips invalid list rows without dropping valid siblings', () => {
+    const list = normalizeKolamSaleList({
+      data: [
+        null,
+        'broken',
+        {
+          _id: 'sale-ok',
+          invoiceCode: 'INV-OK',
+          status: 'sent',
+          items: [],
+        },
+        { invoiceCode: 'NO-ID', status: 'draft', items: [] },
+      ],
+      pagination: { page: 1, limit: 10, total: 4, totalPages: 1 },
+    });
+    expect(list.data).toHaveLength(1);
+    expect(list.data[0].id).toBe('sale-ok');
+    expect(list.pagination.total).toBe(4);
+  });
+
   it('hydrates edit form and validates update payload sourceRef', () => {
     const sale = normalizeKolamSale({
       _id: 'sale-edit',

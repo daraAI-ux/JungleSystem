@@ -482,8 +482,8 @@ function KolamSalesOpsList({
                   controller.loading
                     ? 'Mengambil daftar dari server Kolam.'
                     : filtersAppliedCount > 0
-                      ? 'Coba ubah filter atau kata kunci.'
-                      : 'Belum ada invoice pada tampilan ini.'
+                      ? `Coba ubah filter atau kata kunci. (total server: ${controller.pagination.total}, sumber: ${controller.dataSource})`
+                      : `Belum ada invoice pada tampilan ini. (total server: ${controller.pagination.total}, sumber: ${controller.dataSource})`
                 }
                 title={
                   controller.loading
@@ -1854,6 +1854,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   listSurface: {
+    flex: 1,
+    minHeight: 0,
     overflow: 'visible',
   },
   listRoot: {
@@ -1919,14 +1921,17 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   tableFrame: {
-    flex: 1,
     minHeight: 0,
+    overflow: 'visible',
+    zIndex: 2,
   },
   listFlatList: {
     flexGrow: 0,
+    overflow: 'visible',
   },
   listContent: {
     flexGrow: 0,
+    overflow: 'visible',
   },
   emptyWrap: {
     paddingVertical: 24,

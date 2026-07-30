@@ -1385,11 +1385,19 @@ export function normalizeKolamSaleList(payload: unknown): KolamSaleListResult {
   const paginationSource =
     root.pagination ?? asRecord(root.data).pagination ?? root;
 
-  const data = list.map(normalizeKolamSale).filter(item => Boolean(item.id));
+  const data = list
+    .map(row => {
+      try {
+        return normalizeKolamSale(row);
+      } catch {
+        return null;
+      }
+    })
+    .filter((item): item is KolamSale => Boolean(item?.id));
 
   return {
     data,
-    pagination: normalizePagination(paginationSource, data.length),
+    pagination: normalizePagination(paginationSource, list.length),
   };
 }
 
