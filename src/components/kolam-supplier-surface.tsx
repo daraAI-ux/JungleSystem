@@ -386,6 +386,7 @@ function KolamSupplierList({
         style={styles.tableFrame}
         onBodyWidthChange={setTableBodyWidth}
       >
+        <KolamDataTableHeader columns={listColumns} />
         <FlatList
           contentContainerStyle={[
             styles.listContent,
@@ -403,9 +404,6 @@ function KolamSupplierList({
                 }
               />
             </View>
-          }
-          ListHeaderComponent={
-            <KolamDataTableHeader columns={listColumns} />
           }
           removeClippedSubviews={false}
           renderItem={renderRow}
