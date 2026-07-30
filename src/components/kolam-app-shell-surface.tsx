@@ -104,7 +104,6 @@ export function isCatalogTableListRoute(route?: string | null) {
     routePath === '/stock-transaction' ||
     routePath === '/stock-opname' ||
     routePath === '/sales' ||
-    routePath === '/suppliers' ||
     routePath === '/customers' ||
     routePath === '/purchase-order' ||
     routePath === '/production' ||

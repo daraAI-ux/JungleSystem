@@ -23,7 +23,7 @@ export function KolamDataTableHeaderCell({
     >
       {label ? (
         <Text
-          numberOfLines={2}
+          numberOfLines={1}
           style={[
             styles.text,
             headerAlign === 'center' || headerAlign === 'right'

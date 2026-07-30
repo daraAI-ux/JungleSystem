@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  FlatList,
   Image,
   Pressable,
   ScrollView,
@@ -92,12 +91,7 @@ export function KolamSupplierSurface({
   const controller = useKolamSupplierController(route);
 
   return (
-    <View
-      style={[
-        styles.surface,
-        controller.mode === 'list' ? styles.listSurface : null,
-      ]}
-    >
+    <View style={styles.surface}>
       {controller.error ? (
         <KolamStatusBadge
           intent="danger"
@@ -138,9 +132,6 @@ function KolamSupplierList({
   const [page, setPage] = React.useState(1);
   const [deleteCandidate, setDeleteCandidate] =
     React.useState<KolamVendor | null>(null);
-  const [openActionRowId, setOpenActionRowId] = React.useState<string | null>(
-    null,
-  );
   const [tableBodyWidth, setTableBodyWidth] = React.useState(0);
   const listColumns = React.useMemo(
     () => fitSupplierListColumns(tableBodyWidth),
@@ -179,27 +170,6 @@ function KolamSupplierList({
   React.useEffect(() => {
     setPage(1);
   }, [pageSize, search, sortMode, statusFilter]);
-
-  const renderRow = React.useCallback(
-    ({ item }: { item: KolamVendor }) => (
-      <KolamSupplierRow
-        columns={listColumns}
-        onDelete={() => setDeleteCandidate(item)}
-        onEdit={() => {
-          onRouteChange?.(`${KOLAM_SUPPLIER_ROOT}/${item.id}/edit`);
-        }}
-        onMenuOpenChange={open => {
-          setOpenActionRowId(open ? item.id : null);
-        }}
-        onSelect={() => {
-          void controller.onSelectVendor(item);
-          onRouteChange?.(`${KOLAM_SUPPLIER_ROOT}/${item.id}`);
-        }}
-        vendor={item}
-      />
-    ),
-    [controller, listColumns, onRouteChange],
-  );
 
   return (
     <View style={styles.listRoot}>
@@ -382,32 +352,36 @@ function KolamSupplierList({
             ) : null}
           </KolamTableFooterControls>
         }
-        style={styles.tableFrame}
         onBodyWidthChange={setTableBodyWidth}
       >
         <KolamDataTableHeader columns={listColumns} />
-        <FlatList
-          contentContainerStyle={[
-            styles.listContent,
-            openActionRowId ? styles.listContentMenuOpen : null,
-          ]}
-          data={paged}
-          keyExtractor={item => item.id}
-          ListEmptyComponent={
-            <View style={styles.emptyWrap}>
-              <KolamEmptyState
-                compact
-                message="Coba ubah pencarian atau filter status."
-                title={
-                  controller.loading ? 'Memuat pemasok…' : 'Belum ada pemasok'
-                }
-              />
-            </View>
-          }
-          removeClippedSubviews={false}
-          renderItem={renderRow}
-          style={styles.listFlatList}
-        />
+        {paged.length ? (
+          paged.map(item => (
+            <KolamSupplierRow
+              columns={listColumns}
+              key={item.id}
+              onDelete={() => setDeleteCandidate(item)}
+              onEdit={() => {
+                onRouteChange?.(`${KOLAM_SUPPLIER_ROOT}/${item.id}/edit`);
+              }}
+              onSelect={() => {
+                void controller.onSelectVendor(item);
+                onRouteChange?.(`${KOLAM_SUPPLIER_ROOT}/${item.id}`);
+              }}
+              vendor={item}
+            />
+          ))
+        ) : (
+          <View style={styles.emptyWrap}>
+            <KolamEmptyState
+              compact
+              message="Coba ubah pencarian atau filter status."
+              title={
+                controller.loading ? 'Memuat pemasok…' : 'Belum ada pemasok'
+              }
+            />
+          </View>
+        )}
       </KolamCatalogListTableShell>
 
       <KolamDeleteConfirmDialog
@@ -2312,16 +2286,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 8,
   },
-  listSurface: {
-    flex: 1,
-    minHeight: 0,
-    overflow: 'visible',
-  },
   listRoot: {
-    flex: 1,
     gap: 14,
-    minHeight: 0,
-    overflow: 'visible',
   },
   toolbarWrap: {
     elevation: 1000,
@@ -2380,22 +2346,6 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     marginTop: 6,
     paddingTop: 6,
-  },
-  tableFrame: {
-    minHeight: 0,
-    overflow: 'visible',
-    zIndex: 2,
-  },
-  listFlatList: {
-    flexGrow: 0,
-    overflow: 'visible',
-  },
-  listContent: {
-    flexGrow: 0,
-    overflow: 'visible',
-  },
-  listContentMenuOpen: {
-    paddingBottom: 140,
   },
   errorBadge: {
     alignSelf: 'stretch',
