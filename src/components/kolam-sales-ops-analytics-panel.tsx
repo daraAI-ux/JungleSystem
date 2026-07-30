@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import {
+  EMPTY_KOLAM_SALE_ANALYTICS,
   formatKolamSaleAnalyticsBucketLabel,
   getKolamSaleAnalyticsRangeHint,
   KOLAM_SALE_ANALYTICS_RANGE_OPTIONS,
@@ -16,7 +17,6 @@ import { KolamContentFrame } from './kolam-content-frame';
 import { DASHBOARD_COUNT_VISUAL } from './kolam-dashboard-metric-visual';
 import { KolamDashboardSalesGraphRangeTrigger } from './kolam-dashboard-sales-graph-range-trigger';
 import { KolamHeaderFrame } from './kolam-header-frame';
-import { KolamListFrame } from './kolam-list-frame';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamStatusBadge } from './kolam-status-badge';
 
@@ -35,9 +35,15 @@ const SOURCE_DISPLAY_PRIORITY = [
 
 function rankSalesSourceName(name: string): number {
   const normalized = name.trim().toLowerCase();
-  const index = SOURCE_DISPLAY_PRIORITY.findIndex(
-    token => normalized === token || normalized.includes(token),
-  );
+  if (!normalized) {
+    return 2000;
+  }
+  const index = SOURCE_DISPLAY_PRIORITY.findIndex(token => {
+    if (token === 'pos') {
+      return normalized === 'pos' || normalized.startsWith('pos ');
+    }
+    return normalized === token || normalized.includes(token);
+  });
   return index >= 0 ? index : 1000 + (normalized.charCodeAt(0) || 0);
 }
 
@@ -50,8 +56,26 @@ function sortSalesAnalyticsSources(
     if (rankDelta !== 0) {
       return rankDelta;
     }
-    return left.name.localeCompare(right.name, 'id');
+    return String(left.name || '').localeCompare(String(right.name || ''), 'id');
   });
+}
+
+function resolveAnalytics(
+  analytics: KolamSaleAnalyticsOverview | null | undefined,
+): KolamSaleAnalyticsOverview {
+  if (!analytics || typeof analytics !== 'object') {
+    return EMPTY_KOLAM_SALE_ANALYTICS;
+  }
+  return {
+    range: analytics.range ?? EMPTY_KOLAM_SALE_ANALYTICS.range,
+    bySource: Array.isArray(analytics.bySource) ? analytics.bySource : [],
+    timeline: Array.isArray(analytics.timeline) ? analytics.timeline : [],
+    totals: {
+      orders: Number(analytics.totals?.orders) || 0,
+      success: Number(analytics.totals?.success) || 0,
+      failed: Number(analytics.totals?.failed) || 0,
+    },
+  };
 }
 
 /**
@@ -73,6 +97,7 @@ export function KolamSalesOpsAnalyticsPanel({
   pendingApproval: number;
   range: KolamSaleAnalyticsRange;
 }) {
+  const safeAnalytics = useMemo(() => resolveAnalytics(analytics), [analytics]);
   const rangeHint = getKolamSaleAnalyticsRangeHint(range);
   const rangeOptions = useMemo(
     () =>
@@ -85,18 +110,21 @@ export function KolamSalesOpsAnalyticsPanel({
   );
 
   const sourceRows = useMemo(
-    () => sortSalesAnalyticsSources(analytics.bySource),
-    [analytics.bySource],
+    () => sortSalesAnalyticsSources(safeAnalytics.bySource),
+    [safeAnalytics.bySource],
   );
 
   const maxBucket = useMemo(() => {
+    if (!safeAnalytics.timeline.length) {
+      return 1;
+    }
     return Math.max(
       1,
-      ...analytics.timeline.map(point =>
-        Math.max(point.successCount, point.failedCount),
+      ...safeAnalytics.timeline.map(point =>
+        Math.max(Number(point.successCount) || 0, Number(point.failedCount) || 0),
       ),
     );
-  }, [analytics.timeline]);
+  }, [safeAnalytics.timeline]);
 
   return (
     <View style={styles.root}>
@@ -123,7 +151,7 @@ export function KolamSalesOpsAnalyticsPanel({
                 option => option.id === range,
               )?.label ?? 'Bulan Ini'
             }
-            onSelect={id => onRangeChange(id as KolamSaleAnalyticsRange)}
+            onSelect={id => onRangeChange(id)}
             options={rangeOptions}
             selectedId={range}
           />
@@ -136,72 +164,74 @@ export function KolamSalesOpsAnalyticsPanel({
             Belum ada sumber penjualan aktif.
           </Text>
         ) : (
-          <KolamListFrame variant="dashboardCount" style={styles.sourceStrip}>
-            {sourceRows.map(source => (
-              <KolamCardFrame
-                accessibilityLabel={`${source.name}: ${source.orderCount} pesanan`}
-                key={source.sourceId}
-                style={styles.sourceCard}
-                variant="dashboardCount"
-              >
-                {source.logoUri ? (
-                  <KolamRemoteImage
-                    accessibilityLabel={source.name}
-                    resizeMode="contain"
-                    sourceUri={source.logoUri}
-                    style={styles.sourceLogo}
-                  />
-                ) : (
-                  <View style={styles.sourceLogoFallback}>
-                    <Text style={styles.sourceLogoFallbackText}>
-                      {source.name.slice(0, 2).toUpperCase()}
+          <View style={styles.sourceStrip}>
+            {sourceRows.map(source => {
+              const orderCount = Number(source.orderCount) || 0;
+              const name = String(source.name || '—');
+              return (
+                <KolamCardFrame
+                  accessibilityLabel={`${name}: ${orderCount} pesanan`}
+                  key={source.sourceId || name}
+                  style={styles.sourceCard}
+                  variant="dashboardCount"
+                >
+                  {source.logoUri ? (
+                    <KolamRemoteImage
+                      accessibilityLabel={name}
+                      resizeMode="contain"
+                      sourceUri={source.logoUri}
+                      style={styles.sourceLogo}
+                    />
+                  ) : (
+                    <View style={styles.sourceLogoFallback}>
+                      <Text style={styles.sourceLogoFallbackText}>
+                        {name.slice(0, 2).toUpperCase() || '—'}
+                      </Text>
+                    </View>
+                  )}
+                  <View style={styles.sourceCopy}>
+                    <Text style={styles.sourceValue}>
+                      {orderCount.toLocaleString('id-ID')}
                     </Text>
+                    <Text numberOfLines={1} style={styles.sourceLabel}>
+                      {name}
+                    </Text>
+                    <Text style={styles.sourceSub}>Jumlah pesanan</Text>
                   </View>
-                )}
-                <View style={styles.sourceCopy}>
-                  <Text style={styles.sourceValue}>
-                    {source.orderCount.toLocaleString('id-ID')}
-                  </Text>
-                  <Text numberOfLines={1} style={styles.sourceLabel}>
-                    {source.name}
-                  </Text>
-                  <Text style={styles.sourceSub}>Jumlah pesanan</Text>
-                </View>
-              </KolamCardFrame>
-            ))}
-          </KolamListFrame>
+                </KolamCardFrame>
+              );
+            })}
+          </View>
         )}
       </KolamCardFrame>
 
       <KolamCardFrame variant="dashboardSalesGraph">
-        <KolamHeaderFrame variant="salesGraph">
-          <KolamHeaderFrame variant="salesGraphSummaryColumn">
-            <Text style={styles.sectionTitle}>Berhasil vs Tidak Berhasil</Text>
-            <Text style={styles.sectionDesc}>
-              Total pesanan (rentang dipilih)
-            </Text>
-            <Text style={styles.totalValue}>
-              {analytics.totals.orders.toLocaleString('id-ID')} pesanan
-            </Text>
-            <Text style={styles.sectionDesc}>
-              {rangeHint} · Berhasil{' '}
-              {analytics.totals.success.toLocaleString('id-ID')} · Tidak berhasil{' '}
-              {analytics.totals.failed.toLocaleString('id-ID')}
-            </Text>
-            <View style={styles.legendRow}>
-              <View style={[styles.legendSwatch, styles.legendSuccess]} />
-              <Text style={styles.legendText}>Berhasil</Text>
-              <View style={[styles.legendSwatch, styles.legendFailed]} />
-              <Text style={styles.legendText}>Tidak berhasil</Text>
-            </View>
-          </KolamHeaderFrame>
-        </KolamHeaderFrame>
+        <View style={styles.chartHeader}>
+          <Text style={styles.sectionTitle}>Berhasil vs Tidak Berhasil</Text>
+          <Text style={styles.sectionDesc}>
+            Total pesanan (rentang dipilih)
+          </Text>
+          <Text style={styles.totalValue}>
+            {safeAnalytics.totals.orders.toLocaleString('id-ID')} pesanan
+          </Text>
+          <Text style={styles.sectionDesc}>
+            {rangeHint} · Berhasil{' '}
+            {safeAnalytics.totals.success.toLocaleString('id-ID')} · Tidak
+            berhasil {safeAnalytics.totals.failed.toLocaleString('id-ID')}
+          </Text>
+          <View style={styles.legendRow}>
+            <View style={[styles.legendSwatch, styles.legendSuccess]} />
+            <Text style={styles.legendText}>Berhasil</Text>
+            <View style={[styles.legendSwatch, styles.legendFailed]} />
+            <Text style={styles.legendText}>Tidak berhasil</Text>
+          </View>
+        </View>
 
-        {loading && analytics.timeline.length === 0 ? (
+        {loading && safeAnalytics.timeline.length === 0 ? (
           <KolamContentFrame variant="dashboardSalesGraphEmpty">
             <Text style={styles.loadingText}>Memuat data…</Text>
           </KolamContentFrame>
-        ) : analytics.timeline.length === 0 ? (
+        ) : safeAnalytics.timeline.length === 0 ? (
           <KolamContentFrame variant="dashboardSalesGraphEmpty">
             <Text style={styles.loadingText}>
               Belum ada pesanan pada rentang ini.
@@ -209,33 +239,38 @@ export function KolamSalesOpsAnalyticsPanel({
           </KolamContentFrame>
         ) : (
           <KolamContentFrame variant="dashboardSalesGraphPlot">
-            {analytics.timeline.map(point => {
+            {safeAnalytics.timeline.map((point, index) => {
+              const successCount = Number(point.successCount) || 0;
+              const failedCount = Number(point.failedCount) || 0;
               const successHeight = Math.max(
                 4,
-                Math.round((point.successCount / maxBucket) * PLOT_HEIGHT),
+                Math.round((successCount / maxBucket) * PLOT_HEIGHT),
               );
-              const failedHeight = Math.max(
-                point.failedCount > 0 ? 4 : 0,
-                Math.round((point.failedCount / maxBucket) * PLOT_HEIGHT),
-              );
+              const failedHeight =
+                failedCount > 0
+                  ? Math.max(
+                      4,
+                      Math.round((failedCount / maxBucket) * PLOT_HEIGHT),
+                    )
+                  : 0;
+              const key = point.timestamp || `bucket-${index}`;
               return (
-                <View key={point.timestamp} style={styles.bucket}>
+                <View key={key} style={styles.bucket}>
                   <View style={styles.bucketBars}>
                     <View
-                      style={[
-                        styles.barSuccess,
-                        { height: successHeight || 4 },
-                      ]}
+                      style={[styles.barSuccess, { height: successHeight }]}
                     />
-                    <View
-                      style={[
-                        styles.barFailed,
-                        { height: failedHeight || 0 },
-                      ]}
-                    />
+                    {failedHeight > 0 ? (
+                      <View
+                        style={[styles.barFailed, { height: failedHeight }]}
+                      />
+                    ) : null}
                   </View>
                   <Text numberOfLines={1} style={styles.bucketLabel}>
-                    {formatKolamSaleAnalyticsBucketLabel(point.timestamp, range)}
+                    {formatKolamSaleAnalyticsBucketLabel(
+                      point.timestamp || '',
+                      range,
+                    )}
                   </Text>
                 </View>
               );
@@ -254,6 +289,13 @@ const styles = StyleSheet.create({
   headerCopy: {
     flex: 1,
     minWidth: 0,
+  },
+  chartHeader: {
+    gap: 0,
+    paddingHorizontal: GRAPH_VISUAL.header.paddingX,
+    paddingVertical: GRAPH_VISUAL.header.paddingY,
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: GRAPH_VISUAL.header.borderBottom ? 1 : 0,
   },
   sectionTitle: {
     color: V.colors.fg,
@@ -282,14 +324,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   sourceStrip: {
-    flexWrap: 'nowrap',
-    marginBottom: 0,
+    flexDirection: 'row',
+    gap: COUNT_VISUAL.cardSpacing,
     paddingBottom: COUNT_VISUAL.section.gridPaddingBottom,
     paddingHorizontal: COUNT_VISUAL.section.gridPaddingX,
   },
   sourceCard: {
-    // Equal-width row like FE inventoryGrid `repeat(4, 1fr)` — override
-    // dashboardCount minWidth/basis so POS/Website/Tokopedia/Shopee stay berjejer.
+    // Equal-width row like FE `repeat(4, 1fr)` — avoid minWidth:220 wrap.
     flex: 1,
     flexBasis: 0,
     minWidth: 0,
