@@ -27,7 +27,6 @@ import {
 import { pickNativeAssetFile } from '../services/native-file-picker';
 import { KolamButton } from './kolam-button';
 import { KolamCardFrame } from './kolam-card-frame';
-import { KolamChevronIcon } from './kolam-chevron-icon';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamCopyStack } from './kolam-copy-stack';
@@ -39,8 +38,11 @@ import {
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamModalBackdrop } from './kolam-modal-backdrop';
+import { KolamSearchField } from './kolam-search-field';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamStockOpnameDetail } from './kolam-stock-opname-detail';
+import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
+import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 
 const LIST_COLUMNS = [
   { id: 'document', label: 'Dokumen', flex: 1.2 },
@@ -292,119 +294,98 @@ function KolamStockOpnameList({
   return (
     <View style={styles.listRoot}>
       <View style={styles.toolbarWrap}>
-        <View style={styles.toolbarShell}>
-          <View style={styles.filterRow}>
-            <KolamFormTextField
-              onChangeText={setSearchInput}
-              placeholder="Cari"
-              style={styles.searchInput}
-              value={searchInput}
-            />
-            <KolamButton
-              icon={
-                <KolamChevronIcon
-                  color={
-                    statusPanelOpen || controller.filters.status
-                      ? V.colors.primaryFg
-                      : V.colors.success
-                  }
-                  direction="down"
-                  size="menu-sm"
+        <View style={kolamTableToolbarStyles.shell}>
+          <View style={kolamTableToolbarStyles.row}>
+            <View style={kolamTableToolbarStyles.filters}>
+              <KolamSearchField
+                containerStyle={kolamTableToolbarStyles.searchInput}
+                onChangeText={setSearchInput}
+                placeholder="Cari"
+                value={searchInput}
+              />
+              <KolamTableFilterTrigger
+                active={statusPanelOpen || Boolean(controller.filters.status)}
+                label={statusFilterLabel}
+                onPress={() => setStatusPanelOpen(current => !current)}
+                open={statusPanelOpen}
+                variant="quiet"
+              />
+              <KolamDateField
+                accessibilityLabel="Tanggal mulai"
+                label="Dari"
+                onChange={value => {
+                  setStatusPanelOpen(false);
+                  controller.onChangeFilters({ startDate: value });
+                }}
+                placeholder="Dari"
+                showLabelInTrigger={false}
+                style={styles.dateField}
+                value={controller.filters.startDate}
+              />
+              <KolamDateField
+                accessibilityLabel="Tanggal sampai"
+                label="Sampai"
+                onChange={value => {
+                  setStatusPanelOpen(false);
+                  controller.onChangeFilters({ endDate: value });
+                }}
+                placeholder="Sampai"
+                showLabelInTrigger={false}
+                style={styles.dateField}
+                value={controller.filters.endDate}
+              />
+            </View>
+            <View style={kolamTableToolbarStyles.actions}>
+              {filtersAppliedCount > 0 ? (
+                <KolamButton
+                  label="Reset"
+                  muted
+                  onPress={() => {
+                    setSearchInput('');
+                    setStatusPanelOpen(false);
+                    controller.onClearFilters();
+                  }}
+                  style={styles.toolbarButton}
                 />
-              }
-              intent={
-                statusPanelOpen || controller.filters.status
-                  ? 'primary'
-                  : 'secondary'
-              }
-              label={statusFilterLabel}
-              onPress={() => setStatusPanelOpen(current => !current)}
-              style={[
-                styles.filterTrigger,
-                (statusPanelOpen || controller.filters.status) &&
-                  styles.filterTriggerActive,
-              ]}
-              textStyle={[
-                styles.filterTriggerText,
-                (statusPanelOpen || controller.filters.status) &&
-                  styles.filterTriggerTextActive,
-              ]}
-            />
-            <KolamDateField
-              accessibilityLabel="Tanggal mulai"
-              label="Dari"
-              onChange={value => {
-                setStatusPanelOpen(false);
-                controller.onChangeFilters({ startDate: value });
-              }}
-              placeholder="Dari"
-              showLabelInTrigger={false}
-              style={styles.dateField}
-              value={controller.filters.startDate}
-            />
-            <KolamDateField
-              accessibilityLabel="Tanggal sampai"
-              label="Sampai"
-              onChange={value => {
-                setStatusPanelOpen(false);
-                controller.onChangeFilters({ endDate: value });
-              }}
-              placeholder="Sampai"
-              showLabelInTrigger={false}
-              style={styles.dateField}
-              value={controller.filters.endDate}
-            />
-          </View>
-          <View style={styles.actionRow}>
-            {filtersAppliedCount > 0 ? (
+              ) : null}
               <KolamButton
-                label="Reset"
-                muted
+                disabled={controller.loading}
+                label="Muat ulang"
                 onPress={() => {
-                  setSearchInput('');
-                  setStatusPanelOpen(false);
-                  controller.onClearFilters();
+                  void controller.onRefresh();
                 }}
                 style={styles.toolbarButton}
               />
-            ) : null}
-            <KolamButton
-              disabled={controller.loading}
-              label="Muat ulang"
-              onPress={() => {
-                void controller.onRefresh();
-              }}
-              style={styles.toolbarButton}
-            />
-            <KolamButton
-              disabled={controller.exporting || controller.loading}
-              label={controller.exporting ? 'Mengekspor…' : 'Ekspor'}
-              onPress={() => {
-                void controller.onExport();
-              }}
-              style={styles.toolbarButton}
-            />
-            {canCreate ? (
               <KolamButton
-                disabled={controller.importing}
-                label="Impor"
+                disabled={controller.exporting || controller.loading}
+                label={controller.exporting ? 'Mengekspor…' : 'Ekspor'}
                 onPress={() => {
-                  setStatusPanelOpen(false);
-                  setImportOpen(true);
+                  void controller.onExport();
                 }}
                 style={styles.toolbarButton}
               />
-            ) : null}
-            {canCreate ? (
-              <KolamButton
-                intent="primary"
-                label="Baru"
-                onPress={() =>
-                  onRouteChange?.(`${KOLAM_STOCK_OPNAME_ROOT}/new`)
-                }
-                style={styles.toolbarButton}
-              />
-            ) : null}
+              {canCreate ? (
+                <KolamButton
+                  disabled={controller.importing}
+                  label="Impor"
+                  onPress={() => {
+                    setStatusPanelOpen(false);
+                    setImportOpen(true);
+                  }}
+                  style={styles.toolbarButton}
+                />
+              ) : null}
+              {canCreate ? (
+                <KolamButton
+                  intent="primary"
+                  label="Baru"
+                  onPress={() =>
+                    onRouteChange?.(`${KOLAM_STOCK_OPNAME_ROOT}/new`)
+                  }
+                  style={styles.toolbarButton}
+                />
+              ) : null}
+            </View>
           </View>
         </View>
 
@@ -819,68 +800,9 @@ const styles = StyleSheet.create({
     elevation: 1000,
     overflow: 'visible',
   },
-  toolbarShell: {
-    alignItems: 'center',
-    backgroundColor: V.colors.bg,
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    justifyContent: 'space-between',
-    overflow: 'visible',
-    padding: 4,
-  },
-  filterRow: {
-    alignItems: 'center',
-    flex: 1,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 4,
-    minWidth: 280,
-    overflow: 'visible',
-  },
-  actionRow: {
-    alignItems: 'center',
-    borderLeftColor: V.colors.border,
-    borderLeftWidth: 1,
-    flexDirection: 'row',
-    flexShrink: 0,
-    flexWrap: 'wrap',
-    gap: 6,
-    justifyContent: 'flex-end',
-    paddingLeft: 8,
-  },
-  searchInput: {
-    flexBasis: 140,
-    flexGrow: 1,
-    maxWidth: 220,
-    minWidth: 120,
-  },
-  filterTrigger: {
-    backgroundColor: V.colors.successSoft,
-    borderColor: V.colors.success,
-    flexBasis: 0,
-    flexGrow: 1,
-    minHeight: 34,
-    minWidth: 120,
-    paddingHorizontal: 8,
-  },
-  filterTriggerActive: {
-    backgroundColor: V.colors.success,
-    borderColor: V.colors.success,
-  },
-  filterTriggerText: {
-    color: V.colors.success,
-    fontWeight: '800',
-  },
-  filterTriggerTextActive: {
-    color: V.colors.primaryFg,
-  },
   dateField: {
-    flexBasis: 0,
-    flexGrow: 1,
+    flexGrow: 0,
+    flexShrink: 0,
     minWidth: 110,
     maxWidth: 160,
   },
