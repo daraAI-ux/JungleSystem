@@ -77,6 +77,7 @@ import {KolamModalBackdrop} from './kolam-modal-backdrop';
 import {KolamPressable} from './kolam-pressable';
 import {KolamProfileAvatarContent} from './kolam-profile-avatar-content';
 import {KolamRemoteImage} from './kolam-remote-image';
+import {KolamStatusIndicatorIcon} from './kolam-status-indicator-icon';
 import {KolamTopNavigationChatIcon} from './kolam-top-navigation-chat-icon';
 import {KolamXIcon} from './kolam-x-icon';
 import {resolveProfilePhotoUrl, type SignedInUser} from '../services/auth-api';
@@ -2427,7 +2428,10 @@ function KolamChatRailDetailPanel({
             accessibilityLabel="Kembali ke daftar inbox chat"
             onPress={onBack}
             style={styles.detailBackButton}>
-            <View style={styles.detailBackArrow} />
+            <KolamStatusIndicatorIcon
+              color={V.colors.primary}
+              kind="triangle-left"
+            />
           </KolamPressable>
         ) : null}
         <Text numberOfLines={1} style={styles.selectedTitle}>
@@ -5805,6 +5809,7 @@ const styles = StyleSheet.create({
     backgroundColor: V.colors.bg,
     borderLeftColor: V.colors.border,
     borderLeftWidth: 1,
+    overflow: 'visible',
   },
   header: {
     minHeight: V.layout.topNavHeight,
@@ -5961,7 +5966,7 @@ const styles = StyleSheet.create({
   chatHealthPopover: {
     position: 'absolute',
     top: 30,
-    left: -128,
+    right: 0,
     width: 286,
     padding: 10,
     borderRadius: V.radius.lg,
@@ -5979,7 +5984,7 @@ const styles = StyleSheet.create({
   chatAnalyticsPopover: {
     position: 'absolute',
     top: 30,
-    left: -164,
+    right: 0,
     width: 246,
     padding: 10,
     borderRadius: V.radius.lg,
@@ -6599,20 +6604,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 15,
-    borderColor: V.colors.primary,
-    borderWidth: 1,
-    backgroundColor: V.colors.bg,
-  },
-  detailBackArrow: {
-    width: 0,
-    height: 0,
-    marginLeft: -2,
-    borderTopWidth: 5,
-    borderBottomWidth: 5,
-    borderRightWidth: 8,
-    borderTopColor: 'transparent',
-    borderBottomColor: 'transparent',
-    borderRightColor: V.colors.primary,
+    backgroundColor: V.colors.primarySoft,
   },
   selectedTitle: {
     color: V.colors.primary,
