@@ -1054,14 +1054,6 @@ const styles = StyleSheet.create({
     maxWidth: '100%',
     minWidth: 0,
   },
-  countryText: {
-    color: V.colors.fg,
-    flexShrink: 1,
-    fontFamily: V.fontFamily,
-    fontSize: 13,
-    minWidth: 0,
-    textAlign: 'center',
-  },
   countCell: {
     alignItems: 'center',
   },
