@@ -19,7 +19,6 @@ import {
   kolamSaleSkipsShippingFlow,
   KOLAM_SALES_DISCOUNT_APPROVAL_ROUTE,
   KOLAM_SALES_ROOT,
-  type KolamSale,
   type KolamSaleDeliveryTransitionTarget,
   type KolamSaleStatusTransitionTarget,
 } from '../domain/kolam-sales';
