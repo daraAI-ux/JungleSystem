@@ -40,6 +40,14 @@ describe('Kolam enclosure domain', () => {
   it('parses list filters from plugin-compatible query params', () => {
     expect(parseKolamEnclosureListTab(undefined)).toBe('dashboard');
 
+    expect(createInitialEnclosureListFilters('/enclosures?scope=internal')).toEqual(
+      expect.objectContaining({
+        limit: 10,
+        page: 1,
+        scope: 'internal',
+      }),
+    );
+
     const filters = createInitialEnclosureListFilters(
       '/enclosures?scope=internal&page=2&limit=50&search=ENC&livestock=production&enclosureType=Aquarium',
     );

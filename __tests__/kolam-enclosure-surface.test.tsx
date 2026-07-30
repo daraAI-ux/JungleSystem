@@ -361,7 +361,7 @@ function createController(
     error: null,
     filters: {
       enclosureType: 'all',
-      limit: 20,
+      limit: 10,
       livestockPurpose: 'all',
       page: 1,
       scope: 'internal',
@@ -370,10 +370,10 @@ function createController(
     loading: false,
     mode: 'list',
     pagination: {
-      limit: 20,
+      limit: 10,
       page: 1,
       total: 21,
-      totalPages: 2,
+      totalPages: 3,
     },
     pendingAllocations: [],
     pendingTotal: 0,

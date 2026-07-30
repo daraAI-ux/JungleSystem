@@ -298,7 +298,7 @@ export function createInitialEnclosureListFilters(
     search: query.search ?? '',
     scope: parseKolamEnclosureListTab(query.scope),
     page: Math.max(1, Number(query.page || '1') || 1),
-    limit: Math.max(1, Number(query.limit || '20') || 20),
+    limit: Math.max(1, Number(query.limit || '10') || 10),
     livestockPurpose: parseKolamEnclosureLivestockFilter(query.livestock),
     enclosureType: parseKolamEnclosureTypeFilter(query.enclosureType),
   };

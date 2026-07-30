@@ -19,6 +19,7 @@ import {
   type KolamEnclosureLivestockFilter,
 } from '../domain/kolam-enclosure';
 import {
+  fitKolamDataTableColumns,
   getKolamTableColumns,
   getKolamTableVisualContract,
   type KolamTableColumn,
@@ -534,7 +535,7 @@ function KolamEnclosureRow({
     <KolamDataTableRowFrame
       style={actionMenuOpen ? styles.activeActionRow : undefined}
     >
-      <KolamDataTableMainTrack>
+      <KolamDataTableMainTrack style={styles.mainTrackVisible}>
         <View
           style={[
             styles.listCell,
@@ -617,6 +618,7 @@ function KolamEnclosureRow({
             styles.listCell,
             styles.picCell,
             picColumn ? getKolamDataTableColumnStyle(picColumn) : null,
+            styles.overflowVisible,
           ]}
         >
           <KolamEnclosurePicAvatar enclosure={enclosure} />
@@ -1564,42 +1566,17 @@ function getListEmptyMessage(controller: KolamEnclosureController) {
 }
 
 function fitEnclosureListColumns(containerWidth: number): KolamTableColumn[] {
-  const base = getKolamTableColumns('enclosure');
-  if (containerWidth <= 0) {
-    return base;
-  }
-
-  const gap = KOLAM_DATA_TABLE_COLUMN_GAP;
-  const paddingX = getKolamTableVisualContract().body.cellPaddingX * 2;
-  const actionsWidth = KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH;
-  const gapsTotal = gap * Math.max(0, base.length - 1);
-  const contentBudget = Math.max(
-    0,
-    containerWidth - paddingX - gapsTotal - actionsWidth,
+  return fitKolamDataTableColumns(
+    getKolamTableColumns('enclosure'),
+    containerWidth,
+    {
+      actionsMinWidth: KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+      gap: KOLAM_DATA_TABLE_COLUMN_GAP,
+      paddingX: getKolamTableVisualContract().body.cellPaddingX * 2,
+      primaryMinWidth: 160,
+      secondaryMinWidth: 48,
+    },
   );
-  const contentColumns = base.filter(column => column.id !== 'actions');
-  const equalWidth = Math.max(
-    72,
-    Math.floor(contentBudget / Math.max(1, contentColumns.length)),
-  );
-  let remainder = contentBudget - equalWidth * contentColumns.length;
-  const lastContentId = contentColumns[contentColumns.length - 1]?.id;
-
-  return base.map(column => {
-    if (column.id === 'actions') {
-      return {...column, width: actionsWidth};
-    }
-
-    const extra = column.id === lastContentId ? remainder : 0;
-    if (column.id === lastContentId) {
-      remainder = 0;
-    }
-
-    return {
-      ...column,
-      width: equalWidth + extra,
-    };
-  });
 }
 
 function dashboardWidthOf(id: KolamTableColumn['id']) {
@@ -1829,12 +1806,23 @@ const styles = StyleSheet.create({
   identityCell: {
     alignItems: 'flex-start',
   },
+  mainTrackVisible: {
+    overflow: 'visible',
+  },
+  overflowVisible: {
+    overflow: 'visible',
+    zIndex: 9000,
+  },
   picCell: {
     alignItems: 'center',
-    overflow: 'visible',
   },
   picTooltip: {
     alignSelf: 'center',
+  },
+  activeActionRow: {
+    elevation: 30,
+    overflow: 'visible',
+    zIndex: 1000,
   },
   picAvatar: {
     alignItems: 'center',
@@ -1885,9 +1873,6 @@ const styles = StyleSheet.create({
   },
   actionsTrack: {
     justifyContent: 'center',
-  },
-  activeActionRow: {
-    zIndex: 40,
   },
   actionCell: {
     alignItems: 'flex-end',
