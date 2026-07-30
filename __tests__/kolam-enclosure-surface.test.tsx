@@ -164,7 +164,7 @@ describe('Kolam enclosure surface', () => {
     });
 
     expect(
-      renderer!.root.findAllByProps({title: 'Memuat enclosure...'}).length,
+      renderer!.root.findAllByProps({title: 'Memuat enclosure…'}).length,
     ).toBeGreaterThan(0);
 
     const emptyController = createController({
@@ -254,6 +254,59 @@ describe('Kolam enclosure surface', () => {
 
     expect(onRouteChange).toHaveBeenCalledWith('/stock-transaction');
     expect(onRouteChange).toHaveBeenCalledWith('/stock-transaction/tx-1');
+  });
+
+  it('renders the plugin-parity allocation statistics with grouped variants', async () => {
+    const allocationOverview = createAllocationOverview();
+    const controller = createController({
+      activeTab: 'allocation',
+      allocationOverview,
+      allocationSpeciesGroups: [
+        {
+          hasVariants: true,
+          rows: allocationOverview.items,
+          scientificName: 'Dendrobates tinctorius',
+          speciesId: 'sp-alloc',
+          speciesName: 'Tinctorius',
+          totalAllocated: 8,
+          totalStock: 11,
+          totalUnallocated: 3,
+          unit: 'ekor',
+        },
+      ],
+      filters: {
+        enclosureType: 'all',
+        limit: 20,
+        livestockPurpose: 'all',
+        page: 1,
+        scope: 'allocation',
+        search: '',
+      },
+    });
+    useControllerMock.mockReturnValue(controller);
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamEnclosureSurface route="/enclosures?scope=allocation" />,
+      );
+    });
+
+    const root = renderer!.root;
+    expect(root.findAllByProps({children: 'Jumlah species'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Stok total'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Sudah di enclosure'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Belum di enclosure'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Tinctorius'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: '2 varian down'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'ENC-A, ENC-B'}).length).toBeGreaterThan(0);
+
+    await ReactTestRenderer.act(async () => {
+      root.findAllByProps({label: '2 varian down'})[0].props.onPress();
+    });
+
+    expect(root.findAllByProps({children: 'Azureus'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Tiny'}).length).toBeGreaterThan(0);
   });
 });
 
@@ -389,6 +442,46 @@ function createDashboardStats(): KolamEnclosureController['dashboardStats'] {
   };
 }
 
+function createAllocationOverview(): KolamEnclosureController['allocationOverview'] {
+  return {
+    items: [
+      {
+        allocated: 5,
+        enclosureCodes: ['ENC-A'],
+        enclosures: [{code: 'ENC-A', enclosureId: 'enc-a'}],
+        scientificName: 'Dendrobates tinctorius',
+        speciesId: 'sp-alloc',
+        speciesName: 'Tinctorius',
+        totalStock: 7,
+        unallocated: 2,
+        unit: 'ekor',
+        variantId: 'v-azureus',
+        variantLabel: 'Azureus',
+      },
+      {
+        allocated: 3,
+        enclosureCodes: ['ENC-B'],
+        enclosures: [{code: 'ENC-B', enclosureId: 'enc-b'}],
+        scientificName: 'Dendrobates tinctorius',
+        speciesId: 'sp-alloc',
+        speciesName: 'Tinctorius',
+        totalStock: 4,
+        unallocated: 1,
+        unit: 'ekor',
+        variantId: 'v-tiny',
+        variantLabel: 'Tiny',
+      },
+    ],
+    totals: {
+      rowCount: 2,
+      speciesCount: 1,
+      totalAllocated: 8,
+      totalStock: 11,
+      totalUnallocated: 3,
+    },
+  };
+}
+
 function createEnclosure(): KolamEnclosure {
   return {
     aquariumWaterType: 'freshwater',
@@ -398,6 +491,7 @@ function createEnclosure(): KolamEnclosure {
       firstName: 'Keeper',
       id: 'u1',
       lastName: 'One',
+      photo: '',
       username: 'keeper',
     },
     assignedToId: 'u1',

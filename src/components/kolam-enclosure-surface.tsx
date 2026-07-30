@@ -11,6 +11,7 @@ import {
   KOLAM_ENCLOSURE_TYPES,
   KOLAM_ENCLOSURE_ROOT,
   type KolamEnclosure,
+  type KolamEnclosureAllocationOverviewRow,
   type KolamEnclosureDashboardDeathEvent,
   type KolamEnclosureDashboardSpeciesRow,
   type KolamEnclosureLivestockFilter,
@@ -74,6 +75,14 @@ const DASHBOARD_DEATH_COLUMNS: KolamTableColumn[] = [
   {id: 'amount', label: 'Qty', align: 'right', width: 80},
   {id: 'status', label: 'Status', align: 'left', width: 132},
   {id: 'actions', label: 'Stok', align: 'right', width: 80},
+];
+
+const ALLOCATION_OVERVIEW_COLUMNS: KolamTableColumn[] = [
+  {id: 'primary', label: 'Species', align: 'left'},
+  {id: 'notes', label: 'Varian', align: 'left', width: 132},
+  {id: 'children', label: 'Sudah di enclosure', align: 'right', width: 148},
+  {id: 'amount', label: 'Belum di enclosure', align: 'right', width: 148},
+  {id: 'marketplace', label: 'Kode enclosure', align: 'left', width: 220},
 ];
 
 const LIVESTOCK_FILTER_OPTIONS: Array<{
@@ -724,7 +733,7 @@ function KolamEnclosureDashboardPanel({
         />
         <SummaryTile
           accent="warning"
-          hint={`${stats.deaths.reportedAnimals} ekor / ada alasan atau foto`}
+          hint={`${stats.deaths.reportedAnimals} ekor dilaporkan / ${stats.deaths.totalCases} event total`}
           icon="!"
           label="Kematian dilaporkan"
           value={stats.deaths.reportedCases}
@@ -1137,6 +1146,38 @@ function KolamEnclosureAllocationPanel({
 }: {
   controller: KolamEnclosureController;
 }) {
+  const [page, setPage] = React.useState(1);
+  const [openSpeciesIds, setOpenSpeciesIds] = React.useState<Set<string>>(
+    () => new Set(),
+  );
+  const search = controller.filters.search.trim();
+  const groups = React.useMemo(
+    () => filterAllocationGroups(controller.allocationSpeciesGroups, search),
+    [controller.allocationSpeciesGroups, search],
+  );
+  const totalPages = Math.max(1, Math.ceil(groups.length / DASHBOARD_SPECIES_PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const pageGroups = groups.slice(
+    (safePage - 1) * DASHBOARD_SPECIES_PAGE_SIZE,
+    safePage * DASHBOARD_SPECIES_PAGE_SIZE,
+  );
+
+  React.useEffect(() => {
+    setPage(1);
+  }, [search, controller.allocationSpeciesGroups]);
+
+  const toggleGroup = React.useCallback((speciesId: string) => {
+    setOpenSpeciesIds(current => {
+      const next = new Set(current);
+      if (next.has(speciesId)) {
+        next.delete(speciesId);
+      } else {
+        next.add(speciesId);
+      }
+      return next;
+    });
+  }, []);
+
   if (controller.loading && !controller.allocationOverview.items.length) {
     return <InlineState title="Memuat statistik allocation..." />;
   }
@@ -1153,25 +1194,245 @@ function KolamEnclosureAllocationPanel({
   }
 
   return (
-    <View style={styles.panelList}>
-      {controller.allocationSpeciesGroups.map(group => (
-        <View key={group.speciesId} style={styles.panelRow}>
-          <KolamCopyStack
-            containerStyle={styles.panelRowCopy}
-            items={[
-              {id: 'title', text: group.speciesName || group.speciesId, style: styles.rowTitle},
-              {
-                id: 'meta',
-                text: group.scientificName || `${group.rows.length} varian`,
-                style: styles.rowMeta,
-              },
-            ]}
+    <ScrollView contentContainerStyle={styles.dashboardContent}>
+      <View style={styles.summaryGrid}>
+        <SummaryTile
+          icon="S"
+          label="Jumlah species"
+          value={controller.allocationOverview.totals.speciesCount}
+        />
+        <SummaryTile
+          hint={`${controller.allocationOverview.totals.rowCount} varian`}
+          icon="T"
+          label="Stok total"
+          value={controller.allocationOverview.totals.totalStock}
+        />
+        <SummaryTile
+          accent="primary"
+          icon="E"
+          label="Sudah di enclosure"
+          value={controller.allocationOverview.totals.totalAllocated}
+        />
+        <SummaryTile
+          accent="warning"
+          icon="!"
+          label="Belum di enclosure"
+          value={controller.allocationOverview.totals.totalUnallocated}
+        />
+      </View>
+      <Text style={styles.sectionMeta}>
+        {groups.length} species / {controller.allocationOverview.totals.rowCount} varian
+      </Text>
+      <KolamCatalogListTableShell
+        footer={
+          groups.length > DASHBOARD_SPECIES_PAGE_SIZE ? (
+            <SimpleDashboardPagination
+              onPageChange={setPage}
+              page={safePage}
+              totalItems={groups.length}
+              totalPages={totalPages}
+            />
+          ) : (
+            <Text style={styles.sectionMeta}>{groups.length} species</Text>
+          )
+        }
+        style={styles.tableFrame}
+      >
+        <View style={styles.dashboardTable}>
+          <KolamDataTableHeader columns={ALLOCATION_OVERVIEW_COLUMNS} />
+          {pageGroups.length ? (
+            pageGroups.map(group => (
+              <AllocationSpeciesGroupRow
+                group={group}
+                key={group.speciesId}
+                onToggle={() => toggleGroup(group.speciesId)}
+                open={openSpeciesIds.has(group.speciesId)}
+              />
+            ))
+          ) : (
+            <View style={styles.emptyWrap}>
+              <KolamEmptyState
+                compact
+                message={
+                  search
+                    ? `Tidak ada species untuk "${search}".`
+                    : 'Belum ada data stok species.'
+                }
+                title={search ? 'Species tidak ditemukan' : 'Belum ada data stok'}
+              />
+            </View>
+          )}
+        </View>
+      </KolamCatalogListTableShell>
+    </ScrollView>
+  );
+}
+
+type AllocationSpeciesGroup =
+  KolamEnclosureController['allocationSpeciesGroups'][number];
+
+function AllocationSpeciesGroupRow({
+  group,
+  onToggle,
+  open,
+}: {
+  group: AllocationSpeciesGroup;
+  onToggle: () => void;
+  open: boolean;
+}) {
+  const singleRow = group.rows.length === 1 && !group.hasVariants;
+  const row = group.rows[0];
+  const codeLabel = formatAllocationCodes(group.rows);
+
+  if (singleRow && row) {
+    return (
+      <AllocationOverviewRow
+        allocated={row.allocated}
+        codes={row.enclosureCodes}
+        enclosures={row.enclosures}
+        scientificName={group.scientificName}
+        speciesName={group.speciesName || group.speciesId}
+        unit={row.unit || group.unit}
+        unallocated={row.unallocated}
+        variantLabel={row.variantLabel || '-'}
+      />
+    );
+  }
+
+  return (
+    <View>
+      <KolamDataTableRowFrame>
+        <View style={[styles.cell, styles.primaryCell]}>
+          <Text numberOfLines={1} style={styles.rowTitle}>
+            {group.speciesName || group.speciesId}
+          </Text>
+          {group.scientificName ? (
+            <Text numberOfLines={1} style={styles.scientificText}>
+              {group.scientificName}
+            </Text>
+          ) : null}
+        </View>
+        <View style={[styles.cell, {width: allocationWidthOf('notes')}]}>
+          <KolamButton
+            label={`${group.rows.length} varian ${open ? 'up' : 'down'}`}
+            onPress={onToggle}
+            style={styles.variantToggleButton}
           />
-          <Text style={styles.qtyText}>
-            {group.totalAllocated}/{group.totalStock}
+        </View>
+        <View style={[styles.cell, {width: allocationWidthOf('children')}]}>
+          <Text style={styles.numText}>
+            {group.totalAllocated} {group.unit}
           </Text>
         </View>
-      ))}
+        <View style={[styles.cell, {width: allocationWidthOf('amount')}]}>
+          <Text
+            style={[
+              styles.numText,
+              group.totalUnallocated > 0 ? styles.warningText : null,
+            ]}
+          >
+            {group.totalUnallocated} {group.unit}
+          </Text>
+        </View>
+        <View style={[styles.cell, {width: allocationWidthOf('marketplace')}]}>
+          <Text numberOfLines={2} style={styles.cellText}>
+            {codeLabel || '-'}
+          </Text>
+        </View>
+      </KolamDataTableRowFrame>
+      {open ? (
+        <View style={styles.allocationVariantPanel}>
+          {group.rows.map(rowItem => (
+            <AllocationVariantRow
+              key={`${rowItem.speciesId}:${rowItem.variantId || ''}`}
+              row={rowItem}
+            />
+          ))}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+function AllocationOverviewRow({
+  allocated,
+  codes,
+  enclosures,
+  scientificName,
+  speciesName,
+  unit,
+  unallocated,
+  variantLabel,
+}: {
+  allocated: number;
+  codes: string[];
+  enclosures: KolamEnclosureAllocationOverviewRow['enclosures'];
+  scientificName: string;
+  speciesName: string;
+  unit: string;
+  unallocated: number;
+  variantLabel: string;
+}) {
+  return (
+    <KolamDataTableRowFrame>
+      <View style={[styles.cell, styles.primaryCell]}>
+        <Text numberOfLines={1} style={styles.rowTitle}>
+          {speciesName || '-'}
+        </Text>
+        {scientificName ? (
+          <Text numberOfLines={1} style={styles.scientificText}>
+            {scientificName}
+          </Text>
+        ) : null}
+      </View>
+      <View style={[styles.cell, {width: allocationWidthOf('notes')}]}>
+        <Text numberOfLines={2} style={styles.cellText}>
+          {variantLabel || '-'}
+        </Text>
+      </View>
+      <View style={[styles.cell, {width: allocationWidthOf('children')}]}>
+        <Text style={styles.numText}>
+          {allocated} {unit}
+        </Text>
+      </View>
+      <View style={[styles.cell, {width: allocationWidthOf('amount')}]}>
+        <Text style={[styles.numText, unallocated > 0 ? styles.warningText : null]}>
+          {unallocated} {unit}
+        </Text>
+      </View>
+      <View style={[styles.cell, {width: allocationWidthOf('marketplace')}]}>
+        <Text numberOfLines={2} style={styles.cellText}>
+          {formatAllocationCodes([{enclosureCodes: codes, enclosures}]) || '-'}
+        </Text>
+      </View>
+    </KolamDataTableRowFrame>
+  );
+}
+
+function AllocationVariantRow({
+  row,
+}: {
+  row: KolamEnclosureAllocationOverviewRow;
+}) {
+  return (
+    <View style={styles.allocationVariantRow}>
+      <Text numberOfLines={2} style={[styles.cellText, styles.variantName]}>
+        {row.variantLabel || '-'}
+      </Text>
+      <Text style={styles.allocationVariantMetric}>
+        Di enclosure: {row.allocated} {row.unit}
+      </Text>
+      <Text
+        style={[
+          styles.allocationVariantMetric,
+          row.unallocated > 0 ? styles.warningText : null,
+        ]}
+      >
+        Belum: {row.unallocated} {row.unit}
+      </Text>
+      <Text numberOfLines={2} style={styles.allocationVariantCodes}>
+        {formatAllocationCodes([row]) || '-'}
+      </Text>
     </View>
   );
 }
@@ -1283,6 +1544,58 @@ function dashboardWidthOf(id: KolamTableColumn['id']) {
 
 function deathWidthOf(id: KolamTableColumn['id']) {
   return DASHBOARD_DEATH_COLUMNS.find(column => column.id === id)?.width;
+}
+
+function allocationWidthOf(id: KolamTableColumn['id']) {
+  return ALLOCATION_OVERVIEW_COLUMNS.find(column => column.id === id)?.width;
+}
+
+function filterAllocationGroups(
+  groups: KolamEnclosureController['allocationSpeciesGroups'],
+  search: string,
+) {
+  const needle = search.trim().toLowerCase();
+  if (!needle) {
+    return groups;
+  }
+
+  return groups.filter(group => {
+    const text = [
+      group.speciesName,
+      group.scientificName,
+      group.unit,
+      ...group.rows.flatMap(row => [
+        row.variantLabel,
+        ...row.enclosureCodes,
+        ...row.enclosures.map(enclosure => enclosure.code),
+      ]),
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+    return text.includes(needle);
+  });
+}
+
+function formatAllocationCodes(
+  rows: Array<
+    Pick<KolamEnclosureAllocationOverviewRow, 'enclosureCodes' | 'enclosures'>
+  >,
+) {
+  const codes = new Set<string>();
+  for (const row of rows) {
+    for (const code of row.enclosureCodes) {
+      if (code) {
+        codes.add(code);
+      }
+    }
+    for (const enclosure of row.enclosures) {
+      if (enclosure.code) {
+        codes.add(enclosure.code);
+      }
+    }
+  }
+  return [...codes].join(', ');
 }
 
 function formatDashboardDateTime(value: string) {
@@ -1521,6 +1834,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textAlign: 'right',
   },
+  warningText: {
+    color: V.colors.warning,
+  },
   linkText: {
     color: V.colors.primary,
     fontFamily: V.fontFamily,
@@ -1692,6 +2008,48 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 12,
     justifyContent: 'space-between',
+  },
+  variantToggleButton: {
+    alignSelf: 'flex-start',
+    minHeight: 30,
+    paddingHorizontal: 8,
+  },
+  allocationVariantPanel: {
+    backgroundColor: V.colors.secondary,
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    gap: 0,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  allocationVariantRow: {
+    alignItems: 'center',
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    gap: 12,
+    minHeight: 42,
+    paddingVertical: 7,
+  },
+  variantName: {
+    flex: 1,
+    fontWeight: '700',
+    minWidth: 0,
+  },
+  allocationVariantMetric: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '700',
+    minWidth: 112,
+    textAlign: 'right',
+  },
+  allocationVariantCodes: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    minWidth: 180,
+    width: 220,
   },
   panelList: {
     backgroundColor: V.colors.bg,
