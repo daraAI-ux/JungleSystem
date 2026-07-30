@@ -318,7 +318,7 @@ const kolamTableColumns: Record<KolamTableId, KolamTableColumn[]> = {
       width: 72,
     },
     { id: 'marketplace', label: 'Tanggal', align: 'left', width: 104 },
-    { id: 'actions', label: '', align: 'right', width: 48 },
+    { id: 'actions', label: '', align: 'right', width: 64 },
   ],
   'production-materials': [
     { id: 'primary', label: 'Komponen', align: 'left' },
