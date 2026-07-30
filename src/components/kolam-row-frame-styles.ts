@@ -9,7 +9,7 @@ const KOLAM_TABLE_VISUAL = getKolamTableVisualContract();
 
 export const rowFrameStyles = StyleSheet.create({
   dataTableHeader: {
-    minHeight: KOLAM_TABLE_VISUAL.body.rowMinHeight,
+    // FE th is py-(--gutter-y) only — do not force body rowMinHeight (looks oversized).
     flexDirection: 'row',
     alignItems: 'center',
     gap: KOLAM_DATA_TABLE_COLUMN_GAP,
