@@ -26,6 +26,7 @@ import {
   getKolamWebSetting,
   getKolamUserPickerRows,
   openKolamTeamChatDirect,
+  searchKolamChatMarketplaceListings,
 } from '../src/services/kolam-api';
 import {createKolamNotificationSoundService} from '../src/services/kolam-notification-sound-service';
 import {
@@ -65,6 +66,15 @@ jest.mock('../src/hooks/use-kolam-chat-live-stream', () => ({
   useKolamChatLiveStream: jest.fn(),
 }));
 
+jest.mock('../src/hooks/use-kolam-chat-platform-health', () => ({
+  useKolamChatPlatformHealth: jest.fn(() => ({
+    healthByPlatform: {},
+    loading: false,
+    platforms: [],
+    refresh: jest.fn(),
+  })),
+}));
+
 jest.mock('../src/hooks/use-kolam-notification-sound-settings', () => ({
   useKolamNotificationSoundSettings: jest.fn(),
 }));
@@ -81,6 +91,7 @@ jest.mock('../src/services/kolam-api', () => {
     getKolamWebSetting: jest.fn(),
     getKolamUserPickerRows: jest.fn(),
     openKolamTeamChatDirect: jest.fn(),
+    searchKolamChatMarketplaceListings: jest.fn(),
   };
 });
 
@@ -157,6 +168,10 @@ const getChatTemplatesMock = getKolamChatTemplates as jest.MockedFunction<
 const getWebSettingMock = getKolamWebSetting as jest.MockedFunction<
   typeof getKolamWebSetting
 >;
+const searchMarketplaceListingsMock =
+  searchKolamChatMarketplaceListings as jest.MockedFunction<
+    typeof searchKolamChatMarketplaceListings
+  >;
 const createSoundServiceMock =
   createKolamNotificationSoundService as jest.MockedFunction<
     typeof createKolamNotificationSoundService
@@ -248,6 +263,7 @@ describe('KolamGlobalChatRail', () => {
     getChatContactDetailsMock.mockClear();
     getChatLabelsMock.mockClear();
     getChatTemplatesMock.mockClear();
+    searchMarketplaceListingsMock.mockClear();
     getWebSettingMock.mockClear();
     getChatAnalyticsMock.mockResolvedValue({
       avgReplyDelayMinutes: 4,
@@ -273,6 +289,10 @@ describe('KolamGlobalChatRail', () => {
         title: 'Cek invoice',
       },
     ]);
+    searchMarketplaceListingsMock.mockResolvedValue({
+      items: [],
+      platform: 'tokopedia',
+    });
     getWebSettingMock.mockResolvedValue({
       daraAvatarUrl: '/media/dara/avatar.png',
       katakTerbangWorkerPhotoUrl: '/media/katak-terbang/photo.jpg',
@@ -1322,6 +1342,212 @@ describe('KolamGlobalChatRail', () => {
       expect.objectContaining({name: 'proof.jpg'}),
       undefined,
     );
+  });
+
+  it('keeps store composer off the olshop tool while image, emoji, template, and reply stay available', async () => {
+    useReadonlyDataMock.mockReturnValue({
+      conversations: [
+        {
+          _id: 'conv-store',
+          platform: 'store',
+          contactId: {displayName: 'Buyer Store'},
+          lastMessagePreview: 'Produk webstore',
+          unreadCount: 0,
+        },
+      ],
+      loading: false,
+      refresh: jest.fn(),
+      rooms: [],
+      totalUnread: 0,
+    });
+    useDetailMock.mockReturnValue({
+      ...getDefaultDetailMock(),
+      conversation: {
+        _id: 'conv-store',
+        assignedStaffId: {_id: 'staff-1', first_name: 'Staff'},
+        isAiHandled: false,
+        platform: 'store',
+        status: 'open',
+      },
+      loading: false,
+      messages: [
+        {
+          attachments: [],
+          embeds: [],
+          id: 'msg-store-1',
+          author: 'Buyer',
+          body: 'Produk webstore ini masih ada?',
+          linkPreviews: [],
+          mine: false,
+          reactions: [],
+          sentAt: '2026-07-30T02:00:00.000Z',
+        },
+      ],
+      sendMessage: jest.fn(),
+      sending: false,
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamGlobalChatRail mode="inbox" onClose={() => undefined} />,
+      );
+    });
+
+    const selectButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(
+        node =>
+          node.props.accessibilityLabel === 'Pilih conversation Buyer Store',
+      );
+
+    await ReactTestRenderer.act(async () => {
+      selectButton!.props.onPress();
+    });
+
+    const labels = renderer!.root
+      .findAllByType(KolamPressable)
+      .map(node => node.props.accessibilityLabel)
+      .filter(Boolean);
+
+    expect(labels).toEqual(
+      expect.arrayContaining([
+        'Lampirkan gambar inbox',
+        'Buka emoji chat',
+        'Buka template chat',
+        'Balas pesan Buyer',
+      ]),
+    );
+    expect(labels).not.toEqual(
+      expect.arrayContaining([
+        'Buka produk Shopee',
+        'Buka produk Tokopedia',
+      ]),
+    );
+  });
+
+  it('loads only mapped marketplace listings for Tokopedia and sends the selected card through the detail hook', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer | null = null;
+
+    try {
+      const listing = {
+        entityId: 'species-1',
+        entityType: 'species' as const,
+        goodsId: 'goods-777',
+        listingName: 'Tokopedia Anemon Premium',
+        listingUrl: 'https://www.tokopedia.com/dunia-anura/anemon-premium',
+        name: 'Anemon Premium',
+        platform: 'tokopedia' as const,
+        productId: 'product-fallback',
+        shopId: 'shop-1',
+        sku: 'ANM-777',
+      };
+      const sendMarketplaceProduct = jest.fn().mockResolvedValue(undefined);
+      searchMarketplaceListingsMock.mockResolvedValue({
+        items: [listing],
+        platform: 'tokopedia',
+      });
+      useReadonlyDataMock.mockReturnValue({
+        conversations: [
+          {
+            _id: 'conv-tokped',
+            platform: 'tokopedia',
+            contactId: {displayName: 'Buyer Tokopedia'},
+            lastMessagePreview: 'Kirim produk tokped',
+            unreadCount: 0,
+          },
+        ],
+        loading: false,
+        refresh: jest.fn(),
+        rooms: [],
+        totalUnread: 0,
+      });
+      useDetailMock.mockReturnValue({
+        ...getDefaultDetailMock(),
+        conversation: {
+          _id: 'conv-tokped',
+          assignedStaffId: {_id: 'staff-1', first_name: 'Staff'},
+          isAiHandled: false,
+          platform: 'tokopedia',
+          status: 'open',
+        },
+        loading: false,
+        messages: [],
+        sendMarketplaceProduct,
+        sending: false,
+      });
+
+      await ReactTestRenderer.act(async () => {
+        renderer = ReactTestRenderer.create(
+          <KolamGlobalChatRail mode="inbox" onClose={() => undefined} />,
+        );
+      });
+
+      const selectButton = renderer!.root
+        .findAllByType(KolamPressable)
+        .find(
+          node =>
+            node.props.accessibilityLabel ===
+            'Pilih conversation Buyer Tokopedia',
+        );
+      expect(selectButton).toBeTruthy();
+      await ReactTestRenderer.act(async () => {
+        selectButton!.props.onPress();
+      });
+      await ReactTestRenderer.act(async () => {
+        await Promise.resolve();
+      });
+
+      const olshopButton = renderer!.root
+        .findAllByType(KolamPressable)
+        .find(node => node.props.accessibilityLabel === 'Buka produk Tokopedia');
+      expect(olshopButton).toBeTruthy();
+
+      await ReactTestRenderer.act(async () => {
+        olshopButton!.props.onPress();
+      });
+      await ReactTestRenderer.act(async () => {
+        await new Promise<void>(resolve => setTimeout(resolve, 350));
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+
+      expect(searchMarketplaceListingsMock).toHaveBeenCalledWith({
+        limit: 20,
+        platform: 'tokopedia',
+        q: '',
+      });
+      const marketplaceLabels = renderer!.root
+        .findAllByType(KolamPressable)
+        .map(node => node.props.accessibilityLabel)
+        .filter(Boolean);
+      expect(marketplaceLabels).toEqual(
+        expect.arrayContaining([
+          'Tutup produk marketplace',
+          'Kirim produk Tokopedia Anemon Premium',
+        ]),
+      );
+
+      const listingRow = renderer!.root
+        .findAllByType(KolamPressable)
+        .find(
+          node =>
+            node.props.accessibilityLabel ===
+            'Kirim produk Tokopedia Anemon Premium',
+        );
+      expect(listingRow).toBeTruthy();
+      await ReactTestRenderer.act(async () => {
+        listingRow!.props.onPress();
+      });
+
+      expect(sendMarketplaceProduct).toHaveBeenCalledWith(listing);
+    } finally {
+      if (renderer) {
+        await ReactTestRenderer.act(async () => {
+          renderer!.unmount();
+        });
+      }
+    }
   });
 
   it('blocks inbox send until the conversation is assigned to the current staff', async () => {
