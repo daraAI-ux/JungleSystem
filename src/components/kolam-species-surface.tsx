@@ -80,6 +80,7 @@ import { KolamPackingLinksEditor } from './kolam-packing-links-editor';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamStatusBadge } from './kolam-status-badge';
+import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 
 type SpeciesListFilterPanel = 'taxonomy' | 'category' | 'stock';
 
@@ -341,18 +342,18 @@ function KolamSpeciesList({
             style={styles.speciesFilterSearch}
             value={controller.filters.search}
           />
-          <SpeciesFilterTrigger
-            active={activeFilterPanel === 'taxonomy'}
+          <KolamTableFilterTrigger
+            active={activeFilterPanel === 'taxonomy' || taxonomyFilter !== 'all'}
             label={taxonomyFilterLabel}
             onPress={() => openFilterPanel('taxonomy')}
           />
-          <SpeciesFilterTrigger
-            active={activeFilterPanel === 'category'}
+          <KolamTableFilterTrigger
+            active={activeFilterPanel === 'category' || categoryFilter !== 'all'}
             label={categoryFilterLabel}
             onPress={() => openFilterPanel('category')}
           />
-          <SpeciesFilterTrigger
-            active={activeFilterPanel === 'stock'}
+          <KolamTableFilterTrigger
+            active={activeFilterPanel === 'stock' || stockFilter !== 'all'}
             label={stockFilterLabel}
             onPress={() => openFilterPanel('stock')}
           />
@@ -594,24 +595,6 @@ function KolamSpeciesList({
         />
       </KolamCatalogListTableShell>
     </View>
-  );
-}
-function SpeciesFilterTrigger({
-  active,
-  label,
-  onPress,
-}: {
-  active: boolean;
-  label: string;
-  onPress: () => void;
-}) {
-  return (
-    <KolamButton
-      intent={active ? 'primary' : 'plain'}
-      label={label}
-      onPress={onPress}
-      style={styles.speciesFilterTrigger}
-    />
   );
 }
 
@@ -6340,7 +6323,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     flexDirection: 'row',
-    flexWrap: 'nowrap',
+    flexWrap: 'wrap',
     gap: 6,
     justifyContent: 'space-between',
     overflow: 'visible',
@@ -6353,26 +6336,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
     flexDirection: 'row',
-    flexWrap: 'nowrap',
+    flexWrap: 'wrap',
     gap: 4,
-    minWidth: 0,
+    minWidth: 280,
     overflow: 'visible',
     position: 'relative',
     zIndex: 100001,
     elevation: 1001,
   },
   speciesFilterSearch: {
-    flexBasis: 160,
+    flexBasis: 140,
     flexGrow: 1,
-    maxWidth: 220,
+    maxWidth: 240,
     minWidth: 140,
-  },
-  speciesFilterTrigger: {
-    flexBasis: 0,
-    flexGrow: 1,
-    minHeight: 34,
-    minWidth: 128,
-    paddingHorizontal: 8,
   },
   speciesFilterOverlayPanel: {
     backgroundColor: V.colors.bg,
@@ -6433,7 +6409,7 @@ const styles = StyleSheet.create({
     borderLeftWidth: 1,
     flexDirection: 'row',
     flexShrink: 0,
-    flexWrap: 'nowrap',
+    flexWrap: 'wrap',
     gap: 6,
     justifyContent: 'flex-end',
     paddingLeft: 8,
