@@ -31,6 +31,7 @@ import {
   isSettingsSuperAdminRoleKey,
 } from '../domain/settings-surface';
 import {getKolamFileUrl} from '../lib/file-url';
+import {resolveProfilePhotoUrl} from '../services/auth-api';
 import {
   createKolamUser,
   deleteKolamUser,
@@ -1107,7 +1108,7 @@ function KolamUserDetailSurface({
   }
 
   const encodedUserId = encodeURIComponent(user.id);
-  const profilePhotoUrl = getKolamFileUrl(user.profilePicture);
+  const profilePhotoUrl = resolveProfilePhotoUrl(user.profilePicture);
 
   return (
     <View style={styles.detailSurface}>

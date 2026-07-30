@@ -237,7 +237,9 @@ function mapSignedInUser(
   };
 }
 
-function resolveProfilePhotoUrl(profilePicture?: string | null): string | null {
+export function resolveProfilePhotoUrl(
+  profilePicture?: string | null,
+): string | null {
   const raw = String(profilePicture ?? '').trim();
   if (!raw) {
     return null;
