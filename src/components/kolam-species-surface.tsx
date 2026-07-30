@@ -27,7 +27,11 @@ import {
   type KolamSpeciesVariantFormRow,
   type KolamSpeciesVendorPriceFormRow,
 } from '../domain/kolam-species';
-import { getKolamTableColumns } from '../domain/kolam-table';
+import {
+  getKolamTableColumns,
+  getKolamTableVisualContract,
+  type KolamTableColumn,
+} from '../domain/kolam-table';
 import { getKolamFileUrl } from '../lib/file-url';
 import { copyTextToClipboard } from '../lib/native-clipboard';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
@@ -51,8 +55,17 @@ import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamCustomFieldIcon } from './kolam-custom-field-icon';
+import {
+  getKolamDataTableColumnStyle,
+  KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+  KOLAM_DATA_TABLE_COLUMN_GAP,
+} from './kolam-data-table-column-style';
 import { KolamDataTableHeader } from './kolam-data-table-header';
 import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
+import {
+  KolamDataTableActionsTrack,
+  KolamDataTableMainTrack,
+} from './kolam-data-table-tracks';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import {
   KolamDropdownSelect,
@@ -78,6 +91,7 @@ import {
 import { KolamNativeFormSection } from './kolam-native-form-section';
 import { KolamPackingLinksEditor } from './kolam-packing-links-editor';
 import { KolamRemoteImage } from './kolam-remote-image';
+import { KolamSearchField } from './kolam-search-field';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
@@ -255,6 +269,11 @@ function KolamSpeciesList({
     React.useState<SpeciesMarketplaceSyncSelection | null>(null);
   const [pendingAction, setPendingAction] =
     React.useState<SpeciesPendingAction | null>(null);
+  const [tableBodyWidth, setTableBodyWidth] = React.useState(0);
+  const listColumns = React.useMemo(
+    () => fitSpeciesListColumns(tableBodyWidth),
+    [tableBodyWidth],
+  );
   const taxonomyFilter = controller.filters.taxonomyId || 'all';
   const categoryFilter = controller.filters.categoryId || 'all';
   const stockFilter = controller.filters.stockStatus;
@@ -342,6 +361,7 @@ function KolamSpeciesList({
   const renderSpeciesRow = React.useCallback(
     ({ item }: { item: KolamSpecies }) => (
       <KolamSpeciesRow
+        columns={listColumns}
         item={item}
         onBarcode={() => {
           setBarcodeDialogItems(createSpeciesBarcodeItems([item]));
@@ -383,7 +403,7 @@ function KolamSpeciesList({
         }}
       />
     ),
-    [controller, onRouteChange],
+    [controller, listColumns, onRouteChange],
   );
 
   return (
@@ -392,10 +412,10 @@ function KolamSpeciesList({
         <View style={kolamTableToolbarStyles.shell}>
           <View style={kolamTableToolbarStyles.row}>
             <View style={kolamTableToolbarStyles.filters}>
-              <KolamFormTextField
+              <KolamSearchField
+                containerStyle={kolamTableToolbarStyles.searchInput}
                 onChangeText={controller.onSearchChange}
                 placeholder="Cari"
-                style={kolamTableToolbarStyles.searchInput}
                 value={controller.filters.search}
               />
               <View ref={taxonomyTriggerRef} collapsable={false}>
@@ -405,6 +425,8 @@ function KolamSpeciesList({
                   }
                   label={taxonomyFilterLabel}
                   onPress={() => openFilterPanel('taxonomy')}
+                  open={activeFilterPanel === 'taxonomy'}
+                  variant="quiet"
                 />
               </View>
               <View ref={categoryTriggerRef} collapsable={false}>
@@ -414,6 +436,8 @@ function KolamSpeciesList({
                   }
                   label={categoryFilterLabel}
                   onPress={() => openFilterPanel('category')}
+                  open={activeFilterPanel === 'category'}
+                  variant="quiet"
                 />
               </View>
               <View ref={stockTriggerRef} collapsable={false}>
@@ -421,10 +445,19 @@ function KolamSpeciesList({
                   active={activeFilterPanel === 'stock' || stockFilter !== 'all'}
                   label={stockFilterLabel}
                   onPress={() => openFilterPanel('stock')}
+                  open={activeFilterPanel === 'stock'}
+                  variant="quiet"
                 />
               </View>
             </View>
             <View style={kolamTableToolbarStyles.actions}>
+              <KolamButton
+                disabled={controller.loading}
+                label="Refresh"
+                onPress={() => {
+                  void controller.onRefresh();
+                }}
+              />
               <KolamButton
                 label="Export"
                 onPress={() => setExportDialogOpen(true)}
@@ -634,6 +667,7 @@ function KolamSpeciesList({
             ) : null}
           </KolamTableFooterControls>
         }
+        onBodyWidthChange={setTableBodyWidth}
         style={[styles.speciesTableFrame, styles.listTableFrame]}
       >
         <FlatList
@@ -650,9 +684,7 @@ function KolamSpeciesList({
               />
             </View>
           }
-          ListHeaderComponent={
-            <KolamDataTableHeader columns={getKolamTableColumns('species')} />
-          }
+          ListHeaderComponent={<KolamDataTableHeader columns={listColumns} />}
           renderItem={renderSpeciesRow}
           style={styles.listFlatList}
           contentContainerStyle={styles.listContent}
@@ -831,7 +863,47 @@ function getSpeciesStockFilterLabel(value: KolamSpeciesStockStatus) {
   }
 }
 
+function fitSpeciesListColumns(containerWidth: number): KolamTableColumn[] {
+  const base = getKolamTableColumns('species');
+  if (containerWidth <= 0) {
+    return base;
+  }
+
+  const gap = KOLAM_DATA_TABLE_COLUMN_GAP;
+  const paddingX = getKolamTableVisualContract().body.cellPaddingX * 2;
+  const actionsWidth = KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH;
+  const gapsTotal = gap * Math.max(0, base.length - 1);
+  const contentBudget = Math.max(
+    0,
+    containerWidth - paddingX - gapsTotal - actionsWidth,
+  );
+  const contentColumns = base.filter(column => column.id !== 'actions');
+  const equalWidth = Math.max(
+    72,
+    Math.floor(contentBudget / Math.max(1, contentColumns.length)),
+  );
+  let remainder = contentBudget - equalWidth * contentColumns.length;
+  const lastContentId = contentColumns[contentColumns.length - 1]?.id;
+
+  return base.map(column => {
+    if (column.id === 'actions') {
+      return { ...column, width: actionsWidth };
+    }
+
+    const extra = column.id === lastContentId ? remainder : 0;
+    if (column.id === lastContentId) {
+      remainder = 0;
+    }
+
+    return {
+      ...column,
+      width: equalWidth + extra,
+    };
+  });
+}
+
 function KolamSpeciesRow({
+  columns,
   item,
   onBarcode,
   onCopySku,
@@ -843,6 +915,7 @@ function KolamSpeciesRow({
   onSyncStock,
   onTogglePin,
 }: {
+  columns: KolamTableColumn[];
   item: KolamSpecies;
   onBarcode: () => void;
   onCopySku: () => void;
@@ -854,84 +927,144 @@ function KolamSpeciesRow({
   onSyncStock: (platforms: KolamMarketplacePlatform[]) => void;
   onTogglePin: () => void;
 }) {
+  const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
   const variants = Array.isArray(item.variants) ? item.variants : [];
   const hasVariantRows = item.hasVariants || variants.length > 0;
   const totalStock = getSpeciesListTotalStock(item);
   const priceLabel = getSpeciesListPriceLabel(item);
+  const columnOf = React.useCallback(
+    (id: KolamTableColumn['id']) => columns.find(column => column.id === id),
+    [columns],
+  );
+  const primaryColumn = columnOf('primary');
+  const metaColumn = columnOf('meta');
+  const amountColumn = columnOf('amount');
+  const stockColumn = columnOf('children');
+  const syncColumn = columnOf('marketplace');
+  const notesColumn = columnOf('notes');
+  const actionsColumn = columnOf('actions');
 
   return (
-    <KolamDataTableRowFrame style={styles.tableRow}>
-      <View style={[styles.cell, styles.primaryCell]}>
-        <View style={styles.speciesThumb}>
-          <KolamRemoteImage
-            accessibilityLabel={`Foto ${item.displayName}`}
-            resizeMode="cover"
-            revision={item.updatedAt ?? item.thumbnailUri ?? item.id}
-            scope="species"
-            sourceUri={item.thumbnailUri}
-            style={styles.speciesThumbImage}
-          />
-        </View>
-        <KolamCopyStack
-          containerStyle={styles.primaryCopy}
-          items={[
-            {
-              id: 'name',
-              text: item.scientificName || item.displayName || '-',
-              style: styles.scientificName,
-            },
+    <KolamDataTableRowFrame
+      style={actionMenuOpen ? styles.activeActionRow : styles.tableRow}
+    >
+      <KolamDataTableMainTrack style={styles.mainTrackVisible}>
+        <View
+          style={[
+            styles.cell,
+            styles.primaryCell,
+            primaryColumn ? getKolamDataTableColumnStyle(primaryColumn) : null,
           ]}
-        />
-      </View>
-      <View style={[styles.cell, styles.metaCell]}>
-        {item.sku ? (
-          <KolamBadge
-            horizontalPadding={8}
-            intent="secondary"
-            label={item.sku}
-            shape="square"
-            style={styles.skuBadge}
-          />
-        ) : (
+        >
+          <View style={styles.speciesThumb}>
+            <KolamRemoteImage
+              accessibilityLabel={`Foto ${item.displayName}`}
+              resizeMode="cover"
+              revision={item.updatedAt ?? item.thumbnailUri ?? item.id}
+              scope="species"
+              sourceUri={item.thumbnailUri}
+              style={styles.speciesThumbImage}
+            />
+          </View>
           <KolamCopyStack
+            containerStyle={styles.primaryCopy}
             items={[
               {
-                id: 'empty-sku',
-                text: '-',
-                style: styles.rowSubtext,
+                id: 'name',
+                text: item.scientificName || item.displayName || '-',
+                style: styles.scientificName,
               },
             ]}
           />
-        )}
-      </View>
-      <View style={[styles.cell, styles.amountCell]}>
-        <KolamCopyStack
-          items={[
-            {
-              id: 'price',
-              text: priceLabel,
-              style: priceLabel.includes('\n')
-                ? styles.rowTextRightStack
-                : styles.rowTextRight,
-              textProps: { numberOfLines: 2 },
-            },
+        </View>
+        <View
+          style={[
+            styles.cell,
+            styles.metaCell,
+            metaColumn ? getKolamDataTableColumnStyle(metaColumn) : null,
           ]}
-        />
-      </View>
-      <View style={[styles.cell, styles.stockCell]}>
-        <SpeciesListStockCell stock={totalStock} unitLabel={item.unitLabel} />
-      </View>
-      <View style={[styles.cell, styles.syncCell]}>
-        <SpeciesMarketplaceSyncListCell sync={item.marketplaceSync} />
-      </View>
-      <View style={[styles.cell, styles.notesCell]}>
-        <SpeciesListInfoBadges
-          hasVariants={hasVariantRows}
-          sellable={item.sellable}
-        />
-      </View>
-      <View style={[styles.cell, styles.actionsCell]}>
+        >
+          {item.sku ? (
+            <KolamBadge
+              horizontalPadding={8}
+              intent="secondary"
+              label={item.sku}
+              shape="square"
+              style={styles.skuBadge}
+            />
+          ) : (
+            <KolamCopyStack
+              items={[
+                {
+                  id: 'empty-sku',
+                  text: '-',
+                  style: styles.rowSubtext,
+                },
+              ]}
+            />
+          )}
+        </View>
+        <View
+          style={[
+            styles.cell,
+            styles.amountCell,
+            amountColumn ? getKolamDataTableColumnStyle(amountColumn) : null,
+          ]}
+        >
+          <KolamCopyStack
+            items={[
+              {
+                id: 'price',
+                text: priceLabel,
+                style: priceLabel.includes('\n')
+                  ? styles.rowTextCenterStack
+                  : styles.rowTextCenter,
+                textProps: { numberOfLines: 2 },
+              },
+            ]}
+          />
+        </View>
+        <View
+          style={[
+            styles.cell,
+            styles.stockCell,
+            stockColumn ? getKolamDataTableColumnStyle(stockColumn) : null,
+          ]}
+        >
+          <SpeciesListStockCell stock={totalStock} unitLabel={item.unitLabel} />
+        </View>
+        <View
+          style={[
+            styles.cell,
+            styles.syncCell,
+            syncColumn ? getKolamDataTableColumnStyle(syncColumn) : null,
+          ]}
+        >
+          <SpeciesMarketplaceSyncListCell sync={item.marketplaceSync} />
+        </View>
+        <View
+          style={[
+            styles.cell,
+            styles.notesCell,
+            notesColumn ? getKolamDataTableColumnStyle(notesColumn) : null,
+          ]}
+        >
+          <SpeciesListInfoBadges
+            hasVariants={hasVariantRows}
+            sellable={item.sellable}
+          />
+        </View>
+      </KolamDataTableMainTrack>
+      <KolamDataTableActionsTrack
+        style={styles.actionsTrack}
+        width={Math.max(
+          actionsColumn?.width ?? KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+          KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+        )}
+      >
         <KolamOverflowMenuButton
+          accessibilityLabel={`Menu ${item.displayName}`}
+          onOpenChange={setActionMenuOpen}
           actions={[
             { label: 'Lihat', onPress: onSelect },
             { label: 'Rubah', onPress: onEdit },
@@ -960,7 +1093,7 @@ function KolamSpeciesRow({
             { label: 'Hapus', onPress: onDelete, tone: 'danger' },
           ]}
         />
-      </View>
+      </KolamDataTableActionsTrack>
     </KolamDataTableRowFrame>
   );
 }
@@ -1022,7 +1155,7 @@ function SpeciesListStockCell({
         {
           id: 'stock',
           text: `${formatNumber(stock)}${unitLabel ? ` ${unitLabel}` : ''}`,
-          style: styles.rowTextRight,
+          style: styles.rowTextCenter,
           textProps: { numberOfLines: 1 },
         },
       ]}
@@ -6477,42 +6610,47 @@ const styles = StyleSheet.create({
   tableRow: {
     alignItems: 'stretch',
   },
+  activeActionRow: {
+    alignItems: 'stretch',
+    zIndex: 1000,
+    elevation: 30,
+    overflow: 'visible',
+  },
+  mainTrackVisible: {
+    overflow: 'visible',
+  },
+  actionsTrack: {
+    alignItems: 'center',
+  },
   cell: {
     alignItems: 'center',
     flexDirection: 'row',
+    minWidth: 0,
+    overflow: 'hidden',
     paddingHorizontal: 20,
     paddingVertical: 12,
   },
   primaryCell: {
     alignItems: 'center',
-    flex: 1,
-    minWidth: 260,
   },
   metaCell: {
-    width: 126,
+    justifyContent: 'center',
   },
   amountCell: {
-    justifyContent: 'flex-end',
-    width: 140,
+    justifyContent: 'center',
   },
   stockCell: {
-    justifyContent: 'flex-end',
-    width: 110,
+    justifyContent: 'center',
   },
   syncCell: {
-    width: 168,
+    justifyContent: 'center',
   },
   notesCell: {
-    justifyContent: 'flex-end',
-    width: 136,
+    justifyContent: 'center',
   },
   statusCell: {
     justifyContent: 'flex-end',
     width: 116,
-  },
-  actionsCell: {
-    justifyContent: 'flex-end',
-    width: 64,
   },
   speciesThumb: {
     backgroundColor: V.colors.secondary,
@@ -6543,19 +6681,19 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     lineHeight: 18,
   },
-  rowTextRight: {
+  rowTextCenter: {
     color: V.colors.fg,
     fontSize: 13,
     fontWeight: '700',
     lineHeight: 18,
-    textAlign: 'right',
+    textAlign: 'center',
   },
-  rowTextRightStack: {
+  rowTextCenterStack: {
     color: V.colors.fg,
     fontSize: 13,
     fontWeight: '700',
     lineHeight: 16,
-    textAlign: 'right',
+    textAlign: 'center',
   },
   rowSubtext: {
     color: V.colors.mutedFg,
@@ -6573,7 +6711,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
     overflow: 'visible',
   },
   infoTooltipWrap: {
