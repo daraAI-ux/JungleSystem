@@ -53,7 +53,6 @@ import { KolamBarcodePrintDialog } from './kolam-barcode-print-dialog';
 import { KolamButton } from './kolam-button';
 import { KolamCategoryLabel } from './kolam-category-label';
 import { KolamCatalogTranslationsEditor } from './kolam-catalog-translations-editor';
-import { KolamChevronIcon } from './kolam-chevron-icon';
 import { KolamCommercialPolicyEditor } from './kolam-commercial-policy-editor';
 import { KolamComponentOverridesEditor } from './kolam-component-overrides-editor';
 import {
@@ -111,6 +110,8 @@ import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamGrocerPricingTiersEditor } from './kolam-grocer-pricing-tiers-editor';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
+import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
+import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 import { copyTextToClipboard } from '../lib/native-clipboard';
 
 const SHOPEE_LOGO = require('../assets/marketplace/shopee.jpg');
@@ -157,6 +158,9 @@ const STOCK_OPTIONS = [
 ];
 
 type ProductListFilterPanel = 'category' | 'brand' | 'stock';
+
+const PRODUCT_FILTER_PANEL_WIDTH = 320;
+
 type ProductVariantEditTab = 'pricing' | 'vendor' | 'specs' | 'media';
 
 type ProductDeleteMediaTarget =
@@ -253,14 +257,64 @@ export function KolamProductSurface({
   );
   const brandFilterLabel = getProductFilterLabel(brandOptions, selectedBrand, 'Merek');
   const stockFilterLabel = getProductStockFilterLabel(selectedStock);
+  const [panelAnchor, setPanelAnchor] = React.useState({ left: 0, top: 40 });
+  const toolbarRef = React.useRef<View>(null);
+  const categoryTriggerRef = React.useRef<View>(null);
+  const brandTriggerRef = React.useRef<View>(null);
+  const stockTriggerRef = React.useRef<View>(null);
+
+  const getFilterTriggerRef = (panel: ProductListFilterPanel) => {
+    switch (panel) {
+      case 'brand':
+        return brandTriggerRef;
+      case 'stock':
+        return stockTriggerRef;
+      case 'category':
+      default:
+        return categoryTriggerRef;
+    }
+  };
+
+  const anchorFilterPanel = React.useCallback((panel: ProductListFilterPanel) => {
+    const toolbar = toolbarRef.current;
+    const trigger = getFilterTriggerRef(panel).current;
+    if (!toolbar || !trigger) {
+      return;
+    }
+    toolbar.measureInWindow((toolbarX, toolbarY, toolbarWidth) => {
+      trigger.measureInWindow((x, y, _width, height) => {
+        const panelWidth = panel === 'stock' ? 220 : PRODUCT_FILTER_PANEL_WIDTH;
+        const maxLeft = Math.max(0, toolbarWidth - panelWidth);
+        const preferredLeft = x - toolbarX;
+        setPanelAnchor({
+          left: Math.min(Math.max(0, preferredLeft), maxLeft),
+          top: y - toolbarY + height + 4,
+        });
+      });
+    });
+  }, []);
+
   const openFilterPanel = (panel: ProductListFilterPanel) => {
-    setActiveFilterPanel(current => (current === panel ? null : panel));
+    setActiveFilterPanel(current => {
+      const next = current === panel ? null : panel;
+      if (next) {
+        requestAnimationFrame(() => anchorFilterPanel(next));
+      }
+      return next;
+    });
     setFilterPanelQuery('');
   };
   const closeFilterPanel = () => {
     setActiveFilterPanel(null);
     setFilterPanelQuery('');
   };
+
+  React.useEffect(() => {
+    if (!activeFilterPanel) {
+      return;
+    }
+    requestAnimationFrame(() => anchorFilterPanel(activeFilterPanel));
+  }, [activeFilterPanel, anchorFilterPanel]);
   const pageCount = Math.max(1, controller.pagination.totalPages);
   const safePage = Math.min(Math.max(controller.pagination.page, 1), pageCount);
   const resetListFilters = () => {
@@ -309,110 +363,114 @@ export function KolamProductSurface({
     <View style={[styles.surface, styles.listSurface]}>
 
       <View style={[styles.stack, styles.listStack]}>
-        <View style={styles.toolbarShell}>
-          <View style={styles.filterRow}>
+        <View ref={toolbarRef} collapsable={false} style={styles.toolbarShell}>
+          <View style={kolamTableToolbarStyles.row}>
             <KolamFormTextField
               onChangeText={controller.onSearchChange}
               placeholder="Cari"
-              style={styles.search}
+              style={kolamTableToolbarStyles.searchInput}
               value={controller.filters.search}
             />
-            <ProductFilterTrigger
-              active={activeFilterPanel === 'category'}
-              label={categoryFilterLabel}
-              onPress={() => openFilterPanel('category')}
-            />
-            <ProductFilterTrigger
-              active={activeFilterPanel === 'brand'}
-              label={brandFilterLabel}
-              onPress={() => openFilterPanel('brand')}
-            />
-            {!isRawCatalog ? (
-              <ProductFilterTrigger
-                active={activeFilterPanel === 'stock'}
-                label={stockFilterLabel}
-                onPress={() => openFilterPanel('stock')}
+            <View style={kolamTableToolbarStyles.controls}>
+              <View ref={categoryTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={activeFilterPanel === 'category' || selectedCategory !== 'all'}
+                  label={categoryFilterLabel}
+                  onPress={() => openFilterPanel('category')}
+                />
+              </View>
+              <View ref={brandTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={activeFilterPanel === 'brand' || selectedBrand !== 'all'}
+                  label={brandFilterLabel}
+                  onPress={() => openFilterPanel('brand')}
+                />
+              </View>
+              {!isRawCatalog ? (
+                <View ref={stockTriggerRef} collapsable={false}>
+                  <KolamTableFilterTrigger
+                    active={activeFilterPanel === 'stock' || selectedStock !== 'all'}
+                    label={stockFilterLabel}
+                    onPress={() => openFilterPanel('stock')}
+                  />
+                </View>
+              ) : null}
+              {hasActiveListFilters ? (
+                <KolamButton label="Reset" muted onPress={resetListFilters} />
+              ) : null}
+              <KolamButton label="Ekspor" onPress={() => setExportOpen(true)} />
+              {!isRawCatalog ? (
+                <>
+                  <KolamButton
+                    label={`Cetak barcode (${barcodeItems.length})`}
+                    onPress={() => {
+                      setBarcodeDialogItems(null);
+                      setBarcodeOpen(true);
+                    }}
+                  />
+                  <KolamButton label="SEO audit" muted />
+                  <KolamButton
+                    label="Sinkron Harga"
+                    onPress={() => setSyncPriceOpen(true)}
+                  />
+                  <KolamButton
+                    label="Sinkron Stok"
+                    onPress={() => {
+                      setSyncStockSelection({
+                        ids: productIds,
+                        title: 'Samakan Stok Produk ke Marketplace',
+                      });
+                      setSyncStockOpen(true);
+                    }}
+                  />
+                </>
+              ) : null}
+              <KolamButton
+                intent="primary"
+                label="Baru"
+                onPress={() => {
+                  controller.onCreateNew();
+                  onRouteChange?.(createRoute);
+                }}
               />
-            ) : null}
+            </View>
           </View>
-          <View style={styles.actionRow}>
-            {hasActiveListFilters ? (
-              <KolamButton label="Reset" muted onPress={resetListFilters} style={styles.toolbarButton} />
-            ) : null}
-            <KolamButton label="Ekspor" onPress={() => setExportOpen(true)} style={styles.toolbarButton} />
-            {!isRawCatalog ? (
-              <>
-                <KolamButton
-                  label={`Cetak barcode (${barcodeItems.length})`}
-                  onPress={() => {
-                    setBarcodeDialogItems(null);
-                    setBarcodeOpen(true);
-                  }}
-                  style={styles.toolbarButton}
-                />
-                <KolamButton label="SEO audit" muted style={styles.toolbarButton} />
-                <KolamButton
-                  label="Sinkron Harga"
-                  onPress={() => setSyncPriceOpen(true)}
-                  style={styles.toolbarButton}
-                />
-                <KolamButton
-                  label="Sinkron Stok"
-                  onPress={() => {
-                    setSyncStockSelection({ ids: productIds, title: 'Samakan Stok Produk ke Marketplace' });
-                    setSyncStockOpen(true);
-                  }}
-                  style={styles.toolbarButton}
-                />
-              </>
-            ) : null}
-            <KolamButton
-              intent="primary"
-              label="Baru"
-              onPress={() => {
-                controller.onCreateNew();
-                onRouteChange?.(createRoute);
+          {activeFilterPanel ? (
+            <ProductFilterOverlayPanel
+              activePanel={activeFilterPanel}
+              anchor={panelAnchor}
+              brandOptions={brandOptions}
+              categoryOptions={categoryOptions}
+              onBrandChange={value => {
+                controller.onChangeFilters({
+                  brandIds: value === 'all' ? [] : [value],
+                });
+                closeFilterPanel();
               }}
-              style={styles.toolbarButton}
+              onCategoryChange={value => {
+                controller.onChangeFilters({
+                  categoryIds: value === 'all' ? [] : [value],
+                });
+                closeFilterPanel();
+              }}
+              onClose={closeFilterPanel}
+              onQueryChange={setFilterPanelQuery}
+              onStockChange={value => {
+                controller.onChangeFilters({
+                  stockStatus: value === 'all' ? '' : value,
+                });
+                closeFilterPanel();
+              }}
+              query={filterPanelQuery}
+              selectedBrand={selectedBrand}
+              selectedCategory={selectedCategory}
+              selectedStock={selectedStock}
             />
-
-          </View>
+          ) : null}
         </View>
 
         {controller.error ? (
           <Text style={styles.error}>{controller.error}</Text>
-        ) : null}
-
-        {activeFilterPanel ? (
-          <ProductFilterOverlayPanel
-            activePanel={activeFilterPanel}
-            brandOptions={brandOptions}
-            categoryOptions={categoryOptions}
-            onBrandChange={value => {
-              controller.onChangeFilters({
-                brandIds: value === 'all' ? [] : [value],
-              });
-              closeFilterPanel();
-            }}
-            onCategoryChange={value => {
-              controller.onChangeFilters({
-                categoryIds: value === 'all' ? [] : [value],
-              });
-              closeFilterPanel();
-            }}
-            onClose={closeFilterPanel}
-            onQueryChange={setFilterPanelQuery}
-            onStockChange={value => {
-              controller.onChangeFilters({
-                stockStatus: value === 'all' ? '' : value,
-              });
-              closeFilterPanel();
-            }}
-            query={filterPanelQuery}
-            selectedBrand={selectedBrand}
-            selectedCategory={selectedCategory}
-            selectedStock={selectedStock}
-          />
         ) : null}
 
         <KolamCatalogListTableShell
@@ -619,35 +677,9 @@ export function KolamProductSurface({
   );
 }
 
-function ProductFilterTrigger({
-  active,
-  label,
-  onPress,
-}: {
-  active: boolean;
-  label: string;
-  onPress: () => void;
-}) {
-  return (
-    <KolamButton
-      icon={
-        <KolamChevronIcon
-          color={active ? V.colors.primaryFg : V.colors.success}
-          direction="down"
-          size="menu-sm"
-        />
-      }
-      intent={active ? 'primary' : 'secondary'}
-      label={label}
-      onPress={onPress}
-      style={[styles.filterTrigger, active && styles.filterTriggerActive]}
-      textStyle={[styles.filterTriggerText, active && styles.filterTriggerTextActive]}
-    />
-  );
-}
-
 function ProductFilterOverlayPanel({
   activePanel,
+  anchor,
   brandOptions,
   categoryOptions,
   onBrandChange,
@@ -661,6 +693,7 @@ function ProductFilterOverlayPanel({
   selectedStock,
 }: {
   activePanel: ProductListFilterPanel;
+  anchor: { left: number; top: number };
   brandOptions: Array<{ label: string; value: string }>;
   categoryOptions: Array<{ label: string; value: string }>;
   onBrandChange: (value: string) => void;
@@ -693,11 +726,17 @@ function ProductFilterOverlayPanel({
         )
       : options;
 
+  const panelWidth = activePanel === 'stock' ? 220 : PRODUCT_FILTER_PANEL_WIDTH;
+
   return (
     <View
       style={[
         styles.filterOverlayPanel,
-        getProductFilterOverlayPanelStyle(activePanel),
+        {
+          left: anchor.left,
+          top: anchor.top,
+          width: panelWidth,
+        },
       ]}
     >
       {activePanel === 'stock' ? null : (
@@ -780,18 +819,6 @@ function getProductStockFilterLabel(value: string) {
     case 'all':
     default:
       return 'Stok';
-  }
-}
-
-function getProductFilterOverlayPanelStyle(panel: ProductListFilterPanel) {
-  switch (panel) {
-    case 'brand':
-      return styles.filterPanelBrand;
-    case 'stock':
-      return styles.filterPanelStock;
-    case 'category':
-    default:
-      return styles.filterPanelCategory;
   }
 }
 
@@ -7452,76 +7479,10 @@ const styles = StyleSheet.create({
     flexGrow: 0,
   },
   toolbarShell: {
-    alignItems: 'center',
-    backgroundColor: V.colors.bg,
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    flexDirection: 'row',
-    flexWrap: 'nowrap',
-    gap: 6,
-    justifyContent: 'space-between',
     overflow: 'visible',
-    padding: 4,
     position: 'relative',
     zIndex: 100000,
     elevation: 1000,
-  },
-  filterRow: {
-    alignItems: 'center',
-    flex: 1,
-    flexDirection: 'row',
-    flexWrap: 'nowrap',
-    gap: 4,
-    minWidth: 0,
-    overflow: 'visible',
-    position: 'relative',
-    zIndex: 100001,
-    elevation: 1001,
-  },
-  actionRow: {
-    alignItems: 'center',
-    borderLeftColor: V.colors.border,
-    borderLeftWidth: 1,
-    flexDirection: 'row',
-    flexShrink: 0,
-    flexWrap: 'nowrap',
-    gap: 6,
-    justifyContent: 'flex-end',
-    paddingLeft: 8,
-  },
-  search: {
-    flexBasis: 160,
-    flexGrow: 1,
-    maxWidth: 220,
-    minWidth: 140,
-  },
-  filterTrigger: {
-    backgroundColor: V.colors.successSoft,
-    borderColor: V.colors.success,
-    flexBasis: 0,
-    flexGrow: 1,
-    minHeight: 34,
-    minWidth: 128,
-    paddingHorizontal: 8,
-  },
-  filterTriggerActive: {
-    backgroundColor: V.colors.success,
-    borderColor: V.colors.success,
-  },
-  filterTriggerText: {
-    color: V.colors.success,
-    fontWeight: '800',
-  },
-  filterTriggerTextActive: {
-    color: V.colors.primaryFg,
-  },
-  stockTrigger: {
-    flexBasis: 0,
-    flexGrow: 1,
-    minHeight: 34,
-    minWidth: 128,
-    paddingHorizontal: 8,
   },
   filterOverlayPanel: {
     backgroundColor: V.colors.bg,
@@ -7535,19 +7496,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.12,
     shadowRadius: 16,
-    top: 48,
-    width: 320,
     zIndex: 120000,
-  },
-  filterPanelCategory: {
-    left: 168,
-  },
-  filterPanelBrand: {
-    left: 330,
-  },
-  filterPanelStock: {
-    left: 492,
-    width: 220,
   },
   filterPanelSearch: {
     marginBottom: 6,

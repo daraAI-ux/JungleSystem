@@ -81,8 +81,11 @@ import { KolamRemoteImage } from './kolam-remote-image';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
+import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 
 type SpeciesListFilterPanel = 'taxonomy' | 'category' | 'stock';
+
+const SPECIES_FILTER_PANEL_WIDTH = 320;
 
 type SpeciesMarketplaceSyncSelection = {
   ids: string[];
@@ -234,6 +237,11 @@ function KolamSpeciesList({
   const [activeFilterPanel, setActiveFilterPanel] =
     React.useState<SpeciesListFilterPanel | null>(null);
   const [filterPanelQuery, setFilterPanelQuery] = React.useState('');
+  const [panelAnchor, setPanelAnchor] = React.useState({ left: 0, top: 40 });
+  const toolbarRef = React.useRef<View>(null);
+  const taxonomyTriggerRef = React.useRef<View>(null);
+  const categoryTriggerRef = React.useRef<View>(null);
+  const stockTriggerRef = React.useRef<View>(null);
   const [exportDialogOpen, setExportDialogOpen] = React.useState(false);
   const [barcodeDialogOpen, setBarcodeDialogOpen] = React.useState(false);
   const [syncPriceDialogOpen, setSyncPriceDialogOpen] = React.useState(false);
@@ -276,14 +284,60 @@ function KolamSpeciesList({
       : controller.categories.find(category => category.id === categoryFilter)
           ?.name ?? 'Kategori';
   const stockFilterLabel = getSpeciesStockFilterLabel(stockFilter);
+
+  const getFilterTriggerRef = (panel: SpeciesListFilterPanel) => {
+    switch (panel) {
+      case 'category':
+        return categoryTriggerRef;
+      case 'stock':
+        return stockTriggerRef;
+      case 'taxonomy':
+      default:
+        return taxonomyTriggerRef;
+    }
+  };
+
+  const anchorFilterPanel = React.useCallback((panel: SpeciesListFilterPanel) => {
+    const toolbar = toolbarRef.current;
+    const trigger = getFilterTriggerRef(panel).current;
+    if (!toolbar || !trigger) {
+      return;
+    }
+    toolbar.measureInWindow((toolbarX, toolbarY, toolbarWidth) => {
+      trigger.measureInWindow((x, y, _width, height) => {
+        const panelWidth =
+          panel === 'stock' ? 220 : SPECIES_FILTER_PANEL_WIDTH;
+        const maxLeft = Math.max(0, toolbarWidth - panelWidth);
+        const preferredLeft = x - toolbarX;
+        setPanelAnchor({
+          left: Math.min(Math.max(0, preferredLeft), maxLeft),
+          top: y - toolbarY + height + 4,
+        });
+      });
+    });
+  }, []);
+
   const openFilterPanel = (panel: SpeciesListFilterPanel) => {
-    setActiveFilterPanel(current => (current === panel ? null : panel));
+    setActiveFilterPanel(current => {
+      const next = current === panel ? null : panel;
+      if (next) {
+        requestAnimationFrame(() => anchorFilterPanel(next));
+      }
+      return next;
+    });
     setFilterPanelQuery('');
   };
   const closeFilterPanel = () => {
     setActiveFilterPanel(null);
     setFilterPanelQuery('');
   };
+
+  React.useEffect(() => {
+    if (!activeFilterPanel) {
+      return;
+    }
+    requestAnimationFrame(() => anchorFilterPanel(activeFilterPanel));
+  }, [activeFilterPanel, anchorFilterPanel]);
 
   const renderSpeciesRow = React.useCallback(
     ({ item }: { item: KolamSpecies }) => (
@@ -334,73 +388,108 @@ function KolamSpeciesList({
 
   return (
     <View style={[styles.stack, styles.listStack]}>
-      <View style={styles.speciesFilterToolbar}>
-        <View style={styles.speciesFilterGrid}>
+      <View ref={toolbarRef} collapsable={false} style={styles.speciesToolbarWrap}>
+        <View style={kolamTableToolbarStyles.row}>
           <KolamFormTextField
             onChangeText={controller.onSearchChange}
             placeholder="Cari"
-            style={styles.speciesFilterSearch}
+            style={kolamTableToolbarStyles.searchInput}
             value={controller.filters.search}
           />
-          <KolamTableFilterTrigger
-            active={activeFilterPanel === 'taxonomy' || taxonomyFilter !== 'all'}
-            label={taxonomyFilterLabel}
-            onPress={() => openFilterPanel('taxonomy')}
-          />
-          <KolamTableFilterTrigger
-            active={activeFilterPanel === 'category' || categoryFilter !== 'all'}
-            label={categoryFilterLabel}
-            onPress={() => openFilterPanel('category')}
-          />
-          <KolamTableFilterTrigger
-            active={activeFilterPanel === 'stock' || stockFilter !== 'all'}
-            label={stockFilterLabel}
-            onPress={() => openFilterPanel('stock')}
-          />
+          <View style={kolamTableToolbarStyles.controls}>
+            <View ref={taxonomyTriggerRef} collapsable={false}>
+              <KolamTableFilterTrigger
+                active={
+                  activeFilterPanel === 'taxonomy' || taxonomyFilter !== 'all'
+                }
+                label={taxonomyFilterLabel}
+                onPress={() => openFilterPanel('taxonomy')}
+              />
+            </View>
+            <View ref={categoryTriggerRef} collapsable={false}>
+              <KolamTableFilterTrigger
+                active={
+                  activeFilterPanel === 'category' || categoryFilter !== 'all'
+                }
+                label={categoryFilterLabel}
+                onPress={() => openFilterPanel('category')}
+              />
+            </View>
+            <View ref={stockTriggerRef} collapsable={false}>
+              <KolamTableFilterTrigger
+                active={activeFilterPanel === 'stock' || stockFilter !== 'all'}
+                label={stockFilterLabel}
+                onPress={() => openFilterPanel('stock')}
+              />
+            </View>
+            <KolamButton
+              label="Export"
+              onPress={() => setExportDialogOpen(true)}
+            />
+            <KolamButton
+              disabled={!barcodeItemCount}
+              label={`Cetak barcode (${barcodeItemCount})`}
+              onPress={() => {
+                setBarcodeDialogItems(null);
+                setBarcodeDialogOpen(true);
+              }}
+            />
+            <KolamButton
+              disabled={!syncPriceItemCount || controller.loading}
+              label="Sinkron Harga"
+              onPress={() => {
+                setSyncPriceSelection(null);
+                setSyncPriceDialogOpen(true);
+              }}
+            />
+            <KolamButton
+              disabled={!syncPriceItemCount || controller.loading}
+              label="Sinkron Stok"
+              onPress={() => {
+                setSyncStockSelection(null);
+                setSyncStockDialogOpen(true);
+              }}
+            />
+            <KolamButton
+              intent="primary"
+              label="Baru"
+              onPress={() => {
+                controller.onCreateNew();
+                onRouteChange?.('/species/baru');
+              }}
+            />
+          </View>
         </View>
-        <View style={styles.speciesHeaderActions}>
-          <KolamButton
-            label="Export"
-            onPress={() => setExportDialogOpen(true)}
-            style={styles.speciesToolbarButton}
-          />
-          <KolamButton
-            disabled={!barcodeItemCount}
-            label={`Cetak barcode (${barcodeItemCount})`}
-            onPress={() => {
-              setBarcodeDialogItems(null);
-              setBarcodeDialogOpen(true);
+        {activeFilterPanel ? (
+          <SpeciesFilterOverlayPanel
+            activePanel={activeFilterPanel}
+            anchor={panelAnchor}
+            categories={controller.categories}
+            categoryFilter={categoryFilter}
+            onCategoryChange={value => {
+              controller.onChangeFilters({
+                categoryId: value === 'all' ? '' : value,
+              });
+              closeFilterPanel();
             }}
-            style={styles.speciesToolbarButton}
-          />
-          <KolamButton
-            disabled={!syncPriceItemCount || controller.loading}
-            label="Sinkron Harga"
-            onPress={() => {
-              setSyncPriceSelection(null);
-              setSyncPriceDialogOpen(true);
+            onClose={closeFilterPanel}
+            onQueryChange={setFilterPanelQuery}
+            onStockChange={value => {
+              controller.onChangeFilters({ stockStatus: value });
+              closeFilterPanel();
             }}
-            style={styles.speciesToolbarButton}
-          />
-          <KolamButton
-            disabled={!syncPriceItemCount || controller.loading}
-            label="Sinkron Stok"
-            onPress={() => {
-              setSyncStockSelection(null);
-              setSyncStockDialogOpen(true);
+            onTaxonomyChange={value => {
+              controller.onChangeFilters({
+                taxonomyId: value === 'all' ? '' : value,
+              });
+              closeFilterPanel();
             }}
-            style={styles.speciesToolbarButton}
+            query={filterPanelQuery}
+            stockFilter={stockFilter}
+            taxonomies={controller.taxonomies}
+            taxonomyFilter={taxonomyFilter}
           />
-          <KolamButton
-            intent="primary"
-            label="Baru"
-            onPress={() => {
-              controller.onCreateNew();
-              onRouteChange?.('/species/baru');
-            }}
-            style={styles.speciesToolbarButton}
-          />
-        </View>
+        ) : null}
       </View>
       <KolamBarcodePrintDialog
         items={activeBarcodeItems}
@@ -504,35 +593,6 @@ function KolamSpeciesList({
           style={styles.speciesSyncStatus}
         />
       ) : null}
-      {activeFilterPanel ? (
-        <SpeciesFilterOverlayPanel
-          activePanel={activeFilterPanel}
-          categories={controller.categories}
-          categoryFilter={categoryFilter}
-          onCategoryChange={value => {
-            controller.onChangeFilters({
-              categoryId: value === 'all' ? '' : value,
-            });
-            closeFilterPanel();
-          }}
-          onClose={closeFilterPanel}
-          onQueryChange={setFilterPanelQuery}
-          onStockChange={value => {
-            controller.onChangeFilters({ stockStatus: value });
-            closeFilterPanel();
-          }}
-          onTaxonomyChange={value => {
-            controller.onChangeFilters({
-              taxonomyId: value === 'all' ? '' : value,
-            });
-            closeFilterPanel();
-          }}
-          query={filterPanelQuery}
-          stockFilter={stockFilter}
-          taxonomies={controller.taxonomies}
-          taxonomyFilter={taxonomyFilter}
-        />
-      ) : null}
       <KolamCatalogListTableShell
         footer={
           <KolamTableFooterControls
@@ -600,6 +660,7 @@ function KolamSpeciesList({
 
 function SpeciesFilterOverlayPanel({
   activePanel,
+  anchor,
   categories,
   categoryFilter,
   onCategoryChange,
@@ -613,6 +674,7 @@ function SpeciesFilterOverlayPanel({
   taxonomyFilter,
 }: {
   activePanel: SpeciesListFilterPanel;
+  anchor: { left: number; top: number };
   categories: KolamSpeciesController['categories'];
   categoryFilter: string;
   onCategoryChange: (value: string) => void;
@@ -659,12 +721,18 @@ function SpeciesFilterOverlayPanel({
       : activePanel === 'category'
       ? categoryFilter
       : stockFilter;
+  const panelWidth =
+    activePanel === 'stock' ? 220 : SPECIES_FILTER_PANEL_WIDTH;
 
   return (
     <View
       style={[
         styles.speciesFilterOverlayPanel,
-        getSpeciesFilterOverlayPanelStyle(activePanel),
+        {
+          left: anchor.left,
+          top: anchor.top,
+          width: panelWidth,
+        },
       ]}
     >
       {activePanel === 'stock' ? null : (
@@ -759,17 +827,6 @@ function getSpeciesStockFilterLabel(value: KolamSpeciesStockStatus) {
   }
 }
 
-function getSpeciesFilterOverlayPanelStyle(panel: SpeciesListFilterPanel) {
-  switch (panel) {
-    case 'category':
-      return styles.speciesFilterPanelCategory;
-    case 'stock':
-      return styles.speciesFilterPanelStock;
-    case 'taxonomy':
-    default:
-      return styles.speciesFilterPanelTaxonomy;
-  }
-}
 function KolamSpeciesRow({
   item,
   onBarcode,
@@ -6316,39 +6373,11 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     lineHeight: 18,
   },
-  speciesFilterToolbar: {
-    alignItems: 'center',
-    backgroundColor: V.colors.bg,
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    justifyContent: 'space-between',
+  speciesToolbarWrap: {
     overflow: 'visible',
-    padding: 4,
     position: 'relative',
     zIndex: 100000,
     elevation: 1000,
-  },
-  speciesFilterGrid: {
-    alignItems: 'center',
-    flex: 1,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 4,
-    minWidth: 280,
-    overflow: 'visible',
-    position: 'relative',
-    zIndex: 100001,
-    elevation: 1001,
-  },
-  speciesFilterSearch: {
-    flexBasis: 140,
-    flexGrow: 1,
-    maxWidth: 240,
-    minWidth: 140,
   },
   speciesFilterOverlayPanel: {
     backgroundColor: V.colors.bg,
@@ -6362,19 +6391,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.12,
     shadowRadius: 16,
-    top: 48,
-    width: 320,
     zIndex: 120000,
-  },
-  speciesFilterPanelTaxonomy: {
-    left: 168,
-  },
-  speciesFilterPanelCategory: {
-    left: 330,
-  },
-  speciesFilterPanelStock: {
-    left: 492,
-    width: 220,
   },
   speciesFilterPanelSearch: {
     marginBottom: 6,

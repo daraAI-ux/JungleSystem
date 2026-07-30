@@ -43,11 +43,10 @@ const styles = StyleSheet.create({
   trigger: {
     backgroundColor: V.colors.successSoft,
     borderColor: V.colors.success,
-    flexBasis: 0,
-    flexGrow: 1,
+    flexGrow: 0,
+    flexShrink: 0,
     minHeight: 34,
-    minWidth: 120,
-    paddingHorizontal: 8,
+    paddingHorizontal: 10,
   },
   triggerActive: {
     backgroundColor: V.colors.success,
