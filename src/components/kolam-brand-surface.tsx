@@ -440,9 +440,6 @@ function KolamBrandRow({
           <KolamHoverTooltip align="center" label={brand.name}>
             <View style={styles.brandIdentity}>
               <KolamBrandLogo brand={brand} />
-              <Text numberOfLines={1} style={styles.brandName}>
-                {brand.name}
-              </Text>
             </View>
           </KolamHoverTooltip>
         </View>
@@ -1019,14 +1016,6 @@ const styles = StyleSheet.create({
     maxWidth: '100%',
     minWidth: 0,
     width: '100%',
-  },
-  brandName: {
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 13,
-    fontWeight: '700',
-    maxWidth: '100%',
-    textAlign: 'center',
   },
   countryFlagCell: {
     alignItems: 'center',
