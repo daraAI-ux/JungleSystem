@@ -3638,6 +3638,7 @@ export function KolamSettingsWebConfigSurface({
             style={[
               styles.marketplaceControlSection,
               styles.notificationSettingsCard,
+              styles.settingsTabCardSpacing,
             ]}
           >
             <View style={styles.aiDaraProfileRow}>
@@ -3691,6 +3692,7 @@ export function KolamSettingsWebConfigSurface({
             style={[
               styles.marketplaceControlSection,
               styles.notificationSettingsCard,
+              styles.settingsTabCardSpacing,
             ]}
           >
             <KolamCopyStack
@@ -3762,6 +3764,7 @@ export function KolamSettingsWebConfigSurface({
             style={[
               styles.marketplaceControlSection,
               styles.notificationSettingsCard,
+              styles.settingsTabCardSpacing,
             ]}
           >
             <KolamCopyStack
@@ -3819,6 +3822,7 @@ export function KolamSettingsWebConfigSurface({
             style={[
               styles.marketplaceControlSection,
               styles.notificationSettingsCard,
+              styles.settingsTabCardSpacing,
             ]}
           >
             <KolamCopyStack
@@ -3850,6 +3854,7 @@ export function KolamSettingsWebConfigSurface({
             style={[
               styles.marketplaceControlSection,
               styles.notificationSettingsCard,
+              styles.settingsTabCardSpacing,
             ]}
           >
             <KolamCopyStack
@@ -3877,7 +3882,13 @@ export function KolamSettingsWebConfigSurface({
             ))}
           </View>
 
-          <View style={styles.marketplaceControlSection}>
+          <View
+            style={[
+              styles.marketplaceControlSection,
+              styles.notificationSettingsCard,
+              styles.settingsTabCardSpacing,
+            ]}
+          >
             <KolamCopyStack
               items={[
                 {
@@ -3925,7 +3936,13 @@ export function KolamSettingsWebConfigSurface({
             />
           </View>
 
-          <View style={styles.marketplaceControlSection}>
+          <View
+            style={[
+              styles.marketplaceControlSection,
+              styles.notificationSettingsCard,
+              styles.settingsTabCardSpacing,
+            ]}
+          >
             <KolamCopyStack
               items={[
                 {
@@ -4051,7 +4068,13 @@ export function KolamSettingsWebConfigSurface({
             />
           </View>
 
-          <View style={styles.marketplaceControlSection}>
+          <View
+            style={[
+              styles.marketplaceControlSection,
+              styles.notificationSettingsCard,
+              styles.settingsTabCardSpacing,
+            ]}
+          >
             <KolamCopyStack
               items={[
                 {
