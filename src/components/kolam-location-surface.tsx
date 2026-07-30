@@ -351,18 +351,23 @@ function KolamLocationForm({
   };
 
   return (
-    <View style={styles.surface}>
-      <View style={styles.header}>
-        <View style={styles.heading}>
-          <Text style={styles.eyebrow}>Inventori</Text>
-          <Text style={styles.title}>
-            {isEdit ? 'Rubah Lokasi' : 'Tambah Lokasi'}
-          </Text>
-          <Text style={styles.description}>
-            Kelola lokasi gudang, lantai, rak, dan area penyimpanan
-          </Text>
+    <View style={styles.detailSurface}>
+      <View style={kolamTableToolbarStyles.shell}>
+        <View style={kolamTableToolbarStyles.row}>
+          <View style={kolamTableToolbarStyles.filters}>
+            <Text numberOfLines={1} style={styles.detailToolbarContext}>
+              {isEdit
+                ? `Edit · ${form.name.trim() || 'Lokasi'}`
+                : 'Lokasi baru'}
+            </Text>
+          </View>
+          <View style={kolamTableToolbarStyles.actions}>
+            <KolamButton
+              label="Daftar"
+              onPress={() => onRouteChange?.('/locations')}
+            />
+          </View>
         </View>
-        <KolamButton label="Daftar" onPress={() => onRouteChange?.('/locations')} />
       </View>
 
       {error ? (
@@ -556,6 +561,7 @@ function KolamLocationDetail({
     React.useState<KolamLocationDetailItem | null>(null);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState('');
+  const [refreshKey, setRefreshKey] = React.useState(0);
 
   React.useEffect(() => {
     let active = true;
@@ -591,11 +597,11 @@ function KolamLocationDetail({
     return () => {
       active = false;
     };
-  }, [locationId]);
+  }, [locationId, refreshKey]);
 
   if (loading && !location) {
     return (
-      <View style={styles.surface}>
+      <View style={styles.detailSurface}>
         <KolamEmptyState
           message="Mengambil detail lokasi dari server."
           title="Memuat lokasi..."
@@ -606,12 +612,26 @@ function KolamLocationDetail({
 
   if (!location) {
     return (
-      <View style={styles.surface}>
+      <View style={styles.detailSurface}>
+        <View style={kolamTableToolbarStyles.shell}>
+          <View style={kolamTableToolbarStyles.row}>
+            <View style={kolamTableToolbarStyles.filters}>
+              <Text numberOfLines={1} style={styles.detailToolbarContext}>
+                Detail lokasi
+              </Text>
+            </View>
+            <View style={kolamTableToolbarStyles.actions}>
+              <KolamButton
+                label="Daftar"
+                onPress={() => onRouteChange?.('/locations')}
+              />
+            </View>
+          </View>
+        </View>
         <KolamEmptyState
           message={error || 'Pilih lokasi dari daftar untuk melihat detail.'}
           title="Detail lokasi belum tersedia"
         />
-        <KolamButton label="Daftar" onPress={() => onRouteChange?.('/locations')} />
       </View>
     );
   }
@@ -619,25 +639,32 @@ function KolamLocationDetail({
   const descendants = getLocationDescendants(location);
 
   return (
-    <View style={styles.surface}>
-      <View style={styles.detailHeader}>
-        <View style={styles.detailHeading}>
-          <View style={styles.detailTitleRow}>
-            <Text style={styles.detailTitle}>{location.name}</Text>
-            <KolamStatusBadge
-              intent={getLocationTypeIntent(location.type)}
-              label={getKolamLocationTypeLabel(location.type)}
+    <View style={styles.detailSurface}>
+      <View style={kolamTableToolbarStyles.shell}>
+        <View style={kolamTableToolbarStyles.row}>
+          <View style={kolamTableToolbarStyles.filters}>
+            <Text numberOfLines={1} style={styles.detailToolbarContext}>
+              {location.name}
+            </Text>
+          </View>
+          <View style={kolamTableToolbarStyles.actions}>
+            <KolamButton
+              disabled={loading}
+              label="Refresh"
+              onPress={() => setRefreshKey(current => current + 1)}
+            />
+            <KolamButton
+              label="Daftar"
+              onPress={() => onRouteChange?.('/locations')}
+            />
+            <KolamButton
+              intent="primary"
+              label="Edit"
+              onPress={() =>
+                onRouteChange?.(`/locations/${location.id}/edit`)
+              }
             />
           </View>
-          <Text style={styles.detailSubtitle}>Detail lokasi dan hierarki</Text>
-        </View>
-        <View style={styles.detailActions}>
-          <KolamButton
-            intent="primary"
-            label="Rubah"
-            onPress={() => onRouteChange?.(`/locations/${location.id}/edit`)}
-          />
-          <KolamButton label="Daftar" onPress={() => onRouteChange?.('/locations')} />
         </View>
       </View>
 
@@ -1983,43 +2010,21 @@ function resolveLocationParent(
 }
 
 const styles = StyleSheet.create({
-  surface: {
-    gap: 16,
-    padding: 24,
+  detailSurface: {
+    gap: 14,
+  },
+  detailToolbarContext: {
+    color: V.colors.fg,
+    flexShrink: 1,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+    minWidth: 0,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
   },
   listStack: {
     gap: 14,
-  },
-  header: {
-    alignItems: 'flex-start',
-    flexDirection: 'row',
-    gap: 12,
-    justifyContent: 'space-between',
-    width: '100%',
-  },
-  heading: {
-    flex: 1,
-    minWidth: 0,
-  },
-  eyebrow: {
-    color: V.colors.mutedFg,
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 2,
-    lineHeight: 18,
-    textTransform: 'uppercase',
-  },
-  title: {
-    color: V.colors.fg,
-    fontSize: 28,
-    fontWeight: '800',
-    lineHeight: 34,
-  },
-  description: {
-    color: V.colors.mutedFg,
-    fontSize: 14,
-    lineHeight: 22,
-    marginTop: 4,
   },
   toolbarWrap: {
     elevation: 1000,
@@ -2131,41 +2136,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     lineHeight: 20,
-  },
-  detailHeader: {
-    alignItems: 'flex-start',
-    flexDirection: 'row',
-    gap: 12,
-    justifyContent: 'space-between',
-  },
-  detailHeading: {
-    flex: 1,
-    minWidth: 0,
-  },
-  detailTitleRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  detailTitle: {
-    color: V.colors.fg,
-    fontSize: 24,
-    fontWeight: '800',
-    lineHeight: 32,
-  },
-  detailSubtitle: {
-    color: V.colors.mutedFg,
-    fontSize: 13,
-    lineHeight: 20,
-    marginTop: 2,
-  },
-  detailActions: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    justifyContent: 'flex-end',
   },
   detailGrid: {
     flexDirection: 'row',
