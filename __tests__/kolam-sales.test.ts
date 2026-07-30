@@ -33,6 +33,7 @@ import {
   hydrateKolamSaleCreateFormFromSale,
   isKolamSaleMarketplaceManaged,
   resolveKolamCourierLogoKey,
+  resolveKolamSaleSourceLogoUri,
   isKolamSalesAddItemsRoute,
   isKolamSalesCreateRoute,
   isKolamSalesDetailRoute,
@@ -341,6 +342,26 @@ describe('kolam sales domain', () => {
     const view = getKolamSaleMarketplaceLogistics(detail);
     expect(view?.lastUpdate).toContain('Bandung');
     expect(formatKolamSaleLogisticsTime('2026-07-30T10:00:00.000Z')).toBeTruthy();
+  });
+
+  it('resolves sales source logo from catalog when detail omits logo', () => {
+    expect(
+      resolveKolamSaleSourceLogoUri(
+        { sourceRef: { id: 'src1', logoUri: null } },
+        [{ id: 'src1', logoUri: 'https://cdn.example/tokopedia-source.png' }],
+      ),
+    ).toBe('https://cdn.example/tokopedia-source.png');
+    expect(
+      resolveKolamSaleSourceLogoUri(
+        {
+          sourceRef: {
+            id: 'src1',
+            logoUri: 'https://cdn.example/from-sale.png',
+          },
+        },
+        [{ id: 'src1', logoUri: 'https://cdn.example/from-catalog.png' }],
+      ),
+    ).toBe('https://cdn.example/from-sale.png');
   });
 
   it('normalizes embedded wallet and stock transactions on sale detail', () => {

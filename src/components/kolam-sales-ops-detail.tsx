@@ -32,6 +32,7 @@ import {
   getKolamSaleServiceLabel,
   getKolamSaleTrackingNumber,
   getKolamSaleWalletConfirmStatusIntent,
+  resolveKolamSaleSourceLogoUri,
   isKolamPosSale,
   isKolamSaleMarketplaceManaged,
   kolamSaleSkipsShippingFlow,
@@ -135,6 +136,10 @@ export function KolamSalesOpsDetail({
   const saleCouriers = getKolamSaleCouriers(sale);
   const saleServiceLabel = getKolamSaleServiceLabel(sale);
   const saleTrackingNumber = getKolamSaleTrackingNumber(sale);
+  const sourceLogoUri = resolveKolamSaleSourceLogoUri(
+    sale,
+    controller.sources,
+  );
   const marketplaceLogistics = getKolamSaleMarketplaceLogistics(sale);
   const logisticsPlatformLabel =
     marketplaceLogistics?.platform === 'shopee'
@@ -289,18 +294,22 @@ export function KolamSalesOpsDetail({
               <Text style={styles.stripValue}>{sale.marketplaceOrderId}</Text>
             </View>
           ) : null}
-          {sale.sourceRef?.logoUri || sale.sourceRef?.name ? (
+          {sourceLogoUri || sale.sourceRef?.name ? (
             <View style={styles.stripItem}>
               <Text style={styles.stripLabel}>Sumber</Text>
-              {sale.sourceRef.logoUri ? (
+              {sourceLogoUri ? (
                 <KolamRemoteImage
-                  accessibilityLabel={sale.sourceRef.name || 'Sumber penjualan'}
+                  accessibilityLabel={
+                    sale.sourceRef?.name || 'Sumber penjualan'
+                  }
                   resizeMode="contain"
-                  sourceUri={sale.sourceRef.logoUri}
+                  sourceUri={sourceLogoUri}
                   style={styles.stripSourceLogo}
                 />
               ) : (
-                <Text style={styles.stripValue}>{sale.sourceRef.name}</Text>
+                <Text style={styles.stripValue}>
+                  {sale.sourceRef?.name || '—'}
+                </Text>
               )}
             </View>
           ) : null}

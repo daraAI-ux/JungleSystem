@@ -1181,6 +1181,28 @@ export function formatKolamSaleWalletTypeLabel(type?: string | null): string {
   }
 }
 
+/**
+ * FE list uses populated `sourceRef.logo`; detail GET often omits `logo`.
+ * Prefer sale embed, then active Sales Source catalog option.
+ */
+export function resolveKolamSaleSourceLogoUri(
+  sale: {
+    sourceRef?: { id?: string | null; logoUri?: string | null } | null;
+  },
+  sources: Array<{ id: string; logoUri?: string | null }> = [],
+): string | null {
+  const embedded = sale.sourceRef?.logoUri?.trim() || '';
+  if (embedded) {
+    return embedded;
+  }
+  const sourceId = sale.sourceRef?.id?.trim() || '';
+  if (!sourceId) {
+    return null;
+  }
+  const fromCatalog = sources.find(row => row.id === sourceId)?.logoUri?.trim();
+  return fromCatalog || null;
+}
+
 export function getKolamSaleAllowedStatusTransitions(
   status?: string | null,
 ): KolamSaleStatusTransitionTarget[] {
@@ -1263,6 +1285,8 @@ export interface KolamSaleSourceOption {
   id: string;
   name: string;
   type: 'online' | 'offline' | string;
+  /** Sales Source master logo — prefer this over sale embed when detail omits logo. */
+  logoUri: string | null;
 }
 
 export interface KolamSaleCatalogOption {

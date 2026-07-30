@@ -1,5 +1,6 @@
 import { appConfig } from '../config/app';
 import { getRuntimeClientHeaders } from '../domain/runtime-client-contract';
+import { getKolamFileUrl } from '../lib/file-url';
 import type {
   KolamSale,
   KolamSaleAddItemsBody,
@@ -96,10 +97,12 @@ export async function getKolamSalesActiveSources(): Promise<
         return null;
       }
       const typeRaw = String(record.type ?? '').trim().toLowerCase();
+      const logo = String(record.logo ?? record.logoUrl ?? '').trim();
       return {
         id,
         name: String(record.name ?? '').trim() || id,
         type: typeRaw === 'online' || typeRaw === 'offline' ? typeRaw : typeRaw,
+        logoUri: logo ? getKolamFileUrl(logo) : null,
       } satisfies KolamSaleSourceOption;
     })
     .filter((row): row is KolamSaleSourceOption => Boolean(row));
