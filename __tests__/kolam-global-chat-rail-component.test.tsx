@@ -1080,6 +1080,27 @@ describe('KolamGlobalChatRail', () => {
       input!.props.onChangeText('Siap, masih tersedia.');
     });
 
+    const emojiButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Buka emoji chat');
+    await ReactTestRenderer.act(async () => {
+      emojiButton!.props.onPress();
+    });
+
+    const smileEmojiButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Pilih emoji 🙂');
+    await ReactTestRenderer.act(async () => {
+      smileEmojiButton!.props.onPress();
+    });
+
+    expect(
+      renderer!.root
+        .findAllByType(TextInput)
+        .find(node => node.props.accessibilityLabel === 'Tulis pesan inbox')!
+        .props.value,
+    ).toBe('Siap, masih tersedia. 🙂');
+
     expect(input!.props.submitBehavior).toBe('submit');
     expect(
       renderer!.root
@@ -1091,7 +1112,7 @@ describe('KolamGlobalChatRail', () => {
       await input!.props.onSubmitEditing();
     });
 
-    expect(sendMessage).toHaveBeenCalledWith('Siap, masih tersedia.');
+    expect(sendMessage).toHaveBeenCalledWith('Siap, masih tersedia. 🙂');
   });
 
   it('blocks inbox send until the conversation is assigned to the current staff', async () => {

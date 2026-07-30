@@ -77,6 +77,20 @@ export type KolamGlobalChatRailMode = 'inbox' | 'team-chat';
 type KolamChatRailInboxAssignmentFilter = 'all' | 'assigned' | 'unassigned';
 
 const TEAM_CHAT_REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
+const CHAT_COMPOSER_EMOJIS = [
+  '🙂',
+  '👍',
+  '🙏',
+  '😊',
+  '😂',
+  '❤️',
+  '🔥',
+  '✅',
+  '🙌',
+  '😅',
+  '👌',
+  '🎉',
+];
 const INBOX_PLATFORM_FILTERS: Array<KolamChatPlatform | 'all'> = [
   'all',
   'store',
@@ -1551,6 +1565,7 @@ function KolamChatRailDetailPanel({
   templatesState: KolamChatRailTemplatesState;
 }) {
   const [templatePickerOpen, setTemplatePickerOpen] = React.useState(false);
+  const [emojiPickerOpen, setEmojiPickerOpen] = React.useState(false);
   const [templateSearch, setTemplateSearch] = React.useState('');
   const [contactDetailsOpen, setContactDetailsOpen] = React.useState(false);
   const [daraThinkingLine, setDaraThinkingLine] = React.useState('');
@@ -1619,6 +1634,7 @@ function KolamChatRailDetailPanel({
 
   React.useEffect(() => {
     setTemplatePickerOpen(false);
+    setEmojiPickerOpen(false);
     setTemplateSearch('');
     setDaraThinkingLine('');
     setEditingMessageId(null);
@@ -1680,6 +1696,15 @@ function KolamChatRailDetailPanel({
           : `${composerText}${composerText.endsWith(' ') || !composerText ? '' : ' '}${tag}`;
 
       onComposerTextChange(nextText);
+    },
+    [composerText, onComposerTextChange],
+  );
+
+  const handlePickComposerEmoji = React.useCallback(
+    (emoji: string) => {
+      const nextText = `${composerText}${composerText ? ' ' : ''}${emoji}`;
+      onComposerTextChange(nextText);
+      setEmojiPickerOpen(false);
     },
     [composerText, onComposerTextChange],
   );
@@ -2091,6 +2116,13 @@ function KolamChatRailDetailPanel({
         />
       ) : null}
 
+      {emojiPickerOpen ? (
+        <KolamChatComposerEmojiPicker
+          disabled={detail.sending || inboxComposerBlocked}
+          onPick={handlePickComposerEmoji}
+        />
+      ) : null}
+
       {inboxComposerBlocked ? (
         <KolamInboxComposerGate access={inboxComposerAccess} />
       ) : null}
@@ -2147,10 +2179,16 @@ function KolamChatRailDetailPanel({
               ) : null}
               <KolamPressable
                 accessibilityLabel="Buka emoji chat"
-                disabled
+                disabled={detail.sending || inboxComposerBlocked}
+                onPress={() => {
+                  setEmojiPickerOpen(current => !current);
+                  setTemplatePickerOpen(false);
+                }}
                 style={[
                   styles.composerIconButton,
-                  styles.composerIconButtonDisabled,
+                  emojiPickerOpen && styles.composerIconButtonActive,
+                  (detail.sending || inboxComposerBlocked) &&
+                    styles.composerIconButtonDisabled,
                 ]}>
                 <Text style={styles.composerIconButtonText}>:)</Text>
               </KolamPressable>
@@ -2271,6 +2309,35 @@ function KolamInboxComposerGate({
   return (
     <View style={styles.composerGate}>
       <Text style={styles.composerGateText}>{message}</Text>
+    </View>
+  );
+}
+
+function KolamChatComposerEmojiPicker({
+  disabled,
+  onPick,
+}: {
+  disabled: boolean;
+  onPick: (emoji: string) => void;
+}) {
+  return (
+    <View style={styles.emojiPicker}>
+      <KolamMappedList
+        items={CHAT_COMPOSER_EMOJIS}
+        getKey={emoji => emoji}
+        renderItem={emoji => (
+          <KolamPressable
+            accessibilityLabel={`Pilih emoji ${emoji}`}
+            disabled={disabled}
+            onPress={() => onPick(emoji)}
+            style={[
+              styles.emojiPickerButton,
+              disabled && styles.composerIconButtonDisabled,
+            ]}>
+            <Text style={styles.emojiPickerButtonText}>{emoji}</Text>
+          </KolamPressable>
+        )}
+      />
     </View>
   );
 }
@@ -6585,6 +6652,33 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '900',
     backgroundColor: V.colors.secondary,
+  },
+  emojiPicker: {
+    marginHorizontal: 10,
+    marginBottom: 8,
+    padding: 8,
+    borderRadius: V.radius.lg,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.mutedSoft,
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  emojiPickerButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: V.colors.bg,
+  },
+  emojiPickerButtonText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 15,
+    lineHeight: 18,
   },
   contactDetailsPanel: {
     marginHorizontal: 10,
