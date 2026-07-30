@@ -1,7 +1,10 @@
 import {
+  buildKolamSaleCreateBody,
   canMarkKolamSalePaid,
   canUploadKolamSalePaymentProof,
+  createInitialKolamSaleCreateForm,
   createInitialKolamSaleListFilters,
+  filterOptionsBySalesSource,
   formatKolamSaleDeliveryStatusLabel,
   formatKolamSaleMutationError,
   formatKolamSalePaymentStatusLabel,
@@ -10,24 +13,28 @@ import {
   getKolamSaleRouteId,
   getKolamSaleSurfaceMode,
   isKolamSaleMarketplaceManaged,
+  isKolamSalesCreateRoute,
   isKolamSalesDetailRoute,
   isKolamSalesDiscountApprovalRoute,
   isKolamSalesListRoute,
   isKolamSalesRoute,
   normalizeKolamSale,
   normalizeKolamSaleList,
+  pickDefaultOfflinePosSourceId,
+  validateKolamSaleCreatePayload,
 } from '../src/domain/kolam-sales';
 import { getKolamNavigationRouteTarget } from '../src/domain/kolam-navigation';
 import { ApiError } from '../src/lib/api-error';
 
 describe('kolam sales domain', () => {
-  it('detects list and detail ops routes, excludes create/edit/discount-approval', () => {
+  it('detects list, detail, and create ops routes; excludes edit/discount-approval', () => {
     expect(isKolamSalesRoute('/sales')).toBe(true);
     expect(isKolamSalesListRoute('/sales')).toBe(true);
     expect(isKolamSalesDetailRoute('/sales/abc123')).toBe(true);
     expect(getKolamSaleRouteId('/sales/abc123')).toBe('abc123');
 
-    expect(isKolamSalesRoute('/sales/create')).toBe(false);
+    expect(isKolamSalesRoute('/sales/create')).toBe(true);
+    expect(isKolamSalesCreateRoute('/sales/create')).toBe(true);
     expect(isKolamSalesRoute('/sales/abc123/edit')).toBe(false);
     expect(isKolamSalesRoute('/sales/discount-approval')).toBe(false);
     expect(isKolamSalesDiscountApprovalRoute('/sales/discount-approval')).toBe(
@@ -41,6 +48,7 @@ describe('kolam sales domain', () => {
     expect(getKolamSaleSurfaceMode('/sales')).toBe('list');
     expect(getKolamSaleSurfaceMode('/sales?needsAction=1')).toBe('list');
     expect(getKolamSaleSurfaceMode('/sales/sale-1')).toBe('detail');
+    expect(getKolamSaleSurfaceMode('/sales/create')).toBe('create');
   });
 
   it('routes Kolam /sales to kolam module (not POS sales shell)', () => {
@@ -188,5 +196,84 @@ describe('kolam sales domain', () => {
     );
     expect(formatted).toContain('Sesi Tunai');
     expect(formatted).toContain('No open cashflow session');
+  });
+
+  it('picks default offline POS source and filters marketplace options', () => {
+    expect(
+      pickDefaultOfflinePosSourceId([
+        {
+          id: 'aaaaaaaaaaaaaaaaaaaaaaaa',
+          type: 'online',
+          name: 'Shopee',
+        },
+        {
+          id: 'bbbbbbbbbbbbbbbbbbbbbbbb',
+          type: 'offline',
+          name: 'Website Counter',
+        },
+        {
+          id: 'cccccccccccccccccccccccc',
+          type: 'offline',
+          name: 'POS',
+        },
+      ]),
+    ).toBe('cccccccccccccccccccccccc');
+
+    const methods = [
+      { name: 'Cash POS' },
+      { name: 'Transfer Shopee' },
+      { name: 'Tokopedia VA' },
+    ];
+    expect(
+      filterOptionsBySalesSource(methods, {
+        type: 'offline',
+        name: 'POS',
+      }).map(row => row.name),
+    ).toEqual(['Cash POS']);
+    expect(
+      filterOptionsBySalesSource(methods, {
+        type: 'online',
+        name: 'Shopee Official',
+      }).map(row => row.name),
+    ).toEqual(['Transfer Shopee']);
+  });
+
+  it('builds and validates create sale payload', () => {
+    const form = createInitialKolamSaleCreateForm();
+    form.customerId = '111111111111111111111111';
+    form.paymentMethodId = '222222222222222222222222';
+    form.sourceRefId = '333333333333333333333333';
+    form.items[0] = {
+      ...form.items[0],
+      itemType: 'product',
+      productId: '444444444444444444444444',
+      quantity: '2',
+      discountType: 'fixed',
+      discountAmount: '1000',
+    };
+
+    const body = buildKolamSaleCreateBody(form);
+    expect(body).toEqual({
+      customer: '111111111111111111111111',
+      paymentMethod: '222222222222222222222222',
+      sourceRef: '333333333333333333333333',
+      shippingCost: 0,
+      items: [
+        {
+          itemType: 'product',
+          product: '444444444444444444444444',
+          quantity: 2,
+          discount: { type: 'fixed', amount: 1000 },
+        },
+      ],
+    });
+    expect(validateKolamSaleCreatePayload(body).isValid).toBe(true);
+
+    expect(
+      validateKolamSaleCreatePayload({
+        ...body,
+        customer: null,
+      }).errors[0],
+    ).toBe('Customer wajib diisi');
   });
 });

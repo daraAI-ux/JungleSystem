@@ -2,8 +2,10 @@ import { appConfig } from '../config/app';
 import { getRuntimeClientHeaders } from '../domain/runtime-client-contract';
 import type {
   KolamSale,
+  KolamSaleCreateBody,
   KolamSaleListFilters,
   KolamSaleListResult,
+  KolamSaleSourceOption,
   KolamSaleStatusTransitionTarget,
 } from '../domain/kolam-sales';
 import {
@@ -21,6 +23,7 @@ import { saveNativeBase64File } from './native-file-saver';
 /**
  * Staff Kolam sales API (`/api/sales`).
  * P0: list/detail + status/proof/invoice.
+ * P1: create sale + active sources for create form.
  */
 export async function getKolamSalesList(
   filters: KolamSaleListFilters,
@@ -59,6 +62,48 @@ export async function getKolamSale(id: string): Promise<KolamSale> {
   const payload = await kolamRequest<unknown>(
     `/sales/${encodeURIComponent(id)}`,
   );
+  return unwrapSale(payload);
+}
+
+/** Active sales sources (online + offline). Not the pricing helper (online-only). */
+export async function getKolamSalesActiveSources(): Promise<
+  KolamSaleSourceOption[]
+> {
+  const payload = await kolamRequest<unknown>('/source/active', {
+    query: { isActive: true },
+  });
+  const data =
+    payload && typeof payload === 'object' && 'data' in (payload as object)
+      ? (payload as { data: unknown }).data
+      : payload;
+  const list = Array.isArray(data) ? data : [];
+  return list
+    .map(row => {
+      if (!row || typeof row !== 'object') {
+        return null;
+      }
+      const record = row as Record<string, unknown>;
+      const id = String(record._id ?? record.id ?? '').trim();
+      if (!id) {
+        return null;
+      }
+      const typeRaw = String(record.type ?? '').trim().toLowerCase();
+      return {
+        id,
+        name: String(record.name ?? '').trim() || id,
+        type: typeRaw === 'online' || typeRaw === 'offline' ? typeRaw : typeRaw,
+      } satisfies KolamSaleSourceOption;
+    })
+    .filter((row): row is KolamSaleSourceOption => Boolean(row));
+}
+
+export async function createKolamSale(
+  body: KolamSaleCreateBody,
+): Promise<KolamSale> {
+  const payload = await kolamRequest<unknown>('/sales', {
+    method: 'POST',
+    body,
+  });
   return unwrapSale(payload);
 }
 

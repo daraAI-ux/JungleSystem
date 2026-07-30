@@ -37,7 +37,7 @@ export type KolamSaleDeliveryStatus =
 
 export type KolamSaleLifecycle = 'active' | 'completed' | 'cancelled';
 
-export type KolamSaleSurfaceMode = 'list' | 'detail';
+export type KolamSaleSurfaceMode = 'list' | 'detail' | 'create';
 
 export type KolamSaleItemType =
   | 'product'
@@ -225,11 +225,19 @@ export const KOLAM_SALE_DELIVERY_STATUS_OPTIONS: Array<{
    ──────────────────────────────────────────*/
 
 export function isKolamSalesRoute(route: string) {
-  return isKolamSalesListRoute(route) || isKolamSalesDetailRoute(route);
+  return (
+    isKolamSalesListRoute(route) ||
+    isKolamSalesDetailRoute(route) ||
+    isKolamSalesCreateRoute(route)
+  );
 }
 
 export function isKolamSalesListRoute(route: string) {
   return normalizeSalesRoutePath(route) === KOLAM_SALES_ROOT;
+}
+
+export function isKolamSalesCreateRoute(route: string) {
+  return normalizeSalesRoutePath(route) === `${KOLAM_SALES_ROOT}/create`;
 }
 
 export function isKolamSalesDetailRoute(route: string) {
@@ -242,7 +250,7 @@ export function isKolamSalesDiscountApprovalRoute(route: string) {
   );
 }
 
-/** Create / edit remain placeholders until later phases. */
+/** Edit remains placeholder until a later phase. */
 export function getKolamSaleRouteId(route: string) {
   const path = normalizeSalesRoutePath(route);
   if (
@@ -262,6 +270,9 @@ export function getKolamSaleRouteId(route: string) {
 }
 
 export function getKolamSaleSurfaceMode(route: string): KolamSaleSurfaceMode {
+  if (isKolamSalesCreateRoute(route)) {
+    return 'create';
+  }
   if (getKolamSaleRouteId(route)) {
     return 'detail';
   }
@@ -269,7 +280,13 @@ export function getKolamSaleSurfaceMode(route: string): KolamSaleSurfaceMode {
 }
 
 export function getKolamSaleBreadcrumbPath(mode: KolamSaleSurfaceMode) {
-  return mode === 'detail' ? `${KOLAM_SALES_ROOT}/detail` : KOLAM_SALES_ROOT;
+  if (mode === 'create') {
+    return `${KOLAM_SALES_ROOT}/create`;
+  }
+  if (mode === 'detail') {
+    return `${KOLAM_SALES_ROOT}/detail`;
+  }
+  return KOLAM_SALES_ROOT;
 }
 
 export function createInitialKolamSaleListFilters(
@@ -509,6 +526,327 @@ function getErrorMessageFallback(error: unknown): string {
     return error.message;
   }
   return 'Unknown error';
+}
+
+/* ──────────────────────────────────────────
+   Create form (P1)
+   ──────────────────────────────────────────*/
+
+export type KolamSaleCreateItemType = 'product' | 'species' | 'custom';
+
+export type KolamSaleCreateDiscountType = 'percentage' | 'fixed';
+
+export interface KolamSaleSourceOption {
+  id: string;
+  name: string;
+  type: 'online' | 'offline' | string;
+}
+
+export interface KolamSaleCreateItemForm {
+  key: string;
+  itemType: KolamSaleCreateItemType;
+  productId: string;
+  speciesId: string;
+  customName: string;
+  customUnit: string;
+  customUnitPrice: string;
+  quantity: string;
+  discountType: KolamSaleCreateDiscountType;
+  discountAmount: string;
+}
+
+export interface KolamSaleCreateFormState {
+  customerId: string;
+  paymentMethodId: string;
+  sourceRefId: string;
+  notes: string;
+  items: KolamSaleCreateItemForm[];
+}
+
+export interface KolamSaleCreateItemBody {
+  itemType: KolamSaleCreateItemType;
+  product?: string;
+  species?: string;
+  quantity: number;
+  unitPrice?: number;
+  customName?: string;
+  customUnit?: string;
+  discount?: {
+    type: KolamSaleCreateDiscountType;
+    amount: number;
+  };
+}
+
+export interface KolamSaleCreateBody {
+  customer: string | null;
+  paymentMethod: string;
+  sourceRef: string;
+  shippingCost: number;
+  notes?: string;
+  items: KolamSaleCreateItemBody[];
+}
+
+export interface KolamSaleCreateValidationResult {
+  isValid: boolean;
+  errors: string[];
+}
+
+export type KolamSaleSourceFilterInput = {
+  type: 'online' | 'offline' | string;
+  name: string;
+} | null | undefined;
+
+let createItemKeySeq = 0;
+
+export function createEmptyKolamSaleCreateItem(): KolamSaleCreateItemForm {
+  createItemKeySeq += 1;
+  return {
+    key: `sale-item-${createItemKeySeq}`,
+    itemType: 'product',
+    productId: '',
+    speciesId: '',
+    customName: '',
+    customUnit: 'pcs',
+    customUnitPrice: '',
+    quantity: '1',
+    discountType: 'fixed',
+    discountAmount: '',
+  };
+}
+
+export function createInitialKolamSaleCreateForm(): KolamSaleCreateFormState {
+  return {
+    customerId: '',
+    paymentMethodId: '',
+    sourceRefId: '',
+    notes: '',
+    items: [createEmptyKolamSaleCreateItem()],
+  };
+}
+
+export function isKolamMongoObjectId(value: string): boolean {
+  return typeof value === 'string' && /^[a-fA-F0-9]{24}$/.test(value);
+}
+
+export function nameMatchesMarketplaceKeywords(name: string): boolean {
+  const n = name.toLowerCase();
+  return (
+    n.includes('tokopedia') || n.includes('tokped') || n.includes('shopee')
+  );
+}
+
+function nameMatchesTokopediaChannel(name: string): boolean {
+  const n = name.toLowerCase();
+  return n.includes('tokopedia') || n.includes('tokped');
+}
+
+function nameMatchesShopeeChannel(name: string): boolean {
+  return name.toLowerCase().includes('shopee');
+}
+
+function classifyOnlineSourceChannel(
+  sourceName: string,
+): 'tokopedia' | 'shopee' | 'generic' {
+  const n = sourceName.toLowerCase();
+  const hasTok = n.includes('tokopedia') || n.includes('tokped');
+  const hasShopee = n.includes('shopee');
+  if (hasTok && !hasShopee) {
+    return 'tokopedia';
+  }
+  if (hasShopee && !hasTok) {
+    return 'shopee';
+  }
+  return 'generic';
+}
+
+/** Filter customers / payment methods by sales source channel (FE sales-utils). */
+export function filterOptionsBySalesSource<T extends { name: string }>(
+  options: T[],
+  selectedSource: KolamSaleSourceFilterInput,
+): T[] {
+  if (!selectedSource || selectedSource.type === 'offline') {
+    return options.filter(o => !nameMatchesMarketplaceKeywords(o.name));
+  }
+  const ch = classifyOnlineSourceChannel(selectedSource.name);
+  if (ch === 'tokopedia') {
+    return options.filter(o => nameMatchesTokopediaChannel(o.name));
+  }
+  if (ch === 'shopee') {
+    return options.filter(o => nameMatchesShopeeChannel(o.name));
+  }
+  return options.filter(o => nameMatchesMarketplaceKeywords(o.name));
+}
+
+/** Default staff sale source: offline POS, else first offline. */
+export function pickDefaultOfflinePosSourceId(
+  sources: Array<{ id: string; type: string; name: string }>,
+): string | null {
+  if (!sources.length) {
+    return null;
+  }
+  const pos = sources.find(
+    s => s.type === 'offline' && /^pos$/i.test((s.name || '').trim()),
+  );
+  const offline = sources.find(s => s.type === 'offline');
+  return (pos ?? offline)?.id ?? null;
+}
+
+export function buildKolamSaleCreateBody(
+  form: KolamSaleCreateFormState,
+): KolamSaleCreateBody {
+  const items: KolamSaleCreateItemBody[] = form.items.map(item => {
+    const quantity = Math.max(0, Number(item.quantity) || 0);
+    const discountAmount = Number(item.discountAmount);
+    const discount =
+      Number.isFinite(discountAmount) && discountAmount > 0
+        ? {
+            type: item.discountType,
+            amount: discountAmount,
+          }
+        : undefined;
+
+    if (item.itemType === 'custom') {
+      return {
+        itemType: 'custom',
+        quantity,
+        unitPrice: Math.max(0, Number(item.customUnitPrice) || 0),
+        customName: item.customName.trim(),
+        customUnit: item.customUnit.trim() || 'pcs',
+        ...(discount ? { discount } : {}),
+      };
+    }
+
+    if (item.itemType === 'species') {
+      return {
+        itemType: 'species',
+        species: item.speciesId.trim(),
+        quantity,
+        ...(discount ? { discount } : {}),
+      };
+    }
+
+    return {
+      itemType: 'product',
+      product: item.productId.trim(),
+      quantity,
+      ...(discount ? { discount } : {}),
+    };
+  });
+
+  const notes = form.notes.trim();
+  return {
+    customer: form.customerId.trim() || null,
+    paymentMethod: form.paymentMethodId.trim(),
+    sourceRef: form.sourceRefId.trim(),
+    shippingCost: 0,
+    ...(notes ? { notes } : {}),
+    items,
+  };
+}
+
+/** Subset of FE validateCreateSalePayload for P1 item types. */
+export function validateKolamSaleCreatePayload(
+  payload: KolamSaleCreateBody,
+): KolamSaleCreateValidationResult {
+  const errors: string[] = [];
+  const hasCustomer =
+    typeof payload.customer === 'string' && Boolean(payload.customer.trim());
+
+  if (!hasCustomer) {
+    errors.push('Customer wajib diisi');
+  } else if (payload.customer && !isKolamMongoObjectId(payload.customer)) {
+    errors.push('Customer harus ObjectId valid');
+  }
+
+  if (!payload.paymentMethod || typeof payload.paymentMethod !== 'string') {
+    errors.push('Metode pembayaran wajib diisi');
+  } else if (!isKolamMongoObjectId(payload.paymentMethod)) {
+    errors.push('Metode pembayaran harus ObjectId valid');
+  }
+
+  const sr = payload.sourceRef;
+  if (!sr || typeof sr !== 'string' || !sr.trim()) {
+    errors.push('Sumber penjualan (sourceRef) wajib diisi');
+  } else if (!isKolamMongoObjectId(sr.trim())) {
+    errors.push('Sumber penjualan harus ObjectId valid');
+  }
+
+  if (!Array.isArray(payload.items) || payload.items.length === 0) {
+    errors.push('Minimal satu item wajib diisi');
+  } else {
+    payload.items.forEach((item, index) => {
+      const idx = index + 1;
+      if (
+        item.itemType !== 'product' &&
+        item.itemType !== 'species' &&
+        item.itemType !== 'custom'
+      ) {
+        errors.push(`Item ${idx}: tipe harus product, species, atau custom`);
+      }
+
+      if (item.itemType === 'custom') {
+        if (!item.customName?.trim()) {
+          errors.push(`Item ${idx}: nama custom wajib diisi`);
+        }
+        if (
+          item.unitPrice === undefined ||
+          item.unitPrice === null ||
+          typeof item.unitPrice !== 'number' ||
+          item.unitPrice < 0
+        ) {
+          errors.push(`Item ${idx}: harga custom wajib (≥ 0)`);
+        }
+      }
+
+      if (item.itemType === 'product') {
+        if (!item.product?.trim()) {
+          errors.push(`Item ${idx}: produk wajib dipilih`);
+        } else if (!isKolamMongoObjectId(item.product)) {
+          errors.push(`Item ${idx}: produk harus ObjectId valid`);
+        }
+      }
+
+      if (item.itemType === 'species') {
+        if (!item.species?.trim()) {
+          errors.push(`Item ${idx}: spesies wajib dipilih`);
+        } else if (!isKolamMongoObjectId(item.species)) {
+          errors.push(`Item ${idx}: spesies harus ObjectId valid`);
+        }
+      }
+
+      if (
+        item.quantity == null ||
+        typeof item.quantity !== 'number' ||
+        item.quantity <= 0
+      ) {
+        errors.push(`Item ${idx}: kuantitas harus angka positif`);
+      }
+
+      const d = item.discount;
+      if (d) {
+        if (d.type !== 'percentage' && d.type !== 'fixed') {
+          errors.push(`Item ${idx}: tipe diskon harus percentage atau fixed`);
+        }
+        if (typeof d.amount !== 'number' || d.amount < 0) {
+          errors.push(`Item ${idx}: jumlah diskon harus ≥ 0`);
+        } else if (d.type === 'percentage' && d.amount > 100) {
+          errors.push(`Item ${idx}: diskon persen tidak boleh > 100`);
+        }
+      }
+    });
+  }
+
+  if (
+    payload.shippingCost !== undefined &&
+    (typeof payload.shippingCost !== 'number' || payload.shippingCost < 0)
+  ) {
+    errors.push('Ongkir harus angka ≥ 0');
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+  };
 }
 
 /* ──────────────────────────────────────────
