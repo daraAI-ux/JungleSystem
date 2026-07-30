@@ -2533,6 +2533,79 @@ describe('KolamGlobalChatRail', () => {
     expect(reactToMessage).toHaveBeenCalledWith('team-msg-1', '🙏');
   });
 
+  it('renders DARA team chat avatar from web settings', async () => {
+    useReadonlyDataMock.mockReturnValue({
+      conversations: [],
+      loading: false,
+      refresh: jest.fn(),
+      rooms: [
+        {
+          _id: 'room-1',
+          name: 'Operasional',
+          category: 'general',
+          lastMessagePreview: 'DARA cek stok',
+          unreadCount: 0,
+        },
+      ],
+      totalUnread: 0,
+    });
+    useDetailMock.mockReturnValue({
+      ...getDefaultDetailMock(),
+      loading: false,
+      messages: [
+        {
+          attachments: [],
+          author: 'DARA',
+          body: 'Stok sedang dicek.',
+          embeds: [],
+          id: 'team-msg-dara-1',
+          linkPreviews: [],
+          mine: false,
+          reactions: [],
+          replyPreview: null,
+          senderIsAi: true,
+        },
+      ],
+      presence: {onlineCount: 1, typingUserIds: [], viewingCount: 1},
+      refresh: jest.fn(),
+      sendAttachment: jest.fn(),
+      sendMessage: jest.fn(),
+      signalTyping: jest.fn(),
+      sending: false,
+      updatePresenceFromLive: jest.fn(),
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamGlobalChatRail mode="team-chat" onClose={() => undefined} />,
+      );
+    });
+
+    await ReactTestRenderer.act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const selectButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Pilih room Operasional');
+
+    await ReactTestRenderer.act(async () => {
+      selectButton!.props.onPress();
+    });
+
+    expect(
+      renderer!.root
+        .findAllByType(Image)
+        .some(
+          node =>
+            node.props.source?.uri ===
+            'https://amfibi.dunia-anura.com/media/dara/avatar.png',
+        ),
+    ).toBe(true);
+  });
+
   it('opens team chat rooms as a full rail detail with back navigation', async () => {
     useReadonlyDataMock.mockReturnValue({
       conversations: [],

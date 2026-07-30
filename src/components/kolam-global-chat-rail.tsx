@@ -697,10 +697,6 @@ export function KolamGlobalChatRail({
   }, [mode]);
 
   React.useEffect(() => {
-    if (mode !== 'inbox') {
-      return;
-    }
-
     let active = true;
     getKolamWebSetting()
       .then(webSetting => {
@@ -718,7 +714,7 @@ export function KolamGlobalChatRail({
     return () => {
       active = false;
     };
-  }, [mode]);
+  }, []);
 
   React.useEffect(() => {
     if (selectedItemId && !items.some(item => item.id === selectedItemId)) {
@@ -1037,6 +1033,7 @@ export function KolamGlobalChatRail({
           <KolamChatRailDetailPanel
             composerText={composerText}
             currentUserId={currentUserId}
+            daraAvatarUrl={daraAvatarState.imageUrl}
             daraThinkingLiveSignal={daraThinkingLiveSignal}
             detail={detail}
             inboxCanReply={inboxCanReply}
@@ -2189,6 +2186,7 @@ function KolamTeamChatDirectPanel({
 function KolamChatRailDetailPanel({
   composerText,
   currentUserId,
+  daraAvatarUrl,
   daraThinkingLiveSignal,
   detail,
   inboxCanReply,
@@ -2208,6 +2206,7 @@ function KolamChatRailDetailPanel({
 }: {
   composerText: string;
   currentUserId?: string;
+  daraAvatarUrl: string | null;
   daraThinkingLiveSignal: KolamDaraThinkingLiveSignal | null;
   detail: ReturnType<typeof useKolamChatRailDetail>;
   inboxCanReply: boolean;
@@ -2723,7 +2722,10 @@ function KolamChatRailDetailPanel({
                         <View style={styles.teamMessageAvatar}>
                           <KolamProfileAvatarContent
                             imageStyle={styles.teamMessageAvatarImage}
-                            imageUrl={getTeamChatMessageAvatarUrl(message)}
+                            imageUrl={getTeamChatMessageAvatarUrl(
+                              message,
+                              daraAvatarUrl,
+                            )}
                             initials={getTeamChatMessageInitials(message.author)}
                             textStyle={styles.teamMessageAvatarText}
                           />
@@ -3458,9 +3460,12 @@ function getPendingChatAttachmentLabel(file: NativeImagePickerResult) {
   }
 }
 
-function getTeamChatMessageAvatarUrl(message: KolamChatRailDetailMessage) {
+function getTeamChatMessageAvatarUrl(
+  message: KolamChatRailDetailMessage,
+  daraAvatarUrl: string | null,
+) {
   if (message.senderIsAi) {
-    return resolveDaraAvatarImageUrl();
+    return daraAvatarUrl || resolveDaraAvatarImageUrl();
   }
 
   return resolveProfilePhotoUrl(message.senderProfilePicture);

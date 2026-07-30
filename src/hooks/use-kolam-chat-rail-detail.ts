@@ -1085,6 +1085,8 @@ function mapTeamChatMessage(
   message: KolamTeamChatMessage,
   currentUserId?: string,
 ): KolamChatRailDetailMessage {
+  const isAi = isTeamChatAiMessage(message);
+
   return {
     attachments: Array.isArray(message.attachments) ? message.attachments : [],
     embeds: Array.isArray(message.embeds) ? message.embeds : [],
@@ -1098,10 +1100,10 @@ function mapTeamChatMessage(
     linkPreviews: Array.isArray(message.linkPreviews)
       ? message.linkPreviews
       : [],
-    mine: message.senderType !== 'ai',
+    mine: !isAi,
     reactions: groupTeamChatReactions(message.reactions, currentUserId),
     replyPreview: message.replyPreview ?? null,
-    senderIsAi: message.senderType === 'ai',
+    senderIsAi: isAi,
     senderId: getTeamChatSenderId(message),
     senderProfilePicture: getTeamChatSenderProfilePicture(message),
     sentAt: message.createdAt,
@@ -1117,7 +1119,7 @@ function getTeamChatSenderId(message: KolamTeamChatMessage) {
 }
 
 function getTeamChatSenderProfilePicture(message: KolamTeamChatMessage) {
-  if (message.senderType === 'ai') {
+  if (isTeamChatAiMessage(message)) {
     return null;
   }
 
@@ -1193,7 +1195,7 @@ function getInboxMessageBody({content}: KolamChatMessage) {
 }
 
 function getTeamChatAuthor(message: KolamTeamChatMessage) {
-  if (message.senderType === 'ai') {
+  if (isTeamChatAiMessage(message)) {
     return message.botName || 'DARA';
   }
 
@@ -1208,4 +1210,16 @@ function getTeamChatAuthor(message: KolamTeamChatMessage) {
   }
 
   return 'User';
+}
+
+function isTeamChatAiMessage(message: KolamTeamChatMessage) {
+  const botKey = message.botKey?.trim().toLowerCase();
+  const botName = message.botName?.trim().toLowerCase();
+
+  return (
+    message.senderType === 'ai' ||
+    Boolean(botKey) ||
+    botName === 'dara' ||
+    botName?.includes('dara') === true
+  );
 }
