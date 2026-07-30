@@ -22,6 +22,7 @@ import {
   hasSettingsPermission,
   isSettingsSuperAdminRoleKey,
 } from '../domain/settings-surface';
+import {getKolamFileUrl} from '../lib/file-url';
 import {
   createKolamUser,
   getKolamKasbonPendingSummary,
@@ -793,6 +794,7 @@ function KolamUserDetailSurface({
   }
 
   const encodedUserId = encodeURIComponent(user.id);
+  const profilePhotoUrl = getKolamFileUrl(user.profilePicture);
 
   return (
     <View style={styles.detailSurface}>
@@ -819,16 +821,27 @@ function KolamUserDetailSurface({
         </View>
         <View style={styles.detailGrid}>
           <View style={styles.detailPanel}>
-            <Text style={styles.detailPanelTitle}>Identitas</Text>
+            <Text style={styles.detailPanelTitle}>Informasi Dasar</Text>
+            <View style={styles.userProfileBlock}>
+              {profilePhotoUrl ? (
+                <KolamRemoteImage
+                  accessibilityLabel={`Foto profil ${user.displayName}`}
+                  resizeMode="cover"
+                  scope="user-profile"
+                  sourceUri={profilePhotoUrl}
+                  style={styles.userProfileImage}
+                />
+              ) : (
+                <View style={styles.userProfileFallback}>
+                  <Text style={styles.userProfileInitials}>
+                    {getUserInitials(user.displayName)}
+                  </Text>
+                </View>
+              )}
+            </View>
             <DetailRow label="Nama" value={user.displayName} />
-            <DetailRow label="Username" value={user.username || '-'} />
             <DetailRow label="Email" value={user.email || '-'} />
             <DetailRow label="Nomor Telepon" value={user.phoneNumber || '-'} />
-            <DetailRow label="Zona Waktu" value={user.timezone || '-'} />
-          </View>
-
-          <View style={styles.detailPanel}>
-            <Text style={styles.detailPanelTitle}>Peran dan Flag</Text>
             <DetailBadgeRow
               label="Peran"
               badges={[{intent: 'secondary', label: user.roleLabel || '-'}]}
@@ -848,16 +861,70 @@ function KolamUserDetailSurface({
                 ...(user.isOwner
                   ? [{intent: 'primary' as const, label: 'Pemilik'}]
                   : []),
+                ...(user.isEmployee
+                  ? [{intent: 'secondary' as const, label: 'Karyawan'}]
+                  : []),
                 ...(user.csActive
                   ? [{intent: 'success' as const, label: 'CS Aktif'}]
                   : []),
-                ...(!user.isOwner && !user.csActive
+                ...(!user.isOwner && !user.isEmployee && !user.csActive
                   ? [{intent: 'secondary' as const, label: '-'}]
                   : []),
               ]}
             />
           </View>
 
+          <View style={styles.detailPanel}>
+            <Text style={styles.detailPanelTitle}>Status Akun</Text>
+            <DetailBadgeRow
+              label="Status Akun"
+              badges={[
+                {
+                  intent: getUserAccountStatusIntent(user),
+                  label: getKolamUserAccountStatusLabel(user),
+                },
+              ]}
+            />
+            {user.resignedAt ? (
+              <DetailRow
+                label="Tanggal Resign"
+                value={formatUserDateTime(user.resignedAt)}
+              />
+            ) : null}
+            <DetailBadgeRow
+              label="Assign sebagai CS"
+              badges={[
+                {
+                  intent: user.csActive ? 'success' : 'secondary',
+                  label: user.csActive ? 'CS Aktif' : 'Tidak Ditugaskan',
+                },
+              ]}
+            />
+            <DetailBadgeRow
+              label="Status Online"
+              badges={[
+                {
+                  intent: user.statusOnline ? 'success' : 'secondary',
+                  label: user.statusOnline ? 'Online' : 'Offline',
+                },
+              ]}
+            />
+            <DetailRow
+              label="Terakhir Online"
+              value={formatUserDateTime(user.lastOnline)}
+            />
+            <DetailRow
+              label="Dibuat Pada"
+              value={formatUserDateTime(user.createdAt)}
+            />
+            <DetailRow
+              label="Terakhir Diperbarui"
+              value={formatUserDateTime(user.updatedAt)}
+            />
+          </View>
+        </View>
+
+        <View style={styles.detailGrid}>
           <View style={styles.detailPanel}>
             <Text style={styles.detailPanelTitle}>Akses</Text>
             <DetailBadgeRow
@@ -892,46 +959,119 @@ function KolamUserDetailSurface({
           </View>
 
           <View style={styles.detailPanel}>
-            <Text style={styles.detailPanelTitle}>Status Akun</Text>
-            <DetailBadgeRow
-              label="Status Akun"
-              badges={[
-                {
-                  intent: getUserAccountStatusIntent(user),
-                  label: getKolamUserAccountStatusLabel(user),
-                },
-              ]}
-            />
-            <DetailBadgeRow
-              label="Status Online"
-              badges={[
-                {
-                  intent: user.statusOnline ? 'success' : 'secondary',
-                  label: user.statusOnline ? 'Online' : 'Offline',
-                },
-              ]}
+            <Text style={styles.detailPanelTitle}>Data Pribadi</Text>
+            <DetailRow
+              label="Jenis Kelamin"
+              value={formatUserGender(user.biodata.gender)}
             />
             <DetailRow
-              label="Tanggal Resign"
-              value={formatUserDateTime(user.resignedAt)}
+              label="Tanggal Lahir"
+              value={formatUserLongDate(user.biodata.dateOfBirth)}
             />
             <DetailRow
-              label="Terakhir Online"
-              value={formatUserDateTime(user.lastOnline)}
+              label="Tempat Lahir"
+              value={user.biodata.placeOfBirth || '-'}
             />
+            <DetailRow
+              label="Status Pernikahan"
+              value={formatUserMaritalStatus(user.biodata.maritalStatus)}
+            />
+            <DetailRow label="Agama" value={user.biodata.religion || '-'} />
+            <DetailRow label="NIK (KTP)" value={user.biodata.nationalId || '-'} />
+            <DetailRow label="NPWP" value={user.biodata.taxNumber || '-'} />
+            <DetailRow
+              label="Alamat"
+              numberOfLines={3}
+              value={formatUserAddress(user.biodata.address)}
+            />
+            <DetailRow
+              label="Kontak Darurat"
+              numberOfLines={3}
+              value={formatUserEmergencyContact(user.biodata.emergencyContact)}
+            />
+            {user.biodata.photoKtpUri ? (
+              <View style={styles.userKtpBlock}>
+                <Text style={styles.detailLabel}>Foto KTP</Text>
+                <KolamRemoteImage
+                  accessibilityLabel={`Foto KTP ${user.displayName}`}
+                  resizeMode="cover"
+                  scope="user-ktp"
+                  sourceUri={user.biodata.photoKtpUri}
+                  style={styles.userKtpImage}
+                />
+              </View>
+            ) : null}
           </View>
 
-          <View style={styles.detailPanel}>
-            <Text style={styles.detailPanelTitle}>Timestamps</Text>
-            <DetailRow
-              label="Dibuat Pada"
-              value={formatUserDateTime(user.createdAt)}
-            />
-            <DetailRow
-              label="Terakhir Diperbarui"
-              value={formatUserDateTime(user.updatedAt)}
-            />
-          </View>
+          {user.isEmployee ? (
+            <View style={styles.detailPanel}>
+              <Text style={styles.detailPanelTitle}>Informasi Karyawan</Text>
+              <DetailRow
+                label="Nomor Karyawan"
+                value={user.employee.employeeNumber || '-'}
+              />
+              <DetailRow label="Jabatan" value={user.employee.position || '-'} />
+              <DetailRow
+                label="Departemen"
+                value={user.employee.department || '-'}
+              />
+              <DetailBadgeRow
+                label="Status"
+                badges={[
+                  {
+                    intent: getUserEmployeeStatusIntent(user.employee.status),
+                    label: formatUserEmployeeStatus(user.employee.status),
+                  },
+                ]}
+              />
+              <DetailRow
+                label="Tanggal Mulai Bekerja"
+                value={formatUserLongDate(user.employee.hireDate)}
+              />
+              <DetailRow
+                label="Masa Kerja"
+                value={formatUserWorkDuration(user.employee.hireDate)}
+              />
+              <DetailBadgeRow
+                label="Pekerjaan Pertama"
+                badges={[
+                  {
+                    intent: user.employee.firstTimeWorking
+                      ? 'success'
+                      : 'secondary',
+                    label: user.employee.firstTimeWorking ? 'Ya' : 'Tidak',
+                  },
+                ]}
+              />
+              <DetailRow
+                label="Jadwal"
+                value={formatUserScheduleType(user.employee.schedule.type)}
+              />
+              <DetailRow
+                label="Jam Shift"
+                value={formatUserShiftRange(user.employee.schedule)}
+              />
+              <DetailRow
+                label="Hari Kerja"
+                numberOfLines={3}
+                value={formatUserWorkDays(user.employee.schedule.workDays)}
+              />
+              <DetailBadgeRow
+                label="Status PKP"
+                badges={[
+                  {
+                    intent: user.employee.isPkp ? 'success' : 'secondary',
+                    label: user.employee.isPkp
+                      ? 'PKP berlaku'
+                      : 'Bukan PKP / tidak berlaku',
+                  },
+                ]}
+              />
+              {user.employee.isPkp && user.employee.pkpNotes ? (
+                <DetailRow label="Catatan PKP" value={user.employee.pkpNotes} />
+              ) : null}
+            </View>
+          ) : null}
         </View>
       </KolamContentFrame>
     </View>
@@ -1915,11 +2055,19 @@ function KolamUserEditSurface({
   );
 }
 
-function DetailRow({label, value}: {label: string; value: string}) {
+function DetailRow({
+  label,
+  numberOfLines = 2,
+  value,
+}: {
+  label: string;
+  numberOfLines?: number;
+  value: string;
+}) {
   return (
     <View style={styles.detailRow}>
       <Text style={styles.detailLabel}>{label}</Text>
-      <Text numberOfLines={2} style={styles.detailValue}>
+      <Text numberOfLines={numberOfLines} style={styles.detailValue}>
         {value || '-'}
       </Text>
     </View>
@@ -2108,6 +2256,187 @@ function formatUserDateTime(value?: string | null) {
     dateStyle: 'medium',
     timeStyle: 'short',
   });
+}
+
+function formatUserLongDate(value?: string | null) {
+  if (!value) {
+    return '-';
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return '-';
+  }
+
+  return date.toLocaleDateString('id-ID', {dateStyle: 'long'});
+}
+
+function getUserInitials(name: string) {
+  const initials = name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(part => part[0]?.toUpperCase() ?? '')
+    .join('');
+
+  return initials || '?';
+}
+
+function formatUserGender(value?: string | null) {
+  switch ((value ?? '').toLowerCase()) {
+    case 'male':
+    case 'laki-laki':
+    case 'pria':
+      return 'Laki-laki';
+    case 'female':
+    case 'perempuan':
+    case 'wanita':
+      return 'Perempuan';
+    default:
+      return value || '-';
+  }
+}
+
+function formatUserMaritalStatus(value?: string | null) {
+  switch ((value ?? '').toLowerCase()) {
+    case 'single':
+      return 'Belum menikah';
+    case 'married':
+      return 'Menikah';
+    case 'divorced':
+      return 'Cerai';
+    case 'widowed':
+      return 'Duda/Janda';
+    default:
+      return value || '-';
+  }
+}
+
+function formatUserEmployeeStatus(value?: string | null) {
+  switch ((value ?? '').toLowerCase()) {
+    case 'active':
+      return 'Aktif';
+    case 'terminated':
+      return 'Berhenti';
+    case 'probation':
+      return 'Masa Percobaan';
+    case 'inactive':
+      return 'Tidak aktif';
+    default:
+      return value || '-';
+  }
+}
+
+function getUserEmployeeStatusIntent(
+  value?: string | null,
+): React.ComponentProps<typeof KolamStatusBadge>['intent'] {
+  switch ((value ?? '').toLowerCase()) {
+    case 'active':
+      return 'success';
+    case 'terminated':
+      return 'danger';
+    default:
+      return 'secondary';
+  }
+}
+
+function formatUserScheduleType(value?: string | null) {
+  switch ((value ?? '').toLowerCase()) {
+    case 'full_time':
+      return 'Penuh waktu';
+    case 'part_time':
+      return 'Paruh waktu';
+    case 'shift':
+      return 'Shift';
+    case 'flexible':
+      return 'Fleksibel';
+    default:
+      return value || '-';
+  }
+}
+
+function formatUserShiftRange(schedule: KolamUserEmployeeSchedule) {
+  return schedule.shiftStart && schedule.shiftEnd
+    ? `${schedule.shiftStart} - ${schedule.shiftEnd}`
+    : '-';
+}
+
+function formatUserWorkDays(days: string[]) {
+  if (!days.length) {
+    return '-';
+  }
+
+  const labels: Record<string, string> = {
+    friday: 'Jumat',
+    monday: 'Senin',
+    saturday: 'Sabtu',
+    sunday: 'Minggu',
+    thursday: 'Kamis',
+    tuesday: 'Selasa',
+    wednesday: 'Rabu',
+  };
+
+  return days.map(day => labels[day.toLowerCase()] ?? day).join(', ');
+}
+
+function formatUserWorkDuration(value?: string | null) {
+  if (!value) {
+    return '-';
+  }
+
+  const start = new Date(value);
+
+  if (Number.isNaN(start.getTime())) {
+    return '-';
+  }
+
+  const now = new Date();
+  let months =
+    (now.getFullYear() - start.getFullYear()) * 12 +
+    (now.getMonth() - start.getMonth());
+
+  if (now.getDate() < start.getDate()) {
+    months -= 1;
+  }
+
+  if (months <= 0) {
+    return 'Kurang dari 1 bulan';
+  }
+
+  const years = Math.floor(months / 12);
+  const remainingMonths = months % 12;
+  const parts = [
+    years > 0 ? `${years} tahun` : '',
+    remainingMonths > 0 ? `${remainingMonths} bulan` : '',
+  ].filter(Boolean);
+
+  return parts.join(' ') || '-';
+}
+
+function formatUserAddress(address: KolamUserBiodataAddress) {
+  return [
+    address.street,
+    address.city,
+    address.province,
+    address.postalCode,
+  ]
+    .filter(Boolean)
+    .join(', ') || '-';
+}
+
+function formatUserEmergencyContact(contact: KolamUserBiodataEmergencyContact) {
+  if (!contact.name) {
+    return '-';
+  }
+
+  return [
+    contact.name,
+    contact.relation ? `(${contact.relation})` : '',
+    contact.phone,
+  ]
+    .filter(Boolean)
+    .join(' ');
 }
 
 function validateCreateUserForm(form: KolamUserCreatePayload) {
@@ -2488,6 +2817,39 @@ const styles = StyleSheet.create({
   },
   detailTitleBlock: {
     gap: 4,
+  },
+  userProfileBlock: {
+    alignItems: 'flex-start',
+    marginBottom: 2,
+  },
+  userProfileImage: {
+    borderRadius: 8,
+    height: 144,
+    width: 144,
+  },
+  userProfileFallback: {
+    alignItems: 'center',
+    backgroundColor: V.colors.tableHeader,
+    borderRadius: 8,
+    height: 144,
+    justifyContent: 'center',
+    width: 144,
+  },
+  userProfileInitials: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 30,
+    fontWeight: '900',
+    lineHeight: 36,
+  },
+  userKtpBlock: {
+    gap: 6,
+    marginTop: 4,
+  },
+  userKtpImage: {
+    borderRadius: 8,
+    height: 128,
+    width: 200,
   },
   detailTitle: {
     color: V.colors.fg,
