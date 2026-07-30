@@ -52,11 +52,13 @@ import {
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamFormTextField} from './kolam-form-text-field';
 import {KolamRemoteImage} from './kolam-remote-image';
+import {KolamSearchField} from './kolam-search-field';
 import {
   KolamStatusBadge,
   type KolamStatusBadgeIntent,
 } from './kolam-status-badge';
 import {KolamTableFilterTrigger} from './kolam-table-filter-trigger';
+import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
 
 type LocationTypeFilterValue = KolamLocationListTypeFilter | '';
 
@@ -1144,49 +1146,53 @@ function KolamLocationList({
   return (
     <View style={styles.stack}>
       <View style={styles.toolbarWrap}>
-        <View style={styles.toolbarShell}>
-          <View style={styles.filterRow}>
-            <KolamFormTextField
-              onChangeText={next => {
-                setSearch(next);
-                setShouldSearchApi(false);
-                setPage(1);
-              }}
-              placeholder="Cari lokasi..."
-              style={styles.searchInput}
-              value={search}
-            />
-            <KolamTableFilterTrigger
-              active={activeFilterPanel === 'type' || Boolean(typeFilter)}
-              label={typeFilterLabel}
-              onPress={() =>
-                setActiveFilterPanel(current =>
-                  current === 'type' ? null : 'type',
-                )
-              }
-            />
-          </View>
-          <View style={styles.actionRow}>
-            {filtersAppliedCount > 0 ? (
-              <KolamButton
-                label="Reset"
-                muted
-                onPress={() => {
-                  setSearch('');
-                  setTypeFilter('');
+        <View style={kolamTableToolbarStyles.shell}>
+          <View style={kolamTableToolbarStyles.row}>
+            <View style={kolamTableToolbarStyles.filters}>
+              <KolamSearchField
+                containerStyle={kolamTableToolbarStyles.searchInput}
+                onChangeText={next => {
+                  setSearch(next);
                   setShouldSearchApi(false);
-                  setActiveFilterPanel(null);
                   setPage(1);
                 }}
+                placeholder="Cari lokasi..."
+                value={search}
+              />
+              <KolamTableFilterTrigger
+                active={activeFilterPanel === 'type' || Boolean(typeFilter)}
+                label={typeFilterLabel}
+                onPress={() =>
+                  setActiveFilterPanel(current =>
+                    current === 'type' ? null : 'type',
+                  )
+                }
+                open={activeFilterPanel === 'type'}
+                variant="quiet"
+              />
+            </View>
+            <View style={kolamTableToolbarStyles.actions}>
+              {filtersAppliedCount > 0 ? (
+                <KolamButton
+                  label="Reset"
+                  muted
+                  onPress={() => {
+                    setSearch('');
+                    setTypeFilter('');
+                    setShouldSearchApi(false);
+                    setActiveFilterPanel(null);
+                    setPage(1);
+                  }}
+                  style={styles.toolbarButton}
+                />
+              ) : null}
+              <KolamButton
+                intent="primary"
+                label="Baru"
+                onPress={() => onRouteChange?.('/locations/create')}
                 style={styles.toolbarButton}
               />
-            ) : null}
-            <KolamButton
-              intent="primary"
-              label="Baru"
-              onPress={() => onRouteChange?.('/locations/create')}
-              style={styles.toolbarButton}
-            />
+            </View>
           </View>
         </View>
         {activeFilterPanel === 'type' ? (
@@ -1976,45 +1982,6 @@ const styles = StyleSheet.create({
     overflow: 'visible',
     position: 'relative',
     zIndex: 100000,
-  },
-  toolbarShell: {
-    alignItems: 'center',
-    backgroundColor: V.colors.bg,
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    justifyContent: 'space-between',
-    overflow: 'visible',
-    padding: 4,
-  },
-  filterRow: {
-    alignItems: 'center',
-    flex: 1,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 4,
-    minWidth: 280,
-    overflow: 'visible',
-  },
-  actionRow: {
-    alignItems: 'center',
-    borderLeftColor: V.colors.border,
-    borderLeftWidth: 1,
-    flexDirection: 'row',
-    flexShrink: 0,
-    flexWrap: 'wrap',
-    gap: 6,
-    justifyContent: 'flex-end',
-    paddingLeft: 8,
-  },
-  searchInput: {
-    flexBasis: 140,
-    flexGrow: 1,
-    maxWidth: 240,
-    minWidth: 140,
   },
   toolbarButton: {
     flexShrink: 0,
