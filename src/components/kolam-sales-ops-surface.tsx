@@ -20,6 +20,11 @@ import {
   type KolamSalePaymentStatus,
   type KolamSaleStatusTransitionTarget,
 } from '../domain/kolam-sales';
+import {
+  getKolamTableColumns,
+  getKolamTableVisualContract,
+  type KolamTableColumn,
+} from '../domain/kolam-table';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { formatRupiah } from '../lib/money';
 import {
@@ -31,6 +36,13 @@ import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
+import {
+  getKolamDataTableColumnStyle,
+  KOLAM_DATA_TABLE_COLUMN_GAP,
+} from './kolam-data-table-column-style';
+import { KolamDataTableHeader } from './kolam-data-table-header';
+import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
+import { KolamDataTableMainTrack } from './kolam-data-table-tracks';
 import { KolamDateField } from './kolam-date-field';
 import { KolamDescriptionList } from './kolam-description-list';
 import {
@@ -42,6 +54,7 @@ import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamSalesOpsAnalyticsPanel } from './kolam-sales-ops-analytics-panel';
 import { KolamSalesOpsDetail } from './kolam-sales-ops-detail';
+import { KolamSearchField } from './kolam-search-field';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
@@ -49,15 +62,6 @@ import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 type SalesFilterPanel = 'lifecycle' | 'status' | 'delivery' | null;
 
 const FILTER_PANEL_WIDTH = 260;
-
-const LIST_COLUMNS = [
-  { id: 'invoice', label: 'Invoice', flex: 1.1 },
-  { id: 'buyer', label: 'Pembeli', flex: 1.2 },
-  { id: 'source', label: 'Sumber', flex: 0.9 },
-  { id: 'total', label: 'Total', flex: 0.9 },
-  { id: 'payment', label: 'Bayar', flex: 1 },
-  { id: 'delivery', label: 'Kirim', flex: 1 },
-] as const;
 
 const ITEM_TYPE_OPTIONS_FULL: Array<{
   label: string;
@@ -157,6 +161,7 @@ function KolamSalesOpsList({
   const [activeFilterPanel, setActiveFilterPanel] =
     useState<SalesFilterPanel>(null);
   const [panelAnchor, setPanelAnchor] = useState({ left: 0, top: 48 });
+  const [tableBodyWidth, setTableBodyWidth] = useState(0);
   const toolbarRef = React.useRef<View>(null);
   const lifecycleTriggerRef = React.useRef<View>(null);
   const statusTriggerRef = React.useRef<View>(null);
@@ -173,6 +178,20 @@ function KolamSalesOpsList({
     controller.filters.startDate,
     controller.filters.endDate,
   ].filter(Boolean).length;
+  const listColumns = useMemo(
+    () => fitSalesOpsListColumns(tableBodyWidth),
+    [tableBodyWidth],
+  );
+  const lifecycleFilterLabel =
+    KOLAM_SALE_LIFECYCLE_OPTIONS.find(
+      option => option.value === controller.filters.lifecycle,
+    )?.label ?? 'Berjalan';
+  const statusFilterLabel = controller.filters.status
+    ? formatKolamSalePaymentStatusLabel(controller.filters.status)
+    : 'Status bayar';
+  const deliveryFilterLabel = controller.filters.deliveryStatus
+    ? formatKolamSaleDeliveryStatusLabel(controller.filters.deliveryStatus)
+    : 'Pengiriman';
 
   React.useEffect(() => {
     setSearchInput(controller.filters.search);
@@ -236,133 +255,121 @@ function KolamSalesOpsList({
     requestAnimationFrame(() => anchorFilterPanel(activeFilterPanel));
   }, [activeFilterPanel, anchorFilterPanel]);
 
-  const renderRow = React.useCallback(
-    ({ item }: { item: KolamSale }) => (
-      <KolamSalesOpsRow
-        sale={item}
-        onSelect={() => {
-          controller.onSelectSale(item);
-          onRouteChange?.(`${KOLAM_SALES_ROOT}/${item.id}`);
-        }}
-      />
-    ),
-    [controller, onRouteChange],
-  );
-
   return (
     <View style={styles.listRoot}>
       <View ref={toolbarRef} style={styles.toolbarWrap}>
-        <View style={kolamTableToolbarStyles.row}>
-          <KolamFormTextField
-            onChangeText={setSearchInput}
-            placeholder="Cari invoice / pembeli"
-            style={kolamTableToolbarStyles.searchInput}
-            value={searchInput}
-          />
-          <View style={kolamTableToolbarStyles.controls}>
-            <View ref={lifecycleTriggerRef} collapsable={false}>
-              <KolamTableFilterTrigger
-                active={
-                  activeFilterPanel === 'lifecycle' ||
-                  controller.filters.lifecycle !== 'active'
-                }
-                label={
-                  KOLAM_SALE_LIFECYCLE_OPTIONS.find(
-                    option => option.value === controller.filters.lifecycle,
-                  )?.label ?? 'Berjalan'
-                }
-                onPress={() => toggleFilterPanel('lifecycle')}
+        <View style={kolamTableToolbarStyles.shell}>
+          <View style={kolamTableToolbarStyles.row}>
+            <View style={kolamTableToolbarStyles.filters}>
+              <KolamSearchField
+                containerStyle={kolamTableToolbarStyles.searchInput}
+                onChangeText={setSearchInput}
+                placeholder="Cari invoice / pembeli"
+                value={searchInput}
               />
-            </View>
-            <View ref={statusTriggerRef} collapsable={false}>
-              <KolamTableFilterTrigger
-                active={
-                  activeFilterPanel === 'status' ||
-                  Boolean(controller.filters.status)
+              <View ref={lifecycleTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={
+                    activeFilterPanel === 'lifecycle' ||
+                    controller.filters.lifecycle !== 'active'
+                  }
+                  label={lifecycleFilterLabel}
+                  onPress={() => toggleFilterPanel('lifecycle')}
+                  open={activeFilterPanel === 'lifecycle'}
+                  variant="quiet"
+                />
+              </View>
+              <View ref={statusTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={
+                    activeFilterPanel === 'status' ||
+                    Boolean(controller.filters.status)
+                  }
+                  label={statusFilterLabel}
+                  onPress={() => toggleFilterPanel('status')}
+                  open={activeFilterPanel === 'status'}
+                  variant="quiet"
+                />
+              </View>
+              <View ref={deliveryTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={
+                    activeFilterPanel === 'delivery' ||
+                    Boolean(controller.filters.deliveryStatus)
+                  }
+                  label={deliveryFilterLabel}
+                  onPress={() => toggleFilterPanel('delivery')}
+                  open={activeFilterPanel === 'delivery'}
+                  variant="quiet"
+                />
+              </View>
+              <KolamDateField
+                accessibilityLabel="Tanggal mulai"
+                label="Dari"
+                onChange={value =>
+                  controller.onChangeFilters({ startDate: value })
                 }
-                label={
-                  controller.filters.status
-                    ? formatKolamSalePaymentStatusLabel(controller.filters.status)
-                    : 'Status bayar'
-                }
-                onPress={() => toggleFilterPanel('status')}
+                placeholder="Dari"
+                showLabelInTrigger={false}
+                style={styles.dateField}
+                value={controller.filters.startDate}
               />
-            </View>
-            <View ref={deliveryTriggerRef} collapsable={false}>
-              <KolamTableFilterTrigger
-                active={
-                  activeFilterPanel === 'delivery' ||
-                  Boolean(controller.filters.deliveryStatus)
-                }
-                label={
-                  controller.filters.deliveryStatus
-                    ? formatKolamSaleDeliveryStatusLabel(
-                        controller.filters.deliveryStatus,
-                      )
-                    : 'Pengiriman'
-                }
-                onPress={() => toggleFilterPanel('delivery')}
+              <KolamDateField
+                accessibilityLabel="Tanggal sampai"
+                label="Sampai"
+                onChange={value => controller.onChangeFilters({ endDate: value })}
+                placeholder="Sampai"
+                showLabelInTrigger={false}
+                style={styles.dateField}
+                value={controller.filters.endDate}
               />
-            </View>
-            <KolamDateField
-              accessibilityLabel="Tanggal mulai"
-              label="Dari"
-              onChange={value =>
-                controller.onChangeFilters({ startDate: value })
-              }
-              placeholder="Dari"
-              showLabelInTrigger={false}
-              style={styles.dateField}
-              value={controller.filters.startDate}
-            />
-            <KolamDateField
-              accessibilityLabel="Tanggal sampai"
-              label="Sampai"
-              onChange={value => controller.onChangeFilters({ endDate: value })}
-              placeholder="Sampai"
-              showLabelInTrigger={false}
-              style={styles.dateField}
-              value={controller.filters.endDate}
-            />
-            <KolamButton
-              intent={controller.filters.needsAction ? 'primary' : 'outline'}
-              label="Perlu aksi"
-              onPress={() =>
-                controller.onChangeFilters({
-                  needsAction: !controller.filters.needsAction,
-                })
-              }
-            />
-            {filtersAppliedCount > 0 ? (
               <KolamButton
-                label="Reset"
-                muted
-                onPress={() => {
-                  setSearchInput('');
-                  setActiveFilterPanel(null);
-                  controller.onClearFilters();
-                }}
+                intent={controller.filters.needsAction ? 'primary' : 'outline'}
+                label="Perlu aksi"
+                onPress={() =>
+                  controller.onChangeFilters({
+                    needsAction: !controller.filters.needsAction,
+                  })
+                }
+                style={styles.toolbarButton}
               />
-            ) : null}
-            <KolamButton
-              disabled={controller.exporting}
-              label={controller.exporting ? 'Mengeksporâ€¦' : 'Export'}
-              onPress={() => {
-                void controller.onExportList();
-              }}
-            />
-            <KolamButton
-              disabled={controller.loading}
-              label="Refresh"
-              onPress={() => {
-                void controller.onRefresh();
-              }}
-            />
-            <KolamButton
-              intent="primary"
-              label="Baru"
-              onPress={() => onRouteChange?.(`${KOLAM_SALES_ROOT}/create`)}
-            />
+            </View>
+            <View style={kolamTableToolbarStyles.actions}>
+              {filtersAppliedCount > 0 ? (
+                <KolamButton
+                  label="Reset"
+                  muted
+                  onPress={() => {
+                    setSearchInput('');
+                    setActiveFilterPanel(null);
+                    controller.onClearFilters();
+                  }}
+                  style={styles.toolbarButton}
+                />
+              ) : null}
+              <KolamButton
+                disabled={controller.exporting}
+                label={controller.exporting ? 'Mengekspor…' : 'Export'}
+                onPress={() => {
+                  void controller.onExportList();
+                }}
+                style={styles.toolbarButton}
+              />
+              <KolamButton
+                disabled={controller.loading}
+                label="Refresh"
+                onPress={() => {
+                  void controller.onRefresh();
+                }}
+                style={styles.toolbarButton}
+              />
+              <KolamButton
+                intent="primary"
+                label="Baru"
+                onPress={() => onRouteChange?.(`${KOLAM_SALES_ROOT}/create`)}
+                style={styles.toolbarButton}
+              />
+            </View>
           </View>
         </View>
 
@@ -453,116 +460,168 @@ function KolamSalesOpsList({
             ) : null}
           </KolamTableFooterControls>
         }
+        onBodyWidthChange={setTableBodyWidth}
         style={styles.tableFrame}
       >
-        <FlatList
-          contentContainerStyle={styles.listContent}
-          data={controller.sales}
-          extraData={controller.sales}
-          keyExtractor={item => item.id}
-          ListEmptyComponent={
-            <View style={styles.emptyWrap}>
-              <KolamEmptyState
-                compact
-                message={
-                  controller.loading
-                    ? 'Mengambil daftar dari server Kolam.'
-                    : filtersAppliedCount > 0
-                      ? `Coba ubah filter atau kata kunci. (total server: ${controller.pagination.total}, sumber: ${controller.dataSource})`
-                      : `Belum ada invoice pada tampilan ini. (total server: ${controller.pagination.total}, sumber: ${controller.dataSource})`
-                }
-                title={
-                  controller.loading
-                    ? 'Memuat penjualanâ€¦'
-                    : 'Belum ada penjualan'
-                }
-              />
-            </View>
-          }
-          ListHeaderComponent={
-            <View style={styles.headerRow}>
-              {LIST_COLUMNS.map(column => (
-                <View
-                  key={column.id}
-                  style={[styles.cell, { flex: column.flex }]}
-                >
-                  <Text style={styles.headerCellText}>{column.label}</Text>
-                </View>
-              ))}
-            </View>
-          }
-          renderItem={renderRow}
-          style={styles.listFlatList}
-        />
+        <KolamDataTableHeader columns={listColumns} />
+        {controller.sales.length ? (
+          controller.sales.map(item => (
+            <KolamSalesOpsRow
+              columns={listColumns}
+              key={item.id}
+              onSelect={() => {
+                controller.onSelectSale(item);
+                onRouteChange?.(`${KOLAM_SALES_ROOT}/${item.id}`);
+              }}
+              sale={item}
+            />
+          ))
+        ) : (
+          <View style={styles.emptyWrap}>
+            <KolamEmptyState
+              compact
+              message={
+                controller.loading
+                  ? 'Mengambil daftar dari server Kolam.'
+                  : filtersAppliedCount > 0
+                    ? `Coba ubah filter atau kata kunci. (total server: ${controller.pagination.total}, sumber: ${controller.dataSource})`
+                    : `Belum ada invoice pada tampilan ini. (total server: ${controller.pagination.total}, sumber: ${controller.dataSource})`
+              }
+              title={
+                controller.loading
+                  ? 'Memuat penjualan…'
+                  : 'Belum ada penjualan'
+              }
+            />
+          </View>
+        )}
       </KolamCatalogListTableShell>
     </View>
   );
 }
 
 function KolamSalesOpsRow({
-  sale,
+  columns,
   onSelect,
+  sale,
 }: {
-  sale: KolamSale;
+  columns: ReturnType<typeof getKolamTableColumns>;
   onSelect: () => void;
+  sale: KolamSale;
 }) {
+  const columnOf = React.useCallback(
+    (id: (typeof columns)[number]['id']) => columns.find(column => column.id === id),
+    [columns],
+  );
+  const primaryColumn = columnOf('primary');
+  const metaColumn = columnOf('meta');
+  const childrenColumn = columnOf('children');
+  const amountColumn = columnOf('amount');
+  const statusColumn = columnOf('status');
+  const marketplaceColumn = columnOf('marketplace');
+
   return (
-    <Pressable onPress={onSelect} style={styles.row}>
-      <View style={[styles.cell, { flex: LIST_COLUMNS[0].flex }]}>
-        <Text numberOfLines={1} style={styles.invoiceCode}>
-          {sale.invoiceCode}
-        </Text>
-        <Text numberOfLines={1} style={styles.metaText}>
-          {formatShortDate(sale.transactionDate || sale.createdAt)}
-        </Text>
-      </View>
-      <View style={[styles.cell, { flex: LIST_COLUMNS[1].flex }]}>
-        <Text numberOfLines={1} style={styles.primaryText}>
-          {sale.buyerLabel}
-        </Text>
-        <Text numberOfLines={1} style={styles.metaText}>
-          {sale.items.length} item
-        </Text>
-      </View>
-      <View
-        style={[styles.cell, styles.sourceCell, { flex: LIST_COLUMNS[2].flex }]}
-      >
-        {sale.sourceRef?.logoUri ? (
-          <KolamRemoteImage
-            accessibilityLabel={sale.sourceRef.name}
-            sourceUri={sale.sourceRef.logoUri}
-            style={styles.sourceLogo}
-          />
-        ) : null}
-        <Text numberOfLines={2} style={styles.primaryText}>
-          {sale.sourceRef?.name || 'â€”'}
-        </Text>
-      </View>
-      <View style={[styles.cell, { flex: LIST_COLUMNS[3].flex }]}>
-        <Text numberOfLines={1} style={styles.primaryText}>
-          {formatRupiah(sale.finalTotal)}
-        </Text>
-      </View>
-      <View style={[styles.cell, { flex: LIST_COLUMNS[4].flex }]}>
-        <KolamStatusBadge
-          intent={getKolamSalePaymentStatusIntent(sale.status)}
-          label={formatKolamSalePaymentStatusLabel(sale.status)}
-          numberOfLines={2}
-        />
-      </View>
-      <View style={[styles.cell, { flex: LIST_COLUMNS[5].flex }]}>
-        <KolamStatusBadge
-          intent={getKolamSaleDeliveryStatusIntent(
-            sale.deliveryStatus,
-            sale.status,
-          )}
-          label={formatKolamSaleDeliveryStatusLabel(
-            sale.deliveryStatus,
-            sale.status,
-          )}
-          numberOfLines={2}
-        />
-      </View>
+    <Pressable onPress={onSelect}>
+      <KolamDataTableRowFrame>
+        <KolamDataTableMainTrack>
+          <View
+            style={[
+              styles.listCell,
+              styles.identityCell,
+              primaryColumn ? getKolamDataTableColumnStyle(primaryColumn) : null,
+            ]}
+          >
+            <Text numberOfLines={1} style={styles.invoiceCode}>
+              {sale.invoiceCode}
+            </Text>
+            <Text numberOfLines={1} style={styles.metaText}>
+              {formatShortDate(sale.transactionDate || sale.createdAt)}
+            </Text>
+          </View>
+
+          <View
+            style={[
+              styles.listCell,
+              metaColumn ? getKolamDataTableColumnStyle(metaColumn) : null,
+            ]}
+          >
+            <Text numberOfLines={1} style={styles.primaryText}>
+              {sale.buyerLabel}
+            </Text>
+            <Text numberOfLines={1} style={styles.metaText}>
+              {sale.items.length} item
+            </Text>
+          </View>
+
+          <View
+            style={[
+              styles.listCell,
+              styles.sourceCell,
+              childrenColumn ? getKolamDataTableColumnStyle(childrenColumn) : null,
+            ]}
+          >
+            {sale.sourceRef?.logoUri ? (
+              <KolamRemoteImage
+                accessibilityLabel={sale.sourceRef.name}
+                sourceUri={sale.sourceRef.logoUri}
+                style={styles.sourceLogo}
+              />
+            ) : null}
+            <Text numberOfLines={2} style={styles.primaryText}>
+              {sale.sourceRef?.name || '—'}
+            </Text>
+          </View>
+
+          <View
+            style={[
+              styles.listCell,
+              amountColumn ? getKolamDataTableColumnStyle(amountColumn) : null,
+            ]}
+          >
+            <Text numberOfLines={1} style={styles.primaryText}>
+              {formatRupiah(sale.finalTotal)}
+            </Text>
+          </View>
+
+          <View
+            style={[
+              styles.listCell,
+              styles.statusCell,
+              statusColumn ? getKolamDataTableColumnStyle(statusColumn) : null,
+            ]}
+          >
+            <KolamStatusBadge
+              intent={getKolamSalePaymentStatusIntent(sale.status)}
+              label={formatKolamSalePaymentStatusLabel(sale.status)}
+              numberOfLines={2}
+              style={styles.centerBadge}
+            />
+          </View>
+
+          <View
+            style={[
+              styles.listCell,
+              styles.statusCell,
+              marketplaceColumn
+                ? getKolamDataTableColumnStyle(marketplaceColumn)
+                : null,
+            ]}
+          >
+            <KolamStatusBadge
+              intent={getKolamSaleDeliveryStatusIntent(
+                sale.deliveryStatus,
+                sale.status,
+              )}
+              label={formatKolamSaleDeliveryStatusLabel(
+                sale.deliveryStatus,
+                sale.status,
+              )}
+              numberOfLines={2}
+              style={styles.centerBadge}
+            />
+          </View>
+        </KolamDataTableMainTrack>
+      </KolamDataTableRowFrame>
     </Pressable>
   );
 }
@@ -602,34 +661,42 @@ function KolamSalesOpsCreateForm({
     : ITEM_TYPE_OPTIONS_FULL;
 
   return (
-    <ScrollView
-      contentContainerStyle={styles.formContent}
-      style={styles.formRoot}
-    >
-      <View style={styles.detailHeader}>
-        <View>
-          <Text style={styles.detailTitle}>{title}</Text>
-          <Text style={styles.detailSubtitle}>{subtitle}</Text>
-        </View>
-        <View style={styles.headerActions}>
-          <KolamButton
-            label="Batal"
-            onPress={() => onRouteChange?.(backRoute)}
-          />
-          <KolamButton
-            disabled={controller.mutating || controller.optionsLoading}
-            intent="primary"
-            label={controller.mutating ? 'Menyimpanâ€¦' : 'Simpan'}
-            onPress={() => {
-              void controller.onSave().then(id => {
-                if (id) {
-                  onRouteChange?.(`${KOLAM_SALES_ROOT}/${id}`);
-                }
-              });
-            }}
-          />
+    <View style={styles.formRoot}>
+      <View style={kolamTableToolbarStyles.shell}>
+        <View style={kolamTableToolbarStyles.row}>
+          <View style={kolamTableToolbarStyles.filters}>
+            <Text numberOfLines={1} style={styles.detailToolbarContext}>
+              {title}
+            </Text>
+          </View>
+          <View style={kolamTableToolbarStyles.actions}>
+            <KolamButton
+              label="Batal"
+              onPress={() => onRouteChange?.(backRoute)}
+              style={styles.toolbarButton}
+            />
+            <KolamButton
+              disabled={controller.mutating || controller.optionsLoading}
+              intent="primary"
+              label={controller.mutating ? 'Menyimpan…' : 'Simpan'}
+              onPress={() => {
+                void controller.onSave().then(id => {
+                  if (id) {
+                    onRouteChange?.(`${KOLAM_SALES_ROOT}/${id}`);
+                  }
+                });
+              }}
+              style={styles.toolbarButton}
+            />
+          </View>
         </View>
       </View>
+
+      <ScrollView
+        contentContainerStyle={styles.formContent}
+        style={styles.formScroll}
+      >
+        <Text style={styles.detailSubtitle}>{subtitle}</Text>
 
       <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
         <Text style={styles.sectionTitle}>Data utama</Text>
@@ -641,14 +708,14 @@ function KolamSalesOpsCreateForm({
                 label="Sumber"
                 onChange={sourceRefId => controller.onChangeForm({ sourceRefId })}
                 options={[
-                  { label: 'Pilih sumberâ€¦', value: '' },
+                  { label: 'Pilih sumber…', value: '' },
                   ...controller.sources.map(source => ({
                     label: `${source.name} (${source.type})`,
                     value: source.id,
                   })),
                 ]}
                 searchable
-                searchPlaceholder="Cari sumberâ€¦"
+                searchPlaceholder="Cari sumber…"
                 value={form.sourceRefId}
               />
             </FieldShell>
@@ -668,14 +735,14 @@ function KolamSalesOpsCreateForm({
                   label="Pelanggan"
                   onChange={customerId => controller.onChangeForm({ customerId })}
                   options={[
-                    { label: 'Pilih pelangganâ€¦', value: '' },
+                    { label: 'Pilih pelanggan…', value: '' },
                     ...controller.filteredCustomers.map(customer => ({
                       label: customer.name,
                       value: customer.id,
                     })),
                   ]}
                   searchable
-                  searchPlaceholder="Cari pelangganâ€¦"
+                  searchPlaceholder="Cari pelanggan…"
                   value={form.customerId}
                 />
               </FieldShell>
@@ -743,14 +810,14 @@ function KolamSalesOpsCreateForm({
                   controller.onChangeForm({ paymentMethodId })
                 }
                 options={[
-                  { label: 'Pilih metodeâ€¦', value: '' },
+                  { label: 'Pilih metode…', value: '' },
                   ...controller.filteredPaymentMethods.map(method => ({
                     label: method.name,
                     value: method.id,
                   })),
                 ]}
                 searchable
-                searchPlaceholder="Cari metodeâ€¦"
+                searchPlaceholder="Cari metode…"
                 value={form.paymentMethodId}
               />
             </FieldShell>
@@ -819,7 +886,7 @@ function KolamSalesOpsCreateForm({
         </View>
 
         {controller.optionsLoading ? (
-          <Text style={styles.detailSubtitle}>Memuat opsi formâ€¦</Text>
+          <Text style={styles.detailSubtitle}>Memuat opsi form…</Text>
         ) : null}
       </KolamContentFrame>
 
@@ -885,7 +952,7 @@ function KolamSalesOpsCreateForm({
                     controller.onChangeCreateItem(item.key, { productId })
                   }
                   options={[
-                    { label: 'Pilih produkâ€¦', value: '' },
+                    { label: 'Pilih produk…', value: '' },
                     ...controller.products.map(product => ({
                       label: product.sku
                         ? `${product.name} (${product.sku})`
@@ -894,7 +961,7 @@ function KolamSalesOpsCreateForm({
                     })),
                   ]}
                   searchable
-                  searchPlaceholder="Cari produkâ€¦"
+                  searchPlaceholder="Cari produk…"
                   value={item.productId}
                 />
               </FieldShell>
@@ -909,7 +976,7 @@ function KolamSalesOpsCreateForm({
                     controller.onChangeCreateItem(item.key, { speciesId })
                   }
                   options={[
-                    { label: 'Pilih spesiesâ€¦', value: '' },
+                    { label: 'Pilih spesies…', value: '' },
                     ...controller.species.map(row => ({
                       label:
                         row.displayName ||
@@ -920,7 +987,7 @@ function KolamSalesOpsCreateForm({
                     })),
                   ]}
                   searchable
-                  searchPlaceholder="Cari spesiesâ€¦"
+                  searchPlaceholder="Cari spesies…"
                   value={item.speciesId}
                 />
               </FieldShell>
@@ -935,14 +1002,14 @@ function KolamSalesOpsCreateForm({
                     controller.onChangeCreateItem(item.key, { serviceId })
                   }
                   options={[
-                    { label: 'Pilih layananâ€¦', value: '' },
+                    { label: 'Pilih layanan…', value: '' },
                     ...controller.services.map(service => ({
                       label: service.name,
                       value: service.id,
                     })),
                   ]}
                   searchable
-                  searchPlaceholder="Cari layananâ€¦"
+                  searchPlaceholder="Cari layanan…"
                   value={item.serviceId}
                 />
               </FieldShell>
@@ -957,14 +1024,14 @@ function KolamSalesOpsCreateForm({
                     controller.onChangeCreateItem(item.key, { enclosureId })
                   }
                   options={[
-                    { label: 'Pilih enclosureâ€¦', value: '' },
+                    { label: 'Pilih enclosure…', value: '' },
                     ...controller.enclosures.map(enclosure => ({
                       label: enclosure.name,
                       value: enclosure.id,
                     })),
                   ]}
                   searchable
-                  searchPlaceholder="Cari enclosureâ€¦"
+                  searchPlaceholder="Cari enclosure…"
                   value={item.enclosureId}
                 />
               </FieldShell>
@@ -1104,6 +1171,7 @@ function KolamSalesOpsCreateForm({
         )}
       </KolamContentFrame>
     </ScrollView>
+    </View>
   );
 }
 
@@ -1191,21 +1259,28 @@ function KolamSalesOpsApproval({
 
   return (
     <View style={styles.approvalRoot}>
-      <View style={styles.approvalToolbar}>
-        <View>
-          <Text style={styles.sectionTitle}>Persetujuan diskon</Text>
-          <Text style={styles.metaText}>
-            Invoice dengan status Menunggu persetujuan finance.
-          </Text>
+      <View style={kolamTableToolbarStyles.shell}>
+        <View style={kolamTableToolbarStyles.row}>
+          <View style={kolamTableToolbarStyles.filters}>
+            <Text numberOfLines={1} style={styles.detailToolbarContext}>
+              Persetujuan diskon
+            </Text>
+          </View>
+          <View style={kolamTableToolbarStyles.actions}>
+            <KolamButton
+              disabled={controller.loading}
+              label="Refresh"
+              onPress={() => {
+                void controller.onRefresh();
+              }}
+              style={styles.toolbarButton}
+            />
+          </View>
         </View>
-        <KolamButton
-          disabled={controller.loading}
-          label="Refresh"
-          onPress={() => {
-            void controller.onRefresh();
-          }}
-        />
       </View>
+      <Text style={styles.metaText}>
+        Invoice dengan status Menunggu persetujuan finance.
+      </Text>
 
       <FlatList
         contentContainerStyle={styles.approvalListContent}
@@ -1221,7 +1296,7 @@ function KolamSalesOpsApproval({
                   : 'Tidak ada invoice yang menunggu persetujuan diskon.'
               }
               title={
-                controller.loading ? 'Memuatâ€¦' : 'Semua invoice sudah diproses'
+                controller.loading ? 'Memuat…' : 'Semua invoice sudah diproses'
               }
             />
           </View>
@@ -1329,7 +1404,7 @@ function FilterPanel({
 
 function formatShortDate(value: string) {
   if (!value) {
-    return 'â€”';
+    return '—';
   }
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
@@ -1342,48 +1417,70 @@ function formatShortDate(value: string) {
   });
 }
 
-function formatShortDateTime(value: string) {
-  if (!value) {
-    return '';
+function fitSalesOpsListColumns(containerWidth: number): KolamTableColumn[] {
+  const base = getKolamTableColumns('sales-ops');
+  if (containerWidth <= 0) {
+    return base;
   }
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-  return date.toLocaleString('id-ID', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
+
+  const gap = KOLAM_DATA_TABLE_COLUMN_GAP;
+  const paddingX = getKolamTableVisualContract().body.cellPaddingX * 2;
+  const gapsTotal = gap * Math.max(0, base.length - 1);
+  const contentBudget = Math.max(0, containerWidth - paddingX - gapsTotal);
+  const equalWidth = Math.max(
+    72,
+    Math.floor(contentBudget / Math.max(1, base.length)),
+  );
+  let remainder = contentBudget - equalWidth * base.length;
+  const lastId = base[base.length - 1]?.id;
+
+  return base.map(column => {
+    const extra = column.id === lastId ? remainder : 0;
+    if (column.id === lastId) {
+      remainder = 0;
+    }
+    return {
+      ...column,
+      width: equalWidth + extra,
+    };
   });
 }
 
 const styles = StyleSheet.create({
   surface: {
-    flex: 1,
-    minHeight: 0,
-    gap: 12,
+    gap: 14,
   },
   listSurface: {
-    flex: 1,
-    minHeight: 0,
+    gap: 14,
     overflow: 'visible',
   },
   listRoot: {
-    flex: 1,
-    minHeight: 0,
-    gap: 12,
+    gap: 14,
     overflow: 'visible',
   },
   banner: {
-    alignSelf: 'flex-start',
+    alignSelf: 'stretch',
   },
   toolbarWrap: {
     elevation: 1000,
     overflow: 'visible',
     position: 'relative',
     zIndex: 100000,
+  },
+  toolbarButton: {
+    flexShrink: 0,
+    minHeight: 34,
+    paddingHorizontal: 10,
+  },
+  detailToolbarContext: {
+    color: V.colors.fg,
+    flexShrink: 1,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+    minWidth: 0,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
   },
   dateField: {
     maxWidth: 140,
@@ -1425,47 +1522,28 @@ const styles = StyleSheet.create({
     overflow: 'visible',
     zIndex: 2,
   },
-  listFlatList: {
-    flexGrow: 0,
-    overflow: 'visible',
-  },
-  listContent: {
-    flexGrow: 0,
-    overflow: 'visible',
-  },
   emptyWrap: {
     paddingVertical: 24,
   },
-  headerRow: {
-    backgroundColor: V.colors.tableHeader,
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    flexDirection: 'row',
-    gap: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 10,
-  },
-  headerCellText: {
-    color: V.colors.mutedFg,
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  row: {
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    flexDirection: 'row',
-    gap: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 10,
-  },
-  cell: {
+  listCell: {
     gap: 2,
+    justifyContent: 'center',
     minWidth: 0,
+  },
+  identityCell: {
+    alignItems: 'flex-start',
+  },
+  statusCell: {
+    alignItems: 'center',
+  },
+  centerBadge: {
+    alignSelf: 'center',
   },
   sourceCell: {
     alignItems: 'center',
     flexDirection: 'row',
     gap: 6,
+    justifyContent: 'center',
   },
   sourceLogo: {
     borderRadius: 4,
@@ -1579,7 +1657,10 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   formRoot: {
-    flex: 1,
+    gap: 14,
+  },
+  formScroll: {
+    flexGrow: 0,
   },
   formContent: {
     gap: 12,
@@ -1603,41 +1684,21 @@ const styles = StyleSheet.create({
   },
   formSplitCell: {
     flexGrow: 1,
-    minWidth: 220,
-  },
-  createItemCard: {
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: StyleSheet.hairlineWidth,
-    gap: 8,
-    padding: 12,
-  },
-  itemCardTitle: {
-    color: V.colors.fg,
-    fontSize: 14,
-    fontWeight: '600',
+    flexShrink: 1,
+    minWidth: 160,
   },
   approvalRoot: {
-    flex: 1,
     gap: 12,
-    minHeight: 0,
-  },
-  approvalToolbar: {
-    alignItems: 'flex-start',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    justifyContent: 'space-between',
   },
   approvalListContent: {
     gap: 10,
-    paddingBottom: 24,
+    paddingBottom: 16,
   },
   approvalCard: {
     borderColor: V.colors.border,
     borderRadius: 8,
-    borderWidth: StyleSheet.hairlineWidth,
-    gap: 8,
+    borderWidth: 1,
+    gap: 10,
     padding: 12,
   },
   approvalRowHeader: {
@@ -1650,5 +1711,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+  },
+  createItemCard: {
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    gap: 8,
+    padding: 12,
+  },
+  itemCardTitle: {
+    color: V.colors.fg,
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

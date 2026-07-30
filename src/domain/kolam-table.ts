@@ -18,6 +18,7 @@ export type KolamTableId =
   | 'purchase-order-items'
   | 'purchase-order-form-items'
   | 'sales'
+  | 'sales-ops'
   | 'species'
   | 'supplier'
   | 'supplier-catalog'
@@ -1036,6 +1037,50 @@ const kolamTableColumns: Record<KolamTableId, KolamTableColumn[]> = {
     { id: 'meta', label: 'Status', align: 'left', width: 92 },
     { id: 'amount', label: 'Total', align: 'right', width: 150 },
     { id: 'actions', label: 'Actions', align: 'right', width: 180 },
+  ],
+  /** Backoffice `/sales` list (FE Invoice/Pembeli/Sumber/…); not POS Sales Terbaru. */
+  'sales-ops': [
+    {
+      id: 'primary',
+      label: 'Invoice',
+      align: 'left',
+      headerAlign: 'center',
+    },
+    {
+      id: 'meta',
+      label: 'Pembeli',
+      align: 'center',
+      headerAlign: 'center',
+      width: 160,
+    },
+    {
+      id: 'children',
+      label: 'Sumber',
+      align: 'center',
+      headerAlign: 'center',
+      width: 120,
+    },
+    {
+      id: 'amount',
+      label: 'Total',
+      align: 'center',
+      headerAlign: 'center',
+      width: 120,
+    },
+    {
+      id: 'status',
+      label: 'Bayar',
+      align: 'center',
+      headerAlign: 'center',
+      width: 110,
+    },
+    {
+      id: 'marketplace',
+      label: 'Kirim',
+      align: 'center',
+      headerAlign: 'center',
+      width: 110,
+    },
   ],
 };
 

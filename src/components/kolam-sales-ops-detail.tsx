@@ -60,6 +60,7 @@ import { KolamDescriptionList } from './kolam-description-list';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamStatusBadge } from './kolam-status-badge';
+import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 
 /**
  * FE `SalesInvoice` Batch A: header, status strip, 2-col info/items | shipping/history,
@@ -154,89 +155,100 @@ export function KolamSalesOpsDetail({
   const buyerEmail = sale.customer?.email || sale.buyerInfo?.email || '';
 
   return (
-    <ScrollView
-      contentContainerStyle={styles.detailContent}
-      style={styles.detailRoot}
-    >
-      <View style={styles.detailHeader}>
-        <KolamCopyStack
-          items={[
-            {
-              id: 'title',
-              text: sale.invoiceCode,
-              style: styles.detailTitle,
-            },
-            {
-              id: 'buyer',
-              text: sale.buyerLabel,
-              style: styles.detailSubtitle,
-            },
-            ...(sale.openLivestockPendingCount > 0
-              ? [
-                  {
-                    id: 'livestock',
-                    text: `${sale.openLivestockPendingCount} species perlu atur enclosure`,
-                    style: styles.warningHint,
-                  },
-                ]
-              : []),
-          ]}
-        />
-        <View style={styles.headerActions}>
-          <KolamButton
-            label="Kembali"
-            onPress={() => onRouteChange?.(KOLAM_SALES_ROOT)}
-          />
-          <KolamButton
-            disabled={controller.loading || controller.mutating}
-            label="Refresh"
-            onPress={() => {
-              void controller.onRefresh();
-            }}
-          />
-          {canShowKolamSaleEditAction(sale) ? (
+    <View style={styles.detailSurface}>
+      <View style={kolamTableToolbarStyles.shell}>
+        <View style={kolamTableToolbarStyles.row}>
+          <View style={kolamTableToolbarStyles.filters}>
+            <Text numberOfLines={1} style={styles.detailToolbarContext}>
+              {sale.invoiceCode}
+            </Text>
+          </View>
+          <View style={kolamTableToolbarStyles.actions}>
             <KolamButton
-              label="Ubah"
-              onPress={() =>
-                onRouteChange?.(`${KOLAM_SALES_ROOT}/${sale.id}/edit`)
-              }
+              label="Daftar"
+              onPress={() => onRouteChange?.(KOLAM_SALES_ROOT)}
+              style={styles.toolbarButton}
             />
-          ) : null}
-          {canAddItemsToKolamSale(sale) ? (
             <KolamButton
-              label="Tambah item"
-              onPress={() =>
-                onRouteChange?.(
-                  `${KOLAM_SALES_ROOT}/${sale.id}/edit?mode=add-items`,
-                )
-              }
+              disabled={controller.loading || controller.mutating}
+              label="Refresh"
+              onPress={() => {
+                void controller.onRefresh();
+              }}
+              style={styles.toolbarButton}
             />
-          ) : null}
-          <KolamButton
-            disabled={controller.downloadingInvoice || controller.mutating}
-            intent="primary"
-            label={
-              controller.downloadingInvoice
-                ? 'Mengunduh…'
-                : 'Unduh invoice PDF'
-            }
-            onPress={() => {
-              void controller.onDownloadInvoice();
-            }}
-          />
-          {showResi ? (
+            {canShowKolamSaleEditAction(sale) ? (
+              <KolamButton
+                label="Ubah"
+                onPress={() =>
+                  onRouteChange?.(`${KOLAM_SALES_ROOT}/${sale.id}/edit`)
+                }
+                style={styles.toolbarButton}
+              />
+            ) : null}
+            {canAddItemsToKolamSale(sale) ? (
+              <KolamButton
+                label="Tambah item"
+                onPress={() =>
+                  onRouteChange?.(
+                    `${KOLAM_SALES_ROOT}/${sale.id}/edit?mode=add-items`,
+                  )
+                }
+                style={styles.toolbarButton}
+              />
+            ) : null}
             <KolamButton
               disabled={controller.downloadingInvoice || controller.mutating}
+              intent="primary"
               label={
-                controller.downloadingInvoice ? 'Mengunduh…' : 'Unduh resi'
+                controller.downloadingInvoice
+                  ? 'Mengunduh…'
+                  : 'Unduh invoice PDF'
               }
               onPress={() => {
-                void controller.onDownloadResi();
+                void controller.onDownloadInvoice();
               }}
+              style={styles.toolbarButton}
             />
-          ) : null}
+            {showResi ? (
+              <KolamButton
+                disabled={controller.downloadingInvoice || controller.mutating}
+                label={
+                  controller.downloadingInvoice ? 'Mengunduh…' : 'Unduh resi'
+                }
+                onPress={() => {
+                  void controller.onDownloadResi();
+                }}
+                style={styles.toolbarButton}
+              />
+            ) : null}
+          </View>
         </View>
       </View>
+
+      <KolamCopyStack
+        items={[
+          {
+            id: 'buyer',
+            text: sale.buyerLabel,
+            style: styles.detailSubtitle,
+          },
+          ...(sale.openLivestockPendingCount > 0
+            ? [
+                {
+                  id: 'livestock',
+                  text: `${sale.openLivestockPendingCount} species perlu atur enclosure`,
+                  style: styles.warningHint,
+                },
+              ]
+            : []),
+        ]}
+      />
+
+      <ScrollView
+        contentContainerStyle={styles.detailContent}
+        style={styles.detailRoot}
+      >
 
       <KolamCardFrame style={styles.stripCard} variant="compact">
         <View style={styles.stripRow}>
@@ -970,6 +982,7 @@ export function KolamSalesOpsDetail({
           ) : null}
         </View>
       </View>
+    </ScrollView>
 
       <KolamConfirmDialog
         cancelLabel="Batal"
@@ -1014,7 +1027,7 @@ export function KolamSalesOpsDetail({
         title="Konfirmasi pengiriman"
         visible={Boolean(pendingDelivery)}
       />
-    </ScrollView>
+    </View>
   );
 }
 
@@ -1181,9 +1194,26 @@ function formatShortDateTime(value: string) {
 }
 
 const styles = StyleSheet.create({
+  detailSurface: {
+    gap: 14,
+  },
+  detailToolbarContext: {
+    color: V.colors.fg,
+    flexShrink: 1,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+    minWidth: 0,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+  },
+  toolbarButton: {
+    flexShrink: 0,
+    minHeight: 34,
+    paddingHorizontal: 10,
+  },
   detailRoot: {
-    flex: 1,
-    minHeight: 0,
+    flexGrow: 0,
   },
   detailContent: {
     gap: 12,
