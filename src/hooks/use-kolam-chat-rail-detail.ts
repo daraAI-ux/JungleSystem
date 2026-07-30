@@ -1,6 +1,7 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
 import type {KolamGlobalChatRailMode} from '../components/kolam-global-chat-rail';
 import {
+  attachKolamChatMarketplaceProduct,
   assignKolamChatConversation,
   declineKolamTeamChatCall,
   endKolamTeamChatCall,
@@ -30,6 +31,7 @@ import {
   toggleKolamTeamChatReaction,
   type KolamChatConversation,
   type KolamChatDaraMessageMeta,
+  type KolamChatMarketplaceListingHit,
   type KolamChatMessage,
   type KolamChatMessageContent,
   type KolamChatReplyContent,
@@ -149,6 +151,9 @@ export interface KolamChatRailDetailState {
   sendMessage: (
     text: string,
     options?: KolamChatRailSendMessageOptions,
+  ) => Promise<void>;
+  sendMarketplaceProduct: (
+    item: KolamChatMarketplaceListingHit,
   ) => Promise<void>;
   setInboxLabels: (labelIds: string[]) => Promise<void>;
   signalTyping: (typing: boolean) => void;
@@ -467,6 +472,47 @@ export function useKolamChatRailDetail({
       } catch (error) {
         setErrorMessage(
           error instanceof Error ? error.message : 'Gambar gagal dikirim.',
+        );
+      } finally {
+        setSending(false);
+      }
+    },
+    [mode, selectedId, sending],
+  );
+
+  const sendMarketplaceProduct = useCallback(
+    async (item: KolamChatMarketplaceListingHit) => {
+      if (!selectedId || mode !== 'inbox' || sending) {
+        return;
+      }
+
+      const tempId = `temp_marketplace_${Date.now()}_${Math.random()
+        .toString(36)
+        .slice(2, 8)}`;
+      const optimistic = buildOptimisticMarketplaceMessage(item, tempId);
+
+      setSending(true);
+      setErrorMessage(undefined);
+      setMessages(current => [...current, optimistic]);
+
+      try {
+        const message = await attachKolamChatMarketplaceProduct(
+          selectedId,
+          buildMarketplaceAttachBody(item),
+        );
+        setMessages(current =>
+          current.map(existing =>
+            existing.id === tempId ? mapInboxMessage(message) : existing,
+          ),
+        );
+      } catch (error) {
+        setMessages(current =>
+          current.filter(existing => existing.id !== tempId),
+        );
+        setErrorMessage(
+          error instanceof Error
+            ? error.message
+            : 'Produk marketplace gagal dikirim.',
         );
       } finally {
         setSending(false);
@@ -852,6 +898,7 @@ export function useKolamChatRailDetail({
     sendAttachment,
     sendInboxImage,
     sendMessage,
+    sendMarketplaceProduct,
     setInboxLabels,
     signalTyping,
     sending,
@@ -926,6 +973,62 @@ function mapInboxMessagePatch(
   }
 
   return next;
+}
+
+function buildMarketplaceAttachBody(item: KolamChatMarketplaceListingHit) {
+  return {
+    ...(item.entityType === 'species'
+      ? {speciesId: item.entityId}
+      : {productId: item.entityId}),
+    entityType: item.entityType,
+    ...(item.sku ? {sku: item.sku} : {}),
+  };
+}
+
+function buildOptimisticMarketplaceMessage(
+  item: KolamChatMarketplaceListingHit,
+  tempId: string,
+): KolamChatRailDetailMessage {
+  const platformLabel =
+    item.platform === 'tokopedia' ? 'Tokopedia' : 'Shopee';
+  const name = item.listingName || item.name || 'Produk marketplace';
+  const now = new Date().toISOString();
+
+  return {
+    attachments: [],
+    author: 'Anda',
+    body: `[${platformLabel}] ${name}`,
+    content: {
+      type: 'marketplace_product_card',
+      text: `[${platformLabel}] ${name}`,
+      card: {
+        entityId: item.entityId,
+        entityType: item.entityType,
+        name,
+        detailHref: item.listingUrl || '',
+        marketplace: {
+          platform: item.platform,
+          productId: item.productId,
+          goodsId: item.goodsId ?? undefined,
+          shopId: item.shopId ?? undefined,
+          listingName: name,
+          sku: item.sku ?? undefined,
+        },
+      },
+    },
+    daraMeta: null,
+    editedAt: null,
+    editedByName: null,
+    embeds: [],
+    id: tempId,
+    linkPreviews: [],
+    mine: true,
+    reactions: [],
+    replyContent: null,
+    replyPreview: null,
+    sentAt: now,
+    status: 'pending',
+  };
 }
 
 function getInboxSenderStaffId(message: KolamChatMessage) {

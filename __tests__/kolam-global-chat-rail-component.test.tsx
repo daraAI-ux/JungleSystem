@@ -215,6 +215,7 @@ function getDefaultDetailMock() {
     sendAttachment: jest.fn(),
     sendInboxImage: jest.fn(),
     sendMessage: jest.fn(),
+    sendMarketplaceProduct: jest.fn(),
     setInboxLabels: jest.fn(),
     signalTyping: jest.fn(),
     sending: false,

@@ -2812,7 +2812,15 @@ function KolamChatRailDetailPanel({
 
       {marketplaceAttachPlatform && marketplacePickerOpen ? (
         <KolamChatMarketplaceProductPicker
+          disabled={detail.sending || inboxComposerBlocked}
           onClose={() => setMarketplacePickerOpen(false)}
+          onPick={item => {
+            if (detail.sending || inboxComposerBlocked) {
+              return;
+            }
+            setMarketplacePickerOpen(false);
+            detail.sendMarketplaceProduct(item).catch(() => undefined);
+          }}
           onSearchChange={setMarketplaceSearch}
           platform={marketplaceAttachPlatform}
           search={marketplaceSearch}
@@ -3034,13 +3042,17 @@ function KolamChatTemplatePicker({
 }
 
 function KolamChatMarketplaceProductPicker({
+  disabled,
   onClose,
+  onPick,
   onSearchChange,
   platform,
   search,
   state,
 }: {
+  disabled: boolean;
   onClose: () => void;
+  onPick: (item: KolamChatMarketplaceListingHit) => void;
   onSearchChange: (value: string) => void;
   platform: 'shopee' | 'tokopedia';
   search: string;
@@ -3095,7 +3107,16 @@ function KolamChatMarketplaceProductPicker({
               `${item.platform}-${item.entityType}-${item.entityId}-${item.productId}`
             }
             renderItem={item => (
-              <View style={styles.marketplaceListingRow}>
+              <KolamPressable
+                accessibilityLabel={`Kirim produk ${
+                  item.listingName || item.name
+                }`}
+                disabled={disabled}
+                onPress={() => onPick(item)}
+                style={[
+                  styles.marketplaceListingRow,
+                  disabled && styles.marketplaceListingRowDisabled,
+                ]}>
                 <View style={styles.marketplaceListingCopy}>
                   <Text numberOfLines={2} style={styles.marketplaceListingTitle}>
                     {item.listingName || item.name}
@@ -3104,8 +3125,8 @@ function KolamChatMarketplaceProductPicker({
                     {formatMarketplaceListingMeta(item)}
                   </Text>
                 </View>
-                <Text style={styles.marketplaceListingState}>Preview</Text>
-              </View>
+                <Text style={styles.marketplaceListingState}>Kirim</Text>
+              </KolamPressable>
             )}
           />
         </ScrollView>
@@ -8039,6 +8060,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 8,
+  },
+  marketplaceListingRowDisabled: {
+    opacity: 0.58,
   },
   marketplaceListingCopy: {
     minWidth: 0,
