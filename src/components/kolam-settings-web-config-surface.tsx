@@ -7490,10 +7490,31 @@ function FinancialSettingsPanel({
 
       {financialSectionVisibility.taxProfile ? (
         <View style={styles.financialNestedCard}>
-          <FinancialSectionHeader
-            detail="NPWP, status PKP, alamat, dan data wajib pajak untuk Tax Intelligence."
-            title="Profil pajak perusahaan"
-          />
+          <View style={styles.operationalCardHeaderRow}>
+            <KolamCopyStack
+              containerStyle={styles.operationalCardHeaderCopy}
+              items={[
+                {
+                  id: 'tax-profile-title',
+                  text: 'Profil pajak perusahaan',
+                  style: styles.marketplaceOverviewTitle,
+                },
+                {
+                  id: 'tax-profile-detail',
+                  text: 'NPWP, status PKP, alamat, dan data wajib pajak untuk Tax Intelligence.',
+                  style: styles.marketplaceOverviewMeta,
+                },
+              ]}
+            />
+            <KolamActionControlButton
+              disabled={disabled || busy || !financialSectionVisibility.taxEdit}
+              intent="primary"
+              label="Simpan profil pajak"
+              loading={financialStatus === 'saving'}
+              loadingLabel="Menyimpan..."
+              onPress={onSaveTaxCompanyProfile}
+            />
+          </View>
           <KolamCopyStack
             items={[
               {
@@ -7659,14 +7680,6 @@ function FinancialSettingsPanel({
                 style: styles.marketplaceOverviewMeta,
               },
             ]}
-          />
-          <KolamActionControlButton
-            disabled={disabled || busy || !financialSectionVisibility.taxEdit}
-            intent="primary"
-            label="Simpan profil pajak"
-            loading={financialStatus === 'saving'}
-            loadingLabel="Menyimpan..."
-            onPress={onSaveTaxCompanyProfile}
           />
           {!financialSectionVisibility.taxEdit ? (
             <KolamCopyStack
