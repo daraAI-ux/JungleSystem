@@ -401,6 +401,14 @@ describe('settings web widgets', () => {
     expect(text).toContain('Metode pembayaran');
     expect(text).not.toContain('Finansial');
     expect(text).not.toContain('Data live dari backend Kolam.');
+
+    await ReactTestRenderer.act(async () => {
+      renderer!.root
+        .findAllByType(KolamActionControlButton)
+        .find(node => node.props.label === 'Tambah metode')!
+        .props.onPress();
+    });
+
     expect(
       renderer!.root
         .findAllByType(KolamDropdownSelect)

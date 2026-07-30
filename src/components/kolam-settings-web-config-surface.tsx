@@ -1,7 +1,9 @@
 import React from 'react';
 import {
+  Modal,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -19,6 +21,7 @@ import { KolamActionControlButton } from './kolam-action-control-button';
 import { KolamChoiceSegment } from './kolam-choice-segment';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
+import { KolamModalBackdrop } from './kolam-modal-backdrop';
 import { KolamRowFrame } from './kolam-row-frame';
 import { KolamSettingsWebFormFields } from './kolam-settings-web-form-fields';
 import { KolamSettingsWebFormSectionHeader } from './kolam-settings-web-form-section-header';
@@ -7017,6 +7020,8 @@ function FinancialSettingsPanel({
   ) => void;
 }) {
   const busy = financialStatus === 'loading' || financialStatus === 'saving';
+  const [paymentMethodFormOpen, setPaymentMethodFormOpen] =
+    React.useState(false);
   const paymentMethodCanSave =
     paymentMethodDraft.name.trim() &&
     paymentMethodDraft.type &&
@@ -7069,10 +7074,32 @@ function FinancialSettingsPanel({
             styles.settingsTabCardSpacing,
           ]}
         >
-          <FinancialSectionHeader
-            detail="Channel pembayaran yang diterima toko dan wallet terkait."
-            title="Metode pembayaran"
-          />
+          <View style={styles.operationalCardHeaderRow}>
+            <KolamCopyStack
+              containerStyle={styles.operationalCardHeaderCopy}
+              items={[
+                {
+                  id: 'payment-method-section-title',
+                  text: 'Metode pembayaran',
+                  style: styles.marketplaceOverviewTitle,
+                },
+                {
+                  id: 'payment-method-section-detail',
+                  text: 'Channel pembayaran yang diterima toko dan wallet terkait.',
+                  style: styles.marketplaceOverviewMeta,
+                },
+              ]}
+            />
+            <KolamActionControlButton
+              disabled={disabled || busy}
+              intent="primary"
+              label="Tambah metode"
+              onPress={() => {
+                onClearPaymentMethodDraft();
+                setPaymentMethodFormOpen(true);
+              }}
+            />
+          </View>
           <View style={kolamTableToolbarStyles.row}>
             <TextInput
               accessibilityLabel="Cari metode pembayaran"
@@ -7147,7 +7174,10 @@ function FinancialSettingsPanel({
                     <KolamActionControlButton
                       disabled={disabled || busy}
                       label="Edit"
-                      onPress={() => onEditPaymentMethod(method)}
+                      onPress={() => {
+                        onEditPaymentMethod(method);
+                        setPaymentMethodFormOpen(true);
+                      }}
                     />
                     <KolamActionControlButton
                       disabled={disabled || busy}
@@ -7212,268 +7242,297 @@ function FinancialSettingsPanel({
               }
             />
           </View>
-          <View style={styles.financialNestedCard}>
-            <KolamCopyStack
-              items={[
-                {
-                  id: 'payment-method-form-title',
-                  text: paymentMethodDraft.id
-                    ? 'Edit metode pembayaran'
-                    : 'Metode pembayaran baru',
-                  style: styles.marketplaceOverviewLabel,
-                },
-              ]}
-            />
-            <View style={styles.financialFormStack}>
-              <View style={styles.financialFormBox}>
-                <KolamCopyStack
-                  items={[
-                    {
-                      id: 'payment-method-details-title',
-                      text: 'Detail metode',
-                      style: styles.marketplaceOverviewLabel,
-                    },
-                  ]}
+          {paymentMethodFormOpen ? (
+            <Modal
+              animationType="fade"
+              onRequestClose={() => setPaymentMethodFormOpen(false)}
+              transparent
+              visible={paymentMethodFormOpen}
+            >
+              <View style={styles.financialPaymentModalOverlay}>
+                <KolamModalBackdrop
+                  onPress={() => setPaymentMethodFormOpen(false)}
                 />
-                <KolamTextFieldRow
-                  description="Nama channel pembayaran."
-                  fieldWidth={settingsFieldWidth}
-                  label="Nama"
-                  onChangeText={value =>
-                    setPaymentMethodDraftField('name', value)
-                  }
-                  placeholder="BCA, QRIS, Tunai"
-                  value={paymentMethodDraft.name}
-                  variant="settingsForm"
-                />
-                <KolamRowFrame variant="settingsForm">
-                  <KolamTextFieldRowCopy
-                    description="Pilih tunai, transfer bank, dompet digital, kartu, atau QRIS."
-                    label="Tipe Pembayaran"
-                  />
-                  <KolamDropdownSelect
-                    accessibilityLabel="Tipe metode pembayaran"
-                    label="Tipe Pembayaran"
-                    menuPlacement="inline"
-                    options={paymentMethodTypeOptions.map(option => ({
-                      label: `${option.label} - ${option.description}`,
-                      value: option.value,
-                    }))}
-                    showLabelInTrigger={false}
-                    style={[
-                      styles.financialSelectorControl,
-                      {width: settingsFieldWidth},
-                    ]}
-                    triggerStyle={styles.shippingTimezoneTrigger}
-                    value={paymentMethodDraft.type}
-                    onChange={value =>
-                      setPaymentMethodDraftField('type', value)
-                    }
-                  />
-                </KolamRowFrame>
-                <KolamRowFrame variant="settingsForm">
-                  <KolamTextFieldRowCopy
-                    description="Pilih bank, dompet digital, tunai, atau provider lainnya."
-                    label="Provider Pembayaran"
-                  />
-                  <KolamDropdownSelect
-                    accessibilityLabel="Provider metode pembayaran"
-                    label="Provider Pembayaran"
-                    menuPlacement="inline"
-                    options={paymentMethodProviderOptions}
-                    searchable
-                    searchPlaceholder="Cari provider..."
-                    showLabelInTrigger={false}
-                    style={[
-                      styles.financialSelectorControl,
-                      {width: settingsFieldWidth},
-                    ]}
-                    triggerStyle={styles.shippingTimezoneTrigger}
-                    value={
-                      paymentMethodProviderOptions.some(
-                        option => option.value === paymentMethodDraft.provider,
-                      )
-                        ? paymentMethodDraft.provider
-                        : 'Other'
-                    }
-                    onChange={value =>
-                      setPaymentMethodDraftField('provider', value)
-                    }
-                  />
-                </KolamRowFrame>
-              </View>
-              <View style={styles.financialFormBox}>
-                <KolamCopyStack
-                  items={[
-                    {
-                      id: 'payment-method-account-title',
-                      text: 'Informasi akun',
-                      style: styles.marketplaceOverviewLabel,
-                    },
-                  ]}
-                />
-                <KolamTextFieldRow
-                  description="Nomor rekening, nomor akun, atau ID provider."
-                  fieldWidth={settingsFieldWidth}
-                  label="Nomor akun"
-                  onChangeText={value =>
-                    setPaymentMethodDraftField('accountNumber', value)
-                  }
-                  placeholder="Nomor rekening / ID"
-                  value={paymentMethodDraft.accountNumber}
-                  variant="settingsForm"
-                />
-                <KolamTextFieldRow
-                  description="Nama pemilik rekening atau akun."
-                  fieldWidth={settingsFieldWidth}
-                  label="Nama akun"
-                  onChangeText={value =>
-                    setPaymentMethodDraftField('accountName', value)
-                  }
-                  placeholder="Nama pemilik akun"
-                  value={paymentMethodDraft.accountName}
-                  variant="settingsForm"
-                />
-                <KolamTextFieldRow
-                  description="Catatan internal untuk admin."
-                  fieldWidth={settingsFieldWidth}
-                  label="Catatan"
-                  onChangeText={value =>
-                    setPaymentMethodDraftField('notes', value)
-                  }
-                  placeholder="Catatan internal"
-                  value={paymentMethodDraft.notes}
-                  variant="settingsForm"
-                />
-              </View>
-              <View style={styles.financialFormBox}>
-                <KolamRowFrame variant="settingsForm">
-                  <KolamTextFieldRowCopy
-                    description="Pilih wallet penerima transaksi metode pembayaran ini."
-                    label="Wallet"
-                  />
-                  <KolamDropdownSelect
-                    accessibilityLabel="Wallet metode pembayaran"
-                    label="Wallet"
-                    menuPlacement="inline"
-                    options={[
-                      {value: '', label: 'Pilih wallet'},
-                      ...financialWallets.map(wallet => ({
-                        value: wallet.id,
-                        label: `${wallet.name} (${wallet.type})`,
-                      })),
-                    ]}
-                    searchable
-                    searchPlaceholder="Cari wallet..."
-                    showLabelInTrigger={false}
-                    style={[
-                      styles.financialSelectorControl,
-                      {width: settingsFieldWidth},
-                    ]}
-                    triggerStyle={styles.shippingTimezoneTrigger}
-                    value={paymentMethodDraft.wallet}
-                    onChange={value =>
-                      setPaymentMethodDraftField('wallet', value)
-                    }
-                  />
-                </KolamRowFrame>
-              </View>
-              <View style={styles.financialFormBox}>
-                <KolamCopyStack
-                  items={[
-                    {
-                      id: 'payment-method-cost-title',
-                      text: 'Biaya Payment Method',
-                      style: styles.marketplaceOverviewLabel,
-                    },
-                  ]}
-                />
-                <KolamTextFieldRow
-                  description="Satu baris per biaya: nama|percentage/fixed|nilai."
-                  fieldWidth={settingsFieldWidth}
-                  label="Biaya"
-                  multiline
-                  numberOfLines={3}
-                  onChangeText={value =>
-                    setPaymentMethodDraftField('costsText', value)
-                  }
-                  placeholder="Admin QRIS|percentage|0.7"
-                  value={paymentMethodDraft.costsText}
-                  variant="settingsForm"
-                />
-              </View>
-              <View style={styles.financialFormBox}>
-                <KolamCopyStack
-                  items={[
-                    {
-                      id: 'payment-method-rules-title',
-                      text: 'Pengaturan',
-                      style: styles.marketplaceOverviewLabel,
-                    },
-                  ]}
-                />
-                <View style={styles.notificationToggleGrid}>
-                  <View style={styles.notificationToggleBox}>
-                    <KolamToggleRow
-                      active={paymentMethodDraft.isActive}
-                      description="Metode aktif bisa dipakai transaksi."
-                      label="Metode aktif"
-                      onPress={() =>
-                        setPaymentMethodDraftField(
-                          'isActive',
-                          !paymentMethodDraft.isActive,
-                        )
-                      }
-                      variant="settingsForm"
-                    />
+                <ScrollView
+                  contentContainerStyle={styles.financialPaymentModalScroll}
+                  keyboardShouldPersistTaps="handled"
+                  style={styles.financialPaymentModalPanel}
+                >
+                  <View style={styles.financialNestedCard}>
+                    <View style={styles.operationalCardHeaderRow}>
+                      <KolamCopyStack
+                        containerStyle={styles.operationalCardHeaderCopy}
+                        items={[
+                          {
+                            id: 'payment-method-form-title',
+                            text: paymentMethodDraft.id
+                              ? 'Edit metode pembayaran'
+                              : 'Metode pembayaran baru',
+                            style: styles.marketplaceOverviewLabel,
+                          },
+                        ]}
+                      />
+                      <KolamActionControlButton
+                        disabled={busy}
+                        label="Tutup"
+                        onPress={() => setPaymentMethodFormOpen(false)}
+                      />
+                    </View>
+                    <View style={styles.financialFormStack}>
+                      <View style={styles.financialFormBox}>
+                        <KolamCopyStack
+                          items={[
+                            {
+                              id: 'payment-method-details-title',
+                              text: 'Detail metode',
+                              style: styles.marketplaceOverviewLabel,
+                            },
+                          ]}
+                        />
+                        <KolamTextFieldRow
+                          description="Nama channel pembayaran."
+                          fieldWidth={settingsFieldWidth}
+                          label="Nama"
+                          onChangeText={value =>
+                            setPaymentMethodDraftField('name', value)
+                          }
+                          placeholder="BCA, QRIS, Tunai"
+                          value={paymentMethodDraft.name}
+                          variant="settingsForm"
+                        />
+                        <KolamRowFrame variant="settingsForm">
+                          <KolamTextFieldRowCopy
+                            description="Pilih tunai, transfer bank, dompet digital, kartu, atau QRIS."
+                            label="Tipe Pembayaran"
+                          />
+                          <KolamDropdownSelect
+                            accessibilityLabel="Tipe metode pembayaran"
+                            label="Tipe Pembayaran"
+                            menuPlacement="inline"
+                            options={paymentMethodTypeOptions.map(option => ({
+                              label: `${option.label} - ${option.description}`,
+                              value: option.value,
+                            }))}
+                            showLabelInTrigger={false}
+                            style={[
+                              styles.financialSelectorControl,
+                              {width: settingsFieldWidth},
+                            ]}
+                            triggerStyle={styles.shippingTimezoneTrigger}
+                            value={paymentMethodDraft.type}
+                            onChange={value =>
+                              setPaymentMethodDraftField('type', value)
+                            }
+                          />
+                        </KolamRowFrame>
+                        <KolamRowFrame variant="settingsForm">
+                          <KolamTextFieldRowCopy
+                            description="Pilih bank, dompet digital, tunai, atau provider lainnya."
+                            label="Provider Pembayaran"
+                          />
+                          <KolamDropdownSelect
+                            accessibilityLabel="Provider metode pembayaran"
+                            label="Provider Pembayaran"
+                            menuPlacement="inline"
+                            options={paymentMethodProviderOptions}
+                            searchable
+                            searchPlaceholder="Cari provider..."
+                            showLabelInTrigger={false}
+                            style={[
+                              styles.financialSelectorControl,
+                              {width: settingsFieldWidth},
+                            ]}
+                            triggerStyle={styles.shippingTimezoneTrigger}
+                            value={
+                              paymentMethodProviderOptions.some(
+                                option =>
+                                  option.value === paymentMethodDraft.provider,
+                              )
+                                ? paymentMethodDraft.provider
+                                : 'Other'
+                            }
+                            onChange={value =>
+                              setPaymentMethodDraftField('provider', value)
+                            }
+                          />
+                        </KolamRowFrame>
+                      </View>
+                      <View style={styles.financialFormBox}>
+                        <KolamCopyStack
+                          items={[
+                            {
+                              id: 'payment-method-account-title',
+                              text: 'Informasi akun',
+                              style: styles.marketplaceOverviewLabel,
+                            },
+                          ]}
+                        />
+                        <KolamTextFieldRow
+                          description="Nomor rekening, nomor akun, atau ID provider."
+                          fieldWidth={settingsFieldWidth}
+                          label="Nomor akun"
+                          onChangeText={value =>
+                            setPaymentMethodDraftField('accountNumber', value)
+                          }
+                          placeholder="Nomor rekening / ID"
+                          value={paymentMethodDraft.accountNumber}
+                          variant="settingsForm"
+                        />
+                        <KolamTextFieldRow
+                          description="Nama pemilik rekening atau akun."
+                          fieldWidth={settingsFieldWidth}
+                          label="Nama akun"
+                          onChangeText={value =>
+                            setPaymentMethodDraftField('accountName', value)
+                          }
+                          placeholder="Nama pemilik akun"
+                          value={paymentMethodDraft.accountName}
+                          variant="settingsForm"
+                        />
+                        <KolamTextFieldRow
+                          description="Catatan internal untuk admin."
+                          fieldWidth={settingsFieldWidth}
+                          label="Catatan"
+                          onChangeText={value =>
+                            setPaymentMethodDraftField('notes', value)
+                          }
+                          placeholder="Catatan internal"
+                          value={paymentMethodDraft.notes}
+                          variant="settingsForm"
+                        />
+                      </View>
+                      <View style={styles.financialFormBox}>
+                        <KolamRowFrame variant="settingsForm">
+                          <KolamTextFieldRowCopy
+                            description="Pilih wallet penerima transaksi metode pembayaran ini."
+                            label="Wallet"
+                          />
+                          <KolamDropdownSelect
+                            accessibilityLabel="Wallet metode pembayaran"
+                            label="Wallet"
+                            menuPlacement="inline"
+                            options={[
+                              {value: '', label: 'Pilih wallet'},
+                              ...financialWallets.map(wallet => ({
+                                value: wallet.id,
+                                label: `${wallet.name} (${wallet.type})`,
+                              })),
+                            ]}
+                            searchable
+                            searchPlaceholder="Cari wallet..."
+                            showLabelInTrigger={false}
+                            style={[
+                              styles.financialSelectorControl,
+                              {width: settingsFieldWidth},
+                            ]}
+                            triggerStyle={styles.shippingTimezoneTrigger}
+                            value={paymentMethodDraft.wallet}
+                            onChange={value =>
+                              setPaymentMethodDraftField('wallet', value)
+                            }
+                          />
+                        </KolamRowFrame>
+                      </View>
+                      <View style={styles.financialFormBox}>
+                        <KolamCopyStack
+                          items={[
+                            {
+                              id: 'payment-method-cost-title',
+                              text: 'Biaya Payment Method',
+                              style: styles.marketplaceOverviewLabel,
+                            },
+                          ]}
+                        />
+                        <KolamTextFieldRow
+                          description="Satu baris per biaya: nama|percentage/fixed|nilai."
+                          fieldWidth={settingsFieldWidth}
+                          label="Biaya"
+                          multiline
+                          numberOfLines={3}
+                          onChangeText={value =>
+                            setPaymentMethodDraftField('costsText', value)
+                          }
+                          placeholder="Admin QRIS|percentage|0.7"
+                          value={paymentMethodDraft.costsText}
+                          variant="settingsForm"
+                        />
+                      </View>
+                      <View style={styles.financialFormBox}>
+                        <KolamCopyStack
+                          items={[
+                            {
+                              id: 'payment-method-rules-title',
+                              text: 'Pengaturan',
+                              style: styles.marketplaceOverviewLabel,
+                            },
+                          ]}
+                        />
+                        <View style={styles.notificationToggleGrid}>
+                          <View style={styles.notificationToggleBox}>
+                            <KolamToggleRow
+                              active={paymentMethodDraft.isActive}
+                              description="Metode aktif bisa dipakai transaksi."
+                              label="Metode aktif"
+                              onPress={() =>
+                                setPaymentMethodDraftField(
+                                  'isActive',
+                                  !paymentMethodDraft.isActive,
+                                )
+                              }
+                              variant="settingsForm"
+                            />
+                          </View>
+                          <View style={styles.notificationToggleBox}>
+                            <KolamToggleRow
+                              active={paymentMethodDraft.isAvailableOnWebstore}
+                              description="Tampilkan sebagai opsi pembayaran webstore."
+                              label="Tersedia di webstore"
+                              onPress={() =>
+                                setPaymentMethodDraftField(
+                                  'isAvailableOnWebstore',
+                                  !paymentMethodDraft.isAvailableOnWebstore,
+                                )
+                              }
+                              variant="settingsForm"
+                            />
+                          </View>
+                          <View style={styles.notificationToggleBox}>
+                            <KolamToggleRow
+                              active={paymentMethodDraft.requireSaleProof}
+                              description="Pembeli wajib melampirkan bukti transfer."
+                              label="Wajib bukti pembayaran"
+                              onPress={() =>
+                                setPaymentMethodDraftField(
+                                  'requireSaleProof',
+                                  !paymentMethodDraft.requireSaleProof,
+                                )
+                              }
+                              variant="settingsForm"
+                            />
+                          </View>
+                        </View>
+                      </View>
+                      <View style={styles.financialActions}>
+                        <KolamActionControlButton
+                          disabled={disabled || busy || !paymentMethodCanSave}
+                          intent="primary"
+                          label="Simpan metode"
+                          loading={financialStatus === 'saving'}
+                          loadingLabel="Menyimpan..."
+                          onPress={onSavePaymentMethod}
+                        />
+                        <KolamActionControlButton
+                          disabled={disabled || busy}
+                          label="Reset"
+                          onPress={onClearPaymentMethodDraft}
+                        />
+                      </View>
+                    </View>
                   </View>
-                  <View style={styles.notificationToggleBox}>
-                    <KolamToggleRow
-                      active={paymentMethodDraft.isAvailableOnWebstore}
-                      description="Tampilkan sebagai opsi pembayaran webstore."
-                      label="Tersedia di webstore"
-                      onPress={() =>
-                        setPaymentMethodDraftField(
-                          'isAvailableOnWebstore',
-                          !paymentMethodDraft.isAvailableOnWebstore,
-                        )
-                      }
-                      variant="settingsForm"
-                    />
-                  </View>
-                  <View style={styles.notificationToggleBox}>
-                    <KolamToggleRow
-                      active={paymentMethodDraft.requireSaleProof}
-                      description="Pembeli wajib melampirkan bukti transfer."
-                      label="Wajib bukti pembayaran"
-                      onPress={() =>
-                        setPaymentMethodDraftField(
-                          'requireSaleProof',
-                          !paymentMethodDraft.requireSaleProof,
-                        )
-                      }
-                      variant="settingsForm"
-                    />
-                  </View>
-                </View>
+                </ScrollView>
               </View>
-              <View style={styles.financialActions}>
-                <KolamActionControlButton
-                  disabled={disabled || busy || !paymentMethodCanSave}
-                  intent="primary"
-                  label="Simpan metode"
-                  loading={financialStatus === 'saving'}
-                  loadingLabel="Menyimpan..."
-                  onPress={onSavePaymentMethod}
-                />
-                <KolamActionControlButton
-                  disabled={disabled || busy}
-                  label="Reset"
-                  onPress={onClearPaymentMethodDraft}
-                />
-              </View>
-            </View>
-          </View>
+            </Modal>
+          ) : null}
         </View>
       ) : null}
 
@@ -8241,6 +8300,20 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     gap: 10,
     padding: 12,
+  },
+  financialPaymentModalOverlay: {
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
+    padding: 18,
+  },
+  financialPaymentModalPanel: {
+    maxHeight: '92%',
+    maxWidth: 980,
+    width: '100%',
+  },
+  financialPaymentModalScroll: {
+    paddingVertical: 4,
   },
   financialToolbar: {
     alignItems: 'center',
