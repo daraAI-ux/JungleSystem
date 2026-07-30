@@ -531,7 +531,9 @@ export function KolamSalesOpsDetail({
 
           {showInternalSummary ? (
             <View style={styles.internalSummaryCard}>
-              <Text style={styles.breakdownSectionTitle}>Internal</Text>
+              <Text style={styles.breakdownSectionTitle}>
+                Internal keseluruhan
+              </Text>
               <BreakdownAmountRow
                 label={
                   profitSummary.mode === 'olshop'
