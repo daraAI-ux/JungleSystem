@@ -1,5 +1,5 @@
 import React from 'react';
-import { FlatList, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
   fitKolamDataTableColumns,
   getKolamTableColumns,
@@ -79,7 +79,7 @@ function KolamTeranuraShell({
 }) {
   if (controller.mode === 'list') {
     return (
-      <View style={styles.surface}>
+      <View style={[styles.surface, styles.listSurface]}>
         {controller.error ? <Text style={styles.error}>{controller.error}</Text> : null}
         {children}
       </View>
@@ -248,7 +248,7 @@ function KolamTeranuraList({
   }, [activeFilterPanel, anchorFilterPanel]);
 
   return (
-    <View style={styles.stack}>
+    <View style={[styles.stack, styles.listStack]}>
       <View ref={toolbarRef} collapsable={false} style={styles.toolbarWrap}>
         <View style={kolamTableToolbarStyles.shell}>
           <View style={kolamTableToolbarStyles.row}>
@@ -393,37 +393,32 @@ function KolamTeranuraList({
           </KolamTableFooterControls>
         }
         onBodyWidthChange={setTableBodyWidth}
-        style={styles.tableFrame}
+        style={[styles.tableFrame, styles.listTableFrame]}
       >
-        <FlatList
-          data={controller.items}
-          keyExtractor={item => item.id}
-          ListEmptyComponent={
-            <View style={styles.emptyWrap}>
-              <KolamEmptyState
-                compact
-                message="Data Teranura belum tersedia dari backend."
-                title={
-                  controller.loading
-                    ? 'Memuat Teranura...'
-                    : 'Belum ada Teranura'
-                }
-              />
-            </View>
-          }
-          ListHeaderComponent={<KolamDataTableHeader columns={listColumns} />}
-          renderItem={({ item }) => (
+        <KolamDataTableHeader columns={listColumns} />
+        {controller.items.length ? (
+          controller.items.map(item => (
             <TeranuraRow
               columns={listColumns}
               item={item}
+              key={item.id}
               onEdit={() => onRouteChange?.(`/teranura/${item.id}/edit`)}
               onSelect={() => onRouteChange?.(`/teranura/${item.id}`)}
             />
-          )}
-          removeClippedSubviews={false}
-          style={styles.list}
-          contentContainerStyle={styles.listContent}
-        />
+          ))
+        ) : (
+          <View style={styles.emptyWrap}>
+            <KolamEmptyState
+              compact
+              message="Data Teranura belum tersedia dari backend."
+              title={
+                controller.loading
+                  ? 'Memuat Teranura...'
+                  : 'Belum ada Teranura'
+              }
+            />
+          </View>
+        )}
       </KolamCatalogListTableShell>
     </View>
   );
@@ -834,6 +829,10 @@ const styles = StyleSheet.create({
   surface: {
     gap: 16,
   },
+  listSurface: {
+    flex: 1,
+    minHeight: 0,
+  },
   detailToolbarContext: {
     color: V.colors.fg,
     flexShrink: 1,
@@ -845,13 +844,17 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   stack: {
-    flex: 1,
-    minHeight: 0,
     gap: 16,
     overflow: 'visible',
+    position: 'relative',
+  },
+  listStack: {
+    flex: 1,
+    minHeight: 0,
   },
   toolbarWrap: {
     elevation: 1000,
+    flexShrink: 0,
     overflow: 'visible',
     position: 'relative',
     zIndex: 100000,
@@ -912,16 +915,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   tableFrame: {
+    overflow: 'visible',
+  },
+  listTableFrame: {
+    flexGrow: 0,
+    flexShrink: 1,
     minHeight: 0,
-    overflow: 'visible',
-  },
-  list: {
-    flexGrow: 0,
-    overflow: 'visible',
-  },
-  listContent: {
-    flexGrow: 0,
-    overflow: 'visible',
   },
   emptyWrap: {
     minHeight: 240,
