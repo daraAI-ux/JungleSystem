@@ -1,5 +1,5 @@
 import React from 'react';
-import { FlatList, Image, Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
   KOLAM_PRODUCT_SERIAL_ROOT,
   getKolamProductSerialOpnameIntent,
@@ -13,7 +13,11 @@ import {
   type KolamProductSerialProductType,
   type KolamProductSerialStatus,
 } from '../domain/kolam-product-serial';
-import { getKolamTableColumns } from '../domain/kolam-table';
+import {
+  getKolamTableColumns,
+  getKolamTableVisualContract,
+  type KolamTableColumn,
+} from '../domain/kolam-table';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { useKolamAuthContext } from '../context/kolam-app-contexts';
 import {
@@ -24,12 +28,22 @@ import {
 import { KolamButton } from './kolam-button';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamContentFrame } from './kolam-content-frame';
+import {
+  getKolamDataTableColumnStyle,
+  KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+  KOLAM_DATA_TABLE_COLUMN_GAP,
+} from './kolam-data-table-column-style';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDataTableHeader } from './kolam-data-table-header';
 import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
+import {
+  KolamDataTableActionsTrack,
+  KolamDataTableMainTrack,
+} from './kolam-data-table-tracks';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamModalBackdrop } from './kolam-modal-backdrop';
+import { KolamSearchField } from './kolam-search-field';
 import { KolamOverflowMenuButton, KolamTableFooterControls } from './kolam-dropdown-select';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
@@ -56,12 +70,7 @@ export function KolamProductSerialSurface({
   const controller = useKolamProductSerialController(route);
 
   return (
-    <View
-      style={[
-        styles.surface,
-        controller.mode === 'list' ? styles.listSurface : null,
-      ]}
-    >
+    <View style={styles.surface}>
       {controller.error ? (
         <KolamStatusBadge
           intent="danger"
@@ -105,6 +114,7 @@ function KolamProductSerialList({
     React.useState<ProductSerialFilterPanel | null>(null);
   const [panelAnchor, setPanelAnchor] = React.useState({ left: 0, top: 48 });
   const [qrSerial, setQrSerial] = React.useState<KolamProductSerial | null>(null);
+  const [tableBodyWidth, setTableBodyWidth] = React.useState(0);
   const toolbarRef = React.useRef<View>(null);
   const typeTriggerRef = React.useRef<View>(null);
   const statusTriggerRef = React.useRef<View>(null);
@@ -135,6 +145,16 @@ function KolamProductSerialList({
       controller.filters.productType ||
       controller.filters.status ||
       controller.filters.productId,
+  );
+  const filtersAppliedCount = [
+    controller.filters.search,
+    controller.filters.productType,
+    controller.filters.status,
+    controller.filters.productId,
+  ].filter(Boolean).length;
+  const listColumns = React.useMemo(
+    () => fitProductSerialListColumns(tableBodyWidth),
+    [tableBodyWidth],
   );
   const filteredProductName = controller.filters.productId
     ? controller.serials[0]?.product?.name
@@ -190,14 +210,16 @@ function KolamProductSerialList({
   }, [activeFilterPanel, anchorFilterPanel]);
 
   const renderRow = React.useCallback(
-    ({ item }: { item: KolamProductSerial }) => (
+    (item: KolamProductSerial) => (
       <KolamProductSerialRow
+        columns={listColumns}
+        key={item.id || item.serialNumber}
         onRouteChange={onRouteChange}
         onViewQr={() => setQrSerial(item)}
         serial={item}
       />
     ),
-    [onRouteChange],
+    [listColumns, onRouteChange],
   );
 
   return (
@@ -219,56 +241,66 @@ function KolamProductSerialList({
       ) : null}
 
       <View ref={toolbarRef} style={styles.toolbarWrap}>
-        <View style={kolamTableToolbarStyles.row}>
-          <KolamFormTextField
-            onChangeText={setSearchInput}
-            placeholder="Cari nomor seri"
-            style={kolamTableToolbarStyles.searchInput}
-            value={searchInput}
-          />
-          <View style={kolamTableToolbarStyles.controls}>
-            <View ref={typeTriggerRef} collapsable={false}>
-              <KolamTableFilterTrigger
-                active={
-                  activeFilterPanel === 'type' || Boolean(controller.filters.productType)
-                }
-                label={typeFilterLabel}
-                onPress={() => toggleFilterPanel('type')}
-                style={styles.filterTrigger}
+        <View style={kolamTableToolbarStyles.shell}>
+          <View style={kolamTableToolbarStyles.row}>
+            <View style={kolamTableToolbarStyles.filters}>
+              <KolamSearchField
+                containerStyle={kolamTableToolbarStyles.searchInput}
+                onChangeText={setSearchInput}
+                placeholder="Cari nomor seri"
+                value={searchInput}
               />
+              <View ref={typeTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={
+                    activeFilterPanel === 'type' || Boolean(controller.filters.productType)
+                  }
+                  label={typeFilterLabel}
+                  onPress={() => toggleFilterPanel('type')}
+                  open={activeFilterPanel === 'type'}
+                  variant="quiet"
+                />
+              </View>
+              <View ref={statusTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={
+                    activeFilterPanel === 'status' || Boolean(controller.filters.status)
+                  }
+                  label={statusFilterLabel}
+                  onPress={() => toggleFilterPanel('status')}
+                  open={activeFilterPanel === 'status'}
+                  variant="quiet"
+                />
+              </View>
             </View>
-            <View ref={statusTriggerRef} collapsable={false}>
-              <KolamTableFilterTrigger
-                active={
-                  activeFilterPanel === 'status' || Boolean(controller.filters.status)
-                }
-                label={statusFilterLabel}
-                onPress={() => toggleFilterPanel('status')}
-                style={styles.filterTrigger}
+            <View style={kolamTableToolbarStyles.actions}>
+              {filtersAppliedCount > 0 ? (
+                <KolamButton
+                  label="Reset"
+                  muted
+                  onPress={() => {
+                    setSearchInput('');
+                    setActiveFilterPanel(null);
+                    controller.onClearFilters();
+                  }}
+                  style={styles.toolbarButton}
+                />
+              ) : null}
+              <KolamButton
+                disabled={controller.loading}
+                label="Muat ulang"
+                onPress={() => void controller.onRefresh()}
+                style={styles.toolbarButton}
               />
+              {canOpname ? (
+                <KolamButton
+                  intent="primary"
+                  label="Opname Serial"
+                  onPress={() => onRouteChange?.(`${KOLAM_PRODUCT_SERIAL_ROOT}/opname`)}
+                  style={styles.toolbarButton}
+                />
+              ) : null}
             </View>
-            {hasActiveFilters ? (
-              <KolamButton
-                label="Bersihkan"
-                muted
-                onPress={() => {
-                  setActiveFilterPanel(null);
-                  controller.onClearFilters();
-                }}
-              />
-            ) : null}
-            <KolamButton
-              disabled={controller.loading}
-              label="Muat ulang"
-              onPress={() => void controller.onRefresh()}
-            />
-            {canOpname ? (
-              <KolamButton
-                intent="primary"
-                label="Opname Serial"
-                onPress={() => onRouteChange?.(`${KOLAM_PRODUCT_SERIAL_ROOT}/opname`)}
-              />
-            ) : null}
           </View>
         </View>
 
@@ -396,24 +428,16 @@ function KolamProductSerialList({
             ) : null}
           </KolamTableFooterControls>
         }
-        style={styles.tableFrame}
+        onBodyWidthChange={setTableBodyWidth}
       >
-        <FlatList
-          contentContainerStyle={styles.listContent}
-          data={controller.serials}
-          keyExtractor={item => item.id || item.serialNumber}
-          ListEmptyComponent={
-            <View style={styles.emptyWrap}>
-              <KolamEmptyState compact message={emptyMessage} title={emptyTitle} />
-            </View>
-          }
-          ListHeaderComponent={
-            <KolamDataTableHeader columns={getKolamTableColumns('product-serial')} />
-          }
-          removeClippedSubviews={false}
-          renderItem={renderRow}
-          style={styles.listFlatList}
-        />
+        <KolamDataTableHeader columns={listColumns} />
+        {controller.serials.length ? (
+          controller.serials.map(renderRow)
+        ) : (
+          <View style={styles.emptyWrap}>
+            <KolamEmptyState compact message={emptyMessage} title={emptyTitle} />
+          </View>
+        )}
       </KolamCatalogListTableShell>
 
       <KolamProductSerialQrModal serial={qrSerial} onClose={() => setQrSerial(null)} />
@@ -423,20 +447,28 @@ function KolamProductSerialList({
 
 function KolamProductSerialRow({
   serial,
+  columns,
   onRouteChange,
   onViewQr,
 }: {
   serial: KolamProductSerial;
+  columns: ReturnType<typeof getKolamTableColumns>;
   onRouteChange?: (route: string) => void;
   onViewQr: () => void;
 }) {
   const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
-  const columns = getKolamTableColumns('product-serial');
-  const widthOf = React.useCallback(
-    (id: (typeof columns)[number]['id']) =>
-      columns.find(column => column.id === id)?.width,
+  const columnOf = React.useCallback(
+    (id: (typeof columns)[number]['id']) => columns.find(column => column.id === id),
     [columns],
   );
+  const primaryColumn = columnOf('primary');
+  const metaColumn = columnOf('meta');
+  const notesColumn = columnOf('notes');
+  const childrenColumn = columnOf('children');
+  const marketplaceColumn = columnOf('marketplace');
+  const statusColumn = columnOf('status');
+  const productsColumn = columnOf('products');
+  const actionsColumn = columnOf('actions');
 
   const actions = [
     ...(serial.qrCode ? [{ label: 'Lihat QR', onPress: onViewQr }] : []),
@@ -452,61 +484,111 @@ function KolamProductSerialRow({
 
   return (
     <KolamDataTableRowFrame style={actionMenuOpen ? styles.activeActionRow : undefined}>
-      <View style={[styles.listCell, styles.primaryCell]}>
-        <Text numberOfLines={1} style={styles.rowTitleMono}>
-          {serial.serialNumber}
-        </Text>
-      </View>
-
-      <View style={[styles.listCell, { width: widthOf('meta') }]}>
-        <Text numberOfLines={1} style={styles.cellText}>
-          {serial.product?.name || '—'}
-        </Text>
-        {serial.product?.sku ? (
-          <Text numberOfLines={1} style={styles.rowMetaMono}>
-            {serial.product.sku}
+      <KolamDataTableMainTrack>
+        <View
+          style={[
+            styles.listCell,
+            styles.identityCell,
+            primaryColumn ? getKolamDataTableColumnStyle(primaryColumn) : styles.primaryCell,
+          ]}
+        >
+          <Text numberOfLines={1} style={styles.rowTitleMono}>
+            {serial.serialNumber}
           </Text>
-        ) : null}
-      </View>
+        </View>
 
-      <View style={[styles.listCell, { width: widthOf('notes') }]}>
-        <KolamStatusBadge
-          intent={getKolamProductSerialTypeIntent(serial.productType)}
-          label={getKolamProductSerialTypeLabel(serial.productType)}
-        />
-      </View>
+        <View
+          style={[
+            styles.listCell,
+            metaColumn ? getKolamDataTableColumnStyle(metaColumn) : null,
+          ]}
+        >
+          <Text numberOfLines={1} style={styles.cellText}>
+            {serial.product?.name || '—'}
+          </Text>
+          {serial.product?.sku ? (
+            <Text numberOfLines={1} style={styles.rowMetaMono}>
+              {serial.product.sku}
+            </Text>
+          ) : null}
+        </View>
 
-      <View style={[styles.listCell, { width: widthOf('children') }]}>
-        <Text numberOfLines={1} style={styles.rowMetaMono}>
-          {serial.production?.batchId || '—'}
-        </Text>
-      </View>
-
-      <View style={[styles.listCell, { width: widthOf('marketplace') }]}>
-        <Text numberOfLines={1} style={styles.cellText}>
-          {formatProductSerialDate(serial.productionDate)}
-        </Text>
-      </View>
-
-      <View style={[styles.listCell, styles.statusCell, { width: widthOf('status') }]}>
-        <KolamStatusBadge
-          intent={getKolamProductSerialStatusIntent(serial.status)}
-          label={getKolamProductSerialStatusLabel(serial.status)}
-        />
-      </View>
-
-      <View style={[styles.listCell, styles.statusCell, { width: widthOf('products') }]}>
-        {serial.opnameStatus ? (
+        <View
+          style={[
+            styles.listCell,
+            styles.statusCell,
+            notesColumn ? getKolamDataTableColumnStyle(notesColumn) : null,
+          ]}
+        >
           <KolamStatusBadge
-            intent={getKolamProductSerialOpnameIntent(serial.opnameStatus)}
-            label={getKolamProductSerialOpnameLabel(serial.opnameStatus)}
+            intent={getKolamProductSerialTypeIntent(serial.productType)}
+            label={getKolamProductSerialTypeLabel(serial.productType)}
+            style={styles.centerBadge}
           />
-        ) : (
-          <Text style={styles.rowMeta}>—</Text>
-        )}
-      </View>
+        </View>
 
-      <View style={[styles.overflowCell, { width: widthOf('actions') ?? 48 }]}>
+        <View
+          style={[
+            styles.listCell,
+            childrenColumn ? getKolamDataTableColumnStyle(childrenColumn) : null,
+          ]}
+        >
+          <Text numberOfLines={1} style={styles.rowMetaMono}>
+            {serial.production?.batchId || '—'}
+          </Text>
+        </View>
+
+        <View
+          style={[
+            styles.listCell,
+            marketplaceColumn ? getKolamDataTableColumnStyle(marketplaceColumn) : null,
+          ]}
+        >
+          <Text numberOfLines={1} style={styles.cellText}>
+            {formatProductSerialDate(serial.productionDate)}
+          </Text>
+        </View>
+
+        <View
+          style={[
+            styles.listCell,
+            styles.statusCell,
+            statusColumn ? getKolamDataTableColumnStyle(statusColumn) : null,
+          ]}
+        >
+          <KolamStatusBadge
+            intent={getKolamProductSerialStatusIntent(serial.status)}
+            label={getKolamProductSerialStatusLabel(serial.status)}
+            style={styles.centerBadge}
+          />
+        </View>
+
+        <View
+          style={[
+            styles.listCell,
+            styles.statusCell,
+            productsColumn ? getKolamDataTableColumnStyle(productsColumn) : null,
+          ]}
+        >
+          {serial.opnameStatus ? (
+            <KolamStatusBadge
+              intent={getKolamProductSerialOpnameIntent(serial.opnameStatus)}
+              label={getKolamProductSerialOpnameLabel(serial.opnameStatus)}
+              style={styles.centerBadge}
+            />
+          ) : (
+            <Text style={styles.rowMeta}>—</Text>
+          )}
+        </View>
+      </KolamDataTableMainTrack>
+
+      <KolamDataTableActionsTrack
+        style={styles.actionsTrack}
+        width={Math.max(
+          actionsColumn?.width ?? KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+          KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+        )}
+      >
         {actions.length ? (
           <KolamOverflowMenuButton
             accessibilityLabel={`Menu ${serial.serialNumber}`}
@@ -514,7 +596,7 @@ function KolamProductSerialRow({
             onOpenChange={open => setActionMenuOpen(open)}
           />
         ) : null}
-      </View>
+      </KolamDataTableActionsTrack>
     </KolamDataTableRowFrame>
   );
 }
@@ -554,13 +636,19 @@ function KolamProductSerialOpname({
 
   return (
     <View style={styles.opnameRoot}>
-      <View style={styles.toolbarWrap}>
+      <View style={kolamTableToolbarStyles.shell}>
         <View style={kolamTableToolbarStyles.row}>
-          <View style={kolamTableToolbarStyles.controls}>
+          <View style={kolamTableToolbarStyles.filters}>
+            <Text numberOfLines={1} style={styles.detailToolbarContext}>
+              Opname Serial
+            </Text>
+          </View>
+          <View style={kolamTableToolbarStyles.actions}>
             <KolamButton
               label="Daftar"
               muted
               onPress={() => onRouteChange?.(KOLAM_PRODUCT_SERIAL_ROOT)}
+              style={styles.toolbarButton}
             />
             <KolamStatusBadge intent="success" label={`Ditemukan: ${foundCount}`} />
             <KolamStatusBadge intent="danger" label={`Hilang: ${missingCount}`} />
@@ -572,6 +660,7 @@ function KolamProductSerialOpname({
               disabled={!controller.sessionItems.length}
               label="Reset sesi"
               onPress={() => controller.onResetSession()}
+              style={styles.toolbarButton}
             />
           </View>
         </View>
@@ -669,11 +758,59 @@ function formatProductSerialDateTime(value?: string) {
   return date.toLocaleString('id-ID');
 }
 
+function fitProductSerialListColumns(containerWidth: number): KolamTableColumn[] {
+  const base = getKolamTableColumns('product-serial');
+  if (containerWidth <= 0) {
+    return base;
+  }
+
+  const gap = KOLAM_DATA_TABLE_COLUMN_GAP;
+  const paddingX = getKolamTableVisualContract().body.cellPaddingX * 2;
+  const actionsWidth = KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH;
+  const gapsTotal = gap * Math.max(0, base.length - 1);
+  const contentBudget = Math.max(
+    0,
+    containerWidth - paddingX - gapsTotal - actionsWidth,
+  );
+  const contentColumns = base.filter(column => column.id !== 'actions');
+  const equalWidth = Math.max(
+    72,
+    Math.floor(contentBudget / Math.max(1, contentColumns.length)),
+  );
+  let remainder = contentBudget - equalWidth * contentColumns.length;
+  const lastContentId = contentColumns[contentColumns.length - 1]?.id;
+
+  return base.map(column => {
+    if (column.id === 'actions') {
+      return { ...column, width: actionsWidth };
+    }
+
+    const extra = column.id === lastContentId ? remainder : 0;
+    if (column.id === lastContentId) {
+      remainder = 0;
+    }
+
+    return {
+      ...column,
+      width: equalWidth + extra,
+    };
+  });
+}
+
 const styles = StyleSheet.create({
-  surface: { gap: 12 },
-  listSurface: { flex: 1, minHeight: 0, overflow: 'visible' },
+  surface: { gap: 14 },
   statusBadge: { alignSelf: 'stretch' },
-  listRoot: { flex: 1, gap: 12, minHeight: 0, overflow: 'visible' },
+  detailToolbarContext: {
+    color: V.colors.fg,
+    flexShrink: 1,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+    minWidth: 0,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+  },
+  listRoot: { gap: 14 },
   productFilterBanner: {
     backgroundColor: V.colors.primarySoft,
     borderColor: V.colors.border,
@@ -697,11 +834,10 @@ const styles = StyleSheet.create({
     position: 'relative',
     zIndex: 100000,
   },
-  filterTrigger: {
-    flexBasis: 'auto',
-    flexGrow: 0,
+  toolbarButton: {
     flexShrink: 0,
-    minWidth: 108,
+    minHeight: 34,
+    paddingHorizontal: 10,
   },
   filterOverlayPanel: {
     backgroundColor: V.colors.bg,
@@ -733,40 +869,33 @@ const styles = StyleSheet.create({
     marginTop: 6,
     paddingTop: 6,
   },
-  tableFrame: {
-    minHeight: 0,
-    overflow: 'visible',
-  },
-  listFlatList: {
-    flexGrow: 0,
-  },
-  listContent: {
-    flexGrow: 0,
-  },
   emptyWrap: { paddingHorizontal: 12, paddingVertical: 24 },
   paginationRow: { alignItems: 'center', flexDirection: 'row', gap: 8 },
   pageLabel: { color: V.colors.mutedFg, fontSize: 13 },
   listCell: {
+    alignItems: 'center',
     justifyContent: 'center',
     minWidth: 0,
-    paddingHorizontal: 0,
+    overflow: 'hidden',
     paddingVertical: 4,
   },
+  identityCell: {
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+  },
   primaryCell: {
-    flex: 1,
     minWidth: 0,
+    width: 96,
   },
   statusCell: {
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: 4,
   },
-  overflowCell: {
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-    overflow: 'visible',
-    paddingHorizontal: 0,
-    width: 48,
-    zIndex: 9000,
+  centerBadge: {
+    alignSelf: 'center',
+  },
+  actionsTrack: {
+    alignItems: 'center',
   },
   activeActionRow: {
     elevation: 96,
@@ -790,6 +919,8 @@ const styles = StyleSheet.create({
   cellText: {
     color: V.colors.fg,
     fontSize: 13,
+    textAlign: 'center',
+    width: '100%',
   },
   helperText: {
     color: V.colors.mutedFg,
@@ -828,7 +959,7 @@ const styles = StyleSheet.create({
     width: 220,
     height: 220,
   },
-  opnameRoot: { flex: 1, gap: 12, minHeight: 0 },
+  opnameRoot: { gap: 14 },
   opnameInputRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
