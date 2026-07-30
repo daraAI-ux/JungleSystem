@@ -5,6 +5,8 @@ import {
   StyleSheet,
   Text,
   View,
+  type StyleProp,
+  type TextStyle,
 } from 'react-native';
 import {
   KOLAM_ENCLOSURE_LIST_TABS,
@@ -406,7 +408,10 @@ function KolamEnclosureList({
       ) : controller.activeTab === 'pending' ? (
         <KolamEnclosurePendingPanel controller={controller} />
       ) : (
-        <KolamEnclosureAllocationPanel controller={controller} />
+        <KolamEnclosureAllocationPanel
+          controller={controller}
+          onRouteChange={onRouteChange}
+        />
       )}
     </View>
   );
@@ -1145,8 +1150,10 @@ function KolamEnclosurePendingPanel({
 
 function KolamEnclosureAllocationPanel({
   controller,
+  onRouteChange,
 }: {
   controller: KolamEnclosureController;
+  onRouteChange?: (route: string) => void;
 }) {
   const [page, setPage] = React.useState(1);
   const [openSpeciesIds, setOpenSpeciesIds] = React.useState<Set<string>>(
@@ -1247,6 +1254,7 @@ function KolamEnclosureAllocationPanel({
               <AllocationSpeciesGroupRow
                 group={group}
                 key={group.speciesId}
+                onRouteChange={onRouteChange}
                 onToggle={() => toggleGroup(group.speciesId)}
                 open={openSpeciesIds.has(group.speciesId)}
               />
@@ -1275,16 +1283,17 @@ type AllocationSpeciesGroup =
 
 function AllocationSpeciesGroupRow({
   group,
+  onRouteChange,
   onToggle,
   open,
 }: {
   group: AllocationSpeciesGroup;
+  onRouteChange?: (route: string) => void;
   onToggle: () => void;
   open: boolean;
 }) {
   const singleRow = group.rows.length === 1 && !group.hasVariants;
   const row = group.rows[0];
-  const codeLabel = formatAllocationCodes(group.rows);
 
   if (singleRow && row) {
     return (
@@ -1292,6 +1301,7 @@ function AllocationSpeciesGroupRow({
         allocated={row.allocated}
         codes={row.enclosureCodes}
         enclosures={row.enclosures}
+        onRouteChange={onRouteChange}
         scientificName={group.scientificName}
         speciesName={group.speciesName || group.speciesId}
         unit={row.unit || group.unit}
@@ -1337,9 +1347,10 @@ function AllocationSpeciesGroupRow({
           </Text>
         </View>
         <View style={[styles.cell, {width: allocationWidthOf('marketplace')}]}>
-          <Text numberOfLines={2} style={styles.cellText}>
-            {codeLabel || '-'}
-          </Text>
+          <AllocationEnclosureCodeLinks
+            onRouteChange={onRouteChange}
+            rows={group.rows}
+          />
         </View>
       </KolamDataTableRowFrame>
       {open ? (
@@ -1347,6 +1358,7 @@ function AllocationSpeciesGroupRow({
           {group.rows.map(rowItem => (
             <AllocationVariantRow
               key={`${rowItem.speciesId}:${rowItem.variantId || ''}`}
+              onRouteChange={onRouteChange}
               row={rowItem}
             />
           ))}
@@ -1360,6 +1372,7 @@ function AllocationOverviewRow({
   allocated,
   codes,
   enclosures,
+  onRouteChange,
   scientificName,
   speciesName,
   unit,
@@ -1369,6 +1382,7 @@ function AllocationOverviewRow({
   allocated: number;
   codes: string[];
   enclosures: KolamEnclosureAllocationOverviewRow['enclosures'];
+  onRouteChange?: (route: string) => void;
   scientificName: string;
   speciesName: string;
   unit: string;
@@ -1403,17 +1417,20 @@ function AllocationOverviewRow({
         </Text>
       </View>
       <View style={[styles.cell, {width: allocationWidthOf('marketplace')}]}>
-        <Text numberOfLines={2} style={styles.cellText}>
-          {formatAllocationCodes([{enclosureCodes: codes, enclosures}]) || '-'}
-        </Text>
+        <AllocationEnclosureCodeLinks
+          onRouteChange={onRouteChange}
+          rows={[{enclosureCodes: codes, enclosures}]}
+        />
       </View>
     </KolamDataTableRowFrame>
   );
 }
 
 function AllocationVariantRow({
+  onRouteChange,
   row,
 }: {
+  onRouteChange?: (route: string) => void;
   row: KolamEnclosureAllocationOverviewRow;
 }) {
   return (
@@ -1432,9 +1449,54 @@ function AllocationVariantRow({
       >
         Belum: {row.unallocated} {row.unit}
       </Text>
-      <Text numberOfLines={2} style={styles.allocationVariantCodes}>
-        {formatAllocationCodes([row]) || '-'}
-      </Text>
+      <AllocationEnclosureCodeLinks
+        onRouteChange={onRouteChange}
+        rows={[row]}
+        style={styles.allocationVariantCodes}
+      />
+    </View>
+  );
+}
+
+function AllocationEnclosureCodeLinks({
+  onRouteChange,
+  rows,
+  style,
+}: {
+  onRouteChange?: (route: string) => void;
+  rows: Array<
+    Pick<KolamEnclosureAllocationOverviewRow, 'enclosureCodes' | 'enclosures'>
+  >;
+  style?: StyleProp<TextStyle>;
+}) {
+  const links = collectAllocationEnclosureLinks(rows);
+  if (!links.length) {
+    return <Text style={[styles.cellText, style]}>-</Text>;
+  }
+
+  return (
+    <View style={styles.codeLinksRow}>
+      {links.map((link, index) => (
+        <React.Fragment key={`${link.enclosureId || 'code'}:${link.code}`}>
+          {index > 0 ? <Text style={[styles.cellText, style]}>, </Text> : null}
+          {link.enclosureId ? (
+            <Pressable
+              accessibilityRole="link"
+              onPress={() =>
+                onRouteChange?.(`${KOLAM_ENCLOSURE_ROOT}/${link.enclosureId}`)
+              }
+            >
+              <Text numberOfLines={1} style={[styles.linkText, style]}>
+                {link.code}
+              </Text>
+            </Pressable>
+          ) : (
+            <Text numberOfLines={1} style={[styles.cellText, style]}>
+              {link.code}
+            </Text>
+          )}
+        </React.Fragment>
+      ))}
     </View>
   );
 }
@@ -1579,25 +1641,50 @@ function filterAllocationGroups(
   });
 }
 
-function formatAllocationCodes(
+function collectAllocationEnclosureLinks(
   rows: Array<
     Pick<KolamEnclosureAllocationOverviewRow, 'enclosureCodes' | 'enclosures'>
   >,
 ) {
-  const codes = new Set<string>();
+  const byKey = new Map<string, {code: string; enclosureId: string}>();
+
   for (const row of rows) {
-    for (const code of row.enclosureCodes) {
-      if (code) {
-        codes.add(code);
+    for (const enclosure of row.enclosures) {
+      const code = enclosure.code.trim();
+      const enclosureId = enclosure.enclosureId.trim();
+      if (!code && !enclosureId) {
+        continue;
+      }
+      const key = enclosureId || `code:${code}`;
+      const current = byKey.get(key);
+      if (!current) {
+        byKey.set(key, {
+          code: code || enclosureId.slice(-8),
+          enclosureId,
+        });
+        continue;
+      }
+      if (!current.enclosureId && enclosureId) {
+        current.enclosureId = enclosureId;
+      }
+      if (!current.code && code) {
+        current.code = code;
       }
     }
-    for (const enclosure of row.enclosures) {
-      if (enclosure.code) {
-        codes.add(enclosure.code);
+    for (const code of row.enclosureCodes) {
+      const trimmed = code.trim();
+      if (!trimmed) {
+        continue;
       }
+      const existing = [...byKey.values()].find(item => item.code === trimmed);
+      if (existing) {
+        continue;
+      }
+      byKey.set(`code:${trimmed}`, {code: trimmed, enclosureId: ''});
     }
   }
-  return [...codes].join(', ');
+
+  return [...byKey.values()];
 }
 
 function formatDashboardDateTime(value: string) {
@@ -1844,6 +1931,13 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 13,
     fontWeight: '700',
+  },
+  codeLinksRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 0,
+    minWidth: 0,
   },
   scientificText: {
     color: V.colors.mutedFg,

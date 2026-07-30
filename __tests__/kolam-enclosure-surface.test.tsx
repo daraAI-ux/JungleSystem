@@ -257,6 +257,7 @@ describe('Kolam enclosure surface', () => {
   });
 
   it('renders the plugin-parity allocation statistics with grouped variants', async () => {
+    const onRouteChange = jest.fn();
     const allocationOverview = createAllocationOverview();
     const controller = createController({
       activeTab: 'allocation',
@@ -288,7 +289,10 @@ describe('Kolam enclosure surface', () => {
 
     await ReactTestRenderer.act(async () => {
       renderer = ReactTestRenderer.create(
-        <KolamEnclosureSurface route="/enclosures?scope=allocation" />,
+        <KolamEnclosureSurface
+          onRouteChange={onRouteChange}
+          route="/enclosures?scope=allocation"
+        />,
       );
     });
 
@@ -299,7 +303,19 @@ describe('Kolam enclosure surface', () => {
     expect(root.findAllByProps({children: 'Belum di enclosure'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'Tinctorius'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: '2 varian down'}).length).toBeGreaterThan(0);
-    expect(root.findAllByProps({children: 'ENC-A, ENC-B'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'ENC-A'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'ENC-B'}).length).toBeGreaterThan(0);
+
+    await ReactTestRenderer.act(async () => {
+      let node: ReactTestRenderer.ReactTestInstance | null =
+        root.findAllByProps({children: 'ENC-A'})[0] ?? null;
+      while (node && typeof node.props.onPress !== 'function') {
+        node = node.parent;
+      }
+      expect(node?.props.onPress).toEqual(expect.any(Function));
+      node!.props.onPress();
+    });
+    expect(onRouteChange).toHaveBeenCalledWith('/enclosures/enc-a');
 
     await ReactTestRenderer.act(async () => {
       root.findAllByProps({label: '2 varian down'})[0].props.onPress();
