@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import {
   getCustomFieldTypeLabel,
   type KolamCustomField,
@@ -11,7 +11,11 @@ import {
   countActiveLocaleAuditItems,
   createCustomFieldLocaleAuditItems,
 } from '../domain/kolam-locale-audit';
-import { getKolamTableColumns } from '../domain/kolam-table';
+import {
+  getKolamTableColumns,
+  getKolamTableVisualContract,
+  type KolamTableColumn,
+} from '../domain/kolam-table';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import {
   useKolamCustomFieldController,
@@ -20,11 +24,20 @@ import {
 import { KolamButton } from './kolam-button';
 import { KolamCatalogTranslationsEditor } from './kolam-catalog-translations-editor';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
+import { KolamCheckmarkIcon } from './kolam-checkmark-icon';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamCustomFieldIcon } from './kolam-custom-field-icon';
+import {
+  getKolamDataTableColumnStyle,
+  KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+  KOLAM_DATA_TABLE_COLUMN_GAP,
+} from './kolam-data-table-column-style';
 import { KolamDataTableHeader } from './kolam-data-table-header';
-import { KolamDataTableAmountCell } from './kolam-data-table-text-cell';
 import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
+import {
+  KolamDataTableActionsTrack,
+  KolamDataTableMainTrack,
+} from './kolam-data-table-tracks';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import {
   KolamDropdownSelect,
@@ -33,16 +46,22 @@ import {
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
+import { KolamInteractionFrame } from './kolam-interaction-frame';
 import { KolamLabelFieldDetailOverview } from './kolam-label-field-detail-overview';
 import { KolamNativeFormSection } from './kolam-native-form-section';
+import { KolamSearchField } from './kolam-search-field';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamStatusBadge } from './kolam-status-badge';
+import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 
 type CustomFieldSortMode = 'label-asc' | 'label-desc' | 'order' | 'newest';
 type CustomFieldStatusFilter = 'all' | KolamCustomFieldStatus;
 type CustomFieldTypeFilter = 'all' | KolamCustomFieldType;
+type CustomFieldListFilterPanel = 'sort' | 'status' | 'type';
+
+const CUSTOM_FIELD_FILTER_PANEL_WIDTH = 220;
 
 export function KolamCustomFieldSurface({
   onRouteChange,
@@ -79,27 +98,46 @@ function KolamCustomFieldShell({
   controller: KolamCustomFieldController;
   onRouteChange?: (route: string) => void;
 }) {
+  if (controller.mode === 'list') {
+    return (
+      <View style={styles.surface}>
+        {controller.error ? (
+          <KolamStatusBadge
+            intent="danger"
+            label={controller.error}
+            numberOfLines={2}
+            style={styles.errorBadge}
+          />
+        ) : null}
+        {children}
+      </View>
+    );
+  }
+
+  const contextLabel =
+    controller.mode === 'new'
+      ? 'Field kustom baru'
+      : controller.mode === 'edit'
+        ? `Edit · ${controller.selectedField?.fieldLabel || controller.form.fieldLabel || 'Field Kustom'}`
+        : controller.selectedField?.fieldLabel || 'Detail field kustom';
+
   return (
     <View style={styles.surface}>
-      <View style={styles.header}>
-        <View style={styles.headerActions}>
-          <KolamButton
-            disabled={controller.loading}
-            label="Refresh"
-            onPress={() => {
-              void controller.onRefresh();
-            }}
-          />
-          {controller.mode === 'list' ? (
+      <View style={kolamTableToolbarStyles.shell}>
+        <View style={kolamTableToolbarStyles.row}>
+          <View style={kolamTableToolbarStyles.filters}>
+            <Text numberOfLines={1} style={styles.detailToolbarContext}>
+              {contextLabel}
+            </Text>
+          </View>
+          <View style={kolamTableToolbarStyles.actions}>
             <KolamButton
-              intent="primary"
-              label="Buat Baru"
+              disabled={controller.loading}
+              label="Refresh"
               onPress={() => {
-                controller.onCreateNew();
-                onRouteChange?.('/custom-fields/baru');
+                void controller.onRefresh();
               }}
             />
-          ) : (
             <KolamButton
               label="Daftar"
               onPress={() => {
@@ -107,7 +145,14 @@ function KolamCustomFieldShell({
                 onRouteChange?.('/custom-fields');
               }}
             />
-          )}
+            {controller.mode === 'detail' ? (
+              <KolamButton
+                intent="primary"
+                label="Edit"
+                onPress={controller.onEdit}
+              />
+            ) : null}
+          </View>
         </View>
       </View>
       {controller.error ? (
@@ -139,9 +184,16 @@ function KolamCustomFieldList({
     React.useState<CustomFieldTypeFilter>('all');
   const [pageSize, setPageSize] = React.useState(10);
   const [page, setPage] = React.useState(1);
+  const [activeFilterPanel, setActiveFilterPanel] =
+    React.useState<CustomFieldListFilterPanel | null>(null);
+  const [panelAnchor, setPanelAnchor] = React.useState({ left: 0, top: 40 });
+  const toolbarRef = React.useRef<View>(null);
+  const sortTriggerRef = React.useRef<View>(null);
+  const statusTriggerRef = React.useRef<View>(null);
+  const typeTriggerRef = React.useRef<View>(null);
   const [deleteCandidate, setDeleteCandidate] =
     React.useState<KolamCustomField | null>(null);
-  const summary = getCustomFieldSummary(controller.fields);
+  const [tableBodyWidth, setTableBodyWidth] = React.useState(0);
   const filteredFields = React.useMemo(
     () => filterFields(controller.fields, search, statusFilter, typeFilter),
     [controller.fields, search, statusFilter, typeFilter],
@@ -156,62 +208,193 @@ function KolamCustomFieldList({
     (safePage - 1) * pageSize,
     safePage * pageSize,
   );
+  const listColumns = React.useMemo(
+    () => fitCustomFieldListColumns(tableBodyWidth),
+    [tableBodyWidth],
+  );
+  const sortFilterLabel =
+    sortMode === 'label-desc'
+      ? 'Label Z-A'
+      : sortMode === 'order'
+        ? 'Urutan Field'
+        : sortMode === 'newest'
+          ? 'Terbaru'
+          : 'Label A-Z';
+  const statusFilterLabel =
+    statusFilter === 'active'
+      ? 'Aktif'
+      : statusFilter === 'inactive'
+        ? 'Nonaktif'
+        : 'Semua Status';
+  const typeFilterLabel = getCustomFieldTypeFilterLabel(typeFilter);
+
+  const anchorFilterPanel = React.useCallback(
+    (panel: CustomFieldListFilterPanel) => {
+      const toolbar = toolbarRef.current;
+      const trigger =
+        panel === 'status'
+          ? statusTriggerRef.current
+          : panel === 'type'
+            ? typeTriggerRef.current
+            : sortTriggerRef.current;
+      if (!toolbar || !trigger) {
+        return;
+      }
+      toolbar.measureInWindow((toolbarX, toolbarY, toolbarWidth) => {
+        trigger.measureInWindow((x, y, _width, height) => {
+          const maxLeft = Math.max(
+            0,
+            toolbarWidth - CUSTOM_FIELD_FILTER_PANEL_WIDTH,
+          );
+          const preferredLeft = x - toolbarX;
+          setPanelAnchor({
+            left: Math.min(Math.max(0, preferredLeft), maxLeft),
+            top: y - toolbarY + height + 4,
+          });
+        });
+      });
+    },
+    [],
+  );
+
+  const openFilterPanel = (panel: CustomFieldListFilterPanel) => {
+    setActiveFilterPanel(current => {
+      const next = current === panel ? null : panel;
+      if (next) {
+        requestAnimationFrame(() => anchorFilterPanel(next));
+      }
+      return next;
+    });
+  };
 
   React.useEffect(() => {
     setPage(1);
   }, [pageSize, search, sortMode, statusFilter, typeFilter]);
 
+  React.useEffect(() => {
+    if (!activeFilterPanel) {
+      return;
+    }
+    requestAnimationFrame(() => anchorFilterPanel(activeFilterPanel));
+  }, [activeFilterPanel, anchorFilterPanel]);
+
   return (
     <View style={styles.stack}>
-      <View style={styles.summaryGrid}>
-        <SummaryTile label="Total Field" value={controller.fields.length} />
-        <SummaryTile label="Aktif" value={summary.active} />
-        <SummaryTile label="Nonaktif" value={summary.inactive} />
-        <SummaryTile label="Wajib" value={summary.required} />
-      </View>
-      <View style={kolamTableToolbarStyles.row}>
-        <KolamFormTextField
-          onChangeText={setSearch}
-          placeholder="Cari field kustom..."
-          style={kolamTableToolbarStyles.searchInput}
-          value={search}
-        />
-        <View style={kolamTableToolbarStyles.controls}>
-          <KolamDropdownSelect<CustomFieldSortMode>
-            label="Urutan"
-            onChange={setSortMode}
-            options={[
-              { label: 'Label A-Z', value: 'label-asc' },
-              { label: 'Label Z-A', value: 'label-desc' },
-              { label: 'Urutan Field', value: 'order' },
-              { label: 'Terbaru', value: 'newest' },
-            ]}
-            value={sortMode}
-          />
-          <KolamDropdownSelect<CustomFieldStatusFilter>
-            label="Status"
-            onChange={setStatusFilter}
-            options={[
-              { label: 'Semua', value: 'all' },
-              { label: 'Aktif', value: 'active' },
-              { label: 'Nonaktif', value: 'inactive' },
-            ]}
-            value={statusFilter}
-          />
-          <KolamDropdownSelect<CustomFieldTypeFilter>
-            label="Tipe"
-            onChange={setTypeFilter}
-            options={[
-              { label: 'Semua', value: 'all' },
-              { label: 'Teks', value: 'string' },
-              { label: 'Angka', value: 'number' },
-              { label: 'Ya/Tidak', value: 'boolean' },
-              { label: 'Rentang', value: 'range' },
-              { label: 'Pilihan', value: 'select' },
-            ]}
-            value={typeFilter}
-          />
+      <View ref={toolbarRef} collapsable={false} style={styles.toolbarWrap}>
+        <View style={kolamTableToolbarStyles.shell}>
+          <View style={kolamTableToolbarStyles.row}>
+            <View style={kolamTableToolbarStyles.filters}>
+              <KolamSearchField
+                containerStyle={kolamTableToolbarStyles.searchInput}
+                onChangeText={setSearch}
+                placeholder="Cari field kustom..."
+                value={search}
+              />
+              <View ref={sortTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={sortMode !== 'label-asc'}
+                  label={sortFilterLabel}
+                  onPress={() => openFilterPanel('sort')}
+                  open={activeFilterPanel === 'sort'}
+                  variant="quiet"
+                />
+              </View>
+              <View ref={statusTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={statusFilter !== 'all'}
+                  label={statusFilterLabel}
+                  onPress={() => openFilterPanel('status')}
+                  open={activeFilterPanel === 'status'}
+                  variant="quiet"
+                />
+              </View>
+              <View ref={typeTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={typeFilter !== 'all'}
+                  label={typeFilterLabel}
+                  onPress={() => openFilterPanel('type')}
+                  open={activeFilterPanel === 'type'}
+                  variant="quiet"
+                />
+              </View>
+            </View>
+            <View style={kolamTableToolbarStyles.actions}>
+              <KolamButton
+                disabled={controller.loading}
+                label="Refresh"
+                onPress={() => {
+                  void controller.onRefresh();
+                }}
+              />
+              <KolamButton
+                intent="primary"
+                label="Baru"
+                onPress={() => {
+                  controller.onCreateNew();
+                  onRouteChange?.('/custom-fields/baru');
+                }}
+              />
+            </View>
+          </View>
         </View>
+        {activeFilterPanel ? (
+          <View
+            style={[
+              styles.filterOverlayPanel,
+              {
+                left: panelAnchor.left,
+                top: panelAnchor.top,
+                width: CUSTOM_FIELD_FILTER_PANEL_WIDTH,
+              },
+            ]}
+          >
+            {getFilterPanelOptions(activeFilterPanel).map(option => {
+              const selected = isFilterOptionSelected(
+                activeFilterPanel,
+                option.value,
+                sortMode,
+                statusFilter,
+                typeFilter,
+              );
+              return (
+                <KolamInteractionFrame
+                  accessibilityLabel={option.label}
+                  key={`${activeFilterPanel}-${option.value}`}
+                  onPress={() => {
+                    if (activeFilterPanel === 'sort') {
+                      setSortMode(option.value as CustomFieldSortMode);
+                    } else if (activeFilterPanel === 'status') {
+                      setStatusFilter(option.value as CustomFieldStatusFilter);
+                    } else {
+                      setTypeFilter(option.value as CustomFieldTypeFilter);
+                    }
+                    setActiveFilterPanel(null);
+                  }}
+                  selected={selected}
+                  style={[
+                    styles.filterMenuItem,
+                    selected ? styles.filterMenuItemSelected : null,
+                  ]}
+                >
+                  <Text
+                    numberOfLines={1}
+                    style={[
+                      styles.filterMenuItemLabel,
+                      selected ? styles.filterMenuItemLabelSelected : null,
+                    ]}
+                  >
+                    {option.label}
+                  </Text>
+                  {selected ? (
+                    <KolamCheckmarkIcon color={V.colors.primary} size="sm" />
+                  ) : (
+                    <View style={styles.filterMenuItemCheckSpacer} />
+                  )}
+                </KolamInteractionFrame>
+              );
+            })}
+          </View>
+        ) : null}
       </View>
       <KolamCatalogListTableShell
         footer={
@@ -248,11 +431,13 @@ function KolamCustomFieldList({
             ) : null}
           </KolamTableFooterControls>
         }
+        onBodyWidthChange={setTableBodyWidth}
       >
-        <KolamDataTableHeader columns={getKolamTableColumns('custom-field')} />
+        <KolamDataTableHeader columns={listColumns} />
         {pagedFields.length ? (
           pagedFields.map(field => (
             <KolamCustomFieldRow
+              columns={listColumns}
               field={field}
               key={field.id}
               onDelete={() => setDeleteCandidate(field)}
@@ -308,12 +493,14 @@ function KolamCustomFieldList({
 }
 
 function KolamCustomFieldRow({
+  columns,
   field,
   onDelete,
   onEdit,
   onSelect,
   onSetStatus,
 }: {
+  columns: ReturnType<typeof getKolamTableColumns>;
   field: KolamCustomField;
   onDelete: () => void;
   onEdit: () => void;
@@ -322,62 +509,112 @@ function KolamCustomFieldRow({
 }) {
   const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
   const isInactive = field.status === 'inactive';
+  const columnOf = React.useCallback(
+    (id: (typeof columns)[number]['id']) =>
+      columns.find(column => column.id === id),
+    [columns],
+  );
+  const primaryColumn = columnOf('primary');
+  const metaColumn = columnOf('meta');
+  const notesColumn = columnOf('notes');
+  const childrenColumn = columnOf('children');
+  const amountColumn = columnOf('amount');
+  const statusColumn = columnOf('status');
+  const actionsColumn = columnOf('actions');
 
   return (
-    <KolamDataTableRowFrame style={actionMenuOpen && styles.activeActionRow}>
-      <View style={styles.identityCell}>
-        <View style={styles.identity}>
-          <KolamCustomFieldIcon field={field} />
-          <KolamCopyStack
-            containerStyle={styles.identityCopy}
-            items={[
-              { id: 'name', text: field.fieldLabel, style: styles.rowTitle },
-              {
-                id: 'desc',
-                text: stripHtmlForDetail(field.description) || '-',
-                style: styles.rowMeta,
-                textProps: {
-                  ellipsizeMode: 'tail',
-                  numberOfLines: 1,
+    <KolamDataTableRowFrame
+      style={actionMenuOpen ? styles.activeActionRow : undefined}
+    >
+      <KolamDataTableMainTrack style={styles.mainTrackVisible}>
+        <View
+          style={[
+            styles.listCell,
+            styles.identityCell,
+            primaryColumn ? getKolamDataTableColumnStyle(primaryColumn) : null,
+          ]}
+        >
+          <View style={styles.identity}>
+            <KolamCustomFieldIcon field={field} />
+            <KolamCopyStack
+              containerStyle={styles.identityCopy}
+              items={[
+                { id: 'name', text: field.fieldLabel, style: styles.rowTitle },
+                {
+                  id: 'desc',
+                  text: stripHtmlForDetail(field.description) || '-',
+                  style: styles.rowMeta,
+                  textProps: {
+                    ellipsizeMode: 'tail',
+                    numberOfLines: 1,
+                  },
                 },
-              },
-            ]}
+              ]}
+            />
+          </View>
+        </View>
+        <View
+          style={[
+            styles.listCell,
+            metaColumn ? getKolamDataTableColumnStyle(metaColumn) : null,
+          ]}
+        >
+          <Text numberOfLines={1} style={styles.keyText}>
+            {field.fieldKey}
+          </Text>
+        </View>
+        <View
+          style={[
+            styles.listCell,
+            notesColumn ? getKolamDataTableColumnStyle(notesColumn) : null,
+          ]}
+        >
+          <KolamStatusBadge
+            intent="muted"
+            label={getCustomFieldTypeLabel(field.fieldType)}
+            style={styles.typeBadge}
           />
         </View>
-      </View>
-      <View style={styles.keyCell}>
-        <KolamCopyStack
-          items={[{ id: 'key', text: field.fieldKey, style: styles.rowMeta }]}
-        />
-      </View>
-      <View style={styles.typeCell}>
-        <KolamStatusBadge
-          intent="muted"
-          label={getCustomFieldTypeLabel(field.fieldType)}
-        />
-      </View>
-      <View style={styles.rulesCell}>
-        <KolamCopyStack
-          items={[
-            {
-              id: 'rules',
-              text: getFieldRulesLabel(field),
-              style: styles.rulesText,
-              textProps: { numberOfLines: 2 },
-            },
+        <View
+          style={[
+            styles.listCell,
+            childrenColumn ? getKolamDataTableColumnStyle(childrenColumn) : null,
           ]}
-        />
-      </View>
-      <KolamDataTableAmountCell style={styles.orderCell}>
-        {field.order}
-      </KolamDataTableAmountCell>
-      <View style={styles.statusCell}>
-        <KolamStatusBadge
-          intent={field.status === 'active' ? 'success' : 'warning'}
-          label={getFieldStatusLabel(field.status)}
-        />
-      </View>
-      <View style={styles.overflowCell}>
+        >
+          <Text numberOfLines={2} style={styles.rulesText}>
+            {getFieldRulesLabel(field)}
+          </Text>
+        </View>
+        <View
+          style={[
+            styles.listCell,
+            amountColumn ? getKolamDataTableColumnStyle(amountColumn) : null,
+          ]}
+        >
+          <Text numberOfLines={1} style={styles.orderText}>
+            {String(field.order)}
+          </Text>
+        </View>
+        <View
+          style={[
+            styles.listCell,
+            statusColumn ? getKolamDataTableColumnStyle(statusColumn) : null,
+          ]}
+        >
+          <KolamStatusBadge
+            intent={field.status === 'active' ? 'success' : 'warning'}
+            label={getFieldStatusLabel(field.status)}
+            style={styles.statusBadge}
+          />
+        </View>
+      </KolamDataTableMainTrack>
+      <KolamDataTableActionsTrack
+        style={styles.actionsTrack}
+        width={Math.max(
+          actionsColumn?.width ?? KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+          KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+        )}
+      >
         <KolamOverflowMenuButton
           accessibilityLabel={`Menu ${field.fieldLabel}`}
           actions={[
@@ -391,7 +628,7 @@ function KolamCustomFieldRow({
           ]}
           onOpenChange={setActionMenuOpen}
         />
-      </View>
+      </KolamDataTableActionsTrack>
     </KolamDataTableRowFrame>
   );
 }
@@ -425,13 +662,6 @@ function KolamCustomFieldDetail({
     <View style={styles.stack}>
       {!editable && field ? (
         <>
-          <View style={styles.detailActions}>
-            <KolamButton
-              intent="primary"
-              label="Edit"
-              onPress={controller.onEdit}
-            />
-          </View>
           <KolamLabelFieldDetailOverview
             hero={<KolamCustomFieldIcon field={field} variant="detail" />}
             meta={[
@@ -779,31 +1009,107 @@ function FieldShell({
   );
 }
 
-function SummaryTile({ label, value }: { label: string; value: number }) {
-  return (
-    <View style={styles.summaryTile}>
-      <KolamCopyStack
-        items={[
-          { id: 'value', text: value, style: styles.summaryValue },
-          { id: 'label', text: label, style: styles.summaryLabel },
-        ]}
-      />
-    </View>
+function fitCustomFieldListColumns(containerWidth: number): KolamTableColumn[] {
+  const base = getKolamTableColumns('custom-field');
+  if (containerWidth <= 0) {
+    return base;
+  }
+
+  const gap = KOLAM_DATA_TABLE_COLUMN_GAP;
+  const paddingX = getKolamTableVisualContract().body.cellPaddingX * 2;
+  const actionsWidth = KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH;
+  const gapsTotal = gap * Math.max(0, base.length - 1);
+  const contentBudget = Math.max(
+    0,
+    containerWidth - paddingX - gapsTotal - actionsWidth,
   );
+  const contentColumns = base.filter(column => column.id !== 'actions');
+  const equalWidth = Math.max(
+    72,
+    Math.floor(contentBudget / Math.max(1, contentColumns.length)),
+  );
+  let remainder = contentBudget - equalWidth * contentColumns.length;
+  const lastContentId = contentColumns[contentColumns.length - 1]?.id;
+
+  return base.map(column => {
+    if (column.id === 'actions') {
+      return { ...column, width: actionsWidth };
+    }
+
+    const extra = column.id === lastContentId ? remainder : 0;
+    if (column.id === lastContentId) {
+      remainder = 0;
+    }
+
+    return {
+      ...column,
+      width: equalWidth + extra,
+    };
+  });
 }
 
-function getCustomFieldSummary(fields: KolamCustomField[]) {
-  return fields.reduce(
-    (summary, field) => {
-      summary[field.status] += 1;
-      if (field.required) {
-        summary.required += 1;
-      }
+function getCustomFieldTypeFilterLabel(typeFilter: CustomFieldTypeFilter) {
+  switch (typeFilter) {
+    case 'string':
+      return 'Teks';
+    case 'number':
+      return 'Angka';
+    case 'boolean':
+      return 'Ya/Tidak';
+    case 'range':
+      return 'Rentang';
+    case 'select':
+      return 'Pilihan';
+    case 'all':
+    default:
+      return 'Semua Tipe';
+  }
+}
 
-      return summary;
-    },
-    { active: 0, inactive: 0, required: 0 },
-  );
+function getFilterPanelOptions(panel: CustomFieldListFilterPanel) {
+  if (panel === 'sort') {
+    return [
+      { label: 'Label A-Z', value: 'label-asc' as CustomFieldSortMode },
+      { label: 'Label Z-A', value: 'label-desc' as CustomFieldSortMode },
+      { label: 'Urutan Field', value: 'order' as CustomFieldSortMode },
+      { label: 'Terbaru', value: 'newest' as CustomFieldSortMode },
+    ];
+  }
+
+  if (panel === 'status') {
+    return [
+      { label: 'Semua Status', value: 'all' as CustomFieldStatusFilter },
+      { label: 'Aktif', value: 'active' as CustomFieldStatusFilter },
+      { label: 'Nonaktif', value: 'inactive' as CustomFieldStatusFilter },
+    ];
+  }
+
+  return [
+    { label: 'Semua Tipe', value: 'all' as CustomFieldTypeFilter },
+    { label: 'Teks', value: 'string' as CustomFieldTypeFilter },
+    { label: 'Angka', value: 'number' as CustomFieldTypeFilter },
+    { label: 'Ya/Tidak', value: 'boolean' as CustomFieldTypeFilter },
+    { label: 'Rentang', value: 'range' as CustomFieldTypeFilter },
+    { label: 'Pilihan', value: 'select' as CustomFieldTypeFilter },
+  ];
+}
+
+function isFilterOptionSelected(
+  panel: CustomFieldListFilterPanel,
+  value: string,
+  sortMode: CustomFieldSortMode,
+  statusFilter: CustomFieldStatusFilter,
+  typeFilter: CustomFieldTypeFilter,
+) {
+  if (panel === 'sort') {
+    return value === sortMode;
+  }
+
+  if (panel === 'status') {
+    return value === statusFilter;
+  }
+
+  return value === typeFilter;
 }
 
 function filterFields(
@@ -948,19 +1254,15 @@ const styles = StyleSheet.create({
   surface: {
     gap: 14,
   },
-  header: {
-    minHeight: 40,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'flex-end',
-    gap: 16,
-  },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    justifyContent: 'flex-end',
-    gap: 8,
+  detailToolbarContext: {
+    color: V.colors.fg,
+    flexShrink: 1,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+    minWidth: 0,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
   },
   errorBadge: {
     alignSelf: 'flex-start',
@@ -969,49 +1271,35 @@ const styles = StyleSheet.create({
   stack: {
     gap: 14,
   },
-  summaryGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  summaryTile: {
-    minWidth: 150,
-    flexGrow: 1,
-    padding: 14,
-    borderRadius: 8,
-    borderColor: V.colors.border,
-    borderWidth: 1,
-    backgroundColor: V.colors.bg,
-  },
-  summaryValue: {
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 22,
-    fontWeight: '900',
-  },
-  summaryLabel: {
-    marginTop: 3,
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
-    fontWeight: '700',
-  },
   emptyWrap: {
     minHeight: 220,
     justifyContent: 'center',
   },
   activeActionRow: {
     zIndex: 1000,
-    elevation: 96,
+    elevation: 30,
+    overflow: 'visible',
+  },
+  mainTrackVisible: {
+    overflow: 'visible',
+  },
+  listCell: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 0,
+    overflow: 'hidden',
+    paddingVertical: 4,
   },
   identityCell: {
-    flex: 1,
-    minWidth: 0,
+    alignItems: 'flex-start',
+    justifyContent: 'center',
   },
   identity: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
+    maxWidth: '100%',
+    minWidth: 0,
   },
   identityCopy: {
     minWidth: 0,
@@ -1022,6 +1310,7 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 13,
     fontWeight: '900',
+    textAlign: 'left',
   },
   rowMeta: {
     marginTop: 2,
@@ -1029,18 +1318,18 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 11,
     fontWeight: '700',
+    textAlign: 'left',
   },
-  keyCell: {
-    width: 150,
-    minWidth: 0,
+  keyText: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '700',
+    textAlign: 'center',
+    width: '100%',
   },
-  typeCell: {
-    width: 110,
-    alignItems: 'flex-start',
-  },
-  rulesCell: {
-    width: 230,
-    minWidth: 0,
+  typeBadge: {
+    alignSelf: 'center',
   },
   rulesText: {
     color: V.colors.mutedFg,
@@ -1048,19 +1337,22 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     lineHeight: 17,
+    textAlign: 'center',
+    width: '100%',
   },
-  orderCell: {
-    width: 86,
+  orderText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+    textAlign: 'center',
+    width: '100%',
   },
-  statusCell: {
-    width: 116,
-    alignItems: 'flex-end',
+  statusBadge: {
+    alignSelf: 'center',
   },
-  overflowCell: {
-    width: 64,
-    alignItems: 'flex-end',
-    zIndex: 1100,
-    elevation: 30,
+  actionsTrack: {
+    alignItems: 'center',
   },
   paginationRow: {
     minHeight: 42,
@@ -1075,9 +1367,54 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '800',
   },
-  detailActions: {
+  toolbarWrap: {
+    elevation: 1000,
+    overflow: 'visible',
+    position: 'relative',
+    zIndex: 100000,
+  },
+  filterOverlayPanel: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 10,
+    borderWidth: 1,
+    elevation: 1200,
+    gap: 2,
+    padding: 6,
+    position: 'absolute',
+    shadowColor: V.colors.fg,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 18,
+    zIndex: 120000,
+  },
+  filterMenuItem: {
+    alignItems: 'center',
+    borderRadius: 8,
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    gap: 10,
+    justifyContent: 'space-between',
+    minHeight: 36,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  filterMenuItemSelected: {
+    backgroundColor: V.colors.primarySoft,
+  },
+  filterMenuItemLabel: {
+    color: V.colors.fg,
+    flex: 1,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  filterMenuItemLabelSelected: {
+    color: V.colors.primary,
+    fontWeight: '800',
+  },
+  filterMenuItemCheckSpacer: {
+    height: 14,
+    width: 14,
   },
   segmentRow: {
     flexDirection: 'row',
