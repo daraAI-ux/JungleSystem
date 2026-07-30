@@ -7,7 +7,6 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  useWindowDimensions,
   View,
 } from 'react-native';
 import { SvgXml } from 'react-native-svg';
@@ -22,7 +21,6 @@ import { KolamActionControlButton } from './kolam-action-control-button';
 import { KolamChoiceSegment } from './kolam-choice-segment';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
-import { KolamModalBackdrop } from './kolam-modal-backdrop';
 import { KolamRowFrame } from './kolam-row-frame';
 import { KolamSettingsWebFormFields } from './kolam-settings-web-form-fields';
 import { KolamSettingsWebFormSectionHeader } from './kolam-settings-web-form-section-header';
@@ -7021,7 +7019,6 @@ function FinancialSettingsPanel({
   ) => void;
 }) {
   const busy = financialStatus === 'loading' || financialStatus === 'saving';
-  const {height: windowHeight, width: windowWidth} = useWindowDimensions();
   const [paymentMethodFormOpen, setPaymentMethodFormOpen] =
     React.useState(false);
   const paymentMethodCanSave =
@@ -7248,22 +7245,12 @@ function FinancialSettingsPanel({
             <Modal
               animationType="fade"
               onRequestClose={() => setPaymentMethodFormOpen(false)}
-              transparent
               visible={paymentMethodFormOpen}
             >
               <View style={styles.financialPaymentModalOverlay}>
-                <KolamModalBackdrop
-                  onPress={() => setPaymentMethodFormOpen(false)}
-                />
                 <View
                   accessibilityLabel="Form metode pembayaran"
-                  style={[
-                    styles.financialPaymentModalPanel,
-                    {
-                      height: windowHeight,
-                      width: windowWidth,
-                    },
-                  ]}
+                  style={styles.financialPaymentModalPanel}
                 >
                   <View style={styles.operationalCardHeaderRow}>
                     <KolamCopyStack
@@ -8313,6 +8300,7 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   financialPaymentModalOverlay: {
+    backgroundColor: '#f9fafb',
     flex: 1,
   },
   financialPaymentModalBody: {
@@ -8321,6 +8309,7 @@ const styles = StyleSheet.create({
   },
   financialPaymentModalPanel: {
     backgroundColor: '#f9fafb',
+    flex: 1,
     gap: 10,
     padding: 12,
   },
