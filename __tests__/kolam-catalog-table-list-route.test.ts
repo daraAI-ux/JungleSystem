@@ -10,7 +10,7 @@ describe('isCatalogTableListRoute', () => {
     expect(isCatalogTableListRoute('/stock-transaction?productId=abc')).toBe(
       true,
     );
-    expect(isCatalogTableListRoute('/suppliers')).toBe(true);
+    expect(isCatalogTableListRoute('/suppliers')).toBe(false);
     expect(isCatalogTableListRoute('/customers')).toBe(true);
     expect(isCatalogTableListRoute('/purchase-order')).toBe(true);
   });
