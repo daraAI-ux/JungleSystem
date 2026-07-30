@@ -7729,6 +7729,12 @@ function FinancialSettingsPanel({
                 },
               ]}
             />
+            <KolamActionControlButton
+              disabled={disabled || busy}
+              intent="primary"
+              label="Simpan lembur"
+              onPress={onSaveOvertimeSettings}
+            />
           </View>
           <KolamRowFrame variant="settingsForm">
             <KolamTextFieldRowCopy
@@ -7825,14 +7831,6 @@ function FinancialSettingsPanel({
                 variant="settingsForm"
               />
             </View>
-          </View>
-          <View style={styles.financialActions}>
-            <KolamActionControlButton
-              disabled={disabled || busy}
-              intent="primary"
-              label="Simpan lembur"
-              onPress={onSaveOvertimeSettings}
-            />
           </View>
         </View>
       ) : null}
