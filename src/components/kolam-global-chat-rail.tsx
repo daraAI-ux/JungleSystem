@@ -17,6 +17,7 @@ import {classifyKolamChatLiveEvent} from '../domain/kolam-chat-live-classifier';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {
   type KolamChatLiveEvent,
+  type KolamChatLiveStreamStatus,
   useKolamChatLiveStream,
 } from '../hooks/use-kolam-chat-live-stream';
 import {useKolamChatRailDetail} from '../hooks/use-kolam-chat-rail-detail';
@@ -195,6 +196,8 @@ const CHAT_ADMIN_ROLE_KEYS = new Set([
   'admin',
   'administrator',
 ]);
+const CHAT_LIVE_STALE_MS = 15_000;
+const CHAT_LIVE_FALLBACK_INTERVAL_MS = 5_000;
 interface KolamChatRailAnalyticsState {
   data: KolamChatAnalytics | null;
   errorMessage?: string;
@@ -372,6 +375,11 @@ export function KolamGlobalChatRail({
   const [daraThinkingLiveSignal, setDaraThinkingLiveSignal] =
     React.useState<KolamDaraThinkingLiveSignal | null>(null);
   const daraThinkingSignalKeyRef = React.useRef(0);
+  const [liveStatus, setLiveStatus] =
+    React.useState<KolamChatLiveStreamStatus>('idle');
+  const [liveLastEventAt, setLiveLastEventAt] = React.useState<number | null>(
+    null,
+  );
   const [analyticsState, setAnalyticsState] =
     React.useState<KolamChatRailAnalyticsState>({
       data: null,
@@ -439,8 +447,18 @@ export function KolamGlobalChatRail({
     [],
   );
   const inboxDetailOpen = mode === 'inbox' && selectedItem !== null;
+  const handleLiveStatusChange = React.useCallback(
+    (status: KolamChatLiveStreamStatus) => {
+      setLiveStatus(status);
+      if (status === 'open') {
+        setLiveLastEventAt(Date.now());
+      }
+    },
+    [],
+  );
   const handleLiveEvent = React.useCallback(
     (event: KolamChatLiveEvent) => {
+      setLiveLastEventAt(Date.now());
       const classification = classifyKolamChatLiveEvent(event, {
         currentUserId,
         selectedItemId,
@@ -509,6 +527,30 @@ export function KolamGlobalChatRail({
       syncFromLiveClassification,
     ],
   );
+
+  React.useEffect(() => {
+    const runFallbackRefresh = () => {
+      Promise.resolve(data.refresh()).catch(() => undefined);
+      if (selectedItemId) {
+        Promise.resolve(detail.refresh({quiet: true})).catch(() => undefined);
+      }
+    };
+    const isLiveStale = () =>
+      liveStatus !== 'open' ||
+      liveLastEventAt === null ||
+      Date.now() - liveLastEventAt > CHAT_LIVE_STALE_MS;
+
+    const timer = setInterval(() => {
+      if (isLiveStale()) {
+        runFallbackRefresh();
+      }
+    }, CHAT_LIVE_FALLBACK_INTERVAL_MS);
+    (timer as {unref?: () => void}).unref?.();
+
+    return () => {
+      clearInterval(timer);
+    };
+  }, [data.refresh, detail.refresh, liveLastEventAt, liveStatus, selectedItemId]);
 
   React.useEffect(() => {
     setSelectedItemId(null);
@@ -871,7 +913,11 @@ export function KolamGlobalChatRail({
 
   return (
     <View accessibilityLabel={content.accessibilityLabel} style={styles.rail}>
-      <KolamChatRailLiveHost mode={mode} onEvent={handleLiveEvent} />
+      <KolamChatRailLiveHost
+        mode={mode}
+        onEvent={handleLiveEvent}
+        onStatusChange={handleLiveStatusChange}
+      />
       <View style={styles.header}>
         <View style={styles.titleGroup}>
           <View style={styles.iconShell}>
@@ -1116,13 +1162,16 @@ export function KolamGlobalChatRail({
 function KolamChatRailLiveHost({
   mode,
   onEvent,
+  onStatusChange,
 }: {
   mode: KolamGlobalChatRailMode;
   onEvent: (event: KolamChatLiveEvent) => void;
+  onStatusChange: (status: KolamChatLiveStreamStatus) => void;
 }) {
   useKolamChatLiveStream({
     mode,
     onEvent,
+    onStatusChange,
   });
 
   return null;

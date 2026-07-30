@@ -100,6 +100,10 @@ export interface KolamChatRailSendMessageOptions {
   replyToMessageId?: string | null;
 }
 
+export interface KolamChatRailRefreshOptions {
+  quiet?: boolean;
+}
+
 export interface KolamChatRailTeamRoomMetadata {
   bots: KolamTeamChatBotPresence[];
   canManageAiRoomAccess: boolean;
@@ -147,7 +151,7 @@ export interface KolamChatRailDetailState {
     file: NativeImagePickerResult,
     options?: KolamChatRailSendMessageOptions,
   ) => Promise<void>;
-  refresh: () => Promise<void>;
+  refresh: (options?: KolamChatRailRefreshOptions) => Promise<void>;
   sendMessage: (
     text: string,
     options?: KolamChatRailSendMessageOptions,
@@ -201,7 +205,8 @@ export function useKolamChatRailDetail({
     useState<KolamChatRailTeamRoomMetadata>(EMPTY_TEAM_ROOM_METADATA);
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (options?: KolamChatRailRefreshOptions) => {
+    const quiet = options?.quiet === true;
     if (!selectedId) {
       setMessages([]);
       setMessageSearchResults(null);
@@ -216,7 +221,9 @@ export function useKolamChatRailDetail({
       return;
     }
 
-    setLoading(true);
+    if (!quiet) {
+      setLoading(true);
+    }
     setErrorMessage(undefined);
 
     try {
@@ -246,11 +253,15 @@ export function useKolamChatRailDetail({
       setErrorMessage(
         error instanceof Error ? error.message : 'Detail chat belum bisa dibaca.',
       );
-      setMessages([]);
-      setConversation(null);
-      setTeamRoomMetadata(EMPTY_TEAM_ROOM_METADATA);
+      if (!quiet) {
+        setMessages([]);
+        setConversation(null);
+        setTeamRoomMetadata(EMPTY_TEAM_ROOM_METADATA);
+      }
     } finally {
-      setLoading(false);
+      if (!quiet) {
+        setLoading(false);
+      }
     }
   }, [currentUserId, mode, selectedId]);
 

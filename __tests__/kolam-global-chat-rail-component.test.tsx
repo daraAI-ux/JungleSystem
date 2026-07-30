@@ -3690,6 +3690,71 @@ describe('KolamGlobalChatRail', () => {
     jest.useRealTimers();
   });
 
+  it('polls the active inbox detail quietly when the live stream is unhealthy', async () => {
+    jest.useFakeTimers();
+    const refreshList = jest.fn().mockResolvedValue(undefined);
+    const refreshDetail = jest.fn().mockResolvedValue(undefined);
+    let liveOptions:
+      | Parameters<typeof useKolamChatLiveStream>[0]
+      | undefined;
+
+    useLiveStreamMock.mockImplementation(options => {
+      liveOptions = options;
+    });
+    useReadonlyDataMock.mockReturnValue({
+      conversations: [
+        {
+          _id: 'conv-stale',
+          platform: 'whatsapp',
+          contactId: {displayName: 'Buyer Stale'},
+          lastMessagePreview: 'Tes realtime',
+          unreadCount: 0,
+        },
+      ],
+      loading: false,
+      refresh: refreshList,
+      rooms: [],
+      totalUnread: 0,
+    });
+    useDetailMock.mockReturnValue({
+      ...getDefaultDetailMock(),
+      conversation: {
+        _id: 'conv-stale',
+        assignedStaffId: {_id: 'staff-1'},
+        isAiHandled: false,
+        status: 'open',
+      },
+      loading: false,
+      messages: [],
+      refresh: refreshDetail,
+      sending: false,
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamGlobalChatRail mode="inbox" onClose={() => undefined} />,
+      );
+    });
+
+    const selectButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Pilih conversation Buyer Stale');
+
+    await ReactTestRenderer.act(async () => {
+      selectButton!.props.onPress();
+      liveOptions!.onStatusChange?.('error');
+    });
+
+    await ReactTestRenderer.act(async () => {
+      jest.advanceTimersByTime(5000);
+    });
+
+    expect(refreshList).toHaveBeenCalledTimes(1);
+    expect(refreshDetail).toHaveBeenCalledWith({quiet: true});
+    jest.useRealTimers();
+  });
+
   it('plays configured headless sound for assigned inbound live messages', async () => {
     jest.useFakeTimers();
     let liveOptions:
