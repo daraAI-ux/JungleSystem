@@ -291,9 +291,9 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         requiredAccess: ['kolam'],
       },
       {
-        label: 'Serial Numbers',
+        label: 'Serial Produk',
         route: '/product-serials',
-        description: 'Serial numbers and licenses per unit',
+        description: 'Nomor seri dan lisensi per unit hasil produksi',
         group: 'Produksi',
         requiredAccess: ['kolam'],
       },
@@ -1497,9 +1497,10 @@ const kolamNavigationRouteVariantSpecs: Array<{
   },
   {
     baseRoute: '/product-serials',
+    label: 'Opname Serial',
     labelSuffix: 'Opname',
     route: '/product-serials/opname',
-    description: 'Product serial opname page from live Kolam',
+    description: 'Verifikasi fisik nomor seri produk melalui pindai atau input manual',
   },
   {
     baseRoute: '/stock-opname',

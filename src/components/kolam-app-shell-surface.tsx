@@ -108,6 +108,7 @@ export function isCatalogTableListRoute(route?: string | null) {
     routePath === '/customers' ||
     routePath === '/purchase-order' ||
     routePath === '/production' ||
+    routePath === '/product-serials' ||
     routePath === '/list-of-users'
   );
 }

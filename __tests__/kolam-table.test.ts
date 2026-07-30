@@ -81,6 +81,19 @@ describe('getKolamTableColumns', () => {
     ]);
   });
 
+  it('defines product serial list table headers matching FE', () => {
+    expect(getKolamTableColumns('product-serial').map(column => column.label)).toEqual([
+      'Nomor Seri',
+      'Produk',
+      'Tipe',
+      'Batch',
+      'Tanggal Produksi',
+      'Status',
+      'Opname',
+      '',
+    ]);
+  });
+
   it('defines purchase order item table headers in Indonesian', () => {
     expect(
       getKolamTableColumns('purchase-order-items').map(column => column.label),

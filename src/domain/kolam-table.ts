@@ -10,6 +10,7 @@ export type KolamTableId =
   | 'location-enclosure'
   | 'location-product'
   | 'packing-material'
+  | 'product-serial'
   | 'production'
   | 'production-materials'
   | 'purchase-order'
@@ -291,6 +292,16 @@ const kolamTableColumns: Record<KolamTableId, KolamTableColumn[]> = {
     { id: 'children', label: 'Total order', align: 'right', width: 110 },
     { id: 'amount', label: 'Total value order', align: 'right', width: 140 },
     { id: 'notes', label: 'Terakhir purchase', align: 'left', width: 140 },
+  ],
+  'product-serial': [
+    { id: 'primary', label: 'Nomor Seri', align: 'left', width: 160 },
+    { id: 'meta', label: 'Produk', align: 'left', width: 180 },
+    { id: 'notes', label: 'Tipe', align: 'left', width: 100 },
+    { id: 'children', label: 'Batch', align: 'left', width: 130 },
+    { id: 'marketplace', label: 'Tanggal Produksi', align: 'left', width: 130 },
+    { id: 'status', label: 'Status', align: 'left', width: 100 },
+    { id: 'products', label: 'Opname', align: 'left', width: 100 },
+    { id: 'actions', label: '', align: 'right', width: 48 },
   ],
   production: [
     { id: 'primary', label: 'Target', align: 'left' },
