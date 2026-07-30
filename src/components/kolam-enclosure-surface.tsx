@@ -706,7 +706,7 @@ function KolamEnclosureDashboardPanel({
   const stats = controller.dashboardStats;
   return (
     <ScrollView contentContainerStyle={styles.dashboardContent}>
-      <View style={styles.summaryGrid}>
+      <View style={styles.summaryGridHero}>
         <SummaryTile
           icon="E"
           label="Jumlah enclosure"
@@ -747,16 +747,18 @@ function KolamEnclosureDashboardPanel({
         />
       </View>
 
-      <View style={styles.dashboardSection}>
-        <SectionHeading title="Enclosure per tipe" />
+      <View style={styles.typeBand}>
+        <View style={styles.typeBandHeading}>
+          <Text style={styles.typeBandTitle}>Enclosure per tipe</Text>
+        </View>
         <View style={styles.typeGrid}>
           {stats.byType.length ? (
             stats.byType.map(row => (
-              <View key={row.type || 'unknown'} style={styles.typeTile}>
-                <Text numberOfLines={1} style={styles.summaryLabel}>
+              <View key={row.type || 'unknown'} style={styles.typeMetric}>
+                <Text style={styles.typeMetricValue}>{row.count}</Text>
+                <Text numberOfLines={1} style={styles.typeMetricLabel}>
                   {row.type || '-'}
                 </Text>
-                <Text style={styles.summaryValue}>{row.count}</Text>
               </View>
             ))
           ) : (
@@ -1862,17 +1864,14 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 12,
   },
-  dashboardContent: {
-    gap: 14,
-    paddingBottom: 24,
-  },
-  dashboardSection: {
-    backgroundColor: V.colors.bg,
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
+  summaryGridHero: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 10,
-    padding: 12,
+  },
+  dashboardContent: {
+    gap: 18,
+    paddingBottom: 24,
   },
   sectionHeading: {
     alignItems: 'flex-end',
@@ -1906,18 +1905,46 @@ const styles = StyleSheet.create({
   sectionAction: {
     flexShrink: 0,
   },
+  typeBand: {
+    gap: 10,
+    paddingHorizontal: 2,
+    paddingVertical: 4,
+  },
+  typeBandHeading: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  typeBandTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 16,
+    fontWeight: '900',
+  },
   typeGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    gap: 14,
   },
-  typeTile: {
-    backgroundColor: V.colors.secondary,
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    minWidth: 132,
-    padding: 12,
+  typeMetric: {
+    borderLeftColor: V.colors.border,
+    borderLeftWidth: 1,
+    flexGrow: 1,
+    minWidth: 150,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+  },
+  typeMetricValue: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 30,
+    fontWeight: '900',
+  },
+  typeMetricLabel: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '800',
   },
   summaryTile: {
     backgroundColor: V.colors.bg,
@@ -1925,8 +1952,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     flexGrow: 1,
-    minWidth: 168,
-    padding: 14,
+    minWidth: 142,
+    padding: 12,
   },
   summaryTilePrimary: {
     backgroundColor: V.colors.primarySoft,
