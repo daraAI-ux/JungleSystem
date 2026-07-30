@@ -1691,7 +1691,6 @@ function KolamUserEditSurface({
   const [saving, setSaving] = React.useState(false);
   const [uploadingKtp, setUploadingKtp] = React.useState(false);
   const [ktpPreviewUri, setKtpPreviewUri] = React.useState('');
-  const [resignGuardVisible, setResignGuardVisible] = React.useState(false);
   const [message, setMessage] = React.useState('');
   const [error, setError] = React.useState('');
 
@@ -1800,6 +1799,9 @@ function KolamUserEditSurface({
     roleKey: authUser?.roleKey,
   };
   const canToggleOwner = isSettingsSuperAdminRoleKey(authUser?.roleKey ?? '');
+  const canAccess =
+    canToggleOwner ||
+    hasSettingsPermission(permissionContext, 'user', 'update_by_admin');
   const canToggleEmployee =
     canToggleOwner ||
     hasSettingsPermission(permissionContext, 'user', 'flag_employee');
@@ -1812,7 +1814,27 @@ function KolamUserEditSurface({
   const isResigned = Boolean(user.resignedAt);
   const isSelfUser = currentUserId === String(user.id);
   const isTargetSuperAdmin = isSettingsSuperAdminRoleKey(user.role?.key ?? '');
-  const canShowResignGuard = !isResigned && !isSelfUser && !isTargetSuperAdmin;
+  const canResetPassword = canToggleOwner;
+  const canShowResignInfo = !isResigned && !isSelfUser && !isTargetSuperAdmin;
+  const formDisabled = saving || isResigned || !canAccess;
+
+  if (!canAccess) {
+    return (
+      <View style={styles.detailSurface}>
+        <KolamContentFrame
+          style={styles.detailCard}
+          variant="settingsWebConfig"
+        >
+          <KolamEmptyState
+            compact
+            message="Akun ini tidak memiliki izin user:update_by_admin untuk rubah pengguna."
+            title="Akses ditolak"
+          />
+        </KolamContentFrame>
+      </View>
+    );
+  }
+
   const setField = (field: keyof KolamUserEditForm, value: string) => {
     setForm(current => ({...current, [field]: value}));
     setError('');
@@ -1921,7 +1943,7 @@ function KolamUserEditSurface({
   };
 
   const handleUploadKtp = async () => {
-    if (saving || uploadingKtp) {
+    if (formDisabled || uploadingKtp) {
       return;
     }
 
@@ -1956,6 +1978,16 @@ function KolamUserEditSurface({
   };
 
   const handleSubmit = async () => {
+    if (!canAccess) {
+      setError('Akses rubah pengguna ditolak.');
+      return;
+    }
+
+    if (isResigned) {
+      setError('Pengguna sudah resign dan tidak dapat diubah.');
+      return;
+    }
+
     const validationError = validateEditUserForm(form);
 
     if (validationError) {
@@ -2015,7 +2047,9 @@ function KolamUserEditSurface({
         role: form.role.trim(),
         timezone: form.timezone.trim(),
         username: form.username.trim() || undefined,
-        ...(form.password.trim() ? {password: form.password} : {}),
+        ...(canResetPassword && form.password.trim()
+          ? {password: form.password}
+          : {}),
       });
       let nextUser = updated ?? user;
 
@@ -2050,7 +2084,7 @@ function KolamUserEditSurface({
           }
         />
         <KolamButton
-          disabled={saving}
+          disabled={formDisabled}
           intent="primary"
           label={saving ? 'Menyimpan...' : 'Simpan'}
           onPress={handleSubmit}
@@ -2079,9 +2113,17 @@ function KolamUserEditSurface({
         ) : null}
 
         <View style={styles.formGrid}>
+          <View style={styles.formFieldWide}>
+            <View style={styles.accessSectionHeader}>
+              <Text style={styles.detailPanelTitle}>Informasi Dasar</Text>
+              <Text style={styles.detailSubtitle}>
+                Perbarui informasi pribadi pengguna.
+              </Text>
+            </View>
+          </View>
           <UserFormField label="Username">
             <KolamFormTextField
-              editable={!saving}
+              editable={!formDisabled}
               onChangeText={value => setField('username', value)}
               style={styles.formInput}
               value={form.username}
@@ -2102,7 +2144,7 @@ function KolamUserEditSurface({
           </View>
           <UserFormField label="Nama Depan" required>
             <KolamFormTextField
-              editable={!saving}
+              editable={!formDisabled}
               onChangeText={value => setField('first_name', value)}
               style={styles.formInput}
               value={form.first_name}
@@ -2110,7 +2152,7 @@ function KolamUserEditSurface({
           </UserFormField>
           <UserFormField label="Nama Belakang" required>
             <KolamFormTextField
-              editable={!saving}
+              editable={!formDisabled}
               onChangeText={value => setField('last_name', value)}
               style={styles.formInput}
               value={form.last_name}
@@ -2118,7 +2160,7 @@ function KolamUserEditSurface({
           </UserFormField>
           <UserFormField label="Email" required>
             <KolamFormTextField
-              editable={!saving}
+              editable={!formDisabled}
               mode="email"
               onChangeText={value => setField('email', value)}
               style={styles.formInput}
@@ -2127,22 +2169,19 @@ function KolamUserEditSurface({
           </UserFormField>
           <UserFormField label="Nomor Telepon" required>
             <KolamFormTextField
-              editable={!saving}
+              editable={!formDisabled}
               onChangeText={value => setField('phone_number', value)}
               style={styles.formInput}
               value={form.phone_number}
             />
           </UserFormField>
-          <UserFormField label="Kata Sandi">
-            <KolamFormTextField
-              editable={!saving}
-              mode="password"
-              onChangeText={value => setField('password', value)}
-              style={styles.formInput}
-              value={form.password}
-            />
-          </UserFormField>
           <View style={styles.formFieldWide}>
+            <View style={styles.accessSectionHeader}>
+              <Text style={styles.detailPanelTitle}>Peran & Izin Akses</Text>
+              <Text style={styles.detailSubtitle}>
+                Atur peran dan izin akses pengguna.
+              </Text>
+            </View>
             <UserFormField label="Peran" required>
               <KolamDropdownSelect
                 label="Peran"
@@ -2171,7 +2210,7 @@ function KolamUserEditSurface({
                 description={
                   form.account_restricted ? 'Akun dibatasi' : 'Akun aktif'
                 }
-                disabled={saving}
+                disabled={formDisabled}
                 label="Status Akun"
                 onPress={() =>
                   setBooleanField(
@@ -2183,14 +2222,14 @@ function KolamUserEditSurface({
               <KolamToggleRow
                 active={form.access_pos}
                 description="Izinkan pengguna mengakses sistem Point of Sale"
-                disabled={saving}
+                disabled={formDisabled}
                 label="Akses POS"
                 onPress={() => setBooleanField('access_pos', !form.access_pos)}
               />
               <KolamToggleRow
                 active={form.access_inventory}
                 description="Izinkan pengguna mengakses Manajemen Inventori"
-                disabled={saving}
+                disabled={formDisabled}
                 label="Akses Inventori"
                 onPress={() =>
                   setBooleanField('access_inventory', !form.access_inventory)
@@ -2199,7 +2238,7 @@ function KolamUserEditSurface({
               <KolamToggleRow
                 active={form.access_am}
                 description="Izinkan pengguna mengakses Automation Management"
-                disabled={saving}
+                disabled={formDisabled}
                 label="Akses AM"
                 onPress={() => setBooleanField('access_am', !form.access_am)}
               />
@@ -2207,7 +2246,7 @@ function KolamUserEditSurface({
                 <KolamToggleRow
                   active={form.isEmployee}
                   description="Tandai pengguna ini sebagai karyawan perusahaan"
-                  disabled={saving}
+                  disabled={formDisabled}
                   label="Status Karyawan"
                   onPress={() =>
                     setBooleanField('isEmployee', !form.isEmployee)
@@ -2217,7 +2256,7 @@ function KolamUserEditSurface({
               <KolamToggleRow
                 active={form.csActive}
                 description="Izinkan pengguna membalas chat pelanggan di Inbox"
-                disabled={saving}
+                disabled={formDisabled}
                 label="CS Aktif"
                 onPress={() => setBooleanField('csActive', !form.csActive)}
               />
@@ -2225,7 +2264,7 @@ function KolamUserEditSurface({
                 <KolamToggleRow
                   active={form.isOwner}
                   description="Tandai pengguna ini sebagai pemilik perusahaan"
-                  disabled={saving}
+                  disabled={formDisabled}
                   label="Status Pemilik"
                   onPress={() => setBooleanField('isOwner', !form.isOwner)}
                 />
@@ -2244,7 +2283,7 @@ function KolamUserEditSurface({
               </View>
               <UserFormField label="Nomor Karyawan">
                 <KolamFormTextField
-                  editable={!saving}
+                  editable={!formDisabled}
                   onChangeText={value =>
                     setEmployeeField('employeeNumber', value)
                   }
@@ -2268,7 +2307,7 @@ function KolamUserEditSurface({
               </View>
               <UserFormField label="Jabatan">
                 <KolamFormTextField
-                  editable={!saving}
+                  editable={!formDisabled}
                   onChangeText={value => setEmployeeField('position', value)}
                   style={styles.formInput}
                   value={form.employee.position}
@@ -2276,7 +2315,7 @@ function KolamUserEditSurface({
               </UserFormField>
               <UserFormField label="Departemen">
                 <KolamFormTextField
-                  editable={!saving}
+                  editable={!formDisabled}
                   onChangeText={value => setEmployeeField('department', value)}
                   style={styles.formInput}
                   value={form.employee.department}
@@ -2292,7 +2331,7 @@ function KolamUserEditSurface({
               </UserFormField>
               <UserFormField label="Tahun Masuk">
                 <KolamFormTextField
-                  editable={!saving}
+                  editable={!formDisabled}
                   mode="numeric"
                   onChangeText={value => setEmployeeField('yearIn', value)}
                   style={styles.formInput}
@@ -2303,7 +2342,7 @@ function KolamUserEditSurface({
                 <>
                   <UserFormField label="Gaji Bulanan (IDR)">
                     <KolamFormTextField
-                      editable={!saving}
+                      editable={!formDisabled}
                       mode="numeric"
                       onChangeText={value => setEmployeeField('salary', value)}
                       placeholder="mis. 5000000"
@@ -2313,7 +2352,7 @@ function KolamUserEditSurface({
                   </UserFormField>
                   <UserFormField label="Tanggal Pembayaran Gaji">
                     <KolamFormTextField
-                      editable={!saving}
+                      editable={!formDisabled}
                       mode="numeric"
                       onChangeText={value =>
                         setEmployeeField('salaryDate', value)
@@ -2326,10 +2365,10 @@ function KolamUserEditSurface({
                 </>
               ) : null}
               <View style={styles.formFieldWide}>
-                <KolamToggleRow
+              <KolamToggleRow
                   active={form.employee.firstTimeWorking}
                   description="Ini adalah pekerjaan pertama mereka"
-                  disabled={saving}
+                  disabled={formDisabled}
                   label="Pekerjaan Pertama"
                   onPress={() =>
                     setEmployeeField(
@@ -2343,7 +2382,7 @@ function KolamUserEditSurface({
                 <KolamToggleRow
                   active={form.employee.isPkp}
                   description="Tandai jika karyawan memiliki PKP aktif"
-                  disabled={saving}
+                  disabled={formDisabled}
                   label="Status PKP Berlaku"
                   onPress={() =>
                     setEmployeeField('isPkp', !form.employee.isPkp)
@@ -2353,7 +2392,7 @@ function KolamUserEditSurface({
               {form.employee.isPkp ? (
                 <UserFormField label="Catatan PKP">
                   <KolamFormTextField
-                    editable={!saving}
+                    editable={!formDisabled}
                     onChangeText={value => setEmployeeField('pkpNotes', value)}
                     style={styles.formInput}
                     value={form.employee.pkpNotes}
@@ -2376,7 +2415,7 @@ function KolamUserEditSurface({
               </View>
               <UserFormField label="Mulai Shift">
                 <KolamFormTextField
-                  editable={!saving}
+                  editable={!formDisabled}
                   onChangeText={value =>
                     setEmployeeScheduleField('shiftStart', value)
                   }
@@ -2386,7 +2425,7 @@ function KolamUserEditSurface({
               </UserFormField>
               <UserFormField label="Selesai Shift">
                 <KolamFormTextField
-                  editable={!saving}
+                  editable={!formDisabled}
                   onChangeText={value =>
                     setEmployeeScheduleField('shiftEnd', value)
                   }
@@ -2403,6 +2442,7 @@ function KolamUserEditSurface({
 
                     return (
                       <KolamButton
+                        disabled={formDisabled}
                         intent={selected ? 'primary' : 'secondary'}
                         key={day.id}
                         label={day.label}
@@ -2461,7 +2501,7 @@ function KolamUserEditSurface({
           </UserFormField>
           <UserFormField label="Tempat Lahir">
             <KolamFormTextField
-              editable={!saving}
+              editable={!formDisabled}
               onChangeText={value => setBiodataField('placeOfBirth', value)}
               style={styles.formInput}
               value={form.biodata.placeOfBirth}
@@ -2469,7 +2509,7 @@ function KolamUserEditSurface({
           </UserFormField>
           <UserFormField label="Agama">
             <KolamFormTextField
-              editable={!saving}
+              editable={!formDisabled}
               onChangeText={value => setBiodataField('religion', value)}
               style={styles.formInput}
               value={form.biodata.religion}
@@ -2477,7 +2517,7 @@ function KolamUserEditSurface({
           </UserFormField>
           <UserFormField label="No. KTP">
             <KolamFormTextField
-              editable={!saving}
+              editable={!formDisabled}
               onChangeText={value => setBiodataField('nationalId', value)}
               style={styles.formInput}
               value={form.biodata.nationalId}
@@ -2509,7 +2549,7 @@ function KolamUserEditSurface({
                 />
               ) : null}
               <KolamButton
-                disabled={saving || uploadingKtp}
+                disabled={formDisabled || uploadingKtp}
                 label={uploadingKtp ? 'Mengunggah...' : 'Unggah'}
                 onPress={handleUploadKtp}
                 style={styles.ktpUploadButton}
@@ -2518,7 +2558,7 @@ function KolamUserEditSurface({
           </View>
           <UserFormField label="No. NPWP">
             <KolamFormTextField
-              editable={!saving}
+              editable={!formDisabled}
               onChangeText={value => setBiodataField('taxNumber', value)}
               style={styles.formInput}
               value={form.biodata.taxNumber}
@@ -2529,7 +2569,7 @@ function KolamUserEditSurface({
           </View>
           <UserFormField label="Jalan">
             <KolamFormTextField
-              editable={!saving}
+              editable={!formDisabled}
               onChangeText={value => setBiodataAddressField('street', value)}
               style={styles.formInput}
               value={form.biodata.address.street}
@@ -2537,7 +2577,7 @@ function KolamUserEditSurface({
           </UserFormField>
           <UserFormField label="Kota">
             <KolamFormTextField
-              editable={!saving}
+              editable={!formDisabled}
               onChangeText={value => setBiodataAddressField('city', value)}
               style={styles.formInput}
               value={form.biodata.address.city}
@@ -2545,7 +2585,7 @@ function KolamUserEditSurface({
           </UserFormField>
           <UserFormField label="Provinsi">
             <KolamFormTextField
-              editable={!saving}
+              editable={!formDisabled}
               onChangeText={value => setBiodataAddressField('province', value)}
               style={styles.formInput}
               value={form.biodata.address.province}
@@ -2553,7 +2593,7 @@ function KolamUserEditSurface({
           </UserFormField>
           <UserFormField label="Kode Pos">
             <KolamFormTextField
-              editable={!saving}
+              editable={!formDisabled}
               onChangeText={value => setBiodataAddressField('postalCode', value)}
               style={styles.formInput}
               value={form.biodata.address.postalCode}
@@ -2564,7 +2604,7 @@ function KolamUserEditSurface({
           </View>
           <UserFormField label="Nama">
             <KolamFormTextField
-              editable={!saving}
+              editable={!formDisabled}
               onChangeText={value =>
                 setBiodataEmergencyContactField('name', value)
               }
@@ -2574,7 +2614,7 @@ function KolamUserEditSurface({
           </UserFormField>
           <UserFormField label="Hubungan">
             <KolamFormTextField
-              editable={!saving}
+              editable={!formDisabled}
               onChangeText={value =>
                 setBiodataEmergencyContactField('relation', value)
               }
@@ -2584,7 +2624,7 @@ function KolamUserEditSurface({
           </UserFormField>
           <UserFormField label="Telepon">
             <KolamFormTextField
-              editable={!saving}
+              editable={!formDisabled}
               onChangeText={value =>
                 setBiodataEmergencyContactField('phone', value)
               }
@@ -2592,7 +2632,7 @@ function KolamUserEditSurface({
               value={form.biodata.emergencyContact.phone}
             />
           </UserFormField>
-          {canShowResignGuard ? (
+          {canShowResignInfo ? (
             <View style={styles.formFieldWide}>
               <View style={styles.resignGuardCard}>
                 <View style={styles.resignGuardCopy}>
@@ -2601,35 +2641,44 @@ function KolamUserEditSurface({
                   </Text>
                   <Text style={styles.detailSubtitle}>
                     Aksi ini mencabut akses dan dapat membatalkan komisi
-                    accrued. Endpoint belum diaktifkan di JungleSystem sebelum
-                    ada approval khusus.
+                    accrued. Resign tetap nonaktif di JungleSystem sampai ada
+                    approval khusus untuk endpoint hard-effect ini.
                   </Text>
                 </View>
                 <KolamButton
-                  disabled={saving}
+                  disabled
                   intent="danger"
-                  label="Resign karyawan"
-                  onPress={() => setResignGuardVisible(true)}
+                  label="Resign dinonaktifkan"
+                  onPress={() => undefined}
                   style={styles.resignGuardButton}
                 />
               </View>
             </View>
           ) : null}
+          {canResetPassword ? (
+            <>
+              <View style={styles.formFieldWide}>
+                <View style={styles.accessSectionHeader}>
+                  <Text style={styles.detailPanelTitle}>Reset Kata Sandi</Text>
+                  <Text style={styles.detailSubtitle}>
+                    Hanya Super Admin yang dapat mereset kata sandi pengguna.
+                  </Text>
+                </View>
+              </View>
+              <UserFormField label="Kata Sandi Baru">
+                <KolamFormTextField
+                  editable={!formDisabled}
+                  mode="password"
+                  onChangeText={value => setField('password', value)}
+                  placeholder="Kosongkan untuk mempertahankan kata sandi saat ini"
+                  style={styles.formInput}
+                  value={form.password}
+                />
+              </UserFormField>
+            </>
+          ) : null}
         </View>
       </KolamContentFrame>
-      <KolamConfirmDialog
-        cancelLabel="Batal"
-        confirmLabel="Saya mengerti"
-        destructive
-        message={`Resign ${form.first_name} ${form.last_name} belum dijalankan. Endpoint resign mencabut akses dan melakukan forfeit komisi accrued, jadi harus ada approval khusus sebelum tombol ini disambungkan ke backend.`}
-        onCancel={() => setResignGuardVisible(false)}
-        onConfirm={() => {
-          setResignGuardVisible(false);
-          setMessage('Resign belum dijalankan karena butuh approval khusus.');
-        }}
-        title="Resign membutuhkan approval khusus"
-        visible={resignGuardVisible}
-      />
     </View>
   );
 }
