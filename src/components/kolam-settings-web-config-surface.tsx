@@ -7696,11 +7696,30 @@ function FinancialSettingsPanel({
       ) : null}
 
       {financialSectionVisibility.overtime ? (
-        <View style={styles.marketplaceOverview}>
-          <FinancialSectionHeader
-            detail="Per jam atau per hari untuk pengajuan lembur karyawan."
-            title="Lembur karyawan"
-          />
+        <View style={styles.financialNestedCard}>
+          <View style={styles.operationalCardHeaderRow}>
+            <KolamCopyStack
+              containerStyle={styles.operationalCardHeaderCopy}
+              items={[
+                {
+                  id: 'overtime-title',
+                  text: 'Lembur karyawan',
+                  style: styles.marketplaceOverviewTitle,
+                },
+                {
+                  id: 'overtime-detail',
+                  text: 'Per jam atau per hari untuk pengajuan lembur karyawan.',
+                  style: styles.marketplaceOverviewMeta,
+                },
+              ]}
+            />
+            <KolamActionControlButton
+              disabled={disabled || busy}
+              intent="primary"
+              label="Simpan lembur"
+              onPress={onSaveOvertimeSettings}
+            />
+          </View>
           <View style={styles.financialToolbar}>
             <FinancialChoiceSegment
               active={draft.overtimeCalculationMode === 'per_hour'}
@@ -7784,12 +7803,6 @@ function FinancialSettingsPanel({
               )
             }
             variant="settingsForm"
-          />
-          <KolamActionControlButton
-            disabled={disabled || busy}
-            intent="primary"
-            label="Simpan lembur"
-            onPress={onSaveOvertimeSettings}
           />
         </View>
       ) : null}
