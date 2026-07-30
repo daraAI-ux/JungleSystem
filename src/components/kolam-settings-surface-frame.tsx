@@ -20,7 +20,6 @@ export function KolamSettingsSurfaceFrame({
   const showHeaderSaveAction =
     controller.activeSettingsTabId === 'umum' ||
     controller.activeSettingsTabId === 'toko' ||
-    controller.activeSettingsTabId === 'notifikasi' ||
     controller.activeSettingsTabId === 'ai' ||
     controller.activeSettingsTabId === 'sitemap' ||
     controller.activeSettingsTabId === 'plugin';

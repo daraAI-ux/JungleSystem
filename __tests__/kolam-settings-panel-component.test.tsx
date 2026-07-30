@@ -261,7 +261,8 @@ describe('KolamSettingsPanel', () => {
         'Server SMTP',
         'OTP masuk staf',
         'Tes suara',
-        'Simpan',
+        'Simpan Firebase',
+        'Simpan OTP & SMTP',
       ]),
     );
     expect(text.indexOf('Suara notifikasi')).toBeLessThan(
