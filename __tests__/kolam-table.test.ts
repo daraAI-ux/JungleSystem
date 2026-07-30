@@ -77,7 +77,7 @@ describe('getKolamTableColumns', () => {
       'Batch ID',
       'Status',
       'PIC',
-      'Tanggal Produksi',
+      'Tanggal',
       '',
     ]);
   });
