@@ -56,9 +56,8 @@ function HeaderHarness({
 }
 
 describe('Kolam dashboard header controller hook', () => {
-  it('builds Beranda header props and forwards live actions to native modules', async () => {
+  it('builds Beranda header props without quick-create actions', async () => {
     const messages: string[] = [];
-    const routeContexts: string[] = [];
     let latest: DashboardHeaderController | null = null;
     let selectedModule: AppModule | null = null;
 
@@ -69,9 +68,6 @@ describe('Kolam dashboard header controller hook', () => {
           messages={messages}
           onRender={controller => {
             latest = controller;
-          }}
-          onRouteContext={route => {
-            routeContexts.push(route);
           }}
           onSelectModule={module => {
             selectedModule = module;
@@ -85,19 +81,8 @@ describe('Kolam dashboard header controller hook', () => {
     expect(controller.displayInitials).toBe('OO');
     expect(controller.dashboardHeader.eyebrow).toBe('Beranda');
     expect(controller.dashboardHeader.title).toContain('Offline Operator');
-    expect(controller.dashboardHeader.actions.map(action => action.id)).toEqual(
-      ['new-product', 'new-order'],
-    );
-
-    await ReactTestRenderer.act(async () => {
-      controller.dashboardHeader.onSelectModule(
-        controller.dashboardHeader.actions[1],
-      );
-    });
-
-    expect(selectedModule).toBe('checkout');
-    expect(routeContexts).toEqual(['/sales/create']);
-    expect(messages).toContain('Order Baru native membuka /sales/create.');
+    expect(controller.dashboardHeader.actions).toEqual([]);
+    expect(selectedModule).toBeNull();
   });
 
   it('uses the native module title outside Beranda', async () => {

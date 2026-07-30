@@ -393,36 +393,9 @@ function getDashboardHeaderSyncIntent(
 export function getDashboardHeaderActions(
   accessScope?: Pick<AccessScope, 'kolam' | 'pos'>,
 ): DashboardHeaderAction[] {
-  const actions: DashboardHeaderAction[] = [
-    {
-      id: 'new-product',
-      label: 'Produk Baru',
-      iconKind: 'package',
-      intent: 'outline',
-      buttonTone: 'positive',
-      requiredArea: 'kolam',
-      targetModule: 'catalog',
-      sourceRoute: '/products/create',
-      accessibilityLabel: 'Produk Baru - /products/create',
-    },
-    {
-      id: 'new-order',
-      label: 'Order Baru',
-      iconKind: 'plus',
-      intent: 'primary',
-      buttonTone: 'positive',
-      requiredArea: 'pos',
-      targetModule: 'checkout',
-      sourceRoute: '/sales/create',
-      accessibilityLabel: 'Order Baru - /sales/create',
-    },
-  ];
-
-  if (!accessScope) {
-    return actions;
-  }
-
-  return actions.filter(action => Boolean(accessScope[action.requiredArea]));
+  // Beranda no longer exposes quick-create actions (Produk Baru / Order Baru).
+  void accessScope;
+  return [];
 }
 
 export function getDashboardHeaderVisualContract(): DashboardHeaderVisualContract {

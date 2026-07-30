@@ -162,30 +162,7 @@ describe('dashboard header copy', () => {
   });
 
   it('maps live dashboard header actions to native modules', () => {
-    expect(getDashboardHeaderActions()).toEqual([
-      {
-        id: 'new-product',
-        label: 'Produk Baru',
-        iconKind: 'package',
-        intent: 'outline',
-        buttonTone: 'positive',
-        requiredArea: 'kolam',
-        targetModule: 'catalog',
-        sourceRoute: '/products/create',
-        accessibilityLabel: 'Produk Baru - /products/create',
-      },
-      {
-        id: 'new-order',
-        label: 'Order Baru',
-        iconKind: 'plus',
-        intent: 'primary',
-        buttonTone: 'positive',
-        requiredArea: 'pos',
-        targetModule: 'checkout',
-        sourceRoute: '/sales/create',
-        accessibilityLabel: 'Order Baru - /sales/create',
-      },
-    ]);
+    expect(getDashboardHeaderActions()).toEqual([]);
   });
 
   it('filters live dashboard header actions using native access scope gates', () => {
@@ -193,12 +170,12 @@ describe('dashboard header copy', () => {
       getDashboardHeaderActions({ kolam: true, pos: false }).map(
         action => action.id,
       ),
-    ).toEqual(['new-product']);
+    ).toEqual([]);
     expect(
       getDashboardHeaderActions({ kolam: false, pos: true }).map(
         action => action.id,
       ),
-    ).toEqual(['new-order']);
+    ).toEqual([]);
     expect(
       getDashboardHeaderActions({ kolam: false, pos: false }).map(
         action => action.id,

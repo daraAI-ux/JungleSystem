@@ -149,13 +149,8 @@ describe('Kolam shell chrome controller hook', () => {
 
     const controller = requireController(latest);
 
-    await ReactTestRenderer.act(async () => {
-      controller.dashboardHeader.onSelectModule(
-        controller.dashboardHeader.actions[0],
-      );
-    });
-
-    expect(routeContexts).toEqual(['/products/create']);
+    expect(controller.dashboardHeader.actions).toEqual([]);
+    expect(routeContexts).toEqual([]);
   });
 
   it('passes active plugin route context into the composed page header', async () => {
