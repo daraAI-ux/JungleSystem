@@ -1169,10 +1169,6 @@ const styles = StyleSheet.create({
   emptyWrap: {
     padding: 16,
   },
-  detailActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-  },
   fieldWide: {
     flexBasis: '100%',
   },
