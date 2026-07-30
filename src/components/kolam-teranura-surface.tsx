@@ -204,6 +204,7 @@ export function KolamTeranuraSurface({
                 onSelect={() => onRouteChange?.(`/teranura/${item.id}`)}
               />
             )}
+            removeClippedSubviews={false}
             style={styles.list}
             contentContainerStyle={styles.listContent}
           />
@@ -414,11 +415,13 @@ const styles = StyleSheet.create({
   surface: {
     flex: 1,
     minHeight: 0,
+    overflow: 'visible',
   },
   stack: {
     flex: 1,
     minHeight: 0,
     gap: 16,
+    overflow: 'visible',
   },
   toolbarShell: {
     minHeight: 44,
@@ -459,12 +462,15 @@ const styles = StyleSheet.create({
   },
   tableFrame: {
     minHeight: 0,
+    overflow: 'visible',
   },
   list: {
     flexGrow: 0,
+    overflow: 'visible',
   },
   listContent: {
     flexGrow: 0,
+    overflow: 'visible',
   },
   emptyWrap: {
     minHeight: 240,
