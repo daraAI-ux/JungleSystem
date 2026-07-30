@@ -1,17 +1,28 @@
 import {StyleSheet} from 'react-native';
+import {kolamVisualTokens as V} from '../domain/kolam-visual';
 
 /**
  * Canonical list toolbar chrome (AGENTS SoT).
  *
  * Composition:
- *   <View style={row}>
- *     <KolamFormTextField style={searchInput} />
- *     <View style={controls}>{filters + actions}</View>
+ *   <View style={shell}>                 // kotak pembungkus (Stock Opname / Species)
+ *     <View style={row}>
+ *       <KolamFormTextField style={searchInput} />
+ *       <View style={controls}>{filters + actions}</View>
+ *     </View>
  *   </View>
  *
  * Search fills leftover width; controls stay right and hug their labels.
  */
 export const kolamTableToolbarStyles = StyleSheet.create({
+  shell: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    overflow: 'visible',
+    padding: 4,
+  },
   row: {
     alignItems: 'center',
     elevation: 96,

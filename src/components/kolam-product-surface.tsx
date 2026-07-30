@@ -364,6 +364,7 @@ export function KolamProductSurface({
 
       <View style={[styles.stack, styles.listStack]}>
         <View ref={toolbarRef} collapsable={false} style={styles.toolbarShell}>
+          <View style={kolamTableToolbarStyles.shell}>
           <View style={kolamTableToolbarStyles.row}>
             <KolamFormTextField
               onChangeText={controller.onSearchChange}
@@ -434,6 +435,7 @@ export function KolamProductSurface({
                 }}
               />
             </View>
+          </View>
           </View>
           {activeFilterPanel ? (
             <ProductFilterOverlayPanel

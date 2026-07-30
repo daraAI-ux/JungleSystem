@@ -389,75 +389,77 @@ function KolamSpeciesList({
   return (
     <View style={[styles.stack, styles.listStack]}>
       <View ref={toolbarRef} collapsable={false} style={styles.speciesToolbarWrap}>
-        <View style={kolamTableToolbarStyles.row}>
-          <KolamFormTextField
-            onChangeText={controller.onSearchChange}
-            placeholder="Cari"
-            style={kolamTableToolbarStyles.searchInput}
-            value={controller.filters.search}
-          />
-          <View style={kolamTableToolbarStyles.controls}>
-            <View ref={taxonomyTriggerRef} collapsable={false}>
-              <KolamTableFilterTrigger
-                active={
-                  activeFilterPanel === 'taxonomy' || taxonomyFilter !== 'all'
-                }
-                label={taxonomyFilterLabel}
-                onPress={() => openFilterPanel('taxonomy')}
+        <View style={kolamTableToolbarStyles.shell}>
+          <View style={kolamTableToolbarStyles.row}>
+            <KolamFormTextField
+              onChangeText={controller.onSearchChange}
+              placeholder="Cari"
+              style={kolamTableToolbarStyles.searchInput}
+              value={controller.filters.search}
+            />
+            <View style={kolamTableToolbarStyles.controls}>
+              <View ref={taxonomyTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={
+                    activeFilterPanel === 'taxonomy' || taxonomyFilter !== 'all'
+                  }
+                  label={taxonomyFilterLabel}
+                  onPress={() => openFilterPanel('taxonomy')}
+                />
+              </View>
+              <View ref={categoryTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={
+                    activeFilterPanel === 'category' || categoryFilter !== 'all'
+                  }
+                  label={categoryFilterLabel}
+                  onPress={() => openFilterPanel('category')}
+                />
+              </View>
+              <View ref={stockTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={activeFilterPanel === 'stock' || stockFilter !== 'all'}
+                  label={stockFilterLabel}
+                  onPress={() => openFilterPanel('stock')}
+                />
+              </View>
+              <KolamButton
+                label="Export"
+                onPress={() => setExportDialogOpen(true)}
+              />
+              <KolamButton
+                disabled={!barcodeItemCount}
+                label={`Cetak barcode (${barcodeItemCount})`}
+                onPress={() => {
+                  setBarcodeDialogItems(null);
+                  setBarcodeDialogOpen(true);
+                }}
+              />
+              <KolamButton
+                disabled={!syncPriceItemCount || controller.loading}
+                label="Sinkron Harga"
+                onPress={() => {
+                  setSyncPriceSelection(null);
+                  setSyncPriceDialogOpen(true);
+                }}
+              />
+              <KolamButton
+                disabled={!syncPriceItemCount || controller.loading}
+                label="Sinkron Stok"
+                onPress={() => {
+                  setSyncStockSelection(null);
+                  setSyncStockDialogOpen(true);
+                }}
+              />
+              <KolamButton
+                intent="primary"
+                label="Baru"
+                onPress={() => {
+                  controller.onCreateNew();
+                  onRouteChange?.('/species/baru');
+                }}
               />
             </View>
-            <View ref={categoryTriggerRef} collapsable={false}>
-              <KolamTableFilterTrigger
-                active={
-                  activeFilterPanel === 'category' || categoryFilter !== 'all'
-                }
-                label={categoryFilterLabel}
-                onPress={() => openFilterPanel('category')}
-              />
-            </View>
-            <View ref={stockTriggerRef} collapsable={false}>
-              <KolamTableFilterTrigger
-                active={activeFilterPanel === 'stock' || stockFilter !== 'all'}
-                label={stockFilterLabel}
-                onPress={() => openFilterPanel('stock')}
-              />
-            </View>
-            <KolamButton
-              label="Export"
-              onPress={() => setExportDialogOpen(true)}
-            />
-            <KolamButton
-              disabled={!barcodeItemCount}
-              label={`Cetak barcode (${barcodeItemCount})`}
-              onPress={() => {
-                setBarcodeDialogItems(null);
-                setBarcodeDialogOpen(true);
-              }}
-            />
-            <KolamButton
-              disabled={!syncPriceItemCount || controller.loading}
-              label="Sinkron Harga"
-              onPress={() => {
-                setSyncPriceSelection(null);
-                setSyncPriceDialogOpen(true);
-              }}
-            />
-            <KolamButton
-              disabled={!syncPriceItemCount || controller.loading}
-              label="Sinkron Stok"
-              onPress={() => {
-                setSyncStockSelection(null);
-                setSyncStockDialogOpen(true);
-              }}
-            />
-            <KolamButton
-              intent="primary"
-              label="Baru"
-              onPress={() => {
-                controller.onCreateNew();
-                onRouteChange?.('/species/baru');
-              }}
-            />
           </View>
         </View>
         {activeFilterPanel ? (

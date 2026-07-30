@@ -210,43 +210,45 @@ function KolamBrandList({
         <SummaryTile label="Blacklisted" value={summary.blacklisted} />
       </View>
       <View ref={toolbarRef} collapsable={false} style={styles.toolbarWrap}>
-        <View style={kolamTableToolbarStyles.row}>
-          <KolamFormTextField
-            onChangeText={setSearch}
-            placeholder="Cari merek..."
-            style={kolamTableToolbarStyles.searchInput}
-            value={search}
-          />
-          <View style={kolamTableToolbarStyles.controls}>
-            <View ref={sortTriggerRef} collapsable={false}>
-              <KolamTableFilterTrigger
-                active={activeFilterPanel === 'sort' || sortMode !== 'name-asc'}
-                label={sortFilterLabel}
-                onPress={() => openFilterPanel('sort')}
+        <View style={kolamTableToolbarStyles.shell}>
+          <View style={kolamTableToolbarStyles.row}>
+            <KolamFormTextField
+              onChangeText={setSearch}
+              placeholder="Cari merek..."
+              style={kolamTableToolbarStyles.searchInput}
+              value={search}
+            />
+            <View style={kolamTableToolbarStyles.controls}>
+              <View ref={sortTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={activeFilterPanel === 'sort' || sortMode !== 'name-asc'}
+                  label={sortFilterLabel}
+                  onPress={() => openFilterPanel('sort')}
+                />
+              </View>
+              <View ref={assetTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={activeFilterPanel === 'asset' || assetMode !== 'none'}
+                  label={assetFilterLabel}
+                  onPress={() => openFilterPanel('asset')}
+                />
+              </View>
+              <KolamButton
+                disabled={controller.loading}
+                label="Refresh"
+                onPress={() => {
+                  void controller.onRefresh();
+                }}
+              />
+              <KolamButton
+                intent="primary"
+                label="Baru"
+                onPress={() => {
+                  controller.onCreateNew();
+                  onRouteChange?.('/label-dan-field/merek/baru');
+                }}
               />
             </View>
-            <View ref={assetTriggerRef} collapsable={false}>
-              <KolamTableFilterTrigger
-                active={activeFilterPanel === 'asset' || assetMode !== 'none'}
-                label={assetFilterLabel}
-                onPress={() => openFilterPanel('asset')}
-              />
-            </View>
-            <KolamButton
-              disabled={controller.loading}
-              label="Refresh"
-              onPress={() => {
-                void controller.onRefresh();
-              }}
-            />
-            <KolamButton
-              intent="primary"
-              label="Baru"
-              onPress={() => {
-                controller.onCreateNew();
-                onRouteChange?.('/label-dan-field/merek/baru');
-              }}
-            />
           </View>
         </View>
         {activeFilterPanel ? (
