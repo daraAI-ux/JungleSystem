@@ -24,8 +24,10 @@ import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
+import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 
 type TeranuraFilterPanel = 'category' | 'brand' | 'sellable';
+const TERANURA_FILTER_PANEL_WIDTH = 320;
 
 export function KolamTeranuraSurface({
   onRouteChange,
@@ -38,6 +40,11 @@ export function KolamTeranuraSurface({
   const [activeFilterPanel, setActiveFilterPanel] =
     React.useState<TeranuraFilterPanel | null>(null);
   const [filterPanelQuery, setFilterPanelQuery] = React.useState('');
+  const [panelAnchor, setPanelAnchor] = React.useState({ left: 0, top: 48 });
+  const toolbarRef = React.useRef<View>(null);
+  const categoryTriggerRef = React.useRef<View>(null);
+  const brandTriggerRef = React.useRef<View>(null);
+  const sellableTriggerRef = React.useRef<View>(null);
   const columns = React.useMemo(() => getKolamTableColumns('teranura'), []);
   const categoryOptions = React.useMemo(
     () => [
@@ -91,14 +98,54 @@ export function KolamTeranuraSurface({
     selectedCategory !== 'all' ||
     selectedBrand !== 'all' ||
     controller.filters.sellable !== 'all';
-  const openFilterPanel = (panel: TeranuraFilterPanel) => {
-    setActiveFilterPanel(current => (current === panel ? null : panel));
-    setFilterPanelQuery('');
-  };
+  const anchorFilterPanel = React.useCallback((panel: TeranuraFilterPanel) => {
+    const triggerRef =
+      panel === 'category'
+        ? categoryTriggerRef
+        : panel === 'brand'
+        ? brandTriggerRef
+        : sellableTriggerRef;
+    const toolbar = toolbarRef.current;
+    const trigger = triggerRef.current;
+    if (!toolbar || !trigger) {
+      return;
+    }
+
+    toolbar.measureInWindow((toolbarX, toolbarY, toolbarWidth) => {
+      trigger.measureInWindow((x, y, _width, height) => {
+        const maxLeft = Math.max(0, toolbarWidth - TERANURA_FILTER_PANEL_WIDTH);
+        const preferredLeft = x - toolbarX;
+        setPanelAnchor({
+          left: Math.min(Math.max(0, preferredLeft), maxLeft),
+          top: y - toolbarY + height + 4,
+        });
+      });
+    });
+  }, []);
+  const openFilterPanel = React.useCallback(
+    (panel: TeranuraFilterPanel) => {
+      setActiveFilterPanel(current => {
+        const next = current === panel ? null : panel;
+        if (next) {
+          requestAnimationFrame(() => anchorFilterPanel(next));
+        }
+        return next;
+      });
+      setFilterPanelQuery('');
+    },
+    [anchorFilterPanel],
+  );
   const closeFilterPanel = () => {
     setActiveFilterPanel(null);
     setFilterPanelQuery('');
   };
+  React.useEffect(() => {
+    if (!activeFilterPanel) {
+      return;
+    }
+
+    requestAnimationFrame(() => anchorFilterPanel(activeFilterPanel));
+  }, [activeFilterPanel, anchorFilterPanel]);
 
   if (controller.mode === 'detail') {
     return (
@@ -114,36 +161,40 @@ export function KolamTeranuraSurface({
   return (
     <View style={styles.surface}>
       <View style={styles.stack}>
-        <View style={styles.toolbarWrap}>
-          <View style={styles.toolbarShell}>
-            <View style={styles.filterRow}>
-              <KolamFormTextField
-                mode="search"
-                onChangeText={controller.onSearchChange}
-                placeholder="Cari Teranura..."
-                style={styles.searchInput}
-                value={controller.filters.search}
-              />
-              <KolamTableFilterTrigger
-                active={activeFilterPanel === 'category' || selectedCategory !== 'all'}
-                label={categoryFilterLabel}
-                onPress={() => openFilterPanel('category')}
-              />
-              <KolamTableFilterTrigger
-                active={activeFilterPanel === 'brand' || selectedBrand !== 'all'}
-                label={brandFilterLabel}
-                onPress={() => openFilterPanel('brand')}
-              />
-              <KolamTableFilterTrigger
-                active={
-                  activeFilterPanel === 'sellable' ||
-                  controller.filters.sellable !== 'all'
-                }
-                label={sellableFilterLabel}
-                onPress={() => openFilterPanel('sellable')}
-              />
-            </View>
-            <View style={styles.actionRow}>
+        <View ref={toolbarRef} style={styles.toolbarWrap}>
+          <View style={kolamTableToolbarStyles.row}>
+            <KolamFormTextField
+              mode="search"
+              onChangeText={controller.onSearchChange}
+              placeholder="Cari Teranura..."
+              style={kolamTableToolbarStyles.searchInput}
+              value={controller.filters.search}
+            />
+            <View style={kolamTableToolbarStyles.controls}>
+              <View ref={categoryTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={activeFilterPanel === 'category' || selectedCategory !== 'all'}
+                  label={categoryFilterLabel}
+                  onPress={() => openFilterPanel('category')}
+                />
+              </View>
+              <View ref={brandTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={activeFilterPanel === 'brand' || selectedBrand !== 'all'}
+                  label={brandFilterLabel}
+                  onPress={() => openFilterPanel('brand')}
+                />
+              </View>
+              <View ref={sellableTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={
+                    activeFilterPanel === 'sellable' ||
+                    controller.filters.sellable !== 'all'
+                  }
+                  label={sellableFilterLabel}
+                  onPress={() => openFilterPanel('sellable')}
+                />
+              </View>
               {hasActiveFilters ? (
                 <KolamButton
                   label="Reset"
@@ -157,7 +208,6 @@ export function KolamTeranuraSurface({
                       sellable: 'all',
                     });
                   }}
-                  style={styles.toolbarButton}
                 />
               ) : null}
               <KolamButton
@@ -166,13 +216,11 @@ export function KolamTeranuraSurface({
                 onPress={() => {
                   void controller.onRefresh();
                 }}
-                style={styles.toolbarButton}
               />
               <KolamButton
                 intent="primary"
                 label="Baru"
                 onPress={() => onRouteChange?.('/teranura/create')}
-                style={styles.toolbarButton}
               />
             </View>
           </View>
@@ -199,6 +247,7 @@ export function KolamTeranuraSurface({
                 controller.onChangeFilters({ sellable: value });
                 closeFilterPanel();
               }}
+              panelAnchor={panelAnchor}
               query={filterPanelQuery}
               selectedBrand={selectedBrand}
               selectedCategory={selectedCategory}
@@ -437,7 +486,10 @@ function TeranuraRow({
           label={item.sellable ? 'Dapat dijual' : 'Tidak dijual'}
         />
       </View>
-      <View style={[styles.actionsCell, getCellWidth(columns, 'actions')]}>
+      <View
+        collapsable={false}
+        style={[styles.actionsCell, getCellWidth(columns, 'actions')]}
+      >
         <KolamOverflowMenuButton
           accessibilityLabel={`Menu ${item.name}`}
           onOpenChange={setActionMenuOpen}
@@ -466,6 +518,7 @@ function TeranuraFilterOverlayPanel({
   onClose,
   onQueryChange,
   onSellableChange,
+  panelAnchor,
   query,
   selectedBrand,
   selectedCategory,
@@ -480,6 +533,7 @@ function TeranuraFilterOverlayPanel({
   onClose: () => void;
   onQueryChange: (value: string) => void;
   onSellableChange: (value: KolamTeranuraSellableFilter) => void;
+  panelAnchor: { left: number; top: number };
   query: string;
   selectedBrand: string;
   selectedCategory: string;
@@ -510,7 +564,11 @@ function TeranuraFilterOverlayPanel({
     <View
       style={[
         styles.filterOverlayPanel,
-        getTeranuraFilterOverlayPanelStyle(activePanel),
+        {
+          left: panelAnchor.left,
+          top: panelAnchor.top,
+          width: TERANURA_FILTER_PANEL_WIDTH,
+        },
       ]}
     >
       {activePanel === 'sellable' ? null : (
@@ -584,18 +642,6 @@ function getTeranuraFilterLabel(
   return options.find(option => option.value === value)?.label ?? fallback;
 }
 
-function getTeranuraFilterOverlayPanelStyle(panel: TeranuraFilterPanel) {
-  switch (panel) {
-    case 'brand':
-      return styles.filterPanelBrand;
-    case 'sellable':
-      return styles.filterPanelSellable;
-    case 'category':
-    default:
-      return styles.filterPanelCategory;
-  }
-}
-
 function normalizeTeranuraFilterQuery(value: string) {
   return value.trim().toLowerCase();
 }
@@ -638,51 +684,6 @@ const styles = StyleSheet.create({
     position: 'relative',
     zIndex: 100000,
   },
-  toolbarShell: {
-    backgroundColor: V.colors.bg,
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    flexWrap: 'wrap',
-    minHeight: 44,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 6,
-    overflow: 'visible',
-    padding: 4,
-  },
-  filterRow: {
-    flex: 1,
-    minWidth: 280,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    gap: 4,
-    overflow: 'visible',
-  },
-  actionRow: {
-    flexDirection: 'row',
-    flexShrink: 0,
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    borderLeftColor: V.colors.border,
-    borderLeftWidth: 1,
-    gap: 6,
-    justifyContent: 'flex-end',
-    paddingLeft: 8,
-  },
-  searchInput: {
-    flexBasis: 160,
-    flexGrow: 1,
-    maxWidth: 260,
-    minWidth: 140,
-  },
-  toolbarButton: {
-    flexShrink: 0,
-    minHeight: 34,
-    paddingHorizontal: 10,
-  },
   filterOverlayPanel: {
     backgroundColor: V.colors.bg,
     borderColor: V.colors.border,
@@ -695,19 +696,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.12,
     shadowRadius: 16,
-    top: 48,
-    width: 320,
     zIndex: 120000,
-  },
-  filterPanelCategory: {
-    left: 168,
-  },
-  filterPanelBrand: {
-    left: 330,
-  },
-  filterPanelSellable: {
-    left: 492,
-    width: 220,
   },
   filterPanelSearch: {
     marginBottom: 6,
