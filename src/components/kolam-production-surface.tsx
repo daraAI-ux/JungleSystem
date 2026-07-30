@@ -902,75 +902,94 @@ function KolamProductionDetail({
       </View>
 
       <ScrollView contentContainerStyle={styles.detailScroll}>
-      <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
-        <View style={styles.detailHeaderRow}>
-          <Text style={styles.sectionTitle}>{production.batchId}</Text>
-          <KolamStatusBadge
-            intent={productionStatusIntent(production.status)}
-            label={getKolamProductionStatusLabel(production.status)}
-          />
-        </View>
-        <Text style={styles.helperText}>
-          {getKolamProductionTargetTypeLabel(production.targetType)} ·{' '}
-          {production.createdAt ? production.createdAt.slice(0, 16).replace('T', ' ') : '—'}
-        </Text>
-
-        <KolamDescriptionList
-          accessibilityLabel="Detail produksi"
-          rows={[
-            {
-              id: 'target',
-              label: 'Target',
-              value: getKolamProductionTargetLabel(production),
-              meta: '',
-              tone: 'default',
-              ...(targetHref ? { onPress: () => onRouteChange?.(targetHref) } : {}),
-            },
-            {
-              id: 'variant',
-              label: 'Varian',
-              value: getKolamProductionVariantLabel(production.variant),
-              meta: '',
-              tone: 'default',
-            },
-            {
-              id: 'qty',
-              label: 'Rencana / Selesai',
-              value: `${plannedQty} / ${completedQty} (${progressPercent}%)`,
-              meta: '',
-              tone: 'default',
-            },
-            {
-              id: 'estimated',
-              label: 'Estimasi Biaya',
-              value: formatRupiah(production.estimatedCost),
-              meta: '',
-              tone: 'default',
-            },
-            {
-              id: 'actual',
-              label: 'Biaya Aktual',
-              value: production.status === 'completed' ? formatRupiah(production.actualCost) : '—',
-              meta: '',
-              tone: 'default',
-            },
-            {
-              id: 'assigned',
-              label: 'Penanggung jawab',
-              value: production.assignedTo?.name || production.assignedTo?.email || '—',
-              meta: '',
-              tone: 'default',
-            },
-            {
-              id: 'description',
-              label: 'Deskripsi',
-              value: production.description || '—',
-              meta: '',
-              tone: 'default',
-            },
+      <View style={styles.detailSplitRow}>
+        <View
+          style={[
+            styles.detailMainCol,
+            !production.productionHistories.length ? styles.detailMainColFull : null,
           ]}
-        />
-      </KolamContentFrame>
+        >
+          <KolamContentFrame
+            style={[styles.detailCard, styles.detailSplitCard]}
+            variant="settingsWebConfig"
+          >
+            <View style={styles.detailHeaderRow}>
+              <Text style={styles.sectionTitle}>{production.batchId}</Text>
+              <KolamStatusBadge
+                intent={productionStatusIntent(production.status)}
+                label={getKolamProductionStatusLabel(production.status)}
+              />
+            </View>
+            <Text style={styles.helperText}>
+              {getKolamProductionTargetTypeLabel(production.targetType)} ·{' '}
+              {production.createdAt ? production.createdAt.slice(0, 16).replace('T', ' ') : '—'}
+            </Text>
+
+            <KolamDescriptionList
+              accessibilityLabel="Detail produksi"
+              rows={[
+                {
+                  id: 'target',
+                  label: 'Target',
+                  value: getKolamProductionTargetLabel(production),
+                  meta: '',
+                  tone: 'default',
+                  ...(targetHref ? { onPress: () => onRouteChange?.(targetHref) } : {}),
+                },
+                {
+                  id: 'variant',
+                  label: 'Varian',
+                  value: getKolamProductionVariantLabel(production.variant),
+                  meta: '',
+                  tone: 'default',
+                },
+                {
+                  id: 'qty',
+                  label: 'Rencana / Selesai',
+                  value: `${plannedQty} / ${completedQty} (${progressPercent}%)`,
+                  meta: '',
+                  tone: 'default',
+                },
+                {
+                  id: 'estimated',
+                  label: 'Estimasi Biaya',
+                  value: formatRupiah(production.estimatedCost),
+                  meta: '',
+                  tone: 'default',
+                },
+                {
+                  id: 'actual',
+                  label: 'Biaya Aktual',
+                  value:
+                    production.status === 'completed' ? formatRupiah(production.actualCost) : '—',
+                  meta: '',
+                  tone: 'default',
+                },
+                {
+                  id: 'assigned',
+                  label: 'Penanggung jawab',
+                  value: production.assignedTo?.name || production.assignedTo?.email || '—',
+                  meta: '',
+                  tone: 'default',
+                },
+                {
+                  id: 'description',
+                  label: 'Deskripsi',
+                  value: production.description || '—',
+                  meta: '',
+                  tone: 'default',
+                },
+              ]}
+            />
+          </KolamContentFrame>
+        </View>
+
+        {production.productionHistories.length ? (
+          <View style={styles.detailTimelineCol}>
+            <KolamProductionHistorySection histories={production.productionHistories} />
+          </View>
+        ) : null}
+      </View>
 
       {production.status === 'waiting_for_po' ? (
         <KolamProductionWaitingForPOCard
@@ -1031,8 +1050,6 @@ function KolamProductionDetail({
       {production.status === 'completed' ? (
         <KolamProductionSerialsSection loading={controller.serialsLoading} serials={controller.serials} />
       ) : null}
-
-      <KolamProductionHistorySection histories={production.productionHistories} />
 
       {showSubmitCheck ? (
         <KolamProductionSubmitCheckPanel
@@ -1323,14 +1340,20 @@ function KolamProductionHistorySection({
     (a, b) => new Date(b.changedAt).getTime() - new Date(a.changedAt).getTime(),
   );
   return (
-    <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
+    <KolamContentFrame
+      style={[styles.detailCard, styles.detailSplitCard]}
+      variant="settingsWebConfig"
+    >
       <Text style={styles.sectionTitle}>Timeline Produksi</Text>
       {events.map(event => (
         <View key={event.id} style={styles.historyRow}>
           <Text style={styles.helperText}>
             {event.changedAt ? event.changedAt.slice(0, 16).replace('T', ' ') : '—'}
           </Text>
-          <KolamStatusBadge intent="muted" label={getKolamProductionHistoryStatusLabel(event.status)} />
+          <KolamStatusBadge
+            intent="muted"
+            label={getKolamProductionHistoryStatusLabel(event.status)}
+          />
           {event.note ? <Text style={styles.sectionSubtitle}>{event.note}</Text> : null}
           {event.recalcDelta ? (
             <Text style={styles.helperText}>
@@ -1338,7 +1361,9 @@ function KolamProductionHistorySection({
               {formatRupiah(event.recalcDelta.estimatedCostAfter)}
             </Text>
           ) : null}
-          {event.changedByName ? <Text style={styles.helperText}>Oleh {event.changedByName}</Text> : null}
+          {event.changedByName ? (
+            <Text style={styles.helperText}>Oleh {event.changedByName}</Text>
+          ) : null}
         </View>
       ))}
     </KolamContentFrame>
@@ -1695,6 +1720,27 @@ const styles = StyleSheet.create({
   },
   formActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
   detailScroll: { gap: 12, paddingBottom: 24 },
+  detailSplitRow: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  detailMainCol: {
+    flex: 3,
+    minWidth: 280,
+  },
+  detailMainColFull: {
+    flexBasis: '100%',
+    width: '100%',
+  },
+  detailTimelineCol: {
+    flex: 1,
+    minWidth: 220,
+  },
+  detailSplitCard: {
+    flex: 1,
+  },
   detailHeaderRow: { alignItems: 'center', flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   linkText: { color: V.colors.primary, fontFamily: V.fontFamily, fontSize: 13, fontWeight: '600' },
   linkedPoRow: {
