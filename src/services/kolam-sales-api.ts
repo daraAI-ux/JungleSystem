@@ -1,6 +1,5 @@
 import { appConfig } from '../config/app';
 import { getRuntimeClientHeaders } from '../domain/runtime-client-contract';
-import { getKolamFileUrl } from '../lib/file-url';
 import type {
   KolamSale,
   KolamSaleAddItemsBody,
@@ -22,6 +21,7 @@ import {
   normalizeKolamSaleAnalyticsOverview,
   normalizeKolamSaleList,
 } from '../domain/kolam-sales';
+import { getKolamActiveSources } from './kolam-source-api';
 import {
   apiRequest,
   getAccessToken,
@@ -78,34 +78,13 @@ export async function getKolamSale(id: string): Promise<KolamSale> {
 export async function getKolamSalesActiveSources(): Promise<
   KolamSaleSourceOption[]
 > {
-  const payload = await kolamRequest<unknown>('/source/active', {
-    query: { isActive: true },
-  });
-  const data =
-    payload && typeof payload === 'object' && 'data' in (payload as object)
-      ? (payload as { data: unknown }).data
-      : payload;
-  const list = Array.isArray(data) ? data : [];
-  return list
-    .map(row => {
-      if (!row || typeof row !== 'object') {
-        return null;
-      }
-      const record = row as Record<string, unknown>;
-      const id = String(record._id ?? record.id ?? '').trim();
-      if (!id) {
-        return null;
-      }
-      const typeRaw = String(record.type ?? '').trim().toLowerCase();
-      const logo = String(record.logo ?? record.logoUrl ?? '').trim();
-      return {
-        id,
-        name: String(record.name ?? '').trim() || id,
-        type: typeRaw === 'online' || typeRaw === 'offline' ? typeRaw : typeRaw,
-        logoUri: logo ? getKolamFileUrl(logo) : null,
-      } satisfies KolamSaleSourceOption;
-    })
-    .filter((row): row is KolamSaleSourceOption => Boolean(row));
+  const rows = await getKolamActiveSources();
+  return rows.map(row => ({
+    id: row.id,
+    name: row.name,
+    type: row.type,
+    logoUri: row.logoUri,
+  }));
 }
 
 export async function createKolamSale(

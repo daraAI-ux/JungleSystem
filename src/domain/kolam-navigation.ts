@@ -340,9 +340,10 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         requiredAccess: ['kolam', 'pos'],
       },
       {
-        label: 'Sales Sources',
+        label: 'Sumber Penjualan',
         route: '/source',
-        description: 'Manage sales sources',
+        description:
+          'Kelola sumber penjualan (Shopee, Tokopedia, toko offline, dll.) dengan field biaya dinamis untuk perhitungan profit.',
         group: 'Penjualan',
         requiredAccess: ['kolam'],
       },
@@ -1118,21 +1119,24 @@ const kolamNavigationRouteVariantSpecs: Array<{
   },
   {
     baseRoute: '/source',
-    labelSuffix: 'Create',
+    labelSuffix: 'Baru',
+    label: 'Sumber Penjualan Baru',
     route: '/source/create',
-    description: 'Create sales source page from live Kolam',
+    description: 'Buat sumber penjualan baru.',
   },
   {
     baseRoute: '/source',
     labelSuffix: 'Detail',
+    label: 'Detail Sumber Penjualan',
     route: '/source/:id',
-    description: 'Sales source detail page from live Kolam',
+    description: '',
   },
   {
     baseRoute: '/source',
-    labelSuffix: 'Edit',
+    labelSuffix: 'Ubah',
+    label: 'Ubah Sumber Penjualan',
     route: '/source/:id/edit',
-    description: 'Edit sales source page from live Kolam',
+    description: 'Perbarui data sumber penjualan.',
   },
   {
     baseRoute: '/complaints',

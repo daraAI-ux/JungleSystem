@@ -1,0 +1,1196 @@
+import React from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  estimateKolamSourceCostOnAmount,
+  formatKolamSourceCostField,
+  formatKolamSourceUserDisplayName,
+  getKolamSourceCommissionModeLabel,
+  getKolamSourcePricingMode,
+  getKolamSourceStatusLabel,
+  getKolamSourceTypeLabel,
+  KOLAM_SOURCE_COMMISSION_MODE_OPTIONS,
+  KOLAM_SOURCE_ROOT,
+  KOLAM_SOURCE_TYPE_OPTIONS,
+  type KolamSource,
+  type KolamSourceCostField,
+  type KolamSourceCostFieldType,
+} from '../domain/kolam-source';
+import { type KolamTableColumn } from '../domain/kolam-table';
+import { kolamVisualTokens as V } from '../domain/kolam-visual';
+import { formatRupiah } from '../lib/money';
+import { pickNativeImageFile } from '../services/native-file-picker';
+import {
+  useKolamSourceController,
+  type KolamSourceController,
+} from '../hooks/use-kolam-source-controller';
+import { KolamButton } from './kolam-button';
+import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
+import { KolamContentFrame } from './kolam-content-frame';
+import { KolamCopyStack } from './kolam-copy-stack';
+import {
+  getKolamDataTableColumnStyle,
+  KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+  KOLAM_DATA_TABLE_COLUMN_GAP,
+} from './kolam-data-table-column-style';
+import { KolamDataTableHeader } from './kolam-data-table-header';
+import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
+import {
+  KolamDataTableActionsTrack,
+  KolamDataTableMainTrack,
+} from './kolam-data-table-tracks';
+import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
+import { KolamDescriptionList } from './kolam-description-list';
+import {
+  KolamDropdownSelect,
+  KolamOverflowMenuButton,
+  KolamTableFooterControls,
+} from './kolam-dropdown-select';
+import { KolamEmptyState } from './kolam-empty-state';
+import { KolamFormTextField } from './kolam-form-text-field';
+import { KolamInteractionFrame } from './kolam-interaction-frame';
+import { KolamRemoteImage } from './kolam-remote-image';
+import { KolamSearchField } from './kolam-search-field';
+import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
+import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
+import { KolamStatusBadge } from './kolam-status-badge';
+import { KolamSwitch } from './kolam-switch';
+import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
+
+function FieldShell({
+  children,
+  label,
+  required = false,
+}: {
+  children: React.ReactNode;
+  label: string;
+  required?: boolean;
+}) {
+  return (
+    <View style={settingsWebFormStyles.settingsWebFormField}>
+      <KolamSettingsWebFieldLabel label={label} required={required} />
+      {children}
+    </View>
+  );
+}
+
+const LIST_COLUMNS: KolamTableColumn[] = [
+  { id: 'primary', label: 'Nama', align: 'left', width: 220 },
+  { id: 'meta', label: 'Logo', align: 'left', width: 72 },
+  { id: 'children', label: 'Tipe', align: 'left', width: 88 },
+  { id: 'marketplace', label: 'Dompet', align: 'left', width: 140 },
+  { id: 'notes', label: 'Field Biaya', align: 'left', width: 160 },
+  { id: 'status', label: 'Status', align: 'left', width: 110 },
+  {
+    id: 'actions',
+    label: '',
+    align: 'right',
+    width: KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+  },
+];
+
+function descRow(
+  id: string,
+  label: string,
+  value: string,
+): {
+  id: string;
+  label: string;
+  meta: string;
+  tone: 'default';
+  value: string;
+} {
+  return { id, label, meta: '', tone: 'default', value };
+}
+
+function SourceFormSection({
+  children,
+  description,
+  title,
+}: {
+  children: React.ReactNode;
+  description?: string;
+  title: string;
+}) {
+  return (
+    <KolamContentFrame variant="nativeFormSection">
+      <KolamCopyStack
+        containerStyle={styles.sectionCopy}
+        items={[
+          { id: 'title', text: title, style: styles.sectionTitle },
+          ...(description
+            ? [
+                {
+                  id: 'description',
+                  text: description,
+                  style: styles.sectionDescription,
+                },
+              ]
+            : []),
+        ]}
+      />
+      <KolamContentFrame variant="nativeFormControls">{children}</KolamContentFrame>
+    </KolamContentFrame>
+  );
+}
+
+export function KolamSourceSurface({
+  onRouteChange,
+  route,
+}: {
+  onRouteChange?: (route: string) => void;
+  route: string;
+}) {
+  const controller = useKolamSourceController(route);
+
+  return (
+    <KolamSourceShell controller={controller} onRouteChange={onRouteChange}>
+      {controller.mode === 'list' ? (
+        <KolamSourceList controller={controller} onRouteChange={onRouteChange} />
+      ) : controller.isEditable ? (
+        <KolamSourceForm controller={controller} onRouteChange={onRouteChange} />
+      ) : (
+        <KolamSourceDetail controller={controller} onRouteChange={onRouteChange} />
+      )}
+    </KolamSourceShell>
+  );
+}
+
+function KolamSourceShell({
+  children,
+  controller,
+  onRouteChange,
+}: {
+  children: React.ReactNode;
+  controller: KolamSourceController;
+  onRouteChange?: (route: string) => void;
+}) {
+  if (controller.mode === 'list') {
+    return (
+      <View style={styles.surface}>
+        {controller.error ? (
+          <KolamStatusBadge
+            intent="danger"
+            label={controller.error}
+            numberOfLines={3}
+            style={styles.errorBadge}
+          />
+        ) : null}
+        {children}
+      </View>
+    );
+  }
+
+  const contextLabel =
+    controller.mode === 'new'
+      ? 'Sumber penjualan baru'
+      : controller.mode === 'edit'
+        ? `Ubah · ${controller.selectedSource?.name || controller.form.name || 'Sumber'}`
+        : controller.selectedSource?.name || 'Detail sumber penjualan';
+
+  return (
+    <View style={styles.surface}>
+      <View style={kolamTableToolbarStyles.shell}>
+        <View style={kolamTableToolbarStyles.row}>
+          <View style={kolamTableToolbarStyles.filters}>
+            <Text numberOfLines={1} style={styles.detailToolbarContext}>
+              {contextLabel}
+            </Text>
+          </View>
+          <View style={kolamTableToolbarStyles.actions}>
+            <KolamButton
+              disabled={controller.loading}
+              label="Refresh"
+              onPress={() => {
+                void controller.onRefresh();
+              }}
+            />
+            <KolamButton
+              label="Daftar"
+              onPress={() => {
+                controller.onBackToList();
+                onRouteChange?.(KOLAM_SOURCE_ROOT);
+              }}
+            />
+            {controller.mode === 'detail' ? (
+              <KolamButton
+                intent="primary"
+                label="Ubah"
+                onPress={() => {
+                  controller.onEdit();
+                  if (controller.selectedSource) {
+                    onRouteChange?.(
+                      `${KOLAM_SOURCE_ROOT}/${controller.selectedSource.id}/edit`,
+                    );
+                  }
+                }}
+              />
+            ) : null}
+          </View>
+        </View>
+      </View>
+      {controller.error ? (
+        <KolamStatusBadge
+          intent="danger"
+          label={controller.error}
+          numberOfLines={3}
+          style={styles.errorBadge}
+        />
+      ) : null}
+      {children}
+    </View>
+  );
+}
+
+function KolamSourceList({
+  controller,
+  onRouteChange,
+}: {
+  controller: KolamSourceController;
+  onRouteChange?: (route: string) => void;
+}) {
+  const [deleteCandidate, setDeleteCandidate] =
+    React.useState<KolamSource | null>(null);
+  const [tableBodyWidth, setTableBodyWidth] = React.useState(0);
+
+  const columns = React.useMemo(() => {
+    if (tableBodyWidth <= 0) {
+      return LIST_COLUMNS;
+    }
+    const flexible = LIST_COLUMNS.filter(column => column.id !== 'actions');
+    const actionsWidth = KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH;
+    const gapTotal = KOLAM_DATA_TABLE_COLUMN_GAP * (LIST_COLUMNS.length - 1);
+    const available = Math.max(
+      320,
+      tableBodyWidth - actionsWidth - gapTotal,
+    );
+    const baseWidth = flexible.reduce(
+      (sum, column) => sum + (column.width ?? 100),
+      0,
+    );
+    const scale = available / Math.max(1, baseWidth);
+    return [
+      ...flexible.map(column => ({
+        ...column,
+        width: Math.max(64, Math.round((column.width ?? 100) * scale)),
+      })),
+      { ...LIST_COLUMNS[LIST_COLUMNS.length - 1], width: actionsWidth },
+    ];
+  }, [tableBodyWidth]);
+
+  return (
+    <View style={styles.stack}>
+      <View style={kolamTableToolbarStyles.shell}>
+        <View style={kolamTableToolbarStyles.row}>
+          <View style={kolamTableToolbarStyles.filters}>
+            <KolamSearchField
+              containerStyle={kolamTableToolbarStyles.searchInput}
+              onChangeText={controller.onSearchChange}
+              placeholder="Cari sumber..."
+              value={controller.search}
+            />
+            {controller.search ? (
+              <KolamButton
+                label="Bersihkan"
+                onPress={() => controller.onSearchChange('')}
+              />
+            ) : null}
+          </View>
+          <View style={kolamTableToolbarStyles.actions}>
+            <KolamButton
+              disabled={controller.loading}
+              label="Refresh"
+              onPress={() => {
+                void controller.onRefresh();
+              }}
+            />
+            <KolamButton
+              intent="primary"
+              label="Baru"
+              onPress={() => {
+                controller.onCreateNew();
+                onRouteChange?.(`${KOLAM_SOURCE_ROOT}/create`);
+              }}
+            />
+          </View>
+        </View>
+      </View>
+
+      <KolamCatalogListTableShell
+        footer={
+          <KolamTableFooterControls
+            onPageSizeChange={controller.onSetPageSize}
+            page={controller.page}
+            pageSize={controller.pageSize}
+            total={controller.total}
+          >
+            {controller.totalPages > 1 ? (
+              <View style={styles.paginationRow}>
+                <KolamButton
+                  disabled={controller.page <= 1}
+                  label="Sebelumnya"
+                  onPress={() =>
+                    controller.onSetPage(Math.max(1, controller.page - 1))
+                  }
+                />
+                <Text style={styles.pageLabel}>
+                  {controller.page} / {controller.totalPages}
+                </Text>
+                <KolamButton
+                  disabled={controller.page >= controller.totalPages}
+                  label="Berikutnya"
+                  onPress={() =>
+                    controller.onSetPage(
+                      Math.min(controller.totalPages, controller.page + 1),
+                    )
+                  }
+                />
+              </View>
+            ) : null}
+          </KolamTableFooterControls>
+        }
+        onBodyWidthChange={setTableBodyWidth}
+      >
+        <KolamDataTableHeader columns={columns} />
+        {!controller.loading && controller.sources.length === 0 ? (
+          <KolamEmptyState
+            message="Belum ada sumber penjualan, atau pencarian tidak menemukan hasil."
+            title="Sumber penjualan kosong"
+          />
+        ) : null}
+        {controller.sources.map(source => (
+          <KolamDataTableRowFrame key={source.id}>
+            <KolamDataTableMainTrack>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => {
+                  void controller.onSelectSource(source).then(() => {
+                    onRouteChange?.(`${KOLAM_SOURCE_ROOT}/${source.id}`);
+                  });
+                }}
+                style={getKolamDataTableColumnStyle(columns[0])}
+              >
+                <Text numberOfLines={1} style={styles.primaryText}>
+                  {source.name}
+                </Text>
+                {source.description ? (
+                  <Text numberOfLines={1} style={styles.metaText}>
+                    {source.description}
+                  </Text>
+                ) : null}
+              </Pressable>
+              <View style={getKolamDataTableColumnStyle(columns[1])}>
+                {source.logoUri ? (
+                  <KolamRemoteImage
+                    accessibilityLabel={`Logo ${source.name}`}
+                    resizeMode="contain"
+                    sourceUri={source.logoUri}
+                    style={styles.listLogo}
+                  />
+                ) : (
+                  <Text style={styles.metaText}>—</Text>
+                )}
+              </View>
+              <View style={getKolamDataTableColumnStyle(columns[2])}>
+                <KolamStatusBadge
+                  intent={source.type === 'online' ? 'info' : 'secondary'}
+                  label={getKolamSourceTypeLabel(source.type)}
+                />
+              </View>
+              <View style={getKolamDataTableColumnStyle(columns[3])}>
+                <Text numberOfLines={1} style={styles.cellText}>
+                  {source.wallet?.name || '—'}
+                </Text>
+              </View>
+              <View style={getKolamDataTableColumnStyle(columns[4])}>
+                <Text numberOfLines={2} style={styles.metaText}>
+                  {source.costFields.length
+                    ? source.costFields
+                        .map(field => formatKolamSourceCostField(field))
+                        .join(' · ')
+                    : '—'}
+                </Text>
+              </View>
+              <View
+                style={[
+                  getKolamDataTableColumnStyle(columns[5]),
+                  styles.statusCell,
+                ]}
+              >
+                <KolamSwitch
+                  active={source.isActive}
+                  disabled={controller.saving}
+                  onPress={() => {
+                    void controller.onToggleActive(source, !source.isActive);
+                  }}
+                />
+                <Text style={styles.metaText}>
+                  {getKolamSourceStatusLabel(source.isActive)}
+                </Text>
+              </View>
+            </KolamDataTableMainTrack>
+            <KolamDataTableActionsTrack>
+              <KolamOverflowMenuButton
+                accessibilityLabel={`Menu ${source.name}`}
+                actions={[
+                  {
+                    label: 'Lihat',
+                    onPress: () => {
+                      void controller.onSelectSource(source).then(() => {
+                        onRouteChange?.(`${KOLAM_SOURCE_ROOT}/${source.id}`);
+                      });
+                    },
+                  },
+                  {
+                    label: 'Ubah',
+                    onPress: () => {
+                      void controller.onSelectSource(source).then(() => {
+                        controller.onEdit();
+                        onRouteChange?.(
+                          `${KOLAM_SOURCE_ROOT}/${source.id}/edit`,
+                        );
+                      });
+                    },
+                  },
+                  {
+                    label: 'Hapus',
+                    onPress: () => setDeleteCandidate(source),
+                    tone: 'danger',
+                  },
+                ]}
+              />
+            </KolamDataTableActionsTrack>
+          </KolamDataTableRowFrame>
+        ))}
+      </KolamCatalogListTableShell>
+
+      <KolamDeleteConfirmDialog
+        itemLabel={deleteCandidate?.name}
+        itemType="sumber penjualan"
+        onCancel={() => setDeleteCandidate(null)}
+        onConfirm={() => {
+          const candidate = deleteCandidate;
+          setDeleteCandidate(null);
+          if (!candidate) {
+            return;
+          }
+          void controller.onDeleteSource(candidate).then(ok => {
+            if (ok) {
+              onRouteChange?.(KOLAM_SOURCE_ROOT);
+            }
+          });
+        }}
+        visible={Boolean(deleteCandidate)}
+      />
+    </View>
+  );
+}
+
+function KolamSourceDetail({
+  controller,
+  onRouteChange,
+}: {
+  controller: KolamSourceController;
+  onRouteChange?: (route: string) => void;
+}) {
+  const source = controller.selectedSource;
+  const [deleteOpen, setDeleteOpen] = React.useState(false);
+
+  if (!source) {
+    return (
+      <KolamEmptyState
+        message="Sumber penjualan tidak ditemukan."
+        title="Tidak ada data"
+      />
+    );
+  }
+
+  const pricing = getKolamSourcePricingMode(source);
+  const sampleFee = estimateKolamSourceCostOnAmount(
+    source.costFields,
+    100_000,
+  );
+
+  return (
+    <ScrollView contentContainerStyle={styles.detailContent}>
+      <View style={styles.detailHero}>
+        {source.logoUri ? (
+          <KolamRemoteImage
+            accessibilityLabel={`Logo ${source.name}`}
+            resizeMode="contain"
+            sourceUri={source.logoUri}
+            style={styles.detailLogo}
+          />
+        ) : (
+          <View style={styles.detailLogoPlaceholder}>
+            <Text style={styles.metaText}>Tanpa logo</Text>
+          </View>
+        )}
+        <View style={styles.detailHeroText}>
+          <Text style={styles.detailTitle}>{source.name}</Text>
+          <View style={styles.badgeRow}>
+            <KolamStatusBadge
+              intent={source.type === 'online' ? 'info' : 'secondary'}
+              label={getKolamSourceTypeLabel(source.type)}
+            />
+            <KolamStatusBadge
+              intent={source.isActive ? 'success' : 'danger'}
+              label={getKolamSourceStatusLabel(source.isActive)}
+            />
+            {source.isMarketplace ? (
+              <KolamStatusBadge intent="warning" label="Marketplace" />
+            ) : null}
+          </View>
+          {source.description ? (
+            <Text style={styles.metaText}>{source.description}</Text>
+          ) : null}
+        </View>
+      </View>
+
+      <SourceFormSection
+        description="Identitas, harga, dompet, dan komisi sumber ini."
+        title="Ringkasan"
+      >
+        <KolamDescriptionList
+          accessibilityLabel="Ringkasan sumber penjualan"
+          rows={[
+            descRow('pricing', 'Mode harga', `${pricing.label}\n${pricing.detail}`),
+            descRow(
+              'wallet',
+              'Dompet tujuan',
+              source.wallet
+                ? `${source.wallet.name} (${source.wallet.type})`
+                : '—',
+            ),
+            descRow(
+              'commission',
+              'Komisi penjualan',
+              getKolamSourceCommissionModeLabel(source),
+            ),
+          ]}
+        />
+      </SourceFormSection>
+
+      <SourceFormSection
+        description="Target markup rekomendasi harga channel — tidak mengurangi total invoice."
+        title="Markup Channel (DARA)"
+      >
+        <KolamDescriptionList
+          accessibilityLabel="Markup DARA"
+          rows={[
+            descRow('pct', 'Markup persen', `${source.markupPercent}%`),
+            descRow('fixed', 'Markup tetap', formatRupiah(source.markupFixed)),
+          ]}
+        />
+      </SourceFormSection>
+
+      <SourceFormSection
+        description="Estimasi potongan legacy. Contoh pada omzet Rp 100.000."
+        title="Field Biaya"
+      >
+        {source.costFields.length ? (
+          <KolamDescriptionList
+            accessibilityLabel="Field biaya sumber"
+            rows={[
+              ...source.costFields.map((field, index) =>
+                descRow(
+                  `fee-${index}`,
+                  field.name,
+                  field.type === 'percentage'
+                    ? `${field.value}%`
+                    : formatRupiah(field.value),
+                ),
+              ),
+              descRow(
+                'sample',
+                'Estimasi potongan (Rp 100.000)',
+                formatRupiah(sampleFee),
+              ),
+            ]}
+          />
+        ) : (
+          <Text style={styles.metaText}>Belum ada field biaya.</Text>
+        )}
+      </SourceFormSection>
+
+      <SourceFormSection title="Aktivitas">
+        <KolamDescriptionList
+          accessibilityLabel="Aktivitas sumber"
+          rows={[
+            descRow(
+              'created',
+              'Dibuat',
+              [
+                source.createdAt || '—',
+                source.createdByLabel ? `oleh ${source.createdByLabel}` : '',
+              ]
+                .filter(Boolean)
+                .join(' '),
+            ),
+            descRow(
+              'updated',
+              'Diperbarui',
+              [
+                source.updatedAt || '—',
+                source.updatedByLabel ? `oleh ${source.updatedByLabel}` : '',
+              ]
+                .filter(Boolean)
+                .join(' '),
+            ),
+          ]}
+        />
+      </SourceFormSection>
+
+      <View style={styles.detailActions}>
+        <KolamButton
+          intent="danger"
+          label="Hapus"
+          onPress={() => setDeleteOpen(true)}
+        />
+      </View>
+
+      <KolamDeleteConfirmDialog
+        itemLabel={source.name}
+        itemType="sumber penjualan"
+        onCancel={() => setDeleteOpen(false)}
+        onConfirm={() => {
+          void controller.onDeleteSource(source).then(ok => {
+            if (ok) {
+              setDeleteOpen(false);
+              onRouteChange?.(KOLAM_SOURCE_ROOT);
+            }
+          });
+        }}
+        visible={deleteOpen}
+      />
+    </ScrollView>
+  );
+}
+
+function KolamSourceForm({
+  controller,
+  onRouteChange,
+}: {
+  controller: KolamSourceController;
+  onRouteChange?: (route: string) => void;
+}) {
+  const { form } = controller;
+  const previewUri =
+    form.pendingLogoLocalUri || controller.selectedSource?.logoUri;
+
+  const handlePickLogo = async () => {
+    try {
+      const picked = await pickNativeImageFile();
+      if (picked.cancelled) {
+        return;
+      }
+      const localUri = picked.uri ?? picked.path ?? '';
+      if (!localUri) {
+        return;
+      }
+      await controller.onUploadLogo(localUri);
+    } catch {
+      // Picker/runtime errors are rare; API errors surface via controller.error.
+    }
+  };
+
+  const addCostField = () => {
+    controller.onChangeForm({
+      costFields: [
+        ...form.costFields,
+        { name: '', type: 'percentage', value: 0 },
+      ],
+    });
+  };
+
+  const updateCostField = (
+    index: number,
+    patch: Partial<KolamSourceCostField>,
+  ) => {
+    controller.onChangeForm({
+      costFields: form.costFields.map((field, fieldIndex) =>
+        fieldIndex === index ? { ...field, ...patch } : field,
+      ),
+    });
+  };
+
+  const removeCostField = (index: number) => {
+    controller.onChangeForm({
+      costFields: form.costFields.filter((_, fieldIndex) => fieldIndex !== index),
+    });
+  };
+
+  const toggleRecipient = (userId: string) => {
+    const exists = form.defaultCommissionRecipientIds.includes(userId);
+    controller.onChangeForm({
+      defaultCommissionRecipientIds: exists
+        ? form.defaultCommissionRecipientIds.filter(id => id !== userId)
+        : [...form.defaultCommissionRecipientIds, userId],
+    });
+  };
+
+  return (
+    <ScrollView contentContainerStyle={styles.detailContent}>
+      <SourceFormSection
+        description="Nama, tipe saluran, status, dan flag marketplace."
+        title="Informasi Dasar"
+      >
+        <FieldShell label="Nama" required>
+          <KolamFormTextField
+            onChangeText={value => controller.onChangeForm({ name: value })}
+            placeholder="Contoh: Shopee, Tokopedia, POS"
+            style={settingsWebFormStyles.settingsWebFormFieldValue}
+            value={form.name}
+          />
+        </FieldShell>
+        <KolamDropdownSelect
+          label="Tipe"
+          onChange={value =>
+            controller.onChangeForm({
+              type: value as 'online' | 'offline',
+            })
+          }
+          options={KOLAM_SOURCE_TYPE_OPTIONS.map(option => ({
+            label: option.label,
+            value: option.id,
+          }))}
+          value={form.type}
+        />
+        <FieldShell label="Deskripsi">
+          <KolamFormTextField
+            multiline
+            onChangeText={value =>
+              controller.onChangeForm({ description: value })
+            }
+            placeholder="Opsional"
+            style={[
+              settingsWebFormStyles.settingsWebFormFieldValue,
+              settingsWebFormStyles.settingsWebFormFieldValueTextarea,
+            ]}
+            value={form.description}
+          />
+        </FieldShell>
+        <View style={styles.switchRow}>
+          <View style={styles.switchCopy}>
+            <Text style={styles.primaryText}>Aktif</Text>
+            <Text style={styles.metaText}>
+              Sumber nonaktif tidak muncul di picker penjualan.
+            </Text>
+          </View>
+          <KolamSwitch
+            active={form.isActive}
+            onPress={() =>
+              controller.onChangeForm({ isActive: !form.isActive })
+            }
+          />
+        </View>
+        <View style={styles.switchRow}>
+          <View style={styles.switchCopy}>
+            <Text style={styles.primaryText}>Marketplace / olshop</Text>
+            <Text style={styles.metaText}>
+              Wajib pilih dompet escrow. Komisi dipaksa bagi rata semua karyawan.
+            </Text>
+          </View>
+          <KolamSwitch
+            active={form.isMarketplace}
+            onPress={() =>
+              controller.onChangeForm({ isMarketplace: !form.isMarketplace })
+            }
+          />
+        </View>
+        {form.isMarketplace || form.walletId ? (
+          <KolamDropdownSelect
+            label={form.isMarketplace ? 'Dompet (wajib)' : 'Dompet'}
+            onChange={value =>
+              controller.onChangeForm({
+                walletId: value === '' ? null : value,
+              })
+            }
+            options={[
+              { label: '— Tidak ada —', value: '' },
+              ...controller.wallets.map(wallet => ({
+                label: `${wallet.name} (${wallet.type})`,
+                value: wallet.id,
+              })),
+            ]}
+            value={form.walletId ?? ''}
+          />
+        ) : null}
+      </SourceFormSection>
+
+      <SourceFormSection
+        description="Atur apakah sale dari sumber ini men-accrue komisi karyawan."
+        title="Komisi penjualan"
+      >
+        <View style={styles.switchRow}>
+          <View style={styles.switchCopy}>
+            <Text style={styles.primaryText}>Komisi aktif</Text>
+            <Text style={styles.metaText}>
+              Matikan agar sale eligible tidak accrue komisi.
+            </Text>
+          </View>
+          <KolamSwitch
+            active={form.commissionEnabled}
+            onPress={() =>
+              controller.onChangeForm({
+                commissionEnabled: !form.commissionEnabled,
+              })
+            }
+          />
+        </View>
+        {form.commissionEnabled ? (
+          form.isMarketplace ? (
+            <Text style={styles.metaText}>
+              Olshop / marketplace: pembagian tetap bagi rata semua karyawan
+              eligible.
+            </Text>
+          ) : (
+            <>
+              <KolamDropdownSelect
+                label="Pembagian penerima komisi"
+                onChange={value =>
+                  controller.onChangeForm({
+                    commissionRecipientMode:
+                      value as typeof form.commissionRecipientMode,
+                  })
+                }
+                options={KOLAM_SOURCE_COMMISSION_MODE_OPTIONS.map(option => ({
+                  label: option.label,
+                  value: option.id,
+                }))}
+                value={form.commissionRecipientMode}
+              />
+              {form.commissionRecipientMode === 'selected_users' ? (
+                <View style={styles.recipientList}>
+                  {controller.eligibleUsers.length === 0 ? (
+                    <Text style={styles.metaText}>
+                      Tidak ada user eligible komisi.
+                    </Text>
+                  ) : (
+                    controller.eligibleUsers.map(user => {
+                      const selected =
+                        form.defaultCommissionRecipientIds.includes(user.id);
+                      return (
+                        <KolamInteractionFrame
+                          key={user.id}
+                          onPress={() => toggleRecipient(user.id)}
+                          style={[
+                            styles.recipientRow,
+                            selected && styles.recipientRowSelected,
+                          ]}
+                        >
+                          <Text style={styles.primaryText}>
+                            {user.displayName ||
+                              formatKolamSourceUserDisplayName({
+                                firstName: user.firstName,
+                                lastName: user.lastName,
+                                username: user.username,
+                                email: user.email,
+                              })}
+                          </Text>
+                          <Text style={styles.metaText}>
+                            {user.isOwner
+                              ? 'Pemilik'
+                              : user.isEmployee
+                                ? 'Staf'
+                                : ''}
+                          </Text>
+                        </KolamInteractionFrame>
+                      );
+                    })
+                  )}
+                </View>
+              ) : null}
+            </>
+          )
+        ) : null}
+      </SourceFormSection>
+
+      <SourceFormSection
+        description="Logo kotak untuk list penjualan. JPG/PNG/GIF/WEBP."
+        title="Logo"
+      >
+        {previewUri ? (
+          <KolamRemoteImage
+            accessibilityLabel="Pratinjau logo sumber"
+            resizeMode="contain"
+            sourceUri={previewUri}
+            style={styles.formLogo}
+          />
+        ) : (
+          <Text style={styles.metaText}>Belum ada logo.</Text>
+        )}
+        <View style={styles.badgeRow}>
+          <KolamButton label="Pilih logo" onPress={() => void handlePickLogo()} />
+          {previewUri ? (
+            <KolamButton
+              intent="danger"
+              label="Hapus logo"
+              onPress={() => {
+                void controller.onDeleteLogo();
+              }}
+            />
+          ) : null}
+        </View>
+      </SourceFormSection>
+
+      <SourceFormSection
+        description="Target markup rekomendasi harga channel — tidak mengurangi total invoice."
+        title="Markup Channel (DARA)"
+      >
+        <FieldShell label="Markup persen (0–100)">
+          <KolamFormTextField
+            mode="numeric"
+            onChangeText={value =>
+              controller.onChangeForm({ markupPercent: value })
+            }
+            style={settingsWebFormStyles.settingsWebFormFieldValue}
+            value={form.markupPercent}
+          />
+        </FieldShell>
+        <FieldShell label="Markup tetap (Rp)">
+          <KolamFormTextField
+            mode="numeric"
+            onChangeText={value =>
+              controller.onChangeForm({ markupFixed: value })
+            }
+            style={settingsWebFormStyles.settingsWebFormFieldValue}
+            value={form.markupFixed}
+          />
+        </FieldShell>
+      </SourceFormSection>
+
+      <SourceFormSection
+        description="Field biaya dinamis untuk estimasi potongan / profit preview."
+        title="Field Biaya"
+      >
+        {form.costFields.map((field, index) => (
+          <View key={`cost-${index}`} style={styles.costFieldCard}>
+            <FieldShell label="Nama biaya">
+              <KolamFormTextField
+                onChangeText={value => updateCostField(index, { name: value })}
+                style={settingsWebFormStyles.settingsWebFormFieldValue}
+                value={field.name}
+              />
+            </FieldShell>
+            <KolamDropdownSelect
+              label="Tipe"
+              onChange={value =>
+                updateCostField(index, {
+                  type: value as KolamSourceCostFieldType,
+                })
+              }
+              options={[
+                { label: 'Persentase', value: 'percentage' },
+                { label: 'Nominal tetap', value: 'fixed' },
+              ]}
+              value={field.type}
+            />
+            <FieldShell
+              label={field.type === 'percentage' ? 'Nilai (%)' : 'Nilai (Rp)'}
+            >
+              <KolamFormTextField
+                mode="numeric"
+                onChangeText={value =>
+                  updateCostField(index, {
+                    value: Number(value.replace(/[^\d.-]/g, '')) || 0,
+                  })
+                }
+                style={settingsWebFormStyles.settingsWebFormFieldValue}
+                value={String(field.value)}
+              />
+            </FieldShell>
+            <KolamButton
+              intent="danger"
+              label="Hapus field"
+              onPress={() => removeCostField(index)}
+            />
+          </View>
+        ))}
+        <KolamButton label="Tambah field biaya" onPress={addCostField} />
+      </SourceFormSection>
+
+      <View style={styles.detailActions}>
+        <KolamButton
+          label="Batal"
+          onPress={() => {
+            if (controller.mode === 'edit' && controller.selectedSource) {
+              onRouteChange?.(
+                `${KOLAM_SOURCE_ROOT}/${controller.selectedSource.id}`,
+              );
+              void controller.onSelectSource(controller.selectedSource);
+              return;
+            }
+            controller.onBackToList();
+            onRouteChange?.(KOLAM_SOURCE_ROOT);
+          }}
+        />
+        <KolamButton
+          disabled={controller.saving}
+          intent="primary"
+          label={controller.saving ? 'Menyimpan…' : 'Simpan'}
+          onPress={() => {
+            void controller.onSave().then(id => {
+              if (id) {
+                onRouteChange?.(`${KOLAM_SOURCE_ROOT}/${id}`);
+              }
+            });
+          }}
+        />
+      </View>
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  surface: {
+    flex: 1,
+    gap: 8,
+  },
+  stack: {
+    flex: 1,
+    gap: 8,
+  },
+  errorBadge: {
+    alignSelf: 'stretch',
+    marginHorizontal: 4,
+  },
+  detailToolbarContext: {
+    color: V.colors.fg,
+    fontSize: 14,
+    fontWeight: '600',
+    maxWidth: 420,
+  },
+  primaryText: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  metaText: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+  },
+  cellText: {
+    color: V.colors.fg,
+    fontSize: 13,
+  },
+  listLogo: {
+    height: 36,
+    width: 36,
+  },
+  statusCell: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  paginationRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  pageLabel: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    fontVariant: ['tabular-nums'],
+  },
+  detailContent: {
+    gap: 16,
+    paddingBottom: 32,
+    paddingHorizontal: 8,
+  },
+  detailHero: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 16,
+    paddingVertical: 8,
+  },
+  detailLogo: {
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    height: 72,
+    width: 72,
+  },
+  detailLogoPlaceholder: {
+    alignItems: 'center',
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    height: 72,
+    justifyContent: 'center',
+    width: 72,
+  },
+  detailHeroText: {
+    flex: 1,
+    gap: 6,
+  },
+  detailTitle: {
+    color: V.colors.fg,
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  badgeRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  detailActions: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'flex-end',
+  },
+  switchRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+    paddingVertical: 4,
+  },
+  switchCopy: {
+    flex: 1,
+    gap: 2,
+  },
+  formLogo: {
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    height: 96,
+    width: 96,
+  },
+  costFieldCard: {
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    gap: 8,
+    padding: 10,
+  },
+  recipientList: {
+    gap: 6,
+  },
+  recipientRow: {
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    gap: 2,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  recipientRowSelected: {
+    backgroundColor: V.colors.muted,
+    borderColor: V.colors.primary,
+  },
+  sectionCopy: {
+    gap: 4,
+    marginBottom: 8,
+  },
+  sectionTitle: {
+    color: V.colors.fg,
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  sectionDescription: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+  },
+});

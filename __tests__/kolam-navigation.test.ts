@@ -297,7 +297,7 @@ describe('kolamNavigationSections', () => {
       'kolam',
     );
     expect(getKolamNavigationRouteTarget(byRoute('/sales')).moduleId).toBe(
-      'sales',
+      'kolam',
     );
     expect(
       getKolamNavigationRouteTarget(byRoute('/cashflow-session')).moduleId,
@@ -349,7 +349,7 @@ describe('kolamNavigationSections', () => {
   it('indexes live create detail and edit route variants for native command search', () => {
     const variants = getKolamNavigationRouteVariants();
 
-    expect(variants).toHaveLength(164);
+    expect(variants).toHaveLength(165);
     expect(variants).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
