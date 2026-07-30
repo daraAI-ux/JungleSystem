@@ -447,7 +447,13 @@ export function KolamGlobalChatRail({
       }),
     [],
   );
-  const inboxDetailOpen = mode === 'inbox' && selectedItem !== null;
+  const detailOpen = selectedItem !== null;
+  const handleBackToList = React.useCallback(() => {
+    setSelectedItemId(null);
+    setComposerText('');
+    setPendingAttachment(null);
+    setReplyTarget(null);
+  }, []);
   const handleLiveStatusChange = React.useCallback(
     (status: KolamChatLiveStreamStatus) => {
       setLiveStatus(status);
@@ -967,7 +973,7 @@ export function KolamGlobalChatRail({
       </View>
 
       <View style={styles.body}>
-        {mode === 'inbox' && !inboxDetailOpen ? (
+        {mode === 'inbox' && !detailOpen ? (
           <KolamInboxFilterPanel
             filter={inboxFilter}
             labels={labelsState.items}
@@ -975,11 +981,11 @@ export function KolamGlobalChatRail({
           />
         ) : null}
 
-        {mode === 'inbox' && !inboxDetailOpen ? (
+        {mode === 'inbox' && !detailOpen ? (
           <KolamChatRailSettingsShortcuts />
         ) : null}
 
-        {mode === 'team-chat' ? (
+        {mode === 'team-chat' && !detailOpen ? (
           <KolamTeamChatCreateRoomPanel
             busy={createRoomBusy}
             draft={createRoomDraft}
@@ -996,7 +1002,7 @@ export function KolamGlobalChatRail({
           />
         ) : null}
 
-        {mode === 'team-chat' ? (
+        {mode === 'team-chat' && !detailOpen ? (
           <KolamTeamChatDirectPanel
             currentUserId={currentUserId}
             onChangeSearch={search =>
@@ -1038,16 +1044,7 @@ export function KolamGlobalChatRail({
             onPendingAttachmentPick={handleChooseAttachment}
             onReplyCancel={() => setReplyTarget(null)}
             onReplyToMessage={setReplyTarget}
-            onBack={
-              mode === 'inbox'
-                ? () => {
-                    setSelectedItemId(null);
-                    setComposerText('');
-                    setPendingAttachment(null);
-                    setReplyTarget(null);
-                  }
-                : undefined
-            }
+            onBack={handleBackToList}
             onSend={handleSend}
             pendingAttachment={pendingAttachment}
             replyTarget={replyTarget}
@@ -1072,7 +1069,7 @@ export function KolamGlobalChatRail({
           />
         ) : null}
 
-        {!data.errorMessage && items.length > 0 && !inboxDetailOpen ? (
+        {!data.errorMessage && items.length > 0 && !detailOpen ? (
           <ScrollView
             style={styles.listScroll}
             contentContainerStyle={styles.list}
@@ -2565,6 +2562,10 @@ function KolamChatRailDetailPanel({
   }, [contactDetailsOpen, mode, selectedItem.id]);
 
   const fullPage = Boolean(onBack);
+  const backAccessibilityLabel =
+    mode === 'team-chat'
+      ? 'Kembali ke daftar room team chat'
+      : 'Kembali ke daftar inbox chat';
 
   return (
     <View style={[styles.detailPanel, fullPage && styles.detailPanelFull]}>
@@ -2572,7 +2573,7 @@ function KolamChatRailDetailPanel({
         <View style={styles.selectedTitleRow}>
           {onBack ? (
             <KolamPressable
-              accessibilityLabel="Kembali ke daftar inbox chat"
+              accessibilityLabel={backAccessibilityLabel}
               onPress={onBack}
               style={styles.detailBackButton}>
               <KolamStatusIndicatorIcon

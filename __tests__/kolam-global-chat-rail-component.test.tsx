@@ -2523,6 +2523,75 @@ describe('KolamGlobalChatRail', () => {
     expect(reactToMessage).toHaveBeenCalledWith('team-msg-1', '🙏');
   });
 
+  it('opens team chat rooms as a full rail detail with back navigation', async () => {
+    useReadonlyDataMock.mockReturnValue({
+      conversations: [],
+      loading: false,
+      refresh: jest.fn(),
+      rooms: [
+        {
+          _id: 'room-1',
+          name: 'Operasional',
+          category: 'general',
+          lastMessagePreview: 'Barang siap dikirim',
+          unreadCount: 0,
+        },
+      ],
+      totalUnread: 0,
+    });
+    useDetailMock.mockReturnValue({
+      ...getDefaultDetailMock(),
+      loading: false,
+      messages: [],
+      presence: {onlineCount: 1, typingUserIds: [], viewingCount: 1},
+      refresh: jest.fn(),
+      sendAttachment: jest.fn(),
+      sendMessage: jest.fn(),
+      signalTyping: jest.fn(),
+      sending: false,
+      updatePresenceFromLive: jest.fn(),
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamGlobalChatRail mode="team-chat" onClose={() => undefined} />,
+      );
+    });
+
+    const selectButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Pilih room Operasional');
+
+    await ReactTestRenderer.act(async () => {
+      selectButton!.props.onPress();
+    });
+
+    expect(
+      renderer!.root
+        .findAllByType(KolamPressable)
+        .some(node => node.props.accessibilityLabel === 'Pilih room Operasional'),
+    ).toBe(false);
+
+    const backButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(
+        node =>
+          node.props.accessibilityLabel === 'Kembali ke daftar room team chat',
+      );
+    expect(backButton).toBeTruthy();
+
+    await ReactTestRenderer.act(async () => {
+      backButton!.props.onPress();
+    });
+
+    expect(
+      renderer!.root
+        .findAllByType(KolamPressable)
+        .some(node => node.props.accessibilityLabel === 'Pilih room Operasional'),
+    ).toBe(true);
+  });
+
   it('signals typing for team chat composer changes and accepts live presence updates', async () => {
     const signalTyping = jest.fn();
     const updatePresenceFromLive = jest.fn();
