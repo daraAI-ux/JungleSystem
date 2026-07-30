@@ -93,13 +93,39 @@ function KolamModuleShell({
   controller: KolamBrandController;
   onRouteChange?: (route: string) => void;
 }) {
-  const showDetailHeader = controller.mode !== 'list';
+  if (controller.mode === 'list') {
+    return (
+      <View style={styles.surface}>
+        {controller.error ? (
+          <KolamStatusBadge
+            intent="danger"
+            label={controller.error}
+            style={styles.errorBadge}
+            numberOfLines={2}
+          />
+        ) : null}
+        {children}
+      </View>
+    );
+  }
+
+  const contextLabel =
+    controller.mode === 'new'
+      ? 'Merek baru'
+      : controller.mode === 'edit'
+        ? `Edit · ${controller.selectedBrand?.name || controller.form.name || 'Merek'}`
+        : controller.selectedBrand?.name || 'Detail merek';
 
   return (
     <View style={styles.surface}>
-      {showDetailHeader ? (
-        <View style={styles.header}>
-          <View style={styles.headerActions}>
+      <View style={kolamTableToolbarStyles.shell}>
+        <View style={kolamTableToolbarStyles.row}>
+          <View style={kolamTableToolbarStyles.filters}>
+            <Text numberOfLines={1} style={styles.detailToolbarContext}>
+              {contextLabel}
+            </Text>
+          </View>
+          <View style={kolamTableToolbarStyles.actions}>
             <KolamButton
               disabled={controller.loading}
               label="Refresh"
@@ -114,9 +140,16 @@ function KolamModuleShell({
                 onRouteChange?.('/label-dan-field/merek');
               }}
             />
+            {controller.mode === 'detail' ? (
+              <KolamButton
+                intent="primary"
+                label="Edit"
+                onPress={controller.onEdit}
+              />
+            ) : null}
           </View>
         </View>
-      ) : null}
+      </View>
       {controller.error ? (
         <KolamStatusBadge
           intent="danger"
@@ -584,13 +617,6 @@ function KolamBrandDetail({
     <View style={styles.stack}>
       {!editable && brand ? (
         <>
-          <View style={styles.detailActions}>
-            <KolamButton
-              intent="primary"
-              label="Edit"
-              onPress={controller.onEdit}
-            />
-          </View>
           <KolamLabelFieldDetailOverview
             hero={<KolamBrandLogo brand={brand} variant="detail" />}
             status={{
@@ -988,43 +1014,15 @@ const styles = StyleSheet.create({
   surface: {
     gap: 14,
   },
-  header: {
-    minHeight: 40,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'flex-end',
-    gap: 16,
-  },
-  headerCopy: {
-    flex: 1,
-    minWidth: 0,
-  },
-  title: {
+  detailToolbarContext: {
     color: V.colors.fg,
+    flexShrink: 1,
     fontFamily: V.fontFamily,
-    fontSize: 22,
-    fontWeight: '900',
-  },
-  hint: {
-    marginTop: 3,
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
-    lineHeight: 18,
-  },
-  breadcrumb: {
-    marginTop: 6,
-    color: V.colors.primary,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    justifyContent: 'flex-end',
-    gap: 8,
+    fontSize: 13,
+    fontWeight: '700',
+    minWidth: 0,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
   },
   errorBadge: {
     alignSelf: 'flex-start',
