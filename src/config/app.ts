@@ -17,5 +17,13 @@
   amSourceHeader: 'am',
   authSource: 'kolam',
   preferLiveApi: true,
+  livechatLockOverrideRoles: [
+    'admin',
+    'administrator',
+    'super_admin',
+    'super_administrator',
+    'super-admin',
+    'superadministrator',
+  ],
 };
 

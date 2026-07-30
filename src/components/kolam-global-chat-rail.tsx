@@ -12,6 +12,7 @@ import {
   type TextInputKeyPressEventData,
   View,
 } from 'react-native';
+import {appConfig} from '../config/app';
 import {useKolamAuthContext} from '../context/kolam-app-contexts';
 import {classifyKolamChatLiveEvent} from '../domain/kolam-chat-live-classifier';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
@@ -192,8 +193,13 @@ const CHAT_ADMIN_ROLE_KEYS = new Set([
   'super_admin',
   'super_administrator',
   'super-admin',
+  'superadministrator',
   'admin',
+  'administrator',
 ]);
+const LIVECHAT_LOCK_OVERRIDE_ROLE_KEYS = new Set(
+  appConfig.livechatLockOverrideRoles.map(role => role.toLowerCase().trim()),
+);
 
 interface KolamChatRailAnalyticsState {
   data: KolamChatAnalytics | null;
@@ -967,6 +973,7 @@ export function KolamGlobalChatRail({
 
         {selectedItem ? (
           <KolamChatRailDetailPanel
+            authUser={authUser}
             composerText={composerText}
             currentUserId={currentUserId}
             daraThinkingLiveSignal={daraThinkingLiveSignal}
@@ -2125,6 +2132,7 @@ function KolamTeamChatDirectPanel({
 }
 
 function KolamChatRailDetailPanel({
+  authUser,
   composerText,
   currentUserId,
   daraThinkingLiveSignal,
@@ -2144,6 +2152,7 @@ function KolamChatRailDetailPanel({
   selectedItem,
   templatesState,
 }: {
+  authUser?: SignedInUser | null;
   composerText: string;
   currentUserId?: string;
   daraThinkingLiveSignal: KolamDaraThinkingLiveSignal | null;
@@ -2574,6 +2583,7 @@ function KolamChatRailDetailPanel({
         ) : null}
         {mode === 'inbox' ? (
           <KolamInboxActionStrip
+            authUser={authUser}
             currentUserId={currentUserId}
             detail={detail}
             detailsOpen={contactDetailsOpen}
@@ -3926,12 +3936,14 @@ function KolamContactOrderRow({order}: {order: KolamChatContactOrder}) {
 }
 
 function KolamInboxActionStrip({
+  authUser,
   currentUserId,
   detail,
   detailsOpen,
   labels,
   onDetailsToggle,
 }: {
+  authUser?: SignedInUser | null;
   currentUserId?: string;
   detail: ReturnType<typeof useKolamChatRailDetail>;
   detailsOpen: boolean;
@@ -3951,6 +3963,8 @@ function KolamInboxActionStrip({
   const assignedToMe = Boolean(
     currentUserId && assignedStaffId && assignedStaffId === currentUserId,
   );
+  const canOverrideLock = canSignedInUserOverrideLivechatLock(authUser);
+  const canUnassignConversation = assignedToMe || canOverrideLock;
   const assignedLabel = getChatStaffLabel(conversation.assignedStaffId);
   const displayLabels = getConversationLabels(conversation, labels);
   const activeLabelIds = new Set(getConversationLabelIds(conversation));
@@ -4040,7 +4054,7 @@ function KolamInboxActionStrip({
             <Text style={styles.callButtonGhostText}>Assign saya</Text>
           </KolamPressable>
         ) : null}
-        {!isClosed && assignedStaffId ? (
+        {!isClosed && assignedStaffId && canUnassignConversation ? (
           <KolamPressable
             accessibilityLabel="Unassign inbox conversation"
             disabled={detail.sending}
@@ -4803,12 +4817,25 @@ function canSignedInUserReplyCustomerChat(user?: SignedInUser | null) {
     return false;
   }
 
-  const roleKey = String(user.roleKey ?? '').toLowerCase();
+  const roleKey = normalizeChatRoleKey(user.roleKey);
   if (CHAT_ADMIN_ROLE_KEYS.has(roleKey)) {
     return true;
   }
 
   return user.csActive === true;
+}
+
+function canSignedInUserOverrideLivechatLock(user?: SignedInUser | null) {
+  if (!user) {
+    return false;
+  }
+
+  const roleKey = normalizeChatRoleKey(user.roleKey);
+  return LIVECHAT_LOCK_OVERRIDE_ROLE_KEYS.has(roleKey);
+}
+
+function normalizeChatRoleKey(roleKey?: string | null) {
+  return String(roleKey ?? '').toLowerCase().trim();
 }
 
 function getInboxComposerAccess(
