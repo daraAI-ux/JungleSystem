@@ -148,10 +148,6 @@ function KolamSupplierList({
     [tableBodyWidth],
   );
 
-  const summary = React.useMemo(
-    () => getVendorSummary(controller.vendors),
-    [controller.vendors],
-  );
   const filtered = React.useMemo(
     () => filterVendors(controller.vendors, search, statusFilter),
     [controller.vendors, search, statusFilter],
@@ -208,13 +204,6 @@ function KolamSupplierList({
 
   return (
     <View style={styles.listRoot}>
-      <View style={styles.summaryGrid}>
-        <SummaryTile label="Total" value={controller.vendors.length} />
-        <SummaryTile label="Aktif" value={summary.active} />
-        <SummaryTile label="Nonaktif" value={summary.inactive} />
-        <SummaryTile label="Blacklist" value={summary.blacklisted} />
-      </View>
-
       <View style={styles.toolbarWrap}>
         <View style={kolamTableToolbarStyles.shell}>
           <View style={kolamTableToolbarStyles.row}>
@@ -2225,41 +2214,6 @@ function toLocalImageUri(uri: string) {
   return `file:///${uri.replace(/\\/g, '/')}`;
 }
 
-function SummaryTile({
-  label,
-  value,
-  valueLabel,
-}: {
-  label: string;
-  value?: number;
-  valueLabel?: string;
-}) {
-  return (
-    <View style={styles.summaryTile}>
-      <Text style={styles.summaryLabel}>{label}</Text>
-      <Text style={styles.summaryValue}>
-        {valueLabel ?? String(value ?? 0)}
-      </Text>
-    </View>
-  );
-}
-
-function getVendorSummary(vendors: KolamVendor[]) {
-  return vendors.reduce(
-    (acc, vendor) => {
-      if (vendor.status === 'active') {
-        acc.active += 1;
-      } else if (vendor.status === 'blacklisted') {
-        acc.blacklisted += 1;
-      } else {
-        acc.inactive += 1;
-      }
-      return acc;
-    },
-    { active: 0, inactive: 0, blacklisted: 0 },
-  );
-}
-
 function filterVendors(
   vendors: KolamVendor[],
   search: string,
@@ -2423,32 +2377,6 @@ const styles = StyleSheet.create({
   },
   errorBadge: {
     alignSelf: 'stretch',
-  },
-  summaryGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  summaryTile: {
-    backgroundColor: V.colors.bg,
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    flexGrow: 1,
-    minWidth: 120,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  summaryLabel: {
-    color: V.colors.mutedFg,
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  summaryValue: {
-    color: V.colors.fg,
-    fontSize: 20,
-    fontWeight: '700',
-    marginTop: 2,
   },
   paginationRow: {
     alignItems: 'center',
