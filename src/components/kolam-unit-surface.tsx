@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   getUnitTypeLabel,
   type KolamUnit,
@@ -497,7 +497,9 @@ function KolamUnitRow({
       style={actionMenuOpen ? styles.activeActionRow : undefined}
     >
       <KolamDataTableMainTrack style={styles.mainTrackVisible}>
-        <View
+        <Pressable
+          accessibilityRole="button"
+          onPress={onSelect}
           style={[
             styles.listCell,
             styles.identityCell,
@@ -506,7 +508,7 @@ function KolamUnitRow({
         >
           <KolamCopyStack
             items={[
-              { id: 'name', text: unit.name, style: styles.rowTitle },
+              { id: 'name', text: unit.name || '-', style: styles.rowTitle },
               {
                 id: 'category',
                 text: unit.category || 'Satuan pengukuran',
@@ -514,7 +516,7 @@ function KolamUnitRow({
               },
             ]}
           />
-        </View>
+        </Pressable>
         <View
           style={[
             styles.listCell,
@@ -849,8 +851,9 @@ function filterUnits(
   typeFilter: UnitTypeFilter,
 ) {
   const query = search.trim().toLowerCase();
+  const list = Array.isArray(units) ? units : [];
 
-  return units.filter(unit => {
+  return list.filter(unit => {
     if (statusFilter !== 'all' && unit.status !== statusFilter) {
       return false;
     }
@@ -871,24 +874,31 @@ function filterUnits(
 }
 
 function sortUnits(units: KolamUnit[], sortMode: UnitSortMode) {
-  return [...units].sort((left, right) => {
+  const list = Array.isArray(units) ? [...units] : [];
+
+  return list.sort((left, right) => {
+    const leftName = left.name || '';
+    const rightName = right.name || '';
+    const leftInitial = left.initial || '';
+    const rightInitial = right.initial || '';
+
     if (sortMode === 'newest') {
       return (
         getUnitTime(right) - getUnitTime(left) ||
-        left.name.localeCompare(right.name)
+        leftName.localeCompare(rightName)
       );
     }
 
     if (sortMode === 'initial-asc') {
       return (
-        left.initial.localeCompare(right.initial) ||
-        left.name.localeCompare(right.name)
+        leftInitial.localeCompare(rightInitial) ||
+        leftName.localeCompare(rightName)
       );
     }
 
     return sortMode === 'name-desc'
-      ? right.name.localeCompare(left.name)
-      : left.name.localeCompare(right.name);
+      ? rightName.localeCompare(leftName)
+      : leftName.localeCompare(rightName);
   });
 }
 
@@ -935,7 +945,9 @@ function formatDateTime(value: string) {
 
 const styles = StyleSheet.create({
   surface: {
+    flexGrow: 1,
     gap: 14,
+    minHeight: 0,
   },
   detailToolbarContext: {
     color: V.colors.fg,
@@ -952,7 +964,9 @@ const styles = StyleSheet.create({
     maxWidth: 760,
   },
   stack: {
+    flexGrow: 1,
     gap: 14,
+    minHeight: 0,
   },
   emptyWrap: {
     minHeight: 220,
