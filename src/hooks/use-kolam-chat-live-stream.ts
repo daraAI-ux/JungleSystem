@@ -17,6 +17,7 @@ type KolamEventSourceLike = {
     listener: KolamEventSourceListener,
   ) => void;
   close: () => void;
+  onactivity?: (() => void) | null;
   onerror?: (() => void) | null;
   onopen?: (() => void) | null;
 };
@@ -89,6 +90,11 @@ type XmlHttpRequestGlobal = {
   new (): KolamXmlHttpRequestLike;
 };
 
+const KOLAM_CHAT_LIVE_RECONNECT_MS = 2000;
+const KOLAM_CHAT_LIVE_ACTIVITY_TIMEOUT_MS = 90000;
+const KOLAM_CHAT_LIVE_WATCHDOG_MS = 30000;
+const lastEventIdMemory: Partial<Record<KolamChatLiveStreamKind, string>> = {};
+
 export function useKolamChatLiveStream({
   enabled = true,
   eventSourceFactory,
@@ -118,11 +124,39 @@ export function useKolamChatLiveStream({
     const seenEventIds = new Set<string>();
     let closed = false;
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    let watchdogTimer: ReturnType<typeof setInterval> | null = null;
     let stream: KolamEventSourceLike | null = null;
+    let lastActivityAt = 0;
 
     const closeStream = () => {
       stream?.close();
       stream = null;
+    };
+
+    const clearReconnectTimer = () => {
+      if (!reconnectTimer) {
+        return;
+      }
+
+      clearTimeout(reconnectTimer);
+      reconnectTimer = null;
+    };
+
+    const touchActivity = () => {
+      lastActivityAt = Date.now();
+      clearReconnectTimer();
+      onStatusChangeRef.current?.('open');
+    };
+
+    const scheduleReconnect = () => {
+      if (closed || reconnectTimer) {
+        return;
+      }
+
+      reconnectTimer = setTimeout(() => {
+        reconnectTimer = null;
+        connect();
+      }, KOLAM_CHAT_LIVE_RECONNECT_MS);
     };
 
     const connect = () => {
@@ -131,8 +165,9 @@ export function useKolamChatLiveStream({
       }
 
       closeStream();
-      stream = factory(buildKolamChatLiveStreamUrl(mode), {
-        headers: buildKolamChatLiveStreamHeaders(),
+      const lastEventId = getStoredKolamChatLiveLastEventId(mode);
+      stream = factory(buildKolamChatLiveStreamUrl(mode, lastEventId), {
+        headers: buildKolamChatLiveStreamHeaders(lastEventId),
         withCredentials: true,
       });
 
@@ -141,12 +176,9 @@ export function useKolamChatLiveStream({
           return;
         }
 
-        if (reconnectTimer) {
-          clearTimeout(reconnectTimer);
-          reconnectTimer = null;
-        }
-        onStatusChangeRef.current?.('open');
+        touchActivity();
       };
+      stream.onactivity = touchActivity;
 
       stream.onerror = () => {
         if (closed) {
@@ -154,14 +186,7 @@ export function useKolamChatLiveStream({
         }
 
         onStatusChangeRef.current?.('error');
-        if (reconnectTimer) {
-          return;
-        }
-
-        reconnectTimer = setTimeout(() => {
-          reconnectTimer = null;
-          connect();
-        }, 2000);
+        scheduleReconnect();
       };
 
       contracts.forEach(contract => {
@@ -172,8 +197,10 @@ export function useKolamChatLiveStream({
               return;
             }
             seenEventIds.add(eventId);
+            rememberKolamChatLiveLastEventId(mode, eventId);
           }
 
+          touchActivity();
           onEventRef.current({
             contract,
             eventId,
@@ -184,11 +211,25 @@ export function useKolamChatLiveStream({
     };
 
     connect();
+    watchdogTimer = setInterval(() => {
+      if (
+        closed ||
+        !lastActivityAt ||
+        Date.now() - lastActivityAt <= KOLAM_CHAT_LIVE_ACTIVITY_TIMEOUT_MS
+      ) {
+        return;
+      }
+
+      onStatusChangeRef.current?.('error');
+      connect();
+    }, KOLAM_CHAT_LIVE_WATCHDOG_MS);
+    (watchdogTimer as {unref?: () => void}).unref?.();
 
     return () => {
       closed = true;
-      if (reconnectTimer) {
-        clearTimeout(reconnectTimer);
+      clearReconnectTimer();
+      if (watchdogTimer) {
+        clearInterval(watchdogTimer);
       }
       onStatusChangeRef.current?.('closed');
       closeStream();
@@ -196,15 +237,18 @@ export function useKolamChatLiveStream({
   }, [contracts, enabled, eventSourceFactory, mode]);
 }
 
-export function buildKolamChatLiveStreamUrl(mode: KolamChatLiveStreamKind) {
+export function buildKolamChatLiveStreamUrl(
+  mode: KolamChatLiveStreamKind,
+  lastEventId?: string,
+) {
   return buildUrl(
     KOLAM_CHAT_LIVE_STREAM_ROUTES[mode],
-    undefined,
+    lastEventId ? {lastEventId} : undefined,
     appConfig.kolamApiBaseUrl,
   );
 }
 
-export function buildKolamChatLiveStreamHeaders() {
+export function buildKolamChatLiveStreamHeaders(lastEventId?: string) {
   const headers: Record<string, string> = getRuntimeClientHeaders({
     sourceHeader: appConfig.kolamSourceHeader,
   });
@@ -214,7 +258,24 @@ export function buildKolamChatLiveStreamHeaders() {
     headers.Authorization = `Bearer ${accessToken}`;
   }
 
+  if (lastEventId) {
+    headers['Last-Event-ID'] = lastEventId;
+  }
+
   return headers;
+}
+
+export function clearKolamChatLiveLastEventIdsForTest() {
+  (['inbox', 'team-chat'] as const).forEach(mode => {
+    delete lastEventIdMemory[mode];
+    try {
+      (globalThis as {localStorage?: Storage}).localStorage?.removeItem(
+        getKolamChatLiveLastEventStorageKey(mode),
+      );
+    } catch {
+      // Test environments may not expose localStorage.
+    }
+  });
 }
 
 function getGlobalEventSourceFactory(): KolamEventSourceFactory | undefined {
@@ -255,7 +316,6 @@ function createXmlHttpRequestEventSource(
   const listeners = new Map<string, Set<KolamEventSourceListener>>();
   const xhr = new XmlHttpRequest();
   let closed = false;
-  let opened = false;
   let processedLength = 0;
   let pendingChunk = '';
 
@@ -301,16 +361,8 @@ function createXmlHttpRequestEventSource(
           listener({data, lastEventId: eventId});
         });
       },
+      () => source.onactivity?.(),
     );
-  };
-
-  const markOpen = () => {
-    if (opened || closed) {
-      return;
-    }
-
-    opened = true;
-    source.onopen?.();
   };
 
   const markError = () => {
@@ -326,7 +378,6 @@ function createXmlHttpRequestEventSource(
       xhr.readyState === xhr.HEADERS_RECEIVED ||
       xhr.readyState === xhr.LOADING
     ) {
-      markOpen();
       readAvailableText();
       return;
     }
@@ -339,7 +390,6 @@ function createXmlHttpRequestEventSource(
     }
   };
   xhr.onprogress = () => {
-    markOpen();
     readAvailableText();
   };
   xhr.onerror = markError;
@@ -352,12 +402,16 @@ function createXmlHttpRequestEventSource(
 function parseKolamSseText(
   text: string,
   emit: (eventName: string, data: string, eventId?: string) => void,
+  onActivity?: () => void,
 ) {
   const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
   const blocks = normalized.split('\n\n');
   const pending = blocks.pop() ?? '';
 
   blocks.forEach(block => {
+    if (block.trim()) {
+      onActivity?.();
+    }
     const event = parseKolamSseEventBlock(block);
     if (event) {
       emit(event.eventName, event.data, event.eventId);
@@ -414,4 +468,39 @@ function parseKolamChatLiveEventPayload(data: string | undefined) {
   } catch {
     return data;
   }
+}
+
+function getStoredKolamChatLiveLastEventId(mode: KolamChatLiveStreamKind) {
+  const storageKey = getKolamChatLiveLastEventStorageKey(mode);
+  try {
+    const storage = (globalThis as {localStorage?: Storage}).localStorage;
+    const stored = storage?.getItem(storageKey);
+    if (stored) {
+      return stored;
+    }
+  } catch {
+    // Fall back to process memory when RNW has no browser localStorage.
+  }
+
+  return lastEventIdMemory[mode] ?? '';
+}
+
+function rememberKolamChatLiveLastEventId(
+  mode: KolamChatLiveStreamKind,
+  eventId: string,
+) {
+  lastEventIdMemory[mode] = eventId;
+  const storageKey = getKolamChatLiveLastEventStorageKey(mode);
+  try {
+    (globalThis as {localStorage?: Storage}).localStorage?.setItem(
+      storageKey,
+      eventId,
+    );
+  } catch {
+    // In-memory resume is enough for the current Windows process.
+  }
+}
+
+function getKolamChatLiveLastEventStorageKey(mode: KolamChatLiveStreamKind) {
+  return `kolam-sse:last-event-id:${mode === 'inbox' ? 'chat' : 'team-chat'}`;
 }

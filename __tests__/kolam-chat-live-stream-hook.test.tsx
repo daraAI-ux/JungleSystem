@@ -3,6 +3,7 @@ import ReactTestRenderer from 'react-test-renderer';
 import {
   buildKolamChatLiveStreamHeaders,
   buildKolamChatLiveStreamUrl,
+  clearKolamChatLiveLastEventIdsForTest,
   useKolamChatLiveStream,
   type KolamChatLiveEvent,
 } from '../src/hooks/use-kolam-chat-live-stream';
@@ -83,6 +84,11 @@ class FakeStreamingXmlHttpRequest {
     this.headers[header] = value;
   }
 
+  emitHeaders() {
+    this.readyState = this.HEADERS_RECEIVED;
+    this.onreadystatechange?.();
+  }
+
   emitChunk(chunk: string) {
     this.responseText += chunk;
     this.readyState = this.LOADING;
@@ -121,6 +127,7 @@ function LiveStreamProbe({
 describe('useKolamChatLiveStream', () => {
   afterEach(() => {
     setAccessToken(undefined);
+    clearKolamChatLiveLastEventIdsForTest();
   });
 
   it('builds Kolam live stream URL and bearer headers', () => {
@@ -238,6 +245,94 @@ describe('useKolamChatLiveStream', () => {
       globalWithStreams.EventSource = originalEventSource;
       globalWithStreams.XMLHttpRequest = originalXmlHttpRequest;
     }
+  });
+
+  it('keeps the stream stale on headers only and opens after heartbeat activity', async () => {
+    const statuses: string[] = [];
+    const globalWithStreams = globalThis as Record<string, unknown>;
+    const originalEventSource = globalWithStreams.EventSource;
+    const originalXmlHttpRequest = globalWithStreams.XMLHttpRequest;
+    FakeStreamingXmlHttpRequest.instances = [];
+
+    delete globalWithStreams.EventSource;
+    globalWithStreams.XMLHttpRequest = FakeStreamingXmlHttpRequest;
+
+    try {
+      let renderer: ReactTestRenderer.ReactTestRenderer;
+      await ReactTestRenderer.act(async () => {
+        renderer = ReactTestRenderer.create(
+          <LiveStreamProbe
+            onEvent={jest.fn()}
+            onStatusChange={status => statuses.push(status)}
+          />,
+        );
+      });
+
+      const xhr = FakeStreamingXmlHttpRequest.instances[0];
+      xhr.emitHeaders();
+      expect(statuses).not.toContain('open');
+
+      xhr.emitChunk(': keepalive user-1\n\n');
+      expect(statuses).toContain('open');
+
+      await ReactTestRenderer.act(async () => {
+        renderer!.unmount();
+      });
+    } finally {
+      globalWithStreams.EventSource = originalEventSource;
+      globalWithStreams.XMLHttpRequest = originalXmlHttpRequest;
+    }
+  });
+
+  it('resumes with the last delivered event id on the next connection', async () => {
+    const events: KolamChatLiveEvent[] = [];
+    const createdSources: FakeEventSource[] = [];
+    const factory = jest.fn(() => {
+      const source = new FakeEventSource();
+      createdSources.push(source);
+      return source;
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <LiveStreamProbe
+          eventSourceFactory={factory}
+          onEvent={event => events.push(event)}
+        />,
+      );
+    });
+
+    createdSources[0].emit(
+      'message.created',
+      {conversationId: 'conv-1'},
+      'chat:10',
+    );
+
+    await ReactTestRenderer.act(async () => {
+      renderer!.unmount();
+    });
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <LiveStreamProbe
+          eventSourceFactory={factory}
+          onEvent={event => events.push(event)}
+        />,
+      );
+    });
+
+    expect(factory).toHaveBeenLastCalledWith(
+      'https://amfibi.dunia-anura.com/api/chat/stream?lastEventId=chat%3A10',
+      expect.objectContaining({
+        headers: expect.objectContaining({'Last-Event-ID': 'chat:10'}),
+        withCredentials: true,
+      }),
+    );
+
+    await ReactTestRenderer.act(async () => {
+      renderer!.unmount();
+    });
   });
 
   it('prefers XMLHttpRequest streaming over global EventSource so auth headers are preserved', async () => {
