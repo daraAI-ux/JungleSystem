@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  Image,
   Linking,
   ScrollView,
   StyleSheet,
@@ -8,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
+import {KolamBadge} from '../src/components/kolam-badge';
 import {KolamGlobalChatRail} from '../src/components/kolam-global-chat-rail';
 import {KolamPressable} from '../src/components/kolam-pressable';
 import {useKolamAuthContext} from '../src/context/kolam-app-contexts';
@@ -727,12 +729,29 @@ describe('KolamGlobalChatRail', () => {
         node => node.props.accessibilityLabel === 'DARA menangani chat',
       ),
     ).not.toHaveLength(0);
+    expect(
+      renderer!.root
+        .findAllByType(Image)
+        .some(node =>
+          String(node.props.source?.uri || '').includes(
+            '/images/dara-avatar.png',
+          ),
+        ),
+    ).toBe(true);
 
     const unreadRow = renderer!.root
       .findAllByType(KolamPressable)
       .find(node => node.props.accessibilityLabel === 'Pilih conversation Buyer Tokopedia');
     const unreadRowStyle = StyleSheet.flatten(unreadRow!.props.style);
     expect(unreadRowStyle.backgroundColor).toBe('rgba(254, 226, 226, 0.72)');
+    expect(
+      unreadRow!.findAllByType(KolamBadge).some(node => node.props.label === 2),
+    ).toBe(true);
+    expect(
+      unreadRow!.children.filter(
+        child => typeof child !== 'string' && child.type === KolamBadge,
+      ),
+    ).toHaveLength(0);
   });
 
   it('passes inbox filter parity params to the rail data hook', async () => {

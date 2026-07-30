@@ -99,6 +99,7 @@ const SHOPEE_LOGO = require('../assets/marketplace/shopee.jpg');
 const TIKTOK_LOGO = require('../assets/marketplace/tiktok.webp');
 const TOKOPEDIA_LOGO = require('../assets/marketplace/tokopedia.png');
 const WHATSAPP_LOGO = require('../assets/marketplace/whatsapp.png');
+const DARA_AVATAR_PATH = '/images/dara-avatar.png?v=20260602pp';
 const DARA_THINKING_DEFAULT_LINE = 'DARA sedang berpikir...';
 const DARA_THINKING_ACTIVE_EVENTS = new Set([
   'dara.thinking',
@@ -831,6 +832,16 @@ export function KolamGlobalChatRail({
                       <Text numberOfLines={1} style={styles.rowTitle}>
                         {item.title}
                       </Text>
+                      {item.unreadCount > 0 ? (
+                        <KolamBadge
+                          horizontalPadding={6}
+                          intent="primary"
+                          label={
+                            item.unreadCount > 99 ? '99+' : item.unreadCount
+                          }
+                          style={styles.rowUnreadBadge}
+                        />
+                      ) : null}
                       <Text style={styles.rowTime}>{item.timeLabel}</Text>
                     </View>
                     <Text numberOfLines={2} style={styles.rowPreview}>
@@ -866,12 +877,6 @@ export function KolamGlobalChatRail({
                     <KolamInboxDaraAvatar />
                   ) : mode === 'inbox' && item.assignedStaff ? (
                     <KolamInboxAssignedStaffAvatar staff={item.assignedStaff} />
-                  ) : null}
-                  {item.unreadCount > 0 ? (
-                    <KolamBadge
-                      intent="primary"
-                      label={item.unreadCount > 99 ? '99+' : item.unreadCount}
-                    />
                   ) : null}
                 </KolamPressable>
               )}
@@ -1196,12 +1201,19 @@ function KolamInboxAssignedStaffAvatar({
 }
 
 function KolamInboxDaraAvatar() {
+  const imageUrl = getKolamFileUrl(DARA_AVATAR_PATH) ?? DARA_AVATAR_PATH;
+
   return (
     <KolamHoverTooltip containerStyle={styles.rowStaffTooltip} label="DARA">
       <View
         accessibilityLabel="DARA menangani chat"
         style={[styles.rowStaffAvatar, styles.rowDaraAvatar]}>
-        <Text style={styles.rowDaraAvatarText}>DA</Text>
+        <KolamProfileAvatarContent
+          imageStyle={styles.rowStaffAvatarImage}
+          imageUrl={imageUrl}
+          initials="DA"
+          textStyle={styles.rowDaraAvatarText}
+        />
       </View>
     </KolamHoverTooltip>
   );
@@ -6811,6 +6823,11 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 9,
     fontWeight: '900',
+  },
+  rowUnreadBadge: {
+    flexShrink: 0,
+    fontSize: 10,
+    lineHeight: 14,
   },
   rowUnread: {
     borderColor: 'rgba(220, 38, 38, 0.28)',
