@@ -1317,6 +1317,15 @@ export function useKolamSettingsPanelController(
           ...current,
           ...createStaffAttendanceDraftFields(attendanceSettings),
         }));
+      } else if (
+        activeSettingsTabId === 'operasional' &&
+        attendanceResult.status === 'rejected'
+      ) {
+        setWebSettingMessage(
+          `Gagal memuat pengaturan absensi: ${getWebSettingSaveErrorMessage(
+            attendanceResult.reason,
+          )}`,
+        );
       }
 
       if (roomsResult.status === 'fulfilled') {
@@ -2865,16 +2874,6 @@ export function useKolamSettingsPanelController(
         ),
       });
 
-      if (activeSettingsTabId === 'operasional') {
-        const attendance = await updateKolamStaffAttendanceSettings(
-          createStaffAttendanceUpdateBody(
-            webSettingDraft,
-            staffAttendanceSettings,
-          ),
-        );
-        setStaffAttendanceSettings(attendance);
-      }
-
       await Promise.all(
         [
           ['kolam', webSettingDraft.versionKolam],
@@ -3329,10 +3328,7 @@ export function useKolamSettingsPanelController(
 
     try {
       const attendance = await updateKolamStaffAttendanceSettings(
-        createStaffAttendanceUpdateBody(
-          webSettingDraft,
-          staffAttendanceSettings,
-        ),
+        createStaffAttendanceUpdateBody(webSettingDraft),
       );
       setStaffAttendanceSettings(attendance);
       setWebSettingDraftFields(
@@ -4525,48 +4521,70 @@ function createStaffAttendanceDraftPatch(draft: WebSettingDraft) {
 
 function createStaffAttendanceUpdateBody(
   draft: WebSettingDraft,
-  current: KolamStaffAttendanceSettings | null,
 ): KolamStaffAttendanceSettings {
   return {
-    ...(current ?? {}),
-    payrollCutoffDay: parseIntegerOrFallback(
+    payrollCutoffDay: clampIntegerOrFallback(
       draft.staffAttendancePayrollCutoffDay,
       28,
+      1,
+      31,
     ),
     workStartTime: draft.staffAttendanceWorkStartTime.trim() || '08:00',
     workEndTime: draft.staffAttendanceWorkEndTime.trim() || '17:00',
-    serviceCommissionInsideHoursPct: parseNumberOrFallback(
+    serviceCommissionInsideHoursPct: clampNumberOrFallback(
       draft.staffAttendanceServiceCommissionInsideHoursPct,
       0,
+      0,
+      100,
     ),
-    serviceCommissionOutsideHoursPct: parseNumberOrFallback(
+    serviceCommissionOutsideHoursPct: clampNumberOrFallback(
       draft.staffAttendanceServiceCommissionOutsideHoursPct,
       0,
+      0,
+      100,
     ),
     timezone: draft.staffAttendanceTimezone.trim() || 'Asia/Jakarta',
-    lateToleranceMinutes: parseIntegerOrFallback(
-      draft.staffAttendanceLateToleranceMinutes,
-      15,
+    lateToleranceMinutes: Math.max(
+      0,
+      parseIntegerOrFallback(
+        draft.staffAttendanceLateToleranceMinutes,
+        15,
+      ),
     ),
-    lateTier2MaxMinutes: parseIntegerOrFallback(
-      draft.staffAttendanceLateTier2MaxMinutes,
-      120,
+    lateTier2MaxMinutes: Math.max(
+      0,
+      parseIntegerOrFallback(
+        draft.staffAttendanceLateTier2MaxMinutes,
+        120,
+      ),
     ),
-    lateCheckInDeadlineMinutes: parseIntegerOrFallback(
-      draft.staffAttendanceLateCheckInDeadlineMinutes,
-      240,
+    lateCheckInDeadlineMinutes: Math.max(
+      0,
+      parseIntegerOrFallback(
+        draft.staffAttendanceLateCheckInDeadlineMinutes,
+        240,
+      ),
     ),
-    lateFineTier2: parseIntegerOrFallback(
-      draft.staffAttendanceLateFineTier2,
-      50000,
+    lateFineTier2: Math.max(
+      0,
+      parseIntegerOrFallback(
+        draft.staffAttendanceLateFineTier2,
+        50000,
+      ),
     ),
-    lateFineTier3: parseIntegerOrFallback(
-      draft.staffAttendanceLateFineTier3,
-      100000,
+    lateFineTier3: Math.max(
+      0,
+      parseIntegerOrFallback(
+        draft.staffAttendanceLateFineTier3,
+        100000,
+      ),
     ),
-    absentDailyDivisor: parseIntegerOrFallback(
-      draft.staffAttendanceAbsentDailyDivisor,
-      30,
+    absentDailyDivisor: Math.max(
+      1,
+      parseIntegerOrFallback(
+        draft.staffAttendanceAbsentDailyDivisor,
+        30,
+      ),
     ),
     attendanceMapProvider:
       draft.staffAttendanceMapProvider === 'google'
@@ -4578,9 +4596,11 @@ function createStaffAttendanceUpdateBody(
       draft.staffAttendanceGoogleMapsBrowserApiKey.trim(),
     requireGps: draft.staffAttendanceRequireGps,
     requireFace: draft.staffAttendanceRequireFace,
-    faceMatchThreshold: parseNumberOrFallback(
+    faceMatchThreshold: clampNumberOrFallback(
       draft.staffAttendanceFaceMatchThreshold,
       0.72,
+      0.5,
+      0.99,
     ),
     workSites: normalizeStaffAttendanceWorkSites(
       draft.staffAttendanceWorkSites,
@@ -5529,6 +5549,15 @@ function clampIntegerOrFallback(
 function parseNumberOrFallback(value: string, fallback: number) {
   const parsed = Number(value.trim());
   return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function clampNumberOrFallback(
+  value: string,
+  fallback: number,
+  min: number,
+  max: number,
+) {
+  return clampNumber(parseNumberOrFallback(value, fallback), min, max);
 }
 
 function formatEnabled(value: boolean) {
