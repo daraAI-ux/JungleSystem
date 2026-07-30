@@ -957,6 +957,8 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   identityCell: {
+    alignItems: 'flex-end',
+    justifyContent: 'center',
     zIndex: 2,
   },
   overflowVisible: {
@@ -965,7 +967,7 @@ const styles = StyleSheet.create({
   identityRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    justifyContent: 'center',
+    justifyContent: 'flex-end',
     maxWidth: '100%',
     minWidth: 0,
     width: '100%',
@@ -996,6 +998,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     minWidth: 0,
+    textAlign: 'right',
   },
   countText: {
     color: V.colors.fg,

@@ -205,8 +205,8 @@ const kolamTableColumns: Record<KolamTableId, KolamTableColumn[]> = {
     {
       id: 'primary',
       label: 'Kategori',
-      align: 'center',
-      headerAlign: 'center',
+      align: 'right',
+      headerAlign: 'right',
       width: 220,
     },
     {
