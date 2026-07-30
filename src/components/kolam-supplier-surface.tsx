@@ -10,7 +10,6 @@ import {
 } from 'react-native';
 import { getKolamFormSection } from '../domain/kolam-form';
 import {
-  fitKolamDataTableColumns,
   getKolamTableColumns,
   getKolamTableVisualContract,
   type KolamTableColumn,
@@ -2258,17 +2257,42 @@ function sortVendors(vendors: KolamVendor[], mode: SupplierSortMode) {
 }
 
 function fitSupplierListColumns(containerWidth: number): KolamTableColumn[] {
-  return fitKolamDataTableColumns(
-    getKolamTableColumns('supplier'),
-    containerWidth,
-    {
-      actionsMinWidth: KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-      gap: KOLAM_DATA_TABLE_COLUMN_GAP,
-      paddingX: getKolamTableVisualContract().body.cellPaddingX * 2,
-      primaryMinWidth: 160,
-      secondaryMinWidth: 56,
-    },
+  const base = getKolamTableColumns('supplier');
+  if (containerWidth <= 0) {
+    return base;
+  }
+
+  const gap = KOLAM_DATA_TABLE_COLUMN_GAP;
+  const paddingX = getKolamTableVisualContract().body.cellPaddingX * 2;
+  const actionsWidth = KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH;
+  const gapsTotal = gap * Math.max(0, base.length - 1);
+  const contentBudget = Math.max(
+    0,
+    containerWidth - paddingX - gapsTotal - actionsWidth,
   );
+  const contentColumns = base.filter(column => column.id !== 'actions');
+  const equalWidth = Math.max(
+    72,
+    Math.floor(contentBudget / Math.max(1, contentColumns.length)),
+  );
+  let remainder = contentBudget - equalWidth * contentColumns.length;
+  const lastContentId = contentColumns[contentColumns.length - 1]?.id;
+
+  return base.map(column => {
+    if (column.id === 'actions') {
+      return { ...column, width: actionsWidth };
+    }
+
+    const extra = column.id === lastContentId ? remainder : 0;
+    if (column.id === lastContentId) {
+      remainder = 0;
+    }
+
+    return {
+      ...column,
+      width: equalWidth + extra,
+    };
+  });
 }
 
 const styles = StyleSheet.create({
