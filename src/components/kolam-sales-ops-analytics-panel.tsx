@@ -6,22 +6,57 @@ import {
   KOLAM_SALE_ANALYTICS_RANGE_OPTIONS,
   type KolamSaleAnalyticsOverview,
   type KolamSaleAnalyticsRange,
+  type KolamSaleAnalyticsSourceRow,
 } from '../domain/kolam-sales';
-import { kolamVisualTokens as V } from '../domain/kolam-visual';
+import { getDashboardCountVisualContract } from '../domain/dashboard-counts';
 import { getDashboardSalesGraphVisualContract } from '../domain/dashboard-sales-graph';
+import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamContentFrame } from './kolam-content-frame';
+import { DASHBOARD_COUNT_VISUAL } from './kolam-dashboard-metric-visual';
 import { KolamDashboardSalesGraphRangeTrigger } from './kolam-dashboard-sales-graph-range-trigger';
 import { KolamHeaderFrame } from './kolam-header-frame';
+import { KolamListFrame } from './kolam-list-frame';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamStatusBadge } from './kolam-status-badge';
 
 const GRAPH_VISUAL = getDashboardSalesGraphVisualContract();
+const COUNT_VISUAL = getDashboardCountVisualContract();
 const PLOT_HEIGHT = GRAPH_VISUAL.chart.innerPlotHeight;
+
+/** FE beranda kanal order — POS / Website / Tokopedia / Shopee first. */
+const SOURCE_DISPLAY_PRIORITY = [
+  'pos',
+  'website',
+  'webstore',
+  'tokopedia',
+  'shopee',
+] as const;
+
+function rankSalesSourceName(name: string): number {
+  const normalized = name.trim().toLowerCase();
+  const index = SOURCE_DISPLAY_PRIORITY.findIndex(
+    token => normalized === token || normalized.includes(token),
+  );
+  return index >= 0 ? index : 1000 + (normalized.charCodeAt(0) || 0);
+}
+
+function sortSalesAnalyticsSources(
+  sources: KolamSaleAnalyticsSourceRow[],
+): KolamSaleAnalyticsSourceRow[] {
+  return [...sources].sort((left, right) => {
+    const rankDelta =
+      rankSalesSourceName(left.name) - rankSalesSourceName(right.name);
+    if (rankDelta !== 0) {
+      return rankDelta;
+    }
+    return left.name.localeCompare(right.name, 'id');
+  });
+}
 
 /**
  * FE `/sales` SalesAnalyticsPanel — skin beranda, data `/sales/analytics/overview`.
- * Reuse: CardFrame inventory/sales-graph, range trigger, empty plot, RemoteImage.
+ * Source tiles reuse dashboard inventory count card chrome in one horizontal row.
  */
 export function KolamSalesOpsAnalyticsPanel({
   analytics,
@@ -47,6 +82,11 @@ export function KolamSalesOpsAnalyticsPanel({
         description: option.hint,
       })),
     [],
+  );
+
+  const sourceRows = useMemo(
+    () => sortSalesAnalyticsSources(analytics.bySource),
+    [analytics.bySource],
   );
 
   const maxBucket = useMemo(() => {
@@ -79,8 +119,9 @@ export function KolamSalesOpsAnalyticsPanel({
           </View>
           <KolamDashboardSalesGraphRangeTrigger
             label={
-              KOLAM_SALE_ANALYTICS_RANGE_OPTIONS.find(option => option.id === range)
-                ?.label ?? 'Bulan Ini'
+              KOLAM_SALE_ANALYTICS_RANGE_OPTIONS.find(
+                option => option.id === range,
+              )?.label ?? 'Bulan Ini'
             }
             onSelect={id => onRangeChange(id as KolamSaleAnalyticsRange)}
             options={rangeOptions}
@@ -88,17 +129,27 @@ export function KolamSalesOpsAnalyticsPanel({
           />
         </KolamHeaderFrame>
 
-        {loading && analytics.bySource.length === 0 ? (
+        {loading && sourceRows.length === 0 ? (
           <Text style={styles.loadingText}>Memuat data…</Text>
+        ) : sourceRows.length === 0 ? (
+          <Text style={styles.emptyInline}>
+            Belum ada sumber penjualan aktif.
+          </Text>
         ) : (
-          <View style={styles.sourceGrid}>
-            {analytics.bySource.map(source => (
-              <View key={source.sourceId} style={styles.sourceItem}>
+          <KolamListFrame variant="dashboardCount" style={styles.sourceStrip}>
+            {sourceRows.map(source => (
+              <KolamCardFrame
+                accessibilityLabel={`${source.name}: ${source.orderCount} pesanan`}
+                key={source.sourceId}
+                style={styles.sourceCard}
+                variant="dashboardCount"
+              >
                 {source.logoUri ? (
                   <KolamRemoteImage
                     accessibilityLabel={source.name}
-                    style={styles.sourceLogo}
+                    resizeMode="contain"
                     sourceUri={source.logoUri}
+                    style={styles.sourceLogo}
                   />
                 ) : (
                   <View style={styles.sourceLogoFallback}>
@@ -116,14 +167,9 @@ export function KolamSalesOpsAnalyticsPanel({
                   </Text>
                   <Text style={styles.sourceSub}>Jumlah pesanan</Text>
                 </View>
-              </View>
+              </KolamCardFrame>
             ))}
-            {analytics.bySource.length === 0 ? (
-              <Text style={styles.emptyInline}>
-                Belum ada sumber penjualan aktif.
-              </Text>
-            ) : null}
-          </View>
+          </KolamListFrame>
         )}
       </KolamCardFrame>
 
@@ -212,14 +258,14 @@ const styles = StyleSheet.create({
   sectionTitle: {
     color: V.colors.fg,
     fontFamily: V.fontFamily,
-    fontSize: 15,
+    fontSize: COUNT_VISUAL.section.titleFontSize,
     fontWeight: '800',
   },
   sectionDesc: {
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
-    fontSize: 12,
-    marginTop: 4,
+    fontSize: COUNT_VISUAL.section.descriptionFontSize,
+    marginTop: COUNT_VISUAL.section.descriptionGapY,
   },
   totalValue: {
     color: V.colors.fg,
@@ -235,32 +281,32 @@ const styles = StyleSheet.create({
     paddingVertical: 24,
     textAlign: 'center',
   },
-  sourceGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    paddingBottom: 14,
-    paddingHorizontal: 16,
+  sourceStrip: {
+    flexWrap: 'nowrap',
+    marginBottom: 0,
+    paddingBottom: COUNT_VISUAL.section.gridPaddingBottom,
+    paddingHorizontal: COUNT_VISUAL.section.gridPaddingX,
   },
-  sourceItem: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 10,
-    minWidth: 160,
-    width: '47%',
+  sourceCard: {
+    // Equal-width row like FE inventoryGrid `repeat(4, 1fr)` — override
+    // dashboardCount minWidth/basis so POS/Website/Tokopedia/Shopee stay berjejer.
+    flex: 1,
+    flexBasis: 0,
+    minWidth: 0,
   },
   sourceLogo: {
-    borderRadius: 8,
-    height: 46,
-    width: 46,
+    backgroundColor: V.colors[DASHBOARD_COUNT_VISUAL.iconTile.background],
+    borderRadius: DASHBOARD_COUNT_VISUAL.iconTile.radius,
+    height: DASHBOARD_COUNT_VISUAL.iconTile.size,
+    width: DASHBOARD_COUNT_VISUAL.iconTile.size,
   },
   sourceLogoFallback: {
     alignItems: 'center',
-    backgroundColor: V.colors.secondary,
-    borderRadius: 8,
-    height: 46,
+    backgroundColor: V.colors[DASHBOARD_COUNT_VISUAL.iconTile.background],
+    borderRadius: DASHBOARD_COUNT_VISUAL.iconTile.radius,
+    height: DASHBOARD_COUNT_VISUAL.iconTile.size,
     justifyContent: 'center',
-    width: 46,
+    width: DASHBOARD_COUNT_VISUAL.iconTile.size,
   },
   sourceLogoFallbackText: {
     color: V.colors.fg,
@@ -273,22 +319,27 @@ const styles = StyleSheet.create({
   },
   sourceValue: {
     color: V.colors.fg,
-    fontSize: 18,
-    fontWeight: '800',
+    fontFamily: V.fontFamily,
+    fontSize: DASHBOARD_COUNT_VISUAL.copy.valueFontSize,
+    fontWeight: '700',
   },
   sourceLabel: {
-    color: V.colors.fg,
-    fontSize: 13,
-    fontWeight: '600',
+    color: V.colors[DASHBOARD_COUNT_VISUAL.copy.labelTone],
+    fontFamily: V.fontFamily,
+    fontSize: DASHBOARD_COUNT_VISUAL.copy.labelFontSize,
+    marginTop: DASHBOARD_COUNT_VISUAL.copy.labelGapY,
   },
   sourceSub: {
     color: V.colors.mutedFg,
-    fontSize: 11,
+    fontFamily: V.fontFamily,
+    fontSize: DASHBOARD_COUNT_VISUAL.copy.subLabelFontSize,
+    marginTop: DASHBOARD_COUNT_VISUAL.copy.subLabelGapY,
   },
   emptyInline: {
     color: V.colors.mutedFg,
     fontSize: 13,
-    paddingVertical: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
     textAlign: 'center',
     width: '100%',
   },
