@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
   canAddItemsToKolamSale,
   canDownloadKolamSaleShippingResi,
@@ -11,10 +11,13 @@ import {
   getKolamNoShippingDeliveryLabel,
   getKolamSaleAllowedDeliveryTransitions,
   getKolamSaleAllowedStatusTransitions,
+  getKolamSaleCouriers,
   getKolamSaleDeliveryStatusIntent,
   getKolamSaleItemDiscountAmount,
   getKolamSaleOutstandingAmount,
   getKolamSalePaymentStatusIntent,
+  getKolamSaleServiceLabel,
+  getKolamSaleTrackingNumber,
   isKolamPosSale,
   isKolamSaleMarketplaceManaged,
   kolamSaleSkipsShippingFlow,
@@ -23,6 +26,7 @@ import {
   type KolamSaleDeliveryTransitionTarget,
   type KolamSaleStatusTransitionTarget,
 } from '../domain/kolam-sales';
+import { getKolamCourierLogoSource } from '../domain/kolam-courier-logos';
 import {
   computeKolamSaleProfitSummary,
   getKolamSaleItemProfitBreakdownMap,
@@ -113,6 +117,9 @@ export function KolamSalesOpsDetail({
   const profitSummary = computeKolamSaleProfitSummary(sale);
   const profitByIndex = getKolamSaleItemProfitBreakdownMap(profitSummary);
   const showInternalSummary = profitSummary.itemBreakdowns.length > 0;
+  const saleCouriers = getKolamSaleCouriers(sale);
+  const saleServiceLabel = getKolamSaleServiceLabel(sale);
+  const saleTrackingNumber = getKolamSaleTrackingNumber(sale);
   const pendingLabel = pendingStatus
     ? formatKolamSalePaymentStatusLabel(pendingStatus)
     : '';
@@ -681,6 +688,52 @@ export function KolamSalesOpsDetail({
                   </Text>
                 </View>
                 <View style={styles.shippingField}>
+                  <Text style={styles.shippingFieldLabel}>Kurir</Text>
+                  {saleCouriers.length > 0 ? (
+                    <View style={styles.courierChipRow}>
+                      {saleCouriers.map(courier => {
+                        const logo = getKolamCourierLogoSource(courier.logoKey);
+                        return (
+                          <View key={courier.name} style={styles.courierChip}>
+                            {logo ? (
+                              <Image
+                                accessibilityLabel={`Logo ${courier.name}`}
+                                resizeMode="contain"
+                                source={logo}
+                                style={styles.courierLogo}
+                              />
+                            ) : null}
+                            <Text style={styles.shippingFieldValue}>
+                              {courier.name}
+                            </Text>
+                          </View>
+                        );
+                      })}
+                    </View>
+                  ) : (
+                    <Text style={styles.shippingFieldValue}>Tidak ada kurir</Text>
+                  )}
+                </View>
+                {saleServiceLabel ? (
+                  <View style={styles.shippingField}>
+                    <Text style={styles.shippingFieldLabel}>Layanan</Text>
+                    <Text style={styles.shippingFieldValue}>
+                      {saleServiceLabel}
+                    </Text>
+                  </View>
+                ) : null}
+                {saleTrackingNumber ? (
+                  <View style={styles.shippingField}>
+                    <Text style={styles.shippingFieldLabel}>Nomor Resi</Text>
+                    <Text
+                      selectable
+                      style={[styles.shippingFieldValue, styles.trackingMono]}
+                    >
+                      {saleTrackingNumber}
+                    </Text>
+                  </View>
+                ) : null}
+                <View style={styles.shippingField}>
                   <Text style={styles.shippingFieldLabel}>Total pengiriman</Text>
                   <Text style={styles.shippingFieldValue}>
                     {formatRupiah(sale.shippingCost)}
@@ -1230,6 +1283,29 @@ const styles = StyleSheet.create({
     color: V.colors.fg,
     fontSize: 13,
     lineHeight: 18,
+  },
+  courierChipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  courierChip: {
+    alignItems: 'center',
+    borderColor: V.colors.border,
+    borderRadius: 6,
+    borderWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    gap: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  courierLogo: {
+    height: 20,
+    width: 20,
+  },
+  trackingMono: {
+    fontFamily: 'Consolas',
+    fontVariant: ['tabular-nums'],
   },
   historyRow: {
     borderBottomColor: V.colors.border,

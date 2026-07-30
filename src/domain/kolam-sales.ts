@@ -132,6 +132,9 @@ export type KolamSaleItem = {
   packings: KolamSaleItemPacking[];
   thumbnailUri: string | null;
   variantLabel: string;
+  biteshipCourierCode: string;
+  biteshipServiceCode: string;
+  shippingMethodName: string;
   productId: string;
   speciesId: string;
   serviceId: string;
@@ -170,6 +173,15 @@ export type KolamSaleCustomCost = {
   amount: number;
 };
 
+/** FE `ShippingService` — courier/service/waybill shown on invoice. */
+export type KolamSaleShippingService = {
+  courierCode: string;
+  courierName: string;
+  serviceCode: string;
+  serviceName: string;
+  trackingNumber: string;
+};
+
 export type KolamSale = {
   id: string;
   invoiceCode: string;
@@ -195,6 +207,7 @@ export type KolamSale = {
   notes: string;
   pointsEarned: number;
   shippingAddressText: string;
+  shippingService: KolamSaleShippingService | null;
   createdByName: string;
   openLivestockPendingCount: number;
   hppTotalAtSale: number | null;
@@ -872,6 +885,141 @@ export function isKolamSaleMarketplaceManaged(sale: {
 }): boolean {
   const source = String(sale.marketplaceSource || '').toLowerCase();
   return source === 'shopee' || source === 'tokopedia';
+}
+
+/**
+ * FE `getSaleTrackingNumber`: marketplace externalRef → shippingService.
+ * Callers pass marketplace tracking via sale fields already merged in normalize.
+ */
+export function getKolamSaleTrackingNumber(sale: {
+  shippingService?: KolamSaleShippingService | null;
+}): string {
+  return String(sale.shippingService?.trackingNumber || '').trim();
+}
+
+export function getKolamSaleServiceLabel(sale: {
+  shippingService?: KolamSaleShippingService | null;
+  items?: Array<{ biteshipServiceCode?: string | null }> | null;
+}): string {
+  const fromService =
+    sale.shippingService?.serviceName?.trim() ||
+    sale.shippingService?.serviceCode?.trim().toUpperCase() ||
+    '';
+  if (fromService) {
+    return fromService;
+  }
+  for (const item of sale.items ?? []) {
+    const code = String(item.biteshipServiceCode || '').trim();
+    if (code) {
+      return code.toUpperCase();
+    }
+  }
+  return '';
+}
+
+export type KolamSaleCourierDisplay = {
+  name: string;
+  logoKey: string | null;
+};
+
+/** FE shipping-info courier chips (deduped). */
+export function getKolamSaleCouriers(sale: {
+  shippingService?: KolamSaleShippingService | null;
+  items?: Array<{
+    biteshipCourierCode?: string | null;
+    shippingMethodName?: string | null;
+  }> | null;
+}): KolamSaleCourierDisplay[] {
+  const couriers: KolamSaleCourierDisplay[] = [];
+  const seen = new Set<string>();
+
+  for (const item of sale.items ?? []) {
+    let name = '';
+    let code = '';
+    if (item.biteshipCourierCode?.trim()) {
+      code = item.biteshipCourierCode.trim().toLowerCase();
+      name = item.biteshipCourierCode.trim().toUpperCase();
+    } else if (item.shippingMethodName?.trim()) {
+      name = item.shippingMethodName.trim();
+      code = name.toLowerCase();
+    }
+    if (!name) {
+      continue;
+    }
+    const key = code || name.toLowerCase();
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    couriers.push({
+      name,
+      logoKey: resolveKolamCourierLogoKey(code || name),
+    });
+  }
+
+  if (!couriers.length && sale.shippingService?.courierName?.trim()) {
+    const name = sale.shippingService.courierName.trim();
+    const code =
+      sale.shippingService.courierCode?.trim().toLowerCase() ||
+      name.toLowerCase();
+    couriers.push({
+      name,
+      logoKey: resolveKolamCourierLogoKey(code),
+    });
+  }
+
+  return couriers;
+}
+
+/**
+ * Map courier code/name → FE logo key (`jne`, `jnt`, `sicepat`, …).
+ */
+export function resolveKolamCourierLogoKey(
+  codeOrName: string | null | undefined,
+): string | null {
+  const raw = String(codeOrName || '')
+    .toLowerCase()
+    .trim();
+  if (!raw) {
+    return null;
+  }
+  const compact = raw.replace(/[\s._-]+/g, '');
+  if (compact.includes('anteraja') || compact === 'anter') {
+    return 'anteraja';
+  }
+  if (
+    compact.includes('jnt') ||
+    compact.includes('j&t') ||
+    compact.includes('jet') ||
+    compact === 'jtexpress'
+  ) {
+    return 'jnt';
+  }
+  if (compact.includes('jne')) {
+    return 'jne';
+  }
+  if (compact.includes('sicepat')) {
+    return 'sicepat';
+  }
+  if (compact.includes('tiki')) {
+    return 'tiki';
+  }
+  if (compact.includes('lion')) {
+    return 'lion';
+  }
+  if (compact.includes('grab')) {
+    return 'grab';
+  }
+  if (compact.includes('gojek') || compact.includes('gosend')) {
+    return 'gojek';
+  }
+  if (compact.includes('ninja')) {
+    return 'ninja';
+  }
+  if (compact.includes('posindonesia') || compact === 'pos') {
+    return 'pos';
+  }
+  return compact.length <= 24 ? compact : null;
 }
 
 export function getKolamSaleAllowedStatusTransitions(
@@ -1821,6 +1969,13 @@ export function normalizeKolamSale(payload: unknown): KolamSale {
         ? getString(tokopedia, 'mainOrderId') || getString(tokopedia, 'orderId')
         : getString(externalRef, 'orderId');
 
+  const shippingService = normalizeShippingService(
+    record.shippingService,
+    marketplaceSource,
+    shopee,
+    tokopedia,
+  );
+
   return {
     id: getMongoId(record, '_id') || getMongoId(record, 'id'),
     invoiceCode: getString(record, 'invoiceCode') || '—',
@@ -1851,6 +2006,7 @@ export function normalizeKolamSale(payload: unknown): KolamSale {
       record.shippingAddress,
       buyerInfo,
     ),
+    shippingService,
     createdByName: resolveActorName(record.createdBy),
     openLivestockPendingCount:
       getNumber(record, 'openLivestockPendingCount') ?? 0,
@@ -1907,6 +2063,66 @@ export function normalizeKolamSaleList(payload: unknown): KolamSaleListResult {
     data,
     pagination: normalizePagination(paginationSource, list.length),
   };
+}
+
+function normalizeShippingService(
+  value: unknown,
+  marketplaceSource: string,
+  shopee: Record<string, unknown>,
+  tokopedia: Record<string, unknown>,
+): KolamSaleShippingService | null {
+  const record = asRecord(value);
+  const marketplaceTracking =
+    marketplaceSource === 'shopee'
+      ? getString(shopee, 'trackingNumber')
+      : marketplaceSource === 'tokopedia'
+        ? getString(tokopedia, 'trackingNumber')
+        : '';
+  const marketplaceCourier =
+    marketplaceSource === 'tokopedia'
+      ? getString(tokopedia, 'courierName')
+      : marketplaceSource === 'shopee'
+        ? getString(shopee, 'courierName')
+        : '';
+
+  const courierCode = getString(record, 'courierCode');
+  const courierName =
+    getString(record, 'courierName') || marketplaceCourier;
+  const serviceCode = getString(record, 'serviceCode');
+  const serviceName = getString(record, 'serviceName');
+  const trackingNumber =
+    marketplaceTracking || getString(record, 'trackingNumber');
+
+  if (
+    !courierCode &&
+    !courierName &&
+    !serviceCode &&
+    !serviceName &&
+    !trackingNumber
+  ) {
+    return null;
+  }
+
+  return {
+    courierCode,
+    courierName,
+    serviceCode,
+    serviceName,
+    trackingNumber,
+  };
+}
+
+function resolveShippingMethodName(value: unknown): string {
+  if (typeof value === 'string') {
+    return value.trim();
+  }
+  const record = asRecord(value);
+  return (
+    getString(record, 'name') ||
+    getString(record, 'biteshipServiceName') ||
+    getString(record, 'courierName') ||
+    ''
+  );
 }
 
 function normalizeCustomCosts(value: unknown): KolamSaleCustomCost[] {
@@ -2110,6 +2326,9 @@ function normalizeSaleItem(value: unknown, index: number): KolamSaleItem {
       enclosure,
     ),
     variantLabel,
+    biteshipCourierCode: getString(record, 'biteshipCourierCode'),
+    biteshipServiceCode: getString(record, 'biteshipServiceCode'),
+    shippingMethodName: resolveShippingMethodName(record.shippingMethod),
     productId:
       getMongoId(product, '_id') ||
       getMongoId(product, 'id') ||

@@ -15,6 +15,7 @@ import {
   getKolamSaleAllowedDeliveryTransitions,
   getKolamSaleAllowedStatusTransitions,
   getKolamSaleEditRouteId,
+  getKolamSaleCouriers,
   getKolamSaleEstimatedMargin,
   getKolamSaleInternalNetProfit,
   getKolamSaleItemDiscountAmount,
@@ -23,9 +24,12 @@ import {
   getKolamSaleOutstandingAmount,
   getKolamSalePaymentStatusIntent,
   getKolamSaleRouteId,
+  getKolamSaleServiceLabel,
   getKolamSaleSurfaceMode,
+  getKolamSaleTrackingNumber,
   hydrateKolamSaleCreateFormFromSale,
   isKolamSaleMarketplaceManaged,
+  resolveKolamCourierLogoKey,
   isKolamSalesAddItemsRoute,
   isKolamSalesCreateRoute,
   isKolamSalesDetailRoute,
@@ -252,6 +256,53 @@ describe('kolam sales domain', () => {
     expect(detail.shippingAddressText).toBe(
       'Jl. Mawar No, Bandung, Jawa Barat',
     );
+  });
+
+  it('normalizes Tokopedia courier, service, and tracking number', () => {
+    expect(resolveKolamCourierLogoKey('Anteraja')).toBe('anteraja');
+    expect(resolveKolamCourierLogoKey('J&T Express')).toBe('jnt');
+    expect(resolveKolamCourierLogoKey('jne')).toBe('jne');
+
+    const detail = normalizeKolamSale({
+      _id: 'sale-ship',
+      invoiceCode: 'INV-SHIP',
+      status: 'paid',
+      deliveryStatus: 'on_delivery',
+      shippingCost: 12000,
+      shippingService: {
+        courierName: 'Anteraja',
+        serviceName: 'Same day',
+        trackingNumber: 'TSA-80056970801',
+      },
+      externalRef: {
+        source: 'tokopedia',
+        tokopedia: {
+          mainOrderId: 'TP-88',
+          trackingNumber: 'TSA-FROM-EXT',
+          courierName: 'Anteraja',
+        },
+      },
+      items: [
+        {
+          _id: 'i1',
+          itemType: 'product',
+          quantity: 1,
+          unitPrice: 10000,
+          subtotal: 10000,
+          product: { _id: 'p1', name: 'Item' },
+        },
+      ],
+    });
+
+    expect(detail.shippingService?.courierName).toBe('Anteraja');
+    expect(detail.shippingService?.serviceName).toBe('Same day');
+    // Marketplace externalRef tracking wins over shippingService
+    expect(detail.shippingService?.trackingNumber).toBe('TSA-FROM-EXT');
+    expect(getKolamSaleTrackingNumber(detail)).toBe('TSA-FROM-EXT');
+    expect(getKolamSaleServiceLabel(detail)).toBe('Same day');
+    expect(getKolamSaleCouriers(detail)).toEqual([
+      { name: 'Anteraja', logoKey: 'anteraja' },
+    ]);
   });
 
   it('computes Tokopedia/Shopee olshop profit like FE (not internal PM path)', () => {
