@@ -44,6 +44,8 @@ export interface KolamStockOpnameUserRef {
   name: string;
   email: string;
   username: string;
+  /** Absolute or relative media path for profile/HR photo. */
+  photo: string;
 }
 
 export interface KolamStockOpnameDocRef {
@@ -837,6 +839,7 @@ function normalizeUserRef(value: unknown): KolamStockOpnameUserRef | null {
           name: '',
           email: '',
           username: '',
+          photo: '',
         }
       : null;
   }
@@ -850,6 +853,7 @@ function normalizeUserRef(value: unknown): KolamStockOpnameUserRef | null {
   const name =
     getString(record, 'name') ||
     [firstName, lastName].filter(Boolean).join(' ').trim();
+  const hr = asRecord(record.hr);
   return {
     id,
     firstName,
@@ -857,6 +861,10 @@ function normalizeUserRef(value: unknown): KolamStockOpnameUserRef | null {
     name,
     email: getString(record, 'email'),
     username: getString(record, 'username'),
+    photo:
+      getString(record, 'profile_picture') ||
+      getString(record, 'photo') ||
+      getString(hr, 'photo'),
   };
 }
 

@@ -22,6 +22,7 @@ export type KolamTableId =
   | 'sales'
   | 'sales-ops'
   | 'species'
+  | 'stock-opname'
   | 'supplier'
   | 'supplier-catalog'
   | 'tag'
@@ -1192,6 +1193,43 @@ const kolamTableColumns: Record<KolamTableId, KolamTableColumn[]> = {
       align: 'center',
       headerAlign: 'center',
       width: 110,
+    },
+  ],
+  /** Backoffice `/stock-opname` list (FE Dokumen/Status/Dibuat/Pemilik). */
+  'stock-opname': [
+    {
+      id: 'primary',
+      label: 'Dokumen',
+      align: 'left',
+      headerAlign: 'center',
+    },
+    {
+      id: 'status',
+      label: 'Status',
+      align: 'center',
+      headerAlign: 'center',
+      width: 130,
+    },
+    {
+      id: 'marketplace',
+      label: 'Dibuat',
+      align: 'center',
+      headerAlign: 'center',
+      width: 150,
+    },
+    {
+      id: 'meta',
+      label: 'PIC',
+      align: 'center',
+      headerAlign: 'center',
+      width: 88,
+    },
+    {
+      id: 'actions',
+      label: '',
+      align: 'center',
+      headerAlign: 'center',
+      width: 64,
     },
   ],
 };

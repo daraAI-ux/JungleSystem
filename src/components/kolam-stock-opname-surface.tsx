@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  FlatList,
   Modal,
   Pressable,
   ScrollView,
@@ -18,7 +17,13 @@ import {
   type KolamStockOpnameLineTargetType,
   type KolamStockOpnameStatus,
 } from '../domain/kolam-stock-opname';
+import {
+  getKolamTableColumns,
+  getKolamTableVisualContract,
+  type KolamTableColumn,
+} from '../domain/kolam-table';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
+import { getKolamFileUrl } from '../lib/file-url';
 import { useKolamAuthContext } from '../context/kolam-app-contexts';
 import {
   useKolamStockOpnameController,
@@ -30,6 +35,17 @@ import { KolamCardFrame } from './kolam-card-frame';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamCopyStack } from './kolam-copy-stack';
+import {
+  getKolamDataTableColumnStyle,
+  KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+  KOLAM_DATA_TABLE_COLUMN_GAP,
+} from './kolam-data-table-column-style';
+import { KolamDataTableHeader } from './kolam-data-table-header';
+import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
+import {
+  KolamDataTableActionsTrack,
+  KolamDataTableMainTrack,
+} from './kolam-data-table-tracks';
 import { KolamDateField } from './kolam-date-field';
 import {
   KolamOverflowMenuButton,
@@ -37,20 +53,14 @@ import {
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
+import { KolamHoverTooltip } from './kolam-hover-tooltip';
 import { KolamModalBackdrop } from './kolam-modal-backdrop';
+import { KolamProfileAvatarContent } from './kolam-profile-avatar-content';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamStockOpnameDetail } from './kolam-stock-opname-detail';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
-
-const LIST_COLUMNS = [
-  { id: 'document', label: 'Dokumen', flex: 1.2 },
-  { id: 'status', label: 'Status', flex: 1 },
-  { id: 'created', label: 'Dibuat', flex: 1.1 },
-  { id: 'owner', label: 'PIC', flex: 1 },
-  { id: 'actions', label: '', flex: 0.45 },
-] as const;
 
 const IMPORT_TARGET_OPTIONS: Array<{
   label: string;
@@ -222,6 +232,7 @@ function KolamStockOpnameList({
   const [searchInput, setSearchInput] = React.useState(controller.filters.search);
   const [statusPanelOpen, setStatusPanelOpen] = React.useState(false);
   const [importOpen, setImportOpen] = React.useState(false);
+  const [tableBodyWidth, setTableBodyWidth] = React.useState(0);
   const [deleteTarget, setDeleteTarget] = React.useState<KolamStockOpname | null>(
     null,
   );
@@ -244,6 +255,10 @@ function KolamStockOpnameList({
     controller.filters.startDate,
     controller.filters.endDate,
   ].filter(Boolean).length;
+  const listColumns = React.useMemo(
+    () => fitStockOpnameListColumns(tableBodyWidth),
+    [tableBodyWidth],
+  );
 
   React.useEffect(() => {
     setSearchInput(controller.filters.search);
@@ -275,20 +290,6 @@ function KolamStockOpnameList({
         value: option.id,
       })),
     [],
-  );
-
-  const renderRow = React.useCallback(
-    ({ item }: { item: KolamStockOpname }) => (
-      <StockOpnameListRow
-        canDelete={canDelete}
-        item={item}
-        onDelete={() => setDeleteTarget(item)}
-        onOpen={() =>
-          onRouteChange?.(`${KOLAM_STOCK_OPNAME_ROOT}/${item.id}`)
-        }
-      />
-    ),
-    [canDelete, onRouteChange],
   );
 
   return (
@@ -465,43 +466,36 @@ function KolamStockOpnameList({
             ) : null}
           </KolamTableFooterControls>
         }
+        onBodyWidthChange={setTableBodyWidth}
         style={styles.tableFrame}
       >
-        <FlatList
-          data={controller.items}
-          keyExtractor={item => item.id}
-          ListEmptyComponent={
-            <View style={styles.emptyWrap}>
-              <KolamEmptyState
-                compact
-                message="Buat draf baru atau impor Excel, atau sesuaikan filter."
-                title={
-                  controller.loading
-                    ? 'Memuat dokumen stock opname…'
-                    : 'Belum ada dokumen'
-                }
-              />
-            </View>
-          }
-          ListHeaderComponent={
-            <View style={styles.headerRow}>
-              {LIST_COLUMNS.map(column => (
-                <View
-                  key={column.id}
-                  style={[styles.cell, { flex: column.flex }]}
-                >
-                  {column.label ? (
-                    <Text style={styles.headerCellText}>{column.label}</Text>
-                  ) : null}
-                </View>
-              ))}
-            </View>
-          }
-          removeClippedSubviews={false}
-          renderItem={renderRow}
-          style={styles.listFlatList}
-          contentContainerStyle={styles.listContent}
-        />
+        <KolamDataTableHeader columns={listColumns} />
+        {controller.items.length ? (
+          controller.items.map(item => (
+            <StockOpnameListRow
+              canDelete={canDelete}
+              columns={listColumns}
+              item={item}
+              key={item.id}
+              onDelete={() => setDeleteTarget(item)}
+              onOpen={() =>
+                onRouteChange?.(`${KOLAM_STOCK_OPNAME_ROOT}/${item.id}`)
+              }
+            />
+          ))
+        ) : (
+          <View style={styles.emptyWrap}>
+            <KolamEmptyState
+              compact
+              message="Buat draf baru atau impor Excel, atau sesuaikan filter."
+              title={
+                controller.loading
+                  ? 'Memuat dokumen stock opname…'
+                  : 'Belum ada dokumen'
+              }
+            />
+          </View>
+        )}
       </KolamCatalogListTableShell>
 
       <KolamConfirmDialog
@@ -543,50 +537,91 @@ function KolamStockOpnameList({
 
 function StockOpnameListRow({
   canDelete,
+  columns,
   item,
   onDelete,
   onOpen,
 }: {
   canDelete: boolean;
+  columns: ReturnType<typeof getKolamTableColumns>;
   item: KolamStockOpname;
   onDelete: () => void;
   onOpen: () => void;
 }) {
   const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
+  const columnOf = React.useCallback(
+    (id: (typeof columns)[number]['id']) =>
+      columns.find(column => column.id === id),
+    [columns],
+  );
+  const primaryColumn = columnOf('primary');
+  const statusColumn = columnOf('status');
+  const createdColumn = columnOf('marketplace');
+  const picColumn = columnOf('meta');
+  const actionsColumn = columnOf('actions');
 
   return (
-    <View style={[styles.row, actionMenuOpen ? styles.activeActionRow : null]}>
-      <Pressable
-        accessibilityRole="button"
-        onPress={onOpen}
-        style={({ pressed }) => [
-          styles.rowMain,
-          pressed ? styles.rowPressed : null,
-        ]}
-      >
-        <View style={[styles.cell, { flex: 1.2 }]}>
+    <KolamDataTableRowFrame
+      style={actionMenuOpen ? styles.activeActionRow : undefined}
+    >
+      <KolamDataTableMainTrack>
+        <Pressable
+          accessibilityRole="button"
+          onPress={onOpen}
+          style={[
+            styles.listCell,
+            styles.identityCell,
+            primaryColumn ? getKolamDataTableColumnStyle(primaryColumn) : null,
+          ]}
+        >
           <Text numberOfLines={2} style={styles.primaryText}>
             {item.documentNumber || item.id}
           </Text>
-        </View>
-        <View style={[styles.cell, { flex: 1 }]}>
+        </Pressable>
+
+        <View
+          style={[
+            styles.listCell,
+            styles.statusCell,
+            statusColumn ? getKolamDataTableColumnStyle(statusColumn) : null,
+          ]}
+        >
           <KolamStatusBadge
             intent={statusIntent(item.status)}
             label={item.statusLabel}
+            style={styles.centerBadge}
           />
         </View>
-        <View style={[styles.cell, { flex: 1.1 }]}>
-          <Text style={styles.secondaryText}>
+
+        <View
+          style={[
+            styles.listCell,
+            createdColumn ? getKolamDataTableColumnStyle(createdColumn) : null,
+          ]}
+        >
+          <Text numberOfLines={2} style={styles.secondaryText}>
             {formatDateTime(item.createdAt)}
           </Text>
         </View>
-        <View style={[styles.cell, { flex: 1 }]}>
-          <Text numberOfLines={2} style={styles.secondaryText}>
-            {stockOpnameUserDisplayName(item.owner) || '—'}
-          </Text>
+
+        <View
+          style={[
+            styles.listCell,
+            styles.picCell,
+            picColumn ? getKolamDataTableColumnStyle(picColumn) : null,
+          ]}
+        >
+          <StockOpnamePicAvatar item={item} />
         </View>
-      </Pressable>
-      <View style={styles.overflowCell}>
+      </KolamDataTableMainTrack>
+
+      <KolamDataTableActionsTrack
+        style={styles.actionsTrack}
+        width={Math.max(
+          actionsColumn?.width ?? KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+          KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+        )}
+      >
         <KolamOverflowMenuButton
           accessibilityLabel={`Aksi ${item.documentNumber}`}
           actions={[
@@ -606,8 +641,40 @@ function StockOpnameListRow({
           ]}
           onOpenChange={setActionMenuOpen}
         />
+      </KolamDataTableActionsTrack>
+    </KolamDataTableRowFrame>
+  );
+}
+
+function StockOpnamePicAvatar({ item }: { item: KolamStockOpname }) {
+  const name =
+    stockOpnameUserDisplayName(item.owner) ||
+    item.owner?.email ||
+    'Tanpa PIC';
+  const photoUri = getKolamFileUrl(item.owner?.photo);
+  const initials =
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map(part => part.charAt(0).toUpperCase())
+      .join('') || '?';
+
+  return (
+    <KolamHoverTooltip
+      align="center"
+      containerStyle={styles.picTooltip}
+      label={name}
+    >
+      <View accessibilityLabel={`PIC ${name}`} style={styles.picAvatar}>
+        <KolamProfileAvatarContent
+          imageStyle={styles.picAvatarImage}
+          imageUrl={photoUri}
+          initials={initials}
+          textStyle={styles.picAvatarText}
+        />
       </View>
-    </View>
+    </KolamHoverTooltip>
   );
 }
 
@@ -743,6 +810,45 @@ function StockOpnameImportDialog({
   );
 }
 
+function fitStockOpnameListColumns(containerWidth: number): KolamTableColumn[] {
+  const base = getKolamTableColumns('stock-opname');
+  if (containerWidth <= 0) {
+    return base;
+  }
+
+  const gap = KOLAM_DATA_TABLE_COLUMN_GAP;
+  const paddingX = getKolamTableVisualContract().body.cellPaddingX * 2;
+  const actionsWidth = KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH;
+  const gapsTotal = gap * Math.max(0, base.length - 1);
+  const contentBudget = Math.max(
+    0,
+    containerWidth - paddingX - gapsTotal - actionsWidth,
+  );
+  const contentColumns = base.filter(column => column.id !== 'actions');
+  const equalWidth = Math.max(
+    72,
+    Math.floor(contentBudget / Math.max(1, contentColumns.length)),
+  );
+  let remainder = contentBudget - equalWidth * contentColumns.length;
+  const lastContentId = contentColumns[contentColumns.length - 1]?.id;
+
+  return base.map(column => {
+    if (column.id === 'actions') {
+      return { ...column, width: actionsWidth };
+    }
+
+    const extra = column.id === lastContentId ? remainder : 0;
+    if (column.id === lastContentId) {
+      remainder = 0;
+    }
+
+    return {
+      ...column,
+      width: equalWidth + extra,
+    };
+  });
+}
+
 function statusIntent(
   status: string,
 ): 'success' | 'warning' | 'danger' | 'info' | 'secondary' {
@@ -778,33 +884,30 @@ function formatDateTime(value: string) {
 
 const styles = StyleSheet.create({
   surface: {
-    gap: 12,
+    gap: 14,
   },
   listSurface: {
-    flex: 1,
-    minHeight: 0,
+    gap: 14,
     overflow: 'visible',
   },
   listRoot: {
-    flex: 1,
-    minHeight: 0,
-    gap: 12,
+    gap: 14,
     overflow: 'visible',
   },
   errorBadge: {
-    alignSelf: 'flex-start',
+    alignSelf: 'stretch',
   },
   toolbarWrap: {
-    position: 'relative',
-    zIndex: 100000,
     elevation: 1000,
     overflow: 'visible',
+    position: 'relative',
+    zIndex: 100000,
   },
   dateField: {
     flexGrow: 0,
     flexShrink: 0,
-    minWidth: 110,
     maxWidth: 160,
+    minWidth: 110,
   },
   toolbarButton: {
     flexShrink: 0,
@@ -846,61 +949,57 @@ const styles = StyleSheet.create({
   },
   tableFrame: {
     minHeight: 0,
-  },
-  listFlatList: {
-    flexGrow: 0,
-  },
-  listContent: {
-    flexGrow: 0,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: V.colors.border,
-    paddingVertical: 8,
-    paddingHorizontal: 8,
-    gap: 4,
-  },
-  headerCellText: {
-    color: V.colors.mutedFg,
-    fontSize: 11,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: V.colors.border,
-    paddingVertical: 8,
-    paddingHorizontal: 8,
-    gap: 4,
     overflow: 'visible',
-    zIndex: 1,
+  },
+  listCell: {
+    gap: 2,
+    justifyContent: 'center',
+    minWidth: 0,
+  },
+  identityCell: {
+    alignItems: 'flex-start',
+  },
+  statusCell: {
+    alignItems: 'center',
+  },
+  centerBadge: {
+    alignSelf: 'center',
+  },
+  picCell: {
+    alignItems: 'center',
+    overflow: 'visible',
+  },
+  picTooltip: {
+    alignSelf: 'center',
+  },
+  picAvatar: {
+    alignItems: 'center',
+    backgroundColor: V.colors.primarySoft,
+    borderColor: V.colors.border,
+    borderRadius: 16,
+    borderWidth: 1,
+    height: 32,
+    justifyContent: 'center',
+    overflow: 'hidden',
+    width: 32,
+  },
+  picAvatarImage: {
+    borderRadius: 16,
+    height: 32,
+    width: 32,
+  },
+  picAvatarText: {
+    color: V.colors.primary,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  actionsTrack: {
+    justifyContent: 'center',
   },
   activeActionRow: {
+    elevation: 30,
     zIndex: 1000,
-    elevation: 30,
-  },
-  rowMain: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    minWidth: 0,
-  },
-  rowPressed: {
-    backgroundColor: V.colors.muted,
-  },
-  cell: {
-    minWidth: 0,
-  },
-  overflowCell: {
-    width: 48,
-    alignItems: 'flex-end',
-    zIndex: 1100,
-    elevation: 30,
   },
   primaryText: {
     color: V.colors.fg,
@@ -910,13 +1009,14 @@ const styles = StyleSheet.create({
   secondaryText: {
     color: V.colors.mutedFg,
     fontSize: 12,
+    textAlign: 'center',
   },
   emptyWrap: {
     paddingVertical: 24,
   },
   paginationBar: {
-    flexDirection: 'row',
     alignItems: 'center',
+    flexDirection: 'row',
     gap: 8,
   },
   pageLabel: {
@@ -974,19 +1074,19 @@ const styles = StyleSheet.create({
     lineHeight: 17,
   },
   importOverlay: {
-    flex: 1,
     alignItems: 'center',
+    flex: 1,
     justifyContent: 'center',
   },
   importDialog: {
-    width: 420,
-    maxWidth: '92%',
-    gap: 10,
-    padding: 16,
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: V.colors.border,
-    backgroundColor: V.colors.bg,
+    gap: 10,
+    maxWidth: '92%',
+    padding: 16,
+    width: 420,
   },
   importTargetRow: {
     flexDirection: 'row',
@@ -997,13 +1097,13 @@ const styles = StyleSheet.create({
     minHeight: 32,
   },
   fileRow: {
-    flexDirection: 'row',
     alignItems: 'center',
+    flexDirection: 'row',
     gap: 8,
   },
   fileName: {
-    flex: 1,
     color: V.colors.fg,
+    flex: 1,
     fontSize: 12,
   },
   dangerText: {
@@ -1012,8 +1112,8 @@ const styles = StyleSheet.create({
   },
   importActions: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
     gap: 8,
+    justifyContent: 'flex-end',
     marginTop: 4,
   },
 });

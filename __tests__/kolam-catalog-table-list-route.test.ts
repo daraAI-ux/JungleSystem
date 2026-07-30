@@ -16,6 +16,7 @@ describe('isCatalogTableListRoute', () => {
     expect(isCatalogTableListRoute('/product-serials')).toBe(false);
     expect(isCatalogTableListRoute('/sales')).toBe(false);
     expect(isCatalogTableListRoute('/raw-materials')).toBe(false);
+    expect(isCatalogTableListRoute('/stock-opname')).toBe(false);
   });
 
   it('keeps detail and edit routes on shell ScrollView', () => {
