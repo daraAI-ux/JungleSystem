@@ -332,9 +332,10 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
     title: 'Penjualan & Arus Kas',
     items: [
       {
-        label: 'Sales',
+        label: 'Penjualan',
         route: '/sales',
-        description: 'Sales transactions and payment status',
+        description:
+          'Kelola invoice penjualan dan status pembayaran serta pengiriman.',
         group: 'Penjualan',
         requiredAccess: ['kolam', 'pos'],
       },
@@ -1097,21 +1098,21 @@ const kolamNavigationRouteVariantSpecs: Array<{
   },
   {
     baseRoute: '/sales',
-    labelSuffix: 'Create',
+    labelSuffix: 'Baru',
     route: '/sales/create',
-    description: 'Create sales page from live Kolam',
+    description: 'Buat invoice penjualan baru.',
   },
   {
     baseRoute: '/sales',
     labelSuffix: 'Detail',
     route: '/sales/:id',
-    description: 'Sales detail page from live Kolam',
+    description: '',
   },
   {
     baseRoute: '/sales',
-    labelSuffix: 'Edit',
+    labelSuffix: 'Ubah',
     route: '/sales/:id/edit',
-    description: 'Edit sales page from live Kolam',
+    description: 'Perbarui transaksi penjualan dan kelola pesanan pelanggan.',
   },
   {
     baseRoute: '/source',
