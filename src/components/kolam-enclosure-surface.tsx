@@ -439,7 +439,7 @@ function KolamEnclosureTable({
         <KolamTableFooterControls
           onPageSizeChange={controller.onLimitChange}
           page={safePage}
-          pageSize={controller.pagination.limit}
+          pageSize={controller.filters.limit}
           total={controller.pagination.total}
         >
           {pageCount > 1 ? (
@@ -587,14 +587,15 @@ function KolamEnclosureRow({
         <View
           style={[
             styles.listCell,
+            styles.centerCell,
             typeColumn ? getKolamDataTableColumnStyle(typeColumn) : null,
           ]}
         >
-          <Text numberOfLines={1} style={styles.cellText}>
+          <Text numberOfLines={1} style={[styles.cellText, styles.centerText]}>
             {enclosure.type || '-'}
           </Text>
           {enclosure.aquariumWaterType ? (
-            <Text numberOfLines={1} style={styles.rowMeta}>
+            <Text numberOfLines={1} style={[styles.rowMeta, styles.centerText]}>
               {getAquariumWaterLabel(enclosure.aquariumWaterType)}
             </Text>
           ) : null}
@@ -603,12 +604,13 @@ function KolamEnclosureRow({
         <View
           style={[
             styles.listCell,
+            styles.centerCell,
             livestockColumn
               ? getKolamDataTableColumnStyle(livestockColumn)
               : null,
           ]}
         >
-          <Text numberOfLines={1} style={styles.cellText}>
+          <Text numberOfLines={1} style={[styles.cellText, styles.centerText]}>
             {getLivestockPurposeLabel(enclosure.livestockPurpose)}
           </Text>
         </View>
@@ -1805,6 +1807,13 @@ const styles = StyleSheet.create({
   },
   identityCell: {
     alignItems: 'flex-start',
+  },
+  centerCell: {
+    alignItems: 'center',
+  },
+  centerText: {
+    textAlign: 'center',
+    width: '100%',
   },
   mainTrackVisible: {
     overflow: 'visible',

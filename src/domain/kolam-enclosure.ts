@@ -298,10 +298,23 @@ export function createInitialEnclosureListFilters(
     search: query.search ?? '',
     scope: parseKolamEnclosureListTab(query.scope),
     page: Math.max(1, Number(query.page || '1') || 1),
-    limit: Math.max(1, Number(query.limit || '10') || 10),
+    limit: normalizeKolamEnclosurePageSize(
+      Math.max(1, Number(query.limit || '10') || 10),
+    ),
     livestockPurpose: parseKolamEnclosureLivestockFilter(query.livestock),
     enclosureType: parseKolamEnclosureTypeFilter(query.enclosureType),
   };
+}
+
+const KOLAM_ENCLOSURE_PAGE_SIZES = [10, 50, 100] as const;
+
+/** Match staff/list footer options (10 / 50 / 100). */
+export function normalizeKolamEnclosurePageSize(limit: number) {
+  return KOLAM_ENCLOSURE_PAGE_SIZES.includes(
+    limit as (typeof KOLAM_ENCLOSURE_PAGE_SIZES)[number],
+  )
+    ? limit
+    : 10;
 }
 
 export function parseKolamEnclosureListTab(
@@ -798,7 +811,7 @@ function normalizeKolamEnclosurePagination(
 ): KolamEnclosurePagination {
   const record = asRecord(value);
   const page = getNumber(record, 'page') ?? fallback.page ?? 1;
-  const limit = getNumber(record, 'limit') ?? fallback.limit ?? 20;
+  const limit = getNumber(record, 'limit') ?? fallback.limit ?? 10;
   const total =
     getNumber(record, 'total') ??
     getNumber(record, 'totalItems') ??

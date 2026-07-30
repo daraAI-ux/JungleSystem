@@ -4,6 +4,7 @@ import {
   getKolamEnclosureRouteId,
   getKolamEnclosureSurfaceMode,
   groupKolamEnclosureAllocationRows,
+  normalizeKolamEnclosurePageSize,
   type KolamEnclosure,
   type KolamEnclosureAllocationOverview,
   type KolamEnclosureDashboardStats,
@@ -197,15 +198,31 @@ export function useKolamEnclosureController(
         return;
       }
 
+      const pageLimit = normalizeKolamEnclosurePageSize(filters.limit);
       const [listResult, assignees] = await Promise.all([
-        getKolamEnclosures(filters),
+        getKolamEnclosures({...filters, limit: pageLimit}),
         getKolamEnclosureStaffAssignees({limit: 200}).catch(() => []),
       ]);
       if (requestSeq.current !== activeRequest) {
         return;
       }
-      setEnclosures(listResult.data);
-      setPagination(listResult.pagination);
+      setEnclosures(listResult.data.slice(0, pageLimit));
+      setPagination({
+        ...listResult.pagination,
+        limit: pageLimit,
+        page: filters.page,
+        totalPages: Math.max(
+          1,
+          Math.ceil(listResult.pagination.total / pageLimit),
+        ),
+      });
+      if (filters.limit !== pageLimit) {
+        setFilters(current =>
+          current.limit === pageLimit
+            ? current
+            : {...current, limit: pageLimit, page: 1},
+        );
+      }
       setStaffAssignees(assignees);
       setDataSource('live');
     } catch (loadError) {
@@ -249,7 +266,7 @@ export function useKolamEnclosureController(
   const onLimitChange = useCallback((limit: number) => {
     setFilters(current => ({
       ...current,
-      limit: Math.max(1, limit),
+      limit: normalizeKolamEnclosurePageSize(limit),
       page: 1,
     }));
   }, []);
@@ -259,7 +276,7 @@ export function useKolamEnclosureController(
       search: '',
       scope: current.scope,
       page: 1,
-      limit: current.limit,
+      limit: normalizeKolamEnclosurePageSize(current.limit),
       livestockPurpose: 'all',
       enclosureType: 'all',
     }));
@@ -271,6 +288,7 @@ export function useKolamEnclosureController(
       ...current,
       scope: tab,
       page: 1,
+      limit: normalizeKolamEnclosurePageSize(current.limit),
     }));
     setError(null);
     setStatusMessage(null);

@@ -47,6 +47,13 @@ describe('Kolam enclosure domain', () => {
         scope: 'internal',
       }),
     );
+    expect(
+      createInitialEnclosureListFilters('/enclosures?scope=internal&limit=20'),
+    ).toEqual(
+      expect.objectContaining({
+        limit: 10,
+      }),
+    );
 
     const filters = createInitialEnclosureListFilters(
       '/enclosures?scope=internal&page=2&limit=50&search=ENC&livestock=production&enclosureType=Aquarium',

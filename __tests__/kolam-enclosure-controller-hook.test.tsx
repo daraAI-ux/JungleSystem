@@ -130,7 +130,7 @@ describe('Kolam enclosure controller hook', () => {
     await ReactTestRenderer.act(async () => {
       ReactTestRenderer.create(
         <EnclosureHarness
-          route="/enclosures?scope=client_linked&page=3&limit=15&search=rack&livestock=production&enclosureType=Aquarium"
+          route="/enclosures?scope=client_linked&page=3&limit=50&search=rack&livestock=production&enclosureType=Aquarium"
           onRender={controller => {
             latest = controller;
           }}
