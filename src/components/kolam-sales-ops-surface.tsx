@@ -39,6 +39,7 @@ import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
+import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 
 type SalesFilterPanel = 'lifecycle' | 'status' | 'delivery' | null;
 
@@ -155,14 +156,14 @@ function KolamSalesOpsList({
   return (
     <View style={styles.listRoot}>
       <View style={styles.toolbarWrap}>
-        <View style={styles.toolbarShell}>
-          <View style={styles.filterRow}>
-            <KolamFormTextField
-              onChangeText={setSearchInput}
-              placeholder="Cari invoice / pembeli"
-              style={styles.searchInput}
-              value={searchInput}
-            />
+        <View style={kolamTableToolbarStyles.row}>
+          <KolamFormTextField
+            onChangeText={setSearchInput}
+            placeholder="Cari invoice / pembeli"
+            style={kolamTableToolbarStyles.searchInput}
+            value={searchInput}
+          />
+          <View style={kolamTableToolbarStyles.controls}>
             <KolamTableFilterTrigger
               active={
                 activeFilterPanel === 'lifecycle' ||
@@ -178,7 +179,6 @@ function KolamSalesOpsList({
                   prev === 'lifecycle' ? null : 'lifecycle',
                 )
               }
-              style={styles.filterTrigger}
             />
             <KolamTableFilterTrigger
               active={
@@ -195,7 +195,6 @@ function KolamSalesOpsList({
                   prev === 'status' ? null : 'status',
                 )
               }
-              style={styles.filterTrigger}
             />
             <KolamTableFilterTrigger
               active={
@@ -214,7 +213,6 @@ function KolamSalesOpsList({
                   prev === 'delivery' ? null : 'delivery',
                 )
               }
-              style={styles.filterTrigger}
             />
             <KolamDateField
               accessibilityLabel="Tanggal mulai"
@@ -236,8 +234,6 @@ function KolamSalesOpsList({
               style={styles.dateField}
               value={controller.filters.endDate}
             />
-          </View>
-          <View style={styles.actionRow}>
             <KolamButton
               intent={controller.filters.needsAction ? 'primary' : 'outline'}
               label="Perlu aksi"
@@ -800,16 +796,24 @@ function FilterPanel({
   const rows = useMemo(() => options, [options]);
   return (
     <View style={styles.filterOverlayPanel}>
-      {rows.map(option => (
-        <KolamButton
-          intent={selectedValue === option.value ? 'primary' : 'plain'}
-          key={option.value || 'all'}
-          label={option.label}
-          onPress={() => onSelect(option.value)}
-          style={styles.filterPanelOption}
-        />
-      ))}
-      <KolamButton label="Tutup" onPress={onClose} />
+      <ScrollView
+        contentContainerStyle={styles.filterPanelContent}
+        keyboardShouldPersistTaps="handled"
+        style={styles.filterPanelScroll}
+      >
+        {rows.map(option => (
+          <KolamButton
+            intent={selectedValue === option.value ? 'primary' : 'plain'}
+            key={option.value || 'all'}
+            label={option.label}
+            onPress={() => onSelect(option.value)}
+            style={styles.filterPanelOption}
+          />
+        ))}
+      </ScrollView>
+      <View style={styles.filterPanelFooter}>
+        <KolamButton label="Tutup" onPress={onClose} />
+      </View>
     </View>
   );
 }
@@ -865,61 +869,48 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   toolbarWrap: {
-    position: 'relative',
-    zIndex: 100000,
     elevation: 1000,
     overflow: 'visible',
-  },
-  toolbarShell: {
-    alignItems: 'center',
-    backgroundColor: V.colors.bg,
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    flexDirection: 'row',
-    flexWrap: 'nowrap',
-    gap: 6,
-    justifyContent: 'space-between',
-    overflow: 'visible',
-    padding: 4,
-  },
-  filterRow: {
-    alignItems: 'center',
-    flex: 1,
-    flexDirection: 'row',
-    flexWrap: 'nowrap',
-    gap: 4,
-    minWidth: 0,
-  },
-  actionRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexWrap: 'nowrap',
-    gap: 4,
-  },
-  searchInput: {
-    flex: 1,
-    minWidth: 140,
-    maxWidth: 220,
-  },
-  filterTrigger: {
-    minHeight: 34,
-    paddingHorizontal: 10,
+    position: 'relative',
+    zIndex: 100000,
   },
   dateField: {
-    minWidth: 110,
+    maxWidth: 140,
+    minWidth: 108,
+    width: 120,
   },
   filterOverlayPanel: {
     backgroundColor: V.colors.bg,
     borderColor: V.colors.border,
     borderRadius: 8,
     borderWidth: 1,
+    elevation: 1200,
+    padding: 6,
+    position: 'absolute',
+    right: 8,
+    shadowColor: V.colors.fg,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    top: 48,
+    width: 260,
+    zIndex: 120000,
+  },
+  filterPanelScroll: {
+    maxHeight: 280,
+  },
+  filterPanelContent: {
     gap: 4,
-    marginTop: 6,
-    padding: 8,
   },
   filterPanelOption: {
     justifyContent: 'flex-start',
+  },
+  filterPanelFooter: {
+    alignItems: 'flex-end',
+    borderTopColor: V.colors.border,
+    borderTopWidth: 1,
+    marginTop: 6,
+    paddingTop: 6,
   },
   tableFrame: {
     flex: 1,
