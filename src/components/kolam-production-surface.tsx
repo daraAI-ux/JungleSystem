@@ -333,6 +333,12 @@ function KolamProductionRow({
   onDelete: () => void;
 }) {
   const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
+  const columns = getKolamTableColumns('production');
+  const widthOf = React.useCallback(
+    (id: (typeof columns)[number]['id']) =>
+      columns.find(column => column.id === id)?.width,
+    [columns],
+  );
   const planned = production.plannedQuantity || production.quantity || 0;
   const completed = production.completedQuantity || 0;
   const linked = production.linkedPurchaseOrders ?? [];
@@ -362,7 +368,7 @@ function KolamProductionRow({
         </Text>
       </Pressable>
 
-      <View style={[styles.listCell, { width: 140 }]}>
+      <View style={[styles.listCell, { width: widthOf('meta') }]}>
         <Text numberOfLines={2} style={styles.cellText}>
           {getKolamProductionVariantLabel(production.variant)}
         </Text>
@@ -373,7 +379,7 @@ function KolamProductionRow({
         ) : null}
       </View>
 
-      <View style={[styles.listCell, { width: 100 }]}>
+      <View style={[styles.listCell, { width: widthOf('children') }]}>
         <Text style={styles.cellText}>
           {completed} / {planned}
         </Text>
@@ -382,17 +388,17 @@ function KolamProductionRow({
         ) : null}
       </View>
 
-      <View style={[styles.listCell, { width: 120 }]}>
+      <View style={[styles.listCell, { width: widthOf('amount') }]}>
         <Text style={styles.numText}>{formatRupiah(production.estimatedCost || 0)}</Text>
       </View>
 
-      <View style={[styles.listCell, { width: 140 }]}>
+      <View style={[styles.listCell, { width: widthOf('notes') }]}>
         <Text numberOfLines={1} style={styles.cellText}>
           {production.batchId || '—'}
         </Text>
       </View>
 
-      <View style={[styles.listCell, styles.statusCell, { width: 120 }]}>
+      <View style={[styles.listCell, styles.statusCell, { width: widthOf('status') }]}>
         <KolamStatusBadge
           intent={productionStatusIntent(production.status)}
           label={getKolamProductionStatusLabel(production.status)}
@@ -404,17 +410,17 @@ function KolamProductionRow({
         ) : null}
       </View>
 
-      <View style={[styles.listCell, styles.picCell, { width: 56 }]}>
+      <View style={[styles.listCell, styles.picCell, { width: widthOf('products') }]}>
         <KolamProductionPicAvatar production={production} />
       </View>
 
-      <View style={[styles.listCell, { width: 120 }]}>
+      <View style={[styles.listCell, { width: widthOf('marketplace') }]}>
         <Text numberOfLines={1} style={styles.cellText}>
           {productionDateLabel}
         </Text>
       </View>
 
-      <View style={styles.overflowCell}>
+      <View style={[styles.overflowCell, { width: widthOf('actions') ?? 48 }]}>
         <KolamOverflowMenuButton
           accessibilityLabel={`Menu ${production.batchId || 'produksi'}`}
           actions={actions}
@@ -1489,7 +1495,7 @@ const styles = StyleSheet.create({
   },
   primaryCell: {
     flex: 1,
-    minWidth: 160,
+    minWidth: 0,
   },
   statusCell: {
     alignItems: 'flex-start',

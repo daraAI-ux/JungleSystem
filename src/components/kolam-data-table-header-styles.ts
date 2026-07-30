@@ -18,6 +18,16 @@ export const dataTableHeaderStyles = StyleSheet.create({
     borderBottomColor: V.colors.border,
     borderBottomWidth: 1,
   },
+  cell: {
+    justifyContent: 'center',
+    minWidth: 0,
+  },
+  cellCenter: {
+    alignItems: 'center',
+  },
+  cellRight: {
+    alignItems: 'flex-end',
+  },
   text: {
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
@@ -28,6 +38,7 @@ export const dataTableHeaderStyles = StyleSheet.create({
   },
   primary: {
     flex: 1,
+    minWidth: 0,
   },
   center: {
     textAlign: 'center',
