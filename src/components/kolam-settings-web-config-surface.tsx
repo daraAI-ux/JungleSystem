@@ -825,7 +825,6 @@ export function KolamSettingsWebConfigSurface({
   onUploadMarketplaceHeroImage,
   onUploadMarketplaceLogo,
   onUploadMarketplaceYoutubeBackground,
-  onUploadDaraWorkerPhoto = noop,
   onUploadPaymentMethodPhoto = noop,
   onRefreshRegionSync,
   onRefreshKpiWeeklyPreview,
@@ -3650,7 +3649,7 @@ export function KolamSettingsWebConfigSurface({
                 },
                 {
                   id: 'ai-profile-meta',
-                  text: 'Avatar DARA dipakai di Kolam dan webstore. Foto worker Katak Terbang dipakai untuk autopilot packing.',
+                  text: 'Avatar DARA dipakai di Kolam dan webstore.',
                   style: styles.marketplaceOverviewMeta,
                 },
               ]}
@@ -3661,23 +3660,7 @@ export function KolamSettingsWebConfigSurface({
                 disabled={daraControlsDisabled}
                 onPress={onUploadMarketplaceDaraAvatar}
               />
-              <KolamActionControlButton
-                label="Unggah foto Katak Terbang"
-                disabled={daraControlsDisabled}
-                onPress={onUploadDaraWorkerPhoto}
-              />
             </View>
-            <KolamTextFieldRow
-              variant="settingsForm"
-              fieldWidth={settingsFieldWidth}
-              label="Nama worker Katak Terbang"
-              description="Nama PIC yang tampil pada flow autopilot packing."
-              value={draft.katakTerbangWorkerName}
-              onChangeText={value =>
-                setDraftField('katakTerbangWorkerName', value)
-              }
-              placeholder="Katak Terbang"
-            />
           </View>
 
           <View style={styles.marketplaceControlSection}>

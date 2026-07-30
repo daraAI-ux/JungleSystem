@@ -594,6 +594,9 @@ describe('KolamSettingsPanel', () => {
     expect(expectedAiTexts.filter(item => !text.includes(item))).toEqual([]);
     expect(text).not.toEqual(
       expect.arrayContaining([
+        'Katak Terbang',
+        'Unggah foto Katak Terbang',
+        'Nama worker Katak Terbang',
         'Tagline Perusahaan',
         'Biteship API key',
         'Ringkasan Landing Marketplace',
