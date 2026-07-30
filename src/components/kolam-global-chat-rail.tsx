@@ -31,6 +31,7 @@ import type {
   KolamChatAnalytics,
   KolamChatContactDetails,
   KolamChatContactOrder,
+  KolamChatHandoverNote,
   KolamChatLabel,
   KolamChatConversationListParams,
   KolamChatConversationStatus,
@@ -2653,6 +2654,12 @@ function KolamChatRailDetailPanel({
         />
       ) : null}
 
+      {mode === 'inbox' && detail.conversation?.handoverNote?.text ? (
+        <KolamInboxHandoverNoteBanner
+          note={detail.conversation.handoverNote}
+        />
+      ) : null}
+
       <View style={[styles.messagePane, fullPage && styles.messagePaneFull]}>
         {detail.loading ? (
           <Text style={styles.metaText}>Memuat pesan...</Text>
@@ -4241,6 +4248,34 @@ function KolamInboxLabelPicker({
           />
         </View>
       )}
+    </View>
+  );
+}
+
+function KolamInboxHandoverNoteBanner({
+  note,
+}: {
+  note: KolamChatHandoverNote;
+}) {
+  const text = note.text?.trim();
+  if (!text) {
+    return null;
+  }
+
+  const fromName = getChatStaffLabel(note.fromStaffId);
+  const toName = getChatStaffLabel(note.toStaffId);
+
+  return (
+    <View
+      accessibilityLabel="Catatan handover percakapan"
+      style={styles.inboxHandoverBanner}>
+      <Text style={styles.inboxHandoverBannerTitle}>Catatan handover</Text>
+      {fromName || toName ? (
+        <Text style={styles.inboxHandoverBannerRoute}>
+          {fromName || '-'} {'->'} {toName || '-'}
+        </Text>
+      ) : null}
+      <Text style={styles.inboxHandoverBannerText}>{text}</Text>
     </View>
   );
 }
@@ -7137,6 +7172,33 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'flex-end',
     gap: 7,
+  },
+  inboxHandoverBanner: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderBottomColor: '#FCD34D',
+    borderBottomWidth: 1,
+    backgroundColor: '#FFFBEB',
+    gap: 4,
+  },
+  inboxHandoverBannerTitle: {
+    color: '#78350F',
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '900',
+  },
+  inboxHandoverBannerRoute: {
+    color: '#92400E',
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  inboxHandoverBannerText: {
+    color: '#78350F',
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 17,
   },
   inboxLabelOptionList: {
     gap: 5,

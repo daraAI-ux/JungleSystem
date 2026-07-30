@@ -248,7 +248,12 @@ export function useKolamChatRailDetail({
       await markKolamChatConversationRead(selectedId).catch(() => undefined);
       setConversation(nextConversation);
       setTeamRoomMetadata(EMPTY_TEAM_ROOM_METADATA);
-      setMessages([...nextMessages].reverse().map(mapInboxMessage));
+      const buyerDisplayName = getInboxBuyerDisplayName(nextConversation);
+      setMessages(
+        [...nextMessages]
+          .reverse()
+          .map(message => mapInboxMessage(message, buyerDisplayName)),
+      );
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : 'Detail chat belum bisa dibaca.',
@@ -402,7 +407,10 @@ export function useKolamChatRailDetail({
         const message = await sendKolamChatTextMessage(selectedId, body, {
           replyToMessageId: options?.replyToMessageId ?? undefined,
         });
-        setMessages(current => [...current, mapInboxMessage(message)]);
+        setMessages(current => [
+          ...current,
+          mapInboxMessage(message, getInboxBuyerDisplayName(conversation)),
+        ]);
       } catch (error) {
         setErrorMessage(
           error instanceof Error ? error.message : 'Pesan gagal dikirim.',
@@ -411,7 +419,7 @@ export function useKolamChatRailDetail({
         setSending(false);
       }
     },
-    [currentUserId, mode, selectedId, sending],
+    [conversation, currentUserId, mode, selectedId, sending],
   );
 
   const sendAttachment = useCallback(
@@ -478,7 +486,10 @@ export function useKolamChatRailDetail({
         const message = await sendKolamChatImageMessage(selectedId, uploaded, {
           replyToMessageId: options?.replyToMessageId ?? undefined,
         });
-        setMessages(current => [...current, mapInboxMessage(message)]);
+        setMessages(current => [
+          ...current,
+          mapInboxMessage(message, getInboxBuyerDisplayName(conversation)),
+        ]);
       } catch (error) {
         setErrorMessage(
           error instanceof Error ? error.message : 'Gambar gagal dikirim.',
@@ -487,7 +498,7 @@ export function useKolamChatRailDetail({
         setSending(false);
       }
     },
-    [mode, selectedId, sending],
+    [conversation, mode, selectedId, sending],
   );
 
   const sendMarketplaceProduct = useCallback(
@@ -512,7 +523,9 @@ export function useKolamChatRailDetail({
         );
         setMessages(current =>
           current.map(existing =>
-            existing.id === tempId ? mapInboxMessage(message) : existing,
+            existing.id === tempId
+              ? mapInboxMessage(message, getInboxBuyerDisplayName(conversation))
+              : existing,
           ),
         );
       } catch (error) {
@@ -528,7 +541,7 @@ export function useKolamChatRailDetail({
         setSending(false);
       }
     },
-    [mode, selectedId, sending],
+    [conversation, mode, selectedId, sending],
   );
 
   const reactToMessage = useCallback(
@@ -587,7 +600,7 @@ export function useKolamChatRailDetail({
         ),
       );
     },
-    [mode],
+    [conversation, mode],
   );
 
   const upsertInboxMessageFromLive = useCallback(
@@ -596,7 +609,10 @@ export function useKolamChatRailDetail({
         return;
       }
 
-      const nextMessage = mapInboxMessage(message);
+      const nextMessage = mapInboxMessage(
+        message,
+        getInboxBuyerDisplayName(conversation),
+      );
       setMessages(current => {
         const existingIndex = current.findIndex(item => item.id === nextMessage.id);
         if (existingIndex === -1) {
@@ -630,7 +646,9 @@ export function useKolamChatRailDetail({
           );
           setMessages(current =>
             current.map(item =>
-              item.id === messageId ? mapInboxMessage(message) : item,
+              item.id === messageId
+                ? mapInboxMessage(message, getInboxBuyerDisplayName(conversation))
+                : item,
             ),
           );
           return;
@@ -665,7 +683,7 @@ export function useKolamChatRailDetail({
         setSending(false);
       }
     },
-    [currentUserId, mode, selectedId, sending],
+    [conversation, currentUserId, mode, selectedId, sending],
   );
 
   const searchTeamMessages = useCallback(
@@ -939,14 +957,17 @@ function getCallParticipantUserId(participant: KolamTeamChatCallParticipant) {
   return typeof participant.user === 'string' ? participant.user : participant.user?._id;
 }
 
-function mapInboxMessage(message: KolamChatMessage): KolamChatRailDetailMessage {
+function mapInboxMessage(
+  message: KolamChatMessage,
+  buyerDisplayName?: string,
+): KolamChatRailDetailMessage {
   return {
     attachments: [],
     content: message.content ?? null,
     daraMeta: message.daraMeta ?? null,
     embeds: [],
     id: message._id,
-    author: getInboxAuthor(message),
+    author: getInboxAuthor(message, buyerDisplayName),
     body: getInboxMessageBody(message),
     linkPreviews: [],
     mine: message.direction === 'out',
@@ -1116,7 +1137,7 @@ function groupTeamChatReactions(
   return Array.from(groups.values());
 }
 
-function getInboxAuthor(message: KolamChatMessage) {
+function getInboxAuthor(message: KolamChatMessage, buyerDisplayName?: string) {
   if (message.direction === 'out') {
     return message.senderName || 'Anda';
   }
@@ -1125,7 +1146,24 @@ function getInboxAuthor(message: KolamChatMessage) {
     return 'DARA';
   }
 
-  return message.senderName || 'Buyer';
+  return message.senderName || buyerDisplayName || 'Buyer';
+}
+
+function getInboxBuyerDisplayName(
+  conversation?: KolamChatConversation | null,
+) {
+  const contact = conversation?.contactId;
+  if (!contact || typeof contact === 'string') {
+    return '';
+  }
+
+  const linkedCustomer = contact.linkedCustomerId;
+  const customerName =
+    linkedCustomer && typeof linkedCustomer === 'object'
+      ? linkedCustomer.name?.trim()
+      : '';
+
+  return contact.displayName?.trim() || customerName || '';
 }
 
 function getInboxMessageBody({content}: KolamChatMessage) {

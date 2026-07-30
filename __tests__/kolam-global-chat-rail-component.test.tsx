@@ -974,6 +974,11 @@ describe('KolamGlobalChatRail', () => {
         },
         isAiHandled: false,
         labelIds: ['label-1', 'label-2'],
+        handoverNote: {
+          text: 'Buyer minta follow up stok sore ini.',
+          fromStaffId: {_id: 'staff-old', first_name: 'Sisco'},
+          toStaffId: {_id: 'staff-1', first_name: 'Staff'},
+        },
         status: 'open',
       },
       loading: false,
@@ -1040,23 +1045,24 @@ describe('KolamGlobalChatRail', () => {
             'Pilih conversation Buyer Tokopedia',
         ),
     ).toBe(false);
-    expect(renderText(renderer!)).toEqual(
+    const text = renderText(renderer!);
+    expect(text).toEqual(
       expect.arrayContaining([
-        'Buyer',
+        'Buyer Tokopedia',
         'Apakah masih tersedia?',
-        'File',
-        'invoice.pdf',
-        'application/pdf',
-        'Video',
-        'handover-clip.mp4',
-        'video/mp4',
         'Open',
         'Prioritas',
         'Follow up',
         'CS: Staff',
-        'Resolve',
-        'AI on',
       ]),
+    );
+    expect(
+      renderer!.root.findAll(
+        node => node.props.accessibilityLabel === 'Catatan handover percakapan',
+      ).length,
+    ).toBeGreaterThan(0);
+    expect(text).toEqual(
+      expect.arrayContaining(['Buyer minta follow up stok sore ini.']),
     );
     expect(
       renderer!.root
