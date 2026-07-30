@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import {
   getIucnConservationInfo,
   getIucnStatusLabel,
+  type KolamIucnSpeciesUsageItem,
   type KolamIucnStatus,
   type KolamIucnStatusState,
 } from '../domain/kolam-iucn-status';
@@ -37,7 +38,6 @@ import { KolamOverflowMenuButton, KolamTableFooterControls } from './kolam-dropd
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamInteractionFrame } from './kolam-interaction-frame';
-import { KolamLabelFieldDetailOverview } from './kolam-label-field-detail-overview';
 import { KolamNativeFormSection } from './kolam-native-form-section';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamSearchField } from './kolam-search-field';
@@ -614,70 +614,123 @@ function KolamIucnDetail({
   return (
     <View style={styles.stack}>
       {!editable && item ? (
-        <KolamLabelFieldDetailOverview
-          hero={<IucnHero item={item} />}
-          meta={[
-            { label: 'Singkatan', value: item.abbreviation || '-' },
-            {
-              label: 'Label IUCN',
-              value: getIucnConservationInfo(item.abbreviation).label,
-            },
-            {
-              label: 'Gambar',
-              value: item.image ? 'Tersimpan lokal/cache' : 'Belum ada gambar',
-            },
-            ...(item.createdBy
-              ? [{ label: 'Pembuat', value: item.createdBy }]
-              : []),
-            ...(item.updatedAt
-              ? [
-                  {
-                    label: 'Diperbarui',
-                    value: formatDateTime(item.updatedAt),
-                  },
-                ]
-              : []),
-          ]}
-          metrics={[
-            { label: 'Urutan', value: item.order },
-            { label: 'Species', value: item.species.length },
-            { label: 'Gambar', value: item.image ? 1 : 0 },
-          ]}
-          sections={[
-            {
-              description:
-                'Keterangan status konservasi berdasarkan singkatan IUCN.',
-              emptyText: 'Belum ada keterangan konservasi.',
-              items: getConservationItems(item),
-              title: 'Konservasi',
-              total: getConservationItems(item).length,
-            },
-            {
-              description:
-                'Spesies yang diklasifikasikan dengan status IUCN ini.',
-              emptyText: 'Belum ada spesies dengan status ini.',
-              items: item.species.map(species => ({
-                meta: [
-                  species.commonName,
-                  species.sku ? `SKU: ${species.sku}` : '',
-                ]
-                  .filter(Boolean)
-                  .join('\n'),
-                title:
-                  species.scientificName || species.commonName || species.id,
-              })),
-              title: 'Species',
-              total: item.species.length,
-            },
-          ]}
-          status={{
-            intent: item.status === 'active' ? 'success' : 'warning',
-            label: getIucnStatusLabel(item.status),
-          }}
-        />
+        <IucnStatusDetailReadOnly item={item} />
       ) : (
         <KolamIucnForm controller={controller} />
       )}
+    </View>
+  );
+}
+
+function IucnStatusDetailReadOnly({ item }: { item: KolamIucnStatus }) {
+  const conservation = getIucnConservationInfo(item.abbreviation);
+  const infoRows = [
+    { label: 'Singkatan', value: item.abbreviation || '-' },
+    { label: 'Label IUCN', value: conservation.label || item.name || '-' },
+    {
+      label: 'Gambar',
+      value: item.image ? 'Tersimpan lokal/cache' : 'Belum ada gambar',
+    },
+    ...(item.createdBy ? [{ label: 'Pembuat', value: item.createdBy }] : []),
+    ...(item.updatedAt
+      ? [{ label: 'Diperbarui', value: formatDateTime(item.updatedAt) }]
+      : []),
+    { label: 'Urutan', value: String(item.order) },
+    { label: 'Species', value: String(item.species.length) },
+  ];
+
+  return (
+    <View style={styles.detailStack}>
+      <View style={styles.detailTopRow}>
+        <View style={styles.detailInfoPanel}>
+          <Text style={styles.detailPanelTitle}>Informasi IUCN</Text>
+          <View style={styles.detailInfoBody}>
+            <IucnHero item={item} />
+            <View style={styles.detailInfoMeta}>
+              <KolamStatusBadge
+                intent={item.status === 'active' ? 'success' : 'warning'}
+                label={getIucnStatusLabel(item.status)}
+                style={styles.detailStatusBadge}
+              />
+              {infoRows.map(row => (
+                <Text
+                  key={row.label}
+                  numberOfLines={2}
+                  style={styles.detailMetaText}
+                >
+                  {row.label}: {row.value}
+                </Text>
+              ))}
+            </View>
+          </View>
+        </View>
+        <View style={styles.detailConservationPanel}>
+          <Text style={styles.detailPanelTitle}>Konservasi</Text>
+          <Text style={styles.detailPanelDescription}>
+            Keterangan status konservasi berdasarkan singkatan IUCN.
+          </Text>
+          <View style={styles.conservationBody}>
+            <Text style={[styles.conservationAbbr, { color: conservation.color }]}>
+              {item.abbreviation || '-'}
+            </Text>
+            <Text style={styles.conservationLabel}>
+              {conservation.label || item.name || '-'}
+            </Text>
+            {conservation.description ? (
+              <Text style={styles.conservationDescription}>
+                {conservation.description}
+              </Text>
+            ) : (
+              <Text style={styles.detailEmptyText}>
+                Belum ada keterangan konservasi.
+              </Text>
+            )}
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.speciesPanel}>
+        <Text style={styles.detailPanelTitle}>
+          Spesies ({item.species.length})
+        </Text>
+        <Text style={styles.detailPanelDescription}>
+          Spesies yang diklasifikasikan dengan status IUCN ini.
+        </Text>
+        {item.species.length ? (
+          <View style={styles.speciesCardGrid}>
+            {item.species.map(species => (
+              <IucnSpeciesCard key={species.id} species={species} />
+            ))}
+          </View>
+        ) : (
+          <Text style={styles.detailEmptyText}>
+            Belum ada spesies dengan status ini.
+          </Text>
+        )}
+      </View>
+    </View>
+  );
+}
+
+function IucnSpeciesCard({ species }: { species: KolamIucnSpeciesUsageItem }) {
+  const name =
+    species.scientificName || species.commonName || species.id || '-';
+
+  return (
+    <View style={styles.speciesCard}>
+      <View style={styles.speciesCardPhoto}>
+        <KolamRemoteImage
+          accessibilityLabel={`Foto ${name}`}
+          resizeMode="cover"
+          revision={species.photoUri ?? species.id}
+          scope="species"
+          sourceUri={species.photoUri}
+          style={StyleSheet.absoluteFill}
+        />
+      </View>
+      <Text numberOfLines={2} style={styles.speciesCardName}>
+        {name}
+      </Text>
     </View>
   );
 }
@@ -888,17 +941,6 @@ function fitIucnStatusListColumns(containerWidth: number): KolamTableColumn[] {
       width: equalWidth + extra,
     };
   });
-}
-
-function getConservationItems(item: KolamIucnStatus) {
-  const info = getIucnConservationInfo(item.abbreviation);
-  return [
-    { title: 'Label', value: info.label },
-    ...(info.description
-      ? [{ title: 'Deskripsi', meta: info.description }]
-      : []),
-    { title: 'Singkatan', value: item.abbreviation || '-' },
-  ];
 }
 
 function getIucnRoute(item: KolamIucnStatus) {
@@ -1231,5 +1273,131 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 16,
     fontWeight: '900',
+  },
+  detailStack: {
+    gap: 16,
+  },
+  detailTopRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 14,
+  },
+  detailInfoPanel: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexGrow: 1,
+    gap: 12,
+    minWidth: 320,
+    padding: 16,
+  },
+  detailConservationPanel: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexGrow: 1,
+    gap: 8,
+    minWidth: 280,
+    padding: 16,
+  },
+  detailPanelTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 16,
+    fontWeight: '900',
+  },
+  detailPanelDescription: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  detailInfoBody: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+  },
+  detailInfoMeta: {
+    flex: 1,
+    gap: 8,
+    minWidth: 180,
+  },
+  detailStatusBadge: {
+    alignSelf: 'flex-start',
+  },
+  detailMetaText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  conservationBody: {
+    gap: 8,
+    marginTop: 4,
+  },
+  conservationAbbr: {
+    fontFamily: V.fontFamily,
+    fontSize: 28,
+    fontWeight: '900',
+  },
+  conservationLabel: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 16,
+    fontWeight: '900',
+  },
+  conservationDescription: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 20,
+  },
+  detailEmptyText: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+    marginTop: 8,
+  },
+  speciesPanel: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 8,
+    padding: 16,
+  },
+  speciesCardGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginTop: 8,
+  },
+  speciesCard: {
+    backgroundColor: V.colors.secondary,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 8,
+    padding: 10,
+    width: 120,
+  },
+  speciesCardPhoto: {
+    alignSelf: 'center',
+    backgroundColor: V.colors.muted,
+    borderRadius: 8,
+    height: 72,
+    overflow: 'hidden',
+    width: 72,
+  },
+  speciesCardName: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '800',
+    textAlign: 'center',
   },
 });
