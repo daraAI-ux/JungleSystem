@@ -33,7 +33,6 @@ import { KolamModalBackdrop } from './kolam-modal-backdrop';
 import { KolamOverflowMenuButton, KolamTableFooterControls } from './kolam-dropdown-select';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
-import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 
 const PRODUCT_TYPE_OPTIONS: KolamProductSerialProductType[] = [
   'freyer',
@@ -92,8 +91,9 @@ function KolamProductSerialList({
     authUser?.roleKey,
   );
   const [searchInput, setSearchInput] = React.useState(controller.filters.search);
-  const [typePanelOpen, setTypePanelOpen] = React.useState(false);
-  const [statusPanelOpen, setStatusPanelOpen] = React.useState(false);
+  const [activeFilterPanel, setActiveFilterPanel] = React.useState<
+    'type' | 'status' | null
+  >(null);
   const [qrSerial, setQrSerial] = React.useState<KolamProductSerial | null>(null);
 
   React.useEffect(() => {
@@ -157,42 +157,66 @@ function KolamProductSerialList({
       ) : null}
 
       <View style={styles.toolbarWrap}>
-        <View style={kolamTableToolbarStyles.row}>
-          <KolamFormTextField
-            onChangeText={setSearchInput}
-            placeholder="Cari nomor seri"
-            style={kolamTableToolbarStyles.searchInput}
-            value={searchInput}
-          />
-          <View style={kolamTableToolbarStyles.controls}>
+        <View style={styles.toolbarShell}>
+          <View style={styles.filterRow}>
+            <KolamFormTextField
+              onChangeText={setSearchInput}
+              placeholder="Cari nomor seri"
+              style={styles.searchInput}
+              value={searchInput}
+            />
             <KolamTableFilterTrigger
-              active={typePanelOpen || Boolean(controller.filters.productType)}
+              active={
+                activeFilterPanel === 'type' || Boolean(controller.filters.productType)
+              }
               label={typeFilterLabel}
-              onPress={() => setTypePanelOpen(current => !current)}
+              onPress={() =>
+                setActiveFilterPanel(current => (current === 'type' ? null : 'type'))
+              }
+              style={styles.filterTrigger}
             />
             <KolamTableFilterTrigger
-              active={statusPanelOpen || Boolean(controller.filters.status)}
+              active={
+                activeFilterPanel === 'status' || Boolean(controller.filters.status)
+              }
               label={statusFilterLabel}
-              onPress={() => setStatusPanelOpen(current => !current)}
+              onPress={() =>
+                setActiveFilterPanel(current =>
+                  current === 'status' ? null : 'status',
+                )
+              }
+              style={styles.filterTrigger}
             />
+          </View>
+          <View style={styles.actionRow}>
             {hasActiveFilters ? (
-              <KolamButton label="Bersihkan" onPress={() => controller.onClearFilters()} />
+              <KolamButton
+                label="Bersihkan"
+                muted
+                onPress={() => {
+                  setActiveFilterPanel(null);
+                  controller.onClearFilters();
+                }}
+                style={styles.toolbarButton}
+              />
             ) : null}
             <KolamButton
               disabled={controller.loading}
               label="Muat ulang"
               onPress={() => void controller.onRefresh()}
+              style={styles.toolbarButton}
             />
             {canOpname ? (
               <KolamButton
                 intent="primary"
-                label="Stock Opname"
+                label="Opname Serial"
                 onPress={() => onRouteChange?.(`${KOLAM_PRODUCT_SERIAL_ROOT}/opname`)}
+                style={styles.toolbarButton}
               />
             ) : null}
           </View>
         </View>
-        {typePanelOpen ? (
+        {activeFilterPanel === 'type' ? (
           <View style={styles.filterPanel}>
             {PRODUCT_TYPE_OPTIONS.map(type => (
               <KolamButton
@@ -208,7 +232,7 @@ function KolamProductSerialList({
             ))}
           </View>
         ) : null}
-        {statusPanelOpen ? (
+        {activeFilterPanel === 'status' ? (
           <View style={styles.filterPanel}>
             {STATUS_OPTIONS.map(status => (
               <KolamButton
@@ -565,10 +589,42 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 6,
     justifyContent: 'space-between',
     overflow: 'visible',
-    padding: 8,
+    padding: 4,
+  },
+  filterRow: {
+    alignItems: 'center',
+    flex: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
+    minWidth: 280,
+    overflow: 'visible',
+  },
+  searchInput: {
+    flexBasis: 140,
+    flexGrow: 1,
+    maxWidth: 220,
+    minWidth: 120,
+  },
+  filterTrigger: {
+    flexBasis: 'auto',
+    flexGrow: 0,
+    flexShrink: 0,
+    minWidth: 108,
+  },
+  actionRow: {
+    alignItems: 'center',
+    borderLeftColor: V.colors.border,
+    borderLeftWidth: 1,
+    flexDirection: 'row',
+    flexShrink: 0,
+    flexWrap: 'wrap',
+    gap: 6,
+    justifyContent: 'flex-end',
+    paddingLeft: 8,
   },
   toolbarButton: {
     flexShrink: 0,
