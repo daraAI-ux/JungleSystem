@@ -312,7 +312,7 @@ const kolamTableColumns: Record<KolamTableId, KolamTableColumn[]> = {
     { id: 'status', label: 'Status', align: 'left', width: 100 },
     {
       id: 'products',
-      label: 'Penanggung Jawab',
+      label: 'PIC',
       align: 'center',
       headerAlign: 'center',
       width: 72,
