@@ -204,6 +204,7 @@ function getDefaultDetailMock() {
     messageSearchQuery: '',
     messageSearchResults: null,
     muteCallParticipant: jest.fn(),
+    patchInboxMessageFromLive: jest.fn(),
     presence: {onlineCount: 0, typingUserIds: [], viewingCount: 0},
     clearTeamMessageSearch: jest.fn(),
     reactToMessage: jest.fn(),
@@ -326,6 +327,7 @@ describe('KolamGlobalChatRail', () => {
       ...getDefaultDetailMock(),
       loading: false,
       messages: [],
+      patchInboxMessageFromLive: jest.fn(),
       presence: {onlineCount: 0, typingUserIds: [], viewingCount: 0},
       reactToMessage: jest.fn(),
       refresh: jest.fn(),
@@ -3271,6 +3273,100 @@ describe('KolamGlobalChatRail', () => {
       expect.objectContaining({name: 'clip.mp4'}),
       '',
     );
+  });
+
+  it('patches inbox delivery status directly from message.updated live events', async () => {
+    const patchInboxMessageFromLive = jest.fn();
+    let liveOptions:
+      | Parameters<typeof useKolamChatLiveStream>[0]
+      | undefined;
+
+    useLiveStreamMock.mockImplementation(options => {
+      liveOptions = options;
+    });
+    useReadonlyDataMock.mockReturnValue({
+      conversations: [
+        {
+          _id: 'conv-1',
+          platform: 'whatsapp',
+          contactId: {displayName: 'Buyer WA'},
+          lastMessagePreview: 'Siap.',
+          unreadCount: 0,
+        },
+      ],
+      loading: false,
+      refresh: jest.fn(),
+      rooms: [],
+      totalUnread: 0,
+    });
+    useDetailMock.mockReturnValue({
+      ...getDefaultDetailMock(),
+      conversation: {
+        _id: 'conv-1',
+        assignedStaffId: {_id: 'staff-1'},
+        isAiHandled: false,
+        status: 'open',
+      },
+      loading: false,
+      messages: [
+        {
+          attachments: [],
+          content: {type: 'text', text: 'Siap.'},
+          embeds: [],
+          id: 'msg-1',
+          author: 'Anda',
+          body: 'Siap.',
+          linkPreviews: [],
+          mine: true,
+          reactions: [],
+          sentAt: '2026-07-28T08:00:00.000Z',
+          status: 'pending',
+        },
+      ],
+      patchInboxMessageFromLive,
+      presence: {onlineCount: 0, typingUserIds: [], viewingCount: 0},
+      refresh: jest.fn(),
+      sending: false,
+      updatePresenceFromLive: jest.fn(),
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamGlobalChatRail mode="inbox" onClose={() => undefined} />,
+      );
+    });
+
+    const selectButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Pilih conversation Buyer WA');
+
+    await ReactTestRenderer.act(async () => {
+      selectButton!.props.onPress();
+    });
+
+    await ReactTestRenderer.act(async () => {
+      liveOptions!.onEvent({
+        contract: {
+          eventName: 'message.updated',
+          legacySources: [],
+          note: '',
+          refreshTargets: ['inbox-detail'],
+          route: '/chat/stream',
+          soundIntent: 'none',
+          stream: 'inbox',
+        },
+        payload: {
+          conversationId: 'conv-1',
+          deliveryStatus: 'delivered',
+          messageId: 'msg-1',
+        },
+      });
+    });
+
+    expect(patchInboxMessageFromLive).toHaveBeenCalledWith('msg-1', {
+      deliveryStatus: 'delivered',
+    });
   });
 
   it('refreshes list and active detail from live events without playing sound', async () => {

@@ -32,6 +32,7 @@ import type {
   KolamChatConversationListParams,
   KolamChatConversationStatus,
   KolamChatPlatform,
+  KolamChatMessage,
   KolamChatStaffRef,
   KolamChatTemplate,
   KolamTeamChatAttachment,
@@ -393,6 +394,18 @@ export function KolamGlobalChatRail({
         }
       }
 
+      const inboxMessagePatch = getInboxMessagePatchFromLiveEvent(event);
+      if (
+        inboxMessagePatch &&
+        mode === 'inbox' &&
+        classification.targetId === selectedItemId
+      ) {
+        detail.patchInboxMessageFromLive(
+          inboxMessagePatch.messageId,
+          inboxMessagePatch.patch,
+        );
+      }
+
       if (classification.refreshCallState && classification.targetId === selectedItemId) {
         void detail.refreshCall();
       }
@@ -407,6 +420,7 @@ export function KolamGlobalChatRail({
     [
       currentUserId,
       detail,
+      mode,
       notificationSoundService,
       selectedItemId,
       soundSettings.webSetting,
@@ -4646,6 +4660,61 @@ function getTeamChatPresenceFromLiveEvent(
       ? record.viewingCount ?? 0
       : 0,
   };
+}
+
+function getInboxMessagePatchFromLiveEvent(event: KolamChatLiveEvent) {
+  if (
+    event.contract.stream !== 'inbox' ||
+    event.contract.eventName !== 'message.updated'
+  ) {
+    return null;
+  }
+
+  const payload =
+    event.payload && typeof event.payload === 'object'
+      ? (event.payload as Record<string, unknown>)
+      : {};
+  const message =
+    payload.message && typeof payload.message === 'object'
+      ? (payload.message as Record<string, unknown>)
+      : {};
+  const messageId =
+    readLiveString(payload.messageId) || readLiveString(message._id);
+
+  if (!messageId) {
+    return null;
+  }
+
+  const deliveryStatus =
+    readLiveString(payload.deliveryStatus) ||
+    readLiveString(message.deliveryStatus);
+  const patch: Partial<KolamChatMessage> = {};
+
+  if (deliveryStatus) {
+    patch.deliveryStatus = deliveryStatus;
+  }
+  if (message.content !== undefined) {
+    patch.content = message.content as KolamChatMessage['content'];
+  }
+  if (message.editedAt !== undefined) {
+    patch.editedAt = readLiveString(message.editedAt) || null;
+  }
+  if (message.editedByName !== undefined) {
+    patch.editedByName = readLiveString(message.editedByName) || null;
+  }
+  if (message.replyContent !== undefined) {
+    patch.replyContent =
+      message.replyContent as KolamChatMessage['replyContent'];
+  }
+  if (message.daraMeta !== undefined) {
+    patch.daraMeta = message.daraMeta as KolamChatMessage['daraMeta'];
+  }
+
+  return Object.keys(patch).length ? {messageId, patch} : null;
+}
+
+function readLiveString(value: unknown) {
+  return typeof value === 'string' && value.trim() ? value.trim() : '';
 }
 
 function getDaraThinkingLivePatch(

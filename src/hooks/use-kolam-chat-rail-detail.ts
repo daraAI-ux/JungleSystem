@@ -128,6 +128,10 @@ export interface KolamChatRailDetailState {
   presence: KolamTeamChatPresence;
   clearTeamMessageSearch: () => void;
   editMessage: (messageId: string, body: string) => Promise<void>;
+  patchInboxMessageFromLive: (
+    messageId: string,
+    patch: Partial<KolamChatMessage>,
+  ) => void;
   reactToMessage: (messageId: string, emoji: string) => Promise<void>;
   redialCall: () => Promise<void>;
   refreshCall: () => Promise<void>;
@@ -513,6 +517,23 @@ export function useKolamChatRailDetail({
     [currentUserId, mode, selectedId, sending],
   );
 
+  const patchInboxMessageFromLive = useCallback(
+    (messageId: string, patch: Partial<KolamChatMessage>) => {
+      if (mode !== 'inbox' || !messageId) {
+        return;
+      }
+
+      setMessages(current =>
+        current.map(message =>
+          message.id === messageId
+            ? {...message, ...mapInboxMessagePatch(patch, message)}
+            : message,
+        ),
+      );
+    },
+    [mode],
+  );
+
   const editMessage = useCallback(
     async (messageId: string, text: string) => {
       const body = text.trim();
@@ -821,6 +842,7 @@ export function useKolamChatRailDetail({
     messageSearchQuery,
     messageSearchResults,
     muteCallParticipant,
+    patchInboxMessageFromLive,
     presence,
     reactToMessage,
     redialCall,
@@ -868,6 +890,42 @@ function mapInboxMessage(message: KolamChatMessage): KolamChatRailDetailMessage 
     editedByName: message.editedByName ?? null,
     status: message.deliveryStatus,
   };
+}
+
+function mapInboxMessagePatch(
+  patch: Partial<KolamChatMessage>,
+  current: KolamChatRailDetailMessage,
+): Partial<KolamChatRailDetailMessage> {
+  const next: Partial<KolamChatRailDetailMessage> = {};
+
+  if (patch.content !== undefined) {
+    next.content = patch.content ?? null;
+    next.body = getInboxMessageBody({
+      content: patch.content ?? current.content ?? undefined,
+    } as KolamChatMessage);
+  }
+
+  if (patch.deliveryStatus !== undefined) {
+    next.status = patch.deliveryStatus;
+  }
+
+  if (patch.editedAt !== undefined) {
+    next.editedAt = patch.editedAt ?? null;
+  }
+
+  if (patch.editedByName !== undefined) {
+    next.editedByName = patch.editedByName ?? null;
+  }
+
+  if (patch.replyContent !== undefined) {
+    next.replyContent = patch.replyContent ?? null;
+  }
+
+  if (patch.daraMeta !== undefined) {
+    next.daraMeta = patch.daraMeta ?? null;
+  }
+
+  return next;
 }
 
 function getInboxSenderStaffId(message: KolamChatMessage) {
