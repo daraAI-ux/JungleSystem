@@ -343,6 +343,7 @@ export function KolamGlobalChatRail({
       status: 'all',
     });
   const [healthMenuOpen, setHealthMenuOpen] = React.useState(false);
+  const [analyticsMenuOpen, setAnalyticsMenuOpen] = React.useState(false);
   const inboxParams = React.useMemo(
     () => buildInboxListParams(inboxFilter),
     [inboxFilter],
@@ -863,11 +864,24 @@ export function KolamGlobalChatRail({
             <View style={styles.titleInlineRow}>
               <Text style={styles.title}>{content.title}</Text>
               {mode === 'inbox' ? (
-                <KolamChatHealthMenu
-                  healthState={platformHealth}
-                  open={healthMenuOpen}
-                  onToggle={() => setHealthMenuOpen(current => !current)}
-                />
+                <View style={styles.titleActionRow}>
+                  <KolamChatHealthMenu
+                    healthState={platformHealth}
+                    open={healthMenuOpen}
+                    onToggle={() => {
+                      setAnalyticsMenuOpen(false);
+                      setHealthMenuOpen(current => !current);
+                    }}
+                  />
+                  <KolamChatAnalyticsMenu
+                    open={analyticsMenuOpen}
+                    onToggle={() => {
+                      setHealthMenuOpen(false);
+                      setAnalyticsMenuOpen(current => !current);
+                    }}
+                    state={analyticsState}
+                  />
+                </View>
               ) : null}
             </View>
           </View>
@@ -889,10 +903,6 @@ export function KolamGlobalChatRail({
             labels={labelsState.items}
             onChange={setInboxFilter}
           />
-        ) : null}
-
-        {mode === 'inbox' && !inboxDetailOpen ? (
-          <KolamChatRailAnalyticsPanel state={analyticsState} />
         ) : null}
 
         {mode === 'inbox' && !inboxDetailOpen ? (
@@ -1340,6 +1350,79 @@ function KolamChatHealthPlatformRow({
           {formatChatHealthActivity(row)}
         </Text>
       </View>
+    </View>
+  );
+}
+
+function KolamChatAnalyticsMenu({
+  onToggle,
+  open,
+  state,
+}: {
+  onToggle: () => void;
+  open: boolean;
+  state: KolamChatRailAnalyticsState;
+}) {
+  const totalChats = getAnalyticsNumber(state.data, 'totalChats');
+  const avgRating = getAnalyticsNumber(state.data, 'ratings.average');
+  const avgReplyDelay = getAnalyticsNumber(state.data, 'avgReplyDelayMinutes');
+  const lateReplyCount = getAnalyticsNumber(state.data, 'lateReplyCount');
+  const summaryLabel = state.loading
+    ? 'Memuat analisa'
+    : state.errorMessage
+      ? 'Analisa belum terbaca'
+      : `${formatMetricNumber(totalChats)} chat, rating ${formatRating(avgRating)}`;
+
+  return (
+    <View style={styles.chatHeaderMenuHost}>
+      <KolamPressable
+        accessibilityLabel={`Analisa performa chat. ${summaryLabel}`}
+        accessibilityState={{expanded: open}}
+        onPress={onToggle}
+        style={[
+          styles.chatAnalyticsButton,
+          open && styles.chatHealthButtonActive,
+        ]}>
+        <View style={styles.chatAnalyticsIcon}>
+          <View style={[styles.chatAnalyticsBar, styles.chatAnalyticsBarLow]} />
+          <View style={[styles.chatAnalyticsBar, styles.chatAnalyticsBarMid]} />
+          <View style={[styles.chatAnalyticsBar, styles.chatAnalyticsBarHigh]} />
+        </View>
+      </KolamPressable>
+
+      {open ? (
+        <View style={styles.chatAnalyticsPopover}>
+          <View style={styles.chatHealthPopoverHeader}>
+            <Text style={styles.chatHealthPopoverTitle}>Analisa performa</Text>
+            <Text style={styles.chatHealthPopoverMeta}>30 hari</Text>
+          </View>
+
+          {state.loading ? (
+            <Text style={styles.metaText}>Memuat analisa...</Text>
+          ) : state.errorMessage ? (
+            <Text style={styles.errorText}>{state.errorMessage}</Text>
+          ) : (
+            <View style={styles.analyticsGrid}>
+              <KolamChatRailMetric
+                label="Total"
+                value={formatMetricNumber(totalChats)}
+              />
+              <KolamChatRailMetric
+                label="Rating"
+                value={formatRating(avgRating)}
+              />
+              <KolamChatRailMetric
+                label="Delay"
+                value={`${formatMetricNumber(avgReplyDelay)}m`}
+              />
+              <KolamChatRailMetric
+                label="Telat"
+                value={formatMetricNumber(lateReplyCount)}
+              />
+            </View>
+          )}
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -5771,6 +5854,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 7,
   },
+  titleActionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  chatHeaderMenuHost: {
+    position: 'relative',
+  },
   chatHealthMenuHost: {
     position: 'relative',
   },
@@ -5787,6 +5878,39 @@ const styles = StyleSheet.create({
   chatHealthButtonActive: {
     borderColor: V.colors.primary,
     backgroundColor: V.colors.primarySoft,
+  },
+  chatAnalyticsButton: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: V.colors.bg,
+  },
+  chatAnalyticsIcon: {
+    width: 14,
+    height: 14,
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    gap: 2,
+  },
+  chatAnalyticsBar: {
+    width: 3,
+    borderRadius: 2,
+    backgroundColor: V.colors.mutedFg,
+  },
+  chatAnalyticsBarLow: {
+    height: 6,
+  },
+  chatAnalyticsBarMid: {
+    height: 10,
+    backgroundColor: V.colors.primary,
+  },
+  chatAnalyticsBarHigh: {
+    height: 13,
   },
   chatHealthRadarIcon: {
     width: 14,
@@ -5823,6 +5947,23 @@ const styles = StyleSheet.create({
     top: 30,
     left: -128,
     width: 286,
+    padding: 10,
+    borderRadius: V.radius.lg,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.bg,
+    gap: 8,
+    zIndex: 40,
+    shadowColor: '#111827',
+    shadowOpacity: 0.16,
+    shadowRadius: 14,
+    shadowOffset: {width: 0, height: 8},
+  },
+  chatAnalyticsPopover: {
+    position: 'absolute',
+    top: 30,
+    left: -164,
+    width: 246,
     padding: 10,
     borderRadius: V.radius.lg,
     borderColor: V.colors.border,
