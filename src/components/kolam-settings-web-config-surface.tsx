@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { SvgXml } from 'react-native-svg';
@@ -7020,6 +7021,12 @@ function FinancialSettingsPanel({
   ) => void;
 }) {
   const busy = financialStatus === 'loading' || financialStatus === 'saving';
+  const {height: windowHeight, width: windowWidth} = useWindowDimensions();
+  const paymentMethodModalWidth = Math.max(
+    320,
+    Math.min(980, windowWidth - 56),
+  );
+  const paymentMethodModalHeight = Math.max(360, windowHeight - 56);
   const [paymentMethodFormOpen, setPaymentMethodFormOpen] =
     React.useState(false);
   const paymentMethodCanSave =
@@ -7255,7 +7262,13 @@ function FinancialSettingsPanel({
                 />
                 <View
                   accessibilityLabel="Form metode pembayaran"
-                  style={styles.financialPaymentModalPanel}
+                  style={[
+                    styles.financialPaymentModalPanel,
+                    {
+                      height: paymentMethodModalHeight,
+                      width: paymentMethodModalWidth,
+                    },
+                  ]}
                 >
                   <View style={styles.operationalCardHeaderRow}>
                     <KolamCopyStack
@@ -8320,12 +8333,8 @@ const styles = StyleSheet.create({
     borderColor: V.colors.border,
     borderRadius: 8,
     borderWidth: 1,
-    flex: 1,
     gap: 10,
-    maxHeight: 760,
-    maxWidth: 980,
     padding: 12,
-    width: '94%',
   },
   financialPaymentModalScroll: {
     gap: 12,
