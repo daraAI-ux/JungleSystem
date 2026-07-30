@@ -5,7 +5,6 @@ describe('isCatalogTableListRoute', () => {
     expect(isCatalogTableListRoute('/species')).toBe(true);
     expect(isCatalogTableListRoute('/products')).toBe(true);
     expect(isCatalogTableListRoute('/products/archive')).toBe(true);
-    expect(isCatalogTableListRoute('/raw-materials')).toBe(true);
     expect(isCatalogTableListRoute('/stock-transaction')).toBe(true);
     expect(isCatalogTableListRoute('/stock-transaction?productId=abc')).toBe(
       true,
@@ -16,6 +15,7 @@ describe('isCatalogTableListRoute', () => {
     expect(isCatalogTableListRoute('/production')).toBe(false);
     expect(isCatalogTableListRoute('/product-serials')).toBe(false);
     expect(isCatalogTableListRoute('/sales')).toBe(false);
+    expect(isCatalogTableListRoute('/raw-materials')).toBe(false);
   });
 
   it('keeps detail and edit routes on shell ScrollView', () => {

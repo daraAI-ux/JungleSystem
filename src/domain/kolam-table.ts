@@ -18,6 +18,7 @@ export type KolamTableId =
   | 'purchase-order'
   | 'purchase-order-items'
   | 'purchase-order-form-items'
+  | 'raw-material'
   | 'sales'
   | 'sales-ops'
   | 'species'
@@ -461,6 +462,58 @@ const kolamTableColumns: Record<KolamTableId, KolamTableColumn[]> = {
     },
     // 8th column: blank header, overflow actions in the body.
     { id: 'actions', label: '', align: 'center', headerAlign: 'center', width: 64 },
+  ],
+  /** Backoffice `/raw-materials` list (FE Nama/Kode/Merek/Varian/Stok/Status). */
+  'raw-material': [
+    {
+      id: 'primary',
+      label: 'Nama',
+      align: 'left',
+      headerAlign: 'center',
+      width: 260,
+    },
+    {
+      id: 'meta',
+      label: 'Kode Produk',
+      align: 'center',
+      headerAlign: 'center',
+      width: 118,
+    },
+    {
+      id: 'price',
+      label: 'Merek',
+      align: 'center',
+      headerAlign: 'center',
+      width: 130,
+    },
+    {
+      id: 'children',
+      label: 'Varian',
+      align: 'center',
+      headerAlign: 'center',
+      width: 122,
+    },
+    {
+      id: 'products',
+      label: 'Stok',
+      align: 'center',
+      headerAlign: 'center',
+      width: 104,
+    },
+    {
+      id: 'status',
+      label: 'Status',
+      align: 'center',
+      headerAlign: 'center',
+      width: 118,
+    },
+    {
+      id: 'actions',
+      label: '',
+      align: 'center',
+      headerAlign: 'center',
+      width: 64,
+    },
   ],
   'iucn-status': [
     {
