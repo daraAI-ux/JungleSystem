@@ -53,6 +53,7 @@ import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamHoverTooltip } from './kolam-hover-tooltip';
 import { KolamInteractionFrame } from './kolam-interaction-frame';
 import { KolamLabelFieldDetailOverview } from './kolam-label-field-detail-overview';
+import { KolamSearchField } from './kolam-search-field';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
@@ -222,10 +223,10 @@ function KolamBrandList({
         <View style={kolamTableToolbarStyles.shell}>
           <View style={kolamTableToolbarStyles.row}>
             <View style={kolamTableToolbarStyles.filters}>
-              <KolamFormTextField
+              <KolamSearchField
+                containerStyle={kolamTableToolbarStyles.searchInput}
                 onChangeText={setSearch}
                 placeholder="Cari merek..."
-                style={kolamTableToolbarStyles.searchInput}
                 value={search}
               />
               <View ref={sortTriggerRef} collapsable={false}>
