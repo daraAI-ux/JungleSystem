@@ -182,9 +182,10 @@ describe('KolamSettingsPanel', () => {
         'Email',
         'Alamat',
         'Facebook',
-        'Khusus desktop staff',
-        'Akses MAC',
-        'Daftar MAC diizinkan',
+        'Pembatasan MAC Kolam',
+        'Redirect browser ke https://dunia-anura.com',
+        'Aktifkan pembatasan MAC',
+        'MAC address',
         'Logo',
       ]),
     );
@@ -209,11 +210,11 @@ describe('KolamSettingsPanel', () => {
     );
     expect(text.indexOf('Alamat')).toBeLessThan(text.indexOf('Facebook'));
     expect(text.indexOf('TikTok')).toBeLessThan(
-      text.indexOf('Khusus desktop staff'),
+      text.indexOf('Pembatasan MAC Kolam'),
     );
-    expect(text.indexOf('URL redirect staff')).toBeLessThan(
-      text.indexOf('Akses MAC'),
-    );
+    expect(
+      text.indexOf('Redirect browser ke https://dunia-anura.com'),
+    ).toBeLessThan(text.indexOf('Aktifkan pembatasan MAC'));
     expect(text).not.toEqual(
       expect.arrayContaining([
         'Alamat asal',

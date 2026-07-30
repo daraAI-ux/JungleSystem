@@ -158,6 +158,8 @@ import {
   pickNativeImageFile,
 } from '../services/native-file-picker';
 
+const STAFF_DESKTOP_REDIRECT_URL = 'https://dunia-anura.com';
+
 type WebSettingSaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 type RoleSaveStatus = 'idle' | 'loading' | 'saving' | 'saved' | 'error';
 type ActivityLogStatus = 'idle' | 'loading' | 'live' | 'error';
@@ -2707,7 +2709,7 @@ export function useKolamSettingsPanelController(
           createStoreOperatingHoursUpdateBody(webSettingDraft),
         staffDesktopOnly: {
           enabled: webSettingDraft.staffDesktopOnlyEnabled,
-          redirectUrl: webSettingDraft.staffDesktopOnlyRedirectUrl.trim(),
+          redirectUrl: STAFF_DESKTOP_REDIRECT_URL,
         },
         kolamMacAccess: {
           enabled: webSettingDraft.kolamMacAccessEnabled,
@@ -2906,6 +2908,11 @@ export function useKolamSettingsPanelController(
           isConfiguredSecretDraft(webSettingDraft.googleMapsBrowserApiKey),
         storeOperatingHours:
           createStoreOperatingHoursUpdateBody(webSettingDraft),
+        staffDesktopOnly: {
+          ...(updated.staffDesktopOnly ?? {}),
+          enabled: webSettingDraft.staffDesktopOnlyEnabled,
+          redirectUrl: STAFF_DESKTOP_REDIRECT_URL,
+        },
         kolamMacAccess: {
           ...(updated.kolamMacAccess ?? {}),
           enabled: webSettingDraft.kolamMacAccessEnabled,

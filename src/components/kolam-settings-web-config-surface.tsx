@@ -81,6 +81,7 @@ import {
   type KolamTimezoneOption,
 } from '../services/kolam-timezone-local-cache';
 import type { KolamKpiWeeklyAnnouncePreview } from '../services/kolam-api';
+import { getNativeDeviceIdentity } from '../lib/api-client';
 import { getKolamFileUrl } from '../lib/file-url';
 import { KolamMediaPlayer } from './kolam-media-player';
 
@@ -89,6 +90,7 @@ const DEFAULT_NOTIFICATION_BEEP_URI =
 
 const KolamWebView = WebView as unknown as React.ComponentType<any>;
 const MASKED_SECRET_PLACEHOLDER = '********';
+const STAFF_DESKTOP_REDIRECT_URL = 'https://dunia-anura.com';
 
 const paymentMethodTypeOptions: Array<{
   description: string;
@@ -1127,6 +1129,59 @@ export function KolamSettingsWebConfigSurface({
     KolamTimezoneOption[]
   >([]);
   const umumFieldWidth = 240;
+  const [newMacAddress, setNewMacAddress] = React.useState('');
+  const detectedMacAddresses = React.useMemo(
+    () => getNativeDeviceIdentity().macAddresses ?? [],
+    [],
+  );
+  const allowedMacAddresses = React.useMemo(
+    () => parseMacAddressText(draft.kolamMacAccessAllowedMacAddresses),
+    [draft.kolamMacAccessAllowedMacAddresses],
+  );
+  const setAllowedMacAddresses = React.useCallback(
+    (addresses: string[]) => {
+      setDraftField('kolamMacAccessAllowedMacAddresses', addresses.join('\n'));
+    },
+    [setDraftField],
+  );
+  const addAllowedMacAddress = React.useCallback(
+    (value: string) => {
+      if (disabled) {
+        return;
+      }
+
+      const macAddress = normalizeMacAddressInput(value);
+
+      if (!macAddress) {
+        return;
+      }
+
+      const exists = allowedMacAddresses.some(
+        item => item.toUpperCase() === macAddress.toUpperCase(),
+      );
+
+      if (!exists) {
+        setAllowedMacAddresses([...allowedMacAddresses, macAddress]);
+      }
+
+      setNewMacAddress('');
+    },
+    [allowedMacAddresses, disabled, setAllowedMacAddresses],
+  );
+  const removeAllowedMacAddress = React.useCallback(
+    (value: string) => {
+      if (disabled) {
+        return;
+      }
+
+      setAllowedMacAddresses(
+        allowedMacAddresses.filter(
+          item => item.toUpperCase() !== value.toUpperCase(),
+        ),
+      );
+    },
+    [allowedMacAddresses, disabled, setAllowedMacAddresses],
+  );
   const chatPluginEnabled = draft.pluginControls.chat;
   const daraPluginEnabled = draft.pluginControls.dara;
   const kpiPluginEnabled = draft.pluginControls.kpi;
@@ -1991,13 +2046,13 @@ export function KolamSettingsWebConfigSurface({
 
             <View style={styles.umumCard}>
               <KolamSettingsWebFormSectionHeader
-                description="Policy akses staff desktop dan validasi MAC address."
-                title="Kebijakan akses staff"
+                description="Kelola akses Kolam Desktop dari pengaturan web dan MAC yang dikirim aplikasi desktop."
+                title="Pembatasan MAC Kolam"
               />
               <KolamToggleRow
                 variant="settingsForm"
-                label="Khusus desktop staff"
-                description="Batasi staff ke aplikasi desktop sesuai policy BE."
+                label={`Redirect browser ke ${STAFF_DESKTOP_REDIRECT_URL}`}
+                description="Kolam Desktop, POS Desktop, dan Android Team Chat tidak terpengaruh."
                 active={draft.staffDesktopOnlyEnabled}
                 onPress={() =>
                   !disabled &&
@@ -2009,7 +2064,7 @@ export function KolamSettingsWebConfigSurface({
               />
               <KolamToggleRow
                 variant="settingsForm"
-                label="Akses MAC"
+                label="Aktifkan pembatasan MAC"
                 description="Batasi akses Kolam berdasarkan daftar MAC address."
                 active={draft.kolamMacAccessEnabled}
                 onPress={() =>
@@ -2022,7 +2077,7 @@ export function KolamSettingsWebConfigSurface({
               />
               <KolamToggleRow
                 variant="settingsForm"
-                label="Izinkan browser web"
+                label="Izinkan login browser"
                 description="Izinkan browser web tetap masuk saat MAC access aktif."
                 active={draft.kolamMacAccessAllowWebBrowser}
                 onPress={() =>
@@ -2035,7 +2090,7 @@ export function KolamSettingsWebConfigSurface({
               />
               <KolamToggleRow
                 variant="settingsForm"
-                label="Lewati super admin"
+                label="Lewati super administrator"
                 description="Super admin tidak diblokir oleh validasi MAC."
                 active={draft.kolamMacAccessBypassSuperAdmin}
                 onPress={() =>
@@ -2046,30 +2101,68 @@ export function KolamSettingsWebConfigSurface({
                   )
                 }
               />
+
+              <View style={styles.umumMacDetectedCard}>
+                <Text style={styles.umumMacCardTitle}>MAC terdeteksi</Text>
+                <Text style={styles.umumMacCardDescription}>
+                  Buka Settings ini dari Kolam Desktop untuk mengambil MAC
+                  perangkat aktif.
+                </Text>
+                <View style={styles.umumMacList}>
+                  {detectedMacAddresses.length > 0 ? (
+                    detectedMacAddresses.map(macAddress => (
+                      <View key={macAddress} style={styles.umumMacListRow}>
+                        <Text style={styles.umumMacCode}>{macAddress}</Text>
+                        <KolamActionControlButton
+                          label="Tambah ke daftar"
+                          disabled={disabled}
+                          onPress={() => addAllowedMacAddress(macAddress)}
+                        />
+                      </View>
+                    ))
+                  ) : (
+                    <Text style={styles.umumMacEmpty}>
+                      Belum ada MAC terdeteksi.
+                    </Text>
+                  )}
+                </View>
+              </View>
+
               <KolamTextFieldRow
                 variant="settingsForm"
                 fieldWidth={umumFieldWidth}
-                label="URL redirect staff"
-                description="URL redirect jika staff desktop-only aktif."
-                value={draft.staffDesktopOnlyRedirectUrl}
-                onChangeText={value =>
-                  setDraftField('staffDesktopOnlyRedirectUrl', value)
-                }
-                placeholder="https://..."
-              />
-              <KolamTextFieldRow
-                variant="settingsForm"
-                fieldWidth={umumFieldWidth}
-                label="Daftar MAC diizinkan"
-                description="Pisahkan dengan koma atau baris baru."
-                multiline
-                numberOfLines={4}
-                value={draft.kolamMacAccessAllowedMacAddresses}
-                onChangeText={value =>
-                  setDraftField('kolamMacAccessAllowedMacAddresses', value)
-                }
+                label="MAC address"
+                description="Tambahkan MAC perangkat yang diizinkan."
+                value={newMacAddress}
+                onChangeText={setNewMacAddress}
                 placeholder="AA:BB:CC:DD:EE:FF"
               />
+              <View style={styles.umumMacActions}>
+                <KolamActionControlButton
+                  label="Tambah"
+                  disabled={disabled || !newMacAddress.trim()}
+                  onPress={() => addAllowedMacAddress(newMacAddress)}
+                />
+              </View>
+              <View style={styles.umumMacList}>
+                {allowedMacAddresses.length > 0 ? (
+                  allowedMacAddresses.map(macAddress => (
+                    <View key={macAddress} style={styles.umumMacListRow}>
+                      <Text style={styles.umumMacCode}>{macAddress}</Text>
+                      <KolamActionControlButton
+                        label="Hapus"
+                        intent="danger"
+                        disabled={disabled}
+                        onPress={() => removeAllowedMacAddress(macAddress)}
+                      />
+                    </View>
+                  ))
+                ) : (
+                  <Text style={styles.umumMacEmpty}>
+                    Belum ada MAC terdaftar.
+                  </Text>
+                )}
+              </View>
             </View>
           </View>
           {showNotificationSettings ? (
@@ -8151,6 +8244,17 @@ function parseDelimitedIds(value: string) {
     .filter(Boolean);
 }
 
+function parseMacAddressText(value: string) {
+  return value
+    .split(/[\n,]/)
+    .map(normalizeMacAddressInput)
+    .filter(Boolean);
+}
+
+function normalizeMacAddressInput(value: string) {
+  return value.trim().toUpperCase();
+}
+
 function getTeamChatRoomLabel(room: KolamTeamChatRoom) {
   if (room.name) {
     return room.name;
@@ -8233,6 +8337,48 @@ const styles = StyleSheet.create({
     gap: 12,
     minWidth: 280,
     padding: 12,
+  },
+  umumMacActions: {
+    alignItems: 'flex-start',
+  },
+  umumMacCardDescription: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  umumMacCardTitle: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  umumMacCode: {
+    color: V.colors.fg,
+    flexShrink: 1,
+    fontSize: 13,
+    fontWeight: '700',
+    minWidth: 120,
+  },
+  umumMacDetectedCard: {
+    backgroundColor: '#f9fafb',
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 8,
+    padding: 10,
+  },
+  umumMacEmpty: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+  },
+  umumMacList: {
+    gap: 8,
+  },
+  umumMacListRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'space-between',
   },
   aiDaraAvatarFallback: {
     color: V.colors.mutedFg,
