@@ -12,9 +12,9 @@ import {
 } from '../domain/kolam-brand';
 import { getKolamFormSection } from '../domain/kolam-form';
 import {
-  fitKolamDataTableColumns,
   getKolamTableColumns,
   getKolamTableVisualContract,
+  type KolamTableColumn,
 } from '../domain/kolam-table';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import {
@@ -164,14 +164,7 @@ function KolamBrandList({
     safePage * pageSize,
   );
   const listColumns = React.useMemo(
-    () =>
-      fitKolamDataTableColumns(getKolamTableColumns('brand'), tableBodyWidth, {
-        gap: KOLAM_DATA_TABLE_COLUMN_GAP,
-        paddingX: getKolamTableVisualContract().body.cellPaddingX * 2,
-        actionsMinWidth: 64,
-        primaryMinWidth: 160,
-        secondaryMinWidth: 72,
-      }),
+    () => fitBrandListColumns(tableBodyWidth),
     [tableBodyWidth],
   );
   const sortFilterLabel = sortMode === 'name-desc' ? 'Nama Z-A' : 'Nama A-Z';
@@ -451,7 +444,7 @@ function KolamBrandRow({
             primaryColumn ? getKolamDataTableColumnStyle(primaryColumn) : null,
           ]}
         >
-          <KolamHoverTooltip label={brand.name}>
+          <KolamHoverTooltip align="center" label={brand.name}>
             <View style={styles.brandIdentity}>
               <KolamBrandLogo brand={brand} />
               <Text numberOfLines={1} style={styles.brandName}>
@@ -467,7 +460,7 @@ function KolamBrandRow({
             metaColumn ? getKolamDataTableColumnStyle(metaColumn) : null,
           ]}
         >
-          <KolamHoverTooltip label={flag.country}>
+          <KolamHoverTooltip align="center" label={flag.country}>
             <View style={styles.countryRow}>
               <KolamFlagIcon option={flag} />
               <Text numberOfLines={1} style={styles.countryText}>
@@ -827,6 +820,45 @@ function SummaryTile({ label, value }: { label: string; value: number }) {
       />
     </View>
   );
+}
+
+function fitBrandListColumns(containerWidth: number): KolamTableColumn[] {
+  const base = getKolamTableColumns('brand');
+  if (containerWidth <= 0) {
+    return base;
+  }
+
+  const gap = KOLAM_DATA_TABLE_COLUMN_GAP;
+  const paddingX = getKolamTableVisualContract().body.cellPaddingX * 2;
+  const actionsWidth = KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH;
+  const gapsTotal = gap * Math.max(0, base.length - 1);
+  const contentBudget = Math.max(
+    0,
+    containerWidth - paddingX - gapsTotal - actionsWidth,
+  );
+  const contentColumns = base.filter(column => column.id !== 'actions');
+  const equalWidth = Math.max(
+    72,
+    Math.floor(contentBudget / Math.max(1, contentColumns.length)),
+  );
+  let remainder = contentBudget - equalWidth * contentColumns.length;
+  const lastContentId = contentColumns[contentColumns.length - 1]?.id;
+
+  return base.map(column => {
+    if (column.id === 'actions') {
+      return { ...column, width: actionsWidth };
+    }
+
+    const extra = column.id === lastContentId ? remainder : 0;
+    if (column.id === lastContentId) {
+      remainder = 0;
+    }
+
+    return {
+      ...column,
+      width: equalWidth + extra,
+    };
+  });
 }
 
 function getBrandSummary(brands: KolamBrand[]) {

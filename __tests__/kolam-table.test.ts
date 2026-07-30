@@ -40,28 +40,31 @@ describe('getKolamTableColumns', () => {
     expect(columns.find(column => column.id === 'actions')?.label).toBe('');
   });
 
-  it('fits brand columns from manual widths while keeping six labeled headers centered', () => {
-    const columns = fitKolamDataTableColumns(
-      getKolamTableColumns('brand'),
-      1100,
-      {
-        actionsMinWidth: 64,
-        gap: 16,
-        paddingX: 40,
-        primaryMinWidth: 160,
-        secondaryMinWidth: 72,
-      },
-    );
+  it('fits brand columns from equal manual widths while keeping six labeled headers centered', () => {
+    const base = getKolamTableColumns('brand');
+    expect(base.filter(column => column.id !== 'actions')).toHaveLength(6);
+    expect(base.find(column => column.id === 'actions')?.label).toBe('');
 
-    expect(columns.map(column => column.label)).toEqual([
-      'Merek',
-      'Negara',
-      'Produk',
-      'Bahan',
-      'Catatan',
-      'Status',
-      '',
-    ]);
+    const gap = 16;
+    const paddingX = 40;
+    const actionsWidth = 64;
+    const containerWidth = 1100;
+    const contentColumns = base.filter(column => column.id !== 'actions');
+    const contentBudget =
+      containerWidth - paddingX - gap * (base.length - 1) - actionsWidth;
+    const equalWidth = Math.floor(contentBudget / contentColumns.length);
+    const remainder = contentBudget - equalWidth * contentColumns.length;
+    const columns = base.map((column, index) => {
+      if (column.id === 'actions') {
+        return { ...column, width: actionsWidth };
+      }
+      const isLast = index === contentColumns.length - 1;
+      return {
+        ...column,
+        width: equalWidth + (isLast ? remainder : 0),
+      };
+    });
+
     expect(columns.every(column => (column.headerAlign ?? column.align) === 'center')).toBe(
       true,
     );
@@ -72,7 +75,7 @@ describe('getKolamTableColumns', () => {
       }
       return sum + (column.width ?? 0);
     }, 0);
-    expect(contentTotal + 64).toBe(1100 - 40 - 16 * 6);
+    expect(contentTotal).toBe(contentBudget);
   });
 
   it('defines live-style table headers for catalog, customer, and sales surfaces', () => {

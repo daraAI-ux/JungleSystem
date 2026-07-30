@@ -10,10 +10,12 @@ import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { KolamPressable } from './kolam-pressable';
 
 export function KolamHoverTooltip({
+  align = 'start',
   children,
   containerStyle,
   label,
 }: {
+  align?: 'start' | 'center';
   children: React.ReactNode;
   containerStyle?: StyleProp<ViewStyle>;
   label: string;
@@ -21,13 +23,19 @@ export function KolamHoverTooltip({
   const [visible, setVisible] = React.useState(false);
 
   return (
-    <View style={[styles.root, containerStyle]}>
+    <View
+      style={[
+        styles.root,
+        align === 'center' ? styles.rootCenter : null,
+        containerStyle,
+      ]}
+    >
       <KolamPressable
         accessibilityLabel={label}
         accessibilityRole="text"
         onHoverIn={() => setVisible(true)}
         onHoverOut={() => setVisible(false)}
-        style={styles.trigger}
+        style={[styles.trigger, align === 'center' ? styles.triggerCenter : null]}
       >
         {children}
       </KolamPressable>
@@ -48,8 +56,14 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     overflow: 'visible',
   },
+  rootCenter: {
+    alignSelf: 'center',
+  },
   trigger: {
     alignSelf: 'flex-start',
+  },
+  triggerCenter: {
+    alignSelf: 'center',
   },
   tooltip: {
     position: 'absolute',

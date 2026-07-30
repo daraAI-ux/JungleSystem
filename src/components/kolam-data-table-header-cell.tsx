@@ -26,7 +26,9 @@ export function KolamDataTableHeaderCell({
           numberOfLines={2}
           style={[
             styles.text,
-            styles.labelFill,
+            headerAlign === 'center' || headerAlign === 'right'
+              ? styles.labelFill
+              : null,
             headerAlign === 'center' ? styles.center : null,
             headerAlign === 'right' ? styles.right : null,
             headerAlign === 'left' ? styles.left : null,
