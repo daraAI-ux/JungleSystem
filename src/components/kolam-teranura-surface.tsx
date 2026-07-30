@@ -1,9 +1,15 @@
 import React from 'react';
 import { FlatList, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { type KolamTableColumn, getKolamTableColumns } from '../domain/kolam-table';
+import {
+  fitKolamDataTableColumns,
+  getKolamTableColumns,
+  getKolamTableVisualContract,
+  type KolamTableColumn,
+} from '../domain/kolam-table';
 import { type KolamTeranura } from '../domain/kolam-teranura';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import {
+  type KolamTeranuraController,
   type KolamTeranuraSellableFilter,
   useKolamTeranuraController,
 } from '../hooks/use-kolam-teranura-controller';
@@ -14,8 +20,17 @@ import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamControlTabList } from './kolam-control-tab-list';
 import { KolamCopyStack } from './kolam-copy-stack';
+import {
+  getKolamDataTableColumnStyle,
+  KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+  KOLAM_DATA_TABLE_COLUMN_GAP,
+} from './kolam-data-table-column-style';
 import { KolamDataTableHeader } from './kolam-data-table-header';
 import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
+import {
+  KolamDataTableActionsTrack,
+  KolamDataTableMainTrack,
+} from './kolam-data-table-tracks';
 import {
   KolamOverflowMenuButton,
   KolamTableFooterControls,
@@ -23,6 +38,7 @@ import {
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamRemoteImage } from './kolam-remote-image';
+import { KolamSearchField } from './kolam-search-field';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 
@@ -37,15 +53,99 @@ export function KolamTeranuraSurface({
   route?: string;
 }) {
   const controller = useKolamTeranuraController(route);
+
+  return (
+    <KolamTeranuraShell controller={controller} onRouteChange={onRouteChange}>
+      {controller.mode === 'list' ? (
+        <KolamTeranuraList
+          controller={controller}
+          onRouteChange={onRouteChange}
+        />
+      ) : (
+        <KolamTeranuraDetail controller={controller} />
+      )}
+    </KolamTeranuraShell>
+  );
+}
+
+function KolamTeranuraShell({
+  children,
+  controller,
+  onRouteChange,
+}: {
+  children: React.ReactNode;
+  controller: KolamTeranuraController;
+  onRouteChange?: (route: string) => void;
+}) {
+  if (controller.mode === 'list') {
+    return (
+      <View style={styles.surface}>
+        {controller.error ? <Text style={styles.error}>{controller.error}</Text> : null}
+        {children}
+      </View>
+    );
+  }
+
+  const item = controller.selectedItem;
+  const contextLabel = item?.name || 'Detail Teranura';
+
+  return (
+    <View style={styles.surface}>
+      <View style={kolamTableToolbarStyles.shell}>
+        <View style={kolamTableToolbarStyles.row}>
+          <View style={kolamTableToolbarStyles.filters}>
+            <Text numberOfLines={1} style={styles.detailToolbarContext}>
+              {contextLabel}
+            </Text>
+          </View>
+          <View style={kolamTableToolbarStyles.actions}>
+            <KolamButton
+              disabled={controller.loading}
+              label="Refresh"
+              onPress={() => {
+                void controller.onRefresh();
+              }}
+            />
+            <KolamButton
+              label="Daftar"
+              onPress={() => onRouteChange?.('/teranura')}
+            />
+            {item ? (
+              <KolamButton
+                intent="primary"
+                label="Edit"
+                onPress={() => onRouteChange?.(`/teranura/${item.id}/edit`)}
+              />
+            ) : null}
+          </View>
+        </View>
+      </View>
+      {controller.error ? <Text style={styles.error}>{controller.error}</Text> : null}
+      {children}
+    </View>
+  );
+}
+
+function KolamTeranuraList({
+  controller,
+  onRouteChange,
+}: {
+  controller: KolamTeranuraController;
+  onRouteChange?: (route: string) => void;
+}) {
   const [activeFilterPanel, setActiveFilterPanel] =
     React.useState<TeranuraFilterPanel | null>(null);
   const [filterPanelQuery, setFilterPanelQuery] = React.useState('');
   const [panelAnchor, setPanelAnchor] = React.useState({ left: 0, top: 48 });
+  const [tableBodyWidth, setTableBodyWidth] = React.useState(0);
   const toolbarRef = React.useRef<View>(null);
   const categoryTriggerRef = React.useRef<View>(null);
   const brandTriggerRef = React.useRef<View>(null);
   const sellableTriggerRef = React.useRef<View>(null);
-  const columns = React.useMemo(() => getKolamTableColumns('teranura'), []);
+  const listColumns = React.useMemo(
+    () => fitTeranuraListColumns(tableBodyWidth),
+    [tableBodyWidth],
+  );
   const categoryOptions = React.useMemo(
     () => [
       { label: 'Semua kategori', value: 'all' },
@@ -147,35 +247,30 @@ export function KolamTeranuraSurface({
     requestAnimationFrame(() => anchorFilterPanel(activeFilterPanel));
   }, [activeFilterPanel, anchorFilterPanel]);
 
-  if (controller.mode === 'detail') {
-    return (
-      <TeranuraDetailShell
-        item={controller.selectedItem}
-        loading={controller.loading}
-        onBack={() => onRouteChange?.('/teranura')}
-        onEdit={item => onRouteChange?.(`/teranura/${item.id}/edit`)}
-      />
-    );
-  }
-
   return (
-    <View style={styles.surface}>
-      <View style={styles.stack}>
-        <View ref={toolbarRef} style={styles.toolbarWrap}>
+    <View style={styles.stack}>
+      <View ref={toolbarRef} collapsable={false} style={styles.toolbarWrap}>
+        <View style={kolamTableToolbarStyles.shell}>
           <View style={kolamTableToolbarStyles.row}>
-            <KolamFormTextField
-              mode="search"
-              onChangeText={controller.onSearchChange}
-              placeholder="Cari Teranura..."
-              style={kolamTableToolbarStyles.searchInput}
-              value={controller.filters.search}
-            />
-            <View style={kolamTableToolbarStyles.controls}>
+            <View
+              style={[kolamTableToolbarStyles.filters, styles.listToolbarFilters]}
+            >
+              <KolamSearchField
+                containerStyle={[
+                  kolamTableToolbarStyles.searchInput,
+                  styles.listToolbarSearch,
+                ]}
+                onChangeText={controller.onSearchChange}
+                placeholder="Cari Teranura..."
+                value={controller.filters.search}
+              />
               <View ref={categoryTriggerRef} collapsable={false}>
                 <KolamTableFilterTrigger
                   active={activeFilterPanel === 'category' || selectedCategory !== 'all'}
                   label={categoryFilterLabel}
                   onPress={() => openFilterPanel('category')}
+                  open={activeFilterPanel === 'category'}
+                  variant="quiet"
                 />
               </View>
               <View ref={brandTriggerRef} collapsable={false}>
@@ -183,6 +278,8 @@ export function KolamTeranuraSurface({
                   active={activeFilterPanel === 'brand' || selectedBrand !== 'all'}
                   label={brandFilterLabel}
                   onPress={() => openFilterPanel('brand')}
+                  open={activeFilterPanel === 'brand'}
+                  variant="quiet"
                 />
               </View>
               <View ref={sellableTriggerRef} collapsable={false}>
@@ -193,8 +290,12 @@ export function KolamTeranuraSurface({
                   }
                   label={sellableFilterLabel}
                   onPress={() => openFilterPanel('sellable')}
+                  open={activeFilterPanel === 'sellable'}
+                  variant="quiet"
                 />
               </View>
+            </View>
+            <View style={kolamTableToolbarStyles.actions}>
               {hasActiveFilters ? (
                 <KolamButton
                   label="Reset"
@@ -212,7 +313,7 @@ export function KolamTeranuraSurface({
               ) : null}
               <KolamButton
                 disabled={controller.loading}
-                label="Muat Ulang"
+                label="Refresh"
                 onPress={() => {
                   void controller.onRefresh();
                 }}
@@ -224,122 +325,113 @@ export function KolamTeranuraSurface({
               />
             </View>
           </View>
-          {activeFilterPanel ? (
-            <TeranuraFilterOverlayPanel
-              activePanel={activeFilterPanel}
-              brandOptions={brandOptions}
-              categoryOptions={categoryOptions}
-              onBrandChange={value => {
-                controller.onChangeFilters({
-                  brandIds: value === 'all' ? [] : [value],
-                });
-                closeFilterPanel();
-              }}
-              onCategoryChange={value => {
-                controller.onChangeFilters({
-                  categoryIds: value === 'all' ? [] : [value],
-                });
-                closeFilterPanel();
-              }}
-              onClose={closeFilterPanel}
-              onQueryChange={setFilterPanelQuery}
-              onSellableChange={value => {
-                controller.onChangeFilters({ sellable: value });
-                closeFilterPanel();
-              }}
-              panelAnchor={panelAnchor}
-              query={filterPanelQuery}
-              selectedBrand={selectedBrand}
-              selectedCategory={selectedCategory}
-              selectedSellable={controller.filters.sellable}
-              sellableOptions={sellableOptions}
-            />
-          ) : null}
         </View>
+        {activeFilterPanel ? (
+          <TeranuraFilterOverlayPanel
+            activePanel={activeFilterPanel}
+            brandOptions={brandOptions}
+            categoryOptions={categoryOptions}
+            onBrandChange={value => {
+              controller.onChangeFilters({
+                brandIds: value === 'all' ? [] : [value],
+              });
+              closeFilterPanel();
+            }}
+            onCategoryChange={value => {
+              controller.onChangeFilters({
+                categoryIds: value === 'all' ? [] : [value],
+              });
+              closeFilterPanel();
+            }}
+            onClose={closeFilterPanel}
+            onQueryChange={setFilterPanelQuery}
+            onSellableChange={value => {
+              controller.onChangeFilters({ sellable: value });
+              closeFilterPanel();
+            }}
+            panelAnchor={panelAnchor}
+            query={filterPanelQuery}
+            selectedBrand={selectedBrand}
+            selectedCategory={selectedCategory}
+            selectedSellable={controller.filters.sellable}
+            sellableOptions={sellableOptions}
+          />
+        ) : null}
+      </View>
 
-        {controller.error ? <Text style={styles.error}>{controller.error}</Text> : null}
-
-        <KolamCatalogListTableShell
-          footer={
-            <KolamTableFooterControls
-              onPageSizeChange={controller.onLimitChange}
-              page={safePage}
-              pageSize={controller.pagination.limit}
-              total={controller.pagination.total}
-            >
-              {pageCount > 1 ? (
-                <View style={styles.paginationBar}>
-                  <KolamButton
-                    disabled={safePage <= 1}
-                    label="Sebelumnya"
-                    onPress={() => controller.onPageChange(safePage - 1)}
-                  />
-                  <KolamCopyStack
-                    items={[
-                      {
-                        id: 'page',
-                        text: `${safePage} / ${pageCount}`,
-                        style: styles.pageLabel,
-                      },
-                    ]}
-                  />
-                  <KolamButton
-                    disabled={safePage >= pageCount}
-                    label="Berikutnya"
-                    onPress={() => controller.onPageChange(safePage + 1)}
-                  />
-                </View>
-              ) : null}
-            </KolamTableFooterControls>
-          }
-          style={styles.tableFrame}
-        >
-          <FlatList
-            data={controller.items}
-            keyExtractor={item => item.id}
-            ListEmptyComponent={
-              <View style={styles.emptyWrap}>
-                <KolamEmptyState
-                  compact
-                  message="Data Teranura belum tersedia dari backend."
-                  title={
-                    controller.loading
-                      ? 'Memuat Teranura...'
-                      : 'Belum ada Teranura'
-                  }
+      <KolamCatalogListTableShell
+        footer={
+          <KolamTableFooterControls
+            onPageSizeChange={controller.onLimitChange}
+            page={safePage}
+            pageSize={controller.pagination.limit}
+            total={controller.pagination.total}
+          >
+            {pageCount > 1 ? (
+              <View style={styles.paginationBar}>
+                <KolamButton
+                  disabled={safePage <= 1}
+                  label="Sebelumnya"
+                  onPress={() => controller.onPageChange(safePage - 1)}
+                />
+                <KolamCopyStack
+                  items={[
+                    {
+                      id: 'page',
+                      text: `${safePage} / ${pageCount}`,
+                      style: styles.pageLabel,
+                    },
+                  ]}
+                />
+                <KolamButton
+                  disabled={safePage >= pageCount}
+                  label="Berikutnya"
+                  onPress={() => controller.onPageChange(safePage + 1)}
                 />
               </View>
-            }
-            ListHeaderComponent={<KolamDataTableHeader columns={columns} />}
-            renderItem={({ item }) => (
-              <TeranuraRow
-                columns={columns}
-                item={item}
-                onEdit={() => onRouteChange?.(`/teranura/${item.id}/edit`)}
-                onSelect={() => onRouteChange?.(`/teranura/${item.id}`)}
+            ) : null}
+          </KolamTableFooterControls>
+        }
+        onBodyWidthChange={setTableBodyWidth}
+        style={styles.tableFrame}
+      >
+        <FlatList
+          data={controller.items}
+          keyExtractor={item => item.id}
+          ListEmptyComponent={
+            <View style={styles.emptyWrap}>
+              <KolamEmptyState
+                compact
+                message="Data Teranura belum tersedia dari backend."
+                title={
+                  controller.loading
+                    ? 'Memuat Teranura...'
+                    : 'Belum ada Teranura'
+                }
               />
-            )}
-            removeClippedSubviews={false}
-            style={styles.list}
-            contentContainerStyle={styles.listContent}
-          />
-        </KolamCatalogListTableShell>
-      </View>
+            </View>
+          }
+          ListHeaderComponent={<KolamDataTableHeader columns={listColumns} />}
+          renderItem={({ item }) => (
+            <TeranuraRow
+              columns={listColumns}
+              item={item}
+              onEdit={() => onRouteChange?.(`/teranura/${item.id}/edit`)}
+              onSelect={() => onRouteChange?.(`/teranura/${item.id}`)}
+            />
+          )}
+          removeClippedSubviews={false}
+          style={styles.list}
+          contentContainerStyle={styles.listContent}
+        />
+      </KolamCatalogListTableShell>
     </View>
   );
 }
 
-function TeranuraDetailShell({
-  item,
-  loading,
-  onBack,
-  onEdit,
-}: {
-  item: KolamTeranura | null;
-  loading: boolean;
-  onBack: () => void;
-  onEdit: (item: KolamTeranura) => void;
-}) {
+function KolamTeranuraDetail({ controller }: { controller: KolamTeranuraController }) {
+  const item = controller.selectedItem;
+  const loading = controller.loading;
   const [activeTab, setActiveTab] = React.useState('catalog');
   const tabItems = React.useMemo(
     () => [
@@ -384,7 +476,6 @@ function TeranuraDetailShell({
               {loading ? 'Memuat detail Teranura...' : 'Detail Teranura tidak ditemukan.'}
             </Text>
           </View>
-          <KolamButton label="Daftar" onPress={onBack} />
         </View>
         {tabPanel}
       </View>
@@ -407,8 +498,6 @@ function TeranuraDetailShell({
           </Text>
         </View>
         <View style={styles.detailHeaderActions}>
-          <KolamButton label="Daftar" onPress={onBack} />
-          <KolamButton intent="primary" label="Rubah" onPress={() => onEdit(item)} />
           <KolamButton disabled intent="danger" label="Hapus" onPress={() => undefined} />
         </View>
       </View>
@@ -431,64 +520,130 @@ function TeranuraRow({
   const code = item.sku || item.productCode || '-';
   const variantLabel = item.variants.length ? 'Produk varian' : 'Produk standar';
   const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
+  const columnOf = React.useCallback(
+    (id: KolamTableColumn['id']) => columns.find(column => column.id === id),
+    [columns],
+  );
+  const primaryColumn = columnOf('primary');
+  const skuColumn = columnOf('meta');
+  const brandColumn = columnOf('price');
+  const variantColumn = columnOf('children');
+  const priceColumn = columnOf('amount');
+  const stockColumn = columnOf('products');
+  const statusColumn = columnOf('status');
+  const actionsColumn = columnOf('actions');
 
   return (
-    <KolamDataTableRowFrame style={actionMenuOpen && styles.activeActionRow}>
-      <View style={styles.primaryCell}>
-        <View style={styles.photoBox}>
-          <KolamRemoteImage
-            accessibilityLabel={item.name}
-            scope="teranura"
-            sourceUri={item.photoUrl}
-            style={styles.photo}
-          />
-        </View>
-        <View style={styles.primaryTextWrap}>
-          <View style={styles.nameRow}>
-            <Text numberOfLines={2} style={styles.nameText}>{item.name}</Text>
-            {item.deviceLine === 'freyer' ? (
-              <KolamBadge intent="info" label="Freyer" />
-            ) : null}
+    <KolamDataTableRowFrame style={actionMenuOpen ? styles.activeActionRow : undefined}>
+      <KolamDataTableMainTrack>
+        <View
+          style={[
+            styles.listCell,
+            styles.identityCell,
+            primaryColumn ? getKolamDataTableColumnStyle(primaryColumn) : null,
+          ]}
+        >
+          <View style={styles.primaryCell}>
+            <View style={styles.photoBox}>
+              <KolamRemoteImage
+                accessibilityLabel={item.name}
+                scope="teranura"
+                sourceUri={item.photoUrl}
+                style={styles.photo}
+              />
+            </View>
+            <View style={styles.primaryTextWrap}>
+              <View style={styles.nameRow}>
+                <Text numberOfLines={2} style={styles.nameText}>{item.name}</Text>
+                {item.deviceLine === 'freyer' ? (
+                  <KolamBadge intent="info" label="Freyer" />
+                ) : null}
+              </View>
+              <Text numberOfLines={1} style={styles.metaText}>
+                {item.category?.name ?? 'Tanpa kategori'}
+              </Text>
+            </View>
           </View>
-          <Text numberOfLines={1} style={styles.metaText}>
-            {item.category?.name ?? 'Tanpa kategori'}
+        </View>
+        <View
+          style={[
+            styles.listCell,
+            skuColumn ? getKolamDataTableColumnStyle(skuColumn) : null,
+          ]}
+        >
+          <Text numberOfLines={1} selectable style={styles.cellText}>
+            {code}
           </Text>
         </View>
-      </View>
-      <Text numberOfLines={1} selectable style={[styles.cellText, getCellWidth(columns, 'meta')]}>
-        {code}
-      </Text>
-      <View style={[styles.brandCell, getCellWidth(columns, 'price')]}>
-        {item.brand?.logoUrl ? (
-          <KolamRemoteImage
-            accessibilityLabel={item.brand.name}
-            scope="brand"
-            sourceUri={item.brand.logoUrl}
-            style={styles.brandLogo}
+        <View
+          style={[
+            styles.listCell,
+            brandColumn ? getKolamDataTableColumnStyle(brandColumn) : null,
+          ]}
+        >
+          <View style={styles.brandCell}>
+            {item.brand?.logoUrl ? (
+              <KolamRemoteImage
+                accessibilityLabel={item.brand.name}
+                scope="brand"
+                sourceUri={item.brand.logoUrl}
+                style={styles.brandLogo}
+              />
+            ) : null}
+            <Text numberOfLines={1} style={styles.cellText}>
+              {item.brand?.name ?? '-'}
+            </Text>
+          </View>
+        </View>
+        <View
+          style={[
+            styles.listCell,
+            variantColumn ? getKolamDataTableColumnStyle(variantColumn) : null,
+          ]}
+        >
+          <Text numberOfLines={1} style={styles.cellText}>
+            {variantLabel}
+          </Text>
+        </View>
+        <View
+          style={[
+            styles.listCell,
+            priceColumn ? getKolamDataTableColumnStyle(priceColumn) : null,
+          ]}
+        >
+          <Text numberOfLines={1} style={styles.cellText}>
+            {item.priceToSell > 0 ? formatRupiah(item.priceToSell) : '-'}
+          </Text>
+        </View>
+        <View
+          style={[
+            styles.listCell,
+            stockColumn ? getKolamDataTableColumnStyle(stockColumn) : null,
+          ]}
+        >
+          <Text numberOfLines={1} style={styles.cellText}>
+            {formatNumber(item.stock)}{item.unitLabel ? ` ${item.unitLabel}` : ''}
+          </Text>
+        </View>
+        <View
+          style={[
+            styles.listCell,
+            statusColumn ? getKolamDataTableColumnStyle(statusColumn) : null,
+          ]}
+        >
+          <KolamBadge
+            intent={item.sellable ? 'success' : 'secondary'}
+            label={item.sellable ? 'Dapat dijual' : 'Tidak dijual'}
+            style={styles.centerBadge}
           />
-        ) : null}
-        <Text numberOfLines={1} style={styles.cellText}>
-          {item.brand?.name ?? '-'}
-        </Text>
-      </View>
-      <Text numberOfLines={1} style={[styles.cellText, getCellWidth(columns, 'children')]}>
-        {variantLabel}
-      </Text>
-      <Text numberOfLines={1} style={[styles.amountText, getCellWidth(columns, 'amount')]}>
-        {item.priceToSell > 0 ? formatRupiah(item.priceToSell) : '-'}
-      </Text>
-      <Text numberOfLines={1} style={[styles.amountText, getCellWidth(columns, 'products')]}>
-        {formatNumber(item.stock)}{item.unitLabel ? ` ${item.unitLabel}` : ''}
-      </Text>
-      <View style={[styles.statusCell, getCellWidth(columns, 'status')]}>
-        <KolamBadge
-          intent={item.sellable ? 'success' : 'secondary'}
-          label={item.sellable ? 'Dapat dijual' : 'Tidak dijual'}
-        />
-      </View>
-      <View
-        collapsable={false}
-        style={[styles.actionsCell, getCellWidth(columns, 'actions')]}
+        </View>
+      </KolamDataTableMainTrack>
+      <KolamDataTableActionsTrack
+        style={styles.actionsTrack}
+        width={Math.max(
+          actionsColumn?.width ?? KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+          KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+        )}
       >
         <KolamOverflowMenuButton
           accessibilityLabel={`Menu ${item.name}`}
@@ -499,14 +654,23 @@ function TeranuraRow({
             { disabled: true, label: 'Hapus', onPress: () => undefined, tone: 'danger' },
           ]}
         />
-      </View>
+      </KolamDataTableActionsTrack>
     </KolamDataTableRowFrame>
   );
 }
 
-function getCellWidth(columns: KolamTableColumn[], id: KolamTableColumn['id']) {
-  const width = columns.find(column => column.id === id)?.width;
-  return width ? { width } : null;
+function fitTeranuraListColumns(containerWidth: number): KolamTableColumn[] {
+  return fitKolamDataTableColumns(
+    getKolamTableColumns('teranura'),
+    containerWidth,
+    {
+      actionsMinWidth: KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+      gap: KOLAM_DATA_TABLE_COLUMN_GAP,
+      paddingX: getKolamTableVisualContract().body.cellPaddingX * 2,
+      primaryMinWidth: 200,
+      secondaryMinWidth: 64,
+    },
+  );
 }
 
 function TeranuraFilterOverlayPanel({
@@ -668,9 +832,17 @@ function formatDateTime(value: string | null | undefined) {
 
 const styles = StyleSheet.create({
   surface: {
-    flex: 1,
-    minHeight: 0,
-    overflow: 'visible',
+    gap: 16,
+  },
+  detailToolbarContext: {
+    color: V.colors.fg,
+    flexShrink: 1,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+    minWidth: 0,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
   },
   stack: {
     flex: 1,
@@ -683,6 +855,14 @@ const styles = StyleSheet.create({
     overflow: 'visible',
     position: 'relative',
     zIndex: 100000,
+  },
+  listToolbarFilters: {
+    flexWrap: 'nowrap',
+  },
+  listToolbarSearch: {
+    flexGrow: 1,
+    flexShrink: 1,
+    minWidth: 120,
   },
   filterOverlayPanel: {
     backgroundColor: V.colors.bg,
@@ -747,9 +927,27 @@ const styles = StyleSheet.create({
     minHeight: 240,
     justifyContent: 'center',
   },
+  activeActionRow: {
+    elevation: 96,
+    overflow: 'visible',
+    position: 'relative',
+    zIndex: 1000,
+  },
+  listCell: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 0,
+    overflow: 'hidden',
+    paddingVertical: 4,
+  },
+  identityCell: {
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+  },
   primaryCell: {
     flex: 1,
     minWidth: 0,
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
@@ -784,6 +982,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '800',
     lineHeight: 17,
+    textAlign: 'left',
   },
   metaText: {
     color: V.colors.mutedFg,
@@ -791,6 +990,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
     lineHeight: 15,
+    textAlign: 'left',
   },
   cellText: {
     color: V.colors.fg,
@@ -798,19 +998,15 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     lineHeight: 16,
-  },
-  amountText: {
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
-    fontWeight: '800',
-    lineHeight: 16,
-    textAlign: 'right',
+    textAlign: 'center',
+    width: '100%',
   },
   brandCell: {
     minWidth: 0,
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 8,
   },
   brandLogo: {
@@ -818,24 +1014,11 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 6,
   },
-  statusCell: {
-    alignItems: 'flex-end',
+  centerBadge: {
+    alignSelf: 'center',
   },
-  activeActionRow: {
-    elevation: 96,
-    overflow: 'visible',
-    position: 'relative',
-    zIndex: 1000,
-  },
-  actionsCell: {
-    alignItems: 'flex-end',
-    elevation: 30,
-    overflow: 'visible',
-    position: 'relative',
-    zIndex: 1100,
-  },
-  footerWrap: {
-    paddingBottom: 8,
+  actionsTrack: {
+    alignItems: 'center',
   },
   paginationBar: {
     flexDirection: 'row',
