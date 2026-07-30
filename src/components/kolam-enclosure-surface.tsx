@@ -216,25 +216,18 @@ function KolamEnclosureList({
   return (
     <View style={styles.listRoot}>
       <View ref={toolbarRef} collapsable={false} style={styles.toolbarWrap}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.tabRow}
-        >
-          {KOLAM_ENCLOSURE_LIST_TABS.map(tab => (
-            <KolamButton
-              key={tab.id}
-              intent={controller.activeTab === tab.id ? 'primary' : 'outline'}
-              label={tab.label}
-              onPress={() => controller.onTabChange(tab.id)}
-              style={styles.tabButton}
-            />
-          ))}
-        </ScrollView>
-
         <View style={kolamTableToolbarStyles.shell}>
           <View style={kolamTableToolbarStyles.row}>
             <View style={kolamTableToolbarStyles.filters}>
+              {KOLAM_ENCLOSURE_LIST_TABS.map(tab => (
+                <KolamButton
+                  intent={controller.activeTab === tab.id ? 'primary' : 'outline'}
+                  key={tab.id}
+                  label={tab.label}
+                  onPress={() => controller.onTabChange(tab.id)}
+                  style={styles.toolbarButton}
+                />
+              ))}
               <KolamSearchField
                 containerStyle={kolamTableToolbarStyles.searchInput}
                 onChangeText={setSearchInput}
@@ -1236,15 +1229,6 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     minHeight: 34,
     paddingHorizontal: 10,
-  },
-  tabRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 8,
-    paddingBottom: 2,
-  },
-  tabButton: {
-    flexShrink: 0,
   },
   filterOverlayPanel: {
     backgroundColor: V.colors.bg,
