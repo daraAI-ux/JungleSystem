@@ -33,6 +33,7 @@ import {
 import {getKolamFileUrl} from '../lib/file-url';
 import {
   createKolamUser,
+  deleteKolamUser,
   getKolamKasbonPendingSummary,
   getKolamUserAttendanceRecords,
   getKolamUserAttendanceSettings,
@@ -45,6 +46,7 @@ import {
   getKolamUserRatingList,
   getKolamUserRatingSummary,
   getKolamUserRoles,
+  resignKolamUser,
   updateKolamUser,
   updateKolamUserSalary,
   uploadKolamUserBiodataKtp,
@@ -500,6 +502,8 @@ function KolamUserListSurface({
   >(null);
   const [deleteTarget, setDeleteTarget] =
     React.useState<KolamUserListItem | null>(null);
+  const [deletingUser, setDeletingUser] = React.useState(false);
+  const [deleteError, setDeleteError] = React.useState('');
   const [kasbonPendingSummary, setKasbonPendingSummary] =
     React.useState<KolamKasbonPendingSummary>(EMPTY_KASBON_PENDING_SUMMARY);
   const [loading, setLoading] = React.useState(true);
@@ -514,6 +518,10 @@ function KolamUserListSurface({
   const canVerifyKasbon =
     isSettingsSuperAdminRoleKey(authUser?.roleKey ?? '') ||
     hasSettingsPermission(permissionContext, 'kasbon', 'verify');
+  const canDeleteUser =
+    isSettingsSuperAdminRoleKey(authUser?.roleKey ?? '') ||
+    hasSettingsPermission(permissionContext, 'user', 'delete_by_admin');
+  const currentUserId = String(authUser?.id ?? '');
 
   React.useEffect(() => {
     const timeout = setTimeout(() => {
@@ -616,6 +624,30 @@ function KolamUserListSurface({
   const filtersAppliedCount =
     Number(Boolean(search.trim())) + Number(employeeFilter !== 'all');
   const safePage = Math.min(page, Math.max(1, pagination.totalPages));
+  const handleDeleteUser = async () => {
+    if (!deleteTarget || deletingUser) {
+      return;
+    }
+
+    setDeletingUser(true);
+    setDeleteError('');
+
+    try {
+      await deleteKolamUser(deleteTarget.id);
+      setDeleteTarget(null);
+      setItems(current => current.filter(item => item.id !== deleteTarget.id));
+      setPagination(current => ({
+        ...current,
+        total: Math.max(0, current.total - 1),
+      }));
+    } catch (err) {
+      setDeleteError(
+        getUserFormErrorMessage(err, 'Gagal menghapus pengguna.'),
+      );
+    } finally {
+      setDeletingUser(false);
+    }
+  };
 
   return (
     <View style={styles.surface}>
@@ -726,9 +758,14 @@ function KolamUserListSurface({
         {items.length ? (
           items.map(user => (
             <KolamUserListRow
+              canDeleteUser={canDeleteUser}
+              currentUserId={currentUserId}
               key={user.id}
               pendingKasbonCount={kasbonPendingSummary.byUser[user.id] ?? 0}
-              onDeleteRequest={setDeleteTarget}
+              onDeleteRequest={target => {
+                setDeleteError('');
+                setDeleteTarget(target);
+              }}
               onRouteChange={onRouteChange}
               user={user}
             />
@@ -744,17 +781,24 @@ function KolamUserListSurface({
         )}
       </KolamCatalogListTableShell>
       <KolamConfirmDialog
-        cancelLabel="Batal"
-        confirmLabel="Tutup"
+        cancelLabel={deletingUser ? 'Tunggu' : 'Batal'}
+        confirmLabel={deletingUser ? 'Menghapus...' : 'Hapus permanen'}
         destructive
         message={
           deleteTarget
-            ? `Penghapusan pengguna "${deleteTarget.displayName}" belum diaktifkan karena backend melakukan pembersihan permanen. Aksi ini membutuhkan approval khusus sebelum disambungkan.`
-            : 'Penghapusan pengguna belum diaktifkan karena backend melakukan pembersihan permanen.'
+            ? `Hapus permanen pengguna "${deleteTarget.displayName}"? Backend akan menjalankan hard cleanup: unlink referensi transaksi/ownership/notifikasi, menghapus enclosure/species/user storage/cart milik user, menghapus dokumen user, dan membersihkan file terkait. Aksi ini tidak bisa dibatalkan.${deleteError ? `\n\n${deleteError}` : ''}`
+            : 'Pilih pengguna yang akan dihapus permanen.'
         }
-        onCancel={() => setDeleteTarget(null)}
-        onConfirm={() => setDeleteTarget(null)}
-        title="Konfirmasi hapus pengguna"
+        onCancel={() => {
+          if (!deletingUser) {
+            setDeleteTarget(null);
+            setDeleteError('');
+          }
+        }}
+        onConfirm={() => {
+          void handleDeleteUser();
+        }}
+        title="Hapus permanen pengguna"
         visible={Boolean(deleteTarget)}
       />
     </View>
@@ -1690,6 +1734,8 @@ function KolamUserEditSurface({
   const [rolesLoading, setRolesLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
   const [uploadingKtp, setUploadingKtp] = React.useState(false);
+  const [resigning, setResigning] = React.useState(false);
+  const [resignConfirmVisible, setResignConfirmVisible] = React.useState(false);
   const [ktpPreviewUri, setKtpPreviewUri] = React.useState('');
   const [message, setMessage] = React.useState('');
   const [error, setError] = React.useState('');
@@ -1815,8 +1861,9 @@ function KolamUserEditSurface({
   const isSelfUser = currentUserId === String(user.id);
   const isTargetSuperAdmin = isSettingsSuperAdminRoleKey(user.role?.key ?? '');
   const canResetPassword = canToggleOwner;
+  const canResign = canAccess && !isResigned && !isSelfUser && !isTargetSuperAdmin;
   const canShowResignInfo = !isResigned && !isSelfUser && !isTargetSuperAdmin;
-  const formDisabled = saving || isResigned || !canAccess;
+  const formDisabled = saving || resigning || isResigned || !canAccess;
 
   if (!canAccess) {
     return (
@@ -2065,6 +2112,38 @@ function KolamUserEditSurface({
       setError(getUserFormErrorMessage(err, 'Gagal memperbarui pengguna.'));
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleResignUser = async () => {
+    if (!canResign || resigning) {
+      return;
+    }
+
+    setResigning(true);
+    setError('');
+    setMessage('');
+
+    try {
+      const result = await resignKolamUser(user.id);
+      const nextUser = (await getKolamUserDetail(user.id)) ?? user;
+      const revokedCount = result.forfeit.revokedCount;
+      const unexpectedIncomeText = result.forfeit.unexpectedIncomeId
+        ? ' Cek Pemasukan tak terduga.'
+        : '';
+
+      setUser(nextUser);
+      setForm(getUserEditFormFromUser(nextUser));
+      setResignConfirmVisible(false);
+      setMessage(
+        revokedCount > 0
+          ? `Karyawan di-resign. ${revokedCount} komisi accrued dibatalkan.${unexpectedIncomeText}`
+          : 'Karyawan di-resign. Semua akses dicabut.',
+      );
+    } catch (err) {
+      setError(getUserFormErrorMessage(err, 'Gagal resign karyawan.'));
+    } finally {
+      setResigning(false);
     }
   };
 
@@ -2641,15 +2720,14 @@ function KolamUserEditSurface({
                   </Text>
                   <Text style={styles.detailSubtitle}>
                     Aksi ini mencabut akses dan dapat membatalkan komisi
-                    accrued. Resign tetap nonaktif di JungleSystem sampai ada
-                    approval khusus untuk endpoint hard-effect ini.
+                    accrued. Akun tidak dihapus dan histori tetap tersimpan.
                   </Text>
                 </View>
                 <KolamButton
-                  disabled
+                  disabled={!canResign || saving || resigning}
                   intent="danger"
-                  label="Resign dinonaktifkan"
-                  onPress={() => undefined}
+                  label={resigning ? 'Memproses...' : 'Resign karyawan'}
+                  onPress={() => setResignConfirmVisible(true)}
                   style={styles.resignGuardButton}
                 />
               </View>
@@ -2679,6 +2757,23 @@ function KolamUserEditSurface({
           ) : null}
         </View>
       </KolamContentFrame>
+
+      <KolamConfirmDialog
+        cancelLabel={resigning ? 'Tunggu' : 'Batal'}
+        confirmLabel={resigning ? 'Memproses...' : 'Ya, resign'}
+        destructive
+        message={`Yakin resign ${form.first_name} ${form.last_name}? Semua akses Kolam, POS, AM, dan CS akan dicabut. Komisi accrued dibatalkan bila ada. Tindakan ini tidak menghapus akun dan histori tetap tersimpan.`}
+        onCancel={() => {
+          if (!resigning) {
+            setResignConfirmVisible(false);
+          }
+        }}
+        onConfirm={() => {
+          void handleResignUser();
+        }}
+        title="Resign karyawan?"
+        visible={resignConfirmVisible}
+      />
     </View>
   );
 }
@@ -2750,17 +2845,25 @@ function UserFormField({
 }
 
 function KolamUserListRow({
+  canDeleteUser,
+  currentUserId,
   onDeleteRequest,
   onRouteChange,
   pendingKasbonCount = 0,
   user,
 }: {
+  canDeleteUser: boolean;
+  currentUserId: string;
   onDeleteRequest: (user: KolamUserListItem) => void;
   onRouteChange?: (route: string) => void;
   pendingKasbonCount?: number;
   user: KolamUserListItem;
 }) {
   const userRouteId = encodeURIComponent(user.id);
+  const deleteDisabled =
+    !canDeleteUser ||
+    currentUserId === String(user.id) ||
+    isSettingsSuperAdminRoleKey(user.role?.key ?? '');
 
   return (
     <KolamDataTableRowFrame style={styles.userListRow}>
@@ -2838,6 +2941,7 @@ function KolamUserListRow({
                 onRouteChange?.(`/list-of-users/users/${userRouteId}/edit`),
             },
             {
+              disabled: deleteDisabled,
               label: 'Hapus',
               onPress: () => onDeleteRequest(user),
               tone: 'danger',

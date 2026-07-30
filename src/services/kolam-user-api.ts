@@ -11,6 +11,7 @@ import {
   normalizeKolamUserListResult,
   normalizeKolamUserRatingList,
   normalizeKolamUserRatingSummary,
+  normalizeKolamUserResignResult,
   normalizeKolamUserRoles,
   type KolamKasbonPendingSummary,
   type KolamUserAttendanceRecord,
@@ -25,6 +26,7 @@ import {
   type KolamUserListResult,
   type KolamUserRatingListResult,
   type KolamUserRatingSummary,
+  type KolamUserResignResult,
   type KolamUserRoleOption,
   type KolamUserUpdatePayload,
 } from '../domain/kolam-user';
@@ -214,6 +216,28 @@ export async function updateKolamUserSalary(payload: {
   });
 }
 
+export async function resignKolamUser(
+  userId: string,
+): Promise<KolamUserResignResult> {
+  const response = await kolamRequest<unknown>(
+    `/auth/resign-user/${encodeURIComponent(userId)}`,
+    {
+      method: 'POST',
+    },
+  );
+
+  return normalizeKolamUserResignResult(response);
+}
+
+export async function deleteKolamUser(userId: string) {
+  return kolamRequest<unknown>(
+    `/auth/delete-user/${encodeURIComponent(userId)}`,
+    {
+      method: 'DELETE',
+    },
+  );
+}
+
 export async function uploadKolamUserBiodataKtp(
   userId: string,
   localUri: string,
@@ -242,7 +266,7 @@ function kolamRequest<T>(
   path: string,
   options: {
     body?: unknown;
-    method?: 'GET' | 'POST';
+    method?: 'DELETE' | 'GET' | 'POST';
     query?: Record<string, string | number | boolean | undefined | null>;
   } = {},
 ) {

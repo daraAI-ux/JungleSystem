@@ -337,6 +337,21 @@ export interface KolamUserFaceEnrollment {
   photoPath: string;
 }
 
+export interface KolamUserResignForfeit {
+  forfeitedGross: number;
+  revokedCount: number;
+  unexpectedIncomeId: string;
+  walletCreditAmount: number;
+  walletReversed: number;
+}
+
+export interface KolamUserResignResult {
+  alreadyResigned: boolean;
+  forfeit: KolamUserResignForfeit;
+  resignedAt: string;
+  userId: string;
+}
+
 export function normalizeKolamUserListResult(
   payload: unknown,
   fallback: Required<Pick<KolamUserListQuery, 'limit' | 'page'>>,
@@ -555,6 +570,27 @@ export function normalizeKolamUserFaceEnrollment(
     embeddingLength: embedding.length,
     id,
     photoPath,
+  };
+}
+
+export function normalizeKolamUserResignResult(
+  payload: unknown,
+): KolamUserResignResult {
+  const record = asRecord(payload);
+  const data = asRecord(record.data ?? payload);
+  const forfeit = asRecord(data.forfeit);
+
+  return {
+    alreadyResigned: getBoolean(data, 'alreadyResigned') ?? false,
+    forfeit: {
+      forfeitedGross: getNumber(forfeit, 'forfeitedGross') ?? 0,
+      revokedCount: getNumber(forfeit, 'revokedCount') ?? 0,
+      unexpectedIncomeId: getString(forfeit, 'unexpectedIncomeId'),
+      walletCreditAmount: getNumber(forfeit, 'walletCreditAmount') ?? 0,
+      walletReversed: getNumber(forfeit, 'walletReversed') ?? 0,
+    },
+    resignedAt: getString(data, 'resignedAt'),
+    userId: getString(data, 'userId'),
   };
 }
 
