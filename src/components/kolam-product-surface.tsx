@@ -440,6 +440,7 @@ export function KolamProductSurface({
                     }
                     label={categoryFilterLabel}
                     onPress={() => openFilterPanel('category')}
+                    open={activeFilterPanel === 'category'}
                     variant="quiet"
                   />
                 </View>
@@ -450,6 +451,7 @@ export function KolamProductSurface({
                     }
                     label={brandFilterLabel}
                     onPress={() => openFilterPanel('brand')}
+                    open={activeFilterPanel === 'brand'}
                     variant="quiet"
                   />
                 </View>
@@ -461,6 +463,7 @@ export function KolamProductSurface({
                       }
                       label={stockFilterLabel}
                       onPress={() => openFilterPanel('stock')}
+                      open={activeFilterPanel === 'stock'}
                       variant="quiet"
                     />
                   </View>
