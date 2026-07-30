@@ -42,6 +42,7 @@ import {
   validateKolamSaleCreatePayload,
   validateKolamSaleUpdatePayload,
 } from '../src/domain/kolam-sales';
+import { computeKolamSaleProfitSummary } from '../src/domain/kolam-sales-profit';
 import { getKolamNavigationRouteTarget } from '../src/domain/kolam-navigation';
 import { ApiError } from '../src/lib/api-error';
 
@@ -227,6 +228,75 @@ describe('kolam sales domain', () => {
         sourceRef: { type: 'offline', name: 'POS' },
       }),
     ).toBe(true);
+  });
+
+  it('computes Tokopedia/Shopee olshop profit like FE (not internal PM path)', () => {
+    const detail = normalizeKolamSale({
+      _id: 'sale-tokped',
+      invoiceCode: 'INV-TP',
+      status: 'paid',
+      finalTotal: 160_000,
+      sourceCost: 4_000,
+      sourceCostBreakdown: [
+        { name: 'Biaya layanan', amount: 3_000 },
+        { name: 'Biaya pembayaran', amount: 1_000 },
+      ],
+      commissionAccruedTotalAtSale: 0,
+      paymentMethodCost: 9_999,
+      hppTotalAtSale: 40_000,
+      externalRef: { source: 'tokopedia', tokopedia: { mainOrderId: 'TP-1' } },
+      sourceRef: { _id: 'src1', name: 'Tokopedia', type: 'online' },
+      items: [
+        {
+          _id: 'i1',
+          itemType: 'product',
+          quantity: 1,
+          unitPrice: 150_000,
+          subtotal: 150_000,
+          unitCostAtSale: 40_000,
+          product: { _id: 'p1', name: 'Produk' },
+        },
+      ],
+    });
+
+    const summary = computeKolamSaleProfitSummary(detail);
+    expect(summary.mode).toBe('olshop');
+    expect(summary.marketplaceFeeLabel).toBe('Biaya layanan Tokopedia');
+    expect(summary.marketplaceFees).toBe(4_000);
+    expect(summary.marketplaceFeeBreakdown).toHaveLength(2);
+    // FE: pendapatan − HPP − biaya layanan − komisi (PM diabaikan untuk olshop)
+    expect(summary.netProfit).toBe(106_000);
+    expect(summary.itemBreakdowns[0].sourceFeeShare).toBe(4_000);
+    expect(summary.itemBreakdowns[0].pmCostShare).toBe(0);
+    expect(summary.itemBreakdowns[0].profitItem).toBe(106_000);
+    expect(summary.paymentMethodCost).toBe(0);
+  });
+
+  it('computes internal profit with PM share (non-marketplace)', () => {
+    const detail = normalizeKolamSale({
+      _id: 'sale-pos',
+      invoiceCode: 'INV-POS',
+      status: 'paid',
+      paymentMethodCost: 2_000,
+      commissionAccruedTotalAtSale: 5_000,
+      items: [
+        {
+          _id: 'i1',
+          itemType: 'product',
+          quantity: 1,
+          unitPrice: 100_000,
+          subtotal: 100_000,
+          unitCostAtSale: 30_000,
+          product: { _id: 'p1', name: 'Filter' },
+        },
+      ],
+      sourceRef: { _id: 's1', name: 'POS', type: 'offline' },
+    });
+    const summary = computeKolamSaleProfitSummary(detail);
+    expect(summary.mode).toBe('internal');
+    expect(summary.netProfit).toBe(63_000);
+    expect(summary.itemBreakdowns[0].pmCostShare).toBe(2_000);
+    expect(summary.itemBreakdowns[0].profitItem).toBe(63_000);
   });
 
   it('normalizes item thumbnails, HPP snapshot, and margin helpers', () => {

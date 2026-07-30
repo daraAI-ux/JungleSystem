@@ -107,6 +107,13 @@ export type KolamSaleItemDiscount = {
   amount: number;
 };
 
+export type KolamSaleItemPacking = {
+  name: string;
+  quantity: number;
+  unitPriceAtSale: number;
+  unitCostAtSale: number;
+};
+
 export type KolamSaleItem = {
   id: string;
   itemType: KolamSaleItemType;
@@ -119,6 +126,10 @@ export type KolamSaleItem = {
   shippingCost: number;
   /** HPP unit snapshot at sale (product/species); custom uses customCost. */
   unitCostAtSale: number | null;
+  hppVendorUnitAtSale: number | null;
+  hppBomUnitAtSale: number | null;
+  hppStoredOnlyUnitAtSale: number | null;
+  packings: KolamSaleItemPacking[];
   thumbnailUri: string | null;
   variantLabel: string;
   productId: string;
@@ -129,6 +140,13 @@ export type KolamSaleItem = {
   customUnit: string;
   customCost: number | null;
   voucherCode: string;
+};
+
+export type KolamSaleCommissionAccrualByItem = {
+  saleItemIndex: number;
+  commissionType: 'percentage' | 'fixed';
+  commissionValue: number;
+  commissionAmount: number;
 };
 
 export type KolamSalePaymentProof = {
@@ -181,8 +199,10 @@ export type KolamSale = {
   openLivestockPendingCount: number;
   hppTotalAtSale: number | null;
   commissionAccruedTotalAtSale: number | null;
+  commissionAccrualByItem: KolamSaleCommissionAccrualByItem[];
   paymentMethodCost: number;
   sourceCost: number;
+  sourceCostBreakdown: KolamSaleCustomCost[];
   paidAt: string;
   sentAt: string;
   cancelledAt: string;
@@ -1839,8 +1859,12 @@ export function normalizeKolamSale(payload: unknown): KolamSale {
       record,
       'commissionAccruedTotalAtSale',
     ),
+    commissionAccrualByItem: normalizeCommissionAccrualByItem(
+      record.commissionAccrualByItem,
+    ),
     paymentMethodCost: getNumber(record, 'paymentMethodCost') ?? 0,
     sourceCost: getNumber(record, 'sourceCost') ?? 0,
+    sourceCostBreakdown: normalizeCustomCosts(record.sourceCostBreakdown),
     paidAt: stringifyDate(record.paidAt),
     sentAt: stringifyDate(record.sentAt),
     cancelledAt: stringifyDate(record.cancelledAt),
@@ -1903,6 +1927,59 @@ function normalizeCustomCosts(value: unknown): KolamSaleCustomCost[] {
       } satisfies KolamSaleCustomCost;
     })
     .filter((row): row is KolamSaleCustomCost => Boolean(row));
+}
+
+function normalizeCommissionAccrualByItem(
+  value: unknown,
+): KolamSaleCommissionAccrualByItem[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value
+    .map(row => {
+      const record = asRecord(row);
+      const saleItemIndex = getNumber(record, 'saleItemIndex');
+      if (saleItemIndex == null || saleItemIndex < 0) {
+        return null;
+      }
+      const commissionType =
+        String(record.commissionType || '').toLowerCase() === 'fixed'
+          ? 'fixed'
+          : 'percentage';
+      return {
+        saleItemIndex,
+        commissionType,
+        commissionValue: getNumber(record, 'commissionValue') ?? 0,
+        commissionAmount: getNumber(record, 'commissionAmount') ?? 0,
+      } satisfies KolamSaleCommissionAccrualByItem;
+    })
+    .filter((row): row is KolamSaleCommissionAccrualByItem => Boolean(row));
+}
+
+function normalizeSaleItemPackings(value: unknown): KolamSaleItemPacking[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value
+    .map(row => {
+      const record = asRecord(row);
+      const packing = asRecord(record.packing);
+      const name =
+        getString(packing, 'name') ||
+        getString(record, 'name') ||
+        'Kemasan';
+      const quantity = getNumber(record, 'quantity') ?? 0;
+      if (quantity <= 0) {
+        return null;
+      }
+      return {
+        name,
+        quantity,
+        unitPriceAtSale: getNumber(record, 'unitPriceAtSale') ?? 0,
+        unitCostAtSale: getNumber(record, 'unitCostAtSale') ?? 0,
+      } satisfies KolamSaleItemPacking;
+    })
+    .filter((row): row is KolamSaleItemPacking => Boolean(row));
 }
 
 function normalizeShippingAddressText(
@@ -1991,6 +2068,10 @@ function normalizeSaleItem(value: unknown, index: number): KolamSaleItem {
     discount,
     shippingCost: getNumber(record, 'shippingCost') ?? 0,
     unitCostAtSale: getNumber(record, 'unitCostAtSale'),
+    hppVendorUnitAtSale: getNumber(record, 'hppVendorUnitAtSale'),
+    hppBomUnitAtSale: getNumber(record, 'hppBomUnitAtSale'),
+    hppStoredOnlyUnitAtSale: getNumber(record, 'hppStoredOnlyUnitAtSale'),
+    packings: normalizeSaleItemPackings(record.packings),
     thumbnailUri: resolveSaleItemThumbnailUri(
       itemType,
       variant,

@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
-  allocateKolamSaleCommissionShares,
-  allocateKolamSalePaymentMethodShares,
   canAddItemsToKolamSale,
   canDownloadKolamSaleShippingResi,
   canShowKolamSaleEditAction,
@@ -14,10 +12,7 @@ import {
   getKolamSaleAllowedDeliveryTransitions,
   getKolamSaleAllowedStatusTransitions,
   getKolamSaleDeliveryStatusIntent,
-  getKolamSaleInternalNetProfit,
   getKolamSaleItemDiscountAmount,
-  getKolamSaleItemHppTotal,
-  getKolamSaleItemNetProfit,
   getKolamSaleOutstandingAmount,
   getKolamSalePaymentStatusIntent,
   isKolamPosSale,
@@ -28,6 +23,11 @@ import {
   type KolamSaleDeliveryTransitionTarget,
   type KolamSaleStatusTransitionTarget,
 } from '../domain/kolam-sales';
+import {
+  computeKolamSaleProfitSummary,
+  getKolamSaleItemProfitBreakdownMap,
+  type KolamSaleItemProfitBreakdown,
+} from '../domain/kolam-sales-profit';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { formatRupiah } from '../lib/money';
 import type { KolamSalesController } from '../hooks/use-kolam-sales-controller';
@@ -110,34 +110,9 @@ export function KolamSalesOpsDetail({
     (!sale.deliveryStatus || sale.deliveryStatus === 'none');
   const showResi = !skipShipping && canDownloadKolamSaleShippingResi(sale);
   const outstanding = getKolamSaleOutstandingAmount(sale);
-  const commissionShares = allocateKolamSaleCommissionShares(
-    sale.items,
-    sale.commissionAccruedTotalAtSale ?? 0,
-  );
-  const paymentMethodShares = allocateKolamSalePaymentMethodShares(
-    sale.items,
-    sale.paymentMethodCost,
-  );
-  const showInternalSummary =
-    sale.status === 'paid' ||
-    sale.items.some(item => {
-      const type = String(item.itemType ?? '').toLowerCase();
-      return type === 'product' || type === 'species';
-    });
-  const internalGrossSubtotal = sale.items
-    .filter(item => {
-      const type = String(item.itemType ?? '').toLowerCase();
-      return type === 'product' || type === 'species';
-    })
-    .reduce((sum, item) => sum + item.subtotal, 0);
-  const internalHppTotal =
-    sale.hppTotalAtSale != null
-      ? sale.hppTotalAtSale
-      : sale.items.reduce(
-          (sum, item) => sum + getKolamSaleItemHppTotal(item),
-          0,
-        );
-  const internalNetProfit = getKolamSaleInternalNetProfit(sale);
+  const profitSummary = computeKolamSaleProfitSummary(sale);
+  const profitByIndex = getKolamSaleItemProfitBreakdownMap(profitSummary);
+  const showInternalSummary = profitSummary.itemBreakdowns.length > 0;
   const pendingLabel = pendingStatus
     ? formatKolamSalePaymentStatusLabel(pendingStatus)
     : '';
@@ -420,25 +395,16 @@ export function KolamSalesOpsDetail({
             sale.items.map((item, index) => {
               const lineTotal = item.unitPrice * item.quantity;
               const discountAmount = getKolamSaleItemDiscountAmount(item);
-              const hppPerUnit =
-                item.itemType === 'custom'
-                  ? item.customCost ?? 0
-                  : item.unitCostAtSale ?? 0;
-              const hppTotal = getKolamSaleItemHppTotal(item);
-              const commissionShare = commissionShares[index] ?? 0;
-              const pmShare = paymentMethodShares[index] ?? 0;
-              const netProfit = getKolamSaleItemNetProfit(
-                item,
-                commissionShare,
-                pmShare,
+              const packingClientTotal = item.packings.reduce(
+                (sum, packing) =>
+                  sum + packing.unitPriceAtSale * packing.quantity,
+                0,
               );
               const clientPay =
-                item.subtotal + Math.max(0, item.shippingCost);
-              const showInternalBlock =
-                item.itemType !== 'custom' ||
-                hppTotal > 0 ||
-                commissionShare > 0 ||
-                pmShare > 0;
+                item.subtotal +
+                Math.max(0, item.shippingCost) +
+                packingClientTotal;
+              const internal = profitByIndex.get(index) ?? null;
 
               return (
                 <View key={item.id} style={styles.itemCard}>
@@ -465,7 +431,12 @@ export function KolamSalesOpsDetail({
                   </View>
 
                   <View style={styles.breakdownCard}>
-                    <View style={[styles.breakdownSection, styles.breakdownSectionFirst]}>
+                    <View
+                      style={[
+                        styles.breakdownSection,
+                        styles.breakdownSectionFirst,
+                      ]}
+                    >
                       <Text style={styles.breakdownSectionTitle}>
                         Tagihan Client
                       </Text>
@@ -497,6 +468,12 @@ export function KolamSalesOpsDetail({
                           value={formatRupiah(item.shippingCost)}
                         />
                       ) : null}
+                      {packingClientTotal > 0 ? (
+                        <BreakdownAmountRow
+                          label="Kemasan"
+                          value={formatRupiah(packingClientTotal)}
+                        />
+                      ) : null}
                       <BreakdownAmountRow
                         emphasis
                         label="Client Bayar"
@@ -504,43 +481,11 @@ export function KolamSalesOpsDetail({
                       />
                     </View>
 
-                    {showInternalBlock ? (
-                      <View style={styles.breakdownSection}>
-                        <Text style={styles.breakdownSectionTitle}>
-                          Internal
-                        </Text>
-                        <BreakdownAmountRow
-                          label="Pendapatan (setelah disc)"
-                          value={formatRupiah(item.subtotal)}
-                        />
-                        {hppTotal > 0 ? (
-                          <BreakdownAmountRow
-                            label={`HPP (${formatRupiah(hppPerUnit)}/pcs)`}
-                            tone="deduction"
-                            value={`-${formatRupiah(hppTotal)}`}
-                          />
-                        ) : null}
-                        {pmShare > 0 ? (
-                          <BreakdownAmountRow
-                            label="Biaya Payment Method"
-                            tone="deduction"
-                            value={`-${formatRupiah(pmShare)}`}
-                          />
-                        ) : null}
-                        {commissionShare > 0 ? (
-                          <BreakdownAmountRow
-                            label="Komisi"
-                            tone="deduction"
-                            value={`-${formatRupiah(commissionShare)}`}
-                          />
-                        ) : null}
-                        <BreakdownAmountRow
-                          emphasis
-                          label="Profit Bersih"
-                          tone={netProfit >= 0 ? 'profit' : 'deduction'}
-                          value={formatRupiah(netProfit)}
-                        />
-                      </View>
+                    {internal ? (
+                      <ItemInternalBreakdownSection
+                        bd={internal}
+                        mode={profitSummary.mode}
+                      />
                     ) : null}
                   </View>
                 </View>
@@ -566,11 +511,9 @@ export function KolamSalesOpsDetail({
                 value={formatRupiah(cost.amount)}
               />
             ))}
-            {sale.sourceCost > 0 ? (
+            {sale.sourceCost > 0 && !marketplaceManaged ? (
               <BreakdownAmountRow
-                label={
-                  marketplaceManaged ? 'Biaya marketplace' : 'Biaya sumber'
-                }
+                label="Biaya sumber"
                 value={formatRupiah(sale.sourceCost)}
               />
             ) : null}
@@ -590,42 +533,65 @@ export function KolamSalesOpsDetail({
             <View style={styles.internalSummaryCard}>
               <Text style={styles.breakdownSectionTitle}>Internal</Text>
               <BreakdownAmountRow
-                label="Pendapatan"
-                value={formatRupiah(internalGrossSubtotal)}
+                label={
+                  profitSummary.mode === 'olshop'
+                    ? `Sub Total (${profitSummary.itemBreakdowns.length} item — Pemasukan kotor)`
+                    : 'Pendapatan'
+                }
+                value={formatRupiah(profitSummary.grossSubtotal)}
               />
-              {internalHppTotal > 0 ? (
+              {profitSummary.totalProductHpp > 0 ? (
                 <BreakdownAmountRow
                   label="Total HPP"
                   tone="deduction"
-                  value={`-${formatRupiah(internalHppTotal)}`}
+                  value={`-${formatRupiah(profitSummary.totalProductHpp)}`}
                 />
               ) : null}
-              {sale.paymentMethodCost > 0 ? (
+              {profitSummary.mode === 'olshop' &&
+              profitSummary.marketplaceFees > 0 ? (
+                <>
+                  <Text style={styles.metaText}>
+                    {profitSummary.marketplaceFeeLabel}
+                  </Text>
+                  {profitSummary.marketplaceFeeBreakdown.length > 0
+                    ? profitSummary.marketplaceFeeBreakdown.map((row, i) => (
+                        <BreakdownAmountRow
+                          key={`${row.name}-${i}`}
+                          label={`– ${row.name}`}
+                          tone="deduction"
+                          value={`-${formatRupiah(row.amount)}`}
+                        />
+                      ))
+                    : null}
+                  <BreakdownAmountRow
+                    label="Total"
+                    tone="deduction"
+                    value={`-${formatRupiah(profitSummary.marketplaceFees)}`}
+                  />
+                </>
+              ) : null}
+              {profitSummary.mode === 'internal' &&
+              profitSummary.paymentMethodCost > 0 ? (
                 <BreakdownAmountRow
                   label="Biaya Payment Method"
                   tone="deduction"
-                  value={`-${formatRupiah(sale.paymentMethodCost)}`}
+                  value={`-${formatRupiah(profitSummary.paymentMethodCost)}`}
                 />
               ) : null}
-              {(sale.commissionAccruedTotalAtSale ?? 0) > 0 ? (
+              {profitSummary.totalCommission > 0 ? (
                 <BreakdownAmountRow
                   label="Komisi final"
                   tone="deduction"
-                  value={`-${formatRupiah(sale.commissionAccruedTotalAtSale ?? 0)}`}
-                />
-              ) : null}
-              {sale.sourceCost > 0 && marketplaceManaged ? (
-                <BreakdownAmountRow
-                  label="Biaya marketplace"
-                  tone="deduction"
-                  value={`-${formatRupiah(sale.sourceCost)}`}
+                  value={`-${formatRupiah(profitSummary.totalCommission)}`}
                 />
               ) : null}
               <BreakdownAmountRow
                 emphasis
                 label="Profit bersih"
-                tone={internalNetProfit >= 0 ? 'profit' : 'deduction'}
-                value={formatRupiah(internalNetProfit)}
+                tone={
+                  profitSummary.netProfit >= 0 ? 'profit' : 'deduction'
+                }
+                value={formatRupiah(profitSummary.netProfit)}
               />
             </View>
           ) : null}
@@ -859,6 +825,107 @@ export function KolamSalesOpsDetail({
         visible={Boolean(pendingDelivery)}
       />
     </ScrollView>
+  );
+}
+
+function commissionRuleLabel(
+  rule: KolamSaleItemProfitBreakdown['commissionRule'],
+): string {
+  if (!rule) {
+    return 'Komisi';
+  }
+  if (rule.type === 'percentage') {
+    return `Komisi (${rule.val}%)`;
+  }
+  return 'Komisi (tetap/unit)';
+}
+
+function ItemInternalBreakdownSection({
+  bd,
+  mode,
+}: {
+  bd: KolamSaleItemProfitBreakdown;
+  mode: 'olshop' | 'internal';
+}) {
+  const storedLabel =
+    bd.vendorHpp > 0 || bd.bomHpp > 0
+      ? 'HPP Produk (tersimpan)'
+      : 'HPP Produk';
+
+  return (
+    <View style={styles.breakdownSection}>
+      <Text style={styles.breakdownSectionTitle}>Internal</Text>
+      {bd.hasDiscount ? (
+        <BreakdownAmountRow
+          label="Diskon item"
+          tone="deduction"
+          value={`-${formatRupiah(bd.discountAmount)}`}
+        />
+      ) : null}
+      <BreakdownAmountRow
+        label="Pendapatan (setelah disc)"
+        value={formatRupiah(bd.revenueAfterDiscount)}
+      />
+      {bd.vendorHpp > 0 ? (
+        <BreakdownAmountRow
+          label="Harga Vendor"
+          tone="deduction"
+          value={`-${formatRupiah(bd.vendorHpp)}`}
+        />
+      ) : null}
+      {bd.bomHpp > 0 ? (
+        <BreakdownAmountRow
+          label="Harga bahan baku"
+          tone="deduction"
+          value={`-${formatRupiah(bd.bomHpp)}`}
+        />
+      ) : null}
+      {bd.storedHpp > 0 ? (
+        <BreakdownAmountRow
+          label={storedLabel}
+          tone="deduction"
+          value={`-${formatRupiah(bd.storedHpp)}`}
+        />
+      ) : null}
+      {bd.packingHpp > 0 ? (
+        <BreakdownAmountRow
+          label="Harga packing"
+          tone="deduction"
+          value={`-${formatRupiah(bd.packingHpp)}`}
+        />
+      ) : null}
+      {mode === 'internal' && bd.pmCostShare > 0 ? (
+        <BreakdownAmountRow
+          label="Biaya Payment Method"
+          tone="deduction"
+          value={`-${formatRupiah(bd.pmCostShare)}`}
+        />
+      ) : null}
+      {mode === 'olshop' && bd.sourceFeeShare > 0 ? (
+        <BreakdownAmountRow
+          label="Biaya layanan (proporsional)"
+          tone="deduction"
+          value={`-${formatRupiah(bd.sourceFeeShare)}`}
+        />
+      ) : null}
+      <BreakdownAmountRow
+        label="Total sebelum komisi"
+        value={formatRupiah(bd.commissionBaseBeforeCommission)}
+      />
+      {bd.commissionAmount > 0 ? (
+        <BreakdownAmountRow
+          label={commissionRuleLabel(bd.commissionRule)}
+          tone="deduction"
+          value={`-${formatRupiah(bd.commissionAmount)}`}
+        />
+      ) : null}
+      <BreakdownAmountRow
+        emphasis
+        label="Profit Item"
+        tone={bd.profitItem >= 0 ? 'profit' : 'deduction'}
+        value={formatRupiah(bd.profitItem)}
+      />
+    </View>
   );
 }
 
