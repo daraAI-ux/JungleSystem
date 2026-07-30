@@ -7868,6 +7868,46 @@ function FinancialSettingsPanel({
               onPress={onSaveEnclosureSaleCommission}
             />
           </View>
+          {draft.enclosureSaleCommissionEnabled ? (
+            <>
+              <KolamRowFrame variant="settingsForm">
+                <KolamTextFieldRowCopy
+                  description="Pilih apakah komisi dihitung persen atau nominal tetap."
+                  label="Tipe komisi kandang"
+                />
+                <KolamDropdownSelect
+                  accessibilityLabel="Tipe komisi kandang"
+                  label="Tipe komisi kandang"
+                  menuPlacement="inline"
+                  options={enclosureSaleCommissionTypeOptions}
+                  showLabelInTrigger={false}
+                  style={[
+                    styles.financialSelectorControl,
+                    {width: settingsFieldWidth},
+                  ]}
+                  triggerStyle={styles.shippingTimezoneTrigger}
+                  value={draft.enclosureSaleCommissionType}
+                  onChange={value =>
+                    setDraftField('enclosureSaleCommissionType', value)
+                  }
+                />
+              </KolamRowFrame>
+              <KolamTextFieldRow
+                description="Nilai persen atau nominal sesuai tipe komisi."
+                fieldWidth={settingsFieldWidth}
+                label={
+                  draft.enclosureSaleCommissionType === 'fixed'
+                    ? 'Nominal per kandang'
+                    : 'Persentase'
+                }
+                onChangeText={value =>
+                  setDraftField('enclosureSaleCommissionValue', value)
+                }
+                value={draft.enclosureSaleCommissionValue}
+                variant="settingsForm"
+              />
+            </>
+          ) : null}
           <View style={styles.notificationToggleGrid}>
             <View style={styles.notificationToggleBox}>
               <KolamToggleRow
@@ -7912,46 +7952,6 @@ function FinancialSettingsPanel({
               />
             </View>
           </View>
-          {draft.enclosureSaleCommissionEnabled ? (
-            <>
-              <KolamRowFrame variant="settingsForm">
-                <KolamTextFieldRowCopy
-                  description="Pilih apakah komisi dihitung persen atau nominal tetap."
-                  label="Tipe komisi kandang"
-                />
-                <KolamDropdownSelect
-                  accessibilityLabel="Tipe komisi kandang"
-                  label="Tipe komisi kandang"
-                  menuPlacement="inline"
-                  options={enclosureSaleCommissionTypeOptions}
-                  showLabelInTrigger={false}
-                  style={[
-                    styles.financialSelectorControl,
-                    {width: settingsFieldWidth},
-                  ]}
-                  triggerStyle={styles.shippingTimezoneTrigger}
-                  value={draft.enclosureSaleCommissionType}
-                  onChange={value =>
-                    setDraftField('enclosureSaleCommissionType', value)
-                  }
-                />
-              </KolamRowFrame>
-              <KolamTextFieldRow
-                description="Nilai persen atau nominal sesuai tipe komisi."
-                fieldWidth={settingsFieldWidth}
-                label={
-                  draft.enclosureSaleCommissionType === 'fixed'
-                    ? 'Nominal per kandang'
-                    : 'Persentase'
-                }
-                onChangeText={value =>
-                  setDraftField('enclosureSaleCommissionValue', value)
-                }
-                value={draft.enclosureSaleCommissionValue}
-                variant="settingsForm"
-              />
-            </>
-          ) : null}
         </View>
       ) : null}
 
