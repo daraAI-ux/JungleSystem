@@ -558,6 +558,48 @@ describe('settings web widgets', () => {
     );
   });
 
+  it('routes shipping sections through scoped save handlers', async () => {
+    const onSave = jest.fn();
+    const onSaveShippingOrigin = jest.fn();
+    const onSaveStoreOperatingHours = jest.fn();
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamSettingsWebConfigSurface
+          {...createSurfaceProps({
+            activeTabId: 'toko',
+            onSave,
+            onSaveShippingOrigin,
+            onSaveStoreOperatingHours,
+          })}
+        />,
+      );
+    });
+
+    const buttons = renderer!.root.findAllByType(KolamActionControlButton);
+
+    expect(buttons.map(node => node.props.label)).toEqual(
+      expect.arrayContaining([
+        'Simpan asal kirim',
+        'Simpan jam operasional',
+      ]),
+    );
+
+    await ReactTestRenderer.act(async () => {
+      buttons
+        .find(node => node.props.label === 'Simpan asal kirim')!
+        .props.onPress();
+      buttons
+        .find(node => node.props.label === 'Simpan jam operasional')!
+        .props.onPress();
+    });
+
+    expect(onSaveShippingOrigin).toHaveBeenCalledTimes(1);
+    expect(onSaveStoreOperatingHours).toHaveBeenCalledTimes(1);
+    expect(onSave).not.toHaveBeenCalled();
+  });
+
   it('routes operational controls through scoped save handlers', async () => {
     const onSave = jest.fn();
     const onSaveOperationalGoogleAuth = jest.fn();
@@ -846,6 +888,8 @@ function createSurfaceProps(
     onRefreshKpiWeeklyPreview: jest.fn(),
     onRunRegionSync: jest.fn(),
     onSaveKpiSettings: jest.fn(),
+    onSaveShippingOrigin: jest.fn(),
+    onSaveStoreOperatingHours: jest.fn(),
     onSaveOperationalGoogleAuth: jest.fn(),
     onSaveOperationalLivechat: jest.fn(),
     onSaveOperationalMaintenance: jest.fn(),

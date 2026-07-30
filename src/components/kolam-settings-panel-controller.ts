@@ -556,6 +556,19 @@ export interface KpiSettingsSummaryRow {
   detail: string;
 }
 
+const defaultStoreOperatingHoursMessages = {
+  beforeOpen:
+    'Toko belum buka. Pesanan & pengiriman biasanya diproses setelah jam buka.',
+  afterClose:
+    'Toko sudah tutup. Pesanan & pengiriman bisa tertunda sampai jam operasional berikutnya.',
+  weeklyClosed:
+    'Hari ini libur rutin. Chat tetap bisa, tapi proses pesanan & pengiriman menunggu hari buka.',
+  specialClosed:
+    'Hari ini libur. Pengiriman & layanan CS bisa tertunda sampai toko buka kembali.',
+  shippingDisclaimer:
+    'Catatan: di luar jam operasional / saat libur, pengiriman dan balasan CS bisa lebih lambat.',
+};
+
 const emptyWebSettingDraft: WebSettingDraft = {
   versionKolam: '',
   versionEnclonura: '',
@@ -619,11 +632,16 @@ const emptyWebSettingDraft: WebSettingDraft = {
   storeOperatingHoursSpecialClosureDate: '',
   storeOperatingHoursSpecialClosureLabel: '',
   storeOperatingHoursSpecialClosuresText: '',
-  storeOperatingHoursMessageBeforeOpen: '',
-  storeOperatingHoursMessageAfterClose: '',
-  storeOperatingHoursMessageWeeklyClosed: '',
-  storeOperatingHoursMessageSpecialClosed: '',
-  storeOperatingHoursMessageShippingDisclaimer: '',
+  storeOperatingHoursMessageBeforeOpen:
+    defaultStoreOperatingHoursMessages.beforeOpen,
+  storeOperatingHoursMessageAfterClose:
+    defaultStoreOperatingHoursMessages.afterClose,
+  storeOperatingHoursMessageWeeklyClosed:
+    defaultStoreOperatingHoursMessages.weeklyClosed,
+  storeOperatingHoursMessageSpecialClosed:
+    defaultStoreOperatingHoursMessages.specialClosed,
+  storeOperatingHoursMessageShippingDisclaimer:
+    defaultStoreOperatingHoursMessages.shippingDisclaimer,
   storeHoursMondayOpen: true,
   storeHoursMondayOpenAt: '09:00',
   storeHoursMondayCloseAt: '21:00',
@@ -3081,6 +3099,80 @@ export function useKolamSettingsPanelController(
     }
   };
 
+  const saveShippingOrigin = async () => {
+    if (
+      isInvalidOptionalNumber(webSettingDraft.originLatitude) ||
+      isInvalidOptionalNumber(webSettingDraft.originLongitude)
+    ) {
+      setWebSettingSaveStatus('error');
+      setWebSettingMessage('Koordinat asal pengiriman tidak valid.');
+      return;
+    }
+
+    const originAddress = createShippingOriginAddressUpdateBody(webSettingDraft);
+    const body = {
+      originAddress,
+      ...(createSecretUpdateField(
+        'biteshipApiKey',
+        webSettingDraft.biteshipApiKey,
+      ) as Pick<KolamWebSetting, 'biteshipApiKey'>),
+      ...(createSecretUpdateField(
+        'googleMapsBrowserApiKey',
+        webSettingDraft.googleMapsBrowserApiKey,
+      ) as Pick<KolamWebSetting, 'googleMapsBrowserApiKey'>),
+    };
+
+    setWebSettingSaveStatus('saving');
+    setWebSettingMessage('');
+
+    try {
+      const updated = await updateKolamWebSetting(body);
+
+      setWebSetting({
+        ...updated,
+        originAddress: {
+          ...(updated.originAddress ?? {}),
+          ...originAddress,
+        },
+        biteshipApiKeyConfigured:
+          updated.biteshipApiKeyConfigured ??
+          webSetting?.biteshipApiKeyConfigured ??
+          isConfiguredSecretDraft(webSettingDraft.biteshipApiKey),
+        googleMapsBrowserApiKeyConfigured:
+          updated.googleMapsBrowserApiKeyConfigured ??
+          webSetting?.googleMapsBrowserApiKeyConfigured ??
+          isConfiguredSecretDraft(webSettingDraft.googleMapsBrowserApiKey),
+      });
+      setWebSettingSaveStatus('saved');
+      setWebSettingMessage('Asal pengiriman berhasil disimpan.');
+    } catch (error) {
+      setWebSettingSaveStatus('error');
+      setWebSettingMessage(getWebSettingSaveErrorMessage(error));
+    }
+  };
+
+  const saveStoreOperatingHours = async () => {
+    const storeOperatingHours =
+      createStoreOperatingHoursUpdateBody(webSettingDraft);
+
+    setWebSettingSaveStatus('saving');
+    setWebSettingMessage('');
+
+    try {
+      const updated = await updateKolamWebSetting({ storeOperatingHours });
+
+      setWebSetting({
+        ...updated,
+        storeOperatingHours,
+      });
+      setWebSettingSaveStatus('saved');
+      setWebSettingMessage('Jam operasional berhasil disimpan.');
+    } catch (error) {
+      setWebSettingSaveStatus('error');
+      setWebSettingMessage(getWebSettingSaveErrorMessage(error));
+    }
+  };
+
   const saveOperationalMaintenance = async (
     target: 'pos' | 'marketplace',
     value: boolean,
@@ -3940,6 +4032,8 @@ export function useKolamSettingsPanelController(
     saveNotificationFirebase,
     saveNotificationOtpSmtp,
     saveNotificationToggle,
+    saveShippingOrigin,
+    saveStoreOperatingHours,
     saveOperationalGoogleAuth,
     saveOperationalLivechat,
     saveOperationalMaintenance,
@@ -4103,12 +4197,19 @@ function createWebSettingDraft(
     storeOperatingHoursSpecialClosuresText: serializeStoreSpecialClosures(
       storeOperatingHours.specialClosures,
     ),
-    storeOperatingHoursMessageBeforeOpen: storeMessages.beforeOpen ?? '',
-    storeOperatingHoursMessageAfterClose: storeMessages.afterClose ?? '',
-    storeOperatingHoursMessageWeeklyClosed: storeMessages.weeklyClosed ?? '',
-    storeOperatingHoursMessageSpecialClosed: storeMessages.specialClosed ?? '',
+    storeOperatingHoursMessageBeforeOpen:
+      storeMessages.beforeOpen || defaultStoreOperatingHoursMessages.beforeOpen,
+    storeOperatingHoursMessageAfterClose:
+      storeMessages.afterClose || defaultStoreOperatingHoursMessages.afterClose,
+    storeOperatingHoursMessageWeeklyClosed:
+      storeMessages.weeklyClosed ||
+      defaultStoreOperatingHoursMessages.weeklyClosed,
+    storeOperatingHoursMessageSpecialClosed:
+      storeMessages.specialClosed ||
+      defaultStoreOperatingHoursMessages.specialClosed,
     storeOperatingHoursMessageShippingDisclaimer:
-      storeMessages.shippingDisclaimer ?? '',
+      storeMessages.shippingDisclaimer ||
+      defaultStoreOperatingHoursMessages.shippingDisclaimer,
     storeHoursMondayOpen: mondayHours.open !== false,
     storeHoursMondayOpenAt:
       mondayHours.openAt ?? emptyWebSettingDraft.storeHoursMondayOpenAt,
@@ -5210,6 +5311,17 @@ function createSecretUpdateField(key: string, value: string) {
   return { [key]: trimmed };
 }
 
+function createShippingOriginAddressUpdateBody(draft: WebSettingDraft) {
+  return {
+    addressLine1: draft.originAddressLine1.trim(),
+    city: draft.originCity.trim(),
+    province: draft.originProvince.trim(),
+    postalCode: draft.originPostalCode.trim(),
+    latitude: parseOptionalNumber(draft.originLatitude),
+    longitude: parseOptionalNumber(draft.originLongitude),
+  };
+}
+
 function createStoreOperatingHoursUpdateBody(draft: WebSettingDraft) {
   return {
     enabled: draft.storeOperatingHoursEnabled,
@@ -5340,6 +5452,15 @@ function parseOptionalNumber(value: string) {
 
   const parsed = Number(trimmed);
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+function isInvalidOptionalNumber(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return false;
+  }
+
+  return !Number.isFinite(Number(trimmed));
 }
 
 function parseMacAddressList(value: string) {

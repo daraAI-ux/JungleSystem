@@ -206,6 +206,12 @@ export function KolamSettingsSurfaceBody({
         onSaveNotificationToggle={(key, value) => {
           void controller.saveNotificationToggle(key, value);
         }}
+        onSaveShippingOrigin={() => {
+          void controller.saveShippingOrigin();
+        }}
+        onSaveStoreOperatingHours={() => {
+          void controller.saveStoreOperatingHours();
+        }}
         onSaveOperationalGoogleAuth={patch => {
           void controller.saveOperationalGoogleAuth(patch);
         }}

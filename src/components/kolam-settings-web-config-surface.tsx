@@ -842,6 +842,8 @@ export function KolamSettingsWebConfigSurface({
   onSaveNotificationFirebase = noop,
   onSaveNotificationOtpSmtp = noop,
   onSaveNotificationToggle = noopSaveNotificationToggle,
+  onSaveShippingOrigin = noop,
+  onSaveStoreOperatingHours = noop,
   onSaveOperationalGoogleAuth,
   onSaveOperationalLivechat,
   onSaveOperationalMaintenance,
@@ -1015,6 +1017,8 @@ export function KolamSettingsWebConfigSurface({
     key: 'daraHandoffNotifyEnabled' | 'teamChatGroupCallEnabled',
     value: boolean,
   ) => void;
+  onSaveShippingOrigin?: () => void;
+  onSaveStoreOperatingHours?: () => void;
   onSaveOperationalGoogleAuth: (
     patch: Partial<
       Pick<WebSettingDraft, 'webstoreGoogleAuthEnabled' | 'googleOAuthClientId'>
@@ -4259,15 +4263,26 @@ export function KolamSettingsWebConfigSurface({
               styles.settingsTabCardSpacing,
             ]}
           >
-            <KolamCopyStack
-              items={[
-                {
-                  id: 'shipping-origin-title',
-                  text: 'Asal pengiriman (Biteship)',
-                  style: styles.marketplaceOverviewLabel,
-                },
-              ]}
-            />
+            <View style={styles.operationalCardHeaderRow}>
+              <KolamCopyStack
+                containerStyle={styles.operationalCardHeaderCopy}
+                items={[
+                  {
+                    id: 'shipping-origin-title',
+                    text: 'Asal pengiriman (Biteship)',
+                    style: styles.marketplaceOverviewLabel,
+                  },
+                ]}
+              />
+              <KolamActionControlButton
+                label="Simpan asal kirim"
+                loading={saveStatus === 'saving'}
+                loadingLabel="Menyimpan..."
+                intent="primary"
+                disabled={disabled}
+                onPress={onSaveShippingOrigin}
+              />
+            </View>
             <KolamTextFieldRow
               variant="settingsForm"
               fieldWidth={settingsFieldWidth}
@@ -4393,20 +4408,31 @@ export function KolamSettingsWebConfigSurface({
               styles.settingsTabCardSpacing,
             ]}
           >
-            <KolamCopyStack
-              items={[
-                {
-                  id: 'store-hours-title',
-                  text: 'Jam operasional toko (dunia-anura.com)',
-                  style: styles.marketplaceOverviewLabel,
-                },
-                {
-                  id: 'store-hours-meta',
-                  text: 'DARA tetap aktif untuk produk dan FAQ. Saat tutup atau libur, DARA mendapat konteks jam operasional dan mengingatkan pengiriman tertunda.',
-                  style: styles.marketplaceOverviewMeta,
-                },
-              ]}
-            />
+            <View style={styles.operationalCardHeaderRow}>
+              <KolamCopyStack
+                containerStyle={styles.operationalCardHeaderCopy}
+                items={[
+                  {
+                    id: 'store-hours-title',
+                    text: 'Jam operasional toko (dunia-anura.com)',
+                    style: styles.marketplaceOverviewLabel,
+                  },
+                  {
+                    id: 'store-hours-meta',
+                    text: 'DARA tetap aktif untuk produk dan FAQ. Saat tutup atau libur, DARA mendapat konteks jam operasional dan mengingatkan pengiriman tertunda.',
+                    style: styles.marketplaceOverviewMeta,
+                  },
+                ]}
+              />
+              <KolamActionControlButton
+                label="Simpan jam operasional"
+                loading={saveStatus === 'saving'}
+                loadingLabel="Menyimpan..."
+                intent="primary"
+                disabled={disabled}
+                onPress={onSaveStoreOperatingHours}
+              />
+            </View>
             <View style={styles.shippingStoreHoursGrid}>
               <View style={styles.shippingStoreHoursBox}>
                 <KolamToggleRow
