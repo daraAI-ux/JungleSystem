@@ -1,11 +1,14 @@
 import React, { useMemo, useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
+  canUploadKolamSalePaymentProof,
   formatKolamSaleDeliveryStatusLabel,
   formatKolamSaleItemTypeLabel,
   formatKolamSalePaymentStatusLabel,
+  getKolamSaleAllowedStatusTransitions,
   getKolamSaleDeliveryStatusIntent,
   getKolamSalePaymentStatusIntent,
+  isKolamSaleMarketplaceManaged,
   isKolamSalesListRoute,
   KOLAM_SALE_DELIVERY_STATUS_OPTIONS,
   KOLAM_SALE_LIFECYCLE_OPTIONS,
@@ -15,6 +18,7 @@ import {
   type KolamSaleDeliveryStatus,
   type KolamSaleLifecycle,
   type KolamSalePaymentStatus,
+  type KolamSaleStatusTransitionTarget,
 } from '../domain/kolam-sales';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { formatRupiah } from '../lib/money';
@@ -24,6 +28,7 @@ import {
 } from '../hooks/use-kolam-sales-controller';
 import { KolamButton } from './kolam-button';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
+import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDateField } from './kolam-date-field';
@@ -48,7 +53,7 @@ const LIST_COLUMNS = [
 
 /**
  * Kolam backoffice penjualan (FE `/sales`).
- * P0 batch 1: list + detail read. Status/proof/PDF → batch 2.
+ * P0: list + detail + status/proof/invoice.
  */
 export function KolamSalesOpsSurface({
   onRouteChange,
@@ -457,6 +462,8 @@ function KolamSalesOpsDetail({
   onRouteChange?: (route: string) => void;
 }) {
   const sale = controller.selectedSale;
+  const [pendingStatus, setPendingStatus] =
+    useState<KolamSaleStatusTransitionTarget | null>(null);
 
   if (controller.loading && !sale) {
     return (
@@ -484,6 +491,16 @@ function KolamSalesOpsDetail({
     );
   }
 
+  const marketplaceManaged = isKolamSaleMarketplaceManaged(sale);
+  const allowedTransitions = marketplaceManaged
+    ? []
+    : getKolamSaleAllowedStatusTransitions(sale.status);
+  const canUploadProof =
+    !marketplaceManaged && canUploadKolamSalePaymentProof(sale.status);
+  const pendingLabel = pendingStatus
+    ? formatKolamSalePaymentStatusLabel(pendingStatus)
+    : '';
+
   return (
     <ScrollView
       contentContainerStyle={styles.detailContent}
@@ -510,10 +527,22 @@ function KolamSalesOpsDetail({
             onPress={() => onRouteChange?.(KOLAM_SALES_ROOT)}
           />
           <KolamButton
-            disabled={controller.loading}
+            disabled={controller.loading || controller.mutating}
             label="Refresh"
             onPress={() => {
               void controller.onRefresh();
+            }}
+          />
+          <KolamButton
+            disabled={controller.downloadingInvoice || controller.mutating}
+            intent="primary"
+            label={
+              controller.downloadingInvoice
+                ? 'Mengunduh…'
+                : 'Unduh invoice PDF'
+            }
+            onPress={() => {
+              void controller.onDownloadInvoice();
             }}
           />
         </View>
@@ -534,7 +563,38 @@ function KolamSalesOpsDetail({
             sale.status,
           )}
         />
+        {marketplaceManaged ? (
+          <KolamStatusBadge
+            intent="info"
+            label="Marketplace otomatis"
+          />
+        ) : null}
       </View>
+
+      <Text style={styles.sectionTitle}>Aksi status</Text>
+      {marketplaceManaged ? (
+        <Text style={styles.metaText}>
+          Status pembayaran marketplace dikelola otomatis dari platform.
+        </Text>
+      ) : allowedTransitions.length === 0 ? (
+        <Text style={styles.metaText}>
+          {sale.status === 'pending'
+            ? 'Menunggu persetujuan finance (ubah via Persetujuan Diskon).'
+            : 'Tidak ada transisi status yang tersedia.'}
+        </Text>
+      ) : (
+        <View style={styles.actionButtons}>
+          {allowedTransitions.map(status => (
+            <KolamButton
+              disabled={controller.mutating}
+              intent={status === 'cancelled' ? 'danger' : 'primary'}
+              key={status}
+              label={formatKolamSalePaymentStatusLabel(status)}
+              onPress={() => setPendingStatus(status)}
+            />
+          ))}
+        </View>
+      )}
 
       <KolamDescriptionList
         accessibilityLabel="Ringkasan penjualan"
@@ -632,9 +692,30 @@ function KolamSalesOpsDetail({
         ]}
       />
 
-      <Text style={styles.sectionTitle}>
-        Bukti pembayaran ({sale.paymentProofs.length})
-      </Text>
+      <View style={styles.proofHeader}>
+        <Text style={styles.sectionTitle}>
+          Bukti pembayaran ({sale.paymentProofs.length})
+        </Text>
+        {canUploadProof ? (
+          <KolamButton
+            disabled={controller.mutating}
+            label={controller.mutating ? 'Mengunggah…' : 'Unggah bukti'}
+            onPress={() => {
+              void (async () => {
+                const uri = await controller.onPickImage();
+                if (uri) {
+                  await controller.onUploadPaymentProof(uri);
+                }
+              })();
+            }}
+          />
+        ) : null}
+      </View>
+      {!canUploadProof && !marketplaceManaged ? (
+        <Text style={styles.metaText}>
+          Unggah bukti tersedia saat status Menunggu bayar / Bayar sebagian.
+        </Text>
+      ) : null}
       {sale.paymentProofs.length === 0 ? (
         <Text style={styles.metaText}>Belum ada bukti pembayaran.</Text>
       ) : (
@@ -677,10 +758,30 @@ function KolamSalesOpsDetail({
         </>
       ) : null}
 
-      <Text style={styles.batchNote}>
-        Aksi ubah status, unggah bukti, dan unduh invoice PDF akan tersedia di
-        batch berikutnya.
-      </Text>
+      <KolamConfirmDialog
+        cancelLabel="Batal"
+        confirmLabel={
+          pendingStatus === 'cancelled' ? 'Batalkan penjualan' : 'Ubah status'
+        }
+        destructive={pendingStatus === 'cancelled'}
+        message={
+          pendingStatus === 'paid'
+            ? `Ubah status ${sale.invoiceCode} menjadi Lunas? Stok dan wallet akan diproses di server.`
+            : pendingStatus === 'cancelled'
+              ? `Batalkan ${sale.invoiceCode}? Stok/wallet dapat dikembalikan sesuai aturan backend.`
+              : `Ubah status ${sale.invoiceCode} menjadi ${pendingLabel}?`
+        }
+        onCancel={() => setPendingStatus(null)}
+        onConfirm={() => {
+          const next = pendingStatus;
+          setPendingStatus(null);
+          if (next) {
+            void controller.onUpdateStatus(next);
+          }
+        }}
+        title="Konfirmasi status"
+        visible={Boolean(pendingStatus)}
+      />
     </ScrollView>
   );
 }
@@ -922,6 +1023,11 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8,
   },
+  actionButtons: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
   badgeRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -931,6 +1037,13 @@ const styles = StyleSheet.create({
     color: V.colors.fg,
     fontSize: 15,
     fontWeight: '600',
+  },
+  proofHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'space-between',
   },
   itemCard: {
     borderBottomColor: V.colors.border,
@@ -953,10 +1066,5 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     gap: 2,
     paddingVertical: 8,
-  },
-  batchNote: {
-    color: V.colors.mutedFg,
-    fontSize: 12,
-    fontStyle: 'italic',
   },
 });

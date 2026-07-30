@@ -201,7 +201,12 @@ function normalizeErrorPayload(payload: unknown): ApiErrorPayload {
           : typeof record.error === 'string'
           ? record.error
           : undefined,
-      code: typeof record.code === 'string' ? record.code : undefined,
+      code:
+        typeof record.code === 'string'
+          ? record.code
+          : typeof record.errorCode === 'string'
+            ? record.errorCode
+            : undefined,
       errors: isValidationErrors(record.errors) ? record.errors : undefined,
     };
   }

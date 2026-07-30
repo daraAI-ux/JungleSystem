@@ -1,10 +1,15 @@
 import {
+  canMarkKolamSalePaid,
+  canUploadKolamSalePaymentProof,
   createInitialKolamSaleListFilters,
   formatKolamSaleDeliveryStatusLabel,
+  formatKolamSaleMutationError,
   formatKolamSalePaymentStatusLabel,
+  getKolamSaleAllowedStatusTransitions,
   getKolamSalePaymentStatusIntent,
   getKolamSaleRouteId,
   getKolamSaleSurfaceMode,
+  isKolamSaleMarketplaceManaged,
   isKolamSalesDetailRoute,
   isKolamSalesDiscountApprovalRoute,
   isKolamSalesListRoute,
@@ -13,6 +18,7 @@ import {
   normalizeKolamSaleList,
 } from '../src/domain/kolam-sales';
 import { getKolamNavigationRouteTarget } from '../src/domain/kolam-navigation';
+import { ApiError } from '../src/lib/api-error';
 
 describe('kolam sales domain', () => {
   it('detects list and detail ops routes, excludes create/edit/discount-approval', () => {
@@ -89,7 +95,12 @@ describe('kolam sales domain', () => {
           total: 140000,
           shippingCost: 10000,
           customer: { _id: 'c1', name: 'Ada' },
-          sourceRef: { _id: 's1', name: 'POS', type: 'offline', logo: '/logo.png' },
+          sourceRef: {
+            _id: 's1',
+            name: 'POS',
+            type: 'offline',
+            logo: '/logo.png',
+          },
           items: [
             {
               _id: 'i1',
@@ -118,6 +129,7 @@ describe('kolam sales domain', () => {
         status: 'paid',
         deliveryStatus: 'none',
         buyerInfo: { name: 'Shopee Buyer', phone: '0812' },
+        externalRef: { source: 'shopee' },
         paymentMethod: { _id: 'pm1', name: 'Transfer', type: 'transfer' },
         paymentProofs: [{ path: '/proofs/a.jpg', uploadedAt: '2026-01-02' }],
         items: [],
@@ -126,6 +138,8 @@ describe('kolam sales domain', () => {
     });
     expect(detail.id).toBe('sale-2');
     expect(detail.buyerLabel).toBe('Shopee Buyer');
+    expect(detail.marketplaceSource).toBe('shopee');
+    expect(isKolamSaleMarketplaceManaged(detail)).toBe(true);
     expect(detail.paymentMethod?.name).toBe('Transfer');
     expect(detail.paymentProofs).toHaveLength(1);
     expect(detail.paymentProofs[0].uri).toContain('/proofs/a.jpg');
@@ -140,5 +154,39 @@ describe('kolam sales domain', () => {
     expect(formatKolamSaleDeliveryStatusLabel('packing', 'paid')).toBe(
       'Sedang dipacking',
     );
+  });
+
+  it('gates status transitions and paid proof requirement', () => {
+    expect(getKolamSaleAllowedStatusTransitions('draft')).toEqual([
+      'sent',
+      'cancelled',
+    ]);
+    expect(getKolamSaleAllowedStatusTransitions('pending')).toEqual([]);
+    expect(getKolamSaleAllowedStatusTransitions('sent')).toEqual([
+      'paid',
+      'cancelled',
+    ]);
+    expect(canUploadKolamSalePaymentProof('sent')).toBe(true);
+    expect(canUploadKolamSalePaymentProof('draft')).toBe(false);
+    expect(canMarkKolamSalePaid({ status: 'sent', paymentProofs: [] }).ok).toBe(
+      false,
+    );
+    expect(
+      canMarkKolamSalePaid({
+        status: 'sent',
+        paymentProofs: [{ path: 'x' }],
+      }).ok,
+    ).toBe(true);
+  });
+
+  it('formats cashflow session required errors for operators', () => {
+    const formatted = formatKolamSaleMutationError(
+      new ApiError(400, {
+        message: 'No open cashflow session',
+        code: 'CASHFLOW_SESSION_REQUIRED',
+      }),
+    );
+    expect(formatted).toContain('Sesi Tunai');
+    expect(formatted).toContain('No open cashflow session');
   });
 });

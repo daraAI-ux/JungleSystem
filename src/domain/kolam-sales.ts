@@ -145,6 +145,8 @@ export type KolamSale = {
   paidAmount: number;
   paymentMethod: KolamSalePaymentMethodRef | null;
   sourceRef: KolamSaleSourceRef | null;
+  /** Marketplace channel source (shopee/tokopedia) when present. */
+  marketplaceSource: string;
   paymentProofs: KolamSalePaymentProof[];
   saleHistories: KolamSaleHistory[];
   paidAt: string;
@@ -153,6 +155,25 @@ export type KolamSale = {
   transactionDate: string;
   createdAt: string;
   updatedAt: string;
+};
+
+/** Staff-selectable next statuses from FE `sales-status-updater.tsx`. */
+export type KolamSaleStatusTransitionTarget = Extract<
+  KolamSalePaymentStatus,
+  'sent' | 'paid' | 'cancelled'
+>;
+
+const SALE_STATUS_TRANSITIONS: Record<
+  KolamSalePaymentStatus,
+  KolamSaleStatusTransitionTarget[]
+> = {
+  draft: ['sent', 'cancelled'],
+  pending: [],
+  sent: ['paid', 'cancelled'],
+  unpaid: [],
+  paid: ['cancelled'],
+  partial_paid: ['paid', 'cancelled'],
+  cancelled: [],
 };
 
 export type KolamSaleListResult = {
@@ -424,6 +445,72 @@ export function isKolamSalePaymentStatus(
   );
 }
 
+export function isKolamSaleMarketplaceManaged(sale: {
+  marketplaceSource?: string | null;
+}): boolean {
+  const source = String(sale.marketplaceSource || '').toLowerCase();
+  return source === 'shopee' || source === 'tokopedia';
+}
+
+export function getKolamSaleAllowedStatusTransitions(
+  status?: string | null,
+): KolamSaleStatusTransitionTarget[] {
+  const key = String(status || '').toLowerCase();
+  if (!isKolamSalePaymentStatus(key)) {
+    return [];
+  }
+  return [...SALE_STATUS_TRANSITIONS[key]];
+}
+
+export function canUploadKolamSalePaymentProof(status?: string | null): boolean {
+  const key = String(status || '').toLowerCase();
+  return key === 'sent' || key === 'partial_paid';
+}
+
+export function canMarkKolamSalePaid(sale: {
+  status?: string | null;
+  paymentProofs?: Array<unknown>;
+}): { ok: boolean; reason: string | null } {
+  const key = String(sale.status || '').toLowerCase();
+  if (key !== 'sent' && key !== 'partial_paid') {
+    return { ok: false, reason: 'Status saat ini tidak bisa diubah ke Lunas.' };
+  }
+  if (!sale.paymentProofs?.length) {
+    return {
+      ok: false,
+      reason:
+        'Unggah bukti pembayaran terlebih dahulu sebelum mengubah status ke Lunas.',
+    };
+  }
+  return { ok: true, reason: null };
+}
+
+export function formatKolamSaleMutationError(error: unknown): string {
+  if (error instanceof Error && 'code' in error) {
+    const apiError = error as Error & { code?: string };
+    if (apiError.code === 'CASHFLOW_SESSION_REQUIRED') {
+      return (
+        `${apiError.message || 'Sesi tunai belum dibuka'}. ` +
+        'Buka Sesi Tunai di menu Penjualan & Arus Kas → Sesi Tunai, lalu coba lagi.'
+      );
+    }
+  }
+  if (error instanceof Error && /cashflow session/i.test(error.message)) {
+    return (
+      `${error.message}. ` +
+      'Buka Sesi Tunai di menu Penjualan & Arus Kas → Sesi Tunai, lalu coba lagi.'
+    );
+  }
+  return getErrorMessageFallback(error);
+}
+
+function getErrorMessageFallback(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return 'Unknown error';
+}
+
 /* ──────────────────────────────────────────
    Normalize
    ──────────────────────────────────────────*/
@@ -438,6 +525,7 @@ export function normalizeKolamSale(payload: unknown): KolamSale {
   const buyerInfo = normalizeBuyerInfo(record.buyerInfo);
   const sourceRef = normalizeSourceRef(record.sourceRef);
   const paymentMethod = normalizePaymentMethodRef(record.paymentMethod);
+  const externalRef = asRecord(record.externalRef);
 
   return {
     id: getString(record, '_id') || getString(record, 'id'),
@@ -454,6 +542,7 @@ export function normalizeKolamSale(payload: unknown): KolamSale {
     paidAmount: getNumber(record, 'paidAmount') ?? 0,
     paymentMethod,
     sourceRef,
+    marketplaceSource: getString(externalRef, 'source').toLowerCase(),
     paymentProofs: normalizePaymentProofs(record.paymentProofs),
     saleHistories: normalizeSaleHistories(record.saleHistories),
     paidAt: stringifyDate(record.paidAt),
