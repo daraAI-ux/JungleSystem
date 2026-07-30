@@ -40,8 +40,8 @@ export function KolamStatusIndicatorIcon({
 function KolamTriangleLeftGlyph({color}: {color: string}) {
   return (
     <View style={styles.triangleWrap}>
-      <Svg height={10} width={8} viewBox="0 0 8 10">
-        <Path d="M8 0 L0 5 L8 10 Z" fill={color} />
+      <Svg height={8} width={7} viewBox="0 0 7 8">
+        <Path d="M7 0 L0 4 L7 8 Z" fill={color} />
       </Svg>
     </View>
   );
@@ -51,8 +51,8 @@ const styles = StyleSheet.create({
   triangleWrap: {
     alignItems: 'center',
     flexShrink: 0,
-    height: 12,
+    height: 10,
     justifyContent: 'center',
-    width: 10,
+    width: 9,
   },
 });

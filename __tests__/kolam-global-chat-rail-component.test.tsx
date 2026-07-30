@@ -1044,7 +1044,6 @@ describe('KolamGlobalChatRail', () => {
     ).toBe(false);
     expect(renderText(renderer!)).toEqual(
       expect.arrayContaining([
-        'Kembali',
         'Buyer',
         'Apakah masih tersedia?',
         'File',

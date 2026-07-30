@@ -2516,20 +2516,22 @@ function KolamChatRailDetailPanel({
   return (
     <View style={[styles.detailPanel, fullPage && styles.detailPanelFull]}>
       <View style={styles.selectedBanner}>
-        {onBack ? (
-          <KolamPressable
-            accessibilityLabel="Kembali ke daftar inbox chat"
-            onPress={onBack}
-            style={styles.detailBackButton}>
-            <KolamStatusIndicatorIcon
-              color={V.colors.primary}
-              kind="triangle-left"
-            />
-          </KolamPressable>
-        ) : null}
-        <Text numberOfLines={1} style={styles.selectedTitle}>
-          {selectedItem.title}
-        </Text>
+        <View style={styles.selectedTitleRow}>
+          {onBack ? (
+            <KolamPressable
+              accessibilityLabel="Kembali ke daftar inbox chat"
+              onPress={onBack}
+              style={styles.detailBackButton}>
+              <KolamStatusIndicatorIcon
+                color={V.colors.primary}
+                kind="triangle-left"
+              />
+            </KolamPressable>
+          ) : null}
+          <Text numberOfLines={1} style={styles.selectedTitle}>
+            {selectedItem.title}
+          </Text>
+        </View>
         <Text numberOfLines={2} style={styles.selectedMeta}>
           {selectedItem.preview}
         </Text>
@@ -6903,23 +6905,31 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   selectedBanner: {
-    padding: 10,
+    padding: 8,
     borderRadius: V.radius.lg,
     backgroundColor: V.colors.primarySoft,
     borderColor: V.colors.primary,
     borderWidth: 1,
-    gap: 3,
+    gap: 4,
+  },
+  selectedTitleRow: {
+    minHeight: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   detailBackButton: {
-    width: 30,
-    height: 30,
-    alignSelf: 'flex-start',
+    width: 20,
+    height: 20,
+    flexShrink: 0,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 15,
+    borderRadius: 10,
     backgroundColor: V.colors.primarySoft,
   },
   selectedTitle: {
+    minWidth: 0,
+    flex: 1,
     color: V.colors.primary,
     fontFamily: V.fontFamily,
     fontSize: 13,
