@@ -1399,28 +1399,53 @@ function KolamPlatformHealthGlow({state}: {state: KolamPlatformGlowState}) {
   const opacity = state.animated
     ? pulse.interpolate({
         inputRange: [0, 1],
-        outputRange: [state.opacity * 0.45, state.opacity],
+        outputRange: [state.opacity * 0.55, state.opacity],
       })
     : state.opacity;
+  const haloOpacity = state.animated
+    ? pulse.interpolate({
+        inputRange: [0, 1],
+        outputRange: [state.opacity * 0.14, state.opacity * 0.36],
+      })
+    : state.opacity * 0.18;
   const scale = state.animated
     ? pulse.interpolate({
         inputRange: [0, 1],
-        outputRange: [state.scale * 0.88, state.scale],
+        outputRange: [1, state.scale],
       })
-    : state.scale;
+    : 1;
+  const haloScale = state.animated
+    ? pulse.interpolate({
+        inputRange: [0, 1],
+        outputRange: [1.08, state.scale + 0.18],
+      })
+    : 1.12;
 
   return (
-    <Animated.View
-      pointerEvents="none"
-      style={[
-        styles.platformHealthGlow,
-        {
-          backgroundColor: state.color,
-          opacity,
-          transform: [{scale}],
-        },
-      ]}
-    />
+    <>
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          styles.platformHealthHalo,
+          {
+            backgroundColor: state.color,
+            opacity: haloOpacity,
+            transform: [{scale: haloScale}],
+          },
+        ]}
+      />
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          styles.platformHealthGlow,
+          {
+            borderColor: state.color,
+            opacity,
+            transform: [{scale}],
+          },
+        ]}
+      />
+    </>
   );
 }
 
@@ -5613,7 +5638,7 @@ const styles = StyleSheet.create({
     backgroundColor: V.colors.bg,
   },
   platformFilterChipLayered: {
-    overflow: 'hidden',
+    overflow: 'visible',
   },
   platformFilterChipActive: {
     borderColor: V.colors.primary,
@@ -5625,9 +5650,16 @@ const styles = StyleSheet.create({
   },
   platformHealthGlow: {
     position: 'absolute',
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 31,
+    height: 31,
+    borderRadius: 16,
+    borderWidth: 2,
+  },
+  platformHealthHalo: {
+    position: 'absolute',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
   },
   platformLogoImage: {
     width: 21,
