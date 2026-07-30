@@ -94,7 +94,7 @@ describe('kolam-complaint domain', () => {
     expect(detail.histories[0].changedByLabel).toBe('Staff');
     expect(detail.returnTracking?.trackingNumber).toBe('RESI1');
     expect(getKolamComplaintStatusLabel('pending')).toBe('Menunggu');
-    expect(getKolamComplaintDecisionLabel(null)).toMatch(/Belum/);
+    expect(getKolamComplaintDecisionLabel(null)).toBe('Tidak ada');
   });
 });
 

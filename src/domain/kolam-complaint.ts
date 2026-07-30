@@ -261,7 +261,7 @@ export function getKolamComplaintDecisionLabel(
   decision: string | null | undefined,
 ) {
   if (!decision) {
-    return 'Belum ada keputusan';
+    return 'Tidak ada';
   }
   return (
     KOLAM_COMPLAINT_DECISION_OPTIONS.find(option => option.id === decision)
