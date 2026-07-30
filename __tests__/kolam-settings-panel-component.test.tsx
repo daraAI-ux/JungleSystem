@@ -573,7 +573,6 @@ describe('KolamSettingsPanel', () => {
 
     const expectedAiTexts = [
       'AI / DARA',
-      'Plugin Chat dan DARA aktif. Kontrol AI siap disimpan ke Pengaturan Web.',
       'Pengaturan Chat AI',
       'Chat storefront',
       'Balasan DARA Team Chat',
@@ -597,6 +596,8 @@ describe('KolamSettingsPanel', () => {
         'Katak Terbang',
         'Unggah foto Katak Terbang',
         'Nama worker Katak Terbang',
+        'Plugin Chat dan DARA aktif. Kontrol AI siap disimpan ke Pengaturan Web.',
+        'State nonaktif: Plugin Chat nonaktif. Plugin DARA nonaktif. Aktifkan dari tab Plugin untuk mengubah kontrol terkait.',
         'Tagline Perusahaan',
         'Biteship API key',
         'Ringkasan Landing Marketplace',
@@ -654,9 +655,14 @@ describe('KolamSettingsPanel', () => {
     expect(text).toEqual(
       expect.arrayContaining([
         'AI / DARA',
-        'State nonaktif: Plugin Chat nonaktif. Plugin DARA nonaktif. Aktifkan dari tab Plugin untuk mengubah kontrol terkait.',
         'Chat storefront',
         'Knowledge SOP',
+      ]),
+    );
+    expect(text).not.toEqual(
+      expect.arrayContaining([
+        'Plugin Chat dan DARA aktif. Kontrol AI siap disimpan ke Pengaturan Web.',
+        'State nonaktif: Plugin Chat nonaktif. Plugin DARA nonaktif. Aktifkan dari tab Plugin untuk mengubah kontrol terkait.',
       ]),
     );
   });

@@ -3635,22 +3635,6 @@ export function KolamSettingsWebConfigSurface({
       ) : null}
       {showAiSettings ? (
         <>
-          <KolamCopyStack
-            items={[
-              {
-                id: 'ai-plugin-gate',
-                text:
-                  chatPluginEnabled && daraPluginEnabled
-                    ? 'Plugin Chat dan DARA aktif. Kontrol AI siap disimpan ke Pengaturan Web.'
-                    : `State nonaktif: ${
-                        chatPluginEnabled ? '' : 'Plugin Chat nonaktif. '
-                      }${
-                        daraPluginEnabled ? '' : 'Plugin DARA nonaktif. '
-                      }Aktifkan dari tab Plugin untuk mengubah kontrol terkait.`,
-                style: styles.marketplaceOverviewMeta,
-              },
-            ]}
-          />
           <View
             style={[
               styles.marketplaceControlSection,
