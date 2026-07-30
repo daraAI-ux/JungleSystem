@@ -435,7 +435,7 @@ function KolamProductionRow({
 
   return (
     <KolamDataTableRowFrame style={actionMenuOpen ? styles.activeActionRow : undefined}>
-      <KolamDataTableMainTrack>
+      <KolamDataTableMainTrack style={styles.mainTrackVisible}>
         <Pressable
           onPress={onSelect}
           style={[
@@ -526,6 +526,7 @@ function KolamProductionRow({
             styles.listCell,
             styles.picCell,
             productsColumn ? getKolamDataTableColumnStyle(productsColumn) : null,
+            styles.overflowVisible,
           ]}
         >
           <KolamProductionPicAvatar production={production} />
@@ -1857,9 +1858,15 @@ const styles = StyleSheet.create({
   actionsTrack: {
     alignItems: 'center',
   },
+  mainTrackVisible: {
+    overflow: 'visible',
+  },
+  overflowVisible: {
+    overflow: 'visible',
+    zIndex: 9000,
+  },
   picCell: {
     alignItems: 'center',
-    overflow: 'visible',
   },
   picTooltip: {
     alignSelf: 'center',
