@@ -230,17 +230,19 @@ function KolamBrandList({
               />
               <View ref={sortTriggerRef} collapsable={false}>
                 <KolamTableFilterTrigger
-                  active={activeFilterPanel === 'sort' || sortMode !== 'name-asc'}
+                  active={sortMode !== 'name-asc'}
                   label={sortFilterLabel}
                   onPress={() => openFilterPanel('sort')}
+                  open={activeFilterPanel === 'sort'}
                   variant="quiet"
                 />
               </View>
               <View ref={assetTriggerRef} collapsable={false}>
                 <KolamTableFilterTrigger
-                  active={activeFilterPanel === 'asset' || assetMode !== 'none'}
+                  active={assetMode !== 'none'}
                   label={assetFilterLabel}
                   onPress={() => openFilterPanel('asset')}
+                  open={activeFilterPanel === 'asset'}
                   variant="quiet"
                 />
               </View>

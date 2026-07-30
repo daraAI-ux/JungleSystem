@@ -1,8 +1,16 @@
 import React from 'react';
-import {StyleSheet, type StyleProp, type TextStyle, type ViewStyle} from 'react-native';
+import {
+  StyleSheet,
+  Text,
+  View,
+  type StyleProp,
+  type TextStyle,
+  type ViewStyle,
+} from 'react-native';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {KolamButton} from './kolam-button';
 import {KolamChevronIcon} from './kolam-chevron-icon';
+import {KolamInteractionFrame} from './kolam-interaction-frame';
 
 export type KolamTableFilterTriggerVariant = 'success' | 'quiet';
 
@@ -10,6 +18,7 @@ export function KolamTableFilterTrigger({
   active,
   label,
   onPress,
+  open = false,
   style,
   textStyle,
   variant = 'success',
@@ -17,45 +26,81 @@ export function KolamTableFilterTrigger({
   active: boolean;
   label: string;
   onPress: () => void;
+  /** When true, quiet caret points up (panel open). */
+  open?: boolean;
   style?: StyleProp<ViewStyle>;
   textStyle?: StyleProp<TextStyle>;
-  /** `quiet` = outline/neutral toolbar chrome (elegant). Default keeps Species green. */
+  /** `quiet` = custom select-like chrome. Default keeps Species green button. */
   variant?: KolamTableFilterTriggerVariant;
 }) {
-  const quiet = variant === 'quiet';
-  const chevronColor = quiet
-    ? active
-      ? V.colors.primary
-      : V.colors.mutedFg
-    : active
-      ? V.colors.primaryFg
-      : V.colors.success;
+  if (variant === 'quiet') {
+    return (
+      <KolamInteractionFrame
+        accessibilityLabel={label}
+        accessibilityState={{expanded: open}}
+        onPress={onPress}
+        style={[
+          styles.quietRoot,
+          active ? styles.quietRootActive : null,
+          open ? styles.quietRootOpen : null,
+          style,
+        ]}
+      >
+        <Text
+          numberOfLines={1}
+          style={[
+            styles.quietLabel,
+            active || open ? styles.quietLabelActive : null,
+            textStyle,
+          ]}
+        >
+          {label}
+        </Text>
+        <View style={styles.quietDivider} />
+        <QuietCaret
+          color={active || open ? V.colors.primary : V.colors.mutedFg}
+          open={open}
+        />
+      </KolamInteractionFrame>
+    );
+  }
 
   return (
     <KolamButton
       icon={
         <KolamChevronIcon
-          color={chevronColor}
+          color={active ? V.colors.primaryFg : V.colors.success}
           direction="down"
           size="menu-sm"
         />
       }
-      intent={quiet ? (active ? 'outline' : 'plain') : active ? 'primary' : 'secondary'}
+      intent={active ? 'primary' : 'secondary'}
       label={label}
       onPress={onPress}
-      style={[
-        quiet ? styles.quietTrigger : styles.trigger,
-        quiet && active ? styles.quietTriggerActive : null,
-        !quiet && active ? styles.triggerActive : null,
-        style,
-      ]}
+      style={[styles.trigger, active && styles.triggerActive, style]}
       textStyle={[
-        quiet ? styles.quietTriggerText : styles.triggerText,
-        quiet && active ? styles.quietTriggerTextActive : null,
-        !quiet && active ? styles.triggerTextActive : null,
+        styles.triggerText,
+        active && styles.triggerTextActive,
         textStyle,
       ]}
     />
+  );
+}
+
+function QuietCaret({color, open}: {color: string; open: boolean}) {
+  return (
+    <View style={[styles.caretWrap, open ? styles.caretWrapOpen : null]}>
+      <View
+        style={[
+          styles.caretTriangle,
+          {
+            borderLeftColor: 'transparent',
+            borderRightColor: 'transparent',
+            borderTopColor: color,
+          },
+        ]}
+      />
+    </View>
   );
 }
 
@@ -79,25 +124,62 @@ const styles = StyleSheet.create({
   triggerTextActive: {
     color: V.colors.primaryFg,
   },
-  quietTrigger: {
+  quietRoot: {
+    alignItems: 'center',
     backgroundColor: V.colors.bg,
     borderColor: V.colors.border,
+    borderRadius: 8,
     borderWidth: 1,
+    flexDirection: 'row',
     flexGrow: 0,
     flexShrink: 0,
+    gap: 8,
+    maxWidth: 220,
     minHeight: 34,
-    paddingHorizontal: 12,
+    paddingLeft: 12,
+    paddingRight: 8,
+    paddingVertical: 6,
   },
-  quietTriggerActive: {
-    backgroundColor: V.colors.primarySoft,
+  quietRootActive: {
+    backgroundColor: V.colors.secondary,
+    borderColor: V.colors.border,
+  },
+  quietRootOpen: {
+    backgroundColor: V.colors.bg,
     borderColor: V.colors.primary,
   },
-  quietTriggerText: {
+  quietLabel: {
     color: V.colors.fg,
+    flexShrink: 1,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
     fontWeight: '600',
   },
-  quietTriggerTextActive: {
+  quietLabelActive: {
     color: V.colors.primary,
     fontWeight: '700',
+  },
+  quietDivider: {
+    alignSelf: 'stretch',
+    backgroundColor: V.colors.border,
+    marginVertical: 2,
+    width: StyleSheet.hairlineWidth,
+  },
+  caretWrap: {
+    alignItems: 'center',
+    height: 16,
+    justifyContent: 'center',
+    width: 16,
+  },
+  caretWrapOpen: {
+    transform: [{rotate: '180deg'}],
+  },
+  caretTriangle: {
+    borderLeftWidth: 4,
+    borderRightWidth: 4,
+    borderTopWidth: 5,
+    height: 0,
+    marginTop: 2,
+    width: 0,
   },
 });
