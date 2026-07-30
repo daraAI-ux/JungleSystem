@@ -294,23 +294,16 @@ export function KolamSalesOpsDetail({
               <Text style={styles.stripValue}>{sale.marketplaceOrderId}</Text>
             </View>
           ) : null}
-          {sourceLogoUri || sale.sourceRef?.name ? (
-            <View style={styles.stripItem}>
-              <Text style={styles.stripLabel}>Sumber</Text>
-              {sourceLogoUri ? (
-                <KolamRemoteImage
-                  accessibilityLabel={
-                    sale.sourceRef?.name || 'Sumber penjualan'
-                  }
-                  resizeMode="contain"
-                  sourceUri={sourceLogoUri}
-                  style={styles.stripSourceLogo}
-                />
-              ) : (
-                <Text style={styles.stripValue}>
-                  {sale.sourceRef?.name || '—'}
-                </Text>
-              )}
+          {sourceLogoUri ? (
+            <View style={styles.stripSourceSlot}>
+              <KolamRemoteImage
+                accessibilityLabel={
+                  sale.sourceRef?.name || 'Sumber penjualan'
+                }
+                resizeMode="contain"
+                sourceUri={sourceLogoUri}
+                style={styles.stripSourceLogo}
+              />
             </View>
           ) : null}
         </View>
@@ -1223,16 +1216,23 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   stripCard: {
-    padding: 12,
+    overflow: 'hidden',
+    paddingVertical: 0,
+    paddingLeft: 12,
+    paddingRight: 0,
   },
   stripRow: {
+    alignItems: 'stretch',
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 16,
+    minHeight: 72,
   },
   stripItem: {
     gap: 4,
+    justifyContent: 'center',
     minWidth: 120,
+    paddingVertical: 12,
   },
   stripLabel: {
     color: V.colors.mutedFg,
@@ -1245,6 +1245,18 @@ const styles = StyleSheet.create({
     color: V.colors.fg,
     fontSize: 14,
     fontWeight: '700',
+  },
+  stripSourceSlot: {
+    alignItems: 'center',
+    alignSelf: 'stretch',
+    justifyContent: 'center',
+    marginLeft: 'auto',
+    minHeight: 72,
+    width: 88,
+  },
+  stripSourceLogo: {
+    height: 72,
+    width: 88,
   },
   infoNote: {
     color: V.colors.mutedFg,
