@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
+  allocateKolamSaleCommissionShares,
   canAddItemsToKolamSale,
   canDownloadKolamSaleShippingResi,
   canShowKolamSaleEditAction,
@@ -12,6 +13,10 @@ import {
   getKolamSaleAllowedDeliveryTransitions,
   getKolamSaleAllowedStatusTransitions,
   getKolamSaleDeliveryStatusIntent,
+  getKolamSaleEstimatedMargin,
+  getKolamSaleItemDiscountAmount,
+  getKolamSaleItemHppTotal,
+  getKolamSaleItemNetProfit,
   getKolamSaleOutstandingAmount,
   getKolamSalePaymentStatusIntent,
   isKolamPosSale,
@@ -104,6 +109,14 @@ export function KolamSalesOpsDetail({
     (!sale.deliveryStatus || sale.deliveryStatus === 'none');
   const showResi = !skipShipping && canDownloadKolamSaleShippingResi(sale);
   const outstanding = getKolamSaleOutstandingAmount(sale);
+  const commissionShares = allocateKolamSaleCommissionShares(
+    sale.items,
+    sale.commissionAccruedTotalAtSale ?? 0,
+  );
+  const showInternalMargin = sale.status === 'paid';
+  const estimatedMargin = showInternalMargin
+    ? getKolamSaleEstimatedMargin(sale)
+    : 0;
   const pendingLabel = pendingStatus
     ? formatKolamSalePaymentStatusLabel(pendingStatus)
     : '';
@@ -383,38 +396,103 @@ export function KolamSalesOpsDetail({
           {sale.items.length === 0 ? (
             <Text style={styles.metaText}>Tidak ada item.</Text>
           ) : (
-            sale.items.map(item => (
-              <View key={item.id} style={styles.itemCard}>
-                <Text style={styles.primaryText}>{item.title}</Text>
-                <Text style={styles.metaText}>
-                  {formatKolamSaleItemTypeLabel(item.itemType)}
-                  {item.variantLabel ? ` · ${item.variantLabel}` : ''}
-                  {item.sku ? ` · ${item.sku}` : ''}
-                </Text>
-                <Text style={styles.metaText}>
-                  {item.quantity} × {formatRupiah(item.unitPrice)} ={' '}
-                  {formatRupiah(item.subtotal)}
-                </Text>
-                {item.discount ? (
-                  <Text style={styles.metaText}>
-                    Diskon:{' '}
-                    {item.discount.type === 'percentage'
-                      ? `${item.discount.amount}%`
-                      : formatRupiah(item.discount.amount)}
-                  </Text>
-                ) : null}
-                {item.voucherCode ? (
-                  <Text style={styles.metaText}>
-                    Voucher: {item.voucherCode}
-                  </Text>
-                ) : null}
-                {item.shippingCost > 0 ? (
-                  <Text style={styles.metaText}>
-                    Ongkir item: {formatRupiah(item.shippingCost)}
-                  </Text>
-                ) : null}
-              </View>
-            ))
+            sale.items.map((item, index) => {
+              const discountAmount = getKolamSaleItemDiscountAmount(item);
+              const hppTotal = getKolamSaleItemHppTotal(item);
+              const commissionShare = commissionShares[index] ?? 0;
+              const netProfit = getKolamSaleItemNetProfit(
+                item,
+                commissionShare,
+              );
+              const hasInternal =
+                hppTotal > 0 ||
+                commissionShare > 0 ||
+                item.unitCostAtSale != null ||
+                (item.itemType === 'custom' && item.customCost != null);
+
+              return (
+                <View key={item.id} style={styles.itemCard}>
+                  <View style={styles.itemRow}>
+                    {item.thumbnailUri ? (
+                      <KolamRemoteImage
+                        accessibilityLabel={`Gambar ${item.title}`}
+                        sourceUri={item.thumbnailUri}
+                        style={styles.itemThumb}
+                      />
+                    ) : (
+                      <View style={styles.itemThumbPlaceholder}>
+                        <Text style={styles.itemThumbPlaceholderText}>—</Text>
+                      </View>
+                    )}
+                    <View style={styles.itemBody}>
+                      <Text style={styles.primaryText}>{item.title}</Text>
+                      <Text style={styles.metaText}>
+                        {formatKolamSaleItemTypeLabel(item.itemType)}
+                        {item.variantLabel ? ` · ${item.variantLabel}` : ''}
+                        {item.sku ? ` · ${item.sku}` : ''}
+                      </Text>
+                      <Text style={styles.metaText}>
+                        {item.quantity} × {formatRupiah(item.unitPrice)}
+                      </Text>
+                      {item.voucherCode ? (
+                        <Text style={styles.metaText}>
+                          Voucher: {item.voucherCode}
+                        </Text>
+                      ) : null}
+                      {item.shippingCost > 0 ? (
+                        <Text style={styles.metaText}>
+                          Ongkir item: {formatRupiah(item.shippingCost)}
+                        </Text>
+                      ) : null}
+
+                      <View style={styles.itemFinanceRow}>
+                        <View style={styles.itemFinanceCol}>
+                          <Text style={styles.itemFinanceLabel}>Tagihan</Text>
+                          <Text style={styles.metaText}>
+                            Subtotal: {formatRupiah(item.subtotal)}
+                          </Text>
+                          {discountAmount > 0 ? (
+                            <Text style={styles.metaText}>
+                              Diskon: −{formatRupiah(discountAmount)}
+                              {item.discount?.type === 'percentage'
+                                ? ` (${item.discount.amount}%)`
+                                : ''}
+                            </Text>
+                          ) : null}
+                        </View>
+                        <View style={styles.itemFinanceCol}>
+                          <Text style={styles.itemFinanceLabel}>Internal</Text>
+                          {hasInternal ? (
+                            <>
+                              <Text style={styles.metaText}>
+                                HPP: {formatRupiah(hppTotal)}
+                              </Text>
+                              {commissionShare > 0 ? (
+                                <Text style={styles.metaText}>
+                                  Komisi: {formatRupiah(commissionShare)}
+                                </Text>
+                              ) : null}
+                              <Text
+                                style={[
+                                  styles.metaText,
+                                  netProfit < 0
+                                    ? styles.profitNegative
+                                    : styles.profitPositive,
+                                ]}
+                              >
+                                Profit: {formatRupiah(netProfit)}
+                              </Text>
+                            </>
+                          ) : (
+                            <Text style={styles.metaText}>—</Text>
+                          )}
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+              );
+            })
           )}
 
           <Text style={styles.sectionTitle}>Total</Text>
@@ -442,6 +520,19 @@ export function KolamSalesOpsDetail({
                 meta: '',
                 tone: 'default' as const,
               })),
+              ...(sale.sourceCost > 0
+                ? [
+                    {
+                      id: 'source-cost',
+                      label: marketplaceManaged
+                        ? 'Biaya marketplace'
+                        : 'Biaya sumber',
+                      value: formatRupiah(sale.sourceCost),
+                      meta: '',
+                      tone: 'default' as const,
+                    },
+                  ]
+                : []),
               {
                 id: 'final',
                 label: 'Total keseluruhan',
@@ -459,6 +550,50 @@ export function KolamSalesOpsDetail({
             ]}
           />
 
+          {showInternalMargin ? (
+            <KolamCardFrame style={styles.marginCard} variant="compact">
+              <Text style={styles.primaryText}>Biaya internal & margin</Text>
+              <KolamDescriptionList
+                accessibilityLabel="Biaya internal dan margin"
+                rows={[
+                  {
+                    id: 'hpp',
+                    label: 'HPP total',
+                    value:
+                      sale.hppTotalAtSale != null
+                        ? formatRupiah(sale.hppTotalAtSale)
+                        : '—',
+                    meta: '',
+                    tone: 'default',
+                  },
+                  {
+                    id: 'commission',
+                    label: 'Komisi',
+                    value:
+                      sale.commissionAccruedTotalAtSale != null
+                        ? formatRupiah(sale.commissionAccruedTotalAtSale)
+                        : '—',
+                    meta: '',
+                    tone: 'default',
+                  },
+                  {
+                    id: 'pm-cost',
+                    label: 'Biaya metode bayar',
+                    value: formatRupiah(sale.paymentMethodCost),
+                    meta: '',
+                    tone: 'default',
+                  },
+                  {
+                    id: 'margin',
+                    label: 'Estimasi margin',
+                    value: formatRupiah(estimatedMargin),
+                    meta: '',
+                    tone: estimatedMargin < 0 ? 'danger' : 'success',
+                  },
+                ]}
+              />
+            </KolamCardFrame>
+          ) : null}
           {sale.status === 'partial_paid' ? (
             <KolamCardFrame style={styles.outstandingCard} variant="compact">
               <Text style={styles.sectionTitle}>Sisa Pembayaran</Text>
@@ -805,6 +940,58 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     gap: 2,
     paddingVertical: 8,
+  },
+  itemRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  itemThumb: {
+    borderRadius: 6,
+    height: 56,
+    width: 56,
+  },
+  itemThumbPlaceholder: {
+    alignItems: 'center',
+    backgroundColor: V.colors.muted,
+    borderRadius: 6,
+    height: 56,
+    justifyContent: 'center',
+    width: 56,
+  },
+  itemThumbPlaceholderText: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+  },
+  itemBody: {
+    flex: 1,
+    gap: 2,
+    minWidth: 0,
+  },
+  itemFinanceRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginTop: 6,
+  },
+  itemFinanceCol: {
+    flex: 1,
+    gap: 2,
+    minWidth: 120,
+  },
+  itemFinanceLabel: {
+    color: V.colors.fg,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  profitPositive: {
+    color: V.colors.success,
+  },
+  profitNegative: {
+    color: V.colors.danger,
+  },
+  marginCard: {
+    gap: 8,
+    padding: 12,
   },
   primaryText: {
     color: V.colors.fg,

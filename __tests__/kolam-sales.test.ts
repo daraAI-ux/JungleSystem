@@ -1,4 +1,5 @@
 import {
+  allocateKolamSaleCommissionShares,
   buildKolamSaleCreateBody,
   canAddItemsToKolamSale,
   canEditKolamSaleDraft,
@@ -14,6 +15,10 @@ import {
   getKolamSaleAllowedDeliveryTransitions,
   getKolamSaleAllowedStatusTransitions,
   getKolamSaleEditRouteId,
+  getKolamSaleEstimatedMargin,
+  getKolamSaleItemDiscountAmount,
+  getKolamSaleItemHppTotal,
+  getKolamSaleItemNetProfit,
   getKolamSaleOutstandingAmount,
   getKolamSalePaymentStatusIntent,
   getKolamSaleRouteId,
@@ -221,6 +226,84 @@ describe('kolam sales domain', () => {
         sourceRef: { type: 'offline', name: 'POS' },
       }),
     ).toBe(true);
+  });
+
+  it('normalizes item thumbnails, HPP snapshot, and margin helpers', () => {
+    const detail = normalizeKolamSale({
+      _id: 'sale-profit',
+      invoiceCode: 'INV-P',
+      status: 'paid',
+      finalTotal: 100_000,
+      hppTotalAtSale: 40_000,
+      commissionAccruedTotalAtSale: 5_000,
+      paymentMethodCost: 2_000,
+      sourceCost: 1_500,
+      items: [
+        {
+          _id: 'i1',
+          itemType: 'product',
+          quantity: 2,
+          unitPrice: 30_000,
+          subtotal: 60_000,
+          unitCostAtSale: 10_000,
+          discount: { type: 'percentage', amount: 10 },
+          product: {
+            _id: 'p1',
+            name: 'Filter',
+            thumbnailImage: '/uploads/filter.jpg',
+          },
+          variant: {
+            photos: [{ path: '/uploads/variant.jpg' }],
+          },
+        },
+        {
+          _id: 'i2',
+          itemType: 'custom',
+          customName: 'Ongkos',
+          quantity: 1,
+          unitPrice: 20_000,
+          subtotal: 20_000,
+          customCost: 5_000,
+        },
+        {
+          _id: 'i3',
+          itemType: 'service',
+          customName: 'Jasa',
+          quantity: 1,
+          unitPrice: 10_000,
+          subtotal: 10_000,
+          service: {
+            _id: 'sv1',
+            name: 'Jasa',
+            photos: ['/uploads/service.jpg'],
+          },
+        },
+      ],
+    });
+
+    expect(detail.hppTotalAtSale).toBe(40_000);
+    expect(detail.commissionAccruedTotalAtSale).toBe(5_000);
+    expect(detail.paymentMethodCost).toBe(2_000);
+    expect(detail.sourceCost).toBe(1_500);
+    expect(detail.items[0].unitCostAtSale).toBe(10_000);
+    expect(detail.items[0].thumbnailUri).toContain('/uploads/variant.jpg');
+    expect(detail.items[2].thumbnailUri).toContain('/uploads/service.jpg');
+
+    expect(getKolamSaleItemHppTotal(detail.items[0])).toBe(20_000);
+    expect(getKolamSaleItemHppTotal(detail.items[1])).toBe(5_000);
+    expect(getKolamSaleItemDiscountAmount(detail.items[0])).toBe(6_000);
+    expect(getKolamSaleItemNetProfit(detail.items[0], 2_500)).toBe(37_500);
+    expect(
+      allocateKolamSaleCommissionShares(detail.items, 5_000),
+    ).toEqual([5_000, 0, 0]);
+    expect(
+      getKolamSaleEstimatedMargin({
+        finalTotal: 100_000,
+        hppTotalAtSale: 40_000,
+        commissionAccruedTotalAtSale: 5_000,
+        paymentMethodCost: 2_000,
+      }),
+    ).toBe(53_000);
   });
 
   it('formats payment and delivery labels for list badges', () => {

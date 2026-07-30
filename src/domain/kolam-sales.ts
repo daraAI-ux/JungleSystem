@@ -117,6 +117,9 @@ export type KolamSaleItem = {
   subtotal: number;
   discount: KolamSaleItemDiscount | null;
   shippingCost: number;
+  /** HPP unit snapshot at sale (product/species); custom uses customCost. */
+  unitCostAtSale: number | null;
+  thumbnailUri: string | null;
   variantLabel: string;
   productId: string;
   speciesId: string;
@@ -176,6 +179,10 @@ export type KolamSale = {
   shippingAddressText: string;
   createdByName: string;
   openLivestockPendingCount: number;
+  hppTotalAtSale: number | null;
+  commissionAccruedTotalAtSale: number | null;
+  paymentMethodCost: number;
+  sourceCost: number;
   paidAt: string;
   sentAt: string;
   cancelledAt: string;
@@ -459,6 +466,99 @@ export function getKolamSaleOutstandingAmount(sale: {
   paidAmount?: number | null;
 }): number {
   return Math.max(0, (sale.finalTotal ?? 0) - (sale.paidAmount ?? 0));
+}
+
+/** Line HPP total — FE ItemRow: customCost vs unitCostAtSale × qty. */
+export function getKolamSaleItemHppTotal(item: {
+  itemType?: string | null;
+  quantity?: number | null;
+  unitCostAtSale?: number | null;
+  customCost?: number | null;
+}): number {
+  const qty = Math.max(0, Number(item.quantity) || 0);
+  const type = String(item.itemType ?? '').toLowerCase();
+  const unit =
+    type === 'custom'
+      ? Math.max(0, Number(item.customCost) || 0)
+      : Math.max(0, Number(item.unitCostAtSale) || 0);
+  return Math.round(unit * qty);
+}
+
+export function getKolamSaleItemDiscountAmount(item: {
+  quantity?: number | null;
+  unitPrice?: number | null;
+  discount?: { type?: string | null; amount?: number | null } | null;
+}): number {
+  const discount = item.discount;
+  if (!discount || !(Number(discount.amount) > 0)) {
+    return 0;
+  }
+  const line = Math.max(0, (Number(item.unitPrice) || 0) * (Number(item.quantity) || 0));
+  if (String(discount.type || '').toLowerCase() === 'percentage') {
+    return Math.round((line * Number(discount.amount)) / 100);
+  }
+  return Math.round(Number(discount.amount) * (Number(item.quantity) || 0));
+}
+
+/** Simplified item profit (Batch A.1) — subtotal − HPP; commission share optional. */
+export function getKolamSaleItemNetProfit(
+  item: {
+    subtotal?: number | null;
+    itemType?: string | null;
+    quantity?: number | null;
+    unitCostAtSale?: number | null;
+    customCost?: number | null;
+  },
+  commissionShare = 0,
+): number {
+  return Math.round(
+    (Number(item.subtotal) || 0) -
+      getKolamSaleItemHppTotal(item) -
+      Math.max(0, commissionShare),
+  );
+}
+
+/** FE “Biaya internal & margin” estimasi when paid. */
+export function getKolamSaleEstimatedMargin(sale: {
+  finalTotal?: number | null;
+  hppTotalAtSale?: number | null;
+  commissionAccruedTotalAtSale?: number | null;
+  paymentMethodCost?: number | null;
+}): number {
+  return Math.round(
+    (Number(sale.finalTotal) || 0) -
+      (Number(sale.hppTotalAtSale) || 0) -
+      (Number(sale.commissionAccruedTotalAtSale) || 0) -
+      (Number(sale.paymentMethodCost) || 0),
+  );
+}
+
+/** Allocate sale commission evenly across product/species lines (simple share). */
+export function allocateKolamSaleCommissionShares(
+  items: Array<{ itemType?: string | null }>,
+  totalCommission: number,
+): number[] {
+  const eligible = items
+    .map((item, index) => ({ item, index }))
+    .filter(({ item }) => {
+      const type = String(item.itemType ?? '').toLowerCase();
+      return type === 'product' || type === 'species';
+    });
+  const shares = items.map(() => 0);
+  const total = Math.max(0, Math.round(Number(totalCommission) || 0));
+  if (!eligible.length || total <= 0) {
+    return shares;
+  }
+  const base = Math.floor(total / eligible.length);
+  let remainder = total - base * eligible.length;
+  for (const row of eligible) {
+    const extra = remainder > 0 ? 1 : 0;
+    if (remainder > 0) {
+      remainder -= 1;
+    }
+    shares[row.index] = base + extra;
+  }
+  return shares;
 }
 
 export function saleHasUnsupportedEditItemTypes(
@@ -1633,6 +1733,13 @@ export function normalizeKolamSale(payload: unknown): KolamSale {
     createdByName: resolveActorName(record.createdBy),
     openLivestockPendingCount:
       getNumber(record, 'openLivestockPendingCount') ?? 0,
+    hppTotalAtSale: getNumber(record, 'hppTotalAtSale'),
+    commissionAccruedTotalAtSale: getNumber(
+      record,
+      'commissionAccruedTotalAtSale',
+    ),
+    paymentMethodCost: getNumber(record, 'paymentMethodCost') ?? 0,
+    sourceCost: getNumber(record, 'sourceCost') ?? 0,
     paidAt: stringifyDate(record.paidAt),
     sentAt: stringifyDate(record.sentAt),
     cancelledAt: stringifyDate(record.cancelledAt),
@@ -1782,6 +1889,15 @@ function normalizeSaleItem(value: unknown, index: number): KolamSaleItem {
     subtotal: getNumber(record, 'subtotal') ?? 0,
     discount,
     shippingCost: getNumber(record, 'shippingCost') ?? 0,
+    unitCostAtSale: getNumber(record, 'unitCostAtSale'),
+    thumbnailUri: resolveSaleItemThumbnailUri(
+      itemType,
+      variant,
+      product,
+      species,
+      service,
+      enclosure,
+    ),
     variantLabel,
     productId:
       getMongoId(product, '_id') ||
@@ -1804,6 +1920,60 @@ function normalizeSaleItem(value: unknown, index: number): KolamSaleItem {
     customCost: getNumber(record, 'customCost'),
     voucherCode: getString(record, 'voucherCode'),
   };
+}
+
+function firstEntityPhotoPath(entity: Record<string, unknown>): string {
+  const thumbnail = getString(entity, 'thumbnailImage');
+  if (thumbnail) {
+    return thumbnail;
+  }
+  const photos = entity.photos;
+  if (Array.isArray(photos)) {
+    for (const photo of photos) {
+      if (typeof photo === 'string' && photo.trim()) {
+        return photo.trim();
+      }
+      const nested = asRecord(photo);
+      const path =
+        getString(nested, 'path') ||
+        getString(nested, 'url') ||
+        getString(nested, 'uri');
+      if (path) {
+        return path;
+      }
+    }
+  }
+  return '';
+}
+
+/** FE `getSalesItemThumbnailPath` → absolute URI via getKolamFileUrl. */
+function resolveSaleItemThumbnailUri(
+  itemType: string,
+  variant: Record<string, unknown>,
+  product: Record<string, unknown>,
+  species: Record<string, unknown>,
+  service: Record<string, unknown>,
+  enclosure: Record<string, unknown>,
+): string | null {
+  const type = itemType.toLowerCase();
+  const variantPhoto = firstEntityPhotoPath(variant);
+  if (variantPhoto) {
+    return getKolamFileUrl(variantPhoto);
+  }
+  if (type === 'species' || (Object.keys(species).length && !Object.keys(product).length)) {
+    const path = firstEntityPhotoPath(species);
+    return path ? getKolamFileUrl(path) : null;
+  }
+  if (type === 'service') {
+    const path = firstEntityPhotoPath(service);
+    return path ? getKolamFileUrl(path) : null;
+  }
+  if (type === 'enclosure') {
+    const path = firstEntityPhotoPath(enclosure);
+    return path ? getKolamFileUrl(path) : null;
+  }
+  const productPath = firstEntityPhotoPath(product);
+  return productPath ? getKolamFileUrl(productPath) : null;
 }
 
 function normalizePaymentProofs(value: unknown): KolamSalePaymentProof[] {
