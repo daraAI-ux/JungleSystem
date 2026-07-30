@@ -644,10 +644,10 @@ const styles = StyleSheet.create({
     zIndex: 120000,
   },
   filterPanelType: {
-    right: 280,
+    left: 248,
   },
   filterPanelStatus: {
-    right: 160,
+    left: 356,
   },
   filterPanelScroll: {
     maxHeight: 280,
