@@ -133,6 +133,7 @@ export interface KolamChatRailDetailState {
     messageId: string,
     patch: Partial<KolamChatMessage>,
   ) => void;
+  upsertInboxMessageFromLive: (message: KolamChatMessage) => void;
   reactToMessage: (messageId: string, emoji: string) => Promise<void>;
   redialCall: () => Promise<void>;
   refreshCall: () => Promise<void>;
@@ -578,6 +579,27 @@ export function useKolamChatRailDetail({
     [mode],
   );
 
+  const upsertInboxMessageFromLive = useCallback(
+    (message: KolamChatMessage) => {
+      if (mode !== 'inbox' || !message?._id) {
+        return;
+      }
+
+      const nextMessage = mapInboxMessage(message);
+      setMessages(current => {
+        const existingIndex = current.findIndex(item => item.id === nextMessage.id);
+        if (existingIndex === -1) {
+          return [...current, nextMessage];
+        }
+
+        return current.map(item =>
+          item.id === nextMessage.id ? {...item, ...nextMessage} : item,
+        );
+      });
+    },
+    [mode],
+  );
+
   const editMessage = useCallback(
     async (messageId: string, text: string) => {
       const body = text.trim();
@@ -706,7 +728,8 @@ export function useKolamChatRailDetail({
     await runInboxConversationAction(() =>
       updateKolamChatConversationStatus(selectedId, nextStatus),
     );
-  }, [conversation, runInboxConversationAction, selectedId]);
+    await refresh();
+  }, [conversation, refresh, runInboxConversationAction, selectedId]);
 
   const assignInboxToMe = useCallback(async (handoverNote?: string) => {
     if (!selectedId || !currentUserId) {
@@ -896,6 +919,7 @@ export function useKolamChatRailDetail({
     toggleInboxStatus,
     toggleCallHand,
     unmuteCallParticipant,
+    upsertInboxMessageFromLive,
     updatePresenceFromLive,
   };
 }

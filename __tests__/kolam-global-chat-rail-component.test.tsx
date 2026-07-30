@@ -220,6 +220,7 @@ function getDefaultDetailMock() {
     messageSearchResults: null,
     muteCallParticipant: jest.fn(),
     patchInboxMessageFromLive: jest.fn(),
+    upsertInboxMessageFromLive: jest.fn(),
     presence: {onlineCount: 0, typingUserIds: [], viewingCount: 0},
     clearTeamMessageSearch: jest.fn(),
     reactToMessage: jest.fn(),
@@ -3587,6 +3588,7 @@ describe('KolamGlobalChatRail', () => {
     jest.useFakeTimers();
     const refreshList = jest.fn().mockResolvedValue(undefined);
     const refreshDetail = jest.fn().mockResolvedValue(undefined);
+    const upsertInboxMessageFromLive = jest.fn();
     let liveOptions:
       | Parameters<typeof useKolamChatLiveStream>[0]
       | undefined;
@@ -3620,6 +3622,7 @@ describe('KolamGlobalChatRail', () => {
       sendMessage: jest.fn(),
       signalTyping: jest.fn(),
       sending: false,
+      upsertInboxMessageFromLive,
       updatePresenceFromLive: jest.fn(),
     });
     let renderer: ReactTestRenderer.ReactTestRenderer;
@@ -3649,7 +3652,22 @@ describe('KolamGlobalChatRail', () => {
           soundIntent: 'incoming-assigned-or-unassigned',
           stream: 'inbox',
         },
-        payload: {conversationId: 'conv-1'},
+        payload: {
+          conversationId: 'conv-1',
+          message: {
+            _id: 'msg-rating',
+            content: {
+              text: 'Terima kasih, mohon beri rating 1-5.',
+              type: 'text',
+            },
+            conversationId: 'conv-1',
+            createdAt: '2026-07-30T08:00:00.000Z',
+            direction: 'out',
+            platform: 'tokopedia',
+            senderName: 'System',
+            senderType: 'system',
+          },
+        },
       });
     });
 
@@ -3659,6 +3677,9 @@ describe('KolamGlobalChatRail', () => {
 
     expect(refreshList).toHaveBeenCalledTimes(1);
     expect(refreshDetail).toHaveBeenCalledTimes(1);
+    expect(upsertInboxMessageFromLive).toHaveBeenCalledWith(
+      expect.objectContaining({_id: 'msg-rating'}),
+    );
     expect(mockSoundPlay).toHaveBeenCalledWith({
       intent: 'none',
       webSetting: {

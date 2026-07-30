@@ -467,6 +467,15 @@ export function KolamGlobalChatRail({
         }
       }
 
+      const inboxMessageCreated = getInboxMessageCreatedFromLiveEvent(event);
+      if (
+        inboxMessageCreated &&
+        mode === 'inbox' &&
+        classification.targetId === selectedItemId
+      ) {
+        detail.upsertInboxMessageFromLive(inboxMessageCreated);
+      }
+
       const inboxMessagePatch = getInboxMessagePatchFromLiveEvent(event);
       if (
         inboxMessagePatch &&
@@ -5549,6 +5558,26 @@ function getInboxMessagePatchFromLiveEvent(event: KolamChatLiveEvent) {
   }
 
   return Object.keys(patch).length ? {messageId, patch} : null;
+}
+
+function getInboxMessageCreatedFromLiveEvent(event: KolamChatLiveEvent) {
+  if (
+    event.contract.stream !== 'inbox' ||
+    event.contract.eventName !== 'message.created'
+  ) {
+    return null;
+  }
+
+  const payload =
+    event.payload && typeof event.payload === 'object'
+      ? (event.payload as Record<string, unknown>)
+      : {};
+  const message =
+    payload.message && typeof payload.message === 'object'
+      ? (payload.message as KolamChatMessage)
+      : null;
+
+  return message?._id ? message : null;
 }
 
 function readLiveString(value: unknown) {

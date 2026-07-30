@@ -218,13 +218,18 @@ export function buildKolamChatLiveStreamHeaders() {
 }
 
 function getGlobalEventSourceFactory(): KolamEventSourceFactory | undefined {
+  const xhrFactory = getXmlHttpRequestEventSourceFactory();
+  if (xhrFactory) {
+    return xhrFactory;
+  }
+
   const eventSource = (globalThis as {EventSource?: EventSourceGlobal})
     .EventSource;
   if (eventSource) {
     return (url, options) => new eventSource(url, options);
   }
 
-  return getXmlHttpRequestEventSourceFactory();
+  return undefined;
 }
 
 function getXmlHttpRequestEventSourceFactory():

@@ -240,6 +240,49 @@ describe('useKolamChatLiveStream', () => {
     }
   });
 
+  it('prefers XMLHttpRequest streaming over global EventSource so auth headers are preserved', async () => {
+    const events: KolamChatLiveEvent[] = [];
+    const globalWithStreams = globalThis as Record<string, unknown>;
+    const originalEventSource = globalWithStreams.EventSource;
+    const originalXmlHttpRequest = globalWithStreams.XMLHttpRequest;
+    const eventSourceFactory = jest.fn(() => new FakeEventSource());
+    FakeStreamingXmlHttpRequest.instances = [];
+    setAccessToken('token-xhr-first');
+
+    globalWithStreams.EventSource = eventSourceFactory;
+    globalWithStreams.XMLHttpRequest = FakeStreamingXmlHttpRequest;
+
+    try {
+      let renderer: ReactTestRenderer.ReactTestRenderer;
+      await ReactTestRenderer.act(async () => {
+        renderer = ReactTestRenderer.create(
+          <LiveStreamProbe onEvent={event => events.push(event)} />,
+        );
+      });
+
+      expect(eventSourceFactory).not.toHaveBeenCalled();
+      const xhr = FakeStreamingXmlHttpRequest.instances[0];
+      expect(xhr.headers).toEqual(
+        expect.objectContaining({
+          Authorization: 'Bearer token-xhr-first',
+          'x-source': 'Kolam',
+        }),
+      );
+
+      xhr.emitChunk(
+        'event: message.created\ndata: {"conversationId":"conv-1"}\n\n',
+      );
+      expect(events[0].contract.eventName).toBe('message.created');
+
+      await ReactTestRenderer.act(async () => {
+        renderer!.unmount();
+      });
+    } finally {
+      globalWithStreams.EventSource = originalEventSource;
+      globalWithStreams.XMLHttpRequest = originalXmlHttpRequest;
+    }
+  });
+
   it('reconnects after a stream error', async () => {
     jest.useFakeTimers();
     const createdSources: FakeEventSource[] = [];
