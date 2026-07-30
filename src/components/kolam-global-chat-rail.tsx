@@ -1501,8 +1501,6 @@ function KolamChatRailDetailPanel({
         inboxComposerAccess.blockedReason ||
         inboxComposerAccess.lockedBy),
   );
-  const canSend =
-    Boolean(composerText.trim() || pendingAttachment) && !inboxComposerBlocked;
   const attachmentLabel = pendingAttachment
     ? pendingAttachment.name ?? pendingAttachment.path ?? pendingAttachment.uri ?? 'File'
     : '';
@@ -1629,6 +1627,10 @@ function KolamChatRailDetailPanel({
     inboxComposerBlocked,
     onSend,
   ]);
+
+  const handleSubmitComposer = React.useCallback(() => {
+    handleSendFromComposer();
+  }, [handleSendFromComposer]);
 
   const handleStartEditMessage = React.useCallback(
     (message: ReturnType<typeof useKolamChatRailDetail>['messages'][number]) => {
@@ -2059,6 +2061,7 @@ function KolamChatRailDetailPanel({
           editable={!detail.sending && !inboxComposerBlocked}
           multiline
           onChangeText={handleComposerInputChange}
+          onSubmitEditing={handleSubmitComposer}
           placeholder={
             mode === 'team-chat' && !detail.teamRoomMetadata.daraReplyEnabled
               ? 'Tulis pesan... @dara nonaktif'
@@ -2068,21 +2071,9 @@ function KolamChatRailDetailPanel({
           }
           placeholderTextColor={V.colors.mutedFg}
           style={styles.composerInput}
+          submitBehavior="submit"
           value={composerText}
         />
-        <KolamPressable
-          accessibilityLabel="Kirim pesan"
-          disabled={!canSend || detail.sending || inboxComposerBlocked}
-          onPress={handleSendFromComposer}
-          style={[
-            styles.sendButton,
-            (!canSend || detail.sending || inboxComposerBlocked) &&
-              styles.sendButtonDisabled,
-          ]}>
-          <Text style={styles.sendButtonText}>
-            {detail.sending ? 'Mengirim' : 'Kirim'}
-          </Text>
-        </KolamPressable>
       </View>
     </View>
   );
@@ -6756,24 +6747,6 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 13,
     backgroundColor: V.colors.bg,
-  },
-  sendButton: {
-    minHeight: 38,
-    minWidth: 66,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 12,
-    borderRadius: V.radius.lg,
-    backgroundColor: V.colors.primary,
-  },
-  sendButtonDisabled: {
-    backgroundColor: V.colors.secondary,
-  },
-  sendButtonText: {
-    color: V.colors.primaryFg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
-    fontWeight: '900',
   },
   listScroll: {
     flex: 1,

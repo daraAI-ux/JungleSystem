@@ -1051,12 +1051,15 @@ describe('KolamGlobalChatRail', () => {
       input!.props.onChangeText('Siap, masih tersedia.');
     });
 
-    const sendButton = renderer!.root
-      .findAllByType(KolamPressable)
-      .find(node => node.props.accessibilityLabel === 'Kirim pesan');
+    expect(input!.props.submitBehavior).toBe('submit');
+    expect(
+      renderer!.root
+        .findAllByType(KolamPressable)
+        .some(node => node.props.accessibilityLabel === 'Kirim pesan'),
+    ).toBe(false);
 
     await ReactTestRenderer.act(async () => {
-      await sendButton!.props.onPress();
+      await input!.props.onSubmitEditing();
     });
 
     expect(sendMessage).toHaveBeenCalledWith('Siap, masih tersedia.');
@@ -1164,14 +1167,14 @@ describe('KolamGlobalChatRail', () => {
       input!.props.onChangeText('Siap, masih tersedia.');
     });
 
-    const sendButton = renderer!.root
-      .findAllByType(KolamPressable)
-      .find(node => node.props.accessibilityLabel === 'Kirim pesan');
-
-    expect(sendButton!.props.disabled).toBe(true);
+    expect(
+      renderer!.root
+        .findAllByType(KolamPressable)
+        .some(node => node.props.accessibilityLabel === 'Kirim pesan'),
+    ).toBe(false);
 
     await ReactTestRenderer.act(async () => {
-      await sendButton!.props.onPress();
+      await input!.props.onSubmitEditing();
     });
 
     expect(sendMessage).not.toHaveBeenCalled();
@@ -1264,12 +1267,8 @@ describe('KolamGlobalChatRail', () => {
       input!.props.onChangeText('Saya balas pesan ini.');
     });
 
-    const sendButton = renderer!.root
-      .findAllByType(KolamPressable)
-      .find(node => node.props.accessibilityLabel === 'Kirim pesan');
-
     await ReactTestRenderer.act(async () => {
-      await sendButton!.props.onPress();
+      await input!.props.onSubmitEditing();
     });
 
     expect(sendMessage).toHaveBeenCalledWith('Saya balas pesan ini.', {
@@ -2262,12 +2261,8 @@ describe('KolamGlobalChatRail', () => {
       input!.props.onChangeText('@dara cek stok');
     });
 
-    const sendButton = renderer!.root
-      .findAllByType(KolamPressable)
-      .find(node => node.props.accessibilityLabel === 'Kirim pesan');
-
     await ReactTestRenderer.act(async () => {
-      await sendButton!.props.onPress();
+      await input!.props.onSubmitEditing();
     });
 
     expect(sendMessage).toHaveBeenCalledWith('@dara cek stok');
@@ -2358,12 +2353,8 @@ describe('KolamGlobalChatRail', () => {
       input!.props.onChangeText('Baik, saya lanjutkan.');
     });
 
-    const sendButton = renderer!.root
-      .findAllByType(KolamPressable)
-      .find(node => node.props.accessibilityLabel === 'Kirim pesan');
-
     await ReactTestRenderer.act(async () => {
-      await sendButton!.props.onPress();
+      await input!.props.onSubmitEditing();
     });
 
     expect(sendMessage).toHaveBeenCalledWith('Baik, saya lanjutkan.', {
@@ -2988,12 +2979,12 @@ describe('KolamGlobalChatRail', () => {
 
     expect(renderText(renderer!)).toEqual(expect.arrayContaining(['invoice.pdf']));
 
-    const sendButton = renderer!.root
-      .findAllByType(KolamPressable)
-      .find(node => node.props.accessibilityLabel === 'Kirim pesan');
+    const input = renderer!.root
+      .findAllByType(TextInput)
+      .find(node => node.props.accessibilityLabel === 'Tulis pesan team chat');
 
     await ReactTestRenderer.act(async () => {
-      await sendButton!.props.onPress();
+      await input!.props.onSubmitEditing();
     });
 
     expect(sendAttachment).toHaveBeenCalledWith(
