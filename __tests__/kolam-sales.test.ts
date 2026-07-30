@@ -16,6 +16,7 @@ import {
   getKolamSaleAllowedStatusTransitions,
   getKolamSaleEditRouteId,
   getKolamSaleEstimatedMargin,
+  getKolamSaleInternalNetProfit,
   getKolamSaleItemDiscountAmount,
   getKolamSaleItemHppTotal,
   getKolamSaleItemNetProfit,
@@ -292,10 +293,14 @@ describe('kolam sales domain', () => {
     expect(getKolamSaleItemHppTotal(detail.items[0])).toBe(20_000);
     expect(getKolamSaleItemHppTotal(detail.items[1])).toBe(5_000);
     expect(getKolamSaleItemDiscountAmount(detail.items[0])).toBe(6_000);
-    expect(getKolamSaleItemNetProfit(detail.items[0], 2_500)).toBe(37_500);
+    // FE proportional commission: only non-custom share of 5_000 by subtotal
+    // product 60k + service 10k = 70k → product gets round(5000*60/70)=4286
     expect(
       allocateKolamSaleCommissionShares(detail.items, 5_000),
-    ).toEqual([5_000, 0, 0]);
+    ).toEqual([4286, 0, 714]);
+    expect(getKolamSaleItemNetProfit(detail.items[0], 4286, 0)).toBe(35_714);
+    // Internal summary: product+species revenue only (60k) − HPP 40k − PM 2k − komisi 5k
+    expect(getKolamSaleInternalNetProfit(detail)).toBe(13_000);
     expect(
       getKolamSaleEstimatedMargin({
         finalTotal: 100_000,

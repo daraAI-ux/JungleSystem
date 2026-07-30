@@ -500,7 +500,10 @@ export function getKolamSaleItemDiscountAmount(item: {
   return Math.round(Number(discount.amount) * (Number(item.quantity) || 0));
 }
 
-/** Simplified item profit (Batch A.1) — subtotal − HPP; commission share optional. */
+/**
+ * FE ItemRow fallback: Profit Bersih = subtotal − HPP − komisi (− PM share).
+ * Matches `sales-items-table` when full breakdown panels are absent.
+ */
 export function getKolamSaleItemNetProfit(
   item: {
     subtotal?: number | null;
@@ -510,15 +513,62 @@ export function getKolamSaleItemNetProfit(
     customCost?: number | null;
   },
   commissionShare = 0,
+  paymentMethodShare = 0,
 ): number {
   return Math.round(
     (Number(item.subtotal) || 0) -
       getKolamSaleItemHppTotal(item) -
+      Math.max(0, paymentMethodShare) -
       Math.max(0, commissionShare),
   );
 }
 
-/** FE “Biaya internal & margin” estimasi when paid. */
+/**
+ * FE `InternalSaleProfitSummaryPanel` netProfit:
+ * pendapatan item − HPP − biaya PM − komisi (PPN deferred until tax snapshot ported).
+ */
+export function getKolamSaleInternalNetProfit(sale: {
+  items?: Array<{
+    itemType?: string | null;
+    subtotal?: number | null;
+    quantity?: number | null;
+    unitCostAtSale?: number | null;
+    customCost?: number | null;
+  }> | null;
+  hppTotalAtSale?: number | null;
+  commissionAccruedTotalAtSale?: number | null;
+  paymentMethodCost?: number | null;
+  sourceCost?: number | null;
+  marketplaceSource?: string | null;
+}): number {
+  const items = sale.items ?? [];
+  const grossSubtotal = items
+    .filter(item => {
+      const type = String(item.itemType ?? '').toLowerCase();
+      return type === 'product' || type === 'species';
+    })
+    .reduce((sum, item) => sum + (Number(item.subtotal) || 0), 0);
+  const hppFromItems = items.reduce(
+    (sum, item) => sum + getKolamSaleItemHppTotal(item),
+    0,
+  );
+  const totalHpp =
+    sale.hppTotalAtSale != null
+      ? Math.max(0, Math.round(Number(sale.hppTotalAtSale) || 0))
+      : hppFromItems;
+  const marketplaceFee = sale.marketplaceSource
+    ? Math.max(0, Number(sale.sourceCost) || 0)
+    : 0;
+  return Math.round(
+    grossSubtotal -
+      totalHpp -
+      Math.max(0, Number(sale.paymentMethodCost) || 0) -
+      Math.max(0, Number(sale.commissionAccruedTotalAtSale) || 0) -
+      marketplaceFee,
+  );
+}
+
+/** @deprecated Prefer getKolamSaleInternalNetProfit for Internal summary. */
 export function getKolamSaleEstimatedMargin(sale: {
   finalTotal?: number | null;
   hppTotalAtSale?: number | null;
@@ -533,31 +583,82 @@ export function getKolamSaleEstimatedMargin(sale: {
   );
 }
 
-/** Allocate sale commission evenly across product/species lines (simple share). */
+/**
+ * FE `getItemCommission` — proportional by subtotal among non-custom lines.
+ */
 export function allocateKolamSaleCommissionShares(
-  items: Array<{ itemType?: string | null }>,
+  items: Array<{ itemType?: string | null; subtotal?: number | null }>,
   totalCommission: number,
 ): number[] {
-  const eligible = items
-    .map((item, index) => ({ item, index }))
-    .filter(({ item }) => {
-      const type = String(item.itemType ?? '').toLowerCase();
-      return type === 'product' || type === 'species';
-    });
   const shares = items.map(() => 0);
   const total = Math.max(0, Math.round(Number(totalCommission) || 0));
-  if (!eligible.length || total <= 0) {
+  if (total <= 0) {
     return shares;
   }
-  const base = Math.floor(total / eligible.length);
-  let remainder = total - base * eligible.length;
-  for (const row of eligible) {
-    const extra = remainder > 0 ? 1 : 0;
-    if (remainder > 0) {
-      remainder -= 1;
+  const eligibleIndexes: number[] = [];
+  let productSubtotalSum = 0;
+  items.forEach((item, index) => {
+    const type = String(item.itemType ?? '').toLowerCase();
+    if (type === 'custom') {
+      return;
     }
-    shares[row.index] = base + extra;
+    const sub = Math.max(0, Number(item.subtotal) || 0);
+    eligibleIndexes.push(index);
+    productSubtotalSum += sub;
+  });
+  if (!eligibleIndexes.length || productSubtotalSum <= 0) {
+    return shares;
   }
+  let allocated = 0;
+  eligibleIndexes.forEach((index, i) => {
+    const isLast = i === eligibleIndexes.length - 1;
+    const sub = Math.max(0, Number(items[index]?.subtotal) || 0);
+    const share = isLast
+      ? total - allocated
+      : Math.round((total * sub) / productSubtotalSum);
+    shares[index] = Math.max(0, share);
+    allocated += share;
+  });
+  return shares;
+}
+
+/** FE proportional PM cost shares across product/species lines. */
+export function allocateKolamSalePaymentMethodShares(
+  items: Array<{ itemType?: string | null; subtotal?: number | null }>,
+  paymentMethodCost: number,
+): number[] {
+  const shares = items.map(() => 0);
+  const total = Math.max(0, Math.round(Number(paymentMethodCost) || 0));
+  if (total <= 0) {
+    return shares;
+  }
+  const eligibleIndexes: number[] = [];
+  let baseSum = 0;
+  items.forEach((item, index) => {
+    const type = String(item.itemType ?? '').toLowerCase();
+    if (type !== 'product' && type !== 'species') {
+      return;
+    }
+    const sub = Math.max(0, Number(item.subtotal) || 0);
+    if (sub <= 0) {
+      return;
+    }
+    eligibleIndexes.push(index);
+    baseSum += sub;
+  });
+  if (!eligibleIndexes.length || baseSum <= 0) {
+    return shares;
+  }
+  let allocated = 0;
+  eligibleIndexes.forEach((index, i) => {
+    const isLast = i === eligibleIndexes.length - 1;
+    const sub = Math.max(0, Number(items[index]?.subtotal) || 0);
+    const share = isLast
+      ? total - allocated
+      : Math.round((total * sub) / baseSum);
+    shares[index] = Math.max(0, share);
+    allocated += share;
+  });
   return shares;
 }
 

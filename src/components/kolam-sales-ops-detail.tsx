@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
   allocateKolamSaleCommissionShares,
+  allocateKolamSalePaymentMethodShares,
   canAddItemsToKolamSale,
   canDownloadKolamSaleShippingResi,
   canShowKolamSaleEditAction,
@@ -13,7 +14,7 @@ import {
   getKolamSaleAllowedDeliveryTransitions,
   getKolamSaleAllowedStatusTransitions,
   getKolamSaleDeliveryStatusIntent,
-  getKolamSaleEstimatedMargin,
+  getKolamSaleInternalNetProfit,
   getKolamSaleItemDiscountAmount,
   getKolamSaleItemHppTotal,
   getKolamSaleItemNetProfit,
@@ -113,10 +114,30 @@ export function KolamSalesOpsDetail({
     sale.items,
     sale.commissionAccruedTotalAtSale ?? 0,
   );
-  const showInternalMargin = sale.status === 'paid';
-  const estimatedMargin = showInternalMargin
-    ? getKolamSaleEstimatedMargin(sale)
-    : 0;
+  const paymentMethodShares = allocateKolamSalePaymentMethodShares(
+    sale.items,
+    sale.paymentMethodCost,
+  );
+  const showInternalSummary =
+    sale.status === 'paid' ||
+    sale.items.some(item => {
+      const type = String(item.itemType ?? '').toLowerCase();
+      return type === 'product' || type === 'species';
+    });
+  const internalGrossSubtotal = sale.items
+    .filter(item => {
+      const type = String(item.itemType ?? '').toLowerCase();
+      return type === 'product' || type === 'species';
+    })
+    .reduce((sum, item) => sum + item.subtotal, 0);
+  const internalHppTotal =
+    sale.hppTotalAtSale != null
+      ? sale.hppTotalAtSale
+      : sale.items.reduce(
+          (sum, item) => sum + getKolamSaleItemHppTotal(item),
+          0,
+        );
+  const internalNetProfit = getKolamSaleInternalNetProfit(sale);
   const pendingLabel = pendingStatus
     ? formatKolamSalePaymentStatusLabel(pendingStatus)
     : '';
@@ -397,18 +418,27 @@ export function KolamSalesOpsDetail({
             <Text style={styles.metaText}>Tidak ada item.</Text>
           ) : (
             sale.items.map((item, index) => {
+              const lineTotal = item.unitPrice * item.quantity;
               const discountAmount = getKolamSaleItemDiscountAmount(item);
+              const hppPerUnit =
+                item.itemType === 'custom'
+                  ? item.customCost ?? 0
+                  : item.unitCostAtSale ?? 0;
               const hppTotal = getKolamSaleItemHppTotal(item);
               const commissionShare = commissionShares[index] ?? 0;
+              const pmShare = paymentMethodShares[index] ?? 0;
               const netProfit = getKolamSaleItemNetProfit(
                 item,
                 commissionShare,
+                pmShare,
               );
-              const hasInternal =
+              const clientPay =
+                item.subtotal + Math.max(0, item.shippingCost);
+              const showInternalBlock =
+                item.itemType !== 'custom' ||
                 hppTotal > 0 ||
                 commissionShare > 0 ||
-                item.unitCostAtSale != null ||
-                (item.itemType === 'custom' && item.customCost != null);
+                pmShare > 0;
 
               return (
                 <View key={item.id} style={styles.itemCard}>
@@ -431,168 +461,173 @@ export function KolamSalesOpsDetail({
                         {item.variantLabel ? ` · ${item.variantLabel}` : ''}
                         {item.sku ? ` · ${item.sku}` : ''}
                       </Text>
-                      <Text style={styles.metaText}>
-                        {item.quantity} × {formatRupiah(item.unitPrice)}
+                    </View>
+                  </View>
+
+                  <View style={styles.breakdownCard}>
+                    <View style={[styles.breakdownSection, styles.breakdownSectionFirst]}>
+                      <Text style={styles.breakdownSectionTitle}>
+                        Tagihan Client
                       </Text>
+                      <BreakdownAmountRow
+                        label={`${formatRupiah(item.unitPrice)} × ${item.quantity}`}
+                        value={formatRupiah(lineTotal)}
+                      />
+                      {discountAmount > 0 ? (
+                        <BreakdownAmountRow
+                          label={
+                            item.discount?.type === 'percentage'
+                              ? `Diskon (${item.discount.amount}%)`
+                              : 'Diskon'
+                          }
+                          tone="deduction"
+                          value={`-${formatRupiah(discountAmount)}`}
+                        />
+                      ) : null}
                       {item.voucherCode ? (
-                        <Text style={styles.metaText}>
-                          Voucher: {item.voucherCode}
-                        </Text>
+                        <BreakdownAmountRow
+                          label={`Voucher ${item.voucherCode}`}
+                          tone="muted"
+                          value=""
+                        />
                       ) : null}
                       {item.shippingCost > 0 ? (
-                        <Text style={styles.metaText}>
-                          Ongkir item: {formatRupiah(item.shippingCost)}
-                        </Text>
+                        <BreakdownAmountRow
+                          label="Ongkir"
+                          value={formatRupiah(item.shippingCost)}
+                        />
                       ) : null}
-
-                      <View style={styles.itemFinanceRow}>
-                        <View style={styles.itemFinanceCol}>
-                          <Text style={styles.itemFinanceLabel}>Tagihan</Text>
-                          <Text style={styles.metaText}>
-                            Subtotal: {formatRupiah(item.subtotal)}
-                          </Text>
-                          {discountAmount > 0 ? (
-                            <Text style={styles.metaText}>
-                              Diskon: −{formatRupiah(discountAmount)}
-                              {item.discount?.type === 'percentage'
-                                ? ` (${item.discount.amount}%)`
-                                : ''}
-                            </Text>
-                          ) : null}
-                        </View>
-                        <View style={styles.itemFinanceCol}>
-                          <Text style={styles.itemFinanceLabel}>Internal</Text>
-                          {hasInternal ? (
-                            <>
-                              <Text style={styles.metaText}>
-                                HPP: {formatRupiah(hppTotal)}
-                              </Text>
-                              {commissionShare > 0 ? (
-                                <Text style={styles.metaText}>
-                                  Komisi: {formatRupiah(commissionShare)}
-                                </Text>
-                              ) : null}
-                              <Text
-                                style={[
-                                  styles.metaText,
-                                  netProfit < 0
-                                    ? styles.profitNegative
-                                    : styles.profitPositive,
-                                ]}
-                              >
-                                Profit: {formatRupiah(netProfit)}
-                              </Text>
-                            </>
-                          ) : (
-                            <Text style={styles.metaText}>—</Text>
-                          )}
-                        </View>
-                      </View>
+                      <BreakdownAmountRow
+                        emphasis
+                        label="Client Bayar"
+                        value={formatRupiah(clientPay)}
+                      />
                     </View>
+
+                    {showInternalBlock ? (
+                      <View style={styles.breakdownSection}>
+                        <Text style={styles.breakdownSectionTitle}>
+                          Internal
+                        </Text>
+                        <BreakdownAmountRow
+                          label="Pendapatan (setelah disc)"
+                          value={formatRupiah(item.subtotal)}
+                        />
+                        {hppTotal > 0 ? (
+                          <BreakdownAmountRow
+                            label={`HPP (${formatRupiah(hppPerUnit)}/pcs)`}
+                            tone="deduction"
+                            value={`-${formatRupiah(hppTotal)}`}
+                          />
+                        ) : null}
+                        {pmShare > 0 ? (
+                          <BreakdownAmountRow
+                            label="Biaya Payment Method"
+                            tone="deduction"
+                            value={`-${formatRupiah(pmShare)}`}
+                          />
+                        ) : null}
+                        {commissionShare > 0 ? (
+                          <BreakdownAmountRow
+                            label="Komisi"
+                            tone="deduction"
+                            value={`-${formatRupiah(commissionShare)}`}
+                          />
+                        ) : null}
+                        <BreakdownAmountRow
+                          emphasis
+                          label="Profit Bersih"
+                          tone={netProfit >= 0 ? 'profit' : 'deduction'}
+                          value={formatRupiah(netProfit)}
+                        />
+                      </View>
+                    ) : null}
                   </View>
                 </View>
               );
             })
           )}
 
-          <Text style={styles.sectionTitle}>Total</Text>
-          <KolamDescriptionList
-            accessibilityLabel="Total penjualan"
-            rows={[
-              {
-                id: 'subtotal',
-                label: 'Subtotal',
-                value: formatRupiah(sale.total),
-                meta: '',
-                tone: 'default',
-              },
-              {
-                id: 'shipping',
-                label: 'Ongkir',
-                value: formatRupiah(sale.shippingCost),
-                meta: '',
-                tone: 'default',
-              },
-              ...sale.customCosts.map((cost, index) => ({
-                id: `custom-cost-${index}`,
-                label: cost.name,
-                value: formatRupiah(cost.amount),
-                meta: '',
-                tone: 'default' as const,
-              })),
-              ...(sale.sourceCost > 0
-                ? [
-                    {
-                      id: 'source-cost',
-                      label: marketplaceManaged
-                        ? 'Biaya marketplace'
-                        : 'Biaya sumber',
-                      value: formatRupiah(sale.sourceCost),
-                      meta: '',
-                      tone: 'default' as const,
-                    },
-                  ]
-                : []),
-              {
-                id: 'final',
-                label: 'Total keseluruhan',
-                value: formatRupiah(sale.finalTotal),
-                meta: '',
-                tone: 'success',
-              },
-              {
-                id: 'paid',
-                label: 'Sudah dibayar',
-                value: formatRupiah(sale.paidAmount),
-                meta: '',
-                tone: 'default',
-              },
-            ]}
-          />
-
-          {showInternalMargin ? (
-            <KolamCardFrame style={styles.marginCard} variant="compact">
-              <Text style={styles.primaryText}>Biaya internal & margin</Text>
-              <KolamDescriptionList
-                accessibilityLabel="Biaya internal dan margin"
-                rows={[
-                  {
-                    id: 'hpp',
-                    label: 'HPP total',
-                    value:
-                      sale.hppTotalAtSale != null
-                        ? formatRupiah(sale.hppTotalAtSale)
-                        : '—',
-                    meta: '',
-                    tone: 'default',
-                  },
-                  {
-                    id: 'commission',
-                    label: 'Komisi',
-                    value:
-                      sale.commissionAccruedTotalAtSale != null
-                        ? formatRupiah(sale.commissionAccruedTotalAtSale)
-                        : '—',
-                    meta: '',
-                    tone: 'default',
-                  },
-                  {
-                    id: 'pm-cost',
-                    label: 'Biaya metode bayar',
-                    value: formatRupiah(sale.paymentMethodCost),
-                    meta: '',
-                    tone: 'default',
-                  },
-                  {
-                    id: 'margin',
-                    label: 'Estimasi margin',
-                    value: formatRupiah(estimatedMargin),
-                    meta: '',
-                    tone: estimatedMargin < 0 ? 'danger' : 'success',
-                  },
-                ]}
+          <View style={styles.totalsCard}>
+            <BreakdownAmountRow
+              label="Subtotal"
+              value={formatRupiah(sale.total)}
+            />
+            {sale.shippingCost > 0 ? (
+              <BreakdownAmountRow
+                label="Ongkir"
+                value={formatRupiah(sale.shippingCost)}
               />
-            </KolamCardFrame>
+            ) : null}
+            {sale.customCosts.map((cost, index) => (
+              <BreakdownAmountRow
+                key={`custom-cost-${index}`}
+                label={cost.name}
+                value={formatRupiah(cost.amount)}
+              />
+            ))}
+            {sale.sourceCost > 0 ? (
+              <BreakdownAmountRow
+                label={
+                  marketplaceManaged ? 'Biaya marketplace' : 'Biaya sumber'
+                }
+                value={formatRupiah(sale.sourceCost)}
+              />
+            ) : null}
+            <BreakdownAmountRow
+              emphasis
+              label="Total keseluruhan"
+              tone="profit"
+              value={formatRupiah(sale.finalTotal)}
+            />
+            <BreakdownAmountRow
+              label="Sudah dibayar"
+              value={formatRupiah(sale.paidAmount)}
+            />
+          </View>
+
+          {showInternalSummary ? (
+            <View style={styles.internalSummaryCard}>
+              <Text style={styles.breakdownSectionTitle}>Internal</Text>
+              <BreakdownAmountRow
+                label="Pendapatan"
+                value={formatRupiah(internalGrossSubtotal)}
+              />
+              {internalHppTotal > 0 ? (
+                <BreakdownAmountRow
+                  label="Total HPP"
+                  tone="deduction"
+                  value={`-${formatRupiah(internalHppTotal)}`}
+                />
+              ) : null}
+              {sale.paymentMethodCost > 0 ? (
+                <BreakdownAmountRow
+                  label="Biaya Payment Method"
+                  tone="deduction"
+                  value={`-${formatRupiah(sale.paymentMethodCost)}`}
+                />
+              ) : null}
+              {(sale.commissionAccruedTotalAtSale ?? 0) > 0 ? (
+                <BreakdownAmountRow
+                  label="Komisi final"
+                  tone="deduction"
+                  value={`-${formatRupiah(sale.commissionAccruedTotalAtSale ?? 0)}`}
+                />
+              ) : null}
+              {sale.sourceCost > 0 && marketplaceManaged ? (
+                <BreakdownAmountRow
+                  label="Biaya marketplace"
+                  tone="deduction"
+                  value={`-${formatRupiah(sale.sourceCost)}`}
+                />
+              ) : null}
+              <BreakdownAmountRow
+                emphasis
+                label="Profit bersih"
+                tone={internalNetProfit >= 0 ? 'profit' : 'deduction'}
+                value={formatRupiah(internalNetProfit)}
+              />
+            </View>
           ) : null}
           {sale.status === 'partial_paid' ? (
             <KolamCardFrame style={styles.outstandingCard} variant="compact">
@@ -827,6 +862,50 @@ export function KolamSalesOpsDetail({
   );
 }
 
+function BreakdownAmountRow({
+  emphasis = false,
+  label,
+  tone = 'default',
+  value,
+}: {
+  emphasis?: boolean;
+  label: string;
+  tone?: 'default' | 'muted' | 'deduction' | 'profit';
+  value: string;
+}) {
+  const valueColor =
+    tone === 'deduction'
+      ? styles.breakdownDeduction
+      : tone === 'profit'
+        ? styles.breakdownProfit
+        : tone === 'muted'
+          ? styles.breakdownMuted
+          : styles.breakdownValue;
+
+  return (
+    <View style={styles.breakdownRow}>
+      <Text
+        style={[
+          styles.breakdownLabel,
+          emphasis ? styles.breakdownLabelEmphasis : null,
+        ]}
+      >
+        {label}
+      </Text>
+      {value ? (
+        <Text
+          style={[
+            valueColor,
+            emphasis ? styles.breakdownValueEmphasis : null,
+          ]}
+        >
+          {value}
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
 function formatShortDateTime(value: string) {
   if (!value) {
     return '';
@@ -967,31 +1046,89 @@ const styles = StyleSheet.create({
     gap: 2,
     minWidth: 0,
   },
-  itemFinanceRow: {
+  breakdownCard: {
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    marginLeft: 66,
+    marginTop: 8,
+    overflow: 'hidden',
+  },
+  breakdownSection: {
+    borderTopColor: V.colors.border,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  breakdownSectionFirst: {
+    backgroundColor: V.colors.mutedSoft,
+    borderTopWidth: 0,
+  },
+  breakdownSectionTitle: {
+    color: V.colors.mutedFg,
+    fontSize: 10,
+    fontWeight: '600',
+    letterSpacing: 0.6,
+    marginBottom: 2,
+    textTransform: 'uppercase',
+  },
+  breakdownRow: {
+    alignItems: 'center',
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    marginTop: 6,
+    justifyContent: 'space-between',
+    gap: 8,
   },
-  itemFinanceCol: {
+  breakdownLabel: {
+    color: V.colors.mutedFg,
     flex: 1,
-    gap: 2,
-    minWidth: 120,
-  },
-  itemFinanceLabel: {
-    color: V.colors.fg,
     fontSize: 12,
+  },
+  breakdownLabelEmphasis: {
+    color: V.colors.fg,
     fontWeight: '600',
   },
-  profitPositive: {
-    color: V.colors.success,
+  breakdownValue: {
+    color: V.colors.fg,
+    fontSize: 12,
+    fontVariant: ['tabular-nums'],
   },
-  profitNegative: {
+  breakdownValueEmphasis: {
+    fontWeight: '700',
+  },
+  breakdownMuted: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    fontVariant: ['tabular-nums'],
+  },
+  breakdownDeduction: {
     color: V.colors.danger,
+    fontSize: 12,
+    fontVariant: ['tabular-nums'],
   },
-  marginCard: {
-    gap: 8,
-    padding: 12,
+  breakdownProfit: {
+    color: V.colors.success,
+    fontSize: 12,
+    fontVariant: ['tabular-nums'],
+  },
+  totalsCard: {
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    gap: 6,
+    marginTop: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  internalSummaryCard: {
+    backgroundColor: V.colors.muted,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    gap: 6,
+    marginTop: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
   primaryText: {
     color: V.colors.fg,
