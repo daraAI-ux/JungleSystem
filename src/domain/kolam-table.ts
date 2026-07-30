@@ -305,19 +305,19 @@ const kolamTableColumns: Record<KolamTableId, KolamTableColumn[]> = {
   ],
   production: [
     { id: 'primary', label: 'Target', align: 'left' },
-    { id: 'meta', label: 'Varian', align: 'left', width: 140 },
-    { id: 'children', label: 'Kemajuan', align: 'left', width: 100 },
-    { id: 'amount', label: 'Est. Biaya', align: 'right', width: 120 },
+    { id: 'meta', label: 'Varian', align: 'left', width: 88 },
+    { id: 'children', label: 'Kemajuan', align: 'left', width: 88 },
+    { id: 'amount', label: 'Est. Biaya', align: 'right', width: 110 },
     { id: 'notes', label: 'Batch ID', align: 'left', width: 140 },
-    { id: 'status', label: 'Status', align: 'left', width: 120 },
+    { id: 'status', label: 'Status', align: 'left', width: 100 },
     {
       id: 'products',
       label: 'Penanggung Jawab',
       align: 'center',
       headerAlign: 'center',
-      width: 140,
+      width: 72,
     },
-    { id: 'marketplace', label: 'Tanggal Produksi', align: 'left', width: 120 },
+    { id: 'marketplace', label: 'Tanggal Produksi', align: 'left', width: 104 },
     { id: 'actions', label: '', align: 'right', width: 48 },
   ],
   'production-materials': [
@@ -423,6 +423,14 @@ export function applyKolamAdaptiveColumnWidths(
       width: getKolamAdaptiveColumnWidth(column.label, columnSizing),
     };
   });
+}
+
+/** Exported for unit tests and surfaces that need a single-column estimate. */
+export function estimateKolamAdaptiveColumnWidth(
+  label: string,
+  sizing: KolamTableColumnSizing,
+) {
+  return getKolamAdaptiveColumnWidth(label, sizing);
 }
 
 export function getKolamTableColumnWidthMap(

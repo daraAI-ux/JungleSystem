@@ -1,4 +1,5 @@
 import {
+  applyKolamAdaptiveColumnWidths,
   getKolamTableColumns,
   getKolamTableVisualContract,
 } from '../src/domain/kolam-table';
@@ -79,6 +80,35 @@ describe('getKolamTableColumns', () => {
       'Tanggal Produksi',
       '',
     ]);
+  });
+
+  it('sizes secondary columns from the longest field value within min/max bounds', () => {
+    const columns = applyKolamAdaptiveColumnWidths(getKolamTableColumns('production'), [
+      {
+        id: 'notes',
+        values: ['PRD-SHORT', 'PRD-20260703080531-VERY-LONG-BATCH'],
+        minWidth: 110,
+        maxWidth: 220,
+        charWidth: 7.5,
+      },
+      {
+        id: 'products',
+        values: ['••'],
+        minWidth: 56,
+        maxWidth: 72,
+        padding: 16,
+      },
+    ]);
+
+    const batch = columns.find(column => column.id === 'notes');
+    const pic = columns.find(column => column.id === 'products');
+    const primary = columns.find(column => column.id === 'primary');
+
+    expect(primary?.width).toBeUndefined();
+    expect(batch?.width).toBeGreaterThanOrEqual(110);
+    expect(batch?.width).toBeLessThanOrEqual(220);
+    expect(batch?.width).toBeGreaterThan(140);
+    expect(pic?.width).toBe(72);
   });
 
   it('defines product serial list table headers matching FE', () => {

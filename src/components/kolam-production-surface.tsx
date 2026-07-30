@@ -29,7 +29,7 @@ import {
   type KolamProductForProduction,
   type KolamSubmitCheckBreakdownEntry,
 } from '../domain/kolam-production';
-import { getKolamTableColumns } from '../domain/kolam-table';
+import { applyKolamAdaptiveColumnWidths, getKolamTableColumns } from '../domain/kolam-table';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { useKolamAuthContext } from '../context/kolam-app-contexts';
 import { formatRupiah } from '../lib/money';
@@ -43,6 +43,7 @@ import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
+import { getKolamDataTableColumnStyle } from './kolam-data-table-column-style';
 import { KolamDataTableHeader } from './kolam-data-table-header';
 import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
 import { KolamDateField } from './kolam-date-field';
@@ -147,10 +148,83 @@ function KolamProductionList({
     ? getKolamProductionStatusLabel(controller.filters.status)
     : 'Status';
 
+  const listColumns = React.useMemo(
+    () =>
+      applyKolamAdaptiveColumnWidths(getKolamTableColumns('production'), [
+        {
+          id: 'meta',
+          values: controller.productions.map(item =>
+            getKolamProductionVariantLabel(item.variant),
+          ),
+          minWidth: 72,
+          maxWidth: 160,
+        },
+        {
+          id: 'children',
+          values: controller.productions.map(item => {
+            const planned = item.plannedQuantity || item.quantity || 0;
+            const completed = item.completedQuantity || 0;
+            return `${completed} / ${planned}`;
+          }),
+          minWidth: 80,
+          maxWidth: 110,
+        },
+        {
+          id: 'amount',
+          values: controller.productions.map(item =>
+            formatRupiah(item.estimatedCost || 0),
+          ),
+          minWidth: 96,
+          maxWidth: 140,
+          charWidth: 7,
+        },
+        {
+          id: 'notes',
+          values: controller.productions.map(item => item.batchId || '—'),
+          minWidth: 110,
+          maxWidth: 220,
+          charWidth: 7.5,
+        },
+        {
+          id: 'status',
+          values: controller.productions.map(item =>
+            getKolamProductionStatusLabel(item.status),
+          ),
+          minWidth: 88,
+          maxWidth: 130,
+        },
+        {
+          id: 'products',
+          values: ['••'],
+          minWidth: 56,
+          maxWidth: 72,
+          charWidth: 8,
+          padding: 16,
+        },
+        {
+          id: 'marketplace',
+          values: controller.productions.map(item =>
+            formatProductionListDate(item.productionDate),
+          ),
+          minWidth: 96,
+          maxWidth: 120,
+        },
+        {
+          id: 'actions',
+          values: [''],
+          minWidth: 48,
+          maxWidth: 48,
+          padding: 0,
+        },
+      ]),
+    [controller.productions],
+  );
+
   const renderRow = React.useCallback(
     ({ item }: { item: KolamProduction }) => (
       <KolamProductionRow
         canDelete={canDelete}
+        columns={listColumns}
         production={item}
         onDelete={() => setDeleteCandidate(item)}
         onRestore={() => setRestoreCandidate(item)}
@@ -160,7 +234,7 @@ function KolamProductionList({
         }}
       />
     ),
-    [canDelete, controller, onRouteChange],
+    [canDelete, controller, listColumns, onRouteChange],
   );
 
   return (
@@ -275,7 +349,7 @@ function KolamProductionList({
               />
             </View>
           }
-          ListHeaderComponent={<KolamDataTableHeader columns={getKolamTableColumns('production')} />}
+          ListHeaderComponent={<KolamDataTableHeader columns={listColumns} />}
           renderItem={renderRow}
           style={styles.listFlatList}
         />
@@ -321,22 +395,22 @@ function KolamProductionList({
 
 function KolamProductionRow({
   production,
+  columns,
   canDelete,
   onSelect,
   onRestore,
   onDelete,
 }: {
   production: KolamProduction;
+  columns: ReturnType<typeof getKolamTableColumns>;
   canDelete: boolean;
   onSelect: () => void;
   onRestore: () => void;
   onDelete: () => void;
 }) {
   const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
-  const columns = getKolamTableColumns('production');
-  const widthOf = React.useCallback(
-    (id: (typeof columns)[number]['id']) =>
-      columns.find(column => column.id === id)?.width,
+  const columnOf = React.useCallback(
+    (id: (typeof columns)[number]['id']) => columns.find(column => column.id === id),
     [columns],
   );
   const planned = production.plannedQuantity || production.quantity || 0;
@@ -348,6 +422,15 @@ function KolamProductionRow({
   ).length;
   const productionDateLabel = formatProductionListDate(production.productionDate);
   const variantSku = production.variant?.sku?.trim();
+  const primaryColumn = columnOf('primary');
+  const metaColumn = columnOf('meta');
+  const childrenColumn = columnOf('children');
+  const amountColumn = columnOf('amount');
+  const notesColumn = columnOf('notes');
+  const statusColumn = columnOf('status');
+  const productsColumn = columnOf('products');
+  const marketplaceColumn = columnOf('marketplace');
+  const actionsColumn = columnOf('actions');
 
   const actions = [
     { label: 'Lihat', onPress: onSelect },
@@ -359,7 +442,13 @@ function KolamProductionRow({
 
   return (
     <KolamDataTableRowFrame style={actionMenuOpen ? styles.activeActionRow : undefined}>
-      <Pressable onPress={onSelect} style={[styles.listCell, styles.primaryCell]}>
+      <Pressable
+        onPress={onSelect}
+        style={[
+          styles.listCell,
+          primaryColumn ? getKolamDataTableColumnStyle(primaryColumn) : styles.primaryCell,
+        ]}
+      >
         <Text numberOfLines={2} style={styles.rowTitle}>
           {getKolamProductionTargetLabel(production)}
         </Text>
@@ -368,7 +457,12 @@ function KolamProductionRow({
         </Text>
       </Pressable>
 
-      <View style={[styles.listCell, { width: widthOf('meta') }]}>
+      <View
+        style={[
+          styles.listCell,
+          metaColumn ? getKolamDataTableColumnStyle(metaColumn) : null,
+        ]}
+      >
         <Text numberOfLines={2} style={styles.cellText}>
           {getKolamProductionVariantLabel(production.variant)}
         </Text>
@@ -379,7 +473,12 @@ function KolamProductionRow({
         ) : null}
       </View>
 
-      <View style={[styles.listCell, { width: widthOf('children') }]}>
+      <View
+        style={[
+          styles.listCell,
+          childrenColumn ? getKolamDataTableColumnStyle(childrenColumn) : null,
+        ]}
+      >
         <Text style={styles.cellText}>
           {completed} / {planned}
         </Text>
@@ -388,17 +487,33 @@ function KolamProductionRow({
         ) : null}
       </View>
 
-      <View style={[styles.listCell, { width: widthOf('amount') }]}>
+      <View
+        style={[
+          styles.listCell,
+          amountColumn ? getKolamDataTableColumnStyle(amountColumn) : null,
+        ]}
+      >
         <Text style={styles.numText}>{formatRupiah(production.estimatedCost || 0)}</Text>
       </View>
 
-      <View style={[styles.listCell, { width: widthOf('notes') }]}>
+      <View
+        style={[
+          styles.listCell,
+          notesColumn ? getKolamDataTableColumnStyle(notesColumn) : null,
+        ]}
+      >
         <Text numberOfLines={1} style={styles.cellText}>
           {production.batchId || '—'}
         </Text>
       </View>
 
-      <View style={[styles.listCell, styles.statusCell, { width: widthOf('status') }]}>
+      <View
+        style={[
+          styles.listCell,
+          styles.statusCell,
+          statusColumn ? getKolamDataTableColumnStyle(statusColumn) : null,
+        ]}
+      >
         <KolamStatusBadge
           intent={productionStatusIntent(production.status)}
           label={getKolamProductionStatusLabel(production.status)}
@@ -410,17 +525,35 @@ function KolamProductionRow({
         ) : null}
       </View>
 
-      <View style={[styles.listCell, styles.picCell, { width: widthOf('products') }]}>
+      <View
+        style={[
+          styles.listCell,
+          styles.picCell,
+          productsColumn ? getKolamDataTableColumnStyle(productsColumn) : null,
+        ]}
+      >
         <KolamProductionPicAvatar production={production} />
       </View>
 
-      <View style={[styles.listCell, { width: widthOf('marketplace') }]}>
+      <View
+        style={[
+          styles.listCell,
+          marketplaceColumn ? getKolamDataTableColumnStyle(marketplaceColumn) : null,
+        ]}
+      >
         <Text numberOfLines={1} style={styles.cellText}>
           {productionDateLabel}
         </Text>
       </View>
 
-      <View style={[styles.overflowCell, { width: widthOf('actions') ?? 48 }]}>
+      <View
+        style={[
+          styles.overflowCell,
+          actionsColumn
+            ? getKolamDataTableColumnStyle(actionsColumn)
+            : { width: 48 },
+        ]}
+      >
         <KolamOverflowMenuButton
           accessibilityLabel={`Menu ${production.batchId || 'produksi'}`}
           actions={actions}

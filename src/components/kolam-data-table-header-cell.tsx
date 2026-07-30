@@ -2,6 +2,7 @@ import React from 'react';
 import { View } from 'react-native';
 import { KolamCopyStack } from './kolam-copy-stack';
 import type { KolamTableColumn } from '../domain/kolam-table';
+import { getKolamDataTableColumnStyle } from './kolam-data-table-column-style';
 import { dataTableHeaderStyles as styles } from './kolam-data-table-header-styles';
 
 export function KolamDataTableHeaderCell({
@@ -10,14 +11,12 @@ export function KolamDataTableHeaderCell({
   column: KolamTableColumn;
 }) {
   const headerAlign = column.headerAlign ?? column.align;
-  const isPrimaryFlex = column.id === 'primary' && !column.width;
 
   return (
     <View
       style={[
         styles.cell,
-        isPrimaryFlex ? styles.primary : null,
-        column.width != null ? { width: column.width } : null,
+        getKolamDataTableColumnStyle(column),
         headerAlign === 'center' ? styles.cellCenter : null,
         headerAlign === 'right' ? styles.cellRight : null,
       ]}
