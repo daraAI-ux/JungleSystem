@@ -87,9 +87,10 @@ describe('getKolamTableColumns', () => {
       {
         id: 'notes',
         values: ['PRD-SHORT', 'PRD-20260703080531-VERY-LONG-BATCH'],
-        minWidth: 110,
-        maxWidth: 220,
-        charWidth: 7.5,
+        minWidth: 120,
+        maxWidth: 260,
+        charWidth: 8.5,
+        padding: 32,
       },
       {
         id: 'products',
@@ -105,8 +106,8 @@ describe('getKolamTableColumns', () => {
     const primary = columns.find(column => column.id === 'primary');
 
     expect(primary?.width).toBeUndefined();
-    expect(batch?.width).toBeGreaterThanOrEqual(110);
-    expect(batch?.width).toBeLessThanOrEqual(220);
+    expect(batch?.width).toBeGreaterThanOrEqual(120);
+    expect(batch?.width).toBeLessThanOrEqual(260);
     expect(batch?.width).toBeGreaterThan(140);
     expect(pic?.width).toBe(72);
   });

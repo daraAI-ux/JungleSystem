@@ -9,7 +9,7 @@ export const dataTableRowStyles = StyleSheet.create({
     minHeight: KOLAM_TABLE_VISUAL.body.rowMinHeight,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 12,
     paddingHorizontal: KOLAM_TABLE_VISUAL.body.cellPaddingX,
     paddingVertical: KOLAM_TABLE_VISUAL.body.gutterY,
     backgroundColor: V.colors.bg,

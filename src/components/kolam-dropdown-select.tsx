@@ -297,23 +297,57 @@ export function KolamOverflowMenuButton({
   onOpenChange?: (open: boolean) => void;
 }) {
   const [open, setOpen] = React.useState(false);
+  const [placement, setPlacement] = React.useState<'bottom' | 'top'>('bottom');
+  const rootRef = React.useRef<View>(null);
+  const viewport = useWindowDimensions();
   const setMenuOpen = (next: boolean) => {
     setOpen(next);
     onOpenChange?.(next);
   };
+  const measureAndOpen = () => {
+    const root = rootRef.current;
+    if (!root) {
+      setMenuOpen(true);
+      return;
+    }
+
+    root.measureInWindow((_x, y, _width, height) => {
+      const estimatedMenuHeight = Math.max(48, actions.length * 35 + 14);
+      const availableAbove = y;
+      const availableBelow = viewport.height - (y + height);
+      const shouldOpenUp =
+        availableBelow < estimatedMenuHeight + 12 && availableAbove > availableBelow;
+
+      setPlacement(shouldOpenUp ? 'top' : 'bottom');
+      setMenuOpen(true);
+    });
+  };
+  const toggleMenu = () => {
+    if (open) {
+      setMenuOpen(false);
+      return;
+    }
+
+    requestAnimationFrame(measureAndOpen);
+  };
 
   return (
-    <View style={styles.overflowRoot}>
+    <View ref={rootRef} style={styles.overflowRoot}>
       <KolamButton
         accessibilityLabel={accessibilityLabel}
         intent="outline"
         label="..."
-        onPress={() => setMenuOpen(!open)}
+        onPress={toggleMenu}
         style={styles.overflowButton}
         textStyle={styles.overflowText}
       />
       {open ? (
-        <View style={styles.overflowMenu}>
+        <View
+          style={[
+            styles.overflowMenu,
+            placement === 'top' ? styles.overflowMenuUp : styles.overflowMenuDown,
+          ]}
+        >
           {actions.map(action => (
             <KolamButton
               disabled={action.disabled}
@@ -553,8 +587,6 @@ const styles = StyleSheet.create({
   },
   overflowMenu: {
     position: 'absolute',
-    top: 34,
-    right: 42,
     zIndex: 1200,
     elevation: 32,
     minWidth: 156,
@@ -569,6 +601,14 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.12,
     shadowRadius: 16,
+  },
+  overflowMenuDown: {
+    top: 34,
+    right: 42,
+  },
+  overflowMenuUp: {
+    bottom: 34,
+    right: 42,
   },
   overflowOption: {
     justifyContent: 'flex-start',

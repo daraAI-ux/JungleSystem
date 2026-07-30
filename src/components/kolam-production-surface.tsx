@@ -174,16 +174,18 @@ function KolamProductionList({
           values: controller.productions.map(item =>
             formatRupiah(item.estimatedCost || 0),
           ),
-          minWidth: 96,
-          maxWidth: 140,
-          charWidth: 7,
+          minWidth: 108,
+          maxWidth: 156,
+          charWidth: 8,
+          padding: 36,
         },
         {
           id: 'notes',
           values: controller.productions.map(item => item.batchId || '—'),
-          minWidth: 110,
-          maxWidth: 220,
-          charWidth: 7.5,
+          minWidth: 120,
+          maxWidth: 260,
+          charWidth: 8.5,
+          padding: 32,
         },
         {
           id: 'status',
@@ -1744,6 +1746,7 @@ const styles = StyleSheet.create({
   listCell: {
     justifyContent: 'center',
     minWidth: 0,
+    overflow: 'hidden',
     paddingHorizontal: 0,
     paddingVertical: 4,
   },

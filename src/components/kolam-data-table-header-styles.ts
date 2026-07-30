@@ -9,7 +9,7 @@ export const dataTableHeaderStyles = StyleSheet.create({
     minHeight: KOLAM_TABLE_VISUAL.body.rowMinHeight,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 12,
     paddingHorizontal: KOLAM_TABLE_VISUAL.header.columnPaddingX,
     paddingVertical: KOLAM_TABLE_VISUAL.header.gutterY,
     backgroundColor: V.colors.tableHeader,
@@ -21,6 +21,7 @@ export const dataTableHeaderStyles = StyleSheet.create({
   cell: {
     justifyContent: 'center',
     minWidth: 0,
+    overflow: 'hidden',
   },
   cellCenter: {
     alignItems: 'center',
