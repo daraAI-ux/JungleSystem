@@ -3819,46 +3819,6 @@ export function KolamSettingsWebConfigSurface({
             <KolamCopyStack
               items={[
                 {
-                  id: 'dara-fulfillment-room-title',
-                  text: 'Autopilot packing',
-                  style: styles.marketplaceOverviewLabel,
-                },
-                {
-                  id: 'dara-fulfillment-room-meta',
-                  text: 'Pilih room Team Chat untuk konteks packing. Kosong berarti memakai Chat dengan DARA default.',
-                  style: styles.marketplaceOverviewMeta,
-                },
-              ]}
-            />
-            <View style={styles.poRoomChoices}>
-              <KolamChoiceSegment
-                id=""
-                label="Chat dengan DARA (default)"
-                selectedId={draft.daraFulfillmentTeamRoomId}
-                onSelect={() =>
-                  !daraControlsDisabled &&
-                  setDraftField('daraFulfillmentTeamRoomId', '')
-                }
-              />
-              {daraRoomOptions.map(room => (
-                <KolamChoiceSegment
-                  key={room._id}
-                  id={room._id}
-                  label={getTeamChatRoomLabel(room)}
-                  selectedId={draft.daraFulfillmentTeamRoomId}
-                  onSelect={() =>
-                    !daraControlsDisabled &&
-                    setDraftField('daraFulfillmentTeamRoomId', room._id)
-                  }
-                />
-              ))}
-            </View>
-          </View>
-
-          <View style={styles.marketplaceControlSection}>
-            <KolamCopyStack
-              items={[
-                {
                   id: 'dara-seo-title',
                   text: 'DARA SEO & Market Intelligence',
                   style: styles.marketplaceOverviewLabel,
