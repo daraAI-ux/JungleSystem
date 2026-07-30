@@ -66,7 +66,7 @@ describe('sync activity model', () => {
         area: 'am',
         status: 'live',
         tone: 'success',
-        statusIconKind: 'check',
+        statusIconKind: 'triangle-left',
         detail: 'AM live: dashboard tersedia.',
       }),
     ]);
@@ -95,7 +95,7 @@ describe('sync activity model', () => {
 
   it('maps sync source states to native badge icon kinds', () => {
     expect(getSyncStatusIconKind('cache')).toBe('check');
-    expect(getSyncStatusIconKind('live')).toBe('check');
+    expect(getSyncStatusIconKind('live')).toBe('triangle-left');
     expect(getSyncStatusIconKind('fallback')).toBe('activity');
     expect(getSyncStatusIconKind('disabled')).toBe('clock');
     expect(getSyncStatusIconKind('seed')).toBe('seed');

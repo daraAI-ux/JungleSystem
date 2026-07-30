@@ -7,6 +7,7 @@ export type SyncActivityArea = 'pos' | 'kolam' | 'am';
 export type SyncActivityTone = 'success' | 'warning' | 'muted';
 export type SyncActivityStatusIconKind =
   | 'check'
+  | 'triangle-left'
   | 'activity'
   | 'clock'
   | 'seed';
@@ -97,7 +98,11 @@ function getSyncTone(status: UnifiedSourceState): SyncActivityTone {
 export function getSyncStatusIconKind(
   status: UnifiedSourceState,
 ): SyncActivityStatusIconKind {
-  if (status === 'live' || status === 'cache') {
+  if (status === 'live') {
+    return 'triangle-left';
+  }
+
+  if (status === 'cache') {
     return 'check';
   }
 
