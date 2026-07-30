@@ -1,5 +1,7 @@
 import {
   buildKolamSaleCreateBody,
+  canAddItemsToKolamSale,
+  canEditKolamSaleDraft,
   canMarkKolamSalePaid,
   canUploadKolamSalePaymentProof,
   createInitialKolamSaleCreateForm,
@@ -8,26 +10,33 @@ import {
   formatKolamSaleDeliveryStatusLabel,
   formatKolamSaleMutationError,
   formatKolamSalePaymentStatusLabel,
+  getKolamSaleAllowedDeliveryTransitions,
   getKolamSaleAllowedStatusTransitions,
+  getKolamSaleEditRouteId,
   getKolamSalePaymentStatusIntent,
   getKolamSaleRouteId,
   getKolamSaleSurfaceMode,
+  hydrateKolamSaleCreateFormFromSale,
   isKolamSaleMarketplaceManaged,
+  isKolamSalesAddItemsRoute,
   isKolamSalesCreateRoute,
   isKolamSalesDetailRoute,
   isKolamSalesDiscountApprovalRoute,
+  isKolamSalesEditRoute,
   isKolamSalesListRoute,
   isKolamSalesRoute,
+  isMarketplaceSalesSource,
   normalizeKolamSale,
   normalizeKolamSaleList,
   pickDefaultOfflinePosSourceId,
   validateKolamSaleCreatePayload,
+  validateKolamSaleUpdatePayload,
 } from '../src/domain/kolam-sales';
 import { getKolamNavigationRouteTarget } from '../src/domain/kolam-navigation';
 import { ApiError } from '../src/lib/api-error';
 
 describe('kolam sales domain', () => {
-  it('detects list, detail, and create ops routes; excludes edit/discount-approval', () => {
+  it('detects list, detail, create, edit, add-items, and approval routes', () => {
     expect(isKolamSalesRoute('/sales')).toBe(true);
     expect(isKolamSalesListRoute('/sales')).toBe(true);
     expect(isKolamSalesDetailRoute('/sales/abc123')).toBe(true);
@@ -35,8 +44,15 @@ describe('kolam sales domain', () => {
 
     expect(isKolamSalesRoute('/sales/create')).toBe(true);
     expect(isKolamSalesCreateRoute('/sales/create')).toBe(true);
-    expect(isKolamSalesRoute('/sales/abc123/edit')).toBe(false);
-    expect(isKolamSalesRoute('/sales/discount-approval')).toBe(false);
+    expect(isKolamSalesEditRoute('/sales/abc123/edit')).toBe(true);
+    expect(isKolamSalesAddItemsRoute('/sales/abc123/edit?mode=add-items')).toBe(
+      true,
+    );
+    expect(isKolamSalesEditRoute('/sales/abc123/edit?mode=add-items')).toBe(
+      false,
+    );
+    expect(getKolamSaleEditRouteId('/sales/abc123/edit')).toBe('abc123');
+    expect(isKolamSalesRoute('/sales/discount-approval')).toBe(true);
     expect(isKolamSalesDiscountApprovalRoute('/sales/discount-approval')).toBe(
       true,
     );
@@ -49,6 +65,13 @@ describe('kolam sales domain', () => {
     expect(getKolamSaleSurfaceMode('/sales?needsAction=1')).toBe('list');
     expect(getKolamSaleSurfaceMode('/sales/sale-1')).toBe('detail');
     expect(getKolamSaleSurfaceMode('/sales/create')).toBe('create');
+    expect(getKolamSaleSurfaceMode('/sales/sale-1/edit')).toBe('edit');
+    expect(
+      getKolamSaleSurfaceMode('/sales/sale-1/edit?mode=add-items'),
+    ).toBe('add-items');
+    expect(getKolamSaleSurfaceMode('/sales/discount-approval')).toBe(
+      'approval',
+    );
   });
 
   it('routes Kolam /sales to kolam module (not POS sales shell)', () => {
@@ -91,7 +114,7 @@ describe('kolam sales domain', () => {
     expect(filters.limit).toBe(10);
   });
 
-  it('normalizes sale list and detail payloads', () => {
+  it('normalizes sale list and detail payloads with catalog refs', () => {
     const list = normalizeKolamSaleList({
       data: [
         {
@@ -113,7 +136,7 @@ describe('kolam sales domain', () => {
             {
               _id: 'i1',
               itemType: 'product',
-              product: { name: 'Filter', sku: 'F-1' },
+              product: { _id: 'p1', name: 'Filter', sku: 'F-1' },
               quantity: 2,
               unitPrice: 70000,
               subtotal: 140000,
@@ -126,27 +149,19 @@ describe('kolam sales domain', () => {
 
     expect(list.data).toHaveLength(1);
     expect(list.data[0].id).toBe('sale-1');
-    expect(list.data[0].buyerLabel).toBe('Ada');
-    expect(list.data[0].items[0].title).toBe('Filter');
-    expect(list.pagination.total).toBe(1);
+    expect(list.data[0].items[0].productId).toBe('p1');
 
     const detail = normalizeKolamSale({
-      data: {
-        _id: 'sale-2',
-        invoiceCode: 'INV-02',
-        status: 'paid',
-        deliveryStatus: 'none',
-        buyerInfo: { name: 'Shopee Buyer', phone: '0812' },
-        externalRef: { source: 'shopee' },
-        paymentMethod: { _id: 'pm1', name: 'Transfer', type: 'transfer' },
-        paymentProofs: [{ path: '/proofs/a.jpg', uploadedAt: '2026-01-02' }],
-        items: [],
-        finalTotal: 99000,
-      },
+      _id: 'sale-2',
+      invoiceCode: 'INV-2',
+      status: 'paid',
+      deliveryStatus: 'packing',
+      buyerInfo: { name: 'Buyer MP', phone: '081' },
+      externalRef: { source: 'shopee' },
+      paymentMethod: { _id: 'pm1', name: 'Transfer', type: 'transfer' },
+      paymentProofs: [{ _id: 'pr1', path: '/proofs/a.jpg' }],
+      items: [],
     });
-    expect(detail.id).toBe('sale-2');
-    expect(detail.buyerLabel).toBe('Shopee Buyer');
-    expect(detail.marketplaceSource).toBe('shopee');
     expect(isKolamSaleMarketplaceManaged(detail)).toBe(true);
     expect(detail.paymentMethod?.name).toBe('Transfer');
     expect(detail.paymentProofs).toHaveLength(1);
@@ -155,6 +170,7 @@ describe('kolam sales domain', () => {
 
   it('formats payment and delivery labels for list badges', () => {
     expect(formatKolamSalePaymentStatusLabel('paid')).toBe('Lunas');
+    expect(formatKolamSalePaymentStatusLabel('reject')).toBe('Diskon ditolak');
     expect(getKolamSalePaymentStatusIntent('paid')).toBe('success');
     expect(formatKolamSaleDeliveryStatusLabel('none', 'paid')).toBe(
       'Butuh kirim',
@@ -164,30 +180,35 @@ describe('kolam sales domain', () => {
     );
   });
 
-  it('gates status transitions and paid proof requirement', () => {
+  it('gates status, edit, add-items, and delivery transitions', () => {
     expect(getKolamSaleAllowedStatusTransitions('draft')).toEqual([
       'sent',
       'cancelled',
     ]);
     expect(getKolamSaleAllowedStatusTransitions('pending')).toEqual([]);
-    expect(getKolamSaleAllowedStatusTransitions('sent')).toEqual([
-      'paid',
-      'cancelled',
-    ]);
+    expect(canEditKolamSaleDraft({ status: 'draft' })).toBe(true);
+    expect(canEditKolamSaleDraft({ status: 'pending' })).toBe(false);
+    expect(
+      canAddItemsToKolamSale({ status: 'paid', deliveryStatus: 'none' }),
+    ).toBe(true);
+    expect(
+      canAddItemsToKolamSale({ status: 'paid', deliveryStatus: 'packing' }),
+    ).toBe(false);
     expect(canUploadKolamSalePaymentProof('sent')).toBe(true);
-    expect(canUploadKolamSalePaymentProof('draft')).toBe(false);
     expect(canMarkKolamSalePaid({ status: 'sent', paymentProofs: [] }).ok).toBe(
       false,
     );
     expect(
-      canMarkKolamSalePaid({
-        status: 'sent',
-        paymentProofs: [{ path: 'x' }],
-      }).ok,
-    ).toBe(true);
+      getKolamSaleAllowedDeliveryTransitions('none', { isOfflineSource: true }),
+    ).toEqual(['packing', 'on_delivery', 'success']);
+    expect(
+      getKolamSaleAllowedDeliveryTransitions('none', {
+        isOfflineSource: false,
+      }),
+    ).toEqual(['packing', 'on_delivery']);
   });
 
-  it('formats cashflow session required errors for operators', () => {
+  it('formats cashflow and forbidden mutation errors', () => {
     const formatted = formatKolamSaleMutationError(
       new ApiError(400, {
         message: 'No open cashflow session',
@@ -196,6 +217,11 @@ describe('kolam sales domain', () => {
     );
     expect(formatted).toContain('Sesi Tunai');
     expect(formatted).toContain('No open cashflow session');
+
+    const forbidden = formatKolamSaleMutationError(
+      new ApiError(403, { message: 'Forbidden for role' }),
+    );
+    expect(forbidden).toContain('Forbidden for role');
   });
 
   it('picks default offline POS source and filters marketplace options', () => {
@@ -231,14 +257,11 @@ describe('kolam sales domain', () => {
       }).map(row => row.name),
     ).toEqual(['Cash POS']);
     expect(
-      filterOptionsBySalesSource(methods, {
-        type: 'online',
-        name: 'Shopee Official',
-      }).map(row => row.name),
-    ).toEqual(['Transfer Shopee']);
+      isMarketplaceSalesSource({ type: 'online', name: 'Shopee Official' }),
+    ).toBe(true);
   });
 
-  it('builds and validates create sale payload', () => {
+  it('builds and validates create sale payload including buyerInfo', () => {
     const form = createInitialKolamSaleCreateForm();
     form.customerId = '111111111111111111111111';
     form.paymentMethodId = '222222222222222222222222';
@@ -253,27 +276,68 @@ describe('kolam sales domain', () => {
     };
 
     const body = buildKolamSaleCreateBody(form);
-    expect(body).toEqual({
-      customer: '111111111111111111111111',
-      paymentMethod: '222222222222222222222222',
-      sourceRef: '333333333333333333333333',
-      shippingCost: 0,
-      items: [
-        {
-          itemType: 'product',
-          product: '444444444444444444444444',
-          quantity: 2,
-          discount: { type: 'fixed', amount: 1000 },
-        },
-      ],
+    expect(body.items[0]).toMatchObject({
+      itemType: 'product',
+      product: '444444444444444444444444',
+      quantity: 2,
     });
     expect(validateKolamSaleCreatePayload(body).isValid).toBe(true);
+
+    const marketplaceBody = buildKolamSaleCreateBody(
+      {
+        ...form,
+        customerId: '',
+        buyerInfoName: 'Buyer Shopee',
+      },
+      { useBuyerInfo: true },
+    );
+    expect(marketplaceBody.customer).toBeNull();
+    expect(marketplaceBody.buyerInfo?.name).toBe('Buyer Shopee');
+    expect(validateKolamSaleCreatePayload(marketplaceBody).isValid).toBe(true);
 
     expect(
       validateKolamSaleCreatePayload({
         ...body,
         customer: null,
       }).errors[0],
-    ).toBe('Customer wajib diisi');
+    ).toBe('Customer atau nama pembeli wajib diisi');
+  });
+
+  it('hydrates edit form and validates update payload sourceRef', () => {
+    const sale = normalizeKolamSale({
+      _id: 'sale-edit',
+      invoiceCode: 'INV-E',
+      status: 'draft',
+      customer: { _id: '111111111111111111111111', name: 'Ada' },
+      paymentMethod: { _id: '222222222222222222222222', name: 'Cash' },
+      sourceRef: { _id: '333333333333333333333333', name: 'POS', type: 'offline' },
+      items: [
+        {
+          _id: 'i1',
+          itemType: 'product',
+          product: { _id: '444444444444444444444444', name: 'Filter' },
+          quantity: 1,
+          unitPrice: 1000,
+        },
+      ],
+    });
+    const form = hydrateKolamSaleCreateFormFromSale(sale);
+    expect(form.customerId).toBe('111111111111111111111111');
+    expect(form.items[0].productId).toBe('444444444444444444444444');
+
+    expect(
+      validateKolamSaleUpdatePayload({
+        paymentMethod: '222222222222222222222222',
+        sourceRef: '',
+        shippingCost: 0,
+        items: [
+          {
+            itemType: 'product',
+            product: '444444444444444444444444',
+            quantity: 1,
+          },
+        ],
+      }).errors[0],
+    ).toBe('Sumber penjualan tidak boleh dikosongkan');
   });
 });

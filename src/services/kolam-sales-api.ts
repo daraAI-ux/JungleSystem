@@ -2,11 +2,18 @@ import { appConfig } from '../config/app';
 import { getRuntimeClientHeaders } from '../domain/runtime-client-contract';
 import type {
   KolamSale,
+  KolamSaleAddItemsBody,
+  KolamSaleAnalyticsOverview,
+  KolamSaleCatalogOption,
   KolamSaleCreateBody,
+  KolamSaleDeliveryTransitionTarget,
   KolamSaleListFilters,
   KolamSaleListResult,
+  KolamSaleLivestockAllocationRow,
+  KolamSaleNotificationSummary,
   KolamSaleSourceOption,
   KolamSaleStatusTransitionTarget,
+  KolamSaleUpdateBody,
 } from '../domain/kolam-sales';
 import {
   normalizeKolamSale,
@@ -22,8 +29,7 @@ import { saveNativeBase64File } from './native-file-saver';
 
 /**
  * Staff Kolam sales API (`/api/sales`).
- * P0: list/detail + status/proof/invoice.
- * P1: create sale + active sources for create form.
+ * Ops: list/detail/create/edit/approval/delivery/export/fulfillment helpers.
  */
 export async function getKolamSalesList(
   filters: KolamSaleListFilters,
@@ -107,6 +113,55 @@ export async function createKolamSale(
   return unwrapSale(payload);
 }
 
+export async function updateKolamSale(
+  id: string,
+  body: KolamSaleUpdateBody,
+): Promise<KolamSale> {
+  const payload = await kolamRequest<unknown>(
+    `/sales/${encodeURIComponent(id)}`,
+    { method: 'PUT', body },
+  );
+  return unwrapSale(payload);
+}
+
+export async function addItemsToKolamSale(
+  id: string,
+  body: KolamSaleAddItemsBody,
+  idempotencyKey: string,
+): Promise<KolamSale> {
+  const payload = await kolamRequest<unknown>(
+    `/sales/${encodeURIComponent(id)}/add-items`,
+    {
+      method: 'POST',
+      body,
+      headers: { 'Idempotency-Key': idempotencyKey },
+    },
+  );
+  return unwrapSale(payload);
+}
+
+export async function deleteKolamSale(id: string): Promise<void> {
+  await kolamRequest<unknown>(`/sales/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+  });
+}
+
+export async function getKolamSalesServices(): Promise<KolamSaleCatalogOption[]> {
+  const payload = await kolamRequest<unknown>('/service', {
+    query: { page: 1, limit: 200 },
+  });
+  return normalizeCatalogOptions(payload);
+}
+
+export async function getKolamSalesEnclosuresForSale(): Promise<
+  KolamSaleCatalogOption[]
+> {
+  const payload = await kolamRequest<unknown>('/enclosures/for-sale', {
+    query: { page: 1, limit: 200 },
+  });
+  return normalizeCatalogOptions(payload, ['name', 'code']);
+}
+
 export async function updateKolamSaleStatus(
   id: string,
   status: KolamSaleStatusTransitionTarget | string,
@@ -117,6 +172,30 @@ export async function updateKolamSaleStatus(
       method: 'PUT',
       body: { status },
     },
+  );
+  return unwrapSale(payload);
+}
+
+export async function updateKolamSaleDelivery(
+  id: string,
+  target: KolamSaleDeliveryTransitionTarget,
+): Promise<KolamSale> {
+  if (target === 'packing') {
+    const payload = await kolamRequest<unknown>(
+      `/sales/${encodeURIComponent(id)}/delivery/status`,
+      { method: 'PUT', body: { status: 'packing' } },
+    );
+    return unwrapSale(payload);
+  }
+  const pathSuffix =
+    target === 'on_delivery'
+      ? 'on-delivery'
+      : target === 'delivered'
+        ? 'delivered'
+        : 'success';
+  const payload = await kolamRequest<unknown>(
+    `/sales/${encodeURIComponent(id)}/delivery/${pathSuffix}`,
+    { method: 'PUT' },
   );
   return unwrapSale(payload);
 }
@@ -155,6 +234,34 @@ export async function uploadKolamSalePaymentProofs(
   return unwrapSale(payload);
 }
 
+export async function deleteKolamSalePaymentProof(
+  id: string,
+  proofId: string,
+): Promise<KolamSale> {
+  const payload = await kolamRequest<unknown>(
+    `/sales/${encodeURIComponent(id)}/payment-proofs/${encodeURIComponent(proofId)}`,
+    { method: 'DELETE' },
+  );
+  return unwrapSale(payload);
+}
+
+export async function replaceKolamSalePaymentProof(
+  id: string,
+  proofId: string,
+  localUri: string,
+): Promise<KolamSale> {
+  const body = new FormData();
+  body.append(
+    'proof',
+    createReactNativeFilePart(localUri, 'sale-payment-proof.jpg') as unknown as Blob,
+  );
+  const payload = await kolamRequest<unknown>(
+    `/sales/${encodeURIComponent(id)}/payment-proofs/${encodeURIComponent(proofId)}`,
+    { method: 'PATCH', body },
+  );
+  return unwrapSale(payload);
+}
+
 export async function downloadKolamSaleInvoice(
   id: string,
   invoiceCode: string,
@@ -163,6 +270,188 @@ export async function downloadKolamSaleInvoice(
   const url = `${base}/sales/${encodeURIComponent(id)}/invoice`;
   const safe = String(invoiceCode || 'invoice').replace(/[^\w.-]+/g, '_');
   return downloadKolamSaleBinary(url, `${safe}.pdf`, 'application/pdf,*/*');
+}
+
+export async function downloadKolamSaleResi(
+  id: string,
+  invoiceCode: string,
+): Promise<{ path?: string; name: string }> {
+  const base = appConfig.kolamApiBaseUrl.replace(/\/+$/, '');
+  const url = `${base}/sales/${encodeURIComponent(id)}/resi`;
+  const safe = String(invoiceCode || 'resi').replace(/[^\w.-]+/g, '_');
+  return downloadKolamSaleBinary(url, `${safe}-resi.pdf`, 'application/pdf,*/*');
+}
+
+export async function exportKolamSalesListXlsx(
+  filters: KolamSaleListFilters,
+): Promise<{ path?: string; name: string }> {
+  const base = appConfig.kolamApiBaseUrl.replace(/\/+$/, '');
+  const params = new URLSearchParams();
+  if (filters.search.trim()) {
+    params.set('search', filters.search.trim());
+  }
+  if (filters.status) {
+    params.set('status', filters.status);
+  }
+  if (filters.deliveryStatus) {
+    params.set('deliveryStatus', filters.deliveryStatus);
+  }
+  if (filters.needsAction) {
+    params.set('needsAction', 'true');
+  } else if (filters.lifecycle) {
+    params.set('lifecycle', filters.lifecycle);
+  }
+  if (filters.startDate.trim()) {
+    params.set('startDate', filters.startDate.trim());
+  }
+  if (filters.endDate.trim()) {
+    params.set('endDate', filters.endDate.trim());
+  }
+  const qs = params.toString();
+  const url = `${base}/sales/export${qs ? `?${qs}` : ''}`;
+  return downloadKolamSaleBinary(
+    url,
+    'sales-export.xlsx',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,*/*',
+  );
+}
+
+export async function getKolamSalesAnalyticsOverview(): Promise<KolamSaleAnalyticsOverview> {
+  const payload = await kolamRequest<unknown>('/sales/analytics/overview');
+  const root =
+    payload && typeof payload === 'object' && 'data' in (payload as object)
+      ? (payload as { data: unknown }).data
+      : payload;
+  const record =
+    root && typeof root === 'object' ? (root as Record<string, unknown>) : {};
+  const bySourceRaw = Array.isArray(record.bySource)
+    ? record.bySource
+    : Array.isArray(record.sources)
+      ? record.sources
+      : [];
+  return {
+    totalSales: Number(record.totalSales ?? record.count ?? 0) || 0,
+    totalRevenue: Number(record.totalRevenue ?? record.revenue ?? 0) || 0,
+    bySource: bySourceRaw.map(row => {
+      const item =
+        row && typeof row === 'object' ? (row as Record<string, unknown>) : {};
+      return {
+        name: String(item.name ?? item.source ?? '—'),
+        count: Number(item.count ?? item.total ?? 0) || 0,
+        revenue: Number(item.revenue ?? item.totalRevenue ?? 0) || 0,
+      };
+    }),
+  };
+}
+
+export async function getKolamSalesNotificationSummary(): Promise<KolamSaleNotificationSummary> {
+  const payload = await kolamRequest<unknown>('/sales/notification-summary');
+  const root =
+    payload && typeof payload === 'object' && 'data' in (payload as object)
+      ? (payload as { data: unknown }).data
+      : payload;
+  const record =
+    root && typeof root === 'object' ? (root as Record<string, unknown>) : {};
+  return {
+    pendingApproval: Number(record.pendingApproval ?? record.pending ?? 0) || 0,
+    needsAction: Number(record.needsAction ?? 0) || 0,
+    needDelivery: Number(record.needDelivery ?? record.needsDelivery ?? 0) || 0,
+  };
+}
+
+export async function requestKolamSaleBiteshipPickup(
+  saleId: string,
+): Promise<unknown> {
+  return kolamRequest<unknown>(
+    `/biteship/sales/${encodeURIComponent(saleId)}/request-pickup`,
+    { method: 'POST', body: {} },
+  );
+}
+
+export async function getKolamSaleMarketplacePickupOptions(
+  saleId: string,
+): Promise<unknown> {
+  return kolamRequest<unknown>(
+    `/marketplace/sales/${encodeURIComponent(saleId)}/pickup-options`,
+  );
+}
+
+export async function requestKolamSaleMarketplacePickup(
+  saleId: string,
+  body: Record<string, unknown> = {},
+): Promise<unknown> {
+  return kolamRequest<unknown>(
+    `/marketplace/sales/${encodeURIComponent(saleId)}/request-pickup`,
+    { method: 'POST', body },
+  );
+}
+
+export async function getKolamSalePendingLivestockAllocations(
+  saleId: string,
+): Promise<KolamSaleLivestockAllocationRow[]> {
+  const payload = await kolamRequest<unknown>(
+    '/enclosures/pending-livestock-allocations',
+    {
+      query: { saleId, status: 'pending' },
+    },
+  );
+  const data =
+    payload && typeof payload === 'object' && 'data' in (payload as object)
+      ? (payload as { data: unknown }).data
+      : payload;
+  const list = Array.isArray(data) ? data : [];
+  return list
+    .map((row, index) => {
+      if (!row || typeof row !== 'object') {
+        return null;
+      }
+      const record = row as Record<string, unknown>;
+      const id = String(record._id ?? record.id ?? `alloc-${index}`).trim();
+      return {
+        id,
+        label: String(
+          record.label ??
+            record.speciesName ??
+            record.name ??
+            record.code ??
+            id,
+        ),
+        status: String(record.status ?? 'pending'),
+      } satisfies KolamSaleLivestockAllocationRow;
+    })
+    .filter((row): row is KolamSaleLivestockAllocationRow => Boolean(row));
+}
+
+function normalizeCatalogOptions(
+  payload: unknown,
+  nameKeys: string[] = ['name'],
+): KolamSaleCatalogOption[] {
+  const data =
+    payload && typeof payload === 'object' && 'data' in (payload as object)
+      ? (payload as { data: unknown }).data
+      : payload;
+  const list = Array.isArray(data) ? data : [];
+  return list
+    .map(row => {
+      if (!row || typeof row !== 'object') {
+        return null;
+      }
+      const record = row as Record<string, unknown>;
+      const id = String(record._id ?? record.id ?? '').trim();
+      if (!id) {
+        return null;
+      }
+      let name = '';
+      for (const key of nameKeys) {
+        const value = record[key];
+        if (typeof value === 'string' && value.trim()) {
+          name = value.trim();
+          break;
+        }
+      }
+      return { id, name: name || id } satisfies KolamSaleCatalogOption;
+    })
+    .filter((row): row is KolamSaleCatalogOption => Boolean(row));
 }
 
 function unwrapSale(payload: unknown): KolamSale {
@@ -179,6 +468,7 @@ function kolamRequest<T>(
     method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
     query?: Record<string, string | number | boolean | undefined | null>;
     body?: unknown;
+    headers?: Record<string, string>;
   } = {},
 ) {
   return apiRequest<T>({
@@ -186,6 +476,7 @@ function kolamRequest<T>(
     path,
     query: options.query,
     body: options.body,
+    headers: options.headers,
     baseUrl: appConfig.kolamApiBaseUrl,
     sourceHeader: appConfig.kolamSourceHeader,
   });
