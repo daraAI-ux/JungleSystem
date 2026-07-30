@@ -89,12 +89,11 @@ export function KolamTableFilterTrigger({
   );
 }
 
-/** Solid ∨ caret — border-triangle tricks often render blank on RNW. */
+/** Real triangle glyph — bar-chevrons look like scratches on RNW. */
 function QuietCaret({color, open}: {color: string; open: boolean}) {
   return (
     <View style={[styles.caretWrap, open ? styles.caretWrapOpen : null]}>
-      <View style={[styles.caretArm, styles.caretArmLeft, {backgroundColor: color}]} />
-      <View style={[styles.caretArm, styles.caretArmRight, {backgroundColor: color}]} />
+      <Text style={[styles.caretGlyph, {color}]}>▾</Text>
     </View>
   );
 }
@@ -168,27 +167,18 @@ const styles = StyleSheet.create({
   },
   caretWrap: {
     alignItems: 'center',
-    height: 12,
+    height: 14,
     justifyContent: 'center',
-    position: 'relative',
-    width: 12,
+    width: 14,
   },
   caretWrapOpen: {
     transform: [{rotate: '180deg'}],
   },
-  caretArm: {
-    borderRadius: 1,
-    height: 2,
-    position: 'absolute',
-    top: 4,
-    width: 7,
-  },
-  caretArmLeft: {
-    left: 0,
-    transform: [{rotate: '40deg'}],
-  },
-  caretArmRight: {
-    right: 0,
-    transform: [{rotate: '-40deg'}],
+  caretGlyph: {
+    fontSize: 11,
+    fontWeight: '700',
+    includeFontPadding: false,
+    lineHeight: 14,
+    textAlign: 'center',
   },
 });
