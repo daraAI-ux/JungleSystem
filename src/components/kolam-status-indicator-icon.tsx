@@ -1,5 +1,6 @@
 import React from 'react';
 import {StyleSheet, View} from 'react-native';
+import Svg, {Polygon} from 'react-native-svg';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {KolamCheckmarkIcon} from './kolam-checkmark-icon';
 import {
@@ -32,19 +33,16 @@ export function KolamStatusIndicatorIcon({
   return <KolamStatusGlyph color={color} kind={kind} />;
 }
 
-/**
- * Filled left triangle via border geometry (same technique as KolamWarningIcon).
- * Text glyphs + rotate clip to fragments inside compact status badges on RNW.
- */
+/** Solid left triangle via SVG — border/Text approaches break on RNW badges. */
 function KolamTriangleLeftGlyph({color}: {color: string}) {
   return (
     <View style={styles.triangleWrap}>
-      <View style={[styles.triangleLeft, {borderRightColor: color}]} />
+      <Svg height={10} width={8} viewBox="0 0 8 10">
+        <Polygon fill={color} points="8,0 0,5 8,10" />
+      </Svg>
     </View>
   );
 }
-
-const transparent = 'transparent';
 
 const styles = StyleSheet.create({
   triangleWrap: {
@@ -53,16 +51,5 @@ const styles = StyleSheet.create({
     height: 12,
     justifyContent: 'center',
     width: 10,
-  },
-  triangleLeft: {
-    backgroundColor: transparent,
-    borderBottomColor: transparent,
-    borderBottomWidth: 5,
-    borderLeftWidth: 0,
-    borderRightWidth: 7,
-    borderTopColor: transparent,
-    borderTopWidth: 5,
-    height: 0,
-    width: 0,
   },
 });
