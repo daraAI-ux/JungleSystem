@@ -3815,7 +3815,12 @@ export function KolamSettingsWebConfigSurface({
             />
           </View>
 
-          <View style={styles.marketplaceControlSection}>
+          <View
+            style={[
+              styles.marketplaceControlSection,
+              styles.notificationSettingsCard,
+            ]}
+          >
             <KolamCopyStack
               items={[
                 {
