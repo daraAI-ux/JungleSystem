@@ -63,6 +63,28 @@ describe('kolam-complaint domain', () => {
     expect(list.items[0].assignedStaffName).toBe('Ani Sari');
     expect(list.items[0].marketplaceReadOnly).toBe(true);
     expect(isMarketplaceMirrorComplaint(list.items[0])).toBe(true);
+    expect(list.page).toBe(1);
+    expect(list.limit).toBe(10);
+    expect(list.total).toBe(1);
+    expect(list.totalPages).toBe(1);
+
+    const paged = normalizeKolamComplaintList({
+      data: [
+        {
+          _id: 'c1',
+          ticketCode: 'COMP-1',
+          status: 'pending',
+          description: 'x',
+          items: [],
+        },
+      ],
+      pagination: { page: 2, limit: 10, total: 25, totalPages: 3 },
+    });
+    expect(paged.items).toHaveLength(1);
+    expect(paged.page).toBe(2);
+    expect(paged.limit).toBe(10);
+    expect(paged.total).toBe(25);
+    expect(paged.totalPages).toBe(3);
 
     const detail = normalizeKolamComplaint({
       _id: 'c2',

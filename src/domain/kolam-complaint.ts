@@ -424,17 +424,25 @@ export function normalizeKolamComplaintList(
   payload: unknown,
   query: KolamComplaintListQuery = {},
 ): KolamComplaintListResult {
-  const root = unwrapData(payload);
-  const rootRecord = asRecord(root);
-  const list: unknown[] = Array.isArray(root)
-    ? root
-    : Array.isArray(rootRecord.data)
-      ? rootRecord.data
-      : Array.isArray(rootRecord.items)
-        ? rootRecord.items
-        : [];
+  // BE shape: `{ data: Complaint[], pagination: { page, limit, total, totalPages } }`.
+  // Do not unwrap `data` first — that drops the sibling `pagination` object.
+  const outer = asRecord(payload);
+  const nested = asRecord(outer.data);
+  const list: unknown[] = Array.isArray(payload)
+    ? payload
+    : Array.isArray(outer.data)
+      ? outer.data
+      : Array.isArray(nested.data)
+        ? nested.data
+        : Array.isArray(nested.items)
+          ? nested.items
+          : Array.isArray(outer.items)
+            ? outer.items
+            : [];
 
-  const pagination = asRecord(rootRecord.pagination);
+  const pagination = asRecord(
+    outer.pagination ?? nested.pagination ?? null,
+  );
   const limit = query.limit ?? getNumber(pagination, 'limit') ?? 10;
   const page = query.page ?? getNumber(pagination, 'page') ?? 1;
   const total =

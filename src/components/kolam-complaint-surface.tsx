@@ -42,6 +42,8 @@ import {
   KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
+import type { KolamPaginationState } from './kolam-pagination-footer-types';
+import { KolamPaginationNav } from './kolam-pagination-nav';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamStatusBadge } from './kolam-status-badge';
@@ -49,6 +51,26 @@ import { KolamSwitch } from './kolam-switch';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
+
+function buildComplaintListPagination(
+  page: number,
+  pageSize: number,
+  total: number,
+): KolamPaginationState {
+  const safeTotal = Math.max(0, total);
+  const safePageSize = Math.max(1, pageSize);
+  const pageCount = Math.max(1, Math.ceil(safeTotal / safePageSize));
+  const safePage = Math.min(Math.max(1, page), pageCount);
+  return {
+    total: safeTotal,
+    page: safePage,
+    from: safeTotal === 0 ? 0 : (safePage - 1) * safePageSize + 1,
+    to: Math.min(safeTotal, safePage * safePageSize),
+    hasPrevious: safePage > 1,
+    hasNext: safePage < pageCount,
+    pages: Array.from({ length: pageCount }, (_, index) => index + 1),
+  };
+}
 
 const LIST_COLUMNS: KolamTableColumn[] = [
   { id: 'primary', label: 'Kode Tiket', align: 'left', width: 150 },
@@ -348,29 +370,14 @@ function KolamComplaintList({
             pageSize={controller.pageSize}
             total={controller.total}
           >
-            {controller.totalPages > 1 ? (
-              <View style={styles.paginationRow}>
-                <KolamButton
-                  disabled={controller.page <= 1}
-                  label="Sebelumnya"
-                  onPress={() =>
-                    controller.onSetPage(Math.max(1, controller.page - 1))
-                  }
-                />
-                <Text style={styles.pageLabel}>
-                  {controller.page} / {controller.totalPages}
-                </Text>
-                <KolamButton
-                  disabled={controller.page >= controller.totalPages}
-                  label="Berikutnya"
-                  onPress={() =>
-                    controller.onSetPage(
-                      Math.min(controller.totalPages, controller.page + 1),
-                    )
-                  }
-                />
-              </View>
-            ) : null}
+            <KolamPaginationNav
+              onPageChange={controller.onSetPage}
+              pagination={buildComplaintListPagination(
+                controller.page,
+                controller.pageSize,
+                controller.total,
+              )}
+            />
           </KolamTableFooterControls>
         }
         onBodyWidthChange={setTableBodyWidth}
@@ -703,16 +710,6 @@ const styles = StyleSheet.create({
   cellText: {
     color: V.colors.fg,
     fontSize: 13,
-  },
-  paginationRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 8,
-  },
-  pageLabel: {
-    color: V.colors.mutedFg,
-    fontSize: 12,
-    fontVariant: ['tabular-nums'],
   },
   switchInline: {
     alignItems: 'center',
