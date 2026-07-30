@@ -392,9 +392,17 @@ export function KolamProductSurface({
         <View ref={toolbarRef} collapsable={false} style={styles.toolbarShell}>
           <View style={kolamTableToolbarStyles.shell}>
             <View style={kolamTableToolbarStyles.row}>
-              <View style={kolamTableToolbarStyles.filters}>
+              <View
+                style={[
+                  kolamTableToolbarStyles.filters,
+                  styles.listToolbarFilters,
+                ]}
+              >
                 <KolamSearchField
-                  containerStyle={kolamTableToolbarStyles.searchInput}
+                  containerStyle={[
+                    kolamTableToolbarStyles.searchInput,
+                    styles.listToolbarSearch,
+                  ]}
                   onChangeText={controller.onSearchChange}
                   placeholder="Cari"
                   value={controller.filters.search}
@@ -7670,6 +7678,17 @@ const styles = StyleSheet.create({
     position: 'relative',
     zIndex: 100000,
     elevation: 1000,
+  },
+  // Product has 3 quiet filters + many actions; shared filters wrap orphans
+  // "Stok" under search. Keep filters on one line; search fills leftover up to cap.
+  listToolbarFilters: {
+    flexWrap: 'nowrap',
+  },
+  listToolbarSearch: {
+    flexGrow: 1,
+    flexShrink: 1,
+    maxWidth: 260,
+    minWidth: 120,
   },
   filterOverlayPanel: {
     backgroundColor: V.colors.bg,
