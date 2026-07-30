@@ -49,6 +49,7 @@ import {
   getKolamChatContactDetails,
   getKolamChatLabels,
   getKolamChatTemplates,
+  getKolamWebSetting,
   getKolamUserPickerRows,
   openKolamTeamChatDirect,
 } from '../services/kolam-api';
@@ -99,7 +100,7 @@ const SHOPEE_LOGO = require('../assets/marketplace/shopee.jpg');
 const TIKTOK_LOGO = require('../assets/marketplace/tiktok.webp');
 const TOKOPEDIA_LOGO = require('../assets/marketplace/tokopedia.png');
 const WHATSAPP_LOGO = require('../assets/marketplace/whatsapp.png');
-const DARA_AVATAR_PATH = '/images/dara-avatar.png?v=20260602pp';
+const DARA_AVATAR_DEFAULT_PATH = '/images/dara-avatar.png';
 const DARA_THINKING_DEFAULT_LINE = 'DARA sedang berpikir...';
 const DARA_THINKING_ACTIVE_EVENTS = new Set([
   'dara.thinking',
@@ -135,6 +136,10 @@ interface KolamChatRailContactDetailsState {
   data: KolamChatContactDetails | null;
   errorMessage?: string;
   loading: boolean;
+}
+
+interface KolamChatRailDaraAvatarState {
+  imageUrl: string | null;
 }
 
 interface KolamInboxComposerAccess {
@@ -207,6 +212,41 @@ interface KolamDaraThinkingLiveSignal {
 
 type KolamDaraThinkingLivePatch = Omit<KolamDaraThinkingLiveSignal, 'key'>;
 
+function normalizeDaraAvatarPath(value?: string | null) {
+  const raw = String(value ?? '').trim();
+  if (!raw) {
+    return '';
+  }
+
+  return raw.startsWith('/') ? raw : `/${raw}`;
+}
+
+function readStringField(
+  record: Record<string, unknown> | null | undefined,
+  key: string,
+) {
+  const value = record?.[key];
+  return typeof value === 'string' ? value : '';
+}
+
+function resolveDaraAvatarImageUrl(
+  stored?: string | null,
+  katakTerbangWorkerPhotoUrl?: string | null,
+) {
+  const dara = normalizeDaraAvatarPath(stored);
+  const bot = normalizeDaraAvatarPath(katakTerbangWorkerPhotoUrl);
+  const path =
+    dara && dara.includes('/media/katak-terbang/')
+      ? DARA_AVATAR_DEFAULT_PATH
+      : dara && dara.includes('/media/dara/')
+      ? dara
+      : dara && bot && dara === bot
+      ? DARA_AVATAR_DEFAULT_PATH
+      : dara || DARA_AVATAR_DEFAULT_PATH;
+
+  return getKolamFileUrl(path) ?? path;
+}
+
 export function KolamGlobalChatRail({
   mode,
   onClose,
@@ -250,6 +290,10 @@ export function KolamGlobalChatRail({
       items: [],
       loading: mode === 'inbox',
     });
+  const [daraAvatarState, setDaraAvatarState] =
+    React.useState<KolamChatRailDaraAvatarState>(() => ({
+      imageUrl: resolveDaraAvatarImageUrl(),
+    }));
   const items = getChatRailItems(
     mode,
     data,
@@ -480,6 +524,30 @@ export function KolamGlobalChatRail({
           });
         }
       });
+
+    return () => {
+      active = false;
+    };
+  }, [mode]);
+
+  React.useEffect(() => {
+    if (mode !== 'inbox') {
+      return;
+    }
+
+    let active = true;
+    getKolamWebSetting()
+      .then(webSetting => {
+        if (active) {
+          setDaraAvatarState({
+            imageUrl: resolveDaraAvatarImageUrl(
+              readStringField(webSetting, 'daraAvatarUrl'),
+              readStringField(webSetting, 'katakTerbangWorkerPhotoUrl'),
+            ),
+          });
+        }
+      })
+      .catch(() => undefined);
 
     return () => {
       active = false;
@@ -874,7 +942,7 @@ export function KolamGlobalChatRail({
                     ) : null}
                   </View>
                   {mode === 'inbox' && item.handledByDara ? (
-                    <KolamInboxDaraAvatar />
+                    <KolamInboxDaraAvatar imageUrl={daraAvatarState.imageUrl} />
                   ) : mode === 'inbox' && item.assignedStaff ? (
                     <KolamInboxAssignedStaffAvatar staff={item.assignedStaff} />
                   ) : null}
@@ -1200,9 +1268,7 @@ function KolamInboxAssignedStaffAvatar({
   );
 }
 
-function KolamInboxDaraAvatar() {
-  const imageUrl = getKolamFileUrl(DARA_AVATAR_PATH) ?? DARA_AVATAR_PATH;
-
+function KolamInboxDaraAvatar({imageUrl}: {imageUrl: string | null}) {
   return (
     <KolamHoverTooltip containerStyle={styles.rowStaffTooltip} label="DARA">
       <View

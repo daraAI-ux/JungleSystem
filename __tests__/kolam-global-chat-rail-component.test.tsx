@@ -23,6 +23,7 @@ import {
   getKolamChatContactDetails,
   getKolamChatLabels,
   getKolamChatTemplates,
+  getKolamWebSetting,
   getKolamUserPickerRows,
   openKolamTeamChatDirect,
 } from '../src/services/kolam-api';
@@ -63,6 +64,7 @@ jest.mock('../src/services/kolam-api', () => {
     getKolamChatContactDetails: jest.fn(),
     getKolamChatLabels: jest.fn(),
     getKolamChatTemplates: jest.fn(),
+    getKolamWebSetting: jest.fn(),
     getKolamUserPickerRows: jest.fn(),
     openKolamTeamChatDirect: jest.fn(),
   };
@@ -132,6 +134,9 @@ const getChatLabelsMock = getKolamChatLabels as jest.MockedFunction<
 >;
 const getChatTemplatesMock = getKolamChatTemplates as jest.MockedFunction<
   typeof getKolamChatTemplates
+>;
+const getWebSettingMock = getKolamWebSetting as jest.MockedFunction<
+  typeof getKolamWebSetting
 >;
 const createSoundServiceMock =
   createKolamNotificationSoundService as jest.MockedFunction<
@@ -218,6 +223,7 @@ describe('KolamGlobalChatRail', () => {
     getChatContactDetailsMock.mockClear();
     getChatLabelsMock.mockClear();
     getChatTemplatesMock.mockClear();
+    getWebSettingMock.mockClear();
     getChatAnalyticsMock.mockResolvedValue({
       avgReplyDelayMinutes: 4,
       lateReplyCount: 1,
@@ -242,6 +248,10 @@ describe('KolamGlobalChatRail', () => {
         title: 'Cek invoice',
       },
     ]);
+    getWebSettingMock.mockResolvedValue({
+      daraAvatarUrl: '/media/dara/avatar.png',
+      katakTerbangWorkerPhotoUrl: '/media/katak-terbang/photo.jpg',
+    });
     getChatContactDetailsMock.mockResolvedValue({
       contact: {
         _id: 'contact-1',
@@ -734,7 +744,7 @@ describe('KolamGlobalChatRail', () => {
         .findAllByType(Image)
         .some(node =>
           String(node.props.source?.uri || '').includes(
-            '/images/dara-avatar.png',
+            '/media/dara/avatar.png',
           ),
         ),
     ).toBe(true);
