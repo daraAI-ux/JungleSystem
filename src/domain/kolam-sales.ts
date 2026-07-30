@@ -182,6 +182,18 @@ export type KolamSaleShippingService = {
   trackingNumber: string;
 };
 
+/** FE marketplace logistics timeline (Shopee/Tokopedia). */
+export type KolamSaleLogisticsEvent = {
+  at: string;
+  message: string;
+};
+
+export type KolamSaleMarketplaceLogistics = {
+  platform: 'shopee' | 'tokopedia';
+  timeline: KolamSaleLogisticsEvent[];
+  lastUpdate: string;
+};
+
 export type KolamSale = {
   id: string;
   invoiceCode: string;
@@ -208,6 +220,7 @@ export type KolamSale = {
   pointsEarned: number;
   shippingAddressText: string;
   shippingService: KolamSaleShippingService | null;
+  marketplaceLogistics: KolamSaleMarketplaceLogistics | null;
   createdByName: string;
   openLivestockPendingCount: number;
   hppTotalAtSale: number | null;
@@ -1020,6 +1033,41 @@ export function resolveKolamCourierLogoKey(
     return 'pos';
   }
   return compact.length <= 24 ? compact : null;
+}
+
+/**
+ * FE `getMarketplaceLogisticsView` — perjalanan paket Shopee/Tokopedia.
+ */
+export function getKolamSaleMarketplaceLogistics(sale: {
+  marketplaceSource?: string | null;
+  marketplaceLogistics?: KolamSaleMarketplaceLogistics | null;
+}): KolamSaleMarketplaceLogistics | null {
+  if (!sale.marketplaceLogistics) {
+    return null;
+  }
+  const { platform, timeline, lastUpdate } = sale.marketplaceLogistics;
+  if (!timeline.length && !lastUpdate) {
+    return null;
+  }
+  void sale.marketplaceSource;
+  return sale.marketplaceLogistics;
+}
+
+export function formatKolamSaleLogisticsTime(
+  value: string | null | undefined,
+): string | null {
+  if (!value) {
+    return null;
+  }
+  const date = new Date(value);
+  const ms = date.getTime();
+  if (!Number.isFinite(ms) || ms <= 0) {
+    return null;
+  }
+  return date.toLocaleString('id-ID', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+  });
 }
 
 export function getKolamSaleAllowedStatusTransitions(
@@ -1975,6 +2023,11 @@ export function normalizeKolamSale(payload: unknown): KolamSale {
     shopee,
     tokopedia,
   );
+  const marketplaceLogistics = normalizeMarketplaceLogistics(
+    marketplaceSource,
+    shopee,
+    tokopedia,
+  );
 
   return {
     id: getMongoId(record, '_id') || getMongoId(record, 'id'),
@@ -2007,6 +2060,7 @@ export function normalizeKolamSale(payload: unknown): KolamSale {
       buyerInfo,
     ),
     shippingService,
+    marketplaceLogistics,
     createdByName: resolveActorName(record.createdBy),
     openLivestockPendingCount:
       getNumber(record, 'openLivestockPendingCount') ?? 0,
@@ -2110,6 +2164,55 @@ function normalizeShippingService(
     serviceName,
     trackingNumber,
   };
+}
+
+function normalizeMarketplaceLogistics(
+  marketplaceSource: string,
+  shopee: Record<string, unknown>,
+  tokopedia: Record<string, unknown>,
+): KolamSaleMarketplaceLogistics | null {
+  if (marketplaceSource !== 'shopee' && marketplaceSource !== 'tokopedia') {
+    return null;
+  }
+  const platformRef =
+    marketplaceSource === 'shopee' ? shopee : tokopedia;
+  const timeline = normalizeLogisticsTimeline(platformRef.logisticsTimeline);
+  const lastUpdate =
+    getString(platformRef, 'logisticsLastUpdate') ||
+    (marketplaceSource === 'shopee'
+      ? getString(platformRef, 'statusDescription')
+      : '') ||
+    timeline[0]?.message ||
+    '';
+
+  if (!timeline.length && !lastUpdate) {
+    return null;
+  }
+
+  return {
+    platform: marketplaceSource,
+    timeline,
+    lastUpdate,
+  };
+}
+
+function normalizeLogisticsTimeline(value: unknown): KolamSaleLogisticsEvent[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value
+    .map(row => {
+      const record = asRecord(row);
+      const message = getString(record, 'message').trim();
+      if (!message) {
+        return null;
+      }
+      return {
+        at: stringifyDate(record.at),
+        message,
+      } satisfies KolamSaleLogisticsEvent;
+    })
+    .filter((row): row is KolamSaleLogisticsEvent => Boolean(row));
 }
 
 function resolveShippingMethodName(value: unknown): string {

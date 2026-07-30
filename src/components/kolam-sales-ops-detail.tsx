@@ -14,10 +14,12 @@ import {
   getKolamSaleCouriers,
   getKolamSaleDeliveryStatusIntent,
   getKolamSaleItemDiscountAmount,
+  getKolamSaleMarketplaceLogistics,
   getKolamSaleOutstandingAmount,
   getKolamSalePaymentStatusIntent,
   getKolamSaleServiceLabel,
   getKolamSaleTrackingNumber,
+  formatKolamSaleLogisticsTime,
   isKolamPosSale,
   isKolamSaleMarketplaceManaged,
   kolamSaleSkipsShippingFlow,
@@ -120,6 +122,13 @@ export function KolamSalesOpsDetail({
   const saleCouriers = getKolamSaleCouriers(sale);
   const saleServiceLabel = getKolamSaleServiceLabel(sale);
   const saleTrackingNumber = getKolamSaleTrackingNumber(sale);
+  const marketplaceLogistics = getKolamSaleMarketplaceLogistics(sale);
+  const logisticsPlatformLabel =
+    marketplaceLogistics?.platform === 'shopee'
+      ? 'Shopee'
+      : marketplaceLogistics?.platform === 'tokopedia'
+        ? 'Tokopedia'
+        : '';
   const pendingLabel = pendingStatus
     ? formatKolamSalePaymentStatusLabel(pendingStatus)
     : '';
@@ -739,6 +748,36 @@ export function KolamSalesOpsDetail({
                     {formatRupiah(sale.shippingCost)}
                   </Text>
                 </View>
+                {marketplaceLogistics ? (
+                  <View style={styles.logisticsBlock}>
+                    <Text style={styles.shippingFieldLabel}>
+                      Perjalanan paket ({logisticsPlatformLabel})
+                    </Text>
+                    {marketplaceLogistics.lastUpdate &&
+                    marketplaceLogistics.timeline.length === 0 ? (
+                      <Text style={styles.shippingFieldValue}>
+                        {marketplaceLogistics.lastUpdate}
+                      </Text>
+                    ) : (
+                      marketplaceLogistics.timeline.map((entry, index) => {
+                        const timeLabel = formatKolamSaleLogisticsTime(entry.at);
+                        return (
+                          <View
+                            key={`${entry.message}-${entry.at || index}`}
+                            style={styles.logisticsEntry}
+                          >
+                            <Text style={styles.shippingFieldValue}>
+                              {entry.message}
+                            </Text>
+                            {timeLabel ? (
+                              <Text style={styles.metaText}>{timeLabel}</Text>
+                            ) : null}
+                          </View>
+                        );
+                      })
+                    )}
+                  </View>
+                ) : null}
                 {showDeliveryActions ? (
                   <>
                     {allowedDeliveryTransitions.length === 0 ? (
@@ -1306,6 +1345,21 @@ const styles = StyleSheet.create({
   trackingMono: {
     fontFamily: 'Consolas',
     fontVariant: ['tabular-nums'],
+  },
+  logisticsBlock: {
+    borderTopColor: V.colors.border,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    gap: 8,
+    marginTop: 4,
+    paddingTop: 10,
+  },
+  logisticsEntry: {
+    borderColor: V.colors.border,
+    borderRadius: 6,
+    borderWidth: StyleSheet.hairlineWidth,
+    gap: 2,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
   },
   historyRow: {
     borderBottomColor: V.colors.border,

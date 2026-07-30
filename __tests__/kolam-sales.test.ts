@@ -21,12 +21,14 @@ import {
   getKolamSaleItemDiscountAmount,
   getKolamSaleItemHppTotal,
   getKolamSaleItemNetProfit,
+  getKolamSaleMarketplaceLogistics,
   getKolamSaleOutstandingAmount,
   getKolamSalePaymentStatusIntent,
   getKolamSaleRouteId,
   getKolamSaleServiceLabel,
   getKolamSaleSurfaceMode,
   getKolamSaleTrackingNumber,
+  formatKolamSaleLogisticsTime,
   hydrateKolamSaleCreateFormFromSale,
   isKolamSaleMarketplaceManaged,
   resolveKolamCourierLogoKey,
@@ -303,6 +305,41 @@ describe('kolam sales domain', () => {
     expect(getKolamSaleCouriers(detail)).toEqual([
       { name: 'Anteraja', logoKey: 'anteraja' },
     ]);
+  });
+
+  it('normalizes marketplace perjalanan paket timeline', () => {
+    const detail = normalizeKolamSale({
+      _id: 'sale-logistics',
+      invoiceCode: 'INV-LOG',
+      status: 'paid',
+      externalRef: {
+        source: 'tokopedia',
+        tokopedia: {
+          mainOrderId: 'TP-9',
+          logisticsLastUpdate: 'Paket diterima di hub Bandung',
+          logisticsTimeline: [
+            {
+              at: '2026-07-30T10:00:00.000Z',
+              message: 'Paket diterima di hub Bandung',
+            },
+            {
+              at: '2026-07-30T08:00:00.000Z',
+              message: 'Kurir menjemput paket',
+            },
+          ],
+        },
+      },
+      items: [],
+    });
+
+    expect(detail.marketplaceLogistics?.platform).toBe('tokopedia');
+    expect(detail.marketplaceLogistics?.timeline).toHaveLength(2);
+    expect(detail.marketplaceLogistics?.timeline[0].message).toBe(
+      'Paket diterima di hub Bandung',
+    );
+    const view = getKolamSaleMarketplaceLogistics(detail);
+    expect(view?.lastUpdate).toContain('Bandung');
+    expect(formatKolamSaleLogisticsTime('2026-07-30T10:00:00.000Z')).toBeTruthy();
   });
 
   it('computes Tokopedia/Shopee olshop profit like FE (not internal PM path)', () => {
