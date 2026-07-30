@@ -398,7 +398,7 @@ export function KolamGlobalChatRail({
       if (
         inboxMessagePatch &&
         mode === 'inbox' &&
-        classification.targetId === selectedItemId
+        (!classification.targetId || classification.targetId === selectedItemId)
       ) {
         detail.patchInboxMessageFromLive(
           inboxMessagePatch.messageId,
@@ -994,9 +994,17 @@ export function KolamGlobalChatRail({
                     ) : null}
                   </View>
                   {mode === 'inbox' && item.handledByDara ? (
-                    <KolamInboxDaraAvatar imageUrl={daraAvatarState.imageUrl} />
+                    <View style={styles.rowStaffSlot}>
+                      <KolamInboxDaraAvatar
+                        imageUrl={daraAvatarState.imageUrl}
+                      />
+                    </View>
                   ) : mode === 'inbox' && item.assignedStaff ? (
-                    <KolamInboxAssignedStaffAvatar staff={item.assignedStaff} />
+                    <View style={styles.rowStaffSlot}>
+                      <KolamInboxAssignedStaffAvatar
+                        staff={item.assignedStaff}
+                      />
+                    </View>
                   ) : null}
                 </KolamPressable>
               )}
@@ -7318,6 +7326,13 @@ const styles = StyleSheet.create({
   },
   rowStaffTooltip: {
     alignSelf: 'center',
+  },
+  rowStaffSlot: {
+    width: 30,
+    flexShrink: 0,
+    alignSelf: 'flex-start',
+    alignItems: 'center',
+    paddingTop: 2,
   },
   rowStaffAvatar: {
     width: 30,

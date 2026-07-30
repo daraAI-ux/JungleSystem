@@ -3275,7 +3275,7 @@ describe('KolamGlobalChatRail', () => {
     );
   });
 
-  it('patches inbox delivery status directly from message.updated live events', async () => {
+  it('patches inbox delivery status from message.updated live events without conversation id', async () => {
     const patchInboxMessageFromLive = jest.fn();
     let liveOptions:
       | Parameters<typeof useKolamChatLiveStream>[0]
@@ -3357,7 +3357,6 @@ describe('KolamGlobalChatRail', () => {
           stream: 'inbox',
         },
         payload: {
-          conversationId: 'conv-1',
           deliveryStatus: 'delivered',
           messageId: 'msg-1',
         },
