@@ -1617,7 +1617,7 @@ function KolamChatRailDetailPanel({
         inboxComposerAccess.lockedBy),
   );
   const attachmentLabel = pendingAttachment
-    ? pendingAttachment.name ?? pendingAttachment.path ?? pendingAttachment.uri ?? 'File'
+    ? getPendingChatAttachmentLabel(pendingAttachment)
     : '';
   const filteredTemplates = React.useMemo(
     () => filterChatTemplates(templatesState.items, templateSearch),
@@ -2541,6 +2541,61 @@ function canEditTeamChatMessage(
       message.author !== 'DARA' &&
       message.body.trim(),
   );
+}
+
+function getPendingChatAttachmentLabel(file: NativeImagePickerResult) {
+  const name = getNativePickedFileName(file);
+  const kind = getNativePickedFileKind(file);
+
+  switch (kind) {
+    case 'image':
+      return `📷 Gambar ${name}`;
+    case 'video':
+      return `🎬 Video ${name}`;
+    case 'audio':
+      return `Audio ${name}`;
+    case 'file':
+    default:
+      return `File ${name}`;
+  }
+}
+
+function getNativePickedFileName(file: NativeImagePickerResult) {
+  return (
+    file.name?.trim() ||
+    file.path?.split(/[\\/]/).pop()?.trim() ||
+    file.uri?.split('/').pop()?.trim() ||
+    'lampiran'
+  );
+}
+
+function getNativePickedFileKind(file: NativeImagePickerResult) {
+  const mimeType = file.mimeType?.toLowerCase() ?? '';
+  if (mimeType.startsWith('image/')) {
+    return 'image';
+  }
+  if (mimeType.startsWith('video/')) {
+    return 'video';
+  }
+  if (mimeType.startsWith('audio/')) {
+    return 'audio';
+  }
+
+  const extension =
+    file.extension?.toLowerCase().replace(/^\./, '') ??
+    getNativePickedFileName(file).split('.').pop()?.toLowerCase();
+
+  if (extension && ['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(extension)) {
+    return 'image';
+  }
+  if (extension && ['mp4', 'mov', 'webm'].includes(extension)) {
+    return 'video';
+  }
+  if (extension && ['mp3', 'wav', 'm4a', 'aac'].includes(extension)) {
+    return 'audio';
+  }
+
+  return 'file';
 }
 
 function canEditInboxMessage(

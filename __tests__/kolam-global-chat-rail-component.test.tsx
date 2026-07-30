@@ -1228,7 +1228,9 @@ describe('KolamGlobalChatRail', () => {
     });
 
     expect(pickNativeImageFileMock).toHaveBeenCalledTimes(1);
-    expect(renderText(renderer!)).toEqual(expect.arrayContaining(['proof.jpg']));
+    expect(renderText(renderer!)).toEqual(
+      expect.arrayContaining(['📷 Gambar proof.jpg']),
+    );
 
     const input = renderer!.root
       .findAllByType(TextInput)
@@ -3122,9 +3124,9 @@ describe('KolamGlobalChatRail', () => {
     const sendAttachment = jest.fn().mockResolvedValue(undefined);
     pickNativeAssetFileMock.mockResolvedValue({
       cancelled: false,
-      mimeType: 'application/pdf',
-      name: 'invoice.pdf',
-      path: 'C:\\docs\\invoice.pdf',
+      mimeType: 'video/mp4',
+      name: 'clip.mp4',
+      path: 'C:\\media\\clip.mp4',
     });
     useReadonlyDataMock.mockReturnValue({
       conversations: [],
@@ -3178,7 +3180,9 @@ describe('KolamGlobalChatRail', () => {
       await attachButton!.props.onPress();
     });
 
-    expect(renderText(renderer!)).toEqual(expect.arrayContaining(['invoice.pdf']));
+    expect(renderText(renderer!)).toEqual(
+      expect.arrayContaining(['🎬 Video clip.mp4']),
+    );
 
     const input = renderer!.root
       .findAllByType(TextInput)
@@ -3189,7 +3193,7 @@ describe('KolamGlobalChatRail', () => {
     });
 
     expect(sendAttachment).toHaveBeenCalledWith(
-      expect.objectContaining({name: 'invoice.pdf'}),
+      expect.objectContaining({name: 'clip.mp4'}),
       '',
     );
   });

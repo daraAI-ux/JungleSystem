@@ -450,7 +450,25 @@ void KolamWindowsFilePicker::pickFile(
     PickFileWithTypes(std::move(result),
         winrt::Windows::Storage::Pickers::PickerLocationId::DocumentsLibrary,
         winrt::Windows::Storage::Pickers::PickerViewMode::List,
-        {L".pdf", L".doc", L".docx", L".xls", L".xlsx", L".png", L".jpg", L".jpeg"});
+        {
+            L".pdf",
+            L".doc",
+            L".docx",
+            L".xls",
+            L".xlsx",
+            L".png",
+            L".jpg",
+            L".jpeg",
+            L".webp",
+            L".gif",
+            L".mp4",
+            L".mov",
+            L".webm",
+            L".mp3",
+            L".wav",
+            L".m4a",
+            L".aac",
+        });
   });
 }
 
