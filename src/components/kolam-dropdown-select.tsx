@@ -305,19 +305,19 @@ export function KolamOverflowMenuButton({
     x: 0,
     y: 0,
   });
+  const measureOverflowTrigger = () => {
+    triggerRef.current?.measureInWindow((x, y, width, height) => {
+      setTriggerFrame({
+        height: height || 34,
+        width: width || 38,
+        x,
+        y,
+      });
+    });
+  };
   const setMenuOpen = (next: boolean) => {
     if (next) {
-      triggerRef.current?.measureInWindow((x, y, width, height) => {
-        setTriggerFrame({
-          height: height || 34,
-          width: width || 38,
-          x,
-          y,
-        });
-        setOpen(true);
-        onOpenChange?.(true);
-      });
-      return;
+      requestAnimationFrame(measureOverflowTrigger);
     }
 
     setOpen(next);
@@ -683,6 +683,5 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
 });
-
 
 
