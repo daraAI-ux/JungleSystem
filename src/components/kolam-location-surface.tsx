@@ -9,7 +9,12 @@ import {
   type KolamLocationTier,
   type KolamLocationType,
 } from '../domain/kolam-location';
-import {getKolamTableColumns} from '../domain/kolam-table';
+import {
+  fitKolamDataTableColumns,
+  getKolamTableColumns,
+  getKolamTableVisualContract,
+  type KolamTableColumn,
+} from '../domain/kolam-table';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {
   createKolamLocation,
@@ -39,11 +44,20 @@ import {KolamConfirmDialog} from './kolam-confirm-dialog';
 import {KolamContentFrame} from './kolam-content-frame';
 import {KolamCopyStack} from './kolam-copy-stack';
 import {
+  getKolamDataTableColumnStyle,
+  KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+  KOLAM_DATA_TABLE_COLUMN_GAP,
+} from './kolam-data-table-column-style';
+import {
   KolamDataTableAmountCell,
   KolamDataTableMetaCell,
 } from './kolam-data-table-text-cell';
 import {KolamDataTableHeader} from './kolam-data-table-header';
 import {KolamDataTableRowFrame} from './kolam-data-table-row-frame';
+import {
+  KolamDataTableActionsTrack,
+  KolamDataTableMainTrack,
+} from './kolam-data-table-tracks';
 import {
   KolamDropdownSelect,
   KolamOverflowMenuButton,
@@ -73,19 +87,6 @@ const LOCATION_TYPE_OPTIONS: Array<{
 const LOCATION_FORM_TYPE_OPTIONS = KOLAM_LOCATION_TYPE_OPTIONS.filter(
   option => option.value !== 'bin',
 );
-
-const LOCATION_LIST_COLUMNS = [
-  {id: 'name', label: 'Nama Lokasi', flex: 1.35, align: 'left'},
-  {id: 'type', label: 'Tipe', flex: 0.75, align: 'left'},
-  {id: 'tier', label: 'Tingkat', flex: 0.7, align: 'left'},
-  {id: 'parent', label: 'Induk', flex: 1.05, align: 'left'},
-  {id: 'phone', label: 'Telepon', flex: 0.9, align: 'left'},
-  {id: 'description', label: 'Deskripsi', flex: 1.25, align: 'left'},
-  {id: 'created', label: 'Dibuat', flex: 0.9, align: 'right'},
-  {id: 'actions', label: '', flex: 0.35, align: 'right'},
-] as const;
-
-type LocationListColumnId = (typeof LOCATION_LIST_COLUMNS)[number]['id'];
 
 const INITIAL_PAGINATION: KolamLocationPagination = {
   limit: 10,
@@ -1023,6 +1024,11 @@ function KolamLocationList({
   const [deleting, setDeleting] = React.useState(false);
   const [pagination, setPagination] =
     React.useState<KolamLocationPagination>(INITIAL_PAGINATION);
+  const [tableBodyWidth, setTableBodyWidth] = React.useState(0);
+  const listColumns = React.useMemo(
+    () => fitLocationListColumns(tableBodyWidth),
+    [tableBodyWidth],
+  );
 
   React.useEffect(() => {
     let active = true;
@@ -1260,31 +1266,13 @@ function KolamLocationList({
               </View>
             ) : null}
           </KolamTableFooterControls>
-        }>
-        <View style={styles.locationHeaderRow}>
-          {LOCATION_LIST_COLUMNS.map(column => (
-            <View
-              key={column.id}
-              style={[
-                styles.locationListCell,
-                {flex: column.flex},
-                column.align === 'right' && styles.locationListCellRight,
-              ]}>
-              {column.label ? (
-                <Text
-                  style={[
-                    styles.locationHeaderCellText,
-                    column.align === 'right' && styles.locationTextRight,
-                  ]}>
-                  {column.label}
-                </Text>
-              ) : null}
-            </View>
-          ))}
-        </View>
+        }
+        onBodyWidthChange={setTableBodyWidth}>
+        <KolamDataTableHeader columns={listColumns} />
         {visibleItems.length ? (
           visibleItems.map(location => (
             <KolamLocationRow
+              columns={listColumns}
               key={location.id}
               location={location}
               onDelete={() => setDeleteTarget(location)}
@@ -1341,12 +1329,14 @@ function KolamLocationList({
 }
 
 function KolamLocationRow({
+  columns,
   location,
   onDelete,
   onEdit,
   onSelect,
   parentLookup,
 }: {
+  columns: ReturnType<typeof getKolamTableColumns>;
   location: KolamLocationListItem;
   onDelete: () => void;
   onEdit: () => void;
@@ -1355,71 +1345,124 @@ function KolamLocationRow({
 }) {
   const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
   const parent = resolveLocationParent(location, parentLookup);
+  const columnOf = React.useCallback(
+    (id: (typeof columns)[number]['id']) =>
+      columns.find(column => column.id === id),
+    [columns],
+  );
+  const primaryColumn = columnOf('primary');
+  const typeColumn = columnOf('meta');
+  const tierColumn = columnOf('children');
+  const parentColumn = columnOf('notes');
+  const phoneColumn = columnOf('marketplace');
+  const descriptionColumn = columnOf('status');
+  const createdColumn = columnOf('amount');
+  const actionsColumn = columnOf('actions');
 
   return (
     <KolamDataTableRowFrame
-      style={[styles.locationListRow, actionMenuOpen && styles.activeActionRow]}>
-      <View style={getLocationListCellStyle('name')}>
-        <KolamCopyStack
-          items={[
-            {
-              id: 'name',
-              text: location.name,
-              style: styles.locationNameText,
-              textProps: {numberOfLines: 2},
-            },
-          ]}
-        />
-      </View>
-      <View style={getLocationListCellStyle('type')}>
-        <KolamStatusBadge
-          intent={getLocationTypeIntent(location.type)}
-          label={getKolamLocationTypeLabel(location.type)}
-        />
-      </View>
-      <View style={getLocationListCellStyle('tier')}>
-        <Text style={styles.locationMetaText}>
-          {getKolamLocationTierLabel(location.tier)}
-        </Text>
-      </View>
-      <View style={getLocationListCellStyle('parent')}>
-        <KolamCopyStack
-          items={[
-            {
-              id: 'parent-name',
-              text: parent?.name || '-',
-              style: styles.parentNameText,
-              textProps: {numberOfLines: 1},
-            },
-            ...(parent?.type
-              ? [
-                  {
-                    id: 'parent-type',
-                    text: getKolamLocationTypeLabel(parent.type),
-                    style: styles.parentTypeText,
-                    textProps: {numberOfLines: 1},
-                  },
-                ]
-              : []),
-          ]}
-        />
-      </View>
-      <View style={getLocationListCellStyle('phone')}>
-        <Text numberOfLines={1} style={styles.locationMetaText}>
-          {location.phoneNumber || '-'}
-        </Text>
-      </View>
-      <View style={getLocationListCellStyle('description')}>
-        <Text numberOfLines={2} style={styles.locationMetaText}>
-          {truncateLocationDescription(location.description)}
-        </Text>
-      </View>
-      <View style={getLocationListCellStyle('created')}>
-        <Text style={[styles.locationMetaText, styles.locationTextRight]}>
-          {formatLocationDateTime(location.createdAt)}
-        </Text>
-      </View>
-      <View style={getLocationListCellStyle('actions')}>
+      style={actionMenuOpen ? styles.activeActionRow : undefined}>
+      <KolamDataTableMainTrack>
+        <View
+          style={[
+            styles.listCell,
+            styles.identityCell,
+            primaryColumn ? getKolamDataTableColumnStyle(primaryColumn) : null,
+          ]}>
+          <KolamCopyStack
+            items={[
+              {
+                id: 'name',
+                text: location.name,
+                style: styles.locationNameText,
+                textProps: {numberOfLines: 2},
+              },
+            ]}
+          />
+        </View>
+        <View
+          style={[
+            styles.listCell,
+            typeColumn ? getKolamDataTableColumnStyle(typeColumn) : null,
+          ]}>
+          <KolamStatusBadge
+            intent={getLocationTypeIntent(location.type)}
+            label={getKolamLocationTypeLabel(location.type)}
+            style={styles.centerBadge}
+          />
+        </View>
+        <View
+          style={[
+            styles.listCell,
+            tierColumn ? getKolamDataTableColumnStyle(tierColumn) : null,
+          ]}>
+          <Text numberOfLines={1} style={styles.locationMetaText}>
+            {getKolamLocationTierLabel(location.tier)}
+          </Text>
+        </View>
+        <View
+          style={[
+            styles.listCell,
+            parentColumn ? getKolamDataTableColumnStyle(parentColumn) : null,
+          ]}>
+          <KolamCopyStack
+            containerStyle={styles.parentCopy}
+            items={[
+              {
+                id: 'parent-name',
+                text: parent?.name || '-',
+                style: styles.parentNameText,
+                textProps: {numberOfLines: 1},
+              },
+              ...(parent?.type
+                ? [
+                    {
+                      id: 'parent-type',
+                      text: getKolamLocationTypeLabel(parent.type),
+                      style: styles.parentTypeText,
+                      textProps: {numberOfLines: 1},
+                    },
+                  ]
+                : []),
+            ]}
+          />
+        </View>
+        <View
+          style={[
+            styles.listCell,
+            phoneColumn ? getKolamDataTableColumnStyle(phoneColumn) : null,
+          ]}>
+          <Text numberOfLines={1} style={styles.locationMetaText}>
+            {location.phoneNumber || '-'}
+          </Text>
+        </View>
+        <View
+          style={[
+            styles.listCell,
+            descriptionColumn
+              ? getKolamDataTableColumnStyle(descriptionColumn)
+              : null,
+          ]}>
+          <Text numberOfLines={2} style={styles.locationMetaText}>
+            {truncateLocationDescription(location.description)}
+          </Text>
+        </View>
+        <View
+          style={[
+            styles.listCell,
+            createdColumn ? getKolamDataTableColumnStyle(createdColumn) : null,
+          ]}>
+          <Text numberOfLines={1} style={styles.locationMetaText}>
+            {formatLocationDateTime(location.createdAt)}
+          </Text>
+        </View>
+      </KolamDataTableMainTrack>
+      <KolamDataTableActionsTrack
+        style={styles.actionsTrack}
+        width={Math.max(
+          actionsColumn?.width ?? KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+          KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+        )}>
         <KolamOverflowMenuButton
           accessibilityLabel={`Menu ${location.name}`}
           actions={[
@@ -1433,18 +1476,23 @@ function KolamLocationRow({
           ]}
           onOpenChange={setActionMenuOpen}
         />
-      </View>
+      </KolamDataTableActionsTrack>
     </KolamDataTableRowFrame>
   );
 }
 
-function getLocationListCellStyle(columnId: LocationListColumnId) {
-  const column = LOCATION_LIST_COLUMNS.find(item => item.id === columnId);
-  return [
-    styles.locationListCell,
-    {flex: column?.flex ?? 1},
-    column?.align === 'right' && styles.locationListCellRight,
-  ];
+function fitLocationListColumns(containerWidth: number): KolamTableColumn[] {
+  return fitKolamDataTableColumns(
+    getKolamTableColumns('location'),
+    containerWidth,
+    {
+      actionsMinWidth: KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+      gap: KOLAM_DATA_TABLE_COLUMN_GAP,
+      paddingX: getKolamTableVisualContract().body.cellPaddingX * 2,
+      primaryMinWidth: 160,
+      secondaryMinWidth: 56,
+    },
+  );
 }
 
 function SectionTitle({
@@ -2024,86 +2072,56 @@ const styles = StyleSheet.create({
     zIndex: 9000,
     elevation: 90,
   },
-  locationHeaderRow: {
+  listCell: {
     alignItems: 'center',
-    backgroundColor: V.colors.tableHeader,
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: 1,
-    borderTopColor: V.colors.border,
-    borderTopWidth: 1,
-    flexDirection: 'row',
-    gap: 8,
-    minHeight: 52,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-  },
-  locationHeaderCellText: {
-    color: V.colors.mutedFg,
-    fontSize: 12,
-    fontWeight: '700',
-    lineHeight: 18,
-  },
-  locationListRow: {
-    alignItems: 'center',
-    gap: 8,
-  },
-  locationListCell: {
+    justifyContent: 'center',
     minWidth: 0,
+    overflow: 'hidden',
+    paddingVertical: 4,
   },
-  locationListCellRight: {
-    alignItems: 'flex-end',
+  identityCell: {
+    alignItems: 'flex-start',
+    justifyContent: 'center',
   },
   locationMetaText: {
     color: V.colors.fg,
     fontSize: 13,
     fontWeight: '500',
     lineHeight: 20,
-  },
-  locationTextRight: {
-    textAlign: 'right',
-  },
-  nameCell: {
-    width: 220,
+    textAlign: 'center',
+    width: '100%',
   },
   locationNameText: {
     color: V.colors.fg,
     fontSize: 14,
     fontWeight: '600',
     lineHeight: 24,
+    textAlign: 'left',
   },
-  typeCell: {
-    width: 112,
-  },
-  tierCell: {
-    width: 104,
-  },
-  parentCell: {
-    width: 156,
+  parentCopy: {
+    alignItems: 'center',
+    minWidth: 0,
+    width: '100%',
   },
   parentNameText: {
     color: V.colors.fg,
     fontSize: 13,
     fontWeight: '600',
     lineHeight: 20,
+    textAlign: 'center',
   },
   parentTypeText: {
     color: V.colors.mutedFg,
     fontSize: 12,
     lineHeight: 18,
     marginTop: 2,
+    textAlign: 'center',
   },
-  phoneCell: {
-    width: 132,
+  centerBadge: {
+    alignSelf: 'center',
   },
-  descriptionCell: {
-    width: 220,
-  },
-  createdCell: {
-    width: 128,
-  },
-  overflowCell: {
-    alignItems: 'flex-end',
-    width: 64,
+  actionsTrack: {
+    alignItems: 'center',
   },
   paginationRow: {
     alignItems: 'center',
