@@ -11,6 +11,29 @@ export const KOLAM_DATA_TABLE_COLUMN_GAP = 16;
 export const KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH = 64;
 
 /**
+ * Lock a fixed column box so Yoga/RNW cannot stretch it with leftover row space.
+ * `width` alone is not enough on flex rows — also pin flexBasis/min/max.
+ */
+function lockKolamDataTableColumnWidth(
+  width: number,
+  extras?: Pick<ViewStyle, 'overflow' | 'zIndex'>,
+): ViewStyle {
+  const style: ViewStyle = {
+    width,
+    minWidth: width,
+    maxWidth: width,
+    flexBasis: width,
+    flexGrow: 0,
+    flexShrink: 0,
+    overflow: extras?.overflow ?? 'hidden',
+  };
+  if (extras?.zIndex != null) {
+    style.zIndex = extras.zIndex;
+  }
+  return style;
+}
+
+/**
  * Shared column layout for header + body cells.
  *
  * Content columns (including primary) use explicit content-based widths.
@@ -22,35 +45,21 @@ export function getKolamDataTableColumnStyle(
   const isActions = column.id === 'actions';
 
   if (isActions) {
-    const width = Math.max(
-      column.width ?? KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-      KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+    return lockKolamDataTableColumnWidth(
+      Math.max(
+        column.width ?? KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+        KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+      ),
+      {overflow: 'visible', zIndex: 9000},
     );
-    return {
-      width,
-      flexGrow: 0,
-      flexShrink: 0,
-      overflow: 'visible',
-      zIndex: 9000,
-    };
   }
 
   if (column.width != null) {
-    return {
-      width: column.width,
-      flexGrow: 0,
-      flexShrink: 0,
-      overflow: 'hidden',
-    };
+    return lockKolamDataTableColumnWidth(column.width);
   }
 
   if (column.id === 'primary') {
-    return {
-      width: KOLAM_DATA_TABLE_PRIMARY_MIN_WIDTH,
-      flexGrow: 0,
-      flexShrink: 0,
-      overflow: 'hidden',
-    };
+    return lockKolamDataTableColumnWidth(KOLAM_DATA_TABLE_PRIMARY_MIN_WIDTH);
   }
 
   return {

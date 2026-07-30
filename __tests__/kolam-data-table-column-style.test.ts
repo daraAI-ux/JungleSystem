@@ -5,7 +5,7 @@ import {
 } from '../src/components/kolam-data-table-column-style';
 
 describe('getKolamDataTableColumnStyle', () => {
-  it('uses adaptive width as the full cell box without inner horizontal padding', () => {
+  it('locks adaptive width with flexBasis/min/max so Yoga cannot stretch the cell', () => {
     const style = getKolamDataTableColumnStyle({
       id: 'amount',
       width: 120,
@@ -13,6 +13,10 @@ describe('getKolamDataTableColumnStyle', () => {
     }) as Record<string, number | string>;
 
     expect(style.width).toBe(120);
+    expect(style.minWidth).toBe(120);
+    expect(style.maxWidth).toBe(120);
+    expect(style.flexBasis).toBe(120);
+    expect(style.flexGrow).toBe(0);
     expect(style.flexShrink).toBe(0);
     expect(style.overflow).toBe('hidden');
   });
@@ -24,6 +28,9 @@ describe('getKolamDataTableColumnStyle', () => {
     }) as Record<string, number | string>;
 
     expect(style.width).toBe(KOLAM_DATA_TABLE_PRIMARY_MIN_WIDTH);
+    expect(style.minWidth).toBe(KOLAM_DATA_TABLE_PRIMARY_MIN_WIDTH);
+    expect(style.maxWidth).toBe(KOLAM_DATA_TABLE_PRIMARY_MIN_WIDTH);
+    expect(style.flexBasis).toBe(KOLAM_DATA_TABLE_PRIMARY_MIN_WIDTH);
     expect(style.flexGrow).toBe(0);
     expect(style.flexShrink).toBe(0);
     expect(style.overflow).toBe('hidden');
@@ -37,6 +44,9 @@ describe('getKolamDataTableColumnStyle', () => {
     }) as Record<string, number | string>;
 
     expect(style.width).toBe(KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH);
+    expect(style.minWidth).toBe(KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH);
+    expect(style.maxWidth).toBe(KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH);
+    expect(style.flexBasis).toBe(KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH);
     expect(style.flexShrink).toBe(0);
     expect(style.overflow).toBe('visible');
   });
