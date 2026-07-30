@@ -89,7 +89,9 @@ export interface KolamChatRailDetailMessage {
   reactions: KolamChatRailDetailReactionGroup[];
   replyContent?: KolamChatReplyContent | null;
   replyPreview?: KolamTeamChatReplyPreview | null;
+  senderIsAi?: boolean;
   senderId?: string | null;
+  senderProfilePicture?: string | null;
   sentAt?: string;
   editedAt?: string | null;
   editedByName?: string | null;
@@ -1099,7 +1101,9 @@ function mapTeamChatMessage(
     mine: message.senderType !== 'ai',
     reactions: groupTeamChatReactions(message.reactions, currentUserId),
     replyPreview: message.replyPreview ?? null,
+    senderIsAi: message.senderType === 'ai',
     senderId: getTeamChatSenderId(message),
+    senderProfilePicture: getTeamChatSenderProfilePicture(message),
     sentAt: message.createdAt,
     editedAt: message.editedAt ?? null,
     editedByName: message.editedByName ?? null,
@@ -1110,6 +1114,16 @@ function getTeamChatSenderId(message: KolamTeamChatMessage) {
   return typeof message.sender === 'string'
     ? message.sender
     : message.sender?._id ?? null;
+}
+
+function getTeamChatSenderProfilePicture(message: KolamTeamChatMessage) {
+  if (message.senderType === 'ai') {
+    return null;
+  }
+
+  return typeof message.sender === 'string'
+    ? null
+    : message.sender?.profile_picture ?? null;
 }
 
 function groupTeamChatReactions(

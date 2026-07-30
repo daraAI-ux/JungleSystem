@@ -20,7 +20,10 @@ import {
   type KolamChatLiveStreamStatus,
   useKolamChatLiveStream,
 } from '../hooks/use-kolam-chat-live-stream';
-import {useKolamChatRailDetail} from '../hooks/use-kolam-chat-rail-detail';
+import {
+  type KolamChatRailDetailMessage,
+  useKolamChatRailDetail,
+} from '../hooks/use-kolam-chat-rail-detail';
 import {useKolamChatPlatformHealth} from '../hooks/use-kolam-chat-platform-health';
 import {useKolamChatRailLiveSync} from '../hooks/use-kolam-chat-rail-live-sync';
 import {useKolamChatRailReadonlyData} from '../hooks/use-kolam-chat-rail-readonly-data';
@@ -2715,7 +2718,23 @@ function KolamChatRailDetailPanel({
                         ? styles.messageBubbleMine
                         : styles.messageBubbleOther,
                     ]}>
-                    <Text style={styles.messageAuthor}>{message.author}</Text>
+                    {mode === 'team-chat' ? (
+                      <View style={styles.teamMessageAuthorRow}>
+                        <View style={styles.teamMessageAvatar}>
+                          <KolamProfileAvatarContent
+                            imageStyle={styles.teamMessageAvatarImage}
+                            imageUrl={getTeamChatMessageAvatarUrl(message)}
+                            initials={getTeamChatMessageInitials(message.author)}
+                            textStyle={styles.teamMessageAvatarText}
+                          />
+                        </View>
+                        <Text style={styles.messageAuthor}>
+                          {message.author}
+                        </Text>
+                      </View>
+                    ) : (
+                      <Text style={styles.messageAuthor}>{message.author}</Text>
+                    )}
                     {mode === 'team-chat' && message.replyPreview?.body ? (
                       <KolamTeamChatReplyPreviewCard
                         replyPreview={message.replyPreview}
@@ -3437,6 +3456,28 @@ function getPendingChatAttachmentLabel(file: NativeImagePickerResult) {
     default:
       return `File ${name}`;
   }
+}
+
+function getTeamChatMessageAvatarUrl(message: KolamChatRailDetailMessage) {
+  if (message.senderIsAi) {
+    return resolveDaraAvatarImageUrl();
+  }
+
+  return resolveProfilePhotoUrl(message.senderProfilePicture);
+}
+
+function getTeamChatMessageInitials(author: string) {
+  const words = author
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  const initials = words
+    .slice(0, 2)
+    .map(word => word[0])
+    .join('')
+    .toUpperCase();
+
+  return initials || '?';
 }
 
 function getNativePickedFileName(file: NativeImagePickerResult) {
@@ -7401,6 +7442,32 @@ const styles = StyleSheet.create({
   },
   messageBubbleOther: {
     alignSelf: 'flex-start',
+  },
+  teamMessageAuthorRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 6,
+  },
+  teamMessageAvatar: {
+    alignItems: 'center',
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 9,
+    borderWidth: 1,
+    height: 18,
+    justifyContent: 'center',
+    overflow: 'hidden',
+    width: 18,
+  },
+  teamMessageAvatarImage: {
+    height: 18,
+    width: 18,
+  },
+  teamMessageAvatarText: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 8,
+    fontWeight: '800',
   },
   messageAuthor: {
     color: V.colors.mutedFg,

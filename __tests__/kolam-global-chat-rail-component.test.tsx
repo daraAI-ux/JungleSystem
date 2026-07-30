@@ -2430,6 +2430,7 @@ describe('KolamGlobalChatRail', () => {
           id: 'team-msg-1',
           author: 'Staff',
           body: 'Barang siap dikirim @dara cc @maya',
+          senderProfilePicture: 'media/user-avatar/staff.jpg',
           linkPreviews: [
             {
               description: 'Preview stok operasional harian',
@@ -2510,6 +2511,15 @@ describe('KolamGlobalChatRail', () => {
       renderer!.root
         .findAllByType(View)
         .some(node => node.props.accessibilityLabel === 'Reply preview Maya'),
+    ).toBe(true);
+    expect(
+      renderer!.root
+        .findAllByType(Image)
+        .some(
+          node =>
+            node.props.source?.uri ===
+            'https://amfibi.dunia-anura.com/api/media/avatar?src=media%2Fuser-avatar%2Fstaff.jpg&size=96',
+        ),
     ).toBe(true);
 
     const reactionButton = renderer!.root
