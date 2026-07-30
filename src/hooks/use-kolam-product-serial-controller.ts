@@ -1,8 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   createInitialProductSerialListFilters,
   getKolamProductSerialSurfaceMode,
-  isKolamProductSerialListRoute,
   type KolamProductSerial,
   type KolamProductSerialListFilters,
   type KolamProductSerialOpnameResult,
@@ -76,6 +75,7 @@ export function useKolamProductSerialController(
   const [sessionItems, setSessionItems] = useState<
     KolamProductSerialOpnameSessionItem[]
   >([]);
+  const requestIdRef = useRef(0);
 
   useEffect(() => {
     const nextMode = getKolamProductSerialSurfaceMode(route);
@@ -87,26 +87,40 @@ export function useKolamProductSerialController(
     setStatusMessage(null);
   }, [route]);
 
-  const refreshList = useCallback(async () => {
-    if (!isKolamProductSerialListRoute(route)) {
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await getKolamProductSerialList(filters);
-      setSerials(result.data);
-      setPagination(result.pagination);
-    } catch (loadError) {
-      setError(getErrorMessage(loadError));
-    } finally {
-      setLoading(false);
-    }
-  }, [filters, route]);
+  const refreshList = useCallback(
+    async (nextFilters: KolamProductSerialListFilters) => {
+      const requestId = ++requestIdRef.current;
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await getKolamProductSerialList(nextFilters);
+        if (requestId !== requestIdRef.current) {
+          return;
+        }
+        setSerials(result.data);
+        setPagination(result.pagination);
+      } catch (loadError) {
+        if (requestId !== requestIdRef.current) {
+          return;
+        }
+        setSerials([]);
+        setPagination(DEFAULT_PAGINATION);
+        setError(getErrorMessage(loadError));
+      } finally {
+        if (requestId === requestIdRef.current) {
+          setLoading(false);
+        }
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
-    void refreshList();
-  }, [refreshList]);
+    if (mode !== 'list') {
+      return;
+    }
+    void refreshList(filters);
+  }, [filters, mode, refreshList]);
 
   const onChangeFilters = useCallback(
     (patch: Partial<KolamProductSerialListFilters>) => {
@@ -201,9 +215,9 @@ export function useKolamProductSerialController(
 
   const onRefresh = useCallback(async () => {
     if (mode === 'list') {
-      await refreshList();
+      await refreshList(filters);
     }
-  }, [mode, refreshList]);
+  }, [filters, mode, refreshList]);
 
   return useMemo(
     () => ({

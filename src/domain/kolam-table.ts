@@ -294,7 +294,7 @@ const kolamTableColumns: Record<KolamTableId, KolamTableColumn[]> = {
     { id: 'notes', label: 'Terakhir purchase', align: 'left', width: 140 },
   ],
   'product-serial': [
-    { id: 'primary', label: 'Nomor Seri', align: 'left', width: 160 },
+    { id: 'primary', label: 'Nomor Seri', align: 'left' },
     { id: 'meta', label: 'Produk', align: 'left', width: 180 },
     { id: 'notes', label: 'Tipe', align: 'left', width: 100 },
     { id: 'children', label: 'Batch', align: 'left', width: 130 },

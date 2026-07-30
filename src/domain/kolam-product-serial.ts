@@ -287,9 +287,18 @@ export function hasKolamProductSerialPermission(
 
 export function normalizeKolamProductSerial(payload: unknown): KolamProductSerial {
   const root = asRecord(payload);
-  const record = Object.keys(asRecord(root.data)).length
-    ? asRecord(root.data)
-    : root;
+  // Prefer the document itself when it already looks like a serial row.
+  // Only unwrap `.data` for single-resource envelopes ({ data: serial }).
+  const nested = asRecord(root.data);
+  const looksLikeSerial =
+    Boolean(getString(root, 'serialNumber')) ||
+    Boolean(getString(root, '_id')) ||
+    Boolean(getString(root, 'id'));
+  const record = looksLikeSerial
+    ? root
+    : Object.keys(nested).length
+      ? nested
+      : root;
 
   return {
     id: getString(record, '_id') || getString(record, 'id'),
@@ -310,16 +319,22 @@ export function normalizeKolamProductSerialList(
   payload: unknown,
 ): KolamProductSerialListResult {
   const root = asRecord(payload);
+  const nested = asRecord(root.data);
   const list: unknown[] = Array.isArray(payload)
     ? payload
     : Array.isArray(root.data)
-    ? root.data
-    : [];
+      ? root.data
+      : Array.isArray(nested.data)
+        ? nested.data
+        : [];
 
-  const data = list.map(normalizeKolamProductSerial);
+  const data = list.map(normalizeKolamProductSerial).filter(item =>
+    Boolean(item.id || item.serialNumber),
+  );
+  const paginationSource = root.pagination ?? nested.pagination;
   return {
     data,
-    pagination: normalizeProductSerialPagination(root.pagination, data.length),
+    pagination: normalizeProductSerialPagination(paginationSource, data.length),
   };
 }
 

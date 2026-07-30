@@ -1,5 +1,5 @@
 import React from 'react';
-import { FlatList, Image, Modal, StyleSheet, Text, View } from 'react-native';
+import { Image, Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
   KOLAM_PRODUCT_SERIAL_ROOT,
   getKolamProductSerialOpnameIntent,
@@ -22,7 +22,6 @@ import {
   type KolamProductSerialOpnameSessionItem,
 } from '../hooks/use-kolam-product-serial-controller';
 import { KolamButton } from './kolam-button';
-import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDataTableHeader } from './kolam-data-table-header';
@@ -112,7 +111,7 @@ function KolamProductSerialList({
       }
     }, 300);
     return () => clearTimeout(handle);
-  }, [controller, searchInput]);
+  }, [controller.filters.search, controller.onSearchChange, searchInput]);
 
   const pageCount = Math.max(1, controller.pagination.totalPages);
   const safePage = Math.min(Math.max(controller.pagination.page, 1), pageCount);
@@ -131,17 +130,16 @@ function KolamProductSerialList({
   const filteredProductName = controller.filters.productId
     ? controller.serials[0]?.product?.name
     : '';
-
-  const renderRow = React.useCallback(
-    ({ item }: { item: KolamProductSerial }) => (
-      <KolamProductSerialRow
-        onRouteChange={onRouteChange}
-        onViewQr={() => setQrSerial(item)}
-        serial={item}
-      />
-    ),
-    [onRouteChange],
-  );
+  const emptyTitle = controller.loading
+    ? 'Memuat nomor seri…'
+    : controller.error
+      ? 'Gagal memuat nomor seri'
+      : 'Belum ada nomor seri';
+  const emptyMessage = controller.error
+    ? controller.error
+    : hasActiveFilters
+      ? 'Coba ubah pencarian atau filter.'
+      : 'Nomor seri dibuat otomatis saat produksi selesai.';
 
   return (
     <View style={styles.listRoot}>
@@ -255,8 +253,32 @@ function KolamProductSerialList({
         ) : null}
       </View>
 
-      <KolamCatalogListTableShell
-        footer={
+      <View style={styles.tableShell}>
+        <ScrollView
+          contentContainerStyle={styles.tableScrollContent}
+          style={styles.tableScroll}
+        >
+          <KolamDataTableHeader columns={getKolamTableColumns('product-serial')} />
+          {controller.serials.length ? (
+            controller.serials.map(item => (
+              <KolamProductSerialRow
+                key={item.id || item.serialNumber}
+                onRouteChange={onRouteChange}
+                onViewQr={() => setQrSerial(item)}
+                serial={item}
+              />
+            ))
+          ) : (
+            <View style={styles.emptyWrap}>
+              <KolamEmptyState
+                compact
+                message={emptyMessage}
+                title={emptyTitle}
+              />
+            </View>
+          )}
+        </ScrollView>
+        <View style={styles.tableFooter}>
           <KolamTableFooterControls
             onPageSizeChange={controller.onLimitChange}
             page={safePage}
@@ -271,42 +293,26 @@ function KolamProductSerialList({
                   onPress={() => controller.onPageChange(Math.max(1, safePage - 1))}
                 />
                 <KolamCopyStack
-                  items={[{ id: 'page', text: `${safePage} / ${pageCount}`, style: styles.pageLabel }]}
+                  items={[
+                    {
+                      id: 'page',
+                      text: `${safePage} / ${pageCount}`,
+                      style: styles.pageLabel,
+                    },
+                  ]}
                 />
                 <KolamButton
                   disabled={safePage >= pageCount}
                   label="Berikutnya"
-                  onPress={() => controller.onPageChange(Math.min(pageCount, safePage + 1))}
+                  onPress={() =>
+                    controller.onPageChange(Math.min(pageCount, safePage + 1))
+                  }
                 />
               </View>
             ) : null}
           </KolamTableFooterControls>
-        }
-        style={styles.tableFrame}
-      >
-        <FlatList
-          contentContainerStyle={styles.listContent}
-          data={controller.serials}
-          keyExtractor={item => item.id || item.serialNumber}
-          ListEmptyComponent={
-            <View style={styles.emptyWrap}>
-              <KolamEmptyState
-                compact
-                message={
-                  hasActiveFilters
-                    ? 'Coba ubah pencarian atau filter.'
-                    : 'Nomor seri dibuat otomatis saat produksi selesai.'
-                }
-                title={controller.loading ? 'Memuat nomor seri…' : 'Belum ada nomor seri'}
-              />
-            </View>
-          }
-          ListHeaderComponent={<KolamDataTableHeader columns={getKolamTableColumns('product-serial')} />}
-          removeClippedSubviews={false}
-          renderItem={renderRow}
-          style={styles.listFlatList}
-        />
-      </KolamCatalogListTableShell>
+        </View>
+      </View>
 
       <KolamProductSerialQrModal serial={qrSerial} onClose={() => setQrSerial(null)} />
     </View>
@@ -639,10 +645,32 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   filterPanel: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
-  tableFrame: { flex: 1, minHeight: 0, overflow: 'visible' },
-  listFlatList: { flexGrow: 1, minHeight: 0, overflow: 'visible' },
-  listContent: { flexGrow: 1, overflow: 'visible' },
-  emptyWrap: { paddingVertical: 24 },
+  tableShell: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flex: 1,
+    minHeight: 0,
+    overflow: 'hidden',
+    width: '100%',
+  },
+  tableScroll: {
+    flex: 1,
+    minHeight: 0,
+  },
+  tableScrollContent: {
+    flexGrow: 0,
+    paddingBottom: 8,
+  },
+  tableFooter: {
+    borderTopColor: V.colors.border,
+    borderTopWidth: 1,
+    flexShrink: 0,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  emptyWrap: { paddingHorizontal: 12, paddingVertical: 24 },
   paginationRow: { alignItems: 'center', flexDirection: 'row', gap: 8 },
   pageLabel: { color: V.colors.mutedFg, fontSize: 13 },
   listCell: {
