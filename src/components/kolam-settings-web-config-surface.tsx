@@ -3709,55 +3709,64 @@ export function KolamSettingsWebConfigSurface({
                 },
               ]}
             />
-            <KolamToggleRow
-              variant="settingsForm"
-              label="Chat storefront"
-              description="Aktifkan chat pada storefront."
-              active={draft.chatStoreEnabled}
-              onPress={() =>
-                !chatControlsDisabled &&
-                setDraftField('chatStoreEnabled', !draft.chatStoreEnabled)
-              }
-            />
-            <KolamToggleRow
-              variant="settingsForm"
-              label="Panggilan grup chat tim"
-              description="Aktifkan panggilan grup di chat tim."
-              active={draft.teamChatGroupCallEnabled}
-              onPress={() =>
-                !chatControlsDisabled &&
-                setDraftField(
-                  'teamChatGroupCallEnabled',
-                  !draft.teamChatGroupCallEnabled,
-                )
-              }
-            />
-            <KolamToggleRow
-              variant="settingsForm"
-              label="Balasan DARA Team Chat"
-              description="Aktifkan balasan @dara di Team Chat."
-              active={draft.teamChatDaraReplyEnabled}
-              onPress={() =>
-                !daraChatControlsDisabled &&
-                setDraftField(
-                  'teamChatDaraReplyEnabled',
-                  !draft.teamChatDaraReplyEnabled,
-                )
-              }
-            />
-            {aiInboxPlatformRows.map(row => (
-              <KolamToggleRow
-                key={row.id}
-                variant="settingsForm"
-                label={row.label}
-                description={row.description}
-                active={draft[row.field] === true}
-                onPress={() =>
-                  !daraChatControlsDisabled &&
-                  setDraftField(row.field, !(draft[row.field] === true))
-                }
-              />
-            ))}
+            <View style={styles.notificationToggleGrid}>
+              <View style={styles.notificationToggleBox}>
+                <KolamToggleRow
+                  variant="settingsForm"
+                  label="Chat storefront"
+                  description="Aktifkan chat pada storefront."
+                  active={draft.chatStoreEnabled}
+                  onPress={() =>
+                    !chatControlsDisabled &&
+                    setDraftField('chatStoreEnabled', !draft.chatStoreEnabled)
+                  }
+                />
+              </View>
+              <View style={styles.notificationToggleBox}>
+                <KolamToggleRow
+                  variant="settingsForm"
+                  label="Panggilan grup chat tim"
+                  description="Aktifkan panggilan grup di chat tim."
+                  active={draft.teamChatGroupCallEnabled}
+                  onPress={() =>
+                    !chatControlsDisabled &&
+                    setDraftField(
+                      'teamChatGroupCallEnabled',
+                      !draft.teamChatGroupCallEnabled,
+                    )
+                  }
+                />
+              </View>
+              <View style={styles.notificationToggleBox}>
+                <KolamToggleRow
+                  variant="settingsForm"
+                  label="Balasan DARA Team Chat"
+                  description="Aktifkan balasan @dara di Team Chat."
+                  active={draft.teamChatDaraReplyEnabled}
+                  onPress={() =>
+                    !daraChatControlsDisabled &&
+                    setDraftField(
+                      'teamChatDaraReplyEnabled',
+                      !draft.teamChatDaraReplyEnabled,
+                    )
+                  }
+                />
+              </View>
+              {aiInboxPlatformRows.map(row => (
+                <View key={row.id} style={styles.notificationToggleBox}>
+                  <KolamToggleRow
+                    variant="settingsForm"
+                    label={row.label}
+                    description={row.description}
+                    active={draft[row.field] === true}
+                    onPress={() =>
+                      !daraChatControlsDisabled &&
+                      setDraftField(row.field, !(draft[row.field] === true))
+                    }
+                  />
+                </View>
+              ))}
+            </View>
           </View>
 
           <View
