@@ -541,6 +541,13 @@ export async function getAmTasks(
   return response;
 }
 
+export async function getAmTaskById(
+  id: string,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmTask> {
+  return amGet<AmTask>(`/task/${id}`, undefined, baseUrl);
+}
+
 export async function cancelAmTask(
   id: string,
   baseUrl = appConfig.amApiBaseUrl,

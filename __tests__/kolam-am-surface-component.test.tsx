@@ -25,6 +25,7 @@ import {
   getAmRacks,
   getAmRoles,
   getAmServiceAccounts,
+  getAmTaskById,
   getAmTransferById,
   getAmTransfers,
   getAmUsers,
@@ -67,6 +68,7 @@ jest.mock('../src/services/am-api', () => ({
   getAmRacks: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
   getAmRoles: jest.fn(() => Promise.resolve([])),
   getAmServiceAccounts: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
+  getAmTaskById: jest.fn(() => Promise.resolve({_id: 'task-1', logs: []})),
   getAmTasks: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
   getAmTransferById: jest.fn(() => Promise.resolve({_id: 'transfer-1', logs: []})),
   getAmTransfers: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
@@ -313,6 +315,65 @@ describe('KolamAmSurface', () => {
 
     expect(cancelAmTask).toHaveBeenCalledWith('task-1');
     expect(jest.requireMock('../src/services/am-api').getAmTasks).toHaveBeenCalledTimes(2);
+  });
+
+  it('opens task detail from the Tasks route and loads payload, result, and logs', async () => {
+    const task = {
+      _id: 'task-detail',
+      type: 'stock_sync',
+      status: 'pending',
+      priority: 2,
+      deviceId: {_id: 'device-1', name: 'Phone 1'},
+      serviceAccountId: {_id: 'service-1', label: 'Tokopedia Main', platform: 'tokopedia'},
+      payload: {sku: 'SKU-1'},
+      result: {synced: true},
+      error: '',
+      logs: ['created', 'waiting'],
+      retryCount: 1,
+      maxRetries: 3,
+      startedAt: null,
+      completedAt: null,
+      createdBy: null,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '',
+    };
+    jest.mocked(jest.requireMock('../src/services/am-api').getAmTasks).mockResolvedValue({
+      data: [task],
+      meta: {total: 1, limit: 1},
+    });
+    jest.mocked(getAmTaskById).mockResolvedValue(task);
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await updateAmRoute(renderer!, 'tasks');
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Task Detail task-detail'}).props.onPress();
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Task Cancel task-detail'}).props.onPress();
+    });
+
+    expect(getAmTaskById).toHaveBeenCalledWith('task-detail');
+    expect(cancelAmTask).toHaveBeenCalledWith('task-detail');
+    const text = renderText(renderer!);
+    const joinedText = text.join(' ');
+    expect(text).toContain('Task Detail');
+    expect(text).toContain('Overview');
+    expect(text).toContain('Assignment');
+    expect(text).toContain('Timeline');
+    expect(text).toContain('Payload');
+    expect(text).toContain('Result');
+    expect(joinedText).toContain('"sku": "SKU-1"');
+    expect(joinedText).toContain('"synced": true');
+    expect(joinedText).toMatch(/Logs \(\s*2\s+lines\)/);
+    expect(text).toContain('created');
+    expect(text).toContain('waiting');
   });
 
   it('expands a service row and loads logs plus task history', async () => {

@@ -35,6 +35,7 @@ import {
   getAmDeviceServiceLogs,
   getAmDeviceServices,
   getAmDeviceServiceQrUrl,
+  getAmTaskById,
   getAmMutasi,
   getAmMutasiSummary,
   getAmRacks,
@@ -356,6 +357,7 @@ function AmTasksPage() {
   const [actingTaskId, setActingTaskId] = React.useState<string | null>(null);
   const [actionMessage, setActionMessage] = React.useState<string | null>(null);
   const [total, setTotal] = React.useState(0);
+  const [selectedTaskId, setSelectedTaskId] = React.useState<string | null>(null);
 
   const fetchTasks = React.useCallback(async () => {
     try {
@@ -411,6 +413,19 @@ function AmTasksPage() {
     }
   }, [fetchTasks]);
 
+  if (selectedTaskId) {
+    return (
+      <AmTaskDetailPage
+        id={selectedTaskId}
+        onBack={() => {
+          setSelectedTaskId(null);
+          fetchTasks();
+        }}
+        onTaskAction={runTaskAction}
+      />
+    );
+  }
+
   return (
     <View style={styles.pageStack}>
       <View style={styles.filterBar}>
@@ -442,7 +457,12 @@ function AmTasksPage() {
         {isLoading && !tasks.length ? <Text style={styles.loadingText}>Memuat tasks dari AM live...</Text> : null}
         {!isLoading && !tasks.length ? <Text style={styles.loadingText}>No tasks found</Text> : null}
         {tasks.map(task => (
-          <View key={task._id} style={styles.tableRow}>
+          <KolamInteractionFrame
+            key={task._id}
+            accessibilityLabel={`AM Task Detail ${task._id}`}
+            accessibilityRole="button"
+            onPress={() => setSelectedTaskId(task._id)}
+            style={styles.tableRow}>
             <Text style={[styles.cellText, styles.typeCol]}>{TASK_TYPE_LABELS[task.type] ?? task.type}</Text>
             <Text style={[styles.cellText, styles.statusCol]}>{task.status}</Text>
             <Text style={[styles.cellText, styles.deviceCol]} numberOfLines={1}>{task.deviceId?.name ?? '-'}</Text>
@@ -455,8 +475,154 @@ function AmTasksPage() {
                 onAction={runTaskAction}
               />
             </View>
-          </View>
+          </KolamInteractionFrame>
         ))}
+      </View>
+    </View>
+  );
+}
+
+function AmTaskDetailPage({
+  id,
+  onBack,
+  onTaskAction,
+}: {
+  id: string;
+  onBack: () => void;
+  onTaskAction: (task: AmTask, action: 'cancel' | 'retry' | 'force-fail') => Promise<void>;
+}) {
+  const [task, setTask] = React.useState<AmTask | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+  const [acting, setActing] = React.useState(false);
+
+  const fetchTask = React.useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const response = await getAmTaskById(id);
+      setTask(response);
+      setError(null);
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Gagal memuat detail task AM.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [id]);
+
+  React.useEffect(() => {
+    fetchTask();
+  }, [fetchTask]);
+
+  React.useEffect(() => {
+    if (task?.status !== 'processing') return undefined;
+    const interval = setInterval(fetchTask, 5000);
+    return () => clearInterval(interval);
+  }, [fetchTask, task?.status]);
+
+  const runDetailAction = React.useCallback(async (
+    action: 'cancel' | 'retry' | 'force-fail',
+  ) => {
+    if (!task) return;
+    try {
+      setActing(true);
+      await onTaskAction(task, action);
+      await fetchTask();
+    } finally {
+      setActing(false);
+    }
+  }, [fetchTask, onTaskAction, task]);
+
+  if (isLoading && !task) {
+    return (
+      <View style={styles.emptyPanel}>
+        <Text style={styles.panelTitle}>Memuat task detail</Text>
+        <Text style={styles.panelText}>Mengambil detail task dari AM live...</Text>
+      </View>
+    );
+  }
+
+  if (error || !task) {
+    return (
+      <View style={styles.emptyPanel}>
+        <Text style={styles.panelTitle}>Task tidak ditemukan</Text>
+        <Text style={styles.panelText}>{error ?? 'Task not found'}</Text>
+        <KolamButton label="Kembali" intent="outline" size="sm" onPress={onBack} />
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.pageStack}>
+      <View style={styles.detailHeader}>
+        <View>
+          <Text style={styles.panelTitle}>Task Detail</Text>
+          <Text style={styles.panelText}>{TASK_TYPE_LABELS[task.type] ?? task.type} - {task._id}</Text>
+        </View>
+        <View style={styles.inlineActions}>
+          <KolamButton label="Kembali" intent="outline" size="sm" onPress={onBack} />
+          <KolamButton label={isLoading ? 'Memuat' : 'Refresh'} intent="outline" size="sm" muted={isLoading} onPress={fetchTask} />
+        </View>
+      </View>
+      <View style={styles.cardGrid}>
+        <View style={styles.panel}>
+          <Text style={styles.panelTitle}>Overview</Text>
+          <AmDetailLine label="Type" value={TASK_TYPE_LABELS[task.type] ?? task.type} />
+          <AmDetailLine label="Status" value={task.status} />
+          <AmDetailLine label="Priority" value={String(task.priority)} />
+          <AmDetailLine label="Retry" value={`${task.retryCount} / ${task.maxRetries}`} />
+        </View>
+        <View style={styles.panel}>
+          <Text style={styles.panelTitle}>Assignment</Text>
+          <AmDetailLine label="Device" value={task.deviceId?.name ?? '-'} />
+          <AmDetailLine label="Account" value={task.serviceAccountId?.label ?? '-'} />
+          <AmDetailLine label="Platform" value={task.serviceAccountId?.platform ?? '-'} />
+        </View>
+        <View style={styles.panel}>
+          <Text style={styles.panelTitle}>Timeline</Text>
+          <AmDetailLine label="Created" value={formatAmDate(task.createdAt)} />
+          <AmDetailLine label="Started" value={formatAmDate(task.startedAt)} />
+          <AmDetailLine label="Completed" value={formatAmDate(task.completedAt)} />
+        </View>
+      </View>
+      {task.error ? <AmInlineError error={task.error} title="Task error" /> : null}
+      <AmTaskActions
+        disabled={acting}
+        task={task}
+        onAction={(_, action) => runDetailAction(action)}
+      />
+      <View style={styles.panelGrid}>
+        <AmJsonPanel title="Payload" value={task.payload} />
+        <AmJsonPanel title="Result" value={task.result} />
+      </View>
+      {task.logs.length > 0 ? (
+        <View style={styles.panel}>
+          <Text style={styles.panelTitle}>Logs ({task.logs.length} lines)</Text>
+          <View style={styles.logPanel}>
+            {task.logs.map((line, index) => (
+              <Text key={`${index}-${line}`} style={styles.logText}>{line}</Text>
+            ))}
+          </View>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+function AmDetailLine({label, value}: {label: string; value: string}) {
+  return (
+    <View style={styles.detailListRow}>
+      <Text style={styles.rowMeta}>{label}</Text>
+      <Text style={styles.rowTitle}>{value}</Text>
+    </View>
+  );
+}
+
+function AmJsonPanel({title, value}: {title: string; value: unknown}) {
+  return (
+    <View style={styles.panel}>
+      <Text style={styles.panelTitle}>{title}</Text>
+      <View style={styles.logPanel}>
+        <Text style={styles.logText}>{JSON.stringify(value, null, 2)}</Text>
       </View>
     </View>
   );
