@@ -402,8 +402,13 @@ function KolamEnclosureList({
         />
       ) : controller.activeTab === 'pending' ? (
         <KolamEnclosurePendingPanel controller={controller} />
-      ) : (
+      ) : controller.activeTab === 'allocation' ? (
         <KolamEnclosureAllocationPanel
+          controller={controller}
+          onRouteChange={onRouteChange}
+        />
+      ) : (
+        <KolamEnclosureDeathHistoryPanel
           controller={controller}
           onRouteChange={onRouteChange}
         />
@@ -755,8 +760,46 @@ function KolamEnclosureDashboardPanel({
         speciesDistinct={stats.production.speciesDistinct}
         totalQty={stats.production.totalQty}
       />
+    </ScrollView>
+  );
+}
+
+function KolamEnclosureDeathHistoryPanel({
+  controller,
+  onRouteChange,
+}: {
+  controller: KolamEnclosureController;
+  onRouteChange?: (route: string) => void;
+}) {
+  if (controller.loading && controller.dataSource === 'idle') {
+    return <InlineState title="Memuat riwayat kematian..." />;
+  }
+  if (controller.error) {
+    return (
+      <InlineState title="Gagal memuat riwayat kematian" message={controller.error} />
+    );
+  }
+
+  const deaths = controller.dashboardStats.deaths;
+  return (
+    <ScrollView contentContainerStyle={styles.dashboardContent}>
+      <View style={styles.summaryGridHero}>
+        <SummaryTile
+          accent="warning"
+          hint={`${deaths.reportedAnimals} ekor`}
+          icon="!"
+          label="Kasus dilaporkan"
+          value={deaths.reportedCases}
+        />
+        <SummaryTile
+          hint={`${deaths.totalAnimals} ekor`}
+          icon="E"
+          label="Total event"
+          value={deaths.totalCases}
+        />
+      </View>
       <DashboardDeathTable
-        events={stats.deaths.recent}
+        events={deaths.recent}
         onRouteChange={onRouteChange}
       />
     </ScrollView>

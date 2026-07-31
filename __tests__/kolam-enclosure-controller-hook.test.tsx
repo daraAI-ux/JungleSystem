@@ -144,7 +144,7 @@ describe('Kolam enclosure controller hook', () => {
     expect(controller.activeTab).toBe('client_linked');
     expect(controller.filters).toMatchObject({
       enclosureType: 'Aquarium',
-      limit: 15,
+      limit: 50,
       livestockPurpose: 'production',
       page: 3,
       scope: 'client_linked',
@@ -205,6 +205,14 @@ describe('Kolam enclosure controller hook', () => {
         totalAllocated: 2,
       }),
     ]);
+
+    await ReactTestRenderer.act(async () => {
+      requireController(latest).onTabChange('deaths');
+      await flushPromises();
+    });
+
+    expect(requireController(latest).activeTab).toBe('deaths');
+    expect(getDashboardStatsMock).toHaveBeenCalledTimes(2);
   });
 
   it('resets pagination for search, filters, and tab changes', async () => {

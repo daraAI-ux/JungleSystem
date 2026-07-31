@@ -240,7 +240,41 @@ describe('Kolam enclosure surface', () => {
     expect(root.findAllByProps({children: 'E'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: '!'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: '+'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Statistik kandang produksi (tidak dijual)'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({label: 'Pergerakan stok'}).length).toBe(0);
+    expect(root.findAllByProps({children: 'Kasus dilaporkan'}).length).toBe(0);
+  });
+
+  it('renders death history on its own tab beside statistik', async () => {
+    const onRouteChange = jest.fn();
+    const controller = createController({
+      activeTab: 'deaths',
+      dashboardStats: createDashboardStats(),
+      filters: {
+        enclosureType: 'all',
+        limit: 10,
+        livestockPurpose: 'all',
+        page: 1,
+        scope: 'deaths',
+        search: '',
+      },
+    });
+    useControllerMock.mockReturnValue(controller);
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamEnclosureSurface
+          onRouteChange={onRouteChange}
+          route="/enclosures?scope=deaths"
+        />,
+      );
+    });
+
+    const root = renderer!.root;
     expect(root.findAllByProps({children: 'Riwayat kematian'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Kasus dilaporkan'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Total event'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'Ranitomeya'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'ENC-A'}).length).toBeGreaterThan(0);
 

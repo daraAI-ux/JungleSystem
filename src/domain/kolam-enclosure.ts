@@ -15,6 +15,7 @@ export const KOLAM_ENCLOSURE_LIST_TABS = [
   { id: 'client_linked', label: 'Customer' },
   { id: 'pending', label: 'Pending' },
   { id: 'allocation', label: 'Statistik' },
+  { id: 'deaths', label: 'Riwayat kematian' },
 ] as const;
 
 export type KolamEnclosureType = (typeof KOLAM_ENCLOSURE_TYPES)[number];

@@ -39,6 +39,8 @@ describe('Kolam enclosure domain', () => {
 
   it('parses list filters from plugin-compatible query params', () => {
     expect(parseKolamEnclosureListTab(undefined)).toBe('dashboard');
+    expect(parseKolamEnclosureListTab('deaths')).toBe('deaths');
+    expect(parseKolamEnclosureListTab('unknown')).toBe('dashboard');
 
     expect(createInitialEnclosureListFilters('/enclosures?scope=internal')).toEqual(
       expect.objectContaining({

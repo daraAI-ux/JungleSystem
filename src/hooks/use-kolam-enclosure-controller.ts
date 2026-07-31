@@ -155,7 +155,7 @@ export function useKolamEnclosureController(
     setLoading(true);
     setError(null);
     try {
-      if (filters.scope === 'dashboard') {
+      if (filters.scope === 'dashboard' || filters.scope === 'deaths') {
         const [stats, assignees] = await Promise.all([
           getKolamEnclosureDashboardStats(),
           getKolamEnclosureStaffAssignees({limit: 200}).catch(() => []),
