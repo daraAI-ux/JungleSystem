@@ -3235,24 +3235,27 @@ function AmMutasiPage() {
       <AmInlineError title="Mutasi AM belum bisa dibaca" error={error} />
       <View style={styles.tablePanel}>
         <View style={styles.tableHeader}>
-          <Text style={[styles.tableHeaderText, styles.accountWideCol]}>Account</Text>
           <Text style={[styles.tableHeaderText, styles.typeCol]}>Type</Text>
+          <Text style={[styles.tableHeaderText, styles.accountWideCol]}>Account</Text>
           <Text style={[styles.tableHeaderText, styles.amountCol]}>Amount</Text>
           <Text style={[styles.tableHeaderText, styles.recipientCol]}>Description</Text>
           <Text style={[styles.tableHeaderText, styles.deviceWideCol]}>Device</Text>
-          <Text style={[styles.tableHeaderText, styles.dateCol]}>Detected</Text>
+          <Text style={[styles.tableHeaderText, styles.dateCol]}>Time</Text>
         </View>
         <AmLoadingOrEmpty isLoading={isLoading} items={mutasi} loadingText="Memuat mutasi dari AM live..." emptyText="No mutations found" />
         {mutasi.map(item => (
           <View key={item._id} style={styles.tableRow}>
+            <View style={styles.typeCol}>
+              <AmStatusChip
+                label={formatMutasiTypeLabel(item.type)}
+                tone={item.type === 'masuk' ? 'success' : 'danger'}
+              />
+            </View>
             <View style={styles.accountWideCol}>
               <Text style={styles.cellText} numberOfLines={1}>{formatBankAccount(item.accountId)}</Text>
-              <Text style={styles.rowMeta} numberOfLines={1}>{formatAmDate(item.detectedAt)}</Text>
+              <Text style={styles.rowMeta} numberOfLines={1}>{formatAccountNumber(item.accountId)}</Text>
             </View>
-            <View style={styles.typeCol}>
-              <AmStatusChip label={item.type} tone={item.type === 'masuk' ? 'success' : 'warning'} />
-            </View>
-            <Text style={[styles.cellText, styles.amountCol]}>{formatRupiah(item.amount)}</Text>
+            <Text style={[styles.cellText, styles.amountCol]}>{formatMutasiSignedAmount(item)}</Text>
             <Text style={[styles.cellText, styles.recipientCol]} numberOfLines={1}>{item.description || '-'}</Text>
             <View style={styles.deviceWideCol}>
               <Text style={styles.cellText} numberOfLines={1}>{formatDeviceRef(item.deviceId)}</Text>
@@ -4685,9 +4688,25 @@ function formatBankAccount(account: AmTransfer['accountId'] | AmMutasi['accountI
   return `${account.label}${suffix}`;
 }
 
+function formatAccountNumber(account: AmTransfer['accountId'] | AmMutasi['accountId']) {
+  if (!account || typeof account === 'string') return '-';
+  return account.accountNumber || '-';
+}
+
 function formatMutasiAccountOption(account: AmServiceAccount) {
   const prefix = account.label || account.platform || 'Account';
   return account.accountNumber ? `${prefix} - ${account.accountNumber}` : prefix;
+}
+
+function formatMutasiTypeLabel(type: AmMutasi['type']) {
+  if (type === 'masuk') return 'Incoming';
+  if (type === 'keluar') return 'Outgoing';
+  return titleCase(type);
+}
+
+function formatMutasiSignedAmount(item: AmMutasi) {
+  const prefix = item.type === 'masuk' ? '+' : item.type === 'keluar' ? '-' : '';
+  return `${prefix}${formatRupiah(item.amount)}`;
 }
 
 function webhookLogMatchesTransfer(log: AmWebhookLog, transferId: string) {

@@ -1614,6 +1614,27 @@ describe('KolamAmSurface', () => {
           type: 'masuk',
           updatedAt: '',
         },
+        {
+          _id: 'mutasi-2',
+          accountId: {_id: 'account-1', label: 'BCA Main', platform: 'bca', accountNumber: '123'},
+          amount: 50000,
+          createdAt: '',
+          description: 'Outgoing sample',
+          detectedAt: '2026-01-01T00:10:00.000Z',
+          deviceId: {
+            _id: 'device-1',
+            name: 'Phone 1',
+            boxId: {
+              _id: 'box-1',
+              name: 'Box Green',
+              rackId: {_id: 'rack-1', name: 'Rack Mutasi'},
+            },
+          },
+          notificationHash: null,
+          transferId: null,
+          type: 'keluar',
+          updatedAt: '',
+        },
       ],
       meta: {total: 120, limit: 50, page: 1, totalPages: 3},
     });
@@ -1648,6 +1669,11 @@ describe('KolamAmSurface', () => {
     expect(joinedText).toContain('Total Transactions');
     expect(joinedText).toContain('Phone 1');
     expect(joinedText).toContain('Box Green / Rack Mutasi');
+    expect(joinedText).toContain('Incoming');
+    expect(joinedText).toContain('Outgoing');
+    expect(joinedText).toMatch(/\+Rp\s*125\.000/);
+    expect(joinedText).toMatch(/-Rp\s*50\.000/);
+    expect(joinedText).toContain('Time');
     expect(joinedText).toMatch(/Showing\s+1\s+to\s+50\s+of\s+120\s+items/);
     expect(joinedText).toContain('Page 1/3');
 
