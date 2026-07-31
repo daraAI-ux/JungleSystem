@@ -27,6 +27,7 @@ import {
   type KolamEnclosureTaskItem,
   type KolamEnclosureTaskType,
   type KolamEnclosureType,
+  type KolamEnclosureClientScope,
   type KolamEnclosureUnitRef,
 } from '../domain/kolam-enclosure';
 import { apiRequest } from '../lib/api-client';
@@ -72,9 +73,16 @@ export interface KolamEnclosureParameterInput {
 export interface KolamEnclosureUpdateBody {
   enclosure_code?: string;
   enclosure_name?: string;
-  note?: string;
-  type_aquarium?: string;
+  enclosure_type?: KolamEnclosureType | string;
+  type_aquarium?: string | null;
+  note?: string | null;
+  status?: string;
+  locationId?: string | null;
+  brandId?: string | null;
+  acquired_date?: string | null;
+  clientScope?: KolamEnclosureClientScope;
   livestockPurpose?: 'saleable' | 'production';
+  enclosure_size?: KolamEnclosureSizeInput;
 }
 
 export interface KolamEnclosureSpeciesAttachInput {
@@ -250,25 +258,9 @@ export async function updateKolamEnclosure(
   enclosureId: string,
   body: KolamEnclosureUpdateBody,
 ): Promise<KolamEnclosure> {
-  const payload: Record<string, string> = {};
-  if (body.enclosure_code != null) {
-    payload.enclosure_code = body.enclosure_code.trim().toUpperCase();
-  }
-  if (body.enclosure_name != null) {
-    payload.enclosure_name = body.enclosure_name.trim();
-  }
-  if (body.note != null) {
-    payload.note = body.note.trim();
-  }
-  if (body.type_aquarium != null) {
-    payload.type_aquarium = body.type_aquarium.trim();
-  }
-  if (body.livestockPurpose != null) {
-    payload.livestockPurpose = body.livestockPurpose;
-  }
   const response = await kolamRequest<unknown>(
     `${BASE}/${encodeURIComponent(enclosureId)}`,
-    {method: 'PUT', body: payload},
+    {method: 'PUT', body: createKolamEnclosureUpdatePayload(body)},
   );
   return normalizeKolamEnclosureDetail(response);
 }
@@ -724,12 +716,94 @@ function createKolamEnclosurePayload(body: KolamEnclosureCreateBody) {
     enclosure_type: body.enclosure_type,
     type_aquarium:
       body.enclosure_type === 'Aquarium' ? body.type_aquarium : undefined,
-    enclosure_size: body.enclosure_size,
+    enclosure_size: normalizeEnclosureSizePayload(body.enclosure_size),
     note: body.note?.trim() || undefined,
     locationId: body.locationId,
     assignedTo: body.assignedTo,
     livestockPurpose: body.livestockPurpose ?? 'saleable',
   };
+}
+
+function createKolamEnclosureUpdatePayload(body: KolamEnclosureUpdateBody) {
+  const payload: Record<string, unknown> = {};
+
+  if (body.enclosure_code != null) {
+    payload.enclosure_code = body.enclosure_code.trim().toUpperCase();
+  }
+  if (body.enclosure_name != null) {
+    payload.enclosure_name = body.enclosure_name.trim();
+  }
+  if (body.enclosure_type != null) {
+    payload.enclosure_type = body.enclosure_type;
+  }
+  if (body.type_aquarium !== undefined) {
+    payload.type_aquarium =
+      body.type_aquarium == null || !String(body.type_aquarium).trim()
+        ? null
+        : String(body.type_aquarium).trim();
+  }
+  if (body.note !== undefined) {
+    payload.note =
+      body.note == null || !String(body.note).trim()
+        ? null
+        : String(body.note).trim();
+  }
+  if (body.status != null) {
+    payload.status = body.status;
+  }
+  if (body.locationId !== undefined) {
+    payload.locationId =
+      body.locationId && String(body.locationId).trim()
+        ? String(body.locationId).trim()
+        : null;
+  }
+  if (body.brandId !== undefined) {
+    payload.brandId =
+      body.brandId && String(body.brandId).trim()
+        ? String(body.brandId).trim()
+        : null;
+  }
+  if (body.acquired_date !== undefined) {
+    payload.acquired_date =
+      body.acquired_date && String(body.acquired_date).trim()
+        ? String(body.acquired_date).trim()
+        : null;
+  }
+  if (body.clientScope != null) {
+    payload.clientScope = body.clientScope;
+  }
+  if (body.livestockPurpose != null) {
+    payload.livestockPurpose = body.livestockPurpose;
+  }
+  if (body.enclosure_size != null) {
+    payload.enclosure_size = normalizeEnclosureSizePayload(body.enclosure_size);
+  }
+
+  return payload;
+}
+
+function normalizeEnclosureSizePayload(size: KolamEnclosureSizeInput) {
+  return {
+    high: {
+      value: Number(size.high.value),
+      unit: enclosureSizeUnitId(size.high.unit),
+    },
+    width: {
+      value: Number(size.width.value),
+      unit: enclosureSizeUnitId(size.width.unit),
+    },
+    length: {
+      value: Number(size.length.value),
+      unit: enclosureSizeUnitId(size.length.unit),
+    },
+  };
+}
+
+function enclosureSizeUnitId(unit: string | KolamEnclosureUnitRef) {
+  if (typeof unit === 'string') {
+    return unit;
+  }
+  return unit.id || unit.initial || unit.name || '';
 }
 
 function normalizeStaffAssignee(value: unknown): KolamEnclosureStaffRef {

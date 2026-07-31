@@ -443,6 +443,60 @@ describe('kolam enclosure api', () => {
       }),
     );
   });
+
+  it('updates enclosure with full edit payload fields', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        data: {_id: 'enc-1', enclosure_code: 'ENC-EDIT'},
+      }),
+    );
+
+    await expect(
+      updateKolamEnclosure('enc-1', {
+        acquired_date: '2026-07-01',
+        brandId: 'brand-1',
+        clientScope: 'internal',
+        enclosure_code: 'enc-edit',
+        enclosure_name: 'ENC-EDIT',
+        enclosure_size: {
+          high: {unit: 'unit-cm', value: 40},
+          length: {unit: 'unit-cm', value: 60},
+          width: {unit: 'unit-cm', value: 50},
+        },
+        enclosure_type: 'Aquarium',
+        livestockPurpose: 'saleable',
+        locationId: 'loc-1',
+        note: '  note  ',
+        status: 'active',
+        type_aquarium: 'freshwater',
+      }),
+    ).resolves.toMatchObject({code: 'ENC-EDIT', id: 'enc-1'});
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${appConfig.kolamApiBaseUrl}/enclosures/enc-1`,
+      expect.objectContaining({
+        body: JSON.stringify({
+          enclosure_code: 'ENC-EDIT',
+          enclosure_name: 'ENC-EDIT',
+          enclosure_type: 'Aquarium',
+          type_aquarium: 'freshwater',
+          note: 'note',
+          status: 'active',
+          locationId: 'loc-1',
+          brandId: 'brand-1',
+          acquired_date: '2026-07-01',
+          clientScope: 'internal',
+          livestockPurpose: 'saleable',
+          enclosure_size: {
+            high: {value: 40, unit: 'unit-cm'},
+            width: {value: 50, unit: 'unit-cm'},
+            length: {value: 60, unit: 'unit-cm'},
+          },
+        }),
+        method: 'PUT',
+      }),
+    );
+  });
 });
 
 function jsonResponse(payload: unknown, init: ResponseInit = {}) {

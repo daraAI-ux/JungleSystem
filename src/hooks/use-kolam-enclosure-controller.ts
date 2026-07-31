@@ -56,6 +56,7 @@ import {
   switchKolamEnclosureSpeciesVariant,
   transferKolamEnclosureSpecies,
   updateKolamEnclosure,
+  updateKolamEnclosureAssignedTo,
   updateKolamEnclosureSaleListing,
   uploadKolamEnclosureCoverPhoto,
   uploadKolamEnclosurePhotos,
@@ -70,6 +71,7 @@ import {
   type KolamEnclosureSaleListingInput,
   type KolamEnclosureSpeciesAttachInput,
   type KolamEnclosureSpeciesTransferInput,
+  type KolamEnclosureUpdateBody,
   type KolamEnclosureVariantSwitchInput,
 } from '../services/kolam-enclosure-api';
 import {
@@ -194,6 +196,10 @@ export interface KolamEnclosureController {
     taskTypeId?: string;
   }) => Promise<void>;
   onProvisionCode: (enclosureCode: string) => Promise<void>;
+  onSaveEnclosureEdit: (input: {
+    body: KolamEnclosureUpdateBody;
+    assignedTo: string | null;
+  }) => Promise<void>;
   onUpsertClimateParameter: (body: KolamEnclosureParameterInput) => Promise<void>;
   onSwitchSpeciesVariant: (input: KolamEnclosureVariantSwitchInput) => Promise<void>;
   onTabChange: (tab: KolamEnclosureListTab) => void;
@@ -753,6 +759,24 @@ export function useKolamEnclosureController(
     [route, runOperation],
   );
 
+  const onSaveEnclosureEdit = useCallback(
+    (input: {body: KolamEnclosureUpdateBody; assignedTo: string | null}) =>
+      runOperation(async () => {
+        const enclosureId = getKolamEnclosureRouteId(route);
+        if (!enclosureId) throw new Error('ID enclosure tidak ditemukan.');
+        await updateKolamEnclosure(enclosureId, input.body);
+        const currentPic =
+          selectedEnclosure?.assignedToId ||
+          selectedEnclosure?.assignedTo?.id ||
+          null;
+        const nextPic = input.assignedTo?.trim() || null;
+        if (nextPic !== currentPic) {
+          await updateKolamEnclosureAssignedTo(enclosureId, nextPic);
+        }
+      }, 'Enclosure disimpan.'),
+    [route, runOperation, selectedEnclosure],
+  );
+
   const onUploadCoverPhoto = useCallback(
     (localUri: string) =>
       runOperation(async () => {
@@ -992,6 +1016,7 @@ export function useKolamEnclosureController(
     onSetRecurringEnrollment,
     onSpawnTask,
     onProvisionCode,
+    onSaveEnclosureEdit,
     onUpsertClimateParameter,
     onSwitchSpeciesVariant,
     onTabChange,

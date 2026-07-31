@@ -14,6 +14,8 @@ import {
   getKolamEnclosures,
   getKolamPendingLivestockAllocations,
   getKolamSpeciesAllocationOverview,
+  updateKolamEnclosure,
+  updateKolamEnclosureAssignedTo,
 } from '../src/services/kolam-enclosure-api';
 import {getKolamStockTransactionList} from '../src/services/kolam-stock-transaction-api';
 import {getKolamBrands} from '../src/services/kolam-brand-api';
@@ -32,6 +34,8 @@ jest.mock('../src/services/kolam-enclosure-api', () => ({
   getKolamEnclosures: jest.fn(),
   getKolamPendingLivestockAllocations: jest.fn(),
   getKolamSpeciesAllocationOverview: jest.fn(),
+  updateKolamEnclosure: jest.fn(),
+  updateKolamEnclosureAssignedTo: jest.fn(),
 }));
 
 jest.mock('../src/services/kolam-stock-transaction-api', () => ({
@@ -101,6 +105,13 @@ const getLocationsMock = getKolamLocations as jest.MockedFunction<
   typeof getKolamLocations
 >;
 const getUnitsMock = getKolamUnits as jest.MockedFunction<typeof getKolamUnits>;
+const updateEnclosureMock = updateKolamEnclosure as jest.MockedFunction<
+  typeof updateKolamEnclosure
+>;
+const updateAssignedToMock =
+  updateKolamEnclosureAssignedTo as jest.MockedFunction<
+    typeof updateKolamEnclosureAssignedTo
+  >;
 
 function requireController(controller: EnclosureController | null) {
   if (!controller) {
@@ -316,6 +327,8 @@ describe('Kolam enclosure controller hook', () => {
         type: 'length',
       },
     ]);
+    updateEnclosureMock.mockResolvedValue(createListResult().data[0]!);
+    updateAssignedToMock.mockResolvedValue(createListResult().data[0]!);
   });
 
   it('derives list mode and initial filters from the route query', async () => {
@@ -573,6 +586,70 @@ describe('Kolam enclosure controller hook', () => {
     expect(requireController(latest).editUnits).toEqual([
       expect.objectContaining({id: 'unit-1', initial: 'cm'}),
     ]);
+  });
+
+  it('saves enclosure edit and updates PIC only when changed', async () => {
+    let latest: EnclosureController | null = null;
+    const enclosure = {
+      ...createListResult().data[0]!,
+      assignedTo: {
+        displayName: 'Keeper One',
+        email: 'keeper@example.com',
+        firstName: 'Keeper',
+        id: 'u1',
+        lastName: 'One',
+        photo: '',
+        username: 'keeper',
+      },
+      assignedToId: 'u1',
+    };
+    getDetailMock.mockResolvedValue(enclosure);
+    updateEnclosureMock.mockResolvedValue(enclosure);
+    updateAssignedToMock.mockResolvedValue({
+      ...enclosure,
+      assignedToId: 'u2',
+    });
+
+    await ReactTestRenderer.act(async () => {
+      ReactTestRenderer.create(
+        <EnclosureHarness
+          route="/enclosures/enc-1/edit"
+          onRender={controller => {
+            latest = controller;
+          }}
+        />,
+      );
+      await flushPromises();
+    });
+
+    await ReactTestRenderer.act(async () => {
+      await requireController(latest).onSaveEnclosureEdit({
+        assignedTo: 'u1',
+        body: {
+          enclosure_code: 'ENC-1',
+          enclosure_type: 'Terrarium',
+          status: 'active',
+        },
+      });
+      await flushPromises();
+    });
+
+    expect(updateEnclosureMock).toHaveBeenCalledWith('enc-1', {
+      enclosure_code: 'ENC-1',
+      enclosure_type: 'Terrarium',
+      status: 'active',
+    });
+    expect(updateAssignedToMock).not.toHaveBeenCalled();
+
+    await ReactTestRenderer.act(async () => {
+      await requireController(latest).onSaveEnclosureEdit({
+        assignedTo: 'u2',
+        body: {enclosure_code: 'ENC-1'},
+      });
+      await flushPromises();
+    });
+
+    expect(updateAssignedToMock).toHaveBeenCalledWith('enc-1', 'u2');
   });
 });
 

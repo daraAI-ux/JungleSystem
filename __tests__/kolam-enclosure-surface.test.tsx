@@ -840,6 +840,7 @@ function createController(
     onSetRecurringEnrollment: jest.fn().mockResolvedValue(undefined),
     onSpawnTask: jest.fn().mockResolvedValue(undefined),
     onProvisionCode: jest.fn().mockResolvedValue(undefined),
+    onSaveEnclosureEdit: jest.fn().mockResolvedValue(undefined),
     onUpsertClimateParameter: jest.fn().mockResolvedValue(undefined),
     onSwitchSpeciesVariant: jest.fn().mockResolvedValue(undefined),
     onTabChange: jest.fn(),
@@ -848,6 +849,7 @@ function createController(
     onUpdateSaleListing: jest.fn().mockResolvedValue(undefined),
     onUploadCoverPhoto: jest.fn().mockResolvedValue(undefined),
     onUploadPhotos: jest.fn().mockResolvedValue(undefined),
+    onAttachSpecies: jest.fn().mockResolvedValue(undefined),
     ...patch,
   };
 }
