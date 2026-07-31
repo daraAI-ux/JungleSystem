@@ -7016,9 +7016,8 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   teamDaraWindow: {
-    width: '68%',
+    width: '92%',
     maxWidth: 740,
-    minWidth: 520,
     minHeight: 430,
     maxHeight: '78%',
     borderRadius: V.radius.lg,
