@@ -449,12 +449,11 @@ export function KolamWorkspaceSurfaceComponent({
         />
       );
     case 'checkout':
-      return renderWithPosModuleRoute(
-        activeModule,
-        dataset,
-        activeModuleRoute,
-        <KolamCheckoutSurface checkout={checkout} />,
-        onModuleRouteSelect,
+      return (
+        <KolamCheckoutSurface
+          checkout={checkout}
+          onBackToCenter={() => onSelectModule?.('kolam')}
+        />
       );
     case 'catalog':
       return renderPosRouteContext(

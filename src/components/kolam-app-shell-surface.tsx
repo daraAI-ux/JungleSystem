@@ -40,6 +40,15 @@ function KolamAppShellSurfaceComponent({
   sidebar,
   topNavigation,
 }: KolamAppShellSurfaceProps) {
+  if (sidebar.activeModule === 'checkout') {
+    return (
+      <KolamShellFrame variant="appShell">
+        <StatusBar barStyle="dark-content" />
+        {children}
+      </KolamShellFrame>
+    );
+  }
+
   const isKolamDashboard =
     sidebar.activeModule === 'kolam' || isKolamCenteredRoute(sidebar.activeRoute);
   const ownsListScroll = isCatalogTableListRoute(sidebar.activeRoute);

@@ -1,11 +1,18 @@
-﻿import React from 'react';
+import React from 'react';
 import type {KolamCheckoutSurfaceProps} from './kolam-workspace-module-surface-types';
-import {KolamCheckoutWorkspace} from './kolam-pos-workspace-widgets';
+import {KolamPosFullWindowSurface} from './kolam-pos-full-window-surface';
 
 export function KolamCheckoutSurface({
   checkout,
+  onBackToCenter,
 }: {
   checkout: KolamCheckoutSurfaceProps;
+  onBackToCenter: () => void;
 }) {
-  return <KolamCheckoutWorkspace {...checkout} />;
+  return (
+    <KolamPosFullWindowSurface
+      {...checkout}
+      onBackToCenter={onBackToCenter}
+    />
+  );
 }
