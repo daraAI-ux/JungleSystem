@@ -781,7 +781,6 @@ function PosCatalogCard({
             {item.name}
           </Text>
           <Text style={styles.productPrice}>{formatRupiah(item.price)}</Text>
-          <Text style={styles.productMeta}>Stok {item.stock}</Text>
           <KolamInteractionFrame
             onPress={() => onOpenQuickView(item)}
             style={styles.quickViewButton}>
@@ -2258,11 +2257,6 @@ const styles = StyleSheet.create({
     color: V.colors.primary,
     fontSize: 12,
     fontWeight: '900',
-  },
-  productMeta: {
-    marginTop: 2,
-    color: V.colors.mutedFg,
-    fontSize: 9,
   },
   quickViewButton: {
     minHeight: 24,
