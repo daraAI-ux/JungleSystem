@@ -402,11 +402,11 @@ describe('KolamAmSurface', () => {
           result: {},
           error: '',
           logs: [],
+          createdBy: null,
           retryCount: 0,
           maxRetries: 3,
           startedAt: null,
           completedAt: null,
-          createdBy: null,
           createdAt: '',
           updatedAt: '',
         },
@@ -666,6 +666,30 @@ describe('KolamAmSurface', () => {
       ],
       meta: {total: 1, limit: 1},
     });
+    jest.mocked(getAmTasks).mockResolvedValue({
+      data: [
+        {
+          _id: 'task-history-1',
+          type: 'stock_sync',
+          status: 'success',
+          priority: 1,
+          deviceId: {_id: 'device-1', name: 'Phone 1'},
+          serviceAccountId: {_id: 'service-1', label: 'Tokopedia Main'},
+          payload: {},
+          result: {},
+          error: '',
+          logs: [],
+          createdBy: null,
+          retryCount: 0,
+          maxRetries: 3,
+          startedAt: null,
+          completedAt: null,
+          createdAt: '2026-01-01T00:00:00.000Z',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 12, limit: 5, page: 1, totalPages: 3},
+    });
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
     await act(async () => {
@@ -692,6 +716,17 @@ describe('KolamAmSurface', () => {
     expect(jest.requireMock('../src/services/am-api').getAmTasks).toHaveBeenCalledWith({
       limit: 5,
       page: 1,
+      serviceAccountId: 'service-1',
+    });
+    expect(renderText(renderer!).join(' ')).toContain('Page 1/3');
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Service Task History Next Page'}).props.onPress();
+    });
+
+    expect(jest.requireMock('../src/services/am-api').getAmTasks).toHaveBeenLastCalledWith({
+      limit: 5,
+      page: 2,
       serviceAccountId: 'service-1',
     });
   });

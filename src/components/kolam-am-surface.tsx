@@ -807,6 +807,9 @@ function AmServicesPage() {
   const [detailServices, setDetailServices] = React.useState<AmDeviceServiceStatus[]>([]);
   const [detailTasks, setDetailTasks] = React.useState<AmTask[]>([]);
   const [detailTransfers, setDetailTransfers] = React.useState<AmTransfer[]>([]);
+  const [detailHistoryPage, setDetailHistoryPage] = React.useState(1);
+  const [detailHistoryTotal, setDetailHistoryTotal] = React.useState(0);
+  const [detailHistoryLimit, setDetailHistoryLimit] = React.useState(5);
   const [detailRunning, setDetailRunning] = React.useState(false);
   const [detailLoading, setDetailLoading] = React.useState(false);
   const [detailError, setDetailError] = React.useState<string | null>(null);
@@ -900,24 +903,32 @@ function AmServicesPage() {
     }
   }, []);
 
-  const loadServiceHistory = React.useCallback(async (account: AmServiceAccount) => {
+  const loadServiceHistory = React.useCallback(async (
+    account: AmServiceAccount,
+    historyPage = 1,
+  ) => {
     try {
       setDetailLoading(true);
+      setDetailHistoryPage(historyPage);
       if (isTransferBanking(account.platform)) {
         const response = await getAmTransfers({
           serviceAccountId: account._id,
           limit: 5,
-          page: 1,
+          page: historyPage,
         });
         setDetailTransfers(response.data);
+        setDetailHistoryTotal(response.meta.total ?? response.data.length);
+        setDetailHistoryLimit(response.meta.limit || 5);
         setDetailTasks([]);
       } else {
         const response = await getAmTasks({
           serviceAccountId: account._id,
           limit: 5,
-          page: 1,
+          page: historyPage,
         });
         setDetailTasks(response.data);
+        setDetailHistoryTotal(response.meta.total ?? response.data.length);
+        setDetailHistoryLimit(response.meta.limit || 5);
         setDetailTransfers([]);
       }
       setDetailError(null);
@@ -935,6 +946,9 @@ function AmServicesPage() {
       setDetailServices([]);
       setDetailTasks([]);
       setDetailTransfers([]);
+      setDetailHistoryPage(1);
+      setDetailHistoryTotal(0);
+      setDetailHistoryLimit(5);
       setDetailError(null);
       setServiceInputValue('');
       return;
@@ -946,9 +960,12 @@ function AmServicesPage() {
     setDetailServices([]);
     setDetailTasks([]);
     setDetailTransfers([]);
+    setDetailHistoryPage(1);
+    setDetailHistoryTotal(0);
+    setDetailHistoryLimit(5);
     setServiceInputValue('');
     if (isTransferBanking(account.platform)) {
-      await loadServiceHistory(account);
+      await loadServiceHistory(account, 1);
     } else {
       await loadServiceLogs(account);
     }
@@ -960,11 +977,18 @@ function AmServicesPage() {
   ) => {
     setExpandedTab(tab);
     if (tab === 'history') {
-      await loadServiceHistory(account);
+      await loadServiceHistory(account, 1);
     } else {
       await loadServiceLogs(account);
     }
   }, [loadServiceHistory, loadServiceLogs]);
+
+  const changeServiceHistoryPage = React.useCallback(async (
+    account: AmServiceAccount,
+    nextPage: number,
+  ) => {
+    await loadServiceHistory(account, nextPage);
+  }, [loadServiceHistory]);
 
   const runServicePowerAction = React.useCallback(async (account: AmServiceAccount) => {
     const device = getServiceDevice(account);
@@ -1132,6 +1156,9 @@ function AmServicesPage() {
                   detailError={detailError}
                   isLoading={detailLoading}
                   logs={detailLogs}
+                  historyLimit={detailHistoryLimit}
+                  historyPage={detailHistoryPage}
+                  historyTotal={detailHistoryTotal}
                   serviceInputSending={serviceInputSending}
                   serviceInputValue={serviceInputValue}
                   serviceStatuses={detailServices}
@@ -1142,6 +1169,7 @@ function AmServicesPage() {
                   clearingSession={actingServiceId === account._id}
                   onClearSession={() => clearServiceSession(account)}
                   onChangeServiceInput={setServiceInputValue}
+                  onHistoryPageChange={nextPage => changeServiceHistoryPage(account, nextPage)}
                   onSelectTab={tab => selectDetailTab(account, tab)}
                   onSubmitServiceInput={inputType => submitServiceInput(account, inputType)}
                 />
@@ -1656,6 +1684,9 @@ function AmServiceDetailPanel({
   canClearSession,
   clearingSession,
   detailError,
+  historyLimit,
+  historyPage,
+  historyTotal,
   isLoading,
   logs,
   serviceInputSending,
@@ -1663,6 +1694,7 @@ function AmServiceDetailPanel({
   serviceStatuses,
   onClearSession,
   onChangeServiceInput,
+  onHistoryPageChange,
   onSelectTab,
   onSubmitServiceInput,
   processRunning,
@@ -1674,6 +1706,9 @@ function AmServiceDetailPanel({
   canClearSession: boolean;
   clearingSession: boolean;
   detailError: string | null;
+  historyLimit: number;
+  historyPage: number;
+  historyTotal: number;
   isLoading: boolean;
   logs: AmDeviceServiceLog[];
   serviceInputSending: boolean;
@@ -1681,6 +1716,7 @@ function AmServiceDetailPanel({
   serviceStatuses: AmDeviceServiceStatus[];
   onClearSession: () => void;
   onChangeServiceInput: (value: string) => void;
+  onHistoryPageChange: (page: number) => void;
   onSelectTab: (tab: 'logs' | 'history') => void;
   onSubmitServiceInput: (inputType: 'otp' | 'password') => void;
   processRunning: boolean;
@@ -1694,6 +1730,9 @@ function AmServiceDetailPanel({
   const needsPassword = logs.some(log => log.message.includes('PASSWORD_REQUIRED'));
   const needsInput = needsPassword || logs.some(log => log.message.includes('OTP') || log.message.includes('otp') || log.message.includes('INPUT_REQUIRED'));
   const qrUrl = device?._id ? getAmDeviceServiceQrUrl(device._id, account.platform, qrSignal?.qrcodeId) : null;
+  const historyTotalPages = Math.max(1, Math.ceil(historyTotal / Math.max(historyLimit, 1)));
+  const historyFrom = historyTotal ? (historyPage - 1) * historyLimit + 1 : 0;
+  const historyTo = historyTotal ? Math.min(historyPage * historyLimit, historyTotal) : 0;
 
   return (
     <View style={styles.serviceDetailPanel}>
@@ -1802,6 +1841,18 @@ function AmServiceDetailPanel({
               </View>
             </View>
           ))}
+          {historyTotal > historyLimit ? (
+            <AmServiceHistoryPagination
+              currentPage={historyPage}
+              disabled={isLoading}
+              from={historyFrom}
+              label="AM Service Transfer History"
+              to={historyTo}
+              total={historyTotal}
+              totalPages={historyTotalPages}
+              onPageChange={onHistoryPageChange}
+            />
+          ) : null}
         </View>
       ) : null}
       {!isLoading && activeTab === 'history' && !banking ? (
@@ -1819,8 +1870,66 @@ function AmServiceDetailPanel({
               </View>
             </View>
           ))}
+          {historyTotal > historyLimit ? (
+            <AmServiceHistoryPagination
+              currentPage={historyPage}
+              disabled={isLoading}
+              from={historyFrom}
+              label="AM Service Task History"
+              to={historyTo}
+              total={historyTotal}
+              totalPages={historyTotalPages}
+              onPageChange={onHistoryPageChange}
+            />
+          ) : null}
         </View>
       ) : null}
+    </View>
+  );
+}
+
+function AmServiceHistoryPagination({
+  currentPage,
+  disabled,
+  from,
+  label,
+  onPageChange,
+  to,
+  total,
+  totalPages,
+}: {
+  currentPage: number;
+  disabled: boolean;
+  from: number;
+  label: string;
+  onPageChange: (page: number) => void;
+  to: number;
+  total: number;
+  totalPages: number;
+}) {
+  return (
+    <View style={styles.paginationBar}>
+      <Text style={styles.paginationText}>
+        Showing {from} to {to} of {total} items
+      </Text>
+      <View style={styles.inlineActions}>
+        <KolamButton
+          accessibilityLabel={`${label} Previous Page`}
+          disabled={currentPage <= 1 || disabled}
+          label="Previous"
+          intent="outline"
+          size="sm"
+          onPress={() => onPageChange(Math.max(1, currentPage - 1))}
+        />
+        <KolamButton
+          accessibilityLabel={`${label} Next Page`}
+          disabled={currentPage >= totalPages || disabled}
+          label={`Page ${currentPage}/${totalPages}`}
+          intent="outline"
+          size="sm"
+          onPress={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+        />
+      </View>
     </View>
   );
 }
