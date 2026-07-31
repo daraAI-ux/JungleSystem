@@ -3848,17 +3848,22 @@ export function KolamSettingsWebConfigSurface({
                 },
               ]}
             />
-            <KolamToggleRow
-              variant="settingsForm"
-              label="Bisnis DARA"
-              description="Aktifkan fitur bisnis DARA."
-              active={draft.daraBusinessEnabled}
-              onPress={() =>
-                !daraControlsDisabled &&
-                setDraftField('daraBusinessEnabled', !draft.daraBusinessEnabled)
-              }
-            />
             <View style={styles.notificationToggleGrid}>
+              <View style={styles.notificationToggleBox}>
+                <KolamToggleRow
+                  variant="settingsForm"
+                  label="Bisnis DARA"
+                  description="Aktifkan fitur bisnis DARA."
+                  active={draft.daraBusinessEnabled}
+                  onPress={() =>
+                    !daraControlsDisabled &&
+                    setDraftField(
+                      'daraBusinessEnabled',
+                      !draft.daraBusinessEnabled,
+                    )
+                  }
+                />
+              </View>
               {aiModuleToggleRows.map(row => (
                 <View key={row.id} style={styles.notificationToggleBox}>
                   <KolamToggleRow
