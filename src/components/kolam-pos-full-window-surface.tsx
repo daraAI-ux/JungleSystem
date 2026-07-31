@@ -454,8 +454,13 @@ export function KolamPosFullWindowSurface({
           </ScrollView>
         ) : (
           <View style={styles.orderEmpty}>
-            <Text style={styles.emptyTitle}>Belum ada pesanan</Text>
-            <Text style={styles.emptyText}>Pilih produk atau spesies dari katalog.</Text>
+            <View style={styles.orderEmptyIcon}>
+              <Text style={styles.orderEmptyIconText}>Bag</Text>
+            </View>
+            <Text style={styles.orderEmptyTitle}>Keranjang Kosong</Text>
+            <Text style={styles.orderEmptyText}>
+              Pilih produk dari katalog untuk memulai pesanan
+            </Text>
           </View>
         )}
 
@@ -2861,6 +2866,35 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 24,
+  },
+  orderEmptyIcon: {
+    width: 80,
+    height: 80,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 40,
+    backgroundColor: V.colors.muted,
+  },
+  orderEmptyIconText: {
+    color: V.colors.mutedFg,
+    fontSize: 13,
+    fontWeight: '900',
+    opacity: 0.45,
+  },
+  orderEmptyTitle: {
+    marginTop: 16,
+    color: V.colors.fg,
+    fontSize: 14,
+    fontWeight: '900',
+    textAlign: 'center',
+  },
+  orderEmptyText: {
+    maxWidth: 210,
+    marginTop: 4,
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    lineHeight: 16,
+    textAlign: 'center',
   },
   emptyTitle: {
     color: V.colors.fg,
