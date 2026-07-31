@@ -991,6 +991,7 @@ describe('KolamAmSurface', () => {
       limit: 20,
       search: undefined,
       status: undefined,
+      serviceAccountId: undefined,
     });
     expect(getAmMutasi).toHaveBeenCalledWith({page: 1, limit: 50, type: undefined});
     expect(getAmWebhookConfigs).toHaveBeenCalledTimes(1);
@@ -1469,6 +1470,24 @@ describe('KolamAmSurface', () => {
   });
 
   it('renders transfer stats and pagination from the Transfers route metadata', async () => {
+    jest.mocked(getAmServiceAccounts).mockResolvedValue({
+      data: [
+        {
+          _id: 'account-1',
+          label: 'BCA Main',
+          platform: 'bca',
+          accountNumber: '123',
+          status: 'active',
+          deviceId: null,
+          username: '',
+          credentials: {},
+          meta: {},
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 1, limit: 1},
+    });
     jest.mocked(getAmTransfers).mockResolvedValue({
       data: [
         {
@@ -1534,6 +1553,7 @@ describe('KolamAmSurface', () => {
       limit: 20,
       search: undefined,
       status: undefined,
+      serviceAccountId: undefined,
     });
 
     const joinedText = renderText(renderer!).join(' ');
@@ -1552,6 +1572,19 @@ describe('KolamAmSurface', () => {
       limit: 20,
       search: undefined,
       status: undefined,
+      serviceAccountId: undefined,
+    });
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Segment BCA Main - 123'}).props.onPress();
+    });
+
+    expect(getAmTransfers).toHaveBeenLastCalledWith({
+      page: 1,
+      limit: 20,
+      search: undefined,
+      status: undefined,
+      serviceAccountId: 'account-1',
     });
   });
 

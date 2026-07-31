@@ -1973,7 +1973,9 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
 
 function AmTransfersPage() {
   const [transfers, setTransfers] = React.useState<AmTransfer[]>([]);
+  const [accounts, setAccounts] = React.useState<AmServiceAccount[]>([]);
   const [status, setStatus] = React.useState('all');
+  const [accountFilter, setAccountFilter] = React.useState('all');
   const [search, setSearch] = React.useState('');
   const [page, setPage] = React.useState(1);
   const [limit, setLimit] = React.useState(AM_TRANSFER_PAGE_LIMIT);
@@ -1996,6 +1998,7 @@ function AmTransfersPage() {
         limit: AM_TRANSFER_PAGE_LIMIT,
         search: search.trim() || undefined,
         status: status === 'all' ? undefined : status,
+        serviceAccountId: accountFilter === 'all' ? undefined : accountFilter,
       });
       setTransfers(response.data);
       setTotal(response.meta.total);
@@ -2006,11 +2009,24 @@ function AmTransfersPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [page, search, status]);
+  }, [accountFilter, page, search, status]);
+
+  const fetchTransferAccounts = React.useCallback(async () => {
+    try {
+      const response = await getAmServiceAccounts({limit: 100});
+      setAccounts(response.data);
+    } catch {
+      setAccounts([]);
+    }
+  }, []);
 
   React.useEffect(() => {
     fetchTransfers();
   }, [fetchTransfers]);
+
+  React.useEffect(() => {
+    fetchTransferAccounts();
+  }, [fetchTransferAccounts]);
 
   React.useEffect(() => {
     const interval = setInterval(fetchTransfers, 10_000);
@@ -2071,10 +2087,23 @@ function AmTransfersPage() {
     setPage(1);
   }, []);
 
+  const handleTransferAccountChange = React.useCallback((value: string) => {
+    setAccountFilter(value);
+    setPage(1);
+  }, []);
+
   const totalPages = Math.max(1, Math.ceil(total / Math.max(limit, 1)));
   const rangeFrom = total ? (page - 1) * limit + 1 : 0;
   const rangeTo = total ? Math.min(page * limit, total) : 0;
   const transferStats = getTransferStats(transfers);
+  const transferAccountItems = React.useMemo(() => ['all', ...accounts.map(account => account._id)], [accounts]);
+  const transferAccountLabels = React.useMemo<Record<string, string>>(() => {
+    const labels: Record<string, string> = {all: 'All Accounts'};
+    accounts.forEach(account => {
+      labels[account._id] = formatBankAccount(account);
+    });
+    return labels;
+  }, [accounts]);
 
   const runTransferAction = React.useCallback(async (
     transfer: AmTransfer,
@@ -2109,6 +2138,7 @@ function AmTransfersPage() {
       <View style={styles.filterBar}>
         <KolamSearchField value={search} onChangeText={handleTransferSearchChange} placeholder="Search transfer..." containerStyle={styles.taskSearch} trailingLabel={`${total} transfer`} />
         <AmSegmentGroup active={status} items={['all', 'pending', 'processing', 'success', 'failed']} onSelect={handleTransferStatusChange} />
+        <AmSegmentGroup active={accountFilter} items={transferAccountItems} labels={transferAccountLabels} onSelect={handleTransferAccountChange} />
         <KolamButton label={isLoading ? 'Memuat' : 'Refresh'} intent="outline" muted={isLoading} size="sm" onPress={fetchTransfers} />
       </View>
       <AmInlineError title="Transfers AM belum bisa dibaca" error={error} />
