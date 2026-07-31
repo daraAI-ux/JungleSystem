@@ -1,5 +1,5 @@
 import React from 'react';
-import {Text, TextInput} from 'react-native';
+import {Image, Text, TextInput} from 'react-native';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 import {KolamAmSurface} from '../src/components/kolam-am-surface';
 import {getShellModuleRouteEntry} from '../src/domain/app-shell';
@@ -2256,6 +2256,11 @@ describe('KolamAmSurface', () => {
     expect(joinedText).toContain('Inventory hook');
     expect(joinedText).not.toContain('Other hook');
     expect(joinedText).toMatch(/Screenshot base64 tersedia \(\s*6\s+chars\)/);
+    expect(text).toContain('Transaction Proof');
+    expect(
+      renderer!.root.findByProps({accessibilityLabel: 'AM Transfer Transaction Proof'}).props.source,
+    ).toEqual({uri: 'data:image/png;base64,abc123'});
+    expect(renderer!.root.findAllByType(Image)).toHaveLength(1);
     expect(joinedText).toMatch(/002\s+completed/);
   });
 

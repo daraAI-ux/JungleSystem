@@ -1,5 +1,5 @@
 import React from 'react';
-import {ScrollView, StyleSheet, Text, TextInput, View} from 'react-native';
+import {Image, ScrollView, StyleSheet, Text, TextInput, View} from 'react-native';
 import type {DimensionValue} from 'react-native';
 import {appConfig} from '../config/app';
 import {
@@ -3082,6 +3082,18 @@ function AmTransferDetailPanel({
               </View>
             ) : null}
           </View>
+          {transfer.screenshot ? (
+            <View style={styles.proofPanel}>
+              <Text style={styles.panelTitle}>Transaction Proof</Text>
+              <Text style={styles.panelText}>Screenshot taken after transfer.</Text>
+              <Image
+                accessibilityLabel="AM Transfer Transaction Proof"
+                resizeMode="contain"
+                source={{uri: `data:image/png;base64,${transfer.screenshot}`}}
+                style={styles.proofImage}
+              />
+            </View>
+          ) : null}
           <View style={styles.logPanel}>
             {!transfer.logs.length ? <Text style={styles.logEmptyText}>No transfer logs</Text> : null}
             {transfer.logs.slice(-30).map((line, index) => (
@@ -5374,6 +5386,22 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 12,
     textAlign: 'center',
+  },
+  proofPanel: {
+    gap: 8,
+    borderWidth: 1,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    padding: 12,
+    backgroundColor: V.colors.bg,
+  },
+  proofImage: {
+    width: '100%',
+    height: 320,
+    borderWidth: 1,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    backgroundColor: V.colors.muted,
   },
   detailList: {
     overflow: 'hidden',
