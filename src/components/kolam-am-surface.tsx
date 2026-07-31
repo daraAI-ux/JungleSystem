@@ -25,6 +25,7 @@ import {
   deleteAmBoxes,
   deleteAmDevices,
   deleteAmRacks,
+  deleteAmServiceAccount,
   deleteAmUser,
   deleteAmWebhookConfig,
   forceFailAmTransfer,
@@ -1192,6 +1193,32 @@ function AmServicesPage() {
     }
   }, [fetchAccounts]);
 
+  const deleteServiceAccount = React.useCallback(async (account: AmServiceAccount) => {
+    try {
+      setActingServiceId(account._id);
+      setActionMessage(null);
+      setError(null);
+      await deleteAmServiceAccount(account._id);
+      if (expandedId === account._id) {
+        setExpandedId(null);
+        setDetailLogs([]);
+        setDetailServices([]);
+        setDetailTasks([]);
+        setDetailTransfers([]);
+        setDetailError(null);
+      }
+      if (editingServiceId === account._id) {
+        resetServiceForm();
+      }
+      setActionMessage(`${account.label} dihapus.`);
+      await fetchAccounts();
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Gagal menghapus service account AM.');
+    } finally {
+      setActingServiceId(null);
+    }
+  }, [editingServiceId, expandedId, fetchAccounts, resetServiceForm]);
+
   const submitServiceInput = React.useCallback(async (account: AmServiceAccount, inputType: 'otp' | 'password') => {
     const device = getServiceDevice(account);
     const value = serviceInputValue.trim();
@@ -1364,6 +1391,14 @@ function AmServicesPage() {
                     muted={isSubmitting}
                     size="sm"
                     onPress={() => editServiceAccount(account)}
+                  />
+                  <KolamButton
+                    accessibilityLabel={`AM Service Delete ${account._id}`}
+                    intent="danger"
+                    label={actingServiceId === account._id ? '...' : 'Delete'}
+                    muted={actingServiceId === account._id}
+                    size="sm"
+                    onPress={() => deleteServiceAccount(account)}
                   />
                 </View>
               </View>

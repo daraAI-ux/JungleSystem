@@ -15,6 +15,7 @@ import {
   createAmWebhookConfig,
   deleteAmDevices,
   deleteAmRacks,
+  deleteAmServiceAccount,
   deleteAmUser,
   deleteAmWebhookConfig,
   getAmActivityLogs,
@@ -70,6 +71,7 @@ jest.mock('../src/services/am-api', () => ({
   deleteAmBoxes: jest.fn(() => Promise.resolve(undefined)),
   deleteAmDevices: jest.fn(() => Promise.resolve(undefined)),
   deleteAmRacks: jest.fn(() => Promise.resolve(undefined)),
+  deleteAmServiceAccount: jest.fn(() => Promise.resolve(undefined)),
   deleteAmUser: jest.fn(() => Promise.resolve(undefined)),
   deleteAmWebhookConfig: jest.fn(() => Promise.resolve({success: true})),
   forceFailAmTransfer: jest.fn(() => Promise.resolve({_id: 'transfer-1'})),
@@ -806,6 +808,13 @@ describe('KolamAmSurface', () => {
       credentials: {phoneNumber: '0812'},
       status: 'inactive',
     }));
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Service Delete service-edit'}).props.onPress();
+    });
+
+    expect(deleteAmServiceAccount).toHaveBeenCalledWith('service-edit');
+    expect(renderText(renderer!).join(' ')).toContain('Tokopedia Old dihapus.');
   });
 
   it('expands a service row and loads logs plus task history', async () => {

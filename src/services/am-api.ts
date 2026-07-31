@@ -658,6 +658,13 @@ export async function updateAmServiceAccount(
   return amPut<AmServiceAccount>(`/service-account/${id}`, payload, baseUrl);
 }
 
+export async function deleteAmServiceAccount(
+  id: string,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<void> {
+  return amDelete<void>(`/service-account/${id}`, baseUrl);
+}
+
 export async function getAmRacks(
   query?: AmRackQuery,
   baseUrl = appConfig.amApiBaseUrl,
