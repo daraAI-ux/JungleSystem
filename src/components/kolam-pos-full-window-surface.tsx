@@ -1599,7 +1599,10 @@ function getSavedOrderSubtotal(order: PosSavedOrder, catalog: CatalogItem[]) {
 function getSavedOrderItemNames(order: PosSavedOrder, catalog: CatalogItem[]) {
   return order.checkout.cart
     .slice(0, 3)
-    .map(line => catalog.find(item => item.id === line.itemId)?.name ?? line.itemId);
+    .map(line => {
+      const name = catalog.find(item => item.id === line.itemId)?.name ?? line.itemId;
+      return name.split(/\s+/).slice(0, 2).join(' ');
+    });
 }
 
 function getPosKeyboardTarget(): PosKeyboardTarget | undefined {
@@ -1675,7 +1678,7 @@ function PosSavedOrdersPanel({
           <View>
             <Text style={styles.paymentTitle}>Pesanan Tersimpan</Text>
             <Text style={styles.paymentSubtitle}>
-              {orders.length} pesanan tersimpan di jendela POS ini.
+              {orders.length} pesanan tersimpan
             </Text>
           </View>
           <KolamButton label="Tutup" intent="outline" size="sm" onPress={onClose} />
@@ -1700,8 +1703,10 @@ function PosSavedOrdersPanel({
                         {order.customerName}
                       </Text>
                     ) : null}
-                    <Text style={styles.savedOrderMeta}>
-                      {itemCount} item | {formatRupiah(subtotal)} |{' '}
+                    <Text numberOfLines={1} style={styles.savedOrderMeta}>
+                      {itemCount} item | {formatRupiah(subtotal)}
+                    </Text>
+                    <Text numberOfLines={1} style={styles.savedOrderDateMeta}>
                       {formatPosDate(order.createdAt)}
                     </Text>
                     <View style={styles.savedOrderPreviewList}>
@@ -3500,6 +3505,12 @@ const styles = StyleSheet.create({
     marginTop: 3,
     color: V.colors.mutedFg,
     fontSize: 11,
+    fontWeight: '600',
+  },
+  savedOrderDateMeta: {
+    marginTop: 3,
+    color: V.colors.mutedFg,
+    fontSize: 10,
     fontWeight: '600',
   },
   savedOrderPreviewList: {
