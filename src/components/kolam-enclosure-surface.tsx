@@ -1632,7 +1632,7 @@ function KolamEnclosureDetailTasksTab({
         )}
         <KolamButton
           disabled={controller.enclosureTasksLoading}
-          label="Refresh task"
+          label="Muat ulang tugas"
           onPress={() => void controller.onRefreshTasks()}
           style={styles.toolbarButton}
         />
