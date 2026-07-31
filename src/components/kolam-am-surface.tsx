@@ -8,8 +8,14 @@ import {
   cancelAmTransfer,
   cancelAmTask,
   clearAmServiceAccountSession,
+  createAmBox,
+  createAmDevice,
+  createAmRack,
   createAmUser,
   createAmWebhookConfig,
+  deleteAmBoxes,
+  deleteAmDevices,
+  deleteAmRacks,
   deleteAmUser,
   deleteAmWebhookConfig,
   forceFailAmTransfer,
@@ -35,6 +41,9 @@ import {
   startAmDeviceService,
   stopAmDeviceService,
   testAmWebhookPing,
+  updateAmBox,
+  updateAmDevice,
+  updateAmRack,
   updateAmUser,
   updateAmWebhookConfig,
   type AmActivityLog,
@@ -42,6 +51,7 @@ import {
   type AmBox,
   type AmDashboardData,
   type AmDevice,
+  type AmDevicePayload,
   type AmDeviceServiceLog,
   type AmMutasi,
   type AmMutasiSummary,
@@ -700,7 +710,25 @@ function AmHardwarePage() {
   const [selectedRackId, setSelectedRackId] = React.useState<string | null>(null);
   const [selectedBoxId, setSelectedBoxId] = React.useState<string | null>(null);
   const [selectedDeviceId, setSelectedDeviceId] = React.useState<string | null>(null);
+  const [hardwareForm, setHardwareForm] = React.useState<'rack' | 'box' | 'device'>('rack');
+  const [editingHardwareId, setEditingHardwareId] = React.useState<string | null>(null);
+  const [formLocation, setFormLocation] = React.useState('');
+  const [formDescription, setFormDescription] = React.useState('');
+  const [formServerIp, setFormServerIp] = React.useState('');
+  const [formStatus, setFormStatus] = React.useState<'active' | 'inactive'>('active');
+  const [formRackId, setFormRackId] = React.useState('');
+  const [formBoxId, setFormBoxId] = React.useState('');
+  const [formConnectionType, setFormConnectionType] = React.useState<'usb' | 'tcp' | 'browser'>('usb');
+  const [formUdid, setFormUdid] = React.useState('');
+  const [formTcpAddress, setFormTcpAddress] = React.useState('');
+  const [formBrand, setFormBrand] = React.useState('');
+  const [formModel, setFormModel] = React.useState('');
+  const [formAdbPort, setFormAdbPort] = React.useState('');
+  const [formAppiumPort, setFormAppiumPort] = React.useState('');
+  const [actingHardwareId, setActingHardwareId] = React.useState<string | null>(null);
+  const [actionMessage, setActionMessage] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
   const fetchHardware = React.useCallback(async () => {
@@ -751,6 +779,154 @@ function AmHardwarePage() {
     setSelectedDeviceId(null);
   }, []);
 
+  const resetHardwareForm = React.useCallback((nextForm: 'rack' | 'box' | 'device' = hardwareForm) => {
+    setHardwareForm(nextForm);
+    setEditingHardwareId(null);
+    setFormLocation('');
+    setFormDescription('');
+    setFormServerIp('');
+    setFormStatus('active');
+    setFormRackId(nextForm === 'box' ? (selectedRackId ?? racks[0]?._id ?? '') : '');
+    setFormBoxId(nextForm === 'device' ? (selectedBoxId ?? boxes[0]?._id ?? '') : '');
+    setFormConnectionType('usb');
+    setFormUdid('');
+    setFormTcpAddress('');
+    setFormBrand('');
+    setFormModel('');
+    setFormAdbPort('');
+    setFormAppiumPort('');
+    setActionMessage(null);
+  }, [boxes, hardwareForm, racks, selectedBoxId, selectedRackId]);
+
+  const editRack = React.useCallback((rack: AmRack) => {
+    setHardwareForm('rack');
+    setEditingHardwareId(rack._id);
+    setFormLocation(rack.location ?? '');
+    setFormDescription(rack.description ?? '');
+    setFormServerIp(rack.serverIp ?? '');
+    setFormStatus(rack.status === 'inactive' ? 'inactive' : 'active');
+    setActionMessage(null);
+  }, []);
+
+  const editBox = React.useCallback((box: AmBox) => {
+    setHardwareForm('box');
+    setEditingHardwareId(box._id);
+    setFormRackId(resolveRackId(box.rackId));
+    setFormDescription(box.description ?? '');
+    setFormStatus(box.status === 'inactive' ? 'inactive' : 'active');
+    setActionMessage(null);
+  }, []);
+
+  const editDevice = React.useCallback((device: AmDevice) => {
+    setHardwareForm('device');
+    setEditingHardwareId(device._id);
+    setFormBoxId(resolveBoxId(device.boxId));
+    setFormConnectionType(device.connectionType === 'tcp' || device.connectionType === 'browser' ? device.connectionType : 'usb');
+    setFormUdid(device.udid ?? '');
+    setFormTcpAddress(device.tcpAddress ?? '');
+    setFormBrand(device.brand ?? '');
+    setFormModel(device.model ?? '');
+    setFormAdbPort(device.adbPort ? String(device.adbPort) : '');
+    setFormAppiumPort(device.appiumPort ? String(device.appiumPort) : '');
+    setActionMessage(null);
+  }, []);
+
+  const saveHardware = React.useCallback(async () => {
+    try {
+      setIsSubmitting(true);
+      setError(null);
+      if (hardwareForm === 'rack') {
+        const payload = {
+          location: formLocation.trim(),
+          description: formDescription.trim(),
+          serverIp: formServerIp.trim(),
+          ...(editingHardwareId ? {status: formStatus} : {}),
+        };
+        if (editingHardwareId) {
+          await updateAmRack(editingHardwareId, payload);
+          setActionMessage('Rack AM berhasil diupdate.');
+        } else {
+          await createAmRack(payload);
+          setActionMessage('Rack AM berhasil dibuat.');
+        }
+      } else if (hardwareForm === 'box') {
+        if (!editingHardwareId && !formRackId) {
+          setError('Rack wajib dipilih sebelum membuat box.');
+          return;
+        }
+        if (editingHardwareId) {
+          await updateAmBox(editingHardwareId, {
+            description: formDescription.trim(),
+            status: formStatus,
+          });
+          setActionMessage('Box AM berhasil diupdate.');
+        } else {
+          await createAmBox({
+            rackId: formRackId,
+            description: formDescription.trim(),
+          });
+          setActionMessage('Box AM berhasil dibuat.');
+        }
+      } else {
+        if (!editingHardwareId && !formBoxId) {
+          setError('Box wajib dipilih sebelum membuat device.');
+          return;
+        }
+        const payload = cleanDevicePayload({
+          connectionType: formConnectionType,
+          udid: formUdid.trim(),
+          tcpAddress: formTcpAddress.trim(),
+          brand: formBrand.trim(),
+          model: formModel.trim(),
+          adbPort: parseOptionalNumber(formAdbPort),
+          appiumPort: editingHardwareId ? parseOptionalNumber(formAppiumPort) : undefined,
+        });
+        if (editingHardwareId) {
+          await updateAmDevice(editingHardwareId, payload);
+          setActionMessage('Device AM berhasil diupdate.');
+        } else {
+          await createAmDevice({
+            boxId: formBoxId,
+            ...payload,
+          });
+          setActionMessage('Device AM berhasil dibuat.');
+        }
+      }
+      resetHardwareForm(hardwareForm);
+      await fetchHardware();
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Gagal menyimpan hardware AM.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [editingHardwareId, fetchHardware, formAdbPort, formAppiumPort, formBoxId, formBrand, formConnectionType, formDescription, formLocation, formModel, formRackId, formServerIp, formStatus, formTcpAddress, formUdid, hardwareForm, resetHardwareForm]);
+
+  const deleteHardware = React.useCallback(async (kind: 'rack' | 'box' | 'device', id: string) => {
+    try {
+      setActingHardwareId(id);
+      setError(null);
+      if (kind === 'rack') {
+        await deleteAmRacks([id]);
+        if (selectedRackId === id) resetHardwareRoute();
+      } else if (kind === 'box') {
+        await deleteAmBoxes([id]);
+        if (selectedBoxId === id) {
+          setSelectedBoxId(null);
+          setSelectedDeviceId(null);
+        }
+      } else {
+        await deleteAmDevices([id]);
+        if (selectedDeviceId === id) setSelectedDeviceId(null);
+      }
+      setActionMessage(`${titleCase(kind)} AM berhasil dihapus.`);
+      await fetchHardware();
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Gagal menghapus hardware AM.');
+    } finally {
+      setActingHardwareId(null);
+    }
+  }, [fetchHardware, resetHardwareRoute, selectedBoxId, selectedDeviceId, selectedRackId]);
+
   return (
     <View style={styles.pageStack}>
       <View style={styles.filterBar}>
@@ -798,39 +974,153 @@ function AmHardwarePage() {
           <Text style={styles.errorText}>{error}</Text>
         </View>
       ) : null}
+      {actionMessage ? (
+        <View style={styles.successPanel}>
+          <Text style={styles.successText}>{actionMessage}</Text>
+        </View>
+      ) : null}
+      <View style={styles.tablePanel}>
+        <View style={styles.formGrid}>
+          <AmSegmentGroup
+            active={hardwareForm}
+            items={['rack', 'box', 'device']}
+            labels={{rack: 'Rack', box: 'Box', device: 'Device'}}
+            onSelect={value => resetHardwareForm(value as 'rack' | 'box' | 'device')}
+          />
+          {hardwareForm === 'rack' ? (
+            <>
+              <AmTextInput label="Location" placeholder="e.g. Server Room A" value={formLocation} onChangeText={setFormLocation} />
+              <AmTextInput label="Description" placeholder="Rack notes" value={formDescription} onChangeText={setFormDescription} />
+              <AmTextInput label="Server IP" placeholder="192.168.1.10" value={formServerIp} onChangeText={setFormServerIp} />
+            </>
+          ) : null}
+          {hardwareForm === 'box' ? (
+            <>
+              <View style={styles.formField}>
+                <Text style={styles.formLabel}>Rack</Text>
+                <View style={styles.eventGrid}>
+                  {racks.map(rack => (
+                    <KolamInteractionFrame
+                      key={rack._id}
+                      accessibilityLabel={`AM Hardware Form Rack ${rack.name}`}
+                      onPress={() => setFormRackId(rack._id)}
+                      style={[styles.eventChip, formRackId === rack._id && styles.eventChipSelected]}>
+                      <Text style={[styles.eventChipText, formRackId === rack._id && styles.eventChipTextSelected]}>{rack.name}</Text>
+                    </KolamInteractionFrame>
+                  ))}
+                </View>
+              </View>
+              <AmTextInput label="Description" placeholder="Box notes" value={formDescription} onChangeText={setFormDescription} />
+            </>
+          ) : null}
+          {hardwareForm === 'device' ? (
+            <>
+              <View style={styles.formField}>
+                <Text style={styles.formLabel}>Box</Text>
+                <View style={styles.eventGrid}>
+                  {boxes.map(box => (
+                    <KolamInteractionFrame
+                      key={box._id}
+                      accessibilityLabel={`AM Hardware Form Box ${box.name}`}
+                      onPress={() => setFormBoxId(box._id)}
+                      style={[styles.eventChip, formBoxId === box._id && styles.eventChipSelected]}>
+                      <Text style={[styles.eventChipText, formBoxId === box._id && styles.eventChipTextSelected]}>{box.name}</Text>
+                    </KolamInteractionFrame>
+                  ))}
+                </View>
+              </View>
+              <AmSegmentGroup
+                active={formConnectionType}
+                items={['usb', 'tcp', 'browser']}
+                labels={{usb: 'USB', tcp: 'TCP', browser: 'Browser'}}
+                onSelect={value => setFormConnectionType(value as 'usb' | 'tcp' | 'browser')}
+              />
+              <AmTextInput label="UDID" placeholder="USB device UDID" value={formUdid} onChangeText={setFormUdid} />
+              <AmTextInput label="TCP Address" placeholder="192.168.101.231:5555" value={formTcpAddress} onChangeText={setFormTcpAddress} />
+              <AmTextInput label="Brand" placeholder="Samsung / Server" value={formBrand} onChangeText={setFormBrand} />
+              <AmTextInput label="Model" placeholder="A52 / Playwright" value={formModel} onChangeText={setFormModel} />
+              <AmTextInput label="ADB Port" placeholder="optional" value={formAdbPort} onChangeText={setFormAdbPort} />
+              {editingHardwareId ? (
+                <AmTextInput label="Appium Port" placeholder="optional" value={formAppiumPort} onChangeText={setFormAppiumPort} />
+              ) : null}
+            </>
+          ) : null}
+          {editingHardwareId && hardwareForm !== 'device' ? (
+            <AmSegmentGroup
+              active={formStatus}
+              items={['active', 'inactive']}
+              labels={{active: 'Active', inactive: 'Inactive'}}
+              onSelect={value => setFormStatus(value as 'active' | 'inactive')}
+            />
+          ) : null}
+          <View style={styles.inlineActions}>
+            <KolamButton
+              accessibilityLabel="AM Hardware Save"
+              label={isSubmitting ? 'Menyimpan' : (editingHardwareId ? 'Save' : 'Create')}
+              muted={isSubmitting}
+              size="sm"
+              onPress={saveHardware}
+            />
+            {editingHardwareId ? (
+              <KolamButton
+                accessibilityLabel="AM Hardware Cancel Edit"
+                label="Cancel"
+                intent="outline"
+                size="sm"
+                onPress={() => resetHardwareForm(hardwareForm)}
+              />
+            ) : null}
+          </View>
+        </View>
+      </View>
       {selectedDevice ? (
         <AmDeviceDetailPanel device={selectedDevice} />
       ) : selectedBox ? (
         <AmHardwareDeviceList
+          actingHardwareId={actingHardwareId}
           devices={visibleDevices}
           isLoading={isLoading}
+          onDeleteDevice={device => deleteHardware('device', device._id)}
+          onEditDevice={editDevice}
           onSelectDevice={device => setSelectedDeviceId(device._id)}
         />
       ) : selectedRack ? (
         <>
           <AmHardwareBoxGrid
+            actingHardwareId={actingHardwareId}
             boxes={visibleBoxes}
             isLoading={isLoading}
+            onDeleteBox={box => deleteHardware('box', box._id)}
+            onEditBox={editBox}
             onSelectBox={box => setSelectedBoxId(box._id)}
           />
           <AmHardwareDeviceList
+            actingHardwareId={actingHardwareId}
             devices={visibleDevices}
             isLoading={isLoading}
+            onDeleteDevice={device => deleteHardware('device', device._id)}
+            onEditDevice={editDevice}
             onSelectDevice={device => setSelectedDeviceId(device._id)}
           />
         </>
       ) : (
         <>
           <AmHardwareRackGrid
+            actingHardwareId={actingHardwareId}
             boxes={boxes}
             devices={devices}
             isLoading={isLoading}
+            onDeleteRack={rack => deleteHardware('rack', rack._id)}
+            onEditRack={editRack}
             onSelectRack={rack => setSelectedRackId(rack._id)}
             racks={racks}
           />
           <AmHardwareDeviceList
+            actingHardwareId={actingHardwareId}
             devices={visibleDevices}
             isLoading={isLoading}
+            onDeleteDevice={device => deleteHardware('device', device._id)}
+            onEditDevice={editDevice}
             onSelectDevice={device => setSelectedDeviceId(device._id)}
           />
         </>
@@ -953,15 +1243,21 @@ function AmServiceDetailPanel({
 }
 
 function AmHardwareRackGrid({
+  actingHardwareId,
   boxes,
   devices,
   isLoading,
+  onDeleteRack,
+  onEditRack,
   onSelectRack,
   racks,
 }: {
+  actingHardwareId: string | null;
   boxes: AmBox[];
   devices: AmDevice[];
   isLoading: boolean;
+  onDeleteRack: (rack: AmRack) => void;
+  onEditRack: (rack: AmRack) => void;
   onSelectRack: (rack: AmRack) => void;
   racks: AmRack[];
 }) {
@@ -986,6 +1282,23 @@ function AmHardwareRackGrid({
             </View>
             {rack.serverIp ? <Text style={styles.monoText}>{rack.serverIp}</Text> : null}
             <AmStatusChip label={rack.status} tone={rack.status === 'active' ? 'success' : 'muted'} />
+            <View style={styles.inlineActions}>
+              <KolamButton
+                accessibilityLabel={`AM Hardware Edit Rack ${rack._id}`}
+                label="Edit"
+                intent="outline"
+                size="sm"
+                onPress={() => onEditRack(rack)}
+              />
+              <KolamButton
+                accessibilityLabel={`AM Hardware Delete Rack ${rack._id}`}
+                label={actingHardwareId === rack._id ? '...' : 'Delete'}
+                intent="danger"
+                muted={actingHardwareId === rack._id}
+                size="sm"
+                onPress={() => onDeleteRack(rack)}
+              />
+            </View>
           </KolamInteractionFrame>
         ))}
       </View>
@@ -994,12 +1307,18 @@ function AmHardwareRackGrid({
 }
 
 function AmHardwareBoxGrid({
+  actingHardwareId,
   boxes,
   isLoading,
+  onDeleteBox,
+  onEditBox,
   onSelectBox,
 }: {
+  actingHardwareId: string | null;
   boxes: AmBox[];
   isLoading: boolean;
+  onDeleteBox: (box: AmBox) => void;
+  onEditBox: (box: AmBox) => void;
   onSelectBox: (box: AmBox) => void;
 }) {
   return (
@@ -1019,6 +1338,23 @@ function AmHardwareBoxGrid({
             <Text style={styles.rowMeta}>{box.description || 'No description'}</Text>
             <Text style={styles.rowMeta}>Device {box.deviceCount ?? 0} / 24</Text>
             <AmStatusChip label={box.status} tone={box.status === 'active' ? 'success' : 'muted'} />
+            <View style={styles.inlineActions}>
+              <KolamButton
+                accessibilityLabel={`AM Hardware Edit Box ${box._id}`}
+                label="Edit"
+                intent="outline"
+                size="sm"
+                onPress={() => onEditBox(box)}
+              />
+              <KolamButton
+                accessibilityLabel={`AM Hardware Delete Box ${box._id}`}
+                label={actingHardwareId === box._id ? '...' : 'Delete'}
+                intent="danger"
+                muted={actingHardwareId === box._id}
+                size="sm"
+                onPress={() => onDeleteBox(box)}
+              />
+            </View>
           </KolamInteractionFrame>
         ))}
       </View>
@@ -1027,12 +1363,18 @@ function AmHardwareBoxGrid({
 }
 
 function AmHardwareDeviceList({
+  actingHardwareId,
   devices,
   isLoading,
+  onDeleteDevice,
+  onEditDevice,
   onSelectDevice,
 }: {
+  actingHardwareId: string | null;
   devices: AmDevice[];
   isLoading: boolean;
+  onDeleteDevice: (device: AmDevice) => void;
+  onEditDevice: (device: AmDevice) => void;
   onSelectDevice: (device: AmDevice) => void;
 }) {
   return (
@@ -1043,6 +1385,7 @@ function AmHardwareDeviceList({
         <Text style={[styles.tableHeaderText, styles.brandCol]}>Brand</Text>
         <Text style={[styles.tableHeaderText, styles.modelCol]}>Model</Text>
         <Text style={[styles.tableHeaderText, styles.statusCol]}>ADB</Text>
+        <Text style={[styles.tableHeaderText, styles.actionCol]}>Action</Text>
       </View>
       <AmLoadingOrEmpty isLoading={isLoading} items={devices} loadingText="Memuat devices dari AM live..." emptyText="No devices found" />
       {devices.slice(0, 40).map(device => (
@@ -1061,6 +1404,25 @@ function AmHardwareDeviceList({
           <Text style={[styles.cellText, styles.modelCol]} numberOfLines={1}>{device.model || 'Not set'}</Text>
           <View style={styles.statusCol}>
             <AmStatusChip label={device.adbStatus ?? 'disconnected'} tone={getAdbTone(device.adbStatus)} />
+          </View>
+          <View style={styles.actionCol}>
+            <View style={styles.inlineActions}>
+              <KolamButton
+                accessibilityLabel={`AM Hardware Edit Device ${device._id}`}
+                label="Edit"
+                intent="outline"
+                size="sm"
+                onPress={() => onEditDevice(device)}
+              />
+              <KolamButton
+                accessibilityLabel={`AM Hardware Delete Device ${device._id}`}
+                label={actingHardwareId === device._id ? '...' : 'Delete'}
+                intent="danger"
+                muted={actingHardwareId === device._id}
+                size="sm"
+                onPress={() => onDeleteDevice(device)}
+              />
+            </View>
           </View>
         </KolamInteractionFrame>
       ))}
@@ -1980,7 +2342,11 @@ function AmSegmentGroup({
   return (
     <ScrollView horizontal contentContainerStyle={styles.segmentList} showsHorizontalScrollIndicator={false}>
       {items.map(item => (
-        <KolamInteractionFrame key={item} onPress={() => onSelect(item)} style={[styles.segment, active === item && styles.segmentActive]}>
+        <KolamInteractionFrame
+          key={item}
+          accessibilityLabel={`AM Segment ${labels[item] ?? titleCase(item)}`}
+          onPress={() => onSelect(item)}
+          style={[styles.segment, active === item && styles.segmentActive]}>
           <Text style={[styles.segmentText, active === item && styles.segmentTextActive]}>{labels[item] ?? titleCase(item)}</Text>
         </KolamInteractionFrame>
       ))}
@@ -2027,6 +2393,27 @@ function getTransferTone(status: string) {
   if (status === 'success') return 'success';
   if (status === 'failed') return 'danger';
   return 'warning';
+}
+
+function resolveRackId(rack: AmBox['rackId']) {
+  return typeof rack === 'string' ? rack : rack?._id ?? '';
+}
+
+function resolveBoxId(box: AmDevice['boxId']) {
+  return typeof box === 'string' ? box : box?._id ?? '';
+}
+
+function parseOptionalNumber(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  const parsed = Number(trimmed);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function cleanDevicePayload(payload: AmDevicePayload): Omit<AmDevicePayload, 'boxId'> {
+  return Object.fromEntries(
+    Object.entries(payload).filter(([, value]) => value !== undefined && value !== ''),
+  ) as Omit<AmDevicePayload, 'boxId'>;
 }
 
 function countBoxesForRack(boxes: AmBox[], rack: AmRack) {

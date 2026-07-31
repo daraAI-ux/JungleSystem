@@ -153,6 +153,13 @@ export interface AmRack {
   updatedAt: string;
 }
 
+export interface AmRackPayload {
+  location?: string;
+  description?: string;
+  serverIp?: string;
+  status?: 'active' | 'inactive';
+}
+
 export interface AmRackRef {
   _id: string;
   name: string;
@@ -176,6 +183,12 @@ export interface AmBox {
   updatedAt: string;
 }
 
+export interface AmBoxPayload {
+  rackId?: string;
+  description?: string;
+  status?: 'active' | 'inactive';
+}
+
 export interface AmDevice {
   _id: string;
   name: string;
@@ -193,6 +206,18 @@ export interface AmDevice {
   adbCheckedAt?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface AmDevicePayload {
+  boxId?: string;
+  connectionType?: 'usb' | 'tcp' | 'browser';
+  udid?: string;
+  tcpAddress?: string;
+  adbPort?: number;
+  appiumPort?: number;
+  brand?: string;
+  model?: string;
+  tags?: string[];
 }
 
 export interface AmDeviceServiceLog {
@@ -552,6 +577,72 @@ export async function getAmDevices(
   return getAmList<AmDevice>('/device', query, baseUrl);
 }
 
+export async function createAmRack(
+  payload: Pick<AmRackPayload, 'location' | 'description' | 'serverIp'>,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmRack> {
+  return amPost<AmRack>('/rack', payload, baseUrl);
+}
+
+export async function updateAmRack(
+  id: string,
+  payload: AmRackPayload,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmRack> {
+  return amPut<AmRack>(`/rack/${id}`, payload, baseUrl);
+}
+
+export async function deleteAmRacks(
+  ids: string[],
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<void> {
+  return amDeleteWithBody<void>('/racks', {ids}, baseUrl);
+}
+
+export async function createAmBox(
+  payload: Required<Pick<AmBoxPayload, 'rackId'>> & Pick<AmBoxPayload, 'description'>,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmBox> {
+  return amPost<AmBox>('/box', payload, baseUrl);
+}
+
+export async function updateAmBox(
+  id: string,
+  payload: Omit<AmBoxPayload, 'rackId'>,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmBox> {
+  return amPut<AmBox>(`/box/${id}`, payload, baseUrl);
+}
+
+export async function deleteAmBoxes(
+  ids: string[],
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<void> {
+  return amDeleteWithBody<void>('/boxes', {ids}, baseUrl);
+}
+
+export async function createAmDevice(
+  payload: Required<Pick<AmDevicePayload, 'boxId'>> & Omit<AmDevicePayload, 'boxId'>,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmDevice> {
+  return amPost<AmDevice>('/device', payload, baseUrl);
+}
+
+export async function updateAmDevice(
+  id: string,
+  payload: Omit<AmDevicePayload, 'boxId'>,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmDevice> {
+  return amPut<AmDevice>(`/device/${id}`, payload, baseUrl);
+}
+
+export async function deleteAmDevices(
+  ids: string[],
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<void> {
+  return amDeleteWithBody<void>('/devices', {ids}, baseUrl);
+}
+
 export async function getAmDeviceServiceLogs(
   deviceId: string,
   query?: AmDeviceServiceLogsQuery,
@@ -838,6 +929,28 @@ async function amDelete<T>(
   const response = await apiRequest<AmEnvelope<T> | T>({
     method: 'DELETE',
     path,
+    baseUrl,
+    sourceHeader: appConfig.amSourceHeader,
+    cookieJar: true,
+    credentials: 'include',
+  });
+
+  return unwrapAmResponse(response);
+}
+
+async function amDeleteWithBody<T>(
+  path: string,
+  body: unknown,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<T> {
+  if (!baseUrl) {
+    throw new Error('URL server AM existing belum dikonfigurasi.');
+  }
+
+  const response = await apiRequest<AmEnvelope<T> | T>({
+    method: 'DELETE',
+    path,
+    body,
     baseUrl,
     sourceHeader: appConfig.amSourceHeader,
     cookieJar: true,

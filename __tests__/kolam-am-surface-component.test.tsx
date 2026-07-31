@@ -6,8 +6,13 @@ import {
   cancelAmTransfer,
   cancelAmTask,
   clearAmServiceAccountSession,
+  createAmBox,
+  createAmDevice,
+  createAmRack,
   createAmUser,
   createAmWebhookConfig,
+  deleteAmDevices,
+  deleteAmRacks,
   deleteAmUser,
   deleteAmWebhookConfig,
   getAmActivityLogs,
@@ -21,6 +26,7 @@ import {
   getAmUsers,
   getAmWebhookConfigs,
   testAmWebhookPing,
+  updateAmRack,
   updateAmUser,
   updateAmWebhookConfig,
   startAmDeviceService,
@@ -31,8 +37,14 @@ jest.mock('../src/services/am-api', () => ({
   cancelAmTransfer: jest.fn(() => Promise.resolve({_id: 'transfer-1'})),
   cancelAmTask: jest.fn(() => Promise.resolve({_id: 'task-1'})),
   clearAmServiceAccountSession: jest.fn(() => Promise.resolve({stopped: true, deleted: ['session.json'], missing: []})),
+  createAmBox: jest.fn(() => Promise.resolve({_id: 'box-new'})),
+  createAmDevice: jest.fn(() => Promise.resolve({_id: 'device-new'})),
+  createAmRack: jest.fn(() => Promise.resolve({_id: 'rack-new'})),
   createAmUser: jest.fn(() => Promise.resolve({_id: 'user-new'})),
   createAmWebhookConfig: jest.fn(() => Promise.resolve({_id: 'webhook-1'})),
+  deleteAmBoxes: jest.fn(() => Promise.resolve(undefined)),
+  deleteAmDevices: jest.fn(() => Promise.resolve(undefined)),
+  deleteAmRacks: jest.fn(() => Promise.resolve(undefined)),
   deleteAmUser: jest.fn(() => Promise.resolve(undefined)),
   deleteAmWebhookConfig: jest.fn(() => Promise.resolve({success: true})),
   forceFailAmTransfer: jest.fn(() => Promise.resolve({_id: 'transfer-1'})),
@@ -58,6 +70,9 @@ jest.mock('../src/services/am-api', () => ({
   startAmDeviceService: jest.fn(() => Promise.resolve({success: true})),
   stopAmDeviceService: jest.fn(() => Promise.resolve({success: true})),
   testAmWebhookPing: jest.fn(() => Promise.resolve({success: true})),
+  updateAmBox: jest.fn(() => Promise.resolve({_id: 'box-1'})),
+  updateAmDevice: jest.fn(() => Promise.resolve({_id: 'device-1'})),
+  updateAmRack: jest.fn(() => Promise.resolve({_id: 'rack-1'})),
   updateAmUser: jest.fn(() => Promise.resolve({_id: 'user-1'})),
   updateAmWebhookConfig: jest.fn(() => Promise.resolve({_id: 'webhook-1'})),
 }));
@@ -405,6 +420,161 @@ describe('KolamAmSurface', () => {
     expect(text).toContain('Phone Rack');
     expect(text).toContain('Samsung');
     expect(text).toContain('A15');
+  });
+
+  it('runs hardware create, edit, and delete actions from the Hardware route', async () => {
+    jest.mocked(getAmRacks).mockResolvedValue({
+      data: [
+        {
+          _id: 'rack-1',
+          name: 'Rack 1',
+          slug: 'rack-1',
+          location: 'Old Room',
+          description: 'Old rack',
+          status: 'active',
+          serverIp: '10.0.0.1',
+          boxCount: 1,
+          deviceCount: 1,
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 1, limit: 1},
+    });
+    jest.mocked(jest.requireMock('../src/services/am-api').getAmBoxes).mockResolvedValue({
+      data: [
+        {
+          _id: 'box-1',
+          name: 'Box 1',
+          slug: 'box-1',
+          rackId: {_id: 'rack-1', name: 'Rack 1'},
+          description: 'Box notes',
+          status: 'active',
+          deviceCount: 1,
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 1, limit: 1},
+    });
+    jest.mocked(getAmDevices).mockResolvedValue({
+      data: [
+        {
+          _id: 'device-1',
+          name: 'Device 1',
+          slug: 'device-1',
+          boxId: {_id: 'box-1', name: 'Box 1', rackId: {_id: 'rack-1', name: 'Rack 1'}},
+          connectionType: 'usb',
+          udid: 'USB1234',
+          tcpAddress: null,
+          brand: 'Samsung',
+          model: 'A52',
+          systemPort: 8200,
+          appiumPort: 4723,
+          adbPort: 5037,
+          adbStatus: 'connected',
+          adbCheckedAt: '',
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 1, limit: 1},
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Hardware'}).props.onPress();
+    });
+
+    let inputs = renderer!.root.findAllByType(TextInput);
+    await act(async () => {
+      inputs[0].props.onChangeText('Server Room A');
+      inputs[1].props.onChangeText('Main AM rack');
+      inputs[2].props.onChangeText('10.0.0.10');
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Save'}).props.onPress();
+    });
+
+    expect(createAmRack).toHaveBeenCalledWith({
+      location: 'Server Room A',
+      description: 'Main AM rack',
+      serverIp: '10.0.0.10',
+    });
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Edit Rack rack-1'}).props.onPress();
+    });
+    inputs = renderer!.root.findAllByType(TextInput);
+    await act(async () => {
+      inputs[0].props.onChangeText('Server Room B');
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Save'}).props.onPress();
+    });
+
+    expect(updateAmRack).toHaveBeenCalledWith('rack-1', {
+      location: 'Server Room B',
+      description: 'Old rack',
+      serverIp: '10.0.0.1',
+      status: 'active',
+    });
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Delete Rack rack-1'}).props.onPress();
+    });
+
+    expect(deleteAmRacks).toHaveBeenCalledWith(['rack-1']);
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Segment Box'}).props.onPress();
+    });
+    inputs = renderer!.root.findAllByType(TextInput);
+    await act(async () => {
+      inputs[0].props.onChangeText('New box notes');
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Save'}).props.onPress();
+    });
+
+    expect(createAmBox).toHaveBeenCalledWith({
+      rackId: 'rack-1',
+      description: 'New box notes',
+    });
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Segment Device'}).props.onPress();
+    });
+    inputs = renderer!.root.findAllByType(TextInput);
+    await act(async () => {
+      inputs[0].props.onChangeText('USBNEW1');
+      inputs[2].props.onChangeText('Samsung');
+      inputs[3].props.onChangeText('A54');
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Save'}).props.onPress();
+    });
+
+    expect(createAmDevice).toHaveBeenCalledWith({
+      boxId: 'box-1',
+      connectionType: 'usb',
+      udid: 'USBNEW1',
+      brand: 'Samsung',
+      model: 'A54',
+    });
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Delete Device device-1'}).props.onPress();
+    });
+
+    expect(deleteAmDevices).toHaveBeenCalledWith(['device-1']);
   });
 
   it('loads banking and admin live routes from the internal AM sidebar', async () => {
