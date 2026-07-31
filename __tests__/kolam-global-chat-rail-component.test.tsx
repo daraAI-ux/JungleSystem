@@ -19,6 +19,7 @@ import {useKolamChatRailReadonlyData} from '../src/hooks/use-kolam-chat-rail-rea
 import {useKolamNotificationSoundSettings} from '../src/hooks/use-kolam-notification-sound-settings';
 import {
   createKolamTeamChatRoom,
+  deleteKolamTeamChatRoom,
   getKolamChatAnalytics,
   getKolamChatContactDetails,
   getKolamChatLabels,
@@ -84,6 +85,7 @@ jest.mock('../src/services/kolam-api', () => {
   return {
     ...actual,
     createKolamTeamChatRoom: jest.fn(),
+    deleteKolamTeamChatRoom: jest.fn(),
     getKolamChatAnalytics: jest.fn(),
     getKolamChatContactDetails: jest.fn(),
     getKolamChatLabels: jest.fn(),
@@ -144,6 +146,10 @@ const useSoundSettingsMock =
 const createTeamChatRoomMock =
   createKolamTeamChatRoom as jest.MockedFunction<
     typeof createKolamTeamChatRoom
+  >;
+const deleteTeamChatRoomMock =
+  deleteKolamTeamChatRoom as jest.MockedFunction<
+    typeof deleteKolamTeamChatRoom
   >;
 const getUserPickerRowsMock = getKolamUserPickerRows as jest.MockedFunction<
   typeof getKolamUserPickerRows
@@ -256,6 +262,8 @@ describe('KolamGlobalChatRail', () => {
     mockSoundPlay.mockClear();
     openUrlMock.mockClear();
     createTeamChatRoomMock.mockClear();
+    deleteTeamChatRoomMock.mockClear();
+    deleteTeamChatRoomMock.mockResolvedValue(undefined);
     getUserPickerRowsMock.mockClear();
     openTeamChatDirectMock.mockClear();
     createSoundServiceMock.mockClear();
@@ -501,6 +509,106 @@ describe('KolamGlobalChatRail', () => {
         '2 room terpantau',
       ]),
     );
+  });
+
+  it('deletes only meeting or project team chat rooms after confirmation', async () => {
+    const refresh = jest.fn().mockResolvedValue(undefined);
+    useReadonlyDataMock.mockReturnValue({
+      conversations: [],
+      loading: false,
+      refresh,
+      rooms: [
+        {
+          _id: 'room-general',
+          name: 'Operasional',
+          category: 'general',
+          isGeneral: true,
+          lastMessagePreview: 'Barang siap dikirim',
+          unreadCount: 0,
+        },
+        {
+          _id: 'room-direct',
+          category: 'direct',
+          directPeerName: 'CS Tokopedia',
+          lastMessagePreview: 'Follow up buyer',
+          unreadCount: 0,
+        },
+        {
+          _id: 'room-ai',
+          category: 'ai',
+          directPeerName: 'DARA',
+          lastMessagePreview: 'DARA cek stok',
+          unreadCount: 0,
+        },
+        {
+          _id: 'room-meeting',
+          name: 'Meeting Launch',
+          category: 'meeting',
+          lastMessagePreview: 'Agenda launch',
+          unreadCount: 0,
+        },
+        {
+          _id: 'room-project',
+          name: 'Project Gudang',
+          category: 'project',
+          lastMessagePreview: 'Checklist gudang',
+          unreadCount: 0,
+        },
+      ],
+      totalUnread: 0,
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamGlobalChatRail mode="team-chat" onClose={() => undefined} />,
+      );
+    });
+
+    const buttons = renderer!.root.findAllByType(KolamPressable);
+    expect(
+      buttons.some(
+        node => node.props.accessibilityLabel === 'Hapus room Operasional',
+      ),
+    ).toBe(false);
+    expect(
+      buttons.some(
+        node => node.props.accessibilityLabel === 'Hapus room CS Tokopedia',
+      ),
+    ).toBe(false);
+    expect(
+      buttons.some(node => node.props.accessibilityLabel === 'Hapus room DARA'),
+    ).toBe(false);
+
+    const deleteMeetingButton = buttons.find(
+      node => node.props.accessibilityLabel === 'Hapus room Meeting Launch',
+    );
+    expect(deleteMeetingButton).toBeTruthy();
+    expect(
+      buttons.some(
+        node => node.props.accessibilityLabel === 'Hapus room Project Gudang',
+      ),
+    ).toBe(true);
+
+    await ReactTestRenderer.act(async () => {
+      deleteMeetingButton!.props.onPress();
+    });
+    expect(deleteTeamChatRoomMock).not.toHaveBeenCalled();
+
+    const confirmButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(
+        node =>
+          node.props.accessibilityLabel ===
+          'Konfirmasi hapus room Meeting Launch',
+      );
+
+    await ReactTestRenderer.act(async () => {
+      confirmButton!.props.onPress();
+    });
+
+    expect(deleteTeamChatRoomMock).toHaveBeenCalledWith('room-meeting');
+    expect(refresh).toHaveBeenCalled();
   });
 
   it('creates a minimal meeting or project team chat room from the rail', async () => {

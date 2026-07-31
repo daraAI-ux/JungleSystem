@@ -2098,6 +2098,12 @@ export async function openKolamTeamChatDirect(
   return response.data;
 }
 
+export async function deleteKolamTeamChatRoom(roomId: string): Promise<void> {
+  await kolamDelete<DataResponse<{deletedRoomId?: string}>>(
+    `/team-chat/rooms/${encodeURIComponent(roomId)}`,
+  );
+}
+
 export async function getKolamTeamChatMembers(
   roomId: string,
 ): Promise<KolamTeamChatMembersPayload> {

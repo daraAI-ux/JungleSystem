@@ -53,10 +53,12 @@ import type {
   KolamTeamChatPresence,
   KolamTeamChatReplyPreview,
   KolamTeamChatUserRef,
+  KolamTeamChatRoomCategory,
   KolamUserPickerRow,
 } from '../services/kolam-api';
 import {
   createKolamTeamChatRoom,
+  deleteKolamTeamChatRoom,
   getKolamChatAnalytics,
   getKolamChatContactDetails,
   getKolamChatLabels,
@@ -74,6 +76,7 @@ import {
   type NativeImagePickerResult,
 } from '../services/native-file-picker';
 import {KolamBadge} from './kolam-badge';
+import {KolamActionGlyph} from './kolam-action-glyph';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamDropdownSelect} from './kolam-dropdown-select';
 import {KolamHoverTooltip} from './kolam-hover-tooltip';
@@ -288,6 +291,7 @@ interface KolamChatRailItem {
   platform?: KolamChatPlatform;
   preview: string;
   secondaryMetaLabel?: string;
+  teamRoomCategory?: KolamTeamChatRoomCategory | string;
   timeLabel: string;
   title: string;
   unreadCount: number;
@@ -376,6 +380,14 @@ export function KolamGlobalChatRail({
     React.useState<NativeImagePickerResult | null>(null);
   const [replyTarget, setReplyTarget] =
     React.useState<KolamChatRailReplyTarget | null>(null);
+  const [deleteRoomState, setDeleteRoomState] = React.useState<{
+    busyId: string | null;
+    confirmId: string | null;
+    errorMessage?: string;
+  }>({
+    busyId: null,
+    confirmId: null,
+  });
   const [daraThinkingLiveSignal, setDaraThinkingLiveSignal] =
     React.useState<KolamDaraThinkingLiveSignal | null>(null);
   const daraThinkingSignalKeyRef = React.useRef(0);
@@ -457,6 +469,51 @@ export function KolamGlobalChatRail({
     setPendingAttachment(null);
     setReplyTarget(null);
   }, []);
+  const handleDeleteTeamRoom = React.useCallback(
+    async (item: KolamChatRailItem) => {
+      if (mode !== 'team-chat' || !canDeleteTeamChatRoom(item)) {
+        return;
+      }
+
+      if (deleteRoomState.confirmId !== item.id) {
+        setDeleteRoomState({
+          busyId: null,
+          confirmId: item.id,
+          errorMessage: undefined,
+        });
+        return;
+      }
+
+      setDeleteRoomState({
+        busyId: item.id,
+        confirmId: item.id,
+        errorMessage: undefined,
+      });
+
+      try {
+        await deleteKolamTeamChatRoom(item.id);
+        if (selectedItemId === item.id) {
+          handleBackToList();
+        }
+        await data.refresh();
+        setDeleteRoomState({busyId: null, confirmId: null});
+      } catch (error) {
+        setDeleteRoomState({
+          busyId: null,
+          confirmId: item.id,
+          errorMessage:
+            error instanceof Error ? error.message : 'Room gagal dihapus.',
+        });
+      }
+    },
+    [
+      data,
+      deleteRoomState.confirmId,
+      handleBackToList,
+      mode,
+      selectedItemId,
+    ],
+  );
   const handleLiveStatusChange = React.useCallback(
     (status: KolamChatLiveStreamStatus) => {
       setLiveStatus(status);
@@ -1069,6 +1126,12 @@ export function KolamGlobalChatRail({
           />
         ) : null}
 
+        {mode === 'team-chat' && deleteRoomState.errorMessage ? (
+          <Text style={styles.teamRoomDeleteError}>
+            {deleteRoomState.errorMessage}
+          </Text>
+        ) : null}
+
         {!data.errorMessage && items.length > 0 && !detailOpen ? (
           <ScrollView
             style={styles.listScroll}
@@ -1146,6 +1209,43 @@ export function KolamGlobalChatRail({
                     <KolamInboxDaraAvatar imageUrl={daraAvatarState.imageUrl} />
                   ) : mode === 'inbox' && item.assignedStaff ? (
                     <KolamInboxAssignedStaffAvatar staff={item.assignedStaff} />
+                  ) : mode === 'team-chat' && canDeleteTeamChatRoom(item) ? (
+                    <View style={styles.teamRoomDeleteStack}>
+                      <KolamPressable
+                        accessibilityLabel={`Hapus room ${item.title}`}
+                        disabled={deleteRoomState.busyId === item.id}
+                        onPress={() => {
+                          void handleDeleteTeamRoom(item);
+                        }}
+                        style={[
+                          styles.teamRoomDeleteButton,
+                          deleteRoomState.confirmId === item.id &&
+                            styles.teamRoomDeleteButtonConfirm,
+                          deleteRoomState.busyId === item.id &&
+                            styles.composerIconButtonDisabled,
+                        ]}>
+                        <KolamActionGlyph tone="danger" variant="delete" />
+                      </KolamPressable>
+                      {deleteRoomState.confirmId === item.id ? (
+                        <KolamPressable
+                          accessibilityLabel={`Konfirmasi hapus room ${item.title}`}
+                          disabled={deleteRoomState.busyId === item.id}
+                          onPress={() => {
+                            void handleDeleteTeamRoom(item);
+                          }}
+                          style={[
+                            styles.teamRoomDeleteConfirmButton,
+                            deleteRoomState.busyId === item.id &&
+                              styles.composerIconButtonDisabled,
+                          ]}>
+                          <Text style={styles.teamRoomDeleteConfirmText}>
+                            {deleteRoomState.busyId === item.id
+                              ? 'Hapus...'
+                              : 'Hapus'}
+                          </Text>
+                        </KolamPressable>
+                      ) : null}
+                    </View>
                   ) : null}
                 </KolamPressable>
               )}
@@ -4863,6 +4963,7 @@ function getChatRailItems(
       platform: undefined,
       preview: room.lastMessagePreview || 'Belum ada preview pesan.',
       secondaryMetaLabel: getRoomSecondaryMeta(room),
+      teamRoomCategory: room.category,
       timeLabel: formatRelativeTime(room.lastMessageAt),
       title: getRoomTitle(room),
       unreadCount: room.unreadCount ?? 0,
@@ -4884,10 +4985,17 @@ function getChatRailItems(
       platform: conversation.platform,
       preview: getConversationPreview(conversation),
       secondaryMetaLabel: conversation.status === 'closed' ? 'Closed' : 'Open',
+      teamRoomCategory: undefined,
       timeLabel: formatRelativeTime(conversation.lastMessageAt),
       title: getConversationTitle(conversation),
       unreadCount: conversation.unreadCount ?? 0,
     }));
+}
+
+function canDeleteTeamChatRoom(item: KolamChatRailItem) {
+  return (
+    item.teamRoomCategory === 'meeting' || item.teamRoomCategory === 'project'
+  );
 }
 
 function buildInboxListParams(
@@ -8743,6 +8851,44 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 9,
     fontWeight: '900',
+  },
+  teamRoomDeleteStack: {
+    alignItems: 'center',
+    gap: 5,
+  },
+  teamRoomDeleteButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.bg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  teamRoomDeleteButtonConfirm: {
+    borderColor: V.colors.warning,
+    backgroundColor: V.colors.warningSoft,
+  },
+  teamRoomDeleteConfirmButton: {
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 8,
+    borderColor: V.colors.warning,
+    borderWidth: 1,
+    backgroundColor: V.colors.warningSoft,
+  },
+  teamRoomDeleteConfirmText: {
+    color: V.colors.warning,
+    fontFamily: V.fontFamily,
+    fontSize: 9,
+    fontWeight: '900',
+  },
+  teamRoomDeleteError: {
+    color: V.colors.danger,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '800',
   },
   rowUnreadBadge: {
     flexShrink: 0,

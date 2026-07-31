@@ -13,6 +13,7 @@ import {
   deleteKolamActivityLogs,
   deleteKolamCustomerNotice,
   deleteKolamHeroSlide,
+  deleteKolamTeamChatRoom,
   deleteKolamRole,
   getKolamActivityLogs,
   getKolamActivityLogStats,
@@ -1438,6 +1439,7 @@ describe('Kolam Settings API contracts', () => {
           data: {_id: 'team-msg-2', body: 'Siap.'},
         }),
       );
+    fetchMock.mockResolvedValueOnce(jsonResponse({success: true}));
 
     await expect(getKolamTeamChatMessages('room-1')).resolves.toEqual([
       expect.objectContaining({_id: 'team-msg-1'}),
@@ -1446,6 +1448,7 @@ describe('Kolam Settings API contracts', () => {
     await expect(sendKolamTeamChatTextMessage('room-1', 'Siap.')).resolves.toEqual(
       expect.objectContaining({_id: 'team-msg-2'}),
     );
+    await expect(deleteKolamTeamChatRoom('room-1')).resolves.toBeUndefined();
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
@@ -1464,6 +1467,11 @@ describe('Kolam Settings API contracts', () => {
         method: 'POST',
         body: JSON.stringify({body: 'Siap.'}),
       }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      4,
+      `${appConfig.kolamApiBaseUrl}/team-chat/rooms/room-1`,
+      expect.objectContaining({method: 'DELETE'}),
     );
   });
 
