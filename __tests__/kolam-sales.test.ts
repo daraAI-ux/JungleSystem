@@ -36,6 +36,12 @@ import {
   formatKolamSaleLogisticsTime,
   hydrateKolamSaleCreateFormFromSale,
   isKolamSaleMarketplaceManaged,
+  isKolamTokopediaDropOffOnly,
+  isKolamShopeeDropOffOnly,
+  isKolamMarketplaceShipmentSyncStarted,
+  needsKolamPlatformPickupRequest,
+  shouldShowKolamTokopediaDropOffBadge,
+  getKolamSaleMarketplaceFulfillment,
   canOpenKolamSaleComplaintCreate,
   canShowKolamSaleComplaintSuccessPrompt,
   getKolamSaleMainComplaint,
@@ -350,6 +356,119 @@ describe('kolam sales domain', () => {
     const view = getKolamSaleMarketplaceLogistics(detail);
     expect(view?.lastUpdate).toContain('Bandung');
     expect(formatKolamSaleLogisticsTime('2026-07-30T10:00:00.000Z')).toBeTruthy();
+  });
+
+  it('parses Tokopedia fulfillmentMode and dropOffPointUrl from AM fields', () => {
+    const pickupSale = normalizeKolamSale({
+      _id: 'sale-fm-pickup',
+      invoiceCode: 'INV-FM-P',
+      status: 'paid',
+      deliveryStatus: 'none',
+      externalRef: {
+        source: 'tokopedia',
+        tokopedia: {
+          mainOrderId: 'TP-P',
+          fulfillmentMode: 'Pickup',
+          lastStatus: 101,
+        },
+      },
+      items: [],
+    });
+    expect(pickupSale.marketplaceFulfillment).toEqual(
+      expect.objectContaining({
+        platform: 'tokopedia',
+        fulfillmentMode: 'pickup',
+        dropOffPointUrl: '',
+        lastStatus: 101,
+      }),
+    );
+    expect(getKolamSaleMarketplaceFulfillment(pickupSale)?.fulfillmentMode).toBe(
+      'pickup',
+    );
+    expect(isKolamTokopediaDropOffOnly(pickupSale)).toBe(false);
+    expect(needsKolamPlatformPickupRequest(pickupSale)).toBe(true);
+    expect(shouldShowKolamTokopediaDropOffBadge(pickupSale)).toBe(false);
+
+    const dropoffSale = normalizeKolamSale({
+      _id: 'sale-fm-drop',
+      invoiceCode: 'INV-FM-D',
+      status: 'paid',
+      deliveryStatus: 'packing',
+      externalRef: {
+        source: 'tokopedia',
+        tokopedia: {
+          mainOrderId: 'TP-D',
+          fulfillmentMode: 'dropoff',
+          dropOffPointUrl: 'https://tokopedia.test/dropoff/1',
+          lastStatus: 101,
+        },
+      },
+      items: [],
+    });
+    expect(dropoffSale.marketplaceFulfillment?.fulfillmentMode).toBe('dropoff');
+    expect(dropoffSale.marketplaceFulfillment?.dropOffPointUrl).toBe(
+      'https://tokopedia.test/dropoff/1',
+    );
+    expect(isKolamTokopediaDropOffOnly(dropoffSale)).toBe(true);
+    expect(needsKolamPlatformPickupRequest(dropoffSale)).toBe(false);
+    expect(shouldShowKolamTokopediaDropOffBadge(dropoffSale)).toBe(true);
+
+    const bothSale = normalizeKolamSale({
+      _id: 'sale-fm-both',
+      invoiceCode: 'INV-FM-B',
+      status: 'paid',
+      deliveryStatus: 'none',
+      externalRef: {
+        source: 'tokopedia',
+        tokopedia: {
+          fulfillmentMode: 'both',
+          lastStatus: 101,
+        },
+      },
+      items: [],
+    });
+    expect(isKolamTokopediaDropOffOnly(bothSale)).toBe(false);
+    expect(needsKolamPlatformPickupRequest(bothSale)).toBe(true);
+    expect(shouldShowKolamTokopediaDropOffBadge(bothSale)).toBe(false);
+
+    const syncedDropoff = normalizeKolamSale({
+      _id: 'sale-fm-synced',
+      invoiceCode: 'INV-FM-S',
+      status: 'paid',
+      deliveryStatus: 'none',
+      externalRef: {
+        source: 'tokopedia',
+        tokopedia: {
+          fulfillmentMode: 'dropoff',
+          lastStatus: 102,
+          trackingNumber: 'RESI-1',
+        },
+      },
+      items: [],
+    });
+    expect(isKolamMarketplaceShipmentSyncStarted(syncedDropoff)).toBe(true);
+    expect(shouldShowKolamTokopediaDropOffBadge(syncedDropoff)).toBe(false);
+    expect(needsKolamPlatformPickupRequest(syncedDropoff)).toBe(false);
+  });
+
+  it('hides platform pickup for Shopee drop-off only (FE parity)', () => {
+    const sale = normalizeKolamSale({
+      _id: 'sale-shopee-drop',
+      invoiceCode: 'INV-SH-D',
+      status: 'paid',
+      deliveryStatus: 'none',
+      externalRef: {
+        source: 'shopee',
+        shopee: {
+          mainOrderId: 'SH-1',
+          fulfillmentMode: 'dropoff',
+          lastStatus: 1,
+        },
+      },
+      items: [],
+    });
+    expect(isKolamShopeeDropOffOnly(sale)).toBe(true);
+    expect(needsKolamPlatformPickupRequest(sale)).toBe(false);
   });
 
   it('resolves sales source logo from catalog when detail omits logo', () => {

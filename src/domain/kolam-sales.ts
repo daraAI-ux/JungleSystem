@@ -199,6 +199,30 @@ export type KolamSaleMarketplaceLogistics = {
   lastUpdate: string;
 };
 
+/** AM/FE `externalRef.(tokopedia|shopee).fulfillmentMode` — pickup vs drop-off. */
+export type KolamSaleTokopediaFulfillmentMode =
+  | 'pickup'
+  | 'dropoff'
+  | 'both'
+  | 'unknown';
+
+/**
+ * Marketplace fulfillment flags from AM poll / platform cache.
+ * FE: `externalRef.tokopedia|shopee` (+ `shippingService.trackingNumber` fallback).
+ */
+export type KolamSaleMarketplaceFulfillment = {
+  platform: 'shopee' | 'tokopedia';
+  /** Lowercased mode; empty when AM belum menempelkan. */
+  fulfillmentMode: string;
+  dropOffPointUrl: string;
+  lastStatus: number | null;
+  trackingNumber: string;
+  /** Shopee — dipakai sync / reschedule helpers. */
+  pickupArranged: boolean | null;
+  pickupEditable: boolean | null;
+  pickupTime: number | null;
+};
+
 /** Embedded wallet txs on sale detail (FE `walletTransactions`). */
 export type KolamSaleWalletTransactionRef = {
   id: string;
@@ -260,6 +284,7 @@ export type KolamSale = {
   shippingAddressText: string;
   shippingService: KolamSaleShippingService | null;
   marketplaceLogistics: KolamSaleMarketplaceLogistics | null;
+  marketplaceFulfillment: KolamSaleMarketplaceFulfillment | null;
   walletTransactions: KolamSaleWalletTransactionRef[];
   stockTransactions: KolamSaleStockTransactionRef[];
   /** Linked complaints from sale detail/list payload (FE `complaints` / `hasComplaints`). */
@@ -942,6 +967,169 @@ export function isKolamSaleMarketplaceManaged(sale: {
 }): boolean {
   const source = String(sale.marketplaceSource || '').toLowerCase();
   return source === 'shopee' || source === 'tokopedia';
+}
+
+/** Minimal sale shape for FE `fulfillment-display` helpers. */
+export type KolamSaleFulfillmentContext = {
+  status?: string | null;
+  deliveryStatus?: string | null;
+  marketplaceSource?: string | null;
+  shippingService?: {trackingNumber?: string | null} | null;
+  marketplaceFulfillment?: KolamSaleMarketplaceFulfillment | null;
+};
+
+function getMarketplaceFulfillmentSource(
+  sale: KolamSaleFulfillmentContext,
+): string {
+  return String(sale.marketplaceSource || '').toLowerCase();
+}
+
+function getMarketplaceFulfillmentMode(
+  sale: KolamSaleFulfillmentContext,
+): string {
+  return String(sale.marketplaceFulfillment?.fulfillmentMode || '').toLowerCase();
+}
+
+function hasKolamMarketplaceTrackingSynced(
+  sale: KolamSaleFulfillmentContext,
+): boolean {
+  const source = getMarketplaceFulfillmentSource(sale);
+  const extTracking = sale.marketplaceFulfillment?.trackingNumber;
+  const svcTracking = sale.shippingService?.trackingNumber;
+  if (source !== 'shopee' && source !== 'tokopedia') {
+    return false;
+  }
+  return !!String(extTracking || svcTracking || '').trim();
+}
+
+function isKolamTokopediaShipmentSyncStarted(
+  sale: KolamSaleFulfillmentContext,
+): boolean {
+  if (getMarketplaceFulfillmentSource(sale) !== 'tokopedia') {
+    return false;
+  }
+  const status = Number(sale.marketplaceFulfillment?.lastStatus);
+  return Number.isFinite(status) && status >= 102;
+}
+
+/** FE `isTokopediaDropOffOnly` — drop-off only, no courier pickup via Kolam/AM UI. */
+export function isKolamTokopediaDropOffOnly(
+  sale: KolamSaleFulfillmentContext,
+): boolean {
+  if (getMarketplaceFulfillmentSource(sale) !== 'tokopedia') {
+    return false;
+  }
+  return getMarketplaceFulfillmentMode(sale) === 'dropoff';
+}
+
+/** FE `isShopeeDropOffOnly`. */
+export function isKolamShopeeDropOffOnly(
+  sale: KolamSaleFulfillmentContext,
+): boolean {
+  if (getMarketplaceFulfillmentSource(sale) !== 'shopee') {
+    return false;
+  }
+  return getMarketplaceFulfillmentMode(sale) === 'dropoff';
+}
+
+function isKolamShopeePickupArrangedOnSale(
+  sale: KolamSaleFulfillmentContext,
+): boolean {
+  if (getMarketplaceFulfillmentSource(sale) !== 'shopee') {
+    return false;
+  }
+  const fulfillment = sale.marketplaceFulfillment;
+  if (!fulfillment) {
+    return false;
+  }
+  if (isKolamShopeeDropOffOnly(sale)) {
+    const pickupTime = Number(fulfillment.pickupTime);
+    return Number.isFinite(pickupTime) && pickupTime > 0;
+  }
+  if (fulfillment.pickupArranged === true) {
+    return true;
+  }
+  const pickupTime = Number(fulfillment.pickupTime);
+  if (Number.isFinite(pickupTime) && pickupTime > 0) {
+    return true;
+  }
+  return hasKolamMarketplaceTrackingSynced(sale);
+}
+
+/**
+ * FE `isMarketplaceShipmentSyncStarted` — hide platform pickup once sync started.
+ */
+export function isKolamMarketplaceShipmentSyncStarted(
+  sale: KolamSaleFulfillmentContext,
+): boolean {
+  if (!isKolamSaleMarketplaceManaged(sale) || sale.status !== 'paid') {
+    return false;
+  }
+  if (hasKolamMarketplaceTrackingSynced(sale)) {
+    return true;
+  }
+  const source = getMarketplaceFulfillmentSource(sale);
+  if (source === 'shopee' && isKolamShopeePickupArrangedOnSale(sale)) {
+    return true;
+  }
+  if (source === 'tokopedia' && isKolamTokopediaShipmentSyncStarted(sale)) {
+    return true;
+  }
+  const ds = String(sale.deliveryStatus || 'none').toLowerCase();
+  return (
+    ds === 'waiting_pickup' ||
+    ds === 'on_delivery' ||
+    ds === 'delivered' ||
+    ds === 'success'
+  );
+}
+
+/**
+ * FE `shouldShowTokopediaDropOffBadge` — badge antar counter, belum sync kirim.
+ */
+export function shouldShowKolamTokopediaDropOffBadge(
+  sale: KolamSaleFulfillmentContext,
+): boolean {
+  if (!isKolamSaleMarketplaceManaged(sale) || sale.status !== 'paid') {
+    return false;
+  }
+  if (!isKolamTokopediaDropOffOnly(sale)) {
+    return false;
+  }
+  if (isKolamMarketplaceShipmentSyncStarted(sale)) {
+    return false;
+  }
+  const ds = String(sale.deliveryStatus || 'none').toLowerCase();
+  return ds === 'none' || ds === 'packing';
+}
+
+/**
+ * FE `needsPlatformPickupRequest` — olshop paid + butuh request jemput platform.
+ * Tokopedia `dropoff` disembunyikan (parity FE); mode `pickup`/`both`/`unknown` eligible.
+ */
+export function needsKolamPlatformPickupRequest(
+  sale: KolamSaleFulfillmentContext,
+): boolean {
+  if (!isKolamSaleMarketplaceManaged(sale) || sale.status !== 'paid') {
+    return false;
+  }
+  if (isKolamMarketplaceShipmentSyncStarted(sale)) {
+    return false;
+  }
+  if (isKolamTokopediaDropOffOnly(sale)) {
+    return false;
+  }
+  if (isKolamShopeeDropOffOnly(sale)) {
+    return false;
+  }
+  const ds = String(sale.deliveryStatus || 'none').toLowerCase();
+  return ds === 'none' || ds === 'packing';
+}
+
+export function getKolamSaleMarketplaceFulfillment(sale: {
+  marketplaceFulfillment?: KolamSaleMarketplaceFulfillment | null;
+}): KolamSaleMarketplaceFulfillment | null {
+  return sale.marketplaceFulfillment ?? null;
 }
 
 /** FE sales-invoice header: paid sales without existing tickets can open create. */
@@ -2610,6 +2798,12 @@ export function normalizeKolamSale(payload: unknown): KolamSale {
     ),
     shippingService,
     marketplaceLogistics,
+    marketplaceFulfillment: normalizeMarketplaceFulfillment(
+      marketplaceSource,
+      shopee,
+      tokopedia,
+      shippingService,
+    ),
     walletTransactions: normalizeSaleWalletTransactions(
       record.walletTransactions,
     ),
@@ -2752,6 +2946,55 @@ function normalizeMarketplaceLogistics(
     platform: marketplaceSource,
     timeline,
     lastUpdate,
+  };
+}
+
+function normalizeMarketplaceFulfillment(
+  marketplaceSource: string,
+  shopee: Record<string, unknown>,
+  tokopedia: Record<string, unknown>,
+  shippingService: KolamSaleShippingService | null,
+): KolamSaleMarketplaceFulfillment | null {
+  if (marketplaceSource !== 'shopee' && marketplaceSource !== 'tokopedia') {
+    return null;
+  }
+  const platformRef =
+    marketplaceSource === 'shopee' ? shopee : tokopedia;
+  const trackingNumber =
+    getString(platformRef, 'trackingNumber') ||
+    shippingService?.trackingNumber ||
+    '';
+  const lastStatusRaw = platformRef.lastStatus;
+  const lastStatusNumber = Number(lastStatusRaw);
+  const lastStatus =
+    lastStatusRaw === null ||
+    lastStatusRaw === undefined ||
+    lastStatusRaw === ''
+      ? null
+      : Number.isFinite(lastStatusNumber)
+        ? lastStatusNumber
+        : null;
+  const pickupTimeRaw = Number(platformRef.pickupTime);
+  const pickupTime =
+    Number.isFinite(pickupTimeRaw) && pickupTimeRaw > 0 ? pickupTimeRaw : null;
+  const pickupArranged =
+    typeof platformRef.pickupArranged === 'boolean'
+      ? platformRef.pickupArranged
+      : null;
+  const pickupEditable =
+    typeof platformRef.pickupEditable === 'boolean'
+      ? platformRef.pickupEditable
+      : null;
+
+  return {
+    platform: marketplaceSource,
+    fulfillmentMode: getString(platformRef, 'fulfillmentMode').toLowerCase(),
+    dropOffPointUrl: getString(platformRef, 'dropOffPointUrl').trim(),
+    lastStatus,
+    trackingNumber: trackingNumber.trim(),
+    pickupArranged,
+    pickupEditable,
+    pickupTime,
   };
 }
 
