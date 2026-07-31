@@ -255,6 +255,92 @@ describe('KolamAmSurface', () => {
     expect(getAmDevices).toHaveBeenCalledTimes(1);
   });
 
+  it('drills down hardware from rack to box to device detail', async () => {
+    jest.mocked(getAmRacks).mockResolvedValueOnce({
+      data: [
+        {
+          _id: 'rack-1',
+          name: 'Rack Alpha',
+          slug: 'rack-alpha',
+          location: 'Room A',
+          description: '',
+          status: 'active',
+          serverIp: '10.0.0.1:2700',
+          boxCount: 1,
+          deviceCount: 1,
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 1, limit: 1},
+    });
+    jest.mocked(jest.requireMock('../src/services/am-api').getAmBoxes).mockResolvedValueOnce({
+      data: [
+        {
+          _id: 'box-1',
+          name: 'Box 01',
+          slug: 'box-01',
+          rackId: {_id: 'rack-1', name: 'Rack Alpha'},
+          description: 'Main box',
+          status: 'active',
+          deviceCount: 1,
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 1, limit: 1},
+    });
+    jest.mocked(getAmDevices).mockResolvedValueOnce({
+      data: [
+        {
+          _id: 'device-1',
+          name: 'Phone Rack',
+          slug: 'phone-rack',
+          boxId: {
+            _id: 'box-1',
+            name: 'Box 01',
+            rackId: {_id: 'rack-1', name: 'Rack Alpha'},
+          },
+          connectionType: 'tcp',
+          tcpAddress: '10.0.0.5:5555',
+          udid: null,
+          brand: 'Samsung',
+          model: 'A15',
+          adbStatus: 'connected',
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 1, limit: 1},
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Hardware'}).props.onPress();
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Rack Rack Alpha'}).props.onPress();
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Box Box 01'}).props.onPress();
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Device Phone Rack'}).props.onPress();
+    });
+
+    const text = renderText(renderer!);
+    expect(text).toContain('Phone Rack');
+    expect(text).toContain('Samsung');
+    expect(text).toContain('A15');
+  });
+
   it('loads banking and admin live routes from the internal AM sidebar', async () => {
     let renderer: ReactTestRenderer.ReactTestRenderer;
 

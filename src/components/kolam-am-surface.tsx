@@ -599,6 +599,9 @@ function AmHardwarePage() {
   const [racks, setRacks] = React.useState<AmRack[]>([]);
   const [boxes, setBoxes] = React.useState<AmBox[]>([]);
   const [devices, setDevices] = React.useState<AmDevice[]>([]);
+  const [selectedRackId, setSelectedRackId] = React.useState<string | null>(null);
+  const [selectedBoxId, setSelectedBoxId] = React.useState<string | null>(null);
+  const [selectedDeviceId, setSelectedDeviceId] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -632,6 +635,23 @@ function AmHardwarePage() {
 
   const connectedDevices = devices.filter(device => device.adbStatus === 'connected').length;
   const unauthorizedDevices = devices.filter(device => device.adbStatus === 'unauthorized').length;
+  const selectedRack = racks.find(rack => rack._id === selectedRackId) ?? null;
+  const selectedBox = boxes.find(box => box._id === selectedBoxId) ?? null;
+  const selectedDevice = devices.find(device => device._id === selectedDeviceId) ?? null;
+  const visibleBoxes = selectedRack
+    ? boxes.filter(box => isBoxInRack(box, selectedRack))
+    : [];
+  const visibleDevices = selectedBox
+    ? devices.filter(device => isDeviceInBox(device, selectedBox))
+    : selectedRack
+      ? devices.filter(device => isDeviceInRack(device, selectedRack))
+      : devices;
+
+  const resetHardwareRoute = React.useCallback(() => {
+    setSelectedRackId(null);
+    setSelectedBoxId(null);
+    setSelectedDeviceId(null);
+  }, []);
 
   return (
     <View style={styles.pageStack}>
@@ -647,54 +667,76 @@ function AmHardwarePage() {
           onPress={fetchHardware}
         />
       </View>
+      {selectedRack ? (
+        <View style={styles.breadcrumbBar}>
+          <KolamButton
+            label="Rack"
+            intent="plain"
+            size="sm"
+            onPress={resetHardwareRoute}
+          />
+          <Text style={styles.breadcrumbText}>{selectedRack.name}</Text>
+          {selectedBox ? <Text style={styles.breadcrumbText}>/ {selectedBox.name}</Text> : null}
+          {selectedDevice ? <Text style={styles.breadcrumbText}>/ {selectedDevice.name}</Text> : null}
+          {selectedBox || selectedDevice ? (
+            <KolamButton
+              label="Back"
+              intent="outline"
+              size="sm"
+              onPress={() => {
+                if (selectedDevice) {
+                  setSelectedDeviceId(null);
+                } else {
+                  setSelectedBoxId(null);
+                }
+              }}
+            />
+          ) : null}
+        </View>
+      ) : null}
       {error ? (
         <View style={styles.errorPanel}>
           <Text style={styles.errorTitle}>Hardware AM belum bisa dibaca</Text>
           <Text style={styles.errorText}>{error}</Text>
         </View>
       ) : null}
-      <View style={styles.panel}>
-        <Text style={styles.panelTitle}>Rack</Text>
-        {isLoading && !racks.length ? <Text style={styles.loadingText}>Memuat rack dari AM live...</Text> : null}
-        {!isLoading && !racks.length ? <Text style={styles.loadingText}>No racks yet</Text> : null}
-        <View style={styles.cardGrid}>
-          {racks.map(rack => (
-            <View key={rack._id} style={styles.hardwareCard}>
-              <Text style={styles.rowTitle}>{rack.name}</Text>
-              <Text style={styles.rowMeta}>{rack.location || 'No location'}</Text>
-              <View style={styles.hardwareStats}>
-                <Text style={styles.rowMeta}>Box {rack.boxCount ?? countBoxesForRack(boxes, rack)}</Text>
-                <Text style={styles.rowMeta}>Device {rack.deviceCount ?? countDevicesForRack(devices, rack)}</Text>
-              </View>
-              {rack.serverIp ? <Text style={styles.monoText}>{rack.serverIp}</Text> : null}
-              <AmStatusChip label={rack.status} tone={rack.status === 'active' ? 'success' : 'muted'} />
-            </View>
-          ))}
-        </View>
-      </View>
-      <View style={styles.tablePanel}>
-        <View style={styles.tableHeader}>
-          <Text style={[styles.tableHeaderText, styles.deviceNameCol]}>Device</Text>
-          <Text style={[styles.tableHeaderText, styles.identifierCol]}>Identifier</Text>
-          <Text style={[styles.tableHeaderText, styles.brandCol]}>Brand</Text>
-          <Text style={[styles.tableHeaderText, styles.modelCol]}>Model</Text>
-          <Text style={[styles.tableHeaderText, styles.statusCol]}>ADB</Text>
-        </View>
-        {devices.slice(0, 40).map(device => (
-          <View key={device._id} style={styles.tableRow}>
-            <View style={styles.deviceNameCol}>
-              <Text style={styles.cellText} numberOfLines={1}>{device.name}</Text>
-              <Text style={styles.rowMeta} numberOfLines={1}>{formatDeviceBox(device)}</Text>
-            </View>
-            <Text style={[styles.cellText, styles.identifierCol]} numberOfLines={1}>{formatDeviceIdentifier(device)}</Text>
-            <Text style={[styles.cellText, styles.brandCol]} numberOfLines={1}>{device.brand || 'Not set'}</Text>
-            <Text style={[styles.cellText, styles.modelCol]} numberOfLines={1}>{device.model || 'Not set'}</Text>
-            <View style={styles.statusCol}>
-              <AmStatusChip label={device.adbStatus ?? 'disconnected'} tone={getAdbTone(device.adbStatus)} />
-            </View>
-          </View>
-        ))}
-      </View>
+      {selectedDevice ? (
+        <AmDeviceDetailPanel device={selectedDevice} />
+      ) : selectedBox ? (
+        <AmHardwareDeviceList
+          devices={visibleDevices}
+          isLoading={isLoading}
+          onSelectDevice={device => setSelectedDeviceId(device._id)}
+        />
+      ) : selectedRack ? (
+        <>
+          <AmHardwareBoxGrid
+            boxes={visibleBoxes}
+            isLoading={isLoading}
+            onSelectBox={box => setSelectedBoxId(box._id)}
+          />
+          <AmHardwareDeviceList
+            devices={visibleDevices}
+            isLoading={isLoading}
+            onSelectDevice={device => setSelectedDeviceId(device._id)}
+          />
+        </>
+      ) : (
+        <>
+          <AmHardwareRackGrid
+            boxes={boxes}
+            devices={devices}
+            isLoading={isLoading}
+            onSelectRack={rack => setSelectedRackId(rack._id)}
+            racks={racks}
+          />
+          <AmHardwareDeviceList
+            devices={visibleDevices}
+            isLoading={isLoading}
+            onSelectDevice={device => setSelectedDeviceId(device._id)}
+          />
+        </>
+      )}
     </View>
   );
 }
@@ -808,6 +850,149 @@ function AmServiceDetailPanel({
           ))}
         </View>
       ) : null}
+    </View>
+  );
+}
+
+function AmHardwareRackGrid({
+  boxes,
+  devices,
+  isLoading,
+  onSelectRack,
+  racks,
+}: {
+  boxes: AmBox[];
+  devices: AmDevice[];
+  isLoading: boolean;
+  onSelectRack: (rack: AmRack) => void;
+  racks: AmRack[];
+}) {
+  return (
+    <View style={styles.panel}>
+      <Text style={styles.panelTitle}>Rack</Text>
+      {isLoading && !racks.length ? <Text style={styles.loadingText}>Memuat rack dari AM live...</Text> : null}
+      {!isLoading && !racks.length ? <Text style={styles.loadingText}>No racks yet</Text> : null}
+      <View style={styles.cardGrid}>
+        {racks.map(rack => (
+          <KolamInteractionFrame
+            key={rack._id}
+            accessibilityLabel={`AM Hardware Rack ${rack.name}`}
+            accessibilityRole="button"
+            onPress={() => onSelectRack(rack)}
+            style={styles.hardwareCard}>
+            <Text style={styles.rowTitle}>{rack.name}</Text>
+            <Text style={styles.rowMeta}>{rack.location || 'No location'}</Text>
+            <View style={styles.hardwareStats}>
+              <Text style={styles.rowMeta}>Box {rack.boxCount ?? countBoxesForRack(boxes, rack)}</Text>
+              <Text style={styles.rowMeta}>Device {rack.deviceCount ?? countDevicesForRack(devices, rack)}</Text>
+            </View>
+            {rack.serverIp ? <Text style={styles.monoText}>{rack.serverIp}</Text> : null}
+            <AmStatusChip label={rack.status} tone={rack.status === 'active' ? 'success' : 'muted'} />
+          </KolamInteractionFrame>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function AmHardwareBoxGrid({
+  boxes,
+  isLoading,
+  onSelectBox,
+}: {
+  boxes: AmBox[];
+  isLoading: boolean;
+  onSelectBox: (box: AmBox) => void;
+}) {
+  return (
+    <View style={styles.panel}>
+      <Text style={styles.panelTitle}>Boxes</Text>
+      {isLoading && !boxes.length ? <Text style={styles.loadingText}>Memuat box dari AM live...</Text> : null}
+      {!isLoading && !boxes.length ? <Text style={styles.loadingText}>No boxes in this rack</Text> : null}
+      <View style={styles.cardGrid}>
+        {boxes.map(box => (
+          <KolamInteractionFrame
+            key={box._id}
+            accessibilityLabel={`AM Hardware Box ${box.name}`}
+            accessibilityRole="button"
+            onPress={() => onSelectBox(box)}
+            style={styles.hardwareCard}>
+            <Text style={styles.rowTitle}>{box.name}</Text>
+            <Text style={styles.rowMeta}>{box.description || 'No description'}</Text>
+            <Text style={styles.rowMeta}>Device {box.deviceCount ?? 0} / 24</Text>
+            <AmStatusChip label={box.status} tone={box.status === 'active' ? 'success' : 'muted'} />
+          </KolamInteractionFrame>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function AmHardwareDeviceList({
+  devices,
+  isLoading,
+  onSelectDevice,
+}: {
+  devices: AmDevice[];
+  isLoading: boolean;
+  onSelectDevice: (device: AmDevice) => void;
+}) {
+  return (
+    <View style={styles.tablePanel}>
+      <View style={styles.tableHeader}>
+        <Text style={[styles.tableHeaderText, styles.deviceNameCol]}>Device</Text>
+        <Text style={[styles.tableHeaderText, styles.identifierCol]}>Identifier</Text>
+        <Text style={[styles.tableHeaderText, styles.brandCol]}>Brand</Text>
+        <Text style={[styles.tableHeaderText, styles.modelCol]}>Model</Text>
+        <Text style={[styles.tableHeaderText, styles.statusCol]}>ADB</Text>
+      </View>
+      <AmLoadingOrEmpty isLoading={isLoading} items={devices} loadingText="Memuat devices dari AM live..." emptyText="No devices found" />
+      {devices.slice(0, 40).map(device => (
+        <KolamInteractionFrame
+          key={device._id}
+          accessibilityLabel={`AM Hardware Device ${device.name}`}
+          accessibilityRole="button"
+          onPress={() => onSelectDevice(device)}
+          style={styles.tableRow}>
+          <View style={styles.deviceNameCol}>
+            <Text style={styles.cellText} numberOfLines={1}>{device.name}</Text>
+            <Text style={styles.rowMeta} numberOfLines={1}>{formatDeviceBox(device)}</Text>
+          </View>
+          <Text style={[styles.cellText, styles.identifierCol]} numberOfLines={1}>{formatDeviceIdentifier(device)}</Text>
+          <Text style={[styles.cellText, styles.brandCol]} numberOfLines={1}>{device.brand || 'Not set'}</Text>
+          <Text style={[styles.cellText, styles.modelCol]} numberOfLines={1}>{device.model || 'Not set'}</Text>
+          <View style={styles.statusCol}>
+            <AmStatusChip label={device.adbStatus ?? 'disconnected'} tone={getAdbTone(device.adbStatus)} />
+          </View>
+        </KolamInteractionFrame>
+      ))}
+    </View>
+  );
+}
+
+function AmDeviceDetailPanel({device}: {device: AmDevice}) {
+  return (
+    <View style={styles.panel}>
+      <Text style={styles.panelTitle}>{device.name}</Text>
+      <View style={styles.metricGrid}>
+        <AmMetricCard label="Connection" value={titleCase(device.connectionType ?? 'usb')} meta={formatDeviceIdentifier(device)} />
+        <AmMetricCard label="ADB" value={titleCase(device.adbStatus ?? 'disconnected')} meta={device.adbCheckedAt ? formatAmDate(device.adbCheckedAt) : 'not checked'} />
+        <AmMetricCard label="Ports" value={String(device.adbPort ?? '-')} meta={`Appium ${device.appiumPort ?? '-'} / System ${device.systemPort ?? '-'}`} />
+      </View>
+      <View style={styles.detailList}>
+        <View style={styles.detailListRow}>
+          <Text style={[styles.tableHeaderText, styles.accountCol]}>Brand</Text>
+          <Text style={[styles.cellText, styles.recipientCol]}>{device.brand || 'Not set'}</Text>
+        </View>
+        <View style={styles.detailListRow}>
+          <Text style={[styles.tableHeaderText, styles.accountCol]}>Model</Text>
+          <Text style={[styles.cellText, styles.recipientCol]}>{device.model || 'Not set'}</Text>
+        </View>
+        <View style={styles.detailListRow}>
+          <Text style={[styles.tableHeaderText, styles.accountCol]}>Box</Text>
+          <Text style={[styles.cellText, styles.recipientCol]}>{formatDeviceBox(device)}</Text>
+        </View>
+      </View>
     </View>
   );
 }
@@ -1378,17 +1563,27 @@ function getTransferTone(status: string) {
 }
 
 function countBoxesForRack(boxes: AmBox[], rack: AmRack) {
-  return boxes.filter(box => {
-    if (typeof box.rackId === 'string') return box.rackId === rack._id;
-    return box.rackId?._id === rack._id || box.rackId?.name === rack.name;
-  }).length;
+  return boxes.filter(box => isBoxInRack(box, rack)).length;
 }
 
 function countDevicesForRack(devices: AmDevice[], rack: AmRack) {
-  return devices.filter(device => {
-    if (!device.boxId || typeof device.boxId === 'string') return false;
-    return device.boxId.rackId?._id === rack._id || device.boxId.rackId?.name === rack.name;
-  }).length;
+  return devices.filter(device => isDeviceInRack(device, rack)).length;
+}
+
+function isBoxInRack(box: AmBox, rack: AmRack) {
+  if (typeof box.rackId === 'string') return box.rackId === rack._id || box.rackId === rack.slug;
+  return box.rackId?._id === rack._id || box.rackId?.name === rack.name;
+}
+
+function isDeviceInRack(device: AmDevice, rack: AmRack) {
+  if (!device.boxId || typeof device.boxId === 'string') return false;
+  return device.boxId.rackId?._id === rack._id || device.boxId.rackId?.name === rack.name;
+}
+
+function isDeviceInBox(device: AmDevice, box: AmBox) {
+  if (!device.boxId) return false;
+  if (typeof device.boxId === 'string') return device.boxId === box._id || device.boxId === box.slug;
+  return device.boxId._id === box._id || device.boxId.name === box.name;
 }
 
 function formatDeviceBox(device: AmDevice) {
@@ -1676,6 +1871,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
+  },
+  breadcrumbBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderWidth: 1,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    backgroundColor: V.colors.bg,
+  },
+  breadcrumbText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '800',
   },
   taskSearch: {
     width: 240,
