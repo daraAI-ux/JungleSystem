@@ -370,6 +370,7 @@ export interface AmMutasi {
     | string
     | null;
   notificationHash: string | null;
+  receiptFile?: string | null;
   detectedAt: string;
   createdAt: string;
   updatedAt: string;
@@ -972,6 +973,13 @@ export async function getAmMutasi(
   baseUrl = appConfig.amApiBaseUrl,
 ): Promise<AmListResponse<AmMutasi>> {
   return getAmList<AmMutasi>('/mutasi', query, baseUrl);
+}
+
+export async function getAmMutasiById(
+  id: string,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmMutasi> {
+  return amGet<AmMutasi>(`/mutasi/${id}`, undefined, baseUrl);
 }
 
 export async function getAmMutasiSummary(

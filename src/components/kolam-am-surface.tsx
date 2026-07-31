@@ -40,6 +40,7 @@ import {
   getAmCurrentUser,
   getAmTaskById,
   getAmMutasi,
+  getAmMutasiById,
   getAmMutasiSummary,
   getAmRacks,
   getAmRoles,
@@ -3220,6 +3221,10 @@ function AmMutasiPage() {
   const [page, setPage] = React.useState(1);
   const [limit, setLimit] = React.useState(AM_MUTASI_PAGE_LIMIT);
   const [total, setTotal] = React.useState(0);
+  const [selectedMutasiId, setSelectedMutasiId] = React.useState<string | null>(null);
+  const [selectedMutasi, setSelectedMutasi] = React.useState<AmMutasi | null>(null);
+  const [detailLoading, setDetailLoading] = React.useState(false);
+  const [detailError, setDetailError] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -3289,6 +3294,28 @@ function AmMutasiPage() {
     setPage(1);
   }, []);
 
+  const selectMutasi = React.useCallback(async (item: AmMutasi) => {
+    if (selectedMutasiId === item._id) {
+      setSelectedMutasiId(null);
+      setSelectedMutasi(null);
+      setDetailError(null);
+      return;
+    }
+
+    setSelectedMutasiId(item._id);
+    setSelectedMutasi(item);
+    setDetailLoading(true);
+    setDetailError(null);
+    try {
+      const response = await getAmMutasiById(item._id);
+      setSelectedMutasi(response);
+    } catch (nextError) {
+      setDetailError(nextError instanceof Error ? nextError.message : 'Gagal memuat detail mutasi AM.');
+    } finally {
+      setDetailLoading(false);
+    }
+  }, [selectedMutasiId]);
+
   const totalPages = Math.max(1, Math.ceil(total / Math.max(limit, 1)));
   const rangeFrom = total ? (page - 1) * limit + 1 : 0;
   const rangeTo = total ? Math.min(page * limit, total) : 0;
@@ -3342,6 +3369,7 @@ function AmMutasiPage() {
           <Text style={[styles.tableHeaderText, styles.recipientCol]}>Description</Text>
           <Text style={[styles.tableHeaderText, styles.deviceWideCol]}>Device</Text>
           <Text style={[styles.tableHeaderText, styles.dateCol]}>Time</Text>
+          <Text style={[styles.tableHeaderText, styles.actionCol]}>Action</Text>
         </View>
         <AmLoadingOrEmpty isLoading={isLoading} items={mutasi} loadingText="Memuat mutasi dari AM live..." emptyText="No mutations found" />
         {mutasi.map(item => (
@@ -3363,6 +3391,15 @@ function AmMutasiPage() {
               <Text style={styles.rowMeta} numberOfLines={1}>{formatDeviceLocation(item.deviceId)}</Text>
             </View>
             <Text style={[styles.cellText, styles.dateCol]}>{formatAmDate(item.detectedAt)}</Text>
+            <View style={styles.actionCol}>
+              <KolamButton
+                accessibilityLabel={`AM Mutasi Detail ${item._id}`}
+                label={selectedMutasiId === item._id ? 'Close' : 'Detail'}
+                intent="outline"
+                size="sm"
+                onPress={() => selectMutasi(item)}
+              />
+            </View>
           </View>
         ))}
         {total > limit ? (
@@ -3391,8 +3428,102 @@ function AmMutasiPage() {
           </View>
         ) : null}
       </View>
+      {selectedMutasiId ? (
+        <AmMutasiDetailPanel
+          error={detailError}
+          isLoading={detailLoading}
+          mutasi={selectedMutasi}
+        />
+      ) : null}
     </View>
   );
+}
+
+function AmMutasiDetailPanel({
+  error,
+  isLoading,
+  mutasi,
+}: {
+  error: string | null;
+  isLoading: boolean;
+  mutasi: AmMutasi | null;
+}) {
+  const receiptUrl = mutasi?.receiptFile
+    ? `${appConfig.amApiBaseUrl.replace(/\/+$/, '')}/mutasi/${mutasi._id}/receipt`
+    : null;
+
+  return (
+    <View style={styles.panel}>
+      <View style={styles.detailHeader}>
+        <View>
+          <Text style={styles.panelTitle}>Mutation Detail</Text>
+          <Text style={styles.rowMeta}>{mutasi?._id ?? 'Memuat detail mutasi...'}</Text>
+        </View>
+        {mutasi ? (
+          <AmStatusChip
+            label={formatMutasiTypeLabel(mutasi.type)}
+            tone={mutasi.type === 'masuk' ? 'success' : 'danger'}
+          />
+        ) : null}
+      </View>
+      <AmInlineError title="Detail mutasi AM belum bisa dibaca" error={error} />
+      {isLoading ? <Text style={styles.loadingText}>Memuat detail mutasi...</Text> : null}
+      {mutasi ? (
+        <View style={styles.detailList}>
+          <View style={styles.detailListRow}>
+            <Text style={styles.rowMeta}>Account</Text>
+            <Text style={styles.cellText}>{formatBankAccount(mutasi.accountId)} / {formatAccountNumber(mutasi.accountId)}</Text>
+          </View>
+          <View style={styles.detailListRow}>
+            <Text style={styles.rowMeta}>Amount</Text>
+            <Text style={styles.cellText}>{formatMutasiSignedAmount(mutasi)}</Text>
+          </View>
+          <View style={styles.detailListRow}>
+            <Text style={styles.rowMeta}>Description</Text>
+            <Text style={styles.cellText}>{mutasi.description || '-'}</Text>
+          </View>
+          <View style={styles.detailListRow}>
+            <Text style={styles.rowMeta}>Device</Text>
+            <Text style={styles.cellText}>{formatDeviceRef(mutasi.deviceId)} / {formatDeviceLocation(mutasi.deviceId)}</Text>
+          </View>
+          <View style={styles.detailListRow}>
+            <Text style={styles.rowMeta}>Transfer</Text>
+            <Text style={styles.cellText}>{formatMutasiTransferRef(mutasi.transferId)}</Text>
+          </View>
+          <View style={styles.detailListRow}>
+            <Text style={styles.rowMeta}>Notification Hash</Text>
+            <Text style={styles.monoText}>{mutasi.notificationHash || '-'}</Text>
+          </View>
+          <View style={styles.detailListRow}>
+            <Text style={styles.rowMeta}>Detected</Text>
+            <Text style={styles.cellText}>{formatAmDate(mutasi.detectedAt)}</Text>
+          </View>
+          <View style={styles.detailListRow}>
+            <Text style={styles.rowMeta}>Updated</Text>
+            <Text style={styles.cellText}>{formatAmDate(mutasi.updatedAt)}</Text>
+          </View>
+          <View style={styles.detailListRow}>
+            <Text style={styles.rowMeta}>Receipt</Text>
+            <Text style={receiptUrl ? styles.monoText : styles.cellText}>{receiptUrl ?? 'Receipt not available'}</Text>
+          </View>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+function formatMutasiTransferRef(
+  transfer: AmMutasi['transferId'],
+): string {
+  if (!transfer) return '-';
+  if (typeof transfer === 'string') return transfer;
+  return [
+    transfer.recipientName,
+    transfer.recipientBank,
+    transfer.recipientAccount,
+    formatRupiah(transfer.amount),
+    titleCase(transfer.status),
+  ].filter(Boolean).join(' / ');
 }
 
 function AmTransferActions({

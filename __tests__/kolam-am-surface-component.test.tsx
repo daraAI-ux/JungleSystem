@@ -25,6 +25,7 @@ import {
   getAmDeviceServices,
   getAmDevices,
   getAmMutasi,
+  getAmMutasiById,
   getAmMutasiSummary,
   getAmRacks,
   getAmRoles,
@@ -87,6 +88,7 @@ jest.mock('../src/services/am-api', () => ({
   getAmDeviceServiceQrUrl: jest.fn(() => 'https://frogs.dunia-anura.com/api/device/device-1/service/shopee-qr?t=qr-1'),
   getAmDevices: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
   getAmMutasi: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
+  getAmMutasiById: jest.fn(() => Promise.resolve({_id: 'mutasi-1'})),
   getAmMutasiSummary: jest.fn(() => Promise.resolve({masuk: {total: 0, count: 0}, keluar: {total: 0, count: 0}})),
   getAmRacks: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
   getAmRoles: jest.fn(() => Promise.resolve([])),
@@ -1682,6 +1684,43 @@ describe('KolamAmSurface', () => {
       masuk: {total: 500000, count: 4},
       keluar: {total: 150000, count: 2},
     });
+    jest.mocked(getAmMutasiById).mockResolvedValue({
+      _id: 'mutasi-1',
+      accountId: {
+        _id: 'account-1',
+        label: 'BCA Main',
+        platform: 'bca',
+        accountNumber: '123',
+      },
+      amount: 125000,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      description: 'Transfer in',
+      detectedAt: '2026-01-01T00:00:00.000Z',
+      deviceId: {
+        _id: 'device-1',
+        name: 'Phone 1',
+        connectionType: 'tcp',
+        tcpAddress: '10.0.0.2:5555',
+        udid: null,
+        boxId: {
+          _id: 'box-1',
+          name: 'Box Green',
+          rackId: {_id: 'rack-1', name: 'Rack Mutasi'},
+        },
+      },
+      notificationHash: 'hash-mutasi-1',
+      receiptFile: 'receipt-mutasi-1.png',
+      transferId: {
+        _id: 'transfer-1',
+        amount: 125000,
+        recipientAccount: '9988',
+        recipientBank: 'BCA',
+        recipientName: 'Vendor Mutasi',
+        status: 'success',
+      },
+      type: 'masuk',
+      updatedAt: '2026-01-01T00:01:00.000Z',
+    });
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
     await act(async () => {
@@ -1714,8 +1753,20 @@ describe('KolamAmSurface', () => {
     expect(joinedText).toMatch(/\+Rp\s*125\.000/);
     expect(joinedText).toMatch(/-Rp\s*50\.000/);
     expect(joinedText).toContain('Time');
+    expect(joinedText).toContain('Action');
     expect(joinedText).toMatch(/Showing\s+1\s+to\s+50\s+of\s+120\s+items/);
     expect(joinedText).toContain('Page 1/3');
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Mutasi Detail mutasi-1'}).props.onPress();
+    });
+
+    const detailText = renderText(renderer!).join(' ');
+    expect(getAmMutasiById).toHaveBeenCalledWith('mutasi-1');
+    expect(detailText).toContain('Mutation Detail');
+    expect(detailText).toContain('hash-mutasi-1');
+    expect(detailText).toContain('Vendor Mutasi');
+    expect(detailText).toContain('/mutasi/mutasi-1/receipt');
 
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Mutasi Next Page'}).props.onPress();
