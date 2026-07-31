@@ -4700,6 +4700,11 @@ function hasAmPermission(user: AmCurrentUser | null, permission: string) {
   return user.role.permissions.includes(permission);
 }
 
+function formatTaskCreatedBy(createdBy: AmTask['createdBy']) {
+  if (!createdBy) return '-';
+  return createdBy.username || createdBy.email || createdBy.name || '-';
+}
+
 function isTransferBanking(platform: string) {
   return platform === 'bca' || platform === 'brimo';
 }

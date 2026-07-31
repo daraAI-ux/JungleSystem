@@ -657,7 +657,7 @@ describe('KolamAmSurface', () => {
       maxRetries: 3,
       startedAt: null,
       completedAt: null,
-      createdBy: null,
+      createdBy: {_id: 'user-task', username: 'task-admin', email: 'task-admin@example.test'},
       createdAt: '2026-01-01T00:00:00.000Z',
       updatedAt: '',
     };
@@ -691,6 +691,7 @@ describe('KolamAmSurface', () => {
     expect(text).toContain('Overview');
     expect(text).toContain('Assignment');
     expect(text).toContain('Timeline');
+    expect(joinedText).toContain('Created By task-admin');
     expect(text).toContain('Payload');
     expect(text).toContain('Result');
     expect(joinedText).toContain('"sku": "SKU-1"');

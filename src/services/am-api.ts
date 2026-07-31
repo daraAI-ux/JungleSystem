@@ -66,6 +66,7 @@ export interface AmTaskRef {
   name?: string;
   label?: string;
   username?: string;
+  email?: string;
   platform?: string;
   connectionType?: string;
 }
