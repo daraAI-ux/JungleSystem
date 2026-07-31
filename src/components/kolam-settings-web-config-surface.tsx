@@ -8938,9 +8938,7 @@ function createRegionDropdownOptions(
   return [
     {label: placeholder, value: ''},
     ...regions.map(region => ({
-      label: `${region.code} - ${region.name}${
-        region.postalCode ? ` (${region.postalCode})` : ''
-      }`,
+      label: region.name,
       value: region.code,
     })),
   ];

@@ -968,7 +968,7 @@ describe('settings web widgets', () => {
       dropdowns.some(node =>
         node.props.options.some(
           (option: {label: string}) =>
-            option.label === '32.73.01.1001 - Pasteur (40161)',
+            option.label === 'Pasteur',
         ),
       ),
     ).toBe(true);
