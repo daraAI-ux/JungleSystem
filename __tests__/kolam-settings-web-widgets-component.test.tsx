@@ -852,6 +852,45 @@ describe('settings web widgets', () => {
     expect(onSave).not.toHaveBeenCalled();
   });
 
+  it('renders region sync hierarchy filters', () => {
+    const setRegionSelection = jest.fn();
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    ReactTestRenderer.act(() => {
+      renderer = ReactTestRenderer.create(
+        <KolamSettingsWebConfigSurface
+          {...createSurfaceProps({
+            activeTabId: 'sync',
+            selectedProvince: '32',
+            selectedRegency: '32.73',
+            selectedDistrict: '32.73.01',
+            selectedVillage: '',
+            setRegionSelection,
+          })}
+        />,
+      );
+    });
+
+    const inputs = renderer!.root.findAllByType(TextInput);
+    expect(inputs.some(node => node.props.value === '32')).toBe(true);
+    expect(inputs.some(node => node.props.value === '32.73')).toBe(true);
+    expect(inputs.some(node => node.props.value === '32.73.01')).toBe(true);
+    expect(
+      inputs.some(node => node.props.placeholder === '32.73.01.1001'),
+    ).toBe(true);
+
+    ReactTestRenderer.act(() => {
+      inputs
+        .find(node => node.props.placeholder === '32.73.01.1001')!
+        .props.onChangeText('32.73.01.1001');
+    });
+
+    expect(setRegionSelection).toHaveBeenCalledWith(
+      'village',
+      '32.73.01.1001',
+    );
+  });
+
   it('fills work site coordinates from backend geocode', async () => {
     const setDraftField = jest.fn();
     jest
