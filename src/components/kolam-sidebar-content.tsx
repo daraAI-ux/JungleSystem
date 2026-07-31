@@ -1,7 +1,8 @@
 import React from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import {
-  AM_ROUTES,
+  AM_ROUTE_SECTIONS,
+  AM_SIDEBAR_ROUTES,
   type AmRouteItem,
 } from '../domain/am-navigation';
 import type { AccessScope } from '../domain/auth';
@@ -148,19 +149,14 @@ function KolamAmSidebarMenu({
           />
         )}
         <KolamMappedList
-          items={AM_ROUTES}
-          getKey={item => item.id}
-          renderItem={item => (
-            <KolamNavItem
-              active={isAmRouteActive(item, activeRoute)}
+          items={getAmSidebarSections()}
+          getKey={section => section.id}
+          renderItem={section => (
+            <KolamAmSidebarSection
+              activeRoute={activeRoute}
               collapsed={collapsed}
-              module={toAmShellModule(item)}
-              onPress={() => {
-                const route = getShellModuleRouteEntry('am', item.moduleRoute);
-                if (route) {
-                  onSelectRoute(route);
-                }
-              }}
+              onSelectRoute={onSelectRoute}
+              section={section}
             />
           )}
         />
@@ -174,6 +170,61 @@ function KolamAmSidebarMenu({
       />
     </>
   );
+}
+
+function KolamAmSidebarSection({
+  activeRoute,
+  collapsed,
+  onSelectRoute,
+  section,
+}: {
+  activeRoute?: string | null;
+  collapsed: boolean;
+  onSelectRoute: (route: ShellModuleRouteEntry) => void;
+  section: AmSidebarSection;
+}) {
+  return (
+    <View style={styles.amMenuSection}>
+      {collapsed ? null : (
+        <KolamCopyStack
+          items={[
+            {id: 'label', text: section.label, style: styles.amMenuSectionLabel},
+          ]}
+        />
+      )}
+      <KolamMappedList
+        items={section.items}
+        getKey={item => item.id}
+        renderItem={item => (
+          <KolamNavItem
+            active={isAmRouteActive(item, activeRoute)}
+            collapsed={collapsed}
+            module={toAmShellModule(item)}
+            onPress={() => {
+              const route = getShellModuleRouteEntry('am', item.moduleRoute);
+              if (route) {
+                onSelectRoute(route);
+              }
+            }}
+          />
+        )}
+      />
+    </View>
+  );
+}
+
+type AmSidebarSection = {
+  id: string;
+  label: string;
+  items: AmRouteItem[];
+};
+
+function getAmSidebarSections(): AmSidebarSection[] {
+  return AM_ROUTE_SECTIONS.map(section => ({
+    id: section,
+    label: section,
+    items: AM_SIDEBAR_ROUTES.filter(route => route.section === section),
+  })).filter(section => section.items.length > 0);
 }
 
 function toAmShellModule(item: AmRouteItem): ShellModule {
@@ -235,6 +286,18 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 11,
     fontWeight: '900',
+    textTransform: 'uppercase',
+  },
+  amMenuSection: {
+    gap: 1,
+    marginTop: 8,
+  },
+  amMenuSectionLabel: {
+    paddingHorizontal: 12,
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '800',
     textTransform: 'uppercase',
   },
 });

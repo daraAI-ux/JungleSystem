@@ -17,6 +17,7 @@ export interface AmRouteItem {
   path: string;
   moduleRoute: string;
   description: string;
+  sidebar?: boolean;
 }
 
 export const AM_ROUTES: AmRouteItem[] = [
@@ -35,6 +36,7 @@ export const AM_ROUTES: AmRouteItem[] = [
     path: '/tasks',
     moduleRoute: 'tasks',
     description: 'Monitor dan kelola automation tasks lintas device.',
+    sidebar: false,
   },
   {
     id: 'services',
@@ -109,6 +111,10 @@ export const AM_ROUTE_SECTIONS = [
   'Banking',
   'Administration',
 ];
+
+export const AM_SIDEBAR_ROUTES = AM_ROUTES.filter(
+  route => route.sidebar !== false,
+);
 
 export function getAmRouteByModuleRoute(route?: string | null): AmRouteItem {
   const normalized = normalizeAmRoute(route);

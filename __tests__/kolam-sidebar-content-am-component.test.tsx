@@ -57,7 +57,7 @@ describe('KolamSidebarContent AM mode', () => {
     expect(text).not.toContain('38');
   });
 
-  it('replaces the Kolam menu body with a POS-style AM route group in the main sidebar', async () => {
+  it('replaces the Kolam menu body with the AM FE sidebar sections', async () => {
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
     await ReactTestRenderer.act(async () => {
@@ -87,13 +87,17 @@ describe('KolamSidebarContent AM mode', () => {
     expect(text).toEqual(
       expect.arrayContaining([
         'AM',
+        'Overview',
         'Dashboard',
-        'Tasks',
+        'Automation',
         'Services',
+        'Infrastructure',
         'Hardware',
         'Webhooks',
+        'Banking',
         'Transfers',
         'Mutations',
+        'Administration',
         'Users',
         'Activity Log',
         'Account Settings',
@@ -103,12 +107,8 @@ describe('KolamSidebarContent AM mode', () => {
         'POS',
       ]),
     );
+    expect(text).not.toContain('Tasks');
     expect(text).not.toContain('Automation Management');
-    expect(text).not.toContain('Overview');
-    expect(text).not.toContain('Automation');
-    expect(text).not.toContain('Infrastructure');
-    expect(text).not.toContain('Banking');
-    expect(text).not.toContain('Administration');
     expect(text).not.toContain('Kolam Menu');
     expect(text).not.toContain('Kembali ke Kolam');
   });
