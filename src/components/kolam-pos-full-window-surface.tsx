@@ -532,7 +532,10 @@ export function KolamPosFullWindowSurface({
               intent="primary"
               size="md"
               disabled={!canOpenPayment || isCreatingSale}
-              onPress={() => setIsPaymentModalOpen(true)}
+              onPress={() => {
+                onSelectPaymentMethod('');
+                setIsPaymentModalOpen(true);
+              }}
               style={styles.payButton}
             />
             <View style={styles.savedOrderActions}>
