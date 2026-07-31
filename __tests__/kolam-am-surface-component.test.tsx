@@ -17,6 +17,7 @@ import {
   deleteAmWebhookConfig,
   getAmActivityLogs,
   getAmDeviceServiceLogs,
+  getAmDeviceServices,
   getAmDevices,
   getAmMutasi,
   getAmRacks,
@@ -25,6 +26,7 @@ import {
   getAmTransfers,
   getAmUsers,
   getAmWebhookConfigs,
+  sendAmDeviceServiceInput,
   testAmWebhookPing,
   updateAmRack,
   updateAmUser,
@@ -53,6 +55,8 @@ jest.mock('../src/services/am-api', () => ({
   getAmActivityLogStats: jest.fn(() => Promise.resolve({since: '', days: 7, byType: [], byStatus: [], topUsers: [], topPaths: []})),
   getAmBoxes: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
   getAmDeviceServiceLogs: jest.fn(() => Promise.resolve({logs: [], processRunning: false})),
+  getAmDeviceServices: jest.fn(() => Promise.resolve([])),
+  getAmDeviceServiceQrUrl: jest.fn(() => 'https://frogs.dunia-anura.com/api/device/device-1/service/shopee-qr?t=qr-1'),
   getAmDevices: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
   getAmMutasi: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
   getAmMutasiSummary: jest.fn(() => Promise.resolve({masuk: {total: 0, count: 0}, keluar: {total: 0, count: 0}})),
@@ -67,6 +71,7 @@ jest.mock('../src/services/am-api', () => ({
   getAmWebhookLogs: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
   retryAmTransfer: jest.fn(() => Promise.resolve({_id: 'transfer-1'})),
   retryAmTask: jest.fn(() => Promise.resolve({_id: 'task-1'})),
+  sendAmDeviceServiceInput: jest.fn(() => Promise.resolve({success: true})),
   startAmDeviceService: jest.fn(() => Promise.resolve({success: true})),
   stopAmDeviceService: jest.fn(() => Promise.resolve({success: true})),
   testAmWebhookPing: jest.fn(() => Promise.resolve({success: true})),
@@ -262,11 +267,82 @@ describe('KolamAmSurface', () => {
       page: 1,
       source: 'realtime',
     });
+    expect(getAmDeviceServices).toHaveBeenCalledWith('device-1');
     expect(jest.requireMock('../src/services/am-api').getAmTasks).toHaveBeenCalledWith({
       limit: 5,
       page: 1,
       serviceAccountId: 'service-1',
     });
+  });
+
+  it('sends service OTP input when runtime logs request it', async () => {
+    jest.mocked(getAmServiceAccounts).mockResolvedValue({
+      data: [
+        {
+          _id: 'service-otp',
+          platform: 'shopee',
+          label: 'Shopee OTP',
+          deviceId: {
+            _id: 'device-otp',
+            name: 'Phone OTP',
+            connectionType: 'tcp',
+            tcpAddress: '10.0.0.9:5555',
+            udid: null,
+          },
+          status: 'active',
+          credentials: {},
+          meta: {},
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 1, limit: 1},
+    });
+    jest.mocked(getAmDeviceServiceLogs).mockResolvedValue({
+      logs: [
+        {ts: '2026-01-01T00:00:00.000Z', level: 'info', message: 'OTP_REQUIRED'},
+        {ts: '2026-01-01T00:00:01.000Z', level: 'info', message: 'QR_LOGIN {"qrcodeId":"qr-1","status":"WAITING"}'},
+      ],
+      processRunning: true,
+    });
+    jest.mocked(getAmDeviceServices).mockResolvedValue([
+      {
+        serviceAccountId: 'service-otp',
+        label: 'Shopee OTP',
+        platform: 'shopee',
+        accountNumber: '',
+        serviceStatus: 'active',
+        taskStatus: 'running',
+        processRunning: true,
+        isBanking: false,
+      },
+    ]);
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Services'}).props.onPress();
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Service Shopee OTP'}).props.onPress();
+    });
+
+    const inputs = renderer!.root.findAllByType(TextInput);
+    await act(async () => {
+      inputs[0].props.onChangeText('123456');
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Service Submit Input service-otp'}).props.onPress();
+    });
+
+    expect(sendAmDeviceServiceInput).toHaveBeenCalledWith('device-otp', 'otp', '123456');
+    expect(getAmDeviceServices).toHaveBeenCalledWith('device-otp');
   });
 
   it('runs service start and clear session actions from Services', async () => {

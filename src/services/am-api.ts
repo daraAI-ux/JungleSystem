@@ -233,6 +233,19 @@ export interface AmDeviceServiceLogsResponse {
   page?: number;
 }
 
+export interface AmDeviceServiceStatus {
+  serviceAccountId: string;
+  label: string;
+  platform: string;
+  accountNumber: string;
+  serviceStatus: string;
+  taskStatus: string;
+  processRunning: boolean | null;
+  isBanking: boolean;
+}
+
+export type AmServiceInputType = 'otp' | 'password' | string;
+
 export interface AmClearServiceAccountSessionResult {
   stopped: boolean;
   deleted: string[];
@@ -653,6 +666,47 @@ export async function getAmDeviceServiceLogs(
     query,
     baseUrl,
   );
+}
+
+export async function getAmDeviceServices(
+  deviceId: string,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmDeviceServiceStatus[]> {
+  return amGet<AmDeviceServiceStatus[]>(
+    `/device/${deviceId}/services`,
+    undefined,
+    baseUrl,
+  );
+}
+
+export async function sendAmDeviceServiceInput(
+  deviceId: string,
+  type: AmServiceInputType,
+  value: string,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<unknown> {
+  return amPost(
+    `/device/${deviceId}/service/input`,
+    {type, value},
+    baseUrl,
+  );
+}
+
+export function getAmDeviceServiceQrUrl(
+  deviceId: string,
+  platform: string,
+  qrcodeId?: string,
+  baseUrl = appConfig.amApiBaseUrl,
+): string | null {
+  const endpoint = platform === 'whatsapp'
+    ? 'whatsapp-qr'
+    : platform === 'shopee'
+      ? 'shopee-qr'
+      : null;
+  if (!endpoint || !baseUrl) return null;
+  const trimmedBase = baseUrl.replace(/\/+$/, '');
+  const suffix = qrcodeId ? `?t=${encodeURIComponent(qrcodeId)}` : '';
+  return `${trimmedBase}/device/${encodeURIComponent(deviceId)}/service/${endpoint}${suffix}`;
 }
 
 export async function startAmDeviceService(

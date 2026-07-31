@@ -25,6 +25,8 @@ import {
   getAmActivityLogs,
   getAmActivityLogStats,
   getAmDeviceServiceLogs,
+  getAmDeviceServices,
+  getAmDeviceServiceQrUrl,
   getAmMutasi,
   getAmMutasiSummary,
   getAmRacks,
@@ -38,6 +40,7 @@ import {
   getAmWebhookLogs,
   retryAmTransfer,
   retryAmTask,
+  sendAmDeviceServiceInput,
   startAmDeviceService,
   stopAmDeviceService,
   testAmWebhookPing,
@@ -53,6 +56,7 @@ import {
   type AmDevice,
   type AmDevicePayload,
   type AmDeviceServiceLog,
+  type AmDeviceServiceStatus,
   type AmMutasi,
   type AmMutasiSummary,
   type AmRack,
@@ -392,12 +396,15 @@ function AmServicesPage() {
   const [expandedId, setExpandedId] = React.useState<string | null>(null);
   const [expandedTab, setExpandedTab] = React.useState<'logs' | 'history'>('logs');
   const [detailLogs, setDetailLogs] = React.useState<AmDeviceServiceLog[]>([]);
+  const [detailServices, setDetailServices] = React.useState<AmDeviceServiceStatus[]>([]);
   const [detailTasks, setDetailTasks] = React.useState<AmTask[]>([]);
   const [detailTransfers, setDetailTransfers] = React.useState<AmTransfer[]>([]);
   const [detailRunning, setDetailRunning] = React.useState(false);
   const [detailLoading, setDetailLoading] = React.useState(false);
   const [detailError, setDetailError] = React.useState<string | null>(null);
   const [actingServiceId, setActingServiceId] = React.useState<string | null>(null);
+  const [serviceInputValue, setServiceInputValue] = React.useState('');
+  const [serviceInputSending, setServiceInputSending] = React.useState(false);
   const [actionMessage, setActionMessage] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -430,6 +437,7 @@ function AmServicesPage() {
     const device = getServiceDevice(account);
     if (!device?._id) {
       setDetailLogs([]);
+      setDetailServices([]);
       setDetailRunning(false);
       setDetailError('Service belum punya device.');
       return;
@@ -437,12 +445,16 @@ function AmServicesPage() {
 
     try {
       setDetailLoading(true);
-      const response = await getAmDeviceServiceLogs(device._id, {
-        limit: 80,
-        source: 'realtime',
-        page: 1,
-      });
+      const [response, statusResponse] = await Promise.all([
+        getAmDeviceServiceLogs(device._id, {
+          limit: 80,
+          source: 'realtime',
+          page: 1,
+        }),
+        getAmDeviceServices(device._id),
+      ]);
       setDetailLogs(response.logs);
+      setDetailServices(statusResponse);
       setDetailRunning(response.processRunning);
       setDetailError(null);
     } catch (nextError) {
@@ -484,17 +496,21 @@ function AmServicesPage() {
     if (expandedId === account._id) {
       setExpandedId(null);
       setDetailLogs([]);
+      setDetailServices([]);
       setDetailTasks([]);
       setDetailTransfers([]);
       setDetailError(null);
+      setServiceInputValue('');
       return;
     }
 
     setExpandedId(account._id);
     setExpandedTab(isTransferBanking(account.platform) ? 'history' : 'logs');
     setDetailLogs([]);
+    setDetailServices([]);
     setDetailTasks([]);
     setDetailTransfers([]);
+    setServiceInputValue('');
     if (isTransferBanking(account.platform)) {
       await loadServiceHistory(account);
     } else {
@@ -550,6 +566,7 @@ function AmServicesPage() {
       const deleted = result.deleted?.length ?? 0;
       setActionMessage(deleted > 0 ? `${account.label} session dibersihkan (${deleted} file).` : `${account.label} session state dibersihkan.`);
       setDetailLogs([]);
+      setDetailServices([]);
       setDetailRunning(false);
       await fetchAccounts();
     } catch (nextError) {
@@ -558,6 +575,32 @@ function AmServicesPage() {
       setActingServiceId(null);
     }
   }, [fetchAccounts]);
+
+  const submitServiceInput = React.useCallback(async (account: AmServiceAccount, inputType: 'otp' | 'password') => {
+    const device = getServiceDevice(account);
+    const value = serviceInputValue.trim();
+    if (!device?._id) {
+      setDetailError('Service belum punya device.');
+      return;
+    }
+    if (!value) {
+      setDetailError(inputType === 'password' ? 'Password wajib diisi.' : 'OTP wajib diisi.');
+      return;
+    }
+
+    try {
+      setServiceInputSending(true);
+      setDetailError(null);
+      await sendAmDeviceServiceInput(device._id, 'otp', value);
+      setServiceInputValue('');
+      setActionMessage(`${inputType === 'password' ? 'Password' : 'OTP'} dikirim ke ${account.label}.`);
+      await loadServiceLogs(account);
+    } catch (nextError) {
+      setDetailError(nextError instanceof Error ? nextError.message : 'Gagal mengirim input service.');
+    } finally {
+      setServiceInputSending(false);
+    }
+  }, [loadServiceLogs, serviceInputValue]);
 
   return (
     <View style={styles.pageStack}>
@@ -641,13 +684,18 @@ function AmServicesPage() {
                   detailError={detailError}
                   isLoading={detailLoading}
                   logs={detailLogs}
+                  serviceInputSending={serviceInputSending}
+                  serviceInputValue={serviceInputValue}
+                  serviceStatuses={detailServices}
                   processRunning={detailRunning}
                   tasks={detailTasks}
                   transfers={detailTransfers}
                   canClearSession={PLAYWRIGHT_PLATFORMS.has(account.platform)}
                   clearingSession={actingServiceId === account._id}
                   onClearSession={() => clearServiceSession(account)}
+                  onChangeServiceInput={setServiceInputValue}
                   onSelectTab={tab => selectDetailTab(account, tab)}
+                  onSubmitServiceInput={inputType => submitServiceInput(account, inputType)}
                 />
               ) : null}
             </View>
@@ -1137,8 +1185,13 @@ function AmServiceDetailPanel({
   detailError,
   isLoading,
   logs,
+  serviceInputSending,
+  serviceInputValue,
+  serviceStatuses,
   onClearSession,
+  onChangeServiceInput,
   onSelectTab,
+  onSubmitServiceInput,
   processRunning,
   tasks,
   transfers,
@@ -1150,13 +1203,24 @@ function AmServiceDetailPanel({
   detailError: string | null;
   isLoading: boolean;
   logs: AmDeviceServiceLog[];
+  serviceInputSending: boolean;
+  serviceInputValue: string;
+  serviceStatuses: AmDeviceServiceStatus[];
   onClearSession: () => void;
+  onChangeServiceInput: (value: string) => void;
   onSelectTab: (tab: 'logs' | 'history') => void;
+  onSubmitServiceInput: (inputType: 'otp' | 'password') => void;
   processRunning: boolean;
   tasks: AmTask[];
   transfers: AmTransfer[];
 }) {
   const banking = isTransferBanking(account.platform);
+  const device = getServiceDevice(account);
+  const runtime = serviceStatuses.find(status => status.serviceAccountId === account._id);
+  const qrSignal = getQrLoginSignal(logs);
+  const needsPassword = logs.some(log => log.message.includes('PASSWORD_REQUIRED'));
+  const needsInput = needsPassword || logs.some(log => log.message.includes('OTP') || log.message.includes('otp') || log.message.includes('INPUT_REQUIRED'));
+  const qrUrl = device?._id ? getAmDeviceServiceQrUrl(device._id, account.platform, qrSignal?.qrcodeId) : null;
 
   return (
     <View style={styles.serviceDetailPanel}>
@@ -1195,14 +1259,60 @@ function AmServiceDetailPanel({
       <AmInlineError title="Detail service AM belum bisa dibaca" error={detailError} />
       {isLoading ? <Text style={styles.loadingText}>Memuat detail service...</Text> : null}
       {!isLoading && activeTab === 'logs' ? (
-        <View style={styles.logPanel}>
-          {!logs.length ? <Text style={styles.logEmptyText}>No realtime logs</Text> : null}
-          {logs.slice(-20).map((log, index) => (
-            <Text key={`${log.ts}-${index}`} style={styles.logText} numberOfLines={2}>
-              [{formatAmDate(log.ts)}] {log.level}: {log.message}
-            </Text>
-          ))}
-        </View>
+        <>
+          <View style={styles.runtimePanel}>
+            <View style={styles.detailHeader}>
+              <View>
+                <Text style={styles.panelTitle}>Runtime</Text>
+                <Text style={styles.rowMeta}>
+                  {runtime ? `${titleCase(runtime.taskStatus)} / ${titleCase(runtime.serviceStatus)}` : 'Status service belum tersedia'}
+                </Text>
+              </View>
+              <AmStatusChip
+                label={processRunning ? 'process running' : 'process stopped'}
+                tone={processRunning ? 'success' : 'muted'}
+              />
+            </View>
+            {qrSignal ? (
+              <View style={styles.qrPanel}>
+                <Text style={styles.formLabel}>QR Login {AM_PLATFORM_LABELS[account.platform] ?? titleCase(account.platform)}</Text>
+                <Text style={styles.rowMeta}>{qrSignal.status ? `Status ${qrSignal.status}` : 'Scan QR dari endpoint AM live.'}</Text>
+                {qrSignal.qrcodeBase64 ? (
+                  <Text style={styles.monoText} numberOfLines={1}>{qrSignal.qrcodeBase64}</Text>
+                ) : qrUrl ? (
+                  <Text style={styles.monoText} numberOfLines={1}>{qrUrl}</Text>
+                ) : (
+                  <Text style={styles.rowMeta}>QR image belum tersedia untuk platform ini.</Text>
+                )}
+              </View>
+            ) : null}
+            {needsInput ? (
+              <View style={styles.formGrid}>
+                <AmTextInput
+                  label={needsPassword ? 'Password' : 'OTP'}
+                  placeholder={needsPassword ? 'Masukkan password service' : 'Masukkan OTP service'}
+                  value={serviceInputValue}
+                  onChangeText={onChangeServiceInput}
+                />
+                <KolamButton
+                  accessibilityLabel={`AM Service Submit Input ${account._id}`}
+                  label={serviceInputSending ? 'Mengirim' : 'Submit Input'}
+                  muted={serviceInputSending}
+                  size="sm"
+                  onPress={() => onSubmitServiceInput(needsPassword ? 'password' : 'otp')}
+                />
+              </View>
+            ) : null}
+          </View>
+          <View style={styles.logPanel}>
+            {!logs.length ? <Text style={styles.logEmptyText}>No realtime logs</Text> : null}
+            {logs.slice(-20).map((log, index) => (
+              <Text key={`${log.ts}-${index}`} style={styles.logText} numberOfLines={2}>
+                [{formatAmDate(log.ts)}] {log.level}: {log.message}
+              </Text>
+            ))}
+          </View>
+        </>
       ) : null}
       {!isLoading && activeTab === 'history' && banking ? (
         <View style={styles.detailList}>
@@ -2416,6 +2526,35 @@ function cleanDevicePayload(payload: AmDevicePayload): Omit<AmDevicePayload, 'bo
   ) as Omit<AmDevicePayload, 'boxId'>;
 }
 
+function getQrLoginSignal(logs: AmDeviceServiceLog[]) {
+  for (const log of logs.slice().reverse()) {
+    const message = log.message;
+    if (!message.includes('QR') && !message.includes('qrcode')) continue;
+
+    const jsonStart = message.indexOf('{');
+    if (jsonStart >= 0) {
+      try {
+        const parsed = JSON.parse(message.slice(jsonStart)) as {
+          qrcodeBase64?: string;
+          qrcodeId?: string;
+          status?: string;
+        };
+        if (parsed.qrcodeBase64 || parsed.qrcodeId) return parsed;
+      } catch {
+        // Fall through to pattern extraction below.
+      }
+    }
+
+    const qrcodeId = message.match(/qrcodeId["':=\s]+([A-Za-z0-9._-]+)/)?.[1]
+      ?? message.match(/qr(?:code)?[-_\s]?id["':=\s]+([A-Za-z0-9._-]+)/i)?.[1];
+    const status = message.match(/status["':=\s]+([A-Za-z0-9._-]+)/i)?.[1];
+    if (qrcodeId || message.includes('QR')) {
+      return {qrcodeId, status};
+    }
+  }
+  return null;
+}
+
 function countBoxesForRack(boxes: AmBox[], rack: AmRack) {
   return boxes.filter(box => isBoxInRack(box, rack)).length;
 }
@@ -2883,6 +3022,22 @@ const styles = StyleSheet.create({
     borderTopColor: V.colors.border,
     paddingHorizontal: 12,
     paddingVertical: 10,
+  },
+  runtimePanel: {
+    gap: 10,
+    borderWidth: 1,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    padding: 12,
+    backgroundColor: V.colors.bg,
+  },
+  qrPanel: {
+    gap: 5,
+    borderWidth: 1,
+    borderColor: V.colors.warning,
+    borderRadius: 8,
+    padding: 10,
+    backgroundColor: V.colors.warningSoft,
   },
   cellText: {
     color: V.colors.fg,
