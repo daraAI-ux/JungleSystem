@@ -747,6 +747,9 @@ function PosCatalogCard({
   const isOutOfStock = item.stock <= 0;
   const isLowStock = item.stock > 0 && item.stock <= item.lowStockThreshold;
   const isInCart = !!cartLine;
+  const minimumPriceToSales = item.minimumPriceToSales ?? 0;
+  const minimumOrderQty = item.minimumOrderQty ?? 1;
+  const hasMinimumMeta = minimumPriceToSales > 0 || minimumOrderQty > 1;
 
   return (
     <View style={styles.cardSlot}>
@@ -798,6 +801,20 @@ function PosCatalogCard({
             {item.name}
           </Text>
           <Text style={styles.productPrice}>{formatRupiah(item.price)}</Text>
+          {hasMinimumMeta ? (
+            <View style={styles.productMetaList}>
+              {minimumPriceToSales > 0 ? (
+                <Text style={styles.productMinimumPrice}>
+                  Min. {formatRupiah(minimumPriceToSales)}
+                </Text>
+              ) : null}
+              {minimumOrderQty > 1 ? (
+                <Text style={styles.productMinimumOrder}>
+                  Min. order {minimumOrderQty}
+                </Text>
+              ) : null}
+            </View>
+          ) : null}
           <KolamInteractionFrame
             onPress={() => onOpenQuickView(item)}
             style={styles.quickViewButton}>
@@ -2395,6 +2412,20 @@ const styles = StyleSheet.create({
     color: V.colors.primary,
     fontSize: 12,
     fontWeight: '900',
+  },
+  productMetaList: {
+    gap: 1,
+    marginTop: 2,
+  },
+  productMinimumPrice: {
+    color: V.colors.warning,
+    fontSize: 9,
+    fontWeight: '700',
+  },
+  productMinimumOrder: {
+    color: V.colors.mutedFg,
+    fontSize: 9,
+    fontWeight: '700',
   },
   quickViewButton: {
     minHeight: 24,

@@ -11,6 +11,8 @@ export interface CatalogItem {
   code: string;
   category: string;
   price: number;
+  minimumPriceToSales?: number;
+  minimumOrderQty?: number;
   stock: number;
   lowStockThreshold: number;
   labels: string[];

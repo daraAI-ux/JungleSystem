@@ -27,6 +27,8 @@ interface BackendProduct {
   category?: string | {name?: string};
   price?: number;
   price_to_sell?: number;
+  minimum_price_to_sales?: number;
+  minimumOrderQty?: number;
   stock?: number;
   lowStockThreshold?: number;
   labels?: string[];
@@ -44,6 +46,8 @@ interface BackendSpecies {
   productCode?: string;
   price?: number;
   price_to_sell?: number;
+  minimum_price_to_sales?: number;
+  minimumOrderQty?: number;
   stock?: number;
   lowStockThreshold?: number;
   labels?: string[];
@@ -280,6 +284,8 @@ function mapProduct(product: BackendProduct): CatalogItem {
         ? product.category?.name ?? 'Product'
         : 'Product',
     price: product.price_to_sell ?? product.price ?? 0,
+    minimumPriceToSales: product.minimum_price_to_sales ?? 0,
+    minimumOrderQty: product.minimumOrderQty ?? 1,
     stock: getCatalogStock(product),
     lowStockThreshold: product.lowStockThreshold ?? 0,
     labels: product.labels ?? [],
@@ -311,6 +317,8 @@ function mapSpecies(species: BackendSpecies): CatalogItem {
     code: species.productCode ?? species.sku ?? '-',
     category: 'Species',
     price: species.price_to_sell ?? species.price ?? 0,
+    minimumPriceToSales: species.minimum_price_to_sales ?? 0,
+    minimumOrderQty: species.minimumOrderQty ?? 1,
     stock: getCatalogStock(species),
     lowStockThreshold: species.lowStockThreshold ?? 0,
     labels: species.labels ?? [],

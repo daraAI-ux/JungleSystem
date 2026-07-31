@@ -100,6 +100,10 @@ export function useKolamCheckoutController({
   const addToCart = (item: CatalogItem) => {
     setCheckout(current => {
       const existing = current.cart.find(line => line.itemId === item.id);
+      const initialQuantity = Math.min(
+        Math.max(1, item.stock),
+        Math.max(1, Math.floor(item.minimumOrderQty ?? 1)),
+      );
 
       if (!existing) {
         return {
@@ -108,7 +112,7 @@ export function useKolamCheckoutController({
             ...current.cart,
             {
               itemId: item.id,
-              quantity: 1,
+              quantity: initialQuantity,
               discountType: 'fixed',
               discountAmount: 0,
             },
