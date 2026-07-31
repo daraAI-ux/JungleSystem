@@ -235,6 +235,8 @@ export interface AmDevicePayload {
   tags?: string[];
 }
 
+export type AmDeviceAdbStatusMap = Record<string, AmDevice['adbStatus']>;
+
 export interface AmDeviceServiceLog {
   ts: string;
   level: string;
@@ -675,6 +677,13 @@ export async function getAmDevices(
   baseUrl = appConfig.amApiBaseUrl,
 ): Promise<AmListResponse<AmDevice>> {
   return getAmList<AmDevice>('/device', query, baseUrl);
+}
+
+export async function getAmDevicesAdbStatus(
+  boxId: string,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmDeviceAdbStatusMap> {
+  return amGet<AmDeviceAdbStatusMap>('/device/adb-status', {boxId}, baseUrl);
 }
 
 export async function createAmRack(

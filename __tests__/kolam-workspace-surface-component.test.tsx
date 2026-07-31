@@ -58,6 +58,7 @@ jest.mock('../src/services/am-api', () => ({
       devices: [],
     }),
   ),
+  getAmDevicesAdbStatus: jest.fn(() => Promise.resolve({})),
   getAmTasks: jest.fn(() =>
     Promise.resolve({ data: [], meta: { total: 0, limit: 0 } }),
   ),

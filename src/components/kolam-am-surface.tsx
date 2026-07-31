@@ -37,6 +37,7 @@ import {
   getAmDeviceServiceLogs,
   getAmDeviceServices,
   getAmDeviceServiceQrUrl,
+  getAmDevicesAdbStatus,
   getAmCurrentUser,
   getAmTaskById,
   getAmMutasi,
@@ -79,6 +80,7 @@ import {
   type AmCurrentUser,
   type AmDashboardData,
   type AmDevice,
+  type AmDeviceAdbStatusMap,
   type AmDevicePayload,
   type AmDeviceServiceLog,
   type AmDeviceServiceStatus,
@@ -1496,6 +1498,8 @@ function AmHardwarePage() {
   const [formAppiumPort, setFormAppiumPort] = React.useState('');
   const [actingHardwareId, setActingHardwareId] = React.useState<string | null>(null);
   const [actionMessage, setActionMessage] = React.useState<string | null>(null);
+  const [adbStatusByDeviceId, setAdbStatusByDeviceId] = React.useState<AmDeviceAdbStatusMap>({});
+  const [adbStatusError, setAdbStatusError] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -1528,19 +1532,49 @@ function AmHardwarePage() {
     return () => clearInterval(interval);
   }, [fetchHardware]);
 
-  const connectedDevices = devices.filter(device => device.adbStatus === 'connected').length;
-  const unauthorizedDevices = devices.filter(device => device.adbStatus === 'unauthorized').length;
   const selectedRack = racks.find(rack => rack._id === selectedRackId) ?? null;
   const selectedBox = boxes.find(box => box._id === selectedBoxId) ?? null;
-  const selectedDevice = devices.find(device => device._id === selectedDeviceId) ?? null;
+  const devicesWithAdbStatus = React.useMemo(
+    () => mergeAmDeviceAdbStatus(devices, adbStatusByDeviceId),
+    [adbStatusByDeviceId, devices],
+  );
+  const connectedDevices = devicesWithAdbStatus.filter(device => device.adbStatus === 'connected').length;
+  const unauthorizedDevices = devicesWithAdbStatus.filter(device => device.adbStatus === 'unauthorized').length;
+  const selectedDevice = devicesWithAdbStatus.find(device => device._id === selectedDeviceId) ?? null;
   const visibleBoxes = selectedRack
     ? boxes.filter(box => isBoxInRack(box, selectedRack))
     : [];
   const visibleDevices = selectedBox
-    ? devices.filter(device => isDeviceInBox(device, selectedBox))
+    ? devicesWithAdbStatus.filter(device => isDeviceInBox(device, selectedBox))
     : selectedRack
-      ? devices.filter(device => isDeviceInRack(device, selectedRack))
-      : devices;
+      ? devicesWithAdbStatus.filter(device => isDeviceInRack(device, selectedRack))
+      : devicesWithAdbStatus;
+
+  const fetchSelectedBoxAdbStatus = React.useCallback(async () => {
+    if (!selectedBox) {
+      setAdbStatusByDeviceId({});
+      setAdbStatusError(null);
+      return;
+    }
+
+    try {
+      const nextStatus = await getAmDevicesAdbStatus(selectedBox._id);
+      setAdbStatusByDeviceId(nextStatus);
+      setAdbStatusError(null);
+    } catch (nextError) {
+      setAdbStatusError(nextError instanceof Error ? nextError.message : 'Gagal memuat status ADB box AM.');
+    }
+  }, [selectedBox]);
+
+  React.useEffect(() => {
+    fetchSelectedBoxAdbStatus();
+  }, [fetchSelectedBoxAdbStatus]);
+
+  React.useEffect(() => {
+    if (!selectedBox) return undefined;
+    const interval = setInterval(fetchSelectedBoxAdbStatus, 10_000);
+    return () => clearInterval(interval);
+  }, [fetchSelectedBoxAdbStatus, selectedBox]);
 
   const resetHardwareRoute = React.useCallback(() => {
     setSelectedRackId(null);
@@ -1746,6 +1780,11 @@ function AmHardwarePage() {
       {actionMessage ? (
         <View style={styles.successPanel}>
           <Text style={styles.successText}>{actionMessage}</Text>
+        </View>
+      ) : null}
+      {adbStatusError ? (
+        <View style={styles.warningPanel}>
+          <Text style={styles.warningText}>ADB status box belum bisa dibaca: {adbStatusError}</Text>
         </View>
       ) : null}
       <View style={styles.tablePanel}>
@@ -5132,6 +5171,16 @@ function formatDeviceIdentifier(device: AmDevice) {
   return device.udid ?? '-';
 }
 
+function mergeAmDeviceAdbStatus(
+  devices: AmDevice[],
+  adbStatusByDeviceId: AmDeviceAdbStatusMap,
+) {
+  return devices.map(device => {
+    const adbStatus = adbStatusByDeviceId[device._id];
+    return adbStatus ? {...device, adbStatus} : device;
+  });
+}
+
 function getAdbTone(status: AmDevice['adbStatus']) {
   if (status === 'connected') return 'success';
   if (status === 'unauthorized') return 'warning';
@@ -5832,6 +5881,19 @@ const styles = StyleSheet.create({
     backgroundColor: V.colors.successSoft,
   },
   successText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  warningPanel: {
+    borderWidth: 1,
+    borderColor: V.colors.warning,
+    borderRadius: 8,
+    padding: 12,
+    backgroundColor: V.colors.warningSoft,
+  },
+  warningText: {
     color: V.colors.fg,
     fontFamily: V.fontFamily,
     fontSize: 12,

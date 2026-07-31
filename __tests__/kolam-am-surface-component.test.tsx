@@ -24,6 +24,7 @@ import {
   getAmDeviceServiceLogs,
   getAmDeviceServices,
   getAmDevices,
+  getAmDevicesAdbStatus,
   getAmMutasi,
   getAmMutasiById,
   getAmMutasiSummary,
@@ -90,6 +91,7 @@ jest.mock('../src/services/am-api', () => ({
     return `https://frogs.dunia-anura.com/api/device/${deviceId}/service/${platform}-qr${suffix}`;
   }),
   getAmDevices: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
+  getAmDevicesAdbStatus: jest.fn(() => Promise.resolve({})),
   getAmMutasi: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
   getAmMutasiById: jest.fn(() => Promise.resolve({_id: 'mutasi-1'})),
   getAmMutasiSummary: jest.fn(() => Promise.resolve({masuk: {total: 0, count: 0}, keluar: {total: 0, count: 0}})),
@@ -1204,6 +1206,9 @@ describe('KolamAmSurface', () => {
       ],
       meta: {total: 1, limit: 1},
     });
+    jest.mocked(getAmDevicesAdbStatus).mockResolvedValueOnce({
+      'device-1': 'unauthorized',
+    });
     jest.mocked(getAmServiceAccounts).mockResolvedValueOnce({
       data: [
         {
@@ -1256,6 +1261,7 @@ describe('KolamAmSurface', () => {
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Box Box 01'}).props.onPress();
     });
+    expect(getAmDevicesAdbStatus).toHaveBeenCalledWith('box-1');
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Device Phone Rack'}).props.onPress();
     });
@@ -1264,6 +1270,7 @@ describe('KolamAmSurface', () => {
     expect(text).toContain('Phone Rack');
     expect(text).toContain('Samsung');
     expect(text).toContain('A15');
+    expect(text).toContain('Unauthorized');
     expect(getAmServiceAccounts).toHaveBeenCalledWith({deviceId: 'device-1', limit: 100});
     expect(getAmDeviceServices).toHaveBeenCalledWith('device-1');
     expect(text).toContain('Service Accounts');
