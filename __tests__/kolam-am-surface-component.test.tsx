@@ -11,6 +11,7 @@ import {
   createAmDevice,
   createAmRack,
   createAmServiceAccount,
+  createAmTransfer,
   createAmUser,
   createAmWebhookConfig,
   deleteAmDevices,
@@ -68,6 +69,7 @@ jest.mock('../src/services/am-api', () => ({
   createAmDevice: jest.fn(() => Promise.resolve({_id: 'device-new'})),
   createAmRack: jest.fn(() => Promise.resolve({_id: 'rack-new'})),
   createAmServiceAccount: jest.fn(() => Promise.resolve({_id: 'service-new'})),
+  createAmTransfer: jest.fn(() => Promise.resolve({_id: 'transfer-new'})),
   createAmUser: jest.fn(() => Promise.resolve({_id: 'user-new'})),
   createAmWebhookConfig: jest.fn(() => Promise.resolve({_id: 'webhook-1'})),
   deleteAmBoxes: jest.fn(() => Promise.resolve(undefined)),
@@ -761,7 +763,7 @@ describe('KolamAmSurface', () => {
       deviceId: {_id: 'device-1', name: 'Phone 1'},
       serviceAccountId: {_id: 'service-1', label: 'BCA Main', platform: 'bca'},
       payload: {amount: 125000},
-      result: null,
+      result: {},
       error: '',
       logs: ['started'],
       retryCount: 0,
@@ -2446,6 +2448,77 @@ describe('KolamAmSurface', () => {
       status: undefined,
       serviceAccountId: 'account-1',
     });
+  });
+
+  it('creates a new transfer from the Transfers route form', async () => {
+    jest.mocked(getAmServiceAccounts).mockResolvedValue({
+      data: [
+        {
+          _id: 'account-1',
+          label: 'BCA Main',
+          platform: 'bca',
+          accountNumber: '123',
+          status: 'active',
+          deviceId: null,
+          username: '',
+          credentials: {},
+          meta: {},
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 1, limit: 1},
+    });
+    jest.mocked(getAmTransfers).mockResolvedValue({
+      data: [],
+      meta: {total: 0, limit: 20, page: 1, totalPages: 1},
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await updateAmRoute(renderer!, 'transactions');
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM New Transfer'}).props.onPress();
+    });
+
+    let inputs = renderer!.root.findAllByType(TextInput);
+    await act(async () => {
+      inputs[1].props.onChangeText('999001');
+      inputs[2].props.onChangeText('Vendor Baru');
+      inputs[3].props.onChangeText('250000');
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Segment Mandiri'}).props.onPress();
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Segment BI FAST'}).props.onPress();
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Segment Purchase'}).props.onPress();
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Transfer Create'}).props.onPress();
+    });
+
+    expect(getAmServiceAccounts).toHaveBeenCalledWith({limit: 100});
+    expect(createAmTransfer).toHaveBeenCalledWith({
+      accountId: undefined,
+      transferType: 'transfer',
+      recipientAccount: '999001',
+      recipientName: 'Vendor Baru',
+      recipientBank: 'Mandiri',
+      transferMethod: 'BI FAST',
+      transactionPurpose: 'Purchase',
+      amount: 250000,
+    });
+    expect(getAmTransfers).toHaveBeenCalledTimes(2);
+    expect(renderText(renderer!).join(' ')).toContain('Transfer created');
   });
 
   it('loads transfer detail from the Transfers route', async () => {

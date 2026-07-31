@@ -353,6 +353,17 @@ export interface AmTransfer {
   updatedAt: string;
 }
 
+export interface AmTransferPayload {
+  accountId?: string;
+  transferType?: AmTransferType;
+  transferMethod?: string;
+  transactionPurpose?: string;
+  recipientAccount: string;
+  recipientName?: string;
+  recipientBank?: string;
+  amount?: number;
+}
+
 export interface AmMutasi {
   _id: string;
   accountId: AmBankAccountRef | string;
@@ -954,6 +965,13 @@ export async function getAmTransfers(
   baseUrl = appConfig.amApiBaseUrl,
 ): Promise<AmListResponse<AmTransfer>> {
   return getAmList<AmTransfer>('/transfer', query, baseUrl);
+}
+
+export async function createAmTransfer(
+  payload: AmTransferPayload,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmTransfer> {
+  return amPost<AmTransfer>('/transfer', payload, baseUrl);
 }
 
 export async function getAmTransferById(

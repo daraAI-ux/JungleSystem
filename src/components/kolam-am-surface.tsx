@@ -23,6 +23,7 @@ import {
   createAmDevice,
   createAmRack,
   createAmServiceAccount,
+  createAmTransfer,
   createAmUser,
   createAmWebhookConfig,
   deleteAmBoxes,
@@ -131,6 +132,13 @@ const AM_ACTIVITY_LOG_TYPES = ['all', 'api', 'page'];
 const AM_ACTIVITY_LOG_STATUSES = ['all', 'success', 'failed'];
 const AM_ACTIVITY_LOG_METHODS = ['all', 'GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
 const AM_PLATFORMS = ['all', 'whatsapp', 'tiktok', 'instagram', 'tokopedia', 'shopee', 'bca', 'brimo', 'dana'];
+const AM_RECIPIENT_BANKS = ['BRI', 'BCA', 'Mandiri', 'BNI', 'BSI', 'CIMB Niaga', 'Permata', 'Danamon', 'OCBC NISP', 'BTN'];
+const AM_TRANSFER_METHODS = ['BI FAST', 'Realtime Online'];
+const AM_TRANSFER_METHOD_FEES: Record<string, number> = {
+  'BI FAST': 2500,
+  'Realtime Online': 6500,
+};
+const AM_TRANSACTION_PURPOSES = ['Investment', 'Purchase', 'Others (for various purposes)', 'Transfer of Wealth'];
 const AM_PLATFORM_LABELS: Record<string, string> = {
   whatsapp: 'WhatsApp',
   tokopedia: 'Tokopedia',
@@ -2988,6 +2996,16 @@ function AmTransfersPage({initialTransferId}: {initialTransferId?: string}) {
   const [actingTransferId, setActingTransferId] = React.useState<string | null>(null);
   const [actionMessage, setActionMessage] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
+  const [showTransferForm, setShowTransferForm] = React.useState(false);
+  const [isSubmittingTransfer, setIsSubmittingTransfer] = React.useState(false);
+  const [formAccountId, setFormAccountId] = React.useState('auto');
+  const [formTransferType, setFormTransferType] = React.useState<'transfer' | 'virtual-account'>('transfer');
+  const [formRecipientAccount, setFormRecipientAccount] = React.useState('');
+  const [formRecipientName, setFormRecipientName] = React.useState('');
+  const [formRecipientBank, setFormRecipientBank] = React.useState('');
+  const [formTransferMethod, setFormTransferMethod] = React.useState('');
+  const [formTransactionPurpose, setFormTransactionPurpose] = React.useState('');
+  const [formAmount, setFormAmount] = React.useState('');
 
   const fetchTransfers = React.useCallback(async () => {
     try {
@@ -3109,6 +3127,11 @@ function AmTransfersPage({initialTransferId}: {initialTransferId?: string}) {
   const rangeTo = total ? Math.min(page * limit, total) : 0;
   const transferStats = getTransferStats(transfers);
   const transferAccountItems = React.useMemo(() => ['all', ...accounts.map(account => account._id)], [accounts]);
+  const activeTransferAccounts = React.useMemo(
+    () => accounts.filter(account => account.status === 'active'),
+    [accounts],
+  );
+  const transferCreateAccountItems = React.useMemo(() => ['auto', ...activeTransferAccounts.map(account => account._id)], [activeTransferAccounts]);
   const transferAccountLabels = React.useMemo<Record<string, string>>(() => {
     const labels: Record<string, string> = {all: 'All Accounts'};
     accounts.forEach(account => {
@@ -3116,6 +3139,115 @@ function AmTransfersPage({initialTransferId}: {initialTransferId?: string}) {
     });
     return labels;
   }, [accounts]);
+  const transferCreateAccountLabels = React.useMemo<Record<string, string>>(() => ({
+    ...transferAccountLabels,
+    auto: 'Auto-select',
+  }), [transferAccountLabels]);
+  const selectedCreateAccount = React.useMemo(
+    () => formAccountId === 'auto' ? null : accounts.find(account => account._id === formAccountId) ?? null,
+    [accounts, formAccountId],
+  );
+  const selectedSourceBank = getBankFromAmPlatform(selectedCreateAccount?.platform);
+  const isVirtualAccountTransfer = formTransferType === 'virtual-account';
+  const isInterBankTransfer = !isVirtualAccountTransfer
+    && formRecipientBank !== ''
+    && (selectedSourceBank ? selectedSourceBank !== formRecipientBank : !['BRI', 'BCA'].includes(formRecipientBank));
+  const transferFee = isInterBankTransfer && formTransferMethod ? AM_TRANSFER_METHOD_FEES[formTransferMethod] ?? 0 : 0;
+  const parsedTransferAmount = parseOptionalRupiah(formAmount);
+
+  const resetTransferForm = React.useCallback(() => {
+    setFormAccountId('auto');
+    setFormTransferType('transfer');
+    setFormRecipientAccount('');
+    setFormRecipientName('');
+    setFormRecipientBank('');
+    setFormTransferMethod('');
+    setFormTransactionPurpose('');
+    setFormAmount('');
+  }, []);
+
+  const handleCreateTransferTypeChange = React.useCallback((value: string) => {
+    if (value !== 'transfer' && value !== 'virtual-account') return;
+    setFormTransferType(value);
+    setFormRecipientBank('');
+    setFormTransferMethod('');
+    setFormTransactionPurpose('');
+  }, []);
+
+  const handleRecipientBankChange = React.useCallback((value: string) => {
+    setFormRecipientBank(value);
+    setFormTransferMethod('');
+    setFormTransactionPurpose('');
+  }, []);
+
+  const handleTransferMethodChange = React.useCallback((value: string) => {
+    setFormTransferMethod(value);
+    if (value !== 'BI FAST') {
+      setFormTransactionPurpose('');
+    }
+  }, []);
+
+  const submitTransferForm = React.useCallback(async () => {
+    const recipientAccount = formRecipientAccount.trim();
+    const recipientName = formRecipientName.trim();
+    if (!recipientAccount) {
+      setError('Recipient account is required');
+      return;
+    }
+    if (!isVirtualAccountTransfer && !formRecipientBank) {
+      setError('Recipient bank is required');
+      return;
+    }
+    if (parsedTransferAmount !== undefined && parsedTransferAmount > 0 && parsedTransferAmount < 10000) {
+      setError('Minimal amount Rp 10.000');
+      return;
+    }
+    if (isInterBankTransfer && !formTransferMethod) {
+      setError('Transfer method is required');
+      return;
+    }
+    if (isInterBankTransfer && formTransferMethod === 'BI FAST' && !formTransactionPurpose) {
+      setError('Transaction purpose is required');
+      return;
+    }
+
+    try {
+      setIsSubmittingTransfer(true);
+      setError(null);
+      setActionMessage(null);
+      await createAmTransfer({
+        accountId: formAccountId === 'auto' ? undefined : formAccountId,
+        transferType: formTransferType,
+        recipientAccount,
+        recipientName: recipientName || undefined,
+        recipientBank: isVirtualAccountTransfer ? undefined : formRecipientBank,
+        transferMethod: isInterBankTransfer ? formTransferMethod : undefined,
+        transactionPurpose: isInterBankTransfer ? formTransactionPurpose : undefined,
+        amount: parsedTransferAmount && parsedTransferAmount > 0 ? parsedTransferAmount : undefined,
+      });
+      setActionMessage('Transfer created');
+      setShowTransferForm(false);
+      resetTransferForm();
+      await fetchTransfers();
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Create transfer failed');
+    } finally {
+      setIsSubmittingTransfer(false);
+    }
+  }, [
+    fetchTransfers,
+    formAccountId,
+    formRecipientAccount,
+    formRecipientBank,
+    formRecipientName,
+    formTransactionPurpose,
+    formTransferMethod,
+    formTransferType,
+    isInterBankTransfer,
+    isVirtualAccountTransfer,
+    parsedTransferAmount,
+    resetTransferForm,
+  ]);
 
   const runTransferAction = React.useCallback(async (
     transfer: AmTransfer,
@@ -3151,12 +3283,101 @@ function AmTransfersPage({initialTransferId}: {initialTransferId?: string}) {
         <KolamSearchField value={search} onChangeText={handleTransferSearchChange} placeholder="Search transfer..." containerStyle={styles.taskSearch} trailingLabel={`${total} transfer`} />
         <AmSegmentGroup active={status} items={['all', 'pending', 'processing', 'success', 'failed']} onSelect={handleTransferStatusChange} />
         <AmSegmentGroup active={accountFilter} items={transferAccountItems} labels={transferAccountLabels} onSelect={handleTransferAccountChange} />
+        <KolamButton
+          accessibilityLabel="AM New Transfer"
+          label="New Transfer"
+          intent={showTransferForm ? 'warning' : 'outline'}
+          size="sm"
+          onPress={() => setShowTransferForm(current => !current)}
+        />
         <KolamButton label={isLoading ? 'Memuat' : 'Refresh'} intent="outline" muted={isLoading} size="sm" onPress={fetchTransfers} />
       </View>
       <AmInlineError title="Transfers AM belum bisa dibaca" error={error} />
       {actionMessage ? (
         <View style={styles.successPanel}>
           <Text style={styles.successText}>{actionMessage}</Text>
+        </View>
+      ) : null}
+      {showTransferForm ? (
+        <View style={styles.panel}>
+          <View style={styles.formGrid}>
+            <View style={styles.detailHeader}>
+              <Text style={styles.panelTitle}>New Transfer</Text>
+              <KolamButton
+                accessibilityLabel="AM Transfer Cancel Create"
+                label="Cancel"
+                intent="outline"
+                size="sm"
+                onPress={() => {
+                  setShowTransferForm(false);
+                  resetTransferForm();
+                }}
+              />
+            </View>
+            <View style={styles.formField}>
+              <Text style={styles.formLabel}>Source Account</Text>
+              <AmSegmentGroup
+                active={formAccountId}
+                items={transferCreateAccountItems}
+                labels={transferCreateAccountLabels}
+                onSelect={setFormAccountId}
+              />
+            </View>
+            <View style={styles.formField}>
+              <Text style={styles.formLabel}>Transfer Type</Text>
+              <AmSegmentGroup
+                active={formTransferType}
+                items={['transfer', 'virtual-account']}
+                labels={{transfer: 'Transfer', 'virtual-account': 'Virtual Account'}}
+                onSelect={handleCreateTransferTypeChange}
+              />
+            </View>
+            <View style={styles.formGrid}>
+              <AmTextInput
+                label={isVirtualAccountTransfer ? 'VA Number' : 'Recipient Account Number'}
+                placeholder={isVirtualAccountTransfer ? 'VA number' : 'Account number'}
+                value={formRecipientAccount}
+                onChangeText={setFormRecipientAccount}
+              />
+              <AmTextInput label="Recipient Name" placeholder="Recipient name" value={formRecipientName} onChangeText={setFormRecipientName} />
+              {!isVirtualAccountTransfer ? (
+                <View style={styles.formField}>
+                  <Text style={styles.formLabel}>Recipient Bank</Text>
+                  <AmSegmentGroup active={formRecipientBank} items={AM_RECIPIENT_BANKS} onSelect={handleRecipientBankChange} />
+                </View>
+              ) : null}
+              {isInterBankTransfer ? (
+                <View style={styles.formField}>
+                  <Text style={styles.formLabel}>Transfer Method</Text>
+                  <AmSegmentGroup active={formTransferMethod} items={AM_TRANSFER_METHODS} onSelect={handleTransferMethodChange} />
+                </View>
+              ) : null}
+              {isInterBankTransfer && formTransferMethod === 'BI FAST' ? (
+                <View style={styles.formField}>
+                  <Text style={styles.formLabel}>Transaction Purpose</Text>
+                  <AmSegmentGroup active={formTransactionPurpose} items={AM_TRANSACTION_PURPOSES} onSelect={setFormTransactionPurpose} />
+                </View>
+              ) : null}
+              <AmTextInput label="Amount (IDR)" placeholder="0" value={formAmount} onChangeText={setFormAmount} />
+            </View>
+            {transferFee > 0 || parsedTransferAmount ? (
+              <View style={styles.successPanel}>
+                <Text style={styles.successText}>
+                  Total {formatRupiah((parsedTransferAmount ?? 0) + transferFee)}
+                </Text>
+              </View>
+            ) : null}
+            <View style={styles.inlineActions}>
+              <KolamButton
+                accessibilityLabel="AM Transfer Create"
+                label={isSubmittingTransfer ? 'Creating' : 'Create Transfer'}
+                intent="warning"
+                muted={isSubmittingTransfer}
+                size="sm"
+                onPress={submitTransferForm}
+              />
+            </View>
+          </View>
         </View>
       ) : null}
       <View style={styles.metricGrid}>
@@ -5143,6 +5364,19 @@ function formatTaskCreatedBy(createdBy: AmTask['createdBy']) {
 
 function isTransferBanking(platform: string) {
   return platform === 'bca' || platform === 'brimo';
+}
+
+function getBankFromAmPlatform(platform?: string | null) {
+  if (platform === 'bca') return 'BCA';
+  if (platform === 'brimo') return 'BRI';
+  return null;
+}
+
+function parseOptionalRupiah(value: string) {
+  const normalized = value.replace(/[^\d]/g, '');
+  if (!normalized) return undefined;
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : undefined;
 }
 
 function getCredentialString(
