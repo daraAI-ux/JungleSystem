@@ -4,6 +4,7 @@ import ReactTestRenderer, {act} from 'react-test-renderer';
 import {KolamAmSurface} from '../src/components/kolam-am-surface';
 import {
   cancelAmTransfer,
+  cancelAmTask,
   clearAmServiceAccountSession,
   createAmWebhookConfig,
   deleteAmWebhookConfig,
@@ -24,10 +25,12 @@ import {seedUnifiedDataset} from '../src/services/unified-data';
 
 jest.mock('../src/services/am-api', () => ({
   cancelAmTransfer: jest.fn(() => Promise.resolve({_id: 'transfer-1'})),
+  cancelAmTask: jest.fn(() => Promise.resolve({_id: 'task-1'})),
   clearAmServiceAccountSession: jest.fn(() => Promise.resolve({stopped: true, deleted: ['session.json'], missing: []})),
   createAmWebhookConfig: jest.fn(() => Promise.resolve({_id: 'webhook-1'})),
   deleteAmWebhookConfig: jest.fn(() => Promise.resolve({success: true})),
   forceFailAmTransfer: jest.fn(() => Promise.resolve({_id: 'transfer-1'})),
+  forceFailAmTask: jest.fn(() => Promise.resolve({_id: 'task-1'})),
   getAmActivityLogs: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
   getAmActivityLogStats: jest.fn(() => Promise.resolve({since: '', days: 7, byType: [], byStatus: [], topUsers: [], topPaths: []})),
   getAmBoxes: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
@@ -44,6 +47,7 @@ jest.mock('../src/services/am-api', () => ({
   getAmWebhookEvents: jest.fn(() => Promise.resolve(['transfer.success', 'mutasi.created'])),
   getAmWebhookLogs: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
   retryAmTransfer: jest.fn(() => Promise.resolve({_id: 'transfer-1'})),
+  retryAmTask: jest.fn(() => Promise.resolve({_id: 'task-1'})),
   startAmDeviceService: jest.fn(() => Promise.resolve({success: true})),
   stopAmDeviceService: jest.fn(() => Promise.resolve({success: true})),
   testAmWebhookPing: jest.fn(() => Promise.resolve({success: true})),
@@ -141,6 +145,51 @@ describe('KolamAmSurface', () => {
     });
 
     expect(getAmServiceAccounts).toHaveBeenCalledWith({platform: undefined});
+  });
+
+  it('runs guarded task actions from the Tasks route', async () => {
+    jest.mocked(jest.requireMock('../src/services/am-api').getAmTasks).mockResolvedValue({
+      data: [
+        {
+          _id: 'task-1',
+          type: 'stock_sync',
+          status: 'queued',
+          priority: 1,
+          deviceId: {_id: 'device-1', name: 'Phone 1'},
+          serviceAccountId: {_id: 'service-1', label: 'Tokopedia Main'},
+          payload: {},
+          result: {},
+          error: '',
+          logs: [],
+          retryCount: 0,
+          maxRetries: 3,
+          startedAt: null,
+          completedAt: null,
+          createdBy: null,
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 1, limit: 1},
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Tasks'}).props.onPress();
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Task Cancel task-1'}).props.onPress();
+    });
+
+    expect(cancelAmTask).toHaveBeenCalledWith('task-1');
+    expect(jest.requireMock('../src/services/am-api').getAmTasks).toHaveBeenCalledTimes(2);
   });
 
   it('expands a service row and loads logs plus task history', async () => {

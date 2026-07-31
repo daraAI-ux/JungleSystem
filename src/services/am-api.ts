@@ -494,6 +494,27 @@ export async function getAmTasks(
   return response;
 }
 
+export async function cancelAmTask(
+  id: string,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmTask> {
+  return amPost<AmTask>(`/task/${id}/cancel`, undefined, baseUrl);
+}
+
+export async function retryAmTask(
+  id: string,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmTask> {
+  return amPost<AmTask>(`/task/${id}/retry`, undefined, baseUrl);
+}
+
+export async function forceFailAmTask(
+  id: string,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmTask> {
+  return amPost<AmTask>(`/task/${id}/force-fail`, undefined, baseUrl);
+}
+
 export async function getAmServiceAccounts(
   query?: AmServiceAccountQuery,
   baseUrl = appConfig.amApiBaseUrl,

@@ -6,10 +6,12 @@ import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {formatRupiah} from '../lib/money';
 import {
   cancelAmTransfer,
+  cancelAmTask,
   clearAmServiceAccountSession,
   createAmWebhookConfig,
   deleteAmWebhookConfig,
   forceFailAmTransfer,
+  forceFailAmTask,
   getAmBoxes,
   getAmDevices,
   getAmActivityLogs,
@@ -26,6 +28,7 @@ import {
   getAmWebhookEvents,
   getAmWebhookLogs,
   retryAmTransfer,
+  retryAmTask,
   startAmDeviceService,
   stopAmDeviceService,
   testAmWebhookPing,
@@ -259,6 +262,8 @@ function AmTasksPage() {
   const [type, setType] = React.useState<string>('all');
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const [actingTaskId, setActingTaskId] = React.useState<string | null>(null);
+  const [actionMessage, setActionMessage] = React.useState<string | null>(null);
   const [total, setTotal] = React.useState(0);
 
   const fetchTasks = React.useCallback(async () => {
@@ -290,6 +295,31 @@ function AmTasksPage() {
     return () => clearInterval(interval);
   }, [fetchTasks]);
 
+  const runTaskAction = React.useCallback(async (
+    task: AmTask,
+    action: 'cancel' | 'retry' | 'force-fail',
+  ) => {
+    try {
+      setActingTaskId(task._id);
+      setActionMessage(null);
+      if (action === 'cancel') {
+        await cancelAmTask(task._id);
+        setActionMessage(`Task ${task._id} dibatalkan.`);
+      } else if (action === 'retry') {
+        await retryAmTask(task._id);
+        setActionMessage(`Task ${task._id} dijadwalkan ulang.`);
+      } else {
+        await forceFailAmTask(task._id);
+        setActionMessage(`Task ${task._id} ditandai gagal.`);
+      }
+      await fetchTasks();
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Aksi task AM gagal.');
+    } finally {
+      setActingTaskId(null);
+    }
+  }, [fetchTasks]);
+
   return (
     <View style={styles.pageStack}>
       <View style={styles.filterBar}>
@@ -304,6 +334,11 @@ function AmTasksPage() {
           <Text style={styles.errorText}>{error}</Text>
         </View>
       ) : null}
+      {actionMessage ? (
+        <View style={styles.successPanel}>
+          <Text style={styles.successText}>{actionMessage}</Text>
+        </View>
+      ) : null}
       <View style={styles.tablePanel}>
         <View style={styles.tableHeader}>
           <Text style={[styles.tableHeaderText, styles.typeCol]}>Type</Text>
@@ -311,6 +346,7 @@ function AmTasksPage() {
           <Text style={[styles.tableHeaderText, styles.deviceCol]}>Device</Text>
           <Text style={[styles.tableHeaderText, styles.accountCol]}>Account</Text>
           <Text style={[styles.tableHeaderText, styles.dateCol]}>Created</Text>
+          <Text style={[styles.tableHeaderText, styles.actionCol]}>Action</Text>
         </View>
         {isLoading && !tasks.length ? <Text style={styles.loadingText}>Memuat tasks dari AM live...</Text> : null}
         {!isLoading && !tasks.length ? <Text style={styles.loadingText}>No tasks found</Text> : null}
@@ -321,6 +357,13 @@ function AmTasksPage() {
             <Text style={[styles.cellText, styles.deviceCol]} numberOfLines={1}>{task.deviceId?.name ?? '-'}</Text>
             <Text style={[styles.cellText, styles.accountCol]} numberOfLines={1}>{task.serviceAccountId?.label ?? task.serviceAccountId?.platform ?? '-'}</Text>
             <Text style={[styles.cellText, styles.dateCol]}>{formatAmDate(task.createdAt)}</Text>
+            <View style={styles.actionCol}>
+              <AmTaskActions
+                disabled={actingTaskId === task._id}
+                task={task}
+                onAction={runTaskAction}
+              />
+            </View>
           </View>
         ))}
       </View>
@@ -596,6 +639,51 @@ function AmServicesPage() {
           );
         })}
       </View>
+    </View>
+  );
+}
+
+function AmTaskActions({
+  disabled,
+  onAction,
+  task,
+}: {
+  disabled: boolean;
+  onAction: (task: AmTask, action: 'cancel' | 'retry' | 'force-fail') => void;
+  task: AmTask;
+}) {
+  const actions: Array<{
+    id: 'cancel' | 'retry' | 'force-fail';
+    label: string;
+    intent: 'outline' | 'danger' | 'warning';
+  }> = [];
+
+  if (task.status === 'pending' || task.status === 'queued' || task.status === 'processing') {
+    actions.push({id: 'cancel', label: 'Cancel', intent: 'outline'});
+    actions.push({id: 'force-fail', label: 'Force Fail', intent: 'danger'});
+  }
+
+  if (task.status === 'failed') {
+    actions.push({id: 'retry', label: 'Retry', intent: 'warning'});
+  }
+
+  if (!actions.length) {
+    return <Text style={styles.rowMeta}>-</Text>;
+  }
+
+  return (
+    <View style={styles.inlineActions}>
+      {actions.map(action => (
+        <KolamButton
+          key={action.id}
+          accessibilityLabel={`AM Task ${action.label} ${task._id}`}
+          intent={action.intent}
+          label={disabled ? '...' : action.label}
+          muted={disabled}
+          size="sm"
+          onPress={() => onAction(task, action.id)}
+        />
+      ))}
     </View>
   );
 }
