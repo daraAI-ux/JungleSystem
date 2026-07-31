@@ -7096,11 +7096,15 @@ const styles = StyleSheet.create({
   teamDaraWindowOverlay: {
     backgroundColor: '#f9fafb',
     flex: 1,
+    justifyContent: 'flex-start',
   },
   teamDaraWindow: {
+    alignSelf: 'stretch',
     backgroundColor: '#f9fafb',
+    flexShrink: 0,
     gap: 8,
-    maxHeight: 760,
+    height: '72%',
+    minHeight: '48%',
     padding: 12,
   },
   teamDaraWindowHeader: {
@@ -7115,7 +7119,8 @@ const styles = StyleSheet.create({
     backgroundColor: V.colors.primarySoft,
   },
   teamDaraWindowBody: {
-    maxHeight: 560,
+    flex: 1,
+    flexBasis: 0,
     minHeight: 0,
     padding: 0,
   },
