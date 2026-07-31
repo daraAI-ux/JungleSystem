@@ -4017,13 +4017,13 @@ export function KolamSettingsWebConfigSurface({
                 },
               ]}
             />
-            <View style={styles.storeHoursTimeGrid}>
+            <View style={styles.regionHierarchyGrid}>
               <KolamDropdownSelect
                 label="Provinsi"
                 options={provinceDropdownOptions}
                 searchable
                 searchPlaceholder="Cari provinsi"
-                style={styles.regionDropdownControl}
+                style={styles.regionHierarchyControl}
                 value={selectedProvince}
                 onChange={value => setRegionSelection('province', value)}
               />
@@ -4032,7 +4032,7 @@ export function KolamSettingsWebConfigSurface({
                 options={regencyDropdownOptions}
                 searchable={Boolean(selectedProvince)}
                 searchPlaceholder="Cari kota / kabupaten"
-                style={styles.regionDropdownControl}
+                style={styles.regionHierarchyControl}
                 value={selectedRegency}
                 onChange={value => {
                   if (selectedProvince) {
@@ -4045,7 +4045,7 @@ export function KolamSettingsWebConfigSurface({
                 options={districtDropdownOptions}
                 searchable={Boolean(selectedRegency)}
                 searchPlaceholder="Cari kecamatan"
-                style={styles.regionDropdownControl}
+                style={styles.regionHierarchyControl}
                 value={selectedDistrict}
                 onChange={value => {
                   if (selectedRegency) {
@@ -4058,7 +4058,7 @@ export function KolamSettingsWebConfigSurface({
                 options={villageDropdownOptions}
                 searchable={Boolean(selectedDistrict)}
                 searchPlaceholder="Cari kelurahan"
-                style={styles.regionDropdownControl}
+                style={styles.regionHierarchyControl}
                 value={selectedVillage}
                 onChange={value => {
                   if (selectedDistrict) {
@@ -9867,21 +9867,28 @@ const styles = StyleSheet.create({
     gap: 12,
     padding: 12,
   },
+  regionHierarchyGrid: {
+    alignItems: 'flex-end',
+    flexDirection: 'row',
+    gap: 12,
+  },
+  regionHierarchyControl: {
+    flex: 1,
+    minWidth: 0,
+  },
   regionStatsGrid: {
     alignItems: 'stretch',
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
+    gap: 12,
   },
   regionStatsCard: {
     backgroundColor: '#ffffff',
     borderColor: V.colors.border,
     borderRadius: 8,
     borderWidth: 1,
-    flexBasis: 210,
-    flexGrow: 1,
+    flex: 1,
     gap: 10,
-    minWidth: 190,
+    minWidth: 0,
     padding: 12,
   },
   regionStatsDetail: {
