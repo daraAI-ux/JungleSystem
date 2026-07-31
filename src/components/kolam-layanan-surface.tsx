@@ -47,6 +47,7 @@ import {
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamLayananExecutionDetail } from './kolam-layanan-execution-detail';
 import { KolamLayananServiceEditor } from './kolam-layanan-service-editor';
+import { KolamLayananSubscriptionDetail } from './kolam-layanan-subscription-detail';
 import { KolamLayananVoucherDetail } from './kolam-layanan-voucher-detail';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamStatsCardStrip } from './kolam-stats-card-strip';
@@ -122,6 +123,15 @@ export function KolamLayananSurface({
   if (controller.mode === 'execution') {
     return (
       <KolamLayananExecutionDetail
+        onRouteChange={onRouteChange}
+        route={route}
+      />
+    );
+  }
+
+  if (controller.mode === 'langganan') {
+    return (
+      <KolamLayananSubscriptionDetail
         onRouteChange={onRouteChange}
         route={route}
       />

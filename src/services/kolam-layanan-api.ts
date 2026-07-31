@@ -5,7 +5,10 @@ import {
   normalizeKolamLayananScheduleRequirements,
   normalizeKolamLayananService,
   normalizeKolamLayananServiceList,
+  normalizeKolamLayananSubscriptionDetail,
   normalizeKolamLayananSubscriptionList,
+  normalizeKolamLayananSubscriptionPendingVerifications,
+  normalizeKolamLayananSubscriptionVisitPreviews,
   normalizeKolamLayananTermsContext,
   normalizeKolamLayananTaskDetail,
   normalizeKolamLayananVoucherDetail,
@@ -18,8 +21,11 @@ import {
   type KolamLayananServiceListQuery,
   type KolamLayananServiceListResult,
   type KolamLayananServiceSavePayload,
+  type KolamLayananSubscriptionDetail,
   type KolamLayananSubscriptionListQuery,
   type KolamLayananSubscriptionListResult,
+  type KolamLayananSubscriptionPendingVerification,
+  type KolamLayananSubscriptionVisitPreview,
   type KolamLayananTaskDetail,
   type KolamLayananTermsContext,
   type KolamLayananVisitSlot,
@@ -27,6 +33,7 @@ import {
   type KolamLayananVoucherMaterialChargeMode,
 } from '../domain/kolam-layanan';
 import { apiRequest } from '../lib/api-client';
+import { downloadKolamSaleInvoice } from './kolam-sales-api';
 
 interface DataResponse<T> {
   data: T;
@@ -117,6 +124,48 @@ export async function getKolamLayananSubscriptions(
     },
   });
   return normalizeKolamLayananSubscriptionList(payload, query);
+}
+
+export async function getKolamLayananSubscription(
+  id: string,
+): Promise<KolamLayananSubscriptionDetail> {
+  const payload = await kolamRequest<unknown>(
+    `/subscriptions/${encodeURIComponent(id)}`,
+  );
+  return normalizeKolamLayananSubscriptionDetail(payload);
+}
+
+export async function getKolamLayananSubscriptionUpcomingVisits(
+  id: string,
+): Promise<KolamLayananSubscriptionVisitPreview[]> {
+  const payload = await kolamRequest<unknown>(
+    `/subscriptions/${encodeURIComponent(id)}/upcoming-visits`,
+  );
+  return normalizeKolamLayananSubscriptionVisitPreviews(payload);
+}
+
+export async function getKolamLayananSubscriptionPendingVerifications(
+  id: string,
+): Promise<KolamLayananSubscriptionPendingVerification[]> {
+  const payload = await kolamRequest<unknown>(
+    `/subscriptions/${encodeURIComponent(id)}/pending-customer-verifications`,
+  );
+  return normalizeKolamLayananSubscriptionPendingVerifications(payload);
+}
+
+export async function downloadKolamLayananSubscriptionInvoice(
+  detail: Pick<
+    KolamLayananSubscriptionDetail,
+    'saleId' | 'saleInvoiceCode' | 'subscriptionNumber' | 'id'
+  >,
+): Promise<{ path?: string; name: string }> {
+  if (!detail.saleId) {
+    throw new Error('Langganan tidak terhubung ke faktur penjualan.');
+  }
+  return downloadKolamSaleInvoice(
+    detail.saleId,
+    detail.saleInvoiceCode || detail.subscriptionNumber || detail.id,
+  );
 }
 
 export async function getKolamLayananVoucher(

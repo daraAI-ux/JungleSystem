@@ -311,6 +311,8 @@ export interface KolamLayananVoucherDetail {
   subscriptionNumber: string | null;
   initiatedDosingId: string | null;
   initiatedMaintenanceId: string | null;
+  enclosureId: string | null;
+  enclosureName: string | null;
   initiated: boolean;
   raw: unknown;
 }
@@ -716,6 +718,49 @@ export interface KolamLayananSubscription {
   autoRenew: boolean;
 }
 
+export interface KolamLayananSubscriptionDetail extends KolamLayananSubscription {
+  customerId: string | null;
+  customerPhone: string | null;
+  customerEmail: string | null;
+  serviceId: string | null;
+  taskType: string | null;
+  saleId: string | null;
+  saleInvoiceCode: string | null;
+  saleStatus: string | null;
+  notes: string;
+  transportCostDefault: number;
+  packageTasksCount: number;
+  enclosureId: string | null;
+  enclosureName: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+}
+
+export interface KolamLayananSubscriptionCrossLink {
+  id: string;
+  label: string;
+  description: string;
+  route: string | null;
+  available: boolean;
+}
+
+export interface KolamLayananSubscriptionVisitPreview {
+  packageTaskCode: string;
+  visitTitle: string;
+  scheduledTime: string | null;
+  estimatedAt: string | null;
+}
+
+export interface KolamLayananSubscriptionPendingVerification {
+  taskId: string;
+  executionId: string;
+  pendingServiceId: string | null;
+  visitTitle: string;
+  packageTaskCode: string;
+  scheduledTime: string | null;
+  href: string | null;
+}
+
 export interface KolamLayananSubscriptionListQuery {
   page?: number;
   limit?: number;
@@ -776,6 +821,64 @@ export function getKolamLayananSubscriptionStatusIntent(
     return 'secondary';
   }
   return 'info';
+}
+
+/** Read-only deep links from subscription detail to related modules. */
+export function buildKolamLayananSubscriptionCrossLinks(
+  detail: KolamLayananSubscriptionDetail,
+): KolamLayananSubscriptionCrossLink[] {
+  return [
+    {
+      id: 'sales',
+      label: 'Penjualan',
+      description: detail.saleInvoiceCode
+        ? `Faktur ${detail.saleInvoiceCode}`
+        : 'Faktur penjualan terkait',
+      route: detail.saleId ? `/sales/${detail.saleId}` : null,
+      available: Boolean(detail.saleId),
+    },
+    {
+      id: 'voucher',
+      label: 'Voucher layanan',
+      description: detail.voucherSerial || 'Pending service',
+      route: detail.voucherId
+        ? `${KOLAM_LAYANAN_ROOT}/voucher/${detail.voucherId}`
+        : null,
+      available: Boolean(detail.voucherId),
+    },
+    {
+      id: 'service',
+      label: 'Paket layanan',
+      description: detail.serviceName,
+      route: detail.serviceId
+        ? `${KOLAM_LAYANAN_ROOT}/${detail.serviceId}`
+        : null,
+      available: Boolean(detail.serviceId),
+    },
+    {
+      id: 'enclosure',
+      label: 'Kandang',
+      description: detail.enclosureName || 'Kandang pelanggan',
+      route: detail.enclosureId
+        ? `/enclosures/${detail.enclosureId}`
+        : '/enclosures',
+      available: true,
+    },
+    {
+      id: 'stock',
+      label: 'Transaksi stok',
+      description: 'Riwayat pergerakan stok terkait penjualan',
+      route: '/stock-transaction',
+      available: true,
+    },
+    {
+      id: 'complaint',
+      label: 'Komplain',
+      description: 'Komplain terkait penjualan/langganan',
+      route: '/complaints',
+      available: true,
+    },
+  ];
 }
 
 export function getKolamLayananPendingStatusLabel(status?: string | null) {
@@ -933,6 +1036,14 @@ export function getKolamLayananServiceIdFromRoute(route: string): string | null 
 export function getKolamLayananVoucherIdFromRoute(route: string): string | null {
   const path = normalizeKolamLayananPath(route);
   const match = path.match(/^\/layanan\/voucher\/([^/]+)$/);
+  return match?.[1] ?? null;
+}
+
+export function getKolamLayananSubscriptionIdFromRoute(
+  route: string,
+): string | null {
+  const path = normalizeKolamLayananPath(route);
+  const match = path.match(/^\/layanan\/langganan\/([^/]+)$/);
   return match?.[1] ?? null;
 }
 
@@ -1397,6 +1508,119 @@ export function normalizeKolamLayananSubscription(
   };
 }
 
+export function normalizeKolamLayananSubscriptionDetail(
+  payload: unknown,
+): KolamLayananSubscriptionDetail {
+  const base = normalizeKolamLayananSubscription(payload);
+  const record = asRecord(unwrapData(payload));
+  const customer = asRecord(record.customer);
+  const service = asRecord(record.service);
+  const sale = asRecord(record.sale);
+  const pending = asRecord(record.pendingService);
+  const packageTasks = Array.isArray(record.packageTasksSnapshot)
+    ? record.packageTasksSnapshot
+    : [];
+
+  return {
+    ...base,
+    customerId:
+      getString(customer, '_id') ||
+      getString(customer, 'id') ||
+      (typeof record.customer === 'string' ? record.customer : '') ||
+      null,
+    customerPhone: getString(customer, 'phone') || null,
+    customerEmail: getString(customer, 'email') || null,
+    serviceId:
+      getString(service, '_id') ||
+      getString(service, 'id') ||
+      (typeof record.service === 'string' ? record.service : '') ||
+      null,
+    taskType:
+      getString(service, 'taskType') ||
+      getString(pending, 'taskType') ||
+      null,
+    saleId:
+      getString(sale, '_id') ||
+      getString(sale, 'id') ||
+      (typeof record.sale === 'string' ? record.sale : '') ||
+      null,
+    saleInvoiceCode:
+      getString(sale, 'invoiceCode') ||
+      getString(pending, 'invoiceCode') ||
+      null,
+    saleStatus: getString(sale, 'status') || null,
+    notes: getString(record, 'notes'),
+    transportCostDefault: getNumber(record, 'transportCostDefault') ?? 0,
+    packageTasksCount: packageTasks.length,
+    enclosureId: null,
+    enclosureName: null,
+    createdAt: getString(record, 'createdAt') || null,
+    updatedAt: getString(record, 'updatedAt') || null,
+  };
+}
+
+export function normalizeKolamLayananSubscriptionVisitPreviews(
+  payload: unknown,
+): KolamLayananSubscriptionVisitPreview[] {
+  const record = asRecord(unwrapData(payload));
+  const list = Array.isArray(record.preview)
+    ? record.preview
+    : Array.isArray(payload)
+      ? payload
+      : [];
+  return list.map(item => {
+    const row = asRecord(item);
+    return {
+      packageTaskCode: getString(row, 'packageTaskCode'),
+      visitTitle: getString(row, 'visitTitle') || 'Kunjungan',
+      scheduledTime:
+        getString(row, 'scheduled_time') ||
+        getString(row, 'scheduledTime') ||
+        null,
+      estimatedAt: getString(row, 'estimatedAt') || null,
+    };
+  });
+}
+
+export function normalizeKolamLayananSubscriptionPendingVerifications(
+  payload: unknown,
+): KolamLayananSubscriptionPendingVerification[] {
+  const outer = asRecord(payload);
+  const list = Array.isArray(payload)
+    ? payload
+    : Array.isArray(outer.data)
+      ? outer.data
+      : [];
+  return list
+    .map(item => {
+      const row = asRecord(item);
+      const pendingServiceId =
+        getString(row, 'pendingServiceId') ||
+        getIdFromMaybeRef(row.pendingService);
+      const executionId = getString(row, 'executionId') || '';
+      const taskId = getString(row, 'taskId') || '';
+      return {
+        taskId,
+        executionId,
+        pendingServiceId,
+        visitTitle: getString(row, 'visitTitle') || 'Kunjungan',
+        packageTaskCode: getString(row, 'packageTaskCode'),
+        scheduledTime:
+          getString(row, 'scheduledTime') ||
+          getString(row, 'scheduled_time') ||
+          null,
+        href:
+          pendingServiceId && executionId
+            ? getKolamLayananOpsAlertHref({
+                pendingServiceId,
+                executionId,
+              })
+            : null,
+      };
+    })
+    .filter(item => Boolean(item.executionId));
+}
+
 export function normalizeKolamLayananSubscriptionList(
   payload: unknown,
   query: KolamLayananSubscriptionListQuery = {},
@@ -1643,6 +1867,27 @@ export function normalizeKolamLayananVoucherDetail(
     subscriptionNumber: getString(subscription, 'subscriptionNumber') || null,
     initiatedDosingId: getIdFromMaybeRef(record.initiatedDosingId),
     initiatedMaintenanceId: getIdFromMaybeRef(record.initiatedMaintenanceId),
+    enclosureId:
+      getIdFromMaybeRef(
+        asRecord(record.initiatedDosingId).enclosure ??
+          asRecord(record.initiatedMaintenanceId).enclosure,
+      ) || null,
+    enclosureName:
+      getString(
+        asRecord(
+          asRecord(record.initiatedDosingId).enclosure ??
+            asRecord(record.initiatedMaintenanceId).enclosure,
+        ),
+        'enclosure_name',
+      ) ||
+      getString(
+        asRecord(
+          asRecord(record.initiatedDosingId).enclosure ??
+            asRecord(record.initiatedMaintenanceId).enclosure,
+        ),
+        'name',
+      ) ||
+      null,
     initiated: getString(record, 'status') === 'initiated',
     raw: payload,
   };

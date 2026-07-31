@@ -79,10 +79,7 @@ export function KolamLayananServiceEditor({
   onRouteChange?: (route: string) => void;
   route: string;
 }) {
-  if (
-    controller.mode === 'langganan' ||
-    controller.mode === 'unsupported'
-  ) {
+  if (controller.mode === 'unsupported') {
     return (
       <KolamLayananDeferredPlaceholder
         mode={controller.mode}

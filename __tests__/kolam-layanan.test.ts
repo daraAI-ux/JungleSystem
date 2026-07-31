@@ -11,6 +11,8 @@ import {
   getKolamLayananTaskTypeLabel,
   getKolamLayananVoucherIdFromRoute,
   getKolamLayananExecutionRouteIds,
+  getKolamLayananSubscriptionIdFromRoute,
+  buildKolamLayananSubscriptionCrossLinks,
   canKolamLayananRecordCustomerVerification,
   canKolamLayananSupervisorReview,
   findKolamLayananExecutionInTask,
@@ -22,6 +24,7 @@ import {
   normalizeKolamLayananPendingList,
   normalizeKolamLayananScheduleRequirements,
   normalizeKolamLayananServiceList,
+  normalizeKolamLayananSubscriptionDetail,
   normalizeKolamLayananSubscriptionList,
   normalizeKolamLayananTaskDetail,
   normalizeKolamLayananTermsContext,
@@ -69,6 +72,9 @@ describe('kolam-layanan domain', () => {
     expect(
       getKolamLayananExecutionRouteIds('/layanan/voucher/v1/execution/e1'),
     ).toEqual({ voucherId: 'v1', executionId: 'e1' });
+    expect(getKolamLayananSubscriptionIdFromRoute('/layanan/langganan/s1')).toBe(
+      's1',
+    );
   });
 
   it('normalizes service list payload with sibling pagination', () => {
@@ -379,6 +385,39 @@ describe('kolam-layanan domain', () => {
       reviewStatus: 'pending_review',
     });
     expect(canKolamLayananSupervisorReview(bare)).toBe(true);
+  });
+
+  it('normalizes subscription detail and builds cross-links', () => {
+    const detail = normalizeKolamLayananSubscriptionDetail({
+      data: {
+        _id: 'sub1',
+        subscriptionNumber: 'SUB-1',
+        status: 'active',
+        autoRenew: true,
+        startDate: '2026-01-01',
+        endDate: '2026-12-31',
+        packageCode: 'PKG-1',
+        notes: 'Catatan',
+        transportCostDefault: 25000,
+        packageTasksSnapshot: [{ code: 'A' }, { code: 'B' }],
+        customer: { _id: 'c1', name: 'Andi', phone: '081' },
+        service: { _id: 'svc1', name: 'Dosing', taskType: 'dosing' },
+        pendingService: { _id: 'ps1', serviceSerial: 'SVC-9' },
+        sale: { _id: 'sale1', invoiceCode: 'INV-9', status: 'paid' },
+      },
+    });
+    expect(detail.saleId).toBe('sale1');
+    expect(detail.voucherId).toBe('ps1');
+    expect(detail.packageTasksCount).toBe(2);
+    const links = buildKolamLayananSubscriptionCrossLinks(detail);
+    expect(links.find(link => link.id === 'sales')?.route).toBe('/sales/sale1');
+    expect(links.find(link => link.id === 'voucher')?.route).toBe(
+      '/layanan/voucher/ps1',
+    );
+    expect(links.find(link => link.id === 'complaint')?.route).toBe(
+      '/complaints',
+    );
+    expect(links.find(link => link.id === 'stock')?.available).toBe(true);
   });
 });
 
