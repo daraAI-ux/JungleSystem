@@ -4167,20 +4167,30 @@ export function KolamSettingsWebConfigSurface({
               styles.settingsTabCardSpacing,
             ]}
           >
-            <KolamCopyStack
-              items={[
-                {
-                  id: 'dara-knowledge-title',
-                  text: 'Unggah SOP',
-                  style: styles.marketplaceOverviewLabel,
-                },
-                {
-                  id: 'dara-knowledge-meta',
-                  text: 'Simpan SOP ke knowledge DARA melalui endpoint /dara/knowledge.',
-                  style: styles.marketplaceOverviewMeta,
-                },
-              ]}
-            />
+            <View style={styles.operationalCardHeaderRow}>
+              <KolamCopyStack
+                containerStyle={styles.operationalCardHeaderCopy}
+                items={[
+                  {
+                    id: 'dara-knowledge-title',
+                    text: 'Unggah SOP',
+                    style: styles.marketplaceOverviewLabel,
+                  },
+                  {
+                    id: 'dara-knowledge-meta',
+                    text: 'Simpan SOP ke knowledge DARA melalui endpoint /dara/knowledge.',
+                    style: styles.marketplaceOverviewMeta,
+                  },
+                ]}
+              />
+              <KolamActionControlButton
+                label="Simpan SOP"
+                loading={daraKnowledgeSaveStatus === 'saving'}
+                loadingLabel="Menyimpan..."
+                disabled={daraControlsDisabled}
+                onPress={onSaveDaraKnowledge}
+              />
+            </View>
             <KolamTextFieldRow
               variant="settingsForm"
               fieldWidth={settingsFieldWidth}
@@ -4234,13 +4244,6 @@ export function KolamSettingsWebConfigSurface({
                 {daraKnowledgeMessage}
               </Text>
             ) : null}
-            <KolamActionControlButton
-              label="Simpan SOP"
-              loading={daraKnowledgeSaveStatus === 'saving'}
-              loadingLabel="Menyimpan..."
-              disabled={daraControlsDisabled}
-              onPress={onSaveDaraKnowledge}
-            />
           </View>
         </>
       ) : null}
