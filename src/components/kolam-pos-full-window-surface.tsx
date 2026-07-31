@@ -74,6 +74,7 @@ type PosKeyboardTarget = {
     listener: (event: PosKeyboardEvent) => void,
   ) => void;
 };
+const POS_CATALOG_PAGE_SIZES = [12, 24, 48, 96] as const;
 
 export function KolamPosFullWindowSurface({
   activeCategory = null,
@@ -114,8 +115,20 @@ export function KolamPosFullWindowSurface({
   const [isPaymentModalOpen, setIsPaymentModalOpen] = React.useState(false);
   const [customerSelectorSearch, setCustomerSelectorSearch] =
     React.useState('');
+  const [catalogPage, setCatalogPage] = React.useState(1);
+  const [itemsPerPage, setItemsPerPage] = React.useState(24);
   const columnCount = getCatalogColumnCount(width);
-  const catalogRows = chunkCatalog(filteredCatalog, columnCount);
+  const totalCatalogPages = Math.max(
+    1,
+    Math.ceil(filteredCatalog.length / itemsPerPage),
+  );
+  const safeCatalogPage = Math.min(catalogPage, totalCatalogPages);
+  const catalogPageStartIndex = (safeCatalogPage - 1) * itemsPerPage;
+  const pagedCatalog = filteredCatalog.slice(
+    catalogPageStartIndex,
+    catalogPageStartIndex + itemsPerPage,
+  );
+  const catalogRows = chunkCatalog(pagedCatalog, columnCount);
   const cashflowStep = workflowSteps.find(step =>
     step.label.toLowerCase().includes('cashflow'),
   );
@@ -125,6 +138,16 @@ export function KolamPosFullWindowSurface({
     0,
   );
   const isCatalogView = activeView === 'catalog';
+
+  React.useEffect(() => {
+    setCatalogPage(1);
+  }, [activeCategory, activeType, catalogSearch, itemsPerPage]);
+
+  React.useEffect(() => {
+    if (catalogPage !== safeCatalogPage) {
+      setCatalogPage(safeCatalogPage);
+    }
+  }, [catalogPage, safeCatalogPage]);
 
   React.useEffect(() => {
     const keyboardTarget = getPosKeyboardTarget();
@@ -291,6 +314,13 @@ export function KolamPosFullWindowSurface({
                 </View>
               )}
             </ScrollView>
+            <PosCatalogPagination
+              currentPage={safeCatalogPage}
+              itemsPerPage={itemsPerPage}
+              onItemsPerPageChange={setItemsPerPage}
+              onPageChange={setCatalogPage}
+              totalPages={totalCatalogPages}
+            />
             {!hasCashflowSession ? (
               <PosCashflowLockOverlay onOpenCashflow={() => setActiveView('cashflow')} />
             ) : null}
@@ -485,6 +515,68 @@ function PosCategoryPill({
         {label}
       </Text>
     </KolamInteractionFrame>
+  );
+}
+
+function PosCatalogPagination({
+  currentPage,
+  itemsPerPage,
+  onItemsPerPageChange,
+  onPageChange,
+  totalPages,
+}: {
+  currentPage: number;
+  itemsPerPage: number;
+  onItemsPerPageChange: (size: number) => void;
+  onPageChange: (page: number) => void;
+  totalPages: number;
+}) {
+  if (totalPages <= 1) {
+    return null;
+  }
+
+  return (
+    <View style={styles.catalogPagination}>
+      <Text style={styles.catalogPaginationText}>Tampil</Text>
+      <View style={styles.catalogPageSizeRail}>
+        {POS_CATALOG_PAGE_SIZES.map(size => (
+          <KolamInteractionFrame
+            key={size}
+            onPress={() => onItemsPerPageChange(size)}
+            style={[
+              styles.catalogPageSizeButton,
+              itemsPerPage === size && styles.catalogPageSizeButtonActive,
+            ]}>
+            <Text
+              style={[
+                styles.catalogPageSizeText,
+                itemsPerPage === size && styles.catalogPageSizeTextActive,
+              ]}>
+              {size}
+            </Text>
+          </KolamInteractionFrame>
+        ))}
+      </View>
+      <View style={styles.catalogPageControls}>
+        <KolamButton
+          disabled={currentPage <= 1}
+          intent="outline"
+          label="<"
+          size="sm"
+          onPress={() => onPageChange(Math.max(1, currentPage - 1))}
+        />
+        <Text style={styles.catalogPageText}>
+          {currentPage}/{totalPages}
+        </Text>
+        <KolamButton
+          disabled={currentPage >= totalPages}
+          intent="outline"
+          label=">"
+          size="sm"
+          onPress={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+        />
+      </View>
+    </View>
   );
 }
 
@@ -1367,6 +1459,62 @@ const styles = StyleSheet.create({
   },
   catalogScroll: {
     flex: 1,
+  },
+  catalogPagination: {
+    minHeight: 42,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderTopColor: V.colors.border,
+    borderTopWidth: 1,
+    backgroundColor: V.colors.bg,
+  },
+  catalogPaginationText: {
+    color: V.colors.mutedFg,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  catalogPageSizeRail: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    padding: 3,
+    borderRadius: 6,
+    backgroundColor: V.colors.muted,
+  },
+  catalogPageSizeButton: {
+    minHeight: 24,
+    minWidth: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 4,
+    paddingHorizontal: 6,
+  },
+  catalogPageSizeButtonActive: {
+    backgroundColor: V.colors.bg,
+  },
+  catalogPageSizeText: {
+    color: V.colors.mutedFg,
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  catalogPageSizeTextActive: {
+    color: V.colors.fg,
+  },
+  catalogPageControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  catalogPageText: {
+    minWidth: 54,
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    fontWeight: '800',
+    textAlign: 'center',
   },
   cashflowLockOverlay: {
     ...StyleSheet.absoluteFillObject,
