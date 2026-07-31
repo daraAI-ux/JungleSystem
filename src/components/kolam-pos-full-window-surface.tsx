@@ -18,6 +18,7 @@ import type {
 } from '../domain/pos';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {formatRupiah} from '../lib/money';
+import type {WorkflowStep} from '../lib/workflow';
 import {KolamButton} from './kolam-button';
 import {KolamInteractionFrame} from './kolam-interaction-frame';
 import {KolamQuantityStepper} from './kolam-quantity-stepper';
@@ -55,6 +56,7 @@ export interface KolamPosFullWindowSurfaceProps {
   selectedCustomer?: Customer;
   selectedPayment?: PaymentMethod;
   subtotal: number;
+  workflowSteps?: WorkflowStep[];
 }
 
 type PosWindowView = 'catalog' | 'customers' | 'sales' | 'cashflow';
@@ -104,6 +106,7 @@ export function KolamPosFullWindowSurface({
   selectedCustomer,
   selectedPayment,
   subtotal,
+  workflowSteps = [],
 }: KolamPosFullWindowSurfaceProps) {
   const {width} = useWindowDimensions();
   const searchInputRef = React.useRef<React.ElementRef<typeof TextInput>>(null);
@@ -113,6 +116,10 @@ export function KolamPosFullWindowSurface({
     React.useState('');
   const columnCount = getCatalogColumnCount(width);
   const catalogRows = chunkCatalog(filteredCatalog, columnCount);
+  const cashflowStep = workflowSteps.find(step =>
+    step.label.toLowerCase().includes('cashflow'),
+  );
+  const hasCashflowSession = cashflowStep?.done ?? true;
   const cartCount = checkout.cart.reduce(
     (total, line) => total + line.quantity,
     0,
@@ -284,6 +291,9 @@ export function KolamPosFullWindowSurface({
                 </View>
               )}
             </ScrollView>
+            {!hasCashflowSession ? (
+              <PosCashflowLockOverlay onOpenCashflow={() => setActiveView('cashflow')} />
+            ) : null}
           </>
         ) : (
           <PosSubview
@@ -475,6 +485,30 @@ function PosCategoryPill({
         {label}
       </Text>
     </KolamInteractionFrame>
+  );
+}
+
+function PosCashflowLockOverlay({
+  onOpenCashflow,
+}: {
+  onOpenCashflow: () => void;
+}) {
+  return (
+    <View style={styles.cashflowLockOverlay}>
+      <View style={styles.cashflowLockIcon}>
+        <Text style={styles.cashflowLockIconText}>Rp</Text>
+      </View>
+      <Text style={styles.cashflowLockTitle}>Sesi Kas Tidak Ditemukan</Text>
+      <Text style={styles.cashflowLockText}>
+        Buka shift terlebih dahulu untuk membuat pesanan dari POS.
+      </Text>
+      <KolamButton
+        label="Lihat Kas"
+        intent="primary"
+        size="sm"
+        onPress={onOpenCashflow}
+      />
+    </View>
   );
 }
 
@@ -1333,6 +1367,44 @@ const styles = StyleSheet.create({
   },
   catalogScroll: {
     flex: 1,
+  },
+  cashflowLockOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    top: 104,
+    zIndex: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 28,
+    backgroundColor: 'rgba(255, 255, 255, 0.88)',
+  },
+  cashflowLockIcon: {
+    width: 56,
+    height: 56,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 28,
+    backgroundColor: V.colors.muted,
+  },
+  cashflowLockIconText: {
+    color: V.colors.mutedFg,
+    fontSize: 18,
+    fontWeight: '900',
+  },
+  cashflowLockTitle: {
+    marginTop: 14,
+    color: V.colors.fg,
+    fontSize: 15,
+    fontWeight: '900',
+    textAlign: 'center',
+  },
+  cashflowLockText: {
+    maxWidth: 260,
+    marginTop: 6,
+    marginBottom: 16,
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    lineHeight: 17,
+    textAlign: 'center',
   },
   catalogContent: {
     padding: 16,
