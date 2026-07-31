@@ -9,6 +9,7 @@ import {
   getAmDevices,
   getAmActivityLogs,
   getAmActivityLogStats,
+  getAmDeviceServiceLogs,
   getAmMutasi,
   getAmMutasiSummary,
   getAmRacks,
@@ -23,6 +24,7 @@ import {
   type AmBox,
   type AmDashboardData,
   type AmDevice,
+  type AmDeviceServiceLog,
   type AmMutasi,
   type AmMutasiSummary,
   type AmRack,
@@ -317,6 +319,14 @@ function AmTasksPage() {
 function AmServicesPage() {
   const [accounts, setAccounts] = React.useState<AmServiceAccount[]>([]);
   const [platform, setPlatform] = React.useState('all');
+  const [expandedId, setExpandedId] = React.useState<string | null>(null);
+  const [expandedTab, setExpandedTab] = React.useState<'logs' | 'history'>('logs');
+  const [detailLogs, setDetailLogs] = React.useState<AmDeviceServiceLog[]>([]);
+  const [detailTasks, setDetailTasks] = React.useState<AmTask[]>([]);
+  const [detailTransfers, setDetailTransfers] = React.useState<AmTransfer[]>([]);
+  const [detailRunning, setDetailRunning] = React.useState(false);
+  const [detailLoading, setDetailLoading] = React.useState(false);
+  const [detailError, setDetailError] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -343,6 +353,94 @@ function AmServicesPage() {
     const interval = setInterval(fetchAccounts, 15_000);
     return () => clearInterval(interval);
   }, [fetchAccounts]);
+
+  const loadServiceLogs = React.useCallback(async (account: AmServiceAccount) => {
+    const device = getServiceDevice(account);
+    if (!device?._id) {
+      setDetailLogs([]);
+      setDetailRunning(false);
+      setDetailError('Service belum punya device.');
+      return;
+    }
+
+    try {
+      setDetailLoading(true);
+      const response = await getAmDeviceServiceLogs(device._id, {
+        limit: 80,
+        source: 'realtime',
+        page: 1,
+      });
+      setDetailLogs(response.logs);
+      setDetailRunning(response.processRunning);
+      setDetailError(null);
+    } catch (nextError) {
+      setDetailError(nextError instanceof Error ? nextError.message : 'Gagal memuat service logs.');
+    } finally {
+      setDetailLoading(false);
+    }
+  }, []);
+
+  const loadServiceHistory = React.useCallback(async (account: AmServiceAccount) => {
+    try {
+      setDetailLoading(true);
+      if (isTransferBanking(account.platform)) {
+        const response = await getAmTransfers({
+          serviceAccountId: account._id,
+          limit: 5,
+          page: 1,
+        });
+        setDetailTransfers(response.data);
+        setDetailTasks([]);
+      } else {
+        const response = await getAmTasks({
+          serviceAccountId: account._id,
+          limit: 5,
+          page: 1,
+        });
+        setDetailTasks(response.data);
+        setDetailTransfers([]);
+      }
+      setDetailError(null);
+    } catch (nextError) {
+      setDetailError(nextError instanceof Error ? nextError.message : 'Gagal memuat service history.');
+    } finally {
+      setDetailLoading(false);
+    }
+  }, []);
+
+  const toggleService = React.useCallback(async (account: AmServiceAccount) => {
+    if (expandedId === account._id) {
+      setExpandedId(null);
+      setDetailLogs([]);
+      setDetailTasks([]);
+      setDetailTransfers([]);
+      setDetailError(null);
+      return;
+    }
+
+    setExpandedId(account._id);
+    setExpandedTab(isTransferBanking(account.platform) ? 'history' : 'logs');
+    setDetailLogs([]);
+    setDetailTasks([]);
+    setDetailTransfers([]);
+    if (isTransferBanking(account.platform)) {
+      await loadServiceHistory(account);
+    } else {
+      await loadServiceLogs(account);
+    }
+  }, [expandedId, loadServiceHistory, loadServiceLogs]);
+
+  const selectDetailTab = React.useCallback(async (
+    account: AmServiceAccount,
+    tab: 'logs' | 'history',
+  ) => {
+    setExpandedTab(tab);
+    if (tab === 'history') {
+      await loadServiceHistory(account);
+    } else {
+      await loadServiceLogs(account);
+    }
+  }, [loadServiceHistory, loadServiceLogs]);
 
   return (
     <View style={styles.pageStack}>
@@ -378,25 +476,45 @@ function AmServicesPage() {
         {isLoading && !accounts.length ? <Text style={styles.loadingText}>Memuat services dari AM live...</Text> : null}
         {!isLoading && !accounts.length ? <Text style={styles.loadingText}>No services found</Text> : null}
         {accounts.map(account => {
-          const device = typeof account.deviceId === 'object' ? account.deviceId : null;
+          const device = getServiceDevice(account);
           const active = account.status === 'active';
+          const expanded = expandedId === account._id;
           return (
-            <View key={account._id} style={styles.tableRow}>
-              <View style={styles.serviceCol}>
-                <Text style={styles.rowTitle} numberOfLines={1}>{account.label}</Text>
-                <Text style={styles.rowMeta}>{active ? 'Running' : 'Stopped'}</Text>
-              </View>
-              <Text style={[styles.cellText, styles.platformCol]}>{AM_PLATFORM_LABELS[account.platform] ?? account.platform}</Text>
-              <View style={styles.deviceWideCol}>
-                <Text style={styles.cellText} numberOfLines={1}>{device?.name ?? 'Unassigned'}</Text>
-                <Text style={styles.rowMeta} numberOfLines={1}>{formatServiceDeviceMeta(device)}</Text>
-              </View>
-              <Text style={[styles.cellText, styles.accountCol]} numberOfLines={1}>
-                {account.accountNumber ?? account.username ?? getCredentialString(account.credentials, 'phoneNumber') ?? '-'}
-              </Text>
-              <View style={styles.statusCol}>
-                <AmStatusChip label={active ? 'Ready' : account.status} tone={active ? 'success' : 'warning'} />
-              </View>
+            <View key={account._id}>
+              <KolamInteractionFrame
+                accessibilityLabel={`AM Service ${account.label}`}
+                accessibilityRole="button"
+                onPress={() => toggleService(account)}
+                style={[styles.tableRow, expanded && styles.tableRowExpanded]}>
+                <View style={styles.serviceCol}>
+                  <Text style={styles.rowTitle} numberOfLines={1}>{account.label}</Text>
+                  <Text style={styles.rowMeta}>{expanded ? 'Expanded' : active ? 'Running' : 'Stopped'}</Text>
+                </View>
+                <Text style={[styles.cellText, styles.platformCol]}>{AM_PLATFORM_LABELS[account.platform] ?? account.platform}</Text>
+                <View style={styles.deviceWideCol}>
+                  <Text style={styles.cellText} numberOfLines={1}>{device?.name ?? 'Unassigned'}</Text>
+                  <Text style={styles.rowMeta} numberOfLines={1}>{formatServiceDeviceMeta(device)}</Text>
+                </View>
+                <Text style={[styles.cellText, styles.accountCol]} numberOfLines={1}>
+                  {account.accountNumber ?? account.username ?? getCredentialString(account.credentials, 'phoneNumber') ?? '-'}
+                </Text>
+                <View style={styles.statusCol}>
+                  <AmStatusChip label={active ? 'Ready' : account.status} tone={active ? 'success' : 'warning'} />
+                </View>
+              </KolamInteractionFrame>
+              {expanded ? (
+                <AmServiceDetailPanel
+                  account={account}
+                  activeTab={expandedTab}
+                  detailError={detailError}
+                  isLoading={detailLoading}
+                  logs={detailLogs}
+                  processRunning={detailRunning}
+                  tasks={detailTasks}
+                  transfers={detailTransfers}
+                  onSelectTab={tab => selectDetailTab(account, tab)}
+                />
+              ) : null}
             </View>
           );
         })}
@@ -505,6 +623,101 @@ function AmHardwarePage() {
           </View>
         ))}
       </View>
+    </View>
+  );
+}
+
+function AmServiceDetailPanel({
+  account,
+  activeTab,
+  detailError,
+  isLoading,
+  logs,
+  onSelectTab,
+  processRunning,
+  tasks,
+  transfers,
+}: {
+  account: AmServiceAccount;
+  activeTab: 'logs' | 'history';
+  detailError: string | null;
+  isLoading: boolean;
+  logs: AmDeviceServiceLog[];
+  onSelectTab: (tab: 'logs' | 'history') => void;
+  processRunning: boolean;
+  tasks: AmTask[];
+  transfers: AmTransfer[];
+}) {
+  const banking = isTransferBanking(account.platform);
+
+  return (
+    <View style={styles.serviceDetailPanel}>
+      <View style={styles.detailTabs}>
+        {!banking ? (
+          <KolamInteractionFrame
+            accessibilityLabel={`AM ${account.label} Logs`}
+            onPress={() => onSelectTab('logs')}
+            style={[styles.detailTab, activeTab === 'logs' && styles.detailTabActive]}>
+            <Text style={[styles.segmentText, activeTab === 'logs' && styles.segmentTextActive]}>
+              Logs {processRunning ? 'Live' : ''}
+            </Text>
+          </KolamInteractionFrame>
+        ) : null}
+        <KolamInteractionFrame
+          accessibilityLabel={`AM ${account.label} History`}
+          onPress={() => onSelectTab('history')}
+          style={[styles.detailTab, activeTab === 'history' && styles.detailTabActive]}>
+          <Text style={[styles.segmentText, activeTab === 'history' && styles.segmentTextActive]}>
+            {banking ? 'Transfer History' : 'Task History'}
+          </Text>
+        </KolamInteractionFrame>
+      </View>
+      <AmInlineError title="Detail service AM belum bisa dibaca" error={detailError} />
+      {isLoading ? <Text style={styles.loadingText}>Memuat detail service...</Text> : null}
+      {!isLoading && activeTab === 'logs' ? (
+        <View style={styles.logPanel}>
+          {!logs.length ? <Text style={styles.logEmptyText}>No realtime logs</Text> : null}
+          {logs.slice(-20).map((log, index) => (
+            <Text key={`${log.ts}-${index}`} style={styles.logText} numberOfLines={2}>
+              [{formatAmDate(log.ts)}] {log.level}: {log.message}
+            </Text>
+          ))}
+        </View>
+      ) : null}
+      {!isLoading && activeTab === 'history' && banking ? (
+        <View style={styles.detailList}>
+          {!transfers.length ? <Text style={styles.loadingText}>No transfer history</Text> : null}
+          {transfers.map(transfer => (
+            <View key={transfer._id} style={styles.detailListRow}>
+              <View style={styles.recipientCol}>
+                <Text style={styles.cellText} numberOfLines={1}>{transfer.recipientName || transfer.recipientAccount}</Text>
+                <Text style={styles.rowMeta}>{formatAmDate(transfer.createdAt)}</Text>
+              </View>
+              <Text style={[styles.cellText, styles.amountCol]}>{formatRupiah(transfer.amount)}</Text>
+              <View style={styles.statusCol}>
+                <AmStatusChip label={transfer.status} tone={getTransferTone(transfer.status)} />
+              </View>
+            </View>
+          ))}
+        </View>
+      ) : null}
+      {!isLoading && activeTab === 'history' && !banking ? (
+        <View style={styles.detailList}>
+          {!tasks.length ? <Text style={styles.loadingText}>No task history</Text> : null}
+          {tasks.map(task => (
+            <View key={task._id} style={styles.detailListRow}>
+              <View style={styles.recipientCol}>
+                <Text style={styles.cellText} numberOfLines={1}>{TASK_TYPE_LABELS[task.type] ?? task.type}</Text>
+                <Text style={styles.rowMeta}>{formatAmDate(task.createdAt)}</Text>
+              </View>
+              <Text style={[styles.cellText, styles.amountCol]}>Retry {task.retryCount}/{task.maxRetries}</Text>
+              <View style={styles.statusCol}>
+                <AmStatusChip label={task.status} tone={getTransferTone(task.status)} />
+              </View>
+            </View>
+          ))}
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -953,6 +1166,14 @@ function formatServiceDeviceMeta(device: AmServiceAccountDeviceRef | null) {
   return device.udid ?? device.tcpAddress ?? device.connectionType ?? 'Device linked';
 }
 
+function getServiceDevice(account: AmServiceAccount) {
+  return typeof account.deviceId === 'object' ? account.deviceId : null;
+}
+
+function isTransferBanking(platform: string) {
+  return platform === 'bca' || platform === 'brimo';
+}
+
 function getCredentialString(
   credentials: Record<string, unknown>,
   key: string,
@@ -1353,6 +1574,65 @@ const styles = StyleSheet.create({
     borderTopColor: V.colors.border,
     paddingHorizontal: 12,
     paddingVertical: 11,
+  },
+  tableRowExpanded: {
+    backgroundColor: V.colors.primarySoft,
+  },
+  serviceDetailPanel: {
+    gap: 10,
+    borderTopWidth: 1,
+    borderTopColor: V.colors.border,
+    padding: 12,
+    backgroundColor: V.colors.mutedSoft,
+  },
+  detailTabs: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  detailTab: {
+    borderWidth: 1,
+    borderColor: V.colors.border,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    backgroundColor: V.colors.bg,
+  },
+  detailTabActive: {
+    borderColor: V.colors.primary,
+    backgroundColor: V.colors.primarySoft,
+  },
+  logPanel: {
+    gap: 5,
+    borderRadius: 8,
+    padding: 12,
+    backgroundColor: '#111827',
+  },
+  logText: {
+    color: '#e5e7eb',
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+  },
+  logEmptyText: {
+    color: '#9ca3af',
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  detailList: {
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    backgroundColor: V.colors.bg,
+  },
+  detailListRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderTopWidth: 1,
+    borderTopColor: V.colors.border,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
   cellText: {
     color: V.colors.fg,

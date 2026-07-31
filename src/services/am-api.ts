@@ -195,6 +195,19 @@ export interface AmDevice {
   updatedAt: string;
 }
 
+export interface AmDeviceServiceLog {
+  ts: string;
+  level: string;
+  message: string;
+}
+
+export interface AmDeviceServiceLogsResponse {
+  logs: AmDeviceServiceLog[];
+  processRunning: boolean;
+  total?: number;
+  page?: number;
+}
+
 export type AmTransferStatus = 'pending' | 'processing' | 'success' | 'failed';
 export type AmTransferType = 'transfer' | 'virtual-account';
 export type AmMutasiType = 'masuk' | 'keluar';
@@ -375,6 +388,12 @@ export interface AmDeviceQuery extends Record<string, AmQueryValue> {
   boxId?: string;
 }
 
+export interface AmDeviceServiceLogsQuery extends Record<string, AmQueryValue> {
+  limit?: number;
+  source?: 'realtime' | 'history';
+  page?: number;
+}
+
 export interface AmTransferQuery extends Record<string, AmQueryValue> {
   accountId?: string;
   serviceAccountId?: string;
@@ -487,6 +506,18 @@ export async function getAmDevices(
   baseUrl = appConfig.amApiBaseUrl,
 ): Promise<AmListResponse<AmDevice>> {
   return getAmList<AmDevice>('/device', query, baseUrl);
+}
+
+export async function getAmDeviceServiceLogs(
+  deviceId: string,
+  query?: AmDeviceServiceLogsQuery,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmDeviceServiceLogsResponse> {
+  return amGet<AmDeviceServiceLogsResponse>(
+    `/device/${deviceId}/service/logs`,
+    query,
+    baseUrl,
+  );
 }
 
 export async function getAmTransfers(
