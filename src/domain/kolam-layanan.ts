@@ -264,6 +264,284 @@ export interface KolamLayananPendingListResult {
   totalPages: number;
 }
 
+/** Populated voucher detail (PendingService). */
+export type KolamLayananVoucherMaterialChargeMode =
+  | 'client'
+  | 'hpp_voucher'
+  | 'client_own';
+
+export interface KolamLayananVisitSlot {
+  weekday: number;
+  time: string;
+}
+
+export interface KolamLayananVoucherMaterialLine {
+  key: string;
+  productId: string;
+  productName: string;
+  quantity: string;
+  inventoryKind: 'raw' | 'product';
+  chargeMode: KolamLayananVoucherMaterialChargeMode;
+  unitPrice: string;
+  stockFulfilledAt: string | null;
+}
+
+export interface KolamLayananVoucherDetail {
+  id: string;
+  serviceSerial: string;
+  invoiceCode: string;
+  status: string;
+  packageCode: string;
+  serviceId: string | null;
+  serviceName: string;
+  customerId: string | null;
+  customerName: string;
+  saleId: string | null;
+  taskType: string | null;
+  visitsPerMonth: number | null;
+  purchasedAt: string | null;
+  contractDurationValue: number | null;
+  contractDurationUnit: string | null;
+  proposedVisitSlots: KolamLayananVisitSlot[];
+  scheduleProposedBy: 'client' | 'staff' | null;
+  visitAssignedToId: string | null;
+  visitAssignedToName: string | null;
+  materialLines: KolamLayananVoucherMaterialLine[];
+  subscriptionId: string | null;
+  subscriptionNumber: string | null;
+  initiated: boolean;
+  raw: unknown;
+}
+
+export interface KolamLayananScheduleRequirements {
+  visitsPerMonth: number | null;
+  visitsPerWeek: number | null;
+  requiresScheduleFlow: boolean;
+  status: string;
+  proposedVisitSlots: KolamLayananVisitSlot[];
+  scheduleProposedBy: 'client' | 'staff' | null;
+  scheduleApprovedByStaffAt: string | null;
+  scheduleApprovedByClientAt: string | null;
+  visitAssignedTo: string | null;
+  visitAssignedToDisplayName: string | null;
+}
+
+export interface KolamLayananTermsTemplate {
+  termsTemplateId: string;
+  title: string;
+  version: number;
+  content: string;
+  accepted: boolean;
+  acceptedAt: string | null;
+}
+
+export interface KolamLayananTermsContext {
+  pendingServiceId: string;
+  status: string;
+  required: boolean;
+  allAccepted: boolean;
+  customerId: string | null;
+  templates: KolamLayananTermsTemplate[];
+}
+
+export type KolamLayananSalePermissionAction = 'view' | 'create' | 'update' | 'delete';
+
+export type KolamLayananSalePermissionEntry = {
+  resource?: string;
+  actions?: string[];
+};
+
+/**
+ * BE pending-service mutate endpoints use `checkPermission("sale", …)`,
+ * while the Layanan menu itself may be gated separately. Mirror FE `CanEdit resource="sale"`.
+ */
+export function hasKolamSalePermission(
+  permissions: KolamLayananSalePermissionEntry[] | null | undefined,
+  action: KolamLayananSalePermissionAction,
+  roleKey?: string | null,
+) {
+  const normalizedRole = String(roleKey ?? '')
+    .trim()
+    .toLowerCase();
+  if (
+    normalizedRole === 'super_administrator' ||
+    normalizedRole === 'super_admin' ||
+    normalizedRole === 'super-admin'
+  ) {
+    return true;
+  }
+  if (permissions == null) {
+    return true;
+  }
+  const wanted = action.toLowerCase();
+  return permissions.some(permission => {
+    const resource = String(permission.resource ?? '')
+      .trim()
+      .toLowerCase();
+    const actions = (permission.actions ?? []).map(item =>
+      String(item).trim().toLowerCase(),
+    );
+    return (
+      (resource === 'sale' || resource === '*') &&
+      (actions.includes(wanted) || actions.includes('*'))
+    );
+  });
+}
+
+export const KOLAM_LAYANAN_WEEKDAY_OPTIONS = [
+  { id: '0', label: 'Minggu' },
+  { id: '1', label: 'Senin' },
+  { id: '2', label: 'Selasa' },
+  { id: '3', label: 'Rabu' },
+  { id: '4', label: 'Kamis' },
+  { id: '5', label: 'Jumat' },
+  { id: '6', label: 'Sabtu' },
+] as const;
+
+export const KOLAM_LAYANAN_MATERIAL_CHARGE_OPTIONS: Array<{
+  id: KolamLayananVoucherMaterialChargeMode;
+  label: string;
+}> = [
+  { id: 'client', label: 'Tagih pelanggan' },
+  { id: 'hpp_voucher', label: 'HPP voucher' },
+  { id: 'client_own', label: 'Punya sendiri' },
+];
+
+export const UNSCHEDULED_WEEKDAY = -1;
+
+export function createEmptyKolamLayananVisitSlot(): KolamLayananVisitSlot {
+  return { weekday: UNSCHEDULED_WEEKDAY, time: '' };
+}
+
+export function createEmptyKolamLayananVisitSlots(
+  count: number,
+): KolamLayananVisitSlot[] {
+  const n = Math.max(0, Number(count) || 0);
+  return Array.from({ length: n }, () => createEmptyKolamLayananVisitSlot());
+}
+
+export function ensureKolamLayananVisitSlotRows(
+  value: KolamLayananVisitSlot[],
+  count: number,
+): KolamLayananVisitSlot[] {
+  const n = Math.max(1, Number(count) || 1);
+  const rows = value.slice(0, n);
+  while (rows.length < n) {
+    rows.push(createEmptyKolamLayananVisitSlot());
+  }
+  return rows;
+}
+
+export function isKolamLayananVisitSlotComplete(slot: KolamLayananVisitSlot) {
+  const weekday = Number(slot.weekday);
+  const time = String(slot.time ?? '').trim();
+  return (
+    Number.isFinite(weekday) &&
+    weekday >= 0 &&
+    weekday <= 6 &&
+    /^\d{1,2}:\d{2}$/.test(time)
+  );
+}
+
+export function kolamLayananVisitSlotsReadyForPropose(
+  slots: KolamLayananVisitSlot[],
+  visitsPerWeek: number,
+) {
+  const n = Math.max(1, Number(visitsPerWeek) || 1);
+  const rows = ensureKolamLayananVisitSlotRows(slots, n);
+  if (rows.length !== n) {
+    return false;
+  }
+  if (!rows.every(isKolamLayananVisitSlotComplete)) {
+    return false;
+  }
+  const weekdays = rows.map(slot => slot.weekday);
+  return new Set(weekdays).size === weekdays.length;
+}
+
+export function completedKolamLayananVisitSlotsForApi(
+  slots: KolamLayananVisitSlot[],
+  visitsPerWeek: number,
+): KolamLayananVisitSlot[] {
+  return ensureKolamLayananVisitSlotRows(slots, visitsPerWeek)
+    .filter(isKolamLayananVisitSlotComplete)
+    .map(slot => ({
+      weekday: Number(slot.weekday),
+      time: String(slot.time).trim(),
+    }));
+}
+
+export function createEmptyKolamLayananMaterialLine(
+  partial?: Partial<KolamLayananVoucherMaterialLine>,
+): KolamLayananVoucherMaterialLine {
+  return {
+    key: `row-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    productId: '',
+    productName: '',
+    quantity: '1',
+    inventoryKind: 'product',
+    chargeMode: 'client_own',
+    unitPrice: '0',
+    stockFulfilledAt: null,
+    ...partial,
+  };
+}
+
+export function getKolamLayananWeekdayLabel(weekday: number) {
+  const match = KOLAM_LAYANAN_WEEKDAY_OPTIONS.find(
+    option => Number(option.id) === weekday,
+  );
+  return match?.label ?? String(weekday);
+}
+
+export function getKolamLayananMaterialChargeLabel(
+  mode: KolamLayananVoucherMaterialChargeMode | string,
+) {
+  const match = KOLAM_LAYANAN_MATERIAL_CHARGE_OPTIONS.find(
+    option => option.id === mode,
+  );
+  return match?.label ?? mode;
+}
+
+export function validateKolamLayananMaterialLines(
+  lines: KolamLayananVoucherMaterialLine[],
+): string | null {
+  for (const line of lines) {
+    if (line.chargeMode === 'client_own') {
+      if (!line.productName.trim() && !line.productId.trim()) {
+        return 'Baris “punya sendiri” perlu nama material.';
+      }
+      continue;
+    }
+    if (!line.productId.trim()) {
+      return `"${line.productName || 'Item'}": isi ID produk katalog (SKU) sebelum simpan.`;
+    }
+  }
+  return null;
+}
+
+export function createKolamLayananProductComponentsPayload(
+  lines: KolamLayananVoucherMaterialLine[],
+) {
+  return lines
+    .filter(line =>
+      line.chargeMode === 'client_own'
+        ? Boolean(line.productName.trim() || line.productId.trim())
+        : Boolean(line.productId.trim()),
+    )
+    .map(line => ({
+      product:
+        line.chargeMode === 'client_own' && !line.productId.trim()
+          ? null
+          : line.productId.trim(),
+      quantityPerExecution: Number(line.quantity) || 1,
+      inventoryKind: line.inventoryKind,
+      chargeMode: line.chargeMode,
+      unitPrice: Number(line.unitPrice) || 0,
+      productName: line.productName.trim(),
+    }));
+}
+
 export interface KolamLayananSubscription {
   id: string;
   subscriptionNumber: string;
@@ -490,6 +768,12 @@ export function getKolamLayananServiceIdFromRoute(route: string): string | null 
     return detailMatch[1];
   }
   return null;
+}
+
+export function getKolamLayananVoucherIdFromRoute(route: string): string | null {
+  const path = normalizeKolamLayananPath(route);
+  const match = path.match(/^\/layanan\/voucher\/([^/]+)$/);
+  return match?.[1] ?? null;
 }
 
 export function getKolamLayananTaskTypeLabel(taskType?: string | null) {
@@ -1019,6 +1303,232 @@ function normalizeAlertRows(value: unknown): KolamLayananOpsAlert[] {
       href: getKolamLayananOpsAlertHref({ pendingServiceId, executionId }),
     };
   });
+}
+
+function normalizeVisitSlots(value: unknown): KolamLayananVisitSlot[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value
+    .map(item => {
+      const record = asRecord(item);
+      const weekday = getNumber(record, 'weekday');
+      const time = getString(record, 'time');
+      if (weekday == null) {
+        return null;
+      }
+      return { weekday, time };
+    })
+    .filter((item): item is KolamLayananVisitSlot => item != null);
+}
+
+function normalizeVoucherMaterialLines(
+  record: Record<string, unknown>,
+): KolamLayananVoucherMaterialLine[] {
+  const fromPc = Array.isArray(record.productComponents)
+    ? record.productComponents.map((row, index) => {
+        const item = asRecord(row);
+        const product = item.product;
+        const productRecord = asRecord(product);
+        const productId =
+          typeof product === 'string'
+            ? product
+            : getString(productRecord, '_id') || getString(productRecord, 'id');
+        const productName =
+          getString(item, 'productName') ||
+          getString(productRecord, 'name') ||
+          '';
+        const chargeRaw = getString(item, 'chargeMode');
+        const chargeMode: KolamLayananVoucherMaterialChargeMode =
+          chargeRaw === 'hpp_voucher' || chargeRaw === 'client_own'
+            ? chargeRaw
+            : 'client';
+        const inventoryRaw = getString(item, 'inventoryKind');
+        return {
+          key: `pc-${index}`,
+          productId,
+          productName,
+          quantity: String(
+            getNumber(item, 'quantityPerExecution') ??
+              getNumber(item, 'quantity') ??
+              1,
+          ),
+          inventoryKind: inventoryRaw === 'raw' ? 'raw' : 'product',
+          chargeMode,
+          unitPrice: String(getNumber(item, 'unitPrice') ?? 0),
+          stockFulfilledAt: getString(item, 'stockFulfilledAt') || null,
+        } satisfies KolamLayananVoucherMaterialLine;
+      })
+    : [];
+
+  const fromAddon = Array.isArray(record.addonProducts)
+    ? record.addonProducts.map((row, index) => {
+        const item = asRecord(row);
+        const product = item.product;
+        const productRecord = asRecord(product);
+        const productId =
+          typeof product === 'string'
+            ? product
+            : getString(productRecord, '_id') || getString(productRecord, 'id');
+        const chargeRaw = getString(item, 'chargeMode');
+        const chargeMode: KolamLayananVoucherMaterialChargeMode =
+          chargeRaw === 'hpp_internal' ? 'hpp_voucher' : 'client';
+        return {
+          key: `legacy-addon-${index}`,
+          productId,
+          productName: getString(item, 'productName') || getString(productRecord, 'name'),
+          quantity: String(getNumber(item, 'quantity') ?? 1),
+          inventoryKind: 'product' as const,
+          chargeMode,
+          unitPrice: String(getNumber(item, 'unitPrice') ?? 0),
+          stockFulfilledAt: getString(item, 'stockFulfilledAt') || null,
+        } satisfies KolamLayananVoucherMaterialLine;
+      })
+    : [];
+
+  return [...fromPc, ...fromAddon];
+}
+
+export function normalizeKolamLayananVoucherDetail(
+  payload: unknown,
+): KolamLayananVoucherDetail {
+  const record = asRecord(unwrapData(payload));
+  const service = asRecord(record.service);
+  const sale = asRecord(record.sale);
+  const customer = asRecord(sale.customer);
+  const subscription = asRecord(record.subscription);
+  const visitAssigned = record.visitAssignedTo;
+  const visitAssignedRecord = asRecord(visitAssigned);
+  const visitUser = asRecord(record.visitAssignedToUser);
+
+  const customerId =
+    getString(customer, '_id') ||
+    getString(customer, 'id') ||
+    (typeof sale.customer === 'string' ? sale.customer : '') ||
+    null;
+
+  const visitAssignedToId =
+    typeof visitAssigned === 'string'
+      ? visitAssigned
+      : getString(visitAssignedRecord, '_id') ||
+        getString(visitAssignedRecord, 'id') ||
+        null;
+
+  const visitAssignedToName =
+    getString(visitUser, 'displayName') ||
+    [
+      getString(visitAssignedRecord, 'first_name'),
+      getString(visitAssignedRecord, 'last_name'),
+    ]
+      .filter(Boolean)
+      .join(' ') ||
+    getString(visitAssignedRecord, 'username') ||
+    null;
+
+  const scheduleProposedByRaw = getString(record, 'scheduleProposedBy');
+  const scheduleProposedBy =
+    scheduleProposedByRaw === 'client' || scheduleProposedByRaw === 'staff'
+      ? scheduleProposedByRaw
+      : null;
+
+  return {
+    id: getString(record, '_id') || getString(record, 'id'),
+    serviceSerial: getString(record, 'serviceSerial') || '—',
+    invoiceCode:
+      getString(record, 'invoiceCode') ||
+      getString(sale, 'invoiceCode') ||
+      '—',
+    status: getString(record, 'status') || 'pending',
+    packageCode: getString(record, 'packageCode') || '—',
+    serviceId:
+      getString(service, '_id') ||
+      getString(service, 'id') ||
+      (typeof record.service === 'string' ? record.service : '') ||
+      null,
+    serviceName: getString(service, 'name') || '—',
+    customerId: customerId || null,
+    customerName: getString(customer, 'name') || '—',
+    saleId:
+      getString(sale, '_id') ||
+      getString(sale, 'id') ||
+      (typeof record.sale === 'string' ? record.sale : '') ||
+      null,
+    taskType: getString(record, 'taskType') || getString(service, 'taskType') || null,
+    visitsPerMonth: getNumber(record, 'visitsPerMonth'),
+    purchasedAt: getString(record, 'purchasedAt') || null,
+    contractDurationValue: getNumber(record, 'contractDurationValue'),
+    contractDurationUnit: getString(record, 'contractDurationUnit') || null,
+    proposedVisitSlots: normalizeVisitSlots(record.proposedVisitSlots),
+    scheduleProposedBy,
+    visitAssignedToId,
+    visitAssignedToName,
+    materialLines: normalizeVoucherMaterialLines(record),
+    subscriptionId:
+      getString(subscription, '_id') ||
+      getString(subscription, 'id') ||
+      (typeof record.subscription === 'string' ? record.subscription : '') ||
+      null,
+    subscriptionNumber: getString(subscription, 'subscriptionNumber') || null,
+    initiated: getString(record, 'status') === 'initiated',
+    raw: payload,
+  };
+}
+
+export function normalizeKolamLayananScheduleRequirements(
+  payload: unknown,
+): KolamLayananScheduleRequirements {
+  const record = asRecord(unwrapData(payload));
+  const visitUser = asRecord(record.visitAssignedToUser);
+  const scheduleProposedByRaw = getString(record, 'scheduleProposedBy');
+  return {
+    visitsPerMonth: getNumber(record, 'visitsPerMonth'),
+    visitsPerWeek: getNumber(record, 'visitsPerWeek'),
+    requiresScheduleFlow: getBoolean(record, 'requiresScheduleFlow') ?? false,
+    status: getString(record, 'status') || 'pending',
+    proposedVisitSlots: normalizeVisitSlots(record.proposedVisitSlots),
+    scheduleProposedBy:
+      scheduleProposedByRaw === 'client' || scheduleProposedByRaw === 'staff'
+        ? scheduleProposedByRaw
+        : null,
+    scheduleApprovedByStaffAt:
+      getString(record, 'scheduleApprovedByStaffAt') || null,
+    scheduleApprovedByClientAt:
+      getString(record, 'scheduleApprovedByClientAt') || null,
+    visitAssignedTo:
+      getString(record, 'visitAssignedTo') ||
+      (typeof record.visitAssignedTo === 'string'
+        ? record.visitAssignedTo
+        : getString(asRecord(record.visitAssignedTo), '_id')) ||
+      null,
+    visitAssignedToDisplayName: getString(visitUser, 'displayName') || null,
+  };
+}
+
+export function normalizeKolamLayananTermsContext(
+  payload: unknown,
+): KolamLayananTermsContext {
+  const record = asRecord(unwrapData(payload));
+  const templatesRaw = Array.isArray(record.templates) ? record.templates : [];
+  return {
+    pendingServiceId:
+      getString(record, 'pendingServiceId') || getString(record, '_id'),
+    status: getString(record, 'status'),
+    required: getBoolean(record, 'required') ?? false,
+    allAccepted: getBoolean(record, 'allAccepted') ?? false,
+    customerId: getString(record, 'customerId') || null,
+    templates: templatesRaw.map(item => {
+      const row = asRecord(item);
+      return {
+        termsTemplateId:
+          getString(row, 'termsTemplateId') || getString(row, '_id'),
+        title: getString(row, 'title') || 'Syarat & ketentuan',
+        version: getNumber(row, 'version') ?? 1,
+        content: getString(row, 'content'),
+        accepted: getBoolean(row, 'accepted') ?? false,
+        acceptedAt: getString(row, 'acceptedAt') || null,
+      };
+    }),
+  };
 }
 
 function unwrapData(payload: unknown): unknown {

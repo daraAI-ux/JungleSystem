@@ -1,6 +1,7 @@
 import {
   buildKolamLayananOpsKpiCards,
   createEmptyKolamLayananServiceFormState,
+  createKolamLayananProductComponentsPayload,
   createKolamLayananServiceSavePayload,
   formatKolamLayananUnitPrice,
   getKolamLayananListTab,
@@ -8,11 +9,18 @@ import {
   getKolamLayananServiceIdFromRoute,
   getKolamLayananSubscriptionStatusLabel,
   getKolamLayananTaskTypeLabel,
+  getKolamLayananVoucherIdFromRoute,
+  hasKolamSalePermission,
   isKolamLayananNativeRoute,
+  kolamLayananVisitSlotsReadyForPropose,
   normalizeKolamLayananOpsDashboard,
   normalizeKolamLayananPendingList,
+  normalizeKolamLayananScheduleRequirements,
   normalizeKolamLayananServiceList,
   normalizeKolamLayananSubscriptionList,
+  normalizeKolamLayananTermsContext,
+  normalizeKolamLayananVoucherDetail,
+  validateKolamLayananMaterialLines,
   validateKolamLayananServiceForm,
 } from '../src/domain/kolam-layanan';
 import { getKolamNavigationItemByRoute } from '../src/domain/kolam-navigation';
@@ -50,6 +58,8 @@ describe('kolam-layanan domain', () => {
     expect(getKolamLayananServiceIdFromRoute('/layanan/abc')).toBe('abc');
     expect(getKolamLayananServiceIdFromRoute('/layanan/abc/edit')).toBe('abc');
     expect(getKolamLayananServiceIdFromRoute('/layanan/create')).toBe(null);
+    expect(getKolamLayananVoucherIdFromRoute('/layanan/voucher/v1')).toBe('v1');
+    expect(getKolamLayananVoucherIdFromRoute('/layanan/abc')).toBe(null);
   });
 
   it('normalizes service list payload with sibling pagination', () => {
@@ -198,6 +208,121 @@ describe('kolam-layanan domain', () => {
     expect(body.visitsPerMonth).toBe(2);
     expect(body.taskType).toBe('dosing');
     expect(body.price_m3).toBe(15000);
+  });
+
+  it('normalizes voucher detail, schedule, terms, and sale permission gate', () => {
+    const voucher = normalizeKolamLayananVoucherDetail({
+      data: {
+        _id: 'ps1',
+        serviceSerial: 'SVC-2026-001',
+        status: 'awaiting_client_approval',
+        packageCode: 'PKG-1',
+        taskType: 'dosing',
+        visitsPerMonth: 4,
+        proposedVisitSlots: [{ weekday: 1, time: '09:00' }],
+        scheduleProposedBy: 'staff',
+        visitAssignedToUser: { displayName: 'Budi' },
+        productComponents: [
+          {
+            product: { _id: 'p1', name: 'Pupuk' },
+            quantityPerExecution: 2,
+            chargeMode: 'hpp_voucher',
+            unitPrice: 0,
+          },
+        ],
+        service: { _id: 'svc1', name: 'Dosing' },
+        sale: {
+          _id: 'sale1',
+          invoiceCode: 'INV-1',
+          customer: { _id: 'c1', name: 'Andi' },
+        },
+      },
+    });
+    expect(voucher.id).toBe('ps1');
+    expect(voucher.customerName).toBe('Andi');
+    expect(voucher.materialLines).toHaveLength(1);
+    expect(voucher.materialLines[0].chargeMode).toBe('hpp_voucher');
+    expect(getKolamLayananVoucherIdFromRoute('/layanan/voucher/ps1')).toBe(
+      'ps1',
+    );
+
+    const schedule = normalizeKolamLayananScheduleRequirements({
+      data: {
+        requiresScheduleFlow: true,
+        visitsPerWeek: 2,
+        status: 'pending',
+        proposedVisitSlots: [],
+      },
+    });
+    expect(schedule.requiresScheduleFlow).toBe(true);
+    expect(
+      kolamLayananVisitSlotsReadyForPropose(
+        [
+          { weekday: 1, time: '09:00' },
+          { weekday: 3, time: '10:00' },
+        ],
+        2,
+      ),
+    ).toBe(true);
+
+    const terms = normalizeKolamLayananTermsContext({
+      data: {
+        pendingServiceId: 'ps1',
+        required: true,
+        allAccepted: false,
+        templates: [
+          {
+            termsTemplateId: 't1',
+            title: 'S&K Dosing',
+            version: 2,
+            content: '<p>Isi</p>',
+            accepted: false,
+          },
+        ],
+      },
+    });
+    expect(terms.required).toBe(true);
+    expect(terms.templates[0].title).toBe('S&K Dosing');
+
+    expect(
+      hasKolamSalePermission([{ resource: 'sale', actions: ['view'] }], 'update'),
+    ).toBe(false);
+    expect(
+      hasKolamSalePermission(
+        [{ resource: 'sale', actions: ['update'] }],
+        'update',
+      ),
+    ).toBe(true);
+    expect(
+      hasKolamSalePermission([], 'update', 'super_administrator'),
+    ).toBe(true);
+
+    const invalid = validateKolamLayananMaterialLines([
+      {
+        key: '1',
+        productId: '',
+        productName: 'X',
+        quantity: '1',
+        inventoryKind: 'product',
+        chargeMode: 'client',
+        unitPrice: '0',
+        stockFulfilledAt: null,
+      },
+    ]);
+    expect(invalid).toContain('ID produk');
+    const payload = createKolamLayananProductComponentsPayload([
+      {
+        key: '2',
+        productId: '',
+        productName: 'Milik klien',
+        quantity: '1',
+        inventoryKind: 'product',
+        chargeMode: 'client_own',
+        unitPrice: '0',
+        stockFulfilledAt: null,
+      },
+    ]);
+    expect(payload[0].product).toBeNull();
   });
 });
 

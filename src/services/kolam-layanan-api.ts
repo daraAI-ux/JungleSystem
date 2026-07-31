@@ -2,18 +2,26 @@ import { appConfig } from '../config/app';
 import {
   normalizeKolamLayananOpsDashboard,
   normalizeKolamLayananPendingList,
+  normalizeKolamLayananScheduleRequirements,
   normalizeKolamLayananService,
   normalizeKolamLayananServiceList,
   normalizeKolamLayananSubscriptionList,
+  normalizeKolamLayananTermsContext,
+  normalizeKolamLayananVoucherDetail,
   type KolamLayananOpsDashboard,
   type KolamLayananPendingListQuery,
   type KolamLayananPendingListResult,
+  type KolamLayananScheduleRequirements,
   type KolamLayananService,
   type KolamLayananServiceListQuery,
   type KolamLayananServiceListResult,
   type KolamLayananServiceSavePayload,
   type KolamLayananSubscriptionListQuery,
   type KolamLayananSubscriptionListResult,
+  type KolamLayananTermsContext,
+  type KolamLayananVisitSlot,
+  type KolamLayananVoucherDetail,
+  type KolamLayananVoucherMaterialChargeMode,
 } from '../domain/kolam-layanan';
 import { apiRequest } from '../lib/api-client';
 
@@ -106,6 +114,159 @@ export async function getKolamLayananSubscriptions(
     },
   });
   return normalizeKolamLayananSubscriptionList(payload, query);
+}
+
+export async function getKolamLayananVoucher(
+  id: string,
+): Promise<KolamLayananVoucherDetail> {
+  const payload = await kolamRequest<unknown>(
+    `/pending-services/${encodeURIComponent(id)}`,
+  );
+  return normalizeKolamLayananVoucherDetail(payload);
+}
+
+export async function getKolamLayananVoucherScheduleRequirements(
+  id: string,
+): Promise<KolamLayananScheduleRequirements> {
+  const payload = await kolamRequest<unknown>(
+    `/pending-services/${encodeURIComponent(id)}/schedule-requirements`,
+  );
+  return normalizeKolamLayananScheduleRequirements(payload);
+}
+
+export async function getKolamLayananVoucherTerms(
+  id: string,
+): Promise<KolamLayananTermsContext> {
+  const payload = await kolamRequest<unknown>(
+    `/pending-services/${encodeURIComponent(id)}/service-terms`,
+  );
+  return normalizeKolamLayananTermsContext(payload);
+}
+
+export async function proposeKolamLayananVoucherSchedule(
+  id: string,
+  slots: KolamLayananVisitSlot[],
+  assignedTo?: string,
+): Promise<void> {
+  await kolamRequest<unknown>(
+    `/pending-services/${encodeURIComponent(id)}/propose-schedule`,
+    {
+      method: 'POST',
+      body: { slots, assignedTo },
+    },
+  );
+}
+
+export async function approveKolamLayananVoucherSchedule(
+  id: string,
+  assignedTo?: string,
+): Promise<void> {
+  await kolamRequest<unknown>(
+    `/pending-services/${encodeURIComponent(id)}/approve-schedule`,
+    {
+      method: 'POST',
+      body: assignedTo ? { assignedTo } : {},
+    },
+  );
+}
+
+export async function assignKolamLayananVoucherVisitPic(
+  id: string,
+  assignedTo: string,
+): Promise<void> {
+  await kolamRequest<unknown>(
+    `/pending-services/${encodeURIComponent(id)}/assign-visit-pic`,
+    {
+      method: 'POST',
+      body: { assignedTo },
+    },
+  );
+}
+
+export async function rejectKolamLayananVoucherSchedule(
+  id: string,
+): Promise<void> {
+  await kolamRequest<unknown>(
+    `/pending-services/${encodeURIComponent(id)}/reject-schedule`,
+    {
+      method: 'POST',
+      body: {},
+    },
+  );
+}
+
+export async function acceptKolamLayananVoucherTerms(
+  id: string,
+  termsTemplateIds?: string[],
+): Promise<KolamLayananTermsContext> {
+  const payload = await kolamRequest<unknown>(
+    `/pending-services/${encodeURIComponent(id)}/accept-service-terms`,
+    {
+      method: 'POST',
+      body: { termsTemplateIds },
+    },
+  );
+  return normalizeKolamLayananTermsContext(payload);
+}
+
+export async function setKolamLayananVoucherProductComponents(
+  id: string,
+  productComponents: Array<{
+    product?: string | null;
+    quantityPerExecution: number;
+    inventoryKind?: 'raw' | 'product';
+    chargeMode: KolamLayananVoucherMaterialChargeMode;
+    unitPrice?: number;
+    productName?: string;
+  }>,
+): Promise<void> {
+  await kolamRequest<unknown>(
+    `/pending-services/${encodeURIComponent(id)}/product-components`,
+    {
+      method: 'PUT',
+      body: { productComponents },
+    },
+  );
+}
+
+export async function clearKolamLayananVoucherAddonProducts(
+  id: string,
+): Promise<void> {
+  await kolamRequest<unknown>(
+    `/pending-services/${encodeURIComponent(id)}/addon-products`,
+    {
+      method: 'PUT',
+      body: { addons: [] },
+    },
+  );
+}
+
+export async function fulfillKolamLayananVoucherAddonStock(
+  id: string,
+): Promise<{ fulfilled: number; message: string }> {
+  const payload = await kolamRequest<unknown>(
+    `/pending-services/${encodeURIComponent(id)}/fulfill-addon-stock`,
+    {
+      method: 'POST',
+      body: {},
+    },
+  );
+  const record =
+    payload && typeof payload === 'object'
+      ? (payload as Record<string, unknown>)
+      : {};
+  const data =
+    record.data && typeof record.data === 'object'
+      ? (record.data as Record<string, unknown>)
+      : {};
+  return {
+    fulfilled:
+      typeof data.fulfilled === 'number'
+        ? data.fulfilled
+        : Number(data.fulfilled) || 0,
+    message:
+      typeof record.message === 'string' ? record.message : 'Stok HPP diproses',
+  };
 }
 
 function kolamRequest<T>(
