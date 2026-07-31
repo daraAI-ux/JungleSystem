@@ -756,7 +756,7 @@ function KolamEnclosureDashboardPanel({
         />
       </View>
 
-      <DashboardProductionSpeciesCards
+      <DashboardProductionStatsCard
         rows={stats.production.rows}
         speciesDistinct={stats.production.speciesDistinct}
         totalQty={stats.production.totalQty}
@@ -799,7 +799,7 @@ function SectionHeading({
   );
 }
 
-function DashboardProductionSpeciesCards({
+function DashboardProductionStatsCard({
   rows,
   speciesDistinct,
   totalQty,
@@ -824,30 +824,88 @@ function DashboardProductionSpeciesCards({
   }, [rows]);
 
   return (
-    <View style={styles.dashboardTableBlock}>
-      <SectionHeading
-        meta={`${speciesDistinct} jenis / ${totalQty} ekor total`}
-        subtitle="Breakdown per species — kandang produksi."
-        title="Indukan produksi (tidak dijual)"
-      />
-      {pageRows.length ? (
-        <View style={styles.productionCardGrid}>
-          {pageRows.map(row => (
-            <DashboardProductionSpeciesCard
+    <View style={styles.productionStatsCard}>
+      <View style={styles.productionStatsHeader}>
+        <View style={styles.sectionHeadingCopy}>
+          <Text style={styles.productionStatsTitle}>Indukan produksi</Text>
+          <Text style={styles.productionStatsSubtitle}>
+            Statistik kandang produksi (tidak dijual)
+          </Text>
+        </View>
+        <View style={styles.productionStatsPills}>
+          <View style={styles.productionStatPill}>
+            <Text style={styles.productionStatPillValue}>{speciesDistinct}</Text>
+            <Text style={styles.productionStatPillLabel}>jenis</Text>
+          </View>
+          <View style={styles.productionStatPill}>
+            <Text style={styles.productionStatPillValue}>{totalQty}</Text>
+            <Text style={styles.productionStatPillLabel}>ekor</Text>
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.productionStatsTable}>
+        <View style={styles.productionStatsTableHead}>
+          <Text style={[styles.productionStatsHeadCell, styles.productionStatsColSpecies]}>
+            Species
+          </Text>
+          <Text style={[styles.productionStatsHeadCell, styles.productionStatsColVariant]}>
+            Varian
+          </Text>
+          <Text style={[styles.productionStatsHeadCell, styles.productionStatsColQty]}>
+            Qty
+          </Text>
+          <Text style={[styles.productionStatsHeadCell, styles.productionStatsColEnc]}>
+            Enc
+          </Text>
+        </View>
+        {pageRows.length ? (
+          pageRows.map(row => (
+            <View
               key={`${row.speciesId}:${row.variantId || ''}`}
-              row={row}
+              style={styles.productionStatsTableRow}
+            >
+              <View style={styles.productionStatsColSpecies}>
+                <Text numberOfLines={1} style={styles.productionStatsSpecies}>
+                  {row.speciesName || '-'}
+                </Text>
+                {row.scientificName ? (
+                  <Text numberOfLines={1} style={styles.productionStatsScientific}>
+                    {row.scientificName}
+                  </Text>
+                ) : null}
+              </View>
+              <Text
+                numberOfLines={1}
+                style={[styles.productionStatsCell, styles.productionStatsColVariant]}
+              >
+                {row.variantLabel || '—'}
+              </Text>
+              <Text
+                numberOfLines={1}
+                style={[styles.productionStatsCellStrong, styles.productionStatsColQty]}
+              >
+                {row.qty} {row.unit || 'ekor'}
+              </Text>
+              <Text
+                numberOfLines={1}
+                style={[styles.productionStatsCellStrong, styles.productionStatsColEnc]}
+              >
+                {row.enclosureCount}
+              </Text>
+            </View>
+          ))
+        ) : (
+          <View style={styles.emptyWrap}>
+            <KolamEmptyState
+              compact
+              message="Belum ada livestock produksi."
+              title="Belum ada indukan produksi"
             />
-          ))}
-        </View>
-      ) : (
-        <View style={styles.emptyWrap}>
-          <KolamEmptyState
-            compact
-            message="Belum ada livestock produksi."
-            title="Belum ada indukan produksi"
-          />
-        </View>
-      )}
+          </View>
+        )}
+      </View>
+
       {rows.length > DASHBOARD_SPECIES_PAGE_SIZE ? (
         <SimpleDashboardPagination
           onPageChange={setPage}
@@ -855,64 +913,7 @@ function DashboardProductionSpeciesCards({
           totalItems={rows.length}
           totalPages={totalPages}
         />
-      ) : rows.length ? (
-        <Text style={styles.sectionMeta}>{rows.length} species</Text>
       ) : null}
-    </View>
-  );
-}
-
-function DashboardProductionSpeciesCard({
-  row,
-}: {
-  row: KolamEnclosureDashboardSpeciesRow;
-}) {
-  const imageUri = getKolamFileUrl(row.thumbnailUrl);
-  const enclosureLabel =
-    row.enclosureCount === 1
-      ? '1 enclosure'
-      : `${row.enclosureCount} enclosure`;
-
-  return (
-    <View style={styles.productionCard}>
-      <View style={styles.productionCardMedia}>
-        {imageUri ? (
-          <KolamRemoteImage
-            accessibilityLabel={`Foto ${row.speciesName || 'species'}`}
-            resizeMode="cover"
-            scope="enclosure-dashboard-species"
-            sourceUri={imageUri}
-            style={styles.productionCardImage}
-          />
-        ) : (
-          <View style={styles.productionCardImageFallback}>
-            <Text style={styles.productionCardFallbackGlyph}>
-              {(row.speciesName || '?').charAt(0).toUpperCase()}
-            </Text>
-          </View>
-        )}
-      </View>
-      <View style={styles.productionCardBody}>
-        <Text numberOfLines={2} style={styles.productionCardTitle}>
-          {row.speciesName || '-'}
-        </Text>
-        {row.scientificName ? (
-          <Text numberOfLines={1} style={styles.productionCardScientific}>
-            {row.scientificName}
-          </Text>
-        ) : null}
-        {row.variantLabel ? (
-          <Text numberOfLines={1} style={styles.productionCardVariant}>
-            {row.variantLabel}
-          </Text>
-        ) : null}
-        <View style={styles.productionCardMetrics}>
-          <Text style={styles.productionCardQty}>
-            {row.qty} {row.unit || 'ekor'}
-          </Text>
-          <Text style={styles.productionCardMeta}>{enclosureLabel}</Text>
-        </View>
-      </View>
     </View>
   );
 }
@@ -2158,83 +2159,128 @@ const styles = StyleSheet.create({
   dashboardTableBlock: {
     gap: 8,
   },
-  productionCardGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  productionCard: {
+  productionStatsCard: {
     backgroundColor: V.colors.bg,
     borderColor: V.colors.border,
-    borderRadius: 10,
+    borderRadius: 8,
     borderWidth: 1,
-    flexGrow: 1,
-    flexBasis: 220,
-    maxWidth: '100%',
-    minWidth: 200,
-    overflow: 'hidden',
+    gap: 10,
+    padding: 12,
   },
-  productionCardMedia: {
-    backgroundColor: V.colors.secondary,
-    height: 128,
-    width: '100%',
+  productionStatsHeader: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    justifyContent: 'space-between',
   },
-  productionCardImage: {
-    height: '100%',
-    width: '100%',
-  },
-  productionCardImageFallback: {
-    alignItems: 'center',
-    backgroundColor: V.colors.primarySoft,
-    height: '100%',
-    justifyContent: 'center',
-    width: '100%',
-  },
-  productionCardFallbackGlyph: {
-    color: V.colors.primary,
-    fontFamily: V.fontFamily,
-    fontSize: 36,
-    fontWeight: '900',
-  },
-  productionCardBody: {
-    gap: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-  },
-  productionCardTitle: {
+  productionStatsTitle: {
     color: V.colors.fg,
     fontFamily: V.fontFamily,
     fontSize: 15,
     fontWeight: '800',
   },
-  productionCardScientific: {
+  productionStatsSubtitle: {
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 12,
-    fontStyle: 'italic',
+    marginTop: 2,
   },
-  productionCardVariant: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  productionCardMetrics: {
-    alignItems: 'baseline',
+  productionStatsPills: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 8,
-    justifyContent: 'space-between',
-    marginTop: 8,
   },
-  productionCardQty: {
+  productionStatPill: {
+    alignItems: 'center',
+    backgroundColor: V.colors.secondary,
+    borderColor: V.colors.border,
+    borderRadius: 6,
+    borderWidth: 1,
+    minWidth: 64,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  productionStatPillValue: {
     color: V.colors.fg,
     fontFamily: V.fontFamily,
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: '900',
   },
-  productionCardMeta: {
+  productionStatPillLabel: {
     color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+  },
+  productionStatsTable: {
+    borderColor: V.colors.border,
+    borderRadius: 6,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  productionStatsTableHead: {
+    alignItems: 'center',
+    backgroundColor: V.colors.secondary,
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  productionStatsTableRow: {
+    alignItems: 'center',
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+  },
+  productionStatsHeadCell: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  productionStatsColSpecies: {
+    flex: 1.4,
+    minWidth: 0,
+  },
+  productionStatsColVariant: {
+    flex: 1,
+    minWidth: 0,
+  },
+  productionStatsColQty: {
+    flex: 0.7,
+    minWidth: 72,
+    textAlign: 'right',
+  },
+  productionStatsColEnc: {
+    flex: 0.45,
+    minWidth: 40,
+    textAlign: 'right',
+  },
+  productionStatsSpecies: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  productionStatsScientific: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontStyle: 'italic',
+  },
+  productionStatsCell: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+  },
+  productionStatsCellStrong: {
+    color: V.colors.fg,
     fontFamily: V.fontFamily,
     fontSize: 12,
     fontWeight: '700',
