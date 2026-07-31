@@ -10,6 +10,7 @@ import {
   getSettingsDetailRows,
   getSettingsLiveEndpoints,
   getSettingsPaginationVisualContract,
+  getSettingsRoleActionsForResource,
   getSettingsRoleEditorActions,
   getSettingsRoleInfoPanel,
   getSettingsRoleMemberPreview,
@@ -268,22 +269,22 @@ describe('settingsSurfaceItems', () => {
   });
 
   it('provides native detail rows for each settings tab', () => {
-    expect(getSettingsDetailRows('web-settings').map(row => row.label)).toEqual([
-      'Storefront display',
-      'Kolam header and navigation',
-      'Runtime API config',
-    ]);
+    expect(getSettingsDetailRows('web-settings').map(row => row.label)).toEqual(
+      [
+        'Storefront display',
+        'Kolam header and navigation',
+        'Runtime API config',
+      ],
+    );
     expect(getSettingsDetailRows('web-settings')[0]).toEqual(
       expect.objectContaining({
         value: 'Live contract',
         tone: 'success',
       }),
     );
-    expect(getSettingsDetailRows('role-management').map(row => row.value)).toEqual([
-      'access_inventory',
-      'access_pos / role POS',
-      'access_am',
-    ]);
+    expect(
+      getSettingsDetailRows('role-management').map(row => row.value),
+    ).toEqual(['access_inventory', 'access_pos / role POS', 'access_am']);
     expect(getSettingsDetailRows('activity-log')).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -340,7 +341,7 @@ describe('settingsSurfaceItems', () => {
         address: 'Jl. Live',
         phone: '021-live',
         email: 'live@duniaanura.com',
-        socialMedia: {instagram: 'https://instagram.com/live'},
+        socialMedia: { instagram: 'https://instagram.com/live' },
         originAddress: {
           addressLine1: 'Gudang Live',
           city: 'Jakarta Barat',
@@ -350,7 +351,7 @@ describe('settingsSurfaceItems', () => {
           longitude: 106.7,
         },
         biteshipApiKey: 'sk_live_should_not_render',
-        maintenance: {pos: true, marketplace: false},
+        maintenance: { pos: true, marketplace: false },
       },
       {
         versions: {
@@ -548,23 +549,23 @@ describe('settingsSurfaceItems', () => {
     ])[0];
 
     expect(getSettingsActivityLogDetailFields(row)).toEqual([
-      expect.objectContaining({label: 'Timestamp', value: '10:15'}),
-      expect.objectContaining({label: 'User', value: 'native-shell'}),
-      expect.objectContaining({label: 'Source', value: 'Kolam'}),
-      expect.objectContaining({label: 'Type', value: 'api'}),
-      expect.objectContaining({label: 'Method', value: 'GET'}),
+      expect.objectContaining({ label: 'Timestamp', value: '10:15' }),
+      expect.objectContaining({ label: 'User', value: 'native-shell' }),
+      expect.objectContaining({ label: 'Source', value: 'Kolam' }),
+      expect.objectContaining({ label: 'Type', value: 'api' }),
+      expect.objectContaining({ label: 'Method', value: 'GET' }),
       expect.objectContaining({
         label: 'Path',
         value: '/dashboard/sales-graph',
         mono: true,
       }),
-      expect.objectContaining({label: 'IP', value: '-', mono: true}),
+      expect.objectContaining({ label: 'IP', value: '-', mono: true }),
       expect.objectContaining({
         label: 'User Agent',
         value: 'React Native Windows shell',
       }),
-      expect.objectContaining({label: 'Status', value: '503 (fallback)'}),
-      expect.objectContaining({label: 'Duration', value: '-'}),
+      expect.objectContaining({ label: 'Status', value: '503 (fallback)' }),
+      expect.objectContaining({ label: 'Duration', value: '-' }),
       expect.objectContaining({
         label: 'Action',
         value: 'sync_activity_preview',
@@ -574,7 +575,7 @@ describe('settingsSurfaceItems', () => {
   });
 
   it('paginates activity log rows with a clamped live-style footer model', () => {
-    const entries = Array.from({length: 8}, (_, index) => ({
+    const entries = Array.from({ length: 8 }, (_, index) => ({
       id: `entry-${index + 1}`,
       area: 'pos' as const,
       label: 'POS',
@@ -585,11 +586,9 @@ describe('settingsSurfaceItems', () => {
       timestamp: `time-${index + 1}`,
     }));
 
-    expect(getSettingsActivityLogRows(entries, 3, 2).map(row => row.id)).toEqual([
-      'entry-4',
-      'entry-5',
-      'entry-6',
-    ]);
+    expect(
+      getSettingsActivityLogRows(entries, 3, 2).map(row => row.id),
+    ).toEqual(['entry-4', 'entry-5', 'entry-6']);
     expect(getSettingsActivityLogPagination(entries.length, 4, 3)).toEqual({
       total: 8,
       page: 3,
@@ -675,19 +674,19 @@ describe('settingsSurfaceItems', () => {
       }),
     );
     expect(controls.find(control => control.id === 'method')?.options).toEqual([
-      {id: '', label: 'Semua method'},
-      {id: 'GET', label: 'GET'},
-      {id: 'POST', label: 'POST'},
-      {id: 'PUT', label: 'PUT'},
-      {id: 'PATCH', label: 'PATCH'},
-      {id: 'DELETE', label: 'DELETE'},
+      { id: '', label: 'Semua method' },
+      { id: 'GET', label: 'GET' },
+      { id: 'POST', label: 'POST' },
+      { id: 'PUT', label: 'PUT' },
+      { id: 'PATCH', label: 'PATCH' },
+      { id: 'DELETE', label: 'DELETE' },
     ]);
     expect(
       controls.find(control => control.id === 'suspicious')?.options,
     ).toEqual(
       expect.arrayContaining([
-        {id: 'automation_tool_ua', label: 'UA: automation tool'},
-        {id: 'source_origin_mismatch', label: 'Source/origin mismatch'},
+        { id: 'automation_tool_ua', label: 'UA: automation tool' },
+        { id: 'source_origin_mismatch', label: 'Source/origin mismatch' },
       ]),
     );
   });
@@ -747,28 +746,37 @@ describe('settingsSurfaceItems', () => {
   });
 
   it('maps live Role Management CRUD actions into native toolbar actions', () => {
-    expect(getSettingsRoleEditorActions('inventory-staff')).toEqual([
+    expect(
+      getSettingsRoleEditorActions('inventory-staff', false, {
+        roleKey: 'staff',
+        permissions: [
+          { resource: 'role', actions: ['create', 'update', 'delete'] },
+        ],
+      }),
+    ).toEqual([
       {
         id: 'create-role',
-        label: 'New role',
+        label: 'Role baru',
         method: 'POST',
         path: '/roles',
         intent: 'outline',
         disabled: false,
+        disabledReason: undefined,
         sourceComponent: 'settings/roles/create-roles.tsx',
       },
       {
         id: 'update-role',
-        label: 'Edit role',
+        label: 'Simpan role',
         method: 'PUT',
         path: '/roles/inventory-staff',
         intent: 'outline',
         disabled: false,
+        disabledReason: undefined,
         sourceComponent: 'settings/roles/list.tsx',
       },
       {
         id: 'delete-role',
-        label: 'Delete role',
+        label: 'Hapus role',
         method: 'DELETE',
         path: '/roles/inventory-staff',
         intent: 'danger',
@@ -787,13 +795,43 @@ describe('settingsSurfaceItems', () => {
         defaultRole: true,
       }),
     );
-    expect(getSettingsRoleEditorActions('super-admin', true)[2]).toEqual(
+    expect(
+      getSettingsRoleEditorActions('super-admin', true, {
+        roleKey: 'super-admin',
+        permissions: [],
+      })[2],
+    ).toEqual(
       expect.objectContaining({
         id: 'delete-role',
         disabled: true,
-        disabledReason: 'Default role cannot be deleted',
+        disabledReason: 'Default role tidak boleh dihapus',
       }),
     );
+  });
+
+  it('disables role mutations without matching role permissions', () => {
+    const actions = getSettingsRoleEditorActions('role-1', false, {
+      roleKey: 'staff',
+      permissions: [{ resource: 'role', actions: ['view'] }],
+    });
+
+    expect(actions).toEqual([
+      expect.objectContaining({
+        id: 'create-role',
+        disabled: true,
+        disabledReason: 'Permission role:create diperlukan',
+      }),
+      expect.objectContaining({
+        id: 'update-role',
+        disabled: true,
+        disabledReason: 'Permission role:update diperlukan',
+      }),
+      expect.objectContaining({
+        id: 'delete-role',
+        disabled: true,
+        disabledReason: 'Permission role:delete diperlukan',
+      }),
+    ]);
   });
 
   it('previews live resource-action rows used by Role Management', () => {
@@ -816,9 +854,48 @@ describe('settingsSurfaceItems', () => {
         id: 'activity-log-view',
         resource: 'activity-log',
         label: 'Activity Log',
-        actions: ['view'],
+        actions: ['view', 'update'],
         source: 'lib/permissions/resource-actions.ts',
       },
+    ]);
+  });
+
+  it('uses FE role resource-action contracts for sensitive resources', () => {
+    expect(getSettingsRoleActionsForResource('stock-transaction')).toEqual([
+      'view',
+      'opname',
+    ]);
+    expect(getSettingsRoleActionsForResource('tax')).toEqual([
+      'view',
+      'draft',
+      'approve',
+      'reject',
+    ]);
+    expect(getSettingsRoleActionsForResource('wallet')).toEqual([
+      'view',
+      'create',
+      'update',
+      'confirm',
+      'delete',
+    ]);
+    expect(getSettingsRoleActionsForResource('salary')).toEqual([
+      'view',
+      'update',
+    ]);
+    expect(getSettingsRoleActionsForResource('activity-log')).toEqual([
+      'view',
+      'update',
+    ]);
+    expect(getSettingsRoleActionsForResource('media')).toEqual([
+      'view',
+      'update',
+      'delete',
+    ]);
+    expect(getSettingsRoleActionsForResource('chat')).toEqual([
+      'view',
+      'create',
+      'update',
+      'delete',
     ]);
   });
 
@@ -852,8 +929,8 @@ describe('settingsSurfaceItems', () => {
         expect.objectContaining({
           resource: 'activity-log',
           activeCount: 1,
-          totalCount: 1,
-          tone: 'success',
+          totalCount: 2,
+          tone: 'warning',
         }),
       ]),
     );
@@ -868,13 +945,36 @@ describe('settingsSurfaceItems', () => {
     ]);
   });
 
+  it('keeps default non-super roles editable in the permission matrix like FE', () => {
+    const matrix = getSettingsRolePermissionMatrixGroups(
+      {
+        _id: 'role-member',
+        key: 'member',
+        name: 'Member',
+        permissions: [{ resource: 'role', actions: ['view'] }],
+      },
+      true,
+      true,
+    );
+    const roleRow = matrix
+      .find(group => group.id === 'settings-configuration')
+      ?.rows.find(row => row.resource === 'role');
+
+    expect(roleRow?.actions.map(action => action.disabled)).toEqual([
+      false,
+      false,
+      false,
+      false,
+    ]);
+  });
+
   it('maps live Role Management roles into native tab items', () => {
     expect(getSettingsRoleTabItems()).toEqual([
       expect.objectContaining({
         id: 'super-admin',
         label: 'Super Administrator',
         key: 'super-admin',
-        permissionCount: 233,
+        permissionCount: 222,
         defaultRole: true,
         fullAccess: true,
         sourceComponent: 'settings/roles/list.tsx',
@@ -906,8 +1006,8 @@ describe('settingsSurfaceItems', () => {
       description: 'Full shell access through super administrator role.',
       key: 'super-admin',
       badges: [
-        {id: 'full-access', label: 'Full Access', tone: 'warning'},
-        {id: 'default', label: 'Default', tone: 'secondary'},
+        { id: 'full-access', label: 'Full Access', tone: 'warning' },
+        { id: 'default', label: 'Default', tone: 'secondary' },
       ],
       canDelete: false,
       deleteLabel: 'Delete',
@@ -920,13 +1020,13 @@ describe('settingsSurfaceItems', () => {
         id: 'inventory-staff',
         key: 'inventory-staff',
         badges: [],
-        canDelete: true,
+        canDelete: false,
         notice: undefined,
       }),
     );
   });
 
-  it('locks native permission matrix actions for live super admin/default roles', () => {
+  it('locks native permission matrix actions for live super admin roles', () => {
     const [group] = getSettingsRolePermissionMatrixGroups('super-admin', true);
 
     expect(group.activeCount).toBe(group.totalPossible);
@@ -973,8 +1073,8 @@ describe('settingsSurfaceItems', () => {
       label: 'Members',
       count: 2,
       members: [
-        {id: 'inventory-lead', name: 'Lead Inventori', initials: 'IL'},
-        {id: 'stock-staff', name: 'Stock Staff', initials: 'SS'},
+        { id: 'inventory-lead', name: 'Lead Inventori', initials: 'IL' },
+        { id: 'stock-staff', name: 'Stock Staff', initials: 'SS' },
       ],
       sourceComponent: 'settings/roles/list.tsx',
     });
@@ -987,11 +1087,13 @@ describe('settingsSurfaceItems', () => {
   });
 
   it('defines native Web Settings config fields', () => {
-    expect(getSettingsWebConfigFields({
-      companyName: 'Live Storefront',
-      livechatOnline: false,
-      maintenance: {pos: true},
-    })).toEqual([
+    expect(
+      getSettingsWebConfigFields({
+        companyName: 'Live Storefront',
+        livechatOnline: false,
+        maintenance: { pos: true },
+      }),
+    ).toEqual([
       expect.objectContaining({
         id: 'storefront-title',
         label: 'Judul storefront',
@@ -1014,44 +1116,46 @@ describe('settingsSurfaceItems', () => {
   });
 
   it('tracks live backend endpoints used by the native Settings service', () => {
-    expect(getSettingsLiveEndpoints()).toEqual(expect.arrayContaining([
-      expect.objectContaining({
-        id: 'websetting-read',
-        method: 'GET',
-        path: '/websetting',
-        status: 'wired',
-      }),
-      expect.objectContaining({
-        id: 'websetting-update',
-        method: 'PUT',
-        path: '/websetting',
-        permission: 'websetting:update',
-      }),
-      expect.objectContaining({
-        id: 'version-read',
-        path: '/websetting/version',
-        permission: 'public',
-      }),
-      expect.objectContaining({
-        id: 'version-read-all',
-        path: '/websetting/version/all',
-        permission: 'public',
-      }),
-      expect.objectContaining({
-        id: 'roles-read',
-        path: '/roles',
-        permission: 'role:view',
-      }),
-      expect.objectContaining({
-        id: 'activity-read',
-        path: '/activity-log',
-        permission: 'activity-log:view',
-      }),
-      expect.objectContaining({
-        id: 'activity-stats',
-        path: '/activity-log/stats',
-      }),
-    ]));
+    expect(getSettingsLiveEndpoints()).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'websetting-read',
+          method: 'GET',
+          path: '/websetting',
+          status: 'wired',
+        }),
+        expect.objectContaining({
+          id: 'websetting-update',
+          method: 'PUT',
+          path: '/websetting',
+          permission: 'websetting:update',
+        }),
+        expect.objectContaining({
+          id: 'version-read',
+          path: '/websetting/version',
+          permission: 'public',
+        }),
+        expect.objectContaining({
+          id: 'version-read-all',
+          path: '/websetting/version/all',
+          permission: 'public',
+        }),
+        expect.objectContaining({
+          id: 'roles-read',
+          path: '/roles',
+          permission: 'role:view',
+        }),
+        expect.objectContaining({
+          id: 'activity-read',
+          path: '/activity-log',
+          permission: 'activity-log:view',
+        }),
+        expect.objectContaining({
+          id: 'activity-stats',
+          path: '/activity-log/stats',
+        }),
+      ]),
+    );
     expect(getSettingsLiveEndpoints()).toHaveLength(7);
   });
 });

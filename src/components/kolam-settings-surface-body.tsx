@@ -289,8 +289,11 @@ export function KolamSettingsSurfaceBody({
         onAction={controller.onRoleAction}
         selectedRole={controller.selectedRole}
         selectedRoleId={controller.selectedRoleId}
+        roleToDelete={controller.roleToDelete}
         saveMessage={controller.roleMessage}
         saveStatus={controller.roleSaveStatus}
+        onCancelRoleDelete={controller.cancelRoleDelete}
+        onConfirmRoleDelete={controller.confirmRoleDelete}
         setDraftField={controller.setRoleDraftField}
         onSelectRole={controller.setSelectedRoleId}
         onTogglePermissionAction={controller.onToggleRolePermissionAction}

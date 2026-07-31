@@ -29,6 +29,7 @@ import {
   getVisibleSettingsTabItems,
   hasSettingsFinancialSectionPermission,
   hasSettingsPermission,
+  hasSettingsRoleMutationPermission,
   isSettingsTabId,
   getSettingsWebConfigFields,
   getSettingsWebFormSections,
@@ -36,6 +37,7 @@ import {
   isSettingsSuperAdminRoleKey,
   settingsSurfaceItems,
   type SettingsActivityLogFilterState,
+  type SettingsRoleMemberPreview,
   type SettingsSurfaceItem,
   type SettingsTabId,
   type SettingsTabVisibilityContext,
@@ -152,6 +154,7 @@ import {
   uploadKolamKatakTerbangWorkerPhoto,
 } from '../services/kolam-ai-dara-settings-api';
 import { getCurrentUser } from '../services/auth-api';
+import { getKolamUserList } from '../services/kolam-user-api';
 import { ApiError } from '../lib/api-error';
 import {
   pickNativeAudioFile,
@@ -1065,6 +1068,9 @@ export function useKolamSettingsPanelController(
   const [roleSaveStatus, setRoleSaveStatus] = useState<RoleSaveStatus>('idle');
   const [roleMessage, setRoleMessage] = useState('');
   const [roleDraft, setRoleDraft] = useState<RoleDraft>(emptyRoleDraft);
+  const [roleMemberPreview, setRoleMemberPreview] =
+    useState<SettingsRoleMemberPreview | null>(null);
+  const [roleToDelete, setRoleToDelete] = useState<KolamRole | null>(null);
   const roleRows = roles.length
     ? getSettingsRoleAccessRowsFromLive(roles)
     : fallbackRoleRows;
@@ -1634,6 +1640,13 @@ export function useKolamSettingsPanelController(
     roleRows.find(row => row.id === selectedRoleId) ?? roleRows[0];
   const selectedLiveRole =
     roles.find(role => role._id === selectedRole?.id) ?? null;
+  const canViewRoleMembers =
+    isSettingsSuperAdminRoleKey(settingsVisibilityContext?.roleKey ?? '') ||
+    hasSettingsPermission(settingsVisibilityContext, 'user', 'view_by_admin');
+  const canUpdateRoles = hasSettingsRoleMutationPermission(
+    settingsVisibilityContext,
+    'update',
+  );
   const liveEndpoints = getSettingsLiveEndpoints().filter(endpoint => {
     if (activeSurfaceId === 'web-settings') {
       return endpoint.path.startsWith('/websetting');
@@ -1693,6 +1706,7 @@ export function useKolamSettingsPanelController(
 
   useEffect(() => {
     if (!selectedLiveRole) {
+      setRoleMemberPreview(null);
       return;
     }
 
@@ -1703,6 +1717,55 @@ export function useKolamSettingsPanelController(
     });
     setRoleSaveStatus('idle');
   }, [selectedLiveRole]);
+
+  useEffect(() => {
+    if (!selectedLiveRole || !canViewRoleMembers) {
+      setRoleMemberPreview(null);
+      return;
+    }
+
+    let mounted = true;
+
+    getKolamUserList({
+      roleId: selectedLiveRole._id,
+      limit: 50,
+      includeResigned: 'false',
+    })
+      .then(result => {
+        if (!mounted) {
+          return;
+        }
+
+        setRoleMemberPreview({
+          roleId: selectedLiveRole._id,
+          label: 'Anggota',
+          count: result.pagination.total || result.items.length,
+          members: result.items
+            .filter(user => !user.resignedAt)
+            .map(user => ({
+              id: user.id,
+              name: user.displayName,
+              initials: getRoleMemberInitials(user.displayName),
+            })),
+          sourceComponent: 'settings/roles/list.tsx',
+        });
+      })
+      .catch(() => {
+        if (mounted) {
+          setRoleMemberPreview({
+            roleId: selectedLiveRole._id,
+            label: 'Anggota',
+            count: 0,
+            members: [],
+            sourceComponent: 'settings/roles/list.tsx',
+          });
+        }
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [canViewRoleMembers, selectedLiveRole]);
 
   const changeActivityPage = (page: number) => {
     setActivityPage(page);
@@ -3108,7 +3171,8 @@ export function useKolamSettingsPanelController(
       return;
     }
 
-    const originAddress = createShippingOriginAddressUpdateBody(webSettingDraft);
+    const originAddress =
+      createShippingOriginAddressUpdateBody(webSettingDraft);
     const body = {
       originAddress,
       ...(createSecretUpdateField(
@@ -3352,7 +3416,10 @@ export function useKolamSettingsPanelController(
 
     setWebSettingSaveStatus('saving');
     setWebSettingMessage('');
-    setWebSettingDraftFields({ [key]: value } as Partial<WebSettingDraft>, false);
+    setWebSettingDraftFields(
+      { [key]: value } as Partial<WebSettingDraft>,
+      false,
+    );
 
     try {
       const updated = await updateKolamWebSetting({ [key]: value });
@@ -3541,6 +3608,17 @@ export function useKolamSettingsPanelController(
     key: Key,
     value: RoleDraft[Key],
   ) => {
+    if (
+      key === 'key' &&
+      selectedLiveRole &&
+      (isSettingsDefaultRoleKey(selectedLiveRole.key) ||
+        isSettingsSuperAdminRoleKey(selectedLiveRole.key))
+    ) {
+      setRoleSaveStatus('error');
+      setRoleMessage('Key role sistem tidak boleh diubah dari native.');
+      return;
+    }
+
     setRoleDraft(current => ({
       ...current,
       [key]: value,
@@ -3559,7 +3637,33 @@ export function useKolamSettingsPanelController(
     return nextRoles;
   };
 
+  const refreshRolePermissionCache = async () => {
+    const user = await getCurrentUser().catch(() => null);
+    setSettingsVisibilityContext(
+      user
+        ? {
+            roleKey: user.roleKey,
+            permissions: user.permissions,
+          }
+        : null,
+    );
+  };
+
   const createRole = async () => {
+    if (
+      !hasSettingsRoleMutationPermission(settingsVisibilityContext, 'create')
+    ) {
+      setRoleSaveStatus('error');
+      setRoleMessage('Akses ditolak: permission role:create diperlukan.');
+      return;
+    }
+
+    if (!roleDraft.name.trim() || !roleDraft.key.trim()) {
+      setRoleSaveStatus('error');
+      setRoleMessage('Nama role dan key role wajib diisi.');
+      return;
+    }
+
     setRoleSaveStatus('saving');
     setRoleMessage('');
 
@@ -3587,13 +3691,30 @@ export function useKolamSettingsPanelController(
       return;
     }
 
+    if (!canUpdateRoles) {
+      setRoleSaveStatus('error');
+      setRoleMessage('Akses ditolak: permission role:update diperlukan.');
+      return;
+    }
+
+    if (!roleDraft.name.trim() || !roleDraft.key.trim()) {
+      setRoleSaveStatus('error');
+      setRoleMessage('Nama role dan key role wajib diisi.');
+      return;
+    }
+
+    const protectedRole =
+      isSettingsDefaultRoleKey(selectedLiveRole.key) ||
+      isSettingsSuperAdminRoleKey(selectedLiveRole.key);
+    const nextKey = protectedRole ? selectedLiveRole.key : roleDraft.key.trim();
+
     setRoleSaveStatus('saving');
     setRoleMessage('');
 
     try {
       const updated = await updateKolamRole(selectedLiveRole._id, {
         name: roleDraft.name.trim(),
-        key: roleDraft.key.trim(),
+        key: nextKey,
         description: cleanOptionalString(roleDraft.description),
         permissions: selectedLiveRole.permissions ?? [],
       });
@@ -3611,14 +3732,23 @@ export function useKolamSettingsPanelController(
     }
   };
 
-  const deleteRole = async () => {
-    if (!selectedLiveRole) {
+  const deleteRole = async (role = roleToDelete) => {
+    if (!role) {
       return;
     }
 
-    if (isSettingsDefaultRoleKey(selectedLiveRole.key)) {
+    if (
+      !hasSettingsRoleMutationPermission(settingsVisibilityContext, 'delete')
+    ) {
+      setRoleSaveStatus('error');
+      setRoleMessage('Akses ditolak: permission role:delete diperlukan.');
+      return;
+    }
+
+    if (isSettingsDefaultRoleKey(role.key)) {
       setRoleSaveStatus('error');
       setRoleMessage('Default role tidak boleh dihapus.');
+      setRoleToDelete(null);
       return;
     }
 
@@ -3626,12 +3756,13 @@ export function useKolamSettingsPanelController(
     setRoleMessage('');
 
     try {
-      await deleteKolamRole(selectedLiveRole._id);
+      await deleteKolamRole(role._id);
       const nextRoles = await reloadRoles();
       await refreshRolePermissionCache();
       setRoleSaveStatus('saved');
       setRoleMessage('Role berhasil dihapus dari data live.');
       setSelectedRoleId(nextRoles[0]?._id ?? '');
+      setRoleToDelete(null);
     } catch (error) {
       setRoleSaveStatus('error');
       setRoleMessage(getRoleSaveErrorMessage(error));
@@ -3645,7 +3776,8 @@ export function useKolamSettingsPanelController(
     if (
       !selectedLiveRole ||
       isSettingsSuperAdminRoleKey(selectedLiveRole.key) ||
-      roleSaveStatus === 'saving'
+      roleSaveStatus === 'saving' ||
+      !canUpdateRoles
     ) {
       return;
     }
@@ -3681,7 +3813,11 @@ export function useKolamSettingsPanelController(
   const roleActionHandlers = {
     'create-role': createRole,
     'update-role': updateRole,
-    'delete-role': deleteRole,
+    'delete-role': () => {
+      if (selectedLiveRole) {
+        setRoleToDelete(selectedLiveRole);
+      }
+    },
   };
 
   const setPaymentMethodFilter = (
@@ -4065,14 +4201,25 @@ export function useKolamSettingsPanelController(
     roleEditorActions: getSettingsRoleEditorActions(
       selectedRole?.id,
       selectedRole?.defaultRole,
+      settingsVisibilityContext,
     ),
     roleInfoPanel: getSettingsRoleInfoPanel(selectedRole?.id, roleRows),
-    roleMemberPreview: getSettingsRoleMemberPreview(
-      selectedRole?.id ?? roleRows[0]?.id ?? 'super-admin',
-    ),
+    roleMemberPreview:
+      roleMemberPreview ??
+      getSettingsRoleMemberPreview(
+        selectedRole?.id ?? roleRows[0]?.id ?? 'super-admin',
+      ),
+    roleToDelete,
+    cancelRoleDelete: () => {
+      setRoleToDelete(null);
+    },
+    confirmRoleDelete: () => {
+      void deleteRole();
+    },
     rolePermissionMatrixGroups: getSettingsRolePermissionMatrixGroups(
       selectedLiveRole ?? selectedRole?.id,
       selectedRole?.defaultRole,
+      canUpdateRoles,
     ),
     rolePermissionPreviewRows: getSettingsRolePermissionPreviewRows(),
     roleResourceGroups: getSettingsRoleResourceGroups(),
@@ -4555,17 +4702,11 @@ function createStaffAttendanceUpdateBody(
     timezone: draft.staffAttendanceTimezone.trim() || 'Asia/Jakarta',
     lateToleranceMinutes: Math.max(
       0,
-      parseIntegerOrFallback(
-        draft.staffAttendanceLateToleranceMinutes,
-        15,
-      ),
+      parseIntegerOrFallback(draft.staffAttendanceLateToleranceMinutes, 15),
     ),
     lateTier2MaxMinutes: Math.max(
       0,
-      parseIntegerOrFallback(
-        draft.staffAttendanceLateTier2MaxMinutes,
-        120,
-      ),
+      parseIntegerOrFallback(draft.staffAttendanceLateTier2MaxMinutes, 120),
     ),
     lateCheckInDeadlineMinutes: Math.max(
       0,
@@ -4576,24 +4717,15 @@ function createStaffAttendanceUpdateBody(
     ),
     lateFineTier2: Math.max(
       0,
-      parseIntegerOrFallback(
-        draft.staffAttendanceLateFineTier2,
-        50000,
-      ),
+      parseIntegerOrFallback(draft.staffAttendanceLateFineTier2, 50000),
     ),
     lateFineTier3: Math.max(
       0,
-      parseIntegerOrFallback(
-        draft.staffAttendanceLateFineTier3,
-        100000,
-      ),
+      parseIntegerOrFallback(draft.staffAttendanceLateFineTier3, 100000),
     ),
     absentDailyDivisor: Math.max(
       1,
-      parseIntegerOrFallback(
-        draft.staffAttendanceAbsentDailyDivisor,
-        30,
-      ),
+      parseIntegerOrFallback(draft.staffAttendanceAbsentDailyDivisor, 30),
     ),
     attendanceMapProvider:
       draft.staffAttendanceMapProvider === 'google'
@@ -5643,8 +5775,8 @@ function isAllowedNotificationSoundSize(file: unknown) {
     typeof maybeFile.size === 'number'
       ? maybeFile.size
       : typeof maybeFile.fileSize === 'number'
-        ? maybeFile.fileSize
-        : null;
+      ? maybeFile.fileSize
+      : null;
 
   return rawSize === null || rawSize <= 5 * 1024 * 1024;
 }
@@ -5799,6 +5931,16 @@ function createUpdatedRolePermissions(
   resource: string,
   action: string,
 ): KolamRolePermission[] {
+  const managedResources = getSettingsRoleResourceGroups().flatMap(
+    group => group.resources,
+  );
+  const managedSet = new Set(managedResources);
+  const retiredResources = new Set([
+    'taxonomy-request',
+    'species-request',
+    'product-request',
+    'enclonura-species',
+  ]);
   const validActions = getSettingsRoleActionsForResource(resource);
   const current = currentPermissions.find(
     permission => permission.resource === resource,
@@ -5812,19 +5954,54 @@ function createUpdatedRolePermissions(
   const nextPermission =
     nextActions.length > 0 ? { resource, actions: nextActions } : null;
 
-  return [
-    ...currentPermissions
-      .filter(permission => permission.resource !== resource)
-      .map(permission => ({
+  const nextByResource = new Map<string, KolamRolePermission>();
+  currentPermissions.forEach(permission => {
+    if (retiredResources.has(permission.resource)) {
+      return;
+    }
+
+    const permissionValidActions = getSettingsRoleActionsForResource(
+      permission.resource,
+    );
+    const actions = managedSet.has(permission.resource)
+      ? (permission.actions ?? []).filter(currentAction =>
+          permissionValidActions.includes(currentAction),
+        )
+      : permission.actions ?? [];
+
+    if (actions.length > 0 && permission.resource !== resource) {
+      nextByResource.set(permission.resource, {
         resource: permission.resource,
-        actions: permission.actions,
-      })),
-    ...(nextPermission ? [nextPermission] : []),
+        actions,
+      });
+    }
+  });
+
+  if (nextPermission) {
+    nextByResource.set(resource, nextPermission);
+  }
+
+  return [
+    ...managedResources
+      .map(managedResource => nextByResource.get(managedResource))
+      .filter((permission): permission is KolamRolePermission =>
+        Boolean(permission),
+      ),
+    ...Array.from(nextByResource.values()).filter(
+      permission => !managedSet.has(permission.resource),
+    ),
   ];
 }
 
-async function refreshRolePermissionCache() {
-  await getCurrentUser().catch(() => undefined);
+function getRoleMemberInitials(name: string) {
+  const initials = name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(part => part[0]?.toUpperCase())
+    .join('');
+
+  return initials || 'U';
 }
 
 function getWebSettingSaveErrorMessage(error: unknown) {

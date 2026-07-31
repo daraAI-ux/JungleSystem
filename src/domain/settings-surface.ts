@@ -1290,36 +1290,49 @@ export function getSettingsActivityLogFilterControls(): SettingsActivityLogFilte
 export function getSettingsRoleEditorActions(
   roleId = ':id',
   defaultRole = false,
+  context?: SettingsTabVisibilityContext | null,
 ): SettingsRoleEditorAction[] {
+  const canCreate = hasSettingsRoleMutationPermission(context, 'create');
+  const canUpdate = hasSettingsRoleMutationPermission(context, 'update');
+  const canDelete = hasSettingsRoleMutationPermission(context, 'delete');
+
   return [
     {
       id: 'create-role',
-      label: 'New role',
+      label: 'Role baru',
       method: 'POST',
       path: '/roles',
       intent: 'outline',
-      disabled: false,
+      disabled: !canCreate,
+      disabledReason: canCreate
+        ? undefined
+        : 'Permission role:create diperlukan',
       sourceComponent: 'settings/roles/create-roles.tsx',
     },
     {
       id: 'update-role',
-      label: 'Edit role',
+      label: 'Simpan role',
       method: 'PUT',
       path: `/roles/${roleId}`,
       intent: 'outline',
-      disabled: false,
+      disabled: !canUpdate,
+      disabledReason: canUpdate
+        ? undefined
+        : 'Permission role:update diperlukan',
       sourceComponent: 'settings/roles/list.tsx',
     },
     {
       id: 'delete-role',
-      label: 'Delete role',
+      label: 'Hapus role',
       method: 'DELETE',
       path: `/roles/${roleId}`,
       intent: 'danger',
-      disabled: defaultRole,
+      disabled: defaultRole || !canDelete,
       disabledReason: defaultRole
-        ? 'Default role cannot be deleted'
-        : undefined,
+        ? 'Default role tidak boleh dihapus'
+        : canDelete
+        ? undefined
+        : 'Permission role:delete diperlukan',
       sourceComponent: 'settings/roles/list.tsx',
     },
   ];
@@ -1345,7 +1358,7 @@ export function getSettingsRolePermissionPreviewRows(): SettingsRolePermissionPr
       id: 'activity-log-view',
       resource: 'activity-log',
       label: 'Activity Log',
-      actions: ['view'],
+      actions: ['view', 'update'],
       source: 'lib/permissions/resource-actions.ts',
     },
   ];
@@ -1353,13 +1366,14 @@ export function getSettingsRolePermissionPreviewRows(): SettingsRolePermissionPr
 
 export function getSettingsRolePermissionMatrixGroups(
   roleOrId: KolamRole | string = 'super-admin',
-  defaultRole = false,
+  _defaultRole = false,
+  canUpdateRole = true,
 ): SettingsRolePermissionMatrixGroup[] {
   const role = typeof roleOrId === 'string' ? undefined : roleOrId;
   const roleId = typeof roleOrId === 'string' ? roleOrId : roleOrId._id;
   const roleKey = role?.key ?? roleId;
   const fullAccess = isSettingsSuperAdminRoleKey(roleKey);
-  const canEdit = !defaultRole && !fullAccess;
+  const canEdit = canUpdateRole && !fullAccess;
   const groups = getSettingsRoleResourceGroups();
 
   return groups.map(group => {
@@ -1461,7 +1475,7 @@ export function getSettingsRoleInfoPanel(
     description: row.meta,
     key: row.key,
     badges,
-    canDelete: !row.defaultRole,
+    canDelete: false,
     deleteLabel: 'Delete',
     notice: fullAccess
       ? 'Super Admin has full access to all resources. Permissions cannot be modified.'
@@ -1774,6 +1788,17 @@ export function hasSettingsPermission(
   });
 }
 
+export function hasSettingsRoleMutationPermission(
+  context: SettingsTabVisibilityContext | null | undefined,
+  action: 'create' | 'update' | 'delete',
+) {
+  if (isSettingsSuperAdminRoleKey(context?.roleKey ?? '')) {
+    return true;
+  }
+
+  return hasSettingsPermission(context, 'role', action);
+}
+
 export function getSettingsRolePermissionCount(role: KolamRole) {
   if (isSettingsSuperAdminRoleKey(role.key)) {
     return getSettingsRoleResourceGroups().reduce(
@@ -1801,16 +1826,20 @@ export function getSettingsRolePermissionCount(role: KolamRole) {
 export function getSettingsRoleActionsForResource(resource: string) {
   const actionsByResource: Record<string, string[]> = {
     '*': ['*'],
+    staff_attendance: ['view', 'update'],
     'purchase-order': [
       'view',
       'create',
       'update',
-      'delete',
+      'update_status',
       'receive',
       'check',
       'complete_stock',
-      'update_status',
+      'delete',
     ],
+    sale: ['view', 'create', 'update', 'update_status', 'delete'],
+    'custom-project': ['view', 'create', 'update', 'update_status', 'delete'],
+    'stock-transaction': ['view', 'opname'],
     'stock-opname': [
       'view',
       'create',
@@ -1824,6 +1853,7 @@ export function getSettingsRoleActionsForResource(resource: string) {
       'view',
       'create',
       'update',
+      'update_status',
       'delete',
       'update_decision',
       'assign_staff',
@@ -1837,27 +1867,28 @@ export function getSettingsRoleActionsForResource(resource: string) {
       'delete',
       'view_by_admin',
       'update_by_admin',
-      'create_by_admin',
-      'delete_by_admin',
       'change_role_by_admin',
       'flag_employee',
+      'view_salary',
     ],
-    salary: ['view', 'view_salary', 'create', 'update', 'delete'],
-    payroll: [
-      'view',
-      'create',
-      'update',
-      'delete',
-      'approve',
-      'reject',
-      'verify',
-    ],
-    tax: ['view', 'create', 'update', 'delete', 'draft', 'review', 'post'],
+    wallet: ['view', 'create', 'update', 'confirm', 'delete'],
+    commission: ['view', 'confirm'],
+    'routine-expense': ['view', 'create', 'update', 'delete', 'verify'],
+    'unexpected-expense': ['view', 'create', 'update', 'delete', 'verify'],
+    'unexpected-income': ['view', 'create', 'update', 'delete', 'verify'],
+    tax: ['view', 'draft', 'approve', 'reject'],
+    'ai-seo': ['view', 'draft', 'approve', 'reject'],
+    'ai-market-intel': ['view', 'draft', 'approve', 'reject'],
+    'dara-training': ['view', 'update'],
+    salary: ['view', 'update'],
+    kasbon: ['view', 'view_all', 'create', 'update', 'delete', 'verify'],
+    salary_deduction: ['view', 'view_all', 'create', 'verify'],
+    payroll: ['view', 'create', 'update'],
     role: ['view', 'create', 'update', 'delete'],
     websetting: ['view', 'update'],
-    'activity-log': ['view'],
-    chat: ['view', 'create', 'update', 'delete', 'view_all'],
-    media: ['view', 'create', 'update', 'delete'],
+    'activity-log': ['view', 'update'],
+    chat: ['view', 'create', 'update', 'delete'],
+    media: ['view', 'update', 'delete'],
   };
 
   return actionsByResource[resource] ?? ['view', 'create', 'update', 'delete'];
