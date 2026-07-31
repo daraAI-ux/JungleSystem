@@ -1253,10 +1253,13 @@ function KolamSalesOpsCreateForm({
                         showLabelInTrigger={false}
                         style={styles.itemDiscountType}
                         triggerStyle={styles.itemDiscountTypeTrigger}
-                        triggerTextStyle={styles.itemDropdownTriggerText}
+                        triggerTextStyle={styles.itemDiscountTypeTriggerText}
                         value={item.discountType}
                       />
                       <View style={styles.itemDiscountAmount}>
+                        {item.discountType === 'fixed' ? (
+                          <Text style={styles.itemDiscountPrefix}>Rp</Text>
+                        ) : null}
                         <KolamFormTextField
                           mode="numeric"
                           onChangeText={discountAmount =>
@@ -1268,6 +1271,9 @@ function KolamSalesOpsCreateForm({
                           style={styles.itemPlainInput}
                           value={item.discountAmount}
                         />
+                        {item.discountType === 'percentage' ? (
+                          <Text style={styles.itemDiscountPrefix}>%</Text>
+                        ) : null}
                       </View>
                     </View>
                   </View>
@@ -2037,7 +2043,7 @@ const styles = StyleSheet.create({
   itemColDiscount: {
     flexGrow: 0,
     flexShrink: 0,
-    width: 132,
+    width: 152,
   },
   itemColTotal: {
     flexGrow: 0,
@@ -2070,24 +2076,38 @@ const styles = StyleSheet.create({
   itemDiscountRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: 4,
+    gap: 6,
     minHeight: V.control.inputHeight,
     width: '100%',
   },
   itemDiscountType: {
     flexGrow: 0,
     flexShrink: 0,
-    width: 52,
+    width: 78,
   },
   itemDiscountTypeTrigger: {
     minWidth: 0,
-    paddingHorizontal: 6,
+    paddingHorizontal: 8,
     width: '100%',
   },
+  itemDiscountTypeTriggerText: {
+    fontSize: V.control.fontSize,
+    maxWidth: 40,
+  },
   itemDiscountAmount: {
+    alignItems: 'center',
     flex: 1,
-    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 4,
+    justifyContent: 'flex-start',
     minWidth: 0,
+  },
+  itemDiscountPrefix: {
+    color: V.colors.fg,
+    flexShrink: 0,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '700',
   },
   itemMoneyBox: {
     justifyContent: 'center',
@@ -2104,15 +2124,16 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     borderWidth: 0,
     color: V.colors.fg,
+    flex: 1,
     fontFamily: V.fontFamily,
     fontSize: 12,
     fontWeight: '700',
     height: V.control.inputHeight,
     maxHeight: V.control.inputHeight,
     minHeight: V.control.inputHeight,
+    minWidth: 36,
     paddingHorizontal: 0,
     paddingVertical: 0,
-    width: '100%',
   },
   itemControlFill: {
     width: '100%',
