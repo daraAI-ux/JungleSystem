@@ -23,6 +23,7 @@ import {
   KOLAM_COMPLAINT_SOURCE_OPTIONS,
   KOLAM_COMPLAINT_STATUS_OPTIONS,
   needsKolamComplaintReturnTracking,
+  resolveKolamComplaintSaleSourceLogoUri,
   type KolamComplaint,
   type KolamComplaintDecision,
   type KolamComplaintKpiSeverity,
@@ -501,6 +502,10 @@ function KolamComplaintDetail({
   }
 
   const itemCount = complaint.itemCount || complaint.items.length;
+  const sourceLogoUri = resolveKolamComplaintSaleSourceLogoUri(
+    complaint,
+    controller.saleSources,
+  );
 
   return (
     <ScrollView
@@ -562,6 +567,18 @@ function KolamComplaintDetail({
               <KolamStatusBadge intent="secondary" label="Khusus layanan" />
             </View>
           ) : null}
+          {sourceLogoUri ? (
+            <View style={styles.stripSourceSlot}>
+              <KolamRemoteImage
+                accessibilityLabel={
+                  complaint.saleSourceRef?.name || 'Sumber penjualan'
+                }
+                resizeMode="contain"
+                sourceUri={sourceLogoUri}
+                style={styles.stripSourceLogo}
+              />
+            </View>
+          ) : null}
         </View>
       </KolamCardFrame>
 
@@ -575,8 +592,13 @@ function KolamComplaintDetail({
               descRow('customer', 'Pelanggan', complaint.customerName || '—'),
               descRow(
                 'source',
-                'Sumber',
+                'Sumber komplain',
                 getKolamComplaintSourceLabel(complaint.source),
+              ),
+              descRow(
+                'saleSource',
+                'Sumber penjualan',
+                complaint.saleSourceRef?.name || '—',
               ),
               descRow(
                 'category',
@@ -1232,6 +1254,18 @@ const styles = StyleSheet.create({
     color: V.colors.fg,
     fontSize: 14,
     fontWeight: '700',
+  },
+  stripSourceSlot: {
+    alignItems: 'center',
+    alignSelf: 'stretch',
+    justifyContent: 'center',
+    marginLeft: 'auto',
+    minHeight: 72,
+    width: 88,
+  },
+  stripSourceLogo: {
+    height: 72,
+    width: 88,
   },
   banner: {
     alignSelf: 'stretch',

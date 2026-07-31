@@ -10,6 +10,7 @@ import {
   isMarketplaceMirrorComplaint,
   normalizeKolamComplaint,
   normalizeKolamComplaintList,
+  resolveKolamComplaintSaleSourceLogoUri,
 } from '../src/domain/kolam-complaint';
 import {
   getKolamNavigationItemByRoute,

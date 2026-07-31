@@ -111,6 +111,12 @@ export interface KolamComplaintTracking {
   verifiedAt?: string;
 }
 
+export interface KolamComplaintSaleSourceRef {
+  id: string;
+  name: string;
+  logoUri: string | null;
+}
+
 export interface KolamComplaint {
   id: string;
   ticketCode: string;
@@ -118,6 +124,8 @@ export interface KolamComplaint {
   invoiceCode: string;
   customerName: string;
   isCustomProject: boolean;
+  /** Sales sourceRef from linked sale (for logo strip like sales detail). */
+  saleSourceRef: KolamComplaintSaleSourceRef | null;
   source: KolamComplaintSource;
   status: KolamComplaintStatus;
   decision: KolamComplaintDecision;
@@ -517,6 +525,28 @@ export function needsKolamComplaintReturnTracking(complaint: KolamComplaint) {
   );
 }
 
+/**
+ * Same resolution as sales detail: prefer embedded sale.sourceRef.logo,
+ * then active Sales Source catalog by id.
+ */
+export function resolveKolamComplaintSaleSourceLogoUri(
+  complaint: {
+    saleSourceRef?: KolamComplaintSaleSourceRef | null;
+  },
+  sources: Array<{ id: string; logoUri?: string | null }> = [],
+): string | null {
+  const embedded = complaint.saleSourceRef?.logoUri?.trim() || '';
+  if (embedded) {
+    return embedded;
+  }
+  const sourceId = complaint.saleSourceRef?.id?.trim() || '';
+  if (!sourceId) {
+    return null;
+  }
+  const fromCatalog = sources.find(row => row.id === sourceId)?.logoUri?.trim();
+  return fromCatalog || null;
+}
+
 export function normalizeKolamComplaint(payload: unknown): KolamComplaint {
   const record = asRecord(unwrapData(payload));
   const id = getString(record, '_id') || getString(record, 'id');
@@ -533,6 +563,7 @@ export function normalizeKolamComplaint(payload: unknown): KolamComplaint {
     invoiceCode: sale.invoiceCode,
     customerName: sale.customerName,
     isCustomProject: sale.isCustomProject,
+    saleSourceRef: sale.sourceRef,
     source,
     status: normalizeStatus(getString(record, 'status')),
     decision: normalizeDecision(record.decision),
@@ -617,9 +648,16 @@ function normalizeSaleRef(value: unknown): {
   invoiceCode: string;
   customerName: string;
   isCustomProject: boolean;
+  sourceRef: KolamComplaintSaleSourceRef | null;
 } {
   if (!value) {
-    return { id: null, invoiceCode: '—', customerName: '—', isCustomProject: false };
+    return {
+      id: null,
+      invoiceCode: '—',
+      customerName: '—',
+      isCustomProject: false,
+      sourceRef: null,
+    };
   }
   if (typeof value === 'string') {
     return {
@@ -627,6 +665,7 @@ function normalizeSaleRef(value: unknown): {
       invoiceCode: '—',
       customerName: '—',
       isCustomProject: false,
+      sourceRef: null,
     };
   }
   const record = asRecord(value);
@@ -653,6 +692,34 @@ function normalizeSaleRef(value: unknown): {
     invoiceCode: getString(record, 'invoiceCode') || '—',
     customerName,
     isCustomProject: getBoolean(record, 'isCustomProject') ?? false,
+    sourceRef: normalizeSaleSourceRef(record.sourceRef),
+  };
+}
+
+function normalizeSaleSourceRef(
+  value: unknown,
+): KolamComplaintSaleSourceRef | null {
+  if (!value) {
+    return null;
+  }
+  if (typeof value === 'string') {
+    const id = value.trim();
+    return id ? { id, name: '', logoUri: null } : null;
+  }
+  const record = asRecord(value);
+  const id = getString(record, '_id') || getString(record, 'id');
+  if (!id) {
+    return null;
+  }
+  const logo =
+    getString(record, 'logo') ||
+    getString(record, 'logoUrl') ||
+    getString(record, 'logoUri') ||
+    getString(record, 'icon');
+  return {
+    id,
+    name: getString(record, 'name') || getString(record, 'displayName') || '',
+    logoUri: logo ? getKolamFileUrl(logo) : null,
   };
 }
 

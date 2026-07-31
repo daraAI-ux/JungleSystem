@@ -10,6 +10,7 @@ import {
   type KolamComplaintStatus,
   type KolamComplaintTrackingStatus,
 } from '../domain/kolam-complaint';
+import type { KolamSaleSourceOption } from '../domain/kolam-sales';
 import type { KolamUserListItem } from '../domain/kolam-user';
 import { getErrorMessage as getApiErrorMessage } from '../lib/api-error';
 import {
@@ -21,6 +22,7 @@ import {
   updateKolamComplaintReturnStatus,
   updateKolamComplaintStatus,
 } from '../services/kolam-complaint-api';
+import { getKolamSalesActiveSources } from '../services/kolam-sales-api';
 import { getKolamUserList } from '../services/kolam-user-api';
 
 export type KolamComplaintSurfaceMode = 'list' | 'detail' | 'new';
@@ -44,6 +46,7 @@ export interface KolamComplaintController {
   pageSize: number;
   search: string;
   selectedComplaint: KolamComplaint | null;
+  saleSources: KolamSaleSourceOption[];
   sourceFilter: KolamComplaintSource | 'all';
   staffOptions: KolamComplaintStaffOption[];
   statusFilter: KolamComplaintStatus | 'all';
@@ -126,6 +129,7 @@ export function useKolamComplaintController(
   const [staffOptions, setStaffOptions] = useState<KolamComplaintStaffOption[]>(
     [],
   );
+  const [saleSources, setSaleSources] = useState<KolamSaleSourceOption[]>([]);
 
   const refreshList = useCallback(async () => {
     if (!isKolamComplaintRoute(route)) {
@@ -185,6 +189,15 @@ export function useKolamComplaintController(
     }
   }, []);
 
+  const loadSaleSources = useCallback(async () => {
+    try {
+      const sources = await getKolamSalesActiveSources();
+      setSaleSources(sources);
+    } catch {
+      // Non-blocking: strip logo can fall back to embedded sale.sourceRef.
+    }
+  }, []);
+
   useEffect(() => {
     setMode(initialMode);
     if (initialMode === 'new') {
@@ -201,8 +214,9 @@ export function useKolamComplaintController(
   useEffect(() => {
     if (mode === 'detail') {
       void loadStaffOptions();
+      void loadSaleSources();
     }
-  }, [loadStaffOptions, mode]);
+  }, [loadSaleSources, loadStaffOptions, mode]);
 
   const onSelectComplaint = useCallback(async (complaint: KolamComplaint) => {
     setMode('detail');
@@ -479,6 +493,7 @@ export function useKolamComplaintController(
       pageSize,
       search,
       selectedComplaint,
+      saleSources,
       sourceFilter,
       staffOptions,
       statusFilter,
@@ -531,6 +546,7 @@ export function useKolamComplaintController(
       pageSize,
       search,
       selectedComplaint,
+      saleSources,
       sourceFilter,
       staffOptions,
       statusFilter,
