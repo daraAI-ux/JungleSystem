@@ -750,6 +750,13 @@ export async function getAmTransfers(
   return getAmList<AmTransfer>('/transfer', query, baseUrl);
 }
 
+export async function getAmTransferById(
+  id: string,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmTransfer> {
+  return amGet<AmTransfer>(`/transfer/${id}`, undefined, baseUrl);
+}
+
 export async function cancelAmTransfer(
   id: string,
   baseUrl = appConfig.amApiBaseUrl,

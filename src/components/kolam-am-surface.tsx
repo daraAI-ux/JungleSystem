@@ -33,6 +33,7 @@ import {
   getAmRoles,
   getAmServiceAccounts,
   getAmTasks,
+  getAmTransferById,
   getAmTransfers,
   getAmUsers,
   getAmWebhookConfigs,
@@ -1571,7 +1572,11 @@ function AmTransfersPage() {
   const [transfers, setTransfers] = React.useState<AmTransfer[]>([]);
   const [status, setStatus] = React.useState('all');
   const [search, setSearch] = React.useState('');
+  const [selectedTransferId, setSelectedTransferId] = React.useState<string | null>(null);
+  const [selectedTransfer, setSelectedTransfer] = React.useState<AmTransfer | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [detailLoading, setDetailLoading] = React.useState(false);
+  const [detailError, setDetailError] = React.useState<string | null>(null);
   const [actingTransferId, setActingTransferId] = React.useState<string | null>(null);
   const [actionMessage, setActionMessage] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
@@ -1602,6 +1607,38 @@ function AmTransfersPage() {
     return () => clearInterval(interval);
   }, [fetchTransfers]);
 
+  const loadTransferDetail = React.useCallback(async (id: string) => {
+    try {
+      setDetailLoading(true);
+      const response = await getAmTransferById(id);
+      setSelectedTransfer(response);
+      setDetailError(null);
+    } catch (nextError) {
+      setDetailError(nextError instanceof Error ? nextError.message : 'Gagal memuat detail transfer AM.');
+    } finally {
+      setDetailLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    if (!selectedTransferId || !selectedTransfer) return;
+    if (selectedTransfer.status !== 'pending' && selectedTransfer.status !== 'processing') return;
+    const interval = setInterval(() => loadTransferDetail(selectedTransferId), 3000);
+    return () => clearInterval(interval);
+  }, [loadTransferDetail, selectedTransfer, selectedTransferId]);
+
+  const selectTransfer = React.useCallback(async (transfer: AmTransfer) => {
+    if (selectedTransferId === transfer._id) {
+      setSelectedTransferId(null);
+      setSelectedTransfer(null);
+      setDetailError(null);
+      return;
+    }
+    setSelectedTransferId(transfer._id);
+    setSelectedTransfer(transfer);
+    await loadTransferDetail(transfer._id);
+  }, [loadTransferDetail, selectedTransferId]);
+
   const runTransferAction = React.useCallback(async (
     transfer: AmTransfer,
     action: 'cancel' | 'retry' | 'force-fail',
@@ -1620,12 +1657,15 @@ function AmTransfersPage() {
         setActionMessage(`Transfer ${transfer.recipientAccount} ditandai gagal.`);
       }
       await fetchTransfers();
+      if (selectedTransferId === transfer._id) {
+        await loadTransferDetail(transfer._id);
+      }
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : 'Aksi transfer AM gagal.');
     } finally {
       setActingTransferId(null);
     }
-  }, [fetchTransfers]);
+  }, [fetchTransfers, loadTransferDetail, selectedTransferId]);
 
   return (
     <View style={styles.pageStack}>
@@ -1666,15 +1706,108 @@ function AmTransfersPage() {
             </View>
             <Text style={[styles.cellText, styles.dateCol]}>{formatAmDate(transfer.createdAt)}</Text>
             <View style={styles.actionCol}>
-              <AmTransferActions
-                disabled={actingTransferId === transfer._id}
-                transfer={transfer}
-                onAction={runTransferAction}
-              />
+              <View style={styles.inlineActions}>
+                <KolamButton
+                  accessibilityLabel={`AM Transfer Detail ${transfer._id}`}
+                  label={selectedTransferId === transfer._id ? 'Close' : 'Detail'}
+                  intent="outline"
+                  size="sm"
+                  onPress={() => selectTransfer(transfer)}
+                />
+                <AmTransferActions
+                  disabled={actingTransferId === transfer._id}
+                  transfer={transfer}
+                  onAction={runTransferAction}
+                />
+              </View>
             </View>
           </View>
         ))}
       </View>
+      {selectedTransferId ? (
+        <AmTransferDetailPanel
+          error={detailError}
+          isLoading={detailLoading}
+          transfer={selectedTransfer}
+        />
+      ) : null}
+    </View>
+  );
+}
+
+function AmTransferDetailPanel({
+  error,
+  isLoading,
+  transfer,
+}: {
+  error: string | null;
+  isLoading: boolean;
+  transfer: AmTransfer | null;
+}) {
+  if (!transfer && !isLoading && !error) return null;
+
+  return (
+    <View style={styles.panel}>
+      <View style={styles.detailHeader}>
+        <View>
+          <Text style={styles.panelTitle}>Transfer Detail</Text>
+          <Text style={styles.rowMeta}>{transfer?._id ?? 'Memuat detail transfer...'}</Text>
+        </View>
+        {transfer ? <AmStatusChip label={transfer.status} tone={getTransferTone(transfer.status)} /> : null}
+      </View>
+      <AmInlineError title="Detail transfer AM belum bisa dibaca" error={error} />
+      {isLoading ? <Text style={styles.loadingText}>Memuat detail transfer...</Text> : null}
+      {transfer ? (
+        <>
+          <View style={styles.metricGrid}>
+            <AmMetricCard label="Amount" value={formatRupiah(transfer.amount)} meta={`Fee ${formatRupiah(transfer.fee ?? 0)}`} />
+            <AmMetricCard label="Type" value={titleCase(transfer.transferType)} meta={transfer.transferMethod ?? 'method not set'} />
+            <AmMetricCard label="Recipient" value={transfer.recipientName || '-'} meta={`${transfer.recipientBank ?? '-'} ${transfer.recipientAccount}`} />
+          </View>
+          <View style={styles.detailList}>
+            <View style={styles.detailListRow}>
+              <Text style={[styles.tableHeaderText, styles.accountCol]}>Source Account</Text>
+              <Text style={[styles.cellText, styles.recipientCol]}>{formatBankAccount(transfer.accountId)}</Text>
+            </View>
+            <View style={styles.detailListRow}>
+              <Text style={[styles.tableHeaderText, styles.accountCol]}>Device</Text>
+              <Text style={[styles.cellText, styles.recipientCol]}>{formatDeviceRef(transfer.deviceId)}</Text>
+            </View>
+            <View style={styles.detailListRow}>
+              <Text style={[styles.tableHeaderText, styles.accountCol]}>Created</Text>
+              <Text style={[styles.cellText, styles.recipientCol]}>{formatAmDate(transfer.createdAt)}</Text>
+            </View>
+            <View style={styles.detailListRow}>
+              <Text style={[styles.tableHeaderText, styles.accountCol]}>Started</Text>
+              <Text style={[styles.cellText, styles.recipientCol]}>{formatAmDate(transfer.startedAt)}</Text>
+            </View>
+            <View style={styles.detailListRow}>
+              <Text style={[styles.tableHeaderText, styles.accountCol]}>Completed</Text>
+              <Text style={[styles.cellText, styles.recipientCol]}>{formatAmDate(transfer.completedAt)}</Text>
+            </View>
+            {transfer.error ? (
+              <View style={styles.detailListRow}>
+                <Text style={[styles.tableHeaderText, styles.accountCol]}>Error</Text>
+                <Text style={[styles.cellText, styles.recipientCol]}>{transfer.error}</Text>
+              </View>
+            ) : null}
+            {transfer.screenshot ? (
+              <View style={styles.detailListRow}>
+                <Text style={[styles.tableHeaderText, styles.accountCol]}>Proof</Text>
+                <Text style={[styles.cellText, styles.recipientCol]}>Screenshot base64 tersedia ({transfer.screenshot.length} chars)</Text>
+              </View>
+            ) : null}
+          </View>
+          <View style={styles.logPanel}>
+            {!transfer.logs.length ? <Text style={styles.logEmptyText}>No transfer logs</Text> : null}
+            {transfer.logs.slice(-30).map((line, index) => (
+              <Text key={`${index}-${line}`} style={styles.logText} numberOfLines={2}>
+                {String(index + 1).padStart(3, '0')} {line}
+              </Text>
+            ))}
+          </View>
+        </>
+      ) : null}
     </View>
   );
 }

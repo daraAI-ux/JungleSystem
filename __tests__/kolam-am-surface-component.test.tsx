@@ -23,6 +23,7 @@ import {
   getAmRacks,
   getAmRoles,
   getAmServiceAccounts,
+  getAmTransferById,
   getAmTransfers,
   getAmUsers,
   getAmWebhookConfigs,
@@ -64,6 +65,7 @@ jest.mock('../src/services/am-api', () => ({
   getAmRoles: jest.fn(() => Promise.resolve([])),
   getAmServiceAccounts: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
   getAmTasks: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
+  getAmTransferById: jest.fn(() => Promise.resolve({_id: 'transfer-1', logs: []})),
   getAmTransfers: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
   getAmUsers: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
   getAmWebhookConfigs: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
@@ -814,6 +816,59 @@ describe('KolamAmSurface', () => {
 
     expect(cancelAmTransfer).toHaveBeenCalledWith('transfer-1');
     expect(getAmTransfers).toHaveBeenCalledTimes(2);
+  });
+
+  it('loads transfer detail from the Transfers route', async () => {
+    const transfer = {
+      _id: 'transfer-detail',
+      accountId: { _id: 'account-1', label: 'BCA Main', platform: 'bca', accountNumber: '123' },
+      amount: 250000,
+      completedAt: '2026-01-01T00:05:00.000Z',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      createdBy: { _id: 'user-1', fullName: 'Admin User', username: 'admin' },
+      deviceId: { _id: 'device-1', name: 'Phone 1', udid: 'USB1234' },
+      error: '',
+      fee: 2500,
+      logs: ['created', 'completed'],
+      recipientAccount: '999',
+      recipientBank: 'BCA',
+      recipientName: 'Vendor Detail',
+      screenshot: 'abc123',
+      startedAt: '2026-01-01T00:01:00.000Z',
+      status: 'success',
+      transactionPurpose: 'Payment',
+      transferMethod: 'BI FAST',
+      transferType: 'transfer',
+      updatedAt: '',
+    };
+    jest.mocked(getAmTransfers).mockResolvedValue({
+      data: [transfer],
+      meta: {total: 1, limit: 1},
+    });
+    jest.mocked(getAmTransferById).mockResolvedValue(transfer);
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Transfers'}).props.onPress();
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Transfer Detail transfer-detail'}).props.onPress();
+    });
+
+    expect(getAmTransferById).toHaveBeenCalledWith('transfer-detail');
+    const text = renderText(renderer!);
+    const joinedText = text.join(' ');
+    expect(text).toContain('Transfer Detail');
+    expect(text).toContain('Vendor Detail');
+    expect(joinedText).toMatch(/Screenshot base64 tersedia \(\s*6\s+chars\)/);
+    expect(joinedText).toMatch(/002\s+completed/);
   });
 
   it('runs webhook register, toggle, delete, and test ping actions', async () => {
