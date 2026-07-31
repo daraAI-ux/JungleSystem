@@ -2193,63 +2193,64 @@ function KolamTeamChatDaraWindow({
   onOpenDara: () => void;
 }) {
   return (
-    <View style={styles.teamDaraWindowOverlay}>
-      <KolamModalBackdrop onPress={onClose} />
-      <View
-        accessibilityLabel="Jendela DARA team chat"
-        style={styles.teamDaraWindow}>
-        <View style={styles.teamDaraWindowHeader}>
-          <View style={styles.teamDaraHeaderLargeAvatar}>
-            <KolamProfileAvatarContent
-              imageStyle={styles.teamDaraHeaderLargeAvatarImage}
+    <Modal animationType="fade" onRequestClose={onClose} visible>
+      <View style={styles.teamDaraWindowOverlay}>
+        <View
+          accessibilityLabel="Jendela DARA team chat"
+          style={styles.teamDaraWindow}>
+          <View style={styles.teamDaraWindowHeader}>
+            <View style={styles.teamDaraHeaderLargeAvatar}>
+              <KolamProfileAvatarContent
+                imageStyle={styles.teamDaraHeaderLargeAvatarImage}
+                imageUrl={imageUrl}
+                initials="DA"
+                textStyle={styles.teamDaraHeaderLargeAvatarText}
+              />
+            </View>
+            <View style={styles.teamDaraHeaderCopy}>
+              <Text style={styles.teamDaraHeaderTitle}>DARA</Text>
+              <Text style={styles.teamDaraHeaderMeta}>Assistant Team Chat</Text>
+            </View>
+            <KolamPressable
+              accessibilityLabel="Tutup jendela DARA team chat"
+              onPress={onClose}
+              style={styles.teamDaraWindowCloseButton}>
+              <Text style={styles.teamDaraWindowCloseText}>Tutup</Text>
+            </KolamPressable>
+          </View>
+
+          <View style={styles.teamDaraWindowBody}>
+            <View style={styles.teamDaraHeaderNotice}>
+              <Text style={styles.teamDaraHeaderNoticeText}>
+                Window besar DARA disiapkan agar percakapan, reasoning, dan
+                jawaban panjang tidak sempit di sidebar.
+              </Text>
+            </View>
+            <KolamTeamChatDaraWindowMessages
+              detail={detail}
+              errorMessage={errorMessage}
               imageUrl={imageUrl}
-              initials="DA"
-              textStyle={styles.teamDaraHeaderLargeAvatarText}
+              loading={busy}
             />
           </View>
-          <View style={styles.teamDaraHeaderCopy}>
-            <Text style={styles.teamDaraHeaderTitle}>DARA</Text>
-            <Text style={styles.teamDaraHeaderMeta}>Assistant Team Chat</Text>
-          </View>
-          <KolamPressable
-            accessibilityLabel="Tutup jendela DARA team chat"
-            onPress={onClose}
-            style={styles.teamDaraWindowCloseButton}>
-            <Text style={styles.teamDaraWindowCloseText}>Tutup</Text>
-          </KolamPressable>
-        </View>
 
-        <View style={styles.teamDaraWindowBody}>
-          <View style={styles.teamDaraHeaderNotice}>
-            <Text style={styles.teamDaraHeaderNoticeText}>
-              Window besar DARA disiapkan agar percakapan, reasoning, dan
-              jawaban panjang tidak sempit di sidebar.
-            </Text>
+          <View style={styles.teamDaraWindowFooter}>
+            <KolamPressable
+              accessibilityLabel="Buka chat DARA dari jendela besar"
+              disabled={busy}
+              onPress={onOpenDara}
+              style={[
+                styles.teamDaraHeaderAction,
+                busy && styles.composerIconButtonDisabled,
+              ]}>
+              <Text style={styles.teamDaraHeaderActionText}>
+                {busy ? 'Membuka DARA...' : 'Buka chat DARA'}
+              </Text>
+            </KolamPressable>
           </View>
-          <KolamTeamChatDaraWindowMessages
-            detail={detail}
-            errorMessage={errorMessage}
-            imageUrl={imageUrl}
-            loading={busy}
-          />
-        </View>
-
-        <View style={styles.teamDaraWindowFooter}>
-          <KolamPressable
-            accessibilityLabel="Buka chat DARA dari jendela besar"
-            disabled={busy}
-            onPress={onOpenDara}
-            style={[
-              styles.teamDaraHeaderAction,
-              busy && styles.composerIconButtonDisabled,
-            ]}>
-            <Text style={styles.teamDaraHeaderActionText}>
-              {busy ? 'Membuka DARA...' : 'Buka chat DARA'}
-            </Text>
-          </KolamPressable>
         </View>
       </View>
-    </View>
+    </Modal>
   );
 }
 
@@ -2302,6 +2303,7 @@ function KolamTeamChatDaraWindowMessages({
     <ScrollView
       accessibilityLabel="Daftar pesan DARA team chat"
       contentContainerStyle={styles.teamDaraWindowMessageList}
+      style={styles.teamDaraWindowMessageScroll}
       showsVerticalScrollIndicator>
       <KolamMappedList
         items={messages}
@@ -7018,50 +7020,33 @@ const styles = StyleSheet.create({
     shadowOffset: {width: 0, height: 8},
   },
   teamDaraWindowOverlay: {
-    position: 'absolute',
-    top: V.layout.topNavHeight + 8,
-    right: 10,
-    bottom: 10,
-    width: 720,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 0,
-    zIndex: 500,
-    elevation: 50,
+    backgroundColor: '#f9fafb',
+    flex: 1,
   },
   teamDaraWindow: {
-    width: '100%',
-    maxWidth: 720,
-    height: '100%',
-    maxHeight: 560,
-    borderRadius: V.radius.lg,
-    borderColor: V.colors.border,
-    borderWidth: 1,
-    backgroundColor: V.colors.bg,
-    shadowColor: '#111827',
-    shadowOpacity: 0.2,
-    shadowRadius: 24,
-    shadowOffset: {width: 0, height: 16},
-    overflow: 'hidden',
+    backgroundColor: '#f9fafb',
+    flex: 1,
+    gap: 10,
+    padding: 12,
   },
   teamDaraWindowHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
     gap: 10,
+    borderRadius: V.radius.lg,
     borderBottomColor: V.colors.border,
-    borderBottomWidth: 1,
+    borderColor: V.colors.border,
+    borderWidth: 1,
     backgroundColor: V.colors.primarySoft,
   },
   teamDaraWindowBody: {
     flex: 1,
-    padding: 12,
+    minHeight: 0,
+    padding: 0,
     gap: 10,
   },
   teamDaraWindowFooter: {
-    padding: 12,
-    borderTopColor: V.colors.border,
-    borderTopWidth: 1,
     alignItems: 'flex-end',
   },
   teamDaraWindowCloseButton: {
@@ -7165,6 +7150,10 @@ const styles = StyleSheet.create({
   teamDaraWindowMessageList: {
     gap: 10,
     paddingBottom: 8,
+  },
+  teamDaraWindowMessageScroll: {
+    flex: 1,
+    minHeight: 0,
   },
   teamDaraWindowMessageBubble: {
     maxWidth: '78%',
