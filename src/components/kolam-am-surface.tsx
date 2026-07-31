@@ -2881,6 +2881,7 @@ function AmUsersPage() {
   const [users, setUsers] = React.useState<AmUser[]>([]);
   const [roles, setRoles] = React.useState<AmRole[]>([]);
   const [search, setSearch] = React.useState('');
+  const [roleFilter, setRoleFilter] = React.useState('all');
   const [page, setPage] = React.useState(1);
   const [total, setTotal] = React.useState(0);
   const [limit, setLimit] = React.useState(AM_USER_PAGE_LIMIT);
@@ -2903,6 +2904,7 @@ function AmUsersPage() {
           page,
           limit: AM_USER_PAGE_LIMIT,
           search: search.trim() || undefined,
+          role: roleFilter === 'all' ? undefined : roleFilter,
         }),
         getAmRoles(),
       ]);
@@ -2916,10 +2918,15 @@ function AmUsersPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [page, search]);
+  }, [page, roleFilter, search]);
 
   const handleUserSearchChange = React.useCallback((value: string) => {
     setSearch(value);
+    setPage(1);
+  }, []);
+
+  const handleUserRoleChange = React.useCallback((value: string) => {
+    setRoleFilter(value);
     setPage(1);
   }, []);
 
@@ -3013,6 +3020,14 @@ function AmUsersPage() {
   const totalPages = Math.max(1, Math.ceil(total / Math.max(limit, 1)));
   const rangeFrom = total ? (page - 1) * limit + 1 : 0;
   const rangeTo = total ? Math.min(page * limit, total) : 0;
+  const roleFilterItems = React.useMemo(() => ['all', ...roles.map(role => role._id)], [roles]);
+  const roleFilterLabels = React.useMemo<Record<string, string>>(() => {
+    const labels: Record<string, string> = {all: 'All Roles'};
+    roles.forEach(role => {
+      labels[role._id] = role.name;
+    });
+    return labels;
+  }, [roles]);
 
   return (
     <View style={styles.pageStack}>
@@ -3023,6 +3038,12 @@ function AmUsersPage() {
           placeholder="Search users..."
           containerStyle={styles.taskSearch}
           trailingLabel={`${total} user`}
+        />
+        <AmSegmentGroup
+          active={roleFilter}
+          items={roleFilterItems}
+          labels={roleFilterLabels}
+          onSelect={handleUserRoleChange}
         />
         <KolamButton label={isLoading ? 'Memuat' : 'Refresh'} intent="outline" muted={isLoading} size="sm" onPress={fetchUsers} />
       </View>

@@ -981,6 +981,7 @@ describe('KolamAmSurface', () => {
       page: 1,
       limit: 20,
       search: undefined,
+      role: undefined,
     });
     expect(getAmRoles).toHaveBeenCalledTimes(1);
     expect(getAmActivityLogs).toHaveBeenCalledWith({
@@ -1378,16 +1379,29 @@ describe('KolamAmSurface', () => {
       page: 1,
       limit: 20,
       search: undefined,
+      role: undefined,
     });
     expect(getAmUsers).toHaveBeenCalledWith({
       page: 1,
       limit: 20,
       search: 'Alice',
+      role: undefined,
     });
     expect(getAmUsers).toHaveBeenCalledWith({
       page: 2,
       limit: 20,
       search: 'Alice',
+      role: undefined,
+    });
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Segment Admin'}).props.onPress();
+    });
+    expect(getAmUsers).toHaveBeenCalledWith({
+      page: 1,
+      limit: 20,
+      search: 'Alice',
+      role: 'role-admin',
     });
   });
 
