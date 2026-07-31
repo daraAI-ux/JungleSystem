@@ -3,6 +3,7 @@ import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-n
 import {
   estimateKolamSaleCreateItemLineTotal,
   estimateKolamSaleCreateItemShippingCost,
+  estimateKolamSaleCreateOrderSummary,
   filterKolamSaleCreateItemShippingMethods,
   formatKolamSaleDeliveryStatusLabel,
   formatKolamSalePaymentStatusLabel,
@@ -17,6 +18,7 @@ import {
   KOLAM_SALES_DISCOUNT_APPROVAL_ROUTE,
   KOLAM_SALES_ROOT,
   resolveKolamSaleCreateItemShippingMethodIds,
+  sumKolamSaleCreateItemShippingCost,
   type KolamSale,
   type KolamSaleCreateItemType,
   type KolamSaleDeliveryStatus,
@@ -666,6 +668,28 @@ function KolamSalesOpsCreateForm({
   const itemTypeOptions = isAddItemsMode
     ? ITEM_TYPE_OPTIONS_ADD_ITEMS
     : ITEM_TYPE_OPTIONS_FULL;
+
+  const shippingTotal = useMemo(
+    () => sumKolamSaleCreateItemShippingCost(form.items),
+    [form.items],
+  );
+  const orderSummary = useMemo(
+    () =>
+      estimateKolamSaleCreateOrderSummary(
+        form,
+        controller.products,
+        controller.species,
+        controller.services,
+        controller.enclosures,
+      ),
+    [
+      form,
+      controller.products,
+      controller.species,
+      controller.services,
+      controller.enclosures,
+    ],
+  );
 
   return (
     <View style={styles.formRoot}>
@@ -1349,134 +1373,231 @@ function KolamSalesOpsCreateForm({
           </View>
       </KolamContentFrame>
 
-      <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
-        <View style={styles.proofHeader}>
-          <Text style={styles.sectionTitle}>Biaya tambahan</Text>
-          <KolamButton label="Tambah biaya" onPress={controller.onAddCustomCost} />
-        </View>
-        {form.customCosts.length === 0 ? (
-          <Text style={styles.metaText}>Belum ada biaya tambahan.</Text>
-        ) : (
-          form.customCosts.map(cost => (
-            <View key={cost.key} style={styles.formSplitRow}>
-              <View style={styles.formSplitCell}>
-                <FieldShell label="Nama biaya">
-                  <KolamFormTextField
-                    onChangeText={name =>
-                      controller.onChangeCustomCost(cost.key, { name })
-                    }
-                    placeholder="Contoh: Biaya admin"
-                    value={cost.name}
-                  />
-                </FieldShell>
-              </View>
-              <View style={styles.formSplitCell}>
-                <FieldShell label="Jumlah">
-                  <KolamFormTextField
-                    mode="numeric"
-                    onChangeText={amount =>
-                      controller.onChangeCustomCost(cost.key, { amount })
-                    }
-                    placeholder="0"
-                    value={cost.amount}
-                  />
-                </FieldShell>
-              </View>
-              <View style={styles.formSplitCellNarrow}>
-                <FieldShell label=" ">
-                  <KolamButton
-                    label="Hapus"
-                    muted
-                    onPress={() => controller.onRemoveCustomCost(cost.key)}
-                    style={styles.costRemoveButton}
-                  />
-                </FieldShell>
+      <View style={styles.formBottomSplit}>
+        <View style={styles.formBottomCol}>
+          <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
+            <Text style={styles.sectionTitle}>Total biaya pengiriman</Text>
+            <Text style={styles.shippingTotalValue}>
+              {formatRupiah(shippingTotal)}
+            </Text>
+            <Text style={styles.shippingTotalHint}>
+              Dihitung dari metode pengiriman pada setiap item. Tidak bisa diubah
+              di sini.
+            </Text>
+          </KolamContentFrame>
+
+          <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
+            <View style={styles.proofHeader}>
+              <Text style={styles.sectionTitle}>Biaya tambahan</Text>
+              <KolamButton label="Tambah biaya" onPress={controller.onAddCustomCost} />
+            </View>
+            {form.customCosts.length === 0 ? (
+              <Text style={styles.metaText}>Belum ada biaya tambahan.</Text>
+            ) : (
+              form.customCosts.map(cost => (
+                <View key={cost.key} style={styles.formSplitRow}>
+                  <View style={styles.formSplitCell}>
+                    <FieldShell label="Nama biaya">
+                      <KolamFormTextField
+                        onChangeText={name =>
+                          controller.onChangeCustomCost(cost.key, { name })
+                        }
+                        placeholder="Contoh: Biaya admin"
+                        value={cost.name}
+                      />
+                    </FieldShell>
+                  </View>
+                  <View style={styles.formSplitCell}>
+                    <FieldShell label="Jumlah">
+                      <KolamFormTextField
+                        mode="numeric"
+                        onChangeText={amount =>
+                          controller.onChangeCustomCost(cost.key, { amount })
+                        }
+                        placeholder="0"
+                        value={cost.amount}
+                      />
+                    </FieldShell>
+                  </View>
+                  <View style={styles.formSplitCellNarrow}>
+                    <FieldShell label=" ">
+                      <KolamButton
+                        label="Hapus"
+                        muted
+                        onPress={() => controller.onRemoveCustomCost(cost.key)}
+                        style={styles.costRemoveButton}
+                      />
+                    </FieldShell>
+                  </View>
+                </View>
+              ))
+            )}
+          </KolamContentFrame>
+
+          <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
+            <Text style={styles.sectionTitle}>Catatan</Text>
+            <FieldShell label="Catatan invoice">
+              <KolamFormTextField
+                multiline
+                numberOfLines={6}
+                onChangeText={notes => controller.onChangeForm({ notes })}
+                placeholder="Catatan tambahan…"
+                style={styles.notesInput}
+                value={form.notes}
+              />
+            </FieldShell>
+
+            <View style={styles.tosBlock}>
+              <Text style={styles.fieldLabel}>Syarat & Ketentuan (ToS)</Text>
+              <Text style={styles.tosHint}>
+                Opsional — pilih template S&K yang dilampirkan ke invoice ini.
+                {form.termsTemplateIds.length
+                  ? ` ${form.termsTemplateIds.length} dipilih.`
+                  : ''}
+              </Text>
+              <KolamDropdownSelect
+                accessibilityLabel="Tambah template ToS"
+                label="Tambah template ToS"
+                menuPlacement="inline"
+                onChange={templateId => {
+                  if (
+                    !templateId ||
+                    form.termsTemplateIds.includes(templateId)
+                  ) {
+                    return;
+                  }
+                  controller.onChangeForm({
+                    termsTemplateIds: [...form.termsTemplateIds, templateId],
+                  });
+                }}
+                options={[
+                  { label: 'Tambah template…', value: '' },
+                  ...controller.termsTemplates
+                    .filter(
+                      template => !form.termsTemplateIds.includes(template.id),
+                    )
+                    .map(template => ({
+                      label: template.title,
+                      value: template.id,
+                    })),
+                ]}
+                searchable={controller.termsTemplates.length > 6}
+                searchPlaceholder="Cari judul template…"
+                showLabelInTrigger={false}
+                value=""
+              />
+              <View style={styles.tosSelectedRow}>
+                {form.termsTemplateIds.length ? (
+                  form.termsTemplateIds.map(templateId => {
+                    const template = controller.termsTemplates.find(
+                      row => row.id === templateId,
+                    );
+                    return (
+                      <KolamButton
+                        intent="outline"
+                        key={templateId}
+                        label={`${template?.title ?? templateId} ×`}
+                        onPress={() =>
+                          controller.onChangeForm({
+                            termsTemplateIds: form.termsTemplateIds.filter(
+                              id => id !== templateId,
+                            ),
+                          })
+                        }
+                        style={styles.tosChip}
+                      />
+                    );
+                  })
+                ) : (
+                  <Text style={styles.tosEmpty}>Belum ada template dipilih.</Text>
+                )}
               </View>
             </View>
-          ))
-        )}
-      </KolamContentFrame>
-
-      <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
-        <Text style={styles.sectionTitle}>Catatan</Text>
-        <FieldShell label="Catatan invoice">
-          <KolamFormTextField
-            multiline
-            numberOfLines={6}
-            onChangeText={notes => controller.onChangeForm({ notes })}
-            placeholder="Catatan tambahan…"
-            style={styles.notesInput}
-            value={form.notes}
-          />
-        </FieldShell>
-
-        <View style={styles.tosBlock}>
-          <Text style={styles.fieldLabel}>Syarat & Ketentuan (ToS)</Text>
-          <Text style={styles.tosHint}>
-            Opsional — pilih template S&K yang dilampirkan ke invoice ini.
-            {form.termsTemplateIds.length
-              ? ` ${form.termsTemplateIds.length} dipilih.`
-              : ''}
-          </Text>
-          <KolamDropdownSelect
-            accessibilityLabel="Tambah template ToS"
-            label="Tambah template ToS"
-            menuPlacement="inline"
-            onChange={templateId => {
-              if (
-                !templateId ||
-                form.termsTemplateIds.includes(templateId)
-              ) {
-                return;
-              }
-              controller.onChangeForm({
-                termsTemplateIds: [...form.termsTemplateIds, templateId],
-              });
-            }}
-            options={[
-              { label: 'Tambah template…', value: '' },
-              ...controller.termsTemplates
-                .filter(
-                  template => !form.termsTemplateIds.includes(template.id),
-                )
-                .map(template => ({
-                  label: template.title,
-                  value: template.id,
-                })),
-            ]}
-            searchable={controller.termsTemplates.length > 6}
-            searchPlaceholder="Cari judul template…"
-            showLabelInTrigger={false}
-            value=""
-          />
-          <View style={styles.tosSelectedRow}>
-            {form.termsTemplateIds.length ? (
-              form.termsTemplateIds.map(templateId => {
-                const template = controller.termsTemplates.find(
-                  row => row.id === templateId,
-                );
-                return (
-                  <KolamButton
-                    intent="outline"
-                    key={templateId}
-                    label={`${template?.title ?? templateId} ×`}
-                    onPress={() =>
-                      controller.onChangeForm({
-                        termsTemplateIds: form.termsTemplateIds.filter(
-                          id => id !== templateId,
-                        ),
-                      })
-                    }
-                    style={styles.tosChip}
-                  />
-                );
-              })
-            ) : (
-              <Text style={styles.tosEmpty}>Belum ada template dipilih.</Text>
-            )}
-          </View>
+          </KolamContentFrame>
         </View>
-      </KolamContentFrame>
+
+        <View style={styles.formBottomCol}>
+          <KolamContentFrame
+            style={[styles.detailCard, styles.orderSummaryCard]}
+            variant="settingsWebConfig"
+          >
+            <Text style={styles.sectionTitle}>Ringkasan pesanan</Text>
+            {orderSummary.lines.length === 0 ? (
+              <Text style={styles.metaText}>
+                Belum ada item katalog yang dipilih.
+              </Text>
+            ) : (
+              <View style={styles.orderSummaryLines}>
+                {orderSummary.lines.map(line => (
+                  <View key={line.key} style={styles.orderSummaryLine}>
+                    <View style={styles.orderSummaryLineText}>
+                      <Text style={styles.orderSummaryName}>{line.name}</Text>
+                      <Text style={styles.orderSummaryMeta}>
+                        {line.quantity} ×
+                        {line.shippingCost > 0
+                          ? ` · Ongkir ${formatRupiah(line.shippingCost)}`
+                          : ''}
+                      </Text>
+                    </View>
+                    <Text style={styles.orderSummaryAmount}>
+                      {formatRupiah(line.lineTotal)}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            <View style={styles.orderSummaryTotals}>
+              <View style={styles.orderSummaryTotalRow}>
+                <Text style={styles.orderSummaryTotalLabel}>Subtotal item</Text>
+                <Text style={styles.orderSummaryTotalValue}>
+                  {formatRupiah(orderSummary.itemsTotal)}
+                </Text>
+              </View>
+              {orderSummary.shippingTotal > 0 ? (
+                <View style={styles.orderSummaryTotalRow}>
+                  <Text style={styles.orderSummaryTotalLabel}>
+                    Total biaya pengiriman
+                  </Text>
+                  <Text style={styles.orderSummaryTotalValue}>
+                    {formatRupiah(orderSummary.shippingTotal)}
+                  </Text>
+                </View>
+              ) : null}
+              {orderSummary.customCostsTotal > 0 ? (
+                <>
+                  <Text style={styles.orderSummaryGroupLabel}>Biaya lain-lain</Text>
+                  {form.customCosts
+                    .filter(cost => {
+                      const amount = Number(cost.amount);
+                      return (
+                        cost.name.trim() &&
+                        Number.isFinite(amount) &&
+                        amount > 0
+                      );
+                    })
+                    .map(cost => (
+                      <View key={cost.key} style={styles.orderSummaryTotalRow}>
+                        <Text style={styles.orderSummaryTotalLabel}>
+                          {cost.name.trim()}
+                        </Text>
+                        <Text style={styles.orderSummaryTotalValue}>
+                          {formatRupiah(Number(cost.amount) || 0)}
+                        </Text>
+                      </View>
+                    ))}
+                </>
+              ) : null}
+              <View style={styles.orderSummaryGrandRow}>
+                <Text style={styles.orderSummaryGrandLabel}>Total akhir</Text>
+                <Text style={styles.orderSummaryGrandValue}>
+                  {formatRupiah(orderSummary.grandTotal)}
+                </Text>
+              </View>
+            </View>
+          </KolamContentFrame>
+        </View>
+      </View>
     </ScrollView>
     </View>
   );
@@ -2008,6 +2129,119 @@ const styles = StyleSheet.create({
     maxWidth: 140,
     minWidth: 100,
     width: 120,
+  },
+  formBottomSplit: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    width: '100%',
+  },
+  formBottomCol: {
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: 320,
+    gap: 12,
+    minWidth: 280,
+  },
+  shippingTotalValue: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  shippingTotalHint: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    lineHeight: 16,
+    marginTop: 4,
+  },
+  orderSummaryCard: {
+    backgroundColor: V.colors.muted,
+  },
+  orderSummaryLines: {
+    gap: 10,
+  },
+  orderSummaryLine: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'space-between',
+  },
+  orderSummaryLineText: {
+    flex: 1,
+    gap: 2,
+    minWidth: 0,
+  },
+  orderSummaryName: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  orderSummaryMeta: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+  },
+  orderSummaryAmount: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  orderSummaryTotals: {
+    borderTopColor: V.colors.border,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    gap: 8,
+    marginTop: 12,
+    paddingTop: 12,
+  },
+  orderSummaryTotalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  orderSummaryTotalLabel: {
+    color: V.colors.fg,
+    flex: 1,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+  },
+  orderSummaryTotalValue: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  orderSummaryGroupLabel: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '600',
+    marginTop: 4,
+  },
+  orderSummaryGrandRow: {
+    borderTopColor: V.colors.border,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 8,
+    marginTop: 4,
+    paddingTop: 10,
+  },
+  orderSummaryGrandLabel: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  orderSummaryGrandValue: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 16,
+    fontWeight: '700',
   },
   buyerInfoBlock: {
     borderColor: V.colors.border,

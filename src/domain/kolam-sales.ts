@@ -1797,6 +1797,147 @@ export function estimateKolamSaleCreateItemLineTotal(
   };
 }
 
+/** Sum of per-item shipping costs (FE form.shippingCost auto-total). */
+export function sumKolamSaleCreateItemShippingCost(
+  items: KolamSaleCreateItemForm[],
+): number {
+  return items.reduce((sum, item) => {
+    const cost = Number(item.shippingCost);
+    return sum + (Number.isFinite(cost) && cost > 0 ? cost : 0);
+  }, 0);
+}
+
+export function isKolamSaleCreateItemFilled(
+  item: KolamSaleCreateItemForm,
+): boolean {
+  switch (item.itemType) {
+    case 'product':
+      return Boolean(item.productId.trim());
+    case 'species':
+      return Boolean(item.speciesId.trim());
+    case 'service':
+      return Boolean(item.serviceId.trim());
+    case 'enclosure':
+      return Boolean(item.enclosureId.trim());
+    case 'custom':
+      return Boolean(item.customName.trim());
+    default:
+      return false;
+  }
+}
+
+export function resolveKolamSaleCreateItemDisplayName(
+  item: KolamSaleCreateItemForm,
+  products: KolamProduct[],
+  speciesList: KolamSpecies[],
+  services: KolamSaleCatalogOption[],
+  enclosures: KolamSaleCatalogOption[],
+): string {
+  if (item.itemType === 'custom') {
+    return item.customName.trim() || 'Item kustom';
+  }
+  if (item.itemType === 'product') {
+    const product = products.find(row => row.id === item.productId);
+    return product?.name || 'Produk';
+  }
+  if (item.itemType === 'species') {
+    const species = speciesList.find(row => row.id === item.speciesId);
+    return (
+      species?.scientificName ||
+      species?.commonName ||
+      species?.localName ||
+      'Spesies'
+    );
+  }
+  if (item.itemType === 'service') {
+    return (
+      services.find(row => row.id === item.serviceId)?.name || 'Layanan'
+    );
+  }
+  if (item.itemType === 'enclosure') {
+    return (
+      enclosures.find(row => row.id === item.enclosureId)?.name || 'Enclosure'
+    );
+  }
+  return 'Item';
+}
+
+export interface KolamSaleCreateOrderSummaryLine {
+  key: string;
+  name: string;
+  quantity: number;
+  lineTotal: number;
+  shippingCost: number;
+}
+
+export interface KolamSaleCreateOrderSummary {
+  customCostsTotal: number;
+  grandTotal: number;
+  itemsTotal: number;
+  lines: KolamSaleCreateOrderSummaryLine[];
+  shippingTotal: number;
+}
+
+/** FE create “Ringkasan pesanan” totals (core fields; no packing/insurance). */
+export function estimateKolamSaleCreateOrderSummary(
+  form: KolamSaleCreateFormState,
+  products: KolamProduct[],
+  speciesList: KolamSpecies[],
+  services: KolamSaleCatalogOption[],
+  enclosures: KolamSaleCatalogOption[],
+): KolamSaleCreateOrderSummary {
+  const lines: KolamSaleCreateOrderSummaryLine[] = [];
+  let itemsTotal = 0;
+  for (const item of form.items) {
+    if (!isKolamSaleCreateItemFilled(item)) {
+      continue;
+    }
+    const line = estimateKolamSaleCreateItemLineTotal(
+      item,
+      products,
+      speciesList,
+    );
+    const shippingCostRaw = Number(item.shippingCost);
+    const shippingCost =
+      Number.isFinite(shippingCostRaw) && shippingCostRaw > 0
+        ? shippingCostRaw
+        : 0;
+    const quantity =
+      item.itemType === 'enclosure'
+        ? 1
+        : Math.max(0, Number(item.quantity) || 0);
+    lines.push({
+      key: item.key,
+      name: resolveKolamSaleCreateItemDisplayName(
+        item,
+        products,
+        speciesList,
+        services,
+        enclosures,
+      ),
+      quantity,
+      lineTotal: line.total,
+      shippingCost,
+    });
+    itemsTotal += line.total;
+  }
+  const shippingTotal = sumKolamSaleCreateItemShippingCost(form.items);
+  const customCostsTotal = form.customCosts.reduce((sum, cost) => {
+    if (!cost.name.trim()) {
+      return sum;
+    }
+    const amount = Number(cost.amount);
+    return sum + (Number.isFinite(amount) && amount > 0 ? amount : 0);
+  }, 0);
+  return {
+    lines,
+    itemsTotal,
+    shippingTotal,
+    customCostsTotal,
+    grandTotal: Math.max(0, itemsTotal + shippingTotal + customCostsTotal),
+  };
+}
+
 /** Exact FE external-buyer sources (`sales-create-form` EXTERNAL_BUYER_SOURCE_NAMES). */
 const EXTERNAL_BUYER_SOURCE_NAMES = new Set(['shopee', 'tokopedia']);
 
@@ -2039,7 +2180,7 @@ export function buildKolamSaleCreateBody(
   const body = appendOptionalSaleFields(form, {
     paymentMethod: form.paymentMethodId.trim(),
     sourceRef: form.sourceRefId.trim(),
-    shippingCost: 0,
+    shippingCost: sumKolamSaleCreateItemShippingCost(form.items),
     items: mapFormItemsToBody(form.items),
   });
 
@@ -2062,7 +2203,7 @@ export function buildKolamSaleUpdateBody(
   const created = appendOptionalSaleFields(form, {
     paymentMethod: form.paymentMethodId.trim(),
     sourceRef: form.sourceRefId.trim(),
-    shippingCost: 0,
+    shippingCost: sumKolamSaleCreateItemShippingCost(form.items),
     items: mapFormItemsToBody(form.items),
   });
   const { customer: _customer, buyerInfo: _buyerInfo, ...rest } = created;

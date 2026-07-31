@@ -9,6 +9,7 @@ import {
   createInitialKolamSaleCreateForm,
   createInitialKolamSaleListFilters,
   estimateKolamSaleCreateItemLineTotal,
+  estimateKolamSaleCreateOrderSummary,
   filterKolamSaleCreateItemShippingMethods,
   filterOptionsBySalesSource,
   filterOptionsBySalesSourceWithFallback,
@@ -705,6 +706,7 @@ describe('kolam sales domain', () => {
       shippingCost: 15000,
       discount: { type: 'percentage', amount: 10 },
     });
+    expect(body.shippingCost).toBe(15000);
     expect(form.items[0].discountType).toBe('percentage');
     expect(createInitialKolamSaleCreateForm().items[0].discountType).toBe(
       'percentage',
@@ -738,6 +740,24 @@ describe('kolam sales domain', () => {
     expect(createInitialKolamSaleCreateForm().items[0].itemType).toBe('product');
     expect(createInitialKolamSaleCreateForm().pointsMethod).toBe('product_based');
     expect(body.pointsConfig).toEqual({ method: 'product_based' });
+
+    const summary = estimateKolamSaleCreateOrderSummary(
+      form,
+      [
+        {
+          id: '444444444444444444444444',
+          name: 'Produk A',
+          priceToSell: 100_000,
+          price: 90_000,
+        } as never,
+      ],
+      [],
+      [],
+      [],
+    );
+    expect(summary.itemsTotal).toBe(180_000);
+    expect(summary.shippingTotal).toBe(15_000);
+    expect(summary.grandTotal).toBe(195_000);
 
     form.termsTemplateIds = ['777777777777777777777777'];
     expect(buildKolamSaleCreateBody(form).termsTemplates).toEqual([
