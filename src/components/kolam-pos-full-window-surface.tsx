@@ -49,6 +49,7 @@ export interface KolamPosFullWindowSurfaceProps {
   onGlobalDiscountChange: (value: string) => void;
   onGlobalDiscountTypeChange: (discountType: CheckoutState['globalDiscountType']) => void;
   onQuantityChange: (itemId: string, nextQuantity: number) => void;
+  onReplaceCheckout?: (checkout: CheckoutState) => void;
   onSelectCustomer: (customerId: string) => void;
   onSelectPaymentMethod: (methodId: string) => void;
   onShippingCostChange: (value: string) => void;
@@ -76,6 +77,13 @@ type PosKeyboardTarget = {
   ) => void;
 };
 const POS_CATALOG_PAGE_SIZES = [12, 24, 48, 96] as const;
+type PosSavedOrder = {
+  id: string;
+  name: string;
+  checkout: CheckoutState;
+  createdAt: string;
+  customerName?: string;
+};
 
 export function KolamPosFullWindowSurface({
   activeSession = null,
@@ -100,6 +108,7 @@ export function KolamPosFullWindowSurface({
   onGlobalDiscountChange,
   onGlobalDiscountTypeChange,
   onQuantityChange,
+  onReplaceCheckout,
   onSelectCustomer,
   onSelectPaymentMethod,
   onShippingCostChange,
@@ -114,6 +123,8 @@ export function KolamPosFullWindowSurface({
   const searchInputRef = React.useRef<React.ElementRef<typeof TextInput>>(null);
   const [activeView, setActiveView] = React.useState<PosWindowView>('catalog');
   const [isPaymentModalOpen, setIsPaymentModalOpen] = React.useState(false);
+  const [isSavedOrdersOpen, setIsSavedOrdersOpen] = React.useState(false);
+  const [savedOrders, setSavedOrders] = React.useState<PosSavedOrder[]>([]);
   const [customerSelectorSearch, setCustomerSelectorSearch] =
     React.useState('');
   const [catalogPage, setCatalogPage] = React.useState(1);
@@ -140,6 +151,38 @@ export function KolamPosFullWindowSurface({
   );
   const isCatalogView = activeView === 'catalog';
   const canOpenPayment = checkout.cart.length > 0 && !!selectedCustomer && hasCashflowSession;
+
+  const handleSaveOrder = React.useCallback(() => {
+    if (!checkout.cart.length) {
+      return;
+    }
+
+    const createdAt = new Date().toISOString();
+
+    setSavedOrders(current => [
+      {
+        id: `saved-${Date.now()}`,
+        name: `Pesanan #${current.length + 1}`,
+        checkout: cloneCheckoutState(checkout),
+        createdAt,
+        customerName: selectedCustomer?.name,
+      },
+      ...current,
+    ]);
+    setIsSavedOrdersOpen(true);
+  }, [checkout, selectedCustomer]);
+
+  const handleLoadSavedOrder = React.useCallback(
+    (order: PosSavedOrder) => {
+      onReplaceCheckout?.(cloneCheckoutState(order.checkout));
+      setIsSavedOrdersOpen(false);
+    },
+    [onReplaceCheckout],
+  );
+
+  const handleDeleteSavedOrder = React.useCallback((orderId: string) => {
+    setSavedOrders(current => current.filter(order => order.id !== orderId));
+  }, []);
 
   React.useEffect(() => {
     setCatalogPage(1);
@@ -443,6 +486,22 @@ export function KolamPosFullWindowSurface({
               onPress={() => setIsPaymentModalOpen(true)}
               style={styles.payButton}
             />
+            <View style={styles.savedOrderActions}>
+              <KolamButton
+                label="Simpan"
+                intent="outline"
+                disabled={!checkout.cart.length}
+                onPress={handleSaveOrder}
+                style={styles.savedOrderActionButton}
+              />
+              <KolamButton
+                label={`Tersimpan (${savedOrders.length})`}
+                intent="outline"
+                disabled={!savedOrders.length}
+                onPress={() => setIsSavedOrdersOpen(true)}
+                style={styles.savedOrderActionButton}
+              />
+            </View>
             <KolamButton
               label={`Kosongkan (${cartCount})`}
               intent="plain"
@@ -451,6 +510,16 @@ export function KolamPosFullWindowSurface({
           </View>
         ) : null}
       </View>
+      {isSavedOrdersOpen ? (
+        <PosSavedOrdersPanel
+          catalog={catalog}
+          orders={savedOrders}
+          canLoad={Boolean(onReplaceCheckout)}
+          onClose={() => setIsSavedOrdersOpen(false)}
+          onDeleteOrder={handleDeleteSavedOrder}
+          onLoadOrder={handleLoadSavedOrder}
+        />
+      ) : null}
       {isPaymentModalOpen ? (
         <PosPaymentModal
           isCreatingSale={isCreatingSale}
@@ -1124,6 +1193,30 @@ function formatPosDate(value: string) {
   }).format(date);
 }
 
+function cloneCheckoutState(checkout: CheckoutState): CheckoutState {
+  return {
+    ...checkout,
+    cart: checkout.cart.map(line => ({...line})),
+  };
+}
+
+function getSavedOrderItemCount(order: PosSavedOrder) {
+  return order.checkout.cart.reduce((total, line) => total + line.quantity, 0);
+}
+
+function getSavedOrderSubtotal(order: PosSavedOrder, catalog: CatalogItem[]) {
+  return order.checkout.cart.reduce((total, line) => {
+    const item = catalog.find(catalogItem => catalogItem.id === line.itemId);
+    return total + (item?.price ?? 0) * line.quantity;
+  }, 0);
+}
+
+function getSavedOrderItemNames(order: PosSavedOrder, catalog: CatalogItem[]) {
+  return order.checkout.cart
+    .slice(0, 3)
+    .map(line => catalog.find(item => item.id === line.itemId)?.name ?? line.itemId);
+}
+
 function getPosKeyboardTarget(): PosKeyboardTarget | undefined {
   const keyboardTarget = globalThis as typeof globalThis & PosKeyboardTarget;
 
@@ -1135,6 +1228,103 @@ function getPosKeyboardTarget(): PosKeyboardTarget | undefined {
   }
 
   return keyboardTarget;
+}
+
+function PosSavedOrdersPanel({
+  canLoad,
+  catalog,
+  orders,
+  onClose,
+  onDeleteOrder,
+  onLoadOrder,
+}: {
+  canLoad: boolean;
+  catalog: CatalogItem[];
+  orders: PosSavedOrder[];
+  onClose: () => void;
+  onDeleteOrder: (orderId: string) => void;
+  onLoadOrder: (order: PosSavedOrder) => void;
+}) {
+  return (
+    <View style={styles.savedOrdersOverlay}>
+      <KolamInteractionFrame style={styles.paymentBackdrop} onPress={onClose} />
+      <View style={styles.savedOrdersDialog}>
+        <View style={styles.paymentHeader}>
+          <View>
+            <Text style={styles.paymentTitle}>Pesanan Tersimpan</Text>
+            <Text style={styles.paymentSubtitle}>
+              {orders.length} pesanan tersimpan di jendela POS ini.
+            </Text>
+          </View>
+          <KolamButton label="Tutup" intent="outline" size="sm" onPress={onClose} />
+        </View>
+        {orders.length ? (
+          <ScrollView style={styles.savedOrdersList}>
+            {orders.map(order => {
+              const itemCount = getSavedOrderItemCount(order);
+              const subtotal = getSavedOrderSubtotal(order, catalog);
+              const previewNames = getSavedOrderItemNames(order, catalog);
+
+              return (
+                <View key={order.id} style={styles.savedOrderRow}>
+                  <View style={styles.savedOrderCopy}>
+                    <Text numberOfLines={1} style={styles.savedOrderName}>
+                      {order.name}
+                    </Text>
+                    {order.customerName ? (
+                      <Text numberOfLines={1} style={styles.savedOrderMeta}>
+                        {order.customerName}
+                      </Text>
+                    ) : null}
+                    <Text style={styles.savedOrderMeta}>
+                      {itemCount} item | {formatRupiah(subtotal)} |{' '}
+                      {formatPosDate(order.createdAt)}
+                    </Text>
+                    <View style={styles.savedOrderPreviewList}>
+                      {previewNames.map((name, index) => (
+                        <Text
+                          key={`${order.id}-${index}`}
+                          numberOfLines={1}
+                          style={styles.savedOrderPreviewChip}>
+                          {name}
+                        </Text>
+                      ))}
+                      {order.checkout.cart.length > 3 ? (
+                        <Text style={styles.savedOrderMoreText}>
+                          +{order.checkout.cart.length - 3}
+                        </Text>
+                      ) : null}
+                    </View>
+                  </View>
+                  <View style={styles.savedOrderRowActions}>
+                    <KolamButton
+                      label="Muat"
+                      intent="primary"
+                      disabled={!canLoad}
+                      onPress={() => onLoadOrder(order)}
+                    />
+                    <KolamButton
+                      label="Hapus"
+                      intent="plain"
+                      tone="default"
+                      onPress={() => onDeleteOrder(order.id)}
+                    />
+                  </View>
+                </View>
+              );
+            })}
+          </ScrollView>
+        ) : (
+          <View style={styles.savedOrdersEmpty}>
+            <Text style={styles.emptyTitle}>Tidak ada pesanan tersimpan.</Text>
+            <Text style={styles.emptyText}>
+              Keranjang yang disimpan dari panel pesanan akan muncul di sini.
+            </Text>
+          </View>
+        )}
+      </View>
+    </View>
+  );
 }
 
 function PosPaymentModal({
@@ -2285,6 +2475,97 @@ const styles = StyleSheet.create({
   },
   payButton: {
     marginTop: 10,
+  },
+  savedOrderActions: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 8,
+  },
+  savedOrderActionButton: {
+    flex: 1,
+  },
+  savedOrdersOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 38,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  savedOrdersDialog: {
+    width: '100%',
+    maxWidth: 620,
+    maxHeight: '82%',
+    overflow: 'hidden',
+    borderRadius: 8,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.bg,
+    shadowColor: '#000',
+    shadowOpacity: 0.18,
+    shadowRadius: 20,
+    shadowOffset: {width: 0, height: 10},
+  },
+  savedOrdersList: {
+    maxHeight: 440,
+  },
+  savedOrderRow: {
+    minHeight: 112,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderTopColor: V.colors.border,
+    borderTopWidth: 1,
+  },
+  savedOrderCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  savedOrderName: {
+    color: V.colors.fg,
+    fontSize: 14,
+    fontWeight: '900',
+  },
+  savedOrderMeta: {
+    marginTop: 3,
+    color: V.colors.mutedFg,
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  savedOrderPreviewList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 5,
+    marginTop: 8,
+  },
+  savedOrderPreviewChip: {
+    maxWidth: 118,
+    overflow: 'hidden',
+    borderRadius: 4,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    color: V.colors.mutedFg,
+    backgroundColor: V.colors.muted,
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  savedOrderMoreText: {
+    color: V.colors.mutedFg,
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  savedOrderRowActions: {
+    alignItems: 'stretch',
+    gap: 6,
+  },
+  savedOrdersEmpty: {
+    minHeight: 240,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    borderTopColor: V.colors.border,
+    borderTopWidth: 1,
   },
   paymentOverlay: {
     ...StyleSheet.absoluteFillObject,

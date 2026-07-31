@@ -144,6 +144,10 @@ export function useKolamCheckoutController({
     setCheckout(current => clearCart(current));
   };
 
+  const replaceCheckout = (nextCheckout: CheckoutState) => {
+    setCheckout(nextCheckout);
+  };
+
   const updateLineDiscountType = (
     itemId: string,
     discountType: CartLine['discountType'],
@@ -219,6 +223,7 @@ export function useKolamCheckoutController({
     finalTotal,
     onCategoryChange: setActiveCategory,
     reconcileCheckoutWithDataset,
+    replaceCheckout,
     selectCustomer,
     selectPaymentMethod,
     selectedCustomer,

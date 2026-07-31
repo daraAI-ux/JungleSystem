@@ -68,6 +68,7 @@ export function useKolamWorkspaceSurfaceController({
   onOpenCashflow,
   onPluginSearchChange,
   onQuantityChange,
+  onReplaceCheckout,
   onSalesGraphRangeSelect,
   onSelectCustomer,
   onSelectPaymentMethod,
@@ -136,6 +137,7 @@ export function useKolamWorkspaceSurfaceController({
   onOpenCashflow: WorkspaceCashflowProps['onOpenCashflow'];
   onPluginSearchChange: WorkspacePluginsProps['onPluginSearchChange'];
   onQuantityChange: WorkspaceCheckoutProps['onQuantityChange'];
+  onReplaceCheckout?: WorkspaceCheckoutProps['onReplaceCheckout'];
   onSalesGraphRangeSelect?: KolamWorkspaceSurfaceProps['onSalesGraphRangeSelect'];
   onSelectCustomer: WorkspaceCheckoutProps['onSelectCustomer'];
   onSelectPaymentMethod: WorkspaceCheckoutProps['onSelectPaymentMethod'];
@@ -189,6 +191,7 @@ export function useKolamWorkspaceSurfaceController({
       onGlobalDiscountChange,
       onGlobalDiscountTypeChange,
       onQuantityChange,
+      onReplaceCheckout,
       onSelectCustomer,
       onSelectPaymentMethod,
       onShippingCostChange,
@@ -226,6 +229,7 @@ export function useKolamWorkspaceSurfaceController({
       onGlobalDiscountChange,
       onGlobalDiscountTypeChange,
       onQuantityChange,
+      onReplaceCheckout,
       onSelectCustomer,
       onSelectPaymentMethod,
       onShippingCostChange,

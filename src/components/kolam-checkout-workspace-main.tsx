@@ -38,6 +38,7 @@ export interface KolamCheckoutWorkspaceProps {
   onGlobalDiscountChange: (value: string) => void;
   onGlobalDiscountTypeChange: (discountType: CheckoutState['globalDiscountType']) => void;
   onQuantityChange: (itemId: string, nextQuantity: number) => void;
+  onReplaceCheckout?: (checkout: CheckoutState) => void;
   onSelectCustomer: (customerId: string) => void;
   onSelectPaymentMethod: (methodId: string) => void;
   onShippingCostChange: (value: string) => void;
