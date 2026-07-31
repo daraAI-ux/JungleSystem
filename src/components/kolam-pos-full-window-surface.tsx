@@ -1593,8 +1593,19 @@ function PosQuickViewModal({
               value={cartLine ? `${cartLine.quantity}` : '-'}
             />
           </View>
-          {item.labels.length ? (
+          {item.labels.length || isOutOfStock || isLowStock ? (
             <View style={styles.quickViewLabelList}>
+              {isOutOfStock || isLowStock ? (
+                <Text
+                  style={[
+                    styles.quickViewLabelChip,
+                    isOutOfStock
+                      ? styles.quickViewLabelDanger
+                      : styles.quickViewLabelWarning,
+                  ]}>
+                  {isOutOfStock ? 'Habis' : 'Stok Menipis'}
+                </Text>
+              ) : null}
               {item.labels.map(label => (
                 <Text key={label} style={styles.quickViewLabelChip}>
                   {label}
@@ -3272,6 +3283,14 @@ const styles = StyleSheet.create({
     backgroundColor: V.colors.muted,
     fontSize: 10,
     fontWeight: '800',
+  },
+  quickViewLabelWarning: {
+    color: V.colors.warning,
+    backgroundColor: V.colors.warningSoft,
+  },
+  quickViewLabelDanger: {
+    color: V.colors.danger,
+    backgroundColor: V.colors.dangerSoft,
   },
   quickViewFooter: {
     marginTop: 'auto',
