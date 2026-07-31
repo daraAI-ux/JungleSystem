@@ -889,6 +889,9 @@ function PosOrderRow({
     return null;
   }
 
+  const isAtStockLimit = item.stock > 0 && line.quantity >= item.stock;
+  const typeLabel = item.type === 'species' ? 'Spesies' : 'Produk';
+
   return (
     <View style={styles.orderRow}>
       <View style={styles.orderThumb}>
@@ -910,12 +913,30 @@ function PosOrderRow({
         <Text numberOfLines={2} style={styles.orderName}>
           {item.name}
         </Text>
+        <View style={styles.orderTagRow}>
+          <Text style={styles.orderTypeChip}>{typeLabel}</Text>
+          {item.category ? (
+            <Text numberOfLines={1} style={styles.orderCategoryChip}>
+              {item.category}
+            </Text>
+          ) : null}
+          <Text
+            style={[
+              styles.orderStockChip,
+              isAtStockLimit && styles.orderStockChipLimit,
+            ]}>
+            Stok {item.stock}
+          </Text>
+        </View>
         <View style={styles.orderPriceRow}>
           <Text style={styles.orderMeta}>{formatRupiah(item.price)}</Text>
           <Text style={styles.orderLineTotal}>
             {formatRupiah(item.price * line.quantity)}
           </Text>
         </View>
+        {isAtStockLimit ? (
+          <Text style={styles.orderLimitText}>Jumlah sudah mencapai stok</Text>
+        ) : null}
       </View>
       <View style={styles.orderActions}>
         <KolamInteractionFrame
@@ -2516,6 +2537,48 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     lineHeight: 15,
   },
+  orderTagRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 4,
+    marginTop: 4,
+  },
+  orderTypeChip: {
+    overflow: 'hidden',
+    borderRadius: 4,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    backgroundColor: V.colors.primarySoft,
+    color: V.colors.primary,
+    fontSize: 9,
+    fontWeight: '900',
+  },
+  orderCategoryChip: {
+    maxWidth: 96,
+    overflow: 'hidden',
+    borderRadius: 4,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    backgroundColor: V.colors.muted,
+    color: V.colors.mutedFg,
+    fontSize: 9,
+    fontWeight: '800',
+  },
+  orderStockChip: {
+    overflow: 'hidden',
+    borderRadius: 4,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    backgroundColor: V.colors.muted,
+    color: V.colors.mutedFg,
+    fontSize: 9,
+    fontWeight: '800',
+  },
+  orderStockChipLimit: {
+    backgroundColor: V.colors.warningSoft,
+    color: V.colors.warning,
+  },
   orderMeta: {
     marginTop: 2,
     color: V.colors.mutedFg,
@@ -2532,6 +2595,12 @@ const styles = StyleSheet.create({
     color: V.colors.fg,
     fontSize: 11,
     fontWeight: '900',
+  },
+  orderLimitText: {
+    marginTop: 3,
+    color: V.colors.warning,
+    fontSize: 9,
+    fontWeight: '800',
   },
   orderActions: {
     alignItems: 'flex-end',
