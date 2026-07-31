@@ -54,7 +54,6 @@ export interface KolamPosFullWindowSurfaceProps {
   paymentMethods: PaymentMethod[];
   recentSales: SaleSummary[];
   selectedCustomer?: Customer;
-  selectedPayment?: PaymentMethod;
   subtotal: number;
   workflowSteps?: WorkflowStep[];
 }
@@ -105,7 +104,6 @@ export function KolamPosFullWindowSurface({
   paymentMethods,
   recentSales,
   selectedCustomer,
-  selectedPayment,
   subtotal,
   workflowSteps = [],
 }: KolamPosFullWindowSurfaceProps) {
@@ -138,6 +136,7 @@ export function KolamPosFullWindowSurface({
     0,
   );
   const isCatalogView = activeView === 'catalog';
+  const canOpenPayment = checkout.cart.length > 0 && !!selectedCustomer && hasCashflowSession;
 
   React.useEffect(() => {
     setCatalogPage(1);
@@ -358,15 +357,6 @@ export function KolamPosFullWindowSurface({
           searchValue={customerSelectorSearch}
           onSearchChange={setCustomerSelectorSearch}
         />
-        <SelectorBlock
-          label="Metode Pembayaran"
-          emptyLabel="Pilih metode"
-          items={paymentMethods.filter(method => method.active)}
-          selectedId={checkout.paymentMethodId}
-          getLabel={method => method.name}
-          onSelect={onSelectPaymentMethod}
-        />
-
         {checkout.cart.length ? (
           <ScrollView style={styles.orderList}>
             {checkout.cart.map(line => (
@@ -433,9 +423,6 @@ export function KolamPosFullWindowSurface({
             {!selectedCustomer ? (
               <Text style={styles.validationText}>Pilih pelanggan</Text>
             ) : null}
-            {!selectedPayment ? (
-              <Text style={styles.validationText}>Pilih metode pembayaran</Text>
-            ) : null}
             <View style={styles.totalRow}>
               <Text style={styles.totalLabel}>Total</Text>
               <Text style={styles.totalValue}>{formatRupiah(finalTotal)}</Text>
@@ -444,11 +431,11 @@ export function KolamPosFullWindowSurface({
               label={
                 isCreatingSale
                   ? 'Memproses...'
-                  : `Bayar ${canCreateDraft ? formatRupiah(finalTotal) : ''}`
+                  : `Bayar ${canOpenPayment ? formatRupiah(finalTotal) : ''}`
               }
               intent="primary"
               size="md"
-              disabled={!canCreateDraft || isCreatingSale}
+              disabled={!canOpenPayment || isCreatingSale}
               onPress={() => setIsPaymentModalOpen(true)}
               style={styles.payButton}
             />
@@ -468,6 +455,10 @@ export function KolamPosFullWindowSurface({
           total={finalTotal}
           onClose={() => setIsPaymentModalOpen(false)}
           onConfirm={() => {
+            if (!canCreateDraft) {
+              return;
+            }
+
             setIsPaymentModalOpen(false);
             onCreateSaleDraft();
           }}
