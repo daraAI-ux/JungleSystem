@@ -1051,7 +1051,14 @@ export function useKolamSettingsPanelController(
   const [sitemapExcludedSlugsText, setSitemapExcludedSlugsText] = useState<
     Partial<Record<KolamSitemapSectionKey, string>>
   >({});
-  const [regionRows, setRegionRows] = useState<KolamRegion[]>([]);
+  const [regionProvinceRows, setRegionProvinceRows] = useState<KolamRegion[]>(
+    [],
+  );
+  const [regionRegencyRows, setRegionRegencyRows] = useState<KolamRegion[]>([]);
+  const [regionDistrictRows, setRegionDistrictRows] = useState<KolamRegion[]>(
+    [],
+  );
+  const [regionVillageRows, setRegionVillageRows] = useState<KolamRegion[]>([]);
   const [regionStats, setRegionStats] = useState<KolamRegionStats | null>(null);
   const [regionSyncStatus, setRegionSyncStatus] =
     useState<RegionSyncStatus>('idle');
@@ -1560,29 +1567,21 @@ export function useKolamSettingsPanelController(
       current === 'syncing' ? 'syncing' : 'loading',
     );
 
-    Promise.allSettled([
-      getKolamRegions({
-        level: activeRegionHierarchy.level,
-        parentCode: activeRegionHierarchy.parentCode,
-        limit: 2000,
-      }),
-      getKolamRegionStats(),
-    ])
-      .then(([rowsResult, statsResult]) => {
+    fetchKolamRegionHierarchy({
+      selectedDistrict,
+      selectedProvince,
+      selectedRegency,
+    })
+      .then(result => {
         if (!mounted) {
           return;
         }
 
-        if (rowsResult.status !== 'fulfilled') {
-          setRegionSyncStatus('error');
-          setRegionSyncMessage(getRegionSyncErrorMessage(rowsResult.reason));
-          return;
-        }
-
-        setRegionRows(rowsResult.value);
-        setRegionStats(
-          statsResult.status === 'fulfilled' ? statsResult.value : null,
-        );
+        setRegionProvinceRows(result.provinces);
+        setRegionRegencyRows(result.regencies);
+        setRegionDistrictRows(result.districts);
+        setRegionVillageRows(result.villages);
+        setRegionStats(result.stats);
         setRegionSyncStatus('live');
         setRegionSyncMessage('');
       })
@@ -1598,9 +1597,9 @@ export function useKolamSettingsPanelController(
     };
   }, [
     activeSettingsTabId,
-    activeRegionHierarchy.level,
-    activeRegionHierarchy.parentCode,
-    selectedVillage,
+    selectedDistrict,
+    selectedProvince,
+    selectedRegency,
     regionReloadKey,
   ]);
 
@@ -1700,9 +1699,16 @@ export function useKolamSettingsPanelController(
   const financialSectionVisibility = createFinancialSectionVisibility(
     settingsVisibilityContext,
   );
+  const visibleRegionRows = selectedDistrict
+    ? regionVillageRows
+    : selectedRegency
+      ? regionDistrictRows
+      : selectedProvince
+        ? regionRegencyRows
+        : regionProvinceRows;
   const filteredRegionRows = selectedVillage
-    ? regionRows.filter(region => region.code === selectedVillage)
-    : regionRows;
+    ? visibleRegionRows.filter(region => region.code === selectedVillage)
+    : visibleRegionRows;
   const regionSyncSummaryRows = createRegionSyncSummaryRows(
     regionStats,
     filteredRegionRows,
@@ -2049,16 +2055,16 @@ export function useKolamSettingsPanelController(
           stats.withPostalCode,
         )} postal codes.`,
       );
-      const [rows, nextStats] = await Promise.all([
-        getKolamRegions({
-          level: activeRegionHierarchy.level,
-          parentCode: activeRegionHierarchy.parentCode,
-          limit: 2000,
-        }),
-        getKolamRegionStats(),
-      ]);
-      setRegionRows(rows);
-      setRegionStats(nextStats);
+      const nextHierarchy = await fetchKolamRegionHierarchy({
+        selectedDistrict,
+        selectedProvince,
+        selectedRegency,
+      });
+      setRegionProvinceRows(nextHierarchy.provinces);
+      setRegionRegencyRows(nextHierarchy.regencies);
+      setRegionDistrictRows(nextHierarchy.districts);
+      setRegionVillageRows(nextHierarchy.villages);
+      setRegionStats(nextHierarchy.stats);
       setRegionSyncStatus('live');
     } catch (error) {
       setRegionSyncStatus('error');
@@ -4251,6 +4257,10 @@ export function useKolamSettingsPanelController(
     selectedVillage,
     regionLevel: activeRegionHierarchy.level,
     regionParentCode: activeRegionHierarchy.parentCode,
+    regionProvinceRows,
+    regionRegencyRows,
+    regionDistrictRows,
+    regionVillageRows,
     regionRows: filteredRegionRows,
     regionSyncMessage,
     regionSyncStatus,
@@ -5379,6 +5389,68 @@ function createRegionHierarchyQuery({
   }
 
   return {level: 'province', parentCode: ''};
+}
+
+async function fetchKolamRegionHierarchy({
+  selectedDistrict,
+  selectedProvince,
+  selectedRegency,
+}: {
+  selectedDistrict: string;
+  selectedProvince: string;
+  selectedRegency: string;
+}) {
+  const [provinceResult, regencyResult, districtResult, villageResult, statsResult] =
+    await Promise.allSettled([
+      getKolamRegions({level: 'province', limit: 2000}),
+      selectedProvince
+        ? getKolamRegions({
+            level: 'regency',
+            parentCode: selectedProvince,
+            limit: 2000,
+          })
+        : Promise.resolve([]),
+      selectedRegency
+        ? getKolamRegions({
+            level: 'district',
+            parentCode: selectedRegency,
+            limit: 2000,
+          })
+        : Promise.resolve([]),
+      selectedDistrict
+        ? getKolamRegions({
+            level: 'village',
+            parentCode: selectedDistrict,
+            limit: 2000,
+          })
+        : Promise.resolve([]),
+      getKolamRegionStats(),
+    ]);
+
+  if (provinceResult.status !== 'fulfilled') {
+    throw provinceResult.reason;
+  }
+
+  if (selectedProvince && regencyResult.status !== 'fulfilled') {
+    throw regencyResult.reason;
+  }
+
+  if (selectedRegency && districtResult.status !== 'fulfilled') {
+    throw districtResult.reason;
+  }
+
+  if (selectedDistrict && villageResult.status !== 'fulfilled') {
+    throw villageResult.reason;
+  }
+
+  return {
+    provinces: provinceResult.value,
+    regencies: regencyResult.status === 'fulfilled' ? regencyResult.value : [],
+    districts:
+      districtResult.status === 'fulfilled' ? districtResult.value : [],
+    villages: villageResult.status === 'fulfilled' ? villageResult.value : [],
+    stats: statsResult.status === 'fulfilled' ? statsResult.value : null,
+  };
 }
 
 function getRegionSyncParentCode(

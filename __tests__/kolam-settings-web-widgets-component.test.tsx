@@ -178,6 +178,10 @@ describe('settings web widgets', () => {
           operationalStaffRows={[]}
           regionLevel="province"
           regionParentCode=""
+          regionProvinceRows={[]}
+          regionRegencyRows={[]}
+          regionDistrictRows={[]}
+          regionVillageRows={[]}
           regionRows={[]}
           selectedProvince=""
           selectedRegency=""
@@ -865,24 +869,68 @@ describe('settings web widgets', () => {
             selectedRegency: '32.73',
             selectedDistrict: '32.73.01',
             selectedVillage: '',
+            regionProvinceRows: [
+              {
+                _id: 'province-32',
+                code: '32',
+                name: 'Jawa Barat',
+                level: 'province',
+              },
+            ],
+            regionRegencyRows: [
+              {
+                _id: 'regency-3273',
+                code: '32.73',
+                name: 'Kota Bandung',
+                level: 'regency',
+                parentCode: '32',
+              },
+            ],
+            regionDistrictRows: [
+              {
+                _id: 'district-327301',
+                code: '32.73.01',
+                name: 'Sukajadi',
+                level: 'district',
+                parentCode: '32.73',
+              },
+            ],
+            regionVillageRows: [
+              {
+                _id: 'village-3273011001',
+                code: '32.73.01.1001',
+                name: 'Pasteur',
+                level: 'village',
+                parentCode: '32.73.01',
+                postalCode: '40161',
+              },
+            ],
             setRegionSelection,
           })}
         />,
       );
     });
 
-    const inputs = renderer!.root.findAllByType(TextInput);
-    expect(inputs.some(node => node.props.value === '32')).toBe(true);
-    expect(inputs.some(node => node.props.value === '32.73')).toBe(true);
-    expect(inputs.some(node => node.props.value === '32.73.01')).toBe(true);
+    const dropdowns = renderer!.root.findAllByType(KolamDropdownSelect);
+    expect(dropdowns.some(node => node.props.label === 'Provinsi')).toBe(true);
     expect(
-      inputs.some(node => node.props.placeholder === '32.73.01.1001'),
+      dropdowns.some(node => node.props.label === 'Kota / Kabupaten'),
+    ).toBe(true);
+    expect(dropdowns.some(node => node.props.label === 'Kecamatan')).toBe(true);
+    expect(dropdowns.some(node => node.props.label === 'Kelurahan')).toBe(true);
+    expect(
+      dropdowns.some(node =>
+        node.props.options.some(
+          (option: {label: string}) =>
+            option.label === '32.73.01.1001 - Pasteur (40161)',
+        ),
+      ),
     ).toBe(true);
 
     ReactTestRenderer.act(() => {
-      inputs
-        .find(node => node.props.placeholder === '32.73.01.1001')!
-        .props.onChangeText('32.73.01.1001');
+      dropdowns
+        .find(node => node.props.label === 'Kelurahan')!
+        .props.onChange('32.73.01.1001');
     });
 
     expect(setRegionSelection).toHaveBeenCalledWith(
@@ -1009,6 +1057,10 @@ function createSurfaceProps(
     operationalStaffRows: [],
     regionLevel: 'province',
     regionParentCode: '',
+    regionProvinceRows: [],
+    regionRegencyRows: [],
+    regionDistrictRows: [],
+    regionVillageRows: [],
     regionRows: [],
     selectedProvince: '',
     selectedRegency: '',

@@ -806,6 +806,10 @@ export function KolamSettingsWebConfigSurface({
   operationalStaffRows,
   regionLevel,
   regionParentCode,
+  regionProvinceRows,
+  regionRegencyRows,
+  regionDistrictRows,
+  regionVillageRows,
   regionRows,
   selectedProvince,
   selectedRegency,
@@ -949,6 +953,10 @@ export function KolamSettingsWebConfigSurface({
   operationalStaffRows: KolamUserPickerRow[];
   regionLevel: KolamRegionLevel | '';
   regionParentCode: string;
+  regionProvinceRows: KolamRegion[];
+  regionRegencyRows: KolamRegion[];
+  regionDistrictRows: KolamRegion[];
+  regionVillageRows: KolamRegion[];
   regionRows: KolamRegion[];
   selectedProvince: string;
   selectedRegency: string;
@@ -1193,6 +1201,34 @@ export function KolamSettingsWebConfigSurface({
   const showSitemapSettings = activeTabId === 'sitemap';
   const showSyncSettings = activeTabId === 'sync';
   const showKpiSettings = activeTabId === 'kpi';
+  const provinceDropdownOptions = React.useMemo(
+    () => createRegionDropdownOptions('Pilih provinsi', regionProvinceRows),
+    [regionProvinceRows],
+  );
+  const regencyDropdownOptions = React.useMemo(
+    () =>
+      selectedProvince
+        ? createRegionDropdownOptions(
+            'Pilih kota / kabupaten',
+            regionRegencyRows,
+          )
+        : [{label: 'Pilih provinsi dulu', value: ''}],
+    [regionRegencyRows, selectedProvince],
+  );
+  const districtDropdownOptions = React.useMemo(
+    () =>
+      selectedRegency
+        ? createRegionDropdownOptions('Pilih kecamatan', regionDistrictRows)
+        : [{label: 'Pilih kota / kabupaten dulu', value: ''}],
+    [regionDistrictRows, selectedRegency],
+  );
+  const villageDropdownOptions = React.useMemo(
+    () =>
+      selectedDistrict
+        ? createRegionDropdownOptions('Pilih kelurahan', regionVillageRows)
+        : [{label: 'Pilih kecamatan dulu', value: ''}],
+    [regionVillageRows, selectedDistrict],
+  );
   const generalFormSections = sections.filter(section => section.id === 'logo');
   const settingsFieldWidth = 460;
   const [storedMapsBrowserKey, setStoredMapsBrowserKey] = React.useState('');
@@ -3954,41 +3990,53 @@ export function KolamSettingsWebConfigSurface({
             </View>
           </View>
           <View style={styles.storeHoursTimeGrid}>
-            <KolamTextFieldRow
-              variant="settingsForm"
-              fieldWidth={170}
+            <KolamDropdownSelect
               label="Provinsi"
-              description="Kode provinsi untuk memuat kota/kabupaten."
+              options={provinceDropdownOptions}
+              searchable
+              searchPlaceholder="Cari provinsi"
+              style={styles.regionDropdownControl}
               value={selectedProvince}
-              onChangeText={value => setRegionSelection('province', value)}
-              placeholder="32"
+              onChange={value => setRegionSelection('province', value)}
             />
-            <KolamTextFieldRow
-              variant="settingsForm"
-              fieldWidth={180}
+            <KolamDropdownSelect
               label="Kota / Kabupaten"
-              description="Kode kota/kabupaten untuk memuat kecamatan."
+              options={regencyDropdownOptions}
+              searchable={Boolean(selectedProvince)}
+              searchPlaceholder="Cari kota / kabupaten"
+              style={styles.regionDropdownControl}
               value={selectedRegency}
-              onChangeText={value => setRegionSelection('regency', value)}
-              placeholder="32.73"
+              onChange={value => {
+                if (selectedProvince) {
+                  setRegionSelection('regency', value);
+                }
+              }}
             />
-            <KolamTextFieldRow
-              variant="settingsForm"
-              fieldWidth={180}
+            <KolamDropdownSelect
               label="Kecamatan"
-              description="Kode kecamatan untuk memuat kelurahan."
+              options={districtDropdownOptions}
+              searchable={Boolean(selectedRegency)}
+              searchPlaceholder="Cari kecamatan"
+              style={styles.regionDropdownControl}
               value={selectedDistrict}
-              onChangeText={value => setRegionSelection('district', value)}
-              placeholder="32.73.01"
+              onChange={value => {
+                if (selectedRegency) {
+                  setRegionSelection('district', value);
+                }
+              }}
             />
-            <KolamTextFieldRow
-              variant="settingsForm"
-              fieldWidth={180}
+            <KolamDropdownSelect
               label="Kelurahan"
-              description="Opsional, filter satu kelurahan/desa."
+              options={villageDropdownOptions}
+              searchable={Boolean(selectedDistrict)}
+              searchPlaceholder="Cari kelurahan"
+              style={styles.regionDropdownControl}
               value={selectedVillage}
-              onChangeText={value => setRegionSelection('village', value)}
-              placeholder="32.73.01.1001"
+              onChange={value => {
+                if (selectedDistrict) {
+                  setRegionSelection('village', value);
+                }
+              }}
             />
           </View>
           <View style={styles.notificationSoundActions}>
@@ -4012,7 +4060,12 @@ export function KolamSettingsWebConfigSurface({
                 label={`Sync ${scope}`}
                 loading={regionSyncStatus === 'syncing'}
                 loadingLabel="Syncing..."
-                disabled={regionSyncStatus === 'syncing'}
+                disabled={
+                  regionSyncStatus === 'syncing' ||
+                  (scope === 'regencies' && !selectedProvince) ||
+                  (scope === 'districts' && !selectedRegency) ||
+                  (scope === 'villages' && !selectedDistrict)
+                }
                 onPress={() => onRunRegionSync(scope)}
               />
             ))}
@@ -8812,6 +8865,21 @@ function getRegionLevelLabel(level: KolamRegionLevel) {
   return labels[level];
 }
 
+function createRegionDropdownOptions(
+  placeholder: string,
+  regions: KolamRegion[],
+) {
+  return [
+    {label: placeholder, value: ''},
+    ...regions.map(region => ({
+      label: `${region.code} - ${region.name}${
+        region.postalCode ? ` (${region.postalCode})` : ''
+      }`,
+      value: region.code,
+    })),
+  ];
+}
+
 const styles = StyleSheet.create({
   settingsTabCardSpacing: {
     marginBottom: 14,
@@ -9704,5 +9772,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
+  },
+  regionDropdownControl: {
+    minWidth: 220,
+    width: 260,
   },
 });
