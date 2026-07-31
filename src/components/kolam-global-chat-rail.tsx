@@ -2246,7 +2246,7 @@ function KolamTeamChatDaraWindow({
   );
 
   return (
-    <Modal animationType="fade" onRequestClose={onClose} visible>
+    <Modal animationType="fade" onRequestClose={onClose} transparent visible>
       <View style={styles.teamDaraWindowOverlay}>
         <View
           accessibilityLabel="Jendela DARA team chat"
@@ -7094,14 +7094,18 @@ const styles = StyleSheet.create({
     shadowOffset: {width: 0, height: 8},
   },
   teamDaraWindowOverlay: {
-    backgroundColor: '#f9fafb',
+    alignItems: 'flex-start',
+    backgroundColor: 'transparent',
     flex: 1,
+    justifyContent: 'flex-start',
   },
   teamDaraWindow: {
     backgroundColor: '#f9fafb',
-    flex: 1,
     gap: 8,
+    height: '100%',
+    maxWidth: 980,
     padding: 12,
+    width: '74%',
   },
   teamDaraWindowHeader: {
     flexDirection: 'row',
