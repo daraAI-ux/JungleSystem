@@ -1,4 +1,7 @@
 import {
+  getAllowedKolamComplaintStatuses,
+  getAllowedKolamComplaintTrackingStatuses,
+  getAvailableKolamComplaintDecisions,
   getKolamComplaintDecisionLabel,
   getKolamComplaintIdFromRoute,
   getKolamComplaintRouteMode,
@@ -117,6 +120,29 @@ describe('kolam-complaint domain', () => {
     expect(detail.returnTracking?.trackingNumber).toBe('RESI1');
     expect(getKolamComplaintStatusLabel('pending')).toBe('Menunggu');
     expect(getKolamComplaintDecisionLabel(null)).toBe('Tidak ada');
+  });
+
+  it('exposes status transition and decision helpers for workflow UI', () => {
+    expect(getAllowedKolamComplaintStatuses('pending')).toEqual(['in_review']);
+    expect(getAllowedKolamComplaintStatuses('in_review')).toEqual([
+      'approved',
+      'rejected',
+      'cancelled',
+    ]);
+    expect(getAllowedKolamComplaintTrackingStatuses('pending')).toEqual([
+      'in_transit',
+    ]);
+    expect(
+      getAvailableKolamComplaintDecisions(false).map(row => row.id),
+    ).toEqual(['replacement', 'return_then_refund']);
+    expect(
+      getAvailableKolamComplaintDecisions(true).map(row => row.id),
+    ).toEqual(['rework', 'refund']);
+    expect(
+      getAvailableKolamComplaintDecisions(false, {
+        isWarrantyClaim: true,
+      }).map(row => row.id),
+    ).toEqual(['warranty_honored_da', 'warranty_rejected']);
   });
 });
 

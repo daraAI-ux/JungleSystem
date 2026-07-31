@@ -1,6 +1,12 @@
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
+  canCloseKolamComplaint,
+  canSetKolamComplaintDecision,
+  canUpdateKolamComplaintStatus,
+  getAllowedKolamComplaintStatuses,
+  getAllowedKolamComplaintTrackingStatuses,
+  getAvailableKolamComplaintDecisions,
   getKolamComplaintCategoryLabel,
   getKolamComplaintDecisionBadgeIntent,
   getKolamComplaintDecisionLabel,
@@ -9,11 +15,19 @@ import {
   getKolamComplaintSourceLabel,
   getKolamComplaintStatusBadgeIntent,
   getKolamComplaintStatusLabel,
+  getKolamComplaintTrackingStatusLabel,
+  isWarrantyClaimComplaint,
   KOLAM_COMPLAINT_DECISION_OPTIONS,
+  KOLAM_COMPLAINT_KPI_OPTIONS,
   KOLAM_COMPLAINT_ROOT,
   KOLAM_COMPLAINT_SOURCE_OPTIONS,
   KOLAM_COMPLAINT_STATUS_OPTIONS,
+  needsKolamComplaintReturnTracking,
   type KolamComplaint,
+  type KolamComplaintDecision,
+  type KolamComplaintKpiSeverity,
+  type KolamComplaintStatus,
+  type KolamComplaintTrackingStatus,
 } from '../domain/kolam-complaint';
 import { type KolamTableColumn } from '../domain/kolam-table';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
@@ -43,6 +57,7 @@ import {
   KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
+import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamStatusBadge } from './kolam-status-badge';
@@ -170,6 +185,14 @@ function KolamComplaintShell({
           intent="danger"
           label={controller.error}
           numberOfLines={3}
+          style={styles.errorBadge}
+        />
+      ) : null}
+      {controller.statusMessage ? (
+        <KolamStatusBadge
+          intent="success"
+          label={controller.statusMessage}
+          numberOfLines={2}
           style={styles.errorBadge}
         />
       ) : null}
@@ -613,7 +636,7 @@ function KolamComplaintDetail({
             </>
           ) : null}
 
-          {complaint.returnTracking ? (
+          {complaint.returnTracking || needsKolamComplaintReturnTracking(complaint) ? (
             <>
               <Text style={styles.sectionTitle}>Pelacakan retur</Text>
               <KolamDescriptionList
@@ -622,29 +645,91 @@ function KolamComplaintDetail({
                   descRow(
                     'ret-status',
                     'Status',
-                    complaint.returnTracking.status,
+                    getKolamComplaintTrackingStatusLabel(
+                      complaint.returnTracking?.status || 'pending',
+                    ),
                   ),
                   descRow(
                     'ret-track',
                     'Resi',
-                    complaint.returnTracking.trackingNumber || '—',
+                    complaint.returnTracking?.trackingNumber || '—',
                   ),
                   descRow(
                     'ret-courier',
                     'Kurir',
-                    complaint.returnTracking.courierName || '—',
+                    complaint.returnTracking?.courierName || '—',
                   ),
                 ]}
               />
             </>
           ) : null}
 
-          <KolamStatusBadge
-            intent="secondary"
-            label="Aksi workflow (assign/status/keputusan/retur) menyusul di batch berikutnya."
-            numberOfLines={2}
-            style={styles.banner}
-          />
+          {complaint.replacementTracking ? (
+            <>
+              <Text style={styles.sectionTitle}>Pelacakan penggantian</Text>
+              <KolamDescriptionList
+                accessibilityLabel="Penggantian"
+                rows={[
+                  descRow(
+                    'rep-status',
+                    'Status',
+                    getKolamComplaintTrackingStatusLabel(
+                      complaint.replacementTracking.status,
+                    ),
+                  ),
+                  descRow(
+                    'rep-track',
+                    'Resi',
+                    complaint.replacementTracking.trackingNumber || '—',
+                  ),
+                  descRow(
+                    'rep-courier',
+                    'Kurir',
+                    complaint.replacementTracking.courierName || '—',
+                  ),
+                ]}
+              />
+            </>
+          ) : null}
+
+          {complaint.replacementReturnTracking ? (
+            <>
+              <Text style={styles.sectionTitle}>Retur barang pengganti</Text>
+              <KolamDescriptionList
+                accessibilityLabel="Retur pengganti"
+                rows={[
+                  descRow(
+                    'repr-status',
+                    'Status',
+                    getKolamComplaintTrackingStatusLabel(
+                      complaint.replacementReturnTracking.status,
+                    ),
+                  ),
+                  descRow(
+                    'repr-track',
+                    'Resi',
+                    complaint.replacementReturnTracking.trackingNumber || '—',
+                  ),
+                  descRow(
+                    'repr-courier',
+                    'Kurir',
+                    complaint.replacementReturnTracking.courierName || '—',
+                  ),
+                ]}
+              />
+            </>
+          ) : null}
+
+          {!complaint.marketplaceReadOnly ? (
+            <KolamComplaintWorkflowPanel controller={controller} complaint={complaint} />
+          ) : (
+            <KolamStatusBadge
+              intent="secondary"
+              label="Aksi staf disembunyikan untuk mirror marketplace."
+              numberOfLines={2}
+              style={styles.banner}
+            />
+          )}
         </View>
 
         <View style={styles.columnSide}>
@@ -667,6 +752,373 @@ function KolamComplaintDetail({
         </View>
       </View>
     </ScrollView>
+  );
+}
+
+function KolamComplaintWorkflowPanel({
+  complaint,
+  controller,
+}: {
+  complaint: KolamComplaint;
+  controller: KolamComplaintController;
+}) {
+  const allowedStatuses = getAllowedKolamComplaintStatuses(complaint.status);
+  const decisionOptions = getAvailableKolamComplaintDecisions(
+    complaint.isServiceOnly,
+    { isWarrantyClaim: isWarrantyClaimComplaint(complaint) },
+  );
+  const returnStatus =
+    complaint.returnTracking?.status || ('pending' as KolamComplaintTrackingStatus);
+  const allowedReturnStatuses = getAllowedKolamComplaintTrackingStatuses(returnStatus);
+
+  const [staffId, setStaffId] = React.useState(complaint.assignedStaffId || '');
+  const [assignNote, setAssignNote] = React.useState('');
+  const [nextStatus, setNextStatus] = React.useState<KolamComplaintStatus>(
+    allowedStatuses[0] || complaint.status,
+  );
+  const [statusNote, setStatusNote] = React.useState('');
+  const [decision, setDecision] = React.useState<NonNullable<KolamComplaintDecision> | ''>(
+    complaint.decision || decisionOptions[0]?.id || '',
+  );
+  const [refundAmount, setRefundAmount] = React.useState(
+    complaint.refundAmount > 0 ? String(complaint.refundAmount) : '',
+  );
+  const [decisionNote, setDecisionNote] = React.useState('');
+  const [closeNote, setCloseNote] = React.useState('');
+  const [kpiSeverity, setKpiSeverity] = React.useState<
+    KolamComplaintKpiSeverity | 'none'
+  >('none');
+  const [returnNextStatus, setReturnNextStatus] =
+    React.useState<KolamComplaintTrackingStatus>(
+      allowedReturnStatuses[0] || returnStatus,
+    );
+  const [returnNote, setReturnNote] = React.useState('');
+  const [returnVerifiedNote, setReturnVerifiedNote] = React.useState('');
+  const [trackingNumber, setTrackingNumber] = React.useState(
+    complaint.returnTracking?.trackingNumber || '',
+  );
+  const [courierName, setCourierName] = React.useState(
+    complaint.returnTracking?.courierName || '',
+  );
+
+  React.useEffect(() => {
+    const nextAllowed = getAllowedKolamComplaintStatuses(complaint.status);
+    const nextDecisions = getAvailableKolamComplaintDecisions(
+      complaint.isServiceOnly,
+      { isWarrantyClaim: isWarrantyClaimComplaint(complaint) },
+    );
+    const nextReturnStatus =
+      complaint.returnTracking?.status ||
+      ('pending' as KolamComplaintTrackingStatus);
+    const nextAllowedReturn =
+      getAllowedKolamComplaintTrackingStatuses(nextReturnStatus);
+
+    setStaffId(complaint.assignedStaffId || '');
+    setNextStatus(nextAllowed[0] || complaint.status);
+    setDecision(complaint.decision || nextDecisions[0]?.id || '');
+    setRefundAmount(
+      complaint.refundAmount > 0 ? String(complaint.refundAmount) : '',
+    );
+    setReturnNextStatus(nextAllowedReturn[0] || nextReturnStatus);
+    setTrackingNumber(complaint.returnTracking?.trackingNumber || '');
+    setCourierName(complaint.returnTracking?.courierName || '');
+  }, [
+    complaint.assignedStaffId,
+    complaint.decision,
+    complaint.id,
+    complaint.isServiceOnly,
+    complaint.refundAmount,
+    complaint.returnTracking?.courierName,
+    complaint.returnTracking?.status,
+    complaint.returnTracking?.trackingNumber,
+    complaint.source,
+    complaint.status,
+  ]);
+
+  const busy = controller.mutating || controller.loading;
+  const needsRefundAmount =
+    decision === 'refund' || decision === 'return_then_refund';
+
+  return (
+    <View style={styles.workflowPanel}>
+      <Text style={styles.sectionTitle}>Aksi workflow</Text>
+
+      <View style={styles.workflowBlock}>
+        <Text style={styles.workflowBlockTitle}>Tugaskan staf</Text>
+        <KolamDropdownSelect
+          accessibilityLabel="Pilih staf"
+          label="Staf"
+          menuPlacement="inline"
+          onChange={setStaffId}
+          options={[
+            { label: 'Pilih staf…', value: '' },
+            ...controller.staffOptions.map(option => ({
+              label: option.label,
+              value: option.id,
+            })),
+          ]}
+          searchable={controller.staffOptions.length > 8}
+          searchPlaceholder="Cari staf…"
+          showLabelInTrigger={false}
+          value={staffId}
+        />
+        <KolamFormTextField
+          multiline
+          numberOfLines={2}
+          onChangeText={setAssignNote}
+          placeholder="Catatan penugasan (opsional)"
+          style={styles.workflowNote}
+          value={assignNote}
+        />
+        <KolamButton
+          disabled={busy || !staffId}
+          intent="primary"
+          label={busy ? 'Menyimpan…' : 'Simpan penugasan'}
+          onPress={() => {
+            void controller.onAssignStaff(staffId, assignNote).then(ok => {
+              if (ok) {
+                setAssignNote('');
+              }
+            });
+          }}
+        />
+      </View>
+
+      <View style={styles.workflowBlock}>
+        <Text style={styles.workflowBlockTitle}>Ubah status</Text>
+        {!complaint.assignedStaffId ? (
+          <Text style={styles.metaText}>
+            Tugaskan staf dulu sebelum mengubah status.
+          </Text>
+        ) : null}
+        <KolamDropdownSelect
+          accessibilityLabel="Status baru"
+          label="Status"
+          menuPlacement="inline"
+          onChange={value => setNextStatus(value as KolamComplaintStatus)}
+          options={allowedStatuses.map(status => ({
+            label: getKolamComplaintStatusLabel(status),
+            value: status,
+          }))}
+          showLabelInTrigger={false}
+          value={nextStatus}
+        />
+        <KolamFormTextField
+          multiline
+          numberOfLines={3}
+          onChangeText={setStatusNote}
+          placeholder="Catatan wajib…"
+          style={styles.workflowNote}
+          value={statusNote}
+        />
+        <KolamButton
+          disabled={
+            busy ||
+            !canUpdateKolamComplaintStatus(complaint) ||
+            !statusNote.trim() ||
+            !allowedStatuses.includes(nextStatus)
+          }
+          intent="primary"
+          label={busy ? 'Menyimpan…' : 'Update status'}
+          onPress={() => {
+            void controller.onUpdateStatus(nextStatus, statusNote).then(ok => {
+              if (ok) {
+                setStatusNote('');
+              }
+            });
+          }}
+        />
+      </View>
+
+      {canSetKolamComplaintDecision(complaint) ? (
+        <View style={styles.workflowBlock}>
+          <Text style={styles.workflowBlockTitle}>
+            {complaint.decision ? 'Ubah keputusan' : 'Set keputusan'}
+          </Text>
+          <KolamDropdownSelect
+            accessibilityLabel="Keputusan"
+            label="Keputusan"
+            menuPlacement="inline"
+            onChange={value =>
+              setDecision(value as NonNullable<KolamComplaintDecision>)
+            }
+            options={decisionOptions.map(option => ({
+              label: option.label,
+              value: option.id,
+            }))}
+            showLabelInTrigger={false}
+            value={decision}
+          />
+          {needsRefundAmount ? (
+            <KolamFormTextField
+              mode="numeric"
+              onChangeText={setRefundAmount}
+              placeholder="Jumlah refund (Rp)"
+              value={refundAmount}
+            />
+          ) : null}
+          <KolamFormTextField
+            multiline
+            numberOfLines={3}
+            onChangeText={setDecisionNote}
+            placeholder="Catatan wajib…"
+            style={styles.workflowNote}
+            value={decisionNote}
+          />
+          <KolamButton
+            disabled={
+              busy ||
+              !decision ||
+              !decisionNote.trim() ||
+              (needsRefundAmount && !refundAmount.trim())
+            }
+            intent="primary"
+            label={busy ? 'Menyimpan…' : 'Simpan keputusan'}
+            onPress={() => {
+              if (!decision) {
+                return;
+              }
+              void controller
+                .onUpdateDecision({
+                  decision,
+                  note: decisionNote,
+                  ...(needsRefundAmount
+                    ? { refundAmount: Math.max(0, Number(refundAmount) || 0) }
+                    : {}),
+                })
+                .then(ok => {
+                  if (ok) {
+                    setDecisionNote('');
+                  }
+                });
+            }}
+          />
+        </View>
+      ) : null}
+
+      {needsKolamComplaintReturnTracking(complaint) &&
+      allowedReturnStatuses.length > 0 ? (
+        <View style={styles.workflowBlock}>
+          <Text style={styles.workflowBlockTitle}>Update retur</Text>
+          <KolamDropdownSelect
+            accessibilityLabel="Status retur"
+            label="Status retur"
+            menuPlacement="inline"
+            onChange={value =>
+              setReturnNextStatus(value as KolamComplaintTrackingStatus)
+            }
+            options={allowedReturnStatuses.map(status => ({
+              label: getKolamComplaintTrackingStatusLabel(status),
+              value: status,
+            }))}
+            showLabelInTrigger={false}
+            value={returnNextStatus}
+          />
+          <KolamFormTextField
+            onChangeText={setTrackingNumber}
+            placeholder="Nomor resi"
+            value={trackingNumber}
+          />
+          <KolamFormTextField
+            onChangeText={setCourierName}
+            placeholder="Nama kurir"
+            value={courierName}
+          />
+          {returnNextStatus === 'verified' ? (
+            <KolamFormTextField
+              multiline
+              numberOfLines={3}
+              onChangeText={setReturnVerifiedNote}
+              placeholder="Catatan verifikasi wajib…"
+              style={styles.workflowNote}
+              value={returnVerifiedNote}
+            />
+          ) : (
+            <KolamFormTextField
+              multiline
+              numberOfLines={3}
+              onChangeText={setReturnNote}
+              placeholder="Catatan…"
+              style={styles.workflowNote}
+              value={returnNote}
+            />
+          )}
+          <KolamButton
+            disabled={
+              busy ||
+              (returnNextStatus === 'verified'
+                ? !returnVerifiedNote.trim()
+                : false)
+            }
+            intent="primary"
+            label={busy ? 'Menyimpan…' : 'Update retur'}
+            onPress={() => {
+              void controller
+                .onUpdateReturnStatus({
+                  status: returnNextStatus,
+                  trackingNumber,
+                  courierName,
+                  ...(returnNextStatus === 'verified'
+                    ? { verifiedNote: returnVerifiedNote }
+                    : { note: returnNote }),
+                })
+                .then(ok => {
+                  if (ok) {
+                    setReturnNote('');
+                    setReturnVerifiedNote('');
+                  }
+                });
+            }}
+          />
+        </View>
+      ) : null}
+
+      {canCloseKolamComplaint(complaint) ? (
+        <View style={styles.workflowBlock}>
+          <Text style={styles.workflowBlockTitle}>Tutup tiket</Text>
+          <KolamFormTextField
+            multiline
+            numberOfLines={3}
+            onChangeText={setCloseNote}
+            placeholder="Catatan penutupan wajib…"
+            style={styles.workflowNote}
+            value={closeNote}
+          />
+          <KolamDropdownSelect
+            accessibilityLabel="Penalti KPI"
+            label="KPI"
+            menuPlacement="inline"
+            onChange={value =>
+              setKpiSeverity(value as KolamComplaintKpiSeverity | 'none')
+            }
+            options={KOLAM_COMPLAINT_KPI_OPTIONS.map(option => ({
+              label: option.label,
+              value: option.id,
+            }))}
+            showLabelInTrigger={false}
+            value={kpiSeverity}
+          />
+          <KolamButton
+            disabled={busy || closeNote.trim().length < 10}
+            intent="danger"
+            label={busy ? 'Menutup…' : 'Tutup tiket'}
+            onPress={() => {
+              void controller
+                .onCloseComplaint({
+                  note: closeNote,
+                  kpiSeverity: kpiSeverity === 'none' ? null : kpiSeverity,
+                })
+                .then(ok => {
+                  if (ok) {
+                    setCloseNote('');
+                    setKpiSeverity('none');
+                  }
+                });
+            }}
+          />
+        </View>
+      ) : null}
+    </View>
   );
 }
 
@@ -806,6 +1258,26 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     marginTop: 4,
+  },
+  workflowPanel: {
+    gap: 12,
+    marginTop: 8,
+  },
+  workflowBlock: {
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    gap: 8,
+    padding: 12,
+  },
+  workflowBlockTitle: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  workflowNote: {
+    minHeight: 72,
+    width: '100%',
   },
   itemCard: {
     borderBottomColor: V.colors.border,

@@ -5,17 +5,31 @@ import {
   isKolamComplaintRoute,
   type KolamComplaint,
   type KolamComplaintDecision,
+  type KolamComplaintKpiSeverity,
   type KolamComplaintSource,
   type KolamComplaintStatus,
+  type KolamComplaintTrackingStatus,
 } from '../domain/kolam-complaint';
+import type { KolamUserListItem } from '../domain/kolam-user';
 import { getErrorMessage as getApiErrorMessage } from '../lib/api-error';
 import {
+  assignKolamComplaintStaff,
+  closeKolamComplaint,
   getKolamComplaint,
   getKolamComplaints,
+  updateKolamComplaintDecision,
+  updateKolamComplaintReturnStatus,
+  updateKolamComplaintStatus,
 } from '../services/kolam-complaint-api';
+import { getKolamUserList } from '../services/kolam-user-api';
 
 export type KolamComplaintSurfaceMode = 'list' | 'detail' | 'new';
 export type KolamComplaintDataSource = 'idle' | 'live' | 'error';
+
+export interface KolamComplaintStaffOption {
+  id: string;
+  label: string;
+}
 
 export interface KolamComplaintController {
   complaints: KolamComplaint[];
@@ -25,15 +39,23 @@ export interface KolamComplaintController {
   error: string | null;
   loading: boolean;
   mode: KolamComplaintSurfaceMode;
+  mutating: boolean;
   page: number;
   pageSize: number;
   search: string;
   selectedComplaint: KolamComplaint | null;
   sourceFilter: KolamComplaintSource | 'all';
+  staffOptions: KolamComplaintStaffOption[];
   statusFilter: KolamComplaintStatus | 'all';
+  statusMessage: string | null;
   total: number;
   totalPages: number;
+  onAssignStaff: (staffId: string, note?: string) => Promise<boolean>;
   onBackToList: () => void;
+  onCloseComplaint: (payload: {
+    note: string;
+    kpiSeverity?: KolamComplaintKpiSeverity | null;
+  }) => Promise<boolean>;
   onCreateNew: () => void;
   onRefresh: () => Promise<void>;
   onSearchChange: (value: string) => void;
@@ -46,6 +68,30 @@ export interface KolamComplaintController {
   onSetPageSize: (pageSize: number) => void;
   onSetSourceFilter: (value: KolamComplaintSource | 'all') => void;
   onSetStatusFilter: (value: KolamComplaintStatus | 'all') => void;
+  onUpdateDecision: (payload: {
+    decision: NonNullable<KolamComplaintDecision>;
+    note: string;
+    refundAmount?: number;
+  }) => Promise<boolean>;
+  onUpdateReturnStatus: (payload: {
+    status: KolamComplaintTrackingStatus;
+    note?: string;
+    verifiedNote?: string;
+    trackingNumber?: string;
+    courierName?: string;
+    receivedBy?: string;
+  }) => Promise<boolean>;
+  onUpdateStatus: (
+    status: KolamComplaintStatus,
+    note: string,
+  ) => Promise<boolean>;
+}
+
+function mapStaffOptions(users: KolamUserListItem[]): KolamComplaintStaffOption[] {
+  return users.map(user => ({
+    id: user.id,
+    label: user.displayName || `${user.firstName} ${user.lastName}`.trim() || user.id,
+  }));
 }
 
 export function useKolamComplaintController(
@@ -57,7 +103,9 @@ export function useKolamComplaintController(
     useState<KolamComplaint | null>(null);
   const [mode, setMode] = useState<KolamComplaintSurfaceMode>(initialMode);
   const [loading, setLoading] = useState(false);
+  const [mutating, setMutating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [dataSource, setDataSource] =
     useState<KolamComplaintDataSource>('idle');
   const [page, setPage] = useState(1);
@@ -75,8 +123,11 @@ export function useKolamComplaintController(
   const [customProjectOnly, setCustomProjectOnly] = useState(false);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+  const [staffOptions, setStaffOptions] = useState<KolamComplaintStaffOption[]>(
+    [],
+  );
 
-  const refresh = useCallback(async () => {
+  const refreshList = useCallback(async () => {
     if (!isKolamComplaintRoute(route)) {
       return;
     }
@@ -115,6 +166,25 @@ export function useKolamComplaintController(
     statusFilter,
   ]);
 
+  const refreshDetail = useCallback(async (complaintId: string) => {
+    const live = await getKolamComplaint(complaintId);
+    setSelectedComplaint(live);
+    setDataSource('live');
+    setComplaints(prev =>
+      prev.map(item => (item.id === live.id ? { ...item, ...live } : item)),
+    );
+    return live;
+  }, []);
+
+  const loadStaffOptions = useCallback(async () => {
+    try {
+      const result = await getKolamUserList({ page: 1, limit: 200 });
+      setStaffOptions(mapStaffOptions(result.items));
+    } catch {
+      // Non-blocking: assign dropdown can stay empty.
+    }
+  }, []);
+
   useEffect(() => {
     setMode(initialMode);
     if (initialMode === 'new') {
@@ -124,23 +194,28 @@ export function useKolamComplaintController(
 
   useEffect(() => {
     if (mode === 'list' || mode === 'new') {
-      void refresh();
+      void refreshList();
     }
-  }, [mode, refresh]);
+  }, [mode, refreshList]);
+
+  useEffect(() => {
+    if (mode === 'detail') {
+      void loadStaffOptions();
+    }
+  }, [loadStaffOptions, mode]);
 
   const onSelectComplaint = useCallback(async (complaint: KolamComplaint) => {
     setMode('detail');
     setSelectedComplaint(complaint);
     setError(null);
+    setStatusMessage(null);
 
     try {
-      const live = await getKolamComplaint(complaint.id);
-      setSelectedComplaint(live);
-      setDataSource('live');
+      await refreshDetail(complaint.id);
     } catch (detailError) {
       setError(getErrorMessage(detailError));
     }
-  }, []);
+  }, [refreshDetail]);
 
   useEffect(() => {
     const complaintId = getKolamComplaintIdFromRoute(route);
@@ -183,17 +258,169 @@ export function useKolamComplaintController(
     };
   }, [complaints, mode, onSelectComplaint, route, selectedComplaint?.id]);
 
+  const runMutation = useCallback(
+    async (
+      action: () => Promise<KolamComplaint>,
+      successMessage: string,
+    ): Promise<boolean> => {
+      if (!selectedComplaint?.id) {
+        return false;
+      }
+      setMutating(true);
+      setError(null);
+      setStatusMessage(null);
+      try {
+        const live = await action();
+        setSelectedComplaint(live);
+        setComplaints(prev =>
+          prev.map(item => (item.id === live.id ? { ...item, ...live } : item)),
+        );
+        setStatusMessage(successMessage);
+        setDataSource('live');
+        return true;
+      } catch (mutationError) {
+        setError(getErrorMessage(mutationError));
+        return false;
+      } finally {
+        setMutating(false);
+      }
+    },
+    [selectedComplaint?.id],
+  );
+
+  const onAssignStaff = useCallback(
+    (staffId: string, note?: string) => {
+      const id = selectedComplaint?.id;
+      if (!id || !staffId.trim()) {
+        return Promise.resolve(false);
+      }
+      return runMutation(
+        () =>
+          assignKolamComplaintStaff(id, {
+            staffId: staffId.trim(),
+            ...(note?.trim() ? { note: note.trim() } : {}),
+          }),
+        'Staf berhasil ditugaskan.',
+      );
+    },
+    [runMutation, selectedComplaint?.id],
+  );
+
+  const onUpdateStatus = useCallback(
+    (status: KolamComplaintStatus, note: string) => {
+      const id = selectedComplaint?.id;
+      if (!id || !note.trim()) {
+        return Promise.resolve(false);
+      }
+      return runMutation(
+        () =>
+          updateKolamComplaintStatus(id, {
+            status,
+            note: note.trim(),
+          }),
+        'Status komplain diperbarui.',
+      );
+    },
+    [runMutation, selectedComplaint?.id],
+  );
+
+  const onUpdateDecision = useCallback(
+    (payload: {
+      decision: NonNullable<KolamComplaintDecision>;
+      note: string;
+      refundAmount?: number;
+    }) => {
+      const id = selectedComplaint?.id;
+      if (!id || !payload.note.trim()) {
+        return Promise.resolve(false);
+      }
+      return runMutation(
+        () =>
+          updateKolamComplaintDecision(id, {
+            decision: payload.decision,
+            note: payload.note.trim(),
+            ...(payload.refundAmount !== undefined
+              ? { refundAmount: payload.refundAmount }
+              : {}),
+          }),
+        'Keputusan komplain disimpan.',
+      );
+    },
+    [runMutation, selectedComplaint?.id],
+  );
+
+  const onCloseComplaint = useCallback(
+    (payload: {
+      note: string;
+      kpiSeverity?: KolamComplaintKpiSeverity | null;
+    }) => {
+      const id = selectedComplaint?.id;
+      if (!id || !payload.note.trim()) {
+        return Promise.resolve(false);
+      }
+      return runMutation(
+        () =>
+          closeKolamComplaint(id, {
+            note: payload.note.trim(),
+            kpiSeverity: payload.kpiSeverity ?? null,
+            kpiAttributedTo: selectedComplaint?.assignedStaffId ?? null,
+          }),
+        'Tiket komplain ditutup.',
+      );
+    },
+    [runMutation, selectedComplaint?.assignedStaffId, selectedComplaint?.id],
+  );
+
+  const onUpdateReturnStatus = useCallback(
+    (payload: {
+      status: KolamComplaintTrackingStatus;
+      note?: string;
+      verifiedNote?: string;
+      trackingNumber?: string;
+      courierName?: string;
+      receivedBy?: string;
+    }) => {
+      const id = selectedComplaint?.id;
+      if (!id) {
+        return Promise.resolve(false);
+      }
+      return runMutation(
+        () => updateKolamComplaintReturnStatus(id, payload),
+        'Status retur diperbarui.',
+      );
+    },
+    [runMutation, selectedComplaint?.id],
+  );
+
   const onBackToList = useCallback(() => {
     setMode('list');
     setSelectedComplaint(null);
     setError(null);
+    setStatusMessage(null);
   }, []);
 
   const onCreateNew = useCallback(() => {
     setMode('new');
     setSelectedComplaint(null);
     setError(null);
+    setStatusMessage(null);
   }, []);
+
+  const onRefresh = useCallback(async () => {
+    if (mode === 'detail' && selectedComplaint?.id) {
+      setLoading(true);
+      setError(null);
+      try {
+        await refreshDetail(selectedComplaint.id);
+      } catch (detailError) {
+        setError(getErrorMessage(detailError));
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+    await refreshList();
+  }, [mode, refreshDetail, refreshList, selectedComplaint?.id]);
 
   const onSearchChange = useCallback((value: string) => {
     setSearch(value);
@@ -247,17 +474,22 @@ export function useKolamComplaintController(
       error,
       loading,
       mode,
+      mutating,
       page,
       pageSize,
       search,
       selectedComplaint,
       sourceFilter,
+      staffOptions,
       statusFilter,
+      statusMessage,
       total,
       totalPages,
+      onAssignStaff,
       onBackToList,
+      onCloseComplaint,
       onCreateNew,
-      onRefresh: refresh,
+      onRefresh,
       onSearchChange,
       onSelectComplaint,
       onSetCustomProjectOnly,
@@ -266,6 +498,9 @@ export function useKolamComplaintController(
       onSetPageSize,
       onSetSourceFilter,
       onSetStatusFilter,
+      onUpdateDecision,
+      onUpdateReturnStatus,
+      onUpdateStatus,
     }),
     [
       complaints,
@@ -275,8 +510,12 @@ export function useKolamComplaintController(
       error,
       loading,
       mode,
+      mutating,
+      onAssignStaff,
       onBackToList,
+      onCloseComplaint,
       onCreateNew,
+      onRefresh,
       onSearchChange,
       onSelectComplaint,
       onSetCustomProjectOnly,
@@ -285,13 +524,17 @@ export function useKolamComplaintController(
       onSetPageSize,
       onSetSourceFilter,
       onSetStatusFilter,
+      onUpdateDecision,
+      onUpdateReturnStatus,
+      onUpdateStatus,
       page,
       pageSize,
-      refresh,
       search,
       selectedComplaint,
       sourceFilter,
+      staffOptions,
       statusFilter,
+      statusMessage,
       total,
       totalPages,
     ],
@@ -299,6 +542,5 @@ export function useKolamComplaintController(
 }
 
 function getErrorMessage(error: unknown) {
-  const message = getApiErrorMessage(error).trim();
-  return message || 'Terjadi kesalahan pada modul komplain.';
+  return getApiErrorMessage(error);
 }

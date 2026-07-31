@@ -371,6 +371,152 @@ export function getKolamComplaintHistoryActionLabel(action: string) {
   return labelMap[action] || action;
 }
 
+/** FE `complaint-status-updater` getAllowedStatuses. */
+export function getAllowedKolamComplaintStatuses(
+  currentStatus: KolamComplaintStatus,
+): KolamComplaintStatus[] {
+  switch (currentStatus) {
+    case 'pending':
+      return ['in_review'];
+    case 'in_review':
+      return ['approved', 'rejected', 'cancelled'];
+    case 'approved':
+      return ['processing', 'cancelled'];
+    case 'processing':
+      return ['completed', 'cancelled'];
+    case 'return_in_transit':
+      return ['return_received', 'completed'];
+    case 'return_received':
+      return ['completed'];
+    case 'completed':
+      return ['closed'];
+    case 'rejected':
+      return ['closed', 'cancelled'];
+    case 'cancelled':
+    case 'closed':
+      return [];
+    default:
+      return [];
+  }
+}
+
+/** FE `getAvailableDecisions` (warranty vendor mode optional). */
+export function getAvailableKolamComplaintDecisions(
+  isServiceOnly: boolean,
+  options?: {
+    isWarrantyClaim?: boolean;
+    warrantyMode?: 'official_distributor' | 'da' | null;
+  },
+): Array<{ id: NonNullable<KolamComplaintDecision>; label: string }> {
+  if (options?.isWarrantyClaim) {
+    const decisions: Array<{
+      id: NonNullable<KolamComplaintDecision>;
+      label: string;
+    }> = [
+      { id: 'warranty_honored_da', label: 'Garansi dihonori (DA)' },
+      { id: 'warranty_rejected', label: 'Garansi ditolak' },
+    ];
+    if (options.warrantyMode === 'official_distributor') {
+      decisions.splice(1, 0, {
+        id: 'warranty_honored_vendor',
+        label: 'Garansi dihonori (Vendor)',
+      });
+    }
+    return decisions;
+  }
+  if (isServiceOnly) {
+    return [
+      { id: 'rework', label: 'Rework (dikerjakan ulang)' },
+      { id: 'refund', label: 'Refund' },
+    ];
+  }
+  return [
+    { id: 'replacement', label: 'Penggantian barang' },
+    { id: 'return_then_refund', label: 'Retur & pengembalian dana' },
+  ];
+}
+
+/** FE return updater: pending → in_transit → received → verified. */
+export function getAllowedKolamComplaintTrackingStatuses(
+  current: KolamComplaintTrackingStatus,
+): KolamComplaintTrackingStatus[] {
+  switch (current) {
+    case 'pending':
+      return ['in_transit'];
+    case 'in_transit':
+      return ['received'];
+    case 'received':
+      return ['verified'];
+    case 'verified':
+      return [];
+    default:
+      return [];
+  }
+}
+
+export function getKolamComplaintTrackingStatusLabel(
+  status: KolamComplaintTrackingStatus | string,
+) {
+  switch (status) {
+    case 'pending':
+      return 'Menunggu';
+    case 'in_transit':
+      return 'Dalam perjalanan';
+    case 'received':
+      return 'Diterima';
+    case 'verified':
+      return 'Terverifikasi';
+    default:
+      return status;
+  }
+}
+
+export type KolamComplaintKpiSeverity = 'light' | 'valid' | 'severe';
+
+export const KOLAM_COMPLAINT_KPI_OPTIONS: Array<{
+  id: KolamComplaintKpiSeverity | 'none';
+  label: string;
+}> = [
+  { id: 'none', label: 'Tanpa penalti KPI' },
+  { id: 'light', label: 'Ringan (−10)' },
+  { id: 'valid', label: 'Valid (−25)' },
+  { id: 'severe', label: 'Berat (−50)' },
+];
+
+export function canUpdateKolamComplaintStatus(complaint: KolamComplaint) {
+  if (complaint.marketplaceReadOnly) {
+    return false;
+  }
+  if (!complaint.assignedStaffId) {
+    return false;
+  }
+  if (complaint.status === 'cancelled' || complaint.status === 'closed') {
+    return false;
+  }
+  return getAllowedKolamComplaintStatuses(complaint.status).length > 0;
+}
+
+export function canSetKolamComplaintDecision(complaint: KolamComplaint) {
+  if (complaint.marketplaceReadOnly) {
+    return false;
+  }
+  return complaint.status === 'in_review' || complaint.status === 'approved';
+}
+
+export function canCloseKolamComplaint(complaint: KolamComplaint) {
+  if (complaint.marketplaceReadOnly) {
+    return false;
+  }
+  return complaint.status === 'completed';
+}
+
+export function needsKolamComplaintReturnTracking(complaint: KolamComplaint) {
+  return (
+    complaint.decision === 'return_then_refund' ||
+    complaint.decision === 'replacement'
+  );
+}
+
 export function normalizeKolamComplaint(payload: unknown): KolamComplaint {
   const record = asRecord(unwrapData(payload));
   const id = getString(record, '_id') || getString(record, 'id');
