@@ -423,6 +423,55 @@ export const KOLAM_COMPLAINT_PRIORITY_OPTIONS: Array<{
   { id: 'urgent', label: 'Mendesak' },
 ];
 
+/** Full category set for list filters (create + warranty). */
+export const KOLAM_COMPLAINT_CATEGORY_FILTER_OPTIONS: Array<{
+  id: KolamComplaintCategory;
+  label: string;
+}> = [
+  ...KOLAM_COMPLAINT_CREATE_CATEGORY_OPTIONS,
+  {
+    id: 'product_warranty_defect',
+    label: 'Cacat produk (garansi)',
+  },
+  {
+    id: 'product_warranty_malfunction',
+    label: 'Kerusakan fungsi (garansi)',
+  },
+  {
+    id: 'product_warranty_other',
+    label: 'Lainnya (garansi)',
+  },
+];
+
+export const KOLAM_COMPLAINT_DEFAULT_PERIOD_DAYS = 3;
+
+export function normalizeKolamComplaintPeriodDays(value: unknown): number {
+  const parsed =
+    typeof value === 'number'
+      ? value
+      : typeof value === 'string' && value.trim()
+        ? Number(value)
+        : Number.NaN;
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    return KOLAM_COMPLAINT_DEFAULT_PERIOD_DAYS;
+  }
+  return Math.floor(parsed);
+}
+
+export function validateKolamComplaintPeriodDaysInput(
+  raw: string,
+): string | null {
+  const trimmed = raw.trim();
+  if (!trimmed) {
+    return 'Masukkan jumlah hari yang valid.';
+  }
+  const parsed = Number(trimmed);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    return 'Masukkan jumlah hari yang valid (≥ 0).';
+  }
+  return null;
+}
+
 export function parseKolamComplaintCreateQuery(
   route: string,
 ): KolamComplaintCreateQuery {

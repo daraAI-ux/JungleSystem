@@ -26,10 +26,14 @@ import {
   needsKolamComplaintReplacementTracking,
   normalizeKolamComplaint,
   normalizeKolamComplaintList,
+  normalizeKolamComplaintPeriodDays,
   parseKolamComplaintCreateQuery,
   buildKolamComplaintCreateRoute,
   resolveKolamComplaintSaleSourceLogoUri,
   validateKolamComplaintCreateInput,
+  validateKolamComplaintPeriodDaysInput,
+  KOLAM_COMPLAINT_CATEGORY_FILTER_OPTIONS,
+  KOLAM_COMPLAINT_DEFAULT_PERIOD_DAYS,
 } from '../src/domain/kolam-complaint';
 import {
   getKolamNavigationItemByRoute,
@@ -381,6 +385,25 @@ describe('kolam-complaint domain', () => {
     });
     expect(canUpdateKolamComplaintReworkStatus(review)).toBe(false);
     expect(canSubmitKolamComplaintReworkCustomerResponse(review)).toBe(true);
+  });
+
+  it('normalizes complaint period days and category filter options', () => {
+    expect(normalizeKolamComplaintPeriodDays(undefined)).toBe(
+      KOLAM_COMPLAINT_DEFAULT_PERIOD_DAYS,
+    );
+    expect(normalizeKolamComplaintPeriodDays(-1)).toBe(
+      KOLAM_COMPLAINT_DEFAULT_PERIOD_DAYS,
+    );
+    expect(normalizeKolamComplaintPeriodDays('7.9')).toBe(7);
+    expect(normalizeKolamComplaintPeriodDays(0)).toBe(0);
+    expect(validateKolamComplaintPeriodDaysInput('')).toMatch(/valid/);
+    expect(validateKolamComplaintPeriodDaysInput('-2')).toMatch(/valid/);
+    expect(validateKolamComplaintPeriodDaysInput('5')).toBeNull();
+    expect(
+      KOLAM_COMPLAINT_CATEGORY_FILTER_OPTIONS.some(
+        option => option.id === 'product_warranty_defect',
+      ),
+    ).toBe(true);
   });
 
   it('exposes status transition and decision helpers for workflow UI', () => {

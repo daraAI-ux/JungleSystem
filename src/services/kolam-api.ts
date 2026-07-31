@@ -1139,6 +1139,8 @@ export interface KolamWebSetting {
   poWorkflow?: KolamPoWorkflowSettings;
   salePricesIncludeTax?: boolean;
   commissionPph21Enabled?: boolean;
+  /** Default complaint window (days) when product/species T&C has no period. 0 = no window. */
+  complaintPeriodDays?: number;
   overtimeSettings?: KolamOvertimeSettings;
   enclosureSaleCommission?: KolamEnclosureSaleCommissionSettings;
   maintenance?: {
@@ -1385,6 +1387,7 @@ export interface UpdateKolamWebSettingBody
       | 'poWorkflow'
       | 'salePricesIncludeTax'
       | 'commissionPph21Enabled'
+      | 'complaintPeriodDays'
       | 'overtimeSettings'
       | 'enclosureSaleCommission'
       | 'teamChatDaraReplyEnabled'

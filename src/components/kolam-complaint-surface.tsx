@@ -34,8 +34,10 @@ import {
   isKolamComplaintRefundAwaitingReturn,
   isKolamComplaintReturnAwaitingVerification,
   isWarrantyClaimComplaint,
+  KOLAM_COMPLAINT_CATEGORY_FILTER_OPTIONS,
   KOLAM_COMPLAINT_DECISION_OPTIONS,
   KOLAM_COMPLAINT_KPI_OPTIONS,
+  KOLAM_COMPLAINT_PRIORITY_OPTIONS,
   KOLAM_COMPLAINT_REFUND_TRANSFER_METHOD_OPTIONS,
   KOLAM_COMPLAINT_ROOT,
   KOLAM_COMPLAINT_SOURCE_OPTIONS,
@@ -328,6 +330,40 @@ function KolamComplaintList({
               showLabelInTrigger={false}
               value={controller.decisionFilter}
             />
+            <KolamDropdownSelect
+              label="Prioritas"
+              onChange={value =>
+                controller.onSetPriorityFilter(
+                  value as typeof controller.priorityFilter,
+                )
+              }
+              options={[
+                { label: 'Prioritas', value: 'all' },
+                ...KOLAM_COMPLAINT_PRIORITY_OPTIONS.map(option => ({
+                  label: option.label,
+                  value: option.id,
+                })),
+              ]}
+              showLabelInTrigger={false}
+              value={controller.priorityFilter}
+            />
+            <KolamDropdownSelect
+              label="Kategori"
+              onChange={value =>
+                controller.onSetCategoryFilter(
+                  value as typeof controller.categoryFilter,
+                )
+              }
+              options={[
+                { label: 'Kategori', value: 'all' },
+                ...KOLAM_COMPLAINT_CATEGORY_FILTER_OPTIONS.map(option => ({
+                  label: option.label,
+                  value: option.id,
+                })),
+              ]}
+              showLabelInTrigger={false}
+              value={controller.categoryFilter}
+            />
           </View>
           <View style={kolamTableToolbarStyles.actions}>
             <View style={styles.switchInline}>
@@ -339,6 +375,14 @@ function KolamComplaintList({
                 }
               />
             </View>
+            <KolamButton
+              label={
+                controller.periodEditorOpen
+                  ? 'Tutup periode'
+                  : `Periode (${controller.complaintPeriodDays}h)`
+              }
+              onPress={controller.onTogglePeriodEditor}
+            />
             <KolamButton
               disabled={controller.loading}
               label="Refresh"
@@ -357,6 +401,36 @@ function KolamComplaintList({
           </View>
         </View>
       </View>
+
+      {controller.periodEditorOpen ? (
+        <View style={styles.periodCard}>
+          <Text style={styles.sectionTitle}>Atur periode keluhan</Text>
+          <Text style={styles.metaText}>
+            Default global jika produk/spesies tidak punya template T&C
+            dengan masa komplain. 0 = tanpa jendela komplain.
+          </Text>
+          <KolamFormTextField
+            mode="numeric"
+            onChangeText={controller.onChangePeriodDraft}
+            placeholder="Jumlah hari"
+            value={controller.periodDraft}
+          />
+          <View style={styles.photoActions}>
+            <KolamButton
+              label="Batal"
+              onPress={controller.onTogglePeriodEditor}
+            />
+            <KolamButton
+              disabled={controller.mutating}
+              intent="primary"
+              label={controller.mutating ? 'Menyimpan…' : 'Simpan periode'}
+              onPress={() => {
+                void controller.onSaveComplaintPeriodDays();
+              }}
+            />
+          </View>
+        </View>
+      ) : null}
 
       <KolamCatalogListTableShell
         footer={
@@ -2736,6 +2810,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+  },
+  periodCard: {
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    gap: 8,
+    marginHorizontal: 4,
+    padding: 12,
   },
   localPhotoItem: {
     gap: 4,
