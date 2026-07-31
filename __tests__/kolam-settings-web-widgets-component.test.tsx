@@ -965,6 +965,22 @@ describe('settings web widgets', () => {
     expect(dropdowns.some(node => node.props.label === 'Kecamatan')).toBe(true);
     expect(dropdowns.some(node => node.props.label === 'Kelurahan')).toBe(true);
     expect(
+      dropdowns
+        .filter(node =>
+          ['Provinsi', 'Kota/kabupaten', 'Kecamatan', 'Kelurahan'].includes(
+            node.props.label,
+          ),
+        )
+        .every(node => node.props.showLabelInTrigger === false),
+    ).toBe(true);
+    expect(
+      dropdowns.some(node =>
+        node.props.options.some(
+          (option: {label: string}) => option.label.includes('dulu'),
+        ),
+      ),
+    ).toBe(false);
+    expect(
       dropdowns.some(node =>
         node.props.options.some(
           (option: {label: string}) =>

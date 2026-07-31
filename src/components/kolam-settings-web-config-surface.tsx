@@ -1200,31 +1200,31 @@ export function KolamSettingsWebConfigSurface({
   const showSyncSettings = activeTabId === 'sync';
   const showKpiSettings = activeTabId === 'kpi';
   const provinceDropdownOptions = React.useMemo(
-    () => createRegionDropdownOptions('Pilih provinsi', regionProvinceRows),
+    () => createRegionDropdownOptions('Provinsi', regionProvinceRows),
     [regionProvinceRows],
   );
   const regencyDropdownOptions = React.useMemo(
     () =>
       selectedProvince
         ? createRegionDropdownOptions(
-            'Pilih kota / kabupaten',
+            'Kota/kabupaten',
             regionRegencyRows,
           )
-        : [{label: 'Pilih provinsi dulu', value: ''}],
+        : [{label: 'Kota/kabupaten', value: ''}],
     [regionRegencyRows, selectedProvince],
   );
   const districtDropdownOptions = React.useMemo(
     () =>
       selectedRegency
-        ? createRegionDropdownOptions('Pilih kecamatan', regionDistrictRows)
-        : [{label: 'Pilih kota / kabupaten dulu', value: ''}],
+        ? createRegionDropdownOptions('Kecamatan', regionDistrictRows)
+        : [{label: 'Kecamatan', value: ''}],
     [regionDistrictRows, selectedRegency],
   );
   const villageDropdownOptions = React.useMemo(
     () =>
       selectedDistrict
-        ? createRegionDropdownOptions('Pilih kelurahan', regionVillageRows)
-        : [{label: 'Pilih kecamatan dulu', value: ''}],
+        ? createRegionDropdownOptions('Kelurahan', regionVillageRows)
+        : [{label: 'Kelurahan', value: ''}],
     [regionVillageRows, selectedDistrict],
   );
   const regionLevelCards = React.useMemo(
@@ -4023,6 +4023,7 @@ export function KolamSettingsWebConfigSurface({
                 options={provinceDropdownOptions}
                 searchable
                 searchPlaceholder="Cari provinsi"
+                showLabelInTrigger={false}
                 style={styles.regionHierarchyControl}
                 value={selectedProvince}
                 onChange={value => setRegionSelection('province', value)}
@@ -4032,6 +4033,7 @@ export function KolamSettingsWebConfigSurface({
                 options={regencyDropdownOptions}
                 searchable={Boolean(selectedProvince)}
                 searchPlaceholder="Cari kota / kabupaten"
+                showLabelInTrigger={false}
                 style={styles.regionHierarchyControl}
                 value={selectedRegency}
                 onChange={value => {
@@ -4045,6 +4047,7 @@ export function KolamSettingsWebConfigSurface({
                 options={districtDropdownOptions}
                 searchable={Boolean(selectedRegency)}
                 searchPlaceholder="Cari kecamatan"
+                showLabelInTrigger={false}
                 style={styles.regionHierarchyControl}
                 value={selectedDistrict}
                 onChange={value => {
@@ -4058,6 +4061,7 @@ export function KolamSettingsWebConfigSurface({
                 options={villageDropdownOptions}
                 searchable={Boolean(selectedDistrict)}
                 searchPlaceholder="Cari kelurahan"
+                showLabelInTrigger={false}
                 style={styles.regionHierarchyControl}
                 value={selectedVillage}
                 onChange={value => {
