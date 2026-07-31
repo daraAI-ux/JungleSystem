@@ -309,6 +309,8 @@ export interface KolamLayananVoucherDetail {
   materialLines: KolamLayananVoucherMaterialLine[];
   subscriptionId: string | null;
   subscriptionNumber: string | null;
+  initiatedDosingId: string | null;
+  initiatedMaintenanceId: string | null;
   initiated: boolean;
   raw: unknown;
 }
@@ -342,6 +344,164 @@ export interface KolamLayananTermsContext {
   allAccepted: boolean;
   customerId: string | null;
   templates: KolamLayananTermsTemplate[];
+}
+
+export type KolamLayananVisitVerificationStatus =
+  | 'not_applicable'
+  | 'pending_supervisor'
+  | 'verified'
+  | 'rejected'
+  | string;
+
+export type KolamLayananRejectionDecision =
+  | 'rework'
+  | 'kompensasi'
+  | 'skip'
+  | 'lain';
+
+export interface KolamLayananTaskUserRef {
+  id: string;
+  displayName: string;
+}
+
+export interface KolamLayananExecutionDetail {
+  id: string;
+  status: string;
+  reviewStatus: string | null;
+  visitVerificationStatus: KolamLayananVisitVerificationStatus;
+  scheduledTime: string | null;
+  estimatedAt: string | null;
+  executionTime: string | null;
+  executionNotes: string;
+  notes: string;
+  progressStep: string | null;
+  packageTaskCode: string | null;
+  visitSource: string | null;
+  subscriptionId: string | null;
+  assignedToName: string | null;
+  executedByName: string | null;
+  supervisorVerifiedAt: string | null;
+  supervisorVerifiedByName: string | null;
+  customerVerifiedAt: string | null;
+  customerVerificationConfirmed: boolean | null;
+  customerVerificationNote: string;
+  rejectionReason: string;
+  rejectionDecision: string | null;
+  checkInAt: string | null;
+}
+
+export interface KolamLayananTaskDetail {
+  id: string;
+  taskType: 'dosing' | 'maintenance';
+  name: string;
+  executions: KolamLayananExecutionDetail[];
+}
+
+export const KOLAM_LAYANAN_EXECUTION_STATUS_LABEL: Record<string, string> = {
+  pending: 'Menunggu',
+  now: 'Sekarang',
+  completed: 'Selesai',
+  skipped: 'Dilewati',
+  missed: 'Terlewat',
+};
+
+export const KOLAM_LAYANAN_REVIEW_STATUS_LABEL: Record<string, string> = {
+  accepted: 'Diterima',
+  rejected: 'Ditolak',
+  pending_review: 'Menunggu tinjauan',
+};
+
+export const KOLAM_LAYANAN_VISIT_VERIFICATION_LABEL: Record<string, string> = {
+  not_applicable: '—',
+  pending_supervisor: 'Menunggu supervisor',
+  verified: 'Terverifikasi (supervisor)',
+  rejected: 'Ditolak supervisor',
+};
+
+export const KOLAM_LAYANAN_REJECTION_DECISION_OPTIONS: Array<{
+  id: KolamLayananRejectionDecision;
+  label: string;
+}> = [
+  { id: 'rework', label: 'Perbaikan ulang' },
+  { id: 'kompensasi', label: 'Kompensasi' },
+  { id: 'skip', label: 'Lewati' },
+  { id: 'lain', label: 'Lainnya' },
+];
+
+export const KOLAM_LAYANAN_PROGRESS_STEP_LABEL: Record<string, string> = {
+  en_route: 'Tim dalam perjalanan',
+  arrived: 'Tiba di lokasi',
+  in_progress: 'Sedang dikerjakan',
+  completed: 'Selesai',
+  skipped: 'Dilewati',
+};
+
+export function getKolamLayananExecutionStatusLabel(status?: string | null) {
+  if (!status) {
+    return '—';
+  }
+  return KOLAM_LAYANAN_EXECUTION_STATUS_LABEL[status] || status;
+}
+
+export function getKolamLayananReviewStatusLabel(status?: string | null) {
+  if (!status) {
+    return '—';
+  }
+  return KOLAM_LAYANAN_REVIEW_STATUS_LABEL[status] || status;
+}
+
+export function getKolamLayananVisitVerificationLabel(status?: string | null) {
+  if (!status) {
+    return '—';
+  }
+  return KOLAM_LAYANAN_VISIT_VERIFICATION_LABEL[status] || status;
+}
+
+export function getKolamLayananProgressStepLabel(step?: string | null) {
+  if (!step) {
+    return null;
+  }
+  return KOLAM_LAYANAN_PROGRESS_STEP_LABEL[step] || step;
+}
+
+/** Mirror FE `requiresVisitVerification`. */
+export function requiresKolamLayananVisitVerification(
+  execution: Pick<
+    KolamLayananExecutionDetail,
+    'subscriptionId' | 'visitSource' | 'packageTaskCode'
+  >,
+) {
+  return Boolean(
+    execution.subscriptionId ||
+      execution.visitSource === 'subscription' ||
+      (execution.packageTaskCode && execution.packageTaskCode !== 'LEGACY'),
+  );
+}
+
+export function canKolamLayananSupervisorReview(
+  execution: KolamLayananExecutionDetail,
+) {
+  if (!requiresKolamLayananVisitVerification(execution)) {
+    return (
+      (execution.status === 'completed' || execution.status === 'skipped') &&
+      (!execution.reviewStatus || execution.reviewStatus === 'pending_review')
+    );
+  }
+  return (
+    execution.visitVerificationStatus === 'pending_supervisor' &&
+    (execution.status === 'completed' || execution.status === 'skipped')
+  );
+}
+
+/** Mirror FE `canRecordCustomerVerification`. */
+export function canKolamLayananRecordCustomerVerification(
+  execution: KolamLayananExecutionDetail,
+) {
+  return (
+    requiresKolamLayananVisitVerification(execution) &&
+    execution.visitVerificationStatus === 'verified' &&
+    !execution.customerVerifiedAt
+  );
 }
 
 export type KolamLayananSalePermissionAction = 'view' | 'create' | 'update' | 'delete';
@@ -774,6 +934,18 @@ export function getKolamLayananVoucherIdFromRoute(route: string): string | null 
   const path = normalizeKolamLayananPath(route);
   const match = path.match(/^\/layanan\/voucher\/([^/]+)$/);
   return match?.[1] ?? null;
+}
+
+export function getKolamLayananExecutionRouteIds(route: string): {
+  voucherId: string;
+  executionId: string;
+} | null {
+  const path = normalizeKolamLayananPath(route);
+  const match = path.match(/^\/layanan\/voucher\/([^/]+)\/execution\/([^/]+)$/);
+  if (!match?.[1] || !match?.[2]) {
+    return null;
+  }
+  return { voucherId: match[1], executionId: match[2] };
 }
 
 export function getKolamLayananTaskTypeLabel(taskType?: string | null) {
@@ -1469,6 +1641,8 @@ export function normalizeKolamLayananVoucherDetail(
       (typeof record.subscription === 'string' ? record.subscription : '') ||
       null,
     subscriptionNumber: getString(subscription, 'subscriptionNumber') || null,
+    initiatedDosingId: getIdFromMaybeRef(record.initiatedDosingId),
+    initiatedMaintenanceId: getIdFromMaybeRef(record.initiatedMaintenanceId),
     initiated: getString(record, 'status') === 'initiated',
     raw: payload,
   };
@@ -1529,6 +1703,123 @@ export function normalizeKolamLayananTermsContext(
       };
     }),
   };
+}
+
+function normalizeTaskUserName(value: unknown): string | null {
+  if (!value) {
+    return null;
+  }
+  if (typeof value === 'string') {
+    return value.trim() || null;
+  }
+  const record = asRecord(value);
+  const display = getString(record, 'displayName');
+  if (display) {
+    return display;
+  }
+  const name = [getString(record, 'first_name'), getString(record, 'last_name')]
+    .filter(Boolean)
+    .join(' ')
+    .trim();
+  if (name) {
+    return name;
+  }
+  return getString(record, 'username') || getString(record, 'name') || null;
+}
+
+function getIdFromMaybeRef(value: unknown): string | null {
+  if (typeof value === 'string' && value.trim()) {
+    return value.trim();
+  }
+  const record = asRecord(value);
+  return getString(record, '_id') || getString(record, 'id') || null;
+}
+
+export function normalizeKolamLayananExecutionDetail(
+  payload: unknown,
+): KolamLayananExecutionDetail {
+  const record = asRecord(payload);
+  const id =
+    getString(record, '_id') ||
+    getString(record, 'id') ||
+    (record._id &&
+    typeof record._id === 'object' &&
+    '$oid' in (record._id as object)
+      ? String((record._id as { $oid: string }).$oid)
+      : '');
+
+  return {
+    id,
+    status: getString(record, 'status') || 'pending',
+    reviewStatus: getString(record, 'reviewStatus') || null,
+    visitVerificationStatus:
+      getString(record, 'visitVerificationStatus') || 'not_applicable',
+    scheduledTime:
+      getString(record, 'scheduled_time') ||
+      getString(record, 'scheduledTime') ||
+      null,
+    estimatedAt: getString(record, 'estimatedAt') || null,
+    executionTime:
+      getString(record, 'execution_time') ||
+      getString(record, 'executionTime') ||
+      null,
+    executionNotes: getString(record, 'executionNotes'),
+    notes: getString(record, 'notes'),
+    progressStep: getString(record, 'progressStep') || null,
+    packageTaskCode: getString(record, 'packageTaskCode') || null,
+    visitSource: getString(record, 'visitSource') || null,
+    subscriptionId: getIdFromMaybeRef(record.subscription),
+    assignedToName: normalizeTaskUserName(record.assignedTo),
+    executedByName: normalizeTaskUserName(record.executed_by ?? record.executedBy),
+    supervisorVerifiedAt: getString(record, 'supervisorVerifiedAt') || null,
+    supervisorVerifiedByName: normalizeTaskUserName(
+      record.supervisorVerifiedBy,
+    ),
+    customerVerifiedAt: getString(record, 'customerVerifiedAt') || null,
+    customerVerificationConfirmed: getBoolean(
+      record,
+      'customerVerificationConfirmed',
+    ),
+    customerVerificationNote: getString(record, 'customerVerificationNote'),
+    rejectionReason: getString(record, 'rejectionReason'),
+    rejectionDecision: getString(record, 'rejectionDecision') || null,
+    checkInAt: getString(record, 'checkInAt') || null,
+  };
+}
+
+export function normalizeKolamLayananTaskDetail(
+  payload: unknown,
+  taskType: 'dosing' | 'maintenance',
+): KolamLayananTaskDetail {
+  const record = asRecord(unwrapData(payload));
+  const executionsRaw = Array.isArray(record.executions)
+    ? record.executions
+    : [];
+  return {
+    id: getString(record, '_id') || getString(record, 'id'),
+    taskType,
+    name:
+      getString(record, 'name') ||
+      getString(record, 'title') ||
+      (taskType === 'dosing' ? 'Tugas dosing' : 'Tugas pemeliharaan'),
+    executions: executionsRaw
+      .map(normalizeKolamLayananExecutionDetail)
+      .filter(item => Boolean(item.id)),
+  };
+}
+
+export function findKolamLayananExecutionInTask(
+  task: KolamLayananTaskDetail | null | undefined,
+  executionId: string,
+): KolamLayananExecutionDetail | null {
+  if (!task || !executionId) {
+    return null;
+  }
+  return (
+    task.executions.find(
+      item => item.id === executionId || item.id.endsWith(executionId),
+    ) ?? null
+  );
 }
 
 function unwrapData(payload: unknown): unknown {

@@ -10,14 +10,20 @@ import {
   getKolamLayananSubscriptionStatusLabel,
   getKolamLayananTaskTypeLabel,
   getKolamLayananVoucherIdFromRoute,
+  getKolamLayananExecutionRouteIds,
+  canKolamLayananRecordCustomerVerification,
+  canKolamLayananSupervisorReview,
+  findKolamLayananExecutionInTask,
   hasKolamSalePermission,
   isKolamLayananNativeRoute,
   kolamLayananVisitSlotsReadyForPropose,
+  normalizeKolamLayananExecutionDetail,
   normalizeKolamLayananOpsDashboard,
   normalizeKolamLayananPendingList,
   normalizeKolamLayananScheduleRequirements,
   normalizeKolamLayananServiceList,
   normalizeKolamLayananSubscriptionList,
+  normalizeKolamLayananTaskDetail,
   normalizeKolamLayananTermsContext,
   normalizeKolamLayananVoucherDetail,
   validateKolamLayananMaterialLines,
@@ -60,6 +66,9 @@ describe('kolam-layanan domain', () => {
     expect(getKolamLayananServiceIdFromRoute('/layanan/create')).toBe(null);
     expect(getKolamLayananVoucherIdFromRoute('/layanan/voucher/v1')).toBe('v1');
     expect(getKolamLayananVoucherIdFromRoute('/layanan/abc')).toBe(null);
+    expect(
+      getKolamLayananExecutionRouteIds('/layanan/voucher/v1/execution/e1'),
+    ).toEqual({ voucherId: 'v1', executionId: 'e1' });
   });
 
   it('normalizes service list payload with sibling pagination', () => {
@@ -323,6 +332,53 @@ describe('kolam-layanan domain', () => {
       },
     ]);
     expect(payload[0].product).toBeNull();
+  });
+
+  it('normalizes execution detail and visit confirm gates', () => {
+    const task = normalizeKolamLayananTaskDetail(
+      {
+        data: {
+          _id: 'task1',
+          name: 'Dosing langganan',
+          executions: [
+            {
+              _id: 'ex1',
+              status: 'completed',
+              visitVerificationStatus: 'pending_supervisor',
+              subscription: 'sub1',
+              packageTaskCode: 'PT-01',
+              scheduled_time: '2026-07-31T09:00:00.000Z',
+              assignedTo: { first_name: 'Budi', last_name: 'S' },
+            },
+            {
+              _id: 'ex2',
+              status: 'completed',
+              visitVerificationStatus: 'verified',
+              subscription: 'sub1',
+              packageTaskCode: 'PT-01',
+              customerVerifiedAt: null,
+            },
+          ],
+        },
+      },
+      'dosing',
+    );
+    expect(task.executions).toHaveLength(2);
+    const pending = findKolamLayananExecutionInTask(task, 'ex1');
+    expect(pending?.assignedToName).toBe('Budi S');
+    expect(canKolamLayananSupervisorReview(pending!)).toBe(true);
+    expect(canKolamLayananRecordCustomerVerification(pending!)).toBe(false);
+
+    const verified = findKolamLayananExecutionInTask(task, 'ex2');
+    expect(canKolamLayananSupervisorReview(verified!)).toBe(false);
+    expect(canKolamLayananRecordCustomerVerification(verified!)).toBe(true);
+
+    const bare = normalizeKolamLayananExecutionDetail({
+      _id: 'ex3',
+      status: 'completed',
+      reviewStatus: 'pending_review',
+    });
+    expect(canKolamLayananSupervisorReview(bare)).toBe(true);
   });
 });
 

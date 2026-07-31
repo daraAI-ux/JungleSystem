@@ -7,10 +7,12 @@ import {
   normalizeKolamLayananServiceList,
   normalizeKolamLayananSubscriptionList,
   normalizeKolamLayananTermsContext,
+  normalizeKolamLayananTaskDetail,
   normalizeKolamLayananVoucherDetail,
   type KolamLayananOpsDashboard,
   type KolamLayananPendingListQuery,
   type KolamLayananPendingListResult,
+  type KolamLayananRejectionDecision,
   type KolamLayananScheduleRequirements,
   type KolamLayananService,
   type KolamLayananServiceListQuery,
@@ -18,6 +20,7 @@ import {
   type KolamLayananServiceSavePayload,
   type KolamLayananSubscriptionListQuery,
   type KolamLayananSubscriptionListResult,
+  type KolamLayananTaskDetail,
   type KolamLayananTermsContext,
   type KolamLayananVisitSlot,
   type KolamLayananVoucherDetail,
@@ -267,6 +270,64 @@ export async function fulfillKolamLayananVoucherAddonStock(
     message:
       typeof record.message === 'string' ? record.message : 'Stok HPP diproses',
   };
+}
+
+function taskBasePath(taskType: 'dosing' | 'maintenance') {
+  return taskType === 'dosing' ? '/dosing' : '/maintance-schedule';
+}
+
+export async function getKolamLayananTaskDetail(
+  taskType: 'dosing' | 'maintenance',
+  taskId: string,
+): Promise<KolamLayananTaskDetail> {
+  const payload = await kolamRequest<unknown>(
+    `${taskBasePath(taskType)}/${encodeURIComponent(taskId)}`,
+  );
+  return normalizeKolamLayananTaskDetail(payload, taskType);
+}
+
+export async function setKolamLayananExecutionReview(params: {
+  taskType: 'dosing' | 'maintenance';
+  taskId: string;
+  executionId: string;
+  reviewStatus: 'accepted' | 'rejected';
+  rejectionReason?: string;
+  rejectionDecision?: KolamLayananRejectionDecision;
+}): Promise<void> {
+  await kolamRequest<unknown>(
+    `${taskBasePath(params.taskType)}/${encodeURIComponent(params.taskId)}/executions/${encodeURIComponent(params.executionId)}/review`,
+    {
+      method: 'PUT',
+      body: {
+        reviewStatus: params.reviewStatus,
+        ...(params.rejectionReason
+          ? { rejectionReason: params.rejectionReason }
+          : {}),
+        ...(params.rejectionDecision
+          ? { rejectionDecision: params.rejectionDecision }
+          : {}),
+      },
+    },
+  );
+}
+
+export async function setKolamLayananCustomerVerification(params: {
+  taskType: 'dosing' | 'maintenance';
+  taskId: string;
+  executionId: string;
+  confirmed?: boolean;
+  note?: string;
+}): Promise<void> {
+  await kolamRequest<unknown>(
+    `${taskBasePath(params.taskType)}/${encodeURIComponent(params.taskId)}/executions/${encodeURIComponent(params.executionId)}/customer-verification`,
+    {
+      method: 'PUT',
+      body: {
+        confirmed: params.confirmed !== false,
+        note: params.note ?? '',
+      },
+    },
+  );
 }
 
 function kolamRequest<T>(

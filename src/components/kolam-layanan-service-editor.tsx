@@ -81,7 +81,6 @@ export function KolamLayananServiceEditor({
 }) {
   if (
     controller.mode === 'langganan' ||
-    controller.mode === 'execution' ||
     controller.mode === 'unsupported'
   ) {
     return (

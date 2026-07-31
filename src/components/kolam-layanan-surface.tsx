@@ -45,6 +45,7 @@ import {
   KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
+import { KolamLayananExecutionDetail } from './kolam-layanan-execution-detail';
 import { KolamLayananServiceEditor } from './kolam-layanan-service-editor';
 import { KolamLayananVoucherDetail } from './kolam-layanan-voucher-detail';
 import { KolamSearchField } from './kolam-search-field';
@@ -112,6 +113,15 @@ export function KolamLayananSurface({
   if (controller.mode === 'voucher') {
     return (
       <KolamLayananVoucherDetail
+        onRouteChange={onRouteChange}
+        route={route}
+      />
+    );
+  }
+
+  if (controller.mode === 'execution') {
+    return (
+      <KolamLayananExecutionDetail
         onRouteChange={onRouteChange}
         route={route}
       />
