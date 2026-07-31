@@ -882,6 +882,7 @@ describe('KolamAmSurface', () => {
           serverIp: '10.0.0.1:2700',
           boxCount: 1,
           deviceCount: 1,
+          addedBy: {_id: 'user-1', fullName: 'Hardware Admin'},
           createdAt: '',
           updatedAt: '',
         },
@@ -972,6 +973,7 @@ describe('KolamAmSurface', () => {
     renderers.push(renderer!);
 
     await updateAmRoute(renderer!, 'hardware');
+    expect(renderText(renderer!).join(' ').replace(/\s+/g, ' ')).toContain('Added By Hardware Admin');
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Rack Rack Alpha'}).props.onPress();
     });

@@ -1976,6 +1976,7 @@ function AmHardwareRackGrid({
               <Text style={styles.rowMeta}>Device {rack.deviceCount ?? countDevicesForRack(devices, rack)}</Text>
             </View>
             {rack.serverIp ? <Text style={styles.monoText}>{rack.serverIp}</Text> : null}
+            <Text style={styles.rowMeta}>Added By {formatRackAddedBy(rack)}</Text>
             <AmStatusChip label={rack.status} tone={rack.status === 'active' ? 'success' : 'muted'} />
             <View style={styles.inlineActions}>
               <KolamButton
@@ -4295,6 +4296,11 @@ function countBoxesForRack(boxes: AmBox[], rack: AmRack) {
 
 function countDevicesForRack(devices: AmDevice[], rack: AmRack) {
   return devices.filter(device => isDeviceInRack(device, rack)).length;
+}
+
+function formatRackAddedBy(rack: AmRack) {
+  if (!rack.addedBy) return '-';
+  return typeof rack.addedBy === 'object' ? rack.addedBy.fullName : rack.addedBy;
 }
 
 function isBoxInRack(box: AmBox, rack: AmRack) {
