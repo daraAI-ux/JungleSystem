@@ -2096,7 +2096,7 @@ describe('KolamAmSurface', () => {
         boxId: {
           _id: 'box-1',
           name: 'Box A',
-          rackId: {_id: 'rack-1', name: 'Rack Blue'},
+          rackId: {_id: 'rack-1', name: 'Rack Blue', serverIp: '10.10.10.5'},
         },
       },
       error: '',
@@ -2179,6 +2179,7 @@ describe('KolamAmSurface', () => {
     expect(joinedText).toContain('Transaction Purpose Payment');
     expect(joinedText).toContain('Created By Admin User');
     expect(joinedText).toContain('Box / Rack Box A / Rack Blue');
+    expect(joinedText).toContain('Server IP 10.10.10.5');
     expect(joinedText).toContain('Webhook Delivery Logs');
     expect(joinedText).toContain('Inventory hook');
     expect(joinedText).not.toContain('Other hook');

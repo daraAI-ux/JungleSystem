@@ -3020,6 +3020,10 @@ function AmTransferDetailPanel({
               <Text style={[styles.tableHeaderText, styles.accountCol]}>Box / Rack</Text>
               <Text style={[styles.cellText, styles.recipientCol]}>{formatDeviceLocation(transfer.deviceId)}</Text>
             </View>
+            <View style={styles.detailListRow}>
+              <Text style={[styles.tableHeaderText, styles.accountCol]}>Server IP</Text>
+              <Text style={[styles.cellText, styles.recipientCol]}>{formatTransferServerIp(transfer.deviceId)}</Text>
+            </View>
             {transfer.transferMethod ? (
               <View style={styles.detailListRow}>
                 <Text style={[styles.tableHeaderText, styles.accountCol]}>Transfer Method</Text>
@@ -4704,6 +4708,15 @@ function formatDeviceLocation(device: AmTransfer['deviceId'] | AmMutasi['deviceI
   const rack = box.rackId;
   const rackName = rack && typeof rack === 'object' ? rack.name : null;
   return rackName ? `${box.name} / ${rackName}` : box.name;
+}
+
+function formatTransferServerIp(device: AmTransfer['deviceId']) {
+  if (!device || typeof device === 'string') return '-';
+  const box = device.boxId;
+  if (!box || typeof box === 'string') return '-';
+  const rack = box.rackId;
+  if (!rack || typeof rack !== 'object') return '-';
+  return rack.serverIp || '-';
 }
 
 function formatTransferCreatedBy(createdBy: AmTransfer['createdBy']) {

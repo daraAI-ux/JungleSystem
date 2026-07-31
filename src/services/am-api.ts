@@ -176,6 +176,7 @@ export interface AmRackPayload {
 export interface AmRackRef {
   _id: string;
   name: string;
+  serverIp?: string | null;
 }
 
 export interface AmBoxRef {
