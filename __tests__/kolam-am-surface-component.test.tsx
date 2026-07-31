@@ -1,10 +1,12 @@
 import React from 'react';
-import {Text} from 'react-native';
+import {Text, TextInput} from 'react-native';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 import {KolamAmSurface} from '../src/components/kolam-am-surface';
 import {
   cancelAmTransfer,
   clearAmServiceAccountSession,
+  createAmWebhookConfig,
+  deleteAmWebhookConfig,
   getAmActivityLogs,
   getAmDeviceServiceLogs,
   getAmDevices,
@@ -14,6 +16,8 @@ import {
   getAmTransfers,
   getAmUsers,
   getAmWebhookConfigs,
+  testAmWebhookPing,
+  updateAmWebhookConfig,
   startAmDeviceService,
 } from '../src/services/am-api';
 import {seedUnifiedDataset} from '../src/services/unified-data';
@@ -21,6 +25,8 @@ import {seedUnifiedDataset} from '../src/services/unified-data';
 jest.mock('../src/services/am-api', () => ({
   cancelAmTransfer: jest.fn(() => Promise.resolve({_id: 'transfer-1'})),
   clearAmServiceAccountSession: jest.fn(() => Promise.resolve({stopped: true, deleted: ['session.json'], missing: []})),
+  createAmWebhookConfig: jest.fn(() => Promise.resolve({_id: 'webhook-1'})),
+  deleteAmWebhookConfig: jest.fn(() => Promise.resolve({success: true})),
   forceFailAmTransfer: jest.fn(() => Promise.resolve({_id: 'transfer-1'})),
   getAmActivityLogs: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
   getAmActivityLogStats: jest.fn(() => Promise.resolve({since: '', days: 7, byType: [], byStatus: [], topUsers: [], topPaths: []})),
@@ -35,10 +41,13 @@ jest.mock('../src/services/am-api', () => ({
   getAmTransfers: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
   getAmUsers: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
   getAmWebhookConfigs: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
+  getAmWebhookEvents: jest.fn(() => Promise.resolve(['transfer.success', 'mutasi.created'])),
   getAmWebhookLogs: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
   retryAmTransfer: jest.fn(() => Promise.resolve({_id: 'transfer-1'})),
   startAmDeviceService: jest.fn(() => Promise.resolve({success: true})),
   stopAmDeviceService: jest.fn(() => Promise.resolve({success: true})),
+  testAmWebhookPing: jest.fn(() => Promise.resolve({success: true})),
+  updateAmWebhookConfig: jest.fn(() => Promise.resolve({_id: 'webhook-1'})),
 }));
 
 function renderText(renderer: ReactTestRenderer.ReactTestRenderer) {
@@ -427,5 +436,67 @@ describe('KolamAmSurface', () => {
 
     expect(cancelAmTransfer).toHaveBeenCalledWith('transfer-1');
     expect(getAmTransfers).toHaveBeenCalledTimes(2);
+  });
+
+  it('runs webhook register, toggle, delete, and test ping actions', async () => {
+    jest.mocked(getAmWebhookConfigs).mockResolvedValue({
+      data: [
+        {
+          _id: 'webhook-1',
+          url: 'https://example.test/webhook',
+          events: ['transfer.success'],
+          status: 'active',
+          description: 'Existing hook',
+          lastDeliveredAt: null,
+          failCount: 0,
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 1, limit: 1},
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Webhooks'}).props.onPress();
+    });
+
+    const inputs = renderer!.root.findAllByType(TextInput);
+    await act(async () => {
+      inputs[0].props.onChangeText('https://new.example.test/webhook');
+      inputs[1].props.onChangeText('secret');
+      inputs[2].props.onChangeText('New hook');
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Webhook Save'}).props.onPress();
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Webhook Toggle webhook-1'}).props.onPress();
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Webhook Delete webhook-1'}).props.onPress();
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'Test Ping'}).props.onPress();
+    });
+
+    expect(createAmWebhookConfig).toHaveBeenCalledWith({
+      url: 'https://new.example.test/webhook',
+      events: ['transfer.success', 'mutasi.created'],
+      description: 'New hook',
+      secret: 'secret',
+    });
+    expect(updateAmWebhookConfig).toHaveBeenCalledWith('webhook-1', {
+      status: 'inactive',
+    });
+    expect(deleteAmWebhookConfig).toHaveBeenCalledWith('webhook-1');
+    expect(testAmWebhookPing).toHaveBeenCalledTimes(1);
   });
 });

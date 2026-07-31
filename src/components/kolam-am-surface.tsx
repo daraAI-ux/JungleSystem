@@ -1,5 +1,5 @@
 import React from 'react';
-import {ScrollView, StyleSheet, Text, View} from 'react-native';
+import {ScrollView, StyleSheet, Text, TextInput, View} from 'react-native';
 import {appConfig} from '../config/app';
 import type {UnifiedSurface} from '../domain/unified';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
@@ -7,6 +7,8 @@ import {formatRupiah} from '../lib/money';
 import {
   cancelAmTransfer,
   clearAmServiceAccountSession,
+  createAmWebhookConfig,
+  deleteAmWebhookConfig,
   forceFailAmTransfer,
   getAmBoxes,
   getAmDevices,
@@ -21,10 +23,13 @@ import {
   getAmTransfers,
   getAmUsers,
   getAmWebhookConfigs,
+  getAmWebhookEvents,
   getAmWebhookLogs,
   retryAmTransfer,
   startAmDeviceService,
   stopAmDeviceService,
+  testAmWebhookPing,
+  updateAmWebhookConfig,
   type AmActivityLog,
   type AmActivityLogStats,
   type AmBox,
@@ -1227,21 +1232,58 @@ function AmTransferActions({
   );
 }
 
+function AmTextInput({
+  label,
+  onChangeText,
+  placeholder,
+  value,
+}: {
+  label: string;
+  onChangeText: (value: string) => void;
+  placeholder: string;
+  value: string;
+}) {
+  return (
+    <View style={styles.formField}>
+      <Text style={styles.formLabel}>{label}</Text>
+      <TextInput
+        placeholder={placeholder}
+        placeholderTextColor={V.colors.mutedFg}
+        style={styles.formInput}
+        value={value}
+        onChangeText={onChangeText}
+      />
+    </View>
+  );
+}
+
 function AmWebhooksPage() {
   const [configs, setConfigs] = React.useState<AmWebhookConfig[]>([]);
   const [logs, setLogs] = React.useState<AmWebhookLog[]>([]);
+  const [events, setEvents] = React.useState<string[]>([]);
+  const [editingConfigId, setEditingConfigId] = React.useState<string | null>(null);
+  const [formUrl, setFormUrl] = React.useState('');
+  const [formSecret, setFormSecret] = React.useState('');
+  const [formDescription, setFormDescription] = React.useState('');
+  const [selectedEvents, setSelectedEvents] = React.useState<string[]>([]);
+  const [actingConfigId, setActingConfigId] = React.useState<string | null>(null);
+  const [actionMessage, setActionMessage] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
   const fetchWebhooks = React.useCallback(async () => {
     try {
       setIsLoading(true);
-      const [configResponse, logResponse] = await Promise.all([
+      const [configResponse, logResponse, eventResponse] = await Promise.all([
         getAmWebhookConfigs(),
         getAmWebhookLogs({limit: 20}),
+        getAmWebhookEvents(),
       ]);
       setConfigs(configResponse.data);
       setLogs(logResponse.data);
+      setEvents(eventResponse);
+      setSelectedEvents(current => current.length ? current : eventResponse);
       setError(null);
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : 'Gagal memuat webhooks AM live.');
@@ -1254,14 +1296,156 @@ function AmWebhooksPage() {
     fetchWebhooks();
   }, [fetchWebhooks]);
 
+  React.useEffect(() => {
+    const interval = setInterval(fetchWebhooks, 10_000);
+    return () => clearInterval(interval);
+  }, [fetchWebhooks]);
+
+  const resetWebhookForm = React.useCallback(() => {
+    setEditingConfigId(null);
+    setFormUrl('');
+    setFormSecret('');
+    setFormDescription('');
+    setSelectedEvents(events);
+  }, [events]);
+
+  const editWebhook = React.useCallback((config: AmWebhookConfig) => {
+    setEditingConfigId(config._id);
+    setFormUrl(config.url);
+    setFormSecret('');
+    setFormDescription(config.description);
+    setSelectedEvents(config.events);
+    setActionMessage(null);
+  }, []);
+
+  const saveWebhook = React.useCallback(async () => {
+    const url = formUrl.trim();
+    if (!url || selectedEvents.length === 0) {
+      setError('URL dan minimal satu event wajib diisi.');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      setActionMessage(null);
+      const payload = {
+        url,
+        events: selectedEvents,
+        description: formDescription.trim(),
+        ...(formSecret.trim() ? {secret: formSecret.trim()} : {}),
+      };
+      if (editingConfigId) {
+        await updateAmWebhookConfig(editingConfigId, payload);
+        setActionMessage('Webhook updated.');
+      } else {
+        await createAmWebhookConfig(payload);
+        setActionMessage('Webhook registered.');
+      }
+      resetWebhookForm();
+      await fetchWebhooks();
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Gagal menyimpan webhook.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [editingConfigId, fetchWebhooks, formDescription, formSecret, formUrl, resetWebhookForm, selectedEvents]);
+
+  const toggleWebhookEvent = React.useCallback((event: string) => {
+    setSelectedEvents(current =>
+      current.includes(event)
+        ? current.filter(item => item !== event)
+        : [...current, event],
+    );
+  }, []);
+
+  const toggleWebhookStatus = React.useCallback(async (config: AmWebhookConfig) => {
+    try {
+      setActingConfigId(config._id);
+      setActionMessage(null);
+      await updateAmWebhookConfig(config._id, {
+        status: config.status === 'active' ? 'inactive' : 'active',
+      });
+      setActionMessage(config.status === 'active' ? 'Webhook deactivated.' : 'Webhook activated.');
+      await fetchWebhooks();
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Gagal mengubah status webhook.');
+    } finally {
+      setActingConfigId(null);
+    }
+  }, [fetchWebhooks]);
+
+  const deleteWebhook = React.useCallback(async (config: AmWebhookConfig) => {
+    try {
+      setActingConfigId(config._id);
+      setActionMessage(null);
+      await deleteAmWebhookConfig(config._id);
+      setActionMessage('Webhook deleted.');
+      if (editingConfigId === config._id) resetWebhookForm();
+      await fetchWebhooks();
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Gagal menghapus webhook.');
+    } finally {
+      setActingConfigId(null);
+    }
+  }, [editingConfigId, fetchWebhooks, resetWebhookForm]);
+
+  const testPing = React.useCallback(async () => {
+    try {
+      setActionMessage(null);
+      await testAmWebhookPing();
+      setActionMessage('Test ping dispatched.');
+      await fetchWebhooks();
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Webhook test ping gagal.');
+    }
+  }, [fetchWebhooks]);
+
   return (
     <View style={styles.pageStack}>
       <View style={styles.filterBar}>
         <AmMetricCard label="Configs" value={String(configs.length)} meta={`${configs.filter(item => item.status === 'active').length} active`} />
         <AmMetricCard label="Recent Logs" value={String(logs.length)} meta={`${logs.filter(log => !log.success).length} failed`} />
         <KolamButton label={isLoading ? 'Memuat' : 'Refresh'} intent="outline" muted={isLoading} size="sm" onPress={fetchWebhooks} />
+        <KolamButton label="Test Ping" intent="outline" size="sm" onPress={testPing} />
       </View>
       <AmInlineError title="Webhooks AM belum bisa dibaca" error={error} />
+      {actionMessage ? (
+        <View style={styles.successPanel}>
+          <Text style={styles.successText}>{actionMessage}</Text>
+        </View>
+      ) : null}
+      <View style={styles.panel}>
+        <Text style={styles.panelTitle}>{editingConfigId ? 'Edit Webhook' : 'Register Webhook'}</Text>
+        <View style={styles.formGrid}>
+          <AmTextInput label="URL" placeholder="https://your-server.com/webhook" value={formUrl} onChangeText={setFormUrl} />
+          <AmTextInput label="Secret" placeholder={editingConfigId ? 'Kosongkan untuk secret lama' : 'Shared secret optional'} value={formSecret} onChangeText={setFormSecret} />
+          <AmTextInput label="Description" placeholder="e.g. DA Inventory Backend" value={formDescription} onChangeText={setFormDescription} />
+        </View>
+        <View style={styles.eventGrid}>
+          {events.map(event => (
+            <KolamInteractionFrame
+              key={event}
+              accessibilityLabel={`AM Webhook Event ${event}`}
+              onPress={() => toggleWebhookEvent(event)}
+              style={[styles.eventChip, selectedEvents.includes(event) && styles.eventChipSelected]}>
+              <Text style={[styles.segmentText, selectedEvents.includes(event) && styles.segmentTextActive]}>{event}</Text>
+            </KolamInteractionFrame>
+          ))}
+        </View>
+        <View style={styles.inlineActions}>
+          <KolamButton
+            accessibilityLabel="AM Webhook Save"
+            intent="warning"
+            label={isSubmitting ? 'Saving...' : editingConfigId ? 'Save Webhook' : 'Register Webhook'}
+            muted={isSubmitting}
+            size="sm"
+            onPress={saveWebhook}
+          />
+          {editingConfigId ? (
+            <KolamButton label="Cancel Edit" intent="outline" size="sm" onPress={resetWebhookForm} />
+          ) : null}
+        </View>
+      </View>
       <View style={styles.panel}>
         <Text style={styles.panelTitle}>Webhook Config</Text>
         <View style={styles.cardGrid}>
@@ -1271,6 +1455,25 @@ function AmWebhooksPage() {
               <Text style={styles.rowMeta} numberOfLines={2}>{config.url}</Text>
               <Text style={styles.rowMeta}>{config.events.length} events - {config.failCount} fail</Text>
               <AmStatusChip label={config.status} tone={config.status === 'active' ? 'success' : 'muted'} />
+              <View style={styles.inlineActions}>
+                <KolamButton accessibilityLabel={`AM Webhook Edit ${config._id}`} label="Edit" intent="outline" size="sm" onPress={() => editWebhook(config)} />
+                <KolamButton
+                  accessibilityLabel={`AM Webhook Toggle ${config._id}`}
+                  label={actingConfigId === config._id ? '...' : config.status === 'active' ? 'Deactivate' : 'Activate'}
+                  intent="warning"
+                  muted={actingConfigId === config._id}
+                  size="sm"
+                  onPress={() => toggleWebhookStatus(config)}
+                />
+                <KolamButton
+                  accessibilityLabel={`AM Webhook Delete ${config._id}`}
+                  label={actingConfigId === config._id ? '...' : 'Delete'}
+                  intent="danger"
+                  muted={actingConfigId === config._id}
+                  size="sm"
+                  onPress={() => deleteWebhook(config)}
+                />
+              </View>
             </View>
           ))}
         </View>
@@ -2109,6 +2312,46 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
+  },
+  formGrid: {
+    gap: 10,
+  },
+  formField: {
+    gap: 5,
+  },
+  formLabel: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  formInput: {
+    minHeight: 38,
+    borderWidth: 1,
+    borderColor: V.colors.input,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    backgroundColor: V.colors.bg,
+  },
+  eventGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  eventChip: {
+    borderWidth: 1,
+    borderColor: V.colors.border,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    backgroundColor: V.colors.bg,
+  },
+  eventChipSelected: {
+    borderColor: V.colors.primary,
+    backgroundColor: V.colors.primarySoft,
   },
   statusActionStack: {
     alignItems: 'flex-start',

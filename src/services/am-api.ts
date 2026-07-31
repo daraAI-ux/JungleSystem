@@ -449,6 +449,14 @@ export interface AmWebhookLogQuery extends Record<string, AmQueryValue> {
   limit?: number;
 }
 
+export interface AmWebhookConfigPayload {
+  url: string;
+  events: string[];
+  secret?: string;
+  description?: string;
+  status?: 'active' | 'inactive';
+}
+
 interface AmEnvelope<T> {
   success: boolean;
   message?: string;
@@ -639,6 +647,40 @@ export async function getAmWebhookConfigs(
   return getAmList<AmWebhookConfig>('/webhook/config', undefined, baseUrl);
 }
 
+export async function getAmWebhookEvents(
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<string[]> {
+  return amGet<string[]>('/webhook/events', undefined, baseUrl);
+}
+
+export async function createAmWebhookConfig(
+  payload: AmWebhookConfigPayload,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmWebhookConfig> {
+  return amPost<AmWebhookConfig>('/webhook/config', payload, baseUrl);
+}
+
+export async function updateAmWebhookConfig(
+  id: string,
+  payload: Partial<AmWebhookConfigPayload>,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmWebhookConfig> {
+  return amPut<AmWebhookConfig>(`/webhook/config/${id}`, payload, baseUrl);
+}
+
+export async function deleteAmWebhookConfig(
+  id: string,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<unknown> {
+  return amDelete(`/webhook/config/${id}`, baseUrl);
+}
+
+export async function testAmWebhookPing(
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<unknown> {
+  return amPost('/webhook/test-ping', undefined, baseUrl);
+}
+
 export async function getAmWebhookLogs(
   query?: AmWebhookLogQuery,
   baseUrl = appConfig.amApiBaseUrl,
@@ -700,6 +742,28 @@ async function amPost<T>(
 
   const response = await apiRequest<AmEnvelope<T> | T>({
     method: 'POST',
+    path,
+    body,
+    baseUrl,
+    sourceHeader: appConfig.amSourceHeader,
+    cookieJar: true,
+    credentials: 'include',
+  });
+
+  return unwrapAmResponse(response);
+}
+
+async function amPut<T>(
+  path: string,
+  body?: unknown,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<T> {
+  if (!baseUrl) {
+    throw new Error('URL server AM existing belum dikonfigurasi.');
+  }
+
+  const response = await apiRequest<AmEnvelope<T> | T>({
+    method: 'PUT',
     path,
     body,
     baseUrl,
