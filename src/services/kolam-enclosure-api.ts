@@ -8,7 +8,11 @@ import {
   normalizeKolamEnclosureList,
   normalizeKolamEnclosureComments,
   normalizeKolamEnclosurePendingAllocations,
+  normalizeKolamEnclosureRecurringEnrollments,
+  normalizeKolamEnclosureSpawnTaskResult,
   normalizeKolamEnclosureStatistics,
+  normalizeKolamEnclosureTaskTypes,
+  normalizeKolamEnclosureTasks,
   type KolamEnclosure,
   type KolamEnclosureAllocationOverview,
   type KolamEnclosureComment,
@@ -16,8 +20,12 @@ import {
   type KolamEnclosureListFilters,
   type KolamEnclosureListResult,
   type KolamEnclosurePendingAllocationResult,
+  type KolamEnclosureRecurringEnrollment,
+  type KolamEnclosureSpawnTaskResult,
   type KolamEnclosureStaffRef,
   type KolamEnclosureStatistics,
+  type KolamEnclosureTaskItem,
+  type KolamEnclosureTaskType,
   type KolamEnclosureType,
   type KolamEnclosureUnitRef,
 } from '../domain/kolam-enclosure';
@@ -27,6 +35,8 @@ type QueryValue = string | number | boolean | undefined | null;
 type DataResponse<T> = { data?: T };
 
 const BASE = '/enclosures';
+const TASK_MANAGER_BASE = '/task-manager';
+const ENCLOSURE_TASK_TYPES_BASE = '/enclosure-task-types';
 
 export interface KolamEnclosureSizeInput {
   high: { value: number; unit: string | KolamEnclosureUnitRef };
@@ -376,6 +386,69 @@ export async function getKolamEnclosureComments(
     `${BASE}/${encodeURIComponent(enclosureId)}/comments`,
   );
   return normalizeKolamEnclosureComments(response);
+}
+
+export async function getKolamEnclosureTasks(
+  enclosureId: string,
+): Promise<KolamEnclosureTaskItem[]> {
+  const response = await kolamRequest<unknown>(
+    `${TASK_MANAGER_BASE}/by-enclosure/${encodeURIComponent(enclosureId)}`,
+  );
+  return normalizeKolamEnclosureTasks(response);
+}
+
+export async function spawnKolamEnclosureTask(input: {
+  enclosureId: string;
+  title?: string;
+  description?: string;
+  taskTypeId?: string;
+}): Promise<KolamEnclosureSpawnTaskResult> {
+  const response = await kolamRequest<unknown>(
+    `${TASK_MANAGER_BASE}/spawn/enclosure/${encodeURIComponent(input.enclosureId)}`,
+    {
+      method: 'POST',
+      body: {
+        title: input.title?.trim() || undefined,
+        description: input.description?.trim() || undefined,
+        taskTypeId: input.taskTypeId?.trim() || undefined,
+      },
+    },
+  );
+  return normalizeKolamEnclosureSpawnTaskResult(response);
+}
+
+export async function getKolamEnclosureTaskTypes(options?: {
+  includeInactive?: boolean;
+}): Promise<KolamEnclosureTaskType[]> {
+  const response = await kolamRequest<unknown>(ENCLOSURE_TASK_TYPES_BASE, {
+    query: options?.includeInactive ? {includeInactive: 'true'} : undefined,
+  });
+  return normalizeKolamEnclosureTaskTypes(response);
+}
+
+export async function getKolamEnclosureRecurringEnrollments(
+  enclosureId: string,
+): Promise<KolamEnclosureRecurringEnrollment[]> {
+  const response = await kolamRequest<unknown>(
+    `${BASE}/${encodeURIComponent(enclosureId)}/recurring-enrollments`,
+  );
+  return normalizeKolamEnclosureRecurringEnrollments(response);
+}
+
+export async function setKolamEnclosureRecurringEnrollment(
+  enclosureId: string,
+  body: {taskTypeId: string; active: boolean},
+): Promise<void> {
+  await kolamRequest<unknown>(
+    `${BASE}/${encodeURIComponent(enclosureId)}/recurring-enrollments`,
+    {
+      method: 'PUT',
+      body: {
+        taskTypeId: body.taskTypeId,
+        active: body.active,
+      },
+    },
+  );
 }
 
 export async function createKolamEnclosureComment(

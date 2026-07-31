@@ -407,12 +407,11 @@ describe('Kolam enclosure surface', () => {
     await ReactTestRenderer.act(async () => {
       root.findAllByProps({label: 'Tasks'})[0].props.onPress();
     });
-    expect(root.findAllByProps({children: 'Tasks'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Task terkait'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Jadwal berulang'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Belum ada task.'}).length).toBeGreaterThan(0);
     expect(
-      root.findAllByProps({
-        children:
-          'Task dashboard enclosure membutuhkan endpoint dan domain controller tersendiri. Akan dilanjutkan pada batch berikutnya.',
-      }).length,
+      root.findAllByProps({children: 'Tidak ada tipe task enclosure.'}).length,
     ).toBeGreaterThan(0);
 
     await ReactTestRenderer.act(async () => {
@@ -654,6 +653,11 @@ function createController(
     enclosureStatistics: null,
     enclosureStatisticsError: null,
     enclosureStatisticsLoading: false,
+    enclosureTasks: [],
+    enclosureTasksLoading: false,
+    enclosureTaskTypes: [],
+    enclosureRecurringEnrollments: [],
+    enclosureRecurringLoading: false,
     error: null,
     filters: {
       enclosureType: 'all',
@@ -697,8 +701,11 @@ function createController(
     onRecordPopulationEvent: jest.fn().mockResolvedValue(undefined),
     onRefresh: jest.fn().mockResolvedValue(undefined),
     onRefreshComments: jest.fn().mockResolvedValue(undefined),
+    onRefreshTasks: jest.fn().mockResolvedValue(undefined),
     onReplyComment: jest.fn().mockResolvedValue(undefined),
     onSearchChange: jest.fn(),
+    onSetRecurringEnrollment: jest.fn().mockResolvedValue(undefined),
+    onSpawnTask: jest.fn().mockResolvedValue(undefined),
     onSwitchSpeciesVariant: jest.fn().mockResolvedValue(undefined),
     onTabChange: jest.fn(),
     onTransferSpecies: jest.fn().mockResolvedValue(undefined),

@@ -1,8 +1,11 @@
 import {
   createInitialEnclosureListFilters,
   createKolamEnclosureListQuery,
+  filterKolamEnclosureTaskTypesForCategoryBucket,
+  formatKolamEnclosureTaskStatusLabel,
   getKolamEnclosureRouteId,
   getKolamEnclosureSurfaceMode,
+  getKolamEnclosureTaskStatusIntent,
   groupKolamEnclosureAllocationRows,
   isKolamEnclosureNativeRoute,
   isKolamEnclosureRoute,
@@ -11,7 +14,11 @@ import {
   normalizeKolamEnclosureDetail,
   normalizeKolamEnclosureList,
   normalizeKolamEnclosurePendingAllocations,
+  normalizeKolamEnclosureRecurringEnrollments,
+  normalizeKolamEnclosureSpawnTaskResult,
   normalizeKolamEnclosureStatistics,
+  normalizeKolamEnclosureTaskTypes,
+  normalizeKolamEnclosureTasks,
   parseKolamEnclosureListTab,
 } from '../src/domain/kolam-enclosure';
 
@@ -340,5 +347,84 @@ describe('Kolam enclosure domain', () => {
       category: 'indukan_birth',
       quantity: 3,
     });
+  });
+
+  it('normalizes enclosure tasks, task types, enrollments, and spawn result', () => {
+    expect(
+      normalizeKolamEnclosureTasks({
+        data: [{_id: 'task-1', status: 'in_progress', title: 'Cek suhu'}],
+      }),
+    ).toEqual([
+      expect.objectContaining({
+        id: 'task-1',
+        status: 'in_progress',
+        title: 'Cek suhu',
+      }),
+    ]);
+
+    const types = normalizeKolamEnclosureTaskTypes({
+      data: [
+        {
+          _id: 'tt-crm',
+          categoryBuckets: ['crm'],
+          key: 'crm',
+          name: 'CRM',
+          sortOrder: 2,
+        },
+        {
+          _id: 'tt-enc',
+          categoryBuckets: ['enclosure'],
+          key: 'enc',
+          name: 'Enclosure',
+          sortOrder: 1,
+        },
+        {
+          _id: 'tt-all',
+          key: 'all',
+          name: 'Semua',
+          sortOrder: 0,
+        },
+      ],
+    });
+    expect(types.map(item => item.id)).toEqual(['tt-all', 'tt-enc', 'tt-crm']);
+    expect(
+      filterKolamEnclosureTaskTypesForCategoryBucket(types, 'enclosure').map(
+        item => item.id,
+      ),
+    ).toEqual(['tt-all', 'tt-enc']);
+
+    expect(
+      normalizeKolamEnclosureRecurringEnrollments({
+        data: {
+          enrollments: [
+            {
+              active: true,
+              enrollmentId: 'enr-1',
+              taskType: {_id: 'tt-enc', name: 'Enclosure'},
+            },
+          ],
+        },
+      }),
+    ).toEqual([
+      expect.objectContaining({
+        active: true,
+        enrollmentId: 'enr-1',
+        taskType: expect.objectContaining({id: 'tt-enc', name: 'Enclosure'}),
+      }),
+    ]);
+
+    expect(
+      normalizeKolamEnclosureSpawnTaskResult({
+        created: true,
+        data: {_id: 'task-2', status: 'todo', title: 'Baru'},
+      }),
+    ).toEqual({
+      created: true,
+      task: expect.objectContaining({id: 'task-2', title: 'Baru'}),
+    });
+    expect(getKolamEnclosureTaskStatusIntent('needs_review')).toBe('warning');
+    expect(formatKolamEnclosureTaskStatusLabel('in_progress')).toBe(
+      'in progress',
+    );
   });
 });

@@ -350,6 +350,51 @@ export interface KolamEnclosureComment {
   raw: unknown;
 }
 
+export type KolamEnclosureTaskStatus =
+  | 'todo'
+  | 'in_progress'
+  | 'needs_review'
+  | 'done'
+  | 'cancelled';
+
+export type KolamEnclosureTaskCategoryBucket =
+  | 'enclosure'
+  | 'project'
+  | 'crm'
+  | 'production';
+
+export interface KolamEnclosureTaskType {
+  id: string;
+  key: string;
+  name: string;
+  description: string;
+  handler: string;
+  requiresProductComponents: boolean;
+  active: boolean;
+  sortOrder: number;
+  isSystem: boolean;
+  categoryBuckets: KolamEnclosureTaskCategoryBucket[];
+  raw: unknown;
+}
+
+export interface KolamEnclosureTaskItem {
+  id: string;
+  title: string;
+  status: KolamEnclosureTaskStatus | string;
+  raw: unknown;
+}
+
+export interface KolamEnclosureRecurringEnrollment {
+  taskType: KolamEnclosureTaskType;
+  active: boolean;
+  enrollmentId: string;
+}
+
+export interface KolamEnclosureSpawnTaskResult {
+  task: KolamEnclosureTaskItem | null;
+  created: boolean;
+}
+
 export interface KolamEnclosurePendingAllocation {
   id: string;
   speciesId: string;
@@ -694,6 +739,113 @@ export function normalizeKolamEnclosureComments(
   return rows.map(normalizeKolamEnclosureComment).filter(item => item.id);
 }
 
+export function normalizeKolamEnclosureTaskTypes(
+  payload: unknown,
+): KolamEnclosureTaskType[] {
+  const unwrapped = unwrapData(payload);
+  const rows = Array.isArray(unwrapped)
+    ? unwrapped
+    : Array.isArray(asRecord(unwrapped).data)
+      ? (asRecord(unwrapped).data as unknown[])
+      : Array.isArray(asRecord(payload).data)
+        ? (asRecord(payload).data as unknown[])
+        : [];
+  return rows
+    .map(normalizeKolamEnclosureTaskType)
+    .filter(item => item.id)
+    .sort((left, right) => {
+      if (left.sortOrder !== right.sortOrder) {
+        return left.sortOrder - right.sortOrder;
+      }
+      return left.name.localeCompare(right.name);
+    });
+}
+
+export function normalizeKolamEnclosureTasks(
+  payload: unknown,
+): KolamEnclosureTaskItem[] {
+  const unwrapped = unwrapData(payload);
+  const rows = Array.isArray(unwrapped)
+    ? unwrapped
+    : Array.isArray(asRecord(unwrapped).data)
+      ? (asRecord(unwrapped).data as unknown[])
+      : Array.isArray(asRecord(payload).data)
+        ? (asRecord(payload).data as unknown[])
+        : [];
+  return rows.map(normalizeKolamEnclosureTaskItem).filter(item => item.id);
+}
+
+export function normalizeKolamEnclosureRecurringEnrollments(
+  payload: unknown,
+): KolamEnclosureRecurringEnrollment[] {
+  const record = asRecord(unwrapData(payload));
+  const rows = Array.isArray(record.enrollments)
+    ? record.enrollments
+    : Array.isArray(unwrapData(payload))
+      ? (unwrapData(payload) as unknown[])
+      : [];
+  return rows
+    .map(normalizeKolamEnclosureRecurringEnrollment)
+    .filter(item => item.taskType.id);
+}
+
+export function normalizeKolamEnclosureSpawnTaskResult(
+  payload: unknown,
+): KolamEnclosureSpawnTaskResult {
+  const record = asRecord(payload);
+  const taskPayload = unwrapData(payload);
+  const created =
+    typeof record.created === 'boolean'
+      ? record.created
+      : getBoolean(record, 'created');
+  const task = taskPayload
+    ? normalizeKolamEnclosureTaskItem(taskPayload)
+    : null;
+  return {
+    task: task?.id ? task : null,
+    created,
+  };
+}
+
+/** FE G6 — empty categoryBuckets = semua bucket. */
+export function filterKolamEnclosureTaskTypesForCategoryBucket(
+  types: KolamEnclosureTaskType[] | undefined,
+  bucket?: KolamEnclosureTaskCategoryBucket | null,
+): KolamEnclosureTaskType[] {
+  if (!types?.length) {
+    return [];
+  }
+  if (!bucket) {
+    return types;
+  }
+  return types.filter(
+    type =>
+      !type.categoryBuckets.length || type.categoryBuckets.includes(bucket),
+  );
+}
+
+export function getKolamEnclosureTaskStatusIntent(
+  status: string,
+): 'secondary' | 'info' | 'warning' | 'success' | 'danger' {
+  switch (status) {
+    case 'in_progress':
+      return 'info';
+    case 'needs_review':
+      return 'warning';
+    case 'done':
+      return 'success';
+    case 'cancelled':
+      return 'danger';
+    case 'todo':
+    default:
+      return 'secondary';
+  }
+}
+
+export function formatKolamEnclosureTaskStatusLabel(status: string) {
+  return status.replace('_', ' ') || '-';
+}
+
 export function normalizeKolamEnclosurePendingAllocations(
   payload: unknown,
 ): KolamEnclosurePendingAllocationResult {
@@ -950,6 +1102,60 @@ function normalizeKolamEnclosureComment(value: unknown): KolamEnclosureComment {
     customer: normalizeKolamEnclosureCustomer(record.customer),
     replies: getArray(record.replies).map(normalizeKolamEnclosureComment),
     raw: value,
+  };
+}
+
+function normalizeKolamEnclosureTaskType(
+  value: unknown,
+): KolamEnclosureTaskType {
+  const record = asRecord(value);
+  const buckets = getArray(record.categoryBuckets)
+    .map(item => String(item).trim())
+    .filter(
+      (item): item is KolamEnclosureTaskCategoryBucket =>
+        item === 'enclosure' ||
+        item === 'project' ||
+        item === 'crm' ||
+        item === 'production',
+    );
+  return {
+    id: getId(record),
+    key: getString(record, 'key'),
+    name: getString(record, 'name'),
+    description: getString(record, 'description'),
+    handler: getString(record, 'handler'),
+    requiresProductComponents: getBoolean(record, 'requiresProductComponents'),
+    active: record.active == null ? true : getBoolean(record, 'active'),
+    sortOrder: getNumber(record, 'sortOrder') ?? 0,
+    isSystem: getBoolean(record, 'isSystem'),
+    categoryBuckets: buckets,
+    raw: value,
+  };
+}
+
+function normalizeKolamEnclosureTaskItem(
+  value: unknown,
+): KolamEnclosureTaskItem {
+  const record = asRecord(value);
+  const status = getString(record, 'status') || 'todo';
+  return {
+    id: getId(record),
+    title: getString(record, 'title') || 'Task',
+    status,
+    raw: value,
+  };
+}
+
+function normalizeKolamEnclosureRecurringEnrollment(
+  value: unknown,
+): KolamEnclosureRecurringEnrollment {
+  const record = asRecord(value);
+  const taskType = normalizeKolamEnclosureTaskType(record.taskType);
+  return {
+    taskType,
+    active: getBoolean(record, 'active'),
+    enrollmentId:
+      getIdFromRef(record.enrollmentId) || getString(record, 'enrollmentId'),
   };
 }
 

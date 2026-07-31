@@ -12,6 +12,9 @@ import {
   KOLAM_ENCLOSURE_LIST_TABS,
   KOLAM_ENCLOSURE_TYPES,
   KOLAM_ENCLOSURE_ROOT,
+  filterKolamEnclosureTaskTypesForCategoryBucket,
+  formatKolamEnclosureTaskStatusLabel,
+  getKolamEnclosureTaskStatusIntent,
   normalizeKolamEnclosurePageSize,
   type KolamEnclosure,
   type KolamEnclosureAllocationOverviewRow,
@@ -50,6 +53,7 @@ import {
   KolamDataTableMainTrack,
 } from './kolam-data-table-tracks';
 import {
+  KolamDropdownSelect,
   KolamOverflowMenuButton,
   KolamTableFooterControls,
 } from './kolam-dropdown-select';
@@ -62,6 +66,7 @@ import {KolamSearchField} from './kolam-search-field';
 import {KolamStatusBadge} from './kolam-status-badge';
 import {KolamTableFilterTrigger} from './kolam-table-filter-trigger';
 import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
+import {KolamToggleRow} from './kolam-toggle-row';
 
 type EnclosureFilterPanel = 'type' | 'livestock' | null;
 type EnclosureDetailTab =
@@ -340,7 +345,10 @@ function KolamEnclosureDetailSurface({
         />
       ) : null}
       {safeActiveDetailTab === 'tasks' ? (
-        <KolamEnclosureDetailTasksTab />
+        <KolamEnclosureDetailTasksTab
+          controller={controller}
+          onRouteChange={onRouteChange}
+        />
       ) : null}
       {safeActiveDetailTab === 'statistics' ? (
         <KolamEnclosureDetailStatisticsTab
@@ -738,14 +746,167 @@ function KolamEnclosureDetailProductionTab({
   );
 }
 
-function KolamEnclosureDetailTasksTab() {
+function KolamEnclosureDetailTasksTab({
+  controller,
+  onRouteChange,
+}: {
+  controller: KolamEnclosureController;
+  onRouteChange?: (route: string) => void;
+}) {
+  const [createOpen, setCreateOpen] = React.useState(false);
+  const [title, setTitle] = React.useState('');
+  const [taskTypeId, setTaskTypeId] = React.useState('');
+  const filteredTypes = React.useMemo(
+    () =>
+      filterKolamEnclosureTaskTypesForCategoryBucket(
+        controller.enclosureTaskTypes,
+        'enclosure',
+      ),
+    [controller.enclosureTaskTypes],
+  );
+  const recurringRows = React.useMemo(
+    () =>
+      controller.enclosureRecurringEnrollments.filter(row =>
+        filteredTypes.some(type => type.id === row.taskType.id),
+      ),
+    [controller.enclosureRecurringEnrollments, filteredTypes],
+  );
+  const taskTypeOptions = React.useMemo(
+    () => [
+      {label: '— Opsional —', value: ''},
+      ...filteredTypes.map(type => ({label: type.name, value: type.id})),
+    ],
+    [filteredTypes],
+  );
+
+  const onCreate = async () => {
+    try {
+      await controller.onSpawnTask({
+        title: title.trim() || undefined,
+        taskTypeId: taskTypeId || undefined,
+      });
+      setCreateOpen(false);
+      setTitle('');
+      setTaskTypeId('');
+    } catch {
+      // Error surfaced via controller.error / status badge.
+    }
+  };
+
   return (
-    <DetailSection title="Tasks">
-      <Text style={styles.detailParagraph}>
-        Task dashboard enclosure membutuhkan endpoint dan domain controller
-        tersendiri. Akan dilanjutkan pada batch berikutnya.
-      </Text>
-    </DetailSection>
+    <View style={styles.detailStatsStack}>
+      <DetailSection title="Task terkait">
+        <View style={styles.detailSectionIntroRow}>
+          <Text style={styles.sectionMeta}>
+            Task manual & sub-task dari enclosure ini
+          </Text>
+          <KolamButton
+            label="Buat"
+            onPress={() => setCreateOpen(current => !current)}
+            style={styles.toolbarButton}
+          />
+        </View>
+        {createOpen ? (
+          <View style={styles.operationGrid}>
+            <KolamFormTextField
+              onChangeText={setTitle}
+              placeholder="Judul (opsional)"
+              style={styles.operationInput}
+              value={title}
+            />
+            <KolamDropdownSelect
+              label="Tipe task"
+              menuPlacement="inline"
+              onChange={setTaskTypeId}
+              options={taskTypeOptions}
+              style={styles.operationInput}
+              value={taskTypeId}
+            />
+            <KolamButton
+              disabled={controller.operationLoading}
+              label="Simpan"
+              onPress={() => void onCreate()}
+              style={styles.toolbarButton}
+            />
+            <KolamButton
+              label="Batal"
+              onPress={() => {
+                setCreateOpen(false);
+                setTitle('');
+                setTaskTypeId('');
+              }}
+              style={styles.toolbarButton}
+            />
+          </View>
+        ) : null}
+        {controller.enclosureTasksLoading ? (
+          <Text style={styles.sectionMeta}>Memuat…</Text>
+        ) : controller.enclosureTasks.length === 0 ? (
+          <Text style={styles.sectionMeta}>Belum ada task.</Text>
+        ) : (
+          controller.enclosureTasks.map(task => (
+            <View key={task.id} style={styles.detailMiniRow}>
+              <KolamCopyStack
+                containerStyle={styles.panelRowCopy}
+                items={[
+                  {
+                    id: 'title',
+                    text: task.title,
+                    style: styles.rowTitle,
+                  },
+                ]}
+              />
+              <View style={styles.detailActions}>
+                <KolamStatusBadge
+                  intent={getKolamEnclosureTaskStatusIntent(task.status)}
+                  label={formatKolamEnclosureTaskStatusLabel(task.status)}
+                  textStyle={styles.badgeTextSm}
+                />
+                <KolamButton
+                  label="Buka"
+                  onPress={() => onRouteChange?.(`/task-manager/${task.id}`)}
+                  style={styles.toolbarButton}
+                />
+              </View>
+            </View>
+          ))
+        )}
+        <KolamButton
+          disabled={controller.enclosureTasksLoading}
+          label="Refresh task"
+          onPress={() => void controller.onRefreshTasks()}
+          style={styles.toolbarButton}
+        />
+      </DetailSection>
+
+      <DetailSection title="Jadwal berulang">
+        <Text style={styles.sectionMeta}>
+          Per tipe task · PIC dari enclosure
+        </Text>
+        {controller.enclosureRecurringLoading ? (
+          <Text style={styles.sectionMeta}>Memuat…</Text>
+        ) : recurringRows.length === 0 ? (
+          <Text style={styles.sectionMeta}>Tidak ada tipe task enclosure.</Text>
+        ) : (
+          recurringRows.map(row => (
+            <KolamToggleRow
+              key={row.taskType.id}
+              active={row.active}
+              disabled={controller.operationLoading}
+              label={row.taskType.name}
+              onPress={() =>
+                void controller
+                  .onSetRecurringEnrollment({
+                    taskTypeId: row.taskType.id,
+                    active: !row.active,
+                  })
+                  .catch(() => undefined)
+              }
+            />
+          ))
+        )}
+      </DetailSection>
+    </View>
   );
 }
 

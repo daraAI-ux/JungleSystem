@@ -5,18 +5,26 @@ import {useKolamEnclosureController} from '../src/hooks/use-kolam-enclosure-cont
 import {
   getKolamEnclosureDetail,
   getKolamEnclosureDashboardStats,
+  getKolamEnclosureComments,
+  getKolamEnclosureRecurringEnrollments,
   getKolamEnclosureStaffAssignees,
   getKolamEnclosureStatistics,
+  getKolamEnclosureTaskTypes,
+  getKolamEnclosureTasks,
   getKolamEnclosures,
   getKolamPendingLivestockAllocations,
   getKolamSpeciesAllocationOverview,
 } from '../src/services/kolam-enclosure-api';
 
 jest.mock('../src/services/kolam-enclosure-api', () => ({
+  getKolamEnclosureComments: jest.fn(),
   getKolamEnclosureDashboardStats: jest.fn(),
   getKolamEnclosureDetail: jest.fn(),
+  getKolamEnclosureRecurringEnrollments: jest.fn(),
   getKolamEnclosureStaffAssignees: jest.fn(),
   getKolamEnclosureStatistics: jest.fn(),
+  getKolamEnclosureTaskTypes: jest.fn(),
+  getKolamEnclosureTasks: jest.fn(),
   getKolamEnclosures: jest.fn(),
   getKolamPendingLivestockAllocations: jest.fn(),
   getKolamSpeciesAllocationOverview: jest.fn(),
@@ -37,6 +45,19 @@ const getStatisticsMock = getKolamEnclosureStatistics as jest.MockedFunction<
 const getStaffAssigneesMock =
   getKolamEnclosureStaffAssignees as jest.MockedFunction<
     typeof getKolamEnclosureStaffAssignees
+  >;
+const getCommentsMock = getKolamEnclosureComments as jest.MockedFunction<
+  typeof getKolamEnclosureComments
+>;
+const getTasksMock = getKolamEnclosureTasks as jest.MockedFunction<
+  typeof getKolamEnclosureTasks
+>;
+const getTaskTypesMock = getKolamEnclosureTaskTypes as jest.MockedFunction<
+  typeof getKolamEnclosureTaskTypes
+>;
+const getRecurringEnrollmentsMock =
+  getKolamEnclosureRecurringEnrollments as jest.MockedFunction<
+    typeof getKolamEnclosureRecurringEnrollments
   >;
 const getEnclosuresMock = getKolamEnclosures as jest.MockedFunction<
   typeof getKolamEnclosures
@@ -87,6 +108,44 @@ describe('Kolam enclosure controller hook', () => {
     ]);
     getDetailMock.mockResolvedValue(createListResult().data[0]!);
     getStatisticsMock.mockResolvedValue(createStatistics());
+    getCommentsMock.mockResolvedValue([]);
+    getTasksMock.mockResolvedValue([
+      {id: 'task-1', raw: {}, status: 'todo', title: 'Cek suhu'},
+    ]);
+    getTaskTypesMock.mockResolvedValue([
+      {
+        active: true,
+        categoryBuckets: ['enclosure'],
+        description: '',
+        handler: 'maintenance',
+        id: 'tt-1',
+        isSystem: false,
+        key: 'check',
+        name: 'Cek rutin',
+        raw: {},
+        requiresProductComponents: false,
+        sortOrder: 1,
+      },
+    ]);
+    getRecurringEnrollmentsMock.mockResolvedValue([
+      {
+        active: true,
+        enrollmentId: 'enr-1',
+        taskType: {
+          active: true,
+          categoryBuckets: ['enclosure'],
+          description: '',
+          handler: 'maintenance',
+          id: 'tt-1',
+          isSystem: false,
+          key: 'check',
+          name: 'Cek rutin',
+          raw: {},
+          requiresProductComponents: false,
+          sortOrder: 1,
+        },
+      },
+    ]);
     getEnclosuresMock.mockResolvedValue(createListResult());
     getPendingAllocationsMock.mockResolvedValue({
       items: [
@@ -320,6 +379,9 @@ describe('Kolam enclosure controller hook', () => {
 
     expect(getDetailMock).toHaveBeenCalledWith('enc-1');
     expect(getStatisticsMock).toHaveBeenCalledWith('enc-1');
+    expect(getTasksMock).toHaveBeenCalledWith('enc-1');
+    expect(getTaskTypesMock).toHaveBeenCalled();
+    expect(getRecurringEnrollmentsMock).toHaveBeenCalledWith('enc-1');
     expect(requireController(latest).mode).toBe('detail');
     expect(requireController(latest).selectedEnclosure).toEqual(
       expect.objectContaining({id: 'enc-1', code: 'ENC-1'}),
@@ -330,6 +392,15 @@ describe('Kolam enclosure controller hook', () => {
         summary: expect.objectContaining({deathQty: 1}),
       }),
     );
+    expect(requireController(latest).enclosureTasks).toEqual([
+      expect.objectContaining({id: 'task-1', title: 'Cek suhu'}),
+    ]);
+    expect(requireController(latest).enclosureRecurringEnrollments).toEqual([
+      expect.objectContaining({
+        active: true,
+        taskType: expect.objectContaining({id: 'tt-1', name: 'Cek rutin'}),
+      }),
+    ]);
     expect(getDashboardStatsMock).not.toHaveBeenCalled();
   });
 });

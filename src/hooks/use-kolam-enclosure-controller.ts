@@ -13,9 +13,12 @@ import {
   type KolamEnclosureListTab,
   type KolamEnclosurePagination,
   type KolamEnclosurePendingAllocation,
+  type KolamEnclosureRecurringEnrollment,
   type KolamEnclosureStaffRef,
   type KolamEnclosureStatistics,
   type KolamEnclosureSurfaceMode,
+  type KolamEnclosureTaskItem,
+  type KolamEnclosureTaskType,
 } from '../domain/kolam-enclosure';
 import {getErrorMessage} from '../lib/api-error';
 import {
@@ -32,8 +35,11 @@ import {
   getKolamEnclosureDashboardStats,
   getKolamEnclosureComments,
   getKolamEnclosureDetail,
+  getKolamEnclosureRecurringEnrollments,
   getKolamEnclosureStaffAssignees,
   getKolamEnclosureStatistics,
+  getKolamEnclosureTaskTypes,
+  getKolamEnclosureTasks,
   getKolamEnclosures,
   getKolamPendingLivestockAllocations,
   getKolamSpeciesAllocationOverview,
@@ -41,6 +47,8 @@ import {
   moveKolamEnclosureProductionPhaseToSale,
   recordKolamEnclosurePopulationEvent,
   replyKolamEnclosureComment,
+  setKolamEnclosureRecurringEnrollment,
+  spawnKolamEnclosureTask,
   switchKolamEnclosureSpeciesVariant,
   transferKolamEnclosureSpecies,
   updateKolamEnclosureSaleListing,
@@ -130,6 +138,11 @@ export interface KolamEnclosureController {
   enclosureStatistics: KolamEnclosureStatistics | null;
   enclosureStatisticsError: string | null;
   enclosureStatisticsLoading: boolean;
+  enclosureTasks: KolamEnclosureTaskItem[];
+  enclosureTasksLoading: boolean;
+  enclosureTaskTypes: KolamEnclosureTaskType[];
+  enclosureRecurringEnrollments: KolamEnclosureRecurringEnrollment[];
+  enclosureRecurringLoading: boolean;
   operationLoading: boolean;
   staffAssignees: KolamEnclosureStaffRef[];
   statusMessage: string | null;
@@ -151,8 +164,17 @@ export interface KolamEnclosureController {
   onRecordPopulationEvent: (input: KolamEnclosurePopulationEventInput) => Promise<void>;
   onRefresh: () => Promise<void>;
   onRefreshComments: () => Promise<void>;
+  onRefreshTasks: () => Promise<void>;
   onReplyComment: (commentId: string, comment: string) => Promise<void>;
   onSearchChange: (search: string) => void;
+  onSetRecurringEnrollment: (input: {
+    taskTypeId: string;
+    active: boolean;
+  }) => Promise<void>;
+  onSpawnTask: (input: {
+    title?: string;
+    taskTypeId?: string;
+  }) => Promise<void>;
   onSwitchSpeciesVariant: (input: KolamEnclosureVariantSwitchInput) => Promise<void>;
   onTabChange: (tab: KolamEnclosureListTab) => void;
   onTransferSpecies: (input: KolamEnclosureSpeciesTransferInput) => Promise<void>;
@@ -186,6 +208,17 @@ export function useKolamEnclosureController(
     useState<string | null>(null);
   const [enclosureStatisticsLoading, setEnclosureStatisticsLoading] =
     useState(false);
+  const [enclosureTasks, setEnclosureTasks] = useState<KolamEnclosureTaskItem[]>(
+    [],
+  );
+  const [enclosureTasksLoading, setEnclosureTasksLoading] = useState(false);
+  const [enclosureTaskTypes, setEnclosureTaskTypes] = useState<
+    KolamEnclosureTaskType[]
+  >([]);
+  const [enclosureRecurringEnrollments, setEnclosureRecurringEnrollments] =
+    useState<KolamEnclosureRecurringEnrollment[]>([]);
+  const [enclosureRecurringLoading, setEnclosureRecurringLoading] =
+    useState(false);
   const [dashboardStats, setDashboardStats] =
     useState<KolamEnclosureDashboardStats>(EMPTY_DASHBOARD_STATS);
   const [pendingAllocations, setPendingAllocations] = useState<
@@ -217,6 +250,9 @@ export function useKolamEnclosureController(
     setEnclosureComments([]);
     setEnclosureStatistics(null);
     setEnclosureStatisticsError(null);
+    setEnclosureTasks([]);
+    setEnclosureTaskTypes([]);
+    setEnclosureRecurringEnrollments([]);
     setError(null);
     setStatusMessage(null);
   }, [route]);
@@ -259,6 +295,8 @@ export function useKolamEnclosureController(
         setSelectedEnclosure(detail);
         setEnclosureStatistics(statisticsResult.data);
         setEnclosureStatisticsError(statisticsResult.error);
+        setEnclosureTasksLoading(true);
+        setEnclosureRecurringLoading(true);
         void getKolamEnclosureComments(enclosureId)
           .then(comments => {
             if (requestSeq.current === activeRequest) {
@@ -270,6 +308,32 @@ export function useKolamEnclosureController(
               setEnclosureComments([]);
             }
           });
+        void Promise.all([
+          getKolamEnclosureTasks(enclosureId)
+            .then(tasks => ({tasks, error: null as string | null}))
+            .catch(() => ({tasks: [] as KolamEnclosureTaskItem[], error: 'tasks'})),
+          getKolamEnclosureTaskTypes()
+            .then(types => ({types, error: null as string | null}))
+            .catch(() => ({
+              types: [] as KolamEnclosureTaskType[],
+              error: 'types',
+            })),
+          getKolamEnclosureRecurringEnrollments(enclosureId)
+            .then(enrollments => ({enrollments, error: null as string | null}))
+            .catch(() => ({
+              enrollments: [] as KolamEnclosureRecurringEnrollment[],
+              error: 'enrollments',
+            })),
+        ]).then(([tasksResult, typesResult, enrollmentsResult]) => {
+          if (requestSeq.current !== activeRequest) {
+            return;
+          }
+          setEnclosureTasks(tasksResult.tasks);
+          setEnclosureTaskTypes(typesResult.types);
+          setEnclosureRecurringEnrollments(enrollmentsResult.enrollments);
+          setEnclosureTasksLoading(false);
+          setEnclosureRecurringLoading(false);
+        });
         setDataSource('live');
         return;
       }
@@ -367,6 +431,89 @@ export function useKolamEnclosureController(
     const comments = await getKolamEnclosureComments(enclosureId);
     setEnclosureComments(comments);
   }, [route]);
+
+  const refreshTasks = useCallback(async () => {
+    const enclosureId = getKolamEnclosureRouteId(route);
+    if (!enclosureId) {
+      setEnclosureTasks([]);
+      setEnclosureTaskTypes([]);
+      setEnclosureRecurringEnrollments([]);
+      return;
+    }
+    setEnclosureTasksLoading(true);
+    setEnclosureRecurringLoading(true);
+    try {
+      const [tasks, typesResult, enrollments] = await Promise.all([
+        getKolamEnclosureTasks(enclosureId),
+        getKolamEnclosureTaskTypes()
+          .then(types => ({types, ok: true as const}))
+          .catch(() => ({types: [] as KolamEnclosureTaskType[], ok: false as const})),
+        getKolamEnclosureRecurringEnrollments(enclosureId),
+      ]);
+      setEnclosureTasks(tasks);
+      if (typesResult.ok) {
+        setEnclosureTaskTypes(typesResult.types);
+      }
+      setEnclosureRecurringEnrollments(enrollments);
+    } finally {
+      setEnclosureTasksLoading(false);
+      setEnclosureRecurringLoading(false);
+    }
+  }, [route]);
+
+  const onSpawnTask = useCallback(
+    async (input: {title?: string; taskTypeId?: string}) => {
+      const enclosureId = getKolamEnclosureRouteId(route);
+      if (!enclosureId) {
+        throw new Error('ID enclosure tidak ditemukan.');
+      }
+      setOperationLoading(true);
+      setError(null);
+      setStatusMessage(null);
+      try {
+        const result = await spawnKolamEnclosureTask({
+          enclosureId,
+          title: input.title,
+          taskTypeId: input.taskTypeId,
+        });
+        setStatusMessage(
+          result.created ? 'Task dibuat' : 'Sub-task ditambahkan',
+        );
+        await refreshTasks();
+      } catch (operationError) {
+        setError(getErrorMessage(operationError));
+        throw operationError;
+      } finally {
+        setOperationLoading(false);
+      }
+    },
+    [refreshTasks, route],
+  );
+
+  const onSetRecurringEnrollment = useCallback(
+    async (input: {taskTypeId: string; active: boolean}) => {
+      const enclosureId = getKolamEnclosureRouteId(route);
+      if (!enclosureId) {
+        throw new Error('ID enclosure tidak ditemukan.');
+      }
+      setOperationLoading(true);
+      setError(null);
+      setStatusMessage(null);
+      try {
+        await setKolamEnclosureRecurringEnrollment(enclosureId, input);
+        setStatusMessage(input.active ? 'Jadwal aktif' : 'Jadwal nonaktif');
+        const enrollments =
+          await getKolamEnclosureRecurringEnrollments(enclosureId);
+        setEnclosureRecurringEnrollments(enrollments);
+      } catch (operationError) {
+        setError(getErrorMessage(operationError));
+        throw operationError;
+      } finally {
+        setOperationLoading(false);
+      }
+    },
+    [route],
+  );
 
   const runOperation = useCallback(
     async (action: () => Promise<unknown>, successMessage: string) => {
@@ -652,6 +799,11 @@ export function useKolamEnclosureController(
     enclosureStatistics,
     enclosureStatisticsError,
     enclosureStatisticsLoading,
+    enclosureTasks,
+    enclosureTasksLoading,
+    enclosureTaskTypes,
+    enclosureRecurringEnrollments,
+    enclosureRecurringLoading,
     operationLoading,
     staffAssignees,
     statusMessage,
@@ -673,8 +825,11 @@ export function useKolamEnclosureController(
     onRecordPopulationEvent,
     onRefresh: refresh,
     onRefreshComments: refreshComments,
+    onRefreshTasks: refreshTasks,
     onReplyComment,
     onSearchChange,
+    onSetRecurringEnrollment,
+    onSpawnTask,
     onSwitchSpeciesVariant,
     onTabChange,
     onTransferSpecies,

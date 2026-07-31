@@ -5,12 +5,17 @@ import {
   deleteKolamEnclosure,
   getKolamEnclosureDashboardStats,
   getKolamEnclosureDetail,
+  getKolamEnclosureRecurringEnrollments,
   getKolamEnclosureStatistics,
   getKolamEnclosureStaffAssignees,
+  getKolamEnclosureTaskTypes,
+  getKolamEnclosureTasks,
   getKolamEnclosures,
   getKolamPendingLivestockAllocations,
   getKolamSpeciesAllocationOverview,
   resolveKolamEnclosureLivestockAllocation,
+  setKolamEnclosureRecurringEnrollment,
+  spawnKolamEnclosureTask,
   updateKolamEnclosureAssignedTo,
 } from '../src/services/kolam-enclosure-api';
 
@@ -289,6 +294,108 @@ describe('kolam enclosure api', () => {
       expect.objectContaining({
         body: expect.stringContaining('"pendingId":"pending-1"'),
         method: 'POST',
+      }),
+    );
+  });
+
+  it('requests enclosure tasks, spawn, task types, and recurring enrollments', async () => {
+    fetchMock
+      .mockResolvedValueOnce(
+        jsonResponse({
+          data: [{_id: 'task-1', status: 'todo', title: 'Cek suhu'}],
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          created: true,
+          data: {_id: 'task-2', status: 'todo', title: 'Baru'},
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          data: [
+            {
+              _id: 'tt-1',
+              categoryBuckets: ['enclosure'],
+              key: 'check',
+              name: 'Cek rutin',
+            },
+          ],
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          data: {
+            enrollments: [
+              {
+                active: false,
+                enrollmentId: null,
+                taskType: {_id: 'tt-1', name: 'Cek rutin'},
+              },
+            ],
+          },
+        }),
+      )
+      .mockResolvedValueOnce(jsonResponse({data: {ok: true}}));
+
+    await expect(getKolamEnclosureTasks('enc-1')).resolves.toEqual([
+      expect.objectContaining({id: 'task-1', title: 'Cek suhu'}),
+    ]);
+    await expect(
+      spawnKolamEnclosureTask({
+        enclosureId: 'enc-1',
+        taskTypeId: 'tt-1',
+        title: 'Baru',
+      }),
+    ).resolves.toEqual({
+      created: true,
+      task: expect.objectContaining({id: 'task-2', title: 'Baru'}),
+    });
+    await expect(getKolamEnclosureTaskTypes()).resolves.toEqual([
+      expect.objectContaining({id: 'tt-1', name: 'Cek rutin'}),
+    ]);
+    await expect(getKolamEnclosureRecurringEnrollments('enc-1')).resolves.toEqual(
+      [
+        expect.objectContaining({
+          active: false,
+          taskType: expect.objectContaining({id: 'tt-1'}),
+        }),
+      ],
+    );
+    await setKolamEnclosureRecurringEnrollment('enc-1', {
+      active: true,
+      taskTypeId: 'tt-1',
+    });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      `${appConfig.kolamApiBaseUrl}/task-manager/by-enclosure/enc-1`,
+      expect.objectContaining({method: 'GET'}),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      `${appConfig.kolamApiBaseUrl}/task-manager/spawn/enclosure/enc-1`,
+      expect.objectContaining({
+        body: JSON.stringify({title: 'Baru', taskTypeId: 'tt-1'}),
+        method: 'POST',
+      }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      `${appConfig.kolamApiBaseUrl}/enclosure-task-types`,
+      expect.objectContaining({method: 'GET'}),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      4,
+      `${appConfig.kolamApiBaseUrl}/enclosures/enc-1/recurring-enrollments`,
+      expect.objectContaining({method: 'GET'}),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      5,
+      `${appConfig.kolamApiBaseUrl}/enclosures/enc-1/recurring-enrollments`,
+      expect.objectContaining({
+        body: JSON.stringify({taskTypeId: 'tt-1', active: true}),
+        method: 'PUT',
       }),
     );
   });
