@@ -69,9 +69,9 @@ const ITEM_TYPE_OPTIONS_FULL: Array<{
 }> = [
   { label: 'Produk', value: 'product' },
   { label: 'Spesies', value: 'species' },
-  { label: 'Custom', value: 'custom' },
   { label: 'Layanan', value: 'service' },
-  { label: 'Enclosure', value: 'enclosure' },
+  { label: 'Kustom', value: 'custom' },
+  { label: 'Kandang', value: 'enclosure' },
 ];
 
 const ITEM_TYPE_OPTIONS_ADD_ITEMS: Array<{
@@ -79,8 +79,13 @@ const ITEM_TYPE_OPTIONS_ADD_ITEMS: Array<{
   value: KolamSaleCreateItemType;
 }> = [
   { label: 'Produk', value: 'product' },
-  { label: 'Custom', value: 'custom' },
+  { label: 'Kustom', value: 'custom' },
 ];
+
+const ITEM_DISCOUNT_TYPE_OPTIONS = [
+  { label: '%', value: 'percentage' },
+  { label: 'Rp', value: 'fixed' },
+] as const;
 
 /**
  * Kolam backoffice penjualan (FE `/sales`).
@@ -962,247 +967,305 @@ function KolamSalesOpsCreateForm({
           <Text style={styles.sectionTitle}>Item</Text>
           <KolamButton label="Tambah item" onPress={controller.onAddCreateItem} />
         </View>
-        {form.items.map((item, index) => (
-          <View key={item.key} style={styles.createItemCard}>
-            <View style={styles.proofHeader}>
-              <Text style={styles.itemCardTitle}>Item {index + 1}</Text>
-              {form.items.length > 1 ? (
-                <KolamButton
-                  label="Hapus"
-                  muted
-                  onPress={() => controller.onRemoveCreateItem(item.key)}
-                />
-              ) : null}
-            </View>
-            <View style={styles.formSplitRow}>
-              <View style={styles.formSplitCell}>
-                <FieldShell label="Tipe" required>
-                  <KolamDropdownSelect
-                    menuPlacement="inline"
-                    accessibilityLabel={`Tipe item ${index + 1}`}
-                    label="Tipe"
-                    onChange={value => {
-                      const itemType = value as KolamSaleCreateItemType;
-                      controller.onChangeCreateItem(item.key, {
-                        itemType,
-                        productId: '',
-                        speciesId: '',
-                        serviceId: '',
-                        enclosureId: '',
-                        quantity: itemType === 'enclosure' ? '1' : item.quantity,
-                      });
-                    }}
-                    options={itemTypeOptions}
-                    showLabelInTrigger={false}
-                    value={item.itemType}
-                  />
-                </FieldShell>
-              </View>
-              <View style={styles.formSplitCellNarrow}>
-                <FieldShell label="Qty" required>
-                  <KolamFormTextField
-                    editable={item.itemType !== 'enclosure'}
-                    mode="numeric"
-                    onChangeText={quantity =>
-                      controller.onChangeCreateItem(item.key, { quantity })
-                    }
-                    value={item.itemType === 'enclosure' ? '1' : item.quantity}
-                  />
-                </FieldShell>
-              </View>
+        <ScrollView horizontal nestedScrollEnabled>
+          <View style={styles.itemGrid}>
+            <View style={styles.itemGridHeader}>
+              <Text style={[styles.itemGridHeaderCell, styles.itemColType]}>
+                Tipe
+              </Text>
+              <Text style={[styles.itemGridHeaderCell, styles.itemColCatalog]}>
+                Produk/Spesies
+              </Text>
+              <Text style={[styles.itemGridHeaderCell, styles.itemColQty]}>
+                Jml
+              </Text>
+              <Text style={[styles.itemGridHeaderCell, styles.itemColVoucher]}>
+                Voucher
+              </Text>
+              <Text style={[styles.itemGridHeaderCell, styles.itemColDiscount]}>
+                Diskon
+              </Text>
+              <View style={styles.itemColAction} />
             </View>
 
-            {item.itemType === 'product' ? (
-              <FieldShell label="Produk" required>
-                <KolamDropdownSelect
-                  menuPlacement="inline"
-                  accessibilityLabel={`Produk item ${index + 1}`}
-                  label="Produk"
-                  onChange={productId =>
-                    controller.onChangeCreateItem(item.key, { productId })
-                  }
-                  options={[
-                    { label: 'Pilih produk…', value: '' },
-                    ...controller.products.map(product => ({
-                      label: product.sku
-                        ? `${product.name} (${product.sku})`
-                        : product.name,
-                      value: product.id,
-                    })),
-                  ]}
-                  searchable
-                  searchPlaceholder="Cari produk…"
-                  showLabelInTrigger={false}
-                  value={item.productId}
-                />
-              </FieldShell>
-            ) : null}
-
-            {item.itemType === 'species' ? (
-              <FieldShell label="Spesies" required>
-                <KolamDropdownSelect
-                  menuPlacement="inline"
-                  accessibilityLabel={`Spesies item ${index + 1}`}
-                  label="Spesies"
-                  onChange={speciesId =>
-                    controller.onChangeCreateItem(item.key, { speciesId })
-                  }
-                  options={[
-                    { label: 'Pilih spesies…', value: '' },
-                    ...controller.species.map(row => ({
-                      label:
-                        row.displayName ||
-                        row.scientificName ||
-                        row.commonName ||
-                        row.id,
-                      value: row.id,
-                    })),
-                  ]}
-                  searchable
-                  searchPlaceholder="Cari spesies…"
-                  showLabelInTrigger={false}
-                  value={item.speciesId}
-                />
-              </FieldShell>
-            ) : null}
-
-            {item.itemType === 'service' ? (
-              <FieldShell label="Layanan" required>
-                <KolamDropdownSelect
-                  menuPlacement="inline"
-                  accessibilityLabel={`Layanan item ${index + 1}`}
-                  label="Layanan"
-                  onChange={serviceId =>
-                    controller.onChangeCreateItem(item.key, { serviceId })
-                  }
-                  options={[
-                    { label: 'Pilih layanan…', value: '' },
-                    ...controller.services.map(service => ({
-                      label: service.name,
-                      value: service.id,
-                    })),
-                  ]}
-                  searchable
-                  searchPlaceholder="Cari layanan…"
-                  showLabelInTrigger={false}
-                  value={item.serviceId}
-                />
-              </FieldShell>
-            ) : null}
-
-            {item.itemType === 'enclosure' ? (
-              <FieldShell label="Enclosure" required>
-                <KolamDropdownSelect
-                  menuPlacement="inline"
-                  accessibilityLabel={`Enclosure item ${index + 1}`}
-                  label="Enclosure"
-                  onChange={enclosureId =>
-                    controller.onChangeCreateItem(item.key, { enclosureId })
-                  }
-                  options={[
-                    { label: 'Pilih enclosure…', value: '' },
-                    ...controller.enclosures.map(enclosure => ({
-                      label: enclosure.name,
-                      value: enclosure.id,
-                    })),
-                  ]}
-                  searchable
-                  searchPlaceholder="Cari enclosure…"
-                  showLabelInTrigger={false}
-                  value={item.enclosureId}
-                />
-              </FieldShell>
-            ) : null}
-
-            {item.itemType === 'custom' ? (
-              <View style={styles.formSplitRow}>
-                <View style={styles.formSplitCell}>
-                  <FieldShell label="Nama custom" required>
-                    <KolamFormTextField
-                      onChangeText={customName =>
-                        controller.onChangeCreateItem(item.key, { customName })
-                      }
-                      placeholder="Nama item"
-                      value={item.customName}
-                    />
-                  </FieldShell>
-                </View>
-                <View style={styles.formSplitCellNarrow}>
-                  <FieldShell label="Satuan">
-                    <KolamFormTextField
-                      onChangeText={customUnit =>
-                        controller.onChangeCreateItem(item.key, { customUnit })
-                      }
-                      placeholder="pcs"
-                      value={item.customUnit}
-                    />
-                  </FieldShell>
-                </View>
-                <View style={styles.formSplitCell}>
-                  <FieldShell label="Harga satuan" required>
-                    <KolamFormTextField
-                      mode="numeric"
-                      onChangeText={customUnitPrice =>
+            {form.items.map((item, index) => (
+              <View key={item.key} style={styles.itemGridBlock}>
+                <View style={styles.itemGridRow}>
+                  <View style={styles.itemColType}>
+                    <KolamDropdownSelect
+                      accessibilityLabel={`Tipe item ${index + 1}`}
+                      label="Tipe"
+                      menuPlacement="inline"
+                      onChange={value => {
+                        const itemType = value as KolamSaleCreateItemType;
                         controller.onChangeCreateItem(item.key, {
-                          customUnitPrice,
+                          itemType,
+                          productId: '',
+                          speciesId: '',
+                          serviceId: '',
+                          enclosureId: '',
+                          quantity:
+                            itemType === 'enclosure' ? '1' : item.quantity,
+                          customUnit:
+                            itemType === 'custom'
+                              ? item.customUnit || 'pcs'
+                              : item.customUnit,
+                        });
+                      }}
+                      options={itemTypeOptions}
+                      showLabelInTrigger={false}
+                      style={styles.itemDropdown}
+                      triggerStyle={styles.itemDropdownTrigger}
+                      triggerTextStyle={styles.itemDropdownTriggerText}
+                      value={item.itemType}
+                    />
+                  </View>
+
+                  <View style={styles.itemColCatalog}>
+                    {item.itemType === 'product' ? (
+                      <KolamDropdownSelect
+                        accessibilityLabel={`Produk item ${index + 1}`}
+                        label="Produk"
+                        menuPlacement="inline"
+                        onChange={productId =>
+                          controller.onChangeCreateItem(item.key, { productId })
+                        }
+                        options={[
+                          { label: 'Pilih produk…', value: '' },
+                          ...controller.products.map(product => ({
+                            label: product.sku
+                              ? `${product.name} (${product.sku})`
+                              : product.name,
+                            value: product.id,
+                          })),
+                        ]}
+                        searchable
+                        searchPlaceholder="Cari produk…"
+                        showLabelInTrigger={false}
+                        style={styles.itemDropdown}
+                        triggerStyle={styles.itemDropdownTrigger}
+                        triggerTextStyle={styles.itemDropdownTriggerText}
+                        value={item.productId}
+                      />
+                    ) : null}
+                    {item.itemType === 'species' ? (
+                      <KolamDropdownSelect
+                        accessibilityLabel={`Spesies item ${index + 1}`}
+                        label="Spesies"
+                        menuPlacement="inline"
+                        onChange={speciesId =>
+                          controller.onChangeCreateItem(item.key, { speciesId })
+                        }
+                        options={[
+                          { label: 'Pilih spesies…', value: '' },
+                          ...controller.species.map(row => ({
+                            label:
+                              row.displayName ||
+                              row.scientificName ||
+                              row.commonName ||
+                              row.id,
+                            value: row.id,
+                          })),
+                        ]}
+                        searchable
+                        searchPlaceholder="Cari spesies…"
+                        showLabelInTrigger={false}
+                        style={styles.itemDropdown}
+                        triggerStyle={styles.itemDropdownTrigger}
+                        triggerTextStyle={styles.itemDropdownTriggerText}
+                        value={item.speciesId}
+                      />
+                    ) : null}
+                    {item.itemType === 'service' ? (
+                      <KolamDropdownSelect
+                        accessibilityLabel={`Layanan item ${index + 1}`}
+                        label="Layanan"
+                        menuPlacement="inline"
+                        onChange={serviceId =>
+                          controller.onChangeCreateItem(item.key, { serviceId })
+                        }
+                        options={[
+                          { label: 'Pilih layanan…', value: '' },
+                          ...controller.services.map(service => ({
+                            label: service.name,
+                            value: service.id,
+                          })),
+                        ]}
+                        searchable
+                        searchPlaceholder="Cari layanan…"
+                        showLabelInTrigger={false}
+                        style={styles.itemDropdown}
+                        triggerStyle={styles.itemDropdownTrigger}
+                        triggerTextStyle={styles.itemDropdownTriggerText}
+                        value={item.serviceId}
+                      />
+                    ) : null}
+                    {item.itemType === 'enclosure' ? (
+                      <KolamDropdownSelect
+                        accessibilityLabel={`Kandang item ${index + 1}`}
+                        label="Kandang"
+                        menuPlacement="inline"
+                        onChange={enclosureId =>
+                          controller.onChangeCreateItem(item.key, {
+                            enclosureId,
+                          })
+                        }
+                        options={[
+                          { label: 'Pilih kandang…', value: '' },
+                          ...controller.enclosures.map(enclosure => ({
+                            label: enclosure.name,
+                            value: enclosure.id,
+                          })),
+                        ]}
+                        searchable
+                        searchPlaceholder="Cari kandang…"
+                        showLabelInTrigger={false}
+                        style={styles.itemDropdown}
+                        triggerStyle={styles.itemDropdownTrigger}
+                        triggerTextStyle={styles.itemDropdownTriggerText}
+                        value={item.enclosureId}
+                      />
+                    ) : null}
+                    {item.itemType === 'custom' ? (
+                      <View style={styles.itemCustomSummary}>
+                        <Text numberOfLines={1} style={styles.itemCustomSummaryText}>
+                          {item.customName.trim()
+                            ? `Kustom: ${item.customName}${
+                                item.customUnit
+                                  ? ` · ${item.customUnit}`
+                                  : ''
+                              }`
+                            : 'Isi detail di bawah ↓'}
+                        </Text>
+                      </View>
+                    ) : null}
+                  </View>
+
+                  <View style={styles.itemColQty}>
+                    <KolamFormTextField
+                      editable={item.itemType !== 'enclosure'}
+                      mode="numeric"
+                      onChangeText={quantity =>
+                        controller.onChangeCreateItem(item.key, { quantity })
+                      }
+                      value={
+                        item.itemType === 'enclosure' ? '1' : item.quantity
+                      }
+                    />
+                  </View>
+
+                  <View style={styles.itemColVoucher}>
+                    <KolamFormTextField
+                      onChangeText={voucherCode =>
+                        controller.onChangeCreateItem(item.key, {
+                          voucherCode: voucherCode.toUpperCase(),
                         })
                       }
-                      placeholder="0"
-                      value={item.customUnitPrice}
+                      placeholder="Kode voucher"
+                      value={item.voucherCode}
                     />
-                  </FieldShell>
-                </View>
-              </View>
-            ) : null}
+                  </View>
 
-            <View style={styles.formSplitRow}>
-              <View style={styles.formSplitCell}>
-                <FieldShell label="Tipe diskon">
-                  <KolamDropdownSelect
-                    menuPlacement="inline"
-                    accessibilityLabel={`Tipe diskon item ${index + 1}`}
-                    label="Tipe diskon"
-                    onChange={discountType =>
-                      controller.onChangeCreateItem(item.key, {
-                        discountType:
-                          discountType === 'percentage' ? 'percentage' : 'fixed',
-                      })
-                    }
-                    options={[
-                      { label: 'Fixed (Rp)', value: 'fixed' },
-                      { label: 'Persen (%)', value: 'percentage' },
-                    ]}
-                    showLabelInTrigger={false}
-                    value={item.discountType}
-                  />
-                </FieldShell>
+                  <View style={styles.itemColDiscount}>
+                    <View style={styles.itemDiscountRow}>
+                      <KolamDropdownSelect
+                        accessibilityLabel={`Tipe diskon item ${index + 1}`}
+                        label="Diskon"
+                        menuPlacement="inline"
+                        onChange={discountType =>
+                          controller.onChangeCreateItem(item.key, {
+                            discountType:
+                              discountType === 'percentage'
+                                ? 'percentage'
+                                : 'fixed',
+                          })
+                        }
+                        options={[...ITEM_DISCOUNT_TYPE_OPTIONS]}
+                        showLabelInTrigger={false}
+                        style={styles.itemDiscountType}
+                        triggerStyle={styles.itemDiscountTypeTrigger}
+                        triggerTextStyle={styles.itemDropdownTriggerText}
+                        value={item.discountType}
+                      />
+                      <View style={styles.itemDiscountAmount}>
+                        <KolamFormTextField
+                          mode="numeric"
+                          onChangeText={discountAmount =>
+                            controller.onChangeCreateItem(item.key, {
+                              discountAmount,
+                            })
+                          }
+                          placeholder="0"
+                          value={item.discountAmount}
+                        />
+                      </View>
+                    </View>
+                  </View>
+
+                  <View style={styles.itemColAction}>
+                    {form.items.length > 1 ? (
+                      <KolamButton
+                        accessibilityLabel={`Hapus item ${index + 1}`}
+                        intent="danger"
+                        label="×"
+                        onPress={() => controller.onRemoveCreateItem(item.key)}
+                        style={styles.itemRemoveButton}
+                        textStyle={styles.itemRemoveButtonText}
+                      />
+                    ) : null}
+                  </View>
+                </View>
+
+                {item.itemType === 'custom' ? (
+                  <View style={styles.itemCustomPanel}>
+                    <View style={styles.formSplitRow}>
+                      <View style={styles.formSplitCell}>
+                        <FieldShell label="Nama Item" required>
+                          <KolamFormTextField
+                            onChangeText={customName =>
+                              controller.onChangeCreateItem(item.key, {
+                                customName,
+                              })
+                            }
+                            placeholder="Nama item"
+                            value={item.customName}
+                          />
+                        </FieldShell>
+                      </View>
+                      <View style={styles.formSplitCellNarrow}>
+                        <FieldShell label="Satuan">
+                          <KolamFormTextField
+                            onChangeText={customUnit =>
+                              controller.onChangeCreateItem(item.key, {
+                                customUnit,
+                              })
+                            }
+                            placeholder="pcs"
+                            value={item.customUnit}
+                          />
+                        </FieldShell>
+                      </View>
+                      <View style={styles.formSplitCell}>
+                        <FieldShell label="Harga satuan" required>
+                          <KolamFormTextField
+                            mode="numeric"
+                            onChangeText={customUnitPrice =>
+                              controller.onChangeCreateItem(item.key, {
+                                customUnitPrice,
+                              })
+                            }
+                            placeholder="0"
+                            value={item.customUnitPrice}
+                          />
+                        </FieldShell>
+                      </View>
+                    </View>
+                  </View>
+                ) : null}
               </View>
-              <View style={styles.formSplitCell}>
-                <FieldShell label="Diskon (opsional)">
-                  <KolamFormTextField
-                    mode="numeric"
-                    onChangeText={discountAmount =>
-                      controller.onChangeCreateItem(item.key, { discountAmount })
-                    }
-                    placeholder="0"
-                    value={item.discountAmount}
-                  />
-                </FieldShell>
-              </View>
-              <View style={styles.formSplitCell}>
-                <FieldShell label="Kode voucher">
-                  <KolamFormTextField
-                    onChangeText={voucherCode =>
-                      controller.onChangeCreateItem(item.key, { voucherCode })
-                    }
-                    placeholder="Opsional"
-                    value={item.voucherCode}
-                  />
-                </FieldShell>
-              </View>
-            </View>
+            ))}
           </View>
-        ))}
+        </ScrollView>
       </KolamContentFrame>
 
       <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
@@ -1820,16 +1883,132 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8,
   },
-  createItemCard: {
+  itemGrid: {
+    gap: 12,
+    minWidth: 980,
+    paddingBottom: 4,
+    paddingRight: 8,
+  },
+  itemGridHeader: {
+    alignItems: 'center',
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    gap: 8,
+    paddingBottom: 8,
+  },
+  itemGridHeaderCell: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  itemGridBlock: {
+    gap: 8,
+  },
+  itemGridRow: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  itemColType: {
+    flexGrow: 0,
+    flexShrink: 0,
+    width: 128,
+  },
+  itemColCatalog: {
+    flexGrow: 1,
+    flexShrink: 1,
+    minWidth: 240,
+  },
+  itemColQty: {
+    flexGrow: 0,
+    flexShrink: 0,
+    width: 88,
+  },
+  itemColVoucher: {
+    flexGrow: 0,
+    flexShrink: 0,
+    width: 140,
+  },
+  itemColDiscount: {
+    flexGrow: 0,
+    flexShrink: 0,
+    width: 168,
+  },
+  itemColAction: {
+    alignItems: 'flex-end',
+    flexGrow: 0,
+    flexShrink: 0,
+    justifyContent: 'center',
+    minHeight: 36,
+    width: 44,
+  },
+  itemDropdown: {
+    minWidth: 0,
+    width: '100%',
+  },
+  itemDropdownTrigger: {
+    minWidth: 0,
+    width: '100%',
+  },
+  itemDropdownTriggerText: {
+    fontSize: 12,
+  },
+  itemDiscountRow: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    gap: 6,
+    width: '100%',
+  },
+  itemDiscountType: {
+    flexGrow: 0,
+    flexShrink: 0,
+    width: 56,
+  },
+  itemDiscountTypeTrigger: {
+    minWidth: 0,
+    paddingHorizontal: 8,
+    width: '100%',
+  },
+  itemDiscountAmount: {
+    flex: 1,
+    minWidth: 0,
+  },
+  itemCustomSummary: {
+    borderColor: V.colors.border,
+    borderRadius: V.radius.lg,
+    borderStyle: 'dashed',
+    borderWidth: 1,
+    justifyContent: 'center',
+    minHeight: 36,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  itemCustomSummaryText: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontStyle: 'italic',
+    fontWeight: '600',
+  },
+  itemCustomPanel: {
+    backgroundColor: V.colors.muted,
     borderColor: V.colors.border,
     borderRadius: 8,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderStyle: 'dashed',
+    borderWidth: 1,
     gap: 8,
+    marginLeft: 136,
     padding: 12,
   },
-  itemCardTitle: {
-    color: V.colors.fg,
-    fontSize: 14,
-    fontWeight: '600',
+  itemRemoveButton: {
+    minHeight: 34,
+    minWidth: 34,
+    paddingHorizontal: 8,
+  },
+  itemRemoveButtonText: {
+    fontSize: 18,
+    lineHeight: 20,
   },
 });
