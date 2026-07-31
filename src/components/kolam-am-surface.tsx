@@ -300,19 +300,27 @@ function AmDashboardPage({dashboard}: {dashboard?: AmDashboardData | null}) {
         <AmMutationChart chartData={data.chartData} />
       </View>
       <View style={styles.panel}>
-        <Text style={styles.panelTitle}>Devices</Text>
+        <Text style={styles.panelTitle}>Device Overview</Text>
+        <Text style={styles.panelText}>All devices with active accounts and their locations.</Text>
+        <View style={styles.detailListHeader}>
+          <Text style={[styles.tableHeaderText, styles.serviceCol]}>Device</Text>
+          <Text style={[styles.tableHeaderText, styles.deviceWideCol]}>Location</Text>
+          <Text style={[styles.tableHeaderText, styles.statusCol]}>Accounts</Text>
+          <Text style={[styles.tableHeaderText, styles.accountCol]}>Types</Text>
+        </View>
         {data.devices.slice(0, 8).map(device => (
           <View key={device._id} style={styles.deviceRow}>
-            <View>
+            <View style={styles.serviceCol}>
               <Text style={styles.rowTitle}>{device.name}</Text>
               <Text style={styles.rowMeta}>
-                {device.brand} {device.model} - {device.rackName ?? 'No rack'} / {device.boxName ?? 'No box'}
+                {[device.brand, device.model].filter(Boolean).join(' ') || device.udid}
               </Text>
-              {device.accountTypes.length ? (
-                <Text style={styles.rowMeta}>Types: {device.accountTypes.join(', ')}</Text>
-              ) : null}
             </View>
-            <Text style={styles.rowMeta}>{device.activeAccountCount}/{device.accountCount} active</Text>
+            <Text style={[styles.rowMeta, styles.deviceWideCol]}>
+              {[device.boxName, device.rackName].filter(Boolean).join(' / ') || '-'}
+            </Text>
+            <Text style={[styles.rowMeta, styles.statusCol]}>{device.activeAccountCount}/{device.accountCount}</Text>
+            <Text style={[styles.rowMeta, styles.accountCol]}>{device.accountTypes.length ? device.accountTypes.join(', ') : '-'}</Text>
           </View>
         ))}
         <AmLoadingOrEmpty
@@ -5279,6 +5287,14 @@ const styles = StyleSheet.create({
     borderColor: V.colors.border,
     borderRadius: 8,
     backgroundColor: V.colors.bg,
+  },
+  detailListHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderTopWidth: 1,
+    borderTopColor: V.colors.border,
+    paddingTop: 10,
   },
   detailListRow: {
     flexDirection: 'row',

@@ -274,6 +274,7 @@ describe('KolamAmSurface', () => {
     renderers.push(renderer!);
 
     const text = renderText(renderer!);
+    const joinedText = text.join(' ');
 
     expect(text).toContain('Automation Management');
     expect(text).toContain('Dashboard');
@@ -281,11 +282,17 @@ describe('KolamAmSurface', () => {
     expect(text).toContain('Transfer Status');
     expect(text).toContain('Vendor Dashboard');
     expect(text).toContain('Recent Mutations');
+    expect(text).toContain('Device Overview');
+    expect(joinedText).toContain('All devices with active accounts and their locations.');
+    expect(text).toContain('Location');
+    expect(text).toContain('Accounts');
+    expect(text).toContain('Types');
     expect(text).toContain('Dashboard Phone');
-    const joinedText = text.join(' ');
     expect(text).toContain('In');
     expect(text).toContain('Rp450rb');
-    expect(joinedText).toMatch(/Types:\s+bca/);
+    expect(joinedText).toMatch(/Box 01\s+\/\s+Rack Alpha/);
+    expect(joinedText).toMatch(/1\s+\/\s+2/);
+    expect(joinedText).toContain('bca');
     expect(getAmDashboard).toHaveBeenCalledTimes(1);
   });
 
