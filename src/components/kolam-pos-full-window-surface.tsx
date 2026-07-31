@@ -447,6 +447,10 @@ export function KolamPosFullWindowSurface({
           customers={customers}
           searchValue={customerSelectorSearch}
           selectedCustomer={selectedCustomer}
+          onOpenCustomerView={() => {
+            setActiveView('customers');
+            setCustomerSelectorSearch('');
+          }}
           onSearchChange={setCustomerSelectorSearch}
           onSelectCustomer={onSelectCustomer}
         />
@@ -843,12 +847,14 @@ function PosCatalogCard({
 
 function PosCustomerSelectorInline({
   customers,
+  onOpenCustomerView,
   onSearchChange,
   onSelectCustomer,
   searchValue,
   selectedCustomer,
 }: {
   customers: Customer[];
+  onOpenCustomerView: () => void;
   onSearchChange: (value: string) => void;
   onSelectCustomer: (customerId: string) => void;
   searchValue: string;
@@ -933,6 +939,20 @@ function PosCustomerSelectorInline({
       </View>
       {isOpen ? (
         <View style={styles.customerDropdown}>
+          <KolamInteractionFrame
+            onPress={() => {
+              onOpenCustomerView();
+              setIsOpen(false);
+            }}
+            style={styles.customerManageRow}>
+            <Text style={styles.customerManageIcon}>+</Text>
+            <Text style={styles.customerManageText}>Kelola Pelanggan</Text>
+            {searchValue ? (
+              <Text numberOfLines={1} style={styles.customerManageHint}>
+                "{searchValue}"
+              </Text>
+            ) : null}
+          </KolamInteractionFrame>
           {visibleCustomers.length ? (
             visibleCustomers.map(customer => (
               <KolamInteractionFrame
@@ -2876,6 +2896,40 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 6,
     elevation: 2,
+  },
+  customerManageRow: {
+    minHeight: 38,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+  },
+  customerManageIcon: {
+    width: 22,
+    height: 22,
+    overflow: 'hidden',
+    borderRadius: 11,
+    backgroundColor: V.colors.primarySoft,
+    color: V.colors.primary,
+    fontSize: 15,
+    fontWeight: '900',
+    lineHeight: 21,
+    textAlign: 'center',
+  },
+  customerManageText: {
+    color: V.colors.primary,
+    fontSize: 12,
+    fontWeight: '900',
+  },
+  customerManageHint: {
+    flex: 1,
+    minWidth: 0,
+    color: V.colors.mutedFg,
+    fontSize: 10,
+    fontWeight: '700',
   },
   customerOptionRow: {
     minHeight: 44,
