@@ -2221,7 +2221,11 @@ function AmTransferDetailPanel({
 function AmMutasiPage() {
   const [mutasi, setMutasi] = React.useState<AmMutasi[]>([]);
   const [summary, setSummary] = React.useState<AmMutasiSummary | null>(null);
+  const [accounts, setAccounts] = React.useState<AmServiceAccount[]>([]);
+  const [devices, setDevices] = React.useState<AmDevice[]>([]);
   const [type, setType] = React.useState('all');
+  const [accountFilter, setAccountFilter] = React.useState('all');
+  const [deviceFilter, setDeviceFilter] = React.useState('all');
   const [page, setPage] = React.useState(1);
   const [limit, setLimit] = React.useState(AM_MUTASI_PAGE_LIMIT);
   const [total, setTotal] = React.useState(0);
@@ -2236,8 +2240,10 @@ function AmMutasiPage() {
           page,
           limit: AM_MUTASI_PAGE_LIMIT,
           type: type === 'all' ? undefined : type,
+          accountId: accountFilter === 'all' ? undefined : accountFilter,
+          deviceId: deviceFilter === 'all' ? undefined : deviceFilter,
         }),
-        getAmMutasiSummary(),
+        getAmMutasiSummary(accountFilter === 'all' ? undefined : accountFilter),
       ]);
       setMutasi(listResponse.data);
       setTotal(listResponse.meta.total);
@@ -2249,11 +2255,28 @@ function AmMutasiPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [page, type]);
+  }, [accountFilter, deviceFilter, page, type]);
+
+  const fetchMutasiFilterOptions = React.useCallback(async () => {
+    try {
+      const [accountResponse, deviceResponse] = await Promise.all([
+        getAmServiceAccounts({limit: 100}),
+        getAmDevices({limit: 100}),
+      ]);
+      setAccounts(accountResponse.data);
+      setDevices(deviceResponse.data);
+    } catch {
+      // Mutasi list remains usable when optional filter option loading fails.
+    }
+  }, []);
 
   React.useEffect(() => {
     fetchMutasi();
   }, [fetchMutasi]);
+
+  React.useEffect(() => {
+    fetchMutasiFilterOptions();
+  }, [fetchMutasiFilterOptions]);
 
   React.useEffect(() => {
     const interval = setInterval(fetchMutasi, 10_000);
@@ -2265,6 +2288,16 @@ function AmMutasiPage() {
     setPage(1);
   }, []);
 
+  const handleMutasiAccountChange = React.useCallback((value: string) => {
+    setAccountFilter(value);
+    setPage(1);
+  }, []);
+
+  const handleMutasiDeviceChange = React.useCallback((value: string) => {
+    setDeviceFilter(value);
+    setPage(1);
+  }, []);
+
   const totalPages = Math.max(1, Math.ceil(total / Math.max(limit, 1)));
   const rangeFrom = total ? (page - 1) * limit + 1 : 0;
   const rangeTo = total ? Math.min(page * limit, total) : 0;
@@ -2272,6 +2305,20 @@ function AmMutasiPage() {
   const outgoing = summary?.keluar ?? {total: 0, count: 0};
   const netBalance = incoming.total - outgoing.total;
   const totalTransactions = incoming.count + outgoing.count;
+  const accountLabels = React.useMemo(
+    () => ({
+      all: 'All Accounts',
+      ...Object.fromEntries(accounts.map(account => [account._id, formatMutasiAccountOption(account)])),
+    }),
+    [accounts],
+  );
+  const deviceLabels = React.useMemo(
+    () => ({
+      all: 'All Devices',
+      ...Object.fromEntries(devices.map(device => [device._id, device.name])),
+    }),
+    [devices],
+  );
 
   return (
     <View style={styles.pageStack}>
@@ -2281,6 +2328,18 @@ function AmMutasiPage() {
         <AmMetricCard label="Net Balance" value={formatRupiah(netBalance)} meta="masuk - keluar" />
         <AmMetricCard label="Total Transactions" value={String(totalTransactions)} meta="summary count" />
         <AmSegmentGroup active={type} items={['all', 'masuk', 'keluar']} onSelect={handleMutasiTypeChange} />
+        <AmSegmentGroup
+          active={accountFilter}
+          items={['all', ...accounts.map(account => account._id)]}
+          labels={accountLabels}
+          onSelect={handleMutasiAccountChange}
+        />
+        <AmSegmentGroup
+          active={deviceFilter}
+          items={['all', ...devices.map(device => device._id)]}
+          labels={deviceLabels}
+          onSelect={handleMutasiDeviceChange}
+        />
         <KolamButton label={isLoading ? 'Memuat' : 'Refresh'} intent="outline" muted={isLoading} size="sm" onPress={fetchMutasi} />
       </View>
       <AmInlineError title="Mutasi AM belum bisa dibaca" error={error} />
@@ -3512,6 +3571,11 @@ function formatBankAccount(account: AmTransfer['accountId'] | AmMutasi['accountI
   if (!account || typeof account === 'string') return '-';
   const suffix = account.accountNumber ? ` - ${account.accountNumber}` : '';
   return `${account.label}${suffix}`;
+}
+
+function formatMutasiAccountOption(account: AmServiceAccount) {
+  const prefix = account.label || account.platform || 'Account';
+  return account.accountNumber ? `${prefix} - ${account.accountNumber}` : prefix;
 }
 
 function formatDeviceRef(device: AmTransfer['deviceId'] | AmMutasi['deviceId']) {

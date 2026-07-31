@@ -1106,6 +1106,41 @@ describe('KolamAmSurface', () => {
   });
 
   it('renders mutasi summary stats and pagination from live metadata', async () => {
+    jest.mocked(getAmServiceAccounts).mockResolvedValue({
+      data: [
+        {
+          _id: 'account-1',
+          label: 'BCA Main',
+          platform: 'bca',
+          accountNumber: '123',
+          status: 'connected',
+          deviceId: null,
+          username: '',
+          credentials: {},
+          meta: {},
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 1, limit: 100},
+    });
+    jest.mocked(getAmDevices).mockResolvedValue({
+      data: [
+        {
+          _id: 'device-1',
+          name: 'Phone 1',
+          slug: 'phone-1',
+          brand: 'Samsung',
+          model: 'A1',
+          boxId: 'box-1',
+          udid: 'udid-1',
+          connectionType: 'usb',
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 1, limit: 100},
+    });
     jest.mocked(getAmMutasi).mockResolvedValue({
       data: [
         {
@@ -1143,7 +1178,10 @@ describe('KolamAmSurface', () => {
       page: 1,
       limit: 50,
       type: undefined,
+      accountId: undefined,
+      deviceId: undefined,
     });
+    expect(getAmMutasiSummary).toHaveBeenLastCalledWith(undefined);
 
     const joinedText = renderText(renderer!).join(' ');
     expect(joinedText).toContain('Total Incoming');
@@ -1161,6 +1199,33 @@ describe('KolamAmSurface', () => {
       page: 2,
       limit: 50,
       type: undefined,
+      accountId: undefined,
+      deviceId: undefined,
+    });
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Segment BCA Main - 123'}).props.onPress();
+    });
+
+    expect(getAmMutasi).toHaveBeenLastCalledWith({
+      page: 1,
+      limit: 50,
+      type: undefined,
+      accountId: 'account-1',
+      deviceId: undefined,
+    });
+    expect(getAmMutasiSummary).toHaveBeenLastCalledWith('account-1');
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Segment Phone 1'}).props.onPress();
+    });
+
+    expect(getAmMutasi).toHaveBeenLastCalledWith({
+      page: 1,
+      limit: 50,
+      type: undefined,
+      accountId: 'account-1',
+      deviceId: 'device-1',
     });
   });
 
