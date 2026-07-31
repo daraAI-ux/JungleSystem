@@ -536,6 +536,11 @@ export function canEditKolamProduction(status?: string) {
   );
 }
 
+/** BE rejects quantity (and similar) updates while waiting_for_po. */
+export function isKolamProductionQuantityLocked(status?: string) {
+  return status === 'waiting_for_po';
+}
+
 /* ──────────────────────────────────────────
    Permissions — resource `production`
    ──────────────────────────────────────────*/
@@ -737,13 +742,17 @@ export function buildCreateProductionBody(
 
 export function buildUpdateProductionBody(
   form: KolamProductionFormState,
+  options?: { status?: string | null },
 ): KolamUpdateProductionBody {
-  return {
+  const body: KolamUpdateProductionBody = {
     description: form.description.trim() || undefined,
-    quantity: Number(form.quantity) || undefined,
     assignedTo: form.assignedToId || undefined,
     productionDate: form.productionDate || null,
   };
+  if (!isKolamProductionQuantityLocked(options?.status ?? undefined)) {
+    body.quantity = Number(form.quantity) || undefined;
+  }
+  return body;
 }
 
 /* ──────────────────────────────────────────

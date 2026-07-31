@@ -2,12 +2,14 @@ export interface ApiErrorPayload {
   message?: string;
   code?: string;
   errors?: Record<string, string[]>;
+  insufficientStock?: string[];
 }
 
 export class ApiError extends Error {
   readonly status: number;
   readonly code?: string;
   readonly errors?: Record<string, string[]>;
+  readonly insufficientStock?: string[];
 
   constructor(status: number, payload: ApiErrorPayload = {}) {
     super(payload.message || `Request failed with status ${status}`);
@@ -15,6 +17,7 @@ export class ApiError extends Error {
     this.status = status;
     this.code = payload.code;
     this.errors = payload.errors;
+    this.insufficientStock = payload.insufficientStock;
   }
 }
 

@@ -208,10 +208,19 @@ function normalizeErrorPayload(payload: unknown): ApiErrorPayload {
             ? record.errorCode
             : undefined,
       errors: isValidationErrors(record.errors) ? record.errors : undefined,
+      insufficientStock: isStringArray(record.insufficientStock)
+        ? record.insufficientStock
+        : undefined,
     };
   }
 
   return {};
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return (
+    Array.isArray(value) && value.every(item => typeof item === 'string')
+  );
 }
 
 function isValidationErrors(value: unknown): value is Record<string, string[]> {

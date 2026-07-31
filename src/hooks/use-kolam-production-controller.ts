@@ -427,7 +427,9 @@ export function useKolamProductionController(
       if ((mode === 'edit' || mode === 'detail') && selectedProduction) {
         const updated = await updateKolamProduction(
           selectedProduction.id,
-          buildUpdateProductionBody(form),
+          buildUpdateProductionBody(form, {
+            status: selectedProduction.status,
+          }),
         );
         setSelectedProduction(updated);
         setForm(createKolamProductionFormStateFromProduction(updated));
@@ -441,7 +443,11 @@ export function useKolamProductionController(
         saveError instanceof ApiError &&
         saveError.code === 'INSUFFICIENT_STOCK'
       ) {
-        setInsufficientStock(['Stok bahan tidak mencukupi']);
+        setInsufficientStock(
+          saveError.insufficientStock?.length
+            ? saveError.insufficientStock
+            : ['Stok bahan tidak mencukupi'],
+        );
       }
       return null;
     } finally {
@@ -593,12 +599,27 @@ export function useKolamProductionController(
       setMutating(true);
       setError(null);
       try {
-        const updated = await cancelKolamProduction(
+        const result = await cancelKolamProduction(
           selectedProduction.id,
           note,
         );
-        setSelectedProduction(updated);
-        setStatusMessage('Produksi dibatalkan.');
+        setSelectedProduction(result.production);
+        const cancelledPOs = result.cancelReport.cancelledPOs;
+        const keptPOs = result.cancelReport.keptPOs;
+        if (cancelledPOs.length > 0) {
+          setStatusMessage(
+            `Produksi dibatalkan. ${cancelledPOs.length} PO otomatis dibatalkan: ${cancelledPOs.join(', ')}`,
+          );
+        } else {
+          setStatusMessage('Produksi dibatalkan.');
+        }
+        if (keptPOs.length > 0) {
+          setError(
+            `${keptPOs.length} PO tetap aktif (status sudah lanjut): ${keptPOs
+              .map(po => `${po.poCode} (${po.status})`)
+              .join(', ')}`,
+          );
+        }
         return true;
       } catch (cancelError) {
         setError(getErrorMessage(cancelError));

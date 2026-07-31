@@ -807,9 +807,20 @@ function KolamProductionForm({
         )}
 
         <KolamFormTextField
+          editable={
+            !(
+              isEdit &&
+              controller.selectedProduction?.status === 'waiting_for_po'
+            )
+          }
           keyboardType="numeric"
           onChangeText={value => controller.onChangeForm({ quantity: value })}
-          placeholder="Kuantitas"
+          placeholder={
+            isEdit &&
+            controller.selectedProduction?.status === 'waiting_for_po'
+              ? 'Kuantitas terkunci (menunggu PO)'
+              : 'Kuantitas'
+          }
           value={form.quantity}
         />
         <KolamFormTextField
@@ -872,11 +883,11 @@ function KolamProductionForm({
         {!isEdit && controller.insufficientStock.length ? (
           <View style={styles.warningBox}>
             <Text style={styles.warningTitle}>Stok bahan kurang</Text>
-            {controller.insufficientStock.map(item => (
-              <Text key={item} style={styles.warningText}>
-                {item}
-              </Text>
-            ))}
+            <Text style={styles.warningText}>
+              Bahan berikut tidak cukup:{' '}
+              {controller.insufficientStock.join(', ')}. Buat PO terlebih
+              dahulu.
+            </Text>
             <View style={styles.formActions}>
               <KolamButton
                 disabled={controller.mutating}
@@ -1252,7 +1263,11 @@ function KolamProductionDetail({
       <KolamConfirmDialog
         confirmLabel="Batalkan"
         destructive
-        message={`Batalkan produksi ${production.batchId}?`}
+        message={
+          production.linkedPurchaseOrders.length
+            ? `Batalkan produksi ${production.batchId}? PO draft/sent terkait akan dibatalkan otomatis; PO yang sudah lanjut tetap aktif.`
+            : `Batalkan produksi ${production.batchId}?`
+        }
         title="Batalkan Produksi"
         visible={showCancel}
         onCancel={() => setShowCancel(false)}

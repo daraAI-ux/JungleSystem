@@ -1,6 +1,7 @@
 import {
   KOLAM_PRODUCTION_ROOT,
   buildCreateProductionBody,
+  buildUpdateProductionBody,
   canCancelKolamProduction,
   canRecalculateKolamProduction,
   createEmptyKolamProductionFormState,
@@ -16,6 +17,7 @@ import {
   isKolamProductionDetailRoute,
   isKolamProductionEditRoute,
   isKolamProductionListRoute,
+  isKolamProductionQuantityLocked,
   isKolamProductionRoute,
   normalizeKolamProduction,
   normalizeKolamProductionList,
@@ -185,5 +187,28 @@ describe('kolam production domain', () => {
       quantity: 2,
     });
     expect(body).not.toHaveProperty('freyer');
+  });
+
+  it('omits quantity from update body when waiting_for_po', () => {
+    const form = {
+      ...createEmptyKolamProductionFormState(),
+      quantity: '9',
+      description: 'Update deskripsi',
+      assignedToId: 'user-1',
+      productionDate: '2026-08-01',
+    };
+    expect(isKolamProductionQuantityLocked('waiting_for_po')).toBe(true);
+    expect(isKolamProductionQuantityLocked('pending')).toBe(false);
+
+    const locked = buildUpdateProductionBody(form, {status: 'waiting_for_po'});
+    expect(locked).toMatchObject({
+      description: 'Update deskripsi',
+      assignedTo: 'user-1',
+      productionDate: '2026-08-01',
+    });
+    expect(locked).not.toHaveProperty('quantity');
+
+    const unlocked = buildUpdateProductionBody(form, {status: 'pending'});
+    expect(unlocked.quantity).toBe(9);
   });
 });

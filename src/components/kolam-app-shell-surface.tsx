@@ -111,7 +111,8 @@ export function isCatalogTableListRoute(route?: string | null) {
     routePath === '/products/archive' ||
     routePath === '/stock-transaction' ||
     routePath === '/customers' ||
-    routePath === '/list-of-users'
+    routePath === '/list-of-users' ||
+    routePath === '/production'
   );
 }
 
@@ -143,6 +144,7 @@ const KOLAM_CENTERED_ROUTE_PREFIXES = [
   '/suppliers',
   '/customers',
   '/purchase-order',
+  '/production',
 ];
 const styles = StyleSheet.create({
   mainScroll: {

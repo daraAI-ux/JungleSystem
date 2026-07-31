@@ -46,6 +46,15 @@ export interface KolamRecalculateProductionResult {
   statusTransition: { from: string; to: string } | null;
 }
 
+export interface KolamCancelProductionResult {
+  message: string;
+  production: KolamProduction;
+  cancelReport: {
+    cancelledPOs: string[];
+    keptPOs: Array<{ poCode: string; status: string }>;
+  };
+}
+
 export interface KolamRestoreProductionResult {
   message: string;
   production: KolamProduction;
@@ -221,18 +230,27 @@ export async function updateKolamProduction(
 export async function cancelKolamProduction(
   id: string,
   note?: string,
-): Promise<KolamProduction> {
-  const response = await kolamRequest<unknown>(
-    `/production/${encodeURIComponent(id)}`,
-    {
-      method: 'PUT',
-      body: {
-        status: 'cancelled',
-        note: note?.trim() || undefined,
-      },
+): Promise<KolamCancelProductionResult> {
+  const response = await kolamRequest<{
+    message?: string;
+    data?: unknown;
+    cancelReport?: KolamCancelProductionResult['cancelReport'];
+  }>(`/production/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    body: {
+      status: 'cancelled',
+      note: note?.trim() || undefined,
     },
-  );
-  return normalizeKolamProduction(response);
+  });
+
+  return {
+    message: response.message ?? '',
+    production: normalizeKolamProduction(response.data ?? response),
+    cancelReport: {
+      cancelledPOs: response.cancelReport?.cancelledPOs ?? [],
+      keptPOs: response.cancelReport?.keptPOs ?? [],
+    },
+  };
 }
 
 export async function restoreKolamProduction(
