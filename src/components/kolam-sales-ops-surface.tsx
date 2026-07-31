@@ -90,6 +90,9 @@ const ITEM_DISCOUNT_TYPE_OPTIONS = [
   { label: 'Rp', value: 'fixed' },
 ] as const;
 
+/** Fixed grid width so horizontal ScrollView can scroll (flexGrow catalog was swallowing siblings on RNW). */
+const SALE_CREATE_ITEM_GRID_WIDTH = 1100;
+
 /**
  * Kolam backoffice penjualan (FE `/sales`).
  * P0: list + detail + status/proof/invoice.
@@ -970,27 +973,33 @@ function KolamSalesOpsCreateForm({
           <Text style={styles.sectionTitle}>Item</Text>
           <KolamButton label="Tambah item" onPress={controller.onAddCreateItem} />
         </View>
-        <ScrollView horizontal nestedScrollEnabled>
+        <ScrollView
+          horizontal
+          nestedScrollEnabled
+          showsHorizontalScrollIndicator
+          style={styles.itemGridScroll}
+          contentContainerStyle={styles.itemGridScrollContent}
+        >
           <View style={styles.itemGrid}>
             <View style={styles.itemGridHeader}>
-              <Text style={[styles.itemGridHeaderCell, styles.itemColType]}>
-                Tipe
-              </Text>
-              <Text style={[styles.itemGridHeaderCell, styles.itemColCatalog]}>
-                Produk/Spesies
-              </Text>
-              <Text style={[styles.itemGridHeaderCell, styles.itemColShipping]}>
-                Pengiriman
-              </Text>
-              <Text style={[styles.itemGridHeaderCell, styles.itemColQty]}>
-                Jml
-              </Text>
-              <Text style={[styles.itemGridHeaderCell, styles.itemColVoucher]}>
-                Voucher
-              </Text>
-              <Text style={[styles.itemGridHeaderCell, styles.itemColDiscount]}>
-                Diskon
-              </Text>
+              <View style={styles.itemColType}>
+                <Text style={styles.itemGridHeaderCell}>Tipe</Text>
+              </View>
+              <View style={styles.itemColCatalog}>
+                <Text style={styles.itemGridHeaderCell}>Produk/Spesies</Text>
+              </View>
+              <View style={styles.itemColShipping}>
+                <Text style={styles.itemGridHeaderCell}>Pengiriman</Text>
+              </View>
+              <View style={styles.itemColQty}>
+                <Text style={styles.itemGridHeaderCell}>Jml</Text>
+              </View>
+              <View style={styles.itemColVoucher}>
+                <Text style={styles.itemGridHeaderCell}>Voucher</Text>
+              </View>
+              <View style={styles.itemColDiscount}>
+                <Text style={styles.itemGridHeaderCell}>Diskon</Text>
+              </View>
               <View style={styles.itemColAction} />
             </View>
 
@@ -1955,11 +1964,17 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8,
   },
+  itemGridScroll: {
+    alignSelf: 'stretch',
+    width: '100%',
+  },
+  itemGridScrollContent: {
+    flexGrow: 0,
+    paddingBottom: 6,
+  },
   itemGrid: {
     gap: 12,
-    minWidth: 1120,
-    paddingBottom: 4,
-    paddingRight: 8,
+    width: SALE_CREATE_ITEM_GRID_WIDTH,
   },
   itemGridHeader: {
     alignItems: 'center',
@@ -1968,6 +1983,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     paddingBottom: 8,
+    width: SALE_CREATE_ITEM_GRID_WIDTH,
   },
   itemGridHeaderCell: {
     color: V.colors.mutedFg,
@@ -1977,11 +1993,14 @@ const styles = StyleSheet.create({
   },
   itemGridBlock: {
     gap: 8,
+    width: SALE_CREATE_ITEM_GRID_WIDTH,
   },
   itemGridRow: {
     alignItems: 'flex-start',
     flexDirection: 'row',
+    flexWrap: 'nowrap',
     gap: 8,
+    width: SALE_CREATE_ITEM_GRID_WIDTH,
   },
   itemColType: {
     flexGrow: 0,
@@ -1989,29 +2008,29 @@ const styles = StyleSheet.create({
     width: 120,
   },
   itemColCatalog: {
-    flexGrow: 1,
-    flexShrink: 1,
-    minWidth: 220,
+    flexGrow: 0,
+    flexShrink: 0,
+    width: 260,
   },
   itemColShipping: {
     flexGrow: 0,
     flexShrink: 0,
-    width: 160,
+    width: 170,
   },
   itemColQty: {
     flexGrow: 0,
     flexShrink: 0,
-    width: 80,
+    width: 88,
   },
   itemColVoucher: {
     flexGrow: 0,
     flexShrink: 0,
-    width: 130,
+    width: 140,
   },
   itemColDiscount: {
     flexGrow: 0,
     flexShrink: 0,
-    width: 160,
+    width: 168,
   },
   itemColAction: {
     alignItems: 'flex-end',
@@ -2022,15 +2041,19 @@ const styles = StyleSheet.create({
     width: 44,
   },
   itemDropdown: {
+    alignSelf: 'stretch',
+    maxWidth: '100%',
     minWidth: 0,
     width: '100%',
   },
   itemDropdownTrigger: {
+    maxWidth: '100%',
     minWidth: 0,
     width: '100%',
   },
   itemDropdownTriggerText: {
     fontSize: 12,
+    maxWidth: 240,
   },
   itemDiscountRow: {
     alignItems: 'flex-start',
