@@ -16,6 +16,9 @@ import {
   getKolamSpeciesAllocationOverview,
 } from '../src/services/kolam-enclosure-api';
 import {getKolamStockTransactionList} from '../src/services/kolam-stock-transaction-api';
+import {getKolamBrands} from '../src/services/kolam-brand-api';
+import {getKolamLocations} from '../src/services/kolam-location-api';
+import {getKolamUnits} from '../src/services/kolam-unit-api';
 
 jest.mock('../src/services/kolam-enclosure-api', () => ({
   getKolamEnclosureComments: jest.fn(),
@@ -33,6 +36,18 @@ jest.mock('../src/services/kolam-enclosure-api', () => ({
 
 jest.mock('../src/services/kolam-stock-transaction-api', () => ({
   getKolamStockTransactionList: jest.fn(),
+}));
+
+jest.mock('../src/services/kolam-brand-api', () => ({
+  getKolamBrands: jest.fn(),
+}));
+
+jest.mock('../src/services/kolam-location-api', () => ({
+  getKolamLocations: jest.fn(),
+}));
+
+jest.mock('../src/services/kolam-unit-api', () => ({
+  getKolamUnits: jest.fn(),
 }));
 
 type EnclosureController = ReturnType<typeof useKolamEnclosureController>;
@@ -79,6 +94,13 @@ const getStockTransactionsMock =
   getKolamStockTransactionList as jest.MockedFunction<
     typeof getKolamStockTransactionList
   >;
+const getBrandsMock = getKolamBrands as jest.MockedFunction<
+  typeof getKolamBrands
+>;
+const getLocationsMock = getKolamLocations as jest.MockedFunction<
+  typeof getKolamLocations
+>;
+const getUnitsMock = getKolamUnits as jest.MockedFunction<typeof getKolamUnits>;
 
 function requireController(controller: EnclosureController | null) {
   if (!controller) {
@@ -252,6 +274,48 @@ describe('Kolam enclosure controller hook', () => {
         totalUnallocated: 3,
       },
     });
+    getBrandsMock.mockResolvedValue([
+      {
+        createdAt: '',
+        description: '',
+        id: 'brand-1',
+        links: [],
+        logoUrl: null,
+        name: 'Brand A',
+        notes: '',
+        originCountry: '',
+        photos: [],
+        productCount: 0,
+        raw: {},
+        rawMaterialCount: 0,
+        serviceCount: 0,
+        slug: 'brand-a',
+        speciesCount: 0,
+        status: 'active',
+        updatedAt: '',
+      },
+    ]);
+    getLocationsMock.mockResolvedValue([
+      {
+        id: 'loc-1',
+        label: 'Room A',
+        name: 'Room A',
+        tier: 'primary',
+        type: 'building',
+      },
+    ]);
+    getUnitsMock.mockResolvedValue([
+      {
+        category: 'size',
+        id: 'unit-1',
+        initial: 'cm',
+        isBase: true,
+        name: 'Centimeter',
+        raw: {},
+        status: 'active',
+        type: 'length',
+      },
+    ]);
   });
 
   it('derives list mode and initial filters from the route query', async () => {
@@ -466,6 +530,49 @@ describe('Kolam enclosure controller hook', () => {
       expect.objectContaining({id: 'stx-1'}),
     ]);
     expect(getDashboardStatsMock).not.toHaveBeenCalled();
+  });
+
+  it('loads enclosure detail and edit lookups for edit routes', async () => {
+    let latest: EnclosureController | null = null;
+
+    await ReactTestRenderer.act(async () => {
+      ReactTestRenderer.create(
+        <EnclosureHarness
+          route="/enclosures/enc-1/edit"
+          onRender={controller => {
+            latest = controller;
+          }}
+        />,
+      );
+      await flushPromises();
+    });
+
+    expect(requireController(latest).mode).toBe('edit');
+    expect(getDetailMock).toHaveBeenCalledWith('enc-1');
+    expect(getStaffAssigneesMock).toHaveBeenCalledWith({limit: 200});
+    expect(getBrandsMock).toHaveBeenCalled();
+    expect(getLocationsMock).toHaveBeenCalled();
+    expect(getUnitsMock).toHaveBeenCalled();
+    expect(getStatisticsMock).not.toHaveBeenCalled();
+    expect(getTasksMock).not.toHaveBeenCalled();
+    expect(getStockTransactionsMock).not.toHaveBeenCalled();
+    expect(getDashboardStatsMock).not.toHaveBeenCalled();
+    expect(getEnclosuresMock).not.toHaveBeenCalled();
+    expect(requireController(latest).selectedEnclosure).toEqual(
+      expect.objectContaining({id: 'enc-1', code: 'ENC-1'}),
+    );
+    expect(requireController(latest).staffAssignees).toEqual([
+      expect.objectContaining({id: 'u1', displayName: 'Keeper One'}),
+    ]);
+    expect(requireController(latest).editBrands).toEqual([
+      expect.objectContaining({id: 'brand-1', name: 'Brand A'}),
+    ]);
+    expect(requireController(latest).editLocations).toEqual([
+      expect.objectContaining({id: 'loc-1', name: 'Room A'}),
+    ]);
+    expect(requireController(latest).editUnits).toEqual([
+      expect.objectContaining({id: 'unit-1', initial: 'cm'}),
+    ]);
   });
 });
 

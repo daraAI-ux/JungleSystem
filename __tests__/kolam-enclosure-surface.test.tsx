@@ -451,6 +451,104 @@ describe('Kolam enclosure surface', () => {
     expect(onRouteChange).toHaveBeenCalledWith('/enclosures/enc-1/edit');
   });
 
+  it('renders edit route load shell after detail and lookups are ready', async () => {
+    const onRouteChange = jest.fn();
+    const controller = createController({
+      dataSource: 'live',
+      editBrands: [
+        {
+          createdAt: '',
+          description: '',
+          id: 'brand-1',
+          links: [],
+          logoUrl: null,
+          name: 'Brand A',
+          notes: '',
+          originCountry: '',
+          photos: [],
+          productCount: 0,
+          raw: {},
+          rawMaterialCount: 0,
+          serviceCount: 0,
+          slug: 'brand-a',
+          speciesCount: 0,
+          status: 'active',
+          updatedAt: '',
+        },
+      ],
+      editLocations: [
+        {
+          id: 'loc-1',
+          label: 'Room A',
+          name: 'Room A',
+          tier: 'primary',
+          type: 'building',
+        },
+      ],
+      editUnits: [
+        {
+          category: 'size',
+          id: 'unit-1',
+          initial: 'cm',
+          isBase: true,
+          name: 'Centimeter',
+          raw: {},
+          status: 'active',
+          type: 'length',
+        },
+      ],
+      loading: false,
+      mode: 'edit',
+      routeEnclosureId: 'enc-1',
+      selectedEnclosure: createEnclosure(),
+      staffAssignees: [
+        {
+          displayName: 'Keeper One',
+          email: 'keeper@example.com',
+          firstName: 'Keeper',
+          id: 'u1',
+          lastName: 'One',
+          photo: '',
+          username: 'keeper',
+        },
+      ],
+    });
+    useControllerMock.mockReturnValue(controller);
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamEnclosureSurface
+          onRouteChange={onRouteChange}
+          route="/enclosures/enc-1/edit"
+        />,
+      );
+    });
+
+    const root = renderer!.root;
+    expect(root.findAllByProps({children: 'ENC-1 · Rack 1'}).length).toBeGreaterThan(
+      0,
+    );
+    expect(
+      root.findAllByProps({
+        children:
+          'Data enclosure dan lookup siap. Form ubah akan tersedia di langkah berikutnya.',
+      }).length,
+    ).toBeGreaterThan(0);
+    expect(
+      root.findAllByProps({
+        children: 'Lookup: 1 lokasi · 1 brand · 1 unit · 1 PIC',
+      }).length,
+    ).toBeGreaterThan(0);
+    expect(root.findAllByProps({label: 'Dashboard'}).length).toBe(0);
+    expect(root.findAllByProps({label: 'Overview'}).length).toBe(0);
+
+    await ReactTestRenderer.act(async () => {
+      root.findAllByProps({label: 'Batal'})[0].props.onPress();
+    });
+    expect(onRouteChange).toHaveBeenCalledWith('/enclosures/enc-1');
+  });
+
   it('shows production detail tab only for production enclosures', async () => {
     const controller = createController({
       activeTab: 'dashboard',
@@ -689,6 +787,9 @@ function createController(
     enclosureStockTransactions: [],
     enclosureStockTransactionsLoading: false,
     enclosureStockTransactionsError: null,
+    editBrands: [],
+    editLocations: [],
+    editUnits: [],
     error: null,
     filters: {
       enclosureType: 'all',

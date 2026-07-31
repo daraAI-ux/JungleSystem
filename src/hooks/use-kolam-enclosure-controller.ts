@@ -20,8 +20,11 @@ import {
   type KolamEnclosureTaskItem,
   type KolamEnclosureTaskType,
 } from '../domain/kolam-enclosure';
+import type {KolamBrand} from '../domain/kolam-brand';
 import type {KolamStockTransaction} from '../domain/kolam-stock-transaction';
+import type {KolamUnit} from '../domain/kolam-unit';
 import {getErrorMessage} from '../lib/api-error';
+import {getKolamBrands} from '../services/kolam-brand-api';
 import {
   addKolamEnclosureProductionEggs,
   advanceKolamEnclosureProductionEggs,
@@ -69,7 +72,12 @@ import {
   type KolamEnclosureSpeciesTransferInput,
   type KolamEnclosureVariantSwitchInput,
 } from '../services/kolam-enclosure-api';
+import {
+  getKolamLocations,
+  type KolamLocationOption,
+} from '../services/kolam-location-api';
 import {getKolamStockTransactionList} from '../services/kolam-stock-transaction-api';
+import {getKolamUnits} from '../services/kolam-unit-api';
 
 export type KolamEnclosureDataSource = 'idle' | 'live' | 'error';
 
@@ -149,6 +157,9 @@ export interface KolamEnclosureController {
   enclosureStockTransactions: KolamStockTransaction[];
   enclosureStockTransactionsLoading: boolean;
   enclosureStockTransactionsError: string | null;
+  editBrands: KolamBrand[];
+  editLocations: KolamLocationOption[];
+  editUnits: KolamUnit[];
   operationLoading: boolean;
   staffAssignees: KolamEnclosureStaffRef[];
   statusMessage: string | null;
@@ -246,6 +257,9 @@ export function useKolamEnclosureController(
   const [staffAssignees, setStaffAssignees] = useState<KolamEnclosureStaffRef[]>(
     [],
   );
+  const [editBrands, setEditBrands] = useState<KolamBrand[]>([]);
+  const [editLocations, setEditLocations] = useState<KolamLocationOption[]>([]);
+  const [editUnits, setEditUnits] = useState<KolamUnit[]>([]);
   const [pagination, setPagination] =
     useState<KolamEnclosurePagination>(DEFAULT_PAGINATION);
   const [loading, setLoading] = useState(false);
@@ -271,6 +285,10 @@ export function useKolamEnclosureController(
     setEnclosureRecurringEnrollments([]);
     setEnclosureStockTransactions([]);
     setEnclosureStockTransactionsError(null);
+    setStaffAssignees([]);
+    setEditBrands([]);
+    setEditLocations([]);
+    setEditUnits([]);
     setError(null);
     setStatusMessage(null);
   }, [route]);
@@ -385,6 +403,33 @@ export function useKolamEnclosureController(
               setEnclosureStockTransactionsLoading(false);
             }
           });
+        setDataSource('live');
+        return;
+      }
+
+      if (currentMode === 'edit') {
+        const enclosureId = getKolamEnclosureRouteId(route);
+        if (!enclosureId) {
+          setSelectedEnclosure(null);
+          setDataSource('error');
+          setError('ID enclosure tidak ditemukan.');
+          return;
+        }
+        const [detail, assignees, brands, locations, units] = await Promise.all([
+          getKolamEnclosureDetail(enclosureId),
+          getKolamEnclosureStaffAssignees({limit: 200}).catch(() => []),
+          getKolamBrands().catch(() => [] as KolamBrand[]),
+          getKolamLocations().catch(() => [] as KolamLocationOption[]),
+          getKolamUnits().catch(() => [] as KolamUnit[]),
+        ]);
+        if (requestSeq.current !== activeRequest) {
+          return;
+        }
+        setSelectedEnclosure(detail);
+        setStaffAssignees(assignees);
+        setEditBrands(brands);
+        setEditLocations(locations);
+        setEditUnits(units);
         setDataSource('live');
         return;
       }
@@ -916,6 +961,9 @@ export function useKolamEnclosureController(
     enclosureStockTransactions,
     enclosureStockTransactionsLoading,
     enclosureStockTransactionsError,
+    editBrands,
+    editLocations,
+    editUnits,
     operationLoading,
     staffAssignees,
     statusMessage,

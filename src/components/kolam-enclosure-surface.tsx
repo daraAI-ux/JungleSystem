@@ -169,6 +169,15 @@ export function KolamEnclosureSurface({
     );
   }
 
+  if (controller.mode === 'edit') {
+    return (
+      <KolamEnclosureEditSurface
+        controller={controller}
+        onRouteChange={onRouteChange}
+      />
+    );
+  }
+
   return (
     <View style={styles.surface}>
       {controller.error ? (
@@ -191,6 +200,93 @@ export function KolamEnclosureSurface({
         controller={controller}
         onRouteChange={onRouteChange}
       />
+    </View>
+  );
+}
+
+function KolamEnclosureEditSurface({
+  controller,
+  onRouteChange,
+}: {
+  controller: KolamEnclosureController;
+  onRouteChange?: (route: string) => void;
+}) {
+  const enclosure = controller.selectedEnclosure;
+  const detailRoute = controller.routeEnclosureId
+    ? `${KOLAM_ENCLOSURE_ROOT}/${encodeURIComponent(controller.routeEnclosureId)}`
+    : KOLAM_ENCLOSURE_ROOT;
+
+  if (controller.loading && controller.dataSource === 'idle') {
+    return <InlineState title="Memuat data enclosure..." />;
+  }
+  if (controller.error) {
+    return (
+      <View style={styles.surface}>
+        <InlineState
+          message={controller.error}
+          title="Gagal memuat data enclosure"
+        />
+        <View style={styles.detailActions}>
+          <KolamButton
+            label="Batal"
+            onPress={() => onRouteChange?.(detailRoute)}
+          />
+          <KolamButton
+            disabled={controller.loading}
+            label="Refresh"
+            onPress={() => void controller.onRefresh()}
+          />
+        </View>
+      </View>
+    );
+  }
+  if (!enclosure) {
+    return (
+      <View style={styles.surface}>
+        <InlineState
+          message="Data enclosure tidak ditemukan dari response Kolam."
+          title="Enclosure tidak ditemukan"
+        />
+        <View style={styles.detailActions}>
+          <KolamButton
+            label="Batal"
+            onPress={() => onRouteChange?.(detailRoute)}
+          />
+        </View>
+      </View>
+    );
+  }
+
+  const identityLabel = [enclosure.code, enclosure.name]
+    .map(part => String(part || '').trim())
+    .filter(Boolean)
+    .join(' · ');
+
+  return (
+    <View style={styles.surface}>
+      <View style={styles.editLoadPanel}>
+        {identityLabel ? (
+          <Text style={styles.editLoadIdentity}>{identityLabel}</Text>
+        ) : null}
+        <Text style={styles.editLoadHint}>
+          Data enclosure dan lookup siap. Form ubah akan tersedia di langkah
+          berikutnya.
+        </Text>
+        <Text style={styles.editLoadMeta}>
+          {`Lookup: ${controller.editLocations.length} lokasi · ${controller.editBrands.length} brand · ${controller.editUnits.length} unit · ${controller.staffAssignees.length} PIC`}
+        </Text>
+        <View style={styles.detailActions}>
+          <KolamButton
+            label="Batal"
+            onPress={() => onRouteChange?.(detailRoute)}
+          />
+          <KolamButton
+            disabled={controller.loading}
+            label="Refresh"
+            onPress={() => void controller.onRefresh()}
+          />
+        </View>
+      </View>
     </View>
   );
 }
@@ -4618,6 +4714,25 @@ function formatEnclosureSize(enclosure: KolamEnclosure) {
 const styles = StyleSheet.create({
   surface: {
     gap: 14,
+  },
+  editLoadPanel: {
+    gap: 10,
+  },
+  editLoadIdentity: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  editLoadHint: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+  },
+  editLoadMeta: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
   },
   errorBadge: {
     alignSelf: 'stretch',
