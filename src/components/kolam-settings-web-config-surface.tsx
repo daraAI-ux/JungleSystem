@@ -3858,27 +3858,41 @@ export function KolamSettingsWebConfigSurface({
                 },
               ]}
             />
-            <View style={styles.sitemapSectionGrid}>
-              {sitemapSectionKeys.map(section => (
-                <KolamTextFieldRow
-                  variant="settingsForm"
-                  key={`excluded-${section}`}
-                  fieldWidth={300}
-                  label={getSitemapSectionLabel(section)}
-                  description={`${
-                    (sitemapExcludedSlugsText[section] ?? '')
-                      .split(/\r?\n/)
-                      .filter(value => value.trim()).length
-                  } slug dikecualikan.`}
-                  multiline
-                  numberOfLines={3}
-                  value={sitemapExcludedSlugsText[section] ?? ''}
-                  onChangeText={value =>
-                    setSitemapExcludedSlugsDraftText(section, value)
-                  }
-                  placeholder={'slug-lama\ndraft-internal'}
-                />
-              ))}
+            <View style={styles.sitemapExcludedGrid}>
+              {sitemapSectionKeys.map(section => {
+                const excludedValue = sitemapExcludedSlugsText[section] ?? '';
+                const excludedCount = excludedValue
+                  .split(/\r?\n/)
+                  .filter(value => value.trim()).length;
+
+                return (
+                  <View
+                    key={`excluded-${section}`}
+                    style={styles.sitemapExcludedCard}
+                  >
+                    <View style={styles.sitemapExcludedHeader}>
+                      <Text style={styles.marketplaceOverviewLabel}>
+                        {getSitemapSectionLabel(section)}
+                      </Text>
+                      <Text style={styles.sitemapExcludedCount}>
+                        {excludedCount} slug
+                      </Text>
+                    </View>
+                    <TextInput
+                      multiline
+                      numberOfLines={3}
+                      onChangeText={value =>
+                        setSitemapExcludedSlugsDraftText(section, value)
+                      }
+                      placeholder={'slug-lama\ndraft-internal'}
+                      placeholderTextColor={V.colors.mutedFg}
+                      style={styles.sitemapExcludedInput}
+                      textAlignVertical="top"
+                      value={excludedValue}
+                    />
+                  </View>
+                );
+              })}
             </View>
           </View>
         </View>
@@ -8970,6 +8984,47 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
+  },
+  sitemapExcludedGrid: {
+    alignItems: 'stretch',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  sitemapExcludedCard: {
+    backgroundColor: '#ffffff',
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexBasis: 300,
+    flexGrow: 1,
+    gap: 8,
+    minWidth: 260,
+    padding: 10,
+  },
+  sitemapExcludedHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'space-between',
+  },
+  sitemapExcludedCount: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  sitemapExcludedInput: {
+    backgroundColor: '#ffffff',
+    borderColor: '#d1d5db',
+    borderRadius: 6,
+    borderWidth: 1,
+    color: '#111827',
+    flexGrow: 1,
+    fontSize: 13,
+    lineHeight: 18,
+    minHeight: 82,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
   },
   sitemapRowCard: {
     backgroundColor: '#ffffff',
