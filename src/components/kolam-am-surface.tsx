@@ -731,6 +731,7 @@ function AmServicesPage() {
   const [accounts, setAccounts] = React.useState<AmServiceAccount[]>([]);
   const [search, setSearch] = React.useState('');
   const [platform, setPlatform] = React.useState('all');
+  const [serviceStatus, setServiceStatus] = React.useState('all');
   const [expandedId, setExpandedId] = React.useState<string | null>(null);
   const [expandedTab, setExpandedTab] = React.useState<'logs' | 'history'>('logs');
   const [detailLogs, setDetailLogs] = React.useState<AmDeviceServiceLog[]>([]);
@@ -758,6 +759,7 @@ function AmServicesPage() {
         limit: AM_SERVICE_PAGE_LIMIT,
         search: search.trim() || undefined,
         platform: platform === 'all' ? undefined : platform,
+        status: serviceStatus === 'all' ? undefined : serviceStatus,
       });
       setAccounts(response.data);
       setTotal(response.meta.total ?? response.data.length);
@@ -768,7 +770,7 @@ function AmServicesPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [page, platform, search]);
+  }, [page, platform, search, serviceStatus]);
 
   React.useEffect(() => {
     fetchAccounts();
@@ -786,6 +788,11 @@ function AmServicesPage() {
 
   const handlePlatformChange = React.useCallback((value: string) => {
     setPlatform(value);
+    setPage(1);
+  }, []);
+
+  const handleServiceStatusChange = React.useCallback((value: string) => {
+    setServiceStatus(value);
     setPage(1);
   }, []);
 
@@ -977,6 +984,11 @@ function AmServicesPage() {
           items={AM_PLATFORMS}
           labels={AM_PLATFORM_LABELS}
           onSelect={handlePlatformChange}
+        />
+        <AmSegmentGroup
+          active={serviceStatus}
+          items={['all', 'active', 'inactive', 'blocked']}
+          onSelect={handleServiceStatusChange}
         />
         <KolamButton
           label={isLoading ? 'Memuat' : 'Refresh'}

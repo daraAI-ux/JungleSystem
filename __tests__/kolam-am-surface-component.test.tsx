@@ -291,6 +291,7 @@ describe('KolamAmSurface', () => {
       limit: 20,
       search: undefined,
       platform: undefined,
+      status: undefined,
     });
   });
 
@@ -335,6 +336,7 @@ describe('KolamAmSurface', () => {
       limit: 20,
       search: undefined,
       platform: undefined,
+      status: undefined,
     });
 
     await act(async () => {
@@ -346,6 +348,7 @@ describe('KolamAmSurface', () => {
       limit: 20,
       search: 'Shopee',
       platform: undefined,
+      status: undefined,
     });
 
     await act(async () => {
@@ -357,6 +360,19 @@ describe('KolamAmSurface', () => {
       limit: 20,
       search: 'Shopee',
       platform: 'shopee',
+      status: undefined,
+    });
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Segment Active'}).props.onPress();
+    });
+
+    expect(getAmServiceAccounts).toHaveBeenLastCalledWith({
+      page: 1,
+      limit: 20,
+      search: 'Shopee',
+      platform: 'shopee',
+      status: 'active',
     });
 
     await act(async () => {
@@ -368,6 +384,7 @@ describe('KolamAmSurface', () => {
       limit: 20,
       search: 'Shopee',
       platform: 'shopee',
+      status: 'active',
     });
   });
 
