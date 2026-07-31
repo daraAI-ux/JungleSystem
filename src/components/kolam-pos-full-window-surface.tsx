@@ -14,6 +14,7 @@ import type {
   CheckoutState,
   Customer,
   PaymentMethod,
+  SaleSummary,
 } from '../domain/pos';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {formatRupiah} from '../lib/money';
@@ -46,10 +47,13 @@ export interface KolamPosFullWindowSurfaceProps {
   onShippingCostChange: (value: string) => void;
   onTypeChange: (type: CatalogItemType | 'all') => void;
   paymentMethods: PaymentMethod[];
+  recentSales: SaleSummary[];
   selectedCustomer?: Customer;
   selectedPayment?: PaymentMethod;
   subtotal: number;
 }
+
+type PosWindowView = 'catalog' | 'customers' | 'sales' | 'cashflow';
 
 export function KolamPosFullWindowSurface({
   activeType,
@@ -75,17 +79,20 @@ export function KolamPosFullWindowSurface({
   onShippingCostChange,
   onTypeChange,
   paymentMethods,
+  recentSales,
   selectedCustomer,
   selectedPayment,
   subtotal,
 }: KolamPosFullWindowSurfaceProps) {
   const {width} = useWindowDimensions();
+  const [activeView, setActiveView] = React.useState<PosWindowView>('catalog');
   const columnCount = getCatalogColumnCount(width);
   const catalogRows = chunkCatalog(filteredCatalog, columnCount);
   const cartCount = checkout.cart.reduce(
     (total, line) => total + line.quantity,
     0,
   );
+  const isCatalogView = activeView === 'catalog';
 
   return (
     <View style={styles.surface}>
@@ -93,29 +100,55 @@ export function KolamPosFullWindowSurface({
         <View style={styles.topBar}>
           <View style={styles.segmentRail}>
             <PosSegment
-              active={activeType === 'product' || activeType === 'all'}
+              active={isCatalogView && activeType !== 'species'}
               label="Produk"
-              onPress={() => onTypeChange(activeType === 'product' ? 'all' : 'product')}
+              onPress={() => {
+                setActiveView('catalog');
+                onTypeChange('product');
+              }}
             />
             <PosSegment
-              active={activeType === 'species'}
+              active={isCatalogView && activeType === 'species'}
               label="Spesies"
-              onPress={() => onTypeChange('species')}
+              onPress={() => {
+                setActiveView('catalog');
+                onTypeChange('species');
+              }}
             />
             <View style={styles.segmentDivider} />
-            <PosSegment label="Pelanggan" onPress={() => undefined} />
-            <PosSegment label="Penjualan" onPress={() => undefined} />
-            <PosSegment label="Kas" onPress={() => undefined} />
+            <PosSegment
+              active={activeView === 'customers'}
+              label="Pelanggan"
+              onPress={() => setActiveView('customers')}
+            />
+            <PosSegment
+              active={activeView === 'sales'}
+              label="Penjualan"
+              onPress={() => setActiveView('sales')}
+            />
+            <PosSegment
+              active={activeView === 'cashflow'}
+              label="Kas"
+              onPress={() => setActiveView('cashflow')}
+            />
           </View>
-          <KolamSearchField
-            value={catalogSearch}
-            onChangeText={onCatalogSearchChange}
-            placeholder="Cari... (F1)"
-            containerStyle={styles.search}
-          />
+          {isCatalogView ? (
+            <KolamSearchField
+              value={catalogSearch}
+              onChangeText={onCatalogSearchChange}
+              placeholder="Cari... (F1)"
+              containerStyle={styles.search}
+            />
+          ) : null}
           <Text style={styles.countText}>
-            {filteredCatalog.length || catalog.length}{' '}
-            {activeType === 'species' ? 'spesies' : 'produk'}
+            {getPosViewCountText({
+              activeType,
+              activeView,
+              catalog,
+              customers,
+              filteredCatalog,
+              recentSales,
+            })}
           </Text>
           <KolamButton
             label="Kembali"
@@ -125,49 +158,82 @@ export function KolamPosFullWindowSurface({
           />
         </View>
 
-        <View style={styles.categoryBar}>
-          <PosCategoryPill active label="Semua" onPress={() => undefined} />
-          <PosCategoryPill label="Produk" onPress={() => onTypeChange('product')} />
-          <PosCategoryPill label="Spesies" onPress={() => onTypeChange('species')} />
-          {catalogSearch ? (
-            <KolamButton
-              label="Hapus Filter"
-              intent="plain"
-              onPress={() => {
-                onCatalogSearchChange('');
-                onTypeChange('all');
-              }}
-            />
-          ) : null}
-        </View>
-
-        <ScrollView
-          style={styles.catalogScroll}
-          contentContainerStyle={styles.catalogContent}
-          showsVerticalScrollIndicator>
-          {catalogRows.length ? (
-            catalogRows.map((row, rowIndex) => (
-              <View key={`row-${rowIndex}`} style={styles.catalogRow}>
-                {row.map(item => (
-                  <PosCatalogCard
-                    key={item.id}
-                    cartLine={checkout.cart.find(line => line.itemId === item.id)}
-                    item={item}
-                    onAddToCart={onAddToCart}
-                  />
-                ))}
-                {Array.from({length: columnCount - row.length}).map((_, index) => (
-                  <View key={`empty-${index}`} style={styles.cardSlot} />
-                ))}
-              </View>
-            ))
-          ) : (
-            <View style={styles.catalogEmpty}>
-              <Text style={styles.emptyTitle}>Tidak ada item yang cocok.</Text>
-              <Text style={styles.emptyText}>Coba hapus filter atau kata kunci.</Text>
+        {isCatalogView ? (
+          <>
+            <View style={styles.categoryBar}>
+              <PosCategoryPill
+                active={activeType === 'all'}
+                label="Semua"
+                onPress={() => onTypeChange('all')}
+              />
+              <PosCategoryPill
+                active={activeType === 'product'}
+                label="Produk"
+                onPress={() => onTypeChange('product')}
+              />
+              <PosCategoryPill
+                active={activeType === 'species'}
+                label="Spesies"
+                onPress={() => onTypeChange('species')}
+              />
+              {catalogSearch ? (
+                <KolamButton
+                  label="Hapus Filter"
+                  intent="plain"
+                  onPress={() => {
+                    onCatalogSearchChange('');
+                    onTypeChange('all');
+                  }}
+                />
+              ) : null}
             </View>
-          )}
-        </ScrollView>
+
+            <ScrollView
+              style={styles.catalogScroll}
+              contentContainerStyle={styles.catalogContent}
+              showsVerticalScrollIndicator>
+              {catalogRows.length ? (
+                catalogRows.map((row, rowIndex) => (
+                  <View key={`row-${rowIndex}`} style={styles.catalogRow}>
+                    {row.map(item => (
+                      <PosCatalogCard
+                        key={item.id}
+                        cartLine={checkout.cart.find(
+                          line => line.itemId === item.id,
+                        )}
+                        item={item}
+                        onAddToCart={onAddToCart}
+                      />
+                    ))}
+                    {Array.from({length: columnCount - row.length}).map(
+                      (_, index) => (
+                        <View key={`empty-${index}`} style={styles.cardSlot} />
+                      ),
+                    )}
+                  </View>
+                ))
+              ) : (
+                <View style={styles.catalogEmpty}>
+                  <Text style={styles.emptyTitle}>Tidak ada item yang cocok.</Text>
+                  <Text style={styles.emptyText}>
+                    Coba hapus filter atau kata kunci.
+                  </Text>
+                </View>
+              )}
+            </ScrollView>
+          </>
+        ) : (
+          <PosSubview
+            activeView={activeView}
+            customers={customers}
+            paymentMethods={paymentMethods}
+            recentSales={recentSales}
+            selectedCustomerId={checkout.customerId}
+            selectedPaymentId={checkout.paymentMethodId}
+            onSelectCustomer={onSelectCustomer}
+            onSelectPaymentMethod={onSelectPaymentMethod}
+          />
+        )}
       </View>
 
       <View style={styles.orderPane}>
@@ -508,6 +574,211 @@ function SummaryLine({
   );
 }
 
+function PosSubview({
+  activeView,
+  customers,
+  paymentMethods,
+  recentSales,
+  selectedCustomerId,
+  selectedPaymentId,
+  onSelectCustomer,
+  onSelectPaymentMethod,
+}: {
+  activeView: Exclude<PosWindowView, 'catalog'>;
+  customers: Customer[];
+  paymentMethods: PaymentMethod[];
+  recentSales: SaleSummary[];
+  selectedCustomerId: string;
+  selectedPaymentId: string;
+  onSelectCustomer: (customerId: string) => void;
+  onSelectPaymentMethod: (methodId: string) => void;
+}) {
+  if (activeView === 'customers') {
+    return (
+      <ScrollView
+        style={styles.subviewScroll}
+        contentContainerStyle={styles.subviewContent}>
+        <View style={styles.subviewHeader}>
+          <Text style={styles.subviewTitle}>Pelanggan</Text>
+          <Text style={styles.subviewMeta}>
+            Pilih pelanggan untuk pesanan aktif.
+          </Text>
+        </View>
+        <View style={styles.subviewGrid}>
+          {customers.map(customer => {
+            const active = selectedCustomerId === customer.id;
+
+            return (
+              <KolamInteractionFrame
+                key={customer.id}
+                onPress={() => onSelectCustomer(customer.id)}
+                style={[styles.customerCard, active && styles.customerCardActive]}>
+                <View style={styles.customerAvatar}>
+                  <Text style={styles.customerAvatarText}>
+                    {getInitials(customer.name)}
+                  </Text>
+                </View>
+                <View style={styles.customerCardCopy}>
+                  <Text numberOfLines={1} style={styles.customerName}>
+                    {customer.name}
+                  </Text>
+                  <Text numberOfLines={1} style={styles.customerDetail}>
+                    {customer.phone || customer.email || '-'}
+                  </Text>
+                  <Text numberOfLines={2} style={styles.customerDetail}>
+                    {customer.address || '-'}
+                  </Text>
+                </View>
+                {active ? <Text style={styles.selectedMark}>Dipilih</Text> : null}
+              </KolamInteractionFrame>
+            );
+          })}
+        </View>
+      </ScrollView>
+    );
+  }
+
+  if (activeView === 'sales') {
+    return (
+      <ScrollView
+        style={styles.subviewScroll}
+        contentContainerStyle={styles.subviewContent}>
+        <View style={styles.subviewHeader}>
+          <Text style={styles.subviewTitle}>Penjualan</Text>
+          <Text style={styles.subviewMeta}>
+            Ringkasan transaksi terbaru POS.
+          </Text>
+        </View>
+        {recentSales.length ? (
+          <View style={styles.saleList}>
+            {recentSales.map(sale => (
+              <View key={sale.id} style={styles.saleRow}>
+                <View style={styles.saleCopy}>
+                  <Text style={styles.saleInvoice}>{sale.invoiceCode}</Text>
+                  <Text numberOfLines={1} style={styles.saleMeta}>
+                    {sale.customerName} | {formatPosDate(sale.createdAt)}
+                  </Text>
+                </View>
+                <View style={styles.saleAmountBox}>
+                  <Text style={styles.saleAmount}>{formatRupiah(sale.total)}</Text>
+                  <Text style={styles.saleStatus}>{sale.status}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        ) : (
+          <View style={styles.catalogEmpty}>
+            <Text style={styles.emptyTitle}>Belum ada penjualan.</Text>
+            <Text style={styles.emptyText}>
+              Transaksi yang dibuat dari POS akan muncul di sini.
+            </Text>
+          </View>
+        )}
+      </ScrollView>
+    );
+  }
+
+  return (
+    <ScrollView
+      style={styles.subviewScroll}
+      contentContainerStyle={styles.subviewContent}>
+      <View style={styles.subviewHeader}>
+        <Text style={styles.subviewTitle}>Kas</Text>
+        <Text style={styles.subviewMeta}>
+          Metode pembayaran aktif untuk checkout POS.
+        </Text>
+      </View>
+      <View style={styles.paymentGrid}>
+        {paymentMethods.map(method => {
+          const active = selectedPaymentId === method.id;
+
+          return (
+            <KolamInteractionFrame
+              key={method.id}
+              onPress={() => onSelectPaymentMethod(method.id)}
+              style={[styles.paymentCard, active && styles.paymentCardActive]}>
+              <Text numberOfLines={1} style={styles.paymentName}>
+                {method.name}
+              </Text>
+              <Text numberOfLines={1} style={styles.paymentMeta}>
+                Wallet: {method.wallet || '-'}
+              </Text>
+              <Text
+                style={[
+                  styles.paymentStatus,
+                  method.active ? styles.paymentStatusActive : styles.paymentStatusMuted,
+                ]}>
+                {method.active ? 'Aktif' : 'Nonaktif'}
+              </Text>
+            </KolamInteractionFrame>
+          );
+        })}
+      </View>
+    </ScrollView>
+  );
+}
+
+function getPosViewCountText({
+  activeType,
+  activeView,
+  catalog,
+  customers,
+  filteredCatalog,
+  recentSales,
+}: {
+  activeType: CatalogItemType | 'all';
+  activeView: PosWindowView;
+  catalog: CatalogItem[];
+  customers: Customer[];
+  filteredCatalog: CatalogItem[];
+  recentSales: SaleSummary[];
+}) {
+  if (activeView === 'customers') {
+    return `${customers.length} pelanggan`;
+  }
+
+  if (activeView === 'sales') {
+    return `${recentSales.length} transaksi`;
+  }
+
+  if (activeView === 'cashflow') {
+    return 'kas POS';
+  }
+
+  return `${filteredCatalog.length || catalog.length} ${
+    activeType === 'species' ? 'spesies' : 'produk'
+  }`;
+}
+
+function getInitials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+
+  if (!parts.length) {
+    return '?';
+  }
+
+  if (parts.length === 1) {
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+}
+
+function formatPosDate(value: string) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return '-';
+  }
+
+  return new Intl.DateTimeFormat('id-ID', {
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    month: 'short',
+  }).format(date);
+}
+
 function getCatalogColumnCount(width: number) {
   if (width >= 1680) {
     return 7;
@@ -755,6 +1026,188 @@ const styles = StyleSheet.create({
     minHeight: 280,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  subviewScroll: {
+    flex: 1,
+  },
+  subviewContent: {
+    padding: 16,
+    gap: 12,
+  },
+  subviewHeader: {
+    gap: 2,
+    paddingBottom: 4,
+  },
+  subviewTitle: {
+    color: V.colors.fg,
+    fontSize: 18,
+    fontWeight: '900',
+  },
+  subviewMeta: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  subviewGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  customerCard: {
+    width: 260,
+    minHeight: 94,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderRadius: 6,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    padding: 10,
+    backgroundColor: V.colors.mutedSoft,
+  },
+  customerCardActive: {
+    borderColor: V.colors.primary,
+    backgroundColor: V.colors.primarySoft,
+  },
+  customerAvatar: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 20,
+    backgroundColor: V.colors.muted,
+  },
+  customerAvatarText: {
+    color: V.colors.primary,
+    fontSize: 12,
+    fontWeight: '900',
+  },
+  customerCardCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  customerName: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '900',
+  },
+  customerDetail: {
+    marginTop: 2,
+    color: V.colors.mutedFg,
+    fontSize: 11,
+  },
+  selectedMark: {
+    position: 'absolute',
+    right: 8,
+    top: 8,
+    overflow: 'hidden',
+    borderRadius: 4,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    color: V.colors.primaryFg,
+    backgroundColor: V.colors.primary,
+    fontSize: 8,
+    fontWeight: '900',
+  },
+  saleList: {
+    overflow: 'hidden',
+    borderRadius: 6,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+  },
+  saleRow: {
+    minHeight: 58,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: 1,
+    backgroundColor: V.colors.bg,
+  },
+  saleCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  saleInvoice: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '900',
+  },
+  saleMeta: {
+    marginTop: 2,
+    color: V.colors.mutedFg,
+    fontSize: 11,
+  },
+  saleAmountBox: {
+    alignItems: 'flex-end',
+    flexShrink: 0,
+  },
+  saleAmount: {
+    color: V.colors.primary,
+    fontSize: 13,
+    fontWeight: '900',
+  },
+  saleStatus: {
+    marginTop: 2,
+    overflow: 'hidden',
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    color: V.colors.mutedFg,
+    backgroundColor: V.colors.muted,
+    fontSize: 9,
+    fontWeight: '900',
+    textTransform: 'uppercase',
+  },
+  paymentGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  paymentCard: {
+    width: 220,
+    minHeight: 92,
+    justifyContent: 'center',
+    borderRadius: 6,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    padding: 12,
+    backgroundColor: V.colors.mutedSoft,
+  },
+  paymentCardActive: {
+    borderColor: V.colors.primary,
+    backgroundColor: V.colors.primarySoft,
+  },
+  paymentName: {
+    color: V.colors.fg,
+    fontSize: 14,
+    fontWeight: '900',
+  },
+  paymentMeta: {
+    marginTop: 4,
+    color: V.colors.mutedFg,
+    fontSize: 11,
+  },
+  paymentStatus: {
+    alignSelf: 'flex-start',
+    marginTop: 8,
+    overflow: 'hidden',
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    fontSize: 9,
+    fontWeight: '900',
+  },
+  paymentStatusActive: {
+    color: V.colors.success,
+    backgroundColor: V.colors.successSoft,
+  },
+  paymentStatusMuted: {
+    color: V.colors.mutedFg,
+    backgroundColor: V.colors.muted,
   },
   orderPane: {
     width: 340,
