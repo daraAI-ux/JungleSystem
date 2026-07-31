@@ -157,6 +157,52 @@ describe('KolamSidebarContent AM mode', () => {
       selectedItems.some(item => flattenNodeText(item).includes('Produk')),
     ).toBe(false);
   });
+
+  it('opens AM routes from the sidebar route group instead of a local page menu', async () => {
+    const onModuleRouteSelect = jest.fn();
+    const onSelectMenuItem = jest.fn();
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <View>
+          <KolamSidebarContent
+            accessScope={{ am: true, kolam: true, pos: true }}
+            activeModule="am"
+            activeRoute="/"
+            collapsed={false}
+            expandedSections={{ dashboard: true }}
+            filterMenuByAccess={false}
+            onModuleRouteSelect={onModuleRouteSelect}
+            onMoveMenuSection={() => undefined}
+            onQuickSearch={() => undefined}
+            onSelectMenuItem={onSelectMenuItem}
+            onSelectModule={() => undefined}
+            onToggleMenuSection={() => undefined}
+            sectionOrder={[]}
+          />
+        </View>,
+      );
+    });
+
+    const servicesRouteButton = renderer!.root
+      .findAll(node => typeof node.props.onPress === 'function')
+      .find(node => flattenNodeText(node).includes('Services'));
+
+    expect(servicesRouteButton).toBeTruthy();
+
+    await ReactTestRenderer.act(async () => {
+      servicesRouteButton!.props.onPress();
+    });
+
+    expect(onModuleRouteSelect).toHaveBeenCalledWith(
+      expect.objectContaining({
+        moduleId: 'am',
+        route: 'services',
+      }),
+    );
+    expect(onSelectMenuItem).not.toHaveBeenCalled();
+  });
 });
 
 function flattenNodeText(
