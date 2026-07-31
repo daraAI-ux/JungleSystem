@@ -3120,6 +3120,10 @@ function AmWebhooksPage() {
               <Text style={styles.rowTitle} numberOfLines={1}>{config.description || config.url}</Text>
               <Text style={styles.rowMeta} numberOfLines={2}>{config.url}</Text>
               <Text style={styles.rowMeta}>{config.events.length} events - {config.failCount} fail</Text>
+              <Text style={styles.rowMeta}>Last delivered: {formatAmDate(config.lastDeliveredAt)}</Text>
+              <Text style={styles.rowMeta}>
+                Secret: {formatWebhookSecretStatus(config)}
+              </Text>
               <AmStatusChip label={config.status} tone={config.status === 'active' ? 'success' : 'muted'} />
               <View style={styles.inlineActions}>
                 <KolamButton accessibilityLabel={`AM Webhook Edit ${config._id}`} label="Edit" intent="outline" size="sm" onPress={() => editWebhook(config)} />
@@ -4182,6 +4186,11 @@ function webhookLogMatchesTransfer(log: AmWebhookLog, transferId: string) {
   }
 
   return false;
+}
+
+function formatWebhookSecretStatus(config: AmWebhookConfig) {
+  if (config.secretMasked) return config.secretMasked;
+  return config.hasSecret ? 'configured' : 'not configured';
 }
 
 function formatDeviceRef(device: AmTransfer['deviceId'] | AmMutasi['deviceId']) {

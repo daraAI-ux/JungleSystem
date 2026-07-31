@@ -1941,7 +1941,9 @@ describe('KolamAmSurface', () => {
           events: ['transfer.success'],
           status: 'active',
           description: 'Existing hook',
-          lastDeliveredAt: null,
+          hasSecret: true,
+          secretMasked: 'sec...ok',
+          lastDeliveredAt: '2026-07-31T01:30:00.000Z',
           failCount: 0,
           createdAt: '',
           updatedAt: '',
@@ -1999,6 +2001,9 @@ describe('KolamAmSurface', () => {
     });
     expect(deleteAmWebhookConfig).toHaveBeenCalledWith('webhook-1');
     expect(testAmWebhookPing).toHaveBeenCalledTimes(1);
+    const configText = renderText(renderer!).join(' ');
+    expect(configText).toContain('Last delivered:');
+    expect(configText).toContain('sec...ok');
   });
 
   it('filters and paginates webhook delivery logs against AM BE query params', async () => {
