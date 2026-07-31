@@ -512,6 +512,7 @@ export function KolamWorkspaceSurfaceComponent({
           activeModuleRoute={activeModuleRoute}
           dataset={dataset}
           onBackToCenter={() => onSelectModule?.('kolam')}
+          onModuleRouteSelect={onModuleRouteSelect}
         />
       );
     default:

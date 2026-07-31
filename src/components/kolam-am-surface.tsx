@@ -8,7 +8,10 @@ import {
   type AmRouteId,
   type AmRouteItem,
 } from '../domain/am-navigation';
-import type {ShellModuleRouteEntry} from '../domain/app-shell';
+import {
+  getShellModuleRouteEntry,
+  type ShellModuleRouteEntry,
+} from '../domain/app-shell';
 import type {UnifiedSurface} from '../domain/unified';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {formatRupiah} from '../lib/money';
@@ -150,11 +153,13 @@ export function KolamAmSurface({
   activeModuleRoute,
   dataset,
   onBackToCenter,
+  onModuleRouteSelect,
 }: {
   activeSurface?: UnifiedSurface | null;
   activeModuleRoute?: ShellModuleRouteEntry | null;
   dataset: UnifiedDataset;
   onBackToCenter?: () => void;
+  onModuleRouteSelect?: (route: ShellModuleRouteEntry) => void;
 }) {
   const activeRoute = activeModuleRoute
     ? getAmRouteByModuleRoute(activeModuleRoute.route).id
@@ -171,6 +176,21 @@ export function KolamAmSurface({
         <View style={styles.topBarCompact}>
           <View style={styles.topBarActions}>
             <Text style={styles.serverText}>{appConfig.amApiBaseUrl}</Text>
+            <KolamButton
+              accessibilityLabel="AM Settings"
+              label="Settings"
+              intent="plain"
+              size="sm"
+              onPress={() => {
+                const settingsRoute = getShellModuleRouteEntry(
+                  'am',
+                  'settings/account',
+                );
+                if (settingsRoute) {
+                  onModuleRouteSelect?.(settingsRoute);
+                }
+              }}
+            />
             <KolamButton label="Kembali" intent="outline" size="sm" onPress={onBackToCenter} />
           </View>
         </View>

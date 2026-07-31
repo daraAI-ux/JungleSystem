@@ -619,6 +619,36 @@ describe('KolamWorkspaceSurface', () => {
     expect(renderText(renderer!)).not.toContain('Transfer bank dan status eksekusi.');
   });
 
+  it('forwards AM topbar Settings to the shell route handler', async () => {
+    const onModuleRouteSelect = jest.fn();
+    const settingsRoute = getShellModuleRouteEntry('am', 'settings/account');
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    if (!settingsRoute) {
+      throw new Error('AM account settings route is missing.');
+    }
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <View>
+          <KolamWorkspaceSurface
+            {...buildSurfaceProps({
+              activeModule: 'am',
+              onModuleRouteSelect,
+            })}
+          />
+        </View>,
+      );
+    });
+    mountedWorkspaceRenderers.push(renderer!);
+
+    await ReactTestRenderer.act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Settings'}).props.onPress();
+    });
+
+    expect(onModuleRouteSelect).toHaveBeenCalledWith(settingsRoute);
+  });
+
   it('forwards Beranda customer visit confirmation actions from workspace', async () => {
     const onCustomerVisitConfirm = jest.fn();
     const [confirmation] =

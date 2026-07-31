@@ -335,6 +335,32 @@ describe('KolamAmSurface', () => {
     expect(onBackToCenter).toHaveBeenCalledTimes(1);
   });
 
+  it('opens Account Settings through the AM shell route from the topbar', async () => {
+    const onModuleRouteSelect = jest.fn();
+    const settingsRoute = amRoute('settings/account');
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface
+          dataset={seedUnifiedDataset}
+          onModuleRouteSelect={onModuleRouteSelect}
+        />,
+      );
+    });
+    renderers.push(renderer!);
+
+    const settingsButton = renderer!.root.findByProps({
+      accessibilityLabel: 'AM Settings',
+    });
+
+    act(() => {
+      settingsButton.props.onPress();
+    });
+
+    expect(onModuleRouteSelect).toHaveBeenCalledWith(settingsRoute);
+  });
+
   it('loads live service accounts from the Services route', async () => {
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
