@@ -41,8 +41,8 @@ export interface AmDashboardDevice {
 export interface AmDashboardData {
   summary: AmDashboardSummary;
   transfers: AmTransferStats;
-  recentTransfers: unknown[];
-  recentMutasi: unknown[];
+  recentTransfers: AmTransfer[];
+  recentMutasi: AmMutasi[];
   chartData: AmDashboardChartPoint[];
   devices: AmDashboardDevice[];
 }

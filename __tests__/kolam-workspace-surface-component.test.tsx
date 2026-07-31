@@ -36,6 +36,28 @@ jest.mock('react-native-webview', () => {
 });
 
 jest.mock('../src/services/am-api', () => ({
+  getAmDashboard: jest.fn(() =>
+    Promise.resolve({
+      summary: {
+        totalBalance: 0,
+        totalAccounts: 0,
+        todayIncoming: { total: 0, count: 0 },
+        todayOutgoing: { total: 0, count: 0 },
+        activeDevices: 0,
+      },
+      transfers: {
+        pending: 0,
+        processing: 0,
+        success: 0,
+        failed: 0,
+        totalAmount: 0,
+      },
+      recentTransfers: [],
+      recentMutasi: [],
+      chartData: [],
+      devices: [],
+    }),
+  ),
   getAmTasks: jest.fn(() =>
     Promise.resolve({ data: [], meta: { total: 0, limit: 0 } }),
   ),
@@ -490,7 +512,8 @@ describe('KolamWorkspaceSurface', () => {
         'Ringkasan akun, device, transfer, dan mutasi AM.',
         'https://frogs.dunia-anura.com/api',
         'Kembali',
-        'Menunggu data live AM',
+        'Dashboard live AM dari endpoint /dashboard.',
+        'Transfer Status',
       ]),
     );
     expect(renderText(renderer!)).not.toContain('Ringkasan Penjualan');

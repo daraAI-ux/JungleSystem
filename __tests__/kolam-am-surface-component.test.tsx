@@ -17,6 +17,7 @@ import {
   deleteAmUser,
   deleteAmWebhookConfig,
   getAmActivityLogs,
+  getAmDashboard,
   getAmDeviceServiceLogs,
   getAmDeviceServices,
   getAmDevices,
@@ -56,6 +57,7 @@ jest.mock('../src/services/am-api', () => ({
   getAmActivityLogs: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
   getAmActivityLogStats: jest.fn(() => Promise.resolve({since: '', days: 7, byType: [], byStatus: [], topUsers: [], topPaths: []})),
   getAmBoxes: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
+  getAmDashboard: jest.fn(() => Promise.resolve(mockDashboardData)),
   getAmDeviceServiceLogs: jest.fn(() => Promise.resolve({logs: [], processRunning: false})),
   getAmDeviceServices: jest.fn(() => Promise.resolve([])),
   getAmDeviceServiceQrUrl: jest.fn(() => 'https://frogs.dunia-anura.com/api/device/device-1/service/shopee-qr?t=qr-1'),
@@ -84,6 +86,77 @@ jest.mock('../src/services/am-api', () => ({
   updateAmUser: jest.fn(() => Promise.resolve({_id: 'user-1'})),
   updateAmWebhookConfig: jest.fn(() => Promise.resolve({_id: 'webhook-1'})),
 }));
+
+const mockDashboardData = {
+  summary: {
+    totalBalance: 2500000,
+    totalAccounts: 3,
+    todayIncoming: {total: 450000, count: 2},
+    todayOutgoing: {total: 125000, count: 1},
+    activeDevices: 2,
+  },
+  transfers: {
+    pending: 1,
+    processing: 2,
+    success: 3,
+    failed: 1,
+    totalAmount: 900000,
+  },
+  recentTransfers: [
+    {
+      _id: 'transfer-dashboard-1',
+      accountId: { _id: 'account-1', label: 'BCA Main', platform: 'bca', accountNumber: '123' },
+      amount: 900000,
+      completedAt: null,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      createdBy: null,
+      deviceId: { _id: 'device-1', name: 'Phone 1' },
+      error: '',
+      fee: 2500,
+      logs: [],
+      recipientAccount: '999',
+      recipientBank: 'BCA',
+      recipientName: 'Vendor Dashboard',
+      screenshot: '',
+      startedAt: null,
+      status: 'processing',
+      transactionPurpose: null,
+      transferMethod: 'BI FAST',
+      transferType: 'transfer',
+      updatedAt: '',
+    },
+  ],
+  recentMutasi: [
+    {
+      _id: 'mutasi-dashboard-1',
+      accountId: { _id: 'account-1', label: 'BCA Main', platform: 'bca', accountNumber: '123' },
+      amount: 450000,
+      createdAt: '',
+      description: 'Incoming dashboard',
+      detectedAt: '2026-01-01T00:05:00.000Z',
+      deviceId: { _id: 'device-1', name: 'Phone 1' },
+      notificationHash: null,
+      transferId: null,
+      type: 'masuk',
+      updatedAt: '',
+    },
+  ],
+  chartData: [{date: '2026-01-01', incoming: 450000, outgoing: 125000}],
+  devices: [
+    {
+      _id: 'device-dashboard-1',
+      accountCount: 2,
+      accountTypes: ['bca'],
+      activeAccountCount: 1,
+      boxName: 'Box 01',
+      brand: 'Samsung',
+      model: 'A52',
+      name: 'Dashboard Phone',
+      rackName: 'Rack Alpha',
+      udid: 'USB-1',
+    },
+  ],
+};
 
 function renderText(renderer: ReactTestRenderer.ReactTestRenderer) {
   return renderer.root
@@ -152,6 +225,11 @@ describe('KolamAmSurface', () => {
     expect(text).toContain('Automation Management');
     expect(text).toContain('Dashboard');
     expect(text).toContain('Kembali');
+    expect(text).toContain('Transfer Status');
+    expect(text).toContain('Vendor Dashboard');
+    expect(text).toContain('Recent Mutations');
+    expect(text).toContain('Dashboard Phone');
+    expect(getAmDashboard).toHaveBeenCalledTimes(1);
   });
 
   it('keeps the POS-style back button wired to return to Kolam', async () => {

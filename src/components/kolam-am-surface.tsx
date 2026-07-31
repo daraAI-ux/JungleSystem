@@ -31,6 +31,7 @@ import {
   getAmDevices,
   getAmActivityLogs,
   getAmActivityLogStats,
+  getAmDashboard,
   getAmDeviceServiceLogs,
   getAmDeviceServices,
   getAmDeviceServiceQrUrl,
@@ -164,37 +165,113 @@ export function KolamAmSurface({
 }
 
 function AmDashboardPage({dashboard}: {dashboard?: AmDashboardData | null}) {
-  if (!dashboard) {
+  const [data, setData] = React.useState<AmDashboardData | null>(dashboard ?? null);
+  const [isLoading, setIsLoading] = React.useState(!dashboard);
+  const [error, setError] = React.useState<string | null>(null);
+
+  const fetchDashboard = React.useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const response = await getAmDashboard();
+      setData(response);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load AM dashboard');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    setData(dashboard ?? null);
+  }, [dashboard]);
+
+  React.useEffect(() => {
+    let mounted = true;
+
+    const load = async () => {
+      try {
+        const response = await getAmDashboard();
+        if (!mounted) return;
+        setData(response);
+        setError(null);
+      } catch (err) {
+        if (!mounted) return;
+        setError(err instanceof Error ? err.message : 'Failed to load AM dashboard');
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    load();
+    const interval = setInterval(load, 15000);
+
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, []);
+
+  if (!data) {
     return (
       <View style={styles.emptyPanel}>
-        <Text style={styles.panelTitle}>Menunggu data live AM</Text>
+        <Text style={styles.panelTitle}>{isLoading ? 'Memuat dashboard AM live' : 'Menunggu data live AM'}</Text>
         <Text style={styles.panelText}>
           Dashboard akan terisi dari endpoint /dashboard setelah sesi Kolam punya akses AM.
         </Text>
+        <AmInlineError error={error} title="AM dashboard belum bisa dibaca" />
+        <KolamButton label="Refresh" intent="outline" size="sm" onPress={fetchDashboard} />
       </View>
     );
   }
 
   return (
     <View style={styles.pageStack}>
+      <View style={styles.actionRow}>
+        <Text style={styles.panelText}>Dashboard live AM dari endpoint /dashboard.</Text>
+        <KolamButton
+          disabled={isLoading}
+          label={isLoading ? 'Refreshing...' : 'Refresh'}
+          intent="outline"
+          size="sm"
+          onPress={fetchDashboard}
+        />
+      </View>
+      <AmInlineError error={error} title="AM dashboard refresh gagal" />
       <View style={styles.metricGrid}>
-        <AmMetricCard label="Total Balance" value={formatRupiah(dashboard.summary.totalBalance)} meta={`${dashboard.summary.totalAccounts} account`} />
-        <AmMetricCard label="Incoming Today" value={formatRupiah(dashboard.summary.todayIncoming.total)} meta={`${dashboard.summary.todayIncoming.count} transaksi`} />
-        <AmMetricCard label="Outgoing Today" value={formatRupiah(dashboard.summary.todayOutgoing.total)} meta={`${dashboard.summary.todayOutgoing.count} transaksi`} />
-        <AmMetricCard label="Active Devices" value={String(dashboard.summary.activeDevices)} meta={`${dashboard.devices.length} device terdaftar`} />
+        <AmMetricCard label="Total Balance" value={formatRupiah(data.summary.totalBalance)} meta={`${data.summary.totalAccounts} account`} />
+        <AmMetricCard label="Incoming Today" value={formatRupiah(data.summary.todayIncoming.total)} meta={`${data.summary.todayIncoming.count} transaksi`} />
+        <AmMetricCard label="Outgoing Today" value={formatRupiah(data.summary.todayOutgoing.total)} meta={`${data.summary.todayOutgoing.count} transaksi`} />
+        <AmMetricCard label="Active Devices" value={String(data.summary.activeDevices)} meta={`${data.devices.length} device terdaftar`} />
       </View>
       <View style={styles.panel}>
         <Text style={styles.panelTitle}>Transfer Status</Text>
         <View style={styles.statusRow}>
-          <AmStatusPill label="Pending" value={dashboard.transfers.pending} />
-          <AmStatusPill label="Processing" value={dashboard.transfers.processing} />
-          <AmStatusPill label="Success" value={dashboard.transfers.success} />
-          <AmStatusPill label="Failed" value={dashboard.transfers.failed} danger />
+          <AmStatusPill label="Pending" value={data.transfers.pending} />
+          <AmStatusPill label="Processing" value={data.transfers.processing} />
+          <AmStatusPill label="Success" value={data.transfers.success} />
+          <AmStatusPill label="Failed" value={data.transfers.failed} danger />
         </View>
+        <Text style={styles.panelText}>Total amount hari ini: {formatRupiah(data.transfers.totalAmount)}</Text>
+      </View>
+      <View style={styles.panelGrid}>
+        <AmRecentTransfersPanel transfers={data.recentTransfers} />
+        <AmRecentMutasiPanel mutasi={data.recentMutasi} />
+      </View>
+      <View style={styles.panel}>
+        <Text style={styles.panelTitle}>7 Hari Mutasi</Text>
+        {data.chartData.map(point => (
+          <View key={point.date} style={styles.deviceRow}>
+            <Text style={styles.rowTitle}>{point.date}</Text>
+            <Text style={styles.rowMeta}>Masuk {formatRupiah(point.incoming)} / Keluar {formatRupiah(point.outgoing)}</Text>
+          </View>
+        ))}
       </View>
       <View style={styles.panel}>
         <Text style={styles.panelTitle}>Devices</Text>
-        {dashboard.devices.slice(0, 8).map(device => (
+        {data.devices.slice(0, 8).map(device => (
           <View key={device._id} style={styles.deviceRow}>
             <View>
               <Text style={styles.rowTitle}>{device.name}</Text>
@@ -205,7 +282,66 @@ function AmDashboardPage({dashboard}: {dashboard?: AmDashboardData | null}) {
             <Text style={styles.rowMeta}>{device.activeAccountCount}/{device.accountCount} active</Text>
           </View>
         ))}
+        <AmLoadingOrEmpty
+          isLoading={false}
+          items={data.devices}
+          loadingText="Memuat devices dashboard..."
+          emptyText="No dashboard devices found"
+        />
       </View>
+    </View>
+  );
+}
+
+function AmRecentTransfersPanel({transfers}: {transfers: AmTransfer[]}) {
+  return (
+    <View style={styles.panel}>
+      <Text style={styles.panelTitle}>Recent Transfers</Text>
+      <Text style={styles.panelText}>Latest transfer activity across all devices.</Text>
+      {transfers.slice(0, 5).map(transfer => (
+        <View key={transfer._id} style={styles.deviceRow}>
+          <View>
+            <Text style={styles.rowTitle}>{transfer.recipientName || transfer.recipientAccount}</Text>
+            <Text style={styles.rowMeta}>{formatBankAccount(transfer.accountId)} - {formatAmDate(transfer.createdAt)}</Text>
+          </View>
+          <View style={styles.rowActions}>
+            <Text style={styles.amountText}>{formatRupiah(transfer.amount)}</Text>
+            <AmStatusChip label={transfer.status} tone={getTransferTone(transfer.status)} />
+          </View>
+        </View>
+      ))}
+      <AmLoadingOrEmpty
+        isLoading={false}
+        items={transfers}
+        loadingText="Memuat recent transfers..."
+        emptyText="No recent transfers found"
+      />
+    </View>
+  );
+}
+
+function AmRecentMutasiPanel({mutasi}: {mutasi: AmMutasi[]}) {
+  return (
+    <View style={styles.panel}>
+      <Text style={styles.panelTitle}>Recent Mutations</Text>
+      <Text style={styles.panelText}>Latest incoming and outgoing transactions.</Text>
+      {mutasi.slice(0, 5).map(item => (
+        <View key={item._id} style={styles.deviceRow}>
+          <View>
+            <Text style={styles.rowTitle}>{item.type === 'masuk' ? 'In' : 'Out'} - {formatBankAccount(item.accountId)}</Text>
+            <Text style={styles.rowMeta}>{item.description || formatDeviceRef(item.deviceId)} - {formatAmDate(item.detectedAt)}</Text>
+          </View>
+          <Text style={[styles.amountText, item.type === 'masuk' ? styles.amountPositive : styles.amountDanger]}>
+            {item.type === 'masuk' ? '+' : '-'}{formatRupiah(item.amount)}
+          </Text>
+        </View>
+      ))}
+      <AmLoadingOrEmpty
+        isLoading={false}
+        items={mutasi}
+        loadingText="Memuat recent mutations..."
+        emptyText="No recent mutations found"
+      />
     </View>
   );
 }
@@ -2761,6 +2897,12 @@ const styles = StyleSheet.create({
   pageStack: {
     gap: 16,
   },
+  actionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
   metricGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -2802,6 +2944,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 14,
     backgroundColor: V.colors.bg,
+  },
+  panelGrid: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    gap: 12,
   },
   panelTitle: {
     color: V.colors.fg,
@@ -2861,6 +3008,22 @@ const styles = StyleSheet.create({
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 12,
+  },
+  rowActions: {
+    alignItems: 'flex-end',
+    gap: 5,
+  },
+  amountText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '900',
+  },
+  amountPositive: {
+    color: V.colors.success,
+  },
+  amountDanger: {
+    color: V.colors.danger,
   },
   filterBar: {
     flexDirection: 'row',
