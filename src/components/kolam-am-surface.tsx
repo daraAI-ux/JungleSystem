@@ -404,6 +404,10 @@ function AmTasksPage() {
   const [search, setSearch] = React.useState('');
   const [status, setStatus] = React.useState<string>('all');
   const [type, setType] = React.useState<string>('all');
+  const [serviceAccountId, setServiceAccountId] = React.useState<string>('all');
+  const [deviceId, setDeviceId] = React.useState<string>('all');
+  const [serviceAccounts, setServiceAccounts] = React.useState<AmServiceAccount[]>([]);
+  const [devices, setDevices] = React.useState<AmDevice[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [actingTaskId, setActingTaskId] = React.useState<string | null>(null);
@@ -422,6 +426,8 @@ function AmTasksPage() {
         search: search.trim() || undefined,
         status: status === 'all' ? undefined : status,
         type: type === 'all' ? undefined : type,
+        serviceAccountId: serviceAccountId === 'all' ? undefined : serviceAccountId,
+        deviceId: deviceId === 'all' ? undefined : deviceId,
       });
       setTasks(response.data);
       setTotal(response.meta.total);
@@ -432,11 +438,37 @@ function AmTasksPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [page, search, status, type]);
+  }, [deviceId, page, search, serviceAccountId, status, type]);
 
   React.useEffect(() => {
     fetchTasks();
   }, [fetchTasks]);
+
+  React.useEffect(() => {
+    let mounted = true;
+
+    const loadFilterOptions = async () => {
+      try {
+        const [accountsResponse, devicesResponse] = await Promise.all([
+          getAmServiceAccounts({limit: 100}),
+          getAmDevices({limit: 100}),
+        ]);
+        if (!mounted) return;
+        setServiceAccounts(accountsResponse.data);
+        setDevices(devicesResponse.data);
+      } catch {
+        if (!mounted) return;
+        setServiceAccounts([]);
+        setDevices([]);
+      }
+    };
+
+    loadFilterOptions();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   React.useEffect(() => {
     const interval = setInterval(fetchTasks, 10_000);
@@ -457,6 +489,37 @@ function AmTasksPage() {
     setStatus(value);
     setPage(1);
   }, []);
+
+  const handleServiceAccountChange = React.useCallback((value: string) => {
+    setServiceAccountId(value);
+    setPage(1);
+  }, []);
+
+  const handleDeviceChange = React.useCallback((value: string) => {
+    setDeviceId(value);
+    setPage(1);
+  }, []);
+
+  const serviceAccountFilterItems = React.useMemo(
+    () => ['all', ...serviceAccounts.map(account => account._id)],
+    [serviceAccounts],
+  );
+  const serviceAccountFilterLabels = React.useMemo(
+    () => Object.fromEntries(
+      serviceAccounts.map(account => [account._id, formatMutasiAccountOption(account)]),
+    ),
+    [serviceAccounts],
+  );
+  const deviceFilterItems = React.useMemo(
+    () => ['all', ...devices.map(device => device._id)],
+    [devices],
+  );
+  const deviceFilterLabels = React.useMemo(
+    () => Object.fromEntries(
+      devices.map(device => [device._id, device.name || device.udid || device.tcpAddress || device._id]),
+    ),
+    [devices],
+  );
 
   const totalPages = Math.max(1, Math.ceil(total / Math.max(limit, 1)));
   const rangeFrom = total ? (page - 1) * limit + 1 : 0;
@@ -506,6 +569,12 @@ function AmTasksPage() {
         <KolamSearchField value={search} onChangeText={handleSearchChange} placeholder="Search..." containerStyle={styles.taskSearch} trailingLabel={`${total} task`} />
         <AmSegmentGroup active={type} items={TASK_TYPES} labels={TASK_TYPE_LABELS} onSelect={handleTypeChange} />
         <AmSegmentGroup active={status} items={TASK_STATUSES} onSelect={handleStatusChange} />
+        {serviceAccountFilterItems.length > 1 ? (
+          <AmSegmentGroup active={serviceAccountId} items={serviceAccountFilterItems} labels={serviceAccountFilterLabels} onSelect={handleServiceAccountChange} />
+        ) : null}
+        {deviceFilterItems.length > 1 ? (
+          <AmSegmentGroup active={deviceId} items={deviceFilterItems} labels={deviceFilterLabels} onSelect={handleDeviceChange} />
+        ) : null}
         <KolamButton label={isLoading ? 'Memuat' : 'Refresh'} intent="outline" size="sm" muted={isLoading} onPress={fetchTasks} />
       </View>
       {error ? (

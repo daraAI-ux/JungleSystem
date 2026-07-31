@@ -471,6 +471,8 @@ describe('KolamAmSurface', () => {
       search: undefined,
       status: undefined,
       type: undefined,
+      serviceAccountId: undefined,
+      deviceId: undefined,
     });
     const joinedPageText = renderText(renderer!).join(' ');
     expect(joinedPageText).toMatch(/Showing\s+1\s+to\s+20\s+of\s+45\s+items/);
@@ -486,6 +488,99 @@ describe('KolamAmSurface', () => {
       search: undefined,
       status: undefined,
       type: undefined,
+      serviceAccountId: undefined,
+      deviceId: undefined,
+    });
+  });
+
+  it('filters Tasks by AM service account and device using live query params', async () => {
+    jest.mocked(getAmServiceAccounts).mockResolvedValue({
+      data: [
+        {
+          _id: 'account-1',
+          label: 'BCA Main',
+          platform: 'bca',
+          accountNumber: '123',
+          status: 'active',
+          deviceId: null,
+          username: '',
+          credentials: {},
+          meta: {},
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 1, limit: 100},
+    });
+    jest.mocked(getAmDevices).mockResolvedValue({
+      data: [
+        {
+          _id: 'device-1',
+          name: 'Phone 1',
+          slug: 'phone-1',
+          boxId: 'box-1',
+          connectionType: 'usb',
+          udid: 'USB-1',
+          tcpAddress: '',
+          brand: 'Samsung',
+          model: 'A1',
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 1, limit: 100},
+    });
+    jest.mocked(getAmTasks).mockResolvedValue({
+      data: [],
+      meta: {total: 0, limit: 20},
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await updateAmRoute(renderer!, 'tasks');
+
+    expect(getAmTasks).toHaveBeenLastCalledWith({
+      page: 1,
+      limit: 20,
+      search: undefined,
+      status: undefined,
+      type: undefined,
+      serviceAccountId: undefined,
+      deviceId: undefined,
+    });
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Segment BCA Main - 123'}).props.onPress();
+    });
+
+    expect(getAmTasks).toHaveBeenLastCalledWith({
+      page: 1,
+      limit: 20,
+      search: undefined,
+      status: undefined,
+      type: undefined,
+      serviceAccountId: 'account-1',
+      deviceId: undefined,
+    });
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Segment Phone 1'}).props.onPress();
+    });
+
+    expect(getAmTasks).toHaveBeenLastCalledWith({
+      page: 1,
+      limit: 20,
+      search: undefined,
+      status: undefined,
+      type: undefined,
+      serviceAccountId: 'account-1',
+      deviceId: 'device-1',
     });
   });
 
