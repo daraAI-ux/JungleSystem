@@ -4,10 +4,7 @@ import type { AccessScope } from '../domain/auth';
 import type { AppModule } from '../domain/app-shell';
 import type { KolamNavigationItem } from '../domain/kolam-navigation';
 import { KolamQuickSearch } from './kolam-quick-search';
-import {
-  KolamSidebarModuleGroup,
-  KolamSidebarModuleGroups,
-} from './kolam-sidebar-navigation-widgets';
+import { KolamSidebarModuleGroup } from './kolam-sidebar-navigation-widgets';
 import { KolamMenuGroup } from './kolam-sidebar-menu-widgets';
 
 export interface KolamSidebarContentProps {
@@ -56,6 +53,13 @@ export function KolamSidebarContent({
         label=""
         onSelect={onSelectModule}
       />
+      <KolamSidebarModuleGroup
+        activeModule={activeModule}
+        area="am"
+        collapsed={collapsed}
+        label=""
+        onSelect={onSelectModule}
+      />
       <KolamMenuGroup
         accessScope={accessScope}
         activeRoute={activeRoute}
@@ -66,11 +70,6 @@ export function KolamSidebarContent({
         onSelectItem={onSelectMenuItem}
         onToggleSection={onToggleMenuSection}
         sectionOrder={sectionOrder}
-      />
-      <KolamSidebarModuleGroups
-        activeModule={activeModule}
-        collapsed={collapsed}
-        onSelect={onSelectModule}
       />
     </ScrollView>
   );

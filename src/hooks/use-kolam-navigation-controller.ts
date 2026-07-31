@@ -100,8 +100,8 @@ export function useKolamNavigationController({
     [pluginConfig],
   );
   const commandIndex = useMemo(
-    () => getCommandIndex({ pluginRoutes: pluginRouteIndex }),
-    [pluginRouteIndex],
+    () => getCommandIndex(),
+    [],
   );
   const filteredCommands = useMemo(
     () => filterCommandIndex(commandIndex, commandSearch),
@@ -323,30 +323,6 @@ export function useKolamNavigationController({
       return;
     }
 
-    if (command.kind === 'plugin-route') {
-      const route = pluginRouteIndex.find(
-        item =>
-          item.pluginId === command.pluginId && item.route === command.route,
-      );
-
-      if (!route) {
-        onMessage(
-          `${command.label} tidak dibuka karena plugin dinonaktifkan di Settings.`,
-        );
-        return;
-      }
-
-      setActiveModule('plugins');
-      setActiveNavigationItem(null);
-      setActivePluginRoute(route ?? null);
-      setActiveAmSurface(null);
-      setActiveKolamSurface(null);
-      setActiveModuleRoute(null);
-      setPluginSearch(command.route ?? command.label);
-      onMessage(`${command.label} dibuka di Plugin Hub.`);
-      return;
-    }
-
     const action = runtimeActions.find(item => item.id === command.actionId);
     if (action) {
       await onRuntimeAction(action);
@@ -366,13 +342,6 @@ export function useKolamNavigationController({
           route.route === disabledPluginRoute.route,
       )
     ) {
-      setActiveModule('plugins');
-      setActiveNavigationItem(null);
-      setActivePluginRoute(null);
-      setActiveAmSurface(null);
-      setActiveKolamSurface(null);
-      setActiveModuleRoute(null);
-      setPluginSearch(disabledPluginRoute.pluginLabel);
       onMessage(
         `${disabledPluginRoute.pluginLabel} dinonaktifkan di Settings. Route ${item.route} tidak dibuka.`,
       );
@@ -396,29 +365,12 @@ export function useKolamNavigationController({
     );
 
     if (!enabledRoute) {
-      setActiveModule('plugins');
-      setActiveNavigationItem(null);
-      setActivePluginRoute(null);
-      setActiveAmSurface(null);
-      setActiveKolamSurface(null);
-      setActiveModuleRoute(null);
-      setPluginSearch(route.pluginLabel);
       onMessage(
         `${route.pluginLabel} dinonaktifkan di Settings. Route ${route.route} tidak dibuka.`,
       );
       return;
     }
-
-    setActiveModule('plugins');
-    setActiveNavigationItem(null);
-    setActivePluginRoute(enabledRoute);
-    setActiveAmSurface(null);
-    setActiveKolamSurface(null);
-    setActiveModuleRoute(null);
-    setPluginSearch(route.route);
-    onMessage(
-      `${route.pluginLabel} route dibuka dari Plugin Hub (${route.route}).`,
-    );
+    onMessage(`${enabledRoute.pluginLabel} route tidak dibuka karena Plugin Hub sudah dihapus.`);
   };
 
   const handleAmSurfaceSelect = (surface: UnifiedSurface) => {

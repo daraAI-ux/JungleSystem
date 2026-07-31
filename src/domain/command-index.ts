@@ -17,7 +17,6 @@ import {
 import {
   amSurfaces,
   kolamSurfaces,
-  getPluginRouteIndex,
   type PluginRouteEntry,
   type UnifiedSurface,
 } from './unified';
@@ -80,7 +79,7 @@ export function getCommandIndex({
   ),
   amRouteSurfaces = amSurfaces,
   actions = runtimeActions,
-  pluginRoutes = getPluginRouteIndex(),
+  pluginRoutes = [],
 }: {
   modules?: ShellModule[];
   moduleRoutes?: ShellModuleRouteEntry[];
@@ -91,6 +90,8 @@ export function getCommandIndex({
   actions?: RuntimeAction[];
   pluginRoutes?: PluginRouteEntry[];
 } = {}): CommandEntry[] {
+  void pluginRoutes;
+
   return [
     ...modules.map(module => ({
       id: `module:${module.id}`,
@@ -182,17 +183,6 @@ export function getCommandIndex({
       actionId: action.id,
       requiredAccess: action.requiredAccess,
     })),
-    ...pluginRoutes.map(route => ({
-      id: `plugin-route:${route.pluginId}:${route.route}`,
-      kind: 'plugin-route' as const,
-      area: 'plugins' as const,
-      moduleId: 'plugins' as const,
-      label: `${route.pluginLabel} ${route.route}`,
-      description: `${route.manifestName} host route`,
-      source: route.sourceRepo,
-      route: route.route,
-      pluginId: route.pluginId,
-    })),
   ];
 }
 
@@ -244,8 +234,7 @@ export function getCommandIndexStats(
     amRoutes: commands.filter(command => command.kind === 'am-route').length,
     actions: commands.filter(command => command.kind === 'runtime-action')
       .length,
-    pluginRoutes: commands.filter(command => command.kind === 'plugin-route')
-      .length,
+    pluginRoutes: 0,
   };
 }
 
@@ -294,13 +283,6 @@ export function getCommandPaletteSections(
       title: 'Runtime Actions',
       commands: commands
         .filter(command => command.kind === 'runtime-action')
-        .slice(0, limitPerSection),
-    },
-    {
-      id: 'plugin-route' as const,
-      title: 'Plugin Routes',
-      commands: commands
-        .filter(command => command.kind === 'plugin-route')
         .slice(0, limitPerSection),
     },
   ].filter(section => section.commands.length > 0);

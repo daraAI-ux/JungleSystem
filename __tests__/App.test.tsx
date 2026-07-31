@@ -121,8 +121,9 @@ test('keeps the native shell aligned with the live Kolam sidebar chrome after lo
     .filter(Boolean);
 
   expect(renderedText).toEqual(
-    expect.arrayContaining(['Kolam', 'POS', 'AM', 'Plugin']),
+    expect.arrayContaining(['Kolam', 'POS', 'AM']),
   );
+  expect(renderedText).not.toContain('Plugin');
   expect(renderedText).not.toContain('Kolam + POS + AM');
   expect(renderedText).not.toContain('Native Windows');
 });

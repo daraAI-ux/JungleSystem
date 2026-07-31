@@ -1,10 +1,7 @@
 import React from 'react';
 import {Text, View} from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
-import {
-  KolamSidebarModuleGroup,
-  KolamSidebarModuleGroups,
-} from '../src/components/kolam-sidebar-navigation-widgets';
+import {KolamSidebarModuleGroup} from '../src/components/kolam-sidebar-navigation-widgets';
 
 function renderText(renderer: ReactTestRenderer.ReactTestRenderer) {
   return renderer.root
@@ -25,7 +22,7 @@ function flattenText(value: React.ReactNode): string[] {
 }
 
 describe('sidebar navigation widgets', () => {
-  it('renders Kolam and secondary module groups directly', async () => {
+  it('renders AM in the primary module group without dev planning groups', async () => {
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
     await ReactTestRenderer.act(async () => {
@@ -38,25 +35,20 @@ describe('sidebar navigation widgets', () => {
             label="Kolam"
             onSelect={() => undefined}
           />
-          <KolamSidebarModuleGroups
-            activeModule="plugins"
+          <KolamSidebarModuleGroup
+            activeModule="kolam"
+            area="am"
             collapsed={false}
+            label=""
             onSelect={() => undefined}
           />
         </View>,
       );
     });
 
-    expect(renderText(renderer!)).toEqual(
-      expect.arrayContaining([
-        'Kolam',
-        'POS',
-        '5 modul / 19 route',
-        'AM',
-        '1 modul / 38 route',
-        'Plugin',
-        '1 modul / 9 route',
-      ]),
-    );
+    const text = renderText(renderer!);
+
+    expect(text).toEqual(expect.arrayContaining(['Kolam', 'POS', 'AM']));
+    expect(text).not.toEqual(expect.arrayContaining(['Plugin', 'Persiapan']));
   });
 });

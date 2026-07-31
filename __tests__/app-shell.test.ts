@@ -10,34 +10,30 @@ import {
 } from '../src/domain/app-shell';
 import {kolamNavigationSections} from '../src/domain/kolam-navigation';
 
-test('defines shell areas for Kolam POS AM plugins and preparation', () => {
+test('defines shell areas for Kolam POS and AM without dev planning modules', () => {
   expect(getShellModulesByArea('kolam').map(module => module.id)).toEqual([
     'kolam',
     'settings',
+    'checkout',
   ]);
   expect(getShellModulesByArea('pos').map(module => module.id)).toEqual([
-    'checkout',
     'catalog',
     'sales',
     'cashflow',
     'customer',
   ]);
   expect(getShellModulesByArea('am').map(module => module.id)).toEqual(['am']);
-  expect(getShellModulesByArea('plugins').map(module => module.id)).toEqual([
-    'plugins',
-  ]);
-  expect(getShellModulesByArea('preparation').map(module => module.id)).toEqual([
-    'preparation',
-  ]);
+  expect(getShellModulesByArea('plugins')).toEqual([]);
+  expect(getShellModulesByArea('preparation')).toEqual([]);
 });
 
 test('summarizes shell area coverage for sidebar navigation', () => {
   expect(getShellAreaCoverage('pos')).toEqual(
     expect.objectContaining({
       area: 'pos',
-      moduleCount: 5,
-      routeCount: 19,
-      summaryLabel: '5 modul / 19 route',
+      moduleCount: 4,
+      routeCount: 15,
+      summaryLabel: '4 modul / 15 route',
     }),
   );
   expect(getShellAreaCoverage('am')).toEqual(
@@ -48,12 +44,8 @@ test('summarizes shell area coverage for sidebar navigation', () => {
       summaryLabel: '1 modul / 38 route',
     }),
   );
-  expect(getShellAreaCoverage('plugins').summaryLabel).toBe(
-    '1 modul / 9 route',
-  );
-  expect(getShellAreaCoverage('preparation').summaryLabel).toBe(
-    '1 modul / 4 route',
-  );
+  expect(getShellAreaCoverage('plugins').summaryLabel).toBe('0 modul / 0 route');
+  expect(getShellAreaCoverage('preparation').summaryLabel).toBe('0 modul / 0 route');
 });
 
 test('keeps every shell module tied to a source repo and route list', () => {
@@ -65,32 +57,25 @@ test('keeps every shell module tied to a source repo and route list', () => {
   expect(getShellModule('kolam').sourceRepo).toBe(
     'E:\\Projects\\_latest-da\\da-inventory-frontend',
   );
-  expect(getShellModule('plugins').sourceRepo).toBe('E:\\Projects');
+  expect(() => getShellModule('plugins')).toThrow('Unknown shell module');
 });
 
 test('finds module metadata by id', () => {
-  expect(getShellModule('plugins')).toEqual(
+  expect(getShellModule('am')).toEqual(
     expect.objectContaining({
-      area: 'plugins',
-      label: 'Plugin',
+      area: 'am',
+      label: 'AM',
     }),
   );
-  expect(getShellModule('preparation')).toEqual(
-    expect.objectContaining({
-      area: 'preparation',
-      label: 'Preparation',
-    }),
-  );
+  expect(() => getShellModule('preparation')).toThrow('Unknown shell module');
 });
 
 test('indexes POS and AM module routes as native route surfaces', () => {
   const routeIndex = getShellModuleRouteIndex();
 
-  expect(routeIndex.length).toBeGreaterThanOrEqual(50);
+  expect(routeIndex.length).toBeGreaterThanOrEqual(53);
   expect(routeIndex.map(route => route.id)).toEqual(
     expect.arrayContaining([
-      'checkout:/',
-      'checkout:sale-draft',
       'catalog:products?sellable=true',
       'sales:orders/:id',
       'sales:sales/:id/status',
@@ -105,12 +90,7 @@ test('indexes POS and AM module routes as native route surfaces', () => {
     ]),
   );
   expect(getShellModuleRouteEntry('checkout', 'sale-draft')).toEqual(
-    expect.objectContaining({
-      area: 'pos',
-      moduleId: 'checkout',
-      route: 'sale-draft',
-      sourceRepo: 'E:\\Projects\\da-pos',
-    }),
+    null,
   );
   expect(getShellModuleRouteEntry('am', 'transactions/:id')).toEqual(
     expect.objectContaining({
@@ -134,8 +114,6 @@ test('keeps sidebar metadata available for native navigation badges', () => {
     'wallet',
     'people',
     'automation',
-    'plugin',
-    'preparation',
   ]);
   expect(getShellModule('kolam').routes).toEqual(
     expect.arrayContaining([
@@ -168,8 +146,6 @@ test('keeps sidebar metadata available for native navigation badges', () => {
       'sales/discount-approval',
       'vouchers',
       'shipping-method',
-      'custom-project/instances',
-      'custom-project/instances/new',
       'terms-templates',
       'enclonura-species',
       'species-request',
@@ -204,14 +180,9 @@ test('keeps sidebar metadata available for native navigation badges', () => {
     ]), 
   );
   expect(getShellModule('kolam').routes.length).toBeGreaterThanOrEqual(30);
-  expect(getShellModule('plugins').routes.length).toBe(9);
-  expect(getShellModule('preparation').routes).toEqual([
-    'preparation',
-    'launch-coverage',
-    'source-map',
-    'runtime-readiness',
-  ]);
-  expect(getShellModulesByArea('pos')).toHaveLength(5);
+  expect(() => getShellModule('plugins')).toThrow('Unknown shell module');
+  expect(() => getShellModule('preparation')).toThrow('Unknown shell module');
+  expect(getShellModulesByArea('pos')).toHaveLength(4);
   expect(getShellModule('settings').routes).toEqual(['pengaturan']);
 });
 

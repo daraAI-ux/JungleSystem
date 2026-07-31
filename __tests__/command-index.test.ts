@@ -6,34 +6,25 @@ import {
 } from '../src/domain/command-index';
 
 describe('unified command index', () => {
-  it('indexes shell modules runtime actions and plugin routes', () => {
+  it('indexes shell modules and runtime actions without dev planning routes', () => {
     const commands = getCommandIndex();
 
     expect(getCommandIndexStats(commands)).toEqual({
-      total: 423,
-      modules: 10,
-      moduleRoutes: 57,
+      total: 327,
+      modules: 8,
+      moduleRoutes: 53,
       kolamSurfaces: 5,
-      navigationRoutes: 268,
+      navigationRoutes: 245,
       amRoutes: 5,
-      actions: 14,
-      pluginRoutes: 64,
+      actions: 11,
+      pluginRoutes: 0,
     });
     expect(commands).toContainEqual(
       expect.objectContaining({
         id: 'module:checkout',
         kind: 'module',
         moduleId: 'checkout',
-        area: 'pos',
-      }),
-    );
-    expect(commands).toContainEqual(
-      expect.objectContaining({
-        id: 'module-route:checkout:payment',
-        kind: 'module-route',
-        moduleId: 'checkout',
-        area: 'pos',
-        route: 'payment',
+        area: 'kolam',
       }),
     );
     expect(commands).toContainEqual(
@@ -70,8 +61,6 @@ describe('unified command index', () => {
         moduleId: 'kolam',
         area: 'kolam',
         route: '/customer-storage',
-        description:
-          'User - Customer - Customer storage items management',
       }),
     );
     expect(commands).toContainEqual(
@@ -145,22 +134,8 @@ describe('unified command index', () => {
         area: 'am',
       }),
     );
-    expect(commands).toContainEqual(
-      expect.objectContaining({
-        id: 'module:preparation',
-        kind: 'module',
-        moduleId: 'preparation',
-        area: 'preparation',
-      }),
-    );
-    expect(commands).toContainEqual(
-      expect.objectContaining({
-        id: 'action:preparation-runtime-audit',
-        kind: 'runtime-action',
-        moduleId: 'preparation',
-        area: 'preparation',
-      }),
-    );
+    expect(commands.map(command => command.id)).not.toContain('module:preparation');
+    expect(commands.map(command => command.id)).not.toContain('action:preparation-runtime-audit');
     expect(commands).toContainEqual(
       expect.objectContaining({
         id: 'am-route:tasks',
@@ -170,15 +145,7 @@ describe('unified command index', () => {
         route: 'am-fe/(dashboard)/tasks / am-be/routes/task',
       }),
     );
-    expect(commands).toContainEqual(
-      expect.objectContaining({
-        id: 'plugin-route:chat:/team-chat',
-        kind: 'plugin-route',
-        moduleId: 'plugins',
-        area: 'plugins',
-        route: '/team-chat',
-      }),
-    );
+    expect(commands.some(command => command.kind === 'plugin-route')).toBe(false);
   });
 
   it('filters commands across routes actions sources and access requirements', () => {
@@ -220,9 +187,6 @@ describe('unified command index', () => {
         expect.objectContaining({
           id: 'navigation-route:/campaign/dara-seo/keywords',
         }),
-        expect.objectContaining({
-          id: 'plugin-route:dara:/campaign/dara-seo/keywords',
-        }),
       ]),
     );
     expect(
@@ -231,9 +195,6 @@ describe('unified command index', () => {
       expect.arrayContaining([
         expect.objectContaining({
           id: 'navigation-route:/task-manager/tugas-terjadwal',
-        }),
-        expect.objectContaining({
-          id: 'plugin-route:task-manager:/task-manager/tugas-terjadwal',
         }),
       ]),
     );
@@ -245,7 +206,7 @@ describe('unified command index', () => {
     expect(filterCommandIndex(commands, 'sale-draft')).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          id: 'module-route:checkout:sale-draft',
+          id: 'module:checkout',
         }),
       ]),
     );
@@ -264,9 +225,6 @@ describe('unified command index', () => {
         expect.objectContaining({
           id: 'navigation-route:/team-chat',
         }),
-        expect.objectContaining({
-          id: 'plugin-route:chat:/team-chat',
-        }),
       ]),
     );
     expect(filterCommandIndex(commands, 'access_am')).toEqual([]);
@@ -284,7 +242,6 @@ describe('unified command index', () => {
       'Navigation Routes',
       'AM Routes',
       'Runtime Actions',
-      'Plugin Routes',
     ]);
     expect(sections.every(section => section.commands.length <= 2)).toBe(true);
     expect(sections[0].commands.every(command => command.kind === 'module')).toBe(
@@ -294,12 +251,12 @@ describe('unified command index', () => {
       getCommandPaletteSections(filterCommandIndex(commands, 'team-chat')).map(
         section => section.id,
       ),
-    ).toEqual(expect.arrayContaining(['navigation-route', 'plugin-route']));
+    ).toEqual(expect.arrayContaining(['navigation-route']));
     expect(
       getCommandPaletteSections(filterCommandIndex(commands, 'sale-draft')).map(
         section => section.id,
       ),
-    ).toEqual(expect.arrayContaining(['module-route']));
+    ).toEqual(expect.arrayContaining(['module']));
     expect(
       getCommandPaletteSections(filterCommandIndex(commands, 'am-be/routes/task')).map(
         section => section.id,

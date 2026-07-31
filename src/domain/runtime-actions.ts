@@ -158,40 +158,6 @@ export const runtimeActions: RuntimeAction[] = [
     status: 'source-audit',
     statusIconKind: 'search',
   },
-  {
-    id: 'plugin-route-explorer',
-    moduleId: 'plugins',
-    area: 'plugins',
-    label: 'Explore plugin routes',
-    description: 'Telusuri 64 route host dari manifest plugin resmi DA.',
-    sourceContract: 'DA-*-Plugin src/manifest.ts',
-    requiredAccess: 'kolam',
-    status: 'native-ready',
-    statusIconKind: 'check',
-  },
-  {
-    id: 'plugin-version-audit',
-    moduleId: 'plugins',
-    area: 'plugins',
-    label: 'Audit plugin versions',
-    description: 'Tandai package/manifest mismatch seperti DARA 0.1.44/0.1.45.',
-    sourceContract: 'package.json + src/manifest.ts',
-    requiredAccess: 'kolam',
-    status: 'source-audit',
-    statusIconKind: 'search',
-  },
-  {
-    id: 'preparation-runtime-audit',
-    moduleId: 'preparation',
-    area: 'preparation',
-    label: 'Audit preparation',
-    description:
-      'Periksa launch coverage, source map, dan runtime readiness sebelum screen dipromosikan ke dashboard.',
-    sourceContract: 'KolamWindows preparation surface',
-    requiredAccess: 'kolam',
-    status: 'source-audit',
-    statusIconKind: 'search',
-  },
 ];
 
 export function getRuntimeActionsByModule(

@@ -79,8 +79,6 @@ import {
   KolamAmSurface,
   KolamCustomerSurface,
   KolamOverviewSurface,
-  KolamPluginSurface,
-  KolamPreparationSurface,
   KolamSalesSurface,
   KolamSettingsSurface,
   type KolamCashflowSurfaceProps,
@@ -125,27 +123,23 @@ export function KolamWorkspaceSurfaceComponent({
   activeKolamSurface,
   activeModuleRoute,
   activeNavigationItem,
-  activePluginRoute,
   cashflow,
   catalog,
   checkout,
   customer,
   dataset,
-  plugins,
   salesGraphRange,
   onCommandSelect,
   onCustomerVisitConfirm,
   onDashboardRoute,
   onAmSurfaceSelect,
   onModuleRouteSelect,
-  onPluginRouteSelect,
   onSelectModule,
   onKolamSurfaceSelect,
   onSettingsTabChange,
   onSalesGraphRangeSelect,
   sales,
   syncActivity,
-  runtime,
 }: KolamWorkspaceSurfaceProps) {
   const activeRoutePath = activeNavigationItem?.route.split('?')[0] ?? '';
 
@@ -519,26 +513,6 @@ export function KolamWorkspaceSurfaceComponent({
           dataset={dataset}
           onSurfaceSelect={onAmSurfaceSelect}
         />,
-      );
-    case 'plugins':
-      return (
-        <KolamPluginSurface
-          activePluginRoute={activePluginRoute}
-          dataset={dataset}
-          onPluginRouteSelect={onPluginRouteSelect}
-          plugins={plugins}
-        />
-      );
-    case 'preparation':
-      return (
-        <KolamPreparationSurface
-          dataset={dataset}
-          runtime={runtime}
-          onCommandSelect={onCommandSelect}
-          onSelectModule={onSelectModule}
-          onSurfaceSelect={onKolamSurfaceSelect}
-          salesGraphRange={salesGraphRange}
-        />
       );
     default:
       return null;
