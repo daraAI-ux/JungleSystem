@@ -1182,7 +1182,7 @@ describe('KolamAmSurface', () => {
       status: undefined,
       method: undefined,
     });
-    expect(getAmCurrentUser).toHaveBeenCalledTimes(1);
+    expect(getAmCurrentUser).toHaveBeenCalledTimes(2);
   });
 
   it('renders activity log stats, detail, filters, and pagination from live metadata', async () => {
@@ -1463,6 +1463,17 @@ describe('KolamAmSurface', () => {
   });
 
   it('runs user create, edit, and delete actions from the Users route', async () => {
+    jest.mocked(getAmCurrentUser).mockResolvedValue({
+      _id: 'user-current',
+      fullName: 'Current AM Admin',
+      username: 'current-admin',
+      role: {
+        _id: 'role-admin',
+        name: 'Admin',
+        permissions: ['user:read', 'user:create', 'user:update', 'user:delete'],
+        description: 'Admin role',
+      },
+    });
     jest.mocked(getAmRoles).mockResolvedValue([
       {_id: 'role-admin', name: 'Admin', permissions: ['user:read'], description: 'Admin role'},
     ]);
@@ -1532,6 +1543,52 @@ describe('KolamAmSurface', () => {
     });
 
     expect(deleteAmUser).toHaveBeenCalledWith('user-1');
+  });
+
+  it('hides Users create, edit, and delete actions when AM live permission is read-only', async () => {
+    jest.mocked(getAmCurrentUser).mockResolvedValue({
+      _id: 'user-current',
+      fullName: 'Read Only User',
+      username: 'readonly',
+      role: {
+        _id: 'role-read',
+        name: 'User',
+        permissions: ['user:read'],
+        description: 'Read-only role',
+      },
+    });
+    jest.mocked(getAmRoles).mockResolvedValue([
+      {_id: 'role-read', name: 'User', permissions: ['user:read'], description: 'Read-only role'},
+    ]);
+    jest.mocked(getAmUsers).mockResolvedValue({
+      data: [
+        {
+          _id: 'user-1',
+          fullName: 'Alice Read',
+          username: 'alice',
+          role: {_id: 'role-read', name: 'User', permissions: ['user:read'], description: 'Read-only role'},
+          createdAt: '2026-01-01T00:00:00.000Z',
+          updatedAt: '2026-01-01T00:00:00.000Z',
+        },
+      ],
+      meta: {total: 1, limit: 20},
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await updateAmRoute(renderer!, 'admin/users');
+
+    const text = renderText(renderer!).join(' ');
+    expect(text).toContain('Users read-only');
+    expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM User Save'})).toHaveLength(0);
+    expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM User Edit user-1'})).toHaveLength(0);
+    expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM User Delete user-1'})).toHaveLength(0);
   });
 
   it('keeps Users search and pagination in sync with AM live metadata', async () => {

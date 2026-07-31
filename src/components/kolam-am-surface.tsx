@@ -3256,6 +3256,7 @@ function AmWebhookLogDetailPanel({log}: {log: AmWebhookLog}) {
 function AmUsersPage() {
   const [users, setUsers] = React.useState<AmUser[]>([]);
   const [roles, setRoles] = React.useState<AmRole[]>([]);
+  const [currentUser, setCurrentUser] = React.useState<AmCurrentUser | null>(null);
   const [search, setSearch] = React.useState('');
   const [roleFilter, setRoleFilter] = React.useState('all');
   const [page, setPage] = React.useState(1);
@@ -3275,7 +3276,7 @@ function AmUsersPage() {
   const fetchUsers = React.useCallback(async () => {
     try {
       setIsLoading(true);
-      const [userResponse, roleResponse] = await Promise.all([
+      const [userResponse, roleResponse, currentUserResponse] = await Promise.all([
         getAmUsers({
           page,
           limit: AM_USER_PAGE_LIMIT,
@@ -3283,11 +3284,13 @@ function AmUsersPage() {
           role: roleFilter === 'all' ? undefined : roleFilter,
         }),
         getAmRoles(),
+        getAmCurrentUser(),
       ]);
       setUsers(userResponse.data);
       setTotal(userResponse.meta.total);
       setLimit(userResponse.meta.limit || AM_USER_PAGE_LIMIT);
       setRoles(roleResponse);
+      setCurrentUser(currentUserResponse);
       setError(null);
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : 'Gagal memuat users AM live.');
@@ -3337,6 +3340,16 @@ function AmUsersPage() {
     const username = formUsername.trim();
     const password = formPassword.trim();
 
+    if (editingUserId && !hasAmPermission(currentUser, 'user:update')) {
+      setError('Akun AM ini tidak memiliki permission user:update.');
+      return;
+    }
+
+    if (!editingUserId && !hasAmPermission(currentUser, 'user:create')) {
+      setError('Akun AM ini tidak memiliki permission user:create.');
+      return;
+    }
+
     if (!fullName || !username || (!editingUserId && !password)) {
       setError('Full name, username, dan password wajib diisi untuk user baru.');
       return;
@@ -3375,9 +3388,14 @@ function AmUsersPage() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [editingUserId, fetchUsers, formFullName, formPassword, formRole, formUsername, resetUserForm, users]);
+  }, [currentUser, editingUserId, fetchUsers, formFullName, formPassword, formRole, formUsername, resetUserForm, users]);
 
   const removeUser = React.useCallback(async (user: AmUser) => {
+    if (!hasAmPermission(currentUser, 'user:delete')) {
+      setError('Akun AM ini tidak memiliki permission user:delete.');
+      return;
+    }
+
     try {
       setActingUserId(user._id);
       await deleteAmUser(user._id);
@@ -3391,11 +3409,15 @@ function AmUsersPage() {
     } finally {
       setActingUserId(null);
     }
-  }, [editingUserId, fetchUsers, resetUserForm]);
+  }, [currentUser, editingUserId, fetchUsers, resetUserForm]);
 
   const totalPages = Math.max(1, Math.ceil(total / Math.max(limit, 1)));
   const rangeFrom = total ? (page - 1) * limit + 1 : 0;
   const rangeTo = total ? Math.min(page * limit, total) : 0;
+  const canCreateUser = hasAmPermission(currentUser, 'user:create');
+  const canUpdateUser = hasAmPermission(currentUser, 'user:update');
+  const canDeleteUser = hasAmPermission(currentUser, 'user:delete');
+  const canShowUserForm = canCreateUser || (Boolean(editingUserId) && canUpdateUser);
   const roleFilterItems = React.useMemo(() => ['all', ...roles.map(role => role._id)], [roles]);
   const roleFilterLabels = React.useMemo<Record<string, string>>(() => {
     const labels: Record<string, string> = {all: 'All Roles'};
@@ -3429,56 +3451,65 @@ function AmUsersPage() {
           <Text style={styles.successText}>{actionMessage}</Text>
         </View>
       ) : null}
-      <View style={styles.tablePanel}>
-        <View style={styles.formGrid}>
-          <AmTextInput label="Full Name" placeholder="e.g. John Doe" value={formFullName} onChangeText={setFormFullName} />
-          <AmTextInput label="Username" placeholder="e.g. johndoe" value={formUsername} onChangeText={setFormUsername} />
-          <AmTextInput
-            label="Password"
-            placeholder={editingUserId ? 'Kosongkan untuk password lama' : 'Min 8 chars, uppercase, lowercase, digit, special'}
-            value={formPassword}
-            onChangeText={setFormPassword}
-          />
-          <View style={styles.formField}>
-            <Text style={styles.formLabel}>Role</Text>
-            <View style={styles.eventGrid}>
-              <KolamInteractionFrame
-                accessibilityLabel="AM User Role Default"
-                onPress={() => setFormRole('')}
-                style={[styles.eventChip, formRole === '' && styles.eventChipSelected]}>
-                <Text style={[styles.eventChipText, formRole === '' && styles.eventChipTextSelected]}>Default</Text>
-              </KolamInteractionFrame>
-              {roles.map(role => (
+      {canShowUserForm ? (
+        <View style={styles.tablePanel}>
+          <View style={styles.formGrid}>
+            <AmTextInput label="Full Name" placeholder="e.g. John Doe" value={formFullName} onChangeText={setFormFullName} />
+            <AmTextInput label="Username" placeholder="e.g. johndoe" value={formUsername} onChangeText={setFormUsername} />
+            <AmTextInput
+              label="Password"
+              placeholder={editingUserId ? 'Kosongkan untuk password lama' : 'Min 8 chars, uppercase, lowercase, digit, special'}
+              value={formPassword}
+              onChangeText={setFormPassword}
+            />
+            <View style={styles.formField}>
+              <Text style={styles.formLabel}>Role</Text>
+              <View style={styles.eventGrid}>
                 <KolamInteractionFrame
-                  key={role._id}
-                  accessibilityLabel={`AM User Role ${role.name}`}
-                  onPress={() => setFormRole(role._id)}
-                  style={[styles.eventChip, formRole === role._id && styles.eventChipSelected]}>
-                  <Text style={[styles.eventChipText, formRole === role._id && styles.eventChipTextSelected]}>{role.name}</Text>
+                  accessibilityLabel="AM User Role Default"
+                  onPress={() => setFormRole('')}
+                  style={[styles.eventChip, formRole === '' && styles.eventChipSelected]}>
+                  <Text style={[styles.eventChipText, formRole === '' && styles.eventChipTextSelected]}>Default</Text>
                 </KolamInteractionFrame>
-              ))}
+                {roles.map(role => (
+                  <KolamInteractionFrame
+                    key={role._id}
+                    accessibilityLabel={`AM User Role ${role.name}`}
+                    onPress={() => setFormRole(role._id)}
+                    style={[styles.eventChip, formRole === role._id && styles.eventChipSelected]}>
+                    <Text style={[styles.eventChipText, formRole === role._id && styles.eventChipTextSelected]}>{role.name}</Text>
+                  </KolamInteractionFrame>
+                ))}
+              </View>
+            </View>
+            <View style={styles.inlineActions}>
+              <KolamButton
+                accessibilityLabel="AM User Save"
+                label={isSubmitting ? 'Menyimpan' : (editingUserId ? 'Save' : 'Create')}
+                muted={isSubmitting}
+                size="sm"
+                onPress={saveUser}
+              />
+              {editingUserId ? (
+                <KolamButton
+                  accessibilityLabel="AM User Cancel Edit"
+                  label="Cancel"
+                  intent="outline"
+                  size="sm"
+                  onPress={resetUserForm}
+                />
+              ) : null}
             </View>
           </View>
-          <View style={styles.inlineActions}>
-            <KolamButton
-              accessibilityLabel="AM User Save"
-              label={isSubmitting ? 'Menyimpan' : (editingUserId ? 'Save' : 'Create')}
-              muted={isSubmitting}
-              size="sm"
-              onPress={saveUser}
-            />
-            {editingUserId ? (
-              <KolamButton
-                accessibilityLabel="AM User Cancel Edit"
-                label="Cancel"
-                intent="outline"
-                size="sm"
-                onPress={resetUserForm}
-              />
-            ) : null}
-          </View>
         </View>
-      </View>
+      ) : (
+        <View style={styles.emptyPanel}>
+          <Text style={styles.panelTitle}>Users read-only</Text>
+          <Text style={styles.panelText}>
+            Akun AM ini hanya menampilkan daftar user karena permission create/update tidak tersedia.
+          </Text>
+        </View>
+      )}
       <View style={styles.tablePanel}>
         <View style={styles.tableHeader}>
           <Text style={[styles.tableHeaderText, styles.accountWideCol]}>Name</Text>
@@ -3496,21 +3527,25 @@ function AmUsersPage() {
             <Text style={[styles.cellText, styles.dateCol]}>{formatAmDate(user.createdAt)}</Text>
             <View style={styles.actionCol}>
               <View style={styles.inlineActions}>
-                <KolamButton
-                  accessibilityLabel={`AM User Edit ${user._id}`}
-                  label="Edit"
-                  intent="outline"
-                  size="sm"
-                  onPress={() => editUser(user)}
-                />
-                <KolamButton
-                  accessibilityLabel={`AM User Delete ${user._id}`}
-                  label={actingUserId === user._id ? '...' : 'Delete'}
-                  intent="danger"
-                  muted={actingUserId === user._id}
-                  size="sm"
-                  onPress={() => removeUser(user)}
-                />
+                {canUpdateUser ? (
+                  <KolamButton
+                    accessibilityLabel={`AM User Edit ${user._id}`}
+                    label="Edit"
+                    intent="outline"
+                    size="sm"
+                    onPress={() => editUser(user)}
+                  />
+                ) : null}
+                {canDeleteUser ? (
+                  <KolamButton
+                    accessibilityLabel={`AM User Delete ${user._id}`}
+                    label={actingUserId === user._id ? '...' : 'Delete'}
+                    intent="danger"
+                    muted={actingUserId === user._id}
+                    size="sm"
+                    onPress={() => removeUser(user)}
+                  />
+                ) : null}
               </View>
             </View>
           </View>
@@ -4109,6 +4144,12 @@ function formatServiceDeviceMeta(device: AmServiceAccountDeviceRef | null) {
 
 function getServiceDevice(account: AmServiceAccount) {
   return typeof account.deviceId === 'object' ? account.deviceId : null;
+}
+
+function hasAmPermission(user: AmCurrentUser | null, permission: string) {
+  if (!user?.role) return false;
+  if (user.role.name === 'Super Admin') return true;
+  return user.role.permissions.includes(permission);
 }
 
 function isTransferBanking(platform: string) {
