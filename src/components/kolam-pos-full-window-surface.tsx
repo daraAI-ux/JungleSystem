@@ -20,6 +20,7 @@ import type {
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {formatRupiah} from '../lib/money';
 import type {WorkflowStep} from '../lib/workflow';
+import type {CreateCustomerBody} from '../services/pos-api';
 import {KolamButton} from './kolam-button';
 import {KolamInteractionFrame} from './kolam-interaction-frame';
 import {KolamQuantityStepper} from './kolam-quantity-stepper';
@@ -36,16 +37,20 @@ export interface KolamPosFullWindowSurfaceProps {
   catalogCategories?: string[];
   catalogSearch: string;
   checkout: CheckoutState;
+  customerForm: CreateCustomerBody;
   customers: Customer[];
   filteredCatalog: CatalogItem[];
   finalTotal: number;
+  isCreatingCustomer: boolean;
   isCreatingSale: boolean;
   onAddToCart: (item: CatalogItem) => void;
   onBackToCenter: () => void;
   onCatalogSearchChange: (query: string) => void;
   onCategoryChange?: (category: string | null) => void;
   onClearCart: () => void;
+  onCreateCustomer: () => void;
   onCreateSaleDraft: () => void;
+  onCustomerFormChange: (nextForm: CreateCustomerBody) => void;
   onGlobalDiscountChange: (value: string) => void;
   onGlobalDiscountTypeChange: (discountType: CheckoutState['globalDiscountType']) => void;
   onQuantityChange: (itemId: string, nextQuantity: number) => void;
@@ -99,16 +104,20 @@ export function KolamPosFullWindowSurface({
   catalogCategories = [],
   catalogSearch,
   checkout,
+  customerForm,
   customers,
   filteredCatalog,
   finalTotal,
+  isCreatingCustomer,
   isCreatingSale,
   onAddToCart,
   onBackToCenter,
   onCatalogSearchChange,
   onCategoryChange,
   onClearCart,
+  onCreateCustomer,
   onCreateSaleDraft,
+  onCustomerFormChange,
   onGlobalDiscountChange,
   onGlobalDiscountTypeChange,
   onQuantityChange,
@@ -427,11 +436,15 @@ export function KolamPosFullWindowSurface({
           <PosSubview
             activeView={activeView}
             activeSession={activeSession}
+            customerForm={customerForm}
             customers={customers}
+            isCreatingCustomer={isCreatingCustomer}
             paymentMethods={paymentMethods}
             recentSales={recentSales}
             selectedCustomerId={checkout.customerId}
             selectedPaymentId={checkout.paymentMethodId}
+            onCreateCustomer={onCreateCustomer}
+            onCustomerFormChange={onCustomerFormChange}
             onSelectCustomer={onSelectCustomer}
             onSelectPaymentMethod={onSelectPaymentMethod}
           />
@@ -1219,21 +1232,29 @@ function PosCashMetric({label, value}: {label: string; value: string}) {
 function PosSubview({
   activeView,
   activeSession,
+  customerForm,
   customers,
+  isCreatingCustomer,
   paymentMethods,
   recentSales,
   selectedCustomerId,
   selectedPaymentId,
+  onCreateCustomer,
+  onCustomerFormChange,
   onSelectCustomer,
   onSelectPaymentMethod,
 }: {
   activeView: Exclude<PosWindowView, 'catalog'>;
   activeSession?: CashflowSession | null;
+  customerForm: CreateCustomerBody;
   customers: Customer[];
+  isCreatingCustomer: boolean;
   paymentMethods: PaymentMethod[];
   recentSales: SaleSummary[];
   selectedCustomerId: string;
   selectedPaymentId: string;
+  onCreateCustomer: () => void;
+  onCustomerFormChange: (nextForm: CreateCustomerBody) => void;
   onSelectCustomer: (customerId: string) => void;
   onSelectPaymentMethod: (methodId: string) => void;
 }) {
@@ -1247,6 +1268,53 @@ function PosSubview({
           <Text style={styles.subviewMeta}>
             Pilih pelanggan untuk pesanan aktif.
           </Text>
+        </View>
+        <View style={styles.customerCreatePanel}>
+          <Text style={styles.customerCreateTitle}>Buat Pelanggan Baru</Text>
+          <View style={styles.customerCreateGrid}>
+            <TextInput
+              autoCapitalize="words"
+              onChangeText={name =>
+                onCustomerFormChange({...customerForm, name})
+              }
+              placeholder="Nama pelanggan"
+              placeholderTextColor={V.colors.mutedFg}
+              style={styles.customerCreateInput}
+              value={customerForm.name}
+            />
+            <TextInput
+              keyboardType="phone-pad"
+              onChangeText={phone =>
+                onCustomerFormChange({...customerForm, phone})
+              }
+              placeholder="No. Telepon"
+              placeholderTextColor={V.colors.mutedFg}
+              style={styles.customerCreateInput}
+              value={customerForm.phone}
+            />
+            <TextInput
+              autoCapitalize="none"
+              keyboardType="email-address"
+              onChangeText={email =>
+                onCustomerFormChange({...customerForm, email})
+              }
+              placeholder="Email (Opsional)"
+              placeholderTextColor={V.colors.mutedFg}
+              style={styles.customerCreateInput}
+              value={customerForm.email}
+            />
+          </View>
+          <KolamButton
+            label={isCreatingCustomer ? 'Membuat...' : 'Buat Pelanggan'}
+            intent="primary"
+            disabled={
+              isCreatingCustomer ||
+              !customerForm.name.trim() ||
+              !customerForm.phone.trim()
+            }
+            onPress={onCreateCustomer}
+            style={styles.customerCreateButton}
+          />
         </View>
         <View style={styles.subviewGrid}>
           {customers.map(customer => {
@@ -2538,6 +2606,40 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+  },
+  customerCreatePanel: {
+    gap: 10,
+    borderRadius: 8,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.secondary,
+    padding: 12,
+  },
+  customerCreateTitle: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '900',
+  },
+  customerCreateGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  customerCreateInput: {
+    minWidth: 180,
+    minHeight: 38,
+    flex: 1,
+    borderRadius: 6,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.bg,
+    color: V.colors.fg,
+    fontSize: 12,
+    fontWeight: '700',
+    paddingHorizontal: 10,
+  },
+  customerCreateButton: {
+    alignSelf: 'flex-start',
   },
   customerCard: {
     width: 260,

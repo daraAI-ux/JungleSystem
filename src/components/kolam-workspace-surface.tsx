@@ -446,6 +446,7 @@ export function KolamWorkspaceSurfaceComponent({
       return (
         <KolamCheckoutSurface
           checkout={checkout}
+          customer={customer}
           onBackToCenter={() => onSelectModule?.('kolam')}
         />
       );
