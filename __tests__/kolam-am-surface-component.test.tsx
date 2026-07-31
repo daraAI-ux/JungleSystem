@@ -2,6 +2,7 @@ import React from 'react';
 import {Text, TextInput} from 'react-native';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 import {KolamAmSurface} from '../src/components/kolam-am-surface';
+import {getShellModuleRouteEntry} from '../src/domain/app-shell';
 import {
   cancelAmTransfer,
   cancelAmTask,
@@ -102,6 +103,28 @@ function flattenText(value: React.ReactNode): string[] {
   return [];
 }
 
+function amRoute(route: string) {
+  const entry = getShellModuleRouteEntry('am', route);
+  if (!entry) {
+    throw new Error(`Missing AM route ${route}`);
+  }
+  return entry;
+}
+
+async function updateAmRoute(
+  renderer: ReactTestRenderer.ReactTestRenderer,
+  route: string,
+) {
+  await act(async () => {
+    renderer.update(
+      <KolamAmSurface
+        activeModuleRoute={amRoute(route)}
+        dataset={seedUnifiedDataset}
+      />,
+    );
+  });
+}
+
 describe('KolamAmSurface', () => {
   const renderers: ReactTestRenderer.ReactTestRenderer[] = [];
 
@@ -114,7 +137,7 @@ describe('KolamAmSurface', () => {
     jest.clearAllMocks();
   });
 
-  it('renders AM as an app surface with its own sidebar', async () => {
+  it('renders AM as an app surface driven by the main sidebar route', async () => {
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
     await act(async () => {
@@ -126,13 +149,9 @@ describe('KolamAmSurface', () => {
 
     const text = renderText(renderer!);
 
-    expect(text).toContain('AM');
     expect(text).toContain('Automation Management');
     expect(text).toContain('Dashboard');
-    expect(text).toContain('Services');
-    expect(text).toContain('Hardware');
-    expect(text).toContain('Transfers');
-    expect(text).toContain('Activity Log');
+    expect(text).toContain('Kembali');
   });
 
   it('keeps the POS-style back button wired to return to Kolam', async () => {
@@ -170,9 +189,7 @@ describe('KolamAmSurface', () => {
     });
     renderers.push(renderer!);
 
-    await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Services'}).props.onPress();
-    });
+    await updateAmRoute(renderer!, 'services');
 
     expect(getAmServiceAccounts).toHaveBeenCalledWith({platform: undefined});
   });
@@ -211,9 +228,7 @@ describe('KolamAmSurface', () => {
     });
     renderers.push(renderer!);
 
-    await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Tasks'}).props.onPress();
-    });
+    await updateAmRoute(renderer!, 'tasks');
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Task Cancel task-1'}).props.onPress();
     });
@@ -254,9 +269,7 @@ describe('KolamAmSurface', () => {
     });
     renderers.push(renderer!);
 
-    await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Services'}).props.onPress();
-    });
+    await updateAmRoute(renderer!, 'services');
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Service Tokopedia Main'}).props.onPress();
     });
@@ -328,9 +341,7 @@ describe('KolamAmSurface', () => {
     });
     renderers.push(renderer!);
 
-    await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Services'}).props.onPress();
-    });
+    await updateAmRoute(renderer!, 'services');
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Service Shopee OTP'}).props.onPress();
     });
@@ -379,9 +390,7 @@ describe('KolamAmSurface', () => {
     });
     renderers.push(renderer!);
 
-    await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Services'}).props.onPress();
-    });
+    await updateAmRoute(renderer!, 'services');
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Service Start service-2'}).props.onPress();
     });
@@ -406,9 +415,7 @@ describe('KolamAmSurface', () => {
     });
     renderers.push(renderer!);
 
-    await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Hardware'}).props.onPress();
-    });
+    await updateAmRoute(renderer!, 'hardware');
 
     expect(getAmRacks).toHaveBeenCalledTimes(1);
     expect(getAmDevices).toHaveBeenCalledTimes(1);
@@ -481,9 +488,7 @@ describe('KolamAmSurface', () => {
     });
     renderers.push(renderer!);
 
-    await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Hardware'}).props.onPress();
-    });
+    await updateAmRoute(renderer!, 'hardware');
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Rack Rack Alpha'}).props.onPress();
     });
@@ -567,9 +572,7 @@ describe('KolamAmSurface', () => {
     });
     renderers.push(renderer!);
 
-    await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Hardware'}).props.onPress();
-    });
+    await updateAmRoute(renderer!, 'hardware');
 
     let inputs = renderer!.root.findAllByType(TextInput);
     await act(async () => {
@@ -655,7 +658,7 @@ describe('KolamAmSurface', () => {
     expect(deleteAmDevices).toHaveBeenCalledWith(['device-1']);
   });
 
-  it('loads banking and admin live routes from the internal AM sidebar', async () => {
+  it('loads banking and admin live routes from the main AM sidebar routes', async () => {
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
     await act(async () => {
@@ -665,21 +668,11 @@ describe('KolamAmSurface', () => {
     });
     renderers.push(renderer!);
 
-    await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Transfers'}).props.onPress();
-    });
-    await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Mutations'}).props.onPress();
-    });
-    await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Webhooks'}).props.onPress();
-    });
-    await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Users'}).props.onPress();
-    });
-    await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Activity Log'}).props.onPress();
-    });
+    await updateAmRoute(renderer!, 'transactions');
+    await updateAmRoute(renderer!, 'mutasi');
+    await updateAmRoute(renderer!, 'webhooks');
+    await updateAmRoute(renderer!, 'admin/users');
+    await updateAmRoute(renderer!, 'admin/activity-log');
 
     expect(getAmTransfers).toHaveBeenCalledWith({
       limit: 30,
@@ -722,9 +715,7 @@ describe('KolamAmSurface', () => {
     });
     renderers.push(renderer!);
 
-    await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Users'}).props.onPress();
-    });
+    await updateAmRoute(renderer!, 'admin/users');
 
     let inputs = renderer!.root.findAllByType(TextInput);
     await act(async () => {
@@ -807,9 +798,7 @@ describe('KolamAmSurface', () => {
     });
     renderers.push(renderer!);
 
-    await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Transfers'}).props.onPress();
-    });
+    await updateAmRoute(renderer!, 'transactions');
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Transfer Cancel transfer-1'}).props.onPress();
     });
@@ -855,9 +844,7 @@ describe('KolamAmSurface', () => {
     });
     renderers.push(renderer!);
 
-    await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Transfers'}).props.onPress();
-    });
+    await updateAmRoute(renderer!, 'transactions');
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Transfer Detail transfer-detail'}).props.onPress();
     });
@@ -897,9 +884,7 @@ describe('KolamAmSurface', () => {
     });
     renderers.push(renderer!);
 
-    await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Webhooks'}).props.onPress();
-    });
+    await updateAmRoute(renderer!, 'webhooks');
 
     const inputs = renderer!.root.findAllByType(TextInput);
     await act(async () => {

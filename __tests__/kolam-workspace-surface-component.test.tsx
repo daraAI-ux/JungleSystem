@@ -27,6 +27,33 @@ import { getCartSubtotal } from '../src/lib/checkout';
 import { getCheckoutWorkflowSteps } from '../src/lib/workflow';
 import { seedUnifiedDataset } from '../src/services/unified-data';
 
+jest.mock('react-native-webview', () => {
+  const ReactNative = require('react-native');
+  return {
+    __esModule: true,
+    default: ReactNative.View,
+  };
+});
+
+jest.mock('../src/services/am-api', () => ({
+  getAmTasks: jest.fn(() =>
+    Promise.resolve({ data: [], meta: { total: 0, limit: 0 } }),
+  ),
+  getAmTransfers: jest.fn(() =>
+    Promise.resolve({ data: [], meta: { total: 0, limit: 0 } }),
+  ),
+}));
+
+const mountedWorkspaceRenderers: ReactTestRenderer.ReactTestRenderer[] = [];
+
+afterEach(() => {
+  for (const renderer of mountedWorkspaceRenderers.splice(0)) {
+    ReactTestRenderer.act(() => {
+      renderer.unmount();
+    });
+  }
+});
+
 function renderText(renderer: ReactTestRenderer.ReactTestRenderer) {
   return renderer.root
     .findAllByType(Text)
@@ -206,7 +233,6 @@ describe('KolamWorkspaceSurface', () => {
         </View>,
       );
     });
-
     expect(renderText(renderer!)).toEqual(
       expect.arrayContaining(['Katalog', 'Sponge Filter Medium']),
     );
@@ -232,7 +258,6 @@ describe('KolamWorkspaceSurface', () => {
         </View>,
       );
     });
-
     expect(renderText(renderer!)).toEqual(
       expect.arrayContaining([
         'Checkout Route',
@@ -305,7 +330,6 @@ describe('KolamWorkspaceSurface', () => {
         </View>,
       );
     });
-
     expect(renderText(renderer!)).toEqual(
       expect.arrayContaining([
         'Kolam - Finance',
@@ -383,7 +407,6 @@ describe('KolamWorkspaceSurface', () => {
         </View>,
       );
     });
-
     expect(renderText(renderer!)).toEqual(
       expect.arrayContaining(['Session', 'Runtime', 'Unified sync live']),
     );
@@ -458,27 +481,27 @@ describe('KolamWorkspaceSurface', () => {
         </View>,
       );
     });
+    mountedWorkspaceRenderers.push(renderer!);
 
     expect(renderText(renderer!)).toEqual(
       expect.arrayContaining([
         'Automation Management',
-        'Server',
+        'Dashboard',
+        'Ringkasan akun, device, transfer, dan mutasi AM.',
         'https://frogs.dunia-anura.com/api',
-        'Dashboard AM belum live',
-        'Tasks',
-        'Hardware',
+        'Kembali',
+        'Menunggu data live AM',
       ]),
     );
     expect(renderText(renderer!)).not.toContain('Ringkasan Penjualan');
   });
 
-  it('opens Automation Management surfaces from the native launcher', async () => {
-    const onAmSurfaceSelect = jest.fn();
-    const taskSurface = amSurfaces.find(surface => surface.id === 'tasks');
+  it('renders Automation Management routes from the shell route state', async () => {
+    const taskRoute = getShellModuleRouteEntry('am', 'tasks');
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
-    if (!taskSurface) {
-      throw new Error('AM Tasks surface is missing.');
+    if (!taskRoute) {
+      throw new Error('AM Tasks route is missing.');
     }
 
     await ReactTestRenderer.act(async () => {
@@ -487,20 +510,22 @@ describe('KolamWorkspaceSurface', () => {
           <KolamWorkspaceSurface
             {...buildSurfaceProps({
               activeModule: 'am',
-              onAmSurfaceSelect,
+              activeModuleRoute: taskRoute,
             })}
           />
         </View>,
       );
     });
+    mountedWorkspaceRenderers.push(renderer!);
 
-    await ReactTestRenderer.act(async () => {
-      renderer!.root
-        .findByProps({ accessibilityLabel: 'Buka Tasks surface' })
-        .props.onPress();
-    });
-
-    expect(onAmSurfaceSelect).toHaveBeenCalledWith(taskSurface);
+    expect(renderText(renderer!)).toEqual(
+      expect.arrayContaining([
+        'Automation Management',
+        'Tasks',
+        'Monitor dan kelola automation tasks lintas device.',
+        '0 task',
+      ]),
+    );
   });
 
   it('renders selected Automation Management routes as native route surfaces', async () => {
@@ -523,18 +548,15 @@ describe('KolamWorkspaceSurface', () => {
         </View>,
       );
     });
+    mountedWorkspaceRenderers.push(renderer!);
 
     expect(renderText(renderer!)).toEqual(
       expect.arrayContaining([
-        'Automation Management - Tasks',
-        'am-fe/(dashboard)/tasks / am-be/routes/task',
-        'Source Repo',
+        'Automation Management',
+        'Tasks',
+        'Monitor dan kelola automation tasks lintas device.',
         'https://frogs.dunia-anura.com/api',
-        'Native Client',
-        'npm run verify:shell-routes',
-        'Tasks workbench',
-        'Automation Flow',
-        'AM dashboard belum live',
+        '0 task',
       ]),
     );
   });
@@ -559,17 +581,15 @@ describe('KolamWorkspaceSurface', () => {
         </View>,
       );
     });
+    mountedWorkspaceRenderers.push(renderer!);
 
     expect(renderText(renderer!)).toEqual(
       expect.arrayContaining([
-        'AM Route',
-        'transactions/:id',
-        'Source Repo',
-        'E:\\Projects\\da-automation-management',
         'Automation Management',
+        'Transfers',
+        'Transfer bank dan status eksekusi.',
         'https://frogs.dunia-anura.com/api',
-        'Native Client',
-        'npm run verify:shell-routes',
+        '0 transfer',
       ]),
     );
   });

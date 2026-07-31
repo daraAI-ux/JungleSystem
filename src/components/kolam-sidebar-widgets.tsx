@@ -12,11 +12,13 @@ export interface KolamSidebarProps extends KolamSidebarContentProps {}
 export function KolamSidebar({
   accessScope,
   activeModule,
+  activeModuleRoute,
   activeRoute,
   collapsed,
   expandedSections,
   filterMenuByAccess,
   onMoveMenuSection,
+  onModuleRouteSelect,
   onQuickSearch,
   onSelectMenuItem,
   onSelectModule,
@@ -29,11 +31,13 @@ export function KolamSidebar({
       <KolamSidebarContent
         accessScope={accessScope}
         activeModule={activeModule}
+        activeModuleRoute={activeModuleRoute}
         activeRoute={activeRoute}
         collapsed={collapsed}
         expandedSections={expandedSections}
         filterMenuByAccess={filterMenuByAccess}
         onMoveMenuSection={onMoveMenuSection}
+        onModuleRouteSelect={onModuleRouteSelect}
         onQuickSearch={onQuickSearch}
         onSelectMenuItem={onSelectMenuItem}
         onSelectModule={onSelectModule}

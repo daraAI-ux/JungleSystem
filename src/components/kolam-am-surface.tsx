@@ -1,6 +1,13 @@
 import React from 'react';
 import {ScrollView, StyleSheet, Text, TextInput, View} from 'react-native';
 import {appConfig} from '../config/app';
+import {
+  AM_ROUTES,
+  getAmRouteByModuleRoute,
+  type AmRouteId,
+  type AmRouteItem,
+} from '../domain/am-navigation';
+import type {ShellModuleRouteEntry} from '../domain/app-shell';
 import type {UnifiedSurface} from '../domain/unified';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {formatRupiah} from '../lib/money';
@@ -77,38 +84,6 @@ import {KolamButton} from './kolam-button';
 import {KolamInteractionFrame} from './kolam-interaction-frame';
 import {KolamSearchField} from './kolam-search-field';
 
-type AmRouteId =
-  | 'dashboard'
-  | 'tasks'
-  | 'services'
-  | 'hardware'
-  | 'webhooks'
-  | 'transactions'
-  | 'mutasi'
-  | 'users'
-  | 'activity-log';
-
-interface AmRouteItem {
-  id: AmRouteId;
-  label: string;
-  section: string;
-  path: string;
-  description: string;
-}
-
-const AM_ROUTES: AmRouteItem[] = [
-  {id: 'dashboard', label: 'Dashboard', section: 'Overview', path: '/', description: 'Ringkasan akun, device, transfer, dan mutasi AM.'},
-  {id: 'tasks', label: 'Tasks', section: 'Automation', path: '/tasks', description: 'Monitor dan kelola automation tasks lintas device.'},
-  {id: 'services', label: 'Services', section: 'Automation', path: '/services', description: 'Service account dan worker automation.'},
-  {id: 'hardware', label: 'Hardware', section: 'Infrastructure', path: '/hardware', description: 'Rack, box, device, dan koneksi ADB.'},
-  {id: 'webhooks', label: 'Webhooks', section: 'Infrastructure', path: '/webhooks', description: 'Konfigurasi dan event webhook AM.'},
-  {id: 'transactions', label: 'Transfers', section: 'Banking', path: '/transactions', description: 'Transfer bank dan status eksekusi.'},
-  {id: 'mutasi', label: 'Mutations', section: 'Banking', path: '/mutasi', description: 'Mutasi rekening dan ingest transaksi.'},
-  {id: 'users', label: 'Users', section: 'Administration', path: '/admin/users', description: 'User AM dan permission role.'},
-  {id: 'activity-log', label: 'Activity Log', section: 'Administration', path: '/admin/activity-log', description: 'Audit log aktivitas AM.'},
-];
-
-const AM_ROUTE_SECTIONS = ['Overview', 'Automation', 'Infrastructure', 'Banking', 'Administration'];
 const TASK_TYPE_LABELS: Record<string, string> = {
   stock_sync: 'Stock Sync',
   process_sale: 'Process Sale',
@@ -132,49 +107,22 @@ const PLAYWRIGHT_PLATFORMS = new Set(['tokopedia', 'shopee', 'tiktok', 'instagra
 
 export function KolamAmSurface({
   activeSurface,
+  activeModuleRoute,
   dataset,
   onBackToCenter,
 }: {
   activeSurface?: UnifiedSurface | null;
+  activeModuleRoute?: ShellModuleRouteEntry | null;
   dataset: UnifiedDataset;
   onBackToCenter?: () => void;
 }) {
-  const [activeRoute, setActiveRoute] = React.useState<AmRouteId>(
-    getRouteIdFromSurface(activeSurface),
-  );
-
-  React.useEffect(() => {
-    setActiveRoute(getRouteIdFromSurface(activeSurface));
-  }, [activeSurface]);
-
+  const activeRoute = activeModuleRoute
+    ? getAmRouteByModuleRoute(activeModuleRoute.route).id
+    : getRouteIdFromSurface(activeSurface);
   const route = AM_ROUTES.find(item => item.id === activeRoute) ?? AM_ROUTES[0];
 
   return (
     <View style={styles.shell}>
-      <View style={styles.sidebar}>
-        <View style={styles.brandBlock}>
-          <Text style={styles.brandTitle}>AM</Text>
-          <Text style={styles.brandSubtitle}>Automation Management</Text>
-        </View>
-        <ScrollView contentContainerStyle={styles.sidebarContent} showsVerticalScrollIndicator={false}>
-          {AM_ROUTE_SECTIONS.map(section => {
-            const items = AM_ROUTES.filter(item => item.section === section);
-            return (
-              <View key={section} style={styles.navSection}>
-                <Text style={styles.navSectionLabel}>{section}</Text>
-                {items.map(item => (
-                  <AmNavItem
-                    key={item.id}
-                    active={item.id === activeRoute}
-                    item={item}
-                    onPress={() => setActiveRoute(item.id)}
-                  />
-                ))}
-              </View>
-            );
-          })}
-        </ScrollView>
-      </View>
       <View style={styles.content}>
         <View style={styles.topBar}>
           <View style={styles.topBarCopy}>
@@ -212,19 +160,6 @@ export function KolamAmSurface({
         </ScrollView>
       </View>
     </View>
-  );
-}
-
-function AmNavItem({active, item, onPress}: {active: boolean; item: AmRouteItem; onPress: () => void}) {
-  return (
-    <KolamInteractionFrame
-      accessibilityLabel={`AM ${item.label}`}
-      accessibilityRole="button"
-      onPress={onPress}
-      style={[styles.navItem, active && styles.navItemActive]}>
-      <Text style={[styles.navItemText, active && styles.navItemTextActive]}>{item.label}</Text>
-      <Text style={[styles.navItemPath, active && styles.navItemPathActive]}>{item.path}</Text>
-    </KolamInteractionFrame>
   );
 }
 
@@ -2493,7 +2428,7 @@ function AmParityPlaceholder({route}: {route: AmRouteItem}) {
     <View style={styles.emptyPanel}>
       <Text style={styles.panelTitle}>{route.label}</Text>
       <Text style={styles.panelText}>
-        Route {route.path} sudah masuk sidebar AM internal. Port native detail berikutnya akan mengikuti halaman AM FE saat ini dan endpoint AM BE live.
+        Route {route.path} sudah masuk menu AM di sidebar utama. Port native detail berikutnya akan mengikuti halaman AM FE saat ini dan endpoint AM BE live.
       </Text>
     </View>
   );
@@ -2764,76 +2699,10 @@ function titleCase(value: string) {
 const styles = StyleSheet.create({
   shell: {
     minHeight: 720,
-    flexDirection: 'row',
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: V.colors.border,
     backgroundColor: V.colors.bg,
-  },
-  sidebar: {
-    width: 248,
-    borderRightWidth: 1,
-    borderRightColor: V.colors.border,
-    backgroundColor: V.colors.sidebar,
-  },
-  brandBlock: {
-    paddingHorizontal: 18,
-    paddingVertical: 18,
-    borderBottomWidth: 1,
-    borderBottomColor: V.colors.border,
-  },
-  brandTitle: {
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 22,
-    fontWeight: '900',
-  },
-  brandSubtitle: {
-    marginTop: 2,
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
-  },
-  sidebarContent: {
-    padding: 12,
-    gap: 12,
-  },
-  navSection: {
-    gap: 6,
-  },
-  navSectionLabel: {
-    paddingHorizontal: 8,
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 10,
-    fontWeight: '900',
-    textTransform: 'uppercase',
-  },
-  navItem: {
-    gap: 2,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-  },
-  navItemActive: {
-    backgroundColor: V.colors.primarySoft,
-  },
-  navItemText: {
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 13,
-    fontWeight: '800',
-  },
-  navItemTextActive: {
-    color: V.colors.primary,
-  },
-  navItemPath: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 10,
-  },
-  navItemPathActive: {
-    color: V.colors.primary,
   },
   content: {
     flex: 1,

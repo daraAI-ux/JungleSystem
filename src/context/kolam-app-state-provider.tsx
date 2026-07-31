@@ -369,6 +369,7 @@ export function KolamAppStateProvider({
       onCommandSelect: handleCommandSelect,
       onMessage: setAuthMessage,
       onMoveMenuSection: handleMoveKolamMenuSection,
+      onModuleRouteSelect: handleModuleRouteSelect,
       onNotificationPress: toggleAttentionPanel,
       onQuickSearch: openQuickSearch,
       onRouteContext: handleDashboardRouteContext,

@@ -506,14 +506,13 @@ export function KolamWorkspaceSurfaceComponent({
         onModuleRouteSelect,
       );
     case 'am':
-      return renderWithModuleRoute(
-        dataset,
-        activeModuleRoute,
+      return (
         <KolamAmSurface
           activeSurface={activeAmSurface}
+          activeModuleRoute={activeModuleRoute}
           dataset={dataset}
           onBackToCenter={() => onSelectModule?.('kolam')}
-        />,
+        />
       );
     default:
       return null;

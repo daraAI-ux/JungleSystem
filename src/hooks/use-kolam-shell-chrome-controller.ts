@@ -47,6 +47,7 @@ export function useKolamShellChromeController({
   onCommandSelect,
   onMessage,
   onMoveMenuSection,
+  onModuleRouteSelect,
   onNotificationPress,
   onQuickSearch,
   onRouteContext,
@@ -95,6 +96,7 @@ export function useKolamShellChromeController({
   onCommandSelect: (command: CommandEntry) => Promise<void>;
   onMessage: (message: string) => void;
   onMoveMenuSection: (sectionId: string, direction: 'up' | 'down') => void;
+  onModuleRouteSelect?: (route: ShellModuleRouteEntry) => void;
   onNotificationPress: () => void;
   onQuickSearch: () => void;
   onRouteContext?: (route: string) => void;
@@ -175,11 +177,13 @@ export function useKolamShellChromeController({
   const { sidebar } = useKolamSidebarController({
     accessScope,
     activeModule,
+    activeModuleRoute,
     activeNavigationItem,
     collapsed,
     expandedSections,
     filterMenuByAccess,
     onMoveMenuSection,
+    onModuleRouteSelect,
     onQuickSearch,
     onSelectMenuItem,
     onSelectModule,

@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { KolamAppShellSurfaceProps } from '../components/kolam-app-shell-surface';
-import type { AppModule } from '../domain/app-shell';
+import type { AppModule, ShellModuleRouteEntry } from '../domain/app-shell';
 import type { AccessScope } from '../domain/auth';
 import type { KolamNavigationItem } from '../domain/kolam-navigation';
 
@@ -9,6 +9,7 @@ type SidebarProps = KolamAppShellSurfaceProps['sidebar'];
 export function useKolamSidebarController({
   accessScope,
   activeModule,
+  activeModuleRoute,
   activeNavigationItem,
   collapsed,
   expandedSections,
@@ -17,11 +18,13 @@ export function useKolamSidebarController({
   onQuickSearch,
   onSelectMenuItem,
   onSelectModule,
+  onModuleRouteSelect,
   onToggleMenuSection,
   sectionOrder,
 }: {
   accessScope: AccessScope;
   activeModule: AppModule;
+  activeModuleRoute?: ShellModuleRouteEntry | null;
   activeNavigationItem?: KolamNavigationItem | null;
   collapsed: boolean;
   expandedSections: Record<string, boolean>;
@@ -30,6 +33,7 @@ export function useKolamSidebarController({
   onQuickSearch: () => void;
   onSelectMenuItem: (item: KolamNavigationItem) => void;
   onSelectModule: (module: AppModule) => void;
+  onModuleRouteSelect?: (route: ShellModuleRouteEntry) => void;
   onToggleMenuSection: (sectionId: string) => void;
   sectionOrder: string[];
 }) {
@@ -37,7 +41,8 @@ export function useKolamSidebarController({
     () => ({
       accessScope,
       activeModule,
-      activeRoute: activeNavigationItem?.route ?? null,
+      activeModuleRoute,
+      activeRoute: activeNavigationItem?.route ?? getSidebarActiveRoute(activeModuleRoute),
       collapsed,
       expandedSections,
       filterMenuByAccess,
@@ -45,12 +50,14 @@ export function useKolamSidebarController({
       onQuickSearch,
       onSelectMenuItem,
       onSelectModule,
+      onModuleRouteSelect: onModuleRouteSelect ?? (() => undefined),
       onToggleMenuSection,
       sectionOrder,
     }),
     [
       accessScope,
       activeModule,
+      activeModuleRoute,
       activeNavigationItem,
       collapsed,
       expandedSections,
@@ -59,10 +66,17 @@ export function useKolamSidebarController({
       onQuickSearch,
       onSelectMenuItem,
       onSelectModule,
+      onModuleRouteSelect,
       onToggleMenuSection,
       sectionOrder,
     ],
   );
 
   return { sidebar };
+}
+
+function getSidebarActiveRoute(route?: ShellModuleRouteEntry | null) {
+  if (!route) return null;
+  if (route.route === '/') return '/';
+  return `/${route.route.replace(/^\/+/, '')}`;
 }
