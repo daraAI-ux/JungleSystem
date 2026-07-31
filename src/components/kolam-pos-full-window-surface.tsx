@@ -1445,6 +1445,9 @@ function PosSavedOrdersPanel({
   const [pendingLoadOrderId, setPendingLoadOrderId] = React.useState<
     string | null
   >(null);
+  const [pendingDeleteOrderId, setPendingDeleteOrderId] = React.useState<
+    string | null
+  >(null);
 
   const handleLoadPress = React.useCallback(
     (order: PosSavedOrder) => {
@@ -1453,6 +1456,7 @@ function PosSavedOrdersPanel({
       }
       if (hasActiveCart && pendingLoadOrderId !== order.id) {
         setPendingLoadOrderId(order.id);
+        setPendingDeleteOrderId(null);
         return;
       }
       onLoadOrder(order);
@@ -1462,12 +1466,15 @@ function PosSavedOrdersPanel({
 
   const handleDeletePress = React.useCallback(
     (orderId: string) => {
-      if (pendingLoadOrderId === orderId) {
+      if (pendingDeleteOrderId !== orderId) {
+        setPendingDeleteOrderId(orderId);
         setPendingLoadOrderId(null);
+        return;
       }
+      setPendingDeleteOrderId(null);
       onDeleteOrder(orderId);
     },
-    [onDeleteOrder, pendingLoadOrderId],
+    [onDeleteOrder, pendingDeleteOrderId],
   );
 
   return (
@@ -1490,6 +1497,7 @@ function PosSavedOrdersPanel({
               const subtotal = getSavedOrderSubtotal(order, catalog);
               const previewNames = getSavedOrderItemNames(order, catalog);
               const confirmingLoad = pendingLoadOrderId === order.id;
+              const confirmingDelete = pendingDeleteOrderId === order.id;
 
               return (
                 <View key={order.id} style={styles.savedOrderRow}>
@@ -1521,21 +1529,39 @@ function PosSavedOrdersPanel({
                         </Text>
                       ) : null}
                     </View>
-                    {confirmingLoad ? (
+                    {confirmingLoad || confirmingDelete ? (
                       <Text style={styles.savedOrderWarning}>
-                        Keranjang saat ini akan diganti.
+                        {confirmingLoad
+                          ? 'Keranjang saat ini akan diganti.'
+                          : 'Pesanan tersimpan akan dihapus.'}
                       </Text>
                     ) : null}
                   </View>
                   <View style={styles.savedOrderRowActions}>
                     <KolamButton
-                      label={confirmingLoad ? 'Ganti' : 'Muat'}
+                      label={
+                        confirmingDelete
+                          ? 'Batal'
+                          : confirmingLoad
+                            ? 'Ganti'
+                            : 'Muat'
+                      }
                       intent="primary"
-                      disabled={!canLoad}
-                      onPress={() => handleLoadPress(order)}
+                      disabled={!canLoad && !confirmingDelete}
+                      onPress={
+                        confirmingDelete
+                          ? () => setPendingDeleteOrderId(null)
+                          : () => handleLoadPress(order)
+                      }
                     />
                     <KolamButton
-                      label={confirmingLoad ? 'Batal' : 'Hapus'}
+                      label={
+                        confirmingLoad
+                          ? 'Batal'
+                          : confirmingDelete
+                            ? 'Ya Hapus'
+                            : 'Hapus'
+                      }
                       intent="plain"
                       tone="default"
                       onPress={
