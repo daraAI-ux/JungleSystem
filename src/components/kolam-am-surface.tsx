@@ -2021,9 +2021,25 @@ function AmServiceDetailPanel({
                 <Text style={styles.formLabel}>QR Login {AM_PLATFORM_LABELS[account.platform] ?? titleCase(account.platform)}</Text>
                 <Text style={styles.rowMeta}>{qrSignal.status ? `Status ${qrSignal.status}` : 'Scan QR dari endpoint AM live.'}</Text>
                 {qrSignal.qrcodeBase64 ? (
-                  <Text style={styles.monoText} numberOfLines={1}>{qrSignal.qrcodeBase64}</Text>
+                  <>
+                    <Image
+                      accessibilityLabel={`AM Service QR Image ${account._id}`}
+                      resizeMode="contain"
+                      source={{uri: normalizeAmQrImageUri(qrSignal.qrcodeBase64)}}
+                      style={styles.qrImage}
+                    />
+                    <Text style={styles.monoText} numberOfLines={1}>{qrSignal.qrcodeBase64}</Text>
+                  </>
                 ) : qrUrl ? (
-                  <Text style={styles.monoText} numberOfLines={1}>{qrUrl}</Text>
+                  <>
+                    <Image
+                      accessibilityLabel={`AM Service QR Image ${account._id}`}
+                      resizeMode="contain"
+                      source={{uri: qrUrl}}
+                      style={styles.qrImage}
+                    />
+                    <Text style={styles.monoText} numberOfLines={1}>{qrUrl}</Text>
+                  </>
                 ) : (
                   <Text style={styles.rowMeta}>QR image belum tersedia untuk platform ini.</Text>
                 )}
@@ -5076,6 +5092,10 @@ function getQrLoginSignal(logs: AmDeviceServiceLog[]) {
   return null;
 }
 
+function normalizeAmQrImageUri(value: string): string {
+  return value.startsWith('data:') ? value : `data:image/png;base64,${value}`;
+}
+
 function countBoxesForRack(boxes: AmBox[], rack: AmRack) {
   return boxes.filter(box => isBoxInRack(box, rack)).length;
 }
@@ -5653,6 +5673,14 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 10,
     backgroundColor: V.colors.warningSoft,
+  },
+  qrImage: {
+    width: 180,
+    height: 180,
+    borderWidth: 1,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    backgroundColor: V.colors.bg,
   },
   cellText: {
     color: V.colors.fg,

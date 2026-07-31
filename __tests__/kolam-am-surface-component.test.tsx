@@ -85,7 +85,10 @@ jest.mock('../src/services/am-api', () => ({
   getAmDashboard: jest.fn(() => Promise.resolve(mockDashboardData)),
   getAmDeviceServiceLogs: jest.fn(() => Promise.resolve({logs: [], processRunning: false})),
   getAmDeviceServices: jest.fn(() => Promise.resolve([])),
-  getAmDeviceServiceQrUrl: jest.fn(() => 'https://frogs.dunia-anura.com/api/device/device-1/service/shopee-qr?t=qr-1'),
+  getAmDeviceServiceQrUrl: jest.fn((deviceId: string, platform: string, qrcodeId?: string) => {
+    const suffix = qrcodeId ? `?t=${encodeURIComponent(qrcodeId)}` : '';
+    return `https://frogs.dunia-anura.com/api/device/${deviceId}/service/${platform}-qr${suffix}`;
+  }),
   getAmDevices: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
   getAmMutasi: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
   getAmMutasiById: jest.fn(() => Promise.resolve({_id: 'mutasi-1'})),
@@ -945,6 +948,12 @@ describe('KolamAmSurface', () => {
     await updateAmRoute(renderer!, 'services');
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Service Shopee OTP'}).props.onPress();
+    });
+
+    expect(
+      renderer!.root.findByProps({accessibilityLabel: 'AM Service QR Image service-otp'}).props.source,
+    ).toEqual({
+      uri: 'https://frogs.dunia-anura.com/api/device/device-otp/service/shopee-qr?t=qr-1',
     });
 
     const inputs = renderer!.root.findAllByType(TextInput);
