@@ -281,7 +281,89 @@ describe('KolamAmSurface', () => {
 
     await updateAmRoute(renderer!, 'services');
 
-    expect(getAmServiceAccounts).toHaveBeenCalledWith({platform: undefined});
+    expect(getAmServiceAccounts).toHaveBeenCalledWith({
+      page: 1,
+      limit: 20,
+      search: undefined,
+      platform: undefined,
+    });
+  });
+
+  it('keeps Services search, platform filter, and pagination in sync with AM live metadata', async () => {
+    jest.mocked(getAmServiceAccounts).mockResolvedValue({
+      data: [
+        {
+          _id: 'service-page-1',
+          platform: 'shopee',
+          label: 'Shopee Main',
+          deviceId: {
+            _id: 'device-1',
+            name: 'Browser 1',
+            connectionType: 'browser',
+            tcpAddress: null,
+            udid: null,
+          },
+          status: 'active',
+          credentials: {},
+          meta: {},
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 45, limit: 20, page: 1, totalPages: 3},
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await updateAmRoute(renderer!, 'services');
+
+    let text = renderText(renderer!).join(' ').replace(/\s+/g, ' ');
+    expect(text).toContain('Showing 1 to 20 of 45 items');
+    expect(getAmServiceAccounts).toHaveBeenLastCalledWith({
+      page: 1,
+      limit: 20,
+      search: undefined,
+      platform: undefined,
+    });
+
+    await act(async () => {
+      renderer!.root.findAllByType(TextInput)[0].props.onChangeText('Shopee');
+    });
+
+    expect(getAmServiceAccounts).toHaveBeenLastCalledWith({
+      page: 1,
+      limit: 20,
+      search: 'Shopee',
+      platform: undefined,
+    });
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Segment Shopee'}).props.onPress();
+    });
+
+    expect(getAmServiceAccounts).toHaveBeenLastCalledWith({
+      page: 1,
+      limit: 20,
+      search: 'Shopee',
+      platform: 'shopee',
+    });
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Services Next Page'}).props.onPress();
+    });
+
+    expect(getAmServiceAccounts).toHaveBeenLastCalledWith({
+      page: 2,
+      limit: 20,
+      search: 'Shopee',
+      platform: 'shopee',
+    });
   });
 
   it('runs guarded task actions from the Tasks route', async () => {
@@ -555,7 +637,7 @@ describe('KolamAmSurface', () => {
 
     const inputs = renderer!.root.findAllByType(TextInput);
     await act(async () => {
-      inputs[0].props.onChangeText('123456');
+      inputs[inputs.length - 1].props.onChangeText('123456');
     });
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Service Submit Input service-otp'}).props.onPress();

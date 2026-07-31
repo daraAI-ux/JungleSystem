@@ -97,6 +97,7 @@ const TASK_TYPE_LABELS: Record<string, string> = {
 const TASK_STATUSES: Array<AmTaskStatus | 'all'> = ['all', 'pending', 'queued', 'processing', 'success', 'failed', 'cancelled'];
 const TASK_TYPES: Array<AmTaskType | 'all'> = ['all', 'stock_sync', 'process_sale', 'send_message', 'bank_transfer'];
 const AM_TASK_PAGE_LIMIT = 20;
+const AM_SERVICE_PAGE_LIMIT = 20;
 const AM_TRANSFER_PAGE_LIMIT = 20;
 const AM_MUTASI_PAGE_LIMIT = 50;
 const AM_ACTIVITY_LOG_PAGE_LIMIT = 50;
@@ -688,6 +689,7 @@ function AmJsonPanel({title, value}: {title: string; value: unknown}) {
 
 function AmServicesPage() {
   const [accounts, setAccounts] = React.useState<AmServiceAccount[]>([]);
+  const [search, setSearch] = React.useState('');
   const [platform, setPlatform] = React.useState('all');
   const [expandedId, setExpandedId] = React.useState<string | null>(null);
   const [expandedTab, setExpandedTab] = React.useState<'logs' | 'history'>('logs');
@@ -702,6 +704,9 @@ function AmServicesPage() {
   const [serviceInputValue, setServiceInputValue] = React.useState('');
   const [serviceInputSending, setServiceInputSending] = React.useState(false);
   const [actionMessage, setActionMessage] = React.useState<string | null>(null);
+  const [total, setTotal] = React.useState(0);
+  const [page, setPage] = React.useState(1);
+  const [limit, setLimit] = React.useState(AM_SERVICE_PAGE_LIMIT);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -709,16 +714,21 @@ function AmServicesPage() {
     try {
       setIsLoading(true);
       const response = await getAmServiceAccounts({
+        page,
+        limit: AM_SERVICE_PAGE_LIMIT,
+        search: search.trim() || undefined,
         platform: platform === 'all' ? undefined : platform,
       });
       setAccounts(response.data);
+      setTotal(response.meta.total ?? response.data.length);
+      setLimit(response.meta.limit || AM_SERVICE_PAGE_LIMIT);
       setError(null);
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : 'Gagal memuat services AM live.');
     } finally {
       setIsLoading(false);
     }
-  }, [platform]);
+  }, [page, platform, search]);
 
   React.useEffect(() => {
     fetchAccounts();
@@ -728,6 +738,20 @@ function AmServicesPage() {
     const interval = setInterval(fetchAccounts, 15_000);
     return () => clearInterval(interval);
   }, [fetchAccounts]);
+
+  const handleSearchChange = React.useCallback((value: string) => {
+    setSearch(value);
+    setPage(1);
+  }, []);
+
+  const handlePlatformChange = React.useCallback((value: string) => {
+    setPlatform(value);
+    setPage(1);
+  }, []);
+
+  const totalPages = Math.max(1, Math.ceil(total / Math.max(limit, 1)));
+  const rangeFrom = total ? (page - 1) * limit + 1 : 0;
+  const rangeTo = total ? Math.min(page * limit, total) : 0;
 
   const loadServiceLogs = React.useCallback(async (account: AmServiceAccount) => {
     const device = getServiceDevice(account);
@@ -901,11 +925,18 @@ function AmServicesPage() {
   return (
     <View style={styles.pageStack}>
       <View style={styles.filterBar}>
+        <KolamSearchField
+          value={search}
+          onChangeText={handleSearchChange}
+          placeholder="Search services..."
+          containerStyle={styles.taskSearch}
+          trailingLabel={`${total} service`}
+        />
         <AmSegmentGroup
           active={platform}
           items={AM_PLATFORMS}
           labels={AM_PLATFORM_LABELS}
-          onSelect={setPlatform}
+          onSelect={handlePlatformChange}
         />
         <KolamButton
           label={isLoading ? 'Memuat' : 'Refresh'}
@@ -997,6 +1028,31 @@ function AmServicesPage() {
             </View>
           );
         })}
+        {total > 0 ? (
+          <View style={styles.paginationBar}>
+            <Text style={styles.paginationText}>
+              Showing {rangeFrom} to {rangeTo} of {total} items
+            </Text>
+            <View style={styles.inlineActions}>
+              <KolamButton
+                accessibilityLabel="AM Services Previous Page"
+                disabled={page <= 1 || isLoading}
+                label="Previous"
+                intent="outline"
+                size="sm"
+                onPress={() => setPage(current => Math.max(1, current - 1))}
+              />
+              <KolamButton
+                accessibilityLabel="AM Services Next Page"
+                disabled={page >= totalPages || isLoading}
+                label={`Page ${page}/${totalPages}`}
+                intent="outline"
+                size="sm"
+                onPress={() => setPage(current => Math.min(totalPages, current + 1))}
+              />
+            </View>
+          </View>
+        ) : null}
       </View>
     </View>
   );
