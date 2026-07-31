@@ -1426,7 +1426,7 @@ function PosSubview({
                 {activeSession.cashier} | Dibuka {formatPosDate(activeSession.openedAt)}
               </Text>
             </View>
-            <Text style={styles.cashSessionBadge}>Aktif</Text>
+            <Text style={styles.cashSessionBadge}>Shift Aktif</Text>
           </View>
           <View style={styles.cashMetricGrid}>
             <PosCashMetric
@@ -1450,12 +1450,16 @@ function PosSubview({
               value={`${activeSession.snapshot?.totalSalesCount ?? 0}`}
             />
           </View>
+          <Text style={styles.cashSessionNotice}>
+            Setoran hanya untuk tunai (kas awal + penjualan tunai). Pembayaran
+            e-wallet/transfer tidak masuk setoran.
+          </Text>
         </View>
       ) : (
         <View style={styles.cashSessionEmptyPanel}>
-          <Text style={styles.emptyTitle}>Shift kas belum aktif.</Text>
+          <Text style={styles.emptyTitle}>Tidak Ada Shift Aktif</Text>
           <Text style={styles.emptyText}>
-            Buka sesi kas dari modul Kas pusat sebelum menerima transaksi POS.
+            Buka shift dan masukkan kas awal untuk mulai mencatat transaksi
           </Text>
         </View>
       )}
@@ -2865,6 +2869,19 @@ const styles = StyleSheet.create({
     color: V.colors.fg,
     fontSize: 15,
     fontWeight: '900',
+  },
+  cashSessionNotice: {
+    overflow: 'hidden',
+    borderRadius: 6,
+    borderColor: 'rgba(214, 189, 123, 0.28)',
+    borderWidth: 1,
+    backgroundColor: 'rgba(214, 189, 123, 0.1)',
+    color: '#8a6f2a',
+    fontSize: 11,
+    fontWeight: '600',
+    lineHeight: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
   },
   cashSessionEmptyPanel: {
     minHeight: 150,
