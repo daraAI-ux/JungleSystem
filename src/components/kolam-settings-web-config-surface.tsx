@@ -3686,76 +3686,78 @@ export function KolamSettingsWebConfigSurface({
                 onPress={addSitemapStaticPage}
               />
             </View>
-            {(sitemapDraft.staticPages ?? []).map((page, index) => (
-              <View
-                key={page._id ?? `${page.path || 'static'}-${index}`}
-                style={styles.sitemapRowCard}
-              >
-                <KolamTextFieldRow
-                  variant="settingsForm"
-                  fieldWidth={settingsFieldWidth}
-                  label="Path"
-                  description="Path relatif dari root marketplace."
-                  value={page.path}
-                  onChangeText={value =>
-                    setSitemapStaticPageField(index, 'path', value)
-                  }
-                  placeholder="/about"
-                />
-                <View style={styles.sitemapRowFields}>
-                  <KolamToggleRow
+            <View style={styles.sitemapStaticGrid}>
+              {(sitemapDraft.staticPages ?? []).map((page, index) => (
+                <View
+                  key={page._id ?? `${page.path || 'static'}-${index}`}
+                  style={styles.sitemapStaticCard}
+                >
+                  <KolamTextFieldRow
                     variant="settingsForm"
-                    label="Aktif"
-                    description="Jika mati, path ini disimpan tapi tidak masuk sitemap."
-                    active={page.enabled !== false}
-                    onPress={() =>
-                      !disabled &&
-                      setSitemapStaticPageField(
-                        index,
-                        'enabled',
-                        page.enabled === false,
-                      )
+                    fieldWidth={settingsFieldWidth}
+                    label="Path"
+                    description="Path relatif dari root marketplace."
+                    value={page.path}
+                    onChangeText={value =>
+                      setSitemapStaticPageField(index, 'path', value)
                     }
+                    placeholder="/about"
                   />
-                  <KolamDropdownSelect
-                    accessibilityLabel="Priority halaman statis"
-                    label="Priority"
-                    menuPlacement="inline"
-                    options={sitemapPriorityOptions}
-                    showLabelInTrigger={false}
-                    style={styles.sitemapDropdownControl}
-                    triggerStyle={styles.shippingTimezoneTrigger}
-                    value={formatSitemapPriority(page.priority ?? 0.5)}
-                    onChange={value =>
-                      setSitemapStaticPageField(index, 'priority', value)
-                    }
-                  />
-                  <KolamDropdownSelect
-                    accessibilityLabel="Frekuensi halaman statis"
-                    label="Frekuensi"
-                    menuPlacement="inline"
-                    options={sitemapFrequencyOptions}
-                    showLabelInTrigger={false}
-                    style={styles.sitemapDropdownControl}
-                    triggerStyle={styles.shippingTimezoneTrigger}
-                    value={page.changeFrequency ?? 'monthly'}
-                    onChange={value =>
-                      setSitemapStaticPageField(
-                        index,
-                        'changeFrequency',
-                        value,
-                      )
-                    }
-                  />
-                  <KolamActionControlButton
-                    disabled={disabled}
-                    intent="danger"
-                    label="Hapus"
-                    onPress={() => removeSitemapStaticPage(index)}
-                  />
+                  <View style={styles.sitemapRowFields}>
+                    <KolamToggleRow
+                      variant="settingsForm"
+                      label="Aktif"
+                      description="Jika mati, path ini disimpan tapi tidak masuk sitemap."
+                      active={page.enabled !== false}
+                      onPress={() =>
+                        !disabled &&
+                        setSitemapStaticPageField(
+                          index,
+                          'enabled',
+                          page.enabled === false,
+                        )
+                      }
+                    />
+                    <KolamDropdownSelect
+                      accessibilityLabel="Priority halaman statis"
+                      label="Priority"
+                      menuPlacement="inline"
+                      options={sitemapPriorityOptions}
+                      showLabelInTrigger={false}
+                      style={styles.sitemapDropdownControl}
+                      triggerStyle={styles.shippingTimezoneTrigger}
+                      value={formatSitemapPriority(page.priority ?? 0.5)}
+                      onChange={value =>
+                        setSitemapStaticPageField(index, 'priority', value)
+                      }
+                    />
+                    <KolamDropdownSelect
+                      accessibilityLabel="Frekuensi halaman statis"
+                      label="Frekuensi"
+                      menuPlacement="inline"
+                      options={sitemapFrequencyOptions}
+                      showLabelInTrigger={false}
+                      style={styles.sitemapDropdownControl}
+                      triggerStyle={styles.shippingTimezoneTrigger}
+                      value={page.changeFrequency ?? 'monthly'}
+                      onChange={value =>
+                        setSitemapStaticPageField(
+                          index,
+                          'changeFrequency',
+                          value,
+                        )
+                      }
+                    />
+                    <KolamActionControlButton
+                      disabled={disabled}
+                      intent="danger"
+                      label="Hapus"
+                      onPress={() => removeSitemapStaticPage(index)}
+                    />
+                  </View>
                 </View>
-              </View>
-            ))}
+              ))}
+            </View>
             {sitemapDraft.staticPages?.length ? null : (
               <Text style={styles.sitemapEmptyText}>
                 Belum ada halaman statis.
@@ -9025,6 +9027,23 @@ const styles = StyleSheet.create({
     minHeight: 82,
     paddingHorizontal: 10,
     paddingVertical: 8,
+  },
+  sitemapStaticGrid: {
+    alignItems: 'stretch',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  sitemapStaticCard: {
+    backgroundColor: '#ffffff',
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexBasis: 480,
+    flexGrow: 1,
+    gap: 10,
+    minWidth: 380,
+    padding: 10,
   },
   sitemapRowCard: {
     backgroundColor: '#ffffff',
