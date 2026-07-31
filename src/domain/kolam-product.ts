@@ -1915,6 +1915,8 @@ function normalizeSeo(record: Record<string, unknown>): KolamProductSeo {
 function normalizeShippingMethods(value: unknown): KolamProductShippingMethod[] {
   const list = Array.isArray(value) ? value : [];
   return list.map((entry, index) => {
+    // List payloads often keep bare ObjectId strings (FE create does the same).
+    const stringId = typeof entry === 'string' ? entry.trim() : '';
     const method = asRecord(entry);
     const pricing = asRecord(method.pricingModel);
     const estimatedDays = asRecord(method.estimatedDays);
@@ -1922,7 +1924,10 @@ function normalizeShippingMethods(value: unknown): KolamProductShippingMethod[] 
     const restrictedRegions = Array.isArray(specialConditions.restrictedRegions)
       ? (specialConditions.restrictedRegions as unknown[])
       : [];
-    const displayName = getString(method, 'displayName') || getString(method, 'name') || `Kurir ${index + 1}`;
+    const displayName =
+      getString(method, 'displayName') ||
+      getString(method, 'name') ||
+      (stringId ? stringId : `Kurir ${index + 1}`);
     const pricingType = getString(pricing, 'type');
     const pricingPrice = Math.max(0, getNumber(pricing, 'price') ?? 0);
     const estimatedMinDays = Math.max(0, getNumber(estimatedDays, 'min') ?? 0);
@@ -1938,7 +1943,11 @@ function normalizeShippingMethods(value: unknown): KolamProductShippingMethod[] 
           ? `${getNumber(estimatedDays, 'min') ?? '-'} hari`
           : `${getNumber(estimatedDays, 'min') ?? '-'}-${getNumber(estimatedDays, 'max') ?? '-'} hari`,
       displayName,
-      id: getString(method, '_id') || getString(method, 'id') || `shipping-${index + 1}`,
+      id:
+        stringId ||
+        getString(method, '_id') ||
+        getString(method, 'id') ||
+        `shipping-${index + 1}`,
       label: displayName,
       logoUri: normalizeFileUri(getString(method, 'icon') || getString(method, 'logo')) || null,
       pricingType,

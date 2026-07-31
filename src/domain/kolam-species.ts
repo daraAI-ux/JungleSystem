@@ -2118,11 +2118,18 @@ function normalizeKolamSpeciesShippingMethods(
 
   return value
     .map(item => {
+      // List payloads often keep bare ObjectId strings (same as FE create).
+      const stringId = typeof item === 'string' ? item.trim() : '';
       const record = asRecord(item);
       const pricingModel = asRecord(record.pricingModel);
       const estimatedDays = asRecord(record.estimatedDays);
       const specialConditions = asRecord(record.specialConditions);
-      const id = getObjectIdString(record) || getString(record, '_id') || getString(record, 'id');
+      const id =
+        stringId ||
+        getObjectIdString(item) ||
+        getObjectIdString(record) ||
+        getString(record, '_id') ||
+        getString(record, 'id');
       const displayName =
         getString(record, 'displayName') || getString(record, 'name') || id;
       if (!id || !displayName) {

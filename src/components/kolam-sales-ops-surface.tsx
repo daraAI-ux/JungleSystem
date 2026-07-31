@@ -1031,7 +1031,7 @@ function KolamSalesOpsCreateForm({
                       showLabelInTrigger={false}
                       style={styles.itemDropdown}
                       triggerStyle={styles.itemDropdownTrigger}
-                      triggerTextStyle={styles.itemDropdownTriggerText}
+                      triggerTextStyle={styles.itemTypeDropdownTriggerText}
                       value={item.itemType}
                     />
                   </View>
@@ -1179,9 +1179,7 @@ function KolamSalesOpsCreateForm({
                       }}
                       options={[
                         {
-                          label: shippingOptions.length
-                            ? 'Pilih pengiriman…'
-                            : 'Pilih katalog dulu',
+                          label: '',
                           value: '',
                         },
                         ...shippingOptions.map(method => ({
@@ -2016,7 +2014,7 @@ const styles = StyleSheet.create({
   itemColType: {
     flexGrow: 0,
     flexShrink: 0,
-    width: 108,
+    width: 128,
   },
   itemColCatalog: {
     flexGrow: 1,
@@ -2070,8 +2068,14 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   itemDropdownTriggerText: {
+    flexShrink: 1,
     fontSize: V.control.fontSize,
-    maxWidth: 200,
+    maxWidth: '100%',
+  },
+  itemTypeDropdownTriggerText: {
+    flexShrink: 1,
+    fontSize: V.control.fontSize,
+    maxWidth: '100%',
   },
   itemDiscountRow: {
     alignItems: 'center',

@@ -1636,6 +1636,49 @@ export function createInitialKolamSaleCreateForm(): KolamSaleCreateFormState {
   };
 }
 
+/**
+ * FE create maps `availableShippingMethods` as string ObjectIds or populated
+ * docs. List payloads usually keep bare ids — extract both shapes.
+ */
+function extractCatalogShippingMethodIds(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  const ids: string[] = [];
+  for (const entry of value) {
+    if (typeof entry === 'string') {
+      const id = entry.trim();
+      if (id) {
+        ids.push(id);
+      }
+      continue;
+    }
+    if (!entry || typeof entry !== 'object') {
+      continue;
+    }
+    const record = entry as Record<string, unknown>;
+    const rawId = record._id ?? record.id;
+    if (typeof rawId === 'string' && rawId.trim()) {
+      ids.push(rawId.trim());
+      continue;
+    }
+    if (rawId && typeof rawId === 'object') {
+      const nested = rawId as Record<string, unknown>;
+      if (typeof nested.$oid === 'string' && nested.$oid.trim()) {
+        ids.push(nested.$oid.trim());
+      }
+    }
+  }
+  return ids;
+}
+
+function readRawAvailableShippingMethods(raw: unknown): unknown {
+  if (!raw || typeof raw !== 'object') {
+    return undefined;
+  }
+  return (raw as Record<string, unknown>).availableShippingMethods;
+}
+
 /** Shipping method ids allowed for the selected catalog row (FE create parity). */
 export function resolveKolamSaleCreateItemShippingMethodIds(
   item: KolamSaleCreateItemForm,
@@ -1644,15 +1687,34 @@ export function resolveKolamSaleCreateItemShippingMethodIds(
 ): string[] {
   if (item.itemType === 'product' && item.productId.trim()) {
     const product = products.find(row => row.id === item.productId);
-    return (product?.logistics.shippingMethods ?? [])
-      .map(method => method.id)
-      .filter(Boolean);
+    if (!product) {
+      return [];
+    }
+    const fromRaw = extractCatalogShippingMethodIds(
+      readRawAvailableShippingMethods(product.raw),
+    );
+    if (fromRaw.length > 0) {
+      return fromRaw;
+    }
+    // Ignore synthetic ids from unpopulated list rows (`shipping-1`, …).
+    return extractCatalogShippingMethodIds(product.logistics.shippingMethods).filter(
+      id => !/^shipping-\d+$/i.test(id),
+    );
   }
   if (item.itemType === 'species' && item.speciesId.trim()) {
     const species = speciesList.find(row => row.id === item.speciesId);
-    return (species?.availableShippingMethods ?? [])
-      .map(method => method.id)
-      .filter(Boolean);
+    if (!species) {
+      return [];
+    }
+    const fromNormalized = extractCatalogShippingMethodIds(
+      species.availableShippingMethods,
+    );
+    if (fromNormalized.length > 0) {
+      return fromNormalized;
+    }
+    return extractCatalogShippingMethodIds(
+      readRawAvailableShippingMethods(species.raw),
+    );
   }
   return [];
 }

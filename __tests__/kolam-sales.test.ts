@@ -9,6 +9,7 @@ import {
   createInitialKolamSaleCreateForm,
   createInitialKolamSaleListFilters,
   estimateKolamSaleCreateItemLineTotal,
+  filterKolamSaleCreateItemShippingMethods,
   filterOptionsBySalesSource,
   filterOptionsBySalesSourceWithFallback,
   formatKolamSaleDeliveryStatusLabel,
@@ -35,6 +36,7 @@ import {
   hydrateKolamSaleCreateFormFromSale,
   isKolamSaleMarketplaceManaged,
   resolveKolamCourierLogoKey,
+  resolveKolamSaleCreateItemShippingMethodIds,
   resolveKolamSaleSourceLogoUri,
   isKolamSalesAddItemsRoute,
   isKolamSalesCreateRoute,
@@ -732,6 +734,42 @@ describe('kolam sales domain', () => {
     expect(lineTotal.subtotal).toBe(200_000);
     expect(lineTotal.discount).toBe(20_000);
     expect(lineTotal.total).toBe(180_000);
+
+    expect(createInitialKolamSaleCreateForm().items[0].itemType).toBe('product');
+
+    const shippingMethodId = '666666666666666666666666';
+    const shippingIds = resolveKolamSaleCreateItemShippingMethodIds(
+      {
+        ...form.items[0],
+        itemType: 'product',
+        productId: '444444444444444444444444',
+      },
+      [
+        {
+          id: '444444444444444444444444',
+          logistics: {
+            shippingMethods: [{ id: 'shipping-1' }],
+          },
+          raw: {
+            availableShippingMethods: [shippingMethodId],
+          },
+        } as never,
+      ],
+      [],
+    );
+    expect(shippingIds).toEqual([shippingMethodId]);
+    expect(
+      filterKolamSaleCreateItemShippingMethods(
+        [
+          {
+            id: shippingMethodId,
+            displayName: 'JNE',
+            pricingPrice: 12000,
+          } as never,
+        ],
+        shippingIds,
+      ),
+    ).toHaveLength(1);
 
     const marketplaceBody = buildKolamSaleCreateBody(
       {
