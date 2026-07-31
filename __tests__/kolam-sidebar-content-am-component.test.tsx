@@ -23,6 +23,40 @@ function flattenText(value: React.ReactNode): string[] {
 }
 
 describe('KolamSidebarContent AM mode', () => {
+  it('keeps AM directly under POS in the JungleSystem primary sidebar', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <View>
+          <KolamSidebarContent
+            accessScope={{ am: true, kolam: true, pos: true }}
+            activeModule="kolam"
+            activeRoute="/"
+            collapsed={false}
+            expandedSections={{ dashboard: true }}
+            filterMenuByAccess={false}
+            onModuleRouteSelect={() => undefined}
+            onMoveMenuSection={() => undefined}
+            onQuickSearch={() => undefined}
+            onSelectMenuItem={() => undefined}
+            onSelectModule={() => undefined}
+            onToggleMenuSection={() => undefined}
+            sectionOrder={[]}
+          />
+        </View>,
+      );
+    });
+
+    const text = renderText(renderer!);
+    const posIndex = text.indexOf('POS');
+    const amIndex = text.indexOf('AM');
+
+    expect(posIndex).toBeGreaterThanOrEqual(0);
+    expect(amIndex).toBe(posIndex + 1);
+    expect(text).not.toContain('38');
+  });
+
   it('replaces the Kolam menu body with AM routes in the main sidebar', async () => {
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
