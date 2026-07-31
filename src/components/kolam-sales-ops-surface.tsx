@@ -536,6 +536,7 @@ function KolamSalesOpsRow({
   const deliveryBadgeIntent = skipShipping
     ? 'info'
     : getKolamSaleDeliveryStatusIntent(sale.deliveryStatus, sale.status);
+  const sourceName = sale.sourceRef?.name?.trim() || '—';
 
   return (
     <Pressable onPress={onSelect}>
@@ -579,13 +580,13 @@ function KolamSalesOpsRow({
           >
             {sale.sourceRef?.logoUri ? (
               <KolamRemoteImage
-                accessibilityLabel={sale.sourceRef.name}
+                accessibilityLabel={sourceName}
                 sourceUri={sale.sourceRef.logoUri}
                 style={styles.sourceLogo}
               />
             ) : null}
-            <Text numberOfLines={2} style={styles.primaryText}>
-              {sale.sourceRef?.name || '—'}
+            <Text numberOfLines={2} style={styles.sourceName}>
+              {sourceName}
             </Text>
           </View>
 
@@ -1866,15 +1867,20 @@ function fitSalesOpsListColumns(containerWidth: number): KolamTableColumn[] {
   );
   let remainder = contentBudget - equalWidth * base.length;
   const lastId = base[base.length - 1]?.id;
+  const sourceMinWidth = 120;
 
   return base.map(column => {
     const extra = column.id === lastId ? remainder : 0;
     if (column.id === lastId) {
       remainder = 0;
     }
+    const width =
+      column.id === 'children'
+        ? Math.max(equalWidth + extra, sourceMinWidth)
+        : equalWidth + extra;
     return {
       ...column,
-      width: equalWidth + extra,
+      width,
     };
   });
 }
@@ -1976,12 +1982,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     gap: 6,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
+    minWidth: 0,
   },
   sourceLogo: {
     borderRadius: 4,
+    flexShrink: 0,
     height: 22,
     width: 22,
+  },
+  sourceName: {
+    color: V.colors.fg,
+    flexGrow: 1,
+    flexShrink: 1,
+    fontSize: 13,
+    minWidth: 0,
   },
   invoiceCode: {
     color: V.colors.fg,

@@ -90,7 +90,12 @@ describe('KolamSalesOpsSurface list delivery badges', () => {
         finalTotal: 50_000,
         transactionDate: '2026-07-31T00:00:00.000Z',
         items: [{_id: 'i1', itemType: 'product', quantity: 1}],
-        sourceRef: {_id: 'src-pos', name: 'POS', type: 'offline'},
+        sourceRef: {
+          _id: 'src-pos',
+          name: 'POS',
+          type: 'offline',
+          logo: 'sources/pos.png',
+        },
       },
     ]);
 
@@ -103,6 +108,7 @@ describe('KolamSalesOpsSurface list delivery badges', () => {
 
     const text = renderText(renderer!);
     expect(text).toContain('INV-POS-1');
+    expect(text).toContain('POS');
     expect(text).toContain('POS (tanpa kirim)');
     expect(text).not.toContain('Butuh kirim');
 
@@ -110,6 +116,36 @@ describe('KolamSalesOpsSurface list delivery badges', () => {
       .findAllByType(KolamStatusBadge)
       .find(node => node.props.label === 'POS (tanpa kirim)');
     expect(deliveryBadge?.props.intent).toBe('info');
+  });
+
+  it('always shows Sumber name text beside optional logo', async () => {
+    mockController = createListController([
+      {
+        _id: 'sale-src-1',
+        invoiceCode: 'INV-SRC-1',
+        status: 'paid',
+        deliveryStatus: 'on_delivery',
+        finalTotal: 88_000,
+        transactionDate: '2026-07-31T00:00:00.000Z',
+        items: [{_id: 'i1', itemType: 'product', quantity: 1}],
+        sourceRef: {
+          _id: 'src-tp',
+          name: 'Tokopedia Store',
+          type: 'online',
+          logo: 'sources/tokopedia.png',
+        },
+      },
+    ]);
+
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamSalesOpsSurface route="/sales" />,
+      );
+    });
+
+    const text = renderText(renderer!);
+    expect(text).toContain('Tokopedia Store');
   });
 
   it('shows Layanan (tanpa kirim) for service-only online sales', async () => {

@@ -1170,9 +1170,9 @@ const kolamTableColumns: Record<KolamTableId, KolamTableColumn[]> = {
     {
       id: 'children',
       label: 'Sumber',
-      align: 'center',
+      align: 'left',
       headerAlign: 'center',
-      width: 120,
+      width: 140,
     },
     {
       id: 'amount',
