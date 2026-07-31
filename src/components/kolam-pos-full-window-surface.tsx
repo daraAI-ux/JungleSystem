@@ -504,9 +504,7 @@ export function KolamPosFullWindowSurface({
             {checkout.shippingCost > 0 ? (
               <SummaryLine label="Ongkir" value={formatRupiah(checkout.shippingCost)} />
             ) : null}
-            {!selectedCustomer ? (
-              <Text style={styles.validationText}>Pilih pelanggan</Text>
-            ) : null}
+            <PosCheckoutValidationMessages workflowSteps={workflowSteps} />
             <View style={styles.totalRow}>
               <Text style={styles.totalLabel}>Total</Text>
               <Text style={styles.totalValue}>{formatRupiah(finalTotal)}</Text>
@@ -1051,6 +1049,62 @@ function SummaryLine({
       </Text>
     </View>
   );
+}
+
+function PosCheckoutValidationMessages({
+  workflowSteps,
+}: {
+  workflowSteps: WorkflowStep[];
+}) {
+  const missingMessages = workflowSteps
+    .filter(step => !step.done)
+    .map(step => getPosValidationMessage(step.label))
+    .filter((message): message is string => Boolean(message));
+
+  if (!missingMessages.length) {
+    return null;
+  }
+
+  return (
+    <View style={styles.validationList}>
+      {missingMessages.map(message => (
+        <View key={message} style={styles.validationRow}>
+          <Text style={styles.validationMarker}>!</Text>
+          <Text style={styles.validationMessage}>{message}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function getPosValidationMessage(label: string): string | null {
+  const normalizedLabel = label.toLowerCase();
+
+  if (normalizedLabel.includes('cashflow')) {
+    return 'Buka shift kas sebelum mencatat penjualan';
+  }
+
+  if (normalizedLabel.includes('customer')) {
+    return 'Pilih pelanggan';
+  }
+
+  if (normalizedLabel.includes('payment')) {
+    return 'Pilih metode pembayaran';
+  }
+
+  if (normalizedLabel.includes('login')) {
+    return 'Login kasir diperlukan';
+  }
+
+  if (normalizedLabel.includes('akses')) {
+    return 'Akses POS diperlukan';
+  }
+
+  if (normalizedLabel.includes('cart')) {
+    return 'Tambahkan item ke pesanan';
+  }
+
+  return null;
 }
 
 function PosCashMetric({label, value}: {label: string; value: string}) {
@@ -2893,16 +2947,33 @@ const styles = StyleSheet.create({
   summaryDanger: {
     color: V.colors.success,
   },
-  validationText: {
+  validationList: {
+    gap: 4,
     marginTop: 6,
+  },
+  validationRow: {
+    minHeight: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     overflow: 'hidden',
-    borderRadius: 4,
+    borderRadius: 5,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    color: V.colors.danger,
     backgroundColor: V.colors.dangerSoft,
+  },
+  validationMarker: {
+    width: 14,
+    textAlign: 'center',
+    color: V.colors.danger,
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  validationMessage: {
+    flex: 1,
+    color: V.colors.danger,
     fontSize: 10,
-    fontWeight: '700',
+    fontWeight: '800',
   },
   totalRow: {
     flexDirection: 'row',
