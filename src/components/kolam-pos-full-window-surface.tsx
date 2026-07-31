@@ -55,6 +55,20 @@ export interface KolamPosFullWindowSurfaceProps {
 }
 
 type PosWindowView = 'catalog' | 'customers' | 'sales' | 'cashflow';
+type PosKeyboardEvent = {
+  key?: string;
+  preventDefault?: () => void;
+};
+type PosKeyboardTarget = {
+  addEventListener?: (
+    eventName: 'keydown',
+    listener: (event: PosKeyboardEvent) => void,
+  ) => void;
+  removeEventListener?: (
+    eventName: 'keydown',
+    listener: (event: PosKeyboardEvent) => void,
+  ) => void;
+};
 
 export function KolamPosFullWindowSurface({
   activeType,
@@ -86,6 +100,7 @@ export function KolamPosFullWindowSurface({
   subtotal,
 }: KolamPosFullWindowSurfaceProps) {
   const {width} = useWindowDimensions();
+  const searchInputRef = React.useRef<React.ElementRef<typeof TextInput>>(null);
   const [activeView, setActiveView] = React.useState<PosWindowView>('catalog');
   const [isPaymentModalOpen, setIsPaymentModalOpen] = React.useState(false);
   const columnCount = getCatalogColumnCount(width);
@@ -95,6 +110,40 @@ export function KolamPosFullWindowSurface({
     0,
   );
   const isCatalogView = activeView === 'catalog';
+
+  React.useEffect(() => {
+    const keyboardTarget = getPosKeyboardTarget();
+
+    if (!keyboardTarget) {
+      return undefined;
+    }
+
+    const handleKeyDown = (event: PosKeyboardEvent) => {
+      if (event.key === 'F1') {
+        event.preventDefault?.();
+        setActiveView('catalog');
+        setTimeout(() => searchInputRef.current?.focus(), 0);
+        return;
+      }
+
+      if (event.key === 'Escape') {
+        event.preventDefault?.();
+
+        if (isPaymentModalOpen) {
+          setIsPaymentModalOpen(false);
+          return;
+        }
+
+        onCatalogSearchChange('');
+      }
+    };
+
+    keyboardTarget.addEventListener?.('keydown', handleKeyDown);
+
+    return () => {
+      keyboardTarget.removeEventListener?.('keydown', handleKeyDown);
+    };
+  }, [isPaymentModalOpen, onCatalogSearchChange]);
 
   return (
     <View style={styles.surface}>
@@ -139,6 +188,7 @@ export function KolamPosFullWindowSurface({
               value={catalogSearch}
               onChangeText={onCatalogSearchChange}
               placeholder="Cari... (F1)"
+              inputRef={searchInputRef}
               containerStyle={styles.search}
             />
           ) : null}
@@ -818,6 +868,19 @@ function formatPosDate(value: string) {
     minute: '2-digit',
     month: 'short',
   }).format(date);
+}
+
+function getPosKeyboardTarget(): PosKeyboardTarget | undefined {
+  const keyboardTarget = globalThis as typeof globalThis & PosKeyboardTarget;
+
+  if (
+    typeof keyboardTarget.addEventListener !== 'function' ||
+    typeof keyboardTarget.removeEventListener !== 'function'
+  ) {
+    return undefined;
+  }
+
+  return keyboardTarget;
 }
 
 function PosPaymentModal({

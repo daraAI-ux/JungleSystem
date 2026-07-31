@@ -14,6 +14,7 @@ export function KolamSearchField({
   placeholder,
   autoFocus = false,
   containerStyle,
+  inputRef,
   inputStyle,
   trailingLabel,
 }: KolamSearchFieldProps) {
@@ -24,6 +25,7 @@ export function KolamSearchField({
         value={value}
         onChangeText={onChangeText}
         autoFocus={autoFocus}
+        inputRef={inputRef}
         placeholder={placeholder}
         inputStyle={inputStyle}
       />
