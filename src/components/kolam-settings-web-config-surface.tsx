@@ -3941,20 +3941,23 @@ export function KolamSettingsWebConfigSurface({
                 },
               ]}
             />
-            {daraTaxToggleRows.map(row => (
-              <KolamToggleRow
-                key={row.id}
-                variant="settingsForm"
-                label={row.label}
-                description={row.description}
-                active={draft[row.field] === true}
-                onPress={() =>
-                  !daraControlsDisabled &&
-                  draft.daraBusinessEnabled &&
-                  setDraftField(row.field, !(draft[row.field] === true))
-                }
-              />
-            ))}
+            <View style={styles.notificationToggleGrid}>
+              {daraTaxToggleRows.map(row => (
+                <View key={row.id} style={styles.notificationToggleBox}>
+                  <KolamToggleRow
+                    variant="settingsForm"
+                    label={row.label}
+                    description={row.description}
+                    active={draft[row.field] === true}
+                    onPress={() =>
+                      !daraControlsDisabled &&
+                      draft.daraBusinessEnabled &&
+                      setDraftField(row.field, !(draft[row.field] === true))
+                    }
+                  />
+                </View>
+              ))}
+            </View>
           </View>
 
           <View
