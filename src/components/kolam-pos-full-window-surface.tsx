@@ -252,6 +252,7 @@ export function KolamPosFullWindowSurface({
           <View style={styles.segmentRail}>
             <PosSegment
               active={isCatalogView && activeType !== 'species'}
+              icon="P"
               label="Produk"
               onPress={() => {
                 setActiveView('catalog');
@@ -260,6 +261,7 @@ export function KolamPosFullWindowSurface({
             />
             <PosSegment
               active={isCatalogView && activeType === 'species'}
+              icon="S"
               label="Spesies"
               onPress={() => {
                 setActiveView('catalog');
@@ -269,16 +271,19 @@ export function KolamPosFullWindowSurface({
             <View style={styles.segmentDivider} />
             <PosSegment
               active={activeView === 'customers'}
+              icon="C"
               label="Pelanggan"
               onPress={() => setActiveView('customers')}
             />
             <PosSegment
               active={activeView === 'sales'}
+              icon="R"
               label="Penjualan"
               onPress={() => setActiveView('sales')}
             />
             <PosSegment
               active={activeView === 'cashflow'}
+              icon="K"
               label="Kas"
               onPress={() => setActiveView('cashflow')}
             />
@@ -592,10 +597,12 @@ export function KolamPosFullWindowSurface({
 
 function PosSegment({
   active = false,
+  icon,
   label,
   onPress,
 }: {
   active?: boolean;
+  icon?: string;
   label: string;
   onPress: () => void;
 }) {
@@ -603,6 +610,11 @@ function PosSegment({
     <KolamInteractionFrame
       onPress={onPress}
       style={[styles.segment, active && styles.segmentActive]}>
+      {icon ? (
+        <Text style={[styles.segmentIcon, active && styles.segmentIconActive]}>
+          {icon}
+        </Text>
+      ) : null}
       <Text style={[styles.segmentText, active && styles.segmentTextActive]}>
         {label}
       </Text>
@@ -1957,7 +1969,10 @@ const styles = StyleSheet.create({
   },
   segment: {
     minHeight: 30,
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'center',
+    gap: 6,
     borderRadius: 6,
     paddingHorizontal: 12,
   },
@@ -1975,6 +1990,22 @@ const styles = StyleSheet.create({
   },
   segmentTextActive: {
     color: V.colors.fg,
+  },
+  segmentIcon: {
+    width: 16,
+    height: 16,
+    overflow: 'hidden',
+    borderRadius: 4,
+    textAlign: 'center',
+    color: V.colors.mutedFg,
+    backgroundColor: V.colors.secondary,
+    fontSize: 9,
+    fontWeight: '900',
+    lineHeight: 16,
+  },
+  segmentIconActive: {
+    color: V.colors.primary,
+    backgroundColor: V.colors.primarySoft,
   },
   segmentDivider: {
     width: 1,
