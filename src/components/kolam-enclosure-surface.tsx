@@ -164,21 +164,21 @@ const ENCLOSURE_DETAIL_BASE_TABS: Array<{
   id: Exclude<EnclosureDetailTab, 'production'>;
   label: string;
 }> = [
-  {id: 'overview', label: 'Overview'},
-  {id: 'species', label: 'Species'},
-  {id: 'tasks', label: 'Tasks'},
-  {id: 'statistics', label: 'Statistics'},
+  {id: 'overview', label: 'Ringkasan'},
+  {id: 'species', label: 'Spesies'},
+  {id: 'tasks', label: 'Tugas'},
+  {id: 'statistics', label: 'Statistik'},
 ];
 
 const ENCLOSURE_DETAIL_TABS_WITH_PRODUCTION: Array<{
   id: EnclosureDetailTab;
   label: string;
 }> = [
-  {id: 'overview', label: 'Overview'},
-  {id: 'species', label: 'Species'},
-  {id: 'production', label: 'Production'},
-  {id: 'tasks', label: 'Tasks'},
-  {id: 'statistics', label: 'Statistics'},
+  {id: 'overview', label: 'Ringkasan'},
+  {id: 'species', label: 'Spesies'},
+  {id: 'production', label: 'Produksi'},
+  {id: 'tasks', label: 'Tugas'},
+  {id: 'statistics', label: 'Statistik'},
 ];
 
 export function KolamEnclosureSurface({
@@ -280,7 +280,7 @@ function KolamEnclosureEditSurface({
           />
           <KolamButton
             disabled={controller.loading}
-            label="Refresh"
+            label="Muat ulang"
             onPress={() => void controller.onRefresh()}
           />
         </View>
@@ -910,7 +910,7 @@ function KolamEnclosureDetailSurface({
           />
           <KolamButton
             disabled={controller.loading}
-            label="Refresh"
+            label="Muat ulang"
             onPress={() => void controller.onRefresh()}
           />
         </View>
@@ -927,7 +927,7 @@ function KolamEnclosureDetailSurface({
   }
 
   const scopeLabel =
-    enclosure.clientScope === 'client_linked' ? 'Customer' : 'Internal';
+    enclosure.clientScope === 'client_linked' ? 'Pelanggan' : 'Internal';
   const toolbarContext =
     enclosure.code.trim() || enclosure.name.trim() || enclosure.id;
 
@@ -939,6 +939,15 @@ function KolamEnclosureDetailSurface({
             <Text numberOfLines={1} style={styles.detailToolbarContext}>
               {toolbarContext}
             </Text>
+            {detailTabs.map(tab => (
+              <KolamButton
+                intent={safeActiveDetailTab === tab.id ? 'primary' : 'outline'}
+                key={tab.id}
+                label={tab.label}
+                onPress={() => setActiveDetailTab(tab.id)}
+                style={styles.toolbarButton}
+              />
+            ))}
           </View>
           <View style={kolamTableToolbarStyles.actions}>
             <KolamButton
@@ -950,12 +959,12 @@ function KolamEnclosureDetailSurface({
             />
             <KolamButton
               disabled={controller.loading || controller.operationLoading}
-              label="Refresh"
+              label="Muat ulang"
               onPress={() => void controller.onRefresh()}
               style={styles.toolbarButton}
             />
             <KolamButton
-              label="Edit"
+              label="Ubah"
               onPress={() =>
                 onRouteChange?.(
                   `${KOLAM_ENCLOSURE_ROOT}/${enclosure.id}/edit`,
@@ -983,18 +992,6 @@ function KolamEnclosureDetailSurface({
           style={styles.errorBadge}
         />
       ) : null}
-
-      <View style={styles.detailTabBar}>
-        {detailTabs.map(tab => (
-          <KolamButton
-            intent={safeActiveDetailTab === tab.id ? 'primary' : 'outline'}
-            key={tab.id}
-            label={tab.label}
-            onPress={() => setActiveDetailTab(tab.id)}
-            style={styles.detailTabButton}
-          />
-        ))}
-      </View>
 
       <ScrollView
         contentContainerStyle={styles.detailContent}
@@ -1083,7 +1080,7 @@ function KolamEnclosureDetailOverview({
             />
           </View>
           <View style={styles.stripItem}>
-            <Text style={styles.stripLabel}>Livestock</Text>
+            <Text style={styles.stripLabel}>Tujuan</Text>
             <KolamStatusBadge
               intent={
                 enclosure.livestockPurpose === 'production' ? 'warning' : 'muted'
@@ -1101,7 +1098,7 @@ function KolamEnclosureDetailOverview({
             />
           </View>
           <View style={styles.stripItem}>
-            <Text style={styles.stripLabel}>Scope</Text>
+            <Text style={styles.stripLabel}>Cakupan</Text>
             <KolamStatusBadge
               intent={
                 enclosure.clientScope === 'client_linked' ? 'success' : 'muted'
@@ -1111,7 +1108,7 @@ function KolamEnclosureDetailOverview({
             />
           </View>
           <View style={styles.stripItem}>
-            <Text style={styles.stripLabel}>Sale</Text>
+            <Text style={styles.stripLabel}>Penjualan</Text>
             <Text style={styles.stripValue}>
               {getSaleStatusLabel(enclosure.saleStatus)}
             </Text>
@@ -1182,13 +1179,13 @@ function KolamEnclosureDetailOverview({
                 }
               />
               <DetailField
-                label="Livestock"
+                label="Tujuan livestock"
                 value={getLivestockPurposeLabel(enclosure.livestockPurpose)}
               />
               <DetailField label="Status" value={enclosure.status || 'active'} />
-              <DetailField label="Scope" value={scopeLabel} />
+              <DetailField label="Cakupan" value={scopeLabel} />
               <DetailField
-                label="Customer"
+                label="Pelanggan"
                 value={enclosure.customer?.name || '-'}
               />
               <DetailField
@@ -1209,9 +1206,9 @@ function KolamEnclosureDetailOverview({
                 label="Usia"
                 value={enclosure.computed.ageLabel || '-'}
               />
-              <DetailField label="Brand" value={enclosure.brand?.name || '-'} />
+              <DetailField label="Merek" value={enclosure.brand?.name || '-'} />
               <DetailField
-                label="Sale status"
+                label="Status penjualan"
                 value={getSaleStatusLabel(enclosure.saleStatus)}
               />
             </View>
@@ -1239,7 +1236,7 @@ function KolamEnclosureDetailOverview({
         </View>
 
         <View style={styles.columnSide}>
-          <DetailSection title="Species di enclosure">
+          <DetailSection title="Spesies di enclosure">
             {enclosure.species.length ? (
               enclosure.species.slice(0, 6).map(item => (
                 <View
@@ -1269,7 +1266,7 @@ function KolamEnclosureDetailOverview({
                 </View>
               ))
             ) : (
-              <Text style={styles.mutedText}>Belum ada species.</Text>
+              <Text style={styles.mutedText}>Belum ada spesies.</Text>
             )}
           </DetailSection>
 
@@ -1303,7 +1300,7 @@ function KolamEnclosureDetailSpeciesTab({
   return (
     <>
       <View style={styles.detailTwoColumn}>
-        <DetailSection title="Species di enclosure">
+        <DetailSection title="Spesies di enclosure">
           {enclosure.species.length ? (
             enclosure.species.map(item => (
               <View key={`${item.speciesId}:${item.variantId}`} style={styles.detailMiniRow}>
@@ -1330,7 +1327,7 @@ function KolamEnclosureDetailSpeciesTab({
               </View>
             ))
           ) : (
-            <Text style={styles.mutedText}>Belum ada species.</Text>
+            <Text style={styles.mutedText}>Belum ada spesies.</Text>
           )}
         </DetailSection>
         <DetailSection title="Riwayat populasi">
@@ -1557,7 +1554,7 @@ function KolamEnclosureDetailTasksTab({
 
   return (
     <View style={styles.detailStatsStack}>
-      <DetailSection title="Task terkait">
+      <DetailSection title="Tugas terkait">
         <View style={styles.detailSectionIntroRow}>
           <Text style={styles.sectionMeta}>
             Task manual & sub-task dari enclosure ini
@@ -1604,7 +1601,7 @@ function KolamEnclosureDetailTasksTab({
         {controller.enclosureTasksLoading ? (
           <Text style={styles.sectionMeta}>Memuat…</Text>
         ) : controller.enclosureTasks.length === 0 ? (
-          <Text style={styles.sectionMeta}>Belum ada task.</Text>
+          <Text style={styles.sectionMeta}>Belum ada tugas.</Text>
         ) : (
           controller.enclosureTasks.map(task => (
             <View key={task.id} style={styles.detailMiniRow}>
@@ -2487,7 +2484,7 @@ function EnclosureCommentsOperation({
         />
         <KolamButton
           disabled={controller.operationLoading}
-          label="Refresh"
+          label="Muat ulang"
           onPress={() => void controller.onRefreshComments()}
           style={styles.toolbarButton}
         />
@@ -2740,7 +2737,7 @@ function EnclosureSpeciesOperation({
   return (
     <DetailSection title="Operasional species">
       <KolamDropdownSelect
-        label="Species katalog"
+        label="Katalog spesies"
         menuPlacement="inline"
         onChange={value => {
           setSpeciesId(value);
@@ -3051,7 +3048,7 @@ function EnclosureProductionOperation({
   return (
     <DetailSection title="Operasional produksi">
       <KolamDropdownSelect
-        label="Species telur"
+        label="Spesies telur"
         menuPlacement="inline"
         onChange={setSpeciesId}
         options={speciesOptions}
@@ -3993,7 +3990,7 @@ function KolamEnclosureDashboardPanel({
         <SummaryTile
           hint={`${stats.totals.individuals} ekor total`}
           icon="S"
-          label="Species di enclosure"
+          label="Spesies di enclosure"
           value={stats.totals.speciesDistinct}
         />
         <SummaryTile
@@ -5249,10 +5246,10 @@ function formatDashboardDateTime(value: string) {
 
 function getLivestockPurposeLabel(value: KolamEnclosureLivestockFilter | string) {
   if (value === 'production') {
-    return 'Production';
+    return 'Produksi (indukan)';
   }
   if (value === 'saleable') {
-    return 'Saleable';
+    return 'Stok jual';
   }
   return 'Semua livestock';
 }

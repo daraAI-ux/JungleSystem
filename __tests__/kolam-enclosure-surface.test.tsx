@@ -253,7 +253,7 @@ describe('Kolam enclosure surface', () => {
 
     const root = renderer!.root;
     expect(root.findAllByProps({children: 'Jumlah enclosure'}).length).toBeGreaterThan(0);
-    expect(root.findAllByProps({children: 'Species di enclosure'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Spesies di enclosure'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'Indukan produksi'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'Stok jual di enclosure'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'Kematian dilaporkan'}).length).toBeGreaterThan(0);
@@ -407,26 +407,26 @@ describe('Kolam enclosure surface', () => {
     expect(root.findAllByProps({children: 'Rack 1'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'ENC-1'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'Catatan detail enclosure'}).length).toBeGreaterThan(0);
-    expect(root.findAllByProps({children: 'Species di enclosure'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Spesies di enclosure'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'Informasi enclosure'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'Ranitomeya'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'Client A'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'Jual unit kandang'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({label: 'Cetak barcode'}).length).toBeGreaterThan(0);
-    expect(root.findAllByProps({label: 'Refresh'}).length).toBeGreaterThan(0);
-    expect(root.findAllByProps({label: 'Overview'}).length).toBeGreaterThan(0);
-    expect(root.findAllByProps({label: 'Species'}).length).toBeGreaterThan(0);
-    expect(root.findAllByProps({label: 'Statistics'}).length).toBeGreaterThan(0);
-    expect(root.findAllByProps({label: 'Tasks'}).length).toBeGreaterThan(0);
-    expect(root.findAllByProps({label: 'Production'}).length).toBe(0);
+    expect(root.findAllByProps({label: 'Muat ulang'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({label: 'Ringkasan'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({label: 'Spesies'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({label: 'Statistik'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({label: 'Tugas'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({label: 'Produksi'}).length).toBe(0);
 
     await ReactTestRenderer.act(async () => {
-      root.findAllByProps({label: 'Species'})[0].props.onPress();
+      root.findAllByProps({label: 'Spesies'})[0].props.onPress();
     });
     expect(root.findAllByProps({children: 'Riwayat populasi'}).length).toBeGreaterThan(0);
 
     await ReactTestRenderer.act(async () => {
-      root.findAllByProps({label: 'Statistics'})[0].props.onPress();
+      root.findAllByProps({label: 'Statistik'})[0].props.onPress();
     });
     expect(root.findAllByProps({children: 'Ringkasan kondisi'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'Parameter terbaca'}).length).toBeGreaterThan(0);
@@ -435,18 +435,18 @@ describe('Kolam enclosure surface', () => {
     expect(root.findAllByProps({children: 'Belum ada transaksi.'}).length).toBeGreaterThan(0);
 
     await ReactTestRenderer.act(async () => {
-      root.findAllByProps({label: 'Tasks'})[0].props.onPress();
+      root.findAllByProps({label: 'Tugas'})[0].props.onPress();
     });
-    expect(root.findAllByProps({children: 'Task terkait'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Tugas terkait'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'Jadwal berulang'}).length).toBeGreaterThan(0);
-    expect(root.findAllByProps({children: 'Belum ada task.'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Belum ada tugas.'}).length).toBeGreaterThan(0);
     expect(
       root.findAllByProps({children: 'Tidak ada tipe task enclosure.'}).length,
     ).toBeGreaterThan(0);
 
     await ReactTestRenderer.act(async () => {
       root.findAllByProps({label: 'Daftar'})[0].props.onPress();
-      root.findAllByProps({label: 'Edit'})[0].props.onPress();
+      root.findAllByProps({label: 'Ubah'})[0].props.onPress();
     });
 
     expect(onRouteChange).toHaveBeenCalledWith('/enclosures?scope=dashboard');
@@ -777,11 +777,11 @@ describe('Kolam enclosure surface', () => {
     });
 
     const root = renderer!.root;
-    expect(root.findAllByProps({label: 'Production'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({label: 'Produksi'}).length).toBeGreaterThan(0);
 
     await ReactTestRenderer.act(async () => {
       root
-        .findAllByProps({label: 'Production'})
+        .findAllByProps({label: 'Produksi'})
         .find(node => typeof node.props.onPress === 'function')!
         .props.onPress();
     });
