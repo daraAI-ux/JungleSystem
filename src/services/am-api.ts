@@ -195,6 +195,142 @@ export interface AmDevice {
   updatedAt: string;
 }
 
+export type AmTransferStatus = 'pending' | 'processing' | 'success' | 'failed';
+export type AmTransferType = 'transfer' | 'virtual-account';
+export type AmMutasiType = 'masuk' | 'keluar';
+export type AmActivityLogType = 'api' | 'page';
+export type AmActivityLogStatus = 'success' | 'failed';
+
+export interface AmBankAccountRef {
+  _id: string;
+  label: string;
+  platform: 'bca' | 'brimo' | string;
+  accountNumber?: string;
+  username?: string;
+}
+
+export interface AmTransfer {
+  _id: string;
+  accountId: AmBankAccountRef | string;
+  deviceId: AmServiceAccountDeviceRef | string;
+  transferType: AmTransferType | string;
+  transferMethod: string | null;
+  transactionPurpose: string | null;
+  fee: number;
+  recipientAccount: string;
+  recipientName: string;
+  recipientBank: string | null;
+  amount: number;
+  status: AmTransferStatus | string;
+  startedAt: string | null;
+  completedAt: string | null;
+  error: string;
+  screenshot: string;
+  logs: string[];
+  createdBy: {_id: string; fullName: string; username: string} | string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AmMutasi {
+  _id: string;
+  accountId: AmBankAccountRef | string;
+  deviceId: AmServiceAccountDeviceRef | string;
+  type: AmMutasiType | string;
+  amount: number;
+  description: string;
+  transferId:
+    | {
+        _id: string;
+        recipientAccount: string;
+        recipientName: string;
+        recipientBank: string;
+        amount: number;
+        status: string;
+      }
+    | string
+    | null;
+  notificationHash: string | null;
+  detectedAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AmMutasiSummary {
+  masuk: {total: number; count: number};
+  keluar: {total: number; count: number};
+}
+
+export interface AmRole {
+  _id: string;
+  name: string;
+  permissions: string[];
+  description: string;
+}
+
+export interface AmUser {
+  _id: string;
+  fullName: string;
+  username: string;
+  role?: AmRole;
+}
+
+export interface AmActivityLog {
+  _id: string;
+  timestamp: string;
+  userId: {_id: string; username: string; fullName: string} | null;
+  username: string | null;
+  type: AmActivityLogType | string;
+  action: string;
+  method: string;
+  path: string;
+  ip: string;
+  userAgent: string;
+  status: AmActivityLogStatus | string;
+  statusCode: number;
+  duration: number;
+  metadata: Record<string, unknown>;
+  error: string;
+}
+
+export interface AmActivityLogStats {
+  since: string;
+  days: number;
+  byType: Array<{_id: AmActivityLogType | string; count: number}>;
+  byStatus: Array<{_id: AmActivityLogStatus | string; count: number}>;
+  topUsers: Array<{_id: string; count: number}>;
+  topPaths: Array<{_id: string; count: number}>;
+}
+
+export interface AmWebhookConfig {
+  _id: string;
+  url: string;
+  events: string[];
+  hasSecret?: boolean;
+  secretMasked?: string;
+  status: 'active' | 'inactive' | string;
+  description: string;
+  lastDeliveredAt: string | null;
+  failCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AmWebhookLog {
+  _id: string;
+  configId: {_id: string; url: string; description: string} | null;
+  direction: 'incoming' | 'outgoing' | string;
+  event: string;
+  url: string;
+  requestBody: Record<string, unknown>;
+  responseStatus: number | null;
+  responseBody: unknown;
+  success: boolean;
+  error: string;
+  duration: number;
+  createdAt: string;
+}
+
 export interface AmTaskQuery extends Record<string, AmQueryValue> {
   page?: number;
   limit?: number;
@@ -237,6 +373,55 @@ export interface AmDeviceQuery extends Record<string, AmQueryValue> {
   search?: string;
   sort?: string;
   boxId?: string;
+}
+
+export interface AmTransferQuery extends Record<string, AmQueryValue> {
+  accountId?: string;
+  serviceAccountId?: string;
+  deviceId?: string;
+  status?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+  sort?: string;
+}
+
+export interface AmMutasiQuery extends Record<string, AmQueryValue> {
+  accountId?: string;
+  deviceId?: string;
+  type?: string;
+  page?: number;
+  limit?: number;
+  sort?: string;
+}
+
+export interface AmUserQuery extends Record<string, AmQueryValue> {
+  search?: string;
+  role?: string;
+  page?: number;
+  limit?: number;
+  sort?: string;
+}
+
+export interface AmActivityLogQuery extends Record<string, AmQueryValue> {
+  page?: number;
+  limit?: number;
+  userId?: string;
+  type?: string;
+  action?: string;
+  method?: string;
+  status?: string;
+  from?: string;
+  to?: string;
+  search?: string;
+}
+
+export interface AmWebhookLogQuery extends Record<string, AmQueryValue> {
+  direction?: string;
+  event?: string;
+  configId?: string;
+  page?: number;
+  limit?: number;
 }
 
 interface AmEnvelope<T> {
@@ -302,6 +487,71 @@ export async function getAmDevices(
   baseUrl = appConfig.amApiBaseUrl,
 ): Promise<AmListResponse<AmDevice>> {
   return getAmList<AmDevice>('/device', query, baseUrl);
+}
+
+export async function getAmTransfers(
+  query?: AmTransferQuery,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmListResponse<AmTransfer>> {
+  return getAmList<AmTransfer>('/transfer', query, baseUrl);
+}
+
+export async function getAmMutasi(
+  query?: AmMutasiQuery,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmListResponse<AmMutasi>> {
+  return getAmList<AmMutasi>('/mutasi', query, baseUrl);
+}
+
+export async function getAmMutasiSummary(
+  accountId?: string,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmMutasiSummary> {
+  return amGet<AmMutasiSummary>(
+    '/mutasi/summary',
+    accountId ? {accountId} : undefined,
+    baseUrl,
+  );
+}
+
+export async function getAmUsers(
+  query?: AmUserQuery,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmListResponse<AmUser>> {
+  return getAmList<AmUser>('/users', query, baseUrl);
+}
+
+export async function getAmRoles(
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmRole[]> {
+  return amGet<AmRole[]>('/roles', undefined, baseUrl);
+}
+
+export async function getAmActivityLogs(
+  query?: AmActivityLogQuery,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmListResponse<AmActivityLog>> {
+  return getAmList<AmActivityLog>('/activity-log', query, baseUrl);
+}
+
+export async function getAmActivityLogStats(
+  days = 7,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmActivityLogStats> {
+  return amGet<AmActivityLogStats>('/activity-log/stats', {days}, baseUrl);
+}
+
+export async function getAmWebhookConfigs(
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmListResponse<AmWebhookConfig>> {
+  return getAmList<AmWebhookConfig>('/webhook/config', undefined, baseUrl);
+}
+
+export async function getAmWebhookLogs(
+  query?: AmWebhookLogQuery,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmListResponse<AmWebhookLog>> {
+  return getAmList<AmWebhookLog>('/webhook/logs', query, baseUrl);
 }
 
 async function getAmList<T>(

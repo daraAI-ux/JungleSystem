@@ -7,18 +7,34 @@ import {formatRupiah} from '../lib/money';
 import {
   getAmBoxes,
   getAmDevices,
+  getAmActivityLogs,
+  getAmActivityLogStats,
+  getAmMutasi,
+  getAmMutasiSummary,
   getAmRacks,
   getAmServiceAccounts,
   getAmTasks,
+  getAmTransfers,
+  getAmUsers,
+  getAmWebhookConfigs,
+  getAmWebhookLogs,
+  type AmActivityLog,
+  type AmActivityLogStats,
   type AmBox,
   type AmDashboardData,
   type AmDevice,
+  type AmMutasi,
+  type AmMutasiSummary,
   type AmRack,
   type AmServiceAccount,
   type AmServiceAccountDeviceRef,
   type AmTask,
   type AmTaskStatus,
   type AmTaskType,
+  type AmTransfer,
+  type AmUser,
+  type AmWebhookConfig,
+  type AmWebhookLog,
 } from '../services/am-api';
 import type {UnifiedDataset} from '../services/unified-data';
 import {KolamButton} from './kolam-button';
@@ -143,6 +159,16 @@ export function KolamAmSurface({
             <AmServicesPage />
           ) : activeRoute === 'hardware' ? (
             <AmHardwarePage />
+          ) : activeRoute === 'webhooks' ? (
+            <AmWebhooksPage />
+          ) : activeRoute === 'transactions' ? (
+            <AmTransfersPage />
+          ) : activeRoute === 'mutasi' ? (
+            <AmMutasiPage />
+          ) : activeRoute === 'users' ? (
+            <AmUsersPage />
+          ) : activeRoute === 'activity-log' ? (
+            <AmActivityLogPage />
           ) : (
             <AmParityPlaceholder route={route} />
           )}
@@ -483,6 +509,337 @@ function AmHardwarePage() {
   );
 }
 
+function AmTransfersPage() {
+  const [transfers, setTransfers] = React.useState<AmTransfer[]>([]);
+  const [status, setStatus] = React.useState('all');
+  const [search, setSearch] = React.useState('');
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+
+  const fetchTransfers = React.useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const response = await getAmTransfers({
+        limit: 30,
+        search: search.trim() || undefined,
+        status: status === 'all' ? undefined : status,
+      });
+      setTransfers(response.data);
+      setError(null);
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Gagal memuat transfers AM live.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [search, status]);
+
+  React.useEffect(() => {
+    fetchTransfers();
+  }, [fetchTransfers]);
+
+  React.useEffect(() => {
+    const interval = setInterval(fetchTransfers, 10_000);
+    return () => clearInterval(interval);
+  }, [fetchTransfers]);
+
+  return (
+    <View style={styles.pageStack}>
+      <View style={styles.filterBar}>
+        <KolamSearchField value={search} onChangeText={setSearch} placeholder="Search transfer..." containerStyle={styles.taskSearch} trailingLabel={`${transfers.length} transfer`} />
+        <AmSegmentGroup active={status} items={['all', 'pending', 'processing', 'success', 'failed']} onSelect={setStatus} />
+        <KolamButton label={isLoading ? 'Memuat' : 'Refresh'} intent="outline" muted={isLoading} size="sm" onPress={fetchTransfers} />
+      </View>
+      <AmInlineError title="Transfers AM belum bisa dibaca" error={error} />
+      <View style={styles.tablePanel}>
+        <View style={styles.tableHeader}>
+          <Text style={[styles.tableHeaderText, styles.accountWideCol]}>Account</Text>
+          <Text style={[styles.tableHeaderText, styles.recipientCol]}>Recipient</Text>
+          <Text style={[styles.tableHeaderText, styles.amountCol]}>Amount</Text>
+          <Text style={[styles.tableHeaderText, styles.statusCol]}>Status</Text>
+          <Text style={[styles.tableHeaderText, styles.dateCol]}>Created</Text>
+        </View>
+        <AmLoadingOrEmpty isLoading={isLoading} items={transfers} loadingText="Memuat transfers dari AM live..." emptyText="No transfers found" />
+        {transfers.map(transfer => (
+          <View key={transfer._id} style={styles.tableRow}>
+            <View style={styles.accountWideCol}>
+              <Text style={styles.cellText} numberOfLines={1}>{formatBankAccount(transfer.accountId)}</Text>
+              <Text style={styles.rowMeta} numberOfLines={1}>{formatDeviceRef(transfer.deviceId)}</Text>
+            </View>
+            <View style={styles.recipientCol}>
+              <Text style={styles.cellText} numberOfLines={1}>{transfer.recipientName || '-'}</Text>
+              <Text style={styles.rowMeta} numberOfLines={1}>{transfer.recipientBank ?? '-'} {transfer.recipientAccount}</Text>
+            </View>
+            <Text style={[styles.cellText, styles.amountCol]}>{formatRupiah(transfer.amount)}</Text>
+            <View style={styles.statusCol}>
+              <AmStatusChip label={transfer.status} tone={getTransferTone(transfer.status)} />
+            </View>
+            <Text style={[styles.cellText, styles.dateCol]}>{formatAmDate(transfer.createdAt)}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function AmMutasiPage() {
+  const [mutasi, setMutasi] = React.useState<AmMutasi[]>([]);
+  const [summary, setSummary] = React.useState<AmMutasiSummary | null>(null);
+  const [type, setType] = React.useState('all');
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+
+  const fetchMutasi = React.useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const [listResponse, summaryResponse] = await Promise.all([
+        getAmMutasi({limit: 30, type: type === 'all' ? undefined : type}),
+        getAmMutasiSummary(),
+      ]);
+      setMutasi(listResponse.data);
+      setSummary(summaryResponse);
+      setError(null);
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Gagal memuat mutasi AM live.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [type]);
+
+  React.useEffect(() => {
+    fetchMutasi();
+  }, [fetchMutasi]);
+
+  React.useEffect(() => {
+    const interval = setInterval(fetchMutasi, 10_000);
+    return () => clearInterval(interval);
+  }, [fetchMutasi]);
+
+  return (
+    <View style={styles.pageStack}>
+      <View style={styles.filterBar}>
+        <AmMetricCard label="Masuk" value={formatRupiah(summary?.masuk.total ?? 0)} meta={`${summary?.masuk.count ?? 0} mutasi`} />
+        <AmMetricCard label="Keluar" value={formatRupiah(summary?.keluar.total ?? 0)} meta={`${summary?.keluar.count ?? 0} mutasi`} />
+        <AmSegmentGroup active={type} items={['all', 'masuk', 'keluar']} onSelect={setType} />
+        <KolamButton label={isLoading ? 'Memuat' : 'Refresh'} intent="outline" muted={isLoading} size="sm" onPress={fetchMutasi} />
+      </View>
+      <AmInlineError title="Mutasi AM belum bisa dibaca" error={error} />
+      <View style={styles.tablePanel}>
+        <View style={styles.tableHeader}>
+          <Text style={[styles.tableHeaderText, styles.accountWideCol]}>Account</Text>
+          <Text style={[styles.tableHeaderText, styles.typeCol]}>Type</Text>
+          <Text style={[styles.tableHeaderText, styles.amountCol]}>Amount</Text>
+          <Text style={[styles.tableHeaderText, styles.recipientCol]}>Description</Text>
+          <Text style={[styles.tableHeaderText, styles.dateCol]}>Detected</Text>
+        </View>
+        <AmLoadingOrEmpty isLoading={isLoading} items={mutasi} loadingText="Memuat mutasi dari AM live..." emptyText="No mutations found" />
+        {mutasi.map(item => (
+          <View key={item._id} style={styles.tableRow}>
+            <View style={styles.accountWideCol}>
+              <Text style={styles.cellText} numberOfLines={1}>{formatBankAccount(item.accountId)}</Text>
+              <Text style={styles.rowMeta} numberOfLines={1}>{formatDeviceRef(item.deviceId)}</Text>
+            </View>
+            <View style={styles.typeCol}>
+              <AmStatusChip label={item.type} tone={item.type === 'masuk' ? 'success' : 'warning'} />
+            </View>
+            <Text style={[styles.cellText, styles.amountCol]}>{formatRupiah(item.amount)}</Text>
+            <Text style={[styles.cellText, styles.recipientCol]} numberOfLines={1}>{item.description || '-'}</Text>
+            <Text style={[styles.cellText, styles.dateCol]}>{formatAmDate(item.detectedAt)}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function AmWebhooksPage() {
+  const [configs, setConfigs] = React.useState<AmWebhookConfig[]>([]);
+  const [logs, setLogs] = React.useState<AmWebhookLog[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+
+  const fetchWebhooks = React.useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const [configResponse, logResponse] = await Promise.all([
+        getAmWebhookConfigs(),
+        getAmWebhookLogs({limit: 20}),
+      ]);
+      setConfigs(configResponse.data);
+      setLogs(logResponse.data);
+      setError(null);
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Gagal memuat webhooks AM live.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    fetchWebhooks();
+  }, [fetchWebhooks]);
+
+  return (
+    <View style={styles.pageStack}>
+      <View style={styles.filterBar}>
+        <AmMetricCard label="Configs" value={String(configs.length)} meta={`${configs.filter(item => item.status === 'active').length} active`} />
+        <AmMetricCard label="Recent Logs" value={String(logs.length)} meta={`${logs.filter(log => !log.success).length} failed`} />
+        <KolamButton label={isLoading ? 'Memuat' : 'Refresh'} intent="outline" muted={isLoading} size="sm" onPress={fetchWebhooks} />
+      </View>
+      <AmInlineError title="Webhooks AM belum bisa dibaca" error={error} />
+      <View style={styles.panel}>
+        <Text style={styles.panelTitle}>Webhook Config</Text>
+        <View style={styles.cardGrid}>
+          {configs.map(config => (
+            <View key={config._id} style={styles.hardwareCard}>
+              <Text style={styles.rowTitle} numberOfLines={1}>{config.description || config.url}</Text>
+              <Text style={styles.rowMeta} numberOfLines={2}>{config.url}</Text>
+              <Text style={styles.rowMeta}>{config.events.length} events - {config.failCount} fail</Text>
+              <AmStatusChip label={config.status} tone={config.status === 'active' ? 'success' : 'muted'} />
+            </View>
+          ))}
+        </View>
+      </View>
+      <View style={styles.tablePanel}>
+        <View style={styles.tableHeader}>
+          <Text style={[styles.tableHeaderText, styles.typeCol]}>Direction</Text>
+          <Text style={[styles.tableHeaderText, styles.recipientCol]}>Event</Text>
+          <Text style={[styles.tableHeaderText, styles.statusCol]}>Status</Text>
+          <Text style={[styles.tableHeaderText, styles.amountCol]}>Duration</Text>
+          <Text style={[styles.tableHeaderText, styles.dateCol]}>Created</Text>
+        </View>
+        <AmLoadingOrEmpty isLoading={isLoading} items={logs} loadingText="Memuat webhook logs..." emptyText="No webhook logs found" />
+        {logs.map(log => (
+          <View key={log._id} style={styles.tableRow}>
+            <Text style={[styles.cellText, styles.typeCol]}>{log.direction}</Text>
+            <Text style={[styles.cellText, styles.recipientCol]} numberOfLines={1}>{log.event}</Text>
+            <View style={styles.statusCol}>
+              <AmStatusChip label={log.responseStatus ? String(log.responseStatus) : (log.success ? 'success' : 'failed')} tone={log.success ? 'success' : 'danger'} />
+            </View>
+            <Text style={[styles.cellText, styles.amountCol]}>{log.duration} ms</Text>
+            <Text style={[styles.cellText, styles.dateCol]}>{formatAmDate(log.createdAt)}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function AmUsersPage() {
+  const [users, setUsers] = React.useState<AmUser[]>([]);
+  const [search, setSearch] = React.useState('');
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+
+  const fetchUsers = React.useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const response = await getAmUsers({limit: 30, search: search.trim() || undefined});
+      setUsers(response.data);
+      setError(null);
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Gagal memuat users AM live.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [search]);
+
+  React.useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+
+  return (
+    <View style={styles.pageStack}>
+      <View style={styles.filterBar}>
+        <KolamSearchField value={search} onChangeText={setSearch} placeholder="Search users..." containerStyle={styles.taskSearch} trailingLabel={`${users.length} user`} />
+        <KolamButton label={isLoading ? 'Memuat' : 'Refresh'} intent="outline" muted={isLoading} size="sm" onPress={fetchUsers} />
+      </View>
+      <AmInlineError title="Users AM belum bisa dibaca" error={error} />
+      <View style={styles.tablePanel}>
+        <View style={styles.tableHeader}>
+          <Text style={[styles.tableHeaderText, styles.accountWideCol]}>Name</Text>
+          <Text style={[styles.tableHeaderText, styles.accountCol]}>Username</Text>
+          <Text style={[styles.tableHeaderText, styles.recipientCol]}>Role</Text>
+          <Text style={[styles.tableHeaderText, styles.amountCol]}>Permissions</Text>
+        </View>
+        <AmLoadingOrEmpty isLoading={isLoading} items={users} loadingText="Memuat users dari AM live..." emptyText="No users found" />
+        {users.map(user => (
+          <View key={user._id} style={styles.tableRow}>
+            <Text style={[styles.cellText, styles.accountWideCol]} numberOfLines={1}>{user.fullName}</Text>
+            <Text style={[styles.cellText, styles.accountCol]} numberOfLines={1}>{user.username}</Text>
+            <Text style={[styles.cellText, styles.recipientCol]} numberOfLines={1}>{user.role?.name ?? '-'}</Text>
+            <Text style={[styles.cellText, styles.amountCol]}>{user.role?.permissions.length ?? 0}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function AmActivityLogPage() {
+  const [logs, setLogs] = React.useState<AmActivityLog[]>([]);
+  const [stats, setStats] = React.useState<AmActivityLogStats | null>(null);
+  const [status, setStatus] = React.useState('all');
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+
+  const fetchLogs = React.useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const [listResponse, statsResponse] = await Promise.all([
+        getAmActivityLogs({limit: 40, status: status === 'all' ? undefined : status}),
+        getAmActivityLogStats(7),
+      ]);
+      setLogs(listResponse.data);
+      setStats(statsResponse);
+      setError(null);
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Gagal memuat activity log AM live.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [status]);
+
+  React.useEffect(() => {
+    fetchLogs();
+  }, [fetchLogs]);
+
+  return (
+    <View style={styles.pageStack}>
+      <View style={styles.filterBar}>
+        <AmMetricCard label="Window" value={`${stats?.days ?? 7}d`} meta={stats?.since ? formatAmDate(stats.since) : 'stats'} />
+        <AmMetricCard label="Types" value={String(stats?.byType.length ?? 0)} meta="activity groups" />
+        <AmSegmentGroup active={status} items={['all', 'success', 'failed']} onSelect={setStatus} />
+        <KolamButton label={isLoading ? 'Memuat' : 'Refresh'} intent="outline" muted={isLoading} size="sm" onPress={fetchLogs} />
+      </View>
+      <AmInlineError title="Activity Log AM belum bisa dibaca" error={error} />
+      <View style={styles.tablePanel}>
+        <View style={styles.tableHeader}>
+          <Text style={[styles.tableHeaderText, styles.dateCol]}>Time</Text>
+          <Text style={[styles.tableHeaderText, styles.typeCol]}>Type</Text>
+          <Text style={[styles.tableHeaderText, styles.accountWideCol]}>Action</Text>
+          <Text style={[styles.tableHeaderText, styles.recipientCol]}>Path</Text>
+          <Text style={[styles.tableHeaderText, styles.statusCol]}>Status</Text>
+        </View>
+        <AmLoadingOrEmpty isLoading={isLoading} items={logs} loadingText="Memuat activity logs..." emptyText="No activity logs found" />
+        {logs.map(log => (
+          <View key={log._id} style={styles.tableRow}>
+            <Text style={[styles.cellText, styles.dateCol]}>{formatAmDate(log.timestamp)}</Text>
+            <Text style={[styles.cellText, styles.typeCol]}>{log.type}</Text>
+            <View style={styles.accountWideCol}>
+              <Text style={styles.cellText} numberOfLines={1}>{log.action}</Text>
+              <Text style={styles.rowMeta} numberOfLines={1}>{log.username ?? log.userId?.fullName ?? 'anonymous'}</Text>
+            </View>
+            <Text style={[styles.cellText, styles.recipientCol]} numberOfLines={1}>{log.method} {log.path}</Text>
+            <View style={styles.statusCol}>
+              <AmStatusChip label={`${log.statusCode}`} tone={log.status === 'success' ? 'success' : 'danger'} />
+            </View>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
 function AmParityPlaceholder({route}: {route: AmRouteItem}) {
   return (
     <View style={styles.emptyPanel}>
@@ -533,6 +890,39 @@ function AmStatusChip({
   );
 }
 
+function AmInlineError({error, title}: {error: string | null; title: string}) {
+  if (!error) return null;
+
+  return (
+    <View style={styles.errorPanel}>
+      <Text style={styles.errorTitle}>{title}</Text>
+      <Text style={styles.errorText}>{error}</Text>
+    </View>
+  );
+}
+
+function AmLoadingOrEmpty<T>({
+  emptyText,
+  isLoading,
+  items,
+  loadingText,
+}: {
+  emptyText: string;
+  isLoading: boolean;
+  items: T[];
+  loadingText: string;
+}) {
+  if (isLoading && !items.length) {
+    return <Text style={styles.loadingText}>{loadingText}</Text>;
+  }
+
+  if (!isLoading && !items.length) {
+    return <Text style={styles.loadingText}>{emptyText}</Text>;
+  }
+
+  return null;
+}
+
 function AmSegmentGroup({
   active,
   items,
@@ -569,6 +959,23 @@ function getCredentialString(
 ) {
   const value = credentials[key];
   return typeof value === 'string' && value.trim() ? value : null;
+}
+
+function formatBankAccount(account: AmTransfer['accountId'] | AmMutasi['accountId']) {
+  if (!account || typeof account === 'string') return '-';
+  const suffix = account.accountNumber ? ` - ${account.accountNumber}` : '';
+  return `${account.label}${suffix}`;
+}
+
+function formatDeviceRef(device: AmTransfer['deviceId'] | AmMutasi['deviceId']) {
+  if (!device || typeof device === 'string') return '-';
+  return device.name;
+}
+
+function getTransferTone(status: string) {
+  if (status === 'success') return 'success';
+  if (status === 'failed') return 'danger';
+  return 'warning';
 }
 
 function countBoxesForRack(boxes: AmBox[], rack: AmRack) {
@@ -956,6 +1363,15 @@ const styles = StyleSheet.create({
     flex: 1.2,
   },
   statusCol: {
+    flex: 0.9,
+  },
+  accountWideCol: {
+    flex: 1.3,
+  },
+  recipientCol: {
+    flex: 1.4,
+  },
+  amountCol: {
     flex: 0.9,
   },
   deviceCol: {

@@ -2,15 +2,32 @@ import React from 'react';
 import {Text} from 'react-native';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 import {KolamAmSurface} from '../src/components/kolam-am-surface';
-import {getAmDevices, getAmRacks, getAmServiceAccounts} from '../src/services/am-api';
+import {
+  getAmActivityLogs,
+  getAmDevices,
+  getAmMutasi,
+  getAmRacks,
+  getAmServiceAccounts,
+  getAmTransfers,
+  getAmUsers,
+  getAmWebhookConfigs,
+} from '../src/services/am-api';
 import {seedUnifiedDataset} from '../src/services/unified-data';
 
 jest.mock('../src/services/am-api', () => ({
+  getAmActivityLogs: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
+  getAmActivityLogStats: jest.fn(() => Promise.resolve({since: '', days: 7, byType: [], byStatus: [], topUsers: [], topPaths: []})),
   getAmBoxes: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
   getAmDevices: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
+  getAmMutasi: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
+  getAmMutasiSummary: jest.fn(() => Promise.resolve({masuk: {total: 0, count: 0}, keluar: {total: 0, count: 0}})),
   getAmRacks: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
   getAmServiceAccounts: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
   getAmTasks: jest.fn(),
+  getAmTransfers: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
+  getAmUsers: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
+  getAmWebhookConfigs: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
+  getAmWebhookLogs: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
 }));
 
 function renderText(renderer: ReactTestRenderer.ReactTestRenderer) {
@@ -122,5 +139,45 @@ describe('KolamAmSurface', () => {
 
     expect(getAmRacks).toHaveBeenCalledTimes(1);
     expect(getAmDevices).toHaveBeenCalledTimes(1);
+  });
+
+  it('loads banking and admin live routes from the internal AM sidebar', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Transfers'}).props.onPress();
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Mutations'}).props.onPress();
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Webhooks'}).props.onPress();
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Users'}).props.onPress();
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Activity Log'}).props.onPress();
+    });
+
+    expect(getAmTransfers).toHaveBeenCalledWith({
+      limit: 30,
+      search: undefined,
+      status: undefined,
+    });
+    expect(getAmMutasi).toHaveBeenCalledWith({limit: 30, type: undefined});
+    expect(getAmWebhookConfigs).toHaveBeenCalledTimes(1);
+    expect(getAmUsers).toHaveBeenCalledWith({limit: 30, search: undefined});
+    expect(getAmActivityLogs).toHaveBeenCalledWith({
+      limit: 40,
+      status: undefined,
+    });
   });
 });
