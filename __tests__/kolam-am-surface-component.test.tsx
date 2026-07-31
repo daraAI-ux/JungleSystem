@@ -283,8 +283,6 @@ describe('KolamAmSurface', () => {
     const text = renderText(renderer!);
     const joinedText = text.join(' ');
 
-    expect(text).toContain('Automation Management');
-    expect(text).toContain('Dashboard');
     expect(text).toContain('Kembali');
     expect(text).toContain('Transfer Status');
     expect(text).toContain('Vendor Dashboard');
@@ -300,6 +298,8 @@ describe('KolamAmSurface', () => {
     expect(joinedText).toMatch(/Box 01\s+\/\s+Rack Alpha/);
     expect(joinedText).toMatch(/1\s+\/\s+2/);
     expect(joinedText).toContain('bca');
+    expect(text).not.toContain('Automation Management');
+    expect(text).not.toContain('Ringkasan akun, device, transfer, dan mutasi AM.');
     expect(getAmDashboard).toHaveBeenCalledTimes(1);
   });
 
@@ -1829,11 +1829,11 @@ describe('KolamAmSurface', () => {
 
     const text = renderText(renderer!);
     expect(getAmCurrentUser).toHaveBeenCalledTimes(1);
-    expect(text).toContain('Account Settings');
     expect(text).toContain('Profile information');
     expect(text).toContain('Change password');
     expect(text).toContain('Danger area');
     expect(text).toContain('Current AM User');
+    expect(text).not.toContain('Account Settings');
 
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Account Save Profile'}).props.onPress();

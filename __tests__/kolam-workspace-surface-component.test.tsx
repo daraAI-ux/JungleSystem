@@ -507,15 +507,14 @@ describe('KolamWorkspaceSurface', () => {
 
     expect(renderText(renderer!)).toEqual(
       expect.arrayContaining([
-        'Automation Management',
-        'Dashboard',
-        'Ringkasan akun, device, transfer, dan mutasi AM.',
         'https://frogs.dunia-anura.com/api',
         'Kembali',
         'Dashboard live AM dari endpoint /dashboard.',
         'Transfer Status',
       ]),
     );
+    expect(renderText(renderer!)).not.toContain('Automation Management');
+    expect(renderText(renderer!)).not.toContain('Ringkasan akun, device, transfer, dan mutasi AM.');
     expect(renderText(renderer!)).not.toContain('Ringkasan Penjualan');
   });
 
@@ -543,12 +542,13 @@ describe('KolamWorkspaceSurface', () => {
 
     expect(renderText(renderer!)).toEqual(
       expect.arrayContaining([
-        'Automation Management',
-        'Tasks',
-        'Monitor dan kelola automation tasks lintas device.',
+        'https://frogs.dunia-anura.com/api',
+        'Kembali',
         '0 task',
       ]),
     );
+    expect(renderText(renderer!)).not.toContain('Automation Management');
+    expect(renderText(renderer!)).not.toContain('Monitor dan kelola automation tasks lintas device.');
   });
 
   it('renders selected Automation Management routes as native route surfaces', async () => {
@@ -575,13 +575,13 @@ describe('KolamWorkspaceSurface', () => {
 
     expect(renderText(renderer!)).toEqual(
       expect.arrayContaining([
-        'Automation Management',
-        'Tasks',
-        'Monitor dan kelola automation tasks lintas device.',
         'https://frogs.dunia-anura.com/api',
+        'Kembali',
         '0 task',
       ]),
     );
+    expect(renderText(renderer!)).not.toContain('Automation Management');
+    expect(renderText(renderer!)).not.toContain('Monitor dan kelola automation tasks lintas device.');
   });
 
   it('renders Automation Management module route contracts from the shell index', async () => {
@@ -608,13 +608,13 @@ describe('KolamWorkspaceSurface', () => {
 
     expect(renderText(renderer!)).toEqual(
       expect.arrayContaining([
-        'Automation Management',
-        'Transfers',
-        'Transfer bank dan status eksekusi.',
         'https://frogs.dunia-anura.com/api',
+        'Kembali',
         '0 transfer',
       ]),
     );
+    expect(renderText(renderer!)).not.toContain('Automation Management');
+    expect(renderText(renderer!)).not.toContain('Transfer bank dan status eksekusi.');
   });
 
   it('forwards Beranda customer visit confirmation actions from workspace', async () => {

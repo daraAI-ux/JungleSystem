@@ -160,12 +160,7 @@ export function KolamAmSurface({
   return (
     <View style={styles.shell}>
       <View style={styles.content}>
-        <View style={styles.topBar}>
-          <View style={styles.topBarCopy}>
-            <Text style={styles.topBarEyebrow}>Automation Management</Text>
-            <Text style={styles.topBarTitle}>{route.label}</Text>
-            <Text style={styles.topBarSubtitle}>{route.description}</Text>
-          </View>
+        <View style={styles.topBarCompact}>
           <View style={styles.topBarActions}>
             <Text style={styles.serverText}>{appConfig.amApiBaseUrl}</Text>
             <KolamButton label="Kembali" intent="outline" size="sm" onPress={onBackToCenter} />
@@ -5232,41 +5227,17 @@ const styles = StyleSheet.create({
     minWidth: 0,
     backgroundColor: V.colors.mainSurface,
   },
-  topBar: {
-    minHeight: 82,
+  topBarCompact: {
+    minHeight: 52,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
     gap: 16,
     borderBottomWidth: 1,
     borderBottomColor: V.colors.border,
     paddingHorizontal: 18,
-    paddingVertical: 14,
+    paddingVertical: 10,
     backgroundColor: V.colors.bg,
-  },
-  topBarCopy: {
-    flex: 1,
-    minWidth: 0,
-  },
-  topBarEyebrow: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 11,
-    fontWeight: '900',
-    textTransform: 'uppercase',
-  },
-  topBarTitle: {
-    marginTop: 2,
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 22,
-    fontWeight: '900',
-  },
-  topBarSubtitle: {
-    marginTop: 2,
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
   },
   topBarActions: {
     flexDirection: 'row',
