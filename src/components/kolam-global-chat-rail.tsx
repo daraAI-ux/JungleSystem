@@ -366,6 +366,13 @@ export function KolamGlobalChatRail({
   const [analyticsMenuOpen, setAnalyticsMenuOpen] = React.useState(false);
   const [settingsMenuOpen, setSettingsMenuOpen] = React.useState(false);
   const [daraHeaderMenuOpen, setDaraHeaderMenuOpen] = React.useState(false);
+  const [daraWindowRoomId, setDaraWindowRoomId] = React.useState<string | null>(
+    null,
+  );
+  const [daraWindowBusy, setDaraWindowBusy] = React.useState(false);
+  const [daraWindowError, setDaraWindowError] = React.useState<
+    string | undefined
+  >();
   const inboxParams = React.useMemo(
     () => buildInboxListParams(inboxFilter),
     [inboxFilter],
@@ -451,6 +458,12 @@ export function KolamGlobalChatRail({
     currentUserId,
     mode,
     selectedId: selectedItemId,
+  });
+  const daraWindowDetail = useKolamChatRailDetail({
+    currentUserId,
+    mode: 'team-chat',
+    selectedId:
+      mode === 'team-chat' && daraHeaderMenuOpen ? daraWindowRoomId : null,
   });
   const {syncFromLiveClassification} = useKolamChatRailLiveSync({
     refreshDetail: detail.refresh,
@@ -1011,6 +1024,37 @@ export function KolamGlobalChatRail({
     },
     [currentUserId, data, directState.busyTarget, mode],
   );
+  const handleEnsureDaraWindowRoom = React.useCallback(async () => {
+    if (mode !== 'team-chat' || daraWindowBusy) {
+      return;
+    }
+
+    if (daraWindowRoomId) {
+      await daraWindowDetail.refresh();
+      return;
+    }
+
+    setDaraWindowBusy(true);
+    setDaraWindowError(undefined);
+
+    try {
+      const room = await openKolamTeamChatDirect({dara: true});
+      setDaraWindowRoomId(room._id);
+      await data.refresh();
+    } catch (error) {
+      setDaraWindowError(
+        error instanceof Error ? error.message : 'Chat DARA belum bisa dibuka.',
+      );
+    } finally {
+      setDaraWindowBusy(false);
+    }
+  }, [
+    daraWindowBusy,
+    daraWindowDetail,
+    daraWindowRoomId,
+    data,
+    mode,
+  ]);
 
   return (
     <>
@@ -1065,13 +1109,18 @@ export function KolamGlobalChatRail({
             ) : null}
             {mode === 'team-chat' ? (
               <KolamTeamChatDaraHeaderMenu
-                busy={directState.busyTarget === 'dara'}
+                busy={daraWindowBusy}
+                detail={daraWindowDetail}
+                errorMessage={daraWindowError}
                 imageUrl={daraAvatarState.imageUrl}
                 onClose={() => setDaraHeaderMenuOpen(false)}
                 onOpenDara={() => {
-                  handleOpenDirect({dara: true}).catch(() => undefined);
+                  handleEnsureDaraWindowRoom().catch(() => undefined);
                 }}
-                onOpenWindow={() => setDaraHeaderMenuOpen(true)}
+                onOpenWindow={() => {
+                  setDaraHeaderMenuOpen(true);
+                  handleEnsureDaraWindowRoom().catch(() => undefined);
+                }}
                 open={daraHeaderMenuOpen}
               />
             ) : null}
@@ -2090,6 +2139,8 @@ function KolamInboxDaraAvatar({imageUrl}: {imageUrl: string | null}) {
 
 function KolamTeamChatDaraHeaderMenu({
   busy,
+  detail,
+  errorMessage,
   imageUrl,
   onClose,
   onOpenDara,
@@ -2097,6 +2148,8 @@ function KolamTeamChatDaraHeaderMenu({
   open,
 }: {
   busy: boolean;
+  detail: ReturnType<typeof useKolamChatRailDetail>;
+  errorMessage?: string;
   imageUrl: string | null;
   onClose: () => void;
   onOpenDara: () => void;
@@ -2162,15 +2215,12 @@ function KolamTeamChatDaraHeaderMenu({
                     jawaban panjang tidak sempit di sidebar.
                   </Text>
                 </View>
-                <View style={styles.teamDaraWindowPlaceholder}>
-                  <Text style={styles.teamDaraWindowPlaceholderTitle}>
-                    Chat DARA akan tampil di sini
-                  </Text>
-                  <Text style={styles.teamDaraWindowPlaceholderText}>
-                    Langkah berikutnya akan mengikat window ini ke room direct
-                    DARA, message list, composer, dan live update.
-                  </Text>
-                </View>
+                <KolamTeamChatDaraWindowMessages
+                  detail={detail}
+                  errorMessage={errorMessage}
+                  imageUrl={imageUrl}
+                  loading={busy}
+                />
               </View>
 
               <View style={styles.teamDaraWindowFooter}>
@@ -2192,6 +2242,95 @@ function KolamTeamChatDaraHeaderMenu({
         </Modal>
       ) : null}
     </View>
+  );
+}
+
+function KolamTeamChatDaraWindowMessages({
+  detail,
+  errorMessage,
+  imageUrl,
+  loading,
+}: {
+  detail: ReturnType<typeof useKolamChatRailDetail>;
+  errorMessage?: string;
+  imageUrl: string | null;
+  loading: boolean;
+}) {
+  const messages = detail.messages;
+  const displayedError = errorMessage || detail.errorMessage;
+
+  if (loading || detail.loading) {
+    return (
+      <View style={styles.teamDaraWindowPlaceholder}>
+        <Text style={styles.teamDaraWindowPlaceholderTitle}>
+          Memuat chat DARA...
+        </Text>
+      </View>
+    );
+  }
+
+  if (displayedError) {
+    return (
+      <View style={styles.teamDaraWindowPlaceholder}>
+        <Text style={styles.errorText}>{displayedError}</Text>
+      </View>
+    );
+  }
+
+  if (messages.length === 0) {
+    return (
+      <View style={styles.teamDaraWindowPlaceholder}>
+        <Text style={styles.teamDaraWindowPlaceholderTitle}>
+          Belum ada pesan DARA
+        </Text>
+        <Text style={styles.teamDaraWindowPlaceholderText}>
+          Room DARA sudah siap. Composer akan masuk di fase berikutnya.
+        </Text>
+      </View>
+    );
+  }
+
+  return (
+    <ScrollView
+      accessibilityLabel="Daftar pesan DARA team chat"
+      contentContainerStyle={styles.teamDaraWindowMessageList}
+      showsVerticalScrollIndicator>
+      <KolamMappedList
+        items={messages}
+        getKey={message => message.id}
+        renderItem={message => (
+          <View
+            style={[
+              styles.teamDaraWindowMessageBubble,
+              message.mine
+                ? styles.teamDaraWindowMessageMine
+                : styles.teamDaraWindowMessageOther,
+            ]}>
+            <View style={styles.teamMessageAuthorRow}>
+              <View style={styles.teamMessageAvatar}>
+                <KolamProfileAvatarContent
+                  imageStyle={styles.teamMessageAvatarImage}
+                  imageUrl={getTeamChatMessageAvatarUrl(message, imageUrl)}
+                  initials={getTeamChatMessageInitials(message.author)}
+                  textStyle={styles.teamMessageAvatarText}
+                />
+              </View>
+              <Text style={styles.messageAuthor}>{message.author}</Text>
+            </View>
+            {message.body ? <KolamTeamMentionText body={message.body} /> : null}
+            {message.attachments.length > 0 ? (
+              <KolamChatAttachmentList attachments={message.attachments} />
+            ) : null}
+            {message.linkPreviews.length > 0 ? (
+              <KolamChatLinkPreviewList previews={message.linkPreviews} />
+            ) : null}
+            {message.embeds.length > 0 ? (
+              <KolamChatEmbedList embeds={message.embeds} />
+            ) : null}
+          </View>
+        )}
+      />
+    </ScrollView>
   );
 }
 
@@ -7008,6 +7147,26 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     lineHeight: 18,
     textAlign: 'center',
+  },
+  teamDaraWindowMessageList: {
+    gap: 10,
+    paddingBottom: 8,
+  },
+  teamDaraWindowMessageBubble: {
+    maxWidth: '78%',
+    padding: 10,
+    borderRadius: V.radius.lg,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    gap: 7,
+  },
+  teamDaraWindowMessageMine: {
+    alignSelf: 'flex-end',
+    backgroundColor: V.colors.primarySoft,
+  },
+  teamDaraWindowMessageOther: {
+    alignSelf: 'flex-start',
+    backgroundColor: V.colors.bg,
   },
   teamDaraHeaderAction: {
     minHeight: 34,

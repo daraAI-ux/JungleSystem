@@ -843,6 +843,28 @@ describe('KolamGlobalChatRail', () => {
 
   it('opens DARA from the team chat header window', async () => {
     const refresh = jest.fn().mockResolvedValue(undefined);
+    useDetailMock.mockImplementation((input: {selectedId: string | null}) => {
+      const detail = getDefaultDetailMock();
+      if (input.selectedId === 'room-dara-header') {
+        return {
+          ...detail,
+          messages: [
+            {
+              attachments: [],
+              author: 'DARA',
+              body: 'Halo, saya siap membantu dari window besar.',
+              embeds: [],
+              id: 'msg-dara-1',
+              linkPreviews: [],
+              mine: false,
+              reactions: [],
+            },
+          ],
+        } as ReturnType<typeof getDefaultDetailMock>;
+      }
+
+      return detail;
+    });
     openTeamChatDirectMock.mockResolvedValue({
       _id: 'room-dara-header',
       category: 'direct',
@@ -883,25 +905,22 @@ describe('KolamGlobalChatRail', () => {
       expect.arrayContaining([
         'DARA',
         'Assistant Team Chat',
-        'Chat DARA akan tampil di sini',
+        'Halo, saya siap membantu dari window besar.',
         'Buka chat DARA',
       ]),
     );
 
-    const openDaraButton = renderer!.root
-      .findAllByType(KolamPressable)
-      .find(
-        node =>
-          node.props.accessibilityLabel ===
-          'Buka chat DARA dari jendela besar',
-      );
-
-    await ReactTestRenderer.act(async () => {
-      await openDaraButton!.props.onPress();
-    });
-
     expect(openTeamChatDirectMock).toHaveBeenCalledWith({dara: true});
     expect(refresh).toHaveBeenCalledTimes(1);
+    expect(
+      renderer!.root
+        .findAllByType(KolamPressable)
+        .some(
+          node =>
+            node.props.accessibilityLabel ===
+            'Kembali ke daftar room team chat',
+        ),
+    ).toBe(false);
   });
 
   it('renders a scrollable read-only inbox conversation list without loading message details', async () => {
