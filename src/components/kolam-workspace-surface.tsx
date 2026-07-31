@@ -512,7 +512,7 @@ export function KolamWorkspaceSurfaceComponent({
         <KolamAmSurface
           activeSurface={activeAmSurface}
           dataset={dataset}
-          onSurfaceSelect={onAmSurfaceSelect}
+          onBackToCenter={() => onSelectModule?.('kolam')}
         />,
       );
     default:
