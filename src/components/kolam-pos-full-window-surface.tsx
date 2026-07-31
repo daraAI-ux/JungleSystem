@@ -154,6 +154,13 @@ export function KolamPosFullWindowSurface({
   );
   const safeCatalogPage = Math.min(catalogPage, totalCatalogPages);
   const catalogPageStartIndex = (safeCatalogPage - 1) * itemsPerPage;
+  const orderPaneStyle = React.useMemo(
+    () => [
+      styles.orderPane,
+      width < 1280 ? styles.orderPaneCompact : null,
+    ],
+    [width],
+  );
   const pagedCatalog = filteredCatalog.slice(
     catalogPageStartIndex,
     catalogPageStartIndex + itemsPerPage,
@@ -462,7 +469,7 @@ export function KolamPosFullWindowSurface({
         )}
       </View>
 
-      <View style={styles.orderPane}>
+      <View style={orderPaneStyle}>
         <View style={styles.orderHeader}>
           <Text style={styles.orderTitle}>Pesanan</Text>
           <Text style={styles.orderBadge}>{checkout.cart.length} barang</Text>
@@ -2947,6 +2954,9 @@ const styles = StyleSheet.create({
   orderPane: {
     width: 340,
     backgroundColor: V.colors.bg,
+  },
+  orderPaneCompact: {
+    width: 300,
   },
   orderHeader: {
     padding: 12,
