@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 import {KolamBadge} from '../src/components/kolam-badge';
+import {KolamButton} from '../src/components/kolam-button';
 import {KolamGlobalChatRail} from '../src/components/kolam-global-chat-rail';
 import {KolamPressable} from '../src/components/kolam-pressable';
 import {useKolamAuthContext} from '../src/context/kolam-app-contexts';
@@ -565,7 +566,7 @@ describe('KolamGlobalChatRail', () => {
       );
     });
 
-    const buttons = renderer!.root.findAllByType(KolamPressable);
+    let buttons = renderer!.root.findAllByType(KolamPressable);
     expect(
       buttons.some(
         node => node.props.accessibilityLabel === 'Hapus room Operasional',
@@ -579,16 +580,53 @@ describe('KolamGlobalChatRail', () => {
     expect(
       buttons.some(node => node.props.accessibilityLabel === 'Hapus room DARA'),
     ).toBe(false);
-
-    const deleteMeetingButton = buttons.find(
-      node => node.props.accessibilityLabel === 'Hapus room Meeting Launch',
-    );
-    expect(deleteMeetingButton).toBeTruthy();
     expect(
       buttons.some(
-        node => node.props.accessibilityLabel === 'Hapus room Project Gudang',
+        node => node.props.accessibilityLabel === 'Hapus room Meeting Launch',
       ),
-    ).toBe(true);
+    ).toBe(false);
+
+    await ReactTestRenderer.act(async () => {
+      buttons
+        .find(
+          node => node.props.accessibilityLabel === 'Pilih room Operasional',
+        )!
+        .props.onPress();
+    });
+    expect(
+      renderer!.root
+        .findAllByType(KolamPressable)
+        .some(
+          node => node.props.accessibilityLabel === 'Hapus room Operasional',
+        ),
+    ).toBe(false);
+
+    await ReactTestRenderer.act(async () => {
+      renderer!.root
+        .findAllByType(KolamPressable)
+        .find(
+          node =>
+            node.props.accessibilityLabel ===
+            'Kembali ke daftar room team chat',
+        )!
+        .props.onPress();
+    });
+
+    buttons = renderer!.root.findAllByType(KolamPressable);
+    await ReactTestRenderer.act(async () => {
+      buttons
+        .find(
+          node => node.props.accessibilityLabel === 'Pilih room Meeting Launch',
+        )!
+        .props.onPress();
+    });
+
+    const deleteMeetingButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(
+        node => node.props.accessibilityLabel === 'Hapus room Meeting Launch',
+      );
+    expect(deleteMeetingButton).toBeTruthy();
 
     await ReactTestRenderer.act(async () => {
       deleteMeetingButton!.props.onPress();
@@ -596,12 +634,8 @@ describe('KolamGlobalChatRail', () => {
     expect(deleteTeamChatRoomMock).not.toHaveBeenCalled();
 
     const confirmButton = renderer!.root
-      .findAllByType(KolamPressable)
-      .find(
-        node =>
-          node.props.accessibilityLabel ===
-          'Konfirmasi hapus room Meeting Launch',
-      );
+      .findAllByType(KolamButton)
+      .find(node => node.props.label === 'Hapus');
 
     await ReactTestRenderer.act(async () => {
       confirmButton!.props.onPress();

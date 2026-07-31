@@ -76,7 +76,7 @@ import {
   type NativeImagePickerResult,
 } from '../services/native-file-picker';
 import {KolamBadge} from './kolam-badge';
-import {KolamActionGlyph} from './kolam-action-glyph';
+import {KolamConfirmDialog} from './kolam-confirm-dialog';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamDropdownSelect} from './kolam-dropdown-select';
 import {KolamHoverTooltip} from './kolam-hover-tooltip';
@@ -381,12 +381,12 @@ export function KolamGlobalChatRail({
   const [replyTarget, setReplyTarget] =
     React.useState<KolamChatRailReplyTarget | null>(null);
   const [deleteRoomState, setDeleteRoomState] = React.useState<{
-    busyId: string | null;
-    confirmId: string | null;
+    busy: boolean;
     errorMessage?: string;
+    target: KolamChatRailItem | null;
   }>({
-    busyId: null,
-    confirmId: null,
+    busy: false,
+    target: null,
   });
   const [daraThinkingLiveSignal, setDaraThinkingLiveSignal] =
     React.useState<KolamDaraThinkingLiveSignal | null>(null);
@@ -469,51 +469,87 @@ export function KolamGlobalChatRail({
     setPendingAttachment(null);
     setReplyTarget(null);
   }, []);
-  const handleDeleteTeamRoom = React.useCallback(
-    async (item: KolamChatRailItem) => {
+  const handleRequestDeleteTeamRoom = React.useCallback(
+    (item: KolamChatRailItem) => {
       if (mode !== 'team-chat' || !canDeleteTeamChatRoom(item)) {
         return;
       }
 
-      if (deleteRoomState.confirmId !== item.id) {
-        setDeleteRoomState({
-          busyId: null,
-          confirmId: item.id,
-          errorMessage: undefined,
-        });
-        return;
-      }
-
       setDeleteRoomState({
-        busyId: item.id,
-        confirmId: item.id,
+        busy: false,
         errorMessage: undefined,
+        target: item,
       });
-
-      try {
-        await deleteKolamTeamChatRoom(item.id);
-        if (selectedItemId === item.id) {
-          handleBackToList();
-        }
-        await data.refresh();
-        setDeleteRoomState({busyId: null, confirmId: null});
-      } catch (error) {
-        setDeleteRoomState({
-          busyId: null,
-          confirmId: item.id,
-          errorMessage:
-            error instanceof Error ? error.message : 'Room gagal dihapus.',
-        });
-      }
     },
-    [
-      data,
-      deleteRoomState.confirmId,
-      handleBackToList,
-      mode,
-      selectedItemId,
-    ],
+    [mode],
   );
+
+  const handleCancelDeleteTeamRoom = React.useCallback(() => {
+    if (deleteRoomState.busy) {
+      return;
+    }
+
+    setDeleteRoomState({
+      busy: false,
+      target: null,
+    });
+  }, [deleteRoomState.busy]);
+
+  const handleConfirmDeleteTeamRoom = React.useCallback(async () => {
+    const item = deleteRoomState.target;
+    if (
+      deleteRoomState.busy ||
+      mode !== 'team-chat' ||
+      !item ||
+      !canDeleteTeamChatRoom(item)
+    ) {
+      return;
+    }
+
+    setDeleteRoomState({
+      busy: true,
+      errorMessage: undefined,
+      target: item,
+    });
+
+    try {
+      await deleteKolamTeamChatRoom(item.id);
+      if (selectedItemId === item.id) {
+        handleBackToList();
+      }
+      await data.refresh();
+      setDeleteRoomState({busy: false, target: null});
+    } catch (error) {
+      setDeleteRoomState({
+        busy: false,
+        errorMessage:
+          error instanceof Error ? error.message : 'Room gagal dihapus.',
+        target: item,
+      });
+    }
+  }, [
+    data,
+    deleteRoomState.busy,
+    deleteRoomState.target,
+    handleBackToList,
+    mode,
+    selectedItemId,
+  ]);
+
+  const handleDeleteTeamRoomConfirmPress = React.useCallback(() => {
+    void handleConfirmDeleteTeamRoom();
+  }, [handleConfirmDeleteTeamRoom]);
+
+  const deleteRoomDialogMessage = React.useMemo(() => {
+    const title = deleteRoomState.target?.title ?? 'room ini';
+    const baseMessage = `Yakin ingin menghapus room "${title}"? Semua pesan di room ini ikut terhapus permanen.`;
+
+    return deleteRoomState.errorMessage
+      ? `${baseMessage}\n\n${deleteRoomState.errorMessage}`
+      : baseMessage;
+  }, [deleteRoomState.errorMessage, deleteRoomState.target?.title]);
+
+  const deleteRoomDialogTitle = 'Hapus room team chat?';
   const handleLiveStatusChange = React.useCallback(
     (status: KolamChatLiveStreamStatus) => {
       setLiveStatus(status);
@@ -975,66 +1011,67 @@ export function KolamGlobalChatRail({
   );
 
   return (
-    <View accessibilityLabel={content.accessibilityLabel} style={styles.rail}>
-      <KolamChatRailLiveHost
-        mode={mode}
-        onEvent={handleLiveEvent}
-        onStatusChange={handleLiveStatusChange}
-      />
-      <View style={styles.header}>
-        <View style={styles.titleGroup}>
-          <View style={styles.iconShell}>
-            <KolamTopNavigationChatIcon kind={content.iconKind} />
-          </View>
-          <View style={styles.copyGroup}>
-            <Text style={styles.eyebrow}>Chat</Text>
-            <View style={styles.titleInlineRow}>
-              <Text style={styles.title}>{content.title}</Text>
+    <>
+      <View accessibilityLabel={content.accessibilityLabel} style={styles.rail}>
+        <KolamChatRailLiveHost
+          mode={mode}
+          onEvent={handleLiveEvent}
+          onStatusChange={handleLiveStatusChange}
+        />
+        <View style={styles.header}>
+          <View style={styles.titleGroup}>
+            <View style={styles.iconShell}>
+              <KolamTopNavigationChatIcon kind={content.iconKind} />
+            </View>
+            <View style={styles.copyGroup}>
+              <Text style={styles.eyebrow}>Chat</Text>
+              <View style={styles.titleInlineRow}>
+                <Text style={styles.title}>{content.title}</Text>
+              </View>
             </View>
           </View>
-        </View>
-        <View style={styles.headerActionRow}>
-          {mode === 'inbox' ? (
-            <>
-              <KolamChatHealthMenu
-                healthState={platformHealth}
-                open={healthMenuOpen}
-                onToggle={() => {
-                  setAnalyticsMenuOpen(false);
-                  setHealthMenuOpen(current => !current);
-                }}
+          <View style={styles.headerActionRow}>
+            {mode === 'inbox' ? (
+              <>
+                <KolamChatHealthMenu
+                  healthState={platformHealth}
+                  open={healthMenuOpen}
+                  onToggle={() => {
+                    setAnalyticsMenuOpen(false);
+                    setHealthMenuOpen(current => !current);
+                  }}
+                />
+                <KolamChatAnalyticsMenu
+                  open={analyticsMenuOpen}
+                  onToggle={() => {
+                    setHealthMenuOpen(false);
+                    setAnalyticsMenuOpen(current => !current);
+                  }}
+                  state={analyticsState}
+                />
+              </>
+            ) : null}
+            <KolamIconButton
+              accessibilityLabel="Tutup panel chat"
+              onPress={onClose}
+              size={28}
+              radius="full"
+              variant="ghost">
+              <KolamStatusIndicatorIcon
+                color={V.colors.mutedFg}
+                kind="triangle-left"
               />
-              <KolamChatAnalyticsMenu
-                open={analyticsMenuOpen}
-                onToggle={() => {
-                  setHealthMenuOpen(false);
-                  setAnalyticsMenuOpen(current => !current);
-                }}
-                state={analyticsState}
-              />
-            </>
-          ) : null}
-          <KolamIconButton
-            accessibilityLabel="Tutup panel chat"
-            onPress={onClose}
-            size={28}
-            radius="full"
-            variant="ghost">
-            <KolamStatusIndicatorIcon
-              color={V.colors.mutedFg}
-              kind="triangle-left"
-            />
-          </KolamIconButton>
+            </KolamIconButton>
+          </View>
         </View>
-      </View>
 
-      <View style={styles.body}>
-        {mode === 'inbox' && !detailOpen ? (
-          <KolamInboxFilterPanel
-            filter={inboxFilter}
-            labels={labelsState.items}
-            onChange={setInboxFilter}
-          />
+        <View style={styles.body}>
+          {mode === 'inbox' && !detailOpen ? (
+            <KolamInboxFilterPanel
+              filter={inboxFilter}
+              labels={labelsState.items}
+              onChange={setInboxFilter}
+            />
         ) : null}
 
         {mode === 'inbox' && !detailOpen ? (
@@ -1092,6 +1129,7 @@ export function KolamGlobalChatRail({
             currentUserId={currentUserId}
             daraAvatarUrl={daraAvatarState.imageUrl}
             daraThinkingLiveSignal={daraThinkingLiveSignal}
+            deleteRoomBusy={deleteRoomState.busy}
             detail={detail}
             inboxCanReply={inboxCanReply}
             labels={labelsState.items}
@@ -1102,6 +1140,9 @@ export function KolamGlobalChatRail({
             onReplyCancel={() => setReplyTarget(null)}
             onReplyToMessage={setReplyTarget}
             onBack={handleBackToList}
+            onDeleteTeamRoomRequest={() =>
+              handleRequestDeleteTeamRoom(selectedItem)
+            }
             onSend={handleSend}
             pendingAttachment={pendingAttachment}
             replyTarget={replyTarget}
@@ -1124,12 +1165,6 @@ export function KolamGlobalChatRail({
             message={content.emptyMessage}
             title={content.emptyTitle}
           />
-        ) : null}
-
-        {mode === 'team-chat' && deleteRoomState.errorMessage ? (
-          <Text style={styles.teamRoomDeleteError}>
-            {deleteRoomState.errorMessage}
-          </Text>
         ) : null}
 
         {!data.errorMessage && items.length > 0 && !detailOpen ? (
@@ -1209,43 +1244,6 @@ export function KolamGlobalChatRail({
                     <KolamInboxDaraAvatar imageUrl={daraAvatarState.imageUrl} />
                   ) : mode === 'inbox' && item.assignedStaff ? (
                     <KolamInboxAssignedStaffAvatar staff={item.assignedStaff} />
-                  ) : mode === 'team-chat' && canDeleteTeamChatRoom(item) ? (
-                    <View style={styles.teamRoomDeleteStack}>
-                      <KolamPressable
-                        accessibilityLabel={`Hapus room ${item.title}`}
-                        disabled={deleteRoomState.busyId === item.id}
-                        onPress={() => {
-                          void handleDeleteTeamRoom(item);
-                        }}
-                        style={[
-                          styles.teamRoomDeleteButton,
-                          deleteRoomState.confirmId === item.id &&
-                            styles.teamRoomDeleteButtonConfirm,
-                          deleteRoomState.busyId === item.id &&
-                            styles.composerIconButtonDisabled,
-                        ]}>
-                        <KolamActionGlyph tone="danger" variant="delete" />
-                      </KolamPressable>
-                      {deleteRoomState.confirmId === item.id ? (
-                        <KolamPressable
-                          accessibilityLabel={`Konfirmasi hapus room ${item.title}`}
-                          disabled={deleteRoomState.busyId === item.id}
-                          onPress={() => {
-                            void handleDeleteTeamRoom(item);
-                          }}
-                          style={[
-                            styles.teamRoomDeleteConfirmButton,
-                            deleteRoomState.busyId === item.id &&
-                              styles.composerIconButtonDisabled,
-                          ]}>
-                          <Text style={styles.teamRoomDeleteConfirmText}>
-                            {deleteRoomState.busyId === item.id
-                              ? 'Hapus...'
-                              : 'Hapus'}
-                          </Text>
-                        </KolamPressable>
-                      ) : null}
-                    </View>
                   ) : null}
                 </KolamPressable>
               )}
@@ -1254,6 +1252,19 @@ export function KolamGlobalChatRail({
         ) : null}
       </View>
     </View>
+      {deleteRoomState.target ? (
+        <KolamConfirmDialog
+          cancelLabel="Batal"
+          confirmLabel={deleteRoomState.busy ? 'Menghapus...' : 'Hapus'}
+          destructive
+          message={deleteRoomDialogMessage}
+          onCancel={handleCancelDeleteTeamRoom}
+          onConfirm={handleDeleteTeamRoomConfirmPress}
+          title={deleteRoomDialogTitle}
+          visible
+        />
+      ) : null}
+    </>
   );
 }
 
@@ -2283,11 +2294,28 @@ function KolamTeamChatDirectPanel({
   );
 }
 
+function KolamTeamChatTrashIcon() {
+  return (
+    <View
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      style={styles.teamRoomTrashIcon}>
+      <View style={styles.teamRoomTrashHandle} />
+      <View style={styles.teamRoomTrashLid} />
+      <View style={styles.teamRoomTrashCan}>
+        <View style={styles.teamRoomTrashLine} />
+        <View style={styles.teamRoomTrashLine} />
+      </View>
+    </View>
+  );
+}
+
 function KolamChatRailDetailPanel({
   composerText,
   currentUserId,
   daraAvatarUrl,
   daraThinkingLiveSignal,
+  deleteRoomBusy,
   detail,
   inboxCanReply,
   labels,
@@ -2298,6 +2326,7 @@ function KolamChatRailDetailPanel({
   onReplyCancel,
   onReplyToMessage,
   onBack,
+  onDeleteTeamRoomRequest,
   onSend,
   pendingAttachment,
   replyTarget,
@@ -2308,6 +2337,7 @@ function KolamChatRailDetailPanel({
   currentUserId?: string;
   daraAvatarUrl: string | null;
   daraThinkingLiveSignal: KolamDaraThinkingLiveSignal | null;
+  deleteRoomBusy: boolean;
   detail: ReturnType<typeof useKolamChatRailDetail>;
   inboxCanReply: boolean;
   labels: KolamChatLabel[];
@@ -2318,6 +2348,7 @@ function KolamChatRailDetailPanel({
   onReplyCancel: () => void;
   onReplyToMessage: (message: KolamChatRailReplyTarget) => void;
   onBack?: () => void;
+  onDeleteTeamRoomRequest: () => void;
   onSend: () => Promise<void> | void;
   pendingAttachment: NativeImagePickerResult | null;
   replyTarget: KolamChatRailReplyTarget | null;
@@ -2668,6 +2699,8 @@ function KolamChatRailDetailPanel({
     mode === 'team-chat'
       ? 'Kembali ke daftar room team chat'
       : 'Kembali ke daftar inbox chat';
+  const canDeleteSelectedTeamRoom =
+    mode === 'team-chat' && canDeleteTeamChatRoom(selectedItem);
 
   return (
     <View style={[styles.detailPanel, fullPage && styles.detailPanelFull]}>
@@ -2687,6 +2720,18 @@ function KolamChatRailDetailPanel({
           <Text numberOfLines={1} style={styles.selectedTitle}>
             {selectedItem.title}
           </Text>
+          {canDeleteSelectedTeamRoom ? (
+            <KolamPressable
+              accessibilityLabel={`Hapus room ${selectedItem.title}`}
+              disabled={deleteRoomBusy}
+              onPress={onDeleteTeamRoomRequest}
+              style={[
+                styles.detailDeleteRoomButton,
+                deleteRoomBusy && styles.composerIconButtonDisabled,
+              ]}>
+              <KolamTeamChatTrashIcon />
+            </KolamPressable>
+          ) : null}
         </View>
         <Text numberOfLines={2} style={styles.selectedMeta}>
           {selectedItem.preview}
@@ -7162,6 +7207,58 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: V.colors.primarySoft,
   },
+  detailDeleteRoomButton: {
+    width: 30,
+    height: 30,
+    flexShrink: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 15,
+    borderColor: 'rgba(220, 38, 38, 0.36)',
+    borderWidth: 1,
+    backgroundColor: 'rgba(254, 226, 226, 0.95)',
+  },
+  teamRoomTrashIcon: {
+    width: 15,
+    height: 16,
+    alignItems: 'center',
+  },
+  teamRoomTrashHandle: {
+    width: 7,
+    height: 3,
+    borderTopLeftRadius: 3,
+    borderTopRightRadius: 3,
+    borderColor: V.colors.danger,
+    borderWidth: 2,
+    borderBottomWidth: 0,
+  },
+  teamRoomTrashLid: {
+    width: 15,
+    height: 2,
+    marginTop: 1,
+    borderRadius: 2,
+    backgroundColor: V.colors.danger,
+  },
+  teamRoomTrashCan: {
+    width: 12,
+    height: 10,
+    marginTop: 1,
+    borderBottomLeftRadius: 3,
+    borderBottomRightRadius: 3,
+    borderColor: V.colors.danger,
+    borderWidth: 2,
+    borderTopWidth: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 2,
+    paddingTop: 2,
+  },
+  teamRoomTrashLine: {
+    width: 2,
+    height: 6,
+    borderRadius: 1,
+    backgroundColor: V.colors.danger,
+  },
   selectedTitle: {
     minWidth: 0,
     flex: 1,
@@ -8851,44 +8948,6 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 9,
     fontWeight: '900',
-  },
-  teamRoomDeleteStack: {
-    alignItems: 'center',
-    gap: 5,
-  },
-  teamRoomDeleteButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    borderColor: V.colors.border,
-    borderWidth: 1,
-    backgroundColor: V.colors.bg,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  teamRoomDeleteButtonConfirm: {
-    borderColor: V.colors.warning,
-    backgroundColor: V.colors.warningSoft,
-  },
-  teamRoomDeleteConfirmButton: {
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: 8,
-    borderColor: V.colors.warning,
-    borderWidth: 1,
-    backgroundColor: V.colors.warningSoft,
-  },
-  teamRoomDeleteConfirmText: {
-    color: V.colors.warning,
-    fontFamily: V.fontFamily,
-    fontSize: 9,
-    fontWeight: '900',
-  },
-  teamRoomDeleteError: {
-    color: V.colors.danger,
-    fontFamily: V.fontFamily,
-    fontSize: 10,
-    fontWeight: '800',
   },
   rowUnreadBadge: {
     flexShrink: 0,
