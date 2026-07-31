@@ -974,6 +974,15 @@ describe('settings web widgets', () => {
         .every(node => node.props.showLabelInTrigger === false),
     ).toBe(true);
     expect(
+      dropdowns
+        .filter(node =>
+          ['Provinsi', 'Kota/kabupaten', 'Kecamatan', 'Kelurahan'].includes(
+            node.props.label,
+          ),
+        )
+        .every(node => node.props.menuPlacement === 'inline'),
+    ).toBe(true);
+    expect(
       dropdowns.some(node =>
         node.props.options.some(
           (option: {label: string}) => option.label.includes('dulu'),

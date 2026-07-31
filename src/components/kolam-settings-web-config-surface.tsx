@@ -4020,6 +4020,7 @@ export function KolamSettingsWebConfigSurface({
             <View style={styles.regionHierarchyGrid}>
               <KolamDropdownSelect
                 label="Provinsi"
+                menuPlacement="inline"
                 options={provinceDropdownOptions}
                 searchable
                 searchPlaceholder="Cari provinsi"
@@ -4030,6 +4031,7 @@ export function KolamSettingsWebConfigSurface({
               />
               <KolamDropdownSelect
                 label="Kota/kabupaten"
+                menuPlacement="inline"
                 options={regencyDropdownOptions}
                 searchable={Boolean(selectedProvince)}
                 searchPlaceholder="Cari kota / kabupaten"
@@ -4044,6 +4046,7 @@ export function KolamSettingsWebConfigSurface({
               />
               <KolamDropdownSelect
                 label="Kecamatan"
+                menuPlacement="inline"
                 options={districtDropdownOptions}
                 searchable={Boolean(selectedRegency)}
                 searchPlaceholder="Cari kecamatan"
@@ -4058,6 +4061,7 @@ export function KolamSettingsWebConfigSurface({
               />
               <KolamDropdownSelect
                 label="Kelurahan"
+                menuPlacement="inline"
                 options={villageDropdownOptions}
                 searchable={Boolean(selectedDistrict)}
                 searchPlaceholder="Cari kelurahan"
