@@ -560,6 +560,7 @@ export function KolamPosFullWindowSurface({
           catalog={catalog}
           orders={savedOrders}
           canLoad={Boolean(onReplaceCheckout)}
+          hasActiveCart={checkout.cart.length > 0}
           onClose={() => setIsSavedOrdersOpen(false)}
           onDeleteOrder={handleDeleteSavedOrder}
           onLoadOrder={handleLoadSavedOrder}
@@ -1427,6 +1428,7 @@ function getPosKeyboardTarget(): PosKeyboardTarget | undefined {
 function PosSavedOrdersPanel({
   canLoad,
   catalog,
+  hasActiveCart,
   orders,
   onClose,
   onDeleteOrder,
@@ -1434,11 +1436,40 @@ function PosSavedOrdersPanel({
 }: {
   canLoad: boolean;
   catalog: CatalogItem[];
+  hasActiveCart: boolean;
   orders: PosSavedOrder[];
   onClose: () => void;
   onDeleteOrder: (orderId: string) => void;
   onLoadOrder: (order: PosSavedOrder) => void;
 }) {
+  const [pendingLoadOrderId, setPendingLoadOrderId] = React.useState<
+    string | null
+  >(null);
+
+  const handleLoadPress = React.useCallback(
+    (order: PosSavedOrder) => {
+      if (!canLoad) {
+        return;
+      }
+      if (hasActiveCart && pendingLoadOrderId !== order.id) {
+        setPendingLoadOrderId(order.id);
+        return;
+      }
+      onLoadOrder(order);
+    },
+    [canLoad, hasActiveCart, onLoadOrder, pendingLoadOrderId],
+  );
+
+  const handleDeletePress = React.useCallback(
+    (orderId: string) => {
+      if (pendingLoadOrderId === orderId) {
+        setPendingLoadOrderId(null);
+      }
+      onDeleteOrder(orderId);
+    },
+    [onDeleteOrder, pendingLoadOrderId],
+  );
+
   return (
     <View style={styles.savedOrdersOverlay}>
       <KolamInteractionFrame style={styles.paymentBackdrop} onPress={onClose} />
@@ -1458,6 +1489,7 @@ function PosSavedOrdersPanel({
               const itemCount = getSavedOrderItemCount(order);
               const subtotal = getSavedOrderSubtotal(order, catalog);
               const previewNames = getSavedOrderItemNames(order, catalog);
+              const confirmingLoad = pendingLoadOrderId === order.id;
 
               return (
                 <View key={order.id} style={styles.savedOrderRow}>
@@ -1489,19 +1521,28 @@ function PosSavedOrdersPanel({
                         </Text>
                       ) : null}
                     </View>
+                    {confirmingLoad ? (
+                      <Text style={styles.savedOrderWarning}>
+                        Keranjang saat ini akan diganti.
+                      </Text>
+                    ) : null}
                   </View>
                   <View style={styles.savedOrderRowActions}>
                     <KolamButton
-                      label="Muat"
+                      label={confirmingLoad ? 'Ganti' : 'Muat'}
                       intent="primary"
                       disabled={!canLoad}
-                      onPress={() => onLoadOrder(order)}
+                      onPress={() => handleLoadPress(order)}
                     />
                     <KolamButton
-                      label="Hapus"
+                      label={confirmingLoad ? 'Batal' : 'Hapus'}
                       intent="plain"
                       tone="default"
-                      onPress={() => onDeleteOrder(order.id)}
+                      onPress={
+                        confirmingLoad
+                          ? () => setPendingLoadOrderId(null)
+                          : () => handleDeletePress(order.id)
+                      }
                     />
                   </View>
                 </View>
@@ -3148,6 +3189,17 @@ const styles = StyleSheet.create({
   },
   savedOrderMoreText: {
     color: V.colors.mutedFg,
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  savedOrderWarning: {
+    alignSelf: 'flex-start',
+    marginTop: 8,
+    borderRadius: 4,
+    backgroundColor: V.colors.warningSoft,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    color: V.colors.warning,
     fontSize: 10,
     fontWeight: '800',
   },
