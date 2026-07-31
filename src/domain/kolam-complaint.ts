@@ -342,6 +342,31 @@ export function parseKolamComplaintCreateQuery(
   };
 }
 
+export function buildKolamComplaintCreateRoute(params: {
+  saleId: string;
+  pendingServiceId?: string | null;
+  subscriptionId?: string | null;
+  category?: string | null;
+}): string {
+  const query = new URLSearchParams();
+  if (params.saleId.trim()) {
+    query.set('saleId', params.saleId.trim());
+  }
+  if (params.pendingServiceId?.trim()) {
+    query.set('pendingServiceId', params.pendingServiceId.trim());
+  }
+  if (params.subscriptionId?.trim()) {
+    query.set('subscriptionId', params.subscriptionId.trim());
+  }
+  if (params.category?.trim()) {
+    query.set('category', params.category.trim());
+  }
+  const qs = query.toString();
+  return qs
+    ? `${KOLAM_COMPLAINT_ROOT}/create?${qs}`
+    : `${KOLAM_COMPLAINT_ROOT}/create`;
+}
+
 export function isKolamSaleEligibleForComplaint(sale: {
   status?: string | null;
   deliveryStatus?: string | null;

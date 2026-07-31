@@ -36,6 +36,9 @@ import {
   formatKolamSaleLogisticsTime,
   hydrateKolamSaleCreateFormFromSale,
   isKolamSaleMarketplaceManaged,
+  canOpenKolamSaleComplaintCreate,
+  canShowKolamSaleComplaintSuccessPrompt,
+  getKolamSaleMainComplaint,
   resolveKolamCourierLogoKey,
   resolveKolamSaleCreateItemShippingMethodIds,
   resolveKolamSaleSourceLogoUri,
@@ -933,5 +936,47 @@ describe('kolam sales domain', () => {
         ],
       }).errors[0],
     ).toBe('Sumber penjualan tidak boleh dikosongkan');
+  });
+
+  it('normalizes linked complaints and deep-link eligibility helpers', () => {
+    const sale = normalizeKolamSale({
+      _id: 'sale-c1',
+      invoiceCode: 'INV-C',
+      status: 'paid',
+      deliveryStatus: 'delivered',
+      hasComplaints: true,
+      complaints: [
+        {
+          _id: 'comp-1',
+          ticketCode: 'COMP-1',
+          status: 'pending',
+          decision: null,
+        },
+      ],
+    });
+
+    expect(sale.hasComplaints).toBe(true);
+    expect(getKolamSaleMainComplaint(sale)?.id).toBe('comp-1');
+    expect(canOpenKolamSaleComplaintCreate(sale)).toBe(false);
+    expect(
+      canOpenKolamSaleComplaintCreate({
+        status: 'paid',
+        hasComplaints: false,
+      }),
+    ).toBe(true);
+    expect(
+      canShowKolamSaleComplaintSuccessPrompt({
+        status: 'paid',
+        deliveryStatus: 'delivered',
+        marketplaceSource: '',
+      }),
+    ).toBe(true);
+    expect(
+      canShowKolamSaleComplaintSuccessPrompt({
+        status: 'paid',
+        deliveryStatus: 'delivered',
+        marketplaceSource: 'shopee',
+      }),
+    ).toBe(false);
   });
 });

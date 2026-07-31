@@ -12,6 +12,7 @@ import {
   normalizeKolamComplaint,
   normalizeKolamComplaintList,
   parseKolamComplaintCreateQuery,
+  buildKolamComplaintCreateRoute,
   resolveKolamComplaintSaleSourceLogoUri,
   validateKolamComplaintCreateInput,
 } from '../src/domain/kolam-complaint';
@@ -232,6 +233,10 @@ describe('kolam-complaint domain', () => {
         priority: 'high',
       }),
     ).toBeNull();
+
+    expect(buildKolamComplaintCreateRoute({ saleId: 'sale-1' })).toBe(
+      '/complaints/create?saleId=sale-1',
+    );
   });
 });
 

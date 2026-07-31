@@ -225,6 +225,14 @@ export type KolamSaleStockTransactionRef = {
   crossSyncSummary: string;
 };
 
+/** Linked complaint summary on sale (FE `sales.complaints`). */
+export type KolamSaleComplaintRef = {
+  id: string;
+  ticketCode: string;
+  status: string;
+  decision: string;
+};
+
 export type KolamSale = {
   id: string;
   invoiceCode: string;
@@ -254,6 +262,9 @@ export type KolamSale = {
   marketplaceLogistics: KolamSaleMarketplaceLogistics | null;
   walletTransactions: KolamSaleWalletTransactionRef[];
   stockTransactions: KolamSaleStockTransactionRef[];
+  /** Linked complaints from sale detail/list payload (FE `complaints` / `hasComplaints`). */
+  hasComplaints: boolean;
+  complaints: KolamSaleComplaintRef[];
   createdByName: string;
   openLivestockPendingCount: number;
   hppTotalAtSale: number | null;
@@ -931,6 +942,35 @@ export function isKolamSaleMarketplaceManaged(sale: {
 }): boolean {
   const source = String(sale.marketplaceSource || '').toLowerCase();
   return source === 'shopee' || source === 'tokopedia';
+}
+
+/** FE sales-invoice header: paid sales without existing tickets can open create. */
+export function canOpenKolamSaleComplaintCreate(sale: {
+  status?: string | null;
+  hasComplaints?: boolean;
+}): boolean {
+  return (
+    String(sale.status ?? '').toLowerCase() === 'paid' && !sale.hasComplaints
+  );
+}
+
+/** FE SalesSuccessConfirmation visibility (non-marketplace). */
+export function canShowKolamSaleComplaintSuccessPrompt(sale: {
+  status?: string | null;
+  deliveryStatus?: string | null;
+  marketplaceSource?: string | null;
+}): boolean {
+  return (
+    !isKolamSaleMarketplaceManaged(sale) &&
+    String(sale.status ?? '').toLowerCase() === 'paid' &&
+    String(sale.deliveryStatus ?? '').toLowerCase() === 'delivered'
+  );
+}
+
+export function getKolamSaleMainComplaint(sale: {
+  complaints?: KolamSaleComplaintRef[] | null;
+}): KolamSaleComplaintRef | null {
+  return sale.complaints?.[0] ?? null;
 }
 
 /**
@@ -2576,6 +2616,10 @@ export function normalizeKolamSale(payload: unknown): KolamSale {
     stockTransactions: normalizeSaleStockTransactions(
       record.stockTransactions,
     ),
+    hasComplaints:
+      Boolean(record.hasComplaints) ||
+      (Array.isArray(record.complaints) && record.complaints.length > 0),
+    complaints: normalizeSaleComplaintRefs(record.complaints),
     createdByName: resolveActorName(record.createdBy),
     openLivestockPendingCount:
       getNumber(record, 'openLivestockPendingCount') ?? 0,
@@ -2759,6 +2803,27 @@ function normalizeSaleWalletTransactions(
       } satisfies KolamSaleWalletTransactionRef;
     })
     .filter((row): row is KolamSaleWalletTransactionRef => Boolean(row));
+}
+
+function normalizeSaleComplaintRefs(value: unknown): KolamSaleComplaintRef[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value
+    .map(row => {
+      const record = asRecord(row);
+      const id = getMongoId(record, '_id') || getMongoId(record, 'id');
+      if (!id) {
+        return null;
+      }
+      return {
+        id,
+        ticketCode: getString(record, 'ticketCode') || id,
+        status: getString(record, 'status'),
+        decision: getString(record, 'decision'),
+      } satisfies KolamSaleComplaintRef;
+    })
+    .filter((row): row is KolamSaleComplaintRef => Boolean(row));
 }
 
 function normalizeSaleStockTransactions(

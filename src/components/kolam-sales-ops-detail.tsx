@@ -10,6 +10,8 @@ import {
 import {
   canAddItemsToKolamSale,
   canDownloadKolamSaleShippingResi,
+  canOpenKolamSaleComplaintCreate,
+  canShowKolamSaleComplaintSuccessPrompt,
   canShowKolamSaleEditAction,
   canUploadKolamSalePaymentProof,
   formatKolamSaleDeliveryStatusLabel,
@@ -26,6 +28,7 @@ import {
   getKolamSaleCouriers,
   getKolamSaleDeliveryStatusIntent,
   getKolamSaleItemDiscountAmount,
+  getKolamSaleMainComplaint,
   getKolamSaleMarketplaceLogistics,
   getKolamSaleOutstandingAmount,
   getKolamSalePaymentStatusIntent,
@@ -41,6 +44,10 @@ import {
   type KolamSaleDeliveryTransitionTarget,
   type KolamSaleStatusTransitionTarget,
 } from '../domain/kolam-sales';
+import {
+  buildKolamComplaintCreateRoute,
+  KOLAM_COMPLAINT_ROOT,
+} from '../domain/kolam-complaint';
 import { stockTransactionSourceLabel } from '../domain/kolam-stock-transaction';
 import { getKolamCourierLogoSource } from '../domain/kolam-courier-logos';
 import {
@@ -153,6 +160,12 @@ export function KolamSalesOpsDetail({
     : '';
   const buyerPhone = sale.customer?.phone || sale.buyerInfo?.phone || '';
   const buyerEmail = sale.customer?.email || sale.buyerInfo?.email || '';
+  const mainComplaint = getKolamSaleMainComplaint(sale);
+  const showComplaintCreate = canOpenKolamSaleComplaintCreate(sale);
+  const showComplaintSuccessPrompt = canShowKolamSaleComplaintSuccessPrompt(sale);
+  const complaintCreateRoute = buildKolamComplaintCreateRoute({
+    saleId: sale.id,
+  });
 
   return (
     <View style={styles.detailSurface}>
@@ -222,6 +235,23 @@ export function KolamSalesOpsDetail({
                 style={styles.toolbarButton}
               />
             ) : null}
+            {mainComplaint ? (
+              <KolamButton
+                label="Lihat komplain"
+                onPress={() =>
+                  onRouteChange?.(
+                    `${KOLAM_COMPLAINT_ROOT}/${mainComplaint.id}`,
+                  )
+                }
+                style={styles.toolbarButton}
+              />
+            ) : showComplaintCreate ? (
+              <KolamButton
+                label="Ajukan komplain"
+                onPress={() => onRouteChange?.(complaintCreateRoute)}
+                style={styles.toolbarButton}
+              />
+            ) : null}
           </View>
         </View>
       </View>
@@ -242,6 +272,58 @@ export function KolamSalesOpsDetail({
         contentContainerStyle={styles.detailContent}
         style={styles.detailRoot}
       >
+
+      {mainComplaint ? (
+        <KolamCardFrame style={styles.complaintBanner} variant="compact">
+          <View style={styles.complaintBannerRow}>
+            <View style={styles.complaintBannerCopy}>
+              <Text style={styles.primaryText}>
+                Komplain {mainComplaint.ticketCode}
+              </Text>
+              <Text style={styles.metaText}>
+                Status: {mainComplaint.status || '—'}
+                {mainComplaint.decision
+                  ? ` · Keputusan: ${mainComplaint.decision}`
+                  : ''}
+              </Text>
+            </View>
+            <KolamButton
+              intent="primary"
+              label="Buka tiket"
+              onPress={() =>
+                onRouteChange?.(`${KOLAM_COMPLAINT_ROOT}/${mainComplaint.id}`)
+              }
+              style={styles.toolbarButton}
+            />
+          </View>
+        </KolamCardFrame>
+      ) : null}
+
+      {showComplaintSuccessPrompt ? (
+        <KolamCardFrame style={styles.complaintBanner} variant="compact">
+          <Text style={styles.primaryText}>Konfirmasi status transaksi</Text>
+          <Text style={styles.metaText}>
+            Transaksi sudah dibayar dan diterima. Konfirmasi selesai, atau
+            ajukan komplain jika ada masalah.
+          </Text>
+          <View style={styles.complaintBannerActions}>
+            {allowedDeliveryTransitions.includes('success') ? (
+              <KolamButton
+                disabled={controller.mutating}
+                intent="primary"
+                label="Selesai"
+                onPress={() => setPendingDelivery('success')}
+                style={styles.toolbarButton}
+              />
+            ) : null}
+            <KolamButton
+              label="Komplain"
+              onPress={() => onRouteChange?.(complaintCreateRoute)}
+              style={styles.toolbarButton}
+            />
+          </View>
+        </KolamCardFrame>
+      ) : null}
 
       <KolamCardFrame style={styles.stripCard} variant="compact">
         <View style={styles.stripRow}>
@@ -1199,6 +1281,25 @@ const styles = StyleSheet.create({
     minWidth: 0,
     paddingHorizontal: 8,
     paddingVertical: 8,
+  },
+  complaintBanner: {
+    gap: 8,
+    padding: 12,
+  },
+  complaintBannerRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 10,
+    justifyContent: 'space-between',
+  },
+  complaintBannerCopy: {
+    flex: 1,
+    gap: 2,
+  },
+  complaintBannerActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
   },
   toolbarButton: {
     flexShrink: 0,
