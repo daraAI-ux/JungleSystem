@@ -1890,6 +1890,18 @@ describe('KolamAmSurface', () => {
     expect(renderText(renderer!).join(' ')).toMatch(/Showing\s+1\s+to\s+50\s+of\s+75\s+items/);
 
     await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Webhook Log Detail webhook-log-1'}).props.onPress();
+    });
+
+    const detailText = renderText(renderer!).join(' ');
+    expect(detailText).toContain('Webhook Log Detail');
+    expect(detailText).toContain('Existing hook');
+    expect(detailText).toContain('Request Body');
+    expect(detailText).toContain('Response Body');
+    expect(detailText).toContain('"transferId": "transfer-1"');
+    expect(detailText).toContain('"ok": true');
+
+    await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Segment transfer.success'}).props.onPress();
     });
     expect(getAmWebhookLogs).toHaveBeenLastCalledWith({

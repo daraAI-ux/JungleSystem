@@ -2668,6 +2668,7 @@ function AmWebhooksPage() {
   const [logPage, setLogPage] = React.useState(1);
   const [logTotal, setLogTotal] = React.useState(0);
   const [logLimit, setLogLimit] = React.useState(AM_WEBHOOK_LOG_PAGE_LIMIT);
+  const [selectedWebhookLog, setSelectedWebhookLog] = React.useState<AmWebhookLog | null>(null);
   const [editingConfigId, setEditingConfigId] = React.useState<string | null>(null);
   const [formUrl, setFormUrl] = React.useState('');
   const [formSecret, setFormSecret] = React.useState('');
@@ -2943,6 +2944,7 @@ function AmWebhooksPage() {
           <Text style={[styles.tableHeaderText, styles.statusCol]}>Status</Text>
           <Text style={[styles.tableHeaderText, styles.amountCol]}>Duration</Text>
           <Text style={[styles.tableHeaderText, styles.dateCol]}>Created</Text>
+          <Text style={[styles.tableHeaderText, styles.actionCol]}>Action</Text>
         </View>
         <AmLoadingOrEmpty isLoading={isLoading} items={logs} loadingText="Memuat webhook logs..." emptyText="No webhook logs found" />
         {logs.map(log => (
@@ -2954,6 +2956,15 @@ function AmWebhooksPage() {
             </View>
             <Text style={[styles.cellText, styles.amountCol]}>{log.duration} ms</Text>
             <Text style={[styles.cellText, styles.dateCol]}>{formatAmDate(log.createdAt)}</Text>
+            <View style={styles.actionCol}>
+              <KolamButton
+                accessibilityLabel={`AM Webhook Log Detail ${log._id}`}
+                intent="outline"
+                label={selectedWebhookLog?._id === log._id ? 'Close' : 'Detail'}
+                size="sm"
+                onPress={() => setSelectedWebhookLog(current => current?._id === log._id ? null : log)}
+              />
+            </View>
           </View>
         ))}
         {logTotal > 0 ? (
@@ -2984,6 +2995,39 @@ function AmWebhooksPage() {
           </View>
         ) : null}
       </View>
+      {selectedWebhookLog ? <AmWebhookLogDetailPanel log={selectedWebhookLog} /> : null}
+    </View>
+  );
+}
+
+function AmWebhookLogDetailPanel({log}: {log: AmWebhookLog}) {
+  const endpoint =
+    log.configId?.url ||
+    log.url ||
+    '-';
+
+  return (
+    <View style={styles.panel}>
+      <View style={styles.panelHeaderRow}>
+        <View>
+          <Text style={styles.panelTitle}>Webhook Log Detail</Text>
+          <Text style={styles.panelText}>{log.event}</Text>
+        </View>
+        <AmStatusChip
+          label={log.responseStatus ? String(log.responseStatus) : (log.success ? 'success' : 'failed')}
+          tone={log.success ? 'success' : 'danger'}
+        />
+      </View>
+      <View style={styles.detailGrid}>
+        <AmDetailLine label="Direction" value={log.direction} />
+        <AmDetailLine label="Endpoint" value={endpoint} />
+        <AmDetailLine label="Config" value={log.configId?.description || log.configId?._id || '-'} />
+        <AmDetailLine label="Duration" value={`${log.duration} ms`} />
+        <AmDetailLine label="Created" value={formatAmDate(log.createdAt)} />
+        <AmDetailLine label="Error" value={log.error || '-'} />
+      </View>
+      <AmJsonPanel title="Request Body" value={log.requestBody ?? {}} />
+      <AmJsonPanel title="Response Body" value={log.responseBody ?? {}} />
     </View>
   );
 }
@@ -4166,6 +4210,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'stretch',
     gap: 12,
+  },
+  panelHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  detailGrid: {
+    gap: 8,
   },
   panelTitle: {
     color: V.colors.fg,
