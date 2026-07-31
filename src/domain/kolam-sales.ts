@@ -1335,6 +1335,8 @@ export interface KolamSaleCreateFormState {
   pointsMethod: '' | 'manual' | 'product_based';
   manualPoints: string;
   transactionDate: string;
+  /** Document-level ToS template ids (optional; FE `termsTemplates`). */
+  termsTemplateIds: string[];
   items: KolamSaleCreateItemForm[];
   customCosts: KolamSaleCustomCostForm[];
 }
@@ -1379,6 +1381,8 @@ export interface KolamSaleCreateBody {
   pointsConfig?: { method: 'manual' | 'product_based'; manualPoints?: number };
   transactionDate?: string;
   customCosts?: KolamSaleCustomCostBody[];
+  /** Document-level Terms of Service template ObjectIds. */
+  termsTemplates?: string[];
   items: KolamSaleCreateItemBody[];
 }
 
@@ -1628,9 +1632,10 @@ export function createInitialKolamSaleCreateForm(): KolamSaleCreateFormState {
     buyerInfoPhone: '',
     buyerInfoEmail: '',
     buyerInfoAddress: '',
-    pointsMethod: '',
+    pointsMethod: 'product_based',
     manualPoints: '',
     transactionDate: '',
+    termsTemplateIds: [],
     items: [createEmptyKolamSaleCreateItem()],
     customCosts: [],
   };
@@ -2015,6 +2020,12 @@ function appendOptionalSaleFields(
         : {}),
     };
   }
+  const termsTemplates = form.termsTemplateIds
+    .map(id => id.trim())
+    .filter(Boolean);
+  if (termsTemplates.length > 0) {
+    result.termsTemplates = termsTemplates;
+  }
   if (form.transactionDate.trim()) {
     result.transactionDate = form.transactionDate.trim();
   }
@@ -2125,11 +2136,12 @@ export function hydrateKolamSaleCreateFormFromSale(
     buyerInfoPhone: sale.buyerInfo?.phone ?? '',
     buyerInfoEmail: sale.buyerInfo?.email ?? '',
     buyerInfoAddress: sale.buyerInfo?.address ?? '',
-    pointsMethod: '',
+    pointsMethod: 'product_based',
     manualPoints: '',
     transactionDate: sale.transactionDate
       ? sale.transactionDate.slice(0, 10)
       : '',
+    termsTemplateIds: [],
     items,
     customCosts: [],
   };

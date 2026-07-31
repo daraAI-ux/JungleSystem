@@ -736,6 +736,13 @@ describe('kolam sales domain', () => {
     expect(lineTotal.total).toBe(180_000);
 
     expect(createInitialKolamSaleCreateForm().items[0].itemType).toBe('product');
+    expect(createInitialKolamSaleCreateForm().pointsMethod).toBe('product_based');
+    expect(body.pointsConfig).toEqual({ method: 'product_based' });
+
+    form.termsTemplateIds = ['777777777777777777777777'];
+    expect(buildKolamSaleCreateBody(form).termsTemplates).toEqual([
+      '777777777777777777777777',
+    ]);
 
     const shippingMethodId = '666666666666666666666666';
     const shippingIds = resolveKolamSaleCreateItemShippingMethodIds(

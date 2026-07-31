@@ -684,21 +684,17 @@ function KolamSalesOpsCreateForm({
                 menuPlacement="inline"
                 onChange={pointsMethod =>
                   controller.onChangeForm({
-                    pointsMethod: pointsMethod as
-                      | ''
-                      | 'manual'
-                      | 'product_based',
+                    pointsMethod: pointsMethod as 'manual' | 'product_based',
                   })
                 }
                 options={[
-                  { label: 'Tanpa poin', value: '' },
-                  { label: 'Manual', value: 'manual' },
                   { label: 'Berdasarkan produk', value: 'product_based' },
+                  { label: 'Manual', value: 'manual' },
                 ]}
                 showLabelInTrigger={false}
                 style={styles.toolbarPointsDropdown}
                 triggerStyle={styles.toolbarPointsTrigger}
-                value={form.pointsMethod}
+                value={form.pointsMethod || 'product_based'}
               />
               {form.pointsMethod === 'manual' ? (
                 <KolamFormTextField
@@ -1405,12 +1401,81 @@ function KolamSalesOpsCreateForm({
         <Text style={styles.sectionTitle}>Catatan</Text>
         <FieldShell label="Catatan invoice">
           <KolamFormTextField
+            multiline
+            numberOfLines={6}
             onChangeText={notes => controller.onChangeForm({ notes })}
-            placeholder="Opsional"
+            placeholder="Catatan tambahan…"
             style={styles.notesInput}
             value={form.notes}
           />
         </FieldShell>
+
+        <View style={styles.tosBlock}>
+          <Text style={styles.fieldLabel}>Syarat & Ketentuan (ToS)</Text>
+          <Text style={styles.tosHint}>
+            Opsional — pilih template S&K yang dilampirkan ke invoice ini.
+            {form.termsTemplateIds.length
+              ? ` ${form.termsTemplateIds.length} dipilih.`
+              : ''}
+          </Text>
+          <KolamDropdownSelect
+            accessibilityLabel="Tambah template ToS"
+            label="Tambah template ToS"
+            menuPlacement="inline"
+            onChange={templateId => {
+              if (
+                !templateId ||
+                form.termsTemplateIds.includes(templateId)
+              ) {
+                return;
+              }
+              controller.onChangeForm({
+                termsTemplateIds: [...form.termsTemplateIds, templateId],
+              });
+            }}
+            options={[
+              { label: 'Tambah template…', value: '' },
+              ...controller.termsTemplates
+                .filter(
+                  template => !form.termsTemplateIds.includes(template.id),
+                )
+                .map(template => ({
+                  label: template.title,
+                  value: template.id,
+                })),
+            ]}
+            searchable={controller.termsTemplates.length > 6}
+            searchPlaceholder="Cari judul template…"
+            showLabelInTrigger={false}
+            value=""
+          />
+          <View style={styles.tosSelectedRow}>
+            {form.termsTemplateIds.length ? (
+              form.termsTemplateIds.map(templateId => {
+                const template = controller.termsTemplates.find(
+                  row => row.id === templateId,
+                );
+                return (
+                  <KolamButton
+                    intent="outline"
+                    key={templateId}
+                    label={`${template?.title ?? templateId} ×`}
+                    onPress={() =>
+                      controller.onChangeForm({
+                        termsTemplateIds: form.termsTemplateIds.filter(
+                          id => id !== templateId,
+                        ),
+                      })
+                    }
+                    style={styles.tosChip}
+                  />
+                );
+              })
+            ) : (
+              <Text style={styles.tosEmpty}>Belum ada template dipilih.</Text>
+            )}
+          </View>
+        </View>
       </KolamContentFrame>
     </ScrollView>
     </View>
@@ -2160,7 +2225,32 @@ const styles = StyleSheet.create({
     width: 88,
   },
   notesInput: {
+    minHeight: 120,
     width: '100%',
+  },
+  tosBlock: {
+    gap: 8,
+    marginTop: 12,
+  },
+  tosHint: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  tosSelectedRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  tosChip: {
+    alignSelf: 'flex-start',
+  },
+  tosEmpty: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontStyle: 'italic',
   },
   itemCustomSummary: {
     alignItems: 'center',

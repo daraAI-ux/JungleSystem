@@ -61,7 +61,8 @@ import {
   type KolamPaymentMethod,
 } from '../services/kolam-financial-settings-api';
 import type { KolamShippingMethod } from '../domain/kolam-shipping-method';
-import { getKolamProducts } from '../services/kolam-product-api';
+import { getKolamProducts, getKolamProductWarrantyTermsTemplates } from '../services/kolam-product-api';
+import type { KolamProductTermsTemplate } from '../services/kolam-product-api';
 import { getKolamActiveShippingMethods } from '../services/kolam-shipping-method-api';
 import { getKolamSpeciesList } from '../services/kolam-species-api';
 import { pickNativeImageFile } from '../services/native-file-picker';
@@ -141,6 +142,7 @@ export interface KolamSalesController {
   sources: KolamSaleSourceOption[];
   species: KolamSpecies[];
   statusMessage: string | null;
+  termsTemplates: KolamProductTermsTemplate[];
   useBuyerInfo: boolean;
   onAddCreateItem: (itemType?: KolamSaleCreateItemForm['itemType']) => void;
   onAddCustomCost: () => void;
@@ -202,6 +204,9 @@ export function useKolamSalesController(route: string): KolamSalesController {
   const [services, setServices] = useState<KolamSaleCatalogOption[]>([]);
   const [shippingMethods, setShippingMethods] = useState<
     KolamShippingMethod[]
+  >([]);
+  const [termsTemplates, setTermsTemplates] = useState<
+    KolamProductTermsTemplate[]
   >([]);
   const [enclosures, setEnclosures] = useState<KolamSaleCatalogOption[]>([]);
   const [livestockAllocations, setLivestockAllocations] = useState<
@@ -321,6 +326,7 @@ export function useKolamSalesController(route: string): KolamSalesController {
       serviceRows,
       enclosureRows,
       shippingMethodRows,
+      termsTemplateRows,
     ] = await Promise.all([
       capture('sumber', getKolamSalesActiveSources(), [] as KolamSaleSourceOption[]),
       capture('pelanggan', getKolamCustomerList({page: 1, limit: CREATE_OPTIONS_LIMIT}), {
@@ -394,6 +400,11 @@ export function useKolamSalesController(route: string): KolamSalesController {
         getKolamActiveShippingMethods(),
         [] as KolamShippingMethod[],
       ),
+      capture(
+        'tos',
+        getKolamProductWarrantyTermsTemplates(),
+        [] as KolamProductTermsTemplate[],
+      ),
     ]);
 
     // Match FE create form: keep inactive rows; prefer active when both exist.
@@ -410,6 +421,7 @@ export function useKolamSalesController(route: string): KolamSalesController {
     setServices(serviceRows);
     setEnclosures(enclosureRows);
     setShippingMethods(shippingMethodRows);
+    setTermsTemplates(termsTemplateRows);
 
     if (failures.length > 0) {
       setError(`Gagal memuat opsi: ${failures.join(' · ')}`);
@@ -1150,6 +1162,7 @@ export function useKolamSalesController(route: string): KolamSalesController {
     sources,
     species,
     statusMessage,
+    termsTemplates,
     useBuyerInfo,
     onAddCreateItem,
     onAddCustomCost,
