@@ -2915,7 +2915,12 @@ function AmTransfersPage() {
             <Text style={[styles.cellText, styles.platformCol]} numberOfLines={1}>
               {transfer.transferType === 'virtual-account' ? 'VA' : transfer.recipientBank ?? '-'}
             </Text>
-            <Text style={[styles.cellText, styles.amountCol]}>{formatRupiah(transfer.amount)}</Text>
+            <View style={styles.amountCol}>
+              <Text style={styles.cellText}>{formatRupiah(transfer.amount)}</Text>
+              {transfer.fee > 0 ? (
+                <Text style={styles.rowMeta}>Fee {formatRupiah(transfer.fee)}</Text>
+              ) : null}
+            </View>
             <View style={styles.statusCol}>
               <AmStatusChip label={transfer.status} tone={getTransferTone(transfer.status)} />
             </View>
