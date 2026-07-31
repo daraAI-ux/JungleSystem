@@ -209,7 +209,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
       {
         label: 'Layanan',
         route: '/layanan',
-        description: 'Pesanan layanan, voucher, dan ruang eksekusi dari Kolam live',
+        description: 'Katalog paket, operasional, dan langganan',
         group: 'Layanan',
         requiredAccess: ['kolam'],
       },

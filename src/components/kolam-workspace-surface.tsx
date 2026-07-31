@@ -10,6 +10,7 @@ import type { DashboardSalesGraphRange } from '../domain/dashboard-sales-graph';
 import { isKolamBrandRoute } from '../domain/kolam-brand';
 import { isKolamCategoryRoute } from '../domain/kolam-category';
 import { isKolamComplaintRoute } from '../domain/kolam-complaint';
+import { isKolamLayananNativeRoute } from '../domain/kolam-layanan';
 import { isKolamCustomFieldRoute } from '../domain/kolam-custom-field';
 import { isKolamEnclosureNativeRoute } from '../domain/kolam-enclosure';
 import { isKolamIucnStatusRoute } from '../domain/kolam-iucn-status';
@@ -43,6 +44,7 @@ import type { UnifiedDataset } from '../services/unified-data';
 import { KolamBrandSurface } from './kolam-brand-surface';
 import { KolamCategorySurface } from './kolam-category-surface';
 import { KolamComplaintSurface } from './kolam-complaint-surface';
+import { KolamLayananSurface } from './kolam-layanan-surface';
 import { KolamCustomFieldSurface } from './kolam-custom-field-surface';
 import { KolamEnclosureSurface } from './kolam-enclosure-surface';
 import { KolamIucnStatusSurface } from './kolam-iucn-status-surface';
@@ -234,6 +236,15 @@ export function KolamWorkspaceSurfaceComponent({
         if (isKolamComplaintRoute(activeNavigationItem.route.split('?')[0])) {
           return (
             <KolamComplaintSurface
+              onRouteChange={onDashboardRoute}
+              route={activeNavigationItem.route}
+            />
+          );
+        }
+
+        if (isKolamLayananNativeRoute(activeNavigationItem.route.split('?')[0])) {
+          return (
+            <KolamLayananSurface
               onRouteChange={onDashboardRoute}
               route={activeNavigationItem.route}
             />
