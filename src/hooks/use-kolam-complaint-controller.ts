@@ -1,39 +1,47 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  getKolamComplaintIdFromRoute,
-  getKolamComplaintRouteMode,
-  isKolamComplaintRoute,
-  type KolamComplaint,
-  type KolamComplaintCreateInput,
-  type KolamComplaintDecision,
-  type KolamComplaintKpiSeverity,
-  type KolamComplaintSource,
-  type KolamComplaintStatus,
-  type KolamComplaintTrackingStatus,
-  validateKolamComplaintCreateInput,
-} from '../domain/kolam-complaint';
-import type { KolamSaleSourceOption } from '../domain/kolam-sales';
-import type { KolamUserListItem } from '../domain/kolam-user';
-import { getErrorMessage as getApiErrorMessage } from '../lib/api-error';
-import {
   assignKolamComplaintStaff,
   closeKolamComplaint,
   confirmKolamComplaintRefundPayment,
   createKolamComplaint,
   createKolamComplaintRefundTransaction,
+  createKolamComplaintServiceReworkVisit,
   getKolamComplaint,
   getKolamComplaints,
+  submitKolamComplaintReworkCustomerResponse,
   updateKolamComplaintDecision,
   updateKolamComplaintRefundPayment,
   updateKolamComplaintReplacementReturnStatus,
   updateKolamComplaintReplacementStatus,
   updateKolamComplaintReturnStatus,
+  updateKolamComplaintReworkStatus,
   updateKolamComplaintStatus,
+  updateKolamComplaintVendorClaim,
 } from '../services/kolam-complaint-api';
+import type {
+  KolamComplaint,
+  KolamComplaintCreateInput,
+  KolamComplaintDecision,
+  KolamComplaintKpiSeverity,
+  KolamComplaintReworkStatus,
+  KolamComplaintSource,
+  KolamComplaintStatus,
+  KolamComplaintTrackingStatus,
+  KolamComplaintVendorClaimStatus,
+} from '../domain/kolam-complaint';
+import {
+  getKolamComplaintIdFromRoute,
+  getKolamComplaintRouteMode,
+  isKolamComplaintRoute,
+  validateKolamComplaintCreateInput,
+} from '../domain/kolam-complaint';
+import type { KolamSaleSourceOption } from '../domain/kolam-sales';
+import type { KolamUserListItem } from '../domain/kolam-user';
+import type { KolamWalletOption } from '../domain/kolam-wallet-option';
+import { getErrorMessage as getApiErrorMessage } from '../lib/api-error';
 import { getKolamSalesActiveSources } from '../services/kolam-sales-api';
 import { getKolamUserList } from '../services/kolam-user-api';
 import { getKolamWalletOptionsPaginated } from '../services/kolam-wallet-option-api';
-import type { KolamWalletOption } from '../domain/kolam-wallet-option';
 
 export type KolamComplaintSurfaceMode = 'list' | 'detail' | 'new';
 export type KolamComplaintDataSource = 'idle' | 'live' | 'error';
@@ -101,6 +109,11 @@ export interface KolamComplaintController {
     note?: string;
     photoUris: string[];
   }) => Promise<boolean>;
+  onSpawnServiceReworkVisit: () => Promise<boolean>;
+  onSubmitReworkCustomerResponse: (payload: {
+    accepted: boolean;
+    note?: string;
+  }) => Promise<boolean>;
   onUpdateDecision: (payload: {
     decision: NonNullable<KolamComplaintDecision>;
     note: string;
@@ -130,6 +143,19 @@ export interface KolamComplaintController {
     trackingNumber?: string;
     courierName?: string;
     receivedBy?: string;
+  }) => Promise<boolean>;
+  onUpdateReworkStatus: (payload: {
+    status: KolamComplaintReworkStatus;
+    note?: string;
+    resultNote?: string;
+    photoUris?: string[];
+  }) => Promise<boolean>;
+  onUpdateVendorClaim: (payload: {
+    status: KolamComplaintVendorClaimStatus;
+    note: string;
+    claimReference?: string;
+    vendorResponseNote?: string;
+    resolutionNote?: string;
   }) => Promise<boolean>;
   onUpdateStatus: (
     status: KolamComplaintStatus,
@@ -589,6 +615,72 @@ export function useKolamComplaintController(
     ],
   );
 
+  const onUpdateReworkStatus = useCallback(
+    (payload: {
+      status: KolamComplaintReworkStatus;
+      note?: string;
+      resultNote?: string;
+      photoUris?: string[];
+    }) => {
+      const id = selectedComplaint?.id;
+      if (!id) {
+        return Promise.resolve(false);
+      }
+      return runMutation(
+        () => updateKolamComplaintReworkStatus(id, payload),
+        'Status rework diperbarui.',
+      );
+    },
+    [runMutation, selectedComplaint?.id],
+  );
+
+  const onSubmitReworkCustomerResponse = useCallback(
+    (payload: { accepted: boolean; note?: string }) => {
+      const id = selectedComplaint?.id;
+      if (!id) {
+        return Promise.resolve(false);
+      }
+      return runMutation(
+        () => submitKolamComplaintReworkCustomerResponse(id, payload),
+        payload.accepted
+          ? 'Hasil rework diterima.'
+          : 'Hasil rework ditolak.',
+      );
+    },
+    [runMutation, selectedComplaint?.id],
+  );
+
+  const onUpdateVendorClaim = useCallback(
+    (payload: {
+      status: KolamComplaintVendorClaimStatus;
+      note: string;
+      claimReference?: string;
+      vendorResponseNote?: string;
+      resolutionNote?: string;
+    }) => {
+      const id = selectedComplaint?.id;
+      if (!id || payload.note.trim().length < 10) {
+        return Promise.resolve(false);
+      }
+      return runMutation(
+        () => updateKolamComplaintVendorClaim(id, payload),
+        'Klaim vendor diperbarui.',
+      );
+    },
+    [runMutation, selectedComplaint?.id],
+  );
+
+  const onSpawnServiceReworkVisit = useCallback(() => {
+    const id = selectedComplaint?.id;
+    if (!id) {
+      return Promise.resolve(false);
+    }
+    return runMutation(
+      () => createKolamComplaintServiceReworkVisit(id),
+      'Kunjungan rework dibuat di Kontrol Layanan.',
+    );
+  }, [runMutation, selectedComplaint?.id]);
+
   const onBackToList = useCallback(() => {
     setMode('list');
     setSelectedComplaint(null);
@@ -733,11 +825,15 @@ export function useKolamComplaintController(
       onSetPageSize,
       onSetSourceFilter,
       onSetStatusFilter,
+      onSpawnServiceReworkVisit,
+      onSubmitReworkCustomerResponse,
       onUpdateDecision,
       onUpdateReplacementReturnStatus,
       onUpdateReplacementStatus,
       onUpdateReturnStatus,
+      onUpdateReworkStatus,
       onUpdateStatus,
+      onUpdateVendorClaim,
     }),
     [
       complaints,
@@ -765,11 +861,15 @@ export function useKolamComplaintController(
       onSetPageSize,
       onSetSourceFilter,
       onSetStatusFilter,
+      onSpawnServiceReworkVisit,
+      onSubmitReworkCustomerResponse,
       onUpdateDecision,
       onUpdateReplacementReturnStatus,
       onUpdateReplacementStatus,
       onUpdateReturnStatus,
+      onUpdateReworkStatus,
       onUpdateStatus,
+      onUpdateVendorClaim,
       page,
       pageSize,
       search,

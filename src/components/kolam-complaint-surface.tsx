@@ -4,21 +4,33 @@ import {
   canCloseKolamComplaint,
   canOpenKolamComplaintRefundPayment,
   canSetKolamComplaintDecision,
+  canShowKolamComplaintServiceContext,
+  canSpawnKolamComplaintServiceReworkVisit,
+  canSubmitKolamComplaintReworkCustomerResponse,
+  canUpdateKolamComplaintReworkStatus,
   canUpdateKolamComplaintStatus,
+  canUpdateKolamComplaintVendorClaim,
+  getAllowedKolamComplaintReworkStatuses,
   getAllowedKolamComplaintStatuses,
   getAllowedKolamComplaintTrackingStatuses,
+  getAllowedKolamComplaintVendorClaimStatuses,
   getAvailableKolamComplaintDecisions,
   getKolamComplaintCategoryLabel,
+  getKolamComplaintCurrentRework,
   getKolamComplaintDecisionBadgeIntent,
   getKolamComplaintDecisionLabel,
   getKolamComplaintHistoryActionLabel,
   getKolamComplaintPriorityLabel,
   getKolamComplaintRefundPaymentStatusLabel,
   getKolamComplaintRefundWorkflowStep,
+  getKolamComplaintReworkStatusLabel,
   getKolamComplaintSourceLabel,
   getKolamComplaintStatusBadgeIntent,
   getKolamComplaintStatusLabel,
   getKolamComplaintTrackingStatusLabel,
+  getKolamComplaintVendorClaimStatusLabel,
+  getKolamComplaintWarrantyDaysRemainingAtClaim,
+  getKolamComplaintWarrantyModeLabel,
   isKolamComplaintRefundAwaitingReturn,
   isKolamComplaintReturnAwaitingVerification,
   isWarrantyClaimComplaint,
@@ -35,8 +47,10 @@ import {
   type KolamComplaint,
   type KolamComplaintDecision,
   type KolamComplaintKpiSeverity,
+  type KolamComplaintReworkStatus,
   type KolamComplaintStatus,
   type KolamComplaintTrackingStatus,
+  type KolamComplaintVendorClaimStatus,
 } from '../domain/kolam-complaint';
 import { type KolamTableColumn } from '../domain/kolam-table';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
@@ -480,6 +494,7 @@ function KolamComplaintRow({
 
 function KolamComplaintDetail({
   controller,
+  onRouteChange,
 }: {
   controller: KolamComplaintController;
   onRouteChange?: (route: string) => void;
@@ -827,6 +842,18 @@ function KolamComplaintDetail({
             </>
           ) : null}
 
+          <KolamComplaintWarrantyContextCard complaint={complaint} />
+          <KolamComplaintVendorClaimCard
+            complaint={complaint}
+            controller={controller}
+          />
+          <KolamComplaintServiceContextCard
+            complaint={complaint}
+            controller={controller}
+            onRouteChange={onRouteChange}
+          />
+          <KolamComplaintReworkProgressCard complaint={complaint} />
+
           {!complaint.marketplaceReadOnly ? (
             <KolamComplaintWorkflowPanel controller={controller} complaint={complaint} />
           ) : (
@@ -872,7 +899,10 @@ function KolamComplaintWorkflowPanel({
   const allowedStatuses = getAllowedKolamComplaintStatuses(complaint.status);
   const decisionOptions = getAvailableKolamComplaintDecisions(
     complaint.isServiceOnly,
-    { isWarrantyClaim: isWarrantyClaimComplaint(complaint) },
+    {
+      isWarrantyClaim: isWarrantyClaimComplaint(complaint),
+      warrantyMode: complaint.warrantyContext?.mode ?? null,
+    },
   );
   const returnStatus =
     complaint.returnTracking?.status || ('pending' as KolamComplaintTrackingStatus);
@@ -965,7 +995,10 @@ function KolamComplaintWorkflowPanel({
     const nextAllowed = getAllowedKolamComplaintStatuses(complaint.status);
     const nextDecisions = getAvailableKolamComplaintDecisions(
       complaint.isServiceOnly,
-      { isWarrantyClaim: isWarrantyClaimComplaint(complaint) },
+      {
+        isWarrantyClaim: isWarrantyClaimComplaint(complaint),
+        warrantyMode: complaint.warrantyContext?.mode ?? null,
+      },
     );
     const nextReturnStatus =
       complaint.returnTracking?.status ||
@@ -1043,6 +1076,7 @@ function KolamComplaintWorkflowPanel({
     complaint.returnTracking?.trackingNumber,
     complaint.source,
     complaint.status,
+    complaint.warrantyContext?.mode,
   ]);
 
   const busy = controller.mutating || controller.loading;
@@ -1538,6 +1572,14 @@ function KolamComplaintWorkflowPanel({
         complaint={complaint}
         controller={controller}
       />
+      <KolamComplaintReworkWorkflow
+        complaint={complaint}
+        controller={controller}
+      />
+      <KolamComplaintReworkCustomerResponseWorkflow
+        complaint={complaint}
+        controller={controller}
+      />
 
       {canCloseKolamComplaint(complaint) ? (
         <View style={styles.workflowBlock}>
@@ -1584,6 +1626,663 @@ function KolamComplaintWorkflowPanel({
           />
         </View>
       ) : null}
+    </View>
+  );
+}
+
+function KolamComplaintWarrantyContextCard({
+  complaint,
+}: {
+  complaint: KolamComplaint;
+}) {
+  if (!isWarrantyClaimComplaint(complaint) || !complaint.warrantyContext) {
+    return null;
+  }
+  const ctx = complaint.warrantyContext;
+  const daysAtClaim = getKolamComplaintWarrantyDaysRemainingAtClaim(complaint);
+
+  return (
+    <>
+      <Text style={styles.sectionTitle}>Konteks garansi</Text>
+      <KolamDescriptionList
+        accessibilityLabel="Konteks garansi"
+        rows={[
+          descRow(
+            'w-mode',
+            'Mode',
+            getKolamComplaintWarrantyModeLabel(ctx.mode),
+          ),
+          ...(ctx.vendorName
+            ? [descRow('w-vendor', 'Vendor', ctx.vendorName)]
+            : []),
+          ...(ctx.warrantyDays != null
+            ? [descRow('w-days', 'Durasi', `${ctx.warrantyDays} hari`)]
+            : []),
+          ...(ctx.warrantyEndsAt
+            ? [
+                descRow(
+                  'w-end',
+                  'Berakhir',
+                  formatListDate(ctx.warrantyEndsAt),
+                ),
+              ]
+            : []),
+          ...(daysAtClaim != null
+            ? [
+                descRow(
+                  'w-remain',
+                  'Sisa saat klaim',
+                  `${daysAtClaim} hari`,
+                ),
+              ]
+            : []),
+        ]}
+      />
+    </>
+  );
+}
+
+function KolamComplaintVendorClaimCard({
+  complaint,
+  controller,
+}: {
+  complaint: KolamComplaint;
+  controller: KolamComplaintController;
+}) {
+  if (
+    !isWarrantyClaimComplaint(complaint) ||
+    complaint.warrantyContext?.mode !== 'official_distributor'
+  ) {
+    return null;
+  }
+
+  const vendorClaim = complaint.vendorClaim;
+  const currentStatus = vendorClaim?.status || 'pending_submission';
+  const allowed = getAllowedKolamComplaintVendorClaimStatuses(currentStatus);
+  const canEdit = canUpdateKolamComplaintVendorClaim(complaint);
+  const busy = controller.mutating || controller.loading;
+
+  const [nextStatus, setNextStatus] =
+    React.useState<KolamComplaintVendorClaimStatus>(
+      allowed[0] || currentStatus,
+    );
+  const [claimReference, setClaimReference] = React.useState(
+    vendorClaim?.claimReference || '',
+  );
+  const [vendorResponseNote, setVendorResponseNote] = React.useState(
+    vendorClaim?.vendorResponseNote || '',
+  );
+  const [resolutionNote, setResolutionNote] = React.useState(
+    vendorClaim?.resolutionNote || '',
+  );
+  const [note, setNote] = React.useState('');
+
+  React.useEffect(() => {
+    const nextAllowed = getAllowedKolamComplaintVendorClaimStatuses(
+      vendorClaim?.status || 'pending_submission',
+    );
+    setNextStatus(nextAllowed[0] || vendorClaim?.status || 'pending_submission');
+    setClaimReference(vendorClaim?.claimReference || '');
+    setVendorResponseNote(vendorClaim?.vendorResponseNote || '');
+    setResolutionNote(vendorClaim?.resolutionNote || '');
+    setNote('');
+  }, [
+    complaint.id,
+    vendorClaim?.claimReference,
+    vendorClaim?.resolutionNote,
+    vendorClaim?.status,
+    vendorClaim?.vendorResponseNote,
+  ]);
+
+  return (
+    <>
+      <Text style={styles.sectionTitle}>Klaim vendor</Text>
+      <KolamDescriptionList
+        accessibilityLabel="Klaim vendor"
+        rows={[
+          descRow(
+            'vc-status',
+            'Status',
+            getKolamComplaintVendorClaimStatusLabel(currentStatus),
+          ),
+          ...(vendorClaim?.claimReference
+            ? [descRow('vc-ref', 'Referensi', vendorClaim.claimReference)]
+            : []),
+          ...(vendorClaim?.submittedAt
+            ? [
+                descRow(
+                  'vc-sub',
+                  'Diajukan',
+                  formatListDate(vendorClaim.submittedAt),
+                ),
+              ]
+            : []),
+          ...(vendorClaim?.submittedByLabel
+            ? [descRow('vc-by', 'Oleh', vendorClaim.submittedByLabel)]
+            : []),
+        ]}
+      />
+      {vendorClaim?.vendorResponseNote ? (
+        <Text style={styles.metaText}>{vendorClaim.vendorResponseNote}</Text>
+      ) : null}
+      {vendorClaim?.resolutionNote ? (
+        <Text style={styles.metaText}>{vendorClaim.resolutionNote}</Text>
+      ) : null}
+
+      {canEdit ? (
+        <View style={styles.workflowBlock}>
+          <Text style={styles.workflowBlockTitle}>Perbarui klaim vendor</Text>
+          <KolamDropdownSelect
+            accessibilityLabel="Status klaim vendor"
+            label="Status"
+            menuPlacement="inline"
+            onChange={value =>
+              setNextStatus(value as KolamComplaintVendorClaimStatus)
+            }
+            options={allowed.map(status => ({
+              label: getKolamComplaintVendorClaimStatusLabel(status),
+              value: status,
+            }))}
+            showLabelInTrigger={false}
+            value={nextStatus}
+          />
+          {nextStatus === 'submitted_to_vendor' ||
+          vendorClaim?.claimReference ? (
+            <KolamFormTextField
+              onChangeText={setClaimReference}
+              placeholder="Referensi klaim"
+              value={claimReference}
+            />
+          ) : null}
+          {nextStatus === 'vendor_approved' ||
+          nextStatus === 'vendor_rejected' ||
+          vendorClaim?.vendorResponseNote ? (
+            <KolamFormTextField
+              multiline
+              numberOfLines={2}
+              onChangeText={setVendorResponseNote}
+              placeholder="Catatan respons vendor"
+              style={styles.workflowNote}
+              value={vendorResponseNote}
+            />
+          ) : null}
+          {nextStatus === 'resolved' || vendorClaim?.resolutionNote ? (
+            <KolamFormTextField
+              multiline
+              numberOfLines={2}
+              onChangeText={setResolutionNote}
+              placeholder="Catatan penyelesaian"
+              style={styles.workflowNote}
+              value={resolutionNote}
+            />
+          ) : null}
+          <KolamFormTextField
+            multiline
+            numberOfLines={3}
+            onChangeText={setNote}
+            placeholder="Catatan internal (min. 10 karakter)"
+            style={styles.workflowNote}
+            value={note}
+          />
+          <KolamButton
+            disabled={busy || note.trim().length < 10}
+            intent="primary"
+            label={busy ? 'Menyimpan…' : 'Simpan klaim vendor'}
+            onPress={() => {
+              void controller
+                .onUpdateVendorClaim({
+                  status: nextStatus,
+                  note,
+                  claimReference,
+                  vendorResponseNote,
+                  resolutionNote,
+                })
+                .then(ok => {
+                  if (ok) {
+                    setNote('');
+                  }
+                });
+            }}
+          />
+        </View>
+      ) : null}
+    </>
+  );
+}
+
+function KolamComplaintServiceContextCard({
+  complaint,
+  controller,
+  onRouteChange,
+}: {
+  complaint: KolamComplaint;
+  controller: KolamComplaintController;
+  onRouteChange?: (route: string) => void;
+}) {
+  if (!canShowKolamComplaintServiceContext(complaint)) {
+    return null;
+  }
+
+  const busy = controller.mutating || controller.loading;
+  const pending = complaint.pendingService;
+  const subscription = complaint.subscription;
+  const ctx = complaint.serviceContext;
+  const canSpawn = canSpawnKolamComplaintServiceReworkVisit(complaint);
+
+  return (
+    <>
+      <Text style={styles.sectionTitle}>Layanan & kontrol layanan</Text>
+      <KolamDescriptionList
+        accessibilityLabel="Konteks layanan"
+        rows={[
+          ...(pending
+            ? [
+                descRow(
+                  'svc-pending',
+                  'Voucher',
+                  pending.serviceSerial || pending.id.slice(-8),
+                ),
+              ]
+            : []),
+          ...(subscription
+            ? [
+                descRow(
+                  'svc-sub',
+                  'Langganan',
+                  subscription.subscriptionNumber || subscription.id.slice(-8),
+                ),
+              ]
+            : []),
+          ...(ctx?.taskId
+            ? [
+                descRow(
+                  'svc-visit',
+                  'Kunjungan',
+                  ctx.visitTitle ||
+                    `${ctx.taskKind || 'tugas'} · ${ctx.packageTaskCode || ctx.taskId.slice(-6)}`,
+                ),
+              ]
+            : []),
+        ]}
+      />
+      <View style={styles.photoActions}>
+        {pending?.id ? (
+          <KolamButton
+            intent="plain"
+            label="Buka voucher"
+            onPress={() =>
+              onRouteChange?.(`/layanan/voucher/${pending.id}`)
+            }
+          />
+        ) : null}
+        {subscription?.id ? (
+          <KolamButton
+            intent="plain"
+            label="Buka langganan"
+            onPress={() =>
+              onRouteChange?.(`/layanan/langganan/${subscription.id}`)
+            }
+          />
+        ) : null}
+        {pending?.id && ctx?.executionId ? (
+          <KolamButton
+            intent="plain"
+            label="Detail eksekusi"
+            onPress={() =>
+              onRouteChange?.(
+                `/layanan/voucher/${pending.id}/execution/${ctx.executionId}`,
+              )
+            }
+          />
+        ) : null}
+      </View>
+      {canSpawn ? (
+        <KolamButton
+          disabled={busy}
+          intent="primary"
+          label={
+            busy ? 'Membuat…' : 'Tambah kunjungan rework di Kontrol Layanan'
+          }
+          onPress={() => {
+            void controller.onSpawnServiceReworkVisit();
+          }}
+        />
+      ) : null}
+    </>
+  );
+}
+
+function KolamComplaintReworkProgressCard({
+  complaint,
+}: {
+  complaint: KolamComplaint;
+}) {
+  if (
+    isWarrantyClaimComplaint(complaint) ||
+    complaint.decision !== 'rework'
+  ) {
+    return null;
+  }
+
+  const current = getKolamComplaintCurrentRework(complaint);
+
+  return (
+    <>
+      <Text style={styles.sectionTitle}>Pelacakan rework</Text>
+      <KolamDescriptionList
+        accessibilityLabel="Rework"
+        rows={[
+          descRow(
+            'rw-count',
+            'Hitungan',
+            `${complaint.reworkCount} / ${complaint.maxRework}`,
+          ),
+          ...(current
+            ? [
+                descRow(
+                  'rw-num',
+                  'Rework aktif',
+                  `#${current.reworkNumber}`,
+                ),
+                descRow(
+                  'rw-status',
+                  'Status',
+                  getKolamComplaintReworkStatusLabel(current.status),
+                ),
+                ...(current.assignedToLabel
+                  ? [descRow('rw-asg', 'Ditugaskan', current.assignedToLabel)]
+                  : []),
+                ...(current.resultNote
+                  ? [descRow('rw-result', 'Hasil', current.resultNote)]
+                  : []),
+                ...(current.customerAccepted === true
+                  ? [descRow('rw-cust', 'Pelanggan', 'Menerima hasil')]
+                  : current.customerAccepted === false
+                    ? [descRow('rw-cust', 'Pelanggan', 'Menolak hasil')]
+                    : complaint.status === 'rework_review'
+                      ? [
+                          descRow(
+                            'rw-cust',
+                            'Pelanggan',
+                            'Menunggu review',
+                          ),
+                        ]
+                      : []),
+              ]
+            : [descRow('rw-empty', 'Status', 'Belum ada pelacakan')]),
+        ]}
+      />
+      {current?.photos.length ? (
+        <View style={styles.photoRow}>
+          {current.photos.map(photo =>
+            photo.uri ? (
+              <KolamRemoteImage
+                accessibilityLabel="Bukti rework"
+                key={photo.id}
+                resizeMode="cover"
+                sourceUri={photo.uri}
+                style={styles.photo}
+              />
+            ) : null,
+          )}
+        </View>
+      ) : null}
+      {complaint.reworkTracking.length > 1 ? (
+        <Text style={styles.metaText}>
+          Riwayat:{' '}
+          {complaint.reworkTracking
+            .map(
+              row =>
+                `#${row.reworkNumber} ${getKolamComplaintReworkStatusLabel(row.status)}`,
+            )
+            .join(' · ')}
+        </Text>
+      ) : null}
+    </>
+  );
+}
+
+function KolamComplaintReworkWorkflow({
+  complaint,
+  controller,
+}: {
+  complaint: KolamComplaint;
+  controller: KolamComplaintController;
+}) {
+  if (!canUpdateKolamComplaintReworkStatus(complaint)) {
+    if (
+      complaint.decision === 'rework' &&
+      !isWarrantyClaimComplaint(complaint) &&
+      getKolamComplaintCurrentRework(complaint)?.status === 'completed' &&
+      complaint.status === 'rework_review'
+    ) {
+      return (
+        <View style={styles.workflowBlock}>
+          <Text style={styles.workflowBlockTitle}>Update rework</Text>
+          <Text style={styles.metaText}>
+            Menunggu review pelanggan atas hasil rework.
+          </Text>
+        </View>
+      );
+    }
+    return null;
+  }
+
+  const current = getKolamComplaintCurrentRework(complaint);
+  if (!current) {
+    return null;
+  }
+
+  const allowed = getAllowedKolamComplaintReworkStatuses(current.status);
+  const busy = controller.mutating || controller.loading;
+  const [nextStatus, setNextStatus] = React.useState<KolamComplaintReworkStatus>(
+    allowed[0] || current.status,
+  );
+  const [note, setNote] = React.useState('');
+  const [resultNote, setResultNote] = React.useState(current.resultNote || '');
+  const [photoUris, setPhotoUris] = React.useState<string[]>([]);
+
+  React.useEffect(() => {
+    const nextAllowed = getAllowedKolamComplaintReworkStatuses(current.status);
+    setNextStatus(nextAllowed[0] || current.status);
+    setNote('');
+    setResultNote(current.resultNote || '');
+    setPhotoUris([]);
+  }, [complaint.id, current.id, current.resultNote, current.status]);
+
+  return (
+    <View style={styles.workflowBlock}>
+      <Text style={styles.workflowBlockTitle}>Update rework</Text>
+      <Text style={styles.metaText}>
+        Rework #{current.reworkNumber} dari maks. {complaint.maxRework} ·{' '}
+        {getKolamComplaintReworkStatusLabel(current.status)}
+      </Text>
+      <KolamDropdownSelect
+        accessibilityLabel="Status rework"
+        label="Status rework"
+        menuPlacement="inline"
+        onChange={value => setNextStatus(value as KolamComplaintReworkStatus)}
+        options={allowed.map(status => ({
+          label: getKolamComplaintReworkStatusLabel(status),
+          value: status,
+        }))}
+        showLabelInTrigger={false}
+        value={nextStatus}
+      />
+      {nextStatus === 'in_progress' ? (
+        <KolamFormTextField
+          multiline
+          numberOfLines={3}
+          onChangeText={setNote}
+          placeholder="Catatan mulai rework…"
+          style={styles.workflowNote}
+          value={note}
+        />
+      ) : null}
+      {nextStatus === 'completed' || nextStatus === 'failed' ? (
+        <>
+          <KolamFormTextField
+            multiline
+            numberOfLines={3}
+            onChangeText={setResultNote}
+            placeholder={
+              nextStatus === 'completed'
+                ? 'Catatan hasil rework…'
+                : 'Alasan gagal…'
+            }
+            style={styles.workflowNote}
+            value={resultNote}
+          />
+          <View style={styles.photoActions}>
+            <KolamButton
+              label={`Tambah foto (${photoUris.length})`}
+              onPress={() => {
+                void pickNativeImageFile().then(result => {
+                  if (!result?.uri) {
+                    return;
+                  }
+                  setPhotoUris(currentPhotos => [
+                    ...currentPhotos,
+                    result.uri!,
+                  ]);
+                });
+              }}
+            />
+          </View>
+          {photoUris.length ? (
+            <View style={styles.photoRow}>
+              {photoUris.map((uri, index) => (
+                <View key={`${uri}-${index}`} style={styles.localPhotoItem}>
+                  <Image source={{ uri }} style={styles.localPhotoThumb} />
+                  <KolamButton
+                    intent="plain"
+                    label="Hapus"
+                    onPress={() =>
+                      setPhotoUris(currentPhotos =>
+                        currentPhotos.filter(
+                          (_, photoIndex) => photoIndex !== index,
+                        ),
+                      )
+                    }
+                  />
+                </View>
+              ))}
+            </View>
+          ) : null}
+        </>
+      ) : null}
+      <KolamButton
+        disabled={
+          busy ||
+          (nextStatus === 'in_progress' && !note.trim()) ||
+          ((nextStatus === 'completed' || nextStatus === 'failed') &&
+            !resultNote.trim())
+        }
+        intent="primary"
+        label={busy ? 'Menyimpan…' : 'Update rework'}
+        onPress={() => {
+          void controller
+            .onUpdateReworkStatus({
+              status: nextStatus,
+              ...(nextStatus === 'in_progress' ? { note } : {}),
+              ...(nextStatus === 'completed' || nextStatus === 'failed'
+                ? { resultNote, photoUris }
+                : {}),
+            })
+            .then(ok => {
+              if (ok) {
+                setNote('');
+                setPhotoUris([]);
+              }
+            });
+        }}
+      />
+    </View>
+  );
+}
+
+function KolamComplaintReworkCustomerResponseWorkflow({
+  complaint,
+  controller,
+}: {
+  complaint: KolamComplaint;
+  controller: KolamComplaintController;
+}) {
+  if (!canSubmitKolamComplaintReworkCustomerResponse(complaint)) {
+    return null;
+  }
+
+  const current = getKolamComplaintCurrentRework(complaint);
+  const busy = controller.mutating || controller.loading;
+  const [accepted, setAccepted] = React.useState<'yes' | 'no' | ''>('');
+  const [note, setNote] = React.useState('');
+  const nearMax =
+    complaint.reworkCount >= Math.max(0, complaint.maxRework - 1);
+
+  return (
+    <View style={styles.workflowBlock}>
+      <Text style={styles.workflowBlockTitle}>Review hasil rework</Text>
+      {current?.resultNote ? (
+        <Text style={styles.metaText}>{current.resultNote}</Text>
+      ) : null}
+      <KolamDropdownSelect
+        accessibilityLabel="Respons pelanggan"
+        label="Respons"
+        menuPlacement="inline"
+        onChange={value => setAccepted(value as 'yes' | 'no' | '')}
+        options={[
+          { label: 'Pilih respons…', value: '' },
+          { label: 'Terima hasil', value: 'yes' },
+          { label: 'Tolak hasil', value: 'no' },
+        ]}
+        showLabelInTrigger={false}
+        value={accepted}
+      />
+      {accepted === 'no' && nearMax ? (
+        <KolamStatusBadge
+          intent="warning"
+          label={`Penolakan ini dapat memicu alur refund (batas ${complaint.maxRework}x rework).`}
+          numberOfLines={3}
+          style={styles.banner}
+        />
+      ) : null}
+      <KolamFormTextField
+        multiline
+        numberOfLines={2}
+        onChangeText={setNote}
+        placeholder="Catatan (opsional)"
+        style={styles.workflowNote}
+        value={note}
+      />
+      <KolamButton
+        disabled={busy || !accepted}
+        intent={accepted === 'no' ? 'danger' : 'primary'}
+        label={
+          busy
+            ? 'Mengirim…'
+            : accepted === 'yes'
+              ? 'Terima hasil'
+              : accepted === 'no'
+                ? 'Tolak hasil'
+                : 'Kirim respons'
+        }
+        onPress={() => {
+          if (!accepted) {
+            return;
+          }
+          void controller
+            .onSubmitReworkCustomerResponse({
+              accepted: accepted === 'yes',
+              note,
+            })
+            .then(ok => {
+              if (ok) {
+                setAccepted('');
+                setNote('');
+              }
+            });
+        }}
+      />
     </View>
   );
 }

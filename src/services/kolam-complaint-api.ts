@@ -280,6 +280,105 @@ export async function confirmKolamComplaintRefundPayment(
   return updateKolamComplaintRefundPayment(id, { status: 'completed' });
 }
 
+/** PUT /complaints/:id/rework */
+export async function updateKolamComplaintReworkStatus(
+  id: string,
+  body: {
+    status: string;
+    note?: string;
+    resultNote?: string;
+    photoUris?: string[];
+  },
+): Promise<KolamComplaint> {
+  const formData = new FormData();
+  formData.append('status', body.status);
+  if (body.note?.trim()) {
+    formData.append('note', body.note.trim());
+  }
+  if (body.resultNote?.trim()) {
+    formData.append('resultNote', body.resultNote.trim());
+  }
+  for (const [index, uri] of (body.photoUris ?? []).entries()) {
+    if (!uri.trim()) {
+      continue;
+    }
+    formData.append(
+      'photos',
+      createReactNativeFilePart(
+        uri.trim(),
+        `rework-photo-${index + 1}.jpg`,
+      ) as unknown as Blob,
+    );
+  }
+  const payload = await kolamRequest<unknown>(
+    `/complaints/${encodeURIComponent(id)}/rework`,
+    { method: 'PUT', body: formData },
+  );
+  return normalizeKolamComplaintDetail(payload);
+}
+
+/** PUT /complaints/:id/rework-response (staff proxy for customer). */
+export async function submitKolamComplaintReworkCustomerResponse(
+  id: string,
+  body: { accepted: boolean; note?: string },
+): Promise<KolamComplaint> {
+  const payload = await kolamRequest<unknown>(
+    `/complaints/${encodeURIComponent(id)}/rework-response`,
+    {
+      method: 'PUT',
+      body: {
+        accepted: body.accepted,
+        ...(body.note?.trim() ? { note: body.note.trim() } : {}),
+      },
+    },
+  );
+  return normalizeKolamComplaintDetail(payload);
+}
+
+/** PUT /complaints/:id/vendor-claim */
+export async function updateKolamComplaintVendorClaim(
+  id: string,
+  body: {
+    status: string;
+    note: string;
+    claimReference?: string;
+    vendorResponseNote?: string;
+    resolutionNote?: string;
+  },
+): Promise<KolamComplaint> {
+  const payload = await kolamRequest<unknown>(
+    `/complaints/${encodeURIComponent(id)}/vendor-claim`,
+    {
+      method: 'PUT',
+      body: {
+        status: body.status,
+        note: body.note.trim(),
+        ...(body.claimReference?.trim()
+          ? { claimReference: body.claimReference.trim() }
+          : {}),
+        ...(body.vendorResponseNote?.trim()
+          ? { vendorResponseNote: body.vendorResponseNote.trim() }
+          : {}),
+        ...(body.resolutionNote?.trim()
+          ? { resolutionNote: body.resolutionNote.trim() }
+          : {}),
+      },
+    },
+  );
+  return normalizeKolamComplaintDetail(payload);
+}
+
+/** POST /pending-services/complaints/:id/revisit */
+export async function createKolamComplaintServiceReworkVisit(
+  complaintId: string,
+): Promise<KolamComplaint> {
+  await kolamRequest<unknown>(
+    `/pending-services/complaints/${encodeURIComponent(complaintId)}/revisit`,
+    { method: 'POST', body: {} },
+  );
+  return getKolamComplaint(complaintId);
+}
+
 export async function createKolamComplaint(
   input: KolamComplaintCreateInput,
 ): Promise<KolamComplaint> {

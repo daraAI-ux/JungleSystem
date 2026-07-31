@@ -155,6 +155,77 @@ export interface KolamComplaintRefundTransaction {
   createdAt?: string;
 }
 
+export type KolamComplaintReworkStatus =
+  | 'pending'
+  | 'in_progress'
+  | 'completed'
+  | 'failed';
+
+export type KolamComplaintWarrantyMode = 'official_distributor' | 'da';
+
+export type KolamComplaintVendorClaimStatus =
+  | 'not_applicable'
+  | 'pending_submission'
+  | 'submitted_to_vendor'
+  | 'vendor_approved'
+  | 'vendor_rejected'
+  | 'resolved'
+  | 'closed';
+
+export interface KolamComplaintWarrantyContext {
+  mode: KolamComplaintWarrantyMode | null;
+  warrantyDays: number | null;
+  warrantyEndsAt: string | null;
+  vendorId: string | null;
+  vendorName: string;
+  termsTemplateId: string | null;
+}
+
+export interface KolamComplaintVendorClaim {
+  status: KolamComplaintVendorClaimStatus;
+  claimReference: string;
+  submittedAt?: string;
+  submittedByLabel: string;
+  vendorResponseAt?: string;
+  vendorResponseNote: string;
+  resolutionNote: string;
+}
+
+export interface KolamComplaintServiceContext {
+  taskKind: 'dosing' | 'maintenance' | null;
+  taskId: string | null;
+  executionId: string | null;
+  visitTitle: string | null;
+  packageTaskCode: string | null;
+}
+
+export interface KolamComplaintPendingServiceRef {
+  id: string;
+  serviceSerial: string;
+  status: string;
+}
+
+export interface KolamComplaintSubscriptionRef {
+  id: string;
+  subscriptionNumber: string;
+  status: string;
+}
+
+export interface KolamComplaintReworkTracking {
+  id: string;
+  reworkNumber: number;
+  status: KolamComplaintReworkStatus;
+  assignedToLabel: string;
+  startedAt?: string;
+  completedAt?: string;
+  note: string;
+  resultNote: string;
+  photos: KolamComplaintPhoto[];
+  customerAccepted: boolean | null;
+  customerAcceptedAt?: string;
+  customerNote: string;
+}
+
 export interface KolamComplaint {
   id: string;
   ticketCode: string;
@@ -193,6 +264,13 @@ export interface KolamComplaint {
   refundPaymentProof: KolamComplaintPhoto[];
   refundPaymentHistory: KolamComplaintRefundPaymentHistoryEntry[];
   refundTransaction: KolamComplaintRefundTransaction | null;
+  warrantyContext: KolamComplaintWarrantyContext | null;
+  vendorClaim: KolamComplaintVendorClaim | null;
+  serviceContext: KolamComplaintServiceContext | null;
+  pendingService: KolamComplaintPendingServiceRef | null;
+  subscription: KolamComplaintSubscriptionRef | null;
+  reworkTracking: KolamComplaintReworkTracking[];
+  currentReworkIndex: number | null;
   reworkCount: number;
   maxRework: number;
   createdAt?: string;
@@ -292,13 +370,6 @@ export function getKolamComplaintIdFromRoute(route: string): string | null {
   return null;
 }
 
-export type KolamComplaintServiceContext = {
-  taskKind: 'dosing' | 'maintenance';
-  taskId?: string | null;
-  executionId?: string | null;
-  visitTitle?: string | null;
-};
-
 export type KolamComplaintCreateQuery = {
   saleId: string | null;
   pendingServiceId: string | null;
@@ -376,6 +447,7 @@ export function parseKolamComplaintCreateQuery(
           taskId: params.get('taskId'),
           executionId: params.get('executionId'),
           visitTitle: params.get('visitTitle'),
+          packageTaskCode: params.get('packageTaskCode'),
         }
       : null;
 
@@ -832,6 +904,199 @@ export function getKolamComplaintRefundWorkflowStep(
   return 'completed';
 }
 
+export function getKolamComplaintReworkStatusLabel(
+  status: KolamComplaintReworkStatus | string,
+): string {
+  switch (status) {
+    case 'pending':
+      return 'Menunggu';
+    case 'in_progress':
+      return 'Sedang dikerjakan';
+    case 'completed':
+      return 'Selesai';
+    case 'failed':
+      return 'Gagal';
+    default:
+      return status;
+  }
+}
+
+export function getAllowedKolamComplaintReworkStatuses(
+  current: KolamComplaintReworkStatus,
+): KolamComplaintReworkStatus[] {
+  switch (current) {
+    case 'pending':
+      return ['in_progress'];
+    case 'in_progress':
+      return ['completed', 'failed'];
+    case 'completed':
+    case 'failed':
+      return [];
+    default:
+      return [];
+  }
+}
+
+export function getKolamComplaintCurrentRework(
+  complaint: KolamComplaint,
+): KolamComplaintReworkTracking | null {
+  if (!complaint.reworkTracking.length) {
+    return null;
+  }
+  if (
+    complaint.currentReworkIndex != null &&
+    complaint.currentReworkIndex >= 0 &&
+    complaint.currentReworkIndex < complaint.reworkTracking.length
+  ) {
+    return complaint.reworkTracking[complaint.currentReworkIndex] ?? null;
+  }
+  return complaint.reworkTracking[complaint.reworkTracking.length - 1] ?? null;
+}
+
+export function canUpdateKolamComplaintReworkStatus(
+  complaint: KolamComplaint,
+): boolean {
+  if (
+    complaint.marketplaceReadOnly ||
+    isWarrantyClaimComplaint(complaint) ||
+    complaint.decision !== 'rework'
+  ) {
+    return false;
+  }
+  const current = getKolamComplaintCurrentRework(complaint);
+  if (!current) {
+    return false;
+  }
+  if (current.status === 'completed' && complaint.status === 'rework_review') {
+    return false;
+  }
+  return getAllowedKolamComplaintReworkStatuses(current.status).length > 0;
+}
+
+export function canSubmitKolamComplaintReworkCustomerResponse(
+  complaint: KolamComplaint,
+): boolean {
+  if (
+    complaint.marketplaceReadOnly ||
+    isWarrantyClaimComplaint(complaint) ||
+    complaint.status !== 'rework_review'
+  ) {
+    return false;
+  }
+  const current = getKolamComplaintCurrentRework(complaint);
+  return Boolean(
+    current &&
+      current.status === 'completed' &&
+      current.customerAccepted === null,
+  );
+}
+
+export function getKolamComplaintWarrantyModeLabel(
+  mode: KolamComplaintWarrantyMode | string | null | undefined,
+): string {
+  if (mode === 'official_distributor') {
+    return 'Distributor resmi';
+  }
+  if (mode === 'da') {
+    return 'Dunia Anura';
+  }
+  return '—';
+}
+
+export function getKolamComplaintVendorClaimStatusLabel(
+  status: KolamComplaintVendorClaimStatus | string,
+): string {
+  switch (status) {
+    case 'not_applicable':
+      return 'Tidak berlaku';
+    case 'pending_submission':
+      return 'Menunggu pengajuan';
+    case 'submitted_to_vendor':
+      return 'Diajukan ke vendor';
+    case 'vendor_approved':
+      return 'Disetujui vendor';
+    case 'vendor_rejected':
+      return 'Ditolak vendor';
+    case 'resolved':
+      return 'Selesai';
+    case 'closed':
+      return 'Ditutup';
+    default:
+      return status;
+  }
+}
+
+export function getAllowedKolamComplaintVendorClaimStatuses(
+  current: KolamComplaintVendorClaimStatus,
+): KolamComplaintVendorClaimStatus[] {
+  switch (current) {
+    case 'pending_submission':
+      return ['submitted_to_vendor'];
+    case 'submitted_to_vendor':
+      return ['vendor_approved', 'vendor_rejected'];
+    case 'vendor_approved':
+    case 'vendor_rejected':
+      return ['resolved'];
+    case 'resolved':
+      return ['closed'];
+    default:
+      return [];
+  }
+}
+
+export function canUpdateKolamComplaintVendorClaim(
+  complaint: KolamComplaint,
+): boolean {
+  if (
+    complaint.marketplaceReadOnly ||
+    !isWarrantyClaimComplaint(complaint) ||
+    complaint.warrantyContext?.mode !== 'official_distributor' ||
+    complaint.status === 'closed'
+  ) {
+    return false;
+  }
+  const current = complaint.vendorClaim?.status || 'pending_submission';
+  return getAllowedKolamComplaintVendorClaimStatuses(current).length > 0;
+}
+
+export function canShowKolamComplaintServiceContext(
+  complaint: KolamComplaint,
+): boolean {
+  return Boolean(
+    complaint.pendingService?.id ||
+      complaint.subscription?.id ||
+      complaint.serviceContext?.taskId,
+  );
+}
+
+export function canSpawnKolamComplaintServiceReworkVisit(
+  complaint: KolamComplaint,
+): boolean {
+  return Boolean(
+    complaint.pendingService?.id &&
+      complaint.decision === 'rework' &&
+      (complaint.status === 'rework_in_progress' ||
+        complaint.status === 'approved') &&
+      complaint.reworkCount < complaint.maxRework,
+  );
+}
+
+export function getKolamComplaintWarrantyDaysRemainingAtClaim(
+  complaint: KolamComplaint,
+): number | null {
+  const endsAt = complaint.warrantyContext?.warrantyEndsAt;
+  const createdAt = complaint.createdAt;
+  if (!endsAt || !createdAt) {
+    return null;
+  }
+  const end = new Date(endsAt).getTime();
+  const created = new Date(createdAt).getTime();
+  if (Number.isNaN(end) || Number.isNaN(created)) {
+    return null;
+  }
+  return Math.max(0, Math.ceil((end - created) / (1000 * 60 * 60 * 24)));
+}
+
 /**
  * Same resolution as sales detail: prefer embedded sale.sourceRef.logo,
  * then active Sales Source catalog by id.
@@ -889,7 +1154,13 @@ export function normalizeKolamComplaint(payload: unknown): KolamComplaint {
       '—',
     createdByType:
       getString(record, 'createdByType') === 'customer' ? 'customer' : 'staff',
-    isServiceOnly: getBoolean(record, 'isServiceOnly') ?? false,
+    isServiceOnly:
+      getBoolean(record, 'isServiceOnly') ??
+      (items.length > 0 &&
+        items.every(
+          item =>
+            item.itemType === 'service' || item.itemType === 'custom_project',
+        )),
     marketplaceSource,
     marketplaceReadOnly: Boolean(marketplaceSource),
     photos: normalizePhotos(record.photos),
@@ -912,6 +1183,13 @@ export function normalizeKolamComplaint(payload: unknown): KolamComplaint {
       record.refundPaymentHistory,
     ),
     refundTransaction: normalizeRefundTransaction(record.refundTransaction),
+    warrantyContext: normalizeWarrantyContext(record.warrantyContext),
+    vendorClaim: normalizeVendorClaim(record.vendorClaim),
+    serviceContext: normalizeServiceContext(record.serviceContext),
+    pendingService: normalizePendingServiceRef(record.pendingService),
+    subscription: normalizeSubscriptionRef(record.subscription),
+    reworkTracking: normalizeReworkTrackingList(record.reworkTracking),
+    currentReworkIndex: normalizeCurrentReworkIndex(record.currentReworkIndex),
     reworkCount: getNumber(record, 'reworkCount') ?? 0,
     maxRework: getNumber(record, 'maxRework') ?? 2,
     createdAt: getString(record, 'createdAt') || undefined,
@@ -1315,6 +1593,200 @@ function normalizeRefundTransaction(
     note: getString(record, 'note'),
     createdAt: getString(record, 'createdAt') || undefined,
   };
+}
+
+function normalizeWarrantyContext(
+  value: unknown,
+): KolamComplaintWarrantyContext | null {
+  if (!value || typeof value !== 'object') {
+    return null;
+  }
+  const record = asRecord(value);
+  const modeRaw = getString(record, 'mode');
+  const mode =
+    modeRaw === 'official_distributor' || modeRaw === 'da' ? modeRaw : null;
+  return {
+    mode,
+    warrantyDays: getNumber(record, 'warrantyDays') ?? null,
+    warrantyEndsAt: getString(record, 'warrantyEndsAt') || null,
+    vendorId: getString(record, 'vendorId') || null,
+    vendorName: getString(record, 'vendorName'),
+    termsTemplateId: getString(record, 'termsTemplateId') || null,
+  };
+}
+
+function normalizeVendorClaimStatus(
+  value: string,
+): KolamComplaintVendorClaimStatus {
+  const allowed: KolamComplaintVendorClaimStatus[] = [
+    'not_applicable',
+    'pending_submission',
+    'submitted_to_vendor',
+    'vendor_approved',
+    'vendor_rejected',
+    'resolved',
+    'closed',
+  ];
+  return allowed.includes(value as KolamComplaintVendorClaimStatus)
+    ? (value as KolamComplaintVendorClaimStatus)
+    : 'pending_submission';
+}
+
+function normalizeVendorClaim(
+  value: unknown,
+): KolamComplaintVendorClaim | null {
+  if (!value || typeof value !== 'object') {
+    return null;
+  }
+  const record = asRecord(value);
+  return {
+    status: normalizeVendorClaimStatus(getString(record, 'status')),
+    claimReference: getString(record, 'claimReference'),
+    submittedAt: getString(record, 'submittedAt') || undefined,
+    submittedByLabel: normalizePerson(record.submittedBy).name || '',
+    vendorResponseAt: getString(record, 'vendorResponseAt') || undefined,
+    vendorResponseNote: getString(record, 'vendorResponseNote'),
+    resolutionNote: getString(record, 'resolutionNote'),
+  };
+}
+
+function normalizeServiceContext(
+  value: unknown,
+): KolamComplaintServiceContext | null {
+  if (!value || typeof value !== 'object') {
+    return null;
+  }
+  const record = asRecord(value);
+  const taskKindRaw = getString(record, 'taskKind');
+  const taskKind =
+    taskKindRaw === 'dosing' || taskKindRaw === 'maintenance'
+      ? taskKindRaw
+      : null;
+  const ctx: KolamComplaintServiceContext = {
+    taskKind,
+    taskId: getString(record, 'taskId') || null,
+    executionId: getString(record, 'executionId') || null,
+    visitTitle: getString(record, 'visitTitle') || null,
+    packageTaskCode: getString(record, 'packageTaskCode') || null,
+  };
+  if (
+    !ctx.taskKind &&
+    !ctx.taskId &&
+    !ctx.executionId &&
+    !ctx.visitTitle &&
+    !ctx.packageTaskCode
+  ) {
+    return null;
+  }
+  return ctx;
+}
+
+function normalizePendingServiceRef(
+  value: unknown,
+): KolamComplaintPendingServiceRef | null {
+  if (!value) {
+    return null;
+  }
+  if (typeof value === 'string') {
+    const id = value.trim();
+    return id ? { id, serviceSerial: '', status: '' } : null;
+  }
+  if (typeof value !== 'object') {
+    return null;
+  }
+  const record = asRecord(value);
+  const id = getString(record, '_id') || getString(record, 'id');
+  if (!id) {
+    return null;
+  }
+  return {
+    id,
+    serviceSerial: getString(record, 'serviceSerial'),
+    status: getString(record, 'status'),
+  };
+}
+
+function normalizeSubscriptionRef(
+  value: unknown,
+): KolamComplaintSubscriptionRef | null {
+  if (!value) {
+    return null;
+  }
+  if (typeof value === 'string') {
+    const id = value.trim();
+    return id ? { id, subscriptionNumber: '', status: '' } : null;
+  }
+  if (typeof value !== 'object') {
+    return null;
+  }
+  const record = asRecord(value);
+  const id = getString(record, '_id') || getString(record, 'id');
+  if (!id) {
+    return null;
+  }
+  return {
+    id,
+    subscriptionNumber: getString(record, 'subscriptionNumber'),
+    status: getString(record, 'status'),
+  };
+}
+
+function normalizeReworkStatus(value: string): KolamComplaintReworkStatus {
+  if (
+    value === 'in_progress' ||
+    value === 'completed' ||
+    value === 'failed'
+  ) {
+    return value;
+  }
+  return 'pending';
+}
+
+function normalizeReworkTrackingList(
+  value: unknown,
+): KolamComplaintReworkTracking[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.map((item, index) => {
+    const record = asRecord(item);
+    const customerAcceptedRaw = record.customerAccepted;
+    const customerAccepted =
+      customerAcceptedRaw === true
+        ? true
+        : customerAcceptedRaw === false
+          ? false
+          : null;
+    return {
+      id:
+        getString(record, '_id') ||
+        getString(record, 'id') ||
+        `rework-${index}`,
+      reworkNumber: getNumber(record, 'reworkNumber') ?? index + 1,
+      status: normalizeReworkStatus(getString(record, 'status')),
+      assignedToLabel: normalizePerson(record.assignedTo).name || '',
+      startedAt: getString(record, 'startedAt') || undefined,
+      completedAt: getString(record, 'completedAt') || undefined,
+      note: getString(record, 'note'),
+      resultNote: getString(record, 'resultNote'),
+      photos: normalizePhotos(record.photos),
+      customerAccepted,
+      customerAcceptedAt:
+        getString(record, 'customerAcceptedAt') || undefined,
+      customerNote: getString(record, 'customerNote'),
+    };
+  });
+}
+
+function normalizeCurrentReworkIndex(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value) && value >= 0) {
+    return value;
+  }
+  if (typeof value === 'string' && value.trim()) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
+  }
+  return null;
 }
 
 function normalizeStatus(value: string): KolamComplaintStatus {

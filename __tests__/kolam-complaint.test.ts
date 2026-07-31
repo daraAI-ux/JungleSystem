@@ -1,19 +1,27 @@
 import {
   canOpenKolamComplaintRefundPayment,
+  canSpawnKolamComplaintServiceReworkVisit,
+  canSubmitKolamComplaintReworkCustomerResponse,
+  canUpdateKolamComplaintReworkStatus,
+  canUpdateKolamComplaintVendorClaim,
+  getAllowedKolamComplaintReworkStatuses,
   getAllowedKolamComplaintStatuses,
   getAllowedKolamComplaintTrackingStatuses,
   getAvailableKolamComplaintDecisions,
+  getKolamComplaintCurrentRework,
   getKolamComplaintDecisionLabel,
   getKolamComplaintIdFromRoute,
   getKolamComplaintRefundPaymentStatusLabel,
   getKolamComplaintRefundWorkflowStep,
   getKolamComplaintRouteMode,
   getKolamComplaintStatusLabel,
+  getKolamComplaintWarrantyModeLabel,
   isKolamComplaintRefundAwaitingReturn,
   isKolamComplaintReturnAwaitingVerification,
   isKolamComplaintRoute,
   isKolamSaleEligibleForComplaint,
   isMarketplaceMirrorComplaint,
+  isWarrantyClaimComplaint,
   needsKolamComplaintReplacementReturnTracking,
   needsKolamComplaintReplacementTracking,
   normalizeKolamComplaint,
@@ -284,6 +292,97 @@ describe('kolam-complaint domain', () => {
     expect(getKolamComplaintRefundWorkflowStep(done)).toBe('completed');
   });
 
+  it('normalizes rework, warranty, and service context cards', () => {
+    const warranty = normalizeKolamComplaint({
+      _id: 'c5',
+      ticketCode: 'COMP-5',
+      status: 'in_review',
+      source: 'warranty_claim',
+      description: 'Garansi',
+      items: [{ itemType: 'product', quantity: 1 }],
+      warrantyContext: {
+        mode: 'official_distributor',
+        warrantyDays: 90,
+        warrantyEndsAt: '2026-10-01T00:00:00.000Z',
+        vendorName: 'Vendor A',
+      },
+      vendorClaim: {
+        status: 'pending_submission',
+      },
+      createdAt: '2026-07-01T00:00:00.000Z',
+    });
+    expect(isWarrantyClaimComplaint(warranty)).toBe(true);
+    expect(getKolamComplaintWarrantyModeLabel(warranty.warrantyContext?.mode)).toBe(
+      'Distributor resmi',
+    );
+    expect(canUpdateKolamComplaintVendorClaim(warranty)).toBe(true);
+    expect(
+      getAvailableKolamComplaintDecisions(false, {
+        isWarrantyClaim: true,
+        warrantyMode: 'official_distributor',
+      }).map(row => row.id),
+    ).toEqual([
+      'warranty_honored_da',
+      'warranty_honored_vendor',
+      'warranty_rejected',
+    ]);
+
+    const rework = normalizeKolamComplaint({
+      _id: 'c6',
+      ticketCode: 'COMP-6',
+      status: 'rework_in_progress',
+      decision: 'rework',
+      isServiceOnly: true,
+      description: 'Rework',
+      items: [{ itemType: 'service', quantity: 1 }],
+      reworkCount: 0,
+      maxRework: 2,
+      currentReworkIndex: 0,
+      reworkTracking: [
+        {
+          _id: 'rw1',
+          reworkNumber: 1,
+          status: 'pending',
+        },
+      ],
+      pendingService: { _id: 'ps1', serviceSerial: 'SVC-1' },
+      serviceContext: {
+        taskKind: 'dosing',
+        taskId: 'task1',
+        visitTitle: 'Kunjungan 1',
+      },
+    });
+    expect(rework.isServiceOnly).toBe(true);
+    expect(getKolamComplaintCurrentRework(rework)?.status).toBe('pending');
+    expect(getAllowedKolamComplaintReworkStatuses('pending')).toEqual([
+      'in_progress',
+    ]);
+    expect(canUpdateKolamComplaintReworkStatus(rework)).toBe(true);
+    expect(canSpawnKolamComplaintServiceReworkVisit(rework)).toBe(true);
+    expect(canSubmitKolamComplaintReworkCustomerResponse(rework)).toBe(false);
+
+    const review = normalizeKolamComplaint({
+      _id: 'c6',
+      ticketCode: 'COMP-6',
+      status: 'rework_review',
+      decision: 'rework',
+      description: 'Rework',
+      items: [{ itemType: 'service', quantity: 1 }],
+      currentReworkIndex: 0,
+      reworkTracking: [
+        {
+          _id: 'rw1',
+          reworkNumber: 1,
+          status: 'completed',
+          resultNote: 'Sudah diperbaiki',
+          customerAccepted: null,
+        },
+      ],
+    });
+    expect(canUpdateKolamComplaintReworkStatus(review)).toBe(false);
+    expect(canSubmitKolamComplaintReworkCustomerResponse(review)).toBe(true);
+  });
+
   it('exposes status transition and decision helpers for workflow UI', () => {
     expect(getAllowedKolamComplaintStatuses('pending')).toEqual(['in_review']);
     expect(getAllowedKolamComplaintStatuses('in_review')).toEqual([
@@ -322,6 +421,7 @@ describe('kolam-complaint domain', () => {
         taskId: 't1',
         executionId: null,
         visitTitle: null,
+        packageTaskCode: null,
       },
     });
 
