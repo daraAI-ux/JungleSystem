@@ -460,8 +460,14 @@ export function KolamPosFullWindowSurface({
           customers={customers}
           searchValue={customerSelectorSearch}
           selectedCustomer={selectedCustomer}
-          onOpenCustomerView={() => {
+          onOpenCustomerView={draftName => {
             setActiveView('customers');
+            if (draftName.trim()) {
+              onCustomerFormChange({
+                ...customerForm,
+                name: draftName.trim(),
+              });
+            }
             setCustomerSelectorSearch('');
           }}
           onSearchChange={setCustomerSelectorSearch}
@@ -867,7 +873,7 @@ function PosCustomerSelectorInline({
   selectedCustomer,
 }: {
   customers: Customer[];
-  onOpenCustomerView: () => void;
+  onOpenCustomerView: (draftName: string) => void;
   onSearchChange: (value: string) => void;
   onSelectCustomer: (customerId: string) => void;
   searchValue: string;
@@ -954,12 +960,12 @@ function PosCustomerSelectorInline({
         <View style={styles.customerDropdown}>
           <KolamInteractionFrame
             onPress={() => {
-              onOpenCustomerView();
+              onOpenCustomerView(searchValue);
               setIsOpen(false);
             }}
             style={styles.customerManageRow}>
             <Text style={styles.customerManageIcon}>+</Text>
-            <Text style={styles.customerManageText}>Kelola Pelanggan</Text>
+            <Text style={styles.customerManageText}>Buat Pelanggan Baru</Text>
             {searchValue ? (
               <Text numberOfLines={1} style={styles.customerManageHint}>
                 "{searchValue}"
