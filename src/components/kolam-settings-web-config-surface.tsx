@@ -4089,7 +4089,7 @@ export function KolamSettingsWebConfigSurface({
                 },
                 {
                   id: 'region-table-meta',
-                  text: `${regionRows.length} rows ditampilkan, urut code dari backend.`,
+                  text: `${regionRows.length} rows ditampilkan dari limit 2000, urut code dari backend.`,
                   style: styles.marketplaceOverviewMeta,
                 },
               ]}
@@ -4116,7 +4116,7 @@ export function KolamSettingsWebConfigSurface({
                     </Text>
                   ))}
               </View>
-              {regionRows.slice(0, 100).map(region => (
+              {regionRows.map(region => (
                 <View
                   key={region._id || region.code}
                   style={styles.regionTableRow}

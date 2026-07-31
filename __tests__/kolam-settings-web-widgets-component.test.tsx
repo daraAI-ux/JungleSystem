@@ -857,6 +857,26 @@ describe('settings web widgets', () => {
 
   it('renders region sync hierarchy filters', () => {
     const setRegionSelection = jest.fn();
+    const regionTableRows = [
+      {
+        _id: 'village-3273011001',
+        code: '32.73.01.1001',
+        name: 'Pasteur',
+        level: 'village' as const,
+        parentCode: '32.73.01',
+        postalCode: '40161',
+        updatedAt: '2026-07-31T10:00:00.000Z',
+      },
+      ...Array.from({length: 100}, (_, index) => ({
+        _id: `village-extra-${index}`,
+        code: `32.73.01.${String(1002 + index)}`,
+        name: `Kelurahan ${index + 2}`,
+        level: 'village' as const,
+        parentCode: '32.73.01',
+        postalCode: `40${String(162 + index).padStart(3, '0')}`,
+        updatedAt: '2026-07-31T10:00:00.000Z',
+      })),
+    ];
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
     ReactTestRenderer.act(() => {
@@ -904,17 +924,7 @@ describe('settings web widgets', () => {
                 postalCode: '40161',
               },
             ],
-            regionRows: [
-              {
-                _id: 'village-3273011001',
-                code: '32.73.01.1001',
-                name: 'Pasteur',
-                level: 'village',
-                parentCode: '32.73.01',
-                postalCode: '40161',
-                updatedAt: '2026-07-31T10:00:00.000Z',
-              },
-            ],
+            regionRows: regionTableRows,
             setRegionSelection,
           })}
         />,
@@ -960,6 +970,9 @@ describe('settings web widgets', () => {
         'village',
         '32.73.01',
         '40161',
+        '101 rows ditampilkan dari limit 2000, urut code dari backend.',
+        '32.73.01.1101',
+        'Kelurahan 101',
       ]),
     );
   });
