@@ -10,6 +10,7 @@ import {
   createAmBox,
   createAmDevice,
   createAmRack,
+  createAmServiceAccount,
   createAmUser,
   createAmWebhookConfig,
   deleteAmDevices,
@@ -45,6 +46,7 @@ import {
   updateAmTokopediaCaptchaSettings,
   updateAmTokopediaLoginMethod,
   updateAmRack,
+  updateAmServiceAccount,
   updateAmUser,
   updateAmWebhookConfig,
   startAmDeviceService,
@@ -59,6 +61,7 @@ jest.mock('../src/services/am-api', () => ({
   createAmBox: jest.fn(() => Promise.resolve({_id: 'box-new'})),
   createAmDevice: jest.fn(() => Promise.resolve({_id: 'device-new'})),
   createAmRack: jest.fn(() => Promise.resolve({_id: 'rack-new'})),
+  createAmServiceAccount: jest.fn(() => Promise.resolve({_id: 'service-new'})),
   createAmUser: jest.fn(() => Promise.resolve({_id: 'user-new'})),
   createAmWebhookConfig: jest.fn(() => Promise.resolve({_id: 'webhook-1'})),
   deleteAmBoxes: jest.fn(() => Promise.resolve(undefined)),
@@ -131,6 +134,7 @@ jest.mock('../src/services/am-api', () => ({
   updateAmBox: jest.fn(() => Promise.resolve({_id: 'box-1'})),
   updateAmDevice: jest.fn(() => Promise.resolve({_id: 'device-1'})),
   updateAmRack: jest.fn(() => Promise.resolve({_id: 'rack-1'})),
+  updateAmServiceAccount: jest.fn(() => Promise.resolve({_id: 'service-1'})),
   updateAmUser: jest.fn(() => Promise.resolve({_id: 'user-1'})),
   updateAmWebhookConfig: jest.fn(() => Promise.resolve({_id: 'webhook-1'})),
   verifyAmTokopediaSession: jest.fn(() => Promise.resolve({loggedIn: true, reason: null, cookieCount: 5, url: 'https://seller-id.tokopedia.com'})),
@@ -394,7 +398,7 @@ describe('KolamAmSurface', () => {
     });
 
     await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Segment Shopee'}).props.onPress();
+      renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment Shopee'})[0].props.onPress();
     });
 
     expect(getAmServiceAccounts).toHaveBeenLastCalledWith({
@@ -406,7 +410,7 @@ describe('KolamAmSurface', () => {
     });
 
     await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Segment Active'}).props.onPress();
+      renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment Active'})[0].props.onPress();
     });
 
     expect(getAmServiceAccounts).toHaveBeenLastCalledWith({
@@ -684,6 +688,104 @@ describe('KolamAmSurface', () => {
     expect(joinedText).toMatch(/Logs \(\s*2\s+lines\)/);
     expect(text).toContain('created');
     expect(text).toContain('waiting');
+  });
+
+  it('creates and updates service accounts from the Services form', async () => {
+    jest.mocked(getAmDevices).mockResolvedValue({
+      data: [
+        {
+          _id: 'device-browser',
+          name: 'Browser Worker',
+          slug: 'browser-worker',
+          boxId: 'box-1',
+          connectionType: 'browser',
+          tcpAddress: null,
+          udid: null,
+          brand: 'Playwright',
+          model: 'Chromium',
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 1, limit: 100},
+    });
+    jest.mocked(getAmServiceAccounts).mockResolvedValue({
+      data: [
+        {
+          _id: 'service-edit',
+          platform: 'tokopedia',
+          label: 'Tokopedia Old',
+          deviceId: {
+            _id: 'device-browser',
+            name: 'Browser Worker',
+            connectionType: 'browser',
+            tcpAddress: null,
+            udid: null,
+          },
+          status: 'inactive',
+          username: 'old-user',
+          accountNumber: '',
+          credentials: {phoneNumber: '0812'},
+          meta: {},
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 1, limit: 20},
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await updateAmRoute(renderer!, 'services');
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Segment Browser Worker (Playwright)'}).props.onPress();
+    });
+
+    let inputs = renderer!.root.findAllByType(TextInput);
+    await act(async () => {
+      inputs[1].props.onChangeText('Tokopedia New');
+      inputs[2].props.onChangeText('new-user');
+      inputs[6].props.onChangeText('0899');
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Service Account Save'}).props.onPress();
+    });
+
+    expect(createAmServiceAccount).toHaveBeenCalledWith(expect.objectContaining({
+      platform: 'tokopedia',
+      label: 'Tokopedia New',
+      deviceId: 'device-browser',
+      username: 'new-user',
+      credentials: {phoneNumber: '0899'},
+      status: 'inactive',
+    }));
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Service Edit service-edit'}).props.onPress();
+    });
+
+    inputs = renderer!.root.findAllByType(TextInput);
+    await act(async () => {
+      inputs[1].props.onChangeText('Tokopedia Updated');
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Service Account Save'}).props.onPress();
+    });
+
+    expect(updateAmServiceAccount).toHaveBeenCalledWith('service-edit', expect.objectContaining({
+      platform: 'tokopedia',
+      label: 'Tokopedia Updated',
+      deviceId: 'device-browser',
+      username: 'old-user',
+      credentials: {phoneNumber: '0812'},
+      status: 'inactive',
+    }));
   });
 
   it('expands a service row and loads logs plus task history', async () => {

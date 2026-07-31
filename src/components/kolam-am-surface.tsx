@@ -19,6 +19,7 @@ import {
   createAmBox,
   createAmDevice,
   createAmRack,
+  createAmServiceAccount,
   createAmUser,
   createAmWebhookConfig,
   deleteAmBoxes,
@@ -66,6 +67,7 @@ import {
   updateAmBox,
   updateAmDevice,
   updateAmRack,
+  updateAmServiceAccount,
   updateAmUser,
   updateAmWebhookConfig,
   verifyAmTokopediaSession,
@@ -84,6 +86,7 @@ import {
   type AmRole,
   type AmServiceAccount,
   type AmServiceAccountDeviceRef,
+  type AmServiceAccountPayload,
   type AmTask,
   type AmTaskStatus,
   type AmTaskType,
@@ -816,9 +819,20 @@ function AmJsonPanel({title, value}: {title: string; value: unknown}) {
 
 function AmServicesPage() {
   const [accounts, setAccounts] = React.useState<AmServiceAccount[]>([]);
+  const [devices, setDevices] = React.useState<AmDevice[]>([]);
   const [search, setSearch] = React.useState('');
   const [platform, setPlatform] = React.useState('all');
   const [serviceStatus, setServiceStatus] = React.useState('all');
+  const [editingServiceId, setEditingServiceId] = React.useState<string | null>(null);
+  const [formPlatform, setFormPlatform] = React.useState('tokopedia');
+  const [formStatus, setFormStatus] = React.useState<AmServiceAccount['status']>('inactive');
+  const [formLabel, setFormLabel] = React.useState('');
+  const [formDeviceId, setFormDeviceId] = React.useState('none');
+  const [formUsername, setFormUsername] = React.useState('');
+  const [formPassword, setFormPassword] = React.useState('');
+  const [formPin, setFormPin] = React.useState('');
+  const [formAccountNumber, setFormAccountNumber] = React.useState('');
+  const [formPhoneNumber, setFormPhoneNumber] = React.useState('');
   const [expandedId, setExpandedId] = React.useState<string | null>(null);
   const [expandedTab, setExpandedTab] = React.useState<'logs' | 'history'>('logs');
   const [detailLogs, setDetailLogs] = React.useState<AmDeviceServiceLog[]>([]);
@@ -839,6 +853,7 @@ function AmServicesPage() {
   const [page, setPage] = React.useState(1);
   const [limit, setLimit] = React.useState(AM_SERVICE_PAGE_LIMIT);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
   const fetchAccounts = React.useCallback(async () => {
@@ -867,6 +882,25 @@ function AmServicesPage() {
   }, [fetchAccounts]);
 
   React.useEffect(() => {
+    let mounted = true;
+
+    const loadDevices = async () => {
+      try {
+        const response = await getAmDevices({limit: 100});
+        if (mounted) setDevices(response.data);
+      } catch {
+        if (mounted) setDevices([]);
+      }
+    };
+
+    loadDevices();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  React.useEffect(() => {
     const interval = setInterval(fetchAccounts, 15_000);
     return () => clearInterval(interval);
   }, [fetchAccounts]);
@@ -889,6 +923,102 @@ function AmServicesPage() {
   const totalPages = Math.max(1, Math.ceil(total / Math.max(limit, 1)));
   const rangeFrom = total ? (page - 1) * limit + 1 : 0;
   const rangeTo = total ? Math.min(page * limit, total) : 0;
+  const serviceDeviceItems = React.useMemo(
+    () => ['none', ...devices.map(device => device._id)],
+    [devices],
+  );
+  const serviceDeviceLabels = React.useMemo<Record<string, string>>(
+    () => ({
+      none: 'No device',
+      ...Object.fromEntries(devices.map(device => [device._id, `${device.name} (${formatDeviceIdentifier(device)})`])),
+    }),
+    [devices],
+  );
+
+  const resetServiceForm = React.useCallback(() => {
+    setEditingServiceId(null);
+    setFormPlatform('tokopedia');
+    setFormStatus('inactive');
+    setFormLabel('');
+    setFormDeviceId('none');
+    setFormUsername('');
+    setFormPassword('');
+    setFormPin('');
+    setFormAccountNumber('');
+    setFormPhoneNumber('');
+  }, []);
+
+  const editServiceAccount = React.useCallback((account: AmServiceAccount) => {
+    const device = getServiceDevice(account);
+    setEditingServiceId(account._id);
+    setFormPlatform(account.platform);
+    setFormStatus(account.status);
+    setFormLabel(account.label);
+    setFormDeviceId(device?._id ?? 'none');
+    setFormUsername(account.username ?? '');
+    setFormPassword('');
+    setFormPin('');
+    setFormAccountNumber(account.accountNumber ?? '');
+    setFormPhoneNumber(getCredentialString(account.credentials, 'phoneNumber') ?? '');
+  }, []);
+
+  const buildServiceAccountPayload = React.useCallback((): AmServiceAccountPayload => {
+    const credentials: Record<string, unknown> = {};
+    if (formPhoneNumber.trim()) credentials.phoneNumber = formPhoneNumber.trim();
+
+    return {
+      platform: formPlatform,
+      label: formLabel.trim(),
+      deviceId: formDeviceId === 'none' ? null : formDeviceId,
+      username: formUsername.trim(),
+      password: formPassword.trim(),
+      pin: formPin.trim(),
+      accountNumber: formAccountNumber.trim(),
+      credentials,
+      status: formStatus,
+    };
+  }, [
+    formAccountNumber,
+    formDeviceId,
+    formLabel,
+    formPassword,
+    formPhoneNumber,
+    formPin,
+    formPlatform,
+    formStatus,
+    formUsername,
+  ]);
+
+  const submitServiceAccountForm = React.useCallback(async () => {
+    const payload = buildServiceAccountPayload();
+    if (!payload.platform || !payload.label) {
+      setError('Platform dan label service wajib diisi.');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      setActionMessage(null);
+      setError(null);
+      if (editingServiceId) {
+        await updateAmServiceAccount(editingServiceId, payload);
+        setActionMessage(`${payload.label} diperbarui.`);
+      } else {
+        await createAmServiceAccount({
+          ...payload,
+          platform: String(payload.platform),
+          label: String(payload.label),
+        });
+        setActionMessage(`${payload.label} dibuat.`);
+      }
+      resetServiceForm();
+      await fetchAccounts();
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Gagal menyimpan service account AM.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [buildServiceAccountPayload, editingServiceId, fetchAccounts, resetServiceForm]);
 
   const loadServiceLogs = React.useCallback(async (account: AmServiceAccount) => {
     const device = getServiceDevice(account);
@@ -1120,6 +1250,60 @@ function AmServicesPage() {
           <Text style={styles.successText}>{actionMessage}</Text>
         </View>
       ) : null}
+      <View style={styles.panel}>
+        <View style={styles.detailHeader}>
+          <View>
+            <Text style={styles.panelTitle}>{editingServiceId ? 'Edit Service Account' : 'Create Service Account'}</Text>
+            <Text style={styles.panelText}>Payload mengikuti AM BE live /service-account. Secret kosong saat edit tidak menghapus nilai tersimpan.</Text>
+          </View>
+          {editingServiceId ? (
+            <KolamButton
+              accessibilityLabel="AM Service Form Cancel Edit"
+              intent="outline"
+              label="Cancel Edit"
+              muted={isSubmitting}
+              size="sm"
+              onPress={resetServiceForm}
+            />
+          ) : null}
+        </View>
+        <View style={styles.filterBar}>
+          <AmSegmentGroup
+            active={formPlatform}
+            items={AM_PLATFORMS.filter(item => item !== 'all')}
+            labels={AM_PLATFORM_LABELS}
+            onSelect={setFormPlatform}
+          />
+          <AmSegmentGroup
+            active={formStatus}
+            items={['active', 'inactive', 'blocked']}
+            onSelect={value => setFormStatus(value)}
+          />
+          <AmSegmentGroup
+            active={formDeviceId}
+            items={serviceDeviceItems}
+            labels={serviceDeviceLabels}
+            onSelect={setFormDeviceId}
+          />
+        </View>
+        <View style={styles.formGrid}>
+          <AmTextInput label="Label" placeholder="Tokopedia Seller Center" value={formLabel} onChangeText={setFormLabel} />
+          <AmTextInput label="Username" placeholder="username/email opsional" value={formUsername} onChangeText={setFormUsername} />
+          <AmTextInput label="Password" placeholder={editingServiceId ? 'Kosongkan jika tidak mengganti' : 'password opsional'} secureTextEntry value={formPassword} onChangeText={setFormPassword} />
+          <AmTextInput label="PIN" placeholder={editingServiceId ? 'Kosongkan jika tidak mengganti' : 'PIN opsional'} secureTextEntry value={formPin} onChangeText={setFormPin} />
+          <AmTextInput label="Account Number" placeholder="nomor akun/rekening" value={formAccountNumber} onChangeText={setFormAccountNumber} />
+          <AmTextInput label="Phone Number" placeholder="credentials.phoneNumber" value={formPhoneNumber} onChangeText={setFormPhoneNumber} />
+        </View>
+        <View style={styles.inlineActions}>
+          <KolamButton
+            accessibilityLabel="AM Service Account Save"
+            label={isSubmitting ? 'Menyimpan' : editingServiceId ? 'Update Service' : 'Create Service'}
+            muted={isSubmitting}
+            size="sm"
+            onPress={submitServiceAccountForm}
+          />
+        </View>
+      </View>
       <View style={styles.tablePanel}>
         <View style={styles.tableHeader}>
           <Text style={[styles.tableHeaderText, styles.serviceCol]}>Service</Text>
@@ -1164,6 +1348,14 @@ function AmServicesPage() {
                     muted={actingServiceId === account._id || !device}
                     size="sm"
                     onPress={() => runServicePowerAction(account)}
+                  />
+                  <KolamButton
+                    accessibilityLabel={`AM Service Edit ${account._id}`}
+                    intent="outline"
+                    label="Edit"
+                    muted={isSubmitting}
+                    size="sm"
+                    onPress={() => editServiceAccount(account)}
                   />
                 </View>
               </View>

@@ -138,6 +138,19 @@ export interface AmServiceAccount {
   updatedAt: string;
 }
 
+export interface AmServiceAccountPayload {
+  platform?: AmPlatform | string;
+  label?: string;
+  deviceId?: string | null;
+  username?: string;
+  password?: string;
+  pin?: string;
+  accountNumber?: string;
+  credentials?: Record<string, unknown>;
+  meta?: Record<string, unknown>;
+  status?: AmServiceAccountStatus | string;
+}
+
 export interface AmRack {
   _id: string;
   name: string;
@@ -623,6 +636,21 @@ export async function getAmServiceAccounts(
   baseUrl = appConfig.amApiBaseUrl,
 ): Promise<AmListResponse<AmServiceAccount>> {
   return getAmList<AmServiceAccount>('/service-account', query, baseUrl);
+}
+
+export async function createAmServiceAccount(
+  payload: AmServiceAccountPayload & {platform: string; label: string},
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmServiceAccount> {
+  return amPost<AmServiceAccount>('/service-account', payload, baseUrl);
+}
+
+export async function updateAmServiceAccount(
+  id: string,
+  payload: AmServiceAccountPayload,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmServiceAccount> {
+  return amPut<AmServiceAccount>(`/service-account/${id}`, payload, baseUrl);
 }
 
 export async function getAmRacks(
