@@ -35,6 +35,9 @@ export async function getKolamStockTransactionList(
   if (filters.speciesId && !filters.productId) {
     query.speciesId = filters.speciesId;
   }
+  if (filters.enclosureId.trim()) {
+    query.enclosureId = filters.enclosureId.trim();
+  }
   if (filters.stockOpnameId.trim()) {
     query.stockOpnameId = filters.stockOpnameId.trim();
   }

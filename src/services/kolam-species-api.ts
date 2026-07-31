@@ -1,5 +1,9 @@
 import { appConfig } from '../config/app';
 import {
+  normalizeKolamSpeciesTaxonomyProduction,
+  type KolamSpeciesTaxonomyProduction,
+} from '../domain/kolam-enclosure';
+import {
   createKolamSpeciesPackingLinkPayload,
   createKolamSpeciesSavePayload,
   normalizeKolamSpeciesDetail,
@@ -66,6 +70,15 @@ export async function getKolamSpecies(id: string): Promise<KolamSpecies> {
     `/species/${encodeURIComponent(id)}`,
   );
   return normalizeKolamSpeciesDetail(response);
+}
+
+export async function getKolamSpeciesTaxonomyProduction(
+  speciesId: string,
+): Promise<KolamSpeciesTaxonomyProduction> {
+  const response = await kolamRequest<unknown>(
+    `/species/${encodeURIComponent(speciesId)}/taxonomy-production`,
+  );
+  return normalizeKolamSpeciesTaxonomyProduction(response);
 }
 
 

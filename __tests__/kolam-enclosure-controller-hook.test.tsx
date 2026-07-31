@@ -15,6 +15,7 @@ import {
   getKolamPendingLivestockAllocations,
   getKolamSpeciesAllocationOverview,
 } from '../src/services/kolam-enclosure-api';
+import {getKolamStockTransactionList} from '../src/services/kolam-stock-transaction-api';
 
 jest.mock('../src/services/kolam-enclosure-api', () => ({
   getKolamEnclosureComments: jest.fn(),
@@ -28,6 +29,10 @@ jest.mock('../src/services/kolam-enclosure-api', () => ({
   getKolamEnclosures: jest.fn(),
   getKolamPendingLivestockAllocations: jest.fn(),
   getKolamSpeciesAllocationOverview: jest.fn(),
+}));
+
+jest.mock('../src/services/kolam-stock-transaction-api', () => ({
+  getKolamStockTransactionList: jest.fn(),
 }));
 
 type EnclosureController = ReturnType<typeof useKolamEnclosureController>;
@@ -69,6 +74,10 @@ const getPendingAllocationsMock =
 const getAllocationOverviewMock =
   getKolamSpeciesAllocationOverview as jest.MockedFunction<
     typeof getKolamSpeciesAllocationOverview
+  >;
+const getStockTransactionsMock =
+  getKolamStockTransactionList as jest.MockedFunction<
+    typeof getKolamStockTransactionList
   >;
 
 function requireController(controller: EnclosureController | null) {
@@ -146,6 +155,55 @@ describe('Kolam enclosure controller hook', () => {
         },
       },
     ]);
+    getStockTransactionsMock.mockResolvedValue({
+      data: [
+        {
+          after: 1,
+          before: 2,
+          computed: null,
+          createdAt: '2026-07-30T08:00:00.000Z',
+          createdBy: null,
+          crossSync: null,
+          delta: -1,
+          enclosureHref: null,
+          enclosureLabel: 'ENC-1',
+          financeCancelled: false,
+          financeCancelledAt: '',
+          financeCancelledBy: null,
+          financeNote: '',
+          financeStatusHint: '',
+          financeStatusLabel: '',
+          globalAfter: 0,
+          globalBefore: 0,
+          id: 'stx-1',
+          photos: [],
+          quantity: -1,
+          reason: 'death',
+          reference: null,
+          salesSource: null,
+          source: 'enclosure',
+          sourceLabel: 'Enclosure',
+          status: '',
+          statusLabel: '',
+          stockOpnameId: '',
+          target: {
+            href: null,
+            id: 'sp-1',
+            kind: 'species',
+            label: 'Ranitomeya',
+            sku: '',
+          },
+          type: 'out',
+          variantLabel: '',
+          verificationHint: '',
+          verifiedAt: '',
+          verifiedBy: null,
+          walletTransaction: null,
+        },
+      ],
+      pagination: {limit: 30, page: 1, total: 1, totalPages: 1},
+      pendingReturnExpectations: [],
+    });
     getEnclosuresMock.mockResolvedValue(createListResult());
     getPendingAllocationsMock.mockResolvedValue({
       items: [
@@ -382,6 +440,9 @@ describe('Kolam enclosure controller hook', () => {
     expect(getTasksMock).toHaveBeenCalledWith('enc-1');
     expect(getTaskTypesMock).toHaveBeenCalled();
     expect(getRecurringEnrollmentsMock).toHaveBeenCalledWith('enc-1');
+    expect(getStockTransactionsMock).toHaveBeenCalledWith(
+      expect.objectContaining({enclosureId: 'enc-1', limit: 30}),
+    );
     expect(requireController(latest).mode).toBe('detail');
     expect(requireController(latest).selectedEnclosure).toEqual(
       expect.objectContaining({id: 'enc-1', code: 'ENC-1'}),
@@ -400,6 +461,9 @@ describe('Kolam enclosure controller hook', () => {
         active: true,
         taskType: expect.objectContaining({id: 'tt-1', name: 'Cek rutin'}),
       }),
+    ]);
+    expect(requireController(latest).enclosureStockTransactions).toEqual([
+      expect.objectContaining({id: 'stx-1'}),
     ]);
     expect(getDashboardStatsMock).not.toHaveBeenCalled();
   });

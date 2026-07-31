@@ -8,6 +8,7 @@ import {
   getKolamEnclosureRouteId,
   getKolamEnclosureSurfaceMode,
   getKolamEnclosureTaskStatusIntent,
+  getKolamSpeciesSizeUpgradeTargets,
   groupKolamEnclosureAllocationRows,
   isKolamEnclosureNativeRoute,
   isKolamEnclosureRoute,
@@ -22,7 +23,9 @@ import {
   normalizeKolamEnclosureStatistics,
   normalizeKolamEnclosureTaskTypes,
   normalizeKolamEnclosureTasks,
+  normalizeKolamSpeciesTaxonomyProduction,
   parseKolamEnclosureListTab,
+  resolveKolamProductionAdvanceTarget,
 } from '../src/domain/kolam-enclosure';
 
 describe('Kolam enclosure domain', () => {
@@ -506,5 +509,56 @@ describe('Kolam enclosure domain', () => {
         species: [],
       }),
     ).toEqual({ok: true, reason: ''});
+  });
+
+  it('resolves taxonomy production advance and size upgrade targets', () => {
+    const taxonomy = normalizeKolamSpeciesTaxonomyProduction({
+      data: {
+        profile: {
+          transitions: [
+            {
+              fromStageKey: 'kecebong',
+              kind: 'advance',
+              toStageKey: 'juvenil',
+            },
+          ],
+        },
+        ready: true,
+        stages: [
+          {
+            allowsSaleBranch: false,
+            label: 'Kecebong',
+            stageKey: 'kecebong',
+            storage: 'variant',
+            variant: {variantId: 'v1'},
+          },
+          {
+            allowsSaleBranch: true,
+            label: 'Juvenil',
+            stageKey: 'juvenil',
+            storage: 'variant',
+            variant: {variantId: 'v2'},
+          },
+        ],
+      },
+    });
+    expect(resolveKolamProductionAdvanceTarget(taxonomy, 'v1')).toEqual({
+      fromStageKey: 'kecebong',
+      toLabel: 'Juvenil',
+      toStageKey: 'juvenil',
+    });
+    expect(
+      getKolamSpeciesSizeUpgradeTargets(
+        {
+          raw: {variantConfig: {tier1Values: ['S', 'M', 'L']}},
+          variants: [
+            {id: 'vs', label: 'S', tier1Value: 'S', tier2Value: ''},
+            {id: 'vm', label: 'M', tier1Value: 'M', tier2Value: ''},
+            {id: 'vl', label: 'L', tier1Value: 'L', tier2Value: ''},
+          ],
+        },
+        'vs',
+      ).map(item => item.variantId),
+    ).toEqual(['vm', 'vl']);
   });
 });

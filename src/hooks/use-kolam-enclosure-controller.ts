@@ -20,6 +20,7 @@ import {
   type KolamEnclosureTaskItem,
   type KolamEnclosureTaskType,
 } from '../domain/kolam-enclosure';
+import type {KolamStockTransaction} from '../domain/kolam-stock-transaction';
 import {getErrorMessage} from '../lib/api-error';
 import {
   addKolamEnclosureProductionEggs,
@@ -68,6 +69,7 @@ import {
   type KolamEnclosureSpeciesTransferInput,
   type KolamEnclosureVariantSwitchInput,
 } from '../services/kolam-enclosure-api';
+import {getKolamStockTransactionList} from '../services/kolam-stock-transaction-api';
 
 export type KolamEnclosureDataSource = 'idle' | 'live' | 'error';
 
@@ -144,6 +146,9 @@ export interface KolamEnclosureController {
   enclosureTaskTypes: KolamEnclosureTaskType[];
   enclosureRecurringEnrollments: KolamEnclosureRecurringEnrollment[];
   enclosureRecurringLoading: boolean;
+  enclosureStockTransactions: KolamStockTransaction[];
+  enclosureStockTransactionsLoading: boolean;
+  enclosureStockTransactionsError: string | null;
   operationLoading: boolean;
   staffAssignees: KolamEnclosureStaffRef[];
   statusMessage: string | null;
@@ -166,6 +171,7 @@ export interface KolamEnclosureController {
   onRefresh: () => Promise<void>;
   onRefreshComments: () => Promise<void>;
   onRefreshTasks: () => Promise<void>;
+  onRefreshStockTransactions: () => Promise<void>;
   onReplyComment: (commentId: string, comment: string) => Promise<void>;
   onSearchChange: (search: string) => void;
   onSetRecurringEnrollment: (input: {
@@ -222,6 +228,13 @@ export function useKolamEnclosureController(
     useState<KolamEnclosureRecurringEnrollment[]>([]);
   const [enclosureRecurringLoading, setEnclosureRecurringLoading] =
     useState(false);
+  const [enclosureStockTransactions, setEnclosureStockTransactions] = useState<
+    KolamStockTransaction[]
+  >([]);
+  const [enclosureStockTransactionsLoading, setEnclosureStockTransactionsLoading] =
+    useState(false);
+  const [enclosureStockTransactionsError, setEnclosureStockTransactionsError] =
+    useState<string | null>(null);
   const [dashboardStats, setDashboardStats] =
     useState<KolamEnclosureDashboardStats>(EMPTY_DASHBOARD_STATS);
   const [pendingAllocations, setPendingAllocations] = useState<
@@ -256,6 +269,8 @@ export function useKolamEnclosureController(
     setEnclosureTasks([]);
     setEnclosureTaskTypes([]);
     setEnclosureRecurringEnrollments([]);
+    setEnclosureStockTransactions([]);
+    setEnclosureStockTransactionsError(null);
     setError(null);
     setStatusMessage(null);
   }, [route]);
@@ -337,6 +352,39 @@ export function useKolamEnclosureController(
           setEnclosureTasksLoading(false);
           setEnclosureRecurringLoading(false);
         });
+        setEnclosureStockTransactionsLoading(true);
+        setEnclosureStockTransactionsError(null);
+        void getKolamStockTransactionList({
+          enclosureId,
+          endDate: '',
+          limit: 30,
+          page: 1,
+          productId: '',
+          search: '',
+          speciesId: '',
+          startDate: '',
+          status: '',
+          stockOpnameId: '',
+        })
+          .then(result => {
+            if (requestSeq.current !== activeRequest) {
+              return;
+            }
+            setEnclosureStockTransactions(result.data);
+            setEnclosureStockTransactionsError(null);
+          })
+          .catch(loadError => {
+            if (requestSeq.current !== activeRequest) {
+              return;
+            }
+            setEnclosureStockTransactions([]);
+            setEnclosureStockTransactionsError(getErrorMessage(loadError));
+          })
+          .finally(() => {
+            if (requestSeq.current === activeRequest) {
+              setEnclosureStockTransactionsLoading(false);
+            }
+          });
         setDataSource('live');
         return;
       }
@@ -461,6 +509,37 @@ export function useKolamEnclosureController(
     } finally {
       setEnclosureTasksLoading(false);
       setEnclosureRecurringLoading(false);
+    }
+  }, [route]);
+
+  const refreshStockTransactions = useCallback(async () => {
+    const enclosureId = getKolamEnclosureRouteId(route);
+    if (!enclosureId) {
+      setEnclosureStockTransactions([]);
+      setEnclosureStockTransactionsError(null);
+      return;
+    }
+    setEnclosureStockTransactionsLoading(true);
+    setEnclosureStockTransactionsError(null);
+    try {
+      const result = await getKolamStockTransactionList({
+        enclosureId,
+        endDate: '',
+        limit: 30,
+        page: 1,
+        productId: '',
+        search: '',
+        speciesId: '',
+        startDate: '',
+        status: '',
+        stockOpnameId: '',
+      });
+      setEnclosureStockTransactions(result.data);
+    } catch (loadError) {
+      setEnclosureStockTransactions([]);
+      setEnclosureStockTransactionsError(getErrorMessage(loadError));
+    } finally {
+      setEnclosureStockTransactionsLoading(false);
     }
   }, [route]);
 
@@ -834,6 +913,9 @@ export function useKolamEnclosureController(
     enclosureTaskTypes,
     enclosureRecurringEnrollments,
     enclosureRecurringLoading,
+    enclosureStockTransactions,
+    enclosureStockTransactionsLoading,
+    enclosureStockTransactionsError,
     operationLoading,
     staffAssignees,
     statusMessage,
@@ -856,6 +938,7 @@ export function useKolamEnclosureController(
     onRefresh: refresh,
     onRefreshComments: refreshComments,
     onRefreshTasks: refreshTasks,
+    onRefreshStockTransactions: refreshStockTransactions,
     onReplyComment,
     onSearchChange,
     onSetRecurringEnrollment,

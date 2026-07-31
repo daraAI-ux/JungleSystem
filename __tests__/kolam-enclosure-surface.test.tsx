@@ -17,6 +17,23 @@ jest.mock('../src/components/kolam-barcode-print-dialog', () => ({
   KolamBarcodePrintDialog: () => null,
 }));
 
+jest.mock('../src/services/kolam-species-api', () => ({
+  getKolamSpeciesList: jest.fn().mockResolvedValue({data: [], pagination: {}}),
+  getKolamSpeciesTaxonomyProduction: jest.fn().mockResolvedValue({
+    profile: null,
+    raw: {},
+    ready: false,
+    stages: [],
+  }),
+}));
+
+jest.mock('../src/services/kolam-enclosure-api', () => ({
+  getKolamEnclosures: jest.fn().mockResolvedValue({
+    data: [],
+    pagination: {limit: 200, page: 1, total: 0, totalPages: 1},
+  }),
+}));
+
 jest.mock('react-native', () => {
   const ReactActual = require('react');
   const RN = jest.requireActual('react-native');
@@ -413,7 +430,7 @@ describe('Kolam enclosure surface', () => {
     expect(root.findAllByProps({children: 'Parameter terbaca'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'Penjualan'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'Pergerakan stok'}).length).toBeGreaterThan(0);
-    expect(root.findAllByProps({label: 'Lihat semua'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Belum ada transaksi.'}).length).toBeGreaterThan(0);
 
     await ReactTestRenderer.act(async () => {
       root.findAllByProps({label: 'Tasks'})[0].props.onPress();
@@ -669,6 +686,9 @@ function createController(
     enclosureTaskTypes: [],
     enclosureRecurringEnrollments: [],
     enclosureRecurringLoading: false,
+    enclosureStockTransactions: [],
+    enclosureStockTransactionsLoading: false,
+    enclosureStockTransactionsError: null,
     error: null,
     filters: {
       enclosureType: 'all',
@@ -713,6 +733,7 @@ function createController(
     onRefresh: jest.fn().mockResolvedValue(undefined),
     onRefreshComments: jest.fn().mockResolvedValue(undefined),
     onRefreshTasks: jest.fn().mockResolvedValue(undefined),
+    onRefreshStockTransactions: jest.fn().mockResolvedValue(undefined),
     onReplyComment: jest.fn().mockResolvedValue(undefined),
     onSearchChange: jest.fn(),
     onSetRecurringEnrollment: jest.fn().mockResolvedValue(undefined),

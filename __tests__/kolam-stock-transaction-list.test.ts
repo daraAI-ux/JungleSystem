@@ -35,6 +35,7 @@ describe('Kolam stock transaction domain', () => {
       search: 'sku',
       productId: 'p1',
       speciesId: '',
+      enclosureId: '',
       stockOpnameId: '',
       status: 'verified',
       startDate: '2026-01-01',
@@ -42,6 +43,14 @@ describe('Kolam stock transaction domain', () => {
       page: 3,
       limit: 10,
     });
+  });
+
+  it('parses enclosureId from stock transaction route query', () => {
+    expect(
+      createInitialStockTransactionListFilters(
+        '/stock-transaction?enclosureId=enc-1',
+      ).enclosureId,
+    ).toBe('enc-1');
   });
 
   it('normalizes list payload with pagination and computed display deltas', () => {

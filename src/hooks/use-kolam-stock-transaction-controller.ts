@@ -353,6 +353,7 @@ export function useKolamStockTransactionController(
       search: '',
       productId: '',
       speciesId: '',
+      enclosureId: '',
       stockOpnameId: '',
       status: '',
       startDate: '',

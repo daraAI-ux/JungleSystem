@@ -141,6 +141,7 @@ export interface KolamStockTransactionListFilters {
   search: string;
   productId: string;
   speciesId: string;
+  enclosureId: string;
   stockOpnameId: string;
   status: '' | KolamStockTransactionStatus;
   startDate: string;
@@ -288,6 +289,7 @@ export function createInitialStockTransactionListFilters(
     search: query.search ?? '',
     productId: query.productId ?? '',
     speciesId: query.speciesId ?? '',
+    enclosureId: query.enclosureId ?? '',
     stockOpnameId: query.stockOpnameId ?? '',
     status:
       query.status === 'verified' || query.status === 'unverified'

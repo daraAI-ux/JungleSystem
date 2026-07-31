@@ -13,6 +13,7 @@ import {
   KOLAM_ENCLOSURE_TYPES,
   KOLAM_ENCLOSURE_ROOT,
   canKolamEnclosureBeListed,
+  canKolamProductionSaleBranch,
   climateDraftFromRow,
   climateDraftsEqual,
   filterKolamEnclosureTaskTypesForCategoryBucket,
@@ -20,8 +21,11 @@ import {
   getKolamEnclosureParameterChartValues,
   getKolamEnclosureParameterLastUpdated,
   getKolamEnclosureTaskStatusIntent,
+  getKolamProductionSaleStageKey,
+  getKolamSpeciesSizeUpgradeTargets,
   mergeKolamEnclosureClimateRows,
   normalizeKolamEnclosurePageSize,
+  resolveKolamProductionAdvanceTarget,
   supportsKolamEnclosureClimateParameters,
   type KolamEnclosure,
   type KolamEnclosureAllocationOverviewRow,
@@ -33,8 +37,10 @@ import {
   type KolamEnclosureProductionEvent,
   type KolamEnclosureStatistics,
   type KolamEnclosureStatisticsEvent,
+  type KolamSpeciesTaxonomyProduction,
 } from '../domain/kolam-enclosure';
 import type {KolamBarcodeLabelItem} from '../domain/kolam-barcode';
+import type {KolamSpecies} from '../domain/kolam-species';
 import {
   fitKolamDataTableColumns,
   getKolamTableColumns,
@@ -44,6 +50,8 @@ import {
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {getKolamFileUrl} from '../lib/file-url';
 import {pickNativeImageFile} from '../services/native-file-picker';
+import {getKolamSpeciesList, getKolamSpeciesTaxonomyProduction} from '../services/kolam-species-api';
+import {getKolamEnclosures} from '../services/kolam-enclosure-api';
 import {getKolamUnits} from '../services/kolam-unit-api';
 import {
   useKolamEnclosureController,
@@ -974,7 +982,7 @@ function KolamEnclosureDetailStatisticsTab({
     .reduce((sum, item) => sum + Math.abs(item.delta), 0);
   const birthQty = countProductionBirthQty(enclosure);
   const summary = statistics?.summary;
-  const movementRows = getDetailStockMovementRows(enclosure, statistics);
+  const stockRows = controller.enclosureStockTransactions;
 
   return (
     <View style={styles.detailStatsStack}>
@@ -1089,34 +1097,65 @@ function KolamEnclosureDetailStatisticsTab({
           />
         </DetailSection>
         <DetailSection title="Pergerakan stok">
-          {movementRows.length ? (
+          {controller.enclosureStockTransactionsLoading ? (
+            <Text style={styles.sectionMeta}>Memuat…</Text>
+          ) : controller.enclosureStockTransactionsError ? (
+            <KolamStatusBadge
+              intent="warning"
+              label={controller.enclosureStockTransactionsError}
+              numberOfLines={2}
+              textStyle={styles.badgeTextSm}
+            />
+          ) : stockRows.length ? (
             <>
-              {movementRows.map(row => (
-                <View key={row.key} style={styles.detailMiniRow}>
+              {stockRows.map(row => (
+                <View key={row.id} style={styles.detailMiniRow}>
                   <KolamCopyStack
                     containerStyle={styles.panelRowCopy}
                     items={[
                       {
                         id: 'title',
-                        text: row.title,
+                        text: row.target?.label || '—',
                         style: styles.rowTitle,
                       },
                       {
                         id: 'meta',
-                        text: row.meta,
+                        text: [
+                          formatDashboardDateTime(row.createdAt),
+                          String(row.type || '').toUpperCase(),
+                          row.reason || '',
+                        ]
+                          .filter(Boolean)
+                          .join(' · '),
                         style: styles.rowMeta,
                       },
                     ]}
                   />
-                  <Text
-                    style={[
-                      styles.qtyText,
-                      row.quantity < 0 ? styles.warningText : null,
-                    ]}
-                  >
-                    {row.quantity > 0 ? '+' : ''}
-                    {row.quantity}
-                  </Text>
+                  <View style={styles.detailActions}>
+                    <Text
+                      style={[
+                        styles.qtyText,
+                        row.quantity < 0 ? styles.warningText : null,
+                      ]}
+                    >
+                      {row.quantity > 0 ? '+' : ''}
+                      {row.quantity}
+                    </Text>
+                    <KolamButton
+                      label="Lihat"
+                      onPress={() =>
+                        onRouteChange?.(`/stock-transaction/${row.id}`)
+                      }
+                      style={styles.toolbarButton}
+                    />
+                    {row.reference?.href ? (
+                      <KolamButton
+                        label="Invoice"
+                        onPress={() => onRouteChange?.(row.reference!.href!)}
+                        style={styles.toolbarButton}
+                      />
+                    ) : null}
+                  </View>
                 </View>
               ))}
               <KolamButton
@@ -1128,9 +1167,15 @@ function KolamEnclosureDetailStatisticsTab({
                 }
                 style={styles.detailInlineButton}
               />
+              <KolamButton
+                disabled={controller.enclosureStockTransactionsLoading}
+                label="Refresh stok"
+                onPress={() => void controller.onRefreshStockTransactions()}
+                style={styles.toolbarButton}
+              />
             </>
           ) : (
-            <Text style={styles.mutedText}>Belum ada pergerakan stok.</Text>
+            <Text style={styles.mutedText}>Belum ada transaksi.</Text>
           )}
         </DetailSection>
       </View>
@@ -1791,8 +1836,18 @@ function EnclosureSpeciesOperation({
   controller: KolamEnclosureController;
   enclosure: KolamEnclosure;
 }) {
+  const [speciesCatalog, setSpeciesCatalog] = React.useState<KolamSpecies[]>(
+    [],
+  );
+  const [transferTargets, setTransferTargets] = React.useState<
+    Array<{id: string; label: string}>
+  >([]);
+  const [crossPoolTargets, setCrossPoolTargets] = React.useState<
+    Array<{id: string; label: string}>
+  >([]);
   const [speciesId, setSpeciesId] = React.useState('');
   const [variantId, setVariantId] = React.useState('');
+  const [lineKey, setLineKey] = React.useState('');
   const [qty, setQty] = React.useState('1');
   const [reason, setReason] = React.useState('');
   const [eventType, setEventType] = React.useState('death');
@@ -1800,6 +1855,172 @@ function EnclosureSpeciesOperation({
   const [targetEnclosureId, setTargetEnclosureId] = React.useState('');
   const [toVariantId, setToVariantId] = React.useState('');
   const [eventPhotoUri, setEventPhotoUri] = React.useState('');
+
+  React.useEffect(() => {
+    let cancelled = false;
+    void getKolamSpeciesList({limit: 500, page: 1, view: ''})
+      .then(result => {
+        if (!cancelled) {
+          setSpeciesCatalog(result.data);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setSpeciesCatalog([]);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    const samePurpose = enclosure.livestockPurpose;
+    const oppositePurpose =
+      samePurpose === 'production' ? 'saleable' : 'production';
+    void Promise.all([
+      getKolamEnclosures({
+        enclosureType: 'all',
+        limit: 200,
+        livestockPurpose: samePurpose,
+        page: 1,
+        scope: 'internal',
+        search: '',
+      }),
+      getKolamEnclosures({
+        enclosureType: 'all',
+        limit: 200,
+        livestockPurpose: oppositePurpose,
+        page: 1,
+        scope: 'internal',
+        search: '',
+      }),
+    ])
+      .then(([same, opposite]) => {
+        if (cancelled) {
+          return;
+        }
+        setTransferTargets(
+          same.data
+            .filter(item => item.id !== enclosure.id)
+            .map(item => ({
+              id: item.id,
+              label: `${item.code || item.id} · ${item.name || '-'}`,
+            })),
+        );
+        setCrossPoolTargets(
+          opposite.data
+            .filter(item => item.id !== enclosure.id)
+            .map(item => ({
+              id: item.id,
+              label: `${item.code || item.id} · ${item.name || '-'}`,
+            })),
+        );
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setTransferTargets([]);
+          setCrossPoolTargets([]);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [enclosure.id, enclosure.livestockPurpose]);
+
+  const selectedSpecies =
+    speciesCatalog.find(item => item.id === speciesId) ?? null;
+  const variantOptions = React.useMemo(
+    () => [
+      {label: '— Tanpa variant —', value: ''},
+      ...(selectedSpecies?.variants ?? []).map(variant => ({
+        label: variant.label || variant.sku || variant.id,
+        value: variant.id,
+      })),
+    ],
+    [selectedSpecies],
+  );
+  const lineOptions = React.useMemo(
+    () => [
+      {label: '— Pilih line —', value: ''},
+      ...enclosure.species.map(item => ({
+        label: `${item.speciesName || item.scientificName || item.speciesId}${
+          item.variantLabel ? ` / ${item.variantLabel}` : ''
+        } (${item.quantity})`,
+        value: `${item.speciesId}:${item.variantId}`,
+      })),
+    ],
+    [enclosure.species],
+  );
+  const upgradeTargets = React.useMemo(() => {
+    if (!selectedSpecies || !variantId) {
+      return [];
+    }
+    return getKolamSpeciesSizeUpgradeTargets(selectedSpecies, variantId);
+  }, [selectedSpecies, variantId]);
+
+  React.useEffect(() => {
+    if (!lineKey) {
+      return;
+    }
+    const [nextSpeciesId = '', nextVariantId = ''] = lineKey.split(':');
+    setSpeciesId(nextSpeciesId);
+    setVariantId(nextVariantId);
+  }, [lineKey]);
+
+  React.useEffect(() => {
+    if (
+      toVariantId &&
+      !upgradeTargets.some(item => item.variantId === toVariantId)
+    ) {
+      setToVariantId(upgradeTargets[0]?.variantId ?? '');
+    }
+  }, [toVariantId, upgradeTargets]);
+
+  const speciesOptions = React.useMemo(
+    () => [
+      {label: '— Pilih species —', value: ''},
+      ...speciesCatalog.map(item => ({
+        label: item.displayName || item.scientificName || item.id,
+        value: item.id,
+      })),
+    ],
+    [speciesCatalog],
+  );
+  const transferOptions = React.useMemo(
+    () => [
+      {label: '— Target transfer —', value: ''},
+      ...transferTargets.map(item => ({label: item.label, value: item.id})),
+    ],
+    [transferTargets],
+  );
+  const crossPoolOptions = React.useMemo(
+    () => [
+      {label: '— Target cross-pool —', value: ''},
+      ...crossPoolTargets.map(item => ({label: item.label, value: item.id})),
+    ],
+    [crossPoolTargets],
+  );
+  const eventTypeOptions = [
+    {label: 'Kematian', value: 'death'},
+    {label: 'Hilang', value: 'lost'},
+    {label: 'Transfer keluar', value: 'transfer'},
+    {label: 'Cross-pool', value: 'cross-pool'},
+    {label: 'Adopsi', value: 'adoption'},
+    {label: 'Kelahiran', value: 'birth'},
+  ];
+  const upgradeOptions = React.useMemo(
+    () => [
+      {label: '— Target ukuran —', value: ''},
+      ...upgradeTargets.map(item => ({
+        label: item.label,
+        value: item.variantId,
+      })),
+    ],
+    [upgradeTargets],
+  );
+
   const baseInput = {
     enclosureId: enclosure.id,
     quantity: Math.max(1, Number(qty) || 1),
@@ -1807,21 +2028,32 @@ function EnclosureSpeciesOperation({
     speciesId: speciesId.trim(),
     variantId: variantId.trim() || null,
   };
+
   return (
     <DetailSection title="Operasional species">
+      <KolamDropdownSelect
+        label="Species katalog"
+        menuPlacement="inline"
+        onChange={value => {
+          setSpeciesId(value);
+          setVariantId('');
+          setLineKey('');
+          setToVariantId('');
+        }}
+        options={speciesOptions}
+        searchable
+        style={styles.operationInput}
+        value={speciesId}
+      />
+      <KolamDropdownSelect
+        label="Variant"
+        menuPlacement="inline"
+        onChange={setVariantId}
+        options={variantOptions}
+        style={styles.operationInput}
+        value={variantId}
+      />
       <View style={styles.operationGrid}>
-        <KolamFormTextField
-          onChangeText={setSpeciesId}
-          placeholder="Species ID"
-          style={styles.operationInput}
-          value={speciesId}
-        />
-        <KolamFormTextField
-          onChangeText={setVariantId}
-          placeholder="Variant ID opsional"
-          style={styles.operationInput}
-          value={variantId}
-        />
         <KolamFormTextField
           mode="numeric"
           onChangeText={setQty}
@@ -1835,18 +2067,33 @@ function EnclosureSpeciesOperation({
           style={styles.operationInput}
           value={reason}
         />
-      </View>
-      <View style={styles.operationGrid}>
         <KolamButton
           disabled={controller.operationLoading || !speciesId.trim()}
           label="Attach"
           onPress={() => controller.onAttachSpecies(baseInput)}
           style={styles.toolbarButton}
         />
-        <KolamFormTextField
-          onChangeText={setEventType}
-          placeholder="Event type"
-          style={styles.operationInputSmall}
+      </View>
+
+      <Text style={styles.sectionMeta}>Event populasi</Text>
+      <KolamDropdownSelect
+        label="Line di enclosure"
+        menuPlacement="inline"
+        onChange={setLineKey}
+        options={lineOptions}
+        style={styles.operationInput}
+        value={lineKey}
+      />
+      <View style={styles.operationGrid}>
+        <KolamDropdownSelect
+          label="Tipe event"
+          menuPlacement="inline"
+          onChange={value => {
+            setEventType(value);
+            setDelta(value === 'birth' ? '1' : '-1');
+          }}
+          options={eventTypeOptions}
+          style={styles.operationInput}
           value={eventType}
         />
         <KolamFormTextField
@@ -1863,7 +2110,22 @@ function EnclosureSpeciesOperation({
           value={eventPhotoUri}
         />
         <KolamButton
-          disabled={controller.operationLoading || !speciesId.trim()}
+          label="Pilih foto"
+          onPress={() =>
+            void pickNativeImageFile().then(picked => {
+              if (!picked.cancelled && picked.uri) {
+                setEventPhotoUri(picked.uri);
+              }
+            })
+          }
+          style={styles.toolbarButton}
+        />
+        <KolamButton
+          disabled={
+            controller.operationLoading ||
+            !speciesId.trim() ||
+            (eventType === 'death' && !eventPhotoUri.trim())
+          }
           label="Catat event"
           onPress={() =>
             controller.onRecordPopulationEvent({
@@ -1879,18 +2141,28 @@ function EnclosureSpeciesOperation({
           style={styles.toolbarButton}
         />
       </View>
+
+      <Text style={styles.sectionMeta}>Transfer / cross-pool</Text>
+      <KolamDropdownSelect
+        label="Target transfer (same purpose)"
+        menuPlacement="inline"
+        onChange={setTargetEnclosureId}
+        options={transferOptions}
+        searchable
+        style={styles.operationInput}
+        value={
+          transferTargets.some(item => item.id === targetEnclosureId)
+            ? targetEnclosureId
+            : ''
+        }
+      />
       <View style={styles.operationGrid}>
-        <KolamFormTextField
-          onChangeText={setTargetEnclosureId}
-          placeholder="Target enclosure ID"
-          style={styles.operationInput}
-          value={targetEnclosureId}
-        />
         <KolamButton
           disabled={
             controller.operationLoading ||
             !speciesId.trim() ||
-            !targetEnclosureId.trim()
+            !targetEnclosureId.trim() ||
+            !transferTargets.some(item => item.id === targetEnclosureId)
           }
           label="Transfer"
           onPress={() =>
@@ -1901,54 +2173,76 @@ function EnclosureSpeciesOperation({
           }
           style={styles.toolbarButton}
         />
-        <KolamButton
-          disabled={
-            controller.operationLoading ||
-            !speciesId.trim() ||
-            !targetEnclosureId.trim()
-          }
-          label="Cross pool"
-          onPress={() =>
-            controller.onCrossPoolTransferSpecies({
-              ...baseInput,
-              direction:
-                enclosure.livestockPurpose === 'production'
-                  ? 'release_to_sale'
-                  : 'take_to_production',
-              targetEnclosureId: targetEnclosureId.trim(),
-            })
-          }
-          style={styles.toolbarButton}
-        />
       </View>
-      <View style={styles.operationGrid}>
-        <KolamFormTextField
-          onChangeText={setToVariantId}
-          placeholder="To variant ID"
-          style={styles.operationInput}
-          value={toVariantId}
-        />
-        <KolamButton
-          disabled={
-            controller.operationLoading ||
-            !speciesId.trim() ||
-            !variantId.trim() ||
-            !toVariantId.trim()
-          }
-          label="Switch variant"
-          onPress={() =>
-            controller.onSwitchSpeciesVariant({
-              enclosureId: enclosure.id,
-              speciesId: speciesId.trim(),
-              fromVariantId: variantId.trim(),
-              toVariantId: toVariantId.trim(),
-              quantity: Math.max(1, Number(qty) || 1),
-              reason: reason.trim() || undefined,
-            })
-          }
-          style={styles.toolbarButton}
-        />
-      </View>
+      <KolamDropdownSelect
+        label="Target cross-pool"
+        menuPlacement="inline"
+        onChange={setTargetEnclosureId}
+        options={crossPoolOptions}
+        searchable
+        style={styles.operationInput}
+        value={
+          crossPoolTargets.some(item => item.id === targetEnclosureId)
+            ? targetEnclosureId
+            : ''
+        }
+      />
+      <KolamButton
+        disabled={
+          controller.operationLoading ||
+          !speciesId.trim() ||
+          !targetEnclosureId.trim() ||
+          !crossPoolTargets.some(item => item.id === targetEnclosureId)
+        }
+        label="Cross pool"
+        onPress={() =>
+          controller.onCrossPoolTransferSpecies({
+            ...baseInput,
+            direction:
+              enclosure.livestockPurpose === 'production'
+                ? 'release_to_sale'
+                : 'take_to_production',
+            targetEnclosureId: targetEnclosureId.trim(),
+          })
+        }
+        style={styles.toolbarButton}
+      />
+
+      <Text style={styles.sectionMeta}>Naik ukuran variant</Text>
+      {upgradeTargets.length ? (
+        <View style={styles.operationGrid}>
+          <KolamDropdownSelect
+            label="Ke ukuran"
+            menuPlacement="inline"
+            onChange={setToVariantId}
+            options={upgradeOptions}
+            style={styles.operationInput}
+            value={toVariantId}
+          />
+          <KolamButton
+            disabled={
+              controller.operationLoading ||
+              !speciesId.trim() ||
+              !variantId.trim() ||
+              !toVariantId.trim()
+            }
+            label="Switch variant"
+            onPress={() =>
+              controller.onSwitchSpeciesVariant({
+                enclosureId: enclosure.id,
+                speciesId: speciesId.trim(),
+                fromVariantId: variantId.trim(),
+                toVariantId: toVariantId.trim(),
+                quantity: Math.max(1, Number(qty) || 1),
+                reason: reason.trim() || undefined,
+              })
+            }
+            style={styles.toolbarButton}
+          />
+        </View>
+      ) : (
+        <Text style={styles.mutedText}>Tidak bisa naik ukuran.</Text>
+      )}
     </DetailSection>
   );
 }
@@ -1960,22 +2254,104 @@ function EnclosureProductionOperation({
   controller: KolamEnclosureController;
   enclosure: KolamEnclosure;
 }) {
+  const [speciesCatalog, setSpeciesCatalog] = React.useState<KolamSpecies[]>(
+    [],
+  );
   const [speciesId, setSpeciesId] = React.useState('');
   const [qty, setQty] = React.useState('1');
   const [reason, setReason] = React.useState('');
-  const [toStageKey, setToStageKey] = React.useState('kecebong');
-  const [fromStageKey, setFromStageKey] = React.useState('');
-  const [saleStageKey, setSaleStageKey] = React.useState('');
+  const [taxonomyBySpecies, setTaxonomyBySpecies] = React.useState<
+    Record<string, KolamSpeciesTaxonomyProduction | null>
+  >({});
   const parsedQty = Math.max(1, Number(qty) || 1);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    void getKolamSpeciesList({limit: 500, page: 1, view: ''})
+      .then(result => {
+        if (!cancelled) {
+          setSpeciesCatalog(result.data);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setSpeciesCatalog([]);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  React.useEffect(() => {
+    const ids = Array.from(
+      new Set(
+        [
+          ...enclosure.species.map(item => item.speciesId),
+          ...enclosure.productionEggs.map(item => item.speciesId),
+          speciesId,
+        ].filter(Boolean),
+      ),
+    ).sort();
+    if (!ids.length) {
+      return;
+    }
+    let cancelled = false;
+    void Promise.all(
+      ids.map(async id => {
+        try {
+          const taxonomy = await getKolamSpeciesTaxonomyProduction(id);
+          return {id, taxonomy};
+        } catch {
+          return {id, taxonomy: null as KolamSpeciesTaxonomyProduction | null};
+        }
+      }),
+    ).then(results => {
+      if (cancelled) {
+        return;
+      }
+      setTaxonomyBySpecies(current => {
+        const next = {...current};
+        for (const row of results) {
+          next[row.id] = row.taxonomy;
+        }
+        return next;
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    enclosure.productionEggs,
+    enclosure.species,
+    speciesId,
+  ]);
+
+  const speciesOptions = React.useMemo(
+    () => [
+      {label: '— Pilih species —', value: ''},
+      ...speciesCatalog.map(item => ({
+        label: item.displayName || item.scientificName || item.id,
+        value: item.id,
+      })),
+    ],
+    [speciesCatalog],
+  );
+  const eggTaxonomy = speciesId ? taxonomyBySpecies[speciesId] : null;
+  const canAddEggs = Boolean(eggTaxonomy?.profile || eggTaxonomy?.ready);
+
   return (
     <DetailSection title="Operasional produksi">
+      <KolamDropdownSelect
+        label="Species telur"
+        menuPlacement="inline"
+        onChange={setSpeciesId}
+        options={speciesOptions}
+        searchable
+        style={styles.operationInput}
+        value={speciesId}
+      />
       <View style={styles.operationGrid}>
-        <KolamFormTextField
-          onChangeText={setSpeciesId}
-          placeholder="Species ID"
-          style={styles.operationInput}
-          value={speciesId}
-        />
         <KolamFormTextField
           mode="numeric"
           onChangeText={setQty}
@@ -1989,10 +2365,10 @@ function EnclosureProductionOperation({
           style={styles.operationInput}
           value={reason}
         />
-      </View>
-      <View style={styles.operationGrid}>
         <KolamButton
-          disabled={controller.operationLoading || !speciesId.trim()}
+          disabled={
+            controller.operationLoading || !speciesId.trim() || !canAddEggs
+          }
           label="Tambah telur"
           onPress={() =>
             controller.onAddProductionEggs({
@@ -2004,87 +2380,157 @@ function EnclosureProductionOperation({
           }
           style={styles.toolbarButton}
         />
-        <KolamFormTextField
-          onChangeText={setToStageKey}
-          placeholder="To stage key"
-          style={styles.operationInputSmall}
-          value={toStageKey}
-        />
         <KolamButton
           disabled={controller.operationLoading || !speciesId.trim()}
-          label="Advance telur"
+          label="Advance telur → kecebong"
           onPress={() =>
             controller.onAdvanceProductionEggs({
               enclosureId: enclosure.id,
               speciesId: speciesId.trim(),
               quantity: parsedQty,
-              toStageKey: toStageKey.trim() || undefined,
+              toStageKey: 'kecebong',
               reason: reason.trim() || undefined,
             })
           }
           style={styles.toolbarButton}
         />
       </View>
-      <View style={styles.operationGrid}>
-        <KolamFormTextField
-          onChangeText={setFromStageKey}
-          placeholder="From stage"
-          style={styles.operationInputSmall}
-          value={fromStageKey}
-        />
-        <KolamFormTextField
-          onChangeText={setToStageKey}
-          placeholder="To stage"
-          style={styles.operationInputSmall}
-          value={toStageKey}
-        />
-        <KolamButton
-          disabled={
-            controller.operationLoading ||
-            !speciesId.trim() ||
-            !fromStageKey.trim() ||
-            !toStageKey.trim()
-          }
-          label="Pindah fase"
-          onPress={() =>
-            controller.onChangeProductionPhase({
-              enclosureId: enclosure.id,
-              speciesId: speciesId.trim(),
-              fromStageKey: fromStageKey.trim(),
-              toStageKey: toStageKey.trim(),
-              quantity: parsedQty,
-              reason: reason.trim() || undefined,
-            })
-          }
-          style={styles.toolbarButton}
-        />
-      </View>
-      <View style={styles.operationGrid}>
-        <KolamFormTextField
-          onChangeText={setSaleStageKey}
-          placeholder="Stage key ke stok jual"
-          style={styles.operationInput}
-          value={saleStageKey}
-        />
-        <KolamButton
-          disabled={
-            controller.operationLoading ||
-            !speciesId.trim() ||
-            !saleStageKey.trim()
-          }
-          label="Ke stok jual"
-          onPress={() =>
-            controller.onMoveProductionPhaseToSale({
-              enclosureId: enclosure.id,
-              speciesId: speciesId.trim(),
-              stageKey: saleStageKey.trim(),
-              quantity: parsedQty,
-              reason: reason.trim() || undefined,
-            })
-          }
-          style={styles.toolbarButton}
-        />
-      </View>
+      {speciesId && !canAddEggs ? (
+        <Text style={styles.mutedText}>
+          Species belum punya profil taxonomy produksi.
+        </Text>
+      ) : null}
+
+      {enclosure.productionEggs.length ? (
+        <>
+          <Text style={styles.sectionMeta}>Stok telur</Text>
+          {enclosure.productionEggs.map(egg => (
+            <View
+              key={`${egg.speciesId}:${egg.scientificName}`}
+              style={styles.detailMiniRow}
+            >
+              <KolamCopyStack
+                containerStyle={styles.panelRowCopy}
+                items={[
+                  {
+                    id: 'title',
+                    text: egg.speciesName || egg.scientificName || egg.speciesId,
+                    style: styles.rowTitle,
+                  },
+                  {
+                    id: 'meta',
+                    text: `${egg.quantity} ${egg.unitLabel}`,
+                    style: styles.rowMeta,
+                  },
+                ]}
+              />
+              <KolamButton
+                disabled={controller.operationLoading || egg.quantity <= 0}
+                label="Advance"
+                onPress={() =>
+                  controller.onAdvanceProductionEggs({
+                    enclosureId: enclosure.id,
+                    speciesId: egg.speciesId,
+                    quantity: Math.min(parsedQty, Math.max(1, egg.quantity)),
+                    toStageKey: 'kecebong',
+                    reason: reason.trim() || undefined,
+                  })
+                }
+                style={styles.toolbarButton}
+              />
+            </View>
+          ))}
+        </>
+      ) : null}
+
+      {enclosure.species.length ? (
+        <>
+          <Text style={styles.sectionMeta}>Fase variant</Text>
+          {enclosure.species.map(line => {
+            const taxonomy = taxonomyBySpecies[line.speciesId];
+            const advance = resolveKolamProductionAdvanceTarget(
+              taxonomy,
+              line.variantId,
+            );
+            const canSale = canKolamProductionSaleBranch(
+              taxonomy,
+              line.variantId,
+            );
+            const saleStageKey = getKolamProductionSaleStageKey(
+              taxonomy,
+              line.variantId,
+            );
+            return (
+              <View
+                key={`${line.speciesId}:${line.variantId}`}
+                style={styles.climateCard}
+              >
+                <Text style={styles.rowTitle}>
+                  {line.speciesName || line.scientificName}
+                  {line.variantLabel ? ` / ${line.variantLabel}` : ''}
+                </Text>
+                <Text style={styles.sectionMeta}>
+                  Qty {line.quantity} {line.unitLabel}
+                  {advance
+                    ? ` · next: ${advance.toLabel}`
+                    : ' · tanpa advance'}
+                </Text>
+                <View style={styles.operationGrid}>
+                  <KolamButton
+                    disabled={
+                      controller.operationLoading ||
+                      !advance ||
+                      line.quantity <= 0
+                    }
+                    label={
+                      advance ? `Advance → ${advance.toLabel}` : 'Advance'
+                    }
+                    onPress={() =>
+                      advance
+                        ? controller.onChangeProductionPhase({
+                            enclosureId: enclosure.id,
+                            speciesId: line.speciesId,
+                            fromStageKey: advance.fromStageKey,
+                            toStageKey: advance.toStageKey,
+                            quantity: Math.min(
+                              parsedQty,
+                              Math.max(1, line.quantity),
+                            ),
+                            reason: reason.trim() || undefined,
+                          })
+                        : undefined
+                    }
+                    style={styles.toolbarButton}
+                  />
+                  {canSale ? (
+                    <KolamButton
+                      disabled={
+                        controller.operationLoading ||
+                        !saleStageKey ||
+                        line.quantity <= 0
+                      }
+                      label="Ke stok jual"
+                      onPress={() =>
+                        controller.onMoveProductionPhaseToSale({
+                          enclosureId: enclosure.id,
+                          speciesId: line.speciesId,
+                          stageKey: saleStageKey,
+                          quantity: Math.min(
+                            parsedQty,
+                            Math.max(1, line.quantity),
+                          ),
+                          reason: reason.trim() || undefined,
+                        })
+                      }
+                      style={styles.toolbarButton}
+                    />
+                  ) : null}
+                </View>
+              </View>
+            );
+          })}
+        </>
+      ) : null}
     </DetailSection>
   );
 }

@@ -216,6 +216,34 @@ export interface KolamEnclosureListingEligibility {
   reason: string;
 }
 
+export interface KolamSpeciesTaxonomyProductionTransition {
+  kind: string;
+  fromStageKey: string;
+  toStageKey: string;
+}
+
+export interface KolamSpeciesTaxonomyProductionStage {
+  stageKey: string;
+  label: string;
+  storage: string;
+  allowsSaleBranch: boolean;
+  variantId: string;
+}
+
+export interface KolamSpeciesTaxonomyProduction {
+  ready: boolean;
+  profile: {
+    transitions: KolamSpeciesTaxonomyProductionTransition[];
+  } | null;
+  stages: KolamSpeciesTaxonomyProductionStage[];
+  raw: unknown;
+}
+
+export interface KolamSpeciesSizeUpgradeTarget {
+  variantId: string;
+  label: string;
+}
+
 export interface KolamEnclosurePagination {
   page: number;
   limit: number;
@@ -1193,6 +1221,176 @@ export function canKolamEnclosureBeListed(
     };
   }
   return {ok: true, reason: ''};
+}
+
+export function normalizeKolamSpeciesTaxonomyProduction(
+  payload: unknown,
+): KolamSpeciesTaxonomyProduction {
+  const record = asRecord(unwrapData(payload));
+  const profile = asRecord(record.profile);
+  const transitions = getArray(profile.transitions).map(item => {
+    const row = asRecord(item);
+    return {
+      kind: getString(row, 'kind'),
+      fromStageKey: getString(row, 'fromStageKey'),
+      toStageKey: getString(row, 'toStageKey'),
+    };
+  });
+  const stages = getArray(record.stages).map(item => {
+    const row = asRecord(item);
+    const variant = asRecord(row.variant);
+    return {
+      stageKey: getString(row, 'stageKey'),
+      label: getString(row, 'label') || getString(row, 'stageKey'),
+      storage: getString(row, 'storage'),
+      allowsSaleBranch: getBoolean(row, 'allowsSaleBranch'),
+      variantId:
+        getString(variant, 'variantId') ||
+        getIdFromRef(variant) ||
+        getString(row, 'variantId'),
+    };
+  });
+  return {
+    ready: record.ready == null ? Boolean(profile && stages.length) : getBoolean(record, 'ready'),
+    profile: transitions.length ? {transitions} : record.profile ? {transitions} : null,
+    stages,
+    raw: payload,
+  };
+}
+
+export function resolveKolamProductionAdvanceTarget(
+  taxonomy: KolamSpeciesTaxonomyProduction | null | undefined,
+  variantId: string,
+): {fromStageKey: string; toStageKey: string; toLabel: string} | null {
+  if (!taxonomy?.profile) {
+    return null;
+  }
+  const stage = taxonomy.stages.find(
+    item =>
+      item.storage === 'variant' &&
+      String(item.variantId) === String(variantId),
+  );
+  if (!stage) {
+    return null;
+  }
+  const transition = taxonomy.profile.transitions.find(
+    item =>
+      item.kind === 'advance' &&
+      item.fromStageKey === stage.stageKey &&
+      item.toStageKey,
+  );
+  if (!transition?.toStageKey) {
+    return null;
+  }
+  const toStage = taxonomy.stages.find(
+    item => item.stageKey === transition.toStageKey,
+  );
+  return {
+    fromStageKey: stage.stageKey,
+    toStageKey: transition.toStageKey,
+    toLabel: toStage?.label || transition.toStageKey,
+  };
+}
+
+export function canKolamProductionSaleBranch(
+  taxonomy: KolamSpeciesTaxonomyProduction | null | undefined,
+  variantId: string,
+) {
+  if (!taxonomy?.profile) {
+    return false;
+  }
+  const stage = taxonomy.stages.find(
+    item =>
+      item.storage === 'variant' &&
+      String(item.variantId) === String(variantId),
+  );
+  if (!stage?.allowsSaleBranch) {
+    return false;
+  }
+  return taxonomy.profile.transitions.some(
+    item =>
+      item.kind === 'sale_branch' && item.fromStageKey === stage.stageKey,
+  );
+}
+
+export function getKolamProductionSaleStageKey(
+  taxonomy: KolamSpeciesTaxonomyProduction | null | undefined,
+  variantId: string,
+) {
+  const stage = taxonomy?.stages.find(
+    item =>
+      item.storage === 'variant' &&
+      String(item.variantId) === String(variantId),
+  );
+  return stage?.stageKey || '';
+}
+
+/** FE enclosure-size-variant — naik ukuran sepanjang scale tier1. */
+export function getKolamSpeciesSizeUpgradeTargets(
+  species: {
+    variants: Array<{
+      id: string;
+      label: string;
+      tier1Value: string;
+      tier2Value: string;
+    }>;
+    raw?: unknown;
+  },
+  fromVariantId: string,
+): KolamSpeciesSizeUpgradeTarget[] {
+  if (!fromVariantId || !species.variants.length) {
+    return [];
+  }
+  const config = asRecord(asRecord(species.raw).variantConfig);
+  const scale = getArray(config.tier1Values)
+    .map(item => String(item ?? '').trim().toUpperCase())
+    .filter(Boolean);
+  if (scale.length < 2) {
+    return [];
+  }
+  const fromVariant = species.variants.find(
+    item => item.id === fromVariantId,
+  );
+  if (!fromVariant) {
+    return [];
+  }
+  const fromIdx = scale.indexOf(
+    String(fromVariant.tier1Value ?? '').trim().toUpperCase(),
+  );
+  if (fromIdx < 0 || fromIdx >= scale.length - 1) {
+    return [];
+  }
+  const targets: KolamSpeciesSizeUpgradeTarget[] = [];
+  for (let index = fromIdx + 1; index < scale.length; index += 1) {
+    const sizeKey = scale[index];
+    const toVariant =
+      species.variants.find(item => {
+        const tier1 = String(item.tier1Value ?? '').trim().toUpperCase();
+        if (tier1 !== sizeKey) {
+          return false;
+        }
+        const fromTier2 = String(fromVariant.tier2Value ?? '').trim();
+        if (!fromTier2) {
+          return !String(item.tier2Value ?? '').trim();
+        }
+        return String(item.tier2Value ?? '').trim() === fromTier2;
+      }) ??
+      species.variants.find(
+        item =>
+          String(item.tier1Value ?? '').trim().toUpperCase() === sizeKey,
+      );
+    if (!toVariant?.id) {
+      continue;
+    }
+    targets.push({
+      variantId: toVariant.id,
+      label:
+        [toVariant.tier1Value, toVariant.tier2Value].filter(Boolean).join(' - ') ||
+        toVariant.label ||
+        sizeKey,
+    });
+  }
+  return targets;
 }
 
 function mergeClimateDefaultWithServer(
