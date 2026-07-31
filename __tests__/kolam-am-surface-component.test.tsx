@@ -442,7 +442,7 @@ describe('KolamAmSurface', () => {
         serviceAccountId: {_id: 'service-1', label: 'Tokopedia Main'},
         payload: {},
         result: {},
-        error: '',
+        error: index === 0 ? 'Device offline' : '',
         logs: [],
         retryCount: 0,
         maxRetries: 3,
@@ -477,6 +477,7 @@ describe('KolamAmSurface', () => {
     const joinedPageText = renderText(renderer!).join(' ');
     expect(joinedPageText).toMatch(/Showing\s+1\s+to\s+20\s+of\s+45\s+items/);
     expect(joinedPageText).toContain('Page 1/3');
+    expect(joinedPageText).toContain('Device offline');
 
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Tasks Next Page'}).props.onPress();

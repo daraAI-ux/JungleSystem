@@ -594,6 +594,7 @@ function AmTasksPage() {
           <Text style={[styles.tableHeaderText, styles.statusCol]}>Status</Text>
           <Text style={[styles.tableHeaderText, styles.deviceCol]}>Device</Text>
           <Text style={[styles.tableHeaderText, styles.accountCol]}>Account</Text>
+          <Text style={[styles.tableHeaderText, styles.errorCol]}>Error</Text>
           <Text style={[styles.tableHeaderText, styles.dateCol]}>Created</Text>
           <Text style={[styles.tableHeaderText, styles.actionCol]}>Action</Text>
         </View>
@@ -610,6 +611,7 @@ function AmTasksPage() {
             <Text style={[styles.cellText, styles.statusCol]}>{task.status}</Text>
             <Text style={[styles.cellText, styles.deviceCol]} numberOfLines={1}>{task.deviceId?.name ?? '-'}</Text>
             <Text style={[styles.cellText, styles.accountCol]} numberOfLines={1}>{task.serviceAccountId?.label ?? task.serviceAccountId?.platform ?? '-'}</Text>
+            <Text style={[styles.cellText, styles.errorCol]} numberOfLines={1}>{task.error || '-'}</Text>
             <Text style={[styles.cellText, styles.dateCol]}>{formatAmDate(task.createdAt)}</Text>
             <View style={styles.actionCol}>
               <AmTaskActions
@@ -4784,6 +4786,9 @@ const styles = StyleSheet.create({
     flex: 1.2,
   },
   accountCol: {
+    flex: 1.2,
+  },
+  errorCol: {
     flex: 1.2,
   },
   dateCol: {
