@@ -756,26 +756,6 @@ function KolamEnclosureDashboardPanel({
         />
       </View>
 
-      <View style={styles.typeBand}>
-        <View style={styles.typeBandHeading}>
-          <Text style={styles.typeBandTitle}>Enclosure per tipe</Text>
-        </View>
-        <View style={styles.typeGrid}>
-          {stats.byType.length ? (
-            stats.byType.map(row => (
-              <View key={row.type || 'unknown'} style={styles.typeMetric}>
-                <Text style={styles.typeMetricValue}>{row.count}</Text>
-                <Text numberOfLines={1} style={styles.typeMetricLabel}>
-                  {row.type || '-'}
-                </Text>
-              </View>
-            ))
-          ) : (
-            <Text style={styles.mutedText}>Belum ada data tipe enclosure.</Text>
-          )}
-        </View>
-      </View>
-
       <DashboardSpeciesTable
         rows={stats.production.rows}
         speciesDistinct={stats.production.speciesDistinct}
@@ -1992,47 +1972,6 @@ const styles = StyleSheet.create({
   },
   sectionAction: {
     flexShrink: 0,
-  },
-  typeBand: {
-    gap: 10,
-    paddingHorizontal: 2,
-    paddingVertical: 4,
-  },
-  typeBandHeading: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  typeBandTitle: {
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 16,
-    fontWeight: '900',
-  },
-  typeGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 14,
-  },
-  typeMetric: {
-    borderLeftColor: V.colors.border,
-    borderLeftWidth: 1,
-    flexGrow: 1,
-    minWidth: 150,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-  },
-  typeMetricValue: {
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 30,
-    fontWeight: '900',
-  },
-  typeMetricLabel: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
-    fontWeight: '800',
   },
   summaryTile: {
     backgroundColor: V.colors.bg,
