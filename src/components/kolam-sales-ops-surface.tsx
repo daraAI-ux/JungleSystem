@@ -716,19 +716,82 @@ function KolamSalesOpsCreateForm({
                 ]}
                 searchable
                 searchPlaceholder="Cari sumber…"
+                showLabelInTrigger={false}
                 value={form.sourceRefId}
               />
             </FieldShell>
           </View>
           <View style={styles.formSplitCell}>
-            {controller.useBuyerInfo ? (
-              <FieldShell label="Info pembeli">
-                <Text style={styles.metaText}>
-                  Sumber ini memakai info pembeli manual (marketplace), bukan
-                  daftar pelanggan.
-                </Text>
-              </FieldShell>
-            ) : (
+            <FieldShell label="Tanggal transaksi">
+              <KolamDateField
+                accessibilityLabel="Tanggal transaksi"
+                label="Tanggal transaksi"
+                onChange={transactionDate =>
+                  controller.onChangeForm({ transactionDate })
+                }
+                placeholder="Pilih tanggal"
+                showLabelInTrigger={false}
+                value={form.transactionDate}
+              />
+            </FieldShell>
+          </View>
+        </View>
+
+        {controller.useBuyerInfo ? (
+          <View style={styles.buyerInfoBlock}>
+            <Text style={styles.metaText}>
+              Sumber ini memakai info pembeli manual (marketplace), bukan daftar
+              pelanggan.
+            </Text>
+            <View style={styles.formSplitRow}>
+              <View style={styles.formSplitCell}>
+                <FieldShell label="Nama pembeli" required>
+                  <KolamFormTextField
+                    onChangeText={buyerInfoName =>
+                      controller.onChangeForm({ buyerInfoName })
+                    }
+                    placeholder="Nama pembeli"
+                    value={form.buyerInfoName}
+                  />
+                </FieldShell>
+              </View>
+              <View style={styles.formSplitCell}>
+                <FieldShell label="Telepon">
+                  <KolamFormTextField
+                    onChangeText={buyerInfoPhone =>
+                      controller.onChangeForm({ buyerInfoPhone })
+                    }
+                    placeholder="08xx"
+                    value={form.buyerInfoPhone}
+                  />
+                </FieldShell>
+              </View>
+              <View style={styles.formSplitCell}>
+                <FieldShell label="Email">
+                  <KolamFormTextField
+                    mode="email"
+                    onChangeText={buyerInfoEmail =>
+                      controller.onChangeForm({ buyerInfoEmail })
+                    }
+                    placeholder="email@contoh.com"
+                    value={form.buyerInfoEmail}
+                  />
+                </FieldShell>
+              </View>
+            </View>
+            <FieldShell label="Alamat">
+              <KolamFormTextField
+                onChangeText={buyerInfoAddress =>
+                  controller.onChangeForm({ buyerInfoAddress })
+                }
+                placeholder="Alamat pengiriman"
+                value={form.buyerInfoAddress}
+              />
+            </FieldShell>
+          </View>
+        ) : (
+          <View style={styles.formSplitRow}>
+            <View style={styles.formSplitCell}>
               <FieldShell label="Pelanggan" required>
                 <KolamDropdownSelect
                   accessibilityLabel="Pilih pelanggan"
@@ -743,85 +806,65 @@ function KolamSalesOpsCreateForm({
                   ]}
                   searchable
                   searchPlaceholder="Cari pelanggan…"
+                  showLabelInTrigger={false}
                   value={form.customerId}
                 />
               </FieldShell>
-            )}
+            </View>
+            <View style={styles.formSplitCell}>
+              <FieldShell label="Metode pembayaran" required>
+                <KolamDropdownSelect
+                  accessibilityLabel="Pilih metode pembayaran"
+                  label="Metode pembayaran"
+                  onChange={paymentMethodId =>
+                    controller.onChangeForm({ paymentMethodId })
+                  }
+                  options={[
+                    { label: 'Pilih metode…', value: '' },
+                    ...controller.filteredPaymentMethods.map(method => ({
+                      label: method.name,
+                      value: method.id,
+                    })),
+                  ]}
+                  searchable
+                  searchPlaceholder="Cari metode…"
+                  showLabelInTrigger={false}
+                  value={form.paymentMethodId}
+                />
+              </FieldShell>
+            </View>
           </View>
-        </View>
+        )}
 
         {controller.useBuyerInfo ? (
           <View style={styles.formSplitRow}>
             <View style={styles.formSplitCell}>
-              <FieldShell label="Nama pembeli" required>
-                <KolamFormTextField
-                  onChangeText={buyerInfoName =>
-                    controller.onChangeForm({ buyerInfoName })
+              <FieldShell label="Metode pembayaran" required>
+                <KolamDropdownSelect
+                  accessibilityLabel="Pilih metode pembayaran"
+                  label="Metode pembayaran"
+                  onChange={paymentMethodId =>
+                    controller.onChangeForm({ paymentMethodId })
                   }
-                  placeholder="Nama pembeli"
-                  value={form.buyerInfoName}
+                  options={[
+                    { label: 'Pilih metode…', value: '' },
+                    ...controller.filteredPaymentMethods.map(method => ({
+                      label: method.name,
+                      value: method.id,
+                    })),
+                  ]}
+                  searchable
+                  searchPlaceholder="Cari metode…"
+                  showLabelInTrigger={false}
+                  value={form.paymentMethodId}
                 />
               </FieldShell>
             </View>
-            <View style={styles.formSplitCell}>
-              <FieldShell label="Telepon">
-                <KolamFormTextField
-                  onChangeText={buyerInfoPhone =>
-                    controller.onChangeForm({ buyerInfoPhone })
-                  }
-                  placeholder="08xx"
-                  value={form.buyerInfoPhone}
-                />
-              </FieldShell>
-            </View>
-            <View style={styles.formSplitCell}>
-              <FieldShell label="Email">
-                <KolamFormTextField
-                  mode="email"
-                  onChangeText={buyerInfoEmail =>
-                    controller.onChangeForm({ buyerInfoEmail })
-                  }
-                  placeholder="email@contoh.com"
-                  value={form.buyerInfoEmail}
-                />
-              </FieldShell>
-            </View>
-            <View style={styles.formSplitCell}>
-              <FieldShell label="Alamat">
-                <KolamFormTextField
-                  onChangeText={buyerInfoAddress =>
-                    controller.onChangeForm({ buyerInfoAddress })
-                  }
-                  placeholder="Alamat pengiriman"
-                  value={form.buyerInfoAddress}
-                />
-              </FieldShell>
-            </View>
+            <View style={styles.formSplitCell} />
           </View>
         ) : null}
 
         <View style={styles.formSplitRow}>
-          <View style={styles.formSplitCell}>
-            <FieldShell label="Metode pembayaran" required>
-              <KolamDropdownSelect
-                accessibilityLabel="Pilih metode pembayaran"
-                label="Metode pembayaran"
-                onChange={paymentMethodId =>
-                  controller.onChangeForm({ paymentMethodId })
-                }
-                options={[
-                  { label: 'Pilih metode…', value: '' },
-                  ...controller.filteredPaymentMethods.map(method => ({
-                    label: method.name,
-                    value: method.id,
-                  })),
-                ]}
-                searchable
-                searchPlaceholder="Cari metode…"
-                value={form.paymentMethodId}
-              />
-            </FieldShell>
-          </View>
           <View style={styles.formSplitCell}>
             <FieldShell label="Catatan">
               <KolamFormTextField
@@ -831,9 +874,6 @@ function KolamSalesOpsCreateForm({
               />
             </FieldShell>
           </View>
-        </View>
-
-        <View style={styles.formSplitRow}>
           <View style={styles.formSplitCell}>
             <FieldShell label="Metode poin">
               <KolamDropdownSelect
@@ -852,12 +892,11 @@ function KolamSalesOpsCreateForm({
                   { label: 'Manual', value: 'manual' },
                   { label: 'Berdasarkan produk', value: 'product_based' },
                 ]}
+                showLabelInTrigger={false}
                 value={form.pointsMethod}
               />
             </FieldShell>
-          </View>
-          {form.pointsMethod === 'manual' ? (
-            <View style={styles.formSplitCell}>
+            {form.pointsMethod === 'manual' ? (
               <FieldShell label="Poin manual">
                 <KolamFormTextField
                   mode="numeric"
@@ -868,20 +907,7 @@ function KolamSalesOpsCreateForm({
                   value={form.manualPoints}
                 />
               </FieldShell>
-            </View>
-          ) : null}
-          <View style={styles.formSplitCell}>
-            <FieldShell label="Tanggal transaksi">
-              <KolamDateField
-                accessibilityLabel="Tanggal transaksi"
-                label="Tanggal transaksi"
-                onChange={transactionDate =>
-                  controller.onChangeForm({ transactionDate })
-                }
-                placeholder="Pilih tanggal"
-                value={form.transactionDate}
-              />
-            </FieldShell>
+            ) : null}
           </View>
         </View>
 
@@ -925,11 +951,12 @@ function KolamSalesOpsCreateForm({
                       });
                     }}
                     options={itemTypeOptions}
+                    showLabelInTrigger={false}
                     value={item.itemType}
                   />
                 </FieldShell>
               </View>
-              <View style={styles.formSplitCell}>
+              <View style={styles.formSplitCellNarrow}>
                 <FieldShell label="Qty" required>
                   <KolamFormTextField
                     editable={item.itemType !== 'enclosure'}
@@ -962,6 +989,7 @@ function KolamSalesOpsCreateForm({
                   ]}
                   searchable
                   searchPlaceholder="Cari produk…"
+                  showLabelInTrigger={false}
                   value={item.productId}
                 />
               </FieldShell>
@@ -988,6 +1016,7 @@ function KolamSalesOpsCreateForm({
                   ]}
                   searchable
                   searchPlaceholder="Cari spesies…"
+                  showLabelInTrigger={false}
                   value={item.speciesId}
                 />
               </FieldShell>
@@ -1010,6 +1039,7 @@ function KolamSalesOpsCreateForm({
                   ]}
                   searchable
                   searchPlaceholder="Cari layanan…"
+                  showLabelInTrigger={false}
                   value={item.serviceId}
                 />
               </FieldShell>
@@ -1032,6 +1062,7 @@ function KolamSalesOpsCreateForm({
                   ]}
                   searchable
                   searchPlaceholder="Cari enclosure…"
+                  showLabelInTrigger={false}
                   value={item.enclosureId}
                 />
               </FieldShell>
@@ -1050,7 +1081,7 @@ function KolamSalesOpsCreateForm({
                     />
                   </FieldShell>
                 </View>
-                <View style={styles.formSplitCell}>
+                <View style={styles.formSplitCellNarrow}>
                   <FieldShell label="Satuan">
                     <KolamFormTextField
                       onChangeText={customUnit =>
@@ -1094,6 +1125,7 @@ function KolamSalesOpsCreateForm({
                       { label: 'Fixed (Rp)', value: 'fixed' },
                       { label: 'Persen (%)', value: 'percentage' },
                     ]}
+                    showLabelInTrigger={false}
                     value={item.discountType}
                   />
                 </FieldShell>
@@ -1159,12 +1191,15 @@ function KolamSalesOpsCreateForm({
                   />
                 </FieldShell>
               </View>
-              <View style={styles.formSplitCell}>
-                <KolamButton
-                  label="Hapus"
-                  muted
-                  onPress={() => controller.onRemoveCustomCost(cost.key)}
-                />
+              <View style={styles.formSplitCellNarrow}>
+                <FieldShell label=" ">
+                  <KolamButton
+                    label="Hapus"
+                    muted
+                    onPress={() => controller.onRemoveCustomCost(cost.key)}
+                    style={styles.costRemoveButton}
+                  />
+                </FieldShell>
               </View>
             </View>
           ))
@@ -1678,14 +1713,34 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   formSplitRow: {
+    alignItems: 'flex-start',
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
   },
   formSplitCell: {
-    flexGrow: 1,
-    flexShrink: 1,
-    minWidth: 160,
+    flex: 1,
+    flexBasis: 240,
+    minWidth: 240,
+  },
+  formSplitCellNarrow: {
+    flexGrow: 0,
+    flexShrink: 0,
+    flexBasis: 120,
+    maxWidth: 140,
+    minWidth: 100,
+    width: 120,
+  },
+  buyerInfoBlock: {
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    gap: 10,
+    padding: 12,
+  },
+  costRemoveButton: {
+    alignSelf: 'stretch',
+    minHeight: 34,
   },
   approvalRoot: {
     gap: 12,
