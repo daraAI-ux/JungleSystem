@@ -1929,6 +1929,7 @@ function AmTransfersPage() {
   const [total, setTotal] = React.useState(0);
   const [selectedTransferId, setSelectedTransferId] = React.useState<string | null>(null);
   const [selectedTransfer, setSelectedTransfer] = React.useState<AmTransfer | null>(null);
+  const [selectedTransferWebhookLogs, setSelectedTransferWebhookLogs] = React.useState<AmWebhookLog[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [detailLoading, setDetailLoading] = React.useState(false);
   const [detailError, setDetailError] = React.useState<string | null>(null);
@@ -1970,6 +1971,17 @@ function AmTransfersPage() {
       setDetailLoading(true);
       const response = await getAmTransferById(id);
       setSelectedTransfer(response);
+      if (response.status === 'success' || response.status === 'failed') {
+        const logResponse = await getAmWebhookLogs({
+          event: response.status === 'success' ? 'transfer.success' : 'transfer.failed',
+          limit: 20,
+        });
+        setSelectedTransferWebhookLogs(
+          logResponse.data.filter(log => webhookLogMatchesTransfer(log, id)),
+        );
+      } else {
+        setSelectedTransferWebhookLogs([]);
+      }
       setDetailError(null);
     } catch (nextError) {
       setDetailError(nextError instanceof Error ? nextError.message : 'Gagal memuat detail transfer AM.');
@@ -1989,6 +2001,7 @@ function AmTransfersPage() {
     if (selectedTransferId === transfer._id) {
       setSelectedTransferId(null);
       setSelectedTransfer(null);
+      setSelectedTransferWebhookLogs([]);
       setDetailError(null);
       return;
     }
@@ -2135,6 +2148,7 @@ function AmTransfersPage() {
           error={detailError}
           isLoading={detailLoading}
           transfer={selectedTransfer}
+          webhookLogs={selectedTransferWebhookLogs}
         />
       ) : null}
     </View>
@@ -2145,10 +2159,12 @@ function AmTransferDetailPanel({
   error,
   isLoading,
   transfer,
+  webhookLogs,
 }: {
   error: string | null;
   isLoading: boolean;
   transfer: AmTransfer | null;
+  webhookLogs: AmWebhookLog[];
 }) {
   if (!transfer && !isLoading && !error) return null;
 
@@ -2212,6 +2228,27 @@ function AmTransferDetailPanel({
               </Text>
             ))}
           </View>
+          {transfer.status === 'success' || transfer.status === 'failed' ? (
+            <View style={styles.panel}>
+              <Text style={styles.panelTitle}>Webhook Delivery Logs</Text>
+              <Text style={styles.panelText}>
+                {webhookLogs.length ? `${webhookLogs.length} delivery log terkait transfer ini.` : 'No webhook logs for this transfer'}
+              </Text>
+              {webhookLogs.map(log => (
+                <View key={log._id} style={styles.detailListRow}>
+                  <View style={styles.accountWideCol}>
+                    <Text style={styles.cellText} numberOfLines={1}>{log.event}</Text>
+                    <Text style={styles.rowMeta} numberOfLines={1}>{log.configId?.description || log.url || '-'}</Text>
+                  </View>
+                  <View style={styles.statusCol}>
+                    <AmStatusChip label={log.success ? 'success' : 'failed'} tone={log.success ? 'success' : 'danger'} />
+                  </View>
+                  <Text style={[styles.cellText, styles.amountCol]}>{log.responseStatus ?? '-'}</Text>
+                  <Text style={[styles.cellText, styles.dateCol]}>{formatAmDate(log.createdAt)}</Text>
+                </View>
+              ))}
+            </View>
+          ) : null}
         </>
       ) : null}
     </View>
@@ -3576,6 +3613,15 @@ function formatBankAccount(account: AmTransfer['accountId'] | AmMutasi['accountI
 function formatMutasiAccountOption(account: AmServiceAccount) {
   const prefix = account.label || account.platform || 'Account';
   return account.accountNumber ? `${prefix} - ${account.accountNumber}` : prefix;
+}
+
+function webhookLogMatchesTransfer(log: AmWebhookLog, transferId: string) {
+  const payload = log.requestBody?.payload;
+  if (payload && typeof payload === 'object' && 'transferId' in payload) {
+    return payload.transferId === transferId;
+  }
+
+  return false;
 }
 
 function formatDeviceRef(device: AmTransfer['deviceId'] | AmMutasi['deviceId']) {

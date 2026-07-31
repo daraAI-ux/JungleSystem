@@ -34,6 +34,7 @@ import {
   getAmTransfers,
   getAmUsers,
   getAmWebhookConfigs,
+  getAmWebhookLogs,
   sendAmDeviceServiceInput,
   testAmWebhookPing,
   updateAmRack,
@@ -1547,6 +1548,39 @@ describe('KolamAmSurface', () => {
       meta: {total: 1, limit: 1},
     });
     jest.mocked(getAmTransferById).mockResolvedValue(transfer);
+    jest.mocked(getAmWebhookLogs).mockResolvedValue({
+      data: [
+        {
+          _id: 'webhook-log-1',
+          configId: {_id: 'webhook-1', url: 'https://example.test/hook', description: 'Inventory hook'},
+          direction: 'outgoing',
+          event: 'transfer.success',
+          url: 'https://example.test/hook',
+          requestBody: {payload: {transferId: 'transfer-detail'}},
+          responseStatus: 200,
+          responseBody: {ok: true},
+          success: true,
+          error: '',
+          duration: 42,
+          createdAt: '2026-01-01T00:06:00.000Z',
+        },
+        {
+          _id: 'webhook-log-other',
+          configId: {_id: 'webhook-2', url: 'https://example.test/other', description: 'Other hook'},
+          direction: 'outgoing',
+          event: 'transfer.success',
+          url: 'https://example.test/other',
+          requestBody: {payload: {transferId: 'other-transfer'}},
+          responseStatus: 200,
+          responseBody: {ok: true},
+          success: true,
+          error: '',
+          duration: 12,
+          createdAt: '2026-01-01T00:07:00.000Z',
+        },
+      ],
+      meta: {total: 2, limit: 20},
+    });
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
     await act(async () => {
@@ -1562,10 +1596,17 @@ describe('KolamAmSurface', () => {
     });
 
     expect(getAmTransferById).toHaveBeenCalledWith('transfer-detail');
+    expect(getAmWebhookLogs).toHaveBeenCalledWith({
+      event: 'transfer.success',
+      limit: 20,
+    });
     const text = renderText(renderer!);
     const joinedText = text.join(' ');
     expect(text).toContain('Transfer Detail');
     expect(text).toContain('Vendor Detail');
+    expect(joinedText).toContain('Webhook Delivery Logs');
+    expect(joinedText).toContain('Inventory hook');
+    expect(joinedText).not.toContain('Other hook');
     expect(joinedText).toMatch(/Screenshot base64 tersedia \(\s*6\s+chars\)/);
     expect(joinedText).toMatch(/002\s+completed/);
   });
