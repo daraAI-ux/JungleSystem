@@ -347,10 +347,13 @@ export function useKolamSalesController(route: string): KolamSalesController {
       ),
       capture(
         'produk',
+        // Omit view=list so BE returns populated availableShippingMethods
+        // (FE create uses the same full /products payload).
         getKolamProducts({
           page: 1,
           limit: CREATE_OPTIONS_LIMIT,
           type: 'product',
+          view: '',
         }),
         {
           data: [] as KolamProduct[],
@@ -368,6 +371,7 @@ export function useKolamSalesController(route: string): KolamSalesController {
           page: 1,
           limit: CREATE_OPTIONS_LIMIT,
           sellable: 'sellable',
+          view: '',
         }),
         {
           data: [] as KolamSpecies[],

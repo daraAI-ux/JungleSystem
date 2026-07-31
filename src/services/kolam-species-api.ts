@@ -28,6 +28,11 @@ export async function getKolamSpeciesList(options: {
   status?: 'all' | KolamSpeciesStatus;
   stockStatus?: KolamSpeciesStockStatus;
   taxonomyId?: string;
+  /**
+   * Catalog list defaults to `list` (lightweight). Pass `''` to omit `view`
+   * and receive full rows (needed for sales create shipping methods).
+   */
+  view?: 'list' | 'search' | '';
 } = {}): Promise<KolamSpeciesListResult> {
   const response = await kolamRequest<unknown>('/species', {
     query: {
@@ -49,7 +54,7 @@ export async function getKolamSpeciesList(options: {
       stockStatus:
         options.stockStatus === 'all' ? undefined : options.stockStatus,
       taxonomyId: options.taxonomyId,
-      view: 'list',
+      view: options.view === '' ? undefined : (options.view ?? 'list'),
     },
   });
 

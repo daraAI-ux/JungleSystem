@@ -32,6 +32,7 @@ export interface GetKolamProductsOptions {
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
   stockStatus?: string;
+  /** Pass `''` to omit view and get full rows (shipping methods). Default `list`. */
   view?: 'list' | 'grid' | string;
   archived?: boolean;
 }
