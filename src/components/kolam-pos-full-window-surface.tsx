@@ -84,6 +84,10 @@ type PosSavedOrder = {
   createdAt: string;
   customerName?: string;
 };
+type PosValidationNotice = {
+  message: string;
+  tone: 'danger' | 'warning';
+};
 
 export function KolamPosFullWindowSurface({
   activeSession = null,
@@ -1073,52 +1077,72 @@ function PosCheckoutValidationMessages({
 }: {
   workflowSteps: WorkflowStep[];
 }) {
-  const missingMessages = workflowSteps
+  const missingNotices = workflowSteps
     .filter(step => !step.done)
-    .map(step => getPosValidationMessage(step.label))
-    .filter((message): message is string => Boolean(message));
+    .map(step => getPosValidationNotice(step.label))
+    .filter((notice): notice is PosValidationNotice => Boolean(notice));
 
-  if (!missingMessages.length) {
+  if (!missingNotices.length) {
     return null;
   }
 
   return (
     <View style={styles.validationList}>
-      {missingMessages.map(message => (
-        <View key={message} style={styles.validationRow}>
-          <Text style={styles.validationMarker}>!</Text>
-          <Text style={styles.validationMessage}>{message}</Text>
+      {missingNotices.map(notice => (
+        <View
+          key={notice.message}
+          style={[
+            styles.validationRow,
+            notice.tone === 'warning' && styles.validationRowWarning,
+          ]}>
+          <Text
+            style={[
+              styles.validationMarker,
+              notice.tone === 'warning' && styles.validationMarkerWarning,
+            ]}>
+            !
+          </Text>
+          <Text
+            style={[
+              styles.validationMessage,
+              notice.tone === 'warning' && styles.validationMessageWarning,
+            ]}>
+            {notice.message}
+          </Text>
         </View>
       ))}
     </View>
   );
 }
 
-function getPosValidationMessage(label: string): string | null {
+function getPosValidationNotice(label: string): PosValidationNotice | null {
   const normalizedLabel = label.toLowerCase();
 
   if (normalizedLabel.includes('cashflow')) {
-    return 'Buka shift kas sebelum mencatat penjualan';
+    return {
+      message: 'Buka shift kas sebelum mencatat penjualan',
+      tone: 'warning',
+    };
   }
 
   if (normalizedLabel.includes('customer')) {
-    return 'Pilih pelanggan';
+    return {message: 'Pilih pelanggan', tone: 'danger'};
   }
 
   if (normalizedLabel.includes('payment')) {
-    return 'Pilih metode pembayaran';
+    return {message: 'Pilih metode pembayaran', tone: 'danger'};
   }
 
   if (normalizedLabel.includes('login')) {
-    return 'Login kasir diperlukan';
+    return {message: 'Login kasir diperlukan', tone: 'warning'};
   }
 
   if (normalizedLabel.includes('akses')) {
-    return 'Akses POS diperlukan';
+    return {message: 'Akses POS diperlukan', tone: 'warning'};
   }
 
   if (normalizedLabel.includes('cart')) {
-    return 'Tambahkan item ke pesanan';
+    return {message: 'Tambahkan item ke pesanan', tone: 'danger'};
   }
 
   return null;
@@ -3104,6 +3128,9 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     backgroundColor: V.colors.dangerSoft,
   },
+  validationRowWarning: {
+    backgroundColor: V.colors.warningSoft,
+  },
   validationMarker: {
     width: 14,
     textAlign: 'center',
@@ -3111,11 +3138,17 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '900',
   },
+  validationMarkerWarning: {
+    color: V.colors.warning,
+  },
   validationMessage: {
     flex: 1,
     color: V.colors.danger,
     fontSize: 10,
     fontWeight: '800',
+  },
+  validationMessageWarning: {
+    color: V.colors.warning,
   },
   totalRow: {
     flexDirection: 'row',
