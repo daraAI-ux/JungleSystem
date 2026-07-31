@@ -3366,7 +3366,15 @@ export function KolamSettingsWebConfigSurface({
                 />
               </View>
             </View>
-            <View style={styles.poRoomPicker}>
+            <KolamRowFrame variant="settingsForm">
+              <KolamTextFieldRowCopy
+                description={
+                  roomOptions.length
+                    ? 'Upload bukti PO otomatis diposting ke room ini. Room AI tidak ditampilkan.'
+                    : 'Room Team Chat belum tersedia.'
+                }
+                label="Room pembelian"
+              />
               <KolamDropdownSelect
                 accessibilityLabel="Room penerimaan barang"
                 label="Room Team Chat"
@@ -3383,7 +3391,10 @@ export function KolamSettingsWebConfigSurface({
                 searchable
                 searchPlaceholder="Cari room..."
                 showLabelInTrigger={false}
-                style={styles.poRoomDropdown}
+                style={[
+                  styles.financialSelectorControl,
+                  {width: settingsFieldWidth},
+                ]}
                 triggerStyle={styles.shippingTimezoneTrigger}
                 value={draft.poWorkflowReceivingRoomId}
                 onChange={value => {
@@ -3394,18 +3405,7 @@ export function KolamSettingsWebConfigSurface({
                   }
                 }}
               />
-              <KolamCopyStack
-                items={[
-                  {
-                    id: 'po-room-picker-meta',
-                    text: roomOptions.length
-                      ? 'Upload bukti PO otomatis diposting ke room ini. Room AI tidak ditampilkan.'
-                      : 'Room Team Chat belum tersedia.',
-                    style: styles.marketplaceOverviewMeta,
-                  },
-                ]}
-              />
-            </View>
+            </KolamRowFrame>
             <View style={styles.poStaffOverrideGrid}>
               <View style={styles.poStaffOverrideBox}>
                 {renderPoWorkflowStaffPicker(
@@ -9044,18 +9044,6 @@ const styles = StyleSheet.create({
   },
   marketplaceControlSection: {
     gap: 10,
-  },
-  poRoomChoices: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  poRoomPicker: {
-    gap: 8,
-  },
-  poRoomDropdown: {
-    maxWidth: 520,
-    width: '100%',
   },
   poNotificationToggleBox: {
     backgroundColor: '#f9fafb',
