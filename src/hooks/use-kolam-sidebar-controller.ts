@@ -3,11 +3,13 @@ import type { KolamAppShellSurfaceProps } from '../components/kolam-app-shell-su
 import type { AppModule, ShellModuleRouteEntry } from '../domain/app-shell';
 import type { AccessScope } from '../domain/auth';
 import type { KolamNavigationItem } from '../domain/kolam-navigation';
+import type { UnifiedSurface } from '../domain/unified';
 
 type SidebarProps = KolamAppShellSurfaceProps['sidebar'];
 
 export function useKolamSidebarController({
   accessScope,
+  activeAmSurface,
   activeModule,
   activeModuleRoute,
   activeNavigationItem,
@@ -23,6 +25,7 @@ export function useKolamSidebarController({
   sectionOrder,
 }: {
   accessScope: AccessScope;
+  activeAmSurface?: UnifiedSurface | null;
   activeModule: AppModule;
   activeModuleRoute?: ShellModuleRouteEntry | null;
   activeNavigationItem?: KolamNavigationItem | null;
@@ -42,7 +45,10 @@ export function useKolamSidebarController({
       accessScope,
       activeModule,
       activeModuleRoute,
-      activeRoute: activeNavigationItem?.route ?? getSidebarActiveRoute(activeModuleRoute),
+      activeRoute:
+        activeNavigationItem?.route ??
+        getSidebarActiveRoute(activeModuleRoute) ??
+        getSidebarSurfaceRoute(activeModule, activeAmSurface),
       collapsed,
       expandedSections,
       filterMenuByAccess,
@@ -56,6 +62,7 @@ export function useKolamSidebarController({
     }),
     [
       accessScope,
+      activeAmSurface,
       activeModule,
       activeModuleRoute,
       activeNavigationItem,
@@ -79,4 +86,13 @@ function getSidebarActiveRoute(route?: ShellModuleRouteEntry | null) {
   if (!route) return null;
   if (route.route === '/') return '/';
   return `/${route.route.replace(/^\/+/, '')}`;
+}
+
+function getSidebarSurfaceRoute(
+  module: AppModule,
+  surface?: UnifiedSurface | null,
+) {
+  if (module !== 'am' || !surface?.route) return null;
+  if (surface.route === '/') return '/';
+  return `/${surface.route.replace(/^\/+/, '')}`;
 }

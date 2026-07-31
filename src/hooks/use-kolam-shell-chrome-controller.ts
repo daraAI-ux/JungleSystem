@@ -176,6 +176,7 @@ export function useKolamShellChromeController({
   });
   const { sidebar } = useKolamSidebarController({
     accessScope,
+    activeAmSurface,
     activeModule,
     activeModuleRoute,
     activeNavigationItem,

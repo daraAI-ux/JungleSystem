@@ -136,4 +136,40 @@ describe('Kolam sidebar controller hook', () => {
     expect(toggledSection).toBe('operations');
     expect(quickSearchCount).toBe(1);
   });
+
+  it('uses the active AM surface route for the sidebar route highlight', async () => {
+    let latest: SidebarController | null = null;
+
+    function AmSurfaceHarness() {
+      const controller = useKolamSidebarController({
+        accessScope: {...accessScope, am: true},
+        activeAmSurface: {
+          id: 'am-services',
+          label: 'Services',
+          route: '/services',
+          description: 'Service account operations',
+          sourceRepo: 'E:\\Projects\\da-automation-management',
+        },
+        activeModule: 'am',
+        collapsed: false,
+        expandedSections: {},
+        filterMenuByAccess: false,
+        onMoveMenuSection: () => undefined,
+        onQuickSearch: () => undefined,
+        onSelectMenuItem: () => undefined,
+        onSelectModule: () => undefined,
+        onToggleMenuSection: () => undefined,
+        sectionOrder: [],
+      });
+
+      latest = controller;
+      return null;
+    }
+
+    await ReactTestRenderer.act(async () => {
+      ReactTestRenderer.create(<AmSurfaceHarness />);
+    });
+
+    expect(requireController(latest).sidebar.activeRoute).toBe('/services');
+  });
 });

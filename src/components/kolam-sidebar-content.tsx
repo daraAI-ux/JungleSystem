@@ -140,12 +140,6 @@ function KolamAmSidebarMenu({
   return (
     <>
       <View style={[styles.amMenuGroup, collapsed && styles.amMenuGroupCollapsed]}>
-        {collapsed ? null : (
-          <View style={styles.amMenuSectionHeader}>
-            <Text style={styles.amMenuSectionLabel}>AM</Text>
-            <Text style={styles.amMenuSectionMeta}>Automation Management</Text>
-          </View>
-        )}
         {AM_ROUTE_SECTIONS.map(section => (
           <View key={section} style={styles.amMenuSection}>
             {collapsed ? null : (
@@ -240,9 +234,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 1,
   },
-  amMenuSectionHeader: {
-    paddingHorizontal: 12,
-  },
   amMenuSectionLabel: {
     marginBottom: 4,
     color: V.colors.mutedFg,
@@ -250,11 +241,5 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '900',
     textTransform: 'uppercase',
-  },
-  amMenuSectionMeta: {
-    marginBottom: 6,
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 10,
   },
 });

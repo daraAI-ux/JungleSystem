@@ -86,8 +86,6 @@ describe('KolamSidebarContent AM mode', () => {
 
     expect(text).toEqual(
       expect.arrayContaining([
-        'AM',
-        'Automation Management',
         'Overview',
         'Dashboard',
         'Automation',
@@ -109,6 +107,8 @@ describe('KolamSidebarContent AM mode', () => {
         'POS',
       ]),
     );
+    expect(text).not.toContain('AM');
+    expect(text).not.toContain('Automation Management');
     expect(text).not.toContain('Kolam Menu');
     expect(text).not.toContain('Kembali ke Kolam');
   });
