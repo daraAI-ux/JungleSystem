@@ -65,6 +65,7 @@ jest.mock('../src/services/am-api', () => ({
   getAmTransfers: jest.fn(() =>
     Promise.resolve({ data: [], meta: { total: 0, limit: 0 } }),
   ),
+  recordAmPageView: jest.fn(() => Promise.resolve(undefined)),
 }));
 
 const mountedWorkspaceRenderers: ReactTestRenderer.ReactTestRenderer[] = [];

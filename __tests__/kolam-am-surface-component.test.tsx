@@ -41,6 +41,7 @@ import {
   getAmUsers,
   getAmWebhookConfigs,
   getAmWebhookLogs,
+  recordAmPageView,
   restartAmTokopediaSession,
   runAmTokopediaApiMonitor,
   sendAmDeviceServiceInput,
@@ -125,6 +126,7 @@ jest.mock('../src/services/am-api', () => ({
   getAmWebhookConfigs: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
   getAmWebhookEvents: jest.fn(() => Promise.resolve(['transfer.success', 'mutasi.created'])),
   getAmWebhookLogs: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
+  recordAmPageView: jest.fn(() => Promise.resolve(undefined)),
   restartAmTokopediaSession: jest.fn(() => Promise.resolve({restarted: true, wasRunning: true})),
   retryAmTransfer: jest.fn(() => Promise.resolve({_id: 'transfer-1'})),
   retryAmTask: jest.fn(() => Promise.resolve({_id: 'task-1'})),
@@ -305,6 +307,7 @@ describe('KolamAmSurface', () => {
     expect(text).not.toContain('Automation Management');
     expect(text).not.toContain('Ringkasan akun, device, transfer, dan mutasi AM.');
     expect(getAmDashboard).toHaveBeenCalledTimes(1);
+    expect(recordAmPageView).toHaveBeenCalledWith('/');
   });
 
   it('keeps the POS-style back button wired to return to Kolam', async () => {
@@ -343,6 +346,7 @@ describe('KolamAmSurface', () => {
     renderers.push(renderer!);
 
     await updateAmRoute(renderer!, 'services');
+    expect(recordAmPageView).toHaveBeenCalledWith('/services');
 
     expect(getAmServiceAccounts).toHaveBeenCalledWith({
       page: 1,

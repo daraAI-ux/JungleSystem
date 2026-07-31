@@ -1064,6 +1064,28 @@ export async function getAmActivityLogStats(
   return amGet<AmActivityLogStats>('/activity-log/stats', {days}, baseUrl);
 }
 
+export async function recordAmPageView(
+  path: string,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<void> {
+  if (!baseUrl) {
+    throw new Error('URL server AM existing belum dikonfigurasi.');
+  }
+
+  await apiRequest<unknown>({
+    method: 'POST',
+    path: '/activity-log/page-view',
+    body: {
+      path,
+      userAgent: 'KolamWindows',
+    },
+    baseUrl,
+    sourceHeader: appConfig.amSourceHeader,
+    cookieJar: true,
+    credentials: 'include',
+  });
+}
+
 export async function getAmWebhookConfigs(
   baseUrl = appConfig.amApiBaseUrl,
 ): Promise<AmListResponse<AmWebhookConfig>> {

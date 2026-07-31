@@ -58,6 +58,7 @@ import {
   getAmWebhookLogs,
   retryAmTransfer,
   retryAmTask,
+  recordAmPageView,
   restartAmTokopediaSession,
   runAmTokopediaApiMonitor,
   sendAmDeviceServiceInput,
@@ -159,6 +160,10 @@ export function KolamAmSurface({
     ? getAmRouteByModuleRoute(activeModuleRoute.route).id
     : getRouteIdFromSurface(activeSurface);
   const route = AM_ROUTES.find(item => item.id === activeRoute) ?? AM_ROUTES[0];
+
+  React.useEffect(() => {
+    recordAmPageView(route.path).catch(() => undefined);
+  }, [route.path]);
 
   return (
     <View style={styles.shell}>
