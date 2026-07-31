@@ -536,7 +536,8 @@ function KolamSalesOpsRow({
   const deliveryBadgeIntent = skipShipping
     ? 'info'
     : getKolamSaleDeliveryStatusIntent(sale.deliveryStatus, sale.status);
-  const sourceName = sale.sourceRef?.name?.trim() || '—';
+  const sourceName = sale.sourceRef?.name?.trim() || 'Sumber';
+  const sourceLogoUri = sale.sourceRef?.logoUri?.trim() || '';
 
   return (
     <Pressable onPress={onSelect}>
@@ -578,16 +579,17 @@ function KolamSalesOpsRow({
               childrenColumn ? getKolamDataTableColumnStyle(childrenColumn) : null,
             ]}
           >
-            {sale.sourceRef?.logoUri ? (
+            {sourceLogoUri ? (
               <KolamRemoteImage
                 accessibilityLabel={sourceName}
-                sourceUri={sale.sourceRef.logoUri}
+                sourceUri={sourceLogoUri}
                 style={styles.sourceLogo}
               />
-            ) : null}
-            <Text numberOfLines={2} style={styles.sourceName}>
-              {sourceName}
-            </Text>
+            ) : (
+              <Text numberOfLines={2} style={styles.sourceName}>
+                {sourceName === 'Sumber' ? '—' : sourceName}
+              </Text>
+            )}
           </View>
 
           <View
@@ -1867,20 +1869,15 @@ function fitSalesOpsListColumns(containerWidth: number): KolamTableColumn[] {
   );
   let remainder = contentBudget - equalWidth * base.length;
   const lastId = base[base.length - 1]?.id;
-  const sourceMinWidth = 120;
 
   return base.map(column => {
     const extra = column.id === lastId ? remainder : 0;
     if (column.id === lastId) {
       remainder = 0;
     }
-    const width =
-      column.id === 'children'
-        ? Math.max(equalWidth + extra, sourceMinWidth)
-        : equalWidth + extra;
     return {
       ...column,
-      width,
+      width: equalWidth + extra,
     };
   });
 }
@@ -1980,23 +1977,18 @@ const styles = StyleSheet.create({
   },
   sourceCell: {
     alignItems: 'center',
-    flexDirection: 'row',
-    gap: 6,
-    justifyContent: 'flex-start',
+    justifyContent: 'center',
     minWidth: 0,
   },
   sourceLogo: {
     borderRadius: 4,
-    flexShrink: 0,
-    height: 22,
-    width: 22,
+    height: 32,
+    width: 32,
   },
   sourceName: {
-    color: V.colors.fg,
-    flexGrow: 1,
-    flexShrink: 1,
-    fontSize: 13,
-    minWidth: 0,
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    textAlign: 'center',
   },
   invoiceCode: {
     color: V.colors.fg,

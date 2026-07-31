@@ -90,12 +90,7 @@ describe('KolamSalesOpsSurface list delivery badges', () => {
         finalTotal: 50_000,
         transactionDate: '2026-07-31T00:00:00.000Z',
         items: [{_id: 'i1', itemType: 'product', quantity: 1}],
-        sourceRef: {
-          _id: 'src-pos',
-          name: 'POS',
-          type: 'offline',
-          logo: 'sources/pos.png',
-        },
+        sourceRef: {_id: 'src-pos', name: 'POS', type: 'offline'},
       },
     ]);
 
@@ -108,7 +103,6 @@ describe('KolamSalesOpsSurface list delivery badges', () => {
 
     const text = renderText(renderer!);
     expect(text).toContain('INV-POS-1');
-    expect(text).toContain('POS');
     expect(text).toContain('POS (tanpa kirim)');
     expect(text).not.toContain('Butuh kirim');
 
@@ -118,7 +112,7 @@ describe('KolamSalesOpsSurface list delivery badges', () => {
     expect(deliveryBadge?.props.intent).toBe('info');
   });
 
-  it('always shows Sumber name text beside optional logo', async () => {
+  it('shows Sumber as logo only when logo exists (name is accessibility, not cell text)', async () => {
     mockController = createListController([
       {
         _id: 'sale-src-1',
@@ -145,7 +139,37 @@ describe('KolamSalesOpsSurface list delivery badges', () => {
     });
 
     const text = renderText(renderer!);
-    expect(text).toContain('Tokopedia Store');
+    expect(text).toContain('INV-SRC-1');
+    expect(text).not.toContain('Tokopedia Store');
+  });
+
+  it('falls back to Sumber name text when logo is missing', async () => {
+    mockController = createListController([
+      {
+        _id: 'sale-src-2',
+        invoiceCode: 'INV-SRC-2',
+        status: 'paid',
+        deliveryStatus: 'none',
+        finalTotal: 10_000,
+        transactionDate: '2026-07-31T00:00:00.000Z',
+        items: [{_id: 'i1', itemType: 'product', quantity: 1}],
+        sourceRef: {
+          _id: 'src-offline',
+          name: 'POS Cabang',
+          type: 'offline',
+        },
+      },
+    ]);
+
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamSalesOpsSurface route="/sales" />,
+      );
+    });
+
+    const text = renderText(renderer!);
+    expect(text).toContain('POS Cabang');
   });
 
   it('shows Layanan (tanpa kirim) for service-only online sales', async () => {
