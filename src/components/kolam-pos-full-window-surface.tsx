@@ -983,6 +983,9 @@ function PosOrderRow({
 
   const isAtStockLimit = item.stock > 0 && line.quantity >= item.stock;
   const typeLabel = item.type === 'species' ? 'Spesies' : 'Produk';
+  const minimumPriceToSales = item.minimumPriceToSales ?? 0;
+  const minimumOrderQty = item.minimumOrderQty ?? 1;
+  const hasMinimumMeta = minimumPriceToSales > 0 || minimumOrderQty > 1;
 
   return (
     <View style={styles.orderRow}>
@@ -1026,6 +1029,20 @@ function PosOrderRow({
             {formatRupiah(item.price * line.quantity)}
           </Text>
         </View>
+        {hasMinimumMeta ? (
+          <View style={styles.orderMinimumList}>
+            {minimumPriceToSales > 0 ? (
+              <Text style={styles.orderMinimumPrice}>
+                Min. {formatRupiah(minimumPriceToSales)}
+              </Text>
+            ) : null}
+            {minimumOrderQty > 1 ? (
+              <Text style={styles.orderMinimumQty}>
+                Min. Pesanan {minimumOrderQty}
+              </Text>
+            ) : null}
+          </View>
+        ) : null}
         {isAtStockLimit ? (
           <Text style={styles.orderLimitText}>Jumlah sudah mencapai stok</Text>
         ) : null}
@@ -3001,6 +3018,20 @@ const styles = StyleSheet.create({
     color: V.colors.fg,
     fontSize: 11,
     fontWeight: '900',
+  },
+  orderMinimumList: {
+    gap: 1,
+    marginTop: 3,
+  },
+  orderMinimumPrice: {
+    color: V.colors.warning,
+    fontSize: 9,
+    fontWeight: '700',
+  },
+  orderMinimumQty: {
+    color: V.colors.primary,
+    fontSize: 9,
+    fontWeight: '700',
   },
   orderLimitText: {
     marginTop: 3,
