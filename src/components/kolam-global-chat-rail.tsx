@@ -2273,12 +2273,6 @@ function KolamTeamChatDaraWindow({
           </View>
 
           <View style={styles.teamDaraWindowBody}>
-            <View style={styles.teamDaraHeaderNotice}>
-              <Text style={styles.teamDaraHeaderNoticeText}>
-                Window besar DARA disiapkan agar percakapan, reasoning, dan
-                jawaban panjang tidak sempit di sidebar.
-              </Text>
-            </View>
             <KolamTeamChatDaraWindowMessages
               detail={detail}
               errorMessage={errorMessage}
@@ -2291,6 +2285,7 @@ function KolamTeamChatDaraWindow({
             <View
               style={[
                 styles.composerShell,
+                styles.teamDaraComposerShell,
                 composerDisabled && styles.composerShellBlocked,
               ]}>
               <TextInput
@@ -2304,7 +2299,7 @@ function KolamTeamChatDaraWindow({
                   composerDisabled ? 'Chat DARA sedang dimuat' : 'Tulis pesan...'
                 }
                 placeholderTextColor={V.colors.mutedFg}
-                style={styles.composerInput}
+                style={[styles.composerInput, styles.teamDaraComposerInput]}
                 submitBehavior="submit"
                 value={composerText}
               />
@@ -7105,7 +7100,7 @@ const styles = StyleSheet.create({
   teamDaraWindow: {
     backgroundColor: '#f9fafb',
     flex: 1,
-    gap: 10,
+    gap: 8,
     padding: 12,
   },
   teamDaraWindowHeader: {
@@ -7121,12 +7116,13 @@ const styles = StyleSheet.create({
   },
   teamDaraWindowBody: {
     flex: 1,
+    flexBasis: 0,
     minHeight: 0,
     padding: 0,
-    gap: 10,
   },
   teamDaraWindowFooter: {
     alignItems: 'stretch',
+    flexShrink: 0,
   },
   teamDaraWindowCloseButton: {
     minHeight: 30,
@@ -7183,20 +7179,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '800',
   },
-  teamDaraHeaderNotice: {
-    padding: 9,
-    borderRadius: V.radius.md,
-    borderColor: V.colors.border,
-    borderWidth: 1,
-    backgroundColor: V.colors.mutedSoft,
-  },
-  teamDaraHeaderNoticeText: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 11,
-    fontWeight: '700',
-    lineHeight: 16,
-  },
   teamDaraWindowPlaceholder: {
     flex: 1,
     minHeight: 260,
@@ -7228,7 +7210,9 @@ const styles = StyleSheet.create({
   },
   teamDaraWindowMessageList: {
     gap: 10,
-    paddingBottom: 8,
+    paddingHorizontal: 8,
+    paddingTop: 8,
+    paddingBottom: 12,
   },
   teamDaraWindowMessageScroll: {
     flex: 1,
@@ -7249,6 +7233,15 @@ const styles = StyleSheet.create({
   teamDaraWindowMessageOther: {
     alignSelf: 'flex-start',
     backgroundColor: V.colors.bg,
+  },
+  teamDaraComposerShell: {
+    minHeight: 58,
+    paddingTop: 7,
+    paddingBottom: 7,
+  },
+  teamDaraComposerInput: {
+    minHeight: 30,
+    maxHeight: 62,
   },
   chatSettingsMenuList: {
     gap: 6,
