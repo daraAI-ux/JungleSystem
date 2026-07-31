@@ -373,6 +373,7 @@ export function KolamGlobalChatRail({
   const [daraWindowError, setDaraWindowError] = React.useState<
     string | undefined
   >();
+  const [daraComposerText, setDaraComposerText] = React.useState('');
   const inboxParams = React.useMemo(
     () => buildInboxListParams(inboxFilter),
     [inboxFilter],
@@ -1055,6 +1056,34 @@ export function KolamGlobalChatRail({
     data,
     mode,
   ]);
+  const handleCloseDaraWindow = React.useCallback(() => {
+    setDaraHeaderMenuOpen(false);
+    setDaraComposerText('');
+    daraWindowDetail.signalTyping(false);
+  }, [daraWindowDetail]);
+  const handleDaraComposerTextChange = React.useCallback(
+    (value: string) => {
+      setDaraComposerText(value);
+      daraWindowDetail.signalTyping(Boolean(value.trim()));
+    },
+    [daraWindowDetail],
+  );
+  const handleDaraWindowSend = React.useCallback(async () => {
+    const body = daraComposerText.trim();
+
+    if (
+      !body ||
+      daraWindowBusy ||
+      daraWindowDetail.loading ||
+      daraWindowDetail.sending
+    ) {
+      return;
+    }
+
+    await daraWindowDetail.sendMessage(body);
+    setDaraComposerText('');
+    daraWindowDetail.signalTyping(false);
+  }, [daraComposerText, daraWindowBusy, daraWindowDetail]);
 
   return (
     <>
@@ -1317,13 +1346,13 @@ export function KolamGlobalChatRail({
       {mode === 'team-chat' && daraHeaderMenuOpen ? (
         <KolamTeamChatDaraWindow
           busy={daraWindowBusy}
+          composerText={daraComposerText}
           detail={daraWindowDetail}
           errorMessage={daraWindowError}
           imageUrl={daraAvatarState.imageUrl}
-          onClose={() => setDaraHeaderMenuOpen(false)}
-          onOpenDara={() => {
-            handleEnsureDaraWindowRoom().catch(() => undefined);
-          }}
+          onClose={handleCloseDaraWindow}
+          onComposerTextChange={handleDaraComposerTextChange}
+          onSend={handleDaraWindowSend}
         />
       ) : null}
     </View>
@@ -2179,19 +2208,43 @@ function KolamTeamChatDaraHeaderMenu({
 
 function KolamTeamChatDaraWindow({
   busy,
+  composerText,
   detail,
   errorMessage,
   imageUrl,
   onClose,
-  onOpenDara,
+  onComposerTextChange,
+  onSend,
 }: {
   busy: boolean;
+  composerText: string;
   detail: ReturnType<typeof useKolamChatRailDetail>;
   errorMessage?: string;
   imageUrl: string | null;
   onClose: () => void;
-  onOpenDara: () => void;
+  onComposerTextChange: (value: string) => void;
+  onSend: () => Promise<void>;
 }) {
+  const composerDisabled = busy || detail.loading || detail.sending;
+  const handleSubmitComposer = React.useCallback(() => {
+    onSend().catch(() => undefined);
+  }, [onSend]);
+  const handleComposerKeyPress = React.useCallback(
+    (event: NativeSyntheticEvent<TextInputKeyPressEventData>) => {
+      const nativeEvent = event.nativeEvent as TextInputKeyPressEventData & {
+        shiftKey?: boolean;
+      };
+
+      if (nativeEvent.key !== 'Enter' || nativeEvent.shiftKey) {
+        return;
+      }
+
+      event.preventDefault();
+      onSend().catch(() => undefined);
+    },
+    [onSend],
+  );
+
   return (
     <Modal animationType="fade" onRequestClose={onClose} visible>
       <View style={styles.teamDaraWindowOverlay}>
@@ -2235,18 +2288,27 @@ function KolamTeamChatDaraWindow({
           </View>
 
           <View style={styles.teamDaraWindowFooter}>
-            <KolamPressable
-              accessibilityLabel="Buka chat DARA dari jendela besar"
-              disabled={busy}
-              onPress={onOpenDara}
+            <View
               style={[
-                styles.teamDaraHeaderAction,
-                busy && styles.composerIconButtonDisabled,
+                styles.composerShell,
+                composerDisabled && styles.composerShellBlocked,
               ]}>
-              <Text style={styles.teamDaraHeaderActionText}>
-                {busy ? 'Membuka DARA...' : 'Buka chat DARA'}
-              </Text>
-            </KolamPressable>
+              <TextInput
+                accessibilityLabel="Tulis pesan DARA team chat"
+                editable={!composerDisabled}
+                multiline
+                onChangeText={onComposerTextChange}
+                onKeyPress={handleComposerKeyPress}
+                onSubmitEditing={handleSubmitComposer}
+                placeholder={
+                  composerDisabled ? 'Chat DARA sedang dimuat' : 'Tulis pesan...'
+                }
+                placeholderTextColor={V.colors.mutedFg}
+                style={styles.composerInput}
+                submitBehavior="submit"
+                value={composerText}
+              />
+            </View>
           </View>
         </View>
       </View>
@@ -2293,7 +2355,7 @@ function KolamTeamChatDaraWindowMessages({
           Belum ada pesan DARA
         </Text>
         <Text style={styles.teamDaraWindowPlaceholderText}>
-          Room DARA sudah siap. Composer akan masuk di fase berikutnya.
+          Room DARA sudah siap. Tulis pesan lalu tekan Enter untuk mengirim.
         </Text>
       </View>
     );
@@ -7047,7 +7109,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   teamDaraWindowFooter: {
-    alignItems: 'flex-end',
+    alignItems: 'stretch',
   },
   teamDaraWindowCloseButton: {
     minHeight: 30,
@@ -7170,20 +7232,6 @@ const styles = StyleSheet.create({
   teamDaraWindowMessageOther: {
     alignSelf: 'flex-start',
     backgroundColor: V.colors.bg,
-  },
-  teamDaraHeaderAction: {
-    minHeight: 34,
-    borderRadius: V.radius.md,
-    backgroundColor: V.colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 10,
-  },
-  teamDaraHeaderActionText: {
-    color: V.colors.primaryFg,
-    fontFamily: V.fontFamily,
-    fontSize: 11,
-    fontWeight: '900',
   },
   chatSettingsMenuList: {
     gap: 6,

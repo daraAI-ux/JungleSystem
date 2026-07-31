@@ -843,6 +843,7 @@ describe('KolamGlobalChatRail', () => {
 
   it('opens DARA from the team chat header window', async () => {
     const refresh = jest.fn().mockResolvedValue(undefined);
+    const sendMessage = jest.fn().mockResolvedValue(undefined);
     useDetailMock.mockImplementation((input: {selectedId: string | null}) => {
       const detail = getDefaultDetailMock();
       if (input.selectedId === 'room-dara-header') {
@@ -860,6 +861,7 @@ describe('KolamGlobalChatRail', () => {
               reactions: [],
             },
           ],
+          sendMessage,
         } as ReturnType<typeof getDefaultDetailMock>;
       }
 
@@ -906,10 +908,48 @@ describe('KolamGlobalChatRail', () => {
         'DARA',
         'Assistant Team Chat',
         'Halo, saya siap membantu dari window besar.',
-        'Buka chat DARA',
       ]),
     );
 
+    const daraInput = renderer!.root
+      .findAllByType(TextInput)
+      .find(
+        node =>
+          node.props.accessibilityLabel === 'Tulis pesan DARA team chat',
+      );
+    const preventDefaultForShiftEnter = jest.fn();
+
+    await ReactTestRenderer.act(async () => {
+      await daraInput!.props.onChangeText('Apa prioritas hari ini?');
+    });
+
+    const updatedDaraInput = renderer!.root
+      .findAllByType(TextInput)
+      .find(
+        node =>
+          node.props.accessibilityLabel === 'Tulis pesan DARA team chat',
+      );
+
+    await ReactTestRenderer.act(async () => {
+      await updatedDaraInput!.props.onKeyPress({
+        nativeEvent: {key: 'Enter', shiftKey: true},
+        preventDefault: preventDefaultForShiftEnter,
+      });
+    });
+
+    expect(preventDefaultForShiftEnter).not.toHaveBeenCalled();
+    expect(sendMessage).not.toHaveBeenCalled();
+
+    const preventDefaultForEnter = jest.fn();
+    await ReactTestRenderer.act(async () => {
+      await updatedDaraInput!.props.onKeyPress({
+        nativeEvent: {key: 'Enter'},
+        preventDefault: preventDefaultForEnter,
+      });
+    });
+
+    expect(preventDefaultForEnter).toHaveBeenCalled();
+    expect(sendMessage).toHaveBeenCalledWith('Apa prioritas hari ini?');
     expect(openTeamChatDirectMock).toHaveBeenCalledWith({dara: true});
     expect(refresh).toHaveBeenCalledTimes(1);
     expect(

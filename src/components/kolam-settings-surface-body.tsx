@@ -70,7 +70,10 @@ export function KolamSettingsSurfaceBody({
         regionLevel={controller.regionLevel}
         regionParentCode={controller.regionParentCode}
         regionRows={controller.regionRows}
-        regionSearch={controller.regionSearch}
+        selectedProvince={controller.selectedProvince}
+        selectedRegency={controller.selectedRegency}
+        selectedDistrict={controller.selectedDistrict}
+        selectedVillage={controller.selectedVillage}
         regionSyncMessage={controller.regionSyncMessage}
         regionSyncStatus={controller.regionSyncStatus}
         regionSyncSummaryRows={controller.regionSyncSummaryRows}
@@ -247,7 +250,7 @@ export function KolamSettingsSurfaceBody({
         setPaymentMethodFilter={controller.setPaymentMethodFilter}
         setDaraKnowledgeDraftField={controller.setDaraKnowledgeDraftField}
         setWebContentPanelId={controller.setWebContentPanelId}
-        setRegionFilter={controller.setRegionFilter}
+        setRegionSelection={controller.setRegionSelection}
         setSitemapCustomUrlsDraftText={controller.setSitemapCustomUrlsDraftText}
         setSitemapExcludedSlugsDraftText={
           controller.setSitemapExcludedSlugsDraftText

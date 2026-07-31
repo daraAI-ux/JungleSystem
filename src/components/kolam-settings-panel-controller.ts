@@ -1056,11 +1056,15 @@ export function useKolamSettingsPanelController(
   const [regionSyncStatus, setRegionSyncStatus] =
     useState<RegionSyncStatus>('idle');
   const [regionSyncMessage, setRegionSyncMessage] = useState('');
-  const [regionLevel, setRegionLevel] = useState<KolamRegionLevel | ''>(
-    'province',
-  );
-  const [regionParentCode, setRegionParentCode] = useState('');
-  const [regionSearch, setRegionSearch] = useState('');
+  const [selectedProvince, setSelectedProvince] = useState('');
+  const [selectedRegency, setSelectedRegency] = useState('');
+  const [selectedDistrict, setSelectedDistrict] = useState('');
+  const [selectedVillage, setSelectedVillage] = useState('');
+  const activeRegionHierarchy = createRegionHierarchyQuery({
+    selectedDistrict,
+    selectedProvince,
+    selectedRegency,
+  });
   const [regionReloadKey, setRegionReloadKey] = useState(0);
   const [operationalRooms, setOperationalRooms] = useState<KolamTeamChatRoom[]>(
     [],
@@ -1558,10 +1562,9 @@ export function useKolamSettingsPanelController(
 
     Promise.allSettled([
       getKolamRegions({
-        level: regionLevel,
-        parentCode: regionParentCode,
-        search: regionSearch,
-        limit: 500,
+        level: activeRegionHierarchy.level,
+        parentCode: activeRegionHierarchy.parentCode,
+        limit: 2000,
       }),
       getKolamRegionStats(),
     ])
@@ -1595,9 +1598,9 @@ export function useKolamSettingsPanelController(
     };
   }, [
     activeSettingsTabId,
-    regionLevel,
-    regionParentCode,
-    regionSearch,
+    activeRegionHierarchy.level,
+    activeRegionHierarchy.parentCode,
+    selectedVillage,
     regionReloadKey,
   ]);
 
@@ -1697,9 +1700,12 @@ export function useKolamSettingsPanelController(
   const financialSectionVisibility = createFinancialSectionVisibility(
     settingsVisibilityContext,
   );
+  const filteredRegionRows = selectedVillage
+    ? regionRows.filter(region => region.code === selectedVillage)
+    : regionRows;
   const regionSyncSummaryRows = createRegionSyncSummaryRows(
     regionStats,
-    regionRows,
+    filteredRegionRows,
   );
   const webContentLauncherItems = createWebContentLauncherItems({
     blogRows,
@@ -2000,20 +2006,24 @@ export function useKolamSettingsPanelController(
     }));
     setWebSettingSaveStatus('idle');
   };
-  const setRegionFilter = (
-    key: 'level' | 'parentCode' | 'search',
+  const setRegionSelection = (
+    key: 'province' | 'regency' | 'district' | 'village',
     value: string,
   ) => {
-    if (key === 'level') {
-      setRegionLevel(
-        regionLevels.includes(value as KolamRegionLevel)
-          ? (value as KolamRegionLevel)
-          : '',
-      );
-    } else if (key === 'parentCode') {
-      setRegionParentCode(value);
+    if (key === 'province') {
+      setSelectedProvince(value.trim());
+      setSelectedRegency('');
+      setSelectedDistrict('');
+      setSelectedVillage('');
+    } else if (key === 'regency') {
+      setSelectedRegency(value.trim());
+      setSelectedDistrict('');
+      setSelectedVillage('');
+    } else if (key === 'district') {
+      setSelectedDistrict(value.trim());
+      setSelectedVillage('');
     } else {
-      setRegionSearch(value);
+      setSelectedVillage(value.trim());
     }
   };
   const refreshRegionSync = () => {
@@ -2027,10 +2037,11 @@ export function useKolamSettingsPanelController(
     try {
       const result = await syncKolamRegions({
         scope,
-        parentCode:
-          scope === 'regencies' || scope === 'districts' || scope === 'villages'
-            ? regionParentCode
-            : '',
+        parentCode: getRegionSyncParentCode(scope, {
+          selectedDistrict,
+          selectedProvince,
+          selectedRegency,
+        }),
       });
       const stats = result.data;
       setRegionSyncMessage(
@@ -2040,10 +2051,9 @@ export function useKolamSettingsPanelController(
       );
       const [rows, nextStats] = await Promise.all([
         getKolamRegions({
-          level: regionLevel,
-          parentCode: regionParentCode,
-          search: regionSearch,
-          limit: 500,
+          level: activeRegionHierarchy.level,
+          parentCode: activeRegionHierarchy.parentCode,
+          limit: 2000,
         }),
         getKolamRegionStats(),
       ]);
@@ -4235,10 +4245,13 @@ export function useKolamSettingsPanelController(
     marketplaceLandingTabItems,
     operationalRooms,
     operationalStaffRows,
-    regionLevel,
-    regionParentCode,
-    regionRows,
-    regionSearch,
+    selectedProvince,
+    selectedRegency,
+    selectedDistrict,
+    selectedVillage,
+    regionLevel: activeRegionHierarchy.level,
+    regionParentCode: activeRegionHierarchy.parentCode,
+    regionRows: filteredRegionRows,
     regionSyncMessage,
     regionSyncStatus,
     regionSyncSummaryRows,
@@ -4268,7 +4281,7 @@ export function useKolamSettingsPanelController(
     setPaymentMethodDraftField,
     setPaymentMethodFilter,
     setDaraKnowledgeDraftField,
-    setRegionFilter,
+    setRegionSelection,
     setRoleDraftField,
     setSelectedActivityLogId,
     setSelectedRoleId,
@@ -5339,6 +5352,60 @@ function createRegionSyncSummaryRows(
       stats?.counts[level]?.withPostalCode ?? 0,
     )} postal codes | table cache ${formatNumber(rows.length)} rows`,
   }));
+}
+
+function createRegionHierarchyQuery({
+  selectedDistrict,
+  selectedProvince,
+  selectedRegency,
+}: {
+  selectedDistrict: string;
+  selectedProvince: string;
+  selectedRegency: string;
+}): {
+  level: KolamRegionLevel;
+  parentCode: string;
+} {
+  if (selectedDistrict) {
+    return {level: 'village', parentCode: selectedDistrict};
+  }
+
+  if (selectedRegency) {
+    return {level: 'district', parentCode: selectedRegency};
+  }
+
+  if (selectedProvince) {
+    return {level: 'regency', parentCode: selectedProvince};
+  }
+
+  return {level: 'province', parentCode: ''};
+}
+
+function getRegionSyncParentCode(
+  scope: KolamRegionSyncScope,
+  {
+    selectedDistrict,
+    selectedProvince,
+    selectedRegency,
+  }: {
+    selectedDistrict: string;
+    selectedProvince: string;
+    selectedRegency: string;
+  },
+) {
+  if (scope === 'regencies') {
+    return selectedProvince;
+  }
+
+  if (scope === 'districts') {
+    return selectedRegency;
+  }
+
+  if (scope === 'villages') {
+    return selectedDistrict;
+  }
+
+  return '';
 }
 
 function createWebContentLauncherItems({

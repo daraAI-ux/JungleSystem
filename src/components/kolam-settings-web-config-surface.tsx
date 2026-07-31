@@ -807,7 +807,10 @@ export function KolamSettingsWebConfigSurface({
   regionLevel,
   regionParentCode,
   regionRows,
-  regionSearch,
+  selectedProvince,
+  selectedRegency,
+  selectedDistrict,
+  selectedVillage,
   regionSyncMessage,
   regionSyncStatus,
   regionSyncSummaryRows,
@@ -901,7 +904,7 @@ export function KolamSettingsWebConfigSurface({
   setPaymentMethodFilter = noopSetPaymentMethodFilter,
   setDaraKnowledgeDraftField = noopSetDaraKnowledgeDraftField,
   setWebContentPanelId,
-  setRegionFilter,
+  setRegionSelection,
   setSitemapCustomUrlsDraftText,
   setSitemapExcludedSlugsDraftText,
   setSitemapMasterField,
@@ -947,7 +950,10 @@ export function KolamSettingsWebConfigSurface({
   regionLevel: KolamRegionLevel | '';
   regionParentCode: string;
   regionRows: KolamRegion[];
-  regionSearch: string;
+  selectedProvince: string;
+  selectedRegency: string;
+  selectedDistrict: string;
+  selectedVillage: string;
   regionSyncMessage: string;
   regionSyncStatus: 'idle' | 'loading' | 'live' | 'syncing' | 'error';
   regionSyncSummaryRows: RegionSyncSummaryRow[];
@@ -1131,8 +1137,8 @@ export function KolamSettingsWebConfigSurface({
     value: KolamTaxCompanyProfile[Key],
   ) => void;
   setWebContentPanelId: (id: 'marketplace' | 'blog' | 'blog-topics') => void;
-  setRegionFilter: (
-    key: 'level' | 'parentCode' | 'search',
+  setRegionSelection: (
+    key: 'province' | 'regency' | 'district' | 'village',
     value: string,
   ) => void;
   setSitemapCustomUrlsDraftText: (value: string) => void;
@@ -3951,29 +3957,38 @@ export function KolamSettingsWebConfigSurface({
             <KolamTextFieldRow
               variant="settingsForm"
               fieldWidth={170}
-              label="Level"
-              description="province, regency, district, village."
-              value={regionLevel}
-              onChangeText={value => setRegionFilter('level', value)}
-              placeholder="province"
+              label="Provinsi"
+              description="Kode provinsi untuk memuat kota/kabupaten."
+              value={selectedProvince}
+              onChangeText={value => setRegionSelection('province', value)}
+              placeholder="32"
             />
             <KolamTextFieldRow
               variant="settingsForm"
               fieldWidth={180}
-              label="Parent code"
-              description="Kode parent untuk city/district/village."
-              value={regionParentCode}
-              onChangeText={value => setRegionFilter('parentCode', value)}
+              label="Kota / Kabupaten"
+              description="Kode kota/kabupaten untuk memuat kecamatan."
+              value={selectedRegency}
+              onChangeText={value => setRegionSelection('regency', value)}
               placeholder="32.73"
             />
             <KolamTextFieldRow
               variant="settingsForm"
-              fieldWidth={220}
-              label="Search"
-              description="Cari nama, kode, atau postal code."
-              value={regionSearch}
-              onChangeText={value => setRegionFilter('search', value)}
-              placeholder="Bandung / 40111"
+              fieldWidth={180}
+              label="Kecamatan"
+              description="Kode kecamatan untuk memuat kelurahan."
+              value={selectedDistrict}
+              onChangeText={value => setRegionSelection('district', value)}
+              placeholder="32.73.01"
+            />
+            <KolamTextFieldRow
+              variant="settingsForm"
+              fieldWidth={180}
+              label="Kelurahan"
+              description="Opsional, filter satu kelurahan/desa."
+              value={selectedVillage}
+              onChangeText={value => setRegionSelection('village', value)}
+              placeholder="32.73.01.1001"
             />
           </View>
           <View style={styles.notificationSoundActions}>

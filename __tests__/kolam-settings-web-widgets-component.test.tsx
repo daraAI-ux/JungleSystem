@@ -179,7 +179,10 @@ describe('settings web widgets', () => {
           regionLevel="province"
           regionParentCode=""
           regionRows={[]}
-          regionSearch=""
+          selectedProvince=""
+          selectedRegency=""
+          selectedDistrict=""
+          selectedVillage=""
           regionSyncMessage=""
           regionSyncStatus="idle"
           regionSyncSummaryRows={[]}
@@ -279,7 +282,7 @@ describe('settings web widgets', () => {
           setMarketplaceLandingYoutubeDraftField={jest.fn()}
           setMarketplaceLandingNoticeDraftField={jest.fn()}
           setWebContentPanelId={jest.fn()}
-          setRegionFilter={jest.fn()}
+          setRegionSelection={jest.fn()}
           setSitemapCustomUrlsDraftText={jest.fn()}
           setSitemapExcludedSlugsDraftText={jest.fn()}
           setSitemapMasterField={jest.fn()}
@@ -968,7 +971,10 @@ function createSurfaceProps(
     regionLevel: 'province',
     regionParentCode: '',
     regionRows: [],
-    regionSearch: '',
+    selectedProvince: '',
+    selectedRegency: '',
+    selectedDistrict: '',
+    selectedVillage: '',
     regionSyncMessage: '',
     regionSyncStatus: 'idle',
     regionSyncSummaryRows: [],
@@ -1051,7 +1057,7 @@ function createSurfaceProps(
     setMarketplaceLandingYoutubeDraftField: jest.fn(),
     setMarketplaceLandingNoticeDraftField: jest.fn(),
     setWebContentPanelId: jest.fn(),
-    setRegionFilter: jest.fn(),
+    setRegionSelection: jest.fn(),
     setSitemapCustomUrlsDraftText: jest.fn(),
     setSitemapExcludedSlugsDraftText: jest.fn(),
     setSitemapMasterField: jest.fn(),
