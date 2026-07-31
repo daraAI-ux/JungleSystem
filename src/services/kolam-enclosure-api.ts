@@ -6,10 +6,12 @@ import {
   normalizeKolamEnclosureDashboardStats,
   normalizeKolamEnclosureDetail,
   normalizeKolamEnclosureList,
+  normalizeKolamEnclosureComments,
   normalizeKolamEnclosurePendingAllocations,
   normalizeKolamEnclosureStatistics,
   type KolamEnclosure,
   type KolamEnclosureAllocationOverview,
+  type KolamEnclosureComment,
   type KolamEnclosureDashboardStats,
   type KolamEnclosureListFilters,
   type KolamEnclosureListResult,
@@ -42,6 +44,94 @@ export interface KolamEnclosureCreateBody {
   locationId: string;
   assignedTo: string;
   livestockPurpose?: 'saleable' | 'production';
+}
+
+export interface KolamEnclosureParameterInput {
+  parameter_name: string;
+  current_value?: number | string | null;
+  target_value?: number | string | null;
+  min_value?: number | string | null;
+  max_value?: number | string | null;
+  unit?: string | KolamEnclosureUnitRef | null;
+}
+
+export interface KolamEnclosureSpeciesAttachInput {
+  enclosureId: string;
+  speciesId: string;
+  quantity?: number;
+  variantId?: string | null;
+  reason?: string;
+}
+
+export interface KolamEnclosurePopulationEventInput {
+  enclosureId: string;
+  speciesId: string;
+  delta: number;
+  variantId?: string | null;
+  eventType?: string | null;
+  reason?: string;
+  saleId?: string;
+  invoiceCode?: string;
+  photoUris?: string[];
+}
+
+export interface KolamEnclosureSpeciesTransferInput {
+  enclosureId: string;
+  targetEnclosureId: string;
+  speciesId: string;
+  quantity?: number;
+  variantId?: string | null;
+  reason?: string;
+}
+
+export interface KolamEnclosureCrossPoolTransferInput
+  extends KolamEnclosureSpeciesTransferInput {
+  direction: 'release_to_sale' | 'take_to_production';
+}
+
+export interface KolamEnclosureVariantSwitchInput {
+  enclosureId: string;
+  speciesId: string;
+  fromVariantId: string;
+  toVariantId: string;
+  quantity?: number;
+  reason?: string;
+  photoUris?: string[];
+}
+
+export interface KolamEnclosureSaleListingInput {
+  action: 'list' | 'clear' | 'reserve' | 'sold';
+  salePrice?: number;
+  saleId?: string | null;
+}
+
+export interface KolamEnclosureProductionEggInput {
+  enclosureId: string;
+  speciesId: string;
+  quantity: number;
+  reason?: string;
+}
+
+export interface KolamEnclosureProductionEggAdvanceInput
+  extends KolamEnclosureProductionEggInput {
+  toStageKey?: string;
+}
+
+export interface KolamEnclosureProductionPhaseChangeInput {
+  enclosureId?: string | null;
+  speciesId: string;
+  fromStageKey: string;
+  toStageKey: string;
+  quantity: number;
+  reason?: string;
+}
+
+export interface KolamEnclosureProductionPhaseToSaleInput {
+  enclosureId: string;
+  speciesId: string;
+  stageKey: string;
+  quantity: number;
+  reason?: string;
 }
 
 export async function getKolamEnclosures(
@@ -119,6 +209,272 @@ export async function getKolamEnclosureStaffAssignees(
   return rows.map(normalizeStaffAssignee).filter(item => item.id);
 }
 
+export async function upsertKolamEnclosureParameter(
+  enclosureId: string,
+  body: KolamEnclosureParameterInput,
+): Promise<void> {
+  await kolamRequest<unknown>(`${BASE}/${encodeURIComponent(enclosureId)}/parameters`, {
+    method: 'POST',
+    body,
+  });
+}
+
+export async function uploadKolamEnclosureCoverPhoto(
+  enclosureId: string,
+  localUri: string,
+): Promise<KolamEnclosure> {
+  const body = new FormData();
+  body.append(
+    'photo',
+    createReactNativeFilePart(localUri, 'enclosure-cover.jpg') as unknown as Blob,
+  );
+  const response = await kolamRequest<unknown>(
+    `${BASE}/${encodeURIComponent(enclosureId)}/cover-photo`,
+    {method: 'POST', body},
+  );
+  return normalizeKolamEnclosureDetail(response);
+}
+
+export async function deleteKolamEnclosureCoverPhoto(
+  enclosureId: string,
+): Promise<KolamEnclosure> {
+  const response = await kolamRequest<unknown>(
+    `${BASE}/${encodeURIComponent(enclosureId)}/cover-photo`,
+    {method: 'DELETE'},
+  );
+  return normalizeKolamEnclosureDetail(response);
+}
+
+export async function uploadKolamEnclosurePhotos(
+  enclosureId: string,
+  localUris: string[],
+): Promise<KolamEnclosure> {
+  const body = new FormData();
+  for (const uri of localUris) {
+    if (uri.trim()) {
+      body.append(
+        'photos',
+        createReactNativeFilePart(uri.trim(), 'enclosure-photo.jpg') as unknown as Blob,
+      );
+    }
+  }
+  const response = await kolamRequest<unknown>(
+    `${BASE}/${encodeURIComponent(enclosureId)}/photos`,
+    {method: 'POST', body},
+  );
+  return normalizeKolamEnclosureDetail(response);
+}
+
+export async function deleteKolamEnclosurePhoto(
+  enclosureId: string,
+  index: number,
+): Promise<KolamEnclosure> {
+  const response = await kolamRequest<unknown>(
+    `${BASE}/${encodeURIComponent(enclosureId)}/photos/${encodeURIComponent(String(index))}`,
+    {method: 'DELETE'},
+  );
+  return normalizeKolamEnclosureDetail(response);
+}
+
+export async function attachKolamEnclosureSpecies(
+  input: KolamEnclosureSpeciesAttachInput,
+): Promise<KolamEnclosure> {
+  const response = await kolamRequest<unknown>(
+    `${BASE}/${encodeURIComponent(input.enclosureId)}/species`,
+    {
+      method: 'POST',
+      body: {
+        speciesId: input.speciesId,
+        quantity: input.quantity ?? 1,
+        variantId: input.variantId ?? null,
+        reason: input.reason?.trim() || undefined,
+      },
+    },
+  );
+  return normalizeKolamEnclosureDetail(response);
+}
+
+export async function recordKolamEnclosurePopulationEvent(
+  input: KolamEnclosurePopulationEventInput,
+): Promise<KolamEnclosure> {
+  const body = new FormData();
+  body.append('speciesId', input.speciesId);
+  body.append('delta', String(input.delta));
+  appendOptionalFormValue(body, 'variantId', input.variantId);
+  appendOptionalFormValue(body, 'eventType', input.eventType);
+  appendOptionalFormValue(body, 'reason', input.reason);
+  appendOptionalFormValue(body, 'saleId', input.saleId);
+  appendOptionalFormValue(body, 'invoiceCode', input.invoiceCode);
+  appendPhotoParts(body, input.photoUris);
+
+  const response = await kolamRequest<unknown>(
+    `${BASE}/${encodeURIComponent(input.enclosureId)}/species-population-event`,
+    {method: 'POST', body},
+  );
+  return normalizeKolamEnclosureDetail(response);
+}
+
+export async function transferKolamEnclosureSpecies(
+  input: KolamEnclosureSpeciesTransferInput,
+): Promise<KolamEnclosure> {
+  const response = await kolamRequest<unknown>(
+    `${BASE}/${encodeURIComponent(input.enclosureId)}/species-transfer`,
+    {
+      method: 'POST',
+      body: createSpeciesTransferPayload(input),
+    },
+  );
+  return normalizeKolamEnclosureDetail(response);
+}
+
+export async function crossPoolTransferKolamEnclosureSpecies(
+  input: KolamEnclosureCrossPoolTransferInput,
+): Promise<KolamEnclosure> {
+  const response = await kolamRequest<unknown>(
+    `${BASE}/${encodeURIComponent(input.enclosureId)}/species-cross-pool-transfer`,
+    {
+      method: 'POST',
+      body: {...createSpeciesTransferPayload(input), direction: input.direction},
+    },
+  );
+  return normalizeKolamEnclosureDetail(response);
+}
+
+export async function switchKolamEnclosureSpeciesVariant(
+  input: KolamEnclosureVariantSwitchInput,
+): Promise<KolamEnclosure> {
+  const body = new FormData();
+  body.append('speciesId', input.speciesId);
+  body.append('fromVariantId', input.fromVariantId);
+  body.append('toVariantId', input.toVariantId);
+  body.append('quantity', String(input.quantity ?? 1));
+  appendOptionalFormValue(body, 'reason', input.reason);
+  appendPhotoParts(body, input.photoUris);
+
+  const response = await kolamRequest<unknown>(
+    `${BASE}/${encodeURIComponent(input.enclosureId)}/species-variant-switch`,
+    {method: 'POST', body},
+  );
+  return normalizeKolamEnclosureDetail(response);
+}
+
+export async function updateKolamEnclosureSaleListing(
+  enclosureId: string,
+  body: KolamEnclosureSaleListingInput,
+): Promise<KolamEnclosure> {
+  const response = await kolamRequest<unknown>(
+    `${BASE}/${encodeURIComponent(enclosureId)}/sale-listing`,
+    {method: 'PUT', body},
+  );
+  return normalizeKolamEnclosureDetail(response);
+}
+
+export async function getKolamEnclosureComments(
+  enclosureId: string,
+): Promise<KolamEnclosureComment[]> {
+  const response = await kolamRequest<unknown>(
+    `${BASE}/${encodeURIComponent(enclosureId)}/comments`,
+  );
+  return normalizeKolamEnclosureComments(response);
+}
+
+export async function createKolamEnclosureComment(
+  enclosureId: string,
+  comment: string,
+): Promise<void> {
+  await kolamRequest<unknown>(`${BASE}/${encodeURIComponent(enclosureId)}/comments`, {
+    method: 'POST',
+    body: {comment},
+  });
+}
+
+export async function replyKolamEnclosureComment(
+  commentId: string,
+  comment: string,
+): Promise<void> {
+  await kolamRequest<unknown>(
+    `${BASE}/comments/${encodeURIComponent(commentId)}/reply`,
+    {method: 'POST', body: {comment}},
+  );
+}
+
+export async function editKolamEnclosureComment(
+  commentId: string,
+  comment: string,
+): Promise<void> {
+  await kolamRequest<unknown>(
+    `${BASE}/comments/${encodeURIComponent(commentId)}`,
+    {method: 'PATCH', body: {comment}},
+  );
+}
+
+export async function deleteKolamEnclosureComment(commentId: string): Promise<void> {
+  await kolamRequest<unknown>(
+    `${BASE}/comments/${encodeURIComponent(commentId)}`,
+    {method: 'DELETE'},
+  );
+}
+
+export async function likeKolamEnclosureComment(commentId: string): Promise<void> {
+  await kolamRequest<unknown>(
+    `${BASE}/comments/${encodeURIComponent(commentId)}/like`,
+    {method: 'PUT'},
+  );
+}
+
+export async function addKolamEnclosureProductionEggs(
+  input: KolamEnclosureProductionEggInput,
+): Promise<KolamEnclosure> {
+  const response = await kolamRequest<unknown>(
+    `${BASE}/${encodeURIComponent(input.enclosureId)}/production-eggs`,
+    {
+      method: 'POST',
+      body: {
+        speciesId: input.speciesId,
+        quantity: input.quantity,
+        reason: input.reason?.trim() || undefined,
+      },
+    },
+  );
+  return normalizeKolamEnclosureDetail(response);
+}
+
+export async function advanceKolamEnclosureProductionEggs(
+  input: KolamEnclosureProductionEggAdvanceInput,
+): Promise<KolamEnclosure> {
+  const response = await kolamRequest<unknown>(
+    `${BASE}/${encodeURIComponent(input.enclosureId)}/production-eggs/advance`,
+    {
+      method: 'POST',
+      body: {
+        speciesId: input.speciesId,
+        quantity: input.quantity,
+        toStageKey: input.toStageKey?.trim() || undefined,
+        reason: input.reason?.trim() || undefined,
+      },
+    },
+  );
+  return normalizeKolamEnclosureDetail(response);
+}
+
+export async function changeKolamEnclosureProductionPhase(
+  input: KolamEnclosureProductionPhaseChangeInput,
+): Promise<void> {
+  await kolamRequest<unknown>(`${BASE}/production-phase-change`, {
+    method: 'POST',
+    body: input,
+  });
+}
+
+export async function moveKolamEnclosureProductionPhaseToSale(
+  input: KolamEnclosureProductionPhaseToSaleInput,
+): Promise<void> {
+  await kolamRequest<unknown>(`${BASE}/production-phase-to-sale`, {
+    method: 'POST',
+    body: input,
+  });
+}
+
 export async function createKolamEnclosure(
   body: KolamEnclosureCreateBody,
 ): Promise<KolamEnclosure> {
@@ -177,6 +533,69 @@ function kolamRequest<T>(
     baseUrl: appConfig.kolamApiBaseUrl,
     sourceHeader: appConfig.kolamSourceHeader,
   });
+}
+
+function createSpeciesTransferPayload(input: KolamEnclosureSpeciesTransferInput) {
+  return {
+    targetEnclosureId: input.targetEnclosureId,
+    speciesId: input.speciesId,
+    variantId: input.variantId ?? null,
+    quantity: input.quantity ?? 1,
+    reason: input.reason?.trim() || undefined,
+  };
+}
+
+function appendOptionalFormValue(
+  body: FormData,
+  key: string,
+  value: string | number | null | undefined,
+) {
+  if (value == null) {
+    return;
+  }
+  const text = String(value).trim();
+  if (text) {
+    body.append(key, text);
+  }
+}
+
+function appendPhotoParts(body: FormData, photoUris?: string[]) {
+  for (const uri of photoUris ?? []) {
+    if (uri.trim()) {
+      body.append(
+        'photos',
+        createReactNativeFilePart(uri.trim(), 'enclosure-event-photo.jpg') as unknown as Blob,
+      );
+    }
+  }
+}
+
+function createReactNativeFilePart(localUri: string, fallbackName: string) {
+  const normalizedUri = localUri.startsWith('file://')
+    ? localUri
+    : `file:///${localUri.replace(/\\/g, '/')}`;
+  const name = normalizedUri.split('/').pop() || fallbackName;
+  return {
+    uri: normalizedUri,
+    name,
+    type: inferFileMimeType(name),
+  };
+}
+
+function inferFileMimeType(fileName: string) {
+  const extension = fileName.split('.').pop()?.toLowerCase();
+  switch (extension) {
+    case 'png':
+      return 'image/png';
+    case 'webp':
+      return 'image/webp';
+    case 'gif':
+      return 'image/gif';
+    case 'jpg':
+    case 'jpeg':
+    default:
+      return 'image/jpeg';
+  }
 }
 
 function createKolamEnclosurePayload(body: KolamEnclosureCreateBody) {

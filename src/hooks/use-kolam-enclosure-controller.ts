@@ -7,6 +7,7 @@ import {
   normalizeKolamEnclosurePageSize,
   type KolamEnclosure,
   type KolamEnclosureAllocationOverview,
+  type KolamEnclosureComment,
   type KolamEnclosureDashboardStats,
   type KolamEnclosureListFilters,
   type KolamEnclosureListTab,
@@ -18,13 +19,45 @@ import {
 } from '../domain/kolam-enclosure';
 import {getErrorMessage} from '../lib/api-error';
 import {
+  addKolamEnclosureProductionEggs,
+  advanceKolamEnclosureProductionEggs,
+  attachKolamEnclosureSpecies,
+  changeKolamEnclosureProductionPhase,
+  createKolamEnclosureComment,
+  crossPoolTransferKolamEnclosureSpecies,
+  deleteKolamEnclosureComment,
+  deleteKolamEnclosureCoverPhoto,
+  deleteKolamEnclosurePhoto,
+  editKolamEnclosureComment,
   getKolamEnclosureDashboardStats,
+  getKolamEnclosureComments,
   getKolamEnclosureDetail,
   getKolamEnclosureStaffAssignees,
   getKolamEnclosureStatistics,
   getKolamEnclosures,
   getKolamPendingLivestockAllocations,
   getKolamSpeciesAllocationOverview,
+  likeKolamEnclosureComment,
+  moveKolamEnclosureProductionPhaseToSale,
+  recordKolamEnclosurePopulationEvent,
+  replyKolamEnclosureComment,
+  switchKolamEnclosureSpeciesVariant,
+  transferKolamEnclosureSpecies,
+  updateKolamEnclosureSaleListing,
+  uploadKolamEnclosureCoverPhoto,
+  uploadKolamEnclosurePhotos,
+  upsertKolamEnclosureParameter,
+  type KolamEnclosureCrossPoolTransferInput,
+  type KolamEnclosureParameterInput,
+  type KolamEnclosurePopulationEventInput,
+  type KolamEnclosureProductionEggAdvanceInput,
+  type KolamEnclosureProductionEggInput,
+  type KolamEnclosureProductionPhaseChangeInput,
+  type KolamEnclosureProductionPhaseToSaleInput,
+  type KolamEnclosureSaleListingInput,
+  type KolamEnclosureSpeciesAttachInput,
+  type KolamEnclosureSpeciesTransferInput,
+  type KolamEnclosureVariantSwitchInput,
 } from '../services/kolam-enclosure-api';
 
 export type KolamEnclosureDataSource = 'idle' | 'live' | 'error';
@@ -93,18 +126,41 @@ export interface KolamEnclosureController {
   pendingTotal: number;
   routeEnclosureId: string;
   selectedEnclosure: KolamEnclosure | null;
+  enclosureComments: KolamEnclosureComment[];
   enclosureStatistics: KolamEnclosureStatistics | null;
   enclosureStatisticsError: string | null;
   enclosureStatisticsLoading: boolean;
+  operationLoading: boolean;
   staffAssignees: KolamEnclosureStaffRef[];
   statusMessage: string | null;
+  onAddProductionEggs: (input: KolamEnclosureProductionEggInput) => Promise<void>;
+  onAdvanceProductionEggs: (input: KolamEnclosureProductionEggAdvanceInput) => Promise<void>;
   onChangeFilters: (patch: Partial<KolamEnclosureListFilters>) => void;
+  onChangeProductionPhase: (input: KolamEnclosureProductionPhaseChangeInput) => Promise<void>;
   onClearFilters: () => void;
+  onCreateComment: (comment: string) => Promise<void>;
+  onCrossPoolTransferSpecies: (input: KolamEnclosureCrossPoolTransferInput) => Promise<void>;
+  onDeleteComment: (commentId: string) => Promise<void>;
+  onDeleteCoverPhoto: () => Promise<void>;
+  onDeletePhoto: (index: number) => Promise<void>;
+  onEditComment: (commentId: string, comment: string) => Promise<void>;
+  onLikeComment: (commentId: string) => Promise<void>;
   onLimitChange: (limit: number) => void;
+  onMoveProductionPhaseToSale: (input: KolamEnclosureProductionPhaseToSaleInput) => Promise<void>;
   onPageChange: (page: number) => void;
+  onRecordPopulationEvent: (input: KolamEnclosurePopulationEventInput) => Promise<void>;
   onRefresh: () => Promise<void>;
+  onRefreshComments: () => Promise<void>;
+  onReplyComment: (commentId: string, comment: string) => Promise<void>;
   onSearchChange: (search: string) => void;
+  onSwitchSpeciesVariant: (input: KolamEnclosureVariantSwitchInput) => Promise<void>;
   onTabChange: (tab: KolamEnclosureListTab) => void;
+  onTransferSpecies: (input: KolamEnclosureSpeciesTransferInput) => Promise<void>;
+  onUpdateParameter: (body: KolamEnclosureParameterInput) => Promise<void>;
+  onUpdateSaleListing: (body: KolamEnclosureSaleListingInput) => Promise<void>;
+  onUploadCoverPhoto: (localUri: string) => Promise<void>;
+  onUploadPhotos: (localUris: string[]) => Promise<void>;
+  onAttachSpecies: (input: KolamEnclosureSpeciesAttachInput) => Promise<void>;
 }
 
 export function useKolamEnclosureController(
@@ -121,6 +177,9 @@ export function useKolamEnclosureController(
   const [enclosures, setEnclosures] = useState<KolamEnclosure[]>([]);
   const [selectedEnclosure, setSelectedEnclosure] =
     useState<KolamEnclosure | null>(null);
+  const [enclosureComments, setEnclosureComments] = useState<
+    KolamEnclosureComment[]
+  >([]);
   const [enclosureStatistics, setEnclosureStatistics] =
     useState<KolamEnclosureStatistics | null>(null);
   const [enclosureStatisticsError, setEnclosureStatisticsError] =
@@ -141,6 +200,7 @@ export function useKolamEnclosureController(
   const [pagination, setPagination] =
     useState<KolamEnclosurePagination>(DEFAULT_PAGINATION);
   const [loading, setLoading] = useState(false);
+  const [operationLoading, setOperationLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [dataSource, setDataSource] =
@@ -154,6 +214,7 @@ export function useKolamEnclosureController(
     setMode(getKolamEnclosureSurfaceMode(route));
     setFilters(createInitialEnclosureListFilters(route));
     setSelectedEnclosure(null);
+    setEnclosureComments([]);
     setEnclosureStatistics(null);
     setEnclosureStatisticsError(null);
     setError(null);
@@ -198,6 +259,17 @@ export function useKolamEnclosureController(
         setSelectedEnclosure(detail);
         setEnclosureStatistics(statisticsResult.data);
         setEnclosureStatisticsError(statisticsResult.error);
+        void getKolamEnclosureComments(enclosureId)
+          .then(comments => {
+            if (requestSeq.current === activeRequest) {
+              setEnclosureComments(comments);
+            }
+          })
+          .catch(() => {
+            if (requestSeq.current === activeRequest) {
+              setEnclosureComments([]);
+            }
+          });
         setDataSource('live');
         return;
       }
@@ -286,6 +358,34 @@ export function useKolamEnclosureController(
     }
   }, [filters, route]);
 
+  const refreshComments = useCallback(async () => {
+    const enclosureId = getKolamEnclosureRouteId(route);
+    if (!enclosureId) {
+      setEnclosureComments([]);
+      return;
+    }
+    const comments = await getKolamEnclosureComments(enclosureId);
+    setEnclosureComments(comments);
+  }, [route]);
+
+  const runOperation = useCallback(
+    async (action: () => Promise<unknown>, successMessage: string) => {
+      setOperationLoading(true);
+      setError(null);
+      setStatusMessage(null);
+      try {
+        await action();
+        setStatusMessage(successMessage);
+        await refresh();
+      } catch (operationError) {
+        setError(getErrorMessage(operationError));
+      } finally {
+        setOperationLoading(false);
+      }
+    },
+    [refresh],
+  );
+
   useEffect(() => {
     void refresh();
   }, [refresh]);
@@ -342,6 +442,191 @@ export function useKolamEnclosureController(
     setStatusMessage(null);
   }, []);
 
+  const onUpdateParameter = useCallback(
+    (body: KolamEnclosureParameterInput) =>
+      runOperation(async () => {
+        const enclosureId = getKolamEnclosureRouteId(route);
+        if (!enclosureId) throw new Error('ID enclosure tidak ditemukan.');
+        await upsertKolamEnclosureParameter(enclosureId, body);
+      }, 'Parameter enclosure diperbarui.'),
+    [route, runOperation],
+  );
+
+  const onUploadCoverPhoto = useCallback(
+    (localUri: string) =>
+      runOperation(async () => {
+        const enclosureId = getKolamEnclosureRouteId(route);
+        if (!enclosureId) throw new Error('ID enclosure tidak ditemukan.');
+        await uploadKolamEnclosureCoverPhoto(enclosureId, localUri);
+      }, 'Cover enclosure diunggah.'),
+    [route, runOperation],
+  );
+
+  const onDeleteCoverPhoto = useCallback(
+    () =>
+      runOperation(async () => {
+        const enclosureId = getKolamEnclosureRouteId(route);
+        if (!enclosureId) throw new Error('ID enclosure tidak ditemukan.');
+        await deleteKolamEnclosureCoverPhoto(enclosureId);
+      }, 'Cover enclosure dihapus.'),
+    [route, runOperation],
+  );
+
+  const onUploadPhotos = useCallback(
+    (localUris: string[]) =>
+      runOperation(async () => {
+        const enclosureId = getKolamEnclosureRouteId(route);
+        if (!enclosureId) throw new Error('ID enclosure tidak ditemukan.');
+        await uploadKolamEnclosurePhotos(enclosureId, localUris);
+      }, 'Foto enclosure diunggah.'),
+    [route, runOperation],
+  );
+
+  const onDeletePhoto = useCallback(
+    (index: number) =>
+      runOperation(async () => {
+        const enclosureId = getKolamEnclosureRouteId(route);
+        if (!enclosureId) throw new Error('ID enclosure tidak ditemukan.');
+        await deleteKolamEnclosurePhoto(enclosureId, index);
+      }, 'Foto enclosure dihapus.'),
+    [route, runOperation],
+  );
+
+  const onAttachSpecies = useCallback(
+    (input: KolamEnclosureSpeciesAttachInput) =>
+      runOperation(() => attachKolamEnclosureSpecies(input), 'Species ditempatkan.'),
+    [runOperation],
+  );
+
+  const onRecordPopulationEvent = useCallback(
+    (input: KolamEnclosurePopulationEventInput) =>
+      runOperation(
+        () => recordKolamEnclosurePopulationEvent(input),
+        'Perubahan populasi dicatat.',
+      ),
+    [runOperation],
+  );
+
+  const onTransferSpecies = useCallback(
+    (input: KolamEnclosureSpeciesTransferInput) =>
+      runOperation(
+        () => transferKolamEnclosureSpecies(input),
+        'Species dipindahkan.',
+      ),
+    [runOperation],
+  );
+
+  const onCrossPoolTransferSpecies = useCallback(
+    (input: KolamEnclosureCrossPoolTransferInput) =>
+      runOperation(
+        () => crossPoolTransferKolamEnclosureSpecies(input),
+        'Species dipindahkan antar pool.',
+      ),
+    [runOperation],
+  );
+
+  const onSwitchSpeciesVariant = useCallback(
+    (input: KolamEnclosureVariantSwitchInput) =>
+      runOperation(
+        () => switchKolamEnclosureSpeciesVariant(input),
+        'Variant species diperbarui.',
+      ),
+    [runOperation],
+  );
+
+  const onUpdateSaleListing = useCallback(
+    (body: KolamEnclosureSaleListingInput) =>
+      runOperation(async () => {
+        const enclosureId = getKolamEnclosureRouteId(route);
+        if (!enclosureId) throw new Error('ID enclosure tidak ditemukan.');
+        await updateKolamEnclosureSaleListing(enclosureId, body);
+      }, 'Listing penjualan enclosure diperbarui.'),
+    [route, runOperation],
+  );
+
+  const onCreateComment = useCallback(
+    (comment: string) =>
+      runOperation(async () => {
+        const enclosureId = getKolamEnclosureRouteId(route);
+        if (!enclosureId) throw new Error('ID enclosure tidak ditemukan.');
+        await createKolamEnclosureComment(enclosureId, comment);
+        await refreshComments();
+      }, 'Komentar ditambahkan.'),
+    [refreshComments, route, runOperation],
+  );
+
+  const onReplyComment = useCallback(
+    (commentId: string, comment: string) =>
+      runOperation(async () => {
+        await replyKolamEnclosureComment(commentId, comment);
+        await refreshComments();
+      }, 'Balasan dikirim.'),
+    [refreshComments, runOperation],
+  );
+
+  const onEditComment = useCallback(
+    (commentId: string, comment: string) =>
+      runOperation(async () => {
+        await editKolamEnclosureComment(commentId, comment);
+        await refreshComments();
+      }, 'Komentar diperbarui.'),
+    [refreshComments, runOperation],
+  );
+
+  const onDeleteComment = useCallback(
+    (commentId: string) =>
+      runOperation(async () => {
+        await deleteKolamEnclosureComment(commentId);
+        await refreshComments();
+      }, 'Komentar dihapus.'),
+    [refreshComments, runOperation],
+  );
+
+  const onLikeComment = useCallback(
+    (commentId: string) =>
+      runOperation(async () => {
+        await likeKolamEnclosureComment(commentId);
+        await refreshComments();
+      }, 'Reaksi komentar diperbarui.'),
+    [refreshComments, runOperation],
+  );
+
+  const onAddProductionEggs = useCallback(
+    (input: KolamEnclosureProductionEggInput) =>
+      runOperation(
+        () => addKolamEnclosureProductionEggs(input),
+        'Telur produksi ditambahkan.',
+      ),
+    [runOperation],
+  );
+
+  const onAdvanceProductionEggs = useCallback(
+    (input: KolamEnclosureProductionEggAdvanceInput) =>
+      runOperation(
+        () => advanceKolamEnclosureProductionEggs(input),
+        'Telur produksi di-advance.',
+      ),
+    [runOperation],
+  );
+
+  const onChangeProductionPhase = useCallback(
+    (input: KolamEnclosureProductionPhaseChangeInput) =>
+      runOperation(
+        () => changeKolamEnclosureProductionPhase(input),
+        'Fase produksi diperbarui.',
+      ),
+    [runOperation],
+  );
+
+  const onMoveProductionPhaseToSale = useCallback(
+    (input: KolamEnclosureProductionPhaseToSaleInput) =>
+      runOperation(
+        () => moveKolamEnclosureProductionPhaseToSale(input),
+        'Fase produksi dipindah ke stok jual.',
+      ),
+    [runOperation],
+  );
+
   const allocationSpeciesGroups = useMemo(
     () => groupKolamEnclosureAllocationRows(allocationOverview.items),
     [allocationOverview.items],
@@ -363,17 +648,40 @@ export function useKolamEnclosureController(
     pendingTotal,
     routeEnclosureId: getKolamEnclosureRouteId(route),
     selectedEnclosure,
+    enclosureComments,
     enclosureStatistics,
     enclosureStatisticsError,
     enclosureStatisticsLoading,
+    operationLoading,
     staffAssignees,
     statusMessage,
+    onAddProductionEggs,
+    onAdvanceProductionEggs,
     onChangeFilters,
+    onChangeProductionPhase,
     onClearFilters,
+    onCreateComment,
+    onCrossPoolTransferSpecies,
+    onDeleteComment,
+    onDeleteCoverPhoto,
+    onDeletePhoto,
+    onEditComment,
+    onLikeComment,
     onLimitChange,
+    onMoveProductionPhaseToSale,
     onPageChange,
+    onRecordPopulationEvent,
     onRefresh: refresh,
+    onRefreshComments: refreshComments,
+    onReplyComment,
     onSearchChange,
+    onSwitchSpeciesVariant,
     onTabChange,
+    onTransferSpecies,
+    onUpdateParameter,
+    onUpdateSaleListing,
+    onUploadCoverPhoto,
+    onUploadPhotos,
+    onAttachSpecies,
   };
 }

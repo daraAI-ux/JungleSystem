@@ -336,6 +336,20 @@ export interface KolamEnclosureProductionEvent {
   raw: unknown;
 }
 
+export interface KolamEnclosureComment {
+  id: string;
+  comment: string;
+  createdAt: string;
+  edited: boolean;
+  likedByMe: boolean;
+  totalLikes: number;
+  isMyOwn: boolean;
+  user: KolamEnclosureStaffRef | null;
+  customer: KolamEnclosureCustomerRef | null;
+  replies: KolamEnclosureComment[];
+  raw: unknown;
+}
+
 export interface KolamEnclosurePendingAllocation {
   id: string;
   speciesId: string;
@@ -666,6 +680,20 @@ export function normalizeKolamEnclosureStatistics(
   };
 }
 
+export function normalizeKolamEnclosureComments(
+  payload: unknown,
+): KolamEnclosureComment[] {
+  const record = asRecord(unwrapData(payload));
+  const rows = Array.isArray(payload)
+    ? payload
+    : Array.isArray(record.comments)
+      ? record.comments
+      : Array.isArray(record.data)
+        ? record.data
+        : [];
+  return rows.map(normalizeKolamEnclosureComment).filter(item => item.id);
+}
+
 export function normalizeKolamEnclosurePendingAllocations(
   payload: unknown,
 ): KolamEnclosurePendingAllocationResult {
@@ -904,6 +932,23 @@ function normalizeKolamEnclosureProductionEvent(
     reason: getString(record, 'reason'),
     stockTransactionId: getString(record, 'stockTransactionId'),
     createdAt: getString(record, 'createdAt'),
+    raw: value,
+  };
+}
+
+function normalizeKolamEnclosureComment(value: unknown): KolamEnclosureComment {
+  const record = asRecord(value);
+  return {
+    id: getId(record),
+    comment: getString(record, 'comment'),
+    createdAt: getString(record, 'createdAt'),
+    edited: getBoolean(record, 'edited'),
+    likedByMe: getBoolean(record, 'liked_by_me') || getBoolean(record, 'likedByMe'),
+    totalLikes: getNumber(record, 'totalLikes') ?? 0,
+    isMyOwn: getBoolean(record, 'isMyOwn'),
+    user: normalizeKolamEnclosureStaff(record.user),
+    customer: normalizeKolamEnclosureCustomer(record.customer),
+    replies: getArray(record.replies).map(normalizeKolamEnclosureComment),
     raw: value,
   };
 }
