@@ -30,17 +30,25 @@ import {
   getAmServiceAccounts,
   getAmTasks,
   getAmTaskById,
+  getAmTokopediaApiMonitorStatus,
+  getAmTokopediaSession,
   getAmTransferById,
   getAmTransfers,
   getAmUsers,
   getAmWebhookConfigs,
   getAmWebhookLogs,
+  restartAmTokopediaSession,
+  runAmTokopediaApiMonitor,
   sendAmDeviceServiceInput,
+  startAmTokopediaQrLogin,
   testAmWebhookPing,
+  updateAmTokopediaCaptchaSettings,
+  updateAmTokopediaLoginMethod,
   updateAmRack,
   updateAmUser,
   updateAmWebhookConfig,
   startAmDeviceService,
+  verifyAmTokopediaSession,
 } from '../src/services/am-api';
 import {seedUnifiedDataset} from '../src/services/unified-data';
 
@@ -81,23 +89,51 @@ jest.mock('../src/services/am-api', () => ({
   getAmServiceAccounts: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
   getAmTaskById: jest.fn(() => Promise.resolve({_id: 'task-1', logs: []})),
   getAmTasks: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
+  getAmTokopediaApiMonitorStatus: jest.fn(() => Promise.resolve({status: 'idle', message: 'Idle'})),
+  getAmTokopediaSession: jest.fn(() => Promise.resolve({
+    status: 'ready',
+    cookieCount: 5,
+    expiredCount: 0,
+    sessionCookieCount: 2,
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    hasFingerprint: true,
+    serviceStatus: 'active',
+    hasDevice: true,
+    captchaAutoSolve: false,
+    hasAnthropicApiKey: false,
+    anthropicApiKeyPreview: null,
+    envFallbackAvailable: true,
+    qrTiktokLogin: false,
+    loginFillOnly: false,
+  })),
   getAmTransferById: jest.fn(() => Promise.resolve({_id: 'transfer-1', logs: []})),
   getAmTransfers: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
   getAmUsers: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
   getAmWebhookConfigs: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
   getAmWebhookEvents: jest.fn(() => Promise.resolve(['transfer.success', 'mutasi.created'])),
   getAmWebhookLogs: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
+  restartAmTokopediaSession: jest.fn(() => Promise.resolve({restarted: true, wasRunning: true})),
   retryAmTransfer: jest.fn(() => Promise.resolve({_id: 'transfer-1'})),
   retryAmTask: jest.fn(() => Promise.resolve({_id: 'task-1'})),
+  runAmTokopediaApiMonitor: jest.fn(() => Promise.resolve({status: 'running', message: 'Monitor berjalan'})),
   sendAmDeviceServiceInput: jest.fn(() => Promise.resolve({success: true})),
   startAmDeviceService: jest.fn(() => Promise.resolve({success: true})),
+  startAmTokopediaQrLogin: jest.fn(() => Promise.resolve({started: true})),
   stopAmDeviceService: jest.fn(() => Promise.resolve({success: true})),
   testAmWebhookPing: jest.fn(() => Promise.resolve({success: true})),
+  updateAmTokopediaCaptchaSettings: jest.fn(() => Promise.resolve({
+    captchaAutoSolve: true,
+    hasAnthropicApiKey: true,
+    anthropicApiKeyPreview: 'sk-ant-...',
+    envFallbackAvailable: true,
+  })),
+  updateAmTokopediaLoginMethod: jest.fn(() => Promise.resolve({qrTiktokLogin: true, loginFillOnly: false})),
   updateAmBox: jest.fn(() => Promise.resolve({_id: 'box-1'})),
   updateAmDevice: jest.fn(() => Promise.resolve({_id: 'device-1'})),
   updateAmRack: jest.fn(() => Promise.resolve({_id: 'rack-1'})),
   updateAmUser: jest.fn(() => Promise.resolve({_id: 'user-1'})),
   updateAmWebhookConfig: jest.fn(() => Promise.resolve({_id: 'webhook-1'})),
+  verifyAmTokopediaSession: jest.fn(() => Promise.resolve({loggedIn: true, reason: null, cookieCount: 5, url: 'https://seller-id.tokopedia.com'})),
 }));
 
 const mockDashboardData = {
@@ -851,6 +887,105 @@ describe('KolamAmSurface', () => {
 
     expect(startAmDeviceService).toHaveBeenCalledWith('device-2', 'service-2');
     expect(clearAmServiceAccountSession).toHaveBeenCalledWith('service-2');
+  });
+
+  it('renders Tokopedia session parity actions from Services detail', async () => {
+    jest.mocked(getAmServiceAccounts).mockResolvedValue({
+      data: [
+        {
+          _id: 'service-tokopedia',
+          platform: 'tokopedia',
+          label: 'Tokopedia Seller',
+          deviceId: {
+            _id: 'device-tokopedia',
+            name: 'Browser Worker',
+            connectionType: 'browser',
+            tcpAddress: null,
+            udid: null,
+          },
+          status: 'active',
+          credentials: {},
+          meta: {},
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 1, limit: 1},
+    });
+    jest.mocked(getAmDeviceServiceLogs).mockResolvedValue({
+      logs: [],
+      processRunning: true,
+    });
+    jest.mocked(getAmDeviceServices).mockResolvedValue([
+      {
+        serviceAccountId: 'service-tokopedia',
+        label: 'Tokopedia Seller',
+        platform: 'tokopedia',
+        accountNumber: '',
+        serviceStatus: 'active',
+        taskStatus: 'running',
+        processRunning: true,
+        isBanking: false,
+      },
+    ]);
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await updateAmRoute(renderer!, 'services');
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Service Tokopedia Seller'}).props.onPress();
+    });
+
+    const joinedText = renderText(renderer!).join(' ');
+    expect(joinedText).toContain('Session Login Tokopedia');
+    expect(joinedText).toContain('Session tersedia');
+    expect(joinedText).toContain('Cookies');
+    expect(getAmTokopediaSession).toHaveBeenCalledWith('service-tokopedia');
+    expect(getAmTokopediaApiMonitorStatus).toHaveBeenCalledWith('service-tokopedia');
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Tokopedia Login QR service-tokopedia'}).props.onPress();
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Tokopedia Captcha Toggle service-tokopedia'}).props.onPress();
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Tokopedia Captcha Save service-tokopedia'}).props.onPress();
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Tokopedia Verify service-tokopedia'}).props.onPress();
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Tokopedia Restart service-tokopedia'}).props.onPress();
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Tokopedia QR Start service-tokopedia'}).props.onPress();
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Tokopedia Api Monitor service-tokopedia'}).props.onPress();
+    });
+
+    expect(updateAmTokopediaLoginMethod).toHaveBeenCalledWith('service-tokopedia', {
+      qrTiktokLogin: true,
+      loginFillOnly: false,
+    });
+    expect(updateAmTokopediaCaptchaSettings).toHaveBeenCalledWith('service-tokopedia', {
+      captchaAutoSolve: true,
+      anthropicApiKey: undefined,
+    });
+    expect(verifyAmTokopediaSession).toHaveBeenCalledWith('service-tokopedia');
+    expect(restartAmTokopediaSession).toHaveBeenCalledWith('service-tokopedia');
+    expect(startAmTokopediaQrLogin).toHaveBeenCalledWith('service-tokopedia');
+    expect(runAmTokopediaApiMonitor).toHaveBeenCalledWith('service-tokopedia', {
+      autoRestart: true,
+      fillLogin: false,
+    });
   });
 
   it('loads live hardware topology from the Hardware route', async () => {

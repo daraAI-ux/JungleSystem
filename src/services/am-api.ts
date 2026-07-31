@@ -252,6 +252,53 @@ export interface AmClearServiceAccountSessionResult {
   missing: string[];
 }
 
+export type AmTokopediaSessionStatus = 'missing' | 'empty' | 'ready' | 'expired';
+
+export interface AmTokopediaSessionInfo {
+  status: AmTokopediaSessionStatus;
+  cookieCount: number;
+  expiredCount: number;
+  sessionCookieCount: number;
+  updatedAt: string | null;
+  hasFingerprint: boolean;
+  serviceStatus: string;
+  hasDevice: boolean;
+  captchaAutoSolve: boolean;
+  hasAnthropicApiKey: boolean;
+  anthropicApiKeyPreview: string | null;
+  envFallbackAvailable: boolean;
+  qrTiktokLogin: boolean;
+  loginFillOnly: boolean;
+}
+
+export interface AmTokopediaVerifyResult {
+  loggedIn: boolean;
+  reason: string | null;
+  cookieCount: number;
+  url: string;
+}
+
+export type AmTokopediaApiMonitorStatus =
+  | 'idle'
+  | 'running'
+  | 'success'
+  | 'failed'
+  | 'needs_manual';
+
+export interface AmTokopediaApiMonitorJob {
+  status: AmTokopediaApiMonitorStatus;
+  message: string;
+  startedAt?: string;
+  finishedAt?: string | null;
+  loggedIn?: boolean;
+  cookieCount?: number;
+  apiCallCount?: number;
+  fillLogin?: boolean;
+  needsManual?: boolean;
+  restarted?: boolean;
+  wasRunning?: boolean;
+}
+
 export type AmTransferStatus = 'pending' | 'processing' | 'success' | 'failed';
 export type AmTransferType = 'transfer' | 'virtual-account';
 export type AmMutasiType = 'masuk' | 'keluar';
@@ -748,6 +795,97 @@ export async function clearAmServiceAccountSession(
 ): Promise<AmClearServiceAccountSessionResult> {
   return amDelete<AmClearServiceAccountSessionResult>(
     `/service-account/${serviceAccountId}/session`,
+    baseUrl,
+  );
+}
+
+export async function getAmTokopediaSession(
+  serviceAccountId: string,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmTokopediaSessionInfo> {
+  return amGet<AmTokopediaSessionInfo>(
+    `/service-account/${serviceAccountId}/tokopedia-session`,
+    undefined,
+    baseUrl,
+  );
+}
+
+export async function verifyAmTokopediaSession(
+  serviceAccountId: string,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmTokopediaVerifyResult> {
+  return amPost<AmTokopediaVerifyResult>(
+    `/service-account/${serviceAccountId}/tokopedia-session/verify`,
+    undefined,
+    baseUrl,
+  );
+}
+
+export async function restartAmTokopediaSession(
+  serviceAccountId: string,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<{restarted: boolean; wasRunning: boolean}> {
+  return amPost<{restarted: boolean; wasRunning: boolean}>(
+    `/service-account/${serviceAccountId}/tokopedia-session/restart`,
+    undefined,
+    baseUrl,
+  );
+}
+
+export async function updateAmTokopediaLoginMethod(
+  serviceAccountId: string,
+  body: {qrTiktokLogin?: boolean; loginFillOnly?: boolean},
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<{qrTiktokLogin: boolean; loginFillOnly: boolean}> {
+  return amPut<{qrTiktokLogin: boolean; loginFillOnly: boolean}>(
+    `/service-account/${serviceAccountId}/tokopedia-session/login-method`,
+    body,
+    baseUrl,
+  );
+}
+
+export async function updateAmTokopediaCaptchaSettings(
+  serviceAccountId: string,
+  body: {captchaAutoSolve: boolean; anthropicApiKey?: string; clearAnthropicApiKey?: boolean},
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<Pick<AmTokopediaSessionInfo, 'captchaAutoSolve' | 'hasAnthropicApiKey' | 'anthropicApiKeyPreview' | 'envFallbackAvailable'>> {
+  return amPut<Pick<AmTokopediaSessionInfo, 'captchaAutoSolve' | 'hasAnthropicApiKey' | 'anthropicApiKeyPreview' | 'envFallbackAvailable'>>(
+    `/service-account/${serviceAccountId}/tokopedia-session/captcha`,
+    body,
+    baseUrl,
+  );
+}
+
+export async function startAmTokopediaQrLogin(
+  serviceAccountId: string,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<{started: boolean}> {
+  return amPost<{started: boolean}>(
+    `/service-account/${serviceAccountId}/tokopedia-session/qr-start`,
+    undefined,
+    baseUrl,
+  );
+}
+
+export async function runAmTokopediaApiMonitor(
+  serviceAccountId: string,
+  body?: {autoRestart?: boolean; fillLogin?: boolean},
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmTokopediaApiMonitorJob> {
+  return amPost<AmTokopediaApiMonitorJob>(
+    `/service-account/${serviceAccountId}/tokopedia-session/api-monitor`,
+    body ?? {},
+    baseUrl,
+  );
+}
+
+export async function getAmTokopediaApiMonitorStatus(
+  serviceAccountId: string,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmTokopediaApiMonitorJob> {
+  return amGet<AmTokopediaApiMonitorJob>(
+    `/service-account/${serviceAccountId}/tokopedia-session/api-monitor`,
+    undefined,
     baseUrl,
   );
 }

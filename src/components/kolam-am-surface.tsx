@@ -44,6 +44,8 @@ import {
   getAmRoles,
   getAmServiceAccounts,
   getAmTasks,
+  getAmTokopediaApiMonitorStatus,
+  getAmTokopediaSession,
   getAmTransferById,
   getAmTransfers,
   getAmUsers,
@@ -52,15 +54,21 @@ import {
   getAmWebhookLogs,
   retryAmTransfer,
   retryAmTask,
+  restartAmTokopediaSession,
+  runAmTokopediaApiMonitor,
   sendAmDeviceServiceInput,
   startAmDeviceService,
+  startAmTokopediaQrLogin,
   stopAmDeviceService,
   testAmWebhookPing,
+  updateAmTokopediaCaptchaSettings,
+  updateAmTokopediaLoginMethod,
   updateAmBox,
   updateAmDevice,
   updateAmRack,
   updateAmUser,
   updateAmWebhookConfig,
+  verifyAmTokopediaSession,
   type AmActivityLog,
   type AmActivityLogStats,
   type AmBox,
@@ -79,6 +87,8 @@ import {
   type AmTask,
   type AmTaskStatus,
   type AmTaskType,
+  type AmTokopediaApiMonitorJob,
+  type AmTokopediaSessionInfo,
   type AmTransfer,
   type AmUser,
   type AmWebhookConfig,
@@ -119,6 +129,12 @@ const AM_PLATFORM_LABELS: Record<string, string> = {
   instagram: 'Instagram',
 };
 const PLAYWRIGHT_PLATFORMS = new Set(['tokopedia', 'shopee', 'tiktok', 'instagram']);
+const TOKOPEDIA_SESSION_LABELS: Record<string, string> = {
+  missing: 'Belum ada session',
+  empty: 'File kosong',
+  ready: 'Session tersedia',
+  expired: 'Cookies kedaluwarsa',
+};
 
 export function KolamAmSurface({
   activeSurface,
@@ -1788,6 +1804,12 @@ function AmServiceDetailPanel({
                 tone={processRunning ? 'success' : 'muted'}
               />
             </View>
+            {account.platform === 'tokopedia' ? (
+              <AmTokopediaSessionPanel
+                account={account}
+                processRunning={processRunning}
+              />
+            ) : null}
             {qrSignal ? (
               <View style={styles.qrPanel}>
                 <Text style={styles.formLabel}>QR Login {AM_PLATFORM_LABELS[account.platform] ?? titleCase(account.platform)}</Text>
@@ -1887,6 +1909,266 @@ function AmServiceDetailPanel({
           ) : null}
         </View>
       ) : null}
+    </View>
+  );
+}
+
+function AmTokopediaSessionPanel({
+  account,
+  processRunning,
+}: {
+  account: AmServiceAccount;
+  processRunning: boolean;
+}) {
+  const [info, setInfo] = React.useState<AmTokopediaSessionInfo | null>(null);
+  const [monitorJob, setMonitorJob] = React.useState<AmTokopediaApiMonitorJob | null>(null);
+  const [captchaAutoSolve, setCaptchaAutoSolve] = React.useState(false);
+  const [anthropicApiKey, setAnthropicApiKey] = React.useState('');
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [acting, setActing] = React.useState<string | null>(null);
+  const [message, setMessage] = React.useState<string | null>(null);
+  const [error, setError] = React.useState<string | null>(null);
+
+  const loadSession = React.useCallback(async (silent = false) => {
+    try {
+      if (!silent) setIsLoading(true);
+      const [sessionResponse, monitorResponse] = await Promise.all([
+        getAmTokopediaSession(account._id),
+        getAmTokopediaApiMonitorStatus(account._id),
+      ]);
+      setInfo(sessionResponse);
+      setCaptchaAutoSolve(sessionResponse.captchaAutoSolve);
+      setMonitorJob(monitorResponse.status === 'idle' ? null : monitorResponse);
+      setError(null);
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Gagal memuat Tokopedia session.');
+    } finally {
+      if (!silent) setIsLoading(false);
+    }
+  }, [account._id]);
+
+  React.useEffect(() => {
+    loadSession();
+  }, [loadSession]);
+
+  React.useEffect(() => {
+    if (monitorJob?.status !== 'running') return undefined;
+    const interval = setInterval(() => loadSession(true), 4000);
+    return () => clearInterval(interval);
+  }, [loadSession, monitorJob?.status]);
+
+  const runAction = React.useCallback(async (
+    action: string,
+    callback: () => Promise<string>,
+  ) => {
+    try {
+      setActing(action);
+      setMessage(null);
+      setError(null);
+      const nextMessage = await callback();
+      setMessage(nextMessage);
+      await loadSession(true);
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Aksi Tokopedia session gagal.');
+    } finally {
+      setActing(null);
+    }
+  }, [loadSession]);
+
+  const updateLoginMethod = React.useCallback((mode: 'password' | 'fill' | 'qr') => {
+    runAction('login-method', async () => {
+      const result = await updateAmTokopediaLoginMethod(account._id, {
+        qrTiktokLogin: mode === 'qr',
+        loginFillOnly: mode === 'fill',
+      });
+      setInfo(current => current ? {
+        ...current,
+        qrTiktokLogin: result.qrTiktokLogin,
+        loginFillOnly: result.loginFillOnly,
+      } : current);
+      if (result.qrTiktokLogin) return 'Login QR TikTok diaktifkan. Restart Tokopedia agar berlaku.';
+      if (result.loginFillOnly) return 'Mode isi-form-saja aktif. Restart Tokopedia agar berlaku.';
+      return 'Login password otomatis dipakai lagi.';
+    });
+  }, [account._id, runAction]);
+
+  const saveCaptchaSettings = React.useCallback(() => {
+    runAction('captcha', async () => {
+      const result = await updateAmTokopediaCaptchaSettings(account._id, {
+        captchaAutoSolve,
+        anthropicApiKey: anthropicApiKey.trim() || undefined,
+      });
+      setAnthropicApiKey('');
+      setInfo(current => current ? {
+        ...current,
+        captchaAutoSolve: result.captchaAutoSolve,
+        hasAnthropicApiKey: result.hasAnthropicApiKey,
+        anthropicApiKeyPreview: result.anthropicApiKeyPreview,
+        envFallbackAvailable: result.envFallbackAvailable,
+      } : current);
+      return result.captchaAutoSolve
+        ? 'Auto-solve captcha diaktifkan. Restart Tokopedia agar berlaku.'
+        : 'Auto-solve captcha dimatikan. Restart Tokopedia agar berlaku.';
+    });
+  }, [account._id, anthropicApiKey, captchaAutoSolve, runAction]);
+
+  const statusLabel = info ? TOKOPEDIA_SESSION_LABELS[info.status] ?? titleCase(info.status) : 'Memuat session';
+  const loginMode = info?.qrTiktokLogin ? 'qr' : info?.loginFillOnly ? 'fill' : 'password';
+  const monitorRunning = monitorJob?.status === 'running';
+  const canRunSessionAction = !isLoading && acting === null;
+
+  return (
+    <View style={styles.emptyPanel}>
+      <View style={styles.detailHeader}>
+        <View>
+          <Text style={styles.panelTitle}>Session Login Tokopedia</Text>
+          <Text style={styles.panelText}>Status, login method, captcha, QR, dan browser monitor dari AM BE live.</Text>
+        </View>
+        <AmStatusChip
+          label={statusLabel}
+          tone={info?.status === 'ready' ? 'success' : info?.status === 'expired' ? 'warning' : 'muted'}
+        />
+      </View>
+      <AmInlineError title="Tokopedia session belum bisa dibaca" error={error} />
+      {message ? (
+        <View style={styles.successPanel}>
+          <Text style={styles.successText}>{message}</Text>
+        </View>
+      ) : null}
+      <View style={styles.metricGrid}>
+        <AmMetricCard label="Cookies" value={isLoading ? '...' : String(info?.cookieCount ?? 0)} meta={`${info?.sessionCookieCount ?? 0} session / ${info?.expiredCount ?? 0} expired`} />
+        <AmMetricCard label="Updated" value={formatAmDate(info?.updatedAt ?? null)} meta={info?.hasFingerprint ? 'Fingerprint ada' : 'Fingerprint belum ada'} />
+        <AmMetricCard label="Service" value={processRunning ? 'Berjalan' : 'Berhenti'} meta={info?.hasDevice ? 'Device terhubung' : 'Belum ada device'} />
+        <AmMetricCard label="Captcha" value={captchaAutoSolve ? 'Auto' : 'Manual'} meta={info?.hasAnthropicApiKey ? `Key ${info.anthropicApiKeyPreview ?? 'tersimpan'}` : info?.envFallbackAvailable ? 'Env fallback tersedia' : 'Tidak ada key'} />
+      </View>
+      <View style={styles.formGrid}>
+        <View style={styles.formField}>
+          <Text style={styles.formLabel}>Metode Login Automation</Text>
+          <View style={styles.inlineActions}>
+            <KolamButton
+              accessibilityLabel={`AM Tokopedia Login Password ${account._id}`}
+              intent={loginMode === 'password' ? 'warning' : 'outline'}
+              label="Password"
+              muted={!canRunSessionAction || acting === 'login-method'}
+              size="sm"
+              onPress={() => updateLoginMethod('password')}
+            />
+            <KolamButton
+              accessibilityLabel={`AM Tokopedia Login Fill Only ${account._id}`}
+              intent={loginMode === 'fill' ? 'warning' : 'outline'}
+              label="Fill Only"
+              muted={!canRunSessionAction || acting === 'login-method'}
+              size="sm"
+              onPress={() => updateLoginMethod('fill')}
+            />
+            <KolamButton
+              accessibilityLabel={`AM Tokopedia Login QR ${account._id}`}
+              intent={loginMode === 'qr' ? 'warning' : 'outline'}
+              label="QR TikTok"
+              muted={!canRunSessionAction || acting === 'login-method'}
+              size="sm"
+              onPress={() => updateLoginMethod('qr')}
+            />
+          </View>
+          <Text style={styles.rowMeta}>Restart Tokopedia setelah mengubah metode login.</Text>
+        </View>
+        <View style={styles.formField}>
+          <Text style={styles.formLabel}>Auto-solve Captcha</Text>
+          <View style={styles.inlineActions}>
+            <KolamButton
+              accessibilityLabel={`AM Tokopedia Captcha Toggle ${account._id}`}
+              intent={captchaAutoSolve ? 'warning' : 'outline'}
+              label={captchaAutoSolve ? 'Auto On' : 'Auto Off'}
+              muted={!canRunSessionAction || acting === 'captcha'}
+              size="sm"
+              onPress={() => setCaptchaAutoSolve(current => !current)}
+            />
+            <KolamButton
+              accessibilityLabel={`AM Tokopedia Captcha Save ${account._id}`}
+              label={acting === 'captcha' ? 'Menyimpan' : 'Simpan Captcha'}
+              muted={!canRunSessionAction || acting === 'captcha'}
+              size="sm"
+              onPress={saveCaptchaSettings}
+            />
+          </View>
+        </View>
+        {captchaAutoSolve ? (
+          <AmTextInput
+            label="Anthropic API Key"
+            placeholder={info?.hasAnthropicApiKey ? 'Kosongkan jika tidak mengganti' : 'sk-ant-api03-...'}
+            secureTextEntry
+            value={anthropicApiKey}
+            onChangeText={setAnthropicApiKey}
+          />
+        ) : null}
+      </View>
+      <View style={styles.inlineActions}>
+        <KolamButton
+          accessibilityLabel={`AM Tokopedia Verify ${account._id}`}
+          intent="outline"
+          label={acting === 'verify' ? 'Mengecek' : 'Cek Login'}
+          muted={!canRunSessionAction || info?.status === 'missing'}
+          size="sm"
+          onPress={() => runAction('verify', async () => {
+            const result = await verifyAmTokopediaSession(account._id);
+            return result.loggedIn
+              ? `Login valid (${result.cookieCount} cookies).`
+              : result.reason ?? 'Session ada tetapi belum login.';
+          })}
+        />
+        <KolamButton
+          accessibilityLabel={`AM Tokopedia Restart ${account._id}`}
+          intent="outline"
+          label={acting === 'restart' ? 'Restart...' : 'Restart Tokopedia'}
+          muted={!canRunSessionAction || !processRunning}
+          size="sm"
+          onPress={() => runAction('restart', async () => {
+            const result = await restartAmTokopediaSession(account._id);
+            return result.restarted ? 'Tokopedia di-restart.' : 'Service belum berjalan; nyalakan service untuk memakai session baru.';
+          })}
+        />
+        <KolamButton
+          accessibilityLabel={`AM Tokopedia QR Start ${account._id}`}
+          intent="outline"
+          label={acting === 'qr-start' ? 'Memuat QR' : 'Mulai Scan QR'}
+          muted={!canRunSessionAction || !processRunning || !info?.qrTiktokLogin}
+          size="sm"
+          onPress={() => runAction('qr-start', async () => {
+            await startAmTokopediaQrLogin(account._id);
+            return 'QR login dimulai. Pantau QR/status di log runtime.';
+          })}
+        />
+        <KolamButton
+          accessibilityLabel={`AM Tokopedia Api Monitor ${account._id}`}
+          intent="outline"
+          label={monitorRunning ? 'Monitor berjalan' : 'Perbarui Session'}
+          muted={!canRunSessionAction || monitorRunning || info?.status === 'missing' || info?.status === 'empty'}
+          size="sm"
+          onPress={() => runAction('api-monitor', async () => {
+            const job = await runAmTokopediaApiMonitor(account._id, {
+              autoRestart: true,
+              fillLogin: loginMode === 'fill',
+            });
+            setMonitorJob(job);
+            return job.message;
+          })}
+        />
+        <KolamButton
+          accessibilityLabel={`AM Tokopedia Refresh ${account._id}`}
+          intent="outline"
+          label={isLoading ? 'Memuat' : 'Refresh'}
+          muted={isLoading}
+          size="sm"
+          onPress={() => loadSession()}
+        />
+      </View>
+      {monitorJob ? (
+        <Text style={styles.rowMeta}>
+          Browser Monitor: {titleCase(monitorJob.status)} - {monitorJob.message}
+          {monitorJob.restarted ? ' Service sudah dinyalakan kembali.' : ''}
+        </Text>
+      ) : null}
+      <Text style={styles.rowMeta}>Upload cookies manual dari AM FE belum dipindahkan ke native karena butuh file JSON picker terpisah.</Text>
     </View>
   );
 }
