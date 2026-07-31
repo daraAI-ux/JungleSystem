@@ -1755,7 +1755,7 @@ function PosPaymentModal({
                             styles.quickAmountTextActive,
                         ]}>
                         {paidValue === amount.value
-                          ? `${amount.label} ✓`
+                          ? `${amount.label} OK`
                           : amount.label}
                       </Text>
                     </KolamInteractionFrame>
