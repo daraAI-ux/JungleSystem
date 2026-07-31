@@ -292,6 +292,15 @@ export interface AmUser {
   fullName: string;
   username: string;
   role?: AmRole;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface AmUserPayload {
+  fullName?: string;
+  username?: string;
+  password?: string;
+  role?: string;
 }
 
 export interface AmActivityLog {
@@ -646,6 +655,28 @@ export async function getAmRoles(
   baseUrl = appConfig.amApiBaseUrl,
 ): Promise<AmRole[]> {
   return amGet<AmRole[]>('/roles', undefined, baseUrl);
+}
+
+export async function createAmUser(
+  payload: Required<Pick<AmUserPayload, 'fullName' | 'username' | 'password'>> & Pick<AmUserPayload, 'role'>,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmUser> {
+  return amPost<AmUser>('/users', payload, baseUrl);
+}
+
+export async function updateAmUser(
+  id: string,
+  payload: AmUserPayload,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmUser> {
+  return amPut<AmUser>(`/users/${id}`, payload, baseUrl);
+}
+
+export async function deleteAmUser(
+  id: string,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<void> {
+  return amDelete<void>(`/users/${id}`, baseUrl);
 }
 
 export async function getAmActivityLogs(

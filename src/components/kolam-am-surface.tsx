@@ -8,7 +8,9 @@ import {
   cancelAmTransfer,
   cancelAmTask,
   clearAmServiceAccountSession,
+  createAmUser,
   createAmWebhookConfig,
+  deleteAmUser,
   deleteAmWebhookConfig,
   forceFailAmTransfer,
   forceFailAmTask,
@@ -20,6 +22,7 @@ import {
   getAmMutasi,
   getAmMutasiSummary,
   getAmRacks,
+  getAmRoles,
   getAmServiceAccounts,
   getAmTasks,
   getAmTransfers,
@@ -32,6 +35,7 @@ import {
   startAmDeviceService,
   stopAmDeviceService,
   testAmWebhookPing,
+  updateAmUser,
   updateAmWebhookConfig,
   type AmActivityLog,
   type AmActivityLogStats,
@@ -42,6 +46,7 @@ import {
   type AmMutasi,
   type AmMutasiSummary,
   type AmRack,
+  type AmRole,
   type AmServiceAccount,
   type AmServiceAccountDeviceRef,
   type AmTask,
@@ -1593,15 +1598,28 @@ function AmWebhooksPage() {
 
 function AmUsersPage() {
   const [users, setUsers] = React.useState<AmUser[]>([]);
+  const [roles, setRoles] = React.useState<AmRole[]>([]);
   const [search, setSearch] = React.useState('');
+  const [editingUserId, setEditingUserId] = React.useState<string | null>(null);
+  const [formFullName, setFormFullName] = React.useState('');
+  const [formUsername, setFormUsername] = React.useState('');
+  const [formPassword, setFormPassword] = React.useState('');
+  const [formRole, setFormRole] = React.useState('');
+  const [actingUserId, setActingUserId] = React.useState<string | null>(null);
+  const [actionMessage, setActionMessage] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
   const fetchUsers = React.useCallback(async () => {
     try {
       setIsLoading(true);
-      const response = await getAmUsers({limit: 30, search: search.trim() || undefined});
-      setUsers(response.data);
+      const [userResponse, roleResponse] = await Promise.all([
+        getAmUsers({limit: 100, search: search.trim() || undefined}),
+        getAmRoles(),
+      ]);
+      setUsers(userResponse.data);
+      setRoles(roleResponse);
       setError(null);
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : 'Gagal memuat users AM live.');
@@ -1614,6 +1632,89 @@ function AmUsersPage() {
     fetchUsers();
   }, [fetchUsers]);
 
+  React.useEffect(() => {
+    const interval = setInterval(fetchUsers, 15000);
+    return () => clearInterval(interval);
+  }, [fetchUsers]);
+
+  const resetUserForm = React.useCallback(() => {
+    setEditingUserId(null);
+    setFormFullName('');
+    setFormUsername('');
+    setFormPassword('');
+    setFormRole('');
+  }, []);
+
+  const editUser = React.useCallback((user: AmUser) => {
+    setEditingUserId(user._id);
+    setFormFullName(user.fullName);
+    setFormUsername(user.username);
+    setFormPassword('');
+    setFormRole(user.role?._id ?? '');
+    setActionMessage(null);
+  }, []);
+
+  const saveUser = React.useCallback(async () => {
+    const fullName = formFullName.trim();
+    const username = formUsername.trim();
+    const password = formPassword.trim();
+
+    if (!fullName || !username || (!editingUserId && !password)) {
+      setError('Full name, username, dan password wajib diisi untuk user baru.');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      if (editingUserId) {
+        const original = users.find(user => user._id === editingUserId);
+        const payload: {fullName?: string; username?: string; password?: string; role?: string} = {};
+        if (!original || fullName !== original.fullName) payload.fullName = fullName;
+        if (!original || username !== original.username) payload.username = username;
+        if (password) payload.password = password;
+        if (formRole && formRole !== original?.role?._id) payload.role = formRole;
+
+        if (!Object.keys(payload).length) {
+          setError('Tidak ada perubahan user untuk disimpan.');
+          return;
+        }
+
+        await updateAmUser(editingUserId, payload);
+        setActionMessage('User AM berhasil diupdate.');
+      } else {
+        await createAmUser({
+          fullName,
+          username,
+          password,
+          ...(formRole ? {role: formRole} : {}),
+        });
+        setActionMessage('User AM berhasil dibuat.');
+      }
+      resetUserForm();
+      await fetchUsers();
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Gagal menyimpan user AM.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [editingUserId, fetchUsers, formFullName, formPassword, formRole, formUsername, resetUserForm, users]);
+
+  const removeUser = React.useCallback(async (user: AmUser) => {
+    try {
+      setActingUserId(user._id);
+      await deleteAmUser(user._id);
+      setActionMessage(`User ${user.username} berhasil dihapus.`);
+      if (editingUserId === user._id) {
+        resetUserForm();
+      }
+      await fetchUsers();
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Gagal menghapus user AM.');
+    } finally {
+      setActingUserId(null);
+    }
+  }, [editingUserId, fetchUsers, resetUserForm]);
+
   return (
     <View style={styles.pageStack}>
       <View style={styles.filterBar}>
@@ -1621,20 +1722,95 @@ function AmUsersPage() {
         <KolamButton label={isLoading ? 'Memuat' : 'Refresh'} intent="outline" muted={isLoading} size="sm" onPress={fetchUsers} />
       </View>
       <AmInlineError title="Users AM belum bisa dibaca" error={error} />
+      {actionMessage ? (
+        <View style={styles.successPanel}>
+          <Text style={styles.successText}>{actionMessage}</Text>
+        </View>
+      ) : null}
+      <View style={styles.tablePanel}>
+        <View style={styles.formGrid}>
+          <AmTextInput label="Full Name" placeholder="e.g. John Doe" value={formFullName} onChangeText={setFormFullName} />
+          <AmTextInput label="Username" placeholder="e.g. johndoe" value={formUsername} onChangeText={setFormUsername} />
+          <AmTextInput
+            label="Password"
+            placeholder={editingUserId ? 'Kosongkan untuk password lama' : 'Min 8 chars, uppercase, lowercase, digit, special'}
+            value={formPassword}
+            onChangeText={setFormPassword}
+          />
+          <View style={styles.formField}>
+            <Text style={styles.formLabel}>Role</Text>
+            <View style={styles.eventGrid}>
+              <KolamInteractionFrame
+                accessibilityLabel="AM User Role Default"
+                onPress={() => setFormRole('')}
+                style={[styles.eventChip, formRole === '' && styles.eventChipSelected]}>
+                <Text style={[styles.eventChipText, formRole === '' && styles.eventChipTextSelected]}>Default</Text>
+              </KolamInteractionFrame>
+              {roles.map(role => (
+                <KolamInteractionFrame
+                  key={role._id}
+                  accessibilityLabel={`AM User Role ${role.name}`}
+                  onPress={() => setFormRole(role._id)}
+                  style={[styles.eventChip, formRole === role._id && styles.eventChipSelected]}>
+                  <Text style={[styles.eventChipText, formRole === role._id && styles.eventChipTextSelected]}>{role.name}</Text>
+                </KolamInteractionFrame>
+              ))}
+            </View>
+          </View>
+          <View style={styles.inlineActions}>
+            <KolamButton
+              accessibilityLabel="AM User Save"
+              label={isSubmitting ? 'Menyimpan' : (editingUserId ? 'Save' : 'Create')}
+              muted={isSubmitting}
+              size="sm"
+              onPress={saveUser}
+            />
+            {editingUserId ? (
+              <KolamButton
+                accessibilityLabel="AM User Cancel Edit"
+                label="Cancel"
+                intent="outline"
+                size="sm"
+                onPress={resetUserForm}
+              />
+            ) : null}
+          </View>
+        </View>
+      </View>
       <View style={styles.tablePanel}>
         <View style={styles.tableHeader}>
           <Text style={[styles.tableHeaderText, styles.accountWideCol]}>Name</Text>
           <Text style={[styles.tableHeaderText, styles.accountCol]}>Username</Text>
           <Text style={[styles.tableHeaderText, styles.recipientCol]}>Role</Text>
-          <Text style={[styles.tableHeaderText, styles.amountCol]}>Permissions</Text>
+          <Text style={[styles.tableHeaderText, styles.dateCol]}>Created</Text>
+          <Text style={[styles.tableHeaderText, styles.actionCol]}>Action</Text>
         </View>
         <AmLoadingOrEmpty isLoading={isLoading} items={users} loadingText="Memuat users dari AM live..." emptyText="No users found" />
         {users.map(user => (
           <View key={user._id} style={styles.tableRow}>
             <Text style={[styles.cellText, styles.accountWideCol]} numberOfLines={1}>{user.fullName}</Text>
-            <Text style={[styles.cellText, styles.accountCol]} numberOfLines={1}>{user.username}</Text>
+            <Text style={[styles.cellText, styles.accountCol]} numberOfLines={1}>@{user.username}</Text>
             <Text style={[styles.cellText, styles.recipientCol]} numberOfLines={1}>{user.role?.name ?? '-'}</Text>
-            <Text style={[styles.cellText, styles.amountCol]}>{user.role?.permissions.length ?? 0}</Text>
+            <Text style={[styles.cellText, styles.dateCol]}>{formatAmDate(user.createdAt)}</Text>
+            <View style={styles.actionCol}>
+              <View style={styles.inlineActions}>
+                <KolamButton
+                  accessibilityLabel={`AM User Edit ${user._id}`}
+                  label="Edit"
+                  intent="outline"
+                  size="sm"
+                  onPress={() => editUser(user)}
+                />
+                <KolamButton
+                  accessibilityLabel={`AM User Delete ${user._id}`}
+                  label={actingUserId === user._id ? '...' : 'Delete'}
+                  intent="danger"
+                  muted={actingUserId === user._id}
+                  size="sm"
+                  onPress={() => removeUser(user)}
+                />
+              </View>
+            </View>
           </View>
         ))}
       </View>
@@ -2440,6 +2616,15 @@ const styles = StyleSheet.create({
   eventChipSelected: {
     borderColor: V.colors.primary,
     backgroundColor: V.colors.primarySoft,
+  },
+  eventChipText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  eventChipTextSelected: {
+    color: V.colors.primary,
   },
   statusActionStack: {
     alignItems: 'flex-start',

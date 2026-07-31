@@ -6,18 +6,22 @@ import {
   cancelAmTransfer,
   cancelAmTask,
   clearAmServiceAccountSession,
+  createAmUser,
   createAmWebhookConfig,
+  deleteAmUser,
   deleteAmWebhookConfig,
   getAmActivityLogs,
   getAmDeviceServiceLogs,
   getAmDevices,
   getAmMutasi,
   getAmRacks,
+  getAmRoles,
   getAmServiceAccounts,
   getAmTransfers,
   getAmUsers,
   getAmWebhookConfigs,
   testAmWebhookPing,
+  updateAmUser,
   updateAmWebhookConfig,
   startAmDeviceService,
 } from '../src/services/am-api';
@@ -27,7 +31,9 @@ jest.mock('../src/services/am-api', () => ({
   cancelAmTransfer: jest.fn(() => Promise.resolve({_id: 'transfer-1'})),
   cancelAmTask: jest.fn(() => Promise.resolve({_id: 'task-1'})),
   clearAmServiceAccountSession: jest.fn(() => Promise.resolve({stopped: true, deleted: ['session.json'], missing: []})),
+  createAmUser: jest.fn(() => Promise.resolve({_id: 'user-new'})),
   createAmWebhookConfig: jest.fn(() => Promise.resolve({_id: 'webhook-1'})),
+  deleteAmUser: jest.fn(() => Promise.resolve(undefined)),
   deleteAmWebhookConfig: jest.fn(() => Promise.resolve({success: true})),
   forceFailAmTransfer: jest.fn(() => Promise.resolve({_id: 'transfer-1'})),
   forceFailAmTask: jest.fn(() => Promise.resolve({_id: 'task-1'})),
@@ -39,6 +45,7 @@ jest.mock('../src/services/am-api', () => ({
   getAmMutasi: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
   getAmMutasiSummary: jest.fn(() => Promise.resolve({masuk: {total: 0, count: 0}, keluar: {total: 0, count: 0}})),
   getAmRacks: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
+  getAmRoles: jest.fn(() => Promise.resolve([])),
   getAmServiceAccounts: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
   getAmTasks: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
   getAmTransfers: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
@@ -51,6 +58,7 @@ jest.mock('../src/services/am-api', () => ({
   startAmDeviceService: jest.fn(() => Promise.resolve({success: true})),
   stopAmDeviceService: jest.fn(() => Promise.resolve({success: true})),
   testAmWebhookPing: jest.fn(() => Promise.resolve({success: true})),
+  updateAmUser: jest.fn(() => Promise.resolve({_id: 'user-1'})),
   updateAmWebhookConfig: jest.fn(() => Promise.resolve({_id: 'webhook-1'})),
 }));
 
@@ -432,11 +440,86 @@ describe('KolamAmSurface', () => {
     });
     expect(getAmMutasi).toHaveBeenCalledWith({limit: 30, type: undefined});
     expect(getAmWebhookConfigs).toHaveBeenCalledTimes(1);
-    expect(getAmUsers).toHaveBeenCalledWith({limit: 30, search: undefined});
+    expect(getAmUsers).toHaveBeenCalledWith({limit: 100, search: undefined});
+    expect(getAmRoles).toHaveBeenCalledTimes(1);
     expect(getAmActivityLogs).toHaveBeenCalledWith({
       limit: 40,
       status: undefined,
     });
+  });
+
+  it('runs user create, edit, and delete actions from the Users route', async () => {
+    jest.mocked(getAmRoles).mockResolvedValue([
+      {_id: 'role-admin', name: 'Admin', permissions: ['user:read'], description: 'Admin role'},
+    ]);
+    jest.mocked(getAmUsers).mockResolvedValue({
+      data: [
+        {
+          _id: 'user-1',
+          fullName: 'Existing User',
+          username: 'existing',
+          role: {_id: 'role-admin', name: 'Admin', permissions: ['user:read'], description: 'Admin role'},
+          createdAt: '2026-01-01T00:00:00.000Z',
+          updatedAt: '2026-01-01T00:00:00.000Z',
+        },
+      ],
+      meta: {total: 1, limit: 1},
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Users'}).props.onPress();
+    });
+
+    let inputs = renderer!.root.findAllByType(TextInput);
+    await act(async () => {
+      inputs[1].props.onChangeText('New User');
+      inputs[2].props.onChangeText('newuser');
+      inputs[3].props.onChangeText('StrongPass1!');
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM User Role Admin'}).props.onPress();
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM User Save'}).props.onPress();
+    });
+
+    expect(createAmUser).toHaveBeenCalledWith({
+      fullName: 'New User',
+      username: 'newuser',
+      password: 'StrongPass1!',
+      role: 'role-admin',
+    });
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM User Edit user-1'}).props.onPress();
+    });
+    inputs = renderer!.root.findAllByType(TextInput);
+    await act(async () => {
+      inputs[1].props.onChangeText('Existing User Updated');
+      inputs[3].props.onChangeText('AnotherPass1!');
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM User Save'}).props.onPress();
+    });
+
+    expect(updateAmUser).toHaveBeenCalledWith('user-1', {
+      fullName: 'Existing User Updated',
+      password: 'AnotherPass1!',
+    });
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM User Delete user-1'}).props.onPress();
+    });
+
+    expect(deleteAmUser).toHaveBeenCalledWith('user-1');
   });
 
   it('runs guarded transfer actions from the Transfers route', async () => {
