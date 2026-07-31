@@ -35,6 +35,7 @@ import {
   pickDefaultOfflinePosSourceId,
   resolveKolamSaleSourceLogoUri,
   saleHasUnsupportedEditItemTypes,
+  sumKolamSaleCreateItemShippingCost,
   validateKolamSaleAddItemsPayload,
   validateKolamSaleCreatePayload,
   validateKolamSaleUpdatePayload,
@@ -732,9 +733,8 @@ export function useKolamSalesController(route: string): KolamSalesController {
 
   const onChangeCreateItem = useCallback(
     (key: string, patch: Partial<KolamSaleCreateItemForm>) => {
-      setForm(prev => ({
-        ...prev,
-        items: prev.items.map(item => {
+      setForm(prev => {
+        const items = prev.items.map(item => {
           if (item.key !== key) {
             return item;
           }
@@ -754,8 +754,26 @@ export function useKolamSalesController(route: string): KolamSalesController {
             next.shippingCost = '';
           }
           return next;
-        }),
-      }));
+        });
+        const shippingTouched =
+          patch.shippingCost !== undefined ||
+          patch.shippingMethodId !== undefined ||
+          (patch.productId !== undefined ||
+            patch.speciesId !== undefined ||
+            patch.serviceId !== undefined ||
+            patch.enclosureId !== undefined ||
+            patch.itemType !== undefined);
+        const itemSum = sumKolamSaleCreateItemShippingCost(items);
+        return {
+          ...prev,
+          items,
+          ...(shippingTouched
+            ? {
+                shippingCost: itemSum > 0 ? String(itemSum) : '',
+              }
+            : {}),
+        };
+      });
     },
     [],
   );
@@ -765,9 +783,12 @@ export function useKolamSalesController(route: string): KolamSalesController {
       if (prev.items.length <= 1) {
         return prev;
       }
+      const items = prev.items.filter(item => item.key !== key);
+      const itemSum = sumKolamSaleCreateItemShippingCost(items);
       return {
         ...prev,
-        items: prev.items.filter(item => item.key !== key),
+        items,
+        shippingCost: itemSum > 0 ? String(itemSum) : '',
       };
     });
   }, []);

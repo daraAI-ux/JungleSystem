@@ -18,7 +18,6 @@ import {
   KOLAM_SALES_DISCOUNT_APPROVAL_ROUTE,
   KOLAM_SALES_ROOT,
   resolveKolamSaleCreateItemShippingMethodIds,
-  sumKolamSaleCreateItemShippingCost,
   type KolamSale,
   type KolamSaleCreateItemType,
   type KolamSaleDeliveryStatus,
@@ -669,10 +668,6 @@ function KolamSalesOpsCreateForm({
     ? ITEM_TYPE_OPTIONS_ADD_ITEMS
     : ITEM_TYPE_OPTIONS_FULL;
 
-  const shippingTotal = useMemo(
-    () => sumKolamSaleCreateItemShippingCost(form.items),
-    [form.items],
-  );
   const orderSummary = useMemo(
     () =>
       estimateKolamSaleCreateOrderSummary(
@@ -1377,12 +1372,19 @@ function KolamSalesOpsCreateForm({
         <View style={styles.formBottomCol}>
           <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
             <Text style={styles.sectionTitle}>Total biaya pengiriman</Text>
-            <Text style={styles.shippingTotalValue}>
-              {formatRupiah(shippingTotal)}
-            </Text>
+            <FieldShell label="Jumlah (Rp)">
+              <KolamFormTextField
+                mode="numeric"
+                onChangeText={shippingCost =>
+                  controller.onChangeForm({ shippingCost })
+                }
+                placeholder="0"
+                value={form.shippingCost}
+              />
+            </FieldShell>
             <Text style={styles.shippingTotalHint}>
-              Dihitung dari metode pengiriman pada setiap item. Tidak bisa diubah
-              di sini.
+              Diisi manual. Nilai ikut terisi otomatis saat metode pengiriman
+              item dipilih, lalu bisa diubah.
             </Text>
           </KolamContentFrame>
 
@@ -2144,12 +2146,6 @@ const styles = StyleSheet.create({
     gap: 12,
     minWidth: 280,
   },
-  shippingTotalValue: {
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 20,
-    fontWeight: '700',
-  },
   shippingTotalHint: {
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
@@ -2159,9 +2155,12 @@ const styles = StyleSheet.create({
   },
   orderSummaryCard: {
     backgroundColor: V.colors.muted,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
   },
   orderSummaryLines: {
     gap: 10,
+    marginTop: 4,
   },
   orderSummaryLine: {
     alignItems: 'flex-start',

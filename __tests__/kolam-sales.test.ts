@@ -696,6 +696,7 @@ describe('kolam sales domain', () => {
       discountType: 'percentage',
       discountAmount: '10',
     };
+    form.shippingCost = '15000';
 
     const body = buildKolamSaleCreateBody(form);
     expect(body.items[0]).toMatchObject({

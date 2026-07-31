@@ -1335,6 +1335,8 @@ export interface KolamSaleCreateFormState {
   pointsMethod: '' | 'manual' | 'product_based';
   manualPoints: string;
   transactionDate: string;
+  /** Sale-level shipping total (FE `shippingCost`; editable, synced from items). */
+  shippingCost: string;
   /** Document-level ToS template ids (optional; FE `termsTemplates`). */
   termsTemplateIds: string[];
   items: KolamSaleCreateItemForm[];
@@ -1635,6 +1637,7 @@ export function createInitialKolamSaleCreateForm(): KolamSaleCreateFormState {
     pointsMethod: 'product_based',
     manualPoints: '',
     transactionDate: '',
+    shippingCost: '',
     termsTemplateIds: [],
     items: [createEmptyKolamSaleCreateItem()],
     customCosts: [],
@@ -1921,7 +1924,9 @@ export function estimateKolamSaleCreateOrderSummary(
     });
     itemsTotal += line.total;
   }
-  const shippingTotal = sumKolamSaleCreateItemShippingCost(form.items);
+  const shippingRaw = Number(form.shippingCost);
+  const shippingTotal =
+    Number.isFinite(shippingRaw) && shippingRaw > 0 ? shippingRaw : 0;
   const customCostsTotal = form.customCosts.reduce((sum, cost) => {
     if (!cost.name.trim()) {
       return sum;
@@ -2173,6 +2178,13 @@ function appendOptionalSaleFields(
   return result;
 }
 
+export function resolveKolamSaleCreateFormShippingCost(
+  form: KolamSaleCreateFormState,
+): number {
+  const raw = Number(form.shippingCost);
+  return Number.isFinite(raw) && raw > 0 ? raw : 0;
+}
+
 export function buildKolamSaleCreateBody(
   form: KolamSaleCreateFormState,
   options?: { useBuyerInfo?: boolean },
@@ -2180,7 +2192,7 @@ export function buildKolamSaleCreateBody(
   const body = appendOptionalSaleFields(form, {
     paymentMethod: form.paymentMethodId.trim(),
     sourceRef: form.sourceRefId.trim(),
-    shippingCost: sumKolamSaleCreateItemShippingCost(form.items),
+    shippingCost: resolveKolamSaleCreateFormShippingCost(form),
     items: mapFormItemsToBody(form.items),
   });
 
@@ -2203,7 +2215,7 @@ export function buildKolamSaleUpdateBody(
   const created = appendOptionalSaleFields(form, {
     paymentMethod: form.paymentMethodId.trim(),
     sourceRef: form.sourceRefId.trim(),
-    shippingCost: sumKolamSaleCreateItemShippingCost(form.items),
+    shippingCost: resolveKolamSaleCreateFormShippingCost(form),
     items: mapFormItemsToBody(form.items),
   });
   const { customer: _customer, buyerInfo: _buyerInfo, ...rest } = created;
@@ -2282,6 +2294,8 @@ export function hydrateKolamSaleCreateFormFromSale(
     transactionDate: sale.transactionDate
       ? sale.transactionDate.slice(0, 10)
       : '',
+    shippingCost:
+      sale.shippingCost > 0 ? String(sale.shippingCost) : '',
     termsTemplateIds: [],
     items,
     customCosts: [],
