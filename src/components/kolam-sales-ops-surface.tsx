@@ -1228,6 +1228,7 @@ function KolamSalesOpsCreateForm({
                       onChangeText={quantity =>
                         controller.onChangeCreateItem(item.key, { quantity })
                       }
+                      style={styles.itemBoxedInput}
                       value={
                         item.itemType === 'enclosure' ? '1' : item.quantity
                       }
@@ -1242,6 +1243,7 @@ function KolamSalesOpsCreateForm({
                         })
                       }
                       placeholder="Kode voucher"
+                      style={styles.itemBoxedInput}
                       value={item.voucherCode}
                     />
                   </View>
@@ -1276,6 +1278,7 @@ function KolamSalesOpsCreateForm({
                             })
                           }
                           placeholder="0"
+                          style={styles.itemBoxedInput}
                           value={item.discountAmount}
                         />
                       </View>
@@ -1308,6 +1311,7 @@ function KolamSalesOpsCreateForm({
                               })
                             }
                             placeholder="Nama item"
+                            style={styles.itemBoxedInput}
                             value={item.customName}
                           />
                         </FieldShell>
@@ -1321,6 +1325,7 @@ function KolamSalesOpsCreateForm({
                               })
                             }
                             placeholder="pcs"
+                            style={styles.itemBoxedInput}
                             value={item.customUnit}
                           />
                         </FieldShell>
@@ -1335,6 +1340,7 @@ function KolamSalesOpsCreateForm({
                               })
                             }
                             placeholder="0"
+                            style={styles.itemBoxedInput}
                             value={item.customUnitPrice}
                           />
                         </FieldShell>
@@ -2074,6 +2080,20 @@ const styles = StyleSheet.create({
   itemDiscountAmount: {
     flex: 1,
     minWidth: 0,
+  },
+  itemBoxedInput: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: V.radius.lg,
+    borderWidth: 1,
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '700',
+    minHeight: 36,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    width: '100%',
   },
   itemCustomSummary: {
     borderColor: V.colors.border,
