@@ -687,8 +687,10 @@ describe('kolam sales domain', () => {
       itemType: 'product',
       productId: '444444444444444444444444',
       quantity: '2',
-      discountType: 'fixed',
-      discountAmount: '1000',
+      shippingMethodId: '555555555555555555555555',
+      shippingCost: '15000',
+      discountType: 'percentage',
+      discountAmount: '10',
     };
 
     const body = buildKolamSaleCreateBody(form);
@@ -696,7 +698,17 @@ describe('kolam sales domain', () => {
       itemType: 'product',
       product: '444444444444444444444444',
       quantity: 2,
+      shippingMethod: '555555555555555555555555',
+      shippingCost: 15000,
+      discount: { type: 'percentage', amount: 10 },
     });
+    expect(form.items[0].discountType).toBe('percentage');
+    expect(createInitialKolamSaleCreateForm().items[0].discountType).toBe(
+      'percentage',
+    );
+    expect(createInitialKolamSaleCreateForm().items[0].shippingMethodId).toBe(
+      '',
+    );
     expect(validateKolamSaleCreatePayload(body).isValid).toBe(true);
 
     const marketplaceBody = buildKolamSaleCreateBody(

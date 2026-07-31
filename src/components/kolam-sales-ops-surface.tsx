@@ -3,6 +3,8 @@ import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-n
 import {
   formatKolamSaleDeliveryStatusLabel,
   formatKolamSalePaymentStatusLabel,
+  estimateKolamSaleCreateItemShippingCost,
+  filterKolamSaleCreateItemShippingMethods,
   getKolamSaleDeliveryStatusIntent,
   getKolamSalePaymentStatusIntent,
   isKolamSalesAddItemsRoute,
@@ -13,6 +15,7 @@ import {
   KOLAM_SALE_PAYMENT_STATUS_OPTIONS,
   KOLAM_SALES_DISCOUNT_APPROVAL_ROUTE,
   KOLAM_SALES_ROOT,
+  resolveKolamSaleCreateItemShippingMethodIds,
   type KolamSale,
   type KolamSaleCreateItemType,
   type KolamSaleDeliveryStatus,
@@ -976,6 +979,9 @@ function KolamSalesOpsCreateForm({
               <Text style={[styles.itemGridHeaderCell, styles.itemColCatalog]}>
                 Produk/Spesies
               </Text>
+              <Text style={[styles.itemGridHeaderCell, styles.itemColShipping]}>
+                Pengiriman
+              </Text>
               <Text style={[styles.itemGridHeaderCell, styles.itemColQty]}>
                 Jml
               </Text>
@@ -988,7 +994,23 @@ function KolamSalesOpsCreateForm({
               <View style={styles.itemColAction} />
             </View>
 
-            {form.items.map((item, index) => (
+            {form.items.map((item, index) => {
+              const shippingMethodIds = resolveKolamSaleCreateItemShippingMethodIds(
+                item,
+                controller.products,
+                controller.species,
+              );
+              const shippingOptions = filterKolamSaleCreateItemShippingMethods(
+                controller.shippingMethods,
+                shippingMethodIds,
+              );
+              const shippingValue = shippingOptions.some(
+                method => method.id === item.shippingMethodId,
+              )
+                ? item.shippingMethodId
+                : '';
+
+              return (
               <View key={item.key} style={styles.itemGridBlock}>
                 <View style={styles.itemGridRow}>
                   <View style={styles.itemColType}>
@@ -1141,6 +1163,55 @@ function KolamSalesOpsCreateForm({
                     ) : null}
                   </View>
 
+                  <View style={styles.itemColShipping}>
+                    <KolamDropdownSelect
+                      accessibilityLabel={`Pengiriman item ${index + 1}`}
+                      label="Pengiriman"
+                      menuPlacement="inline"
+                      onChange={shippingMethodId => {
+                        const method =
+                          shippingOptions.find(
+                            row => row.id === shippingMethodId,
+                          ) ?? null;
+                        const cost =
+                          estimateKolamSaleCreateItemShippingCost(method);
+                        controller.onChangeCreateItem(item.key, {
+                          shippingMethodId,
+                          shippingCost: shippingMethodId
+                            ? cost > 0
+                              ? String(cost)
+                              : ''
+                            : '',
+                        });
+                      }}
+                      options={[
+                        {
+                          label: shippingOptions.length
+                            ? 'Pilih pengiriman…'
+                            : 'Pilih katalog dulu',
+                          value: '',
+                        },
+                        ...shippingOptions.map(method => ({
+                          label: `${method.displayName}${
+                            method.category === 'instant'
+                              ? ' (Instan)'
+                              : method.category
+                                ? ' (Reguler)'
+                                : ''
+                          }`,
+                          value: method.id,
+                        })),
+                      ]}
+                      searchable={shippingOptions.length > 6}
+                      searchPlaceholder="Cari pengiriman…"
+                      showLabelInTrigger={false}
+                      style={styles.itemDropdown}
+                      triggerStyle={styles.itemDropdownTrigger}
+                      triggerTextStyle={styles.itemDropdownTriggerText}
+                      value={shippingValue}
+                    />
+                  </View>
+
                   <View style={styles.itemColQty}>
                     <KolamFormTextField
                       editable={item.itemType !== 'enclosure'}
@@ -1263,7 +1334,8 @@ function KolamSalesOpsCreateForm({
                   </View>
                 ) : null}
               </View>
-            ))}
+              );
+            })}
           </View>
         </ScrollView>
       </KolamContentFrame>
@@ -1885,7 +1957,7 @@ const styles = StyleSheet.create({
   },
   itemGrid: {
     gap: 12,
-    minWidth: 980,
+    minWidth: 1120,
     paddingBottom: 4,
     paddingRight: 8,
   },
@@ -1914,27 +1986,32 @@ const styles = StyleSheet.create({
   itemColType: {
     flexGrow: 0,
     flexShrink: 0,
-    width: 128,
+    width: 120,
   },
   itemColCatalog: {
     flexGrow: 1,
     flexShrink: 1,
-    minWidth: 240,
+    minWidth: 220,
+  },
+  itemColShipping: {
+    flexGrow: 0,
+    flexShrink: 0,
+    width: 160,
   },
   itemColQty: {
     flexGrow: 0,
     flexShrink: 0,
-    width: 88,
+    width: 80,
   },
   itemColVoucher: {
     flexGrow: 0,
     flexShrink: 0,
-    width: 140,
+    width: 130,
   },
   itemColDiscount: {
     flexGrow: 0,
     flexShrink: 0,
-    width: 168,
+    width: 160,
   },
   itemColAction: {
     alignItems: 'flex-end',

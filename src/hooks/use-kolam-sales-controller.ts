@@ -60,7 +60,11 @@ import {
   getKolamPaymentMethods,
   type KolamPaymentMethod,
 } from '../services/kolam-financial-settings-api';
+import type { KolamShippingMethod } from '../domain/kolam-shipping-method';
 import { getKolamProducts } from '../services/kolam-product-api';
+import { getKolamActiveShippingMethods } from '../services/kolam-shipping-method-api';
+import { getKolamSpeciesList } from '../services/kolam-species-api';
+import { pickNativeImageFile } from '../services/native-file-picker';
 import {
   addItemsToKolamSale,
   createKolamSale,
@@ -83,8 +87,6 @@ import {
   updateKolamSaleStatus,
   uploadKolamSalePaymentProofs,
 } from '../services/kolam-sales-api';
-import { getKolamSpeciesList } from '../services/kolam-species-api';
-import { pickNativeImageFile } from '../services/native-file-picker';
 
 export type KolamSalesDataSource = 'idle' | 'live' | 'error';
 
@@ -135,6 +137,7 @@ export interface KolamSalesController {
   sales: KolamSale[];
   selectedSale: KolamSale | null;
   services: KolamSaleCatalogOption[];
+  shippingMethods: KolamShippingMethod[];
   sources: KolamSaleSourceOption[];
   species: KolamSpecies[];
   statusMessage: string | null;
@@ -197,6 +200,9 @@ export function useKolamSalesController(route: string): KolamSalesController {
   const [products, setProducts] = useState<KolamProduct[]>([]);
   const [species, setSpecies] = useState<KolamSpecies[]>([]);
   const [services, setServices] = useState<KolamSaleCatalogOption[]>([]);
+  const [shippingMethods, setShippingMethods] = useState<
+    KolamShippingMethod[]
+  >([]);
   const [enclosures, setEnclosures] = useState<KolamSaleCatalogOption[]>([]);
   const [livestockAllocations, setLivestockAllocations] = useState<
     KolamSaleLivestockAllocationRow[]
@@ -314,6 +320,7 @@ export function useKolamSalesController(route: string): KolamSalesController {
       speciesResult,
       serviceRows,
       enclosureRows,
+      shippingMethodRows,
     ] = await Promise.all([
       capture('sumber', getKolamSalesActiveSources(), [] as KolamSaleSourceOption[]),
       capture('pelanggan', getKolamCustomerList({page: 1, limit: CREATE_OPTIONS_LIMIT}), {
@@ -378,6 +385,11 @@ export function useKolamSalesController(route: string): KolamSalesController {
         getKolamSalesEnclosuresForSale(),
         [] as KolamSaleCatalogOption[],
       ),
+      capture(
+        'pengiriman',
+        getKolamActiveShippingMethods(),
+        [] as KolamShippingMethod[],
+      ),
     ]);
 
     // Match FE create form: keep inactive rows; prefer active when both exist.
@@ -393,6 +405,7 @@ export function useKolamSalesController(route: string): KolamSalesController {
     setSpecies(speciesResult.data);
     setServices(serviceRows);
     setEnclosures(enclosureRows);
+    setShippingMethods(shippingMethodRows);
 
     if (failures.length > 0) {
       setError(`Gagal memuat opsi: ${failures.join(' · ')}`);
@@ -534,6 +547,7 @@ export function useKolamSalesController(route: string): KolamSalesController {
     setOptionsLoading(true);
     setLoading(true);
     setError(null);
+    setStatusMessage(null);
     try {
       const sourceRows = await loadFormOptions();
       setDataSource('live');
@@ -704,9 +718,27 @@ export function useKolamSalesController(route: string): KolamSalesController {
     (key: string, patch: Partial<KolamSaleCreateItemForm>) => {
       setForm(prev => ({
         ...prev,
-        items: prev.items.map(item =>
-          item.key === key ? { ...item, ...patch } : item,
-        ),
+        items: prev.items.map(item => {
+          if (item.key !== key) {
+            return item;
+          }
+          const next = { ...item, ...patch };
+          const catalogChanged =
+            (patch.itemType !== undefined && patch.itemType !== item.itemType) ||
+            (patch.productId !== undefined &&
+              patch.productId !== item.productId) ||
+            (patch.speciesId !== undefined &&
+              patch.speciesId !== item.speciesId) ||
+            (patch.serviceId !== undefined &&
+              patch.serviceId !== item.serviceId) ||
+            (patch.enclosureId !== undefined &&
+              patch.enclosureId !== item.enclosureId);
+          if (catalogChanged && patch.shippingMethodId === undefined) {
+            next.shippingMethodId = '';
+            next.shippingCost = '';
+          }
+          return next;
+        }),
       }));
     },
     [],
@@ -1110,6 +1142,7 @@ export function useKolamSalesController(route: string): KolamSalesController {
     sales,
     selectedSale,
     services,
+    shippingMethods,
     sources,
     species,
     statusMessage,

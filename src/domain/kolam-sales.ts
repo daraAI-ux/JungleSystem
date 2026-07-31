@@ -6,6 +6,9 @@
  */
 
 import type { KolamBadgeIntent } from './kolam-badge';
+import type { KolamProduct } from './kolam-product';
+import type { KolamShippingMethod } from './kolam-shipping-method';
+import type { KolamSpecies } from './kolam-species';
 import { getKolamFileUrl } from '../lib/file-url';
 import { crossSyncSummaryLabel } from './kolam-stock-transaction';
 
@@ -135,6 +138,7 @@ export type KolamSaleItem = {
   variantLabel: string;
   biteshipCourierCode: string;
   biteshipServiceCode: string;
+  shippingMethodId: string;
   shippingMethodName: string;
   productId: string;
   speciesId: string;
@@ -1312,6 +1316,8 @@ export interface KolamSaleCreateItemForm {
   customUnitPrice: string;
   customCost: string;
   quantity: string;
+  shippingMethodId: string;
+  shippingCost: string;
   discountType: KolamSaleCreateDiscountType;
   discountAmount: string;
   voucherCode: string;
@@ -1345,6 +1351,8 @@ export interface KolamSaleCreateItemBody {
   customUnit?: string;
   customCost?: number;
   voucherCode?: string;
+  shippingMethod?: string;
+  shippingCost?: number;
   discount?: {
     type: KolamSaleCreateDiscountType;
     amount: number;
@@ -1593,7 +1601,9 @@ export function createEmptyKolamSaleCreateItem(
     customUnitPrice: '',
     customCost: '',
     quantity: itemType === 'enclosure' ? '1' : '1',
-    discountType: 'fixed',
+    shippingMethodId: '',
+    shippingCost: '',
+    discountType: 'percentage',
     discountAmount: '',
     voucherCode: '',
   };
@@ -1624,6 +1634,47 @@ export function createInitialKolamSaleCreateForm(): KolamSaleCreateFormState {
     items: [createEmptyKolamSaleCreateItem()],
     customCosts: [],
   };
+}
+
+/** Shipping method ids allowed for the selected catalog row (FE create parity). */
+export function resolveKolamSaleCreateItemShippingMethodIds(
+  item: KolamSaleCreateItemForm,
+  products: KolamProduct[],
+  speciesList: KolamSpecies[],
+): string[] {
+  if (item.itemType === 'product' && item.productId.trim()) {
+    const product = products.find(row => row.id === item.productId);
+    return (product?.logistics.shippingMethods ?? [])
+      .map(method => method.id)
+      .filter(Boolean);
+  }
+  if (item.itemType === 'species' && item.speciesId.trim()) {
+    const species = speciesList.find(row => row.id === item.speciesId);
+    return (species?.availableShippingMethods ?? [])
+      .map(method => method.id)
+      .filter(Boolean);
+  }
+  return [];
+}
+
+export function filterKolamSaleCreateItemShippingMethods(
+  allMethods: KolamShippingMethod[],
+  allowedIds: string[],
+): KolamShippingMethod[] {
+  if (!allowedIds.length) {
+    return [];
+  }
+  const allowed = new Set(allowedIds);
+  return allMethods.filter(method => allowed.has(method.id));
+}
+
+export function estimateKolamSaleCreateItemShippingCost(
+  method: Pick<KolamShippingMethod, 'pricingPrice'> | null | undefined,
+): number {
+  if (!method) {
+    return 0;
+  }
+  return Math.max(0, method.pricingPrice || 0);
 }
 
 /** Exact FE external-buyer sources (`sales-create-form` EXTERNAL_BUYER_SOURCE_NAMES). */
@@ -1739,6 +1790,17 @@ function mapFormItemsToBody(
         : undefined;
     const voucherCode = item.voucherCode.trim();
     const voucher = voucherCode ? { voucherCode } : {};
+    const shippingMethodId = item.shippingMethodId.trim();
+    const shippingCostValue = Number(item.shippingCost);
+    const shipping =
+      shippingMethodId.length > 0
+        ? {
+            shippingMethod: shippingMethodId,
+            ...(Number.isFinite(shippingCostValue) && shippingCostValue > 0
+              ? { shippingCost: shippingCostValue }
+              : {}),
+          }
+        : {};
 
     if (item.itemType === 'custom') {
       const customCost = Number(item.customCost);
@@ -1753,6 +1815,7 @@ function mapFormItemsToBody(
           : {}),
         ...(discount ? { discount } : {}),
         ...voucher,
+        ...shipping,
       };
     }
 
@@ -1763,6 +1826,7 @@ function mapFormItemsToBody(
         quantity,
         ...(discount ? { discount } : {}),
         ...voucher,
+        ...shipping,
       };
     }
 
@@ -1773,6 +1837,7 @@ function mapFormItemsToBody(
         quantity,
         ...(discount ? { discount } : {}),
         ...voucher,
+        ...shipping,
       };
     }
 
@@ -1783,6 +1848,7 @@ function mapFormItemsToBody(
         quantity: 1,
         ...(discount ? { discount } : {}),
         ...voucher,
+        ...shipping,
       };
     }
 
@@ -1792,6 +1858,7 @@ function mapFormItemsToBody(
       quantity,
       ...(discount ? { discount } : {}),
       ...voucher,
+      ...shipping,
     };
   });
 }
@@ -1920,6 +1987,9 @@ export function hydrateKolamSaleCreateFormFromSale(
             customCost:
               item.customCost != null ? String(item.customCost) : '',
             quantity: String(item.quantity || 1),
+            shippingMethodId: item.shippingMethodId || '',
+            shippingCost:
+              item.shippingCost > 0 ? String(item.shippingCost) : '',
             discountType:
               item.discount?.type === 'percentage' ? 'percentage' : 'fixed',
             discountAmount:
@@ -2444,12 +2514,21 @@ function normalizeSaleStockTransactions(
     .filter((row): row is KolamSaleStockTransactionRef => Boolean(row));
 }
 
+function resolveShippingMethodId(value: unknown): string {
+  if (typeof value === 'string') {
+    return isKolamMongoObjectId(value.trim()) ? value.trim() : '';
+  }
+  const record = asRecord(value);
+  return getMongoId(record, '_id') || getMongoId(record, 'id') || '';
+}
+
 function resolveShippingMethodName(value: unknown): string {
   if (typeof value === 'string') {
-    return value.trim();
+    return isKolamMongoObjectId(value.trim()) ? '' : value.trim();
   }
   const record = asRecord(value);
   return (
+    getString(record, 'displayName') ||
     getString(record, 'name') ||
     getString(record, 'biteshipServiceName') ||
     getString(record, 'courierName') ||
@@ -2660,6 +2739,7 @@ function normalizeSaleItem(value: unknown, index: number): KolamSaleItem {
     variantLabel,
     biteshipCourierCode: getString(record, 'biteshipCourierCode'),
     biteshipServiceCode: getString(record, 'biteshipServiceCode'),
+    shippingMethodId: resolveShippingMethodId(record.shippingMethod),
     shippingMethodName: resolveShippingMethodName(record.shippingMethod),
     productId:
       getMongoId(product, '_id') ||
