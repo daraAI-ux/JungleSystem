@@ -2404,7 +2404,11 @@ function AmTransferDetailPanel({
       {transfer ? (
         <>
           <View style={styles.metricGrid}>
-            <AmMetricCard label="Amount" value={formatRupiah(transfer.amount)} meta={`Fee ${formatRupiah(transfer.fee ?? 0)}`} />
+            <AmMetricCard
+              label="Amount"
+              value={formatRupiah(transfer.amount)}
+              meta={`Fee ${formatRupiah(transfer.fee ?? 0)} / Total ${formatRupiah(transfer.amount + (transfer.fee ?? 0))}`}
+            />
             <AmMetricCard label="Type" value={titleCase(transfer.transferType)} meta={transfer.transferMethod ?? 'method not set'} />
             <AmMetricCard label="Recipient" value={transfer.recipientName || '-'} meta={`${transfer.recipientBank ?? '-'} ${transfer.recipientAccount}`} />
           </View>
@@ -2416,6 +2420,26 @@ function AmTransferDetailPanel({
             <View style={styles.detailListRow}>
               <Text style={[styles.tableHeaderText, styles.accountCol]}>Device</Text>
               <Text style={[styles.cellText, styles.recipientCol]}>{formatDeviceRef(transfer.deviceId)}</Text>
+            </View>
+            <View style={styles.detailListRow}>
+              <Text style={[styles.tableHeaderText, styles.accountCol]}>Box / Rack</Text>
+              <Text style={[styles.cellText, styles.recipientCol]}>{formatTransferDeviceLocation(transfer.deviceId)}</Text>
+            </View>
+            {transfer.transferMethod ? (
+              <View style={styles.detailListRow}>
+                <Text style={[styles.tableHeaderText, styles.accountCol]}>Transfer Method</Text>
+                <Text style={[styles.cellText, styles.recipientCol]}>{transfer.transferMethod}</Text>
+              </View>
+            ) : null}
+            {transfer.transactionPurpose ? (
+              <View style={styles.detailListRow}>
+                <Text style={[styles.tableHeaderText, styles.accountCol]}>Transaction Purpose</Text>
+                <Text style={[styles.cellText, styles.recipientCol]}>{transfer.transactionPurpose}</Text>
+              </View>
+            ) : null}
+            <View style={styles.detailListRow}>
+              <Text style={[styles.tableHeaderText, styles.accountCol]}>Created By</Text>
+              <Text style={[styles.cellText, styles.recipientCol]}>{formatTransferCreatedBy(transfer.createdBy)}</Text>
             </View>
             <View style={styles.detailListRow}>
               <Text style={[styles.tableHeaderText, styles.accountCol]}>Created</Text>
@@ -4006,6 +4030,20 @@ function webhookLogMatchesTransfer(log: AmWebhookLog, transferId: string) {
 function formatDeviceRef(device: AmTransfer['deviceId'] | AmMutasi['deviceId']) {
   if (!device || typeof device === 'string') return '-';
   return device.name;
+}
+
+function formatTransferDeviceLocation(device: AmTransfer['deviceId']) {
+  if (!device || typeof device === 'string') return '-';
+  const box = device.boxId;
+  if (!box || typeof box === 'string') return '-';
+  const rack = box.rackId;
+  const rackName = rack && typeof rack === 'object' ? rack.name : null;
+  return rackName ? `${box.name} / ${rackName}` : box.name;
+}
+
+function formatTransferCreatedBy(createdBy: AmTransfer['createdBy']) {
+  if (!createdBy || typeof createdBy === 'string') return '-';
+  return createdBy.fullName || createdBy.username || '-';
 }
 
 function getTransferTone(status: string) {

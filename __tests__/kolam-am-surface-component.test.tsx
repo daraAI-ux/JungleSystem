@@ -1732,7 +1732,16 @@ describe('KolamAmSurface', () => {
       completedAt: '2026-01-01T00:05:00.000Z',
       createdAt: '2026-01-01T00:00:00.000Z',
       createdBy: { _id: 'user-1', fullName: 'Admin User', username: 'admin' },
-      deviceId: { _id: 'device-1', name: 'Phone 1', udid: 'USB1234' },
+      deviceId: {
+        _id: 'device-1',
+        name: 'Phone 1',
+        udid: 'USB1234',
+        boxId: {
+          _id: 'box-1',
+          name: 'Box A',
+          rackId: {_id: 'rack-1', name: 'Rack Blue'},
+        },
+      },
       error: '',
       fee: 2500,
       logs: ['created', 'completed'],
@@ -1808,6 +1817,11 @@ describe('KolamAmSurface', () => {
     const joinedText = text.join(' ');
     expect(text).toContain('Transfer Detail');
     expect(text).toContain('Vendor Detail');
+    expect(joinedText).toMatch(/Total\s+Rp\s*252\.500/);
+    expect(joinedText).toContain('Transfer Method BI FAST');
+    expect(joinedText).toContain('Transaction Purpose Payment');
+    expect(joinedText).toContain('Created By Admin User');
+    expect(joinedText).toContain('Box / Rack Box A / Rack Blue');
     expect(joinedText).toContain('Webhook Delivery Logs');
     expect(joinedText).toContain('Inventory hook');
     expect(joinedText).not.toContain('Other hook');
