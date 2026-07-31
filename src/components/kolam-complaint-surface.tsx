@@ -23,6 +23,7 @@ import {
   type KolamComplaintController,
 } from '../hooks/use-kolam-complaint-controller';
 import { KolamButton } from './kolam-button';
+import { KolamCardFrame } from './kolam-card-frame';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import {
   getKolamDataTableColumnStyle,
@@ -47,8 +48,6 @@ import { KolamSearchField } from './kolam-search-field';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamSwitch } from './kolam-switch';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
-import { KolamContentFrame } from './kolam-content-frame';
-import { KolamCopyStack } from './kolam-copy-stack';
 
 const LIST_COLUMNS: KolamTableColumn[] = [
   { id: 'primary', label: 'Kode Tiket', align: 'left', width: 150 },
@@ -69,37 +68,6 @@ const LIST_COLUMNS: KolamTableColumn[] = [
 
 function descRow(id: string, label: string, value: string) {
   return { id, label, meta: '', tone: 'default' as const, value };
-}
-
-function Section({
-  children,
-  description,
-  title,
-}: {
-  children: React.ReactNode;
-  description?: string;
-  title: string;
-}) {
-  return (
-    <KolamContentFrame variant="nativeFormSection">
-      <KolamCopyStack
-        containerStyle={styles.sectionCopy}
-        items={[
-          { id: 'title', text: title, style: styles.sectionTitle },
-          ...(description
-            ? [
-                {
-                  id: 'description',
-                  text: description,
-                  style: styles.sectionDescription,
-                },
-              ]
-            : []),
-        ]}
-      />
-      <KolamContentFrame variant="nativeFormControls">{children}</KolamContentFrame>
-    </KolamContentFrame>
-  );
 }
 
 export function KolamComplaintSurface({
@@ -159,6 +127,7 @@ function KolamComplaintShell({
     controller.mode === 'new'
       ? 'Komplain baru'
       : controller.selectedComplaint?.ticketCode || 'Detail komplain';
+  const saleId = controller.selectedComplaint?.saleId;
 
   return (
     <View style={styles.surface}>
@@ -171,19 +140,28 @@ function KolamComplaintShell({
           </View>
           <View style={kolamTableToolbarStyles.actions}>
             <KolamButton
-              disabled={controller.loading}
-              label="Refresh"
-              onPress={() => {
-                void controller.onRefresh();
-              }}
-            />
-            <KolamButton
               label="Daftar"
               onPress={() => {
                 controller.onBackToList();
                 onRouteChange?.(KOLAM_COMPLAINT_ROOT);
               }}
+              style={styles.toolbarButton}
             />
+            <KolamButton
+              disabled={controller.loading}
+              label="Refresh"
+              onPress={() => {
+                void controller.onRefresh();
+              }}
+              style={styles.toolbarButton}
+            />
+            {saleId ? (
+              <KolamButton
+                label="Lihat invoice"
+                onPress={() => onRouteChange?.(`/sales/${saleId}`)}
+                style={styles.toolbarButton}
+              />
+            ) : null}
           </View>
         </View>
       </View>
@@ -484,7 +462,6 @@ function KolamComplaintRow({
 
 function KolamComplaintDetail({
   controller,
-  onRouteChange,
 }: {
   controller: KolamComplaintController;
   onRouteChange?: (route: string) => void;
@@ -500,8 +477,13 @@ function KolamComplaintDetail({
     );
   }
 
+  const itemCount = complaint.itemCount || complaint.items.length;
+
   return (
-    <ScrollView contentContainerStyle={styles.detailContent}>
+    <ScrollView
+      contentContainerStyle={styles.detailContent}
+      style={styles.detailRoot}
+    >
       {complaint.marketplaceReadOnly ? (
         <KolamStatusBadge
           intent="warning"
@@ -511,154 +493,179 @@ function KolamComplaintDetail({
         />
       ) : null}
 
-      <View style={styles.stripRow}>
-        <KolamStatusBadge
-          intent={getKolamComplaintStatusBadgeIntent(complaint.status)}
-          label={getKolamComplaintStatusLabel(complaint.status)}
-        />
-        <KolamStatusBadge
-          intent={getKolamComplaintDecisionBadgeIntent(complaint.decision)}
-          label={getKolamComplaintDecisionLabel(complaint.decision)}
-        />
-        {complaint.isCustomProject ? (
-          <KolamStatusBadge intent="info" label="Proyek khusus" />
-        ) : null}
-        {complaint.isServiceOnly ? (
-          <KolamStatusBadge intent="secondary" label="Khusus layanan" />
-        ) : null}
-      </View>
-
-      <Section title="Ringkasan">
-        <KolamDescriptionList
-          accessibilityLabel="Ringkasan komplain"
-          rows={[
-            descRow('ticket', 'Kode tiket', complaint.ticketCode),
-            descRow('invoice', 'Invoice', complaint.invoiceCode),
-            descRow('customer', 'Pelanggan', complaint.customerName),
-            descRow(
-              'source',
-              'Sumber',
-              getKolamComplaintSourceLabel(complaint.source),
-            ),
-            descRow(
-              'priority',
-              'Prioritas',
-              getKolamComplaintPriorityLabel(complaint.priority),
-            ),
-            descRow(
-              'category',
-              'Kategori',
-              getKolamComplaintCategoryLabel(complaint.category),
-            ),
-            descRow('staff', 'Staf ditugaskan', complaint.assignedStaffName),
-            descRow(
-              'refund',
-              'Nilai refund',
-              complaint.refundAmount > 0
-                ? formatRupiah(complaint.refundAmount)
-                : '—',
-            ),
-            descRow('createdBy', 'Dibuat oleh', complaint.createdByName),
-            descRow('createdAt', 'Dibuat', formatListDate(complaint.createdAt)),
-          ]}
-        />
-        {complaint.saleId ? (
-          <View style={styles.detailActions}>
-            <KolamButton
-              label="Lihat invoice"
-              onPress={() => onRouteChange?.(`/sales/${complaint.saleId}`)}
+      <KolamCardFrame style={styles.stripCard} variant="compact">
+        <View style={styles.stripRow}>
+          <View style={styles.stripItem}>
+            <Text style={styles.stripLabel}>Status</Text>
+            <KolamStatusBadge
+              intent={getKolamComplaintStatusBadgeIntent(complaint.status)}
+              label={getKolamComplaintStatusLabel(complaint.status)}
             />
           </View>
-        ) : null}
-      </Section>
-
-      <Section description={complaint.description || '—'} title="Deskripsi">
-        <View />
-      </Section>
-
-      <Section title="Item komplain">
-        {complaint.items.length === 0 ? (
-          <Text style={styles.metaText}>Tidak ada item.</Text>
-        ) : (
-          complaint.items.map(item => (
-            <View key={item.id} style={styles.itemCard}>
-              <Text style={styles.primaryText}>{item.name}</Text>
-              <Text style={styles.metaText}>
-                Qty {item.quantity}
-                {item.reason ? ` · ${item.reason}` : ''}
+          <View style={styles.stripItem}>
+            <Text style={styles.stripLabel}>Keputusan</Text>
+            <KolamStatusBadge
+              intent={getKolamComplaintDecisionBadgeIntent(complaint.decision)}
+              label={getKolamComplaintDecisionLabel(complaint.decision)}
+            />
+          </View>
+          <View style={styles.stripItem}>
+            <Text style={styles.stripLabel}>Prioritas</Text>
+            <Text style={styles.stripValue}>
+              {getKolamComplaintPriorityLabel(complaint.priority)}
+            </Text>
+          </View>
+          <View style={styles.stripItem}>
+            <Text style={styles.stripLabel}>Items</Text>
+            <Text style={styles.stripValue}>{itemCount}</Text>
+          </View>
+          {complaint.refundAmount > 0 ? (
+            <View style={styles.stripItem}>
+              <Text style={styles.stripLabel}>Refund</Text>
+              <Text style={styles.stripValue}>
+                {formatRupiah(complaint.refundAmount)}
               </Text>
             </View>
-          ))
-        )}
-      </Section>
+          ) : null}
+          {complaint.isCustomProject ? (
+            <View style={styles.stripItem}>
+              <Text style={styles.stripLabel}>Flag</Text>
+              <KolamStatusBadge intent="info" label="Proyek khusus" />
+            </View>
+          ) : null}
+          {complaint.isServiceOnly ? (
+            <View style={styles.stripItem}>
+              <Text style={styles.stripLabel}>Layanan</Text>
+              <KolamStatusBadge intent="secondary" label="Khusus layanan" />
+            </View>
+          ) : null}
+        </View>
+      </KolamCardFrame>
 
-      {complaint.photos.length ? (
-        <Section title="Bukti foto">
-          <View style={styles.photoRow}>
-            {complaint.photos.map(photo =>
-              photo.uri ? (
-                <KolamRemoteImage
-                  accessibilityLabel="Bukti komplain"
-                  key={photo.id}
-                  resizeMode="cover"
-                  sourceUri={photo.uri}
-                  style={styles.photo}
-                />
-              ) : null,
-            )}
-          </View>
-        </Section>
-      ) : null}
-
-      {complaint.returnTracking ? (
-        <Section title="Pelacakan retur">
+      <View style={styles.columns}>
+        <View style={styles.columnMain}>
+          <Text style={styles.sectionTitle}>Informasi Komplain</Text>
           <KolamDescriptionList
-            accessibilityLabel="Retur"
+            accessibilityLabel="Informasi komplain"
             rows={[
+              descRow('invoice', 'Invoice', complaint.invoiceCode || '—'),
+              descRow('customer', 'Pelanggan', complaint.customerName || '—'),
               descRow(
-                'ret-status',
-                'Status',
-                complaint.returnTracking.status,
+                'source',
+                'Sumber',
+                getKolamComplaintSourceLabel(complaint.source),
               ),
               descRow(
-                'ret-track',
-                'Resi',
-                complaint.returnTracking.trackingNumber || '—',
+                'category',
+                'Kategori',
+                getKolamComplaintCategoryLabel(complaint.category),
               ),
               descRow(
-                'ret-courier',
-                'Kurir',
-                complaint.returnTracking.courierName || '—',
+                'staff',
+                'Staf ditugaskan',
+                complaint.assignedStaffName || '—',
+              ),
+              descRow(
+                'createdBy',
+                'Dibuat oleh',
+                complaint.createdByName || '—',
+              ),
+              descRow('createdAt', 'Dibuat', formatListDate(complaint.createdAt)),
+              descRow(
+                'description',
+                'Deskripsi',
+                complaint.description || '—',
               ),
             ]}
           />
-        </Section>
-      ) : null}
 
-      <Section title="Riwayat">
-        {complaint.histories.length === 0 ? (
-          <Text style={styles.metaText}>Belum ada riwayat.</Text>
-        ) : (
-          complaint.histories.map(history => (
-            <View key={history.id} style={styles.historyCard}>
-              <Text style={styles.primaryText}>
-                {getKolamComplaintHistoryActionLabel(history.action)}
-              </Text>
-              <Text style={styles.metaText}>{history.note || '—'}</Text>
-              <Text style={styles.metaText}>
-                {history.changedByLabel} · {formatListDate(history.changedAt)}
-              </Text>
-            </View>
-          ))
-        )}
-      </Section>
+          <Text style={styles.sectionTitle}>Item komplain</Text>
+          {complaint.items.length === 0 ? (
+            <Text style={styles.metaText}>Tidak ada item.</Text>
+          ) : (
+            complaint.items.map(item => (
+              <View key={item.id} style={styles.itemCard}>
+                <Text style={styles.primaryText}>{item.name}</Text>
+                <Text style={styles.metaText}>
+                  Qty {item.quantity}
+                  {item.reason ? ` · ${item.reason}` : ''}
+                </Text>
+              </View>
+            ))
+          )}
 
-      <KolamStatusBadge
-        intent="secondary"
-        label="Aksi workflow (assign/status/keputusan/retur) menyusul di batch berikutnya."
-        numberOfLines={2}
-        style={styles.banner}
-      />
+          {complaint.photos.length ? (
+            <>
+              <Text style={styles.sectionTitle}>Bukti foto</Text>
+              <View style={styles.photoRow}>
+                {complaint.photos.map(photo =>
+                  photo.uri ? (
+                    <KolamRemoteImage
+                      accessibilityLabel="Bukti komplain"
+                      key={photo.id}
+                      resizeMode="cover"
+                      sourceUri={photo.uri}
+                      style={styles.photo}
+                    />
+                  ) : null,
+                )}
+              </View>
+            </>
+          ) : null}
+
+          {complaint.returnTracking ? (
+            <>
+              <Text style={styles.sectionTitle}>Pelacakan retur</Text>
+              <KolamDescriptionList
+                accessibilityLabel="Retur"
+                rows={[
+                  descRow(
+                    'ret-status',
+                    'Status',
+                    complaint.returnTracking.status,
+                  ),
+                  descRow(
+                    'ret-track',
+                    'Resi',
+                    complaint.returnTracking.trackingNumber || '—',
+                  ),
+                  descRow(
+                    'ret-courier',
+                    'Kurir',
+                    complaint.returnTracking.courierName || '—',
+                  ),
+                ]}
+              />
+            </>
+          ) : null}
+
+          <KolamStatusBadge
+            intent="secondary"
+            label="Aksi workflow (assign/status/keputusan/retur) menyusul di batch berikutnya."
+            numberOfLines={2}
+            style={styles.banner}
+          />
+        </View>
+
+        <View style={styles.columnSide}>
+          <Text style={styles.sectionTitle}>Riwayat</Text>
+          {complaint.histories.length === 0 ? (
+            <Text style={styles.metaText}>Belum ada riwayat.</Text>
+          ) : (
+            complaint.histories.map(history => (
+              <View key={history.id} style={styles.historyCard}>
+                <Text style={styles.primaryText}>
+                  {getKolamComplaintHistoryActionLabel(history.action)}
+                </Text>
+                <Text style={styles.metaText}>{history.note || '—'}</Text>
+                <Text style={styles.metaText}>
+                  {history.changedByLabel} · {formatListDate(history.changedAt)}
+                </Text>
+              </View>
+            ))
+          )}
+        </View>
+      </View>
     </ScrollView>
   );
 }
@@ -695,9 +702,18 @@ const styles = StyleSheet.create({
   },
   detailToolbarContext: {
     color: V.colors.fg,
-    fontSize: 14,
-    fontWeight: '600',
+    flexShrink: 1,
+    fontSize: 13,
+    fontWeight: '700',
     maxWidth: 420,
+    minWidth: 0,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+  },
+  toolbarButton: {
+    flexShrink: 0,
+    minHeight: 34,
+    paddingHorizontal: 10,
   },
   primaryText: {
     color: V.colors.fg,
@@ -727,32 +743,74 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
   },
+  detailRoot: {
+    flexGrow: 0,
+  },
   detailContent: {
-    gap: 16,
-    paddingBottom: 32,
-    paddingHorizontal: 8,
+    gap: 12,
+    paddingBottom: 24,
+  },
+  stripCard: {
+    overflow: 'hidden',
+    paddingLeft: 12,
+    paddingRight: 12,
+    paddingVertical: 0,
   },
   stripRow: {
-    alignItems: 'center',
+    alignItems: 'stretch',
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 16,
+    minHeight: 72,
+  },
+  stripItem: {
+    gap: 4,
+    justifyContent: 'center',
+    minWidth: 120,
+    paddingVertical: 12,
+  },
+  stripLabel: {
+    color: V.colors.mutedFg,
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+  },
+  stripValue: {
+    color: V.colors.fg,
+    fontSize: 14,
+    fontWeight: '700',
   },
   banner: {
     alignSelf: 'stretch',
   },
-  detailActions: {
+  columns: {
     flexDirection: 'row',
-    gap: 8,
-    justifyContent: 'flex-end',
-    marginTop: 8,
+    flexWrap: 'wrap',
+    gap: 16,
+  },
+  columnMain: {
+    flex: 2,
+    flexBasis: 420,
+    gap: 10,
+    minWidth: 280,
+  },
+  columnSide: {
+    flex: 1,
+    flexBasis: 280,
+    gap: 10,
+    minWidth: 240,
+  },
+  sectionTitle: {
+    color: V.colors.fg,
+    fontSize: 15,
+    fontWeight: '700',
+    marginTop: 4,
   },
   itemCard: {
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     gap: 2,
-    paddingHorizontal: 10,
     paddingVertical: 8,
   },
   photoRow: {
@@ -772,19 +830,6 @@ const styles = StyleSheet.create({
     gap: 2,
     paddingHorizontal: 10,
     paddingVertical: 8,
-  },
-  sectionCopy: {
-    gap: 4,
-    marginBottom: 8,
-  },
-  sectionTitle: {
-    color: V.colors.fg,
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  sectionDescription: {
-    color: V.colors.mutedFg,
-    fontSize: 12,
   },
   placeholder: {
     alignItems: 'flex-start',
