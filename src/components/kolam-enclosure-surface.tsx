@@ -62,6 +62,7 @@ import {
 import {KolamBarcodePanel} from './kolam-barcode-panel';
 import {KolamBarcodePrintDialog} from './kolam-barcode-print-dialog';
 import {KolamButton} from './kolam-button';
+import {KolamCardFrame} from './kolam-card-frame';
 import {KolamCatalogListTableShell} from './kolam-catalog-list-table-shell';
 import {KolamCopyStack} from './kolam-copy-stack';
 import {KolamDashboardMetricSparkline} from './kolam-dashboard-metric-sparkline';
@@ -925,84 +926,63 @@ function KolamEnclosureDetailSurface({
     );
   }
 
-  const coverUri = getKolamFileUrl(enclosure.coverPhotoUrl);
-  const photoUris = getEnclosureDetailPhotoUris(enclosure);
-  const sizeText = formatEnclosureSize(enclosure);
-  const volumeText =
-    enclosure.computed.volumeLiters != null
-      ? `${enclosure.computed.volumeLiters} L`
-      : '-';
   const scopeLabel =
     enclosure.clientScope === 'client_linked' ? 'Customer' : 'Internal';
+  const toolbarContext =
+    enclosure.code.trim() || enclosure.name.trim() || enclosure.id;
 
   return (
-    <ScrollView contentContainerStyle={styles.detailContent}>
-      <View style={styles.detailHeader}>
-        <View style={styles.detailHeaderPhoto}>
-          {coverUri ? (
-            <KolamRemoteImage
-              accessibilityLabel={`Foto ${enclosure.name || enclosure.code}`}
-              resizeMode="cover"
-              scope="enclosure-detail-cover"
-              sourceUri={coverUri}
-              style={styles.detailHeaderPhotoImage}
+    <View style={styles.detailSurface}>
+      <View style={kolamTableToolbarStyles.shell}>
+        <View style={kolamTableToolbarStyles.row}>
+          <View style={kolamTableToolbarStyles.filters}>
+            <Text numberOfLines={1} style={styles.detailToolbarContext}>
+              {toolbarContext}
+            </Text>
+          </View>
+          <View style={kolamTableToolbarStyles.actions}>
+            <KolamButton
+              label="Daftar"
+              onPress={() =>
+                onRouteChange?.(`${KOLAM_ENCLOSURE_ROOT}?scope=dashboard`)
+              }
+              style={styles.toolbarButton}
             />
-          ) : (
-            <Text style={styles.mutedText}>-</Text>
-          )}
-        </View>
-        <View style={styles.detailHeaderCopy}>
-          <Text numberOfLines={2} style={styles.detailTitle}>
-            {enclosure.name || enclosure.code || 'Enclosure'}
-          </Text>
-          <View style={styles.detailBadgeRow}>
-            {enclosure.code ? (
-              <Text numberOfLines={1} style={styles.detailCode}>
-                {enclosure.code}
-              </Text>
-            ) : null}
-            {enclosure.type ? (
-              <KolamStatusBadge
-                intent="muted"
-                label={String(enclosure.type)}
-                textStyle={styles.badgeTextSm}
-              />
-            ) : null}
-            <KolamStatusBadge
-              intent={getEnclosureStatusIntent(enclosure.status)}
-              label={enclosure.status || 'active'}
-              textStyle={styles.badgeTextSm}
+            <KolamButton
+              disabled={controller.loading || controller.operationLoading}
+              label="Refresh"
+              onPress={() => void controller.onRefresh()}
+              style={styles.toolbarButton}
             />
-            <KolamStatusBadge
-              intent={enclosure.livestockPurpose === 'production' ? 'warning' : 'muted'}
-              label={getLivestockPurposeLabel(enclosure.livestockPurpose)}
-              textStyle={styles.badgeTextSm}
-            />
-            <KolamStatusBadge
-              intent={enclosure.clientScope === 'client_linked' ? 'success' : 'muted'}
-              label={scopeLabel}
-              textStyle={styles.badgeTextSm}
+            <KolamButton
+              label="Edit"
+              onPress={() =>
+                onRouteChange?.(
+                  `${KOLAM_ENCLOSURE_ROOT}/${enclosure.id}/edit`,
+                )
+              }
+              style={styles.toolbarButton}
             />
           </View>
-          <Text numberOfLines={2} style={styles.rowMeta}>
-            {[enclosure.location?.name, enclosure.assignedTo?.displayName]
-              .filter(Boolean)
-              .join(' / ') || 'Lokasi dan PIC belum lengkap'}
-          </Text>
-        </View>
-        <View style={styles.detailActions}>
-          <KolamButton
-            label="Daftar"
-            onPress={() => onRouteChange?.(`${KOLAM_ENCLOSURE_ROOT}?scope=dashboard`)}
-          />
-          <KolamButton
-            label="Edit"
-            onPress={() =>
-              onRouteChange?.(`${KOLAM_ENCLOSURE_ROOT}/${enclosure.id}/edit`)
-            }
-          />
         </View>
       </View>
+
+      {controller.error ? (
+        <KolamStatusBadge
+          intent="danger"
+          label={controller.error}
+          numberOfLines={3}
+          style={styles.errorBadge}
+        />
+      ) : null}
+      {controller.statusMessage ? (
+        <KolamStatusBadge
+          intent="success"
+          label={controller.statusMessage}
+          numberOfLines={2}
+          style={styles.errorBadge}
+        />
+      ) : null}
 
       <View style={styles.detailTabBar}>
         {detailTabs.map(tab => (
@@ -1016,47 +996,55 @@ function KolamEnclosureDetailSurface({
         ))}
       </View>
 
-      {safeActiveDetailTab === 'overview' ? (
-        <KolamEnclosureDetailOverview
-          controller={controller}
-          enclosure={enclosure}
-        />
-      ) : null}
-      {safeActiveDetailTab === 'species' ? (
-        <KolamEnclosureDetailSpeciesTab
-          controller={controller}
-          enclosure={enclosure}
-        />
-      ) : null}
-      {safeActiveDetailTab === 'production' ? (
-        <KolamEnclosureDetailProductionTab
-          controller={controller}
-          enclosure={enclosure}
-        />
-      ) : null}
-      {safeActiveDetailTab === 'tasks' ? (
-        <KolamEnclosureDetailTasksTab
-          controller={controller}
-          onRouteChange={onRouteChange}
-        />
-      ) : null}
-      {safeActiveDetailTab === 'statistics' ? (
-        <KolamEnclosureDetailStatisticsTab
-          controller={controller}
-          enclosure={enclosure}
-          onRouteChange={onRouteChange}
-        />
-      ) : null}
-    </ScrollView>
+      <ScrollView
+        contentContainerStyle={styles.detailContent}
+        style={styles.detailRoot}
+      >
+        {safeActiveDetailTab === 'overview' ? (
+          <KolamEnclosureDetailOverview
+            controller={controller}
+            enclosure={enclosure}
+            scopeLabel={scopeLabel}
+          />
+        ) : null}
+        {safeActiveDetailTab === 'species' ? (
+          <KolamEnclosureDetailSpeciesTab
+            controller={controller}
+            enclosure={enclosure}
+          />
+        ) : null}
+        {safeActiveDetailTab === 'production' ? (
+          <KolamEnclosureDetailProductionTab
+            controller={controller}
+            enclosure={enclosure}
+          />
+        ) : null}
+        {safeActiveDetailTab === 'tasks' ? (
+          <KolamEnclosureDetailTasksTab
+            controller={controller}
+            onRouteChange={onRouteChange}
+          />
+        ) : null}
+        {safeActiveDetailTab === 'statistics' ? (
+          <KolamEnclosureDetailStatisticsTab
+            controller={controller}
+            enclosure={enclosure}
+            onRouteChange={onRouteChange}
+          />
+        ) : null}
+      </ScrollView>
+    </View>
   );
 }
 
 function KolamEnclosureDetailOverview({
   controller,
   enclosure,
+  scopeLabel,
 }: {
   controller: KolamEnclosureController;
   enclosure: KolamEnclosure;
+  scopeLabel: string;
 }) {
   const [barcodeOpen, setBarcodeOpen] = React.useState(false);
   const coverUri = getKolamFileUrl(enclosure.coverPhotoUrl);
@@ -1066,8 +1054,6 @@ function KolamEnclosureDetailOverview({
     enclosure.computed.volumeLiters != null
       ? `${enclosure.computed.volumeLiters} L`
       : '-';
-  const scopeLabel =
-    enclosure.clientScope === 'client_linked' ? 'Customer' : 'Internal';
   const showProvisioning =
     enclosure.computed.needsProvisioning && !enclosure.code.trim();
   const barcodeItems = React.useMemo<KolamBarcodeLabelItem[]>(
@@ -1086,45 +1072,55 @@ function KolamEnclosureDetailOverview({
 
   return (
     <>
-      <View style={styles.detailOverviewGrid}>
-        <View style={styles.detailMediaPanel}>
-          <View style={styles.detailMainPhoto}>
-            {coverUri ? (
-              <KolamRemoteImage
-                accessibilityLabel={`Foto utama ${enclosure.name || enclosure.code}`}
-                resizeMode="cover"
-                scope="enclosure-detail-gallery"
-                sourceUri={coverUri}
-                style={styles.detailMainPhotoImage}
-              />
-            ) : (
-              <Text style={styles.mutedText}>Tidak ada foto</Text>
-            )}
-          </View>
-          {photoUris.length > 1 ? (
-            <View style={styles.detailThumbRow}>
-              {photoUris.slice(0, 4).map((uri, index) => (
-                <KolamRemoteImage
-                  accessibilityLabel={`Foto enclosure ${index + 1}`}
-                  key={`${uri}:${index}`}
-                  resizeMode="cover"
-                  scope="enclosure-detail-thumbs"
-                  sourceUri={uri}
-                  style={styles.detailThumb}
-                />
-              ))}
-            </View>
-          ) : null}
-          {enclosure.code.trim() ? (
-            <KolamBarcodePanel
-              name={enclosure.name || enclosure.code}
-              onPrint={() => setBarcodeOpen(true)}
-              sku={enclosure.code}
+      <KolamCardFrame style={styles.stripCard} variant="compact">
+        <View style={styles.stripRow}>
+          <View style={styles.stripItem}>
+            <Text style={styles.stripLabel}>Status</Text>
+            <KolamStatusBadge
+              intent={getEnclosureStatusIntent(enclosure.status)}
+              label={enclosure.status || 'active'}
+              textStyle={styles.badgeTextSm}
             />
-          ) : null}
+          </View>
+          <View style={styles.stripItem}>
+            <Text style={styles.stripLabel}>Livestock</Text>
+            <KolamStatusBadge
+              intent={
+                enclosure.livestockPurpose === 'production' ? 'warning' : 'muted'
+              }
+              label={getLivestockPurposeLabel(enclosure.livestockPurpose)}
+              textStyle={styles.badgeTextSm}
+            />
+          </View>
+          <View style={styles.stripItem}>
+            <Text style={styles.stripLabel}>Tipe</Text>
+            <KolamStatusBadge
+              intent="muted"
+              label={String(enclosure.type || '-')}
+              textStyle={styles.badgeTextSm}
+            />
+          </View>
+          <View style={styles.stripItem}>
+            <Text style={styles.stripLabel}>Scope</Text>
+            <KolamStatusBadge
+              intent={
+                enclosure.clientScope === 'client_linked' ? 'success' : 'muted'
+              }
+              label={scopeLabel}
+              textStyle={styles.badgeTextSm}
+            />
+          </View>
+          <View style={styles.stripItem}>
+            <Text style={styles.stripLabel}>Sale</Text>
+            <Text style={styles.stripValue}>
+              {getSaleStatusLabel(enclosure.saleStatus)}
+            </Text>
+          </View>
         </View>
+      </KolamCardFrame>
 
-        <View style={styles.detailInfoPanel}>
+      <View style={styles.columns}>
+        <View style={styles.columnMain}>
           {enclosure.livestockPurpose === 'production' ? (
             <View style={styles.detailWarningBand}>
               <Text style={styles.warningText}>
@@ -1132,115 +1128,159 @@ function KolamEnclosureDetailOverview({
               </Text>
             </View>
           ) : null}
-          <View style={styles.detailFieldGrid}>
-            <DetailField label="Kode" value={enclosure.code || '-'} />
-            <DetailField label="Nama" value={enclosure.name || '-'} />
-            <DetailField
-              label="Tipe"
-              value={
-                [enclosure.type, getAquariumWaterLabel(enclosure.aquariumWaterType)]
-                  .filter(Boolean)
-                  .join(' / ') || '-'
-              }
-            />
-            <DetailField
-              label="Livestock"
-              value={getLivestockPurposeLabel(enclosure.livestockPurpose)}
-            />
-            <DetailField label="Status" value={enclosure.status || 'active'} />
-            <DetailField label="Scope" value={scopeLabel} />
-            <DetailField
-              label="Customer"
-              value={enclosure.customer?.name || '-'}
-            />
-            <DetailField
-              label="Lokasi"
-              value={
-                [enclosure.location?.name, enclosure.location?.code]
-                  .filter(Boolean)
-                  .join(' / ') || '-'
-              }
-            />
-            <DetailField
-              label="PIC"
-              value={enclosure.assignedTo?.displayName || '-'}
-            />
-            <DetailField label="Ukuran" value={sizeText || '-'} />
-            <DetailField label="Volume" value={volumeText} />
-            <DetailField
-              label="Usia"
-              value={enclosure.computed.ageLabel || '-'}
-            />
-            <DetailField
-              label="Brand"
-              value={enclosure.brand?.name || '-'}
-            />
-            <DetailField
-              label="Sale status"
-              value={getSaleStatusLabel(enclosure.saleStatus)}
-            />
+
+          <View style={styles.detailMediaPanel}>
+            <View style={styles.detailMainPhoto}>
+              {coverUri ? (
+                <KolamRemoteImage
+                  accessibilityLabel={`Foto utama ${enclosure.name || enclosure.code}`}
+                  resizeMode="cover"
+                  scope="enclosure-detail-gallery"
+                  sourceUri={coverUri}
+                  style={styles.detailMainPhotoImage}
+                />
+              ) : (
+                <Text style={styles.mutedText}>Tidak ada foto</Text>
+              )}
+            </View>
+            {photoUris.length > 1 ? (
+              <View style={styles.detailThumbRow}>
+                {photoUris.slice(0, 4).map((uri, index) => (
+                  <KolamRemoteImage
+                    accessibilityLabel={`Foto enclosure ${index + 1}`}
+                    key={`${uri}:${index}`}
+                    resizeMode="cover"
+                    scope="enclosure-detail-thumbs"
+                    sourceUri={uri}
+                    style={styles.detailThumb}
+                  />
+                ))}
+              </View>
+            ) : null}
+            {enclosure.code.trim() ? (
+              <KolamBarcodePanel
+                name={enclosure.name || enclosure.code}
+                onPrint={() => setBarcodeOpen(true)}
+                sku={enclosure.code}
+              />
+            ) : null}
           </View>
+
+          <DetailSection title="Informasi enclosure">
+            <View style={styles.detailFieldGrid}>
+              <DetailField label="Kode" value={enclosure.code || '-'} />
+              <DetailField label="Nama" value={enclosure.name || '-'} />
+              <DetailField
+                label="Tipe"
+                value={
+                  [
+                    enclosure.type,
+                    getAquariumWaterLabel(enclosure.aquariumWaterType),
+                  ]
+                    .filter(Boolean)
+                    .join(' / ') || '-'
+                }
+              />
+              <DetailField
+                label="Livestock"
+                value={getLivestockPurposeLabel(enclosure.livestockPurpose)}
+              />
+              <DetailField label="Status" value={enclosure.status || 'active'} />
+              <DetailField label="Scope" value={scopeLabel} />
+              <DetailField
+                label="Customer"
+                value={enclosure.customer?.name || '-'}
+              />
+              <DetailField
+                label="Lokasi"
+                value={
+                  [enclosure.location?.name, enclosure.location?.code]
+                    .filter(Boolean)
+                    .join(' / ') || '-'
+                }
+              />
+              <DetailField
+                label="PIC"
+                value={enclosure.assignedTo?.displayName || '-'}
+              />
+              <DetailField label="Ukuran" value={sizeText || '-'} />
+              <DetailField label="Volume" value={volumeText} />
+              <DetailField
+                label="Usia"
+                value={enclosure.computed.ageLabel || '-'}
+              />
+              <DetailField label="Brand" value={enclosure.brand?.name || '-'} />
+              <DetailField
+                label="Sale status"
+                value={getSaleStatusLabel(enclosure.saleStatus)}
+              />
+            </View>
+          </DetailSection>
+
+          {enclosure.note.trim() ? (
+            <DetailSection title="Catatan">
+              <Text style={styles.detailParagraph}>{enclosure.note}</Text>
+            </DetailSection>
+          ) : null}
+
+          <EnclosureClimateParameters
+            controller={controller}
+            enclosure={enclosure}
+          />
+
+          <EnclosureSaleListingOperation
+            controller={controller}
+            enclosure={enclosure}
+          />
+
+          {showProvisioning ? (
+            <EnclosureProvisioningOperation controller={controller} />
+          ) : null}
+        </View>
+
+        <View style={styles.columnSide}>
+          <DetailSection title="Species di enclosure">
+            {enclosure.species.length ? (
+              enclosure.species.slice(0, 6).map(item => (
+                <View
+                  key={`${item.speciesId}:${item.variantId}`}
+                  style={styles.detailMiniRow}
+                >
+                  <KolamCopyStack
+                    containerStyle={styles.panelRowCopy}
+                    items={[
+                      {
+                        id: 'title',
+                        text: item.speciesName || item.scientificName || '-',
+                        style: styles.rowTitle,
+                      },
+                      {
+                        id: 'meta',
+                        text: [item.scientificName, item.variantLabel]
+                          .filter(Boolean)
+                          .join(' / '),
+                        style: styles.rowMeta,
+                      },
+                    ]}
+                  />
+                  <Text style={styles.qtyText}>
+                    {item.quantity} {item.unitLabel}
+                  </Text>
+                </View>
+              ))
+            ) : (
+              <Text style={styles.mutedText}>Belum ada species.</Text>
+            )}
+          </DetailSection>
+
+          <EnclosureMediaOperation
+            controller={controller}
+            enclosure={enclosure}
+          />
+
+          <EnclosureCommentsOperation controller={controller} />
         </View>
       </View>
-
-      <EnclosureClimateParameters
-        controller={controller}
-        enclosure={enclosure}
-      />
-
-      <EnclosureSaleListingOperation
-        controller={controller}
-        enclosure={enclosure}
-      />
-
-      {showProvisioning ? (
-        <EnclosureProvisioningOperation controller={controller} />
-      ) : null}
-
-      {enclosure.note.trim() ? (
-        <DetailSection title="Catatan">
-          <Text style={styles.detailParagraph}>{enclosure.note}</Text>
-        </DetailSection>
-      ) : null}
-
-      <View style={styles.detailTwoColumn}>
-        <DetailSection title="Species di enclosure">
-          {enclosure.species.length ? (
-            enclosure.species.slice(0, 6).map(item => (
-              <View key={`${item.speciesId}:${item.variantId}`} style={styles.detailMiniRow}>
-                <KolamCopyStack
-                  containerStyle={styles.panelRowCopy}
-                  items={[
-                    {
-                      id: 'title',
-                      text: item.speciesName || item.scientificName || '-',
-                      style: styles.rowTitle,
-                    },
-                    {
-                      id: 'meta',
-                      text: [item.scientificName, item.variantLabel]
-                        .filter(Boolean)
-                        .join(' / '),
-                      style: styles.rowMeta,
-                    },
-                  ]}
-                />
-                <Text style={styles.qtyText}>
-                  {item.quantity} {item.unitLabel}
-                </Text>
-              </View>
-            ))
-          ) : (
-            <Text style={styles.mutedText}>Belum ada species.</Text>
-          )}
-        </DetailSection>
-        <EnclosureMediaOperation
-          controller={controller}
-          enclosure={enclosure}
-        />
-      </View>
-
-      <EnclosureCommentsOperation controller={controller} />
 
       <KolamBarcodePrintDialog
         description="Label CODE128 memakai kode enclosure. Ukuran label mengikuti web enclosure: 75mm × 45mm."
@@ -5353,9 +5393,68 @@ const styles = StyleSheet.create({
     minHeight: 34,
     paddingHorizontal: 10,
   },
+  detailSurface: {
+    gap: 14,
+  },
+  detailToolbarContext: {
+    color: V.colors.fg,
+    flexShrink: 1,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+    minWidth: 0,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+  },
+  detailRoot: {
+    flexGrow: 0,
+  },
   detailContent: {
     gap: 14,
     paddingBottom: 24,
+  },
+  stripCard: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  stripRow: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 14,
+  },
+  stripItem: {
+    gap: 4,
+    minWidth: 96,
+  },
+  stripLabel: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  stripValue: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  columns: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+  },
+  columnMain: {
+    flex: 2,
+    flexBasis: 420,
+    gap: 14,
+    minWidth: 280,
+  },
+  columnSide: {
+    flex: 1,
+    flexBasis: 280,
+    gap: 14,
+    minWidth: 240,
   },
   detailHeader: {
     alignItems: 'center',
@@ -5438,9 +5537,9 @@ const styles = StyleSheet.create({
   },
   detailMediaPanel: {
     gap: 10,
-    maxWidth: 320,
-    minWidth: 240,
-    width: 300,
+    maxWidth: 420,
+    minWidth: 220,
+    width: '100%',
   },
   detailMainPhoto: {
     alignItems: 'center',

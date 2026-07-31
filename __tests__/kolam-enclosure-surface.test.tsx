@@ -408,10 +408,12 @@ describe('Kolam enclosure surface', () => {
     expect(root.findAllByProps({children: 'ENC-1'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'Catatan detail enclosure'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'Species di enclosure'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Informasi enclosure'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'Ranitomeya'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'Client A'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'Jual unit kandang'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({label: 'Cetak barcode'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({label: 'Refresh'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({label: 'Overview'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({label: 'Species'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({label: 'Statistics'}).length).toBeGreaterThan(0);
