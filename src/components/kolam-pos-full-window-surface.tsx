@@ -1012,7 +1012,7 @@ function PosOrderRow({
         <KolamInteractionFrame
           onPress={() => onQuantityChange(line.itemId, 0)}
           style={styles.orderRemoveButton}>
-          <Text style={styles.orderRemoveText}>Hapus</Text>
+          <Text style={styles.orderRemoveText}>X</Text>
         </KolamInteractionFrame>
         <KolamQuantityStepper
           quantity={line.quantity}
@@ -2891,15 +2891,15 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   orderRemoveButton: {
-    minHeight: 22,
+    width: 24,
+    height: 24,
+    alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 4,
-    paddingHorizontal: 8,
-    backgroundColor: V.colors.dangerSoft,
+    borderRadius: 12,
   },
   orderRemoveText: {
     color: V.colors.danger,
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '900',
   },
   orderEmpty: {
