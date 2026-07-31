@@ -323,6 +323,37 @@ describe('Kolam navigation controller hook', () => {
     expect(messages.at(-1)).toContain('Module Route Launcher');
   });
 
+  it('opens AM as a sidebar-owned app route when selecting the AM module directly', async () => {
+    const messages: string[] = [];
+    let latest: NavigationController | null = null;
+
+    await ReactTestRenderer.act(async () => {
+      ReactTestRenderer.create(
+        <NavigationHarness
+          messages={messages}
+          onRender={controller => {
+            latest = controller;
+          }}
+        />,
+      );
+    });
+
+    await ReactTestRenderer.act(async () => {
+      requireNavigationController(latest).handleModuleSelect('am');
+    });
+
+    expect(requireNavigationController(latest).activeModule).toBe('am');
+    expect(requireNavigationController(latest).activeModuleRoute).toEqual(
+      expect.objectContaining({
+        moduleId: 'am',
+        route: '/',
+      }),
+    );
+    expect(requireNavigationController(latest).activeAmSurface).toBeNull();
+    expect(requireNavigationController(latest).activeKolamSurface).toBeNull();
+    expect(requireNavigationController(latest).activeNavigationItem).toBeNull();
+  });
+
   it('keeps selected Kolam surface context from command palette', async () => {
     const messages: string[] = [];
     let latest: NavigationController | null = null;
@@ -593,7 +624,7 @@ describe('Kolam navigation controller hook', () => {
     expect(messages.at(-1)).toContain('Plugin Hub');
   });
 
-  it('keeps selected AM route context from command palette', async () => {
+  it('keeps selected AM sidebar route context from command palette', async () => {
     const messages: string[] = [];
     let latest: NavigationController | null = null;
 
@@ -622,18 +653,19 @@ describe('Kolam navigation controller hook', () => {
     });
 
     expect(requireNavigationController(latest).activeModule).toBe('am');
-    expect(requireNavigationController(latest).activeAmSurface).toEqual(
+    expect(requireNavigationController(latest).activeModuleRoute).toEqual(
       expect.objectContaining({
-        id: 'tasks',
-        label: 'Tasks',
+        moduleId: 'am',
+        route: 'tasks',
       }),
     );
+    expect(requireNavigationController(latest).activeAmSurface).toBeNull();
     expect(requireNavigationController(latest).activeNavigationItem).toBeNull();
     expect(requireNavigationController(latest).activePluginRoute).toBeNull();
-    expect(messages.at(-1)).toContain('am-be/routes/task');
+    expect(messages.at(-1)).toContain('sidebar AM native');
   });
 
-  it('keeps selected AM route context from AM Surface Launcher', async () => {
+  it('keeps selected AM sidebar route context from AM Surface Launcher', async () => {
     const messages: string[] = [];
     let latest: NavigationController | null = null;
     const taskSurface = amSurfaces.find(surface => surface.id === 'tasks');
@@ -658,17 +690,18 @@ describe('Kolam navigation controller hook', () => {
     });
 
     expect(requireNavigationController(latest).activeModule).toBe('am');
-    expect(requireNavigationController(latest).activeAmSurface).toEqual(
+    expect(requireNavigationController(latest).activeModuleRoute).toEqual(
       expect.objectContaining({
-        id: 'tasks',
-        label: 'Tasks',
+        moduleId: 'am',
+        route: 'tasks',
       }),
     );
+    expect(requireNavigationController(latest).activeAmSurface).toBeNull();
     expect(requireNavigationController(latest).activePluginRoute).toBeNull();
     expect(requireNavigationController(latest).commandSearch).toBe(
-      taskSurface.route,
+      'tasks',
     );
-    expect(messages.at(-1)).toContain('AM Surface Launcher');
+    expect(messages.at(-1)).toContain('sidebar AM native');
   });
 
   it('clears stale route context when selecting a module directly', async () => {

@@ -4,6 +4,7 @@ import {
   type ShellModuleRouteEntry,
   type AppModule,
 } from '../domain/app-shell';
+import { getAmRouteByModuleRoute } from '../domain/am-navigation';
 import {
   filterCommandIndex,
   getCommandIndex,
@@ -109,6 +110,9 @@ export function useKolamNavigationController({
   );
 
   const handleModuleSelect = (module: AppModule) => {
+    const defaultAmRoute =
+      module === 'am' ? getShellModuleRouteEntry('am', '/') : null;
+
     setActiveModule(module);
     setActiveNavigationItem(
       module === 'settings'
@@ -118,7 +122,7 @@ export function useKolamNavigationController({
     setActivePluginRoute(null);
     setActiveAmSurface(null);
     setActiveKolamSurface(null);
-    setActiveModuleRoute(null);
+    setActiveModuleRoute(defaultAmRoute);
   };
 
   const openQuickSearch = () => {
@@ -311,15 +315,21 @@ export function useKolamNavigationController({
 
     if (command.kind === 'am-route') {
       const surface = getAmSurfaceById(command.amSurfaceId);
+      const route = getAmModuleRouteEntry(
+        command.route ?? surface?.route,
+        surface?.id,
+      );
 
       setActiveModule('am');
       setActiveNavigationItem(null);
       setActivePluginRoute(null);
-      setActiveAmSurface(surface);
+      setActiveAmSurface(null);
       setActiveKolamSurface(null);
-      setActiveModuleRoute(null);
-      setCommandSearch(command.route ?? command.label);
-      onMessage(`${command.label} dibuka di AM native (${command.route}).`);
+      setActiveModuleRoute(route);
+      setCommandSearch(route?.route ?? command.route ?? command.label);
+      onMessage(
+        `${command.label} dibuka dari sidebar AM native (${route?.route ?? command.route}).`,
+      );
       return;
     }
 
@@ -374,15 +384,17 @@ export function useKolamNavigationController({
   };
 
   const handleAmSurfaceSelect = (surface: UnifiedSurface) => {
+    const route = getAmModuleRouteEntry(surface.route, surface.id);
+
     setActiveModule('am');
     setActiveNavigationItem(null);
     setActivePluginRoute(null);
-    setActiveAmSurface(surface);
+    setActiveAmSurface(null);
     setActiveKolamSurface(null);
-    setActiveModuleRoute(null);
-    setCommandSearch(surface.route);
+    setActiveModuleRoute(route);
+    setCommandSearch(route?.route ?? surface.route);
     onMessage(
-      `${surface.label} dibuka dari AM Surface Launcher (${surface.route}).`,
+      `${surface.label} dibuka dari sidebar AM native (${route?.route ?? surface.route}).`,
     );
   };
 
@@ -502,6 +514,43 @@ export function useKolamNavigationController({
     toggleSidebar,
     toggleUserMenu,
   };
+}
+
+function getAmModuleRouteEntry(
+  route?: string | null,
+  surfaceId?: string | null,
+): ShellModuleRouteEntry | null {
+  const normalizedSurfaceRoute = route?.toLowerCase() ?? '';
+  let moduleRoute = getAmRouteByModuleRoute(route).moduleRoute;
+
+  if (
+    surfaceId === 'tasks' ||
+    normalizedSurfaceRoute.includes('tasks') ||
+    normalizedSurfaceRoute.includes('routes/task')
+  ) {
+    moduleRoute = 'tasks';
+  } else if (
+    surfaceId === 'hardware' ||
+    normalizedSurfaceRoute.includes('hardware') ||
+    normalizedSurfaceRoute.includes('routes/device')
+  ) {
+    moduleRoute = 'hardware';
+  } else if (
+    surfaceId === 'marketplace' ||
+    normalizedSurfaceRoute.includes('webhook')
+  ) {
+    moduleRoute = 'webhooks';
+  } else if (
+    surfaceId === 'operations' ||
+    normalizedSurfaceRoute.includes('mutasi')
+  ) {
+    moduleRoute = 'mutasi';
+  }
+
+  return getShellModuleRouteEntry(
+    'am',
+    moduleRoute,
+  );
 }
 
 function getManualNavigationItem(route: string): KolamNavigationItem | null {
