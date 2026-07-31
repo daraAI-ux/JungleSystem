@@ -316,6 +316,17 @@ describe('Kolam enclosure surface', () => {
         },
         customerId: 'cust-1',
         note: 'Catatan detail enclosure',
+        parameters: [
+          {
+            currentValue: 27,
+            id: 'param-1',
+            name: 'Suhu',
+            raw: {},
+            unit: null,
+            unitLabel: 'C',
+            updatedAt: '',
+          },
+        ],
         species: [
           {
             displayLine: 'Ranitomeya / Orange',
@@ -325,6 +336,27 @@ describe('Kolam enclosure surface', () => {
             speciesId: 'sp-1',
             speciesName: 'Ranitomeya',
             thumbnailUrl: '',
+            unitLabel: 'ekor',
+            variantId: 'v1',
+            variantLabel: 'Orange',
+          },
+        ],
+        speciesPopulationHistory: [
+          {
+            createdAt: '2026-07-30T08:00:00.000Z',
+            delta: -1,
+            enclosureQtyAfter: 2,
+            enclosureQtyBefore: 3,
+            eventType: 'death',
+            eventTypeLabel: 'Kematian',
+            id: 'hist-1',
+            invoiceCode: '',
+            photos: [],
+            reason: 'MATI',
+            scientificName: 'Ranitomeya imitator',
+            speciesId: 'sp-1',
+            speciesName: 'Ranitomeya',
+            stockTransactionId: 'tx-1',
             unitLabel: 'ekor',
             variantId: 'v1',
             variantLabel: 'Orange',
@@ -351,6 +383,33 @@ describe('Kolam enclosure surface', () => {
     expect(root.findAllByProps({children: 'Species di enclosure'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'Ranitomeya'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'Client A'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({label: 'Overview'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({label: 'Species'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({label: 'Statistics'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({label: 'Tasks'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({label: 'Production'}).length).toBe(0);
+
+    await ReactTestRenderer.act(async () => {
+      root.findAllByProps({label: 'Species'})[0].props.onPress();
+    });
+    expect(root.findAllByProps({children: 'Riwayat populasi'}).length).toBeGreaterThan(0);
+
+    await ReactTestRenderer.act(async () => {
+      root.findAllByProps({label: 'Statistics'})[0].props.onPress();
+    });
+    expect(root.findAllByProps({children: 'Ringkasan kondisi'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Parameter terbaca'}).length).toBeGreaterThan(0);
+
+    await ReactTestRenderer.act(async () => {
+      root.findAllByProps({label: 'Tasks'})[0].props.onPress();
+    });
+    expect(root.findAllByProps({children: 'Tasks'}).length).toBeGreaterThan(0);
+    expect(
+      root.findAllByProps({
+        children:
+          'Task dashboard enclosure membutuhkan endpoint dan domain controller tersendiri. Akan dilanjutkan pada batch berikutnya.',
+      }).length,
+    ).toBeGreaterThan(0);
 
     await ReactTestRenderer.act(async () => {
       root.findAllByProps({label: 'Daftar'})[0].props.onPress();
@@ -359,6 +418,88 @@ describe('Kolam enclosure surface', () => {
 
     expect(onRouteChange).toHaveBeenCalledWith('/enclosures?scope=dashboard');
     expect(onRouteChange).toHaveBeenCalledWith('/enclosures/enc-1/edit');
+  });
+
+  it('shows production detail tab only for production enclosures', async () => {
+    const controller = createController({
+      activeTab: 'dashboard',
+      dataSource: 'live',
+      mode: 'detail',
+      routeEnclosureId: 'enc-1',
+      selectedEnclosure: createEnclosure({
+        computed: {
+          ...createEnclosure().computed,
+          productionPhaseTabVisible: true,
+        },
+        livestockPurpose: 'production',
+        productionEggs: [
+          {
+            quantity: 12,
+            scientificName: 'Ranitomeya imitator',
+            speciesId: 'sp-1',
+            speciesName: 'Ranitomeya',
+            unitLabel: 'telur',
+          },
+        ],
+        species: [
+          {
+            displayLine: 'Ranitomeya / Orange',
+            id: 'sp-line-1',
+            quantity: 4,
+            scientificName: 'Ranitomeya imitator',
+            speciesId: 'sp-1',
+            speciesName: 'Ranitomeya',
+            thumbnailUrl: '',
+            unitLabel: 'ekor',
+            variantId: 'v1',
+            variantLabel: 'Orange',
+          },
+        ],
+        speciesPopulationHistory: [
+          {
+            createdAt: '2026-07-30T08:00:00.000Z',
+            delta: 4,
+            enclosureQtyAfter: 4,
+            enclosureQtyBefore: 0,
+            eventType: 'birth',
+            eventTypeLabel: 'Kelahiran',
+            id: 'hist-birth-1',
+            invoiceCode: '',
+            photos: [],
+            reason: 'KELAHIRAN',
+            scientificName: 'Ranitomeya imitator',
+            speciesId: 'sp-1',
+            speciesName: 'Ranitomeya',
+            stockTransactionId: 'tx-birth-1',
+            unitLabel: 'ekor',
+            variantId: 'v1',
+            variantLabel: 'Orange',
+          },
+        ],
+      }),
+    });
+    useControllerMock.mockReturnValue(controller);
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamEnclosureSurface route="/enclosures/enc-1" />,
+      );
+    });
+
+    const root = renderer!.root;
+    expect(root.findAllByProps({label: 'Production'}).length).toBeGreaterThan(0);
+
+    await ReactTestRenderer.act(async () => {
+      root
+        .findAllByProps({label: 'Production'})
+        .find(node => typeof node.props.onPress === 'function')!
+        .props.onPress();
+    });
+
+    expect(root.findAllByProps({children: 'Ringkasan produksi'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Telur di kandang'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Kelahiran indukan'}).length).toBeGreaterThan(0);
   });
 
   it('renders the plugin-parity allocation statistics with grouped variants', async () => {

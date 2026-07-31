@@ -59,6 +59,12 @@ import {KolamTableFilterTrigger} from './kolam-table-filter-trigger';
 import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
 
 type EnclosureFilterPanel = 'type' | 'livestock' | null;
+type EnclosureDetailTab =
+  | 'overview'
+  | 'species'
+  | 'production'
+  | 'tasks'
+  | 'statistics';
 
 const ENCLOSURE_FILTER_PANEL_WIDTH = 232;
 const DASHBOARD_SPECIES_PAGE_SIZE = 12;
@@ -90,6 +96,27 @@ const LIVESTOCK_FILTER_OPTIONS: Array<{
   {label: 'Semua livestock', value: 'all'},
   {label: 'Saleable', value: 'saleable'},
   {label: 'Production', value: 'production'},
+];
+
+const ENCLOSURE_DETAIL_BASE_TABS: Array<{
+  id: Exclude<EnclosureDetailTab, 'production'>;
+  label: string;
+}> = [
+  {id: 'overview', label: 'Overview'},
+  {id: 'species', label: 'Species'},
+  {id: 'tasks', label: 'Tasks'},
+  {id: 'statistics', label: 'Statistics'},
+];
+
+const ENCLOSURE_DETAIL_TABS_WITH_PRODUCTION: Array<{
+  id: EnclosureDetailTab;
+  label: string;
+}> = [
+  {id: 'overview', label: 'Overview'},
+  {id: 'species', label: 'Species'},
+  {id: 'production', label: 'Production'},
+  {id: 'tasks', label: 'Tasks'},
+  {id: 'statistics', label: 'Statistics'},
 ];
 
 export function KolamEnclosureSurface({
@@ -144,6 +171,26 @@ function KolamEnclosureDetailSurface({
   onRouteChange?: (route: string) => void;
 }) {
   const enclosure = controller.selectedEnclosure;
+  const [activeDetailTab, setActiveDetailTab] =
+    React.useState<EnclosureDetailTab>('overview');
+  const showProductionTab = Boolean(
+    enclosure &&
+      (enclosure.computed.productionPhaseTabVisible ||
+        enclosure.livestockPurpose === 'production'),
+  );
+  const detailTabs = React.useMemo(
+    () => getEnclosureDetailTabs(showProductionTab),
+    [showProductionTab],
+  );
+  const safeActiveDetailTab = detailTabs.some(tab => tab.id === activeDetailTab)
+    ? activeDetailTab
+    : 'overview';
+
+  React.useEffect(() => {
+    if (!detailTabs.some(tab => tab.id === activeDetailTab)) {
+      setActiveDetailTab('overview');
+    }
+  }, [activeDetailTab, detailTabs]);
 
   if (controller.loading && controller.dataSource === 'idle') {
     return <InlineState title="Memuat detail enclosure..." />;
@@ -257,6 +304,54 @@ function KolamEnclosureDetailSurface({
         </View>
       </View>
 
+      <View style={styles.detailTabBar}>
+        {detailTabs.map(tab => (
+          <KolamButton
+            intent={safeActiveDetailTab === tab.id ? 'primary' : 'outline'}
+            key={tab.id}
+            label={tab.label}
+            onPress={() => setActiveDetailTab(tab.id)}
+            style={styles.detailTabButton}
+          />
+        ))}
+      </View>
+
+      {safeActiveDetailTab === 'overview' ? (
+        <KolamEnclosureDetailOverview enclosure={enclosure} />
+      ) : null}
+      {safeActiveDetailTab === 'species' ? (
+        <KolamEnclosureDetailSpeciesTab enclosure={enclosure} />
+      ) : null}
+      {safeActiveDetailTab === 'production' ? (
+        <KolamEnclosureDetailProductionTab enclosure={enclosure} />
+      ) : null}
+      {safeActiveDetailTab === 'tasks' ? (
+        <KolamEnclosureDetailTasksTab />
+      ) : null}
+      {safeActiveDetailTab === 'statistics' ? (
+        <KolamEnclosureDetailStatisticsTab enclosure={enclosure} />
+      ) : null}
+    </ScrollView>
+  );
+}
+
+function KolamEnclosureDetailOverview({
+  enclosure,
+}: {
+  enclosure: KolamEnclosure;
+}) {
+  const coverUri = getKolamFileUrl(enclosure.coverPhotoUrl);
+  const photoUris = getEnclosureDetailPhotoUris(enclosure);
+  const sizeText = formatEnclosureSize(enclosure);
+  const volumeText =
+    enclosure.computed.volumeLiters != null
+      ? `${enclosure.computed.volumeLiters} L`
+      : '-';
+  const scopeLabel =
+    enclosure.clientScope === 'client_linked' ? 'Customer' : 'Internal';
+
+  return (
+    <>
       <View style={styles.detailOverviewGrid}>
         <View style={styles.detailMediaPanel}>
           <View style={styles.detailMainPhoto}>
@@ -401,7 +496,201 @@ function KolamEnclosureDetailSurface({
           )}
         </DetailSection>
       </View>
-    </ScrollView>
+    </>
+  );
+}
+
+function KolamEnclosureDetailSpeciesTab({
+  enclosure,
+}: {
+  enclosure: KolamEnclosure;
+}) {
+  return (
+    <View style={styles.detailTwoColumn}>
+      <DetailSection title="Species di enclosure">
+        {enclosure.species.length ? (
+          enclosure.species.map(item => (
+            <View key={`${item.speciesId}:${item.variantId}`} style={styles.detailMiniRow}>
+              <KolamCopyStack
+                containerStyle={styles.panelRowCopy}
+                items={[
+                  {
+                    id: 'title',
+                    text: item.speciesName || item.scientificName || '-',
+                    style: styles.rowTitle,
+                  },
+                  {
+                    id: 'meta',
+                    text: [item.scientificName, item.variantLabel]
+                      .filter(Boolean)
+                      .join(' / '),
+                    style: styles.rowMeta,
+                  },
+                ]}
+              />
+              <Text style={styles.qtyText}>
+                {item.quantity} {item.unitLabel}
+              </Text>
+            </View>
+          ))
+        ) : (
+          <Text style={styles.mutedText}>Belum ada species.</Text>
+        )}
+      </DetailSection>
+      <DetailSection title="Riwayat populasi">
+        {enclosure.speciesPopulationHistory.length ? (
+          enclosure.speciesPopulationHistory.slice(0, 12).map((item, index) => (
+            <View key={item.id || `${item.createdAt}:${index}`} style={styles.detailMiniRow}>
+              <KolamCopyStack
+                containerStyle={styles.panelRowCopy}
+                items={[
+                  {
+                    id: 'title',
+                    text: item.speciesName || item.scientificName || '-',
+                    style: styles.rowTitle,
+                  },
+                  {
+                    id: 'meta',
+                    text: [
+                      formatDashboardDateTime(item.createdAt),
+                      item.eventTypeLabel || item.eventType,
+                      item.reason,
+                    ]
+                      .filter(Boolean)
+                      .join(' / '),
+                    style: styles.rowMeta,
+                  },
+                ]}
+              />
+              <Text
+                style={[
+                  styles.qtyText,
+                  item.delta < 0 ? styles.warningText : null,
+                ]}
+              >
+                {item.delta > 0 ? '+' : ''}
+                {item.delta} {item.unitLabel}
+              </Text>
+            </View>
+          ))
+        ) : (
+          <Text style={styles.mutedText}>Belum ada riwayat populasi.</Text>
+        )}
+      </DetailSection>
+    </View>
+  );
+}
+
+function KolamEnclosureDetailProductionTab({
+  enclosure,
+}: {
+  enclosure: KolamEnclosure;
+}) {
+  return (
+    <View style={styles.detailTwoColumn}>
+      <DetailSection title="Ringkasan produksi">
+        <View style={styles.summaryGrid}>
+          <SummaryTile
+            accent="primary"
+            icon="+"
+            label="Kelahiran indukan"
+            value={countProductionBirthQty(enclosure)}
+          />
+          <SummaryTile
+            icon="P"
+            label="Populasi indukan"
+            value={sumDetailSpeciesQty(enclosure)}
+          />
+          <SummaryTile
+            icon="T"
+            label="Telur produksi"
+            value={sumProductionEggQty(enclosure)}
+          />
+        </View>
+      </DetailSection>
+      <DetailSection title="Telur di kandang">
+        {enclosure.productionEggs.length ? (
+          enclosure.productionEggs.map(item => (
+            <View key={item.speciesId || item.speciesName} style={styles.detailMiniRow}>
+              <KolamCopyStack
+                containerStyle={styles.panelRowCopy}
+                items={[
+                  {
+                    id: 'title',
+                    text: item.speciesName || item.scientificName || '-',
+                    style: styles.rowTitle,
+                  },
+                  {
+                    id: 'meta',
+                    text: item.scientificName,
+                    style: styles.rowMeta,
+                  },
+                ]}
+              />
+              <Text style={styles.qtyText}>
+                {item.quantity} {item.unitLabel}
+              </Text>
+            </View>
+          ))
+        ) : (
+          <Text style={styles.mutedText}>Belum ada telur produksi.</Text>
+        )}
+      </DetailSection>
+    </View>
+  );
+}
+
+function KolamEnclosureDetailTasksTab() {
+  return (
+    <DetailSection title="Tasks">
+      <Text style={styles.detailParagraph}>
+        Task dashboard enclosure membutuhkan endpoint dan domain controller
+        tersendiri. Akan dilanjutkan pada batch berikutnya.
+      </Text>
+    </DetailSection>
+  );
+}
+
+function KolamEnclosureDetailStatisticsTab({
+  enclosure,
+}: {
+  enclosure: KolamEnclosure;
+}) {
+  const deathQty = enclosure.speciesPopulationHistory
+    .filter(item => item.eventType === 'death')
+    .reduce((sum, item) => sum + Math.abs(item.delta), 0);
+  const lostQty = enclosure.speciesPopulationHistory
+    .filter(item => item.eventType === 'lost')
+    .reduce((sum, item) => sum + Math.abs(item.delta), 0);
+  const birthQty = countProductionBirthQty(enclosure);
+
+  return (
+    <View style={styles.detailTwoColumn}>
+      <DetailSection title="Ringkasan kondisi">
+        <View style={styles.summaryGrid}>
+          <SummaryTile icon="S" label="Populasi sekarang" value={sumDetailSpeciesQty(enclosure)} />
+          <SummaryTile accent="warning" icon="!" label="Kematian" value={deathQty} />
+          <SummaryTile accent="warning" icon="L" label="Hilang" value={lostQty} />
+          <SummaryTile accent="primary" icon="+" label="Kelahiran" value={birthQty} />
+        </View>
+      </DetailSection>
+      <DetailSection title="Parameter terbaca">
+        {enclosure.parameters.length ? (
+          enclosure.parameters.map(item => (
+            <View key={item.id || item.name} style={styles.detailMiniRow}>
+              <Text numberOfLines={1} style={styles.cellText}>
+                {item.name || '-'}
+              </Text>
+              <Text style={styles.qtyText}>
+                {item.currentValue ?? '-'} {item.unitLabel}
+              </Text>
+            </View>
+          ))
+        ) : (
+          <Text style={styles.mutedText}>Belum ada parameter.</Text>
+        )}
+      </DetailSection>
+    </View>
   );
 }
 
@@ -2146,6 +2435,36 @@ function getEnclosureDetailPhotoUris(enclosure: KolamEnclosure) {
   return uris;
 }
 
+function getEnclosureDetailTabs(showProductionTab: boolean) {
+  return showProductionTab
+    ? ENCLOSURE_DETAIL_TABS_WITH_PRODUCTION
+    : ENCLOSURE_DETAIL_BASE_TABS;
+}
+
+function sumDetailSpeciesQty(enclosure: KolamEnclosure) {
+  return enclosure.species.reduce(
+    (sum, item) => sum + Math.max(0, Number(item.quantity) || 0),
+    0,
+  );
+}
+
+function sumProductionEggQty(enclosure: KolamEnclosure) {
+  return enclosure.productionEggs.reduce(
+    (sum, item) => sum + Math.max(0, Number(item.quantity) || 0),
+    0,
+  );
+}
+
+function countProductionBirthQty(enclosure: KolamEnclosure) {
+  return enclosure.speciesPopulationHistory
+    .filter(item => {
+      const eventType = String(item.eventType || '').toLowerCase();
+      const reason = String(item.reason || '').toUpperCase();
+      return eventType === 'birth' || reason.includes('KELAHIRAN');
+    })
+    .reduce((sum, item) => sum + Math.max(0, Number(item.delta) || 0), 0);
+}
+
 function formatDashboardDateTime(value: string) {
   if (!value) {
     return '-';
@@ -2309,6 +2628,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+  },
+  detailTabBar: {
+    alignItems: 'center',
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    padding: 8,
+  },
+  detailTabButton: {
+    minHeight: 34,
   },
   detailOverviewGrid: {
     alignItems: 'flex-start',
