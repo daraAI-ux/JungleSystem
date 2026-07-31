@@ -59,6 +59,7 @@ import {
   getAmWebhookConfigs,
   getAmWebhookEvents,
   getAmWebhookLogs,
+  logoutAmSession,
   retryAmTransfer,
   retryAmTask,
   recordAmPageView,
@@ -4443,6 +4444,7 @@ function AmAccountSettingsPage() {
   const [confirmPassword, setConfirmPassword] = React.useState('');
   const [deletePassword, setDeletePassword] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(true);
+  const [isLoggingOut, setIsLoggingOut] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [actionMessage, setActionMessage] = React.useState<string | null>(null);
 
@@ -4509,6 +4511,19 @@ function AmAccountSettingsPage() {
     showEndpointNotice('Danger area');
   }, [deletePassword, showEndpointNotice]);
 
+  const handleLogout = React.useCallback(async () => {
+    try {
+      setIsLoggingOut(true);
+      await logoutAmSession();
+      setError(null);
+      setActionMessage('AM session logged out. Login ulang diperlukan untuk membaca data AM live.');
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Gagal logout session AM live.');
+    } finally {
+      setIsLoggingOut(false);
+    }
+  }, []);
+
   return (
     <View style={styles.pageStack}>
       <View style={styles.filterBar}>
@@ -4523,6 +4538,14 @@ function AmAccountSettingsPage() {
           muted={isLoading}
           size="sm"
           onPress={fetchCurrentUser}
+        />
+        <KolamButton
+          accessibilityLabel="AM Account Logout"
+          label={isLoggingOut ? 'Logging out' : 'Log out'}
+          intent="outline"
+          muted={isLoggingOut}
+          size="sm"
+          onPress={handleLogout}
         />
       </View>
       <AmInlineError title="Account Settings AM" error={error} />

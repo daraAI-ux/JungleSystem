@@ -41,6 +41,7 @@ import {
   getAmUsers,
   getAmWebhookConfigs,
   getAmWebhookLogs,
+  logoutAmSession,
   recordAmPageView,
   restartAmTokopediaSession,
   runAmTokopediaApiMonitor,
@@ -126,6 +127,7 @@ jest.mock('../src/services/am-api', () => ({
   getAmWebhookConfigs: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
   getAmWebhookEvents: jest.fn(() => Promise.resolve(['transfer.success', 'mutasi.created'])),
   getAmWebhookLogs: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
+  logoutAmSession: jest.fn(() => Promise.resolve(undefined)),
   recordAmPageView: jest.fn(() => Promise.resolve(undefined)),
   restartAmTokopediaSession: jest.fn(() => Promise.resolve({restarted: true, wasRunning: true})),
   retryAmTransfer: jest.fn(() => Promise.resolve({_id: 'transfer-1'})),
@@ -1886,6 +1888,13 @@ describe('KolamAmSurface', () => {
     });
 
     expect(renderText(renderer!).join(' ')).toContain('Tidak ada perubahan profile untuk disimpan.');
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Account Logout'}).props.onPress();
+    });
+
+    expect(logoutAmSession).toHaveBeenCalledTimes(1);
+    expect(renderText(renderer!).join(' ')).toContain('AM session logged out.');
   });
 
   it('runs user create, edit, and delete actions from the Users route', async () => {
