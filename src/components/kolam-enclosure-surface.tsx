@@ -65,14 +65,6 @@ const DASHBOARD_PRODUCTION_STATS_PAGE_SIZE = 10;
 const DASHBOARD_DEATH_PAGE_SIZE = 10;
 const PRODUCTION_DIAGRAM_TOP_N = 6;
 
-const DASHBOARD_SPECIES_COLUMNS: KolamTableColumn[] = [
-  {id: 'meta', label: '', align: 'left', width: 56},
-  {id: 'primary', label: 'Species', align: 'left'},
-  {id: 'notes', label: 'Varian', align: 'left', width: 180},
-  {id: 'children', label: 'Qty', align: 'right', width: 112},
-  {id: 'amount', label: 'Enclosure', align: 'right', width: 112},
-];
-
 const DASHBOARD_DEATH_COLUMNS: KolamTableColumn[] = [
   {id: 'meta', label: 'Waktu', align: 'left', width: 142},
   {id: 'children', label: 'Enclosure', align: 'left', width: 120},
@@ -763,13 +755,6 @@ function KolamEnclosureDashboardPanel({
         speciesDistinct={stats.production.speciesDistinct}
         totalQty={stats.production.totalQty}
       />
-      <DashboardSpeciesTable
-        rows={stats.saleable.rows}
-        speciesDistinct={stats.saleable.speciesDistinct}
-        subtitle="Breakdown per species - kandang siap jual."
-        title="Stok jual"
-        totalQty={stats.saleable.totalQty}
-      />
       <DashboardDeathTable
         events={stats.deaths.recent}
         onRouteChange={onRouteChange}
@@ -1016,129 +1001,6 @@ function buildProductionDiagramRows(
     ...item,
     percent: Math.max(6, Math.round((item.qty / maxQty) * 100)),
   }));
-}
-
-function DashboardSpeciesTable({
-  rows,
-  speciesDistinct,
-  subtitle,
-  title,
-  totalQty,
-}: {
-  rows: KolamEnclosureDashboardSpeciesRow[];
-  speciesDistinct: number;
-  subtitle: string;
-  title: string;
-  totalQty: number;
-}) {
-  const [page, setPage] = React.useState(1);
-  const totalPages = Math.max(
-    1,
-    Math.ceil(rows.length / DASHBOARD_SPECIES_PAGE_SIZE),
-  );
-  const safePage = Math.min(page, totalPages);
-  const pageRows = rows.slice(
-    (safePage - 1) * DASHBOARD_SPECIES_PAGE_SIZE,
-    safePage * DASHBOARD_SPECIES_PAGE_SIZE,
-  );
-
-  React.useEffect(() => {
-    setPage(1);
-  }, [rows]);
-
-  return (
-    <View style={styles.dashboardTableBlock}>
-      <SectionHeading
-        meta={`${speciesDistinct} jenis / ${totalQty} ekor total`}
-        subtitle={subtitle}
-        title={title}
-      />
-      <KolamCatalogListTableShell
-        footer={
-          rows.length > DASHBOARD_SPECIES_PAGE_SIZE ? (
-            <SimpleDashboardPagination
-              onPageChange={setPage}
-              page={safePage}
-              totalItems={rows.length}
-              totalPages={totalPages}
-            />
-          ) : (
-            <Text style={styles.sectionMeta}>{rows.length} baris</Text>
-          )
-        }
-        style={styles.tableFrame}
-      >
-        <View style={styles.dashboardTable}>
-          <KolamDataTableHeader columns={DASHBOARD_SPECIES_COLUMNS} />
-          {pageRows.length ? (
-            pageRows.map(row => (
-              <DashboardSpeciesRow
-                key={`${row.speciesId}:${row.variantId || ''}`}
-                row={row}
-              />
-            ))
-          ) : (
-            <View style={styles.emptyWrap}>
-              <KolamEmptyState
-                compact
-                message="Belum ada livestock."
-                title="Belum ada livestock"
-              />
-            </View>
-          )}
-        </View>
-      </KolamCatalogListTableShell>
-    </View>
-  );
-}
-
-function DashboardSpeciesRow({
-  row,
-}: {
-  row: KolamEnclosureDashboardSpeciesRow;
-}) {
-  const imageUri = getKolamFileUrl(row.thumbnailUrl);
-
-  return (
-    <KolamDataTableRowFrame>
-      <View style={styles.speciesThumbCell}>
-        {imageUri ? (
-          <KolamRemoteImage
-            accessibilityLabel={`Foto ${row.speciesName || 'species'}`}
-            resizeMode="cover"
-            scope="enclosure-dashboard-species"
-            sourceUri={imageUri}
-            style={styles.speciesThumb}
-          />
-        ) : (
-          <Text style={styles.mutedText}>-</Text>
-        )}
-      </View>
-      <View style={[styles.cell, styles.primaryCell]}>
-        <Text numberOfLines={1} style={styles.rowTitle}>
-          {row.speciesName || '-'}
-        </Text>
-        {row.scientificName ? (
-          <Text numberOfLines={1} style={styles.scientificText}>
-            {row.scientificName}
-          </Text>
-        ) : null}
-      </View>
-      <View style={[styles.cell, {width: dashboardWidthOf('notes')}]}>
-        <Text numberOfLines={2} style={styles.cellText}>
-          {row.variantLabel || '-'}
-        </Text>
-      </View>
-      <View style={[styles.cell, {width: dashboardWidthOf('children')}]}>
-        <Text style={styles.numText}>
-          {row.qty} {row.unit}
-        </Text>
-      </View>
-      <View style={[styles.cell, {width: dashboardWidthOf('amount')}]}>
-        <Text style={styles.numText}>{row.enclosureCount}</Text>
-      </View>
-    </KolamDataTableRowFrame>
-  );
 }
 
 function DashboardDeathTable({
@@ -1776,10 +1638,6 @@ function fitEnclosureListColumns(containerWidth: number): KolamTableColumn[] {
       secondaryMinWidth: 48,
     },
   );
-}
-
-function dashboardWidthOf(id: KolamTableColumn['id']) {
-  return DASHBOARD_SPECIES_COLUMNS.find(column => column.id === id)?.width;
 }
 
 function deathWidthOf(id: KolamTableColumn['id']) {
@@ -2459,16 +2317,6 @@ const styles = StyleSheet.create({
   dashboardTable: {
     gap: 0,
     overflow: 'visible',
-  },
-  speciesThumbCell: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: dashboardWidthOf('meta'),
-  },
-  speciesThumb: {
-    borderRadius: 6,
-    height: 36,
-    width: 36,
   },
   dashboardPagination: {
     alignItems: 'center',

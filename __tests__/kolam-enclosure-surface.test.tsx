@@ -240,7 +240,6 @@ describe('Kolam enclosure surface', () => {
     expect(root.findAllByProps({children: 'E'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: '!'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: '+'}).length).toBeGreaterThan(0);
-    expect(root.findAllByProps({children: 'Stok jual'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'Riwayat kematian'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'Ranitomeya'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'ENC-A'}).length).toBeGreaterThan(0);
