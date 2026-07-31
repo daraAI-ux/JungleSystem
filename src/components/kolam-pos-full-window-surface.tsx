@@ -1423,6 +1423,10 @@ function PosSubview({
               value={formatRupiah(activeSession.openingBalance)}
             />
             <PosCashMetric
+              label="Durasi"
+              value={formatPosDuration(activeSession.openedAt)}
+            />
+            <PosCashMetric
               label="Total Penjualan"
               value={formatRupiah(activeSession.snapshot?.totalSalesAmount ?? 0)}
             />
@@ -1541,6 +1545,26 @@ function formatPosDate(value: string) {
     minute: '2-digit',
     month: 'short',
   }).format(date);
+}
+
+function formatPosDuration(openedAt: string) {
+  const start = new Date(openedAt);
+
+  if (Number.isNaN(start.getTime())) {
+    return '-';
+  }
+
+  const totalMinutes = Math.floor(
+    Math.max(0, Date.now() - start.getTime()) / 60000,
+  );
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  if (hours > 0) {
+    return `${hours} jam ${minutes} mnt`;
+  }
+
+  return `${minutes} mnt`;
 }
 
 function cloneCheckoutState(checkout: CheckoutState): CheckoutState {
