@@ -376,14 +376,6 @@ function KolamComplaintList({
               />
             </View>
             <KolamButton
-              label={
-                controller.periodEditorOpen
-                  ? 'Tutup periode'
-                  : `Periode (${controller.complaintPeriodDays}h)`
-              }
-              onPress={controller.onTogglePeriodEditor}
-            />
-            <KolamButton
               disabled={controller.loading}
               label="Refresh"
               onPress={() => {
@@ -401,36 +393,6 @@ function KolamComplaintList({
           </View>
         </View>
       </View>
-
-      {controller.periodEditorOpen ? (
-        <View style={styles.periodCard}>
-          <Text style={styles.sectionTitle}>Atur periode keluhan</Text>
-          <Text style={styles.metaText}>
-            Default global jika produk/spesies tidak punya template T&C
-            dengan masa komplain. 0 = tanpa jendela komplain.
-          </Text>
-          <KolamFormTextField
-            mode="numeric"
-            onChangeText={controller.onChangePeriodDraft}
-            placeholder="Jumlah hari"
-            value={controller.periodDraft}
-          />
-          <View style={styles.photoActions}>
-            <KolamButton
-              label="Batal"
-              onPress={controller.onTogglePeriodEditor}
-            />
-            <KolamButton
-              disabled={controller.mutating}
-              intent="primary"
-              label={controller.mutating ? 'Menyimpan…' : 'Simpan periode'}
-              onPress={() => {
-                void controller.onSaveComplaintPeriodDays();
-              }}
-            />
-          </View>
-        </View>
-      ) : null}
 
       <KolamCatalogListTableShell
         footer={
@@ -2810,14 +2772,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-  },
-  periodCard: {
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: StyleSheet.hairlineWidth,
-    gap: 8,
-    marginHorizontal: 4,
-    padding: 12,
   },
   localPhotoItem: {
     gap: 4,

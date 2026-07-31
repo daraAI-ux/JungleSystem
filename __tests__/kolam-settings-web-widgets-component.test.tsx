@@ -737,6 +737,7 @@ describe('settings web widgets', () => {
 
   it('routes operational controls through scoped save handlers', async () => {
     const onSave = jest.fn();
+    const onSaveOperationalComplaintPeriod = jest.fn();
     const onSaveOperationalGoogleAuth = jest.fn();
     const onSaveOperationalLivechat = jest.fn();
     const onSaveOperationalMaintenance = jest.fn();
@@ -752,6 +753,7 @@ describe('settings web widgets', () => {
             draft: {
               ...createWebSettingDraft(),
               googleOAuthClientId: 'client-1',
+              complaintPeriodDays: '7',
               poWorkflowReceivingRoomId: 'room-a',
             },
             operationalRooms: [
@@ -774,6 +776,7 @@ describe('settings web widgets', () => {
               },
             ],
             onSave,
+            onSaveOperationalComplaintPeriod,
             onSaveOperationalGoogleAuth,
             onSaveOperationalLivechat,
             onSaveOperationalMaintenance,
@@ -791,6 +794,8 @@ describe('settings web widgets', () => {
 
     expect(text).toContain('Maya Staff');
     expect(text).toContain('bima@dunia-anura.test');
+    expect(text).toContain('Periode keluhan');
+    expect(text).toContain('Default komplain (hari)');
     expect(text).not.toContain('staff-1');
     expect(text).not.toContain('staff-2');
     const staffCheckboxes = renderer!.root.findAll(
@@ -817,6 +822,9 @@ describe('settings web widgets', () => {
       buttons
         .find(node => node.props.label === 'Simpan absensi')!
         .props.onPress();
+      buttons
+        .find(node => node.props.label === 'Simpan periode keluhan')!
+        .props.onPress();
     });
 
     expect(onSaveOperationalMaintenance).toHaveBeenCalledWith(
@@ -837,6 +845,7 @@ describe('settings web widgets', () => {
       poWorkflowNotifyReceiveUserIds: 'staff-1',
     });
     expect(onSaveOperationalStaffAttendance).toHaveBeenCalledTimes(1);
+    expect(onSaveOperationalComplaintPeriod).toHaveBeenCalledTimes(1);
     expect(onSave).not.toHaveBeenCalled();
   });
 
@@ -1107,6 +1116,7 @@ function createWebSettingDraft() {
     livechatOnline: true,
     webstoreGoogleAuthEnabled: false,
     googleOAuthClientId: '',
+    complaintPeriodDays: '3',
     poWorkflowReceivingRoomId: '',
     poWorkflowNotifyOnReceive: true,
     poWorkflowNotifyOnCheck: true,

@@ -44,6 +44,10 @@ import {
 } from '../domain/settings-surface';
 import type { SyncActivityEntry } from '../domain/sync-activity';
 import {
+  normalizeKolamComplaintPeriodDays,
+  validateKolamComplaintPeriodDaysInput,
+} from '../domain/kolam-complaint';
+import {
   createKolamRole,
   deleteKolamRole,
   getKolamActivityLogs,
@@ -344,6 +348,7 @@ interface WebSettingDraft {
   livechatOnline: boolean;
   webstoreGoogleAuthEnabled: boolean;
   googleOAuthClientId: string;
+  complaintPeriodDays: string;
   poWorkflowReceivingRoomId: string;
   poWorkflowNotifyOnReceive: boolean;
   poWorkflowNotifyOnCheck: boolean;
@@ -620,6 +625,7 @@ const emptyWebSettingDraft: WebSettingDraft = {
   livechatOnline: false,
   webstoreGoogleAuthEnabled: false,
   googleOAuthClientId: '',
+  complaintPeriodDays: '3',
   poWorkflowReceivingRoomId: '',
   poWorkflowNotifyOnReceive: true,
   poWorkflowNotifyOnCheck: true,
@@ -3438,6 +3444,42 @@ export function useKolamSettingsPanelController(
     }
   };
 
+  const saveOperationalComplaintPeriod = async () => {
+    const previous = webSettingDraft.complaintPeriodDays;
+    const validationError = validateKolamComplaintPeriodDaysInput(
+      webSettingDraft.complaintPeriodDays,
+    );
+    if (validationError) {
+      setWebSettingSaveStatus('error');
+      setWebSettingMessage(validationError);
+      return;
+    }
+
+    const days = normalizeKolamComplaintPeriodDays(
+      webSettingDraft.complaintPeriodDays,
+    );
+
+    setWebSettingSaveStatus('saving');
+    setWebSettingMessage('');
+    setWebSettingDraftFields({ complaintPeriodDays: String(days) }, false);
+
+    try {
+      const updated = await updateKolamWebSetting({
+        complaintPeriodDays: days,
+      });
+      setWebSetting({
+        ...updated,
+        complaintPeriodDays: days,
+      });
+      setWebSettingSaveStatus('saved');
+      setWebSettingMessage('Periode keluhan diperbarui.');
+    } catch (error) {
+      setWebSettingDraftFields({ complaintPeriodDays: previous }, false);
+      setWebSettingSaveStatus('error');
+      setWebSettingMessage(getWebSettingSaveErrorMessage(error));
+    }
+  };
+
   const saveOperationalGoogleAuth = async (
     patch: Partial<
       Pick<WebSettingDraft, 'webstoreGoogleAuthEnabled' | 'googleOAuthClientId'>
@@ -4302,6 +4344,7 @@ export function useKolamSettingsPanelController(
     saveNotificationToggle,
     saveShippingOrigin,
     saveStoreOperatingHours,
+    saveOperationalComplaintPeriod,
     saveOperationalGoogleAuth,
     saveOperationalLivechat,
     saveOperationalMaintenance,
@@ -4430,6 +4473,9 @@ function createWebSettingDraft(
     livechatOnline: setting.livechatOnline === true,
     webstoreGoogleAuthEnabled: setting.webstoreGoogleAuthEnabled === true,
     googleOAuthClientId: setting.googleOAuthClientId ?? '',
+    complaintPeriodDays: String(
+      normalizeKolamComplaintPeriodDays(setting.complaintPeriodDays),
+    ),
     poWorkflowReceivingRoomId: poWorkflow.receivingRoomId ?? '',
     poWorkflowNotifyOnReceive: poWorkflow.notifyOnReceive !== false,
     poWorkflowNotifyOnCheck: poWorkflow.notifyOnCheck !== false,

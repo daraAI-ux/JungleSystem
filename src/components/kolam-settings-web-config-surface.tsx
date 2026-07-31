@@ -269,6 +269,7 @@ type WebSettingDraft = {
   livechatOnline: boolean;
   webstoreGoogleAuthEnabled: boolean;
   googleOAuthClientId: string;
+  complaintPeriodDays: string;
   poWorkflowReceivingRoomId: string;
   poWorkflowNotifyOnReceive: boolean;
   poWorkflowNotifyOnCheck: boolean;
@@ -874,6 +875,7 @@ export function KolamSettingsWebConfigSurface({
   onSaveNotificationToggle = noopSaveNotificationToggle,
   onSaveShippingOrigin = noop,
   onSaveStoreOperatingHours = noop,
+  onSaveOperationalComplaintPeriod = noop,
   onSaveOperationalGoogleAuth,
   onSaveOperationalLivechat,
   onSaveOperationalMaintenance,
@@ -1053,6 +1055,7 @@ export function KolamSettingsWebConfigSurface({
   ) => void;
   onSaveShippingOrigin?: () => void;
   onSaveStoreOperatingHours?: () => void;
+  onSaveOperationalComplaintPeriod?: () => void;
   onSaveOperationalGoogleAuth: (
     patch: Partial<
       Pick<WebSettingDraft, 'webstoreGoogleAuthEnabled' | 'googleOAuthClientId'>
@@ -3423,6 +3426,51 @@ export function KolamSettingsWebConfigSurface({
                 )}
               </View>
             </View>
+          </View>
+          <View
+            style={[
+              styles.marketplaceControlSection,
+              styles.notificationSettingsCard,
+              styles.settingsTabCardSpacing,
+            ]}
+          >
+            <View style={styles.operationalCardHeaderRow}>
+              <KolamCopyStack
+                containerStyle={styles.operationalCardHeaderCopy}
+                items={[
+                  {
+                    id: 'operational-complaint-period-title',
+                    text: 'Periode keluhan',
+                    style: styles.marketplaceOverviewTitle,
+                  },
+                  {
+                    id: 'operational-complaint-period-meta',
+                    text: 'Default global jika produk/spesies tidak punya template T&C dengan masa komplain. Per item, atur di Syarat & Ketentuan. 0 = tanpa jendela komplain.',
+                    style: styles.marketplaceOverviewMeta,
+                  },
+                ]}
+              />
+              <KolamActionControlButton
+                label="Simpan periode keluhan"
+                loading={saveStatus === 'saving'}
+                loadingLabel="Menyimpan..."
+                disabled={disabled}
+                onPress={onSaveOperationalComplaintPeriod}
+              />
+            </View>
+            <KolamTextFieldRow
+              variant="settingsForm"
+              fieldWidth={settingsFieldWidth}
+              label="Default komplain (hari)"
+              description="Jumlah hari jendela komplain default (0 = tanpa jendela)."
+              value={draft.complaintPeriodDays}
+              onChangeText={value => {
+                if (!disabled) {
+                  setDraftField('complaintPeriodDays', value);
+                }
+              }}
+              placeholder="3"
+            />
           </View>
         </>
       ) : null}

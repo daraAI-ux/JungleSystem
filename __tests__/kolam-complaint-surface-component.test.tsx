@@ -73,22 +73,17 @@ const mockController: KolamComplaintController = {
   statusFilter: 'all',
   priorityFilter: 'all',
   categoryFilter: 'all',
-  complaintPeriodDays: 3,
-  periodDraft: '3',
-  periodEditorOpen: false,
   statusMessage: null,
   total: 1,
   totalPages: 1,
   onAssignStaff: jest.fn(async () => false),
   onBackToList: jest.fn(),
-  onChangePeriodDraft: jest.fn(),
   onCloseComplaint: jest.fn(async () => false),
   onConfirmRefundPayment: jest.fn(async () => false),
   onCreateComplaint: jest.fn(async () => null),
   onCreateNew: jest.fn(),
   onCreateRefundTransaction: jest.fn(async () => false),
   onRefresh: jest.fn(async () => undefined),
-  onSaveComplaintPeriodDays: jest.fn(async () => false),
   onSearchChange: jest.fn(),
   onSelectComplaint: jest.fn(async () => undefined),
   onSendRefundPayment: jest.fn(async () => false),
@@ -102,7 +97,6 @@ const mockController: KolamComplaintController = {
   onSetStatusFilter: jest.fn(),
   onSpawnServiceReworkVisit: jest.fn(async () => false),
   onSubmitReworkCustomerResponse: jest.fn(async () => false),
-  onTogglePeriodEditor: jest.fn(),
   onUpdateDecision: jest.fn(async () => false),
   onUpdateReturnStatus: jest.fn(async () => false),
   onUpdateReplacementStatus: jest.fn(async () => false),
@@ -133,7 +127,7 @@ function flattenText(value: React.ReactNode): string[] {
 }
 
 describe('KolamComplaintSurface', () => {
-  it('renders list polish controls and ticket rows', async () => {
+  it('renders list polish controls and ticket rows without period editor', async () => {
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
     await act(async () => {
@@ -144,30 +138,11 @@ describe('KolamComplaintSurface', () => {
 
     const text = renderText(renderer!);
     expect(text).toEqual(
-      expect.arrayContaining([
-        'COMP-1',
-        'INV-1',
-        'Periode (3h)',
-        'Baru',
-        'Proyek khusus',
-      ]),
+      expect.arrayContaining(['COMP-1', 'INV-1', 'Baru', 'Proyek khusus']),
     );
-  });
-
-  it('shows period editor when open', async () => {
-    mockController.periodEditorOpen = true;
-    let renderer: ReactTestRenderer.ReactTestRenderer;
-
-    await act(async () => {
-      renderer = ReactTestRenderer.create(
-        <KolamComplaintSurface route="/complaints" />,
-      );
-    });
-
-    const text = renderText(renderer!);
-    expect(text).toEqual(
+    expect(text).not.toEqual(expect.arrayContaining(['Periode (3h)']));
+    expect(text).not.toEqual(
       expect.arrayContaining(['Atur periode keluhan', 'Simpan periode']),
     );
-    mockController.periodEditorOpen = false;
   });
 });

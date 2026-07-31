@@ -212,6 +212,9 @@ export function KolamSettingsSurfaceBody({
         onSaveStoreOperatingHours={() => {
           void controller.saveStoreOperatingHours();
         }}
+        onSaveOperationalComplaintPeriod={() => {
+          void controller.saveOperationalComplaintPeriod();
+        }}
         onSaveOperationalGoogleAuth={patch => {
           void controller.saveOperationalGoogleAuth(patch);
         }}

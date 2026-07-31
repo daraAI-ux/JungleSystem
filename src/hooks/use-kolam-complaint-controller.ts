@@ -22,18 +22,12 @@ import {
   getKolamComplaintIdFromRoute,
   getKolamComplaintRouteMode,
   isKolamComplaintRoute,
-  normalizeKolamComplaintPeriodDays,
   validateKolamComplaintCreateInput,
-  validateKolamComplaintPeriodDaysInput,
 } from '../domain/kolam-complaint';
 import type { KolamSaleSourceOption } from '../domain/kolam-sales';
 import type { KolamUserListItem } from '../domain/kolam-user';
 import type { KolamWalletOption } from '../domain/kolam-wallet-option';
 import { getErrorMessage as getApiErrorMessage } from '../lib/api-error';
-import {
-  getKolamWebSetting,
-  updateKolamWebSetting,
-} from '../services/kolam-api';
 import { getKolamSalesActiveSources } from '../services/kolam-sales-api';
 import { getKolamUserList } from '../services/kolam-user-api';
 import { getKolamWalletOptionsPaginated } from '../services/kolam-wallet-option-api';
@@ -79,9 +73,6 @@ export interface KolamComplaintController {
   statusFilter: KolamComplaintStatus | 'all';
   priorityFilter: KolamComplaintPriority | 'all';
   categoryFilter: KolamComplaintCategory | 'all';
-  complaintPeriodDays: number;
-  periodDraft: string;
-  periodEditorOpen: boolean;
   statusMessage: string | null;
   total: number;
   totalPages: number;
@@ -115,9 +106,6 @@ export interface KolamComplaintController {
   onSetStatusFilter: (value: KolamComplaintStatus | 'all') => void;
   onSetPriorityFilter: (value: KolamComplaintPriority | 'all') => void;
   onSetCategoryFilter: (value: KolamComplaintCategory | 'all') => void;
-  onTogglePeriodEditor: () => void;
-  onChangePeriodDraft: (value: string) => void;
-  onSaveComplaintPeriodDays: () => Promise<boolean>;
   onSendRefundPayment: (payload: {
     accountNumber: string;
     accountName: string;
@@ -220,9 +208,6 @@ export function useKolamComplaintController(
   const [categoryFilter, setCategoryFilter] = useState<
     KolamComplaintCategory | 'all'
   >('all');
-  const [complaintPeriodDays, setComplaintPeriodDays] = useState(3);
-  const [periodDraft, setPeriodDraft] = useState('3');
-  const [periodEditorOpen, setPeriodEditorOpen] = useState(false);
   const [customProjectOnly, setCustomProjectOnly] = useState(false);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -306,19 +291,6 @@ export function useKolamComplaintController(
     }
   }, []);
 
-  const loadComplaintPeriodDays = useCallback(async () => {
-    try {
-      const setting = await getKolamWebSetting();
-      const days = normalizeKolamComplaintPeriodDays(
-        setting.complaintPeriodDays,
-      );
-      setComplaintPeriodDays(days);
-      setPeriodDraft(String(days));
-    } catch {
-      // Non-blocking: keep default period days.
-    }
-  }, []);
-
   const loadSaleSources = useCallback(async () => {
     try {
       const sources = await getKolamSalesActiveSources();
@@ -338,9 +310,8 @@ export function useKolamComplaintController(
   useEffect(() => {
     if (mode === 'list') {
       void refreshList();
-      void loadComplaintPeriodDays();
     }
-  }, [loadComplaintPeriodDays, mode, refreshList]);
+  }, [mode, refreshList]);
 
   useEffect(() => {
     if (mode === 'detail') {
@@ -847,45 +818,6 @@ export function useKolamComplaintController(
     setPage(1);
   }, []);
 
-  const onTogglePeriodEditor = useCallback(() => {
-    setPeriodEditorOpen(open => {
-      const next = !open;
-      if (next) {
-        setPeriodDraft(String(complaintPeriodDays));
-      }
-      return next;
-    });
-  }, [complaintPeriodDays]);
-
-  const onChangePeriodDraft = useCallback((value: string) => {
-    setPeriodDraft(value);
-  }, []);
-
-  const onSaveComplaintPeriodDays = useCallback(async () => {
-    const validationError = validateKolamComplaintPeriodDaysInput(periodDraft);
-    if (validationError) {
-      setError(validationError);
-      return false;
-    }
-    const days = normalizeKolamComplaintPeriodDays(periodDraft);
-    setMutating(true);
-    setError(null);
-    setStatusMessage(null);
-    try {
-      await updateKolamWebSetting({ complaintPeriodDays: days });
-      setComplaintPeriodDays(days);
-      setPeriodDraft(String(days));
-      setPeriodEditorOpen(false);
-      setStatusMessage('Periode keluhan diperbarui.');
-      return true;
-    } catch (saveError) {
-      setError(getErrorMessage(saveError));
-      return false;
-    } finally {
-      setMutating(false);
-    }
-  }, [periodDraft]);
-
   return useMemo(
     () => ({
       complaints,
@@ -907,22 +839,17 @@ export function useKolamComplaintController(
       statusFilter,
       priorityFilter,
       categoryFilter,
-      complaintPeriodDays,
-      periodDraft,
-      periodEditorOpen,
       statusMessage,
       total,
       totalPages,
       onAssignStaff,
       onBackToList,
-      onChangePeriodDraft,
       onCloseComplaint,
       onConfirmRefundPayment,
       onCreateComplaint,
       onCreateNew,
       onCreateRefundTransaction,
       onRefresh,
-      onSaveComplaintPeriodDays,
       onSearchChange,
       onSelectComplaint,
       onSendRefundPayment,
@@ -936,7 +863,6 @@ export function useKolamComplaintController(
       onSetStatusFilter,
       onSpawnServiceReworkVisit,
       onSubmitReworkCustomerResponse,
-      onTogglePeriodEditor,
       onUpdateDecision,
       onUpdateReplacementReturnStatus,
       onUpdateReplacementStatus,
@@ -948,7 +874,6 @@ export function useKolamComplaintController(
     [
       categoryFilter,
       complaints,
-      complaintPeriodDays,
       customProjectOnly,
       dataSource,
       decisionFilter,
@@ -958,14 +883,12 @@ export function useKolamComplaintController(
       mutating,
       onAssignStaff,
       onBackToList,
-      onChangePeriodDraft,
       onCloseComplaint,
       onConfirmRefundPayment,
       onCreateComplaint,
       onCreateNew,
       onCreateRefundTransaction,
       onRefresh,
-      onSaveComplaintPeriodDays,
       onSearchChange,
       onSelectComplaint,
       onSendRefundPayment,
@@ -979,7 +902,6 @@ export function useKolamComplaintController(
       onSetStatusFilter,
       onSpawnServiceReworkVisit,
       onSubmitReworkCustomerResponse,
-      onTogglePeriodEditor,
       onUpdateDecision,
       onUpdateReplacementReturnStatus,
       onUpdateReplacementStatus,
@@ -989,8 +911,6 @@ export function useKolamComplaintController(
       onUpdateVendorClaim,
       page,
       pageSize,
-      periodDraft,
-      periodEditorOpen,
       priorityFilter,
       search,
       selectedComplaint,
