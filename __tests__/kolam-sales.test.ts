@@ -8,6 +8,7 @@ import {
   canUploadKolamSalePaymentProof,
   createInitialKolamSaleCreateForm,
   createInitialKolamSaleListFilters,
+  estimateKolamSaleCreateItemLineTotal,
   filterOptionsBySalesSource,
   filterOptionsBySalesSourceWithFallback,
   formatKolamSaleDeliveryStatusLabel,
@@ -710,6 +711,27 @@ describe('kolam sales domain', () => {
       '',
     );
     expect(validateKolamSaleCreatePayload(body).isValid).toBe(true);
+
+    const lineTotal = estimateKolamSaleCreateItemLineTotal(
+      {
+        ...form.items[0],
+        quantity: '2',
+        discountType: 'percentage',
+        discountAmount: '10',
+      },
+      [
+        {
+          id: '444444444444444444444444',
+          priceToSell: 100_000,
+          price: 90_000,
+        } as never,
+      ],
+      [],
+    );
+    expect(lineTotal.unitPrice).toBe(100_000);
+    expect(lineTotal.subtotal).toBe(200_000);
+    expect(lineTotal.discount).toBe(20_000);
+    expect(lineTotal.total).toBe(180_000);
 
     const marketplaceBody = buildKolamSaleCreateBody(
       {

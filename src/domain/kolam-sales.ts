@@ -1677,6 +1677,59 @@ export function estimateKolamSaleCreateItemShippingCost(
   return Math.max(0, method.pricingPrice || 0);
 }
 
+/** Preview unit price for create-form line totals (FE Total column). */
+export function resolveKolamSaleCreateItemUnitPrice(
+  item: KolamSaleCreateItemForm,
+  products: KolamProduct[],
+  speciesList: KolamSpecies[],
+): number {
+  if (item.itemType === 'custom') {
+    return Math.max(0, Number(item.customUnitPrice) || 0);
+  }
+  if (item.itemType === 'product' && item.productId.trim()) {
+    const product = products.find(row => row.id === item.productId);
+    return Math.max(0, product?.priceToSell ?? product?.price ?? 0);
+  }
+  if (item.itemType === 'species' && item.speciesId.trim()) {
+    const species = speciesList.find(row => row.id === item.speciesId);
+    return Math.max(0, species?.priceToSell ?? 0);
+  }
+  return 0;
+}
+
+/** Line total after per-item discount (excludes shipping; FE Total cell). */
+export function estimateKolamSaleCreateItemLineTotal(
+  item: KolamSaleCreateItemForm,
+  products: KolamProduct[],
+  speciesList: KolamSpecies[],
+): { discount: number; subtotal: number; total: number; unitPrice: number } {
+  const quantity =
+    item.itemType === 'enclosure'
+      ? 1
+      : Math.max(0, Number(item.quantity) || 0);
+  const unitPrice = resolveKolamSaleCreateItemUnitPrice(
+    item,
+    products,
+    speciesList,
+  );
+  const subtotal = unitPrice * quantity;
+  const discountRaw = Number(item.discountAmount);
+  let discount = 0;
+  if (Number.isFinite(discountRaw) && discountRaw > 0) {
+    discount =
+      item.discountType === 'percentage'
+        ? (subtotal * discountRaw) / 100
+        : discountRaw;
+  }
+  discount = Math.min(Math.max(0, discount), subtotal);
+  return {
+    unitPrice,
+    subtotal,
+    discount,
+    total: Math.max(0, subtotal - discount),
+  };
+}
+
 /** Exact FE external-buyer sources (`sales-create-form` EXTERNAL_BUYER_SOURCE_NAMES). */
 const EXTERNAL_BUYER_SOURCE_NAMES = new Set(['shopee', 'tokopedia']);
 

@@ -1,10 +1,11 @@
 ﻿import React, { useMemo, useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
-  formatKolamSaleDeliveryStatusLabel,
-  formatKolamSalePaymentStatusLabel,
+  estimateKolamSaleCreateItemLineTotal,
   estimateKolamSaleCreateItemShippingCost,
   filterKolamSaleCreateItemShippingMethods,
+  formatKolamSaleDeliveryStatusLabel,
+  formatKolamSalePaymentStatusLabel,
   getKolamSaleDeliveryStatusIntent,
   getKolamSalePaymentStatusIntent,
   isKolamSalesAddItemsRoute,
@@ -91,7 +92,7 @@ const ITEM_DISCOUNT_TYPE_OPTIONS = [
 ] as const;
 
 /** Fixed grid width so horizontal ScrollView can scroll (flexGrow catalog was swallowing siblings on RNW). */
-const SALE_CREATE_ITEM_GRID_WIDTH = 1100;
+const SALE_CREATE_ITEM_GRID_WIDTH = 1220;
 
 /**
  * Kolam backoffice penjualan (FE `/sales`).
@@ -681,6 +682,41 @@ function KolamSalesOpsCreateForm({
             </Text>
           </View>
           <View style={kolamTableToolbarStyles.actions}>
+            <View style={styles.toolbarPointsWrap}>
+              <KolamDropdownSelect
+                accessibilityLabel="Pilih metode poin"
+                label="Metode poin"
+                menuPlacement="inline"
+                onChange={pointsMethod =>
+                  controller.onChangeForm({
+                    pointsMethod: pointsMethod as
+                      | ''
+                      | 'manual'
+                      | 'product_based',
+                  })
+                }
+                options={[
+                  { label: 'Tanpa poin', value: '' },
+                  { label: 'Manual', value: 'manual' },
+                  { label: 'Berdasarkan produk', value: 'product_based' },
+                ]}
+                showLabelInTrigger={false}
+                style={styles.toolbarPointsDropdown}
+                triggerStyle={styles.toolbarPointsTrigger}
+                value={form.pointsMethod}
+              />
+              {form.pointsMethod === 'manual' ? (
+                <KolamFormTextField
+                  mode="numeric"
+                  onChangeText={manualPoints =>
+                    controller.onChangeForm({ manualPoints })
+                  }
+                  placeholder="Poin"
+                  style={styles.toolbarPointsInput}
+                  value={form.manualPoints}
+                />
+              ) : null}
+            </View>
             <KolamButton
               label="Batal"
               onPress={() => onRouteChange?.(backRoute)}
@@ -909,54 +945,6 @@ function KolamSalesOpsCreateForm({
           </View>
         ) : null}
 
-        <View style={styles.formSplitRow}>
-          <View style={styles.formSplitCell}>
-            <FieldShell label="Catatan">
-              <KolamFormTextField
-                onChangeText={notes => controller.onChangeForm({ notes })}
-                placeholder="Opsional"
-                value={form.notes}
-              />
-            </FieldShell>
-          </View>
-          <View style={styles.formSplitCell}>
-            <FieldShell label="Metode poin">
-              <KolamDropdownSelect
-                menuPlacement="inline"
-                accessibilityLabel="Pilih metode poin"
-                label="Metode poin"
-                onChange={pointsMethod =>
-                  controller.onChangeForm({
-                    pointsMethod: pointsMethod as
-                      | ''
-                      | 'manual'
-                      | 'product_based',
-                  })
-                }
-                options={[
-                  { label: 'Tanpa poin', value: '' },
-                  { label: 'Manual', value: 'manual' },
-                  { label: 'Berdasarkan produk', value: 'product_based' },
-                ]}
-                showLabelInTrigger={false}
-                value={form.pointsMethod}
-              />
-            </FieldShell>
-            {form.pointsMethod === 'manual' ? (
-              <FieldShell label="Poin manual">
-                <KolamFormTextField
-                  mode="numeric"
-                  onChangeText={manualPoints =>
-                    controller.onChangeForm({ manualPoints })
-                  }
-                  placeholder="0"
-                  value={form.manualPoints}
-                />
-              </FieldShell>
-            ) : null}
-          </View>
-        </View>
-
         {controller.optionsLoading ? (
           <Text style={styles.detailSubtitle}>Memuat opsi form…</Text>
         ) : null}
@@ -1000,6 +988,9 @@ function KolamSalesOpsCreateForm({
               <View style={styles.itemColDiscount}>
                 <Text style={styles.itemGridHeaderCell}>Diskon</Text>
               </View>
+              <View style={styles.itemColTotal}>
+                <Text style={styles.itemGridHeaderCell}>Total</Text>
+              </View>
               <View style={styles.itemColAction} />
             </View>
 
@@ -1018,6 +1009,11 @@ function KolamSalesOpsCreateForm({
               )
                 ? item.shippingMethodId
                 : '';
+              const lineTotal = estimateKolamSaleCreateItemLineTotal(
+                item,
+                controller.products,
+                controller.species,
+              );
 
               return (
               <View key={item.key} style={styles.itemGridBlock}>
@@ -1285,6 +1281,19 @@ function KolamSalesOpsCreateForm({
                     </View>
                   </View>
 
+                  <View style={styles.itemColTotal}>
+                    <View style={styles.itemTotalBox}>
+                      <Text numberOfLines={1} style={styles.itemTotalText}>
+                        {formatRupiah(lineTotal.total)}
+                      </Text>
+                      {lineTotal.discount > 0 ? (
+                        <Text numberOfLines={1} style={styles.itemTotalDiscount}>
+                          -{formatRupiah(lineTotal.discount)}
+                        </Text>
+                      ) : null}
+                    </View>
+                  </View>
+
                   <View style={styles.itemColAction}>
                     {form.items.length > 1 ? (
                       <KolamButton
@@ -1401,6 +1410,18 @@ function KolamSalesOpsCreateForm({
             </View>
           ))
         )}
+      </KolamContentFrame>
+
+      <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
+        <Text style={styles.sectionTitle}>Catatan</Text>
+        <FieldShell label="Catatan invoice">
+          <KolamFormTextField
+            onChangeText={notes => controller.onChangeForm({ notes })}
+            placeholder="Opsional"
+            style={styles.notesInput}
+            value={form.notes}
+          />
+        </FieldShell>
       </KolamContentFrame>
     </ScrollView>
     </View>
@@ -2038,6 +2059,11 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     width: 168,
   },
+  itemColTotal: {
+    flexGrow: 0,
+    flexShrink: 0,
+    width: 110,
+  },
   itemColAction: {
     alignItems: 'flex-end',
     flexGrow: 0,
@@ -2082,6 +2108,43 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   itemControlFill: {
+    width: '100%',
+  },
+  itemTotalBox: {
+    justifyContent: 'center',
+    minHeight: V.control.inputHeight,
+    paddingVertical: 2,
+  },
+  itemTotalText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  itemTotalDiscount: {
+    color: V.colors.danger,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  toolbarPointsWrap: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexShrink: 0,
+    gap: 8,
+  },
+  toolbarPointsDropdown: {
+    minWidth: 0,
+    width: 168,
+  },
+  toolbarPointsTrigger: {
+    minWidth: 0,
+    width: '100%',
+  },
+  toolbarPointsInput: {
+    width: 88,
+  },
+  notesInput: {
     width: '100%',
   },
   itemCustomSummary: {
