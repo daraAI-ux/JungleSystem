@@ -87,6 +87,7 @@ export function KolamPosFullWindowSurface({
 }: KolamPosFullWindowSurfaceProps) {
   const {width} = useWindowDimensions();
   const [activeView, setActiveView] = React.useState<PosWindowView>('catalog');
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = React.useState(false);
   const columnCount = getCatalogColumnCount(width);
   const catalogRows = chunkCatalog(filteredCatalog, columnCount);
   const cartCount = checkout.cart.reduce(
@@ -341,7 +342,7 @@ export function KolamPosFullWindowSurface({
               intent="primary"
               size="md"
               disabled={!canCreateDraft || isCreatingSale}
-              onPress={onCreateSaleDraft}
+              onPress={() => setIsPaymentModalOpen(true)}
               style={styles.payButton}
             />
             <KolamButton
@@ -352,6 +353,20 @@ export function KolamPosFullWindowSurface({
           </View>
         ) : null}
       </View>
+      {isPaymentModalOpen ? (
+        <PosPaymentModal
+          isCreatingSale={isCreatingSale}
+          paymentMethods={paymentMethods.filter(method => method.active)}
+          selectedPaymentId={checkout.paymentMethodId}
+          total={finalTotal}
+          onClose={() => setIsPaymentModalOpen(false)}
+          onConfirm={() => {
+            setIsPaymentModalOpen(false);
+            onCreateSaleDraft();
+          }}
+          onSelectPaymentMethod={onSelectPaymentMethod}
+        />
+      ) : null}
     </View>
   );
 }
@@ -803,6 +818,255 @@ function formatPosDate(value: string) {
     minute: '2-digit',
     month: 'short',
   }).format(date);
+}
+
+function PosPaymentModal({
+  isCreatingSale,
+  paymentMethods,
+  selectedPaymentId,
+  total,
+  onClose,
+  onConfirm,
+  onSelectPaymentMethod,
+}: {
+  isCreatingSale: boolean;
+  paymentMethods: PaymentMethod[];
+  selectedPaymentId?: string;
+  total: number;
+  onClose: () => void;
+  onConfirm: () => void;
+  onSelectPaymentMethod: (methodId: string) => void;
+}) {
+  const selectedPayment = paymentMethods.find(
+    method => method.id === selectedPaymentId,
+  );
+  const isCash = selectedPayment ? isCashPaymentMethod(selectedPayment) : false;
+  const [paidAmount, setPaidAmount] = React.useState(() =>
+    total > 0 ? String(Math.round(total)) : '',
+  );
+  const paidValue = Number(paidAmount || 0);
+  const change = paidValue - total;
+  const quickAmounts = React.useMemo(() => getQuickPaymentAmounts(total), [total]);
+  const canConfirm = Boolean(selectedPayment) && (!isCash || paidValue >= total);
+
+  React.useEffect(() => {
+    setPaidAmount(total > 0 ? String(Math.round(total)) : '');
+  }, [total]);
+
+  return (
+    <View style={styles.paymentOverlay}>
+      <KolamInteractionFrame style={styles.paymentBackdrop} onPress={onClose} />
+      <View style={styles.paymentDialog}>
+        <View style={styles.paymentHeader}>
+          <View>
+            <Text style={styles.paymentTitle}>Pembayaran</Text>
+            <Text style={styles.paymentSubtitle}>
+              Pilih metode pembayaran dan konfirmasi.
+            </Text>
+          </View>
+          <KolamButton label="Tutup" intent="outline" size="sm" onPress={onClose} />
+        </View>
+
+        <View style={styles.paymentBody}>
+          <View style={styles.paymentColumn}>
+            <Text style={styles.paymentSectionLabel}>Metode Pembayaran</Text>
+            <ScrollView
+              style={styles.paymentMethodList}
+              contentContainerStyle={styles.paymentMethodListContent}>
+              {paymentMethods.length ? (
+                paymentMethods.map(method => (
+                  <KolamInteractionFrame
+                    key={method.id}
+                    onPress={() => onSelectPaymentMethod(method.id)}
+                    style={[
+                      styles.paymentMethodCard,
+                      selectedPaymentId === method.id &&
+                        styles.paymentMethodCardActive,
+                    ]}>
+                    <View style={styles.paymentMethodIcon}>
+                      <Text style={styles.paymentMethodIconText}>
+                        {isCashPaymentMethod(method) ? 'Rp' : '$'}
+                      </Text>
+                    </View>
+                    <View style={styles.paymentMethodCopy}>
+                      <Text
+                        style={[
+                          styles.paymentMethodName,
+                          selectedPaymentId === method.id &&
+                            styles.paymentMethodNameActive,
+                        ]}
+                        numberOfLines={1}>
+                        {method.name}
+                      </Text>
+                      <Text style={styles.paymentMethodMeta}>
+                        {isCashPaymentMethod(method)
+                          ? 'Tunai dengan hitung kembalian'
+                          : 'Konfirmasi non-tunai'}
+                      </Text>
+                    </View>
+                    {selectedPaymentId === method.id ? (
+                      <Text style={styles.paymentMethodCheck}>Terpilih</Text>
+                    ) : null}
+                  </KolamInteractionFrame>
+                ))
+              ) : (
+                <Text style={styles.paymentEmptyText}>
+                  Belum ada metode pembayaran aktif.
+                </Text>
+              )}
+            </ScrollView>
+          </View>
+
+          <View style={styles.paymentColumn}>
+            <View style={styles.paymentTotalCard}>
+              <Text style={styles.paymentTotalLabel}>Total Tagihan</Text>
+              <Text style={styles.paymentTotalValue}>{formatRupiah(total)}</Text>
+            </View>
+
+            {isCash ? (
+              <>
+                <View style={styles.paymentPaidCard}>
+                  <Text style={styles.paymentSectionLabel}>Jumlah Dibayar</Text>
+                  <Text style={styles.paymentPaidValue}>
+                    {formatRupiah(paidValue)}
+                  </Text>
+                </View>
+                <View style={styles.quickAmountGrid}>
+                  {quickAmounts.map(amount => (
+                    <KolamInteractionFrame
+                      key={amount.value}
+                      onPress={() => setPaidAmount(String(amount.value))}
+                      style={[
+                        styles.quickAmountButton,
+                        paidValue === amount.value &&
+                          styles.quickAmountButtonActive,
+                      ]}>
+                      <Text
+                        style={[
+                          styles.quickAmountText,
+                          paidValue === amount.value &&
+                            styles.quickAmountTextActive,
+                        ]}>
+                        {amount.label}
+                      </Text>
+                    </KolamInteractionFrame>
+                  ))}
+                </View>
+                <View style={styles.numpadGrid}>
+                  {['1', '2', '3', '4', '5', '6', '7', '8', '9', 'C', '0', '<'].map(
+                    key => (
+                      <KolamInteractionFrame
+                        key={key}
+                        onPress={() => {
+                          if (key === 'C') {
+                            setPaidAmount('');
+                          } else if (key === '<') {
+                            setPaidAmount(value => value.slice(0, -1));
+                          } else {
+                            setPaidAmount(value =>
+                              `${value}${key}`.replace(/^0+(?=\d)/, ''),
+                            );
+                          }
+                        }}
+                        style={[
+                          styles.numpadButton,
+                          key === 'C' && styles.numpadButtonDanger,
+                          key === '<' && styles.numpadButtonWarning,
+                        ]}>
+                        <Text
+                          style={[
+                            styles.numpadText,
+                            key === 'C' && styles.numpadTextDanger,
+                            key === '<' && styles.numpadTextWarning,
+                          ]}>
+                          {key === '<' ? 'Hapus' : key}
+                        </Text>
+                      </KolamInteractionFrame>
+                    ),
+                  )}
+                </View>
+                <View
+                  style={[
+                    styles.changeCard,
+                    change < 0 && styles.changeCardDanger,
+                  ]}>
+                  <Text style={styles.changeLabel}>
+                    {change >= 0 ? 'Kembalian' : 'Kurang'}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.changeValue,
+                      change < 0 && styles.changeValueDanger,
+                    ]}>
+                    {formatRupiah(Math.abs(change))}
+                  </Text>
+                </View>
+              </>
+            ) : (
+              <View style={styles.nonCashCard}>
+                <Text style={styles.nonCashTitle}>
+                  {selectedPayment
+                    ? `Konfirmasi ${selectedPayment.name}`
+                    : 'Pilih metode pembayaran'}
+                </Text>
+                <Text style={styles.nonCashText}>
+                  Pembayaran non-tunai akan dibuat sesuai total tagihan.
+                </Text>
+              </View>
+            )}
+          </View>
+        </View>
+
+        <View style={styles.paymentFooter}>
+          <KolamButton label="Batal" intent="outline" onPress={onClose} />
+          <KolamButton
+            label={isCreatingSale ? 'Memproses...' : 'Konfirmasi Pembayaran'}
+            intent="primary"
+            disabled={!canConfirm || isCreatingSale}
+            onPress={onConfirm}
+          />
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function isCashPaymentMethod(method: PaymentMethod) {
+  const normalized = method.name.toLowerCase();
+  return (
+    normalized.includes('cash') ||
+    normalized.includes('tunai') ||
+    normalized.includes('kas')
+  );
+}
+
+function getQuickPaymentAmounts(total: number) {
+  const roundedTotal = Math.max(0, Math.round(total));
+  const amounts: Array<{label: string; value: number}> = [
+    {label: 'Uang Pas', value: roundedTotal},
+  ];
+  const denominations = [10000, 20000, 50000, 100000, 200000, 500000];
+
+  denominations.forEach(denomination => {
+    const roundedUp =
+      Math.ceil(roundedTotal / denomination) * denomination || denomination;
+
+    if (
+      roundedUp > roundedTotal &&
+      !amounts.some(amount => amount.value === roundedUp)
+    ) {
+      amounts.push({label: formatRupiah(roundedUp), value: roundedUp});
+    }
+
+    if (
+      denomination > roundedTotal &&
+      !amounts.some(amount => amount.value === denomination)
+    ) {
+      amounts.push({label: formatRupiah(denomination), value: denomination});
+    }
+  });
+
+  return amounts.sort((left, right) => left.value - right.value).slice(0, 5);
 }
 
 function getCatalogColumnCount(width: number) {
@@ -1480,5 +1744,264 @@ const styles = StyleSheet.create({
   },
   payButton: {
     marginTop: 10,
+  },
+  paymentOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  paymentBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(15, 23, 42, 0.45)',
+  },
+  paymentDialog: {
+    width: '86%',
+    maxWidth: 920,
+    maxHeight: '90%',
+    overflow: 'hidden',
+    borderRadius: V.radius.lg,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.bg,
+  },
+  paymentHeader: {
+    minHeight: 68,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 16,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: 1,
+  },
+  paymentTitle: {
+    color: V.colors.fg,
+    fontSize: 18,
+    fontWeight: '900',
+  },
+  paymentSubtitle: {
+    marginTop: 3,
+    color: V.colors.mutedFg,
+    fontSize: 12,
+  },
+  paymentBody: {
+    flexDirection: 'row',
+    gap: 18,
+    padding: 18,
+  },
+  paymentColumn: {
+    flex: 1,
+    minWidth: 0,
+  },
+  paymentSectionLabel: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '900',
+  },
+  paymentMethodList: {
+    maxHeight: 430,
+    marginTop: 10,
+  },
+  paymentMethodListContent: {
+    gap: 8,
+  },
+  paymentMethodCard: {
+    minHeight: 72,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderRadius: V.radius.md,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    padding: 12,
+    backgroundColor: V.colors.bg,
+  },
+  paymentMethodCardActive: {
+    borderColor: V.colors.primary,
+    backgroundColor: V.colors.primarySoft,
+  },
+  paymentMethodIcon: {
+    width: 38,
+    height: 38,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: V.radius.md,
+    backgroundColor: V.colors.muted,
+  },
+  paymentMethodIconText: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '900',
+  },
+  paymentMethodCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  paymentMethodName: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '900',
+  },
+  paymentMethodNameActive: {
+    color: V.colors.primary,
+  },
+  paymentMethodMeta: {
+    marginTop: 3,
+    color: V.colors.mutedFg,
+    fontSize: 11,
+  },
+  paymentMethodCheck: {
+    color: V.colors.primary,
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  paymentEmptyText: {
+    borderRadius: V.radius.md,
+    padding: 12,
+    color: V.colors.mutedFg,
+    backgroundColor: V.colors.muted,
+    fontSize: 12,
+  },
+  paymentTotalCard: {
+    borderRadius: V.radius.lg,
+    padding: 16,
+    backgroundColor: V.colors.successSoft,
+  },
+  paymentTotalLabel: {
+    color: V.colors.success,
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  paymentTotalValue: {
+    marginTop: 4,
+    color: V.colors.success,
+    fontSize: 28,
+    fontWeight: '900',
+  },
+  paymentPaidCard: {
+    marginTop: 12,
+    borderRadius: V.radius.md,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    padding: 12,
+  },
+  paymentPaidValue: {
+    marginTop: 6,
+    color: V.colors.fg,
+    fontSize: 22,
+    fontWeight: '900',
+  },
+  quickAmountGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 12,
+  },
+  quickAmountButton: {
+    minHeight: 34,
+    justifyContent: 'center',
+    borderRadius: V.radius.md,
+    paddingHorizontal: 12,
+    backgroundColor: V.colors.muted,
+  },
+  quickAmountButtonActive: {
+    backgroundColor: V.colors.primary,
+  },
+  quickAmountText: {
+    color: V.colors.fg,
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  quickAmountTextActive: {
+    color: V.colors.primaryFg,
+  },
+  numpadGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 14,
+  },
+  numpadButton: {
+    width: '31.6%',
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: V.radius.md,
+    backgroundColor: V.colors.muted,
+  },
+  numpadButtonDanger: {
+    backgroundColor: V.colors.dangerSoft,
+  },
+  numpadButtonWarning: {
+    backgroundColor: V.colors.warningSoft,
+  },
+  numpadText: {
+    color: V.colors.fg,
+    fontSize: 16,
+    fontWeight: '900',
+  },
+  numpadTextDanger: {
+    color: V.colors.danger,
+  },
+  numpadTextWarning: {
+    color: V.colors.warning,
+    fontSize: 12,
+  },
+  changeCard: {
+    minHeight: 52,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 12,
+    borderRadius: V.radius.md,
+    paddingHorizontal: 14,
+    backgroundColor: V.colors.successSoft,
+  },
+  changeCardDanger: {
+    backgroundColor: V.colors.dangerSoft,
+  },
+  changeLabel: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  changeValue: {
+    color: V.colors.success,
+    fontSize: 18,
+    fontWeight: '900',
+  },
+  changeValueDanger: {
+    color: V.colors.danger,
+  },
+  nonCashCard: {
+    marginTop: 12,
+    borderRadius: V.radius.md,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    padding: 14,
+    backgroundColor: V.colors.mutedSoft,
+  },
+  nonCashTitle: {
+    color: V.colors.fg,
+    fontSize: 14,
+    fontWeight: '900',
+  },
+  nonCashText: {
+    marginTop: 4,
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    lineHeight: 17,
+  },
+  paymentFooter: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 10,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    borderTopColor: V.colors.border,
+    borderTopWidth: 1,
   },
 });
