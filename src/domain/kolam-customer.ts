@@ -110,7 +110,10 @@ export function normalizeKolamCustomerDetail(payload: unknown) {
 export function normalizeKolamCustomer(value: unknown): KolamCustomer | null {
   const record = asRecord(value);
   const id = getString(record, '_id') || getString(record, 'id');
-  const name = getString(record, 'name');
+  const name =
+    getString(record, 'name') ||
+    getString(record, 'username') ||
+    getString(record, 'email');
 
   if (!id || !name) {
     return null;

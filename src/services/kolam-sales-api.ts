@@ -21,7 +21,7 @@ import {
   normalizeKolamSaleAnalyticsOverview,
   normalizeKolamSaleList,
 } from '../domain/kolam-sales';
-import { getKolamActiveSources } from './kolam-source-api';
+import { getKolamActiveSources, getKolamSources } from './kolam-source-api';
 import {
   apiRequest,
   getAccessToken,
@@ -79,12 +79,29 @@ export async function getKolamSalesActiveSources(): Promise<
   KolamSaleSourceOption[]
 > {
   const rows = await getKolamActiveSources();
-  return rows.map(row => ({
-    id: row.id,
-    name: row.name,
-    type: row.type,
-    logoUri: row.logoUri,
-  }));
+  if (rows.length > 0) {
+    return rows.map(row => ({
+      id: row.id,
+      name: row.name,
+      type: row.type,
+      logoUri: row.logoUri,
+    }));
+  }
+
+  // Fallback when /source/active returns [] but master list still has actives.
+  const listed = await getKolamSources({
+    isActive: true,
+    limit: 1000,
+    page: 1,
+  });
+  return listed.items
+    .filter(item => item.isActive)
+    .map(item => ({
+      id: item.id,
+      name: item.name,
+      type: item.type,
+      logoUri: item.logoUri,
+    }));
 }
 
 export async function createKolamSale(

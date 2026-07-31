@@ -9,6 +9,7 @@ import {
   createInitialKolamSaleCreateForm,
   createInitialKolamSaleListFilters,
   filterOptionsBySalesSource,
+  filterOptionsBySalesSourceWithFallback,
   formatKolamSaleDeliveryStatusLabel,
   formatKolamSaleMutationError,
   formatKolamSalePaymentStatusLabel,
@@ -664,6 +665,16 @@ describe('kolam sales domain', () => {
     expect(
       isMarketplaceSalesSource({ type: 'online', name: 'Tokopedia Store' }),
     ).toBe(false);
+
+    const fallback = filterOptionsBySalesSourceWithFallback(
+      [{ name: 'Cash POS' }, { name: 'Transfer Bank' }],
+      { type: 'online', name: 'Shopee' },
+    );
+    expect(fallback.usedFallback).toBe(true);
+    expect(fallback.items.map(row => row.name)).toEqual([
+      'Cash POS',
+      'Transfer Bank',
+    ]);
   });
 
   it('builds and validates create sale payload including buyerInfo', () => {

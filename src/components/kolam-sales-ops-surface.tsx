@@ -944,6 +944,12 @@ function KolamSalesOpsCreateForm({
         {controller.optionsLoading ? (
           <Text style={styles.detailSubtitle}>Memuat opsi form…</Text>
         ) : null}
+        {controller.optionsChannelFilterRelaxed ? (
+          <Text style={styles.fieldHint}>
+            Filter channel sumber tidak cocok dengan nama pelanggan/metode —
+            menampilkan semua opsi agar form tetap bisa diisi.
+          </Text>
+        ) : null}
       </KolamContentFrame>
 
       <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">

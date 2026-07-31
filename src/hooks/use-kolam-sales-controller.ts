@@ -14,7 +14,7 @@ import {
   createInitialKolamSaleCreateForm,
   createInitialKolamSaleListFilters,
   EMPTY_KOLAM_SALE_ANALYTICS,
-  filterOptionsBySalesSource,
+  filterOptionsBySalesSourceWithFallback,
   formatKolamSaleMutationError,
   getKolamSaleAllowedDeliveryTransitions,
   getKolamSaleAllowedStatusTransitions,
@@ -119,6 +119,8 @@ export interface KolamSalesController {
   exporting: boolean;
   filteredCustomers: KolamCustomer[];
   filteredPaymentMethods: KolamPaymentMethod[];
+  /** True when channel filter emptied the list and UI fell back to all rows. */
+  optionsChannelFilterRelaxed: boolean;
   filters: KolamSaleListFilters;
   form: KolamSaleCreateFormState;
   livestockAllocations: KolamSaleLivestockAllocationRow[];
@@ -234,15 +236,22 @@ export function useKolamSalesController(route: string): KolamSalesController {
 
   const useBuyerInfo = isMarketplaceSalesSource(selectedSource);
 
-  const filteredCustomers = useMemo(
-    () => filterOptionsBySalesSource(customers, selectedSource),
+  const filteredCustomersResult = useMemo(
+    () => filterOptionsBySalesSourceWithFallback(customers, selectedSource),
     [customers, selectedSource],
   );
 
-  const filteredPaymentMethods = useMemo(
-    () => filterOptionsBySalesSource(paymentMethods, selectedSource),
+  const filteredPaymentMethodsResult = useMemo(
+    () =>
+      filterOptionsBySalesSourceWithFallback(paymentMethods, selectedSource),
     [paymentMethods, selectedSource],
   );
+
+  const filteredCustomers = filteredCustomersResult.items;
+  const filteredPaymentMethods = filteredPaymentMethodsResult.items;
+  const optionsChannelFilterRelaxed =
+    filteredCustomersResult.usedFallback ||
+    filteredPaymentMethodsResult.usedFallback;
 
   useEffect(() => {
     const nextMode = getKolamSaleSurfaceMode(route);
@@ -284,6 +293,19 @@ export function useKolamSalesController(route: string): KolamSalesController {
 
   const loadFormOptions = useCallback(async () => {
     const failures: string[] = [];
+    const capture = async <T,>(
+      label: string,
+      task: Promise<T>,
+      fallback: T,
+    ): Promise<T> => {
+      try {
+        return await task;
+      } catch (error) {
+        failures.push(`${label} (${getErrorMessage(error)})`);
+        return fallback;
+      }
+    };
+
     const [
       sourceRows,
       customerResult,
@@ -293,43 +315,37 @@ export function useKolamSalesController(route: string): KolamSalesController {
       serviceRows,
       enclosureRows,
     ] = await Promise.all([
-      getKolamSalesActiveSources().catch(() => {
-        failures.push('sumber');
-        return [] as KolamSaleSourceOption[];
+      capture('sumber', getKolamSalesActiveSources(), [] as KolamSaleSourceOption[]),
+      capture('pelanggan', getKolamCustomerList({page: 1, limit: CREATE_OPTIONS_LIMIT}), {
+        items: [],
+        pagination: {
+          page: 1,
+          limit: CREATE_OPTIONS_LIMIT,
+          total: 0,
+          totalPages: 1,
+        },
       }),
-      getKolamCustomerList({page: 1, limit: CREATE_OPTIONS_LIMIT}).catch(() => {
-        failures.push('pelanggan');
-        return {
-          items: [],
+      capture(
+        'metode pembayaran',
+        getKolamPaymentMethods({page: 1, limit: CREATE_OPTIONS_LIMIT}),
+        {
+          rows: [],
           pagination: {
+            total: 0,
             page: 1,
             limit: CREATE_OPTIONS_LIMIT,
-            total: 0,
             totalPages: 1,
           },
-        };
-      }),
-      getKolamPaymentMethods({page: 1, limit: CREATE_OPTIONS_LIMIT}).catch(
-        () => {
-          failures.push('metode pembayaran');
-          return {
-            rows: [],
-            pagination: {
-              total: 0,
-              page: 1,
-              limit: CREATE_OPTIONS_LIMIT,
-              totalPages: 1,
-            },
-          };
         },
       ),
-      getKolamProducts({
-        page: 1,
-        limit: CREATE_OPTIONS_LIMIT,
-        type: 'product',
-      }).catch(() => {
-        failures.push('produk');
-        return {
+      capture(
+        'produk',
+        getKolamProducts({
+          page: 1,
+          limit: CREATE_OPTIONS_LIMIT,
+          type: 'product',
+        }),
+        {
           data: [] as KolamProduct[],
           pagination: {
             page: 1,
@@ -337,15 +353,16 @@ export function useKolamSalesController(route: string): KolamSalesController {
             total: 0,
             totalPages: 1,
           },
-        };
-      }),
-      getKolamSpeciesList({
-        page: 1,
-        limit: CREATE_OPTIONS_LIMIT,
-        sellable: 'sellable',
-      }).catch(() => {
-        failures.push('spesies');
-        return {
+        },
+      ),
+      capture(
+        'spesies',
+        getKolamSpeciesList({
+          page: 1,
+          limit: CREATE_OPTIONS_LIMIT,
+          sellable: 'sellable',
+        }),
+        {
           data: [] as KolamSpecies[],
           pagination: {
             page: 1,
@@ -353,29 +370,35 @@ export function useKolamSalesController(route: string): KolamSalesController {
             total: 0,
             totalPages: 1,
           },
-        };
-      }),
-      getKolamSalesServices().catch(() => {
-        failures.push('layanan');
-        return [] as KolamSaleCatalogOption[];
-      }),
-      getKolamSalesEnclosuresForSale().catch(() => {
-        failures.push('enclosure');
-        return [] as KolamSaleCatalogOption[];
-      }),
+        },
+      ),
+      capture('layanan', getKolamSalesServices(), [] as KolamSaleCatalogOption[]),
+      capture(
+        'enclosure',
+        getKolamSalesEnclosuresForSale(),
+        [] as KolamSaleCatalogOption[],
+      ),
     ]);
+
+    // Match FE create form: keep inactive rows; prefer active when both exist.
+    const paymentRows = paymentResult.rows;
+    const activePayments = paymentRows.filter(row => row.isActive);
+    const nextPaymentMethods =
+      activePayments.length > 0 ? activePayments : paymentRows;
 
     setSources(sourceRows);
     setCustomers(customerResult.items);
-    setPaymentMethods(paymentResult.rows.filter(row => row.isActive));
+    setPaymentMethods(nextPaymentMethods);
     setProducts(productResult.data);
     setSpecies(speciesResult.data);
     setServices(serviceRows);
     setEnclosures(enclosureRows);
 
     if (failures.length > 0) {
-      setError(
-        `Sebagian opsi gagal dimuat: ${failures.join(', ')}. Coba Refresh.`,
+      setError(`Gagal memuat opsi: ${failures.join(' · ')}`);
+    } else {
+      setStatusMessage(
+        `Opsi dimuat: ${sourceRows.length} sumber, ${customerResult.items.length} pelanggan, ${nextPaymentMethods.length} metode.`,
       );
     }
 
@@ -1072,6 +1095,7 @@ export function useKolamSalesController(route: string): KolamSalesController {
     exporting,
     filteredCustomers,
     filteredPaymentMethods,
+    optionsChannelFilterRelaxed,
     filters,
     form,
     livestockAllocations,

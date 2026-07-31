@@ -1694,6 +1694,22 @@ export function filterOptionsBySalesSource<T extends { name: string }>(
   return options.filter(o => nameMatchesMarketplaceKeywords(o.name));
 }
 
+/**
+ * Same as filterOptionsBySalesSource, but if the channel filter removes every
+ * row while the raw catalog is non-empty, fall back to the raw list so create
+ * form dropdowns stay usable (with a UI hint).
+ */
+export function filterOptionsBySalesSourceWithFallback<T extends { name: string }>(
+  options: T[],
+  selectedSource: KolamSaleSourceFilterInput,
+): { items: T[]; usedFallback: boolean } {
+  const filtered = filterOptionsBySalesSource(options, selectedSource);
+  if (filtered.length === 0 && options.length > 0) {
+    return { items: options, usedFallback: true };
+  }
+  return { items: filtered, usedFallback: false };
+}
+
 /** Default staff sale source: offline POS, else first offline. */
 export function pickDefaultOfflinePosSourceId(
   sources: Array<{ id: string; type: string; name: string }>,
