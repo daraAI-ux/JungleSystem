@@ -4026,7 +4026,12 @@ function AmUsersPage() {
           <View key={user._id} style={styles.tableRow}>
             <Text style={[styles.cellText, styles.accountWideCol]} numberOfLines={1}>{user.fullName}</Text>
             <Text style={[styles.cellText, styles.accountCol]} numberOfLines={1}>@{user.username}</Text>
-            <Text style={[styles.cellText, styles.recipientCol]} numberOfLines={1}>{user.role?.name ?? '-'}</Text>
+            <View style={styles.recipientCol}>
+              <AmStatusChip
+                label={user.role?.name ?? 'Unknown'}
+                tone={getUserRoleTone(user.role?.name)}
+              />
+            </View>
             <Text style={[styles.cellText, styles.dateCol]}>{formatAmDate(user.createdAt)}</Text>
             <View style={styles.actionCol}>
               <View style={styles.inlineActions}>
@@ -4931,6 +4936,12 @@ function getActivityLogMethodTone(method: string): 'success' | 'warning' | 'dang
   if (method === 'POST') return 'success';
   if (method === 'PUT' || method === 'PATCH') return 'warning';
   if (method === 'DELETE') return 'danger';
+  return 'muted';
+}
+
+function getUserRoleTone(roleName?: string | null): 'success' | 'warning' | 'danger' | 'muted' {
+  if (roleName === 'Super Admin') return 'danger';
+  if (roleName === 'User') return 'warning';
   return 'muted';
 }
 

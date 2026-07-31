@@ -1775,6 +1775,7 @@ describe('KolamAmSurface', () => {
     });
     jest.mocked(getAmRoles).mockResolvedValue([
       {_id: 'role-admin', name: 'Admin', permissions: ['user:read'], description: 'Admin role'},
+      {_id: 'role-super', name: 'Super Admin', permissions: ['user:read', 'user:create'], description: 'Full access'},
     ]);
     jest.mocked(getAmUsers).mockResolvedValue({
       data: [
@@ -1904,6 +1905,14 @@ describe('KolamAmSurface', () => {
           createdAt: '2026-01-01T00:00:00.000Z',
           updatedAt: '2026-01-01T00:00:00.000Z',
         },
+        {
+          _id: 'user-2',
+          fullName: 'Root Admin',
+          username: 'root',
+          role: {_id: 'role-super', name: 'Super Admin', permissions: ['user:read', 'user:create'], description: 'Full access'},
+          createdAt: '2026-01-01T00:10:00.000Z',
+          updatedAt: '2026-01-01T00:10:00.000Z',
+        },
       ],
       meta: {total: 45, limit: 20, page: 1, totalPages: 3},
     });
@@ -1921,6 +1930,7 @@ describe('KolamAmSurface', () => {
     const text = renderText(renderer!).join(' ').replace(/\s+/g, ' ');
     expect(text).toContain('Showing 1 to 20 of 45 items');
     expect(text).toContain('Page 1/3');
+    expect(text).toContain('Super Admin');
 
     const searchInput = renderer!.root.findAllByType(TextInput)[0];
     await act(async () => {
