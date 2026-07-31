@@ -655,12 +655,14 @@ function PosCatalogCard({
           {isInCart ? <Text style={styles.inCartBadge}>OK</Text> : null}
         </View>
         <View style={styles.productCopy}>
-          <Text numberOfLines={1} style={styles.skuText}>
-            {item.code}
-          </Text>
-          {item.variantCount ? (
-            <Text style={styles.variantBadge}>{item.variantCount} Varian</Text>
-          ) : null}
+          <View style={styles.productInfoHeader}>
+            <Text numberOfLines={1} style={styles.skuText}>
+              {item.code}
+            </Text>
+            {item.variantCount ? (
+              <Text style={styles.variantBadge}>{item.variantCount} Varian</Text>
+            ) : null}
+          </View>
           <Text numberOfLines={2} style={styles.productName}>
             {item.name}
           </Text>
@@ -1636,16 +1638,20 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 8,
   },
+  productInfoHeader: {
+    minHeight: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   skuText: {
+    flex: 1,
+    minWidth: 0,
     color: V.colors.mutedFg,
     fontSize: 9,
     fontWeight: '700',
-    paddingRight: 58,
   },
   variantBadge: {
-    position: 'absolute',
-    right: 8,
-    top: 8,
     overflow: 'hidden',
     borderRadius: 4,
     paddingHorizontal: 5,
@@ -1678,7 +1684,7 @@ const styles = StyleSheet.create({
     minHeight: 30,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 8,
+    marginTop: 'auto',
     borderRadius: 6,
     backgroundColor: V.colors.primary,
   },
