@@ -101,6 +101,15 @@ export function KolamEnclosureSurface({
 }) {
   const controller = useKolamEnclosureController(route);
 
+  if (controller.mode === 'detail' || controller.mode === 'customer-detail') {
+    return (
+      <KolamEnclosureDetailSurface
+        controller={controller}
+        onRouteChange={onRouteChange}
+      />
+    );
+  }
+
   return (
     <View style={styles.surface}>
       {controller.error ? (
@@ -123,6 +132,303 @@ export function KolamEnclosureSurface({
         controller={controller}
         onRouteChange={onRouteChange}
       />
+    </View>
+  );
+}
+
+function KolamEnclosureDetailSurface({
+  controller,
+  onRouteChange,
+}: {
+  controller: KolamEnclosureController;
+  onRouteChange?: (route: string) => void;
+}) {
+  const enclosure = controller.selectedEnclosure;
+
+  if (controller.loading && controller.dataSource === 'idle') {
+    return <InlineState title="Memuat detail enclosure..." />;
+  }
+  if (controller.error) {
+    return (
+      <View style={styles.surface}>
+        <InlineState
+          message={controller.error}
+          title="Gagal memuat detail enclosure"
+        />
+        <View style={styles.detailActions}>
+          <KolamButton
+            label="Daftar"
+            onPress={() => onRouteChange?.(`${KOLAM_ENCLOSURE_ROOT}?scope=dashboard`)}
+          />
+          <KolamButton
+            disabled={controller.loading}
+            label="Refresh"
+            onPress={() => void controller.onRefresh()}
+          />
+        </View>
+      </View>
+    );
+  }
+  if (!enclosure) {
+    return (
+      <InlineState
+        message="Data enclosure tidak ditemukan dari response Kolam."
+        title="Enclosure tidak ditemukan"
+      />
+    );
+  }
+
+  const coverUri = getKolamFileUrl(enclosure.coverPhotoUrl);
+  const photoUris = getEnclosureDetailPhotoUris(enclosure);
+  const sizeText = formatEnclosureSize(enclosure);
+  const volumeText =
+    enclosure.computed.volumeLiters != null
+      ? `${enclosure.computed.volumeLiters} L`
+      : '-';
+  const scopeLabel =
+    enclosure.clientScope === 'client_linked' ? 'Customer' : 'Internal';
+
+  return (
+    <ScrollView contentContainerStyle={styles.detailContent}>
+      <View style={styles.detailHeader}>
+        <View style={styles.detailHeaderPhoto}>
+          {coverUri ? (
+            <KolamRemoteImage
+              accessibilityLabel={`Foto ${enclosure.name || enclosure.code}`}
+              resizeMode="cover"
+              scope="enclosure-detail-cover"
+              sourceUri={coverUri}
+              style={styles.detailHeaderPhotoImage}
+            />
+          ) : (
+            <Text style={styles.mutedText}>-</Text>
+          )}
+        </View>
+        <View style={styles.detailHeaderCopy}>
+          <Text numberOfLines={2} style={styles.detailTitle}>
+            {enclosure.name || enclosure.code || 'Enclosure'}
+          </Text>
+          <View style={styles.detailBadgeRow}>
+            {enclosure.code ? (
+              <Text numberOfLines={1} style={styles.detailCode}>
+                {enclosure.code}
+              </Text>
+            ) : null}
+            {enclosure.type ? (
+              <KolamStatusBadge
+                intent="muted"
+                label={String(enclosure.type)}
+                textStyle={styles.badgeTextSm}
+              />
+            ) : null}
+            <KolamStatusBadge
+              intent={getEnclosureStatusIntent(enclosure.status)}
+              label={enclosure.status || 'active'}
+              textStyle={styles.badgeTextSm}
+            />
+            <KolamStatusBadge
+              intent={enclosure.livestockPurpose === 'production' ? 'warning' : 'muted'}
+              label={getLivestockPurposeLabel(enclosure.livestockPurpose)}
+              textStyle={styles.badgeTextSm}
+            />
+            <KolamStatusBadge
+              intent={enclosure.clientScope === 'client_linked' ? 'success' : 'muted'}
+              label={scopeLabel}
+              textStyle={styles.badgeTextSm}
+            />
+          </View>
+          <Text numberOfLines={2} style={styles.rowMeta}>
+            {[enclosure.location?.name, enclosure.assignedTo?.displayName]
+              .filter(Boolean)
+              .join(' / ') || 'Lokasi dan PIC belum lengkap'}
+          </Text>
+        </View>
+        <View style={styles.detailActions}>
+          <KolamButton
+            label="Daftar"
+            onPress={() => onRouteChange?.(`${KOLAM_ENCLOSURE_ROOT}?scope=dashboard`)}
+          />
+          <KolamButton
+            label="Edit"
+            onPress={() =>
+              onRouteChange?.(`${KOLAM_ENCLOSURE_ROOT}/${enclosure.id}/edit`)
+            }
+          />
+        </View>
+      </View>
+
+      <View style={styles.detailOverviewGrid}>
+        <View style={styles.detailMediaPanel}>
+          <View style={styles.detailMainPhoto}>
+            {coverUri ? (
+              <KolamRemoteImage
+                accessibilityLabel={`Foto utama ${enclosure.name || enclosure.code}`}
+                resizeMode="cover"
+                scope="enclosure-detail-gallery"
+                sourceUri={coverUri}
+                style={styles.detailMainPhotoImage}
+              />
+            ) : (
+              <Text style={styles.mutedText}>Tidak ada foto</Text>
+            )}
+          </View>
+          {photoUris.length > 1 ? (
+            <View style={styles.detailThumbRow}>
+              {photoUris.slice(0, 4).map((uri, index) => (
+                <KolamRemoteImage
+                  accessibilityLabel={`Foto enclosure ${index + 1}`}
+                  key={`${uri}:${index}`}
+                  resizeMode="cover"
+                  scope="enclosure-detail-thumbs"
+                  sourceUri={uri}
+                  style={styles.detailThumb}
+                />
+              ))}
+            </View>
+          ) : null}
+        </View>
+
+        <View style={styles.detailInfoPanel}>
+          {enclosure.livestockPurpose === 'production' ? (
+            <View style={styles.detailWarningBand}>
+              <Text style={styles.warningText}>
+                Kandang produksi (indukan - tidak dijual)
+              </Text>
+            </View>
+          ) : null}
+          <View style={styles.detailFieldGrid}>
+            <DetailField label="Kode" value={enclosure.code || '-'} />
+            <DetailField label="Nama" value={enclosure.name || '-'} />
+            <DetailField
+              label="Tipe"
+              value={
+                [enclosure.type, getAquariumWaterLabel(enclosure.aquariumWaterType)]
+                  .filter(Boolean)
+                  .join(' / ') || '-'
+              }
+            />
+            <DetailField
+              label="Livestock"
+              value={getLivestockPurposeLabel(enclosure.livestockPurpose)}
+            />
+            <DetailField label="Status" value={enclosure.status || 'active'} />
+            <DetailField label="Scope" value={scopeLabel} />
+            <DetailField
+              label="Customer"
+              value={enclosure.customer?.name || '-'}
+            />
+            <DetailField
+              label="Lokasi"
+              value={
+                [enclosure.location?.name, enclosure.location?.code]
+                  .filter(Boolean)
+                  .join(' / ') || '-'
+              }
+            />
+            <DetailField
+              label="PIC"
+              value={enclosure.assignedTo?.displayName || '-'}
+            />
+            <DetailField label="Ukuran" value={sizeText || '-'} />
+            <DetailField label="Volume" value={volumeText} />
+            <DetailField
+              label="Usia"
+              value={enclosure.computed.ageLabel || '-'}
+            />
+            <DetailField
+              label="Brand"
+              value={enclosure.brand?.name || '-'}
+            />
+            <DetailField
+              label="Sale status"
+              value={getSaleStatusLabel(enclosure.saleStatus)}
+            />
+          </View>
+        </View>
+      </View>
+
+      {enclosure.note.trim() ? (
+        <DetailSection title="Catatan">
+          <Text style={styles.detailParagraph}>{enclosure.note}</Text>
+        </DetailSection>
+      ) : null}
+
+      <View style={styles.detailTwoColumn}>
+        <DetailSection title="Species di enclosure">
+          {enclosure.species.length ? (
+            enclosure.species.slice(0, 6).map(item => (
+              <View key={`${item.speciesId}:${item.variantId}`} style={styles.detailMiniRow}>
+                <KolamCopyStack
+                  containerStyle={styles.panelRowCopy}
+                  items={[
+                    {
+                      id: 'title',
+                      text: item.speciesName || item.scientificName || '-',
+                      style: styles.rowTitle,
+                    },
+                    {
+                      id: 'meta',
+                      text: [item.scientificName, item.variantLabel]
+                        .filter(Boolean)
+                        .join(' / '),
+                      style: styles.rowMeta,
+                    },
+                  ]}
+                />
+                <Text style={styles.qtyText}>
+                  {item.quantity} {item.unitLabel}
+                </Text>
+              </View>
+            ))
+          ) : (
+            <Text style={styles.mutedText}>Belum ada species.</Text>
+          )}
+        </DetailSection>
+        <DetailSection title="Parameter">
+          {enclosure.parameters.length ? (
+            enclosure.parameters.slice(0, 6).map(item => (
+              <View key={item.id || item.name} style={styles.detailMiniRow}>
+                <Text numberOfLines={1} style={styles.cellText}>
+                  {item.name || '-'}
+                </Text>
+                <Text style={styles.qtyText}>
+                  {item.currentValue ?? '-'} {item.unitLabel}
+                </Text>
+              </View>
+            ))
+          ) : (
+            <Text style={styles.mutedText}>Belum ada parameter.</Text>
+          )}
+        </DetailSection>
+      </View>
+    </ScrollView>
+  );
+}
+
+function DetailSection({
+  children,
+  title,
+}: {
+  children: React.ReactNode;
+  title: string;
+}) {
+  return (
+    <View style={styles.detailSection}>
+      <View style={styles.detailSectionHeader}>
+        <Text style={styles.sectionTitle}>{title}</Text>
+      </View>
+      <View style={styles.detailSectionBody}>{children}</View>
+    </View>
+  );
+}
+
+function DetailField({label, value}: {label: string; value: string}) {
+  return (
+    <View style={styles.detailField}>
+      <Text style={styles.detailFieldLabel}>{label}</Text>
+      <Text numberOfLines={2} style={styles.detailFieldValue}>
+        {value}
+      </Text>
     </View>
   );
 }
@@ -1829,6 +2135,17 @@ function collectAllocationEnclosureLinks(
   return [...byKey.values()];
 }
 
+function getEnclosureDetailPhotoUris(enclosure: KolamEnclosure) {
+  const uris: string[] = [];
+  for (const path of [enclosure.coverPhotoUrl, ...enclosure.photos]) {
+    const uri = getKolamFileUrl(path);
+    if (uri && !uris.includes(uri)) {
+      uris.push(uri);
+    }
+  }
+  return uris;
+}
+
 function formatDashboardDateTime(value: string) {
   if (!value) {
     return '-';
@@ -1857,6 +2174,9 @@ function getLivestockPurposeLabel(value: KolamEnclosureLivestockFilter | string)
 }
 
 function getAquariumWaterLabel(value: string) {
+  if (!value) {
+    return '';
+  }
   if (value === 'freshwater') {
     return 'Air tawar';
   }
@@ -1864,6 +2184,19 @@ function getAquariumWaterLabel(value: string) {
     return 'Air laut';
   }
   return value;
+}
+
+function getSaleStatusLabel(value: string) {
+  switch (value) {
+    case 'for_sale':
+      return 'Siap dijual';
+    case 'reserved':
+      return 'Direservasi invoice';
+    case 'sold':
+      return 'Terjual';
+    default:
+      return 'Belum dijual';
+  }
 }
 
 function getEnclosureStatusIntent(
@@ -1913,6 +2246,189 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     minHeight: 34,
     paddingHorizontal: 10,
+  },
+  detailContent: {
+    gap: 14,
+    paddingBottom: 24,
+  },
+  detailHeader: {
+    alignItems: 'center',
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    padding: 12,
+  },
+  detailHeaderPhoto: {
+    alignItems: 'center',
+    backgroundColor: V.colors.secondary,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    height: 56,
+    justifyContent: 'center',
+    overflow: 'hidden',
+    width: 56,
+  },
+  detailHeaderPhotoImage: {
+    height: 56,
+    width: 56,
+  },
+  detailHeaderCopy: {
+    flex: 1,
+    gap: 5,
+    minWidth: 220,
+  },
+  detailTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 18,
+    fontWeight: '900',
+  },
+  detailBadgeRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  detailCode: {
+    backgroundColor: V.colors.secondary,
+    borderRadius: 6,
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '800',
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+  },
+  detailActions: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  detailOverviewGrid: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 14,
+  },
+  detailMediaPanel: {
+    gap: 10,
+    maxWidth: 320,
+    minWidth: 240,
+    width: 300,
+  },
+  detailMainPhoto: {
+    alignItems: 'center',
+    aspectRatio: 1,
+    backgroundColor: V.colors.secondary,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    justifyContent: 'center',
+    overflow: 'hidden',
+    width: '100%',
+  },
+  detailMainPhotoImage: {
+    height: '100%',
+    width: '100%',
+  },
+  detailThumbRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  detailThumb: {
+    borderRadius: 6,
+    height: 58,
+    width: 58,
+  },
+  detailInfoPanel: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flex: 1,
+    gap: 12,
+    minWidth: 280,
+    padding: 12,
+  },
+  detailWarningBand: {
+    backgroundColor: V.colors.warningSoft,
+    borderColor: V.colors.warning,
+    borderRadius: 6,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  detailFieldGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  detailField: {
+    backgroundColor: V.colors.secondary,
+    borderRadius: 6,
+    flexGrow: 1,
+    minWidth: 150,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  detailFieldLabel: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+  },
+  detailFieldValue: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+    marginTop: 3,
+  },
+  detailSection: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flex: 1,
+    minWidth: 280,
+  },
+  detailSectionHeader: {
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  detailSectionBody: {
+    gap: 8,
+    padding: 12,
+  },
+  detailParagraph: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    lineHeight: 19,
+  },
+  detailTwoColumn: {
+    alignItems: 'stretch',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 14,
+  },
+  detailMiniRow: {
+    alignItems: 'center',
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    gap: 10,
+    paddingVertical: 8,
   },
   filterOverlayPanel: {
     backgroundColor: V.colors.bg,

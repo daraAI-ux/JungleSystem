@@ -4,6 +4,7 @@ import {
   normalizeKolamEnclosure,
   normalizeKolamEnclosureAllocationOverview,
   normalizeKolamEnclosureDashboardStats,
+  normalizeKolamEnclosureDetail,
   normalizeKolamEnclosureList,
   normalizeKolamEnclosurePendingAllocations,
   type KolamEnclosure,
@@ -57,6 +58,15 @@ export async function getKolamEnclosures(
 export async function getKolamEnclosureDashboardStats(): Promise<KolamEnclosureDashboardStats> {
   const response = await kolamRequest<unknown>(`${BASE}/dashboard-stats`);
   return normalizeKolamEnclosureDashboardStats(response);
+}
+
+export async function getKolamEnclosureDetail(
+  enclosureId: string,
+): Promise<KolamEnclosure> {
+  const response = await kolamRequest<unknown>(
+    `${BASE}/${encodeURIComponent(enclosureId)}`,
+  );
+  return normalizeKolamEnclosureDetail(response);
 }
 
 export async function getKolamPendingLivestockAllocations(
@@ -189,8 +199,20 @@ function normalizeStaffAssignee(value: unknown): KolamEnclosureStaffRef {
     username ||
     email ||
     id;
+  const hr = asRecord(record.hr);
 
-  return { id, firstName, lastName, username, email, displayName };
+  return {
+    id,
+    firstName,
+    lastName,
+    username,
+    email,
+    displayName,
+    photo:
+      getString(record, 'profile_picture') ||
+      getString(record, 'photo') ||
+      getString(hr, 'photo'),
+  };
 }
 
 function unwrapData(value: unknown) {

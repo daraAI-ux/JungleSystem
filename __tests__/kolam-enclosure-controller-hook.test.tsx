@@ -3,6 +3,7 @@ import ReactTestRenderer from 'react-test-renderer';
 import type {KolamEnclosureListResult} from '../src/domain/kolam-enclosure';
 import {useKolamEnclosureController} from '../src/hooks/use-kolam-enclosure-controller';
 import {
+  getKolamEnclosureDetail,
   getKolamEnclosureDashboardStats,
   getKolamEnclosureStaffAssignees,
   getKolamEnclosures,
@@ -12,6 +13,7 @@ import {
 
 jest.mock('../src/services/kolam-enclosure-api', () => ({
   getKolamEnclosureDashboardStats: jest.fn(),
+  getKolamEnclosureDetail: jest.fn(),
   getKolamEnclosureStaffAssignees: jest.fn(),
   getKolamEnclosures: jest.fn(),
   getKolamPendingLivestockAllocations: jest.fn(),
@@ -24,6 +26,9 @@ const getDashboardStatsMock =
   getKolamEnclosureDashboardStats as jest.MockedFunction<
     typeof getKolamEnclosureDashboardStats
   >;
+const getDetailMock = getKolamEnclosureDetail as jest.MockedFunction<
+  typeof getKolamEnclosureDetail
+>;
 const getStaffAssigneesMock =
   getKolamEnclosureStaffAssignees as jest.MockedFunction<
     typeof getKolamEnclosureStaffAssignees
@@ -71,9 +76,11 @@ describe('Kolam enclosure controller hook', () => {
         firstName: 'Keeper',
         id: 'u1',
         lastName: 'One',
+        photo: '',
         username: 'keeper',
       },
     ]);
+    getDetailMock.mockResolvedValue(createListResult().data[0]!);
     getEnclosuresMock.mockResolvedValue(createListResult());
     getPendingAllocationsMock.mockResolvedValue({
       items: [
@@ -289,6 +296,29 @@ describe('Kolam enclosure controller hook', () => {
     expect(controller.error).toBe('backend down');
     expect(controller.loading).toBe(false);
   });
+
+  it('loads selected enclosure for detail routes', async () => {
+    let latest: EnclosureController | null = null;
+
+    await ReactTestRenderer.act(async () => {
+      ReactTestRenderer.create(
+        <EnclosureHarness
+          route="/enclosures/enc-1"
+          onRender={controller => {
+            latest = controller;
+          }}
+        />,
+      );
+      await flushPromises();
+    });
+
+    expect(getDetailMock).toHaveBeenCalledWith('enc-1');
+    expect(requireController(latest).mode).toBe('detail');
+    expect(requireController(latest).selectedEnclosure).toEqual(
+      expect.objectContaining({id: 'enc-1', code: 'ENC-1'}),
+    );
+    expect(getDashboardStatsMock).not.toHaveBeenCalled();
+  });
 });
 
 function createListResult(): KolamEnclosureListResult {
@@ -309,9 +339,12 @@ function createListResult(): KolamEnclosureListResult {
           volumeLiters: null,
         },
         coverPhotoUrl: '',
+        photos: [],
         createdAt: '',
         customer: null,
         customerId: '',
+        brand: null,
+        brandId: '',
         id: 'enc-1',
         livestockPurpose: 'saleable',
         location: null,
@@ -326,7 +359,11 @@ function createListResult(): KolamEnclosureListResult {
           length: {unit: null, unitLabel: 'Cm', value: 20},
           width: {unit: null, unitLabel: 'Cm', value: 15},
         },
+        species: [],
+        speciesPopulationHistory: [],
         status: 'active',
+        parameters: [],
+        productionEggs: [],
         type: 'Aquarium',
         updatedAt: '',
       },

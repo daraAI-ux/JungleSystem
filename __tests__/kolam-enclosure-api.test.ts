@@ -4,6 +4,7 @@ import {
   createKolamEnclosure,
   deleteKolamEnclosure,
   getKolamEnclosureDashboardStats,
+  getKolamEnclosureDetail,
   getKolamEnclosureStaffAssignees,
   getKolamEnclosures,
   getKolamPendingLivestockAllocations,
@@ -57,6 +58,33 @@ describe('kolam enclosure api', () => {
         }),
         method: 'GET',
       }),
+    );
+  });
+
+  it('reads enclosure detail by id', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        data: {
+          _id: 'enc-1',
+          enclosure_code: 'ENC-1',
+          enclosure_name: 'Rack 1',
+          photo: ['/uploads/enc-1.jpg'],
+          species: [{ speciesId: 'sp-1', speciesName: 'Frog', quantity: 2 }],
+        },
+      }),
+    );
+
+    await expect(getKolamEnclosureDetail('enc-1')).resolves.toMatchObject({
+      code: 'ENC-1',
+      id: 'enc-1',
+      name: 'Rack 1',
+      photos: ['/uploads/enc-1.jpg'],
+      species: [{quantity: 2, speciesName: 'Frog'}],
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${appConfig.kolamApiBaseUrl}/enclosures/enc-1`,
+      expect.objectContaining({method: 'GET'}),
     );
   });
 

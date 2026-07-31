@@ -8,6 +8,7 @@ import {
   isKolamEnclosureRoute,
   normalizeKolamEnclosureAllocationOverview,
   normalizeKolamEnclosureDashboardStats,
+  normalizeKolamEnclosureDetail,
   normalizeKolamEnclosureList,
   normalizeKolamEnclosurePendingAllocations,
   parseKolamEnclosureListTab,
@@ -131,6 +132,74 @@ describe('Kolam enclosure domain', () => {
     expect(result.data[0]?.assignedTo?.displayName).toBe('Ada Lovelace');
     expect(result.data[0]?.size.high.unitLabel).toBe('Cm');
     expect(result.data[0]?.computed.volumeLiters).toBe(120);
+  });
+
+  it('normalizes enclosure detail fields from plugin response', () => {
+    const detail = normalizeKolamEnclosureDetail({
+      data: {
+        _id: 'enc-1',
+        brandId: {_id: 'brand-1', name: 'ZooMed', photos: ['/brand.jpg']},
+        computed: {ageLabel: '2 bulan', volumeLiters: 120},
+        enclosure_code: 'ENC-1',
+        enclosure_name: 'Rack 1',
+        enclosure_parameter: [
+          {
+            _id: 'param-1',
+            current_value: '28',
+            parameter_name: 'Temperature',
+            unit: {_id: 'c', initial: 'C'},
+          },
+        ],
+        photo: ['/uploads/a.jpg', '/uploads/b.jpg'],
+        productionEggs: [{quantity: 4, speciesId: 'sp-egg'}],
+        species: [
+          {
+            quantity: '3',
+            scientificName: 'Ranitomeya imitator',
+            speciesId: 'sp-1',
+            speciesName: 'Ranitomeya',
+            unitLabel: 'ekor',
+            variantLabel: 'Orange',
+          },
+        ],
+        speciesPopulationHistory: [
+          {
+            _id: 'hist-1',
+            delta: '-1',
+            eventType: 'death',
+            reason: 'sakit',
+            speciesName: 'Ranitomeya',
+          },
+        ],
+      },
+    });
+
+    expect(detail).toMatchObject({
+      brand: {id: 'brand-1', name: 'ZooMed', photos: ['/brand.jpg']},
+      code: 'ENC-1',
+      computed: {ageLabel: '2 bulan', volumeLiters: 120},
+      coverPhotoUrl: '/uploads/a.jpg',
+      id: 'enc-1',
+      name: 'Rack 1',
+      photos: ['/uploads/a.jpg', '/uploads/b.jpg'],
+    });
+    expect(detail.species[0]).toMatchObject({
+      quantity: 3,
+      scientificName: 'Ranitomeya imitator',
+      speciesName: 'Ranitomeya',
+      variantLabel: 'Orange',
+    });
+    expect(detail.speciesPopulationHistory[0]).toMatchObject({
+      delta: -1,
+      eventType: 'death',
+      reason: 'sakit',
+    });
+    expect(detail.productionEggs[0]).toMatchObject({quantity: 4});
+    expect(detail.parameters[0]).toMatchObject({
+      currentValue: 28,
+      name: 'Temperature',
+      unitLabel: 'C',
+    });
   });
 
   it('normalizes dashboard, pending, and allocation payloads', () => {

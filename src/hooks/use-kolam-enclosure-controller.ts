@@ -18,6 +18,7 @@ import {
 import {getErrorMessage} from '../lib/api-error';
 import {
   getKolamEnclosureDashboardStats,
+  getKolamEnclosureDetail,
   getKolamEnclosureStaffAssignees,
   getKolamEnclosures,
   getKolamPendingLivestockAllocations,
@@ -89,6 +90,7 @@ export interface KolamEnclosureController {
   pendingAllocations: KolamEnclosurePendingAllocation[];
   pendingTotal: number;
   routeEnclosureId: string;
+  selectedEnclosure: KolamEnclosure | null;
   staffAssignees: KolamEnclosureStaffRef[];
   statusMessage: string | null;
   onChangeFilters: (patch: Partial<KolamEnclosureListFilters>) => void;
@@ -112,6 +114,8 @@ export function useKolamEnclosureController(
     createInitialEnclosureListFilters(route),
   );
   const [enclosures, setEnclosures] = useState<KolamEnclosure[]>([]);
+  const [selectedEnclosure, setSelectedEnclosure] =
+    useState<KolamEnclosure | null>(null);
   const [dashboardStats, setDashboardStats] =
     useState<KolamEnclosureDashboardStats>(EMPTY_DASHBOARD_STATS);
   const [pendingAllocations, setPendingAllocations] = useState<
@@ -138,6 +142,7 @@ export function useKolamEnclosureController(
     routeRef.current = route;
     setMode(getKolamEnclosureSurfaceMode(route));
     setFilters(createInitialEnclosureListFilters(route));
+    setSelectedEnclosure(null);
     setError(null);
     setStatusMessage(null);
   }, [route]);
@@ -155,6 +160,23 @@ export function useKolamEnclosureController(
     setLoading(true);
     setError(null);
     try {
+      if (currentMode === 'detail' || currentMode === 'customer-detail') {
+        const enclosureId = getKolamEnclosureRouteId(route);
+        if (!enclosureId) {
+          setSelectedEnclosure(null);
+          setDataSource('error');
+          setError('ID enclosure tidak ditemukan.');
+          return;
+        }
+        const detail = await getKolamEnclosureDetail(enclosureId);
+        if (requestSeq.current !== activeRequest) {
+          return;
+        }
+        setSelectedEnclosure(detail);
+        setDataSource('live');
+        return;
+      }
+
       if (filters.scope === 'dashboard' || filters.scope === 'deaths') {
         const [stats, assignees] = await Promise.all([
           getKolamEnclosureDashboardStats(),
@@ -314,6 +336,7 @@ export function useKolamEnclosureController(
     pendingAllocations,
     pendingTotal,
     routeEnclosureId: getKolamEnclosureRouteId(route),
+    selectedEnclosure,
     staffAssignees,
     statusMessage,
     onChangeFilters,

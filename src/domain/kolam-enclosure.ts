@@ -66,6 +66,12 @@ export interface KolamEnclosureUnitRef {
   initial: string;
 }
 
+export interface KolamEnclosureBrandRef {
+  id: string;
+  name: string;
+  photos: string[];
+}
+
 export interface KolamEnclosureSizeDimension {
   value: number;
   unit: KolamEnclosureUnitRef | null;
@@ -96,8 +102,11 @@ export interface KolamEnclosure {
   note: string;
   status: string;
   coverPhotoUrl: string;
+  photos: string[];
   assignedTo: KolamEnclosureStaffRef | null;
   assignedToId: string;
+  brand: KolamEnclosureBrandRef | null;
+  brandId: string;
   customer: KolamEnclosureCustomerRef | null;
   customerId: string;
   location: KolamEnclosureLocationRef | null;
@@ -108,7 +117,62 @@ export interface KolamEnclosure {
   salePrice: number | null;
   size: KolamEnclosureSize;
   computed: KolamEnclosureComputed;
+  species: KolamEnclosureSpeciesRef[];
+  speciesPopulationHistory: KolamEnclosurePopulationHistory[];
+  productionEggs: KolamEnclosureProductionEgg[];
+  parameters: KolamEnclosureParameter[];
   createdAt: string;
+  updatedAt: string;
+  raw: unknown;
+}
+
+export interface KolamEnclosureSpeciesRef {
+  id: string;
+  speciesId: string;
+  speciesName: string;
+  scientificName: string;
+  variantId: string;
+  variantLabel: string;
+  thumbnailUrl: string;
+  quantity: number;
+  unitLabel: string;
+  displayLine: string;
+}
+
+export interface KolamEnclosurePopulationHistory {
+  id: string;
+  speciesId: string;
+  speciesName: string;
+  scientificName: string;
+  variantId: string;
+  variantLabel: string;
+  unitLabel: string;
+  delta: number;
+  enclosureQtyBefore: number | null;
+  enclosureQtyAfter: number | null;
+  reason: string;
+  eventType: string;
+  eventTypeLabel: string;
+  invoiceCode: string;
+  stockTransactionId: string;
+  createdAt: string;
+  photos: string[];
+}
+
+export interface KolamEnclosureProductionEgg {
+  speciesId: string;
+  speciesName: string;
+  scientificName: string;
+  quantity: number;
+  unitLabel: string;
+}
+
+export interface KolamEnclosureParameter {
+  id: string;
+  name: string;
+  currentValue: number | null;
+  unit: KolamEnclosureUnitRef | null;
+  unitLabel: string;
   updatedAt: string;
   raw: unknown;
 }
@@ -410,10 +474,17 @@ export function normalizeKolamEnclosure(value: unknown): KolamEnclosure {
   const assignedTo = normalizeKolamEnclosureStaff(record.assignedTo);
   const customer = normalizeKolamEnclosureCustomer(record.customer);
   const location = normalizeKolamEnclosureLocation(record.locationId);
+  const brand = normalizeKolamEnclosureBrand(record.brandId);
   const code =
     getString(record, 'enclosure_code') ||
     getString(record, 'enclosureCode') ||
     getString(record, 'code');
+  const photos = getStringArray(record.photo);
+  const coverPhotoUrl =
+    getString(record, 'coverPhotoUrl') ||
+    getString(record, 'cover_photo') ||
+    photos[0] ||
+    '';
 
   return {
     id: getId(record),
@@ -430,12 +501,12 @@ export function normalizeKolamEnclosure(value: unknown): KolamEnclosure {
     aquariumWaterType: getString(record, 'type_aquarium'),
     note: getString(record, 'note'),
     status: getString(record, 'status') || 'active',
-    coverPhotoUrl:
-      getString(record, 'coverPhotoUrl') ||
-      getString(record, 'cover_photo') ||
-      getFirstString(record.photo),
+    coverPhotoUrl,
+    photos,
     assignedTo,
     assignedToId: assignedTo?.id ?? getIdFromRef(record.assignedTo),
+    brand,
+    brandId: brand?.id ?? getIdFromRef(record.brandId),
     customer,
     customerId: customer?.id ?? getIdFromRef(record.customer),
     location,
@@ -448,6 +519,16 @@ export function normalizeKolamEnclosure(value: unknown): KolamEnclosure {
     salePrice: getNullableNumber(record, 'salePrice'),
     size: normalizeKolamEnclosureSize(record.enclosure_size),
     computed: normalizeKolamEnclosureComputed(record.computed),
+    species: getArray(record.species).map(normalizeKolamEnclosureSpeciesRef),
+    speciesPopulationHistory: getArray(
+      record.speciesPopulationHistory ?? record.species_population_history,
+    ).map(normalizeKolamEnclosurePopulationHistory),
+    productionEggs: getArray(record.productionEggs).map(
+      normalizeKolamEnclosureProductionEgg,
+    ),
+    parameters: getArray(record.enclosure_parameter).map(
+      normalizeKolamEnclosureParameter,
+    ),
     createdAt: getString(record, 'createdAt'),
     updatedAt: getString(record, 'updatedAt'),
     raw: value,
@@ -761,6 +842,24 @@ function normalizeKolamEnclosureCustomer(
   };
 }
 
+function normalizeKolamEnclosureBrand(
+  value: unknown,
+): KolamEnclosureBrandRef | null {
+  const record = asRecord(value);
+  const id = getId(record) || (typeof value === 'string' ? value.trim() : '');
+  const name = getString(record, 'name');
+
+  if (!id && !name) {
+    return null;
+  }
+
+  return {
+    id,
+    name: name || id,
+    photos: getStringArray(record.photos),
+  };
+}
+
 function normalizeKolamEnclosureLocation(
   value: unknown,
 ): KolamEnclosureLocationRef | null {
@@ -791,6 +890,102 @@ function normalizeUnitRef(value: unknown): KolamEnclosureUnitRef | null {
   }
 
   return { id, initial: initial || name || id, name };
+}
+
+function normalizeKolamEnclosureSpeciesRef(
+  value: unknown,
+): KolamEnclosureSpeciesRef {
+  const record = asRecord(value);
+  const speciesRecord = asRecord(record.species);
+  const speciesId =
+    getString(record, 'speciesId') ||
+    getId(speciesRecord) ||
+    getId(record);
+  const speciesName =
+    getString(record, 'speciesName') ||
+    getString(record, 'commonName') ||
+    getString(speciesRecord, 'commonName') ||
+    getString(speciesRecord, 'localName') ||
+    getString(speciesRecord, 'scientificName') ||
+    speciesId;
+  const scientificName =
+    getString(record, 'scientificName') ||
+    getString(speciesRecord, 'scientificName');
+
+  return {
+    id: getId(record) || speciesId,
+    speciesId,
+    speciesName,
+    scientificName,
+    variantId: getString(record, 'variantId'),
+    variantLabel: getString(record, 'variantLabel'),
+    thumbnailUrl:
+      getString(record, 'thumbnailImage') ||
+      getString(speciesRecord, 'thumbnailImage') ||
+      getFirstString(record.photos) ||
+      getFirstString(speciesRecord.photos),
+    quantity: getNumber(record, 'quantity') ?? 0,
+    unitLabel: getString(record, 'unitLabel') || 'ekor',
+    displayLine:
+      getString(record, 'displayLine') ||
+      [speciesName, getString(record, 'variantLabel')]
+        .filter(Boolean)
+        .join(' / '),
+  };
+}
+
+function normalizeKolamEnclosurePopulationHistory(
+  value: unknown,
+): KolamEnclosurePopulationHistory {
+  const record = asRecord(value);
+  return {
+    id: getId(record),
+    speciesId: getString(record, 'speciesId') || getIdFromRef(record.species),
+    speciesName: getString(record, 'speciesName'),
+    scientificName: getString(record, 'scientificName'),
+    variantId: getString(record, 'variantId'),
+    variantLabel: getString(record, 'variantLabel'),
+    unitLabel: getString(record, 'unitLabel') || 'ekor',
+    delta: getNumber(record, 'delta') ?? 0,
+    enclosureQtyBefore: getNullableNumber(record, 'enclosureQtyBefore'),
+    enclosureQtyAfter: getNullableNumber(record, 'enclosureQtyAfter'),
+    reason: getString(record, 'reason'),
+    eventType: getString(record, 'eventType'),
+    eventTypeLabel: getString(record, 'eventTypeLabel'),
+    invoiceCode: getString(record, 'invoiceCode'),
+    stockTransactionId: getString(record, 'stockTransactionId'),
+    createdAt: getString(record, 'createdAt'),
+    photos: getStringArray(record.photos),
+  };
+}
+
+function normalizeKolamEnclosureProductionEgg(
+  value: unknown,
+): KolamEnclosureProductionEgg {
+  const record = asRecord(value);
+  return {
+    speciesId: getString(record, 'speciesId') || getIdFromRef(record.species),
+    speciesName: getString(record, 'speciesName'),
+    scientificName: getString(record, 'scientificName'),
+    quantity: getNumber(record, 'quantity') ?? 0,
+    unitLabel: getString(record, 'unitLabel') || 'telur',
+  };
+}
+
+function normalizeKolamEnclosureParameter(
+  value: unknown,
+): KolamEnclosureParameter {
+  const record = asRecord(value);
+  const unit = normalizeUnitRef(record.unit);
+  return {
+    id: getId(record) || getString(record, 'parameter_name'),
+    name: getString(record, 'parameter_name') || getString(record, 'name'),
+    currentValue: getNullableNumber(record, 'current_value'),
+    unit,
+    unitLabel: unit?.initial || unit?.name || getString(record, 'unit'),
+    updatedAt: getString(record, 'updatedAt'),
+    raw: value,
+  };
 }
 
 function normalizeKolamEnclosureClientScope(

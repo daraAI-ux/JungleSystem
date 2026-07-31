@@ -297,6 +297,70 @@ describe('Kolam enclosure surface', () => {
     expect(onRouteChange).toHaveBeenCalledWith('/stock-transaction/tx-1');
   });
 
+  it('renders enclosure detail read-only overview and navigation actions', async () => {
+    const onRouteChange = jest.fn();
+    const controller = createController({
+      activeTab: 'dashboard',
+      dataSource: 'live',
+      mode: 'detail',
+      routeEnclosureId: 'enc-1',
+      selectedEnclosure: createEnclosure({
+        brand: {id: 'brand-1', name: 'ZooMed', photos: []},
+        brandId: 'brand-1',
+        clientScope: 'client_linked',
+        customer: {
+          email: 'client@example.com',
+          id: 'cust-1',
+          name: 'Client A',
+          phone: '0812',
+        },
+        customerId: 'cust-1',
+        note: 'Catatan detail enclosure',
+        species: [
+          {
+            displayLine: 'Ranitomeya / Orange',
+            id: 'sp-line-1',
+            quantity: 3,
+            scientificName: 'Ranitomeya imitator',
+            speciesId: 'sp-1',
+            speciesName: 'Ranitomeya',
+            thumbnailUrl: '',
+            unitLabel: 'ekor',
+            variantId: 'v1',
+            variantLabel: 'Orange',
+          },
+        ],
+      }),
+    });
+    useControllerMock.mockReturnValue(controller);
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamEnclosureSurface
+          onRouteChange={onRouteChange}
+          route="/enclosures/enc-1"
+        />,
+      );
+    });
+
+    const root = renderer!.root;
+    expect(root.findAllByProps({children: 'Rack 1'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'ENC-1'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Catatan detail enclosure'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Species di enclosure'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Ranitomeya'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Client A'}).length).toBeGreaterThan(0);
+
+    await ReactTestRenderer.act(async () => {
+      root.findAllByProps({label: 'Daftar'})[0].props.onPress();
+      root.findAllByProps({label: 'Edit'})[0].props.onPress();
+    });
+
+    expect(onRouteChange).toHaveBeenCalledWith('/enclosures?scope=dashboard');
+    expect(onRouteChange).toHaveBeenCalledWith('/enclosures/enc-1/edit');
+  });
+
   it('renders the plugin-parity allocation statistics with grouped variants', async () => {
     const onRouteChange = jest.fn();
     const allocationOverview = createAllocationOverview();
@@ -419,6 +483,7 @@ function createController(
     pendingAllocations: [],
     pendingTotal: 0,
     routeEnclosureId: '',
+    selectedEnclosure: null,
     staffAssignees: [],
     statusMessage: null,
     onChangeFilters: jest.fn(),
@@ -539,8 +604,8 @@ function createAllocationOverview(): KolamEnclosureController['allocationOvervie
   };
 }
 
-function createEnclosure(): KolamEnclosure {
-  return {
+function createEnclosure(patch: Partial<KolamEnclosure> = {}): KolamEnclosure {
+  const enclosure: KolamEnclosure = {
     aquariumWaterType: 'freshwater',
     assignedTo: {
       displayName: 'Keeper One',
@@ -563,15 +628,20 @@ function createEnclosure(): KolamEnclosure {
       volumeLiters: null,
     },
     coverPhotoUrl: '',
+    photos: [],
     createdAt: '',
     customer: null,
     customerId: '',
+    brand: null,
+    brandId: '',
     id: 'enc-1',
     livestockPurpose: 'saleable',
     location: {address: '', code: 'LOC', id: 'loc-1', name: 'Room A'},
     locationId: 'loc-1',
     name: 'Rack 1',
     note: '',
+    parameters: [],
+    productionEggs: [],
     raw: {},
     salePrice: null,
     saleStatus: 'not_for_sale',
@@ -580,8 +650,11 @@ function createEnclosure(): KolamEnclosure {
       length: {unit: null, unitLabel: 'Cm', value: 60},
       width: {unit: null, unitLabel: 'Cm', value: 40},
     },
+    species: [],
+    speciesPopulationHistory: [],
     status: 'active',
     type: 'Aquarium',
     updatedAt: '',
   };
+  return {...enclosure, ...patch};
 }
