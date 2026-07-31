@@ -704,6 +704,7 @@ function KolamSalesOpsCreateForm({
           <View style={styles.formSplitCell}>
             <FieldShell label="Sumber" required>
               <KolamDropdownSelect
+                menuPlacement="inline"
                 accessibilityLabel="Pilih sumber penjualan"
                 label="Sumber"
                 onChange={sourceRefId => controller.onChangeForm({ sourceRefId })}
@@ -800,6 +801,7 @@ function KolamSalesOpsCreateForm({
             <View style={styles.formSplitCell}>
               <FieldShell label="Pelanggan" required>
                 <KolamDropdownSelect
+                  menuPlacement="inline"
                   accessibilityLabel="Pilih pelanggan"
                   label="Pelanggan"
                   onChange={customerId => controller.onChangeForm({ customerId })}
@@ -828,6 +830,7 @@ function KolamSalesOpsCreateForm({
             <View style={styles.formSplitCell}>
               <FieldShell label="Metode pembayaran" required>
                 <KolamDropdownSelect
+                  menuPlacement="inline"
                   accessibilityLabel="Pilih metode pembayaran"
                   label="Metode pembayaran"
                   onChange={paymentMethodId =>
@@ -863,6 +866,7 @@ function KolamSalesOpsCreateForm({
             <View style={styles.formSplitCell}>
               <FieldShell label="Metode pembayaran" required>
                 <KolamDropdownSelect
+                  menuPlacement="inline"
                   accessibilityLabel="Pilih metode pembayaran"
                   label="Metode pembayaran"
                   onChange={paymentMethodId =>
@@ -907,6 +911,7 @@ function KolamSalesOpsCreateForm({
           <View style={styles.formSplitCell}>
             <FieldShell label="Metode poin">
               <KolamDropdownSelect
+                menuPlacement="inline"
                 accessibilityLabel="Pilih metode poin"
                 label="Metode poin"
                 onChange={pointsMethod =>
@@ -973,6 +978,7 @@ function KolamSalesOpsCreateForm({
               <View style={styles.formSplitCell}>
                 <FieldShell label="Tipe" required>
                   <KolamDropdownSelect
+                    menuPlacement="inline"
                     accessibilityLabel={`Tipe item ${index + 1}`}
                     label="Tipe"
                     onChange={value => {
@@ -1009,6 +1015,7 @@ function KolamSalesOpsCreateForm({
             {item.itemType === 'product' ? (
               <FieldShell label="Produk" required>
                 <KolamDropdownSelect
+                  menuPlacement="inline"
                   accessibilityLabel={`Produk item ${index + 1}`}
                   label="Produk"
                   onChange={productId =>
@@ -1034,6 +1041,7 @@ function KolamSalesOpsCreateForm({
             {item.itemType === 'species' ? (
               <FieldShell label="Spesies" required>
                 <KolamDropdownSelect
+                  menuPlacement="inline"
                   accessibilityLabel={`Spesies item ${index + 1}`}
                   label="Spesies"
                   onChange={speciesId =>
@@ -1061,6 +1069,7 @@ function KolamSalesOpsCreateForm({
             {item.itemType === 'service' ? (
               <FieldShell label="Layanan" required>
                 <KolamDropdownSelect
+                  menuPlacement="inline"
                   accessibilityLabel={`Layanan item ${index + 1}`}
                   label="Layanan"
                   onChange={serviceId =>
@@ -1084,6 +1093,7 @@ function KolamSalesOpsCreateForm({
             {item.itemType === 'enclosure' ? (
               <FieldShell label="Enclosure" required>
                 <KolamDropdownSelect
+                  menuPlacement="inline"
                   accessibilityLabel={`Enclosure item ${index + 1}`}
                   label="Enclosure"
                   onChange={enclosureId =>
@@ -1149,6 +1159,7 @@ function KolamSalesOpsCreateForm({
               <View style={styles.formSplitCell}>
                 <FieldShell label="Tipe diskon">
                   <KolamDropdownSelect
+                    menuPlacement="inline"
                     accessibilityLabel={`Tipe diskon item ${index + 1}`}
                     label="Tipe diskon"
                     onChange={discountType =>
