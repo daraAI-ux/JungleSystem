@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   Image,
+  Linking,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -29,6 +30,7 @@ import {
   getKolamSaleDeliveryStatusIntent,
   getKolamSaleItemDiscountAmount,
   getKolamSaleMainComplaint,
+  getKolamSaleMarketplaceFulfillment,
   getKolamSaleMarketplaceLogistics,
   getKolamSaleOutstandingAmount,
   getKolamSalePaymentStatusIntent,
@@ -39,6 +41,8 @@ import {
   isKolamPosSale,
   isKolamSaleMarketplaceManaged,
   kolamSaleSkipsShippingFlow,
+  needsKolamPlatformPickupRequest,
+  shouldShowKolamTokopediaDropOffBadge,
   KOLAM_SALES_DISCOUNT_APPROVAL_ROUTE,
   KOLAM_SALES_ROOT,
   type KolamSaleDeliveryTransitionTarget,
@@ -136,6 +140,16 @@ export function KolamSalesOpsDetail({
     isOfflineSource &&
     sale.status === 'paid' &&
     (!sale.deliveryStatus || sale.deliveryStatus === 'none');
+  const marketplaceFulfillment = getKolamSaleMarketplaceFulfillment(sale);
+  const isTokopediaSale =
+    String(sale.marketplaceSource || '').toLowerCase() === 'tokopedia';
+  const showTokopediaPickupRequest =
+    isTokopediaSale && needsKolamPlatformPickupRequest(sale);
+  const showTokopediaDropOffBadge = shouldShowKolamTokopediaDropOffBadge(sale);
+  const tokopediaDropOffUrl =
+    marketplaceFulfillment?.dropOffPointUrl?.trim() || '';
+  const showMarketplaceFulfillmentActions =
+    showTokopediaPickupRequest || showTokopediaDropOffBadge;
   const showResi = !skipShipping && canDownloadKolamSaleShippingResi(sale);
   const outstanding = getKolamSaleOutstandingAmount(sale);
   const profitSummary = computeKolamSaleProfitSummary(sale);
@@ -1011,9 +1025,45 @@ export function KolamSalesOpsDetail({
                     ) : null}
                   </>
                 ) : marketplaceManaged ? (
-                  <Text style={styles.metaText}>
-                    Pengiriman marketplace dikelola otomatis dari platform.
-                  </Text>
+                  <View style={styles.marketplaceFulfillmentActions}>
+                    {showTokopediaDropOffBadge ? (
+                      <View style={styles.tokopediaDropOffRow}>
+                        <KolamStatusBadge
+                          intent="warning"
+                          label="Antar ke counter (Tokopedia)"
+                        />
+                        {tokopediaDropOffUrl ? (
+                          <Pressable
+                            accessibilityRole="link"
+                            onPress={() => {
+                              void Linking.openURL(tokopediaDropOffUrl).catch(
+                                () => undefined,
+                              );
+                            }}
+                          >
+                            <Text style={styles.dropOffLink}>
+                              Lokasi counter
+                            </Text>
+                          </Pressable>
+                        ) : null}
+                      </View>
+                    ) : null}
+                    {showTokopediaPickupRequest ? (
+                      <KolamButton
+                        disabled={controller.mutating}
+                        intent="primary"
+                        label="Request jemput kurir (Tokopedia)"
+                        onPress={() => {
+                          void controller.onRequestMarketplacePickup();
+                        }}
+                      />
+                    ) : null}
+                    {!showMarketplaceFulfillmentActions ? (
+                      <Text style={styles.metaText}>
+                        Pengiriman marketplace dikelola otomatis dari platform.
+                      </Text>
+                    ) : null}
+                  </View>
                 ) : sale.status !== 'paid' && sale.status !== 'partial_paid' ? (
                   <Text style={styles.metaText}>
                     Transisi pengiriman tersedia setelah status Lunas.
@@ -1595,6 +1645,21 @@ const styles = StyleSheet.create({
   },
   shippingBlock: {
     gap: 10,
+  },
+  marketplaceFulfillmentActions: {
+    gap: 10,
+  },
+  tokopediaDropOffRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  dropOffLink: {
+    color: V.colors.primary,
+    fontSize: 13,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
   shippingField: {
     gap: 2,
