@@ -24,6 +24,19 @@ Agen tidak boleh:
 - menyentuh Species/Product/modul lain kecuali disebut eksplisit
 - "memperbaiki" hal yang tidak diminta
 
+## UI Copy Minimal (anti-insight tidak perlu)
+
+Agen dilarang memasukkan insight, penjelasan, embel-embel, atau kata-kata tambahan yang tidak diminta ke UI.
+
+Aturan ini berlaku untuk semua label, placeholder, dropdown trigger/menu, tombol, badge, subtitle, helper text, empty state, table copy, toast, dan panel Settings/modul lain.
+
+Wajib:
+1. Pakai teks terpendek yang tetap jelas untuk operator.
+2. Ikuti copy FE Kolam lokal jika sedang port parity.
+3. Jika user memberi teks exact, gunakan teks itu apa adanya.
+4. Jangan menambah konteks seperti "disarankan", "dulu", "planned", "live dari backend", "insight", atau penjelasan teknis kecuali memang diminta eksplisit.
+5. Informasi teknis/debug hanya boleh muncul di UI jika sudah ada di FE source of truth atau user meminta.
+
 Sebelum coding:
 1. Audit-only.
 2. Sebutkan file yang akan dibaca.
