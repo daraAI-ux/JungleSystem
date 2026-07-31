@@ -841,6 +841,68 @@ describe('KolamGlobalChatRail', () => {
     expect(refresh).toHaveBeenCalledTimes(2);
   });
 
+  it('opens DARA from the team chat header menu', async () => {
+    const refresh = jest.fn().mockResolvedValue(undefined);
+    openTeamChatDirectMock.mockResolvedValue({
+      _id: 'room-dara-header',
+      category: 'direct',
+      directPeerName: 'DARA',
+      isDaraDirect: true,
+    });
+    useReadonlyDataMock.mockReturnValue({
+      conversations: [],
+      loading: false,
+      refresh,
+      rooms: [],
+      totalUnread: 0,
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamGlobalChatRail mode="team-chat" onClose={() => undefined} />,
+      );
+    });
+
+    expect(renderText(renderer!)).not.toEqual(
+      expect.arrayContaining(['Assistant Team Chat']),
+    );
+
+    const daraHeaderButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(
+        node =>
+          node.props.accessibilityLabel === 'Buka panel DARA team chat',
+      );
+
+    await ReactTestRenderer.act(async () => {
+      daraHeaderButton!.props.onPress();
+    });
+
+    expect(renderText(renderer!)).toEqual(
+      expect.arrayContaining([
+        'DARA',
+        'Assistant Team Chat',
+        'Buka chat DARA',
+      ]),
+    );
+
+    const openDaraButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(
+        node =>
+          node.props.accessibilityLabel ===
+          'Buka chat DARA dari header team chat',
+      );
+
+    await ReactTestRenderer.act(async () => {
+      await openDaraButton!.props.onPress();
+    });
+
+    expect(openTeamChatDirectMock).toHaveBeenCalledWith({dara: true});
+    expect(refresh).toHaveBeenCalledTimes(1);
+  });
+
   it('renders a scrollable read-only inbox conversation list without loading message details', async () => {
     useReadonlyDataMock.mockReturnValue({
       conversations: [

@@ -365,6 +365,7 @@ export function KolamGlobalChatRail({
   const [healthMenuOpen, setHealthMenuOpen] = React.useState(false);
   const [analyticsMenuOpen, setAnalyticsMenuOpen] = React.useState(false);
   const [settingsMenuOpen, setSettingsMenuOpen] = React.useState(false);
+  const [daraHeaderMenuOpen, setDaraHeaderMenuOpen] = React.useState(false);
   const inboxParams = React.useMemo(
     () => buildInboxListParams(inboxFilter),
     [inboxFilter],
@@ -1061,6 +1062,17 @@ export function KolamGlobalChatRail({
                   open={settingsMenuOpen}
                 />
               </>
+            ) : null}
+            {mode === 'team-chat' ? (
+              <KolamTeamChatDaraHeaderMenu
+                busy={directState.busyTarget === 'dara'}
+                imageUrl={daraAvatarState.imageUrl}
+                onOpenDara={() => {
+                  handleOpenDirect({dara: true}).catch(() => undefined);
+                }}
+                onToggle={() => setDaraHeaderMenuOpen(current => !current)}
+                open={daraHeaderMenuOpen}
+              />
             ) : null}
             <KolamIconButton
               accessibilityLabel="Tutup panel chat"
@@ -2072,6 +2084,79 @@ function KolamInboxDaraAvatar({imageUrl}: {imageUrl: string | null}) {
         />
       </View>
     </KolamHoverTooltip>
+  );
+}
+
+function KolamTeamChatDaraHeaderMenu({
+  busy,
+  imageUrl,
+  onOpenDara,
+  onToggle,
+  open,
+}: {
+  busy: boolean;
+  imageUrl: string | null;
+  onOpenDara: () => void;
+  onToggle: () => void;
+  open: boolean;
+}) {
+  return (
+    <View style={styles.chatHeaderMenuHost}>
+      <KolamPressable
+        accessibilityLabel="Buka panel DARA team chat"
+        accessibilityState={{expanded: open}}
+        onPress={onToggle}
+        style={[
+          styles.teamDaraHeaderButton,
+          open && styles.chatHealthButtonActive,
+        ]}>
+        <KolamProfileAvatarContent
+          imageStyle={styles.teamDaraHeaderAvatarImage}
+          imageUrl={imageUrl}
+          initials="DA"
+          textStyle={styles.teamDaraHeaderAvatarText}
+        />
+      </KolamPressable>
+
+      {open ? (
+        <View style={styles.teamDaraHeaderPopover}>
+          <View style={styles.teamDaraHeaderTopRow}>
+            <View style={styles.teamDaraHeaderLargeAvatar}>
+              <KolamProfileAvatarContent
+                imageStyle={styles.teamDaraHeaderLargeAvatarImage}
+                imageUrl={imageUrl}
+                initials="DA"
+                textStyle={styles.teamDaraHeaderLargeAvatarText}
+              />
+            </View>
+            <View style={styles.teamDaraHeaderCopy}>
+              <Text style={styles.teamDaraHeaderTitle}>DARA</Text>
+              <Text style={styles.teamDaraHeaderMeta}>Assistant Team Chat</Text>
+            </View>
+          </View>
+
+          <View style={styles.teamDaraHeaderNotice}>
+            <Text style={styles.teamDaraHeaderNoticeText}>
+              Panel cepat DARA disiapkan di header agar chat DARA tidak
+              tenggelam di daftar room.
+            </Text>
+          </View>
+
+          <KolamPressable
+            accessibilityLabel="Buka chat DARA dari header team chat"
+            disabled={busy}
+            onPress={onOpenDara}
+            style={[
+              styles.teamDaraHeaderAction,
+              busy && styles.composerIconButtonDisabled,
+            ]}>
+            <Text style={styles.teamDaraHeaderActionText}>
+              {busy ? 'Membuka DARA...' : 'Buka chat DARA'}
+            </Text>
+          </KolamPressable>
+        </View>
+      ) : null}
+    </View>
   );
 }
 
@@ -6583,6 +6668,28 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: V.colors.bg,
   },
+  teamDaraHeaderButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: V.colors.bg,
+    overflow: 'hidden',
+  },
+  teamDaraHeaderAvatarImage: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+  },
+  teamDaraHeaderAvatarText: {
+    color: V.colors.primaryFg,
+    fontFamily: V.fontFamily,
+    fontSize: 9,
+    fontWeight: '900',
+  },
   chatSettingsIcon: {
     width: 15,
     height: 15,
@@ -6727,6 +6834,96 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.16,
     shadowRadius: 14,
     shadowOffset: {width: 0, height: 8},
+  },
+  teamDaraHeaderPopover: {
+    position: 'absolute',
+    top: 32,
+    right: 0,
+    width: 304,
+    padding: 12,
+    borderRadius: V.radius.lg,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.bg,
+    gap: 10,
+    zIndex: 420,
+    elevation: 42,
+    shadowColor: '#111827',
+    shadowOpacity: 0.18,
+    shadowRadius: 16,
+    shadowOffset: {width: 0, height: 9},
+  },
+  teamDaraHeaderTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  teamDaraHeaderLargeAvatar: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    borderColor: V.colors.primary,
+    borderWidth: 1,
+    backgroundColor: V.colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  teamDaraHeaderLargeAvatarImage: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+  },
+  teamDaraHeaderLargeAvatarText: {
+    color: V.colors.primary,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '900',
+  },
+  teamDaraHeaderCopy: {
+    minWidth: 0,
+    flex: 1,
+    gap: 2,
+  },
+  teamDaraHeaderTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 15,
+    fontWeight: '900',
+  },
+  teamDaraHeaderMeta: {
+    color: V.colors.primary,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  teamDaraHeaderNotice: {
+    padding: 9,
+    borderRadius: V.radius.md,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.mutedSoft,
+  },
+  teamDaraHeaderNoticeText: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '700',
+    lineHeight: 16,
+  },
+  teamDaraHeaderAction: {
+    minHeight: 34,
+    borderRadius: V.radius.md,
+    backgroundColor: V.colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 10,
+  },
+  teamDaraHeaderActionText: {
+    color: V.colors.primaryFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '900',
   },
   chatSettingsMenuList: {
     gap: 6,
