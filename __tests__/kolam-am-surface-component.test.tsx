@@ -881,7 +881,8 @@ describe('KolamAmSurface', () => {
     await updateAmRoute(renderer!, 'settings/account');
 
     expect(getAmTransfers).toHaveBeenCalledWith({
-      limit: 30,
+      page: 1,
+      limit: 20,
       search: undefined,
       status: undefined,
     });
@@ -1039,6 +1040,93 @@ describe('KolamAmSurface', () => {
 
     expect(cancelAmTransfer).toHaveBeenCalledWith('transfer-1');
     expect(getAmTransfers).toHaveBeenCalledTimes(2);
+  });
+
+  it('renders transfer stats and pagination from the Transfers route metadata', async () => {
+    jest.mocked(getAmTransfers).mockResolvedValue({
+      data: [
+        {
+          _id: 'transfer-pending',
+          accountId: { _id: 'account-1', label: 'BCA Main', platform: 'bca', accountNumber: '123' },
+          amount: 100000,
+          completedAt: null,
+          createdAt: '',
+          createdBy: null,
+          deviceId: { _id: 'device-1', name: 'Phone 1' },
+          error: '',
+          fee: 2500,
+          logs: [],
+          recipientAccount: '999',
+          recipientBank: 'BCA',
+          recipientName: 'Vendor Pending',
+          screenshot: '',
+          startedAt: null,
+          status: 'pending',
+          transactionPurpose: null,
+          transferMethod: null,
+          transferType: 'transfer',
+          updatedAt: '',
+        },
+        {
+          _id: 'transfer-success',
+          accountId: { _id: 'account-1', label: 'BCA Main', platform: 'bca', accountNumber: '123' },
+          amount: 250000,
+          completedAt: null,
+          createdAt: '',
+          createdBy: null,
+          deviceId: { _id: 'device-1', name: 'Phone 1' },
+          error: '',
+          fee: 2500,
+          logs: [],
+          recipientAccount: '888',
+          recipientBank: 'BRI',
+          recipientName: 'Vendor Success',
+          screenshot: '',
+          startedAt: null,
+          status: 'success',
+          transactionPurpose: null,
+          transferMethod: null,
+          transferType: 'transfer',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 45, limit: 20, page: 1, totalPages: 3},
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await updateAmRoute(renderer!, 'transactions');
+
+    expect(getAmTransfers).toHaveBeenLastCalledWith({
+      page: 1,
+      limit: 20,
+      search: undefined,
+      status: undefined,
+    });
+
+    const joinedText = renderText(renderer!).join(' ');
+    expect(joinedText).toContain('Total Transfers');
+    expect(joinedText).toContain('Total Amount');
+    expect(joinedText).toContain('Pending');
+    expect(joinedText).toMatch(/Showing\s+1\s+to\s+20\s+of\s+45\s+items/);
+    expect(joinedText).toContain('Page 1/3');
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Transfers Next Page'}).props.onPress();
+    });
+
+    expect(getAmTransfers).toHaveBeenLastCalledWith({
+      page: 2,
+      limit: 20,
+      search: undefined,
+      status: undefined,
+    });
   });
 
   it('loads transfer detail from the Transfers route', async () => {

@@ -97,6 +97,7 @@ const TASK_TYPE_LABELS: Record<string, string> = {
 const TASK_STATUSES: Array<AmTaskStatus | 'all'> = ['all', 'pending', 'queued', 'processing', 'success', 'failed', 'cancelled'];
 const TASK_TYPES: Array<AmTaskType | 'all'> = ['all', 'stock_sync', 'process_sale', 'send_message', 'bank_transfer'];
 const AM_TASK_PAGE_LIMIT = 20;
+const AM_TRANSFER_PAGE_LIMIT = 20;
 const AM_PLATFORMS = ['all', 'whatsapp', 'tiktok', 'instagram', 'tokopedia', 'shopee', 'bca', 'brimo', 'dana'];
 const AM_PLATFORM_LABELS: Record<string, string> = {
   whatsapp: 'WhatsApp',
@@ -1861,6 +1862,9 @@ function AmTransfersPage() {
   const [transfers, setTransfers] = React.useState<AmTransfer[]>([]);
   const [status, setStatus] = React.useState('all');
   const [search, setSearch] = React.useState('');
+  const [page, setPage] = React.useState(1);
+  const [limit, setLimit] = React.useState(AM_TRANSFER_PAGE_LIMIT);
+  const [total, setTotal] = React.useState(0);
   const [selectedTransferId, setSelectedTransferId] = React.useState<string | null>(null);
   const [selectedTransfer, setSelectedTransfer] = React.useState<AmTransfer | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -1874,18 +1878,21 @@ function AmTransfersPage() {
     try {
       setIsLoading(true);
       const response = await getAmTransfers({
-        limit: 30,
+        page,
+        limit: AM_TRANSFER_PAGE_LIMIT,
         search: search.trim() || undefined,
         status: status === 'all' ? undefined : status,
       });
       setTransfers(response.data);
+      setTotal(response.meta.total);
+      setLimit(response.meta.limit || AM_TRANSFER_PAGE_LIMIT);
       setError(null);
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : 'Gagal memuat transfers AM live.');
     } finally {
       setIsLoading(false);
     }
-  }, [search, status]);
+  }, [page, search, status]);
 
   React.useEffect(() => {
     fetchTransfers();
@@ -1928,6 +1935,21 @@ function AmTransfersPage() {
     await loadTransferDetail(transfer._id);
   }, [loadTransferDetail, selectedTransferId]);
 
+  const handleTransferSearchChange = React.useCallback((value: string) => {
+    setSearch(value);
+    setPage(1);
+  }, []);
+
+  const handleTransferStatusChange = React.useCallback((value: string) => {
+    setStatus(value);
+    setPage(1);
+  }, []);
+
+  const totalPages = Math.max(1, Math.ceil(total / Math.max(limit, 1)));
+  const rangeFrom = total ? (page - 1) * limit + 1 : 0;
+  const rangeTo = total ? Math.min(page * limit, total) : 0;
+  const transferStats = getTransferStats(transfers);
+
   const runTransferAction = React.useCallback(async (
     transfer: AmTransfer,
     action: 'cancel' | 'retry' | 'force-fail',
@@ -1959,8 +1981,8 @@ function AmTransfersPage() {
   return (
     <View style={styles.pageStack}>
       <View style={styles.filterBar}>
-        <KolamSearchField value={search} onChangeText={setSearch} placeholder="Search transfer..." containerStyle={styles.taskSearch} trailingLabel={`${transfers.length} transfer`} />
-        <AmSegmentGroup active={status} items={['all', 'pending', 'processing', 'success', 'failed']} onSelect={setStatus} />
+        <KolamSearchField value={search} onChangeText={handleTransferSearchChange} placeholder="Search transfer..." containerStyle={styles.taskSearch} trailingLabel={`${total} transfer`} />
+        <AmSegmentGroup active={status} items={['all', 'pending', 'processing', 'success', 'failed']} onSelect={handleTransferStatusChange} />
         <KolamButton label={isLoading ? 'Memuat' : 'Refresh'} intent="outline" muted={isLoading} size="sm" onPress={fetchTransfers} />
       </View>
       <AmInlineError title="Transfers AM belum bisa dibaca" error={error} />
@@ -1969,6 +1991,14 @@ function AmTransfersPage() {
           <Text style={styles.successText}>{actionMessage}</Text>
         </View>
       ) : null}
+      <View style={styles.metricGrid}>
+        <AmMetricCard label="Total Transfers" value={String(transferStats.total)} meta="page result" />
+        <AmMetricCard label="Total Amount" value={formatRupiah(transferStats.totalAmount)} meta="page amount" />
+        <AmMetricCard label="Pending" value={String(transferStats.pending)} meta="menunggu eksekusi" />
+        <AmMetricCard label="Processing" value={String(transferStats.processing)} meta="sedang berjalan" />
+        <AmMetricCard label="Success" value={String(transferStats.success)} meta="berhasil" />
+        <AmMetricCard label="Failed" value={String(transferStats.failed)} meta="perlu tindak lanjut" />
+      </View>
       <View style={styles.tablePanel}>
         <View style={styles.tableHeader}>
           <Text style={[styles.tableHeaderText, styles.accountWideCol]}>Account</Text>
@@ -2012,6 +2042,31 @@ function AmTransfersPage() {
             </View>
           </View>
         ))}
+        {total > limit ? (
+          <View style={styles.paginationBar}>
+            <Text style={styles.paginationText}>
+              Showing {rangeFrom} to {rangeTo} of {total} items
+            </Text>
+            <View style={styles.inlineActions}>
+              <KolamButton
+                accessibilityLabel="AM Transfers Previous Page"
+                disabled={page <= 1 || isLoading}
+                label="Previous"
+                intent="outline"
+                size="sm"
+                onPress={() => setPage(current => Math.max(1, current - 1))}
+              />
+              <KolamButton
+                accessibilityLabel="AM Transfers Next Page"
+                disabled={page >= totalPages || isLoading}
+                label={`Page ${page}/${totalPages}`}
+                intent="outline"
+                size="sm"
+                onPress={() => setPage(current => Math.min(totalPages, current + 1))}
+              />
+            </View>
+          </View>
+        ) : null}
       </View>
       {selectedTransferId ? (
         <AmTransferDetailPanel
@@ -3118,6 +3173,17 @@ function getTransferTone(status: string) {
   if (status === 'success') return 'success';
   if (status === 'failed') return 'danger';
   return 'warning';
+}
+
+function getTransferStats(transfers: AmTransfer[]) {
+  return {
+    total: transfers.length,
+    totalAmount: transfers.reduce((sum, transfer) => sum + transfer.amount, 0),
+    pending: transfers.filter(transfer => transfer.status === 'pending').length,
+    processing: transfers.filter(transfer => transfer.status === 'processing').length,
+    success: transfers.filter(transfer => transfer.status === 'success').length,
+    failed: transfers.filter(transfer => transfer.status === 'failed').length,
+  };
 }
 
 function resolveRackId(rack: AmBox['rackId']) {
