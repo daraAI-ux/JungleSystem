@@ -1498,9 +1498,14 @@ function PosSavedOrdersPanel({
           </ScrollView>
         ) : (
           <View style={styles.savedOrdersEmpty}>
-            <Text style={styles.emptyTitle}>Tidak ada pesanan tersimpan.</Text>
-            <Text style={styles.emptyText}>
-              Keranjang yang disimpan dari panel pesanan akan muncul di sini.
+            <View style={styles.savedOrdersEmptyIcon}>
+              <Text style={styles.savedOrdersEmptyIconText}>File</Text>
+            </View>
+            <Text style={styles.savedOrdersEmptyTitle}>
+              Tidak ada pesanan tersimpan
+            </Text>
+            <Text style={styles.savedOrdersEmptyText}>
+              Pesanan yang disimpan akan muncul di sini
             </Text>
           </View>
         )}
@@ -3115,6 +3120,34 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     borderTopColor: V.colors.border,
     borderTopWidth: 1,
+  },
+  savedOrdersEmptyIcon: {
+    width: 64,
+    height: 64,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 32,
+    backgroundColor: V.colors.muted,
+  },
+  savedOrdersEmptyIconText: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    fontWeight: '900',
+    opacity: 0.45,
+  },
+  savedOrdersEmptyTitle: {
+    marginTop: 16,
+    color: V.colors.fg,
+    fontSize: 14,
+    fontWeight: '900',
+    textAlign: 'center',
+  },
+  savedOrdersEmptyText: {
+    marginTop: 4,
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    lineHeight: 16,
+    textAlign: 'center',
   },
   quickViewOverlay: {
     ...StyleSheet.absoluteFillObject,
