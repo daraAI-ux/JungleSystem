@@ -756,11 +756,9 @@ function KolamEnclosureDashboardPanel({
         />
       </View>
 
-      <DashboardSpeciesTable
+      <DashboardProductionSpeciesCards
         rows={stats.production.rows}
         speciesDistinct={stats.production.speciesDistinct}
-        subtitle="Breakdown per species - kandang produksi."
-        title="Indukan produksi (tidak dijual)"
         totalQty={stats.production.totalQty}
       />
       <DashboardSpeciesTable
@@ -797,6 +795,124 @@ function SectionHeading({
         {meta ? <Text style={styles.sectionMeta}>{meta}</Text> : null}
       </View>
       {action ? <View style={styles.sectionAction}>{action}</View> : null}
+    </View>
+  );
+}
+
+function DashboardProductionSpeciesCards({
+  rows,
+  speciesDistinct,
+  totalQty,
+}: {
+  rows: KolamEnclosureDashboardSpeciesRow[];
+  speciesDistinct: number;
+  totalQty: number;
+}) {
+  const [page, setPage] = React.useState(1);
+  const totalPages = Math.max(
+    1,
+    Math.ceil(rows.length / DASHBOARD_SPECIES_PAGE_SIZE),
+  );
+  const safePage = Math.min(page, totalPages);
+  const pageRows = rows.slice(
+    (safePage - 1) * DASHBOARD_SPECIES_PAGE_SIZE,
+    safePage * DASHBOARD_SPECIES_PAGE_SIZE,
+  );
+
+  React.useEffect(() => {
+    setPage(1);
+  }, [rows]);
+
+  return (
+    <View style={styles.dashboardTableBlock}>
+      <SectionHeading
+        meta={`${speciesDistinct} jenis / ${totalQty} ekor total`}
+        subtitle="Breakdown per species — kandang produksi."
+        title="Indukan produksi (tidak dijual)"
+      />
+      {pageRows.length ? (
+        <View style={styles.productionCardGrid}>
+          {pageRows.map(row => (
+            <DashboardProductionSpeciesCard
+              key={`${row.speciesId}:${row.variantId || ''}`}
+              row={row}
+            />
+          ))}
+        </View>
+      ) : (
+        <View style={styles.emptyWrap}>
+          <KolamEmptyState
+            compact
+            message="Belum ada livestock produksi."
+            title="Belum ada indukan produksi"
+          />
+        </View>
+      )}
+      {rows.length > DASHBOARD_SPECIES_PAGE_SIZE ? (
+        <SimpleDashboardPagination
+          onPageChange={setPage}
+          page={safePage}
+          totalItems={rows.length}
+          totalPages={totalPages}
+        />
+      ) : rows.length ? (
+        <Text style={styles.sectionMeta}>{rows.length} species</Text>
+      ) : null}
+    </View>
+  );
+}
+
+function DashboardProductionSpeciesCard({
+  row,
+}: {
+  row: KolamEnclosureDashboardSpeciesRow;
+}) {
+  const imageUri = getKolamFileUrl(row.thumbnailUrl);
+  const enclosureLabel =
+    row.enclosureCount === 1
+      ? '1 enclosure'
+      : `${row.enclosureCount} enclosure`;
+
+  return (
+    <View style={styles.productionCard}>
+      <View style={styles.productionCardMedia}>
+        {imageUri ? (
+          <KolamRemoteImage
+            accessibilityLabel={`Foto ${row.speciesName || 'species'}`}
+            resizeMode="cover"
+            scope="enclosure-dashboard-species"
+            sourceUri={imageUri}
+            style={styles.productionCardImage}
+          />
+        ) : (
+          <View style={styles.productionCardImageFallback}>
+            <Text style={styles.productionCardFallbackGlyph}>
+              {(row.speciesName || '?').charAt(0).toUpperCase()}
+            </Text>
+          </View>
+        )}
+      </View>
+      <View style={styles.productionCardBody}>
+        <Text numberOfLines={2} style={styles.productionCardTitle}>
+          {row.speciesName || '-'}
+        </Text>
+        {row.scientificName ? (
+          <Text numberOfLines={1} style={styles.productionCardScientific}>
+            {row.scientificName}
+          </Text>
+        ) : null}
+        {row.variantLabel ? (
+          <Text numberOfLines={1} style={styles.productionCardVariant}>
+            {row.variantLabel}
+          </Text>
+        ) : null}
+        <View style={styles.productionCardMetrics}>
+          <Text style={styles.productionCardQty}>
+            {row.qty} {row.unit || 'ekor'}
+          </Text>
+          <Text style={styles.productionCardMeta}>{enclosureLabel}</Text>
+        </View>
+      </View>
     </View>
   );
 }
@@ -2041,6 +2157,87 @@ const styles = StyleSheet.create({
   },
   dashboardTableBlock: {
     gap: 8,
+  },
+  productionCardGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  productionCard: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 10,
+    borderWidth: 1,
+    flexGrow: 1,
+    flexBasis: 220,
+    maxWidth: '100%',
+    minWidth: 200,
+    overflow: 'hidden',
+  },
+  productionCardMedia: {
+    backgroundColor: V.colors.secondary,
+    height: 128,
+    width: '100%',
+  },
+  productionCardImage: {
+    height: '100%',
+    width: '100%',
+  },
+  productionCardImageFallback: {
+    alignItems: 'center',
+    backgroundColor: V.colors.primarySoft,
+    height: '100%',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  productionCardFallbackGlyph: {
+    color: V.colors.primary,
+    fontFamily: V.fontFamily,
+    fontSize: 36,
+    fontWeight: '900',
+  },
+  productionCardBody: {
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+  },
+  productionCardTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  productionCardScientific: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontStyle: 'italic',
+  },
+  productionCardVariant: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  productionCardMetrics: {
+    alignItems: 'baseline',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
+  productionCardQty: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 20,
+    fontWeight: '900',
+  },
+  productionCardMeta: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '700',
   },
   dashboardTable: {
     gap: 0,
