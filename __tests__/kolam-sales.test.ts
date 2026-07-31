@@ -16,6 +16,7 @@ import {
   formatKolamSaleDeliveryStatusLabel,
   formatKolamSaleMutationError,
   formatKolamSalePaymentStatusLabel,
+  getKolamNoShippingDeliveryLabel,
   getKolamSaleAllowedDeliveryTransitions,
   getKolamSaleAllowedStatusTransitions,
   getKolamSaleEditRouteId,
@@ -813,6 +814,24 @@ describe('kolam sales domain', () => {
     expect(formatKolamSaleDeliveryStatusLabel('packing', 'paid')).toBe(
       'Sedang dipacking',
     );
+    expect(
+      getKolamNoShippingDeliveryLabel({
+        items: [{ itemType: 'product' }],
+        sourceRef: { type: 'offline', name: 'POS' },
+      }),
+    ).toBe('POS (tanpa kirim)');
+    expect(
+      getKolamNoShippingDeliveryLabel({
+        items: [{ itemType: 'service' }],
+        sourceRef: { type: 'online', name: 'Website' },
+      }),
+    ).toBe('Layanan (tanpa kirim)');
+    expect(
+      kolamSaleSkipsShippingFlow({
+        items: [{ itemType: 'product' }],
+        sourceRef: { type: 'offline', name: 'Kasir Cabang' },
+      }),
+    ).toBe(true);
   });
 
   it('gates status, edit, add-items, and delivery transitions', () => {

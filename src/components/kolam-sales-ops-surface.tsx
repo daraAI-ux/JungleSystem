@@ -7,8 +7,10 @@ import {
   filterKolamSaleCreateItemShippingMethods,
   formatKolamSaleDeliveryStatusLabel,
   formatKolamSalePaymentStatusLabel,
+  getKolamNoShippingDeliveryLabel,
   getKolamSaleDeliveryStatusIntent,
   getKolamSalePaymentStatusIntent,
+  kolamSaleSkipsShippingFlow,
   isKolamSalesAddItemsRoute,
   isKolamSalesDiscountApprovalRoute,
   isKolamSalesEditRoute,
@@ -527,6 +529,13 @@ function KolamSalesOpsRow({
   const amountColumn = columnOf('amount');
   const statusColumn = columnOf('status');
   const marketplaceColumn = columnOf('marketplace');
+  const skipShipping = kolamSaleSkipsShippingFlow(sale);
+  const deliveryBadgeLabel = skipShipping
+    ? getKolamNoShippingDeliveryLabel(sale)
+    : formatKolamSaleDeliveryStatusLabel(sale.deliveryStatus, sale.status);
+  const deliveryBadgeIntent = skipShipping
+    ? 'info'
+    : getKolamSaleDeliveryStatusIntent(sale.deliveryStatus, sale.status);
 
   return (
     <Pressable onPress={onSelect}>
@@ -616,14 +625,8 @@ function KolamSalesOpsRow({
             ]}
           >
             <KolamStatusBadge
-              intent={getKolamSaleDeliveryStatusIntent(
-                sale.deliveryStatus,
-                sale.status,
-              )}
-              label={formatKolamSaleDeliveryStatusLabel(
-                sale.deliveryStatus,
-                sale.status,
-              )}
+              intent={deliveryBadgeIntent}
+              label={deliveryBadgeLabel}
               numberOfLines={2}
               style={styles.centerBadge}
             />
