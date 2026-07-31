@@ -7,6 +7,7 @@ export type AmRouteId =
   | 'transactions'
   | 'mutasi'
   | 'users'
+  | 'settings-account'
   | 'activity-log';
 
 export interface AmRouteItem {
@@ -91,6 +92,14 @@ export const AM_ROUTES: AmRouteItem[] = [
     moduleRoute: 'admin/activity-log',
     description: 'Audit log aktivitas AM.',
   },
+  {
+    id: 'settings-account',
+    label: 'Account Settings',
+    section: 'Administration',
+    path: '/settings/account',
+    moduleRoute: 'settings/account',
+    description: 'Profil akun AM, password, dan area akun sesuai AM FE.',
+  },
 ];
 
 export const AM_ROUTE_SECTIONS = [
@@ -127,5 +136,6 @@ function getAmParentRoute(route: string) {
   if (route.startsWith('webhooks')) return 'webhooks';
   if (route.startsWith('admin/users')) return 'admin/users';
   if (route.startsWith('admin/activity-log')) return 'admin/activity-log';
+  if (route.startsWith('settings/account')) return 'settings/account';
   return route;
 }

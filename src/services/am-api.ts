@@ -334,6 +334,8 @@ export interface AmUser {
   updatedAt?: string;
 }
 
+export type AmCurrentUser = AmUser;
+
 export interface AmUserPayload {
   fullName?: string;
   username?: string;
@@ -808,6 +810,12 @@ export async function getAmUsers(
   baseUrl = appConfig.amApiBaseUrl,
 ): Promise<AmListResponse<AmUser>> {
   return getAmList<AmUser>('/users', query, baseUrl);
+}
+
+export async function getAmCurrentUser(
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmCurrentUser> {
+  return amGet<AmCurrentUser>('/auth/me', undefined, baseUrl);
 }
 
 export async function getAmRoles(

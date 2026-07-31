@@ -35,6 +35,7 @@ import {
   getAmDeviceServiceLogs,
   getAmDeviceServices,
   getAmDeviceServiceQrUrl,
+  getAmCurrentUser,
   getAmTaskById,
   getAmMutasi,
   getAmMutasiSummary,
@@ -62,6 +63,7 @@ import {
   type AmActivityLog,
   type AmActivityLogStats,
   type AmBox,
+  type AmCurrentUser,
   type AmDashboardData,
   type AmDevice,
   type AmDevicePayload,
@@ -154,6 +156,8 @@ export function KolamAmSurface({
             <AmMutasiPage />
           ) : activeRoute === 'users' ? (
             <AmUsersPage />
+          ) : activeRoute === 'settings-account' ? (
+            <AmAccountSettingsPage />
           ) : activeRoute === 'activity-log' ? (
             <AmActivityLogPage />
           ) : (
@@ -2171,11 +2175,13 @@ function AmTextInput({
   label,
   onChangeText,
   placeholder,
+  secureTextEntry = false,
   value,
 }: {
   label: string;
   onChangeText: (value: string) => void;
   placeholder: string;
+  secureTextEntry?: boolean;
   value: string;
 }) {
   return (
@@ -2184,6 +2190,7 @@ function AmTextInput({
       <TextInput
         placeholder={placeholder}
         placeholderTextColor={V.colors.mutedFg}
+        secureTextEntry={secureTextEntry}
         style={styles.formInput}
         value={value}
         onChangeText={onChangeText}
@@ -2660,6 +2667,196 @@ function AmUsersPage() {
   );
 }
 
+function AmAccountSettingsPage() {
+  const [user, setUser] = React.useState<AmCurrentUser | null>(null);
+  const [fullName, setFullName] = React.useState('');
+  const [emailAddress, setEmailAddress] = React.useState('');
+  const [currentPassword, setCurrentPassword] = React.useState('');
+  const [newPassword, setNewPassword] = React.useState('');
+  const [confirmPassword, setConfirmPassword] = React.useState('');
+  const [deletePassword, setDeletePassword] = React.useState('');
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+  const [actionMessage, setActionMessage] = React.useState<string | null>(null);
+
+  const fetchCurrentUser = React.useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const currentUser = await getAmCurrentUser();
+      setUser(currentUser);
+      setFullName(currentUser.fullName ?? '');
+      setEmailAddress(currentUser.username ?? '');
+      setError(null);
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Gagal memuat akun AM live.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    fetchCurrentUser();
+  }, [fetchCurrentUser]);
+
+  const showEndpointNotice = React.useCallback((scope: string) => {
+    setError(null);
+    setActionMessage(
+      `${scope} mengikuti form AM FE, tetapi AM BE live saat ini baru menyediakan GET /auth/me untuk akun aktif.`,
+    );
+  }, []);
+
+  const handleSaveProfile = React.useCallback(() => {
+    if (!fullName.trim() || !emailAddress.trim()) {
+      setError('Full name dan email address wajib diisi.');
+      return;
+    }
+
+    if (user && fullName.trim() === user.fullName && emailAddress.trim() === user.username) {
+      setError('Tidak ada perubahan profile untuk disimpan.');
+      return;
+    }
+
+    showEndpointNotice('Profile information');
+  }, [emailAddress, fullName, showEndpointNotice, user]);
+
+  const handleUpdatePassword = React.useCallback(() => {
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setError('Current password, new password, dan confirm password wajib diisi.');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError('Confirm password harus sama dengan new password.');
+      return;
+    }
+
+    showEndpointNotice('Change password');
+  }, [confirmPassword, currentPassword, newPassword, showEndpointNotice]);
+
+  const handleDeleteAccount = React.useCallback(() => {
+    if (!deletePassword) {
+      setError('Password wajib diisi sebelum delete account.');
+      return;
+    }
+
+    showEndpointNotice('Danger area');
+  }, [deletePassword, showEndpointNotice]);
+
+  return (
+    <View style={styles.pageStack}>
+      <View style={styles.filterBar}>
+        <AmMetricCard
+          label="Signed in as"
+          value={user?.fullName ?? (isLoading ? 'Loading' : '-')}
+          meta={user?.role?.name ?? user?.username ?? 'AM account'}
+        />
+        <KolamButton
+          label={isLoading ? 'Memuat' : 'Refresh'}
+          intent="outline"
+          muted={isLoading}
+          size="sm"
+          onPress={fetchCurrentUser}
+        />
+      </View>
+      <AmInlineError title="Account Settings AM" error={error} />
+      {actionMessage ? (
+        <View style={styles.successPanel}>
+          <Text style={styles.successText}>{actionMessage}</Text>
+        </View>
+      ) : null}
+      <View style={styles.panel}>
+        <Text style={styles.panelTitle}>Profile information</Text>
+        <Text style={styles.panelText}>
+          Manage your personal information, photo, and other profile details.
+        </Text>
+        <View style={styles.formGrid}>
+          <AmTextInput
+            label="Full name"
+            placeholder="Your name"
+            value={fullName}
+            onChangeText={setFullName}
+          />
+          <AmTextInput
+            label="Email address"
+            placeholder="you@domain.com"
+            value={emailAddress}
+            onChangeText={setEmailAddress}
+          />
+          <View style={styles.inlineActions}>
+            <KolamButton
+              accessibilityLabel="AM Account Save Profile"
+              label="Save"
+              size="sm"
+              onPress={handleSaveProfile}
+            />
+          </View>
+        </View>
+      </View>
+      <View style={styles.panel}>
+        <Text style={styles.panelTitle}>Change password</Text>
+        <Text style={styles.panelText}>
+          Update your current password to keep your account secure.
+        </Text>
+        <View style={styles.formGrid}>
+          <AmTextInput
+            label="Current password"
+            placeholder="Current password"
+            secureTextEntry
+            value={currentPassword}
+            onChangeText={setCurrentPassword}
+          />
+          <AmTextInput
+            label="New password"
+            placeholder="New password"
+            secureTextEntry
+            value={newPassword}
+            onChangeText={setNewPassword}
+          />
+          <AmTextInput
+            label="Confirm password"
+            placeholder="Confirm password"
+            secureTextEntry
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+          />
+          <View style={styles.inlineActions}>
+            <KolamButton
+              accessibilityLabel="AM Account Update Password"
+              label="Update password"
+              size="sm"
+              onPress={handleUpdatePassword}
+            />
+          </View>
+        </View>
+      </View>
+      <View style={styles.panel}>
+        <Text style={styles.panelTitle}>Danger area</Text>
+        <Text style={styles.panelText}>
+          Permanently delete your account and all associated data.
+        </Text>
+        <View style={styles.formGrid}>
+          <AmTextInput
+            label="Confirm password"
+            placeholder="Your password"
+            secureTextEntry
+            value={deletePassword}
+            onChangeText={setDeletePassword}
+          />
+          <View style={styles.inlineActions}>
+            <KolamButton
+              accessibilityLabel="AM Account Delete"
+              label="Delete account"
+              intent="danger"
+              size="sm"
+              onPress={handleDeleteAccount}
+            />
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+}
+
 function AmActivityLogPage() {
   const [logs, setLogs] = React.useState<AmActivityLog[]>([]);
   const [stats, setStats] = React.useState<AmActivityLogStats | null>(null);
@@ -2976,6 +3173,7 @@ function getRouteIdFromSurface(surface?: UnifiedSurface | null): AmRouteId {
   if (surface.route.includes('mutasi')) return 'mutasi';
   if (surface.route.includes('admin/users')) return 'users';
   if (surface.route.includes('activity-log')) return 'activity-log';
+  if (surface.route.includes('settings/account')) return 'settings-account';
   return 'dashboard';
 }
 

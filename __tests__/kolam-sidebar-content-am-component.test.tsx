@@ -67,6 +67,7 @@ describe('KolamSidebarContent AM mode', () => {
         'Administration',
         'Users',
         'Activity Log',
+        'Account Settings',
         'JungleSystem',
         'Beranda',
         'Pengaturan',

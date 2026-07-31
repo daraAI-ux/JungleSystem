@@ -17,6 +17,7 @@ import {
   deleteAmUser,
   deleteAmWebhookConfig,
   getAmActivityLogs,
+  getAmCurrentUser,
   getAmDashboard,
   getAmDeviceServiceLogs,
   getAmDeviceServices,
@@ -58,6 +59,12 @@ jest.mock('../src/services/am-api', () => ({
   getAmActivityLogs: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
   getAmActivityLogStats: jest.fn(() => Promise.resolve({since: '', days: 7, byType: [], byStatus: [], topUsers: [], topPaths: []})),
   getAmBoxes: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
+  getAmCurrentUser: jest.fn(() => Promise.resolve({
+    _id: 'user-current',
+    fullName: 'Current AM User',
+    username: 'current@dunia-anura.com',
+    role: {_id: 'role-admin', name: 'Admin', permissions: ['user:read'], description: 'Admin role'},
+  })),
   getAmDashboard: jest.fn(() => Promise.resolve(mockDashboardData)),
   getAmDeviceServiceLogs: jest.fn(() => Promise.resolve({logs: [], processRunning: false})),
   getAmDeviceServices: jest.fn(() => Promise.resolve([])),
@@ -812,6 +819,7 @@ describe('KolamAmSurface', () => {
     await updateAmRoute(renderer!, 'webhooks');
     await updateAmRoute(renderer!, 'admin/users');
     await updateAmRoute(renderer!, 'admin/activity-log');
+    await updateAmRoute(renderer!, 'settings/account');
 
     expect(getAmTransfers).toHaveBeenCalledWith({
       limit: 30,
@@ -826,6 +834,34 @@ describe('KolamAmSurface', () => {
       limit: 40,
       status: undefined,
     });
+    expect(getAmCurrentUser).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders account settings from the live AM auth session route', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await updateAmRoute(renderer!, 'settings/account');
+
+    const text = renderText(renderer!);
+    expect(getAmCurrentUser).toHaveBeenCalledTimes(1);
+    expect(text).toContain('Account Settings');
+    expect(text).toContain('Profile information');
+    expect(text).toContain('Change password');
+    expect(text).toContain('Danger area');
+    expect(text).toContain('Current AM User');
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Account Save Profile'}).props.onPress();
+    });
+
+    expect(renderText(renderer!).join(' ')).toContain('Tidak ada perubahan profile untuk disimpan.');
   });
 
   it('runs user create, edit, and delete actions from the Users route', async () => {
