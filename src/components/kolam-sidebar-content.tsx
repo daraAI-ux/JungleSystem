@@ -1,8 +1,7 @@
 import React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import {
   AM_ROUTES,
-  AM_ROUTE_SECTIONS,
   type AmRouteItem,
 } from '../domain/am-navigation';
 import type { AccessScope } from '../domain/auth';
@@ -18,6 +17,7 @@ import type { KolamNavigationItem } from '../domain/kolam-navigation';
 import { KolamMappedList } from './kolam-mapped-list';
 import { KolamQuickSearch } from './kolam-quick-search';
 import { KolamNavItem } from './kolam-nav-item';
+import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamSidebarNavGroup } from './kolam-sidebar-navigation-widgets';
 import { KolamMenuGroup } from './kolam-sidebar-menu-widgets';
 
@@ -140,30 +140,30 @@ function KolamAmSidebarMenu({
   return (
     <>
       <View style={[styles.amMenuGroup, collapsed && styles.amMenuGroupCollapsed]}>
-        {AM_ROUTE_SECTIONS.map(section => (
-          <View key={section} style={styles.amMenuSection}>
-            {collapsed ? null : (
-              <Text style={styles.amMenuSectionLabel}>{section}</Text>
-            )}
-            <KolamMappedList
-              items={AM_ROUTES.filter(item => item.section === section)}
-              getKey={item => item.id}
-              renderItem={item => (
-                <KolamNavItem
-                  active={isAmRouteActive(item, activeRoute)}
-                  collapsed={collapsed}
-                  module={toAmShellModule(item)}
-                  onPress={() => {
-                    const route = getShellModuleRouteEntry('am', item.moduleRoute);
-                    if (route) {
-                      onSelectRoute(route);
-                    }
-                  }}
-                />
-              )}
+        {collapsed ? null : (
+          <KolamCopyStack
+            items={[
+              {id: 'label', text: 'AM', style: styles.amMenuGroupLabel},
+            ]}
+          />
+        )}
+        <KolamMappedList
+          items={AM_ROUTES}
+          getKey={item => item.id}
+          renderItem={item => (
+            <KolamNavItem
+              active={isAmRouteActive(item, activeRoute)}
+              collapsed={collapsed}
+              module={toAmShellModule(item)}
+              onPress={() => {
+                const route = getShellModuleRouteEntry('am', item.moduleRoute);
+                if (route) {
+                  onSelectRoute(route);
+                }
+              }}
             />
-          </View>
-        ))}
+          )}
+        />
       </View>
       <KolamSidebarNavGroup
         activeModule={activeModule}
@@ -221,7 +221,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   amMenuGroup: {
-    gap: 8,
     marginTop: 2,
     marginBottom: V.layout.navSectionGap,
   },
@@ -230,12 +229,8 @@ const styles = StyleSheet.create({
     gap: 4,
     marginBottom: 8,
   },
-  amMenuSection: {
-    paddingHorizontal: 10,
-    paddingVertical: 1,
-  },
-  amMenuSectionLabel: {
-    marginBottom: 4,
+  amMenuGroupLabel: {
+    paddingHorizontal: 12,
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 11,
