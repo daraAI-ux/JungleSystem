@@ -841,7 +841,7 @@ describe('KolamGlobalChatRail', () => {
     expect(refresh).toHaveBeenCalledTimes(2);
   });
 
-  it('opens DARA from the team chat header menu', async () => {
+  it('opens DARA from the team chat header window', async () => {
     const refresh = jest.fn().mockResolvedValue(undefined);
     openTeamChatDirectMock.mockResolvedValue({
       _id: 'room-dara-header',
@@ -872,7 +872,7 @@ describe('KolamGlobalChatRail', () => {
       .findAllByType(KolamPressable)
       .find(
         node =>
-          node.props.accessibilityLabel === 'Buka panel DARA team chat',
+          node.props.accessibilityLabel === 'Buka jendela DARA team chat',
       );
 
     await ReactTestRenderer.act(async () => {
@@ -883,6 +883,7 @@ describe('KolamGlobalChatRail', () => {
       expect.arrayContaining([
         'DARA',
         'Assistant Team Chat',
+        'Chat DARA akan tampil di sini',
         'Buka chat DARA',
       ]),
     );
@@ -892,7 +893,7 @@ describe('KolamGlobalChatRail', () => {
       .find(
         node =>
           node.props.accessibilityLabel ===
-          'Buka chat DARA dari header team chat',
+          'Buka chat DARA dari jendela besar',
       );
 
     await ReactTestRenderer.act(async () => {

@@ -1067,10 +1067,11 @@ export function KolamGlobalChatRail({
               <KolamTeamChatDaraHeaderMenu
                 busy={directState.busyTarget === 'dara'}
                 imageUrl={daraAvatarState.imageUrl}
+                onClose={() => setDaraHeaderMenuOpen(false)}
                 onOpenDara={() => {
                   handleOpenDirect({dara: true}).catch(() => undefined);
                 }}
-                onToggle={() => setDaraHeaderMenuOpen(current => !current)}
+                onOpenWindow={() => setDaraHeaderMenuOpen(true)}
                 open={daraHeaderMenuOpen}
               />
             ) : null}
@@ -2090,22 +2091,24 @@ function KolamInboxDaraAvatar({imageUrl}: {imageUrl: string | null}) {
 function KolamTeamChatDaraHeaderMenu({
   busy,
   imageUrl,
+  onClose,
   onOpenDara,
-  onToggle,
+  onOpenWindow,
   open,
 }: {
   busy: boolean;
   imageUrl: string | null;
+  onClose: () => void;
   onOpenDara: () => void;
-  onToggle: () => void;
+  onOpenWindow: () => void;
   open: boolean;
 }) {
   return (
     <View style={styles.chatHeaderMenuHost}>
       <KolamPressable
-        accessibilityLabel="Buka panel DARA team chat"
+        accessibilityLabel="Buka jendela DARA team chat"
         accessibilityState={{expanded: open}}
-        onPress={onToggle}
+        onPress={onOpenWindow}
         style={[
           styles.teamDaraHeaderButton,
           open && styles.chatHealthButtonActive,
@@ -2119,42 +2122,74 @@ function KolamTeamChatDaraHeaderMenu({
       </KolamPressable>
 
       {open ? (
-        <View style={styles.teamDaraHeaderPopover}>
-          <View style={styles.teamDaraHeaderTopRow}>
-            <View style={styles.teamDaraHeaderLargeAvatar}>
-              <KolamProfileAvatarContent
-                imageStyle={styles.teamDaraHeaderLargeAvatarImage}
-                imageUrl={imageUrl}
-                initials="DA"
-                textStyle={styles.teamDaraHeaderLargeAvatarText}
-              />
-            </View>
-            <View style={styles.teamDaraHeaderCopy}>
-              <Text style={styles.teamDaraHeaderTitle}>DARA</Text>
-              <Text style={styles.teamDaraHeaderMeta}>Assistant Team Chat</Text>
+        <Modal
+          animationType="fade"
+          onRequestClose={onClose}
+          transparent
+          visible>
+          <View style={styles.teamDaraWindowOverlay}>
+            <KolamModalBackdrop onPress={onClose} />
+            <View
+              accessibilityLabel="Jendela DARA team chat"
+              style={styles.teamDaraWindow}>
+              <View style={styles.teamDaraWindowHeader}>
+                <View style={styles.teamDaraHeaderLargeAvatar}>
+                  <KolamProfileAvatarContent
+                    imageStyle={styles.teamDaraHeaderLargeAvatarImage}
+                    imageUrl={imageUrl}
+                    initials="DA"
+                    textStyle={styles.teamDaraHeaderLargeAvatarText}
+                  />
+                </View>
+                <View style={styles.teamDaraHeaderCopy}>
+                  <Text style={styles.teamDaraHeaderTitle}>DARA</Text>
+                  <Text style={styles.teamDaraHeaderMeta}>
+                    Assistant Team Chat
+                  </Text>
+                </View>
+                <KolamPressable
+                  accessibilityLabel="Tutup jendela DARA team chat"
+                  onPress={onClose}
+                  style={styles.teamDaraWindowCloseButton}>
+                  <Text style={styles.teamDaraWindowCloseText}>Tutup</Text>
+                </KolamPressable>
+              </View>
+
+              <View style={styles.teamDaraWindowBody}>
+                <View style={styles.teamDaraHeaderNotice}>
+                  <Text style={styles.teamDaraHeaderNoticeText}>
+                    Window besar DARA disiapkan agar percakapan, reasoning, dan
+                    jawaban panjang tidak sempit di sidebar.
+                  </Text>
+                </View>
+                <View style={styles.teamDaraWindowPlaceholder}>
+                  <Text style={styles.teamDaraWindowPlaceholderTitle}>
+                    Chat DARA akan tampil di sini
+                  </Text>
+                  <Text style={styles.teamDaraWindowPlaceholderText}>
+                    Langkah berikutnya akan mengikat window ini ke room direct
+                    DARA, message list, composer, dan live update.
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.teamDaraWindowFooter}>
+                <KolamPressable
+                  accessibilityLabel="Buka chat DARA dari jendela besar"
+                  disabled={busy}
+                  onPress={onOpenDara}
+                  style={[
+                    styles.teamDaraHeaderAction,
+                    busy && styles.composerIconButtonDisabled,
+                  ]}>
+                  <Text style={styles.teamDaraHeaderActionText}>
+                    {busy ? 'Membuka DARA...' : 'Buka chat DARA'}
+                  </Text>
+                </KolamPressable>
+              </View>
             </View>
           </View>
-
-          <View style={styles.teamDaraHeaderNotice}>
-            <Text style={styles.teamDaraHeaderNoticeText}>
-              Panel cepat DARA disiapkan di header agar chat DARA tidak
-              tenggelam di daftar room.
-            </Text>
-          </View>
-
-          <KolamPressable
-            accessibilityLabel="Buka chat DARA dari header team chat"
-            disabled={busy}
-            onPress={onOpenDara}
-            style={[
-              styles.teamDaraHeaderAction,
-              busy && styles.composerIconButtonDisabled,
-            ]}>
-            <Text style={styles.teamDaraHeaderActionText}>
-              {busy ? 'Membuka DARA...' : 'Buka chat DARA'}
-            </Text>
-          </KolamPressable>
-        </View>
+        </Modal>
       ) : null}
     </View>
   );
@@ -6835,28 +6870,62 @@ const styles = StyleSheet.create({
     shadowRadius: 14,
     shadowOffset: {width: 0, height: 8},
   },
-  teamDaraHeaderPopover: {
-    position: 'absolute',
-    top: 32,
-    right: 0,
-    width: 304,
-    padding: 12,
+  teamDaraWindowOverlay: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 28,
+  },
+  teamDaraWindow: {
+    width: '86%',
+    maxWidth: 920,
+    minHeight: 520,
+    maxHeight: '86%',
     borderRadius: V.radius.lg,
     borderColor: V.colors.border,
     borderWidth: 1,
     backgroundColor: V.colors.bg,
-    gap: 10,
-    zIndex: 420,
-    elevation: 42,
     shadowColor: '#111827',
-    shadowOpacity: 0.18,
-    shadowRadius: 16,
-    shadowOffset: {width: 0, height: 9},
+    shadowOpacity: 0.2,
+    shadowRadius: 24,
+    shadowOffset: {width: 0, height: 16},
+    overflow: 'hidden',
   },
-  teamDaraHeaderTopRow: {
+  teamDaraWindowHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    padding: 14,
     gap: 10,
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: 1,
+    backgroundColor: V.colors.primarySoft,
+  },
+  teamDaraWindowBody: {
+    flex: 1,
+    padding: 14,
+    gap: 12,
+  },
+  teamDaraWindowFooter: {
+    padding: 14,
+    borderTopColor: V.colors.border,
+    borderTopWidth: 1,
+    alignItems: 'flex-end',
+  },
+  teamDaraWindowCloseButton: {
+    minHeight: 30,
+    paddingHorizontal: 10,
+    borderRadius: V.radius.md,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.bg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  teamDaraWindowCloseText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '900',
   },
   teamDaraHeaderLargeAvatar: {
     width: 46,
@@ -6910,6 +6979,35 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     lineHeight: 16,
+  },
+  teamDaraWindowPlaceholder: {
+    flex: 1,
+    minHeight: 320,
+    borderRadius: V.radius.lg,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    backgroundColor: V.colors.mutedSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 18,
+    gap: 8,
+  },
+  teamDaraWindowPlaceholderTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 16,
+    fontWeight: '900',
+    textAlign: 'center',
+  },
+  teamDaraWindowPlaceholderText: {
+    maxWidth: 460,
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 18,
+    textAlign: 'center',
   },
   teamDaraHeaderAction: {
     minHeight: 34,
