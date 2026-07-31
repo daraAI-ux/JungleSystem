@@ -992,6 +992,15 @@ describe('settings web widgets', () => {
         .every(node => Boolean(node.props.menuStyle)),
     ).toBe(true);
     expect(
+      dropdowns
+        .filter(node =>
+          ['Provinsi', 'Kota/kabupaten', 'Kecamatan', 'Kelurahan'].includes(
+            node.props.label,
+          ),
+        )
+        .every(node => Boolean(node.props.triggerStyle)),
+    ).toBe(true);
+    expect(
       dropdowns.some(node =>
         node.props.options.some(
           (option: {label: string}) => option.label.includes('dulu'),

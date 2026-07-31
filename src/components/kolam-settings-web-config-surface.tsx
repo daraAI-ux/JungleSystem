@@ -4027,6 +4027,7 @@ export function KolamSettingsWebConfigSurface({
                 searchPlaceholder="Cari provinsi"
                 showLabelInTrigger={false}
                 style={styles.regionHierarchyControl}
+                triggerStyle={styles.regionHierarchyTrigger}
                 value={selectedProvince}
                 onChange={value => setRegionSelection('province', value)}
               />
@@ -4039,6 +4040,7 @@ export function KolamSettingsWebConfigSurface({
                 searchPlaceholder="Cari kota / kabupaten"
                 showLabelInTrigger={false}
                 style={styles.regionHierarchyControl}
+                triggerStyle={styles.regionHierarchyTrigger}
                 value={selectedRegency}
                 onChange={value => {
                   if (selectedProvince) {
@@ -4055,6 +4057,7 @@ export function KolamSettingsWebConfigSurface({
                 searchPlaceholder="Cari kecamatan"
                 showLabelInTrigger={false}
                 style={styles.regionHierarchyControl}
+                triggerStyle={styles.regionHierarchyTrigger}
                 value={selectedDistrict}
                 onChange={value => {
                   if (selectedRegency) {
@@ -4071,6 +4074,7 @@ export function KolamSettingsWebConfigSurface({
                 searchPlaceholder="Cari kelurahan"
                 showLabelInTrigger={false}
                 style={styles.regionHierarchyControl}
+                triggerStyle={styles.regionHierarchyTrigger}
                 value={selectedVillage}
                 onChange={value => {
                   if (selectedDistrict) {
@@ -9881,14 +9885,21 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     flexDirection: 'row',
     gap: 12,
+    width: '100%',
   },
   regionHierarchyControl: {
-    flex: 1,
+    flexBasis: 0,
+    flexGrow: 1,
+    flexShrink: 1,
     minWidth: 0,
   },
   regionHierarchyMenu: {
     marginTop: 6,
     maxHeight: 220,
+  },
+  regionHierarchyTrigger: {
+    minWidth: 0,
+    width: '100%',
   },
   regionStatsGrid: {
     alignItems: 'stretch',
