@@ -284,13 +284,25 @@ export function KolamPosFullWindowSurface({
             />
           </View>
           {isCatalogView ? (
-            <KolamSearchField
-              value={catalogSearch}
-              onChangeText={onCatalogSearchChange}
-              placeholder="Cari... (F1)"
-              inputRef={searchInputRef}
-              containerStyle={styles.search}
-            />
+            <View style={styles.searchWrap}>
+              <KolamSearchField
+                value={catalogSearch}
+                onChangeText={onCatalogSearchChange}
+                placeholder="Cari... (F1)"
+                inputRef={searchInputRef}
+                containerStyle={styles.search}
+                inputStyle={catalogSearch ? styles.searchInputWithClear : null}
+              />
+              {catalogSearch ? (
+                <KolamInteractionFrame
+                  accessibilityRole="button"
+                  accessibilityLabel="Hapus pencarian katalog"
+                  onPress={() => onCatalogSearchChange('')}
+                  style={styles.searchClearButton}>
+                  <Text style={styles.searchClearText}>X</Text>
+                </KolamInteractionFrame>
+              ) : null}
+            </View>
           ) : null}
           <Text style={styles.countText}>
             {getPosViewCountText({
@@ -1852,8 +1864,30 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
     backgroundColor: V.colors.border,
   },
+  searchWrap: {
+    position: 'relative',
+    width: 240,
+  },
   search: {
     width: 240,
+  },
+  searchInputWithClear: {
+    paddingRight: 28,
+  },
+  searchClearButton: {
+    position: 'absolute',
+    right: 9,
+    top: 8,
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 12,
+  },
+  searchClearText: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    fontWeight: '900',
   },
   countText: {
     color: V.colors.mutedFg,
