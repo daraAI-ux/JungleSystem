@@ -1811,6 +1811,15 @@ describe('KolamAmSurface', () => {
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Webhook Save'}).props.onPress();
     });
+    expect(createAmWebhookConfig).not.toHaveBeenCalled();
+    expect(renderText(renderer!).join(' ')).toContain('Secret HMAC minimal 16 karakter wajib diisi');
+
+    await act(async () => {
+      inputs[1].props.onChangeText('secret-16-chars-ok');
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Webhook Save'}).props.onPress();
+    });
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Webhook Toggle webhook-1'}).props.onPress();
     });
@@ -1825,7 +1834,7 @@ describe('KolamAmSurface', () => {
       url: 'https://new.example.test/webhook',
       events: ['transfer.success', 'mutasi.created'],
       description: 'New hook',
-      secret: 'secret',
+      secret: 'secret-16-chars-ok',
     });
     expect(updateAmWebhookConfig).toHaveBeenCalledWith('webhook-1', {
       status: 'inactive',

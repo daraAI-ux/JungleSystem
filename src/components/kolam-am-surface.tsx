@@ -2735,8 +2735,17 @@ function AmWebhooksPage() {
 
   const saveWebhook = React.useCallback(async () => {
     const url = formUrl.trim();
+    const secret = formSecret.trim();
     if (!url || selectedEvents.length === 0) {
       setError('URL dan minimal satu event wajib diisi.');
+      return;
+    }
+    if (!editingConfigId && secret.length < 16) {
+      setError('Secret HMAC minimal 16 karakter wajib diisi untuk webhook baru.');
+      return;
+    }
+    if (editingConfigId && secret && secret.length < 16) {
+      setError('Secret HMAC minimal 16 karakter jika ingin diganti.');
       return;
     }
 
@@ -2747,7 +2756,7 @@ function AmWebhooksPage() {
         url,
         events: selectedEvents,
         description: formDescription.trim(),
-        ...(formSecret.trim() ? {secret: formSecret.trim()} : {}),
+        ...(secret ? {secret} : {}),
       };
       if (editingConfigId) {
         await updateAmWebhookConfig(editingConfigId, payload);
@@ -2863,7 +2872,7 @@ function AmWebhooksPage() {
         <Text style={styles.panelTitle}>{editingConfigId ? 'Edit Webhook' : 'Register Webhook'}</Text>
         <View style={styles.formGrid}>
           <AmTextInput label="URL" placeholder="https://your-server.com/webhook" value={formUrl} onChangeText={setFormUrl} />
-          <AmTextInput label="Secret" placeholder={editingConfigId ? 'Kosongkan untuk secret lama' : 'Shared secret optional'} value={formSecret} onChangeText={setFormSecret} />
+          <AmTextInput label="Secret" placeholder={editingConfigId ? 'Kosongkan untuk secret lama' : 'Minimal 16 karakter untuk HMAC'} value={formSecret} onChangeText={setFormSecret} />
           <AmTextInput label="Description" placeholder="e.g. DA Inventory Backend" value={formDescription} onChangeText={setFormDescription} />
         </View>
         <View style={styles.eventGrid}>
