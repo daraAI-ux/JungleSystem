@@ -1,15 +1,18 @@
 import {
+  buildKolamLayananOpsKpiCards,
   formatKolamLayananUnitPrice,
   getKolamLayananListTab,
   getKolamLayananRouteMode,
   getKolamLayananServiceIdFromRoute,
+  getKolamLayananSubscriptionStatusLabel,
   getKolamLayananTaskTypeLabel,
   isKolamLayananNativeRoute,
+  normalizeKolamLayananOpsDashboard,
+  normalizeKolamLayananPendingList,
   normalizeKolamLayananServiceList,
+  normalizeKolamLayananSubscriptionList,
 } from '../src/domain/kolam-layanan';
-import {
-  getKolamNavigationItemByRoute,
-} from '../src/domain/kolam-navigation';
+import { getKolamNavigationItemByRoute } from '../src/domain/kolam-navigation';
 
 describe('kolam-layanan domain', () => {
   it('parses layanan routes and tabs', () => {
@@ -74,6 +77,94 @@ describe('kolam-layanan domain', () => {
     expect(list.page).toBe(2);
     expect(list.total).toBe(25);
     expect(list.totalPages).toBe(3);
+  });
+
+  it('normalizes ops dashboard, pending list, and subscriptions', () => {
+    const ops = normalizeKolamLayananOpsDashboard({
+      data: {
+        subscriptions: { active: 4 },
+        visits: { scheduledToday: 2 },
+        hpp: { totalThisMonth: 250000 },
+        capacity: {
+          period: { periodStart: '2026-07-01', periodEnd: '2026-07-30' },
+          summary: { fullSlots: 3, limitedSlots: 5, totalSlots: 28 },
+          slots: [
+            {
+              week: 1,
+              weekday: 1,
+              status: 'limited',
+              booked: 2,
+              capacity: 3,
+              remaining: 1,
+              dates: ['2026-07-07'],
+            },
+          ],
+        },
+        alerts: {
+          overdue: [
+            {
+              pendingServiceId: 'ps1',
+              executionId: 'ex1',
+              visitTitle: 'Dosing A',
+              scheduledTime: '2026-07-30T08:00:00.000Z',
+            },
+          ],
+          pendingSupervisor: [],
+          pendingCustomerConfirm: [],
+        },
+      },
+    });
+    expect(ops.activeSubscriptions).toBe(4);
+    expect(ops.scheduledToday).toBe(2);
+    expect(ops.fullSlots).toBe(3);
+    expect(ops.slots).toHaveLength(1);
+    expect(ops.alerts.overdue[0].href).toContain(
+      '/layanan/voucher/ps1/execution/ex1',
+    );
+    expect(buildKolamLayananOpsKpiCards(ops)[0].value).toBe('4');
+
+    const pending = normalizeKolamLayananPendingList({
+      data: [
+        {
+          _id: 'ps1',
+          serviceSerial: 'VCH-1',
+          status: 'pending',
+          packageCode: 'PKG',
+          service: { name: 'Dosing' },
+          sale: { invoiceCode: 'INV-1', customer: { name: 'Budi' } },
+        },
+      ],
+      pagination: {
+        currentPage: 1,
+        totalPages: 2,
+        totalDocuments: 12,
+        limit: 10,
+      },
+    });
+    expect(pending.items[0].serviceSerial).toBe('VCH-1');
+    expect(pending.items[0].customerName).toBe('Budi');
+    expect(pending.total).toBe(12);
+    expect(pending.totalPages).toBe(2);
+
+    const subs = normalizeKolamLayananSubscriptionList({
+      data: [
+        {
+          _id: 'sub1',
+          subscriptionNumber: 'SUB-1',
+          status: 'active',
+          autoRenew: true,
+          customer: { name: 'Ani' },
+          service: { name: 'Paket A', packageCode: 'PA' },
+          pendingService: { _id: 'ps1', serviceSerial: 'VCH-1' },
+          startDate: '2026-01-01',
+          endDate: '2026-12-31',
+        },
+      ],
+      pagination: { page: 1, limit: 10, total: 1, totalPages: 1 },
+    });
+    expect(subs.items[0].subscriptionNumber).toBe('SUB-1');
+    expect(subs.items[0].voucherId).toBe('ps1');
+    expect(getKolamLayananSubscriptionStatusLabel('active')).toBe('Aktif');
   });
 });
 

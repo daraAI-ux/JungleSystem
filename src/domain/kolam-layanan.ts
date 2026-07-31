@@ -73,6 +73,244 @@ export interface KolamLayananServiceListResult {
   totalPages: number;
 }
 
+export type KolamLayananSubscriptionStatus =
+  | 'draft'
+  | 'active'
+  | 'suspended'
+  | 'expired'
+  | 'cancelled';
+
+export type KolamLayananPendingStatus =
+  | 'pending'
+  | 'awaiting_staff_approval'
+  | 'awaiting_client_approval'
+  | 'schedule_approved'
+  | 'initiated'
+  | 'cancelled';
+
+export type KolamLayananCapacityStatus = 'available' | 'limited' | 'full';
+
+export interface KolamLayananOpsAlert {
+  executionId: string | null;
+  taskId: string | null;
+  taskKind: 'dosing' | 'maintenance' | string;
+  pendingServiceId: string | null;
+  subscriptionId: string | null;
+  visitTitle: string;
+  packageTaskCode: string;
+  scheduledTime: string | null;
+  href: string | null;
+}
+
+export interface KolamLayananCapacitySlot {
+  week: number;
+  weekday: number;
+  weekdayLabel: string;
+  dates: string[];
+  status: KolamLayananCapacityStatus;
+  booked: number;
+  capacity: number;
+  remaining: number;
+}
+
+export interface KolamLayananOpsDashboard {
+  generatedAt: string;
+  timezone: string;
+  activeSubscriptions: number;
+  scheduledToday: number;
+  fullSlots: number;
+  hppThisMonth: number;
+  capacityPeriodStart: string;
+  capacityPeriodEnd: string;
+  capacitySummary: {
+    fullSlots: number;
+    limitedSlots: number;
+    totalSlots: number;
+  };
+  slots: KolamLayananCapacitySlot[];
+  alerts: {
+    overdue: KolamLayananOpsAlert[];
+    pendingSupervisor: KolamLayananOpsAlert[];
+    pendingCustomerConfirm: KolamLayananOpsAlert[];
+  };
+}
+
+export interface KolamLayananPendingService {
+  id: string;
+  serviceSerial: string;
+  invoiceCode: string;
+  status: KolamLayananPendingStatus | string;
+  packageCode: string;
+  serviceName: string;
+  customerName: string;
+  taskType: string | null;
+  purchasedAt?: string;
+}
+
+export interface KolamLayananPendingListQuery {
+  page?: number;
+  limit?: number;
+  status?: KolamLayananPendingStatus;
+  statuses?: string;
+  search?: string;
+}
+
+export interface KolamLayananPendingListResult {
+  items: KolamLayananPendingService[];
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface KolamLayananSubscription {
+  id: string;
+  subscriptionNumber: string;
+  customerName: string;
+  serviceName: string;
+  packageCode: string;
+  voucherSerial: string;
+  voucherId: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  status: KolamLayananSubscriptionStatus | string;
+  autoRenew: boolean;
+}
+
+export interface KolamLayananSubscriptionListQuery {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: KolamLayananSubscriptionStatus | 'all';
+}
+
+export interface KolamLayananSubscriptionListResult {
+  items: KolamLayananSubscription[];
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export const KOLAM_LAYANAN_SUBSCRIPTION_STATUS_OPTIONS: Array<{
+  id: KolamLayananSubscriptionStatus;
+  label: string;
+}> = [
+  { id: 'draft', label: 'Draf' },
+  { id: 'active', label: 'Aktif' },
+  { id: 'suspended', label: 'Ditangguhkan' },
+  { id: 'expired', label: 'Kedaluwarsa' },
+  { id: 'cancelled', label: 'Dibatalkan' },
+];
+
+export const KOLAM_LAYANAN_PENDING_STATUS_LABEL: Record<string, string> = {
+  pending: 'Menunggu',
+  awaiting_staff_approval: 'Menunggu staf',
+  awaiting_client_approval: 'Menunggu klien',
+  schedule_approved: 'Jadwal disetujui',
+  initiated: 'Diaktifkan',
+  cancelled: 'Dibatalkan',
+};
+
+export function getKolamLayananSubscriptionStatusLabel(status?: string | null) {
+  return (
+    KOLAM_LAYANAN_SUBSCRIPTION_STATUS_OPTIONS.find(option => option.id === status)
+      ?.label ||
+    status ||
+    '—'
+  );
+}
+
+export function getKolamLayananSubscriptionStatusIntent(
+  status?: string | null,
+): 'secondary' | 'success' | 'warning' | 'danger' | 'info' {
+  if (status === 'active') {
+    return 'success';
+  }
+  if (status === 'suspended') {
+    return 'warning';
+  }
+  if (status === 'cancelled') {
+    return 'danger';
+  }
+  if (status === 'draft' || status === 'expired') {
+    return 'secondary';
+  }
+  return 'info';
+}
+
+export function getKolamLayananPendingStatusLabel(status?: string | null) {
+  if (!status) {
+    return '—';
+  }
+  return KOLAM_LAYANAN_PENDING_STATUS_LABEL[status] || status;
+}
+
+export function getKolamLayananCapacityStatusLabel(status: string) {
+  if (status === 'full') {
+    return 'Penuh';
+  }
+  if (status === 'limited') {
+    return 'Hampir penuh';
+  }
+  return 'Tersedia';
+}
+
+export function getKolamLayananCapacityStatusIntent(
+  status: string,
+): 'danger' | 'warning' | 'success' {
+  if (status === 'full') {
+    return 'danger';
+  }
+  if (status === 'limited') {
+    return 'warning';
+  }
+  return 'success';
+}
+
+export function getKolamLayananOpsAlertHref(alert: {
+  pendingServiceId: string | null;
+  executionId: string | null;
+}) {
+  if (!alert.pendingServiceId || !alert.executionId) {
+    return null;
+  }
+  return `${KOLAM_LAYANAN_ROOT}/voucher/${alert.pendingServiceId}/execution/${alert.executionId}`;
+}
+
+export function buildKolamLayananOpsKpiCards(dashboard: KolamLayananOpsDashboard | null) {
+  return [
+    {
+      id: 'active',
+      label: 'Langganan aktif',
+      detail: 'Kontrak berstatus aktif',
+      value: dashboard ? String(dashboard.activeSubscriptions) : '—',
+      tone: 'success' as const,
+    },
+    {
+      id: 'today',
+      label: 'Kunjungan hari ini',
+      detail: 'Jadwal operasional hari ini',
+      value: dashboard ? String(dashboard.scheduledToday) : '—',
+      tone: 'default' as const,
+    },
+    {
+      id: 'fullSlots',
+      label: 'Slot penuh',
+      detail: 'Periode 30 hari ke depan',
+      value: dashboard ? String(dashboard.fullSlots) : '—',
+      tone: 'warning' as const,
+    },
+    {
+      id: 'hpp',
+      label: 'HPP bulan ini',
+      detail: 'Biaya kunjungan layanan',
+      value: dashboard ? formatCompactIdr(dashboard.hppThisMonth) : '—',
+      tone: 'muted' as const,
+    },
+  ];
+}
+
 export function normalizeKolamLayananPath(route: string) {
   const path = route.trim().split('?')[0] || '';
   if (!path) {
@@ -276,6 +514,226 @@ export function normalizeKolamLayananServiceList(
     total,
     totalPages,
   };
+}
+
+export function normalizeKolamLayananOpsDashboard(
+  payload: unknown,
+): KolamLayananOpsDashboard {
+  const root = asRecord(unwrapData(payload));
+  const subscriptions = asRecord(root.subscriptions);
+  const visits = asRecord(root.visits);
+  const hpp = asRecord(root.hpp);
+  const capacity = asRecord(root.capacity);
+  const period = asRecord(capacity.period);
+  const summary = asRecord(capacity.summary);
+  const alerts = asRecord(root.alerts);
+  const slotsRaw = Array.isArray(capacity.slots) ? capacity.slots : [];
+
+  return {
+    generatedAt: getString(root, 'generatedAt'),
+    timezone: getString(root, 'timezone') || getString(capacity, 'timezone'),
+    activeSubscriptions: getNumber(subscriptions, 'active') ?? 0,
+    scheduledToday: getNumber(visits, 'scheduledToday') ?? 0,
+    fullSlots: getNumber(summary, 'fullSlots') ?? 0,
+    hppThisMonth: getNumber(hpp, 'totalThisMonth') ?? 0,
+    capacityPeriodStart: getString(period, 'periodStart'),
+    capacityPeriodEnd: getString(period, 'periodEnd'),
+    capacitySummary: {
+      fullSlots: getNumber(summary, 'fullSlots') ?? 0,
+      limitedSlots: getNumber(summary, 'limitedSlots') ?? 0,
+      totalSlots: getNumber(summary, 'totalSlots') ?? 0,
+    },
+    slots: slotsRaw.map(normalizeCapacitySlot).filter(slot => slot.week > 0),
+    alerts: {
+      overdue: normalizeAlertRows(alerts.overdue),
+      pendingSupervisor: normalizeAlertRows(alerts.pendingSupervisor),
+      pendingCustomerConfirm: normalizeAlertRows(alerts.pendingCustomerConfirm),
+    },
+  };
+}
+
+export function normalizeKolamLayananPendingService(
+  payload: unknown,
+): KolamLayananPendingService {
+  const record = asRecord(unwrapData(payload));
+  const service = asRecord(record.service);
+  const sale = asRecord(record.sale);
+  const customer = asRecord(sale.customer);
+
+  return {
+    id: getString(record, '_id') || getString(record, 'id'),
+    serviceSerial: getString(record, 'serviceSerial') || '—',
+    invoiceCode:
+      getString(record, 'invoiceCode') ||
+      getString(sale, 'invoiceCode') ||
+      '—',
+    status: getString(record, 'status') || 'pending',
+    packageCode: getString(record, 'packageCode') || '—',
+    serviceName: getString(service, 'name') || '—',
+    customerName: getString(customer, 'name') || '—',
+    taskType: getString(record, 'taskType') || getString(service, 'taskType') || null,
+    purchasedAt: getString(record, 'purchasedAt') || undefined,
+  };
+}
+
+export function normalizeKolamLayananPendingList(
+  payload: unknown,
+  query: KolamLayananPendingListQuery = {},
+): KolamLayananPendingListResult {
+  const outer = asRecord(payload);
+  const nested = asRecord(outer.data);
+  const list: unknown[] = Array.isArray(payload)
+    ? payload
+    : Array.isArray(outer.data)
+      ? outer.data
+      : Array.isArray(nested.data)
+        ? nested.data
+        : [];
+
+  const pagination = asRecord(outer.pagination ?? nested.pagination ?? null);
+  const limit =
+    query.limit ??
+    getNumber(pagination, 'limit') ??
+    10;
+  const page =
+    query.page ??
+    getNumber(pagination, 'page') ??
+    getNumber(pagination, 'currentPage') ??
+    1;
+  const total =
+    getNumber(pagination, 'total') ??
+    getNumber(pagination, 'totalDocuments') ??
+    getNumber(pagination, 'totalItems') ??
+    list.length;
+  const totalPages =
+    getNumber(pagination, 'totalPages') ??
+    Math.max(1, Math.ceil(total / Math.max(1, limit)));
+
+  return {
+    items: list
+      .map(normalizeKolamLayananPendingService)
+      .filter(item => Boolean(item.id)),
+    page,
+    limit,
+    total,
+    totalPages,
+  };
+}
+
+export function normalizeKolamLayananSubscription(
+  payload: unknown,
+): KolamLayananSubscription {
+  const record = asRecord(unwrapData(payload));
+  const customer = asRecord(record.customer);
+  const service = asRecord(record.service);
+  const pending = asRecord(record.pendingService);
+
+  return {
+    id: getString(record, '_id') || getString(record, 'id'),
+    subscriptionNumber: getString(record, 'subscriptionNumber') || '—',
+    customerName:
+      typeof record.customer === 'string'
+        ? record.customer
+        : getString(customer, 'name') || '—',
+    serviceName:
+      typeof record.service === 'string'
+        ? record.service
+        : getString(service, 'name') || '—',
+    packageCode:
+      getString(record, 'packageCode') ||
+      getString(service, 'packageCode') ||
+      '—',
+    voucherSerial:
+      getString(pending, 'serviceSerial') ||
+      getString(record, 'serviceSerial') ||
+      '—',
+    voucherId:
+      getString(pending, '_id') || getString(pending, 'id') || null,
+    startDate: getString(record, 'startDate') || null,
+    endDate: getString(record, 'endDate') || null,
+    status: getString(record, 'status') || 'draft',
+    autoRenew: getBoolean(record, 'autoRenew') ?? false,
+  };
+}
+
+export function normalizeKolamLayananSubscriptionList(
+  payload: unknown,
+  query: KolamLayananSubscriptionListQuery = {},
+): KolamLayananSubscriptionListResult {
+  const outer = asRecord(payload);
+  const nested = asRecord(outer.data);
+  const list: unknown[] = Array.isArray(payload)
+    ? payload
+    : Array.isArray(outer.data)
+      ? outer.data
+      : Array.isArray(nested.data)
+        ? nested.data
+        : [];
+
+  const pagination = asRecord(outer.pagination ?? nested.pagination ?? null);
+  const limit = query.limit ?? getNumber(pagination, 'limit') ?? 10;
+  const page = query.page ?? getNumber(pagination, 'page') ?? 1;
+  const total =
+    getNumber(pagination, 'total') ??
+    getNumber(pagination, 'totalItems') ??
+    list.length;
+  const totalPages =
+    getNumber(pagination, 'totalPages') ??
+    Math.max(1, Math.ceil(total / Math.max(1, limit)));
+
+  return {
+    items: list
+      .map(normalizeKolamLayananSubscription)
+      .filter(item => Boolean(item.id)),
+    page,
+    limit,
+    total,
+    totalPages,
+  };
+}
+
+function normalizeCapacitySlot(value: unknown): KolamLayananCapacitySlot {
+  const record = asRecord(value);
+  const statusRaw = getString(record, 'status') || 'available';
+  const status: KolamLayananCapacityStatus =
+    statusRaw === 'full' || statusRaw === 'limited' ? statusRaw : 'available';
+  const dates = Array.isArray(record.dates)
+    ? record.dates.filter((item): item is string => typeof item === 'string')
+    : [];
+
+  return {
+    week: getNumber(record, 'week') ?? 0,
+    weekday: getNumber(record, 'weekday') ?? 0,
+    weekdayLabel: getString(record, 'weekdayLabel'),
+    dates,
+    status,
+    booked: getNumber(record, 'booked') ?? 0,
+    capacity: getNumber(record, 'capacity') ?? 0,
+    remaining: getNumber(record, 'remaining') ?? 0,
+  };
+}
+
+function normalizeAlertRows(value: unknown): KolamLayananOpsAlert[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.map(item => {
+    const record = asRecord(item);
+    const pendingServiceId =
+      getString(record, 'pendingServiceId') || null;
+    const executionId = getString(record, 'executionId') || null;
+    return {
+      executionId,
+      taskId: getString(record, 'taskId') || null,
+      taskKind: getString(record, 'taskKind') || 'dosing',
+      pendingServiceId,
+      subscriptionId: getString(record, 'subscriptionId') || null,
+      visitTitle: getString(record, 'visitTitle') || 'Kunjungan',
+      packageTaskCode: getString(record, 'packageTaskCode'),
+      scheduledTime: getString(record, 'scheduledTime') || null,
+      href: getKolamLayananOpsAlertHref({ pendingServiceId, executionId }),
+    };
+  });
 }
 
 function unwrapData(payload: unknown): unknown {
