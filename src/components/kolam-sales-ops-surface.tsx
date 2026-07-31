@@ -86,13 +86,8 @@ const ITEM_TYPE_OPTIONS_ADD_ITEMS: Array<{
   { label: 'Kustom', value: 'custom' },
 ];
 
-const ITEM_DISCOUNT_TYPE_OPTIONS = [
-  { label: '%', value: 'percentage' },
-  { label: 'Rp', value: 'fixed' },
-] as const;
-
-/** Fixed grid width so horizontal ScrollView can scroll (flexGrow catalog was swallowing siblings on RNW). */
-const SALE_CREATE_ITEM_GRID_WIDTH = 1220;
+/** Item row fills parent width — no horizontal scroll. */
+const ITEM_COL_GAP = 6;
 
 /**
  * Kolam backoffice penjualan (FE `/sales`).
@@ -961,14 +956,7 @@ function KolamSalesOpsCreateForm({
           <Text style={styles.sectionTitle}>Item</Text>
           <KolamButton label="Tambah item" onPress={controller.onAddCreateItem} />
         </View>
-        <ScrollView
-          horizontal
-          nestedScrollEnabled
-          showsHorizontalScrollIndicator
-          style={styles.itemGridScroll}
-          contentContainerStyle={styles.itemGridScrollContent}
-        >
-          <View style={styles.itemGrid}>
+        <View style={styles.itemGrid}>
             <View style={styles.itemGridHeader}>
               <View style={styles.itemColType}>
                 <Text style={styles.itemGridHeaderCell}>Tipe</Text>
@@ -1245,27 +1233,51 @@ function KolamSalesOpsCreateForm({
                   </View>
 
                   <View style={styles.itemColDiscount}>
-                    <View style={styles.itemDiscountRow}>
-                      <KolamDropdownSelect
-                        accessibilityLabel={`Tipe diskon item ${index + 1}`}
-                        label="Diskon"
-                        menuPlacement="inline"
-                        onChange={discountType =>
-                          controller.onChangeCreateItem(item.key, {
-                            discountType:
-                              discountType === 'percentage'
-                                ? 'percentage'
-                                : 'fixed',
-                          })
-                        }
-                        options={[...ITEM_DISCOUNT_TYPE_OPTIONS]}
-                        showLabelInTrigger={false}
-                        style={styles.itemDiscountType}
-                        triggerStyle={styles.itemDiscountTypeTrigger}
-                        triggerTextStyle={styles.itemDropdownTriggerText}
-                        value={item.discountType}
-                      />
-                      <View style={styles.itemDiscountAmount}>
+                    <View style={styles.itemMoneyBox}>
+                      <Text numberOfLines={1} style={styles.itemMoneyText}>
+                        {formatRupiah(lineTotal.discount)}
+                      </Text>
+                      <View style={styles.itemDiscountEditRow}>
+                        <Pressable
+                          accessibilityLabel={`Diskon persen item ${index + 1}`}
+                          onPress={() =>
+                            controller.onChangeCreateItem(item.key, {
+                              discountType: 'percentage',
+                            })
+                          }
+                          style={styles.itemDiscountTypeChip}
+                        >
+                          <Text
+                            style={[
+                              styles.itemDiscountTypeChipText,
+                              item.discountType === 'percentage'
+                                ? styles.itemDiscountTypeChipTextActive
+                                : null,
+                            ]}
+                          >
+                            %
+                          </Text>
+                        </Pressable>
+                        <Pressable
+                          accessibilityLabel={`Diskon rupiah item ${index + 1}`}
+                          onPress={() =>
+                            controller.onChangeCreateItem(item.key, {
+                              discountType: 'fixed',
+                            })
+                          }
+                          style={styles.itemDiscountTypeChip}
+                        >
+                          <Text
+                            style={[
+                              styles.itemDiscountTypeChipText,
+                              item.discountType === 'fixed'
+                                ? styles.itemDiscountTypeChipTextActive
+                                : null,
+                            ]}
+                          >
+                            Rp
+                          </Text>
+                        </Pressable>
                         <KolamFormTextField
                           mode="numeric"
                           onChangeText={discountAmount =>
@@ -1274,7 +1286,7 @@ function KolamSalesOpsCreateForm({
                             })
                           }
                           placeholder="0"
-                          style={styles.itemControlFill}
+                          style={styles.itemPlainInput}
                           value={item.discountAmount}
                         />
                       </View>
@@ -1282,15 +1294,10 @@ function KolamSalesOpsCreateForm({
                   </View>
 
                   <View style={styles.itemColTotal}>
-                    <View style={styles.itemTotalBox}>
-                      <Text numberOfLines={1} style={styles.itemTotalText}>
+                    <View style={styles.itemMoneyBox}>
+                      <Text numberOfLines={1} style={styles.itemMoneyText}>
                         {formatRupiah(lineTotal.total)}
                       </Text>
-                      {lineTotal.discount > 0 ? (
-                        <Text numberOfLines={1} style={styles.itemTotalDiscount}>
-                          -{formatRupiah(lineTotal.discount)}
-                        </Text>
-                      ) : null}
                     </View>
                   </View>
 
@@ -1361,7 +1368,6 @@ function KolamSalesOpsCreateForm({
               );
             })}
           </View>
-        </ScrollView>
       </KolamContentFrame>
 
       <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
@@ -1991,26 +1997,19 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8,
   },
-  itemGridScroll: {
-    alignSelf: 'stretch',
-    width: '100%',
-  },
-  itemGridScrollContent: {
-    flexGrow: 0,
-    paddingBottom: 6,
-  },
   itemGrid: {
-    gap: 12,
-    width: SALE_CREATE_ITEM_GRID_WIDTH,
+    alignSelf: 'stretch',
+    gap: 10,
+    width: '100%',
   },
   itemGridHeader: {
     alignItems: 'center',
     borderBottomColor: V.colors.border,
     borderBottomWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
-    gap: 8,
+    gap: ITEM_COL_GAP,
     paddingBottom: 8,
-    width: SALE_CREATE_ITEM_GRID_WIDTH,
+    width: '100%',
   },
   itemGridHeaderCell: {
     color: V.colors.mutedFg,
@@ -2020,44 +2019,46 @@ const styles = StyleSheet.create({
   },
   itemGridBlock: {
     gap: 8,
-    width: SALE_CREATE_ITEM_GRID_WIDTH,
+    width: '100%',
   },
   itemGridRow: {
     alignItems: 'flex-start',
     flexDirection: 'row',
     flexWrap: 'nowrap',
-    gap: 8,
-    width: SALE_CREATE_ITEM_GRID_WIDTH,
+    gap: ITEM_COL_GAP,
+    width: '100%',
   },
   itemColType: {
     flexGrow: 0,
     flexShrink: 0,
-    width: 120,
+    width: 108,
   },
   itemColCatalog: {
-    flexGrow: 0,
-    flexShrink: 0,
-    width: 260,
+    flexGrow: 1,
+    flexShrink: 1,
+    minWidth: 140,
   },
   itemColShipping: {
     flexGrow: 0,
-    flexShrink: 0,
-    width: 170,
+    flexShrink: 1,
+    minWidth: 110,
+    width: 140,
   },
   itemColQty: {
     flexGrow: 0,
     flexShrink: 0,
-    width: 88,
+    width: 64,
   },
   itemColVoucher: {
     flexGrow: 0,
-    flexShrink: 0,
-    width: 140,
+    flexShrink: 1,
+    minWidth: 88,
+    width: 110,
   },
   itemColDiscount: {
     flexGrow: 0,
     flexShrink: 0,
-    width: 168,
+    width: 120,
   },
   itemColTotal: {
     flexGrow: 0,
@@ -2069,8 +2070,8 @@ const styles = StyleSheet.create({
     flexGrow: 0,
     flexShrink: 0,
     justifyContent: 'center',
-    minHeight: 36,
-    width: 44,
+    minHeight: V.control.inputHeight,
+    width: 36,
   },
   itemDropdown: {
     alignSelf: 'stretch',
@@ -2085,47 +2086,53 @@ const styles = StyleSheet.create({
   },
   itemDropdownTriggerText: {
     fontSize: V.control.fontSize,
-    maxWidth: 240,
+    maxWidth: 200,
   },
-  itemDiscountRow: {
-    alignItems: 'flex-start',
-    flexDirection: 'row',
-    gap: 6,
-    width: '100%',
-  },
-  itemDiscountType: {
-    flexGrow: 0,
-    flexShrink: 0,
-    width: 56,
-  },
-  itemDiscountTypeTrigger: {
-    minWidth: 0,
-    paddingHorizontal: 8,
-    width: '100%',
-  },
-  itemDiscountAmount: {
-    flex: 1,
-    minWidth: 0,
-  },
-  itemControlFill: {
-    width: '100%',
-  },
-  itemTotalBox: {
+  itemMoneyBox: {
     justifyContent: 'center',
     minHeight: V.control.inputHeight,
     paddingVertical: 2,
   },
-  itemTotalText: {
+  itemMoneyText: {
     color: V.colors.fg,
     fontFamily: V.fontFamily,
     fontSize: 12,
     fontWeight: '700',
   },
-  itemTotalDiscount: {
-    color: V.colors.danger,
+  itemDiscountEditRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 4,
+    marginTop: 2,
+  },
+  itemDiscountTypeChip: {
+    paddingHorizontal: 2,
+    paddingVertical: 1,
+  },
+  itemDiscountTypeChipText: {
+    color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
-    fontSize: 10,
-    fontWeight: '600',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  itemDiscountTypeChipTextActive: {
+    color: V.colors.primary,
+  },
+  itemPlainInput: {
+    backgroundColor: 'transparent',
+    borderWidth: 0,
+    flex: 1,
+    fontSize: 11,
+    fontWeight: '700',
+    height: 22,
+    maxHeight: 22,
+    minHeight: 22,
+    minWidth: 36,
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+  },
+  itemControlFill: {
+    width: '100%',
   },
   toolbarPointsWrap: {
     alignItems: 'center',
