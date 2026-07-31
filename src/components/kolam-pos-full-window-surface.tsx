@@ -124,6 +124,9 @@ export function KolamPosFullWindowSurface({
   const [activeView, setActiveView] = React.useState<PosWindowView>('catalog');
   const [isPaymentModalOpen, setIsPaymentModalOpen] = React.useState(false);
   const [isSavedOrdersOpen, setIsSavedOrdersOpen] = React.useState(false);
+  const [quickViewItem, setQuickViewItem] = React.useState<CatalogItem | null>(
+    null,
+  );
   const [savedOrders, setSavedOrders] = React.useState<PosSavedOrder[]>([]);
   const [customerSelectorSearch, setCustomerSelectorSearch] =
     React.useState('');
@@ -341,6 +344,7 @@ export function KolamPosFullWindowSurface({
                         )}
                         item={item}
                         onAddToCart={onAddToCart}
+                        onOpenQuickView={setQuickViewItem}
                       />
                     ))}
                     {Array.from({length: columnCount - row.length}).map(
@@ -520,6 +524,14 @@ export function KolamPosFullWindowSurface({
           onLoadOrder={handleLoadSavedOrder}
         />
       ) : null}
+      {quickViewItem ? (
+        <PosQuickViewModal
+          cartLine={checkout.cart.find(line => line.itemId === quickViewItem.id)}
+          item={quickViewItem}
+          onAddToCart={onAddToCart}
+          onClose={() => setQuickViewItem(null)}
+        />
+      ) : null}
       {isPaymentModalOpen ? (
         <PosPaymentModal
           isCreatingSale={isCreatingSale}
@@ -672,10 +684,12 @@ function PosCatalogCard({
   cartLine,
   item,
   onAddToCart,
+  onOpenQuickView,
 }: {
   cartLine?: CartLine;
   item: CatalogItem;
   onAddToCart: (item: CatalogItem) => void;
+  onOpenQuickView: (item: CatalogItem) => void;
 }) {
   const isOutOfStock = item.stock <= 0;
   const isLowStock = item.stock > 0 && item.stock <= item.lowStockThreshold;
@@ -732,6 +746,11 @@ function PosCatalogCard({
           </Text>
           <Text style={styles.productPrice}>{formatRupiah(item.price)}</Text>
           <Text style={styles.productMeta}>Stok {item.stock}</Text>
+          <KolamInteractionFrame
+            onPress={() => onOpenQuickView(item)}
+            style={styles.quickViewButton}>
+            <Text style={styles.quickViewButtonText}>Detail</Text>
+          </KolamInteractionFrame>
           <KolamInteractionFrame
             disabled={isOutOfStock}
             onPress={() => onAddToCart(item)}
@@ -1323,6 +1342,121 @@ function PosSavedOrdersPanel({
           </View>
         )}
       </View>
+    </View>
+  );
+}
+
+function PosQuickViewModal({
+  cartLine,
+  item,
+  onAddToCart,
+  onClose,
+}: {
+  cartLine?: CartLine;
+  item: CatalogItem;
+  onAddToCart: (item: CatalogItem) => void;
+  onClose: () => void;
+}) {
+  const isOutOfStock = item.stock <= 0;
+  const isLowStock = item.stock > 0 && item.stock <= item.lowStockThreshold;
+
+  return (
+    <View style={styles.quickViewOverlay}>
+      <KolamInteractionFrame style={styles.paymentBackdrop} onPress={onClose} />
+      <View style={styles.quickViewDialog}>
+        <View style={styles.quickViewMedia}>
+          {item.imageUri ? (
+            <KolamRemoteImage
+              accessibilityLabel={item.name}
+              previewItems={[
+                {
+                  revision: item.imageRevision ?? item.imageUri,
+                  scope: 'pos-quick-view',
+                  title: item.name,
+                  uri: item.imageUri,
+                },
+              ]}
+              revision={item.imageRevision}
+              scope="pos-quick-view"
+              sourceUri={item.imageUri}
+              style={styles.quickViewImage}
+            />
+          ) : (
+            <View style={styles.quickViewPlaceholder}>
+              <Text style={styles.productImageIcon}>
+                {item.type === 'species' ? 'S' : 'P'}
+              </Text>
+              <Text numberOfLines={2} style={styles.productImageName}>
+                {item.name}
+              </Text>
+            </View>
+          )}
+          {isOutOfStock || isLowStock ? (
+            <Text style={[styles.quickViewStockBadge, isOutOfStock && styles.stockBadgeDanger]}>
+              {isOutOfStock ? 'Habis' : `Sisa ${item.stock}`}
+            </Text>
+          ) : null}
+        </View>
+        <View style={styles.quickViewBody}>
+          <View style={styles.quickViewHeader}>
+            <View style={styles.quickViewTitleWrap}>
+              <Text numberOfLines={2} style={styles.quickViewTitle}>
+                {item.name}
+              </Text>
+              <Text style={styles.quickViewMeta}>
+                {item.code} | {item.category || 'Tanpa kategori'}
+              </Text>
+            </View>
+            <KolamButton label="Tutup" intent="outline" size="sm" onPress={onClose} />
+          </View>
+          <Text style={styles.quickViewPrice}>{formatRupiah(item.price)}</Text>
+          <View style={styles.quickViewInfoGrid}>
+            <PosQuickInfo label="Stok" value={`${item.stock}`} />
+            <PosQuickInfo
+              label="Jenis"
+              value={item.type === 'species' ? 'Spesies' : 'Produk'}
+            />
+            <PosQuickInfo
+              label="Varian"
+              value={item.variantCount ? `${item.variantCount}` : '-'}
+            />
+            <PosQuickInfo
+              label="Keranjang"
+              value={cartLine ? `${cartLine.quantity}` : '-'}
+            />
+          </View>
+          {item.labels.length ? (
+            <View style={styles.quickViewLabelList}>
+              {item.labels.map(label => (
+                <Text key={label} style={styles.quickViewLabelChip}>
+                  {label}
+                </Text>
+              ))}
+            </View>
+          ) : null}
+          <View style={styles.quickViewFooter}>
+            <KolamButton
+              label={cartLine ? 'Tambah Lagi' : 'Tambah'}
+              intent="primary"
+              size="md"
+              disabled={isOutOfStock}
+              onPress={() => onAddToCart(item)}
+              style={styles.quickViewAddButton}
+            />
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function PosQuickInfo({label, value}: {label: string; value: string}) {
+  return (
+    <View style={styles.quickInfoCard}>
+      <Text style={styles.quickInfoLabel}>{label}</Text>
+      <Text numberOfLines={1} style={styles.quickInfoValue}>
+        {value}
+      </Text>
     </View>
   );
 }
@@ -1922,11 +2056,24 @@ const styles = StyleSheet.create({
     color: V.colors.mutedFg,
     fontSize: 9,
   },
+  quickViewButton: {
+    minHeight: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 'auto',
+    borderRadius: 5,
+    backgroundColor: V.colors.muted,
+  },
+  quickViewButtonText: {
+    color: V.colors.fg,
+    fontSize: 10,
+    fontWeight: '800',
+  },
   addButton: {
     minHeight: 30,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 'auto',
+    marginTop: 6,
     borderRadius: 6,
     backgroundColor: V.colors.primary,
   },
@@ -2566,6 +2713,136 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     borderTopColor: V.colors.border,
     borderTopWidth: 1,
+  },
+  quickViewOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 39,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  quickViewDialog: {
+    width: '100%',
+    maxWidth: 820,
+    minHeight: 420,
+    maxHeight: '86%',
+    flexDirection: 'row',
+    overflow: 'hidden',
+    borderRadius: 8,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.bg,
+    shadowColor: '#000',
+    shadowOpacity: 0.18,
+    shadowRadius: 20,
+    shadowOffset: {width: 0, height: 10},
+  },
+  quickViewMedia: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: V.colors.secondary,
+  },
+  quickViewImage: {
+    height: '100%',
+    width: '100%',
+  },
+  quickViewPlaceholder: {
+    flex: 1,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  quickViewStockBadge: {
+    position: 'absolute',
+    left: 12,
+    top: 12,
+    overflow: 'hidden',
+    borderRadius: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    color: V.colors.warning,
+    backgroundColor: V.colors.warningSoft,
+    fontSize: 10,
+    fontWeight: '900',
+  },
+  quickViewBody: {
+    width: 360,
+    gap: 14,
+    padding: 16,
+  },
+  quickViewHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  quickViewTitleWrap: {
+    flex: 1,
+    minWidth: 0,
+  },
+  quickViewTitle: {
+    color: V.colors.fg,
+    fontSize: 20,
+    fontWeight: '900',
+    lineHeight: 24,
+  },
+  quickViewMeta: {
+    marginTop: 5,
+    color: V.colors.mutedFg,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  quickViewPrice: {
+    color: V.colors.primary,
+    fontSize: 18,
+    fontWeight: '900',
+  },
+  quickViewInfoGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  quickInfoCard: {
+    width: 156,
+    minHeight: 62,
+    justifyContent: 'center',
+    borderRadius: 6,
+    padding: 10,
+    backgroundColor: V.colors.mutedSoft,
+  },
+  quickInfoLabel: {
+    color: V.colors.mutedFg,
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  quickInfoValue: {
+    marginTop: 4,
+    color: V.colors.fg,
+    fontSize: 14,
+    fontWeight: '900',
+  },
+  quickViewLabelList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  quickViewLabelChip: {
+    overflow: 'hidden',
+    borderRadius: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    color: V.colors.mutedFg,
+    backgroundColor: V.colors.muted,
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  quickViewFooter: {
+    marginTop: 'auto',
+  },
+  quickViewAddButton: {
+    width: '100%',
   },
   paymentOverlay: {
     ...StyleSheet.absoluteFillObject,
