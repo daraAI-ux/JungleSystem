@@ -4059,6 +4059,7 @@ export function KolamSettingsWebConfigSurface({
                 loading={regionSyncStatus === 'syncing'}
                 loadingLabel="Syncing..."
                 disabled={
+                  disabled ||
                   regionSyncStatus === 'syncing' ||
                   (scope === 'regencies' && !selectedProvince) ||
                   (scope === 'districts' && !selectedRegency) ||

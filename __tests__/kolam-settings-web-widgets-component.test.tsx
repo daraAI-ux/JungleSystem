@@ -938,6 +938,60 @@ describe('settings web widgets', () => {
     );
   });
 
+  it('disables region child sync until parent is selected or when read-only', () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    ReactTestRenderer.act(() => {
+      renderer = ReactTestRenderer.create(
+        <KolamSettingsWebConfigSurface
+          {...createSurfaceProps({
+            activeTabId: 'sync',
+            selectedProvince: '',
+            selectedRegency: '',
+            selectedDistrict: '',
+          })}
+        />,
+      );
+    });
+
+    const actionButtons = renderer!.root.findAllByType(
+      KolamActionControlButton,
+    );
+    expect(
+      actionButtons.find(node => node.props.label === 'Sync regencies')!.props
+        .disabled,
+    ).toBe(true);
+    expect(
+      actionButtons.find(node => node.props.label === 'Sync districts')!.props
+        .disabled,
+    ).toBe(true);
+    expect(
+      actionButtons.find(node => node.props.label === 'Sync villages')!.props
+        .disabled,
+    ).toBe(true);
+
+    ReactTestRenderer.act(() => {
+      renderer!.update(
+        <KolamSettingsWebConfigSurface
+          {...createSurfaceProps({
+            activeTabId: 'sync',
+            readOnly: true,
+            selectedProvince: '32',
+            selectedRegency: '32.73',
+            selectedDistrict: '32.73.01',
+          })}
+        />,
+      );
+    });
+
+    renderer!.root
+      .findAllByType(KolamActionControlButton)
+      .filter(node => String(node.props.label).startsWith('Sync '))
+      .forEach(node => {
+        expect(node.props.disabled).toBe(true);
+      });
+  });
+
   it('fills work site coordinates from backend geocode', async () => {
     const setDraftField = jest.fn();
     jest
