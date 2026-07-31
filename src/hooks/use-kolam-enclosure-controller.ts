@@ -13,6 +13,7 @@ import {
   type KolamEnclosurePagination,
   type KolamEnclosurePendingAllocation,
   type KolamEnclosureStaffRef,
+  type KolamEnclosureStatistics,
   type KolamEnclosureSurfaceMode,
 } from '../domain/kolam-enclosure';
 import {getErrorMessage} from '../lib/api-error';
@@ -20,6 +21,7 @@ import {
   getKolamEnclosureDashboardStats,
   getKolamEnclosureDetail,
   getKolamEnclosureStaffAssignees,
+  getKolamEnclosureStatistics,
   getKolamEnclosures,
   getKolamPendingLivestockAllocations,
   getKolamSpeciesAllocationOverview,
@@ -91,6 +93,9 @@ export interface KolamEnclosureController {
   pendingTotal: number;
   routeEnclosureId: string;
   selectedEnclosure: KolamEnclosure | null;
+  enclosureStatistics: KolamEnclosureStatistics | null;
+  enclosureStatisticsError: string | null;
+  enclosureStatisticsLoading: boolean;
   staffAssignees: KolamEnclosureStaffRef[];
   statusMessage: string | null;
   onChangeFilters: (patch: Partial<KolamEnclosureListFilters>) => void;
@@ -116,6 +121,12 @@ export function useKolamEnclosureController(
   const [enclosures, setEnclosures] = useState<KolamEnclosure[]>([]);
   const [selectedEnclosure, setSelectedEnclosure] =
     useState<KolamEnclosure | null>(null);
+  const [enclosureStatistics, setEnclosureStatistics] =
+    useState<KolamEnclosureStatistics | null>(null);
+  const [enclosureStatisticsError, setEnclosureStatisticsError] =
+    useState<string | null>(null);
+  const [enclosureStatisticsLoading, setEnclosureStatisticsLoading] =
+    useState(false);
   const [dashboardStats, setDashboardStats] =
     useState<KolamEnclosureDashboardStats>(EMPTY_DASHBOARD_STATS);
   const [pendingAllocations, setPendingAllocations] = useState<
@@ -143,6 +154,8 @@ export function useKolamEnclosureController(
     setMode(getKolamEnclosureSurfaceMode(route));
     setFilters(createInitialEnclosureListFilters(route));
     setSelectedEnclosure(null);
+    setEnclosureStatistics(null);
+    setEnclosureStatisticsError(null);
     setError(null);
     setStatusMessage(null);
   }, [route]);
@@ -168,11 +181,23 @@ export function useKolamEnclosureController(
           setError('ID enclosure tidak ditemukan.');
           return;
         }
-        const detail = await getKolamEnclosureDetail(enclosureId);
+        setEnclosureStatisticsLoading(true);
+        setEnclosureStatisticsError(null);
+        const [detail, statisticsResult] = await Promise.all([
+          getKolamEnclosureDetail(enclosureId),
+          getKolamEnclosureStatistics(enclosureId)
+            .then(data => ({data, error: null as string | null}))
+            .catch(loadError => ({
+              data: null,
+              error: getErrorMessage(loadError),
+            })),
+        ]);
         if (requestSeq.current !== activeRequest) {
           return;
         }
         setSelectedEnclosure(detail);
+        setEnclosureStatistics(statisticsResult.data);
+        setEnclosureStatisticsError(statisticsResult.error);
         setDataSource('live');
         return;
       }
@@ -256,6 +281,7 @@ export function useKolamEnclosureController(
     } finally {
       if (requestSeq.current === activeRequest) {
         setLoading(false);
+        setEnclosureStatisticsLoading(false);
       }
     }
   }, [filters, route]);
@@ -337,6 +363,9 @@ export function useKolamEnclosureController(
     pendingTotal,
     routeEnclosureId: getKolamEnclosureRouteId(route),
     selectedEnclosure,
+    enclosureStatistics,
+    enclosureStatisticsError,
+    enclosureStatisticsLoading,
     staffAssignees,
     statusMessage,
     onChangeFilters,

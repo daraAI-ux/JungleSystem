@@ -5,6 +5,7 @@ import {
   deleteKolamEnclosure,
   getKolamEnclosureDashboardStats,
   getKolamEnclosureDetail,
+  getKolamEnclosureStatistics,
   getKolamEnclosureStaffAssignees,
   getKolamEnclosures,
   getKolamPendingLivestockAllocations,
@@ -84,6 +85,55 @@ describe('kolam enclosure api', () => {
 
     expect(fetchMock).toHaveBeenCalledWith(
       `${appConfig.kolamApiBaseUrl}/enclosures/enc-1`,
+      expect.objectContaining({method: 'GET'}),
+    );
+  });
+
+  it('reads enclosure statistics by id', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        data: {
+          deaths: [{_id: 'death-1', quantity: '1', totalValue: '100000'}],
+          enclosureCode: 'ENC-1',
+          enclosureId: 'enc-1',
+          lost: [],
+          livestockPurpose: 'production',
+          production: {
+            eggsBySpecies: [{quantity: 4, speciesId: 'sp-1'}],
+            events: [
+              {
+                _id: 'prod-1',
+                category: 'indukan_birth',
+                categoryLabel: 'Kelahiran indukan',
+                quantity: 3,
+              },
+            ],
+            summary: {currentEggQty: 4, indukanBirthQty: 3},
+          },
+          sales: [],
+          summary: {
+            currentPopulationQty: 6,
+            deathQty: 1,
+            healthLabel: 'Menguntungkan',
+            healthTone: 'positive',
+          },
+        },
+      }),
+    );
+
+    await expect(getKolamEnclosureStatistics('enc-1')).resolves.toMatchObject({
+      deaths: [{id: 'death-1', quantity: 1, totalValue: 100000}],
+      enclosureId: 'enc-1',
+      livestockPurpose: 'production',
+      production: {
+        events: [{category: 'indukan_birth', quantity: 3}],
+        summary: {currentEggQty: 4, indukanBirthQty: 3},
+      },
+      summary: {currentPopulationQty: 6, deathQty: 1},
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${appConfig.kolamApiBaseUrl}/enclosures/enc-1/statistics`,
       expect.objectContaining({method: 'GET'}),
     );
   });

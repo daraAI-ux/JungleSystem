@@ -302,6 +302,7 @@ describe('Kolam enclosure surface', () => {
     const controller = createController({
       activeTab: 'dashboard',
       dataSource: 'live',
+      enclosureStatistics: createEnclosureStatistics(),
       mode: 'detail',
       routeEnclosureId: 'enc-1',
       selectedEnclosure: createEnclosure({
@@ -399,6 +400,9 @@ describe('Kolam enclosure surface', () => {
     });
     expect(root.findAllByProps({children: 'Ringkasan kondisi'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'Parameter terbaca'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Penjualan'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Pergerakan stok'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({label: 'Lihat semua'}).length).toBeGreaterThan(0);
 
     await ReactTestRenderer.act(async () => {
       root.findAllByProps({label: 'Tasks'})[0].props.onPress();
@@ -424,6 +428,47 @@ describe('Kolam enclosure surface', () => {
     const controller = createController({
       activeTab: 'dashboard',
       dataSource: 'live',
+      enclosureStatistics: createEnclosureStatistics({
+        livestockPurpose: 'production',
+        production: {
+          eggsBySpecies: [
+            {
+              quantity: 12,
+              scientificName: 'Ranitomeya imitator',
+              speciesId: 'sp-1',
+              speciesName: 'Ranitomeya',
+            },
+          ],
+          events: [
+            {
+              category: 'indukan_birth',
+              categoryLabel: 'Kelahiran indukan',
+              createdAt: '2026-07-30T08:00:00.000Z',
+              id: 'prod-1',
+              quantity: 4,
+              raw: {},
+              reason: 'KELAHIRAN',
+              scientificName: 'Ranitomeya imitator',
+              speciesId: 'sp-1',
+              speciesName: 'Ranitomeya',
+              stockTransactionId: 'tx-birth-1',
+              variantId: 'v1',
+              variantLabel: 'Orange',
+            },
+          ],
+          summary: {
+            currentEggQty: 12,
+            eggAddedQty: 12,
+            fromSaleableQty: 0,
+            hatchQty: 0,
+            indukanBirthQty: 4,
+            netGrowthQty: 4,
+            otherAddedQty: 0,
+            placementQty: 0,
+            transferInQty: 0,
+          },
+        },
+      }),
       mode: 'detail',
       routeEnclosureId: 'enc-1',
       selectedEnclosure: createEnclosure({
@@ -500,6 +545,7 @@ describe('Kolam enclosure surface', () => {
     expect(root.findAllByProps({children: 'Ringkasan produksi'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'Telur di kandang'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'Kelahiran indukan'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Log produksi'}).length).toBeGreaterThan(0);
   });
 
   it('renders the plugin-parity allocation statistics with grouped variants', async () => {
@@ -604,6 +650,9 @@ function createController(
     },
     dataSource: 'live',
     enclosures: [createEnclosure()],
+    enclosureStatistics: null,
+    enclosureStatisticsError: null,
+    enclosureStatisticsLoading: false,
     error: null,
     filters: {
       enclosureType: 'all',
@@ -742,6 +791,93 @@ function createAllocationOverview(): KolamEnclosureController['allocationOvervie
       totalStock: 11,
       totalUnallocated: 3,
     },
+  };
+}
+
+function createEnclosureStatistics(
+  patch: Partial<
+    NonNullable<KolamEnclosureController['enclosureStatistics']>
+  > = {},
+): NonNullable<KolamEnclosureController['enclosureStatistics']> {
+  return {
+    deaths: [
+      {
+        createdAt: '2026-07-30T08:00:00.000Z',
+        id: 'death-1',
+        invoiceCode: '',
+        quantity: 1,
+        raw: {},
+        reason: 'sakit',
+        saleId: '',
+        scientificName: 'Ranitomeya imitator',
+        speciesId: 'sp-1',
+        speciesName: 'Ranitomeya',
+        stockTransactionId: 'tx-1',
+        totalValue: 100000,
+        unitPrice: 100000,
+        variantId: 'v1',
+        variantLabel: 'Orange',
+      },
+    ],
+    enclosureCode: 'ENC-1',
+    enclosureId: 'enc-1',
+    livestockPurpose: 'saleable',
+    lost: [
+      {
+        createdAt: '2026-07-29T08:00:00.000Z',
+        id: 'lost-1',
+        invoiceCode: '',
+        quantity: 1,
+        raw: {},
+        reason: 'hilang',
+        saleId: '',
+        scientificName: 'Ranitomeya imitator',
+        speciesId: 'sp-1',
+        speciesName: 'Ranitomeya',
+        stockTransactionId: 'tx-2',
+        totalValue: 100000,
+        unitPrice: 100000,
+        variantId: 'v1',
+        variantLabel: 'Orange',
+      },
+    ],
+    production: null,
+    raw: {},
+    sales: [
+      {
+        createdAt: '2026-07-28T08:00:00.000Z',
+        id: 'sale-1',
+        invoiceCode: 'INV-1',
+        quantity: 2,
+        raw: {},
+        reason: 'adoption',
+        saleId: 'sale-1',
+        scientificName: 'Ranitomeya imitator',
+        speciesId: 'sp-1',
+        speciesName: 'Ranitomeya',
+        stockTransactionId: 'tx-3',
+        totalValue: 300000,
+        unitPrice: 150000,
+        variantId: 'v1',
+        variantLabel: 'Orange',
+      },
+    ],
+    summary: {
+      currentPopulationQty: 3,
+      currentPopulationValue: 450000,
+      deathQty: 1,
+      deathValue: 100000,
+      healthLabel: 'Menguntungkan',
+      healthTone: 'positive',
+      lostQty: 1,
+      lostValue: 100000,
+      mortalityRate: 25,
+      netBalance: 100000,
+      saleQty: 2,
+      saleRevenue: 300000,
+      totalLossValue: 200000,
+    },
+    ...patch,
   };
 }
 

@@ -18,6 +18,9 @@ import {
   type KolamEnclosureDashboardDeathEvent,
   type KolamEnclosureDashboardSpeciesRow,
   type KolamEnclosureLivestockFilter,
+  type KolamEnclosureProductionEvent,
+  type KolamEnclosureStatistics,
+  type KolamEnclosureStatisticsEvent,
 } from '../domain/kolam-enclosure';
 import {
   fitKolamDataTableColumns,
@@ -323,13 +326,20 @@ function KolamEnclosureDetailSurface({
         <KolamEnclosureDetailSpeciesTab enclosure={enclosure} />
       ) : null}
       {safeActiveDetailTab === 'production' ? (
-        <KolamEnclosureDetailProductionTab enclosure={enclosure} />
+        <KolamEnclosureDetailProductionTab
+          controller={controller}
+          enclosure={enclosure}
+        />
       ) : null}
       {safeActiveDetailTab === 'tasks' ? (
         <KolamEnclosureDetailTasksTab />
       ) : null}
       {safeActiveDetailTab === 'statistics' ? (
-        <KolamEnclosureDetailStatisticsTab enclosure={enclosure} />
+        <KolamEnclosureDetailStatisticsTab
+          controller={controller}
+          enclosure={enclosure}
+          onRouteChange={onRouteChange}
+        />
       ) : null}
     </ScrollView>
   );
@@ -582,36 +592,98 @@ function KolamEnclosureDetailSpeciesTab({
 }
 
 function KolamEnclosureDetailProductionTab({
+  controller,
   enclosure,
 }: {
+  controller: KolamEnclosureController;
   enclosure: KolamEnclosure;
 }) {
+  const statistics = controller.enclosureStatistics;
+  const production = statistics?.production ?? null;
+  const productionSummary = production?.summary;
+  const showEndpointState =
+    controller.enclosureStatisticsLoading ||
+    Boolean(controller.enclosureStatisticsError);
+
   return (
     <View style={styles.detailTwoColumn}>
       <DetailSection title="Ringkasan produksi">
+        {showEndpointState ? (
+          <DetailEndpointState
+            error={controller.enclosureStatisticsError}
+            loading={controller.enclosureStatisticsLoading}
+          />
+        ) : null}
         <View style={styles.summaryGrid}>
           <SummaryTile
             accent="primary"
+            hint="Populasi (+) alasan KELAHIRAN"
             icon="+"
             label="Kelahiran indukan"
-            value={countProductionBirthQty(enclosure)}
+            value={
+              productionSummary?.indukanBirthQty ??
+              countProductionBirthQty(enclosure)
+            }
           />
           <SummaryTile
             icon="P"
             label="Populasi indukan"
-            value={sumDetailSpeciesQty(enclosure)}
+            value={
+              statistics?.summary.currentPopulationQty ??
+              sumDetailSpeciesQty(enclosure)
+            }
           />
           <SummaryTile
+            hint={
+              productionSummary
+                ? `Tambah ${productionSummary.eggAddedQty} / tetas ${productionSummary.hatchQty}`
+                : undefined
+            }
             icon="T"
             label="Telur produksi"
-            value={sumProductionEggQty(enclosure)}
+            value={
+              productionSummary?.currentEggQty ??
+              sumProductionEggQty(enclosure)
+            }
+          />
+          <SummaryTile
+            hint={
+              productionSummary
+                ? `Antar kandang ${productionSummary.transferInQty} / stok jual ${productionSummary.fromSaleableQty}`
+                : undefined
+            }
+            icon="M"
+            label="Pindah masuk"
+            value={
+              productionSummary
+                ? productionSummary.transferInQty +
+                  productionSummary.fromSaleableQty
+                : 0
+            }
           />
         </View>
       </DetailSection>
+      {production ? (
+        <DetailSection title="Log produksi">
+          <ProductionEventList
+            emptyLabel="Belum ada catatan produksi."
+            rows={production.events.slice(0, 12)}
+          />
+        </DetailSection>
+      ) : null}
       <DetailSection title="Telur di kandang">
-        {enclosure.productionEggs.length ? (
-          enclosure.productionEggs.map(item => (
-            <View key={item.speciesId || item.speciesName} style={styles.detailMiniRow}>
+        {(production?.eggsBySpecies.length
+          ? production.eggsBySpecies
+          : enclosure.productionEggs
+        ).length ? (
+          (production?.eggsBySpecies.length
+            ? production.eggsBySpecies
+            : enclosure.productionEggs
+          ).map(item => (
+            <View
+              key={item.speciesId || item.speciesName}
+              style={styles.detailMiniRow}
+            >
               <KolamCopyStack
                 containerStyle={styles.panelRowCopy}
                 items={[
@@ -628,7 +700,8 @@ function KolamEnclosureDetailProductionTab({
                 ]}
               />
               <Text style={styles.qtyText}>
-                {item.quantity} {item.unitLabel}
+                {item.quantity}{' '}
+                {String('unitLabel' in item ? item.unitLabel : 'telur')}
               </Text>
             </View>
           ))
@@ -652,10 +725,15 @@ function KolamEnclosureDetailTasksTab() {
 }
 
 function KolamEnclosureDetailStatisticsTab({
+  controller,
   enclosure,
+  onRouteChange,
 }: {
+  controller: KolamEnclosureController;
   enclosure: KolamEnclosure;
+  onRouteChange?: (route: string) => void;
 }) {
+  const statistics = controller.enclosureStatistics;
   const deathQty = enclosure.speciesPopulationHistory
     .filter(item => item.eventType === 'death')
     .reduce((sum, item) => sum + Math.abs(item.delta), 0);
@@ -663,34 +741,359 @@ function KolamEnclosureDetailStatisticsTab({
     .filter(item => item.eventType === 'lost')
     .reduce((sum, item) => sum + Math.abs(item.delta), 0);
   const birthQty = countProductionBirthQty(enclosure);
+  const summary = statistics?.summary;
+  const movementRows = getDetailStockMovementRows(enclosure, statistics);
 
   return (
-    <View style={styles.detailTwoColumn}>
+    <View style={styles.detailStatsStack}>
       <DetailSection title="Ringkasan kondisi">
+        <View style={styles.detailSectionIntroRow}>
+          <Text style={styles.sectionMeta}>
+            Perkiraan nilai dari harga jual species, bukan laba bersih setelah
+            biaya.
+          </Text>
+          {summary ? (
+            <KolamStatusBadge
+              intent={getStatisticsHealthIntent(summary.healthTone)}
+              label={summary.healthLabel}
+              textStyle={styles.badgeTextSm}
+            />
+          ) : null}
+        </View>
+        <DetailEndpointState
+          error={controller.enclosureStatisticsError}
+          loading={controller.enclosureStatisticsLoading}
+        />
         <View style={styles.summaryGrid}>
-          <SummaryTile icon="S" label="Populasi sekarang" value={sumDetailSpeciesQty(enclosure)} />
-          <SummaryTile accent="warning" icon="!" label="Kematian" value={deathQty} />
-          <SummaryTile accent="warning" icon="L" label="Hilang" value={lostQty} />
-          <SummaryTile accent="primary" icon="+" label="Kelahiran" value={birthQty} />
+          <SummaryTile
+            hint={formatKolamCurrency(summary?.deathValue ?? 0)}
+            accent="warning"
+            icon="!"
+            label="Kematian"
+            value={summary?.deathQty ?? deathQty}
+          />
+          <SummaryTile
+            hint={formatKolamCurrency(summary?.lostValue ?? 0)}
+            accent="warning"
+            icon="L"
+            label="Hilang"
+            value={summary?.lostQty ?? lostQty}
+          />
+          <SummaryTile
+            hint={formatKolamCurrency(summary?.saleRevenue ?? 0)}
+            accent="primary"
+            icon="J"
+            label="Penjualan"
+            value={summary?.saleQty ?? 0}
+          />
+          <SummaryTile
+            hint={formatKolamCurrency(summary?.currentPopulationValue ?? 0)}
+            icon="S"
+            label="Populasi sekarang"
+            value={summary?.currentPopulationQty ?? sumDetailSpeciesQty(enclosure)}
+          />
+          <SummaryTile
+            hint={
+              summary?.mortalityRate != null
+                ? `Mortalitas ${summary.mortalityRate}%`
+                : undefined
+            }
+            accent={
+              (summary?.netBalance ?? 0) < 0 ? 'warning' : 'primary'
+            }
+            icon="N"
+            label="Saldo jual-rugi"
+            value={Math.round((summary?.netBalance ?? 0) / 1000)}
+          />
+          <SummaryTile
+            accent="primary"
+            icon="+"
+            label="Kelahiran"
+            value={birthQty}
+          />
         </View>
       </DetailSection>
+
+      {statistics?.livestockPurpose === 'production' ||
+      enclosure.livestockPurpose === 'production' ? (
+        <DetailSection title="Ringkasan produksi">
+          <KolamEnclosureStatisticsProductionSummary
+            enclosure={enclosure}
+            statistics={statistics}
+          />
+        </DetailSection>
+      ) : null}
+
+      {statistics?.production ? (
+        <DetailSection title="Log produksi">
+          <ProductionEventList
+            emptyLabel="Belum ada catatan produksi."
+            rows={statistics.production.events.slice(0, 12)}
+          />
+        </DetailSection>
+      ) : null}
+
+      <View style={styles.detailTwoColumn}>
+        <DetailSection title="Kematian">
+          <StatisticsEventList
+            emptyLabel="Belum ada catatan kematian."
+            rows={statistics?.deaths ?? []}
+          />
+        </DetailSection>
+        <DetailSection title="Hilang">
+          <StatisticsEventList
+            emptyLabel="Belum ada catatan hilang."
+            rows={statistics?.lost ?? []}
+          />
+        </DetailSection>
+      </View>
+
+      <View style={styles.detailTwoColumn}>
+        <DetailSection title="Penjualan">
+          <StatisticsEventList
+            emptyLabel="Belum ada penjualan dari kandang ini."
+            rows={statistics?.sales ?? []}
+            showInvoice
+          />
+        </DetailSection>
+        <DetailSection title="Pergerakan stok">
+          {movementRows.length ? (
+            <>
+              {movementRows.map(row => (
+                <View key={row.key} style={styles.detailMiniRow}>
+                  <KolamCopyStack
+                    containerStyle={styles.panelRowCopy}
+                    items={[
+                      {
+                        id: 'title',
+                        text: row.title,
+                        style: styles.rowTitle,
+                      },
+                      {
+                        id: 'meta',
+                        text: row.meta,
+                        style: styles.rowMeta,
+                      },
+                    ]}
+                  />
+                  <Text
+                    style={[
+                      styles.qtyText,
+                      row.quantity < 0 ? styles.warningText : null,
+                    ]}
+                  >
+                    {row.quantity > 0 ? '+' : ''}
+                    {row.quantity}
+                  </Text>
+                </View>
+              ))}
+              <KolamButton
+                label="Lihat semua"
+                onPress={() =>
+                  onRouteChange?.(
+                    `/stock-transaction?enclosureId=${encodeURIComponent(enclosure.id)}`,
+                  )
+                }
+                style={styles.detailInlineButton}
+              />
+            </>
+          ) : (
+            <Text style={styles.mutedText}>Belum ada pergerakan stok.</Text>
+          )}
+        </DetailSection>
+      </View>
+
       <DetailSection title="Parameter terbaca">
-        {enclosure.parameters.length ? (
-          enclosure.parameters.map(item => (
-            <View key={item.id || item.name} style={styles.detailMiniRow}>
-              <Text numberOfLines={1} style={styles.cellText}>
-                {item.name || '-'}
-              </Text>
-              <Text style={styles.qtyText}>
-                {item.currentValue ?? '-'} {item.unitLabel}
-              </Text>
-            </View>
-          ))
-        ) : (
-          <Text style={styles.mutedText}>Belum ada parameter.</Text>
-        )}
+        <DetailParameterList enclosure={enclosure} />
       </DetailSection>
     </View>
+  );
+}
+
+function KolamEnclosureStatisticsProductionSummary({
+  enclosure,
+  statistics,
+}: {
+  enclosure: KolamEnclosure;
+  statistics: KolamEnclosureStatistics | null;
+}) {
+  const summary = statistics?.production?.summary;
+  return (
+    <View style={styles.summaryGrid}>
+      <SummaryTile
+        accent="primary"
+        icon="+"
+        label="Kelahiran indukan"
+        value={summary?.indukanBirthQty ?? countProductionBirthQty(enclosure)}
+      />
+      <SummaryTile
+        hint={
+          summary
+            ? `Tambah ${summary.eggAddedQty} / tetas ${summary.hatchQty}`
+            : undefined
+        }
+        icon="T"
+        label="Telur saat ini"
+        value={summary?.currentEggQty ?? sumProductionEggQty(enclosure)}
+      />
+      <SummaryTile
+        icon="A"
+        label="Penempatan awal"
+        value={summary?.placementQty ?? 0}
+      />
+      <SummaryTile
+        icon="M"
+        label="Pindah masuk"
+        value={
+          summary ? summary.transferInQty + summary.fromSaleableQty : 0
+        }
+      />
+    </View>
+  );
+}
+
+function DetailParameterList({enclosure}: {enclosure: KolamEnclosure}) {
+  if (!enclosure.parameters.length) {
+    return <Text style={styles.mutedText}>Belum ada parameter.</Text>;
+  }
+  return (
+    <>
+      {enclosure.parameters.map(item => (
+        <View key={item.id || item.name} style={styles.detailMiniRow}>
+          <Text numberOfLines={1} style={styles.cellText}>
+            {item.name || '-'}
+          </Text>
+          <Text style={styles.qtyText}>
+            {item.currentValue ?? '-'} {item.unitLabel}
+          </Text>
+        </View>
+      ))}
+    </>
+  );
+}
+
+function DetailEndpointState({
+  error,
+  loading,
+}: {
+  error: string | null;
+  loading: boolean;
+}) {
+  if (loading) {
+    return <Text style={styles.sectionMeta}>Memuat statistik detail...</Text>;
+  }
+  if (error) {
+    return (
+      <KolamStatusBadge
+        intent="warning"
+        label={`Statistik endpoint belum tersedia: ${error}`}
+        numberOfLines={2}
+        textStyle={styles.badgeTextSm}
+      />
+    );
+  }
+  return null;
+}
+
+function StatisticsEventList({
+  emptyLabel,
+  rows,
+  showInvoice,
+}: {
+  emptyLabel: string;
+  rows: KolamEnclosureStatisticsEvent[];
+  showInvoice?: boolean;
+}) {
+  if (!rows.length) {
+    return <Text style={styles.mutedText}>{emptyLabel}</Text>;
+  }
+  return (
+    <>
+      {rows.slice(0, 8).map((row, index) => (
+        <View key={row.id || `${row.createdAt}:${index}`} style={styles.detailMiniRow}>
+          <KolamCopyStack
+            containerStyle={styles.panelRowCopy}
+            items={[
+              {
+                id: 'title',
+                text: row.scientificName || row.speciesName || '-',
+                style: styles.rowTitle,
+              },
+              {
+                id: 'meta',
+                text: [
+                  formatDashboardDateTime(row.createdAt),
+                  row.variantLabel,
+                  showInvoice ? row.invoiceCode : '',
+                  row.reason,
+                ]
+                  .filter(Boolean)
+                  .join(' / '),
+                style: styles.rowMeta,
+              },
+            ]}
+          />
+          <KolamCopyStack
+            containerStyle={styles.detailValueStack}
+            items={[
+              {
+                id: 'qty',
+                text: `${row.quantity} ekor`,
+                style: styles.qtyText,
+              },
+              {
+                id: 'value',
+                text: formatKolamCurrency(row.totalValue),
+                style: styles.rowMeta,
+              },
+            ]}
+          />
+        </View>
+      ))}
+    </>
+  );
+}
+
+function ProductionEventList({
+  emptyLabel,
+  rows,
+}: {
+  emptyLabel: string;
+  rows: KolamEnclosureProductionEvent[];
+}) {
+  if (!rows.length) {
+    return <Text style={styles.mutedText}>{emptyLabel}</Text>;
+  }
+  return (
+    <>
+      {rows.map((row, index) => (
+        <View key={row.id || `${row.createdAt}:${index}`} style={styles.detailMiniRow}>
+          <KolamCopyStack
+            containerStyle={styles.panelRowCopy}
+            items={[
+              {
+                id: 'title',
+                text: row.categoryLabel || row.category || 'Produksi',
+                style: styles.rowTitle,
+              },
+              {
+                id: 'meta',
+                text: [
+                  formatDashboardDateTime(row.createdAt),
+                  row.scientificName || row.speciesName,
+                  row.variantLabel,
+                  row.reason,
+                ]
+                  .filter(Boolean)
+                  .join(' / '),
+                style: styles.rowMeta,
+              },
+            ]}
+          />
+          <Text style={styles.qtyText}>{row.quantity} ekor</Text>
+        </View>
+      ))}
+    </>
   );
 }
 
@@ -2465,6 +2868,93 @@ function countProductionBirthQty(enclosure: KolamEnclosure) {
     .reduce((sum, item) => sum + Math.max(0, Number(item.delta) || 0), 0);
 }
 
+function getDetailStockMovementRows(
+  enclosure: KolamEnclosure,
+  statistics: KolamEnclosureStatistics | null,
+) {
+  if (statistics) {
+    return [
+      ...statistics.deaths.map(row =>
+        getStatisticsMovementRow(row, 'Kematian', -row.quantity),
+      ),
+      ...statistics.lost.map(row =>
+        getStatisticsMovementRow(row, 'Hilang', -row.quantity),
+      ),
+      ...statistics.sales.map(row =>
+        getStatisticsMovementRow(row, 'Penjualan', -row.quantity),
+      ),
+      ...(statistics.production?.events ?? []).map(row => ({
+        key: row.id || `${row.createdAt}:${row.category}`,
+        meta: [
+          formatDashboardDateTime(row.createdAt),
+          row.scientificName || row.speciesName,
+          row.variantLabel,
+          row.reason,
+        ]
+          .filter(Boolean)
+          .join(' / '),
+        quantity: row.quantity,
+        title: row.categoryLabel || row.category || 'Produksi',
+      })),
+    ]
+      .sort((left, right) => right.meta.localeCompare(left.meta))
+      .slice(0, 8);
+  }
+
+  return enclosure.speciesPopulationHistory.slice(0, 8).map((row, index) => ({
+    key: row.id || `${row.createdAt}:${index}`,
+    meta: [
+      formatDashboardDateTime(row.createdAt),
+      row.speciesName || row.scientificName,
+      row.variantLabel,
+      row.reason,
+    ]
+      .filter(Boolean)
+      .join(' / '),
+    quantity: row.delta,
+    title: row.eventTypeLabel || row.eventType || 'Pergerakan stok',
+  }));
+}
+
+function getStatisticsMovementRow(
+  row: KolamEnclosureStatisticsEvent,
+  title: string,
+  quantity: number,
+) {
+  return {
+    key: row.id || `${row.createdAt}:${title}`,
+    meta: [
+      formatDashboardDateTime(row.createdAt),
+      row.scientificName || row.speciesName,
+      row.variantLabel,
+      row.invoiceCode,
+      row.reason,
+    ]
+      .filter(Boolean)
+      .join(' / '),
+    quantity,
+    title,
+  };
+}
+
+function formatKolamCurrency(value: number) {
+  return new Intl.NumberFormat('id-ID', {
+    currency: 'IDR',
+    maximumFractionDigits: 0,
+    style: 'currency',
+  }).format(Number(value) || 0);
+}
+
+function getStatisticsHealthIntent(tone: string) {
+  if (tone === 'positive') {
+    return 'success';
+  }
+  if (tone === 'negative') {
+    return 'danger';
+  }
+  return 'muted';
+}
+
 function formatDashboardDateTime(value: string) {
   if (!value) {
     return '-';
@@ -2755,6 +3245,16 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 14,
   },
+  detailStatsStack: {
+    gap: 14,
+  },
+  detailSectionIntroRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'space-between',
+  },
   detailMiniRow: {
     alignItems: 'center',
     borderBottomColor: V.colors.border,
@@ -2762,6 +3262,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 10,
     paddingVertical: 8,
+  },
+  detailValueStack: {
+    alignItems: 'flex-end',
+    flexShrink: 0,
+  },
+  detailInlineButton: {
+    alignSelf: 'flex-start',
+    marginTop: 8,
   },
   filterOverlayPanel: {
     backgroundColor: V.colors.bg,

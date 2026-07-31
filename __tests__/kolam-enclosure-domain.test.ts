@@ -11,6 +11,7 @@ import {
   normalizeKolamEnclosureDetail,
   normalizeKolamEnclosureList,
   normalizeKolamEnclosurePendingAllocations,
+  normalizeKolamEnclosureStatistics,
   parseKolamEnclosureListTab,
 } from '../src/domain/kolam-enclosure';
 
@@ -268,6 +269,76 @@ describe('Kolam enclosure domain', () => {
       totalStock: 5,
       totalAllocated: 3,
       totalUnallocated: 2,
+    });
+  });
+
+  it('normalizes enclosure detail statistics payloads', () => {
+    const statistics = normalizeKolamEnclosureStatistics({
+      data: {
+        deaths: [
+          {
+            _id: 'death-1',
+            quantity: '2',
+            speciesName: 'Frog',
+            totalValue: '250000',
+            unitPrice: '125000',
+          },
+        ],
+        enclosureCode: 'ENC-1',
+        enclosureId: 'enc-1',
+        livestockPurpose: 'production',
+        lost: [{ _id: 'lost-1', quantity: 1 }],
+        production: {
+          eggsBySpecies: [{ quantity: '4', speciesId: 'sp-egg' }],
+          events: [
+            {
+              _id: 'prod-1',
+              category: 'indukan_birth',
+              categoryLabel: 'Kelahiran indukan',
+              quantity: '3',
+            },
+          ],
+          summary: {
+            currentEggQty: '4',
+            hatchQty: '1',
+            indukanBirthQty: '3',
+          },
+        },
+        sales: [{ invoiceCode: 'INV-1', quantity: 2, totalValue: 300000 }],
+        summary: {
+          currentPopulationQty: '6',
+          deathQty: '2',
+          healthLabel: 'Menguntungkan',
+          healthTone: 'positive',
+          mortalityRate: '12.5',
+          netBalance: '50000',
+        },
+      },
+    });
+
+    expect(statistics).toMatchObject({
+      deaths: [{ id: 'death-1', quantity: 2, totalValue: 250000 }],
+      enclosureCode: 'ENC-1',
+      enclosureId: 'enc-1',
+      livestockPurpose: 'production',
+      lost: [{ id: 'lost-1', quantity: 1 }],
+      sales: [{ invoiceCode: 'INV-1', quantity: 2, totalValue: 300000 }],
+      summary: {
+        currentPopulationQty: 6,
+        deathQty: 2,
+        healthTone: 'positive',
+        mortalityRate: 12.5,
+        netBalance: 50000,
+      },
+    });
+    expect(statistics.production?.summary).toMatchObject({
+      currentEggQty: 4,
+      hatchQty: 1,
+      indukanBirthQty: 3,
+    });
+    expect(statistics.production?.events[0]).toMatchObject({
+      category: 'indukan_birth',
+      quantity: 3,
     });
   });
 });

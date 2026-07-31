@@ -6,6 +6,7 @@ import {
   getKolamEnclosureDetail,
   getKolamEnclosureDashboardStats,
   getKolamEnclosureStaffAssignees,
+  getKolamEnclosureStatistics,
   getKolamEnclosures,
   getKolamPendingLivestockAllocations,
   getKolamSpeciesAllocationOverview,
@@ -15,6 +16,7 @@ jest.mock('../src/services/kolam-enclosure-api', () => ({
   getKolamEnclosureDashboardStats: jest.fn(),
   getKolamEnclosureDetail: jest.fn(),
   getKolamEnclosureStaffAssignees: jest.fn(),
+  getKolamEnclosureStatistics: jest.fn(),
   getKolamEnclosures: jest.fn(),
   getKolamPendingLivestockAllocations: jest.fn(),
   getKolamSpeciesAllocationOverview: jest.fn(),
@@ -28,6 +30,9 @@ const getDashboardStatsMock =
   >;
 const getDetailMock = getKolamEnclosureDetail as jest.MockedFunction<
   typeof getKolamEnclosureDetail
+>;
+const getStatisticsMock = getKolamEnclosureStatistics as jest.MockedFunction<
+  typeof getKolamEnclosureStatistics
 >;
 const getStaffAssigneesMock =
   getKolamEnclosureStaffAssignees as jest.MockedFunction<
@@ -81,6 +86,7 @@ describe('Kolam enclosure controller hook', () => {
       },
     ]);
     getDetailMock.mockResolvedValue(createListResult().data[0]!);
+    getStatisticsMock.mockResolvedValue(createStatistics());
     getEnclosuresMock.mockResolvedValue(createListResult());
     getPendingAllocationsMock.mockResolvedValue({
       items: [
@@ -313,9 +319,16 @@ describe('Kolam enclosure controller hook', () => {
     });
 
     expect(getDetailMock).toHaveBeenCalledWith('enc-1');
+    expect(getStatisticsMock).toHaveBeenCalledWith('enc-1');
     expect(requireController(latest).mode).toBe('detail');
     expect(requireController(latest).selectedEnclosure).toEqual(
       expect.objectContaining({id: 'enc-1', code: 'ENC-1'}),
+    );
+    expect(requireController(latest).enclosureStatistics).toEqual(
+      expect.objectContaining({
+        enclosureId: 'enc-1',
+        summary: expect.objectContaining({deathQty: 1}),
+      }),
     );
     expect(getDashboardStatsMock).not.toHaveBeenCalled();
   });
@@ -391,6 +404,52 @@ function createDashboardStats() {
     production: {rows: [], speciesDistinct: 0, totalQty: 0},
     saleable: {rows: [], speciesDistinct: 0, totalQty: 0},
     totals: {enclosures: 1, individuals: 0, speciesDistinct: 0},
+  };
+}
+
+function createStatistics() {
+  return {
+    deaths: [
+      {
+        createdAt: '',
+        id: 'death-1',
+        invoiceCode: '',
+        quantity: 1,
+        raw: {},
+        reason: 'sakit',
+        saleId: '',
+        scientificName: 'Rana',
+        speciesId: 'sp-1',
+        speciesName: 'Frog',
+        stockTransactionId: 'tx-1',
+        totalValue: 100000,
+        unitPrice: 100000,
+        variantId: '',
+        variantLabel: '',
+      },
+    ],
+    enclosureCode: 'ENC-1',
+    enclosureId: 'enc-1',
+    livestockPurpose: 'saleable' as const,
+    lost: [],
+    production: null,
+    raw: {},
+    sales: [],
+    summary: {
+      currentPopulationQty: 2,
+      currentPopulationValue: 200000,
+      deathQty: 1,
+      deathValue: 100000,
+      healthLabel: 'Rugi',
+      healthTone: 'negative',
+      lostQty: 0,
+      lostValue: 0,
+      mortalityRate: 33.3,
+      netBalance: -100000,
+      saleQty: 0,
+      saleRevenue: 0,
+      totalLossValue: 100000,
+    },
   };
 }
 

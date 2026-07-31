@@ -7,6 +7,7 @@ import {
   normalizeKolamEnclosureDetail,
   normalizeKolamEnclosureList,
   normalizeKolamEnclosurePendingAllocations,
+  normalizeKolamEnclosureStatistics,
   type KolamEnclosure,
   type KolamEnclosureAllocationOverview,
   type KolamEnclosureDashboardStats,
@@ -14,6 +15,7 @@ import {
   type KolamEnclosureListResult,
   type KolamEnclosurePendingAllocationResult,
   type KolamEnclosureStaffRef,
+  type KolamEnclosureStatistics,
   type KolamEnclosureType,
   type KolamEnclosureUnitRef,
 } from '../domain/kolam-enclosure';
@@ -67,6 +69,15 @@ export async function getKolamEnclosureDetail(
     `${BASE}/${encodeURIComponent(enclosureId)}`,
   );
   return normalizeKolamEnclosureDetail(response);
+}
+
+export async function getKolamEnclosureStatistics(
+  enclosureId: string,
+): Promise<KolamEnclosureStatistics> {
+  const response = await kolamRequest<unknown>(
+    `${BASE}/${encodeURIComponent(enclosureId)}/statistics`,
+  );
+  return normalizeKolamEnclosureStatistics(response);
 }
 
 export async function getKolamPendingLivestockAllocations(

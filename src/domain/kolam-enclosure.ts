@@ -253,6 +253,89 @@ export interface KolamEnclosureDashboardDeathEvent {
   livestockPurpose: string;
 }
 
+export interface KolamEnclosureStatistics {
+  enclosureId: string;
+  enclosureCode: string;
+  livestockPurpose: KolamEnclosureLivestockPurpose;
+  summary: KolamEnclosureStatisticsSummary;
+  deaths: KolamEnclosureStatisticsEvent[];
+  lost: KolamEnclosureStatisticsEvent[];
+  sales: KolamEnclosureStatisticsEvent[];
+  production: KolamEnclosureProductionStatistics | null;
+  raw: unknown;
+}
+
+export interface KolamEnclosureStatisticsSummary {
+  deathQty: number;
+  deathValue: number;
+  lostQty: number;
+  lostValue: number;
+  saleQty: number;
+  saleRevenue: number;
+  totalLossValue: number;
+  netBalance: number;
+  currentPopulationQty: number;
+  currentPopulationValue: number;
+  mortalityRate: number | null;
+  healthLabel: string;
+  healthTone: string;
+}
+
+export interface KolamEnclosureStatisticsEvent {
+  id: string;
+  speciesId: string;
+  variantId: string;
+  speciesName: string;
+  scientificName: string;
+  variantLabel: string;
+  quantity: number;
+  unitPrice: number;
+  totalValue: number;
+  invoiceCode: string;
+  saleId: string;
+  stockTransactionId: string;
+  reason: string;
+  createdAt: string;
+  raw: unknown;
+}
+
+export interface KolamEnclosureProductionStatistics {
+  summary: {
+    indukanBirthQty: number;
+    hatchQty: number;
+    eggAddedQty: number;
+    placementQty: number;
+    otherAddedQty: number;
+    transferInQty: number;
+    fromSaleableQty: number;
+    netGrowthQty: number;
+    currentEggQty: number;
+  };
+  events: KolamEnclosureProductionEvent[];
+  eggsBySpecies: Array<{
+    speciesId: string;
+    speciesName: string;
+    scientificName: string;
+    quantity: number;
+  }>;
+}
+
+export interface KolamEnclosureProductionEvent {
+  id: string;
+  speciesId: string;
+  variantId: string;
+  speciesName: string;
+  scientificName: string;
+  variantLabel: string;
+  quantity: number;
+  category: string;
+  categoryLabel: string;
+  reason: string;
+  stockTransactionId: string;
+  createdAt: string;
+  raw: unknown;
+}
+
 export interface KolamEnclosurePendingAllocation {
   id: string;
   speciesId: string;
@@ -561,6 +644,28 @@ export function normalizeKolamEnclosureDashboardStats(
   };
 }
 
+export function normalizeKolamEnclosureStatistics(
+  payload: unknown,
+): KolamEnclosureStatistics {
+  const record = asRecord(unwrapData(payload));
+
+  return {
+    enclosureId: getString(record, 'enclosureId'),
+    enclosureCode: getString(record, 'enclosureCode'),
+    livestockPurpose: normalizeKolamEnclosureLivestockPurpose(
+      record.livestockPurpose,
+    ),
+    summary: normalizeKolamEnclosureStatisticsSummary(record.summary),
+    deaths: getArray(record.deaths).map(normalizeKolamEnclosureStatisticsEvent),
+    lost: getArray(record.lost).map(normalizeKolamEnclosureStatisticsEvent),
+    sales: getArray(record.sales).map(normalizeKolamEnclosureStatisticsEvent),
+    production: record.production
+      ? normalizeKolamEnclosureProductionStatistics(record.production)
+      : null,
+    raw: payload,
+  };
+}
+
 export function normalizeKolamEnclosurePendingAllocations(
   payload: unknown,
 ): KolamEnclosurePendingAllocationResult {
@@ -705,6 +810,101 @@ function normalizeDashboardBirths(value: unknown) {
   return {
     totalCases: getNumber(record, 'totalCases') ?? 0,
     totalAnimals: getNumber(record, 'totalAnimals') ?? 0,
+  };
+}
+
+function normalizeKolamEnclosureStatisticsSummary(
+  value: unknown,
+): KolamEnclosureStatisticsSummary {
+  const record = asRecord(value);
+  return {
+    deathQty: getNumber(record, 'deathQty') ?? 0,
+    deathValue: getNumber(record, 'deathValue') ?? 0,
+    lostQty: getNumber(record, 'lostQty') ?? 0,
+    lostValue: getNumber(record, 'lostValue') ?? 0,
+    saleQty: getNumber(record, 'saleQty') ?? 0,
+    saleRevenue: getNumber(record, 'saleRevenue') ?? 0,
+    totalLossValue: getNumber(record, 'totalLossValue') ?? 0,
+    netBalance: getNumber(record, 'netBalance') ?? 0,
+    currentPopulationQty: getNumber(record, 'currentPopulationQty') ?? 0,
+    currentPopulationValue: getNumber(record, 'currentPopulationValue') ?? 0,
+    mortalityRate: getNullableNumber(record, 'mortalityRate'),
+    healthLabel: getString(record, 'healthLabel') || 'Statistik belum tersedia',
+    healthTone: getString(record, 'healthTone') || 'neutral',
+  };
+}
+
+function normalizeKolamEnclosureStatisticsEvent(
+  value: unknown,
+): KolamEnclosureStatisticsEvent {
+  const record = asRecord(value);
+  return {
+    id: getId(record),
+    speciesId: getString(record, 'speciesId'),
+    variantId: getString(record, 'variantId'),
+    speciesName: getString(record, 'speciesName'),
+    scientificName: getString(record, 'scientificName'),
+    variantLabel: getString(record, 'variantLabel'),
+    quantity: getNumber(record, 'quantity') ?? 0,
+    unitPrice: getNumber(record, 'unitPrice') ?? 0,
+    totalValue: getNumber(record, 'totalValue') ?? 0,
+    invoiceCode: getString(record, 'invoiceCode'),
+    saleId: getString(record, 'saleId'),
+    stockTransactionId: getString(record, 'stockTransactionId'),
+    reason: getString(record, 'reason'),
+    createdAt: getString(record, 'createdAt'),
+    raw: value,
+  };
+}
+
+function normalizeKolamEnclosureProductionStatistics(
+  value: unknown,
+): KolamEnclosureProductionStatistics {
+  const record = asRecord(value);
+  const summary = asRecord(record.summary);
+  return {
+    summary: {
+      indukanBirthQty: getNumber(summary, 'indukanBirthQty') ?? 0,
+      hatchQty: getNumber(summary, 'hatchQty') ?? 0,
+      eggAddedQty: getNumber(summary, 'eggAddedQty') ?? 0,
+      placementQty: getNumber(summary, 'placementQty') ?? 0,
+      otherAddedQty: getNumber(summary, 'otherAddedQty') ?? 0,
+      transferInQty: getNumber(summary, 'transferInQty') ?? 0,
+      fromSaleableQty: getNumber(summary, 'fromSaleableQty') ?? 0,
+      netGrowthQty: getNumber(summary, 'netGrowthQty') ?? 0,
+      currentEggQty: getNumber(summary, 'currentEggQty') ?? 0,
+    },
+    events: getArray(record.events).map(normalizeKolamEnclosureProductionEvent),
+    eggsBySpecies: getArray(record.eggsBySpecies).map(item => {
+      const egg = asRecord(item);
+      return {
+        speciesId: getString(egg, 'speciesId'),
+        speciesName: getString(egg, 'speciesName'),
+        scientificName: getString(egg, 'scientificName'),
+        quantity: getNumber(egg, 'quantity') ?? 0,
+      };
+    }),
+  };
+}
+
+function normalizeKolamEnclosureProductionEvent(
+  value: unknown,
+): KolamEnclosureProductionEvent {
+  const record = asRecord(value);
+  return {
+    id: getId(record),
+    speciesId: getString(record, 'speciesId'),
+    variantId: getString(record, 'variantId'),
+    speciesName: getString(record, 'speciesName'),
+    scientificName: getString(record, 'scientificName'),
+    variantLabel: getString(record, 'variantLabel'),
+    quantity: getNumber(record, 'quantity') ?? 0,
+    category: getString(record, 'category'),
+    categoryLabel: getString(record, 'categoryLabel'),
+    reason: getString(record, 'reason'),
+    stockTransactionId: getString(record, 'stockTransactionId'),
+    createdAt: getString(record, 'createdAt'),
+    raw: value,
   };
 }
 
