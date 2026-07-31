@@ -99,6 +99,10 @@ const TASK_TYPES: Array<AmTaskType | 'all'> = ['all', 'stock_sync', 'process_sal
 const AM_TASK_PAGE_LIMIT = 20;
 const AM_TRANSFER_PAGE_LIMIT = 20;
 const AM_MUTASI_PAGE_LIMIT = 50;
+const AM_ACTIVITY_LOG_PAGE_LIMIT = 50;
+const AM_ACTIVITY_LOG_TYPES = ['all', 'api', 'page'];
+const AM_ACTIVITY_LOG_STATUSES = ['all', 'success', 'failed'];
+const AM_ACTIVITY_LOG_METHODS = ['all', 'GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
 const AM_PLATFORMS = ['all', 'whatsapp', 'tiktok', 'instagram', 'tokopedia', 'shopee', 'bca', 'brimo', 'dana'];
 const AM_PLATFORM_LABELS: Record<string, string> = {
   whatsapp: 'WhatsApp',
@@ -3013,7 +3017,14 @@ function AmAccountSettingsPage() {
 function AmActivityLogPage() {
   const [logs, setLogs] = React.useState<AmActivityLog[]>([]);
   const [stats, setStats] = React.useState<AmActivityLogStats | null>(null);
+  const [search, setSearch] = React.useState('');
+  const [type, setType] = React.useState('all');
   const [status, setStatus] = React.useState('all');
+  const [method, setMethod] = React.useState('all');
+  const [page, setPage] = React.useState(1);
+  const [limit, setLimit] = React.useState(AM_ACTIVITY_LOG_PAGE_LIMIT);
+  const [total, setTotal] = React.useState(0);
+  const [selectedLog, setSelectedLog] = React.useState<AmActivityLog | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -3021,10 +3032,19 @@ function AmActivityLogPage() {
     try {
       setIsLoading(true);
       const [listResponse, statsResponse] = await Promise.all([
-        getAmActivityLogs({limit: 40, status: status === 'all' ? undefined : status}),
+        getAmActivityLogs({
+          page,
+          limit: AM_ACTIVITY_LOG_PAGE_LIMIT,
+          search: search.trim() || undefined,
+          type: type === 'all' ? undefined : type,
+          status: status === 'all' ? undefined : status,
+          method: method === 'all' ? undefined : method,
+        }),
         getAmActivityLogStats(7),
       ]);
       setLogs(listResponse.data);
+      setTotal(listResponse.meta.total ?? listResponse.data.length);
+      setLimit(listResponse.meta.limit || AM_ACTIVITY_LOG_PAGE_LIMIT);
       setStats(statsResponse);
       setError(null);
     } catch (nextError) {
@@ -3032,45 +3052,217 @@ function AmActivityLogPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [status]);
+  }, [method, page, search, status, type]);
 
   React.useEffect(() => {
     fetchLogs();
   }, [fetchLogs]);
 
+  const handleSearchChange = React.useCallback((value: string) => {
+    setSearch(value);
+    setPage(1);
+  }, []);
+
+  const handleTypeChange = React.useCallback((value: string) => {
+    setType(value);
+    setPage(1);
+  }, []);
+
+  const handleStatusChange = React.useCallback((value: string) => {
+    setStatus(value);
+    setPage(1);
+  }, []);
+
+  const handleMethodChange = React.useCallback((value: string) => {
+    setMethod(value);
+    setPage(1);
+  }, []);
+
+  const resetFilters = React.useCallback(() => {
+    setSearch('');
+    setType('all');
+    setStatus('all');
+    setMethod('all');
+    setPage(1);
+  }, []);
+
+  const totalPages = Math.max(1, Math.ceil(total / Math.max(limit, 1)));
+  const rangeFrom = total ? (page - 1) * limit + 1 : 0;
+  const rangeTo = total ? Math.min(page * limit, total) : 0;
+  const successCount = getAmStatsCount(stats?.byStatus, 'success');
+  const failedCount = getAmStatsCount(stats?.byStatus, 'failed');
+  const apiCount = getAmStatsCount(stats?.byType, 'api');
+  const pageCount = getAmStatsCount(stats?.byType, 'page');
+  const hasActiveFilters =
+    Boolean(search.trim()) || type !== 'all' || status !== 'all' || method !== 'all';
+
   return (
     <View style={styles.pageStack}>
       <View style={styles.filterBar}>
         <AmMetricCard label="Window" value={`${stats?.days ?? 7}d`} meta={stats?.since ? formatAmDate(stats.since) : 'stats'} />
-        <AmMetricCard label="Types" value={String(stats?.byType.length ?? 0)} meta="activity groups" />
-        <AmSegmentGroup active={status} items={['all', 'success', 'failed']} onSelect={setStatus} />
+        <AmMetricCard label="API / Page" value={`${apiCount} / ${pageCount}`} meta="7d type count" />
+        <AmMetricCard label="Success" value={String(successCount)} meta={`${failedCount} failed`} />
+      </View>
+      <View style={styles.filterBar}>
+        <KolamSearchField
+          value={search}
+          onChangeText={handleSearchChange}
+          placeholder="Cari path, username, atau IP..."
+          containerStyle={styles.activitySearch}
+          trailingLabel={`${total} log`}
+        />
+        <AmSegmentGroup active={type} items={AM_ACTIVITY_LOG_TYPES} onSelect={handleTypeChange} />
+        <AmSegmentGroup active={status} items={AM_ACTIVITY_LOG_STATUSES} onSelect={handleStatusChange} />
+        <AmSegmentGroup active={method} items={AM_ACTIVITY_LOG_METHODS} onSelect={handleMethodChange} />
+        {hasActiveFilters ? (
+          <KolamButton label="Reset" intent="outline" size="sm" onPress={resetFilters} />
+        ) : null}
         <KolamButton label={isLoading ? 'Memuat' : 'Refresh'} intent="outline" muted={isLoading} size="sm" onPress={fetchLogs} />
       </View>
       <AmInlineError title="Activity Log AM belum bisa dibaca" error={error} />
+      {stats && (stats.topUsers.length || stats.topPaths.length) ? (
+        <View style={styles.panelGrid}>
+          <AmStatsListPanel emptyText="Belum ada user" items={stats.topUsers} title="Top Users" />
+          <AmStatsListPanel emptyText="Belum ada path" items={stats.topPaths} title="Top Paths" />
+        </View>
+      ) : null}
       <View style={styles.tablePanel}>
         <View style={styles.tableHeader}>
           <Text style={[styles.tableHeaderText, styles.dateCol]}>Time</Text>
+          <Text style={[styles.tableHeaderText, styles.accountCol]}>User</Text>
           <Text style={[styles.tableHeaderText, styles.typeCol]}>Type</Text>
-          <Text style={[styles.tableHeaderText, styles.accountWideCol]}>Action</Text>
+          <Text style={[styles.tableHeaderText, styles.typeCol]}>Method</Text>
           <Text style={[styles.tableHeaderText, styles.recipientCol]}>Path</Text>
+          <Text style={[styles.tableHeaderText, styles.amountCol]}>IP</Text>
           <Text style={[styles.tableHeaderText, styles.statusCol]}>Status</Text>
+          <Text style={[styles.tableHeaderText, styles.amountCol]}>Duration</Text>
+          <Text style={[styles.tableHeaderText, styles.actionCol]}>Action</Text>
         </View>
         <AmLoadingOrEmpty isLoading={isLoading} items={logs} loadingText="Memuat activity logs..." emptyText="No activity logs found" />
         {logs.map(log => (
           <View key={log._id} style={styles.tableRow}>
             <Text style={[styles.cellText, styles.dateCol]}>{formatAmDate(log.timestamp)}</Text>
-            <Text style={[styles.cellText, styles.typeCol]}>{log.type}</Text>
-            <View style={styles.accountWideCol}>
-              <Text style={styles.cellText} numberOfLines={1}>{log.action}</Text>
-              <Text style={styles.rowMeta} numberOfLines={1}>{log.username ?? log.userId?.fullName ?? 'anonymous'}</Text>
+            <View style={styles.accountCol}>
+              <Text style={styles.cellText} numberOfLines={1}>{log.username ?? log.userId?.username ?? 'anonymous'}</Text>
+              <Text style={styles.rowMeta} numberOfLines={1}>{log.userId?.fullName ?? '-'}</Text>
             </View>
-            <Text style={[styles.cellText, styles.recipientCol]} numberOfLines={1}>{log.method} {log.path}</Text>
+            <Text style={[styles.cellText, styles.typeCol]}>{log.type}</Text>
+            <Text style={[styles.cellText, styles.typeCol]}>{log.method || '-'}</Text>
+            <View style={styles.recipientCol}>
+              <Text style={styles.monoText} numberOfLines={1}>{log.path}</Text>
+              <Text style={styles.rowMeta} numberOfLines={1}>{log.action}</Text>
+            </View>
+            <Text style={[styles.cellText, styles.amountCol]} numberOfLines={1}>{log.ip || '-'}</Text>
             <View style={styles.statusCol}>
-              <AmStatusChip label={`${log.statusCode}`} tone={log.status === 'success' ? 'success' : 'danger'} />
+              <AmStatusChip label={log.statusCode ? String(log.statusCode) : log.status} tone={log.status === 'success' ? 'success' : 'danger'} />
+            </View>
+            <Text style={[styles.cellText, styles.amountCol]}>{formatAmDuration(log.duration)}</Text>
+            <View style={styles.actionCol}>
+              <KolamButton
+                accessibilityLabel={`AM Activity Log Detail ${log._id}`}
+                label="Detail"
+                intent="outline"
+                size="sm"
+                onPress={() => setSelectedLog(current => current?._id === log._id ? null : log)}
+              />
             </View>
           </View>
         ))}
+        {total > 0 ? (
+          <View style={styles.paginationBar}>
+            <Text style={styles.paginationText}>
+              Showing {rangeFrom} to {rangeTo} of {total} items
+            </Text>
+            <View style={styles.inlineActions}>
+              <KolamButton
+                accessibilityLabel="AM Activity Logs Previous Page"
+                disabled={page <= 1 || isLoading}
+                label="Previous"
+                intent="outline"
+                size="sm"
+                onPress={() => setPage(current => Math.max(1, current - 1))}
+              />
+              <KolamButton
+                accessibilityLabel="AM Activity Logs Next Page"
+                disabled={page >= totalPages || isLoading}
+                label={`Page ${page}/${totalPages}`}
+                intent="outline"
+                size="sm"
+                onPress={() => setPage(current => Math.min(totalPages, current + 1))}
+              />
+            </View>
+          </View>
+        ) : null}
       </View>
+      {selectedLog ? <AmActivityLogDetailPanel log={selectedLog} /> : null}
+    </View>
+  );
+}
+
+function AmStatsListPanel({
+  emptyText,
+  items,
+  title,
+}: {
+  emptyText: string;
+  items: Array<{_id: string; count: number}>;
+  title: string;
+}) {
+  return (
+    <View style={styles.panel}>
+      <Text style={styles.panelTitle}>{title}</Text>
+      <View style={styles.detailList}>
+        {items.length ? items.slice(0, 5).map(item => (
+          <View key={item._id || 'unknown'} style={styles.detailListRow}>
+            <Text style={[styles.cellText, styles.recipientCol]} numberOfLines={1}>{item._id || 'unknown'}</Text>
+            <Text style={[styles.cellText, styles.amountCol]}>{item.count}</Text>
+          </View>
+        )) : <Text style={styles.rowMeta}>{emptyText}</Text>}
+      </View>
+    </View>
+  );
+}
+
+function AmActivityLogDetailPanel({log}: {log: AmActivityLog}) {
+  return (
+    <View style={styles.panel}>
+      <View style={styles.detailHeader}>
+        <View>
+          <Text style={styles.panelTitle}>Activity Detail</Text>
+          <Text style={styles.rowMeta}>{formatAmDate(log.timestamp)}</Text>
+        </View>
+        <AmStatusChip label={log.statusCode ? String(log.statusCode) : log.status} tone={log.status === 'success' ? 'success' : 'danger'} />
+      </View>
+      <View style={styles.detailList}>
+        <View style={styles.detailListRow}>
+          <Text style={styles.tableHeaderText}>User</Text>
+          <Text style={[styles.cellText, styles.recipientCol]}>{log.username ?? log.userId?.fullName ?? 'anonymous'}</Text>
+        </View>
+        <View style={styles.detailListRow}>
+          <Text style={styles.tableHeaderText}>Request</Text>
+          <Text style={[styles.cellText, styles.recipientCol]}>{log.method || '-'} {log.path}</Text>
+        </View>
+        <View style={styles.detailListRow}>
+          <Text style={styles.tableHeaderText}>Action</Text>
+          <Text style={[styles.cellText, styles.recipientCol]}>{log.action || '-'}</Text>
+        </View>
+        <View style={styles.detailListRow}>
+          <Text style={styles.tableHeaderText}>IP</Text>
+          <Text style={[styles.cellText, styles.recipientCol]}>{log.ip || '-'}</Text>
+        </View>
+        <View style={styles.detailListRow}>
+          <Text style={styles.tableHeaderText}>Duration</Text>
+          <Text style={[styles.cellText, styles.recipientCol]}>{formatAmDuration(log.duration)}</Text>
+        </View>
+        {log.error ? (
+          <View style={styles.detailListRow}>
+            <Text style={styles.tableHeaderText}>Error</Text>
+            <Text style={[styles.cellText, styles.recipientCol]}>{log.error}</Text>
+          </View>
+        ) : null}
+      </View>
+      <AmJsonPanel title="Metadata" value={log.metadata ?? {}} />
+      <AmJsonPanel title="User Agent" value={log.userAgent || '-'} />
     </View>
   );
 }
@@ -3352,6 +3544,17 @@ function formatAmDate(value: string | null | undefined) {
   });
 }
 
+function formatAmDuration(value: number | null | undefined) {
+  return value ? `${value} ms` : '-';
+}
+
+function getAmStatsCount(
+  rows: Array<{_id: string; count: number}> | undefined,
+  key: string,
+) {
+  return rows?.find(row => row._id === key)?.count ?? 0;
+}
+
 function titleCase(value: string) {
   if (value === 'all') return 'All';
   return value
@@ -3577,6 +3780,9 @@ const styles = StyleSheet.create({
   },
   taskSearch: {
     width: 240,
+  },
+  activitySearch: {
+    width: 300,
   },
   segmentList: {
     gap: 6,

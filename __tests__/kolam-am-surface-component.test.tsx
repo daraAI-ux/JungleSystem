@@ -17,6 +17,7 @@ import {
   deleteAmUser,
   deleteAmWebhookConfig,
   getAmActivityLogs,
+  getAmActivityLogStats,
   getAmCurrentUser,
   getAmDashboard,
   getAmDeviceServiceLogs,
@@ -892,10 +893,130 @@ describe('KolamAmSurface', () => {
     expect(getAmUsers).toHaveBeenCalledWith({limit: 100, search: undefined});
     expect(getAmRoles).toHaveBeenCalledTimes(1);
     expect(getAmActivityLogs).toHaveBeenCalledWith({
-      limit: 40,
+      page: 1,
+      limit: 50,
+      search: undefined,
+      type: undefined,
       status: undefined,
+      method: undefined,
     });
     expect(getAmCurrentUser).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders activity log stats, detail, filters, and pagination from live metadata', async () => {
+    jest.mocked(getAmActivityLogs).mockResolvedValue({
+      data: [
+        {
+          _id: 'log-1',
+          action: 'GET /activity-log',
+          duration: 45,
+          error: '',
+          ip: '127.0.0.1',
+          metadata: {requestId: 'REQ-1'},
+          method: 'GET',
+          path: '/activity-log',
+          status: 'success',
+          statusCode: 200,
+          timestamp: '2026-01-01T00:00:00.000Z',
+          type: 'api',
+          userAgent: 'Jest',
+          userId: {_id: 'user-1', username: 'alice', fullName: 'Alice AM'},
+          username: 'alice',
+        },
+      ],
+      meta: {total: 75, limit: 50, page: 1, totalPages: 2},
+    });
+    jest.mocked(getAmActivityLogStats).mockResolvedValue({
+      since: '2025-12-25T00:00:00.000Z',
+      days: 7,
+      byType: [{_id: 'api', count: 12}, {_id: 'page', count: 3}],
+      byStatus: [{_id: 'success', count: 10}, {_id: 'failed', count: 2}],
+      topUsers: [{_id: 'alice', count: 8}],
+      topPaths: [{_id: '/activity-log', count: 6}],
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await updateAmRoute(renderer!, 'admin/activity-log');
+
+    let text = renderText(renderer!);
+    let joinedText = text.join(' ');
+    expect(text).toEqual(
+      expect.arrayContaining([
+        'API / Page',
+        '12 / 3',
+        'Success',
+        '2 failed',
+        'Top Users',
+        'alice',
+        'Top Paths',
+        '/activity-log',
+      ]),
+    );
+    expect(joinedText.replace(/\s+/g, ' ')).toContain('Showing 1 to 50 of 75 items');
+    expect(getAmActivityLogs).toHaveBeenLastCalledWith({
+      page: 1,
+      limit: 50,
+      search: undefined,
+      type: undefined,
+      status: undefined,
+      method: undefined,
+    });
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Activity Log Detail log-1'}).props.onPress();
+    });
+
+    text = renderText(renderer!);
+    joinedText = text.join(' ');
+    expect(text).toContain('Activity Detail');
+    expect(joinedText).toContain('REQ-1');
+    expect(joinedText).toContain('Jest');
+
+    await act(async () => {
+      renderer!.root.findAllByType(TextInput)[0].props.onChangeText('alice');
+    });
+
+    expect(getAmActivityLogs).toHaveBeenLastCalledWith({
+      page: 1,
+      limit: 50,
+      search: 'alice',
+      type: undefined,
+      status: undefined,
+      method: undefined,
+    });
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Segment GET'}).props.onPress();
+    });
+
+    expect(getAmActivityLogs).toHaveBeenLastCalledWith({
+      page: 1,
+      limit: 50,
+      search: 'alice',
+      type: undefined,
+      status: undefined,
+      method: 'GET',
+    });
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Activity Logs Next Page'}).props.onPress();
+    });
+
+    expect(getAmActivityLogs).toHaveBeenLastCalledWith({
+      page: 2,
+      limit: 50,
+      search: 'alice',
+      type: undefined,
+      status: undefined,
+      method: 'GET',
+    });
   });
 
   it('renders mutasi summary stats and pagination from live metadata', async () => {
