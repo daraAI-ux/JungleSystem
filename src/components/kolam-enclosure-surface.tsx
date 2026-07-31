@@ -61,7 +61,9 @@ type EnclosureFilterPanel = 'type' | 'livestock' | null;
 
 const ENCLOSURE_FILTER_PANEL_WIDTH = 232;
 const DASHBOARD_SPECIES_PAGE_SIZE = 12;
+const DASHBOARD_PRODUCTION_STATS_PAGE_SIZE = 10;
 const DASHBOARD_DEATH_PAGE_SIZE = 10;
+const PRODUCTION_DIAGRAM_TOP_N = 6;
 
 const DASHBOARD_SPECIES_COLUMNS: KolamTableColumn[] = [
   {id: 'meta', label: '', align: 'left', width: 56},
@@ -811,12 +813,16 @@ function DashboardProductionStatsCard({
   const [page, setPage] = React.useState(1);
   const totalPages = Math.max(
     1,
-    Math.ceil(rows.length / DASHBOARD_SPECIES_PAGE_SIZE),
+    Math.ceil(rows.length / DASHBOARD_PRODUCTION_STATS_PAGE_SIZE),
   );
   const safePage = Math.min(page, totalPages);
   const pageRows = rows.slice(
-    (safePage - 1) * DASHBOARD_SPECIES_PAGE_SIZE,
-    safePage * DASHBOARD_SPECIES_PAGE_SIZE,
+    (safePage - 1) * DASHBOARD_PRODUCTION_STATS_PAGE_SIZE,
+    safePage * DASHBOARD_PRODUCTION_STATS_PAGE_SIZE,
+  );
+  const diagramRows = React.useMemo(
+    () => buildProductionDiagramRows(rows, totalQty),
+    [rows, totalQty],
   );
 
   React.useEffect(() => {
@@ -844,69 +850,132 @@ function DashboardProductionStatsCard({
         </View>
       </View>
 
-      <View style={styles.productionStatsTable}>
-        <View style={styles.productionStatsTableHead}>
-          <Text style={[styles.productionStatsHeadCell, styles.productionStatsColSpecies]}>
-            Species
-          </Text>
-          <Text style={[styles.productionStatsHeadCell, styles.productionStatsColVariant]}>
-            Varian
-          </Text>
-          <Text style={[styles.productionStatsHeadCell, styles.productionStatsColQty]}>
-            Qty
-          </Text>
-          <Text style={[styles.productionStatsHeadCell, styles.productionStatsColEnc]}>
-            Enc
-          </Text>
-        </View>
-        {pageRows.length ? (
-          pageRows.map(row => (
-            <View
-              key={`${row.speciesId}:${row.variantId || ''}`}
-              style={styles.productionStatsTableRow}
-            >
-              <View style={styles.productionStatsColSpecies}>
-                <Text numberOfLines={1} style={styles.productionStatsSpecies}>
-                  {row.speciesName || '-'}
-                </Text>
-                {row.scientificName ? (
-                  <Text numberOfLines={1} style={styles.productionStatsScientific}>
-                    {row.scientificName}
-                  </Text>
-                ) : null}
-              </View>
+      <View style={styles.productionStatsBody}>
+        <View style={styles.productionStatsTablePane}>
+          <View style={styles.productionStatsTable}>
+            <View style={styles.productionStatsTableHead}>
               <Text
-                numberOfLines={1}
-                style={[styles.productionStatsCell, styles.productionStatsColVariant]}
+                style={[
+                  styles.productionStatsHeadCell,
+                  styles.productionStatsColSpecies,
+                ]}
               >
-                {row.variantLabel || '—'}
+                Species
               </Text>
               <Text
-                numberOfLines={1}
-                style={[styles.productionStatsCellStrong, styles.productionStatsColQty]}
+                style={[
+                  styles.productionStatsHeadCell,
+                  styles.productionStatsColVariant,
+                ]}
               >
-                {row.qty} {row.unit || 'ekor'}
+                Varian
               </Text>
               <Text
-                numberOfLines={1}
-                style={[styles.productionStatsCellStrong, styles.productionStatsColEnc]}
+                style={[
+                  styles.productionStatsHeadCell,
+                  styles.productionStatsColQty,
+                ]}
               >
-                {row.enclosureCount}
+                Qty
+              </Text>
+              <Text
+                style={[
+                  styles.productionStatsHeadCell,
+                  styles.productionStatsColEnc,
+                ]}
+              >
+                Enc
               </Text>
             </View>
-          ))
-        ) : (
-          <View style={styles.emptyWrap}>
-            <KolamEmptyState
-              compact
-              message="Belum ada livestock produksi."
-              title="Belum ada indukan produksi"
-            />
+            {pageRows.length ? (
+              pageRows.map(row => (
+                <View
+                  key={`${row.speciesId}:${row.variantId || ''}`}
+                  style={styles.productionStatsTableRow}
+                >
+                  <View style={styles.productionStatsColSpecies}>
+                    <Text numberOfLines={1} style={styles.productionStatsSpecies}>
+                      {row.speciesName || '-'}
+                    </Text>
+                    {row.scientificName ? (
+                      <Text
+                        numberOfLines={1}
+                        style={styles.productionStatsScientific}
+                      >
+                        {row.scientificName}
+                      </Text>
+                    ) : null}
+                  </View>
+                  <Text
+                    numberOfLines={1}
+                    style={[
+                      styles.productionStatsCell,
+                      styles.productionStatsColVariant,
+                    ]}
+                  >
+                    {row.variantLabel || '—'}
+                  </Text>
+                  <Text
+                    numberOfLines={1}
+                    style={[
+                      styles.productionStatsCellStrong,
+                      styles.productionStatsColQty,
+                    ]}
+                  >
+                    {row.qty} {row.unit || 'ekor'}
+                  </Text>
+                  <Text
+                    numberOfLines={1}
+                    style={[
+                      styles.productionStatsCellStrong,
+                      styles.productionStatsColEnc,
+                    ]}
+                  >
+                    {row.enclosureCount}
+                  </Text>
+                </View>
+              ))
+            ) : (
+              <View style={styles.emptyWrap}>
+                <KolamEmptyState
+                  compact
+                  message="Belum ada livestock produksi."
+                  title="Belum ada indukan produksi"
+                />
+              </View>
+            )}
           </View>
-        )}
+        </View>
+
+        <View style={styles.productionDiagramPane}>
+          <Text style={styles.productionDiagramTitle}>Distribusi qty</Text>
+          <Text style={styles.productionDiagramSubtitle}>Top species</Text>
+          {diagramRows.length ? (
+            <View style={styles.productionDiagramList}>
+              {diagramRows.map(item => (
+                <View key={item.key} style={styles.productionDiagramRow}>
+                  <Text numberOfLines={1} style={styles.productionDiagramLabel}>
+                    {item.label}
+                  </Text>
+                  <View style={styles.productionDiagramTrack}>
+                    <View
+                      style={[
+                        styles.productionDiagramFill,
+                        {width: `${item.percent}%` as `${number}%`},
+                      ]}
+                    />
+                  </View>
+                  <Text style={styles.productionDiagramValue}>{item.qty}</Text>
+                </View>
+              ))}
+            </View>
+          ) : (
+            <Text style={styles.productionDiagramEmpty}>Belum ada data</Text>
+          )}
+        </View>
       </View>
 
-      {rows.length > DASHBOARD_SPECIES_PAGE_SIZE ? (
+      {rows.length > DASHBOARD_PRODUCTION_STATS_PAGE_SIZE ? (
         <SimpleDashboardPagination
           onPageChange={setPage}
           page={safePage}
@@ -916,6 +985,37 @@ function DashboardProductionStatsCard({
       ) : null}
     </View>
   );
+}
+
+function buildProductionDiagramRows(
+  rows: KolamEnclosureDashboardSpeciesRow[],
+  totalQty: number,
+) {
+  const bySpecies = new Map<
+    string,
+    {key: string; label: string; qty: number}
+  >();
+
+  for (const row of rows) {
+    const key = row.speciesId || row.speciesName || row.variantId || 'unknown';
+    const label = row.speciesName || row.scientificName || 'Species';
+    const current = bySpecies.get(key);
+    if (current) {
+      current.qty += row.qty;
+    } else {
+      bySpecies.set(key, {key, label, qty: row.qty});
+    }
+  }
+
+  const ranked = [...bySpecies.values()]
+    .sort((left, right) => right.qty - left.qty || left.label.localeCompare(right.label))
+    .slice(0, PRODUCTION_DIAGRAM_TOP_N);
+  const maxQty = Math.max(1, ...ranked.map(item => item.qty), totalQty > 0 ? 1 : 0);
+
+  return ranked.map(item => ({
+    ...item,
+    percent: Math.max(6, Math.round((item.qty / maxQty) * 100)),
+  }));
 }
 
 function DashboardSpeciesTable({
@@ -2189,6 +2289,77 @@ const styles = StyleSheet.create({
   productionStatsPills: {
     flexDirection: 'row',
     gap: 8,
+  },
+  productionStatsBody: {
+    alignItems: 'stretch',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  productionStatsTablePane: {
+    flexBasis: 0,
+    flexGrow: 3,
+    minWidth: 280,
+  },
+  productionDiagramPane: {
+    backgroundColor: V.colors.secondary,
+    borderColor: V.colors.border,
+    borderRadius: 6,
+    borderWidth: 1,
+    flexBasis: 0,
+    flexGrow: 1,
+    gap: 8,
+    minWidth: 160,
+    padding: 10,
+  },
+  productionDiagramTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  productionDiagramSubtitle: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '600',
+    marginTop: -4,
+  },
+  productionDiagramList: {
+    gap: 8,
+  },
+  productionDiagramRow: {
+    gap: 3,
+  },
+  productionDiagramLabel: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  productionDiagramTrack: {
+    backgroundColor: V.colors.bg,
+    borderRadius: 999,
+    height: 6,
+    overflow: 'hidden',
+    width: '100%',
+  },
+  productionDiagramFill: {
+    backgroundColor: V.colors.primary,
+    borderRadius: 999,
+    height: '100%',
+  },
+  productionDiagramValue: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  productionDiagramEmpty: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '600',
   },
   productionStatPill: {
     alignItems: 'center',
