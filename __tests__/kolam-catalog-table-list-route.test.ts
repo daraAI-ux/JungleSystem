@@ -12,7 +12,8 @@ describe('isCatalogTableListRoute', () => {
     expect(isCatalogTableListRoute('/suppliers')).toBe(false);
     expect(isCatalogTableListRoute('/customers')).toBe(true);
     expect(isCatalogTableListRoute('/purchase-order')).toBe(false);
-    expect(isCatalogTableListRoute('/production')).toBe(true);
+    // Mapped-row Produksi uses shell ScrollView (same as supplier/PO) so header height stays compact.
+    expect(isCatalogTableListRoute('/production')).toBe(false);
     expect(isCatalogTableListRoute('/product-serials')).toBe(false);
     expect(isCatalogTableListRoute('/sales')).toBe(false);
     expect(isCatalogTableListRoute('/raw-materials')).toBe(false);
