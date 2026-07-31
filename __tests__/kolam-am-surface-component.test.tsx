@@ -1247,8 +1247,10 @@ describe('KolamAmSurface', () => {
         'alice',
         'Top Paths',
         '/activity-log',
+        'Super Admin audit log',
       ]),
     );
+    expect(joinedText).toContain('Log otomatis dibersihkan setelah 90 hari');
     expect(joinedText.replace(/\s+/g, ' ')).toContain('Showing 1 to 50 of 75 items');
     expect(getAmActivityLogs).toHaveBeenLastCalledWith({
       page: 1,

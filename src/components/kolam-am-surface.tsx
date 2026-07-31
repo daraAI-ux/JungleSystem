@@ -3867,6 +3867,12 @@ function AmActivityLogPage() {
         <AmMetricCard label="API / Page" value={`${apiCount} / ${pageCount}`} meta="7d type count" />
         <AmMetricCard label="Success" value={String(successCount)} meta={`${failedCount} failed`} />
       </View>
+      <View style={styles.emptyPanel}>
+        <Text style={styles.panelTitle}>Super Admin audit log</Text>
+        <Text style={styles.panelText}>
+          Catatan page/API request AM live. Log otomatis dibersihkan setelah 90 hari; bulk delete manual dari AM FE sengaja tidak dijalankan otomatis di native.
+        </Text>
+      </View>
       <View style={styles.filterBar}>
         <KolamSearchField
           value={search}
