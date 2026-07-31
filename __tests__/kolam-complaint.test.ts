@@ -112,13 +112,29 @@ describe('kolam-complaint domain', () => {
         courierName: 'JNE',
       },
       items: [],
-      sale: 'sale2',
+      sale: {
+        _id: 'sale2',
+        invoiceCode: 'INV-2',
+        sourceRef: {
+          _id: 'src1',
+          name: 'POS Offline',
+          logo: '/media/sources/pos.png',
+        },
+      },
     });
 
     expect(detail.decision).toBe('return_then_refund');
     expect(detail.photos[0].uri).toContain('media/complaints/a.jpg');
     expect(detail.histories[0].changedByLabel).toBe('Staff');
     expect(detail.returnTracking?.trackingNumber).toBe('RESI1');
+    expect(detail.saleSourceRef?.id).toBe('src1');
+    expect(detail.saleSourceRef?.name).toBe('POS Offline');
+    expect(detail.saleSourceRef?.logoUri).toContain('media/sources/pos.png');
+    expect(
+      resolveKolamComplaintSaleSourceLogoUri(detail, [
+        { id: 'src1', logoUri: 'https://cdn.example/fallback.png' },
+      ]),
+    ).toContain('media/sources/pos.png');
     expect(getKolamComplaintStatusLabel('pending')).toBe('Menunggu');
     expect(getKolamComplaintDecisionLabel(null)).toBe('Tidak ada');
   });
