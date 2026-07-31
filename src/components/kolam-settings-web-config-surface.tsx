@@ -4094,38 +4094,52 @@ export function KolamSettingsWebConfigSurface({
                 },
               ]}
             />
-            <View style={styles.marketplaceOverviewRows}>
+            <View style={styles.regionTable}>
+              <View style={[styles.regionTableRow, styles.regionTableHeader]}>
+                {[
+                  'Code',
+                  'Name',
+                  'Level',
+                  'Parent',
+                  'Postal Code',
+                  'Updated',
+                ].map(column => (
+                    <Text
+                      key={column}
+                      style={[
+                        styles.regionTableCell,
+                        styles.regionTableHeaderCell,
+                        column === 'Name' && styles.regionTableNameCell,
+                      ]}
+                    >
+                      {column}
+                    </Text>
+                  ))}
+              </View>
               {regionRows.slice(0, 100).map(region => (
                 <View
                   key={region._id || region.code}
-                  style={styles.marketplaceOverviewRow}
+                  style={styles.regionTableRow}
                 >
-                  <KolamCopyStack
-                    containerStyle={styles.marketplaceOverviewCopy}
-                    items={[
-                      {
-                        id: `${region.code}-name`,
-                        text: `${region.code} - ${region.name}`,
-                        style: styles.marketplaceOverviewLabel,
-                      },
-                      {
-                        id: `${region.code}-meta`,
-                        text: `${getRegionLevelLabel(region.level)} | parent ${
-                          region.parentCode || '-'
-                        } | postal ${region.postalCode || '-'}`,
-                        style: styles.marketplaceOverviewDetail,
-                      },
-                    ]}
-                  />
-                  <KolamCopyStack
-                    items={[
-                      {
-                        id: `${region.code}-updated`,
-                        text: region.updatedAt ?? '-',
-                        style: styles.marketplaceOverviewValue,
-                      },
-                    ]}
-                  />
+                  <Text style={[styles.regionTableCell, styles.regionTableMono]}>
+                    {region.code}
+                  </Text>
+                  <Text
+                    numberOfLines={1}
+                    style={[styles.regionTableCell, styles.regionTableNameCell]}
+                  >
+                    {region.name}
+                  </Text>
+                  <Text style={styles.regionTableCell}>{region.level}</Text>
+                  <Text style={[styles.regionTableCell, styles.regionTableMono]}>
+                    {region.parentCode || '-'}
+                  </Text>
+                  <Text style={[styles.regionTableCell, styles.regionTableMono]}>
+                    {region.postalCode || '-'}
+                  </Text>
+                  <Text style={styles.regionTableCell}>
+                    {formatRegionUpdatedAt(region.updatedAt)}
+                  </Text>
                 </View>
               ))}
               {regionRows.length === 0 ? (
@@ -8879,6 +8893,22 @@ function createRegionDropdownOptions(
   ];
 }
 
+function formatRegionUpdatedAt(value?: string) {
+  if (!value) {
+    return '-';
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleString('id-ID', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  });
+}
+
 const styles = StyleSheet.create({
   settingsTabCardSpacing: {
     marginBottom: 14,
@@ -9775,5 +9805,46 @@ const styles = StyleSheet.create({
   regionDropdownControl: {
     minWidth: 220,
     width: 260,
+  },
+  regionTable: {
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  regionTableRow: {
+    alignItems: 'center',
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    minHeight: 36,
+  },
+  regionTableHeader: {
+    backgroundColor: V.colors.muted,
+  },
+  regionTableCell: {
+    color: V.colors.fg,
+    flexBasis: 118,
+    flexShrink: 0,
+    fontSize: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  regionTableHeaderCell: {
+    color: V.colors.mutedFg,
+    fontSize: 11,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+  },
+  regionTableNameCell: {
+    flexBasis: 220,
+    flexGrow: 1,
+    flexShrink: 1,
+  },
+  regionTableMono: {
+    fontFamily: Platform.select({
+      default: 'monospace',
+      windows: 'Consolas',
+    }),
   },
 });

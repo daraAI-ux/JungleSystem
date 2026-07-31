@@ -904,6 +904,17 @@ describe('settings web widgets', () => {
                 postalCode: '40161',
               },
             ],
+            regionRows: [
+              {
+                _id: 'village-3273011001',
+                code: '32.73.01.1001',
+                name: 'Pasteur',
+                level: 'village',
+                parentCode: '32.73.01',
+                postalCode: '40161',
+                updatedAt: '2026-07-31T10:00:00.000Z',
+              },
+            ],
             setRegionSelection,
           })}
         />,
@@ -935,6 +946,21 @@ describe('settings web widgets', () => {
     expect(setRegionSelection).toHaveBeenCalledWith(
       'village',
       '32.73.01.1001',
+    );
+    expect(renderText(renderer!)).toEqual(
+      expect.arrayContaining([
+        'Code',
+        'Name',
+        'Level',
+        'Parent',
+        'Postal Code',
+        'Updated',
+        '32.73.01.1001',
+        'Pasteur',
+        'village',
+        '32.73.01',
+        '40161',
+      ]),
     );
   });
 
