@@ -100,6 +100,7 @@ const AM_TASK_PAGE_LIMIT = 20;
 const AM_SERVICE_PAGE_LIMIT = 20;
 const AM_TRANSFER_PAGE_LIMIT = 20;
 const AM_MUTASI_PAGE_LIMIT = 50;
+const AM_WEBHOOK_LOG_PAGE_LIMIT = 50;
 const AM_USER_PAGE_LIMIT = 20;
 const AM_ACTIVITY_LOG_PAGE_LIMIT = 50;
 const AM_ACTIVITY_LOG_TYPES = ['all', 'api', 'page'];
@@ -2513,6 +2514,11 @@ function AmWebhooksPage() {
   const [configs, setConfigs] = React.useState<AmWebhookConfig[]>([]);
   const [logs, setLogs] = React.useState<AmWebhookLog[]>([]);
   const [events, setEvents] = React.useState<string[]>([]);
+  const [logEventFilter, setLogEventFilter] = React.useState('all');
+  const [logConfigFilter, setLogConfigFilter] = React.useState('all');
+  const [logPage, setLogPage] = React.useState(1);
+  const [logTotal, setLogTotal] = React.useState(0);
+  const [logLimit, setLogLimit] = React.useState(AM_WEBHOOK_LOG_PAGE_LIMIT);
   const [editingConfigId, setEditingConfigId] = React.useState<string | null>(null);
   const [formUrl, setFormUrl] = React.useState('');
   const [formSecret, setFormSecret] = React.useState('');
@@ -2529,11 +2535,18 @@ function AmWebhooksPage() {
       setIsLoading(true);
       const [configResponse, logResponse, eventResponse] = await Promise.all([
         getAmWebhookConfigs(),
-        getAmWebhookLogs({limit: 20}),
+        getAmWebhookLogs({
+          page: logPage,
+          limit: AM_WEBHOOK_LOG_PAGE_LIMIT,
+          event: logEventFilter === 'all' ? undefined : logEventFilter,
+          configId: logConfigFilter === 'all' ? undefined : logConfigFilter,
+        }),
         getAmWebhookEvents(),
       ]);
       setConfigs(configResponse.data);
       setLogs(logResponse.data);
+      setLogTotal(logResponse.meta.total ?? logResponse.data.length);
+      setLogLimit(logResponse.meta.limit || AM_WEBHOOK_LOG_PAGE_LIMIT);
       setEvents(eventResponse);
       setSelectedEvents(current => current.length ? current : eventResponse);
       setError(null);
@@ -2542,7 +2555,7 @@ function AmWebhooksPage() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [logConfigFilter, logEventFilter, logPage]);
 
   React.useEffect(() => {
     fetchWebhooks();
@@ -2652,11 +2665,41 @@ function AmWebhooksPage() {
     }
   }, [fetchWebhooks]);
 
+  const handleLogEventChange = React.useCallback((value: string) => {
+    setLogEventFilter(value);
+    setLogPage(1);
+  }, []);
+
+  const handleLogConfigChange = React.useCallback((value: string) => {
+    setLogConfigFilter(value);
+    setLogPage(1);
+  }, []);
+
+  const webhookLogEventItems = React.useMemo(() => ['all', ...events], [events]);
+  const webhookLogEventLabels = React.useMemo<Record<string, string>>(() => {
+    const labels: Record<string, string> = {all: 'All Events'};
+    events.forEach(event => {
+      labels[event] = event;
+    });
+    return labels;
+  }, [events]);
+  const webhookLogConfigItems = React.useMemo(() => ['all', ...configs.map(config => config._id)], [configs]);
+  const webhookLogConfigLabels = React.useMemo<Record<string, string>>(() => {
+    const labels: Record<string, string> = {all: 'All Endpoints'};
+    configs.forEach(config => {
+      labels[config._id] = config.description || config.url;
+    });
+    return labels;
+  }, [configs]);
+  const webhookLogTotalPages = Math.max(1, Math.ceil(logTotal / Math.max(logLimit, 1)));
+  const webhookLogRangeFrom = logTotal ? (logPage - 1) * logLimit + 1 : 0;
+  const webhookLogRangeTo = logTotal ? Math.min(logPage * logLimit, logTotal) : 0;
+
   return (
     <View style={styles.pageStack}>
       <View style={styles.filterBar}>
         <AmMetricCard label="Configs" value={String(configs.length)} meta={`${configs.filter(item => item.status === 'active').length} active`} />
-        <AmMetricCard label="Recent Logs" value={String(logs.length)} meta={`${logs.filter(log => !log.success).length} failed`} />
+        <AmMetricCard label="Delivery Logs" value={String(logTotal || logs.length)} meta={`${logs.filter(log => !log.success).length} failed on page`} />
         <KolamButton label={isLoading ? 'Memuat' : 'Refresh'} intent="outline" muted={isLoading} size="sm" onPress={fetchWebhooks} />
         <KolamButton label="Test Ping" intent="outline" size="sm" onPress={testPing} />
       </View>
@@ -2731,6 +2774,20 @@ function AmWebhooksPage() {
         </View>
       </View>
       <View style={styles.tablePanel}>
+        <View style={styles.filterBar}>
+          <AmSegmentGroup
+            active={logEventFilter}
+            items={webhookLogEventItems}
+            labels={webhookLogEventLabels}
+            onSelect={handleLogEventChange}
+          />
+          <AmSegmentGroup
+            active={logConfigFilter}
+            items={webhookLogConfigItems}
+            labels={webhookLogConfigLabels}
+            onSelect={handleLogConfigChange}
+          />
+        </View>
         <View style={styles.tableHeader}>
           <Text style={[styles.tableHeaderText, styles.typeCol]}>Direction</Text>
           <Text style={[styles.tableHeaderText, styles.recipientCol]}>Event</Text>
@@ -2750,6 +2807,33 @@ function AmWebhooksPage() {
             <Text style={[styles.cellText, styles.dateCol]}>{formatAmDate(log.createdAt)}</Text>
           </View>
         ))}
+        {logTotal > 0 ? (
+          <View style={styles.paginationBar}>
+            <Text style={styles.paginationText}>
+              Showing {webhookLogRangeFrom} to {webhookLogRangeTo} of {logTotal} items
+            </Text>
+            <View style={styles.inlineActions}>
+              <KolamButton
+                accessibilityLabel="AM Webhook Logs Previous Page"
+                disabled={logPage <= 1 || isLoading}
+                intent="outline"
+                label="Previous"
+                muted={logPage <= 1 || isLoading}
+                size="sm"
+                onPress={() => setLogPage(current => Math.max(1, current - 1))}
+              />
+              <KolamButton
+                accessibilityLabel="AM Webhook Logs Next Page"
+                disabled={logPage >= webhookLogTotalPages || isLoading}
+                intent="outline"
+                label={`Page ${logPage}/${webhookLogTotalPages}`}
+                muted={logPage >= webhookLogTotalPages || isLoading}
+                size="sm"
+                onPress={() => setLogPage(current => Math.min(webhookLogTotalPages, current + 1))}
+              />
+            </View>
+          </View>
+        ) : null}
       </View>
     </View>
   );

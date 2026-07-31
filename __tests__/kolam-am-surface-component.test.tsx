@@ -1670,4 +1670,90 @@ describe('KolamAmSurface', () => {
     expect(deleteAmWebhookConfig).toHaveBeenCalledWith('webhook-1');
     expect(testAmWebhookPing).toHaveBeenCalledTimes(1);
   });
+
+  it('filters and paginates webhook delivery logs against AM BE query params', async () => {
+    jest.mocked(getAmWebhookConfigs).mockResolvedValue({
+      data: [
+        {
+          _id: 'webhook-1',
+          url: 'https://example.test/webhook',
+          events: ['transfer.success'],
+          status: 'active',
+          description: 'Existing hook',
+          lastDeliveredAt: null,
+          failCount: 0,
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 1, limit: 1},
+    });
+    jest.mocked(getAmWebhookLogs).mockResolvedValue({
+      data: [
+        {
+          _id: 'webhook-log-1',
+          configId: {_id: 'webhook-1', url: 'https://example.test/webhook', description: 'Existing hook'},
+          direction: 'outgoing',
+          event: 'transfer.success',
+          url: 'https://example.test/webhook',
+          requestBody: {payload: {transferId: 'transfer-1'}},
+          responseStatus: 200,
+          responseBody: {ok: true},
+          success: true,
+          error: '',
+          duration: 42,
+          createdAt: '2026-07-31T01:00:00.000Z',
+        },
+      ],
+      meta: {total: 75, limit: 50},
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await updateAmRoute(renderer!, 'webhooks');
+
+    expect(getAmWebhookLogs).toHaveBeenLastCalledWith({
+      page: 1,
+      limit: 50,
+      event: undefined,
+      configId: undefined,
+    });
+    expect(renderText(renderer!).join(' ')).toMatch(/Showing\s+1\s+to\s+50\s+of\s+75\s+items/);
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Segment transfer.success'}).props.onPress();
+    });
+    expect(getAmWebhookLogs).toHaveBeenLastCalledWith({
+      page: 1,
+      limit: 50,
+      event: 'transfer.success',
+      configId: undefined,
+    });
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Segment Existing hook'}).props.onPress();
+    });
+    expect(getAmWebhookLogs).toHaveBeenLastCalledWith({
+      page: 1,
+      limit: 50,
+      event: 'transfer.success',
+      configId: 'webhook-1',
+    });
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Webhook Logs Next Page'}).props.onPress();
+    });
+    expect(getAmWebhookLogs).toHaveBeenLastCalledWith({
+      page: 2,
+      limit: 50,
+      event: 'transfer.success',
+      configId: 'webhook-1',
+    });
+  });
 });
