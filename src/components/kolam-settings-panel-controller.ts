@@ -1709,10 +1709,7 @@ export function useKolamSettingsPanelController(
   const filteredRegionRows = selectedVillage
     ? visibleRegionRows.filter(region => region.code === selectedVillage)
     : visibleRegionRows;
-  const regionSyncSummaryRows = createRegionSyncSummaryRows(
-    regionStats,
-    filteredRegionRows,
-  );
+  const regionSyncSummaryRows = createRegionSyncSummaryRows(regionStats);
   const webContentLauncherItems = createWebContentLauncherItems({
     blogRows,
     blogTopicRows,
@@ -5363,16 +5360,33 @@ function parseLooseList(value: string) {
 
 function createRegionSyncSummaryRows(
   stats: KolamRegionStats | null,
-  rows: KolamRegion[],
 ): RegionSyncSummaryRow[] {
   return regionLevels.map(level => ({
     id: level,
     label: getRegionLevelLabel(level),
     value: formatNumber(stats?.counts[level]?.count ?? 0),
-    detail: `${formatNumber(
+    detail: `${formatRegionStatsUpdatedAt(
+      stats?.counts[level]?.latestUpdatedAt,
+    )} | Postal codes ${formatNumber(
       stats?.counts[level]?.withPostalCode ?? 0,
-    )} postal codes | table cache ${formatNumber(rows.length)} rows`,
+    )}`,
   }));
+}
+
+function formatRegionStatsUpdatedAt(value?: string | null) {
+  if (!value) {
+    return '-';
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleString('id-ID', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  });
 }
 
 function createRegionHierarchyQuery({

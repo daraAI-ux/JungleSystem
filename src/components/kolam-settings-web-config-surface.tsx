@@ -1227,6 +1227,15 @@ export function KolamSettingsWebConfigSurface({
         : [{label: 'Pilih kecamatan dulu', value: ''}],
     [regionVillageRows, selectedDistrict],
   );
+  const regionLevelCards = React.useMemo(
+    () =>
+      regionSyncSummaryRows.map(row => ({
+        ...row,
+        label: getRegionCardLabel(row.id),
+        syncScope: getRegionSyncScopeForLevel(row.id),
+      })),
+    [regionSyncSummaryRows],
+  );
   const generalFormSections = sections.filter(section => section.id === 'logo');
   const settingsFieldWidth = 460;
   const [storedMapsBrowserKey, setStoredMapsBrowserKey] = React.useState('');
@@ -3956,21 +3965,15 @@ export function KolamSettingsWebConfigSurface({
                 },
               ]}
             />
-            <View style={styles.marketplaceOverviewRows}>
-              {regionSyncSummaryRows.map(row => (
-                <View key={row.id} style={styles.marketplaceOverviewRow}>
+            <View style={styles.regionStatsGrid}>
+              {regionLevelCards.map(row => (
+                <View key={row.id} style={styles.regionStatsCard}>
                   <KolamCopyStack
-                    containerStyle={styles.marketplaceOverviewCopy}
                     items={[
                       {
                         id: `${row.id}-label`,
                         text: row.label,
-                        style: styles.marketplaceOverviewLabel,
-                      },
-                      {
-                        id: `${row.id}-detail`,
-                        text: row.detail,
-                        style: styles.marketplaceOverviewDetail,
+                        style: styles.regionStatsLabel,
                       },
                     ]}
                   />
@@ -3979,9 +3982,21 @@ export function KolamSettingsWebConfigSurface({
                       {
                         id: `${row.id}-value`,
                         text: row.value,
-                        style: styles.marketplaceOverviewValue,
+                        style: styles.regionStatsValue,
+                      },
+                      {
+                        id: `${row.id}-detail`,
+                        text: row.detail,
+                        style: styles.regionStatsDetail,
                       },
                     ]}
+                  />
+                  <KolamActionControlButton
+                    disabled={disabled || regionSyncStatus === 'syncing'}
+                    label={`Sync ${row.label}`}
+                    loading={regionSyncStatus === 'syncing'}
+                    loadingLabel="Syncing..."
+                    onPress={() => onRunRegionSync(row.syncScope)}
                   />
                 </View>
               ))}
@@ -8878,6 +8893,28 @@ function getRegionLevelLabel(level: KolamRegionLevel) {
   return labels[level];
 }
 
+function getRegionCardLabel(level: string) {
+  const labels: Record<string, string> = {
+    province: 'Provinsi',
+    regency: 'Kota / Kabupaten',
+    district: 'Kecamatan',
+    village: 'Desa / Kelurahan',
+  };
+
+  return labels[level] ?? level;
+}
+
+function getRegionSyncScopeForLevel(level: string): KolamRegionSyncScope {
+  const scopes: Record<string, KolamRegionSyncScope> = {
+    district: 'districts',
+    province: 'provinces',
+    regency: 'regencies',
+    village: 'villages',
+  };
+
+  return scopes[level] ?? 'all';
+}
+
 function createRegionDropdownOptions(
   placeholder: string,
   regions: KolamRegion[],
@@ -9805,6 +9842,39 @@ const styles = StyleSheet.create({
   regionDropdownControl: {
     minWidth: 220,
     width: 260,
+  },
+  regionStatsGrid: {
+    alignItems: 'stretch',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  regionStatsCard: {
+    backgroundColor: '#ffffff',
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexBasis: 210,
+    flexGrow: 1,
+    gap: 10,
+    minWidth: 190,
+    padding: 12,
+  },
+  regionStatsDetail: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  regionStatsLabel: {
+    color: '#111827',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  regionStatsValue: {
+    color: '#111827',
+    fontSize: 24,
+    fontWeight: '800',
+    lineHeight: 30,
   },
   regionTable: {
     borderColor: V.colors.border,

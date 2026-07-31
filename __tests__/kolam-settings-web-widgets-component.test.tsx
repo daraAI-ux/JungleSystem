@@ -925,6 +925,32 @@ describe('settings web widgets', () => {
               },
             ],
             regionRows: regionTableRows,
+            regionSyncSummaryRows: [
+              {
+                id: 'province',
+                label: 'Province',
+                value: '38',
+                detail: '31 Jul 2026, 17.00 | Postal codes 0',
+              },
+              {
+                id: 'regency',
+                label: 'City / Regency',
+                value: '514',
+                detail: '31 Jul 2026, 17.00 | Postal codes 0',
+              },
+              {
+                id: 'district',
+                label: 'District',
+                value: '7.288',
+                detail: '31 Jul 2026, 17.00 | Postal codes 0',
+              },
+              {
+                id: 'village',
+                label: 'Village',
+                value: '83.762',
+                detail: '31 Jul 2026, 17.00 | Postal codes 83.000',
+              },
+            ],
             setRegionSelection,
           })}
         />,
@@ -973,6 +999,14 @@ describe('settings web widgets', () => {
         '101 rows ditampilkan dari limit 2000, urut code dari backend.',
         '32.73.01.1101',
         'Kelurahan 101',
+        'Provinsi',
+        'Kota / Kabupaten',
+        'Kecamatan',
+        'Desa / Kelurahan',
+        'Sync Provinsi',
+        'Sync Kota / Kabupaten',
+        'Sync Kecamatan',
+        'Sync Desa / Kelurahan',
       ]),
     );
   });
