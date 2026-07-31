@@ -71,8 +71,8 @@ const DASHBOARD_DEATH_COLUMNS: KolamTableColumn[] = [
   {id: 'children', label: 'Enclosure', align: 'left', width: 120},
   {id: 'primary', label: 'Species', align: 'left'},
   {id: 'amount', label: 'Qty', align: 'right', width: 80},
-  {id: 'status', label: 'Status', align: 'left', width: 132},
-  {id: 'actions', label: 'Stok', align: 'right', width: 80},
+  {id: 'status', label: 'Status', align: 'center', width: 132},
+  {id: 'actions', label: '', align: 'center', headerAlign: 'center', width: 64},
 ];
 
 const ALLOCATION_OVERVIEW_COLUMNS: KolamTableColumn[] = [
