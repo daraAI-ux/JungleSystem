@@ -5668,19 +5668,23 @@ function WebContentLauncherPanel({
             text: 'Konten Web',
             style: styles.marketplaceOverviewTitle,
           },
-          {
-            id: 'meta',
-            text:
-              status === 'loading'
-                ? 'Memuat Blog, Topik Blog, dan Landing Marketplace...'
-                : status === 'error'
-                ? message
-                : 'Launcher produksi untuk Landing Marketplace, Blog, dan Blog Topics.',
-            style:
-              status === 'error'
-                ? styles.marketplaceOverviewError
-                : styles.marketplaceOverviewMeta,
-          },
+          ...(status === 'loading'
+            ? [
+                {
+                  id: 'meta',
+                  text: 'Memuat...',
+                  style: styles.marketplaceOverviewMeta,
+                },
+              ]
+            : status === 'error'
+            ? [
+                {
+                  id: 'meta',
+                  text: message,
+                  style: styles.marketplaceOverviewError,
+                },
+              ]
+            : []),
         ]}
       />
       <View style={styles.marketplaceOverviewRows}>
@@ -5799,11 +5803,6 @@ function WebContentRowsPanel({
             id: 'title',
             text: type === 'blog' ? 'Blog' : 'Blog Topics',
             style: styles.marketplaceOverviewTitle,
-          },
-          {
-            id: 'meta',
-            text: 'Ringkasan live read-only. Editor penuh mengikuti kontrak FE lama Blog/Blog Topics.',
-            style: styles.marketplaceOverviewMeta,
           },
         ]}
       />
@@ -6822,19 +6821,23 @@ function MarketplaceLandingOverviewPanel({
             text: 'Ringkasan Landing Marketplace',
             style: styles.marketplaceOverviewTitle,
           },
-          {
-            id: 'status',
-            text:
-              overview.status === 'loading'
-                ? 'Memuat data live landing marketplace...'
-                : overview.status === 'error'
-                ? overview.message
-                : 'Data live read-only dari endpoint Landing Marketplace.',
-            style:
-              overview.status === 'error'
-                ? styles.marketplaceOverviewError
-                : styles.marketplaceOverviewMeta,
-          },
+          ...(overview.status === 'loading'
+            ? [
+                {
+                  id: 'status',
+                  text: 'Memuat...',
+                  style: styles.marketplaceOverviewMeta,
+                },
+              ]
+            : overview.status === 'error'
+            ? [
+                {
+                  id: 'status',
+                  text: overview.message,
+                  style: styles.marketplaceOverviewError,
+                },
+              ]
+            : []),
         ]}
       />
       <View style={styles.marketplaceOverviewRows}>
@@ -6874,11 +6877,6 @@ function MarketplaceLandingOverviewPanel({
               id: 'asset-title',
               text: 'Unggah Aset Marketplace',
               style: styles.marketplaceOverviewLabel,
-            },
-            {
-              id: 'asset-meta',
-              text: 'Ganti, urutkan ulang, dan hapus item live landing marketplace.',
-              style: styles.marketplaceOverviewMeta,
             },
           ]}
         />
@@ -7294,11 +7292,6 @@ function MarketplaceLandingControlsPanel({
             text: 'Kontrol Landing Marketplace',
             style: styles.marketplaceOverviewTitle,
           },
-          {
-            id: 'meta',
-            text: 'Kontrol teks dan toggle. Unggah aset dan reorder tetap memakai kontrak Fase 8D/8E.',
-            style: styles.marketplaceOverviewMeta,
-          },
         ]}
       />
       {activeTabId === 'cta' ? (
@@ -7315,7 +7308,7 @@ function MarketplaceLandingControlsPanel({
           <KolamTextFieldRow
             variant="settingsForm"
             label="Judul CTA"
-            description="Judul section CTA marketplace."
+            description=""
             value={ctaDraft.title}
             onChangeText={value => setCtaDraftField('title', value)}
             placeholder="Jelajahi Dunia Species"
@@ -7323,7 +7316,7 @@ function MarketplaceLandingControlsPanel({
           <KolamTextFieldRow
             variant="settingsForm"
             label="Deskripsi CTA"
-            description="Deskripsi singkat CTA marketplace."
+            description=""
             value={ctaDraft.description}
             onChangeText={value => setCtaDraftField('description', value)}
             placeholder="Temukan koleksi lengkap..."
@@ -7331,7 +7324,7 @@ function MarketplaceLandingControlsPanel({
           <KolamTextFieldRow
             variant="settingsForm"
             label="Teks tombol CTA"
-            description="Label tombol CTA."
+            description=""
             value={ctaDraft.buttonText}
             onChangeText={value => setCtaDraftField('buttonText', value)}
             placeholder="View All Species"
@@ -7339,7 +7332,7 @@ function MarketplaceLandingControlsPanel({
           <KolamTextFieldRow
             variant="settingsForm"
             label="Link tombol CTA"
-            description="Target URL tombol CTA."
+            description=""
             value={ctaDraft.buttonLink}
             onChangeText={value => setCtaDraftField('buttonLink', value)}
             placeholder="/species"
@@ -7347,7 +7340,7 @@ function MarketplaceLandingControlsPanel({
           <KolamToggleRow
             variant="settingsForm"
             label="CTA aktif"
-            description="Tampilkan CTA di marketplace landing."
+            description=""
             active={ctaDraft.isActive}
             onPress={() =>
               !disabled && setCtaDraftField('isActive', !ctaDraft.isActive)
@@ -7377,7 +7370,7 @@ function MarketplaceLandingControlsPanel({
           <KolamTextFieldRow
             variant="settingsForm"
             label="Link YouTube"
-            description="URL channel atau video YouTube."
+            description=""
             value={youtubeDraft.link}
             onChangeText={value => setYoutubeDraftField('link', value)}
             placeholder="https://www.youtube.com/@DuniaAnura"
@@ -7385,7 +7378,7 @@ function MarketplaceLandingControlsPanel({
           <KolamTextFieldRow
             variant="settingsForm"
             label="Judul YouTube"
-            description="Judul section YouTube."
+            description=""
             value={youtubeDraft.title}
             onChangeText={value => setYoutubeDraftField('title', value)}
             placeholder="Dunia Anura"
@@ -7393,7 +7386,7 @@ function MarketplaceLandingControlsPanel({
           <KolamTextFieldRow
             variant="settingsForm"
             label="Subtitle YouTube"
-            description="Subtitle section YouTube."
+            description=""
             value={youtubeDraft.subtitle}
             onChangeText={value => setYoutubeDraftField('subtitle', value)}
             placeholder="YouTube"
@@ -7401,7 +7394,7 @@ function MarketplaceLandingControlsPanel({
           <KolamToggleRow
             variant="settingsForm"
             label="YouTube aktif"
-            description="Tampilkan YouTube section di marketplace landing."
+            description=""
             active={youtubeDraft.isActive}
             onPress={() =>
               !disabled &&
@@ -7468,7 +7461,7 @@ function MarketplaceLandingControlsPanel({
                 items={[
                   {
                     id: 'empty',
-                    text: 'Belum ada notice customer.',
+                    text: 'Belum ada notice.',
                     style: styles.marketplaceOverviewMeta,
                   },
                 ]}
@@ -7478,7 +7471,7 @@ function MarketplaceLandingControlsPanel({
           <KolamTextFieldRow
             variant="settingsForm"
             label="Key notice"
-            description="Key unik notice. Untuk edit, pilih notice dari list."
+            description=""
             value={noticeDraft.key}
             onChangeText={value => setNoticeDraftField('key', value)}
             placeholder="enclonura-migration-2026"
@@ -7486,7 +7479,7 @@ function MarketplaceLandingControlsPanel({
           <KolamTextFieldRow
             variant="settingsForm"
             label="Judul notice"
-            description="Judul singkat notice."
+            description=""
             value={noticeDraft.title}
             onChangeText={value => setNoticeDraftField('title', value)}
             placeholder="Enclonura pindah ke Dunia Anura"
@@ -7494,7 +7487,7 @@ function MarketplaceLandingControlsPanel({
           <KolamTextFieldRow
             variant="settingsForm"
             label="Pesan notice"
-            description="Pesan teks untuk customer marketplace."
+            description=""
             value={noticeDraft.message}
             onChangeText={value => setNoticeDraftField('message', value)}
             placeholder="Kelola kandang, Freyr, dan layanan..."
@@ -7502,7 +7495,7 @@ function MarketplaceLandingControlsPanel({
           <KolamTextFieldRow
             variant="settingsForm"
             label="URL CTA notice"
-            description="URL tombol opsional."
+            description=""
             value={noticeDraft.ctaUrl}
             onChangeText={value => setNoticeDraftField('ctaUrl', value)}
             placeholder="/dashboard"
@@ -7510,7 +7503,7 @@ function MarketplaceLandingControlsPanel({
           <KolamTextFieldRow
             variant="settingsForm"
             label="Label CTA notice"
-            description="Label tombol opsional."
+            description=""
             value={noticeDraft.ctaLabel}
             onChangeText={value => setNoticeDraftField('ctaLabel', value)}
             placeholder="Buka dashboard"
@@ -7518,7 +7511,7 @@ function MarketplaceLandingControlsPanel({
           <KolamToggleRow
             variant="settingsForm"
             label="Notice aktif"
-            description="Aktifkan notice untuk customer."
+            description=""
             active={noticeDraft.isActive}
             onPress={() =>
               !disabled &&
@@ -7528,7 +7521,7 @@ function MarketplaceLandingControlsPanel({
           <KolamToggleRow
             variant="settingsForm"
             label="Tampilkan di home"
-            description="Tampilkan notice di homepage marketplace."
+            description=""
             active={noticeDraft.showOnHome}
             onPress={() =>
               !disabled &&
@@ -7538,7 +7531,7 @@ function MarketplaceLandingControlsPanel({
           <KolamToggleRow
             variant="settingsForm"
             label="Tampilkan di dashboard"
-            description="Tampilkan notice di dashboard customer."
+            description=""
             active={noticeDraft.showOnDashboard}
             onPress={() =>
               !disabled &&
