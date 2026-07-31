@@ -93,6 +93,8 @@ const styles = StyleSheet.create({
     lineHeight: KOLAM_BADGE_VISUAL.base.lineHeight,
     fontWeight:
       KOLAM_BADGE_VISUAL.base.fontWeight === 'medium' ? '500' : '700',
+    textAlign: 'center',
+    textAlignVertical: 'center',
   },
   circle: {
     paddingHorizontal: KOLAM_BADGE_VISUAL.circle.paddingX,

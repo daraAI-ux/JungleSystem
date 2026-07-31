@@ -40,9 +40,10 @@ const kolamBadgeVisual: KolamBadgeVisualContract = {
     alignItems: 'center',
     gapX: 6,
     paddingX: 8,
-    paddingY: 2,
+    // Slightly taller vertical pad + tighter line box so label sits centered in soft-box badges.
+    paddingY: 3,
     fontSize: 12,
-    lineHeight: 20,
+    lineHeight: 16,
     fontWeight: 'medium',
     iconSize: 12,
   },

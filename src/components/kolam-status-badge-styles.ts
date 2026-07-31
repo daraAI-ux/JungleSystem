@@ -10,6 +10,7 @@ export const statusBadgeStyles = StyleSheet.create({
     overflow: 'hidden',
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     flexShrink: 1,
     gap: KOLAM_BADGE_VISUAL.base.gapX,
     // Compact text-hugging padding (square token), not circle icon padding.
@@ -24,6 +25,8 @@ export const statusBadgeStyles = StyleSheet.create({
     fontWeight:
       KOLAM_BADGE_VISUAL.base.fontWeight === 'medium' ? '500' : '700',
     flexShrink: 1,
+    textAlign: 'center',
+    textAlignVertical: 'center',
   },
   primary: {
     backgroundColor: V.colors.primarySoft,

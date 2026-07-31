@@ -12,9 +12,9 @@ describe('getKolamBadgeVisualContract', () => {
       alignItems: 'center',
       gapX: 6,
       paddingX: 8,
-      paddingY: 2,
+      paddingY: 3,
       fontSize: 12,
-      lineHeight: 20,
+      lineHeight: 16,
       fontWeight: 'medium',
       iconSize: 12,
     });

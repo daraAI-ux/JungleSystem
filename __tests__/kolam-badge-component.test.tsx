@@ -21,7 +21,7 @@ describe('KolamBadge', () => {
       expect.arrayContaining([
         expect.objectContaining({
           fontSize: 12,
-          lineHeight: 20,
+          lineHeight: 16,
           fontWeight: '500',
         }),
         expect.objectContaining({

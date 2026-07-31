@@ -31,7 +31,7 @@ describe('KolamStatusBadge', () => {
           flexShrink: 1,
           gap: 6,
           paddingHorizontal: 6,
-          paddingVertical: 2,
+          paddingVertical: 3,
         }),
         expect.objectContaining({
           backgroundColor: V.colors.successSoft,
@@ -42,7 +42,7 @@ describe('KolamStatusBadge', () => {
       expect.arrayContaining([
         expect.objectContaining({
           fontSize: 12,
-          lineHeight: 20,
+          lineHeight: 16,
           fontWeight: '500',
         }),
         expect.objectContaining({
