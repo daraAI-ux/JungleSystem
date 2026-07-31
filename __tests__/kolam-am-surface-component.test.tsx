@@ -1457,6 +1457,23 @@ describe('KolamAmSurface', () => {
           userId: {_id: 'user-1', username: 'alice', fullName: 'Alice AM'},
           username: 'alice',
         },
+        {
+          _id: 'log-2',
+          action: 'PAGE /dashboard',
+          duration: 0,
+          error: '',
+          ip: '127.0.0.2',
+          metadata: {},
+          method: '',
+          path: '/dashboard',
+          status: 'success',
+          statusCode: 200,
+          timestamp: '2026-01-01T00:01:00.000Z',
+          type: 'page',
+          userAgent: 'Jest',
+          userId: null,
+          username: null,
+        },
       ],
       meta: {total: 75, limit: 50, page: 1, totalPages: 2},
     });
@@ -1495,6 +1512,8 @@ describe('KolamAmSurface', () => {
       ]),
     );
     expect(joinedText).toContain('Log otomatis dibersihkan setelah 90 hari');
+    expect(text).toEqual(expect.arrayContaining(['API', 'Page', 'GET']));
+    expect(joinedText).toContain('/dashboard');
     expect(joinedText.replace(/\s+/g, ' ')).toContain('Showing 1 to 50 of 75 items');
     expect(getAmActivityLogs).toHaveBeenLastCalledWith({
       page: 1,

@@ -4413,8 +4413,22 @@ function AmActivityLogPage() {
               <Text style={styles.cellText} numberOfLines={1}>{log.username ?? log.userId?.username ?? 'anonymous'}</Text>
               <Text style={styles.rowMeta} numberOfLines={1}>{log.userId?.fullName ?? '-'}</Text>
             </View>
-            <Text style={[styles.cellText, styles.typeCol]}>{log.type}</Text>
-            <Text style={[styles.cellText, styles.typeCol]}>{log.method || '-'}</Text>
+            <View style={styles.typeCol}>
+              <AmStatusChip
+                label={formatActivityLogTypeLabel(log.type)}
+                tone={log.type === 'api' ? 'warning' : 'muted'}
+              />
+            </View>
+            <View style={styles.typeCol}>
+              {log.method ? (
+                <AmStatusChip
+                  label={log.method}
+                  tone={getActivityLogMethodTone(log.method)}
+                />
+              ) : (
+                <Text style={styles.cellText}>-</Text>
+              )}
+            </View>
             <View style={styles.recipientCol}>
               <Text style={styles.monoText} numberOfLines={1}>{log.path}</Text>
               <Text style={styles.rowMeta} numberOfLines={1}>{log.action}</Text>
@@ -4905,6 +4919,19 @@ function formatCompactRupiah(value: number) {
 
 function formatAmDuration(value: number | null | undefined) {
   return value ? `${value} ms` : '-';
+}
+
+function formatActivityLogTypeLabel(type: AmActivityLog['type']) {
+  if (type === 'api') return 'API';
+  if (type === 'page') return 'Page';
+  return titleCase(type);
+}
+
+function getActivityLogMethodTone(method: string): 'success' | 'warning' | 'danger' | 'muted' {
+  if (method === 'POST') return 'success';
+  if (method === 'PUT' || method === 'PATCH') return 'warning';
+  if (method === 'DELETE') return 'danger';
+  return 'muted';
 }
 
 function getAmStatsCount(
