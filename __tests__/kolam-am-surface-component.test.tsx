@@ -1926,7 +1926,11 @@ describe('KolamAmSurface', () => {
           completedAt: null,
           createdAt: '',
           createdBy: null,
-          deviceId: { _id: 'device-1', name: 'Phone 1' },
+          deviceId: {
+            _id: 'device-1',
+            name: 'Phone 1',
+            boxId: {_id: 'box-1', name: 'Box A', rackId: {_id: 'rack-1', name: 'Rack Blue'}},
+          },
           error: '',
           fee: 2500,
           logs: [],
@@ -1990,7 +1994,11 @@ describe('KolamAmSurface', () => {
           completedAt: null,
           createdAt: '',
           createdBy: null,
-          deviceId: { _id: 'device-1', name: 'Phone 1' },
+          deviceId: {
+            _id: 'device-1',
+            name: 'Phone 1',
+            boxId: {_id: 'box-1', name: 'Box A', rackId: {_id: 'rack-1', name: 'Rack Blue'}},
+          },
           error: '',
           fee: 2500,
           logs: [],
@@ -2053,6 +2061,9 @@ describe('KolamAmSurface', () => {
     expect(joinedText).toContain('Total Transfers');
     expect(joinedText).toContain('Total Amount');
     expect(joinedText).toContain('Pending');
+    expect(joinedText).toContain('Bank');
+    expect(joinedText).toContain('Device');
+    expect(joinedText).toContain('Box A / Rack Blue');
     expect(joinedText).toMatch(/Showing\s+1\s+to\s+20\s+of\s+45\s+items/);
     expect(joinedText).toContain('Page 1/3');
 

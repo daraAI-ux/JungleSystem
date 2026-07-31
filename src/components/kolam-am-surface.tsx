@@ -2895,8 +2895,10 @@ function AmTransfersPage() {
         <View style={styles.tableHeader}>
           <Text style={[styles.tableHeaderText, styles.accountWideCol]}>Account</Text>
           <Text style={[styles.tableHeaderText, styles.recipientCol]}>Recipient</Text>
+          <Text style={[styles.tableHeaderText, styles.platformCol]}>Bank</Text>
           <Text style={[styles.tableHeaderText, styles.amountCol]}>Amount</Text>
           <Text style={[styles.tableHeaderText, styles.statusCol]}>Status</Text>
+          <Text style={[styles.tableHeaderText, styles.deviceWideCol]}>Device</Text>
           <Text style={[styles.tableHeaderText, styles.dateCol]}>Created</Text>
           <Text style={[styles.tableHeaderText, styles.actionCol]}>Action</Text>
         </View>
@@ -2905,15 +2907,21 @@ function AmTransfersPage() {
           <View key={transfer._id} style={styles.tableRow}>
             <View style={styles.accountWideCol}>
               <Text style={styles.cellText} numberOfLines={1}>{formatBankAccount(transfer.accountId)}</Text>
-              <Text style={styles.rowMeta} numberOfLines={1}>{formatDeviceRef(transfer.deviceId)}</Text>
             </View>
             <View style={styles.recipientCol}>
               <Text style={styles.cellText} numberOfLines={1}>{transfer.recipientName || '-'}</Text>
               <Text style={styles.rowMeta} numberOfLines={1}>{transfer.recipientBank ?? '-'} {transfer.recipientAccount}</Text>
             </View>
+            <Text style={[styles.cellText, styles.platformCol]} numberOfLines={1}>
+              {transfer.transferType === 'virtual-account' ? 'VA' : transfer.recipientBank ?? '-'}
+            </Text>
             <Text style={[styles.cellText, styles.amountCol]}>{formatRupiah(transfer.amount)}</Text>
             <View style={styles.statusCol}>
               <AmStatusChip label={transfer.status} tone={getTransferTone(transfer.status)} />
+            </View>
+            <View style={styles.deviceWideCol}>
+              <Text style={styles.cellText} numberOfLines={1}>{formatDeviceRef(transfer.deviceId)}</Text>
+              <Text style={styles.rowMeta} numberOfLines={1}>{formatDeviceLocation(transfer.deviceId)}</Text>
             </View>
             <Text style={[styles.cellText, styles.dateCol]}>{formatAmDate(transfer.createdAt)}</Text>
             <View style={styles.actionCol}>
