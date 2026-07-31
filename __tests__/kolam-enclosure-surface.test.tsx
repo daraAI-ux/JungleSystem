@@ -13,6 +13,21 @@ jest.mock('../src/hooks/use-kolam-enclosure-controller', () => ({
   useKolamEnclosureController: jest.fn(),
 }));
 
+jest.mock('../src/components/kolam-filter-panel-anchor', () => {
+  const actual = jest.requireActual('../src/components/kolam-filter-panel-anchor');
+  return {
+    ...actual,
+    measureFilterPanelAnchor: (
+      _toolbar: unknown,
+      _trigger: unknown,
+      _panelWidth: number,
+      onReady: (anchor: {left: number; top: number}) => void,
+    ) => {
+      onReady({left: 0, top: 40});
+    },
+  };
+});
+
 jest.mock('../src/components/kolam-barcode-print-dialog', () => ({
   KolamBarcodePrintDialog: () => null,
 }));
@@ -143,6 +158,9 @@ describe('Kolam enclosure surface', () => {
       root.findAllByProps({label: 'Tipe'})[0].props.onPress();
     });
     await ReactTestRenderer.act(async () => {
+      jest.runOnlyPendingTimers();
+    });
+    await ReactTestRenderer.act(async () => {
       root.findAllByProps({label: 'Aquarium'})[0].props.onPress();
     });
     expect(controller.onChangeFilters).toHaveBeenCalledWith({
@@ -151,6 +169,9 @@ describe('Kolam enclosure surface', () => {
 
     await ReactTestRenderer.act(async () => {
       root.findAllByProps({label: 'Livestock'})[0].props.onPress();
+    });
+    await ReactTestRenderer.act(async () => {
+      jest.runOnlyPendingTimers();
     });
     await ReactTestRenderer.act(async () => {
       root.findAllByProps({label: 'Production'})[0].props.onPress();
@@ -407,11 +428,12 @@ describe('Kolam enclosure surface', () => {
     expect(root.findAllByProps({children: 'Rack 1'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'ENC-1'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'Catatan detail enclosure'}).length).toBeGreaterThan(0);
-    expect(root.findAllByProps({children: 'Spesies di enclosure'}).length).toBeGreaterThan(0);
-    expect(root.findAllByProps({children: 'Informasi enclosure'}).length).toBeGreaterThan(0);
-    expect(root.findAllByProps({children: 'Ranitomeya'}).length).toBeGreaterThan(0);
-    expect(root.findAllByProps({children: 'Client A'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'ZooMed'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Ukuran'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'Jual unit kandang'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Komentar'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Belum ada komentar.'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Informasi enclosure'}).length).toBe(0);
     expect(root.findAllByProps({label: 'Cetak barcode'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({label: 'Muat ulang'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({label: 'Ringkasan'}).length).toBeGreaterThan(0);
@@ -423,6 +445,8 @@ describe('Kolam enclosure surface', () => {
     await ReactTestRenderer.act(async () => {
       root.findAllByProps({label: 'Spesies'})[0].props.onPress();
     });
+    expect(root.findAllByProps({children: 'Spesies di enclosure'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Ranitomeya'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'Riwayat populasi'}).length).toBeGreaterThan(0);
 
     await ReactTestRenderer.act(async () => {
