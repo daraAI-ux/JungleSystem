@@ -136,12 +136,12 @@ describe('KolamSidebarContent AM mode', () => {
         'Users',
         'Activity Log',
         'Account Settings',
-        'JungleSystem',
-        'Beranda',
-        'Pengaturan',
-        'POS',
       ]),
     );
+    expect(text).not.toContain('JungleSystem');
+    expect(text).not.toContain('Beranda');
+    expect(text).not.toContain('Pengaturan');
+    expect(text).not.toContain('POS');
     expect(text).not.toContain('Tasks');
     expect(text).not.toContain('Automation Management');
     expect(text).not.toContain('Kolam Menu');

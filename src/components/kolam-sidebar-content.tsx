@@ -80,10 +80,8 @@ export function KolamSidebarContent({
       <KolamQuickSearch collapsed={collapsed} onPress={onQuickSearch} />
       {activeArea === 'am' ? (
         <KolamAmSidebarMenu
-          activeModule={activeModule}
           activeRoute={activeAmRoute}
           collapsed={collapsed}
-          onSelectModule={onSelectModule}
           onSelectRoute={onModuleRouteSelect ?? (() => undefined)}
         />
       ) : activeArea === 'pos' ? (
@@ -130,16 +128,12 @@ export function KolamSidebarContent({
 }
 
 function KolamAmSidebarMenu({
-  activeModule,
   activeRoute,
   collapsed,
-  onSelectModule,
   onSelectRoute,
 }: {
-  activeModule: AppModule;
   activeRoute?: string | null;
   collapsed: boolean;
-  onSelectModule: (module: AppModule) => void;
   onSelectRoute: (route: ShellModuleRouteEntry) => void;
 }) {
   const [currentUser, setCurrentUser] =
@@ -166,36 +160,27 @@ function KolamAmSidebarMenu({
   }, []);
 
   return (
-    <>
-      <View style={[styles.amMenuGroup, collapsed && styles.amMenuGroupCollapsed]}>
-        {collapsed ? null : (
-          <KolamCopyStack
-            items={[
-              {id: 'label', text: 'AM', style: styles.amMenuGroupLabel},
-            ]}
+    <View style={[styles.amMenuGroup, collapsed && styles.amMenuGroupCollapsed]}>
+      {collapsed ? null : (
+        <KolamCopyStack
+          items={[
+            {id: 'label', text: 'AM', style: styles.amMenuGroupLabel},
+          ]}
+        />
+      )}
+      <KolamMappedList
+        items={getAmSidebarSections(currentUser)}
+        getKey={section => section.id}
+        renderItem={section => (
+          <KolamAmSidebarSection
+            activeRoute={activeRoute}
+            collapsed={collapsed}
+            onSelectRoute={onSelectRoute}
+            section={section}
           />
         )}
-        <KolamMappedList
-          items={getAmSidebarSections(currentUser)}
-          getKey={section => section.id}
-          renderItem={section => (
-            <KolamAmSidebarSection
-              activeRoute={activeRoute}
-              collapsed={collapsed}
-              onSelectRoute={onSelectRoute}
-              section={section}
-            />
-          )}
-        />
-      </View>
-      <KolamSidebarNavGroup
-        activeModule={activeModule}
-        collapsed={collapsed}
-        label="JungleSystem"
-        modules={getShellModulesByArea('kolam')}
-        onSelect={onSelectModule}
       />
-    </>
+    </View>
   );
 }
 
