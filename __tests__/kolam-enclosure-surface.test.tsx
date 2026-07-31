@@ -13,6 +13,10 @@ jest.mock('../src/hooks/use-kolam-enclosure-controller', () => ({
   useKolamEnclosureController: jest.fn(),
 }));
 
+jest.mock('../src/components/kolam-barcode-print-dialog', () => ({
+  KolamBarcodePrintDialog: () => null,
+}));
+
 jest.mock('react-native', () => {
   const ReactActual = require('react');
   const RN = jest.requireActual('react-native');
@@ -320,10 +324,15 @@ describe('Kolam enclosure surface', () => {
         parameters: [
           {
             currentValue: 27,
+            history: [],
             id: 'param-1',
+            maxValue: null,
+            minValue: null,
             name: 'Suhu',
             raw: {},
+            targetValue: null,
             unit: null,
+            unitId: '',
             unitLabel: 'C',
             updatedAt: '',
           },
@@ -384,6 +393,8 @@ describe('Kolam enclosure surface', () => {
     expect(root.findAllByProps({children: 'Species di enclosure'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'Ranitomeya'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'Client A'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Jual unit kandang'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({label: 'Cetak barcode'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({label: 'Overview'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({label: 'Species'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({label: 'Statistics'}).length).toBeGreaterThan(0);
@@ -706,6 +717,8 @@ function createController(
     onSearchChange: jest.fn(),
     onSetRecurringEnrollment: jest.fn().mockResolvedValue(undefined),
     onSpawnTask: jest.fn().mockResolvedValue(undefined),
+    onProvisionCode: jest.fn().mockResolvedValue(undefined),
+    onUpsertClimateParameter: jest.fn().mockResolvedValue(undefined),
     onSwitchSpeciesVariant: jest.fn().mockResolvedValue(undefined),
     onTabChange: jest.fn(),
     onTransferSpecies: jest.fn().mockResolvedValue(undefined),
@@ -951,7 +964,11 @@ function createEnclosure(patch: Partial<KolamEnclosure> = {}): KolamEnclosure {
     productionEggs: [],
     raw: {},
     salePrice: null,
+    saleReservedInvoiceCode: '',
+    saleReservedInvoiceStatus: '',
+    saleReservedSaleId: '',
     saleStatus: 'not_for_sale',
+    soldAt: '',
     size: {
       high: {unit: null, unitLabel: 'Cm', value: 30},
       length: {unit: null, unitLabel: 'Cm', value: 60},

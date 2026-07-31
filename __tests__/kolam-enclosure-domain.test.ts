@@ -1,14 +1,17 @@
 import {
+  canKolamEnclosureBeListed,
   createInitialEnclosureListFilters,
   createKolamEnclosureListQuery,
   filterKolamEnclosureTaskTypesForCategoryBucket,
   formatKolamEnclosureTaskStatusLabel,
+  getKolamEnclosureParameterChartValues,
   getKolamEnclosureRouteId,
   getKolamEnclosureSurfaceMode,
   getKolamEnclosureTaskStatusIntent,
   groupKolamEnclosureAllocationRows,
   isKolamEnclosureNativeRoute,
   isKolamEnclosureRoute,
+  mergeKolamEnclosureClimateRows,
   normalizeKolamEnclosureAllocationOverview,
   normalizeKolamEnclosureDashboardStats,
   normalizeKolamEnclosureDetail,
@@ -426,5 +429,82 @@ describe('Kolam enclosure domain', () => {
     expect(formatKolamEnclosureTaskStatusLabel('in_progress')).toBe(
       'in progress',
     );
+  });
+
+  it('merges climate defaults and gates enclosure sale listing', () => {
+    const rows = mergeKolamEnclosureClimateRows(
+      'Terrarium',
+      [
+        {
+          currentValue: 29,
+          history: [
+            {currentValue: 28, timestamp: '2026-07-01T00:00:00.000Z'},
+            {currentValue: 29, timestamp: '2026-07-02T00:00:00.000Z'},
+          ],
+          id: 'p1',
+          maxValue: 33,
+          minValue: 23,
+          name: 'Temperature',
+          raw: {},
+          targetValue: 29,
+          unit: null,
+          unitId: 'u1',
+          unitLabel: '°C',
+          updatedAt: '',
+        },
+      ],
+      null,
+    );
+    expect(rows.map(row => row.parameterName)).toEqual([
+      'Temperature',
+      'Humidity',
+    ]);
+    expect(rows[0]).toMatchObject({
+      currentValue: 29,
+      constant: 29,
+      min: 23,
+      max: 33,
+    });
+    expect(getKolamEnclosureParameterChartValues(rows[0]?.server)).toEqual([
+      28, 29,
+    ]);
+
+    expect(
+      canKolamEnclosureBeListed({
+        livestockPurpose: 'production',
+        productionEggs: [],
+        saleStatus: 'not_for_sale',
+        species: [],
+      }).reason,
+    ).toContain('produksi');
+    expect(
+      canKolamEnclosureBeListed({
+        livestockPurpose: 'saleable',
+        productionEggs: [],
+        saleStatus: 'not_for_sale',
+        species: [
+          {
+            displayLine: '',
+            id: '1',
+            quantity: 2,
+            scientificName: '',
+            speciesId: 'sp',
+            speciesName: 'Frog',
+            thumbnailUrl: '',
+            unitLabel: 'ekor',
+            variantId: '',
+            variantLabel: '',
+          },
+        ],
+      }).ok,
+    ).toBe(false);
+    expect(
+      canKolamEnclosureBeListed({
+        livestockPurpose: 'saleable',
+        productionEggs: [],
+        saleStatus: 'not_for_sale',
+        species: [],
+      }),
+    ).toEqual({ok: true, reason: ''});
   });
 });

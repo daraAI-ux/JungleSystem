@@ -437,7 +437,11 @@ function createListResult(): KolamEnclosureListResult {
         note: '',
         raw: {},
         salePrice: null,
+        saleReservedInvoiceCode: '',
+        saleReservedInvoiceStatus: '',
+        saleReservedSaleId: '',
         saleStatus: 'not_for_sale',
+        soldAt: '',
         size: {
           high: {unit: null, unitLabel: 'Cm', value: 10},
           length: {unit: null, unitLabel: 'Cm', value: 20},

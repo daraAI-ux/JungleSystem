@@ -12,12 +12,21 @@ import {
   KOLAM_ENCLOSURE_LIST_TABS,
   KOLAM_ENCLOSURE_TYPES,
   KOLAM_ENCLOSURE_ROOT,
+  canKolamEnclosureBeListed,
+  climateDraftFromRow,
+  climateDraftsEqual,
   filterKolamEnclosureTaskTypesForCategoryBucket,
   formatKolamEnclosureTaskStatusLabel,
+  getKolamEnclosureParameterChartValues,
+  getKolamEnclosureParameterLastUpdated,
   getKolamEnclosureTaskStatusIntent,
+  mergeKolamEnclosureClimateRows,
   normalizeKolamEnclosurePageSize,
+  supportsKolamEnclosureClimateParameters,
   type KolamEnclosure,
   type KolamEnclosureAllocationOverviewRow,
+  type KolamEnclosureClimateDraft,
+  type KolamEnclosureClimateRow,
   type KolamEnclosureDashboardDeathEvent,
   type KolamEnclosureDashboardSpeciesRow,
   type KolamEnclosureLivestockFilter,
@@ -25,6 +34,7 @@ import {
   type KolamEnclosureStatistics,
   type KolamEnclosureStatisticsEvent,
 } from '../domain/kolam-enclosure';
+import type {KolamBarcodeLabelItem} from '../domain/kolam-barcode';
 import {
   fitKolamDataTableColumns,
   getKolamTableColumns,
@@ -34,13 +44,17 @@ import {
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {getKolamFileUrl} from '../lib/file-url';
 import {pickNativeImageFile} from '../services/native-file-picker';
+import {getKolamUnits} from '../services/kolam-unit-api';
 import {
   useKolamEnclosureController,
   type KolamEnclosureController,
 } from '../hooks/use-kolam-enclosure-controller';
+import {KolamBarcodePanel} from './kolam-barcode-panel';
+import {KolamBarcodePrintDialog} from './kolam-barcode-print-dialog';
 import {KolamButton} from './kolam-button';
 import {KolamCatalogListTableShell} from './kolam-catalog-list-table-shell';
 import {KolamCopyStack} from './kolam-copy-stack';
+import {KolamDashboardMetricSparkline} from './kolam-dashboard-metric-sparkline';
 import {
   getKolamDataTableColumnStyle,
   KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
@@ -368,6 +382,7 @@ function KolamEnclosureDetailOverview({
   controller: KolamEnclosureController;
   enclosure: KolamEnclosure;
 }) {
+  const [barcodeOpen, setBarcodeOpen] = React.useState(false);
   const coverUri = getKolamFileUrl(enclosure.coverPhotoUrl);
   const photoUris = getEnclosureDetailPhotoUris(enclosure);
   const sizeText = formatEnclosureSize(enclosure);
@@ -377,6 +392,21 @@ function KolamEnclosureDetailOverview({
       : '-';
   const scopeLabel =
     enclosure.clientScope === 'client_linked' ? 'Customer' : 'Internal';
+  const showProvisioning =
+    enclosure.computed.needsProvisioning && !enclosure.code.trim();
+  const barcodeItems = React.useMemo<KolamBarcodeLabelItem[]>(
+    () =>
+      enclosure.code.trim()
+        ? [
+            {
+              id: enclosure.id,
+              name: enclosure.name || enclosure.code,
+              code: enclosure.code,
+            },
+          ]
+        : [],
+    [enclosure.code, enclosure.id, enclosure.name],
+  );
 
   return (
     <>
@@ -408,6 +438,13 @@ function KolamEnclosureDetailOverview({
                 />
               ))}
             </View>
+          ) : null}
+          {enclosure.code.trim() ? (
+            <KolamBarcodePanel
+              name={enclosure.name || enclosure.code}
+              onPrint={() => setBarcodeOpen(true)}
+              sku={enclosure.code}
+            />
           ) : null}
         </View>
 
@@ -470,6 +507,20 @@ function KolamEnclosureDetailOverview({
         </View>
       </View>
 
+      <EnclosureClimateParameters
+        controller={controller}
+        enclosure={enclosure}
+      />
+
+      <EnclosureSaleListingOperation
+        controller={controller}
+        enclosure={enclosure}
+      />
+
+      {showProvisioning ? (
+        <EnclosureProvisioningOperation controller={controller} />
+      ) : null}
+
       {enclosure.note.trim() ? (
         <DetailSection title="Catatan">
           <Text style={styles.detailParagraph}>{enclosure.note}</Text>
@@ -507,26 +558,21 @@ function KolamEnclosureDetailOverview({
             <Text style={styles.mutedText}>Belum ada species.</Text>
           )}
         </DetailSection>
-        <DetailSection title="Parameter">
-          <DetailParameterList enclosure={enclosure} limit={6} />
-        </DetailSection>
-      </View>
-
-      <View style={styles.detailTwoColumn}>
-        <EnclosureParameterOperation controller={controller} />
         <EnclosureMediaOperation
           controller={controller}
           enclosure={enclosure}
         />
       </View>
 
-      <View style={styles.detailTwoColumn}>
-        <EnclosureSaleListingOperation
-          controller={controller}
-          enclosure={enclosure}
-        />
-        <EnclosureCommentsOperation controller={controller} />
-      </View>
+      <EnclosureCommentsOperation controller={controller} />
+
+      <KolamBarcodePrintDialog
+        description="Label CODE128 memakai kode enclosure. Ukuran label mengikuti web enclosure: 75mm × 45mm."
+        items={barcodeItems}
+        onOpenChange={setBarcodeOpen}
+        title="Cetak Barcode Enclosure"
+        visible={barcodeOpen}
+      />
     </>
   );
 }
@@ -1165,49 +1211,300 @@ function DetailParameterList({
   );
 }
 
-function EnclosureParameterOperation({
+function EnclosureClimateParameters({
+  controller,
+  enclosure,
+}: {
+  controller: KolamEnclosureController;
+  enclosure: KolamEnclosure;
+}) {
+  const isAquarium = enclosure.type === 'Aquarium';
+  const title = isAquarium ? 'Parameter air' : 'Parameter iklim';
+  const [unitByInitial, setUnitByInitial] = React.useState<
+    Record<string, string>
+  >({});
+
+  React.useEffect(() => {
+    let cancelled = false;
+    void getKolamUnits()
+      .then(units => {
+        if (cancelled) {
+          return;
+        }
+        const next: Record<string, string> = {};
+        for (const unit of units) {
+          if (unit.initial && !next[unit.initial]) {
+            next[unit.initial] = unit.id;
+          }
+          if (unit.name && !next[unit.name]) {
+            next[unit.name] = unit.id;
+          }
+        }
+        setUnitByInitial(next);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setUnitByInitial({});
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (isAquarium && !enclosure.aquariumWaterType.trim()) {
+    return (
+      <DetailSection title={title}>
+        <View style={styles.detailWarningBand}>
+          <Text style={styles.warningText}>
+            Sub-tipe air (tawar/laut) belum diset. Atur saat setup enclosure di
+            form edit.
+          </Text>
+        </View>
+      </DetailSection>
+    );
+  }
+
+  if (
+    !supportsKolamEnclosureClimateParameters(
+      enclosure.type,
+      enclosure.aquariumWaterType,
+    )
+  ) {
+    return null;
+  }
+
+  const rows = React.useMemo(
+    () =>
+      mergeKolamEnclosureClimateRows(
+        enclosure.type,
+        enclosure.parameters,
+        enclosure.aquariumWaterType,
+      ),
+    [enclosure.aquariumWaterType, enclosure.parameters, enclosure.type],
+  );
+  if (!rows.length) {
+    return null;
+  }
+
+  return (
+    <DetailSection title={title}>
+      <Text style={styles.sectionMeta}>
+        Perubahan disimpan otomatis — grafik riwayat dari setiap update nilai
+      </Text>
+      {rows.map(row => (
+        <EnclosureClimateParameterCard
+          key={row.parameterName}
+          enclosureId={enclosure.id}
+          onUpsert={controller.onUpsertClimateParameter}
+          resolveUnitId={() =>
+            row.server?.unitId ||
+            unitByInitial[row.unitInitial] ||
+            null
+          }
+          row={row}
+        />
+      ))}
+    </DetailSection>
+  );
+}
+
+function EnclosureClimateParameterCard({
+  enclosureId,
+  onUpsert,
+  resolveUnitId,
+  row,
+}: {
+  enclosureId: string;
+  onUpsert: KolamEnclosureController['onUpsertClimateParameter'];
+  resolveUnitId: () => string | null;
+  row: KolamEnclosureClimateRow;
+}) {
+  const [draft, setDraft] = React.useState<KolamEnclosureClimateDraft>(() =>
+    climateDraftFromRow(row),
+  );
+  const [saveState, setSaveState] = React.useState<
+    'idle' | 'pending' | 'saving' | 'saved' | 'error'
+  >('idle');
+  const baselineRef = React.useRef(climateDraftFromRow(row));
+  const savingRef = React.useRef(false);
+  const draftRef = React.useRef(draft);
+  const rowRef = React.useRef(row);
+  const resolveUnitIdRef = React.useRef(resolveUnitId);
+  const onUpsertRef = React.useRef(onUpsert);
+  draftRef.current = draft;
+  rowRef.current = row;
+  resolveUnitIdRef.current = resolveUnitId;
+  onUpsertRef.current = onUpsert;
+
+  React.useEffect(() => {
+    const fromServer = climateDraftFromRow(row);
+    baselineRef.current = fromServer;
+    setDraft(current =>
+      climateDraftsEqual(current, fromServer) ? fromServer : current,
+    );
+    if (!savingRef.current) {
+      setSaveState('idle');
+    }
+  }, [row]);
+
+  React.useEffect(() => {
+    if (climateDraftsEqual(draft, baselineRef.current)) {
+      setSaveState(current => (current === 'pending' ? 'idle' : current));
+      return;
+    }
+    setSaveState('pending');
+    const timer = setTimeout(() => {
+      void (async () => {
+        const next = draftRef.current;
+        const currentRow = rowRef.current;
+        if (climateDraftsEqual(next, baselineRef.current)) {
+          return;
+        }
+        if (next.min > next.max) {
+          setSaveState('error');
+          return;
+        }
+        savingRef.current = true;
+        setSaveState('saving');
+        try {
+          await onUpsertRef.current({
+            parameter_name: currentRow.parameterName,
+            current_value: next.current,
+            unit: resolveUnitIdRef.current(),
+            alert_setting: {
+              constant: next.constant,
+              range: {min: next.min, max: next.max},
+            },
+          });
+          baselineRef.current = {...next};
+          setSaveState('saved');
+        } catch {
+          setSaveState('error');
+        } finally {
+          savingRef.current = false;
+        }
+      })();
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [draft, enclosureId]);
+
+  React.useEffect(() => {
+    if (saveState !== 'saved') {
+      return;
+    }
+    const timer = setTimeout(() => setSaveState('idle'), 2400);
+    return () => clearTimeout(timer);
+  }, [saveState]);
+
+  const chartValues = getKolamEnclosureParameterChartValues(row.server);
+  const lastUpdated = getKolamEnclosureParameterLastUpdated(row.server);
+  const statusText =
+    saveState === 'pending'
+      ? 'Menyimpan otomatis…'
+      : saveState === 'saving'
+        ? 'Menyimpan…'
+        : saveState === 'saved'
+          ? 'Tersimpan'
+          : saveState === 'error'
+            ? 'Gagal menyimpan — periksa nilai min/max'
+            : null;
+
+  const patch = (key: keyof KolamEnclosureClimateDraft, raw: string) => {
+    const normalized = raw.trim().replace(',', '.');
+    if (
+      normalized === '' ||
+      normalized === '-' ||
+      normalized === '.' ||
+      normalized === '-.'
+    ) {
+      return;
+    }
+    const value = Number(normalized);
+    if (!Number.isFinite(value)) {
+      return;
+    }
+    setDraft(current => ({...current, [key]: value}));
+  };
+
+  return (
+    <View style={styles.climateCard}>
+      <Text style={styles.rowTitle}>
+        {row.parameterName}
+        <Text style={styles.rowMeta}> ({row.unitInitial})</Text>
+      </Text>
+      <KolamFormTextField
+        mode="numeric"
+        onChangeText={value => patch('current', value)}
+        placeholder="Nilai saat ini"
+        style={styles.operationInput}
+        value={String(draft.current)}
+      />
+      <Text style={styles.sectionMeta}>
+        Update: {formatDashboardDateTime(lastUpdated) || '—'}
+      </Text>
+      {statusText ? <Text style={styles.sectionMeta}>{statusText}</Text> : null}
+      {chartValues.length ? (
+        <KolamDashboardMetricSparkline tone="success" values={chartValues} />
+      ) : (
+        <Text style={styles.mutedText}>Belum ada riwayat</Text>
+      )}
+      <View style={styles.operationGrid}>
+        <KolamFormTextField
+          mode="numeric"
+          onChangeText={value => patch('constant', value)}
+          placeholder="Target"
+          style={styles.operationInput}
+          value={String(draft.constant)}
+        />
+        <KolamFormTextField
+          mode="numeric"
+          onChangeText={value => patch('min', value)}
+          placeholder="Min"
+          style={styles.operationInput}
+          value={String(draft.min)}
+        />
+        <KolamFormTextField
+          mode="numeric"
+          onChangeText={value => patch('max', value)}
+          placeholder="Max"
+          style={styles.operationInput}
+          value={String(draft.max)}
+        />
+      </View>
+    </View>
+  );
+}
+
+function EnclosureProvisioningOperation({
   controller,
 }: {
   controller: KolamEnclosureController;
 }) {
-  const [name, setName] = React.useState('');
-  const [value, setValue] = React.useState('');
-  const [unit, setUnit] = React.useState('');
+  const [code, setCode] = React.useState('');
   return (
-    <DetailSection title="Update parameter">
+    <DetailSection title="Provisioning kode">
+      <View style={styles.detailWarningBand}>
+        <Text style={styles.warningText}>
+          Enclosure belum punya kode. Simpan kode agar bisa dilacak dan dicetak
+          barcode.
+        </Text>
+      </View>
       <View style={styles.operationGrid}>
         <KolamFormTextField
-          onChangeText={setName}
-          placeholder="Nama parameter"
+          autoCapitalize="characters"
+          onChangeText={value => setCode(value.toUpperCase())}
+          placeholder="ENC-AQUA-01"
           style={styles.operationInput}
-          value={name}
+          value={code}
         />
-        <KolamFormTextField
-          mode="numeric"
-          onChangeText={setValue}
-          placeholder="Nilai saat ini"
-          style={styles.operationInput}
-          value={value}
-        />
-        <KolamFormTextField
-          onChangeText={setUnit}
-          placeholder="Unit"
-          style={styles.operationInput}
-          value={unit}
+        <KolamButton
+          disabled={controller.operationLoading || !code.trim()}
+          label="Simpan kode"
+          onPress={() => void controller.onProvisionCode(code)}
+          style={styles.toolbarButton}
         />
       </View>
-      <KolamButton
-        disabled={controller.operationLoading || !name.trim()}
-        label="Simpan parameter"
-        onPress={() =>
-          controller.onUpdateParameter({
-            current_value: value.trim() || null,
-            parameter_name: name.trim(),
-            unit: unit.trim() || null,
-          })
-        }
-        style={styles.detailInlineButton}
-      />
     </DetailSection>
   );
 }
@@ -1302,40 +1599,110 @@ function EnclosureSaleListingOperation({
   controller: KolamEnclosureController;
   enclosure: KolamEnclosure;
 }) {
+  const status = enclosure.saleStatus || 'not_for_sale';
+  const eligibility = canKolamEnclosureBeListed(enclosure);
   const [price, setPrice] = React.useState(
-    enclosure.salePrice ? String(enclosure.salePrice) : '',
+    enclosure.salePrice && enclosure.salePrice > 0
+      ? String(enclosure.salePrice)
+      : '',
   );
+  React.useEffect(() => {
+    setPrice(
+      enclosure.salePrice && enclosure.salePrice > 0
+        ? String(enclosure.salePrice)
+        : '',
+    );
+  }, [enclosure.salePrice]);
+
+  const showListForm = status === 'not_for_sale' && eligibility.ok;
+  const showClear = status === 'for_sale';
+  const reservedPaid =
+    enclosure.saleReservedInvoiceStatus === 'paid' ||
+    enclosure.saleReservedInvoiceStatus === 'partial_paid';
+
   return (
-    <DetailSection title="Sale listing">
-      <Text style={styles.sectionMeta}>
-        Status: {getSaleStatusLabel(enclosure.saleStatus)}
-      </Text>
-      <View style={styles.operationGrid}>
-        <KolamFormTextField
-          mode="numeric"
-          onChangeText={setPrice}
-          placeholder="Harga jual kandang"
-          style={styles.operationInput}
-          value={price}
+    <DetailSection title="Jual unit kandang">
+      <View style={styles.detailSectionIntroRow}>
+        <Text style={styles.sectionMeta}>
+          Jual kandang fisik (bukan livestock) lewat invoice tipe Kandang. Qty
+          selalu 1.
+        </Text>
+        <KolamStatusBadge
+          intent={getSaleStatusIntent(status)}
+          label={getSaleStatusLabel(status)}
+          textStyle={styles.badgeTextSm}
         />
-        <KolamButton
-          disabled={controller.operationLoading || !price.trim()}
-          label="Tandai for_sale"
-          onPress={() =>
-            controller.onUpdateSaleListing({
-              action: 'list',
-              salePrice: Math.max(0, Number(price) || 0),
-            })
-          }
-          style={styles.toolbarButton}
-        />
+      </View>
+      {enclosure.salePrice != null && enclosure.salePrice > 0 ? (
+        <Text style={styles.sectionMeta}>
+          Harga listing: {formatKolamCurrency(enclosure.salePrice)}
+        </Text>
+      ) : null}
+      {status === 'sold' && enclosure.soldAt ? (
+        <Text style={styles.sectionMeta}>
+          Terjual {formatDashboardDateTime(enclosure.soldAt)}
+        </Text>
+      ) : null}
+      {status === 'reserved' ? (
+        <View style={styles.detailWarningBand}>
+          <Text style={styles.warningText}>
+            {reservedPaid
+              ? 'Invoice sudah lunas — kandang seharusnya terjual. Muat ulang halaman; jika masih muncul, hubungi admin (repair reservasi stale).'
+              : 'Kandang ini ada di draft/pending invoice. Batalkan invoice atau hapus baris kandang untuk melepas reservasi.'}
+          </Text>
+          {enclosure.saleReservedInvoiceCode ? (
+            <Text style={styles.sectionMeta}>
+              Invoice: {enclosure.saleReservedInvoiceCode}
+              {enclosure.saleReservedInvoiceStatus
+                ? ` (${enclosure.saleReservedInvoiceStatus})`
+                : ''}
+            </Text>
+          ) : null}
+        </View>
+      ) : null}
+      {!eligibility.ok && status !== 'sold' && status !== 'reserved' ? (
+        <View style={[styles.detailWarningBand, styles.detailDangerBand]}>
+          <Text style={styles.dangerText}>{eligibility.reason}</Text>
+        </View>
+      ) : null}
+      {showListForm ? (
+        <View style={styles.operationGrid}>
+          <KolamFormTextField
+            mode="numeric"
+            onChangeText={setPrice}
+            placeholder="Harga jual (Rp)"
+            style={styles.operationInput}
+            value={price}
+          />
+          <KolamButton
+            disabled={
+              controller.operationLoading ||
+              !(Number(price) > 0)
+            }
+            label="Tandai for_sale"
+            onPress={() =>
+              controller.onUpdateSaleListing({
+                action: 'list',
+                salePrice: Math.max(0, Number(price) || 0),
+              })
+            }
+            style={styles.toolbarButton}
+          />
+        </View>
+      ) : null}
+      {showClear ? (
         <KolamButton
           disabled={controller.operationLoading}
-          label="Clear listing"
+          label="Batalkan listing"
           onPress={() => controller.onUpdateSaleListing({action: 'clear'})}
           style={styles.toolbarButton}
         />
-      </View>
+      ) : null}
+      {status === 'sold' ? (
+        <Text style={styles.sectionMeta}>
+          Kandang nonaktif operasional setelah lunas.
+        </Text>
+      ) : null}
     </DetailSection>
   );
 }
@@ -3762,6 +4129,21 @@ function getSaleStatusLabel(value: string) {
   }
 }
 
+function getSaleStatusIntent(
+  value: string,
+): 'success' | 'warning' | 'danger' | 'muted' {
+  switch (value) {
+    case 'for_sale':
+      return 'success';
+    case 'reserved':
+      return 'warning';
+    case 'sold':
+      return 'danger';
+    default:
+      return 'muted';
+  }
+}
+
 function getEnclosureStatusIntent(
   status: string,
 ): 'primary' | 'success' | 'warning' | 'danger' | 'muted' {
@@ -3941,6 +4323,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingHorizontal: 10,
     paddingVertical: 8,
+  },
+  detailDangerBand: {
+    backgroundColor: V.colors.dangerSoft,
+    borderColor: V.colors.danger,
+  },
+  climateCard: {
+    backgroundColor: V.colors.secondary,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 8,
+    padding: 10,
   },
   detailFieldGrid: {
     flexDirection: 'row',
@@ -4230,6 +4624,12 @@ const styles = StyleSheet.create({
   },
   warningText: {
     color: V.colors.warning,
+  },
+  dangerText: {
+    color: V.colors.danger,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '600',
   },
   linkText: {
     color: V.colors.primary,

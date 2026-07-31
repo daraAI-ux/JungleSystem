@@ -59,10 +59,22 @@ export interface KolamEnclosureCreateBody {
 export interface KolamEnclosureParameterInput {
   parameter_name: string;
   current_value?: number | string | null;
-  target_value?: number | string | null;
-  min_value?: number | string | null;
-  max_value?: number | string | null;
-  unit?: string | KolamEnclosureUnitRef | null;
+  unit?: string | null;
+  alert_setting?: {
+    constant?: number | string | null;
+    range?: {
+      min?: number | string | null;
+      max?: number | string | null;
+    };
+  };
+}
+
+export interface KolamEnclosureUpdateBody {
+  enclosure_code?: string;
+  enclosure_name?: string;
+  note?: string;
+  type_aquarium?: string;
+  livestockPurpose?: 'saleable' | 'production';
 }
 
 export interface KolamEnclosureSpeciesAttachInput {
@@ -225,8 +237,40 @@ export async function upsertKolamEnclosureParameter(
 ): Promise<void> {
   await kolamRequest<unknown>(`${BASE}/${encodeURIComponent(enclosureId)}/parameters`, {
     method: 'POST',
-    body,
+    body: {
+      parameter_name: body.parameter_name,
+      current_value: body.current_value,
+      unit: body.unit ?? null,
+      alert_setting: body.alert_setting,
+    },
   });
+}
+
+export async function updateKolamEnclosure(
+  enclosureId: string,
+  body: KolamEnclosureUpdateBody,
+): Promise<KolamEnclosure> {
+  const payload: Record<string, string> = {};
+  if (body.enclosure_code != null) {
+    payload.enclosure_code = body.enclosure_code.trim().toUpperCase();
+  }
+  if (body.enclosure_name != null) {
+    payload.enclosure_name = body.enclosure_name.trim();
+  }
+  if (body.note != null) {
+    payload.note = body.note.trim();
+  }
+  if (body.type_aquarium != null) {
+    payload.type_aquarium = body.type_aquarium.trim();
+  }
+  if (body.livestockPurpose != null) {
+    payload.livestockPurpose = body.livestockPurpose;
+  }
+  const response = await kolamRequest<unknown>(
+    `${BASE}/${encodeURIComponent(enclosureId)}`,
+    {method: 'PUT', body: payload},
+  );
+  return normalizeKolamEnclosureDetail(response);
 }
 
 export async function uploadKolamEnclosureCoverPhoto(

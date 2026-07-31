@@ -115,6 +115,10 @@ export interface KolamEnclosure {
   livestockPurpose: KolamEnclosureLivestockPurpose;
   saleStatus: string;
   salePrice: number | null;
+  soldAt: string;
+  saleReservedSaleId: string;
+  saleReservedInvoiceCode: string;
+  saleReservedInvoiceStatus: string;
   size: KolamEnclosureSize;
   computed: KolamEnclosureComputed;
   species: KolamEnclosureSpeciesRef[];
@@ -167,14 +171,49 @@ export interface KolamEnclosureProductionEgg {
   unitLabel: string;
 }
 
+export interface KolamEnclosureParameterHistoryPoint {
+  timestamp: string;
+  currentValue: number;
+}
+
 export interface KolamEnclosureParameter {
   id: string;
   name: string;
   currentValue: number | null;
+  targetValue: number | null;
+  minValue: number | null;
+  maxValue: number | null;
   unit: KolamEnclosureUnitRef | null;
   unitLabel: string;
+  unitId: string;
+  history: KolamEnclosureParameterHistoryPoint[];
   updatedAt: string;
   raw: unknown;
+}
+
+export interface KolamEnclosureClimateDefault {
+  parameterName: string;
+  currentValue: number;
+  constant: number;
+  min: number;
+  max: number;
+  unitInitial: string;
+}
+
+export interface KolamEnclosureClimateRow extends KolamEnclosureClimateDefault {
+  server: KolamEnclosureParameter | null;
+}
+
+export interface KolamEnclosureClimateDraft {
+  current: number;
+  constant: number;
+  min: number;
+  max: number;
+}
+
+export interface KolamEnclosureListingEligibility {
+  ok: boolean;
+  reason: string;
 }
 
 export interface KolamEnclosurePagination {
@@ -659,6 +698,12 @@ export function normalizeKolamEnclosure(value: unknown): KolamEnclosure {
     ),
     saleStatus: getString(record, 'saleStatus') || 'not_for_sale',
     salePrice: getNullableNumber(record, 'salePrice'),
+    soldAt: getString(record, 'soldAt'),
+    saleReservedSaleId:
+      getIdFromRef(record.saleReservedSaleId) ||
+      getString(record, 'saleReservedSaleId'),
+    saleReservedInvoiceCode: getString(record, 'saleReservedInvoiceCode'),
+    saleReservedInvoiceStatus: getString(record, 'saleReservedInvoiceStatus'),
     size: normalizeKolamEnclosureSize(record.enclosure_size),
     computed: normalizeKolamEnclosureComputed(record.computed),
     species: getArray(record.species).map(normalizeKolamEnclosureSpeciesRef),
@@ -844,6 +889,342 @@ export function getKolamEnclosureTaskStatusIntent(
 
 export function formatKolamEnclosureTaskStatusLabel(status: string) {
   return status.replace('_', ' ') || '-';
+}
+
+const TERRARIUM_VIVARIUM_CLIMATE: KolamEnclosureClimateDefault[] = [
+  {
+    parameterName: 'Temperature',
+    currentValue: 28,
+    constant: 28,
+    min: 24,
+    max: 32,
+    unitInitial: '°C',
+  },
+  {
+    parameterName: 'Humidity',
+    currentValue: 70,
+    constant: 70,
+    min: 60,
+    max: 80,
+    unitInitial: '%',
+  },
+];
+
+const PALUDARIUM_CLIMATE: KolamEnclosureClimateDefault[] = [
+  {
+    parameterName: 'Temperature',
+    currentValue: 26,
+    constant: 26,
+    min: 22,
+    max: 30,
+    unitInitial: '°C',
+  },
+  {
+    parameterName: 'Humidity',
+    currentValue: 75,
+    constant: 75,
+    min: 65,
+    max: 85,
+    unitInitial: '%',
+  },
+  {
+    parameterName: 'Water Temperature',
+    currentValue: 24,
+    constant: 24,
+    min: 22,
+    max: 26,
+    unitInitial: '°C',
+  },
+];
+
+const AQUARIUM_BASE_CLIMATE: KolamEnclosureClimateDefault[] = [
+  {
+    parameterName: 'Water Temperature',
+    currentValue: 26,
+    constant: 26,
+    min: 24,
+    max: 28,
+    unitInitial: '°C',
+  },
+  {
+    parameterName: 'pH',
+    currentValue: 7,
+    constant: 7,
+    min: 6.5,
+    max: 7.5,
+    unitInitial: 'pH',
+  },
+  {
+    parameterName: 'Ammonia',
+    currentValue: 0,
+    constant: 0,
+    min: 0,
+    max: 0.25,
+    unitInitial: 'ppm',
+  },
+];
+
+const AQUARIUM_MARINE_EXTRA_CLIMATE: KolamEnclosureClimateDefault[] = [
+  {
+    parameterName: 'Salinity',
+    currentValue: 35,
+    constant: 35,
+    min: 33,
+    max: 36,
+    unitInitial: 'ppt',
+  },
+  {
+    parameterName: 'Nitrite',
+    currentValue: 0,
+    constant: 0,
+    min: 0,
+    max: 0.1,
+    unitInitial: 'ppm',
+  },
+  {
+    parameterName: 'Nitrate',
+    currentValue: 0,
+    constant: 0,
+    min: 0,
+    max: 50,
+    unitInitial: 'ppm',
+  },
+  {
+    parameterName: 'Calcium',
+    currentValue: 400,
+    constant: 400,
+    min: 380,
+    max: 450,
+    unitInitial: 'ppm',
+  },
+  {
+    parameterName: 'Magnesium',
+    currentValue: 1250,
+    constant: 1250,
+    min: 1200,
+    max: 1350,
+    unitInitial: 'ppm',
+  },
+  {
+    parameterName: 'Carbonate Hardness',
+    currentValue: 8,
+    constant: 8,
+    min: 7,
+    max: 10,
+    unitInitial: 'dKH',
+  },
+];
+
+export function getKolamEnclosureClimateDefaults(
+  enclosureType: string,
+  typeAquarium?: string | null,
+): KolamEnclosureClimateDefault[] {
+  if (enclosureType === 'Aquarium') {
+    if (typeAquarium !== 'freshwater' && typeAquarium !== 'marine') {
+      return [];
+    }
+    const rows = [...AQUARIUM_BASE_CLIMATE];
+    if (typeAquarium === 'marine') {
+      rows.push(...AQUARIUM_MARINE_EXTRA_CLIMATE);
+    }
+    return rows;
+  }
+  if (enclosureType === 'Paludarium') {
+    return PALUDARIUM_CLIMATE;
+  }
+  if (enclosureType === 'Terrarium' || enclosureType === 'Vivarium') {
+    return TERRARIUM_VIVARIUM_CLIMATE;
+  }
+  return [];
+}
+
+export function supportsKolamEnclosureClimateParameters(
+  enclosureType: string,
+  typeAquarium?: string | null,
+) {
+  if (enclosureType === 'Aquarium') {
+    return typeAquarium === 'freshwater' || typeAquarium === 'marine';
+  }
+  return (
+    enclosureType === 'Terrarium' ||
+    enclosureType === 'Vivarium' ||
+    enclosureType === 'Paludarium'
+  );
+}
+
+export function mergeKolamEnclosureClimateRows(
+  enclosureType: string,
+  serverParams: KolamEnclosureParameter[],
+  typeAquarium?: string | null,
+): KolamEnclosureClimateRow[] {
+  const defaults = getKolamEnclosureClimateDefaults(enclosureType, typeAquarium);
+  const byName = new Map<string, KolamEnclosureClimateRow>();
+  for (const def of defaults) {
+    const server =
+      serverParams.find(param => param.name === def.parameterName) ?? null;
+    byName.set(def.parameterName, mergeClimateDefaultWithServer(def, server));
+  }
+  for (const server of serverParams) {
+    if (!server.name || byName.has(server.name)) {
+      continue;
+    }
+    byName.set(server.name, climateRowFromServerParam(server));
+  }
+  return [...byName.values()];
+}
+
+export function climateDraftFromRow(
+  row: KolamEnclosureClimateRow,
+): KolamEnclosureClimateDraft {
+  return {
+    current: row.currentValue,
+    constant: row.constant,
+    min: row.min,
+    max: row.max,
+  };
+}
+
+export function climateDraftsEqual(
+  left: KolamEnclosureClimateDraft,
+  right: KolamEnclosureClimateDraft,
+) {
+  return (
+    left.current === right.current &&
+    left.constant === right.constant &&
+    left.min === right.min &&
+    left.max === right.max
+  );
+}
+
+export function getKolamEnclosureParameterChartValues(
+  parameter: KolamEnclosureParameter | null | undefined,
+  limit = 50,
+): number[] {
+  if (!parameter?.history.length) {
+    return [];
+  }
+  const points = [...parameter.history]
+    .filter(item => item.timestamp)
+    .sort(
+      (left, right) =>
+        new Date(left.timestamp).getTime() - new Date(right.timestamp).getTime(),
+    );
+  const sliced = points.length > limit ? points.slice(-limit) : points;
+  return sliced.map(item => item.currentValue);
+}
+
+export function getKolamEnclosureParameterLastUpdated(
+  parameter: KolamEnclosureParameter | null | undefined,
+): string {
+  if (!parameter?.history.length) {
+    return parameter?.updatedAt || '';
+  }
+  let latest = '';
+  let latestTs = 0;
+  for (const point of parameter.history) {
+    if (!point.timestamp) {
+      continue;
+    }
+    const ts = new Date(point.timestamp).getTime();
+    if (Number.isNaN(ts)) {
+      continue;
+    }
+    if (ts >= latestTs) {
+      latestTs = ts;
+      latest = point.timestamp;
+    }
+  }
+  return latest || parameter.updatedAt || '';
+}
+
+export function sumKolamEnclosureSpeciesQty(
+  species: KolamEnclosureSpeciesRef[] | undefined,
+) {
+  if (!species?.length) {
+    return 0;
+  }
+  return species.reduce(
+    (sum, row) => sum + Math.max(0, Number(row.quantity) || 0),
+    0,
+  );
+}
+
+export function sumKolamEnclosureProductionEggsQty(
+  productionEggs: KolamEnclosureProductionEgg[] | undefined,
+) {
+  if (!productionEggs?.length) {
+    return 0;
+  }
+  return productionEggs.reduce(
+    (sum, row) => sum + Math.max(0, Number(row.quantity) || 0),
+    0,
+  );
+}
+
+export function canKolamEnclosureBeListed(
+  enclosure: Pick<
+    KolamEnclosure,
+    'livestockPurpose' | 'saleStatus' | 'species' | 'productionEggs'
+  >,
+): KolamEnclosureListingEligibility {
+  if (enclosure.livestockPurpose === 'production') {
+    return {
+      ok: false,
+      reason: 'Kandang produksi (indukan) tidak bisa dijual sebagai unit.',
+    };
+  }
+  if (enclosure.saleStatus === 'sold') {
+    return {ok: false, reason: 'Kandang sudah terjual.'};
+  }
+  if (enclosure.saleStatus === 'reserved') {
+    return {
+      ok: false,
+      reason:
+        'Kandang sedang direservasi draft invoice — hapus dari invoice atau batalkan draft dulu.',
+    };
+  }
+  const speciesQty = sumKolamEnclosureSpeciesQty(enclosure.species);
+  const eggsQty = sumKolamEnclosureProductionEggsQty(enclosure.productionEggs);
+  if (speciesQty > 0 || eggsQty > 0) {
+    return {
+      ok: false,
+      reason:
+        'Kandang harus kosong (species & telur produksi qty 0) sebelum dijual.',
+    };
+  }
+  return {ok: true, reason: ''};
+}
+
+function mergeClimateDefaultWithServer(
+  def: KolamEnclosureClimateDefault,
+  server: KolamEnclosureParameter | null,
+): KolamEnclosureClimateRow {
+  if (!server) {
+    return {...def, server: null};
+  }
+  return {
+    parameterName: def.parameterName,
+    currentValue: server.currentValue ?? def.currentValue,
+    constant: server.targetValue ?? def.constant,
+    min: server.minValue ?? def.min,
+    max: server.maxValue ?? def.max,
+    unitInitial: server.unitLabel || def.unitInitial,
+    server,
+  };
+}
+
+function climateRowFromServerParam(
+  server: KolamEnclosureParameter,
+): KolamEnclosureClimateRow {
+  return {
+    parameterName: server.name,
+    currentValue: server.currentValue ?? 0,
+    constant: server.targetValue ?? server.currentValue ?? 0,
+    min: server.minValue ?? 0,
+    max: server.maxValue ?? 0,
+    unitInitial: server.unitLabel || '—',
+    server,
+  };
 }
 
 export function normalizeKolamEnclosurePendingAllocations(
@@ -1428,12 +1809,36 @@ function normalizeKolamEnclosureParameter(
 ): KolamEnclosureParameter {
   const record = asRecord(value);
   const unit = normalizeUnitRef(record.unit);
+  const alert = asRecord(record.alert_setting);
+  const range = asRecord(alert.range);
+  const history = getArray(record.history)
+    .map(item => {
+      const point = asRecord(item);
+      const timestamp = getString(point, 'timestamp');
+      if (!timestamp) {
+        return null;
+      }
+      return {
+        timestamp,
+        currentValue: getNullableNumber(point, 'current_value') ?? 0,
+      };
+    })
+    .filter((item): item is KolamEnclosureParameterHistoryPoint => Boolean(item));
   return {
     id: getId(record) || getString(record, 'parameter_name'),
     name: getString(record, 'parameter_name') || getString(record, 'name'),
     currentValue: getNullableNumber(record, 'current_value'),
+    targetValue:
+      getNullableNumber(alert, 'constant') ??
+      getNullableNumber(record, 'target_value'),
+    minValue:
+      getNullableNumber(range, 'min') ?? getNullableNumber(record, 'min_value'),
+    maxValue:
+      getNullableNumber(range, 'max') ?? getNullableNumber(record, 'max_value'),
     unit,
     unitLabel: unit?.initial || unit?.name || getString(record, 'unit'),
+    unitId: unit?.id || getIdFromRef(record.unit),
+    history,
     updatedAt: getString(record, 'updatedAt'),
     raw: value,
   };

@@ -16,7 +16,9 @@ import {
   resolveKolamEnclosureLivestockAllocation,
   setKolamEnclosureRecurringEnrollment,
   spawnKolamEnclosureTask,
+  updateKolamEnclosure,
   updateKolamEnclosureAssignedTo,
+  upsertKolamEnclosureParameter,
 } from '../src/services/kolam-enclosure-api';
 
 const fetchMock = jest.fn();
@@ -396,6 +398,48 @@ describe('kolam enclosure api', () => {
       expect.objectContaining({
         body: JSON.stringify({taskTypeId: 'tt-1', active: true}),
         method: 'PUT',
+      }),
+    );
+  });
+
+  it('updates enclosure code and posts climate parameters with alert_setting', async () => {
+    fetchMock
+      .mockResolvedValueOnce(
+        jsonResponse({
+          data: {_id: 'enc-1', enclosure_code: 'ENC-NEW'},
+        }),
+      )
+      .mockResolvedValueOnce(jsonResponse({data: {ok: true}}));
+
+    await expect(
+      updateKolamEnclosure('enc-1', {enclosure_code: 'enc-new'}),
+    ).resolves.toMatchObject({code: 'ENC-NEW', id: 'enc-1'});
+    await upsertKolamEnclosureParameter('enc-1', {
+      alert_setting: {constant: 28, range: {max: 32, min: 24}},
+      current_value: 29,
+      parameter_name: 'Temperature',
+      unit: 'unit-1',
+    });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      `${appConfig.kolamApiBaseUrl}/enclosures/enc-1`,
+      expect.objectContaining({
+        body: JSON.stringify({enclosure_code: 'ENC-NEW'}),
+        method: 'PUT',
+      }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      `${appConfig.kolamApiBaseUrl}/enclosures/enc-1/parameters`,
+      expect.objectContaining({
+        body: JSON.stringify({
+          parameter_name: 'Temperature',
+          current_value: 29,
+          unit: 'unit-1',
+          alert_setting: {constant: 28, range: {max: 32, min: 24}},
+        }),
+        method: 'POST',
       }),
     );
   });

@@ -51,6 +51,7 @@ import {
   spawnKolamEnclosureTask,
   switchKolamEnclosureSpeciesVariant,
   transferKolamEnclosureSpecies,
+  updateKolamEnclosure,
   updateKolamEnclosureSaleListing,
   uploadKolamEnclosureCoverPhoto,
   uploadKolamEnclosurePhotos,
@@ -175,6 +176,8 @@ export interface KolamEnclosureController {
     title?: string;
     taskTypeId?: string;
   }) => Promise<void>;
+  onProvisionCode: (enclosureCode: string) => Promise<void>;
+  onUpsertClimateParameter: (body: KolamEnclosureParameterInput) => Promise<void>;
   onSwitchSpeciesVariant: (input: KolamEnclosureVariantSwitchInput) => Promise<void>;
   onTabChange: (tab: KolamEnclosureListTab) => void;
   onTransferSpecies: (input: KolamEnclosureSpeciesTransferInput) => Promise<void>;
@@ -599,6 +602,33 @@ export function useKolamEnclosureController(
     [route, runOperation],
   );
 
+  const onUpsertClimateParameter = useCallback(
+    async (body: KolamEnclosureParameterInput) => {
+      const enclosureId = getKolamEnclosureRouteId(route);
+      if (!enclosureId) {
+        throw new Error('ID enclosure tidak ditemukan.');
+      }
+      await upsertKolamEnclosureParameter(enclosureId, body);
+      const detail = await getKolamEnclosureDetail(enclosureId);
+      setSelectedEnclosure(detail);
+    },
+    [route],
+  );
+
+  const onProvisionCode = useCallback(
+    (enclosureCode: string) =>
+      runOperation(async () => {
+        const enclosureId = getKolamEnclosureRouteId(route);
+        if (!enclosureId) throw new Error('ID enclosure tidak ditemukan.');
+        const next = enclosureCode.trim().toUpperCase();
+        if (!next) {
+          throw new Error('Kode enclosure wajib diisi.');
+        }
+        await updateKolamEnclosure(enclosureId, {enclosure_code: next});
+      }, 'Kode enclosure disimpan.'),
+    [route, runOperation],
+  );
+
   const onUploadCoverPhoto = useCallback(
     (localUri: string) =>
       runOperation(async () => {
@@ -830,6 +860,8 @@ export function useKolamEnclosureController(
     onSearchChange,
     onSetRecurringEnrollment,
     onSpawnTask,
+    onProvisionCode,
+    onUpsertClimateParameter,
     onSwitchSpeciesVariant,
     onTabChange,
     onTransferSpecies,
