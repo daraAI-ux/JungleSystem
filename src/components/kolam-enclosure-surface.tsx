@@ -939,6 +939,8 @@ function KolamEnclosureDetailSurface({
             <Text numberOfLines={1} style={styles.detailToolbarContext}>
               {toolbarContext}
             </Text>
+          </View>
+          <View style={kolamTableToolbarStyles.actions}>
             {detailTabs.map(tab => (
               <KolamButton
                 intent={safeActiveDetailTab === tab.id ? 'primary' : 'outline'}
@@ -948,8 +950,6 @@ function KolamEnclosureDetailSurface({
                 style={styles.toolbarButton}
               />
             ))}
-          </View>
-          <View style={kolamTableToolbarStyles.actions}>
             <KolamButton
               label="Daftar"
               onPress={() =>
