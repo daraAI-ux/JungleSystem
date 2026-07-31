@@ -68,9 +68,12 @@ describe('KolamSidebarContent AM mode', () => {
         'Users',
         'Activity Log',
         'JungleSystem',
-        'Kembali ke Kolam',
+        'Beranda',
+        'Pengaturan',
+        'POS',
       ]),
     );
     expect(text).not.toContain('Kolam Menu');
+    expect(text).not.toContain('Kembali ke Kolam');
   });
 });

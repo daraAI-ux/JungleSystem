@@ -10,14 +10,16 @@ import {
   getShellModuleRouteEntry,
   getShellModulesByArea,
   type AppModule,
+  type ShellModule,
   type ShellModuleRouteEntry,
 } from '../domain/app-shell';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import type { KolamNavigationItem } from '../domain/kolam-navigation';
+import { KolamMappedList } from './kolam-mapped-list';
 import { KolamQuickSearch } from './kolam-quick-search';
+import { KolamNavItem } from './kolam-nav-item';
 import { KolamSidebarNavGroup } from './kolam-sidebar-navigation-widgets';
 import { KolamMenuGroup } from './kolam-sidebar-menu-widgets';
-import { KolamMenuSectionItems } from './kolam-menu-section-items';
 
 export interface KolamSidebarContentProps {
   accessScope: AccessScope;
@@ -70,9 +72,10 @@ export function KolamSidebarContent({
       <KolamQuickSearch collapsed={collapsed} onPress={onQuickSearch} />
       {activeArea === 'am' ? (
         <KolamAmSidebarMenu
+          activeModule={activeModule}
           activeRoute={activeRoute}
           collapsed={collapsed}
-          onBackToKolam={() => onSelectModule('kolam')}
+          onSelectModule={onSelectModule}
           onSelectRoute={onModuleRouteSelect ?? (() => undefined)}
         />
       ) : activeArea === 'pos' ? (
@@ -119,84 +122,89 @@ export function KolamSidebarContent({
 }
 
 function KolamAmSidebarMenu({
+  activeModule,
   activeRoute,
   collapsed,
-  onBackToKolam,
+  onSelectModule,
   onSelectRoute,
 }: {
+  activeModule: AppModule;
   activeRoute?: string | null;
   collapsed: boolean;
-  onBackToKolam: () => void;
+  onSelectModule: (module: AppModule) => void;
   onSelectRoute: (route: ShellModuleRouteEntry) => void;
 }) {
-  if (collapsed) {
-    return (
-      <KolamSidebarNavGroup
-        activeModule="am"
-        collapsed
-        label="AM"
-        modules={getShellModulesByArea('am')}
-        onSelect={() => undefined}
-      />
-    );
-  }
-
   return (
-    <View style={styles.amMenuGroup}>
-      <KolamSidebarNavGroup
-        activeModule="am"
-        collapsed={false}
-        label="AM"
-        meta="Automation Management"
-        modules={getShellModulesByArea('am')}
-        onSelect={() => undefined}
-      />
-      {AM_ROUTE_SECTIONS.map(section => (
-        <View key={section} style={styles.amMenuSection}>
-          <Text style={styles.amMenuSectionLabel}>{section}</Text>
-          <KolamMenuSectionItems
-            activeRoute={activeRoute}
-            items={AM_ROUTES.filter(item => item.section === section).map(toAmNavigationItem)}
-            onSelectItem={item => {
-              const route = getShellModuleRouteEntry('am', getAmModuleRoute(item.route));
-              if (route) {
-                onSelectRoute(route);
-              }
-            }}
-          />
-        </View>
-      ))}
-      <View style={styles.amMenuSection}>
-        <Text style={styles.amMenuSectionLabel}>JungleSystem</Text>
-        <KolamMenuSectionItems
-          activeRoute={null}
-          items={[
-            {
-              label: 'Kembali ke Kolam',
-              route: '/kolam',
-              description: 'Kembali ke sidebar utama Kolam.',
-              requiredAccess: ['kolam', 'pos', 'am'],
-            },
-          ]}
-          onSelectItem={() => onBackToKolam()}
-        />
+    <>
+      <View style={[styles.amMenuGroup, collapsed && styles.amMenuGroupCollapsed]}>
+        {collapsed ? null : (
+          <View style={styles.amMenuSectionHeader}>
+            <Text style={styles.amMenuSectionLabel}>AM</Text>
+            <Text style={styles.amMenuSectionMeta}>Automation Management</Text>
+          </View>
+        )}
+        {AM_ROUTE_SECTIONS.map(section => (
+          <View key={section} style={styles.amMenuSection}>
+            {collapsed ? null : (
+              <Text style={styles.amMenuSectionLabel}>{section}</Text>
+            )}
+            <KolamMappedList
+              items={AM_ROUTES.filter(item => item.section === section)}
+              getKey={item => item.id}
+              renderItem={item => (
+                <KolamNavItem
+                  active={isAmRouteActive(item, activeRoute)}
+                  collapsed={collapsed}
+                  module={toAmShellModule(item)}
+                  onPress={() => {
+                    const route = getShellModuleRouteEntry('am', item.moduleRoute);
+                    if (route) {
+                      onSelectRoute(route);
+                    }
+                  }}
+                />
+              )}
+            />
+          </View>
+        ))}
       </View>
-    </View>
+      <KolamSidebarNavGroup
+        activeModule={activeModule}
+        collapsed={collapsed}
+        label="JungleSystem"
+        modules={getShellModulesByArea('kolam')}
+        onSelect={onSelectModule}
+      />
+    </>
   );
 }
 
-function toAmNavigationItem(item: AmRouteItem): KolamNavigationItem {
+function toAmShellModule(item: AmRouteItem): ShellModule {
   return {
+    id: 'am',
+    area: 'am',
     label: item.label,
-    route: item.path,
-    description: item.description,
-    requiredAccess: ['am'],
+    iconKind: 'automation',
+    sourceRepo: 'E:\\Projects\\da-automation-management',
+    summary: item.description,
+    routes: [item.moduleRoute],
   };
 }
 
-function getAmModuleRoute(route: string) {
-  if (route === '/') return '/';
-  return route.replace(/^\/+/, '');
+function isAmRouteActive(item: AmRouteItem, activeRoute?: string | null) {
+  if (!activeRoute) return item.id === 'dashboard';
+  const normalizedActiveRoute =
+    activeRoute === '/' ? '/' : activeRoute.replace(/^\/+/, '').replace(/\/+$/, '');
+  const normalizedItemRoute =
+    item.moduleRoute === '/'
+      ? '/'
+      : item.moduleRoute.replace(/^\/+/, '').replace(/\/+$/, '');
+
+  return (
+    normalizedActiveRoute === normalizedItemRoute ||
+    (normalizedItemRoute !== '/' &&
+      normalizedActiveRoute.startsWith(`${normalizedItemRoute}/`))
+  );
 }
 
 function getActiveSidebarArea(module: AppModule) {
@@ -220,9 +228,17 @@ const styles = StyleSheet.create({
     marginTop: 2,
     marginBottom: V.layout.navSectionGap,
   },
+  amMenuGroupCollapsed: {
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 8,
+  },
   amMenuSection: {
     paddingHorizontal: 10,
     paddingVertical: 1,
+  },
+  amMenuSectionHeader: {
+    paddingHorizontal: 12,
   },
   amMenuSectionLabel: {
     marginBottom: 4,
@@ -231,5 +247,11 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '900',
     textTransform: 'uppercase',
+  },
+  amMenuSectionMeta: {
+    marginBottom: 6,
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
   },
 });
