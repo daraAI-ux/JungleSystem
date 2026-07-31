@@ -3,6 +3,7 @@ import {
   normalizeKolamComplaintDetail,
   normalizeKolamComplaintList,
   type KolamComplaint,
+  type KolamComplaintCreateInput,
   type KolamComplaintDecision,
   type KolamComplaintKpiSeverity,
   type KolamComplaintListQuery,
@@ -132,6 +133,78 @@ export async function updateKolamComplaintReturnStatus(
     { method: 'PUT', body: formData },
   );
   return normalizeKolamComplaintDetail(payload);
+}
+
+export async function createKolamComplaint(
+  input: KolamComplaintCreateInput,
+): Promise<KolamComplaint> {
+  const formData = new FormData();
+  formData.append('sale', input.saleId.trim());
+  formData.append('description', input.description.trim());
+  formData.append(
+    'items',
+    JSON.stringify(
+      input.items.map(item => ({
+        saleItemIndex: item.saleItemIndex,
+        quantity: item.quantity,
+        ...(item.reason?.trim() ? { reason: item.reason.trim() } : {}),
+      })),
+    ),
+  );
+  formData.append('category', input.category);
+  formData.append('priority', input.priority);
+  if (input.createdByCustomerId?.trim()) {
+    formData.append('createdBy', input.createdByCustomerId.trim());
+  }
+  if (input.pendingServiceId?.trim()) {
+    formData.append('pendingService', input.pendingServiceId.trim());
+  }
+  if (input.subscriptionId?.trim()) {
+    formData.append('subscription', input.subscriptionId.trim());
+  }
+  if (input.serviceContext) {
+    formData.append('serviceContext', JSON.stringify(input.serviceContext));
+  }
+  for (const [index, uri] of (input.photoUris ?? []).entries()) {
+    if (!uri.trim()) {
+      continue;
+    }
+    formData.append(
+      'photos',
+      createReactNativeFilePart(
+        uri.trim(),
+        `complaint-photo-${index + 1}.jpg`,
+      ) as unknown as Blob,
+    );
+  }
+
+  const payload = await kolamRequest<unknown>('/complaints', {
+    method: 'POST',
+    body: formData,
+  });
+  return normalizeKolamComplaintDetail(payload);
+}
+
+function createReactNativeFilePart(localUri: string, fallbackName: string) {
+  const normalizedUri = localUri.startsWith('file://')
+    ? localUri
+    : `file:///${localUri.replace(/\\/g, '/')}`;
+  const name = normalizedUri.split('/').pop() || fallbackName;
+  const extension = name.split('.').pop()?.toLowerCase();
+  const type =
+    extension === 'png'
+      ? 'image/png'
+      : extension === 'webp'
+        ? 'image/webp'
+        : extension === 'gif'
+          ? 'image/gif'
+          : 'image/jpeg';
+
+  return {
+    uri: normalizedUri,
+    name,
+    type,
+  };
 }
 
 function kolamRequest<T>(

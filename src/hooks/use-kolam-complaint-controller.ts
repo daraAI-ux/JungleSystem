@@ -4,11 +4,13 @@ import {
   getKolamComplaintRouteMode,
   isKolamComplaintRoute,
   type KolamComplaint,
+  type KolamComplaintCreateInput,
   type KolamComplaintDecision,
   type KolamComplaintKpiSeverity,
   type KolamComplaintSource,
   type KolamComplaintStatus,
   type KolamComplaintTrackingStatus,
+  validateKolamComplaintCreateInput,
 } from '../domain/kolam-complaint';
 import type { KolamSaleSourceOption } from '../domain/kolam-sales';
 import type { KolamUserListItem } from '../domain/kolam-user';
@@ -16,6 +18,7 @@ import { getErrorMessage as getApiErrorMessage } from '../lib/api-error';
 import {
   assignKolamComplaintStaff,
   closeKolamComplaint,
+  createKolamComplaint,
   getKolamComplaint,
   getKolamComplaints,
   updateKolamComplaintDecision,
@@ -59,6 +62,9 @@ export interface KolamComplaintController {
     note: string;
     kpiSeverity?: KolamComplaintKpiSeverity | null;
   }) => Promise<boolean>;
+  onCreateComplaint: (
+    input: KolamComplaintCreateInput,
+  ) => Promise<KolamComplaint | null>;
   onCreateNew: () => void;
   onRefresh: () => Promise<void>;
   onSearchChange: (value: string) => void;
@@ -206,7 +212,7 @@ export function useKolamComplaintController(
   }, [initialMode]);
 
   useEffect(() => {
-    if (mode === 'list' || mode === 'new') {
+    if (mode === 'list') {
       void refreshList();
     }
   }, [mode, refreshList]);
@@ -420,6 +426,38 @@ export function useKolamComplaintController(
     setStatusMessage(null);
   }, []);
 
+  const onCreateComplaint = useCallback(
+    async (input: KolamComplaintCreateInput): Promise<KolamComplaint | null> => {
+      const validationError = validateKolamComplaintCreateInput(input);
+      if (validationError) {
+        setError(validationError);
+        return null;
+      }
+
+      setMutating(true);
+      setError(null);
+      setStatusMessage(null);
+      try {
+        const created = await createKolamComplaint(input);
+        setSelectedComplaint(created);
+        setComplaints(prev => {
+          const without = prev.filter(item => item.id !== created.id);
+          return [created, ...without];
+        });
+        setMode('detail');
+        setDataSource('live');
+        setStatusMessage('Keluhan berhasil dibuat.');
+        return created;
+      } catch (createError) {
+        setError(getErrorMessage(createError));
+        return null;
+      } finally {
+        setMutating(false);
+      }
+    },
+    [],
+  );
+
   const onRefresh = useCallback(async () => {
     if (mode === 'detail' && selectedComplaint?.id) {
       setLoading(true);
@@ -503,6 +541,7 @@ export function useKolamComplaintController(
       onAssignStaff,
       onBackToList,
       onCloseComplaint,
+      onCreateComplaint,
       onCreateNew,
       onRefresh,
       onSearchChange,
@@ -529,6 +568,7 @@ export function useKolamComplaintController(
       onAssignStaff,
       onBackToList,
       onCloseComplaint,
+      onCreateComplaint,
       onCreateNew,
       onRefresh,
       onSearchChange,

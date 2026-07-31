@@ -246,6 +246,133 @@ export function getKolamComplaintIdFromRoute(route: string): string | null {
   return null;
 }
 
+export type KolamComplaintServiceContext = {
+  taskKind: 'dosing' | 'maintenance';
+  taskId?: string | null;
+  executionId?: string | null;
+  visitTitle?: string | null;
+};
+
+export type KolamComplaintCreateQuery = {
+  saleId: string | null;
+  pendingServiceId: string | null;
+  subscriptionId: string | null;
+  category: KolamComplaintCategory | null;
+  serviceContext: KolamComplaintServiceContext | null;
+};
+
+export type KolamComplaintCreateItemInput = {
+  saleItemIndex: number;
+  quantity: number;
+  reason?: string;
+};
+
+export type KolamComplaintCreateInput = {
+  saleId: string;
+  items: KolamComplaintCreateItemInput[];
+  description: string;
+  category: KolamComplaintCategory;
+  priority: KolamComplaintPriority;
+  createdByCustomerId?: string | null;
+  pendingServiceId?: string | null;
+  subscriptionId?: string | null;
+  serviceContext?: KolamComplaintServiceContext | null;
+  photoUris?: string[];
+};
+
+/** Categories offered on create form (matches FE select options). */
+export const KOLAM_COMPLAINT_CREATE_CATEGORY_OPTIONS: Array<{
+  id: KolamComplaintCategory;
+  label: string;
+}> = [
+  { id: 'defective', label: 'Cacat' },
+  { id: 'wrong_item', label: 'Item Salah' },
+  { id: 'damaged', label: 'Rusak' },
+  { id: 'quality_issue', label: 'Masalah Kualitas' },
+  { id: 'service_not_delivered', label: 'Layanan Tidak Diberikan' },
+  { id: 'service_incomplete', label: 'Layanan Tidak Lengkap' },
+  { id: 'service_quality_issue', label: 'Masalah Kualitas Layanan' },
+  { id: 'service_delayed', label: 'Layanan Terlambat' },
+  { id: 'other', label: 'Lainnya' },
+];
+
+export const KOLAM_COMPLAINT_PRIORITY_OPTIONS: Array<{
+  id: KolamComplaintPriority;
+  label: string;
+}> = [
+  { id: 'low', label: 'Rendah' },
+  { id: 'medium', label: 'Sedang' },
+  { id: 'high', label: 'Tinggi' },
+  { id: 'urgent', label: 'Mendesak' },
+];
+
+export function parseKolamComplaintCreateQuery(
+  route: string,
+): KolamComplaintCreateQuery {
+  const queryIndex = route.indexOf('?');
+  const params = new URLSearchParams(
+    queryIndex >= 0 ? route.slice(queryIndex + 1) : '',
+  );
+  const saleId = params.get('saleId')?.trim() || null;
+  const pendingServiceId = params.get('pendingServiceId')?.trim() || null;
+  const subscriptionId = params.get('subscriptionId')?.trim() || null;
+  const categoryRaw = params.get('category')?.trim() || '';
+  const category = KOLAM_COMPLAINT_CREATE_CATEGORY_OPTIONS.some(
+    option => option.id === categoryRaw,
+  )
+    ? (categoryRaw as KolamComplaintCategory)
+    : null;
+  const taskKind = params.get('taskKind')?.trim();
+  const serviceContext: KolamComplaintServiceContext | null =
+    taskKind === 'dosing' || taskKind === 'maintenance'
+      ? {
+          taskKind,
+          taskId: params.get('taskId'),
+          executionId: params.get('executionId'),
+          visitTitle: params.get('visitTitle'),
+        }
+      : null;
+
+  return {
+    saleId,
+    pendingServiceId,
+    subscriptionId,
+    category,
+    serviceContext,
+  };
+}
+
+export function isKolamSaleEligibleForComplaint(sale: {
+  status?: string | null;
+  deliveryStatus?: string | null;
+}): boolean {
+  const status = String(sale.status ?? '').toLowerCase();
+  const delivery = String(sale.deliveryStatus ?? '').toLowerCase();
+  return (
+    status === 'paid' && (delivery === 'delivered' || delivery === 'success')
+  );
+}
+
+export function validateKolamComplaintCreateInput(
+  input: KolamComplaintCreateInput,
+): string | null {
+  if (!input.saleId.trim()) {
+    return 'Silakan pilih penjualan/invoice';
+  }
+  if (!input.items.length) {
+    return 'Silakan pilih minimal satu item untuk dikeluhkan';
+  }
+  if (!input.description.trim()) {
+    return 'Silakan masukkan deskripsi';
+  }
+  for (const item of input.items) {
+    if (!Number.isFinite(item.quantity) || item.quantity < 1) {
+      return 'Jumlah item dikeluhkan harus minimal 1';
+    }
+  }
+  return null;
+}
+
 export function isMarketplaceMirrorComplaint(complaint: {
   marketplaceSource?: string | null;
 }): boolean {

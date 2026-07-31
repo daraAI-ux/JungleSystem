@@ -39,6 +39,7 @@ import {
 } from '../hooks/use-kolam-complaint-controller';
 import { KolamButton } from './kolam-button';
 import { KolamCardFrame } from './kolam-card-frame';
+import { KolamComplaintCreateForm } from './kolam-complaint-create-form';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import {
   getKolamDataTableColumnStyle,
@@ -103,7 +104,11 @@ export function KolamComplaintSurface({
           onRouteChange={onRouteChange}
         />
       ) : controller.mode === 'new' ? (
-        <KolamComplaintCreatePlaceholder onRouteChange={onRouteChange} />
+        <KolamComplaintCreateForm
+          controller={controller}
+          onRouteChange={onRouteChange}
+          route={route}
+        />
       ) : (
         <KolamComplaintDetail
           controller={controller}
@@ -198,26 +203,6 @@ function KolamComplaintShell({
         />
       ) : null}
       {children}
-    </View>
-  );
-}
-
-function KolamComplaintCreatePlaceholder({
-  onRouteChange,
-}: {
-  onRouteChange?: (route: string) => void;
-}) {
-  return (
-    <View style={styles.placeholder}>
-      <KolamEmptyState
-        message="Form buat komplain akan hadir di batch berikutnya. Sementara buka daftar untuk melihat tiket existing."
-        title="Buat komplain (segera)"
-      />
-      <KolamButton
-        intent="primary"
-        label="Kembali ke daftar"
-        onPress={() => onRouteChange?.(KOLAM_COMPLAINT_ROOT)}
-      />
     </View>
   );
 }

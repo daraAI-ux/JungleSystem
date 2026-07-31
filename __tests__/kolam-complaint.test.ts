@@ -7,10 +7,13 @@ import {
   getKolamComplaintRouteMode,
   getKolamComplaintStatusLabel,
   isKolamComplaintRoute,
+  isKolamSaleEligibleForComplaint,
   isMarketplaceMirrorComplaint,
   normalizeKolamComplaint,
   normalizeKolamComplaintList,
+  parseKolamComplaintCreateQuery,
   resolveKolamComplaintSaleSourceLogoUri,
+  validateKolamComplaintCreateInput,
 } from '../src/domain/kolam-complaint';
 import {
   getKolamNavigationItemByRoute,
@@ -160,6 +163,75 @@ describe('kolam-complaint domain', () => {
         isWarrantyClaim: true,
       }).map(row => row.id),
     ).toEqual(['warranty_honored_da', 'warranty_rejected']);
+  });
+
+  it('parses create query and validates create payload', () => {
+    expect(
+      parseKolamComplaintCreateQuery(
+        '/complaints/create?saleId=s1&category=damaged&pendingServiceId=ps1&taskKind=dosing&taskId=t1',
+      ),
+    ).toEqual({
+      saleId: 's1',
+      pendingServiceId: 'ps1',
+      subscriptionId: null,
+      category: 'damaged',
+      serviceContext: {
+        taskKind: 'dosing',
+        taskId: 't1',
+        executionId: null,
+        visitTitle: null,
+      },
+    });
+
+    expect(
+      isKolamSaleEligibleForComplaint({
+        status: 'paid',
+        deliveryStatus: 'delivered',
+      }),
+    ).toBe(true);
+    expect(
+      isKolamSaleEligibleForComplaint({
+        status: 'paid',
+        deliveryStatus: 'packing',
+      }),
+    ).toBe(false);
+
+    expect(
+      validateKolamComplaintCreateInput({
+        saleId: '',
+        items: [],
+        description: '',
+        category: 'other',
+        priority: 'medium',
+      }),
+    ).toBe('Silakan pilih penjualan/invoice');
+    expect(
+      validateKolamComplaintCreateInput({
+        saleId: 's1',
+        items: [],
+        description: 'Rusak',
+        category: 'other',
+        priority: 'medium',
+      }),
+    ).toBe('Silakan pilih minimal satu item untuk dikeluhkan');
+    expect(
+      validateKolamComplaintCreateInput({
+        saleId: 's1',
+        items: [{ saleItemIndex: 0, quantity: 1 }],
+        description: '  ',
+        category: 'other',
+        priority: 'medium',
+      }),
+    ).toBe('Silakan masukkan deskripsi');
+    expect(
+      validateKolamComplaintCreateInput({
+        saleId: 's1',
+        items: [{ saleItemIndex: 0, quantity: 2 }],
+        description: 'Barang rusak',
+        category: 'damaged',
+        priority: 'high',
+      }),
+    ).toBeNull();
   });
 });
 
