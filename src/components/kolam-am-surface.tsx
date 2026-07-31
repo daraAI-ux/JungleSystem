@@ -2014,6 +2014,32 @@ function AmHardwareDeviceList({
 }
 
 function AmDeviceDetailPanel({device}: {device: AmDevice}) {
+  const [accounts, setAccounts] = React.useState<AmServiceAccount[]>([]);
+  const [services, setServices] = React.useState<AmDeviceServiceStatus[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+
+  const fetchDeviceServices = React.useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const [accountResponse, serviceResponse] = await Promise.all([
+        getAmServiceAccounts({deviceId: device._id, limit: 100}),
+        getAmDeviceServices(device._id),
+      ]);
+      setAccounts(accountResponse.data);
+      setServices(serviceResponse);
+      setError(null);
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Gagal memuat service account device.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [device._id]);
+
+  React.useEffect(() => {
+    fetchDeviceServices();
+  }, [fetchDeviceServices]);
+
   return (
     <View style={styles.panel}>
       <Text style={styles.panelTitle}>{device.name}</Text>
@@ -2035,6 +2061,52 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
           <Text style={[styles.tableHeaderText, styles.accountCol]}>Box</Text>
           <Text style={[styles.cellText, styles.recipientCol]}>{formatDeviceBox(device)}</Text>
         </View>
+      </View>
+      <View style={styles.sectionHeaderRow}>
+        <Text style={styles.panelTitle}>Service Accounts</Text>
+        <KolamButton
+          disabled={isLoading}
+          label={isLoading ? 'Memuat' : 'Refresh'}
+          intent="outline"
+          size="sm"
+          onPress={fetchDeviceServices}
+        />
+      </View>
+      <AmInlineError error={error} title="Service account device belum bisa dibaca" />
+      <View style={styles.tablePanel}>
+        <View style={styles.tableHeader}>
+          <Text style={[styles.tableHeaderText, styles.serviceCol]}>Account</Text>
+          <Text style={[styles.tableHeaderText, styles.platformCol]}>Platform</Text>
+          <Text style={[styles.tableHeaderText, styles.accountCol]}>Identifier</Text>
+          <Text style={[styles.tableHeaderText, styles.statusCol]}>Status</Text>
+        </View>
+        <AmLoadingOrEmpty
+          isLoading={isLoading}
+          items={accounts}
+          loadingText="Memuat service accounts device..."
+          emptyText="No service accounts linked to this device"
+        />
+        {accounts.map(account => {
+          const runtime = services.find(status => status.serviceAccountId === account._id);
+          const statusLabel = runtime?.serviceStatus ?? account.status;
+          return (
+            <View key={account._id} style={styles.tableRow}>
+              <View style={styles.serviceCol}>
+                <Text style={styles.rowTitle} numberOfLines={1}>{account.label}</Text>
+                <Text style={styles.rowMeta} numberOfLines={1}>{runtime?.taskStatus ?? 'No runtime task'}</Text>
+              </View>
+              <Text style={[styles.cellText, styles.platformCol]}>
+                {AM_PLATFORM_LABELS[account.platform] ?? account.platform}
+              </Text>
+              <Text style={[styles.cellText, styles.accountCol]} numberOfLines={1}>
+                {account.accountNumber ?? account.username ?? getCredentialString(account.credentials, 'phoneNumber') ?? '-'}
+              </Text>
+              <View style={styles.statusCol}>
+                <AmStatusChip label={statusLabel} tone={statusLabel === 'running' || statusLabel === 'active' ? 'success' : 'warning'} />
+              </View>
+            </View>
+          );
+        })}
       </View>
     </View>
   );
@@ -4422,6 +4494,12 @@ const styles = StyleSheet.create({
     borderColor: V.colors.border,
     borderRadius: 8,
     backgroundColor: V.colors.bg,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
   },
   tableHeader: {
     flexDirection: 'row',

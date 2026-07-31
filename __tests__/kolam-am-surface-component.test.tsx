@@ -885,6 +885,41 @@ describe('KolamAmSurface', () => {
       ],
       meta: {total: 1, limit: 1},
     });
+    jest.mocked(getAmServiceAccounts).mockResolvedValueOnce({
+      data: [
+        {
+          _id: 'service-1',
+          label: 'BCA Device Alpha',
+          platform: 'bca',
+          accountNumber: '1234567890',
+          status: 'active',
+          deviceId: {
+            _id: 'device-1',
+            name: 'Phone Rack',
+            connectionType: 'tcp',
+            tcpAddress: '10.0.0.5:5555',
+          },
+          username: 'bcauser',
+          credentials: {},
+          meta: {},
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 1, limit: 100},
+    });
+    jest.mocked(getAmDeviceServices).mockResolvedValueOnce([
+      {
+        serviceAccountId: 'service-1',
+        label: 'BCA Device Alpha',
+        platform: 'bca',
+        accountNumber: '1234567890',
+        serviceStatus: 'running',
+        taskStatus: 'idle',
+        processRunning: true,
+        isBanking: true,
+      },
+    ]);
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
     await act(async () => {
@@ -909,6 +944,12 @@ describe('KolamAmSurface', () => {
     expect(text).toContain('Phone Rack');
     expect(text).toContain('Samsung');
     expect(text).toContain('A15');
+    expect(getAmServiceAccounts).toHaveBeenCalledWith({deviceId: 'device-1', limit: 100});
+    expect(getAmDeviceServices).toHaveBeenCalledWith('device-1');
+    expect(text).toContain('Service Accounts');
+    expect(text).toContain('BCA Device Alpha');
+    expect(text).toContain('1234567890');
+    expect(text).toContain('Running');
   });
 
   it('runs hardware create, edit, and delete actions from the Hardware route', async () => {
