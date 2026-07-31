@@ -1443,6 +1443,9 @@ function AmTaskActions({
 
   if (task.status === 'pending' || task.status === 'queued' || task.status === 'processing') {
     actions.push({id: 'cancel', label: 'Cancel', intent: 'outline'});
+  }
+
+  if (task.status === 'processing') {
     actions.push({id: 'force-fail', label: 'Force Fail', intent: 'danger'});
   }
 

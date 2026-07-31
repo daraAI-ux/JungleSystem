@@ -476,6 +476,9 @@ describe('KolamAmSurface', () => {
     renderers.push(renderer!);
 
     await updateAmRoute(renderer!, 'tasks');
+    expect(
+      renderer!.root.findAllByProps({accessibilityLabel: 'AM Task Force Fail task-1'}),
+    ).toHaveLength(0);
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Task Cancel task-1'}).props.onPress();
     });
