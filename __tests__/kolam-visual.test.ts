@@ -17,7 +17,7 @@ describe('kolamVisualTokens', () => {
     expect(kolamVisualTokens.radius.lg).toBe(8);
     expect(kolamVisualTokens.control.inputHeight).toBe(36);
     expect(kolamVisualTokens.control.buttonSmHeight).toBe(34);
-    expect(kolamVisualTokens.control.badgeRadius).toBe(999);
+    expect(kolamVisualTokens.control.badgeRadius).toBe(6);
     expect(kolamVisualTokens.surface.cardChrome).toEqual({
       sourceSlot: 'card',
       radius: 8,

@@ -776,6 +776,7 @@ function AmTaskDetailPage({
         </View>
         <View style={styles.panel}>
           <Text style={styles.panelTitle}>Timeline</Text>
+          <AmDetailLine label="Created By" value={formatTaskCreatedBy(task.createdBy)} />
           <AmDetailLine label="Created" value={formatAmDate(task.createdAt)} />
           <AmDetailLine label="Started" value={formatAmDate(task.startedAt)} />
           <AmDetailLine label="Completed" value={formatAmDate(task.completedAt)} />
@@ -5467,7 +5468,7 @@ const styles = StyleSheet.create({
   },
   statusChip: {
     alignSelf: 'flex-start',
-    borderRadius: 999,
+    borderRadius: V.control.badgeRadius,
     paddingHorizontal: 8,
     paddingVertical: 3,
     backgroundColor: V.colors.muted,

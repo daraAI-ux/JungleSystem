@@ -42,7 +42,8 @@ export const kolamVisualTokens = {
     inputPaddingX: 12,
     badgePaddingX: 8,
     badgePaddingY: 2,
-    badgeRadius: 999,
+    // Soft box (not pill) — shared by KolamBadge / status badges / count chips.
+    badgeRadius: 6,
     fontSize: 13,
     badgeFontSize: 12,
   },
