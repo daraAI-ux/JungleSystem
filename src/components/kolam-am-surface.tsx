@@ -6,6 +6,7 @@ import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {formatRupiah} from '../lib/money';
 import {
   cancelAmTransfer,
+  clearAmServiceAccountSession,
   forceFailAmTransfer,
   getAmBoxes,
   getAmDevices,
@@ -22,6 +23,8 @@ import {
   getAmWebhookConfigs,
   getAmWebhookLogs,
   retryAmTransfer,
+  startAmDeviceService,
+  stopAmDeviceService,
   type AmActivityLog,
   type AmActivityLogStats,
   type AmBox,
@@ -97,6 +100,7 @@ const AM_PLATFORM_LABELS: Record<string, string> = {
   tiktok: 'TikTok',
   instagram: 'Instagram',
 };
+const PLAYWRIGHT_PLATFORMS = new Set(['tokopedia', 'shopee', 'tiktok', 'instagram']);
 
 export function KolamAmSurface({
   activeSurface,
@@ -330,6 +334,8 @@ function AmServicesPage() {
   const [detailRunning, setDetailRunning] = React.useState(false);
   const [detailLoading, setDetailLoading] = React.useState(false);
   const [detailError, setDetailError] = React.useState<string | null>(null);
+  const [actingServiceId, setActingServiceId] = React.useState<string | null>(null);
+  const [actionMessage, setActionMessage] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -445,6 +451,51 @@ function AmServicesPage() {
     }
   }, [loadServiceHistory, loadServiceLogs]);
 
+  const runServicePowerAction = React.useCallback(async (account: AmServiceAccount) => {
+    const device = getServiceDevice(account);
+    if (!device?._id) {
+      setError('Service belum punya device.');
+      return;
+    }
+
+    try {
+      setActingServiceId(account._id);
+      setActionMessage(null);
+      if (account.status === 'active') {
+        await stopAmDeviceService(device._id, account._id);
+        setActionMessage(`${account.label} dihentikan.`);
+      } else {
+        await startAmDeviceService(device._id, account._id);
+        setActionMessage(`${account.label} dijalankan.`);
+      }
+      await fetchAccounts();
+      if (expandedId === account._id) {
+        await loadServiceLogs(account);
+      }
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Aksi service AM gagal.');
+    } finally {
+      setActingServiceId(null);
+    }
+  }, [expandedId, fetchAccounts, loadServiceLogs]);
+
+  const clearServiceSession = React.useCallback(async (account: AmServiceAccount) => {
+    try {
+      setActingServiceId(account._id);
+      setActionMessage(null);
+      const result = await clearAmServiceAccountSession(account._id);
+      const deleted = result.deleted?.length ?? 0;
+      setActionMessage(deleted > 0 ? `${account.label} session dibersihkan (${deleted} file).` : `${account.label} session state dibersihkan.`);
+      setDetailLogs([]);
+      setDetailRunning(false);
+      await fetchAccounts();
+    } catch (nextError) {
+      setDetailError(nextError instanceof Error ? nextError.message : 'Gagal membersihkan session service.');
+    } finally {
+      setActingServiceId(null);
+    }
+  }, [fetchAccounts]);
+
   return (
     <View style={styles.pageStack}>
       <View style={styles.filterBar}>
@@ -466,6 +517,11 @@ function AmServicesPage() {
         <View style={styles.errorPanel}>
           <Text style={styles.errorTitle}>Services AM belum bisa dibaca</Text>
           <Text style={styles.errorText}>{error}</Text>
+        </View>
+      ) : null}
+      {actionMessage ? (
+        <View style={styles.successPanel}>
+          <Text style={styles.successText}>{actionMessage}</Text>
         </View>
       ) : null}
       <View style={styles.tablePanel}>
@@ -501,10 +557,20 @@ function AmServicesPage() {
                 <Text style={[styles.cellText, styles.accountCol]} numberOfLines={1}>
                   {account.accountNumber ?? account.username ?? getCredentialString(account.credentials, 'phoneNumber') ?? '-'}
                 </Text>
-                <View style={styles.statusCol}>
+              <View style={styles.statusCol}>
+                <View style={styles.statusActionStack}>
                   <AmStatusChip label={active ? 'Ready' : account.status} tone={active ? 'success' : 'warning'} />
+                  <KolamButton
+                    accessibilityLabel={`AM Service ${active ? 'Stop' : 'Start'} ${account._id}`}
+                    intent={active ? 'outline' : 'warning'}
+                    label={actingServiceId === account._id ? '...' : active ? 'Stop' : 'Start'}
+                    muted={actingServiceId === account._id || !device}
+                    size="sm"
+                    onPress={() => runServicePowerAction(account)}
+                  />
                 </View>
-              </KolamInteractionFrame>
+              </View>
+            </KolamInteractionFrame>
               {expanded ? (
                 <AmServiceDetailPanel
                   account={account}
@@ -515,6 +581,9 @@ function AmServicesPage() {
                   processRunning={detailRunning}
                   tasks={detailTasks}
                   transfers={detailTransfers}
+                  canClearSession={PLAYWRIGHT_PLATFORMS.has(account.platform)}
+                  clearingSession={actingServiceId === account._id}
+                  onClearSession={() => clearServiceSession(account)}
                   onSelectTab={tab => selectDetailTab(account, tab)}
                 />
               ) : null}
@@ -633,9 +702,12 @@ function AmHardwarePage() {
 function AmServiceDetailPanel({
   account,
   activeTab,
+  canClearSession,
+  clearingSession,
   detailError,
   isLoading,
   logs,
+  onClearSession,
   onSelectTab,
   processRunning,
   tasks,
@@ -643,9 +715,12 @@ function AmServiceDetailPanel({
 }: {
   account: AmServiceAccount;
   activeTab: 'logs' | 'history';
+  canClearSession: boolean;
+  clearingSession: boolean;
   detailError: string | null;
   isLoading: boolean;
   logs: AmDeviceServiceLog[];
+  onClearSession: () => void;
   onSelectTab: (tab: 'logs' | 'history') => void;
   processRunning: boolean;
   tasks: AmTask[];
@@ -655,25 +730,37 @@ function AmServiceDetailPanel({
 
   return (
     <View style={styles.serviceDetailPanel}>
-      <View style={styles.detailTabs}>
-        {!banking ? (
+      <View style={styles.detailHeader}>
+        <View style={styles.detailTabs}>
+          {!banking ? (
+            <KolamInteractionFrame
+              accessibilityLabel={`AM ${account.label} Logs`}
+              onPress={() => onSelectTab('logs')}
+              style={[styles.detailTab, activeTab === 'logs' && styles.detailTabActive]}>
+              <Text style={[styles.segmentText, activeTab === 'logs' && styles.segmentTextActive]}>
+                Logs {processRunning ? 'Live' : ''}
+              </Text>
+            </KolamInteractionFrame>
+          ) : null}
           <KolamInteractionFrame
-            accessibilityLabel={`AM ${account.label} Logs`}
-            onPress={() => onSelectTab('logs')}
-            style={[styles.detailTab, activeTab === 'logs' && styles.detailTabActive]}>
-            <Text style={[styles.segmentText, activeTab === 'logs' && styles.segmentTextActive]}>
-              Logs {processRunning ? 'Live' : ''}
+            accessibilityLabel={`AM ${account.label} History`}
+            onPress={() => onSelectTab('history')}
+            style={[styles.detailTab, activeTab === 'history' && styles.detailTabActive]}>
+            <Text style={[styles.segmentText, activeTab === 'history' && styles.segmentTextActive]}>
+              {banking ? 'Transfer History' : 'Task History'}
             </Text>
           </KolamInteractionFrame>
+        </View>
+        {canClearSession ? (
+          <KolamButton
+            accessibilityLabel={`AM Service Clear Session ${account._id}`}
+            intent="danger"
+            label={clearingSession ? 'Clearing...' : 'Clear Session'}
+            muted={clearingSession}
+            size="sm"
+            onPress={onClearSession}
+          />
         ) : null}
-        <KolamInteractionFrame
-          accessibilityLabel={`AM ${account.label} History`}
-          onPress={() => onSelectTab('history')}
-          style={[styles.detailTab, activeTab === 'history' && styles.detailTabActive]}>
-          <Text style={[styles.segmentText, activeTab === 'history' && styles.segmentTextActive]}>
-            {banking ? 'Transfer History' : 'Task History'}
-          </Text>
-        </KolamInteractionFrame>
       </View>
       <AmInlineError title="Detail service AM belum bisa dibaca" error={detailError} />
       {isLoading ? <Text style={styles.loadingText}>Memuat detail service...</Text> : null}
@@ -1676,6 +1763,12 @@ const styles = StyleSheet.create({
     padding: 12,
     backgroundColor: V.colors.mutedSoft,
   },
+  detailHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
   detailTabs: {
     flexDirection: 'row',
     gap: 6,
@@ -1803,6 +1896,10 @@ const styles = StyleSheet.create({
   inlineActions: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    gap: 6,
+  },
+  statusActionStack: {
+    alignItems: 'flex-start',
     gap: 6,
   },
   successPanel: {

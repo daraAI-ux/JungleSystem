@@ -208,6 +208,12 @@ export interface AmDeviceServiceLogsResponse {
   page?: number;
 }
 
+export interface AmClearServiceAccountSessionResult {
+  stopped: boolean;
+  deleted: string[];
+  missing: string[];
+}
+
 export type AmTransferStatus = 'pending' | 'processing' | 'success' | 'failed';
 export type AmTransferType = 'transfer' | 'virtual-account';
 export type AmMutasiType = 'masuk' | 'keluar';
@@ -520,6 +526,40 @@ export async function getAmDeviceServiceLogs(
   );
 }
 
+export async function startAmDeviceService(
+  deviceId: string,
+  serviceAccountId: string,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<unknown> {
+  return amPost(
+    `/device/${deviceId}/service/start`,
+    {serviceAccountId},
+    baseUrl,
+  );
+}
+
+export async function stopAmDeviceService(
+  deviceId: string,
+  serviceAccountId: string,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<unknown> {
+  return amPost(
+    `/device/${deviceId}/service/stop`,
+    {serviceAccountId},
+    baseUrl,
+  );
+}
+
+export async function clearAmServiceAccountSession(
+  serviceAccountId: string,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmClearServiceAccountSessionResult> {
+  return amDelete<AmClearServiceAccountSessionResult>(
+    `/service-account/${serviceAccountId}/session`,
+    baseUrl,
+  );
+}
+
 export async function getAmTransfers(
   query?: AmTransferQuery,
   baseUrl = appConfig.amApiBaseUrl,
@@ -662,6 +702,26 @@ async function amPost<T>(
     method: 'POST',
     path,
     body,
+    baseUrl,
+    sourceHeader: appConfig.amSourceHeader,
+    cookieJar: true,
+    credentials: 'include',
+  });
+
+  return unwrapAmResponse(response);
+}
+
+async function amDelete<T>(
+  path: string,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<T> {
+  if (!baseUrl) {
+    throw new Error('URL server AM existing belum dikonfigurasi.');
+  }
+
+  const response = await apiRequest<AmEnvelope<T> | T>({
+    method: 'DELETE',
+    path,
     baseUrl,
     sourceHeader: appConfig.amSourceHeader,
     cookieJar: true,

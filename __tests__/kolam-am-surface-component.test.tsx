@@ -4,6 +4,7 @@ import ReactTestRenderer, {act} from 'react-test-renderer';
 import {KolamAmSurface} from '../src/components/kolam-am-surface';
 import {
   cancelAmTransfer,
+  clearAmServiceAccountSession,
   getAmActivityLogs,
   getAmDeviceServiceLogs,
   getAmDevices,
@@ -13,11 +14,13 @@ import {
   getAmTransfers,
   getAmUsers,
   getAmWebhookConfigs,
+  startAmDeviceService,
 } from '../src/services/am-api';
 import {seedUnifiedDataset} from '../src/services/unified-data';
 
 jest.mock('../src/services/am-api', () => ({
   cancelAmTransfer: jest.fn(() => Promise.resolve({_id: 'transfer-1'})),
+  clearAmServiceAccountSession: jest.fn(() => Promise.resolve({stopped: true, deleted: ['session.json'], missing: []})),
   forceFailAmTransfer: jest.fn(() => Promise.resolve({_id: 'transfer-1'})),
   getAmActivityLogs: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
   getAmActivityLogStats: jest.fn(() => Promise.resolve({since: '', days: 7, byType: [], byStatus: [], topUsers: [], topPaths: []})),
@@ -34,6 +37,8 @@ jest.mock('../src/services/am-api', () => ({
   getAmWebhookConfigs: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
   getAmWebhookLogs: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
   retryAmTransfer: jest.fn(() => Promise.resolve({_id: 'transfer-1'})),
+  startAmDeviceService: jest.fn(() => Promise.resolve({success: true})),
+  stopAmDeviceService: jest.fn(() => Promise.resolve({success: true})),
 }));
 
 function renderText(renderer: ReactTestRenderer.ReactTestRenderer) {
@@ -181,6 +186,55 @@ describe('KolamAmSurface', () => {
       page: 1,
       serviceAccountId: 'service-1',
     });
+  });
+
+  it('runs service start and clear session actions from Services', async () => {
+    jest.mocked(getAmServiceAccounts).mockResolvedValue({
+      data: [
+        {
+          _id: 'service-2',
+          platform: 'tokopedia',
+          label: 'Tokopedia Session',
+          deviceId: {
+            _id: 'device-2',
+            name: 'Phone 2',
+            connectionType: 'tcp',
+            tcpAddress: '10.0.0.3:5555',
+            udid: null,
+          },
+          status: 'inactive',
+          credentials: {},
+          meta: {},
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 1, limit: 1},
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Services'}).props.onPress();
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Service Start service-2'}).props.onPress();
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Service Tokopedia Session'}).props.onPress();
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Service Clear Session service-2'}).props.onPress();
+    });
+
+    expect(startAmDeviceService).toHaveBeenCalledWith('device-2', 'service-2');
+    expect(clearAmServiceAccountSession).toHaveBeenCalledWith('service-2');
   });
 
   it('loads live hardware topology from the Hardware route', async () => {
