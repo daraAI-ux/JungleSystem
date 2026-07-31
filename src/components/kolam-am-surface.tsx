@@ -3663,8 +3663,8 @@ function AmWebhooksPage() {
           />
         </View>
         <View style={styles.tableHeader}>
-          <Text style={[styles.tableHeaderText, styles.typeCol]}>Direction</Text>
           <Text style={[styles.tableHeaderText, styles.recipientCol]}>Event</Text>
+          <Text style={[styles.tableHeaderText, styles.deviceWideCol]}>URL</Text>
           <Text style={[styles.tableHeaderText, styles.statusCol]}>Status</Text>
           <Text style={[styles.tableHeaderText, styles.amountCol]}>Duration</Text>
           <Text style={[styles.tableHeaderText, styles.dateCol]}>Created</Text>
@@ -3673,8 +3673,8 @@ function AmWebhooksPage() {
         <AmLoadingOrEmpty isLoading={isLoading} items={logs} loadingText="Memuat webhook logs..." emptyText="No webhook logs found" />
         {logs.map(log => (
           <View key={log._id} style={styles.tableRow}>
-            <Text style={[styles.cellText, styles.typeCol]}>{log.direction}</Text>
             <Text style={[styles.cellText, styles.recipientCol]} numberOfLines={1}>{log.event}</Text>
+            <Text style={[styles.cellText, styles.deviceWideCol]} numberOfLines={1}>{getWebhookLogEndpoint(log)}</Text>
             <View style={styles.statusCol}>
               <AmStatusChip label={log.responseStatus ? String(log.responseStatus) : (log.success ? 'success' : 'failed')} tone={log.success ? 'success' : 'danger'} />
             </View>
@@ -3725,10 +3725,7 @@ function AmWebhooksPage() {
 }
 
 function AmWebhookLogDetailPanel({log}: {log: AmWebhookLog}) {
-  const endpoint =
-    log.configId?.url ||
-    log.url ||
-    '-';
+  const endpoint = getWebhookLogEndpoint(log);
 
   return (
     <View style={styles.panel}>
@@ -3754,6 +3751,10 @@ function AmWebhookLogDetailPanel({log}: {log: AmWebhookLog}) {
       <AmJsonPanel title="Response Body" value={log.responseBody ?? {}} />
     </View>
   );
+}
+
+function getWebhookLogEndpoint(log: AmWebhookLog) {
+  return log.configId?.url || log.url || '-';
 }
 
 function AmUsersPage() {

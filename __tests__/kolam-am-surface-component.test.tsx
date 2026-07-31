@@ -2324,6 +2324,7 @@ describe('KolamAmSurface', () => {
     expect(testAmWebhookPing).toHaveBeenCalledTimes(1);
     const configText = renderText(renderer!).join(' ');
     expect(configText).toContain('Last delivered:');
+    expect(configText).toContain('31 Jul 2026');
     expect(configText).toContain('sec...ok');
   });
 
@@ -2380,7 +2381,9 @@ describe('KolamAmSurface', () => {
       event: undefined,
       configId: undefined,
     });
-    expect(renderText(renderer!).join(' ')).toMatch(/Showing\s+1\s+to\s+50\s+of\s+75\s+items/);
+    const webhooksText = renderText(renderer!).join(' ');
+    expect(webhooksText).toContain('https://example.test/webhook');
+    expect(webhooksText).toMatch(/Showing\s+1\s+to\s+50\s+of\s+75\s+items/);
 
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Webhook Log Detail webhook-log-1'}).props.onPress();
