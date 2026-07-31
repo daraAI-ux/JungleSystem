@@ -1802,6 +1802,7 @@ describe('KolamAmSurface', () => {
     await updateAmRoute(renderer!, 'admin/users');
 
     let inputs = renderer!.root.findAllByType(TextInput);
+    expect(inputs[3].props.secureTextEntry).toBe(true);
     await act(async () => {
       inputs[1].props.onChangeText('New User');
       inputs[2].props.onChangeText('newuser');

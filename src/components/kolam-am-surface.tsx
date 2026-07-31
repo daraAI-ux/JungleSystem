@@ -3963,6 +3963,7 @@ function AmUsersPage() {
             <AmTextInput
               label="Password"
               placeholder={editingUserId ? 'Kosongkan untuk password lama' : 'Min 8 chars, uppercase, lowercase, digit, special'}
+              secureTextEntry
               value={formPassword}
               onChangeText={setFormPassword}
             />
