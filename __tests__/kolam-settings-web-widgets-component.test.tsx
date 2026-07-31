@@ -177,7 +177,6 @@ describe('settings web widgets', () => {
           operationalRooms={[]}
           operationalStaffRows={[]}
           regionLevel="province"
-          regionParentCode=""
           regionProvinceRows={[]}
           regionRegencyRows={[]}
           regionDistrictRows={[]}
@@ -1056,7 +1055,6 @@ function createSurfaceProps(
     operationalRooms: [],
     operationalStaffRows: [],
     regionLevel: 'province',
-    regionParentCode: '',
     regionProvinceRows: [],
     regionRegencyRows: [],
     regionDistrictRows: [],

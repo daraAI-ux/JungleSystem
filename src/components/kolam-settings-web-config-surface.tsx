@@ -805,7 +805,6 @@ export function KolamSettingsWebConfigSurface({
   operationalRooms,
   operationalStaffRows,
   regionLevel,
-  regionParentCode,
   regionProvinceRows,
   regionRegencyRows,
   regionDistrictRows,
@@ -952,7 +951,6 @@ export function KolamSettingsWebConfigSurface({
   operationalRooms: KolamTeamChatRoom[];
   operationalStaffRows: KolamUserPickerRow[];
   regionLevel: KolamRegionLevel | '';
-  regionParentCode: string;
   regionProvinceRows: KolamRegion[];
   regionRegencyRows: KolamRegion[];
   regionDistrictRows: KolamRegion[];

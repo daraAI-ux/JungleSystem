@@ -68,7 +68,6 @@ export function KolamSettingsSurfaceBody({
         operationalRooms={controller.operationalRooms}
         operationalStaffRows={controller.operationalStaffRows}
         regionLevel={controller.regionLevel}
-        regionParentCode={controller.regionParentCode}
         regionProvinceRows={controller.regionProvinceRows}
         regionRegencyRows={controller.regionRegencyRows}
         regionDistrictRows={controller.regionDistrictRows}

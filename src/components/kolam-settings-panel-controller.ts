@@ -2037,17 +2037,29 @@ export function useKolamSettingsPanelController(
     setRegionReloadKey(current => current + 1);
   };
   const runRegionSync = async (scope: KolamRegionSyncScope) => {
+    const parentCode = getRegionSyncParentSelectionCode(scope, {
+      selectedDistrict,
+      selectedProvince,
+      selectedRegency,
+    });
+    const missingParentMessage = getRegionSyncMissingParentMessage(
+      scope,
+      parentCode,
+    );
+
+    if (missingParentMessage) {
+      setRegionSyncStatus('error');
+      setRegionSyncMessage(missingParentMessage);
+      return;
+    }
+
     setRegionSyncStatus('syncing');
     setRegionSyncMessage('');
 
     try {
       const result = await syncKolamRegions({
         scope,
-        parentCode: getRegionSyncParentCode(scope, {
-          selectedDistrict,
-          selectedProvince,
-          selectedRegency,
-        }),
+        parentCode,
       });
       const stats = result.data;
       setRegionSyncMessage(
@@ -4256,7 +4268,6 @@ export function useKolamSettingsPanelController(
     selectedDistrict,
     selectedVillage,
     regionLevel: activeRegionHierarchy.level,
-    regionParentCode: activeRegionHierarchy.parentCode,
     regionProvinceRows,
     regionRegencyRows,
     regionDistrictRows,
@@ -5453,7 +5464,7 @@ async function fetchKolamRegionHierarchy({
   };
 }
 
-function getRegionSyncParentCode(
+export function getRegionSyncParentSelectionCode(
   scope: KolamRegionSyncScope,
   {
     selectedDistrict,
@@ -5475,6 +5486,29 @@ function getRegionSyncParentCode(
 
   if (scope === 'villages') {
     return selectedDistrict;
+  }
+
+  return '';
+}
+
+function getRegionSyncMissingParentMessage(
+  scope: KolamRegionSyncScope,
+  parentCode: string,
+) {
+  if (parentCode) {
+    return '';
+  }
+
+  if (scope === 'regencies') {
+    return 'Pilih provinsi sebelum sync kota / kabupaten.';
+  }
+
+  if (scope === 'districts') {
+    return 'Pilih kota / kabupaten sebelum sync kecamatan.';
+  }
+
+  if (scope === 'villages') {
+    return 'Pilih kecamatan sebelum sync kelurahan.';
   }
 
   return '';

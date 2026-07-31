@@ -4,6 +4,7 @@ import ReactTestRenderer from 'react-test-renderer';
 import { KolamMediaPlayer } from '../src/components/kolam-media-player';
 import { KolamSettingsPanel } from '../src/components/kolam-settings-panel';
 import {
+  getRegionSyncParentSelectionCode,
   useKolamSettingsPanelController,
   type KolamSettingsPanelController,
 } from '../src/components/kolam-settings-panel-controller';
@@ -845,6 +846,24 @@ describe('KolamSettingsPanel', () => {
     });
 
     expect(requireController(latest).activeSurfaceId).toBe('web-settings');
+  });
+
+  it('maps region child sync to the selected parent hierarchy', () => {
+    const selection = {
+      selectedProvince: '32',
+      selectedRegency: '32.73',
+      selectedDistrict: '32.73.01',
+    };
+
+    expect(getRegionSyncParentSelectionCode('all', selection)).toBe('');
+    expect(getRegionSyncParentSelectionCode('provinces', selection)).toBe('');
+    expect(getRegionSyncParentSelectionCode('regencies', selection)).toBe('32');
+    expect(getRegionSyncParentSelectionCode('districts', selection)).toBe(
+      '32.73',
+    );
+    expect(getRegionSyncParentSelectionCode('villages', selection)).toBe(
+      '32.73.01',
+    );
   });
 
   it('hides Settings tabs that are not visible for the current user permissions', async () => {
