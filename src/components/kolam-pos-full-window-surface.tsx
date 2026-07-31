@@ -1489,6 +1489,13 @@ function PosPaymentModal({
   const change = paidValue - total;
   const quickAmounts = React.useMemo(() => getQuickPaymentAmounts(total), [total]);
   const canConfirm = Boolean(selectedPayment) && (!isCash || paidValue >= total);
+  const confirmLabel = isCreatingSale
+    ? 'Memproses...'
+    : !selectedPayment
+      ? 'Pilih Metode'
+      : isCash && paidValue < total
+        ? `Kurang ${formatRupiah(total - paidValue)}`
+        : `Bayar ${formatRupiah(total)}`;
 
   React.useEffect(() => {
     setPaidAmount(total > 0 ? String(Math.round(total)) : '');
@@ -1588,7 +1595,9 @@ function PosPaymentModal({
                           paidValue === amount.value &&
                             styles.quickAmountTextActive,
                         ]}>
-                        {amount.label}
+                        {paidValue === amount.value
+                          ? `${amount.label} ✓`
+                          : amount.label}
                       </Text>
                     </KolamInteractionFrame>
                   ))}
@@ -1661,7 +1670,7 @@ function PosPaymentModal({
         <View style={styles.paymentFooter}>
           <KolamButton label="Batal" intent="outline" onPress={onClose} />
           <KolamButton
-            label={isCreatingSale ? 'Memproses...' : 'Konfirmasi Pembayaran'}
+            label={confirmLabel}
             intent="primary"
             disabled={!canConfirm || isCreatingSale}
             onPress={onConfirm}
