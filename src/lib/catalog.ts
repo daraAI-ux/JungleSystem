@@ -3,6 +3,7 @@ import type {CatalogItem, CatalogItemType} from '../domain/pos';
 export type CatalogFilterType = 'all' | CatalogItemType;
 
 export interface CatalogFilter {
+  category?: string | null;
   type: CatalogFilterType;
   search: string;
 }
@@ -15,8 +16,15 @@ export function filterCatalogItems(
 
   return items.filter(item => {
     const typeMatches = filter.type === 'all' || item.type === filter.type;
+    const categoryMatches =
+      !filter.category ||
+      item.category.trim().toLowerCase() === filter.category.trim().toLowerCase();
 
     if (!typeMatches) {
+      return false;
+    }
+
+    if (!categoryMatches) {
       return false;
     }
 
@@ -30,4 +38,3 @@ export function filterCatalogItems(
       .includes(query);
   });
 }
-

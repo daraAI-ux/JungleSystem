@@ -14,10 +14,12 @@ import {KolamCheckoutWorkspaceBody} from './kolam-checkout-workspace-body';
 import {KolamSalesPanel} from './kolam-pos-widgets';
 
 export interface KolamCheckoutWorkspaceProps {
+  activeCategory?: string | null;
   activeType: CatalogItemType | 'all';
   afterDiscount: number;
   canCreateDraft: boolean;
   catalog: CatalogItem[];
+  catalogCategories?: string[];
   catalogSearch: string;
   checkout: CheckoutState;
   customers: Customer[];
@@ -26,6 +28,7 @@ export interface KolamCheckoutWorkspaceProps {
   isCreatingSale: boolean;
   onAddToCart: (item: CatalogItem) => void;
   onCatalogSearchChange: (query: string) => void;
+  onCategoryChange?: (category: string | null) => void;
   onClearCart: () => void;
   onCreateSaleDraft: () => void;
   onDiscountAmountChange: (itemId: string, value: string) => void;

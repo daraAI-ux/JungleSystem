@@ -25,10 +25,12 @@ import {KolamRemoteImage} from './kolam-remote-image';
 import {KolamSearchField} from './kolam-search-field';
 
 export interface KolamPosFullWindowSurfaceProps {
+  activeCategory?: string | null;
   activeType: CatalogItemType | 'all';
   afterDiscount: number;
   canCreateDraft: boolean;
   catalog: CatalogItem[];
+  catalogCategories?: string[];
   catalogSearch: string;
   checkout: CheckoutState;
   customers: Customer[];
@@ -38,6 +40,7 @@ export interface KolamPosFullWindowSurfaceProps {
   onAddToCart: (item: CatalogItem) => void;
   onBackToCenter: () => void;
   onCatalogSearchChange: (query: string) => void;
+  onCategoryChange?: (category: string | null) => void;
   onClearCart: () => void;
   onCreateSaleDraft: () => void;
   onGlobalDiscountChange: (value: string) => void;
@@ -71,10 +74,12 @@ type PosKeyboardTarget = {
 };
 
 export function KolamPosFullWindowSurface({
+  activeCategory = null,
   activeType,
   afterDiscount,
   canCreateDraft,
   catalog,
+  catalogCategories = [],
   catalogSearch,
   checkout,
   customers,
@@ -84,6 +89,7 @@ export function KolamPosFullWindowSurface({
   onAddToCart,
   onBackToCenter,
   onCatalogSearchChange,
+  onCategoryChange,
   onClearCart,
   onCreateSaleDraft,
   onGlobalDiscountChange,
@@ -196,7 +202,6 @@ export function KolamPosFullWindowSurface({
             {getPosViewCountText({
               activeType,
               activeView,
-              catalog,
               customers,
               filteredCatalog,
               recentSales,
@@ -213,27 +218,31 @@ export function KolamPosFullWindowSurface({
         {isCatalogView ? (
           <>
             <View style={styles.categoryBar}>
-              <PosCategoryPill
-                active={activeType === 'all'}
-                label="Semua"
-                onPress={() => onTypeChange('all')}
-              />
-              <PosCategoryPill
-                active={activeType === 'product'}
-                label="Produk"
-                onPress={() => onTypeChange('product')}
-              />
-              <PosCategoryPill
-                active={activeType === 'species'}
-                label="Spesies"
-                onPress={() => onTypeChange('species')}
-              />
-              {catalogSearch ? (
+              <ScrollView
+                horizontal
+                contentContainerStyle={styles.categoryPillList}
+                showsHorizontalScrollIndicator={false}>
+                <PosCategoryPill
+                  active={!activeCategory}
+                  label="Semua"
+                  onPress={() => onCategoryChange?.(null)}
+                />
+                {catalogCategories.map(category => (
+                  <PosCategoryPill
+                    key={category}
+                    active={activeCategory === category}
+                    label={category}
+                    onPress={() => onCategoryChange?.(category)}
+                  />
+                ))}
+              </ScrollView>
+              {catalogSearch || activeCategory ? (
                 <KolamButton
                   label="Hapus Filter"
                   intent="plain"
                   onPress={() => {
                     onCatalogSearchChange('');
+                    onCategoryChange?.(null);
                     onTypeChange('all');
                   }}
                 />
@@ -812,14 +821,12 @@ function PosSubview({
 function getPosViewCountText({
   activeType,
   activeView,
-  catalog,
   customers,
   filteredCatalog,
   recentSales,
 }: {
   activeType: CatalogItemType | 'all';
   activeView: PosWindowView;
-  catalog: CatalogItem[];
   customers: Customer[];
   filteredCatalog: CatalogItem[];
   recentSales: SaleSummary[];
@@ -836,8 +843,12 @@ function getPosViewCountText({
     return 'kas POS';
   }
 
-  return `${filteredCatalog.length || catalog.length} ${
-    activeType === 'species' ? 'spesies' : 'produk'
+  return `${filteredCatalog.length} ${
+    activeType === 'species'
+      ? 'spesies'
+      : activeType === 'product'
+        ? 'produk'
+        : 'item'
   }`;
 }
 
@@ -1233,6 +1244,11 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     borderBottomColor: V.colors.border,
     borderBottomWidth: 1,
+  },
+  categoryPillList: {
+    alignItems: 'center',
+    gap: 8,
+    paddingRight: 8,
   },
   categoryPill: {
     minHeight: 32,

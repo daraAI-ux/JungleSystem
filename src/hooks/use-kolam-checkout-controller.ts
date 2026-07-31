@@ -31,15 +31,29 @@ export function useKolamCheckoutController({
 }: KolamCheckoutControllerOptions) {
   const [checkout, setCheckout] = useState<CheckoutState>(initialCheckoutState);
   const [activeType, setActiveType] = useState<CatalogFilterType>('all');
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [catalogSearch, setCatalogSearch] = useState('');
 
+  const catalogCategories = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          dataset.catalog
+            .filter(item => activeType === 'all' || item.type === activeType)
+            .map(item => item.category.trim())
+            .filter(Boolean),
+        ),
+      ).sort((left, right) => left.localeCompare(right, 'id-ID')),
+    [activeType, dataset.catalog],
+  );
   const filteredCatalog = useMemo(
     () =>
       filterCatalogItems(dataset.catalog, {
+        category: activeCategory,
         type: activeType,
         search: catalogSearch,
       }),
-    [activeType, catalogSearch, dataset.catalog],
+    [activeCategory, activeType, catalogSearch, dataset.catalog],
   );
   const selectedCustomer = dataset.customers.find(
     customer => customer.id === checkout.customerId,
@@ -185,23 +199,32 @@ export function useKolamCheckoutController({
     }));
   };
 
+  const setCatalogType = (type: CatalogFilterType) => {
+    setActiveType(type);
+    setActiveCategory(null);
+  };
+
   return {
+    activeCategory,
     activeType,
     addToCart,
     afterDiscount,
     canCreateDraft,
+    catalogCategories,
     catalogSearch,
     checkout,
     checkoutWorkflowSteps,
     clearCheckoutCart,
     filteredCatalog,
     finalTotal,
+    onCategoryChange: setActiveCategory,
     reconcileCheckoutWithDataset,
     selectCustomer,
     selectPaymentMethod,
     selectedCustomer,
     selectedPayment,
-    setActiveType,
+    setActiveCategory,
+    setActiveType: setCatalogType,
     setCatalogSearch,
     setDiscountType,
     subtotal,

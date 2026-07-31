@@ -21,6 +21,7 @@ export function useKolamWorkspaceSurfaceController({
   activeModuleRoute,
   activeNavigationItem,
   activePluginRoute,
+  activeCategory,
   activeType,
   afterDiscount,
   canCloseCashflow,
@@ -28,6 +29,7 @@ export function useKolamWorkspaceSurfaceController({
   canOpenCashflow,
   cashflowPreview,
   cashflowShiftName,
+  catalogCategories,
   catalogSearch,
   checkout,
   customerForm,
@@ -43,6 +45,7 @@ export function useKolamWorkspaceSurfaceController({
   onAddToCart,
   onCashflowShiftNameChange,
   onCatalogSearchChange,
+  onCategoryChange,
   onClearCart,
   onCloseCashflow,
   onCommandSelect,
@@ -86,6 +89,7 @@ export function useKolamWorkspaceSurfaceController({
   activeModuleRoute?: KolamWorkspaceSurfaceProps['activeModuleRoute'];
   activeNavigationItem?: KolamWorkspaceSurfaceProps['activeNavigationItem'];
   activePluginRoute?: KolamWorkspaceSurfaceProps['activePluginRoute'];
+  activeCategory?: WorkspaceCheckoutProps['activeCategory'];
   activeType: WorkspaceCheckoutProps['activeType'];
   afterDiscount: WorkspaceCheckoutProps['afterDiscount'];
   canCloseCashflow: WorkspaceCashflowProps['canClose'];
@@ -93,6 +97,7 @@ export function useKolamWorkspaceSurfaceController({
   canOpenCashflow: WorkspaceCashflowProps['canOpen'];
   cashflowPreview: WorkspaceCashflowProps['cashflowPreview'];
   cashflowShiftName: WorkspaceCashflowProps['cashflowShiftName'];
+  catalogCategories?: WorkspaceCheckoutProps['catalogCategories'];
   catalogSearch: WorkspaceCatalogProps['catalogSearch'];
   checkout: WorkspaceCheckoutProps['checkout'];
   customerForm: WorkspaceCustomerProps['customerForm'];
@@ -108,6 +113,7 @@ export function useKolamWorkspaceSurfaceController({
   onAddToCart: WorkspaceCheckoutProps['onAddToCart'];
   onCashflowShiftNameChange: WorkspaceCashflowProps['onCashflowShiftNameChange'];
   onCatalogSearchChange: WorkspaceCatalogProps['onCatalogSearchChange'];
+  onCategoryChange?: WorkspaceCheckoutProps['onCategoryChange'];
   onClearCart: WorkspaceCheckoutProps['onClearCart'];
   onCloseCashflow: WorkspaceCashflowProps['onCloseCashflow'];
   onCommandSelect?: (command: CommandEntry) => void;
@@ -160,10 +166,12 @@ export function useKolamWorkspaceSurfaceController({
 
   const checkoutProps = useMemo<WorkspaceCheckoutProps>(
     () => ({
+      activeCategory,
       activeType,
       afterDiscount,
       canCreateDraft,
       catalog: dataset.catalog,
+      catalogCategories,
       catalogSearch,
       checkout,
       customers: dataset.customers,
@@ -172,6 +180,7 @@ export function useKolamWorkspaceSurfaceController({
       isCreatingSale,
       onAddToCart,
       onCatalogSearchChange,
+      onCategoryChange,
       onClearCart,
       onCreateSaleDraft,
       onDiscountAmountChange,
@@ -191,9 +200,11 @@ export function useKolamWorkspaceSurfaceController({
       workflowSteps,
     }),
     [
+      activeCategory,
       activeType,
       afterDiscount,
       canCreateDraft,
+      catalogCategories,
       catalogSearch,
       checkout,
       dataset.catalog,
@@ -205,6 +216,7 @@ export function useKolamWorkspaceSurfaceController({
       isCreatingSale,
       onAddToCart,
       onCatalogSearchChange,
+      onCategoryChange,
       onClearCart,
       onCreateSaleDraft,
       onDiscountAmountChange,
