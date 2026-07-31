@@ -9,7 +9,6 @@ type SidebarModuleGroupDescriptor = {
 };
 
 const SIDEBAR_MODULE_GROUPS: SidebarModuleGroupDescriptor[] = [
-  {area: 'pos', label: 'POS'},
   {area: 'am', label: 'AM'},
   {area: 'plugins', label: 'Plugin'},
   {area: 'preparation', label: 'Persiapan'},

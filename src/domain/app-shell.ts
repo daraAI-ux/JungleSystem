@@ -204,8 +204,8 @@ export const shellModules: ShellModule[] = [
   },
   {
     id: 'checkout',
-    area: 'pos',
-    label: 'Checkout',
+    area: 'kolam',
+    label: 'POS',
     iconKind: 'cart',
     sourceRepo: 'E:\\Projects\\da-pos',
     summary: 'Alur checkout kasir native untuk product dan species sellable.',
