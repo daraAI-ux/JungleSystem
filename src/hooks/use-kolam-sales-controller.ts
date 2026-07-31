@@ -28,6 +28,7 @@ import {
   isKolamSalesCreateRoute,
   isKolamSalesDetailRoute,
   isKolamSalesDiscountApprovalRoute,
+  needsKolamPlatformPickupRequest,
   isKolamSalesEditRoute,
   isKolamSalesListRoute,
   isKolamSalesRoute,
@@ -84,6 +85,7 @@ import {
   getKolamSalesServices,
   replaceKolamSalePaymentProof,
   requestKolamSaleBiteshipPickup,
+  requestKolamSaleMarketplacePickup,
   updateKolamSale,
   updateKolamSaleDelivery,
   updateKolamSaleStatus,
@@ -171,6 +173,8 @@ export interface KolamSalesController {
   onRemoveCustomCost: (key: string) => void;
   onReplacePaymentProof: (proofId: string, localUri: string) => Promise<boolean>;
   onRequestBiteshipPickup: () => Promise<boolean>;
+  /** Platform (Tokopedia/Shopee) pickup via AM — Tokopedia uses empty body. */
+  onRequestMarketplacePickup: () => Promise<boolean>;
   onSave: () => Promise<string | null>;
   onSearchChange: (search: string) => void;
   onSelectSale: (sale: KolamSale) => void;
@@ -1150,6 +1154,38 @@ export function useKolamSalesController(route: string): KolamSalesController {
     }
   }, [refreshDetail, selectedSale]);
 
+  const onRequestMarketplacePickup = useCallback(async () => {
+    const sale = selectedSale;
+    if (!sale) {
+      return false;
+    }
+    if (!needsKolamPlatformPickupRequest(sale)) {
+      setError(
+        'Penjualan ini belum eligible untuk request jemput kurir platform.',
+      );
+      return false;
+    }
+    const platform =
+      String(sale.marketplaceSource || '').toLowerCase() === 'shopee'
+        ? 'Shopee'
+        : 'Tokopedia';
+    setMutating(true);
+    setError(null);
+    setStatusMessage(null);
+    try {
+      // Tokopedia: empty body. Shopee slot payload is a later UI batch.
+      await requestKolamSaleMarketplacePickup(sale.id, {});
+      setStatusMessage(`Request jemput kurir ${platform} dikirim.`);
+      await refreshDetail();
+      return true;
+    } catch (mutationError) {
+      setError(formatKolamSaleMutationError(mutationError));
+      return false;
+    } finally {
+      setMutating(false);
+    }
+  }, [refreshDetail, selectedSale]);
+
   return {
     analytics,
     analyticsLoading,
@@ -1205,6 +1241,7 @@ export function useKolamSalesController(route: string): KolamSalesController {
     onRemoveCustomCost,
     onReplacePaymentProof,
     onRequestBiteshipPickup,
+    onRequestMarketplacePickup,
     onSave,
     onSearchChange,
     onSelectSale,
