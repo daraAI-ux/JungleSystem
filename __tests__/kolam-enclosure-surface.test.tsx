@@ -451,8 +451,29 @@ describe('Kolam enclosure surface', () => {
     expect(onRouteChange).toHaveBeenCalledWith('/enclosures/enc-1/edit');
   });
 
-  it('renders edit route load shell after detail and lookups are ready', async () => {
+  it('renders enclosure edit form with size lock and save/cancel actions', async () => {
     const onRouteChange = jest.fn();
+    const onSaveEnclosureEdit = jest.fn().mockResolvedValue(true);
+    const lockedEnclosure = createEnclosure({
+      acquiredDate: '2026-07-01',
+      size: {
+        high: {
+          unit: {id: 'unit-1', initial: 'Cm', name: 'Centimeter'},
+          unitLabel: 'Cm',
+          value: 30,
+        },
+        length: {
+          unit: {id: 'unit-1', initial: 'Cm', name: 'Centimeter'},
+          unitLabel: 'Cm',
+          value: 60,
+        },
+        width: {
+          unit: {id: 'unit-1', initial: 'Cm', name: 'Centimeter'},
+          unitLabel: 'Cm',
+          value: 40,
+        },
+      },
+    });
     const controller = createController({
       dataSource: 'live',
       editBrands: [
@@ -489,7 +510,7 @@ describe('Kolam enclosure surface', () => {
         {
           category: 'size',
           id: 'unit-1',
-          initial: 'cm',
+          initial: 'Cm',
           isBase: true,
           name: 'Centimeter',
           raw: {},
@@ -499,8 +520,9 @@ describe('Kolam enclosure surface', () => {
       ],
       loading: false,
       mode: 'edit',
+      onSaveEnclosureEdit,
       routeEnclosureId: 'enc-1',
-      selectedEnclosure: createEnclosure(),
+      selectedEnclosure: lockedEnclosure,
       staffAssignees: [
         {
           displayName: 'Keeper One',
@@ -526,27 +548,122 @@ describe('Kolam enclosure surface', () => {
     });
 
     const root = renderer!.root;
-    expect(root.findAllByProps({children: 'ENC-1 · Rack 1'}).length).toBeGreaterThan(
-      0,
-    );
+    expect(root.findAllByProps({children: 'Identitas'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Operasional'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Ukuran'}).length).toBeGreaterThan(0);
     expect(
       root.findAllByProps({
-        children:
-          'Data enclosure dan lookup siap. Form ubah akan tersedia di langkah berikutnya.',
+        children: 'Dimensi sudah tercatat — view-only setelah provisioning.',
       }).length,
     ).toBeGreaterThan(0);
-    expect(
-      root.findAllByProps({
-        children: 'Lookup: 1 lokasi · 1 brand · 1 unit · 1 PIC',
-      }).length,
-    ).toBeGreaterThan(0);
+    expect(root.findAllByProps({label: 'Satuan ukuran'}).length).toBe(0);
     expect(root.findAllByProps({label: 'Dashboard'}).length).toBe(0);
-    expect(root.findAllByProps({label: 'Overview'}).length).toBe(0);
+
+    await ReactTestRenderer.act(async () => {
+      root.findAllByProps({label: 'Simpan'})[0].props.onPress();
+      await Promise.resolve();
+    });
+
+    expect(onSaveEnclosureEdit).toHaveBeenCalledWith({
+      assignedTo: 'u1',
+      body: expect.objectContaining({
+        enclosure_code: 'ENC-1',
+        enclosure_type: 'Aquarium',
+        status: 'active',
+      }),
+    });
+    expect(onSaveEnclosureEdit.mock.calls[0][0].body.enclosure_size).toBeUndefined();
+    expect(onRouteChange).toHaveBeenCalledWith('/enclosures/enc-1');
 
     await ReactTestRenderer.act(async () => {
       root.findAllByProps({label: 'Batal'})[0].props.onPress();
     });
     expect(onRouteChange).toHaveBeenCalledWith('/enclosures/enc-1');
+  });
+
+  it('allows editing enclosure size when not size-locked', async () => {
+    const onSaveEnclosureEdit = jest.fn().mockResolvedValue(true);
+    const unlockedEnclosure = createEnclosure({
+      code: '',
+      computed: {
+        ...createEnclosure().computed,
+        needsProvisioning: true,
+      },
+      size: {
+        high: {unit: null, unitLabel: '', value: 0},
+        length: {unit: null, unitLabel: '', value: 0},
+        width: {unit: null, unitLabel: '', value: 0},
+      },
+      type: 'Terrarium',
+    });
+    const controller = createController({
+      dataSource: 'live',
+      editUnits: [
+        {
+          category: 'size',
+          id: 'unit-1',
+          initial: 'Cm',
+          isBase: true,
+          name: 'Centimeter',
+          raw: {},
+          status: 'active',
+          type: 'length',
+        },
+      ],
+      loading: false,
+      mode: 'edit',
+      onSaveEnclosureEdit,
+      routeEnclosureId: 'enc-1',
+      selectedEnclosure: unlockedEnclosure,
+    });
+    useControllerMock.mockReturnValue(controller);
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamEnclosureSurface route="/enclosures/enc-1/edit" />,
+      );
+    });
+
+    const root = renderer!.root;
+    expect(root.findAllByProps({label: 'Satuan ukuran'}).length).toBeGreaterThan(0);
+    expect(
+      root.findAllByProps({children: 'Dimensi fisik enclosure.'}).length,
+    ).toBeGreaterThan(0);
+
+    await ReactTestRenderer.act(async () => {
+      root.findAllByProps({placeholder: 'Kode enclosure'})[0].props.onChangeText(
+        'enc-new',
+      );
+      root
+        .findAllByProps({placeholder: '0'})
+        .forEach(
+          (
+            field: {props: {onChangeText?: (value: string) => void}},
+            index: number,
+          ) => {
+            field.props.onChangeText?.(String((index + 1) * 10));
+          },
+        );
+    });
+
+    await ReactTestRenderer.act(async () => {
+      root.findAllByProps({label: 'Simpan'})[0].props.onPress();
+      await Promise.resolve();
+    });
+
+    expect(onSaveEnclosureEdit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        body: expect.objectContaining({
+          enclosure_code: 'ENC-NEW',
+          enclosure_size: {
+            high: {unit: 'unit-1', value: expect.any(Number)},
+            length: {unit: 'unit-1', value: expect.any(Number)},
+            width: {unit: 'unit-1', value: expect.any(Number)},
+          },
+        }),
+      }),
+    );
   });
 
   it('shows production detail tab only for production enclosures', async () => {
@@ -840,7 +957,7 @@ function createController(
     onSetRecurringEnrollment: jest.fn().mockResolvedValue(undefined),
     onSpawnTask: jest.fn().mockResolvedValue(undefined),
     onProvisionCode: jest.fn().mockResolvedValue(undefined),
-    onSaveEnclosureEdit: jest.fn().mockResolvedValue(undefined),
+    onSaveEnclosureEdit: jest.fn().mockResolvedValue(true),
     onUpsertClimateParameter: jest.fn().mockResolvedValue(undefined),
     onSwitchSpeciesVariant: jest.fn().mockResolvedValue(undefined),
     onTabChange: jest.fn(),
@@ -849,7 +966,6 @@ function createController(
     onUpdateSaleListing: jest.fn().mockResolvedValue(undefined),
     onUploadCoverPhoto: jest.fn().mockResolvedValue(undefined),
     onUploadPhotos: jest.fn().mockResolvedValue(undefined),
-    onAttachSpecies: jest.fn().mockResolvedValue(undefined),
     ...patch,
   };
 }
@@ -1061,6 +1177,7 @@ function createEnclosure(patch: Partial<KolamEnclosure> = {}): KolamEnclosure {
       username: 'keeper',
     },
     assignedToId: 'u1',
+    acquiredDate: '',
     clientScope: 'internal',
     code: 'ENC-1',
     computed: {

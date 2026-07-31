@@ -119,6 +119,7 @@ export interface KolamEnclosure {
   saleReservedSaleId: string;
   saleReservedInvoiceCode: string;
   saleReservedInvoiceStatus: string;
+  acquiredDate: string;
   size: KolamEnclosureSize;
   computed: KolamEnclosureComputed;
   species: KolamEnclosureSpeciesRef[];
@@ -732,6 +733,7 @@ export function normalizeKolamEnclosure(value: unknown): KolamEnclosure {
       getString(record, 'saleReservedSaleId'),
     saleReservedInvoiceCode: getString(record, 'saleReservedInvoiceCode'),
     saleReservedInvoiceStatus: getString(record, 'saleReservedInvoiceStatus'),
+    acquiredDate: normalizeKolamEnclosureAcquiredDate(record.acquired_date),
     size: normalizeKolamEnclosureSize(record.enclosure_size),
     computed: normalizeKolamEnclosureComputed(record.computed),
     species: getArray(record.species).map(normalizeKolamEnclosureSpeciesRef),
@@ -1794,6 +1796,20 @@ function normalizeKolamEnclosureSize(value: unknown): KolamEnclosureSize {
     width: normalizeSizeDimension(record.width),
     length: normalizeSizeDimension(record.length),
   };
+}
+
+function normalizeKolamEnclosureAcquiredDate(value: unknown) {
+  if (value == null || value === '') {
+    return '';
+  }
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return value.toISOString().slice(0, 10);
+  }
+  const raw = String(value).trim();
+  if (!raw) {
+    return '';
+  }
+  return raw.slice(0, 10);
 }
 
 function normalizeSizeDimension(value: unknown): KolamEnclosureSizeDimension {

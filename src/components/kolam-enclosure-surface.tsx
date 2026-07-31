@@ -29,11 +29,13 @@ import {
   supportsKolamEnclosureClimateParameters,
   type KolamEnclosure,
   type KolamEnclosureAllocationOverviewRow,
+  type KolamEnclosureClientScope,
   type KolamEnclosureClimateDraft,
   type KolamEnclosureClimateRow,
   type KolamEnclosureDashboardDeathEvent,
   type KolamEnclosureDashboardSpeciesRow,
   type KolamEnclosureLivestockFilter,
+  type KolamEnclosureLivestockPurpose,
   type KolamEnclosureProductionEvent,
   type KolamEnclosureStatistics,
   type KolamEnclosureStatisticsEvent,
@@ -98,6 +100,33 @@ type EnclosureDetailTab =
   | 'tasks'
   | 'statistics';
 
+const ENCLOSURE_EDIT_NONE = '__none__';
+const ENCLOSURE_EDIT_STATUS_OPTIONS = [
+  'active',
+  'inactive',
+  'maintenance',
+  'quarantine',
+] as const;
+const ENCLOSURE_EDIT_SIZE_UNIT_INITIALS = new Set(['Cm', 'Mm', 'M']);
+
+type EnclosureEditFormState = {
+  acquired_date: string;
+  assignedTo: string;
+  brandId: string;
+  clientScope: KolamEnclosureClientScope;
+  enclosure_code: string;
+  enclosure_size: {
+    high: {unit: string; value: number};
+    length: {unit: string; value: number};
+    width: {unit: string; value: number};
+  };
+  enclosure_type: string;
+  livestockPurpose: KolamEnclosureLivestockPurpose;
+  locationId: string;
+  note: string;
+  status: string;
+  type_aquarium: string;
+};
 const ENCLOSURE_FILTER_PANEL_WIDTH = 232;
 const DASHBOARD_SPECIES_PAGE_SIZE = 12;
 const DASHBOARD_PRODUCTION_STATS_PAGE_SIZE = 10;
@@ -215,11 +244,28 @@ function KolamEnclosureEditSurface({
   const detailRoute = controller.routeEnclosureId
     ? `${KOLAM_ENCLOSURE_ROOT}/${encodeURIComponent(controller.routeEnclosureId)}`
     : KOLAM_ENCLOSURE_ROOT;
+  const [form, setForm] = React.useState<EnclosureEditFormState>(() =>
+    createEmptyEnclosureEditFormState(),
+  );
+  const [formError, setFormError] = React.useState<string | null>(null);
+  const [hydratedId, setHydratedId] = React.useState('');
+
+  React.useEffect(() => {
+    if (!enclosure) {
+      return;
+    }
+    if (hydratedId === enclosure.id) {
+      return;
+    }
+    setForm(createEnclosureEditFormState(enclosure));
+    setHydratedId(enclosure.id);
+    setFormError(null);
+  }, [enclosure, hydratedId]);
 
   if (controller.loading && controller.dataSource === 'idle') {
     return <InlineState title="Memuat data enclosure..." />;
   }
-  if (controller.error) {
+  if (controller.error && !enclosure) {
     return (
       <View style={styles.surface}>
         <InlineState
@@ -257,38 +303,564 @@ function KolamEnclosureEditSurface({
     );
   }
 
-  const identityLabel = [enclosure.code, enclosure.name]
-    .map(part => String(part || '').trim())
-    .filter(Boolean)
-    .join(' · ');
+  const sizeUnitOptions = controller.editUnits.filter(unit =>
+    ENCLOSURE_EDIT_SIZE_UNIT_INITIALS.has(unit.initial),
+  );
+  const sizeUnitId =
+    form.enclosure_size.high.unit ||
+    form.enclosure_size.width.unit ||
+    form.enclosure_size.length.unit ||
+    '';
+  const effectiveSizeUnitId = sizeUnitId || sizeUnitOptions[0]?.id || '';
+  const needsProvisioning =
+    enclosure.computed.needsProvisioning || !enclosure.code.trim();
+  const hasSize =
+    Number(form.enclosure_size.high.value) > 0 &&
+    Number(form.enclosure_size.width.value) > 0 &&
+    Number(form.enclosure_size.length.value) > 0;
+  const sizeLocked =
+    !needsProvisioning && hasSize && Boolean(form.enclosure_code.trim());
+  const coverUri = getKolamFileUrl(enclosure.coverPhotoUrl);
+  const brandBannerUri = getKolamFileUrl(enclosure.brand?.photos?.[0] || '');
+  const brandOptions = [
+    {label: '—', value: ENCLOSURE_EDIT_NONE},
+    ...controller.editBrands.map(brand => ({
+      label: brand.name,
+      value: brand.id,
+    })),
+  ];
+  const locationOptions = [
+    {label: '—', value: ENCLOSURE_EDIT_NONE},
+    ...controller.editLocations.map(location => ({
+      label: location.name || location.label,
+      value: location.id,
+    })),
+  ];
+  const picOptions = [
+    {label: '— Tidak ada —', value: ENCLOSURE_EDIT_NONE},
+    ...controller.staffAssignees.map(staff => ({
+      label: staff.displayName || staff.username || staff.email || staff.id,
+      value: staff.id,
+    })),
+  ];
+  const typeOptions = KOLAM_ENCLOSURE_TYPES.map(type => ({
+    label: type,
+    value: type,
+  }));
+  const statusOptions = ENCLOSURE_EDIT_STATUS_OPTIONS.map(status => ({
+    label: status,
+    value: status,
+  }));
+  const unitSelectOptions = sizeUnitOptions.map(unit => ({
+    label: unit.initial || unit.name,
+    value: unit.id,
+  }));
+
+  const formatDim = (value: number, unitId: string) => {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric) || numeric <= 0) {
+      return '—';
+    }
+    const unit = sizeUnitOptions.find(item => item.id === unitId);
+    return unit ? `${numeric} ${unit.initial || unit.name}` : String(numeric);
+  };
+
+  const patchSizeValue = (
+    dim: 'high' | 'width' | 'length',
+    raw: string,
+  ) => {
+    const next = Number(raw);
+    setForm(current => ({
+      ...current,
+      enclosure_size: {
+        ...current.enclosure_size,
+        [dim]: {
+          unit: effectiveSizeUnitId,
+          value: Number.isFinite(next) ? next : 0,
+        },
+      },
+    }));
+  };
+
+  const onSave = async () => {
+    if (!form.enclosure_code.trim() || !form.enclosure_type) {
+      setFormError('Kode dan tipe wajib');
+      return;
+    }
+    if (!effectiveSizeUnitId) {
+      setFormError('Satuan ukuran wajib');
+      return;
+    }
+    setFormError(null);
+    const code = form.enclosure_code.trim().toUpperCase();
+    const saved = await controller.onSaveEnclosureEdit({
+      assignedTo: form.assignedTo || null,
+      body: {
+        acquired_date: form.acquired_date || undefined,
+        brandId: form.brandId || undefined,
+        clientScope: form.clientScope,
+        enclosure_code: code,
+        enclosure_name: code,
+        enclosure_type: form.enclosure_type,
+        livestockPurpose: form.livestockPurpose,
+        locationId: form.locationId || undefined,
+        note: form.note.trim() || undefined,
+        status: form.status,
+        type_aquarium:
+          form.enclosure_type === 'Aquarium' ? form.type_aquarium : undefined,
+        ...(sizeLocked
+          ? {}
+          : {
+              enclosure_size: {
+                high: {
+                  unit: effectiveSizeUnitId,
+                  value: Number(form.enclosure_size.high.value),
+                },
+                length: {
+                  unit: effectiveSizeUnitId,
+                  value: Number(form.enclosure_size.length.value),
+                },
+                width: {
+                  unit: effectiveSizeUnitId,
+                  value: Number(form.enclosure_size.width.value),
+                },
+              },
+            }),
+      },
+    });
+    if (saved) {
+      onRouteChange?.(detailRoute);
+    }
+  };
+
+  const onPickCover = async () => {
+    const picked = await pickNativeImageFile();
+    if (!picked.cancelled && picked.uri) {
+      await controller.onUploadCoverPhoto(picked.uri);
+    }
+  };
 
   return (
-    <View style={styles.surface}>
-      <View style={styles.editLoadPanel}>
-        {identityLabel ? (
-          <Text style={styles.editLoadIdentity}>{identityLabel}</Text>
-        ) : null}
-        <Text style={styles.editLoadHint}>
-          Data enclosure dan lookup siap. Form ubah akan tersedia di langkah
-          berikutnya.
+    <ScrollView contentContainerStyle={styles.editFormContent}>
+      {controller.error ? (
+        <KolamStatusBadge
+          intent="danger"
+          label={controller.error}
+          numberOfLines={3}
+          style={styles.errorBadge}
+        />
+      ) : null}
+      {formError ? (
+        <KolamStatusBadge
+          intent="danger"
+          label={formError}
+          numberOfLines={2}
+          style={styles.errorBadge}
+        />
+      ) : null}
+      {controller.statusMessage ? (
+        <KolamStatusBadge
+          intent="success"
+          label={controller.statusMessage}
+          numberOfLines={2}
+          style={styles.errorBadge}
+        />
+      ) : null}
+
+      <DetailSection title="Identitas">
+        <Text style={styles.sectionMeta}>
+          Kode, merek, dan tanggal pemasangan.
         </Text>
-        <Text style={styles.editLoadMeta}>
-          {`Lookup: ${controller.editLocations.length} lokasi · ${controller.editBrands.length} brand · ${controller.editUnits.length} unit · ${controller.staffAssignees.length} PIC`}
-        </Text>
+        <View style={styles.editFormGrid}>
+          <LabeledEditField label="Kode *">
+            <KolamFormTextField
+              onChangeText={value =>
+                setForm(current => ({
+                  ...current,
+                  enclosure_code: value.toUpperCase(),
+                }))
+              }
+              placeholder="Kode enclosure"
+              style={styles.editFormInput}
+              value={form.enclosure_code}
+            />
+          </LabeledEditField>
+          <LabeledEditField label="Merek">
+            <KolamDropdownSelect
+              label="Merek"
+              menuPlacement="inline"
+              onChange={value =>
+                setForm(current => ({
+                  ...current,
+                  brandId: value === ENCLOSURE_EDIT_NONE ? '' : value,
+                }))
+              }
+              options={brandOptions}
+              showLabelInTrigger={false}
+              style={styles.editFormInput}
+              value={form.brandId || ENCLOSURE_EDIT_NONE}
+            />
+          </LabeledEditField>
+          {brandBannerUri ? (
+            <View style={styles.editBrandBanner}>
+              <KolamRemoteImage
+                accessibilityLabel="Banner merek"
+                resizeMode="contain"
+                scope="enclosure-edit-brand"
+                sourceUri={brandBannerUri}
+                style={styles.editBrandBannerImage}
+              />
+            </View>
+          ) : null}
+          <LabeledEditField label="Tanggal ditambahkan">
+            <KolamFormTextField
+              onChangeText={value =>
+                setForm(current => ({...current, acquired_date: value}))
+              }
+              placeholder="YYYY-MM-DD"
+              style={styles.editFormInput}
+              value={form.acquired_date}
+            />
+          </LabeledEditField>
+          <LabeledEditField label="Visibilitas klien">
+            <KolamDropdownSelect
+              label="Visibilitas klien"
+              menuPlacement="inline"
+              onChange={value =>
+                setForm(current => ({
+                  ...current,
+                  clientScope: value as KolamEnclosureClientScope,
+                }))
+              }
+              options={[
+                {label: 'Internal staff', value: 'internal'},
+                {label: 'Terhubung klien', value: 'client_linked'},
+              ]}
+              showLabelInTrigger={false}
+              style={styles.editFormInput}
+              value={form.clientScope}
+            />
+          </LabeledEditField>
+          <LabeledEditField label="Tujuan livestock">
+            <KolamDropdownSelect
+              label="Tujuan livestock"
+              menuPlacement="inline"
+              onChange={value =>
+                setForm(current => ({
+                  ...current,
+                  livestockPurpose: value as KolamEnclosureLivestockPurpose,
+                }))
+              }
+              options={[
+                {label: 'Stok jual', value: 'saleable'},
+                {label: 'Produksi (indukan)', value: 'production'},
+              ]}
+              showLabelInTrigger={false}
+              style={styles.editFormInput}
+              value={form.livestockPurpose}
+            />
+          </LabeledEditField>
+          <Text style={styles.sectionMeta}>
+            Produksi = seluruh isi kandang indukan (stock OUT, tidak dijual)
+          </Text>
+        </View>
+      </DetailSection>
+
+      <DetailSection title="Foto sampul">
+        <Text style={styles.sectionMeta}>Gambar utama enclosure.</Text>
+        <View style={styles.editCoverPreview}>
+          {coverUri ? (
+            <KolamRemoteImage
+              accessibilityLabel="Cover enclosure"
+              resizeMode="cover"
+              scope="enclosure-edit-cover"
+              sourceUri={coverUri}
+              style={styles.editCoverImage}
+            />
+          ) : (
+            <Text style={styles.mutedText}>Belum ada foto</Text>
+          )}
+        </View>
         <View style={styles.detailActions}>
           <KolamButton
-            label="Batal"
-            onPress={() => onRouteChange?.(detailRoute)}
+            disabled={controller.operationLoading}
+            label="Unggah"
+            onPress={() => void onPickCover()}
           />
-          <KolamButton
-            disabled={controller.loading}
-            label="Refresh"
-            onPress={() => void controller.onRefresh()}
-          />
+          {coverUri ? (
+            <KolamButton
+              disabled={controller.operationLoading}
+              label="Hapus foto"
+              onPress={() => void controller.onDeleteCoverPhoto()}
+            />
+          ) : null}
         </View>
+      </DetailSection>
+
+      <DetailSection title="Operasional">
+        <Text style={styles.sectionMeta}>Tipe, lokasi, PIC, dan status.</Text>
+        <View style={styles.editFormGrid}>
+          <LabeledEditField label="Tipe">
+            <KolamDropdownSelect
+              label="Tipe"
+              menuPlacement="inline"
+              onChange={value =>
+                setForm(current => ({
+                  ...current,
+                  enclosure_type: value,
+                  type_aquarium: '',
+                }))
+              }
+              options={typeOptions}
+              showLabelInTrigger={false}
+              style={styles.editFormInput}
+              value={form.enclosure_type || typeOptions[0]?.value || 'Terrarium'}
+            />
+          </LabeledEditField>
+          {form.enclosure_type === 'Aquarium' ? (
+            <LabeledEditField label="Tipe air">
+              <KolamDropdownSelect
+                label="Tipe air"
+                menuPlacement="inline"
+                onChange={value =>
+                  setForm(current => ({...current, type_aquarium: value}))
+                }
+                options={[
+                  {label: 'Freshwater', value: 'freshwater'},
+                  {label: 'Marine', value: 'marine'},
+                ]}
+                showLabelInTrigger={false}
+                style={styles.editFormInput}
+                value={form.type_aquarium || 'freshwater'}
+              />
+            </LabeledEditField>
+          ) : null}
+          <LabeledEditField label="Status">
+            <KolamDropdownSelect
+              label="Status"
+              menuPlacement="inline"
+              onChange={value =>
+                setForm(current => ({...current, status: value}))
+              }
+              options={statusOptions}
+              showLabelInTrigger={false}
+              style={styles.editFormInput}
+              value={form.status || 'active'}
+            />
+          </LabeledEditField>
+          <LabeledEditField label="Lokasi">
+            <KolamDropdownSelect
+              label="Lokasi"
+              menuPlacement="inline"
+              onChange={value =>
+                setForm(current => ({
+                  ...current,
+                  locationId: value === ENCLOSURE_EDIT_NONE ? '' : value,
+                }))
+              }
+              options={locationOptions}
+              showLabelInTrigger={false}
+              style={styles.editFormInput}
+              value={form.locationId || ENCLOSURE_EDIT_NONE}
+            />
+          </LabeledEditField>
+          <LabeledEditField label="PIC">
+            <KolamDropdownSelect
+              label="PIC"
+              menuPlacement="inline"
+              onChange={value =>
+                setForm(current => ({
+                  ...current,
+                  assignedTo: value === ENCLOSURE_EDIT_NONE ? '' : value,
+                }))
+              }
+              options={picOptions}
+              showLabelInTrigger={false}
+              style={styles.editFormInput}
+              value={form.assignedTo || ENCLOSURE_EDIT_NONE}
+            />
+          </LabeledEditField>
+          <LabeledEditField label="Catatan">
+            <KolamFormTextField
+              multiline
+              numberOfLines={3}
+              onChangeText={value =>
+                setForm(current => ({...current, note: value}))
+              }
+              placeholder="Catatan"
+              style={[styles.editFormInput, styles.editFormTextArea]}
+              value={form.note}
+            />
+          </LabeledEditField>
+        </View>
+      </DetailSection>
+
+      <DetailSection title="Ukuran">
+        <Text style={styles.sectionMeta}>
+          {sizeLocked
+            ? 'Dimensi sudah tercatat — view-only setelah provisioning.'
+            : 'Dimensi fisik enclosure.'}
+        </Text>
+        {sizeLocked ? (
+          <View style={styles.editSizeLockedList}>
+            <DetailField
+              label="Tinggi"
+              value={formatDim(form.enclosure_size.high.value, effectiveSizeUnitId)}
+            />
+            <DetailField
+              label="Lebar"
+              value={formatDim(form.enclosure_size.width.value, effectiveSizeUnitId)}
+            />
+            <DetailField
+              label="Panjang"
+              value={formatDim(form.enclosure_size.length.value, effectiveSizeUnitId)}
+            />
+          </View>
+        ) : (
+          <View style={styles.editFormGrid}>
+            <LabeledEditField label="Satuan ukuran">
+              <KolamDropdownSelect
+                label="Satuan ukuran"
+                menuPlacement="inline"
+                onChange={value =>
+                  setForm(current => ({
+                    ...current,
+                    enclosure_size: {
+                      high: {
+                        unit: value,
+                        value: Number(current.enclosure_size.high.value) || 0,
+                      },
+                      length: {
+                        unit: value,
+                        value: Number(current.enclosure_size.length.value) || 0,
+                      },
+                      width: {
+                        unit: value,
+                        value: Number(current.enclosure_size.width.value) || 0,
+                      },
+                    },
+                  }))
+                }
+                options={
+                  unitSelectOptions.length
+                    ? unitSelectOptions
+                    : [{label: '—', value: ''}]
+                }
+                showLabelInTrigger={false}
+                style={styles.editFormInput}
+                value={effectiveSizeUnitId || unitSelectOptions[0]?.value || ''}
+              />
+            </LabeledEditField>
+            <LabeledEditField label="Tinggi">
+              <KolamFormTextField
+                mode="numeric"
+                onChangeText={value => patchSizeValue('high', value)}
+                placeholder="0"
+                style={styles.editFormInput}
+                value={String(form.enclosure_size.high.value || 0)}
+              />
+            </LabeledEditField>
+            <LabeledEditField label="Lebar">
+              <KolamFormTextField
+                mode="numeric"
+                onChangeText={value => patchSizeValue('width', value)}
+                placeholder="0"
+                style={styles.editFormInput}
+                value={String(form.enclosure_size.width.value || 0)}
+              />
+            </LabeledEditField>
+            <LabeledEditField label="Panjang">
+              <KolamFormTextField
+                mode="numeric"
+                onChangeText={value => patchSizeValue('length', value)}
+                placeholder="0"
+                style={styles.editFormInput}
+                value={String(form.enclosure_size.length.value || 0)}
+              />
+            </LabeledEditField>
+          </View>
+        )}
+      </DetailSection>
+
+      <View style={styles.detailActions}>
+        <KolamButton
+          disabled={controller.operationLoading}
+          label="Simpan"
+          onPress={() => void onSave()}
+        />
+        <KolamButton
+          disabled={controller.operationLoading}
+          label="Batal"
+          onPress={() => onRouteChange?.(detailRoute)}
+        />
       </View>
+    </ScrollView>
+  );
+}
+
+function LabeledEditField({
+  children,
+  label,
+}: {
+  children: React.ReactNode;
+  label: string;
+}) {
+  return (
+    <View style={styles.editFormField}>
+      <Text style={styles.detailFieldLabel}>{label}</Text>
+      {children}
     </View>
   );
+}
+
+function createEmptyEnclosureEditFormState(): EnclosureEditFormState {
+  return {
+    acquired_date: '',
+    assignedTo: '',
+    brandId: '',
+    clientScope: 'internal',
+    enclosure_code: '',
+    enclosure_size: {
+      high: {unit: '', value: 0},
+      length: {unit: '', value: 0},
+      width: {unit: '', value: 0},
+    },
+    enclosure_type: '',
+    livestockPurpose: 'saleable',
+    locationId: '',
+    note: '',
+    status: 'active',
+    type_aquarium: '',
+  };
+}
+
+function createEnclosureEditFormState(
+  enclosure: KolamEnclosure,
+): EnclosureEditFormState {
+  const unitId =
+    enclosure.size.high.unit?.id ||
+    enclosure.size.width.unit?.id ||
+    enclosure.size.length.unit?.id ||
+    '';
+  return {
+    acquired_date: enclosure.acquiredDate,
+    assignedTo: enclosure.assignedToId || enclosure.assignedTo?.id || '',
+    brandId: enclosure.brandId || enclosure.brand?.id || '',
+    clientScope: enclosure.clientScope || 'internal',
+    enclosure_code: enclosure.code || '',
+    enclosure_size: {
+      high: {unit: unitId, value: Number(enclosure.size.high.value) || 0},
+      length: {unit: unitId, value: Number(enclosure.size.length.value) || 0},
+      width: {unit: unitId, value: Number(enclosure.size.width.value) || 0},
+    },
+    enclosure_type: enclosure.type || '',
+    livestockPurpose:
+      enclosure.livestockPurpose === 'production' ? 'production' : 'saleable',
+    locationId: enclosure.locationId || enclosure.location?.id || '',
+    note: enclosure.note || '',
+    status: enclosure.status || 'active',
+    type_aquarium: enclosure.aquariumWaterType || '',
+  };
 }
 
 function KolamEnclosureDetailSurface({
@@ -4715,24 +5287,52 @@ const styles = StyleSheet.create({
   surface: {
     gap: 14,
   },
-  editLoadPanel: {
-    gap: 10,
+  editFormContent: {
+    gap: 14,
+    paddingBottom: 24,
   },
-  editLoadIdentity: {
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 15,
-    fontWeight: '700',
+  editFormGrid: {
+    gap: 12,
   },
-  editLoadHint: {
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 13,
+  editFormField: {
+    gap: 6,
   },
-  editLoadMeta: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
+  editFormInput: {
+    minWidth: 220,
+  },
+  editFormTextArea: {
+    minHeight: 84,
+  },
+  editBrandBanner: {
+    backgroundColor: V.colors.muted,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    height: 64,
+    maxWidth: 400,
+    overflow: 'hidden',
+  },
+  editBrandBannerImage: {
+    height: '100%',
+    width: '100%',
+  },
+  editCoverPreview: {
+    alignItems: 'center',
+    aspectRatio: 16 / 9,
+    backgroundColor: V.colors.muted,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    justifyContent: 'center',
+    maxWidth: 400,
+    overflow: 'hidden',
+  },
+  editCoverImage: {
+    height: '100%',
+    width: '100%',
+  },
+  editSizeLockedList: {
+    gap: 8,
   },
   errorBadge: {
     alignSelf: 'stretch',

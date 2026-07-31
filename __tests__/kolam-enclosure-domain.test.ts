@@ -152,6 +152,7 @@ describe('Kolam enclosure domain', () => {
     const detail = normalizeKolamEnclosureDetail({
       data: {
         _id: 'enc-1',
+        acquired_date: '2026-07-01T00:00:00.000Z',
         brandId: {_id: 'brand-1', name: 'ZooMed', photos: ['/brand.jpg']},
         computed: {ageLabel: '2 bulan', volumeLiters: 120},
         enclosure_code: 'ENC-1',
@@ -189,6 +190,7 @@ describe('Kolam enclosure domain', () => {
     });
 
     expect(detail).toMatchObject({
+      acquiredDate: '2026-07-01',
       brand: {id: 'brand-1', name: 'ZooMed', photos: ['/brand.jpg']},
       code: 'ENC-1',
       computed: {ageLabel: '2 bulan', volumeLiters: 120},

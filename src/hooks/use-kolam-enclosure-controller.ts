@@ -199,7 +199,7 @@ export interface KolamEnclosureController {
   onSaveEnclosureEdit: (input: {
     body: KolamEnclosureUpdateBody;
     assignedTo: string | null;
-  }) => Promise<void>;
+  }) => Promise<boolean>;
   onUpsertClimateParameter: (body: KolamEnclosureParameterInput) => Promise<void>;
   onSwitchSpeciesVariant: (input: KolamEnclosureVariantSwitchInput) => Promise<void>;
   onTabChange: (tab: KolamEnclosureListTab) => void;
@@ -760,10 +760,19 @@ export function useKolamEnclosureController(
   );
 
   const onSaveEnclosureEdit = useCallback(
-    (input: {body: KolamEnclosureUpdateBody; assignedTo: string | null}) =>
-      runOperation(async () => {
-        const enclosureId = getKolamEnclosureRouteId(route);
-        if (!enclosureId) throw new Error('ID enclosure tidak ditemukan.');
+    async (input: {
+      body: KolamEnclosureUpdateBody;
+      assignedTo: string | null;
+    }): Promise<boolean> => {
+      const enclosureId = getKolamEnclosureRouteId(route);
+      if (!enclosureId) {
+        setError('ID enclosure tidak ditemukan.');
+        return false;
+      }
+      setOperationLoading(true);
+      setError(null);
+      setStatusMessage(null);
+      try {
         await updateKolamEnclosure(enclosureId, input.body);
         const currentPic =
           selectedEnclosure?.assignedToId ||
@@ -773,8 +782,17 @@ export function useKolamEnclosureController(
         if (nextPic !== currentPic) {
           await updateKolamEnclosureAssignedTo(enclosureId, nextPic);
         }
-      }, 'Enclosure disimpan.'),
-    [route, runOperation, selectedEnclosure],
+        setStatusMessage('Enclosure disimpan.');
+        await refresh();
+        return true;
+      } catch (operationError) {
+        setError(getErrorMessage(operationError));
+        return false;
+      } finally {
+        setOperationLoading(false);
+      }
+    },
+    [refresh, route, selectedEnclosure],
   );
 
   const onUploadCoverPhoto = useCallback(

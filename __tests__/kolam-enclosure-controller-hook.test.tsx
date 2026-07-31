@@ -660,6 +660,7 @@ function createListResult(): KolamEnclosureListResult {
         aquariumWaterType: '',
         assignedTo: null,
         assignedToId: '',
+        acquiredDate: '',
         clientScope: 'internal',
         code: 'ENC-1',
         computed: {
