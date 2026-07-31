@@ -1465,10 +1465,6 @@ export function getSettingsRoleInfoPanel(
     badges.push({ id: 'full-access', label: 'Full Access', tone: 'warning' });
   }
 
-  if (row.defaultRole) {
-    badges.push({ id: 'default', label: 'Default', tone: 'secondary' });
-  }
-
   return {
     id: row.id,
     name: row.role,

@@ -1,6 +1,6 @@
 ﻿import React from 'react';
-import type {SettingsRoleTabItem} from '../domain/settings-surface';
-import {KolamMappedControlTabList} from './kolam-mapped-control-tab-list';
+import type { SettingsRoleTabItem } from '../domain/settings-surface';
+import { KolamMappedControlTabList } from './kolam-mapped-control-tab-list';
 
 export function KolamSettingsRoleTabList({
   items,
@@ -17,7 +17,7 @@ export function KolamSettingsRoleTabList({
       items={items}
       getItem={tab => ({
         count: tab.permissionCount,
-        flag: tab.fullAccess ? 'Full' : tab.defaultRole ? 'Default' : undefined,
+        flag: tab.fullAccess ? 'Full' : undefined,
         id: tab.id,
         label: tab.label,
       })}

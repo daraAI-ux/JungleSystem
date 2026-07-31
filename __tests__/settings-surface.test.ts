@@ -1005,10 +1005,7 @@ describe('settingsSurfaceItems', () => {
       name: 'Super Administrator',
       description: 'Full shell access through super administrator role.',
       key: 'super-admin',
-      badges: [
-        { id: 'full-access', label: 'Full Access', tone: 'warning' },
-        { id: 'default', label: 'Default', tone: 'secondary' },
-      ],
+      badges: [{ id: 'full-access', label: 'Full Access', tone: 'warning' }],
       canDelete: false,
       deleteLabel: 'Delete',
       notice:
