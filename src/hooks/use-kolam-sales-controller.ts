@@ -95,7 +95,7 @@ const DEFAULT_PAGINATION: KolamSalePagination = {
   totalPages: 1,
 };
 
-const CREATE_OPTIONS_LIMIT = 200;
+const CREATE_OPTIONS_LIMIT = 1000;
 
 const EMPTY_ANALYTICS = EMPTY_KOLAM_SALE_ANALYTICS;
 
@@ -283,6 +283,7 @@ export function useKolamSalesController(route: string): KolamSalesController {
   }, [filteredPaymentMethods, form.paymentMethodId]);
 
   const loadFormOptions = useCallback(async () => {
+    const failures: string[] = [];
     const [
       sourceRows,
       customerResult,
@@ -292,23 +293,76 @@ export function useKolamSalesController(route: string): KolamSalesController {
       serviceRows,
       enclosureRows,
     ] = await Promise.all([
-      getKolamSalesActiveSources(),
-      getKolamCustomerList({ page: 1, limit: CREATE_OPTIONS_LIMIT }),
-      getKolamPaymentMethods({ page: 1, limit: CREATE_OPTIONS_LIMIT }),
+      getKolamSalesActiveSources().catch(() => {
+        failures.push('sumber');
+        return [] as KolamSaleSourceOption[];
+      }),
+      getKolamCustomerList({page: 1, limit: CREATE_OPTIONS_LIMIT}).catch(() => {
+        failures.push('pelanggan');
+        return {
+          items: [],
+          pagination: {
+            page: 1,
+            limit: CREATE_OPTIONS_LIMIT,
+            total: 0,
+            totalPages: 1,
+          },
+        };
+      }),
+      getKolamPaymentMethods({page: 1, limit: CREATE_OPTIONS_LIMIT}).catch(
+        () => {
+          failures.push('metode pembayaran');
+          return {
+            rows: [],
+            pagination: {
+              total: 0,
+              page: 1,
+              limit: CREATE_OPTIONS_LIMIT,
+              totalPages: 1,
+            },
+          };
+        },
+      ),
       getKolamProducts({
         page: 1,
         limit: CREATE_OPTIONS_LIMIT,
         type: 'product',
+      }).catch(() => {
+        failures.push('produk');
+        return {
+          data: [] as KolamProduct[],
+          pagination: {
+            page: 1,
+            limit: CREATE_OPTIONS_LIMIT,
+            total: 0,
+            totalPages: 1,
+          },
+        };
       }),
       getKolamSpeciesList({
         page: 1,
         limit: CREATE_OPTIONS_LIMIT,
         sellable: 'sellable',
+      }).catch(() => {
+        failures.push('spesies');
+        return {
+          data: [] as KolamSpecies[],
+          pagination: {
+            page: 1,
+            limit: CREATE_OPTIONS_LIMIT,
+            total: 0,
+            totalPages: 1,
+          },
+        };
       }),
-      getKolamSalesServices().catch(() => [] as KolamSaleCatalogOption[]),
-      getKolamSalesEnclosuresForSale().catch(
-        () => [] as KolamSaleCatalogOption[],
-      ),
+      getKolamSalesServices().catch(() => {
+        failures.push('layanan');
+        return [] as KolamSaleCatalogOption[];
+      }),
+      getKolamSalesEnclosuresForSale().catch(() => {
+        failures.push('enclosure');
+        return [] as KolamSaleCatalogOption[];
+      }),
     ]);
 
     setSources(sourceRows);
@@ -318,6 +372,13 @@ export function useKolamSalesController(route: string): KolamSalesController {
     setSpecies(speciesResult.data);
     setServices(serviceRows);
     setEnclosures(enclosureRows);
+
+    if (failures.length > 0) {
+      setError(
+        `Sebagian opsi gagal dimuat: ${failures.join(', ')}. Coba Refresh.`,
+      );
+    }
+
     return sourceRows;
   }, []);
 

@@ -720,6 +720,12 @@ function KolamSalesOpsCreateForm({
                 value={form.sourceRefId}
               />
             </FieldShell>
+            {!controller.optionsLoading && controller.sources.length === 0 ? (
+              <Text style={styles.fieldHint}>
+                Tidak ada sumber aktif. Periksa Master Data → Sales Sources atau
+                Refresh.
+              </Text>
+            ) : null}
           </View>
           <View style={styles.formSplitCell}>
             <FieldShell label="Tanggal transaksi">
@@ -810,6 +816,14 @@ function KolamSalesOpsCreateForm({
                   value={form.customerId}
                 />
               </FieldShell>
+              {!controller.optionsLoading &&
+              controller.filteredCustomers.length === 0 ? (
+                <Text style={styles.fieldHint}>
+                  {controller.customers.length === 0
+                    ? 'Tidak ada pelanggan dari server. Coba Refresh.'
+                    : 'Tidak ada pelanggan yang cocok dengan channel sumber terpilih.'}
+                </Text>
+              ) : null}
             </View>
             <View style={styles.formSplitCell}>
               <FieldShell label="Metode pembayaran" required>
@@ -832,6 +846,14 @@ function KolamSalesOpsCreateForm({
                   value={form.paymentMethodId}
                 />
               </FieldShell>
+              {!controller.optionsLoading &&
+              controller.filteredPaymentMethods.length === 0 ? (
+                <Text style={styles.fieldHint}>
+                  {controller.paymentMethods.length === 0
+                    ? 'Tidak ada metode pembayaran dari server. Coba Refresh.'
+                    : 'Tidak ada metode pembayaran yang cocok dengan channel sumber terpilih.'}
+                </Text>
+              ) : null}
             </View>
           </View>
         )}
@@ -859,6 +881,14 @@ function KolamSalesOpsCreateForm({
                   value={form.paymentMethodId}
                 />
               </FieldShell>
+              {!controller.optionsLoading &&
+              controller.filteredPaymentMethods.length === 0 ? (
+                <Text style={styles.fieldHint}>
+                  {controller.paymentMethods.length === 0
+                    ? 'Tidak ada metode pembayaran dari server. Coba Refresh.'
+                    : 'Tidak ada metode pembayaran yang cocok dengan channel sumber terpilih.'}
+                </Text>
+              ) : null}
             </View>
             <View style={styles.formSplitCell} />
           </View>
@@ -1711,6 +1741,12 @@ const styles = StyleSheet.create({
     color: V.colors.mutedFg,
     fontSize: 12,
     fontWeight: '700',
+  },
+  fieldHint: {
+    color: V.colors.warning,
+    fontSize: 11,
+    fontWeight: '600',
+    marginTop: 4,
   },
   formSplitRow: {
     alignItems: 'flex-start',

@@ -1626,13 +1626,19 @@ export function createInitialKolamSaleCreateForm(): KolamSaleCreateFormState {
   };
 }
 
+/** Exact FE external-buyer sources (`sales-create-form` EXTERNAL_BUYER_SOURCE_NAMES). */
+const EXTERNAL_BUYER_SOURCE_NAMES = new Set(['shopee', 'tokopedia']);
+
 export function isMarketplaceSalesSource(
   source: KolamSaleSourceFilterInput,
 ): boolean {
-  if (!source || source.type !== 'online') {
+  if (!source) {
     return false;
   }
-  return nameMatchesMarketplaceKeywords(source.name);
+  const lowered = String(source.name || '')
+    .trim()
+    .toLowerCase();
+  return EXTERNAL_BUYER_SOURCE_NAMES.has(lowered);
 }
 
 export function isKolamMongoObjectId(value: string): boolean {

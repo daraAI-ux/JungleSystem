@@ -652,9 +652,18 @@ describe('kolam sales domain', () => {
         name: 'POS',
       }).map(row => row.name),
     ).toEqual(['Cash POS']);
+    expect(isMarketplaceSalesSource({ type: 'online', name: 'Shopee' })).toBe(
+      true,
+    );
+    expect(
+      isMarketplaceSalesSource({ type: 'online', name: 'Tokopedia' }),
+    ).toBe(true);
     expect(
       isMarketplaceSalesSource({ type: 'online', name: 'Shopee Official' }),
-    ).toBe(true);
+    ).toBe(false);
+    expect(
+      isMarketplaceSalesSource({ type: 'online', name: 'Tokopedia Store' }),
+    ).toBe(false);
   });
 
   it('builds and validates create sale payload including buyerInfo', () => {
