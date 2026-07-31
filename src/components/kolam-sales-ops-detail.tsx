@@ -41,7 +41,7 @@ import {
   isKolamPosSale,
   isKolamSaleMarketplaceManaged,
   kolamSaleSkipsShippingFlow,
-  needsKolamPlatformPickupRequest,
+  needsKolamTokopediaPickupRequest,
   shouldShowKolamTokopediaDropOffBadge,
   KOLAM_SALES_DISCOUNT_APPROVAL_ROUTE,
   KOLAM_SALES_ROOT,
@@ -141,10 +141,7 @@ export function KolamSalesOpsDetail({
     sale.status === 'paid' &&
     (!sale.deliveryStatus || sale.deliveryStatus === 'none');
   const marketplaceFulfillment = getKolamSaleMarketplaceFulfillment(sale);
-  const isTokopediaSale =
-    String(sale.marketplaceSource || '').toLowerCase() === 'tokopedia';
-  const showTokopediaPickupRequest =
-    isTokopediaSale && needsKolamPlatformPickupRequest(sale);
+  const showTokopediaPickupRequest = needsKolamTokopediaPickupRequest(sale);
   const showTokopediaDropOffBadge = shouldShowKolamTokopediaDropOffBadge(sale);
   const tokopediaDropOffUrl =
     marketplaceFulfillment?.dropOffPointUrl?.trim() || '';

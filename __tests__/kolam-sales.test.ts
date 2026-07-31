@@ -40,6 +40,7 @@ import {
   isKolamShopeeDropOffOnly,
   isKolamMarketplaceShipmentSyncStarted,
   needsKolamPlatformPickupRequest,
+  needsKolamTokopediaPickupRequest,
   shouldShowKolamTokopediaDropOffBadge,
   getKolamSaleMarketplaceFulfillment,
   canOpenKolamSaleComplaintCreate,
@@ -469,6 +470,43 @@ describe('kolam sales domain', () => {
     });
     expect(isKolamShopeeDropOffOnly(sale)).toBe(true);
     expect(needsKolamPlatformPickupRequest(sale)).toBe(false);
+    expect(needsKolamTokopediaPickupRequest(sale)).toBe(false);
+  });
+
+  it('scopes JungleSystem pickup request helper to Tokopedia only (no Shopee slots)', () => {
+    const shopeePickup = normalizeKolamSale({
+      _id: 'sale-shopee-pickup',
+      invoiceCode: 'INV-SH-P',
+      status: 'paid',
+      deliveryStatus: 'none',
+      externalRef: {
+        source: 'shopee',
+        shopee: {
+          mainOrderId: 'SH-2',
+          fulfillmentMode: 'pickup',
+          lastStatus: 1,
+        },
+      },
+      items: [],
+    });
+    expect(needsKolamPlatformPickupRequest(shopeePickup)).toBe(true);
+    expect(needsKolamTokopediaPickupRequest(shopeePickup)).toBe(false);
+
+    const tokopediaPickup = normalizeKolamSale({
+      _id: 'sale-tp-only',
+      invoiceCode: 'INV-TP-ONLY',
+      status: 'paid',
+      deliveryStatus: 'none',
+      externalRef: {
+        source: 'tokopedia',
+        tokopedia: {
+          fulfillmentMode: 'pickup',
+          lastStatus: 101,
+        },
+      },
+      items: [],
+    });
+    expect(needsKolamTokopediaPickupRequest(tokopediaPickup)).toBe(true);
   });
 
   it('resolves sales source logo from catalog when detail omits logo', () => {

@@ -28,7 +28,7 @@ import {
   isKolamSalesCreateRoute,
   isKolamSalesDetailRoute,
   isKolamSalesDiscountApprovalRoute,
-  needsKolamPlatformPickupRequest,
+  needsKolamTokopediaPickupRequest,
   isKolamSalesEditRoute,
   isKolamSalesListRoute,
   isKolamSalesRoute,
@@ -173,7 +173,7 @@ export interface KolamSalesController {
   onRemoveCustomCost: (key: string) => void;
   onReplacePaymentProof: (proofId: string, localUri: string) => Promise<boolean>;
   onRequestBiteshipPickup: () => Promise<boolean>;
-  /** Platform (Tokopedia/Shopee) pickup via AM — Tokopedia uses empty body. */
+  /** Tokopedia platform pickup via AM (empty body). Shopee slot UI is out of scope. */
   onRequestMarketplacePickup: () => Promise<boolean>;
   onSave: () => Promise<string | null>;
   onSearchChange: (search: string) => void;
@@ -1159,23 +1159,24 @@ export function useKolamSalesController(route: string): KolamSalesController {
     if (!sale) {
       return false;
     }
-    if (!needsKolamPlatformPickupRequest(sale)) {
+    if (String(sale.marketplaceSource || '').toLowerCase() === 'shopee') {
       setError(
-        'Penjualan ini belum eligible untuk request jemput kurir platform.',
+        'Request jemput Shopee membutuhkan pemilihan slot — belum tersedia di JungleSystem.',
       );
       return false;
     }
-    const platform =
-      String(sale.marketplaceSource || '').toLowerCase() === 'shopee'
-        ? 'Shopee'
-        : 'Tokopedia';
+    if (!needsKolamTokopediaPickupRequest(sale)) {
+      setError(
+        'Penjualan Tokopedia ini belum eligible untuk request jemput kurir.',
+      );
+      return false;
+    }
     setMutating(true);
     setError(null);
     setStatusMessage(null);
     try {
-      // Tokopedia: empty body. Shopee slot payload is a later UI batch.
       await requestKolamSaleMarketplacePickup(sale.id, {});
-      setStatusMessage(`Request jemput kurir ${platform} dikirim.`);
+      setStatusMessage('Request jemput kurir Tokopedia dikirim.');
       await refreshDetail();
       return true;
     } catch (mutationError) {

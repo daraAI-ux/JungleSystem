@@ -1126,6 +1126,19 @@ export function needsKolamPlatformPickupRequest(
   return ds === 'none' || ds === 'packing';
 }
 
+/**
+ * JungleSystem Batch 1 — Tokopedia jemput kurir only.
+ * Shopee slot/modal/reschedule tetap out of scope sampai diminta eksplisit.
+ */
+export function needsKolamTokopediaPickupRequest(
+  sale: KolamSaleFulfillmentContext,
+): boolean {
+  if (getMarketplaceFulfillmentSource(sale) !== 'tokopedia') {
+    return false;
+  }
+  return needsKolamPlatformPickupRequest(sale);
+}
+
 export function getKolamSaleMarketplaceFulfillment(sale: {
   marketplaceFulfillment?: KolamSaleMarketplaceFulfillment | null;
 }): KolamSaleMarketplaceFulfillment | null {

@@ -131,4 +131,40 @@ describe('KolamSalesOpsDetail marketplace fulfillment', () => {
       .find(node => node.props.label === 'Antar ke counter (Tokopedia)');
     expect(badge?.props.intent).toBe('warning');
   });
+
+  it('does not show Tokopedia pickup or Shopee slot UI for eligible Shopee sales', async () => {
+    const controller = createController({
+      _id: 'sale-sh-pickup',
+      invoiceCode: 'INV-SH-P',
+      status: 'paid',
+      deliveryStatus: 'none',
+      shippingCost: 0,
+      items: [],
+      saleHistories: [],
+      externalRef: {
+        source: 'shopee',
+        shopee: {
+          mainOrderId: 'SH-9',
+          fulfillmentMode: 'pickup',
+          lastStatus: 1,
+        },
+      },
+    });
+
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamSalesOpsDetail controller={controller} />,
+      );
+    });
+
+    const text = renderText(renderer!);
+    expect(text).not.toContain('Request jemput kurir (Tokopedia)');
+    expect(text).not.toContain('Request jemput kurir (Shopee)');
+    expect(text).not.toContain('Reschedule pickup');
+    expect(text).not.toContain('Waktu pickup');
+    expect(text).toContain(
+      'Pengiriman marketplace dikelola otomatis dari platform.',
+    );
+  });
 });
