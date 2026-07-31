@@ -4047,7 +4047,11 @@ export function KolamSettingsWebConfigSurface({
                 </View>
               ))}
             </View>
-            <View style={styles.poRoomPicker}>
+            <KolamRowFrame variant="settingsForm">
+              <KolamTextFieldRowCopy
+                description="Room tujuan digest dan notifikasi penjualan Night Ops."
+                label="Room penjualan"
+              />
               <KolamDropdownSelect
                 accessibilityLabel="Room Team Chat Penjualan"
                 label="Room Team Chat Penjualan"
@@ -4064,7 +4068,10 @@ export function KolamSettingsWebConfigSurface({
                 searchable
                 searchPlaceholder="Cari room..."
                 showLabelInTrigger={false}
-                style={styles.poRoomDropdown}
+                style={[
+                  styles.financialSelectorControl,
+                  {width: settingsFieldWidth},
+                ]}
                 triggerStyle={styles.shippingTimezoneTrigger}
                 value={draft.daraPenjualanTeamRoomId}
                 onChange={value => {
@@ -4073,18 +4080,7 @@ export function KolamSettingsWebConfigSurface({
                   }
                 }}
               />
-              <KolamCopyStack
-                items={[
-                  {
-                    id: 'dara-penjualan-room-meta',
-                    text: daraPenjualanRoomOptions.length
-                      ? 'Room tujuan digest dan notifikasi penjualan Night Ops.'
-                      : 'Room Team Chat belum tersedia.',
-                    style: styles.marketplaceOverviewMeta,
-                  },
-                ]}
-              />
-            </View>
+            </KolamRowFrame>
             <KolamTextFieldRow
               variant="settingsForm"
               fieldWidth={settingsFieldWidth}
