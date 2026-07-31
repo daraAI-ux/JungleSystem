@@ -7096,11 +7096,16 @@ const styles = StyleSheet.create({
   teamDaraWindowOverlay: {
     backgroundColor: '#f9fafb',
     flex: 1,
+    height: '100%',
+    minHeight: '100%',
   },
   teamDaraWindow: {
+    alignSelf: 'stretch',
     backgroundColor: '#f9fafb',
     flex: 1,
     gap: 8,
+    height: '100%',
+    minHeight: '100%',
     padding: 12,
   },
   teamDaraWindowHeader: {
