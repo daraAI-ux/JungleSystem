@@ -4030,42 +4030,60 @@ export function KolamSettingsWebConfigSurface({
                 },
               ]}
             />
-            {daraNightOpsToggleRows.map(row => (
-              <KolamToggleRow
-                key={row.id}
-                variant="settingsForm"
-                label={row.label}
-                description={row.description}
-                active={draft[row.field] === true}
-                onPress={() =>
-                  !daraControlsDisabled &&
-                  draft.daraBusinessEnabled &&
-                  setDraftField(row.field, !(draft[row.field] === true))
-                }
-              />
-            ))}
-            <View style={styles.poRoomChoices}>
-              <KolamChoiceSegment
-                id=""
-                label="Room penjualan default"
-                selectedId={draft.daraPenjualanTeamRoomId}
-                onSelect={() =>
-                  !daraControlsDisabled &&
-                  setDraftField('daraPenjualanTeamRoomId', '')
-                }
-              />
-              {daraPenjualanRoomOptions.map(room => (
-                <KolamChoiceSegment
-                  key={room._id}
-                  id={room._id}
-                  label={getTeamChatRoomLabel(room)}
-                  selectedId={draft.daraPenjualanTeamRoomId}
-                  onSelect={() =>
-                    !daraControlsDisabled &&
-                    setDraftField('daraPenjualanTeamRoomId', room._id)
-                  }
-                />
+            <View style={styles.notificationToggleGrid}>
+              {daraNightOpsToggleRows.map(row => (
+                <View key={row.id} style={styles.notificationToggleBox}>
+                  <KolamToggleRow
+                    variant="settingsForm"
+                    label={row.label}
+                    description={row.description}
+                    active={draft[row.field] === true}
+                    onPress={() =>
+                      !daraControlsDisabled &&
+                      draft.daraBusinessEnabled &&
+                      setDraftField(row.field, !(draft[row.field] === true))
+                    }
+                  />
+                </View>
               ))}
+            </View>
+            <View style={styles.poRoomPicker}>
+              <KolamDropdownSelect
+                accessibilityLabel="Room Team Chat Penjualan"
+                label="Room Team Chat Penjualan"
+                menuPlacement="inline"
+                options={[
+                  { label: 'Room penjualan default', value: '' },
+                  ...daraPenjualanRoomOptions.map(room => ({
+                    label: `${getTeamChatRoomLabel(room)}${
+                      room.category ? ` (${room.category})` : ''
+                    }`,
+                    value: room._id,
+                  })),
+                ]}
+                searchable
+                searchPlaceholder="Cari room..."
+                showLabelInTrigger={false}
+                style={styles.poRoomDropdown}
+                triggerStyle={styles.shippingTimezoneTrigger}
+                value={draft.daraPenjualanTeamRoomId}
+                onChange={value => {
+                  if (!daraControlsDisabled) {
+                    setDraftField('daraPenjualanTeamRoomId', value);
+                  }
+                }}
+              />
+              <KolamCopyStack
+                items={[
+                  {
+                    id: 'dara-penjualan-room-meta',
+                    text: daraPenjualanRoomOptions.length
+                      ? 'Room tujuan digest dan notifikasi penjualan Night Ops.'
+                      : 'Room Team Chat belum tersedia.',
+                    style: styles.marketplaceOverviewMeta,
+                  },
+                ]}
+              />
             </View>
             <KolamTextFieldRow
               variant="settingsForm"
