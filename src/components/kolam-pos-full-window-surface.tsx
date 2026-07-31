@@ -576,6 +576,7 @@ export function KolamPosFullWindowSurface({
               <KolamButton
                 label="Simpan"
                 intent="outline"
+                size="sm"
                 disabled={!checkout.cart.length}
                 onPress={handleSaveOrder}
                 style={styles.savedOrderActionButton}
@@ -583,16 +584,19 @@ export function KolamPosFullWindowSurface({
               <KolamButton
                 label={`Tersimpan (${savedOrders.length})`}
                 intent="outline"
+                size="sm"
                 disabled={!savedOrders.length}
                 onPress={() => setIsSavedOrdersOpen(true)}
                 style={styles.savedOrderActionButton}
               />
+              <KolamButton
+                label={`Kosongkan (${cartCount})`}
+                intent="plain"
+                size="sm"
+                onPress={onClearCart}
+                style={styles.savedOrderActionButton}
+              />
             </View>
-            <KolamButton
-              label={`Kosongkan (${cartCount})`}
-              intent="plain"
-              onPress={onClearCart}
-            />
           </View>
         ) : null}
       </View>
@@ -3469,11 +3473,12 @@ const styles = StyleSheet.create({
   },
   savedOrderActions: {
     flexDirection: 'row',
-    gap: 8,
-    marginTop: 8,
+    gap: 6,
+    marginTop: 7,
   },
   savedOrderActionButton: {
     flex: 1,
+    minWidth: 0,
   },
   savedOrdersOverlay: {
     ...StyleSheet.absoluteFillObject,
