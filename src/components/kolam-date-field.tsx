@@ -19,6 +19,7 @@ import {
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { KolamButton } from './kolam-button';
 import { KolamChevronIcon } from './kolam-chevron-icon';
+import { kolamFormControlStyles } from './kolam-form-control-styles';
 import { KolamInteractionFrame } from './kolam-interaction-frame';
 import { KolamModalBackdrop } from './kolam-modal-backdrop';
 
@@ -76,7 +77,7 @@ export function KolamDateField({
         accessibilityLabel={accessibilityLabel ?? label}
         accessibilityRole="button"
         onPress={() => setOpen(true)}
-        style={styles.trigger}
+        style={[styles.trigger, kolamFormControlStyles.trigger]}
       >
         <Text numberOfLines={1} style={styles.triggerText}>
           {triggerLabel}
@@ -185,22 +186,15 @@ export function KolamDateField({
 
 const styles = StyleSheet.create({
   trigger: {
-    minHeight: V.control.inputHeight,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
-    paddingHorizontal: V.control.inputPaddingX,
-    borderWidth: 1,
-    borderColor: V.colors.border,
-    borderRadius: V.radius.md,
-    backgroundColor: V.colors.bg,
+    minWidth: 120,
   },
   triggerText: {
     flex: 1,
     color: V.colors.fg,
     fontFamily: V.fontFamily,
     fontSize: V.control.fontSize,
+    fontWeight: '700',
+    lineHeight: 16,
   },
   overlay: {
     flex: 1,

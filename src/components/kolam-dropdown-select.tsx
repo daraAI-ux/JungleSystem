@@ -15,6 +15,7 @@ import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { KolamButton } from './kolam-button';
 import { KolamChevronIcon } from './kolam-chevron-icon';
 import { KolamCopyStack } from './kolam-copy-stack';
+import { kolamFormControlStyles } from './kolam-form-control-styles';
 import { KolamInteractionFrame } from './kolam-interaction-frame';
 
 export interface KolamDropdownOption<TValue extends string = string> {
@@ -182,7 +183,7 @@ export function KolamDropdownSelect<TValue extends string = string>({
         accessibilityLabel={accessibilityLabel ?? label}
         accessibilityState={{ expanded: open }}
         onPress={toggleOpen}
-        style={[styles.trigger, triggerStyle]}
+        style={[styles.trigger, kolamFormControlStyles.trigger, triggerStyle]}
       >
         <View style={styles.triggerValue}>
           {selected?.icon ? (
@@ -441,18 +442,7 @@ const styles = StyleSheet.create({
     elevation: 2000000,
   },
   trigger: {
-    minHeight: 36,
     minWidth: 190,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: V.radius.lg,
-    borderColor: V.colors.border,
-    borderWidth: 1,
-    backgroundColor: V.colors.bg,
   },
   triggerValue: {
     minWidth: 0,
@@ -469,17 +459,18 @@ const styles = StyleSheet.create({
   },
   triggerChevronButton: {
     width: 28,
-    height: 28,
+    height: V.control.inputHeight - 2,
     flexShrink: 0,
     alignItems: 'center',
     justifyContent: 'center',
     borderLeftColor: V.colors.border,
     borderLeftWidth: 1,
+    marginVertical: 0,
   },
   triggerText: {
     color: V.colors.fg,
     fontFamily: V.fontFamily,
-    fontSize: 12,
+    fontSize: V.control.fontSize,
     fontWeight: '700',
     lineHeight: 16,
     maxWidth: 220,

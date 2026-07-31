@@ -1228,7 +1228,7 @@ function KolamSalesOpsCreateForm({
                       onChangeText={quantity =>
                         controller.onChangeCreateItem(item.key, { quantity })
                       }
-                      style={styles.itemBoxedInput}
+                      style={styles.itemControlFill}
                       value={
                         item.itemType === 'enclosure' ? '1' : item.quantity
                       }
@@ -1243,7 +1243,7 @@ function KolamSalesOpsCreateForm({
                         })
                       }
                       placeholder="Kode voucher"
-                      style={styles.itemBoxedInput}
+                      style={styles.itemControlFill}
                       value={item.voucherCode}
                     />
                   </View>
@@ -1278,7 +1278,7 @@ function KolamSalesOpsCreateForm({
                             })
                           }
                           placeholder="0"
-                          style={styles.itemBoxedInput}
+                          style={styles.itemControlFill}
                           value={item.discountAmount}
                         />
                       </View>
@@ -1311,7 +1311,7 @@ function KolamSalesOpsCreateForm({
                               })
                             }
                             placeholder="Nama item"
-                            style={styles.itemBoxedInput}
+                            style={styles.itemControlFill}
                             value={item.customName}
                           />
                         </FieldShell>
@@ -1325,7 +1325,7 @@ function KolamSalesOpsCreateForm({
                               })
                             }
                             placeholder="pcs"
-                            style={styles.itemBoxedInput}
+                            style={styles.itemControlFill}
                             value={item.customUnit}
                           />
                         </FieldShell>
@@ -1340,7 +1340,7 @@ function KolamSalesOpsCreateForm({
                               })
                             }
                             placeholder="0"
-                            style={styles.itemBoxedInput}
+                            style={styles.itemControlFill}
                             value={item.customUnitPrice}
                           />
                         </FieldShell>
@@ -2058,7 +2058,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   itemDropdownTriggerText: {
-    fontSize: 12,
+    fontSize: V.control.fontSize,
     maxWidth: 240,
   },
   itemDiscountRow: {
@@ -2081,36 +2081,29 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
   },
-  itemBoxedInput: {
-    backgroundColor: V.colors.bg,
-    borderColor: V.colors.border,
-    borderRadius: V.radius.lg,
-    borderWidth: 1,
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
-    fontWeight: '700',
-    minHeight: 36,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
+  itemControlFill: {
     width: '100%',
   },
   itemCustomSummary: {
+    alignItems: 'center',
     borderColor: V.colors.border,
     borderRadius: V.radius.lg,
     borderStyle: 'dashed',
     borderWidth: 1,
-    justifyContent: 'center',
-    minHeight: 36,
+    flexDirection: 'row',
+    height: V.control.inputHeight,
+    justifyContent: 'flex-start',
+    minHeight: V.control.inputHeight,
     paddingHorizontal: 12,
-    paddingVertical: 7,
+    paddingVertical: 0,
   },
   itemCustomSummaryText: {
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
-    fontSize: 12,
+    fontSize: V.control.fontSize,
     fontStyle: 'italic',
     fontWeight: '600',
+    lineHeight: 16,
   },
   itemCustomPanel: {
     backgroundColor: V.colors.muted,

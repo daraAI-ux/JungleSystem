@@ -40,8 +40,11 @@ export const textFieldRowStyles = StyleSheet.create({
     lineHeight: 16,
   },
   input: {
+    height: KOLAM_FORM_VISUAL.input.height,
     minHeight: KOLAM_FORM_VISUAL.input.height,
+    maxHeight: KOLAM_FORM_VISUAL.input.height,
     paddingHorizontal: V.control.inputPaddingX,
+    paddingVertical: 0,
     borderRadius: KOLAM_FORM_VISUAL.input.radius,
     borderColor: V.colors.input,
     borderWidth: 1,
@@ -53,7 +56,9 @@ export const textFieldRowStyles = StyleSheet.create({
     ...INPUT_SHADOW,
   },
   multilineInput: {
+    height: undefined,
     minHeight: 96,
+    maxHeight: undefined,
     paddingVertical: 10,
   },
 });
