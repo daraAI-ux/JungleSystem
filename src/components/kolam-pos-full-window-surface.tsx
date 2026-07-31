@@ -121,6 +121,8 @@ export function KolamPosFullWindowSurface({
 }: KolamPosFullWindowSurfaceProps) {
   const {width} = useWindowDimensions();
   const searchInputRef = React.useRef<React.ElementRef<typeof TextInput>>(null);
+  const categoryScrollRef = React.useRef<ScrollView>(null);
+  const categoryScrollOffsetRef = React.useRef(0);
   const [activeView, setActiveView] = React.useState<PosWindowView>('catalog');
   const [isPaymentModalOpen, setIsPaymentModalOpen] = React.useState(false);
   const [isSavedOrdersOpen, setIsSavedOrdersOpen] = React.useState(false);
@@ -185,6 +187,18 @@ export function KolamPosFullWindowSurface({
 
   const handleDeleteSavedOrder = React.useCallback((orderId: string) => {
     setSavedOrders(current => current.filter(order => order.id !== orderId));
+  }, []);
+
+  const scrollCategories = React.useCallback((direction: 'left' | 'right') => {
+    const nextOffset =
+      direction === 'left'
+        ? Math.max(0, categoryScrollOffsetRef.current - 220)
+        : categoryScrollOffsetRef.current + 220;
+
+    categoryScrollRef.current?.scrollTo({
+      animated: true,
+      x: nextOffset,
+    });
   }, []);
 
   React.useEffect(() => {
@@ -298,9 +312,19 @@ export function KolamPosFullWindowSurface({
         {isCatalogView ? (
           <>
             <View style={styles.categoryBar}>
+              <KolamInteractionFrame
+                onPress={() => scrollCategories('left')}
+                style={styles.categoryScrollButton}>
+                <Text style={styles.categoryScrollText}>{'<'}</Text>
+              </KolamInteractionFrame>
               <ScrollView
+                ref={categoryScrollRef}
                 horizontal
                 contentContainerStyle={styles.categoryPillList}
+                onScroll={event => {
+                  categoryScrollOffsetRef.current = event.nativeEvent.contentOffset.x;
+                }}
+                scrollEventThrottle={16}
                 showsHorizontalScrollIndicator={false}>
                 <PosCategoryPill
                   active={!activeCategory}
@@ -316,6 +340,11 @@ export function KolamPosFullWindowSurface({
                   />
                 ))}
               </ScrollView>
+              <KolamInteractionFrame
+                onPress={() => scrollCategories('right')}
+                style={styles.categoryScrollButton}>
+                <Text style={styles.categoryScrollText}>{'>'}</Text>
+              </KolamInteractionFrame>
               {catalogSearch || activeCategory ? (
                 <KolamButton
                   label="Hapus Filter"
@@ -323,7 +352,6 @@ export function KolamPosFullWindowSurface({
                   onPress={() => {
                     onCatalogSearchChange('');
                     onCategoryChange?.(null);
-                    onTypeChange('all');
                   }}
                 />
               ) : null}
@@ -1825,6 +1853,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     paddingRight: 8,
+  },
+  categoryScrollButton: {
+    width: 30,
+    height: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 6,
+    backgroundColor: V.colors.muted,
+  },
+  categoryScrollText: {
+    color: V.colors.mutedFg,
+    fontSize: 13,
+    fontWeight: '900',
   },
   categoryPill: {
     minHeight: 32,
