@@ -308,6 +308,11 @@ describe('KolamAmSurface', () => {
             connectionType: 'browser',
             tcpAddress: null,
             udid: null,
+            boxId: {
+              _id: 'box-1',
+              name: 'Box Browser',
+              rackId: {_id: 'rack-1', name: 'Rack Green'},
+            },
           },
           status: 'active',
           credentials: {},
@@ -331,6 +336,7 @@ describe('KolamAmSurface', () => {
 
     let text = renderText(renderer!).join(' ').replace(/\s+/g, ' ');
     expect(text).toContain('Showing 1 to 20 of 45 items');
+    expect(text).toContain('Box Browser / Rack Green');
     expect(getAmServiceAccounts).toHaveBeenLastCalledWith({
       page: 1,
       limit: 20,

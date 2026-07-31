@@ -1133,6 +1133,7 @@ function AmServicesPage() {
                 <View style={styles.deviceWideCol}>
                   <Text style={styles.cellText} numberOfLines={1}>{device?.name ?? 'Unassigned'}</Text>
                   <Text style={styles.rowMeta} numberOfLines={1}>{formatServiceDeviceMeta(device)}</Text>
+                  <Text style={styles.rowMeta} numberOfLines={1}>{formatServiceDeviceLocation(device)}</Text>
                 </View>
                 <Text style={[styles.cellText, styles.accountCol]} numberOfLines={1}>
                   {account.accountNumber ?? account.username ?? getCredentialString(account.credentials, 'phoneNumber') ?? '-'}
@@ -4144,6 +4145,15 @@ function formatServiceDeviceMeta(device: AmServiceAccountDeviceRef | null) {
   if (device.connectionType === 'usb') return device.udid ?? 'USB device';
   if (device.connectionType === 'browser') return 'Playwright';
   return device.udid ?? device.tcpAddress ?? device.connectionType ?? 'Device linked';
+}
+
+function formatServiceDeviceLocation(device: AmServiceAccountDeviceRef | null) {
+  if (!device || typeof device !== 'object') return 'No location assigned';
+  const box = device.boxId;
+  if (!box || typeof box === 'string') return 'No location assigned';
+  const rack = box.rackId;
+  const rackName = rack && typeof rack === 'object' ? rack.name : null;
+  return rackName ? `${box.name} / ${rackName}` : box.name;
 }
 
 function getServiceDevice(account: AmServiceAccount) {
