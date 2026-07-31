@@ -23,6 +23,7 @@ import {
   getAmDeviceServices,
   getAmDevices,
   getAmMutasi,
+  getAmMutasiSummary,
   getAmRacks,
   getAmRoles,
   getAmServiceAccounts,
@@ -886,7 +887,7 @@ describe('KolamAmSurface', () => {
       search: undefined,
       status: undefined,
     });
-    expect(getAmMutasi).toHaveBeenCalledWith({limit: 30, type: undefined});
+    expect(getAmMutasi).toHaveBeenCalledWith({page: 1, limit: 50, type: undefined});
     expect(getAmWebhookConfigs).toHaveBeenCalledTimes(1);
     expect(getAmUsers).toHaveBeenCalledWith({limit: 100, search: undefined});
     expect(getAmRoles).toHaveBeenCalledTimes(1);
@@ -895,6 +896,65 @@ describe('KolamAmSurface', () => {
       status: undefined,
     });
     expect(getAmCurrentUser).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders mutasi summary stats and pagination from live metadata', async () => {
+    jest.mocked(getAmMutasi).mockResolvedValue({
+      data: [
+        {
+          _id: 'mutasi-1',
+          accountId: {_id: 'account-1', label: 'BCA Main', platform: 'bca', accountNumber: '123'},
+          amount: 125000,
+          createdAt: '',
+          description: 'Incoming sample',
+          detectedAt: '2026-01-01T00:00:00.000Z',
+          deviceId: {_id: 'device-1', name: 'Phone 1'},
+          notificationHash: null,
+          transferId: null,
+          type: 'masuk',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 120, limit: 50, page: 1, totalPages: 3},
+    });
+    jest.mocked(getAmMutasiSummary).mockResolvedValue({
+      masuk: {total: 500000, count: 4},
+      keluar: {total: 150000, count: 2},
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await updateAmRoute(renderer!, 'mutasi');
+
+    expect(getAmMutasi).toHaveBeenLastCalledWith({
+      page: 1,
+      limit: 50,
+      type: undefined,
+    });
+
+    const joinedText = renderText(renderer!).join(' ');
+    expect(joinedText).toContain('Total Incoming');
+    expect(joinedText).toContain('Total Outgoing');
+    expect(joinedText).toContain('Net Balance');
+    expect(joinedText).toContain('Total Transactions');
+    expect(joinedText).toMatch(/Showing\s+1\s+to\s+50\s+of\s+120\s+items/);
+    expect(joinedText).toContain('Page 1/3');
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Mutasi Next Page'}).props.onPress();
+    });
+
+    expect(getAmMutasi).toHaveBeenLastCalledWith({
+      page: 2,
+      limit: 50,
+      type: undefined,
+    });
   });
 
   it('renders account settings from the live AM auth session route', async () => {

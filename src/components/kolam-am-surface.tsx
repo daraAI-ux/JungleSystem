@@ -98,6 +98,7 @@ const TASK_STATUSES: Array<AmTaskStatus | 'all'> = ['all', 'pending', 'queued', 
 const TASK_TYPES: Array<AmTaskType | 'all'> = ['all', 'stock_sync', 'process_sale', 'send_message', 'bank_transfer'];
 const AM_TASK_PAGE_LIMIT = 20;
 const AM_TRANSFER_PAGE_LIMIT = 20;
+const AM_MUTASI_PAGE_LIMIT = 50;
 const AM_PLATFORMS = ['all', 'whatsapp', 'tiktok', 'instagram', 'tokopedia', 'shopee', 'bca', 'brimo', 'dana'];
 const AM_PLATFORM_LABELS: Record<string, string> = {
   whatsapp: 'WhatsApp',
@@ -2160,6 +2161,9 @@ function AmMutasiPage() {
   const [mutasi, setMutasi] = React.useState<AmMutasi[]>([]);
   const [summary, setSummary] = React.useState<AmMutasiSummary | null>(null);
   const [type, setType] = React.useState('all');
+  const [page, setPage] = React.useState(1);
+  const [limit, setLimit] = React.useState(AM_MUTASI_PAGE_LIMIT);
+  const [total, setTotal] = React.useState(0);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -2167,10 +2171,16 @@ function AmMutasiPage() {
     try {
       setIsLoading(true);
       const [listResponse, summaryResponse] = await Promise.all([
-        getAmMutasi({limit: 30, type: type === 'all' ? undefined : type}),
+        getAmMutasi({
+          page,
+          limit: AM_MUTASI_PAGE_LIMIT,
+          type: type === 'all' ? undefined : type,
+        }),
         getAmMutasiSummary(),
       ]);
       setMutasi(listResponse.data);
+      setTotal(listResponse.meta.total);
+      setLimit(listResponse.meta.limit || AM_MUTASI_PAGE_LIMIT);
       setSummary(summaryResponse);
       setError(null);
     } catch (nextError) {
@@ -2178,7 +2188,7 @@ function AmMutasiPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [type]);
+  }, [page, type]);
 
   React.useEffect(() => {
     fetchMutasi();
@@ -2189,12 +2199,27 @@ function AmMutasiPage() {
     return () => clearInterval(interval);
   }, [fetchMutasi]);
 
+  const handleMutasiTypeChange = React.useCallback((value: string) => {
+    setType(value);
+    setPage(1);
+  }, []);
+
+  const totalPages = Math.max(1, Math.ceil(total / Math.max(limit, 1)));
+  const rangeFrom = total ? (page - 1) * limit + 1 : 0;
+  const rangeTo = total ? Math.min(page * limit, total) : 0;
+  const incoming = summary?.masuk ?? {total: 0, count: 0};
+  const outgoing = summary?.keluar ?? {total: 0, count: 0};
+  const netBalance = incoming.total - outgoing.total;
+  const totalTransactions = incoming.count + outgoing.count;
+
   return (
     <View style={styles.pageStack}>
       <View style={styles.filterBar}>
-        <AmMetricCard label="Masuk" value={formatRupiah(summary?.masuk.total ?? 0)} meta={`${summary?.masuk.count ?? 0} mutasi`} />
-        <AmMetricCard label="Keluar" value={formatRupiah(summary?.keluar.total ?? 0)} meta={`${summary?.keluar.count ?? 0} mutasi`} />
-        <AmSegmentGroup active={type} items={['all', 'masuk', 'keluar']} onSelect={setType} />
+        <AmMetricCard label="Total Incoming" value={formatRupiah(incoming.total)} meta={`${incoming.count} mutasi`} />
+        <AmMetricCard label="Total Outgoing" value={formatRupiah(outgoing.total)} meta={`${outgoing.count} mutasi`} />
+        <AmMetricCard label="Net Balance" value={formatRupiah(netBalance)} meta="masuk - keluar" />
+        <AmMetricCard label="Total Transactions" value={String(totalTransactions)} meta="summary count" />
+        <AmSegmentGroup active={type} items={['all', 'masuk', 'keluar']} onSelect={handleMutasiTypeChange} />
         <KolamButton label={isLoading ? 'Memuat' : 'Refresh'} intent="outline" muted={isLoading} size="sm" onPress={fetchMutasi} />
       </View>
       <AmInlineError title="Mutasi AM belum bisa dibaca" error={error} />
@@ -2221,6 +2246,31 @@ function AmMutasiPage() {
             <Text style={[styles.cellText, styles.dateCol]}>{formatAmDate(item.detectedAt)}</Text>
           </View>
         ))}
+        {total > limit ? (
+          <View style={styles.paginationBar}>
+            <Text style={styles.paginationText}>
+              Showing {rangeFrom} to {rangeTo} of {total} items
+            </Text>
+            <View style={styles.inlineActions}>
+              <KolamButton
+                accessibilityLabel="AM Mutasi Previous Page"
+                disabled={page <= 1 || isLoading}
+                label="Previous"
+                intent="outline"
+                size="sm"
+                onPress={() => setPage(current => Math.max(1, current - 1))}
+              />
+              <KolamButton
+                accessibilityLabel="AM Mutasi Next Page"
+                disabled={page >= totalPages || isLoading}
+                label={`Page ${page}/${totalPages}`}
+                intent="outline"
+                size="sm"
+                onPress={() => setPage(current => Math.min(totalPages, current + 1))}
+              />
+            </View>
+          </View>
+        ) : null}
       </View>
     </View>
   );
