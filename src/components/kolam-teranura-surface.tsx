@@ -39,6 +39,10 @@ import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamSearchField } from './kolam-search-field';
+import {
+  measureFilterPanelAnchor,
+  type KolamFilterPanelAnchor,
+} from './kolam-filter-panel-anchor';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 
@@ -136,7 +140,8 @@ function KolamTeranuraList({
   const [activeFilterPanel, setActiveFilterPanel] =
     React.useState<TeranuraFilterPanel | null>(null);
   const [filterPanelQuery, setFilterPanelQuery] = React.useState('');
-  const [panelAnchor, setPanelAnchor] = React.useState({ left: 0, top: 48 });
+  const [panelAnchor, setPanelAnchor] =
+    React.useState<KolamFilterPanelAnchor | null>(null);
   const [tableBodyWidth, setTableBodyWidth] = React.useState(0);
   const toolbarRef = React.useRef<View>(null);
   const categoryTriggerRef = React.useRef<View>(null);
@@ -198,45 +203,54 @@ function KolamTeranuraList({
     selectedCategory !== 'all' ||
     selectedBrand !== 'all' ||
     controller.filters.sellable !== 'all';
-  const anchorFilterPanel = React.useCallback((panel: TeranuraFilterPanel) => {
-    const triggerRef =
-      panel === 'category'
-        ? categoryTriggerRef
-        : panel === 'brand'
-        ? brandTriggerRef
-        : sellableTriggerRef;
-    const toolbar = toolbarRef.current;
-    const trigger = triggerRef.current;
-    if (!toolbar || !trigger) {
-      return;
+  const getFilterTriggerRef = (panel: TeranuraFilterPanel) => {
+    switch (panel) {
+      case 'category':
+        return categoryTriggerRef;
+      case 'brand':
+        return brandTriggerRef;
+      case 'sellable':
+      default:
+        return sellableTriggerRef;
     }
+  };
 
-    toolbar.measureInWindow((toolbarX, toolbarY, toolbarWidth) => {
-      trigger.measureInWindow((x, y, _width, height) => {
-        const maxLeft = Math.max(0, toolbarWidth - TERANURA_FILTER_PANEL_WIDTH);
-        const preferredLeft = x - toolbarX;
-        setPanelAnchor({
-          left: Math.min(Math.max(0, preferredLeft), maxLeft),
-          top: y - toolbarY + height + 4,
-        });
-      });
-    });
+  const anchorFilterPanel = React.useCallback((panel: TeranuraFilterPanel) => {
+    measureFilterPanelAnchor(
+      toolbarRef.current,
+      getFilterTriggerRef(panel).current,
+      TERANURA_FILTER_PANEL_WIDTH,
+      setPanelAnchor,
+    );
   }, []);
+
   const openFilterPanel = React.useCallback(
     (panel: TeranuraFilterPanel) => {
-      setActiveFilterPanel(current => {
-        const next = current === panel ? null : panel;
-        if (next) {
-          requestAnimationFrame(() => anchorFilterPanel(next));
-        }
-        return next;
-      });
       setFilterPanelQuery('');
+      if (activeFilterPanel === panel) {
+        setActiveFilterPanel(null);
+        setPanelAnchor(null);
+        return;
+      }
+      setActiveFilterPanel(null);
+      setPanelAnchor(null);
+      requestAnimationFrame(() => {
+        measureFilterPanelAnchor(
+          toolbarRef.current,
+          getFilterTriggerRef(panel).current,
+          TERANURA_FILTER_PANEL_WIDTH,
+          anchor => {
+            setPanelAnchor(anchor);
+            setActiveFilterPanel(panel);
+          },
+        );
+      });
     },
-    [anchorFilterPanel],
+    [activeFilterPanel],
   );
   const closeFilterPanel = () => {
     setActiveFilterPanel(null);
+    setPanelAnchor(null);
     setFilterPanelQuery('');
   };
   React.useEffect(() => {
@@ -326,7 +340,7 @@ function KolamTeranuraList({
             </View>
           </View>
         </View>
-        {activeFilterPanel ? (
+        {activeFilterPanel && panelAnchor ? (
           <TeranuraFilterOverlayPanel
             activePanel={activeFilterPanel}
             brandOptions={brandOptions}

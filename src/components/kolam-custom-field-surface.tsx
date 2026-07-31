@@ -53,6 +53,10 @@ import { KolamSearchField } from './kolam-search-field';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamStatusBadge } from './kolam-status-badge';
+import {
+  measureFilterPanelAnchor,
+  type KolamFilterPanelAnchor,
+} from './kolam-filter-panel-anchor';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 
@@ -186,7 +190,8 @@ function KolamCustomFieldList({
   const [page, setPage] = React.useState(1);
   const [activeFilterPanel, setActiveFilterPanel] =
     React.useState<CustomFieldListFilterPanel | null>(null);
-  const [panelAnchor, setPanelAnchor] = React.useState({ left: 0, top: 40 });
+  const [panelAnchor, setPanelAnchor] =
+    React.useState<KolamFilterPanelAnchor | null>(null);
   const toolbarRef = React.useRef<View>(null);
   const sortTriggerRef = React.useRef<View>(null);
   const statusTriggerRef = React.useRef<View>(null);
@@ -228,42 +233,48 @@ function KolamCustomFieldList({
         : 'Semua Status';
   const typeFilterLabel = getCustomFieldTypeFilterLabel(typeFilter);
 
+  const getFilterTriggerRef = (panel: CustomFieldListFilterPanel) => {
+    switch (panel) {
+      case 'status':
+        return statusTriggerRef;
+      case 'type':
+        return typeTriggerRef;
+      case 'sort':
+      default:
+        return sortTriggerRef;
+    }
+  };
+
   const anchorFilterPanel = React.useCallback(
     (panel: CustomFieldListFilterPanel) => {
-      const toolbar = toolbarRef.current;
-      const trigger =
-        panel === 'status'
-          ? statusTriggerRef.current
-          : panel === 'type'
-            ? typeTriggerRef.current
-            : sortTriggerRef.current;
-      if (!toolbar || !trigger) {
-        return;
-      }
-      toolbar.measureInWindow((toolbarX, toolbarY, toolbarWidth) => {
-        trigger.measureInWindow((x, y, _width, height) => {
-          const maxLeft = Math.max(
-            0,
-            toolbarWidth - CUSTOM_FIELD_FILTER_PANEL_WIDTH,
-          );
-          const preferredLeft = x - toolbarX;
-          setPanelAnchor({
-            left: Math.min(Math.max(0, preferredLeft), maxLeft),
-            top: y - toolbarY + height + 4,
-          });
-        });
-      });
+      measureFilterPanelAnchor(
+        toolbarRef.current,
+        getFilterTriggerRef(panel).current,
+        CUSTOM_FIELD_FILTER_PANEL_WIDTH,
+        setPanelAnchor,
+      );
     },
     [],
   );
 
   const openFilterPanel = (panel: CustomFieldListFilterPanel) => {
-    setActiveFilterPanel(current => {
-      const next = current === panel ? null : panel;
-      if (next) {
-        requestAnimationFrame(() => anchorFilterPanel(next));
-      }
-      return next;
+    if (activeFilterPanel === panel) {
+      setActiveFilterPanel(null);
+      setPanelAnchor(null);
+      return;
+    }
+    setActiveFilterPanel(null);
+    setPanelAnchor(null);
+    requestAnimationFrame(() => {
+      measureFilterPanelAnchor(
+        toolbarRef.current,
+        getFilterTriggerRef(panel).current,
+        CUSTOM_FIELD_FILTER_PANEL_WIDTH,
+        anchor => {
+          setPanelAnchor(anchor);
+          setActiveFilterPanel(panel);
+        },
+      );
     });
   };
 
@@ -337,7 +348,7 @@ function KolamCustomFieldList({
             </View>
           </View>
         </View>
-        {activeFilterPanel ? (
+        {activeFilterPanel && panelAnchor ? (
           <View
             style={[
               styles.filterOverlayPanel,
@@ -369,6 +380,7 @@ function KolamCustomFieldList({
                       setTypeFilter(option.value as CustomFieldTypeFilter);
                     }
                     setActiveFilterPanel(null);
+                    setPanelAnchor(null);
                   }}
                   selected={selected}
                   style={[

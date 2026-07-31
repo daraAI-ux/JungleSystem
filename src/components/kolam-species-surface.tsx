@@ -94,6 +94,10 @@ import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamSearchField } from './kolam-search-field';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamStatusBadge } from './kolam-status-badge';
+import {
+  measureFilterPanelAnchor,
+  type KolamFilterPanelAnchor,
+} from './kolam-filter-panel-anchor';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 
@@ -251,7 +255,8 @@ function KolamSpeciesList({
   const [activeFilterPanel, setActiveFilterPanel] =
     React.useState<SpeciesListFilterPanel | null>(null);
   const [filterPanelQuery, setFilterPanelQuery] = React.useState('');
-  const [panelAnchor, setPanelAnchor] = React.useState({ left: 0, top: 40 });
+  const [panelAnchor, setPanelAnchor] =
+    React.useState<KolamFilterPanelAnchor | null>(null);
   const toolbarRef = React.useRef<View>(null);
   const taxonomyTriggerRef = React.useRef<View>(null);
   const categoryTriggerRef = React.useRef<View>(null);
@@ -317,37 +322,42 @@ function KolamSpeciesList({
   };
 
   const anchorFilterPanel = React.useCallback((panel: SpeciesListFilterPanel) => {
-    const toolbar = toolbarRef.current;
-    const trigger = getFilterTriggerRef(panel).current;
-    if (!toolbar || !trigger) {
-      return;
-    }
-    toolbar.measureInWindow((toolbarX, toolbarY, toolbarWidth) => {
-      trigger.measureInWindow((x, y, _width, height) => {
-        const panelWidth =
-          panel === 'stock' ? 220 : SPECIES_FILTER_PANEL_WIDTH;
-        const maxLeft = Math.max(0, toolbarWidth - panelWidth);
-        const preferredLeft = x - toolbarX;
-        setPanelAnchor({
-          left: Math.min(Math.max(0, preferredLeft), maxLeft),
-          top: y - toolbarY + height + 4,
-        });
-      });
-    });
+    const panelWidth =
+      panel === 'stock' ? 220 : SPECIES_FILTER_PANEL_WIDTH;
+    measureFilterPanelAnchor(
+      toolbarRef.current,
+      getFilterTriggerRef(panel).current,
+      panelWidth,
+      setPanelAnchor,
+    );
   }, []);
 
   const openFilterPanel = (panel: SpeciesListFilterPanel) => {
-    setActiveFilterPanel(current => {
-      const next = current === panel ? null : panel;
-      if (next) {
-        requestAnimationFrame(() => anchorFilterPanel(next));
-      }
-      return next;
-    });
     setFilterPanelQuery('');
+    if (activeFilterPanel === panel) {
+      setActiveFilterPanel(null);
+      setPanelAnchor(null);
+      return;
+    }
+    setActiveFilterPanel(null);
+    setPanelAnchor(null);
+    const panelWidth =
+      panel === 'stock' ? 220 : SPECIES_FILTER_PANEL_WIDTH;
+    requestAnimationFrame(() => {
+      measureFilterPanelAnchor(
+        toolbarRef.current,
+        getFilterTriggerRef(panel).current,
+        panelWidth,
+        anchor => {
+          setPanelAnchor(anchor);
+          setActiveFilterPanel(panel);
+        },
+      );
+    });
   };
   const closeFilterPanel = () => {
     setActiveFilterPanel(null);
+    setPanelAnchor(null);
     setFilterPanelQuery('');
   };
 
@@ -497,7 +507,7 @@ function KolamSpeciesList({
             </View>
           </View>
         </View>
-        {activeFilterPanel ? (
+        {activeFilterPanel && panelAnchor ? (
           <SpeciesFilterOverlayPanel
             activePanel={activeFilterPanel}
             anchor={panelAnchor}

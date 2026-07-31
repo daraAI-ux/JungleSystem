@@ -65,6 +65,10 @@ import { KolamSalesOpsAnalyticsPanel } from './kolam-sales-ops-analytics-panel';
 import { KolamSalesOpsDetail } from './kolam-sales-ops-detail';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamStatusBadge } from './kolam-status-badge';
+import {
+  measureFilterPanelAnchor,
+  type KolamFilterPanelAnchor,
+} from './kolam-filter-panel-anchor';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 
@@ -172,7 +176,9 @@ function KolamSalesOpsList({
   const [searchInput, setSearchInput] = useState(controller.filters.search);
   const [activeFilterPanel, setActiveFilterPanel] =
     useState<SalesFilterPanel>(null);
-  const [panelAnchor, setPanelAnchor] = useState({ left: 0, top: 48 });
+  const [panelAnchor, setPanelAnchor] = useState<KolamFilterPanelAnchor | null>(
+    null,
+  );
   const [tableBodyWidth, setTableBodyWidth] = useState(0);
   const toolbarRef = React.useRef<View>(null);
   const lifecycleTriggerRef = React.useRef<View>(null);
@@ -219,46 +225,45 @@ function KolamSalesOpsList({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchInput]);
 
+  const getFilterTriggerRef = (panel: Exclude<SalesFilterPanel, null>) =>
+    panel === 'lifecycle'
+      ? lifecycleTriggerRef
+      : panel === 'status'
+        ? statusTriggerRef
+        : deliveryTriggerRef;
+
   const anchorFilterPanel = React.useCallback(
     (panel: Exclude<SalesFilterPanel, null>) => {
-      const triggerRef =
-        panel === 'lifecycle'
-          ? lifecycleTriggerRef
-          : panel === 'status'
-            ? statusTriggerRef
-            : deliveryTriggerRef;
-      const toolbar = toolbarRef.current;
-      const trigger = triggerRef.current;
-      if (!toolbar || !trigger) {
-        return;
-      }
-      toolbar.measureInWindow((toolbarX, toolbarY, toolbarWidth) => {
-        trigger.measureInWindow((x, y, width, height) => {
-          const maxLeft = Math.max(0, toolbarWidth - FILTER_PANEL_WIDTH);
-          const preferredLeft = x - toolbarX;
-          const left = Math.min(Math.max(0, preferredLeft), maxLeft);
-          setPanelAnchor({
-            left,
-            top: y - toolbarY + height + 4,
-          });
-        });
-      });
+      measureFilterPanelAnchor(
+        toolbarRef.current,
+        getFilterTriggerRef(panel).current,
+        FILTER_PANEL_WIDTH,
+        setPanelAnchor,
+      );
     },
     [],
   );
 
-  const toggleFilterPanel = React.useCallback(
-    (panel: Exclude<SalesFilterPanel, null>) => {
-      setActiveFilterPanel(prev => {
-        const next = prev === panel ? null : panel;
-        if (next) {
-          requestAnimationFrame(() => anchorFilterPanel(next));
-        }
-        return next;
-      });
-    },
-    [anchorFilterPanel],
-  );
+  const toggleFilterPanel = (panel: Exclude<SalesFilterPanel, null>) => {
+    if (activeFilterPanel === panel) {
+      setActiveFilterPanel(null);
+      setPanelAnchor(null);
+      return;
+    }
+    setActiveFilterPanel(null);
+    setPanelAnchor(null);
+    requestAnimationFrame(() => {
+      measureFilterPanelAnchor(
+        toolbarRef.current,
+        getFilterTriggerRef(panel).current,
+        FILTER_PANEL_WIDTH,
+        anchor => {
+          setPanelAnchor(anchor);
+          setActiveFilterPanel(panel);
+        },
+      );
+    });
+  };
 
   React.useEffect(() => {
     if (!activeFilterPanel) {
@@ -354,6 +359,7 @@ function KolamSalesOpsList({
                   onPress={() => {
                     setSearchInput('');
                     setActiveFilterPanel(null);
+                    setPanelAnchor(null);
                     controller.onClearFilters();
                   }}
                   style={styles.toolbarButton}
@@ -385,44 +391,56 @@ function KolamSalesOpsList({
           </View>
         </View>
 
-        {activeFilterPanel === 'lifecycle' ? (
+        {activeFilterPanel === 'lifecycle' && panelAnchor ? (
           <FilterPanel
             anchor={panelAnchor}
-            onClose={() => setActiveFilterPanel(null)}
+            onClose={() => {
+              setActiveFilterPanel(null);
+              setPanelAnchor(null);
+            }}
             onSelect={value => {
               controller.onChangeFilters({
                 lifecycle: value as KolamSaleLifecycle,
                 needsAction: false,
               });
               setActiveFilterPanel(null);
+              setPanelAnchor(null);
             }}
             options={KOLAM_SALE_LIFECYCLE_OPTIONS}
             selectedValue={controller.filters.lifecycle}
           />
         ) : null}
-        {activeFilterPanel === 'status' ? (
+        {activeFilterPanel === 'status' && panelAnchor ? (
           <FilterPanel
             anchor={panelAnchor}
-            onClose={() => setActiveFilterPanel(null)}
+            onClose={() => {
+              setActiveFilterPanel(null);
+              setPanelAnchor(null);
+            }}
             onSelect={value => {
               controller.onChangeFilters({
                 status: value as '' | KolamSalePaymentStatus,
               });
               setActiveFilterPanel(null);
+              setPanelAnchor(null);
             }}
             options={KOLAM_SALE_PAYMENT_STATUS_OPTIONS}
             selectedValue={controller.filters.status}
           />
         ) : null}
-        {activeFilterPanel === 'delivery' ? (
+        {activeFilterPanel === 'delivery' && panelAnchor ? (
           <FilterPanel
             anchor={panelAnchor}
-            onClose={() => setActiveFilterPanel(null)}
+            onClose={() => {
+              setActiveFilterPanel(null);
+              setPanelAnchor(null);
+            }}
             onSelect={value => {
               controller.onChangeFilters({
                 deliveryStatus: value as '' | KolamSaleDeliveryStatus,
               });
               setActiveFilterPanel(null);
+              setPanelAnchor(null);
             }}
             options={KOLAM_SALE_DELIVERY_STATUS_OPTIONS}
             selectedValue={controller.filters.deliveryStatus}

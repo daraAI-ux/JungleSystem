@@ -46,6 +46,10 @@ import { KolamModalBackdrop } from './kolam-modal-backdrop';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamOverflowMenuButton, KolamTableFooterControls } from './kolam-dropdown-select';
 import { KolamStatusBadge } from './kolam-status-badge';
+import {
+  measureFilterPanelAnchor,
+  type KolamFilterPanelAnchor,
+} from './kolam-filter-panel-anchor';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 
@@ -112,7 +116,8 @@ function KolamProductSerialList({
   const [searchInput, setSearchInput] = React.useState(controller.filters.search);
   const [activeFilterPanel, setActiveFilterPanel] =
     React.useState<ProductSerialFilterPanel | null>(null);
-  const [panelAnchor, setPanelAnchor] = React.useState({ left: 0, top: 48 });
+  const [panelAnchor, setPanelAnchor] =
+    React.useState<KolamFilterPanelAnchor | null>(null);
   const [qrSerial, setQrSerial] = React.useState<KolamProductSerial | null>(null);
   const [tableBodyWidth, setTableBodyWidth] = React.useState(0);
   const toolbarRef = React.useRef<View>(null);
@@ -170,37 +175,38 @@ function KolamProductSerialList({
       ? 'Coba ubah pencarian atau filter.'
       : 'Nomor seri dibuat otomatis saat produksi selesai.';
 
+  const getFilterTriggerRef = (panel: ProductSerialFilterPanel) =>
+    panel === 'type' ? typeTriggerRef : statusTriggerRef;
+
   const anchorFilterPanel = React.useCallback((panel: ProductSerialFilterPanel) => {
-    const triggerRef = panel === 'type' ? typeTriggerRef : statusTriggerRef;
-    const toolbar = toolbarRef.current;
-    const trigger = triggerRef.current;
-    if (!toolbar || !trigger) {
-      return;
-    }
-    toolbar.measureInWindow((toolbarX, toolbarY, toolbarWidth) => {
-      trigger.measureInWindow((x, y, _width, height) => {
-        const maxLeft = Math.max(0, toolbarWidth - FILTER_PANEL_WIDTH);
-        const preferredLeft = x - toolbarX;
-        setPanelAnchor({
-          left: Math.min(Math.max(0, preferredLeft), maxLeft),
-          top: y - toolbarY + height + 4,
-        });
-      });
-    });
+    measureFilterPanelAnchor(
+      toolbarRef.current,
+      getFilterTriggerRef(panel).current,
+      FILTER_PANEL_WIDTH,
+      setPanelAnchor,
+    );
   }, []);
 
-  const toggleFilterPanel = React.useCallback(
-    (panel: ProductSerialFilterPanel) => {
-      setActiveFilterPanel(current => {
-        const next = current === panel ? null : panel;
-        if (next) {
-          requestAnimationFrame(() => anchorFilterPanel(next));
-        }
-        return next;
-      });
-    },
-    [anchorFilterPanel],
-  );
+  const toggleFilterPanel = (panel: ProductSerialFilterPanel) => {
+    if (activeFilterPanel === panel) {
+      setActiveFilterPanel(null);
+      setPanelAnchor(null);
+      return;
+    }
+    setActiveFilterPanel(null);
+    setPanelAnchor(null);
+    requestAnimationFrame(() => {
+      measureFilterPanelAnchor(
+        toolbarRef.current,
+        getFilterTriggerRef(panel).current,
+        FILTER_PANEL_WIDTH,
+        anchor => {
+          setPanelAnchor(anchor);
+          setActiveFilterPanel(panel);
+        },
+      );
+    });
+  };
 
   React.useEffect(() => {
     if (!activeFilterPanel) {
@@ -281,6 +287,7 @@ function KolamProductSerialList({
                   onPress={() => {
                     setSearchInput('');
                     setActiveFilterPanel(null);
+                    setPanelAnchor(null);
                     controller.onClearFilters();
                   }}
                   style={styles.toolbarButton}
@@ -304,7 +311,7 @@ function KolamProductSerialList({
           </View>
         </View>
 
-        {activeFilterPanel === 'type' ? (
+        {activeFilterPanel === 'type' && panelAnchor ? (
           <View
             style={[
               styles.filterOverlayPanel,
@@ -326,6 +333,7 @@ function KolamProductSerialList({
                 onPress={() => {
                   controller.onChangeFilters({ productType: '' });
                   setActiveFilterPanel(null);
+                  setPanelAnchor(null);
                 }}
                 style={styles.filterPanelOption}
               />
@@ -337,18 +345,25 @@ function KolamProductSerialList({
                   onPress={() => {
                     controller.onChangeFilters({ productType: type });
                     setActiveFilterPanel(null);
+                    setPanelAnchor(null);
                   }}
                   style={styles.filterPanelOption}
                 />
               ))}
             </ScrollView>
             <View style={styles.filterPanelFooter}>
-              <KolamButton label="Tutup" onPress={() => setActiveFilterPanel(null)} />
+              <KolamButton
+                label="Tutup"
+                onPress={() => {
+                  setActiveFilterPanel(null);
+                  setPanelAnchor(null);
+                }}
+              />
             </View>
           </View>
         ) : null}
 
-        {activeFilterPanel === 'status' ? (
+        {activeFilterPanel === 'status' && panelAnchor ? (
           <View
             style={[
               styles.filterOverlayPanel,
@@ -370,6 +385,7 @@ function KolamProductSerialList({
                 onPress={() => {
                   controller.onChangeFilters({ status: '' });
                   setActiveFilterPanel(null);
+                  setPanelAnchor(null);
                 }}
                 style={styles.filterPanelOption}
               />
@@ -381,13 +397,20 @@ function KolamProductSerialList({
                   onPress={() => {
                     controller.onChangeFilters({ status });
                     setActiveFilterPanel(null);
+                    setPanelAnchor(null);
                   }}
                   style={styles.filterPanelOption}
                 />
               ))}
             </ScrollView>
             <View style={styles.filterPanelFooter}>
-              <KolamButton label="Tutup" onPress={() => setActiveFilterPanel(null)} />
+              <KolamButton
+                label="Tutup"
+                onPress={() => {
+                  setActiveFilterPanel(null);
+                  setPanelAnchor(null);
+                }}
+              />
             </View>
           </View>
         ) : null}

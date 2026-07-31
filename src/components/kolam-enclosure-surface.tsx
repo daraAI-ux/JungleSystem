@@ -89,6 +89,10 @@ import {KolamProfileAvatarContent} from './kolam-profile-avatar-content';
 import {KolamRemoteImage} from './kolam-remote-image';
 import {KolamSearchField} from './kolam-search-field';
 import {KolamStatusBadge} from './kolam-status-badge';
+import {
+  measureFilterPanelAnchor,
+  type KolamFilterPanelAnchor,
+} from './kolam-filter-panel-anchor';
 import {KolamTableFilterTrigger} from './kolam-table-filter-trigger';
 import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
 import {KolamToggleRow} from './kolam-toggle-row';
@@ -3405,7 +3409,8 @@ function KolamEnclosureList({
   );
   const [activeFilterPanel, setActiveFilterPanel] =
     React.useState<EnclosureFilterPanel>(null);
-  const [panelAnchor, setPanelAnchor] = React.useState({left: 0, top: 48});
+  const [panelAnchor, setPanelAnchor] =
+    React.useState<KolamFilterPanelAnchor | null>(null);
   const toolbarRef = React.useRef<View>(null);
   const typeTriggerRef = React.useRef<View>(null);
   const livestockTriggerRef = React.useRef<View>(null);
@@ -3444,44 +3449,41 @@ function KolamEnclosureList({
       ? 'Livestock'
       : getLivestockPurposeLabel(controller.filters.livestockPurpose);
 
+  const getFilterTriggerRef = (panel: Exclude<EnclosureFilterPanel, null>) =>
+    panel === 'type' ? typeTriggerRef : livestockTriggerRef;
+
   const anchorFilterPanel = React.useCallback((panel: EnclosureFilterPanel) => {
     if (!panel) {
       return;
     }
-    const triggerRef =
-      panel === 'type' ? typeTriggerRef : livestockTriggerRef;
-    const toolbar = toolbarRef.current;
-    const trigger = triggerRef.current;
-    if (!toolbar || !trigger) {
-      return;
-    }
-    toolbar.measureInWindow((toolbarX, toolbarY, toolbarWidth) => {
-      trigger.measureInWindow((x, y, _width, height) => {
-        const maxLeft = Math.max(
-          0,
-          toolbarWidth - ENCLOSURE_FILTER_PANEL_WIDTH,
-        );
-        const preferredLeft = x - toolbarX;
-        setPanelAnchor({
-          left: Math.min(Math.max(0, preferredLeft), maxLeft),
-          top: y - toolbarY + height + 4,
-        });
-      });
-    });
+    measureFilterPanelAnchor(
+      toolbarRef.current,
+      getFilterTriggerRef(panel).current,
+      ENCLOSURE_FILTER_PANEL_WIDTH,
+      setPanelAnchor,
+    );
   }, []);
 
-  const toggleFilterPanel = React.useCallback(
-    (panel: Exclude<EnclosureFilterPanel, null>) => {
-      setActiveFilterPanel(current => {
-        const next = current === panel ? null : panel;
-        if (next) {
-          requestAnimationFrame(() => anchorFilterPanel(next));
-        }
-        return next;
-      });
-    },
-    [anchorFilterPanel],
-  );
+  const toggleFilterPanel = (panel: Exclude<EnclosureFilterPanel, null>) => {
+    if (activeFilterPanel === panel) {
+      setActiveFilterPanel(null);
+      setPanelAnchor(null);
+      return;
+    }
+    setActiveFilterPanel(null);
+    setPanelAnchor(null);
+    requestAnimationFrame(() => {
+      measureFilterPanelAnchor(
+        toolbarRef.current,
+        getFilterTriggerRef(panel).current,
+        ENCLOSURE_FILTER_PANEL_WIDTH,
+        anchor => {
+          setPanelAnchor(anchor);
+          setActiveFilterPanel(panel);
+        },
+      );
+    });
+  };
 
   React.useEffect(() => {
     if (!activeFilterPanel) {
@@ -3544,6 +3546,7 @@ function KolamEnclosureList({
                   onPress={() => {
                     setSearchInput('');
                     setActiveFilterPanel(null);
+                    setPanelAnchor(null);
                     controller.onClearFilters();
                   }}
                   style={styles.toolbarButton}
@@ -3559,7 +3562,7 @@ function KolamEnclosureList({
           </View>
         </View>
 
-        {activeFilterPanel === 'type' ? (
+        {activeFilterPanel === 'type' && panelAnchor ? (
           <View
             style={[
               styles.filterOverlayPanel,
@@ -3584,6 +3587,7 @@ function KolamEnclosureList({
                 onPress={() => {
                   controller.onChangeFilters({enclosureType: 'all'});
                   setActiveFilterPanel(null);
+                  setPanelAnchor(null);
                 }}
                 style={styles.filterPanelOption}
               />
@@ -3599,6 +3603,7 @@ function KolamEnclosureList({
                   onPress={() => {
                     controller.onChangeFilters({enclosureType: type});
                     setActiveFilterPanel(null);
+                    setPanelAnchor(null);
                   }}
                   style={styles.filterPanelOption}
                 />
@@ -3607,13 +3612,16 @@ function KolamEnclosureList({
             <View style={styles.filterPanelFooter}>
               <KolamButton
                 label="Tutup"
-                onPress={() => setActiveFilterPanel(null)}
+                onPress={() => {
+                  setActiveFilterPanel(null);
+                  setPanelAnchor(null);
+                }}
               />
             </View>
           </View>
         ) : null}
 
-        {activeFilterPanel === 'livestock' ? (
+        {activeFilterPanel === 'livestock' && panelAnchor ? (
           <View
             style={[
               styles.filterOverlayPanel,
@@ -3642,6 +3650,7 @@ function KolamEnclosureList({
                       livestockPurpose: option.value,
                     });
                     setActiveFilterPanel(null);
+                    setPanelAnchor(null);
                   }}
                   style={styles.filterPanelOption}
                 />
@@ -3650,7 +3659,10 @@ function KolamEnclosureList({
             <View style={styles.filterPanelFooter}>
               <KolamButton
                 label="Tutup"
-                onPress={() => setActiveFilterPanel(null)}
+                onPress={() => {
+                  setActiveFilterPanel(null);
+                  setPanelAnchor(null);
+                }}
               />
             </View>
           </View>

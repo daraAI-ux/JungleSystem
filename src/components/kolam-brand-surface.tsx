@@ -55,6 +55,10 @@ import { KolamInteractionFrame } from './kolam-interaction-frame';
 import { KolamLabelFieldDetailOverview } from './kolam-label-field-detail-overview';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamStatusBadge } from './kolam-status-badge';
+import {
+  measureFilterPanelAnchor,
+  type KolamFilterPanelAnchor,
+} from './kolam-filter-panel-anchor';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 
@@ -177,7 +181,8 @@ function KolamBrandList({
   const [page, setPage] = React.useState(1);
   const [activeFilterPanel, setActiveFilterPanel] =
     React.useState<BrandListFilterPanel | null>(null);
-  const [panelAnchor, setPanelAnchor] = React.useState({ left: 0, top: 40 });
+  const [panelAnchor, setPanelAnchor] =
+    React.useState<KolamFilterPanelAnchor | null>(null);
   const toolbarRef = React.useRef<View>(null);
   const sortTriggerRef = React.useRef<View>(null);
   const assetTriggerRef = React.useRef<View>(null);
@@ -211,31 +216,36 @@ function KolamBrandList({
         : 'Aset terbanyak';
 
   const anchorFilterPanel = React.useCallback((panel: BrandListFilterPanel) => {
-    const toolbar = toolbarRef.current;
     const trigger =
       panel === 'asset' ? assetTriggerRef.current : sortTriggerRef.current;
-    if (!toolbar || !trigger) {
-      return;
-    }
-    toolbar.measureInWindow((toolbarX, toolbarY, toolbarWidth) => {
-      trigger.measureInWindow((x, y, _width, height) => {
-        const maxLeft = Math.max(0, toolbarWidth - BRAND_FILTER_PANEL_WIDTH);
-        const preferredLeft = x - toolbarX;
-        setPanelAnchor({
-          left: Math.min(Math.max(0, preferredLeft), maxLeft),
-          top: y - toolbarY + height + 4,
-        });
-      });
-    });
+    measureFilterPanelAnchor(
+      toolbarRef.current,
+      trigger,
+      BRAND_FILTER_PANEL_WIDTH,
+      setPanelAnchor,
+    );
   }, []);
 
   const openFilterPanel = (panel: BrandListFilterPanel) => {
-    setActiveFilterPanel(current => {
-      const next = current === panel ? null : panel;
-      if (next) {
-        requestAnimationFrame(() => anchorFilterPanel(next));
-      }
-      return next;
+    if (activeFilterPanel === panel) {
+      setActiveFilterPanel(null);
+      setPanelAnchor(null);
+      return;
+    }
+    setActiveFilterPanel(null);
+    setPanelAnchor(null);
+    const trigger =
+      panel === 'asset' ? assetTriggerRef.current : sortTriggerRef.current;
+    requestAnimationFrame(() => {
+      measureFilterPanelAnchor(
+        toolbarRef.current,
+        trigger,
+        BRAND_FILTER_PANEL_WIDTH,
+        anchor => {
+          setPanelAnchor(anchor);
+          setActiveFilterPanel(panel);
+        },
+      );
     });
   };
 
@@ -300,7 +310,7 @@ function KolamBrandList({
             </View>
           </View>
         </View>
-        {activeFilterPanel ? (
+        {activeFilterPanel && panelAnchor ? (
           <View
             style={[
               styles.filterOverlayPanel,
@@ -337,6 +347,7 @@ function KolamBrandList({
                       setAssetMode(option.value as BrandAssetMode);
                     }
                     setActiveFilterPanel(null);
+                    setPanelAnchor(null);
                   }}
                   selected={selected}
                   style={[

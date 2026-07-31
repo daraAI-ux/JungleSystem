@@ -125,6 +125,10 @@ import { KolamGrocerPricingTiersEditor } from './kolam-grocer-pricing-tiers-edit
 import { KolamSearchField } from './kolam-search-field';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
+import {
+  measureFilterPanelAnchor,
+  type KolamFilterPanelAnchor,
+} from './kolam-filter-panel-anchor';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 import { copyTextToClipboard } from '../lib/native-clipboard';
@@ -291,7 +295,8 @@ export function KolamProductSurface({
   );
   const brandFilterLabel = getProductFilterLabel(brandOptions, selectedBrand, 'Merek');
   const stockFilterLabel = getProductStockFilterLabel(selectedStock);
-  const [panelAnchor, setPanelAnchor] = React.useState({ left: 0, top: 40 });
+  const [panelAnchor, setPanelAnchor] =
+    React.useState<KolamFilterPanelAnchor | null>(null);
   const toolbarRef = React.useRef<View>(null);
   const categoryTriggerRef = React.useRef<View>(null);
   const brandTriggerRef = React.useRef<View>(null);
@@ -310,36 +315,40 @@ export function KolamProductSurface({
   };
 
   const anchorFilterPanel = React.useCallback((panel: ProductListFilterPanel) => {
-    const toolbar = toolbarRef.current;
-    const trigger = getFilterTriggerRef(panel).current;
-    if (!toolbar || !trigger) {
-      return;
-    }
-    toolbar.measureInWindow((toolbarX, toolbarY, toolbarWidth) => {
-      trigger.measureInWindow((x, y, _width, height) => {
-        const panelWidth = panel === 'stock' ? 220 : PRODUCT_FILTER_PANEL_WIDTH;
-        const maxLeft = Math.max(0, toolbarWidth - panelWidth);
-        const preferredLeft = x - toolbarX;
-        setPanelAnchor({
-          left: Math.min(Math.max(0, preferredLeft), maxLeft),
-          top: y - toolbarY + height + 4,
-        });
-      });
-    });
+    const panelWidth = panel === 'stock' ? 220 : PRODUCT_FILTER_PANEL_WIDTH;
+    measureFilterPanelAnchor(
+      toolbarRef.current,
+      getFilterTriggerRef(panel).current,
+      panelWidth,
+      setPanelAnchor,
+    );
   }, []);
 
   const openFilterPanel = (panel: ProductListFilterPanel) => {
-    setActiveFilterPanel(current => {
-      const next = current === panel ? null : panel;
-      if (next) {
-        requestAnimationFrame(() => anchorFilterPanel(next));
-      }
-      return next;
-    });
     setFilterPanelQuery('');
+    if (activeFilterPanel === panel) {
+      setActiveFilterPanel(null);
+      setPanelAnchor(null);
+      return;
+    }
+    setActiveFilterPanel(null);
+    setPanelAnchor(null);
+    const panelWidth = panel === 'stock' ? 220 : PRODUCT_FILTER_PANEL_WIDTH;
+    requestAnimationFrame(() => {
+      measureFilterPanelAnchor(
+        toolbarRef.current,
+        getFilterTriggerRef(panel).current,
+        panelWidth,
+        anchor => {
+          setPanelAnchor(anchor);
+          setActiveFilterPanel(panel);
+        },
+      );
+    });
   };
   const closeFilterPanel = () => {
     setActiveFilterPanel(null);
+    setPanelAnchor(null);
     setFilterPanelQuery('');
   };
 
@@ -508,7 +517,7 @@ export function KolamProductSurface({
               </View>
             </View>
           </View>
-          {activeFilterPanel ? (
+          {activeFilterPanel && panelAnchor ? (
             <ProductFilterOverlayPanel
               activePanel={activeFilterPanel}
               anchor={panelAnchor}
