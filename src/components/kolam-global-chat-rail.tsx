@@ -5398,20 +5398,22 @@ function getChatRailItems(
   labels: KolamChatLabel[] = [],
 ): KolamChatRailItem[] {
   if (mode === 'team-chat') {
-    return data.rooms.map(room => ({
-      assignedStaff: null,
-      handledByDara: false,
-      id: room._id,
-      labels: [],
-      metaLabel: getRoomCategoryLabel(room),
-      platform: undefined,
-      preview: room.lastMessagePreview || 'Belum ada preview pesan.',
-      secondaryMetaLabel: getRoomSecondaryMeta(room),
-      teamRoomCategory: room.category,
-      timeLabel: formatRelativeTime(room.lastMessageAt),
-      title: getRoomTitle(room),
-      unreadCount: room.unreadCount ?? 0,
-    }));
+    return data.rooms
+      .filter(room => !isDaraDirectTeamRoom(room))
+      .map(room => ({
+        assignedStaff: null,
+        handledByDara: false,
+        id: room._id,
+        labels: [],
+        metaLabel: getRoomCategoryLabel(room),
+        platform: undefined,
+        preview: room.lastMessagePreview || 'Belum ada preview pesan.',
+        secondaryMetaLabel: getRoomSecondaryMeta(room),
+        teamRoomCategory: room.category,
+        timeLabel: formatRelativeTime(room.lastMessageAt),
+        title: getRoomTitle(room),
+        unreadCount: room.unreadCount ?? 0,
+      }));
   }
 
   return data.conversations
@@ -6005,6 +6007,21 @@ function getRoomTitle({
   }
 
   return name?.trim() || 'Room tanpa nama';
+}
+
+function isDaraDirectTeamRoom({
+  category,
+  directPeerName,
+  isDaraDirect,
+}: {
+  category?: string;
+  directPeerName?: string;
+  isDaraDirect?: boolean;
+}) {
+  return (
+    isDaraDirect === true ||
+    (category === 'direct' && directPeerName?.trim().toLowerCase() === 'dara')
+  );
 }
 
 function getUserPickerDisplayName(user: KolamUserPickerRow) {

@@ -502,8 +502,16 @@ describe('KolamGlobalChatRail', () => {
           lastMessagePreview: 'Follow up buyer',
           unreadCount: 0,
         },
+        {
+          _id: 'room-dara',
+          category: 'direct',
+          directPeerName: 'DARA',
+          isDaraDirect: true,
+          lastMessagePreview: 'Cek purchase order',
+          unreadCount: 2,
+        },
       ],
-      totalUnread: 4,
+      totalUnread: 6,
     });
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
@@ -525,6 +533,17 @@ describe('KolamGlobalChatRail', () => {
         'Follow up buyer',
       ]),
     );
+    expect(renderText(renderer!)).not.toEqual(
+      expect.arrayContaining(['Cek purchase order']),
+    );
+    expect(
+      renderer!.root
+        .findAllByType(KolamPressable)
+        .some(
+          node =>
+            node.props.accessibilityLabel === 'Buka jendela DARA team chat',
+        ),
+    ).toBe(true);
     expect(renderText(renderer!)).not.toEqual(
       expect.arrayContaining([
         'Team chat siap dipasang',
