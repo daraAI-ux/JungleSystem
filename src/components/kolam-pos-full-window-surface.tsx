@@ -716,10 +716,10 @@ function PosCashflowLockOverlay({
       </View>
       <Text style={styles.cashflowLockTitle}>Sesi Kas Tidak Ditemukan</Text>
       <Text style={styles.cashflowLockText}>
-        Buka shift terlebih dahulu untuk membuat pesanan dari POS.
+        Buka shift terlebih dahulu untuk membuat pesanan.
       </Text>
       <KolamButton
-        label="Lihat Kas"
+        label="Buka Shift Sekarang"
         intent="primary"
         size="sm"
         onPress={onOpenCashflow}
