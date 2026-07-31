@@ -2423,7 +2423,7 @@ function AmTransferDetailPanel({
             </View>
             <View style={styles.detailListRow}>
               <Text style={[styles.tableHeaderText, styles.accountCol]}>Box / Rack</Text>
-              <Text style={[styles.cellText, styles.recipientCol]}>{formatTransferDeviceLocation(transfer.deviceId)}</Text>
+              <Text style={[styles.cellText, styles.recipientCol]}>{formatDeviceLocation(transfer.deviceId)}</Text>
             </View>
             {transfer.transferMethod ? (
               <View style={styles.detailListRow}>
@@ -2632,6 +2632,7 @@ function AmMutasiPage() {
           <Text style={[styles.tableHeaderText, styles.typeCol]}>Type</Text>
           <Text style={[styles.tableHeaderText, styles.amountCol]}>Amount</Text>
           <Text style={[styles.tableHeaderText, styles.recipientCol]}>Description</Text>
+          <Text style={[styles.tableHeaderText, styles.deviceWideCol]}>Device</Text>
           <Text style={[styles.tableHeaderText, styles.dateCol]}>Detected</Text>
         </View>
         <AmLoadingOrEmpty isLoading={isLoading} items={mutasi} loadingText="Memuat mutasi dari AM live..." emptyText="No mutations found" />
@@ -2639,13 +2640,17 @@ function AmMutasiPage() {
           <View key={item._id} style={styles.tableRow}>
             <View style={styles.accountWideCol}>
               <Text style={styles.cellText} numberOfLines={1}>{formatBankAccount(item.accountId)}</Text>
-              <Text style={styles.rowMeta} numberOfLines={1}>{formatDeviceRef(item.deviceId)}</Text>
+              <Text style={styles.rowMeta} numberOfLines={1}>{formatAmDate(item.detectedAt)}</Text>
             </View>
             <View style={styles.typeCol}>
               <AmStatusChip label={item.type} tone={item.type === 'masuk' ? 'success' : 'warning'} />
             </View>
             <Text style={[styles.cellText, styles.amountCol]}>{formatRupiah(item.amount)}</Text>
             <Text style={[styles.cellText, styles.recipientCol]} numberOfLines={1}>{item.description || '-'}</Text>
+            <View style={styles.deviceWideCol}>
+              <Text style={styles.cellText} numberOfLines={1}>{formatDeviceRef(item.deviceId)}</Text>
+              <Text style={styles.rowMeta} numberOfLines={1}>{formatDeviceLocation(item.deviceId)}</Text>
+            </View>
             <Text style={[styles.cellText, styles.dateCol]}>{formatAmDate(item.detectedAt)}</Text>
           </View>
         ))}
@@ -4032,7 +4037,7 @@ function formatDeviceRef(device: AmTransfer['deviceId'] | AmMutasi['deviceId']) 
   return device.name;
 }
 
-function formatTransferDeviceLocation(device: AmTransfer['deviceId']) {
+function formatDeviceLocation(device: AmTransfer['deviceId'] | AmMutasi['deviceId']) {
   if (!device || typeof device === 'string') return '-';
   const box = device.boxId;
   if (!box || typeof box === 'string') return '-';

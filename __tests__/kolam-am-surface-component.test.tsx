@@ -1310,7 +1310,15 @@ describe('KolamAmSurface', () => {
           createdAt: '',
           description: 'Incoming sample',
           detectedAt: '2026-01-01T00:00:00.000Z',
-          deviceId: {_id: 'device-1', name: 'Phone 1'},
+          deviceId: {
+            _id: 'device-1',
+            name: 'Phone 1',
+            boxId: {
+              _id: 'box-1',
+              name: 'Box Green',
+              rackId: {_id: 'rack-1', name: 'Rack Mutasi'},
+            },
+          },
           notificationHash: null,
           transferId: null,
           type: 'masuk',
@@ -1348,6 +1356,8 @@ describe('KolamAmSurface', () => {
     expect(joinedText).toContain('Total Outgoing');
     expect(joinedText).toContain('Net Balance');
     expect(joinedText).toContain('Total Transactions');
+    expect(joinedText).toContain('Phone 1');
+    expect(joinedText).toContain('Box Green / Rack Mutasi');
     expect(joinedText).toMatch(/Showing\s+1\s+to\s+50\s+of\s+120\s+items/);
     expect(joinedText).toContain('Page 1/3');
 
