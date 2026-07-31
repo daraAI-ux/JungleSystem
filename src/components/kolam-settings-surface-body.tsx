@@ -251,6 +251,12 @@ export function KolamSettingsSurfaceBody({
         }
         setSitemapMasterField={controller.setSitemapMasterField}
         setSitemapSectionField={controller.setSitemapSectionField}
+        setSitemapStaticPageField={controller.setSitemapStaticPageField}
+        addSitemapStaticPage={controller.addSitemapStaticPage}
+        removeSitemapStaticPage={controller.removeSitemapStaticPage}
+        setSitemapCustomUrlField={controller.setSitemapCustomUrlField}
+        addSitemapCustomUrl={controller.addSitemapCustomUrl}
+        removeSitemapCustomUrl={controller.removeSitemapCustomUrl}
         setTaxCompanyProfileDraftField={
           controller.setTaxCompanyProfileDraftField
         }

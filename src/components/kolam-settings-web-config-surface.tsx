@@ -131,6 +131,32 @@ const paymentMethodProviderOptions = [
   {value: 'Other', label: 'Lainnya - Other'},
 ];
 
+const sitemapPriorityOptions = [
+  '0.1',
+  '0.2',
+  '0.3',
+  '0.4',
+  '0.5',
+  '0.6',
+  '0.7',
+  '0.8',
+  '0.9',
+  '1.0',
+].map(value => ({value, label: value}));
+
+const sitemapFrequencyOptions: Array<{
+  label: string;
+  value: KolamSitemapChangeFrequency;
+}> = [
+  {value: 'always', label: 'Selalu'},
+  {value: 'hourly', label: 'Per jam'},
+  {value: 'daily', label: 'Harian'},
+  {value: 'weekly', label: 'Mingguan'},
+  {value: 'monthly', label: 'Bulanan'},
+  {value: 'yearly', label: 'Tahunan'},
+  {value: 'never', label: 'Tidak pernah'},
+];
+
 type TaxPayerTypeOptionValue = 'pt' | 'cv' | 'umkm' | 'perorangan' | 'other';
 type TaxUmkmSchemeOptionValue = 'none' | 'pp_55_2022' | 'other';
 
@@ -878,6 +904,12 @@ export function KolamSettingsWebConfigSurface({
   setSitemapExcludedSlugsDraftText,
   setSitemapMasterField,
   setSitemapSectionField,
+  setSitemapStaticPageField,
+  addSitemapStaticPage,
+  removeSitemapStaticPage,
+  setSitemapCustomUrlField,
+  addSitemapCustomUrl,
+  removeSitemapCustomUrl,
   setTaxCompanyProfileDraftField = noopSetTaxCompanyProfileDraftField,
   setDraftField,
   storefrontEnabled,
@@ -891,8 +923,6 @@ export function KolamSettingsWebConfigSurface({
   taxPartyGaps = null,
   draft,
   notificationSoundStatus,
-  sitemapChangeFrequencies,
-  sitemapCustomUrlsText,
   sitemapDraft,
   sitemapExcludedSlugsText,
   sitemapSectionKeys,
@@ -1116,6 +1146,20 @@ export function KolamSettingsWebConfigSurface({
     key: 'enabled' | 'priority' | 'changeFrequency',
     value: string | boolean,
   ) => void;
+  setSitemapStaticPageField: (
+    index: number,
+    key: 'path' | 'enabled' | 'priority' | 'changeFrequency',
+    value: string | boolean,
+  ) => void;
+  addSitemapStaticPage: () => void;
+  removeSitemapStaticPage: (index: number) => void;
+  setSitemapCustomUrlField: (
+    index: number,
+    key: 'path' | 'priority' | 'changeFrequency',
+    value: string,
+  ) => void;
+  addSitemapCustomUrl: () => void;
+  removeSitemapCustomUrl: (index: number) => void;
   setDraftField: (
     key: keyof WebSettingDraft,
     value: WebSettingDraft[keyof WebSettingDraft],
@@ -3431,117 +3475,365 @@ export function KolamSettingsWebConfigSurface({
         />
       ) : null}
       {showSitemapSettings ? (
-        <>
-          <KolamToggleRow
-            variant="settingsForm"
-            label="Sitemap enabled"
-            description="Master switch untuk sitemap marketplace."
-            active={sitemapDraft.enabled !== false}
-            onPress={() =>
-              !disabled &&
-              setSitemapMasterField('enabled', sitemapDraft.enabled === false)
-            }
-          />
-          <KolamToggleRow
-            variant="settingsForm"
-            label="Include images"
-            description="Sertakan image metadata pada sitemap jika tersedia."
-            active={sitemapDraft.includeImages !== false}
-            onPress={() =>
-              !disabled &&
-              setSitemapMasterField(
-                'includeImages',
-                sitemapDraft.includeImages === false,
-              )
-            }
-          />
+        <View style={styles.sitemapCardStack}>
+          <View style={styles.financialNestedCard}>
+            <View style={styles.operationalCardHeaderRow}>
+              <KolamCopyStack
+                containerStyle={styles.operationalCardHeaderCopy}
+                items={[
+                  {
+                    id: 'sitemap-master-title',
+                    text: 'Kontrol utama',
+                    style: styles.marketplaceOverviewTitle,
+                  },
+                  {
+                    id: 'sitemap-master-meta',
+                    text: 'Mengatur sitemap marketplace yang dibaca /sitemap.xml.',
+                    style: styles.marketplaceOverviewMeta,
+                  },
+                ]}
+              />
+              <KolamActionControlButton
+                disabled={disabled}
+                intent="primary"
+                label="Simpan sitemap"
+                loading={saveStatus === 'saving'}
+                loadingLabel="Menyimpan..."
+                onPress={onSave}
+              />
+            </View>
+            <View style={styles.notificationToggleGrid}>
+              <View style={styles.notificationToggleBox}>
+                <KolamToggleRow
+                  variant="settingsForm"
+                  label="Sitemap aktif"
+                  description="Jika mati, sitemap.xml hanya berisi URL beranda."
+                  active={sitemapDraft.enabled !== false}
+                  onPress={() =>
+                    !disabled &&
+                    setSitemapMasterField(
+                      'enabled',
+                      sitemapDraft.enabled === false,
+                    )
+                  }
+                />
+              </View>
+              <View style={styles.notificationToggleBox}>
+                <KolamToggleRow
+                  variant="settingsForm"
+                  label="Sertakan gambar"
+                  description="Kirim metadata gambar produk dan species ke sitemap."
+                  active={sitemapDraft.includeImages !== false}
+                  onPress={() =>
+                    !disabled &&
+                    setSitemapMasterField(
+                      'includeImages',
+                      sitemapDraft.includeImages === false,
+                    )
+                  }
+                />
+              </View>
+            </View>
+          </View>
+
           <View style={styles.financialNestedCard}>
             <KolamCopyStack
               items={[
                 {
                   id: 'sitemap-sections-title',
-                  text: 'Dynamic sections',
+                  text: 'Section dinamis',
                   style: styles.marketplaceOverviewTitle,
                 },
                 {
                   id: 'sitemap-sections-meta',
-                  text: 'Priority memakai angka 0 sampai 1. Frequency menerima always, hourly, daily, weekly, monthly, yearly, never.',
+                  text: 'Setiap section punya status, priority, dan frekuensi perubahan.',
                   style: styles.marketplaceOverviewMeta,
                 },
               ]}
             />
-            {sitemapSectionKeys.map(section => {
-              const item = sitemapDraft.sections?.[section] ?? {};
-              return (
-                <View key={section} style={styles.storeHoursRow}>
+            <View style={styles.sitemapSectionGrid}>
+              {sitemapSectionKeys.map(section => {
+                const item = sitemapDraft.sections?.[section] ?? {};
+                const priorityValue = formatSitemapPriority(
+                  item.priority ?? 0.5,
+                );
+                return (
+                  <View key={section} style={styles.sitemapRowCard}>
+                    <KolamToggleRow
+                      variant="settingsForm"
+                      label={getSitemapSectionLabel(section)}
+                      description="Aktifkan section ini di sitemap."
+                      active={item.enabled !== false}
+                      onPress={() =>
+                        !disabled &&
+                        setSitemapSectionField(
+                          section,
+                          'enabled',
+                          item.enabled === false,
+                        )
+                      }
+                    />
+                    <View style={styles.sitemapRowFields}>
+                      <KolamDropdownSelect
+                        accessibilityLabel={`Priority ${getSitemapSectionLabel(
+                          section,
+                        )}`}
+                        label="Priority"
+                        menuPlacement="inline"
+                        options={sitemapPriorityOptions}
+                        showLabelInTrigger={false}
+                        style={styles.sitemapDropdownControl}
+                        triggerStyle={styles.shippingTimezoneTrigger}
+                        value={priorityValue}
+                        onChange={value =>
+                          setSitemapSectionField(section, 'priority', value)
+                        }
+                      />
+                      <KolamDropdownSelect
+                        accessibilityLabel={`Frekuensi ${getSitemapSectionLabel(
+                          section,
+                        )}`}
+                        label="Frekuensi"
+                        menuPlacement="inline"
+                        options={sitemapFrequencyOptions}
+                        showLabelInTrigger={false}
+                        style={styles.sitemapDropdownControl}
+                        triggerStyle={styles.shippingTimezoneTrigger}
+                        value={item.changeFrequency ?? 'weekly'}
+                        onChange={value =>
+                          setSitemapSectionField(
+                            section,
+                            'changeFrequency',
+                            value,
+                          )
+                        }
+                      />
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+
+          <View style={styles.financialNestedCard}>
+            <View style={styles.operationalCardHeaderRow}>
+              <KolamCopyStack
+                containerStyle={styles.operationalCardHeaderCopy}
+                items={[
+                  {
+                    id: 'sitemap-static-title',
+                    text: 'Halaman statis',
+                    style: styles.marketplaceOverviewTitle,
+                  },
+                  {
+                    id: 'sitemap-static-meta',
+                    text: 'Path halaman info marketplace seperti /about, /contact, dan /faq.',
+                    style: styles.marketplaceOverviewMeta,
+                  },
+                ]}
+              />
+              <KolamActionControlButton
+                disabled={disabled}
+                label="Tambah halaman"
+                onPress={addSitemapStaticPage}
+              />
+            </View>
+            {(sitemapDraft.staticPages ?? []).map((page, index) => (
+              <View
+                key={page._id ?? `${page.path || 'static'}-${index}`}
+                style={styles.sitemapRowCard}
+              >
+                <KolamTextFieldRow
+                  variant="settingsForm"
+                  fieldWidth={settingsFieldWidth}
+                  label="Path"
+                  description="Path relatif dari root marketplace."
+                  value={page.path}
+                  onChangeText={value =>
+                    setSitemapStaticPageField(index, 'path', value)
+                  }
+                  placeholder="/about"
+                />
+                <View style={styles.sitemapRowFields}>
                   <KolamToggleRow
                     variant="settingsForm"
-                    label={getSitemapSectionLabel(section)}
-                    description="Aktifkan section dinamis pada sitemap."
-                    active={item.enabled !== false}
+                    label="Aktif"
+                    description="Jika mati, path ini disimpan tapi tidak masuk sitemap."
+                    active={page.enabled !== false}
                     onPress={() =>
                       !disabled &&
-                      setSitemapSectionField(
-                        section,
+                      setSitemapStaticPageField(
+                        index,
                         'enabled',
-                        item.enabled === false,
+                        page.enabled === false,
                       )
                     }
                   />
-                  <View style={styles.storeHoursTimeGrid}>
-                    <KolamTextFieldRow
-                      variant="settingsForm"
-                      fieldWidth={140}
-                      label="Priority"
-                      description="Nilai 0 sampai 1."
-                      value={String(item.priority ?? 0.5)}
-                      onChangeText={value =>
-                        setSitemapSectionField(section, 'priority', value)
-                      }
-                      placeholder="0.7"
-                    />
-                    <KolamTextFieldRow
-                      variant="settingsForm"
-                      fieldWidth={180}
-                      label="Change frequency"
-                      description="daily, weekly, monthly..."
-                      value={item.changeFrequency ?? 'weekly'}
-                      onChangeText={value =>
-                        setSitemapSectionField(
-                          section,
-                          'changeFrequency',
-                          value,
-                        )
-                      }
-                      placeholder={sitemapChangeFrequencies.join(', ')}
-                    />
-                  </View>
+                  <KolamDropdownSelect
+                    accessibilityLabel="Priority halaman statis"
+                    label="Priority"
+                    menuPlacement="inline"
+                    options={sitemapPriorityOptions}
+                    showLabelInTrigger={false}
+                    style={styles.sitemapDropdownControl}
+                    triggerStyle={styles.shippingTimezoneTrigger}
+                    value={formatSitemapPriority(page.priority ?? 0.5)}
+                    onChange={value =>
+                      setSitemapStaticPageField(index, 'priority', value)
+                    }
+                  />
+                  <KolamDropdownSelect
+                    accessibilityLabel="Frekuensi halaman statis"
+                    label="Frekuensi"
+                    menuPlacement="inline"
+                    options={sitemapFrequencyOptions}
+                    showLabelInTrigger={false}
+                    style={styles.sitemapDropdownControl}
+                    triggerStyle={styles.shippingTimezoneTrigger}
+                    value={page.changeFrequency ?? 'monthly'}
+                    onChange={value =>
+                      setSitemapStaticPageField(
+                        index,
+                        'changeFrequency',
+                        value,
+                      )
+                    }
+                  />
+                  <KolamActionControlButton
+                    disabled={disabled}
+                    intent="danger"
+                    label="Hapus"
+                    onPress={() => removeSitemapStaticPage(index)}
+                  />
                 </View>
-              );
-            })}
+              </View>
+            ))}
+            {sitemapDraft.staticPages?.length ? null : (
+              <Text style={styles.sitemapEmptyText}>
+                Belum ada halaman statis.
+              </Text>
+            )}
           </View>
-          <KolamTextFieldRow
-            variant="settingsForm"
-            label="Custom URLs"
-            description="Satu baris per URL: /path|0.5|weekly."
-            value={sitemapCustomUrlsText}
-            onChangeText={setSitemapCustomUrlsDraftText}
-            placeholder="/promo|0.8|daily"
-          />
-          {sitemapSectionKeys.map(section => (
-            <KolamTextFieldRow
-              variant="settingsForm"
-              key={`excluded-${section}`}
-              label={`Excluded ${getSitemapSectionLabel(section)}`}
-              description="Slug dipisah koma atau baris baru."
-              value={sitemapExcludedSlugsText[section] ?? ''}
-              onChangeText={value =>
-                setSitemapExcludedSlugsDraftText(section, value)
-              }
-              placeholder="slug-lama, draft-internal"
+
+          <View style={styles.financialNestedCard}>
+            <View style={styles.operationalCardHeaderRow}>
+              <KolamCopyStack
+                containerStyle={styles.operationalCardHeaderCopy}
+                items={[
+                  {
+                    id: 'sitemap-custom-title',
+                    text: 'URL khusus',
+                    style: styles.marketplaceOverviewTitle,
+                  },
+                  {
+                    id: 'sitemap-custom-meta',
+                    text: 'Tambahan URL promosi atau landing page yang tidak termasuk section lain.',
+                    style: styles.marketplaceOverviewMeta,
+                  },
+                ]}
+              />
+              <KolamActionControlButton
+                disabled={disabled}
+                label="Tambah URL"
+                onPress={addSitemapCustomUrl}
+              />
+            </View>
+            {(sitemapDraft.customUrls ?? []).map((url, index) => (
+              <View
+                key={url._id ?? `${url.path || 'custom'}-${index}`}
+                style={styles.sitemapRowCard}
+              >
+                <KolamTextFieldRow
+                  variant="settingsForm"
+                  fieldWidth={settingsFieldWidth}
+                  label="Path"
+                  description="Path URL khusus marketplace."
+                  value={url.path}
+                  onChangeText={value =>
+                    setSitemapCustomUrlField(index, 'path', value)
+                  }
+                  placeholder="/promo-imlek-2027"
+                />
+                <View style={styles.sitemapRowFields}>
+                  <KolamDropdownSelect
+                    accessibilityLabel="Priority URL khusus"
+                    label="Priority"
+                    menuPlacement="inline"
+                    options={sitemapPriorityOptions}
+                    showLabelInTrigger={false}
+                    style={styles.sitemapDropdownControl}
+                    triggerStyle={styles.shippingTimezoneTrigger}
+                    value={formatSitemapPriority(url.priority ?? 0.5)}
+                    onChange={value =>
+                      setSitemapCustomUrlField(index, 'priority', value)
+                    }
+                  />
+                  <KolamDropdownSelect
+                    accessibilityLabel="Frekuensi URL khusus"
+                    label="Frekuensi"
+                    menuPlacement="inline"
+                    options={sitemapFrequencyOptions}
+                    showLabelInTrigger={false}
+                    style={styles.sitemapDropdownControl}
+                    triggerStyle={styles.shippingTimezoneTrigger}
+                    value={url.changeFrequency ?? 'weekly'}
+                    onChange={value =>
+                      setSitemapCustomUrlField(index, 'changeFrequency', value)
+                    }
+                  />
+                  <KolamActionControlButton
+                    disabled={disabled}
+                    intent="danger"
+                    label="Hapus"
+                    onPress={() => removeSitemapCustomUrl(index)}
+                  />
+                </View>
+              </View>
+            ))}
+            {sitemapDraft.customUrls?.length ? null : (
+              <Text style={styles.sitemapEmptyText}>Belum ada URL khusus.</Text>
+            )}
+          </View>
+
+          <View style={styles.financialNestedCard}>
+            <KolamCopyStack
+              items={[
+                {
+                  id: 'sitemap-excluded-title',
+                  text: 'Slug dikecualikan',
+                  style: styles.marketplaceOverviewTitle,
+                },
+                {
+                  id: 'sitemap-excluded-meta',
+                  text: 'Satu slug per baris. Item ini dilewati tanpa mengubah data produk, species, atau blog.',
+                  style: styles.marketplaceOverviewMeta,
+                },
+              ]}
             />
-          ))}
-        </>
+            <View style={styles.sitemapSectionGrid}>
+              {sitemapSectionKeys.map(section => (
+                <KolamTextFieldRow
+                  variant="settingsForm"
+                  key={`excluded-${section}`}
+                  fieldWidth={300}
+                  label={getSitemapSectionLabel(section)}
+                  description={`${
+                    (sitemapExcludedSlugsText[section] ?? '')
+                      .split(/\r?\n/)
+                      .filter(value => value.trim()).length
+                  } slug dikecualikan.`}
+                  multiline
+                  numberOfLines={3}
+                  value={sitemapExcludedSlugsText[section] ?? ''}
+                  onChangeText={value =>
+                    setSitemapExcludedSlugsDraftText(section, value)
+                  }
+                  placeholder={'slug-lama\ndraft-internal'}
+                />
+              ))}
+            </View>
+          </View>
+        </View>
       ) : null}
       {showSyncSettings ? (
         <>
@@ -8421,6 +8713,15 @@ function getSitemapSectionLabel(section: KolamSitemapSectionKey) {
   return labels[section];
 }
 
+function formatSitemapPriority(value: number) {
+  if (!Number.isFinite(value)) {
+    return '0.5';
+  }
+
+  const clamped = Math.max(0.1, Math.min(1, Number(value.toFixed(1))));
+  return clamped === 1 ? '1.0' : clamped.toFixed(1);
+}
+
 function getRegionLevelLabel(level: KolamRegionLevel) {
   const labels: Record<KolamRegionLevel, string> = {
     province: 'Province',
@@ -8612,6 +8913,40 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     gap: 10,
     padding: 12,
+  },
+  sitemapCardStack: {
+    gap: 14,
+  },
+  sitemapSectionGrid: {
+    alignItems: 'stretch',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  sitemapRowCard: {
+    backgroundColor: '#ffffff',
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexBasis: 340,
+    flexGrow: 1,
+    gap: 10,
+    minWidth: 300,
+    padding: 10,
+  },
+  sitemapRowFields: {
+    alignItems: 'flex-end',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  sitemapDropdownControl: {
+    width: 160,
+  },
+  sitemapEmptyText: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    lineHeight: 18,
   },
   financialPaymentModalOverlay: {
     backgroundColor: '#f9fafb',

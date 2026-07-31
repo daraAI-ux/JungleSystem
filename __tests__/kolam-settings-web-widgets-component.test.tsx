@@ -284,6 +284,12 @@ describe('settings web widgets', () => {
           setSitemapExcludedSlugsDraftText={jest.fn()}
           setSitemapMasterField={jest.fn()}
           setSitemapSectionField={jest.fn()}
+          setSitemapStaticPageField={jest.fn()}
+          addSitemapStaticPage={jest.fn()}
+          removeSitemapStaticPage={jest.fn()}
+          setSitemapCustomUrlField={jest.fn()}
+          addSitemapCustomUrl={jest.fn()}
+          removeSitemapCustomUrl={jest.fn()}
           setDraftField={jest.fn()}
           sitemapChangeFrequencies={[
             'always',
@@ -550,6 +556,68 @@ describe('settings web widgets', () => {
         'Belum ada MAC terdaftar.',
       ]),
     );
+  });
+
+  it('renders sitemap settings with FE parity sections and dropdown controls', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamSettingsWebConfigSurface
+          {...createSurfaceProps({
+            activeTabId: 'sitemap',
+            sitemapDraft: {
+              enabled: true,
+              includeImages: true,
+              sections: {
+                products: {
+                  enabled: true,
+                  priority: 0.7,
+                  changeFrequency: 'weekly',
+                },
+              },
+              staticPages: [
+                {
+                  path: '/about',
+                  enabled: true,
+                  priority: 0.5,
+                  changeFrequency: 'monthly',
+                },
+              ],
+              customUrls: [
+                {
+                  path: '/promo',
+                  priority: 0.8,
+                  changeFrequency: 'daily',
+                },
+              ],
+              excludedSlugs: {products: ['draft-internal']},
+            },
+            sitemapExcludedSlugsText: {products: 'draft-internal'},
+          })}
+        />,
+      );
+    });
+
+    expect(renderText(renderer!)).toEqual(
+      expect.arrayContaining([
+        'Kontrol utama',
+        'Sitemap aktif',
+        'Sertakan gambar',
+        'Section dinamis',
+        'Halaman statis',
+        'Tambah halaman',
+        'URL khusus',
+        'Tambah URL',
+        'Slug dikecualikan',
+      ]),
+    );
+    expect(
+      renderer!.root.findAllByType(TextInput).map(node => node.props.value),
+    ).toEqual(expect.arrayContaining(['/about', '/promo']));
+    expect(
+      renderer!.root.findAllByType(KolamDropdownSelect).map(node => node.props.label),
+    ).toEqual(expect.arrayContaining(['Priority', 'Frekuensi']));
   });
 
   it('routes notification sections through scoped save handlers', async () => {
@@ -979,6 +1047,12 @@ function createSurfaceProps(
     setSitemapExcludedSlugsDraftText: jest.fn(),
     setSitemapMasterField: jest.fn(),
     setSitemapSectionField: jest.fn(),
+    setSitemapStaticPageField: jest.fn(),
+    addSitemapStaticPage: jest.fn(),
+    removeSitemapStaticPage: jest.fn(),
+    setSitemapCustomUrlField: jest.fn(),
+    addSitemapCustomUrl: jest.fn(),
+    removeSitemapCustomUrl: jest.fn(),
     setDraftField: jest.fn(),
     sitemapChangeFrequencies: [
       'always',

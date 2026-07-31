@@ -266,6 +266,34 @@ const sitemapChangeFrequencies: KolamSitemapChangeFrequency[] = [
   'yearly',
   'never',
 ];
+const defaultSitemapStaticPages = [
+  {path: '/', enabled: true, priority: 1.0, changeFrequency: 'daily'},
+  {path: '/products', enabled: true, priority: 0.9, changeFrequency: 'daily'},
+  {path: '/species', enabled: true, priority: 0.9, changeFrequency: 'daily'},
+  {path: '/blog', enabled: true, priority: 0.8, changeFrequency: 'daily'},
+  {path: '/category', enabled: true, priority: 0.7, changeFrequency: 'weekly'},
+  {path: '/tag', enabled: true, priority: 0.6, changeFrequency: 'weekly'},
+  {path: '/collections', enabled: true, priority: 0.8, changeFrequency: 'daily'},
+  {
+    path: '/collections/deals',
+    enabled: true,
+    priority: 0.8,
+    changeFrequency: 'daily',
+  },
+  {
+    path: '/collections/new-arrivals',
+    enabled: true,
+    priority: 0.8,
+    changeFrequency: 'daily',
+  },
+  {path: '/about', enabled: true, priority: 0.5, changeFrequency: 'monthly'},
+  {path: '/contact', enabled: true, priority: 0.5, changeFrequency: 'monthly'},
+  {path: '/faq', enabled: true, priority: 0.5, changeFrequency: 'monthly'},
+  {path: '/shipping', enabled: true, priority: 0.4, changeFrequency: 'monthly'},
+  {path: '/returns', enabled: true, priority: 0.4, changeFrequency: 'monthly'},
+  {path: '/terms', enabled: true, priority: 0.3, changeFrequency: 'yearly'},
+  {path: '/privacy', enabled: true, priority: 0.3, changeFrequency: 'yearly'},
+] satisfies NonNullable<KolamSitemapConfig['staticPages']>;
 const storeOperatingWeekdays: Array<{
   key: KolamStoreOperatingWeekday;
   label: string;
@@ -888,7 +916,7 @@ const defaultSitemapConfig: KolamSitemapConfig = {
     categories: { enabled: true, priority: 0.6, changeFrequency: 'weekly' },
     tags: { enabled: true, priority: 0.4, changeFrequency: 'weekly' },
   },
-  staticPages: [],
+  staticPages: defaultSitemapStaticPages,
   customUrls: [],
   excludedSlugs: {
     products: [],
@@ -1859,8 +1887,101 @@ export function useKolamSettingsPanelController(
     }));
     setWebSettingSaveStatus('idle');
   };
+  const setSitemapStaticPageField = (
+    index: number,
+    key: 'path' | 'enabled' | 'priority' | 'changeFrequency',
+    value: string | boolean,
+  ) => {
+    setSitemapDraft(current => ({
+      ...current,
+      staticPages: (current.staticPages ?? []).map((item, itemIndex) =>
+        itemIndex === index
+          ? {
+              ...item,
+              [key]:
+                key === 'priority'
+                  ? parseNumberOrFallback(String(value), 0.5)
+                  : key === 'changeFrequency'
+                  ? normalizeSitemapChangeFrequency(String(value))
+                  : value,
+            }
+          : item,
+      ),
+    }));
+    setWebSettingSaveStatus('idle');
+  };
+  const addSitemapStaticPage = () => {
+    setSitemapDraft(current => ({
+      ...current,
+      staticPages: [
+        ...(current.staticPages ?? []),
+        {
+          path: '',
+          enabled: true,
+          priority: 0.5,
+          changeFrequency: 'monthly',
+        },
+      ],
+    }));
+    setWebSettingSaveStatus('idle');
+  };
+  const removeSitemapStaticPage = (index: number) => {
+    setSitemapDraft(current => ({
+      ...current,
+      staticPages: (current.staticPages ?? []).filter(
+        (_item, itemIndex) => itemIndex !== index,
+      ),
+    }));
+    setWebSettingSaveStatus('idle');
+  };
+  const setSitemapCustomUrlField = (
+    index: number,
+    key: 'path' | 'priority' | 'changeFrequency',
+    value: string,
+  ) => {
+    setSitemapDraft(current => ({
+      ...current,
+      customUrls: (current.customUrls ?? []).map((item, itemIndex) =>
+        itemIndex === index
+          ? {
+              ...item,
+              [key]:
+                key === 'priority'
+                  ? parseNumberOrFallback(value, 0.5)
+                  : key === 'changeFrequency'
+                  ? normalizeSitemapChangeFrequency(value)
+                  : value,
+            }
+          : item,
+      ),
+    }));
+    setWebSettingSaveStatus('idle');
+  };
+  const addSitemapCustomUrl = () => {
+    setSitemapDraft(current => ({
+      ...current,
+      customUrls: [
+        ...(current.customUrls ?? []),
+        {path: '', priority: 0.5, changeFrequency: 'weekly'},
+      ],
+    }));
+    setWebSettingSaveStatus('idle');
+  };
+  const removeSitemapCustomUrl = (index: number) => {
+    setSitemapDraft(current => ({
+      ...current,
+      customUrls: (current.customUrls ?? []).filter(
+        (_item, itemIndex) => itemIndex !== index,
+      ),
+    }));
+    setWebSettingSaveStatus('idle');
+  };
   const setSitemapCustomUrlsDraftText = (value: string) => {
     setSitemapCustomUrlsText(value);
+    setSitemapDraft(current => ({
+      ...current,
+      customUrls: parseSitemapCustomUrlsText(value),
+    }));
     setWebSettingSaveStatus('idle');
   };
   const setSitemapExcludedSlugsDraftText = (
@@ -4143,6 +4264,12 @@ export function useKolamSettingsPanelController(
     setSitemapExcludedSlugsDraftText,
     setSitemapMasterField,
     setSitemapSectionField,
+    setSitemapStaticPageField,
+    addSitemapStaticPage,
+    removeSitemapStaticPage,
+    setSitemapCustomUrlField,
+    addSitemapCustomUrl,
+    removeSitemapCustomUrl,
     clearMarketplaceLandingNoticeDraft,
     deleteMarketplaceAnnouncementBanner,
     deleteMarketplaceBioactiveStep,
@@ -5035,7 +5162,9 @@ function normalizeSitemapConfig(
       };
       return sections;
     }, {} as Record<KolamSitemapSectionKey, NonNullable<KolamSitemapConfig['sections']>[KolamSitemapSectionKey]>),
-    staticPages: config?.staticPages ?? defaultSitemapConfig.staticPages,
+    staticPages: config?.staticPages?.length
+      ? config.staticPages
+      : defaultSitemapConfig.staticPages,
     customUrls: config?.customUrls ?? defaultSitemapConfig.customUrls,
     excludedSlugs: sitemapSectionKeys.reduce((slugs, key) => {
       slugs[key] = config?.excludedSlugs?.[key] ?? [];
@@ -5053,12 +5182,48 @@ function createSitemapConfigUpdateBody(
 
   return {
     ...normalized,
-    customUrls: parseSitemapCustomUrlsText(customUrlsText),
+    staticPages: sanitizeSitemapStaticPages(normalized.staticPages ?? []),
+    customUrls: sanitizeSitemapCustomUrls(
+      normalized.customUrls?.length
+        ? normalized.customUrls
+        : parseSitemapCustomUrlsText(customUrlsText),
+    ),
     excludedSlugs: sitemapSectionKeys.reduce((slugs, key) => {
       slugs[key] = parseLooseList(excludedSlugsText[key] ?? '');
       return slugs;
     }, {} as Record<KolamSitemapSectionKey, string[]>),
   };
+}
+
+function sanitizeSitemapStaticPages(
+  rows: NonNullable<KolamSitemapConfig['staticPages']>,
+) {
+  return rows
+    .filter(item => item.path.trim().length > 0)
+    .map(({_id: _id, ...item}) => ({
+      ...item,
+      path: item.path.trim(),
+      enabled: item.enabled !== false,
+      priority: clampSitemapPriority(item.priority ?? 0.5),
+      changeFrequency: normalizeSitemapChangeFrequency(
+        item.changeFrequency ?? 'monthly',
+      ),
+    }));
+}
+
+function sanitizeSitemapCustomUrls(
+  rows: NonNullable<KolamSitemapConfig['customUrls']>,
+) {
+  return rows
+    .filter(item => item.path.trim().length > 0)
+    .map(({_id: _id, ...item}) => ({
+      ...item,
+      path: item.path.trim(),
+      priority: clampSitemapPriority(item.priority ?? 0.5),
+      changeFrequency: normalizeSitemapChangeFrequency(
+        item.changeFrequency ?? 'weekly',
+      ),
+    }));
 }
 
 function formatSitemapCustomUrlsText(config: KolamSitemapConfig) {
@@ -5099,6 +5264,14 @@ function formatSitemapExcludedSlugsText(config: KolamSitemapConfig) {
 function normalizeSitemapChangeFrequency(value: string) {
   const clean = value.trim() as KolamSitemapChangeFrequency;
   return sitemapChangeFrequencies.includes(clean) ? clean : 'weekly';
+}
+
+function clampSitemapPriority(value: number) {
+  if (!Number.isFinite(value)) {
+    return 0.5;
+  }
+
+  return Math.max(0, Math.min(1, Number(value.toFixed(1))));
 }
 
 function parseLooseList(value: string) {
