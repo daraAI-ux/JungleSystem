@@ -3,6 +3,23 @@ import { Text, View } from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 import { KolamSidebarContent } from '../src/components/kolam-sidebar-content';
 import { getShellModuleRouteEntry } from '../src/domain/app-shell';
+import { getAmCurrentUser } from '../src/services/am-api';
+
+jest.mock('../src/services/am-api', () => ({
+  getAmCurrentUser: jest.fn(() =>
+    Promise.resolve({
+      _id: 'super-admin',
+      fullName: 'Super Admin',
+      username: 'super@dunia-anura.com',
+      role: {
+        _id: 'role-super',
+        name: 'Super Admin',
+        permissions: ['user:read'],
+        description: 'Full access',
+      },
+    }),
+  ),
+}));
 
 function renderText(renderer: ReactTestRenderer.ReactTestRenderer) {
   return renderer.root
@@ -23,6 +40,20 @@ function flattenText(value: React.ReactNode): string[] {
 }
 
 describe('KolamSidebarContent AM mode', () => {
+  beforeEach(() => {
+    jest.mocked(getAmCurrentUser).mockResolvedValue({
+      _id: 'super-admin',
+      fullName: 'Super Admin',
+      username: 'super@dunia-anura.com',
+      role: {
+        _id: 'role-super',
+        name: 'Super Admin',
+        permissions: ['user:read'],
+        description: 'Full access',
+      },
+    });
+  });
+
   it('keeps AM directly under POS in the JungleSystem primary sidebar', async () => {
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
@@ -80,6 +111,10 @@ describe('KolamSidebarContent AM mode', () => {
           />
         </View>,
       );
+    });
+
+    await ReactTestRenderer.act(async () => {
+      await Promise.resolve();
     });
 
     const text = renderText(renderer!);
@@ -144,6 +179,10 @@ describe('KolamSidebarContent AM mode', () => {
       );
     });
 
+    await ReactTestRenderer.act(async () => {
+      await Promise.resolve();
+    });
+
     const selectedItems = renderer!.root.findAll(
       node => node.props.accessibilityState?.selected === true,
     );
@@ -185,6 +224,10 @@ describe('KolamSidebarContent AM mode', () => {
       );
     });
 
+    await ReactTestRenderer.act(async () => {
+      await Promise.resolve();
+    });
+
     const servicesRouteButton = renderer!.root
       .findAll(node => typeof node.props.onPress === 'function')
       .find(node => flattenNodeText(node).includes('Services'));
@@ -202,6 +245,91 @@ describe('KolamSidebarContent AM mode', () => {
       }),
     );
     expect(onSelectMenuItem).not.toHaveBeenCalled();
+  });
+
+  it('hides Super Admin-only Activity Log from read-only AM users', async () => {
+    jest.mocked(getAmCurrentUser).mockResolvedValue({
+      _id: 'read-only',
+      fullName: 'Read Only',
+      username: 'readonly@dunia-anura.com',
+      role: {
+        _id: 'role-read',
+        name: 'User',
+        permissions: ['user:read'],
+        description: 'Read-only access',
+      },
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <View>
+          <KolamSidebarContent
+            accessScope={{ am: true, kolam: true, pos: true }}
+            activeModule="am"
+            activeRoute="/admin/users"
+            collapsed={false}
+            expandedSections={{ dashboard: true }}
+            filterMenuByAccess={false}
+            onModuleRouteSelect={() => undefined}
+            onMoveMenuSection={() => undefined}
+            onQuickSearch={() => undefined}
+            onSelectMenuItem={() => undefined}
+            onSelectModule={() => undefined}
+            onToggleMenuSection={() => undefined}
+            sectionOrder={[]}
+          />
+        </View>,
+      );
+    });
+
+    await ReactTestRenderer.act(async () => {
+      await Promise.resolve();
+    });
+
+    const text = renderText(renderer!);
+
+    expect(text).toContain('Users');
+    expect(text).not.toContain('Activity Log');
+  });
+
+  it('keeps AM admin routes closed when the live AM user cannot be read', async () => {
+    jest.mocked(getAmCurrentUser).mockRejectedValue(new Error('Unauthorized'));
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <View>
+          <KolamSidebarContent
+            accessScope={{ am: true, kolam: true, pos: true }}
+            activeModule="am"
+            activeRoute="/services"
+            collapsed={false}
+            expandedSections={{ dashboard: true }}
+            filterMenuByAccess={false}
+            onModuleRouteSelect={() => undefined}
+            onMoveMenuSection={() => undefined}
+            onQuickSearch={() => undefined}
+            onSelectMenuItem={() => undefined}
+            onSelectModule={() => undefined}
+            onToggleMenuSection={() => undefined}
+            sectionOrder={[]}
+          />
+        </View>,
+      );
+    });
+
+    await ReactTestRenderer.act(async () => {
+      await Promise.resolve();
+    });
+
+    const text = renderText(renderer!);
+
+    expect(text).toEqual(
+      expect.arrayContaining(['Dashboard', 'Services', 'Hardware', 'Webhooks']),
+    );
+    expect(text).not.toContain('Users');
+    expect(text).not.toContain('Activity Log');
   });
 });
 

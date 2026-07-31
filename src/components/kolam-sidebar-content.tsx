@@ -15,6 +15,10 @@ import {
 } from '../domain/app-shell';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import type { KolamNavigationItem } from '../domain/kolam-navigation';
+import {
+  getAmCurrentUser,
+  type AmCurrentUser,
+} from '../services/am-api';
 import { KolamMappedList } from './kolam-mapped-list';
 import { KolamQuickSearch } from './kolam-quick-search';
 import { KolamNavItem } from './kolam-nav-item';
@@ -138,6 +142,29 @@ function KolamAmSidebarMenu({
   onSelectModule: (module: AppModule) => void;
   onSelectRoute: (route: ShellModuleRouteEntry) => void;
 }) {
+  const [currentUser, setCurrentUser] =
+    React.useState<AmCurrentUser | null>(null);
+
+  React.useEffect(() => {
+    let mounted = true;
+
+    getAmCurrentUser()
+      .then(user => {
+        if (mounted) {
+          setCurrentUser(user);
+        }
+      })
+      .catch(() => {
+        if (mounted) {
+          setCurrentUser(null);
+        }
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   return (
     <>
       <View style={[styles.amMenuGroup, collapsed && styles.amMenuGroupCollapsed]}>
@@ -149,7 +176,7 @@ function KolamAmSidebarMenu({
           />
         )}
         <KolamMappedList
-          items={getAmSidebarSections()}
+          items={getAmSidebarSections(currentUser)}
           getKey={section => section.id}
           renderItem={section => (
             <KolamAmSidebarSection
@@ -219,12 +246,42 @@ type AmSidebarSection = {
   items: AmRouteItem[];
 };
 
-function getAmSidebarSections(): AmSidebarSection[] {
+function getAmSidebarSections(currentUser: AmCurrentUser | null): AmSidebarSection[] {
   return AM_ROUTE_SECTIONS.map(section => ({
     id: section,
     label: section,
-    items: AM_SIDEBAR_ROUTES.filter(route => route.section === section),
+    items: AM_SIDEBAR_ROUTES.filter(
+      route =>
+        route.section === section &&
+        canShowAmSidebarRoute(route, currentUser),
+    ),
   })).filter(section => section.items.length > 0);
+}
+
+function canShowAmSidebarRoute(
+  route: AmRouteItem,
+  currentUser: AmCurrentUser | null,
+) {
+  if (route.id === 'users') {
+    return hasAmSidebarPermission(currentUser, 'user:read');
+  }
+
+  if (route.id === 'activity-log') {
+    return currentUser?.role?.name === 'Super Admin';
+  }
+
+  return true;
+}
+
+function hasAmSidebarPermission(
+  currentUser: AmCurrentUser | null,
+  permission: string,
+) {
+  if (currentUser?.role?.name === 'Super Admin') {
+    return true;
+  }
+
+  return currentUser?.role?.permissions.includes(permission) ?? false;
 }
 
 function toAmShellModule(item: AmRouteItem): ShellModule {
