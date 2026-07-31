@@ -90,6 +90,42 @@ describe('KolamSalesOpsDetail marketplace fulfillment', () => {
       .findAllByType(KolamButton)
       .find(node => node.props.label === 'Request jemput kurir (Tokopedia)');
     expect(pickupButton).toBeTruthy();
+
+    await act(async () => {
+      pickupButton!.props.onPress();
+    });
+    expect(controller.onRequestMarketplacePickup).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows Tokopedia pickup for fulfillmentMode both', async () => {
+    const controller = createController({
+      _id: 'sale-tp-both',
+      invoiceCode: 'INV-TP-B',
+      status: 'paid',
+      deliveryStatus: 'none',
+      shippingCost: 0,
+      items: [],
+      saleHistories: [],
+      externalRef: {
+        source: 'tokopedia',
+        tokopedia: {
+          mainOrderId: 'TP-BOTH',
+          fulfillmentMode: 'both',
+          lastStatus: 101,
+        },
+      },
+    });
+
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamSalesOpsDetail controller={controller} />,
+      );
+    });
+
+    const text = renderText(renderer!);
+    expect(text).toContain('Request jemput kurir (Tokopedia)');
+    expect(text).not.toContain('Antar ke counter (Tokopedia)');
   });
 
   it('shows Tokopedia drop-off badge with counter link', async () => {
@@ -130,6 +166,73 @@ describe('KolamSalesOpsDetail marketplace fulfillment', () => {
       .findAllByType(KolamStatusBadge)
       .find(node => node.props.label === 'Antar ke counter (Tokopedia)');
     expect(badge?.props.intent).toBe('warning');
+  });
+
+  it('shows drop-off badge without counter link when URL is missing', async () => {
+    const controller = createController({
+      _id: 'sale-tp-drop-nourl',
+      invoiceCode: 'INV-TP-DN',
+      status: 'paid',
+      deliveryStatus: 'none',
+      shippingCost: 0,
+      items: [],
+      saleHistories: [],
+      externalRef: {
+        source: 'tokopedia',
+        tokopedia: {
+          mainOrderId: 'TP-3',
+          fulfillmentMode: 'dropoff',
+          lastStatus: 101,
+        },
+      },
+    });
+
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamSalesOpsDetail controller={controller} />,
+      );
+    });
+
+    const text = renderText(renderer!);
+    expect(text).toContain('Antar ke counter (Tokopedia)');
+    expect(text).not.toContain('Lokasi counter');
+    expect(text).not.toContain('Request jemput kurir (Tokopedia)');
+  });
+
+  it('keeps auto-managed copy when Tokopedia shipment sync already started', async () => {
+    const controller = createController({
+      _id: 'sale-tp-synced',
+      invoiceCode: 'INV-TP-S',
+      status: 'paid',
+      deliveryStatus: 'waiting_pickup',
+      shippingCost: 0,
+      items: [],
+      saleHistories: [],
+      externalRef: {
+        source: 'tokopedia',
+        tokopedia: {
+          mainOrderId: 'TP-4',
+          fulfillmentMode: 'pickup',
+          lastStatus: 102,
+          trackingNumber: 'RESI-SYNC',
+        },
+      },
+    });
+
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamSalesOpsDetail controller={controller} />,
+      );
+    });
+
+    const text = renderText(renderer!);
+    expect(text).not.toContain('Request jemput kurir (Tokopedia)');
+    expect(text).not.toContain('Antar ke counter (Tokopedia)');
+    expect(text).toContain(
+      'Pengiriman marketplace dikelola otomatis dari platform.',
+    );
   });
 
   it('does not show Tokopedia pickup or Shopee slot UI for eligible Shopee sales', async () => {

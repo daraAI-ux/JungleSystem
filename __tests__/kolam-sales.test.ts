@@ -388,6 +388,7 @@ describe('kolam sales domain', () => {
     );
     expect(isKolamTokopediaDropOffOnly(pickupSale)).toBe(false);
     expect(needsKolamPlatformPickupRequest(pickupSale)).toBe(true);
+    expect(needsKolamTokopediaPickupRequest(pickupSale)).toBe(true);
     expect(shouldShowKolamTokopediaDropOffBadge(pickupSale)).toBe(false);
 
     const dropoffSale = normalizeKolamSale({
@@ -412,6 +413,7 @@ describe('kolam sales domain', () => {
     );
     expect(isKolamTokopediaDropOffOnly(dropoffSale)).toBe(true);
     expect(needsKolamPlatformPickupRequest(dropoffSale)).toBe(false);
+    expect(needsKolamTokopediaPickupRequest(dropoffSale)).toBe(false);
     expect(shouldShowKolamTokopediaDropOffBadge(dropoffSale)).toBe(true);
 
     const bothSale = normalizeKolamSale({
@@ -430,6 +432,7 @@ describe('kolam sales domain', () => {
     });
     expect(isKolamTokopediaDropOffOnly(bothSale)).toBe(false);
     expect(needsKolamPlatformPickupRequest(bothSale)).toBe(true);
+    expect(needsKolamTokopediaPickupRequest(bothSale)).toBe(true);
     expect(shouldShowKolamTokopediaDropOffBadge(bothSale)).toBe(false);
 
     const syncedDropoff = normalizeKolamSale({
@@ -507,6 +510,78 @@ describe('kolam sales domain', () => {
       items: [],
     });
     expect(needsKolamTokopediaPickupRequest(tokopediaPickup)).toBe(true);
+  });
+
+  it('covers Tokopedia fulfillment edge cases for pickup and drop-off helpers', () => {
+    const unknownMode = normalizeKolamSale({
+      _id: 'sale-fm-unknown',
+      invoiceCode: 'INV-FM-U',
+      status: 'paid',
+      deliveryStatus: 'packing',
+      externalRef: {
+        source: 'tokopedia',
+        tokopedia: {
+          fulfillmentMode: 'unknown',
+          lastStatus: 101,
+        },
+      },
+      items: [],
+    });
+    expect(isKolamTokopediaDropOffOnly(unknownMode)).toBe(false);
+    expect(needsKolamTokopediaPickupRequest(unknownMode)).toBe(true);
+    expect(shouldShowKolamTokopediaDropOffBadge(unknownMode)).toBe(false);
+
+    const unpaid = normalizeKolamSale({
+      _id: 'sale-fm-unpaid',
+      invoiceCode: 'INV-FM-UNPAID',
+      status: 'sent',
+      deliveryStatus: 'none',
+      externalRef: {
+        source: 'tokopedia',
+        tokopedia: {
+          fulfillmentMode: 'pickup',
+          lastStatus: 101,
+        },
+      },
+      items: [],
+    });
+    expect(needsKolamTokopediaPickupRequest(unpaid)).toBe(false);
+    expect(shouldShowKolamTokopediaDropOffBadge(unpaid)).toBe(false);
+
+    const waitingPickup = normalizeKolamSale({
+      _id: 'sale-fm-waiting',
+      invoiceCode: 'INV-FM-WP',
+      status: 'paid',
+      deliveryStatus: 'waiting_pickup',
+      externalRef: {
+        source: 'tokopedia',
+        tokopedia: {
+          fulfillmentMode: 'pickup',
+          lastStatus: 101,
+        },
+      },
+      items: [],
+    });
+    expect(isKolamMarketplaceShipmentSyncStarted(waitingPickup)).toBe(true);
+    expect(needsKolamTokopediaPickupRequest(waitingPickup)).toBe(false);
+
+    const dropoffNoUrl = normalizeKolamSale({
+      _id: 'sale-fm-drop-nourl',
+      invoiceCode: 'INV-FM-DN',
+      status: 'paid',
+      deliveryStatus: 'none',
+      externalRef: {
+        source: 'tokopedia',
+        tokopedia: {
+          fulfillmentMode: 'dropoff',
+          lastStatus: 101,
+        },
+      },
+      items: [],
+    });
+    expect(dropoffNoUrl.marketplaceFulfillment?.dropOffPointUrl).toBe('');
+    expect(shouldShowKolamTokopediaDropOffBadge(dropoffNoUrl)).toBe(true);
+    expect(needsKolamTokopediaPickupRequest(dropoffNoUrl)).toBe(false);
   });
 
   it('resolves sales source logo from catalog when detail omits logo', () => {
