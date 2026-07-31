@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import type {
   CartLine,
+  CashflowSession,
   CatalogItem,
   CatalogItemType,
   CheckoutState,
@@ -26,6 +27,7 @@ import {KolamRemoteImage} from './kolam-remote-image';
 import {KolamSearchField} from './kolam-search-field';
 
 export interface KolamPosFullWindowSurfaceProps {
+  activeSession?: CashflowSession | null;
   activeCategory?: string | null;
   activeType: CatalogItemType | 'all';
   afterDiscount: number;
@@ -76,6 +78,7 @@ type PosKeyboardTarget = {
 const POS_CATALOG_PAGE_SIZES = [12, 24, 48, 96] as const;
 
 export function KolamPosFullWindowSurface({
+  activeSession = null,
   activeCategory = null,
   activeType,
   afterDiscount,
@@ -327,6 +330,7 @@ export function KolamPosFullWindowSurface({
         ) : (
           <PosSubview
             activeView={activeView}
+            activeSession={activeSession}
             customers={customers}
             paymentMethods={paymentMethods}
             recentSales={recentSales}
@@ -856,8 +860,20 @@ function SummaryLine({
   );
 }
 
+function PosCashMetric({label, value}: {label: string; value: string}) {
+  return (
+    <View style={styles.cashMetricCard}>
+      <Text style={styles.cashMetricLabel}>{label}</Text>
+      <Text numberOfLines={1} style={styles.cashMetricValue}>
+        {value}
+      </Text>
+    </View>
+  );
+}
+
 function PosSubview({
   activeView,
+  activeSession,
   customers,
   paymentMethods,
   recentSales,
@@ -867,6 +883,7 @@ function PosSubview({
   onSelectPaymentMethod,
 }: {
   activeView: Exclude<PosWindowView, 'catalog'>;
+  activeSession?: CashflowSession | null;
   customers: Customer[];
   paymentMethods: PaymentMethod[];
   recentSales: SaleSummary[];
@@ -967,11 +984,55 @@ function PosSubview({
       <View style={styles.subviewHeader}>
         <Text style={styles.subviewTitle}>Kas</Text>
         <Text style={styles.subviewMeta}>
-          Metode pembayaran aktif untuk checkout POS.
+          Ringkasan shift kas dan metode pembayaran POS.
+        </Text>
+      </View>
+      {activeSession ? (
+        <View style={styles.cashSessionPanel}>
+          <View style={styles.cashSessionHeader}>
+            <View>
+              <Text style={styles.cashSessionTitle}>{activeSession.name}</Text>
+              <Text style={styles.cashSessionMeta}>
+                {activeSession.cashier} | Dibuka {formatPosDate(activeSession.openedAt)}
+              </Text>
+            </View>
+            <Text style={styles.cashSessionBadge}>Aktif</Text>
+          </View>
+          <View style={styles.cashMetricGrid}>
+            <PosCashMetric
+              label="Kas Awal"
+              value={formatRupiah(activeSession.openingBalance)}
+            />
+            <PosCashMetric
+              label="Total Penjualan"
+              value={formatRupiah(activeSession.snapshot?.totalSalesAmount ?? 0)}
+            />
+            <PosCashMetric
+              label="Tunai"
+              value={formatRupiah(activeSession.snapshot?.cashSalesTotal ?? 0)}
+            />
+            <PosCashMetric
+              label="Transaksi"
+              value={`${activeSession.snapshot?.totalSalesCount ?? 0}`}
+            />
+          </View>
+        </View>
+      ) : (
+        <View style={styles.cashSessionEmptyPanel}>
+          <Text style={styles.emptyTitle}>Shift kas belum aktif.</Text>
+          <Text style={styles.emptyText}>
+            Buka sesi kas dari modul Kas pusat sebelum menerima transaksi POS.
+          </Text>
+        </View>
+      )}
+      <View style={styles.subviewHeaderCompact}>
+        <Text style={styles.subviewSectionTitle}>Metode Pembayaran</Text>
+        <Text style={styles.subviewMeta}>
+          Pilihan di sini juga tersedia di modal pembayaran.
         </Text>
       </View>
       <View style={styles.paymentGrid}>
-        {paymentMethods.map(method => {
+        {paymentMethods.filter(method => method.active).map(method => {
           const active = selectedPaymentId === method.id;
 
           return (
@@ -1706,9 +1767,18 @@ const styles = StyleSheet.create({
     gap: 2,
     paddingBottom: 4,
   },
+  subviewHeaderCompact: {
+    gap: 2,
+    paddingTop: 4,
+  },
   subviewTitle: {
     color: V.colors.fg,
     fontSize: 18,
+    fontWeight: '900',
+  },
+  subviewSectionTitle: {
+    color: V.colors.fg,
+    fontSize: 13,
     fontWeight: '900',
   },
   subviewMeta: {
@@ -1829,6 +1899,75 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '900',
     textTransform: 'uppercase',
+  },
+  cashSessionPanel: {
+    gap: 12,
+    borderRadius: 6,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    padding: 14,
+    backgroundColor: V.colors.bg,
+  },
+  cashSessionHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  cashSessionTitle: {
+    color: V.colors.fg,
+    fontSize: 14,
+    fontWeight: '900',
+  },
+  cashSessionMeta: {
+    marginTop: 3,
+    color: V.colors.mutedFg,
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  cashSessionBadge: {
+    overflow: 'hidden',
+    borderRadius: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    color: V.colors.success,
+    backgroundColor: V.colors.successSoft,
+    fontSize: 10,
+    fontWeight: '900',
+  },
+  cashMetricGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  cashMetricCard: {
+    width: 160,
+    minHeight: 68,
+    justifyContent: 'center',
+    borderRadius: 6,
+    padding: 10,
+    backgroundColor: V.colors.mutedSoft,
+  },
+  cashMetricLabel: {
+    color: V.colors.mutedFg,
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  cashMetricValue: {
+    marginTop: 5,
+    color: V.colors.fg,
+    fontSize: 15,
+    fontWeight: '900',
+  },
+  cashSessionEmptyPanel: {
+    minHeight: 150,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 6,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    padding: 18,
+    backgroundColor: V.colors.mutedSoft,
   },
   paymentGrid: {
     flexDirection: 'row',

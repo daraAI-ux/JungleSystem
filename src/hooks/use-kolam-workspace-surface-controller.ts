@@ -166,6 +166,7 @@ export function useKolamWorkspaceSurfaceController({
 
   const checkoutProps = useMemo<WorkspaceCheckoutProps>(
     () => ({
+      activeSession: dataset.activeSession,
       activeCategory,
       activeType,
       afterDiscount,
@@ -209,6 +210,7 @@ export function useKolamWorkspaceSurfaceController({
       checkout,
       dataset.catalog,
       dataset.customers,
+      dataset.activeSession,
       dataset.paymentMethods,
       dataset.recentSales,
       filteredCatalog,

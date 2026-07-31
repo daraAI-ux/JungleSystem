@@ -1,6 +1,7 @@
 ﻿import React from 'react';
 import type {
   CartLine,
+  CashflowSession,
   CatalogItem,
   CatalogItemType,
   CheckoutState,
@@ -14,6 +15,7 @@ import {KolamCheckoutWorkspaceBody} from './kolam-checkout-workspace-body';
 import {KolamSalesPanel} from './kolam-pos-widgets';
 
 export interface KolamCheckoutWorkspaceProps {
+  activeSession?: CashflowSession | null;
   activeCategory?: string | null;
   activeType: CatalogItemType | 'all';
   afterDiscount: number;
