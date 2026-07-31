@@ -226,24 +226,17 @@ export function KolamSalesOpsDetail({
         </View>
       </View>
 
-      <KolamCopyStack
-        items={[
-          {
-            id: 'buyer',
-            text: sale.buyerLabel,
-            style: styles.detailSubtitle,
-          },
-          ...(sale.openLivestockPendingCount > 0
-            ? [
-                {
-                  id: 'livestock',
-                  text: `${sale.openLivestockPendingCount} species perlu atur enclosure`,
-                  style: styles.warningHint,
-                },
-              ]
-            : []),
-        ]}
-      />
+      {sale.openLivestockPendingCount > 0 ? (
+        <KolamCopyStack
+          items={[
+            {
+              id: 'livestock',
+              text: `${sale.openLivestockPendingCount} species perlu atur enclosure`,
+              style: styles.warningHint,
+            },
+          ]}
+        />
+      ) : null}
 
       <ScrollView
         contentContainerStyle={styles.detailContent}
