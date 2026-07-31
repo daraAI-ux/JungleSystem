@@ -959,9 +959,9 @@ describe('settings web widgets', () => {
 
     const dropdowns = renderer!.root.findAllByType(KolamDropdownSelect);
     expect(dropdowns.some(node => node.props.label === 'Provinsi')).toBe(true);
-    expect(
-      dropdowns.some(node => node.props.label === 'Kota / Kabupaten'),
-    ).toBe(true);
+    expect(dropdowns.some(node => node.props.label === 'Kota/kabupaten')).toBe(
+      true,
+    );
     expect(dropdowns.some(node => node.props.label === 'Kecamatan')).toBe(true);
     expect(dropdowns.some(node => node.props.label === 'Kelurahan')).toBe(true);
     expect(
@@ -1000,13 +1000,13 @@ describe('settings web widgets', () => {
         '32.73.01.1101',
         'Kelurahan 101',
         'Provinsi',
-        'Kota / Kabupaten',
+        'Kota/kabupaten',
         'Kecamatan',
-        'Desa / Kelurahan',
+        'Kelurahan',
         'Sync Provinsi',
-        'Sync Kota / Kabupaten',
+        'Sync Kota/kabupaten',
         'Sync Kecamatan',
-        'Sync Desa / Kelurahan',
+        'Sync Kelurahan',
         'Region Explorer',
         'Filter hierarchy wilayah dan inspeksi postal code sebelum dipakai checkout.',
       ]),

@@ -4028,7 +4028,7 @@ export function KolamSettingsWebConfigSurface({
                 onChange={value => setRegionSelection('province', value)}
               />
               <KolamDropdownSelect
-                label="Kota / Kabupaten"
+                label="Kota/kabupaten"
                 options={regencyDropdownOptions}
                 searchable={Boolean(selectedProvince)}
                 searchPlaceholder="Cari kota / kabupaten"
@@ -8912,9 +8912,9 @@ function getRegionLevelLabel(level: KolamRegionLevel) {
 function getRegionCardLabel(level: string) {
   const labels: Record<string, string> = {
     province: 'Provinsi',
-    regency: 'Kota / Kabupaten',
+    regency: 'Kota/kabupaten',
     district: 'Kecamatan',
-    village: 'Desa / Kelurahan',
+    village: 'Kelurahan',
   };
 
   return labels[level] ?? level;
