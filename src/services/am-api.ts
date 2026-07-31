@@ -851,6 +851,18 @@ export async function verifyAmTokopediaSession(
   );
 }
 
+export async function uploadAmTokopediaSession(
+  serviceAccountId: string,
+  cookies: unknown[],
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<{cookieCount: number; updatedAt: string}> {
+  return amPost<{cookieCount: number; updatedAt: string}>(
+    `/service-account/${serviceAccountId}/tokopedia-session`,
+    {cookies},
+    baseUrl,
+  );
+}
+
 export async function restartAmTokopediaSession(
   serviceAccountId: string,
   baseUrl = appConfig.amApiBaseUrl,

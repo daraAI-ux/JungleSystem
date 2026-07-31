@@ -62,6 +62,7 @@ import {
   startAmTokopediaQrLogin,
   stopAmDeviceService,
   testAmWebhookPing,
+  uploadAmTokopediaSession,
   updateAmTokopediaCaptchaSettings,
   updateAmTokopediaLoginMethod,
   updateAmBox,
@@ -2128,6 +2129,7 @@ function AmTokopediaSessionPanel({
   const [monitorJob, setMonitorJob] = React.useState<AmTokopediaApiMonitorJob | null>(null);
   const [captchaAutoSolve, setCaptchaAutoSolve] = React.useState(false);
   const [anthropicApiKey, setAnthropicApiKey] = React.useState('');
+  const [cookiesJson, setCookiesJson] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(true);
   const [acting, setActing] = React.useState<string | null>(null);
   const [message, setMessage] = React.useState<string | null>(null);
@@ -2216,10 +2218,20 @@ function AmTokopediaSessionPanel({
     });
   }, [account._id, anthropicApiKey, captchaAutoSolve, runAction]);
 
+  const uploadManualCookies = React.useCallback(() => {
+    runAction('upload-cookies', async () => {
+      const cookies = parseAmTokopediaCookiesJson(cookiesJson);
+      const result = await uploadAmTokopediaSession(account._id, cookies);
+      setCookiesJson('');
+      return `Session disimpan (${result.cookieCount} cookies).`;
+    });
+  }, [account._id, cookiesJson, runAction]);
+
   const statusLabel = info ? TOKOPEDIA_SESSION_LABELS[info.status] ?? titleCase(info.status) : 'Memuat session';
   const loginMode = info?.qrTiktokLogin ? 'qr' : info?.loginFillOnly ? 'fill' : 'password';
   const monitorRunning = monitorJob?.status === 'running';
   const canRunSessionAction = !isLoading && acting === null;
+  const cookiesPreview = getAmTokopediaCookiesPreview(cookiesJson);
 
   return (
     <View style={styles.emptyPanel}>
@@ -2306,6 +2318,41 @@ function AmTokopediaSessionPanel({
           />
         ) : null}
       </View>
+      <View style={styles.uploadPanel}>
+        <Text style={styles.formLabel}>Upload cookies manual</Text>
+        <Text style={styles.rowMeta}>
+          Paste JSON export Cookie-Editor dari seller-id.tokopedia.com. Format bisa array cookies atau object {'{cookies: [...]}'}
+        </Text>
+        <TextInput
+          accessibilityLabel={`AM Tokopedia Cookies JSON ${account._id}`}
+          multiline
+          placeholder="[{&quot;name&quot;:&quot;sid&quot;,&quot;value&quot;:&quot;...&quot;}]"
+          placeholderTextColor={V.colors.mutedFg}
+          style={[styles.formInput, styles.cookieTextArea]}
+          value={cookiesJson}
+          onChangeText={setCookiesJson}
+        />
+        <View style={styles.inlineActions}>
+          <KolamButton
+            accessibilityLabel={`AM Tokopedia Save Cookies ${account._id}`}
+            label={acting === 'upload-cookies' ? 'Menyimpan' : 'Simpan Session'}
+            muted={!canRunSessionAction || acting === 'upload-cookies' || !cookiesJson.trim()}
+            size="sm"
+            onPress={uploadManualCookies}
+          />
+          <KolamButton
+            accessibilityLabel={`AM Tokopedia Clear Cookies ${account._id}`}
+            intent="outline"
+            label="Bersihkan"
+            muted={!cookiesJson.trim()}
+            size="sm"
+            onPress={() => setCookiesJson('')}
+          />
+        </View>
+        <Text style={cookiesPreview.error ? styles.cookieErrorText : styles.rowMeta}>
+          {cookiesPreview.error ?? (cookiesPreview.count ? `Siap upload: ${cookiesPreview.count} cookies` : 'Belum ada cookies JSON.')}
+        </Text>
+      </View>
       <View style={styles.inlineActions}>
         <KolamButton
           accessibilityLabel={`AM Tokopedia Verify ${account._id}`}
@@ -2372,9 +2419,42 @@ function AmTokopediaSessionPanel({
           {monitorJob.restarted ? ' Service sudah dinyalakan kembali.' : ''}
         </Text>
       ) : null}
-      <Text style={styles.rowMeta}>Upload cookies manual dari AM FE belum dipindahkan ke native karena butuh file JSON picker terpisah.</Text>
     </View>
   );
+}
+
+function parseAmTokopediaCookiesJson(text: string): unknown[] {
+  const parsed = JSON.parse(text);
+  const cookies = Array.isArray(parsed)
+    ? parsed
+    : isRecord(parsed) && Array.isArray(parsed.cookies)
+      ? parsed.cookies
+      : null;
+
+  if (!cookies?.length) {
+    throw new Error('JSON harus berisi array cookies atau object {cookies: [...]}.');
+  }
+
+  return cookies;
+}
+
+function getAmTokopediaCookiesPreview(text: string): {count: number; error?: string} {
+  if (!text.trim()) {
+    return {count: 0};
+  }
+
+  try {
+    return {count: parseAmTokopediaCookiesJson(text).length};
+  } catch (nextError) {
+    return {
+      count: 0,
+      error: nextError instanceof Error ? nextError.message : 'Cookies JSON tidak valid.',
+    };
+  }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
 }
 
 function AmServiceHistoryPagination({
@@ -5564,6 +5644,25 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 13,
     backgroundColor: V.colors.bg,
+  },
+  uploadPanel: {
+    gap: 8,
+    borderWidth: 1,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    padding: 12,
+    backgroundColor: V.colors.mutedSoft,
+  },
+  cookieTextArea: {
+    minHeight: 112,
+    paddingTop: 10,
+    textAlignVertical: 'top',
+  },
+  cookieErrorText: {
+    color: V.colors.danger,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '700',
   },
   eventGrid: {
     flexDirection: 'row',

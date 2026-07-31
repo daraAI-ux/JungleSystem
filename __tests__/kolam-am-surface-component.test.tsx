@@ -43,6 +43,7 @@ import {
   sendAmDeviceServiceInput,
   startAmTokopediaQrLogin,
   testAmWebhookPing,
+  uploadAmTokopediaSession,
   updateAmTokopediaCaptchaSettings,
   updateAmTokopediaLoginMethod,
   updateAmRack,
@@ -124,6 +125,7 @@ jest.mock('../src/services/am-api', () => ({
   startAmTokopediaQrLogin: jest.fn(() => Promise.resolve({started: true})),
   stopAmDeviceService: jest.fn(() => Promise.resolve({success: true})),
   testAmWebhookPing: jest.fn(() => Promise.resolve({success: true})),
+  uploadAmTokopediaSession: jest.fn(() => Promise.resolve({cookieCount: 1, updatedAt: '2026-01-01T00:00:00.000Z'})),
   updateAmTokopediaCaptchaSettings: jest.fn(() => Promise.resolve({
     captchaAutoSolve: true,
     hasAnthropicApiKey: true,
@@ -1080,6 +1082,18 @@ describe('KolamAmSurface', () => {
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Tokopedia QR Start service-tokopedia'}).props.onPress();
     });
+    const cookiesInput = renderer!.root.findByProps({
+      accessibilityLabel: 'AM Tokopedia Cookies JSON service-tokopedia',
+    });
+    await act(async () => {
+      cookiesInput.props.onChangeText(JSON.stringify({
+        cookies: [{name: 'sid', value: 'cookie-value'}],
+      }));
+    });
+    expect(renderText(renderer!).join(' ')).toContain('Siap upload: 1 cookies');
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Tokopedia Save Cookies service-tokopedia'}).props.onPress();
+    });
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Tokopedia Api Monitor service-tokopedia'}).props.onPress();
     });
@@ -1095,6 +1109,9 @@ describe('KolamAmSurface', () => {
     expect(verifyAmTokopediaSession).toHaveBeenCalledWith('service-tokopedia');
     expect(restartAmTokopediaSession).toHaveBeenCalledWith('service-tokopedia');
     expect(startAmTokopediaQrLogin).toHaveBeenCalledWith('service-tokopedia');
+    expect(uploadAmTokopediaSession).toHaveBeenCalledWith('service-tokopedia', [
+      {name: 'sid', value: 'cookie-value'},
+    ]);
     expect(runAmTokopediaApiMonitor).toHaveBeenCalledWith('service-tokopedia', {
       autoRestart: true,
       fillLogin: false,
