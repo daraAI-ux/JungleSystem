@@ -864,9 +864,15 @@ export function getKolamSalePaymentStatusIntent(
   return 'secondary';
 }
 
+/**
+ * FE `resolveShippingDisplayLabel` — optional `sale` remaps `waiting_pickup`
+ * for marketplace drop-off vs courier pickup (DB status stays waiting_pickup).
+ * Filter dropdowns should omit `sale` to keep the raw DB filter label.
+ */
 export function formatKolamSaleDeliveryStatusLabel(
   deliveryStatus?: string | null,
   paymentStatus?: string | null,
+  sale?: KolamSaleFulfillmentContext | null,
 ): string {
   const pay = String(paymentStatus || '').toLowerCase();
   if (pay === 'cancelled') {
@@ -879,13 +885,16 @@ export function formatKolamSaleDeliveryStatusLabel(
   if (pay === 'paid' && ds === 'none') {
     return 'Butuh kirim';
   }
+  if (pay === 'paid' && ds === 'waiting_pickup') {
+    return resolveKolamWaitingPickupDisplayLabel(sale);
+  }
   switch (ds) {
     case 'none':
       return 'Belum dikirim';
     case 'packing':
       return 'Sedang dipacking';
     case 'waiting_pickup':
-      return 'Menunggu di jemput kurir';
+      return resolveKolamWaitingPickupDisplayLabel(sale);
     case 'on_delivery':
       return 'Dalam pengiriman';
     case 'delivered':
@@ -1030,6 +1039,38 @@ export function isKolamShopeeDropOffOnly(
     return false;
   }
   return getMarketplaceFulfillmentMode(sale) === 'dropoff';
+}
+
+/** FE `isShopeeDropOffArrangedOnSale` — drop-off already arranged (resi / flag). */
+export function isKolamShopeeDropOffArrangedOnSale(
+  sale: KolamSaleFulfillmentContext,
+): boolean {
+  if (!isKolamShopeeDropOffOnly(sale)) {
+    return false;
+  }
+  if (hasKolamMarketplaceTrackingSynced(sale)) {
+    return true;
+  }
+  return sale.marketplaceFulfillment?.pickupArranged === true;
+}
+
+/**
+ * FE `resolveWaitingPickupDisplayLabel` — pickup kurir vs drop-off antar gerai.
+ * DB `deliveryStatus` tetap `waiting_pickup`; label mengikuti fulfillmentMode.
+ */
+export function resolveKolamWaitingPickupDisplayLabel(
+  sale?: KolamSaleFulfillmentContext | null,
+): string {
+  if (sale && isKolamShopeeDropOffOnly(sale)) {
+    if (isKolamShopeeDropOffArrangedOnSale(sale)) {
+      return 'Drop Off';
+    }
+    return 'Menunggu dibawa ke gerai';
+  }
+  if (sale && isKolamTokopediaDropOffOnly(sale)) {
+    return 'Menunggu dibawa ke gerai';
+  }
+  return 'Menunggu di jemput kurir';
 }
 
 function isKolamShopeePickupArrangedOnSale(

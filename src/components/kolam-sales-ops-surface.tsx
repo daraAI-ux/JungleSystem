@@ -531,7 +531,11 @@ function KolamSalesOpsRow({
   const skipShipping = kolamSaleSkipsShippingFlow(sale);
   const deliveryBadgeLabel = skipShipping
     ? getKolamNoShippingDeliveryLabel(sale)
-    : formatKolamSaleDeliveryStatusLabel(sale.deliveryStatus, sale.status);
+    : formatKolamSaleDeliveryStatusLabel(
+        sale.deliveryStatus,
+        sale.status,
+        sale,
+      );
   const deliveryBadgeIntent = skipShipping
     ? 'info'
     : getKolamSaleDeliveryStatusIntent(sale.deliveryStatus, sale.status);

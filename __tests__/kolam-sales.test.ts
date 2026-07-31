@@ -39,9 +39,11 @@ import {
   isKolamSaleMarketplaceManaged,
   isKolamTokopediaDropOffOnly,
   isKolamShopeeDropOffOnly,
+  isKolamShopeeDropOffArrangedOnSale,
   isKolamMarketplaceShipmentSyncStarted,
   needsKolamPlatformPickupRequest,
   needsKolamTokopediaPickupRequest,
+  resolveKolamWaitingPickupDisplayLabel,
   shouldShowKolamTokopediaDropOffBadge,
   getKolamSaleMarketplaceFulfillment,
   canOpenKolamSaleComplaintCreate,
@@ -814,6 +816,9 @@ describe('kolam sales domain', () => {
     expect(formatKolamSaleDeliveryStatusLabel('packing', 'paid')).toBe(
       'Sedang dipacking',
     );
+    expect(formatKolamSaleDeliveryStatusLabel('waiting_pickup', 'paid')).toBe(
+      'Menunggu di jemput kurir',
+    );
     expect(
       getKolamNoShippingDeliveryLabel({
         items: [{ itemType: 'product' }],
@@ -832,6 +837,105 @@ describe('kolam sales domain', () => {
         sourceRef: { type: 'offline', name: 'Kasir Cabang' },
       }),
     ).toBe(true);
+  });
+
+  it('remaps waiting_pickup label for marketplace drop-off vs courier pickup', () => {
+    const tokopediaDropoff = normalizeKolamSale({
+      _id: 'sale-wp-tp-drop',
+      invoiceCode: 'INV-WP-TP',
+      status: 'paid',
+      deliveryStatus: 'waiting_pickup',
+      externalRef: {
+        source: 'tokopedia',
+        tokopedia: {
+          fulfillmentMode: 'dropoff',
+          lastStatus: 101,
+        },
+      },
+      items: [],
+    });
+    expect(resolveKolamWaitingPickupDisplayLabel(tokopediaDropoff)).toBe(
+      'Menunggu dibawa ke gerai',
+    );
+    expect(
+      formatKolamSaleDeliveryStatusLabel(
+        'waiting_pickup',
+        'paid',
+        tokopediaDropoff,
+      ),
+    ).toBe('Menunggu dibawa ke gerai');
+    expect(
+      formatKolamSaleDeliveryStatusLabel('waiting_pickup', 'paid'),
+    ).toBe('Menunggu di jemput kurir');
+
+    const tokopediaPickup = normalizeKolamSale({
+      _id: 'sale-wp-tp-pick',
+      invoiceCode: 'INV-WP-TPP',
+      status: 'paid',
+      deliveryStatus: 'waiting_pickup',
+      externalRef: {
+        source: 'tokopedia',
+        tokopedia: {
+          fulfillmentMode: 'pickup',
+          lastStatus: 101,
+        },
+      },
+      items: [],
+    });
+    expect(
+      formatKolamSaleDeliveryStatusLabel(
+        'waiting_pickup',
+        'paid',
+        tokopediaPickup,
+      ),
+    ).toBe('Menunggu di jemput kurir');
+
+    const shopeeDropoffPending = normalizeKolamSale({
+      _id: 'sale-wp-sp-drop',
+      invoiceCode: 'INV-WP-SP',
+      status: 'paid',
+      deliveryStatus: 'waiting_pickup',
+      externalRef: {
+        source: 'shopee',
+        shopee: {
+          fulfillmentMode: 'dropoff',
+          pickupArranged: false,
+        },
+      },
+      items: [],
+    });
+    expect(isKolamShopeeDropOffOnly(shopeeDropoffPending)).toBe(true);
+    expect(isKolamShopeeDropOffArrangedOnSale(shopeeDropoffPending)).toBe(false);
+    expect(
+      formatKolamSaleDeliveryStatusLabel(
+        'waiting_pickup',
+        'paid',
+        shopeeDropoffPending,
+      ),
+    ).toBe('Menunggu dibawa ke gerai');
+
+    const shopeeDropoffArranged = normalizeKolamSale({
+      _id: 'sale-wp-sp-arr',
+      invoiceCode: 'INV-WP-SPA',
+      status: 'paid',
+      deliveryStatus: 'waiting_pickup',
+      externalRef: {
+        source: 'shopee',
+        shopee: {
+          fulfillmentMode: 'dropoff',
+          pickupArranged: true,
+        },
+      },
+      items: [],
+    });
+    expect(isKolamShopeeDropOffArrangedOnSale(shopeeDropoffArranged)).toBe(true);
+    expect(
+      formatKolamSaleDeliveryStatusLabel(
+        'waiting_pickup',
+        'paid',
+        shopeeDropoffArranged,
+      ),
+    ).toBe('Drop Off');
   });
 
   it('gates status, edit, add-items, and delivery transitions', () => {

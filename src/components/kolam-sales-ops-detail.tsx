@@ -368,6 +368,7 @@ export function KolamSalesOpsDetail({
                     : formatKolamSaleDeliveryStatusLabel(
                         sale.deliveryStatus,
                         sale.status,
+                        sale,
                       )
               }
             />
@@ -1005,6 +1006,7 @@ export function KolamSalesOpsDetail({
                             label={formatKolamSaleDeliveryStatusLabel(
                               target,
                               sale.status,
+                              sale,
                             )}
                             onPress={() => setPendingDelivery(target)}
                           />
@@ -1135,7 +1137,11 @@ export function KolamSalesOpsDetail({
         confirmLabel="Ubah pengiriman"
         message={`Ubah status pengiriman ${sale.invoiceCode} menjadi ${
           pendingDelivery
-            ? formatKolamSaleDeliveryStatusLabel(pendingDelivery, sale.status)
+            ? formatKolamSaleDeliveryStatusLabel(
+                pendingDelivery,
+                sale.status,
+                sale,
+              )
             : ''
         }?`}
         onCancel={() => setPendingDelivery(null)}

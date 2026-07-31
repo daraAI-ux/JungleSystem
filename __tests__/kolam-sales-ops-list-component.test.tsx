@@ -224,4 +224,38 @@ describe('KolamSalesOpsSurface list delivery badges', () => {
     expect(text).toContain('Butuh kirim');
     expect(text).not.toContain('POS (tanpa kirim)');
   });
+
+  it('shows Menunggu dibawa ke gerai for Tokopedia drop-off waiting_pickup', async () => {
+    mockController = createListController([
+      {
+        _id: 'sale-tp-drop-1',
+        invoiceCode: 'INV-TP-DROP-1',
+        status: 'paid',
+        deliveryStatus: 'waiting_pickup',
+        finalTotal: 120_000,
+        transactionDate: '2026-07-31T00:00:00.000Z',
+        items: [{_id: 'i1', itemType: 'product', quantity: 1}],
+        sourceRef: {_id: 'src-tp', name: 'Tokopedia', type: 'online'},
+        externalRef: {
+          source: 'tokopedia',
+          tokopedia: {
+            mainOrderId: 'TP-DROP-1',
+            fulfillmentMode: 'dropoff',
+            lastStatus: 101,
+          },
+        },
+      },
+    ]);
+
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamSalesOpsSurface route="/sales" />,
+      );
+    });
+
+    const text = renderText(renderer!);
+    expect(text).toContain('Menunggu dibawa ke gerai');
+    expect(text).not.toContain('Menunggu di jemput kurir');
+  });
 });
