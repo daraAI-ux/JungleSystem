@@ -1946,7 +1946,7 @@ function PosPaymentModal({
                     ]}>
                     <View style={styles.paymentMethodIcon}>
                       <Text style={styles.paymentMethodIconText}>
-                        {isCashPaymentMethod(method) ? 'Rp' : '$'}
+                        {getPaymentMethodIconLabel(method)}
                       </Text>
                     </View>
                     <View style={styles.paymentMethodCopy}>
@@ -1962,7 +1962,7 @@ function PosPaymentModal({
                       <Text style={styles.paymentMethodMeta}>
                         {isCashPaymentMethod(method)
                           ? 'Tunai dengan hitung kembalian'
-                          : 'Konfirmasi non-tunai'}
+                          : method.wallet || 'Konfirmasi non-tunai'}
                       </Text>
                     </View>
                     {selectedPaymentId === method.id ? (
@@ -2067,6 +2067,13 @@ function PosPaymentModal({
               </>
             ) : (
               <View style={styles.nonCashCard}>
+                <View style={styles.nonCashIcon}>
+                  <Text style={styles.nonCashIconText}>
+                    {selectedPayment
+                      ? getPaymentMethodIconLabel(selectedPayment)
+                      : 'RC'}
+                  </Text>
+                </View>
                 <Text style={styles.nonCashTitle}>
                   {selectedPayment
                     ? `Konfirmasi ${selectedPayment.name}`
@@ -2101,6 +2108,10 @@ function isCashPaymentMethod(method: PaymentMethod) {
     normalized.includes('tunai') ||
     normalized.includes('kas')
   );
+}
+
+function getPaymentMethodIconLabel(method: PaymentMethod) {
+  return isCashPaymentMethod(method) ? 'Rp' : 'RC';
 }
 
 function getQuickPaymentAmounts(total: number) {
@@ -3899,6 +3910,7 @@ const styles = StyleSheet.create({
     color: V.colors.danger,
   },
   nonCashCard: {
+    alignItems: 'center',
     marginTop: 12,
     borderRadius: V.radius.md,
     borderColor: V.colors.border,
@@ -3906,16 +3918,32 @@ const styles = StyleSheet.create({
     padding: 14,
     backgroundColor: V.colors.mutedSoft,
   },
+  nonCashIcon: {
+    width: 56,
+    height: 56,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+    borderRadius: 28,
+    backgroundColor: V.colors.primarySoft,
+  },
+  nonCashIconText: {
+    color: V.colors.primary,
+    fontSize: 15,
+    fontWeight: '900',
+  },
   nonCashTitle: {
     color: V.colors.fg,
     fontSize: 14,
     fontWeight: '900',
+    textAlign: 'center',
   },
   nonCashText: {
     marginTop: 4,
     color: V.colors.mutedFg,
     fontSize: 12,
     lineHeight: 17,
+    textAlign: 'center',
   },
   paymentFooter: {
     flexDirection: 'row',
