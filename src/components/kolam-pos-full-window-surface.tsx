@@ -611,24 +611,45 @@ function PosOrderRow({
   return (
     <View style={styles.orderRow}>
       <View style={styles.orderThumb}>
-        <Text style={styles.orderThumbText}>{item.type === 'species' ? 'S' : 'P'}</Text>
+        {item.imageUri ? (
+          <KolamRemoteImage
+            accessibilityLabel={item.name}
+            revision={item.imageRevision}
+            scope="pos-order"
+            sourceUri={item.imageUri}
+            style={styles.orderThumbImage}
+          />
+        ) : (
+          <Text style={styles.orderThumbText}>
+            {item.type === 'species' ? 'S' : 'P'}
+          </Text>
+        )}
       </View>
       <View style={styles.orderCopy}>
         <Text numberOfLines={2} style={styles.orderName}>
           {item.name}
         </Text>
-        <Text style={styles.orderMeta}>{formatRupiah(item.price)}</Text>
-        <Text style={styles.orderMeta}>
-          {formatRupiah(item.price * line.quantity)}
-        </Text>
+        <View style={styles.orderPriceRow}>
+          <Text style={styles.orderMeta}>{formatRupiah(item.price)}</Text>
+          <Text style={styles.orderLineTotal}>
+            {formatRupiah(item.price * line.quantity)}
+          </Text>
+        </View>
       </View>
-      <KolamQuantityStepper
-        quantity={line.quantity}
-        onDecrement={() => onQuantityChange(line.itemId, line.quantity - 1)}
-        onIncrement={() =>
-          onQuantityChange(line.itemId, Math.min(item.stock, line.quantity + 1))
-        }
-      />
+      <View style={styles.orderActions}>
+        <KolamInteractionFrame
+          onPress={() => onQuantityChange(line.itemId, 0)}
+          style={styles.orderRemoveButton}>
+          <Text style={styles.orderRemoveText}>Hapus</Text>
+        </KolamInteractionFrame>
+        <KolamQuantityStepper
+          quantity={line.quantity}
+          onDecrement={() => onQuantityChange(line.itemId, line.quantity - 1)}
+          onIncrement={() =>
+            onQuantityChange(line.itemId, Math.min(item.stock, line.quantity + 1))
+          }
+        />
+      </View>
     </View>
   );
 }
@@ -1677,8 +1698,13 @@ const styles = StyleSheet.create({
     height: 38,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
     borderRadius: 6,
     backgroundColor: V.colors.muted,
+  },
+  orderThumbImage: {
+    width: 38,
+    height: 38,
   },
   orderThumbText: {
     color: V.colors.mutedFg,
@@ -1699,6 +1725,34 @@ const styles = StyleSheet.create({
     marginTop: 2,
     color: V.colors.mutedFg,
     fontSize: 10,
+  },
+  orderPriceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+    marginTop: 2,
+  },
+  orderLineTotal: {
+    color: V.colors.fg,
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  orderActions: {
+    alignItems: 'flex-end',
+    gap: 6,
+  },
+  orderRemoveButton: {
+    minHeight: 22,
+    justifyContent: 'center',
+    borderRadius: 4,
+    paddingHorizontal: 8,
+    backgroundColor: V.colors.dangerSoft,
+  },
+  orderRemoveText: {
+    color: V.colors.danger,
+    fontSize: 10,
+    fontWeight: '900',
   },
   orderEmpty: {
     flex: 1,
