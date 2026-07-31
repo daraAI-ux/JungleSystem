@@ -41,7 +41,6 @@ export interface KolamSidebarContentProps {
 export function KolamSidebarContent({
   accessScope,
   activeModule,
-  activeModuleRoute,
   activeRoute,
   collapsed,
   expandedSections,
@@ -55,8 +54,6 @@ export function KolamSidebarContent({
   sectionOrder,
 }: KolamSidebarContentProps) {
   const activeArea = getActiveSidebarArea(activeModule);
-  const activeAmRoute =
-    activeArea === 'am' ? activeModuleRoute?.route ?? activeRoute : activeRoute;
   const primaryModules = [
     ...getShellModulesByArea('kolam'),
     ...getShellModulesByArea('am'),
@@ -76,7 +73,7 @@ export function KolamSidebarContent({
       {activeArea === 'am' ? (
         <KolamAmSidebarMenu
           activeModule={activeModule}
-          activeRoute={activeAmRoute}
+          activeRoute={activeRoute}
           collapsed={collapsed}
           onSelectModule={onSelectModule}
           onSelectRoute={onModuleRouteSelect ?? (() => undefined)}

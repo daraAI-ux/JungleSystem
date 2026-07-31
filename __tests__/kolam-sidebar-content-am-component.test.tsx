@@ -2,7 +2,6 @@ import React from 'react';
 import { Text, View } from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 import { KolamSidebarContent } from '../src/components/kolam-sidebar-content';
-import { getShellModuleRouteEntry } from '../src/domain/app-shell';
 
 function renderText(renderer: ReactTestRenderer.ReactTestRenderer) {
   return renderer.root
@@ -78,55 +77,4 @@ describe('KolamSidebarContent AM mode', () => {
     expect(text).not.toContain('Kolam Menu');
     expect(text).not.toContain('Kembali ke Kolam');
   });
-
-  it('uses the AM shell route as the active sidebar route', async () => {
-    const activeModuleRoute = getShellModuleRouteEntry('am', 'settings/account');
-    let renderer: ReactTestRenderer.ReactTestRenderer;
-
-    if (!activeModuleRoute) {
-      throw new Error('AM account settings route is missing.');
-    }
-
-    await ReactTestRenderer.act(async () => {
-      renderer = ReactTestRenderer.create(
-        <View>
-          <KolamSidebarContent
-            accessScope={{ am: true, kolam: true, pos: true }}
-            activeModule="am"
-            activeModuleRoute={activeModuleRoute}
-            activeRoute="/products"
-            collapsed={false}
-            expandedSections={{ dashboard: true }}
-            filterMenuByAccess={false}
-            onModuleRouteSelect={() => undefined}
-            onMoveMenuSection={() => undefined}
-            onQuickSearch={() => undefined}
-            onSelectMenuItem={() => undefined}
-            onSelectModule={() => undefined}
-            onToggleMenuSection={() => undefined}
-            sectionOrder={[]}
-          />
-        </View>,
-      );
-    });
-
-    const selectedItems = renderer!.root.findAll(
-      node => node.props.accessibilityState?.selected === true,
-    );
-
-    expect(
-      selectedItems.some(item =>
-        flattenNodeText(item).includes('Account Settings'),
-      ),
-    ).toBe(true);
-    expect(
-      selectedItems.some(item => flattenNodeText(item).includes('Produk')),
-    ).toBe(false);
-  });
 });
-
-function flattenNodeText(
-  node: ReactTestRenderer.ReactTestInstance,
-): string[] {
-  return node.findAllByType(Text).flatMap(item => flattenText(item.props.children));
-}
