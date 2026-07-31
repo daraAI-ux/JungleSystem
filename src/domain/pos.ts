@@ -14,6 +14,9 @@ export interface CatalogItem {
   stock: number;
   lowStockThreshold: number;
   labels: string[];
+  imageRevision?: string;
+  imageUri?: string | null;
+  variantCount?: number;
 }
 
 export interface Customer {

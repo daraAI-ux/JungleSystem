@@ -21,6 +21,7 @@ import {formatRupiah} from '../lib/money';
 import {KolamButton} from './kolam-button';
 import {KolamInteractionFrame} from './kolam-interaction-frame';
 import {KolamQuantityStepper} from './kolam-quantity-stepper';
+import {KolamRemoteImage} from './kolam-remote-image';
 import {KolamSearchField} from './kolam-search-field';
 
 export interface KolamPosFullWindowSurfaceProps {
@@ -412,10 +413,32 @@ function PosCatalogCard({
     <View style={styles.cardSlot}>
       <View style={[styles.productCard, isInCart && styles.productCardActive]}>
         <View style={styles.productImage}>
-          <Text style={styles.productImageIcon}>{item.type === 'species' ? 'S' : 'P'}</Text>
-          <Text numberOfLines={2} style={styles.productImageName}>
-            {item.name}
-          </Text>
+          {item.imageUri ? (
+            <KolamRemoteImage
+              accessibilityLabel={item.name}
+              previewItems={[
+                {
+                  revision: item.imageRevision ?? item.imageUri,
+                  scope: 'pos-catalog',
+                  title: item.name,
+                  uri: item.imageUri,
+                },
+              ]}
+              revision={item.imageRevision}
+              scope="pos-catalog"
+              sourceUri={item.imageUri}
+              style={styles.productImageFill}
+            />
+          ) : (
+            <>
+              <Text style={styles.productImageIcon}>
+                {item.type === 'species' ? 'S' : 'P'}
+              </Text>
+              <Text numberOfLines={2} style={styles.productImageName}>
+                {item.name}
+              </Text>
+            </>
+          )}
           {isOutOfStock || isLowStock ? (
             <Text style={[styles.stockBadge, isOutOfStock && styles.stockBadgeDanger]}>
               {isOutOfStock ? 'Habis' : `Sisa ${item.stock}`}
@@ -427,6 +450,9 @@ function PosCatalogCard({
           <Text numberOfLines={1} style={styles.skuText}>
             {item.code}
           </Text>
+          {item.variantCount ? (
+            <Text style={styles.variantBadge}>{item.variantCount} Varian</Text>
+          ) : null}
           <Text numberOfLines={2} style={styles.productName}>
             {item.name}
           </Text>
@@ -933,6 +959,11 @@ const styles = StyleSheet.create({
     padding: 8,
     backgroundColor: V.colors.secondary,
   },
+  productImageFill: {
+    ...StyleSheet.absoluteFillObject,
+    height: '100%',
+    width: '100%',
+  },
   productImageIcon: {
     color: V.colors.mutedFg,
     fontSize: 22,
@@ -983,6 +1014,20 @@ const styles = StyleSheet.create({
     color: V.colors.mutedFg,
     fontSize: 9,
     fontWeight: '700',
+    paddingRight: 58,
+  },
+  variantBadge: {
+    position: 'absolute',
+    right: 8,
+    top: 8,
+    overflow: 'hidden',
+    borderRadius: 4,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    color: V.colors.mutedFg,
+    backgroundColor: V.colors.muted,
+    fontSize: 9,
+    fontWeight: '800',
   },
   productName: {
     marginTop: 2,

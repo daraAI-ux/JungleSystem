@@ -9,6 +9,7 @@ import type {
 } from '../domain/pos';
 import {apiGet, apiPost, apiRequest} from '../lib/api-client';
 import {formatCashflowSessionDisplayName} from '../lib/cashflow';
+import {getKolamFileUrl} from '../lib/file-url';
 
 interface ListResponse<T> {
   data: T[];
@@ -29,6 +30,9 @@ interface BackendProduct {
   stock?: number;
   lowStockThreshold?: number;
   labels?: string[];
+  photos?: string[];
+  thumbnailImage?: string | null;
+  variants?: BackendCatalogVariant[];
 }
 
 interface BackendSpecies {
@@ -43,6 +47,14 @@ interface BackendSpecies {
   stock?: number;
   lowStockThreshold?: number;
   labels?: string[];
+  photos?: string[];
+  thumbnailImage?: string | null;
+  variants?: BackendCatalogVariant[];
+}
+
+interface BackendCatalogVariant {
+  photos?: string[];
+  stock?: number;
 }
 
 interface BackendCustomer {
@@ -268,9 +280,12 @@ function mapProduct(product: BackendProduct): CatalogItem {
         ? product.category?.name ?? 'Product'
         : 'Product',
     price: product.price_to_sell ?? product.price ?? 0,
-    stock: product.stock ?? 0,
+    stock: getCatalogStock(product),
     lowStockThreshold: product.lowStockThreshold ?? 0,
     labels: product.labels ?? [],
+    imageRevision: pickCatalogPhoto(product) ?? undefined,
+    imageUri: getKolamFileUrl(pickCatalogPhoto(product)),
+    variantCount: product.variants?.length ?? 0,
   };
 }
 
@@ -296,10 +311,37 @@ function mapSpecies(species: BackendSpecies): CatalogItem {
     code: species.productCode ?? species.sku ?? '-',
     category: 'Species',
     price: species.price_to_sell ?? species.price ?? 0,
-    stock: species.stock ?? 0,
+    stock: getCatalogStock(species),
     lowStockThreshold: species.lowStockThreshold ?? 0,
     labels: species.labels ?? [],
+    imageRevision: pickCatalogPhoto(species) ?? undefined,
+    imageUri: getKolamFileUrl(pickCatalogPhoto(species)),
+    variantCount: species.variants?.length ?? 0,
   };
+}
+
+function pickCatalogPhoto(item: {
+  photos?: string[];
+  thumbnailImage?: string | null;
+  variants?: BackendCatalogVariant[];
+}) {
+  return (
+    item.thumbnailImage ??
+    item.photos?.find(Boolean) ??
+    item.variants?.flatMap(variant => variant.photos ?? []).find(Boolean) ??
+    null
+  );
+}
+
+function getCatalogStock(item: {stock?: number; variants?: BackendCatalogVariant[]}) {
+  if ((item.stock ?? 0) > 0) {
+    return item.stock ?? 0;
+  }
+
+  return (
+    item.variants?.reduce((total, variant) => total + (variant.stock ?? 0), 0) ??
+    0
+  );
 }
 
 function mapCashflowSession(session: BackendCashflowSession): CashflowSession {
