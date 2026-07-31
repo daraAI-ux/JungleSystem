@@ -96,6 +96,7 @@ const TASK_TYPE_LABELS: Record<string, string> = {
 };
 const TASK_STATUSES: Array<AmTaskStatus | 'all'> = ['all', 'pending', 'queued', 'processing', 'success', 'failed', 'cancelled'];
 const TASK_TYPES: Array<AmTaskType | 'all'> = ['all', 'stock_sync', 'process_sale', 'send_message', 'bank_transfer'];
+const AM_TASK_PAGE_LIMIT = 20;
 const AM_PLATFORMS = ['all', 'whatsapp', 'tiktok', 'instagram', 'tokopedia', 'shopee', 'bca', 'brimo', 'dana'];
 const AM_PLATFORM_LABELS: Record<string, string> = {
   whatsapp: 'WhatsApp',
@@ -361,27 +362,30 @@ function AmTasksPage() {
   const [actingTaskId, setActingTaskId] = React.useState<string | null>(null);
   const [actionMessage, setActionMessage] = React.useState<string | null>(null);
   const [total, setTotal] = React.useState(0);
+  const [page, setPage] = React.useState(1);
+  const [limit, setLimit] = React.useState(AM_TASK_PAGE_LIMIT);
   const [selectedTaskId, setSelectedTaskId] = React.useState<string | null>(null);
 
   const fetchTasks = React.useCallback(async () => {
     try {
       setIsLoading(true);
       const response = await getAmTasks({
-        page: 1,
-        limit: 20,
+        page,
+        limit: AM_TASK_PAGE_LIMIT,
         search: search.trim() || undefined,
         status: status === 'all' ? undefined : status,
         type: type === 'all' ? undefined : type,
       });
       setTasks(response.data);
       setTotal(response.meta.total);
+      setLimit(response.meta.limit || AM_TASK_PAGE_LIMIT);
       setError(null);
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : 'Gagal memuat task AM live.');
     } finally {
       setIsLoading(false);
     }
-  }, [search, status, type]);
+  }, [page, search, status, type]);
 
   React.useEffect(() => {
     fetchTasks();
@@ -391,6 +395,25 @@ function AmTasksPage() {
     const interval = setInterval(fetchTasks, 10_000);
     return () => clearInterval(interval);
   }, [fetchTasks]);
+
+  const handleSearchChange = React.useCallback((value: string) => {
+    setSearch(value);
+    setPage(1);
+  }, []);
+
+  const handleTypeChange = React.useCallback((value: string) => {
+    setType(value);
+    setPage(1);
+  }, []);
+
+  const handleStatusChange = React.useCallback((value: string) => {
+    setStatus(value);
+    setPage(1);
+  }, []);
+
+  const totalPages = Math.max(1, Math.ceil(total / Math.max(limit, 1)));
+  const rangeFrom = total ? (page - 1) * limit + 1 : 0;
+  const rangeTo = total ? Math.min(page * limit, total) : 0;
 
   const runTaskAction = React.useCallback(async (
     task: AmTask,
@@ -433,9 +456,9 @@ function AmTasksPage() {
   return (
     <View style={styles.pageStack}>
       <View style={styles.filterBar}>
-        <KolamSearchField value={search} onChangeText={setSearch} placeholder="Search..." containerStyle={styles.taskSearch} trailingLabel={`${total} task`} />
-        <AmSegmentGroup active={type} items={TASK_TYPES} labels={TASK_TYPE_LABELS} onSelect={setType} />
-        <AmSegmentGroup active={status} items={TASK_STATUSES} onSelect={setStatus} />
+        <KolamSearchField value={search} onChangeText={handleSearchChange} placeholder="Search..." containerStyle={styles.taskSearch} trailingLabel={`${total} task`} />
+        <AmSegmentGroup active={type} items={TASK_TYPES} labels={TASK_TYPE_LABELS} onSelect={handleTypeChange} />
+        <AmSegmentGroup active={status} items={TASK_STATUSES} onSelect={handleStatusChange} />
         <KolamButton label={isLoading ? 'Memuat' : 'Refresh'} intent="outline" size="sm" muted={isLoading} onPress={fetchTasks} />
       </View>
       {error ? (
@@ -481,6 +504,31 @@ function AmTasksPage() {
             </View>
           </KolamInteractionFrame>
         ))}
+        {total > limit ? (
+          <View style={styles.paginationBar}>
+            <Text style={styles.paginationText}>
+              Showing {rangeFrom} to {rangeTo} of {total} items
+            </Text>
+            <View style={styles.inlineActions}>
+              <KolamButton
+                accessibilityLabel="AM Tasks Previous Page"
+                disabled={page <= 1 || isLoading}
+                label="Previous"
+                intent="outline"
+                size="sm"
+                onPress={() => setPage(current => Math.max(1, current - 1))}
+              />
+              <KolamButton
+                accessibilityLabel="AM Tasks Next Page"
+                disabled={page >= totalPages || isLoading}
+                label={`Page ${page}/${totalPages}`}
+                intent="outline"
+                size="sm"
+                onPress={() => setPage(current => Math.min(totalPages, current + 1))}
+              />
+            </View>
+          </View>
+        ) : null}
       </View>
     </View>
   );
@@ -3647,6 +3695,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
+  },
+  paginationBar: {
+    marginTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: V.colors.border,
+    paddingTop: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  paginationText: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '700',
   },
   formGrid: {
     gap: 10,

@@ -26,6 +26,7 @@ import {
   getAmRacks,
   getAmRoles,
   getAmServiceAccounts,
+  getAmTasks,
   getAmTaskById,
   getAmTransferById,
   getAmTransfers,
@@ -282,7 +283,7 @@ describe('KolamAmSurface', () => {
   });
 
   it('runs guarded task actions from the Tasks route', async () => {
-    jest.mocked(jest.requireMock('../src/services/am-api').getAmTasks).mockResolvedValue({
+    jest.mocked(getAmTasks).mockResolvedValue({
       data: [
         {
           _id: 'task-1',
@@ -321,7 +322,65 @@ describe('KolamAmSurface', () => {
     });
 
     expect(cancelAmTask).toHaveBeenCalledWith('task-1');
-    expect(jest.requireMock('../src/services/am-api').getAmTasks).toHaveBeenCalledTimes(2);
+    expect(getAmTasks).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps Tasks pagination in sync with AM live list metadata', async () => {
+    jest.mocked(getAmTasks).mockResolvedValue({
+      data: Array.from({length: 20}, (_, index) => ({
+        _id: `task-page-${index + 1}`,
+        type: 'stock_sync',
+        status: 'success',
+        priority: 1,
+        deviceId: {_id: 'device-1', name: 'Phone 1'},
+        serviceAccountId: {_id: 'service-1', label: 'Tokopedia Main'},
+        payload: {},
+        result: {},
+        error: '',
+        logs: [],
+        retryCount: 0,
+        maxRetries: 3,
+        startedAt: null,
+        completedAt: null,
+        createdBy: null,
+        createdAt: '',
+        updatedAt: '',
+      })),
+      meta: {total: 45, limit: 20, page: 1, totalPages: 3},
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await updateAmRoute(renderer!, 'tasks');
+
+    expect(getAmTasks).toHaveBeenLastCalledWith({
+      page: 1,
+      limit: 20,
+      search: undefined,
+      status: undefined,
+      type: undefined,
+    });
+    const joinedPageText = renderText(renderer!).join(' ');
+    expect(joinedPageText).toMatch(/Showing\s+1\s+to\s+20\s+of\s+45\s+items/);
+    expect(joinedPageText).toContain('Page 1/3');
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Tasks Next Page'}).props.onPress();
+    });
+
+    expect(getAmTasks).toHaveBeenLastCalledWith({
+      page: 2,
+      limit: 20,
+      search: undefined,
+      status: undefined,
+      type: undefined,
+    });
   });
 
   it('opens task detail from the Tasks route and loads payload, result, and logs', async () => {
@@ -344,7 +403,7 @@ describe('KolamAmSurface', () => {
       createdAt: '2026-01-01T00:00:00.000Z',
       updatedAt: '',
     };
-    jest.mocked(jest.requireMock('../src/services/am-api').getAmTasks).mockResolvedValue({
+    jest.mocked(getAmTasks).mockResolvedValue({
       data: [task],
       meta: {total: 1, limit: 1},
     });
