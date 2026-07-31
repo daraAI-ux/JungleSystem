@@ -7098,11 +7098,12 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     flex: 1,
     justifyContent: 'flex-start',
+    padding: 12,
   },
   teamDaraWindow: {
     backgroundColor: '#f9fafb',
+    flex: 1,
     gap: 8,
-    height: '100%',
     maxWidth: 980,
     padding: 12,
     width: '74%',
