@@ -23,6 +23,7 @@ import {
   getKolamHeroSlidesAdmin,
   getKolamMarketplaceContentAdmin,
   getKolamPendingCustomerVerifications,
+  getKolamRegions,
   getKolamRoles,
   getKolamWebSetting,
   getKolamWebSettingVersion,
@@ -63,6 +64,7 @@ import {
   sendKolamTeamChatMessage,
   sendKolamTeamChatTextMessage,
   startKolamTeamChatCall,
+  syncKolamRegions,
   toggleKolamTeamChatReaction,
   unmuteKolamTeamChatCallParticipant,
   updateKolamChatConversationAiHandled,
@@ -2034,6 +2036,121 @@ describe('Kolam Settings API contracts', () => {
     expect(fetchMock).toHaveBeenCalledWith(
       `${appConfig.kolamApiBaseUrl}/chat/conversations/conv-1/contact-details?ordersLimit=5`,
       expect.objectContaining({method: 'GET'}),
+    );
+  });
+
+  it('maps region list endpoint params and omits empty filters', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        data: [
+          {
+            _id: 'region-1',
+            code: '32.73',
+            level: 'regency',
+            name: 'Kota Bandung',
+            parentCode: '32',
+          },
+        ],
+      }),
+    );
+
+    await expect(
+      getKolamRegions({
+        level: 'regency',
+        parentCode: '32',
+        search: '',
+        limit: 2000,
+      }),
+    ).resolves.toEqual([
+      expect.objectContaining({
+        code: '32.73',
+        parentCode: '32',
+      }),
+    ]);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${appConfig.kolamApiBaseUrl}/regions?level=regency&parentCode=32&limit=2000`,
+      expect.objectContaining({method: 'GET'}),
+    );
+  });
+
+  it('omits empty region params from the list endpoint', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({data: []}));
+
+    await expect(
+      getKolamRegions({
+        level: '',
+        parentCode: '',
+        search: '   ',
+        limit: 2000,
+      }),
+    ).resolves.toEqual([]);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${appConfig.kolamApiBaseUrl}/regions?limit=2000`,
+      expect.objectContaining({method: 'GET'}),
+    );
+  });
+
+  it('sends child region sync parentCode only when selected', async () => {
+    fetchMock
+      .mockResolvedValueOnce(
+        jsonResponse({
+          message: 'ok',
+          data: {
+            districts: 1,
+            provinces: 0,
+            regencies: 0,
+            upserted: 1,
+            villages: 0,
+            withPostalCode: 0,
+            sources: {kodepos: 'kodepos', wilayah: 'wilayah'},
+          },
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          message: 'ok',
+          data: {
+            districts: 0,
+            provinces: 1,
+            regencies: 0,
+            upserted: 1,
+            villages: 0,
+            withPostalCode: 0,
+            sources: {kodepos: 'kodepos', wilayah: 'wilayah'},
+          },
+        }),
+      );
+
+    await expect(
+      syncKolamRegions({scope: 'districts', parentCode: '32.73'}),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        data: expect.objectContaining({districts: 1}),
+      }),
+    );
+    await expect(syncKolamRegions({scope: 'provinces'})).resolves.toEqual(
+      expect.objectContaining({
+        data: expect.objectContaining({provinces: 1}),
+      }),
+    );
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      `${appConfig.kolamApiBaseUrl}/regions/sync`,
+      expect.objectContaining({
+        body: JSON.stringify({scope: 'districts', parentCode: '32.73'}),
+        method: 'POST',
+      }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      `${appConfig.kolamApiBaseUrl}/regions/sync`,
+      expect.objectContaining({
+        body: JSON.stringify({scope: 'provinces'}),
+        method: 'POST',
+      }),
     );
   });
 });
