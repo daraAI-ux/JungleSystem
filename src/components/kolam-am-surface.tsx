@@ -5,8 +5,17 @@ import type {UnifiedSurface} from '../domain/unified';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {formatRupiah} from '../lib/money';
 import {
+  getAmBoxes,
+  getAmDevices,
+  getAmRacks,
+  getAmServiceAccounts,
   getAmTasks,
+  type AmBox,
   type AmDashboardData,
+  type AmDevice,
+  type AmRack,
+  type AmServiceAccount,
+  type AmServiceAccountDeviceRef,
   type AmTask,
   type AmTaskStatus,
   type AmTaskType,
@@ -56,6 +65,17 @@ const TASK_TYPE_LABELS: Record<string, string> = {
 };
 const TASK_STATUSES: Array<AmTaskStatus | 'all'> = ['all', 'pending', 'queued', 'processing', 'success', 'failed', 'cancelled'];
 const TASK_TYPES: Array<AmTaskType | 'all'> = ['all', 'stock_sync', 'process_sale', 'send_message', 'bank_transfer'];
+const AM_PLATFORMS = ['all', 'whatsapp', 'tiktok', 'instagram', 'tokopedia', 'shopee', 'bca', 'brimo', 'dana'];
+const AM_PLATFORM_LABELS: Record<string, string> = {
+  whatsapp: 'WhatsApp',
+  tokopedia: 'Tokopedia',
+  shopee: 'Shopee',
+  bca: 'BCA',
+  brimo: 'BRImo',
+  dana: 'DANA',
+  tiktok: 'TikTok',
+  instagram: 'Instagram',
+};
 
 export function KolamAmSurface({
   activeSurface,
@@ -119,6 +139,10 @@ export function KolamAmSurface({
             <AmDashboardPage dashboard={dataset.am.dashboard} />
           ) : activeRoute === 'tasks' ? (
             <AmTasksPage />
+          ) : activeRoute === 'services' ? (
+            <AmServicesPage />
+          ) : activeRoute === 'hardware' ? (
+            <AmHardwarePage />
           ) : (
             <AmParityPlaceholder route={route} />
           )}
@@ -264,6 +288,201 @@ function AmTasksPage() {
   );
 }
 
+function AmServicesPage() {
+  const [accounts, setAccounts] = React.useState<AmServiceAccount[]>([]);
+  const [platform, setPlatform] = React.useState('all');
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+
+  const fetchAccounts = React.useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const response = await getAmServiceAccounts({
+        platform: platform === 'all' ? undefined : platform,
+      });
+      setAccounts(response.data);
+      setError(null);
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Gagal memuat services AM live.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [platform]);
+
+  React.useEffect(() => {
+    fetchAccounts();
+  }, [fetchAccounts]);
+
+  React.useEffect(() => {
+    const interval = setInterval(fetchAccounts, 15_000);
+    return () => clearInterval(interval);
+  }, [fetchAccounts]);
+
+  return (
+    <View style={styles.pageStack}>
+      <View style={styles.filterBar}>
+        <AmSegmentGroup
+          active={platform}
+          items={AM_PLATFORMS}
+          labels={AM_PLATFORM_LABELS}
+          onSelect={setPlatform}
+        />
+        <KolamButton
+          label={isLoading ? 'Memuat' : 'Refresh'}
+          intent="outline"
+          muted={isLoading}
+          size="sm"
+          onPress={fetchAccounts}
+        />
+      </View>
+      {error ? (
+        <View style={styles.errorPanel}>
+          <Text style={styles.errorTitle}>Services AM belum bisa dibaca</Text>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      ) : null}
+      <View style={styles.tablePanel}>
+        <View style={styles.tableHeader}>
+          <Text style={[styles.tableHeaderText, styles.serviceCol]}>Service</Text>
+          <Text style={[styles.tableHeaderText, styles.platformCol]}>Platform</Text>
+          <Text style={[styles.tableHeaderText, styles.deviceWideCol]}>Device</Text>
+          <Text style={[styles.tableHeaderText, styles.accountCol]}>Account</Text>
+          <Text style={[styles.tableHeaderText, styles.statusCol]}>Status</Text>
+        </View>
+        {isLoading && !accounts.length ? <Text style={styles.loadingText}>Memuat services dari AM live...</Text> : null}
+        {!isLoading && !accounts.length ? <Text style={styles.loadingText}>No services found</Text> : null}
+        {accounts.map(account => {
+          const device = typeof account.deviceId === 'object' ? account.deviceId : null;
+          const active = account.status === 'active';
+          return (
+            <View key={account._id} style={styles.tableRow}>
+              <View style={styles.serviceCol}>
+                <Text style={styles.rowTitle} numberOfLines={1}>{account.label}</Text>
+                <Text style={styles.rowMeta}>{active ? 'Running' : 'Stopped'}</Text>
+              </View>
+              <Text style={[styles.cellText, styles.platformCol]}>{AM_PLATFORM_LABELS[account.platform] ?? account.platform}</Text>
+              <View style={styles.deviceWideCol}>
+                <Text style={styles.cellText} numberOfLines={1}>{device?.name ?? 'Unassigned'}</Text>
+                <Text style={styles.rowMeta} numberOfLines={1}>{formatServiceDeviceMeta(device)}</Text>
+              </View>
+              <Text style={[styles.cellText, styles.accountCol]} numberOfLines={1}>
+                {account.accountNumber ?? account.username ?? getCredentialString(account.credentials, 'phoneNumber') ?? '-'}
+              </Text>
+              <View style={styles.statusCol}>
+                <AmStatusChip label={active ? 'Ready' : account.status} tone={active ? 'success' : 'warning'} />
+              </View>
+            </View>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+function AmHardwarePage() {
+  const [racks, setRacks] = React.useState<AmRack[]>([]);
+  const [boxes, setBoxes] = React.useState<AmBox[]>([]);
+  const [devices, setDevices] = React.useState<AmDevice[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+
+  const fetchHardware = React.useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const [rackResponse, boxResponse, deviceResponse] = await Promise.all([
+        getAmRacks(),
+        getAmBoxes(),
+        getAmDevices(),
+      ]);
+      setRacks(rackResponse.data);
+      setBoxes(boxResponse.data);
+      setDevices(deviceResponse.data);
+      setError(null);
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Gagal memuat hardware AM live.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    fetchHardware();
+  }, [fetchHardware]);
+
+  React.useEffect(() => {
+    const interval = setInterval(fetchHardware, 10_000);
+    return () => clearInterval(interval);
+  }, [fetchHardware]);
+
+  const connectedDevices = devices.filter(device => device.adbStatus === 'connected').length;
+  const unauthorizedDevices = devices.filter(device => device.adbStatus === 'unauthorized').length;
+
+  return (
+    <View style={styles.pageStack}>
+      <View style={styles.filterBar}>
+        <AmMetricCard label="Rack" value={String(racks.length)} meta={`${boxes.length} box`} />
+        <AmMetricCard label="Device" value={String(devices.length)} meta={`${connectedDevices} connected`} />
+        <AmMetricCard label="ADB Attention" value={String(unauthorizedDevices)} meta="unauthorized device" />
+        <KolamButton
+          label={isLoading ? 'Memuat' : 'Refresh'}
+          intent="outline"
+          muted={isLoading}
+          size="sm"
+          onPress={fetchHardware}
+        />
+      </View>
+      {error ? (
+        <View style={styles.errorPanel}>
+          <Text style={styles.errorTitle}>Hardware AM belum bisa dibaca</Text>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      ) : null}
+      <View style={styles.panel}>
+        <Text style={styles.panelTitle}>Rack</Text>
+        {isLoading && !racks.length ? <Text style={styles.loadingText}>Memuat rack dari AM live...</Text> : null}
+        {!isLoading && !racks.length ? <Text style={styles.loadingText}>No racks yet</Text> : null}
+        <View style={styles.cardGrid}>
+          {racks.map(rack => (
+            <View key={rack._id} style={styles.hardwareCard}>
+              <Text style={styles.rowTitle}>{rack.name}</Text>
+              <Text style={styles.rowMeta}>{rack.location || 'No location'}</Text>
+              <View style={styles.hardwareStats}>
+                <Text style={styles.rowMeta}>Box {rack.boxCount ?? countBoxesForRack(boxes, rack)}</Text>
+                <Text style={styles.rowMeta}>Device {rack.deviceCount ?? countDevicesForRack(devices, rack)}</Text>
+              </View>
+              {rack.serverIp ? <Text style={styles.monoText}>{rack.serverIp}</Text> : null}
+              <AmStatusChip label={rack.status} tone={rack.status === 'active' ? 'success' : 'muted'} />
+            </View>
+          ))}
+        </View>
+      </View>
+      <View style={styles.tablePanel}>
+        <View style={styles.tableHeader}>
+          <Text style={[styles.tableHeaderText, styles.deviceNameCol]}>Device</Text>
+          <Text style={[styles.tableHeaderText, styles.identifierCol]}>Identifier</Text>
+          <Text style={[styles.tableHeaderText, styles.brandCol]}>Brand</Text>
+          <Text style={[styles.tableHeaderText, styles.modelCol]}>Model</Text>
+          <Text style={[styles.tableHeaderText, styles.statusCol]}>ADB</Text>
+        </View>
+        {devices.slice(0, 40).map(device => (
+          <View key={device._id} style={styles.tableRow}>
+            <View style={styles.deviceNameCol}>
+              <Text style={styles.cellText} numberOfLines={1}>{device.name}</Text>
+              <Text style={styles.rowMeta} numberOfLines={1}>{formatDeviceBox(device)}</Text>
+            </View>
+            <Text style={[styles.cellText, styles.identifierCol]} numberOfLines={1}>{formatDeviceIdentifier(device)}</Text>
+            <Text style={[styles.cellText, styles.brandCol]} numberOfLines={1}>{device.brand || 'Not set'}</Text>
+            <Text style={[styles.cellText, styles.modelCol]} numberOfLines={1}>{device.model || 'Not set'}</Text>
+            <View style={styles.statusCol}>
+              <AmStatusChip label={device.adbStatus ?? 'disconnected'} tone={getAdbTone(device.adbStatus)} />
+            </View>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
 function AmParityPlaceholder({route}: {route: AmRouteItem}) {
   return (
     <View style={styles.emptyPanel}>
@@ -294,6 +513,26 @@ function AmStatusPill({danger = false, label, value}: {danger?: boolean; label: 
   );
 }
 
+function AmStatusChip({
+  label,
+  tone,
+}: {
+  label: string;
+  tone: 'success' | 'warning' | 'danger' | 'muted';
+}) {
+  return (
+    <View
+      style={[
+        styles.statusChip,
+        tone === 'success' && styles.statusChipSuccess,
+        tone === 'warning' && styles.statusChipWarning,
+        tone === 'danger' && styles.statusChipDanger,
+      ]}>
+      <Text style={styles.statusChipText}>{titleCase(label)}</Text>
+    </View>
+  );
+}
+
 function AmSegmentGroup({
   active,
   items,
@@ -314,6 +553,54 @@ function AmSegmentGroup({
       ))}
     </ScrollView>
   );
+}
+
+function formatServiceDeviceMeta(device: AmServiceAccountDeviceRef | null) {
+  if (!device || typeof device !== 'object') return 'No device assigned';
+  if (device.connectionType === 'tcp') return device.tcpAddress ?? 'TCP device';
+  if (device.connectionType === 'usb') return device.udid ?? 'USB device';
+  if (device.connectionType === 'browser') return 'Playwright';
+  return device.udid ?? device.tcpAddress ?? device.connectionType ?? 'Device linked';
+}
+
+function getCredentialString(
+  credentials: Record<string, unknown>,
+  key: string,
+) {
+  const value = credentials[key];
+  return typeof value === 'string' && value.trim() ? value : null;
+}
+
+function countBoxesForRack(boxes: AmBox[], rack: AmRack) {
+  return boxes.filter(box => {
+    if (typeof box.rackId === 'string') return box.rackId === rack._id;
+    return box.rackId?._id === rack._id || box.rackId?.name === rack.name;
+  }).length;
+}
+
+function countDevicesForRack(devices: AmDevice[], rack: AmRack) {
+  return devices.filter(device => {
+    if (!device.boxId || typeof device.boxId === 'string') return false;
+    return device.boxId.rackId?._id === rack._id || device.boxId.rackId?.name === rack.name;
+  }).length;
+}
+
+function formatDeviceBox(device: AmDevice) {
+  if (!device.boxId || typeof device.boxId === 'string') return 'No box';
+  const rackName = device.boxId.rackId?.name;
+  return rackName ? `${device.boxId.name} - ${rackName}` : device.boxId.name;
+}
+
+function formatDeviceIdentifier(device: AmDevice) {
+  if (device.connectionType === 'browser') return 'Playwright';
+  if (device.connectionType === 'tcp') return device.tcpAddress ?? '-';
+  return device.udid ?? '-';
+}
+
+function getAdbTone(status: AmDevice['adbStatus']) {
+  if (status === 'connected') return 'success';
+  if (status === 'unauthorized') return 'warning';
+  return 'danger';
 }
 
 function getRouteIdFromSurface(surface?: UnifiedSurface | null): AmRouteId {
@@ -679,6 +966,73 @@ const styles = StyleSheet.create({
   },
   dateCol: {
     flex: 1,
+  },
+  serviceCol: {
+    flex: 1.4,
+  },
+  platformCol: {
+    flex: 0.8,
+  },
+  deviceWideCol: {
+    flex: 1.3,
+  },
+  deviceNameCol: {
+    flex: 1.2,
+  },
+  identifierCol: {
+    flex: 1.2,
+  },
+  brandCol: {
+    flex: 0.8,
+  },
+  modelCol: {
+    flex: 0.8,
+  },
+  statusChip: {
+    alignSelf: 'flex-start',
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    backgroundColor: V.colors.muted,
+  },
+  statusChipSuccess: {
+    backgroundColor: V.colors.successSoft,
+  },
+  statusChipWarning: {
+    backgroundColor: V.colors.warningSoft,
+  },
+  statusChipDanger: {
+    backgroundColor: V.colors.dangerSoft,
+  },
+  statusChipText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  cardGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  hardwareCard: {
+    width: 220,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    padding: 12,
+    backgroundColor: V.colors.bg,
+  },
+  hardwareStats: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  monoText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '800',
   },
   loadingText: {
     padding: 18,

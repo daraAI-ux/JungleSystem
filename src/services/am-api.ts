@@ -102,6 +102,99 @@ export interface AmListResponse<T> {
   meta: AmListMeta;
 }
 
+export type AmPlatform =
+  | 'whatsapp'
+  | 'tokopedia'
+  | 'shopee'
+  | 'bca'
+  | 'brimo'
+  | 'dana'
+  | 'tiktok'
+  | 'instagram';
+
+export type AmServiceAccountStatus = 'active' | 'inactive' | 'blocked';
+
+export interface AmServiceAccountDeviceRef {
+  _id: string;
+  name: string;
+  connectionType?: string;
+  tcpAddress?: string | null;
+  udid?: string | null;
+  boxId?: AmBoxRef | null;
+}
+
+export interface AmServiceAccount {
+  _id: string;
+  platform: AmPlatform | string;
+  label: string;
+  deviceId: AmServiceAccountDeviceRef | string | null;
+  status: AmServiceAccountStatus | string;
+  username?: string;
+  accountNumber?: string;
+  balance?: number;
+  credentials: Record<string, unknown>;
+  meta: Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AmRack {
+  _id: string;
+  name: string;
+  slug: string;
+  location: string;
+  description: string;
+  status: 'active' | 'inactive' | string;
+  serverIp: string;
+  boxCount?: number;
+  deviceCount?: number;
+  addedBy?: {_id: string; fullName: string} | string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AmRackRef {
+  _id: string;
+  name: string;
+}
+
+export interface AmBoxRef {
+  _id: string;
+  name: string;
+  rackId?: AmRackRef | null;
+}
+
+export interface AmBox {
+  _id: string;
+  name: string;
+  slug: string;
+  rackId: string | AmRackRef;
+  description: string;
+  status: 'active' | 'inactive' | string;
+  deviceCount?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AmDevice {
+  _id: string;
+  name: string;
+  slug: string;
+  boxId: string | AmBoxRef;
+  connectionType?: 'usb' | 'tcp' | 'browser' | string;
+  udid?: string | null;
+  tcpAddress?: string | null;
+  brand: string;
+  model: string;
+  systemPort?: number;
+  appiumPort?: number;
+  adbPort?: number;
+  adbStatus?: 'connected' | 'disconnected' | 'unauthorized' | string;
+  adbCheckedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface AmTaskQuery extends Record<string, AmQueryValue> {
   page?: number;
   limit?: number;
@@ -110,6 +203,40 @@ export interface AmTaskQuery extends Record<string, AmQueryValue> {
   deviceId?: string;
   serviceAccountId?: string;
   search?: string;
+}
+
+export interface AmServiceAccountQuery extends Record<string, AmQueryValue> {
+  page?: number;
+  limit?: number;
+  platform?: string;
+  status?: string;
+  deviceId?: string;
+  search?: string;
+}
+
+export interface AmRackQuery extends Record<string, AmQueryValue> {
+  page?: number;
+  limit?: number;
+  search?: string;
+  sort?: string;
+  status?: string;
+}
+
+export interface AmBoxQuery extends Record<string, AmQueryValue> {
+  page?: number;
+  limit?: number;
+  search?: string;
+  sort?: string;
+  rackId?: string;
+  status?: string;
+}
+
+export interface AmDeviceQuery extends Record<string, AmQueryValue> {
+  page?: number;
+  limit?: number;
+  search?: string;
+  sort?: string;
+  boxId?: string;
 }
 
 interface AmEnvelope<T> {
@@ -142,6 +269,55 @@ export async function getAmTasks(
         total: response.length,
         limit: query?.limit ?? response.length,
         page: query?.page ?? 1,
+      },
+    };
+  }
+
+  return response;
+}
+
+export async function getAmServiceAccounts(
+  query?: AmServiceAccountQuery,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmListResponse<AmServiceAccount>> {
+  return getAmList<AmServiceAccount>('/service-account', query, baseUrl);
+}
+
+export async function getAmRacks(
+  query?: AmRackQuery,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmListResponse<AmRack>> {
+  return getAmList<AmRack>('/rack', query, baseUrl);
+}
+
+export async function getAmBoxes(
+  query?: AmBoxQuery,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmListResponse<AmBox>> {
+  return getAmList<AmBox>('/box', query, baseUrl);
+}
+
+export async function getAmDevices(
+  query?: AmDeviceQuery,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmListResponse<AmDevice>> {
+  return getAmList<AmDevice>('/device', query, baseUrl);
+}
+
+async function getAmList<T>(
+  path: string,
+  query?: Record<string, AmQueryValue>,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmListResponse<T>> {
+  const response = await amGet<T[] | AmListResponse<T>>(path, query, baseUrl);
+
+  if (Array.isArray(response)) {
+    return {
+      data: response,
+      meta: {
+        total: response.length,
+        limit: typeof query?.limit === 'number' ? query.limit : response.length,
+        page: typeof query?.page === 'number' ? query.page : 1,
       },
     };
   }

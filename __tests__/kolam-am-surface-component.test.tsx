@@ -2,9 +2,14 @@ import React from 'react';
 import {Text} from 'react-native';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 import {KolamAmSurface} from '../src/components/kolam-am-surface';
+import {getAmDevices, getAmRacks, getAmServiceAccounts} from '../src/services/am-api';
 import {seedUnifiedDataset} from '../src/services/unified-data';
 
 jest.mock('../src/services/am-api', () => ({
+  getAmBoxes: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
+  getAmDevices: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
+  getAmRacks: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
+  getAmServiceAccounts: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
   getAmTasks: jest.fn(),
 }));
 
@@ -27,6 +32,17 @@ function flattenText(value: React.ReactNode): string[] {
 }
 
 describe('KolamAmSurface', () => {
+  const renderers: ReactTestRenderer.ReactTestRenderer[] = [];
+
+  afterEach(() => {
+    for (const renderer of renderers.splice(0)) {
+      act(() => {
+        renderer.unmount();
+      });
+    }
+    jest.clearAllMocks();
+  });
+
   it('renders AM as an app surface with its own sidebar', async () => {
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
@@ -35,6 +51,7 @@ describe('KolamAmSurface', () => {
         <KolamAmSurface dataset={seedUnifiedDataset} />,
       );
     });
+    renderers.push(renderer!);
 
     const text = renderText(renderer!);
 
@@ -59,6 +76,7 @@ describe('KolamAmSurface', () => {
         />,
       );
     });
+    renderers.push(renderer!);
 
     const backButton = renderer!.root.findByProps({
       accessibilityLabel: 'Kembali',
@@ -69,5 +87,40 @@ describe('KolamAmSurface', () => {
     });
 
     expect(onBackToCenter).toHaveBeenCalledTimes(1);
+  });
+
+  it('loads live service accounts from the Services route', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Services'}).props.onPress();
+    });
+
+    expect(getAmServiceAccounts).toHaveBeenCalledWith({platform: undefined});
+  });
+
+  it('loads live hardware topology from the Hardware route', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Hardware'}).props.onPress();
+    });
+
+    expect(getAmRacks).toHaveBeenCalledTimes(1);
+    expect(getAmDevices).toHaveBeenCalledTimes(1);
   });
 });
