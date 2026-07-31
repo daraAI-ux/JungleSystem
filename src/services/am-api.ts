@@ -1022,6 +1022,23 @@ export async function getAmCurrentUser(
   return amGet<AmCurrentUser>('/auth/me', undefined, baseUrl);
 }
 
+export async function logoutAmSession(
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<void> {
+  if (!baseUrl) {
+    throw new Error('URL server AM existing belum dikonfigurasi.');
+  }
+
+  await apiRequest<unknown>({
+    method: 'POST',
+    path: '/auth/logout',
+    baseUrl,
+    sourceHeader: appConfig.amSourceHeader,
+    cookieJar: true,
+    credentials: 'include',
+  });
+}
+
 export async function getAmRoles(
   baseUrl = appConfig.amApiBaseUrl,
 ): Promise<AmRole[]> {
