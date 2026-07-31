@@ -423,19 +423,10 @@ describe('KolamGlobalChatRail', () => {
       expect.arrayContaining([
         'Chat',
         'Pesan masuk',
-        'Analisa chat',
-        '30 hari',
-        'Total',
-        '12',
-        'Rating',
-        '4.5',
-        'Delay',
-        '4m',
-        'Telat',
-        '1',
-        'Pengaturan chat',
-        'Label percakapan',
-        'Template chat',
+        'Status: Semua',
+        'Tugas: Semua',
+        'Label: Semua label',
+        'Platform',
       ]),
     );
     expect(renderText(renderer!)).not.toEqual(
@@ -456,6 +447,37 @@ describe('KolamGlobalChatRail', () => {
         from: expect.any(String),
         to: expect.any(String),
       }),
+    );
+  });
+
+  it('opens chat settings shortcuts from the inbox header menu', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamGlobalChatRail mode="inbox" onClose={() => undefined} />,
+      );
+    });
+
+    expect(renderText(renderer!)).not.toEqual(
+      expect.arrayContaining(['Pengaturan chat', 'Label percakapan']),
+    );
+
+    const settingsButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Pengaturan chat');
+
+    await ReactTestRenderer.act(async () => {
+      settingsButton!.props.onPress();
+    });
+
+    expect(renderText(renderer!)).toEqual(
+      expect.arrayContaining([
+        'Pengaturan chat',
+        'Konfigurasi inbox',
+        'Label percakapan',
+        'Template chat',
+      ]),
     );
   });
 

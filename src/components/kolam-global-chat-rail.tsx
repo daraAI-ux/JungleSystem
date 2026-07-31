@@ -364,6 +364,7 @@ export function KolamGlobalChatRail({
     });
   const [healthMenuOpen, setHealthMenuOpen] = React.useState(false);
   const [analyticsMenuOpen, setAnalyticsMenuOpen] = React.useState(false);
+  const [settingsMenuOpen, setSettingsMenuOpen] = React.useState(false);
   const inboxParams = React.useMemo(
     () => buildInboxListParams(inboxFilter),
     [inboxFilter],
@@ -1038,6 +1039,7 @@ export function KolamGlobalChatRail({
                   open={healthMenuOpen}
                   onToggle={() => {
                     setAnalyticsMenuOpen(false);
+                    setSettingsMenuOpen(false);
                     setHealthMenuOpen(current => !current);
                   }}
                 />
@@ -1045,9 +1047,18 @@ export function KolamGlobalChatRail({
                   open={analyticsMenuOpen}
                   onToggle={() => {
                     setHealthMenuOpen(false);
+                    setSettingsMenuOpen(false);
                     setAnalyticsMenuOpen(current => !current);
                   }}
                   state={analyticsState}
+                />
+                <KolamChatSettingsMenu
+                  onToggle={() => {
+                    setAnalyticsMenuOpen(false);
+                    setHealthMenuOpen(false);
+                    setSettingsMenuOpen(current => !current);
+                  }}
+                  open={settingsMenuOpen}
                 />
               </>
             ) : null}
@@ -1072,10 +1083,6 @@ export function KolamGlobalChatRail({
               labels={labelsState.items}
               onChange={setInboxFilter}
             />
-        ) : null}
-
-        {mode === 'inbox' && !detailOpen ? (
-          <KolamChatRailSettingsShortcuts />
         ) : null}
 
         {mode === 'team-chat' && !detailOpen ? (
@@ -2068,15 +2075,76 @@ function KolamInboxDaraAvatar({imageUrl}: {imageUrl: string | null}) {
   );
 }
 
-function KolamChatRailSettingsShortcuts() {
+function KolamChatSettingsMenu({
+  onToggle,
+  open,
+}: {
+  onToggle: () => void;
+  open: boolean;
+}) {
   return (
-    <View style={styles.settingsPanel}>
-      <Text style={styles.settingsTitle}>Pengaturan chat</Text>
-      <View style={styles.settingsShortcutRow}>
-        <Text style={styles.settingsShortcut}>Label percakapan</Text>
-        <Text style={styles.settingsShortcut}>Template chat</Text>
-      </View>
+    <View style={styles.chatHeaderMenuHost}>
+      <KolamPressable
+        accessibilityLabel="Pengaturan chat"
+        accessibilityState={{expanded: open}}
+        onPress={onToggle}
+        style={[
+          styles.chatSettingsButton,
+          open && styles.chatHealthButtonActive,
+        ]}>
+        <View style={styles.chatSettingsIcon}>
+          <View style={styles.chatSettingsIconCore} />
+          <View
+            style={[
+              styles.chatSettingsIconTooth,
+              styles.chatSettingsIconToothTop,
+            ]}
+          />
+          <View
+            style={[
+              styles.chatSettingsIconTooth,
+              styles.chatSettingsIconToothRight,
+            ]}
+          />
+          <View
+            style={[
+              styles.chatSettingsIconTooth,
+              styles.chatSettingsIconToothBottom,
+            ]}
+          />
+          <View
+            style={[
+              styles.chatSettingsIconTooth,
+              styles.chatSettingsIconToothLeft,
+            ]}
+          />
+        </View>
+      </KolamPressable>
+
+      {open ? (
+        <View style={styles.chatSettingsPopover}>
+          <View style={styles.chatHealthPopoverHeader}>
+            <Text style={styles.chatHealthPopoverTitle}>Pengaturan chat</Text>
+            <Text style={styles.chatHealthPopoverMeta}>Konfigurasi inbox</Text>
+          </View>
+          <View style={styles.chatSettingsMenuList}>
+            <KolamChatSettingsMenuItem label="Label percakapan" />
+            <KolamChatSettingsMenuItem label="Template chat" />
+          </View>
+        </View>
+      ) : null}
     </View>
+  );
+}
+
+function KolamChatSettingsMenuItem({label}: {label: string}) {
+  return (
+    <KolamPressable
+      accessibilityLabel={`Buka ${label}`}
+      style={styles.chatSettingsMenuItem}>
+      <View style={styles.chatSettingsMenuBullet} />
+      <Text style={styles.chatSettingsMenuLabel}>{label}</Text>
+    </KolamPressable>
   );
 }
 
@@ -6505,6 +6573,54 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: V.colors.bg,
   },
+  chatSettingsButton: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: V.colors.bg,
+  },
+  chatSettingsIcon: {
+    width: 15,
+    height: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  chatSettingsIconCore: {
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+    borderColor: V.colors.primary,
+    borderWidth: 2,
+    backgroundColor: V.colors.bg,
+  },
+  chatSettingsIconTooth: {
+    position: 'absolute',
+    width: 3,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: V.colors.mutedFg,
+  },
+  chatSettingsIconToothTop: {
+    top: 0,
+    left: 6,
+  },
+  chatSettingsIconToothRight: {
+    top: 6,
+    right: 0,
+  },
+  chatSettingsIconToothBottom: {
+    bottom: 0,
+    left: 6,
+  },
+  chatSettingsIconToothLeft: {
+    top: 6,
+    left: 0,
+  },
   chatAnalyticsIcon: {
     width: 14,
     height: 14,
@@ -6593,6 +6709,50 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.16,
     shadowRadius: 14,
     shadowOffset: {width: 0, height: 8},
+  },
+  chatSettingsPopover: {
+    position: 'absolute',
+    top: 30,
+    right: 0,
+    width: 212,
+    padding: 10,
+    borderRadius: V.radius.lg,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.bg,
+    gap: 8,
+    zIndex: 400,
+    elevation: 40,
+    shadowColor: '#111827',
+    shadowOpacity: 0.16,
+    shadowRadius: 14,
+    shadowOffset: {width: 0, height: 8},
+  },
+  chatSettingsMenuList: {
+    gap: 6,
+  },
+  chatSettingsMenuItem: {
+    minHeight: 34,
+    borderRadius: V.radius.md,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.mutedSoft,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 9,
+  },
+  chatSettingsMenuBullet: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: V.colors.primary,
+  },
+  chatSettingsMenuLabel: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '900',
   },
   chatHealthPopoverHeader: {
     gap: 2,
@@ -6998,36 +7158,6 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 14,
     fontWeight: '900',
-  },
-  settingsPanel: {
-    padding: 10,
-    borderRadius: V.radius.lg,
-    borderColor: V.colors.border,
-    borderWidth: 1,
-    backgroundColor: V.colors.bg,
-    gap: 8,
-  },
-  settingsTitle: {
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
-    fontWeight: '900',
-  },
-  settingsShortcutRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  settingsShortcut: {
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-    borderRadius: V.radius.md,
-    overflow: 'hidden',
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 11,
-    fontWeight: '800',
-    backgroundColor: V.colors.mutedSoft,
   },
   createRoomPanel: {
     padding: 10,
