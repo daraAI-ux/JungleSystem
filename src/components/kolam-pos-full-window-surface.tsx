@@ -109,6 +109,8 @@ export function KolamPosFullWindowSurface({
   const searchInputRef = React.useRef<React.ElementRef<typeof TextInput>>(null);
   const [activeView, setActiveView] = React.useState<PosWindowView>('catalog');
   const [isPaymentModalOpen, setIsPaymentModalOpen] = React.useState(false);
+  const [customerSelectorSearch, setCustomerSelectorSearch] =
+    React.useState('');
   const columnCount = getCatalogColumnCount(width);
   const catalogRows = chunkCatalog(filteredCatalog, columnCount);
   const cartCount = checkout.cart.reduce(
@@ -308,7 +310,13 @@ export function KolamPosFullWindowSurface({
           items={customers}
           selectedId={checkout.customerId}
           getLabel={customer => customer.name}
+          getSearchText={customer =>
+            [customer.name, customer.phone, customer.email].join(' ')
+          }
           onSelect={onSelectCustomer}
+          searchPlaceholder="Cari pelanggan..."
+          searchValue={customerSelectorSearch}
+          onSearchChange={setCustomerSelectorSearch}
         />
         <SelectorBlock
           label="Metode Pembayaran"
@@ -553,29 +561,61 @@ function PosCatalogCard({
 function SelectorBlock<T extends {id: string}>({
   emptyLabel,
   getLabel,
+  getSearchText,
   items,
   label,
+  onSearchChange,
   onSelect,
+  searchPlaceholder,
+  searchValue,
   selectedId,
 }: {
   emptyLabel: string;
   getLabel: (item: T) => string;
+  getSearchText?: (item: T) => string;
   items: T[];
   label: string;
+  onSearchChange?: (value: string) => void;
   onSelect: (id: string) => void;
+  searchPlaceholder?: string;
+  searchValue?: string;
   selectedId: string;
 }) {
+  const normalizedSearch = searchValue?.trim().toLowerCase() ?? '';
+  const visibleItems = normalizedSearch
+    ? items
+        .filter(item =>
+          (getSearchText?.(item) ?? getLabel(item))
+            .toLowerCase()
+            .includes(normalizedSearch),
+        )
+        .slice(0, 30)
+    : items.slice(0, 8);
+
   return (
     <View style={styles.selectorBlock}>
       <Text style={styles.selectorLabel}>{label}</Text>
+      {onSearchChange ? (
+        <TextInput
+          autoCapitalize="none"
+          onChangeText={onSearchChange}
+          placeholder={searchPlaceholder}
+          placeholderTextColor={V.colors.mutedFg}
+          style={styles.selectorSearchInput}
+          value={searchValue}
+        />
+      ) : null}
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        {items.length ? (
-          items.slice(0, 8).map(item => {
+        {visibleItems.length ? (
+          visibleItems.map(item => {
             const active = selectedId === item.id;
             return (
               <KolamInteractionFrame
                 key={item.id}
-                onPress={() => onSelect(item.id)}
+                onPress={() => {
+                  onSelect(item.id);
+                  onSearchChange?.('');
+                }}
                 style={[styles.selectorChip, active && styles.selectorChipActive]}>
                 <Text
                   numberOfLines={1}
@@ -586,7 +626,9 @@ function SelectorBlock<T extends {id: string}>({
             );
           })
         ) : (
-          <Text style={styles.selectorEmpty}>{emptyLabel}</Text>
+          <Text style={styles.selectorEmpty}>
+            {items.length ? 'Pelanggan tidak ditemukan' : emptyLabel}
+          </Text>
         )}
       </ScrollView>
     </View>
@@ -1654,6 +1696,16 @@ const styles = StyleSheet.create({
     color: V.colors.mutedFg,
     fontSize: 11,
     fontWeight: '800',
+  },
+  selectorSearchInput: {
+    minHeight: 32,
+    borderRadius: 6,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    paddingHorizontal: 9,
+    color: V.colors.fg,
+    fontSize: 12,
+    backgroundColor: V.colors.bg,
   },
   selectorChip: {
     maxWidth: 128,
