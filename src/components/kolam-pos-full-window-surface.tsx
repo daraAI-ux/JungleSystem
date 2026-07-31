@@ -163,6 +163,7 @@ export function KolamPosFullWindowSurface({
     step.label.toLowerCase().includes('cashflow'),
   );
   const hasCashflowSession = cashflowStep?.done ?? true;
+  const hasActiveCatalogFilters = Boolean(catalogSearch || activeCategory);
   const cartCount = checkout.cart.reduce(
     (total, line) => total + line.quantity,
     0,
@@ -414,9 +415,19 @@ export function KolamPosFullWindowSurface({
                 ))
               ) : (
                 <View style={styles.catalogEmpty}>
-                  <Text style={styles.emptyTitle}>Tidak ada item yang cocok.</Text>
+                  <Text style={styles.emptyTitle}>
+                    {hasActiveCatalogFilters
+                      ? activeType === 'species'
+                        ? 'Tidak ada spesies yang cocok.'
+                        : 'Tidak ada produk yang cocok.'
+                      : activeType === 'species'
+                        ? 'Tidak ada spesies tersedia.'
+                        : 'Tidak ada produk tersedia.'}
+                  </Text>
                   <Text style={styles.emptyText}>
-                    Coba hapus filter atau kata kunci.
+                    {hasActiveCatalogFilters
+                      ? 'Coba hapus filter atau kata kunci.'
+                      : 'Katalog sellable akan muncul di sini.'}
                   </Text>
                 </View>
               )}
