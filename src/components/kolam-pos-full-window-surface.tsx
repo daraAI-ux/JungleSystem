@@ -434,19 +434,12 @@ export function KolamPosFullWindowSurface({
           <Text style={styles.orderTitle}>Pesanan</Text>
           <Text style={styles.orderBadge}>{checkout.cart.length} barang</Text>
         </View>
-        <SelectorBlock
-          label="Pelanggan"
-          emptyLabel="Pilih pelanggan"
-          items={customers}
-          selectedId={checkout.customerId}
-          getLabel={customer => customer.name}
-          getSearchText={customer =>
-            [customer.name, customer.phone, customer.email].join(' ')
-          }
-          onSelect={onSelectCustomer}
-          searchPlaceholder="Cari pelanggan..."
+        <PosCustomerSelectorInline
+          customers={customers}
           searchValue={customerSelectorSearch}
+          selectedCustomer={selectedCustomer}
           onSearchChange={setCustomerSelectorSearch}
+          onSelectCustomer={onSelectCustomer}
         />
         {checkout.cart.length ? (
           <ScrollView style={styles.orderList}>
@@ -809,79 +802,130 @@ function PosCatalogCard({
   );
 }
 
-function SelectorBlock<T extends {id: string}>({
-  emptyLabel,
-  getLabel,
-  getSearchText,
-  items,
-  label,
+function PosCustomerSelectorInline({
+  customers,
   onSearchChange,
-  onSelect,
-  searchPlaceholder,
+  onSelectCustomer,
   searchValue,
-  selectedId,
+  selectedCustomer,
 }: {
-  emptyLabel: string;
-  getLabel: (item: T) => string;
-  getSearchText?: (item: T) => string;
-  items: T[];
-  label: string;
-  onSearchChange?: (value: string) => void;
-  onSelect: (id: string) => void;
-  searchPlaceholder?: string;
-  searchValue?: string;
-  selectedId: string;
+  customers: Customer[];
+  onSearchChange: (value: string) => void;
+  onSelectCustomer: (customerId: string) => void;
+  searchValue: string;
+  selectedCustomer?: Customer;
 }) {
-  const normalizedSearch = searchValue?.trim().toLowerCase() ?? '';
-  const visibleItems = normalizedSearch
-    ? items
-        .filter(item =>
-          (getSearchText?.(item) ?? getLabel(item))
+  const [isOpen, setIsOpen] = React.useState(false);
+  const normalizedSearch = searchValue.trim().toLowerCase();
+  const visibleCustomers = normalizedSearch
+    ? customers
+        .filter(customer =>
+          [customer.name, customer.phone, customer.email]
+            .join(' ')
             .toLowerCase()
             .includes(normalizedSearch),
         )
         .slice(0, 30)
-    : items.slice(0, 8);
+    : customers.slice(0, 8);
+
+  if (selectedCustomer && !isOpen) {
+    return (
+      <View style={styles.customerInline}>
+        <View style={styles.customerSelectedCard}>
+          <View style={styles.customerInlineAvatar}>
+            <Text style={styles.customerInlineAvatarText}>
+              {selectedCustomer.name.charAt(0).toUpperCase()}
+            </Text>
+          </View>
+          <View style={styles.customerSelectedCopy}>
+            <Text numberOfLines={1} style={styles.customerSelectedName}>
+              {selectedCustomer.name}
+            </Text>
+            <Text numberOfLines={1} style={styles.customerSelectedMeta}>
+              {selectedCustomer.phone || selectedCustomer.email || 'Pelanggan'}
+            </Text>
+          </View>
+          <Text style={styles.customerCheckText}>OK</Text>
+          <KolamInteractionFrame
+            accessibilityLabel="Ganti pelanggan"
+            onPress={() => setIsOpen(true)}
+            style={styles.customerIconButton}>
+            <Text style={styles.customerIconButtonText}>...</Text>
+          </KolamInteractionFrame>
+          <KolamInteractionFrame
+            accessibilityLabel="Hapus pelanggan"
+            onPress={() => {
+              onSelectCustomer('');
+              onSearchChange('');
+              setIsOpen(true);
+            }}
+            style={styles.customerIconButton}>
+            <Text style={styles.customerIconButtonText}>X</Text>
+          </KolamInteractionFrame>
+        </View>
+      </View>
+    );
+  }
 
   return (
-    <View style={styles.selectorBlock}>
-      <Text style={styles.selectorLabel}>{label}</Text>
-      {onSearchChange ? (
+    <View style={styles.customerInline}>
+      <View style={styles.customerSearchShell}>
+        <Text style={styles.customerSearchIcon}>P</Text>
         <TextInput
           autoCapitalize="none"
-          onChangeText={onSearchChange}
-          placeholder={searchPlaceholder}
+          onChangeText={value => {
+            onSearchChange(value);
+            setIsOpen(true);
+          }}
+          onFocus={() => setIsOpen(true)}
+          placeholder="Pilih pelanggan..."
           placeholderTextColor={V.colors.mutedFg}
-          style={styles.selectorSearchInput}
+          style={styles.customerSearchInput}
           value={searchValue}
         />
-      ) : null}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        {visibleItems.length ? (
-          visibleItems.map(item => {
-            const active = selectedId === item.id;
-            return (
+        {searchValue ? (
+          <KolamInteractionFrame
+            accessibilityLabel="Hapus pencarian pelanggan"
+            onPress={() => onSearchChange('')}
+            style={styles.customerSearchClearButton}>
+            <Text style={styles.customerIconButtonText}>X</Text>
+          </KolamInteractionFrame>
+        ) : null}
+      </View>
+      {isOpen ? (
+        <View style={styles.customerDropdown}>
+          {visibleCustomers.length ? (
+            visibleCustomers.map(customer => (
               <KolamInteractionFrame
-                key={item.id}
+                key={customer.id}
                 onPress={() => {
-                  onSelect(item.id);
-                  onSearchChange?.('');
+                  onSelectCustomer(customer.id);
+                  onSearchChange('');
+                  setIsOpen(false);
                 }}
-                style={[styles.selectorChip, active && styles.selectorChipActive]}>
-                <Text
-                  numberOfLines={1}
-                  style={[styles.selectorText, active && styles.selectorTextActive]}>
-                  {getLabel(item)}
-                </Text>
+                style={styles.customerOptionRow}>
+                <View style={styles.customerOptionAvatar}>
+                  <Text style={styles.customerOptionAvatarText}>
+                    {customer.name.charAt(0).toUpperCase()}
+                  </Text>
+                </View>
+                <View style={styles.customerOptionCopy}>
+                  <Text numberOfLines={1} style={styles.customerOptionName}>
+                    {customer.name}
+                  </Text>
+                  <Text numberOfLines={1} style={styles.customerOptionMeta}>
+                    {customer.phone || customer.email || 'Pelanggan'}
+                  </Text>
+                </View>
               </KolamInteractionFrame>
-            );
-          })
-        ) : (
-          <Text style={styles.selectorEmpty}>
-            {items.length ? 'Pelanggan tidak ditemukan' : emptyLabel}
-          </Text>
-        )}
-      </ScrollView>
+            ))
+          ) : (
+            <Text style={styles.customerEmpty}>
+              {customers.length ? 'Pelanggan tidak ditemukan' : 'Belum ada pelanggan'}
+            </Text>
+          )}
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -2485,49 +2529,155 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '800',
   },
-  selectorBlock: {
-    gap: 6,
+  customerInline: {
     paddingHorizontal: 12,
     paddingTop: 10,
+    zIndex: 5,
   },
-  selectorLabel: {
-    color: V.colors.mutedFg,
-    fontSize: 11,
-    fontWeight: '800',
-  },
-  selectorSearchInput: {
-    minHeight: 32,
-    borderRadius: 6,
-    borderColor: V.colors.border,
-    borderWidth: 1,
-    paddingHorizontal: 9,
-    color: V.colors.fg,
-    fontSize: 12,
-    backgroundColor: V.colors.bg,
-  },
-  selectorChip: {
-    maxWidth: 128,
-    minHeight: 28,
-    justifyContent: 'center',
-    marginRight: 6,
-    borderRadius: 6,
-    paddingHorizontal: 9,
+  customerSelectedCard: {
+    minHeight: 38,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
     backgroundColor: V.colors.muted,
   },
-  selectorChipActive: {
-    backgroundColor: V.colors.primary,
+  customerInlineAvatar: {
+    width: 26,
+    height: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 13,
+    backgroundColor: V.colors.primarySoft,
   },
-  selectorText: {
+  customerInlineAvatarText: {
+    color: V.colors.primary,
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  customerSelectedCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  customerSelectedName: {
+    color: V.colors.fg,
+    fontSize: 12,
+    fontWeight: '900',
+  },
+  customerSelectedMeta: {
+    marginTop: 1,
+    color: V.colors.mutedFg,
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  customerCheckText: {
+    color: V.colors.primary,
+    fontSize: 10,
+    fontWeight: '900',
+  },
+  customerIconButton: {
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 12,
+  },
+  customerIconButtonText: {
     color: V.colors.mutedFg,
     fontSize: 11,
-    fontWeight: '800',
+    fontWeight: '900',
   },
-  selectorTextActive: {
-    color: V.colors.primaryFg,
+  customerSearchShell: {
+    minHeight: 38,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderRadius: 8,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    backgroundColor: V.colors.bg,
   },
-  selectorEmpty: {
+  customerSearchIcon: {
+    width: 18,
+    textAlign: 'center',
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    fontWeight: '900',
+  },
+  customerSearchInput: {
+    minWidth: 0,
+    minHeight: 36,
+    flex: 1,
+    paddingVertical: 0,
+    color: V.colors.fg,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  customerSearchClearButton: {
+    width: 22,
+    height: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 11,
+  },
+  customerDropdown: {
+    overflow: 'hidden',
+    marginTop: 6,
+    borderRadius: 8,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.bg,
+    shadowColor: '#000000',
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  customerOptionRow: {
+    minHeight: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  customerOptionAvatar: {
+    width: 26,
+    height: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 13,
+    backgroundColor: V.colors.muted,
+  },
+  customerOptionAvatarText: {
+    color: V.colors.fg,
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  customerOptionCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  customerOptionName: {
+    color: V.colors.fg,
+    fontSize: 12,
+    fontWeight: '900',
+  },
+  customerOptionMeta: {
+    marginTop: 1,
+    color: V.colors.mutedFg,
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  customerEmpty: {
+    paddingHorizontal: 12,
+    paddingVertical: 16,
     color: V.colors.mutedFg,
     fontSize: 11,
+    fontWeight: '700',
+    textAlign: 'center',
   },
   orderList: {
     flex: 1,
