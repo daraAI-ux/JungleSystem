@@ -15,6 +15,7 @@ import {
   canShowKolamSaleComplaintSuccessPrompt,
   canShowKolamSaleEditAction,
   canUploadKolamSalePaymentProof,
+  formatKolamSaleDeliveryFilterLabel,
   formatKolamSaleDeliveryStatusLabel,
   formatKolamSaleItemTypeLabel,
   formatKolamSaleLogisticsTime,
@@ -1003,11 +1004,7 @@ export function KolamSalesOpsDetail({
                             disabled={controller.mutating}
                             intent="primary"
                             key={target}
-                            label={formatKolamSaleDeliveryStatusLabel(
-                              target,
-                              sale.status,
-                              sale,
-                            )}
+                            label={formatKolamSaleDeliveryFilterLabel(target)}
                             onPress={() => setPendingDelivery(target)}
                           />
                         ))}
@@ -1137,11 +1134,7 @@ export function KolamSalesOpsDetail({
         confirmLabel="Ubah pengiriman"
         message={`Ubah status pengiriman ${sale.invoiceCode} menjadi ${
           pendingDelivery
-            ? formatKolamSaleDeliveryStatusLabel(
-                pendingDelivery,
-                sale.status,
-                sale,
-              )
+            ? formatKolamSaleDeliveryFilterLabel(pendingDelivery)
             : ''
         }?`}
         onCancel={() => setPendingDelivery(null)}

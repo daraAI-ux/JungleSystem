@@ -865,9 +865,46 @@ export function getKolamSalePaymentStatusIntent(
 }
 
 /**
+ * FE `resolveDeliveryDbFilterLabel` — raw DB `deliveryStatus` labels for filters /
+ * transition targets. Complaint window statuses stay explicit here.
+ */
+export function formatKolamSaleDeliveryFilterLabel(
+  deliveryStatus?: string | null,
+): string {
+  const ds = String(deliveryStatus || '').toLowerCase();
+  if (ds === KOLAM_SALES_NEED_DELIVERY_FILTER) {
+    return 'Butuh kirim';
+  }
+  if (!ds) {
+    return '(kosong)';
+  }
+  switch (ds) {
+    case 'none':
+      return 'Belum dikirim';
+    case 'packing':
+      return 'Sedang dipacking';
+    case 'waiting_pickup':
+      return 'Menunggu di jemput kurir';
+    case 'on_delivery':
+      return 'Dalam pengiriman';
+    case 'delivered':
+      return 'Terkirim';
+    case 'success':
+      return 'Pengiriman selesai';
+    case 'waiting_complaints':
+      return 'Menunggu komplain';
+    case 'complaint':
+      return 'Komplain diproses';
+    default:
+      return deliveryStatus || '—';
+  }
+}
+
+/**
  * FE `resolveShippingDisplayLabel` — optional `sale` remaps `waiting_pickup`
  * for marketplace drop-off vs courier pickup (DB status stays waiting_pickup).
- * Filter dropdowns should omit `sale` to keep the raw DB filter label.
+ * Complaint-window statuses map to "Terkirim" (komplain is a separate column).
+ * Filter dropdowns should use `formatKolamSaleDeliveryFilterLabel` instead.
  */
 export function formatKolamSaleDeliveryStatusLabel(
   deliveryStatus?: string | null,
@@ -888,6 +925,10 @@ export function formatKolamSaleDeliveryStatusLabel(
   if (pay === 'paid' && ds === 'waiting_pickup') {
     return resolveKolamWaitingPickupDisplayLabel(sale);
   }
+  // Escrow / complaint window — logistics already delivered (FE shipping column).
+  if (ds === 'waiting_complaints' || ds === 'complaint') {
+    return 'Terkirim';
+  }
   switch (ds) {
     case 'none':
       return 'Belum dikirim';
@@ -901,10 +942,6 @@ export function formatKolamSaleDeliveryStatusLabel(
       return 'Terkirim';
     case 'success':
       return 'Pengiriman selesai';
-    case 'waiting_complaints':
-      return 'Menunggu komplain';
-    case 'complaint':
-      return 'Komplain diproses';
     default:
       return deliveryStatus || '—';
   }
@@ -922,14 +959,19 @@ export function getKolamSaleDeliveryStatusIntent(
   if (pay === 'paid' && (ds === 'none' || ds === KOLAM_SALES_NEED_DELIVERY_FILTER)) {
     return 'warning';
   }
-  if (ds === 'success' || ds === 'delivered') {
+  if (ds === 'success') {
+    return 'success';
+  }
+  // delivered + complaint-window statuses share "Terkirim" shipping display.
+  if (
+    ds === 'delivered' ||
+    ds === 'waiting_complaints' ||
+    ds === 'complaint'
+  ) {
     return 'success';
   }
   if (ds === 'on_delivery' || ds === 'waiting_pickup' || ds === 'packing') {
     return 'info';
-  }
-  if (ds === 'complaint' || ds === 'waiting_complaints') {
-    return 'warning';
   }
   return 'muted';
 }
@@ -1213,6 +1255,117 @@ export function getKolamSaleMainComplaint(sale: {
   complaints?: KolamSaleComplaintRef[] | null;
 }): KolamSaleComplaintRef | null {
   return sale.complaints?.[0] ?? null;
+}
+
+/** FE `TERMINAL_COMPLAINT_STATUSES` — open tickets still count as active. */
+const KOLAM_SALE_TERMINAL_COMPLAINT_STATUSES = new Set([
+  'completed',
+  'cancelled',
+  'rejected',
+  'closed',
+]);
+
+/**
+ * FE `resolveComplaintDisplayLabel` — complaint column (not shipping).
+ */
+export function resolveKolamSaleComplaintDisplayLabel(sale: {
+  deliveryStatus?: string | null;
+  hasComplaints?: boolean;
+  complaints?: Array<{status?: string | null}> | null;
+}): string {
+  const complaints = sale.complaints ?? [];
+  const hasActiveComplaint = complaints.some(
+    c =>
+      !KOLAM_SALE_TERMINAL_COMPLAINT_STATUSES.has(
+        String(c.status || '').toLowerCase(),
+      ),
+  );
+  if (sale.hasComplaints && hasActiveComplaint) {
+    return 'Komplain diproses';
+  }
+
+  const ds = String(sale.deliveryStatus || '').toLowerCase();
+  if (ds === 'waiting_complaints') {
+    return 'Menunggu komplain';
+  }
+  if (ds === 'complaint') {
+    return 'Komplain diproses';
+  }
+  return 'Tidak dikomplain';
+}
+
+/** FE `salesListComplaintLabel` — short labels for the sales list Komplain cell. */
+export function formatKolamSaleListComplaintLabel(raw: string): string {
+  if (raw === 'Tidak dikomplain') {
+    return 'Lulus';
+  }
+  if (raw === 'Menunggu komplain') {
+    return 'Menunggu';
+  }
+  if (raw === 'Komplain diproses') {
+    return 'Komplain';
+  }
+  return raw;
+}
+
+function getKolamSaleLinkedComplaintBadgeIntent(
+  status?: string | null,
+): KolamSaleStatusIntent {
+  const key = String(status || '').toLowerCase();
+  if (
+    key === 'pending' ||
+    key === 'in_review' ||
+    key === 'rework_review'
+  ) {
+    return 'warning';
+  }
+  if (key === 'rejected' || key === 'cancelled') {
+    return 'danger';
+  }
+  if (key === 'completed' || key === 'closed' || key === 'approved') {
+    return 'success';
+  }
+  if (
+    key === 'return_in_transit' ||
+    key === 'return_received' ||
+    key === 'processing' ||
+    key === 'rework_in_progress'
+  ) {
+    return 'info';
+  }
+  return 'secondary';
+}
+
+/**
+ * FE sales list Komplain cell — badge vs muted "Lulus" text.
+ */
+export function getKolamSaleListComplaintDisplay(sale: {
+  deliveryStatus?: string | null;
+  hasComplaints?: boolean;
+  complaints?: KolamSaleComplaintRef[] | null;
+}): {
+  label: string;
+  intent: KolamSaleStatusIntent;
+  asBadge: boolean;
+} {
+  const main = getKolamSaleMainComplaint(sale);
+  if (sale.hasComplaints && main) {
+    return {
+      label: 'Komplain',
+      intent: getKolamSaleLinkedComplaintBadgeIntent(main.status),
+      asBadge: true,
+    };
+  }
+
+  const raw = resolveKolamSaleComplaintDisplayLabel(sale);
+  const label = formatKolamSaleListComplaintLabel(raw);
+  if (raw === 'Tidak dikomplain') {
+    return {label, intent: 'muted', asBadge: false};
+  }
+  if (raw === 'Komplain diproses') {
+    return {label, intent: 'danger', asBadge: true};
+  }
+  return {label, intent: 'warning', asBadge: true};
 }
 
 /**

@@ -5,10 +5,12 @@ import {
   estimateKolamSaleCreateItemShippingCost,
   estimateKolamSaleCreateOrderSummary,
   filterKolamSaleCreateItemShippingMethods,
+  formatKolamSaleDeliveryFilterLabel,
   formatKolamSaleDeliveryStatusLabel,
   formatKolamSalePaymentStatusLabel,
   getKolamNoShippingDeliveryLabel,
   getKolamSaleDeliveryStatusIntent,
+  getKolamSaleListComplaintDisplay,
   getKolamSalePaymentStatusIntent,
   kolamSaleSkipsShippingFlow,
   isKolamSalesAddItemsRoute,
@@ -200,7 +202,7 @@ function KolamSalesOpsList({
     ? formatKolamSalePaymentStatusLabel(controller.filters.status)
     : 'Status bayar';
   const deliveryFilterLabel = controller.filters.deliveryStatus
-    ? formatKolamSaleDeliveryStatusLabel(controller.filters.deliveryStatus)
+    ? formatKolamSaleDeliveryFilterLabel(controller.filters.deliveryStatus)
     : 'Pengiriman';
 
   React.useEffect(() => {
@@ -528,6 +530,7 @@ function KolamSalesOpsRow({
   const amountColumn = columnOf('amount');
   const statusColumn = columnOf('status');
   const marketplaceColumn = columnOf('marketplace');
+  const metaColumn = columnOf('meta');
   const skipShipping = kolamSaleSkipsShippingFlow(sale);
   const deliveryBadgeLabel = skipShipping
     ? getKolamNoShippingDeliveryLabel(sale)
@@ -539,6 +542,7 @@ function KolamSalesOpsRow({
   const deliveryBadgeIntent = skipShipping
     ? 'info'
     : getKolamSaleDeliveryStatusIntent(sale.deliveryStatus, sale.status);
+  const complaintDisplay = getKolamSaleListComplaintDisplay(sale);
   const sourceName = sale.sourceRef?.name?.trim() || 'Sumber';
   const sourceLogoUri = sale.sourceRef?.logoUri?.trim() || '';
 
@@ -622,6 +626,27 @@ function KolamSalesOpsRow({
               numberOfLines={2}
               style={styles.centerBadge}
             />
+          </View>
+
+          <View
+            style={[
+              styles.listCell,
+              styles.statusCell,
+              metaColumn ? getKolamDataTableColumnStyle(metaColumn) : null,
+            ]}
+          >
+            {complaintDisplay.asBadge ? (
+              <KolamStatusBadge
+                intent={complaintDisplay.intent}
+                label={complaintDisplay.label}
+                numberOfLines={2}
+                style={styles.centerBadge}
+              />
+            ) : (
+              <Text numberOfLines={2} style={styles.complaintMuted}>
+                {complaintDisplay.label}
+              </Text>
+            )}
           </View>
         </KolamDataTableMainTrack>
       </KolamDataTableRowFrame>
@@ -1991,6 +2016,11 @@ const styles = StyleSheet.create({
   metaText: {
     color: V.colors.mutedFg,
     fontSize: 12,
+  },
+  complaintMuted: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    textAlign: 'center',
   },
   paginationBar: {
     alignItems: 'center',

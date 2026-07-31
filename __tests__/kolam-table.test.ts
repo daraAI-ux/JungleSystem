@@ -107,6 +107,7 @@ describe('getKolamTableColumns', () => {
       'Total',
       'Bayar',
       'Kirim',
+      'Komplain',
     ]);
   });
 

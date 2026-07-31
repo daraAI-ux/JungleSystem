@@ -258,4 +258,59 @@ describe('KolamSalesOpsSurface list delivery badges', () => {
     expect(text).toContain('Menunggu dibawa ke gerai');
     expect(text).not.toContain('Menunggu di jemput kurir');
   });
+
+  it('keeps Kirim as Terkirim and Komplain as Menunggu for waiting_complaints', async () => {
+    mockController = createListController([
+      {
+        _id: 'sale-cw-list-1',
+        invoiceCode: 'INV-CW-LIST-1',
+        status: 'paid',
+        deliveryStatus: 'waiting_complaints',
+        finalTotal: 90_000,
+        transactionDate: '2026-07-31T00:00:00.000Z',
+        items: [{_id: 'i1', itemType: 'product', quantity: 1}],
+        sourceRef: {_id: 'src-web', name: 'Website', type: 'online'},
+      },
+    ]);
+
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamSalesOpsSurface route="/sales" />,
+      );
+    });
+
+    const text = renderText(renderer!);
+    expect(text).toContain('Komplain');
+    expect(text).toContain('Terkirim');
+    expect(text).toContain('Menunggu');
+    expect(text).not.toContain('Menunggu komplain');
+    expect(text).not.toContain('Komplain diproses');
+  });
+
+  it('shows Lulus in Komplain when no complaint window or ticket', async () => {
+    mockController = createListController([
+      {
+        _id: 'sale-ok-1',
+        invoiceCode: 'INV-OK-1',
+        status: 'paid',
+        deliveryStatus: 'success',
+        finalTotal: 40_000,
+        transactionDate: '2026-07-31T00:00:00.000Z',
+        items: [{_id: 'i1', itemType: 'product', quantity: 1}],
+        sourceRef: {_id: 'src-web', name: 'Website', type: 'online'},
+      },
+    ]);
+
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamSalesOpsSurface route="/sales" />,
+      );
+    });
+
+    const text = renderText(renderer!);
+    expect(text).toContain('Lulus');
+    expect(text).toContain('Pengiriman selesai');
+  });
 });

@@ -13,6 +13,7 @@ import {
   filterKolamSaleCreateItemShippingMethods,
   filterOptionsBySalesSource,
   filterOptionsBySalesSourceWithFallback,
+  formatKolamSaleDeliveryFilterLabel,
   formatKolamSaleDeliveryStatusLabel,
   formatKolamSaleMutationError,
   formatKolamSalePaymentStatusLabel,
@@ -30,6 +31,7 @@ import {
   getKolamSaleMarketplaceLogistics,
   getKolamSaleOutstandingAmount,
   getKolamSalePaymentStatusIntent,
+  getKolamSaleListComplaintDisplay,
   getKolamSaleRouteId,
   getKolamSaleServiceLabel,
   getKolamSaleSurfaceMode,
@@ -44,6 +46,8 @@ import {
   needsKolamPlatformPickupRequest,
   needsKolamTokopediaPickupRequest,
   resolveKolamWaitingPickupDisplayLabel,
+  resolveKolamSaleComplaintDisplayLabel,
+  formatKolamSaleListComplaintLabel,
   shouldShowKolamTokopediaDropOffBadge,
   getKolamSaleMarketplaceFulfillment,
   canOpenKolamSaleComplaintCreate,
@@ -936,6 +940,80 @@ describe('kolam sales domain', () => {
         shopeeDropoffArranged,
       ),
     ).toBe('Drop Off');
+  });
+
+  it('splits shipping vs complaint labels like FE list columns', () => {
+    expect(
+      formatKolamSaleDeliveryStatusLabel('waiting_complaints', 'paid'),
+    ).toBe('Terkirim');
+    expect(formatKolamSaleDeliveryStatusLabel('complaint', 'paid')).toBe(
+      'Terkirim',
+    );
+    expect(
+      formatKolamSaleDeliveryFilterLabel('waiting_complaints'),
+    ).toBe('Menunggu komplain');
+    expect(formatKolamSaleDeliveryFilterLabel('complaint')).toBe(
+      'Komplain diproses',
+    );
+
+    const waitingWindow = normalizeKolamSale({
+      _id: 'sale-cw-1',
+      invoiceCode: 'INV-CW-1',
+      status: 'paid',
+      deliveryStatus: 'waiting_complaints',
+      items: [],
+    });
+    expect(resolveKolamSaleComplaintDisplayLabel(waitingWindow)).toBe(
+      'Menunggu komplain',
+    );
+    expect(formatKolamSaleListComplaintLabel('Menunggu komplain')).toBe(
+      'Menunggu',
+    );
+    expect(getKolamSaleListComplaintDisplay(waitingWindow)).toEqual({
+      label: 'Menunggu',
+      intent: 'warning',
+      asBadge: true,
+    });
+
+    const clearSale = normalizeKolamSale({
+      _id: 'sale-cw-2',
+      invoiceCode: 'INV-CW-2',
+      status: 'paid',
+      deliveryStatus: 'success',
+      items: [],
+    });
+    expect(resolveKolamSaleComplaintDisplayLabel(clearSale)).toBe(
+      'Tidak dikomplain',
+    );
+    expect(getKolamSaleListComplaintDisplay(clearSale)).toEqual({
+      label: 'Lulus',
+      intent: 'muted',
+      asBadge: false,
+    });
+
+    const ticketSale = normalizeKolamSale({
+      _id: 'sale-cw-3',
+      invoiceCode: 'INV-CW-3',
+      status: 'paid',
+      deliveryStatus: 'delivered',
+      hasComplaints: true,
+      complaints: [
+        {_id: 'c1', ticketCode: 'CMP-1', status: 'pending', decision: ''},
+      ],
+      items: [],
+    });
+    expect(getKolamSaleListComplaintDisplay(ticketSale)).toEqual({
+      label: 'Komplain',
+      intent: 'warning',
+      asBadge: true,
+    });
+    expect(
+      formatKolamSaleDeliveryStatusLabel(
+        ticketSale.deliveryStatus,
+        ticketSale.status,
+        ticketSale,
+      ),
+    ).toBe('Terkirim');
   });
 
   it('gates status, edit, add-items, and delivery transitions', () => {

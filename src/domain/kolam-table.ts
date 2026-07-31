@@ -1152,7 +1152,7 @@ const kolamTableColumns: Record<KolamTableId, KolamTableColumn[]> = {
     { id: 'amount', label: 'Total', align: 'right', width: 150 },
     { id: 'actions', label: 'Actions', align: 'right', width: 180 },
   ],
-  /** Backoffice `/sales` list (FE Invoice/Sumber/Total/…); not POS Sales Terbaru. */
+  /** Backoffice `/sales` list (FE Invoice/Sumber/Total/Bayar/Kirim/Komplain/…). */
   'sales-ops': [
     {
       id: 'primary',
@@ -1187,6 +1187,13 @@ const kolamTableColumns: Record<KolamTableId, KolamTableColumn[]> = {
       align: 'center',
       headerAlign: 'center',
       width: 110,
+    },
+    {
+      id: 'meta',
+      label: 'Komplain',
+      align: 'center',
+      headerAlign: 'center',
+      width: 100,
     },
   ],
   /** Backoffice `/stock-opname` list (FE Dokumen/Status/Dibuat/Pemilik). */
