@@ -101,6 +101,13 @@ describe('getKolamTableColumns', () => {
       'Total',
       'Actions',
     ]);
+    expect(getKolamTableColumns('sales-ops').map(column => column.label)).toEqual([
+      'Invoice',
+      'Sumber',
+      'Total',
+      'Bayar',
+      'Kirim',
+    ]);
   });
 
   it('defines supplier catalog purchase table headers', () => {

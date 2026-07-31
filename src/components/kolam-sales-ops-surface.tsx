@@ -524,7 +524,6 @@ function KolamSalesOpsRow({
     [columns],
   );
   const primaryColumn = columnOf('primary');
-  const metaColumn = columnOf('meta');
   const childrenColumn = columnOf('children');
   const amountColumn = columnOf('amount');
   const statusColumn = columnOf('status');
@@ -555,20 +554,6 @@ function KolamSalesOpsRow({
             </Text>
             <Text numberOfLines={1} style={styles.metaText}>
               {formatShortDate(sale.transactionDate || sale.createdAt)}
-            </Text>
-          </View>
-
-          <View
-            style={[
-              styles.listCell,
-              metaColumn ? getKolamDataTableColumnStyle(metaColumn) : null,
-            ]}
-          >
-            <Text numberOfLines={1} style={styles.primaryText}>
-              {sale.buyerLabel}
-            </Text>
-            <Text numberOfLines={1} style={styles.metaText}>
-              {sale.items.length} item
             </Text>
           </View>
 
