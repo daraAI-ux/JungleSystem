@@ -527,6 +527,27 @@ export async function getAmTransfers(
   return getAmList<AmTransfer>('/transfer', query, baseUrl);
 }
 
+export async function cancelAmTransfer(
+  id: string,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmTransfer> {
+  return amPost<AmTransfer>(`/transfer/${id}/cancel`, undefined, baseUrl);
+}
+
+export async function retryAmTransfer(
+  id: string,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmTransfer> {
+  return amPost<AmTransfer>(`/transfer/${id}/retry`, undefined, baseUrl);
+}
+
+export async function forceFailAmTransfer(
+  id: string,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmTransfer> {
+  return amPost<AmTransfer>(`/transfer/${id}/force-fail`, undefined, baseUrl);
+}
+
 export async function getAmMutasi(
   query?: AmMutasiQuery,
   baseUrl = appConfig.amApiBaseUrl,
@@ -619,6 +640,28 @@ async function amGet<T>(
     method: 'GET',
     path,
     query,
+    baseUrl,
+    sourceHeader: appConfig.amSourceHeader,
+    cookieJar: true,
+    credentials: 'include',
+  });
+
+  return unwrapAmResponse(response);
+}
+
+async function amPost<T>(
+  path: string,
+  body?: unknown,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<T> {
+  if (!baseUrl) {
+    throw new Error('URL server AM existing belum dikonfigurasi.');
+  }
+
+  const response = await apiRequest<AmEnvelope<T> | T>({
+    method: 'POST',
+    path,
+    body,
     baseUrl,
     sourceHeader: appConfig.amSourceHeader,
     cookieJar: true,

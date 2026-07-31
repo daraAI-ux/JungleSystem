@@ -3,6 +3,7 @@ import {Text} from 'react-native';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 import {KolamAmSurface} from '../src/components/kolam-am-surface';
 import {
+  cancelAmTransfer,
   getAmActivityLogs,
   getAmDeviceServiceLogs,
   getAmDevices,
@@ -16,6 +17,8 @@ import {
 import {seedUnifiedDataset} from '../src/services/unified-data';
 
 jest.mock('../src/services/am-api', () => ({
+  cancelAmTransfer: jest.fn(() => Promise.resolve({_id: 'transfer-1'})),
+  forceFailAmTransfer: jest.fn(() => Promise.resolve({_id: 'transfer-1'})),
   getAmActivityLogs: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
   getAmActivityLogStats: jest.fn(() => Promise.resolve({since: '', days: 7, byType: [], byStatus: [], topUsers: [], topPaths: []})),
   getAmBoxes: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
@@ -30,6 +33,7 @@ jest.mock('../src/services/am-api', () => ({
   getAmUsers: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
   getAmWebhookConfigs: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
   getAmWebhookLogs: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
+  retryAmTransfer: jest.fn(() => Promise.resolve({_id: 'transfer-1'})),
 }));
 
 function renderText(renderer: ReactTestRenderer.ReactTestRenderer) {
@@ -235,5 +239,53 @@ describe('KolamAmSurface', () => {
       limit: 40,
       status: undefined,
     });
+  });
+
+  it('runs guarded transfer actions from the Transfers route', async () => {
+    jest.mocked(getAmTransfers).mockResolvedValue({
+      data: [
+        {
+          _id: 'transfer-1',
+          accountId: { _id: 'account-1', label: 'BCA Main', platform: 'bca', accountNumber: '123' },
+          amount: 125000,
+          completedAt: null,
+          createdAt: '',
+          createdBy: null,
+          deviceId: { _id: 'device-1', name: 'Phone 1' },
+          error: '',
+          fee: 2500,
+          logs: [],
+          recipientAccount: '999',
+          recipientBank: 'BCA',
+          recipientName: 'Vendor',
+          screenshot: '',
+          startedAt: null,
+          status: 'pending',
+          transactionPurpose: null,
+          transferMethod: 'BI FAST',
+          transferType: 'transfer',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 1, limit: 1},
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Transfers'}).props.onPress();
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Transfer Cancel transfer-1'}).props.onPress();
+    });
+
+    expect(cancelAmTransfer).toHaveBeenCalledWith('transfer-1');
+    expect(getAmTransfers).toHaveBeenCalledTimes(2);
   });
 });

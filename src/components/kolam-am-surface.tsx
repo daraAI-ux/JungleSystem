@@ -5,6 +5,8 @@ import type {UnifiedSurface} from '../domain/unified';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {formatRupiah} from '../lib/money';
 import {
+  cancelAmTransfer,
+  forceFailAmTransfer,
   getAmBoxes,
   getAmDevices,
   getAmActivityLogs,
@@ -19,6 +21,7 @@ import {
   getAmUsers,
   getAmWebhookConfigs,
   getAmWebhookLogs,
+  retryAmTransfer,
   type AmActivityLog,
   type AmActivityLogStats,
   type AmBox,
@@ -727,6 +730,8 @@ function AmTransfersPage() {
   const [status, setStatus] = React.useState('all');
   const [search, setSearch] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(true);
+  const [actingTransferId, setActingTransferId] = React.useState<string | null>(null);
+  const [actionMessage, setActionMessage] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
 
   const fetchTransfers = React.useCallback(async () => {
@@ -755,6 +760,31 @@ function AmTransfersPage() {
     return () => clearInterval(interval);
   }, [fetchTransfers]);
 
+  const runTransferAction = React.useCallback(async (
+    transfer: AmTransfer,
+    action: 'cancel' | 'retry' | 'force-fail',
+  ) => {
+    try {
+      setActingTransferId(transfer._id);
+      setActionMessage(null);
+      if (action === 'cancel') {
+        await cancelAmTransfer(transfer._id);
+        setActionMessage(`Transfer ${transfer.recipientAccount} dibatalkan.`);
+      } else if (action === 'retry') {
+        await retryAmTransfer(transfer._id);
+        setActionMessage(`Transfer ${transfer.recipientAccount} dijadwalkan ulang.`);
+      } else {
+        await forceFailAmTransfer(transfer._id);
+        setActionMessage(`Transfer ${transfer.recipientAccount} ditandai gagal.`);
+      }
+      await fetchTransfers();
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Aksi transfer AM gagal.');
+    } finally {
+      setActingTransferId(null);
+    }
+  }, [fetchTransfers]);
+
   return (
     <View style={styles.pageStack}>
       <View style={styles.filterBar}>
@@ -763,6 +793,11 @@ function AmTransfersPage() {
         <KolamButton label={isLoading ? 'Memuat' : 'Refresh'} intent="outline" muted={isLoading} size="sm" onPress={fetchTransfers} />
       </View>
       <AmInlineError title="Transfers AM belum bisa dibaca" error={error} />
+      {actionMessage ? (
+        <View style={styles.successPanel}>
+          <Text style={styles.successText}>{actionMessage}</Text>
+        </View>
+      ) : null}
       <View style={styles.tablePanel}>
         <View style={styles.tableHeader}>
           <Text style={[styles.tableHeaderText, styles.accountWideCol]}>Account</Text>
@@ -770,6 +805,7 @@ function AmTransfersPage() {
           <Text style={[styles.tableHeaderText, styles.amountCol]}>Amount</Text>
           <Text style={[styles.tableHeaderText, styles.statusCol]}>Status</Text>
           <Text style={[styles.tableHeaderText, styles.dateCol]}>Created</Text>
+          <Text style={[styles.tableHeaderText, styles.actionCol]}>Action</Text>
         </View>
         <AmLoadingOrEmpty isLoading={isLoading} items={transfers} loadingText="Memuat transfers dari AM live..." emptyText="No transfers found" />
         {transfers.map(transfer => (
@@ -787,6 +823,13 @@ function AmTransfersPage() {
               <AmStatusChip label={transfer.status} tone={getTransferTone(transfer.status)} />
             </View>
             <Text style={[styles.cellText, styles.dateCol]}>{formatAmDate(transfer.createdAt)}</Text>
+            <View style={styles.actionCol}>
+              <AmTransferActions
+                disabled={actingTransferId === transfer._id}
+                transfer={transfer}
+                onAction={runTransferAction}
+              />
+            </View>
           </View>
         ))}
       </View>
@@ -860,6 +903,54 @@ function AmMutasiPage() {
           </View>
         ))}
       </View>
+    </View>
+  );
+}
+
+function AmTransferActions({
+  disabled,
+  onAction,
+  transfer,
+}: {
+  disabled: boolean;
+  onAction: (
+    transfer: AmTransfer,
+    action: 'cancel' | 'retry' | 'force-fail',
+  ) => void;
+  transfer: AmTransfer;
+}) {
+  const actions: Array<{
+    id: 'cancel' | 'retry' | 'force-fail';
+    label: string;
+    intent: 'outline' | 'danger' | 'warning';
+  }> = [];
+
+  if (transfer.status === 'pending' || transfer.status === 'processing') {
+    actions.push({id: 'cancel', label: 'Cancel', intent: 'outline'});
+    actions.push({id: 'force-fail', label: 'Force Fail', intent: 'danger'});
+  }
+
+  if (transfer.status === 'failed') {
+    actions.push({id: 'retry', label: 'Retry', intent: 'warning'});
+  }
+
+  if (!actions.length) {
+    return <Text style={styles.rowMeta}>-</Text>;
+  }
+
+  return (
+    <View style={styles.inlineActions}>
+      {actions.map(action => (
+        <KolamButton
+          key={action.id}
+          accessibilityLabel={`AM Transfer ${action.label} ${transfer._id}`}
+          intent={action.intent}
+          label={disabled ? '...' : action.label}
+          muted={disabled}
+          size="sm"
+          onPress={() => onAction(transfer, action.id)}
+        />
+      ))}
     </View>
   );
 }
@@ -1654,6 +1745,9 @@ const styles = StyleSheet.create({
   amountCol: {
     flex: 0.9,
   },
+  actionCol: {
+    flex: 1.2,
+  },
   deviceCol: {
     flex: 1.2,
   },
@@ -1704,6 +1798,24 @@ const styles = StyleSheet.create({
     color: V.colors.fg,
     fontFamily: V.fontFamily,
     fontSize: 11,
+    fontWeight: '800',
+  },
+  inlineActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  successPanel: {
+    borderWidth: 1,
+    borderColor: V.colors.success,
+    borderRadius: 8,
+    padding: 12,
+    backgroundColor: V.colors.successSoft,
+  },
+  successText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
     fontWeight: '800',
   },
   cardGrid: {
