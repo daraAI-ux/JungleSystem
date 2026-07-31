@@ -1,5 +1,7 @@
 import {
   buildKolamLayananOpsKpiCards,
+  createEmptyKolamLayananServiceFormState,
+  createKolamLayananServiceSavePayload,
   formatKolamLayananUnitPrice,
   getKolamLayananListTab,
   getKolamLayananRouteMode,
@@ -11,6 +13,7 @@ import {
   normalizeKolamLayananPendingList,
   normalizeKolamLayananServiceList,
   normalizeKolamLayananSubscriptionList,
+  validateKolamLayananServiceForm,
 } from '../src/domain/kolam-layanan';
 import { getKolamNavigationItemByRoute } from '../src/domain/kolam-navigation';
 
@@ -45,6 +48,7 @@ describe('kolam-layanan domain', () => {
     );
     expect(getKolamLayananListTab('/layanan?tab=langganan')).toBe('langganan');
     expect(getKolamLayananServiceIdFromRoute('/layanan/abc')).toBe('abc');
+    expect(getKolamLayananServiceIdFromRoute('/layanan/abc/edit')).toBe('abc');
     expect(getKolamLayananServiceIdFromRoute('/layanan/create')).toBe(null);
   });
 
@@ -165,6 +169,35 @@ describe('kolam-layanan domain', () => {
     expect(subs.items[0].subscriptionNumber).toBe('SUB-1');
     expect(subs.items[0].voucherId).toBe('ps1');
     expect(getKolamLayananSubscriptionStatusLabel('active')).toBe('Aktif');
+  });
+
+  it('builds and validates service create/edit payload', () => {
+    const empty = createEmptyKolamLayananServiceFormState();
+    expect(validateKolamLayananServiceForm(empty)).toContain('Nama');
+
+    const form = {
+      ...empty,
+      name: 'Dosing Bulanan',
+      sku: 'SVC-1',
+      brandIds: ['b1'],
+      enclosureTaskTypeKeys: ['dosing'],
+      enclosureTypes: ['Terrarium'],
+      taskType: 'dosing',
+      packageCode: 'sv-01',
+      price: '100000',
+      priceM3: '15000',
+      visitsPerMonth: '2',
+      contractDurationValue: '3',
+      contractDurationUnit: 'months' as const,
+    };
+    expect(validateKolamLayananServiceForm(form)).toBeNull();
+    const body = createKolamLayananServiceSavePayload(form);
+    expect(body.name).toBe('Dosing Bulanan');
+    expect(body.brand).toEqual(['b1']);
+    expect(body.packageCode).toBe('SV-01');
+    expect(body.visitsPerMonth).toBe(2);
+    expect(body.taskType).toBe('dosing');
+    expect(body.price_m3).toBe(15000);
   });
 });
 

@@ -45,6 +45,7 @@ import {
   KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
+import { KolamLayananServiceEditor } from './kolam-layanan-service-editor';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamStatsCardStrip } from './kolam-stats-card-strip';
 import { KolamStatusBadge } from './kolam-status-badge';
@@ -109,7 +110,7 @@ export function KolamLayananSurface({
 
   if (controller.mode !== 'list') {
     return (
-      <KolamLayananPlaceholder
+      <KolamLayananServiceEditor
         controller={controller}
         onRouteChange={onRouteChange}
         route={route}
@@ -128,53 +129,6 @@ export function KolamLayananSurface({
         />
       ) : null}
       <KolamLayananList controller={controller} onRouteChange={onRouteChange} />
-    </View>
-  );
-}
-
-function KolamLayananPlaceholder({
-  controller,
-  onRouteChange,
-  route,
-}: {
-  controller: KolamLayananController;
-  onRouteChange?: (route: string) => void;
-  route: string;
-}) {
-  const title =
-    controller.mode === 'create'
-      ? 'Layanan baru'
-      : controller.mode === 'edit'
-        ? 'Ubah layanan'
-        : controller.mode === 'langganan'
-          ? 'Detail langganan'
-          : controller.mode === 'voucher'
-            ? 'Detail voucher'
-            : controller.mode === 'execution'
-              ? 'Detail eksekusi kunjungan'
-              : 'Detail layanan';
-
-  return (
-    <View style={styles.surface}>
-      <View style={kolamTableToolbarStyles.shell}>
-        <View style={kolamTableToolbarStyles.row}>
-          <View style={kolamTableToolbarStyles.filters}>
-            <Text numberOfLines={1} style={styles.placeholderTitle}>
-              {title}
-            </Text>
-          </View>
-          <View style={kolamTableToolbarStyles.actions}>
-            <KolamButton
-              label="Daftar"
-              onPress={() => onRouteChange?.(KOLAM_LAYANAN_ROOT)}
-            />
-          </View>
-        </View>
-      </View>
-      <KolamEmptyState
-        message={`Halaman ${route} menyusul di batch berikutnya. Kembali ke daftar untuk mengelola katalog paket.`}
-        title="Segera hadir"
-      />
     </View>
   );
 }
@@ -476,6 +430,10 @@ function KolamLayananServiceTable({
         <KolamLayananServiceRow
           columns={columns.columns}
           key={service.id}
+          onEdit={() => {
+            controller.onOpenEdit(service);
+            onRouteChange?.(`${KOLAM_LAYANAN_ROOT}/${service.id}/edit`);
+          }}
           onSelect={() => {
             controller.onSelectService(service);
             onRouteChange?.(`${KOLAM_LAYANAN_ROOT}/${service.id}`);
@@ -653,10 +611,12 @@ function useFitColumns(baseColumns: KolamTableColumn[]) {
 
 function KolamLayananServiceRow({
   columns,
+  onEdit,
   onSelect,
   service,
 }: {
   columns: KolamTableColumn[];
+  onEdit: () => void;
   onSelect: () => void;
   service: KolamLayananService;
 }) {
@@ -714,7 +674,10 @@ function KolamLayananServiceRow({
       </KolamDataTableMainTrack>
       <KolamDataTableActionsTrack>
         <KolamOverflowMenuButton
-          actions={[{ label: 'Lihat', onPress: onSelect }]}
+          actions={[
+            { label: 'Lihat', onPress: onSelect },
+            { label: 'Rubah', onPress: onEdit },
+          ]}
         />
       </KolamDataTableActionsTrack>
     </KolamDataTableRowFrame>

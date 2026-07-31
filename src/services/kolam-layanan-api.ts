@@ -2,13 +2,16 @@ import { appConfig } from '../config/app';
 import {
   normalizeKolamLayananOpsDashboard,
   normalizeKolamLayananPendingList,
+  normalizeKolamLayananService,
   normalizeKolamLayananServiceList,
   normalizeKolamLayananSubscriptionList,
   type KolamLayananOpsDashboard,
   type KolamLayananPendingListQuery,
   type KolamLayananPendingListResult,
+  type KolamLayananService,
   type KolamLayananServiceListQuery,
   type KolamLayananServiceListResult,
+  type KolamLayananServiceSavePayload,
   type KolamLayananSubscriptionListQuery,
   type KolamLayananSubscriptionListResult,
 } from '../domain/kolam-layanan';
@@ -34,6 +37,39 @@ export async function getKolamLayananServices(
     },
   });
   return normalizeKolamLayananServiceList(payload, query);
+}
+
+export async function getKolamLayananService(
+  id: string,
+): Promise<KolamLayananService> {
+  const payload = await kolamRequest<unknown>(
+    `/service/${encodeURIComponent(id)}`,
+  );
+  return normalizeKolamLayananService(payload);
+}
+
+export async function createKolamLayananService(
+  body: KolamLayananServiceSavePayload,
+): Promise<KolamLayananService> {
+  const payload = await kolamRequest<unknown>('/service', {
+    method: 'POST',
+    body,
+  });
+  return normalizeKolamLayananService(payload);
+}
+
+export async function updateKolamLayananService(
+  id: string,
+  body: KolamLayananServiceSavePayload,
+): Promise<KolamLayananService> {
+  const payload = await kolamRequest<unknown>(
+    `/service/${encodeURIComponent(id)}`,
+    {
+      method: 'PUT',
+      body,
+    },
+  );
+  return normalizeKolamLayananService(payload);
 }
 
 export async function getKolamLayananOpsDashboard(): Promise<KolamLayananOpsDashboard> {

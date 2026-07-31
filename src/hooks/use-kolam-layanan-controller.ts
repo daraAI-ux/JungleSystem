@@ -1,31 +1,44 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { KolamBrand } from '../domain/kolam-brand';
 import {
+  createEmptyKolamLayananServiceFormState,
+  createKolamLayananServiceFormState,
+  createKolamLayananServiceSavePayload,
   getKolamLayananListTab,
   getKolamLayananRouteMode,
+  getKolamLayananServiceIdFromRoute,
   getKolamLayananTabHref,
   isKolamLayananNativeRoute,
+  validateKolamLayananServiceForm,
   type KolamLayananListTab,
   type KolamLayananOpsDashboard,
   type KolamLayananPendingService,
   type KolamLayananService,
+  type KolamLayananServiceFormState,
   type KolamLayananSubscription,
   type KolamLayananSubscriptionStatus,
   type KolamLayananSurfaceMode,
 } from '../domain/kolam-layanan';
 import { getErrorMessage as getApiErrorMessage } from '../lib/api-error';
+import { getKolamBrands } from '../services/kolam-brand-api';
 import {
+  createKolamLayananService,
   getKolamLayananOpsDashboard,
   getKolamLayananPendingServices,
+  getKolamLayananService,
   getKolamLayananServices,
   getKolamLayananSubscriptions,
+  updateKolamLayananService,
 } from '../services/kolam-layanan-api';
 
 export type KolamLayananDataSource = 'idle' | 'live' | 'error';
 
 export interface KolamLayananController {
   activeTab: KolamLayananListTab;
+  brandOptions: KolamBrand[];
   dataSource: KolamLayananDataSource;
   error: string | null;
+  form: KolamLayananServiceFormState;
   loading: boolean;
   mode: KolamLayananSurfaceMode;
   opsDashboard: KolamLayananOpsDashboard | null;
@@ -33,14 +46,21 @@ export interface KolamLayananController {
   page: number;
   pageSize: number;
   pendingServices: KolamLayananPendingService[];
+  saving: boolean;
   search: string;
+  selectedService: KolamLayananService | null;
   services: KolamLayananService[];
   subscriptionStatusFilter: KolamLayananSubscriptionStatus | 'all';
   subscriptions: KolamLayananSubscription[];
   total: number;
   totalPages: number;
+  onBackToList: () => void;
+  onChangeForm: (patch: Partial<KolamLayananServiceFormState>) => void;
   onCreateNew: () => void;
+  onEdit: () => void;
+  onOpenEdit: (service: KolamLayananService) => void;
   onRefresh: () => Promise<void>;
+  onSave: () => Promise<string | null>;
   onSearchChange: (value: string) => void;
   onSelectPending: (item: KolamLayananPendingService) => void;
   onSelectService: (service: KolamLayananService) => void;
@@ -51,6 +71,9 @@ export interface KolamLayananController {
     value: KolamLayananSubscriptionStatus | 'all',
   ) => void;
   onTabChange: (tab: KolamLayananListTab) => string;
+  onToggleBrand: (brandId: string) => void;
+  onToggleEnclosureType: (enclosureType: string) => void;
+  onToggleTaskTypeKey: (taskType: string) => void;
 }
 
 const PENDING_OPEN_STATUSES =
@@ -70,10 +93,17 @@ export function useKolamLayananController(
   const [subscriptions, setSubscriptions] = useState<KolamLayananSubscription[]>(
     [],
   );
+  const [selectedService, setSelectedService] =
+    useState<KolamLayananService | null>(null);
+  const [form, setForm] = useState<KolamLayananServiceFormState>(() =>
+    createEmptyKolamLayananServiceFormState(),
+  );
+  const [brandOptions, setBrandOptions] = useState<KolamBrand[]>([]);
   const [opsDashboard, setOpsDashboard] =
     useState<KolamLayananOpsDashboard | null>(null);
   const [loading, setLoading] = useState(false);
   const [opsLoading, setOpsLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dataSource, setDataSource] = useState<KolamLayananDataSource>('idle');
   const [page, setPage] = useState(1);
@@ -155,6 +185,15 @@ export function useKolamLayananController(
     subscriptionStatusFilter,
   ]);
 
+  const loadBrands = useCallback(async () => {
+    try {
+      const brands = await getKolamBrands();
+      setBrandOptions(brands);
+    } catch {
+      setBrandOptions([]);
+    }
+  }, []);
+
   useEffect(() => {
     setMode(initialMode);
     setActiveTab(initialTab);
@@ -166,6 +205,56 @@ export function useKolamLayananController(
       void refresh();
     }
   }, [mode, refresh, refreshOps]);
+
+  useEffect(() => {
+    if (mode === 'create' || mode === 'edit') {
+      void loadBrands();
+    }
+  }, [loadBrands, mode]);
+
+  useEffect(() => {
+    if (mode === 'create') {
+      setSelectedService(null);
+      setForm(createEmptyKolamLayananServiceFormState());
+      setError(null);
+      return;
+    }
+
+    const serviceId = getKolamLayananServiceIdFromRoute(route);
+    if (!serviceId || (mode !== 'detail' && mode !== 'edit')) {
+      return;
+    }
+
+    let active = true;
+    void (async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const live = await getKolamLayananService(serviceId);
+        if (!active) {
+          return;
+        }
+        setSelectedService(live);
+        if (mode === 'edit') {
+          setForm(createKolamLayananServiceFormState(live));
+        }
+        setDataSource('live');
+      } catch (detailError) {
+        if (active) {
+          setError(getErrorMessage(detailError));
+          setDataSource('error');
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [mode, route]);
 
   const onTabChange = useCallback((tab: KolamLayananListTab) => {
     setActiveTab(tab);
@@ -198,10 +287,87 @@ export function useKolamLayananController(
 
   const onCreateNew = useCallback(() => {
     setMode('create');
+    setSelectedService(null);
+    setForm(createEmptyKolamLayananServiceFormState());
+    setError(null);
   }, []);
 
-  const onSelectService = useCallback((_service: KolamLayananService) => {
+  const onBackToList = useCallback(() => {
+    setMode('list');
+    setSelectedService(null);
+    setForm(createEmptyKolamLayananServiceFormState());
+    setError(null);
+  }, []);
+
+  const onSelectService = useCallback((service: KolamLayananService) => {
     setMode('detail');
+    setSelectedService(service);
+    setError(null);
+  }, []);
+
+  const onEdit = useCallback(() => {
+    if (!selectedService) {
+      return;
+    }
+    setMode('edit');
+    setForm(createKolamLayananServiceFormState(selectedService));
+    setError(null);
+  }, [selectedService]);
+
+  const onOpenEdit = useCallback((service: KolamLayananService) => {
+    setMode('edit');
+    setSelectedService(service);
+    setForm(createKolamLayananServiceFormState(service));
+    setError(null);
+  }, []);
+
+  const onChangeForm = useCallback(
+    (patch: Partial<KolamLayananServiceFormState>) => {
+      setForm(current => ({ ...current, ...patch }));
+    },
+    [],
+  );
+
+  const onToggleBrand = useCallback((brandId: string) => {
+    setForm(current => {
+      const exists = current.brandIds.includes(brandId);
+      return {
+        ...current,
+        brandIds: exists
+          ? current.brandIds.filter(id => id !== brandId)
+          : [...current.brandIds, brandId],
+      };
+    });
+  }, []);
+
+  const onToggleEnclosureType = useCallback((enclosureType: string) => {
+    setForm(current => {
+      const exists = current.enclosureTypes.includes(enclosureType);
+      return {
+        ...current,
+        enclosureTypes: exists
+          ? current.enclosureTypes.filter(item => item !== enclosureType)
+          : [...current.enclosureTypes, enclosureType],
+      };
+    });
+  }, []);
+
+  const onToggleTaskTypeKey = useCallback((taskType: string) => {
+    setForm(current => {
+      const exists = current.enclosureTaskTypeKeys.includes(taskType);
+      const enclosureTaskTypeKeys = exists
+        ? current.enclosureTaskTypeKeys.filter(item => item !== taskType)
+        : [...current.enclosureTaskTypeKeys, taskType];
+      const nextPrimary =
+        current.taskType && enclosureTaskTypeKeys.includes(current.taskType)
+          ? current.taskType
+          : enclosureTaskTypeKeys[0] || '';
+      return {
+        ...current,
+        enclosureTaskTypeKeys,
+        taskType: nextPrimary,
+      };
+    });
   }, []);
 
   const onSelectPending = useCallback((_item: KolamLayananPendingService) => {
@@ -215,15 +381,68 @@ export function useKolamLayananController(
     [],
   );
 
+  const onSave = useCallback(async () => {
+    const validationError = validateKolamLayananServiceForm(form);
+    if (validationError) {
+      setError(validationError);
+      return null;
+    }
+
+    setSaving(true);
+    setError(null);
+    try {
+      const body = createKolamLayananServiceSavePayload(form);
+      const saved =
+        mode === 'edit' && form.id
+          ? await updateKolamLayananService(form.id, body)
+          : await createKolamLayananService(body);
+      setSelectedService(saved);
+      setForm(createKolamLayananServiceFormState(saved));
+      setMode('detail');
+      setDataSource('live');
+      return saved.id;
+    } catch (saveError) {
+      setError(getErrorMessage(saveError));
+      return null;
+    } finally {
+      setSaving(false);
+    }
+  }, [form, mode]);
+
   const onRefreshAll = useCallback(async () => {
-    await Promise.all([refreshOps(), refresh()]);
-  }, [refresh, refreshOps]);
+    if (mode === 'list') {
+      await Promise.all([refreshOps(), refresh()]);
+      return;
+    }
+    const serviceId =
+      selectedService?.id || getKolamLayananServiceIdFromRoute(route);
+    if (!serviceId) {
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const live = await getKolamLayananService(serviceId);
+      setSelectedService(live);
+      if (mode === 'edit') {
+        setForm(createKolamLayananServiceFormState(live));
+      }
+      setDataSource('live');
+    } catch (detailError) {
+      setError(getErrorMessage(detailError));
+      setDataSource('error');
+    } finally {
+      setLoading(false);
+    }
+  }, [mode, refresh, refreshOps, route, selectedService?.id]);
 
   return useMemo(
     () => ({
       activeTab,
+      brandOptions,
       dataSource,
       error,
+      form,
       loading,
       mode,
       opsDashboard,
@@ -231,14 +450,21 @@ export function useKolamLayananController(
       page,
       pageSize,
       pendingServices,
+      saving,
       search,
+      selectedService,
       services,
       subscriptionStatusFilter,
       subscriptions,
       total,
       totalPages,
+      onBackToList,
+      onChangeForm,
       onCreateNew,
+      onEdit,
+      onOpenEdit,
       onRefresh: onRefreshAll,
+      onSave,
       onSearchChange,
       onSelectPending,
       onSelectService,
@@ -247,15 +473,25 @@ export function useKolamLayananController(
       onSetPageSize,
       onSetSubscriptionStatusFilter,
       onTabChange,
+      onToggleBrand,
+      onToggleEnclosureType,
+      onToggleTaskTypeKey,
     }),
     [
       activeTab,
+      brandOptions,
       dataSource,
       error,
+      form,
       loading,
       mode,
+      onBackToList,
+      onChangeForm,
       onCreateNew,
+      onEdit,
+      onOpenEdit,
       onRefreshAll,
+      onSave,
       onSearchChange,
       onSelectPending,
       onSelectService,
@@ -264,12 +500,17 @@ export function useKolamLayananController(
       onSetPageSize,
       onSetSubscriptionStatusFilter,
       onTabChange,
+      onToggleBrand,
+      onToggleEnclosureType,
+      onToggleTaskTypeKey,
       opsDashboard,
       opsLoading,
       page,
       pageSize,
       pendingServices,
+      saving,
       search,
+      selectedService,
       services,
       subscriptionStatusFilter,
       subscriptions,

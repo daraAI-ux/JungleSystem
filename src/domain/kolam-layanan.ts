@@ -35,6 +35,35 @@ export type KolamLayananSurfaceMode =
 
 export type KolamLayananTaskType = 'dosing' | 'maintenance' | string;
 
+export type KolamLayananContractDurationUnit =
+  | 'days'
+  | 'weeks'
+  | 'months'
+  | 'years';
+
+export const KOLAM_LAYANAN_ENCLOSURE_TYPE_OPTIONS = [
+  'Terrarium',
+  'Paludarium',
+  'Aquarium',
+  'Vivarium',
+  'Cags',
+] as const;
+
+export const KOLAM_LAYANAN_TASK_TYPE_OPTIONS = [
+  { id: 'dosing', label: 'Dosing' },
+  { id: 'maintenance', label: 'Pemeliharaan' },
+] as const;
+
+export const KOLAM_LAYANAN_CONTRACT_DURATION_UNIT_OPTIONS: Array<{
+  id: KolamLayananContractDurationUnit;
+  label: string;
+}> = [
+  { id: 'days', label: 'Hari' },
+  { id: 'weeks', label: 'Minggu' },
+  { id: 'months', label: 'Bulan' },
+  { id: 'years', label: 'Tahun' },
+];
+
 export interface KolamLayananServiceBrandRef {
   id: string;
   name: string;
@@ -44,16 +73,88 @@ export interface KolamLayananService {
   id: string;
   name: string;
   sku: string;
+  description: string;
   packageCode: string;
+  packageActive: boolean;
   brands: KolamLayananServiceBrandRef[];
+  brandIds: string[];
   taskType: string | null;
+  enclosureTaskTypeKeys: string[];
+  enclosureTypes: string[];
+  visitsPerMonth: number | null;
+  requiresOnSiteVisit: boolean;
+  includesDelivery: boolean;
+  price: number | null;
   priceM3: number | null;
   priceKm: number | null;
+  costM3: number | null;
+  costKm: number | null;
   priceToSell: number | null;
   sellable: boolean;
+  commissionEnabled: boolean;
+  commissionType: 'percentage' | 'fixed';
+  commissionValue: number;
+  memberPointsEnabled: boolean;
+  memberPoints: number;
+  contractDurationValue: number | null;
+  contractDurationUnit: KolamLayananContractDurationUnit | null;
   createdAt?: string;
   updatedAt?: string;
   raw: unknown;
+}
+
+export interface KolamLayananServiceFormState {
+  id?: string;
+  name: string;
+  sku: string;
+  description: string;
+  brandIds: string[];
+  sellable: boolean;
+  enclosureTaskTypeKeys: string[];
+  enclosureTypes: string[];
+  taskType: string;
+  visitsPerMonth: string;
+  packageCode: string;
+  packageActive: boolean;
+  contractDurationValue: string;
+  contractDurationUnit: KolamLayananContractDurationUnit;
+  price: string;
+  costM3: string;
+  costKm: string;
+  priceM3: string;
+  priceKm: string;
+  commissionEnabled: boolean;
+  commissionType: 'percentage' | 'fixed';
+  commissionValue: string;
+  memberPointsEnabled: boolean;
+  memberPoints: string;
+}
+
+export interface KolamLayananServiceSavePayload {
+  name: string;
+  sku: string;
+  description: string;
+  brand: string[];
+  sellable: boolean;
+  price: number;
+  price_to_sell: number;
+  cost_m3: number;
+  cost_km: number;
+  price_m3: number;
+  price_km: number;
+  minimum_price_to_sales: number;
+  commissionEnabled: boolean;
+  commissionType: 'percentage' | 'fixed';
+  commissionValue: number;
+  memberPoints: { enabled: boolean; points: number };
+  enclosureTaskTypeKeys: string[];
+  enclosureTypes: string[];
+  taskType: string | null;
+  visitsPerMonth?: number;
+  packageCode?: string;
+  packageActive: boolean;
+  contractDurationValue?: number;
+  contractDurationUnit?: KolamLayananContractDurationUnit;
 }
 
 export interface KolamLayananServiceListQuery {
@@ -428,6 +529,149 @@ function formatCompactIdr(value: number) {
   return value.toLocaleString('id-ID');
 }
 
+export function createEmptyKolamLayananServiceFormState(): KolamLayananServiceFormState {
+  return {
+    name: '',
+    sku: '',
+    description: '',
+    brandIds: [],
+    sellable: false,
+    enclosureTaskTypeKeys: [],
+    enclosureTypes: [],
+    taskType: '',
+    visitsPerMonth: '',
+    packageCode: '',
+    packageActive: true,
+    contractDurationValue: '1',
+    contractDurationUnit: 'months',
+    price: '0',
+    costM3: '0',
+    costKm: '0',
+    priceM3: '0',
+    priceKm: '0',
+    commissionEnabled: false,
+    commissionType: 'percentage',
+    commissionValue: '0',
+    memberPointsEnabled: false,
+    memberPoints: '0',
+  };
+}
+
+export function createKolamLayananServiceFormState(
+  service: KolamLayananService,
+): KolamLayananServiceFormState {
+  return {
+    id: service.id,
+    name: service.name === '—' ? '' : service.name,
+    sku: service.sku === '—' ? '' : service.sku,
+    description: service.description,
+    brandIds: service.brandIds.length
+      ? service.brandIds
+      : service.brands.map(brand => brand.id),
+    sellable: service.sellable,
+    enclosureTaskTypeKeys: service.enclosureTaskTypeKeys.length
+      ? service.enclosureTaskTypeKeys
+      : service.taskType
+        ? [service.taskType]
+        : [],
+    enclosureTypes: service.enclosureTypes,
+    taskType: service.taskType || '',
+    visitsPerMonth:
+      service.visitsPerMonth != null ? String(service.visitsPerMonth) : '',
+    packageCode: service.packageCode === '—' ? '' : service.packageCode,
+    packageActive: service.packageActive,
+    contractDurationValue:
+      service.contractDurationValue != null
+        ? String(service.contractDurationValue)
+        : '1',
+    contractDurationUnit: service.contractDurationUnit || 'months',
+    price: String(service.price ?? 0),
+    costM3: String(service.costM3 ?? 0),
+    costKm: String(service.costKm ?? 0),
+    priceM3: String(service.priceM3 ?? 0),
+    priceKm: String(service.priceKm ?? 0),
+    commissionEnabled: service.commissionEnabled,
+    commissionType: service.commissionType,
+    commissionValue: String(service.commissionValue ?? 0),
+    memberPointsEnabled: service.memberPointsEnabled,
+    memberPoints: String(service.memberPoints ?? 0),
+  };
+}
+
+export function validateKolamLayananServiceForm(
+  form: KolamLayananServiceFormState,
+): string | null {
+  if (!form.name.trim()) {
+    return 'Nama layanan wajib diisi.';
+  }
+  if (!form.sku.trim()) {
+    return 'SKU wajib diisi.';
+  }
+  if (!form.brandIds.length) {
+    return 'Pilih minimal satu merek.';
+  }
+  if (!form.enclosureTaskTypeKeys.length) {
+    return 'Pilih minimal satu tipe task (dosing/pemeliharaan).';
+  }
+  if (!form.enclosureTypes.length) {
+    return 'Pilih minimal satu tipe kandang.';
+  }
+  return null;
+}
+
+export function createKolamLayananServiceSavePayload(
+  form: KolamLayananServiceFormState,
+): KolamLayananServiceSavePayload {
+  const visitsPerMonth = Number(form.visitsPerMonth);
+  const contractDurationValue = Number(form.contractDurationValue);
+  const packageCode = form.packageCode.trim().toUpperCase();
+  const taskType =
+    form.taskType.trim() || form.enclosureTaskTypeKeys[0] || null;
+
+  const body: KolamLayananServiceSavePayload = {
+    name: form.name.trim(),
+    sku: form.sku.trim(),
+    description: form.description.trim(),
+    brand: form.brandIds,
+    sellable: form.sellable,
+    price: Number(form.price) || 0,
+    price_to_sell: 0,
+    cost_m3: Number(form.costM3) || 0,
+    cost_km: Number(form.costKm) || 0,
+    price_m3: Number(form.priceM3) || 0,
+    price_km: Number(form.priceKm) || 0,
+    minimum_price_to_sales: 0,
+    commissionEnabled: form.commissionEnabled,
+    commissionType: form.commissionType,
+    commissionValue: Number(form.commissionValue) || 0,
+    memberPoints: {
+      enabled: form.memberPointsEnabled,
+      points: Number(form.memberPoints) || 0,
+    },
+    enclosureTaskTypeKeys: form.enclosureTaskTypeKeys,
+    enclosureTypes: form.enclosureTypes,
+    taskType,
+    packageActive: form.packageActive,
+  };
+
+  if (Number.isFinite(visitsPerMonth) && visitsPerMonth > 0) {
+    body.visitsPerMonth = visitsPerMonth;
+  }
+  if (packageCode) {
+    body.packageCode = packageCode;
+  }
+  if (
+    Number.isFinite(contractDurationValue) &&
+    contractDurationValue > 0 &&
+    form.contractDurationUnit
+  ) {
+    body.contractDurationValue = contractDurationValue;
+    body.contractDurationUnit = form.contractDurationUnit;
+  }
+
+  return body;
+}
+
 export function normalizeKolamLayananService(payload: unknown): KolamLayananService {
   const record = asRecord(unwrapData(payload));
   const brandsRaw = record.brand;
@@ -458,17 +702,58 @@ export function normalizeKolamLayananService(payload: unknown): KolamLayananServ
     }
   }
 
+  const enclosureTaskTypeKeys = Array.isArray(record.enclosureTaskTypeKeys)
+    ? record.enclosureTaskTypeKeys
+        .filter((item): item is string => typeof item === 'string' && Boolean(item.trim()))
+        .map(item => item.trim())
+    : [];
+  const enclosureTypes = Array.isArray(record.enclosureTypes)
+    ? record.enclosureTypes
+        .filter((item): item is string => typeof item === 'string' && Boolean(item.trim()))
+        .map(item => item.trim())
+    : getString(record, 'enclosureType')
+      ? [getString(record, 'enclosureType')]
+      : [];
+  const memberPoints = asRecord(record.memberPoints);
+  const commissionTypeRaw = getString(record, 'commissionType');
+  const contractUnitRaw = getString(record, 'contractDurationUnit');
+  const contractDurationUnit =
+    contractUnitRaw === 'days' ||
+    contractUnitRaw === 'weeks' ||
+    contractUnitRaw === 'months' ||
+    contractUnitRaw === 'years'
+      ? contractUnitRaw
+      : null;
+
   return {
     id: getString(record, '_id') || getString(record, 'id'),
     name: getString(record, 'name') || '—',
     sku: getString(record, 'sku') || '—',
+    description: getString(record, 'description'),
     packageCode: getString(record, 'packageCode') || '—',
+    packageActive: getBoolean(record, 'packageActive') ?? true,
     brands,
+    brandIds: brands.map(brand => brand.id),
     taskType: getString(record, 'taskType') || null,
+    enclosureTaskTypeKeys,
+    enclosureTypes,
+    visitsPerMonth: getNumber(record, 'visitsPerMonth'),
+    requiresOnSiteVisit: getBoolean(record, 'requiresOnSiteVisit') ?? false,
+    includesDelivery: getBoolean(record, 'includesDelivery') ?? false,
+    price: getNumber(record, 'price'),
     priceM3: getNumber(record, 'price_m3'),
     priceKm: getNumber(record, 'price_km'),
+    costM3: getNumber(record, 'cost_m3'),
+    costKm: getNumber(record, 'cost_km'),
     priceToSell: getNumber(record, 'price_to_sell'),
     sellable: getBoolean(record, 'sellable') ?? true,
+    commissionEnabled: getBoolean(record, 'commissionEnabled') ?? false,
+    commissionType: commissionTypeRaw === 'fixed' ? 'fixed' : 'percentage',
+    commissionValue: getNumber(record, 'commissionValue') ?? 0,
+    memberPointsEnabled: getBoolean(memberPoints, 'enabled') ?? false,
+    memberPoints: getNumber(memberPoints, 'points') ?? 0,
+    contractDurationValue: getNumber(record, 'contractDurationValue'),
+    contractDurationUnit,
     createdAt: getString(record, 'createdAt') || undefined,
     updatedAt: getString(record, 'updatedAt') || undefined,
     raw: payload,
