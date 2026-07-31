@@ -1233,51 +1233,30 @@ function KolamSalesOpsCreateForm({
                   </View>
 
                   <View style={styles.itemColDiscount}>
-                    <View style={styles.itemMoneyBox}>
-                      <Text numberOfLines={1} style={styles.itemMoneyText}>
-                        {formatRupiah(lineTotal.discount)}
-                      </Text>
-                      <View style={styles.itemDiscountEditRow}>
-                        <Pressable
-                          accessibilityLabel={`Diskon persen item ${index + 1}`}
-                          onPress={() =>
-                            controller.onChangeCreateItem(item.key, {
-                              discountType: 'percentage',
-                            })
-                          }
-                          style={styles.itemDiscountTypeChip}
-                        >
-                          <Text
-                            style={[
-                              styles.itemDiscountTypeChipText,
-                              item.discountType === 'percentage'
-                                ? styles.itemDiscountTypeChipTextActive
-                                : null,
-                            ]}
-                          >
-                            %
-                          </Text>
-                        </Pressable>
-                        <Pressable
-                          accessibilityLabel={`Diskon rupiah item ${index + 1}`}
-                          onPress={() =>
-                            controller.onChangeCreateItem(item.key, {
-                              discountType: 'fixed',
-                            })
-                          }
-                          style={styles.itemDiscountTypeChip}
-                        >
-                          <Text
-                            style={[
-                              styles.itemDiscountTypeChipText,
-                              item.discountType === 'fixed'
-                                ? styles.itemDiscountTypeChipTextActive
-                                : null,
-                            ]}
-                          >
-                            Rp
-                          </Text>
-                        </Pressable>
+                    <View style={styles.itemDiscountRow}>
+                      <KolamDropdownSelect
+                        accessibilityLabel={`Tipe diskon item ${index + 1}`}
+                        label="Diskon"
+                        menuPlacement="inline"
+                        onChange={discountType =>
+                          controller.onChangeCreateItem(item.key, {
+                            discountType:
+                              discountType === 'percentage'
+                                ? 'percentage'
+                                : 'fixed',
+                          })
+                        }
+                        options={[
+                          { label: '%', value: 'percentage' },
+                          { label: 'Rp', value: 'fixed' },
+                        ]}
+                        showLabelInTrigger={false}
+                        style={styles.itemDiscountType}
+                        triggerStyle={styles.itemDiscountTypeTrigger}
+                        triggerTextStyle={styles.itemDropdownTriggerText}
+                        value={item.discountType}
+                      />
+                      <View style={styles.itemDiscountAmount}>
                         <KolamFormTextField
                           mode="numeric"
                           onChangeText={discountAmount =>
@@ -2058,7 +2037,7 @@ const styles = StyleSheet.create({
   itemColDiscount: {
     flexGrow: 0,
     flexShrink: 0,
-    width: 120,
+    width: 132,
   },
   itemColTotal: {
     flexGrow: 0,
@@ -2088,6 +2067,28 @@ const styles = StyleSheet.create({
     fontSize: V.control.fontSize,
     maxWidth: 200,
   },
+  itemDiscountRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 4,
+    minHeight: V.control.inputHeight,
+    width: '100%',
+  },
+  itemDiscountType: {
+    flexGrow: 0,
+    flexShrink: 0,
+    width: 52,
+  },
+  itemDiscountTypeTrigger: {
+    minWidth: 0,
+    paddingHorizontal: 6,
+    width: '100%',
+  },
+  itemDiscountAmount: {
+    flex: 1,
+    justifyContent: 'center',
+    minWidth: 0,
+  },
   itemMoneyBox: {
     justifyContent: 'center',
     minHeight: V.control.inputHeight,
@@ -2099,37 +2100,19 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
   },
-  itemDiscountEditRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 4,
-    marginTop: 2,
-  },
-  itemDiscountTypeChip: {
-    paddingHorizontal: 2,
-    paddingVertical: 1,
-  },
-  itemDiscountTypeChipText: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  itemDiscountTypeChipTextActive: {
-    color: V.colors.primary,
-  },
   itemPlainInput: {
     backgroundColor: 'transparent',
     borderWidth: 0,
-    flex: 1,
-    fontSize: 11,
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
     fontWeight: '700',
-    height: 22,
-    maxHeight: 22,
-    minHeight: 22,
-    minWidth: 36,
+    height: V.control.inputHeight,
+    maxHeight: V.control.inputHeight,
+    minHeight: V.control.inputHeight,
     paddingHorizontal: 0,
     paddingVertical: 0,
+    width: '100%',
   },
   itemControlFill: {
     width: '100%',
