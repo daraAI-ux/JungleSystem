@@ -105,6 +105,8 @@ export interface KolamComplaintTracking {
   trackingNumber: string;
   courierName: string;
   receivedByLabel: string;
+  receivedById: string | null;
+  receivedByType: 'customer' | 'other' | '';
   verifiedNote: string;
   sentAt?: string;
   receivedAt?: string;
@@ -137,6 +139,7 @@ export interface KolamComplaint {
   refundAmount: number;
   assignedStaffId: string | null;
   assignedStaffName: string;
+  createdById: string | null;
   createdByName: string;
   createdByType: 'staff' | 'customer';
   isServiceOnly: boolean;
@@ -677,6 +680,41 @@ export function needsKolamComplaintReturnTracking(complaint: KolamComplaint) {
   );
 }
 
+/** FE: replacement updater after returnTracking verified. */
+export function needsKolamComplaintReplacementTracking(
+  complaint: KolamComplaint,
+): boolean {
+  if (complaint.marketplaceReadOnly || complaint.decision !== 'replacement') {
+    return false;
+  }
+  if (complaint.returnTracking?.status !== 'verified') {
+    return false;
+  }
+  const current = complaint.replacementTracking?.status || 'pending';
+  return getAllowedKolamComplaintTrackingStatuses(current).length > 0;
+}
+
+/** FE: replacement-return updater when decision is replacement. */
+export function needsKolamComplaintReplacementReturnTracking(
+  complaint: KolamComplaint,
+): boolean {
+  if (complaint.marketplaceReadOnly || complaint.decision !== 'replacement') {
+    return false;
+  }
+  const current = complaint.replacementReturnTracking?.status || 'pending';
+  return getAllowedKolamComplaintTrackingStatuses(current).length > 0;
+}
+
+export function isKolamComplaintReturnAwaitingVerification(
+  complaint: KolamComplaint,
+): boolean {
+  return (
+    !complaint.marketplaceReadOnly &&
+    complaint.decision === 'replacement' &&
+    complaint.returnTracking?.status !== 'verified'
+  );
+}
+
 /**
  * Same resolution as sales detail: prefer embedded sale.sourceRef.logo,
  * then active Sales Source catalog by id.
@@ -727,6 +765,7 @@ export function normalizeKolamComplaint(payload: unknown): KolamComplaint {
     refundAmount: getNumber(record, 'refundAmount') ?? 0,
     assignedStaffId: assigned.id,
     assignedStaffName: assigned.name || (record.assignedStaff ? 'Pengguna dihapus' : '—'),
+    createdById: normalizePerson(record.createdBy).id,
     createdByName:
       getString(record, 'createdByName') ||
       normalizePerson(record.createdBy).name ||
@@ -1020,13 +1059,20 @@ function normalizeTracking(value: unknown): KolamComplaintTracking | null {
   if (!statusRaw) {
     return null;
   }
+  const receivedBy = normalizePerson(record.receivedBy);
+  const receivedByTypeRaw = getString(record, 'receivedByType');
+  const receivedByType =
+    receivedByTypeRaw === 'customer' || receivedByTypeRaw === 'other'
+      ? receivedByTypeRaw
+      : '';
   return {
     status: normalizeTrackingStatus(statusRaw),
     trackingNumber: getString(record, 'trackingNumber'),
     courierName: getString(record, 'courierName'),
     receivedByLabel:
-      getString(record, 'receivedByLabel') ||
-      normalizePerson(record.receivedBy).name,
+      getString(record, 'receivedByLabel') || receivedBy.name,
+    receivedById: receivedBy.id,
+    receivedByType,
     verifiedNote: getString(record, 'verifiedNote'),
     sentAt: getString(record, 'sentAt') || undefined,
     receivedAt: getString(record, 'receivedAt') || undefined,

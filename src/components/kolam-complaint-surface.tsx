@@ -22,7 +22,10 @@ import {
   KOLAM_COMPLAINT_ROOT,
   KOLAM_COMPLAINT_SOURCE_OPTIONS,
   KOLAM_COMPLAINT_STATUS_OPTIONS,
+  needsKolamComplaintReplacementReturnTracking,
+  needsKolamComplaintReplacementTracking,
   needsKolamComplaintReturnTracking,
+  isKolamComplaintReturnAwaitingVerification,
   resolveKolamComplaintSaleSourceLogoUri,
   type KolamComplaint,
   type KolamComplaintDecision,
@@ -671,9 +674,19 @@ function KolamComplaintDetail({
             </>
           ) : null}
 
-          {complaint.replacementTracking ? (
+          {complaint.replacementTracking ||
+          needsKolamComplaintReplacementTracking(complaint) ||
+          isKolamComplaintReturnAwaitingVerification(complaint) ? (
             <>
               <Text style={styles.sectionTitle}>Pelacakan penggantian</Text>
+              {isKolamComplaintReturnAwaitingVerification(complaint) ? (
+                <KolamStatusBadge
+                  intent="warning"
+                  label="Retur harus diterima dan diverifikasi dulu sebelum pengiriman pengganti."
+                  numberOfLines={3}
+                  style={styles.banner}
+                />
+              ) : null}
               <KolamDescriptionList
                 accessibilityLabel="Penggantian"
                 rows={[
@@ -681,25 +694,26 @@ function KolamComplaintDetail({
                     'rep-status',
                     'Status',
                     getKolamComplaintTrackingStatusLabel(
-                      complaint.replacementTracking.status,
+                      complaint.replacementTracking?.status || 'pending',
                     ),
                   ),
                   descRow(
                     'rep-track',
                     'Resi',
-                    complaint.replacementTracking.trackingNumber || '—',
+                    complaint.replacementTracking?.trackingNumber || '—',
                   ),
                   descRow(
                     'rep-courier',
                     'Kurir',
-                    complaint.replacementTracking.courierName || '—',
+                    complaint.replacementTracking?.courierName || '—',
                   ),
                 ]}
               />
             </>
           ) : null}
 
-          {complaint.replacementReturnTracking ? (
+          {complaint.replacementReturnTracking ||
+          needsKolamComplaintReplacementReturnTracking(complaint) ? (
             <>
               <Text style={styles.sectionTitle}>Retur barang pengganti</Text>
               <KolamDescriptionList
@@ -709,18 +723,18 @@ function KolamComplaintDetail({
                     'repr-status',
                     'Status',
                     getKolamComplaintTrackingStatusLabel(
-                      complaint.replacementReturnTracking.status,
+                      complaint.replacementReturnTracking?.status || 'pending',
                     ),
                   ),
                   descRow(
                     'repr-track',
                     'Resi',
-                    complaint.replacementReturnTracking.trackingNumber || '—',
+                    complaint.replacementReturnTracking?.trackingNumber || '—',
                   ),
                   descRow(
                     'repr-courier',
                     'Kurir',
-                    complaint.replacementReturnTracking.courierName || '—',
+                    complaint.replacementReturnTracking?.courierName || '—',
                   ),
                 ]}
               />
@@ -777,6 +791,16 @@ function KolamComplaintWorkflowPanel({
   const returnStatus =
     complaint.returnTracking?.status || ('pending' as KolamComplaintTrackingStatus);
   const allowedReturnStatuses = getAllowedKolamComplaintTrackingStatuses(returnStatus);
+  const replacementStatus =
+    complaint.replacementTracking?.status ||
+    ('pending' as KolamComplaintTrackingStatus);
+  const allowedReplacementStatuses =
+    getAllowedKolamComplaintTrackingStatuses(replacementStatus);
+  const replacementReturnStatus =
+    complaint.replacementReturnTracking?.status ||
+    ('pending' as KolamComplaintTrackingStatus);
+  const allowedReplacementReturnStatuses =
+    getAllowedKolamComplaintTrackingStatuses(replacementReturnStatus);
 
   const [staffId, setStaffId] = React.useState(complaint.assignedStaffId || '');
   const [assignNote, setAssignNote] = React.useState('');
@@ -807,6 +831,49 @@ function KolamComplaintWorkflowPanel({
   const [courierName, setCourierName] = React.useState(
     complaint.returnTracking?.courierName || '',
   );
+  const [replacementNextStatus, setReplacementNextStatus] =
+    React.useState<KolamComplaintTrackingStatus>(
+      allowedReplacementStatuses[0] || replacementStatus,
+    );
+  const [replacementNote, setReplacementNote] = React.useState('');
+  const [replacementVerifiedNote, setReplacementVerifiedNote] =
+    React.useState('');
+  const [replacementTrackingNumber, setReplacementTrackingNumber] =
+    React.useState(complaint.replacementTracking?.trackingNumber || '');
+  const [replacementCourierName, setReplacementCourierName] = React.useState(
+    complaint.replacementTracking?.courierName || '',
+  );
+  const [replacementReceivedByType, setReplacementReceivedByType] =
+    React.useState<'customer' | 'other'>(
+      complaint.replacementTracking?.receivedByType === 'other'
+        ? 'other'
+        : 'customer',
+    );
+  const [replacementReceivedByOther, setReplacementReceivedByOther] =
+    React.useState(
+      complaint.replacementTracking?.receivedByType === 'other'
+        ? complaint.replacementTracking.receivedByLabel || ''
+        : '',
+    );
+  const [replacementReturnNextStatus, setReplacementReturnNextStatus] =
+    React.useState<KolamComplaintTrackingStatus>(
+      allowedReplacementReturnStatuses[0] || replacementReturnStatus,
+    );
+  const [replacementReturnNote, setReplacementReturnNote] = React.useState('');
+  const [replacementReturnVerifiedNote, setReplacementReturnVerifiedNote] =
+    React.useState('');
+  const [replacementReturnTrackingNumber, setReplacementReturnTrackingNumber] =
+    React.useState(
+      complaint.replacementReturnTracking?.trackingNumber || '',
+    );
+  const [replacementReturnCourierName, setReplacementReturnCourierName] =
+    React.useState(complaint.replacementReturnTracking?.courierName || '');
+  const [replacementReturnReceivedBy, setReplacementReturnReceivedBy] =
+    React.useState(
+      complaint.replacementReturnTracking?.receivedById ||
+        complaint.assignedStaffId ||
+        '',
+    );
 
   React.useEffect(() => {
     const nextAllowed = getAllowedKolamComplaintStatuses(complaint.status);
@@ -819,6 +886,16 @@ function KolamComplaintWorkflowPanel({
       ('pending' as KolamComplaintTrackingStatus);
     const nextAllowedReturn =
       getAllowedKolamComplaintTrackingStatuses(nextReturnStatus);
+    const nextReplacementStatus =
+      complaint.replacementTracking?.status ||
+      ('pending' as KolamComplaintTrackingStatus);
+    const nextAllowedReplacement =
+      getAllowedKolamComplaintTrackingStatuses(nextReplacementStatus);
+    const nextReplacementReturnStatus =
+      complaint.replacementReturnTracking?.status ||
+      ('pending' as KolamComplaintTrackingStatus);
+    const nextAllowedReplacementReturn =
+      getAllowedKolamComplaintTrackingStatuses(nextReplacementReturnStatus);
 
     setStaffId(complaint.assignedStaffId || '');
     setNextStatus(nextAllowed[0] || complaint.status);
@@ -829,12 +906,52 @@ function KolamComplaintWorkflowPanel({
     setReturnNextStatus(nextAllowedReturn[0] || nextReturnStatus);
     setTrackingNumber(complaint.returnTracking?.trackingNumber || '');
     setCourierName(complaint.returnTracking?.courierName || '');
+    setReplacementNextStatus(
+      nextAllowedReplacement[0] || nextReplacementStatus,
+    );
+    setReplacementTrackingNumber(
+      complaint.replacementTracking?.trackingNumber || '',
+    );
+    setReplacementCourierName(complaint.replacementTracking?.courierName || '');
+    setReplacementReceivedByType(
+      complaint.replacementTracking?.receivedByType === 'other'
+        ? 'other'
+        : 'customer',
+    );
+    setReplacementReceivedByOther(
+      complaint.replacementTracking?.receivedByType === 'other'
+        ? complaint.replacementTracking.receivedByLabel || ''
+        : '',
+    );
+    setReplacementReturnNextStatus(
+      nextAllowedReplacementReturn[0] || nextReplacementReturnStatus,
+    );
+    setReplacementReturnTrackingNumber(
+      complaint.replacementReturnTracking?.trackingNumber || '',
+    );
+    setReplacementReturnCourierName(
+      complaint.replacementReturnTracking?.courierName || '',
+    );
+    setReplacementReturnReceivedBy(
+      complaint.replacementReturnTracking?.receivedById ||
+        complaint.assignedStaffId ||
+        '',
+    );
   }, [
     complaint.assignedStaffId,
     complaint.decision,
     complaint.id,
     complaint.isServiceOnly,
     complaint.refundAmount,
+    complaint.replacementReturnTracking?.courierName,
+    complaint.replacementReturnTracking?.receivedById,
+    complaint.replacementReturnTracking?.status,
+    complaint.replacementReturnTracking?.trackingNumber,
+    complaint.replacementTracking?.courierName,
+    complaint.replacementTracking?.receivedByLabel,
+    complaint.replacementTracking?.receivedByType,
+    complaint.replacementTracking?.status,
+    complaint.replacementTracking?.trackingNumber,
     complaint.returnTracking?.courierName,
     complaint.returnTracking?.status,
     complaint.returnTracking?.trackingNumber,
@@ -845,6 +962,24 @@ function KolamComplaintWorkflowPanel({
   const busy = controller.mutating || controller.loading;
   const needsRefundAmount =
     decision === 'refund' || decision === 'return_then_refund';
+  const showReplacementUpdater =
+    needsKolamComplaintReplacementTracking(complaint) &&
+    allowedReplacementStatuses.length > 0;
+  const showReplacementReturnUpdater =
+    needsKolamComplaintReplacementReturnTracking(complaint) &&
+    allowedReplacementReturnStatuses.length > 0;
+  const replacementReceivedByValue =
+    replacementReceivedByType === 'customer'
+      ? complaint.createdById || ''
+      : replacementReceivedByOther.trim();
+  const replacementReceivedReady =
+    replacementNextStatus !== 'received' ||
+    (replacementReceivedByType === 'customer'
+      ? Boolean(complaint.createdById)
+      : Boolean(replacementReceivedByOther.trim()));
+  const replacementReturnReceivedReady =
+    replacementReturnNextStatus !== 'received' ||
+    Boolean(replacementReturnReceivedBy.trim());
 
   return (
     <View style={styles.workflowPanel}>
@@ -1073,6 +1208,239 @@ function KolamComplaintWorkflowPanel({
                   if (ok) {
                     setReturnNote('');
                     setReturnVerifiedNote('');
+                  }
+                });
+            }}
+          />
+        </View>
+      ) : null}
+
+      {isKolamComplaintReturnAwaitingVerification(complaint) ? (
+        <View style={styles.workflowBlock}>
+          <Text style={styles.workflowBlockTitle}>Update penggantian</Text>
+          <Text style={styles.metaText}>
+            Retur harus diterima dan diverifikasi dulu sebelum pengiriman
+            pengganti.
+          </Text>
+        </View>
+      ) : null}
+
+      {showReplacementUpdater ? (
+        <View style={styles.workflowBlock}>
+          <Text style={styles.workflowBlockTitle}>Update penggantian</Text>
+          <KolamDropdownSelect
+            accessibilityLabel="Status penggantian"
+            label="Status penggantian"
+            menuPlacement="inline"
+            onChange={value =>
+              setReplacementNextStatus(value as KolamComplaintTrackingStatus)
+            }
+            options={allowedReplacementStatuses.map(status => ({
+              label: getKolamComplaintTrackingStatusLabel(status),
+              value: status,
+            }))}
+            showLabelInTrigger={false}
+            value={replacementNextStatus}
+          />
+          <KolamFormTextField
+            onChangeText={setReplacementTrackingNumber}
+            placeholder="Nomor resi"
+            value={replacementTrackingNumber}
+          />
+          <KolamFormTextField
+            onChangeText={setReplacementCourierName}
+            placeholder="Nama kurir"
+            value={replacementCourierName}
+          />
+          {replacementNextStatus === 'received' ? (
+            <>
+              <KolamDropdownSelect
+                accessibilityLabel="Diterima oleh"
+                label="Diterima oleh"
+                menuPlacement="inline"
+                onChange={value =>
+                  setReplacementReceivedByType(value as 'customer' | 'other')
+                }
+                options={[
+                  {
+                    label: complaint.createdByName
+                      ? `Pelanggan (${complaint.createdByName})`
+                      : 'Pelanggan',
+                    value: 'customer',
+                  },
+                  { label: 'Orang lain', value: 'other' },
+                ]}
+                showLabelInTrigger={false}
+                value={replacementReceivedByType}
+              />
+              {replacementReceivedByType === 'other' ? (
+                <KolamFormTextField
+                  onChangeText={setReplacementReceivedByOther}
+                  placeholder="Nama penerima"
+                  value={replacementReceivedByOther}
+                />
+              ) : !complaint.createdById ? (
+                <Text style={styles.metaText}>
+                  ID pembuat komplain tidak tersedia untuk opsi pelanggan.
+                </Text>
+              ) : null}
+            </>
+          ) : null}
+          {replacementNextStatus === 'verified' ? (
+            <KolamFormTextField
+              multiline
+              numberOfLines={3}
+              onChangeText={setReplacementVerifiedNote}
+              placeholder="Catatan verifikasi wajib…"
+              style={styles.workflowNote}
+              value={replacementVerifiedNote}
+            />
+          ) : (
+            <KolamFormTextField
+              multiline
+              numberOfLines={3}
+              onChangeText={setReplacementNote}
+              placeholder="Catatan…"
+              style={styles.workflowNote}
+              value={replacementNote}
+            />
+          )}
+          <KolamButton
+            disabled={
+              busy ||
+              !replacementReceivedReady ||
+              (replacementNextStatus === 'verified'
+                ? !replacementVerifiedNote.trim()
+                : !replacementNote.trim())
+            }
+            intent="primary"
+            label={busy ? 'Menyimpan…' : 'Update penggantian'}
+            onPress={() => {
+              void controller
+                .onUpdateReplacementStatus({
+                  status: replacementNextStatus,
+                  trackingNumber: replacementTrackingNumber,
+                  courierName: replacementCourierName,
+                  ...(replacementNextStatus === 'verified'
+                    ? {
+                        verifiedNote: replacementVerifiedNote,
+                        note: replacementVerifiedNote,
+                      }
+                    : { note: replacementNote }),
+                  ...(replacementNextStatus === 'received'
+                    ? {
+                        receivedByType: replacementReceivedByType,
+                        receivedBy: replacementReceivedByValue,
+                      }
+                    : {}),
+                })
+                .then(ok => {
+                  if (ok) {
+                    setReplacementNote('');
+                    setReplacementVerifiedNote('');
+                  }
+                });
+            }}
+          />
+        </View>
+      ) : null}
+
+      {showReplacementReturnUpdater ? (
+        <View style={styles.workflowBlock}>
+          <Text style={styles.workflowBlockTitle}>
+            Update retur barang pengganti
+          </Text>
+          <KolamDropdownSelect
+            accessibilityLabel="Status retur pengganti"
+            label="Status retur pengganti"
+            menuPlacement="inline"
+            onChange={value =>
+              setReplacementReturnNextStatus(
+                value as KolamComplaintTrackingStatus,
+              )
+            }
+            options={allowedReplacementReturnStatuses.map(status => ({
+              label: getKolamComplaintTrackingStatusLabel(status),
+              value: status,
+            }))}
+            showLabelInTrigger={false}
+            value={replacementReturnNextStatus}
+          />
+          <KolamFormTextField
+            onChangeText={setReplacementReturnTrackingNumber}
+            placeholder="Nomor resi"
+            value={replacementReturnTrackingNumber}
+          />
+          <KolamFormTextField
+            onChangeText={setReplacementReturnCourierName}
+            placeholder="Nama kurir"
+            value={replacementReturnCourierName}
+          />
+          {replacementReturnNextStatus === 'received' ? (
+            <KolamDropdownSelect
+              accessibilityLabel="Staf penerima"
+              label="Staf penerima"
+              menuPlacement="inline"
+              onChange={setReplacementReturnReceivedBy}
+              options={[
+                { label: 'Pilih staf…', value: '' },
+                ...controller.staffOptions.map(option => ({
+                  label: option.label,
+                  value: option.id,
+                })),
+              ]}
+              searchable={controller.staffOptions.length > 8}
+              searchPlaceholder="Cari staf…"
+              showLabelInTrigger={false}
+              value={replacementReturnReceivedBy}
+            />
+          ) : null}
+          {replacementReturnNextStatus === 'verified' ? (
+            <KolamFormTextField
+              multiline
+              numberOfLines={3}
+              onChangeText={setReplacementReturnVerifiedNote}
+              placeholder="Catatan verifikasi wajib…"
+              style={styles.workflowNote}
+              value={replacementReturnVerifiedNote}
+            />
+          ) : (
+            <KolamFormTextField
+              multiline
+              numberOfLines={3}
+              onChangeText={setReplacementReturnNote}
+              placeholder="Catatan…"
+              style={styles.workflowNote}
+              value={replacementReturnNote}
+            />
+          )}
+          <KolamButton
+            disabled={
+              busy ||
+              !replacementReturnReceivedReady ||
+              (replacementReturnNextStatus === 'verified'
+                ? !replacementReturnVerifiedNote.trim()
+                : !replacementReturnNote.trim())
+            }
+            intent="primary"
+            label={busy ? 'Menyimpan…' : 'Update retur pengganti'}
+            onPress={() => {
+              void controller
+                .onUpdateReplacementReturnStatus({
+                  status: replacementReturnNextStatus,
+                  trackingNumber: replacementReturnTrackingNumber,
+                  courierName: replacementReturnCourierName,
+                  ...(replacementReturnNextStatus === 'verified'
+                    ? { verifiedNote: replacementReturnVerifiedNote }
+                    : { note: replacementReturnNote }),
+                  ...(replacementReturnNextStatus === 'received'
+                    ? { receivedBy: replacementReturnReceivedBy }
+                    : {}),
+                })
+                .then(ok => {
+                  if (ok) {
+                    setReplacementReturnNote('');
+                    setReplacementReturnVerifiedNote('');
                   }
                 });
             }}

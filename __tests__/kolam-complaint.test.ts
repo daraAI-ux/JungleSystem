@@ -6,9 +6,12 @@ import {
   getKolamComplaintIdFromRoute,
   getKolamComplaintRouteMode,
   getKolamComplaintStatusLabel,
+  isKolamComplaintReturnAwaitingVerification,
   isKolamComplaintRoute,
   isKolamSaleEligibleForComplaint,
   isMarketplaceMirrorComplaint,
+  needsKolamComplaintReplacementReturnTracking,
+  needsKolamComplaintReplacementTracking,
   normalizeKolamComplaint,
   normalizeKolamComplaintList,
   parseKolamComplaintCreateQuery,
@@ -114,7 +117,10 @@ describe('kolam-complaint domain', () => {
         status: 'in_transit',
         trackingNumber: 'RESI1',
         courierName: 'JNE',
+        receivedBy: { _id: 'recv1', first_name: 'Rina' },
+        receivedByType: 'other',
       },
+      createdBy: { _id: 'cust1', first_name: 'Budi' },
       items: [],
       sale: {
         _id: 'sale2',
@@ -131,6 +137,9 @@ describe('kolam-complaint domain', () => {
     expect(detail.photos[0].uri).toContain('media/complaints/a.jpg');
     expect(detail.histories[0].changedByLabel).toBe('Staff');
     expect(detail.returnTracking?.trackingNumber).toBe('RESI1');
+    expect(detail.returnTracking?.receivedById).toBe('recv1');
+    expect(detail.returnTracking?.receivedByType).toBe('other');
+    expect(detail.createdById).toBe('cust1');
     expect(detail.saleSourceRef?.id).toBe('src1');
     expect(detail.saleSourceRef?.name).toBe('POS Offline');
     expect(detail.saleSourceRef?.logoUri).toContain('media/sources/pos.png');
@@ -141,6 +150,49 @@ describe('kolam-complaint domain', () => {
     ).toContain('media/sources/pos.png');
     expect(getKolamComplaintStatusLabel('pending')).toBe('Menunggu');
     expect(getKolamComplaintDecisionLabel(null)).toBe('Tidak ada');
+  });
+
+  it('gates replacement tracking until return is verified', () => {
+    const base = normalizeKolamComplaint({
+      _id: 'c3',
+      ticketCode: 'COMP-3',
+      status: 'processing',
+      decision: 'replacement',
+      description: 'Ganti',
+      items: [],
+      returnTracking: { status: 'received', trackingNumber: 'R1' },
+    });
+    expect(isKolamComplaintReturnAwaitingVerification(base)).toBe(true);
+    expect(needsKolamComplaintReplacementTracking(base)).toBe(false);
+
+    const ready = normalizeKolamComplaint({
+      _id: 'c3',
+      ticketCode: 'COMP-3',
+      status: 'processing',
+      decision: 'replacement',
+      description: 'Ganti',
+      items: [],
+      returnTracking: { status: 'verified', trackingNumber: 'R1' },
+      replacementTracking: { status: 'pending' },
+      replacementReturnTracking: { status: 'pending' },
+    });
+    expect(isKolamComplaintReturnAwaitingVerification(ready)).toBe(false);
+    expect(needsKolamComplaintReplacementTracking(ready)).toBe(true);
+    expect(needsKolamComplaintReplacementReturnTracking(ready)).toBe(true);
+
+    const done = normalizeKolamComplaint({
+      _id: 'c3',
+      ticketCode: 'COMP-3',
+      status: 'processing',
+      decision: 'replacement',
+      description: 'Ganti',
+      items: [],
+      returnTracking: { status: 'verified' },
+      replacementTracking: { status: 'verified' },
+      replacementReturnTracking: { status: 'verified' },
+    });
+    expect(needsKolamComplaintReplacementTracking(done)).toBe(false);
+    expect(needsKolamComplaintReplacementReturnTracking(done)).toBe(false);
   });
 
   it('exposes status transition and decision helpers for workflow UI', () => {

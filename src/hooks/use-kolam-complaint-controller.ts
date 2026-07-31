@@ -22,6 +22,8 @@ import {
   getKolamComplaint,
   getKolamComplaints,
   updateKolamComplaintDecision,
+  updateKolamComplaintReplacementReturnStatus,
+  updateKolamComplaintReplacementStatus,
   updateKolamComplaintReturnStatus,
   updateKolamComplaintStatus,
 } from '../services/kolam-complaint-api';
@@ -83,6 +85,23 @@ export interface KolamComplaintController {
     refundAmount?: number;
   }) => Promise<boolean>;
   onUpdateReturnStatus: (payload: {
+    status: KolamComplaintTrackingStatus;
+    note?: string;
+    verifiedNote?: string;
+    trackingNumber?: string;
+    courierName?: string;
+    receivedBy?: string;
+  }) => Promise<boolean>;
+  onUpdateReplacementStatus: (payload: {
+    status: KolamComplaintTrackingStatus;
+    note?: string;
+    verifiedNote?: string;
+    trackingNumber?: string;
+    courierName?: string;
+    receivedBy?: string;
+    receivedByType?: 'customer' | 'other';
+  }) => Promise<boolean>;
+  onUpdateReplacementReturnStatus: (payload: {
     status: KolamComplaintTrackingStatus;
     note?: string;
     verifiedNote?: string;
@@ -412,6 +431,49 @@ export function useKolamComplaintController(
     [runMutation, selectedComplaint?.id],
   );
 
+  const onUpdateReplacementStatus = useCallback(
+    (payload: {
+      status: KolamComplaintTrackingStatus;
+      note?: string;
+      verifiedNote?: string;
+      trackingNumber?: string;
+      courierName?: string;
+      receivedBy?: string;
+      receivedByType?: 'customer' | 'other';
+    }) => {
+      const id = selectedComplaint?.id;
+      if (!id) {
+        return Promise.resolve(false);
+      }
+      return runMutation(
+        () => updateKolamComplaintReplacementStatus(id, payload),
+        'Status penggantian diperbarui.',
+      );
+    },
+    [runMutation, selectedComplaint?.id],
+  );
+
+  const onUpdateReplacementReturnStatus = useCallback(
+    (payload: {
+      status: KolamComplaintTrackingStatus;
+      note?: string;
+      verifiedNote?: string;
+      trackingNumber?: string;
+      courierName?: string;
+      receivedBy?: string;
+    }) => {
+      const id = selectedComplaint?.id;
+      if (!id) {
+        return Promise.resolve(false);
+      }
+      return runMutation(
+        () => updateKolamComplaintReplacementReturnStatus(id, payload),
+        'Status retur barang pengganti diperbarui.',
+      );
+    },
+    [runMutation, selectedComplaint?.id],
+  );
+
   const onBackToList = useCallback(() => {
     setMode('list');
     setSelectedComplaint(null);
@@ -553,6 +615,8 @@ export function useKolamComplaintController(
       onSetSourceFilter,
       onSetStatusFilter,
       onUpdateDecision,
+      onUpdateReplacementReturnStatus,
+      onUpdateReplacementStatus,
       onUpdateReturnStatus,
       onUpdateStatus,
     }),
@@ -580,6 +644,8 @@ export function useKolamComplaintController(
       onSetSourceFilter,
       onSetStatusFilter,
       onUpdateDecision,
+      onUpdateReplacementReturnStatus,
+      onUpdateReplacementStatus,
       onUpdateReturnStatus,
       onUpdateStatus,
       page,

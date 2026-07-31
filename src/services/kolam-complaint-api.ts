@@ -95,17 +95,61 @@ export async function closeKolamComplaint(
   return normalizeKolamComplaintDetail(payload);
 }
 
+export type KolamComplaintTrackingUpdateBody = {
+  status: KolamComplaintTrackingStatus;
+  note?: string;
+  verifiedNote?: string;
+  trackingNumber?: string;
+  courierName?: string;
+  receivedBy?: string;
+  receivedByType?: 'customer' | 'other';
+  photoUris?: string[];
+};
+
 export async function updateKolamComplaintReturnStatus(
   id: string,
-  body: {
-    status: KolamComplaintTrackingStatus;
-    note?: string;
-    verifiedNote?: string;
-    trackingNumber?: string;
-    courierName?: string;
-    receivedBy?: string;
-  },
+  body: KolamComplaintTrackingUpdateBody,
 ): Promise<KolamComplaint> {
+  const formData = buildComplaintTrackingFormData(body);
+  const payload = await kolamRequest<unknown>(
+    `/complaints/${encodeURIComponent(id)}/return`,
+    { method: 'PUT', body: formData },
+  );
+  return normalizeKolamComplaintDetail(payload);
+}
+
+/** PUT /complaints/:id/replacement — after return verified. */
+export async function updateKolamComplaintReplacementStatus(
+  id: string,
+  body: KolamComplaintTrackingUpdateBody,
+): Promise<KolamComplaint> {
+  const formData = buildComplaintTrackingFormData(body, {
+    includeReceivedByType: true,
+  });
+  const payload = await kolamRequest<unknown>(
+    `/complaints/${encodeURIComponent(id)}/replacement`,
+    { method: 'PUT', body: formData },
+  );
+  return normalizeKolamComplaintDetail(payload);
+}
+
+/** PUT /complaints/:id/replacement-return */
+export async function updateKolamComplaintReplacementReturnStatus(
+  id: string,
+  body: KolamComplaintTrackingUpdateBody,
+): Promise<KolamComplaint> {
+  const formData = buildComplaintTrackingFormData(body);
+  const payload = await kolamRequest<unknown>(
+    `/complaints/${encodeURIComponent(id)}/replacement-return`,
+    { method: 'PUT', body: formData },
+  );
+  return normalizeKolamComplaintDetail(payload);
+}
+
+function buildComplaintTrackingFormData(
+  body: KolamComplaintTrackingUpdateBody,
+  options?: { includeReceivedByType?: boolean },
+): FormData {
   const formData = new FormData();
   formData.append('status', body.status);
   if (body.status === 'verified') {
@@ -124,15 +168,25 @@ export async function updateKolamComplaintReturnStatus(
   if (body.courierName?.trim()) {
     formData.append('courierName', body.courierName.trim());
   }
+  if (options?.includeReceivedByType && body.receivedByType) {
+    formData.append('receivedByType', body.receivedByType);
+  }
   if (body.receivedBy?.trim()) {
     formData.append('receivedBy', body.receivedBy.trim());
   }
-
-  const payload = await kolamRequest<unknown>(
-    `/complaints/${encodeURIComponent(id)}/return`,
-    { method: 'PUT', body: formData },
-  );
-  return normalizeKolamComplaintDetail(payload);
+  for (const [index, uri] of (body.photoUris ?? []).entries()) {
+    if (!uri.trim()) {
+      continue;
+    }
+    formData.append(
+      'photos',
+      createReactNativeFilePart(
+        uri.trim(),
+        `complaint-tracking-photo-${index + 1}.jpg`,
+      ) as unknown as Blob,
+    );
+  }
+  return formData;
 }
 
 export async function createKolamComplaint(
