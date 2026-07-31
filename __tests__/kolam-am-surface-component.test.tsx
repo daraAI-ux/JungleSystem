@@ -242,6 +242,10 @@ describe('KolamAmSurface', () => {
     expect(text).toContain('Vendor Dashboard');
     expect(text).toContain('Recent Mutations');
     expect(text).toContain('Dashboard Phone');
+    const joinedText = text.join(' ');
+    expect(text).toContain('In');
+    expect(text).toContain('Rp450rb');
+    expect(joinedText).toMatch(/Types:\s+bca/);
     expect(getAmDashboard).toHaveBeenCalledTimes(1);
   });
 

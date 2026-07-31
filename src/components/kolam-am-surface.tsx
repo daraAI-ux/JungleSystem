@@ -1,5 +1,6 @@
 import React from 'react';
 import {ScrollView, StyleSheet, Text, TextInput, View} from 'react-native';
+import type {DimensionValue} from 'react-native';
 import {appConfig} from '../config/app';
 import {
   AM_ROUTES,
@@ -277,12 +278,7 @@ function AmDashboardPage({dashboard}: {dashboard?: AmDashboardData | null}) {
       </View>
       <View style={styles.panel}>
         <Text style={styles.panelTitle}>7 Hari Mutasi</Text>
-        {data.chartData.map(point => (
-          <View key={point.date} style={styles.deviceRow}>
-            <Text style={styles.rowTitle}>{point.date}</Text>
-            <Text style={styles.rowMeta}>Masuk {formatRupiah(point.incoming)} / Keluar {formatRupiah(point.outgoing)}</Text>
-          </View>
-        ))}
+        <AmMutationChart chartData={data.chartData} />
       </View>
       <View style={styles.panel}>
         <Text style={styles.panelTitle}>Devices</Text>
@@ -293,6 +289,9 @@ function AmDashboardPage({dashboard}: {dashboard?: AmDashboardData | null}) {
               <Text style={styles.rowMeta}>
                 {device.brand} {device.model} - {device.rackName ?? 'No rack'} / {device.boxName ?? 'No box'}
               </Text>
+              {device.accountTypes.length ? (
+                <Text style={styles.rowMeta}>Types: {device.accountTypes.join(', ')}</Text>
+              ) : null}
             </View>
             <Text style={styles.rowMeta}>{device.activeAccountCount}/{device.accountCount} active</Text>
           </View>
@@ -304,6 +303,45 @@ function AmDashboardPage({dashboard}: {dashboard?: AmDashboardData | null}) {
           emptyText="No dashboard devices found"
         />
       </View>
+    </View>
+  );
+}
+
+function AmMutationChart({chartData}: {chartData: Array<{date: string; incoming: number; outgoing: number}>}) {
+  const maxAmount = Math.max(
+    1,
+    ...chartData.flatMap(point => [point.incoming, point.outgoing]),
+  );
+
+  return (
+    <View style={styles.chartStack}>
+      <AmLoadingOrEmpty
+        isLoading={false}
+        items={chartData}
+        loadingText="Memuat chart mutasi..."
+        emptyText="No mutation chart data found"
+      />
+      {chartData.map(point => {
+        const incomingWidth = `${Math.max(4, Math.round((point.incoming / maxAmount) * 100))}%` as DimensionValue;
+        const outgoingWidth = `${Math.max(4, Math.round((point.outgoing / maxAmount) * 100))}%` as DimensionValue;
+        return (
+          <View key={point.date} style={styles.chartRow}>
+            <Text style={styles.chartDate}>{formatShortDate(point.date)}</Text>
+            <View style={styles.chartBars}>
+              <View style={styles.chartBarTrack}>
+                <View style={[styles.chartBar, styles.chartBarIncoming, {width: incomingWidth}]} />
+              </View>
+              <View style={styles.chartBarTrack}>
+                <View style={[styles.chartBar, styles.chartBarOutgoing, {width: outgoingWidth}]} />
+              </View>
+            </View>
+            <View style={styles.chartValues}>
+              <Text style={styles.rowMeta}>In {formatCompactRupiah(point.incoming)}</Text>
+              <Text style={styles.rowMeta}>Out {formatCompactRupiah(point.outgoing)}</Text>
+            </View>
+          </View>
+        );
+      })}
     </View>
   );
 }
@@ -3846,6 +3884,20 @@ function formatAmDate(value: string | null | undefined) {
   });
 }
 
+function formatShortDate(value: string) {
+  return new Date(value).toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: 'short',
+  });
+}
+
+function formatCompactRupiah(value: number) {
+  if (value >= 1_000_000_000) return `Rp${Math.round(value / 1_000_000_000)}M`;
+  if (value >= 1_000_000) return `Rp${Math.round(value / 1_000_000)}jt`;
+  if (value >= 1_000) return `Rp${Math.round(value / 1_000)}rb`;
+  return formatRupiah(value);
+}
+
 function formatAmDuration(value: number | null | undefined) {
   return value ? `${value} ms` : '-';
 }
@@ -4045,6 +4097,47 @@ const styles = StyleSheet.create({
   rowActions: {
     alignItems: 'flex-end',
     gap: 5,
+  },
+  chartStack: {
+    gap: 10,
+  },
+  chartRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  chartDate: {
+    width: 54,
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  chartBars: {
+    flex: 1,
+    minWidth: 0,
+    gap: 5,
+  },
+  chartBarTrack: {
+    height: 8,
+    overflow: 'hidden',
+    borderRadius: 999,
+    backgroundColor: V.colors.muted,
+  },
+  chartBar: {
+    height: 8,
+    borderRadius: 999,
+  },
+  chartBarIncoming: {
+    backgroundColor: V.colors.success,
+  },
+  chartBarOutgoing: {
+    backgroundColor: V.colors.danger,
+  },
+  chartValues: {
+    width: 94,
+    alignItems: 'flex-end',
+    gap: 2,
   },
   amountText: {
     color: V.colors.fg,
