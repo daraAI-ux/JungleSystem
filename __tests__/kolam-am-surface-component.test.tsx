@@ -972,7 +972,11 @@ describe('KolamAmSurface', () => {
     });
     expect(getAmMutasi).toHaveBeenCalledWith({page: 1, limit: 50, type: undefined});
     expect(getAmWebhookConfigs).toHaveBeenCalledTimes(1);
-    expect(getAmUsers).toHaveBeenCalledWith({limit: 100, search: undefined});
+    expect(getAmUsers).toHaveBeenCalledWith({
+      page: 1,
+      limit: 20,
+      search: undefined,
+    });
     expect(getAmRoles).toHaveBeenCalledTimes(1);
     expect(getAmActivityLogs).toHaveBeenCalledWith({
       page: 1,
@@ -1257,6 +1261,64 @@ describe('KolamAmSurface', () => {
     });
 
     expect(deleteAmUser).toHaveBeenCalledWith('user-1');
+  });
+
+  it('keeps Users search and pagination in sync with AM live metadata', async () => {
+    jest.mocked(getAmRoles).mockResolvedValue([
+      {_id: 'role-admin', name: 'Admin', permissions: ['user:read'], description: 'Admin role'},
+    ]);
+    jest.mocked(getAmUsers).mockResolvedValue({
+      data: [
+        {
+          _id: 'user-1',
+          fullName: 'Alice Admin',
+          username: 'alice',
+          role: {_id: 'role-admin', name: 'Admin', permissions: ['user:read'], description: 'Admin role'},
+          createdAt: '2026-01-01T00:00:00.000Z',
+          updatedAt: '2026-01-01T00:00:00.000Z',
+        },
+      ],
+      meta: {total: 45, limit: 20, page: 1, totalPages: 3},
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await updateAmRoute(renderer!, 'admin/users');
+
+    const text = renderText(renderer!).join(' ').replace(/\s+/g, ' ');
+    expect(text).toContain('Showing 1 to 20 of 45 items');
+    expect(text).toContain('Page 1/3');
+
+    const searchInput = renderer!.root.findAllByType(TextInput)[0];
+    await act(async () => {
+      searchInput.props.onChangeText('Alice');
+    });
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Users Next Page'}).props.onPress();
+    });
+
+    expect(getAmUsers).toHaveBeenCalledWith({
+      page: 1,
+      limit: 20,
+      search: undefined,
+    });
+    expect(getAmUsers).toHaveBeenCalledWith({
+      page: 1,
+      limit: 20,
+      search: 'Alice',
+    });
+    expect(getAmUsers).toHaveBeenCalledWith({
+      page: 2,
+      limit: 20,
+      search: 'Alice',
+    });
   });
 
   it('runs guarded transfer actions from the Transfers route', async () => {

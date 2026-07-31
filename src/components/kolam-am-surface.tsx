@@ -100,6 +100,7 @@ const AM_TASK_PAGE_LIMIT = 20;
 const AM_SERVICE_PAGE_LIMIT = 20;
 const AM_TRANSFER_PAGE_LIMIT = 20;
 const AM_MUTASI_PAGE_LIMIT = 50;
+const AM_USER_PAGE_LIMIT = 20;
 const AM_ACTIVITY_LOG_PAGE_LIMIT = 50;
 const AM_ACTIVITY_LOG_TYPES = ['all', 'api', 'page'];
 const AM_ACTIVITY_LOG_STATUSES = ['all', 'success', 'failed'];
@@ -2662,6 +2663,9 @@ function AmUsersPage() {
   const [users, setUsers] = React.useState<AmUser[]>([]);
   const [roles, setRoles] = React.useState<AmRole[]>([]);
   const [search, setSearch] = React.useState('');
+  const [page, setPage] = React.useState(1);
+  const [total, setTotal] = React.useState(0);
+  const [limit, setLimit] = React.useState(AM_USER_PAGE_LIMIT);
   const [editingUserId, setEditingUserId] = React.useState<string | null>(null);
   const [formFullName, setFormFullName] = React.useState('');
   const [formUsername, setFormUsername] = React.useState('');
@@ -2677,10 +2681,16 @@ function AmUsersPage() {
     try {
       setIsLoading(true);
       const [userResponse, roleResponse] = await Promise.all([
-        getAmUsers({limit: 100, search: search.trim() || undefined}),
+        getAmUsers({
+          page,
+          limit: AM_USER_PAGE_LIMIT,
+          search: search.trim() || undefined,
+        }),
         getAmRoles(),
       ]);
       setUsers(userResponse.data);
+      setTotal(userResponse.meta.total);
+      setLimit(userResponse.meta.limit || AM_USER_PAGE_LIMIT);
       setRoles(roleResponse);
       setError(null);
     } catch (nextError) {
@@ -2688,7 +2698,12 @@ function AmUsersPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [search]);
+  }, [page, search]);
+
+  const handleUserSearchChange = React.useCallback((value: string) => {
+    setSearch(value);
+    setPage(1);
+  }, []);
 
   React.useEffect(() => {
     fetchUsers();
@@ -2777,10 +2792,20 @@ function AmUsersPage() {
     }
   }, [editingUserId, fetchUsers, resetUserForm]);
 
+  const totalPages = Math.max(1, Math.ceil(total / Math.max(limit, 1)));
+  const rangeFrom = total ? (page - 1) * limit + 1 : 0;
+  const rangeTo = total ? Math.min(page * limit, total) : 0;
+
   return (
     <View style={styles.pageStack}>
       <View style={styles.filterBar}>
-        <KolamSearchField value={search} onChangeText={setSearch} placeholder="Search users..." containerStyle={styles.taskSearch} trailingLabel={`${users.length} user`} />
+        <KolamSearchField
+          value={search}
+          onChangeText={handleUserSearchChange}
+          placeholder="Search users..."
+          containerStyle={styles.taskSearch}
+          trailingLabel={`${total} user`}
+        />
         <KolamButton label={isLoading ? 'Memuat' : 'Refresh'} intent="outline" muted={isLoading} size="sm" onPress={fetchUsers} />
       </View>
       <AmInlineError title="Users AM belum bisa dibaca" error={error} />
@@ -2875,6 +2900,33 @@ function AmUsersPage() {
             </View>
           </View>
         ))}
+        {total ? (
+          <View style={styles.paginationBar}>
+            <Text style={styles.paginationText}>
+              Showing {rangeFrom} to {rangeTo} of {total} items
+            </Text>
+            <View style={styles.inlineActions}>
+              <KolamButton
+                accessibilityLabel="AM Users Previous Page"
+                disabled={page <= 1 || isLoading}
+                intent="outline"
+                label="Prev"
+                muted={page <= 1 || isLoading}
+                size="sm"
+                onPress={() => setPage(current => Math.max(1, current - 1))}
+              />
+              <KolamButton
+                accessibilityLabel="AM Users Next Page"
+                disabled={page >= totalPages || isLoading}
+                intent="outline"
+                label={`Page ${page}/${totalPages}`}
+                muted={page >= totalPages || isLoading}
+                size="sm"
+                onPress={() => setPage(current => Math.min(totalPages, current + 1))}
+              />
+            </View>
+          </View>
+        ) : null}
       </View>
     </View>
   );
