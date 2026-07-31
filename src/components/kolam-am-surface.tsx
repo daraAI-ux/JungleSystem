@@ -162,8 +162,11 @@ export function KolamAmSurface({
   onBackToCenter?: () => void;
   onModuleRouteSelect?: (route: ShellModuleRouteEntry) => void;
 }) {
-  const activeRoute = activeModuleRoute
-    ? getAmRouteByModuleRoute(activeModuleRoute.route).id
+  const routeSelection = activeModuleRoute
+    ? getAmRouteSelection(activeModuleRoute.route)
+    : null;
+  const activeRoute = routeSelection
+    ? routeSelection.route.id
     : getRouteIdFromSurface(activeSurface);
   const route = AM_ROUTES.find(item => item.id === activeRoute) ?? AM_ROUTES[0];
 
@@ -199,15 +202,15 @@ export function KolamAmSurface({
           {activeRoute === 'dashboard' ? (
             <AmDashboardPage dashboard={dataset.am.dashboard} />
           ) : activeRoute === 'tasks' ? (
-            <AmTasksPage />
+            <AmTasksPage initialTaskId={routeSelection?.taskId} />
           ) : activeRoute === 'services' ? (
             <AmServicesPage />
           ) : activeRoute === 'hardware' ? (
-            <AmHardwarePage />
+            <AmHardwarePage initialRoute={routeSelection?.hardwareRoute} />
           ) : activeRoute === 'webhooks' ? (
             <AmWebhooksPage />
           ) : activeRoute === 'transactions' ? (
-            <AmTransfersPage />
+            <AmTransfersPage initialTransferId={routeSelection?.transferId} />
           ) : activeRoute === 'mutasi' ? (
             <AmMutasiPage />
           ) : activeRoute === 'users' ? (
@@ -223,6 +226,60 @@ export function KolamAmSurface({
       </View>
     </View>
   );
+}
+
+type AmRouteSelection = {
+  route: AmRouteItem;
+  taskId?: string;
+  transferId?: string;
+  hardwareRoute?: AmHardwareInitialRoute;
+};
+
+type AmHardwareInitialRoute = {
+  rackId?: string;
+  boxId?: string;
+  deviceId?: string;
+};
+
+function getAmRouteSelection(route?: string | null): AmRouteSelection {
+  const normalizedRoute = normalizeModuleRoutePath(route);
+  const routeItem = getAmRouteByModuleRoute(normalizedRoute);
+  const segments = normalizedRoute === '/' ? [] : normalizedRoute.split('/');
+
+  if (segments[0] === 'tasks' && isConcreteRouteSegment(segments[1])) {
+    return {route: routeItem, taskId: segments[1]};
+  }
+
+  if (segments[0] === 'transactions' && isConcreteRouteSegment(segments[1])) {
+    return {route: routeItem, transferId: segments[1]};
+  }
+
+  if (segments[0] === 'hardware') {
+    const hardwareRoute: AmHardwareInitialRoute = {};
+    if (isConcreteRouteSegment(segments[1])) {
+      hardwareRoute.rackId = segments[1];
+    }
+    if (isConcreteRouteSegment(segments[2])) {
+      hardwareRoute.boxId = segments[2];
+    }
+    if (isConcreteRouteSegment(segments[3])) {
+      hardwareRoute.deviceId = segments[3];
+    }
+    return Object.keys(hardwareRoute).length
+      ? {route: routeItem, hardwareRoute}
+      : {route: routeItem};
+  }
+
+  return {route: routeItem};
+}
+
+function normalizeModuleRoutePath(route?: string | null) {
+  if (!route || route === '/') return '/';
+  return route.split('?')[0].replace(/^\/+/, '').replace(/\/+$/, '') || '/';
+}
+
+function isConcreteRouteSegment(segment?: string) {
+  return Boolean(segment && !segment.startsWith(':'));
 }
 
 function AmDashboardPage({dashboard}: {dashboard?: AmDashboardData | null}) {
@@ -452,7 +509,7 @@ function AmRecentMutasiPanel({mutasi}: {mutasi: AmMutasi[]}) {
   );
 }
 
-function AmTasksPage() {
+function AmTasksPage({initialTaskId}: {initialTaskId?: string}) {
   const [tasks, setTasks] = React.useState<AmTask[]>([]);
   const [search, setSearch] = React.useState('');
   const [status, setStatus] = React.useState<string>('all');
@@ -469,6 +526,10 @@ function AmTasksPage() {
   const [page, setPage] = React.useState(1);
   const [limit, setLimit] = React.useState(AM_TASK_PAGE_LIMIT);
   const [selectedTaskId, setSelectedTaskId] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    setSelectedTaskId(initialTaskId ?? null);
+  }, [initialTaskId]);
 
   const fetchTasks = React.useCallback(async () => {
     try {
@@ -1535,7 +1596,7 @@ function AmTaskActions({
   );
 }
 
-function AmHardwarePage() {
+function AmHardwarePage({initialRoute}: {initialRoute?: AmHardwareInitialRoute}) {
   const [racks, setRacks] = React.useState<AmRack[]>([]);
   const [boxes, setBoxes] = React.useState<AmBox[]>([]);
   const [devices, setDevices] = React.useState<AmDevice[]>([]);
@@ -1564,6 +1625,12 @@ function AmHardwarePage() {
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    setSelectedRackId(initialRoute?.rackId ?? null);
+    setSelectedBoxId(initialRoute?.boxId ?? null);
+    setSelectedDeviceId(initialRoute?.deviceId ?? null);
+  }, [initialRoute?.boxId, initialRoute?.deviceId, initialRoute?.rackId]);
 
   const fetchHardware = React.useCallback(async () => {
     try {
@@ -2903,7 +2970,7 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
   );
 }
 
-function AmTransfersPage() {
+function AmTransfersPage({initialTransferId}: {initialTransferId?: string}) {
   const [transfers, setTransfers] = React.useState<AmTransfer[]>([]);
   const [accounts, setAccounts] = React.useState<AmServiceAccount[]>([]);
   const [status, setStatus] = React.useState('all');
@@ -2988,6 +3055,19 @@ function AmTransfersPage() {
       setDetailLoading(false);
     }
   }, []);
+
+  React.useEffect(() => {
+    if (!initialTransferId) {
+      setSelectedTransferId(null);
+      setSelectedTransfer(null);
+      setSelectedTransferWebhookLogs([]);
+      setDetailError(null);
+      return;
+    }
+
+    setSelectedTransferId(initialTransferId);
+    loadTransferDetail(initialTransferId);
+  }, [initialTransferId, loadTransferDetail]);
 
   React.useEffect(() => {
     if (!selectedTransferId || !selectedTransfer) return;

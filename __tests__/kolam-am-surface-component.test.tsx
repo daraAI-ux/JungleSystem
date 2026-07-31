@@ -252,6 +252,14 @@ function amRoute(route: string) {
   return entry;
 }
 
+function concreteAmRoute(route: string, templateRoute: string) {
+  return {
+    ...amRoute(templateRoute),
+    id: `am:${route}`,
+    route,
+  };
+}
+
 async function updateAmRoute(
   renderer: ReactTestRenderer.ReactTestRenderer,
   route: string,
@@ -742,6 +750,47 @@ describe('KolamAmSurface', () => {
     expect(joinedText).toMatch(/Logs \(\s*2\s+lines\)/);
     expect(text).toContain('created');
     expect(text).toContain('waiting');
+  });
+
+  it('opens task detail directly from a concrete AM shell route', async () => {
+    const task = {
+      _id: 'task-detail',
+      type: 'bank_transfer',
+      status: 'processing',
+      priority: 3,
+      deviceId: {_id: 'device-1', name: 'Phone 1'},
+      serviceAccountId: {_id: 'service-1', label: 'BCA Main', platform: 'bca'},
+      payload: {amount: 125000},
+      result: null,
+      error: '',
+      logs: ['started'],
+      retryCount: 0,
+      maxRetries: 3,
+      startedAt: '2026-01-01T00:01:00.000Z',
+      completedAt: null,
+      createdBy: {_id: 'user-task', username: 'task-admin', email: 'task-admin@example.test'},
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '',
+    };
+    jest.mocked(getAmTaskById).mockResolvedValue(task);
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface
+          activeModuleRoute={concreteAmRoute('tasks/task-detail', 'tasks/:id')}
+          dataset={seedUnifiedDataset}
+        />,
+      );
+    });
+    renderers.push(renderer!);
+
+    expect(getAmTaskById).toHaveBeenCalledWith('task-detail');
+    expect(recordAmPageView).toHaveBeenCalledWith('/tasks');
+    const text = renderText(renderer!);
+    expect(text).toContain('Task Detail');
+    expect(text).toContain('Bank Transfer');
+    expect(text).toContain('started');
   });
 
   it('creates and updates service accounts from the Services form', async () => {
@@ -1318,6 +1367,120 @@ describe('KolamAmSurface', () => {
     expect(text).toContain('BCA Device Alpha');
     expect(text).toContain('1234567890');
     expect(text).toContain('Running');
+  });
+
+  it('opens hardware device detail directly from a concrete AM shell route', async () => {
+    jest.mocked(getAmRacks).mockResolvedValueOnce({
+      data: [
+        {
+          _id: 'rack-1',
+          name: 'Rack Alpha',
+          slug: 'rack-alpha',
+          location: 'Room A',
+          description: '',
+          status: 'active',
+          serverIp: '10.0.0.1:2700',
+          boxCount: 1,
+          deviceCount: 1,
+          addedBy: {_id: 'user-1', fullName: 'Hardware Admin'},
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 1, limit: 1},
+    });
+    jest.mocked(jest.requireMock('../src/services/am-api').getAmBoxes).mockResolvedValueOnce({
+      data: [
+        {
+          _id: 'box-1',
+          name: 'Box 01',
+          slug: 'box-01',
+          rackId: {_id: 'rack-1', name: 'Rack Alpha'},
+          description: 'Main box',
+          status: 'active',
+          deviceCount: 1,
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 1, limit: 1},
+    });
+    jest.mocked(getAmDevices).mockResolvedValueOnce({
+      data: [
+        {
+          _id: 'device-1',
+          name: 'Phone Rack',
+          slug: 'phone-rack',
+          boxId: {
+            _id: 'box-1',
+            name: 'Box 01',
+            rackId: {_id: 'rack-1', name: 'Rack Alpha'},
+          },
+          connectionType: 'tcp',
+          tcpAddress: '10.0.0.5:5555',
+          udid: null,
+          brand: 'Samsung',
+          model: 'A15',
+          adbStatus: 'connected',
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 1, limit: 1},
+    });
+    jest.mocked(getAmDevicesAdbStatus).mockResolvedValueOnce({
+      'device-1': 'connected',
+    });
+    jest.mocked(getAmServiceAccounts).mockResolvedValueOnce({
+      data: [
+        {
+          _id: 'service-1',
+          label: 'BCA Device Alpha',
+          platform: 'bca',
+          accountNumber: '1234567890',
+          status: 'active',
+          deviceId: {
+            _id: 'device-1',
+            name: 'Phone Rack',
+            connectionType: 'tcp',
+            tcpAddress: '10.0.0.5:5555',
+          },
+          username: 'bcauser',
+          credentials: {},
+          meta: {},
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 1, limit: 100},
+    });
+    jest.mocked(getAmDeviceServices).mockResolvedValueOnce([]);
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface
+          activeModuleRoute={concreteAmRoute(
+            'hardware/rack-1/box-1/device-1',
+            'hardware/:rackId/:boxId/:deviceId',
+          )}
+          dataset={seedUnifiedDataset}
+        />,
+      );
+    });
+    renderers.push(renderer!);
+
+    const text = renderText(renderer!);
+    const joinedText = text.join(' ');
+    expect(recordAmPageView).toHaveBeenCalledWith('/hardware');
+    expect(joinedText).toContain('Rack Alpha');
+    expect(joinedText).toContain('Box 01');
+    expect(text).toContain('Phone Rack');
+    expect(text).toContain('Samsung');
+    expect(text).toContain('A15');
+    expect(getAmDevicesAdbStatus).toHaveBeenCalledWith('box-1');
+    expect(getAmServiceAccounts).toHaveBeenCalledWith({deviceId: 'device-1', limit: 100});
+    expect(getAmDeviceServices).toHaveBeenCalledWith('device-1');
   });
 
   it('runs hardware create, edit, and delete actions from the Hardware route', async () => {
@@ -2394,6 +2557,81 @@ describe('KolamAmSurface', () => {
     ).toEqual({uri: 'data:image/png;base64,abc123'});
     expect(renderer!.root.findAllByType(Image)).toHaveLength(1);
     expect(joinedText).toMatch(/002\s+completed/);
+  });
+
+  it('opens transfer detail directly from a concrete AM shell route', async () => {
+    const transfer = {
+      _id: 'transfer-detail',
+      accountId: { _id: 'account-1', label: 'BCA Main', platform: 'bca', accountNumber: '123' },
+      amount: 250000,
+      completedAt: '2026-01-01T00:05:00.000Z',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      createdBy: { _id: 'user-1', fullName: 'Admin User', username: 'admin' },
+      deviceId: {
+        _id: 'device-1',
+        name: 'Phone 1',
+        udid: 'USB1234',
+        boxId: {
+          _id: 'box-1',
+          name: 'Box A',
+          rackId: {_id: 'rack-1', name: 'Rack Blue', serverIp: '10.10.10.5'},
+        },
+      },
+      error: '',
+      fee: 2500,
+      logs: ['created', 'completed'],
+      recipientAccount: '999',
+      recipientBank: 'BCA',
+      recipientName: 'Vendor Detail',
+      screenshot: '',
+      startedAt: '2026-01-01T00:01:00.000Z',
+      status: 'success',
+      transactionPurpose: 'Payment',
+      transferMethod: 'BI FAST',
+      transferType: 'transfer',
+      updatedAt: '',
+    };
+    jest.mocked(getAmTransferById).mockResolvedValue(transfer);
+    jest.mocked(getAmWebhookLogs).mockResolvedValue({
+      data: [
+        {
+          _id: 'webhook-log-1',
+          configId: {_id: 'webhook-1', url: 'https://example.test/hook', description: 'Inventory hook'},
+          direction: 'outgoing',
+          event: 'transfer.success',
+          url: 'https://example.test/hook',
+          requestBody: {payload: {transferId: 'transfer-detail'}},
+          responseStatus: 200,
+          responseBody: {ok: true},
+          success: true,
+          error: '',
+          duration: 42,
+          createdAt: '2026-01-01T00:06:00.000Z',
+        },
+      ],
+      meta: {total: 1, limit: 20},
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface
+          activeModuleRoute={concreteAmRoute(
+            'transactions/transfer-detail',
+            'transactions/:id',
+          )}
+          dataset={seedUnifiedDataset}
+        />,
+      );
+    });
+    renderers.push(renderer!);
+
+    expect(getAmTransferById).toHaveBeenCalledWith('transfer-detail');
+    expect(recordAmPageView).toHaveBeenCalledWith('/transactions');
+    const joinedText = renderText(renderer!).join(' ');
+    expect(joinedText).toContain('Transfer Detail');
+    expect(joinedText).toContain('Vendor Detail');
+    expect(joinedText).toContain('Inventory hook');
   });
 
   it('runs webhook register, toggle, delete, and test ping actions', async () => {
