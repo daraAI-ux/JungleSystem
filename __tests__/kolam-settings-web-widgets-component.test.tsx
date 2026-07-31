@@ -1007,6 +1007,8 @@ describe('settings web widgets', () => {
         'Sync Kota / Kabupaten',
         'Sync Kecamatan',
         'Sync Desa / Kelurahan',
+        'Region Explorer',
+        'Filter hierarchy wilayah dan inspeksi postal code sebelum dipakai checkout.',
       ]),
     );
   });

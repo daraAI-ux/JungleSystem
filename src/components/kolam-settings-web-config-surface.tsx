@@ -4002,87 +4002,103 @@ export function KolamSettingsWebConfigSurface({
               ))}
             </View>
           </View>
-          <View style={styles.storeHoursTimeGrid}>
-            <KolamDropdownSelect
-              label="Provinsi"
-              options={provinceDropdownOptions}
-              searchable
-              searchPlaceholder="Cari provinsi"
-              style={styles.regionDropdownControl}
-              value={selectedProvince}
-              onChange={value => setRegionSelection('province', value)}
+          <View style={styles.regionExplorerCard}>
+            <KolamCopyStack
+              items={[
+                {
+                  id: 'region-explorer-title',
+                  text: 'Region Explorer',
+                  style: styles.marketplaceOverviewTitle,
+                },
+                {
+                  id: 'region-explorer-meta',
+                  text: 'Filter hierarchy wilayah dan inspeksi postal code sebelum dipakai checkout.',
+                  style: styles.marketplaceOverviewMeta,
+                },
+              ]}
             />
-            <KolamDropdownSelect
-              label="Kota / Kabupaten"
-              options={regencyDropdownOptions}
-              searchable={Boolean(selectedProvince)}
-              searchPlaceholder="Cari kota / kabupaten"
-              style={styles.regionDropdownControl}
-              value={selectedRegency}
-              onChange={value => {
-                if (selectedProvince) {
-                  setRegionSelection('regency', value);
-                }
-              }}
-            />
-            <KolamDropdownSelect
-              label="Kecamatan"
-              options={districtDropdownOptions}
-              searchable={Boolean(selectedRegency)}
-              searchPlaceholder="Cari kecamatan"
-              style={styles.regionDropdownControl}
-              value={selectedDistrict}
-              onChange={value => {
-                if (selectedRegency) {
-                  setRegionSelection('district', value);
-                }
-              }}
-            />
-            <KolamDropdownSelect
-              label="Kelurahan"
-              options={villageDropdownOptions}
-              searchable={Boolean(selectedDistrict)}
-              searchPlaceholder="Cari kelurahan"
-              style={styles.regionDropdownControl}
-              value={selectedVillage}
-              onChange={value => {
-                if (selectedDistrict) {
-                  setRegionSelection('village', value);
-                }
-              }}
-            />
-          </View>
-          <View style={styles.notificationSoundActions}>
-            <KolamActionControlButton
-              label="Refresh"
-              loading={regionSyncStatus === 'loading'}
-              loadingLabel="Refreshing..."
-              onPress={onRefreshRegionSync}
-            />
-            {(
-              [
-                'all',
-                'provinces',
-                'regencies',
-                'districts',
-                'villages',
-              ] as const
-            ).map(scope => (
-              <KolamActionControlButton
-                key={scope}
-                label={`Sync ${scope}`}
-                loading={regionSyncStatus === 'syncing'}
-                loadingLabel="Syncing..."
-                disabled={
-                  disabled ||
-                  regionSyncStatus === 'syncing' ||
-                  (scope === 'regencies' && !selectedProvince) ||
-                  (scope === 'districts' && !selectedRegency) ||
-                  (scope === 'villages' && !selectedDistrict)
-                }
-                onPress={() => onRunRegionSync(scope)}
+            <View style={styles.storeHoursTimeGrid}>
+              <KolamDropdownSelect
+                label="Provinsi"
+                options={provinceDropdownOptions}
+                searchable
+                searchPlaceholder="Cari provinsi"
+                style={styles.regionDropdownControl}
+                value={selectedProvince}
+                onChange={value => setRegionSelection('province', value)}
               />
-            ))}
+              <KolamDropdownSelect
+                label="Kota / Kabupaten"
+                options={regencyDropdownOptions}
+                searchable={Boolean(selectedProvince)}
+                searchPlaceholder="Cari kota / kabupaten"
+                style={styles.regionDropdownControl}
+                value={selectedRegency}
+                onChange={value => {
+                  if (selectedProvince) {
+                    setRegionSelection('regency', value);
+                  }
+                }}
+              />
+              <KolamDropdownSelect
+                label="Kecamatan"
+                options={districtDropdownOptions}
+                searchable={Boolean(selectedRegency)}
+                searchPlaceholder="Cari kecamatan"
+                style={styles.regionDropdownControl}
+                value={selectedDistrict}
+                onChange={value => {
+                  if (selectedRegency) {
+                    setRegionSelection('district', value);
+                  }
+                }}
+              />
+              <KolamDropdownSelect
+                label="Kelurahan"
+                options={villageDropdownOptions}
+                searchable={Boolean(selectedDistrict)}
+                searchPlaceholder="Cari kelurahan"
+                style={styles.regionDropdownControl}
+                value={selectedVillage}
+                onChange={value => {
+                  if (selectedDistrict) {
+                    setRegionSelection('village', value);
+                  }
+                }}
+              />
+            </View>
+            <View style={styles.notificationSoundActions}>
+              <KolamActionControlButton
+                label="Refresh"
+                loading={regionSyncStatus === 'loading'}
+                loadingLabel="Refreshing..."
+                onPress={onRefreshRegionSync}
+              />
+              {(
+                [
+                  'all',
+                  'provinces',
+                  'regencies',
+                  'districts',
+                  'villages',
+                ] as const
+              ).map(scope => (
+                <KolamActionControlButton
+                  key={scope}
+                  label={`Sync ${scope}`}
+                  loading={regionSyncStatus === 'syncing'}
+                  loadingLabel="Syncing..."
+                  disabled={
+                    disabled ||
+                    regionSyncStatus === 'syncing' ||
+                    (scope === 'regencies' && !selectedProvince) ||
+                    (scope === 'districts' && !selectedRegency) ||
+                    (scope === 'villages' && !selectedDistrict)
+                  }
+                  onPress={() => onRunRegionSync(scope)}
+                />
+              ))}
+            </View>
           </View>
           {regionSyncMessage ? (
             <KolamCopyStack
@@ -9842,6 +9858,14 @@ const styles = StyleSheet.create({
   regionDropdownControl: {
     minWidth: 220,
     width: 260,
+  },
+  regionExplorerCard: {
+    backgroundColor: '#ffffff',
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 12,
+    padding: 12,
   },
   regionStatsGrid: {
     alignItems: 'stretch',
