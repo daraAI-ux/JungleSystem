@@ -4020,6 +4020,7 @@ export function KolamSettingsWebConfigSurface({
             <View style={styles.regionHierarchyGrid}>
               <KolamDropdownSelect
                 label="Provinsi"
+                menuStyle={styles.regionHierarchyMenu}
                 menuPlacement="inline"
                 options={provinceDropdownOptions}
                 searchable
@@ -4031,6 +4032,7 @@ export function KolamSettingsWebConfigSurface({
               />
               <KolamDropdownSelect
                 label="Kota/kabupaten"
+                menuStyle={styles.regionHierarchyMenu}
                 menuPlacement="inline"
                 options={regencyDropdownOptions}
                 searchable={Boolean(selectedProvince)}
@@ -4046,6 +4048,7 @@ export function KolamSettingsWebConfigSurface({
               />
               <KolamDropdownSelect
                 label="Kecamatan"
+                menuStyle={styles.regionHierarchyMenu}
                 menuPlacement="inline"
                 options={districtDropdownOptions}
                 searchable={Boolean(selectedRegency)}
@@ -4061,6 +4064,7 @@ export function KolamSettingsWebConfigSurface({
               />
               <KolamDropdownSelect
                 label="Kelurahan"
+                menuStyle={styles.regionHierarchyMenu}
                 menuPlacement="inline"
                 options={villageDropdownOptions}
                 searchable={Boolean(selectedDistrict)}
@@ -9874,13 +9878,17 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   regionHierarchyGrid: {
-    alignItems: 'flex-end',
+    alignItems: 'flex-start',
     flexDirection: 'row',
     gap: 12,
   },
   regionHierarchyControl: {
     flex: 1,
     minWidth: 0,
+  },
+  regionHierarchyMenu: {
+    marginTop: 6,
+    maxHeight: 220,
   },
   regionStatsGrid: {
     alignItems: 'stretch',
