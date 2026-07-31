@@ -280,7 +280,17 @@ describe('Kolam enclosure surface', () => {
 
     await ReactTestRenderer.act(async () => {
       root.findAllByProps({label: 'Pergerakan stok'})[0].props.onPress();
-      root.findAllByProps({label: 'Lihat'})[0].props.onPress();
+      const overflowMenus = root.findAll(
+        node =>
+          Array.isArray(node.props.actions) &&
+          node.props.actions.some(
+            (action: {label?: string}) => action.label === 'Lihat',
+          ),
+      );
+      expect(overflowMenus.length).toBeGreaterThan(0);
+      overflowMenus[0].props.actions
+        .find((action: {label?: string}) => action.label === 'Lihat')
+        .onPress();
     });
 
     expect(onRouteChange).toHaveBeenCalledWith('/stock-transaction');

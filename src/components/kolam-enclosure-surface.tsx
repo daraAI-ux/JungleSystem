@@ -12,6 +12,7 @@ import {
   KOLAM_ENCLOSURE_LIST_TABS,
   KOLAM_ENCLOSURE_TYPES,
   KOLAM_ENCLOSURE_ROOT,
+  normalizeKolamEnclosurePageSize,
   type KolamEnclosure,
   type KolamEnclosureAllocationOverviewRow,
   type KolamEnclosureDashboardDeathEvent,
@@ -782,7 +783,7 @@ function KolamEnclosureDeathHistoryPanel({
 
   const deaths = controller.dashboardStats.deaths;
   return (
-    <ScrollView contentContainerStyle={styles.dashboardContent}>
+    <View style={styles.deathHistoryPanel}>
       <View style={styles.summaryGridHero}>
         <SummaryTile
           accent="warning"
@@ -798,33 +799,17 @@ function KolamEnclosureDeathHistoryPanel({
           value={deaths.totalCases}
         />
       </View>
+      <View style={styles.deathHistoryToolbar}>
+        <KolamButton
+          label="Pergerakan stok"
+          onPress={() => onRouteChange?.('/stock-transaction')}
+          style={styles.toolbarButton}
+        />
+      </View>
       <DashboardDeathTable
         events={deaths.recent}
         onRouteChange={onRouteChange}
       />
-    </ScrollView>
-  );
-}
-
-function SectionHeading({
-  action,
-  meta,
-  subtitle,
-  title,
-}: {
-  action?: React.ReactNode;
-  meta?: string;
-  subtitle?: string;
-  title: string;
-}) {
-  return (
-    <View style={styles.sectionHeading}>
-      <View style={styles.sectionHeadingCopy}>
-        <Text style={styles.sectionTitle}>{title}</Text>
-        {subtitle ? <Text style={styles.sectionSubtitle}>{subtitle}</Text> : null}
-        {meta ? <Text style={styles.sectionMeta}>{meta}</Text> : null}
-      </View>
-      {action ? <View style={styles.sectionAction}>{action}</View> : null}
     </View>
   );
 }
@@ -1053,128 +1038,202 @@ function DashboardDeathTable({
   events: KolamEnclosureDashboardDeathEvent[];
   onRouteChange?: (route: string) => void;
 }) {
+  const [tableBodyWidth, setTableBodyWidth] = React.useState(0);
   const [page, setPage] = React.useState(1);
-  const totalPages = Math.max(
-    1,
-    Math.ceil(events.length / DASHBOARD_DEATH_PAGE_SIZE),
+  const [pageSize, setPageSize] = React.useState(DASHBOARD_DEATH_PAGE_SIZE);
+  const columns = React.useMemo(
+    () => fitDeathHistoryColumns(tableBodyWidth),
+    [tableBodyWidth],
   );
+  const totalPages = Math.max(1, Math.ceil(events.length / pageSize));
   const safePage = Math.min(page, totalPages);
   const pageEvents = events.slice(
-    (safePage - 1) * DASHBOARD_DEATH_PAGE_SIZE,
-    safePage * DASHBOARD_DEATH_PAGE_SIZE,
+    (safePage - 1) * pageSize,
+    safePage * pageSize,
   );
 
   React.useEffect(() => {
     setPage(1);
-  }, [events]);
+  }, [events, pageSize]);
 
   return (
-    <View style={styles.dashboardTableBlock}>
-      <SectionHeading
-        action={
-          <KolamButton
-            label="Pergerakan stok"
-            onPress={() => onRouteChange?.('/stock-transaction')}
-          />
-        }
-        subtitle="Event death - link ke pergerakan stok bila tersedia."
-        title="Riwayat kematian"
-      />
-      <KolamCatalogListTableShell
-        footer={
-          events.length > DASHBOARD_DEATH_PAGE_SIZE ? (
-            <SimpleDashboardPagination
-              onPageChange={setPage}
-              page={safePage}
-              totalItems={events.length}
-              totalPages={totalPages}
-            />
-          ) : (
-            <Text style={styles.sectionMeta}>{events.length} baris</Text>
-          )
-        }
-        style={styles.tableFrame}
-      >
-        <View style={styles.dashboardTable}>
-          <KolamDataTableHeader columns={DASHBOARD_DEATH_COLUMNS} />
-          {pageEvents.length ? (
-            pageEvents.map((event, index) => (
-              <DashboardDeathRow
-                event={event}
-                key={`${event.enclosureId}:${event.createdAt || index}`}
-                onRouteChange={onRouteChange}
+    <KolamCatalogListTableShell
+      footer={
+        <KolamTableFooterControls
+          onPageSizeChange={next => {
+            setPageSize(normalizeKolamEnclosurePageSize(next));
+            setPage(1);
+          }}
+          page={safePage}
+          pageSize={pageSize}
+          total={events.length}
+        >
+          {totalPages > 1 ? (
+            <View style={styles.paginationRow}>
+              <KolamButton
+                disabled={safePage <= 1}
+                label="Sebelumnya"
+                onPress={() => setPage(Math.max(1, safePage - 1))}
               />
-            ))
-          ) : (
-            <View style={styles.emptyWrap}>
-              <KolamEmptyState
-                compact
-                message="Belum ada catatan kematian."
-                title="Belum ada catatan kematian"
+              <KolamCopyStack
+                items={[
+                  {
+                    id: 'page',
+                    text: `${safePage} / ${totalPages}`,
+                    style: styles.pageLabel,
+                  },
+                ]}
+              />
+              <KolamButton
+                disabled={safePage >= totalPages}
+                label="Berikutnya"
+                onPress={() => setPage(Math.min(totalPages, safePage + 1))}
               />
             </View>
-          )}
+          ) : null}
+        </KolamTableFooterControls>
+      }
+      onBodyWidthChange={setTableBodyWidth}
+      style={styles.tableFrame}
+    >
+      <KolamDataTableHeader columns={columns} />
+      {pageEvents.length ? (
+        pageEvents.map((event, index) => (
+          <DashboardDeathRow
+            columns={columns}
+            event={event}
+            key={`${event.enclosureId}:${event.createdAt || index}`}
+            onRouteChange={onRouteChange}
+          />
+        ))
+      ) : (
+        <View style={styles.emptyWrap}>
+          <KolamEmptyState
+            compact
+            message="Belum ada catatan kematian."
+            title="Belum ada catatan kematian"
+          />
         </View>
-      </KolamCatalogListTableShell>
-    </View>
+      )}
+    </KolamCatalogListTableShell>
   );
 }
 
 function DashboardDeathRow({
+  columns,
   event,
   onRouteChange,
 }: {
+  columns: KolamTableColumn[];
   event: KolamEnclosureDashboardDeathEvent;
   onRouteChange?: (route: string) => void;
 }) {
+  const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
   const stockRoute = event.stockTransactionId
     ? `/stock-transaction/${event.stockTransactionId}`
     : event.speciesId
       ? `/stock-transaction?speciesId=${encodeURIComponent(event.speciesId)}`
       : '/stock-transaction';
+  const columnOf = React.useCallback(
+    (id: KolamTableColumn['id']) => columns.find(column => column.id === id),
+    [columns],
+  );
+  const metaColumn = columnOf('meta');
+  const enclosureColumn = columnOf('children');
+  const primaryColumn = columnOf('primary');
+  const amountColumn = columnOf('amount');
+  const statusColumn = columnOf('status');
+  const actionsColumn = columnOf('actions');
 
   return (
-    <KolamDataTableRowFrame>
-      <View style={[styles.cell, {width: deathWidthOf('meta')}]}>
-        <Text numberOfLines={2} style={styles.cellText}>
-          {formatDashboardDateTime(event.createdAt)}
-        </Text>
-      </View>
-      <Pressable
-        onPress={() =>
-          event.enclosureId
-            ? onRouteChange?.(`${KOLAM_ENCLOSURE_ROOT}/${event.enclosureId}`)
-            : undefined
-        }
-        style={[styles.cell, {width: deathWidthOf('children')}]}
-      >
-        <Text numberOfLines={1} style={styles.linkText}>
-          {event.enclosureCode || event.enclosureId.slice(-8) || '-'}
-        </Text>
-      </Pressable>
-      <View style={[styles.cell, styles.primaryCell]}>
-        <Text numberOfLines={1} style={styles.cellText}>
-          {event.speciesName || '-'}
-        </Text>
-        {event.scientificName ? (
-          <Text numberOfLines={1} style={styles.scientificText}>
-            {event.scientificName}
+    <KolamDataTableRowFrame
+      style={actionMenuOpen ? styles.activeActionRow : undefined}
+    >
+      <KolamDataTableMainTrack style={styles.mainTrackVisible}>
+        <View
+          style={[
+            styles.listCell,
+            metaColumn ? getKolamDataTableColumnStyle(metaColumn) : null,
+          ]}
+        >
+          <Text numberOfLines={2} style={styles.cellText}>
+            {formatDashboardDateTime(event.createdAt)}
           </Text>
-        ) : null}
-      </View>
-      <View style={[styles.cell, {width: deathWidthOf('amount')}]}>
-        <Text style={styles.numText}>{event.qty}</Text>
-      </View>
-      <View style={[styles.cell, {width: deathWidthOf('status')}]}>
-        <KolamStatusBadge
-          intent={event.reported ? 'warning' : 'muted'}
-          label={event.reported ? 'Dilaporkan' : 'Tanpa laporan'}
-          textStyle={styles.badgeTextSm}
+        </View>
+        <Pressable
+          onPress={() =>
+            event.enclosureId
+              ? onRouteChange?.(`${KOLAM_ENCLOSURE_ROOT}/${event.enclosureId}`)
+              : undefined
+          }
+          style={[
+            styles.listCell,
+            enclosureColumn
+              ? getKolamDataTableColumnStyle(enclosureColumn)
+              : null,
+          ]}
+        >
+          <Text numberOfLines={1} style={styles.linkText}>
+            {event.enclosureCode || event.enclosureId.slice(-8) || '-'}
+          </Text>
+        </Pressable>
+        <View
+          style={[
+            styles.listCell,
+            styles.identityCell,
+            primaryColumn ? getKolamDataTableColumnStyle(primaryColumn) : null,
+          ]}
+        >
+          <Text numberOfLines={1} style={styles.rowTitle}>
+            {event.speciesName || '-'}
+          </Text>
+          {event.scientificName ? (
+            <Text numberOfLines={1} style={styles.rowMeta}>
+              {event.scientificName}
+            </Text>
+          ) : null}
+        </View>
+        <View
+          style={[
+            styles.listCell,
+            amountColumn ? getKolamDataTableColumnStyle(amountColumn) : null,
+          ]}
+        >
+          <Text style={styles.numText}>{event.qty}</Text>
+        </View>
+        <View
+          style={[
+            styles.listCell,
+            styles.statusCell,
+            statusColumn ? getKolamDataTableColumnStyle(statusColumn) : null,
+          ]}
+        >
+          <KolamStatusBadge
+            intent={event.reported ? 'warning' : 'muted'}
+            label={event.reported ? 'Dilaporkan' : 'Tanpa laporan'}
+            style={styles.centerBadge}
+            textStyle={styles.badgeTextSm}
+          />
+        </View>
+      </KolamDataTableMainTrack>
+      <KolamDataTableActionsTrack
+        style={styles.actionsTrack}
+        width={Math.max(
+          actionsColumn?.width ?? KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+          KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+        )}
+      >
+        <KolamOverflowMenuButton
+          accessibilityLabel={`Aksi kematian ${event.enclosureCode || event.speciesName || ''}`}
+          actions={[
+            {
+              label: 'Lihat',
+              onPress: () => onRouteChange?.(stockRoute),
+            },
+          ]}
+          onOpenChange={setActionMenuOpen}
         />
-      </View>
-      <View style={[styles.actionCell, {width: deathWidthOf('actions')}]}>
-        <KolamButton label="Lihat" onPress={() => onRouteChange?.(stockRoute)} />
-      </View>
+      </KolamDataTableActionsTrack>
     </KolamDataTableRowFrame>
   );
 }
@@ -1683,8 +1742,14 @@ function fitEnclosureListColumns(containerWidth: number): KolamTableColumn[] {
   );
 }
 
-function deathWidthOf(id: KolamTableColumn['id']) {
-  return DASHBOARD_DEATH_COLUMNS.find(column => column.id === id)?.width;
+function fitDeathHistoryColumns(containerWidth: number): KolamTableColumn[] {
+  return fitKolamDataTableColumns(DASHBOARD_DEATH_COLUMNS, containerWidth, {
+    actionsMinWidth: KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+    gap: KOLAM_DATA_TABLE_COLUMN_GAP,
+    paddingX: getKolamTableVisualContract().body.cellPaddingX * 2,
+    primaryMinWidth: 160,
+    secondaryMinWidth: 72,
+  });
 }
 
 function allocationWidthOf(id: KolamTableColumn['id']) {
@@ -2058,6 +2123,15 @@ const styles = StyleSheet.create({
   dashboardContent: {
     gap: 18,
     paddingBottom: 24,
+  },
+  deathHistoryPanel: {
+    gap: 12,
+    minHeight: 0,
+  },
+  deathHistoryToolbar: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
   },
   sectionHeading: {
     alignItems: 'flex-end',
