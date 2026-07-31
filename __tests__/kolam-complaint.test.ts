@@ -1,11 +1,15 @@
 import {
+  canOpenKolamComplaintRefundPayment,
   getAllowedKolamComplaintStatuses,
   getAllowedKolamComplaintTrackingStatuses,
   getAvailableKolamComplaintDecisions,
   getKolamComplaintDecisionLabel,
   getKolamComplaintIdFromRoute,
+  getKolamComplaintRefundPaymentStatusLabel,
+  getKolamComplaintRefundWorkflowStep,
   getKolamComplaintRouteMode,
   getKolamComplaintStatusLabel,
+  isKolamComplaintRefundAwaitingReturn,
   isKolamComplaintReturnAwaitingVerification,
   isKolamComplaintRoute,
   isKolamSaleEligibleForComplaint,
@@ -193,6 +197,91 @@ describe('kolam-complaint domain', () => {
     });
     expect(needsKolamComplaintReplacementTracking(done)).toBe(false);
     expect(needsKolamComplaintReplacementReturnTracking(done)).toBe(false);
+  });
+
+  it('gates refund payment until return is verified', () => {
+    const waiting = normalizeKolamComplaint({
+      _id: 'c4',
+      ticketCode: 'COMP-4',
+      status: 'processing',
+      decision: 'return_then_refund',
+      refundAmount: 150000,
+      description: 'Refund',
+      items: [],
+      returnTracking: { status: 'in_transit', trackingNumber: 'R2' },
+    });
+    expect(isKolamComplaintRefundAwaitingReturn(waiting)).toBe(true);
+    expect(canOpenKolamComplaintRefundPayment(waiting)).toBe(false);
+    expect(getKolamComplaintRefundWorkflowStep(waiting)).toBe('unavailable');
+
+    const ready = normalizeKolamComplaint({
+      _id: 'c4',
+      ticketCode: 'COMP-4',
+      status: 'processing',
+      decision: 'return_then_refund',
+      refundAmount: 150000,
+      description: 'Refund',
+      items: [],
+      returnTracking: { status: 'verified', trackingNumber: 'R2' },
+      refundTransaction: {
+        _id: 'tx1',
+        amount: 150000,
+        confirmStatus: 'unconfirmed',
+        wallet: { _id: 'w1', name: 'Kas Utama' },
+      },
+      refundPaymentStatus: 'pending',
+    });
+    expect(isKolamComplaintRefundAwaitingReturn(ready)).toBe(false);
+    expect(canOpenKolamComplaintRefundPayment(ready)).toBe(true);
+    expect(ready.refundTransaction?.walletName).toBe('Kas Utama');
+    expect(getKolamComplaintRefundWorkflowStep(ready)).toBe('send');
+    expect(getKolamComplaintRefundPaymentStatusLabel('sent')).toBe(
+      'Pembayaran dikirim',
+    );
+
+    const sent = normalizeKolamComplaint({
+      _id: 'c4',
+      ticketCode: 'COMP-4',
+      status: 'processing',
+      decision: 'return_then_refund',
+      refundAmount: 150000,
+      description: 'Refund',
+      items: [],
+      returnTracking: { status: 'verified' },
+      refundTransaction: {
+        _id: 'tx1',
+        amount: 150000,
+        confirmStatus: 'unconfirmed',
+        wallet: { _id: 'w1', name: 'Kas Utama' },
+      },
+      refundPaymentStatus: 'sent',
+      refundPaymentDetails: {
+        accountNumber: '123',
+        accountName: 'Budi',
+        bank: 'BCA',
+      },
+    });
+    expect(getKolamComplaintRefundWorkflowStep(sent)).toBe('confirm');
+    expect(sent.refundPaymentDetails?.bank).toBe('BCA');
+
+    const done = normalizeKolamComplaint({
+      _id: 'c4',
+      ticketCode: 'COMP-4',
+      status: 'completed',
+      decision: 'return_then_refund',
+      refundAmount: 150000,
+      description: 'Refund',
+      items: [],
+      returnTracking: { status: 'verified' },
+      refundPaymentStatus: 'completed',
+      refundTransaction: {
+        _id: 'tx1',
+        confirmStatus: 'confirmed',
+        wallet: { name: 'Kas' },
+      },
+    });
+    expect(canOpenKolamComplaintRefundPayment(done)).toBe(false);
+    expect(getKolamComplaintRefundWorkflowStep(done)).toBe('completed');
   });
 
   it('exposes status transition and decision helpers for workflow UI', () => {

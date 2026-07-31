@@ -189,6 +189,97 @@ function buildComplaintTrackingFormData(
   return formData;
 }
 
+/** POST /complaints/:id/refund-transaction then reload detail. */
+export async function createKolamComplaintRefundTransaction(
+  id: string,
+  body: { walletId: string; note?: string },
+): Promise<KolamComplaint> {
+  await kolamRequest<unknown>(
+    `/complaints/${encodeURIComponent(id)}/refund-transaction`,
+    {
+      method: 'POST',
+      body: {
+        wallet: body.walletId.trim(),
+        ...(body.note?.trim() ? { note: body.note.trim() } : {}),
+      },
+    },
+  );
+  return getKolamComplaint(id);
+}
+
+/** PUT /complaints/:id/refund-payment (multipart). */
+export async function updateKolamComplaintRefundPayment(
+  id: string,
+  body: {
+    status: 'sent' | 'completed';
+    accountNumber?: string;
+    accountName?: string;
+    bank?: string;
+    transferDate?: string;
+    transferMethod?: string;
+    note?: string;
+    photoUris?: string[];
+  },
+): Promise<KolamComplaint> {
+  const formData = new FormData();
+  formData.append('status', body.status);
+  if (body.accountNumber?.trim()) {
+    formData.append('accountNumber', body.accountNumber.trim());
+  }
+  if (body.accountName?.trim()) {
+    formData.append('accountName', body.accountName.trim());
+  }
+  if (body.bank?.trim()) {
+    formData.append('bank', body.bank.trim());
+  }
+  if (body.transferDate?.trim()) {
+    formData.append('transferDate', body.transferDate.trim());
+  }
+  if (body.transferMethod?.trim()) {
+    formData.append('transferMethod', body.transferMethod.trim());
+  }
+  if (body.note?.trim()) {
+    formData.append('note', body.note.trim());
+  }
+  for (const [index, uri] of (body.photoUris ?? []).entries()) {
+    if (!uri.trim()) {
+      continue;
+    }
+    formData.append(
+      'photos',
+      createReactNativeFilePart(
+        uri.trim(),
+        `refund-proof-${index + 1}.jpg`,
+      ) as unknown as Blob,
+    );
+  }
+
+  const payload = await kolamRequest<unknown>(
+    `/complaints/${encodeURIComponent(id)}/refund-payment`,
+    { method: 'PUT', body: formData },
+  );
+  return normalizeKolamComplaintDetail(payload);
+}
+
+/** Confirm wallet txn then mark refund payment completed (FE order). */
+export async function confirmKolamComplaintRefundPayment(
+  id: string,
+  body: { transactionId: string; confirmNote?: string },
+): Promise<KolamComplaint> {
+  await kolamRequest<unknown>(
+    `/wallet-transaction/${encodeURIComponent(body.transactionId)}/confirm`,
+    {
+      method: 'PUT',
+      body: {
+        ...(body.confirmNote?.trim()
+          ? { confirmNote: body.confirmNote.trim() }
+          : {}),
+      },
+    },
+  );
+  return updateKolamComplaintRefundPayment(id, { status: 'completed' });
+}
+
 export async function createKolamComplaint(
   input: KolamComplaintCreateInput,
 ): Promise<KolamComplaint> {

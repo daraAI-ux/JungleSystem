@@ -1,7 +1,8 @@
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
   canCloseKolamComplaint,
+  canOpenKolamComplaintRefundPayment,
   canSetKolamComplaintDecision,
   canUpdateKolamComplaintStatus,
   getAllowedKolamComplaintStatuses,
@@ -12,20 +13,24 @@ import {
   getKolamComplaintDecisionLabel,
   getKolamComplaintHistoryActionLabel,
   getKolamComplaintPriorityLabel,
+  getKolamComplaintRefundPaymentStatusLabel,
+  getKolamComplaintRefundWorkflowStep,
   getKolamComplaintSourceLabel,
   getKolamComplaintStatusBadgeIntent,
   getKolamComplaintStatusLabel,
   getKolamComplaintTrackingStatusLabel,
+  isKolamComplaintRefundAwaitingReturn,
+  isKolamComplaintReturnAwaitingVerification,
   isWarrantyClaimComplaint,
   KOLAM_COMPLAINT_DECISION_OPTIONS,
   KOLAM_COMPLAINT_KPI_OPTIONS,
+  KOLAM_COMPLAINT_REFUND_TRANSFER_METHOD_OPTIONS,
   KOLAM_COMPLAINT_ROOT,
   KOLAM_COMPLAINT_SOURCE_OPTIONS,
   KOLAM_COMPLAINT_STATUS_OPTIONS,
   needsKolamComplaintReplacementReturnTracking,
   needsKolamComplaintReplacementTracking,
   needsKolamComplaintReturnTracking,
-  isKolamComplaintReturnAwaitingVerification,
   resolveKolamComplaintSaleSourceLogoUri,
   type KolamComplaint,
   type KolamComplaintDecision,
@@ -36,6 +41,7 @@ import {
 import { type KolamTableColumn } from '../domain/kolam-table';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { formatRupiah } from '../lib/money';
+import { pickNativeImageFile } from '../services/native-file-picker';
 import {
   useKolamComplaintController,
   type KolamComplaintController,
@@ -738,6 +744,86 @@ function KolamComplaintDetail({
                   ),
                 ]}
               />
+            </>
+          ) : null}
+
+          {complaint.refundPaymentStatus ||
+          complaint.refundTransaction ||
+          canOpenKolamComplaintRefundPayment(complaint) ||
+          isKolamComplaintRefundAwaitingReturn(complaint) ? (
+            <>
+              <Text style={styles.sectionTitle}>Pembayaran refund</Text>
+              {isKolamComplaintRefundAwaitingReturn(complaint) ? (
+                <KolamStatusBadge
+                  intent="warning"
+                  label="Retur harus diverifikasi dulu sebelum refund."
+                  numberOfLines={2}
+                  style={styles.banner}
+                />
+              ) : null}
+              <KolamDescriptionList
+                accessibilityLabel="Refund"
+                rows={[
+                  descRow(
+                    'rf-status',
+                    'Status',
+                    getKolamComplaintRefundPaymentStatusLabel(
+                      complaint.refundPaymentStatus,
+                    ),
+                  ),
+                  descRow(
+                    'rf-amount',
+                    'Jumlah',
+                    complaint.refundAmount > 0
+                      ? formatRupiah(complaint.refundAmount)
+                      : '—',
+                  ),
+                  descRow(
+                    'rf-wallet',
+                    'Wallet',
+                    complaint.refundTransaction?.walletName || '—',
+                  ),
+                  descRow(
+                    'rf-tx',
+                    'Konfirmasi txn',
+                    complaint.refundTransaction?.confirmStatus || '—',
+                  ),
+                  ...(complaint.refundPaymentDetails
+                    ? [
+                        descRow(
+                          'rf-acc',
+                          'Rekening',
+                          complaint.refundPaymentDetails.accountNumber || '—',
+                        ),
+                        descRow(
+                          'rf-name',
+                          'Atas nama',
+                          complaint.refundPaymentDetails.accountName || '—',
+                        ),
+                        descRow(
+                          'rf-bank',
+                          'Bank',
+                          complaint.refundPaymentDetails.bank || '—',
+                        ),
+                      ]
+                    : []),
+                ]}
+              />
+              {complaint.refundPaymentProof.length ? (
+                <View style={styles.photoRow}>
+                  {complaint.refundPaymentProof.map(photo =>
+                    photo.uri ? (
+                      <KolamRemoteImage
+                        accessibilityLabel="Bukti refund"
+                        key={photo.id}
+                        resizeMode="cover"
+                        sourceUri={photo.uri}
+                        style={styles.photo}
+                      />
+                    ) : null,
+                  )}
+                </View>
+              ) : null}
             </>
           ) : null}
 
@@ -1448,6 +1534,11 @@ function KolamComplaintWorkflowPanel({
         </View>
       ) : null}
 
+      <KolamComplaintRefundWorkflow
+        complaint={complaint}
+        controller={controller}
+      />
+
       {canCloseKolamComplaint(complaint) ? (
         <View style={styles.workflowBlock}>
           <Text style={styles.workflowBlockTitle}>Tutup tiket</Text>
@@ -1492,6 +1583,266 @@ function KolamComplaintWorkflowPanel({
             }}
           />
         </View>
+      ) : null}
+    </View>
+  );
+}
+
+function KolamComplaintRefundWorkflow({
+  complaint,
+  controller,
+}: {
+  complaint: KolamComplaint;
+  controller: KolamComplaintController;
+}) {
+  const step = getKolamComplaintRefundWorkflowStep(complaint);
+  const busy = controller.mutating || controller.loading;
+  const [walletId, setWalletId] = React.useState('');
+  const [transactionNote, setTransactionNote] = React.useState('');
+  const [accountNumber, setAccountNumber] = React.useState('');
+  const [accountName, setAccountName] = React.useState('');
+  const [bank, setBank] = React.useState('');
+  const [transferDate, setTransferDate] = React.useState('');
+  const [transferMethod, setTransferMethod] = React.useState('transfer');
+  const [paymentNote, setPaymentNote] = React.useState('');
+  const [photoUris, setPhotoUris] = React.useState<string[]>([]);
+  const [confirmNote, setConfirmNote] = React.useState('');
+
+  React.useEffect(() => {
+    setWalletId('');
+    setTransactionNote('');
+    setAccountNumber('');
+    setAccountName('');
+    setBank('');
+    setTransferDate('');
+    setTransferMethod('transfer');
+    setPaymentNote('');
+    setPhotoUris([]);
+    setConfirmNote('');
+  }, [complaint.id, step]);
+
+  if (isKolamComplaintRefundAwaitingReturn(complaint)) {
+    return (
+      <View style={styles.workflowBlock}>
+        <Text style={styles.workflowBlockTitle}>Pembayaran refund</Text>
+        <Text style={styles.metaText}>
+          Retur harus diterima dan diverifikasi dulu sebelum membuat transaksi
+          refund.
+        </Text>
+      </View>
+    );
+  }
+
+  if (step === 'unavailable' && !complaint.refundPaymentStatus) {
+    return null;
+  }
+
+  if (step === 'completed' || complaint.refundPaymentStatus === 'completed') {
+    return (
+      <View style={styles.workflowBlock}>
+        <Text style={styles.workflowBlockTitle}>Pembayaran refund</Text>
+        <KolamStatusBadge
+          intent="success"
+          label="Refund selesai — transaksi wallet dikonfirmasi."
+          numberOfLines={2}
+          style={styles.banner}
+        />
+      </View>
+    );
+  }
+
+  if (!canOpenKolamComplaintRefundPayment(complaint) && step !== 'create') {
+    return null;
+  }
+
+  return (
+    <View style={styles.workflowBlock}>
+      <Text style={styles.workflowBlockTitle}>Pembayaran refund</Text>
+      <Text style={styles.metaText}>
+        Jumlah: {formatRupiah(complaint.refundAmount || 0)}
+      </Text>
+
+      {step === 'create' ? (
+        <>
+          <KolamDropdownSelect
+            accessibilityLabel="Pilih wallet"
+            label="Wallet"
+            menuPlacement="inline"
+            onChange={setWalletId}
+            options={[
+              { label: 'Pilih wallet…', value: '' },
+              ...controller.walletOptions.map(wallet => ({
+                label: `${wallet.name} · ${formatRupiah(wallet.currentBalance)}`,
+                value: wallet.id,
+              })),
+            ]}
+            searchable={controller.walletOptions.length > 8}
+            searchPlaceholder="Cari wallet…"
+            showLabelInTrigger={false}
+            value={walletId}
+          />
+          <KolamFormTextField
+            multiline
+            numberOfLines={2}
+            onChangeText={setTransactionNote}
+            placeholder="Catatan transaksi (opsional)"
+            style={styles.workflowNote}
+            value={transactionNote}
+          />
+          <KolamButton
+            disabled={busy || !walletId || complaint.refundAmount <= 0}
+            intent="primary"
+            label={busy ? 'Menyimpan…' : 'Buat transaksi refund'}
+            onPress={() => {
+              void controller.onCreateRefundTransaction({
+                walletId,
+                note: transactionNote,
+              });
+            }}
+          />
+        </>
+      ) : null}
+
+      {step === 'send' ? (
+        <>
+          {complaint.refundTransaction ? (
+            <Text style={styles.metaText}>
+              Wallet: {complaint.refundTransaction.walletName} · Status txn:{' '}
+              {complaint.refundTransaction.confirmStatus || 'unconfirmed'}
+            </Text>
+          ) : null}
+          <KolamFormTextField
+            onChangeText={setAccountNumber}
+            placeholder="Nomor rekening *"
+            value={accountNumber}
+          />
+          <KolamFormTextField
+            onChangeText={setAccountName}
+            placeholder="Nama pemilik rekening *"
+            value={accountName}
+          />
+          <KolamFormTextField
+            onChangeText={setBank}
+            placeholder="Bank *"
+            value={bank}
+          />
+          <KolamFormTextField
+            onChangeText={setTransferDate}
+            placeholder="Tanggal transfer (YYYY-MM-DD)"
+            value={transferDate}
+          />
+          <KolamDropdownSelect
+            accessibilityLabel="Metode transfer"
+            label="Metode"
+            menuPlacement="inline"
+            onChange={setTransferMethod}
+            options={KOLAM_COMPLAINT_REFUND_TRANSFER_METHOD_OPTIONS.map(
+              option => ({
+                label: option.label,
+                value: option.id,
+              }),
+            )}
+            showLabelInTrigger={false}
+            value={transferMethod}
+          />
+          <KolamFormTextField
+            multiline
+            numberOfLines={2}
+            onChangeText={setPaymentNote}
+            placeholder="Catatan pembayaran (opsional)"
+            style={styles.workflowNote}
+            value={paymentNote}
+          />
+          <View style={styles.photoActions}>
+            <KolamButton
+              label={`Tambah bukti (${photoUris.length})`}
+              onPress={() => {
+                void pickNativeImageFile().then(result => {
+                  if (!result?.uri) {
+                    return;
+                  }
+                  setPhotoUris(current => [...current, result.uri!]);
+                });
+              }}
+            />
+          </View>
+          {photoUris.length ? (
+            <View style={styles.photoRow}>
+              {photoUris.map((uri, index) => (
+                <View key={`${uri}-${index}`} style={styles.localPhotoItem}>
+                  <Image source={{ uri }} style={styles.localPhotoThumb} />
+                  <KolamButton
+                    intent="plain"
+                    label="Hapus"
+                    onPress={() =>
+                      setPhotoUris(current =>
+                        current.filter((_, photoIndex) => photoIndex !== index),
+                      )
+                    }
+                  />
+                </View>
+              ))}
+            </View>
+          ) : (
+            <Text style={styles.metaText}>Minimal satu foto bukti wajib.</Text>
+          )}
+          <KolamButton
+            disabled={
+              busy ||
+              !accountNumber.trim() ||
+              !accountName.trim() ||
+              !bank.trim() ||
+              photoUris.length === 0
+            }
+            intent="primary"
+            label={busy ? 'Mengirim…' : 'Kirim bukti refund'}
+            onPress={() => {
+              void controller
+                .onSendRefundPayment({
+                  accountNumber,
+                  accountName,
+                  bank,
+                  transferDate,
+                  transferMethod,
+                  note: paymentNote,
+                  photoUris,
+                })
+                .then(ok => {
+                  if (ok) {
+                    setPhotoUris([]);
+                    setPaymentNote('');
+                  }
+                });
+            }}
+          />
+        </>
+      ) : null}
+
+      {step === 'confirm' ? (
+        <>
+          <Text style={styles.metaText}>
+            Periksa detail pembayaran di atas, lalu konfirmasi transaksi wallet.
+            Saldo wallet akan dipotong.
+          </Text>
+          <KolamFormTextField
+            multiline
+            numberOfLines={2}
+            onChangeText={setConfirmNote}
+            placeholder="Catatan konfirmasi (opsional)"
+            style={styles.workflowNote}
+            value={confirmNote}
+          />
+          <KolamButton
+            disabled={busy || !complaint.refundTransaction?.id}
+            intent="primary"
+            label={busy ? 'Mengonfirmasi…' : 'Konfirmasi transaksi'}
+            onPress={() => {
+              void controller.onConfirmRefundPayment({
+                confirmNote,
+              });
+            }}
+          />
+        </>
       ) : null}
     </View>
   );
@@ -1678,6 +2029,20 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   photo: {
+    borderRadius: 8,
+    height: 88,
+    width: 88,
+  },
+  photoActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  localPhotoItem: {
+    gap: 4,
+    width: 88,
+  },
+  localPhotoThumb: {
     borderRadius: 8,
     height: 88,
     width: 88,

@@ -18,10 +18,13 @@ import { getErrorMessage as getApiErrorMessage } from '../lib/api-error';
 import {
   assignKolamComplaintStaff,
   closeKolamComplaint,
+  confirmKolamComplaintRefundPayment,
   createKolamComplaint,
+  createKolamComplaintRefundTransaction,
   getKolamComplaint,
   getKolamComplaints,
   updateKolamComplaintDecision,
+  updateKolamComplaintRefundPayment,
   updateKolamComplaintReplacementReturnStatus,
   updateKolamComplaintReplacementStatus,
   updateKolamComplaintReturnStatus,
@@ -29,6 +32,8 @@ import {
 } from '../services/kolam-complaint-api';
 import { getKolamSalesActiveSources } from '../services/kolam-sales-api';
 import { getKolamUserList } from '../services/kolam-user-api';
+import { getKolamWalletOptionsPaginated } from '../services/kolam-wallet-option-api';
+import type { KolamWalletOption } from '../domain/kolam-wallet-option';
 
 export type KolamComplaintSurfaceMode = 'list' | 'detail' | 'new';
 export type KolamComplaintDataSource = 'idle' | 'live' | 'error';
@@ -54,6 +59,7 @@ export interface KolamComplaintController {
   saleSources: KolamSaleSourceOption[];
   sourceFilter: KolamComplaintSource | 'all';
   staffOptions: KolamComplaintStaffOption[];
+  walletOptions: KolamWalletOption[];
   statusFilter: KolamComplaintStatus | 'all';
   statusMessage: string | null;
   total: number;
@@ -68,6 +74,13 @@ export interface KolamComplaintController {
     input: KolamComplaintCreateInput,
   ) => Promise<KolamComplaint | null>;
   onCreateNew: () => void;
+  onCreateRefundTransaction: (payload: {
+    walletId: string;
+    note?: string;
+  }) => Promise<boolean>;
+  onConfirmRefundPayment: (payload: {
+    confirmNote?: string;
+  }) => Promise<boolean>;
   onRefresh: () => Promise<void>;
   onSearchChange: (value: string) => void;
   onSelectComplaint: (complaint: KolamComplaint) => Promise<void>;
@@ -79,6 +92,15 @@ export interface KolamComplaintController {
   onSetPageSize: (pageSize: number) => void;
   onSetSourceFilter: (value: KolamComplaintSource | 'all') => void;
   onSetStatusFilter: (value: KolamComplaintStatus | 'all') => void;
+  onSendRefundPayment: (payload: {
+    accountNumber: string;
+    accountName: string;
+    bank: string;
+    transferDate?: string;
+    transferMethod?: string;
+    note?: string;
+    photoUris: string[];
+  }) => Promise<boolean>;
   onUpdateDecision: (payload: {
     decision: NonNullable<KolamComplaintDecision>;
     note: string;
@@ -154,6 +176,7 @@ export function useKolamComplaintController(
   const [staffOptions, setStaffOptions] = useState<KolamComplaintStaffOption[]>(
     [],
   );
+  const [walletOptions, setWalletOptions] = useState<KolamWalletOption[]>([]);
   const [saleSources, setSaleSources] = useState<KolamSaleSourceOption[]>([]);
 
   const refreshList = useCallback(async () => {
@@ -214,6 +237,18 @@ export function useKolamComplaintController(
     }
   }, []);
 
+  const loadWalletOptions = useCallback(async () => {
+    try {
+      const wallets = await getKolamWalletOptionsPaginated({
+        page: 1,
+        limit: 200,
+      });
+      setWalletOptions(wallets);
+    } catch {
+      // Non-blocking: refund wallet select can stay empty.
+    }
+  }, []);
+
   const loadSaleSources = useCallback(async () => {
     try {
       const sources = await getKolamSalesActiveSources();
@@ -240,8 +275,9 @@ export function useKolamComplaintController(
     if (mode === 'detail') {
       void loadStaffOptions();
       void loadSaleSources();
+      void loadWalletOptions();
     }
-  }, [loadSaleSources, loadStaffOptions, mode]);
+  }, [loadSaleSources, loadStaffOptions, loadWalletOptions, mode]);
 
   const onSelectComplaint = useCallback(async (complaint: KolamComplaint) => {
     setMode('detail');
@@ -474,6 +510,85 @@ export function useKolamComplaintController(
     [runMutation, selectedComplaint?.id],
   );
 
+  const onCreateRefundTransaction = useCallback(
+    (payload: { walletId: string; note?: string }) => {
+      const id = selectedComplaint?.id;
+      if (!id || !payload.walletId.trim()) {
+        return Promise.resolve(false);
+      }
+      return runMutation(
+        () =>
+          createKolamComplaintRefundTransaction(id, {
+            walletId: payload.walletId.trim(),
+            note: payload.note,
+          }),
+        'Transaksi refund wallet dibuat.',
+      );
+    },
+    [runMutation, selectedComplaint?.id],
+  );
+
+  const onSendRefundPayment = useCallback(
+    (payload: {
+      accountNumber: string;
+      accountName: string;
+      bank: string;
+      transferDate?: string;
+      transferMethod?: string;
+      note?: string;
+      photoUris: string[];
+    }) => {
+      const id = selectedComplaint?.id;
+      if (
+        !id ||
+        !payload.accountNumber.trim() ||
+        !payload.accountName.trim() ||
+        !payload.bank.trim() ||
+        payload.photoUris.length === 0
+      ) {
+        return Promise.resolve(false);
+      }
+      return runMutation(
+        () =>
+          updateKolamComplaintRefundPayment(id, {
+            status: 'sent',
+            accountNumber: payload.accountNumber,
+            accountName: payload.accountName,
+            bank: payload.bank,
+            transferDate: payload.transferDate,
+            transferMethod: payload.transferMethod,
+            note: payload.note,
+            photoUris: payload.photoUris,
+          }),
+        'Bukti refund dikirim.',
+      );
+    },
+    [runMutation, selectedComplaint?.id],
+  );
+
+  const onConfirmRefundPayment = useCallback(
+    (payload: { confirmNote?: string }) => {
+      const id = selectedComplaint?.id;
+      const transactionId = selectedComplaint?.refundTransaction?.id;
+      if (!id || !transactionId) {
+        return Promise.resolve(false);
+      }
+      return runMutation(
+        () =>
+          confirmKolamComplaintRefundPayment(id, {
+            transactionId,
+            confirmNote: payload.confirmNote,
+          }),
+        'Refund dikonfirmasi dan selesai.',
+      );
+    },
+    [
+      runMutation,
+      selectedComplaint?.id,
+      selectedComplaint?.refundTransaction?.id,
+    ],
+  );
+
   const onBackToList = useCallback(() => {
     setMode('list');
     setSelectedComplaint(null);
@@ -596,6 +711,7 @@ export function useKolamComplaintController(
       saleSources,
       sourceFilter,
       staffOptions,
+      walletOptions,
       statusFilter,
       statusMessage,
       total,
@@ -603,11 +719,14 @@ export function useKolamComplaintController(
       onAssignStaff,
       onBackToList,
       onCloseComplaint,
+      onConfirmRefundPayment,
       onCreateComplaint,
       onCreateNew,
+      onCreateRefundTransaction,
       onRefresh,
       onSearchChange,
       onSelectComplaint,
+      onSendRefundPayment,
       onSetCustomProjectOnly,
       onSetDecisionFilter,
       onSetPage,
@@ -632,11 +751,14 @@ export function useKolamComplaintController(
       onAssignStaff,
       onBackToList,
       onCloseComplaint,
+      onConfirmRefundPayment,
       onCreateComplaint,
       onCreateNew,
+      onCreateRefundTransaction,
       onRefresh,
       onSearchChange,
       onSelectComplaint,
+      onSendRefundPayment,
       onSetCustomProjectOnly,
       onSetDecisionFilter,
       onSetPage,
@@ -655,6 +777,7 @@ export function useKolamComplaintController(
       saleSources,
       sourceFilter,
       staffOptions,
+      walletOptions,
       statusFilter,
       statusMessage,
       total,

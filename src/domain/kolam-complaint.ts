@@ -119,6 +119,42 @@ export interface KolamComplaintSaleSourceRef {
   logoUri: string | null;
 }
 
+export type KolamComplaintRefundPaymentStatus = 'pending' | 'sent' | 'completed';
+
+export type KolamComplaintRefundWorkflowStep =
+  | 'create'
+  | 'send'
+  | 'confirm'
+  | 'completed'
+  | 'unavailable';
+
+export interface KolamComplaintRefundPaymentDetails {
+  accountNumber: string;
+  accountName: string;
+  bank: string;
+  transferDate: string;
+  transferMethod: string;
+  note: string;
+}
+
+export interface KolamComplaintRefundPaymentHistoryEntry {
+  id: string;
+  action: string;
+  note: string;
+  changedByLabel: string;
+  timestamp?: string;
+}
+
+export interface KolamComplaintRefundTransaction {
+  id: string;
+  amount: number;
+  confirmStatus: 'unconfirmed' | 'confirmed' | 'rejected' | '';
+  walletId: string | null;
+  walletName: string;
+  note: string;
+  createdAt?: string;
+}
+
 export interface KolamComplaint {
   id: string;
   ticketCode: string;
@@ -150,6 +186,13 @@ export interface KolamComplaint {
   returnTracking: KolamComplaintTracking | null;
   replacementTracking: KolamComplaintTracking | null;
   replacementReturnTracking: KolamComplaintTracking | null;
+  refundPaymentStatus: KolamComplaintRefundPaymentStatus | null;
+  refundPaymentSentAt?: string;
+  refundPaymentSentByLabel: string;
+  refundPaymentDetails: KolamComplaintRefundPaymentDetails | null;
+  refundPaymentProof: KolamComplaintPhoto[];
+  refundPaymentHistory: KolamComplaintRefundPaymentHistoryEntry[];
+  refundTransaction: KolamComplaintRefundTransaction | null;
   reworkCount: number;
   maxRework: number;
   createdAt?: string;
@@ -646,6 +689,16 @@ export const KOLAM_COMPLAINT_KPI_OPTIONS: Array<{
   { id: 'severe', label: 'Berat (−50)' },
 ];
 
+export const KOLAM_COMPLAINT_REFUND_TRANSFER_METHOD_OPTIONS: Array<{
+  id: string;
+  label: string;
+}> = [
+  { id: 'transfer', label: 'Transfer bank' },
+  { id: 'ewallet', label: 'E-Wallet' },
+  { id: 'cash', label: 'Tunai' },
+  { id: 'other', label: 'Lainnya' },
+];
+
 export function canUpdateKolamComplaintStatus(complaint: KolamComplaint) {
   if (complaint.marketplaceReadOnly) {
     return false;
@@ -715,6 +768,70 @@ export function isKolamComplaintReturnAwaitingVerification(
   );
 }
 
+/** BE: refund payment only for return_then_refund after return verified. */
+export function canOpenKolamComplaintRefundPayment(
+  complaint: KolamComplaint,
+): boolean {
+  return (
+    !complaint.marketplaceReadOnly &&
+    complaint.decision === 'return_then_refund' &&
+    complaint.returnTracking?.status === 'verified' &&
+    complaint.refundPaymentStatus !== 'completed'
+  );
+}
+
+export function isKolamComplaintRefundAwaitingReturn(
+  complaint: KolamComplaint,
+): boolean {
+  return (
+    !complaint.marketplaceReadOnly &&
+    complaint.decision === 'return_then_refund' &&
+    complaint.returnTracking?.status !== 'verified'
+  );
+}
+
+export function getKolamComplaintRefundPaymentStatusLabel(
+  status: KolamComplaintRefundPaymentStatus | string | null | undefined,
+): string {
+  switch (status) {
+    case 'sent':
+      return 'Pembayaran dikirim';
+    case 'completed':
+      return 'Pembayaran selesai';
+    case 'pending':
+      return 'Menunggu';
+    default:
+      return 'Belum ada';
+  }
+}
+
+export function getKolamComplaintRefundWorkflowStep(
+  complaint: KolamComplaint,
+): KolamComplaintRefundWorkflowStep {
+  if (complaint.refundPaymentStatus === 'completed') {
+    return 'completed';
+  }
+  if (!canOpenKolamComplaintRefundPayment(complaint)) {
+    return 'unavailable';
+  }
+  if (!complaint.refundTransaction) {
+    return 'create';
+  }
+  if (
+    complaint.refundPaymentStatus !== 'sent' &&
+    complaint.refundPaymentStatus !== 'completed'
+  ) {
+    return 'send';
+  }
+  if (
+    complaint.refundPaymentStatus === 'sent' &&
+    complaint.refundTransaction.confirmStatus !== 'confirmed'
+  ) {
+    return 'confirm';
+  }
+  return 'completed';
+}
+
 /**
  * Same resolution as sales detail: prefer embedded sale.sourceRef.logo,
  * then active Sales Source catalog by id.
@@ -780,6 +897,21 @@ export function normalizeKolamComplaint(payload: unknown): KolamComplaint {
     returnTracking: normalizeTracking(record.returnTracking),
     replacementTracking: normalizeTracking(record.replacementTracking),
     replacementReturnTracking: normalizeTracking(record.replacementReturnTracking),
+    refundPaymentStatus: normalizeRefundPaymentStatus(
+      getString(record, 'refundPaymentStatus'),
+    ),
+    refundPaymentSentAt:
+      getString(record, 'refundPaymentSentAt') || undefined,
+    refundPaymentSentByLabel:
+      normalizePerson(record.refundPaymentSentBy).name || '',
+    refundPaymentDetails: normalizeRefundPaymentDetails(
+      record.refundPaymentDetails,
+    ),
+    refundPaymentProof: normalizePhotos(record.refundPaymentProof),
+    refundPaymentHistory: normalizeRefundPaymentHistory(
+      record.refundPaymentHistory,
+    ),
+    refundTransaction: normalizeRefundTransaction(record.refundTransaction),
     reworkCount: getNumber(record, 'reworkCount') ?? 0,
     maxRework: getNumber(record, 'maxRework') ?? 2,
     createdAt: getString(record, 'createdAt') || undefined,
@@ -1077,6 +1209,111 @@ function normalizeTracking(value: unknown): KolamComplaintTracking | null {
     sentAt: getString(record, 'sentAt') || undefined,
     receivedAt: getString(record, 'receivedAt') || undefined,
     verifiedAt: getString(record, 'verifiedAt') || undefined,
+  };
+}
+
+function normalizeRefundPaymentStatus(
+  value: string,
+): KolamComplaintRefundPaymentStatus | null {
+  if (value === 'sent' || value === 'completed' || value === 'pending') {
+    return value;
+  }
+  return null;
+}
+
+function normalizeRefundPaymentDetails(
+  value: unknown,
+): KolamComplaintRefundPaymentDetails | null {
+  if (!value || typeof value !== 'object') {
+    return null;
+  }
+  const record = asRecord(value);
+  const details: KolamComplaintRefundPaymentDetails = {
+    accountNumber: getString(record, 'accountNumber'),
+    accountName: getString(record, 'accountName'),
+    bank: getString(record, 'bank'),
+    transferDate: getString(record, 'transferDate'),
+    transferMethod: getString(record, 'transferMethod'),
+    note: getString(record, 'note'),
+  };
+  if (
+    !details.accountNumber &&
+    !details.accountName &&
+    !details.bank &&
+    !details.transferDate &&
+    !details.transferMethod &&
+    !details.note
+  ) {
+    return null;
+  }
+  return details;
+}
+
+function normalizeRefundPaymentHistory(
+  value: unknown,
+): KolamComplaintRefundPaymentHistoryEntry[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.map((item, index) => {
+    const record = asRecord(item);
+    return {
+      id: getString(record, '_id') || getString(record, 'id') || `refund-h-${index}`,
+      action: getString(record, 'action') || '—',
+      note: getString(record, 'note'),
+      changedByLabel: normalizePerson(record.by).name || '—',
+      timestamp:
+        getString(record, 'timestamp') ||
+        getString(record, 'changedAt') ||
+        undefined,
+    };
+  });
+}
+
+function normalizeRefundTransaction(
+  value: unknown,
+): KolamComplaintRefundTransaction | null {
+  if (!value) {
+    return null;
+  }
+  if (typeof value === 'string') {
+    const id = value.trim();
+    if (!id) {
+      return null;
+    }
+    return {
+      id,
+      amount: 0,
+      confirmStatus: '',
+      walletId: null,
+      walletName: '—',
+      note: '',
+    };
+  }
+  if (typeof value !== 'object') {
+    return null;
+  }
+  const record = asRecord(value);
+  const id = getString(record, '_id') || getString(record, 'id');
+  if (!id) {
+    return null;
+  }
+  const wallet = asRecord(record.wallet);
+  const confirmRaw = getString(record, 'confirmStatus');
+  const confirmStatus =
+    confirmRaw === 'confirmed' ||
+    confirmRaw === 'rejected' ||
+    confirmRaw === 'unconfirmed'
+      ? confirmRaw
+      : '';
+  return {
+    id,
+    amount: getNumber(record, 'amount') ?? 0,
+    confirmStatus,
+    walletId: getString(wallet, '_id') || getString(wallet, 'id') || null,
+    walletName: getString(wallet, 'name') || '—',
+    note: getString(record, 'note'),
+    createdAt: getString(record, 'createdAt') || undefined,
   };
 }
 
