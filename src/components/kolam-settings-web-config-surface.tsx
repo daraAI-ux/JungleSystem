@@ -4190,16 +4190,34 @@ export function KolamSettingsWebConfigSurface({
               onChangeText={value => setDaraKnowledgeDraftField('title', value)}
               placeholder="SOP Kasir Harian"
             />
-            <View style={styles.financialToolbar}>
-              {daraKnowledgeCategories.map(([id, label]) => (
-                <FinancialChoiceSegment
-                  key={id}
-                  active={daraKnowledgeDraft.category === id}
-                  label={label}
-                  onPress={() => setDaraKnowledgeDraftField('category', id)}
-                />
-              ))}
-            </View>
+            <KolamRowFrame variant="settingsForm">
+              <KolamTextFieldRowCopy
+                description="Pilih kategori knowledge DARA."
+                label="Tipe SOP"
+              />
+              <KolamDropdownSelect
+                accessibilityLabel="Tipe SOP"
+                label="Tipe SOP"
+                menuPlacement="inline"
+                options={daraKnowledgeCategories.map(([id, label]) => ({
+                  label,
+                  value: id,
+                }))}
+                showLabelInTrigger={false}
+                style={[
+                  styles.financialSelectorControl,
+                  {width: settingsFieldWidth},
+                ]}
+                triggerStyle={styles.shippingTimezoneTrigger}
+                value={daraKnowledgeDraft.category}
+                onChange={value =>
+                  setDaraKnowledgeDraftField(
+                    'category',
+                    value as DaraKnowledgeDraft['category'],
+                  )
+                }
+              />
+            </KolamRowFrame>
             <KolamTextFieldRow
               variant="settingsForm"
               fieldWidth={settingsFieldWidth}
