@@ -170,6 +170,33 @@ export interface KolamTaskRecurringServiceVisit {
   subscriptionNumber: string;
 }
 
+export interface KolamTaskRecurringEnrollmentDashboard {
+  byLocation: Array<{
+    count: number;
+    locationId: string | null;
+    locationName: string;
+  }>;
+  byPic: Array<{
+    count: number;
+    userId: string | null;
+    userName: string;
+  }>;
+  totalActive: number;
+}
+
+export interface KolamTaskRecurringEnrollmentCompliance {
+  done: number;
+  donePercent: number;
+  missed: number;
+  missedPercent: number;
+  pending: number;
+  pendingPercent: number;
+  periodDays: number;
+  sampleReviewPending: number;
+  sampleSpawned: number;
+  total: number;
+}
+
 export interface KolamTaskManagerTask {
   id: string;
   title: string;
@@ -744,6 +771,53 @@ export function normalizeKolamTaskRecurringServiceVisits(
   });
 }
 
+export function normalizeKolamTaskRecurringEnrollmentDashboard(
+  payload: unknown,
+): KolamTaskRecurringEnrollmentDashboard {
+  const row = unwrapData(payload);
+  return {
+    byLocation: Array.isArray(row.byLocation)
+      ? row.byLocation.map(item => {
+          const record = unwrapData(item);
+          return {
+            count: toNumber(record.count, 0),
+            locationId: toNullableString(record.locationId),
+            locationName: toStringValue(record.locationName),
+          };
+        })
+      : [],
+    byPic: Array.isArray(row.byPic)
+      ? row.byPic.map(item => {
+          const record = unwrapData(item);
+          return {
+            count: toNumber(record.count, 0),
+            userId: toNullableString(record.userId),
+            userName: toStringValue(record.userName),
+          };
+        })
+      : [],
+    totalActive: toNumber(row.totalActive, 0),
+  };
+}
+
+export function normalizeKolamTaskRecurringEnrollmentCompliance(
+  payload: unknown,
+): KolamTaskRecurringEnrollmentCompliance {
+  const row = unwrapData(payload);
+  return {
+    done: toNumber(row.done, 0),
+    donePercent: toNumber(row.donePercent, 0),
+    missed: toNumber(row.missed, 0),
+    missedPercent: toNumber(row.missedPercent, 0),
+    pending: toNumber(row.pending, 0),
+    pendingPercent: toNumber(row.pendingPercent, 0),
+    periodDays: toNumber(row.periodDays, 30),
+    sampleReviewPending: toNumber(row.sampleReviewPending, 0),
+    sampleSpawned: toNumber(row.sampleSpawned, 0),
+    total: toNumber(row.total, 0),
+  };
+}
+
 export function buildKolamTaskManagerKpi(
   total: number,
   todo: number,
@@ -932,6 +1006,11 @@ function unwrapArrayPayload(payload: unknown): unknown[] {
 
 function toStringValue(value: unknown) {
   return typeof value === 'string' ? value : value == null ? '' : String(value);
+}
+
+function toNullableString(value: unknown) {
+  const text = toStringValue(value);
+  return text ? text : null;
 }
 
 function toNumber(value: unknown, fallback: number) {

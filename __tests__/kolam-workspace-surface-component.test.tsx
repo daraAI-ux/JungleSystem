@@ -234,6 +234,29 @@ jest.mock('../src/services/kolam-task-manager-api', () => ({
       },
     ]),
   ),
+  getKolamTaskRecurringEnrollmentCompliance: jest.fn(() =>
+    Promise.resolve({
+      done: 4,
+      donePercent: 40,
+      missed: 1,
+      missedPercent: 10,
+      pending: 5,
+      pendingPercent: 50,
+      periodDays: 30,
+      sampleReviewPending: 2,
+      sampleSpawned: 3,
+      total: 10,
+    }),
+  ),
+  getKolamTaskRecurringEnrollmentDashboard: jest.fn(() =>
+    Promise.resolve({
+      byLocation: [
+        { count: 3, locationId: 'loc-1', locationName: 'Kolam Utama' },
+      ],
+      byPic: [{ count: 2, userId: 'user-1', userName: 'Dara Ops' }],
+      totalActive: 5,
+    }),
+  ),
   getKolamTaskRecurringTemplates: jest.fn(() =>
     Promise.resolve([
       {

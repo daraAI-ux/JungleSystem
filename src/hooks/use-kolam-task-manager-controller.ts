@@ -17,6 +17,8 @@ import {
   type KolamTaskManagerTask,
   type KolamTaskManagerTaskType,
   type KolamTaskManagerTaskTypeHandler,
+  type KolamTaskRecurringEnrollmentCompliance,
+  type KolamTaskRecurringEnrollmentDashboard,
   type KolamTaskRecurringOccurrence,
   type KolamTaskRecurringServiceVisit,
   type KolamTaskRecurringTemplate,
@@ -36,6 +38,8 @@ import {
   getKolamTaskManagerTask,
   getKolamTaskManagerTasks,
   getKolamTaskManagerTaskTypes,
+  getKolamTaskRecurringEnrollmentCompliance,
+  getKolamTaskRecurringEnrollmentDashboard,
   getKolamTaskRecurringOccurrences,
   getKolamTaskRecurringServiceVisits,
   getKolamTaskRecurringTemplates,
@@ -134,6 +138,8 @@ export interface KolamTaskManagerController {
   pageSize: number;
   priorityFilter: KolamTaskManagerPriority | 'all';
   recurringEnclosureOnly: boolean;
+  recurringEnrollmentCompliance: KolamTaskRecurringEnrollmentCompliance | null;
+  recurringEnrollmentDashboard: KolamTaskRecurringEnrollmentDashboard | null;
   recurringOccurrences: KolamTaskRecurringOccurrence[];
   recurringServiceVisits: KolamTaskRecurringServiceVisit[];
   recurringTemplates: KolamTaskRecurringTemplate[];
@@ -236,6 +242,10 @@ export function useKolamTaskManagerController({
   const [recurringServiceVisits, setRecurringServiceVisits] = useState<
     KolamTaskRecurringServiceVisit[]
   >([]);
+  const [recurringEnrollmentDashboard, setRecurringEnrollmentDashboard] =
+    useState<KolamTaskRecurringEnrollmentDashboard | null>(null);
+  const [recurringEnrollmentCompliance, setRecurringEnrollmentCompliance] =
+    useState<KolamTaskRecurringEnrollmentCompliance | null>(null);
   const [taskTypes, setTaskTypes] = useState<KolamTaskManagerTaskType[]>([]);
   const [selectedTask, setSelectedTask] =
     useState<KolamTaskManagerTask | null>(null);
@@ -453,7 +463,13 @@ export function useKolamTaskManagerController({
     setLoading(true);
     setError(null);
     try {
-      const [templates, occurrences, serviceVisits] = await Promise.all([
+      const [
+        templates,
+        occurrences,
+        serviceVisits,
+        enrollmentDashboard,
+        enrollmentCompliance,
+      ] = await Promise.all([
         getKolamTaskRecurringTemplates(),
         getKolamTaskRecurringOccurrences({
           enclosureOnly: isTaskAdmin && recurringEnclosureOnly,
@@ -462,10 +478,18 @@ export function useKolamTaskManagerController({
           page: 1,
         }),
         getKolamTaskRecurringServiceVisits({ limit: 200 }),
+        isTaskAdmin
+          ? getKolamTaskRecurringEnrollmentDashboard()
+          : Promise.resolve(null),
+        isTaskAdmin
+          ? getKolamTaskRecurringEnrollmentCompliance({ days: 30 })
+          : Promise.resolve(null),
       ]);
       setRecurringTemplates(templates);
       setRecurringOccurrences(occurrences);
       setRecurringServiceVisits(serviceVisits);
+      setRecurringEnrollmentDashboard(enrollmentDashboard);
+      setRecurringEnrollmentCompliance(enrollmentCompliance);
       setDataSource('live');
     } catch (loadError) {
       setError(getErrorMessage(loadError));
@@ -1142,6 +1166,8 @@ export function useKolamTaskManagerController({
       pageSize,
       priorityFilter,
       recurringEnclosureOnly,
+      recurringEnrollmentCompliance,
+      recurringEnrollmentDashboard,
       recurringOccurrences,
       recurringServiceVisits,
       recurringTemplates,
@@ -1281,6 +1307,8 @@ export function useKolamTaskManagerController({
       pageSize,
       priorityFilter,
       recurringEnclosureOnly,
+      recurringEnrollmentCompliance,
+      recurringEnrollmentDashboard,
       recurringOccurrences,
       recurringServiceVisits,
       recurringTemplates,

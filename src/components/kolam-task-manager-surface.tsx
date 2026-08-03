@@ -889,6 +889,10 @@ function KolamTaskRecurringPanel({
         </View>
       </View>
 
+      {controller.isTaskAdmin ? (
+        <KolamTaskRecurringEnrollmentDashboard controller={controller} />
+      ) : null}
+
       <View style={styles.detailCard}>
         <Text style={styles.sectionTitle}>Template aktif</Text>
         {controller.recurringTemplates.length ? (
@@ -968,6 +972,89 @@ function KolamTaskRecurringPanel({
           </Text>
         )}
       </View>
+    </View>
+  );
+}
+
+function KolamTaskRecurringEnrollmentDashboard({
+  controller,
+}: {
+  controller: KolamTaskManagerController;
+}) {
+  const dashboard = controller.recurringEnrollmentDashboard;
+  const compliance = controller.recurringEnrollmentCompliance;
+  if (!dashboard && !compliance) return null;
+
+  return (
+    <View style={styles.detailCard}>
+      <View>
+        <Text style={styles.sectionTitle}>
+          Enclosure - enrollment & compliance
+        </Text>
+        <Text style={styles.metaText}>30 hari terakhir</Text>
+      </View>
+      {compliance ? (
+        <View style={styles.kpiRow}>
+          <KolamTaskDetailMetric
+            label="Occurrence"
+            value={String(compliance.total)}
+          />
+          <KolamTaskDetailMetric
+            label="Terlewat"
+            value={`${compliance.missedPercent}%`}
+          />
+          <KolamTaskDetailMetric
+            label="Pending"
+            value={`${compliance.pendingPercent}%`}
+          />
+          <KolamTaskDetailMetric
+            label="Review sampel"
+            value={String(compliance.sampleReviewPending)}
+          />
+        </View>
+      ) : null}
+      {dashboard ? (
+        <View style={styles.enrollmentGrid}>
+          <View style={styles.enrollmentList}>
+            <Text style={styles.timelineTitle}>
+              Enrollment aktif ({dashboard.totalActive})
+            </Text>
+            {dashboard.byLocation.length ? (
+              dashboard.byLocation.slice(0, 12).map(row => (
+                <View
+                  key={row.locationId ?? row.locationName}
+                  style={styles.enrollmentRow}
+                >
+                  <Text numberOfLines={1} style={styles.cellText}>
+                    {row.locationName || '-'}
+                  </Text>
+                  <Text style={styles.metaText}>{row.count}</Text>
+                </View>
+              ))
+            ) : (
+              <Text style={styles.metaText}>-</Text>
+            )}
+          </View>
+          <View style={styles.enrollmentList}>
+            <Text style={styles.timelineTitle}>Per PIC</Text>
+            {dashboard.byPic.length ? (
+              dashboard.byPic.slice(0, 12).map(row => (
+                <View
+                  key={row.userId ?? row.userName}
+                  style={styles.enrollmentRow}
+                >
+                  <Text numberOfLines={1} style={styles.cellText}>
+                    {row.userName || '-'}
+                  </Text>
+                  <Text style={styles.metaText}>{row.count}</Text>
+                </View>
+              ))
+            ) : (
+              <Text style={styles.metaText}>-</Text>
+            )}
+          </View>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -2066,6 +2153,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 4,
+  },
+  enrollmentGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  enrollmentList: {
+    flex: 1,
+    gap: 8,
+    minWidth: 220,
+  },
+  enrollmentRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'space-between',
   },
   timelineTitle: {
     color: V.colors.fg,

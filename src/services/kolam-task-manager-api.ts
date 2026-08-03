@@ -5,6 +5,8 @@ import {
   normalizeKolamTaskManagerTask,
   normalizeKolamTaskManagerTaskTypes,
   normalizeKolamTaskRecurringOccurrences,
+  normalizeKolamTaskRecurringEnrollmentCompliance,
+  normalizeKolamTaskRecurringEnrollmentDashboard,
   normalizeKolamTaskRecurringServiceVisits,
   normalizeKolamTaskRecurringTemplates,
   type KolamTaskManagerCategory,
@@ -17,6 +19,8 @@ import {
   type KolamTaskManagerTaskType,
   type KolamTaskManagerTaskTypeHandler,
   type KolamTaskRecurringOccurrence,
+  type KolamTaskRecurringEnrollmentCompliance,
+  type KolamTaskRecurringEnrollmentDashboard,
   type KolamTaskRecurringServiceVisit,
   type KolamTaskRecurringTemplate,
 } from '../domain/kolam-task-manager';
@@ -251,6 +255,25 @@ export async function getKolamTaskRecurringServiceVisits(
     { query: { limit: query.limit ?? 200 } },
   );
   return normalizeKolamTaskRecurringServiceVisits(payload);
+}
+
+export async function getKolamTaskRecurringEnrollmentDashboard(): Promise<
+  KolamTaskRecurringEnrollmentDashboard
+> {
+  const payload = await kolamRequest<unknown>(
+    '/task-manager/recurring/enrollment-dashboard',
+  );
+  return normalizeKolamTaskRecurringEnrollmentDashboard(payload);
+}
+
+export async function getKolamTaskRecurringEnrollmentCompliance(
+  query: { days?: number } = {},
+): Promise<KolamTaskRecurringEnrollmentCompliance> {
+  const payload = await kolamRequest<unknown>(
+    '/task-manager/recurring/enrollment-compliance',
+    { query: { days: query.days ?? 30 } },
+  );
+  return normalizeKolamTaskRecurringEnrollmentCompliance(payload);
 }
 
 export async function runKolamTaskRecurringTick(): Promise<void> {
