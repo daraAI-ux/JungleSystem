@@ -2313,6 +2313,23 @@ describe('KolamAmSurface', () => {
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM User Delete user-1'}).props.onPress();
     });
+    expect(deleteAmUser).not.toHaveBeenCalled();
+
+    let text = renderText(renderer!).join(' ').replace(/\s+/g, ' ');
+    expect(text).toContain('Hapus Existing User (@ existing )?');
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM User Cancel Delete'}).props.onPress();
+    });
+    text = renderText(renderer!).join(' ').replace(/\s+/g, ' ');
+    expect(text).not.toContain('Hapus Existing User (@ existing )?');
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM User Delete user-1'}).props.onPress();
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM User Confirm Delete user-1'}).props.onPress();
+    });
 
     expect(deleteAmUser).toHaveBeenCalledWith('user-1');
   });

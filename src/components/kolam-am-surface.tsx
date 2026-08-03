@@ -4766,6 +4766,7 @@ function AmUsersPage() {
   const [formPassword, setFormPassword] = React.useState('');
   const [formRole, setFormRole] = React.useState('');
   const [actingUserId, setActingUserId] = React.useState<string | null>(null);
+  const [deletingUser, setDeletingUser] = React.useState<AmUser | null>(null);
   const [actionMessage, setActionMessage] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -4830,8 +4831,19 @@ function AmUsersPage() {
     setFormUsername(user.username);
     setFormPassword('');
     setFormRole(user.role?._id ?? '');
+    setDeletingUser(null);
     setActionMessage(null);
   }, []);
+
+  const requestDeleteUser = React.useCallback((user: AmUser) => {
+    if (!hasAmPermission(currentUser, 'user:delete')) {
+      setError('Akun AM ini tidak memiliki permission user:delete.');
+      return;
+    }
+
+    setDeletingUser(user);
+    setActionMessage(null);
+  }, [currentUser]);
 
   const saveUser = React.useCallback(async () => {
     const fullName = formFullName.trim();
@@ -4898,6 +4910,7 @@ function AmUsersPage() {
       setActingUserId(user._id);
       await deleteAmUser(user._id);
       setActionMessage(`User ${user.username} berhasil dihapus.`);
+      setDeletingUser(null);
       if (editingUserId === user._id) {
         resetUserForm();
       }
@@ -4947,6 +4960,31 @@ function AmUsersPage() {
       {actionMessage ? (
         <View style={styles.successPanel}>
           <Text style={styles.successText}>{actionMessage}</Text>
+        </View>
+      ) : null}
+      {deletingUser ? (
+        <View style={styles.warningPanel}>
+          <Text style={styles.warningText}>
+            Hapus {deletingUser.fullName} (@{deletingUser.username})?
+          </Text>
+          <View style={styles.inlineActions}>
+            <KolamButton
+              accessibilityLabel={`AM User Confirm Delete ${deletingUser._id}`}
+              intent="danger"
+              label={actingUserId === deletingUser._id ? '...' : 'Delete'}
+              muted={actingUserId === deletingUser._id}
+              size="sm"
+              onPress={() => removeUser(deletingUser)}
+            />
+            <KolamButton
+              accessibilityLabel="AM User Cancel Delete"
+              intent="outline"
+              label="Cancel"
+              muted={actingUserId === deletingUser._id}
+              size="sm"
+              onPress={() => setDeletingUser(null)}
+            />
+          </View>
         </View>
       ) : null}
       {canShowUserForm ? (
@@ -5047,7 +5085,7 @@ function AmUsersPage() {
                     intent="danger"
                     muted={actingUserId === user._id}
                     size="sm"
-                    onPress={() => removeUser(user)}
+                    onPress={() => requestDeleteUser(user)}
                   />
                 ) : null}
               </View>
