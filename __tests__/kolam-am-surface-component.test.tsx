@@ -3122,6 +3122,7 @@ describe('KolamAmSurface', () => {
   });
 
   it('renders transfer stats and pagination from the Transfers route metadata', async () => {
+    jest.useFakeTimers();
     jest.mocked(getAmServiceAccounts).mockResolvedValue({
       data: [
         {
@@ -3204,6 +3205,20 @@ describe('KolamAmSurface', () => {
 
     await updateAmRoute(renderer!, 'transactions');
 
+    expect(getAmTransfers).toHaveBeenLastCalledWith({
+      page: 1,
+      limit: 20,
+      search: undefined,
+      status: undefined,
+      serviceAccountId: undefined,
+    });
+
+    await act(async () => {
+      jest.advanceTimersByTime(5000);
+      await Promise.resolve();
+    });
+
+    expect(getAmTransfers).toHaveBeenCalledTimes(2);
     expect(getAmTransfers).toHaveBeenLastCalledWith({
       page: 1,
       limit: 20,

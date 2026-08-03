@@ -3676,9 +3676,14 @@ function AmTransfersPage({initialTransferId}: {initialTransferId?: string}) {
   }, [fetchTransferAccounts]);
 
   React.useEffect(() => {
-    const interval = setInterval(fetchTransfers, 10_000);
+    const hasRunningTransfer = transfers.some(
+      transfer => transfer.status === 'pending' || transfer.status === 'processing',
+    );
+    if (!hasRunningTransfer) return undefined;
+
+    const interval = setInterval(fetchTransfers, 5000);
     return () => clearInterval(interval);
-  }, [fetchTransfers]);
+  }, [fetchTransfers, transfers]);
 
   const loadTransferDetail = React.useCallback(async (id: string) => {
     try {
