@@ -1530,6 +1530,62 @@ describe('KolamAmSurface', () => {
     expect(getAmDeviceServices).toHaveBeenCalledWith('device-otp');
   });
 
+  it('sends password-required runtime input through the AM BE otp command channel', async () => {
+    jest.mocked(getAmServiceAccounts).mockResolvedValue({
+      data: [
+        {
+          _id: 'service-password',
+          platform: 'instagram',
+          label: 'Instagram Password',
+          deviceId: {
+            _id: 'device-password',
+            name: 'Browser Password',
+            connectionType: 'browser',
+            tcpAddress: null,
+            udid: null,
+          },
+          status: 'active',
+          credentials: {},
+          meta: {},
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 1, limit: 1},
+    });
+    jest.mocked(getAmDeviceServiceLogs).mockResolvedValue({
+      logs: [
+        {ts: '2026-01-01T00:00:00.000Z', level: 'info', message: 'PASSWORD_REQUIRED'},
+      ],
+      processRunning: true,
+    });
+    jest.mocked(getAmDeviceServices).mockResolvedValue([]);
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await updateAmRoute(renderer!, 'services');
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Service Instagram Password'}).props.onPress();
+    });
+
+    const inputs = renderer!.root.findAllByType(TextInput);
+    expect(inputs[inputs.length - 1].props.placeholder).toBe('Masukkan password service');
+    await act(async () => {
+      inputs[inputs.length - 1].props.onChangeText('SecretPass1!');
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Service Submit Input service-password'}).props.onPress();
+    });
+
+    expect(sendAmDeviceServiceInput).toHaveBeenCalledWith('device-password', 'otp', 'SecretPass1!');
+  });
+
   it('hides service input after runtime logs report login success', async () => {
     jest.mocked(getAmServiceAccounts).mockResolvedValue({
       data: [
