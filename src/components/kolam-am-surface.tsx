@@ -4079,8 +4079,10 @@ function AmTransfersPage({initialTransferId}: {initialTransferId?: string}) {
       </View>
       {selectedTransferId ? (
         <AmTransferDetailPanel
+          actingTransferId={actingTransferId}
           error={detailError}
           isLoading={detailLoading}
+          onAction={runTransferAction}
           transfer={selectedTransfer}
           webhookLogs={selectedTransferWebhookLogs}
         />
@@ -4090,13 +4092,20 @@ function AmTransfersPage({initialTransferId}: {initialTransferId?: string}) {
 }
 
 function AmTransferDetailPanel({
+  actingTransferId,
   error,
   isLoading,
+  onAction,
   transfer,
   webhookLogs,
 }: {
+  actingTransferId: string | null;
   error: string | null;
   isLoading: boolean;
+  onAction: (
+    transfer: AmTransfer,
+    action: 'cancel' | 'retry' | 'force-fail',
+  ) => void;
   transfer: AmTransfer | null;
   webhookLogs: AmWebhookLog[];
 }) {
@@ -4109,7 +4118,16 @@ function AmTransferDetailPanel({
           <Text style={styles.panelTitle}>Transfer Detail</Text>
           <Text style={styles.rowMeta}>{transfer?._id ?? 'Memuat detail transfer...'}</Text>
         </View>
-        {transfer ? <AmStatusChip label={transfer.status} tone={getTransferTone(transfer.status)} /> : null}
+        {transfer ? (
+          <View style={styles.inlineActions}>
+            <AmStatusChip label={transfer.status} tone={getTransferTone(transfer.status)} />
+            <AmTransferActions
+              disabled={actingTransferId === transfer._id}
+              transfer={transfer}
+              onAction={onAction}
+            />
+          </View>
+        ) : null}
       </View>
       <AmInlineError title="Detail transfer AM belum bisa dibaca" error={error} />
       {isLoading ? <Text style={styles.loadingText}>Memuat detail transfer...</Text> : null}

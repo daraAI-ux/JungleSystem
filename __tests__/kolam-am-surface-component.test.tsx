@@ -3332,12 +3332,12 @@ describe('KolamAmSurface', () => {
     expect(joinedText).toMatch(/002\s+completed/);
   });
 
-  it('opens transfer detail directly from a concrete AM shell route', async () => {
+  it('opens transfer detail directly from a concrete AM shell route with detail actions', async () => {
     const transfer = {
       _id: 'transfer-detail',
       accountId: { _id: 'account-1', label: 'BCA Main', platform: 'bca', accountNumber: '123' },
       amount: 250000,
-      completedAt: '2026-01-01T00:05:00.000Z',
+      completedAt: null,
       createdAt: '2026-01-01T00:00:00.000Z',
       createdBy: { _id: 'user-1', fullName: 'Admin User', username: 'admin' },
       deviceId: {
@@ -3358,31 +3358,16 @@ describe('KolamAmSurface', () => {
       recipientName: 'Vendor Detail',
       screenshot: '',
       startedAt: '2026-01-01T00:01:00.000Z',
-      status: 'success',
+      status: 'pending',
       transactionPurpose: 'Payment',
       transferMethod: 'BI FAST',
       transferType: 'transfer',
       updatedAt: '',
     };
     jest.mocked(getAmTransferById).mockResolvedValue(transfer);
-    jest.mocked(getAmWebhookLogs).mockResolvedValue({
-      data: [
-        {
-          _id: 'webhook-log-1',
-          configId: {_id: 'webhook-1', url: 'https://example.test/hook', description: 'Inventory hook'},
-          direction: 'outgoing',
-          event: 'transfer.success',
-          url: 'https://example.test/hook',
-          requestBody: {payload: {transferId: 'transfer-detail'}},
-          responseStatus: 200,
-          responseBody: {ok: true},
-          success: true,
-          error: '',
-          duration: 42,
-          createdAt: '2026-01-01T00:06:00.000Z',
-        },
-      ],
-      meta: {total: 1, limit: 20},
+    jest.mocked(getAmTransfers).mockResolvedValue({
+      data: [],
+      meta: {total: 0, limit: 20},
     });
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
@@ -3404,7 +3389,11 @@ describe('KolamAmSurface', () => {
     const joinedText = renderText(renderer!).join(' ');
     expect(joinedText).toContain('Transfer Detail');
     expect(joinedText).toContain('Vendor Detail');
-    expect(joinedText).toContain('Inventory hook');
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Transfer Cancel transfer-detail'}).props.onPress();
+    });
+
+    expect(cancelAmTransfer).toHaveBeenCalledWith('transfer-detail');
   });
 
   it('runs webhook register, toggle, delete, and test ping actions', async () => {
