@@ -28,6 +28,7 @@ export type KolamTableId =
   | 'supplier-catalog'
   | 'tag'
   | 'teranura'
+  | 'voucher'
   | 'taxonomy'
   | 'unit';
 
@@ -212,6 +213,58 @@ const kolamTableColumns: Record<KolamTableId, KolamTableColumn[]> = {
       align: 'center',
       headerAlign: 'center',
       width: 100,
+    },
+    {
+      id: 'actions',
+      label: '',
+      align: 'center',
+      headerAlign: 'center',
+      width: 64,
+    },
+  ],
+  /** Backoffice `/vouchers` list (FE Voucher/Diskon/Min/Terpakai/Periode/Status). */
+  voucher: [
+    {
+      id: 'primary',
+      label: 'Voucher',
+      align: 'left',
+      headerAlign: 'left',
+      width: 200,
+    },
+    {
+      id: 'amount',
+      label: 'Diskon',
+      align: 'left',
+      headerAlign: 'center',
+      width: 140,
+    },
+    {
+      id: 'meta',
+      label: 'Min. Pembelian',
+      align: 'left',
+      headerAlign: 'center',
+      width: 120,
+    },
+    {
+      id: 'children',
+      label: 'Terpakai / Batas',
+      align: 'center',
+      headerAlign: 'center',
+      width: 110,
+    },
+    {
+      id: 'notes',
+      label: 'Periode',
+      align: 'left',
+      headerAlign: 'center',
+      width: 180,
+    },
+    {
+      id: 'status',
+      label: 'Status',
+      align: 'center',
+      headerAlign: 'center',
+      width: 120,
     },
     {
       id: 'actions',

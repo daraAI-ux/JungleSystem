@@ -35,6 +35,7 @@ import { isKolamTaxonomyRoute } from '../domain/kolam-taxonomy';
 import { isKolamTeranuraNativeRoute } from '../domain/kolam-teranura';
 import { isKolamUnitRoute } from '../domain/kolam-unit';
 import { isKolamUserRoute } from '../domain/kolam-user';
+import { isKolamVoucherRoute } from '../domain/kolam-voucher';
 import type { KolamNavigationItem } from '../domain/kolam-navigation';
 import {
   getSettingsSurfaceItemByRoute,
@@ -71,6 +72,7 @@ import { KolamTeranuraSurface } from './kolam-teranura-surface';
 import { KolamTaxonomySurface } from './kolam-taxonomy-surface';
 import { KolamUnitSurface } from './kolam-unit-surface';
 import { KolamUserSurface } from './kolam-user-surface';
+import { KolamVoucherSurface } from './kolam-voucher-surface';
 import { KolamNavigationRouteSurface } from './kolam-navigation-route-surface';
 import { KolamModuleRouteLauncher } from './kolam-module-route-launcher';
 import { KolamModuleRouteSurface } from './kolam-module-route-surface';
@@ -212,6 +214,15 @@ export function KolamWorkspaceSurfaceComponent({
     );
   }
 
+  if (activeRoutePath && isKolamVoucherRoute(activeRoutePath)) {
+    return (
+      <KolamVoucherSurface
+        onRouteChange={onDashboardRoute}
+        route={activeNavigationItem?.route ?? '/vouchers'}
+      />
+    );
+  }
+
   if (activeRoutePath && isKolamTaskManagerRoute(activeRoutePath)) {
     return (
       <KolamTaskManagerSurface
@@ -232,6 +243,18 @@ export function KolamWorkspaceSurfaceComponent({
   ) {
     return (
       <KolamCampaignSurface
+        onRouteChange={onDashboardRoute}
+        route={activeModuleRoutePath}
+      />
+    );
+  }
+
+  if (
+    activeModuleRoutePath &&
+    isKolamVoucherRoute(activeModuleRoutePath)
+  ) {
+    return (
+      <KolamVoucherSurface
         onRouteChange={onDashboardRoute}
         route={activeModuleRoutePath}
       />
@@ -435,6 +458,15 @@ export function KolamWorkspaceSurfaceComponent({
         if (isKolamCampaignRoute(activeNavigationItem.route.split('?')[0])) {
           return (
             <KolamCampaignSurface
+              onRouteChange={onDashboardRoute}
+              route={activeNavigationItem.route}
+            />
+          );
+        }
+
+        if (isKolamVoucherRoute(activeNavigationItem.route.split('?')[0])) {
+          return (
+            <KolamVoucherSurface
               onRouteChange={onDashboardRoute}
               route={activeNavigationItem.route}
             />
