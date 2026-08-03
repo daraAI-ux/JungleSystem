@@ -1446,7 +1446,7 @@ function KolamTaskRecurringPanel({
                   label={getKolamTaskPriorityLabel(template.priority)}
                 />
                 <KolamStatusBadge
-                  intent={template.active ? 'success' : 'muted'}
+                  intent={template.active ? 'success' : 'danger'}
                   label={template.active ? 'Aktif' : 'Nonaktif'}
                 />
               </View>
@@ -2476,7 +2476,7 @@ function KolamTaskTypeSettingsPanel({
                     label={row.requiresProductComponents ? 'Produk' : 'Tanpa produk'}
                   />
                   <KolamStatusBadge
-                    intent={row.active ? 'success' : 'muted'}
+                    intent={row.active ? 'success' : 'danger'}
                     label={row.active ? 'Aktif' : 'Nonaktif'}
                   />
                   <KolamStatusBadge intent="muted" label={`Urutan ${row.sortOrder}`} />
