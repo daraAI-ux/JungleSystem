@@ -2,10 +2,6 @@ import React from 'react';
 import { Text, View } from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 import { KolamSidebar } from '../src/components/kolam-sidebar-widgets';
-import {
-  filterKolamNavigationSectionsByAccess,
-  kolamSidebarNavigationSections,
-} from '../src/domain/kolam-navigation';
 
 function renderText(renderer: ReactTestRenderer.ReactTestRenderer) {
   return renderer.root
@@ -49,18 +45,16 @@ describe('KolamSidebar', () => {
       );
     });
 
-    expect(renderText(renderer!)).toEqual(
+    const text = renderText(renderer!);
+    expect(text).toEqual(
       expect.arrayContaining([
-        'Kolam',
-        'Kolam Menu',
         'POS',
-        '5 modul / 19 route',
         'AM',
-        '1 modul / 38 route',
-        'Plugin',
-        '1 modul / 9 route',
       ]),
     );
+    expect(text.indexOf('AM')).toBeGreaterThan(text.indexOf('POS'));
+    expect(text).not.toContain('Plugin');
+    expect(text).not.toContain('1 modul / 38 route');
   });
 
   it('renders collapsed menu dock without expanded text chrome', async () => {
@@ -87,12 +81,7 @@ describe('KolamSidebar', () => {
     });
 
     const text = renderText(renderer!);
-    const visibleDockInitials = filterKolamNavigationSectionsByAccess(
-      kolamSidebarNavigationSections,
-      { am: false, kolam: true, pos: true },
-    ).map(section => section.title.charAt(0));
-
-    expect(text).toEqual(expect.arrayContaining(visibleDockInitials));
+    expect(text).toEqual([]);
     expect(text).not.toContain('Kolam Menu');
     expect(text).not.toContain('5 modul / 19 route');
   });

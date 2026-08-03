@@ -10,11 +10,11 @@ describe('unified command index', () => {
     const commands = getCommandIndex();
 
     expect(getCommandIndexStats(commands)).toEqual({
-      total: 327,
+      total: 312,
       modules: 8,
-      moduleRoutes: 53,
+      moduleRoutes: 33,
       kolamSurfaces: 5,
-      navigationRoutes: 245,
+      navigationRoutes: 250,
       amRoutes: 5,
       actions: 11,
       pluginRoutes: 0,
@@ -36,14 +36,8 @@ describe('unified command index', () => {
         route: 'transactions/:id',
       }),
     );
-    expect(commands).toContainEqual(
-      expect.objectContaining({
-        id: 'module-route:am:am-be/routes/webhook',
-        kind: 'module-route',
-        moduleId: 'am',
-        area: 'am',
-        route: 'am-be/routes/webhook',
-      }),
+    expect(commands.map(command => command.id)).not.toContain(
+      'module-route:am:am-be/routes/webhook',
     );
     expect(commands).toContainEqual(
       expect.objectContaining({
@@ -76,8 +70,8 @@ describe('unified command index', () => {
       expect.objectContaining({
         id: 'navigation-route:/sales/create',
         kind: 'navigation-route',
-        moduleId: 'sales',
-        area: 'pos',
+        moduleId: 'kolam',
+        area: 'kolam',
         route: '/sales/create',
       }),
     );
@@ -210,11 +204,8 @@ describe('unified command index', () => {
         }),
       ]),
     );
-    expect(filterCommandIndex(commands, 'am-be/routes/task')).toEqual(
+    expect(filterCommandIndex(commands, 'Tasks')).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({
-          id: 'module-route:am:am-be/routes/task',
-        }),
         expect.objectContaining({
           id: 'am-route:tasks',
         }),
@@ -258,10 +249,10 @@ describe('unified command index', () => {
       ),
     ).toEqual(expect.arrayContaining(['module']));
     expect(
-      getCommandPaletteSections(filterCommandIndex(commands, 'am-be/routes/task')).map(
+      getCommandPaletteSections(filterCommandIndex(commands, 'Tasks')).map(
         section => section.id,
       ),
-    ).toEqual(expect.arrayContaining(['module-route', 'am-route']));
+    ).toEqual(expect.arrayContaining(['am-route']));
     expect(
       getCommandPaletteSections(filterCommandIndex(commands, 'products / species')).map(
         section => section.id,
