@@ -476,6 +476,11 @@ export interface AmWebhookLog {
   createdAt: string;
 }
 
+export interface AmWebhookTestPingResult {
+  success: boolean;
+  message: string;
+}
+
 export interface AmTaskQuery extends Record<string, AmQueryValue> {
   page?: number;
   limit?: number;
@@ -1181,8 +1186,8 @@ export async function deleteAmWebhookConfig(
 
 export async function testAmWebhookPing(
   baseUrl = appConfig.amApiBaseUrl,
-): Promise<unknown> {
-  return amPost('/webhook/test-ping', undefined, baseUrl);
+): Promise<AmWebhookTestPingResult> {
+  return amPost<AmWebhookTestPingResult>('/webhook/test-ping', undefined, baseUrl);
 }
 
 export async function getAmWebhookLogs(

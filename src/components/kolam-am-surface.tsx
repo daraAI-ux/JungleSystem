@@ -4801,8 +4801,8 @@ function AmWebhooksPage() {
   const testPing = React.useCallback(async () => {
     try {
       setActionMessage(null);
-      await testAmWebhookPing();
-      setActionMessage('Test ping dispatched.');
+      const result = await testAmWebhookPing();
+      setActionMessage(result.message || 'Test ping dispatched.');
       await fetchWebhooks();
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : 'Webhook test ping gagal.');

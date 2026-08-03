@@ -145,7 +145,7 @@ jest.mock('../src/services/am-api', () => ({
   startAmDeviceService: jest.fn(() => Promise.resolve({success: true})),
   startAmTokopediaQrLogin: jest.fn(() => Promise.resolve({started: true})),
   stopAmDeviceService: jest.fn(() => Promise.resolve({success: true})),
-  testAmWebhookPing: jest.fn(() => Promise.resolve({success: true})),
+  testAmWebhookPing: jest.fn(() => Promise.resolve({success: true, message: 'Test ping dispatched to 1 active config(s)'})),
   uploadAmTokopediaSession: jest.fn(() => Promise.resolve({cookieCount: 1, updatedAt: '2026-01-01T00:00:00.000Z'})),
   updateAmTokopediaCaptchaSettings: jest.fn(() => Promise.resolve({
     captchaAutoSolve: true,
@@ -3466,6 +3466,7 @@ describe('KolamAmSurface', () => {
     expect(deleteAmWebhookConfig).toHaveBeenCalledWith('webhook-1');
     expect(testAmWebhookPing).toHaveBeenCalledTimes(1);
     const configText = renderText(renderer!).join(' ');
+    expect(configText).toContain('Test ping dispatched to 1 active config(s)');
     expect(configText).toContain('Last delivered:');
     expect(configText).toContain('31 Jul 2026');
     expect(configText).toContain('sec...ok');

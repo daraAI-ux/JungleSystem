@@ -6,6 +6,7 @@ import {
   getAmDeviceById,
   getAmRackById,
   logoutAmSession,
+  testAmWebhookPing,
 } from '../src/services/am-api';
 
 const fetchMock = jest.fn();
@@ -112,6 +113,30 @@ describe('AM API service', () => {
       'https://am.example.test/api/device/device-live?boxId=box-live',
       expect.objectContaining({
         method: 'GET',
+        credentials: 'include',
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+  });
+
+  it('returns the live AM webhook test ping message', async () => {
+    fetchMock.mockResolvedValue(jsonResponse({
+      success: true,
+      message: 'Test ping dispatched to 2 active config(s)',
+    }));
+
+    await expect(testAmWebhookPing('https://am.example.test/api')).resolves.toEqual({
+      success: true,
+      message: 'Test ping dispatched to 2 active config(s)',
+    });
+
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://am.example.test/api/webhook/test-ping',
+      expect.objectContaining({
+        method: 'POST',
         credentials: 'include',
         headers: expect.objectContaining({
           Cookie: 'kolamCsrf=',
