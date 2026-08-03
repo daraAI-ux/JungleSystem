@@ -1345,6 +1345,7 @@ describe('KolamAmSurface', () => {
           label: 'BCA Device Alpha',
           platform: 'bca',
           accountNumber: '1234567890',
+          balance: 250000,
           status: 'active',
           deviceId: {
             _id: 'device-1',
@@ -1396,6 +1397,7 @@ describe('KolamAmSurface', () => {
     });
 
     const text = renderText(renderer!);
+    const detailText = text.join(' ').replace(/\s+/g, ' ');
     expect(text).toContain('Phone Rack');
     expect(text).toContain('Samsung');
     expect(text).toContain('A15');
@@ -1404,7 +1406,9 @@ describe('KolamAmSurface', () => {
     expect(getAmDeviceServices).toHaveBeenCalledWith('device-1');
     expect(text).toContain('Service Accounts');
     expect(text).toContain('BCA Device Alpha');
+    expect(text).toContain('bcauser');
     expect(text).toContain('1234567890');
+    expect(detailText).toContain('Rp 250.000');
     expect(text).toContain('Running');
   });
 

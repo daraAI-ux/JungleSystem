@@ -3170,7 +3170,9 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
         <View style={styles.tableHeader}>
           <Text style={[styles.tableHeaderText, styles.serviceCol]}>Account</Text>
           <Text style={[styles.tableHeaderText, styles.platformCol]}>Platform</Text>
-          <Text style={[styles.tableHeaderText, styles.accountCol]}>Identifier</Text>
+          <Text style={[styles.tableHeaderText, styles.accountCol]}>Username</Text>
+          <Text style={[styles.tableHeaderText, styles.accountCol]}>Account No.</Text>
+          <Text style={[styles.tableHeaderText, styles.amountCol]}>Balance</Text>
           <Text style={[styles.tableHeaderText, styles.statusCol]}>Status</Text>
         </View>
         <AmLoadingOrEmpty
@@ -3192,7 +3194,13 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
                 {AM_PLATFORM_LABELS[account.platform] ?? account.platform}
               </Text>
               <Text style={[styles.cellText, styles.accountCol]} numberOfLines={1}>
-                {account.accountNumber ?? account.username ?? getCredentialString(account.credentials, 'phoneNumber') ?? '-'}
+                {account.username ?? getCredentialString(account.credentials, 'phoneNumber') ?? '-'}
+              </Text>
+              <Text style={[styles.cellText, styles.accountCol]} numberOfLines={1}>
+                {account.accountNumber ?? '-'}
+              </Text>
+              <Text style={[styles.cellText, styles.amountCol]} numberOfLines={1}>
+                {typeof account.balance === 'number' ? formatRupiah(account.balance) : '-'}
               </Text>
               <View style={styles.statusCol}>
                 <AmStatusChip label={statusLabel} tone={statusLabel === 'running' || statusLabel === 'active' ? 'success' : 'warning'} />
