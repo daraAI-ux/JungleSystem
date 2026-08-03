@@ -1570,7 +1570,7 @@ describe('KolamAmSurface', () => {
     jest.mocked(getAmDevicesAdbStatus).mockResolvedValueOnce({
       'device-1': 'connected',
     });
-    jest.mocked(getAmServiceAccounts).mockResolvedValueOnce({
+    jest.mocked(getAmServiceAccounts).mockResolvedValue({
       data: [
         {
           _id: 'service-1',
@@ -1593,7 +1593,7 @@ describe('KolamAmSurface', () => {
       ],
       meta: {total: 1, limit: 100},
     });
-    jest.mocked(getAmDeviceServices).mockResolvedValueOnce([]);
+    jest.mocked(getAmDeviceServices).mockResolvedValue([]);
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
     await act(async () => {
@@ -1622,10 +1622,43 @@ describe('KolamAmSurface', () => {
     expect(getAmDeviceServices).toHaveBeenCalledWith('device-1');
 
     await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Device Add Service Account device-1'}).props.onPress();
+      renderer!.root.findByProps({accessibilityLabel: 'AM Device Delete Service Account service-1'}).props.onPress();
+    });
+
+    expect(deleteAmServiceAccount).toHaveBeenCalledWith('service-1');
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Device Edit Service Account service-1'}).props.onPress();
     });
 
     const findInput = (placeholder: string) => renderer!.root.findAllByType(TextInput).find(input => input.props.placeholder === placeholder);
+    await act(async () => {
+      findInput('Service label')!.props.onChangeText('BCA Detail Updated');
+      findInput('username/email')!.props.onChangeText('bca-updated');
+      findInput('nomor akun/rekening')!.props.onChangeText('9876543210');
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Device Save Service Account device-1'}).props.onPress();
+    });
+
+    expect(updateAmServiceAccount).toHaveBeenCalledWith('service-1', expect.objectContaining({
+      platform: 'bca',
+      label: 'BCA Detail Updated',
+      deviceId: 'device-1',
+      username: 'bca-updated',
+      accountNumber: '9876543210',
+      credentials: {},
+      status: 'active',
+    }));
+    expect(updateAmServiceAccount).toHaveBeenCalledWith('service-1', expect.not.objectContaining({
+      password: '',
+      pin: '',
+    }));
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Device Add Service Account device-1'}).props.onPress();
+    });
+
     await act(async () => {
       findInput('Service label')!.props.onChangeText('BCA Detail New');
       findInput('username/email')!.props.onChangeText('bca-detail');

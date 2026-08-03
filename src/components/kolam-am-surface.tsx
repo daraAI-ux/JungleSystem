@@ -3142,6 +3142,8 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
   const [serviceFormPin, setServiceFormPin] = React.useState('');
   const [serviceFormAccountNumber, setServiceFormAccountNumber] = React.useState('');
   const [serviceFormPhoneNumber, setServiceFormPhoneNumber] = React.useState('');
+  const [editingDeviceServiceId, setEditingDeviceServiceId] = React.useState<string | null>(null);
+  const [actingDeviceServiceId, setActingDeviceServiceId] = React.useState<string | null>(null);
   const [isSubmittingService, setIsSubmittingService] = React.useState(false);
   const [actionMessage, setActionMessage] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -3155,6 +3157,7 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
   );
 
   const resetDeviceServiceForm = React.useCallback((open = false) => {
+    setEditingDeviceServiceId(null);
     setIsServiceFormOpen(open);
     setServiceFormPlatform(servicePlatformItems[0] ?? 'bca');
     setServiceFormStatus('inactive');
@@ -3166,6 +3169,20 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
     setServiceFormPhoneNumber('');
     setActionMessage(null);
   }, [servicePlatformItems]);
+
+  const editDeviceServiceAccount = React.useCallback((account: AmServiceAccount) => {
+    setEditingDeviceServiceId(account._id);
+    setIsServiceFormOpen(true);
+    setServiceFormPlatform(account.platform);
+    setServiceFormStatus(account.status as 'active' | 'inactive' | 'blocked');
+    setServiceFormLabel(account.label);
+    setServiceFormUsername(account.username ?? '');
+    setServiceFormPassword('');
+    setServiceFormPin('');
+    setServiceFormAccountNumber(account.accountNumber ?? '');
+    setServiceFormPhoneNumber(getCredentialString(account.credentials, 'phoneNumber') ?? '');
+    setActionMessage(null);
+  }, []);
 
   const fetchDeviceServices = React.useCallback(async () => {
     try {
@@ -3206,32 +3223,39 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
       label: serviceFormLabel.trim(),
       deviceId: device._id,
       username: serviceFormUsername.trim(),
-      password: serviceFormPassword.trim(),
-      pin: serviceFormPin.trim(),
       accountNumber: serviceFormAccountNumber.trim(),
       credentials,
       status: serviceFormStatus,
     };
+    const password = serviceFormPassword.trim();
+    const pin = serviceFormPin.trim();
+    if (!editingDeviceServiceId || password) payload.password = password;
+    if (!editingDeviceServiceId || pin) payload.pin = pin;
 
     try {
       setIsSubmittingService(true);
       setError(null);
       setActionMessage(null);
-      await createAmServiceAccount({
-        ...payload,
-        platform: serviceFormPlatform,
-        label: serviceFormLabel.trim(),
-      });
+      if (editingDeviceServiceId) {
+        await updateAmServiceAccount(editingDeviceServiceId, payload);
+      } else {
+        await createAmServiceAccount({
+          ...payload,
+          platform: serviceFormPlatform,
+          label: serviceFormLabel.trim(),
+        });
+      }
       resetDeviceServiceForm(false);
-      setActionMessage(`${payload.label} dibuat.`);
+      setActionMessage(`${payload.label} ${editingDeviceServiceId ? 'diperbarui' : 'dibuat'}.`);
       await fetchDeviceServices();
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : 'Gagal membuat service account device.');
+      setError(nextError instanceof Error ? nextError.message : 'Gagal menyimpan service account device.');
     } finally {
       setIsSubmittingService(false);
     }
   }, [
     device._id,
+    editingDeviceServiceId,
     fetchDeviceServices,
     resetDeviceServiceForm,
     serviceFormAccountNumber,
@@ -3243,6 +3267,24 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
     serviceFormStatus,
     serviceFormUsername,
   ]);
+
+  const deleteDeviceServiceAccount = React.useCallback(async (account: AmServiceAccount) => {
+    try {
+      setActingDeviceServiceId(account._id);
+      setError(null);
+      setActionMessage(null);
+      await deleteAmServiceAccount(account._id);
+      if (editingDeviceServiceId === account._id) {
+        resetDeviceServiceForm(false);
+      }
+      setActionMessage(`${account.label} dihapus.`);
+      await fetchDeviceServices();
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Gagal menghapus service account device.');
+    } finally {
+      setActingDeviceServiceId(null);
+    }
+  }, [editingDeviceServiceId, fetchDeviceServices, resetDeviceServiceForm]);
 
   return (
     <View style={styles.panel}>
@@ -3313,7 +3355,7 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
             <View style={styles.inlineActions}>
               <KolamButton
                 accessibilityLabel={`AM Device Save Service Account ${device._id}`}
-                label={isSubmittingService ? 'Menyimpan' : 'Create Service'}
+                label={isSubmittingService ? 'Menyimpan' : editingDeviceServiceId ? 'Update Service' : 'Create Service'}
                 muted={isSubmittingService}
                 size="sm"
                 onPress={submitDeviceServiceAccount}
@@ -3366,7 +3408,25 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
                 {typeof account.balance === 'number' ? formatRupiah(account.balance) : '-'}
               </Text>
               <View style={styles.statusCol}>
-                <AmStatusChip label={statusLabel} tone={statusLabel === 'running' || statusLabel === 'active' ? 'success' : 'warning'} />
+                <View style={styles.statusActionStack}>
+                  <AmStatusChip label={statusLabel} tone={statusLabel === 'running' || statusLabel === 'active' ? 'success' : 'warning'} />
+                  <KolamButton
+                    accessibilityLabel={`AM Device Edit Service Account ${account._id}`}
+                    intent="outline"
+                    label="Edit"
+                    muted={isSubmittingService || actingDeviceServiceId === account._id}
+                    size="sm"
+                    onPress={() => editDeviceServiceAccount(account)}
+                  />
+                  <KolamButton
+                    accessibilityLabel={`AM Device Delete Service Account ${account._id}`}
+                    intent="danger"
+                    label={actingDeviceServiceId === account._id ? '...' : 'Delete'}
+                    muted={actingDeviceServiceId === account._id}
+                    size="sm"
+                    onPress={() => deleteDeviceServiceAccount(account)}
+                  />
+                </View>
               </View>
             </View>
           );
