@@ -641,6 +641,14 @@ export function getKolamTaskChecklistProgress(task: KolamTaskManagerTask) {
   };
 }
 
+export function hasOpenKolamTaskChecklistItems(task: KolamTaskManagerTask) {
+  return task.checklist.some(item => !item.done);
+}
+
+export function canMarkKolamTaskDone(task: KolamTaskManagerTask) {
+  return Boolean(task.projectId) || !hasOpenKolamTaskChecklistItems(task);
+}
+
 export function getKolamTaskTimelineLabel(type: string) {
   switch (type) {
     case 'created':
@@ -715,7 +723,8 @@ export function getKolamTaskStatusOptionsForUser({
       canUpgradeKolamTaskStatus(task.status, option.id, {
         allowReviewRevision,
       }),
-    );
+    )
+    .filter(option => option.id !== 'done' || canMarkKolamTaskDone(task));
 }
 
 export function normalizeKolamTaskManagerList(

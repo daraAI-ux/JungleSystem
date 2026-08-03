@@ -8,11 +8,13 @@ import {
   getKolamTaskPriorityBadgeIntent,
   getKolamTaskPriorityLabel,
   getKolamTaskResolutionDuration,
+  getKolamTaskRefId,
   getKolamTaskStatusBadgeIntent,
   getKolamTaskStatusLabel,
   getKolamTaskStatusOptionsForUser,
   getKolamTaskTimelineLabel,
   getKolamTaskUserDisplayName,
+  hasOpenKolamTaskChecklistItems,
   isKolamTaskOverdue,
   resolveKolamTaskCompletedAt,
   KOLAM_TASK_CATEGORY_BUCKET_OPTIONS,
@@ -158,6 +160,13 @@ function KolamTaskManagerDetail({
 
   const checklistProgress = getKolamTaskChecklistProgress(task);
   const completedAt = resolveKolamTaskCompletedAt(task);
+  const isCreator =
+    Boolean(controller.currentUserId) &&
+    getKolamTaskRefId(task.createdBy) === controller.currentUserId;
+  const showChecklistDoneWarning =
+    checklistProgress &&
+    checklistProgress.done < checklistProgress.total &&
+    (controller.isTaskAdmin || isCreator);
   const statusOptions = getKolamTaskStatusOptionsForUser({
     currentUserId: controller.currentUserId,
     isTaskAdmin: controller.isTaskAdmin,
@@ -341,6 +350,16 @@ function KolamTaskManagerDetail({
             </Text>
           ) : null}
         </View>
+        {showChecklistDoneWarning ? (
+          <KolamStatusBadge
+            intent={
+              hasOpenKolamTaskChecklistItems(task) && !task.projectId
+                ? 'warning'
+                : 'muted'
+            }
+            label="Checklist belum 100%"
+          />
+        ) : null}
         {task.checklist.length ? (
           task.checklist.map((item, index) => (
             <View key={item.id || item.title} style={styles.checklistRow}>
