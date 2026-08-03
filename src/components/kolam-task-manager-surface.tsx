@@ -4,14 +4,17 @@ import {
   formatKolamTaskListDatetime,
   getKolamTaskChecklistProgress,
   getKolamTaskCategoryBucketLabel,
+  getKolamTaskDueCountdownLabel,
   getKolamTaskPriorityBadgeIntent,
   getKolamTaskPriorityLabel,
+  getKolamTaskResolutionDuration,
   getKolamTaskStatusBadgeIntent,
   getKolamTaskStatusLabel,
   getKolamTaskStatusOptionsForUser,
   getKolamTaskTimelineLabel,
   getKolamTaskUserDisplayName,
   isKolamTaskOverdue,
+  resolveKolamTaskCompletedAt,
   KOLAM_TASK_CATEGORY_BUCKET_OPTIONS,
   KOLAM_TASK_PRIORITY_OPTIONS,
   KOLAM_TASK_STATUS_OPTIONS,
@@ -149,6 +152,7 @@ function KolamTaskManagerDetail({
   }
 
   const checklistProgress = getKolamTaskChecklistProgress(task);
+  const completedAt = resolveKolamTaskCompletedAt(task);
   const statusOptions = getKolamTaskStatusOptionsForUser({
     currentUserId: controller.currentUserId,
     isTaskAdmin: controller.isTaskAdmin,
@@ -248,7 +252,20 @@ function KolamTaskManagerDetail({
         <KolamTaskDetailMetric label="PIC" value={getKolamTaskUserDisplayName(task.assignedTo)} />
         <KolamTaskDetailMetric label="Dibantu" value={getKolamTaskUserDisplayName(task.assistedBy)} />
         <KolamTaskDetailMetric label="Tipe task" value={getTaskTypeLabel(task)} />
+        <KolamTaskDetailMetric label="Dibuat" value={formatKolamTaskListDatetime(task.createdAt)} />
         <KolamTaskDetailMetric label="Due" value={formatKolamTaskListDatetime(task.dueDate)} />
+        <KolamTaskDetailMetric
+          label="Countdown"
+          value={getKolamTaskDueCountdownLabel(task)}
+        />
+        <KolamTaskDetailMetric
+          label="Diselesaikan"
+          value={completedAt ? formatKolamTaskListDatetime(completedAt) : '-'}
+        />
+        <KolamTaskDetailMetric
+          label="Durasi"
+          value={getKolamTaskResolutionDuration(task)}
+        />
         <KolamTaskDetailMetric
           label="Checklist"
           value={

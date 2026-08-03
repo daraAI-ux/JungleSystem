@@ -102,6 +102,7 @@ export interface KolamTaskTimelineItem {
   id: string;
   type: KolamTaskTimelineType | string;
   message: string;
+  meta: Record<string, unknown>;
   by: string | KolamTaskManagerUserRef | null;
   at: string;
 }
@@ -455,6 +456,78 @@ export function isKolamTaskOverdue(task: Pick<KolamTaskManagerTask, 'dueDate' | 
   return new Date(task.dueDate).getTime() < Date.now();
 }
 
+export function resolveKolamTaskCompletedAt(task: KolamTaskManagerTask) {
+  if (task.completedAt) return task.completedAt;
+  const doneEvent = [...task.timeline]
+    .reverse()
+    .find(
+      item =>
+        item.type === 'status_change' &&
+        isRecord(item.meta) &&
+        item.meta.to === 'done',
+    );
+  return doneEvent?.at || '';
+}
+
+export function getKolamTaskResolutionDuration(task: KolamTaskManagerTask) {
+  if (!task.createdAt) return '-';
+  const completedAt = resolveKolamTaskCompletedAt(task);
+  if (!completedAt) {
+    if (task.status === 'done' || task.status === 'cancelled') return '-';
+    return 'Belum selesai';
+  }
+  return formatKolamTaskDuration(
+    new Date(completedAt).getTime() - new Date(task.createdAt).getTime(),
+  );
+}
+
+export function getKolamTaskDueCountdownLabel(task: KolamTaskManagerTask) {
+  const completedAt = resolveKolamTaskCompletedAt(task);
+  if (task.status === 'cancelled') return 'Dibatalkan';
+  if (task.status === 'done') {
+    if (!task.dueDate || !completedAt) return 'Selesai';
+    const doneMs = new Date(completedAt).getTime();
+    const dueMs = new Date(task.dueDate).getTime();
+    if (!Number.isFinite(doneMs) || !Number.isFinite(dueMs)) return 'Selesai';
+    return doneMs > dueMs
+      ? `Terlambat ${formatKolamTaskClockDuration(doneMs - dueMs)}`
+      : 'Tepat waktu';
+  }
+  if (!task.dueDate) return '-';
+  const dueMs = new Date(task.dueDate).getTime();
+  if (!Number.isFinite(dueMs)) return '-';
+  const diff = dueMs - Date.now();
+  return diff < 0
+    ? `Terlambat ${formatKolamTaskClockDuration(-diff)}`
+    : formatKolamTaskClockDuration(diff);
+}
+
+function formatKolamTaskDuration(ms: number) {
+  if (ms < 0 || !Number.isFinite(ms)) return '-';
+  const totalMinutes = Math.floor(ms / 60000);
+  const days = Math.floor(totalMinutes / 1440);
+  const hours = Math.floor((totalMinutes % 1440) / 60);
+  const minutes = totalMinutes % 60;
+  if (days > 0) return `${days} hari ${hours} jam`;
+  if (hours > 0) return `${hours} jam ${minutes} menit`;
+  if (minutes > 0) return `${minutes} menit`;
+  return '< 1 menit';
+}
+
+function formatKolamTaskClockDuration(ms: number) {
+  if (ms <= 0 || !Number.isFinite(ms)) return '00:00:00';
+  const totalSeconds = Math.floor(ms / 1000);
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  const clock = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(
+    2,
+    '0',
+  )}:${String(seconds).padStart(2, '0')}`;
+  return days > 0 ? `${days}h ${clock}` : clock;
+}
+
 export function formatKolamTaskListDatetime(input?: string | null) {
   if (!input) return '-';
   const date = new Date(input);
@@ -746,6 +819,7 @@ function normalizeTimelineItem(payload: unknown): KolamTaskTimelineItem {
     id: toStringValue(record._id ?? record.id),
     type: toStringValue(record.type),
     message: toStringValue(record.message),
+    meta: isRecord(record.meta) ? record.meta : {},
     by: normalizeUserRef(record.by),
     at: toStringValue(record.at),
   };
