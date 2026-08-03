@@ -472,6 +472,7 @@ function AmDashboardPage({
 
   return (
     <View style={styles.pageStack}>
+      <Text style={styles.panelText}>Welcome back, User</Text>
       <View style={styles.actionRow}>
         <KolamButton
           disabled={isLoading}

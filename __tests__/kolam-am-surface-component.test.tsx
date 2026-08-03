@@ -413,6 +413,7 @@ describe('KolamAmSurface', () => {
     const joinedText = text.join(' ');
 
     expect(text).toContain('Kembali');
+    expect(joinedText).toContain('Welcome back, User');
     expect(text).toContain("Today's Incoming");
     expect(text).toContain("Today's Outgoing");
     expect(text).toContain("Today's Transfers");
