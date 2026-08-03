@@ -1,6 +1,7 @@
 import {appConfig} from '../src/config/app';
 import {clearResponseCookieJar} from '../src/lib/api-client';
 import {
+  createAmTask,
   createAmTransfer,
   getAmBoxById,
   getAmDeviceById,
@@ -49,6 +50,33 @@ describe('AM API service', () => {
 
     expect(fetchMock).toHaveBeenCalledWith(
       'https://am.example.test/api/auth/login',
+      expect.objectContaining({
+        method: 'POST',
+        credentials: 'include',
+        body: JSON.stringify(payload),
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
+          'Content-Type': 'application/json',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+  });
+
+  it('creates automation tasks through the AM live task endpoint', async () => {
+    const payload = {
+      type: 'send_message',
+      deviceId: 'device-1',
+      serviceAccountId: 'account-1',
+      payload: {message: 'Halo'},
+      priority: 5,
+    };
+    fetchMock.mockResolvedValue(jsonResponse({success: true, data: {_id: 'task-new'}}));
+
+    await createAmTask(payload, 'https://am.example.test/api');
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://am.example.test/api/task',
       expect.objectContaining({
         method: 'POST',
         credentials: 'include',

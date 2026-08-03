@@ -91,6 +91,14 @@ export interface AmTask {
   updatedAt: string;
 }
 
+export interface AmTaskPayload {
+  type: AmTaskType | string;
+  deviceId?: string;
+  serviceAccountId?: string;
+  payload?: Record<string, unknown>;
+  priority?: number;
+}
+
 export interface AmListMeta {
   total: number;
   page?: number;
@@ -639,6 +647,13 @@ export async function getAmTaskById(
   baseUrl = appConfig.amApiBaseUrl,
 ): Promise<AmTask> {
   return amGet<AmTask>(`/task/${id}`, undefined, baseUrl);
+}
+
+export async function createAmTask(
+  payload: AmTaskPayload,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmTask> {
+  return amPost<AmTask>('/task', payload, baseUrl);
 }
 
 export async function cancelAmTask(
