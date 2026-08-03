@@ -1615,7 +1615,7 @@ describe('KolamAmSurface', () => {
     });
   });
 
-  it('sends password-required runtime input through the AM BE otp command channel', async () => {
+  it('sends password-required runtime input through the AM BE password command channel', async () => {
     jest.mocked(getAmServiceAccounts).mockResolvedValue({
       data: [
         {
@@ -1668,7 +1668,7 @@ describe('KolamAmSurface', () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Service Submit Input service-password'}).props.onPress();
     });
 
-    expect(sendAmDeviceServiceInput).toHaveBeenCalledWith('device-password', 'otp', 'SecretPass1!');
+    expect(sendAmDeviceServiceInput).toHaveBeenCalledWith('device-password', 'password', 'SecretPass1!');
   });
 
   it('hides service input after runtime logs report login success', async () => {
