@@ -25,6 +25,7 @@ import {
   getAmServiceAccountById,
   getAmTasks,
   getAmUserById,
+  deleteAmServiceAccount,
   loginAmSession,
   logoutAmSession,
   restartAmTokopediaSession,
@@ -284,6 +285,38 @@ describe('AM API service', () => {
         }),
       }),
     );
+  });
+
+  it('unwraps AM success envelopes without data for void endpoints', async () => {
+    fetchMock.mockResolvedValue(jsonResponse({success: true, message: 'Service account deleted'}));
+
+    await expect(
+      deleteAmServiceAccount('service-account-1', 'https://am.example.test/api'),
+    ).resolves.toBeUndefined();
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://am.example.test/api/service-account/service-account-1',
+      expect.objectContaining({
+        method: 'DELETE',
+        credentials: 'include',
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+  });
+
+  it('throws AM error envelopes without data', async () => {
+    fetchMock.mockResolvedValue(jsonResponse(
+      {success: false, message: 'Service account not found'},
+      {},
+      404,
+    ));
+
+    await expect(
+      deleteAmServiceAccount('missing-service', 'https://am.example.test/api'),
+    ).rejects.toThrow('Service account not found');
   });
 
   it('loads AM chat messages through the live read-only chat endpoint', async () => {

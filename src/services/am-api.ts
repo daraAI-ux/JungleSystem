@@ -698,7 +698,7 @@ export interface AmWebhookConfigPayload {
 interface AmEnvelope<T> {
   success: boolean;
   message?: string;
-  data: T;
+  data?: T;
   meta?: AmListMeta;
 }
 
@@ -800,7 +800,7 @@ export async function deleteAmServiceAccount(
   id: string,
   baseUrl = appConfig.amApiBaseUrl,
 ): Promise<void> {
-  return amDelete<void>(`/service-account/${id}`, baseUrl);
+  await amDelete<unknown>(`/service-account/${id}`, baseUrl);
 }
 
 export async function getAmRacks(
@@ -873,7 +873,7 @@ export async function deleteAmRacks(
   ids: string[],
   baseUrl = appConfig.amApiBaseUrl,
 ): Promise<void> {
-  return amDeleteWithBody<void>('/racks', {ids}, baseUrl);
+  await amDeleteWithBody<unknown>('/racks', {ids}, baseUrl);
 }
 
 export async function createAmBox(
@@ -895,7 +895,7 @@ export async function deleteAmBoxes(
   ids: string[],
   baseUrl = appConfig.amApiBaseUrl,
 ): Promise<void> {
-  return amDeleteWithBody<void>('/boxes', {ids}, baseUrl);
+  await amDeleteWithBody<unknown>('/boxes', {ids}, baseUrl);
 }
 
 export async function createAmDevice(
@@ -917,7 +917,7 @@ export async function deleteAmDevices(
   ids: string[],
   baseUrl = appConfig.amApiBaseUrl,
 ): Promise<void> {
-  return amDeleteWithBody<void>('/devices', {ids}, baseUrl);
+  await amDeleteWithBody<unknown>('/devices', {ids}, baseUrl);
 }
 
 export async function getAmDeviceServiceLogs(
@@ -1257,7 +1257,7 @@ export async function deleteAmUser(
   id: string,
   baseUrl = appConfig.amApiBaseUrl,
 ): Promise<void> {
-  return amDelete<void>(`/users/${id}`, baseUrl);
+  await amDelete<unknown>(`/users/${id}`, baseUrl);
 }
 
 export async function getAmActivityLogs(
@@ -1586,5 +1586,5 @@ function isAmEnvelope<T>(
     return false;
   }
 
-  return 'success' in response && 'data' in response;
+  return 'success' in response && (response.success === false || 'data' in response);
 }
