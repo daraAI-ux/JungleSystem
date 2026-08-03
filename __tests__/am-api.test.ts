@@ -8,6 +8,7 @@ import {
   getAmMutasiReceiptUrl,
   getAmRackById,
   getAmServiceAccountById,
+  getAmUserById,
   loginAmSession,
   logoutAmSession,
   testAmWebhookPing,
@@ -217,6 +218,27 @@ describe('AM API service', () => {
       'https://am.example.test/api/webhook/test-ping',
       expect.objectContaining({
         method: 'POST',
+        credentials: 'include',
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+  });
+
+  it('loads AM user detail through the live user endpoint', async () => {
+    fetchMock.mockResolvedValue(jsonResponse({
+      success: true,
+      data: {_id: 'user-1', username: 'admin@dunia-anura.com'},
+    }));
+
+    await getAmUserById('user-1', 'https://am.example.test/api');
+
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://am.example.test/api/users/user-1',
+      expect.objectContaining({
+        method: 'GET',
         credentials: 'include',
         headers: expect.objectContaining({
           Cookie: 'kolamCsrf=',

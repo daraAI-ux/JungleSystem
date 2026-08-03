@@ -1105,6 +1105,13 @@ export async function getAmUsers(
   return getAmList<AmUser>('/users', query, baseUrl);
 }
 
+export async function getAmUserById(
+  id: string,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmUser> {
+  return amGet<AmUser>(`/users/${id}`, undefined, baseUrl);
+}
+
 export async function getAmCurrentUser(
   baseUrl = appConfig.amApiBaseUrl,
 ): Promise<AmCurrentUser> {
