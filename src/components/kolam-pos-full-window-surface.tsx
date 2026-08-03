@@ -7,6 +7,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
+import type {ShellModule} from '../domain/app-shell';
 import type {
   CartLine,
   CashflowSession,
@@ -26,6 +27,7 @@ import {KolamDashboardHeaderCopy} from './kolam-dashboard-header-copy';
 import {dashboardHeaderStyles} from './kolam-dashboard-header-styles';
 import {KolamHeaderFrame} from './kolam-header-frame';
 import {KolamInteractionFrame} from './kolam-interaction-frame';
+import {KolamNavItem} from './kolam-nav-item';
 import {KolamQuantityStepper} from './kolam-quantity-stepper';
 import {KolamRemoteImage} from './kolam-remote-image';
 import {KolamSearchField} from './kolam-search-field';
@@ -179,13 +181,6 @@ export function KolamPosFullWindowSurface({
     0,
   );
   const isCatalogView = activeView === 'catalog';
-  const viewCountText = getPosViewCountText({
-    activeType,
-    activeView,
-    customers,
-    filteredCatalog,
-    recentSales,
-  });
   const canOpenPayment = checkout.cart.length > 0 && !!selectedCustomer && hasCashflowSession;
 
   const handleSaveOrder = React.useCallback(() => {
@@ -283,7 +278,6 @@ export function KolamPosFullWindowSurface({
           <KolamDashboardHeaderCopy
             eyebrow="POS"
             title="POS"
-            subtitle={viewCountText}
           />
           <View style={dashboardHeaderStyles.headerControls}>
             <KolamButton
@@ -294,47 +288,8 @@ export function KolamPosFullWindowSurface({
             />
           </View>
         </KolamHeaderFrame>
-        <View style={styles.topBar}>
-          <View style={styles.segmentRail}>
-            <PosSegment
-              active={isCatalogView && activeType !== 'species'}
-              icon="P"
-              label="Produk"
-              onPress={() => {
-                setActiveView('catalog');
-                onTypeChange('product');
-              }}
-            />
-            <PosSegment
-              active={isCatalogView && activeType === 'species'}
-              icon="S"
-              label="Spesies"
-              onPress={() => {
-                setActiveView('catalog');
-                onTypeChange('species');
-              }}
-            />
-            <View style={styles.segmentDivider} />
-            <PosSegment
-              active={activeView === 'customers'}
-              icon="C"
-              label="Pelanggan"
-              onPress={() => setActiveView('customers')}
-            />
-            <PosSegment
-              active={activeView === 'sales'}
-              icon="R"
-              label="Penjualan"
-              onPress={() => setActiveView('sales')}
-            />
-            <PosSegment
-              active={activeView === 'cashflow'}
-              icon="K"
-              label="Kas"
-              onPress={() => setActiveView('cashflow')}
-            />
-          </View>
-          {isCatalogView ? (
+        {isCatalogView ? (
+          <View style={styles.topBar}>
             <View style={styles.searchWrap}>
               <KolamSearchField
                 value={catalogSearch}
@@ -354,8 +309,8 @@ export function KolamPosFullWindowSurface({
                 </KolamInteractionFrame>
               ) : null}
             </View>
-          ) : null}
-        </View>
+          </View>
+        ) : null}
 
         {isCatalogView ? (
           <>
@@ -617,6 +572,21 @@ export function KolamPosFullWindowSurface({
           </View>
         ) : null}
       </View>
+      <PosRightSidebar
+        activeType={activeType}
+        activeView={activeView}
+        onSelectCashflow={() => setActiveView('cashflow')}
+        onSelectCustomers={() => setActiveView('customers')}
+        onSelectProduct={() => {
+          setActiveView('catalog');
+          onTypeChange('product');
+        }}
+        onSelectSales={() => setActiveView('sales')}
+        onSelectSpecies={() => {
+          setActiveView('catalog');
+          onTypeChange('species');
+        }}
+      />
       {isSavedOrdersOpen ? (
         <PosSavedOrdersPanel
           catalog={catalog}
@@ -658,30 +628,93 @@ export function KolamPosFullWindowSurface({
   );
 }
 
-function PosSegment({
-  active = false,
-  icon,
-  label,
-  onPress,
+const POS_PRODUCT_NAV_MODULE: ShellModule = {
+  id: 'catalog',
+  area: 'pos',
+  label: 'Produk',
+  iconKind: 'catalog',
+  sourceRepo: 'E:\\Projects\\da-pos',
+  summary: '',
+  routes: [],
+};
+
+const POS_SPECIES_NAV_MODULE: ShellModule = {
+  ...POS_PRODUCT_NAV_MODULE,
+  label: 'Spesies',
+};
+
+const POS_CUSTOMER_NAV_MODULE: ShellModule = {
+  ...POS_PRODUCT_NAV_MODULE,
+  id: 'customer',
+  label: 'Pelanggan',
+  iconKind: 'people',
+};
+
+const POS_SALES_NAV_MODULE: ShellModule = {
+  ...POS_PRODUCT_NAV_MODULE,
+  id: 'sales',
+  label: 'Penjualan',
+  iconKind: 'sales',
+};
+
+const POS_CASHFLOW_NAV_MODULE: ShellModule = {
+  ...POS_PRODUCT_NAV_MODULE,
+  id: 'cashflow',
+  label: 'Kas',
+  iconKind: 'wallet',
+};
+
+function PosRightSidebar({
+  activeType,
+  activeView,
+  onSelectCashflow,
+  onSelectCustomers,
+  onSelectProduct,
+  onSelectSales,
+  onSelectSpecies,
 }: {
-  active?: boolean;
-  icon?: string;
-  label: string;
-  onPress: () => void;
+  activeType: CatalogItemType | 'all';
+  activeView: PosWindowView;
+  onSelectCashflow: () => void;
+  onSelectCustomers: () => void;
+  onSelectProduct: () => void;
+  onSelectSales: () => void;
+  onSelectSpecies: () => void;
 }) {
   return (
-    <KolamInteractionFrame
-      onPress={onPress}
-      style={[styles.segment, active && styles.segmentActive]}>
-      {icon ? (
-        <Text style={[styles.segmentIcon, active && styles.segmentIconActive]}>
-          {icon}
-        </Text>
-      ) : null}
-      <Text style={[styles.segmentText, active && styles.segmentTextActive]}>
-        {label}
-      </Text>
-    </KolamInteractionFrame>
+    <View style={styles.posRightSidebar}>
+      <ScrollView
+        style={styles.posRightSidebarScroll}
+        contentContainerStyle={styles.posRightSidebarContent}
+        showsVerticalScrollIndicator={false}>
+        <Text style={styles.posRightSidebarLabel}>POS</Text>
+        <KolamNavItem
+          active={activeView === 'catalog' && activeType !== 'species'}
+          module={POS_PRODUCT_NAV_MODULE}
+          onPress={onSelectProduct}
+        />
+        <KolamNavItem
+          active={activeView === 'catalog' && activeType === 'species'}
+          module={POS_SPECIES_NAV_MODULE}
+          onPress={onSelectSpecies}
+        />
+        <KolamNavItem
+          active={activeView === 'customers'}
+          module={POS_CUSTOMER_NAV_MODULE}
+          onPress={onSelectCustomers}
+        />
+        <KolamNavItem
+          active={activeView === 'sales'}
+          module={POS_SALES_NAV_MODULE}
+          onPress={onSelectSales}
+        />
+        <KolamNavItem
+          active={activeView === 'cashflow'}
+          module={POS_CASHFLOW_NAV_MODULE}
+          onPress={onSelectCashflow}
+        />
+      </ScrollView>
+    </View>
   );
 }
 
@@ -1520,40 +1553,6 @@ function PosSubview({
   );
 }
 
-function getPosViewCountText({
-  activeType,
-  activeView,
-  customers,
-  filteredCatalog,
-  recentSales,
-}: {
-  activeType: CatalogItemType | 'all';
-  activeView: PosWindowView;
-  customers: Customer[];
-  filteredCatalog: CatalogItem[];
-  recentSales: SaleSummary[];
-}) {
-  if (activeView === 'customers') {
-    return `${customers.length} pelanggan`;
-  }
-
-  if (activeView === 'sales') {
-    return `${recentSales.length} transaksi`;
-  }
-
-  if (activeView === 'cashflow') {
-    return 'kas POS';
-  }
-
-  return `${filteredCatalog.length} ${
-    activeType === 'species'
-      ? 'spesies'
-      : activeType === 'product'
-        ? 'produk'
-        : 'item'
-  }`;
-}
-
 function getInitials(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean);
 
@@ -2255,68 +2254,11 @@ const styles = StyleSheet.create({
     minHeight: 58,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'flex-end',
     padding: 12,
     borderBottomColor: V.colors.border,
     borderBottomWidth: 1,
     backgroundColor: V.colors.bg,
-  },
-  segmentRail: {
-    flex: 1,
-    minWidth: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    overflow: 'hidden',
-    borderRadius: 6,
-    padding: 4,
-    backgroundColor: V.colors.muted,
-  },
-  segment: {
-    minHeight: 30,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    borderRadius: 6,
-    paddingHorizontal: 12,
-  },
-  segmentActive: {
-    backgroundColor: V.colors.bg,
-    shadowColor: '#000000',
-    shadowOpacity: 0.06,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  segmentText: {
-    color: V.colors.mutedFg,
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  segmentTextActive: {
-    color: V.colors.fg,
-  },
-  segmentIcon: {
-    width: 16,
-    height: 16,
-    overflow: 'hidden',
-    borderRadius: 4,
-    textAlign: 'center',
-    color: V.colors.mutedFg,
-    backgroundColor: V.colors.secondary,
-    fontSize: 9,
-    fontWeight: '900',
-    lineHeight: 16,
-  },
-  segmentIconActive: {
-    color: V.colors.primary,
-    backgroundColor: V.colors.primarySoft,
-  },
-  segmentDivider: {
-    width: 1,
-    height: 20,
-    marginHorizontal: 4,
-    backgroundColor: V.colors.border,
   },
   searchWrap: {
     position: 'relative',
@@ -2343,10 +2285,27 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '900',
   },
-  countText: {
+  posRightSidebar: {
+    width: V.layout.sidebarWidth,
+    paddingHorizontal: 12,
+    paddingVertical: 14,
+    backgroundColor: V.colors.sidebar,
+    borderLeftColor: V.colors.border,
+    borderLeftWidth: 1,
+  },
+  posRightSidebarScroll: {
+    flex: 1,
+  },
+  posRightSidebarContent: {
+    paddingBottom: 12,
+  },
+  posRightSidebarLabel: {
+    paddingHorizontal: 12,
     color: V.colors.mutedFg,
-    fontSize: 12,
-    fontWeight: '700',
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '900',
+    textTransform: 'uppercase',
   },
   categoryBar: {
     minHeight: 46,
