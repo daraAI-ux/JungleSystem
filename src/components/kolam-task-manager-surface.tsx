@@ -94,6 +94,14 @@ export function KolamTaskManagerSurface({
   route: string;
 }) {
   const controller = useKolamTaskManagerController({ onRouteChange, route });
+  const settingsBlocked =
+    Boolean(controller.currentUserId) &&
+    !controller.isTaskAdmin &&
+    (controller.mode === 'categories' || controller.mode === 'task-types');
+
+  if (settingsBlocked) {
+    return null;
+  }
 
   return (
     <View style={styles.surface}>

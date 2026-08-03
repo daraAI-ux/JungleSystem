@@ -436,6 +436,17 @@ export function useKolamTaskManagerController({
   const [projectFilter, setProjectFilter] = useState('all');
   const [mineOnly, setMineOnly] = useState(false);
   const [recurringEnclosureOnly, setRecurringEnclosureOnly] = useState(false);
+
+  useEffect(() => {
+    if (
+      currentUserId &&
+      !isTaskAdmin &&
+      (mode === 'categories' || mode === 'task-types')
+    ) {
+      onRouteChange?.(KOLAM_TASK_MANAGER_ROOT);
+    }
+  }, [currentUserId, isTaskAdmin, mode, onRouteChange]);
+
   const taskTypeFormKeyLocked =
     taskTypeFormMode === 'edit' &&
     taskTypes.some(row => row.id === editingTaskTypeId && row.isSystem);
