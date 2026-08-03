@@ -250,7 +250,7 @@ export interface KolamTaskManagerController {
   onCloseOvertimeRequest: () => void;
   onCreateCategory: () => void;
   onCreateNew: () => void;
-  onCreateRecurringBulkEnrollment: () => void;
+  onCreateRecurringBulkEnrollment: (taskTypeId?: string) => void;
   onCreateRecurringTemplate: () => void;
   onCreateTaskType: () => void;
   onDeleteCategory: (category: KolamTaskManagerCategory) => Promise<boolean>;
@@ -892,12 +892,15 @@ export function useKolamTaskManagerController({
     [],
   );
 
-  const onCreateRecurringBulkEnrollment = useCallback(() => {
+  const onCreateRecurringBulkEnrollment = useCallback((taskTypeId?: string) => {
     const initialTaskTypeId =
-      taskTypes.find(taskType => taskType.active && taskType.categoryBuckets.includes('enclosure'))
-        ?.id ??
-      taskTypes.find(taskType => taskType.active)?.id ??
-      '';
+      taskTypeId?.trim() ||
+      (taskTypes.find(
+        taskType =>
+          taskType.active && taskType.categoryBuckets.includes('enclosure'),
+      )?.id ??
+        taskTypes.find(taskType => taskType.active)?.id ??
+        '');
     setRecurringBulkForm({
       ...getDefaultRecurringBulkEnrollmentForm(),
       taskTypeId: initialTaskTypeId,
