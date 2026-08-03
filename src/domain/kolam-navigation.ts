@@ -1,4 +1,4 @@
-﻿import type { AccessScope } from './auth';
+import type { AccessScope } from './auth';
 import type { AppModule } from './app-shell';
 
 export interface KolamNavigationItem {
