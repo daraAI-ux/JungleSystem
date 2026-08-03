@@ -6504,13 +6504,15 @@ function getCredentialString(
 
 function formatBankAccount(account: AmTransfer['accountId'] | AmMutasi['accountId']) {
   if (!account || typeof account === 'string') return '-';
-  const suffix = account.accountNumber ? ` - ${account.accountNumber}` : '';
-  return `${account.label}${suffix}`;
+  const label = account.label || account.name || account.platform || account.type || 'Account';
+  const accountNumber = account.accountNumber || account.account_number;
+  const suffix = accountNumber ? ` - ${accountNumber}` : '';
+  return `${label}${suffix}`;
 }
 
 function formatAccountNumber(account: AmTransfer['accountId'] | AmMutasi['accountId']) {
   if (!account || typeof account === 'string') return '-';
-  return account.accountNumber || '-';
+  return account.accountNumber || account.account_number || '-';
 }
 
 function formatMutasiAccountOption(account: AmServiceAccount) {

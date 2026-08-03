@@ -344,6 +344,9 @@ export interface AmBankAccountRef {
   platform: 'bca' | 'brimo' | string;
   accountNumber?: string;
   username?: string;
+  name?: string;
+  type?: string;
+  account_number?: string;
 }
 
 export interface AmTransfer {

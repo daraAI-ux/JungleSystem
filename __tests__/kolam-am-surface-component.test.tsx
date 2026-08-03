@@ -214,6 +214,28 @@ const mockDashboardData = {
       transferType: 'transfer',
       updatedAt: '',
     },
+    {
+      _id: 'transfer-dashboard-legacy-account',
+      accountId: {_id: 'account-legacy', name: 'Legacy BCA', type: 'bca', account_number: '321'},
+      amount: 325000,
+      completedAt: null,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      createdBy: null,
+      deviceId: {_id: 'device-1', name: 'Phone 1'},
+      error: '',
+      fee: 2500,
+      logs: [],
+      recipientAccount: '991',
+      recipientBank: 'BCA',
+      recipientName: 'Vendor Legacy Account',
+      screenshot: '',
+      startedAt: null,
+      status: 'pending',
+      transactionPurpose: null,
+      transferMethod: 'BI FAST',
+      transferType: 'transfer',
+      updatedAt: '',
+    },
     ...Array.from({length: 5}, (_, index) => ({
       _id: `transfer-dashboard-extra-${index + 2}`,
       accountId: {_id: 'account-1', label: 'BCA Main', platform: 'bca', accountNumber: '123'},
@@ -246,6 +268,19 @@ const mockDashboardData = {
       description: 'Incoming dashboard',
       detectedAt: '2026-01-01T00:05:00.000Z',
       deviceId: { _id: 'device-1', name: 'Phone 1' },
+      notificationHash: null,
+      transferId: null,
+      type: 'masuk',
+      updatedAt: '',
+    },
+    {
+      _id: 'mutasi-dashboard-legacy-account',
+      accountId: {_id: 'account-legacy', name: 'Legacy BRI', type: 'brimo', account_number: '654'},
+      amount: 175000,
+      createdAt: '',
+      description: 'Incoming legacy account',
+      detectedAt: '2026-01-01T00:05:00.000Z',
+      deviceId: {_id: 'device-1', name: 'Phone 1'},
       notificationHash: null,
       transferId: null,
       type: 'masuk',
@@ -376,8 +411,10 @@ describe('KolamAmSurface', () => {
     expect(text).toContain('Transfer Status');
     expect(text).toContain('Vendor Dashboard');
     expect(text).toContain('Vendor Dashboard Sixth');
+    expect(joinedText).toContain('Legacy BCA - 321');
     expect(text).toContain('Recent Mutations');
     expect(text).toContain('Incoming dashboard sixth');
+    expect(joinedText).toContain('Legacy BRI - 654');
     expect(text).toContain('Device Overview');
     expect(joinedText).toContain('All devices with active accounts and their locations.');
     expect(text).toContain('Location');
