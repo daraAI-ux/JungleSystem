@@ -2479,6 +2479,9 @@ describe('KolamAmSurface', () => {
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Segment DANA'}).props.onPress();
     });
+    expect(findInput('username/email')).toBeUndefined();
+    expect(findInput('password')).toBeUndefined();
+    expect(findInput('nomor akun/rekening')).toBeUndefined();
     await act(async () => {
       findInput('Service label')!.props.onChangeText('DANA Detail');
       findInput('PIN')!.props.onChangeText('654321');
@@ -2714,6 +2717,10 @@ describe('KolamAmSurface', () => {
     });
 
     const findInput = (placeholder: string) => renderer!.root.findAllByType(TextInput).find(input => input.props.placeholder === placeholder);
+    expect(findInput('username/email')).toBeUndefined();
+    expect(findInput('password')).toBeUndefined();
+    expect(findInput('PIN')).toBeUndefined();
+    expect(findInput('nomor akun/rekening')).toBeUndefined();
     await act(async () => {
       findInput('Service label')!.props.onChangeText('WA Browser');
       findInput('nomor HP')!.props.onChangeText('08123456789');

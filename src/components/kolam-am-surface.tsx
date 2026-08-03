@@ -3605,6 +3605,24 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
     ),
     [allDevices, device, serviceFormPlatform],
   );
+  const showDeviceServiceUsername = serviceFormPlatform === 'bca' ||
+    serviceFormPlatform === 'brimo' ||
+    serviceFormPlatform === 'shopee' ||
+    serviceFormPlatform === 'instagram' ||
+    serviceFormPlatform === 'tiktok';
+  const showDeviceServicePassword = serviceFormPlatform === 'bca' ||
+    serviceFormPlatform === 'brimo' ||
+    serviceFormPlatform === 'shopee' ||
+    serviceFormPlatform === 'instagram' ||
+    serviceFormPlatform === 'tokopedia';
+  const showDeviceServicePin = serviceFormPlatform === 'bca' ||
+    serviceFormPlatform === 'brimo' ||
+    serviceFormPlatform === 'dana';
+  const showDeviceServiceAccountNumber = serviceFormPlatform === 'bca' ||
+    serviceFormPlatform === 'brimo';
+  const showDeviceServicePhoneNumber = serviceFormPlatform === 'dana' ||
+    serviceFormPlatform === 'whatsapp' ||
+    serviceFormPlatform === 'tokopedia';
 
   const resetDeviceServiceForm = React.useCallback((open = false) => {
     setEditingDeviceServiceId(null);
@@ -3868,11 +3886,21 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
               onSelect={value => setServiceFormStatus(value as 'active' | 'inactive' | 'blocked')}
             />
             <AmTextInput label="Label" placeholder="Service label" value={serviceFormLabel} onChangeText={setServiceFormLabel} />
-            <AmTextInput label="Username" placeholder="username/email" value={serviceFormUsername} onChangeText={setServiceFormUsername} />
-            <AmTextInput label="Password" placeholder="password" secureTextEntry value={serviceFormPassword} onChangeText={setServiceFormPassword} />
-            <AmTextInput label="PIN" placeholder="PIN" secureTextEntry value={serviceFormPin} onChangeText={setServiceFormPin} />
-            <AmTextInput label="Account Number" placeholder="nomor akun/rekening" value={serviceFormAccountNumber} onChangeText={setServiceFormAccountNumber} />
-            <AmTextInput label="Phone Number" placeholder="nomor HP" value={serviceFormPhoneNumber} onChangeText={setServiceFormPhoneNumber} />
+            {showDeviceServiceUsername ? (
+              <AmTextInput label="Username" placeholder="username/email" value={serviceFormUsername} onChangeText={setServiceFormUsername} />
+            ) : null}
+            {showDeviceServicePassword ? (
+              <AmTextInput label="Password" placeholder="password" secureTextEntry value={serviceFormPassword} onChangeText={setServiceFormPassword} />
+            ) : null}
+            {showDeviceServicePin ? (
+              <AmTextInput label="PIN" placeholder="PIN" secureTextEntry value={serviceFormPin} onChangeText={setServiceFormPin} />
+            ) : null}
+            {showDeviceServiceAccountNumber ? (
+              <AmTextInput label="Account Number" placeholder="nomor akun/rekening" value={serviceFormAccountNumber} onChangeText={setServiceFormAccountNumber} />
+            ) : null}
+            {showDeviceServicePhoneNumber ? (
+              <AmTextInput label="Phone Number" placeholder="nomor HP" value={serviceFormPhoneNumber} onChangeText={setServiceFormPhoneNumber} />
+            ) : null}
             {editingDeviceServiceId ? (
               <View style={styles.formField}>
                 <Text style={styles.formLabel}>Device</Text>
