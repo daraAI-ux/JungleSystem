@@ -1,11 +1,15 @@
 /**
  * Kolam backoffice Voucher (`/vouchers`) — Campaign discount codes.
- * Source of truth: FE `types/voucher.ts` + list + BE `/api/vouchers`.
- * VA-1A: list (+ toggle status / delete). Create/detail/edit surface later.
+ * Source of truth: FE `types/voucher.ts` + form/detail + BE `/api/vouchers`.
  */
 
 import type { KolamBadgeIntent } from './kolam-badge';
 import { formatRupiah } from '../lib/money';
+import {
+  formatKolamIsoDate,
+  isKolamIsoDate,
+  parseKolamIsoDate,
+} from './kolam-date';
 
 export const KOLAM_VOUCHER_ROOT = '/vouchers';
 export const KOLAM_VOUCHER_CREATE_ROUTE = `${KOLAM_VOUCHER_ROOT}/create`;
@@ -25,6 +29,13 @@ export type KolamVoucherPermissionEntry = {
   actions?: string[];
 };
 
+/** Populated ref from detail endpoint (or bare id from list). */
+export type KolamVoucherRef = {
+  id: string;
+  label: string;
+  sublabel?: string;
+};
+
 export interface KolamVoucher {
   id: string;
   code: string;
@@ -41,10 +52,80 @@ export interface KolamVoucher {
   usedCount: number;
   status: KolamVoucherStatus;
   applicableTo: KolamVoucherApplicableTo;
+  applicableProducts: KolamVoucherRef[];
+  applicableSpecies: KolamVoucherRef[];
+  applicableCustomers: KolamVoucherRef[];
   firstOrderOnly: boolean;
   createdAt: string;
   updatedAt: string;
 }
+
+/** Form uses YYYY-MM-DD for dates (KolamDateField) and strings for numeric inputs. */
+export type KolamVoucherFormState = {
+  code: string;
+  title: string;
+  description: string;
+  discountType: KolamVoucherDiscountType;
+  discountValue: string;
+  maxDiscountAmount: string;
+  minPurchaseAmount: string;
+  startDate: string;
+  endDate: string;
+  usageLimit: string;
+  usageLimitPerUser: string;
+  status: Extract<KolamVoucherStatus, 'active' | 'inactive'>;
+  applicableTo: KolamVoucherApplicableTo;
+  applicableProductIds: string[];
+  applicableSpeciesIds: string[];
+  applicableCustomerIds: string[];
+  firstOrderOnly: boolean;
+};
+
+export type KolamVoucherSaveBody = {
+  code: string;
+  title: string;
+  description: string;
+  discountType: KolamVoucherDiscountType;
+  discountValue: number;
+  maxDiscountAmount: number | null;
+  minPurchaseAmount: number;
+  startDate: string;
+  endDate: string;
+  usageLimit: number | null;
+  usageLimitPerUser: number | null;
+  status: Extract<KolamVoucherStatus, 'active' | 'inactive'>;
+  applicableTo: KolamVoucherApplicableTo;
+  applicableProducts: string[];
+  applicableSpecies: string[];
+  applicableCustomers: string[];
+  firstOrderOnly: boolean;
+};
+
+export type KolamVoucherPickerOption = {
+  id: string;
+  label: string;
+  sublabel?: string;
+};
+
+export type KolamVoucherRedemption = {
+  id: string;
+  code: string;
+  discountApplied: number;
+  cancelled: boolean;
+  cancelledAt: string | null;
+  createdAt: string;
+  customerLabel: string;
+  saleLabel: string;
+  saleId: string | null;
+};
+
+export type KolamVoucherRedemptionListResult = {
+  items: KolamVoucherRedemption[];
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+};
 
 export interface KolamVoucherListQuery {
   page?: number;
@@ -69,6 +150,23 @@ export const KOLAM_VOUCHER_STATUS_FILTER_OPTIONS: Array<{
   { label: 'Aktif', value: 'active' },
   { label: 'Nonaktif', value: 'inactive' },
   { label: 'Kedaluwarsa', value: 'expired' },
+];
+
+export const KOLAM_VOUCHER_DISCOUNT_TYPE_OPTIONS: Array<{
+  label: string;
+  value: KolamVoucherDiscountType;
+}> = [
+  { label: 'Nominal Tetap (Rp)', value: 'fixed' },
+  { label: 'Persentase (%)', value: 'percentage' },
+];
+
+export const KOLAM_VOUCHER_APPLICABLE_TO_OPTIONS: Array<{
+  label: string;
+  value: KolamVoucherApplicableTo;
+}> = [
+  { label: 'Semua Item', value: 'all' },
+  { label: 'Produk Tertentu', value: 'products' },
+  { label: 'Spesies Tertentu', value: 'species' },
 ];
 
 export function isKolamVoucherRoute(route: string): boolean {
@@ -259,6 +357,174 @@ export function formatKolamVoucherRemainingLabel(voucher: {
   };
 }
 
+export function formatKolamVoucherApplicableToLabel(
+  value?: string | null,
+): string {
+  switch (String(value || '').toLowerCase()) {
+    case 'products':
+      return 'Produk Tertentu';
+    case 'species':
+      return 'Spesies Tertentu';
+    case 'all':
+      return 'Semua Item';
+    default:
+      return value || '—';
+  }
+}
+
+/** FE: calendar date → UTC midnight ISO (no local TZ shift). */
+export function kolamVoucherFormDateToApiIso(dateOnly: string): string {
+  const trimmed = dateOnly.trim();
+  if (!isKolamIsoDate(trimmed)) {
+    return '';
+  }
+  return `${trimmed}T00:00:00.000Z`;
+}
+
+export function kolamVoucherApiDateToFormDate(iso?: string | null): string {
+  const raw = String(iso ?? '').trim();
+  if (!raw) {
+    return '';
+  }
+  if (isKolamIsoDate(raw.slice(0, 10))) {
+    return raw.slice(0, 10);
+  }
+  const date = new Date(raw);
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+  return formatKolamIsoDate(date);
+}
+
+export function createEmptyKolamVoucherFormState(): KolamVoucherFormState {
+  return {
+    code: '',
+    title: '',
+    description: '',
+    discountType: 'fixed',
+    discountValue: '0',
+    maxDiscountAmount: '0',
+    minPurchaseAmount: '0',
+    startDate: '',
+    endDate: '',
+    usageLimit: '0',
+    usageLimitPerUser: '0',
+    status: 'active',
+    applicableTo: 'all',
+    applicableProductIds: [],
+    applicableSpeciesIds: [],
+    applicableCustomerIds: [],
+    firstOrderOnly: false,
+  };
+}
+
+export function createKolamVoucherFormState(
+  voucher: KolamVoucher,
+): KolamVoucherFormState {
+  const status: Extract<KolamVoucherStatus, 'active' | 'inactive'> =
+    voucher.status === 'active' ? 'active' : 'inactive';
+  return {
+    code: voucher.code,
+    title: voucher.title,
+    description: voucher.description,
+    discountType: voucher.discountType,
+    discountValue: String(voucher.discountValue ?? 0),
+    maxDiscountAmount: String(voucher.maxDiscountAmount ?? 0),
+    minPurchaseAmount: String(voucher.minPurchaseAmount ?? 0),
+    startDate: kolamVoucherApiDateToFormDate(voucher.startDate),
+    endDate: kolamVoucherApiDateToFormDate(voucher.endDate),
+    usageLimit: String(voucher.usageLimit ?? 0),
+    usageLimitPerUser: String(voucher.usageLimitPerUser ?? 0),
+    status,
+    applicableTo: voucher.applicableTo,
+    applicableProductIds: voucher.applicableProducts.map(item => item.id),
+    applicableSpeciesIds: voucher.applicableSpecies.map(item => item.id),
+    applicableCustomerIds: voucher.applicableCustomers.map(item => item.id),
+    firstOrderOnly: voucher.firstOrderOnly,
+  };
+}
+
+export function validateKolamVoucherForm(
+  form: KolamVoucherFormState,
+  options: { isEdit?: boolean } = {},
+): string | null {
+  if (!form.code.trim()) {
+    return 'Kode voucher wajib diisi';
+  }
+  if (!form.title.trim()) {
+    return 'Judul voucher wajib diisi (ditampilkan ke pelanggan)';
+  }
+  if (!form.startDate || !isKolamIsoDate(form.startDate)) {
+    return 'Tanggal mulai wajib diisi';
+  }
+  if (!form.endDate || !isKolamIsoDate(form.endDate)) {
+    return 'Tanggal akhir wajib diisi';
+  }
+  const start = parseKolamIsoDate(form.startDate);
+  const end = parseKolamIsoDate(form.endDate);
+  if (!start || !end || start.getTime() >= end.getTime()) {
+    return 'Tanggal akhir harus setelah tanggal mulai';
+  }
+  if (!options.isEdit) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (end.getTime() < today.getTime()) {
+      return 'Tanggal akhir sudah lewat. Voucher akan langsung kedaluwarsa.';
+    }
+  }
+  const discountValue = Number(form.discountValue);
+  if (!Number.isFinite(discountValue) || discountValue <= 0) {
+    return 'Nilai diskon harus lebih dari 0';
+  }
+  if (form.discountType === 'percentage' && discountValue > 100) {
+    return 'Diskon persentase tidak boleh melebihi 100%';
+  }
+  if (
+    form.applicableTo === 'products' &&
+    form.applicableProductIds.length === 0
+  ) {
+    return 'Pilih minimal satu produk untuk cakupan produk';
+  }
+  if (
+    form.applicableTo === 'species' &&
+    form.applicableSpeciesIds.length === 0
+  ) {
+    return 'Pilih minimal satu spesies untuk cakupan spesies';
+  }
+  return null;
+}
+
+export function createKolamVoucherSavePayload(
+  form: KolamVoucherFormState,
+): KolamVoucherSaveBody {
+  const maxDiscount = Number(form.maxDiscountAmount) || 0;
+  const minPurchase = Number(form.minPurchaseAmount) || 0;
+  const usageLimit = Number(form.usageLimit) || 0;
+  const usageLimitPerUser = Number(form.usageLimitPerUser) || 0;
+
+  return {
+    code: form.code.trim().toUpperCase(),
+    title: form.title.trim(),
+    description: form.description.trim(),
+    discountType: form.discountType,
+    discountValue: Number(form.discountValue) || 0,
+    maxDiscountAmount: maxDiscount > 0 ? maxDiscount : null,
+    minPurchaseAmount: minPurchase > 0 ? minPurchase : 0,
+    startDate: kolamVoucherFormDateToApiIso(form.startDate),
+    endDate: kolamVoucherFormDateToApiIso(form.endDate),
+    usageLimit: usageLimit > 0 ? usageLimit : null,
+    usageLimitPerUser: usageLimitPerUser > 0 ? usageLimitPerUser : null,
+    status: form.status,
+    applicableTo: form.applicableTo,
+    applicableProducts:
+      form.applicableTo === 'products' ? form.applicableProductIds : [],
+    applicableSpecies:
+      form.applicableTo === 'species' ? form.applicableSpeciesIds : [],
+    applicableCustomers: form.applicableCustomerIds,
+    firstOrderOnly: form.firstOrderOnly,
+  };
+}
+
 function formatKolamVoucherDate(value?: string | null): string {
   if (!value) {
     return '—';
@@ -271,6 +537,23 @@ function formatKolamVoucherDate(value?: string | null): string {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
+  });
+}
+
+export function formatKolamVoucherDateTime(value?: string | null): string {
+  if (!value) {
+    return '—';
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return '—';
+  }
+  return date.toLocaleString('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
   });
 }
 
@@ -322,10 +605,159 @@ export function normalizeKolamVoucher(payload: unknown): KolamVoucher {
     usedCount: Math.max(0, Number(record.usedCount) || 0),
     status,
     applicableTo,
+    applicableProducts: normalizeKolamVoucherRefList(
+      record.applicableProducts,
+      'product',
+    ),
+    applicableSpecies: normalizeKolamVoucherRefList(
+      record.applicableSpecies,
+      'species',
+    ),
+    applicableCustomers: normalizeKolamVoucherRefList(
+      record.applicableCustomers,
+      'customer',
+    ),
     firstOrderOnly: Boolean(record.firstOrderOnly),
     createdAt: String(record.createdAt ?? '').trim(),
     updatedAt: String(record.updatedAt ?? '').trim(),
   };
+}
+
+export function normalizeKolamVoucherRedemptionList(
+  payload: unknown,
+  query: { page?: number; limit?: number } = {},
+): KolamVoucherRedemptionListResult {
+  const root = asRecord(payload);
+  const pagination = asRecord(root.pagination);
+  const list: unknown[] = Array.isArray(root.data)
+    ? root.data
+    : Array.isArray(payload)
+      ? payload
+      : [];
+
+  const limit =
+    query.limit ??
+    getNumber(pagination, 'limit') ??
+    getNumber(root, 'limit') ??
+    20;
+  const page =
+    query.page ??
+    getNumber(pagination, 'page') ??
+    getNumber(root, 'page') ??
+    1;
+  const total =
+    getNumber(pagination, 'total') ??
+    getNumber(root, 'total') ??
+    list.length;
+  const totalPages =
+    getNumber(pagination, 'totalPages') ??
+    Math.max(1, Math.ceil(total / Math.max(1, limit)));
+
+  return {
+    items: list
+      .map(row => {
+        try {
+          return normalizeKolamVoucherRedemption(row);
+        } catch {
+          return null;
+        }
+      })
+      .filter((item): item is KolamVoucherRedemption => Boolean(item?.id)),
+    page,
+    limit,
+    total,
+    totalPages,
+  };
+}
+
+function normalizeKolamVoucherRedemption(
+  payload: unknown,
+): KolamVoucherRedemption {
+  const record = asRecord(payload);
+  const id =
+    getMongoId(record, '_id') ||
+    getMongoId(record, 'id') ||
+    `${String(record.code ?? '')}-${String(record.createdAt ?? '')}`;
+  if (!id) {
+    throw new Error('Redemption tanpa id');
+  }
+
+  const customer = asRecord(record.customer);
+  const sale = asRecord(record.sale);
+  const customerName = [
+    String(customer.first_name ?? customer.firstName ?? '').trim(),
+    String(customer.last_name ?? customer.lastName ?? '').trim(),
+  ]
+    .filter(Boolean)
+    .join(' ');
+  const customerLabel =
+    customerName ||
+    String(customer.name ?? '').trim() ||
+    String(customer.email ?? '').trim() ||
+    '—';
+  const saleId =
+    getMongoId(sale, '_id') || getMongoId(sale, 'id') || null;
+  const saleLabel =
+    String(sale.invoiceCode ?? sale.invoice_code ?? '').trim() ||
+    (saleId ? `#${saleId.slice(-6)}` : '—');
+
+  return {
+    id,
+    code: String(record.code ?? '').trim().toUpperCase(),
+    discountApplied: Math.max(0, Number(record.discountApplied) || 0),
+    cancelled: Boolean(record.cancelled),
+    cancelledAt: String(record.cancelledAt ?? '').trim() || null,
+    createdAt: String(record.createdAt ?? '').trim(),
+    customerLabel,
+    saleLabel,
+    saleId,
+  };
+}
+
+function normalizeKolamVoucherRefList(
+  value: unknown,
+  kind: 'product' | 'species' | 'customer',
+): KolamVoucherRef[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  const items: KolamVoucherRef[] = [];
+  for (const entry of value) {
+    if (typeof entry === 'string' || typeof entry === 'number') {
+      const id = String(entry).trim();
+      if (id) {
+        items.push({ id, label: id });
+      }
+      continue;
+    }
+    const record = asRecord(entry);
+    const id = getMongoId(record, '_id') || getMongoId(record, 'id');
+    if (!id) {
+      continue;
+    }
+    let label = id;
+    let sublabel: string | undefined;
+    if (kind === 'product') {
+      label = String(record.name ?? '').trim() || id;
+    } else if (kind === 'species') {
+      label =
+        String(record.displayName ?? '').trim() ||
+        String(record.scientificName ?? '').trim() ||
+        String(record.commonName ?? '').trim() ||
+        String(record.localName ?? '').trim() ||
+        id;
+    } else {
+      label =
+        String(record.name ?? '').trim() ||
+        String(record.email ?? '').trim() ||
+        id;
+      const email = String(record.email ?? '').trim();
+      const phone = String(record.phone ?? '').trim();
+      sublabel = email || phone || undefined;
+    }
+    items.push({ id, label, sublabel });
+  }
+  return items;
 }
 
 export function normalizeKolamVoucherList(

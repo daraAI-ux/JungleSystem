@@ -49,6 +49,8 @@ import { KolamEmptyState } from './kolam-empty-state';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
+import { KolamVoucherDetail } from './kolam-voucher-detail';
+import { KolamVoucherForm } from './kolam-voucher-form';
 
 const VOUCHER_SKELETON_ROW_COUNT = 6;
 
@@ -92,20 +94,17 @@ export function KolamVoucherSurface({
     );
   }
 
+  if (controller.mode === 'detail') {
+    return (
+      <KolamVoucherDetail
+        controller={controller}
+        onRouteChange={onRouteChange}
+      />
+    );
+  }
+
   return (
-    <View style={styles.surface}>
-      <KolamEmptyState
-        compact
-        message="Form create / detail / edit voucher akan menyusul di batch berikutnya."
-        title="Segera hadir"
-      />
-      <KolamButton
-        intent="outline"
-        label="Kembali ke daftar"
-        onPress={() => onRouteChange?.(controller.onBackToList())}
-        style={styles.backButton}
-      />
-    </View>
+    <KolamVoucherForm controller={controller} onRouteChange={onRouteChange} />
   );
 }
 
