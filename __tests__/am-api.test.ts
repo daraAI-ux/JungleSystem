@@ -302,9 +302,10 @@ describe('AM API service', () => {
     fetchMock.mockResolvedValue(jsonResponse({
       success: true,
       data: {_id: 'message-new', ...payload},
+      taskId: 'task-send-1',
     }));
 
-    await sendAmChatMessage(payload, 'https://am.example.test/api');
+    const result = await sendAmChatMessage(payload, 'https://am.example.test/api');
 
     expect(fetchMock).toHaveBeenCalledWith(
       'https://am.example.test/api/chat/message/send',
@@ -319,6 +320,10 @@ describe('AM API service', () => {
         }),
       }),
     );
+    expect(result).toEqual({
+      message: {_id: 'message-new', ...payload},
+      taskId: 'task-send-1',
+    });
   });
 
   it('creates AM chat contacts through the live chat endpoint', async () => {

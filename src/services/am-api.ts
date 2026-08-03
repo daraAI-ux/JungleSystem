@@ -671,6 +671,11 @@ export interface AmChatMessagePayload {
   platform?: string;
 }
 
+export interface AmChatSendMessageResult {
+  message: AmChatMessage;
+  taskId?: string;
+}
+
 export interface AmChatContactPayload {
   platform: string;
   serviceAccountId: string;
@@ -1362,8 +1367,33 @@ export async function getAmChatMessageById(
 export async function sendAmChatMessage(
   payload: AmChatMessagePayload,
   baseUrl = appConfig.amApiBaseUrl,
-): Promise<AmChatMessage> {
-  return amPost<AmChatMessage>('/chat/message/send', payload, baseUrl);
+): Promise<AmChatSendMessageResult> {
+  if (!baseUrl) {
+    throw new Error('URL server AM existing belum dikonfigurasi.');
+  }
+
+  const response = await apiRequest<(AmEnvelope<AmChatMessage> & {taskId?: string}) | AmChatMessage>({
+    method: 'POST',
+    path: '/chat/message/send',
+    body: payload,
+    baseUrl,
+    sourceHeader: appConfig.amSourceHeader,
+    cookieJar: true,
+    credentials: 'include',
+  });
+
+  if (isAmEnvelope(response)) {
+    if (!response.success) {
+      throw new Error(response.message ?? 'AM API mengembalikan status gagal.');
+    }
+
+    return {
+      message: response.data,
+      taskId: response.taskId,
+    };
+  }
+
+  return {message: response};
 }
 
 export async function getAmChatContacts(
