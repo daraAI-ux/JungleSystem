@@ -6354,7 +6354,7 @@ function AmAccountSettingsPage() {
       </View>
       <View style={styles.panel}>
         <Text style={styles.panelTitle}>Change password</Text>
-        <Text style={styles.panelText}>Set a new password.</Text>
+        <Text style={styles.panelText}>Update your current password to keep your account secure.</Text>
         <View style={styles.formGrid}>
           <AmTextInput
             label="New password"

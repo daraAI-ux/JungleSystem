@@ -4022,6 +4022,7 @@ describe('KolamAmSurface', () => {
     expect(getAmCurrentUser).toHaveBeenCalledTimes(1);
     expect(text).toContain('Profile information');
     expect(text).toContain('Change password');
+    expect(text).toContain('Update your current password to keep your account secure.');
     expect(text).toContain('Current AM User');
     expect(text).not.toContain('Current password');
     expect(text).not.toContain('Account Settings');
