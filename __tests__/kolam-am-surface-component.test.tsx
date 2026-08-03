@@ -2473,6 +2473,9 @@ describe('KolamAmSurface', () => {
     text = renderText(renderer!);
     joinedText = text.join(' ');
     expect(text).toContain('Activity Detail');
+    expect(text).toEqual(expect.arrayContaining(['Timestamp', 'Type', 'Status', 'User Agent']));
+    expect(joinedText).toContain('Api');
+    expect(joinedText).toContain('200 (success)');
     expect(joinedText).toContain('REQ-1');
     expect(joinedText).toContain('Jest');
 

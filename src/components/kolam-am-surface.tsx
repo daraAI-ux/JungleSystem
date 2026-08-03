@@ -5958,12 +5958,24 @@ function AmActivityLogDetailPanel({log}: {log: AmActivityLog}) {
       </View>
       <View style={styles.detailList}>
         <View style={styles.detailListRow}>
+          <Text style={styles.tableHeaderText}>Timestamp</Text>
+          <Text style={[styles.cellText, styles.recipientCol]}>{formatAmDate(log.timestamp)}</Text>
+        </View>
+        <View style={styles.detailListRow}>
           <Text style={styles.tableHeaderText}>User</Text>
           <Text style={[styles.cellText, styles.recipientCol]}>{log.username ?? log.userId?.fullName ?? 'anonymous'}</Text>
         </View>
         <View style={styles.detailListRow}>
+          <Text style={styles.tableHeaderText}>Type</Text>
+          <Text style={[styles.cellText, styles.recipientCol]}>{formatActivityLogTypeLabel(log.type)}</Text>
+        </View>
+        <View style={styles.detailListRow}>
           <Text style={styles.tableHeaderText}>Request</Text>
           <Text style={[styles.cellText, styles.recipientCol]}>{log.method || '-'} {log.path}</Text>
+        </View>
+        <View style={styles.detailListRow}>
+          <Text style={styles.tableHeaderText}>Status</Text>
+          <Text style={[styles.cellText, styles.recipientCol]}>{log.statusCode ? `${log.statusCode} (${log.status})` : log.status}</Text>
         </View>
         <View style={styles.detailListRow}>
           <Text style={styles.tableHeaderText}>Action</Text>
@@ -5977,6 +5989,10 @@ function AmActivityLogDetailPanel({log}: {log: AmActivityLog}) {
           <Text style={styles.tableHeaderText}>Duration</Text>
           <Text style={[styles.cellText, styles.recipientCol]}>{formatAmDuration(log.duration)}</Text>
         </View>
+        <View style={styles.detailListRow}>
+          <Text style={styles.tableHeaderText}>User Agent</Text>
+          <Text style={[styles.cellText, styles.recipientCol]}>{log.userAgent || '-'}</Text>
+        </View>
         {log.error ? (
           <View style={styles.detailListRow}>
             <Text style={styles.tableHeaderText}>Error</Text>
@@ -5985,7 +6001,6 @@ function AmActivityLogDetailPanel({log}: {log: AmActivityLog}) {
         ) : null}
       </View>
       <AmJsonPanel title="Metadata" value={log.metadata ?? {}} />
-      <AmJsonPanel title="User Agent" value={log.userAgent || '-'} />
     </View>
   );
 }
