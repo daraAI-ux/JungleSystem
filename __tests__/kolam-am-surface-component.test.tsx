@@ -2352,7 +2352,9 @@ describe('KolamAmSurface', () => {
       pin: '123456',
       accountNumber: '9876543210',
       credentials: {},
-      status: 'inactive',
+    }));
+    expect(createAmServiceAccount).toHaveBeenCalledWith(expect.not.objectContaining({
+      status: expect.anything(),
     }));
 
     await act(async () => {
@@ -2379,12 +2381,12 @@ describe('KolamAmSurface', () => {
       deviceId: 'device-1',
       pin: '654321',
       credentials: {phoneNumber: '081234567890'},
-      status: 'inactive',
     }));
     expect(createAmServiceAccount).toHaveBeenLastCalledWith(expect.not.objectContaining({
       username: expect.anything(),
       password: expect.anything(),
       accountNumber: expect.anything(),
+      status: expect.anything(),
     }));
   });
 
@@ -2616,7 +2618,10 @@ describe('KolamAmSurface', () => {
       label: 'WA Browser',
       deviceId: 'device-browser',
       credentials: {phoneNumber: '08123456789'},
-      status: 'inactive',
+    }));
+    expect(createAmServiceAccount).toHaveBeenCalledWith(expect.not.objectContaining({
+      pin: expect.anything(),
+      status: expect.anything(),
     }));
   });
 

@@ -3408,7 +3408,6 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
           label: serviceFormLabel.trim(),
           deviceId: targetDeviceId,
           credentials,
-          status: serviceFormStatus,
         }
       : AM_BROWSER_DEVICE_PLATFORMS.has(serviceFormPlatform)
         ? {
@@ -3421,7 +3420,6 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
               password: serviceFormPassword,
               phoneNumber: serviceFormPhoneNumber,
             }),
-            status: serviceFormStatus,
           }
         : {
             platform: serviceFormPlatform,
@@ -3430,8 +3428,8 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
             username: serviceFormUsername.trim(),
             accountNumber: serviceFormAccountNumber.trim(),
             credentials,
-            status: serviceFormStatus,
           };
+    if (editingDeviceServiceId) payload.status = serviceFormStatus;
     const password = serviceFormPassword.trim();
     const pin = serviceFormPin.trim();
     if (
@@ -3441,7 +3439,9 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
     ) {
       payload.password = password;
     }
-    if (!editingDeviceServiceId || pin) payload.pin = pin;
+    if (!AM_BROWSER_DEVICE_PLATFORMS.has(serviceFormPlatform) && (!editingDeviceServiceId || pin)) {
+      payload.pin = pin;
+    }
 
     try {
       setIsSubmittingService(true);
@@ -3567,11 +3567,13 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
                 onSelect={setServiceFormPlatform}
               />
             )}
-            <AmSegmentGroup
-              active={serviceFormStatus}
-              items={['active', 'inactive', 'blocked']}
-              onSelect={value => setServiceFormStatus(value as 'active' | 'inactive' | 'blocked')}
-            />
+            {editingDeviceServiceId ? (
+              <AmSegmentGroup
+                active={serviceFormStatus}
+                items={['active', 'inactive', 'blocked']}
+                onSelect={value => setServiceFormStatus(value as 'active' | 'inactive' | 'blocked')}
+              />
+            ) : null}
             <AmTextInput label="Label" placeholder="Service label" value={serviceFormLabel} onChangeText={setServiceFormLabel} />
             {showDeviceServiceUsername ? (
               <AmTextInput {...getAmServiceFieldProps(serviceFormPlatform, 'username', Boolean(editingDeviceServiceId))} value={serviceFormUsername} onChangeText={setServiceFormUsername} />
