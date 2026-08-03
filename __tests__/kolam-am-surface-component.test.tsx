@@ -413,7 +413,10 @@ describe('KolamAmSurface', () => {
     const joinedText = text.join(' ');
 
     expect(text).toContain('Kembali');
-    expect(text).toContain('Transfer Status');
+    expect(text).toContain("Today's Incoming");
+    expect(text).toContain("Today's Outgoing");
+    expect(text).toContain("Today's Transfers");
+    expect(text).not.toContain('Transfer Status');
     expect(text).toContain('Vendor Dashboard');
     expect(text).toContain('Vendor Dashboard Sixth');
     expect(joinedText).toContain('Legacy BCA - 321');

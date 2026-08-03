@@ -484,12 +484,12 @@ function AmDashboardPage({
       <AmInlineError error={error} title="AM dashboard refresh gagal" />
       <View style={styles.metricGrid}>
         <AmMetricCard label="Total Balance" value={formatRupiah(data.summary.totalBalance)} meta={`${data.summary.totalAccounts} account`} />
-        <AmMetricCard label="Incoming Today" value={formatRupiah(data.summary.todayIncoming.total)} meta={`${data.summary.todayIncoming.count} transaksi`} />
-        <AmMetricCard label="Outgoing Today" value={formatRupiah(data.summary.todayOutgoing.total)} meta={`${data.summary.todayOutgoing.count} transaksi`} />
+        <AmMetricCard label="Today's Incoming" value={formatRupiah(data.summary.todayIncoming.total)} meta={`${data.summary.todayIncoming.count} transactions`} />
+        <AmMetricCard label="Today's Outgoing" value={formatRupiah(data.summary.todayOutgoing.total)} meta={`${data.summary.todayOutgoing.count} transactions`} />
         <AmMetricCard label="Active Devices" value={String(data.summary.activeDevices)} meta="with active accounts" />
       </View>
       <View style={styles.panel}>
-        <Text style={styles.panelTitle}>Transfer Status</Text>
+        <Text style={styles.panelTitle}>Today's Transfers</Text>
         <View style={styles.statusRow}>
           <AmStatusPill label="Pending" value={data.transfers.pending} />
           <AmStatusPill label="Processing" value={data.transfers.processing} />
