@@ -1630,7 +1630,7 @@ describe('KolamAmSurface', () => {
           label: 'BCA Device Alpha',
           platform: 'bca',
           accountNumber: '1234567890',
-          status: 'active',
+          status: 'inactive',
           deviceId: {
             _id: 'device-1',
             name: 'Phone Rack',
@@ -1645,6 +1645,65 @@ describe('KolamAmSurface', () => {
         },
       ],
       meta: {total: 1, limit: 100},
+    });
+    jest.mocked(getAmDevices).mockResolvedValue({
+      data: [
+        {
+          _id: 'device-1',
+          name: 'Phone Rack',
+          slug: 'phone-rack',
+          boxId: {
+            _id: 'box-1',
+            name: 'Box 01',
+            rackId: {_id: 'rack-1', name: 'Rack Alpha'},
+          },
+          connectionType: 'tcp',
+          tcpAddress: '10.0.0.5:5555',
+          udid: null,
+          brand: 'Samsung',
+          model: 'A15',
+          adbStatus: 'connected',
+          createdAt: '',
+          updatedAt: '',
+        },
+        {
+          _id: 'device-2',
+          name: 'Phone Target',
+          slug: 'phone-target',
+          boxId: {
+            _id: 'box-1',
+            name: 'Box 01',
+            rackId: {_id: 'rack-1', name: 'Rack Alpha'},
+          },
+          connectionType: 'tcp',
+          tcpAddress: '10.0.0.6:5555',
+          udid: null,
+          brand: 'Samsung',
+          model: 'A25',
+          adbStatus: 'connected',
+          createdAt: '',
+          updatedAt: '',
+        },
+        {
+          _id: 'device-browser',
+          name: 'Browser Target',
+          slug: 'browser-target',
+          boxId: {
+            _id: 'box-1',
+            name: 'Box 01',
+            rackId: {_id: 'rack-1', name: 'Rack Alpha'},
+          },
+          connectionType: 'browser',
+          tcpAddress: null,
+          udid: null,
+          brand: 'Playwright',
+          model: 'Chromium',
+          adbStatus: 'connected',
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 3, limit: 100},
     });
     jest.mocked(getAmDeviceServices).mockResolvedValue([]);
     let renderer: ReactTestRenderer.ReactTestRenderer;
@@ -1683,6 +1742,9 @@ describe('KolamAmSurface', () => {
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Device Edit Service Account service-1'}).props.onPress();
     });
+    await act(async () => {
+      await Promise.resolve();
+    });
 
     const findInput = (placeholder: string) => renderer!.root.findAllByType(TextInput).find(input => input.props.placeholder === placeholder);
     await act(async () => {
@@ -1691,17 +1753,20 @@ describe('KolamAmSurface', () => {
       findInput('nomor akun/rekening')!.props.onChangeText('9876543210');
     });
     await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Device Service Target Phone Target'}).props.onPress();
+    });
+    await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Device Save Service Account device-1'}).props.onPress();
     });
 
     expect(updateAmServiceAccount).toHaveBeenCalledWith('service-1', expect.objectContaining({
       platform: 'bca',
       label: 'BCA Detail Updated',
-      deviceId: 'device-1',
+      deviceId: 'device-2',
       username: 'bca-updated',
       accountNumber: '9876543210',
       credentials: {},
-      status: 'active',
+      status: 'inactive',
     }));
     expect(updateAmServiceAccount).toHaveBeenCalledWith('service-1', expect.not.objectContaining({
       password: '',
@@ -1734,6 +1799,181 @@ describe('KolamAmSurface', () => {
       credentials: {},
       status: 'inactive',
     }));
+  });
+
+  it('blocks moving an active hardware service account to another device', async () => {
+    jest.mocked(getAmRacks).mockResolvedValue({
+      data: [
+        {
+          _id: 'rack-1',
+          name: 'Rack Alpha',
+          slug: 'rack-alpha',
+          location: 'Room A',
+          description: '',
+          status: 'active',
+          serverIp: '10.0.0.1:2700',
+          boxCount: 1,
+          deviceCount: 2,
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 1, limit: 20},
+    });
+    jest.mocked(jest.requireMock('../src/services/am-api').getAmBoxes).mockResolvedValue({
+      data: [
+        {
+          _id: 'box-1',
+          name: 'Box 01',
+          slug: 'box-01',
+          rackId: {_id: 'rack-1', name: 'Rack Alpha'},
+          description: 'Main box',
+          status: 'active',
+          deviceCount: 2,
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 1, limit: 20},
+    });
+    jest.mocked(getAmDevices).mockResolvedValue({
+      data: [
+        {
+          _id: 'device-1',
+          name: 'Phone Rack',
+          slug: 'phone-rack',
+          boxId: {
+            _id: 'box-1',
+            name: 'Box 01',
+            rackId: {_id: 'rack-1', name: 'Rack Alpha'},
+          },
+          connectionType: 'tcp',
+          tcpAddress: '10.0.0.5:5555',
+          udid: null,
+          brand: 'Samsung',
+          model: 'A15',
+          adbStatus: 'connected',
+          createdAt: '',
+          updatedAt: '',
+        },
+        {
+          _id: 'device-2',
+          name: 'Phone Target',
+          slug: 'phone-target',
+          boxId: {
+            _id: 'box-1',
+            name: 'Box 01',
+            rackId: {_id: 'rack-1', name: 'Rack Alpha'},
+          },
+          connectionType: 'tcp',
+          tcpAddress: '10.0.0.6:5555',
+          udid: null,
+          brand: 'Samsung',
+          model: 'A25',
+          adbStatus: 'connected',
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 2, limit: 100},
+    });
+    jest.mocked(getAmRackById).mockResolvedValue({
+      _id: 'rack-1',
+      name: 'Rack Alpha',
+      slug: 'rack-alpha',
+      location: 'Room A',
+      description: '',
+      status: 'active',
+      serverIp: '10.0.0.1:2700',
+      boxCount: 1,
+      deviceCount: 2,
+      createdAt: '',
+      updatedAt: '',
+    });
+    jest.mocked(getAmBoxById).mockResolvedValue({
+      _id: 'box-1',
+      name: 'Box 01',
+      slug: 'box-01',
+      rackId: {_id: 'rack-1', name: 'Rack Alpha'},
+      description: '',
+      status: 'active',
+      deviceCount: 2,
+      createdAt: '',
+      updatedAt: '',
+    });
+    jest.mocked(getAmDeviceById).mockResolvedValue({
+      _id: 'device-1',
+      name: 'Phone Rack',
+      slug: 'phone-rack',
+      boxId: {
+        _id: 'box-1',
+        name: 'Box 01',
+        rackId: {_id: 'rack-1', name: 'Rack Alpha'},
+      },
+      connectionType: 'tcp',
+      tcpAddress: '10.0.0.5:5555',
+      udid: null,
+      brand: 'Samsung',
+      model: 'A15',
+      adbStatus: 'connected',
+      createdAt: '',
+      updatedAt: '',
+    });
+    jest.mocked(getAmServiceAccounts).mockResolvedValue({
+      data: [
+        {
+          _id: 'service-active',
+          label: 'BCA Active',
+          platform: 'bca',
+          accountNumber: '1234567890',
+          status: 'active',
+          deviceId: {
+            _id: 'device-1',
+            name: 'Phone Rack',
+            connectionType: 'tcp',
+            tcpAddress: '10.0.0.5:5555',
+          },
+          username: 'bcauser',
+          credentials: {},
+          meta: {},
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 1, limit: 100},
+    });
+    jest.mocked(getAmDeviceServices).mockResolvedValue([]);
+    const updateCallsBefore = jest.mocked(updateAmServiceAccount).mock.calls.length;
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface
+          activeModuleRoute={concreteAmRoute(
+            'hardware/rack-1/box-1/device-1',
+            'hardware/:rackId/:boxId/:deviceId',
+          )}
+          dataset={seedUnifiedDataset}
+        />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Device Edit Service Account service-active'}).props.onPress();
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Device Service Target Phone Target'}).props.onPress();
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Device Save Service Account device-1'}).props.onPress();
+    });
+
+    expect(updateAmServiceAccount).toHaveBeenCalledTimes(updateCallsBefore);
+    expect(renderText(renderer!)).toContain('Stop service first before moving to another device');
   });
 
   it('resolves hardware deep links by slug through live get-by-id endpoints', async () => {

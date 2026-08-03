@@ -155,6 +155,7 @@ const AM_PLATFORM_LABELS: Record<string, string> = {
   instagram: 'Instagram',
 };
 const PLAYWRIGHT_PLATFORMS = new Set(['tokopedia', 'shopee', 'tiktok', 'instagram']);
+const AM_BROWSER_DEVICE_PLATFORMS = new Set(['tokopedia', 'shopee', 'tiktok', 'instagram', 'whatsapp']);
 const TOKOPEDIA_SESSION_LABELS: Record<string, string> = {
   missing: 'Belum ada session',
   empty: 'File kosong',
@@ -3226,9 +3227,11 @@ function AmHardwareDeviceList({
 function AmDeviceDetailPanel({device}: {device: AmDevice}) {
   const [accounts, setAccounts] = React.useState<AmServiceAccount[]>([]);
   const [services, setServices] = React.useState<AmDeviceServiceStatus[]>([]);
+  const [allDevices, setAllDevices] = React.useState<AmDevice[]>([]);
   const [isServiceFormOpen, setIsServiceFormOpen] = React.useState(false);
   const [serviceFormPlatform, setServiceFormPlatform] = React.useState('bca');
   const [serviceFormStatus, setServiceFormStatus] = React.useState<'active' | 'inactive' | 'blocked'>('inactive');
+  const [serviceFormDeviceId, setServiceFormDeviceId] = React.useState(device._id);
   const [serviceFormLabel, setServiceFormLabel] = React.useState('');
   const [serviceFormUsername, setServiceFormUsername] = React.useState('');
   const [serviceFormPassword, setServiceFormPassword] = React.useState('');
@@ -3248,12 +3251,19 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
       : ['bca', 'brimo', 'dana'],
     [device.connectionType],
   );
+  const deviceOptions = React.useMemo(
+    () => mergeAmEntityById(allDevices, device).filter(nextDevice =>
+      isDeviceCompatibleWithServicePlatform(nextDevice, serviceFormPlatform),
+    ),
+    [allDevices, device, serviceFormPlatform],
+  );
 
   const resetDeviceServiceForm = React.useCallback((open = false) => {
     setEditingDeviceServiceId(null);
     setIsServiceFormOpen(open);
     setServiceFormPlatform(servicePlatformItems[0] ?? 'bca');
     setServiceFormStatus('inactive');
+    setServiceFormDeviceId(device._id);
     setServiceFormLabel('');
     setServiceFormUsername('');
     setServiceFormPassword('');
@@ -3261,13 +3271,23 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
     setServiceFormAccountNumber('');
     setServiceFormPhoneNumber('');
     setActionMessage(null);
-  }, [servicePlatformItems]);
+  }, [device._id, servicePlatformItems]);
+
+  const fetchAllDeviceOptions = React.useCallback(async () => {
+    try {
+      const response = await getAmDevices({limit: 100});
+      setAllDevices(response.data);
+    } catch {
+      setAllDevices(current => mergeAmEntityById(current, device));
+    }
+  }, [device]);
 
   const editDeviceServiceAccount = React.useCallback((account: AmServiceAccount) => {
     setEditingDeviceServiceId(account._id);
     setIsServiceFormOpen(true);
     setServiceFormPlatform(account.platform);
     setServiceFormStatus(account.status as 'active' | 'inactive' | 'blocked');
+    setServiceFormDeviceId(resolveServiceAccountDeviceId(account.deviceId) || device._id);
     setServiceFormLabel(account.label);
     setServiceFormUsername(account.username ?? '');
     setServiceFormPassword('');
@@ -3275,7 +3295,8 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
     setServiceFormAccountNumber(account.accountNumber ?? '');
     setServiceFormPhoneNumber(getCredentialString(account.credentials, 'phoneNumber') ?? '');
     setActionMessage(null);
-  }, []);
+    void fetchAllDeviceOptions();
+  }, [device._id, fetchAllDeviceOptions]);
 
   const fetchDeviceServices = React.useCallback(async () => {
     try {
@@ -3310,11 +3331,26 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
 
     const credentials: Record<string, unknown> = {};
     if (serviceFormPhoneNumber.trim()) credentials.phoneNumber = serviceFormPhoneNumber.trim();
+    const editingAccount = editingDeviceServiceId
+      ? accounts.find(account => account._id === editingDeviceServiceId) ?? null
+      : null;
+    const targetDeviceId = editingDeviceServiceId
+      ? serviceFormDeviceId || device._id
+      : device._id;
+    const currentDeviceId = editingAccount
+      ? resolveServiceAccountDeviceId(editingAccount.deviceId) || device._id
+      : device._id;
+    const deviceChanged = Boolean(editingDeviceServiceId) && targetDeviceId !== currentDeviceId;
+
+    if (deviceChanged && editingAccount?.status === 'active') {
+      setError('Stop service first before moving to another device');
+      return;
+    }
 
     const payload: AmServiceAccountPayload = {
       platform: serviceFormPlatform,
       label: serviceFormLabel.trim(),
-      deviceId: device._id,
+      deviceId: targetDeviceId,
       username: serviceFormUsername.trim(),
       accountNumber: serviceFormAccountNumber.trim(),
       credentials,
@@ -3351,7 +3387,9 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
     editingDeviceServiceId,
     fetchDeviceServices,
     resetDeviceServiceForm,
+    accounts,
     serviceFormAccountNumber,
+    serviceFormDeviceId,
     serviceFormLabel,
     serviceFormPassword,
     serviceFormPhoneNumber,
@@ -3445,6 +3483,24 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
             <AmTextInput label="PIN" placeholder="PIN" secureTextEntry value={serviceFormPin} onChangeText={setServiceFormPin} />
             <AmTextInput label="Account Number" placeholder="nomor akun/rekening" value={serviceFormAccountNumber} onChangeText={setServiceFormAccountNumber} />
             <AmTextInput label="Phone Number" placeholder="nomor HP" value={serviceFormPhoneNumber} onChangeText={setServiceFormPhoneNumber} />
+            {editingDeviceServiceId ? (
+              <View style={styles.formField}>
+                <Text style={styles.formLabel}>Device</Text>
+                <View style={styles.eventGrid}>
+                  {deviceOptions.map(nextDevice => (
+                    <KolamInteractionFrame
+                      key={nextDevice._id}
+                      accessibilityLabel={`AM Device Service Target ${nextDevice.name}`}
+                      onPress={() => setServiceFormDeviceId(nextDevice._id)}
+                      style={[styles.eventChip, serviceFormDeviceId === nextDevice._id && styles.eventChipSelected]}>
+                      <Text style={[styles.eventChipText, serviceFormDeviceId === nextDevice._id && styles.eventChipTextSelected]}>
+                        {nextDevice.name}
+                      </Text>
+                    </KolamInteractionFrame>
+                  ))}
+                </View>
+              </View>
+            ) : null}
             <View style={styles.inlineActions}>
               <KolamButton
                 accessibilityLabel={`AM Device Save Service Account ${device._id}`}
@@ -6083,6 +6139,17 @@ function resolveRackId(rack: AmBox['rackId']) {
 
 function resolveBoxId(box: AmDevice['boxId']) {
   return typeof box === 'string' ? box : box?._id ?? '';
+}
+
+function resolveServiceAccountDeviceId(device: AmServiceAccount['deviceId']) {
+  return typeof device === 'string' ? device : device?._id ?? '';
+}
+
+function isDeviceCompatibleWithServicePlatform(device: AmDevice, platform: string) {
+  const needsBrowserDevice = AM_BROWSER_DEVICE_PLATFORMS.has(platform);
+  return needsBrowserDevice
+    ? device.connectionType === 'browser'
+    : device.connectionType !== 'browser';
 }
 
 function mergeAmEntityById<T extends {_id: string}>(items: T[], nextItem: T) {
