@@ -1124,20 +1124,9 @@ function AmJsonPanel({title, value}: {title: string; value: unknown}) {
 
 function AmServicesPage() {
   const [accounts, setAccounts] = React.useState<AmServiceAccount[]>([]);
-  const [devices, setDevices] = React.useState<AmDevice[]>([]);
   const [search, setSearch] = React.useState('');
   const [platform, setPlatform] = React.useState('all');
   const [serviceStatus, setServiceStatus] = React.useState('all');
-  const [editingServiceId, setEditingServiceId] = React.useState<string | null>(null);
-  const [formPlatform, setFormPlatform] = React.useState('tokopedia');
-  const [formStatus, setFormStatus] = React.useState<AmServiceAccount['status']>('inactive');
-  const [formLabel, setFormLabel] = React.useState('');
-  const [formDeviceId, setFormDeviceId] = React.useState('none');
-  const [formUsername, setFormUsername] = React.useState('');
-  const [formPassword, setFormPassword] = React.useState('');
-  const [formPin, setFormPin] = React.useState('');
-  const [formAccountNumber, setFormAccountNumber] = React.useState('');
-  const [formPhoneNumber, setFormPhoneNumber] = React.useState('');
   const [expandedId, setExpandedId] = React.useState<string | null>(null);
   const [expandedTab, setExpandedTab] = React.useState<AmServiceDetailTab>('logs');
   const [sessionToClear, setSessionToClear] = React.useState<AmServiceAccount | null>(null);
@@ -1163,7 +1152,6 @@ function AmServicesPage() {
   const [page, setPage] = React.useState(1);
   const [limit, setLimit] = React.useState(AM_SERVICE_PAGE_LIMIT);
   const [isLoading, setIsLoading] = React.useState(true);
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
   const fetchAccounts = React.useCallback(async () => {
@@ -1192,25 +1180,6 @@ function AmServicesPage() {
   }, [fetchAccounts]);
 
   React.useEffect(() => {
-    let mounted = true;
-
-    const loadDevices = async () => {
-      try {
-        const response = await getAmDevices({limit: 100});
-        if (mounted) setDevices(response.data);
-      } catch {
-        if (mounted) setDevices([]);
-      }
-    };
-
-    loadDevices();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  React.useEffect(() => {
     const interval = setInterval(fetchAccounts, 15_000);
     return () => clearInterval(interval);
   }, [fetchAccounts]);
@@ -1233,171 +1202,6 @@ function AmServicesPage() {
   const totalPages = Math.max(1, Math.ceil(total / Math.max(limit, 1)));
   const rangeFrom = total ? (page - 1) * limit + 1 : 0;
   const rangeTo = total ? Math.min(page * limit, total) : 0;
-  const selectedFormDevice = React.useMemo(
-    () => devices.find(device => device._id === formDeviceId) ?? null,
-    [devices, formDeviceId],
-  );
-  const serviceDeviceOptions = React.useMemo(() => {
-    const compatibleDevices = devices.filter(device =>
-      isDeviceCompatibleWithServicePlatform(device, formPlatform),
-    );
-    return selectedFormDevice
-      ? mergeAmEntityById(compatibleDevices, selectedFormDevice)
-      : compatibleDevices;
-  }, [devices, formPlatform, selectedFormDevice]);
-  const serviceDeviceItems = React.useMemo(
-    () => ['none', ...serviceDeviceOptions.map(device => device._id)],
-    [serviceDeviceOptions],
-  );
-  const serviceDeviceLabels = React.useMemo<Record<string, string>>(
-    () => ({
-      none: 'No device',
-      ...Object.fromEntries(serviceDeviceOptions.map(device => [device._id, `${device.name} (${formatDeviceIdentifier(device)})`])),
-    }),
-    [serviceDeviceOptions],
-  );
-  const showServiceUsername = formPlatform === 'bca' ||
-    formPlatform === 'brimo' ||
-    formPlatform === 'shopee' ||
-    formPlatform === 'instagram' ||
-    formPlatform === 'tiktok';
-  const showServicePassword = formPlatform === 'bca' ||
-    formPlatform === 'brimo' ||
-    formPlatform === 'shopee' ||
-    formPlatform === 'instagram' ||
-    formPlatform === 'tokopedia';
-  const showServicePin = formPlatform === 'bca' ||
-    formPlatform === 'brimo' ||
-    formPlatform === 'dana';
-  const showServiceAccountNumber = formPlatform === 'bca' ||
-    formPlatform === 'brimo';
-  const showServicePhoneNumber = formPlatform === 'dana' ||
-    formPlatform === 'whatsapp' ||
-    formPlatform === 'tokopedia';
-
-  const handleFormPlatformChange = React.useCallback((value: string) => {
-    setFormPlatform(value);
-    if (
-      formDeviceId !== 'none' &&
-      selectedFormDevice &&
-      !isDeviceCompatibleWithServicePlatform(selectedFormDevice, value)
-    ) {
-      setFormDeviceId('none');
-    }
-  }, [formDeviceId, selectedFormDevice]);
-
-  const resetServiceForm = React.useCallback(() => {
-    setEditingServiceId(null);
-    setFormPlatform('tokopedia');
-    setFormStatus('inactive');
-    setFormLabel('');
-    setFormDeviceId('none');
-    setFormUsername('');
-    setFormPassword('');
-    setFormPin('');
-    setFormAccountNumber('');
-    setFormPhoneNumber('');
-  }, []);
-
-  const editServiceAccount = React.useCallback((account: AmServiceAccount) => {
-    const device = getServiceDevice(account);
-    setEditingServiceId(account._id);
-    setFormPlatform(account.platform);
-    setFormStatus(account.status);
-    setFormLabel(account.label);
-    setFormDeviceId(device?._id ?? 'none');
-    setFormUsername(getServiceCredentialLogin(account));
-    setFormPassword('');
-    setFormPin('');
-    setFormAccountNumber(account.accountNumber ?? '');
-    setFormPhoneNumber(getCredentialString(account.credentials, 'phoneNumber') ?? '');
-  }, []);
-
-  const buildServiceAccountPayload = React.useCallback((): AmServiceAccountPayload => {
-    const credentials: Record<string, unknown> = {};
-    if (formPhoneNumber.trim()) credentials.phoneNumber = formPhoneNumber.trim();
-
-    if (formPlatform === 'dana') {
-      return {
-        platform: formPlatform,
-        label: formLabel.trim(),
-        deviceId: formDeviceId === 'none' ? null : formDeviceId,
-        pin: formPin.trim(),
-        credentials,
-        status: formStatus,
-      };
-    }
-
-    if (AM_BROWSER_DEVICE_PLATFORMS.has(formPlatform)) {
-      return {
-        platform: formPlatform,
-        label: formLabel.trim(),
-        deviceId: formDeviceId === 'none' ? null : formDeviceId,
-        credentials: buildWebServiceCredentials({
-          platform: formPlatform,
-          login: formUsername,
-          password: formPassword,
-          phoneNumber: formPhoneNumber,
-        }),
-        status: formStatus,
-      };
-    }
-
-    return {
-      platform: formPlatform,
-      label: formLabel.trim(),
-      deviceId: formDeviceId === 'none' ? null : formDeviceId,
-      username: formUsername.trim(),
-      password: formPassword.trim(),
-      pin: formPin.trim(),
-      accountNumber: formAccountNumber.trim(),
-      credentials,
-      status: formStatus,
-    };
-  }, [
-    formAccountNumber,
-    formDeviceId,
-    formLabel,
-    formPassword,
-    formPhoneNumber,
-    formPin,
-    formPlatform,
-    formStatus,
-    formUsername,
-  ]);
-
-  const submitServiceAccountForm = React.useCallback(async () => {
-    const payload = buildServiceAccountPayload();
-    if (!payload.platform || !payload.label) {
-      setError('Platform dan label service wajib diisi.');
-      return;
-    }
-
-    try {
-      setIsSubmitting(true);
-      setActionMessage(null);
-      setError(null);
-      if (editingServiceId) {
-        const updatePayload = {...payload};
-        delete updatePayload.platform;
-        await updateAmServiceAccount(editingServiceId, updatePayload);
-        setActionMessage(`${payload.label} diperbarui.`);
-      } else {
-        await createAmServiceAccount({
-          ...payload,
-          platform: String(payload.platform),
-          label: String(payload.label),
-        });
-        setActionMessage(`${payload.label} dibuat.`);
-      }
-      resetServiceForm();
-      await fetchAccounts();
-    } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : 'Gagal menyimpan service account AM.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [buildServiceAccountPayload, editingServiceId, fetchAccounts, resetServiceForm]);
 
   const loadServiceLogs = React.useCallback(async (
     account: AmServiceAccount,
@@ -1598,36 +1402,6 @@ function AmServicesPage() {
     }
   }, [fetchAccounts]);
 
-  const deleteServiceAccount = React.useCallback(async (account: AmServiceAccount) => {
-    try {
-      setActingServiceId(account._id);
-      setActionMessage(null);
-      setError(null);
-      await deleteAmServiceAccount(account._id);
-      if (expandedId === account._id) {
-        setExpandedId(null);
-        setDetailLogs([]);
-        setDetailServices([]);
-        setDetailTasks([]);
-        setDetailTransfers([]);
-        setDetailLogSource('realtime');
-        setDetailLogPage(1);
-        setDetailLogTotal(0);
-        setDetailLogLimit(AM_SERVICE_LOG_PAGE_LIMIT);
-        setDetailError(null);
-      }
-      if (editingServiceId === account._id) {
-        resetServiceForm();
-      }
-      setActionMessage(`${account.label} dihapus.`);
-      await fetchAccounts();
-    } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : 'Gagal menghapus service account AM.');
-    } finally {
-      setActingServiceId(null);
-    }
-  }, [editingServiceId, expandedId, fetchAccounts, resetServiceForm]);
-
   const submitServiceInput = React.useCallback(async (account: AmServiceAccount, inputType: 'otp' | 'password') => {
     const device = getServiceDevice(account);
     const value = serviceInputValue.trim();
@@ -1740,79 +1514,6 @@ function AmServicesPage() {
           </View>
         </View>
       ) : null}
-      <View style={styles.panel}>
-        <View style={styles.detailHeader}>
-          <View>
-            <Text style={styles.panelTitle}>{editingServiceId ? 'Edit Service Account' : 'Create Service Account'}</Text>
-            <Text style={styles.panelText}>Secret kosong saat edit tidak menghapus nilai tersimpan.</Text>
-          </View>
-          {editingServiceId ? (
-            <KolamButton
-              accessibilityLabel="AM Service Form Cancel Edit"
-              intent="outline"
-              label="Cancel Edit"
-              muted={isSubmitting}
-              size="sm"
-              onPress={resetServiceForm}
-            />
-          ) : null}
-        </View>
-        <View style={styles.filterBar}>
-          {editingServiceId ? (
-            <View accessibilityLabel="AM Service Platform Read Only" style={styles.detailListRow}>
-              <Text style={[styles.tableHeaderText, styles.accountCol]}>Platform</Text>
-              <Text style={[styles.cellText, styles.recipientCol]}>
-                {AM_PLATFORM_LABELS[formPlatform] ?? formPlatform}
-              </Text>
-            </View>
-          ) : (
-            <AmSegmentGroup
-              active={formPlatform}
-              items={AM_PLATFORMS.filter(item => item !== 'all')}
-              labels={AM_PLATFORM_LABELS}
-              onSelect={handleFormPlatformChange}
-            />
-          )}
-          <AmSegmentGroup
-            active={formStatus}
-            items={['active', 'inactive', 'blocked']}
-            onSelect={value => setFormStatus(value)}
-          />
-          <AmSegmentGroup
-            active={formDeviceId}
-            items={serviceDeviceItems}
-            labels={serviceDeviceLabels}
-            onSelect={setFormDeviceId}
-          />
-        </View>
-        <View style={styles.formGrid}>
-          <AmTextInput label="Label" placeholder="Tokopedia Seller Center" value={formLabel} onChangeText={setFormLabel} />
-          {showServiceUsername ? (
-            <AmTextInput {...getAmServiceFieldProps(formPlatform, 'username', Boolean(editingServiceId))} value={formUsername} onChangeText={setFormUsername} />
-          ) : null}
-          {showServicePassword ? (
-            <AmTextInput {...getAmServiceFieldProps(formPlatform, 'password', Boolean(editingServiceId))} secureTextEntry value={formPassword} onChangeText={setFormPassword} />
-          ) : null}
-          {showServicePin ? (
-            <AmTextInput {...getAmServiceFieldProps(formPlatform, 'pin', Boolean(editingServiceId))} secureTextEntry value={formPin} onChangeText={setFormPin} />
-          ) : null}
-          {showServiceAccountNumber ? (
-            <AmTextInput {...getAmServiceFieldProps(formPlatform, 'accountNumber', Boolean(editingServiceId))} value={formAccountNumber} onChangeText={setFormAccountNumber} />
-          ) : null}
-          {showServicePhoneNumber ? (
-            <AmTextInput {...getAmServiceFieldProps(formPlatform, 'phoneNumber', Boolean(editingServiceId))} value={formPhoneNumber} onChangeText={setFormPhoneNumber} />
-          ) : null}
-        </View>
-        <View style={styles.inlineActions}>
-          <KolamButton
-            accessibilityLabel="AM Service Account Save"
-            label={isSubmitting ? 'Menyimpan' : editingServiceId ? 'Update Service' : 'Create Service'}
-            muted={isSubmitting}
-            size="sm"
-            onPress={submitServiceAccountForm}
-          />
-        </View>
-      </View>
       <View style={styles.tablePanel}>
         <View style={styles.tableHeader}>
           <Text style={[styles.tableHeaderText, styles.serviceCol]}>Service</Text>
@@ -1860,22 +1561,6 @@ function AmServicesPage() {
                     muted={actingServiceId === account._id || !device}
                     size="sm"
                     onPress={() => runServicePowerAction(account)}
-                  />
-                  <KolamButton
-                    accessibilityLabel={`AM Service Edit ${account._id}`}
-                    intent="outline"
-                    label="Edit"
-                    muted={isSubmitting}
-                    size="sm"
-                    onPress={() => editServiceAccount(account)}
-                  />
-                  <KolamButton
-                    accessibilityLabel={`AM Service Delete ${account._id}`}
-                    intent="danger"
-                    label={actingServiceId === account._id ? '...' : 'Delete'}
-                    muted={actingServiceId === account._id}
-                    size="sm"
-                    onPress={() => deleteServiceAccount(account)}
                   />
                 </View>
               </View>

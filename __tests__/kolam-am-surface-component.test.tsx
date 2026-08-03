@@ -1150,38 +1150,7 @@ describe('KolamAmSurface', () => {
     );
   });
 
-  it('creates and updates service accounts from the Services form', async () => {
-    jest.mocked(getAmDevices).mockResolvedValue({
-      data: [
-        {
-          _id: 'device-browser',
-          name: 'Browser Worker',
-          slug: 'browser-worker',
-          boxId: 'box-1',
-          connectionType: 'browser',
-          tcpAddress: null,
-          udid: null,
-          brand: 'Playwright',
-          model: 'Chromium',
-          createdAt: '',
-          updatedAt: '',
-        },
-        {
-          _id: 'device-phone',
-          name: 'Phone Worker',
-          slug: 'phone-worker',
-          boxId: 'box-1',
-          connectionType: 'tcp',
-          tcpAddress: '10.0.0.7:5555',
-          udid: null,
-          brand: 'Samsung',
-          model: 'A15',
-          createdAt: '',
-          updatedAt: '',
-        },
-      ],
-      meta: {total: 1, limit: 100},
-    });
+  it('keeps Services as the AM FE runtime list without service account CRUD controls', async () => {
     jest.mocked(getAmServiceAccounts).mockResolvedValue({
       data: [
         {
@@ -1216,131 +1185,22 @@ describe('KolamAmSurface', () => {
     renderers.push(renderer!);
 
     await updateAmRoute(renderer!, 'services');
-    expect(
-      renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment Browser Worker (Playwright)'}),
-    ).not.toHaveLength(0);
-    expect(
-      renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment Phone Worker (10.0.0.7:5555)'}),
-    ).toHaveLength(0);
 
-    await act(async () => {
-      const bcaSegments = renderer!.root
-        .findAllByProps({accessibilityLabel: 'AM Segment BCA'})
-        .filter(node => typeof node.props.onPress === 'function');
-      bcaSegments[bcaSegments.length - 1].props.onPress();
-    });
+    const text = renderText(renderer!);
 
-    expect(
-      renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment Browser Worker (Playwright)'}),
-    ).toHaveLength(0);
-    expect(
-      renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment Phone Worker (10.0.0.7:5555)'}),
-    ).not.toHaveLength(0);
-
-    await act(async () => {
-      const tokopediaSegments = renderer!.root
-        .findAllByProps({accessibilityLabel: 'AM Segment Tokopedia'})
-        .filter(node => typeof node.props.onPress === 'function');
-      tokopediaSegments[tokopediaSegments.length - 1].props.onPress();
-    });
-    await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Segment Browser Worker (Playwright)'}).props.onPress();
-    });
-
-    const findInput = (placeholder: string) =>
-      renderer!.root.findAllByType(TextInput).find(input => input.props.placeholder === placeholder);
-    expect(findInput('Store login email')).toBeUndefined();
-    expect(findInput('Account PIN')).toBeUndefined();
-    expect(findInput('e.g. 1234567890')).toBeUndefined();
-    await act(async () => {
-      findInput('Tokopedia Seller Center')!.props.onChangeText('Tokopedia New');
-      findInput('TikTok Shop password')!.props.onChangeText('top-secret');
-      findInput('e.g. 08123456789')!.props.onChangeText('0899');
-    });
-    await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Service Account Save'}).props.onPress();
-    });
-
-    expect(createAmServiceAccount).toHaveBeenCalledWith(expect.objectContaining({
-      platform: 'tokopedia',
-      label: 'Tokopedia New',
-      deviceId: 'device-browser',
-      credentials: {phoneNumber: '0899', password: 'top-secret'},
-      status: 'inactive',
-    }));
-    expect(createAmServiceAccount).toHaveBeenCalledWith(expect.not.objectContaining({
-      username: expect.anything(),
-      password: expect.anything(),
-      accountNumber: expect.anything(),
-    }));
-
-    await act(async () => {
-      const danaSegments = renderer!.root
-        .findAllByProps({accessibilityLabel: 'AM Segment DANA'})
-        .filter(node => typeof node.props.onPress === 'function');
-      danaSegments[danaSegments.length - 1].props.onPress();
-    });
-    await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Segment Phone Worker (10.0.0.7:5555)'}).props.onPress();
-    });
-    expect(findInput('myBCA username')).toBeUndefined();
-    expect(findInput('Store password')).toBeUndefined();
-    expect(findInput('e.g. 1234567890')).toBeUndefined();
-    await act(async () => {
-      findInput('Tokopedia Seller Center')!.props.onChangeText('DANA Services');
-      findInput('PIN DANA')!.props.onChangeText('112233');
-      findInput('e.g. 081234567890')!.props.onChangeText('081234567891');
-    });
-    await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Service Account Save'}).props.onPress();
-    });
-
-    expect(createAmServiceAccount).toHaveBeenLastCalledWith(expect.objectContaining({
-      platform: 'dana',
-      label: 'DANA Services',
-      deviceId: 'device-phone',
-      pin: '112233',
-      credentials: {phoneNumber: '081234567891'},
-      status: 'inactive',
-    }));
-    expect(createAmServiceAccount).toHaveBeenLastCalledWith(expect.not.objectContaining({
-      username: expect.anything(),
-      password: expect.anything(),
-      accountNumber: expect.anything(),
-    }));
-
-    await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Service Edit service-edit'}).props.onPress();
-    });
-
-    expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Service Platform Read Only'}).length).toBeGreaterThan(0);
-
-    await act(async () => {
-      findInput('Tokopedia Seller Center')!.props.onChangeText('Tokopedia Updated');
-    });
-    await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Service Account Save'}).props.onPress();
-    });
-
-    expect(updateAmServiceAccount).toHaveBeenCalledWith('service-edit', expect.objectContaining({
-      label: 'Tokopedia Updated',
-      deviceId: 'device-browser',
-      credentials: {phoneNumber: '0812'},
-      status: 'inactive',
-    }));
-    expect(updateAmServiceAccount).toHaveBeenCalledWith('service-edit', expect.not.objectContaining({
-      platform: expect.anything(),
-      username: expect.anything(),
-      password: expect.anything(),
-      accountNumber: expect.anything(),
-    }));
-
-    await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Service Delete service-edit'}).props.onPress();
-    });
-
-    expect(deleteAmServiceAccount).toHaveBeenCalledWith('service-edit');
-    expect(renderText(renderer!).join(' ')).toContain('Tokopedia Old dihapus.');
+    expect(text).toContain('Tokopedia Old');
+    expect(text).toContain('Stopped');
+    expect(text).not.toContain('Create Service Account');
+    expect(text).not.toContain('Edit Service Account');
+    expect(text).not.toContain('Secret kosong saat edit tidak menghapus nilai tersimpan.');
+    expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Service Account Save'})).toHaveLength(0);
+    expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Service Edit service-edit'})).toHaveLength(0);
+    expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Service Delete service-edit'})).toHaveLength(0);
+    expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Service Platform Read Only'})).toHaveLength(0);
+    expect(getAmDevices).not.toHaveBeenCalled();
+    expect(createAmServiceAccount).not.toHaveBeenCalled();
+    expect(updateAmServiceAccount).not.toHaveBeenCalled();
+    expect(deleteAmServiceAccount).not.toHaveBeenCalled();
   });
 
   it('expands a service row and loads logs plus task history', async () => {
