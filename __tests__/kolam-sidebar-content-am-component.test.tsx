@@ -140,9 +140,9 @@ describe('KolamSidebarContent AM mode', () => {
       ]),
     );
     expect(text).not.toContain('Account Settings');
-    expect(text).not.toContain('JungleSystem');
-    expect(text).not.toContain('Beranda');
-    expect(text).not.toContain('Pengaturan');
+    expect(text).toContain('JungleSystem');
+    expect(text).toContain('Beranda');
+    expect(text).toContain('Pengaturan');
     expect(text).not.toContain('POS');
     expect(text).not.toContain('Tasks');
     expect(text).not.toContain('Automation Management');
@@ -251,6 +251,49 @@ describe('KolamSidebarContent AM mode', () => {
       }),
     );
     expect(onSelectMenuItem).not.toHaveBeenCalled();
+  });
+
+  it('keeps the JungleSystem back modules in the AM sidebar like POS', async () => {
+    const onSelectModule = jest.fn();
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <View>
+          <KolamSidebarContent
+            accessScope={{ am: true, kolam: true, pos: true }}
+            activeModule="am"
+            activeRoute="/services"
+            collapsed={false}
+            expandedSections={{ dashboard: true }}
+            filterMenuByAccess={false}
+            onModuleRouteSelect={() => undefined}
+            onMoveMenuSection={() => undefined}
+            onQuickSearch={() => undefined}
+            onSelectMenuItem={() => undefined}
+            onSelectModule={onSelectModule}
+            onToggleMenuSection={() => undefined}
+            sectionOrder={[]}
+          />
+        </View>,
+      );
+    });
+
+    await ReactTestRenderer.act(async () => {
+      await Promise.resolve();
+    });
+
+    const homeButton = renderer!.root
+      .findAll(node => typeof node.props.onPress === 'function')
+      .find(node => flattenNodeText(node).includes('Beranda'));
+
+    expect(homeButton).toBeTruthy();
+
+    await ReactTestRenderer.act(async () => {
+      homeButton!.props.onPress();
+    });
+
+    expect(onSelectModule).toHaveBeenCalledWith('kolam');
   });
 
   it('opens AM account actions from the sidebar footer', async () => {

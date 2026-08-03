@@ -68,6 +68,9 @@ export function KolamSidebarContent({
     ...getShellModulesByArea('kolam'),
     ...getShellModulesByArea('am'),
   ];
+  const amBackModules = getShellModulesByArea('kolam').filter(
+    module => module.id !== 'checkout',
+  );
   const posModules = getShellModulesByArea('pos');
 
   return (
@@ -81,11 +84,20 @@ export function KolamSidebarContent({
     >
       <KolamQuickSearch collapsed={collapsed} onPress={onQuickSearch} />
       {activeArea === 'am' ? (
-        <KolamAmSidebarMenu
-          activeRoute={activeAmRoute}
-          collapsed={collapsed}
-          onSelectRoute={onModuleRouteSelect ?? (() => undefined)}
-        />
+        <>
+          <KolamAmSidebarMenu
+            activeRoute={activeAmRoute}
+            collapsed={collapsed}
+            onSelectRoute={onModuleRouteSelect ?? (() => undefined)}
+          />
+          <KolamSidebarNavGroup
+            activeModule={activeModule}
+            collapsed={collapsed}
+            label="JungleSystem"
+            modules={amBackModules}
+            onSelect={onSelectModule}
+          />
+        </>
       ) : activeArea === 'pos' ? (
         <>
           <KolamSidebarNavGroup
