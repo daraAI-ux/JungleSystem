@@ -1,5 +1,5 @@
 ﻿import React, { useMemo, useState } from 'react';
-import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
   estimateKolamSaleCreateItemLineTotal,
   estimateKolamSaleCreateItemShippingCost,
@@ -1691,81 +1691,7 @@ function KolamSalesOpsApproval({
 
   const pageCount = Math.max(1, controller.pagination.totalPages);
   const safePage = Math.min(Math.max(controller.pagination.page, 1), pageCount);
-
-  const renderRow = React.useCallback(
-    ({ item }: { item: KolamSale }) => {
-      const expanded = expandedId === item.id;
-      const canMutateDiscount = controller.canApproveDiscount;
-
-      return (
-        <View style={styles.approvalCard}>
-          <Pressable
-            onPress={() =>
-              setExpandedId(current => (current === item.id ? null : item.id))
-            }
-            style={styles.approvalRowHeader}
-          >
-            <View style={styles.approvalHeaderCopy}>
-              <Text style={styles.invoiceCode}>{item.invoiceCode}</Text>
-              <Text style={styles.metaText}>{item.buyerLabel}</Text>
-              <Text style={styles.metaText}>
-                {item.createdAt
-                  ? new Date(item.createdAt).toLocaleString('id-ID')
-                  : '—'}
-              </Text>
-            </View>
-            <View style={styles.approvalHeaderTotals}>
-              <Text style={styles.primaryText}>
-                {formatRupiah(item.finalTotal)}
-              </Text>
-              <Text style={styles.metaText}>
-                Diskon: {summarizeKolamSaleDiscounts(item)}
-              </Text>
-              <Text style={styles.expandHint}>
-                {expanded ? 'Sembunyikan detail' : 'Lihat detail'}
-              </Text>
-            </View>
-          </Pressable>
-
-          {expanded ? <KolamSalesOpsApprovalDetail sale={item} /> : null}
-
-          <View style={styles.approvalActions}>
-            <KolamButton
-              disabled={controller.mutating || !canMutateDiscount}
-              intent="primary"
-              label="Setujui"
-              onPress={() => requestAction(item, 'sent')}
-            />
-            <KolamButton
-              disabled={controller.mutating || !canMutateDiscount}
-              label="Tolak diskon"
-              onPress={() => requestAction(item, 'reject')}
-            />
-            <KolamButton
-              disabled={controller.mutating}
-              intent="danger"
-              label="Batalkan"
-              onPress={() => requestAction(item, 'cancelled')}
-            />
-            <KolamButton
-              intent="outline"
-              label="Buka detail"
-              onPress={() =>
-                onRouteChange?.(`${KOLAM_SALES_ROOT}/${encodeURIComponent(item.id)}`)
-              }
-            />
-          </View>
-        </View>
-      );
-    },
-    [
-      controller.canApproveDiscount,
-      controller.mutating,
-      expandedId,
-      onRouteChange,
-      requestAction,
-    ],
-  );
+  const sales = controller.sales;
 
   return (
     <View style={styles.approvalRoot}>
@@ -1773,7 +1699,8 @@ function KolamSalesOpsApproval({
         <View style={kolamTableToolbarStyles.row}>
           <View style={kolamTableToolbarStyles.filters}>
             <Text numberOfLines={2} style={styles.detailToolbarContext}>
-              Invoice menunggu persetujuan finance
+              Review invoice dengan diskon yang butuh approval finance. Klik
+              baris untuk detail item dan diskon.
             </Text>
           </View>
           <View style={kolamTableToolbarStyles.actions}>
@@ -1814,56 +1741,163 @@ function KolamSalesOpsApproval({
         />
       ) : null}
 
-      <FlatList
-        contentContainerStyle={styles.approvalListContent}
-        data={controller.sales}
-        keyExtractor={item => item.id}
-        style={styles.approvalList}
-        ListEmptyComponent={
-          <View style={styles.emptyWrap}>
-            <KolamEmptyState
-              compact
-              message={
-                controller.loading
-                  ? 'Mengambil invoice dari server Kolam.'
-                  : 'Tidak ada invoice yang menunggu persetujuan diskon.'
-              }
-              title={
-                controller.loading ? 'Memuat…' : 'Semua invoice sudah diproses'
-              }
-            />
-          </View>
-        }
-        ListFooterComponent={
-          <KolamTableFooterControls
-            onPageSizeChange={controller.onLimitChange}
-            page={safePage}
-            pageSize={controller.filters.limit}
-            total={controller.pagination.total}
-          >
-            {pageCount > 1 ? (
-              <View style={styles.paginationRow}>
-                <KolamButton
-                  disabled={safePage <= 1 || controller.loading}
-                  label="Sebelumnya"
-                  onPress={() => controller.onPageChange(Math.max(1, safePage - 1))}
-                />
-                <Text style={styles.pageLabel}>
-                  {safePage} / {pageCount}
-                </Text>
-                <KolamButton
-                  disabled={safePage >= pageCount || controller.loading}
-                  label="Berikutnya"
-                  onPress={() =>
-                    controller.onPageChange(Math.min(pageCount, safePage + 1))
-                  }
-                />
-              </View>
-            ) : null}
-          </KolamTableFooterControls>
-        }
-        renderItem={renderRow}
-      />
+      {controller.loading && sales.length === 0 ? (
+        <View style={styles.emptyWrap}>
+          <KolamEmptyState
+            compact
+            message="Mengambil invoice dari server Kolam."
+            title="Memuat…"
+          />
+        </View>
+      ) : null}
+
+      {!controller.loading && sales.length === 0 ? (
+        <View style={styles.emptyWrap}>
+          <KolamEmptyState
+            compact
+            message="Tidak ada invoice yang menunggu persetujuan diskon."
+            title="Semua invoice sudah diproses"
+          />
+        </View>
+      ) : null}
+
+      <View style={styles.approvalCardList}>
+        {sales.map(sale => {
+          const expanded = expandedId === sale.id;
+          const canMutateDiscount = controller.canApproveDiscount;
+          const itemDiscountCount = sale.items.filter(
+            item => item.discount && item.discount.amount > 0,
+          ).length;
+          const hasGlobalDiscount = sale.discount > 0;
+
+          return (
+            <View
+              key={sale.id}
+              style={[
+                styles.approvalCard,
+                expanded ? styles.approvalCardExpanded : null,
+              ]}
+            >
+              <Pressable
+                onPress={() =>
+                  setExpandedId(current => (current === sale.id ? null : sale.id))
+                }
+                style={styles.approvalRowHeader}
+              >
+                <View style={styles.approvalHeaderCopy}>
+                  <View style={styles.approvalTitleRow}>
+                    <Text style={styles.invoiceCode}>{sale.invoiceCode}</Text>
+                    <Text style={styles.approvalDot}>·</Text>
+                    <Text numberOfLines={1} style={styles.approvalBuyerInline}>
+                      {sale.buyerLabel}
+                    </Text>
+                    <KolamStatusBadge intent="warning" label="Pending" />
+                  </View>
+                  <View style={styles.approvalMetaRow}>
+                    <Text style={styles.metaText}>
+                      {sale.createdAt
+                        ? new Date(sale.createdAt).toLocaleString('id-ID')
+                        : '—'}
+                    </Text>
+                    {itemDiscountCount > 0 ? (
+                      <KolamStatusBadge
+                        intent="warning"
+                        label={`${itemDiscountCount} item discount`}
+                      />
+                    ) : null}
+                    {hasGlobalDiscount ? (
+                      <KolamStatusBadge
+                        intent="danger"
+                        label={
+                          sale.discountType === 'percentage'
+                            ? `Global ${sale.discount}%`
+                            : `Global ${formatRupiah(sale.discount)}`
+                        }
+                      />
+                    ) : null}
+                    <Text style={styles.metaText}>
+                      {sale.items.length} item · Subtotal{' '}
+                      {formatRupiah(sale.total)}
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.approvalHeaderTotals}>
+                  <Text style={styles.approvalFinalLabel}>Final Total</Text>
+                  <Text style={styles.primaryText}>
+                    {formatRupiah(sale.finalTotal)}
+                  </Text>
+                  <Text style={styles.expandHint}>
+                    {expanded ? 'Sembunyikan' : 'Lihat detail'}
+                  </Text>
+                </View>
+              </Pressable>
+
+              {expanded ? (
+                <View style={styles.approvalExpandedBody}>
+                  <KolamSalesOpsApprovalDetail sale={sale} />
+                  <View style={styles.approvalActions}>
+                    <KolamButton
+                      disabled={controller.mutating}
+                      intent="danger"
+                      label="Batalkan"
+                      onPress={() => requestAction(sale, 'cancelled')}
+                    />
+                    <KolamButton
+                      disabled={controller.mutating || !canMutateDiscount}
+                      label="Tolak diskon"
+                      onPress={() => requestAction(sale, 'reject')}
+                    />
+                    <KolamButton
+                      disabled={controller.mutating || !canMutateDiscount}
+                      intent="primary"
+                      label="Setujui"
+                      onPress={() => requestAction(sale, 'sent')}
+                    />
+                    <KolamButton
+                      intent="outline"
+                      label="Buka detail"
+                      onPress={() =>
+                        onRouteChange?.(
+                          `${KOLAM_SALES_ROOT}/${encodeURIComponent(sale.id)}`,
+                        )
+                      }
+                    />
+                  </View>
+                </View>
+              ) : null}
+            </View>
+          );
+        })}
+      </View>
+
+      {sales.length > 0 || controller.pagination.total > 0 ? (
+        <KolamTableFooterControls
+          onPageSizeChange={controller.onLimitChange}
+          page={safePage}
+          pageSize={controller.filters.limit}
+          total={controller.pagination.total}
+        >
+          {pageCount > 1 ? (
+            <View style={styles.paginationRow}>
+              <KolamButton
+                disabled={safePage <= 1 || controller.loading}
+                label="Sebelumnya"
+                onPress={() => controller.onPageChange(Math.max(1, safePage - 1))}
+              />
+              <Text style={styles.pageLabel}>
+                {safePage} / {pageCount}
+              </Text>
+              <KolamButton
+                disabled={safePage >= pageCount || controller.loading}
+                label="Berikutnya"
+                onPress={() =>
+                  controller.onPageChange(Math.min(pageCount, safePage + 1))
+                }
+              />
+            </View>
+          ) : null}
+        </KolamTableFooterControls>
+      ) : null}
 
       <KolamConfirmDialog
         cancelLabel="Batal"
@@ -2022,27 +2056,6 @@ function KolamSalesOpsApprovalDetail({ sale }: { sale: KolamSale }) {
       </View>
     </View>
   );
-}
-
-function summarizeKolamSaleDiscounts(sale: KolamSale): string {
-  const discounted = sale.items.filter(
-    item => item.discount && item.discount.amount > 0,
-  );
-  if (discounted.length === 0) {
-    if (sale.discount > 0) {
-      return sale.discountType === 'percentage'
-        ? `${sale.discount}% global`
-        : formatRupiah(sale.discount);
-    }
-    return 'Tidak ada diskon';
-  }
-  return discounted
-    .map(item =>
-      item.discount!.type === 'percentage'
-        ? `${item.discount!.amount}%`
-        : formatRupiah(item.discount!.amount),
-    )
-    .join(', ');
 }
 
 function FilterPanel({
@@ -2519,41 +2532,64 @@ const styles = StyleSheet.create({
     minHeight: 34,
   },
   approvalRoot: {
-    flex: 1,
     gap: 12,
-    minHeight: 0,
   },
-  approvalList: {
-    flex: 1,
-    minHeight: 0,
-  },
-  approvalListContent: {
-    flexGrow: 1,
-    gap: 10,
-    paddingBottom: 16,
+  approvalCardList: {
+    gap: 12,
   },
   approvalCard: {
     borderColor: V.colors.border,
     borderRadius: 8,
     borderWidth: 1,
-    gap: 10,
-    padding: 12,
+    overflow: 'hidden',
+  },
+  approvalCardExpanded: {
+    borderColor: V.colors.warning,
   },
   approvalRowHeader: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
     justifyContent: 'space-between',
+    padding: 12,
   },
   approvalHeaderCopy: {
     flex: 1,
-    gap: 2,
-    minWidth: 160,
+    gap: 6,
+    minWidth: 200,
+  },
+  approvalTitleRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  approvalBuyerInline: {
+    color: V.colors.fg,
+    flexShrink: 1,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+  },
+  approvalDot: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+  },
+  approvalMetaRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
   },
   approvalHeaderTotals: {
     alignItems: 'flex-end',
     gap: 2,
-    minWidth: 140,
+    minWidth: 120,
+  },
+  approvalFinalLabel: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
   },
   expandHint: {
     color: V.colors.primary,
@@ -2564,6 +2600,12 @@ const styles = StyleSheet.create({
   },
   approvalGateBadge: {
     alignSelf: 'stretch',
+  },
+  approvalExpandedBody: {
+    borderTopColor: V.colors.border,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    gap: 12,
+    padding: 12,
   },
   approvalDetail: {
     backgroundColor: V.colors.muted,
@@ -2633,6 +2675,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+    justifyContent: 'flex-end',
   },
   paginationRow: {
     alignItems: 'center',
