@@ -48,6 +48,23 @@ describe('AM navigation parity', () => {
     expect(
       AM_ROUTES.find(route => route.moduleRoute === 'services')?.description,
     ).toBe('Manage automation services. Click a row to view history.');
+    expect(
+      AM_ROUTES.find(route => route.moduleRoute === 'webhooks')?.description,
+    ).toBe('Manage outgoing webhook endpoints and monitor delivery logs.');
+    expect(
+      AM_ROUTES.find(route => route.moduleRoute === 'mutasi')?.description,
+    ).toBe('Incoming and outgoing transaction records across all accounts.');
+    expect(
+      AM_ROUTES.find(route => route.moduleRoute === 'admin/users')?.description,
+    ).toBe('Manage user accounts, assign roles, and control access permissions.');
+    expect(
+      AM_ROUTES.find(route => route.moduleRoute === 'settings/account')?.description,
+    ).toBe('Manage your personal information, photo, and other profile details.');
+    expect(
+      AM_ROUTES.find(route => route.moduleRoute === 'admin/activity-log')?.description,
+    ).toBe(
+      'Catatan setiap akses halaman dan API request. Otomatis hapus setelah 90 hari. Super Admin bisa hapus manual per baris terpilih atau sesuai filter.',
+    );
   });
 
   it('keeps detail routes selected under their AM sidebar parents', () => {

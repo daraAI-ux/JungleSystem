@@ -61,7 +61,7 @@ export const AM_ROUTES: AmRouteItem[] = [
     section: 'Infrastructure',
     path: '/webhooks',
     moduleRoute: 'webhooks',
-    description: 'Konfigurasi dan event webhook AM.',
+    description: 'Manage outgoing webhook endpoints and monitor delivery logs.',
   },
   {
     id: 'transactions',
@@ -77,7 +77,7 @@ export const AM_ROUTES: AmRouteItem[] = [
     section: 'Banking',
     path: '/mutasi',
     moduleRoute: 'mutasi',
-    description: 'Mutasi rekening dan ingest transaksi.',
+    description: 'Incoming and outgoing transaction records across all accounts.',
   },
   {
     id: 'users',
@@ -85,7 +85,7 @@ export const AM_ROUTES: AmRouteItem[] = [
     section: 'Administration',
     path: '/admin/users',
     moduleRoute: 'admin/users',
-    description: 'User AM dan permission role.',
+    description: 'Manage user accounts, assign roles, and control access permissions.',
   },
   {
     id: 'activity-log',
@@ -93,7 +93,8 @@ export const AM_ROUTES: AmRouteItem[] = [
     section: 'Administration',
     path: '/admin/activity-log',
     moduleRoute: 'admin/activity-log',
-    description: 'Audit log aktivitas AM.',
+    description:
+      'Catatan setiap akses halaman dan API request. Otomatis hapus setelah 90 hari. Super Admin bisa hapus manual per baris terpilih atau sesuai filter.',
   },
   {
     id: 'settings-account',
@@ -101,7 +102,7 @@ export const AM_ROUTES: AmRouteItem[] = [
     section: 'Administration',
     path: '/settings/account',
     moduleRoute: 'settings/account',
-    description: 'Profil akun AM, password, dan area akun sesuai AM FE.',
+    description: 'Manage your personal information, photo, and other profile details.',
     sidebar: false,
   },
   {
