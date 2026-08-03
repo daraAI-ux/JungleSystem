@@ -652,6 +652,20 @@ export function canMarkKolamTaskDone(task: KolamTaskManagerTask) {
   return Boolean(task.projectId) || !hasOpenKolamTaskChecklistItems(task);
 }
 
+export function canPostKolamTaskDiscussion(
+  task: KolamTaskManagerTask,
+  currentUserId: string,
+  isTaskAdmin: boolean,
+) {
+  if (!currentUserId) return false;
+  if (isTaskAdmin) return true;
+  if (getLooseRefId(task.createdBy) === currentUserId) return true;
+  if (getLooseRefId(task.assignedTo) === currentUserId) return true;
+  return task.checklist.some(
+    item => getLooseRefId(item.assignedTo) === currentUserId,
+  );
+}
+
 export function getKolamTaskTimelineLabel(type: string) {
   switch (type) {
     case 'created':

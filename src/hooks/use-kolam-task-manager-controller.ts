@@ -1288,7 +1288,9 @@ export function useKolamTaskManagerController({
   const onAddDiscussion = useCallback(async () => {
     if (!selectedTask) return false;
     const message = discussionDraft.trim();
-    if (!message && discussionAttachments.length === 0) return false;
+    if (!stripHtmlText(message) && discussionAttachments.length === 0) {
+      return false;
+    }
     setMutatingTaskId(`discussion:${selectedTask.id}`);
     setError(null);
     setStatusMessage(null);
@@ -1921,6 +1923,10 @@ function getOvertimeCandidateTaskIds(tasks: KolamTaskManagerTask[]) {
         ['todo', 'in_progress', 'needs_review'].includes(task.status),
     )
     .map(task => task.id);
+}
+
+function stripHtmlText(value: string) {
+  return value.replace(/<[^>]+>/g, '').trim();
 }
 
 function mapStaffOptions(users: KolamUserListItem[]): KolamTaskManagerStaffOption[] {

@@ -14,6 +14,7 @@ import {
   getKolamTaskStatusOptionsForUser,
   getKolamTaskTimelineLabel,
   getKolamTaskUserDisplayName,
+  canPostKolamTaskDiscussion,
   hasOpenKolamTaskChecklistItems,
   isKolamTaskOverdue,
   resolveKolamTaskCompletedAt,
@@ -185,6 +186,11 @@ function KolamTaskManagerDetail({
   );
   const relatedLinks = getTaskRelatedLinks(task);
   const canRequestOvertime = isTaskOvertimeRequestVisible(controller, task);
+  const canPostDiscussion = canPostKolamTaskDiscussion(
+    task,
+    controller.currentUserId,
+    controller.isTaskAdmin,
+  );
 
   return (
     <View style={styles.detailStack}>
@@ -486,71 +492,69 @@ function KolamTaskManagerDetail({
         ) : (
           <Text style={styles.metaText}>Belum ada diskusi.</Text>
         )}
-        {controller.discussionAttachments.length ? (
-          <View style={styles.attachmentRow}>
-            {controller.discussionAttachments.map((file, index) => (
-              <Pressable
-                key={`${file.uri || file.path || file.name}-${index}`}
-                onPress={() => controller.onRemoveDiscussionAttachment(index)}
-              >
-                <KolamStatusBadge
-                  intent="muted"
-                  label={getDiscussionAttachmentLabel(file)}
+        {canPostDiscussion ? (
+          <>
+            {controller.discussionAttachments.length ? (
+              <View style={styles.attachmentRow}>
+                {controller.discussionAttachments.map((file, index) => (
+                  <Pressable
+                    key={`${file.uri || file.path || file.name}-${index}`}
+                    onPress={() => controller.onRemoveDiscussionAttachment(index)}
+                  >
+                    <KolamStatusBadge
+                      intent="muted"
+                      label={getDiscussionAttachmentLabel(file)}
+                    />
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
+            <View style={styles.noteAddRow}>
+              <KolamTipTapRichTextEditor
+                onChangeText={controller.onSetDiscussionDraft}
+                placeholder="Pesan"
+                value={controller.discussionDraft}
+              />
+              <View style={styles.discussionActionStack}>
+                <View style={styles.attachmentRow}>
+                  <KolamButton
+                    disabled={
+                      controller.mutatingTaskId === `discussion:${task.id}` ||
+                      controller.discussionAttachments.length >= 8
+                    }
+                    intent="outline"
+                    label="Gambar"
+                    onPress={() => {
+                      void controller.onPickDiscussionImage();
+                    }}
+                  />
+                  <KolamButton
+                    disabled={
+                      controller.mutatingTaskId === `discussion:${task.id}` ||
+                      controller.discussionAttachments.length >= 8
+                    }
+                    intent="outline"
+                    label="Video"
+                    onPress={() => {
+                      void controller.onPickDiscussionVideo();
+                    }}
+                  />
+                </View>
+                <KolamButton
+                  disabled={
+                    controller.mutatingTaskId === `discussion:${task.id}` ||
+                    (!stripTaskHtmlText(controller.discussionDraft) &&
+                      controller.discussionAttachments.length === 0)
+                  }
+                  label="Kirim"
+                  onPress={() => {
+                    void controller.onAddDiscussion();
+                  }}
                 />
-              </Pressable>
-            ))}
-          </View>
-        ) : null}
-        <View style={styles.noteAddRow}>
-          <KolamFormTextField
-            multiline
-            onChangeText={controller.onSetDiscussionDraft}
-            placeholder="Pesan"
-            style={[
-              settingsWebFormStyles.settingsWebFormFieldValue,
-              settingsWebFormStyles.settingsWebFormFieldValueTextarea,
-              styles.noteDraftInput,
-            ]}
-            value={controller.discussionDraft}
-          />
-          <View style={styles.discussionActionStack}>
-            <View style={styles.attachmentRow}>
-              <KolamButton
-                disabled={
-                  controller.mutatingTaskId === `discussion:${task.id}` ||
-                  controller.discussionAttachments.length >= 8
-                }
-                intent="outline"
-                label="Gambar"
-                onPress={() => {
-                  void controller.onPickDiscussionImage();
-                }}
-              />
-              <KolamButton
-                disabled={
-                  controller.mutatingTaskId === `discussion:${task.id}` ||
-                  controller.discussionAttachments.length >= 8
-                }
-                intent="outline"
-                label="Video"
-                onPress={() => {
-                  void controller.onPickDiscussionVideo();
-                }}
-              />
+              </View>
             </View>
-            <KolamButton
-              disabled={
-                controller.mutatingTaskId === `discussion:${task.id}` ||
-                (!controller.discussionDraft.trim() &&
-                  controller.discussionAttachments.length === 0)
-              }
-              label="Kirim"
-              onPress={() => {
-                void controller.onAddDiscussion();
-              }}
-            />
-          </View>
-        </View>
+          </>
+        ) : null}
       </View>
 
       <View style={styles.detailCard}>
@@ -630,6 +634,10 @@ function isTaskOvertimeRequestVisible(
 ) {
   const eligibility = controller.overtimeEligibilityByTaskId[task.id];
   return Boolean(eligibility?.eligible && !eligibility.hasActiveRequest);
+}
+
+function stripTaskHtmlText(value: string) {
+  return value.replace(/<[^>]+>/g, '').trim();
 }
 
 function getDiscussionAttachmentLabel(

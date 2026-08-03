@@ -779,6 +779,7 @@ describe('KolamWorkspaceSurface', () => {
         '8 rating',
         '4.5',
         'Diskusi',
+        'Kirim',
         'Siap cek filter.',
         'Timeline',
         'Tugas dibuat',
