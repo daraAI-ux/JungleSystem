@@ -3672,6 +3672,60 @@ describe('KolamAmSurface', () => {
     expect(getAmActivityLogStats).not.toHaveBeenCalled();
   });
 
+  it('allows Super Admin users without user read permission to open Activity Log like AM BE', async () => {
+    jest.mocked(getAmCurrentUser).mockResolvedValue({
+      _id: 'user-current',
+      fullName: 'Audit Super Admin',
+      username: 'audit@dunia-anura.com',
+      role: {_id: 'role-super', name: 'Super Admin', permissions: [], description: 'Super Admin role'},
+    });
+    jest.mocked(getAmActivityLogs).mockResolvedValue({
+      data: [
+        {
+          _id: 'log-super',
+          action: 'GET /activity-log',
+          duration: 12,
+          error: '',
+          ip: '127.0.0.1',
+          metadata: {},
+          method: 'GET',
+          path: '/activity-log',
+          status: 'success',
+          statusCode: 200,
+          timestamp: '2026-01-01T00:00:00.000Z',
+          type: 'api',
+          userAgent: 'Jest',
+          userId: null,
+          username: 'audit',
+        },
+      ],
+      meta: {total: 1, limit: 50, page: 1, totalPages: 1},
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await updateAmRoute(renderer!, 'admin/activity-log');
+
+    const joinedText = renderText(renderer!).join(' ');
+    expect(joinedText).toContain('Super Admin audit log');
+    expect(joinedText).toContain('/activity-log');
+    expect(getAmActivityLogs).toHaveBeenCalledWith({
+      page: 1,
+      limit: 50,
+      search: undefined,
+      type: undefined,
+      status: undefined,
+      method: undefined,
+    });
+    expect(getAmActivityLogStats).toHaveBeenCalledTimes(1);
+  });
+
   it('renders mutasi summary stats and pagination from live metadata', async () => {
     jest.mocked(getAmServiceAccounts).mockResolvedValue({
       data: [
