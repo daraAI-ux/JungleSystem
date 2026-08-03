@@ -1,0 +1,262 @@
+/**
+ * Pusat AI — Ringkasan hub (plugin DARA).
+ * SoT: FE `MarketingHubDashboard` / `MarketingHubPanel` + BE `GET /dara-seo/marketing-hub`.
+ */
+
+export const KOLAM_PUSAT_AI_ROOT = '/pusat-ai';
+export const KOLAM_PUSAT_AI_MARKETING_LEGACY = '/campaign/dara-marketing';
+
+export type KolamPusatAiHubTab =
+  | 'ringkasan'
+  | 'proses'
+  | 'owner-copilot'
+  | 'log-dara'
+  | 'transaksi-copilot'
+  | 'po-copilot'
+  | 'inventory-copilot'
+  | 'other';
+
+export type KolamDaraActiveBrand = {
+  id: string;
+  name: string;
+  productCount: number;
+  monitoringActive: boolean;
+};
+
+export type KolamDaraMarketingHubSummary = {
+  generatedAt: string;
+  seo: {
+    seoScore: number;
+    pendingApprovals: number;
+    negativeMentions: number;
+    keywordCount: number;
+  } | null;
+  market: {
+    pendingApprovals: number;
+    tooCheap: number;
+    tooExpensive: number;
+    lowMargin: number;
+  };
+  integrations: {
+    serpConfigured: boolean;
+    searxngReachable: boolean;
+    searxngUrl?: string;
+  };
+  serpSnapshotsStored: number;
+  quickLinks: Array<{href: string; label: string}>;
+  brands: KolamDaraActiveBrand[];
+  selectedBrandId: string;
+};
+
+export function normalizeKolamPusatAiPath(route: string) {
+  const path = route.trim().split('?')[0] || '';
+  if (!path) {
+    return '';
+  }
+  return path.endsWith('/') && path.length > 1 ? path.slice(0, -1) : path;
+}
+
+export function getKolamPusatAiHubTab(route: string): KolamPusatAiHubTab {
+  const path = normalizeKolamPusatAiPath(route);
+  if (path === KOLAM_PUSAT_AI_MARKETING_LEGACY) {
+    return 'ringkasan';
+  }
+  if (path !== KOLAM_PUSAT_AI_ROOT) {
+    return 'other';
+  }
+
+  const queryIndex = route.indexOf('?');
+  if (queryIndex < 0) {
+    return 'ringkasan';
+  }
+
+  const params = new URLSearchParams(route.slice(queryIndex + 1));
+  const raw = (params.get('tab') || '').trim().toLowerCase();
+  if (!raw || raw === 'ringkasan') {
+    return 'ringkasan';
+  }
+  if (raw === 'proses') {
+    return 'proses';
+  }
+  if (raw === 'owner-copilot') {
+    return 'owner-copilot';
+  }
+  if (raw === 'log-dara') {
+    return 'log-dara';
+  }
+  if (
+    raw === 'transaksi-copilot' ||
+    raw === 'shipping-copilot' ||
+    raw === 'marketplace-copilot' ||
+    raw === 'packing-copilot'
+  ) {
+    return 'transaksi-copilot';
+  }
+  if (
+    raw === 'po-copilot' ||
+    raw === 'receiving-copilot' ||
+    raw === 'procurement-copilot' ||
+    raw === 'supplier-copilot'
+  ) {
+    return 'po-copilot';
+  }
+  if (raw === 'inventory-copilot' || raw === 'warehouse-copilot') {
+    return 'inventory-copilot';
+  }
+  return 'other';
+}
+
+/** Native Ringkasan surface only — other hub tabs stay placeholder. */
+export function isKolamPusatAiRingkasanRoute(route: string) {
+  return getKolamPusatAiHubTab(route) === 'ringkasan';
+}
+
+export function normalizeKolamPusatAiQuickLinkHref(href: string) {
+  if (href === '/campaign/dara-jobs') {
+    return `${KOLAM_PUSAT_AI_ROOT}?tab=proses`;
+  }
+  return href;
+}
+
+/** FE Ringkasan filters out jobs link (lives under tab Proses). */
+export function filterKolamPusatAiRingkasanQuickLinks(
+  links: Array<{href: string; label: string}>,
+) {
+  return links
+    .filter(item => item.href !== '/campaign/dara-jobs')
+    .map(item => ({
+      ...item,
+      href: normalizeKolamPusatAiQuickLinkHref(item.href),
+    }));
+}
+
+export function buildKolamPusatAiRingkasanKpiCards(
+  hub: KolamDaraMarketingHubSummary | null,
+) {
+  const pendingTotal =
+    (hub?.seo?.pendingApprovals ?? 0) + (hub?.market?.pendingApprovals ?? 0);
+
+  return [
+    {
+      id: 'seoScore',
+      label: 'Skor SEO',
+      detail: '',
+      value: hub?.seo != null ? String(hub.seo.seoScore) : '—',
+      tone: 'default' as const,
+    },
+    {
+      id: 'approvals',
+      label: 'Persetujuan',
+      detail: '',
+      value: hub ? String(pendingTotal) : '—',
+      tone: (pendingTotal > 0 ? 'warning' : 'muted') as const,
+    },
+    {
+      id: 'serp',
+      label: 'Snapshot SERP',
+      detail: '',
+      value: hub ? String(hub.serpSnapshotsStored) : '—',
+      tone: 'default' as const,
+    },
+    {
+      id: 'keywords',
+      label: 'Keywords',
+      detail: '',
+      value: hub?.seo != null ? String(hub.seo.keywordCount) : '—',
+      tone: 'muted' as const,
+    },
+  ];
+}
+
+export function normalizeKolamDaraMarketingHub(
+  payload: unknown,
+): KolamDaraMarketingHubSummary {
+  const root = asRecord(payload);
+  const data = asRecord(
+    root.data && typeof root.data === 'object' ? root.data : root,
+  );
+
+  const seoRaw = data.seo;
+  const seo =
+    seoRaw && typeof seoRaw === 'object'
+      ? {
+          seoScore: toFiniteNumber(asRecord(seoRaw).seoScore),
+          pendingApprovals: toFiniteNumber(asRecord(seoRaw).pendingApprovals),
+          negativeMentions: toFiniteNumber(asRecord(seoRaw).negativeMentions),
+          keywordCount: toFiniteNumber(asRecord(seoRaw).keywordCount),
+        }
+      : null;
+
+  const marketRaw = asRecord(data.market);
+  const integrationsRaw = asRecord(data.integrations);
+  const brandsRaw = Array.isArray(data.brands) ? data.brands : [];
+
+  const quickLinksRaw = Array.isArray(data.quickLinks) ? data.quickLinks : [];
+  const quickLinks = quickLinksRaw
+    .map(item => {
+      const row = asRecord(item);
+      const href = typeof row.href === 'string' ? row.href.trim() : '';
+      const label = typeof row.label === 'string' ? row.label.trim() : '';
+      if (!href || !label) {
+        return null;
+      }
+      return {href, label};
+    })
+    .filter((item): item is {href: string; label: string} => item != null);
+
+  return {
+    generatedAt:
+      typeof data.generatedAt === 'string' ? data.generatedAt : '',
+    seo,
+    market: {
+      pendingApprovals: toFiniteNumber(marketRaw.pendingApprovals),
+      tooCheap: toFiniteNumber(marketRaw.tooCheap),
+      tooExpensive: toFiniteNumber(marketRaw.tooExpensive),
+      lowMargin: toFiniteNumber(marketRaw.lowMargin),
+    },
+    integrations: {
+      serpConfigured: Boolean(integrationsRaw.serpConfigured),
+      searxngReachable: Boolean(integrationsRaw.searxngReachable),
+      searxngUrl:
+        typeof integrationsRaw.searxngUrl === 'string'
+          ? integrationsRaw.searxngUrl
+          : undefined,
+    },
+    serpSnapshotsStored: toFiniteNumber(data.serpSnapshotsStored),
+    quickLinks,
+    brands: brandsRaw
+      .map(item => {
+        const row = asRecord(item);
+        const id =
+          (typeof row._id === 'string' && row._id) ||
+          (typeof row.id === 'string' && row.id) ||
+          '';
+        const name = typeof row.name === 'string' ? row.name.trim() : '';
+        if (!id || !name) {
+          return null;
+        }
+        return {
+          id,
+          name,
+          productCount: toFiniteNumber(row.productCount),
+          monitoringActive: Boolean(row.monitoringActive),
+        };
+      })
+      .filter((item): item is KolamDaraActiveBrand => item != null),
+    selectedBrandId:
+      typeof data.selectedBrandId === 'string' && data.selectedBrandId
+        ? data.selectedBrandId
+        : 'all',
+  };
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function toFiniteNumber(value: unknown) {
+  const n = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(n) ? n : 0;
+}
