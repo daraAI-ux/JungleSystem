@@ -7,6 +7,7 @@ import {
   getAmDeviceById,
   getAmMutasiReceiptUrl,
   getAmRackById,
+  getAmServiceAccountById,
   loginAmSession,
   logoutAmSession,
   testAmWebhookPing,
@@ -84,6 +85,30 @@ describe('AM API service', () => {
         headers: expect.objectContaining({
           Cookie: 'kolamCsrf=',
           'Content-Type': 'application/json',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+  });
+
+  it('loads service account detail through the AM live service-account endpoint', async () => {
+    fetchMock.mockResolvedValue(jsonResponse({
+      success: true,
+      data: {_id: 'service-account-1', label: 'BCA Main'},
+    }));
+
+    await getAmServiceAccountById(
+      'service-account-1',
+      'https://am.example.test/api',
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://am.example.test/api/service-account/service-account-1',
+      expect.objectContaining({
+        method: 'GET',
+        credentials: 'include',
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
           'x-source': appConfig.amSourceHeader,
         }),
       }),

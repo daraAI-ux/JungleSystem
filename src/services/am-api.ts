@@ -684,6 +684,13 @@ export async function getAmServiceAccounts(
   return getAmList<AmServiceAccount>('/service-account', query, baseUrl);
 }
 
+export async function getAmServiceAccountById(
+  id: string,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmServiceAccount> {
+  return amGet<AmServiceAccount>(`/service-account/${id}`, undefined, baseUrl);
+}
+
 export async function createAmServiceAccount(
   payload: AmServiceAccountPayload & {platform: string; label: string},
   baseUrl = appConfig.amApiBaseUrl,
