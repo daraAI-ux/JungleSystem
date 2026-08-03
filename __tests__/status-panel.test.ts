@@ -19,13 +19,13 @@ describe('getStatusPanelDescriptor', () => {
     });
     expect(getStatusPanelDescriptor('runtime-actions')).toMatchObject({
       title: 'Aksi Operasional',
-      description: 'Aksi cepat untuk Kolam, POS, AM, dan plugin terkait.',
+      description: 'Aksi cepat untuk Kolam, POS, dan AM.',
       iconKind: 'actions',
       sourceComponent,
     });
     expect(getStatusPanelDescriptor('command-index')).toMatchObject({
       title: 'Pencarian Menu',
-      description: 'Pencarian cepat untuk menu, aksi, dan route plugin.',
+      description: 'Pencarian cepat untuk menu dan aksi.',
       iconKind: 'search',
       sourceComponent,
     });

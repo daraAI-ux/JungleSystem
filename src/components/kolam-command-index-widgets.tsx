@@ -50,21 +50,21 @@ export function KolamCommandIndexPanel({
             id: 'route-coverage',
             label: 'Native Route Coverage',
             value: `${routeCoverage} route`,
-            meta: 'Kolam nav, POS/AM module route, Kolam/AM surface, dan plugin route bisa dibuka dari command index.',
+            meta: 'Kolam nav, POS/AM module route, dan Kolam/AM surface.',
             tone: 'success',
           },
           {
             id: 'command-groups',
             label: 'Command Groups',
-            value: `${stats.modules} module / ${stats.actions} action / ${stats.pluginRoutes} plugin`,
-            meta: 'Satu index untuk Kolam, POS, AM, runtime action, dan Plugin Hub.',
+            value: `${stats.modules} module / ${stats.actions} action`,
+            meta: 'Satu index untuk Kolam, POS, AM, dan runtime action.',
             tone: 'success',
           },
           {
             id: 'current-filter',
             label: 'Current Filter',
             value: `${commands.length}/${coverageCommands.length} hasil`,
-            meta: `${filteredStats.navigationRoutes} nav / ${filteredStats.moduleRoutes} module-route / ${filteredStats.pluginRoutes} plugin route.`,
+            meta: `${filteredStats.navigationRoutes} nav / ${filteredStats.moduleRoutes} module-route / ${filteredStats.amRoutes} AM route.`,
             tone: commands.length ? 'default' : 'warning',
           },
         ]}
@@ -72,7 +72,7 @@ export function KolamCommandIndexPanel({
       <KolamSearchField
         value={search}
         onChangeText={onSearchChange}
-        placeholder="cari module, route navigasi, action, route plugin"
+        placeholder="cari module, route navigasi, action"
         containerStyle={styles.commandSearchField}
         inputStyle={styles.commandInput}
       />
@@ -94,7 +94,7 @@ export function KolamCommandIndexPanel({
         ) : (
           <KolamEmptyState
             title="Command tidak ditemukan"
-            message="Coba cari nama module, route navigasi, action, route plugin, atau source contract."
+            message="Coba cari nama module, route navigasi, action, atau source contract."
             compact
           />
         )}

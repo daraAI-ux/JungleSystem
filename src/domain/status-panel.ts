@@ -51,7 +51,7 @@ const statusPanelDescriptors: Record<StatusPanelId, StatusPanelDescriptor> = {
   'runtime-actions': {
     id: 'runtime-actions',
     title: 'Aksi Operasional',
-    description: 'Aksi cepat untuk Kolam, POS, AM, dan plugin terkait.',
+    description: 'Aksi cepat untuk Kolam, POS, dan AM.',
     iconKind: 'actions',
     sourceComponent: 'E:\\Projects\\da-inventory-frontend\\src\\components\\ui\\card.tsx',
     cardChrome: statusPanelCardChrome,
@@ -59,7 +59,7 @@ const statusPanelDescriptors: Record<StatusPanelId, StatusPanelDescriptor> = {
   'command-index': {
     id: 'command-index',
     title: 'Pencarian Menu',
-    description: 'Pencarian cepat untuk menu, aksi, dan route plugin.',
+    description: 'Pencarian cepat untuk menu dan aksi.',
     iconKind: 'search',
     sourceComponent: 'E:\\Projects\\da-inventory-frontend\\src\\components\\ui\\card.tsx',
     cardChrome: statusPanelCardChrome,
