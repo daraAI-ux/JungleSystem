@@ -5741,7 +5741,6 @@ function AmAccountSettingsPage() {
   const [currentPassword, setCurrentPassword] = React.useState('');
   const [newPassword, setNewPassword] = React.useState('');
   const [confirmPassword, setConfirmPassword] = React.useState('');
-  const [deletePassword, setDeletePassword] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSavingProfile, setIsSavingProfile] = React.useState(false);
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
@@ -5766,13 +5765,6 @@ function AmAccountSettingsPage() {
   React.useEffect(() => {
     fetchCurrentUser();
   }, [fetchCurrentUser]);
-
-  const showEndpointNotice = React.useCallback((scope: string) => {
-    setError(null);
-    setActionMessage(
-      `${scope} belum tersedia.`,
-    );
-  }, []);
 
   const handleSaveProfile = React.useCallback(async () => {
     if (!fullName.trim() || !emailAddress.trim()) {
@@ -5840,15 +5832,6 @@ function AmAccountSettingsPage() {
       setIsSavingProfile(false);
     }
   }, [confirmPassword, currentPassword, newPassword, user]);
-
-  const handleDeleteAccount = React.useCallback(() => {
-    if (!deletePassword) {
-      setError('Password wajib diisi sebelum delete account.');
-      return;
-    }
-
-    showEndpointNotice('Danger area');
-  }, [deletePassword, showEndpointNotice]);
 
   const handleLogout = React.useCallback(async () => {
     try {
@@ -5955,30 +5938,6 @@ function AmAccountSettingsPage() {
               label="Update password"
               size="sm"
               onPress={handleUpdatePassword}
-            />
-          </View>
-        </View>
-      </View>
-      <View style={styles.panel}>
-        <Text style={styles.panelTitle}>Danger area</Text>
-        <Text style={styles.panelText}>
-          Permanently delete your account and all associated data.
-        </Text>
-        <View style={styles.formGrid}>
-          <AmTextInput
-            label="Confirm password"
-            placeholder="Your password"
-            secureTextEntry
-            value={deletePassword}
-            onChangeText={setDeletePassword}
-          />
-          <View style={styles.inlineActions}>
-            <KolamButton
-              accessibilityLabel="AM Account Delete"
-              label="Delete account"
-              intent="danger"
-              size="sm"
-              onPress={handleDeleteAccount}
             />
           </View>
         </View>

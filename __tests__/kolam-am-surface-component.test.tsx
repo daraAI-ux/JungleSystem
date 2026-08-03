@@ -3550,9 +3550,13 @@ describe('KolamAmSurface', () => {
     expect(getAmCurrentUser).toHaveBeenCalledTimes(1);
     expect(text).toContain('Profile information');
     expect(text).toContain('Change password');
-    expect(text).toContain('Danger area');
     expect(text).toContain('Current AM User');
     expect(text).not.toContain('Account Settings');
+    expect(text).not.toContain('Danger area');
+    expect(text).not.toContain('Delete account');
+    expect(
+      renderer!.root.findAllByProps({accessibilityLabel: 'AM Account Delete'}),
+    ).toHaveLength(0);
 
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Account Save Profile'}).props.onPress();
