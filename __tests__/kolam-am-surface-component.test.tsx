@@ -2422,7 +2422,7 @@ describe('KolamAmSurface', () => {
     });
   });
 
-  it('runs guarded transfer actions from the Transfers route', async () => {
+  it('keeps transfer action guards aligned with AM FE status rules', async () => {
     jest.mocked(getAmTransfers).mockResolvedValue({
       data: [
         {
@@ -2451,8 +2451,60 @@ describe('KolamAmSurface', () => {
           transferType: 'transfer',
           updatedAt: '',
         },
+        {
+          _id: 'transfer-processing',
+          accountId: { _id: 'account-1', label: 'BCA Main', platform: 'bca', accountNumber: '123' },
+          amount: 125000,
+          completedAt: null,
+          createdAt: '',
+          createdBy: null,
+          deviceId: {
+            _id: 'device-1',
+            name: 'Phone 1',
+            boxId: {_id: 'box-1', name: 'Box A', rackId: {_id: 'rack-1', name: 'Rack Blue'}},
+          },
+          error: '',
+          fee: 2500,
+          logs: [],
+          recipientAccount: '998',
+          recipientBank: 'BCA',
+          recipientName: 'Vendor Processing',
+          screenshot: '',
+          startedAt: null,
+          status: 'processing',
+          transactionPurpose: null,
+          transferMethod: 'BI FAST',
+          transferType: 'transfer',
+          updatedAt: '',
+        },
+        {
+          _id: 'transfer-failed',
+          accountId: { _id: 'account-1', label: 'BCA Main', platform: 'bca', accountNumber: '123' },
+          amount: 125000,
+          completedAt: null,
+          createdAt: '',
+          createdBy: null,
+          deviceId: {
+            _id: 'device-1',
+            name: 'Phone 1',
+            boxId: {_id: 'box-1', name: 'Box A', rackId: {_id: 'rack-1', name: 'Rack Blue'}},
+          },
+          error: 'Failed',
+          fee: 2500,
+          logs: [],
+          recipientAccount: '997',
+          recipientBank: 'BCA',
+          recipientName: 'Vendor Failed',
+          screenshot: '',
+          startedAt: null,
+          status: 'failed',
+          transactionPurpose: null,
+          transferMethod: 'BI FAST',
+          transferType: 'transfer',
+          updatedAt: '',
+        },
       ],
-      meta: {total: 1, limit: 1},
+      meta: {total: 3, limit: 20},
     });
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
@@ -2464,6 +2516,18 @@ describe('KolamAmSurface', () => {
     renderers.push(renderer!);
 
     await updateAmRoute(renderer!, 'transactions');
+    expect(
+      renderer!.root.findAllByProps({accessibilityLabel: 'AM Transfer Force Fail transfer-1'}),
+    ).toHaveLength(0);
+    expect(
+      renderer!.root.findAllByProps({accessibilityLabel: 'AM Transfer Cancel transfer-processing'}),
+    ).toHaveLength(0);
+    expect(
+      renderer!.root.findAllByProps({accessibilityLabel: 'AM Transfer Force Fail transfer-processing'}),
+    ).not.toHaveLength(0);
+    expect(
+      renderer!.root.findAllByProps({accessibilityLabel: 'AM Transfer Retry transfer-failed'}),
+    ).not.toHaveLength(0);
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Transfer Cancel transfer-1'}).props.onPress();
     });

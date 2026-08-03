@@ -4276,8 +4276,11 @@ function AmTransferActions({
     intent: 'outline' | 'danger' | 'warning';
   }> = [];
 
-  if (transfer.status === 'pending' || transfer.status === 'processing') {
+  if (transfer.status === 'pending') {
     actions.push({id: 'cancel', label: 'Cancel', intent: 'outline'});
+  }
+
+  if (transfer.status === 'processing') {
     actions.push({id: 'force-fail', label: 'Force Fail', intent: 'danger'});
   }
 
