@@ -2473,6 +2473,12 @@ describe('KolamAmSurface', () => {
   });
 
   it('loads banking and admin live routes from the main AM sidebar routes', async () => {
+    jest.mocked(getAmCurrentUser).mockResolvedValue({
+      _id: 'user-current',
+      fullName: 'Current AM User',
+      username: 'current@dunia-anura.com',
+      role: {_id: 'role-super', name: 'Super Admin', permissions: ['user:read'], description: 'Super Admin role'},
+    });
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
     await act(async () => {
@@ -2513,10 +2519,16 @@ describe('KolamAmSurface', () => {
       status: undefined,
       method: undefined,
     });
-    expect(getAmCurrentUser).toHaveBeenCalledTimes(2);
+    expect(getAmCurrentUser).toHaveBeenCalledTimes(3);
   });
 
   it('renders activity log stats, detail, filters, and pagination from live metadata', async () => {
+    jest.mocked(getAmCurrentUser).mockResolvedValue({
+      _id: 'user-current',
+      fullName: 'Current AM User',
+      username: 'current@dunia-anura.com',
+      role: {_id: 'role-super', name: 'Super Admin', permissions: ['user:read'], description: 'Super Admin role'},
+    });
     jest.mocked(getAmActivityLogs).mockResolvedValue({
       data: [
         {
@@ -2699,6 +2711,29 @@ describe('KolamAmSurface', () => {
       status: undefined,
       method: 'GET',
     });
+  });
+
+  it('blocks Activity Log for non-Super Admin users like AM FE', async () => {
+    jest.mocked(getAmCurrentUser).mockResolvedValue({
+      _id: 'user-current',
+      fullName: 'Current AM User',
+      username: 'current@dunia-anura.com',
+      role: {_id: 'role-admin', name: 'Admin', permissions: ['user:read'], description: 'Admin role'},
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await updateAmRoute(renderer!, 'admin/activity-log');
+
+    expect(renderText(renderer!)).toContain('Halaman ini hanya untuk Super Admin.');
+    expect(getAmActivityLogs).not.toHaveBeenCalled();
+    expect(getAmActivityLogStats).not.toHaveBeenCalled();
   });
 
   it('renders mutasi summary stats and pagination from live metadata', async () => {

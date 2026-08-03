@@ -5829,6 +5829,8 @@ function AmAccountSettingsPage() {
 function AmActivityLogPage() {
   const [logs, setLogs] = React.useState<AmActivityLog[]>([]);
   const [stats, setStats] = React.useState<AmActivityLogStats | null>(null);
+  const [currentUser, setCurrentUser] = React.useState<AmCurrentUser | null>(null);
+  const [accessLoaded, setAccessLoaded] = React.useState(false);
   const [search, setSearch] = React.useState('');
   const [type, setType] = React.useState('all');
   const [status, setStatus] = React.useState('all');
@@ -5851,7 +5853,35 @@ function AmActivityLogPage() {
     method: method === 'all' ? undefined : method,
   }), [method, search, status, type]);
 
+  React.useEffect(() => {
+    let mounted = true;
+
+    getAmCurrentUser()
+      .then(user => {
+        if (mounted) {
+          setCurrentUser(user);
+          setError(null);
+        }
+      })
+      .catch(nextError => {
+        if (mounted) {
+          setError(nextError instanceof Error ? nextError.message : 'Gagal membaca user AM.');
+        }
+      })
+      .finally(() => {
+        if (mounted) setAccessLoaded(true);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const isSuperAdmin = isAmSuperAdmin(currentUser);
+
   const fetchLogs = React.useCallback(async () => {
+    if (!isSuperAdmin) return;
+
     try {
       setIsLoading(true);
       const filterPayload = buildFilterPayload();
@@ -5876,11 +5906,13 @@ function AmActivityLogPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [buildFilterPayload, page]);
+  }, [buildFilterPayload, isSuperAdmin, page]);
 
   React.useEffect(() => {
-    fetchLogs();
-  }, [fetchLogs]);
+    if (accessLoaded && isSuperAdmin) {
+      fetchLogs();
+    }
+  }, [accessLoaded, fetchLogs, isSuperAdmin]);
 
   const handleSearchChange = React.useCallback((value: string) => {
     setSearch(value);
@@ -5957,6 +5989,24 @@ function AmActivityLogPage() {
   const pageCount = getAmStatsCount(stats?.byType, 'page');
   const hasActiveFilters =
     Boolean(search.trim()) || type !== 'all' || status !== 'all' || method !== 'all';
+
+  if (!accessLoaded) {
+    return (
+      <View style={styles.pageStack}>
+        <Text style={styles.loadingText}>Memuat activity log...</Text>
+      </View>
+    );
+  }
+
+  if (!isSuperAdmin) {
+    return (
+      <View style={styles.pageStack}>
+        <View style={styles.warningPanel}>
+          <Text style={styles.panelTitle}>Halaman ini hanya untuk Super Admin.</Text>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.pageStack}>
@@ -6392,6 +6442,10 @@ function getServiceDevice(account: AmServiceAccount) {
 function hasAmPermission(user: AmCurrentUser | null, permission: string) {
   if (!user?.role) return false;
   return user.role.permissions.includes(permission);
+}
+
+function isAmSuperAdmin(user: AmCurrentUser | null) {
+  return user?.role?.name === 'Super Admin';
 }
 
 function formatTaskCreatedBy(createdBy: AmTask['createdBy']) {
