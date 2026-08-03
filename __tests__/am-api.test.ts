@@ -26,19 +26,30 @@ import {
   getAmDevices,
   getAmDevicesAdbStatus,
   getAmDeviceById,
+  getAmDeviceServiceLogs,
   getAmDeviceServiceQrUrl,
+  getAmDeviceServices,
   getAmRacks,
   getAmBoxes,
+  getAmActivityLogs,
+  getAmActivityLogStats,
+  getAmMutasi,
+  getAmMutasiById,
+  getAmMutasiSummary,
   getAmMutasiReceiptUrl,
   getAmRackById,
   getAmRoles,
   getAmServiceAccounts,
   getAmServiceAccountById,
+  getAmTaskById,
   getAmTasks,
   getAmUserById,
+  getAmUsers,
   getAmWebhookConfigs,
   getAmWebhookEvents,
   getAmWebhookLogs,
+  getAmTransferById,
+  getAmTransfers,
   deleteAmBoxes,
   deleteAmDevices,
   deleteAmRacks,
@@ -1127,6 +1138,184 @@ describe('AM API service', () => {
         headers: expect.objectContaining({
           Cookie: 'kolamCsrf=',
           'Content-Type': 'application/json',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+  });
+
+  it('loads AM detail and read surfaces through live FE parity endpoints', async () => {
+    fetchMock.mockResolvedValue(jsonResponse({
+      success: true,
+      data: [],
+      meta: {total: 0, limit: 20, page: 1},
+    }));
+
+    await getAmTaskById('task-1', 'https://am.example.test/api');
+
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://am.example.test/api/task/task-1',
+      expect.objectContaining({
+        method: 'GET',
+        credentials: 'include',
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+
+    await getAmDeviceServices('device-1', 'https://am.example.test/api');
+
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://am.example.test/api/device/device-1/services',
+      expect.objectContaining({
+        method: 'GET',
+        credentials: 'include',
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+
+    await getAmDeviceServiceLogs(
+      'device-1',
+      {limit: 80, source: 'realtime', page: 2},
+      'https://am.example.test/api',
+    );
+
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://am.example.test/api/device/device-1/service/logs?limit=80&source=realtime&page=2',
+      expect.objectContaining({
+        method: 'GET',
+        credentials: 'include',
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+
+    await getAmTransfers(
+      {serviceAccountId: 'account-1', status: 'pending', page: 2, limit: 20},
+      'https://am.example.test/api',
+    );
+
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://am.example.test/api/transfer?serviceAccountId=account-1&status=pending&page=2&limit=20',
+      expect.objectContaining({
+        method: 'GET',
+        credentials: 'include',
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+
+    await getAmTransferById('transfer-1', 'https://am.example.test/api');
+
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://am.example.test/api/transfer/transfer-1',
+      expect.objectContaining({
+        method: 'GET',
+        credentials: 'include',
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+
+    await getAmMutasi(
+      {accountId: 'account-1', deviceId: 'device-1', type: 'masuk', page: 2, limit: 20},
+      'https://am.example.test/api',
+    );
+
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://am.example.test/api/mutasi?accountId=account-1&deviceId=device-1&type=masuk&page=2&limit=20',
+      expect.objectContaining({
+        method: 'GET',
+        credentials: 'include',
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+
+    await getAmMutasiSummary('account-1', 'https://am.example.test/api');
+
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://am.example.test/api/mutasi/summary?accountId=account-1',
+      expect.objectContaining({
+        method: 'GET',
+        credentials: 'include',
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+
+    await getAmMutasiById('mutasi-1', 'https://am.example.test/api');
+
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://am.example.test/api/mutasi/mutasi-1',
+      expect.objectContaining({
+        method: 'GET',
+        credentials: 'include',
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+
+    await getAmUsers(
+      {search: 'admin', role: 'role-1', page: 2, limit: 20},
+      'https://am.example.test/api',
+    );
+
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://am.example.test/api/users?search=admin&role=role-1&page=2&limit=20',
+      expect.objectContaining({
+        method: 'GET',
+        credentials: 'include',
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+
+    await getAmActivityLogs(
+      {search: 'login', method: 'POST', status: 'success', page: 2, limit: 20},
+      'https://am.example.test/api',
+    );
+
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://am.example.test/api/activity-log?search=login&method=POST&status=success&page=2&limit=20',
+      expect.objectContaining({
+        method: 'GET',
+        credentials: 'include',
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+
+    await getAmActivityLogStats(14, 'https://am.example.test/api');
+
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://am.example.test/api/activity-log/stats?days=14',
+      expect.objectContaining({
+        method: 'GET',
+        credentials: 'include',
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
           'x-source': appConfig.amSourceHeader,
         }),
       }),
