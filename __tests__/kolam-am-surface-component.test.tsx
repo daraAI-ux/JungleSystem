@@ -3086,6 +3086,8 @@ describe('KolamAmSurface', () => {
 
     await updateAmRoute(renderer!, 'admin/users');
 
+    expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM User Role Super Admin'})).toHaveLength(0);
+
     let inputs = renderer!.root.findAllByType(TextInput);
     expect(inputs[3].props.secureTextEntry).toBe(true);
     await act(async () => {
@@ -3192,6 +3194,40 @@ describe('KolamAmSurface', () => {
     expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM User Save'})).toHaveLength(0);
     expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM User Edit user-1'})).toHaveLength(0);
     expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM User Delete user-1'})).toHaveLength(0);
+  });
+
+  it('keeps Super Admin role assignment available only to Super Admin users', async () => {
+    jest.mocked(getAmCurrentUser).mockResolvedValue({
+      _id: 'user-current',
+      fullName: 'Root Admin',
+      username: 'root',
+      role: {
+        _id: 'role-super',
+        name: 'Super Admin',
+        permissions: ['user:read', 'user:create', 'user:update'],
+        description: 'Full access',
+      },
+    });
+    jest.mocked(getAmRoles).mockResolvedValue([
+      {_id: 'role-admin', name: 'Admin', permissions: ['user:read'], description: 'Admin role'},
+      {_id: 'role-super', name: 'Super Admin', permissions: ['user:read', 'user:create'], description: 'Full access'},
+    ]);
+    jest.mocked(getAmUsers).mockResolvedValue({
+      data: [],
+      meta: {total: 0, limit: 20},
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await updateAmRoute(renderer!, 'admin/users');
+
+    expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM User Role Super Admin'}).length).toBeGreaterThan(0);
   });
 
   it('keeps Users search and pagination in sync with AM live metadata', async () => {

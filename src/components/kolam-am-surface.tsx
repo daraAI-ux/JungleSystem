@@ -5316,6 +5316,10 @@ function AmUsersPage() {
   const canUpdateUser = hasAmPermission(currentUser, 'user:update');
   const canDeleteUser = hasAmPermission(currentUser, 'user:delete');
   const canShowUserForm = canCreateUser || (Boolean(editingUserId) && canUpdateUser);
+  const assignableRoles = React.useMemo(
+    () => roles.filter(role => role.name !== 'Super Admin' || isAmSuperAdmin(currentUser)),
+    [currentUser, roles],
+  );
   const roleFilterItems = React.useMemo(() => ['all', ...roles.map(role => role._id)], [roles]);
   const roleFilterLabels = React.useMemo<Record<string, string>>(() => {
     const labels: Record<string, string> = {all: 'All Roles'};
@@ -5395,7 +5399,7 @@ function AmUsersPage() {
                   style={[styles.eventChip, formRole === '' && styles.eventChipSelected]}>
                   <Text style={[styles.eventChipText, formRole === '' && styles.eventChipTextSelected]}>Default</Text>
                 </KolamInteractionFrame>
-                {roles.map(role => (
+                {assignableRoles.map(role => (
                   <KolamInteractionFrame
                     key={role._id}
                     accessibilityLabel={`AM User Role ${role.name}`}
