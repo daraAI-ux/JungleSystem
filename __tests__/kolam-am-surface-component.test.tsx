@@ -1756,6 +1756,22 @@ describe('KolamAmSurface', () => {
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Delete Rack rack-1'}).props.onPress();
     });
+    expect(deleteAmRacks).not.toHaveBeenCalled();
+    let hardwareText = renderText(renderer!).join(' ').replace(/\s+/g, ' ');
+    expect(hardwareText).toContain('Delete Rack Rack 1 ?');
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Cancel Delete'}).props.onPress();
+    });
+    hardwareText = renderText(renderer!).join(' ').replace(/\s+/g, ' ');
+    expect(hardwareText).not.toContain('Delete Rack Rack 1 ?');
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Delete Rack rack-1'}).props.onPress();
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Confirm Delete Rack rack-1'}).props.onPress();
+    });
 
     expect(deleteAmRacks).toHaveBeenCalledWith(['rack-1']);
 
@@ -1819,6 +1835,13 @@ describe('KolamAmSurface', () => {
 
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Delete Device device-1'}).props.onPress();
+    });
+    expect(deleteAmDevices).not.toHaveBeenCalled();
+    hardwareText = renderText(renderer!).join(' ').replace(/\s+/g, ' ');
+    expect(hardwareText).toContain('Delete Device Device 1 ?');
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Confirm Delete Device device-1'}).props.onPress();
     });
 
     expect(deleteAmDevices).toHaveBeenCalledWith(['device-1']);

@@ -1791,6 +1791,11 @@ function AmHardwarePage({initialRoute}: {initialRoute?: AmHardwareInitialRoute})
   const [formAppiumPort, setFormAppiumPort] = React.useState('');
   const [actingHardwareId, setActingHardwareId] = React.useState<string | null>(null);
   const [actionMessage, setActionMessage] = React.useState<string | null>(null);
+  const [deletingHardware, setDeletingHardware] = React.useState<{
+    kind: 'rack' | 'box' | 'device';
+    id: string;
+    label: string;
+  } | null>(null);
   const [adbStatusByDeviceId, setAdbStatusByDeviceId] = React.useState<AmDeviceAdbStatusMap>({});
   const [adbStatusError, setAdbStatusError] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -2018,6 +2023,11 @@ function AmHardwarePage({initialRoute}: {initialRoute?: AmHardwareInitialRoute})
     }
   }, [editingHardwareId, fetchHardware, formAdbPort, formAppiumPort, formBoxId, formBrand, formConnectionType, formDescription, formLocation, formModel, formRackId, formServerIp, formStatus, formTcpAddress, formUdid, hardwareForm, resetHardwareForm]);
 
+  const requestDeleteHardware = React.useCallback((kind: 'rack' | 'box' | 'device', id: string, label: string) => {
+    setDeletingHardware({kind, id, label});
+    setActionMessage(null);
+  }, []);
+
   const deleteHardware = React.useCallback(async (kind: 'rack' | 'box' | 'device', id: string) => {
     try {
       setActingHardwareId(id);
@@ -2035,6 +2045,7 @@ function AmHardwarePage({initialRoute}: {initialRoute?: AmHardwareInitialRoute})
         await deleteAmDevices([id]);
         if (selectedDeviceId === id) setSelectedDeviceId(null);
       }
+      setDeletingHardware(null);
       setActionMessage(`${titleCase(kind)} AM berhasil dihapus.`);
       await fetchHardware();
     } catch (nextError) {
@@ -2099,6 +2110,32 @@ function AmHardwarePage({initialRoute}: {initialRoute?: AmHardwareInitialRoute})
       {adbStatusError ? (
         <View style={styles.warningPanel}>
           <Text style={styles.warningText}>ADB status box belum bisa dibaca: {adbStatusError}</Text>
+        </View>
+      ) : null}
+      {deletingHardware ? (
+        <View style={styles.warningPanel}>
+          <Text style={styles.warningText}>
+            Delete {titleCase(deletingHardware.kind)} {deletingHardware.label}?
+          </Text>
+          <Text style={styles.panelText}>Aksi ini tidak bisa dibatalkan.</Text>
+          <View style={styles.inlineActions}>
+            <KolamButton
+              accessibilityLabel={`AM Hardware Confirm Delete ${titleCase(deletingHardware.kind)} ${deletingHardware.id}`}
+              intent="danger"
+              label={actingHardwareId === deletingHardware.id ? '...' : 'Delete'}
+              muted={actingHardwareId === deletingHardware.id}
+              size="sm"
+              onPress={() => deleteHardware(deletingHardware.kind, deletingHardware.id)}
+            />
+            <KolamButton
+              accessibilityLabel="AM Hardware Cancel Delete"
+              intent="outline"
+              label="Cancel"
+              muted={actingHardwareId === deletingHardware.id}
+              size="sm"
+              onPress={() => setDeletingHardware(null)}
+            />
+          </View>
         </View>
       ) : null}
       <View style={styles.tablePanel}>
@@ -2202,7 +2239,7 @@ function AmHardwarePage({initialRoute}: {initialRoute?: AmHardwareInitialRoute})
           actingHardwareId={actingHardwareId}
           devices={visibleDevices}
           isLoading={isLoading}
-          onDeleteDevice={device => deleteHardware('device', device._id)}
+          onDeleteDevice={device => requestDeleteHardware('device', device._id, device.name)}
           onEditDevice={editDevice}
           onSelectDevice={device => setSelectedDeviceId(device._id)}
         />
@@ -2212,7 +2249,7 @@ function AmHardwarePage({initialRoute}: {initialRoute?: AmHardwareInitialRoute})
             actingHardwareId={actingHardwareId}
             boxes={visibleBoxes}
             isLoading={isLoading}
-            onDeleteBox={box => deleteHardware('box', box._id)}
+            onDeleteBox={box => requestDeleteHardware('box', box._id, box.name)}
             onEditBox={editBox}
             onSelectBox={box => setSelectedBoxId(box._id)}
           />
@@ -2220,7 +2257,7 @@ function AmHardwarePage({initialRoute}: {initialRoute?: AmHardwareInitialRoute})
             actingHardwareId={actingHardwareId}
             devices={visibleDevices}
             isLoading={isLoading}
-            onDeleteDevice={device => deleteHardware('device', device._id)}
+            onDeleteDevice={device => requestDeleteHardware('device', device._id, device.name)}
             onEditDevice={editDevice}
             onSelectDevice={device => setSelectedDeviceId(device._id)}
           />
@@ -2232,7 +2269,7 @@ function AmHardwarePage({initialRoute}: {initialRoute?: AmHardwareInitialRoute})
             boxes={boxes}
             devices={devices}
             isLoading={isLoading}
-            onDeleteRack={rack => deleteHardware('rack', rack._id)}
+            onDeleteRack={rack => requestDeleteHardware('rack', rack._id, rack.name)}
             onEditRack={editRack}
             onSelectRack={rack => setSelectedRackId(rack._id)}
             racks={racks}
@@ -2241,7 +2278,7 @@ function AmHardwarePage({initialRoute}: {initialRoute?: AmHardwareInitialRoute})
             actingHardwareId={actingHardwareId}
             devices={visibleDevices}
             isLoading={isLoading}
-            onDeleteDevice={device => deleteHardware('device', device._id)}
+            onDeleteDevice={device => requestDeleteHardware('device', device._id, device.name)}
             onEditDevice={editDevice}
             onSelectDevice={device => setSelectedDeviceId(device._id)}
           />
