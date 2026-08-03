@@ -695,6 +695,7 @@ describe('KolamWorkspaceSurface', () => {
         'Tugas',
         'Tugas Terjadwal',
         'Project',
+        'Prioritas tinggi',
         'To Do',
         'Cek jadwal kolam',
         'Dara Ops',

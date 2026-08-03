@@ -1079,6 +1079,16 @@ function KolamTaskToolbar({
           />
         </View>
         <View style={kolamTableToolbarStyles.actions}>
+          <KolamButton
+            disabled={controller.loading}
+            intent={controller.priorityFilter === 'high' ? 'primary' : 'outline'}
+            label="Prioritas tinggi"
+            onPress={() =>
+              controller.onSetPriorityFilter(
+                controller.priorityFilter === 'high' ? 'all' : 'high',
+              )
+            }
+          />
           <View style={styles.switchInline}>
             <Text style={styles.metaText}>Tugas saya</Text>
             <KolamSwitch
