@@ -16,6 +16,7 @@ import {
   getAmChatMessageById,
   getAmChatMessages,
   getAmBoxById,
+  getAmCurrentUser,
   getAmDeviceById,
   getAmMutasiReceiptUrl,
   getAmRackById,
@@ -84,6 +85,34 @@ describe('AM API service', () => {
         headers: expect.objectContaining({
           Cookie: 'kolamCsrf=',
           'Content-Type': 'application/json',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+  });
+
+  it('reuses the live AM auth cookie after login', async () => {
+    const payload = {username: 'admin', password: 'secret'};
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse(
+        {success: true, data: {user: {_id: 'user-current', username: 'admin'}}},
+        {'set-cookie': 'am_accessToken=token-123; Path=/; HttpOnly; SameSite=Lax'},
+      ))
+      .mockResolvedValueOnce(jsonResponse({
+        success: true,
+        data: {_id: 'user-current', username: 'admin'},
+      }));
+
+    await loginAmSession(payload, 'https://am.example.test/api');
+    await getAmCurrentUser('https://am.example.test/api');
+
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://am.example.test/api/auth/me',
+      expect.objectContaining({
+        method: 'GET',
+        credentials: 'include',
+        headers: expect.objectContaining({
+          Cookie: 'am_accessToken=token-123',
           'x-source': appConfig.amSourceHeader,
         }),
       }),
@@ -809,12 +838,12 @@ describe('AM API service', () => {
   });
 });
 
-function jsonResponse(payload: unknown) {
+function jsonResponse(payload: unknown, headers: Record<string, string> = {}) {
   return {
     ok: true,
     status: 200,
     headers: {
-      get: jest.fn(),
+      get: jest.fn((name: string) => headers[name.toLowerCase()] ?? headers[name]),
     },
     text: jest.fn().mockResolvedValue(JSON.stringify(payload)),
   };
