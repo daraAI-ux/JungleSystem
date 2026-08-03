@@ -141,6 +141,7 @@ const AM_ACTIVITY_LOG_TYPES = ['all', 'api', 'page'];
 const AM_ACTIVITY_LOG_STATUSES = ['all', 'success', 'failed'];
 const AM_ACTIVITY_LOG_METHODS = ['all', 'GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
 const AM_PLATFORMS = ['all', 'whatsapp', 'tiktok', 'instagram', 'tokopedia', 'shopee', 'bca', 'brimo', 'dana'];
+type AmServiceDetailTab = 'logs' | 'history' | 'session';
 const AM_RECIPIENT_BANKS = ['BRI', 'BCA', 'Mandiri', 'BNI', 'BSI', 'CIMB Niaga', 'Permata', 'Danamon', 'OCBC NISP', 'BTN'];
 const AM_TRANSFER_METHODS = ['BI FAST', 'Realtime Online'];
 const AM_TRANSFER_METHOD_FEES: Record<string, number> = {
@@ -1040,7 +1041,7 @@ function AmServicesPage() {
   const [formAccountNumber, setFormAccountNumber] = React.useState('');
   const [formPhoneNumber, setFormPhoneNumber] = React.useState('');
   const [expandedId, setExpandedId] = React.useState<string | null>(null);
-  const [expandedTab, setExpandedTab] = React.useState<'logs' | 'history'>('logs');
+  const [expandedTab, setExpandedTab] = React.useState<AmServiceDetailTab>('logs');
   const [sessionToClear, setSessionToClear] = React.useState<AmServiceAccount | null>(null);
   const [detailLogSource, setDetailLogSource] = React.useState<'realtime' | 'history'>('realtime');
   const [detailLogPage, setDetailLogPage] = React.useState(1);
@@ -1352,12 +1353,12 @@ function AmServicesPage() {
 
   const selectDetailTab = React.useCallback(async (
     account: AmServiceAccount,
-    tab: 'logs' | 'history',
+    tab: AmServiceDetailTab,
   ) => {
     setExpandedTab(tab);
     if (tab === 'history') {
       await loadServiceHistory(account, 1);
-    } else {
+    } else if (tab === 'logs') {
       await loadServiceLogs(account);
     }
   }, [loadServiceHistory, loadServiceLogs]);
@@ -2461,7 +2462,7 @@ function AmServiceDetailPanel({
   transfers,
 }: {
   account: AmServiceAccount;
-  activeTab: 'logs' | 'history';
+  activeTab: AmServiceDetailTab;
   canClearSession: boolean;
   clearingSession: boolean;
   detailError: string | null;
@@ -2482,7 +2483,7 @@ function AmServiceDetailPanel({
   onHistoryPageChange: (page: number) => void;
   onLogPageChange: (page: number) => void;
   onLogSourceChange: (source: 'realtime' | 'history') => void;
-  onSelectTab: (tab: 'logs' | 'history') => void;
+  onSelectTab: (tab: AmServiceDetailTab) => void;
   onSubmitServiceInput: (inputType: 'otp' | 'password') => void;
   processRunning: boolean;
   tasks: AmTask[];
@@ -2525,6 +2526,16 @@ function AmServiceDetailPanel({
               {banking ? 'Transfer History' : 'Task History'}
             </Text>
           </KolamInteractionFrame>
+          {!banking && account.platform === 'tokopedia' ? (
+            <KolamInteractionFrame
+              accessibilityLabel={`AM ${account.label} Session`}
+              onPress={() => onSelectTab('session')}
+              style={[styles.detailTab, activeTab === 'session' && styles.detailTabActive]}>
+              <Text style={[styles.segmentText, activeTab === 'session' && styles.segmentTextActive]}>
+                Session
+              </Text>
+            </KolamInteractionFrame>
+          ) : null}
         </View>
         {canClearSession ? (
           <KolamButton
@@ -2539,6 +2550,12 @@ function AmServiceDetailPanel({
       </View>
       <AmInlineError title="Detail service AM belum bisa dibaca" error={detailError} />
       {isLoading ? <Text style={styles.loadingText}>Memuat detail service...</Text> : null}
+      {!isLoading && activeTab === 'session' && account.platform === 'tokopedia' ? (
+        <AmTokopediaSessionPanel
+          account={account}
+          processRunning={processRunning}
+        />
+      ) : null}
       {!isLoading && activeTab === 'logs' ? (
         <>
           <View style={styles.runtimePanel}>
@@ -2554,12 +2571,6 @@ function AmServiceDetailPanel({
                 tone={processRunning ? 'success' : 'muted'}
               />
             </View>
-            {account.platform === 'tokopedia' ? (
-              <AmTokopediaSessionPanel
-                account={account}
-                processRunning={processRunning}
-              />
-            ) : null}
             {qrSignal ? (
               <View style={styles.qrPanel}>
                 <Text style={styles.formLabel}>QR Login {AM_PLATFORM_LABELS[account.platform] ?? titleCase(account.platform)}</Text>

@@ -1422,6 +1422,12 @@ describe('KolamAmSurface', () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Service Tokopedia Seller'}).props.onPress();
     });
 
+    expect(getAmTokopediaSession).not.toHaveBeenCalled();
+    expect(renderText(renderer!).join(' ')).toContain('Session');
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Tokopedia Seller Session'}).props.onPress();
+    });
+
     const joinedText = renderText(renderer!).join(' ');
     expect(joinedText).toContain('Session Login Tokopedia');
     expect(joinedText).toContain('Session tersedia');
