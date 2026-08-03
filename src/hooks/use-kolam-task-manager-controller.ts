@@ -221,6 +221,10 @@ export interface KolamTaskManagerController {
   total: number;
   totalPages: number;
   onAddChecklistItem: () => Promise<boolean>;
+  onAssignChecklistItem: (
+    index: number,
+    assignedToId: string,
+  ) => Promise<boolean>;
   onAddDiscussion: () => Promise<boolean>;
   onAddNote: () => Promise<boolean>;
   onChangeCategoryForm: (
@@ -1318,6 +1322,22 @@ export function useKolamTaskManagerController({
     [persistChecklist, selectedTask],
   );
 
+  const onAssignChecklistItem = useCallback(
+    async (index: number, assignedToId: string) => {
+      if (!selectedTask) return false;
+      const nextChecklist = selectedTask.checklist.map((item, itemIndex) =>
+        itemIndex === index
+          ? {
+              ...item,
+              assignedTo: assignedToId || null,
+            }
+          : item,
+      );
+      return persistChecklist(nextChecklist);
+    },
+    [persistChecklist, selectedTask],
+  );
+
   const onRemoveChecklistItem = useCallback(
     async (index: number) => {
       if (!selectedTask) return false;
@@ -1683,6 +1703,7 @@ export function useKolamTaskManagerController({
       selectedTask,
       taskTypes,
       onAddChecklistItem,
+      onAssignChecklistItem,
       onAddDiscussion,
       onAddNote,
       onChangeCategoryForm,
@@ -1803,6 +1824,7 @@ export function useKolamTaskManagerController({
       mode,
       mutatingTaskId,
       onAddChecklistItem,
+      onAssignChecklistItem,
       onAddDiscussion,
       onAddNote,
       onChangeCategoryForm,

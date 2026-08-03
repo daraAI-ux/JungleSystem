@@ -216,6 +216,13 @@ function KolamTaskManagerDetail({
     controller.isTaskAdmin,
   );
   const canEditChecklist = canPostDiscussion;
+  const checklistAssigneeOptions = [
+    { label: 'Tanpa PIC', value: '' },
+    ...controller.staffOptions.map(option => ({
+      label: option.label,
+      value: option.id,
+    })),
+  ];
   const mentionOptions = getTaskMentionOptions(controller);
 
   return (
@@ -450,6 +457,19 @@ function KolamTaskManagerDetail({
                 <Text style={styles.metaText}>
                   {getKolamTaskUserDisplayName(item.assignedTo)}
                 </Text>
+              ) : null}
+              {canEditChecklist ? (
+                <KolamDropdownSelect
+                  label="PIC"
+                  onChange={assignedToId => {
+                    void controller.onAssignChecklistItem(index, assignedToId);
+                  }}
+                  options={checklistAssigneeOptions}
+                  searchable
+                  showLabelInTrigger={false}
+                  triggerStyle={styles.checklistAssigneeSelect}
+                  value={getKolamTaskRefId(item.assignedTo)}
+                />
               ) : null}
               {canEditChecklist ? (
                 <KolamButton
@@ -3036,6 +3056,9 @@ const styles = StyleSheet.create({
   checklistDraftInput: {
     flex: 1,
     minWidth: 220,
+  },
+  checklistAssigneeSelect: {
+    minWidth: 150,
   },
   noteAddRow: {
     alignItems: 'flex-start',
