@@ -19,8 +19,23 @@ import {
   KOLAM_PUSAT_AI_PROSES_HELPER_COPY,
   type KolamDaraAsyncJob,
 } from '../domain/kolam-pusat-ai-jobs';
+import {
+  computeKolamOwnerCopilotNightOpsTotal,
+  formatKolamOwnerCopilotEventLabel,
+  formatKolamOwnerCopilotWib,
+  getKolamOwnerCopilotStatusIntent,
+  KOLAM_OWNER_COPILOT_AUDIT_OFF,
+  KOLAM_OWNER_COPILOT_DESCRIPTION,
+  KOLAM_OWNER_COPILOT_EMPTY_NIGHT_OPS,
+  KOLAM_OWNER_COPILOT_EXECUTIVE_SUFFIX,
+  type KolamOwnerCopilotDashboard,
+} from '../domain/kolam-pusat-ai-owner-copilot';
 import {isTopNavAdminRole} from '../domain/top-nav';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
+import {
+  useKolamPusatAiOwnerCopilotController,
+  type KolamPusatAiOwnerCopilotController,
+} from '../hooks/use-kolam-pusat-ai-owner-copilot-controller';
 import {
   useKolamPusatAiProsesController,
   type KolamPusatAiProsesController,
@@ -52,6 +67,7 @@ export function KolamPusatAiRingkasanSurface({
   const prosesController = useKolamPusatAiProsesController(route, {
     canNormalize: isAdmin,
   });
+  const ownerController = useKolamPusatAiOwnerCopilotController(route);
 
   return (
     <View style={styles.surface}>
@@ -72,6 +88,11 @@ export function KolamPusatAiRingkasanSurface({
         />
       ) : selectedTab === 'proses' ? (
         <KolamPusatAiProsesBody controller={prosesController} />
+      ) : selectedTab === 'owner-copilot' ? (
+        <KolamPusatAiOwnerCopilotBody
+          controller={ownerController}
+          onRouteChange={onRouteChange}
+        />
       ) : (
         <KolamEmptyState title="Belum tersedia" />
       )}
@@ -79,7 +100,7 @@ export function KolamPusatAiRingkasanSurface({
   );
 }
 
-/** Alias for hub surface (tabs + ringkasan/proses). */
+/** Alias for hub surface (tabs + ringkasan/proses/owner). */
 export const KolamPusatAiSurface = KolamPusatAiRingkasanSurface;
 
 function resolveSelectedHubTab(
@@ -94,6 +115,203 @@ function resolveSelectedHubTab(
     item => item.id === tab,
   );
   return allowed ? tab : 'ringkasan';
+}
+
+function KolamPusatAiOwnerCopilotBody({
+  controller,
+  onRouteChange,
+}: {
+  controller: KolamPusatAiOwnerCopilotController;
+  onRouteChange?: (route: string) => void;
+}) {
+  const {dash, loading, error} = controller;
+
+  return (
+    <ScrollView
+      contentContainerStyle={styles.ownerScrollContent}
+      style={styles.scroll}>
+      <View style={styles.copilotShell}>
+        <View style={styles.copilotHeader}>
+          <View style={styles.copilotHeading}>
+            <Text style={styles.copilotEyebrow}>Copilot</Text>
+            <Text style={styles.copilotTitle}>Owner Copilot</Text>
+            <Text style={styles.copilotDesc}>
+              {KOLAM_OWNER_COPILOT_DESCRIPTION}
+            </Text>
+          </View>
+          <View style={styles.copilotActions}>
+            <KolamButton
+              disabled={loading}
+              intent="outline"
+              label={loading ? 'Memuat…' : 'Refresh'}
+              onPress={() => {
+                void controller.onRefresh();
+              }}
+            />
+            {dash?.teamChat.webHref ? (
+              <KolamButton
+                intent="primary"
+                label="Buka room DARA"
+                onPress={() => onRouteChange?.(dash.teamChat.webHref)}
+              />
+            ) : null}
+          </View>
+        </View>
+
+        {loading && !dash ? (
+          <Text style={styles.loadingText}>Memuat…</Text>
+        ) : null}
+
+        {error && !dash ? (
+          <KolamEmptyState message={error} title="Gagal memuat" />
+        ) : null}
+
+        {dash ? <OwnerCopilotDashboardContent dash={dash} /> : null}
+      </View>
+    </ScrollView>
+  );
+}
+
+function OwnerCopilotDashboardContent({
+  dash,
+}: {
+  dash: KolamOwnerCopilotDashboard;
+}) {
+  const nightTotal = computeKolamOwnerCopilotNightOpsTotal(dash.nightOps.counts);
+  const counts = dash.nightOps.counts;
+
+  return (
+    <View style={styles.ownerBody}>
+      <Text style={styles.ownerMeta}>
+        {`Periode Night Ops: ${dash.windowLabel}${
+          dash.generatedAt
+            ? ` · diperbarui ${formatKolamOwnerCopilotWib(dash.generatedAt)}`
+            : ''
+        }`}
+      </Text>
+
+      <View style={styles.ownerCards}>
+        <View style={styles.ownerCard}>
+          <Text style={styles.ownerCardTitle}>Bisnis hari ini</Text>
+          <Text style={styles.ownerCardLine}>
+            {`Penjualan: ${dash.health.salesFormatted} · ${dash.health.orderCount} order`}
+          </Text>
+          <Text style={styles.ownerCardLine}>
+            {`Margin kotor: ${dash.health.marginFormatted}`}
+          </Text>
+          <Text style={styles.ownerCardMuted}>
+            {`Stok rendah: ${dash.health.lowStockCount}`}
+          </Text>
+        </View>
+
+        <View style={styles.ownerCard}>
+          <Text style={styles.ownerCardTitle}>Night Ops (24 jam)</Text>
+          {!dash.nightOps.opsAuditEnabled ? (
+            <Text style={styles.ownerWarn}>{KOLAM_OWNER_COPILOT_AUDIT_OFF}</Text>
+          ) : nightTotal === 0 ? (
+            <Text style={styles.ownerCardMuted}>
+              {KOLAM_OWNER_COPILOT_EMPTY_NIGHT_OPS}
+            </Text>
+          ) : (
+            <>
+              <Text style={styles.ownerCardLine}>
+                {`Olshop: ${counts.olshop_dispatch} dispatch · ${counts.olshop_defer} defer · ${counts.olshop_fail} gagal · ${counts.olshop_stock_hold} stock hold`}
+              </Text>
+              <Text style={styles.ownerCardLine}>
+                {`Webstore: ${counts.webstore_start} packing · DANA: ${counts.dana_ok} ok · ${counts.dana_fail} gagal`}
+              </Text>
+            </>
+          )}
+        </View>
+
+        <View style={[styles.ownerCard, styles.ownerCardWide]}>
+          <Text style={styles.ownerCardTitle}>Tanya di room DARA</Text>
+          {dash.teamChat.suggestedPrompts.map(prompt => (
+            <Text key={prompt} style={styles.promptChip}>
+              {`«${prompt}»`}
+            </Text>
+          ))}
+        </View>
+      </View>
+
+      {dash.nightOps.failures.length > 0 ? (
+        <View style={[styles.ownerCard, styles.ownerCardDanger]}>
+          <Text style={styles.ownerCardTitleDanger}>Perlu cek (Night Ops)</Text>
+          {dash.nightOps.failures.map(failure => (
+            <Text key={failure.id} style={styles.ownerCardLine}>
+              {`${failure.invoiceCode || '—'} · ${formatKolamOwnerCopilotEventLabel(failure.eventType)} — ${failure.reason}`}
+            </Text>
+          ))}
+        </View>
+      ) : null}
+
+      {dash.insights.length > 0 ? (
+        <View style={styles.ownerCard}>
+          <Text style={styles.ownerCardTitle}>Insight DARA terbaru</Text>
+          {dash.insights.map((item, index) => (
+            <View
+              key={`${item.kind}-${index}`}
+              style={styles.insightRow}>
+              <Text style={styles.ownerStrong}>{item.title}</Text>
+              {item.body ? (
+                <Text numberOfLines={2} style={styles.ownerCardMuted}>
+                  {item.body}
+                </Text>
+              ) : null}
+              <Text style={styles.insightTime}>
+                {formatKolamOwnerCopilotWib(item.broadcastAt)}
+              </Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
+
+      {dash.nightOps.recentEvents.length > 0 ? (
+        <View style={styles.ownerCard}>
+          <Text style={styles.ownerCardTitle}>Event ops terbaru</Text>
+          <View style={styles.eventsHeader}>
+            <Text style={[styles.eventsHeaderCell, styles.colWaktu]}>
+              Waktu
+            </Text>
+            <Text style={[styles.eventsHeaderCell, styles.colEvent]}>
+              Event
+            </Text>
+            <Text style={[styles.eventsHeaderCell, styles.colInvoice]}>
+              Invoice
+            </Text>
+            <Text style={[styles.eventsHeaderCell, styles.colEventStatus]}>
+              Status
+            </Text>
+          </View>
+          {dash.nightOps.recentEvents.map(event => (
+            <View key={event.id} style={styles.eventsRow}>
+              <Text style={[styles.eventsCell, styles.colWaktu]}>
+                {formatKolamOwnerCopilotWib(event.at)}
+              </Text>
+              <Text style={[styles.eventsCell, styles.colEvent]}>
+                {formatKolamOwnerCopilotEventLabel(event.eventType)}
+              </Text>
+              <Text style={[styles.eventsCell, styles.colInvoice]}>
+                {event.invoiceCode || '—'}
+              </Text>
+              <View style={[styles.eventsCell, styles.colEventStatus]}>
+                <KolamStatusBadge
+                  intent={getKolamOwnerCopilotStatusIntent(event.status)}
+                  label={event.status}
+                />
+              </View>
+            </View>
+          ))}
+        </View>
+      ) : null}
+
+      <View style={styles.executiveCard}>
+        <Text style={styles.executiveText}>
+          {`${dash.executiveNote}${KOLAM_OWNER_COPILOT_EXECUTIVE_SUFFIX}`}
+        </Text>
+      </View>
+    </View>
+  );
 }
 
 function KolamPusatAiProsesBody({
@@ -461,6 +679,190 @@ const styles = StyleSheet.create({
     borderBottomColor: V.colors.border,
     borderBottomWidth: 1,
     paddingBottom: 4,
+  },
+  ownerScrollContent: {
+    gap: 16,
+    paddingBottom: 24,
+  },
+  copilotShell: {
+    gap: 16,
+  },
+  copilotHeader: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    justifyContent: 'space-between',
+  },
+  copilotHeading: {
+    flex: 1,
+    gap: 4,
+    minWidth: 220,
+  },
+  copilotEyebrow: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+  },
+  copilotTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  copilotDesc: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  copilotActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  ownerBody: {
+    gap: 16,
+  },
+  ownerMeta: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+  },
+  ownerCards: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  ownerCard: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: V.radius.lg,
+    borderWidth: 1,
+    flexBasis: 260,
+    flexGrow: 1,
+    gap: 6,
+    minWidth: 220,
+    padding: 14,
+  },
+  ownerCardWide: {
+    flexBasis: 280,
+  },
+  ownerCardDanger: {
+    borderColor: V.colors.danger,
+    flexBasis: '100%',
+  },
+  ownerCardTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  ownerCardTitleDanger: {
+    color: V.colors.danger,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  ownerCardLine: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  ownerCardMuted: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  ownerStrong: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontWeight: '700',
+  },
+  ownerWarn: {
+    color: V.colors.warning,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+  },
+  promptChip: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: V.radius.md,
+    borderWidth: 1,
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    lineHeight: 16,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+  },
+  insightRow: {
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: 1,
+    gap: 2,
+    paddingBottom: 8,
+  },
+  insightTime: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+  },
+  eventsHeader: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 4,
+  },
+  eventsHeaderCell: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  eventsRow: {
+    borderTopColor: V.colors.border,
+    borderTopWidth: 1,
+    flexDirection: 'row',
+    gap: 8,
+    paddingVertical: 6,
+  },
+  eventsCell: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    justifyContent: 'center',
+  },
+  colWaktu: {
+    flex: 1.1,
+  },
+  colEvent: {
+    flex: 1.4,
+  },
+  colInvoice: {
+    flex: 1,
+  },
+  colEventStatus: {
+    flex: 0.8,
+  },
+  executiveCard: {
+    backgroundColor: V.colors.muted,
+    borderColor: V.colors.border,
+    borderRadius: V.radius.lg,
+    borderStyle: 'dashed',
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  executiveText: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    lineHeight: 16,
   },
   ringkasan: {
     flex: 1,

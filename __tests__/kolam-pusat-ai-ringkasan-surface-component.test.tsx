@@ -3,6 +3,7 @@ import ReactTestRenderer from 'react-test-renderer';
 import {useKolamAuthContext} from '../src/context/kolam-app-contexts';
 import {KolamPusatAiRingkasanSurface} from '../src/components/kolam-pusat-ai-ringkasan-surface';
 import {fetchKolamDaraJobsList} from '../src/services/kolam-dara-jobs-api';
+import {fetchKolamOwnerCopilotDashboard} from '../src/services/kolam-dara-owner-copilot-api';
 import {fetchKolamDaraMarketingHub} from '../src/services/kolam-dara-marketing-hub-api';
 
 jest.mock('../src/services/kolam-dara-marketing-hub-api', () => ({
@@ -15,6 +16,10 @@ jest.mock('../src/services/kolam-dara-jobs-api', () => ({
   normalizeKolamDaraSeoTargetTypes: jest.fn(),
 }));
 
+jest.mock('../src/services/kolam-dara-owner-copilot-api', () => ({
+  fetchKolamOwnerCopilotDashboard: jest.fn(),
+}));
+
 jest.mock('../src/context/kolam-app-contexts', () => ({
   useKolamAuthContext: jest.fn(),
 }));
@@ -24,6 +29,9 @@ const fetchHubMock = fetchKolamDaraMarketingHub as jest.MockedFunction<
 >;
 const fetchJobsMock = fetchKolamDaraJobsList as jest.MockedFunction<
   typeof fetchKolamDaraJobsList
+>;
+const fetchOwnerMock = fetchKolamOwnerCopilotDashboard as jest.MockedFunction<
+  typeof fetchKolamOwnerCopilotDashboard
 >;
 const useAuthContextMock = useKolamAuthContext as jest.MockedFunction<
   typeof useKolamAuthContext
@@ -42,7 +50,41 @@ describe('KolamPusatAiRingkasanSurface', () => {
   beforeEach(() => {
     fetchHubMock.mockReset();
     fetchJobsMock.mockReset();
+    fetchOwnerMock.mockReset();
     fetchJobsMock.mockResolvedValue([]);
+    fetchOwnerMock.mockResolvedValue({
+      generatedAt: '2026-08-03T12:00:00.000Z',
+      lookbackHours: 24,
+      windowLabel: '3 Agu 00.00 — 3 Agu 12.00 WIB',
+      teamChat: {
+        aiRoomId: 'room-1',
+        roomName: 'Chat dengan DARA',
+        webHref: '/team-chat?room=room-1',
+        suggestedPrompts: ['Ringkasan bisnis hari ini'],
+      },
+      health: {
+        salesFormatted: 'Rp 1.000.000',
+        orderCount: 4,
+        marginFormatted: 'Rp 200.000 (20.0%)',
+        lowStockCount: 3,
+      },
+      nightOps: {
+        opsAuditEnabled: true,
+        counts: {
+          olshop_dispatch: 2,
+          olshop_defer: 0,
+          olshop_fail: 0,
+          olshop_stock_hold: 0,
+          webstore_start: 1,
+          dana_ok: 1,
+          dana_fail: 0,
+        },
+        failures: [],
+        recentEvents: [],
+      },
+      insights: [],
+      executiveNote: 'Note eksekutif.',
+    });
     useAuthContextMock.mockReturnValue({
       authUser: {roleKey: 'super_admin'},
     } as ReturnType<typeof useKolamAuthContext>);
@@ -179,6 +221,41 @@ describe('KolamPusatAiRingkasanSurface', () => {
     expect(text).toContain('Tutup');
     expect(text).toContain('Perbaiki tipe SEO lama');
     expect(fetchJobsMock).toHaveBeenCalled();
+  });
+
+  it('loads Owner Copilot dashboard for admin', async () => {
+    const onRouteChange = jest.fn();
+    let renderer: ReactTestRenderer.ReactTestRenderer | undefined;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamPusatAiRingkasanSurface
+          onRouteChange={onRouteChange}
+          route="/pusat-ai?tab=owner-copilot"
+        />,
+      );
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const text = renderText(renderer!).join(' ');
+    expect(text).toContain('Owner Copilot');
+    expect(text).toContain('Bisnis hari ini');
+    expect(text).toContain('Night Ops (24 jam)');
+    expect(text).toContain('Rp 1.000.000');
+    expect(text).toContain('Buka room DARA');
+    expect(text).toContain('Ringkasan bisnis hari ini');
+    expect(fetchOwnerMock).toHaveBeenCalled();
+
+    const openRoom = renderer!.root.find(
+      node =>
+        typeof node.props.label === 'string' &&
+        node.props.label === 'Buka room DARA',
+    );
+    await ReactTestRenderer.act(async () => {
+      openRoom.props.onPress();
+    });
+    expect(onRouteChange).toHaveBeenCalledWith('/team-chat?room=room-1');
   });
 
   it('hides admin tabs for non-admin roles', async () => {
