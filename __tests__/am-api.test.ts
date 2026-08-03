@@ -1,9 +1,11 @@
 import {appConfig} from '../src/config/app';
 import {clearResponseCookieJar} from '../src/lib/api-client';
 import {
+  clearAmServiceAccountSession,
   createAmChatContact,
   createAmTask,
   createAmTransfer,
+  getAmTokopediaApiMonitorStatus,
   getAmChatContactById,
   getAmChatContacts,
   getAmChatMessageById,
@@ -16,9 +18,19 @@ import {
   getAmUserById,
   loginAmSession,
   logoutAmSession,
+  restartAmTokopediaSession,
+  runAmTokopediaApiMonitor,
+  sendAmDeviceServiceInput,
   sendAmChatMessage,
+  startAmDeviceService,
+  startAmTokopediaQrLogin,
+  stopAmDeviceService,
   testAmWebhookPing,
+  updateAmTokopediaCaptchaSettings,
+  updateAmTokopediaLoginMethod,
   updateAmUser,
+  uploadAmTokopediaSession,
+  verifyAmTokopediaSession,
 } from '../src/services/am-api';
 
 const fetchMock = jest.fn();
@@ -435,6 +447,223 @@ describe('AM API service', () => {
         headers: expect.objectContaining({
           Cookie: 'kolamCsrf=',
           'Content-Type': 'application/json',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+  });
+
+  it('controls AM device services through the live device service endpoints', async () => {
+    fetchMock.mockResolvedValue(jsonResponse({success: true}));
+
+    await startAmDeviceService('device-1', 'account-1', 'https://am.example.test/api');
+
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://am.example.test/api/device/device-1/service/start',
+      expect.objectContaining({
+        method: 'POST',
+        credentials: 'include',
+        body: JSON.stringify({serviceAccountId: 'account-1'}),
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
+          'Content-Type': 'application/json',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+
+    await stopAmDeviceService('device-1', 'account-1', 'https://am.example.test/api');
+
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://am.example.test/api/device/device-1/service/stop',
+      expect.objectContaining({
+        method: 'POST',
+        credentials: 'include',
+        body: JSON.stringify({serviceAccountId: 'account-1'}),
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
+          'Content-Type': 'application/json',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+
+    await sendAmDeviceServiceInput(
+      'device-1',
+      'otp',
+      '123456',
+      'https://am.example.test/api',
+    );
+
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://am.example.test/api/device/device-1/service/input',
+      expect.objectContaining({
+        method: 'POST',
+        credentials: 'include',
+        body: JSON.stringify({type: 'otp', value: '123456'}),
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
+          'Content-Type': 'application/json',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+  });
+
+  it('uses live AM Tokopedia session runtime endpoints', async () => {
+    fetchMock.mockResolvedValue(jsonResponse({success: true, data: {started: true}}));
+
+    await verifyAmTokopediaSession('account-1', 'https://am.example.test/api');
+
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://am.example.test/api/service-account/account-1/tokopedia-session/verify',
+      expect.objectContaining({
+        method: 'POST',
+        credentials: 'include',
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+
+    await startAmTokopediaQrLogin('account-1', 'https://am.example.test/api');
+
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://am.example.test/api/service-account/account-1/tokopedia-session/qr-start',
+      expect.objectContaining({
+        method: 'POST',
+        credentials: 'include',
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+
+    await restartAmTokopediaSession('account-1', 'https://am.example.test/api');
+
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://am.example.test/api/service-account/account-1/tokopedia-session/restart',
+      expect.objectContaining({
+        method: 'POST',
+        credentials: 'include',
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+  });
+
+  it('writes AM Tokopedia session settings through the live service-account endpoints', async () => {
+    const cookies = [{name: 'shop', value: 'token'}];
+
+    await uploadAmTokopediaSession('account-1', cookies, 'https://am.example.test/api');
+
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://am.example.test/api/service-account/account-1/tokopedia-session',
+      expect.objectContaining({
+        method: 'POST',
+        credentials: 'include',
+        body: JSON.stringify({cookies}),
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
+          'Content-Type': 'application/json',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+
+    await updateAmTokopediaLoginMethod(
+      'account-1',
+      {qrTiktokLogin: true, loginFillOnly: false},
+      'https://am.example.test/api',
+    );
+
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://am.example.test/api/service-account/account-1/tokopedia-session/login-method',
+      expect.objectContaining({
+        method: 'PUT',
+        credentials: 'include',
+        body: JSON.stringify({qrTiktokLogin: true, loginFillOnly: false}),
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
+          'Content-Type': 'application/json',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+
+    await updateAmTokopediaCaptchaSettings(
+      'account-1',
+      {captchaAutoSolve: true, anthropicApiKey: 'sk-ant'},
+      'https://am.example.test/api',
+    );
+
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://am.example.test/api/service-account/account-1/tokopedia-session/captcha',
+      expect.objectContaining({
+        method: 'PUT',
+        credentials: 'include',
+        body: JSON.stringify({captchaAutoSolve: true, anthropicApiKey: 'sk-ant'}),
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
+          'Content-Type': 'application/json',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+  });
+
+  it('runs AM Tokopedia API monitor jobs against live service-account endpoints', async () => {
+    const payload = {autoRestart: true, fillLogin: true};
+
+    await runAmTokopediaApiMonitor(
+      'account-1',
+      payload,
+      'https://am.example.test/api',
+    );
+
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://am.example.test/api/service-account/account-1/tokopedia-session/api-monitor',
+      expect.objectContaining({
+        method: 'POST',
+        credentials: 'include',
+        body: JSON.stringify(payload),
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
+          'Content-Type': 'application/json',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+
+    await getAmTokopediaApiMonitorStatus('account-1', 'https://am.example.test/api');
+
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://am.example.test/api/service-account/account-1/tokopedia-session/api-monitor',
+      expect.objectContaining({
+        method: 'GET',
+        credentials: 'include',
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+  });
+
+  it('clears AM service account sessions through the live session endpoint', async () => {
+    await clearAmServiceAccountSession('account-1', 'https://am.example.test/api');
+
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://am.example.test/api/service-account/account-1/session',
+      expect.objectContaining({
+        method: 'DELETE',
+        credentials: 'include',
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
           'x-source': appConfig.amSourceHeader,
         }),
       }),
