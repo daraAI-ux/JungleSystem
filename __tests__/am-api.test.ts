@@ -537,6 +537,7 @@ describe('AM API service', () => {
     const payload = {
       fullName: 'Current AM User Updated',
       username: 'current.updated@dunia-anura.com',
+      password: 'NewPass1!',
     };
     fetchMock.mockResolvedValue(jsonResponse({success: true, data: {_id: 'user-current'}}));
 

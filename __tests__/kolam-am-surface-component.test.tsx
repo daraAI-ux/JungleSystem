@@ -3039,6 +3039,20 @@ describe('KolamAmSurface', () => {
     expect(renderText(renderer!).join(' ')).toContain('Current AM User Updated');
 
     await act(async () => {
+      findInput('Current password')!.props.onChangeText('OldPass1!');
+      findInput('New password')!.props.onChangeText('NewPass1!');
+      findInput('Confirm password')!.props.onChangeText('NewPass1!');
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Account Update Password'}).props.onPress();
+    });
+
+    expect(updateAmUser).toHaveBeenCalledWith('user-current', {
+      password: 'NewPass1!',
+    });
+    expect(renderText(renderer!).join(' ')).toContain('Password tersimpan.');
+
+    await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Account Logout'}).props.onPress();
     });
 

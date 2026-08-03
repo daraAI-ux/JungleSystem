@@ -5670,7 +5670,7 @@ function AmAccountSettingsPage() {
     }
   }, [emailAddress, fullName, user]);
 
-  const handleUpdatePassword = React.useCallback(() => {
+  const handleUpdatePassword = React.useCallback(async () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
       setError('Current password, new password, dan confirm password wajib diisi.');
       return;
@@ -5681,8 +5681,27 @@ function AmAccountSettingsPage() {
       return;
     }
 
-    showEndpointNotice('Change password');
-  }, [confirmPassword, currentPassword, newPassword, showEndpointNotice]);
+    if (!user?._id) {
+      setError('Akun AM belum terbaca.');
+      return;
+    }
+
+    try {
+      setIsSavingProfile(true);
+      await updateAmUser(user._id, {
+        password: newPassword,
+      });
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setError(null);
+      setActionMessage('Password tersimpan.');
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Gagal menyimpan password AM.');
+    } finally {
+      setIsSavingProfile(false);
+    }
+  }, [confirmPassword, currentPassword, newPassword, user]);
 
   const handleDeleteAccount = React.useCallback(() => {
     if (!deletePassword) {
