@@ -424,38 +424,16 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         requiredAccess: ['kolam'],
       },
       {
-        label: 'Custom Project',
-        route: '/custom-project',
-        description: 'Custom project dashboard and project intake',
-        group: 'Custom Project',
-        requiredAccess: ['kolam'],
-      },
-      {
-        label: 'Custom Project Instances',
-        route: '/custom-project/instances',
-        description: 'Quotation, payment, and design review',
-        group: 'Custom Project',
-        requiredAccess: ['kolam'],
-      },
-      {
-        label: 'Surat Penawaran Baru',
-        route: '/custom-project/instances/new',
-        description: 'Buat custom project dan surat penawaran baru',
-        group: 'Custom Project',
-        requiredAccess: ['kolam'],
-      },
-      {
-        label: 'Terms & Conditions',
+        label: 'Syarat & Ketentuan',
         route: '/terms-templates',
-        description: 'Template syarat dan ketentuan untuk surat penawaran',
-        group: 'Custom Project',
+        description: 'Template syarat & ketentuan untuk surat penawaran',
+        group: 'Penjualan',
         requiredAccess: ['kolam'],
       },
       {
         label: 'Proyek',
         route: '/proyek',
-        description: 'Legacy project routes still present in live Kolam',
-        group: 'Custom Project',
+        description: 'Surat penawaran dan proyek kustom',
         requiredAccess: ['kolam'],
       },
       {
@@ -747,11 +725,6 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
       sidebarItem('/teranura', { group: 'Produk', label: 'Teranura' }),
       sidebarItem('/stock-transaction', { group: 'Stok', label: 'Transaksi Stok' }),
       sidebarItem('/stock-opname', { group: 'Stok', label: 'Stock Opname' }),
-      sidebarItem('/locations', {
-        description: 'Kelola lokasi gudang, lantai, rak, dan area penyimpanan',
-        group: 'Inventory',
-        label: 'Lokasi',
-      }),
       sidebarItem('/suppliers', { group: 'Pengadaan', label: 'Pemasok' }),
       sidebarItem('/purchase-order', { group: 'Pengadaan', label: 'Pesanan Pembelian' }),
       sidebarItem('/production', { group: 'Produksi', label: 'Produksi' }),
@@ -759,6 +732,11 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
       sidebarItem('/enclosures', {
         group: 'Produksi',
         label: 'Daftar Enclosure',
+      }),
+      sidebarItem('/locations', {
+        description: 'Kelola lokasi gudang, lantai, rak, dan area penyimpanan',
+        group: undefined,
+        label: 'Lokasi',
       }),
     ],
   },
@@ -769,20 +747,26 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
       sidebarItem('/sales', { group: 'Penjualan', label: 'Penjualan' }),
       sidebarItem('/source', { group: 'Penjualan', label: 'Sumber' }),
       sidebarItem('/complaints', { group: 'Penjualan', label: 'Komplain' }),
-      sidebarItem('/layanan', { label: 'Layanan' }),
-      sidebarItem('/terms-templates', { label: 'Syarat & Ketentuan' }),
       sidebarItem('/campaign', { group: 'Kampanye', label: 'Daftar' }),
       sidebarItem('/sales/discount-approval', { group: 'Kampanye', label: 'Persetujuan Diskon' }),
       sidebarItem('/vouchers', { group: 'Kampanye', label: 'Voucher' }),
-      sidebarItem('/shipping-method', { label: 'Metode Pengiriman' }),
-      sidebarItem('/proyek', { label: 'Proyek' }),
+      sidebarItem('/layanan', { group: undefined, label: 'Layanan' }),
+      sidebarItem('/proyek', { group: undefined, label: 'Proyek' }),
+      sidebarItem('/shipping-method', {
+        group: undefined,
+        label: 'Metode Pengiriman',
+      }),
+      sidebarItem('/terms-templates', {
+        group: undefined,
+        label: 'Syarat & Ketentuan',
+      }),
     ],
   },
   {
     id: 'pusatAi',
     title: 'Pusat AI',
     items: [
-      sidebarItem('/pusat-ai', { label: 'Pusat AI' }),
+      sidebarItem('/pusat-ai', { group: undefined, label: 'Pusat AI' }),
       sidebarItem('/campaign/dara-seo', { label: 'DARA SEO' }),
       sidebarItem('/campaign/dara-market-intel', { label: 'Intel Pasar' }),
       sidebarItem('/finance/tax', { label: 'DARA Pajak' }),
@@ -1603,18 +1587,6 @@ const kolamNavigationRouteVariantSpecs: Array<{
     description: 'Edit terms template page from live Kolam',
   },
   {
-    baseRoute: '/custom-project/instances',
-    labelSuffix: 'Detail',
-    route: '/custom-project/instances/:id',
-    description: 'Custom project instance detail page from live Kolam',
-  },
-  {
-    baseRoute: '/custom-project/instances',
-    labelSuffix: 'Edit',
-    route: '/custom-project/instances/:id/edit',
-    description: 'Edit custom project instance page from live Kolam',
-  },
-  {
     baseRoute: '/appointments',
     labelSuffix: 'Create',
     route: '/appointments/create',
@@ -2269,6 +2241,16 @@ export function getKolamNavigationDisclosure(
       ? `${visibleItems.length}/${section.items.length}`
       : String(section.items.length),
   };
+}
+
+/**
+ * Hub item for a sidebar section: item whose label matches the section title
+ * (e.g. Pusat AI → /pusat-ai, Keuangan → /finance).
+ */
+export function getKolamNavigationSectionPrimaryItem(
+  section: KolamNavigationSection,
+): KolamNavigationItem | null {
+  return section.items.find(item => item.label === section.title) ?? null;
 }
 
 export function getKolamNavigationRouteTarget(

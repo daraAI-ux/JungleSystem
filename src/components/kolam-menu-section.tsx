@@ -3,8 +3,9 @@ import { StyleSheet, View } from 'react-native';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import {
   getKolamNavigationDisclosure,
+  getKolamNavigationSectionPrimaryItem,
   type KolamNavigationItem,
-  kolamNavigationSections,
+  type KolamNavigationSection,
 } from '../domain/kolam-navigation';
 import { KolamChevronIcon } from './kolam-chevron-icon';
 import { KolamHeaderFrame } from './kolam-header-frame';
@@ -29,9 +30,10 @@ export function KolamMenuSection({
   onMove: (sectionId: string, direction: 'up' | 'down') => void;
   onSelectItem: (item: KolamNavigationItem) => void;
   onToggle: (sectionId: string) => void;
-  section: (typeof kolamNavigationSections)[number];
+  section: KolamNavigationSection;
 }) {
   const disclosure = getKolamNavigationDisclosure(section, expanded);
+  const primaryItem = getKolamNavigationSectionPrimaryItem(section);
 
   return (
     <View style={styles.kolamMenuSection}>
@@ -48,7 +50,16 @@ export function KolamMenuSection({
             />
           }
           label={section.title}
-          onPress={() => onToggle(section.id)}
+          onPress={() => {
+            if (primaryItem) {
+              onSelectItem(primaryItem);
+              if (!expanded) {
+                onToggle(section.id);
+              }
+              return;
+            }
+            onToggle(section.id);
+          }}
         />
         <KolamMenuSectionActions
           onMove={direction => onMove(section.id, direction)}
