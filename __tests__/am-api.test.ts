@@ -7,6 +7,7 @@ import {
   getAmRackById,
   logoutAmSession,
   testAmWebhookPing,
+  updateAmUser,
 } from '../src/services/am-api';
 
 const fetchMock = jest.fn();
@@ -140,6 +141,30 @@ describe('AM API service', () => {
         credentials: 'include',
         headers: expect.objectContaining({
           Cookie: 'kolamCsrf=',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+  });
+
+  it('updates AM users through the live user endpoint', async () => {
+    const payload = {
+      fullName: 'Current AM User Updated',
+      username: 'current.updated@dunia-anura.com',
+    };
+    fetchMock.mockResolvedValue(jsonResponse({success: true, data: {_id: 'user-current'}}));
+
+    await updateAmUser('user-current', payload, 'https://am.example.test/api');
+
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://am.example.test/api/users/user-current',
+      expect.objectContaining({
+        method: 'PUT',
+        credentials: 'include',
+        body: JSON.stringify(payload),
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
+          'Content-Type': 'application/json',
           'x-source': appConfig.amSourceHeader,
         }),
       }),

@@ -5423,6 +5423,7 @@ function AmAccountSettingsPage() {
   const [confirmPassword, setConfirmPassword] = React.useState('');
   const [deletePassword, setDeletePassword] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(true);
+  const [isSavingProfile, setIsSavingProfile] = React.useState(false);
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [actionMessage, setActionMessage] = React.useState<string | null>(null);
@@ -5449,11 +5450,11 @@ function AmAccountSettingsPage() {
   const showEndpointNotice = React.useCallback((scope: string) => {
     setError(null);
     setActionMessage(
-      `${scope} mengikuti form AM FE, tetapi AM BE live saat ini baru menyediakan GET /auth/me untuk akun aktif.`,
+      `${scope} mengikuti form AM FE, tetapi AM BE live saat ini belum menyediakan endpoint akun mandiri.`,
     );
   }, []);
 
-  const handleSaveProfile = React.useCallback(() => {
+  const handleSaveProfile = React.useCallback(async () => {
     if (!fullName.trim() || !emailAddress.trim()) {
       setError('Full name dan email address wajib diisi.');
       return;
@@ -5464,8 +5465,28 @@ function AmAccountSettingsPage() {
       return;
     }
 
-    showEndpointNotice('Profile information');
-  }, [emailAddress, fullName, showEndpointNotice, user]);
+    if (!user?._id) {
+      setError('Akun AM live belum terbaca.');
+      return;
+    }
+
+    try {
+      setIsSavingProfile(true);
+      const updatedUser = await updateAmUser(user._id, {
+        fullName: fullName.trim(),
+        username: emailAddress.trim(),
+      });
+      setUser(updatedUser);
+      setFullName(updatedUser.fullName ?? '');
+      setEmailAddress(updatedUser.username ?? '');
+      setError(null);
+      setActionMessage('Profile information tersimpan.');
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Gagal menyimpan profile AM live.');
+    } finally {
+      setIsSavingProfile(false);
+    }
+  }, [emailAddress, fullName, user]);
 
   const handleUpdatePassword = React.useCallback(() => {
     if (!currentPassword || !newPassword || !confirmPassword) {
@@ -5554,7 +5575,8 @@ function AmAccountSettingsPage() {
           <View style={styles.inlineActions}>
             <KolamButton
               accessibilityLabel="AM Account Save Profile"
-              label="Save"
+              label={isSavingProfile ? 'Saving' : 'Save'}
+              muted={isSavingProfile}
               size="sm"
               onPress={handleSaveProfile}
             />

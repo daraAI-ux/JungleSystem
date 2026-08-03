@@ -2672,6 +2672,33 @@ describe('KolamAmSurface', () => {
     });
 
     expect(renderText(renderer!).join(' ')).toContain('Tidak ada perubahan profile untuk disimpan.');
+    expect(updateAmUser).not.toHaveBeenCalled();
+
+    jest.mocked(updateAmUser).mockResolvedValueOnce({
+      _id: 'user-current',
+      fullName: 'Current AM User Updated',
+      username: 'current.updated@dunia-anura.com',
+      role: {_id: 'role-admin', name: 'Admin', permissions: ['user:read'], description: 'Admin role'},
+    });
+
+    const findInput = (placeholder: string) =>
+      renderer!.root.findAllByType(TextInput).find(input => input.props.placeholder === placeholder);
+
+    await act(async () => {
+      findInput('Your name')!.props.onChangeText('Current AM User Updated');
+      findInput('you@domain.com')!.props.onChangeText('current.updated@dunia-anura.com');
+    });
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Account Save Profile'}).props.onPress();
+    });
+
+    expect(updateAmUser).toHaveBeenCalledWith('user-current', {
+      fullName: 'Current AM User Updated',
+      username: 'current.updated@dunia-anura.com',
+    });
+    expect(renderText(renderer!).join(' ')).toContain('Profile information tersimpan.');
+    expect(renderText(renderer!).join(' ')).toContain('Current AM User Updated');
 
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Account Logout'}).props.onPress();
