@@ -2493,8 +2493,9 @@ function AmServiceDetailPanel({
   const device = getServiceDevice(account);
   const runtime = serviceStatuses.find(status => status.serviceAccountId === account._id);
   const qrSignal = getQrLoginSignal(logs);
-  const needsPassword = logs.some(log => log.message.includes('PASSWORD_REQUIRED'));
-  const needsInput = needsPassword || logs.some(log => log.message.includes('OTP') || log.message.includes('otp') || log.message.includes('INPUT_REQUIRED'));
+  const inputRequirement = getServiceInputRequirement(logs);
+  const needsPassword = inputRequirement === 'password';
+  const needsInput = inputRequirement !== null;
   const qrUrl = device?._id ? getAmDeviceServiceQrUrl(device._id, account.platform, qrSignal?.qrcodeId) : null;
   const historyTotalPages = Math.max(1, Math.ceil(historyTotal / Math.max(historyLimit, 1)));
   const historyFrom = historyTotal ? (historyPage - 1) * historyLimit + 1 : 0;
@@ -6666,6 +6667,42 @@ function getQrLoginSignal(logs: AmDeviceServiceLog[]) {
     }
   }
   return null;
+}
+
+function getServiceInputRequirement(logs: AmDeviceServiceLog[]): 'otp' | 'password' | null {
+  let lastInputIndex = -1;
+  let lastInputType: 'otp' | 'password' | null = null;
+  let lastReadyIndex = -1;
+
+  logs.forEach((log, index) => {
+    const message = log.message;
+    if (message.includes('PASSWORD_REQUIRED')) {
+      lastInputIndex = index;
+      lastInputType = 'password';
+    } else if (
+      message.includes('OTP_REQUIRED') ||
+      message.includes('INPUT_REQUIRED') ||
+      message.includes('"event":"login_waiting"')
+    ) {
+      lastInputIndex = index;
+      lastInputType = 'otp';
+    }
+
+    if (
+      message.includes('login_success') ||
+      message.includes('Login success') ||
+      message.includes('Already logged in') ||
+      message.includes('OTP accepted') ||
+      message.includes('Process ready') ||
+      message.includes('"event":"ready"') ||
+      message.includes('"event":"login_success"') ||
+      message.includes('"event":"otp_fulfilled"')
+    ) {
+      lastReadyIndex = index;
+    }
+  });
+
+  return lastInputIndex >= 0 && lastInputIndex > lastReadyIndex ? lastInputType : null;
 }
 
 function normalizeAmQrImageUri(value: string): string {

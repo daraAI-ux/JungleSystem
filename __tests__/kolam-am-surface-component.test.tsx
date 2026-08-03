@@ -1360,6 +1360,57 @@ describe('KolamAmSurface', () => {
     expect(getAmDeviceServices).toHaveBeenCalledWith('device-otp');
   });
 
+  it('hides service input after runtime logs report login success', async () => {
+    jest.mocked(getAmServiceAccounts).mockResolvedValue({
+      data: [
+        {
+          _id: 'service-login-ok',
+          platform: 'shopee',
+          label: 'Shopee Login OK',
+          deviceId: {
+            _id: 'device-login-ok',
+            name: 'Phone Login OK',
+            connectionType: 'tcp',
+            tcpAddress: '10.0.0.10:5555',
+            udid: null,
+          },
+          status: 'active',
+          credentials: {},
+          meta: {},
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 1, limit: 1},
+    });
+    jest.mocked(getAmDeviceServiceLogs).mockResolvedValue({
+      logs: [
+        {ts: '2026-01-01T00:00:00.000Z', level: 'info', message: 'OTP_REQUIRED'},
+        {ts: '2026-01-01T00:00:01.000Z', level: 'info', message: '{"event":"login_success"}'},
+      ],
+      processRunning: true,
+    });
+    jest.mocked(getAmDeviceServices).mockResolvedValue([]);
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await updateAmRoute(renderer!, 'services');
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Service Shopee Login OK'}).props.onPress();
+    });
+
+    expect(
+      renderer!.root.findAllByProps({accessibilityLabel: 'AM Service Submit Input service-login-ok'}),
+    ).toHaveLength(0);
+    expect(renderText(renderer!)).not.toContain('Masukkan OTP service');
+  });
+
   it('runs service start and clear session actions from Services', async () => {
     jest.mocked(getAmServiceAccounts).mockResolvedValue({
       data: [
