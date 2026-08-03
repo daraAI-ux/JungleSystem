@@ -412,53 +412,31 @@ describe('KolamAmSurface', () => {
     expect(onModuleRouteSelect).toHaveBeenLastCalledWith(amRoute('hardware'));
   });
 
-  it('opens Account Settings through the AM shell route from the topbar', async () => {
-    const onModuleRouteSelect = jest.fn();
-    const settingsRoute = amRoute('settings/account');
+  it('keeps AM account actions out of the surface topbar', async () => {
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
     await act(async () => {
       renderer = ReactTestRenderer.create(
-        <KolamAmSurface
-          dataset={seedUnifiedDataset}
-          onModuleRouteSelect={onModuleRouteSelect}
-        />,
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
       );
     });
     renderers.push(renderer!);
 
-    const settingsButton = renderer!.root.findByProps({
-      accessibilityLabel: 'AM Settings',
-    });
-
-    act(() => {
-      settingsButton.props.onPress();
-    });
-
-    expect(onModuleRouteSelect).toHaveBeenCalledWith(settingsRoute);
+    expect(
+      renderer!.root.findAllByProps({accessibilityLabel: 'AM Settings'}),
+    ).toHaveLength(0);
+    expect(
+      renderer!.root.findAllByProps({accessibilityLabel: 'AM Login'}),
+    ).toHaveLength(0);
+    expect(renderer!.root.findByProps({accessibilityLabel: 'Kembali'})).toBeTruthy();
   });
 
-  it('opens and submits the AM live login route from the topbar', async () => {
+  it('submits the AM live login route from the AM shell route', async () => {
     const onModuleRouteSelect = jest.fn();
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
     await act(async () => {
       renderer = ReactTestRenderer.create(
-        <KolamAmSurface
-          dataset={seedUnifiedDataset}
-          onModuleRouteSelect={onModuleRouteSelect}
-        />,
-      );
-    });
-    renderers.push(renderer!);
-
-    act(() => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Login'}).props.onPress();
-    });
-    expect(onModuleRouteSelect).toHaveBeenLastCalledWith(amRoute('login'));
-
-    await act(async () => {
-      renderer!.update(
         <KolamAmSurface
           activeModuleRoute={amRoute('login')}
           dataset={seedUnifiedDataset}
@@ -466,6 +444,7 @@ describe('KolamAmSurface', () => {
         />,
       );
     });
+    renderers.push(renderer!);
 
     const inputs = renderer!.root.findAllByType(TextInput);
     await act(async () => {

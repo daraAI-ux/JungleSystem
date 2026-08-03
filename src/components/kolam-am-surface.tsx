@@ -197,33 +197,6 @@ export function KolamAmSurface({
         <View style={styles.topBarCompact}>
           <View style={styles.topBarActions}>
             <Text style={styles.serverText}>{appConfig.amApiBaseUrl}</Text>
-            <KolamButton
-              accessibilityLabel="AM Login"
-              label="Login"
-              intent="plain"
-              size="sm"
-              onPress={() => {
-                const loginRoute = getShellModuleRouteEntry('am', 'login');
-                if (loginRoute) {
-                  onModuleRouteSelect?.(loginRoute);
-                }
-              }}
-            />
-            <KolamButton
-              accessibilityLabel="AM Settings"
-              label="Settings"
-              intent="plain"
-              size="sm"
-              onPress={() => {
-                const settingsRoute = getShellModuleRouteEntry(
-                  'am',
-                  'settings/account',
-                );
-                if (settingsRoute) {
-                  onModuleRouteSelect?.(settingsRoute);
-                }
-              }}
-            />
             <KolamButton label="Kembali" intent="outline" size="sm" onPress={onBackToCenter} />
           </View>
         </View>
