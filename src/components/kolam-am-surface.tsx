@@ -123,6 +123,7 @@ const TASK_STATUSES: Array<AmTaskStatus | 'all'> = ['all', 'pending', 'queued', 
 const TASK_TYPES: Array<AmTaskType | 'all'> = ['all', 'stock_sync', 'process_sale', 'send_message', 'bank_transfer'];
 const AM_TASK_PAGE_LIMIT = 20;
 const AM_SERVICE_PAGE_LIMIT = 20;
+const AM_SERVICE_LOG_PAGE_LIMIT = 100;
 const AM_TRANSFER_PAGE_LIMIT = 20;
 const AM_MUTASI_PAGE_LIMIT = 50;
 const AM_WEBHOOK_LOG_PAGE_LIMIT = 50;
@@ -1028,6 +1029,10 @@ function AmServicesPage() {
   const [formPhoneNumber, setFormPhoneNumber] = React.useState('');
   const [expandedId, setExpandedId] = React.useState<string | null>(null);
   const [expandedTab, setExpandedTab] = React.useState<'logs' | 'history'>('logs');
+  const [detailLogSource, setDetailLogSource] = React.useState<'realtime' | 'history'>('realtime');
+  const [detailLogPage, setDetailLogPage] = React.useState(1);
+  const [detailLogTotal, setDetailLogTotal] = React.useState(0);
+  const [detailLogLimit, setDetailLogLimit] = React.useState(AM_SERVICE_LOG_PAGE_LIMIT);
   const [detailLogs, setDetailLogs] = React.useState<AmDeviceServiceLog[]>([]);
   const [detailServices, setDetailServices] = React.useState<AmDeviceServiceStatus[]>([]);
   const [detailTasks, setDetailTasks] = React.useState<AmTask[]>([]);
@@ -1213,29 +1218,40 @@ function AmServicesPage() {
     }
   }, [buildServiceAccountPayload, editingServiceId, fetchAccounts, resetServiceForm]);
 
-  const loadServiceLogs = React.useCallback(async (account: AmServiceAccount) => {
+  const loadServiceLogs = React.useCallback(async (
+    account: AmServiceAccount,
+    source: 'realtime' | 'history' = 'realtime',
+    logPage = 1,
+  ) => {
     const device = getServiceDevice(account);
     if (!device?._id) {
       setDetailLogs([]);
       setDetailServices([]);
       setDetailRunning(false);
+      setDetailLogPage(1);
+      setDetailLogTotal(0);
+      setDetailLogLimit(AM_SERVICE_LOG_PAGE_LIMIT);
       setDetailError('Service belum punya device.');
       return;
     }
 
     try {
       setDetailLoading(true);
+      setDetailLogSource(source);
+      setDetailLogPage(logPage);
       const [response, statusResponse] = await Promise.all([
         getAmDeviceServiceLogs(device._id, {
-          limit: 80,
-          source: 'realtime',
-          page: 1,
+          limit: AM_SERVICE_LOG_PAGE_LIMIT,
+          source,
+          page: logPage,
         }),
         getAmDeviceServices(device._id),
       ]);
       setDetailLogs(response.logs);
       setDetailServices(statusResponse);
       setDetailRunning(response.processRunning);
+      setDetailLogTotal(response.total ?? response.logs.length);
+      setDetailLogLimit(response.limit || AM_SERVICE_LOG_PAGE_LIMIT);
       setDetailError(null);
     } catch (nextError) {
       setDetailError(nextError instanceof Error ? nextError.message : 'Gagal memuat service logs.');
@@ -1290,6 +1306,10 @@ function AmServicesPage() {
       setDetailHistoryPage(1);
       setDetailHistoryTotal(0);
       setDetailHistoryLimit(5);
+      setDetailLogSource('realtime');
+      setDetailLogPage(1);
+      setDetailLogTotal(0);
+      setDetailLogLimit(AM_SERVICE_LOG_PAGE_LIMIT);
       setDetailError(null);
       setServiceInputValue('');
       return;
@@ -1304,6 +1324,10 @@ function AmServicesPage() {
     setDetailHistoryPage(1);
     setDetailHistoryTotal(0);
     setDetailHistoryLimit(5);
+    setDetailLogSource('realtime');
+    setDetailLogPage(1);
+    setDetailLogTotal(0);
+    setDetailLogLimit(AM_SERVICE_LOG_PAGE_LIMIT);
     setServiceInputValue('');
     if (isTransferBanking(account.platform)) {
       await loadServiceHistory(account, 1);
@@ -1323,6 +1347,20 @@ function AmServicesPage() {
       await loadServiceLogs(account);
     }
   }, [loadServiceHistory, loadServiceLogs]);
+
+  const changeServiceLogSource = React.useCallback(async (
+    account: AmServiceAccount,
+    source: 'realtime' | 'history',
+  ) => {
+    await loadServiceLogs(account, source, 1);
+  }, [loadServiceLogs]);
+
+  const changeServiceLogPage = React.useCallback(async (
+    account: AmServiceAccount,
+    nextPage: number,
+  ) => {
+    await loadServiceLogs(account, 'history', nextPage);
+  }, [loadServiceLogs]);
 
   const changeServiceHistoryPage = React.useCallback(async (
     account: AmServiceAccount,
@@ -1389,6 +1427,10 @@ function AmServicesPage() {
         setDetailServices([]);
         setDetailTasks([]);
         setDetailTransfers([]);
+        setDetailLogSource('realtime');
+        setDetailLogPage(1);
+        setDetailLogTotal(0);
+        setDetailLogLimit(AM_SERVICE_LOG_PAGE_LIMIT);
         setDetailError(null);
       }
       if (editingServiceId === account._id) {
@@ -1594,6 +1636,10 @@ function AmServicesPage() {
                   detailError={detailError}
                   isLoading={detailLoading}
                   logs={detailLogs}
+                  logLimit={detailLogLimit}
+                  logPage={detailLogPage}
+                  logSource={detailLogSource}
+                  logTotal={detailLogTotal}
                   historyLimit={detailHistoryLimit}
                   historyPage={detailHistoryPage}
                   historyTotal={detailHistoryTotal}
@@ -1608,6 +1654,8 @@ function AmServicesPage() {
                   onClearSession={() => clearServiceSession(account)}
                   onChangeServiceInput={setServiceInputValue}
                   onHistoryPageChange={nextPage => changeServiceHistoryPage(account, nextPage)}
+                  onLogPageChange={nextPage => changeServiceLogPage(account, nextPage)}
+                  onLogSourceChange={source => changeServiceLogSource(account, source)}
                   onSelectTab={tab => selectDetailTab(account, tab)}
                   onSubmitServiceInput={inputType => submitServiceInput(account, inputType)}
                 />
@@ -2173,12 +2221,18 @@ function AmServiceDetailPanel({
   historyTotal,
   isLoading,
   logs,
+  logLimit,
+  logPage,
+  logSource,
+  logTotal,
   serviceInputSending,
   serviceInputValue,
   serviceStatuses,
   onClearSession,
   onChangeServiceInput,
   onHistoryPageChange,
+  onLogPageChange,
+  onLogSourceChange,
   onSelectTab,
   onSubmitServiceInput,
   processRunning,
@@ -2195,12 +2249,18 @@ function AmServiceDetailPanel({
   historyTotal: number;
   isLoading: boolean;
   logs: AmDeviceServiceLog[];
+  logLimit: number;
+  logPage: number;
+  logSource: 'realtime' | 'history';
+  logTotal: number;
   serviceInputSending: boolean;
   serviceInputValue: string;
   serviceStatuses: AmDeviceServiceStatus[];
   onClearSession: () => void;
   onChangeServiceInput: (value: string) => void;
   onHistoryPageChange: (page: number) => void;
+  onLogPageChange: (page: number) => void;
+  onLogSourceChange: (source: 'realtime' | 'history') => void;
   onSelectTab: (tab: 'logs' | 'history') => void;
   onSubmitServiceInput: (inputType: 'otp' | 'password') => void;
   processRunning: boolean;
@@ -2217,6 +2277,10 @@ function AmServiceDetailPanel({
   const historyTotalPages = Math.max(1, Math.ceil(historyTotal / Math.max(historyLimit, 1)));
   const historyFrom = historyTotal ? (historyPage - 1) * historyLimit + 1 : 0;
   const historyTo = historyTotal ? Math.min(historyPage * historyLimit, historyTotal) : 0;
+  const logTotalPages = Math.max(1, Math.ceil(logTotal / Math.max(logLimit, 1)));
+  const logFrom = logTotal ? (logPage - 1) * logLimit + 1 : 0;
+  const logTo = logTotal ? Math.min(logPage * logLimit, logTotal) : 0;
+  const displayedLogs = logSource === 'history' ? logs : logs.slice(-20);
 
   return (
     <View style={styles.serviceDetailPanel}>
@@ -2322,14 +2386,34 @@ function AmServiceDetailPanel({
               </View>
             ) : null}
           </View>
+          <View style={styles.filterBar}>
+            <AmSegmentGroup
+              active={logSource}
+              items={['realtime', 'history']}
+              labels={{realtime: 'Realtime', history: 'History'}}
+              onSelect={value => onLogSourceChange(value as 'realtime' | 'history')}
+            />
+          </View>
           <View style={styles.logPanel}>
-            {!logs.length ? <Text style={styles.logEmptyText}>No realtime logs</Text> : null}
-            {logs.slice(-20).map((log, index) => (
+            {!logs.length ? <Text style={styles.logEmptyText}>{logSource === 'history' ? 'No history logs' : 'No realtime logs'}</Text> : null}
+            {displayedLogs.map((log, index) => (
               <Text key={`${log.ts}-${index}`} style={styles.logText} numberOfLines={2}>
                 [{formatAmDate(log.ts)}] {log.level}: {log.message}
               </Text>
             ))}
           </View>
+          {logSource === 'history' && logTotal > logLimit ? (
+            <AmServiceHistoryPagination
+              currentPage={logPage}
+              disabled={isLoading}
+              from={logFrom}
+              label="AM Service Logs History"
+              to={logTo}
+              total={logTotal}
+              totalPages={logTotalPages}
+              onPageChange={onLogPageChange}
+            />
+          ) : null}
         </>
       ) : null}
       {!isLoading && activeTab === 'history' && banking ? (

@@ -248,6 +248,7 @@ export interface AmDeviceServiceLogsResponse {
   processRunning: boolean;
   total?: number;
   page?: number;
+  limit?: number;
 }
 
 export interface AmDeviceServiceStatus {

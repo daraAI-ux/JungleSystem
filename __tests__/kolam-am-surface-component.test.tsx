@@ -1031,6 +1031,15 @@ describe('KolamAmSurface', () => {
       ],
       meta: {total: 12, limit: 5, page: 1, totalPages: 3},
     });
+    jest.mocked(getAmDeviceServiceLogs).mockResolvedValue({
+      logs: [
+        {ts: '2026-01-01T00:00:00.000Z', level: 'info', message: 'Realtime ready'},
+      ],
+      processRunning: true,
+      total: 140,
+      page: 1,
+      limit: 100,
+    });
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
     await act(async () => {
@@ -1049,7 +1058,7 @@ describe('KolamAmSurface', () => {
     });
 
     expect(getAmDeviceServiceLogs).toHaveBeenCalledWith('device-1', {
-      limit: 80,
+      limit: 100,
       page: 1,
       source: 'realtime',
     });
@@ -1069,6 +1078,30 @@ describe('KolamAmSurface', () => {
       limit: 5,
       page: 2,
       serviceAccountId: 'service-1',
+    });
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Tokopedia Main Logs'}).props.onPress();
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Segment History'}).props.onPress();
+    });
+
+    expect(getAmDeviceServiceLogs).toHaveBeenLastCalledWith('device-1', {
+      limit: 100,
+      page: 1,
+      source: 'history',
+    });
+    expect(renderText(renderer!).join(' ')).toMatch(/Showing\s+1\s+to\s+100\s+of\s+140\s+items/);
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Service Logs History Next Page'}).props.onPress();
+    });
+
+    expect(getAmDeviceServiceLogs).toHaveBeenLastCalledWith('device-1', {
+      limit: 100,
+      page: 2,
+      source: 'history',
     });
   });
 
