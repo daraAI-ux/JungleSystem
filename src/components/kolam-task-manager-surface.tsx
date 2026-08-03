@@ -1147,6 +1147,26 @@ function KolamTaskFormModal({
       value: category.id,
     })),
   ];
+  const selectedCategoryBucket =
+    controller.categories.find(
+      category => category.id === controller.form.categoryId,
+    )?.bucket ?? null;
+  const taskTypeOptions = [
+    { label: 'Tidak ada', value: '' },
+    ...controller.taskTypes
+      .filter(taskType => {
+        if (!taskType.active) return false;
+        if (!selectedCategoryBucket) return true;
+        return (
+          taskType.categoryBuckets.length === 0 ||
+          taskType.categoryBuckets.includes(selectedCategoryBucket)
+        );
+      })
+      .map(taskType => ({
+        label: taskType.name,
+        value: taskType.id,
+      })),
+  ];
   const saving =
     controller.mutatingTaskId === 'new' ||
     (controller.formMode === 'edit' &&
@@ -1236,10 +1256,19 @@ function KolamTaskFormModal({
               />
               <KolamDropdownSelect
                 label="Kategori"
-                onChange={categoryId => controller.onChangeForm({ categoryId })}
+                onChange={categoryId =>
+                  controller.onChangeForm({ categoryId, taskTypeId: '' })
+                }
                 options={categoryOptions}
                 searchable
                 value={controller.form.categoryId}
+              />
+              <KolamDropdownSelect
+                label="Tipe task"
+                onChange={taskTypeId => controller.onChangeForm({ taskTypeId })}
+                options={taskTypeOptions}
+                searchable
+                value={controller.form.taskTypeId}
               />
               <KolamDropdownSelect
                 label="Status"

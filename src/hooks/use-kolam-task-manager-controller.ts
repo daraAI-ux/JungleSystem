@@ -70,6 +70,7 @@ export interface KolamTaskManagerFormState {
   priority: KolamTaskManagerPriority;
   assignedToId: string;
   status: KolamTaskManagerStatus;
+  taskTypeId: string;
   title: string;
   urgent: boolean;
 }
@@ -351,7 +352,14 @@ export function useKolamTaskManagerController({
   }, []);
 
   const loadTaskTypes = useCallback(async () => {
-    if (mode !== 'task-types' && mode !== 'recurring') return;
+    if (
+      mode !== 'task-types' &&
+      mode !== 'recurring' &&
+      mode !== 'list' &&
+      mode !== 'detail'
+    ) {
+      return;
+    }
     if (mode === 'task-types') {
       setLoading(true);
       setError(null);
@@ -817,6 +825,7 @@ export function useKolamTaskManagerController({
         assistedById: form.assistedById || null,
         dueDate,
         categoryId,
+        taskTypeId: form.taskTypeId || null,
       };
       if (formMode === 'edit' && editingTaskId) {
         await updateKolamTaskManagerTask(editingTaskId, payload);
@@ -1382,6 +1391,7 @@ function getDefaultTaskForm(
     priority: 'medium',
     assignedToId,
     status: 'todo',
+    taskTypeId: '',
     title: '',
     urgent: false,
   };
@@ -1438,6 +1448,7 @@ function getTaskFormFromTask(
     priority: task.priority,
     assignedToId: getTaskUserId(task.assignedTo),
     status: task.status,
+    taskTypeId: getTaskTypeId(task.taskType),
     title: task.title,
     urgent: task.urgent,
   };
@@ -1449,6 +1460,11 @@ function getTaskUserId(value: KolamTaskManagerTask['assignedTo']) {
 }
 
 function getTaskCategoryId(value: KolamTaskManagerTask['category']) {
+  if (!value) return '';
+  return typeof value === 'string' ? value : value.id;
+}
+
+function getTaskTypeId(value: KolamTaskManagerTask['taskType']) {
   if (!value) return '';
   return typeof value === 'string' ? value : value.id;
 }
