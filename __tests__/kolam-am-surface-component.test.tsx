@@ -4,6 +4,7 @@ import ReactTestRenderer, {act} from 'react-test-renderer';
 import {KolamAmSurface} from '../src/components/kolam-am-surface';
 import {getShellModuleRouteEntry} from '../src/domain/app-shell';
 import {
+  bulkDeleteAmActivityLogs,
   cancelAmTransfer,
   cancelAmTask,
   clearAmServiceAccountSession,
@@ -66,6 +67,7 @@ import {
 import {seedUnifiedDataset} from '../src/services/unified-data';
 
 jest.mock('../src/services/am-api', () => ({
+  bulkDeleteAmActivityLogs: jest.fn(() => Promise.resolve({deletedCount: 75})),
   cancelAmTransfer: jest.fn(() => Promise.resolve({_id: 'transfer-1'})),
   cancelAmTask: jest.fn(() => Promise.resolve({_id: 'task-1'})),
   clearAmServiceAccountSession: jest.fn(() => Promise.resolve({stopped: true, deleted: ['session.json'], missing: []})),
@@ -2489,10 +2491,11 @@ describe('KolamAmSurface', () => {
         'Super Admin audit log',
       ]),
     );
-    expect(joinedText).toContain('Log otomatis dibersihkan setelah 90 hari');
+    expect(joinedText).toContain('Otomatis hapus setelah 90 hari');
     expect(text).toEqual(expect.arrayContaining(['API', 'Page', 'GET']));
     expect(joinedText).toContain('/dashboard');
     expect(joinedText.replace(/\s+/g, ' ')).toContain('Showing 1 to 50 of 75 items');
+    expect(joinedText).toContain('Hapus sesuai filter (75)');
     expect(getAmActivityLogs).toHaveBeenLastCalledWith({
       page: 1,
       limit: 50,
@@ -2540,6 +2543,30 @@ describe('KolamAmSurface', () => {
       status: undefined,
       method: 'GET',
     });
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Activity Logs Delete Filter'}).props.onPress();
+    });
+
+    text = renderText(renderer!);
+    joinedText = text.join(' ');
+    expect(text).toContain('Hapus activity log');
+    expect(joinedText).toContain('Semua log yang cocok dengan filter saat ini akan dihapus permanen.');
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Activity Logs Confirm Delete Filter'}).props.onPress();
+    });
+
+    expect(bulkDeleteAmActivityLogs).toHaveBeenCalledWith({
+      confirm: true,
+      filter: {
+        search: 'alice',
+        type: undefined,
+        status: undefined,
+        method: 'GET',
+      },
+    });
+    expect(renderText(renderer!).join(' ')).toContain('75 log dihapus');
 
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Activity Logs Next Page'}).props.onPress();

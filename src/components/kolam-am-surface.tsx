@@ -16,6 +16,7 @@ import type {UnifiedSurface} from '../domain/unified';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {formatRupiah} from '../lib/money';
 import {
+  bulkDeleteAmActivityLogs,
   cancelAmTransfer,
   cancelAmTask,
   clearAmServiceAccountSession,
@@ -5800,19 +5801,30 @@ function AmActivityLogPage() {
   const [total, setTotal] = React.useState(0);
   const [selectedLog, setSelectedLog] = React.useState<AmActivityLog | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [isDeleting, setIsDeleting] = React.useState(false);
+  const [showDeleteFilterConfirm, setShowDeleteFilterConfirm] = React.useState(false);
+  const [deleteMessage, setDeleteMessage] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
+
+  const buildFilterPayload = React.useCallback(() => ({
+    search: search.trim() || undefined,
+    type: type === 'all' ? undefined : type,
+    status: status === 'all' ? undefined : status,
+    method: method === 'all' ? undefined : method,
+  }), [method, search, status, type]);
 
   const fetchLogs = React.useCallback(async () => {
     try {
       setIsLoading(true);
+      const filterPayload = buildFilterPayload();
       const [listResponse, statsResponse] = await Promise.all([
         getAmActivityLogs({
           page,
           limit: AM_ACTIVITY_LOG_PAGE_LIMIT,
-          search: search.trim() || undefined,
-          type: type === 'all' ? undefined : type,
-          status: status === 'all' ? undefined : status,
-          method: method === 'all' ? undefined : method,
+          search: filterPayload.search,
+          type: filterPayload.type,
+          status: filterPayload.status,
+          method: filterPayload.method,
         }),
         getAmActivityLogStats(7),
       ]);
@@ -5826,7 +5838,7 @@ function AmActivityLogPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [method, page, search, status, type]);
+  }, [buildFilterPayload, page]);
 
   React.useEffect(() => {
     fetchLogs();
@@ -5860,6 +5872,24 @@ function AmActivityLogPage() {
     setPage(1);
   }, []);
 
+  const handleDeleteFilter = React.useCallback(async () => {
+    try {
+      setIsDeleting(true);
+      const result = await bulkDeleteAmActivityLogs({
+        confirm: true,
+        filter: buildFilterPayload(),
+      });
+      setDeleteMessage(`${result.deletedCount} log dihapus`);
+      setShowDeleteFilterConfirm(false);
+      setSelectedLog(null);
+      await fetchLogs();
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Gagal menghapus activity log AM.');
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [buildFilterPayload, fetchLogs]);
+
   const totalPages = Math.max(1, Math.ceil(total / Math.max(limit, 1)));
   const rangeFrom = total ? (page - 1) * limit + 1 : 0;
   const rangeTo = total ? Math.min(page * limit, total) : 0;
@@ -5880,7 +5910,7 @@ function AmActivityLogPage() {
       <View style={styles.emptyPanel}>
         <Text style={styles.panelTitle}>Super Admin audit log</Text>
         <Text style={styles.panelText}>
-          Catatan page/API request AM live. Log otomatis dibersihkan setelah 90 hari; bulk delete manual dari AM FE sengaja tidak dijalankan otomatis di native.
+          Catatan page/API request AM live. Otomatis hapus setelah 90 hari.
         </Text>
       </View>
       <View style={styles.filterBar}>
@@ -5897,8 +5927,52 @@ function AmActivityLogPage() {
         {hasActiveFilters ? (
           <KolamButton label="Reset" intent="outline" size="sm" onPress={resetFilters} />
         ) : null}
+        {total > 0 ? (
+          <KolamButton
+            accessibilityLabel="AM Activity Logs Delete Filter"
+            disabled={isLoading || isDeleting}
+            label={`Hapus sesuai filter (${total})`}
+            intent="danger"
+            size="sm"
+            onPress={() => setShowDeleteFilterConfirm(true)}
+          />
+        ) : null}
         <KolamButton label={isLoading ? 'Memuat' : 'Refresh'} intent="outline" muted={isLoading} size="sm" onPress={fetchLogs} />
       </View>
+      {deleteMessage ? (
+        <View style={styles.successPanel}>
+          <Text style={styles.successText}>{deleteMessage}</Text>
+        </View>
+      ) : null}
+      {showDeleteFilterConfirm ? (
+        <View style={styles.warningPanel}>
+          <Text style={styles.panelTitle}>Hapus activity log</Text>
+          <Text style={styles.panelText}>
+            {hasActiveFilters
+              ? 'Semua log yang cocok dengan filter saat ini akan dihapus permanen.'
+              : 'Semua log akan dihapus permanen.'}
+          </Text>
+          <Text style={styles.warningText}>{total} entri akan dihapus.</Text>
+          <View style={styles.inlineActions}>
+            <KolamButton
+              accessibilityLabel="AM Activity Logs Cancel Delete Filter"
+              disabled={isDeleting}
+              label="Batal"
+              intent="outline"
+              size="sm"
+              onPress={() => setShowDeleteFilterConfirm(false)}
+            />
+            <KolamButton
+              accessibilityLabel="AM Activity Logs Confirm Delete Filter"
+              disabled={isDeleting}
+              label={isDeleting ? 'Menghapus' : 'Hapus'}
+              intent="danger"
+              size="sm"
+              onPress={handleDeleteFilter}
+            />
+          </View>
+        </View>
+      ) : null}
       <AmInlineError title="Activity Log AM belum bisa dibaca" error={error} />
       {stats && (stats.topUsers.length || stats.topPaths.length) ? (
         <View style={styles.panelGrid}>
