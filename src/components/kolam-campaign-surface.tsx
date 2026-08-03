@@ -178,6 +178,7 @@ function KolamCampaignList({
         <View style={kolamTableToolbarStyles.row}>
           <View style={kolamTableToolbarStyles.filters}>
             <KolamSearchField
+              containerStyle={kolamTableToolbarStyles.searchInput}
               onChangeText={setSearchInput}
               placeholder="Cari"
               value={searchInput}
@@ -193,13 +194,17 @@ function KolamCampaignList({
                 label: option.label,
                 value: option.value,
               }))}
+              style={styles.statusFilter}
               value={controller.statusFilter}
             />
             {filtersApplied ? (
               <KolamButton
                 intent="plain"
                 label="Hapus"
-                onPress={controller.onClearFilters}
+                onPress={() => {
+                  setSearchInput('');
+                  controller.onClearFilters();
+                }}
               />
             ) : null}
           </View>
@@ -582,6 +587,10 @@ const styles = StyleSheet.create({
     flexGrow: 0,
     flexShrink: 1,
     minWidth: 0,
+  },
+  statusFilter: {
+    flexGrow: 0,
+    flexShrink: 0,
   },
   errorBadge: {
     alignSelf: 'stretch',
