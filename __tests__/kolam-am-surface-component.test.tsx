@@ -531,11 +531,30 @@ describe('KolamAmSurface', () => {
     });
   });
 
-  it('runs guarded task actions from the Tasks route', async () => {
+  it('keeps task action guards aligned with AM FE status rules', async () => {
     jest.mocked(getAmTasks).mockResolvedValue({
       data: [
         {
           _id: 'task-1',
+          type: 'stock_sync',
+          status: 'pending',
+          priority: 1,
+          deviceId: {_id: 'device-1', name: 'Phone 1'},
+          serviceAccountId: {_id: 'service-1', label: 'Tokopedia Main'},
+          payload: {},
+          result: {},
+          error: '',
+          logs: [],
+          createdBy: null,
+          retryCount: 0,
+          maxRetries: 3,
+          startedAt: null,
+          completedAt: null,
+          createdAt: '',
+          updatedAt: '',
+        },
+        {
+          _id: 'task-queued',
           type: 'stock_sync',
           status: 'queued',
           priority: 1,
@@ -553,8 +572,27 @@ describe('KolamAmSurface', () => {
           createdAt: '',
           updatedAt: '',
         },
+        {
+          _id: 'task-processing',
+          type: 'stock_sync',
+          status: 'processing',
+          priority: 1,
+          deviceId: {_id: 'device-1', name: 'Phone 1'},
+          serviceAccountId: {_id: 'service-1', label: 'Tokopedia Main'},
+          payload: {},
+          result: {},
+          error: '',
+          logs: [],
+          createdBy: null,
+          retryCount: 0,
+          maxRetries: 3,
+          startedAt: null,
+          completedAt: null,
+          createdAt: '',
+          updatedAt: '',
+        },
       ],
-      meta: {total: 1, limit: 1},
+      meta: {total: 3, limit: 20},
     });
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
@@ -569,6 +607,15 @@ describe('KolamAmSurface', () => {
     expect(
       renderer!.root.findAllByProps({accessibilityLabel: 'AM Task Force Fail task-1'}),
     ).toHaveLength(0);
+    expect(
+      renderer!.root.findAllByProps({accessibilityLabel: 'AM Task Cancel task-queued'}),
+    ).toHaveLength(0);
+    expect(
+      renderer!.root.findAllByProps({accessibilityLabel: 'AM Task Cancel task-processing'}),
+    ).toHaveLength(0);
+    expect(
+      renderer!.root.findAllByProps({accessibilityLabel: 'AM Task Force Fail task-processing'}),
+    ).not.toHaveLength(0);
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Task Cancel task-1'}).props.onPress();
     });
