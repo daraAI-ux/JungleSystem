@@ -559,29 +559,31 @@ function KolamTaskManagerDetail({
 
       <View style={styles.detailCard}>
         <Text style={styles.sectionTitle}>Timeline</Text>
-        <View style={styles.noteAddRow}>
-          <KolamFormTextField
-            multiline
-            onChangeText={controller.onSetNoteDraft}
-            placeholder="Catatan"
-            style={[
-              settingsWebFormStyles.settingsWebFormFieldValue,
-              settingsWebFormStyles.settingsWebFormFieldValueTextarea,
-              styles.noteDraftInput,
-            ]}
-            value={controller.noteDraft}
-          />
-          <KolamButton
-            disabled={
-              controller.mutatingTaskId === `note:${task.id}` ||
-              !controller.noteDraft.trim()
-            }
-            label="Kirim"
-            onPress={() => {
-              void controller.onAddNote();
-            }}
-          />
-        </View>
+        {canPostDiscussion ? (
+          <View style={styles.noteAddRow}>
+            <KolamFormTextField
+              multiline
+              onChangeText={controller.onSetNoteDraft}
+              placeholder="Catatan"
+              style={[
+                settingsWebFormStyles.settingsWebFormFieldValue,
+                settingsWebFormStyles.settingsWebFormFieldValueTextarea,
+                styles.noteDraftInput,
+              ]}
+              value={controller.noteDraft}
+            />
+            <KolamButton
+              disabled={
+                controller.mutatingTaskId === `note:${task.id}` ||
+                !controller.noteDraft.trim()
+              }
+              label="Kirim"
+              onPress={() => {
+                void controller.onAddNote();
+              }}
+            />
+          </View>
+        ) : null}
         {task.timeline.length ? (
           task.timeline.map(item => (
             <View key={item.id || `${item.type}-${item.at}`} style={styles.timelineRow}>
