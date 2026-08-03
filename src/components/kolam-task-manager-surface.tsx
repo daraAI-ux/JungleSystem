@@ -2159,6 +2159,7 @@ function KolamTaskTypeFormModal({
             <View style={styles.formGrid}>
               <KolamTaskField label="Key" required>
                 <KolamFormTextField
+                  editable={!controller.taskTypeFormKeyLocked}
                   onChangeText={key => controller.onChangeTaskTypeForm({ key })}
                   style={settingsWebFormStyles.settingsWebFormFieldValue}
                   value={controller.taskTypeForm.key}

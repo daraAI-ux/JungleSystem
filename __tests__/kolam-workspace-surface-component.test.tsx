@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, View } from 'react-native';
+import { Text, TextInput, View } from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 import { KolamDropdownSelect } from '../src/components/kolam-dropdown-select';
 import { KolamWorkspaceSurface } from '../src/components/kolam-workspace-surface';
@@ -911,6 +911,24 @@ describe('KolamWorkspaceSurface', () => {
     expect(renderText(renderer!)).toEqual(
       expect.arrayContaining(['Tipe Task', 'Tambah tipe', 'dosing', 'Dosing']),
     );
+
+    const editButton = renderer!.root.findAllByProps({
+      accessibilityLabel: 'Edit',
+    })[0];
+
+    if (!editButton) {
+      throw new Error('Task type edit button is missing.');
+    }
+
+    await ReactTestRenderer.act(async () => {
+      editButton.props.onPress();
+    });
+
+    const keyInput = renderer!.root.findAllByType(TextInput).find(input =>
+      input.props.value === 'dosing',
+    );
+
+    expect(keyInput?.props.editable).toBe(false);
   });
 
   it('renders selected POS module routes through the shared route surface', async () => {

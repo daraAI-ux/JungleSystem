@@ -153,6 +153,7 @@ export interface KolamTaskManagerController {
   categoryFormOpen: boolean;
   taskTypeForm: KolamTaskManagerTaskTypeFormState;
   taskTypeFormError: string | null;
+  taskTypeFormKeyLocked: boolean;
   taskTypeFormMode: 'edit' | 'new';
   taskTypeFormOpen: boolean;
   recurringTemplateForm: KolamTaskRecurringTemplateFormState;
@@ -407,6 +408,9 @@ export function useKolamTaskManagerController({
   const [projectFilter, setProjectFilter] = useState('all');
   const [mineOnly, setMineOnly] = useState(false);
   const [recurringEnclosureOnly, setRecurringEnclosureOnly] = useState(false);
+  const taskTypeFormKeyLocked =
+    taskTypeFormMode === 'edit' &&
+    taskTypes.some(row => row.id === editingTaskTypeId && row.isSystem);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [kpi, setKpi] = useState<KolamTaskManagerKpi>({
@@ -1459,6 +1463,7 @@ export function useKolamTaskManagerController({
       categoryFormOpen,
       taskTypeForm,
       taskTypeFormError,
+      taskTypeFormKeyLocked,
       taskTypeFormMode,
       taskTypeFormOpen,
       recurringTemplateForm,
@@ -1589,6 +1594,7 @@ export function useKolamTaskManagerController({
       categoryFormOpen,
       taskTypeForm,
       taskTypeFormError,
+      taskTypeFormKeyLocked,
       taskTypeFormMode,
       taskTypeFormOpen,
       recurringTemplateForm,
