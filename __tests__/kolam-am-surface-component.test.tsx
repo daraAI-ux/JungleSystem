@@ -923,8 +923,6 @@ describe('KolamAmSurface', () => {
       search: undefined,
       status: undefined,
       type: undefined,
-      serviceAccountId: undefined,
-      deviceId: undefined,
     });
     const joinedPageText = renderText(renderer!).join(' ');
     expect(joinedPageText).toMatch(/Showing\s+1\s+to\s+20\s+of\s+45\s+items/);
@@ -941,12 +939,10 @@ describe('KolamAmSurface', () => {
       search: undefined,
       status: undefined,
       type: undefined,
-      serviceAccountId: undefined,
-      deviceId: undefined,
     });
   });
 
-  it('filters Tasks by AM service account and device using live query params', async () => {
+  it('keeps Tasks filters aligned with AM FE without service account or device filters', async () => {
     jest.mocked(getAmServiceAccounts).mockResolvedValue({
       data: [
         {
@@ -1004,37 +1000,11 @@ describe('KolamAmSurface', () => {
       search: undefined,
       status: undefined,
       type: undefined,
-      serviceAccountId: undefined,
-      deviceId: undefined,
     });
-
-    await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Segment BCA Main - 123'}).props.onPress();
-    });
-
-    expect(getAmTasks).toHaveBeenLastCalledWith({
-      page: 1,
-      limit: 20,
-      search: undefined,
-      status: undefined,
-      type: undefined,
-      serviceAccountId: 'account-1',
-      deviceId: undefined,
-    });
-
-    await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Segment Phone 1'}).props.onPress();
-    });
-
-    expect(getAmTasks).toHaveBeenLastCalledWith({
-      page: 1,
-      limit: 20,
-      search: undefined,
-      status: undefined,
-      type: undefined,
-      serviceAccountId: 'account-1',
-      deviceId: 'device-1',
-    });
+    expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment BCA Main - 123'})).toHaveLength(0);
+    expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment Phone 1'})).toHaveLength(0);
+    expect(getAmServiceAccounts).not.toHaveBeenCalled();
+    expect(getAmDevices).not.toHaveBeenCalled();
   });
 
   it('opens task detail from the Tasks route and loads payload, result, and logs', async () => {
