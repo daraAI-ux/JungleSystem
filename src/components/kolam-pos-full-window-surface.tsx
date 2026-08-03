@@ -273,6 +273,21 @@ export function KolamPosFullWindowSurface({
 
   return (
     <View style={styles.surface}>
+      <PosSidebar
+        activeType={activeType}
+        activeView={activeView}
+        onSelectCashflow={() => setActiveView('cashflow')}
+        onSelectCustomers={() => setActiveView('customers')}
+        onSelectProduct={() => {
+          setActiveView('catalog');
+          onTypeChange('product');
+        }}
+        onSelectSales={() => setActiveView('sales')}
+        onSelectSpecies={() => {
+          setActiveView('catalog');
+          onTypeChange('species');
+        }}
+      />
       <View style={styles.catalogPane}>
         <KolamHeaderFrame variant="dashboardHeader" style={styles.posHeader}>
           <KolamDashboardHeaderCopy
@@ -572,21 +587,6 @@ export function KolamPosFullWindowSurface({
           </View>
         ) : null}
       </View>
-      <PosRightSidebar
-        activeType={activeType}
-        activeView={activeView}
-        onSelectCashflow={() => setActiveView('cashflow')}
-        onSelectCustomers={() => setActiveView('customers')}
-        onSelectProduct={() => {
-          setActiveView('catalog');
-          onTypeChange('product');
-        }}
-        onSelectSales={() => setActiveView('sales')}
-        onSelectSpecies={() => {
-          setActiveView('catalog');
-          onTypeChange('species');
-        }}
-      />
       {isSavedOrdersOpen ? (
         <PosSavedOrdersPanel
           catalog={catalog}
@@ -664,7 +664,7 @@ const POS_CASHFLOW_NAV_MODULE: ShellModule = {
   iconKind: 'wallet',
 };
 
-function PosRightSidebar({
+function PosSidebar({
   activeType,
   activeView,
   onSelectCashflow,
@@ -682,12 +682,12 @@ function PosRightSidebar({
   onSelectSpecies: () => void;
 }) {
   return (
-    <View style={styles.posRightSidebar}>
+    <View style={styles.posSidebar}>
       <ScrollView
-        style={styles.posRightSidebarScroll}
-        contentContainerStyle={styles.posRightSidebarContent}
+        style={styles.posSidebarScroll}
+        contentContainerStyle={styles.posSidebarContent}
         showsVerticalScrollIndicator={false}>
-        <Text style={styles.posRightSidebarLabel}>POS</Text>
+        <Text style={styles.posSidebarLabel}>POS</Text>
         <KolamNavItem
           active={activeView === 'catalog' && activeType !== 'species'}
           module={POS_PRODUCT_NAV_MODULE}
@@ -2285,21 +2285,21 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '900',
   },
-  posRightSidebar: {
+  posSidebar: {
     width: V.layout.sidebarWidth,
     paddingHorizontal: 12,
     paddingVertical: 14,
     backgroundColor: V.colors.sidebar,
-    borderLeftColor: V.colors.border,
-    borderLeftWidth: 1,
+    borderRightColor: V.colors.border,
+    borderRightWidth: 1,
   },
-  posRightSidebarScroll: {
+  posSidebarScroll: {
     flex: 1,
   },
-  posRightSidebarContent: {
+  posSidebarContent: {
     paddingBottom: 12,
   },
-  posRightSidebarLabel: {
+  posSidebarLabel: {
     paddingHorizontal: 12,
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
