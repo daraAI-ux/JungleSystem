@@ -388,10 +388,7 @@ function AmDashboardPage({
   if (!data) {
     return (
       <View style={styles.emptyPanel}>
-        <Text style={styles.panelTitle}>{isLoading ? 'Memuat dashboard AM live' : 'Menunggu data live AM'}</Text>
-        <Text style={styles.panelText}>
-          Dashboard akan terisi dari endpoint /dashboard setelah sesi Kolam punya akses AM.
-        </Text>
+        <Text style={styles.panelTitle}>{isLoading ? 'Memuat dashboard AM' : 'Menunggu data AM'}</Text>
         <AmInlineError error={error} title="AM dashboard belum bisa dibaca" />
         <KolamButton label="Refresh" intent="outline" size="sm" onPress={fetchDashboard} />
       </View>
@@ -401,7 +398,6 @@ function AmDashboardPage({
   return (
     <View style={styles.pageStack}>
       <View style={styles.actionRow}>
-        <Text style={styles.panelText}>Dashboard live AM dari endpoint /dashboard.</Text>
         <KolamButton
           disabled={isLoading}
           label={isLoading ? 'Refreshing...' : 'Refresh'}
@@ -663,7 +659,7 @@ function AmTasksPage({initialTaskId}: {initialTaskId?: string}) {
       setLimit(response.meta.limit || AM_TASK_PAGE_LIMIT);
       setError(null);
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : 'Gagal memuat task AM live.');
+      setError(nextError instanceof Error ? nextError.message : 'Gagal memuat task AM.');
     } finally {
       setIsLoading(false);
     }
@@ -808,7 +804,7 @@ function AmTasksPage({initialTaskId}: {initialTaskId?: string}) {
       </View>
       {error ? (
         <View style={styles.errorPanel}>
-          <Text style={styles.errorTitle}>AM live belum bisa dibaca</Text>
+          <Text style={styles.errorTitle}>AM belum bisa dibaca</Text>
           <Text style={styles.errorText}>{error}</Text>
         </View>
       ) : null}
@@ -827,7 +823,7 @@ function AmTasksPage({initialTaskId}: {initialTaskId?: string}) {
           <Text style={[styles.tableHeaderText, styles.dateCol]}>Created</Text>
           <Text style={[styles.tableHeaderText, styles.actionCol]}>Action</Text>
         </View>
-        {isLoading && !tasks.length ? <Text style={styles.loadingText}>Memuat tasks dari AM live...</Text> : null}
+        {isLoading && !tasks.length ? <Text style={styles.loadingText}>Memuat tasks AM...</Text> : null}
         {!isLoading && !tasks.length ? <Text style={styles.loadingText}>No tasks found</Text> : null}
         {tasks.map(task => (
           <KolamInteractionFrame
@@ -935,7 +931,7 @@ function AmTaskDetailPage({
     return (
       <View style={styles.emptyPanel}>
         <Text style={styles.panelTitle}>Memuat task detail</Text>
-        <Text style={styles.panelText}>Mengambil detail task dari AM live...</Text>
+        <Text style={styles.panelText}>Mengambil detail task AM...</Text>
       </View>
     );
   }
@@ -1087,7 +1083,7 @@ function AmServicesPage() {
       setLimit(response.meta.limit || AM_SERVICE_PAGE_LIMIT);
       setError(null);
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : 'Gagal memuat services AM live.');
+      setError(nextError instanceof Error ? nextError.message : 'Gagal memuat services AM.');
     } finally {
       setIsLoading(false);
     }
@@ -1581,7 +1577,7 @@ function AmServicesPage() {
         <View style={styles.detailHeader}>
           <View>
             <Text style={styles.panelTitle}>{editingServiceId ? 'Edit Service Account' : 'Create Service Account'}</Text>
-            <Text style={styles.panelText}>Payload mengikuti AM BE live /service-account. Secret kosong saat edit tidak menghapus nilai tersimpan.</Text>
+            <Text style={styles.panelText}>Secret kosong saat edit tidak menghapus nilai tersimpan.</Text>
           </View>
           {editingServiceId ? (
             <KolamButton
@@ -1639,7 +1635,7 @@ function AmServicesPage() {
           <Text style={[styles.tableHeaderText, styles.accountCol]}>Account</Text>
           <Text style={[styles.tableHeaderText, styles.statusCol]}>Status</Text>
         </View>
-        {isLoading && !accounts.length ? <Text style={styles.loadingText}>Memuat services dari AM live...</Text> : null}
+        {isLoading && !accounts.length ? <Text style={styles.loadingText}>Memuat services AM...</Text> : null}
         {!isLoading && !accounts.length ? <Text style={styles.loadingText}>No services found</Text> : null}
         {accounts.map(account => {
           const device = getServiceDevice(account);
@@ -1951,7 +1947,7 @@ function AmHardwarePage({initialRoute}: {initialRoute?: AmHardwareInitialRoute})
       );
       setError(null);
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : 'Gagal memuat hardware AM live.');
+      setError(nextError instanceof Error ? nextError.message : 'Gagal memuat hardware AM.');
     } finally {
       setIsLoading(false);
     }
@@ -2550,7 +2546,7 @@ function AmServiceDetailPanel({
             {qrSignal ? (
               <View style={styles.qrPanel}>
                 <Text style={styles.formLabel}>QR Login {AM_PLATFORM_LABELS[account.platform] ?? titleCase(account.platform)}</Text>
-                <Text style={styles.rowMeta}>{qrSignal.status ? `Status ${qrSignal.status}` : 'Scan QR dari endpoint AM live.'}</Text>
+                <Text style={styles.rowMeta}>{qrSignal.status ? `Status ${qrSignal.status}` : 'Scan QR tersedia.'}</Text>
                 {qrSignal.qrcodeBase64 ? (
                   <>
                     <Image
@@ -2806,7 +2802,7 @@ function AmTokopediaSessionPanel({
       <View style={styles.detailHeader}>
         <View>
           <Text style={styles.panelTitle}>Session Login Tokopedia</Text>
-          <Text style={styles.panelText}>Status, login method, captcha, QR, dan browser monitor dari AM BE live.</Text>
+          <Text style={styles.panelText}>Status, login method, captcha, QR, dan browser monitor.</Text>
         </View>
         <AmStatusChip
           label={statusLabel}
@@ -3093,7 +3089,7 @@ function AmHardwareRackGrid({
   return (
     <View style={styles.panel}>
       <Text style={styles.panelTitle}>Rack</Text>
-      {isLoading && !racks.length ? <Text style={styles.loadingText}>Memuat rack dari AM live...</Text> : null}
+      {isLoading && !racks.length ? <Text style={styles.loadingText}>Memuat rack AM...</Text> : null}
       {!isLoading && !racks.length ? <Text style={styles.loadingText}>No racks yet</Text> : null}
       <View style={styles.cardGrid}>
         {racks.map(rack => (
@@ -3154,7 +3150,7 @@ function AmHardwareBoxGrid({
   return (
     <View style={styles.panel}>
       <Text style={styles.panelTitle}>Boxes</Text>
-      {isLoading && !boxes.length ? <Text style={styles.loadingText}>Memuat box dari AM live...</Text> : null}
+      {isLoading && !boxes.length ? <Text style={styles.loadingText}>Memuat box AM...</Text> : null}
       {!isLoading && !boxes.length ? <Text style={styles.loadingText}>No boxes in this rack</Text> : null}
       <View style={styles.cardGrid}>
         {boxes.map(box => (
@@ -3217,7 +3213,7 @@ function AmHardwareDeviceList({
         <Text style={[styles.tableHeaderText, styles.statusCol]}>ADB</Text>
         <Text style={[styles.tableHeaderText, styles.actionCol]}>Action</Text>
       </View>
-      <AmLoadingOrEmpty isLoading={isLoading} items={devices} loadingText="Memuat devices dari AM live..." emptyText="No devices found" />
+      <AmLoadingOrEmpty isLoading={isLoading} items={devices} loadingText="Memuat devices AM..." emptyText="No devices found" />
       {devices.slice(0, 40).map(device => (
         <KolamInteractionFrame
           key={device._id}
@@ -3665,7 +3661,7 @@ function AmTransfersPage({initialTransferId}: {initialTransferId?: string}) {
       setLimit(response.meta.limit || AM_TRANSFER_PAGE_LIMIT);
       setError(null);
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : 'Gagal memuat transfers AM live.');
+      setError(nextError instanceof Error ? nextError.message : 'Gagal memuat transfers AM.');
     } finally {
       setIsLoading(false);
     }
@@ -4047,7 +4043,7 @@ function AmTransfersPage({initialTransferId}: {initialTransferId?: string}) {
           <Text style={[styles.tableHeaderText, styles.dateCol]}>Created</Text>
           <Text style={[styles.tableHeaderText, styles.actionCol]}>Action</Text>
         </View>
-        <AmLoadingOrEmpty isLoading={isLoading} items={transfers} loadingText="Memuat transfers dari AM live..." emptyText="No transfers found" />
+        <AmLoadingOrEmpty isLoading={isLoading} items={transfers} loadingText="Memuat transfers AM..." emptyText="No transfers found" />
         {transfers.map(transfer => (
           <View key={transfer._id} style={styles.tableRow}>
             <View style={styles.accountWideCol}>
@@ -4325,7 +4321,7 @@ function AmMutasiPage({initialMutasiId}: {initialMutasiId?: string}) {
       setSummary(summaryResponse);
       setError(null);
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : 'Gagal memuat mutasi AM live.');
+      setError(nextError instanceof Error ? nextError.message : 'Gagal memuat mutasi AM.');
     } finally {
       setIsLoading(false);
     }
@@ -4481,7 +4477,7 @@ function AmMutasiPage({initialMutasiId}: {initialMutasiId?: string}) {
           <Text style={[styles.tableHeaderText, styles.dateCol]}>Time</Text>
           <Text style={[styles.tableHeaderText, styles.actionCol]}>Action</Text>
         </View>
-        <AmLoadingOrEmpty isLoading={isLoading} items={mutasi} loadingText="Memuat mutasi dari AM live..." emptyText="No mutations found" />
+        <AmLoadingOrEmpty isLoading={isLoading} items={mutasi} loadingText="Memuat mutasi AM..." emptyText="No mutations found" />
         {mutasi.map(item => (
           <View key={item._id} style={styles.tableRow}>
             <View style={styles.typeCol}>
@@ -4759,7 +4755,7 @@ function AmWebhooksPage() {
       setSelectedEvents(current => current.length ? current : eventResponse);
       setError(null);
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : 'Gagal memuat webhooks AM live.');
+      setError(nextError instanceof Error ? nextError.message : 'Gagal memuat webhooks AM.');
     } finally {
       setIsLoading(false);
     }
@@ -5155,7 +5151,7 @@ function AmUsersPage() {
       setCurrentUser(currentUserResponse);
       setError(null);
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : 'Gagal memuat users AM live.');
+      setError(nextError instanceof Error ? nextError.message : 'Gagal memuat users AM.');
     } finally {
       setIsLoading(false);
     }
@@ -5418,7 +5414,7 @@ function AmUsersPage() {
           <Text style={[styles.tableHeaderText, styles.dateCol]}>Created</Text>
           <Text style={[styles.tableHeaderText, styles.actionCol]}>Action</Text>
         </View>
-        <AmLoadingOrEmpty isLoading={isLoading} items={users} loadingText="Memuat users dari AM live..." emptyText="No users found" />
+        <AmLoadingOrEmpty isLoading={isLoading} items={users} loadingText="Memuat users AM..." emptyText="No users found" />
         {users.map(user => (
           <View key={user._id} style={styles.tableRow}>
             <Text style={[styles.cellText, styles.accountWideCol]} numberOfLines={1}>{user.fullName}</Text>
@@ -5591,7 +5587,7 @@ function AmAccountSettingsPage() {
       setEmailAddress(currentUser.username ?? '');
       setError(null);
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : 'Gagal memuat akun AM live.');
+      setError(nextError instanceof Error ? nextError.message : 'Gagal memuat akun AM.');
     } finally {
       setIsLoading(false);
     }
@@ -5604,7 +5600,7 @@ function AmAccountSettingsPage() {
   const showEndpointNotice = React.useCallback((scope: string) => {
     setError(null);
     setActionMessage(
-      `${scope} mengikuti form AM FE, tetapi AM BE live saat ini belum menyediakan endpoint akun mandiri.`,
+      `${scope} belum tersedia.`,
     );
   }, []);
 
@@ -5620,7 +5616,7 @@ function AmAccountSettingsPage() {
     }
 
     if (!user?._id) {
-      setError('Akun AM live belum terbaca.');
+      setError('Akun AM belum terbaca.');
       return;
     }
 
@@ -5636,7 +5632,7 @@ function AmAccountSettingsPage() {
       setError(null);
       setActionMessage('Profile information tersimpan.');
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : 'Gagal menyimpan profile AM live.');
+      setError(nextError instanceof Error ? nextError.message : 'Gagal menyimpan profile AM.');
     } finally {
       setIsSavingProfile(false);
     }
@@ -5670,9 +5666,9 @@ function AmAccountSettingsPage() {
       setIsLoggingOut(true);
       await logoutAmSession();
       setError(null);
-      setActionMessage('AM session logged out. Login ulang diperlukan untuk membaca data AM live.');
+      setActionMessage('AM session logged out. Login ulang diperlukan.');
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : 'Gagal logout session AM live.');
+      setError(nextError instanceof Error ? nextError.message : 'Gagal logout session AM.');
     } finally {
       setIsLoggingOut(false);
     }
@@ -5848,7 +5844,7 @@ function AmActivityLogPage() {
       setStats(statsResponse);
       setError(null);
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : 'Gagal memuat activity log AM live.');
+      setError(nextError instanceof Error ? nextError.message : 'Gagal memuat activity log AM.');
     } finally {
       setIsLoading(false);
     }
@@ -5944,7 +5940,7 @@ function AmActivityLogPage() {
       <View style={styles.emptyPanel}>
         <Text style={styles.panelTitle}>Super Admin audit log</Text>
         <Text style={styles.panelText}>
-          Catatan page/API request AM live. Otomatis hapus setelah 90 hari.
+          Catatan page/API request AM.
         </Text>
       </View>
       <View style={styles.filterBar}>
@@ -6240,7 +6236,7 @@ function AmParityPlaceholder({route}: {route: AmRouteItem}) {
     <View style={styles.emptyPanel}>
       <Text style={styles.panelTitle}>{route.label}</Text>
       <Text style={styles.panelText}>
-        Route {route.path} sudah masuk menu AM di sidebar utama. Port native detail berikutnya akan mengikuti halaman AM FE saat ini dan endpoint AM BE live.
+        Route {route.path} sudah masuk menu AM.
       </Text>
     </View>
   );

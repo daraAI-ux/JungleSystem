@@ -2491,7 +2491,7 @@ describe('KolamAmSurface', () => {
         'Super Admin audit log',
       ]),
     );
-    expect(joinedText).toContain('Otomatis hapus setelah 90 hari');
+    expect(joinedText).toContain('Catatan page/API request AM.');
     expect(text).toEqual(expect.arrayContaining(['API', 'Page', 'GET']));
     expect(joinedText).toContain('/dashboard');
     expect(joinedText.replace(/\s+/g, ' ')).toContain('Showing 1 to 50 of 75 items');
