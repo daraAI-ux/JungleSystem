@@ -161,6 +161,8 @@ const AM_PLATFORM_LABELS: Record<string, string> = {
 };
 const PLAYWRIGHT_PLATFORMS = new Set(['tokopedia', 'shopee', 'tiktok', 'instagram']);
 const AM_BROWSER_DEVICE_PLATFORMS = new Set(['tokopedia', 'shopee', 'tiktok', 'instagram', 'whatsapp']);
+const AM_EXCLUSIVE_SERVICE_PLATFORMS = new Set(['whatsapp', 'tokopedia', 'shopee', 'tiktok', 'instagram']);
+const AM_BANKING_SERVICE_PLATFORMS = new Set(['bca', 'brimo', 'dana']);
 const TOKOPEDIA_SESSION_LABELS: Record<string, string> = {
   missing: 'Belum ada session',
   empty: 'File kosong',
@@ -3340,6 +3342,18 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
       : ['bca', 'brimo', 'dana'],
     [device.connectionType],
   );
+  const deviceServiceMode = React.useMemo(() => {
+    if (accounts.some(account => AM_EXCLUSIVE_SERVICE_PLATFORMS.has(account.platform))) return 'exclusive';
+    if (accounts.some(account => AM_BANKING_SERVICE_PLATFORMS.has(account.platform))) return 'banking';
+    return 'empty';
+  }, [accounts]);
+  const createServicePlatformItems = React.useMemo(() => {
+    if (deviceServiceMode === 'exclusive') return [];
+    if (deviceServiceMode === 'banking') {
+      return servicePlatformItems.filter(platform => AM_BANKING_SERVICE_PLATFORMS.has(platform));
+    }
+    return servicePlatformItems;
+  }, [deviceServiceMode, servicePlatformItems]);
   const deviceOptions = React.useMemo(
     () => mergeAmEntityById(allDevices, device).filter(nextDevice =>
       isDeviceCompatibleWithServicePlatform(nextDevice, serviceFormPlatform),
@@ -3350,7 +3364,7 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
   const resetDeviceServiceForm = React.useCallback((open = false) => {
     setEditingDeviceServiceId(null);
     setIsServiceFormOpen(open);
-    setServiceFormPlatform(servicePlatformItems[0] ?? 'bca');
+    setServiceFormPlatform(createServicePlatformItems[0] ?? servicePlatformItems[0] ?? 'bca');
     setServiceFormStatus('inactive');
     setServiceFormDeviceId(device._id);
     setServiceFormLabel('');
@@ -3360,7 +3374,7 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
     setServiceFormAccountNumber('');
     setServiceFormPhoneNumber('');
     setActionMessage(null);
-  }, [device._id, servicePlatformItems]);
+  }, [createServicePlatformItems, device._id, servicePlatformItems]);
 
   const fetchAllDeviceOptions = React.useCallback(async () => {
     try {
@@ -3409,8 +3423,10 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
   }, [fetchDeviceServices]);
 
   React.useEffect(() => {
-    setServiceFormPlatform(servicePlatformItems[0] ?? 'bca');
-  }, [servicePlatformItems]);
+    if (!editingDeviceServiceId && !isServiceFormOpen) {
+      setServiceFormPlatform(createServicePlatformItems[0] ?? servicePlatformItems[0] ?? 'bca');
+    }
+  }, [createServicePlatformItems, editingDeviceServiceId, isServiceFormOpen, servicePlatformItems]);
 
   const submitDeviceServiceAccount = React.useCallback(async () => {
     if (!serviceFormLabel.trim()) {
@@ -3531,12 +3547,14 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
       <View style={styles.sectionHeaderRow}>
         <Text style={styles.panelTitle}>Service Accounts</Text>
         <View style={styles.inlineActions}>
-          <KolamButton
-            accessibilityLabel={`AM Device Add Service Account ${device._id}`}
-            label="Add Service"
-            size="sm"
-            onPress={() => resetDeviceServiceForm(true)}
-          />
+          {createServicePlatformItems.length ? (
+            <KolamButton
+              accessibilityLabel={`AM Device Add Service Account ${device._id}`}
+              label="Add Service"
+              size="sm"
+              onPress={() => resetDeviceServiceForm(true)}
+            />
+          ) : null}
           <KolamButton
             disabled={isLoading}
             label={isLoading ? 'Memuat' : 'Refresh'}
@@ -3555,12 +3573,21 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
       {isServiceFormOpen ? (
         <View style={styles.tablePanel}>
           <View style={styles.formGrid}>
-            <AmSegmentGroup
-              active={serviceFormPlatform}
-              items={servicePlatformItems}
-              labels={AM_PLATFORM_LABELS}
-              onSelect={setServiceFormPlatform}
-            />
+            {editingDeviceServiceId ? (
+              <View style={styles.detailListRow}>
+                <Text style={[styles.tableHeaderText, styles.accountCol]}>Platform</Text>
+                <Text style={[styles.cellText, styles.recipientCol]}>
+                  {AM_PLATFORM_LABELS[serviceFormPlatform] ?? serviceFormPlatform}
+                </Text>
+              </View>
+            ) : (
+              <AmSegmentGroup
+                active={serviceFormPlatform}
+                items={createServicePlatformItems}
+                labels={AM_PLATFORM_LABELS}
+                onSelect={setServiceFormPlatform}
+              />
+            )}
             <AmSegmentGroup
               active={serviceFormStatus}
               items={['active', 'inactive', 'blocked']}

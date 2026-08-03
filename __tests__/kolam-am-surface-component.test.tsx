@@ -2171,6 +2171,105 @@ describe('KolamAmSurface', () => {
     }));
   });
 
+  it('hides service creation on browser devices that already have an exclusive service', async () => {
+    jest.mocked(getAmRackById).mockResolvedValue({
+      _id: 'rack-1',
+      name: 'Rack Alpha',
+      slug: 'rack-alpha',
+      location: 'Room A',
+      description: '',
+      status: 'active',
+      serverIp: '10.0.0.1',
+      boxCount: 1,
+      deviceCount: 1,
+      createdAt: '',
+      updatedAt: '',
+    });
+    jest.mocked(getAmBoxById).mockResolvedValue({
+      _id: 'box-1',
+      name: 'Box 01',
+      slug: 'box-01',
+      rackId: {_id: 'rack-1', name: 'Rack Alpha'},
+      description: '',
+      status: 'active',
+      deviceCount: 1,
+      createdAt: '',
+      updatedAt: '',
+    });
+    const browserDevice = {
+      _id: 'device-browser',
+      name: 'Browser Target',
+      slug: 'browser-target',
+      boxId: {
+        _id: 'box-1',
+        name: 'Box 01',
+        rackId: {_id: 'rack-1', name: 'Rack Alpha'},
+      },
+      connectionType: 'browser',
+      tcpAddress: null,
+      udid: null,
+      brand: 'Playwright',
+      model: 'Chromium',
+      adbStatus: 'connected',
+      createdAt: '',
+      updatedAt: '',
+    };
+    jest.mocked(getAmDeviceById).mockResolvedValue(browserDevice);
+    jest.mocked(getAmRacks).mockResolvedValue({
+      data: [],
+      meta: {total: 0, limit: 20},
+    });
+    jest.mocked(getAmBoxes).mockResolvedValue({
+      data: [],
+      meta: {total: 0, limit: 20},
+    });
+    jest.mocked(getAmDevices).mockResolvedValue({
+      data: [browserDevice],
+      meta: {total: 1, limit: 20},
+    });
+    jest.mocked(getAmServiceAccounts).mockResolvedValue({
+      data: [
+        {
+          _id: 'service-web-1',
+          label: 'WA Browser',
+          platform: 'whatsapp',
+          accountNumber: '',
+          status: 'inactive',
+          deviceId: {
+            _id: 'device-browser',
+            name: 'Browser Target',
+            connectionType: 'browser',
+          },
+          username: '',
+          credentials: {phoneNumber: '08123456789'},
+          meta: {},
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 1, limit: 100},
+    });
+    jest.mocked(getAmDeviceServices).mockResolvedValue([]);
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface
+          activeModuleRoute={concreteAmRoute(
+            'hardware/rack-1/box-1/browser-target',
+            'hardware/:rackId/:boxId/:deviceId',
+          )}
+          dataset={seedUnifiedDataset}
+        />,
+      );
+    });
+    renderers.push(renderer!);
+
+    expect(
+      renderer!.root.findAllByProps({accessibilityLabel: 'AM Device Add Service Account device-browser'}),
+    ).toHaveLength(0);
+  });
+
   it('blocks moving an active hardware service account to another device', async () => {
     jest.mocked(getAmRacks).mockResolvedValue({
       data: [
