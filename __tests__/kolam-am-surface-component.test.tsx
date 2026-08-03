@@ -347,6 +347,43 @@ describe('KolamAmSurface', () => {
     expect(onBackToCenter).toHaveBeenCalledTimes(1);
   });
 
+  it('opens AM dashboard parity routes from recent panels', async () => {
+    const onModuleRouteSelect = jest.fn();
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface
+          dataset={seedUnifiedDataset}
+          onModuleRouteSelect={onModuleRouteSelect}
+        />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Dashboard View Transfers'}).props.onPress();
+    });
+    expect(onModuleRouteSelect).toHaveBeenLastCalledWith(amRoute('transactions'));
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Dashboard Transfer transfer-dashboard-1'}).props.onPress();
+    });
+    expect(onModuleRouteSelect).toHaveBeenLastCalledWith(
+      concreteAmRoute('transactions/transfer-dashboard-1', 'transactions/:id'),
+    );
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Dashboard View Recent Mutations'}).props.onPress();
+    });
+    expect(onModuleRouteSelect).toHaveBeenLastCalledWith(amRoute('mutasi'));
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Dashboard View Hardware'}).props.onPress();
+    });
+    expect(onModuleRouteSelect).toHaveBeenLastCalledWith(amRoute('hardware'));
+  });
+
   it('opens Account Settings through the AM shell route from the topbar', async () => {
     const onModuleRouteSelect = jest.fn();
     const settingsRoute = amRoute('settings/account');

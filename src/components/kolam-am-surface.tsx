@@ -208,7 +208,10 @@ export function KolamAmSurface({
         </View>
         <ScrollView contentContainerStyle={styles.pageContent} showsVerticalScrollIndicator={false}>
           {activeRoute === 'dashboard' ? (
-            <AmDashboardPage dashboard={dataset.am.dashboard} />
+            <AmDashboardPage
+              dashboard={dataset.am.dashboard}
+              onModuleRouteSelect={onModuleRouteSelect}
+            />
           ) : activeRoute === 'tasks' ? (
             <AmTasksPage initialTaskId={routeSelection?.taskId} />
           ) : activeRoute === 'services' ? (
@@ -281,6 +284,20 @@ function getAmRouteSelection(route?: string | null): AmRouteSelection {
   return {route: routeItem};
 }
 
+function getConcreteAmRouteEntry(
+  route: string,
+  templateRoute = route,
+): ShellModuleRouteEntry | null {
+  const template = getShellModuleRouteEntry('am', templateRoute);
+  if (!template) return null;
+  if (route === template.route) return template;
+  return {
+    ...template,
+    id: `am:${route}`,
+    route,
+  };
+}
+
 function normalizeModuleRoutePath(route?: string | null) {
   if (!route || route === '/') return '/';
   return route.split('?')[0].replace(/^\/+/, '').replace(/\/+$/, '') || '/';
@@ -290,7 +307,13 @@ function isConcreteRouteSegment(segment?: string) {
   return Boolean(segment && !segment.startsWith(':'));
 }
 
-function AmDashboardPage({dashboard}: {dashboard?: AmDashboardData | null}) {
+function AmDashboardPage({
+  dashboard,
+  onModuleRouteSelect,
+}: {
+  dashboard?: AmDashboardData | null;
+  onModuleRouteSelect?: (route: ShellModuleRouteEntry) => void;
+}) {
   const [data, setData] = React.useState<AmDashboardData | null>(dashboard ?? null);
   const [isLoading, setIsLoading] = React.useState(!dashboard);
   const [error, setError] = React.useState<string | null>(null);
@@ -340,6 +363,13 @@ function AmDashboardPage({dashboard}: {dashboard?: AmDashboardData | null}) {
     };
   }, []);
 
+  const openAmRoute = React.useCallback((route: string, templateRoute = route) => {
+    const entry = getConcreteAmRouteEntry(route, templateRoute);
+    if (entry) {
+      onModuleRouteSelect?.(entry);
+    }
+  }, [onModuleRouteSelect]);
+
   if (!data) {
     return (
       <View style={styles.emptyPanel}>
@@ -383,15 +413,39 @@ function AmDashboardPage({dashboard}: {dashboard?: AmDashboardData | null}) {
         <Text style={styles.panelText}>Total amount hari ini: {formatRupiah(data.transfers.totalAmount)}</Text>
       </View>
       <View style={styles.panelGrid}>
-        <AmRecentTransfersPanel transfers={data.recentTransfers} />
-        <AmRecentMutasiPanel mutasi={data.recentMutasi} />
+        <AmRecentTransfersPanel
+          onOpenRoute={openAmRoute}
+          transfers={data.recentTransfers}
+        />
+        <AmRecentMutasiPanel
+          onOpenRoute={openAmRoute}
+          mutasi={data.recentMutasi}
+        />
       </View>
       <View style={styles.panel}>
-        <Text style={styles.panelTitle}>7 Hari Mutasi</Text>
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.panelTitle}>7 Hari Mutasi</Text>
+          <KolamButton
+            accessibilityLabel="AM Dashboard View Mutations"
+            label="View all"
+            intent="outline"
+            size="sm"
+            onPress={() => openAmRoute('mutasi')}
+          />
+        </View>
         <AmMutationChart chartData={data.chartData} />
       </View>
       <View style={styles.panel}>
-        <Text style={styles.panelTitle}>Device Overview</Text>
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.panelTitle}>Device Overview</Text>
+          <KolamButton
+            accessibilityLabel="AM Dashboard View Hardware"
+            label="View all"
+            intent="outline"
+            size="sm"
+            onPress={() => openAmRoute('hardware')}
+          />
+        </View>
         <Text style={styles.panelText}>All devices with active accounts and their locations.</Text>
         <View style={styles.detailListHeader}>
           <Text style={[styles.tableHeaderText, styles.serviceCol]}>Device</Text>
@@ -464,13 +518,32 @@ function AmMutationChart({chartData}: {chartData: Array<{date: string; incoming:
   );
 }
 
-function AmRecentTransfersPanel({transfers}: {transfers: AmTransfer[]}) {
+function AmRecentTransfersPanel({
+  onOpenRoute,
+  transfers,
+}: {
+  onOpenRoute: (route: string, templateRoute?: string) => void;
+  transfers: AmTransfer[];
+}) {
   return (
     <View style={styles.panel}>
-      <Text style={styles.panelTitle}>Recent Transfers</Text>
+      <View style={styles.sectionHeaderRow}>
+        <Text style={styles.panelTitle}>Recent Transfers</Text>
+        <KolamButton
+          accessibilityLabel="AM Dashboard View Transfers"
+          label="View all"
+          intent="outline"
+          size="sm"
+          onPress={() => onOpenRoute('transactions')}
+        />
+      </View>
       <Text style={styles.panelText}>Latest transfer activity across all devices.</Text>
       {transfers.slice(0, 5).map(transfer => (
-        <View key={transfer._id} style={styles.deviceRow}>
+        <KolamInteractionFrame
+          key={transfer._id}
+          accessibilityLabel={`AM Dashboard Transfer ${transfer._id}`}
+          onPress={() => onOpenRoute(`transactions/${transfer._id}`, 'transactions/:id')}
+          style={styles.deviceRow}>
           <View>
             <Text style={styles.rowTitle}>{transfer.recipientName || transfer.recipientAccount}</Text>
             <Text style={styles.rowMeta}>{formatBankAccount(transfer.accountId)} - {formatAmDate(transfer.createdAt)}</Text>
@@ -479,7 +552,7 @@ function AmRecentTransfersPanel({transfers}: {transfers: AmTransfer[]}) {
             <Text style={styles.amountText}>{formatRupiah(transfer.amount)}</Text>
             <AmStatusChip label={transfer.status} tone={getTransferTone(transfer.status)} />
           </View>
-        </View>
+        </KolamInteractionFrame>
       ))}
       <AmLoadingOrEmpty
         isLoading={false}
@@ -491,10 +564,25 @@ function AmRecentTransfersPanel({transfers}: {transfers: AmTransfer[]}) {
   );
 }
 
-function AmRecentMutasiPanel({mutasi}: {mutasi: AmMutasi[]}) {
+function AmRecentMutasiPanel({
+  mutasi,
+  onOpenRoute,
+}: {
+  mutasi: AmMutasi[];
+  onOpenRoute: (route: string, templateRoute?: string) => void;
+}) {
   return (
     <View style={styles.panel}>
-      <Text style={styles.panelTitle}>Recent Mutations</Text>
+      <View style={styles.sectionHeaderRow}>
+        <Text style={styles.panelTitle}>Recent Mutations</Text>
+        <KolamButton
+          accessibilityLabel="AM Dashboard View Recent Mutations"
+          label="View all"
+          intent="outline"
+          size="sm"
+          onPress={() => onOpenRoute('mutasi')}
+        />
+      </View>
       <Text style={styles.panelText}>Latest incoming and outgoing transactions.</Text>
       {mutasi.slice(0, 5).map(item => (
         <View key={item._id} style={styles.deviceRow}>
