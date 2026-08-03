@@ -1045,7 +1045,6 @@ function KolamTaskRow({
     task,
   });
   const statusDisabled =
-    !controller.isTaskAdmin ||
     task.status === 'done' ||
     task.status === 'cancelled' ||
     controller.mutatingTaskId === task.id ||
