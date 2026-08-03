@@ -4647,6 +4647,7 @@ describe('KolamAmSurface', () => {
       data: [],
       meta: {total: 0, limit: 20},
     });
+    const onModuleRouteSelect = jest.fn();
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
     await act(async () => {
@@ -4657,6 +4658,7 @@ describe('KolamAmSurface', () => {
             'transactions/:id',
           )}
           dataset={seedUnifiedDataset}
+          onModuleRouteSelect={onModuleRouteSelect}
         />,
       );
     });
@@ -4672,6 +4674,16 @@ describe('KolamAmSurface', () => {
     });
 
     expect(cancelAmTransfer).toHaveBeenCalledWith('transfer-detail');
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Transfer Back'}).props.onPress();
+    });
+
+    expect(onModuleRouteSelect).toHaveBeenCalledWith(
+      expect.objectContaining({
+        moduleId: 'am',
+        route: 'transactions',
+      }),
+    );
   });
 
   it('runs webhook register, toggle, delete, and test ping actions', async () => {

@@ -222,7 +222,10 @@ export function KolamAmSurface({
           ) : activeRoute === 'webhooks' ? (
             <AmWebhooksPage />
           ) : activeRoute === 'transactions' ? (
-            <AmTransfersPage initialTransferId={routeSelection?.transferId} />
+            <AmTransfersPage
+              initialTransferId={routeSelection?.transferId}
+              onModuleRouteSelect={onModuleRouteSelect}
+            />
           ) : activeRoute === 'mutasi' ? (
             <AmMutasiPage initialMutasiId={routeSelection?.mutasiId} />
           ) : activeRoute === 'users' ? (
@@ -3819,7 +3822,13 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
   );
 }
 
-function AmTransfersPage({initialTransferId}: {initialTransferId?: string}) {
+function AmTransfersPage({
+  initialTransferId,
+  onModuleRouteSelect,
+}: {
+  initialTransferId?: string;
+  onModuleRouteSelect?: (route: ShellModuleRouteEntry) => void;
+}) {
   const [transfers, setTransfers] = React.useState<AmTransfer[]>([]);
   const [accounts, setAccounts] = React.useState<AmServiceAccount[]>([]);
   const [status, setStatus] = React.useState('all');
@@ -3952,6 +3961,20 @@ function AmTransfersPage({initialTransferId}: {initialTransferId?: string}) {
     setSelectedTransfer(transfer);
     await loadTransferDetail(transfer._id);
   }, [loadTransferDetail, selectedTransferId]);
+
+  const closeTransferDetail = React.useCallback(() => {
+    setSelectedTransferId(null);
+    setSelectedTransfer(null);
+    setSelectedTransferWebhookLogs([]);
+    setDetailError(null);
+
+    if (initialTransferId) {
+      const transactionsRoute = getShellModuleRouteEntry('am', 'transactions');
+      if (transactionsRoute) {
+        onModuleRouteSelect?.(transactionsRoute);
+      }
+    }
+  }, [initialTransferId, onModuleRouteSelect]);
 
   const handleTransferSearchChange = React.useCallback((value: string) => {
     setSearch(value);
@@ -4322,6 +4345,7 @@ function AmTransfersPage({initialTransferId}: {initialTransferId?: string}) {
           error={detailError}
           isLoading={detailLoading}
           onAction={runTransferAction}
+          onBack={closeTransferDetail}
           transfer={selectedTransfer}
           webhookLogs={selectedTransferWebhookLogs}
         />
@@ -4335,6 +4359,7 @@ function AmTransferDetailPanel({
   error,
   isLoading,
   onAction,
+  onBack,
   transfer,
   webhookLogs,
 }: {
@@ -4345,6 +4370,7 @@ function AmTransferDetailPanel({
     transfer: AmTransfer,
     action: 'cancel' | 'retry' | 'force-fail',
   ) => void;
+  onBack: () => void;
   transfer: AmTransfer | null;
   webhookLogs: AmWebhookLog[];
 }) {
@@ -4359,6 +4385,13 @@ function AmTransferDetailPanel({
         </View>
         {transfer ? (
           <View style={styles.inlineActions}>
+            <KolamButton
+              accessibilityLabel="AM Transfer Back"
+              intent="outline"
+              label="Back"
+              size="sm"
+              onPress={onBack}
+            />
             <AmStatusChip label={transfer.status} tone={getTransferTone(transfer.status)} />
             <AmTransferActions
               disabled={actingTransferId === transfer._id}
