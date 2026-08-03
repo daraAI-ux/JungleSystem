@@ -5,9 +5,14 @@ import {
   cancelAmTask,
   cancelAmTransfer,
   clearAmServiceAccountSession,
+  createAmBox,
   createAmChatContact,
+  createAmDevice,
+  createAmRack,
   createAmTask,
+  createAmServiceAccount,
   createAmTransfer,
+  createAmWebhookConfig,
   forceFailAmTask,
   forceFailAmTransfer,
   getAmTokopediaApiMonitorStatus,
@@ -18,14 +23,27 @@ import {
   getAmBoxById,
   getAmCurrentUser,
   getAmDashboard,
+  getAmDevices,
+  getAmDevicesAdbStatus,
   getAmDeviceById,
   getAmDeviceServiceQrUrl,
+  getAmRacks,
+  getAmBoxes,
   getAmMutasiReceiptUrl,
   getAmRackById,
+  getAmRoles,
+  getAmServiceAccounts,
   getAmServiceAccountById,
   getAmTasks,
   getAmUserById,
+  getAmWebhookConfigs,
+  getAmWebhookEvents,
+  getAmWebhookLogs,
+  deleteAmBoxes,
+  deleteAmDevices,
+  deleteAmRacks,
   deleteAmServiceAccount,
+  deleteAmWebhookConfig,
   loginAmSession,
   logoutAmSession,
   restartAmTokopediaSession,
@@ -38,9 +56,14 @@ import {
   startAmTokopediaQrLogin,
   stopAmDeviceService,
   testAmWebhookPing,
+  updateAmBox,
+  updateAmDevice,
+  updateAmRack,
+  updateAmServiceAccount,
   updateAmTokopediaCaptchaSettings,
   updateAmTokopediaLoginMethod,
   updateAmUser,
+  updateAmWebhookConfig,
   uploadAmTokopediaSession,
   verifyAmTokopediaSession,
 } from '../src/services/am-api';
@@ -298,6 +321,182 @@ describe('AM API service', () => {
       'https://am.example.test/api/service-account/service-account-1',
       expect.objectContaining({
         method: 'DELETE',
+        credentials: 'include',
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+  });
+
+  it('maps service account list, create, and update helpers to live AM endpoints', async () => {
+    const createPayload = {
+      platform: 'tokopedia',
+      label: 'Tokopedia Main',
+      deviceId: 'device-browser',
+      credentials: {phoneNumber: '0899'},
+      status: 'inactive',
+    };
+    const updatePayload = {
+      label: 'Tokopedia Updated',
+      credentials: {phoneNumber: '0812'},
+      status: 'inactive',
+    };
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({success: true, data: [], meta: {total: 0, limit: 20}}))
+      .mockResolvedValueOnce(jsonResponse({success: true, data: {_id: 'service-new', ...createPayload}}))
+      .mockResolvedValueOnce(jsonResponse({success: true, data: {_id: 'service-new', ...updatePayload}}));
+
+    await getAmServiceAccounts(
+      {page: 2, limit: 20, platform: 'tokopedia', status: 'inactive', search: 'main'},
+      'https://am.example.test/api',
+    );
+    await createAmServiceAccount(createPayload, 'https://am.example.test/api');
+    await updateAmServiceAccount('service-new', updatePayload, 'https://am.example.test/api');
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://am.example.test/api/service-account?page=2&limit=20&platform=tokopedia&status=inactive&search=main',
+      expect.objectContaining({
+        method: 'GET',
+        credentials: 'include',
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://am.example.test/api/service-account',
+      expect.objectContaining({
+        method: 'POST',
+        credentials: 'include',
+        body: JSON.stringify(createPayload),
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
+          'Content-Type': 'application/json',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'https://am.example.test/api/service-account/service-new',
+      expect.objectContaining({
+        method: 'PUT',
+        credentials: 'include',
+        body: JSON.stringify(updatePayload),
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
+          'Content-Type': 'application/json',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+  });
+
+  it('maps AM hardware list, CRUD, ADB, and bulk delete helpers to live endpoints', async () => {
+    fetchMock.mockResolvedValue(jsonResponse({success: true, data: [], meta: {total: 0, limit: 20}}));
+
+    await getAmRacks({page: 1, limit: 20}, 'https://am.example.test/api');
+    await getAmBoxes({rackId: 'rack-1', limit: 100}, 'https://am.example.test/api');
+    await getAmDevices({boxId: 'box-1', limit: 100}, 'https://am.example.test/api');
+    await getAmDevicesAdbStatus('box-1', 'https://am.example.test/api');
+    await createAmRack({location: 'Room A', description: 'Main', serverIp: '10.0.0.1'}, 'https://am.example.test/api');
+    await updateAmRack('rack-1', {location: 'Room B', description: 'Updated', serverIp: '10.0.0.2', status: 'active'}, 'https://am.example.test/api');
+    await deleteAmRacks(['rack-1'], 'https://am.example.test/api');
+    await createAmBox({rackId: 'rack-1', description: 'Box'}, 'https://am.example.test/api');
+    await updateAmBox('box-1', {description: 'Box Updated', status: 'inactive'}, 'https://am.example.test/api');
+    await deleteAmBoxes(['box-1'], 'https://am.example.test/api');
+    await createAmDevice({boxId: 'box-1', name: 'Phone', connectionType: 'tcp'}, 'https://am.example.test/api');
+    await updateAmDevice('device-1', {name: 'Phone 2', connectionType: 'tcp'}, 'https://am.example.test/api');
+    await deleteAmDevices(['device-1'], 'https://am.example.test/api');
+
+    expect(fetchMock).toHaveBeenNthCalledWith(1, 'https://am.example.test/api/rack?page=1&limit=20', expect.objectContaining({method: 'GET'}));
+    expect(fetchMock).toHaveBeenNthCalledWith(2, 'https://am.example.test/api/box?rackId=rack-1&limit=100', expect.objectContaining({method: 'GET'}));
+    expect(fetchMock).toHaveBeenNthCalledWith(3, 'https://am.example.test/api/device?boxId=box-1&limit=100', expect.objectContaining({method: 'GET'}));
+    expect(fetchMock).toHaveBeenNthCalledWith(4, 'https://am.example.test/api/device/adb-status?boxId=box-1', expect.objectContaining({method: 'GET'}));
+    expect(fetchMock).toHaveBeenNthCalledWith(5, 'https://am.example.test/api/rack', expect.objectContaining({method: 'POST'}));
+    expect(fetchMock).toHaveBeenNthCalledWith(6, 'https://am.example.test/api/rack/rack-1', expect.objectContaining({method: 'PUT'}));
+    expect(fetchMock).toHaveBeenNthCalledWith(7, 'https://am.example.test/api/racks', expect.objectContaining({
+      method: 'DELETE',
+      body: JSON.stringify({ids: ['rack-1']}),
+    }));
+    expect(fetchMock).toHaveBeenNthCalledWith(8, 'https://am.example.test/api/box', expect.objectContaining({method: 'POST'}));
+    expect(fetchMock).toHaveBeenNthCalledWith(9, 'https://am.example.test/api/box/box-1', expect.objectContaining({method: 'PUT'}));
+    expect(fetchMock).toHaveBeenNthCalledWith(10, 'https://am.example.test/api/boxes', expect.objectContaining({
+      method: 'DELETE',
+      body: JSON.stringify({ids: ['box-1']}),
+    }));
+    expect(fetchMock).toHaveBeenNthCalledWith(11, 'https://am.example.test/api/device', expect.objectContaining({method: 'POST'}));
+    expect(fetchMock).toHaveBeenNthCalledWith(12, 'https://am.example.test/api/device/device-1', expect.objectContaining({method: 'PUT'}));
+    expect(fetchMock).toHaveBeenNthCalledWith(13, 'https://am.example.test/api/devices', expect.objectContaining({
+      method: 'DELETE',
+      credentials: 'include',
+      body: JSON.stringify({ids: ['device-1']}),
+      headers: expect.objectContaining({
+        Cookie: 'kolamCsrf=',
+        'Content-Type': 'application/json',
+        'x-source': appConfig.amSourceHeader,
+      }),
+    }));
+  });
+
+  it('maps AM webhook config, events, logs, and delete helpers to live endpoints', async () => {
+    const configPayload = {
+      url: 'https://hooks.example.test/am',
+      events: ['transfer.success'],
+      secret: '1234567890abcdef',
+      active: true,
+    };
+    fetchMock.mockResolvedValue(jsonResponse({success: true, data: [], meta: {total: 0, limit: 20}}));
+
+    await getAmWebhookConfigs('https://am.example.test/api');
+    await getAmWebhookEvents('https://am.example.test/api');
+    await createAmWebhookConfig(configPayload, 'https://am.example.test/api');
+    await updateAmWebhookConfig('webhook-1', {active: false}, 'https://am.example.test/api');
+    await getAmWebhookLogs(
+      {page: 2, limit: 20, event: 'transfer.success', direction: 'outgoing'},
+      'https://am.example.test/api',
+    );
+    await deleteAmWebhookConfig('webhook-1', 'https://am.example.test/api');
+
+    expect(fetchMock).toHaveBeenNthCalledWith(1, 'https://am.example.test/api/webhook/config', expect.objectContaining({method: 'GET'}));
+    expect(fetchMock).toHaveBeenNthCalledWith(2, 'https://am.example.test/api/webhook/events', expect.objectContaining({method: 'GET'}));
+    expect(fetchMock).toHaveBeenNthCalledWith(3, 'https://am.example.test/api/webhook/config', expect.objectContaining({
+      method: 'POST',
+      body: JSON.stringify(configPayload),
+    }));
+    expect(fetchMock).toHaveBeenNthCalledWith(4, 'https://am.example.test/api/webhook/config/webhook-1', expect.objectContaining({
+      method: 'PUT',
+      body: JSON.stringify({active: false}),
+    }));
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      5,
+      'https://am.example.test/api/webhook/logs?page=2&limit=20&event=transfer.success&direction=outgoing',
+      expect.objectContaining({method: 'GET'}),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(6, 'https://am.example.test/api/webhook/config/webhook-1', expect.objectContaining({
+      method: 'DELETE',
+      credentials: 'include',
+      headers: expect.objectContaining({
+        Cookie: 'kolamCsrf=',
+        'x-source': appConfig.amSourceHeader,
+      }),
+    }));
+  });
+
+  it('maps AM roles lookup to the live user role endpoint', async () => {
+    fetchMock.mockResolvedValue(jsonResponse({success: true, data: [{_id: 'role-admin', name: 'Admin'}]}));
+
+    await getAmRoles('https://am.example.test/api');
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://am.example.test/api/roles',
+      expect.objectContaining({
+        method: 'GET',
         credentials: 'include',
         headers: expect.objectContaining({
           Cookie: 'kolamCsrf=',
