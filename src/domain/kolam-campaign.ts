@@ -144,7 +144,10 @@ function isKolamCampaignDaraSegment(segment: string): boolean {
 }
 
 export function isKolamCampaignRoute(route: string): boolean {
-  const path = route.split('?')[0].replace(/\/+$/, '') || '/';
+  let path = route.split('?')[0].replace(/\/+$/, '') || '/';
+  if (path && !path.startsWith('/')) {
+    path = `/${path}`;
+  }
   if (path === KOLAM_CAMPAIGN_ROOT || path === KOLAM_CAMPAIGN_CREATE_ROUTE) {
     return true;
   }

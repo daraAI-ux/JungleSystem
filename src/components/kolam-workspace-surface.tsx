@@ -421,6 +421,15 @@ export function KolamWorkspaceSurfaceComponent({
           );
         }
 
+        if (isKolamCampaignRoute(activeNavigationItem.route.split('?')[0])) {
+          return (
+            <KolamCampaignSurface
+              onRouteChange={onDashboardRoute}
+              route={activeNavigationItem.route}
+            />
+          );
+        }
+
         return (
           <KolamNavigationRouteSurface
             dataset={dataset}
