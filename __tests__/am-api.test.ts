@@ -3,7 +3,9 @@ import {clearResponseCookieJar} from '../src/lib/api-client';
 import {
   createAmTask,
   createAmTransfer,
+  getAmChatContactById,
   getAmChatContacts,
+  getAmChatMessageById,
   getAmChatMessages,
   getAmBoxById,
   getAmDeviceById,
@@ -170,6 +172,48 @@ describe('AM API service', () => {
 
     expect(fetchMock).toHaveBeenCalledWith(
       'https://am.example.test/api/chat/contact?page=1&limit=20&platform=tokopedia&serviceAccountId=account-1&search=buyer',
+      expect.objectContaining({
+        method: 'GET',
+        credentials: 'include',
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+  });
+
+  it('loads AM chat message detail through the live read-only chat endpoint', async () => {
+    fetchMock.mockResolvedValue(jsonResponse({
+      success: true,
+      data: {_id: 'message-1', body: 'Halo'},
+    }));
+
+    await getAmChatMessageById('message-1', 'https://am.example.test/api');
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://am.example.test/api/chat/message/message-1',
+      expect.objectContaining({
+        method: 'GET',
+        credentials: 'include',
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+  });
+
+  it('loads AM chat contact detail through the live read-only chat endpoint', async () => {
+    fetchMock.mockResolvedValue(jsonResponse({
+      success: true,
+      data: {_id: 'contact-1', name: 'Buyer'},
+    }));
+
+    await getAmChatContactById('contact-1', 'https://am.example.test/api');
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://am.example.test/api/chat/contact/contact-1',
       expect.objectContaining({
         method: 'GET',
         credentials: 'include',

@@ -1317,11 +1317,25 @@ export async function getAmChatMessages(
   return getAmList<AmChatMessage>('/chat/message', query, baseUrl);
 }
 
+export async function getAmChatMessageById(
+  id: string,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmChatMessage> {
+  return amGet<AmChatMessage>(`/chat/message/${id}`, undefined, baseUrl);
+}
+
 export async function getAmChatContacts(
   query?: AmChatContactQuery,
   baseUrl = appConfig.amApiBaseUrl,
 ): Promise<AmListResponse<AmChatContact>> {
   return getAmList<AmChatContact>('/chat/contact', query, baseUrl);
+}
+
+export async function getAmChatContactById(
+  id: string,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmChatContact> {
+  return amGet<AmChatContact>(`/chat/contact/${id}`, undefined, baseUrl);
 }
 
 async function getAmList<T>(
