@@ -161,7 +161,7 @@ function KolamAmSidebarMenu({
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [activeRoute]);
 
   const openAmRoute = React.useCallback(
     (moduleRoute: string) => {

@@ -42,6 +42,7 @@ function flattenText(value: React.ReactNode): string[] {
 
 describe('KolamSidebarContent AM mode', () => {
   beforeEach(() => {
+    jest.clearAllMocks();
     jest.mocked(getAmCurrentUser).mockResolvedValue({
       _id: 'super-admin',
       fullName: 'Super Admin',
@@ -308,6 +309,87 @@ describe('KolamSidebarContent AM mode', () => {
         route: 'login',
       }),
     );
+  });
+
+  it('refreshes the AM sidebar account after the AM route changes', async () => {
+    jest
+      .mocked(getAmCurrentUser)
+      .mockRejectedValueOnce(new Error('Unauthorized'))
+      .mockResolvedValueOnce({
+        _id: 'logged-in',
+        fullName: 'Logged In AM',
+        username: 'logged@dunia-anura.com',
+        role: {
+          _id: 'role-user',
+          name: 'User',
+          permissions: ['user:read'],
+          description: 'User role',
+        },
+      });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <View>
+          <KolamSidebarContent
+            accessScope={{ am: true, kolam: true, pos: true }}
+            activeModule="am"
+            activeRoute="/login"
+            collapsed={false}
+            expandedSections={{ dashboard: true }}
+            filterMenuByAccess={false}
+            onModuleRouteSelect={() => undefined}
+            onMoveMenuSection={() => undefined}
+            onQuickSearch={() => undefined}
+            onSelectMenuItem={() => undefined}
+            onSelectModule={() => undefined}
+            onToggleMenuSection={() => undefined}
+            sectionOrder={[]}
+          />
+        </View>,
+      );
+    });
+
+    await ReactTestRenderer.act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(renderText(renderer!)).toContain('Login');
+    expect(renderText(renderer!)).not.toContain('Logged In AM');
+
+    await ReactTestRenderer.act(async () => {
+      renderer!.update(
+        <View>
+          <KolamSidebarContent
+            accessScope={{ am: true, kolam: true, pos: true }}
+            activeModule="am"
+            activeRoute="/"
+            collapsed={false}
+            expandedSections={{ dashboard: true }}
+            filterMenuByAccess={false}
+            onModuleRouteSelect={() => undefined}
+            onMoveMenuSection={() => undefined}
+            onQuickSearch={() => undefined}
+            onSelectMenuItem={() => undefined}
+            onSelectModule={() => undefined}
+            onToggleMenuSection={() => undefined}
+            sectionOrder={[]}
+          />
+        </View>,
+      );
+    });
+
+    await ReactTestRenderer.act(async () => {
+      await Promise.resolve();
+    });
+
+    const text = renderText(renderer!);
+
+    expect(getAmCurrentUser).toHaveBeenCalledTimes(2);
+    expect(text).toContain('Logged In AM');
+    expect(text).toContain('@logged@dunia-anura.com');
+    expect(text).toContain('Log out');
+    expect(text).not.toContain('Login');
   });
 
   it('hides Super Admin-only Activity Log from read-only AM users', async () => {
