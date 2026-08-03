@@ -30,6 +30,7 @@ import {
   useKolamTaskManagerController,
   type KolamTaskManagerController,
 } from '../hooks/use-kolam-task-manager-controller';
+import { getKolamFileUrl } from '../lib/file-url';
 import { formatRupiah } from '../lib/money';
 import { KolamButton } from './kolam-button';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
@@ -53,7 +54,9 @@ import {
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamHtmlContent } from './kolam-html-content';
+import { openKolamMediaPreview } from './kolam-media-preview-dialog';
 import { KolamModalBackdrop } from './kolam-modal-backdrop';
+import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
@@ -537,13 +540,10 @@ function KolamTaskManagerDetail({
               {message.attachments.length ? (
                 <View style={styles.attachmentRow}>
                   {message.attachments.map(attachment => (
-                    <KolamStatusBadge
-                      intent="muted"
+                    <KolamTaskDiscussionAttachmentPreview
+                      attachment={attachment}
                       key={
                         attachment.path || attachment.fileName || attachment.mimeType
-                      }
-                      label={
-                        attachment.fileName || attachment.path || attachment.type
                       }
                     />
                   ))}
@@ -732,6 +732,56 @@ function getDiscussionAttachmentLabel(
     file.uri?.split('/').pop() ||
     'File'
   );
+}
+
+function KolamTaskDiscussionAttachmentPreview({
+  attachment,
+}: {
+  attachment: KolamTaskManagerTask['discussion'][number]['attachments'][number];
+}) {
+  const label = attachment.fileName || attachment.path || attachment.type;
+  const uri = getKolamFileUrl(attachment.path);
+
+  if (attachment.type === 'image' && uri) {
+    return (
+      <KolamRemoteImage
+        accessibilityLabel={label || 'Lampiran'}
+        previewItems={[
+          {
+            revision: uri,
+            scope: 'task-discussion-attachment',
+            title: label || 'Lampiran',
+            uri,
+          },
+        ]}
+        resizeMode="cover"
+        revision={uri}
+        scope="task-discussion-attachment"
+        sourceUri={uri}
+        style={styles.discussionAttachmentImage}
+      />
+    );
+  }
+
+  if (attachment.type === 'video' && uri) {
+    return (
+      <Pressable
+        accessibilityRole="button"
+        onPress={() =>
+          openKolamMediaPreview({
+            kind: 'video',
+            title: label || 'Video',
+            uri,
+          })
+        }
+        style={styles.discussionAttachmentVideo}
+      >
+        <Text style={styles.discussionAttachmentVideoText}>Video</Text>
+      </Pressable>
+    );
+  }
+
+  return <KolamStatusBadge intent="muted" label={label || 'Lampiran'} />;
 }
 
 function getTaskMentionOptions(controller: KolamTaskManagerController) {
@@ -3122,6 +3172,28 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 4,
+  },
+  discussionAttachmentImage: {
+    borderRadius: V.radius.md,
+    height: 96,
+    width: 96,
+  },
+  discussionAttachmentVideo: {
+    alignItems: 'center',
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: V.radius.md,
+    borderWidth: 1,
+    height: 96,
+    justifyContent: 'center',
+    width: 128,
+  },
+  discussionAttachmentVideoText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '900',
+    lineHeight: 16,
   },
   discussionActionStack: {
     alignItems: 'flex-start',
