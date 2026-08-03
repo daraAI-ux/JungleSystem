@@ -5803,6 +5803,7 @@ function AmActivityLogPage() {
   const [isLoading, setIsLoading] = React.useState(true);
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [showDeleteFilterConfirm, setShowDeleteFilterConfirm] = React.useState(false);
+  const [showDeleteSelectedConfirm, setShowDeleteSelectedConfirm] = React.useState(false);
   const [deleteMessage, setDeleteMessage] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -5889,6 +5890,26 @@ function AmActivityLogPage() {
       setIsDeleting(false);
     }
   }, [buildFilterPayload, fetchLogs]);
+
+  const handleDeleteSelectedLog = React.useCallback(async () => {
+    if (!selectedLog?._id) return;
+
+    try {
+      setIsDeleting(true);
+      const result = await bulkDeleteAmActivityLogs({
+        confirm: true,
+        ids: [selectedLog._id],
+      });
+      setDeleteMessage(`${result.deletedCount} log dihapus`);
+      setShowDeleteSelectedConfirm(false);
+      setSelectedLog(null);
+      await fetchLogs();
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Gagal menghapus activity log AM.');
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [fetchLogs, selectedLog]);
 
   const totalPages = Math.max(1, Math.ceil(total / Math.max(limit, 1)));
   const rangeFrom = total ? (page - 1) * limit + 1 : 0;
@@ -6062,7 +6083,40 @@ function AmActivityLogPage() {
           </View>
         ) : null}
       </View>
-      {selectedLog ? <AmActivityLogDetailPanel log={selectedLog} /> : null}
+      {selectedLog ? (
+        <AmActivityLogDetailPanel
+          isDeleting={isDeleting}
+          log={selectedLog}
+          onDelete={() => setShowDeleteSelectedConfirm(true)}
+        />
+      ) : null}
+      {selectedLog && showDeleteSelectedConfirm ? (
+        <View style={styles.warningPanel}>
+          <Text style={styles.panelTitle}>Hapus activity log</Text>
+          <Text style={styles.panelText}>
+            Log terpilih akan dihapus permanen.
+          </Text>
+          <Text style={styles.warningText}>1 entri akan dihapus.</Text>
+          <View style={styles.inlineActions}>
+            <KolamButton
+              accessibilityLabel="AM Activity Logs Cancel Delete Selected"
+              disabled={isDeleting}
+              label="Batal"
+              intent="outline"
+              size="sm"
+              onPress={() => setShowDeleteSelectedConfirm(false)}
+            />
+            <KolamButton
+              accessibilityLabel="AM Activity Logs Confirm Delete Selected"
+              disabled={isDeleting}
+              label={isDeleting ? 'Menghapus' : 'Hapus'}
+              intent="danger"
+              size="sm"
+              onPress={handleDeleteSelectedLog}
+            />
+          </View>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -6091,7 +6145,15 @@ function AmStatsListPanel({
   );
 }
 
-function AmActivityLogDetailPanel({log}: {log: AmActivityLog}) {
+function AmActivityLogDetailPanel({
+  isDeleting,
+  log,
+  onDelete,
+}: {
+  isDeleting: boolean;
+  log: AmActivityLog;
+  onDelete: () => void;
+}) {
   return (
     <View style={styles.panel}>
       <View style={styles.detailHeader}>
@@ -6099,7 +6161,17 @@ function AmActivityLogDetailPanel({log}: {log: AmActivityLog}) {
           <Text style={styles.panelTitle}>Activity Detail</Text>
           <Text style={styles.rowMeta}>{formatAmDate(log.timestamp)}</Text>
         </View>
-        <AmStatusChip label={log.statusCode ? String(log.statusCode) : log.status} tone={log.status === 'success' ? 'success' : 'danger'} />
+        <View style={styles.inlineActions}>
+          <AmStatusChip label={log.statusCode ? String(log.statusCode) : log.status} tone={log.status === 'success' ? 'success' : 'danger'} />
+          <KolamButton
+            accessibilityLabel={`AM Activity Log Delete Selected ${log._id}`}
+            disabled={isDeleting}
+            label="Hapus log ini"
+            intent="danger"
+            size="sm"
+            onPress={onDelete}
+          />
+        </View>
       </View>
       <View style={styles.detailList}>
         <View style={styles.detailListRow}>

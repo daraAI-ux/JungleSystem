@@ -2517,6 +2517,26 @@ describe('KolamAmSurface', () => {
     expect(joinedText).toContain('200 (success)');
     expect(joinedText).toContain('REQ-1');
     expect(joinedText).toContain('Jest');
+    expect(joinedText).toContain('Hapus log ini');
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Activity Log Delete Selected log-1'}).props.onPress();
+    });
+
+    text = renderText(renderer!);
+    joinedText = text.join(' ');
+    expect(text).toContain('Hapus activity log');
+    expect(joinedText).toContain('Log terpilih akan dihapus permanen.');
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Activity Logs Confirm Delete Selected'}).props.onPress();
+    });
+
+    expect(bulkDeleteAmActivityLogs).toHaveBeenCalledWith({
+      confirm: true,
+      ids: ['log-1'],
+    });
+    expect(renderText(renderer!).join(' ')).toContain('75 log dihapus');
 
     await act(async () => {
       renderer!.root.findAllByType(TextInput)[0].props.onChangeText('alice');
