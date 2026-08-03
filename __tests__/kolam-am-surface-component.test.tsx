@@ -1073,6 +1073,7 @@ describe('KolamAmSurface', () => {
       updatedAt: '',
     };
     jest.mocked(getAmTaskById).mockResolvedValue(task);
+    const onModuleRouteSelect = jest.fn();
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
     await act(async () => {
@@ -1080,6 +1081,7 @@ describe('KolamAmSurface', () => {
         <KolamAmSurface
           activeModuleRoute={concreteAmRoute('tasks/task-detail', 'tasks/:id')}
           dataset={seedUnifiedDataset}
+          onModuleRouteSelect={onModuleRouteSelect}
         />,
       );
     });
@@ -1091,6 +1093,16 @@ describe('KolamAmSurface', () => {
     expect(text).toContain('Task Detail');
     expect(text).toContain('Bank Transfer');
     expect(text).toContain('started');
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Task Back'}).props.onPress();
+    });
+
+    expect(onModuleRouteSelect).toHaveBeenCalledWith(
+      expect.objectContaining({
+        moduleId: 'am',
+        route: 'tasks',
+      }),
+    );
   });
 
   it('creates and updates service accounts from the Services form', async () => {

@@ -214,7 +214,10 @@ export function KolamAmSurface({
               onModuleRouteSelect={onModuleRouteSelect}
             />
           ) : activeRoute === 'tasks' ? (
-            <AmTasksPage initialTaskId={routeSelection?.taskId} />
+            <AmTasksPage
+              initialTaskId={routeSelection?.taskId}
+              onModuleRouteSelect={onModuleRouteSelect}
+            />
           ) : activeRoute === 'services' ? (
             <AmServicesPage />
           ) : activeRoute === 'hardware' ? (
@@ -646,7 +649,13 @@ function AmRecentMutasiPanel({
   );
 }
 
-function AmTasksPage({initialTaskId}: {initialTaskId?: string}) {
+function AmTasksPage({
+  initialTaskId,
+  onModuleRouteSelect,
+}: {
+  initialTaskId?: string;
+  onModuleRouteSelect?: (route: ShellModuleRouteEntry) => void;
+}) {
   const [tasks, setTasks] = React.useState<AmTask[]>([]);
   const [search, setSearch] = React.useState('');
   const [status, setStatus] = React.useState<string>('all');
@@ -801,14 +810,23 @@ function AmTasksPage({initialTaskId}: {initialTaskId?: string}) {
     }
   }, [fetchTasks]);
 
+  const closeTaskDetail = React.useCallback(() => {
+    setSelectedTaskId(null);
+    fetchTasks();
+
+    if (initialTaskId) {
+      const tasksRoute = getShellModuleRouteEntry('am', 'tasks');
+      if (tasksRoute) {
+        onModuleRouteSelect?.(tasksRoute);
+      }
+    }
+  }, [fetchTasks, initialTaskId, onModuleRouteSelect]);
+
   if (selectedTaskId) {
     return (
       <AmTaskDetailPage
         id={selectedTaskId}
-        onBack={() => {
-          setSelectedTaskId(null);
-          fetchTasks();
-        }}
+        onBack={closeTaskDetail}
         onTaskAction={runTaskAction}
       />
     );
@@ -967,7 +985,13 @@ function AmTaskDetailPage({
       <View style={styles.emptyPanel}>
         <Text style={styles.panelTitle}>Task tidak ditemukan</Text>
         <Text style={styles.panelText}>{error ?? 'Task not found'}</Text>
-        <KolamButton label="Kembali" intent="outline" size="sm" onPress={onBack} />
+        <KolamButton
+          accessibilityLabel="AM Task Back"
+          label="Kembali"
+          intent="outline"
+          size="sm"
+          onPress={onBack}
+        />
       </View>
     );
   }
@@ -980,7 +1004,13 @@ function AmTaskDetailPage({
           <Text style={styles.panelText}>{TASK_TYPE_LABELS[task.type] ?? task.type} - {task._id}</Text>
         </View>
         <View style={styles.inlineActions}>
-          <KolamButton label="Kembali" intent="outline" size="sm" onPress={onBack} />
+          <KolamButton
+            accessibilityLabel="AM Task Back"
+            label="Kembali"
+            intent="outline"
+            size="sm"
+            onPress={onBack}
+          />
           <KolamButton label={isLoading ? 'Memuat' : 'Refresh'} intent="outline" size="sm" muted={isLoading} onPress={fetchTask} />
         </View>
       </View>
