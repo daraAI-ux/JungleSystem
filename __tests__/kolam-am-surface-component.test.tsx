@@ -3518,7 +3518,8 @@ describe('KolamAmSurface', () => {
         'Super Admin audit log',
       ]),
     );
-    expect(joinedText).toContain('Catatan page/API request AM.');
+    expect(joinedText).toContain('Catatan page/API request AM. Otomatis hapus setelah 90 hari.');
+    expect(joinedText).toContain('Super Admin bisa hapus manual per baris terpilih atau sesuai filter.');
     expect(text).toEqual(expect.arrayContaining(['API', 'Page', 'GET']));
     expect(joinedText).toContain('/dashboard');
     expect(joinedText.replace(/\s+/g, ' ')).toContain('Showing 1 to 50 of 75 items');

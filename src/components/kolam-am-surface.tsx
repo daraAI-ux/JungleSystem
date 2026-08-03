@@ -6597,7 +6597,7 @@ function AmActivityLogPage() {
       <View style={styles.emptyPanel}>
         <Text style={styles.panelTitle}>Super Admin audit log</Text>
         <Text style={styles.panelText}>
-          Catatan page/API request AM.
+          Catatan page/API request AM. Otomatis hapus setelah 90 hari. Super Admin bisa hapus manual per baris terpilih atau sesuai filter.
         </Text>
       </View>
       <View style={styles.filterBar}>
