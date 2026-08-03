@@ -282,6 +282,32 @@ export interface KolamTaskManagerListResult {
   totalPages: number;
 }
 
+export interface KolamTaskCustomerCrmOrder {
+  id: string;
+  invoiceCode: string;
+  transactionDate: string;
+  itemsCount: number;
+  finalTotal: number;
+  status: string;
+  deliveryStatus: string;
+}
+
+export interface KolamTaskCustomerCrmContext {
+  customer: {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    createdAt: string;
+  } | null;
+  metrics: {
+    ordersCount: number;
+    totalOrders: number;
+    totalSpend: number;
+  };
+  recentOrders: KolamTaskCustomerCrmOrder[];
+}
+
 export interface KolamTaskManagerKpi {
   done: number;
   inProgress: number;
@@ -638,6 +664,50 @@ export function normalizeKolamTaskManagerTask(payload: unknown): KolamTaskManage
     updatedBy: normalizeUserRef(record.updatedBy),
     createdAt: toStringValue(record.createdAt),
     updatedAt: toStringValue(record.updatedAt),
+  };
+}
+
+export function normalizeKolamTaskCustomerCrmContext(
+  payload: unknown,
+): KolamTaskCustomerCrmContext {
+  const record = unwrapData(payload);
+  const customer = isRecord(record.customer) ? record.customer : null;
+  const metrics = isRecord(record.metrics) ? record.metrics : {};
+  const recentOrders = Array.isArray(record.recentOrders)
+    ? record.recentOrders
+    : [];
+
+  return {
+    customer: customer
+      ? {
+          id: toStringValue(customer._id ?? customer.id),
+          name: toStringValue(customer.name),
+          email: toStringValue(customer.email),
+          phone: toStringValue(customer.phone),
+          createdAt: toStringValue(customer.createdAt),
+        }
+      : null,
+    metrics: {
+      ordersCount: toNumber(metrics?.ordersCount, 0),
+      totalOrders: toNumber(metrics?.totalOrders, 0),
+      totalSpend: toNumber(metrics?.totalSpend, 0),
+    },
+    recentOrders: recentOrders.map(normalizeKolamTaskCustomerCrmOrder),
+  };
+}
+
+function normalizeKolamTaskCustomerCrmOrder(
+  payload: unknown,
+): KolamTaskCustomerCrmOrder {
+  const record = unwrapData(payload);
+  return {
+    id: toStringValue(record._id ?? record.id),
+    invoiceCode: toStringValue(record.invoiceCode),
+    transactionDate: toStringValue(record.transactionDate),
+    itemsCount: toNumber(record.itemsCount, 0),
+    finalTotal: toNumber(record.finalTotal, 0),
+    status: toStringValue(record.status),
+    deliveryStatus: toStringValue(record.deliveryStatus),
   };
 }
 

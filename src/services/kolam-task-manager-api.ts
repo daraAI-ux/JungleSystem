@@ -4,6 +4,7 @@ import {
   normalizeKolamTaskManagerList,
   normalizeKolamTaskManagerTask,
   normalizeKolamTaskManagerTaskTypes,
+  normalizeKolamTaskCustomerCrmContext,
   normalizeKolamTaskRecurringBulkEnrollmentResult,
   normalizeKolamTaskRecurringOccurrences,
   normalizeKolamTaskRecurringEnrollmentCompliance,
@@ -20,6 +21,7 @@ import {
   type KolamTaskManagerTask,
   type KolamTaskManagerTaskType,
   type KolamTaskManagerTaskTypeHandler,
+  type KolamTaskCustomerCrmContext,
   type KolamTaskRecurringBulkEnrollmentResult,
   type KolamTaskRecurringOccurrence,
   type KolamTaskRecurringEnrollmentCompliance,
@@ -135,6 +137,15 @@ export async function getKolamTaskManagerTask(
     `/task-manager/${encodeURIComponent(taskId)}`,
   );
   return normalizeKolamTaskManagerTask(payload);
+}
+
+export async function getKolamTaskManagerCrmContext(
+  taskId: string,
+): Promise<KolamTaskCustomerCrmContext> {
+  const payload = await kolamRequest<unknown>(
+    `/task-manager/${encodeURIComponent(taskId)}/crm-context`,
+  );
+  return normalizeKolamTaskCustomerCrmContext(payload);
 }
 
 export async function getKolamTaskManagerCategories(

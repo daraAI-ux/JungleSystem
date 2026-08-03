@@ -17,6 +17,7 @@ import {
   type KolamTaskManagerTask,
   type KolamTaskManagerTaskType,
   type KolamTaskManagerTaskTypeHandler,
+  type KolamTaskCustomerCrmContext,
   type KolamTaskRecurringEnrollmentCompliance,
   type KolamTaskRecurringEnrollmentDashboard,
   type KolamTaskRecurringEnrollmentStats,
@@ -43,6 +44,7 @@ import {
   deleteKolamTaskManagerTaskType,
   deleteKolamTaskRecurringTemplate,
   getKolamTaskManagerCategories,
+  getKolamTaskManagerCrmContext,
   getKolamTaskManagerTask,
   getKolamTaskManagerTasks,
   getKolamTaskManagerTaskTypes,
@@ -161,6 +163,7 @@ export interface KolamTaskManagerController {
   formError: string | null;
   formMode: 'edit' | 'new';
   formOpen: boolean;
+  crmContext: KolamTaskCustomerCrmContext | null;
   checklistDraft: string;
   discussionDraft: string;
   discussionAttachments: NativeImagePickerResult[];
@@ -305,6 +308,8 @@ export function useKolamTaskManagerController({
   const [taskTypes, setTaskTypes] = useState<KolamTaskManagerTaskType[]>([]);
   const [selectedTask, setSelectedTask] =
     useState<KolamTaskManagerTask | null>(null);
+  const [crmContext, setCrmContext] =
+    useState<KolamTaskCustomerCrmContext | null>(null);
   const [categories, setCategories] = useState<KolamTaskManagerCategory[]>([]);
   const [staffOptions, setStaffOptions] = useState<KolamTaskManagerStaffOption[]>(
     [],
@@ -532,6 +537,7 @@ export function useKolamTaskManagerController({
         ),
       );
     } catch (loadError) {
+      setCrmContext(null);
       setError(getErrorMessage(loadError));
       setDataSource('error');
     } finally {
@@ -558,6 +564,7 @@ export function useKolamTaskManagerController({
     const taskId = getKolamTaskManagerIdFromRoute(route);
     if (!taskId) {
       setSelectedTask(null);
+      setCrmContext(null);
       return;
     }
 
@@ -566,6 +573,15 @@ export function useKolamTaskManagerController({
     try {
       const live = await getKolamTaskManagerTask(taskId);
       setSelectedTask(live);
+      if (live.customerId) {
+        try {
+          setCrmContext(await getKolamTaskManagerCrmContext(taskId));
+        } catch {
+          setCrmContext(null);
+        }
+      } else {
+        setCrmContext(null);
+      }
       setDataSource('live');
     } catch (loadError) {
       setError(getErrorMessage(loadError));
@@ -1437,6 +1453,7 @@ export function useKolamTaskManagerController({
       formError,
       formMode,
       formOpen,
+      crmContext,
       checklistDraft,
       discussionDraft,
       discussionAttachments,
@@ -1565,6 +1582,7 @@ export function useKolamTaskManagerController({
       formError,
       formMode,
       formOpen,
+      crmContext,
       checklistDraft,
       discussionDraft,
       discussionAttachments,

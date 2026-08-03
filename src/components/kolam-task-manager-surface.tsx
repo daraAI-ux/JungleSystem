@@ -24,6 +24,7 @@ import {
   useKolamTaskManagerController,
   type KolamTaskManagerController,
 } from '../hooks/use-kolam-task-manager-controller';
+import { formatRupiah } from '../lib/money';
 import { KolamButton } from './kolam-button';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamDateField } from './kolam-date-field';
@@ -257,6 +258,36 @@ function KolamTaskManagerDetail({
           }
         />
       </View>
+
+      {controller.crmContext?.customer ? (
+        <View style={styles.detailCard}>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionTitle}>CRM</Text>
+            <KolamStatusBadge
+              intent="info"
+              label={`${controller.crmContext.metrics.totalOrders} paid`}
+            />
+          </View>
+          <Text style={styles.cellText}>{controller.crmContext.customer.name}</Text>
+          <Text style={styles.metaText}>
+            {formatRupiah(controller.crmContext.metrics.totalSpend)}
+          </Text>
+          {controller.crmContext.recentOrders.length ? (
+            <View style={styles.crmOrderStack}>
+              {controller.crmContext.recentOrders.slice(0, 3).map(order => (
+                <View key={order.id || order.invoiceCode} style={styles.crmOrderRow}>
+                  <Text style={styles.cellText}>
+                    {order.invoiceCode || order.id || '-'}
+                  </Text>
+                  <Text style={styles.metaText}>
+                    {formatRupiah(order.finalTotal)}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          ) : null}
+        </View>
+      ) : null}
 
       {task.description ? (
         <View style={styles.detailCard}>
@@ -2534,6 +2565,20 @@ const styles = StyleSheet.create({
     borderRadius: V.radius.md,
     borderWidth: 1,
     gap: 8,
+    padding: 10,
+  },
+  crmOrderStack: {
+    gap: 6,
+  },
+  crmOrderRow: {
+    alignItems: 'center',
+    borderColor: V.colors.border,
+    borderRadius: V.radius.md,
+    borderWidth: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'space-between',
     padding: 10,
   },
   attachmentRow: {
