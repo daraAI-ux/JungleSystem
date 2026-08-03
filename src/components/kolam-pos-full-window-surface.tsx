@@ -31,6 +31,7 @@ import {KolamNavItem} from './kolam-nav-item';
 import {KolamQuantityStepper} from './kolam-quantity-stepper';
 import {KolamRemoteImage} from './kolam-remote-image';
 import {KolamSearchField} from './kolam-search-field';
+import {KolamSidebarBrand} from './kolam-sidebar-brand';
 
 export interface KolamPosFullWindowSurfaceProps {
   activeSession?: CashflowSession | null;
@@ -683,6 +684,7 @@ function PosSidebar({
 }) {
   return (
     <View style={styles.posSidebar}>
+      <KolamSidebarBrand collapsed={false} />
       <ScrollView
         style={styles.posSidebarScroll}
         contentContainerStyle={styles.posSidebarContent}
