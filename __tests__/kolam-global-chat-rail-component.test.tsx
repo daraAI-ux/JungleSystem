@@ -2907,6 +2907,14 @@ describe('KolamGlobalChatRail', () => {
         ),
     ).toBe(true);
 
+    const actionButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Aksi pesan Staff');
+
+    await ReactTestRenderer.act(async () => {
+      actionButton!.props.onPress();
+    });
+
     const reactionButton = renderer!.root
       .findAllByType(KolamPressable)
       .find(node => node.props.accessibilityLabel === 'Reaksi 🙏');
@@ -3368,6 +3376,14 @@ describe('KolamGlobalChatRail', () => {
       selectButton!.props.onPress();
     });
 
+    const actionButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Aksi pesan Maya');
+
+    await ReactTestRenderer.act(async () => {
+      actionButton!.props.onPress();
+    });
+
     const replyButton = renderer!.root
       .findAllByType(KolamPressable)
       .find(node => node.props.accessibilityLabel === 'Balas pesan Maya');
@@ -3481,6 +3497,14 @@ describe('KolamGlobalChatRail', () => {
         .findAllByType(KolamPressable)
         .some(node => node.props.accessibilityLabel === 'Edit pesan Maya'),
     ).toBe(false);
+
+    const actionButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Aksi pesan Staff');
+
+    await ReactTestRenderer.act(async () => {
+      actionButton!.props.onPress();
+    });
 
     const editButton = renderer!.root
       .findAllByType(KolamPressable)

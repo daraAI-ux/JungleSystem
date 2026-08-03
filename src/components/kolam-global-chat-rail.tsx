@@ -2975,6 +2975,8 @@ function KolamChatRailDetailPanel({
   const [editingMessageId, setEditingMessageId] = React.useState<string | null>(
     null,
   );
+  const [openTeamActionMessageId, setOpenTeamActionMessageId] =
+    React.useState<string | null>(null);
   const [editingDraft, setEditingDraft] = React.useState('');
   const [messageSearchDraft, setMessageSearchDraft] = React.useState('');
   const [contactDetailsState, setContactDetailsState] =
@@ -3056,6 +3058,7 @@ function KolamChatRailDetailPanel({
     setMarketplacePickerState({items: [], loading: false});
     setDaraThinkingLine('');
     setEditingMessageId(null);
+    setOpenTeamActionMessageId(null);
     setEditingDraft('');
     setMessageSearchDraft('');
     setContactDetailsOpen(false);
@@ -3230,6 +3233,7 @@ function KolamChatRailDetailPanel({
   const handleStartEditMessage = React.useCallback(
     (message: ReturnType<typeof useKolamChatRailDetail>['messages'][number]) => {
       setEditingMessageId(message.id);
+      setOpenTeamActionMessageId(null);
       setEditingDraft(message.body);
     },
     [],
@@ -3567,6 +3571,7 @@ function KolamChatRailDetailPanel({
                             canEdit={canEdit}
                             disabled={detail.sending}
                             message={message}
+                            onClose={() => setOpenTeamActionMessageId(null)}
                             onEdit={() => handleStartEditMessage(message)}
                             onReact={emoji =>
                               detail.reactToMessage(message.id, emoji)
@@ -3578,6 +3583,12 @@ function KolamChatRailDetailPanel({
                                 id: message.id,
                               })
                             }
+                            onToggle={() =>
+                              setOpenTeamActionMessageId(current =>
+                                current === message.id ? null : message.id,
+                              )
+                            }
+                            open={openTeamActionMessageId === message.id}
                           />
                         ) : null}
                         {mode === 'inbox' ? (
@@ -5498,41 +5509,97 @@ function KolamChatReactionControls({
   canEdit,
   disabled,
   message,
+  onClose,
   onEdit,
   onReact,
   onReply,
+  onToggle,
+  open,
 }: {
   canEdit: boolean;
   disabled: boolean;
   message: ReturnType<typeof useKolamChatRailDetail>['messages'][number];
+  onClose: () => void;
   onEdit: () => void;
   onReact: (emoji: string) => void;
   onReply: () => void;
+  onToggle: () => void;
+  open: boolean;
 }) {
   return (
     <View style={styles.reactionControls}>
-      <View style={styles.messageActionRow}>
+      <View style={styles.teamBubbleActionRow}>
         <KolamPressable
-          accessibilityLabel={`Balas pesan ${message.author}`}
+          accessibilityLabel={`Aksi pesan ${message.author}`}
+          accessibilityState={{expanded: open}}
           disabled={disabled}
-          onPress={onReply}
-          style={[styles.replyActionButton, disabled && styles.attachButtonDisabled]}>
-          <Text style={styles.replyActionText}>Balas</Text>
+          onPress={onToggle}
+          style={[
+            styles.teamBubbleActionButton,
+            open && styles.teamBubbleActionButtonOpen,
+            disabled && styles.attachButtonDisabled,
+          ]}>
+          <Text style={styles.teamBubbleActionButtonText}>...</Text>
         </KolamPressable>
-        {canEdit ? (
-          <KolamPressable
-            accessibilityLabel={`Edit pesan ${message.author}`}
-            disabled={disabled}
-            onPress={onEdit}
-            style={[
-              styles.replyActionButton,
-              styles.editActionButton,
-              disabled && styles.attachButtonDisabled,
-            ]}>
-            <Text style={styles.replyActionText}>Edit</Text>
-          </KolamPressable>
+
+        {open ? (
+          <View style={styles.teamBubbleActionMenu}>
+            <View style={styles.reactionPalette}>
+              <KolamMappedList
+                items={TEAM_CHAT_REACTIONS}
+                getKey={emoji => emoji}
+                renderItem={emoji => (
+                  <KolamPressable
+                    accessibilityLabel={`Reaksi ${emoji}`}
+                    disabled={disabled}
+                    onPress={() => {
+                      onReact(emoji);
+                      onClose();
+                    }}
+                    style={[
+                      styles.reactionButton,
+                      disabled && styles.reactionButtonDisabled,
+                    ]}>
+                    <Text style={styles.reactionButtonText}>{emoji}</Text>
+                  </KolamPressable>
+                )}
+              />
+            </View>
+            <View style={styles.messageActionRow}>
+              <KolamPressable
+                accessibilityLabel={`Balas pesan ${message.author}`}
+                disabled={disabled}
+                onPress={() => {
+                  onReply();
+                  onClose();
+                }}
+                style={[
+                  styles.replyActionButton,
+                  disabled && styles.attachButtonDisabled,
+                ]}>
+                <Text style={styles.replyActionText}>Balas</Text>
+              </KolamPressable>
+              {canEdit ? (
+                <KolamPressable
+                  accessibilityLabel={`Edit pesan ${message.author}`}
+                  disabled={disabled}
+                  onPress={() => {
+                    onEdit();
+                    onClose();
+                  }}
+                  style={[
+                    styles.replyActionButton,
+                    styles.editActionButton,
+                    disabled && styles.attachButtonDisabled,
+                  ]}>
+                  <Text style={styles.replyActionText}>Edit</Text>
+                </KolamPressable>
+              ) : null}
+            </View>
+          </View>
         ) : null}
       </View>
+
       {message.reactions.length > 0 ? (
         <View style={styles.reactionPills}>
           <KolamMappedList
@@ -5555,24 +5622,6 @@ function KolamChatReactionControls({
           />
         </View>
       ) : null}
-      <View style={styles.reactionPalette}>
-        <KolamMappedList
-          items={TEAM_CHAT_REACTIONS}
-          getKey={emoji => emoji}
-          renderItem={emoji => (
-            <KolamPressable
-              accessibilityLabel={`Reaksi ${emoji}`}
-              disabled={disabled}
-              onPress={() => onReact(emoji)}
-              style={[
-                styles.reactionButton,
-                disabled && styles.reactionButtonDisabled,
-              ]}>
-              <Text style={styles.reactionButtonText}>{emoji}</Text>
-            </KolamPressable>
-          )}
-        />
-      </View>
     </View>
   );
 }
@@ -9022,7 +9071,44 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   reactionControls: {
+    alignItems: 'flex-end',
     gap: 5,
+  },
+  teamBubbleActionRow: {
+    alignItems: 'flex-end',
+    gap: 5,
+  },
+  teamBubbleActionButton: {
+    alignItems: 'center',
+    alignSelf: 'flex-end',
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 10,
+    borderWidth: 1,
+    height: 20,
+    justifyContent: 'center',
+    paddingHorizontal: 7,
+  },
+  teamBubbleActionButtonOpen: {
+    borderColor: V.colors.primary,
+    backgroundColor: V.colors.primarySoft,
+  },
+  teamBubbleActionButtonText: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '900',
+    lineHeight: 12,
+  },
+  teamBubbleActionMenu: {
+    alignItems: 'flex-end',
+    alignSelf: 'flex-end',
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 5,
+    padding: 6,
   },
   messageActionRow: {
     flexDirection: 'row',
