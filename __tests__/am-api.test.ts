@@ -18,6 +18,7 @@ import {
   getAmBoxById,
   getAmCurrentUser,
   getAmDeviceById,
+  getAmDeviceServiceQrUrl,
   getAmMutasiReceiptUrl,
   getAmRackById,
   getAmServiceAccountById,
@@ -835,6 +836,16 @@ describe('AM API service', () => {
     expect(getAmMutasiReceiptUrl('mutasi 1', 'https://am.example.test/api/')).toBe(
       'https://am.example.test/api/mutasi/mutasi%201/receipt',
     );
+  });
+
+  it('builds AM device service QR URLs only for live QR endpoints', () => {
+    expect(getAmDeviceServiceQrUrl('device 1', 'shopee', 'qr 1', 'https://am.example.test/api/')).toBe(
+      'https://am.example.test/api/device/device%201/service/shopee-qr?t=qr%201',
+    );
+    expect(getAmDeviceServiceQrUrl('device 1', 'whatsapp', 'qr 1', 'https://am.example.test/api/')).toBe(
+      'https://am.example.test/api/device/device%201/service/whatsapp-qr?t=qr%201',
+    );
+    expect(getAmDeviceServiceQrUrl('device 1', 'tokopedia', 'qr 1', 'https://am.example.test/api/')).toBeNull();
   });
 });
 

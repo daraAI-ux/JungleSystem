@@ -103,8 +103,10 @@ jest.mock('../src/services/am-api', () => ({
   getAmDeviceServiceLogs: jest.fn(() => Promise.resolve({logs: [], processRunning: false})),
   getAmDeviceServices: jest.fn(() => Promise.resolve([])),
   getAmDeviceServiceQrUrl: jest.fn((deviceId: string, platform: string, qrcodeId?: string) => {
+    const endpoint = platform === 'whatsapp' ? 'whatsapp-qr' : platform === 'shopee' ? 'shopee-qr' : null;
+    if (!endpoint) return null;
     const suffix = qrcodeId ? `?t=${encodeURIComponent(qrcodeId)}` : '';
-    return `https://frogs.dunia-anura.com/api/device/${deviceId}/service/${platform}-qr${suffix}`;
+    return `https://frogs.dunia-anura.com/api/device/${deviceId}/service/${endpoint}${suffix}`;
   }),
   getAmDevices: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
   getAmDevicesAdbStatus: jest.fn(() => Promise.resolve({})),
