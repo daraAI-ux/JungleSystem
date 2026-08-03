@@ -118,8 +118,11 @@ export function KolamComplaintCreateForm({
         if (!active) {
           return;
         }
-        const merged = new Map<string, (typeof activeList.items)[number]>();
-        for (const sale of [...activeList.items, ...completedList.items]) {
+        const merged = new Map<string, (typeof activeList.data)[number]>();
+        for (const sale of [
+          ...(activeList.data ?? []),
+          ...(completedList.data ?? []),
+        ]) {
           merged.set(sale.id, sale);
         }
         const eligible = Array.from(merged.values())
@@ -531,7 +534,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   title: {
-    color: V.colors.foreground,
+    color: V.colors.fg,
     fontFamily: V.fontFamily,
     fontSize: 18,
     fontWeight: '800',
@@ -546,7 +549,7 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   cardTitle: {
-    color: V.colors.foreground,
+    color: V.colors.fg,
     fontFamily: V.fontFamily,
     fontSize: 14,
     fontWeight: '800',
@@ -580,7 +583,7 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   itemTitle: {
-    color: V.colors.foreground,
+    color: V.colors.fg,
     fontFamily: V.fontFamily,
     fontSize: 13,
     fontWeight: '700',
