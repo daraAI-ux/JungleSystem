@@ -7,6 +7,7 @@ import {
   View,
   type StyleProp,
   type TextStyle,
+  type ViewStyle,
 } from 'react-native';
 import {
   KOLAM_ENCLOSURE_LIST_TABS,
@@ -451,8 +452,8 @@ function KolamEnclosureEditSurface({
         <Text style={styles.sectionMeta}>
           Kode, merek, dan tanggal pemasangan.
         </Text>
-        <View style={styles.editFormGrid}>
-          <LabeledEditField label="Kode *">
+        <View style={styles.editFormRow}>
+          <LabeledEditField label="Kode *" style={styles.editFormCol}>
             <KolamFormTextField
               onChangeText={value =>
                 setForm(current => ({
@@ -465,7 +466,7 @@ function KolamEnclosureEditSurface({
               value={form.enclosure_code}
             />
           </LabeledEditField>
-          <LabeledEditField label="Merek">
+          <LabeledEditField label="Merek" style={styles.editFormCol}>
             <KolamDropdownSelect
               label="Merek"
               menuPlacement="inline"
@@ -481,18 +482,10 @@ function KolamEnclosureEditSurface({
               value={form.brandId || ENCLOSURE_EDIT_NONE}
             />
           </LabeledEditField>
-          {brandBannerUri ? (
-            <View style={styles.editBrandBanner}>
-              <KolamRemoteImage
-                accessibilityLabel="Banner merek"
-                resizeMode="contain"
-                scope="enclosure-edit-brand"
-                sourceUri={brandBannerUri}
-                style={styles.editBrandBannerImage}
-              />
-            </View>
-          ) : null}
-          <LabeledEditField label="Tanggal ditambahkan">
+          <LabeledEditField
+            label="Tanggal ditambahkan"
+            style={styles.editFormCol}
+          >
             <KolamFormTextField
               onChangeText={value =>
                 setForm(current => ({...current, acquired_date: value}))
@@ -502,7 +495,23 @@ function KolamEnclosureEditSurface({
               value={form.acquired_date}
             />
           </LabeledEditField>
-          <LabeledEditField label="Visibilitas klien">
+        </View>
+        {brandBannerUri ? (
+          <View style={styles.editBrandBanner}>
+            <KolamRemoteImage
+              accessibilityLabel="Banner merek"
+              resizeMode="contain"
+              scope="enclosure-edit-brand"
+              sourceUri={brandBannerUri}
+              style={styles.editBrandBannerImage}
+            />
+          </View>
+        ) : null}
+        <View style={styles.editFormRow}>
+          <LabeledEditField
+            label="Visibilitas klien"
+            style={styles.editFormCol}
+          >
             <KolamDropdownSelect
               label="Visibilitas klien"
               menuPlacement="inline"
@@ -521,7 +530,10 @@ function KolamEnclosureEditSurface({
               value={form.clientScope}
             />
           </LabeledEditField>
-          <LabeledEditField label="Tujuan livestock">
+          <LabeledEditField
+            label="Tujuan livestock"
+            style={styles.editFormCol}
+          >
             <KolamDropdownSelect
               label="Tujuan livestock"
               menuPlacement="inline"
@@ -540,9 +552,11 @@ function KolamEnclosureEditSurface({
               value={form.livestockPurpose}
             />
           </LabeledEditField>
-          <Text style={styles.sectionMeta}>
-            Produksi = seluruh isi kandang indukan (stock OUT, tidak dijual)
-          </Text>
+          <View style={[styles.editFormCol, styles.editFormHintCol]}>
+            <Text style={styles.sectionMeta}>
+              Produksi = seluruh isi kandang indukan (stock OUT, tidak dijual)
+            </Text>
+          </View>
         </View>
       </DetailSection>
 
@@ -781,12 +795,14 @@ function KolamEnclosureEditSurface({
 function LabeledEditField({
   children,
   label,
+  style,
 }: {
   children: React.ReactNode;
   label: string;
+  style?: StyleProp<ViewStyle>;
 }) {
   return (
-    <View style={styles.editFormField}>
+    <View style={[styles.editFormField, style]}>
       <Text style={styles.detailFieldLabel}>{label}</Text>
       {children}
     </View>
@@ -2709,11 +2725,27 @@ const styles = StyleSheet.create({
   editFormGrid: {
     gap: 12,
   },
+  editFormRow: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  editFormCol: {
+    flexBasis: 180,
+    flexGrow: 1,
+    minWidth: 160,
+  },
+  editFormHintCol: {
+    justifyContent: 'flex-end',
+    paddingBottom: 4,
+  },
   editFormField: {
     gap: 6,
   },
   editFormInput: {
-    minWidth: 220,
+    minWidth: 0,
+    width: '100%',
   },
   editFormTextArea: {
     minHeight: 84,
