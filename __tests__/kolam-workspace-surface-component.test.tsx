@@ -35,6 +35,15 @@ jest.mock('react-native-webview', () => {
   };
 });
 
+jest.mock('../src/components/kolam-tiptap-rich-text-editor', () => {
+  const React = require('react');
+  const ReactNative = require('react-native');
+  return {
+    KolamTipTapRichTextEditor: ({ value }: { value: string }) =>
+      React.createElement(ReactNative.Text, null, value || 'Deskripsi'),
+  };
+});
+
 jest.mock('../src/services/am-api', () => ({
   getAmDashboard: jest.fn(() =>
     Promise.resolve({
@@ -69,6 +78,7 @@ jest.mock('../src/services/am-api', () => ({
 }));
 
 jest.mock('../src/services/kolam-task-manager-api', () => ({
+  createKolamTaskManagerTask: jest.fn(() => Promise.resolve({})),
   getKolamTaskManagerCategories: jest.fn(() =>
     Promise.resolve([
       { active: true, bucket: 'project', color: '#16a34a', id: 'cat-1', name: 'Operasional' },
@@ -482,6 +492,44 @@ describe('KolamWorkspaceSurface', () => {
         'Cek jadwal kolam',
         'Dara Ops',
       ]),
+    );
+  });
+
+  it('opens the native Task Manager form from /task-manager', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+    const taskManagerItem = getKolamNavigationItemByRoute('/task-manager');
+
+    if (!taskManagerItem) {
+      throw new Error('Task Manager navigation item is missing.');
+    }
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <View>
+          <KolamWorkspaceSurface
+            {...buildSurfaceProps({
+              activeModule: 'kolam',
+              activeNavigationItem: taskManagerItem,
+            })}
+          />
+        </View>,
+      );
+    });
+
+    await ReactTestRenderer.act(async () => {
+      await Promise.resolve();
+    });
+
+    const newButton = renderer!.root.findAll(
+      node => node.props.label === 'Baru',
+    )[0];
+
+    await ReactTestRenderer.act(async () => {
+      newButton.props.onPress();
+    });
+
+    expect(renderText(renderer!)).toEqual(
+      expect.arrayContaining(['Tugas baru', 'Judul', 'PIC', 'Kategori']),
     );
   });
 

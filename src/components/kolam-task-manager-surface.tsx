@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
   formatKolamTaskListDatetime,
   getKolamTaskChecklistProgress,
@@ -25,6 +25,7 @@ import {
 } from '../hooks/use-kolam-task-manager-controller';
 import { KolamButton } from './kolam-button';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
+import { KolamDateField } from './kolam-date-field';
 import {
   getKolamDataTableColumnStyle,
   KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
@@ -42,11 +43,16 @@ import {
   KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
+import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamHtmlContent } from './kolam-html-content';
+import { KolamModalBackdrop } from './kolam-modal-backdrop';
 import { KolamSearchField } from './kolam-search-field';
+import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
+import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamSwitch } from './kolam-switch';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
+import { KolamTipTapRichTextEditor } from './kolam-tiptap-rich-text-editor';
 
 const LIST_COLUMNS: KolamTableColumn[] = [
   { id: 'primary', label: 'Tugas', align: 'left', width: 240 },
@@ -103,6 +109,7 @@ export function KolamTaskManagerSurface({
       ) : (
         <KolamTaskManagerPlaceholder mode={controller.mode} />
       )}
+      <KolamTaskFormModal controller={controller} />
     </View>
   );
 }
@@ -143,6 +150,11 @@ function KolamTaskManagerDetail({
           </View>
           <View style={kolamTableToolbarStyles.actions}>
             <KolamButton label="Daftar" onPress={controller.onBackToList} />
+            <KolamButton
+              disabled={controller.mutatingTaskId === task.id}
+              label="Ubah"
+              onPress={() => controller.onEditTask(task)}
+            />
             <KolamButton
               disabled={controller.loading}
               label="Refresh"
@@ -632,6 +644,11 @@ function KolamTaskRow({
               label: 'Detail',
               onPress: () => onRouteChange?.(`/task-manager/${task.id}`),
             },
+            {
+              disabled: controller.mutatingTaskId === task.id,
+              label: 'Ubah',
+              onPress: () => controller.onEditTask(task),
+            },
           ]}
         />
       </KolamDataTableActionsTrack>
@@ -805,6 +822,205 @@ function getRecurringStatusIntent(
     default:
       return 'info';
   }
+}
+
+function KolamTaskFormModal({
+  controller,
+}: {
+  controller: KolamTaskManagerController;
+}) {
+  const staffOptions = [
+    { label: 'Pilih PIC', value: '' },
+    ...controller.staffOptions.map(option => ({
+      label: option.label,
+      value: option.id,
+    })),
+  ];
+  const assistedOptions = [
+    { label: 'Tanpa asisten', value: '' },
+    ...controller.staffOptions.map(option => ({
+      label: option.label,
+      value: option.id,
+    })),
+  ];
+  const categoryOptions = [
+    { label: 'Pilih kategori', value: '' },
+    ...controller.categories.map(category => ({
+      label: category.name,
+      value: category.id,
+    })),
+  ];
+  const saving =
+    controller.mutatingTaskId === 'new' ||
+    (controller.formMode === 'edit' &&
+      controller.mutatingTaskId != null &&
+      controller.mutatingTaskId !== 'recurring');
+
+  return (
+    <Modal
+      animationType="fade"
+      onRequestClose={controller.onCloseForm}
+      transparent
+      visible={controller.formOpen}
+    >
+      <View style={styles.modalRoot}>
+        <KolamModalBackdrop onPress={controller.onCloseForm} />
+        <View style={styles.modalCard}>
+          <View style={styles.modalHeader}>
+            <Text numberOfLines={1} style={styles.modalTitle}>
+              {controller.formMode === 'edit' ? 'Ubah tugas' : 'Tugas baru'}
+            </Text>
+            <View style={styles.modalActions}>
+              <KolamButton
+                disabled={saving}
+                intent="outline"
+                label="Batal"
+                onPress={controller.onCloseForm}
+              />
+              <KolamButton
+                disabled={saving}
+                label={saving ? 'Menyimpan...' : 'Simpan'}
+                onPress={() => {
+                  void controller.onSaveForm();
+                }}
+              />
+            </View>
+          </View>
+
+          {controller.formError ? (
+            <KolamStatusBadge
+              intent="danger"
+              label={controller.formError}
+              numberOfLines={3}
+            />
+          ) : null}
+
+          <ScrollView
+            contentContainerStyle={styles.modalContent}
+            keyboardShouldPersistTaps="handled"
+          >
+            <KolamTaskField label="Judul" required>
+              <KolamFormTextField
+                onChangeText={title => controller.onChangeForm({ title })}
+                placeholder="Judul"
+                style={settingsWebFormStyles.settingsWebFormFieldValue}
+                value={controller.form.title}
+              />
+            </KolamTaskField>
+
+            <KolamTaskField label="Deskripsi">
+              <KolamTipTapRichTextEditor
+                onChangeText={description =>
+                  controller.onChangeForm({ description })
+                }
+                placeholder="Deskripsi"
+                value={controller.form.description}
+              />
+            </KolamTaskField>
+
+            <View style={styles.formGrid}>
+              <KolamDropdownSelect
+                label="PIC"
+                onChange={assignedToId =>
+                  controller.onChangeForm({ assignedToId })
+                }
+                options={staffOptions}
+                searchable
+                value={controller.form.assignedToId}
+              />
+              <KolamDropdownSelect
+                label="Dibantu"
+                onChange={assistedById =>
+                  controller.onChangeForm({ assistedById })
+                }
+                options={assistedOptions}
+                searchable
+                value={controller.form.assistedById}
+              />
+              <KolamDropdownSelect
+                label="Kategori"
+                onChange={categoryId => controller.onChangeForm({ categoryId })}
+                options={categoryOptions}
+                searchable
+                value={controller.form.categoryId}
+              />
+              <KolamDropdownSelect
+                label="Status"
+                onChange={status =>
+                  controller.onChangeForm({
+                    status: status as typeof controller.form.status,
+                  })
+                }
+                options={KOLAM_TASK_STATUS_OPTIONS.filter(
+                  option => option.id !== 'all',
+                ).map(option => ({
+                  label: option.label,
+                  value: option.id,
+                }))}
+                value={controller.form.status}
+              />
+              <KolamDropdownSelect
+                label="Prioritas"
+                onChange={priority =>
+                  controller.onChangeForm({
+                    priority: priority as typeof controller.form.priority,
+                  })
+                }
+                options={KOLAM_TASK_PRIORITY_OPTIONS.filter(
+                  option => option.id !== 'all',
+                ).map(option => ({
+                  label: option.label,
+                  value: option.id,
+                }))}
+                value={controller.form.priority}
+              />
+              <KolamDateField
+                label="Due"
+                onChange={dueDate => controller.onChangeForm({ dueDate })}
+                value={controller.form.dueDate}
+              />
+              <KolamTaskField label="Jam batas">
+                <KolamFormTextField
+                  onChangeText={dueTime => controller.onChangeForm({ dueTime })}
+                  placeholder="23:59"
+                  style={settingsWebFormStyles.settingsWebFormFieldValue}
+                  value={controller.form.dueTime}
+                />
+              </KolamTaskField>
+              <View style={styles.formSwitchRow}>
+                <Text style={styles.cellText}>Urgent</Text>
+                <KolamSwitch
+                  active={controller.form.urgent}
+                  onPress={() =>
+                    controller.onChangeForm({
+                      urgent: !controller.form.urgent,
+                    })
+                  }
+                />
+              </View>
+            </View>
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function KolamTaskField({
+  children,
+  label,
+  required = false,
+}: {
+  children: React.ReactNode;
+  label: string;
+  required?: boolean;
+}) {
+  return (
+    <View style={settingsWebFormStyles.settingsWebFormField}>
+      <KolamSettingsWebFieldLabel label={label} required={required} />
+      {children}
+    </View>
+  );
 }
 
 function KolamTaskManagerPlaceholder({
@@ -1050,5 +1266,71 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     lineHeight: 18,
+  },
+  modalRoot: {
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
+    padding: 18,
+  },
+  modalCard: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: V.radius.lg,
+    borderWidth: 1,
+    elevation: 8,
+    gap: 12,
+    maxHeight: '92%',
+    maxWidth: 900,
+    minHeight: 420,
+    overflow: 'hidden',
+    padding: 14,
+    width: '100%',
+  },
+  modalHeader: {
+    alignItems: 'center',
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    justifyContent: 'space-between',
+    paddingBottom: 12,
+  },
+  modalTitle: {
+    color: V.colors.fg,
+    flex: 1,
+    fontFamily: V.fontFamily,
+    fontSize: 16,
+    fontWeight: '900',
+    lineHeight: 22,
+    minWidth: 180,
+  },
+  modalActions: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  modalContent: {
+    gap: 14,
+    paddingBottom: 8,
+  },
+  formGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  formSwitchRow: {
+    alignItems: 'center',
+    borderColor: V.colors.border,
+    borderRadius: V.radius.lg,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+    minHeight: V.control.inputHeight,
+    minWidth: 180,
+    paddingHorizontal: 12,
   },
 });

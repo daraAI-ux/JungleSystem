@@ -358,6 +358,30 @@ export function formatKolamTaskListDatetime(input?: string | null) {
   return `${day}/${month}/${year}-${hours}:${minutes}`;
 }
 
+export function splitKolamTaskDueDateTime(input?: string | null) {
+  if (!input) return { date: '', time: '' };
+  const date = new Date(input);
+  if (Number.isNaN(date.getTime())) return { date: '', time: '' };
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return {
+    date: `${year}-${month}-${day}`,
+    time: hours === '23' && minutes === '59' ? '' : `${hours}:${minutes}`,
+  };
+}
+
+export function buildKolamTaskDueDateIso(date: string, time?: string) {
+  const normalizedDate = date.trim();
+  if (!normalizedDate) return null;
+  const normalizedTime = time?.trim() || '23:59';
+  const parsed = new Date(`${normalizedDate}T${normalizedTime}:00`);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed.toISOString();
+}
+
 export function getKolamTaskUserDisplayName(
   user: string | KolamTaskManagerUserRef | null | undefined,
 ) {

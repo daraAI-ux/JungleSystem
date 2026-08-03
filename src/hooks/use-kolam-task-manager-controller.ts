@@ -2,8 +2,10 @@ import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { KolamAuthContext } from '../context/kolam-app-contexts';
 import {
   buildKolamTaskManagerKpi,
+  buildKolamTaskDueDateIso,
   getKolamTaskManagerIdFromRoute,
   getKolamTaskManagerRouteMode,
+  splitKolamTaskDueDateTime,
   KOLAM_TASK_MANAGER_RECURRING_ROUTE,
   KOLAM_TASK_MANAGER_ROOT,
   type KolamTaskCategoryBucket,
@@ -20,6 +22,7 @@ import {
 import type { KolamUserListItem } from '../domain/kolam-user';
 import { getErrorMessage as getApiErrorMessage } from '../lib/api-error';
 import {
+  createKolamTaskManagerTask,
   getKolamTaskManagerCategories,
   getKolamTaskManagerTask,
   getKolamTaskManagerTasks,
@@ -39,6 +42,19 @@ export interface KolamTaskManagerStaffOption {
   label: string;
 }
 
+export interface KolamTaskManagerFormState {
+  assistedById: string;
+  categoryId: string;
+  description: string;
+  dueDate: string;
+  dueTime: string;
+  priority: KolamTaskManagerPriority;
+  assignedToId: string;
+  status: KolamTaskManagerStatus;
+  title: string;
+  urgent: boolean;
+}
+
 export interface KolamTaskManagerController {
   categories: KolamTaskManagerCategory[];
   categoryBucketFilter: KolamTaskCategoryBucket | 'all';
@@ -46,6 +62,10 @@ export interface KolamTaskManagerController {
   currentUserId: string;
   dataSource: KolamTaskManagerDataSource;
   error: string | null;
+  form: KolamTaskManagerFormState;
+  formError: string | null;
+  formMode: 'edit' | 'new';
+  formOpen: boolean;
   kpi: KolamTaskManagerKpi;
   loading: boolean;
   mineOnly: boolean;
@@ -68,7 +88,10 @@ export interface KolamTaskManagerController {
   tasks: KolamTaskManagerTask[];
   total: number;
   totalPages: number;
+  onChangeForm: (patch: Partial<KolamTaskManagerFormState>) => void;
+  onCloseForm: () => void;
   onCreateNew: () => void;
+  onEditTask: (task: KolamTaskManagerTask) => void;
   onBackToList: () => void;
   onRefresh: () => Promise<void>;
   onResetFilters: () => void;
@@ -89,6 +112,7 @@ export interface KolamTaskManagerController {
     task: KolamTaskManagerTask,
     status: KolamTaskManagerStatus,
   ) => Promise<boolean>;
+  onSaveForm: () => Promise<boolean>;
   onRunRecurringTick: () => Promise<boolean>;
   onSwitchTab: (tab: 'recurring' | 'tasks') => void;
 }
@@ -130,6 +154,13 @@ export function useKolamTaskManagerController({
   const [mutatingTaskId, setMutatingTaskId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const [formMode, setFormMode] = useState<'edit' | 'new'>('new');
+  const [editingTaskId, setEditingTaskId] = useState('');
+  const [formError, setFormError] = useState<string | null>(null);
+  const [form, setForm] = useState<KolamTaskManagerFormState>(() =>
+    getDefaultTaskForm(currentUserId),
+  );
   const [dataSource, setDataSource] =
     useState<KolamTaskManagerDataSource>('idle');
   const [page, setPage] = useState(1);
@@ -418,8 +449,105 @@ export function useKolamTaskManagerController({
   }, [refreshRecurring]);
 
   const onCreateNew = useCallback(() => {
-    setStatusMessage('Form tugas baru masuk batch berikutnya');
+    setFormMode('new');
+    setEditingTaskId('');
+    setForm(
+      getDefaultTaskForm(
+        currentUserId || staffOptions[0]?.id || '',
+        categories[0]?.id ?? '',
+      ),
+    );
+    setFormError(null);
+    setError(null);
+    setStatusMessage(null);
+    setFormOpen(true);
+  }, [categories, currentUserId, staffOptions]);
+
+  const onEditTask = useCallback((task: KolamTaskManagerTask) => {
+    setFormMode('edit');
+    setEditingTaskId(task.id);
+    setForm(getTaskFormFromTask(task));
+    setFormError(null);
+    setError(null);
+    setStatusMessage(null);
+    setFormOpen(true);
   }, []);
+
+  const onCloseForm = useCallback(() => {
+    setFormOpen(false);
+    setFormError(null);
+  }, []);
+
+  const onChangeForm = useCallback(
+    (patch: Partial<KolamTaskManagerFormState>) => {
+      setForm(current => ({ ...current, ...patch }));
+      setFormError(null);
+      setStatusMessage(null);
+    },
+    [],
+  );
+
+  const onSaveForm = useCallback(async () => {
+    const title = form.title.trim();
+    const assignedToId = form.assignedToId.trim();
+    const categoryId = form.categoryId.trim();
+    const dueDate = buildKolamTaskDueDateIso(form.dueDate, form.dueTime);
+
+    if (!title) {
+      setFormError('Judul wajib diisi');
+      return false;
+    }
+    if (!assignedToId) {
+      setFormError('PIC wajib dipilih');
+      return false;
+    }
+    if (!categoryId) {
+      setFormError('Kategori wajib dipilih');
+      return false;
+    }
+    if (!dueDate) {
+      setFormError('Due wajib diisi');
+      return false;
+    }
+
+    setMutatingTaskId(formMode === 'edit' ? editingTaskId : 'new');
+    setError(null);
+    setFormError(null);
+    setStatusMessage(null);
+    try {
+      const payload = {
+        title,
+        description: form.description,
+        status: form.status,
+        priority: form.priority,
+        urgent: form.urgent,
+        assignedToId,
+        assistedById: form.assistedById || null,
+        dueDate,
+        categoryId,
+      };
+      if (formMode === 'edit' && editingTaskId) {
+        await updateKolamTaskManagerTask(editingTaskId, payload);
+        setStatusMessage('Tugas diperbarui');
+        if (mode === 'detail') {
+          await refreshDetail();
+        } else {
+          await refreshList();
+        }
+      } else {
+        await createKolamTaskManagerTask(payload);
+        setStatusMessage('Tugas dibuat');
+        await refreshList();
+      }
+      setFormOpen(false);
+      return true;
+    } catch (mutationError) {
+      setFormError(getErrorMessage(mutationError));
+      return false;
+    } finally {
+      setMutatingTaskId(null);
+    }
+  }, [editingTaskId, form, formMode, mode, refreshDetail, refreshList]);
 
   return useMemo(
     () => ({
@@ -429,6 +557,10 @@ export function useKolamTaskManagerController({
       currentUserId,
       dataSource,
       error,
+      form,
+      formError,
+      formMode,
+      formOpen,
       kpi,
       loading,
       mineOnly,
@@ -451,8 +583,11 @@ export function useKolamTaskManagerController({
       total,
       totalPages,
       selectedTask,
+      onChangeForm,
+      onCloseForm,
       onBackToList,
       onCreateNew,
+      onEditTask,
       onRefresh:
         mode === 'detail'
           ? refreshDetail
@@ -475,6 +610,7 @@ export function useKolamTaskManagerController({
       onSetStatusFilter: setFilterAndFirstPage(setStatusFilter),
       onSetTaskPriority,
       onSetTaskStatus,
+      onSaveForm,
       onRunRecurringTick,
       onSwitchTab,
     }),
@@ -485,18 +621,26 @@ export function useKolamTaskManagerController({
       currentUserId,
       dataSource,
       error,
+      form,
+      formError,
+      formMode,
+      formOpen,
       kpi,
       loading,
       mineOnly,
       isTaskAdmin,
       mode,
       mutatingTaskId,
+      onChangeForm,
+      onCloseForm,
       onCreateNew,
+      onEditTask,
       onBackToList,
       onResetFilters,
       onRunRecurringTick,
       onSetTaskPriority,
       onSetTaskStatus,
+      onSaveForm,
       onSwitchTab,
       page,
       pageSize,
@@ -520,6 +664,52 @@ export function useKolamTaskManagerController({
       selectedTask,
     ],
   );
+}
+
+function getDefaultTaskForm(
+  assignedToId: string,
+  categoryId = '',
+): KolamTaskManagerFormState {
+  return {
+    assistedById: '',
+    categoryId,
+    description: '',
+    dueDate: '',
+    dueTime: '',
+    priority: 'medium',
+    assignedToId,
+    status: 'todo',
+    title: '',
+    urgent: false,
+  };
+}
+
+function getTaskFormFromTask(
+  task: KolamTaskManagerTask,
+): KolamTaskManagerFormState {
+  const due = splitKolamTaskDueDateTime(task.dueDate);
+  return {
+    assistedById: getTaskUserId(task.assistedBy),
+    categoryId: getTaskCategoryId(task.category),
+    description: task.description,
+    dueDate: due.date,
+    dueTime: due.time,
+    priority: task.priority,
+    assignedToId: getTaskUserId(task.assignedTo),
+    status: task.status,
+    title: task.title,
+    urgent: task.urgent,
+  };
+}
+
+function getTaskUserId(value: KolamTaskManagerTask['assignedTo']) {
+  if (!value) return '';
+  return typeof value === 'string' ? value : value.id;
+}
+
+function getTaskCategoryId(value: KolamTaskManagerTask['category']) {
+  if (!value) return '';
+  return typeof value === 'string' ? value : value.id;
 }
 
 function mapStaffOptions(users: KolamUserListItem[]): KolamTaskManagerStaffOption[] {
