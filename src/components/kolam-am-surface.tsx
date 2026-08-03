@@ -1137,17 +1137,40 @@ function AmServicesPage() {
   const totalPages = Math.max(1, Math.ceil(total / Math.max(limit, 1)));
   const rangeFrom = total ? (page - 1) * limit + 1 : 0;
   const rangeTo = total ? Math.min(page * limit, total) : 0;
+  const selectedFormDevice = React.useMemo(
+    () => devices.find(device => device._id === formDeviceId) ?? null,
+    [devices, formDeviceId],
+  );
+  const serviceDeviceOptions = React.useMemo(() => {
+    const compatibleDevices = devices.filter(device =>
+      isDeviceCompatibleWithServicePlatform(device, formPlatform),
+    );
+    return selectedFormDevice
+      ? mergeAmEntityById(compatibleDevices, selectedFormDevice)
+      : compatibleDevices;
+  }, [devices, formPlatform, selectedFormDevice]);
   const serviceDeviceItems = React.useMemo(
-    () => ['none', ...devices.map(device => device._id)],
-    [devices],
+    () => ['none', ...serviceDeviceOptions.map(device => device._id)],
+    [serviceDeviceOptions],
   );
   const serviceDeviceLabels = React.useMemo<Record<string, string>>(
     () => ({
       none: 'No device',
-      ...Object.fromEntries(devices.map(device => [device._id, `${device.name} (${formatDeviceIdentifier(device)})`])),
+      ...Object.fromEntries(serviceDeviceOptions.map(device => [device._id, `${device.name} (${formatDeviceIdentifier(device)})`])),
     }),
-    [devices],
+    [serviceDeviceOptions],
   );
+
+  const handleFormPlatformChange = React.useCallback((value: string) => {
+    setFormPlatform(value);
+    if (
+      formDeviceId !== 'none' &&
+      selectedFormDevice &&
+      !isDeviceCompatibleWithServicePlatform(selectedFormDevice, value)
+    ) {
+      setFormDeviceId('none');
+    }
+  }, [formDeviceId, selectedFormDevice]);
 
   const resetServiceForm = React.useCallback(() => {
     setEditingServiceId(null);
@@ -1597,7 +1620,7 @@ function AmServicesPage() {
             active={formPlatform}
             items={AM_PLATFORMS.filter(item => item !== 'all')}
             labels={AM_PLATFORM_LABELS}
-            onSelect={setFormPlatform}
+            onSelect={handleFormPlatformChange}
           />
           <AmSegmentGroup
             active={formStatus}

@@ -1043,6 +1043,19 @@ describe('KolamAmSurface', () => {
           createdAt: '',
           updatedAt: '',
         },
+        {
+          _id: 'device-phone',
+          name: 'Phone Worker',
+          slug: 'phone-worker',
+          boxId: 'box-1',
+          connectionType: 'tcp',
+          tcpAddress: '10.0.0.7:5555',
+          udid: null,
+          brand: 'Samsung',
+          model: 'A15',
+          createdAt: '',
+          updatedAt: '',
+        },
       ],
       meta: {total: 1, limit: 100},
     });
@@ -1080,6 +1093,33 @@ describe('KolamAmSurface', () => {
     renderers.push(renderer!);
 
     await updateAmRoute(renderer!, 'services');
+    expect(
+      renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment Browser Worker (Playwright)'}),
+    ).not.toHaveLength(0);
+    expect(
+      renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment Phone Worker (10.0.0.7:5555)'}),
+    ).toHaveLength(0);
+
+    await act(async () => {
+      const bcaSegments = renderer!.root
+        .findAllByProps({accessibilityLabel: 'AM Segment BCA'})
+        .filter(node => typeof node.props.onPress === 'function');
+      bcaSegments[bcaSegments.length - 1].props.onPress();
+    });
+
+    expect(
+      renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment Browser Worker (Playwright)'}),
+    ).toHaveLength(0);
+    expect(
+      renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment Phone Worker (10.0.0.7:5555)'}),
+    ).not.toHaveLength(0);
+
+    await act(async () => {
+      const tokopediaSegments = renderer!.root
+        .findAllByProps({accessibilityLabel: 'AM Segment Tokopedia'})
+        .filter(node => typeof node.props.onPress === 'function');
+      tokopediaSegments[tokopediaSegments.length - 1].props.onPress();
+    });
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Segment Browser Worker (Playwright)'}).props.onPress();
     });
