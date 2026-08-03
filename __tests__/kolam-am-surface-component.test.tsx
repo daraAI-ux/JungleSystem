@@ -347,6 +347,43 @@ describe('KolamAmSurface', () => {
     expect(onBackToCenter).toHaveBeenCalledTimes(1);
   });
 
+  it('opens AM dashboard parity routes from recent panels', async () => {
+    const onModuleRouteSelect = jest.fn();
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface
+          dataset={seedUnifiedDataset}
+          onModuleRouteSelect={onModuleRouteSelect}
+        />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Dashboard View Transfers'}).props.onPress();
+    });
+    expect(onModuleRouteSelect).toHaveBeenLastCalledWith(amRoute('transactions'));
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Dashboard Transfer transfer-dashboard-1'}).props.onPress();
+    });
+    expect(onModuleRouteSelect).toHaveBeenLastCalledWith(
+      concreteAmRoute('transactions/transfer-dashboard-1', 'transactions/:id'),
+    );
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Dashboard View Recent Mutations'}).props.onPress();
+    });
+    expect(onModuleRouteSelect).toHaveBeenLastCalledWith(amRoute('mutasi'));
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Dashboard View Hardware'}).props.onPress();
+    });
+    expect(onModuleRouteSelect).toHaveBeenLastCalledWith(amRoute('hardware'));
+  });
+
   it('opens Account Settings through the AM shell route from the topbar', async () => {
     const onModuleRouteSelect = jest.fn();
     const settingsRoute = amRoute('settings/account');
@@ -1483,6 +1520,34 @@ describe('KolamAmSurface', () => {
     expect(getAmDevicesAdbStatus).toHaveBeenCalledWith('box-1');
     expect(getAmServiceAccounts).toHaveBeenCalledWith({deviceId: 'device-1', limit: 100});
     expect(getAmDeviceServices).toHaveBeenCalledWith('device-1');
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Device Add Service Account device-1'}).props.onPress();
+    });
+
+    const findInput = (placeholder: string) => renderer!.root.findAllByType(TextInput).find(input => input.props.placeholder === placeholder);
+    await act(async () => {
+      findInput('Service label')!.props.onChangeText('BCA Detail New');
+      findInput('username/email')!.props.onChangeText('bca-detail');
+      findInput('password')!.props.onChangeText('secret');
+      findInput('PIN')!.props.onChangeText('123456');
+      findInput('nomor akun/rekening')!.props.onChangeText('9876543210');
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Device Save Service Account device-1'}).props.onPress();
+    });
+
+    expect(createAmServiceAccount).toHaveBeenCalledWith(expect.objectContaining({
+      platform: 'bca',
+      label: 'BCA Detail New',
+      deviceId: 'device-1',
+      username: 'bca-detail',
+      password: 'secret',
+      pin: '123456',
+      accountNumber: '9876543210',
+      credentials: {},
+      status: 'inactive',
+    }));
   });
 
   it('runs hardware create, edit, and delete actions from the Hardware route', async () => {

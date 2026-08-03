@@ -208,7 +208,10 @@ export function KolamAmSurface({
         </View>
         <ScrollView contentContainerStyle={styles.pageContent} showsVerticalScrollIndicator={false}>
           {activeRoute === 'dashboard' ? (
-            <AmDashboardPage dashboard={dataset.am.dashboard} />
+            <AmDashboardPage
+              dashboard={dataset.am.dashboard}
+              onModuleRouteSelect={onModuleRouteSelect}
+            />
           ) : activeRoute === 'tasks' ? (
             <AmTasksPage initialTaskId={routeSelection?.taskId} />
           ) : activeRoute === 'services' ? (
@@ -281,6 +284,20 @@ function getAmRouteSelection(route?: string | null): AmRouteSelection {
   return {route: routeItem};
 }
 
+function getConcreteAmRouteEntry(
+  route: string,
+  templateRoute = route,
+): ShellModuleRouteEntry | null {
+  const template = getShellModuleRouteEntry('am', templateRoute);
+  if (!template) return null;
+  if (route === template.route) return template;
+  return {
+    ...template,
+    id: `am:${route}`,
+    route,
+  };
+}
+
 function normalizeModuleRoutePath(route?: string | null) {
   if (!route || route === '/') return '/';
   return route.split('?')[0].replace(/^\/+/, '').replace(/\/+$/, '') || '/';
@@ -290,7 +307,13 @@ function isConcreteRouteSegment(segment?: string) {
   return Boolean(segment && !segment.startsWith(':'));
 }
 
-function AmDashboardPage({dashboard}: {dashboard?: AmDashboardData | null}) {
+function AmDashboardPage({
+  dashboard,
+  onModuleRouteSelect,
+}: {
+  dashboard?: AmDashboardData | null;
+  onModuleRouteSelect?: (route: ShellModuleRouteEntry) => void;
+}) {
   const [data, setData] = React.useState<AmDashboardData | null>(dashboard ?? null);
   const [isLoading, setIsLoading] = React.useState(!dashboard);
   const [error, setError] = React.useState<string | null>(null);
@@ -340,6 +363,13 @@ function AmDashboardPage({dashboard}: {dashboard?: AmDashboardData | null}) {
     };
   }, []);
 
+  const openAmRoute = React.useCallback((route: string, templateRoute = route) => {
+    const entry = getConcreteAmRouteEntry(route, templateRoute);
+    if (entry) {
+      onModuleRouteSelect?.(entry);
+    }
+  }, [onModuleRouteSelect]);
+
   if (!data) {
     return (
       <View style={styles.emptyPanel}>
@@ -383,15 +413,39 @@ function AmDashboardPage({dashboard}: {dashboard?: AmDashboardData | null}) {
         <Text style={styles.panelText}>Total amount hari ini: {formatRupiah(data.transfers.totalAmount)}</Text>
       </View>
       <View style={styles.panelGrid}>
-        <AmRecentTransfersPanel transfers={data.recentTransfers} />
-        <AmRecentMutasiPanel mutasi={data.recentMutasi} />
+        <AmRecentTransfersPanel
+          onOpenRoute={openAmRoute}
+          transfers={data.recentTransfers}
+        />
+        <AmRecentMutasiPanel
+          onOpenRoute={openAmRoute}
+          mutasi={data.recentMutasi}
+        />
       </View>
       <View style={styles.panel}>
-        <Text style={styles.panelTitle}>7 Hari Mutasi</Text>
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.panelTitle}>7 Hari Mutasi</Text>
+          <KolamButton
+            accessibilityLabel="AM Dashboard View Mutations"
+            label="View all"
+            intent="outline"
+            size="sm"
+            onPress={() => openAmRoute('mutasi')}
+          />
+        </View>
         <AmMutationChart chartData={data.chartData} />
       </View>
       <View style={styles.panel}>
-        <Text style={styles.panelTitle}>Device Overview</Text>
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.panelTitle}>Device Overview</Text>
+          <KolamButton
+            accessibilityLabel="AM Dashboard View Hardware"
+            label="View all"
+            intent="outline"
+            size="sm"
+            onPress={() => openAmRoute('hardware')}
+          />
+        </View>
         <Text style={styles.panelText}>All devices with active accounts and their locations.</Text>
         <View style={styles.detailListHeader}>
           <Text style={[styles.tableHeaderText, styles.serviceCol]}>Device</Text>
@@ -464,13 +518,32 @@ function AmMutationChart({chartData}: {chartData: Array<{date: string; incoming:
   );
 }
 
-function AmRecentTransfersPanel({transfers}: {transfers: AmTransfer[]}) {
+function AmRecentTransfersPanel({
+  onOpenRoute,
+  transfers,
+}: {
+  onOpenRoute: (route: string, templateRoute?: string) => void;
+  transfers: AmTransfer[];
+}) {
   return (
     <View style={styles.panel}>
-      <Text style={styles.panelTitle}>Recent Transfers</Text>
+      <View style={styles.sectionHeaderRow}>
+        <Text style={styles.panelTitle}>Recent Transfers</Text>
+        <KolamButton
+          accessibilityLabel="AM Dashboard View Transfers"
+          label="View all"
+          intent="outline"
+          size="sm"
+          onPress={() => onOpenRoute('transactions')}
+        />
+      </View>
       <Text style={styles.panelText}>Latest transfer activity across all devices.</Text>
       {transfers.slice(0, 5).map(transfer => (
-        <View key={transfer._id} style={styles.deviceRow}>
+        <KolamInteractionFrame
+          key={transfer._id}
+          accessibilityLabel={`AM Dashboard Transfer ${transfer._id}`}
+          onPress={() => onOpenRoute(`transactions/${transfer._id}`, 'transactions/:id')}
+          style={styles.deviceRow}>
           <View>
             <Text style={styles.rowTitle}>{transfer.recipientName || transfer.recipientAccount}</Text>
             <Text style={styles.rowMeta}>{formatBankAccount(transfer.accountId)} - {formatAmDate(transfer.createdAt)}</Text>
@@ -479,7 +552,7 @@ function AmRecentTransfersPanel({transfers}: {transfers: AmTransfer[]}) {
             <Text style={styles.amountText}>{formatRupiah(transfer.amount)}</Text>
             <AmStatusChip label={transfer.status} tone={getTransferTone(transfer.status)} />
           </View>
-        </View>
+        </KolamInteractionFrame>
       ))}
       <AmLoadingOrEmpty
         isLoading={false}
@@ -491,10 +564,25 @@ function AmRecentTransfersPanel({transfers}: {transfers: AmTransfer[]}) {
   );
 }
 
-function AmRecentMutasiPanel({mutasi}: {mutasi: AmMutasi[]}) {
+function AmRecentMutasiPanel({
+  mutasi,
+  onOpenRoute,
+}: {
+  mutasi: AmMutasi[];
+  onOpenRoute: (route: string, templateRoute?: string) => void;
+}) {
   return (
     <View style={styles.panel}>
-      <Text style={styles.panelTitle}>Recent Mutations</Text>
+      <View style={styles.sectionHeaderRow}>
+        <Text style={styles.panelTitle}>Recent Mutations</Text>
+        <KolamButton
+          accessibilityLabel="AM Dashboard View Recent Mutations"
+          label="View all"
+          intent="outline"
+          size="sm"
+          onPress={() => onOpenRoute('mutasi')}
+        />
+      </View>
       <Text style={styles.panelText}>Latest incoming and outgoing transactions.</Text>
       {mutasi.slice(0, 5).map(item => (
         <View key={item._id} style={styles.deviceRow}>
@@ -2882,8 +2970,39 @@ function AmHardwareDeviceList({
 function AmDeviceDetailPanel({device}: {device: AmDevice}) {
   const [accounts, setAccounts] = React.useState<AmServiceAccount[]>([]);
   const [services, setServices] = React.useState<AmDeviceServiceStatus[]>([]);
+  const [isServiceFormOpen, setIsServiceFormOpen] = React.useState(false);
+  const [serviceFormPlatform, setServiceFormPlatform] = React.useState('bca');
+  const [serviceFormStatus, setServiceFormStatus] = React.useState<'active' | 'inactive' | 'blocked'>('inactive');
+  const [serviceFormLabel, setServiceFormLabel] = React.useState('');
+  const [serviceFormUsername, setServiceFormUsername] = React.useState('');
+  const [serviceFormPassword, setServiceFormPassword] = React.useState('');
+  const [serviceFormPin, setServiceFormPin] = React.useState('');
+  const [serviceFormAccountNumber, setServiceFormAccountNumber] = React.useState('');
+  const [serviceFormPhoneNumber, setServiceFormPhoneNumber] = React.useState('');
+  const [isSubmittingService, setIsSubmittingService] = React.useState(false);
+  const [actionMessage, setActionMessage] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+
+  const servicePlatformItems = React.useMemo(
+    () => device.connectionType === 'browser'
+      ? ['tokopedia', 'shopee', 'tiktok', 'instagram', 'whatsapp']
+      : ['bca', 'brimo', 'dana'],
+    [device.connectionType],
+  );
+
+  const resetDeviceServiceForm = React.useCallback((open = false) => {
+    setIsServiceFormOpen(open);
+    setServiceFormPlatform(servicePlatformItems[0] ?? 'bca');
+    setServiceFormStatus('inactive');
+    setServiceFormLabel('');
+    setServiceFormUsername('');
+    setServiceFormPassword('');
+    setServiceFormPin('');
+    setServiceFormAccountNumber('');
+    setServiceFormPhoneNumber('');
+    setActionMessage(null);
+  }, [servicePlatformItems]);
 
   const fetchDeviceServices = React.useCallback(async () => {
     try {
@@ -2905,6 +3024,62 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
   React.useEffect(() => {
     fetchDeviceServices();
   }, [fetchDeviceServices]);
+
+  React.useEffect(() => {
+    setServiceFormPlatform(servicePlatformItems[0] ?? 'bca');
+  }, [servicePlatformItems]);
+
+  const submitDeviceServiceAccount = React.useCallback(async () => {
+    if (!serviceFormLabel.trim()) {
+      setError('Label service wajib diisi.');
+      return;
+    }
+
+    const credentials: Record<string, unknown> = {};
+    if (serviceFormPhoneNumber.trim()) credentials.phoneNumber = serviceFormPhoneNumber.trim();
+
+    const payload: AmServiceAccountPayload = {
+      platform: serviceFormPlatform,
+      label: serviceFormLabel.trim(),
+      deviceId: device._id,
+      username: serviceFormUsername.trim(),
+      password: serviceFormPassword.trim(),
+      pin: serviceFormPin.trim(),
+      accountNumber: serviceFormAccountNumber.trim(),
+      credentials,
+      status: serviceFormStatus,
+    };
+
+    try {
+      setIsSubmittingService(true);
+      setError(null);
+      setActionMessage(null);
+      await createAmServiceAccount({
+        ...payload,
+        platform: serviceFormPlatform,
+        label: serviceFormLabel.trim(),
+      });
+      resetDeviceServiceForm(false);
+      setActionMessage(`${payload.label} dibuat.`);
+      await fetchDeviceServices();
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Gagal membuat service account device.');
+    } finally {
+      setIsSubmittingService(false);
+    }
+  }, [
+    device._id,
+    fetchDeviceServices,
+    resetDeviceServiceForm,
+    serviceFormAccountNumber,
+    serviceFormLabel,
+    serviceFormPassword,
+    serviceFormPhoneNumber,
+    serviceFormPin,
+    serviceFormPlatform,
+    serviceFormStatus,
+    serviceFormUsername,
+  ]);
 
   return (
     <View style={styles.panel}>
@@ -2930,15 +3105,67 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
       </View>
       <View style={styles.sectionHeaderRow}>
         <Text style={styles.panelTitle}>Service Accounts</Text>
-        <KolamButton
-          disabled={isLoading}
-          label={isLoading ? 'Memuat' : 'Refresh'}
-          intent="outline"
-          size="sm"
-          onPress={fetchDeviceServices}
-        />
+        <View style={styles.inlineActions}>
+          <KolamButton
+            accessibilityLabel={`AM Device Add Service Account ${device._id}`}
+            label="Add Service"
+            size="sm"
+            onPress={() => resetDeviceServiceForm(true)}
+          />
+          <KolamButton
+            disabled={isLoading}
+            label={isLoading ? 'Memuat' : 'Refresh'}
+            intent="outline"
+            size="sm"
+            onPress={fetchDeviceServices}
+          />
+        </View>
       </View>
       <AmInlineError error={error} title="Service account device belum bisa dibaca" />
+      {actionMessage ? (
+        <View style={styles.successPanel}>
+          <Text style={styles.successText}>{actionMessage}</Text>
+        </View>
+      ) : null}
+      {isServiceFormOpen ? (
+        <View style={styles.tablePanel}>
+          <View style={styles.formGrid}>
+            <AmSegmentGroup
+              active={serviceFormPlatform}
+              items={servicePlatformItems}
+              labels={AM_PLATFORM_LABELS}
+              onSelect={setServiceFormPlatform}
+            />
+            <AmSegmentGroup
+              active={serviceFormStatus}
+              items={['active', 'inactive', 'blocked']}
+              onSelect={value => setServiceFormStatus(value as 'active' | 'inactive' | 'blocked')}
+            />
+            <AmTextInput label="Label" placeholder="Service label" value={serviceFormLabel} onChangeText={setServiceFormLabel} />
+            <AmTextInput label="Username" placeholder="username/email" value={serviceFormUsername} onChangeText={setServiceFormUsername} />
+            <AmTextInput label="Password" placeholder="password" secureTextEntry value={serviceFormPassword} onChangeText={setServiceFormPassword} />
+            <AmTextInput label="PIN" placeholder="PIN" secureTextEntry value={serviceFormPin} onChangeText={setServiceFormPin} />
+            <AmTextInput label="Account Number" placeholder="nomor akun/rekening" value={serviceFormAccountNumber} onChangeText={setServiceFormAccountNumber} />
+            <AmTextInput label="Phone Number" placeholder="nomor HP" value={serviceFormPhoneNumber} onChangeText={setServiceFormPhoneNumber} />
+            <View style={styles.inlineActions}>
+              <KolamButton
+                accessibilityLabel={`AM Device Save Service Account ${device._id}`}
+                label={isSubmittingService ? 'Menyimpan' : 'Create Service'}
+                muted={isSubmittingService}
+                size="sm"
+                onPress={submitDeviceServiceAccount}
+              />
+              <KolamButton
+                accessibilityLabel={`AM Device Cancel Service Account ${device._id}`}
+                label="Cancel"
+                intent="outline"
+                size="sm"
+                onPress={() => resetDeviceServiceForm(false)}
+              />
+            </View>
+          </View>
+        </View>
+      ) : null}
       <View style={styles.tablePanel}>
         <View style={styles.tableHeader}>
           <Text style={[styles.tableHeaderText, styles.serviceCol]}>Account</Text>
