@@ -2182,9 +2182,11 @@ function AmHardwarePage({initialRoute}: {initialRoute?: AmHardwareInitialRoute})
           return;
         }
         const devicePayload: AmDevicePayload = {
-          connectionType: formConnectionType,
           appiumPort: editingHardwareId ? parseOptionalNumber(formAppiumPort) : undefined,
         };
+        if (!editingHardwareId) {
+          devicePayload.connectionType = formConnectionType;
+        }
         if (formConnectionType === 'usb') {
           devicePayload.udid = formUdid.trim();
           devicePayload.adbPort = parseOptionalNumber(formAdbPort);
@@ -2386,12 +2388,21 @@ function AmHardwarePage({initialRoute}: {initialRoute?: AmHardwareInitialRoute})
                   ))}
                 </View>
               </View>
-              <AmSegmentGroup
-                active={formConnectionType}
-                items={['usb', 'tcp', 'browser']}
-                labels={{usb: 'USB', tcp: 'TCP', browser: 'Browser'}}
-                onSelect={handleHardwareConnectionTypeChange}
-              />
+              {editingHardwareId ? (
+                <View accessibilityLabel="AM Hardware Connection Type Read Only" style={styles.detailListRow}>
+                  <Text style={[styles.tableHeaderText, styles.accountCol]}>Connection</Text>
+                  <Text style={[styles.cellText, styles.recipientCol]}>
+                    {{usb: 'USB', tcp: 'TCP', browser: 'Browser'}[formConnectionType]}
+                  </Text>
+                </View>
+              ) : (
+                <AmSegmentGroup
+                  active={formConnectionType}
+                  items={['usb', 'tcp', 'browser']}
+                  labels={{usb: 'USB', tcp: 'TCP', browser: 'Browser'}}
+                  onSelect={handleHardwareConnectionTypeChange}
+                />
+              )}
               {formConnectionType === 'usb' ? (
                 <AmTextInput label="UDID" placeholder="USB device UDID" value={formUdid} onChangeText={setFormUdid} />
               ) : null}

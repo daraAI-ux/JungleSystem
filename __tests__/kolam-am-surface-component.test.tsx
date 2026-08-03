@@ -60,6 +60,7 @@ import {
   uploadAmTokopediaSession,
   updateAmTokopediaCaptchaSettings,
   updateAmTokopediaLoginMethod,
+  updateAmDevice,
   updateAmRack,
   updateAmServiceAccount,
   updateAmUser,
@@ -3110,6 +3111,35 @@ describe('KolamAmSurface', () => {
       boxId: 'box-1',
       connectionType: 'browser',
     });
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Edit Device device-1'}).props.onPress();
+    });
+    expect(
+      renderer!.root.findAllByProps({accessibilityLabel: 'AM Hardware Connection Type Read Only'}).length,
+    ).toBeGreaterThan(0);
+    expect(
+      renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment TCP'}),
+    ).toHaveLength(0);
+    inputs = renderer!.root.findAllByType(TextInput);
+    await act(async () => {
+      inputs[0].props.onChangeText('USB9999');
+      inputs[1].props.onChangeText('Samsung');
+      inputs[2].props.onChangeText('A55');
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Save'}).props.onPress();
+    });
+
+    expect(updateAmDevice).toHaveBeenCalledWith('device-1', expect.objectContaining({
+      udid: 'USB9999',
+      brand: 'Samsung',
+      model: 'A55',
+    }));
+    expect(updateAmDevice).toHaveBeenCalledWith('device-1', expect.not.objectContaining({
+      connectionType: expect.anything(),
+      tcpAddress: expect.anything(),
+    }));
 
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Delete Device device-1'}).props.onPress();
