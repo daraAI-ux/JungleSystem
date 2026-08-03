@@ -769,13 +769,22 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
       sidebarItem('/sales', { group: 'Penjualan', label: 'Penjualan' }),
       sidebarItem('/source', { group: 'Penjualan', label: 'Sumber' }),
       sidebarItem('/complaints', { group: 'Penjualan', label: 'Komplain' }),
-      sidebarItem('/layanan', { label: 'Layanan' }),
-      sidebarItem('/terms-templates', { label: 'Syarat & Ketentuan' }),
+      sidebarItem('/terms-templates', {
+        group: 'Penjualan',
+        label: 'Syarat & Ketentuan',
+      }),
+      sidebarItem('/proyek', { group: 'Penjualan', label: 'Proyek' }),
+      sidebarItem('/layanan', { group: undefined, label: 'Layanan' }),
       sidebarItem('/campaign', { group: 'Kampanye', label: 'Daftar' }),
-      sidebarItem('/sales/discount-approval', { group: 'Kampanye', label: 'Persetujuan Diskon' }),
+      sidebarItem('/sales/discount-approval', {
+        group: 'Kampanye',
+        label: 'Persetujuan Diskon',
+      }),
       sidebarItem('/vouchers', { group: 'Kampanye', label: 'Voucher' }),
-      sidebarItem('/shipping-method', { label: 'Metode Pengiriman' }),
-      sidebarItem('/proyek', { label: 'Proyek' }),
+      sidebarItem('/shipping-method', {
+        group: undefined,
+        label: 'Metode Pengiriman',
+      }),
     ],
   },
   {

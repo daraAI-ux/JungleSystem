@@ -17,44 +17,92 @@ export function KolamMenuSectionItems({
   items: ReturnType<typeof getKolamNavigationDisclosure>['visibleItems'];
   onSelectItem: (item: KolamNavigationItem) => void;
 }) {
+  const groups = getMenuItemGroups(items);
+  const [expandedGroups, setExpandedGroups] = React.useState<
+    Record<string, boolean>
+  >({});
+
   return (
     <KolamMappedList
-      items={getMenuItemGroups(items)}
+      items={groups}
       getKey={group => group.id}
-      renderItem={group => (
-        <View style={group.label ? styles.group : styles.rootGroup}>
-          {group.label ? <KolamMenuItemGroupLabel label={group.label} /> : null}
-          <KolamMappedList
-            items={group.items}
-            getKey={item => item.route}
-            renderItem={item => (
-              <KolamMenuItem
-                active={isMenuItemActive(item, activeRoute)}
-                grouped={Boolean(group.label)}
-                label={item.label}
-                onPress={() => onSelectItem(item)}
+      renderItem={group => {
+        if (!group.label) {
+          return (
+            <View style={styles.rootGroup}>
+              <KolamMappedList
+                items={group.items}
+                getKey={item => item.route}
+                renderItem={item => (
+                  <KolamMenuItem
+                    active={isMenuItemActive(item, activeRoute)}
+                    label={item.label}
+                    onPress={() => onSelectItem(item)}
+                  />
+                )}
               />
-            )}
-          />
-        </View>
-      )}
+            </View>
+          );
+        }
+
+        const hasActiveChild = group.items.some(item =>
+          isMenuItemActive(item, activeRoute),
+        );
+        const expanded =
+          hasActiveChild || Boolean(expandedGroups[group.label]);
+
+        return (
+          <View style={styles.group}>
+            <KolamMenuItemGroupLabel
+              expanded={expanded}
+              label={group.label}
+              onPress={() => {
+                if (hasActiveChild) {
+                  return;
+                }
+                setExpandedGroups(current => ({
+                  ...current,
+                  [group.label!]: !current[group.label!],
+                }));
+              }}
+            />
+            {expanded ? (
+              <KolamMappedList
+                items={group.items}
+                getKey={item => item.route}
+                renderItem={item => (
+                  <KolamMenuItem
+                    active={isMenuItemActive(item, activeRoute)}
+                    grouped
+                    label={item.label}
+                    onPress={() => onSelectItem(item)}
+                  />
+                )}
+              />
+            ) : null}
+          </View>
+        );
+      }}
     />
   );
 }
 
-function getMenuItemGroups(items: KolamNavigationItem[]) {
+export function getMenuItemGroups(items: KolamNavigationItem[]) {
   return items.reduce<
     Array<{ id: string; label: string | null; items: KolamNavigationItem[] }>
   >((groups, item) => {
     const label = item.group ?? null;
-    const id = label ? `group:${label}:${item.route}` : `item:${item.route}`;
     const lastGroup = groups[groups.length - 1];
 
-    if (lastGroup?.label === label) {
+    if (label && lastGroup?.label === label) {
       lastGroup.items.push(item);
       return groups;
     }
 
+    // Include first route so non-adjacent same labels stay unique React keys.
+    const id = label
+      ? `group:${label}:${item.route}`
+      : `item:${item.route}`;
     groups.push({ id, label, items: [item] });
     return groups;
   }, []);
