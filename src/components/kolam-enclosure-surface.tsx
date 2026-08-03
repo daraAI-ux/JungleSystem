@@ -452,8 +452,8 @@ function KolamEnclosureEditSurface({
         <Text style={styles.sectionMeta}>
           Kode, merek, dan tanggal pemasangan.
         </Text>
-        <View style={styles.editFormRow}>
-          <LabeledEditField label="Kode *" style={styles.editFormCol}>
+        <View style={styles.editFormGrid}>
+          <LabeledEditField label="Kode *">
             <KolamFormTextField
               onChangeText={value =>
                 setForm(current => ({
@@ -466,7 +466,7 @@ function KolamEnclosureEditSurface({
               value={form.enclosure_code}
             />
           </LabeledEditField>
-          <LabeledEditField label="Merek" style={styles.editFormCol}>
+          <LabeledEditField label="Merek">
             <KolamDropdownSelect
               label="Merek"
               menuPlacement="inline"
@@ -482,10 +482,18 @@ function KolamEnclosureEditSurface({
               value={form.brandId || ENCLOSURE_EDIT_NONE}
             />
           </LabeledEditField>
-          <LabeledEditField
-            label="Tanggal ditambahkan"
-            style={styles.editFormCol}
-          >
+          {brandBannerUri ? (
+            <View style={styles.editBrandBanner}>
+              <KolamRemoteImage
+                accessibilityLabel="Banner merek"
+                resizeMode="contain"
+                scope="enclosure-edit-brand"
+                sourceUri={brandBannerUri}
+                style={styles.editBrandBannerImage}
+              />
+            </View>
+          ) : null}
+          <LabeledEditField label="Tanggal ditambahkan">
             <KolamFormTextField
               onChangeText={value =>
                 setForm(current => ({...current, acquired_date: value}))
@@ -495,68 +503,55 @@ function KolamEnclosureEditSurface({
               value={form.acquired_date}
             />
           </LabeledEditField>
-        </View>
-        {brandBannerUri ? (
-          <View style={styles.editBrandBanner}>
-            <KolamRemoteImage
-              accessibilityLabel="Banner merek"
-              resizeMode="contain"
-              scope="enclosure-edit-brand"
-              sourceUri={brandBannerUri}
-              style={styles.editBrandBannerImage}
-            />
-          </View>
-        ) : null}
-        <View style={styles.editFormRow}>
-          <LabeledEditField
-            label="Visibilitas klien"
-            style={styles.editFormCol}
-          >
-            <KolamDropdownSelect
+          <View style={styles.editFormRow}>
+            <LabeledEditField
               label="Visibilitas klien"
-              menuPlacement="inline"
-              onChange={value =>
-                setForm(current => ({
-                  ...current,
-                  clientScope: value as KolamEnclosureClientScope,
-                }))
-              }
-              options={[
-                {label: 'Internal staff', value: 'internal'},
-                {label: 'Terhubung klien', value: 'client_linked'},
-              ]}
-              showLabelInTrigger={false}
-              style={styles.editFormInput}
-              value={form.clientScope}
-            />
-          </LabeledEditField>
-          <LabeledEditField
-            label="Tujuan livestock"
-            style={styles.editFormCol}
-          >
-            <KolamDropdownSelect
+              style={styles.editFormCol}
+            >
+              <KolamDropdownSelect
+                label="Visibilitas klien"
+                menuPlacement="inline"
+                onChange={value =>
+                  setForm(current => ({
+                    ...current,
+                    clientScope: value as KolamEnclosureClientScope,
+                  }))
+                }
+                options={[
+                  {label: 'Internal staff', value: 'internal'},
+                  {label: 'Terhubung klien', value: 'client_linked'},
+                ]}
+                showLabelInTrigger={false}
+                style={styles.editFormInput}
+                value={form.clientScope}
+              />
+            </LabeledEditField>
+            <LabeledEditField
               label="Tujuan livestock"
-              menuPlacement="inline"
-              onChange={value =>
-                setForm(current => ({
-                  ...current,
-                  livestockPurpose: value as KolamEnclosureLivestockPurpose,
-                }))
-              }
-              options={[
-                {label: 'Stok jual', value: 'saleable'},
-                {label: 'Produksi (indukan)', value: 'production'},
-              ]}
-              showLabelInTrigger={false}
-              style={styles.editFormInput}
-              value={form.livestockPurpose}
-            />
-          </LabeledEditField>
-          <View style={[styles.editFormCol, styles.editFormHintCol]}>
-            <Text style={styles.sectionMeta}>
-              Produksi = seluruh isi kandang indukan (stock OUT, tidak dijual)
-            </Text>
+              style={styles.editFormCol}
+            >
+              <KolamDropdownSelect
+                label="Tujuan livestock"
+                menuPlacement="inline"
+                onChange={value =>
+                  setForm(current => ({
+                    ...current,
+                    livestockPurpose: value as KolamEnclosureLivestockPurpose,
+                  }))
+                }
+                options={[
+                  {label: 'Stok jual', value: 'saleable'},
+                  {label: 'Produksi (indukan)', value: 'production'},
+                ]}
+                showLabelInTrigger={false}
+                style={styles.editFormInput}
+                value={form.livestockPurpose}
+              />
+            </LabeledEditField>
           </View>
+          <Text style={styles.sectionMeta}>
+            Produksi = seluruh isi kandang indukan (stock OUT, tidak dijual)
+          </Text>
         </View>
       </DetailSection>
 
@@ -2732,13 +2727,9 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   editFormCol: {
-    flexBasis: 180,
+    flexBasis: '48%',
     flexGrow: 1,
-    minWidth: 160,
-  },
-  editFormHintCol: {
-    justifyContent: 'flex-end',
-    paddingBottom: 4,
+    minWidth: 200,
   },
   editFormField: {
     gap: 6,
