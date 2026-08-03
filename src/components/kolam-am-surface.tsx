@@ -5680,7 +5680,7 @@ function AmLoginPage({
         <View style={styles.formGrid}>
           <AmTextInput
             label="Email atau username"
-            placeholder="Akun Kolam"
+            placeholder="Akun Kolam (email atau username)"
             value={username}
             onChangeText={setUsername}
           />

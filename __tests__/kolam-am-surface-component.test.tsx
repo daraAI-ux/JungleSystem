@@ -603,7 +603,7 @@ describe('KolamAmSurface', () => {
 
     const inputs = renderer!.root.findAllByType(TextInput);
     expect(renderText(renderer!).join(' ')).toContain('Gunakan akun Kolam yang sama.');
-    expect(inputs[0].props.placeholder).toBe('Akun Kolam');
+    expect(inputs[0].props.placeholder).toBe('Akun Kolam (email atau username)');
     expect(inputs[1].props.placeholder).toBe('Password Kolam');
 
     await act(async () => {
