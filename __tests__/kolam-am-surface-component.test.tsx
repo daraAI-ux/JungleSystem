@@ -2422,9 +2422,8 @@ describe('KolamAmSurface', () => {
     inputs = renderer!.root.findAllByType(TextInput);
     await act(async () => {
       inputs[0].props.onChangeText('USBNEW1');
-      inputs[1].props.onChangeText('Samsung');
-      inputs[2].props.onChangeText('A54');
-      inputs[3].props.onChangeText('whatsapp, banking');
+      inputs[2].props.onChangeText('Samsung');
+      inputs[3].props.onChangeText('A54');
     });
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Save'}).props.onPress();
@@ -2437,11 +2436,18 @@ describe('KolamAmSurface', () => {
       adbPort: 5037,
       brand: 'Samsung',
       model: 'A54',
-      tags: ['whatsapp', 'banking'],
     });
 
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Segment Browser'}).props.onPress();
+    });
+    inputs = renderer!.root.findAllByType(TextInput);
+    await act(async () => {
+      inputs[0].props.onChangeText('STALE-USB');
+      inputs[1].props.onChangeText('192.168.1.50:5555');
+      inputs[2].props.onChangeText('Stale Brand');
+      inputs[3].props.onChangeText('Stale Model');
+      inputs[4].props.onChangeText('6404');
     });
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Save'}).props.onPress();

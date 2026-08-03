@@ -1824,7 +1824,6 @@ function AmHardwarePage({initialRoute}: {initialRoute?: AmHardwareInitialRoute})
   const [formModel, setFormModel] = React.useState('');
   const [formAdbPort, setFormAdbPort] = React.useState('');
   const [formAppiumPort, setFormAppiumPort] = React.useState('');
-  const [formTags, setFormTags] = React.useState('');
   const [actingHardwareId, setActingHardwareId] = React.useState<string | null>(null);
   const [actionMessage, setActionMessage] = React.useState<string | null>(null);
   const [deletingHardware, setDeletingHardware] = React.useState<{
@@ -2028,7 +2027,6 @@ function AmHardwarePage({initialRoute}: {initialRoute?: AmHardwareInitialRoute})
     setFormModel('');
     setFormAdbPort(nextForm === 'device' ? '5037' : '');
     setFormAppiumPort('');
-    setFormTags('');
     setActionMessage(null);
   }, [boxes, hardwareForm, racks, selectedBoxId, selectedRackId]);
 
@@ -2062,7 +2060,6 @@ function AmHardwarePage({initialRoute}: {initialRoute?: AmHardwareInitialRoute})
     setFormModel(device.model ?? '');
     setFormAdbPort(device.adbPort ? String(device.adbPort) : '');
     setFormAppiumPort(device.appiumPort ? String(device.appiumPort) : '');
-    setFormTags((device.tags ?? []).join(', '));
     setActionMessage(null);
   }, []);
 
@@ -2130,10 +2127,6 @@ function AmHardwarePage({initialRoute}: {initialRoute?: AmHardwareInitialRoute})
           devicePayload.brand = formBrand.trim();
           devicePayload.model = formModel.trim();
         }
-        const tags = parseCommaSeparatedTags(formTags);
-        if (tags.length) {
-          devicePayload.tags = tags;
-        }
         const payload = cleanDevicePayload(devicePayload);
         if (editingHardwareId) {
           await updateAmDevice(editingHardwareId, payload);
@@ -2153,7 +2146,7 @@ function AmHardwarePage({initialRoute}: {initialRoute?: AmHardwareInitialRoute})
     } finally {
       setIsSubmitting(false);
     }
-  }, [editingHardwareId, fetchHardware, formAdbPort, formAppiumPort, formBoxId, formBrand, formConnectionType, formDescription, formLocation, formModel, formRackId, formServerIp, formStatus, formTags, formTcpAddress, formUdid, hardwareForm, resetHardwareForm]);
+  }, [editingHardwareId, fetchHardware, formAdbPort, formAppiumPort, formBoxId, formBrand, formConnectionType, formDescription, formLocation, formModel, formRackId, formServerIp, formStatus, formTcpAddress, formUdid, hardwareForm, resetHardwareForm]);
 
   const requestDeleteHardware = React.useCallback((kind: 'rack' | 'box' | 'device', id: string, label: string) => {
     setDeletingHardware({kind, id, label});
@@ -2326,23 +2319,12 @@ function AmHardwarePage({initialRoute}: {initialRoute?: AmHardwareInitialRoute})
                 labels={{usb: 'USB', tcp: 'TCP', browser: 'Browser'}}
                 onSelect={handleHardwareConnectionTypeChange}
               />
-              {formConnectionType === 'usb' ? (
-                <AmTextInput label="UDID" placeholder="USB device UDID" value={formUdid} onChangeText={setFormUdid} />
-              ) : null}
-              {formConnectionType === 'tcp' ? (
-                <AmTextInput label="TCP Address" placeholder="192.168.101.231:5555" value={formTcpAddress} onChangeText={setFormTcpAddress} />
-              ) : null}
-              {formConnectionType !== 'browser' ? (
-                <>
-                  <AmTextInput label="Brand" placeholder="Samsung / Server" value={formBrand} onChangeText={setFormBrand} />
-                  <AmTextInput label="Model" placeholder="A52 / Playwright" value={formModel} onChangeText={setFormModel} />
-                </>
-              ) : null}
-              <AmTextInput label="Tags" placeholder="whatsapp, marketplace, banking" value={formTags} onChangeText={setFormTags} />
-              {formConnectionType !== 'browser' ? (
-                <AmTextInput label="ADB Port" placeholder="optional" value={formAdbPort} onChangeText={setFormAdbPort} />
-              ) : null}
-              {editingHardwareId && formConnectionType !== 'browser' ? (
+              <AmTextInput label="UDID" placeholder="USB device UDID" value={formUdid} onChangeText={setFormUdid} />
+              <AmTextInput label="TCP Address" placeholder="192.168.101.231:5555" value={formTcpAddress} onChangeText={setFormTcpAddress} />
+              <AmTextInput label="Brand" placeholder="Samsung / Server" value={formBrand} onChangeText={setFormBrand} />
+              <AmTextInput label="Model" placeholder="A52 / Playwright" value={formModel} onChangeText={setFormModel} />
+              <AmTextInput label="ADB Port" placeholder="optional" value={formAdbPort} onChangeText={setFormAdbPort} />
+              {editingHardwareId ? (
                 <AmTextInput label="Appium Port" placeholder="optional" value={formAppiumPort} onChangeText={setFormAppiumPort} />
               ) : null}
             </>
@@ -6536,13 +6518,6 @@ function parseOptionalNumber(value: string) {
   if (!trimmed) return undefined;
   const parsed = Number(trimmed);
   return Number.isFinite(parsed) ? parsed : undefined;
-}
-
-function parseCommaSeparatedTags(value: string) {
-  return value
-    .split(',')
-    .map(tag => tag.trim())
-    .filter(Boolean);
 }
 
 function cleanDevicePayload(payload: AmDevicePayload): Omit<AmDevicePayload, 'boxId'> {
