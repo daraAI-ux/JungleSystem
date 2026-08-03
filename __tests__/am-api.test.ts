@@ -1,6 +1,12 @@
 import {appConfig} from '../src/config/app';
 import {clearResponseCookieJar} from '../src/lib/api-client';
-import {createAmTransfer, logoutAmSession} from '../src/services/am-api';
+import {
+  createAmTransfer,
+  getAmBoxById,
+  getAmDeviceById,
+  getAmRackById,
+  logoutAmSession,
+} from '../src/services/am-api';
 
 const fetchMock = jest.fn();
 
@@ -51,6 +57,64 @@ describe('AM API service', () => {
         headers: expect.objectContaining({
           Cookie: 'kolamCsrf=',
           'Content-Type': 'application/json',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+  });
+
+  it('loads hardware detail resources through AM live get-by-id endpoints', async () => {
+    fetchMock.mockResolvedValue(jsonResponse({success: true, data: {_id: 'rack-live'}}));
+
+    await getAmRackById('rack-live', 'https://am.example.test/api');
+
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://am.example.test/api/rack/rack-live',
+      expect.objectContaining({
+        method: 'GET',
+        credentials: 'include',
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+
+    fetchMock.mockResolvedValue(jsonResponse({success: true, data: {_id: 'box-live'}}));
+
+    await getAmBoxById(
+      'box-live',
+      {rackId: 'rack-live'},
+      'https://am.example.test/api',
+    );
+
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://am.example.test/api/box/box-live?rackId=rack-live',
+      expect.objectContaining({
+        method: 'GET',
+        credentials: 'include',
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+
+    fetchMock.mockResolvedValue(jsonResponse({success: true, data: {_id: 'device-live'}}));
+
+    await getAmDeviceById(
+      'device-live',
+      {boxId: 'box-live'},
+      'https://am.example.test/api',
+    );
+
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://am.example.test/api/device/device-live?boxId=box-live',
+      expect.objectContaining({
+        method: 'GET',
+        credentials: 'include',
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
           'x-source': appConfig.amSourceHeader,
         }),
       }),

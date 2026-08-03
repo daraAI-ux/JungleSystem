@@ -684,6 +684,13 @@ export async function getAmRacks(
   return getAmList<AmRack>('/rack', query, baseUrl);
 }
 
+export async function getAmRackById(
+  id: string,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmRack> {
+  return amGet<AmRack>(`/rack/${id}`, undefined, baseUrl);
+}
+
 export async function getAmBoxes(
   query?: AmBoxQuery,
   baseUrl = appConfig.amApiBaseUrl,
@@ -691,11 +698,27 @@ export async function getAmBoxes(
   return getAmList<AmBox>('/box', query, baseUrl);
 }
 
+export async function getAmBoxById(
+  id: string,
+  query?: Pick<AmBoxQuery, 'rackId'>,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmBox> {
+  return amGet<AmBox>(`/box/${id}`, query, baseUrl);
+}
+
 export async function getAmDevices(
   query?: AmDeviceQuery,
   baseUrl = appConfig.amApiBaseUrl,
 ): Promise<AmListResponse<AmDevice>> {
   return getAmList<AmDevice>('/device', query, baseUrl);
+}
+
+export async function getAmDeviceById(
+  id: string,
+  query?: Pick<AmDeviceQuery, 'boxId'>,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmDevice> {
+  return amGet<AmDevice>(`/device/${id}`, query, baseUrl);
 }
 
 export async function getAmDevicesAdbStatus(

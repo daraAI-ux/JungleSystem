@@ -21,8 +21,10 @@ import {
   deleteAmWebhookConfig,
   getAmActivityLogs,
   getAmActivityLogStats,
+  getAmBoxById,
   getAmCurrentUser,
   getAmDashboard,
+  getAmDeviceById,
   getAmDeviceServiceLogs,
   getAmDeviceServices,
   getAmDevices,
@@ -30,6 +32,7 @@ import {
   getAmMutasi,
   getAmMutasiById,
   getAmMutasiSummary,
+  getAmRackById,
   getAmRacks,
   getAmRoles,
   getAmServiceAccounts,
@@ -82,6 +85,7 @@ jest.mock('../src/services/am-api', () => ({
   forceFailAmTask: jest.fn(() => Promise.resolve({_id: 'task-1'})),
   getAmActivityLogs: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
   getAmActivityLogStats: jest.fn(() => Promise.resolve({since: '', days: 7, byType: [], byStatus: [], topUsers: [], topPaths: []})),
+  getAmBoxById: jest.fn(() => Promise.resolve({_id: 'box-1', name: 'Box 1'})),
   getAmBoxes: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
   getAmCurrentUser: jest.fn(() => Promise.resolve({
     _id: 'user-current',
@@ -90,6 +94,7 @@ jest.mock('../src/services/am-api', () => ({
     role: {_id: 'role-admin', name: 'Admin', permissions: ['user:read'], description: 'Admin role'},
   })),
   getAmDashboard: jest.fn(() => Promise.resolve(mockDashboardData)),
+  getAmDeviceById: jest.fn(() => Promise.resolve({_id: 'device-1', name: 'Device 1'})),
   getAmDeviceServiceLogs: jest.fn(() => Promise.resolve({logs: [], processRunning: false})),
   getAmDeviceServices: jest.fn(() => Promise.resolve([])),
   getAmDeviceServiceQrUrl: jest.fn((deviceId: string, platform: string, qrcodeId?: string) => {
@@ -101,6 +106,7 @@ jest.mock('../src/services/am-api', () => ({
   getAmMutasi: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
   getAmMutasiById: jest.fn(() => Promise.resolve({_id: 'mutasi-1'})),
   getAmMutasiSummary: jest.fn(() => Promise.resolve({masuk: {total: 0, count: 0}, keluar: {total: 0, count: 0}})),
+  getAmRackById: jest.fn(() => Promise.resolve({_id: 'rack-1', name: 'Rack 1'})),
   getAmRacks: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
   getAmRoles: jest.fn(() => Promise.resolve([])),
   getAmServiceAccounts: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
@@ -297,6 +303,10 @@ describe('KolamAmSurface', () => {
       );
     });
     renderers.push(renderer!);
+
+    await act(async () => {
+      await Promise.resolve();
+    });
 
     const text = renderText(renderer!);
     const joinedText = text.join(' ');
@@ -1570,6 +1580,49 @@ describe('KolamAmSurface', () => {
     jest.mocked(getAmDevicesAdbStatus).mockResolvedValueOnce({
       'device-1': 'connected',
     });
+    jest.mocked(getAmRackById).mockResolvedValueOnce({
+      _id: 'rack-1',
+      name: 'Rack Alpha',
+      slug: 'rack-alpha',
+      location: 'Room A',
+      description: '',
+      status: 'active',
+      serverIp: '10.0.0.1:2700',
+      boxCount: 1,
+      deviceCount: 1,
+      addedBy: {_id: 'user-1', fullName: 'Hardware Admin'},
+      createdAt: '',
+      updatedAt: '',
+    });
+    jest.mocked(getAmBoxById).mockResolvedValueOnce({
+      _id: 'box-1',
+      name: 'Box 01',
+      slug: 'box-01',
+      rackId: {_id: 'rack-1', name: 'Rack Alpha'},
+      description: 'Main box',
+      status: 'active',
+      deviceCount: 1,
+      createdAt: '',
+      updatedAt: '',
+    });
+    jest.mocked(getAmDeviceById).mockResolvedValueOnce({
+      _id: 'device-1',
+      name: 'Phone Rack',
+      slug: 'phone-rack',
+      boxId: {
+        _id: 'box-1',
+        name: 'Box 01',
+        rackId: {_id: 'rack-1', name: 'Rack Alpha'},
+      },
+      connectionType: 'tcp',
+      tcpAddress: '10.0.0.5:5555',
+      udid: null,
+      brand: 'Samsung',
+      model: 'A15',
+      adbStatus: 'connected',
+      createdAt: '',
+      updatedAt: '',
+    });
     jest.mocked(getAmServiceAccounts).mockResolvedValue({
       data: [
         {
@@ -1681,6 +1734,90 @@ describe('KolamAmSurface', () => {
       credentials: {},
       status: 'inactive',
     }));
+  });
+
+  it('resolves hardware deep links by slug through live get-by-id endpoints', async () => {
+    jest.mocked(getAmRacks).mockResolvedValue({
+      data: [],
+      meta: {total: 0, limit: 20},
+    });
+    jest.mocked(jest.requireMock('../src/services/am-api').getAmBoxes).mockResolvedValue({
+      data: [],
+      meta: {total: 0, limit: 20},
+    });
+    jest.mocked(getAmDevices).mockResolvedValue({
+      data: [],
+      meta: {total: 0, limit: 20},
+    });
+    jest.mocked(getAmRackById).mockResolvedValue({
+      _id: 'rack-live',
+      name: 'Rack Live',
+      slug: 'rack-live',
+      location: 'Room Live',
+      description: '',
+      status: 'active',
+      serverIp: '10.0.0.9',
+      boxCount: 1,
+      deviceCount: 1,
+      createdAt: '',
+      updatedAt: '',
+    });
+    jest.mocked(getAmBoxById).mockResolvedValue({
+      _id: 'box-live',
+      name: 'Box Live',
+      slug: 'box-live',
+      rackId: {_id: 'rack-live', name: 'Rack Live'},
+      description: '',
+      status: 'active',
+      deviceCount: 1,
+      createdAt: '',
+      updatedAt: '',
+    });
+    jest.mocked(getAmDeviceById).mockResolvedValue({
+      _id: 'device-live',
+      name: 'Device Live',
+      slug: 'device-live',
+      boxId: {
+        _id: 'box-live',
+        name: 'Box Live',
+        rackId: {_id: 'rack-live', name: 'Rack Live'},
+      },
+      connectionType: 'tcp',
+      tcpAddress: '10.0.0.9:5555',
+      udid: null,
+      brand: 'Samsung',
+      model: 'A55',
+      adbStatus: 'connected',
+      createdAt: '',
+      updatedAt: '',
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface
+          activeModuleRoute={concreteAmRoute(
+            'hardware/rack-live/box-live/device-live',
+            'hardware/:rackId/:boxId/:deviceId',
+          )}
+          dataset={seedUnifiedDataset}
+        />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    const text = renderText(renderer!);
+    expect(text).toContain('Rack Live');
+    expect(text).toContain('Box Live');
+    expect(text).toContain('Device Live');
+    expect(text).toContain('A55');
+    expect(getAmRackById).toHaveBeenCalledWith('rack-live');
+    expect(getAmBoxById).toHaveBeenCalledWith('box-live', {rackId: 'rack-live'});
+    expect(getAmDeviceById).toHaveBeenCalledWith('device-live', {boxId: 'box-live'});
   });
 
   it('runs hardware create, edit, and delete actions from the Hardware route', async () => {

@@ -34,7 +34,9 @@ import {
   deleteAmWebhookConfig,
   forceFailAmTransfer,
   forceFailAmTask,
+  getAmBoxById,
   getAmBoxes,
+  getAmDeviceById,
   getAmDevices,
   getAmActivityLogs,
   getAmActivityLogStats,
@@ -48,6 +50,7 @@ import {
   getAmMutasi,
   getAmMutasiById,
   getAmMutasiSummary,
+  getAmRackById,
   getAmRacks,
   getAmRoles,
   getAmServiceAccounts,
@@ -1803,9 +1806,69 @@ function AmHardwarePage({initialRoute}: {initialRoute?: AmHardwareInitialRoute})
   const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    setSelectedRackId(initialRoute?.rackId ?? null);
-    setSelectedBoxId(initialRoute?.boxId ?? null);
-    setSelectedDeviceId(initialRoute?.deviceId ?? null);
+    let mounted = true;
+
+    const resolveRoute = async () => {
+      if (!initialRoute?.rackId && !initialRoute?.boxId && !initialRoute?.deviceId) {
+        setSelectedRackId(null);
+        setSelectedBoxId(null);
+        setSelectedDeviceId(null);
+        return;
+      }
+
+      try {
+        setError(null);
+        let nextRackId = initialRoute.rackId ?? null;
+        let nextBoxId = initialRoute.boxId ?? null;
+        let nextDeviceId = initialRoute.deviceId ?? null;
+
+        if (initialRoute.rackId) {
+          const rack = await getAmRackById(initialRoute.rackId);
+          if (!mounted) return;
+          nextRackId = rack._id;
+          setRacks(current => mergeAmEntityById(current, rack));
+        }
+
+        if (initialRoute.boxId) {
+          const box = await getAmBoxById(
+            initialRoute.boxId,
+            nextRackId ? {rackId: nextRackId} : undefined,
+          );
+          if (!mounted) return;
+          nextBoxId = box._id;
+          setBoxes(current => mergeAmEntityById(current, box));
+          nextRackId = resolveRackId(box.rackId) || nextRackId;
+        }
+
+        if (initialRoute.deviceId) {
+          const device = await getAmDeviceById(
+            initialRoute.deviceId,
+            nextBoxId ? {boxId: nextBoxId} : undefined,
+          );
+          if (!mounted) return;
+          nextDeviceId = device._id;
+          setDevices(current => mergeAmEntityById(current, device));
+          nextBoxId = resolveBoxId(device.boxId) || nextBoxId;
+        }
+
+        if (!mounted) return;
+        setSelectedRackId(nextRackId);
+        setSelectedBoxId(nextBoxId);
+        setSelectedDeviceId(nextDeviceId);
+      } catch (nextError) {
+        if (!mounted) return;
+        setSelectedRackId(initialRoute.rackId ?? null);
+        setSelectedBoxId(initialRoute.boxId ?? null);
+        setSelectedDeviceId(initialRoute.deviceId ?? null);
+        setError(nextError instanceof Error ? nextError.message : 'Gagal memuat route hardware AM.');
+      }
+    };
+
+    void resolveRoute();
+
+    return () => {
+      mounted = false;
+    };
   }, [initialRoute?.boxId, initialRoute?.deviceId, initialRoute?.rackId]);
 
   const fetchHardware = React.useCallback(async () => {
@@ -1816,16 +1879,46 @@ function AmHardwarePage({initialRoute}: {initialRoute?: AmHardwareInitialRoute})
         getAmBoxes(),
         getAmDevices(),
       ]);
-      setRacks(rackResponse.data);
-      setBoxes(boxResponse.data);
-      setDevices(deviceResponse.data);
+      const hasInitialHardwareRoute = Boolean(
+        initialRoute?.rackId || initialRoute?.boxId || initialRoute?.deviceId,
+      );
+      setRacks(current =>
+        hasInitialHardwareRoute
+          ? mergeAmEntityListById(rackResponse.data, current)
+          : selectedRackId
+          ? mergeAmEntityListById(
+              rackResponse.data,
+              current.filter(rack => rack._id === selectedRackId),
+            )
+          : rackResponse.data,
+      );
+      setBoxes(current =>
+        hasInitialHardwareRoute
+          ? mergeAmEntityListById(boxResponse.data, current)
+          : selectedBoxId
+          ? mergeAmEntityListById(
+              boxResponse.data,
+              current.filter(box => box._id === selectedBoxId),
+            )
+          : boxResponse.data,
+      );
+      setDevices(current =>
+        hasInitialHardwareRoute
+          ? mergeAmEntityListById(deviceResponse.data, current)
+          : selectedDeviceId
+          ? mergeAmEntityListById(
+              deviceResponse.data,
+              current.filter(device => device._id === selectedDeviceId),
+            )
+          : deviceResponse.data,
+      );
       setError(null);
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : 'Gagal memuat hardware AM live.');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [initialRoute?.boxId, initialRoute?.deviceId, initialRoute?.rackId]);
 
   React.useEffect(() => {
     fetchHardware();
@@ -5990,6 +6083,19 @@ function resolveRackId(rack: AmBox['rackId']) {
 
 function resolveBoxId(box: AmDevice['boxId']) {
   return typeof box === 'string' ? box : box?._id ?? '';
+}
+
+function mergeAmEntityById<T extends {_id: string}>(items: T[], nextItem: T) {
+  return items.some(item => item._id === nextItem._id)
+    ? items.map(item => item._id === nextItem._id ? nextItem : item)
+    : [nextItem, ...items];
+}
+
+function mergeAmEntityListById<T extends {_id: string}>(items: T[], preservedItems: T[]) {
+  return preservedItems.reduce(
+    (current, item) => mergeAmEntityById(current, item),
+    items,
+  );
 }
 
 function parseOptionalNumber(value: string) {
