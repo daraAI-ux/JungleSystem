@@ -23,7 +23,9 @@ import type { KolamUserListItem } from '../domain/kolam-user';
 import { getErrorMessage as getApiErrorMessage } from '../lib/api-error';
 import {
   addKolamTaskManagerNote,
+  createKolamTaskManagerCategory,
   createKolamTaskManagerTask,
+  deleteKolamTaskManagerCategory,
   getKolamTaskManagerCategories,
   getKolamTaskManagerTask,
   getKolamTaskManagerTasks,
@@ -31,6 +33,7 @@ import {
   getKolamTaskRecurringServiceVisits,
   getKolamTaskRecurringTemplates,
   runKolamTaskRecurringTick,
+  updateKolamTaskManagerCategory,
   updateKolamTaskManagerChecklist,
   updateKolamTaskManagerStatus,
   updateKolamTaskManagerTask,
@@ -57,8 +60,19 @@ export interface KolamTaskManagerFormState {
   urgent: boolean;
 }
 
+export interface KolamTaskManagerCategoryFormState {
+  active: boolean;
+  color: string;
+  name: string;
+  sortOrder: string;
+}
+
 export interface KolamTaskManagerController {
   categories: KolamTaskManagerCategory[];
+  categoryForm: KolamTaskManagerCategoryFormState;
+  categoryFormError: string | null;
+  categoryFormMode: 'edit' | 'new';
+  categoryFormOpen: boolean;
   categoryBucketFilter: KolamTaskCategoryBucket | 'all';
   categoryFilter: string;
   currentUserId: string;
@@ -94,9 +108,16 @@ export interface KolamTaskManagerController {
   totalPages: number;
   onAddChecklistItem: () => Promise<boolean>;
   onAddNote: () => Promise<boolean>;
+  onChangeCategoryForm: (
+    patch: Partial<KolamTaskManagerCategoryFormState>,
+  ) => void;
   onChangeForm: (patch: Partial<KolamTaskManagerFormState>) => void;
+  onCloseCategoryForm: () => void;
   onCloseForm: () => void;
+  onCreateCategory: () => void;
   onCreateNew: () => void;
+  onDeleteCategory: (category: KolamTaskManagerCategory) => Promise<boolean>;
+  onEditCategory: (category: KolamTaskManagerCategory) => void;
   onEditTask: (task: KolamTaskManagerTask) => void;
   onBackToList: () => void;
   onRefresh: () => Promise<void>;
@@ -119,6 +140,7 @@ export interface KolamTaskManagerController {
     status: KolamTaskManagerStatus,
   ) => Promise<boolean>;
   onRemoveChecklistItem: (index: number) => Promise<boolean>;
+  onSaveCategory: () => Promise<boolean>;
   onSaveForm: () => Promise<boolean>;
   onSetChecklistDraft: (value: string) => void;
   onSetNoteDraft: (value: string) => void;
@@ -171,6 +193,16 @@ export function useKolamTaskManagerController({
   const [form, setForm] = useState<KolamTaskManagerFormState>(() =>
     getDefaultTaskForm(currentUserId),
   );
+  const [categoryFormOpen, setCategoryFormOpen] = useState(false);
+  const [categoryFormMode, setCategoryFormMode] = useState<'edit' | 'new'>(
+    'new',
+  );
+  const [editingCategoryId, setEditingCategoryId] = useState('');
+  const [categoryFormError, setCategoryFormError] = useState<string | null>(
+    null,
+  );
+  const [categoryForm, setCategoryForm] =
+    useState<KolamTaskManagerCategoryFormState>(() => getDefaultCategoryForm());
   const [checklistDraft, setChecklistDraft] = useState('');
   const [noteDraft, setNoteDraft] = useState('');
   const [dataSource, setDataSource] =
@@ -202,12 +234,12 @@ export function useKolamTaskManagerController({
 
   const loadCategories = useCallback(async () => {
     try {
-      const live = await getKolamTaskManagerCategories(true);
+      const live = await getKolamTaskManagerCategories(mode !== 'categories');
       setCategories(live);
     } catch {
       // Non-blocking: list can still load without category labels.
     }
-  }, []);
+  }, [mode]);
 
   const loadStaff = useCallback(async () => {
     try {
@@ -658,9 +690,108 @@ export function useKolamTaskManagerController({
     }
   }, [noteDraft, selectedTask]);
 
+  const onCreateCategory = useCallback(() => {
+    setCategoryFormMode('new');
+    setEditingCategoryId('');
+    setCategoryForm(getDefaultCategoryForm());
+    setCategoryFormError(null);
+    setStatusMessage(null);
+    setCategoryFormOpen(true);
+  }, []);
+
+  const onEditCategory = useCallback((category: KolamTaskManagerCategory) => {
+    setCategoryFormMode('edit');
+    setEditingCategoryId(category.id);
+    setCategoryForm({
+      active: category.active,
+      color: category.color || '#6366f1',
+      name: category.name,
+      sortOrder: String(category.sortOrder ?? 0),
+    });
+    setCategoryFormError(null);
+    setStatusMessage(null);
+    setCategoryFormOpen(true);
+  }, []);
+
+  const onCloseCategoryForm = useCallback(() => {
+    setCategoryFormOpen(false);
+    setCategoryFormError(null);
+  }, []);
+
+  const onChangeCategoryForm = useCallback(
+    (patch: Partial<KolamTaskManagerCategoryFormState>) => {
+      setCategoryForm(current => ({ ...current, ...patch }));
+      setCategoryFormError(null);
+      setStatusMessage(null);
+    },
+    [],
+  );
+
+  const onSaveCategory = useCallback(async () => {
+    const name = categoryForm.name.trim();
+    if (!name) {
+      setCategoryFormError('Nama wajib diisi');
+      return false;
+    }
+
+    setMutatingTaskId(
+      categoryFormMode === 'edit'
+        ? `category:${editingCategoryId}`
+        : 'category:new',
+    );
+    setError(null);
+    setStatusMessage(null);
+    try {
+      const input = {
+        active: categoryForm.active,
+        color: categoryForm.color,
+        name,
+        sortOrder: Number(categoryForm.sortOrder) || 0,
+      };
+      if (categoryFormMode === 'edit' && editingCategoryId) {
+        await updateKolamTaskManagerCategory(editingCategoryId, input);
+      } else {
+        await createKolamTaskManagerCategory(input);
+      }
+      setCategoryFormOpen(false);
+      setStatusMessage('Kategori disimpan');
+      await loadCategories();
+      return true;
+    } catch (mutationError) {
+      setCategoryFormError(getErrorMessage(mutationError));
+      return false;
+    } finally {
+      setMutatingTaskId(null);
+    }
+  }, [categoryForm, categoryFormMode, editingCategoryId, loadCategories]);
+
+  const onDeleteCategory = useCallback(
+    async (category: KolamTaskManagerCategory) => {
+      setMutatingTaskId(`category:${category.id}`);
+      setError(null);
+      setStatusMessage(null);
+      try {
+        await deleteKolamTaskManagerCategory(category.id);
+        setStatusMessage('Kategori dihapus');
+        await loadCategories();
+        return true;
+      } catch (mutationError) {
+        setError(getErrorMessage(mutationError));
+        return false;
+      } finally {
+        setMutatingTaskId(null);
+      }
+    },
+    [loadCategories],
+  );
+
   return useMemo(
     () => ({
       categories,
+      categoryForm,
+      categoryFormError,
+      categoryFormMode,
+      categoryFormOpen,
       categoryBucketFilter,
       categoryFilter,
       currentUserId,
@@ -696,10 +827,15 @@ export function useKolamTaskManagerController({
       selectedTask,
       onAddChecklistItem,
       onAddNote,
+      onChangeCategoryForm,
       onChangeForm,
+      onCloseCategoryForm,
       onCloseForm,
       onBackToList,
+      onCreateCategory,
       onCreateNew,
+      onDeleteCategory,
+      onEditCategory,
       onEditTask,
       onRefresh:
         mode === 'detail'
@@ -724,6 +860,7 @@ export function useKolamTaskManagerController({
       onSetTaskPriority,
       onSetTaskStatus,
       onRemoveChecklistItem,
+      onSaveCategory,
       onSaveForm,
       onSetChecklistDraft: setChecklistDraft,
       onSetNoteDraft: setNoteDraft,
@@ -733,6 +870,10 @@ export function useKolamTaskManagerController({
     }),
     [
       categories,
+      categoryForm,
+      categoryFormError,
+      categoryFormMode,
+      categoryFormOpen,
       categoryBucketFilter,
       categoryFilter,
       currentUserId,
@@ -752,9 +893,14 @@ export function useKolamTaskManagerController({
       mutatingTaskId,
       onAddChecklistItem,
       onAddNote,
+      onChangeCategoryForm,
       onChangeForm,
+      onCloseCategoryForm,
       onCloseForm,
+      onCreateCategory,
       onCreateNew,
+      onDeleteCategory,
+      onEditCategory,
       onEditTask,
       onBackToList,
       onResetFilters,
@@ -762,6 +908,7 @@ export function useKolamTaskManagerController({
       onSetTaskPriority,
       onSetTaskStatus,
       onRemoveChecklistItem,
+      onSaveCategory,
       onSaveForm,
       onToggleChecklistItem,
       onSwitchTab,
@@ -804,6 +951,15 @@ function getDefaultTaskForm(
     status: 'todo',
     title: '',
     urgent: false,
+  };
+}
+
+function getDefaultCategoryForm(): KolamTaskManagerCategoryFormState {
+  return {
+    active: true,
+    color: '#6366f1',
+    name: '',
+    sortOrder: '0',
   };
 }
 

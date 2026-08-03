@@ -176,6 +176,7 @@ export interface KolamTaskManagerCategory {
   name: string;
   color: string;
   bucket: KolamTaskCategoryBucket | null;
+  sortOrder: number;
   active: boolean;
 }
 
@@ -576,7 +577,9 @@ export function normalizeKolamTaskManagerCategories(
       ? record.data
       : Array.isArray(record.items)
         ? record.items
-        : [];
+        : toStringValue(record._id ?? record.id)
+          ? [record]
+          : [];
   return items.map(item => {
     const row = unwrapData(item);
     return {
@@ -584,6 +587,7 @@ export function normalizeKolamTaskManagerCategories(
       name: toStringValue(row.name),
       color: toStringValue(row.color) || '#6366f1',
       bucket: toTaskCategoryBucket(row.bucket ?? row.categoryBucket),
+      sortOrder: toNumber(row.sortOrder, 0),
       active: row.active !== false && row.isActive !== false,
     };
   });

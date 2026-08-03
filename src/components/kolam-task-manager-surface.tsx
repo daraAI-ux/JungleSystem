@@ -106,10 +106,13 @@ export function KolamTaskManagerSurface({
         />
       ) : controller.mode === 'detail' ? (
         <KolamTaskManagerDetail controller={controller} />
+      ) : controller.mode === 'categories' ? (
+        <KolamTaskCategorySettingsPanel controller={controller} />
       ) : (
         <KolamTaskManagerPlaceholder mode={controller.mode} />
       )}
       <KolamTaskFormModal controller={controller} />
+      <KolamTaskCategoryFormModal controller={controller} />
     </View>
   );
 }
@@ -1074,6 +1077,182 @@ function KolamTaskFormModal({
   );
 }
 
+function KolamTaskCategorySettingsPanel({
+  controller,
+}: {
+  controller: KolamTaskManagerController;
+}) {
+  return (
+    <View style={styles.detailStack}>
+      <View style={kolamTableToolbarStyles.shell}>
+        <View style={kolamTableToolbarStyles.row}>
+          <View style={kolamTableToolbarStyles.filters}>
+            <Text numberOfLines={1} style={styles.detailContext}>
+              Pengaturan Kategori Tugas
+            </Text>
+          </View>
+          <View style={kolamTableToolbarStyles.actions}>
+            <KolamButton
+              disabled={controller.loading}
+              label="Refresh"
+              onPress={() => {
+                void controller.onRefresh();
+              }}
+            />
+            <KolamButton
+              intent="primary"
+              label="Kategori"
+              onPress={controller.onCreateCategory}
+            />
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.detailCard}>
+        <View style={styles.categoryHeaderRow}>
+          <Text style={[styles.metaText, styles.categoryNameCell]}>Nama</Text>
+          <Text style={[styles.metaText, styles.categorySmallCell]}>Warna</Text>
+          <Text style={[styles.metaText, styles.categorySmallCell]}>Urutan</Text>
+          <Text style={[styles.metaText, styles.categorySmallCell]}>Aktif</Text>
+          <View style={styles.categoryActionsCell} />
+        </View>
+        {controller.categories.length ? (
+          controller.categories.map(category => (
+            <View key={category.id} style={styles.categoryRow}>
+              <Text numberOfLines={1} style={[styles.cellText, styles.categoryNameCell]}>
+                {category.name || '-'}
+              </Text>
+              <View style={styles.categorySmallCell}>
+                <View
+                  style={[
+                    styles.categoryColorSwatch,
+                    { backgroundColor: category.color || '#6366f1' },
+                  ]}
+                />
+              </View>
+              <Text style={[styles.cellText, styles.categorySmallCell]}>
+                {category.sortOrder}
+              </Text>
+              <KolamStatusBadge
+                intent={category.active ? 'success' : 'muted'}
+                label={category.active ? 'Ya' : 'Tidak'}
+                style={styles.categorySmallCell}
+              />
+              <View style={styles.categoryActionsCell}>
+                <KolamButton
+                  disabled={controller.mutatingTaskId === `category:${category.id}`}
+                  label="Edit"
+                  onPress={() => controller.onEditCategory(category)}
+                />
+                <KolamButton
+                  disabled={controller.mutatingTaskId === `category:${category.id}`}
+                  intent="outline"
+                  label="Hapus"
+                  onPress={() => {
+                    void controller.onDeleteCategory(category);
+                  }}
+                />
+              </View>
+            </View>
+          ))
+        ) : (
+          <Text style={styles.metaText}>
+            {controller.loading ? 'Memuat...' : 'Belum ada kategori'}
+          </Text>
+        )}
+      </View>
+    </View>
+  );
+}
+
+function KolamTaskCategoryFormModal({
+  controller,
+}: {
+  controller: KolamTaskManagerController;
+}) {
+  const saving =
+    controller.mutatingTaskId === 'category:new' ||
+    (controller.categoryFormMode === 'edit' &&
+      controller.mutatingTaskId?.startsWith('category:'));
+
+  return (
+    <Modal
+      animationType="fade"
+      onRequestClose={controller.onCloseCategoryForm}
+      transparent
+      visible={controller.categoryFormOpen}
+    >
+      <View style={styles.modalRoot}>
+        <KolamModalBackdrop onPress={controller.onCloseCategoryForm} />
+        <View style={styles.categoryModalCard}>
+          <View style={styles.modalHeader}>
+            <Text numberOfLines={1} style={styles.modalTitle}>
+              {controller.categoryFormMode === 'edit' ? 'Edit kategori' : 'Baru kategori'}
+            </Text>
+            <View style={styles.modalActions}>
+              <KolamButton
+                disabled={saving}
+                intent="outline"
+                label="Batal"
+                onPress={controller.onCloseCategoryForm}
+              />
+              <KolamButton
+                disabled={saving}
+                label={saving ? 'Menyimpan...' : 'Simpan'}
+                onPress={() => {
+                  void controller.onSaveCategory();
+                }}
+              />
+            </View>
+          </View>
+          {controller.categoryFormError ? (
+            <KolamStatusBadge
+              intent="danger"
+              label={controller.categoryFormError}
+              numberOfLines={3}
+            />
+          ) : null}
+          <KolamTaskField label="Nama" required>
+            <KolamFormTextField
+              onChangeText={name => controller.onChangeCategoryForm({ name })}
+              style={settingsWebFormStyles.settingsWebFormFieldValue}
+              value={controller.categoryForm.name}
+            />
+          </KolamTaskField>
+          <KolamTaskField label="Warna">
+            <KolamFormTextField
+              onChangeText={color => controller.onChangeCategoryForm({ color })}
+              style={settingsWebFormStyles.settingsWebFormFieldValue}
+              value={controller.categoryForm.color}
+            />
+          </KolamTaskField>
+          <KolamTaskField label="Urutan">
+            <KolamFormTextField
+              mode="numeric"
+              onChangeText={sortOrder =>
+                controller.onChangeCategoryForm({ sortOrder })
+              }
+              style={settingsWebFormStyles.settingsWebFormFieldValue}
+              value={controller.categoryForm.sortOrder}
+            />
+          </KolamTaskField>
+          <View style={styles.formSwitchRow}>
+            <Text style={styles.cellText}>Aktif</Text>
+            <KolamSwitch
+              active={controller.categoryForm.active}
+              onPress={() =>
+                controller.onChangeCategoryForm({
+                  active: !controller.categoryForm.active,
+                })
+              }
+            />
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
 function KolamTaskField({
   children,
   label,
@@ -1427,5 +1606,57 @@ const styles = StyleSheet.create({
     minHeight: V.control.inputHeight,
     minWidth: 180,
     paddingHorizontal: 12,
+  },
+  categoryHeaderRow: {
+    alignItems: 'center',
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    paddingBottom: 8,
+  },
+  categoryRow: {
+    alignItems: 'center',
+    borderColor: V.colors.border,
+    borderRadius: V.radius.md,
+    borderWidth: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    padding: 10,
+  },
+  categoryNameCell: {
+    flex: 1,
+    minWidth: 180,
+  },
+  categorySmallCell: {
+    minWidth: 72,
+  },
+  categoryActionsCell: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    justifyContent: 'flex-end',
+    minWidth: 140,
+  },
+  categoryColorSwatch: {
+    borderColor: V.colors.border,
+    borderRadius: 999,
+    borderWidth: 1,
+    height: 18,
+    width: 18,
+  },
+  categoryModalCard: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: V.radius.lg,
+    borderWidth: 1,
+    elevation: 8,
+    gap: 12,
+    maxWidth: 520,
+    padding: 14,
+    width: '100%',
   },
 });

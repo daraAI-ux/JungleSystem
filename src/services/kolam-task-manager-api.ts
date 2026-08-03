@@ -41,6 +41,13 @@ export interface KolamTaskManagerTaskInput {
   conversationId?: string | null;
 }
 
+export interface KolamTaskManagerCategoryInput {
+  active?: boolean;
+  color: string;
+  name: string;
+  sortOrder: number;
+}
+
 export async function getKolamTaskManagerTasks(
   query: KolamTaskManagerListQuery = {},
 ): Promise<KolamTaskManagerListResult> {
@@ -82,6 +89,37 @@ export async function getKolamTaskManagerCategories(
     query: activeOnly ? { active: true } : {},
   });
   return normalizeKolamTaskManagerCategories(payload);
+}
+
+export async function createKolamTaskManagerCategory(
+  input: KolamTaskManagerCategoryInput,
+): Promise<KolamTaskManagerCategory> {
+  const payload = await kolamRequest<unknown>('/task-manager/categories', {
+    method: 'POST',
+    body: normalizeCategoryInput(input),
+  });
+  return normalizeKolamTaskManagerCategories(payload)[0];
+}
+
+export async function updateKolamTaskManagerCategory(
+  categoryId: string,
+  input: Partial<KolamTaskManagerCategoryInput>,
+): Promise<KolamTaskManagerCategory> {
+  const payload = await kolamRequest<unknown>(
+    `/task-manager/categories/${encodeURIComponent(categoryId)}`,
+    {
+      method: 'PATCH',
+      body: normalizeCategoryInput(input),
+    },
+  );
+  return normalizeKolamTaskManagerCategories(payload)[0];
+}
+
+export async function deleteKolamTaskManagerCategory(categoryId: string) {
+  await kolamRequest<unknown>(
+    `/task-manager/categories/${encodeURIComponent(categoryId)}`,
+    { method: 'DELETE' },
+  );
 }
 
 export async function getKolamTaskRecurringTemplates(): Promise<
@@ -221,6 +259,15 @@ function getTaskRefId(value: unknown) {
     return typeof id === 'string' ? id : null;
   }
   return null;
+}
+
+function normalizeCategoryInput(input: Partial<KolamTaskManagerCategoryInput>) {
+  return {
+    ...(input.name != null ? { name: input.name.trim() } : {}),
+    ...(input.color != null ? { color: input.color.trim() } : {}),
+    ...(input.sortOrder != null ? { sortOrder: Number(input.sortOrder) || 0 } : {}),
+    ...(input.active != null ? { isActive: input.active } : {}),
+  };
 }
 
 function normalizeTaskInput(input: Partial<KolamTaskManagerTaskInput>) {

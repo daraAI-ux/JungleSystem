@@ -79,10 +79,12 @@ jest.mock('../src/services/am-api', () => ({
 
 jest.mock('../src/services/kolam-task-manager-api', () => ({
   addKolamTaskManagerNote: jest.fn(() => Promise.resolve({})),
+  createKolamTaskManagerCategory: jest.fn(() => Promise.resolve({})),
   createKolamTaskManagerTask: jest.fn(() => Promise.resolve({})),
+  deleteKolamTaskManagerCategory: jest.fn(() => Promise.resolve(undefined)),
   getKolamTaskManagerCategories: jest.fn(() =>
     Promise.resolve([
-      { active: true, bucket: 'project', color: '#16a34a', id: 'cat-1', name: 'Operasional' },
+      { active: true, bucket: 'project', color: '#16a34a', id: 'cat-1', name: 'Operasional', sortOrder: 2 },
     ]),
   ),
   getKolamTaskManagerTasks: jest.fn(query =>
@@ -246,6 +248,7 @@ jest.mock('../src/services/kolam-task-manager-api', () => ({
   getKolamTaskRecurringServiceVisits: jest.fn(() => Promise.resolve([])),
   runKolamTaskRecurringTick: jest.fn(() => Promise.resolve(undefined)),
   updateKolamTaskManagerChecklist: jest.fn(() => Promise.resolve({})),
+  updateKolamTaskManagerCategory: jest.fn(() => Promise.resolve({})),
   updateKolamTaskManagerStatus: jest.fn(() => Promise.resolve({})),
   updateKolamTaskManagerTask: jest.fn(() => Promise.resolve({})),
 }));
@@ -608,6 +611,40 @@ describe('KolamWorkspaceSurface', () => {
         'Cek harian enclosure',
         'Jadwal / occurrence',
         'Cek suhu',
+      ]),
+    );
+  });
+
+  it('renders the native Task Manager categories settings route', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+    const taskManagerItem = {
+      ...getKolamNavigationItemByRoute('/task-manager')!,
+      route: '/task-manager/settings/categories',
+    };
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <View>
+          <KolamWorkspaceSurface
+            {...buildSurfaceProps({
+              activeModule: 'kolam',
+              activeNavigationItem: taskManagerItem,
+            })}
+          />
+        </View>,
+      );
+    });
+
+    await ReactTestRenderer.act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(renderText(renderer!)).toEqual(
+      expect.arrayContaining([
+        'Pengaturan Kategori Tugas',
+        'Operasional',
+        'Urutan',
+        'Aktif',
       ]),
     );
   });
