@@ -2532,7 +2532,7 @@ describe('KolamAmSurface', () => {
     });
     inputs = renderer!.root.findAllByType(TextInput);
     await act(async () => {
-      inputs[0].props.onChangeText('USBNEW1');
+      inputs[0].props.onChangeText('10.0.0.9:5555');
       inputs[1].props.onChangeText('Samsung');
       inputs[2].props.onChangeText('A54');
       inputs[3].props.onChangeText('whatsapp, banking');
@@ -2542,6 +2542,30 @@ describe('KolamAmSurface', () => {
     });
 
     expect(createAmDevice).toHaveBeenCalledWith({
+      boxId: 'box-1',
+      connectionType: 'tcp',
+      tcpAddress: '10.0.0.9:5555',
+      adbPort: 6404,
+      brand: 'Samsung',
+      model: 'A54',
+      tags: ['whatsapp', 'banking'],
+    });
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Segment USB'}).props.onPress();
+    });
+    inputs = renderer!.root.findAllByType(TextInput);
+    await act(async () => {
+      inputs[0].props.onChangeText('USBNEW1');
+      inputs[1].props.onChangeText('Samsung');
+      inputs[2].props.onChangeText('A54');
+      inputs[3].props.onChangeText('whatsapp, banking');
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Save'}).props.onPress();
+    });
+
+    expect(createAmDevice).toHaveBeenLastCalledWith({
       boxId: 'box-1',
       connectionType: 'usb',
       udid: 'USBNEW1',

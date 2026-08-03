@@ -1818,7 +1818,7 @@ function AmHardwarePage({initialRoute}: {initialRoute?: AmHardwareInitialRoute})
   const [formStatus, setFormStatus] = React.useState<'active' | 'inactive'>('active');
   const [formRackId, setFormRackId] = React.useState('');
   const [formBoxId, setFormBoxId] = React.useState('');
-  const [formConnectionType, setFormConnectionType] = React.useState<'usb' | 'tcp' | 'browser'>('usb');
+  const [formConnectionType, setFormConnectionType] = React.useState<'usb' | 'tcp' | 'browser'>('tcp');
   const [formUdid, setFormUdid] = React.useState('');
   const [formTcpAddress, setFormTcpAddress] = React.useState('');
   const [formBrand, setFormBrand] = React.useState('');
@@ -2022,12 +2022,12 @@ function AmHardwarePage({initialRoute}: {initialRoute?: AmHardwareInitialRoute})
     setFormStatus('active');
     setFormRackId(nextForm === 'box' ? (selectedRackId ?? racks[0]?._id ?? '') : '');
     setFormBoxId(nextForm === 'device' ? (selectedBoxId ?? boxes[0]?._id ?? '') : '');
-    setFormConnectionType('usb');
+    setFormConnectionType('tcp');
     setFormUdid('');
     setFormTcpAddress('');
     setFormBrand('');
     setFormModel('');
-    setFormAdbPort(nextForm === 'device' ? '5037' : '');
+    setFormAdbPort(nextForm === 'device' ? '6404' : '');
     setFormAppiumPort('');
     setFormTags('');
     setActionMessage(null);
