@@ -1,20 +1,38 @@
 /**
- * Pusat AI — Ringkasan hub (plugin DARA).
- * SoT: FE `MarketingHubDashboard` / `MarketingHubPanel` + BE `GET /dara-seo/marketing-hub`.
+ * Pusat AI hub (plugin DARA).
+ * SoT: FE `MarketingHubDashboard` tabs + `MarketingHubPanel` ringkasan
+ * + BE `GET /dara-seo/marketing-hub`.
  */
 
 export const KOLAM_PUSAT_AI_ROOT = '/pusat-ai';
 export const KOLAM_PUSAT_AI_MARKETING_LEGACY = '/campaign/dara-marketing';
+export const KOLAM_PUSAT_AI_JOBS_LEGACY = '/campaign/dara-jobs';
 
-export type KolamPusatAiHubTab =
+export type KolamPusatAiHubTabId =
   | 'ringkasan'
   | 'proses'
   | 'owner-copilot'
   | 'log-dara'
   | 'transaksi-copilot'
   | 'po-copilot'
-  | 'inventory-copilot'
-  | 'other';
+  | 'inventory-copilot';
+
+/** Includes unresolved query tabs as `other`. */
+export type KolamPusatAiHubTab = KolamPusatAiHubTabId | 'other';
+
+export const KOLAM_PUSAT_AI_HUB_TABS: Array<{
+  id: KolamPusatAiHubTabId;
+  label: string;
+  adminOnly: boolean;
+}> = [
+  {id: 'ringkasan', label: 'Ringkasan', adminOnly: false},
+  {id: 'proses', label: 'Proses', adminOnly: false},
+  {id: 'owner-copilot', label: 'Owner Copilot', adminOnly: true},
+  {id: 'log-dara', label: 'Log DARA', adminOnly: true},
+  {id: 'transaksi-copilot', label: 'Transaksi Copilot', adminOnly: true},
+  {id: 'po-copilot', label: 'PO Copilot', adminOnly: true},
+  {id: 'inventory-copilot', label: 'Inventory Copilot', adminOnly: true},
+];
 
 export type KolamDaraActiveBrand = {
   id: string;
@@ -61,6 +79,9 @@ export function getKolamPusatAiHubTab(route: string): KolamPusatAiHubTab {
   if (path === KOLAM_PUSAT_AI_MARKETING_LEGACY) {
     return 'ringkasan';
   }
+  if (path === KOLAM_PUSAT_AI_JOBS_LEGACY) {
+    return 'proses';
+  }
   if (path !== KOLAM_PUSAT_AI_ROOT) {
     return 'other';
   }
@@ -106,7 +127,23 @@ export function getKolamPusatAiHubTab(route: string): KolamPusatAiHubTab {
   return 'other';
 }
 
-/** Native Ringkasan surface only — other hub tabs stay placeholder. */
+export function buildKolamPusatAiHubRoute(tab: KolamPusatAiHubTabId) {
+  if (tab === 'ringkasan') {
+    return KOLAM_PUSAT_AI_ROOT;
+  }
+  return `${KOLAM_PUSAT_AI_ROOT}?tab=${tab}`;
+}
+
+export function filterKolamPusatAiHubTabs(isAdmin: boolean) {
+  return KOLAM_PUSAT_AI_HUB_TABS.filter(tab => isAdmin || !tab.adminOnly);
+}
+
+/** Native Pusat AI hub (all known tabs + legacy marketing/jobs URLs). */
+export function isKolamPusatAiHubRoute(route: string) {
+  return getKolamPusatAiHubTab(route) !== 'other';
+}
+
+/** @deprecated Prefer isKolamPusatAiHubRoute */
 export function isKolamPusatAiRingkasanRoute(route: string) {
   return getKolamPusatAiHubTab(route) === 'ringkasan';
 }

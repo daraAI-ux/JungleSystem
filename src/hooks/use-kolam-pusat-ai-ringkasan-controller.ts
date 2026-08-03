@@ -2,7 +2,7 @@ import {useCallback, useEffect, useMemo, useState} from 'react';
 import {
   buildKolamPusatAiRingkasanKpiCards,
   filterKolamPusatAiRingkasanQuickLinks,
-  isKolamPusatAiRingkasanRoute,
+  getKolamPusatAiHubTab,
   type KolamDaraMarketingHubSummary,
 } from '../domain/kolam-pusat-ai';
 import {getErrorMessage as getApiErrorMessage} from '../lib/api-error';
@@ -26,7 +26,7 @@ export interface KolamPusatAiRingkasanController {
 export function useKolamPusatAiRingkasanController(
   route: string,
 ): KolamPusatAiRingkasanController {
-  const enabled = isKolamPusatAiRingkasanRoute(route);
+  const enabled = getKolamPusatAiHubTab(route) === 'ringkasan';
   const [brandId, setBrandId] = useState('all');
   const [hub, setHub] = useState<KolamDaraMarketingHubSummary | null>(null);
   const [loading, setLoading] = useState(false);
@@ -46,9 +46,6 @@ export function useKolamPusatAiRingkasanController(
       );
       setHub(next);
       setDataSource('live');
-      if (next.selectedBrandId && next.selectedBrandId !== brandId) {
-        // Keep local filter unless server only returns a forced brand id.
-      }
     } catch (err) {
       setHub(null);
       setDataSource('error');

@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactTestRenderer from 'react-test-renderer';
+import {useKolamAuthContext} from '../src/context/kolam-app-contexts';
 import {KolamPusatAiRingkasanSurface} from '../src/components/kolam-pusat-ai-ringkasan-surface';
 import {fetchKolamDaraMarketingHub} from '../src/services/kolam-dara-marketing-hub-api';
 
@@ -7,8 +8,15 @@ jest.mock('../src/services/kolam-dara-marketing-hub-api', () => ({
   fetchKolamDaraMarketingHub: jest.fn(),
 }));
 
+jest.mock('../src/context/kolam-app-contexts', () => ({
+  useKolamAuthContext: jest.fn(),
+}));
+
 const fetchHubMock = fetchKolamDaraMarketingHub as jest.MockedFunction<
   typeof fetchKolamDaraMarketingHub
+>;
+const useAuthContextMock = useKolamAuthContext as jest.MockedFunction<
+  typeof useKolamAuthContext
 >;
 
 function renderText(renderer: ReactTestRenderer.ReactTestRenderer) {
@@ -23,6 +31,9 @@ function renderText(renderer: ReactTestRenderer.ReactTestRenderer) {
 describe('KolamPusatAiRingkasanSurface', () => {
   beforeEach(() => {
     fetchHubMock.mockReset();
+    useAuthContextMock.mockReturnValue({
+      authUser: {roleKey: 'super_admin'},
+    } as ReturnType<typeof useKolamAuthContext>);
     fetchHubMock.mockResolvedValue({
       generatedAt: '2026-08-03T00:00:00.000Z',
       seo: {
@@ -46,12 +57,14 @@ describe('KolamPusatAiRingkasanSurface', () => {
         {href: '/campaign/dara-seo', label: 'DARA SEO'},
         {href: '/campaign/dara-jobs', label: 'Riwayat proses'},
       ],
-      brands: [{id: 'b1', name: 'Anura', productCount: 2, monitoringActive: true}],
+      brands: [
+        {id: 'b1', name: 'Anura', productCount: 2, monitoringActive: true},
+      ],
       selectedBrandId: 'all',
     });
   });
 
-  it('renders Ringkasan KPI and module actions from live hub', async () => {
+  it('renders hub tabs and Ringkasan content for admin', async () => {
     const onRouteChange = jest.fn();
     let renderer: ReactTestRenderer.ReactTestRenderer | undefined;
 
@@ -66,21 +79,80 @@ describe('KolamPusatAiRingkasanSurface', () => {
     });
 
     const text = renderText(renderer!).join(' ');
+    expect(text).toContain('Ringkasan');
+    expect(text).toContain('Proses');
+    expect(text).toContain('Owner Copilot');
+    expect(text).toContain('Transaksi Copilot');
     expect(text).toContain('Skor SEO');
-    expect(text).toContain('DARA SEO');
-    expect(text).toContain('Market Intel');
-    expect(text).toContain('Akses cepat');
     expect(text).toContain('DARA SEO');
     expect(text).not.toContain('Riwayat proses');
 
     const seoButton = renderer!.root.find(
       node =>
-        node.props.accessibilityLabel === 'Buka SEO' ||
-        (typeof node.props.label === 'string' && node.props.label === 'Buka SEO'),
+        typeof node.props.label === 'string' && node.props.label === 'Buka SEO',
     );
     await ReactTestRenderer.act(async () => {
       seoButton.props.onPress();
     });
     expect(onRouteChange).toHaveBeenCalledWith('/campaign/dara-seo');
+  });
+
+  it('switches to Proses tab route and shows placeholder', async () => {
+    const onRouteChange = jest.fn();
+    let renderer: ReactTestRenderer.ReactTestRenderer | undefined;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamPusatAiRingkasanSurface
+          onRouteChange={onRouteChange}
+          route="/pusat-ai"
+        />,
+      );
+      await Promise.resolve();
+    });
+
+    const prosesTab = renderer!.root.find(
+      node =>
+        typeof node.props.label === 'string' &&
+        node.props.label === 'Proses' &&
+        typeof node.props.onSelect === 'function',
+    );
+
+    await ReactTestRenderer.act(async () => {
+      prosesTab.props.onSelect('proses');
+    });
+    expect(onRouteChange).toHaveBeenCalledWith('/pusat-ai?tab=proses');
+
+    await ReactTestRenderer.act(async () => {
+      renderer!.update(
+        <KolamPusatAiRingkasanSurface
+          onRouteChange={onRouteChange}
+          route="/pusat-ai?tab=proses"
+        />,
+      );
+      await Promise.resolve();
+    });
+
+    expect(renderText(renderer!).join(' ')).toContain('Belum tersedia');
+  });
+
+  it('hides admin tabs for non-admin roles', async () => {
+    useAuthContextMock.mockReturnValue({
+      authUser: {roleKey: 'staff'},
+    } as ReturnType<typeof useKolamAuthContext>);
+
+    let renderer: ReactTestRenderer.ReactTestRenderer | undefined;
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamPusatAiRingkasanSurface route="/pusat-ai" />,
+      );
+      await Promise.resolve();
+    });
+
+    const text = renderText(renderer!).join(' ');
+    expect(text).toContain('Ringkasan');
+    expect(text).toContain('Proses');
+    expect(text).not.toContain('Owner Copilot');
+    expect(text).not.toContain('Inventory Copilot');
   });
 });

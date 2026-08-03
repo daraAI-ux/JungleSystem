@@ -27,7 +27,7 @@ import { isKolamStockTransactionRoute } from '../domain/kolam-stock-transaction'
 import { isKolamStockOpnameRoute } from '../domain/kolam-stock-opname';
 import { isKolamAdminCashflowSessionRoute } from '../domain/kolam-admin-cashflow-session';
 import { isKolamCampaignRoute } from '../domain/kolam-campaign';
-import { isKolamPusatAiRingkasanRoute } from '../domain/kolam-pusat-ai';
+import { isKolamPusatAiHubRoute } from '../domain/kolam-pusat-ai';
 import { isKolamSalesRoute } from '../domain/kolam-sales';
 import { isKolamSourceRoute } from '../domain/kolam-source';
 import { isKolamSupplierRoute } from '../domain/kolam-vendor';
@@ -240,7 +240,7 @@ export function KolamWorkspaceSurfaceComponent({
 
   if (
     activeNavigationItem &&
-    isKolamPusatAiRingkasanRoute(activeNavigationItem.route)
+    isKolamPusatAiHubRoute(activeNavigationItem.route)
   ) {
     return (
       <KolamPusatAiRingkasanSurface

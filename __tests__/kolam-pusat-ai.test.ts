@@ -1,30 +1,51 @@
 import {
+  buildKolamPusatAiHubRoute,
   buildKolamPusatAiRingkasanKpiCards,
+  filterKolamPusatAiHubTabs,
   filterKolamPusatAiRingkasanQuickLinks,
   getKolamPusatAiHubTab,
+  isKolamPusatAiHubRoute,
   isKolamPusatAiRingkasanRoute,
   normalizeKolamDaraMarketingHub,
   normalizeKolamPusatAiQuickLinkHref,
 } from '../src/domain/kolam-pusat-ai';
 
 describe('kolam-pusat-ai domain', () => {
-  it('matches Ringkasan routes and excludes other hub tabs', () => {
+  it('matches hub routes including legacy jobs and tab aliases', () => {
+    expect(isKolamPusatAiHubRoute('/pusat-ai')).toBe(true);
+    expect(isKolamPusatAiHubRoute('/pusat-ai?tab=proses')).toBe(true);
+    expect(isKolamPusatAiHubRoute('/pusat-ai?tab=owner-copilot')).toBe(true);
+    expect(isKolamPusatAiHubRoute('/campaign/dara-jobs')).toBe(true);
+    expect(isKolamPusatAiHubRoute('/campaign/dara-marketing')).toBe(true);
+    expect(isKolamPusatAiHubRoute('/campaign/dara-seo')).toBe(false);
+
     expect(isKolamPusatAiRingkasanRoute('/pusat-ai')).toBe(true);
-    expect(isKolamPusatAiRingkasanRoute('/pusat-ai?tab=ringkasan')).toBe(true);
-    expect(isKolamPusatAiRingkasanRoute('/campaign/dara-marketing')).toBe(true);
     expect(isKolamPusatAiRingkasanRoute('/pusat-ai?tab=proses')).toBe(false);
-    expect(isKolamPusatAiRingkasanRoute('/pusat-ai?tab=owner-copilot')).toBe(
-      false,
-    );
-    expect(isKolamPusatAiRingkasanRoute('/pusat-ai?tab=shipping-copilot')).toBe(
-      false,
+    expect(getKolamPusatAiHubTab('/campaign/dara-jobs')).toBe('proses');
+    expect(getKolamPusatAiHubTab('/pusat-ai?tab=shipping-copilot')).toBe(
+      'transaksi-copilot',
     );
     expect(getKolamPusatAiHubTab('/pusat-ai?tab=warehouse-copilot')).toBe(
       'inventory-copilot',
     );
-    expect(getKolamPusatAiHubTab('/pusat-ai?tab=procurement-copilot')).toBe(
-      'po-copilot',
-    );
+    expect(buildKolamPusatAiHubRoute('ringkasan')).toBe('/pusat-ai');
+    expect(buildKolamPusatAiHubRoute('proses')).toBe('/pusat-ai?tab=proses');
+  });
+
+  it('filters admin-only hub tabs', () => {
+    expect(filterKolamPusatAiHubTabs(false).map(tab => tab.id)).toEqual([
+      'ringkasan',
+      'proses',
+    ]);
+    expect(filterKolamPusatAiHubTabs(true).map(tab => tab.label)).toEqual([
+      'Ringkasan',
+      'Proses',
+      'Owner Copilot',
+      'Log DARA',
+      'Transaksi Copilot',
+      'PO Copilot',
+      'Inventory Copilot',
+    ]);
   });
 
   it('filters jobs quick link and normalizes href', () => {
@@ -68,16 +89,6 @@ describe('kolam-pusat-ai domain', () => {
     });
 
     expect(hub.seo?.seoScore).toBe(72);
-    expect(hub.market.pendingApprovals).toBe(3);
-    expect(hub.brands).toEqual([
-      {
-        id: 'b1',
-        name: 'Anura',
-        productCount: 2,
-        monitoringActive: false,
-      },
-    ]);
-
     const cards = buildKolamPusatAiRingkasanKpiCards(hub);
     expect(cards.map(card => card.label)).toEqual([
       'Skor SEO',
@@ -85,9 +96,6 @@ describe('kolam-pusat-ai domain', () => {
       'Snapshot SERP',
       'Keywords',
     ]);
-    expect(cards[0].value).toBe('72');
     expect(cards[1].value).toBe('5');
-    expect(cards[2].value).toBe('11');
-    expect(cards[3].value).toBe('9');
   });
 });

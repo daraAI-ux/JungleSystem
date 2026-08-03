@@ -1,5 +1,13 @@
-import React from 'react';
+import React, {useMemo} from 'react';
 import {Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
+import {useKolamAuthContext} from '../context/kolam-app-contexts';
+import {
+  buildKolamPusatAiHubRoute,
+  filterKolamPusatAiHubTabs,
+  getKolamPusatAiHubTab,
+  type KolamPusatAiHubTabId,
+} from '../domain/kolam-pusat-ai';
+import {isTopNavAdminRole} from '../domain/top-nav';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {
   useKolamPusatAiRingkasanController,
@@ -9,6 +17,7 @@ import {KolamButton} from './kolam-button';
 import {KolamDropdownSelect} from './kolam-dropdown-select';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamStatsCardStrip} from './kolam-stats-card-strip';
+import {KolamSurfacePanelTabs} from './kolam-surface-panel-tabs';
 import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
 
 export function KolamPusatAiRingkasanSurface({
@@ -18,14 +27,49 @@ export function KolamPusatAiRingkasanSurface({
   onRouteChange?: (route: string) => void;
   route: string;
 }) {
+  const {authUser} = useKolamAuthContext();
+  const isAdmin = isTopNavAdminRole(authUser?.roleKey);
+  const hubTabs = useMemo(() => filterKolamPusatAiHubTabs(isAdmin), [isAdmin]);
+  const selectedTab = resolveSelectedHubTab(route, isAdmin);
   const controller = useKolamPusatAiRingkasanController(route);
 
   return (
-    <KolamPusatAiRingkasanBody
-      controller={controller}
-      onRouteChange={onRouteChange}
-    />
+    <View style={styles.surface}>
+      <View style={styles.tabBar}>
+        <KolamSurfacePanelTabs
+          onSelectTab={(tabId: KolamPusatAiHubTabId) => {
+            onRouteChange?.(buildKolamPusatAiHubRoute(tabId));
+          }}
+          selectedTabId={selectedTab}
+          tabs={hubTabs.map(tab => ({id: tab.id, label: tab.label}))}
+        />
+      </View>
+
+      {selectedTab === 'ringkasan' ? (
+        <KolamPusatAiRingkasanBody
+          controller={controller}
+          onRouteChange={onRouteChange}
+        />
+      ) : (
+        <KolamEmptyState title="Belum tersedia" />
+      )}
+    </View>
   );
+}
+
+/** Alias for hub surface (tabs + ringkasan). */
+export const KolamPusatAiSurface = KolamPusatAiRingkasanSurface;
+
+function resolveSelectedHubTab(
+  route: string,
+  isAdmin: boolean,
+): KolamPusatAiHubTabId {
+  const tab = getKolamPusatAiHubTab(route);
+  if (tab === 'other') {
+    return 'ringkasan';
+  }
+  const allowed = filterKolamPusatAiHubTabs(isAdmin).some(item => item.id === tab);
+  return allowed ? tab : 'ringkasan';
 }
 
 function KolamPusatAiRingkasanBody({
@@ -39,7 +83,7 @@ function KolamPusatAiRingkasanBody({
   const showBrandFilter = (hub?.brands.length ?? 0) > 0;
 
   return (
-    <View style={styles.surface}>
+    <View style={styles.ringkasan}>
       <View style={kolamTableToolbarStyles.shell}>
         <View style={kolamTableToolbarStyles.row}>
           <View style={kolamTableToolbarStyles.filters}>
@@ -80,9 +124,7 @@ function KolamPusatAiRingkasanBody({
             <ModuleCard
               actionLabel="Buka SEO"
               href="/campaign/dara-seo"
-              metric={
-                hub.seo != null ? String(hub.seo.seoScore) : '—'
-              }
+              metric={hub.seo != null ? String(hub.seo.seoScore) : '—'}
               onRouteChange={onRouteChange}
               stats={[
                 `Persetujuan: ${hub.seo?.pendingApprovals ?? 0}`,
@@ -211,6 +253,15 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 12,
   },
+  tabBar: {
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: 1,
+    paddingBottom: 4,
+  },
+  ringkasan: {
+    flex: 1,
+    gap: 12,
+  },
   scroll: {
     flex: 1,
   },
@@ -228,8 +279,8 @@ const styles = StyleSheet.create({
     borderColor: V.colors.border,
     borderRadius: V.radius.lg,
     borderWidth: 1,
-    flexGrow: 1,
     flexBasis: 260,
+    flexGrow: 1,
     gap: 6,
     minWidth: 240,
     padding: 14,
