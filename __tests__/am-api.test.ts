@@ -17,11 +17,13 @@ import {
   getAmChatMessages,
   getAmBoxById,
   getAmCurrentUser,
+  getAmDashboard,
   getAmDeviceById,
   getAmDeviceServiceQrUrl,
   getAmMutasiReceiptUrl,
   getAmRackById,
   getAmServiceAccountById,
+  getAmTasks,
   getAmUserById,
   loginAmSession,
   logoutAmSession,
@@ -114,6 +116,73 @@ describe('AM API service', () => {
         credentials: 'include',
         headers: expect.objectContaining({
           Cookie: 'am_accessToken=token-123',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+  });
+
+  it('loads the AM dashboard through the live dashboard endpoint', async () => {
+    fetchMock.mockResolvedValue(jsonResponse({
+      success: true,
+      data: {
+        summary: {
+          totalBalance: 0,
+          totalAccounts: 0,
+          todayIncoming: {total: 0, count: 0},
+          todayOutgoing: {total: 0, count: 0},
+          activeDevices: 0,
+        },
+        transfers: {pending: 0, processing: 0, success: 0, failed: 0, totalAmount: 0},
+        recentTransfers: [],
+        recentMutasi: [],
+        chartData: [],
+        devices: [],
+      },
+    }));
+
+    await getAmDashboard('https://am.example.test/api');
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://am.example.test/api/dashboard',
+      expect.objectContaining({
+        method: 'GET',
+        credentials: 'include',
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+  });
+
+  it('loads automation tasks through the AM live task list endpoint', async () => {
+    fetchMock.mockResolvedValue(jsonResponse({
+      success: true,
+      data: [{_id: 'task-1'}],
+      meta: {total: 1, limit: 20, page: 2},
+    }));
+
+    await getAmTasks(
+      {
+        page: 2,
+        limit: 20,
+        type: 'send_message',
+        status: 'processing',
+        serviceAccountId: 'account-1',
+        deviceId: 'device-1',
+        search: 'buyer',
+      },
+      'https://am.example.test/api',
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://am.example.test/api/task?page=2&limit=20&type=send_message&status=processing&serviceAccountId=account-1&deviceId=device-1&search=buyer',
+      expect.objectContaining({
+        method: 'GET',
+        credentials: 'include',
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
           'x-source': appConfig.amSourceHeader,
         }),
       }),
