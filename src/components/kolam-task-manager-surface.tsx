@@ -1182,7 +1182,7 @@ function KolamTaskDueCountdownText({
   }, [task]);
 
   const danger =
-    isKolamTaskOverdue(task) || label.toLowerCase().startsWith('terlambat');
+    isKolamTaskOverdue(task) || label.toLowerCase().includes('terlambat');
 
   return (
     <Text

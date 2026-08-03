@@ -545,8 +545,8 @@ export function getKolamTaskDueCountdownLabel(task: KolamTaskManagerTask) {
     const dueMs = new Date(task.dueDate).getTime();
     if (!Number.isFinite(doneMs) || !Number.isFinite(dueMs)) return 'Selesai';
     return doneMs > dueMs
-      ? `Terlambat ${formatKolamTaskClockDuration(doneMs - dueMs)}`
-      : 'Tepat waktu';
+      ? `Selesai (terlambat ${formatKolamTaskClockDuration(doneMs - dueMs)})`
+      : 'Selesai (tepat waktu)';
   }
   if (!task.dueDate) return '-';
   const dueMs = new Date(task.dueDate).getTime();
