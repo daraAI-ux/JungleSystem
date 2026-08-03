@@ -1202,12 +1202,15 @@ describe('KolamAmSurface', () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Segment Browser Worker (Playwright)'}).props.onPress();
     });
 
-    let inputs = renderer!.root.findAllByType(TextInput);
+    const findInput = (placeholder: string) =>
+      renderer!.root.findAllByType(TextInput).find(input => input.props.placeholder === placeholder);
+    expect(findInput('username/email opsional')).toBeUndefined();
+    expect(findInput('PIN opsional')).toBeUndefined();
+    expect(findInput('nomor akun/rekening')).toBeUndefined();
     await act(async () => {
-      inputs[1].props.onChangeText('Tokopedia New');
-      inputs[2].props.onChangeText('new-user');
-      inputs[3].props.onChangeText('top-secret');
-      inputs[6].props.onChangeText('0899');
+      findInput('Tokopedia Seller Center')!.props.onChangeText('Tokopedia New');
+      findInput('password opsional')!.props.onChangeText('top-secret');
+      findInput('credentials.phoneNumber')!.props.onChangeText('0899');
     });
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Service Account Save'}).props.onPress();
@@ -1226,9 +1229,6 @@ describe('KolamAmSurface', () => {
       accountNumber: expect.anything(),
     }));
 
-    const findInput = (placeholder: string) =>
-      renderer!.root.findAllByType(TextInput).find(input => input.props.placeholder === placeholder);
-
     await act(async () => {
       const danaSegments = renderer!.root
         .findAllByProps({accessibilityLabel: 'AM Segment DANA'})
@@ -1238,6 +1238,9 @@ describe('KolamAmSurface', () => {
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Segment Phone Worker (10.0.0.7:5555)'}).props.onPress();
     });
+    expect(findInput('username/email opsional')).toBeUndefined();
+    expect(findInput('password opsional')).toBeUndefined();
+    expect(findInput('nomor akun/rekening')).toBeUndefined();
     await act(async () => {
       findInput('Tokopedia Seller Center')!.props.onChangeText('DANA Services');
       findInput('PIN opsional')!.props.onChangeText('112233');
@@ -1267,9 +1270,8 @@ describe('KolamAmSurface', () => {
 
     expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Service Platform Read Only'}).length).toBeGreaterThan(0);
 
-    inputs = renderer!.root.findAllByType(TextInput);
     await act(async () => {
-      inputs[1].props.onChangeText('Tokopedia Updated');
+      findInput('Tokopedia Seller Center')!.props.onChangeText('Tokopedia Updated');
     });
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Service Account Save'}).props.onPress();

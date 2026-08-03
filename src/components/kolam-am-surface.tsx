@@ -1217,6 +1217,24 @@ function AmServicesPage() {
     }),
     [serviceDeviceOptions],
   );
+  const showServiceUsername = formPlatform === 'bca' ||
+    formPlatform === 'brimo' ||
+    formPlatform === 'shopee' ||
+    formPlatform === 'instagram' ||
+    formPlatform === 'tiktok';
+  const showServicePassword = formPlatform === 'bca' ||
+    formPlatform === 'brimo' ||
+    formPlatform === 'shopee' ||
+    formPlatform === 'instagram' ||
+    formPlatform === 'tokopedia';
+  const showServicePin = formPlatform === 'bca' ||
+    formPlatform === 'brimo' ||
+    formPlatform === 'dana';
+  const showServiceAccountNumber = formPlatform === 'bca' ||
+    formPlatform === 'brimo';
+  const showServicePhoneNumber = formPlatform === 'dana' ||
+    formPlatform === 'whatsapp' ||
+    formPlatform === 'tokopedia';
 
   const handleFormPlatformChange = React.useCallback((value: string) => {
     setFormPlatform(value);
@@ -1730,11 +1748,21 @@ function AmServicesPage() {
         </View>
         <View style={styles.formGrid}>
           <AmTextInput label="Label" placeholder="Tokopedia Seller Center" value={formLabel} onChangeText={setFormLabel} />
-          <AmTextInput label="Username" placeholder="username/email opsional" value={formUsername} onChangeText={setFormUsername} />
-          <AmTextInput label="Password" placeholder={editingServiceId ? 'Kosongkan jika tidak mengganti' : 'password opsional'} secureTextEntry value={formPassword} onChangeText={setFormPassword} />
-          <AmTextInput label="PIN" placeholder={editingServiceId ? 'Kosongkan jika tidak mengganti' : 'PIN opsional'} secureTextEntry value={formPin} onChangeText={setFormPin} />
-          <AmTextInput label="Account Number" placeholder="nomor akun/rekening" value={formAccountNumber} onChangeText={setFormAccountNumber} />
-          <AmTextInput label="Phone Number" placeholder="credentials.phoneNumber" value={formPhoneNumber} onChangeText={setFormPhoneNumber} />
+          {showServiceUsername ? (
+            <AmTextInput label="Username" placeholder="username/email opsional" value={formUsername} onChangeText={setFormUsername} />
+          ) : null}
+          {showServicePassword ? (
+            <AmTextInput label="Password" placeholder={editingServiceId ? 'Kosongkan jika tidak mengganti' : 'password opsional'} secureTextEntry value={formPassword} onChangeText={setFormPassword} />
+          ) : null}
+          {showServicePin ? (
+            <AmTextInput label="PIN" placeholder={editingServiceId ? 'Kosongkan jika tidak mengganti' : 'PIN opsional'} secureTextEntry value={formPin} onChangeText={setFormPin} />
+          ) : null}
+          {showServiceAccountNumber ? (
+            <AmTextInput label="Account Number" placeholder="nomor akun/rekening" value={formAccountNumber} onChangeText={setFormAccountNumber} />
+          ) : null}
+          {showServicePhoneNumber ? (
+            <AmTextInput label="Phone Number" placeholder="credentials.phoneNumber" value={formPhoneNumber} onChangeText={setFormPhoneNumber} />
+          ) : null}
         </View>
         <View style={styles.inlineActions}>
           <KolamButton
