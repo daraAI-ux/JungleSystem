@@ -3,7 +3,7 @@ import { Text, View } from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 import { KolamSidebarContent } from '../src/components/kolam-sidebar-content';
 import { getShellModuleRouteEntry } from '../src/domain/app-shell';
-import { getAmCurrentUser } from '../src/services/am-api';
+import { getAmCurrentUser, logoutAmSession } from '../src/services/am-api';
 
 jest.mock('../src/services/am-api', () => ({
   getAmCurrentUser: jest.fn(() =>
@@ -19,6 +19,7 @@ jest.mock('../src/services/am-api', () => ({
       },
     }),
   ),
+  logoutAmSession: jest.fn(() => Promise.resolve(undefined)),
 }));
 
 function renderText(renderer: ReactTestRenderer.ReactTestRenderer) {
@@ -146,6 +147,10 @@ describe('KolamSidebarContent AM mode', () => {
     expect(text).not.toContain('Automation Management');
     expect(text).not.toContain('Kolam Menu');
     expect(text).not.toContain('Kembali ke Kolam');
+    expect(text).toContain('Super Admin');
+    expect(text).toContain('@super@dunia-anura.com');
+    expect(text).toContain('Settings');
+    expect(text).toContain('Log out');
   });
 
   it('uses the AM shell route as the active sidebar route', async () => {
@@ -245,6 +250,64 @@ describe('KolamSidebarContent AM mode', () => {
       }),
     );
     expect(onSelectMenuItem).not.toHaveBeenCalled();
+  });
+
+  it('opens AM account actions from the sidebar footer', async () => {
+    const onModuleRouteSelect = jest.fn();
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <View>
+          <KolamSidebarContent
+            accessScope={{ am: true, kolam: true, pos: true }}
+            activeModule="am"
+            activeRoute="/"
+            collapsed={false}
+            expandedSections={{ dashboard: true }}
+            filterMenuByAccess={false}
+            onModuleRouteSelect={onModuleRouteSelect}
+            onMoveMenuSection={() => undefined}
+            onQuickSearch={() => undefined}
+            onSelectMenuItem={() => undefined}
+            onSelectModule={() => undefined}
+            onToggleMenuSection={() => undefined}
+            sectionOrder={[]}
+          />
+        </View>,
+      );
+    });
+
+    await ReactTestRenderer.act(async () => {
+      await Promise.resolve();
+    });
+
+    await ReactTestRenderer.act(async () => {
+      renderer!.root
+        .findByProps({ accessibilityLabel: 'AM Sidebar Settings' })
+        .props.onPress();
+    });
+
+    expect(onModuleRouteSelect).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        moduleId: 'am',
+        route: 'settings/account',
+      }),
+    );
+
+    await ReactTestRenderer.act(async () => {
+      await renderer!.root
+        .findByProps({ accessibilityLabel: 'AM Sidebar Logout' })
+        .props.onPress();
+    });
+
+    expect(logoutAmSession).toHaveBeenCalledTimes(1);
+    expect(onModuleRouteSelect).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        moduleId: 'am',
+        route: 'login',
+      }),
+    );
   });
 
   it('hides Super Admin-only Activity Log from read-only AM users', async () => {

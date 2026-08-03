@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
   AM_ROUTE_SECTIONS,
   AM_SIDEBAR_ROUTES,
@@ -17,12 +17,14 @@ import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import type { KolamNavigationItem } from '../domain/kolam-navigation';
 import {
   getAmCurrentUser,
+  logoutAmSession,
   type AmCurrentUser,
 } from '../services/am-api';
 import { KolamMappedList } from './kolam-mapped-list';
 import { KolamQuickSearch } from './kolam-quick-search';
 import { KolamNavItem } from './kolam-nav-item';
 import { KolamCopyStack } from './kolam-copy-stack';
+import { KolamButton } from './kolam-button';
 import { KolamSidebarNavGroup } from './kolam-sidebar-navigation-widgets';
 import { KolamMenuGroup } from './kolam-sidebar-menu-widgets';
 
@@ -138,6 +140,8 @@ function KolamAmSidebarMenu({
 }) {
   const [currentUser, setCurrentUser] =
     React.useState<AmCurrentUser | null>(null);
+  const [isLoggingOut, setIsLoggingOut] = React.useState(false);
+  const [logoutError, setLogoutError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     let mounted = true;
@@ -158,6 +162,30 @@ function KolamAmSidebarMenu({
       mounted = false;
     };
   }, []);
+
+  const openAmRoute = React.useCallback(
+    (moduleRoute: string) => {
+      const route = getShellModuleRouteEntry('am', moduleRoute);
+      if (route) {
+        onSelectRoute(route);
+      }
+    },
+    [onSelectRoute],
+  );
+
+  const handleLogout = React.useCallback(async () => {
+    try {
+      setIsLoggingOut(true);
+      await logoutAmSession();
+      setCurrentUser(null);
+      setLogoutError(null);
+      openAmRoute('login');
+    } catch (error) {
+      setLogoutError(error instanceof Error ? error.message : 'Logout gagal');
+    } finally {
+      setIsLoggingOut(false);
+    }
+  }, [openAmRoute]);
 
   return (
     <View style={[styles.amMenuGroup, collapsed && styles.amMenuGroupCollapsed]}>
@@ -180,6 +208,53 @@ function KolamAmSidebarMenu({
           />
         )}
       />
+      {collapsed ? null : (
+        <View style={styles.amAccountPanel}>
+          <View style={styles.amAccountAvatar}>
+            <Text style={styles.amAccountAvatarText}>
+              {(currentUser?.fullName ?? 'AM').charAt(0).toUpperCase()}
+            </Text>
+          </View>
+          <View style={styles.amAccountCopy}>
+            <Text style={styles.amAccountName} numberOfLines={1}>
+              {currentUser?.fullName ?? 'AM'}
+            </Text>
+            <Text style={styles.amAccountUsername} numberOfLines={1}>
+              {currentUser?.username ? `@${currentUser.username}` : 'Login'}
+            </Text>
+          </View>
+          <View style={styles.amAccountActions}>
+            <KolamButton
+              accessibilityLabel="AM Sidebar Settings"
+              label="Settings"
+              intent="plain"
+              size="sm"
+              onPress={() => openAmRoute('settings/account')}
+            />
+            {currentUser ? (
+              <KolamButton
+                accessibilityLabel="AM Sidebar Logout"
+                disabled={isLoggingOut}
+                label={isLoggingOut ? 'Logging out' : 'Log out'}
+                intent="plain"
+                size="sm"
+                onPress={handleLogout}
+              />
+            ) : (
+              <KolamButton
+                accessibilityLabel="AM Sidebar Login"
+                label="Login"
+                intent="plain"
+                size="sm"
+                onPress={() => openAmRoute('login')}
+              />
+            )}
+          </View>
+          {logoutError ? (
+            <Text style={styles.amAccountError}>{logoutError}</Text>
+          ) : null}
+        </View>
+      )}
     </View>
   );
 }
@@ -341,5 +416,53 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '800',
     textTransform: 'uppercase',
+  },
+  amAccountPanel: {
+    marginTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: V.colors.border,
+    paddingHorizontal: 10,
+    paddingTop: 12,
+    gap: 8,
+  },
+  amAccountAvatar: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 8,
+    backgroundColor: V.colors.primarySoft,
+  },
+  amAccountAvatarText: {
+    color: V.colors.primary,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '900',
+  },
+  amAccountCopy: {
+    minWidth: 0,
+  },
+  amAccountName: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '900',
+  },
+  amAccountUsername: {
+    marginTop: 2,
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+  },
+  amAccountActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  amAccountError: {
+    color: V.colors.danger,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '700',
   },
 });
