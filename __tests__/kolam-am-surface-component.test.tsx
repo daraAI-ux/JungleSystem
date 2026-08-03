@@ -928,7 +928,7 @@ describe('KolamAmSurface', () => {
     renderers.push(renderer!);
 
     expect(getAmTaskById).toHaveBeenCalledWith('task-detail');
-    expect(recordAmPageView).toHaveBeenCalledWith('/tasks');
+    expect(recordAmPageView).toHaveBeenCalledWith('/tasks/task-detail');
     const text = renderText(renderer!);
     expect(text).toContain('Task Detail');
     expect(text).toContain('Bank Transfer');
@@ -1839,7 +1839,7 @@ describe('KolamAmSurface', () => {
 
     const text = renderText(renderer!);
     const joinedText = text.join(' ');
-    expect(recordAmPageView).toHaveBeenCalledWith('/hardware');
+    expect(recordAmPageView).toHaveBeenCalledWith('/hardware/rack-1/box-1/device-1');
     expect(joinedText).toContain('Rack Alpha');
     expect(joinedText).toContain('Box 01');
     expect(text).toContain('Phone Rack');
@@ -2843,7 +2843,7 @@ describe('KolamAmSurface', () => {
     });
     renderers.push(renderer!);
 
-    expect(recordAmPageView).toHaveBeenCalledWith('/mutasi');
+    expect(recordAmPageView).toHaveBeenCalledWith('/mutasi/mutasi-detail');
     expect(getAmMutasiById).toHaveBeenCalledWith('mutasi-detail');
     const text = renderText(renderer!).join(' ');
     expect(text).toContain('Mutation Detail');
@@ -3631,7 +3631,7 @@ describe('KolamAmSurface', () => {
     renderers.push(renderer!);
 
     expect(getAmTransferById).toHaveBeenCalledWith('transfer-detail');
-    expect(recordAmPageView).toHaveBeenCalledWith('/transactions');
+    expect(recordAmPageView).toHaveBeenCalledWith('/transactions/transfer-detail');
     const joinedText = renderText(renderer!).join(' ');
     expect(joinedText).toContain('Transfer Detail');
     expect(joinedText).toContain('Vendor Detail');

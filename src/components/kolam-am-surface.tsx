@@ -187,10 +187,11 @@ export function KolamAmSurface({
     ? routeSelection.route.id
     : getRouteIdFromSurface(activeSurface);
   const route = AM_ROUTES.find(item => item.id === activeRoute) ?? AM_ROUTES[0];
+  const pageViewPath = getAmPageViewPath(activeModuleRoute?.route, route.path);
 
   React.useEffect(() => {
-    recordAmPageView(route.path).catch(() => undefined);
-  }, [route.path]);
+    recordAmPageView(pageViewPath).catch(() => undefined);
+  }, [pageViewPath]);
 
   return (
     <View style={styles.shell}>
@@ -298,6 +299,18 @@ function getConcreteAmRouteEntry(
     id: `am:${route}`,
     route,
   };
+}
+
+function getAmPageViewPath(
+  moduleRoute: string | null | undefined,
+  fallbackPath: string,
+) {
+  const normalizedRoute = normalizeModuleRoutePath(moduleRoute);
+  if (!moduleRoute || normalizedRoute === '/') {
+    return fallbackPath;
+  }
+
+  return `/${normalizedRoute}`;
 }
 
 function normalizeModuleRoutePath(route?: string | null) {
