@@ -464,7 +464,7 @@ function AmDashboardPage({
           <Text style={[styles.tableHeaderText, styles.statusCol]}>Accounts</Text>
           <Text style={[styles.tableHeaderText, styles.accountCol]}>Types</Text>
         </View>
-        {data.devices.slice(0, 8).map(device => (
+        {data.devices.map(device => (
           <View key={device._id} style={styles.deviceRow}>
             <View style={styles.serviceCol}>
               <Text style={styles.rowTitle}>{device.name}</Text>
@@ -549,7 +549,7 @@ function AmRecentTransfersPanel({
         />
       </View>
       <Text style={styles.panelText}>Latest transfer activity across all devices.</Text>
-      {transfers.slice(0, 5).map(transfer => (
+      {transfers.map(transfer => (
         <KolamInteractionFrame
           key={transfer._id}
           accessibilityLabel={`AM Dashboard Transfer ${transfer._id}`}
@@ -595,7 +595,7 @@ function AmRecentMutasiPanel({
         />
       </View>
       <Text style={styles.panelText}>Latest incoming and outgoing transactions.</Text>
-      {mutasi.slice(0, 5).map(item => (
+      {mutasi.map(item => (
         <KolamInteractionFrame
           key={item._id}
           accessibilityLabel={`AM Dashboard Mutation ${item._id}`}

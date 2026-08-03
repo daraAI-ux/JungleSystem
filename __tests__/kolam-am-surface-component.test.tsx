@@ -214,6 +214,28 @@ const mockDashboardData = {
       transferType: 'transfer',
       updatedAt: '',
     },
+    ...Array.from({length: 5}, (_, index) => ({
+      _id: `transfer-dashboard-extra-${index + 2}`,
+      accountId: {_id: 'account-1', label: 'BCA Main', platform: 'bca', accountNumber: '123'},
+      amount: 100000 + index,
+      completedAt: null,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      createdBy: null,
+      deviceId: {_id: 'device-1', name: 'Phone 1'},
+      error: '',
+      fee: 2500,
+      logs: [],
+      recipientAccount: `99${index}`,
+      recipientBank: 'BCA',
+      recipientName: index === 4 ? 'Vendor Dashboard Sixth' : `Vendor Dashboard Extra ${index + 2}`,
+      screenshot: '',
+      startedAt: null,
+      status: 'pending',
+      transactionPurpose: null,
+      transferMethod: 'BI FAST',
+      transferType: 'transfer',
+      updatedAt: '',
+    })),
   ],
   recentMutasi: [
     {
@@ -229,6 +251,19 @@ const mockDashboardData = {
       type: 'masuk',
       updatedAt: '',
     },
+    ...Array.from({length: 5}, (_, index) => ({
+      _id: `mutasi-dashboard-extra-${index + 2}`,
+      accountId: {_id: 'account-1', label: 'BCA Main', platform: 'bca', accountNumber: '123'},
+      amount: 300000 + index,
+      createdAt: '',
+      description: index === 4 ? 'Incoming dashboard sixth' : `Incoming dashboard extra ${index + 2}`,
+      detectedAt: '2026-01-01T00:05:00.000Z',
+      deviceId: {_id: 'device-1', name: 'Phone 1'},
+      notificationHash: null,
+      transferId: null,
+      type: 'masuk',
+      updatedAt: '',
+    })),
   ],
   chartData: [{date: '2026-01-01', incoming: 450000, outgoing: 125000}],
   devices: [
@@ -244,6 +279,18 @@ const mockDashboardData = {
       rackName: 'Rack Alpha',
       udid: 'USB-1',
     },
+    ...Array.from({length: 8}, (_, index) => ({
+      _id: `device-dashboard-extra-${index + 2}`,
+      accountCount: 1,
+      accountTypes: ['bca'],
+      activeAccountCount: 1,
+      boxName: 'Box 01',
+      brand: 'Samsung',
+      model: 'A52',
+      name: index === 7 ? 'Dashboard Phone Ninth' : `Dashboard Phone Extra ${index + 2}`,
+      rackName: 'Rack Alpha',
+      udid: `USB-${index + 2}`,
+    })),
   ],
 };
 
@@ -328,13 +375,16 @@ describe('KolamAmSurface', () => {
     expect(text).toContain('Kembali');
     expect(text).toContain('Transfer Status');
     expect(text).toContain('Vendor Dashboard');
+    expect(text).toContain('Vendor Dashboard Sixth');
     expect(text).toContain('Recent Mutations');
+    expect(text).toContain('Incoming dashboard sixth');
     expect(text).toContain('Device Overview');
     expect(joinedText).toContain('All devices with active accounts and their locations.');
     expect(text).toContain('Location');
     expect(text).toContain('Accounts');
     expect(text).toContain('Types');
     expect(text).toContain('Dashboard Phone');
+    expect(text).toContain('Dashboard Phone Ninth');
     expect(text).toContain('In');
     expect(text).toContain('Rp450rb');
     expect(joinedText).toMatch(/Box 01\s+\/\s+Rack Alpha/);
