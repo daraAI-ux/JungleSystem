@@ -3251,7 +3251,7 @@ describe('KolamAmSurface', () => {
       status: undefined,
       serviceAccountId: undefined,
     });
-    expect(getAmMutasi).toHaveBeenCalledWith({page: 1, limit: 50, type: undefined});
+    expect(getAmMutasi).toHaveBeenCalledWith({page: 1, limit: 100, type: undefined});
     expect(getAmWebhookConfigs).toHaveBeenCalledTimes(1);
     expect(getAmUsers).toHaveBeenCalledWith({
       page: 1,
@@ -3649,7 +3649,7 @@ describe('KolamAmSurface', () => {
           updatedAt: '',
         },
       ],
-      meta: {total: 120, limit: 50, page: 1, totalPages: 3},
+      meta: {total: 120, limit: 100, page: 1, totalPages: 2},
     });
     jest.mocked(getAmMutasiSummary).mockResolvedValue({
       masuk: {total: 500000, count: 4},
@@ -3705,7 +3705,7 @@ describe('KolamAmSurface', () => {
 
     expect(getAmMutasi).toHaveBeenLastCalledWith({
       page: 1,
-      limit: 50,
+      limit: 100,
       type: undefined,
       accountId: undefined,
       deviceId: undefined,
@@ -3725,8 +3725,8 @@ describe('KolamAmSurface', () => {
     expect(joinedText).toMatch(/-Rp\s*50\.000/);
     expect(joinedText).toContain('Time');
     expect(joinedText).toContain('Action');
-    expect(joinedText).toMatch(/Showing\s+1\s+to\s+50\s+of\s+120\s+items/);
-    expect(joinedText).toContain('Page 1/3');
+    expect(joinedText).toMatch(/Showing\s+1\s+to\s+100\s+of\s+120\s+items/);
+    expect(joinedText).toContain('Page 1/2');
 
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Mutasi Detail mutasi-1'}).props.onPress();
@@ -3745,7 +3745,7 @@ describe('KolamAmSurface', () => {
 
     expect(getAmMutasi).toHaveBeenLastCalledWith({
       page: 2,
-      limit: 50,
+      limit: 100,
       type: undefined,
       accountId: undefined,
       deviceId: undefined,
@@ -3757,7 +3757,7 @@ describe('KolamAmSurface', () => {
 
     expect(getAmMutasi).toHaveBeenLastCalledWith({
       page: 1,
-      limit: 50,
+      limit: 100,
       type: undefined,
       accountId: 'account-1',
       deviceId: undefined,
@@ -3770,7 +3770,7 @@ describe('KolamAmSurface', () => {
 
     expect(getAmMutasi).toHaveBeenLastCalledWith({
       page: 1,
-      limit: 50,
+      limit: 100,
       type: undefined,
       accountId: 'account-1',
       deviceId: 'device-1',
@@ -3795,7 +3795,7 @@ describe('KolamAmSurface', () => {
     jest.mocked(getAmMutasiById).mockResolvedValue(detailMutasi);
     jest.mocked(getAmMutasi).mockResolvedValue({
       data: [],
-      meta: {total: 0, limit: 50, page: 1, totalPages: 1},
+      meta: {total: 0, limit: 100, page: 1, totalPages: 1},
     });
     const onModuleRouteSelect = jest.fn();
     let renderer: ReactTestRenderer.ReactTestRenderer;
