@@ -5240,6 +5240,7 @@ function AmWebhooksPage() {
   const [logLimit, setLogLimit] = React.useState(AM_WEBHOOK_LOG_PAGE_LIMIT);
   const [selectedWebhookLog, setSelectedWebhookLog] = React.useState<AmWebhookLog | null>(null);
   const [editingConfigId, setEditingConfigId] = React.useState<string | null>(null);
+  const [isWebhookFormOpen, setIsWebhookFormOpen] = React.useState(false);
   const [formUrl, setFormUrl] = React.useState('');
   const [formSecret, setFormSecret] = React.useState('');
   const [formDescription, setFormDescription] = React.useState('');
@@ -5293,6 +5294,17 @@ function AmWebhooksPage() {
     setFormSecret('');
     setFormDescription('');
     setSelectedEvents(events);
+    setIsWebhookFormOpen(false);
+  }, [events]);
+
+  const openCreateWebhookForm = React.useCallback(() => {
+    setEditingConfigId(null);
+    setFormUrl('');
+    setFormSecret('');
+    setFormDescription('');
+    setSelectedEvents(events);
+    setActionMessage(null);
+    setIsWebhookFormOpen(true);
   }, [events]);
 
   const editWebhook = React.useCallback((config: AmWebhookConfig) => {
@@ -5302,6 +5314,7 @@ function AmWebhooksPage() {
     setFormDescription(config.description);
     setSelectedEvents(config.events);
     setActionMessage(null);
+    setIsWebhookFormOpen(true);
   }, []);
 
   const saveWebhook = React.useCallback(async () => {
@@ -5437,6 +5450,13 @@ function AmWebhooksPage() {
         <AmMetricCard label="Delivery Logs" value={String(logTotal || logs.length)} meta={`${logs.filter(log => !log.success).length} failed on page`} />
         <KolamButton label={isLoading ? 'Memuat' : 'Refresh'} intent="outline" muted={isLoading} size="sm" onPress={fetchWebhooks} />
         <KolamButton label="Test Ping" intent="outline" size="sm" onPress={testPing} />
+        <KolamButton
+          accessibilityLabel="AM Webhook Register"
+          label="Register Webhook"
+          intent={isWebhookFormOpen && !editingConfigId ? 'warning' : 'outline'}
+          size="sm"
+          onPress={isWebhookFormOpen && !editingConfigId ? resetWebhookForm : openCreateWebhookForm}
+        />
       </View>
       <AmInlineError title="Webhooks AM belum bisa dibaca" error={error} />
       {actionMessage ? (
@@ -5444,38 +5464,38 @@ function AmWebhooksPage() {
           <Text style={styles.successText}>{actionMessage}</Text>
         </View>
       ) : null}
-      <View style={styles.panel}>
-        <Text style={styles.panelTitle}>{editingConfigId ? 'Edit Webhook' : 'Register Webhook'}</Text>
-        <View style={styles.formGrid}>
-          <AmTextInput label="URL" placeholder="https://your-server.com/webhook" value={formUrl} onChangeText={setFormUrl} />
-          <AmTextInput label="Secret" placeholder={editingConfigId ? 'Kosongkan untuk secret lama' : 'Minimal 16 karakter untuk HMAC'} value={formSecret} onChangeText={setFormSecret} />
-          <AmTextInput label="Description" placeholder="e.g. DA Inventory Backend" value={formDescription} onChangeText={setFormDescription} />
+      {isWebhookFormOpen ? (
+        <View style={styles.panel}>
+          <Text style={styles.panelTitle}>{editingConfigId ? 'Edit Webhook' : 'Register Webhook'}</Text>
+          <View style={styles.formGrid}>
+            <AmTextInput label="URL" placeholder="https://your-server.com/webhook" value={formUrl} onChangeText={setFormUrl} />
+            <AmTextInput label="Secret" placeholder={editingConfigId ? 'Kosongkan untuk secret lama' : 'Minimal 16 karakter untuk HMAC'} value={formSecret} onChangeText={setFormSecret} />
+            <AmTextInput label="Description" placeholder="e.g. DA Inventory Backend" value={formDescription} onChangeText={setFormDescription} />
+          </View>
+          <View style={styles.eventGrid}>
+            {events.map(event => (
+              <KolamInteractionFrame
+                key={event}
+                accessibilityLabel={`AM Webhook Event ${event}`}
+                onPress={() => toggleWebhookEvent(event)}
+                style={[styles.eventChip, selectedEvents.includes(event) && styles.eventChipSelected]}>
+                <Text style={[styles.segmentText, selectedEvents.includes(event) && styles.segmentTextActive]}>{event}</Text>
+              </KolamInteractionFrame>
+            ))}
+          </View>
+          <View style={styles.inlineActions}>
+            <KolamButton
+              accessibilityLabel="AM Webhook Save"
+              intent="warning"
+              label={isSubmitting ? 'Saving...' : editingConfigId ? 'Save Webhook' : 'Register'}
+              muted={isSubmitting}
+              size="sm"
+              onPress={saveWebhook}
+            />
+            <KolamButton label={editingConfigId ? 'Cancel Edit' : 'Cancel'} intent="outline" size="sm" onPress={resetWebhookForm} />
+          </View>
         </View>
-        <View style={styles.eventGrid}>
-          {events.map(event => (
-            <KolamInteractionFrame
-              key={event}
-              accessibilityLabel={`AM Webhook Event ${event}`}
-              onPress={() => toggleWebhookEvent(event)}
-              style={[styles.eventChip, selectedEvents.includes(event) && styles.eventChipSelected]}>
-              <Text style={[styles.segmentText, selectedEvents.includes(event) && styles.segmentTextActive]}>{event}</Text>
-            </KolamInteractionFrame>
-          ))}
-        </View>
-        <View style={styles.inlineActions}>
-          <KolamButton
-            accessibilityLabel="AM Webhook Save"
-            intent="warning"
-            label={isSubmitting ? 'Saving...' : editingConfigId ? 'Save Webhook' : 'Register Webhook'}
-            muted={isSubmitting}
-            size="sm"
-            onPress={saveWebhook}
-          />
-          {editingConfigId ? (
-            <KolamButton label="Cancel Edit" intent="outline" size="sm" onPress={resetWebhookForm} />
-          ) : null}
-        </View>
-      </View>
+      ) : null}
       <View style={styles.panel}>
         <Text style={styles.panelTitle}>Webhook Config</Text>
         <View style={styles.cardGrid}>

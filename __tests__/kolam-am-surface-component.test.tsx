@@ -5115,6 +5115,11 @@ describe('KolamAmSurface', () => {
 
     await updateAmRoute(renderer!, 'webhooks');
 
+    expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Webhook Save'})).toHaveLength(0);
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Webhook Register'}).props.onPress();
+    });
+
     const inputs = renderer!.root.findAllByType(TextInput);
     await act(async () => {
       inputs[0].props.onChangeText('https://new.example.test/webhook');
