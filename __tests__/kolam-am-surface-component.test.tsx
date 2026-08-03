@@ -128,8 +128,8 @@ jest.mock('../src/services/am-api', () => ({
     serviceStatus: 'active',
     hasDevice: true,
     captchaAutoSolve: false,
-    hasAnthropicApiKey: false,
-    anthropicApiKeyPreview: null,
+    hasAnthropicApiKey: true,
+    anthropicApiKeyPreview: 'sk-ant-...',
     envFallbackAvailable: true,
     qrTiktokLogin: false,
     loginFillOnly: false,
@@ -1587,6 +1587,9 @@ describe('KolamAmSurface', () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Tokopedia Captcha Save service-tokopedia'}).props.onPress();
     });
     await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Tokopedia Captcha Clear Key service-tokopedia'}).props.onPress();
+    });
+    await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Tokopedia Verify service-tokopedia'}).props.onPress();
     });
     await act(async () => {
@@ -1618,6 +1621,10 @@ describe('KolamAmSurface', () => {
     expect(updateAmTokopediaCaptchaSettings).toHaveBeenCalledWith('service-tokopedia', {
       captchaAutoSolve: true,
       anthropicApiKey: undefined,
+    });
+    expect(updateAmTokopediaCaptchaSettings).toHaveBeenCalledWith('service-tokopedia', {
+      captchaAutoSolve: false,
+      clearAnthropicApiKey: true,
     });
     expect(verifyAmTokopediaSession).toHaveBeenCalledWith('service-tokopedia');
     expect(restartAmTokopediaSession).toHaveBeenCalledWith('service-tokopedia');

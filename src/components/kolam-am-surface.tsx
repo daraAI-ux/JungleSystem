@@ -2811,6 +2811,24 @@ function AmTokopediaSessionPanel({
     });
   }, [account._id, anthropicApiKey, captchaAutoSolve, runAction]);
 
+  const clearCaptchaApiKey = React.useCallback(() => {
+    runAction('captcha-clear-key', async () => {
+      const result = await updateAmTokopediaCaptchaSettings(account._id, {
+        captchaAutoSolve,
+        clearAnthropicApiKey: true,
+      });
+      setAnthropicApiKey('');
+      setInfo(current => current ? {
+        ...current,
+        captchaAutoSolve: result.captchaAutoSolve,
+        hasAnthropicApiKey: result.hasAnthropicApiKey,
+        anthropicApiKeyPreview: result.anthropicApiKeyPreview,
+        envFallbackAvailable: result.envFallbackAvailable,
+      } : current);
+      return 'Anthropic API key dihapus.';
+    });
+  }, [account._id, captchaAutoSolve, runAction]);
+
   const uploadManualCookies = React.useCallback(() => {
     runAction('upload-cookies', async () => {
       const cookies = parseAmTokopediaCookiesJson(cookiesJson);
@@ -2899,6 +2917,16 @@ function AmTokopediaSessionPanel({
               size="sm"
               onPress={saveCaptchaSettings}
             />
+            {info?.hasAnthropicApiKey ? (
+              <KolamButton
+                accessibilityLabel={`AM Tokopedia Captcha Clear Key ${account._id}`}
+                intent="outline"
+                label={acting === 'captcha-clear-key' ? 'Menghapus' : 'Hapus Key'}
+                muted={!canRunSessionAction || acting === 'captcha-clear-key'}
+                size="sm"
+                onPress={clearCaptchaApiKey}
+              />
+            ) : null}
           </View>
         </View>
         {captchaAutoSolve ? (
