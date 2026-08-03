@@ -529,6 +529,36 @@ describe('KolamAmSurface', () => {
     expect(onModuleRouteSelect).toHaveBeenLastCalledWith(amRoute('hardware'));
   });
 
+  it('renders the AM FE-style not-found page for catch-all routes', async () => {
+    const onModuleRouteSelect = jest.fn();
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface
+          activeModuleRoute={amRoute(':catchAll')}
+          dataset={seedUnifiedDataset}
+          onModuleRouteSelect={onModuleRouteSelect}
+        />,
+      );
+    });
+    renderers.push(renderer!);
+
+    const text = renderText(renderer!);
+
+    expect(text).toContain('404');
+    expect(text).toContain('Page not found');
+    expect(text).toContain("The page you are looking for doesn't exist or has been moved.");
+    expect(text).toContain('Back to Dashboard');
+    expect(text).not.toContain('sudah masuk menu AM');
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Back to Dashboard'}).props.onPress();
+    });
+
+    expect(onModuleRouteSelect).toHaveBeenCalledWith(amRoute('/'));
+  });
+
   it('keeps AM account actions out of the surface topbar', async () => {
     let renderer: ReactTestRenderer.ReactTestRenderer;
 

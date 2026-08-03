@@ -187,10 +187,13 @@ export function KolamAmSurface({
     ? getAmRouteSelection(activeModuleRoute.route)
     : null;
   const activeRoute = routeSelection
-    ? routeSelection.route.id
+    ? routeSelection.routeId
     : getRouteIdFromSurface(activeSurface);
-  const route = AM_ROUTES.find(item => item.id === activeRoute) ?? AM_ROUTES[0];
-  const pageViewPath = getAmPageViewPath(activeModuleRoute?.route, route.path);
+  const activeRouteItem = AM_ROUTES.find(item => item.id === activeRoute);
+  const pageViewPath = getAmPageViewPath(
+    activeModuleRoute?.route,
+    activeRouteItem?.path ?? '/:catchAll',
+  );
 
   React.useEffect(() => {
     recordAmPageView(pageViewPath).catch(() => undefined);
@@ -231,7 +234,7 @@ export function KolamAmSurface({
           ) : activeRoute === 'activity-log' ? (
             <AmActivityLogPage />
           ) : (
-            <AmParityPlaceholder route={route} />
+            <AmNotFoundPage onModuleRouteSelect={onModuleRouteSelect} />
           )}
         </ScrollView>
       </View>
@@ -240,7 +243,7 @@ export function KolamAmSurface({
 }
 
 type AmRouteSelection = {
-  route: AmRouteItem;
+  routeId: AmRouteId | 'not-found';
   taskId?: string;
   transferId?: string;
   mutasiId?: string;
@@ -255,19 +258,23 @@ type AmHardwareInitialRoute = {
 
 function getAmRouteSelection(route?: string | null): AmRouteSelection {
   const normalizedRoute = normalizeModuleRoutePath(route);
-  const routeItem = getAmRouteByModuleRoute(normalizedRoute);
+  const routeItem = getKnownAmRouteByModuleRoute(normalizedRoute);
   const segments = normalizedRoute === '/' ? [] : normalizedRoute.split('/');
 
+  if (!routeItem) {
+    return {routeId: 'not-found'};
+  }
+
   if (segments[0] === 'tasks' && isConcreteRouteSegment(segments[1])) {
-    return {route: routeItem, taskId: segments[1]};
+    return {routeId: routeItem.id, taskId: segments[1]};
   }
 
   if (segments[0] === 'transactions' && isConcreteRouteSegment(segments[1])) {
-    return {route: routeItem, transferId: segments[1]};
+    return {routeId: routeItem.id, transferId: segments[1]};
   }
 
   if (segments[0] === 'mutasi' && isConcreteRouteSegment(segments[1])) {
-    return {route: routeItem, mutasiId: segments[1]};
+    return {routeId: routeItem.id, mutasiId: segments[1]};
   }
 
   if (segments[0] === 'hardware') {
@@ -282,11 +289,26 @@ function getAmRouteSelection(route?: string | null): AmRouteSelection {
       hardwareRoute.deviceId = segments[3];
     }
     return Object.keys(hardwareRoute).length
-      ? {route: routeItem, hardwareRoute}
-      : {route: routeItem};
+      ? {routeId: routeItem.id, hardwareRoute}
+      : {routeId: routeItem.id};
   }
 
-  return {route: routeItem};
+  return {routeId: routeItem.id};
+}
+
+function getKnownAmRouteByModuleRoute(route?: string | null): AmRouteItem | null {
+  const normalizedRoute = normalizeModuleRoutePath(route);
+  const routeItem = getAmRouteByModuleRoute(normalizedRoute);
+  const normalizedItemRoute = normalizeModuleRoutePath(routeItem.moduleRoute);
+
+  if (normalizedItemRoute === '/') {
+    return normalizedRoute === '/' ? routeItem : null;
+  }
+
+  return normalizedRoute === normalizedItemRoute ||
+    normalizedRoute.startsWith(`${normalizedItemRoute}/`)
+    ? routeItem
+    : null;
 }
 
 function getConcreteAmRouteEntry(
@@ -6449,13 +6471,31 @@ function AmActivityLogDetailPanel({
   );
 }
 
-function AmParityPlaceholder({route}: {route: AmRouteItem}) {
+function AmNotFoundPage({
+  onModuleRouteSelect,
+}: {
+  onModuleRouteSelect?: (route: ShellModuleRouteEntry) => void;
+}) {
+  const openDashboard = React.useCallback(() => {
+    const dashboardRoute = getShellModuleRouteEntry('am', '/');
+    if (dashboardRoute) {
+      onModuleRouteSelect?.(dashboardRoute);
+    }
+  }, [onModuleRouteSelect]);
+
   return (
     <View style={styles.emptyPanel}>
-      <Text style={styles.panelTitle}>{route.label}</Text>
+      <Text style={styles.panelTitle}>404</Text>
+      <Text style={styles.panelTitle}>Page not found</Text>
       <Text style={styles.panelText}>
-        Route {route.path} sudah masuk menu AM.
+        The page you are looking for doesn't exist or has been moved.
       </Text>
+      <KolamButton
+        accessibilityLabel="AM Back to Dashboard"
+        label="Back to Dashboard"
+        size="sm"
+        onPress={openDashboard}
+      />
     </View>
   );
 }
