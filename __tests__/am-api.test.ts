@@ -460,14 +460,14 @@ describe('AM API service', () => {
       url: 'https://hooks.example.test/am',
       events: ['transfer.success'],
       secret: '1234567890abcdef',
-      active: true,
+      status: 'active' as const,
     };
     fetchMock.mockResolvedValue(jsonResponse({success: true, data: [], meta: {total: 0, limit: 20}}));
 
     await getAmWebhookConfigs('https://am.example.test/api');
     await getAmWebhookEvents('https://am.example.test/api');
     await createAmWebhookConfig(configPayload, 'https://am.example.test/api');
-    await updateAmWebhookConfig('webhook-1', {active: false}, 'https://am.example.test/api');
+    await updateAmWebhookConfig('webhook-1', {status: 'inactive'}, 'https://am.example.test/api');
     await getAmWebhookLogs(
       {page: 2, limit: 20, event: 'transfer.success', direction: 'outgoing'},
       'https://am.example.test/api',
@@ -482,7 +482,7 @@ describe('AM API service', () => {
     }));
     expect(fetchMock).toHaveBeenNthCalledWith(4, 'https://am.example.test/api/webhook/config/webhook-1', expect.objectContaining({
       method: 'PUT',
-      body: JSON.stringify({active: false}),
+      body: JSON.stringify({status: 'inactive'}),
     }));
     expect(fetchMock).toHaveBeenNthCalledWith(
       5,
