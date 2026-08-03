@@ -118,209 +118,224 @@ export function KolamCampaignDetail({
         />
       ) : null}
 
-      <KolamContentFrame variant="nativeFormSection">
-        <Text style={styles.sectionTitle}>Ringkasan Kampanye</Text>
-        <Text style={styles.sectionDescription}>
-          Ringkasan status kampanye, nilai diskon, cakupan produk, dan durasi
-          aktif.
-        </Text>
-        <View style={styles.metricGrid}>
-          <MetricCard
-            description={
-              campaign.status === 'on_going'
-                ? 'Kampanye aktif'
-                : 'Siklus kampanye'
-            }
-            title="Status"
-            value={formatKolamCampaignStatusLabel(campaign.status)}
-          />
-          <MetricCard
-            accent
-            description={`Diskon ${formatKolamCampaignDiscountTypeLabel(campaign.discountType)}`}
-            title="Diskon"
-            value={discountLabel}
-          />
-          <MetricCard
-            description={
-              variantCount > 0
-                ? `${variantCount} varian terpilih`
-                : 'Semua item yang memenuhi syarat'
-            }
-            title="Produk"
-            value={String(campaign.products.length)}
-          />
-          <MetricCard
-            description={
-              daysLeft != null && daysLeft > 0
-                ? `${daysLeft} hari tersisa`
-                : 'Periode kampanye'
-            }
-            title="Durasi"
-            value={durationDays != null ? `${durationDays} hari` : '—'}
-          />
-        </View>
-      </KolamContentFrame>
-
-      <KolamContentFrame variant="nativeFormSection">
-        <View style={styles.productsHeader}>
-          <View style={styles.titleBlock}>
-            <Text style={styles.sectionTitle}>Produk Kampanye</Text>
+      <View style={styles.detailColumns}>
+        <View style={styles.mainColumn}>
+          <KolamContentFrame variant="nativeFormSection">
+            <Text style={styles.sectionTitle}>Ringkasan Kampanye</Text>
             <Text style={styles.sectionDescription}>
-              Produk dan varian yang mendapat harga kampanye ini.
+              Ringkasan status kampanye, nilai diskon, cakupan produk, dan
+              durasi aktif.
             </Text>
-          </View>
-          <KolamStatusBadge
-            intent="secondary"
-            label={`${campaign.products.length} produk`}
-          />
-        </View>
+            <View style={styles.metricGrid}>
+              <MetricCard
+                description={
+                  campaign.status === 'on_going'
+                    ? 'Kampanye aktif'
+                    : 'Siklus kampanye'
+                }
+                title="Status"
+                value={formatKolamCampaignStatusLabel(campaign.status)}
+              />
+              <MetricCard
+                accent
+                description={`Diskon ${formatKolamCampaignDiscountTypeLabel(campaign.discountType)}`}
+                title="Diskon"
+                value={discountLabel}
+              />
+              <MetricCard
+                description={
+                  variantCount > 0
+                    ? `${variantCount} varian terpilih`
+                    : 'Semua item yang memenuhi syarat'
+                }
+                title="Produk"
+                value={String(campaign.products.length)}
+              />
+              <MetricCard
+                description={
+                  daysLeft != null && daysLeft > 0
+                    ? `${daysLeft} hari tersisa`
+                    : 'Periode kampanye'
+                }
+                title="Durasi"
+                value={durationDays != null ? `${durationDays} hari` : '—'}
+              />
+            </View>
+          </KolamContentFrame>
 
-        {campaign.products.length === 0 ? (
-          <KolamEmptyState
-            message="Tidak ada produk pada kampanye ini."
-            title="Kosong"
-          />
-        ) : (
-          campaign.products.map((entry, index) => {
-            const product = entry.product;
-            const priceItems =
-              entry.variantIds.length > 0 && entry.variantDetails?.length
-                ? entry.variantDetails
-                : product?.variants?.length
-                  ? product.variants
-                  : product
-                    ? [product]
-                    : [];
-            const priceRange = formatKolamCampaignPriceRange(
-              priceItems,
-              campaign,
-            );
+          <KolamContentFrame variant="nativeFormSection">
+            <View style={styles.productsHeader}>
+              <View style={styles.titleBlock}>
+                <Text style={styles.sectionTitle}>Produk Kampanye</Text>
+                <Text style={styles.sectionDescription}>
+                  Produk dan varian yang mendapat harga kampanye ini.
+                </Text>
+              </View>
+              <KolamStatusBadge
+                intent="secondary"
+                label={`${campaign.products.length} produk`}
+              />
+            </View>
 
-            return (
-              <View key={`${entry.productId}-${index}`} style={styles.productRow}>
-                <View style={styles.productMain}>
-                  <Text style={styles.productIndex}>{index + 1}</Text>
-                  {product?.thumbnailUri ? (
-                    <KolamRemoteImage
-                      accessibilityLabel={product?.name || entry.productId}
-                      sourceUri={product.thumbnailUri}
-                      style={styles.thumb}
-                    />
-                  ) : (
-                    <View style={styles.thumbPlaceholder} />
-                  )}
-                  <View style={styles.productCopy}>
-                    <Text numberOfLines={2} style={styles.productName}>
-                      {product?.name || entry.productId}
-                    </Text>
-                    {product?.sku ? (
-                      <KolamStatusBadge
-                        intent="secondary"
-                        label={`SKU ${product.sku}`}
-                      />
-                    ) : null}
-                    <View style={styles.variantBadges}>
-                      {entry.variantIds.length === 0 ? (
-                        <KolamStatusBadge
-                          intent="info"
-                          label={
-                            product?.variants?.length
-                              ? 'Semua varian'
-                              : 'Produk utama'
-                          }
+            {campaign.products.length === 0 ? (
+              <KolamEmptyState
+                message="Tidak ada produk pada kampanye ini."
+                title="Kosong"
+              />
+            ) : (
+              campaign.products.map((entry, index) => {
+                const product = entry.product;
+                const priceItems =
+                  entry.variantIds.length > 0 && entry.variantDetails?.length
+                    ? entry.variantDetails
+                    : product?.variants?.length
+                      ? product.variants
+                      : product
+                        ? [product]
+                        : [];
+                const priceRange = formatKolamCampaignPriceRange(
+                  priceItems,
+                  campaign,
+                );
+
+                return (
+                  <View
+                    key={`${entry.productId}-${index}`}
+                    style={styles.productRow}
+                  >
+                    <View style={styles.productMain}>
+                      <Text style={styles.productIndex}>{index + 1}</Text>
+                      {product?.thumbnailUri ? (
+                        <KolamRemoteImage
+                          accessibilityLabel={product?.name || entry.productId}
+                          sourceUri={product.thumbnailUri}
+                          style={styles.thumb}
                         />
                       ) : (
-                        (entry.variantDetails ?? []).map(variant => (
+                        <View style={styles.thumbPlaceholder} />
+                      )}
+                      <View style={styles.productCopy}>
+                        <Text numberOfLines={2} style={styles.productName}>
+                          {product?.name || entry.productId}
+                        </Text>
+                        {product?.sku ? (
                           <KolamStatusBadge
                             intent="secondary"
-                            key={variant.id}
-                            label={variant.label}
+                            label={`SKU ${product.sku}`}
                           />
-                        ))
-                      )}
+                        ) : null}
+                        <View style={styles.variantBadges}>
+                          {entry.variantIds.length === 0 ? (
+                            <KolamStatusBadge
+                              intent="info"
+                              label={
+                                product?.variants?.length
+                                  ? 'Semua varian'
+                                  : 'Produk utama'
+                              }
+                            />
+                          ) : (
+                            (entry.variantDetails ?? []).map(variant => (
+                              <KolamStatusBadge
+                                intent="secondary"
+                                key={variant.id}
+                                label={variant.label}
+                              />
+                            ))
+                          )}
+                        </View>
+                      </View>
+                    </View>
+                    <View style={styles.pricePanel}>
+                      <Text style={styles.pricePanelTitle}>Harga kampanye</Text>
+                      {priceRange.original ? (
+                        <Text style={styles.priceOriginal}>
+                          {priceRange.original}
+                        </Text>
+                      ) : null}
+                      <Text style={styles.priceCampaign}>
+                        {priceRange.campaign || '—'}
+                      </Text>
                     </View>
                   </View>
-                </View>
-                <View style={styles.pricePanel}>
-                  <Text style={styles.pricePanelTitle}>Harga kampanye</Text>
-                  {priceRange.original ? (
-                    <Text style={styles.priceOriginal}>
-                      {priceRange.original}
-                    </Text>
-                  ) : null}
-                  <Text style={styles.priceCampaign}>
-                    {priceRange.campaign || '—'}
-                  </Text>
-                </View>
-              </View>
-            );
-          })
-        )}
-      </KolamContentFrame>
+                );
+              })
+            )}
+          </KolamContentFrame>
+        </View>
 
-      <KolamContentFrame variant="nativeFormSection">
-        <Text style={styles.sectionTitle}>Status Kampanye</Text>
-        <KolamDescriptionList
-          accessibilityLabel="Status kampanye"
-          rows={[
-            {
-              id: 'status',
-              label: 'Status',
-              meta: '',
-              tone: 'default',
-              value: formatKolamCampaignStatusLabel(campaign.status),
-            },
-            {
-              id: 'start',
-              label: 'Mulai',
-              meta: '',
-              tone: 'default',
-              value: startLabel,
-            },
-            {
-              id: 'end',
-              label: 'Selesai',
-              meta: '',
-              tone: 'default',
-              value: endLabel,
-            },
-            ...(daysLeft != null && daysLeft > 0
-              ? [
-                  {
-                    id: 'left',
-                    label: 'Sisa',
-                    meta: '',
-                    tone: 'default' as const,
-                    value: `${daysLeft} hari`,
-                  },
-                ]
-              : []),
-          ]}
-        />
-      </KolamContentFrame>
+        <View style={styles.sidebarColumn}>
+          <KolamContentFrame variant="nativeFormSection">
+            <Text style={styles.sectionTitle}>Status Kampanye</Text>
+            <Text style={styles.sectionDescription}>
+              Siklus dan timeline kampanye.
+            </Text>
+            <View style={styles.statusHighlight}>
+              <Text style={styles.statusHighlightLabel}>Status saat ini</Text>
+              <KolamStatusBadge
+                intent={getKolamCampaignStatusIntent(campaign.status)}
+                label={formatKolamCampaignStatusLabel(campaign.status)}
+              />
+            </View>
+            <KolamDescriptionList
+              accessibilityLabel="Status kampanye"
+              rows={[
+                {
+                  id: 'start',
+                  label: 'Mulai',
+                  meta: '',
+                  tone: 'default',
+                  value: startLabel,
+                },
+                {
+                  id: 'end',
+                  label: 'Selesai',
+                  meta: '',
+                  tone: 'default',
+                  value: endLabel,
+                },
+                ...(daysLeft != null && daysLeft > 0
+                  ? [
+                      {
+                        id: 'left',
+                        label: 'Sisa',
+                        meta: '',
+                        tone: 'default' as const,
+                        value: `${daysLeft} hari`,
+                      },
+                    ]
+                  : []),
+              ]}
+            />
+          </KolamContentFrame>
 
-      <KolamContentFrame variant="nativeFormSection">
-        <Text style={styles.sectionTitle}>Metadata</Text>
-        <KolamDescriptionList
-          accessibilityLabel="Metadata kampanye"
-          rows={[
-            {
-              id: 'created',
-              label: 'Dibuat',
-              meta: '',
-              tone: 'default',
-              value: formatKolamCampaignFullDatetime(campaign.createdAt),
-            },
-            {
-              id: 'updated',
-              label: 'Diperbarui',
-              meta: '',
-              tone: 'default',
-              value: formatKolamCampaignFullDatetime(campaign.updatedAt),
-            },
-          ]}
-        />
-      </KolamContentFrame>
+          <KolamContentFrame variant="nativeFormSection">
+            <Text style={styles.sectionTitle}>Metadata</Text>
+            <Text style={styles.sectionDescription}>
+              Timestamp audit untuk kampanye ini.
+            </Text>
+            <KolamDescriptionList
+              accessibilityLabel="Metadata kampanye"
+              rows={[
+                {
+                  id: 'created',
+                  label: 'Dibuat',
+                  meta: '',
+                  tone: 'default',
+                  value: formatKolamCampaignFullDatetime(campaign.createdAt),
+                },
+                {
+                  id: 'updated',
+                  label: 'Diperbarui',
+                  meta: '',
+                  tone: 'default',
+                  value: formatKolamCampaignFullDatetime(campaign.updatedAt),
+                },
+              ]}
+            />
+          </KolamContentFrame>
+        </View>
+      </View>
     </ScrollView>
   );
 }
@@ -356,6 +371,43 @@ const styles = StyleSheet.create({
   content: {
     gap: 12,
     paddingBottom: 24,
+  },
+  detailColumns: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  mainColumn: {
+    flexGrow: 2,
+    flexShrink: 1,
+    gap: 12,
+    minWidth: 320,
+  },
+  sidebarColumn: {
+    flexGrow: 1,
+    flexShrink: 1,
+    gap: 12,
+    minWidth: 260,
+    maxWidth: 420,
+  },
+  statusHighlight: {
+    alignItems: 'center',
+    backgroundColor: V.colors.primarySoft,
+    borderColor: V.colors.primary,
+    borderRadius: 10,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 10,
+    justifyContent: 'space-between',
+    marginBottom: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  statusHighlightLabel: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
   },
   titleBlock: {
     flex: 1,

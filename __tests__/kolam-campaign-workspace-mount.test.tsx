@@ -30,6 +30,7 @@ jest.mock('../src/hooks/use-kolam-campaign-controller', () => ({
     canCreate: true,
     canDelete: true,
     canUpdate: true,
+    canView: true,
     dataSource: 'live',
     error: null,
     form: {

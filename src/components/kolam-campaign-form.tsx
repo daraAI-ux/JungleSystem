@@ -213,7 +213,7 @@ export function KolamCampaignForm({
       >
         <KolamSearchField
           onChangeText={controller.onProductSearchChange}
-          placeholder="Cari produk…"
+          placeholder="Cari produk di server…"
           value={controller.productSearch}
         />
         {controller.loadingProducts ? (
@@ -225,6 +225,26 @@ export function KolamCampaignForm({
             option => option.id === row.productId,
           );
           const hasVariants = Boolean(selected?.variants.length);
+          const productOptions = controller.productOptions.map(option => ({
+            icon: option.thumbnailUri ? (
+              <KolamRemoteImage
+                accessibilityLabel={option.name}
+                sourceUri={option.thumbnailUri}
+                style={styles.optionThumb}
+              />
+            ) : (
+              <View style={styles.optionThumbPlaceholder} />
+            ),
+            label: [
+              option.name,
+              option.sku ? `SKU: ${option.sku}` : 'Tanpa SKU',
+              `${option.variants.length} varian`,
+              option.priceLabel || '',
+            ]
+              .filter(Boolean)
+              .join(' · '),
+            value: option.id,
+          }));
 
           return (
             <View key={`product-row-${index}`} style={styles.productCard}>
@@ -247,12 +267,10 @@ export function KolamCampaignForm({
               <KolamDropdownSelect
                 label="Pilih Produk"
                 onChange={value => controller.onSetProductId(index, value)}
-                options={controller.productOptions.map(option => ({
-                  label: option.sku
-                    ? `${option.name} (${option.sku})`
-                    : option.name,
-                  value: option.id,
-                }))}
+                options={productOptions}
+                searchable
+                searchPlaceholder="Saring daftar produk…"
+                showLabelInTrigger={false}
                 value={row.productId}
               />
 
@@ -483,6 +501,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     gap: 10,
+  },
+  optionThumb: {
+    borderRadius: 6,
+    height: 28,
+    width: 28,
+  },
+  optionThumbPlaceholder: {
+    backgroundColor: V.colors.muted,
+    borderRadius: 6,
+    height: 28,
+    width: 28,
   },
   thumb: {
     borderRadius: 8,

@@ -20,7 +20,7 @@ import {
   normalizeKolamCampaignList,
   validateKolamCampaignForm,
 } from '../src/domain/kolam-campaign';
-import { getKolamTableColumns } from '../src/domain/kolam-table';
+import { getKolamTableColumns, fitKolamDataTableColumns } from '../src/domain/kolam-table';
 import {
   getKolamNavigationItemByRoute,
   getKolamNavigationRouteTarget,
@@ -232,6 +232,19 @@ describe('kolam-campaign domain', () => {
       'Dibuat',
       '',
     ]);
+
+    const fitted = fitKolamDataTableColumns(columns, 1100, {
+      gap: 16,
+      paddingX: 24,
+      primaryMinWidth: 160,
+      secondaryMinWidth: 56,
+      actionsMinWidth: 64,
+    });
+    const contentWidth = fitted
+      .filter(column => column.id !== 'actions')
+      .reduce((sum, column) => sum + (column.width ?? 0), 0);
+    expect(contentWidth).toBeGreaterThan(0);
+    expect(fitted.find(column => column.id === 'actions')?.width).toBe(64);
 
     const nav = getKolamNavigationItemByRoute('/campaign');
     expect(nav?.label).toBe('Daftar');

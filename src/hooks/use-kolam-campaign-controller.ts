@@ -39,6 +39,7 @@ export interface KolamCampaignController {
   canCreate: boolean;
   canDelete: boolean;
   canUpdate: boolean;
+  canView: boolean;
   dataSource: KolamCampaignDataSource;
   error: string | null;
   form: KolamCampaignFormState;
@@ -84,6 +85,11 @@ export function useKolamCampaignController(
   const initialMode = getKolamCampaignRouteMode(route);
   const routeCampaignId = getKolamCampaignIdFromRoute(route);
 
+  const canView = hasKolamSalePermission(
+    authUser?.permissions,
+    'view',
+    authUser?.roleKey,
+  );
   const canCreate = hasKolamSalePermission(
     authUser?.permissions,
     'create',
@@ -196,6 +202,10 @@ export function useKolamCampaignController(
   }, [initialMode, route]);
 
   useEffect(() => {
+    if (!canView) {
+      setLoading(false);
+      return;
+    }
     if (mode === 'list') {
       void refreshList();
       return;
@@ -208,6 +218,7 @@ export function useKolamCampaignController(
       void loadCampaignById(routeCampaignId);
     }
   }, [
+    canView,
     loadCampaignById,
     mode,
     refreshList,
@@ -216,6 +227,9 @@ export function useKolamCampaignController(
   ]);
 
   useEffect(() => {
+    if (!canView) {
+      return;
+    }
     if (mode !== 'new' && mode !== 'edit') {
       return;
     }
@@ -261,7 +275,7 @@ export function useKolamCampaignController(
       cancelled = true;
       clearTimeout(handle);
     };
-  }, [mode, productSearch]);
+  }, [canView, mode, productSearch]);
 
   const mergedProductOptions = useMemo(() => {
     const map = new Map<string, KolamCampaignProductOption>();
@@ -488,6 +502,7 @@ export function useKolamCampaignController(
       canCreate,
       canDelete,
       canUpdate,
+      canView,
       dataSource,
       error,
       form,
@@ -530,6 +545,7 @@ export function useKolamCampaignController(
       canCreate,
       canDelete,
       canUpdate,
+      canView,
       dataSource,
       error,
       form,

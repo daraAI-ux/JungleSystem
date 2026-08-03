@@ -16,7 +16,9 @@ import {
   type KolamCampaignStatus,
 } from '../domain/kolam-campaign';
 import {
+  fitKolamDataTableColumns,
   getKolamTableColumns,
+  getKolamTableVisualContract,
   type KolamTableColumn,
 } from '../domain/kolam-table';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
@@ -30,6 +32,8 @@ import { KolamCampaignForm } from './kolam-campaign-form';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import {
   getKolamDataTableColumnStyle,
+  KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+  KOLAM_DATA_TABLE_COLUMN_GAP,
 } from './kolam-data-table-column-style';
 import { KolamDataTableHeader } from './kolam-data-table-header';
 import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
@@ -48,6 +52,22 @@ import { KolamSearchField } from './kolam-search-field';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 
+const CAMPAIGN_SKELETON_ROW_COUNT = 8;
+
+function fitCampaignListColumns(containerWidth: number): KolamTableColumn[] {
+  return fitKolamDataTableColumns(
+    getKolamTableColumns('campaign'),
+    containerWidth,
+    {
+      actionsMinWidth: KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+      gap: KOLAM_DATA_TABLE_COLUMN_GAP,
+      paddingX: getKolamTableVisualContract().body.cellPaddingX * 2,
+      primaryMinWidth: 160,
+      secondaryMinWidth: 56,
+    },
+  );
+}
+
 export function KolamCampaignSurface({
   onRouteChange,
   route,
@@ -56,6 +76,17 @@ export function KolamCampaignSurface({
   route: string;
 }) {
   const controller = useKolamCampaignController(route);
+
+  if (!controller.canView) {
+    return (
+      <View style={styles.surface}>
+        <KolamEmptyState
+          message="Tidak ada izin view penjualan (sale) untuk membuka kampanye."
+          title="Akses ditolak"
+        />
+      </View>
+    );
+  }
 
   if (controller.mode === 'list') {
     return (
@@ -88,7 +119,11 @@ function KolamCampaignList({
   const [pendingDelete, setPendingDelete] = React.useState<KolamCampaign | null>(
     null,
   );
-  const columns = React.useMemo(() => getKolamTableColumns('campaign'), []);
+  const [tableBodyWidth, setTableBodyWidth] = React.useState(0);
+  const columns = React.useMemo(
+    () => fitCampaignListColumns(tableBodyWidth),
+    [tableBodyWidth],
+  );
 
   React.useEffect(() => {
     setSearchInput(controller.search);
@@ -110,6 +145,15 @@ function KolamCampaignList({
     KOLAM_CAMPAIGN_STATUS_FILTER_OPTIONS.find(
       option => option.value === controller.statusFilter,
     )?.label ?? 'Status';
+
+  const clearSearchFilter = () => {
+    setSearchInput('');
+    controller.onSearchChange('');
+  };
+
+  const clearStatusFilter = () => {
+    controller.onSetStatusFilter('');
+  };
 
   return (
     <View style={styles.surface}>
@@ -178,6 +222,36 @@ function KolamCampaignList({
             />
           </View>
         </View>
+
+        {filtersApplied ? (
+          <View style={styles.filterChipBar}>
+            <Text style={styles.filterChipLabel}>Filter:</Text>
+            {controller.search.trim() ? (
+              <Pressable
+                accessibilityRole="button"
+                onPress={clearSearchFilter}
+                style={styles.filterChip}
+              >
+                <Text numberOfLines={1} style={styles.filterChipText}>
+                  "{controller.search.trim()}"
+                </Text>
+                <Text style={styles.filterChipRemove}>×</Text>
+              </Pressable>
+            ) : null}
+            {controller.statusFilter ? (
+              <Pressable
+                accessibilityRole="button"
+                onPress={clearStatusFilter}
+                style={styles.filterChip}
+              >
+                <Text numberOfLines={1} style={styles.filterChipText}>
+                  {statusFilterLabel}
+                </Text>
+                <Text style={styles.filterChipRemove}>×</Text>
+              </Pressable>
+            ) : null}
+          </View>
+        ) : null}
       </View>
 
       <KolamCatalogListTableShell
@@ -213,16 +287,14 @@ function KolamCampaignList({
             ) : null}
           </KolamTableFooterControls>
         }
+        onBodyWidthChange={setTableBodyWidth}
       >
         <KolamDataTableHeader columns={columns} />
-        {controller.loading && controller.campaigns.length === 0 ? (
-          <View style={styles.emptyWrap}>
-            <KolamEmptyState
-              message="Memuat daftar kampanye…"
-              title="Memuat"
-            />
-          </View>
-        ) : null}
+        {controller.loading && controller.campaigns.length === 0
+          ? Array.from({ length: CAMPAIGN_SKELETON_ROW_COUNT }).map((_, index) => (
+              <KolamCampaignSkeletonRow columns={columns} key={`sk-${index}`} />
+            ))
+          : null}
         {!controller.loading && controller.campaigns.length === 0 ? (
           <View style={styles.emptyWrap}>
             <KolamEmptyState
@@ -262,6 +334,39 @@ function KolamCampaignList({
         visible={Boolean(pendingDelete)}
       />
     </View>
+  );
+}
+
+function KolamCampaignSkeletonRow({
+  columns,
+}: {
+  columns: KolamTableColumn[];
+}) {
+  const mainColumns = columns.filter(column => column.id !== 'actions');
+
+  return (
+    <KolamDataTableRowFrame>
+      <KolamDataTableMainTrack>
+        {mainColumns.map(column => (
+          <View
+            key={column.id}
+            style={[styles.cell, getKolamDataTableColumnStyle(column)]}
+          >
+            <View
+              style={[
+                styles.skeletonBar,
+                column.id === 'primary'
+                  ? styles.skeletonBarWide
+                  : styles.skeletonBarNarrow,
+              ]}
+            />
+          </View>
+        ))}
+      </KolamDataTableMainTrack>
+      <KolamDataTableActionsTrack>
+        <View style={styles.skeletonAction} />
+      </KolamDataTableActionsTrack>
+    </KolamDataTableRowFrame>
   );
 }
 
@@ -460,6 +565,49 @@ const styles = StyleSheet.create({
   errorBadge: {
     alignSelf: 'stretch',
   },
+  filterChipBar: {
+    alignItems: 'center',
+    backgroundColor: V.colors.muted,
+    borderColor: V.colors.border,
+    borderRadius: 10,
+    borderWidth: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  filterChipLabel: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+  },
+  filterChip: {
+    alignItems: 'center',
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 999,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 6,
+    maxWidth: 280,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  filterChipText: {
+    color: V.colors.fg,
+    flexShrink: 1,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+  },
+  filterChipRemove: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 14,
+    fontWeight: '700',
+    lineHeight: 16,
+  },
   emptyWrap: {
     padding: 16,
   },
@@ -474,6 +622,24 @@ const styles = StyleSheet.create({
   },
   centerBadge: {
     alignSelf: 'center',
+  },
+  skeletonBar: {
+    backgroundColor: V.colors.muted,
+    borderRadius: 4,
+    height: 12,
+  },
+  skeletonBarWide: {
+    width: '78%',
+  },
+  skeletonBarNarrow: {
+    width: '56%',
+  },
+  skeletonAction: {
+    alignSelf: 'center',
+    backgroundColor: V.colors.muted,
+    borderRadius: 4,
+    height: 18,
+    width: 28,
   },
   title: {
     color: V.colors.fg,
