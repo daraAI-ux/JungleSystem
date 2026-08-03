@@ -218,6 +218,9 @@ function KolamTaskManagerDetail({
                 label={getKolamTaskCategoryBucketLabel(task.categoryBucket)}
               />
             ) : null}
+            {getTaskTypeLabel(task) !== '-' ? (
+              <KolamStatusBadge intent="info" label={getTaskTypeLabel(task)} />
+            ) : null}
           </View>
         </View>
         {statusDisabled ? null : (
@@ -239,6 +242,7 @@ function KolamTaskManagerDetail({
       <View style={styles.detailGrid}>
         <KolamTaskDetailMetric label="PIC" value={getKolamTaskUserDisplayName(task.assignedTo)} />
         <KolamTaskDetailMetric label="Dibantu" value={getKolamTaskUserDisplayName(task.assistedBy)} />
+        <KolamTaskDetailMetric label="Tipe task" value={getTaskTypeLabel(task)} />
         <KolamTaskDetailMetric label="Due" value={formatKolamTaskListDatetime(task.dueDate)} />
         <KolamTaskDetailMetric
           label="Checklist"
@@ -444,6 +448,12 @@ function KolamTaskDetailMetric({
       </Text>
     </View>
   );
+}
+
+function getTaskTypeLabel(task: KolamTaskManagerTask) {
+  if (!task.taskType) return '-';
+  if (typeof task.taskType === 'string') return task.taskType || '-';
+  return task.taskType.name || task.taskType.key || task.taskType.id || '-';
 }
 
 function KolamTaskManagerTabs({
@@ -740,6 +750,9 @@ function KolamTaskRow({
             ) : null}
             {task.category && typeof task.category === 'object' ? (
               <KolamStatusBadge intent="info" label={task.category.name} />
+            ) : null}
+            {getTaskTypeLabel(task) !== '-' ? (
+              <KolamStatusBadge intent="muted" label={getTaskTypeLabel(task)} />
             ) : null}
           </View>
         </Pressable>

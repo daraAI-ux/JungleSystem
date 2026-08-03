@@ -122,7 +122,7 @@ jest.mock('../src/services/kolam-task-manager-api', () => ({
                 serviceId: '',
                 source: 'manual',
                 status: 'todo',
-                taskType: null,
+                taskType: { id: 'type-1', key: 'dosing', name: 'Dosing' },
                 title: 'Cek jadwal kolam',
                 updatedAt: '',
                 updatedBy: null,
@@ -194,7 +194,7 @@ jest.mock('../src/services/kolam-task-manager-api', () => ({
       serviceId: '',
       source: 'manual',
       status: 'todo',
-      taskType: null,
+      taskType: { id: 'type-1', key: 'dosing', name: 'Dosing' },
       timeline: [
         {
           at: '2026-08-03T01:00:00.000Z',
@@ -630,6 +630,8 @@ describe('KolamWorkspaceSurface', () => {
         'Cek jadwal kolam',
         'Checklist',
         'Cek pompa',
+        'Tipe task',
+        'Dosing',
         'Diskusi',
         'Siap cek filter.',
         'Timeline',
