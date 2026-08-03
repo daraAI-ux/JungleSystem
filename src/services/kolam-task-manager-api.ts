@@ -80,6 +80,13 @@ export interface KolamTaskManagerTaskTypeInput {
   sortOrder: number;
 }
 
+export interface KolamTaskOvertimeEligibility {
+  activeRequest?: unknown;
+  eligible: boolean;
+  hasActiveRequest: boolean;
+  windowHours: number;
+}
+
 export interface KolamTaskRecurringTemplateInput {
   active?: boolean;
   assignedToId: string;
@@ -146,6 +153,33 @@ export async function getKolamTaskManagerCrmContext(
     `/task-manager/${encodeURIComponent(taskId)}/crm-context`,
   );
   return normalizeKolamTaskCustomerCrmContext(payload);
+}
+
+export async function getKolamTaskOvertimeEligibility(
+  taskId: string,
+): Promise<KolamTaskOvertimeEligibility> {
+  const payload = await kolamRequest<KolamTaskOvertimeEligibility>(
+    `/overtime/task/${encodeURIComponent(taskId)}/eligibility`,
+  );
+  return {
+    activeRequest: payload.activeRequest,
+    eligible: payload.eligible === true,
+    hasActiveRequest: payload.hasActiveRequest === true,
+    windowHours: Number(payload.windowHours) || 3,
+  };
+}
+
+export async function requestKolamTaskOvertime(
+  taskId: string,
+  reason: string,
+) {
+  await kolamRequest<unknown>('/overtime/request', {
+    method: 'POST',
+    body: {
+      reason,
+      taskId,
+    },
+  });
 }
 
 export async function getKolamTaskManagerCategories(

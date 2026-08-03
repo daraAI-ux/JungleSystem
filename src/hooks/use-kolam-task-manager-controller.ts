@@ -51,12 +51,14 @@ import {
   getKolamTaskManagerTask,
   getKolamTaskManagerTasks,
   getKolamTaskManagerTaskTypes,
+  getKolamTaskOvertimeEligibility,
   getKolamTaskRecurringEnrollmentCompliance,
   getKolamTaskRecurringEnrollmentDashboard,
   getKolamTaskRecurringEnrollmentStats,
   getKolamTaskRecurringOccurrences,
   getKolamTaskRecurringServiceVisits,
   getKolamTaskRecurringTemplates,
+  requestKolamTaskOvertime,
   runKolamTaskRecurringTick,
   sendKolamTaskManagerDiscussion,
   updateKolamTaskManagerCategory,
@@ -64,6 +66,7 @@ import {
   updateKolamTaskManagerStatus,
   updateKolamTaskManagerTask,
   updateKolamTaskManagerTaskType,
+  type KolamTaskOvertimeEligibility,
 } from '../services/kolam-task-manager-api';
 import { getKolamLocations } from '../services/kolam-location-api';
 import { getKolamCustomerList } from '../services/kolam-customer-api';
@@ -176,6 +179,10 @@ export interface KolamTaskManagerController {
   discussionDraft: string;
   discussionAttachments: NativeImagePickerResult[];
   noteDraft: string;
+  overtimeEligibilityByTaskId: Record<string, KolamTaskOvertimeEligibility | null>;
+  overtimeRequestError: string | null;
+  overtimeRequestReason: string;
+  overtimeRequestTaskId: string;
   kpi: KolamTaskManagerKpi;
   loading: boolean;
   mineOnly: boolean;
@@ -229,6 +236,7 @@ export interface KolamTaskManagerController {
   onCloseRecurringBulkForm: () => void;
   onCloseRecurringTemplateForm: () => void;
   onCloseTaskTypeForm: () => void;
+  onCloseOvertimeRequest: () => void;
   onCreateCategory: () => void;
   onCreateNew: () => void;
   onCreateRecurringBulkEnrollment: () => void;
@@ -243,6 +251,7 @@ export interface KolamTaskManagerController {
   onEditCategory: (category: KolamTaskManagerCategory) => void;
   onEditTaskType: (taskType: KolamTaskManagerTaskType) => void;
   onEditTask: (task: KolamTaskManagerTask) => void;
+  onOpenOvertimeRequest: (task: KolamTaskManagerTask) => void;
   onBackToList: () => void;
   onRefresh: () => Promise<void>;
   onResetFilters: () => void;
@@ -277,8 +286,10 @@ export interface KolamTaskManagerController {
   onRemoveDiscussionAttachment: (index: number) => void;
   onSetDiscussionDraft: (value: string) => void;
   onSetNoteDraft: (value: string) => void;
+  onSetOvertimeRequestReason: (value: string) => void;
   onToggleChecklistItem: (index: number) => Promise<boolean>;
   onRunRecurringTick: () => Promise<boolean>;
+  onSubmitOvertimeRequest: () => Promise<boolean>;
   onSwitchTab: (tab: 'recurring' | 'tasks') => void;
 }
 
@@ -389,6 +400,13 @@ export function useKolamTaskManagerController({
     NativeImagePickerResult[]
   >([]);
   const [noteDraft, setNoteDraft] = useState('');
+  const [overtimeEligibilityByTaskId, setOvertimeEligibilityByTaskId] =
+    useState<Record<string, KolamTaskOvertimeEligibility | null>>({});
+  const [overtimeRequestTaskId, setOvertimeRequestTaskId] = useState('');
+  const [overtimeRequestReason, setOvertimeRequestReason] = useState('');
+  const [overtimeRequestError, setOvertimeRequestError] = useState<
+    string | null
+  >(null);
   const [dataSource, setDataSource] =
     useState<KolamTaskManagerDataSource>('idle');
   const [page, setPage] = useState(1);
@@ -501,6 +519,31 @@ export function useKolamTaskManagerController({
     }
   }, [mode]);
 
+  const refreshOvertimeEligibility = useCallback(
+    async (taskIds: string[]) => {
+      const uniqueTaskIds = Array.from(new Set(taskIds.filter(Boolean)));
+      if (!uniqueTaskIds.length) return;
+
+      const pairs = await Promise.all(
+        uniqueTaskIds.map(async taskId => {
+          try {
+            return [
+              taskId,
+              await getKolamTaskOvertimeEligibility(taskId),
+            ] as const;
+          } catch {
+            return [taskId, null] as const;
+          }
+        }),
+      );
+      setOvertimeEligibilityByTaskId(current => ({
+        ...current,
+        ...Object.fromEntries(pairs),
+      }));
+    },
+    [],
+  );
+
   const refreshList = useCallback(async () => {
     if (mode !== 'list') {
       return;
@@ -524,6 +567,7 @@ export function useKolamTaskManagerController({
         mine: mineOnly,
       });
       setTasks(list.items);
+      void refreshOvertimeEligibility(getOvertimeCandidateTaskIds(list.items));
       setTotal(list.total);
       setTotalPages(list.totalPages);
       setDataSource('live');
@@ -566,6 +610,7 @@ export function useKolamTaskManagerController({
     page,
     pageSize,
     priorityFilter,
+    refreshOvertimeEligibility,
     search,
     statusFilter,
   ]);
@@ -587,6 +632,7 @@ export function useKolamTaskManagerController({
     try {
       const live = await getKolamTaskManagerTask(taskId);
       setSelectedTask(live);
+      void refreshOvertimeEligibility(getOvertimeCandidateTaskIds([live]));
       const assigneeId = getTaskUserId(live.assignedTo);
       if (live.customerId) {
         try {
@@ -615,7 +661,7 @@ export function useKolamTaskManagerController({
     } finally {
       setLoading(false);
     }
-  }, [mode, route]);
+  }, [mode, refreshOvertimeEligibility, route]);
 
   const refreshRecurring = useCallback(async () => {
     if (mode !== 'recurring') {
@@ -989,6 +1035,49 @@ export function useKolamTaskManagerController({
     setStatusMessage(null);
     setFormOpen(true);
   }, []);
+
+  const onOpenOvertimeRequest = useCallback((task: KolamTaskManagerTask) => {
+    setOvertimeRequestTaskId(task.id);
+    setOvertimeRequestReason('');
+    setOvertimeRequestError(null);
+    setStatusMessage(null);
+  }, []);
+
+  const onCloseOvertimeRequest = useCallback(() => {
+    setOvertimeRequestTaskId('');
+    setOvertimeRequestReason('');
+    setOvertimeRequestError(null);
+  }, []);
+
+  const onSubmitOvertimeRequest = useCallback(async () => {
+    const reason = overtimeRequestReason.trim();
+    if (!overtimeRequestTaskId) return false;
+    if (reason.length < 10) {
+      setOvertimeRequestError('Alasan minimal 10 karakter');
+      return false;
+    }
+
+    setMutatingTaskId(`overtime:${overtimeRequestTaskId}`);
+    setOvertimeRequestError(null);
+    setStatusMessage(null);
+    try {
+      await requestKolamTaskOvertime(overtimeRequestTaskId, reason);
+      setStatusMessage('Pengajuan lembur terkirim');
+      setOvertimeRequestTaskId('');
+      setOvertimeRequestReason('');
+      await refreshOvertimeEligibility([overtimeRequestTaskId]);
+      return true;
+    } catch (mutationError) {
+      setOvertimeRequestError(getErrorMessage(mutationError));
+      return false;
+    } finally {
+      setMutatingTaskId(null);
+    }
+  }, [
+    overtimeRequestReason,
+    overtimeRequestTaskId,
+    refreshOvertimeEligibility,
+  ]);
 
   const onDeleteTask = useCallback(
     async (task: KolamTaskManagerTask) => {
@@ -1486,6 +1575,10 @@ export function useKolamTaskManagerController({
       discussionDraft,
       discussionAttachments,
       noteDraft,
+      overtimeEligibilityByTaskId,
+      overtimeRequestError,
+      overtimeRequestReason,
+      overtimeRequestTaskId,
       kpi,
       loading,
       mineOnly,
@@ -1531,6 +1624,7 @@ export function useKolamTaskManagerController({
       onCloseRecurringBulkForm,
       onCloseRecurringTemplateForm,
       onCloseTaskTypeForm,
+      onCloseOvertimeRequest,
       onBackToList,
       onCreateCategory,
       onCreateNew,
@@ -1544,6 +1638,7 @@ export function useKolamTaskManagerController({
       onEditCategory,
       onEditTask,
       onEditTaskType,
+      onOpenOvertimeRequest,
       onRefresh:
         mode === 'detail'
           ? refreshDetail
@@ -1582,8 +1677,10 @@ export function useKolamTaskManagerController({
       onRemoveDiscussionAttachment,
       onSetDiscussionDraft: setDiscussionDraft,
       onSetNoteDraft: setNoteDraft,
+      onSetOvertimeRequestReason: setOvertimeRequestReason,
       onToggleChecklistItem,
       onRunRecurringTick,
+      onSubmitOvertimeRequest,
       onSwitchTab,
     }),
     [
@@ -1617,6 +1714,10 @@ export function useKolamTaskManagerController({
       discussionDraft,
       discussionAttachments,
       noteDraft,
+      overtimeEligibilityByTaskId,
+      overtimeRequestError,
+      overtimeRequestReason,
+      overtimeRequestTaskId,
       kpi,
       loading,
       mineOnly,
@@ -1636,6 +1737,7 @@ export function useKolamTaskManagerController({
       onCloseRecurringBulkForm,
       onCloseRecurringTemplateForm,
       onCloseTaskTypeForm,
+      onCloseOvertimeRequest,
       onCreateCategory,
       onCreateNew,
       onCreateRecurringBulkEnrollment,
@@ -1648,6 +1750,7 @@ export function useKolamTaskManagerController({
       onEditCategory,
       onEditTask,
       onEditTaskType,
+      onOpenOvertimeRequest,
       onBackToList,
       onResetFilters,
       onRunRecurringTick,
@@ -1659,6 +1762,7 @@ export function useKolamTaskManagerController({
       onSaveRecurringBulkEnrollment,
       onSaveRecurringTemplate,
       onSaveTaskType,
+      onSubmitOvertimeRequest,
       onPickDiscussionImage,
       onPickDiscussionVideo,
       onRemoveDiscussionAttachment,
@@ -1807,6 +1911,16 @@ function getTaskCategoryId(value: KolamTaskManagerTask['category']) {
 function getTaskTypeId(value: KolamTaskManagerTask['taskType']) {
   if (!value) return '';
   return typeof value === 'string' ? value : value.id;
+}
+
+function getOvertimeCandidateTaskIds(tasks: KolamTaskManagerTask[]) {
+  return tasks
+    .filter(
+      task =>
+        Boolean(task.dueDate) &&
+        ['todo', 'in_progress', 'needs_review'].includes(task.status),
+    )
+    .map(task => task.id);
 }
 
 function mapStaffOptions(users: KolamUserListItem[]): KolamTaskManagerStaffOption[] {

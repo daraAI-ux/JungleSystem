@@ -139,6 +139,7 @@ export function KolamTaskManagerSurface({
       <KolamTaskRecurringBulkEnrollmentModal controller={controller} />
       <KolamTaskRecurringTemplateFormModal controller={controller} />
       <KolamTaskTypeFormModal controller={controller} />
+      <KolamTaskOvertimeRequestModal controller={controller} />
     </View>
   );
 }
@@ -183,6 +184,7 @@ function KolamTaskManagerDetail({
       new Date(right.createdAt || 0).getTime(),
   );
   const relatedLinks = getTaskRelatedLinks(task);
+  const canRequestOvertime = isTaskOvertimeRequestVisible(controller, task);
 
   return (
     <View style={styles.detailStack}>
@@ -200,6 +202,14 @@ function KolamTaskManagerDetail({
               label="Ubah"
               onPress={() => controller.onEditTask(task)}
             />
+            {canRequestOvertime ? (
+              <KolamButton
+                disabled={controller.mutatingTaskId === `overtime:${task.id}`}
+                intent="outline"
+                label="Ajukan lembur"
+                onPress={() => controller.onOpenOvertimeRequest(task)}
+              />
+            ) : null}
             {controller.isTaskAdmin ? (
               <KolamButton
                 disabled={controller.mutatingTaskId === `delete:${task.id}`}
@@ -612,6 +622,14 @@ function getTaskTypeLabel(task: KolamTaskManagerTask) {
   if (!task.taskType) return '-';
   if (typeof task.taskType === 'string') return task.taskType || '-';
   return task.taskType.name || task.taskType.key || task.taskType.id || '-';
+}
+
+function isTaskOvertimeRequestVisible(
+  controller: KolamTaskManagerController,
+  task: KolamTaskManagerTask,
+) {
+  const eligibility = controller.overtimeEligibilityByTaskId[task.id];
+  return Boolean(eligibility?.eligible && !eligibility.hasActiveRequest);
 }
 
 function getDiscussionAttachmentLabel(
@@ -1073,6 +1091,16 @@ function KolamTaskRow({
               label: 'Detail',
               onPress: () => onRouteChange?.(`/task-manager/${task.id}`),
             },
+            ...(isTaskOvertimeRequestVisible(controller, task)
+              ? [
+                  {
+                    disabled:
+                      controller.mutatingTaskId === `overtime:${task.id}`,
+                    label: 'Lembur',
+                    onPress: () => controller.onOpenOvertimeRequest(task),
+                  },
+                ]
+              : []),
             {
               disabled: controller.mutatingTaskId === task.id,
               label: 'Ubah',
@@ -1726,6 +1754,79 @@ function KolamTaskFormModal({
               </View>
             </View>
           </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function KolamTaskOvertimeRequestModal({
+  controller,
+}: {
+  controller: KolamTaskManagerController;
+}) {
+  const task =
+    controller.selectedTask?.id === controller.overtimeRequestTaskId
+      ? controller.selectedTask
+      : controller.tasks.find(row => row.id === controller.overtimeRequestTaskId);
+  const saving =
+    controller.mutatingTaskId ===
+    `overtime:${controller.overtimeRequestTaskId}`;
+
+  return (
+    <Modal
+      animationType="fade"
+      onRequestClose={controller.onCloseOvertimeRequest}
+      transparent
+      visible={Boolean(controller.overtimeRequestTaskId)}
+    >
+      <View style={styles.modalRoot}>
+        <KolamModalBackdrop onPress={controller.onCloseOvertimeRequest} />
+        <View style={styles.modalCard}>
+          <View style={styles.modalHeader}>
+            <Text numberOfLines={1} style={styles.modalTitle}>
+              Ajukan lembur
+            </Text>
+            <View style={styles.modalActions}>
+              <KolamButton
+                disabled={saving}
+                intent="outline"
+                label="Batal"
+                onPress={controller.onCloseOvertimeRequest}
+              />
+              <KolamButton
+                disabled={saving}
+                label={saving ? 'Mengirim...' : 'Kirim pengajuan'}
+                onPress={() => {
+                  void controller.onSubmitOvertimeRequest();
+                }}
+              />
+            </View>
+          </View>
+          <Text style={styles.metaText}>
+            {task?.title || 'Tugas'} - tersedia 3 jam sebelum deadline
+          </Text>
+          {controller.overtimeRequestError ? (
+            <KolamStatusBadge
+              intent="danger"
+              label={controller.overtimeRequestError}
+              numberOfLines={3}
+            />
+          ) : null}
+          <View style={styles.modalContent}>
+            <KolamTaskField label="Alasan lembur" required>
+              <KolamFormTextField
+                multiline
+                onChangeText={controller.onSetOvertimeRequestReason}
+                placeholder="Alasan"
+                style={[
+                  settingsWebFormStyles.settingsWebFormFieldValue,
+                  settingsWebFormStyles.settingsWebFormFieldValueTextarea,
+                ]}
+                value={controller.overtimeRequestReason}
+              />
+            </KolamTaskField>
+          </View>
         </View>
       </View>
     </Modal>

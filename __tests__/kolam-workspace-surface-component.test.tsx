@@ -103,6 +103,13 @@ jest.mock('../src/services/kolam-task-manager-api', () => ({
   deleteKolamTaskManagerTask: jest.fn(() => Promise.resolve(undefined)),
   deleteKolamTaskManagerTaskType: jest.fn(() => Promise.resolve(undefined)),
   deleteKolamTaskRecurringTemplate: jest.fn(() => Promise.resolve(undefined)),
+  getKolamTaskOvertimeEligibility: jest.fn(() =>
+    Promise.resolve({
+      eligible: true,
+      hasActiveRequest: false,
+      windowHours: 3,
+    }),
+  ),
   getKolamTaskManagerCategories: jest.fn(() =>
     Promise.resolve([
       { active: true, bucket: 'project', color: '#16a34a', id: 'cat-1', name: 'Operasional', sortOrder: 2 },
@@ -367,6 +374,7 @@ jest.mock('../src/services/kolam-task-manager-api', () => ({
     ]),
   ),
   runKolamTaskRecurringTick: jest.fn(() => Promise.resolve(undefined)),
+  requestKolamTaskOvertime: jest.fn(() => Promise.resolve(undefined)),
   sendKolamTaskManagerDiscussion: jest.fn(() => Promise.resolve({})),
   updateKolamTaskManagerChecklist: jest.fn(() => Promise.resolve({})),
   updateKolamTaskManagerCategory: jest.fn(() => Promise.resolve({})),
@@ -716,6 +724,7 @@ describe('KolamWorkspaceSurface', () => {
 
     await ReactTestRenderer.act(async () => {
       await Promise.resolve();
+      await Promise.resolve();
     });
 
     const projectDropdown = renderer!.root
@@ -749,6 +758,7 @@ describe('KolamWorkspaceSurface', () => {
 
     await ReactTestRenderer.act(async () => {
       await Promise.resolve();
+      await Promise.resolve();
     });
 
     expect(renderText(renderer!)).toEqual(
@@ -757,6 +767,7 @@ describe('KolamWorkspaceSurface', () => {
         'Checklist',
         'Cek pompa',
         'Tipe task',
+        'Ajukan lembur',
         'Dosing',
         'Dibuat',
         'Countdown',
