@@ -43,6 +43,10 @@ export const topNavigationStyles = StyleSheet.create({
     justifyContent: 'flex-end',
     gap: TOP_NAV_CHROME.rightGap,
   },
+  metricsHost: {
+    minWidth: 0,
+    flexShrink: 1,
+  },
   notificationBadge: {
     position: 'absolute',
     top: -5,

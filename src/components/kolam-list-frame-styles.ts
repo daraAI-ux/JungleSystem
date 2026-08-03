@@ -222,6 +222,7 @@ export const listFrameStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
+    flexShrink: 0,
     gap: TOP_NAV_CHROME.rightGap,
   },
   controlTabShell: {

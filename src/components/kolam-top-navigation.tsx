@@ -1,8 +1,10 @@
 import React from 'react';
+import {View} from 'react-native';
 import { KolamShellFrame } from './kolam-shell-frame';
 import { KolamTopNavigationLeft } from './kolam-top-navigation-left';
 import { KolamTopNavigationRight } from './kolam-top-navigation-right';
 import { KolamServerMetricsStripHost } from './kolam-server-metrics-strip-host';
+import {topNavigationStyles as styles} from './kolam-top-navigation-styles';
 import type { KolamTopNavigationProps } from './kolam-top-navigation-types';
 
 export function KolamTopNavigation({
@@ -27,7 +29,9 @@ export function KolamTopNavigation({
         onBreadcrumbDashboardPress={onBreadcrumbDashboardPress}
         onToggleSidebar={onToggleSidebar}
       />
-      <KolamServerMetricsStripHost />
+      <View style={styles.metricsHost}>
+        <KolamServerMetricsStripHost />
+      </View>
       <KolamTopNavigationRight
         attentionCount={attentionCount}
         displayInitials={displayInitials}
