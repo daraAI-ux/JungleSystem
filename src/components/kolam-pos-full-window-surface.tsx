@@ -29,6 +29,7 @@ import {KolamHeaderFrame} from './kolam-header-frame';
 import {KolamInteractionFrame} from './kolam-interaction-frame';
 import {KolamNavItem} from './kolam-nav-item';
 import {KolamQuantityStepper} from './kolam-quantity-stepper';
+import {KolamQuickSearch} from './kolam-quick-search';
 import {KolamRemoteImage} from './kolam-remote-image';
 import {KolamSearchField} from './kolam-search-field';
 import {KolamSidebarBrand} from './kolam-sidebar-brand';
@@ -216,6 +217,11 @@ export function KolamPosFullWindowSurface({
     setSavedOrders(current => current.filter(order => order.id !== orderId));
   }, []);
 
+  const handleSidebarQuickSearch = React.useCallback(() => {
+    setActiveView('catalog');
+    setTimeout(() => searchInputRef.current?.focus(), 0);
+  }, []);
+
   const scrollCategories = React.useCallback((direction: 'left' | 'right') => {
     const nextOffset =
       direction === 'left'
@@ -277,6 +283,7 @@ export function KolamPosFullWindowSurface({
       <PosSidebar
         activeType={activeType}
         activeView={activeView}
+        onQuickSearch={handleSidebarQuickSearch}
         onSelectCashflow={() => setActiveView('cashflow')}
         onSelectCustomers={() => setActiveView('customers')}
         onSelectProduct={() => {
@@ -673,9 +680,11 @@ function PosSidebar({
   onSelectProduct,
   onSelectSales,
   onSelectSpecies,
+  onQuickSearch,
 }: {
   activeType: CatalogItemType | 'all';
   activeView: PosWindowView;
+  onQuickSearch: () => void;
   onSelectCashflow: () => void;
   onSelectCustomers: () => void;
   onSelectProduct: () => void;
@@ -689,6 +698,12 @@ function PosSidebar({
         style={styles.posSidebarScroll}
         contentContainerStyle={styles.posSidebarContent}
         showsVerticalScrollIndicator={false}>
+        <KolamQuickSearch
+          collapsed={false}
+          label="Cari cepat"
+          onPress={onQuickSearch}
+          shortcutLabel="F1"
+        />
         <Text style={styles.posSidebarLabel}>POS</Text>
         <KolamNavItem
           active={activeView === 'catalog' && activeType !== 'species'}
