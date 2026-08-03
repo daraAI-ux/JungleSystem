@@ -48,6 +48,9 @@ import {
   validateKolamComplaintPeriodDaysInput,
 } from '../domain/kolam-complaint';
 import {
+  createKolamAnnouncementBanner,
+  createKolamCategoryBanner,
+  createKolamHeroSlide,
   createKolamRole,
   deleteKolamRole,
   getKolamActivityLogs,
@@ -525,6 +528,37 @@ export interface MarketplaceLandingCtaDraft {
   isActive: boolean;
 }
 
+export interface MarketplaceLandingHeroDraft {
+  id: string;
+  eyebrow: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  link: string;
+  linkText: string;
+  secondaryLink: string;
+  secondaryLinkText: string;
+  order: string;
+  isActive: boolean;
+  imageLocalUri: string;
+}
+
+export interface MarketplaceLandingCategoryDraft {
+  id: string;
+  categorySlug: string;
+  order: string;
+  isActive: boolean;
+  imageLocalUri: string;
+}
+
+export interface MarketplaceLandingAnnouncementDraft {
+  id: string;
+  link: string;
+  order: string;
+  isActive: boolean;
+  imageLocalUri: string;
+}
+
 export interface MarketplaceLandingYoutubeDraft {
   link: string;
   title: string;
@@ -837,6 +871,38 @@ const emptyMarketplaceLandingCtaDraft: MarketplaceLandingCtaDraft = {
   isActive: true,
 };
 
+const emptyMarketplaceLandingHeroDraft: MarketplaceLandingHeroDraft = {
+  id: '',
+  eyebrow: '',
+  title: '',
+  subtitle: '',
+  description: '',
+  link: '',
+  linkText: '',
+  secondaryLink: '',
+  secondaryLinkText: '',
+  order: '',
+  isActive: true,
+  imageLocalUri: '',
+};
+
+const emptyMarketplaceLandingCategoryDraft: MarketplaceLandingCategoryDraft = {
+  id: '',
+  categorySlug: '',
+  order: '',
+  isActive: true,
+  imageLocalUri: '',
+};
+
+const emptyMarketplaceLandingAnnouncementDraft: MarketplaceLandingAnnouncementDraft =
+  {
+    id: '',
+    link: '',
+    order: '',
+    isActive: true,
+    imageLocalUri: '',
+  };
+
 const emptyMarketplaceLandingYoutubeDraft: MarketplaceLandingYoutubeDraft = {
   link: '',
   title: '',
@@ -993,6 +1059,18 @@ export function useKolamSettingsPanelController(
     useState<MarketplaceLandingOverview>(emptyMarketplaceLandingOverview);
   const [marketplaceLandingCtaDraft, setMarketplaceLandingCtaDraft] =
     useState<MarketplaceLandingCtaDraft>(emptyMarketplaceLandingCtaDraft);
+  const [marketplaceLandingHeroDraft, setMarketplaceLandingHeroDraft] =
+    useState<MarketplaceLandingHeroDraft>(emptyMarketplaceLandingHeroDraft);
+  const [marketplaceLandingCategoryDraft, setMarketplaceLandingCategoryDraft] =
+    useState<MarketplaceLandingCategoryDraft>(
+      emptyMarketplaceLandingCategoryDraft,
+    );
+  const [
+    marketplaceLandingAnnouncementDraft,
+    setMarketplaceLandingAnnouncementDraft,
+  ] = useState<MarketplaceLandingAnnouncementDraft>(
+    emptyMarketplaceLandingAnnouncementDraft,
+  );
   const [marketplaceLandingYoutubeDraft, setMarketplaceLandingYoutubeDraft] =
     useState<MarketplaceLandingYoutubeDraft>(
       emptyMarketplaceLandingYoutubeDraft,
@@ -1281,6 +1359,13 @@ export function useKolamSettingsPanelController(
           );
           setMarketplaceLandingYoutubeDraft(
             createMarketplaceLandingYoutubeDraft(youtubeSection),
+          );
+          setMarketplaceLandingHeroDraft(emptyMarketplaceLandingHeroDraft);
+          setMarketplaceLandingCategoryDraft(
+            emptyMarketplaceLandingCategoryDraft,
+          );
+          setMarketplaceLandingAnnouncementDraft(
+            emptyMarketplaceLandingAnnouncementDraft,
           );
           setMarketplaceLandingNoticeDraft(emptyMarketplaceLandingNoticeDraft);
           setMarketplaceLandingSaveStatus('idle');
@@ -2154,6 +2239,39 @@ export function useKolamSettingsPanelController(
     setMarketplaceLandingCtaDraft(current => ({ ...current, [key]: value }));
     setMarketplaceLandingSaveStatus('idle');
   };
+  const setMarketplaceLandingHeroDraftField = <
+    Key extends keyof MarketplaceLandingHeroDraft,
+  >(
+    key: Key,
+    value: MarketplaceLandingHeroDraft[Key],
+  ) => {
+    setMarketplaceLandingHeroDraft(current => ({ ...current, [key]: value }));
+    setMarketplaceLandingSaveStatus('idle');
+  };
+  const setMarketplaceLandingCategoryDraftField = <
+    Key extends keyof MarketplaceLandingCategoryDraft,
+  >(
+    key: Key,
+    value: MarketplaceLandingCategoryDraft[Key],
+  ) => {
+    setMarketplaceLandingCategoryDraft(current => ({
+      ...current,
+      [key]: value,
+    }));
+    setMarketplaceLandingSaveStatus('idle');
+  };
+  const setMarketplaceLandingAnnouncementDraftField = <
+    Key extends keyof MarketplaceLandingAnnouncementDraft,
+  >(
+    key: Key,
+    value: MarketplaceLandingAnnouncementDraft[Key],
+  ) => {
+    setMarketplaceLandingAnnouncementDraft(current => ({
+      ...current,
+      [key]: value,
+    }));
+    setMarketplaceLandingSaveStatus('idle');
+  };
   const setMarketplaceLandingYoutubeDraftField = <
     Key extends keyof MarketplaceLandingYoutubeDraft,
   >(
@@ -2186,6 +2304,242 @@ export function useKolamSettingsPanelController(
     setMarketplaceLandingNoticeDraft(emptyMarketplaceLandingNoticeDraft);
     setMarketplaceLandingSaveStatus('idle');
     setMarketplaceLandingMessage('');
+  };
+  const editMarketplaceHeroSlide = (slide: KolamHeroSlide) => {
+    setMarketplaceLandingHeroDraft(createMarketplaceLandingHeroDraft(slide));
+    setMarketplaceLandingSaveStatus('idle');
+    setMarketplaceLandingMessage('');
+  };
+  const clearMarketplaceHeroDraft = () => {
+    setMarketplaceLandingHeroDraft(emptyMarketplaceLandingHeroDraft);
+    setMarketplaceLandingSaveStatus('idle');
+    setMarketplaceLandingMessage('');
+  };
+  const editMarketplaceCategoryBanner = (banner: KolamCategoryBanner) => {
+    setMarketplaceLandingCategoryDraft(
+      createMarketplaceLandingCategoryDraft(banner),
+    );
+    setMarketplaceLandingSaveStatus('idle');
+    setMarketplaceLandingMessage('');
+  };
+  const clearMarketplaceCategoryDraft = () => {
+    setMarketplaceLandingCategoryDraft(emptyMarketplaceLandingCategoryDraft);
+    setMarketplaceLandingSaveStatus('idle');
+    setMarketplaceLandingMessage('');
+  };
+  const editMarketplaceAnnouncementBanner = (
+    banner: KolamAnnouncementBanner,
+  ) => {
+    setMarketplaceLandingAnnouncementDraft(
+      createMarketplaceLandingAnnouncementDraft(banner),
+    );
+    setMarketplaceLandingSaveStatus('idle');
+    setMarketplaceLandingMessage('');
+  };
+  const clearMarketplaceAnnouncementDraft = () => {
+    setMarketplaceLandingAnnouncementDraft(
+      emptyMarketplaceLandingAnnouncementDraft,
+    );
+    setMarketplaceLandingSaveStatus('idle');
+    setMarketplaceLandingMessage('');
+  };
+  const pickMarketplaceLandingHeroImage = () =>
+    pickMarketplaceLandingDraftImage(localUri =>
+      setMarketplaceLandingHeroDraftField('imageLocalUri', localUri),
+    );
+  const pickMarketplaceLandingCategoryImage = () =>
+    pickMarketplaceLandingDraftImage(localUri =>
+      setMarketplaceLandingCategoryDraftField('imageLocalUri', localUri),
+    );
+  const pickMarketplaceLandingAnnouncementImage = () =>
+    pickMarketplaceLandingDraftImage(localUri =>
+      setMarketplaceLandingAnnouncementDraftField('imageLocalUri', localUri),
+    );
+  const pickMarketplaceLandingDraftImage = async (
+    applyLocalUri: (localUri: string) => void,
+  ) => {
+    setMarketplaceLandingMessage('');
+
+    try {
+      const picked = await pickNativeImageFile();
+      if (picked.cancelled) {
+        return;
+      }
+
+      const localUri = picked.uri || picked.path || '';
+      if (!localUri) {
+        setMarketplaceLandingMessage('File image tidak valid.');
+        return;
+      }
+
+      if (!isAllowedMarketplaceImageFile(localUri, picked.extension)) {
+        setMarketplaceLandingMessage(
+          'Asset image hanya menerima JPG, PNG, WEBP, GIF, SVG, HEIC, atau HEIF.',
+        );
+        return;
+      }
+
+      applyLocalUri(localUri);
+    } catch (error) {
+      setMarketplaceLandingSaveStatus('error');
+      setMarketplaceLandingMessage(
+        getMarketplaceLandingSaveErrorMessage(error),
+      );
+    }
+  };
+  const saveMarketplaceHeroSlide = async () => {
+    const title = marketplaceLandingHeroDraft.title.trim();
+    if (!title) {
+      setMarketplaceLandingSaveStatus('error');
+      setMarketplaceLandingMessage('Judul wajib diisi.');
+      return;
+    }
+
+    if (
+      !marketplaceLandingHeroDraft.id &&
+      !marketplaceLandingHeroDraft.imageLocalUri
+    ) {
+      setMarketplaceLandingSaveStatus('error');
+      setMarketplaceLandingMessage('Gambar wajib dipilih.');
+      return;
+    }
+
+    setMarketplaceLandingSaveStatus('saving');
+    setMarketplaceLandingMessage('');
+
+    try {
+      const body = {
+        eyebrow: marketplaceLandingHeroDraft.eyebrow.trim(),
+        title,
+        subtitle: marketplaceLandingHeroDraft.subtitle.trim(),
+        description: marketplaceLandingHeroDraft.description.trim(),
+        link: marketplaceLandingHeroDraft.link.trim(),
+        linkText: marketplaceLandingHeroDraft.linkText.trim(),
+        secondaryLink: marketplaceLandingHeroDraft.secondaryLink.trim(),
+        secondaryLinkText: marketplaceLandingHeroDraft.secondaryLinkText.trim(),
+        order: parseMarketplaceLandingOrder(marketplaceLandingHeroDraft.order),
+        isActive: marketplaceLandingHeroDraft.isActive,
+        imageLocalUri: marketplaceLandingHeroDraft.imageLocalUri || undefined,
+      };
+      const slide = marketplaceLandingHeroDraft.id
+        ? await updateKolamHeroSlide(marketplaceLandingHeroDraft.id, body)
+        : await createKolamHeroSlide(body);
+      setMarketplaceLandingOverview(current => ({
+        ...current,
+        heroSlides: upsertMarketplaceLandingItem(current.heroSlides, slide),
+      }));
+      setMarketplaceLandingHeroDraft(createMarketplaceLandingHeroDraft(slide));
+      setMarketplaceLandingSaveStatus('saved');
+      setMarketplaceLandingMessage('Hero disimpan.');
+    } catch (error) {
+      setMarketplaceLandingSaveStatus('error');
+      setMarketplaceLandingMessage(
+        getMarketplaceLandingSaveErrorMessage(error),
+      );
+    }
+  };
+  const saveMarketplaceCategoryBanner = async () => {
+    const categorySlug = marketplaceLandingCategoryDraft.categorySlug.trim();
+    if (!categorySlug) {
+      setMarketplaceLandingSaveStatus('error');
+      setMarketplaceLandingMessage('Slug kategori wajib diisi.');
+      return;
+    }
+
+    if (
+      !marketplaceLandingCategoryDraft.id &&
+      !marketplaceLandingCategoryDraft.imageLocalUri
+    ) {
+      setMarketplaceLandingSaveStatus('error');
+      setMarketplaceLandingMessage('Gambar wajib dipilih.');
+      return;
+    }
+
+    setMarketplaceLandingSaveStatus('saving');
+    setMarketplaceLandingMessage('');
+
+    try {
+      const body = {
+        categorySlug,
+        order: parseMarketplaceLandingOrder(
+          marketplaceLandingCategoryDraft.order,
+        ),
+        isActive: marketplaceLandingCategoryDraft.isActive,
+        imageLocalUri:
+          marketplaceLandingCategoryDraft.imageLocalUri || undefined,
+      };
+      const banner = marketplaceLandingCategoryDraft.id
+        ? await updateKolamCategoryBanner(
+            marketplaceLandingCategoryDraft.id,
+            body,
+          )
+        : await createKolamCategoryBanner(body);
+      setMarketplaceLandingOverview(current => ({
+        ...current,
+        categoryBanners: upsertMarketplaceLandingItem(
+          current.categoryBanners,
+          banner,
+        ),
+      }));
+      setMarketplaceLandingCategoryDraft(
+        createMarketplaceLandingCategoryDraft(banner),
+      );
+      setMarketplaceLandingSaveStatus('saved');
+      setMarketplaceLandingMessage('Kategori disimpan.');
+    } catch (error) {
+      setMarketplaceLandingSaveStatus('error');
+      setMarketplaceLandingMessage(
+        getMarketplaceLandingSaveErrorMessage(error),
+      );
+    }
+  };
+  const saveMarketplaceAnnouncementBanner = async () => {
+    if (
+      !marketplaceLandingAnnouncementDraft.id &&
+      !marketplaceLandingAnnouncementDraft.imageLocalUri
+    ) {
+      setMarketplaceLandingSaveStatus('error');
+      setMarketplaceLandingMessage('Gambar wajib dipilih.');
+      return;
+    }
+
+    setMarketplaceLandingSaveStatus('saving');
+    setMarketplaceLandingMessage('');
+
+    try {
+      const body = {
+        link: marketplaceLandingAnnouncementDraft.link.trim(),
+        order: parseMarketplaceLandingOrder(
+          marketplaceLandingAnnouncementDraft.order,
+        ),
+        isActive: marketplaceLandingAnnouncementDraft.isActive,
+        imageLocalUri:
+          marketplaceLandingAnnouncementDraft.imageLocalUri || undefined,
+      };
+      const banner = marketplaceLandingAnnouncementDraft.id
+        ? await updateKolamAnnouncementBanner(
+            marketplaceLandingAnnouncementDraft.id,
+            body,
+          )
+        : await createKolamAnnouncementBanner(body);
+      setMarketplaceLandingOverview(current => ({
+        ...current,
+        announcementBanners: upsertMarketplaceLandingItem(
+          current.announcementBanners,
+          banner,
+        ),
+      }));
+      setMarketplaceLandingAnnouncementDraft(
+        createMarketplaceLandingAnnouncementDraft(banner),
+      );
+      setMarketplaceLandingSaveStatus('saved');
+      setMarketplaceLandingMessage('Announcement disimpan.');
+    } catch (error) {
+      setMarketplaceLandingSaveStatus('error');
+      setMarketplaceLandingMessage(
+        getMarketplaceLandingSaveErrorMessage(error),
+      );
+    }
   };
   const saveMarketplaceLandingCta = async () => {
     setMarketplaceLandingSaveStatus('saving');
@@ -4251,6 +4605,9 @@ export function useKolamSettingsPanelController(
     maintenanceMode,
     marketplaceLandingOverview,
     marketplaceLandingCtaDraft,
+    marketplaceLandingHeroDraft,
+    marketplaceLandingCategoryDraft,
+    marketplaceLandingAnnouncementDraft,
     marketplaceLandingYoutubeDraft,
     marketplaceLandingNoticeDraft,
     marketplaceLandingSaveStatus,
@@ -4296,6 +4653,9 @@ export function useKolamSettingsPanelController(
     setKpiEnabledRule,
     setKpiSettingsDraftField,
     setMarketplaceLandingTabId,
+    setMarketplaceLandingHeroDraftField,
+    setMarketplaceLandingCategoryDraftField,
+    setMarketplaceLandingAnnouncementDraftField,
     setPaymentMethodDraftField,
     setPaymentMethodFilter,
     setDaraKnowledgeDraftField,
@@ -4344,12 +4704,18 @@ export function useKolamSettingsPanelController(
     addSitemapCustomUrl,
     removeSitemapCustomUrl,
     clearMarketplaceLandingNoticeDraft,
+    clearMarketplaceHeroDraft,
+    clearMarketplaceCategoryDraft,
+    clearMarketplaceAnnouncementDraft,
     deleteMarketplaceAnnouncementBanner,
     deleteMarketplaceBioactiveStep,
     deleteMarketplaceCategoryBanner,
     deleteMarketplaceFeaturedCollection,
     deleteMarketplaceHeroSlide,
     deleteMarketplaceLandingNotice,
+    editMarketplaceHeroSlide,
+    editMarketplaceCategoryBanner,
+    editMarketplaceAnnouncementBanner,
     editMarketplaceLandingNotice,
     moveMarketplaceAnnouncementBanner,
     moveMarketplaceBioactiveStep,
@@ -4357,6 +4723,9 @@ export function useKolamSettingsPanelController(
     moveMarketplaceFeaturedCollection,
     moveMarketplaceHeroSlide,
     saveMarketplaceLandingCta,
+    saveMarketplaceHeroSlide,
+    saveMarketplaceCategoryBanner,
+    saveMarketplaceAnnouncementBanner,
     saveMarketplaceLandingYoutube,
     saveMarketplaceLandingNotice,
     saveDaraKnowledge,
@@ -4390,6 +4759,9 @@ export function useKolamSettingsPanelController(
     uploadMarketplaceHeroImage,
     uploadMarketplaceLogo,
     uploadMarketplaceYoutubeBackground,
+    pickMarketplaceLandingHeroImage,
+    pickMarketplaceLandingCategoryImage,
+    pickMarketplaceLandingAnnouncementImage,
     uploadDaraWorkerPhoto,
     uploadPaymentMethodPhoto,
     taxCompanyProfile,
@@ -6270,6 +6642,49 @@ function createMarketplaceLandingCtaDraft(
   };
 }
 
+function createMarketplaceLandingHeroDraft(
+  slide: KolamHeroSlide,
+): MarketplaceLandingHeroDraft {
+  return {
+    id: slide._id,
+    eyebrow: slide.eyebrow ?? '',
+    title: slide.title ?? '',
+    subtitle: slide.subtitle ?? '',
+    description: slide.description ?? '',
+    link: slide.link ?? '',
+    linkText: slide.linkText ?? '',
+    secondaryLink: slide.secondaryLink ?? '',
+    secondaryLinkText: slide.secondaryLinkText ?? '',
+    order: String(slide.order ?? ''),
+    isActive: slide.isActive !== false,
+    imageLocalUri: '',
+  };
+}
+
+function createMarketplaceLandingCategoryDraft(
+  banner: KolamCategoryBanner,
+): MarketplaceLandingCategoryDraft {
+  return {
+    id: banner._id,
+    categorySlug: banner.categorySlug ?? '',
+    order: String(banner.order ?? ''),
+    isActive: banner.isActive !== false,
+    imageLocalUri: '',
+  };
+}
+
+function createMarketplaceLandingAnnouncementDraft(
+  banner: KolamAnnouncementBanner,
+): MarketplaceLandingAnnouncementDraft {
+  return {
+    id: banner._id,
+    link: banner.link ?? '',
+    order: String(banner.order ?? ''),
+    isActive: banner.isActive !== false,
+    imageLocalUri: '',
+  };
+}
+
 function createMarketplaceLandingYoutubeDraft(
   section: KolamYoutubeSection | null,
 ): MarketplaceLandingYoutubeDraft {
@@ -6306,6 +6721,34 @@ function upsertMarketplaceNotice(
   }
 
   return notices.map(item => (item.key === notice.key ? notice : item));
+}
+
+function parseMarketplaceLandingOrder(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+
+  const parsed = Number(trimmed);
+  return Number.isFinite(parsed) ? Math.max(0, Math.floor(parsed)) : undefined;
+}
+
+function upsertMarketplaceLandingItem<
+  Item extends { _id: string; order?: number },
+>(items: Item[], next: Item) {
+  const rows = items.some(item => item._id === next._id)
+    ? replaceById(items, next)
+    : [...items, next];
+
+  return [...rows].sort((left, right) => {
+    const leftOrder = left.order ?? 0;
+    const rightOrder = right.order ?? 0;
+    if (leftOrder !== rightOrder) {
+      return leftOrder - rightOrder;
+    }
+
+    return left._id.localeCompare(right._id);
+  });
 }
 
 function createActivityLogListParams(

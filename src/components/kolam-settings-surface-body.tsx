@@ -32,6 +32,13 @@ export function KolamSettingsSurfaceBody({
         maintenanceMode={controller.maintenanceMode}
         marketplaceLandingOverview={controller.marketplaceLandingOverview}
         marketplaceLandingCtaDraft={controller.marketplaceLandingCtaDraft}
+        marketplaceLandingHeroDraft={controller.marketplaceLandingHeroDraft}
+        marketplaceLandingCategoryDraft={
+          controller.marketplaceLandingCategoryDraft
+        }
+        marketplaceLandingAnnouncementDraft={
+          controller.marketplaceLandingAnnouncementDraft
+        }
         marketplaceLandingYoutubeDraft={
           controller.marketplaceLandingYoutubeDraft
         }
@@ -107,6 +114,13 @@ export function KolamSettingsSurfaceBody({
         onDeletePaymentMethodPhoto={id => {
           void controller.deletePaymentMethodPhoto(id);
         }}
+        onEditMarketplaceAnnouncementBanner={
+          controller.editMarketplaceAnnouncementBanner
+        }
+        onEditMarketplaceCategoryBanner={
+          controller.editMarketplaceCategoryBanner
+        }
+        onEditMarketplaceHeroSlide={controller.editMarketplaceHeroSlide}
         onEditMarketplaceLandingNotice={controller.editMarketplaceLandingNotice}
         onEditPaymentMethod={controller.editPaymentMethod}
         onMoveMarketplaceAnnouncementBanner={(banner, direction) => {
@@ -123,6 +137,31 @@ export function KolamSettingsSurfaceBody({
         }}
         onMoveMarketplaceHeroSlide={(slide, direction) => {
           void controller.moveMarketplaceHeroSlide(slide, direction);
+        }}
+        onPickMarketplaceLandingAnnouncementImage={() => {
+          void controller.pickMarketplaceLandingAnnouncementImage();
+        }}
+        onPickMarketplaceLandingCategoryImage={() => {
+          void controller.pickMarketplaceLandingCategoryImage();
+        }}
+        onPickMarketplaceLandingHeroImage={() => {
+          void controller.pickMarketplaceLandingHeroImage();
+        }}
+        onClearMarketplaceAnnouncementDraft={
+          controller.clearMarketplaceAnnouncementDraft
+        }
+        onClearMarketplaceCategoryDraft={
+          controller.clearMarketplaceCategoryDraft
+        }
+        onClearMarketplaceHeroDraft={controller.clearMarketplaceHeroDraft}
+        onSaveMarketplaceAnnouncementBanner={() => {
+          void controller.saveMarketplaceAnnouncementBanner();
+        }}
+        onSaveMarketplaceCategoryBanner={() => {
+          void controller.saveMarketplaceCategoryBanner();
+        }}
+        onSaveMarketplaceHeroSlide={() => {
+          void controller.saveMarketplaceHeroSlide();
         }}
         onSaveMarketplaceLandingCta={() => {
           void controller.saveMarketplaceLandingCta();
@@ -239,6 +278,15 @@ export function KolamSettingsSurfaceBody({
         onWebTitleChange={controller.setWebTitle}
         setMarketplaceLandingCtaDraftField={
           controller.setMarketplaceLandingCtaDraftField
+        }
+        setMarketplaceLandingAnnouncementDraftField={
+          controller.setMarketplaceLandingAnnouncementDraftField
+        }
+        setMarketplaceLandingCategoryDraftField={
+          controller.setMarketplaceLandingCategoryDraftField
+        }
+        setMarketplaceLandingHeroDraftField={
+          controller.setMarketplaceLandingHeroDraftField
         }
         setMarketplaceLandingTabId={controller.setMarketplaceLandingTabId}
         setKpiEnabledRule={controller.setKpiEnabledRule}

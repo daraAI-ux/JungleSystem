@@ -114,6 +114,34 @@ describe('settings web widgets', () => {
             buttonLink: '/species',
             isActive: true,
           }}
+          marketplaceLandingHeroDraft={{
+            id: '',
+            eyebrow: '',
+            title: '',
+            subtitle: '',
+            description: '',
+            link: '',
+            linkText: '',
+            secondaryLink: '',
+            secondaryLinkText: '',
+            order: '',
+            isActive: true,
+            imageLocalUri: '',
+          }}
+          marketplaceLandingCategoryDraft={{
+            id: '',
+            categorySlug: '',
+            order: '',
+            isActive: true,
+            imageLocalUri: '',
+          }}
+          marketplaceLandingAnnouncementDraft={{
+            id: '',
+            link: '',
+            order: '',
+            isActive: true,
+            imageLocalUri: '',
+          }}
           marketplaceLandingYoutubeDraft={{
             link: 'https://youtube.com/@DuniaAnura',
             title: 'Dunia Anura',
@@ -244,14 +272,26 @@ describe('settings web widgets', () => {
           onDeleteMarketplaceHeroSlide={jest.fn()}
           onDeleteMarketplaceLandingNotice={jest.fn()}
           onDeleteNotificationSound={jest.fn()}
+          onEditMarketplaceAnnouncementBanner={jest.fn()}
+          onEditMarketplaceCategoryBanner={jest.fn()}
+          onEditMarketplaceHeroSlide={jest.fn()}
           onEditMarketplaceLandingNotice={jest.fn()}
           onMoveMarketplaceAnnouncementBanner={jest.fn()}
           onMoveMarketplaceBioactiveStep={jest.fn()}
           onMoveMarketplaceCategoryBanner={jest.fn()}
           onMoveMarketplaceFeaturedCollection={jest.fn()}
           onMoveMarketplaceHeroSlide={jest.fn()}
+          onPickMarketplaceLandingAnnouncementImage={jest.fn()}
+          onPickMarketplaceLandingCategoryImage={jest.fn()}
+          onPickMarketplaceLandingHeroImage={jest.fn()}
+          onClearMarketplaceAnnouncementDraft={jest.fn()}
+          onClearMarketplaceCategoryDraft={jest.fn()}
+          onClearMarketplaceHeroDraft={jest.fn()}
           onPluginControlChange={jest.fn()}
           onSave={jest.fn()}
+          onSaveMarketplaceAnnouncementBanner={jest.fn()}
+          onSaveMarketplaceCategoryBanner={jest.fn()}
+          onSaveMarketplaceHeroSlide={jest.fn()}
           onSaveMarketplaceLandingCta={jest.fn()}
           onSaveMarketplaceLandingYoutube={jest.fn()}
           onSaveMarketplaceLandingNotice={jest.fn()}
@@ -278,7 +318,10 @@ describe('settings web widgets', () => {
           saveMessage=""
           saveStatus="idle"
           sections={[]}
+          setMarketplaceLandingAnnouncementDraftField={jest.fn()}
+          setMarketplaceLandingCategoryDraftField={jest.fn()}
           setMarketplaceLandingCtaDraftField={jest.fn()}
+          setMarketplaceLandingHeroDraftField={jest.fn()}
           setMarketplaceLandingTabId={jest.fn()}
           setKpiEnabledRule={jest.fn()}
           setKpiSettingsDraftField={jest.fn()}
@@ -344,6 +387,9 @@ describe('settings web widgets', () => {
         'Naik',
         'Turun',
         'Hapus',
+        'Hero baru',
+        'Simpan hero',
+        'Pilih gambar',
       ]),
     );
   });
@@ -1191,6 +1237,34 @@ function createSurfaceProps(
       buttonLink: '/species',
       isActive: true,
     },
+    marketplaceLandingHeroDraft: {
+      id: '',
+      eyebrow: '',
+      title: '',
+      subtitle: '',
+      description: '',
+      link: '',
+      linkText: '',
+      secondaryLink: '',
+      secondaryLinkText: '',
+      order: '',
+      isActive: true,
+      imageLocalUri: '',
+    },
+    marketplaceLandingCategoryDraft: {
+      id: '',
+      categorySlug: '',
+      order: '',
+      isActive: true,
+      imageLocalUri: '',
+    },
+    marketplaceLandingAnnouncementDraft: {
+      id: '',
+      link: '',
+      order: '',
+      isActive: true,
+      imageLocalUri: '',
+    },
     marketplaceLandingYoutubeDraft: {
       link: 'https://youtube.com/@DuniaAnura',
       title: 'Dunia Anura',
@@ -1275,14 +1349,26 @@ function createSurfaceProps(
     onDeleteMarketplaceHeroSlide: jest.fn(),
     onDeleteMarketplaceLandingNotice: jest.fn(),
     onDeleteNotificationSound: jest.fn(),
+    onEditMarketplaceAnnouncementBanner: jest.fn(),
+    onEditMarketplaceCategoryBanner: jest.fn(),
+    onEditMarketplaceHeroSlide: jest.fn(),
     onEditMarketplaceLandingNotice: jest.fn(),
     onMoveMarketplaceAnnouncementBanner: jest.fn(),
     onMoveMarketplaceBioactiveStep: jest.fn(),
     onMoveMarketplaceCategoryBanner: jest.fn(),
     onMoveMarketplaceFeaturedCollection: jest.fn(),
     onMoveMarketplaceHeroSlide: jest.fn(),
+    onPickMarketplaceLandingAnnouncementImage: jest.fn(),
+    onPickMarketplaceLandingCategoryImage: jest.fn(),
+    onPickMarketplaceLandingHeroImage: jest.fn(),
+    onClearMarketplaceAnnouncementDraft: jest.fn(),
+    onClearMarketplaceCategoryDraft: jest.fn(),
+    onClearMarketplaceHeroDraft: jest.fn(),
     onPluginControlChange: jest.fn(),
     onSave: jest.fn(),
+    onSaveMarketplaceAnnouncementBanner: jest.fn(),
+    onSaveMarketplaceCategoryBanner: jest.fn(),
+    onSaveMarketplaceHeroSlide: jest.fn(),
     onSaveMarketplaceLandingCta: jest.fn(),
     onSaveMarketplaceLandingYoutube: jest.fn(),
     onSaveMarketplaceLandingNotice: jest.fn(),
@@ -1311,7 +1397,10 @@ function createSurfaceProps(
     saveMessage: '',
     saveStatus: 'idle',
     sections: [],
+    setMarketplaceLandingAnnouncementDraftField: jest.fn(),
+    setMarketplaceLandingCategoryDraftField: jest.fn(),
     setMarketplaceLandingCtaDraftField: jest.fn(),
+    setMarketplaceLandingHeroDraftField: jest.fn(),
     setMarketplaceLandingTabId: jest.fn(),
     setKpiEnabledRule: jest.fn(),
     setKpiSettingsDraftField: jest.fn(),
