@@ -203,6 +203,66 @@ describe('KolamSidebarContent AM mode', () => {
     ).toBe(false);
   });
 
+  it('keeps concrete AM detail routes selected in the AM sidebar instead of the Kolam menu', async () => {
+    const activeModuleRoute = getShellModuleRouteEntry('am', 'hardware/:rackId/:boxId/:deviceId');
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    if (!activeModuleRoute) {
+      throw new Error('AM hardware detail route is missing.');
+    }
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <View>
+          <KolamSidebarContent
+            accessScope={{ am: true, kolam: true, pos: true }}
+            activeModule="am"
+            activeModuleRoute={{
+              ...activeModuleRoute,
+              id: 'am:hardware/rack-1/box-1/device-1',
+              route: 'hardware/rack-1/box-1/device-1',
+            }}
+            activeRoute="/products"
+            collapsed={false}
+            expandedSections={{ dashboard: true, catalog: true }}
+            filterMenuByAccess={false}
+            onModuleRouteSelect={() => undefined}
+            onMoveMenuSection={() => undefined}
+            onQuickSearch={() => undefined}
+            onSelectMenuItem={() => undefined}
+            onSelectModule={() => undefined}
+            onToggleMenuSection={() => undefined}
+            sectionOrder={[]}
+          />
+        </View>,
+      );
+    });
+
+    await ReactTestRenderer.act(async () => {
+      await Promise.resolve();
+    });
+
+    const text = renderText(renderer!);
+    const selectedItems = renderer!.root.findAll(
+      node => node.props.accessibilityState?.selected === true,
+    );
+
+    expect(text).toEqual(
+      expect.arrayContaining(['AM', 'Hardware', 'JungleSystem', 'Beranda']),
+    );
+    expect(text).not.toContain('POS');
+    expect(text).not.toContain('Produk');
+    expect(text).not.toContain('Species');
+    expect(
+      selectedItems.some(item =>
+        flattenNodeText(item).includes('Hardware'),
+      ),
+    ).toBe(true);
+    expect(
+      selectedItems.some(item => flattenNodeText(item).includes('Produk')),
+    ).toBe(false);
+  });
+
   it('opens AM routes from the sidebar route group instead of a local page menu', async () => {
     const onModuleRouteSelect = jest.fn();
     const onSelectMenuItem = jest.fn();
