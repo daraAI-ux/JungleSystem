@@ -208,6 +208,12 @@ function KolamTaskManagerDetail({
       new Date(left.createdAt || 0).getTime() -
       new Date(right.createdAt || 0).getTime(),
   );
+  const timeline = [...task.timeline]
+    .filter(item => item.meta?.source !== 'description')
+    .sort(
+      (left, right) =>
+        new Date(right.at || 0).getTime() - new Date(left.at || 0).getTime(),
+    );
   const relatedLinks = getTaskRelatedLinks(task);
   const canRequestOvertime = isTaskOvertimeRequestVisible(controller, task);
   const canPostDiscussion = canPostKolamTaskDiscussion(
@@ -641,8 +647,8 @@ function KolamTaskManagerDetail({
             />
           </View>
         ) : null}
-        {task.timeline.length ? (
-          task.timeline.map(item => (
+        {timeline.length ? (
+          timeline.map(item => (
             <View key={item.id || `${item.type}-${item.at}`} style={styles.timelineRow}>
               <Text style={styles.timelineTitle}>
                 {getKolamTaskTimelineLabel(item.type)}
