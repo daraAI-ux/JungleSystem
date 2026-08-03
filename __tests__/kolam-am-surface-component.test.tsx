@@ -1200,6 +1200,41 @@ describe('KolamAmSurface', () => {
       status: 'inactive',
     }));
 
+    const findInput = (placeholder: string) =>
+      renderer!.root.findAllByType(TextInput).find(input => input.props.placeholder === placeholder);
+
+    await act(async () => {
+      const danaSegments = renderer!.root
+        .findAllByProps({accessibilityLabel: 'AM Segment DANA'})
+        .filter(node => typeof node.props.onPress === 'function');
+      danaSegments[danaSegments.length - 1].props.onPress();
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Segment Phone Worker (10.0.0.7:5555)'}).props.onPress();
+    });
+    await act(async () => {
+      findInput('Tokopedia Seller Center')!.props.onChangeText('DANA Services');
+      findInput('PIN opsional')!.props.onChangeText('112233');
+      findInput('credentials.phoneNumber')!.props.onChangeText('081234567891');
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Service Account Save'}).props.onPress();
+    });
+
+    expect(createAmServiceAccount).toHaveBeenLastCalledWith(expect.objectContaining({
+      platform: 'dana',
+      label: 'DANA Services',
+      deviceId: 'device-phone',
+      pin: '112233',
+      credentials: {phoneNumber: '081234567891'},
+      status: 'inactive',
+    }));
+    expect(createAmServiceAccount).toHaveBeenLastCalledWith(expect.not.objectContaining({
+      username: expect.anything(),
+      password: expect.anything(),
+      accountNumber: expect.anything(),
+    }));
+
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Service Edit service-edit'}).props.onPress();
     });
