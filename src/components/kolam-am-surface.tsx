@@ -1835,7 +1835,7 @@ function AmTaskActions({
     intent: 'outline' | 'danger' | 'warning';
   }> = [];
 
-  if (task.status === 'pending' || task.status === 'queued' || task.status === 'processing') {
+  if (task.status === 'pending') {
     actions.push({id: 'cancel', label: 'Cancel', intent: 'outline'});
   }
 
