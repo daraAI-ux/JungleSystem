@@ -349,10 +349,6 @@ function hasAmSidebarPermission(
   currentUser: AmCurrentUser | null,
   permission: string,
 ) {
-  if (currentUser?.role?.name === 'Super Admin') {
-    return true;
-  }
-
   return currentUser?.role?.permissions.includes(permission) ?? false;
 }
 

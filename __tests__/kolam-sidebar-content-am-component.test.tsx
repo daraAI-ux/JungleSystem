@@ -481,6 +481,52 @@ describe('KolamSidebarContent AM mode', () => {
     expect(text).not.toContain('Activity Log');
   });
 
+  it('keeps Users hidden for Super Admin role without user read permission', async () => {
+    jest.mocked(getAmCurrentUser).mockResolvedValue({
+      _id: 'super-no-read',
+      fullName: 'Super No Read',
+      username: 'super-no-read@dunia-anura.com',
+      role: {
+        _id: 'role-super',
+        name: 'Super Admin',
+        permissions: [],
+        description: 'Role-only access',
+      },
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <View>
+          <KolamSidebarContent
+            accessScope={{ am: true, kolam: true, pos: true }}
+            activeModule="am"
+            activeRoute="/admin/activity-log"
+            collapsed={false}
+            expandedSections={{ dashboard: true }}
+            filterMenuByAccess={false}
+            onModuleRouteSelect={() => undefined}
+            onMoveMenuSection={() => undefined}
+            onQuickSearch={() => undefined}
+            onSelectMenuItem={() => undefined}
+            onSelectModule={() => undefined}
+            onToggleMenuSection={() => undefined}
+            sectionOrder={[]}
+          />
+        </View>,
+      );
+    });
+
+    await ReactTestRenderer.act(async () => {
+      await Promise.resolve();
+    });
+
+    const text = renderText(renderer!);
+
+    expect(text).not.toContain('Users');
+    expect(text).toContain('Activity Log');
+  });
+
   it('keeps AM admin routes closed when the live AM user cannot be read', async () => {
     jest.mocked(getAmCurrentUser).mockRejectedValue(new Error('Unauthorized'));
     let renderer: ReactTestRenderer.ReactTestRenderer;
