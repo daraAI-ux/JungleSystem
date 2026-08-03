@@ -389,15 +389,19 @@ function KolamCampaignRow({
   onEdit: () => void;
   onSelect: () => void;
 }) {
+  const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
   const columnOf = (id: KolamTableColumn['id']) =>
     columns.find(column => column.id === id);
   const start = formatKolamCampaignDateTimeParts(campaign.startDate);
   const end = formatKolamCampaignDateTimeParts(campaign.endDate);
   const variantCount = countKolamCampaignVariants(campaign);
+  const actionsColumn = columnOf('actions');
 
   return (
-    <Pressable onPress={onSelect}>
-      <KolamDataTableRowFrame>
+    <KolamDataTableRowFrame
+      style={actionMenuOpen ? styles.activeActionRow : undefined}
+    >
+      <Pressable onPress={onSelect} style={styles.rowPressable}>
         <KolamDataTableMainTrack>
           <View
             style={[
@@ -531,29 +535,36 @@ function KolamCampaignRow({
             </Text>
           </View>
         </KolamDataTableMainTrack>
+      </Pressable>
 
-        <KolamDataTableActionsTrack>
-          <KolamOverflowMenuButton
-            accessibilityLabel={`Menu ${campaign.title}`}
-            actions={[
-              { label: 'Lihat', onPress: onSelect },
-              ...(canUpdate
-                ? [{ label: 'Rubah', onPress: onEdit }]
-                : []),
-              ...(canDelete
-                ? [
-                    {
-                      label: 'Hapus',
-                      onPress: onDelete,
-                      disabled: mutating,
-                    },
-                  ]
-                : []),
-            ]}
-          />
-        </KolamDataTableActionsTrack>
-      </KolamDataTableRowFrame>
-    </Pressable>
+      <KolamDataTableActionsTrack
+        width={Math.max(
+          actionsColumn?.width ?? KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+          KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+        )}
+      >
+        <KolamOverflowMenuButton
+          accessibilityLabel={`Menu ${campaign.title}`}
+          onOpenChange={setActionMenuOpen}
+          actions={[
+            { label: 'Lihat', onPress: onSelect },
+            ...(canUpdate
+              ? [{ label: 'Rubah', onPress: onEdit }]
+              : []),
+            ...(canDelete
+              ? [
+                  {
+                    label: 'Hapus',
+                    onPress: onDelete,
+                    disabled: mutating,
+                    tone: 'danger' as const,
+                  },
+                ]
+              : []),
+          ]}
+        />
+      </KolamDataTableActionsTrack>
+    </KolamDataTableRowFrame>
   );
 }
 
@@ -561,6 +572,16 @@ const styles = StyleSheet.create({
   surface: {
     flex: 1,
     gap: 10,
+  },
+  activeActionRow: {
+    elevation: 30,
+    overflow: 'visible',
+    zIndex: 1000,
+  },
+  rowPressable: {
+    flexGrow: 0,
+    flexShrink: 1,
+    minWidth: 0,
   },
   errorBadge: {
     alignSelf: 'stretch',
