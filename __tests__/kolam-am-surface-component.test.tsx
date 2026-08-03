@@ -2045,10 +2045,15 @@ describe('KolamAmSurface', () => {
     renderers.push(renderer!);
 
     await updateAmRoute(renderer!, 'hardware');
-    expect(renderText(renderer!).join(' ').replace(/\s+/g, ' ')).toContain('Added By Hardware Admin');
+    let hardwareText = renderText(renderer!).join(' ').replace(/\s+/g, ' ');
+    expect(hardwareText).toContain('Added By Hardware Admin');
+    expect(hardwareText).not.toContain('Phone Rack');
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Rack Rack Alpha'}).props.onPress();
     });
+    hardwareText = renderText(renderer!).join(' ').replace(/\s+/g, ' ');
+    expect(hardwareText).toContain('Box 01');
+    expect(hardwareText).not.toContain('Phone Rack');
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Box Box 01'}).props.onPress();
     });
@@ -3182,6 +3187,13 @@ describe('KolamAmSurface', () => {
     expect(createAmDevice).toHaveBeenLastCalledWith({
       boxId: 'box-1',
       connectionType: 'browser',
+    });
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Rack Rack 1'}).props.onPress();
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Box Box 1'}).props.onPress();
     });
 
     await act(async () => {

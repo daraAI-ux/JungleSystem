@@ -2271,45 +2271,25 @@ function AmHardwarePage({
           onSelectDevice={device => setSelectedDeviceId(device._id)}
         />
       ) : selectedRack ? (
-        <>
-          <AmHardwareBoxGrid
-            actingHardwareId={actingHardwareId}
-            boxes={visibleBoxes}
-            isLoading={isLoading}
-            onDeleteBox={box => requestDeleteHardware('box', box._id, box.name)}
-            onEditBox={editBox}
-            onSelectBox={box => setSelectedBoxId(box._id)}
-          />
-          <AmHardwareDeviceList
-            actingHardwareId={actingHardwareId}
-            devices={visibleDevices}
-            isLoading={isLoading}
-            onDeleteDevice={device => requestDeleteHardware('device', device._id, device.name)}
-            onEditDevice={editDevice}
-            onSelectDevice={device => setSelectedDeviceId(device._id)}
-          />
-        </>
+        <AmHardwareBoxGrid
+          actingHardwareId={actingHardwareId}
+          boxes={visibleBoxes}
+          isLoading={isLoading}
+          onDeleteBox={box => requestDeleteHardware('box', box._id, box.name)}
+          onEditBox={editBox}
+          onSelectBox={box => setSelectedBoxId(box._id)}
+        />
       ) : (
-        <>
-          <AmHardwareRackGrid
-            actingHardwareId={actingHardwareId}
-            boxes={boxes}
-            devices={devices}
-            isLoading={isLoading}
-            onDeleteRack={rack => requestDeleteHardware('rack', rack._id, rack.name)}
-            onEditRack={editRack}
-            onSelectRack={rack => setSelectedRackId(rack._id)}
-            racks={racks}
-          />
-          <AmHardwareDeviceList
-            actingHardwareId={actingHardwareId}
-            devices={visibleDevices}
-            isLoading={isLoading}
-            onDeleteDevice={device => requestDeleteHardware('device', device._id, device.name)}
-            onEditDevice={editDevice}
-            onSelectDevice={device => setSelectedDeviceId(device._id)}
-          />
-        </>
+        <AmHardwareRackGrid
+          actingHardwareId={actingHardwareId}
+          boxes={boxes}
+          devices={devices}
+          isLoading={isLoading}
+          onDeleteRack={rack => requestDeleteHardware('rack', rack._id, rack.name)}
+          onEditRack={editRack}
+          onSelectRack={rack => setSelectedRackId(rack._id)}
+          racks={racks}
+        />
       )}
     </View>
   );
