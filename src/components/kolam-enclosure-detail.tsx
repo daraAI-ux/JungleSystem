@@ -427,11 +427,6 @@ function KolamEnclosureDetailOverview({
               ) : null}
             </View>
           ) : null}
-
-          <EnclosureMediaOperation
-            controller={controller}
-            enclosure={enclosure}
-          />
         </View>
 
         <View style={styles.columnMain}>
@@ -1433,89 +1428,6 @@ function EnclosureProvisioningOperation({
           disabled={controller.operationLoading || !code.trim()}
           label="Simpan kode"
           onPress={() => void controller.onProvisionCode(code)}
-          style={styles.toolbarButton}
-        />
-      </View>
-    </DetailSection>
-  );
-}
-
-function EnclosureMediaOperation({
-  controller,
-  enclosure,
-}: {
-  controller: KolamEnclosureController;
-  enclosure: KolamEnclosure;
-}) {
-  const [coverUri, setCoverUri] = React.useState('');
-  const [photoUri, setPhotoUri] = React.useState('');
-  const [deleteIndex, setDeleteIndex] = React.useState('');
-  const pickImage = React.useCallback(async (setter: (uri: string) => void) => {
-    const picked = await pickNativeImageFile();
-    if (!picked.cancelled && picked.uri) {
-      setter(picked.uri);
-    }
-  }, []);
-  return (
-    <DetailSection title="Foto & cover">
-      <View style={styles.operationGrid}>
-        <KolamFormTextField
-          onChangeText={setCoverUri}
-          placeholder="URI cover lokal"
-          style={styles.operationInput}
-          value={coverUri}
-        />
-        <KolamButton
-          label="Pilih cover"
-          onPress={() => void pickImage(setCoverUri)}
-          style={styles.toolbarButton}
-        />
-        <KolamButton
-          disabled={controller.operationLoading || !coverUri.trim()}
-          label="Upload cover"
-          onPress={() => controller.onUploadCoverPhoto(coverUri.trim())}
-          style={styles.toolbarButton}
-        />
-        <KolamButton
-          disabled={controller.operationLoading || !enclosure.coverPhotoUrl}
-          label="Hapus cover"
-          onPress={() => void controller.onDeleteCoverPhoto()}
-          style={styles.toolbarButton}
-        />
-      </View>
-      <View style={styles.operationGrid}>
-        <KolamFormTextField
-          onChangeText={setPhotoUri}
-          placeholder="URI foto lokal"
-          style={styles.operationInput}
-          value={photoUri}
-        />
-        <KolamButton
-          label="Pilih foto"
-          onPress={() => void pickImage(setPhotoUri)}
-          style={styles.toolbarButton}
-        />
-        <KolamButton
-          disabled={controller.operationLoading || !photoUri.trim()}
-          label="Upload foto"
-          onPress={() => controller.onUploadPhotos([photoUri.trim()])}
-          style={styles.toolbarButton}
-        />
-      </View>
-      <View style={styles.operationGrid}>
-        <KolamFormTextField
-          mode="numeric"
-          onChangeText={setDeleteIndex}
-          placeholder="Index foto"
-          style={styles.operationInput}
-          value={deleteIndex}
-        />
-        <KolamButton
-          disabled={controller.operationLoading || !deleteIndex.trim()}
-          label="Hapus foto"
-          onPress={() =>
-            controller.onDeletePhoto(Math.max(0, Number(deleteIndex) || 0))
-          }
           style={styles.toolbarButton}
         />
       </View>
