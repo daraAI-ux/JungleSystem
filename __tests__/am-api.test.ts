@@ -2,10 +2,14 @@ import {appConfig} from '../src/config/app';
 import {clearResponseCookieJar} from '../src/lib/api-client';
 import {
   bulkDeleteAmActivityLogs,
+  cancelAmTask,
+  cancelAmTransfer,
   clearAmServiceAccountSession,
   createAmChatContact,
   createAmTask,
   createAmTransfer,
+  forceFailAmTask,
+  forceFailAmTransfer,
   getAmTokopediaApiMonitorStatus,
   getAmChatContactById,
   getAmChatContacts,
@@ -20,6 +24,8 @@ import {
   loginAmSession,
   logoutAmSession,
   restartAmTokopediaSession,
+  retryAmTask,
+  retryAmTransfer,
   runAmTokopediaApiMonitor,
   sendAmDeviceServiceInput,
   sendAmChatMessage,
@@ -105,6 +111,52 @@ describe('AM API service', () => {
         headers: expect.objectContaining({
           Cookie: 'kolamCsrf=',
           'Content-Type': 'application/json',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+  });
+
+  it('controls AM tasks through the live task action endpoints', async () => {
+    fetchMock.mockResolvedValue(jsonResponse({success: true, data: {_id: 'task-1'}}));
+
+    await cancelAmTask('task-1', 'https://am.example.test/api');
+
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://am.example.test/api/task/task-1/cancel',
+      expect.objectContaining({
+        method: 'POST',
+        credentials: 'include',
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+
+    await retryAmTask('task-1', 'https://am.example.test/api');
+
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://am.example.test/api/task/task-1/retry',
+      expect.objectContaining({
+        method: 'POST',
+        credentials: 'include',
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+
+    await forceFailAmTask('task-1', 'https://am.example.test/api');
+
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://am.example.test/api/task/task-1/force-fail',
+      expect.objectContaining({
+        method: 'POST',
+        credentials: 'include',
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
           'x-source': appConfig.amSourceHeader,
         }),
       }),
@@ -321,6 +373,52 @@ describe('AM API service', () => {
         headers: expect.objectContaining({
           Cookie: 'kolamCsrf=',
           'Content-Type': 'application/json',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+  });
+
+  it('controls AM transfers through the live transfer action endpoints', async () => {
+    fetchMock.mockResolvedValue(jsonResponse({success: true, data: {_id: 'transfer-1'}}));
+
+    await cancelAmTransfer('transfer-1', 'https://am.example.test/api');
+
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://am.example.test/api/transfer/transfer-1/cancel',
+      expect.objectContaining({
+        method: 'POST',
+        credentials: 'include',
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+
+    await retryAmTransfer('transfer-1', 'https://am.example.test/api');
+
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://am.example.test/api/transfer/transfer-1/retry',
+      expect.objectContaining({
+        method: 'POST',
+        credentials: 'include',
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+
+    await forceFailAmTransfer('transfer-1', 'https://am.example.test/api');
+
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://am.example.test/api/transfer/transfer-1/force-fail',
+      expect.objectContaining({
+        method: 'POST',
+        credentials: 'include',
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
           'x-source': appConfig.amSourceHeader,
         }),
       }),
