@@ -3726,7 +3726,7 @@ function AmTransfersPage({initialTransferId}: {initialTransferId?: string}) {
 
   const fetchTransferAccounts = React.useCallback(async () => {
     try {
-      const response = await getAmServiceAccounts({limit: 100});
+      const response = await getAmServiceAccounts({status: 'active', limit: 100});
       setAccounts(response.data);
     } catch {
       setAccounts([]);

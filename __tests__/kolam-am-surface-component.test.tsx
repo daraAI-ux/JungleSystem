@@ -3809,7 +3809,7 @@ describe('KolamAmSurface', () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Transfer Create'}).props.onPress();
     });
 
-    expect(getAmServiceAccounts).toHaveBeenCalledWith({limit: 100});
+    expect(getAmServiceAccounts).toHaveBeenCalledWith({status: 'active', limit: 100});
     expect(createAmTransfer).toHaveBeenCalledWith({
       accountId: undefined,
       transferType: 'transfer',
