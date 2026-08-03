@@ -470,6 +470,16 @@ export interface AmActivityLogStats {
   topPaths: Array<{_id: string; count: number}>;
 }
 
+export interface AmActivityLogBulkDeletePayload {
+  confirm: true;
+  ids?: string[];
+  filter?: Omit<AmActivityLogQuery, 'page' | 'limit'>;
+}
+
+export interface AmActivityLogBulkDeleteResult {
+  deletedCount: number;
+}
+
 export interface AmWebhookConfig {
   _id: string;
   url: string;
@@ -1253,6 +1263,17 @@ export async function getAmActivityLogStats(
   baseUrl = appConfig.amApiBaseUrl,
 ): Promise<AmActivityLogStats> {
   return amGet<AmActivityLogStats>('/activity-log/stats', {days}, baseUrl);
+}
+
+export async function bulkDeleteAmActivityLogs(
+  payload: AmActivityLogBulkDeletePayload,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmActivityLogBulkDeleteResult> {
+  return amPost<AmActivityLogBulkDeleteResult>(
+    '/activity-log/bulk-delete',
+    payload,
+    baseUrl,
+  );
 }
 
 export async function recordAmPageView(

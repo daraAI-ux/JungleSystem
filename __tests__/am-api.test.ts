@@ -1,6 +1,7 @@
 import {appConfig} from '../src/config/app';
 import {clearResponseCookieJar} from '../src/lib/api-client';
 import {
+  bulkDeleteAmActivityLogs,
   clearAmServiceAccountSession,
   createAmChatContact,
   createAmTask,
@@ -664,6 +665,33 @@ describe('AM API service', () => {
         credentials: 'include',
         headers: expect.objectContaining({
           Cookie: 'kolamCsrf=',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+  });
+
+  it('bulk deletes AM activity logs through the live activity-log endpoint', async () => {
+    const payload = {
+      confirm: true as const,
+      filter: {status: 'success', type: 'api'},
+    };
+    fetchMock.mockResolvedValue(jsonResponse({
+      success: true,
+      data: {deletedCount: 3},
+    }));
+
+    await bulkDeleteAmActivityLogs(payload, 'https://am.example.test/api');
+
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://am.example.test/api/activity-log/bulk-delete',
+      expect.objectContaining({
+        method: 'POST',
+        credentials: 'include',
+        body: JSON.stringify(payload),
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
+          'Content-Type': 'application/json',
           'x-source': appConfig.amSourceHeader,
         }),
       }),
