@@ -1188,7 +1188,7 @@ export function useKolamTaskManagerController({
       return false;
     }
     if (!categoryId) {
-      setFormError('Kategori wajib dipilih');
+      setFormError('Kategori tugas wajib dipilih');
       return false;
     }
     if (!dueDate) {
