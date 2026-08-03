@@ -1,6 +1,7 @@
 import {appConfig} from '../src/config/app';
 import {clearResponseCookieJar} from '../src/lib/api-client';
 import {
+  createAmChatContact,
   createAmTask,
   createAmTransfer,
   getAmChatContactById,
@@ -15,6 +16,7 @@ import {
   getAmUserById,
   loginAmSession,
   logoutAmSession,
+  sendAmChatMessage,
   testAmWebhookPing,
   updateAmUser,
 } from '../src/services/am-api';
@@ -219,6 +221,64 @@ describe('AM API service', () => {
         credentials: 'include',
         headers: expect.objectContaining({
           Cookie: 'kolamCsrf=',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+  });
+
+  it('sends AM chat messages through the live chat endpoint', async () => {
+    const payload = {
+      serviceAccountId: 'account-1',
+      contactId: 'contact-1',
+      body: 'Halo',
+      platform: 'whatsapp',
+    };
+    fetchMock.mockResolvedValue(jsonResponse({
+      success: true,
+      data: {_id: 'message-new', ...payload},
+    }));
+
+    await sendAmChatMessage(payload, 'https://am.example.test/api');
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://am.example.test/api/chat/message/send',
+      expect.objectContaining({
+        method: 'POST',
+        credentials: 'include',
+        body: JSON.stringify(payload),
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
+          'Content-Type': 'application/json',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+  });
+
+  it('creates AM chat contacts through the live chat endpoint', async () => {
+    const payload = {
+      platform: 'tokopedia',
+      serviceAccountId: 'account-1',
+      externalId: 'buyer-1',
+      name: 'Buyer',
+    };
+    fetchMock.mockResolvedValue(jsonResponse({
+      success: true,
+      data: {_id: 'contact-new', ...payload},
+    }));
+
+    await createAmChatContact(payload, 'https://am.example.test/api');
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://am.example.test/api/chat/contact',
+      expect.objectContaining({
+        method: 'POST',
+        credentials: 'include',
+        body: JSON.stringify(payload),
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
+          'Content-Type': 'application/json',
           'x-source': appConfig.amSourceHeader,
         }),
       }),

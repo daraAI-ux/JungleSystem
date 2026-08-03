@@ -654,6 +654,20 @@ export interface AmChatContactQuery extends Record<string, AmQueryValue> {
   search?: string;
 }
 
+export interface AmChatMessagePayload {
+  serviceAccountId: string;
+  contactId: string;
+  body: string;
+  platform?: string;
+}
+
+export interface AmChatContactPayload {
+  platform: string;
+  serviceAccountId: string;
+  externalId: string;
+  name?: string;
+}
+
 export interface AmWebhookConfigPayload {
   url: string;
   events: string[];
@@ -1324,6 +1338,13 @@ export async function getAmChatMessageById(
   return amGet<AmChatMessage>(`/chat/message/${id}`, undefined, baseUrl);
 }
 
+export async function sendAmChatMessage(
+  payload: AmChatMessagePayload,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmChatMessage> {
+  return amPost<AmChatMessage>('/chat/message/send', payload, baseUrl);
+}
+
 export async function getAmChatContacts(
   query?: AmChatContactQuery,
   baseUrl = appConfig.amApiBaseUrl,
@@ -1336,6 +1357,13 @@ export async function getAmChatContactById(
   baseUrl = appConfig.amApiBaseUrl,
 ): Promise<AmChatContact> {
   return amGet<AmChatContact>(`/chat/contact/${id}`, undefined, baseUrl);
+}
+
+export async function createAmChatContact(
+  payload: AmChatContactPayload,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmChatContact> {
+  return amPost<AmChatContact>('/chat/contact', payload, baseUrl);
 }
 
 async function getAmList<T>(
