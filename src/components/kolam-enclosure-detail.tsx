@@ -477,30 +477,49 @@ function KolamEnclosureDetailSpeciesTab({
       <View style={styles.detailTwoColumn}>
         <DetailSection title="Spesies di enclosure">
           {enclosure.species.length ? (
-            enclosure.species.map(item => (
-              <View key={`${item.speciesId}:${item.variantId}`} style={styles.detailMiniRow}>
-                <KolamCopyStack
-                  containerStyle={styles.panelRowCopy}
-                  items={[
-                    {
-                      id: 'title',
-                      text: item.speciesName || item.scientificName || '-',
-                      style: styles.rowTitle,
-                    },
-                    {
-                      id: 'meta',
-                      text: [item.scientificName, item.variantLabel]
-                        .filter(Boolean)
-                        .join(' / '),
-                      style: styles.rowMeta,
-                    },
-                  ]}
-                />
-                <Text style={styles.qtyText}>
-                  {item.quantity} {item.unitLabel}
-                </Text>
-              </View>
-            ))
+            enclosure.species.map(item => {
+              const photoUri = getKolamFileUrl(item.thumbnailUrl);
+              return (
+                <View
+                  key={`${item.speciesId}:${item.variantId}`}
+                  style={styles.detailMiniRow}
+                >
+                  {photoUri ? (
+                    <KolamRemoteImage
+                      accessibilityLabel={`Foto ${item.speciesName || item.scientificName || 'spesies'}`}
+                      resizeMode="cover"
+                      scope="enclosure-species-list"
+                      sourceUri={photoUri}
+                      style={styles.speciesPhoto}
+                    />
+                  ) : (
+                    <View style={styles.speciesPhotoPlaceholder}>
+                      <Text style={styles.mutedText}>—</Text>
+                    </View>
+                  )}
+                  <KolamCopyStack
+                    containerStyle={styles.panelRowCopy}
+                    items={[
+                      {
+                        id: 'title',
+                        text: item.speciesName || item.scientificName || '-',
+                        style: styles.rowTitle,
+                      },
+                      {
+                        id: 'meta',
+                        text: [item.scientificName, item.variantLabel]
+                          .filter(Boolean)
+                          .join(' / '),
+                        style: styles.rowMeta,
+                      },
+                    ]}
+                  />
+                  <Text style={styles.qtyText}>
+                    {item.quantity} {item.unitLabel}
+                  </Text>
+                </View>
+              );
+            })
           ) : (
             <Text style={styles.mutedText}>Belum ada spesies.</Text>
           )}
@@ -3013,6 +3032,26 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     height: 58,
     width: 58,
+  },
+  speciesPhoto: {
+    backgroundColor: V.colors.secondary,
+    borderColor: V.colors.border,
+    borderRadius: 6,
+    borderWidth: 1,
+    flexShrink: 0,
+    height: 40,
+    width: 40,
+  },
+  speciesPhotoPlaceholder: {
+    alignItems: 'center',
+    backgroundColor: V.colors.secondary,
+    borderColor: V.colors.border,
+    borderRadius: 6,
+    borderWidth: 1,
+    flexShrink: 0,
+    height: 40,
+    justifyContent: 'center',
+    width: 40,
   },
   detailInfoPanel: {
     backgroundColor: V.colors.bg,
