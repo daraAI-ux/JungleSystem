@@ -4167,6 +4167,14 @@ describe('KolamAmSurface', () => {
     await updateAmRoute(renderer!, 'admin/users');
 
     expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM User Role Super Admin'})).toHaveLength(0);
+    expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM User Save'})).toHaveLength(0);
+    expect(
+      renderer!.root.findAllByType(TextInput).some(input => input.props.placeholder === 'Search by name or username...'),
+    ).toBe(true);
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM User Create'}).props.onPress();
+    });
 
     let inputs = renderer!.root.findAllByType(TextInput);
     expect(inputs[3].props.secureTextEntry).toBe(true);
@@ -4338,6 +4346,10 @@ describe('KolamAmSurface', () => {
     renderers.push(renderer!);
 
     await updateAmRoute(renderer!, 'admin/users');
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM User Create'}).props.onPress();
+    });
 
     expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM User Role Super Admin'}).length).toBeGreaterThan(0);
   });

@@ -5637,6 +5637,7 @@ function AmUsersPage() {
   const [total, setTotal] = React.useState(0);
   const [limit, setLimit] = React.useState(AM_USER_PAGE_LIMIT);
   const [editingUserId, setEditingUserId] = React.useState<string | null>(null);
+  const [isCreateUserFormOpen, setIsCreateUserFormOpen] = React.useState(false);
   const [formFullName, setFormFullName] = React.useState('');
   const [formUsername, setFormUsername] = React.useState('');
   const [formPassword, setFormPassword] = React.useState('');
@@ -5705,6 +5706,7 @@ function AmUsersPage() {
 
   const resetUserForm = React.useCallback(() => {
     setEditingUserId(null);
+    setIsCreateUserFormOpen(false);
     setFormFullName('');
     setFormUsername('');
     setFormPassword('');
@@ -5713,6 +5715,7 @@ function AmUsersPage() {
 
   const editUser = React.useCallback((user: AmUser) => {
     setEditingUserId(user._id);
+    setIsCreateUserFormOpen(false);
     setFormFullName(user.fullName);
     setFormUsername(user.username);
     setFormPassword('');
@@ -5814,7 +5817,7 @@ function AmUsersPage() {
   const canCreateUser = hasAmPermission(currentUser, 'user:create');
   const canUpdateUser = hasAmPermission(currentUser, 'user:update');
   const canDeleteUser = hasAmPermission(currentUser, 'user:delete');
-  const canShowUserForm = canCreateUser || (Boolean(editingUserId) && canUpdateUser);
+  const canShowUserForm = (canCreateUser && isCreateUserFormOpen) || (Boolean(editingUserId) && canUpdateUser);
   const assignableRoles = React.useMemo(
     () => roles.filter(role => role.name !== 'Super Admin' || isAmSuperAdmin(currentUser)),
     [currentUser, roles],
@@ -5844,7 +5847,7 @@ function AmUsersPage() {
         <KolamSearchField
           value={search}
           onChangeText={handleUserSearchChange}
-          placeholder="Search users..."
+          placeholder="Search by name or username..."
           containerStyle={styles.taskSearch}
           trailingLabel={`${total} user`}
         />
@@ -5854,6 +5857,17 @@ function AmUsersPage() {
           labels={roleFilterLabels}
           onSelect={handleUserRoleChange}
         />
+        {canCreateUser && !isCreateUserFormOpen && !editingUserId ? (
+          <KolamButton
+            accessibilityLabel="AM User Create"
+            label="Create User"
+            size="sm"
+            onPress={() => {
+              resetUserForm();
+              setIsCreateUserFormOpen(true);
+            }}
+          />
+        ) : null}
         <KolamButton label={isLoading ? 'Memuat' : 'Refresh'} intent="outline" muted={isLoading} size="sm" onPress={fetchUsers} />
       </View>
       <AmInlineError title="Users AM belum bisa dibaca" error={error} />
