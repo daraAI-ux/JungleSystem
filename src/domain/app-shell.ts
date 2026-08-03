@@ -273,6 +273,7 @@ export const shellModules: ShellModule[] = [
       'hardware/:rackId/:boxId',
       'hardware/:rackId/:boxId/:deviceId',
       'mutasi',
+      'mutasi/:id',
       'services',
       'transactions',
       'transactions/:id',

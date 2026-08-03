@@ -229,7 +229,7 @@ export function KolamAmSurface({
           ) : activeRoute === 'transactions' ? (
             <AmTransfersPage initialTransferId={routeSelection?.transferId} />
           ) : activeRoute === 'mutasi' ? (
-            <AmMutasiPage />
+            <AmMutasiPage initialMutasiId={routeSelection?.mutasiId} />
           ) : activeRoute === 'users' ? (
             <AmUsersPage />
           ) : activeRoute === 'settings-account' ? (
@@ -249,6 +249,7 @@ type AmRouteSelection = {
   route: AmRouteItem;
   taskId?: string;
   transferId?: string;
+  mutasiId?: string;
   hardwareRoute?: AmHardwareInitialRoute;
 };
 
@@ -269,6 +270,10 @@ function getAmRouteSelection(route?: string | null): AmRouteSelection {
 
   if (segments[0] === 'transactions' && isConcreteRouteSegment(segments[1])) {
     return {route: routeItem, transferId: segments[1]};
+  }
+
+  if (segments[0] === 'mutasi' && isConcreteRouteSegment(segments[1])) {
+    return {route: routeItem, mutasiId: segments[1]};
   }
 
   if (segments[0] === 'hardware') {
@@ -591,7 +596,11 @@ function AmRecentMutasiPanel({
       </View>
       <Text style={styles.panelText}>Latest incoming and outgoing transactions.</Text>
       {mutasi.slice(0, 5).map(item => (
-        <View key={item._id} style={styles.deviceRow}>
+        <KolamInteractionFrame
+          key={item._id}
+          accessibilityLabel={`AM Dashboard Mutation ${item._id}`}
+          onPress={() => onOpenRoute(`mutasi/${item._id}`, 'mutasi/:id')}
+          style={styles.deviceRow}>
           <View>
             <Text style={styles.rowTitle}>{item.type === 'masuk' ? 'In' : 'Out'} - {formatBankAccount(item.accountId)}</Text>
             <Text style={styles.rowMeta}>{item.description || formatDeviceRef(item.deviceId)} - {formatAmDate(item.detectedAt)}</Text>
@@ -599,7 +608,7 @@ function AmRecentMutasiPanel({
           <Text style={[styles.amountText, item.type === 'masuk' ? styles.amountPositive : styles.amountDanger]}>
             {item.type === 'masuk' ? '+' : '-'}{formatRupiah(item.amount)}
           </Text>
-        </View>
+        </KolamInteractionFrame>
       ))}
       <AmLoadingOrEmpty
         isLoading={false}
@@ -4275,7 +4284,7 @@ function AmTransferDetailPanel({
   );
 }
 
-function AmMutasiPage() {
+function AmMutasiPage({initialMutasiId}: {initialMutasiId?: string}) {
   const [mutasi, setMutasi] = React.useState<AmMutasi[]>([]);
   const [summary, setSummary] = React.useState<AmMutasiSummary | null>(null);
   const [accounts, setAccounts] = React.useState<AmServiceAccount[]>([]);
@@ -4343,6 +4352,38 @@ function AmMutasiPage() {
     const interval = setInterval(fetchMutasi, 10_000);
     return () => clearInterval(interval);
   }, [fetchMutasi]);
+
+  React.useEffect(() => {
+    if (!initialMutasiId) {
+      setSelectedMutasiId(null);
+      setSelectedMutasi(null);
+      setDetailError(null);
+      return;
+    }
+
+    let mounted = true;
+    setSelectedMutasiId(initialMutasiId);
+    setSelectedMutasi(null);
+    setDetailLoading(true);
+    setDetailError(null);
+
+    getAmMutasiById(initialMutasiId)
+      .then(response => {
+        if (!mounted) return;
+        setSelectedMutasi(response);
+      })
+      .catch(nextError => {
+        if (!mounted) return;
+        setDetailError(nextError instanceof Error ? nextError.message : 'Gagal memuat detail mutasi AM.');
+      })
+      .finally(() => {
+        if (mounted) setDetailLoading(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [initialMutasiId]);
 
   const handleMutasiTypeChange = React.useCallback((value: string) => {
     setType(value);

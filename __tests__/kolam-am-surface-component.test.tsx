@@ -390,6 +390,13 @@ describe('KolamAmSurface', () => {
     expect(onModuleRouteSelect).toHaveBeenLastCalledWith(amRoute('mutasi'));
 
     await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Dashboard Mutation mutasi-dashboard-1'}).props.onPress();
+    });
+    expect(onModuleRouteSelect).toHaveBeenLastCalledWith(
+      concreteAmRoute('mutasi/mutasi-dashboard-1', 'mutasi/:id'),
+    );
+
+    await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Dashboard View Hardware'}).props.onPress();
     });
     expect(onModuleRouteSelect).toHaveBeenLastCalledWith(amRoute('hardware'));
@@ -2716,6 +2723,46 @@ describe('KolamAmSurface', () => {
       accountId: 'account-1',
       deviceId: 'device-1',
     });
+  });
+
+  it('opens mutasi detail directly from a concrete AM shell route', async () => {
+    const detailMutasi = {
+      _id: 'mutasi-detail',
+      accountId: {_id: 'account-1', label: 'BCA Main', platform: 'bca', accountNumber: '123'},
+      amount: 88000,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      description: 'Direct mutation detail',
+      detectedAt: '2026-01-01T00:00:00.000Z',
+      deviceId: {_id: 'device-1', name: 'Phone 1'},
+      notificationHash: 'hash-direct-mutasi',
+      receiptFile: 'receipt-direct.png',
+      transferId: null,
+      type: 'keluar',
+      updatedAt: '2026-01-01T00:01:00.000Z',
+    };
+    jest.mocked(getAmMutasiById).mockResolvedValue(detailMutasi);
+    jest.mocked(getAmMutasi).mockResolvedValue({
+      data: [],
+      meta: {total: 0, limit: 50, page: 1, totalPages: 1},
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface
+          activeModuleRoute={concreteAmRoute('mutasi/mutasi-detail', 'mutasi/:id')}
+          dataset={seedUnifiedDataset}
+        />,
+      );
+    });
+    renderers.push(renderer!);
+
+    expect(recordAmPageView).toHaveBeenCalledWith('/mutasi');
+    expect(getAmMutasiById).toHaveBeenCalledWith('mutasi-detail');
+    const text = renderText(renderer!).join(' ');
+    expect(text).toContain('Mutation Detail');
+    expect(text).toContain('hash-direct-mutasi');
+    expect(text).toContain('/mutasi/mutasi-detail/receipt');
   });
 
   it('renders account settings from the live AM auth session route', async () => {

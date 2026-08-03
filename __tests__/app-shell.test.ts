@@ -40,8 +40,8 @@ test('summarizes shell area coverage for sidebar navigation', () => {
     expect.objectContaining({
       area: 'am',
       moduleCount: 1,
-      routeCount: 38,
-      summaryLabel: '1 modul / 38 route',
+      routeCount: 39,
+      summaryLabel: '1 modul / 39 route',
     }),
   );
   expect(getShellAreaCoverage('plugins').summaryLabel).toBe('0 modul / 0 route');
@@ -85,6 +85,7 @@ test('indexes POS and AM module routes as native route surfaces', () => {
       'customer:account/settings',
       'am:tasks/:id',
       'am:hardware/:rackId/:boxId/:deviceId',
+      'am:mutasi/:id',
       'am:api/auth/am-access-check',
       'am:am-be/routes/webhook',
     ]),
