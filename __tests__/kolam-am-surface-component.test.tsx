@@ -616,6 +616,44 @@ describe('KolamAmSurface', () => {
     expect(renderer!.root.findAllByType(TextInput)[1].props.value).toBe('');
   });
 
+  it('locks AM login after repeated failed attempts like AM FE', async () => {
+    jest.mocked(loginAmSession).mockRejectedValue(new Error('Username atau password salah'));
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface
+          activeModuleRoute={amRoute('login')}
+          dataset={seedUnifiedDataset}
+        />,
+      );
+    });
+    renderers.push(renderer!);
+
+    const inputs = renderer!.root.findAllByType(TextInput);
+    await act(async () => {
+      inputs[0].props.onChangeText('admin');
+      inputs[1].props.onChangeText('wrong-password');
+    });
+
+    for (let index = 0; index < 5; index += 1) {
+      await act(async () => {
+        renderer!.root.findByProps({accessibilityLabel: 'AM Login Submit'}).props.onPress();
+      });
+    }
+
+    expect(loginAmSession).toHaveBeenCalledTimes(5);
+    expect(renderText(renderer!).join(' ')).toContain('Terlalu banyak percobaan gagal.');
+    expect(renderText(renderer!).join(' ')).toContain('Coba lagi dalam');
+    expect(renderer!.root.findByProps({accessibilityLabel: 'AM Login Submit'}).props.disabled).toBe(true);
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Login Submit'}).props.onPress();
+    });
+
+    expect(loginAmSession).toHaveBeenCalledTimes(5);
+  });
+
   it('loads live service accounts from the Services route', async () => {
     let renderer: ReactTestRenderer.ReactTestRenderer;
 

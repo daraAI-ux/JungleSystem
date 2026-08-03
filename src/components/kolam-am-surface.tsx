@@ -136,6 +136,8 @@ const AM_MUTASI_PAGE_LIMIT = 50;
 const AM_WEBHOOK_LOG_PAGE_LIMIT = 50;
 const AM_USER_PAGE_LIMIT = 20;
 const AM_ACTIVITY_LOG_PAGE_LIMIT = 50;
+const AM_LOGIN_MAX_FAILED_ATTEMPTS = 5;
+const AM_LOGIN_LOCKOUT_DURATION_MS = 60_000;
 const AM_WEBHOOK_LOG_DIRECTIONS = ['all', 'outgoing'];
 const AM_ACTIVITY_LOG_TYPES = ['all', 'api', 'page'];
 const AM_ACTIVITY_LOG_STATUSES = ['all', 'success', 'failed'];
@@ -5985,8 +5987,33 @@ function AmLoginPage({
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [actionMessage, setActionMessage] = React.useState<string | null>(null);
+  const [failedAttempts, setFailedAttempts] = React.useState(0);
+  const [lockedUntil, setLockedUntil] = React.useState<number | null>(null);
+  const [lockCountdown, setLockCountdown] = React.useState(0);
+  const isLocked = lockedUntil !== null && Date.now() < lockedUntil;
+  const canSubmit = Boolean(username.trim() && password && !isSubmitting && !isLocked);
+
+  React.useEffect(() => {
+    if (!lockedUntil) return undefined;
+
+    const tick = () => {
+      const remaining = Math.max(0, Math.ceil((lockedUntil - Date.now()) / 1000));
+      setLockCountdown(remaining);
+      if (remaining <= 0) {
+        setLockedUntil(null);
+        setFailedAttempts(0);
+        setError(null);
+      }
+    };
+
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [lockedUntil]);
 
   const handleLogin = React.useCallback(async () => {
+    if (!canSubmit) return;
+
     const payload: AmLoginPayload = {
       username: username.replace(/[<>]/g, '').trim(),
       password,
@@ -6001,6 +6028,8 @@ function AmLoginPage({
       setIsSubmitting(true);
       setError(null);
       const result = await loginAmSession(payload);
+      setFailedAttempts(0);
+      setLockedUntil(null);
       setPassword('');
       setActionMessage(`Masuk sebagai ${result.user.fullName || result.user.username}.`);
       const dashboardRoute = getShellModuleRouteEntry('am', '/');
@@ -6008,11 +6037,18 @@ function AmLoginPage({
         onModuleRouteSelect?.(dashboardRoute);
       }
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : 'Login AM gagal.');
+      const nextFailedAttempts = failedAttempts + 1;
+      setFailedAttempts(nextFailedAttempts);
+      if (nextFailedAttempts >= AM_LOGIN_MAX_FAILED_ATTEMPTS) {
+        setLockedUntil(Date.now() + AM_LOGIN_LOCKOUT_DURATION_MS);
+        setError('Terlalu banyak percobaan gagal. Silakan tunggu sebelum mencoba lagi.');
+      } else {
+        setError(nextError instanceof Error ? nextError.message : 'Login AM gagal.');
+      }
     } finally {
       setIsSubmitting(false);
     }
-  }, [onModuleRouteSelect, password, username]);
+  }, [canSubmit, failedAttempts, onModuleRouteSelect, password, username]);
 
   return (
     <View style={styles.pageStack}>
@@ -6045,12 +6081,16 @@ function AmLoginPage({
             <KolamButton
               accessibilityLabel="AM Login Submit"
               label={isSubmitting ? 'Memproses' : 'Masuk'}
+              disabled={!canSubmit}
               muted={isSubmitting}
               size="sm"
               onPress={handleLogin}
             />
           </View>
         </View>
+        {isLocked && lockCountdown > 0 ? (
+          <Text style={styles.panelText}>Coba lagi dalam {lockCountdown} detik</Text>
+        ) : null}
       </View>
     </View>
   );
