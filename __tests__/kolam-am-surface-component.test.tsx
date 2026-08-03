@@ -5039,13 +5039,13 @@ describe('KolamAmSurface', () => {
       page: 1,
       limit: 50,
       direction: undefined,
-      event: undefined,
-      configId: undefined,
     });
     const webhooksText = renderText(renderer!).join(' ');
     expect(webhooksText).toContain('https://example.test/webhook');
     expect(webhooksText).toMatch(/Showing\s+1\s+to\s+50\s+of\s+75\s+items/);
     expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment Incoming'})).toHaveLength(0);
+    expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment transfer.success'})).toHaveLength(0);
+    expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment Existing hook'})).toHaveLength(0);
 
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Webhook Log Detail webhook-log-1'}).props.onPress();
@@ -5060,36 +5060,12 @@ describe('KolamAmSurface', () => {
     expect(detailText).toContain('"ok": true');
 
     await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Segment transfer.success'}).props.onPress();
-    });
-    expect(getAmWebhookLogs).toHaveBeenLastCalledWith({
-      page: 1,
-      limit: 50,
-      direction: undefined,
-      event: 'transfer.success',
-      configId: undefined,
-    });
-
-    await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Segment Outgoing'}).props.onPress();
     });
     expect(getAmWebhookLogs).toHaveBeenLastCalledWith({
       page: 1,
       limit: 50,
       direction: 'outgoing',
-      event: 'transfer.success',
-      configId: undefined,
-    });
-
-    await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Segment Existing hook'}).props.onPress();
-    });
-    expect(getAmWebhookLogs).toHaveBeenLastCalledWith({
-      page: 1,
-      limit: 50,
-      direction: 'outgoing',
-      event: 'transfer.success',
-      configId: 'webhook-1',
     });
 
     await act(async () => {
@@ -5099,8 +5075,6 @@ describe('KolamAmSurface', () => {
       page: 2,
       limit: 50,
       direction: 'outgoing',
-      event: 'transfer.success',
-      configId: 'webhook-1',
     });
   });
 });

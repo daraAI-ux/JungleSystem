@@ -4837,8 +4837,6 @@ function AmWebhooksPage() {
   const [logs, setLogs] = React.useState<AmWebhookLog[]>([]);
   const [events, setEvents] = React.useState<string[]>([]);
   const [logDirectionFilter, setLogDirectionFilter] = React.useState('all');
-  const [logEventFilter, setLogEventFilter] = React.useState('all');
-  const [logConfigFilter, setLogConfigFilter] = React.useState('all');
   const [logPage, setLogPage] = React.useState(1);
   const [logTotal, setLogTotal] = React.useState(0);
   const [logLimit, setLogLimit] = React.useState(AM_WEBHOOK_LOG_PAGE_LIMIT);
@@ -4864,8 +4862,6 @@ function AmWebhooksPage() {
           page: logPage,
           limit: AM_WEBHOOK_LOG_PAGE_LIMIT,
           direction: logDirectionFilter === 'all' ? undefined : logDirectionFilter,
-          event: logEventFilter === 'all' ? undefined : logEventFilter,
-          configId: logConfigFilter === 'all' ? undefined : logConfigFilter,
         }),
         getAmWebhookEvents(),
       ]);
@@ -4881,7 +4877,7 @@ function AmWebhooksPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [logConfigFilter, logDirectionFilter, logEventFilter, logPage]);
+  }, [logDirectionFilter, logPage]);
 
   React.useEffect(() => {
     fetchWebhooks();
@@ -5017,32 +5013,6 @@ function AmWebhooksPage() {
     setLogPage(1);
   }, []);
 
-  const handleLogEventChange = React.useCallback((value: string) => {
-    setLogEventFilter(value);
-    setLogPage(1);
-  }, []);
-
-  const handleLogConfigChange = React.useCallback((value: string) => {
-    setLogConfigFilter(value);
-    setLogPage(1);
-  }, []);
-
-  const webhookLogEventItems = React.useMemo(() => ['all', ...events], [events]);
-  const webhookLogEventLabels = React.useMemo<Record<string, string>>(() => {
-    const labels: Record<string, string> = {all: 'All Events'};
-    events.forEach(event => {
-      labels[event] = event;
-    });
-    return labels;
-  }, [events]);
-  const webhookLogConfigItems = React.useMemo(() => ['all', ...configs.map(config => config._id)], [configs]);
-  const webhookLogConfigLabels = React.useMemo<Record<string, string>>(() => {
-    const labels: Record<string, string> = {all: 'All Endpoints'};
-    configs.forEach(config => {
-      labels[config._id] = config.description || config.url;
-    });
-    return labels;
-  }, [configs]);
   const webhookLogTotalPages = Math.max(1, Math.ceil(logTotal / Math.max(logLimit, 1)));
   const webhookLogRangeFrom = logTotal ? (logPage - 1) * logLimit + 1 : 0;
   const webhookLogRangeTo = logTotal ? Math.min(logPage * logLimit, logTotal) : 0;
@@ -5142,18 +5112,6 @@ function AmWebhooksPage() {
             active={logDirectionFilter}
             items={AM_WEBHOOK_LOG_DIRECTIONS}
             onSelect={handleLogDirectionChange}
-          />
-          <AmSegmentGroup
-            active={logEventFilter}
-            items={webhookLogEventItems}
-            labels={webhookLogEventLabels}
-            onSelect={handleLogEventChange}
-          />
-          <AmSegmentGroup
-            active={logConfigFilter}
-            items={webhookLogConfigItems}
-            labels={webhookLogConfigLabels}
-            onSelect={handleLogConfigChange}
           />
         </View>
         <View style={styles.tableHeader}>
