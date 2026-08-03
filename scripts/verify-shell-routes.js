@@ -41,7 +41,7 @@ if (hasFailure) {
 const registry = loadAppShellRegistry(appShellPath);
 const posPages = readNextPages(posAppRoot);
 const amPages = readNextPages(amAppRoot);
-const posShellRoutes = readShellRoutes(registry.shellModules, 'pos');
+const posShellRoutes = readPosShellRoutes(registry.shellModules);
 const amShellRoutes = readShellRoutes(registry.shellModules, 'am');
 
 console.log(`[INFO] POS source app pages: ${posPages.length}`);
@@ -92,6 +92,16 @@ function readShellRoutes(modules, area) {
     new Set(
       modules
         .filter(module => module.area === area)
+        .flatMap(module => module.routes),
+    ),
+  ).sort(compareRoutes);
+}
+
+function readPosShellRoutes(modules) {
+  return Array.from(
+    new Set(
+      modules
+        .filter(module => module.area === 'pos' || module.id === 'checkout')
         .flatMap(module => module.routes),
     ),
   ).sort(compareRoutes);
