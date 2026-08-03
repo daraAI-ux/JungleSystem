@@ -28,8 +28,10 @@ import {
   createKolamTaskManagerCategory,
   createKolamTaskManagerTask,
   createKolamTaskManagerTaskType,
+  createKolamTaskRecurringTemplate,
   deleteKolamTaskManagerCategory,
   deleteKolamTaskManagerTaskType,
+  deleteKolamTaskRecurringTemplate,
   getKolamTaskManagerCategories,
   getKolamTaskManagerTask,
   getKolamTaskManagerTasks,
@@ -85,6 +87,18 @@ export interface KolamTaskManagerTaskTypeFormState {
   sortOrder: string;
 }
 
+export interface KolamTaskRecurringTemplateFormState {
+  assignedToId: string;
+  dayOfMonth: string;
+  description: string;
+  recurrenceType: 'daily' | 'monthly' | 'weekly';
+  sampleReviewPercent: string;
+  taskTypeId: string;
+  time: string;
+  title: string;
+  weekPreset: 'all' | 'weekdays';
+}
+
 export interface KolamTaskManagerController {
   categories: KolamTaskManagerCategory[];
   categoryForm: KolamTaskManagerCategoryFormState;
@@ -95,6 +109,9 @@ export interface KolamTaskManagerController {
   taskTypeFormError: string | null;
   taskTypeFormMode: 'edit' | 'new';
   taskTypeFormOpen: boolean;
+  recurringTemplateForm: KolamTaskRecurringTemplateFormState;
+  recurringTemplateFormError: string | null;
+  recurringTemplateFormOpen: boolean;
   categoryBucketFilter: KolamTaskCategoryBucket | 'all';
   categoryFilter: string;
   currentUserId: string;
@@ -140,13 +157,21 @@ export interface KolamTaskManagerController {
   onChangeTaskTypeForm: (
     patch: Partial<KolamTaskManagerTaskTypeFormState>,
   ) => void;
+  onChangeRecurringTemplateForm: (
+    patch: Partial<KolamTaskRecurringTemplateFormState>,
+  ) => void;
   onCloseCategoryForm: () => void;
   onCloseForm: () => void;
+  onCloseRecurringTemplateForm: () => void;
   onCloseTaskTypeForm: () => void;
   onCreateCategory: () => void;
   onCreateNew: () => void;
+  onCreateRecurringTemplate: () => void;
   onCreateTaskType: () => void;
   onDeleteCategory: (category: KolamTaskManagerCategory) => Promise<boolean>;
+  onDeleteRecurringTemplate: (
+    template: KolamTaskRecurringTemplate,
+  ) => Promise<boolean>;
   onDeleteTaskType: (taskType: KolamTaskManagerTaskType) => Promise<boolean>;
   onEditCategory: (category: KolamTaskManagerCategory) => void;
   onEditTaskType: (taskType: KolamTaskManagerTaskType) => void;
@@ -174,6 +199,7 @@ export interface KolamTaskManagerController {
   onRemoveChecklistItem: (index: number) => Promise<boolean>;
   onSaveCategory: () => Promise<boolean>;
   onSaveForm: () => Promise<boolean>;
+  onSaveRecurringTemplate: () => Promise<boolean>;
   onSaveTaskType: () => Promise<boolean>;
   onSetChecklistDraft: (value: string) => void;
   onSetDiscussionDraft: (value: string) => void;
@@ -248,6 +274,15 @@ export function useKolamTaskManagerController({
   );
   const [taskTypeForm, setTaskTypeForm] =
     useState<KolamTaskManagerTaskTypeFormState>(() => getDefaultTaskTypeForm());
+  const [recurringTemplateFormOpen, setRecurringTemplateFormOpen] =
+    useState(false);
+  const [recurringTemplateFormError, setRecurringTemplateFormError] = useState<
+    string | null
+  >(null);
+  const [recurringTemplateForm, setRecurringTemplateForm] =
+    useState<KolamTaskRecurringTemplateFormState>(() =>
+      getDefaultRecurringTemplateForm(currentUserId),
+    );
   const [checklistDraft, setChecklistDraft] = useState('');
   const [discussionDraft, setDiscussionDraft] = useState('');
   const [noteDraft, setNoteDraft] = useState('');
@@ -301,17 +336,25 @@ export function useKolamTaskManagerController({
   }, []);
 
   const loadTaskTypes = useCallback(async () => {
-    if (mode !== 'task-types') return;
-    setLoading(true);
-    setError(null);
+    if (mode !== 'task-types' && mode !== 'recurring') return;
+    if (mode === 'task-types') {
+      setLoading(true);
+      setError(null);
+    }
     try {
       setTaskTypes(await getKolamTaskManagerTaskTypes(true));
-      setDataSource('live');
+      if (mode === 'task-types') {
+        setDataSource('live');
+      }
     } catch (loadError) {
-      setError(getErrorMessage(loadError));
-      setDataSource('error');
+      if (mode === 'task-types') {
+        setError(getErrorMessage(loadError));
+        setDataSource('error');
+      }
     } finally {
-      setLoading(false);
+      if (mode === 'task-types') {
+        setLoading(false);
+      }
     }
   }, [mode]);
 
@@ -556,6 +599,88 @@ export function useKolamTaskManagerController({
       setMutatingTaskId(null);
     }
   }, [refreshRecurring]);
+
+  const onCreateRecurringTemplate = useCallback(() => {
+    setRecurringTemplateForm(
+      getDefaultRecurringTemplateForm(currentUserId || staffOptions[0]?.id || ''),
+    );
+    setRecurringTemplateFormError(null);
+    setStatusMessage(null);
+    setRecurringTemplateFormOpen(true);
+  }, [currentUserId, staffOptions]);
+
+  const onCloseRecurringTemplateForm = useCallback(() => {
+    setRecurringTemplateFormOpen(false);
+    setRecurringTemplateFormError(null);
+  }, []);
+
+  const onChangeRecurringTemplateForm = useCallback(
+    (patch: Partial<KolamTaskRecurringTemplateFormState>) => {
+      setRecurringTemplateForm(current => ({ ...current, ...patch }));
+      setRecurringTemplateFormError(null);
+      setStatusMessage(null);
+    },
+    [],
+  );
+
+  const onSaveRecurringTemplate = useCallback(async () => {
+    const title = recurringTemplateForm.title.trim();
+    const assignedToId = recurringTemplateForm.assignedToId.trim();
+    if (!title || !assignedToId) {
+      setRecurringTemplateFormError('Judul dan Maintainer wajib');
+      return false;
+    }
+
+    setMutatingTaskId('recurring-template:new');
+    setError(null);
+    setStatusMessage(null);
+    try {
+      await createKolamTaskRecurringTemplate({
+        assignedToId,
+        dayOfMonth: Number(recurringTemplateForm.dayOfMonth) || 1,
+        daysOfWeek:
+          recurringTemplateForm.weekPreset === 'all'
+            ? [0, 1, 2, 3, 4, 5, 6]
+            : [1, 2, 3, 4, 5],
+        description: recurringTemplateForm.description,
+        recurrenceType: recurringTemplateForm.recurrenceType,
+        sampleReviewPercent:
+          Number(recurringTemplateForm.sampleReviewPercent) || 0,
+        taskTypeId: recurringTemplateForm.taskTypeId || null,
+        time: recurringTemplateForm.time,
+        title,
+      });
+      setRecurringTemplateFormOpen(false);
+      setStatusMessage('Template berulang dibuat');
+      await refreshRecurring();
+      return true;
+    } catch (mutationError) {
+      setRecurringTemplateFormError(getErrorMessage(mutationError));
+      return false;
+    } finally {
+      setMutatingTaskId(null);
+    }
+  }, [recurringTemplateForm, refreshRecurring]);
+
+  const onDeleteRecurringTemplate = useCallback(
+    async (template: KolamTaskRecurringTemplate) => {
+      setMutatingTaskId(`recurring-template:${template.id}`);
+      setError(null);
+      setStatusMessage(null);
+      try {
+        await deleteKolamTaskRecurringTemplate(template.id);
+        setStatusMessage('Dihapus');
+        await refreshRecurring();
+        return true;
+      } catch (mutationError) {
+        setError(getErrorMessage(mutationError));
+        return false;
+      } finally {
+        setMutatingTaskId(null);
+      }
+    },
+    [refreshRecurring],
+  );
 
   const onCreateNew = useCallback(() => {
     setFormMode('new');
@@ -992,6 +1117,9 @@ export function useKolamTaskManagerController({
       taskTypeFormError,
       taskTypeFormMode,
       taskTypeFormOpen,
+      recurringTemplateForm,
+      recurringTemplateFormError,
+      recurringTemplateFormOpen,
       categoryBucketFilter,
       categoryFilter,
       currentUserId,
@@ -1032,15 +1160,19 @@ export function useKolamTaskManagerController({
       onAddNote,
       onChangeCategoryForm,
       onChangeForm,
+      onChangeRecurringTemplateForm,
       onChangeTaskTypeForm,
       onCloseCategoryForm,
       onCloseForm,
+      onCloseRecurringTemplateForm,
       onCloseTaskTypeForm,
       onBackToList,
       onCreateCategory,
       onCreateNew,
+      onCreateRecurringTemplate,
       onCreateTaskType,
       onDeleteCategory,
+      onDeleteRecurringTemplate,
       onDeleteTaskType,
       onEditCategory,
       onEditTask,
@@ -1072,6 +1204,7 @@ export function useKolamTaskManagerController({
       onRemoveChecklistItem,
       onSaveCategory,
       onSaveForm,
+      onSaveRecurringTemplate,
       onSaveTaskType,
       onSetChecklistDraft: setChecklistDraft,
       onSetDiscussionDraft: setDiscussionDraft,
@@ -1090,6 +1223,9 @@ export function useKolamTaskManagerController({
       taskTypeFormError,
       taskTypeFormMode,
       taskTypeFormOpen,
+      recurringTemplateForm,
+      recurringTemplateFormError,
+      recurringTemplateFormOpen,
       categoryBucketFilter,
       categoryFilter,
       currentUserId,
@@ -1113,14 +1249,18 @@ export function useKolamTaskManagerController({
       onAddNote,
       onChangeCategoryForm,
       onChangeForm,
+      onChangeRecurringTemplateForm,
       onChangeTaskTypeForm,
       onCloseCategoryForm,
       onCloseForm,
+      onCloseRecurringTemplateForm,
       onCloseTaskTypeForm,
       onCreateCategory,
       onCreateNew,
+      onCreateRecurringTemplate,
       onCreateTaskType,
       onDeleteCategory,
+      onDeleteRecurringTemplate,
       onDeleteTaskType,
       onEditCategory,
       onEditTask,
@@ -1133,6 +1273,7 @@ export function useKolamTaskManagerController({
       onRemoveChecklistItem,
       onSaveCategory,
       onSaveForm,
+      onSaveRecurringTemplate,
       onSaveTaskType,
       onToggleChecklistItem,
       onSwitchTab,
@@ -1198,6 +1339,22 @@ function getDefaultTaskTypeForm(): KolamTaskManagerTaskTypeFormState {
     name: '',
     requiresProductComponents: false,
     sortOrder: '100',
+  };
+}
+
+function getDefaultRecurringTemplateForm(
+  assignedToId: string,
+): KolamTaskRecurringTemplateFormState {
+  return {
+    assignedToId,
+    dayOfMonth: '1',
+    description: '',
+    recurrenceType: 'daily',
+    sampleReviewPercent: '10',
+    taskTypeId: '',
+    time: '09:00',
+    title: '',
+    weekPreset: 'weekdays',
   };
 }
 

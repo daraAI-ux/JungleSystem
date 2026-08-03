@@ -62,6 +62,21 @@ export interface KolamTaskManagerTaskTypeInput {
   sortOrder: number;
 }
 
+export interface KolamTaskRecurringTemplateInput {
+  active?: boolean;
+  assignedToId: string;
+  dayOfMonth?: number | null;
+  daysOfWeek?: number[];
+  description?: string;
+  dueHoursAfter?: number;
+  priority?: KolamTaskManagerPriority;
+  recurrenceType: 'daily' | 'monthly' | 'weekly';
+  sampleReviewPercent?: number;
+  taskTypeId?: string | null;
+  time: string;
+  title: string;
+}
+
 export async function getKolamTaskManagerTasks(
   query: KolamTaskManagerListQuery = {},
 ): Promise<KolamTaskManagerListResult> {
@@ -184,6 +199,26 @@ export async function getKolamTaskRecurringTemplates(): Promise<
     { query: { active: true } },
   );
   return normalizeKolamTaskRecurringTemplates(payload);
+}
+
+export async function createKolamTaskRecurringTemplate(
+  input: KolamTaskRecurringTemplateInput,
+): Promise<KolamTaskRecurringTemplate> {
+  const payload = await kolamRequest<unknown>(
+    '/task-manager/recurring/templates',
+    {
+      method: 'POST',
+      body: normalizeRecurringTemplateInput(input),
+    },
+  );
+  return normalizeKolamTaskRecurringTemplates(payload)[0];
+}
+
+export async function deleteKolamTaskRecurringTemplate(templateId: string) {
+  await kolamRequest<unknown>(
+    `/task-manager/recurring/templates/${encodeURIComponent(templateId)}`,
+    { method: 'DELETE' },
+  );
 }
 
 export async function getKolamTaskRecurringOccurrences(
@@ -354,6 +389,31 @@ function normalizeTaskTypeInput(input: Partial<KolamTaskManagerTaskTypeInput>) {
     ...(input.categoryBuckets != null
       ? { categoryBuckets: input.categoryBuckets }
       : {}),
+  };
+}
+
+function normalizeRecurringTemplateInput(input: KolamTaskRecurringTemplateInput) {
+  return {
+    title: input.title.trim(),
+    description: input.description?.trim() ?? '',
+    priority: input.priority ?? 'medium',
+    assignedToId: input.assignedToId.trim(),
+    taskTypeId: input.taskTypeId?.trim() || undefined,
+    sampleReviewPercent: input.taskTypeId
+      ? Math.min(100, Math.max(0, Number(input.sampleReviewPercent) || 0))
+      : undefined,
+    recurrence: {
+      type: input.recurrenceType,
+      ...(input.recurrenceType === 'weekly'
+        ? { daysOfWeek: input.daysOfWeek?.length ? input.daysOfWeek : [1, 2, 3, 4, 5] }
+        : {}),
+      ...(input.recurrenceType === 'monthly'
+        ? { dayOfMonth: Number(input.dayOfMonth) || 1 }
+        : {}),
+      time: input.time.trim() || '09:00',
+      dueHoursAfter: Number(input.dueHoursAfter) || 24,
+    },
+    ...(input.active != null ? { active: input.active } : {}),
   };
 }
 

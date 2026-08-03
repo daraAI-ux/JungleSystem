@@ -124,6 +124,7 @@ export function KolamTaskManagerSurface({
       )}
       <KolamTaskFormModal controller={controller} />
       <KolamTaskCategoryFormModal controller={controller} />
+      <KolamTaskRecurringTemplateFormModal controller={controller} />
       <KolamTaskTypeFormModal controller={controller} />
     </View>
   );
@@ -876,6 +877,14 @@ function KolamTaskRecurringPanel({
                 }}
               />
             ) : null}
+            {controller.isTaskAdmin ? (
+              <KolamButton
+                disabled={controller.loading}
+                intent="primary"
+                label="Template baru"
+                onPress={controller.onCreateRecurringTemplate}
+              />
+            ) : null}
           </View>
         </View>
       </View>
@@ -900,6 +909,21 @@ function KolamTaskRecurringPanel({
                 {getRecurrenceLabel(template.recurrence)} -{' '}
                 {getKolamTaskUserDisplayName(template.assignedTo)}
               </Text>
+              {controller.isTaskAdmin ? (
+                <View style={styles.categoryActionsCell}>
+                  <KolamButton
+                    disabled={
+                      controller.mutatingTaskId ===
+                      `recurring-template:${template.id}`
+                    }
+                    intent="outline"
+                    label="Hapus"
+                    onPress={() => {
+                      void controller.onDeleteRecurringTemplate(template);
+                    }}
+                  />
+                </View>
+              ) : null}
             </View>
           ))
         ) : (
@@ -1598,6 +1622,177 @@ function KolamTaskField({
       <KolamSettingsWebFieldLabel label={label} required={required} />
       {children}
     </View>
+  );
+}
+
+function KolamTaskRecurringTemplateFormModal({
+  controller,
+}: {
+  controller: KolamTaskManagerController;
+}) {
+  const saving = controller.mutatingTaskId === 'recurring-template:new';
+  const taskTypeOptions = controller.taskTypes
+    .filter(type => type.active && type.categoryBuckets.includes('enclosure'))
+    .map(type => ({ label: type.name, value: type.id }));
+
+  return (
+    <Modal
+      animationType="fade"
+      onRequestClose={controller.onCloseRecurringTemplateForm}
+      transparent
+      visible={controller.recurringTemplateFormOpen}
+    >
+      <View style={styles.modalRoot}>
+        <KolamModalBackdrop onPress={controller.onCloseRecurringTemplateForm} />
+        <View style={styles.modalCard}>
+          <View style={styles.modalHeader}>
+            <Text numberOfLines={1} style={styles.modalTitle}>
+              Template tugas berulang
+            </Text>
+            <View style={styles.modalActions}>
+              <KolamButton
+                disabled={saving}
+                intent="outline"
+                label="Batal"
+                onPress={controller.onCloseRecurringTemplateForm}
+              />
+              <KolamButton
+                disabled={saving}
+                label={saving ? 'Menyimpan...' : 'Simpan'}
+                onPress={() => {
+                  void controller.onSaveRecurringTemplate();
+                }}
+              />
+            </View>
+          </View>
+          {controller.recurringTemplateFormError ? (
+            <KolamStatusBadge
+              intent="danger"
+              label={controller.recurringTemplateFormError}
+              numberOfLines={3}
+            />
+          ) : null}
+          <ScrollView contentContainerStyle={styles.modalContent}>
+            <View style={styles.formGrid}>
+              <KolamTaskField label="Judul" required>
+                <KolamFormTextField
+                  onChangeText={title =>
+                    controller.onChangeRecurringTemplateForm({ title })
+                  }
+                  style={settingsWebFormStyles.settingsWebFormFieldValue}
+                  value={controller.recurringTemplateForm.title}
+                />
+              </KolamTaskField>
+              <KolamTaskField label="Deskripsi">
+                <KolamFormTextField
+                  multiline
+                  onChangeText={description =>
+                    controller.onChangeRecurringTemplateForm({ description })
+                  }
+                  style={[
+                    settingsWebFormStyles.settingsWebFormFieldValue,
+                    settingsWebFormStyles.settingsWebFormFieldValueTextarea,
+                  ]}
+                  value={controller.recurringTemplateForm.description}
+                />
+              </KolamTaskField>
+              <KolamDropdownSelect
+                label="Maintainer"
+                onChange={assignedToId =>
+                  controller.onChangeRecurringTemplateForm({ assignedToId })
+                }
+                options={controller.staffOptions.map(option => ({
+                  label: option.label,
+                  value: option.id,
+                }))}
+                value={controller.recurringTemplateForm.assignedToId}
+              />
+              <KolamDropdownSelect
+                label="Tipe task enclosure"
+                onChange={taskTypeId =>
+                  controller.onChangeRecurringTemplateForm({
+                    taskTypeId: taskTypeId === '__none__' ? '' : taskTypeId,
+                  })
+                }
+                options={[
+                  { label: 'Umum', value: '__none__' },
+                  ...taskTypeOptions,
+                ]}
+                value={
+                  controller.recurringTemplateForm.taskTypeId || '__none__'
+                }
+              />
+              {controller.recurringTemplateForm.taskTypeId ? (
+                <KolamTaskField label="Review sampel (%)">
+                  <KolamFormTextField
+                    mode="numeric"
+                    onChangeText={sampleReviewPercent =>
+                      controller.onChangeRecurringTemplateForm({
+                        sampleReviewPercent,
+                      })
+                    }
+                    style={settingsWebFormStyles.settingsWebFormFieldValue}
+                    value={controller.recurringTemplateForm.sampleReviewPercent}
+                  />
+                </KolamTaskField>
+              ) : null}
+              <KolamDropdownSelect
+                label="Frekuensi"
+                onChange={recurrenceType =>
+                  controller.onChangeRecurringTemplateForm({
+                    recurrenceType:
+                      recurrenceType as typeof controller.recurringTemplateForm.recurrenceType,
+                  })
+                }
+                options={[
+                  { label: 'Harian', value: 'daily' },
+                  { label: 'Mingguan', value: 'weekly' },
+                  { label: 'Bulanan', value: 'monthly' },
+                ]}
+                value={controller.recurringTemplateForm.recurrenceType}
+              />
+              {controller.recurringTemplateForm.recurrenceType === 'weekly' ? (
+                <KolamDropdownSelect
+                  label="Hari"
+                  onChange={weekPreset =>
+                    controller.onChangeRecurringTemplateForm({
+                      weekPreset:
+                        weekPreset as typeof controller.recurringTemplateForm.weekPreset,
+                    })
+                  }
+                  options={[
+                    { label: 'Sen-Jum', value: 'weekdays' },
+                    { label: 'Setiap hari', value: 'all' },
+                  ]}
+                  value={controller.recurringTemplateForm.weekPreset}
+                />
+              ) : null}
+              {controller.recurringTemplateForm.recurrenceType === 'monthly' ? (
+                <KolamTaskField label="Tanggal">
+                  <KolamFormTextField
+                    mode="numeric"
+                    onChangeText={dayOfMonth =>
+                      controller.onChangeRecurringTemplateForm({ dayOfMonth })
+                    }
+                    style={settingsWebFormStyles.settingsWebFormFieldValue}
+                    value={controller.recurringTemplateForm.dayOfMonth}
+                  />
+                </KolamTaskField>
+              ) : null}
+              <KolamTaskField label="Jam">
+                <KolamFormTextField
+                  onChangeText={time =>
+                    controller.onChangeRecurringTemplateForm({ time })
+                  }
+                  style={settingsWebFormStyles.settingsWebFormFieldValue}
+                  value={controller.recurringTemplateForm.time}
+                />
+              </KolamTaskField>
+            </View>
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
   );
 }
 

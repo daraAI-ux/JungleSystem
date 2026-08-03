@@ -82,8 +82,10 @@ jest.mock('../src/services/kolam-task-manager-api', () => ({
   createKolamTaskManagerCategory: jest.fn(() => Promise.resolve({})),
   createKolamTaskManagerTask: jest.fn(() => Promise.resolve({})),
   createKolamTaskManagerTaskType: jest.fn(() => Promise.resolve({})),
+  createKolamTaskRecurringTemplate: jest.fn(() => Promise.resolve({})),
   deleteKolamTaskManagerCategory: jest.fn(() => Promise.resolve(undefined)),
   deleteKolamTaskManagerTaskType: jest.fn(() => Promise.resolve(undefined)),
+  deleteKolamTaskRecurringTemplate: jest.fn(() => Promise.resolve(undefined)),
   getKolamTaskManagerCategories: jest.fn(() =>
     Promise.resolve([
       { active: true, bucket: 'project', color: '#16a34a', id: 'cat-1', name: 'Operasional', sortOrder: 2 },
