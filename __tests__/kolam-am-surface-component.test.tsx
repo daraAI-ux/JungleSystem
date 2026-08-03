@@ -1250,6 +1250,8 @@ describe('KolamAmSurface', () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Service Edit service-edit'}).props.onPress();
     });
 
+    expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Service Platform Read Only'}).length).toBeGreaterThan(0);
+
     inputs = renderer!.root.findAllByType(TextInput);
     await act(async () => {
       inputs[1].props.onChangeText('Tokopedia Updated');
@@ -1259,12 +1261,14 @@ describe('KolamAmSurface', () => {
     });
 
     expect(updateAmServiceAccount).toHaveBeenCalledWith('service-edit', expect.objectContaining({
-      platform: 'tokopedia',
       label: 'Tokopedia Updated',
       deviceId: 'device-browser',
       username: 'old-user',
       credentials: {phoneNumber: '0812'},
       status: 'inactive',
+    }));
+    expect(updateAmServiceAccount).toHaveBeenCalledWith('service-edit', expect.not.objectContaining({
+      platform: expect.anything(),
     }));
 
     await act(async () => {
@@ -2383,7 +2387,6 @@ describe('KolamAmSurface', () => {
     });
 
     expect(updateAmServiceAccount).toHaveBeenCalledWith('service-1', expect.objectContaining({
-      platform: 'bca',
       label: 'BCA Detail Updated',
       deviceId: 'device-2',
       username: 'bca-updated',
@@ -2392,6 +2395,7 @@ describe('KolamAmSurface', () => {
       status: 'inactive',
     }));
     expect(updateAmServiceAccount).toHaveBeenCalledWith('service-1', expect.not.objectContaining({
+      platform: expect.anything(),
       password: '',
       pin: '',
     }));

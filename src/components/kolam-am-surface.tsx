@@ -1267,7 +1267,9 @@ function AmServicesPage() {
       setActionMessage(null);
       setError(null);
       if (editingServiceId) {
-        await updateAmServiceAccount(editingServiceId, payload);
+        const updatePayload = {...payload};
+        delete updatePayload.platform;
+        await updateAmServiceAccount(editingServiceId, updatePayload);
         setActionMessage(`${payload.label} diperbarui.`);
       } else {
         await createAmServiceAccount({
@@ -1645,12 +1647,21 @@ function AmServicesPage() {
           ) : null}
         </View>
         <View style={styles.filterBar}>
-          <AmSegmentGroup
-            active={formPlatform}
-            items={AM_PLATFORMS.filter(item => item !== 'all')}
-            labels={AM_PLATFORM_LABELS}
-            onSelect={handleFormPlatformChange}
-          />
+          {editingServiceId ? (
+            <View accessibilityLabel="AM Service Platform Read Only" style={styles.detailListRow}>
+              <Text style={[styles.tableHeaderText, styles.accountCol]}>Platform</Text>
+              <Text style={[styles.cellText, styles.recipientCol]}>
+                {AM_PLATFORM_LABELS[formPlatform] ?? formPlatform}
+              </Text>
+            </View>
+          ) : (
+            <AmSegmentGroup
+              active={formPlatform}
+              items={AM_PLATFORMS.filter(item => item !== 'all')}
+              labels={AM_PLATFORM_LABELS}
+              onSelect={handleFormPlatformChange}
+            />
+          )}
           <AmSegmentGroup
             active={formStatus}
             items={['active', 'inactive', 'blocked']}
@@ -3533,7 +3544,9 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
       setError(null);
       setActionMessage(null);
       if (editingDeviceServiceId) {
-        await updateAmServiceAccount(editingDeviceServiceId, payload);
+        const updatePayload = {...payload};
+        delete updatePayload.platform;
+        await updateAmServiceAccount(editingDeviceServiceId, updatePayload);
       } else {
         await createAmServiceAccount({
           ...payload,
