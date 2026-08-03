@@ -16,6 +16,7 @@ import {
   type KolamNavigationItem,
   kolamSidebarNavigationSections,
 } from '../domain/kolam-navigation';
+import { isKolamCampaignRoute } from '../domain/kolam-campaign';
 import { runtimeActions, type RuntimeAction } from '../domain/runtime-actions';
 import type {
   TopNavBreadcrumbItem,
@@ -412,6 +413,20 @@ export function useKolamNavigationController({
   };
 
   const handleModuleRouteSelect = (route: ShellModuleRouteEntry) => {
+    const normalizedRoute = route.route.startsWith('/')
+      ? route.route
+      : `/${route.route}`;
+
+    // Prefer native campaign surface over module-route stub workbench.
+    if (isKolamCampaignRoute(normalizedRoute)) {
+      const navigationItem =
+        getKolamNavigationItemByRuntimeRoute(normalizedRoute);
+      if (navigationItem) {
+        handleKolamNavigationItem(navigationItem);
+        return;
+      }
+    }
+
     setActiveModule(route.moduleId);
     setActiveNavigationItem(null);
     setActivePluginRoute(null);

@@ -210,6 +210,23 @@ export function KolamWorkspaceSurfaceComponent({
     );
   }
 
+  const activeModuleRoutePath = activeModuleRoute?.route
+    ? activeModuleRoute.route.startsWith('/')
+      ? activeModuleRoute.route
+      : `/${activeModuleRoute.route}`
+    : '';
+  if (
+    activeModuleRoutePath &&
+    isKolamCampaignRoute(activeModuleRoutePath)
+  ) {
+    return (
+      <KolamCampaignSurface
+        onRouteChange={onDashboardRoute}
+        route={activeModuleRoutePath}
+      />
+    );
+  }
+
   if (
     activeNavigationItem &&
     isKolamPusatAiRingkasanRoute(activeNavigationItem.route)

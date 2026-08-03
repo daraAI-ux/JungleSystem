@@ -369,7 +369,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         requiredAccess: ['kolam'],
       },
       {
-        label: 'Kampanye',
+        label: 'Daftar',
         route: '/campaign',
         description: 'Kelola semua kampanye pemasaran dan promosi.',
         group: 'Kampanye',
@@ -771,7 +771,7 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
       sidebarItem('/complaints', { group: 'Penjualan', label: 'Komplain' }),
       sidebarItem('/layanan', { label: 'Layanan' }),
       sidebarItem('/terms-templates', { label: 'Syarat & Ketentuan' }),
-      sidebarItem('/campaign', { group: 'Kampanye', label: 'Daftar Kampanye' }),
+      sidebarItem('/campaign', { group: 'Kampanye', label: 'Daftar' }),
       sidebarItem('/sales/discount-approval', { group: 'Kampanye', label: 'Persetujuan Diskon' }),
       sidebarItem('/vouchers', { group: 'Kampanye', label: 'Voucher' }),
       sidebarItem('/shipping-method', { label: 'Metode Pengiriman' }),

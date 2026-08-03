@@ -234,7 +234,8 @@ describe('kolam-campaign domain', () => {
     ]);
 
     const nav = getKolamNavigationItemByRoute('/campaign');
-    expect(nav?.label).toMatch(/Kampanye/);
+    expect(nav?.label).toBe('Daftar');
+    expect(nav?.group).toBe('Kampanye');
     expect(nav?.description).toBe(
       'Kelola semua kampanye pemasaran dan promosi.',
     );

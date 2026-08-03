@@ -4,12 +4,14 @@ import {
   getKolamNavigationRouteSurfaceContract,
   type KolamNavigationItem,
 } from '../domain/kolam-navigation';
+import {isKolamCampaignRoute} from '../domain/kolam-campaign';
 import {isKolamSpeciesRoute} from '../domain/kolam-species';
 import {isKolamSalesRoute} from '../domain/kolam-sales';
 import {isKolamStockOpnameRoute} from '../domain/kolam-stock-opname';
 import {isKolamStockTransactionRoute} from '../domain/kolam-stock-transaction';
 import {isKolamTeranuraNativeRoute} from '../domain/kolam-teranura';
 import type {UnifiedDataset} from '../services/unified-data';
+import {KolamCampaignSurface} from './kolam-campaign-surface';
 import {KolamDescriptionList} from './kolam-description-list';
 import {KolamModulePanel} from './kolam-module-panel';
 import {KolamSpeciesSurface} from './kolam-species-surface';
@@ -30,6 +32,15 @@ export function KolamNavigationRouteSurface({
 }) {
   const contract = getKolamNavigationRouteSurfaceContract(item);
   const routePath = contract.runtimeRoute.split('?')[0];
+
+  if (isKolamCampaignRoute(routePath)) {
+    return (
+      <KolamCampaignSurface
+        onRouteChange={onRouteChange}
+        route={contract.runtimeRoute}
+      />
+    );
+  }
 
   if (isKolamSpeciesRoute(routePath)) {
     return (
