@@ -364,6 +364,21 @@ function KolamTaskManagerDetail({
         ) : (
           <Text style={styles.metaText}>Belum ada diskusi.</Text>
         )}
+        {controller.discussionAttachments.length ? (
+          <View style={styles.attachmentRow}>
+            {controller.discussionAttachments.map((file, index) => (
+              <Pressable
+                key={`${file.uri || file.path || file.name}-${index}`}
+                onPress={() => controller.onRemoveDiscussionAttachment(index)}
+              >
+                <KolamStatusBadge
+                  intent="muted"
+                  label={getDiscussionAttachmentLabel(file)}
+                />
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
         <View style={styles.noteAddRow}>
           <KolamFormTextField
             multiline
@@ -376,16 +391,43 @@ function KolamTaskManagerDetail({
             ]}
             value={controller.discussionDraft}
           />
-          <KolamButton
-            disabled={
-              controller.mutatingTaskId === `discussion:${task.id}` ||
-              !controller.discussionDraft.trim()
-            }
-            label="Kirim"
-            onPress={() => {
-              void controller.onAddDiscussion();
-            }}
-          />
+          <View style={styles.discussionActionStack}>
+            <View style={styles.attachmentRow}>
+              <KolamButton
+                disabled={
+                  controller.mutatingTaskId === `discussion:${task.id}` ||
+                  controller.discussionAttachments.length >= 8
+                }
+                intent="outline"
+                label="Gambar"
+                onPress={() => {
+                  void controller.onPickDiscussionImage();
+                }}
+              />
+              <KolamButton
+                disabled={
+                  controller.mutatingTaskId === `discussion:${task.id}` ||
+                  controller.discussionAttachments.length >= 8
+                }
+                intent="outline"
+                label="Video"
+                onPress={() => {
+                  void controller.onPickDiscussionVideo();
+                }}
+              />
+            </View>
+            <KolamButton
+              disabled={
+                controller.mutatingTaskId === `discussion:${task.id}` ||
+                (!controller.discussionDraft.trim() &&
+                  controller.discussionAttachments.length === 0)
+              }
+              label="Kirim"
+              onPress={() => {
+                void controller.onAddDiscussion();
+              }}
+            />
+          </View>
         </View>
       </View>
 
@@ -458,6 +500,17 @@ function getTaskTypeLabel(task: KolamTaskManagerTask) {
   if (!task.taskType) return '-';
   if (typeof task.taskType === 'string') return task.taskType || '-';
   return task.taskType.name || task.taskType.key || task.taskType.id || '-';
+}
+
+function getDiscussionAttachmentLabel(
+  file: KolamTaskManagerController['discussionAttachments'][number],
+) {
+  return (
+    file.name ||
+    file.path?.split(/[\\/]/).pop() ||
+    file.uri?.split('/').pop() ||
+    'File'
+  );
 }
 
 function KolamTaskManagerTabs({
@@ -2488,6 +2541,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 4,
+  },
+  discussionActionStack: {
+    alignItems: 'flex-start',
+    gap: 8,
   },
   enrollmentGrid: {
     flexDirection: 'row',

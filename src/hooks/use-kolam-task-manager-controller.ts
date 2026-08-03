@@ -63,6 +63,11 @@ import {
 import { getKolamLocations } from '../services/kolam-location-api';
 import { getKolamCustomerList } from '../services/kolam-customer-api';
 import { getKolamUserList } from '../services/kolam-user-api';
+import {
+  pickNativeImageFile,
+  pickNativeVideoFile,
+  type NativeImagePickerResult,
+} from '../services/native-file-picker';
 
 export type KolamTaskManagerDataSource = 'error' | 'idle' | 'live';
 
@@ -158,6 +163,7 @@ export interface KolamTaskManagerController {
   formOpen: boolean;
   checklistDraft: string;
   discussionDraft: string;
+  discussionAttachments: NativeImagePickerResult[];
   noteDraft: string;
   kpi: KolamTaskManagerKpi;
   loading: boolean;
@@ -255,6 +261,9 @@ export interface KolamTaskManagerController {
   onSaveRecurringTemplate: () => Promise<boolean>;
   onSaveTaskType: () => Promise<boolean>;
   onSetChecklistDraft: (value: string) => void;
+  onPickDiscussionImage: () => Promise<boolean>;
+  onPickDiscussionVideo: () => Promise<boolean>;
+  onRemoveDiscussionAttachment: (index: number) => void;
   onSetDiscussionDraft: (value: string) => void;
   onSetNoteDraft: (value: string) => void;
   onToggleChecklistItem: (index: number) => Promise<boolean>;
@@ -361,6 +370,9 @@ export function useKolamTaskManagerController({
   >([]);
   const [checklistDraft, setChecklistDraft] = useState('');
   const [discussionDraft, setDiscussionDraft] = useState('');
+  const [discussionAttachments, setDiscussionAttachments] = useState<
+    NativeImagePickerResult[]
+  >([]);
   const [noteDraft, setNoteDraft] = useState('');
   const [dataSource, setDataSource] =
     useState<KolamTaskManagerDataSource>('idle');
@@ -1145,17 +1157,19 @@ export function useKolamTaskManagerController({
   const onAddDiscussion = useCallback(async () => {
     if (!selectedTask) return false;
     const message = discussionDraft.trim();
-    if (!message) return false;
+    if (!message && discussionAttachments.length === 0) return false;
     setMutatingTaskId(`discussion:${selectedTask.id}`);
     setError(null);
     setStatusMessage(null);
     try {
       const updated = await sendKolamTaskManagerDiscussion(
         selectedTask.id,
-        message,
+        message || '<p></p>',
+        discussionAttachments,
       );
       setSelectedTask(updated);
       setDiscussionDraft('');
+      setDiscussionAttachments([]);
       setStatusMessage('Pesan dikirim');
       return true;
     } catch (mutationError) {
@@ -1164,7 +1178,37 @@ export function useKolamTaskManagerController({
     } finally {
       setMutatingTaskId(null);
     }
-  }, [discussionDraft, selectedTask]);
+  }, [discussionAttachments, discussionDraft, selectedTask]);
+
+  const onPickDiscussionImage = useCallback(async () => {
+    try {
+      const file = await pickNativeImageFile();
+      if (file.cancelled || (!file.uri && !file.path)) return false;
+      setDiscussionAttachments(current => [...current, file].slice(0, 8));
+      return true;
+    } catch (pickerError) {
+      setError(getErrorMessage(pickerError));
+      return false;
+    }
+  }, []);
+
+  const onPickDiscussionVideo = useCallback(async () => {
+    try {
+      const file = await pickNativeVideoFile();
+      if (file.cancelled || (!file.uri && !file.path)) return false;
+      setDiscussionAttachments(current => [...current, file].slice(0, 8));
+      return true;
+    } catch (pickerError) {
+      setError(getErrorMessage(pickerError));
+      return false;
+    }
+  }, []);
+
+  const onRemoveDiscussionAttachment = useCallback((index: number) => {
+    setDiscussionAttachments(current =>
+      current.filter((_, itemIndex) => itemIndex !== index),
+    );
+  }, []);
 
   const onCreateCategory = useCallback(() => {
     setCategoryFormMode('new');
@@ -1395,6 +1439,7 @@ export function useKolamTaskManagerController({
       formOpen,
       checklistDraft,
       discussionDraft,
+      discussionAttachments,
       noteDraft,
       kpi,
       loading,
@@ -1487,6 +1532,9 @@ export function useKolamTaskManagerController({
       onSaveRecurringTemplate,
       onSaveTaskType,
       onSetChecklistDraft: setChecklistDraft,
+      onPickDiscussionImage,
+      onPickDiscussionVideo,
+      onRemoveDiscussionAttachment,
       onSetDiscussionDraft: setDiscussionDraft,
       onSetNoteDraft: setNoteDraft,
       onToggleChecklistItem,
@@ -1519,6 +1567,7 @@ export function useKolamTaskManagerController({
       formOpen,
       checklistDraft,
       discussionDraft,
+      discussionAttachments,
       noteDraft,
       kpi,
       loading,
@@ -1562,6 +1611,9 @@ export function useKolamTaskManagerController({
       onSaveRecurringBulkEnrollment,
       onSaveRecurringTemplate,
       onSaveTaskType,
+      onPickDiscussionImage,
+      onPickDiscussionVideo,
+      onRemoveDiscussionAttachment,
       onToggleChecklistItem,
       onSwitchTab,
       page,

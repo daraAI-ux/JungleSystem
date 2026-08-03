@@ -52,6 +52,14 @@ export interface KolamTaskManagerTaskInput {
   conversationId?: string | null;
 }
 
+export interface KolamTaskManagerDiscussionFileInput {
+  extension?: string;
+  mimeType?: string;
+  name?: string;
+  path?: string;
+  uri?: string;
+}
+
 export interface KolamTaskManagerCategoryInput {
   active?: boolean;
   color: string;
@@ -408,12 +416,18 @@ export async function addKolamTaskManagerNote(
 export async function sendKolamTaskManagerDiscussion(
   taskId: string,
   message: string,
+  files: KolamTaskManagerDiscussionFileInput[] = [],
 ): Promise<KolamTaskManagerTask> {
+  const normalizedFiles = files.filter(file => file.uri || file.path);
+  const body =
+    normalizedFiles.length > 0
+      ? createTaskDiscussionFormData(message, normalizedFiles)
+      : { message: message.trim() };
   const payload = await kolamRequest<unknown>(
     `/task-manager/${encodeURIComponent(taskId)}/discussion`,
     {
       method: 'POST',
-      body: { message: message.trim() },
+      body,
     },
   );
   return normalizeKolamTaskManagerTask(payload);
@@ -524,6 +538,55 @@ function normalizeTaskInput(input: Partial<KolamTaskManagerTaskInput>) {
       ? { conversationId: input.conversationId?.trim() || null }
       : {}),
   };
+}
+
+function createTaskDiscussionFormData(
+  message: string,
+  files: KolamTaskManagerDiscussionFileInput[],
+) {
+  const formData = new FormData();
+  formData.append('message', message.trim() || '<p></p>');
+  files.slice(0, 8).forEach((file, index) => {
+    const localUri = file.uri || file.path;
+    if (!localUri) return;
+    formData.append(
+      'files',
+      createReactNativeFilePart(
+        localUri,
+        file.name || `task-discussion-${index + 1}`,
+        file.mimeType,
+      ) as unknown as Blob,
+    );
+  });
+  return formData;
+}
+
+function createReactNativeFilePart(
+  localUri: string,
+  fallbackName: string,
+  mimeType?: string,
+) {
+  const normalizedUri = localUri.startsWith('file://')
+    ? localUri
+    : `file:///${localUri.replace(/\\/g, '/')}`;
+  const name = normalizedUri.split('/').pop() || fallbackName;
+
+  return {
+    uri: normalizedUri,
+    name,
+    type: mimeType || inferFileMimeType(name),
+  };
+}
+
+function inferFileMimeType(name: string) {
+  const extension = name.split('.').pop()?.toLowerCase();
+  if (extension === 'png') return 'image/png';
+  if (extension === 'webp') return 'image/webp';
+  if (extension === 'gif') return 'image/gif';
+  if (extension === 'mp4') return 'video/mp4';
+  if (extension === 'webm') return 'video/webm';
+  if (extension === 'mov') return 'video/quicktime';
+  return 'image/jpeg';
 }
 
 function kolamRequest<T>(
