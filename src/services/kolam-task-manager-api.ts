@@ -193,6 +193,20 @@ export async function updateKolamTaskManagerChecklist(
   return normalizeKolamTaskManagerTask(payload);
 }
 
+export async function addKolamTaskManagerNote(
+  taskId: string,
+  note: string,
+): Promise<KolamTaskManagerTask> {
+  const payload = await kolamRequest<unknown>(
+    `/task-manager/${encodeURIComponent(taskId)}/notes`,
+    {
+      method: 'POST',
+      body: { note: note.trim() },
+    },
+  );
+  return normalizeKolamTaskManagerTask(payload);
+}
+
 export async function deleteKolamTaskManagerTask(taskId: string) {
   await kolamRequest<unknown>(`/task-manager/${encodeURIComponent(taskId)}`, {
     method: 'DELETE',

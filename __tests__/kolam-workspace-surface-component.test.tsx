@@ -78,6 +78,7 @@ jest.mock('../src/services/am-api', () => ({
 }));
 
 jest.mock('../src/services/kolam-task-manager-api', () => ({
+  addKolamTaskManagerNote: jest.fn(() => Promise.resolve({})),
   createKolamTaskManagerTask: jest.fn(() => Promise.resolve({})),
   getKolamTaskManagerCategories: jest.fn(() =>
     Promise.resolve([

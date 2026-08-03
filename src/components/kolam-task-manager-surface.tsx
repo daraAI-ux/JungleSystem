@@ -290,6 +290,29 @@ function KolamTaskManagerDetail({
 
       <View style={styles.detailCard}>
         <Text style={styles.sectionTitle}>Timeline</Text>
+        <View style={styles.noteAddRow}>
+          <KolamFormTextField
+            multiline
+            onChangeText={controller.onSetNoteDraft}
+            placeholder="Catatan"
+            style={[
+              settingsWebFormStyles.settingsWebFormFieldValue,
+              settingsWebFormStyles.settingsWebFormFieldValueTextarea,
+              styles.noteDraftInput,
+            ]}
+            value={controller.noteDraft}
+          />
+          <KolamButton
+            disabled={
+              controller.mutatingTaskId === `note:${task.id}` ||
+              !controller.noteDraft.trim()
+            }
+            label="Kirim"
+            onPress={() => {
+              void controller.onAddNote();
+            }}
+          />
+        </View>
         {task.timeline.length ? (
           task.timeline.map(item => (
             <View key={item.id || `${item.type}-${item.at}`} style={styles.timelineRow}>
@@ -1308,6 +1331,16 @@ const styles = StyleSheet.create({
   checklistDraftInput: {
     flex: 1,
     minWidth: 220,
+  },
+  noteAddRow: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  noteDraftInput: {
+    flex: 1,
+    minWidth: 260,
   },
   timelineRow: {
     borderColor: V.colors.border,

@@ -22,6 +22,7 @@ import {
 import type { KolamUserListItem } from '../domain/kolam-user';
 import { getErrorMessage as getApiErrorMessage } from '../lib/api-error';
 import {
+  addKolamTaskManagerNote,
   createKolamTaskManagerTask,
   getKolamTaskManagerCategories,
   getKolamTaskManagerTask,
@@ -68,6 +69,7 @@ export interface KolamTaskManagerController {
   formMode: 'edit' | 'new';
   formOpen: boolean;
   checklistDraft: string;
+  noteDraft: string;
   kpi: KolamTaskManagerKpi;
   loading: boolean;
   mineOnly: boolean;
@@ -91,6 +93,7 @@ export interface KolamTaskManagerController {
   total: number;
   totalPages: number;
   onAddChecklistItem: () => Promise<boolean>;
+  onAddNote: () => Promise<boolean>;
   onChangeForm: (patch: Partial<KolamTaskManagerFormState>) => void;
   onCloseForm: () => void;
   onCreateNew: () => void;
@@ -118,6 +121,7 @@ export interface KolamTaskManagerController {
   onRemoveChecklistItem: (index: number) => Promise<boolean>;
   onSaveForm: () => Promise<boolean>;
   onSetChecklistDraft: (value: string) => void;
+  onSetNoteDraft: (value: string) => void;
   onToggleChecklistItem: (index: number) => Promise<boolean>;
   onRunRecurringTick: () => Promise<boolean>;
   onSwitchTab: (tab: 'recurring' | 'tasks') => void;
@@ -168,6 +172,7 @@ export function useKolamTaskManagerController({
     getDefaultTaskForm(currentUserId),
   );
   const [checklistDraft, setChecklistDraft] = useState('');
+  const [noteDraft, setNoteDraft] = useState('');
   const [dataSource, setDataSource] =
     useState<KolamTaskManagerDataSource>('idle');
   const [page, setPage] = useState(1);
@@ -632,6 +637,27 @@ export function useKolamTaskManagerController({
     [persistChecklist, selectedTask],
   );
 
+  const onAddNote = useCallback(async () => {
+    if (!selectedTask) return false;
+    const note = noteDraft.trim();
+    if (!note) return false;
+    setMutatingTaskId(`note:${selectedTask.id}`);
+    setError(null);
+    setStatusMessage(null);
+    try {
+      const updated = await addKolamTaskManagerNote(selectedTask.id, note);
+      setSelectedTask(updated);
+      setNoteDraft('');
+      setStatusMessage('Catatan ditambahkan');
+      return true;
+    } catch (mutationError) {
+      setError(getErrorMessage(mutationError));
+      return false;
+    } finally {
+      setMutatingTaskId(null);
+    }
+  }, [noteDraft, selectedTask]);
+
   return useMemo(
     () => ({
       categories,
@@ -645,6 +671,7 @@ export function useKolamTaskManagerController({
       formMode,
       formOpen,
       checklistDraft,
+      noteDraft,
       kpi,
       loading,
       mineOnly,
@@ -668,6 +695,7 @@ export function useKolamTaskManagerController({
       totalPages,
       selectedTask,
       onAddChecklistItem,
+      onAddNote,
       onChangeForm,
       onCloseForm,
       onBackToList,
@@ -698,6 +726,7 @@ export function useKolamTaskManagerController({
       onRemoveChecklistItem,
       onSaveForm,
       onSetChecklistDraft: setChecklistDraft,
+      onSetNoteDraft: setNoteDraft,
       onToggleChecklistItem,
       onRunRecurringTick,
       onSwitchTab,
@@ -714,6 +743,7 @@ export function useKolamTaskManagerController({
       formMode,
       formOpen,
       checklistDraft,
+      noteDraft,
       kpi,
       loading,
       mineOnly,
@@ -721,6 +751,7 @@ export function useKolamTaskManagerController({
       mode,
       mutatingTaskId,
       onAddChecklistItem,
+      onAddNote,
       onChangeForm,
       onCloseForm,
       onCreateNew,
