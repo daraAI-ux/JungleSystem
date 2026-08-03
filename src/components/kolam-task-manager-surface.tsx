@@ -107,7 +107,10 @@ export function KolamTaskManagerSurface({
         />
       ) : null}
       {controller.mode === 'recurring' ? (
-        <KolamTaskRecurringPanel controller={controller} />
+        <KolamTaskRecurringPanel
+          controller={controller}
+          onRouteChange={onRouteChange}
+        />
       ) : controller.mode === 'list' ? (
         <KolamTaskManagerList
           controller={controller}
@@ -859,8 +862,10 @@ function KolamTaskRow({
 
 function KolamTaskRecurringPanel({
   controller,
+  onRouteChange,
 }: {
   controller: KolamTaskManagerController;
+  onRouteChange?: (route: string) => void;
 }) {
   const scheduleRows = [
     ...controller.recurringOccurrences.map(row => ({
@@ -1002,6 +1007,11 @@ function KolamTaskRecurringPanel({
             <Pressable
               accessibilityRole="button"
               key={row.id}
+              onPress={() => {
+                if (row.taskId) {
+                  onRouteChange?.(`/task-manager/${row.taskId}`);
+                }
+              }}
               style={styles.timelineRow}
             >
               <View style={styles.titleRow}>

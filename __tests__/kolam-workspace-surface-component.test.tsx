@@ -697,6 +697,7 @@ describe('KolamWorkspaceSurface', () => {
 
   it('renders the native Task Manager recurring tab', async () => {
     let renderer: ReactTestRenderer.ReactTestRenderer;
+    const onRouteChange = jest.fn();
     const baseItem = getKolamNavigationItemByRoute('/task-manager');
     const recurringItem = baseItem
       ? {
@@ -717,6 +718,7 @@ describe('KolamWorkspaceSurface', () => {
               {...buildSurfaceProps({
                 activeModule: 'kolam',
                 activeNavigationItem: recurringItem,
+                onDashboardRoute: onRouteChange,
               })}
             />
           </View>
@@ -744,6 +746,25 @@ describe('KolamWorkspaceSurface', () => {
         accessibilityLabel: 'Bulk enrollment',
       }).length,
     ).toBeGreaterThan(0);
+
+    const occurrenceRow = renderer!.root.findAll(
+      node =>
+        node.props.accessibilityRole === 'button' &&
+        node
+          .findAllByType(Text)
+          .flatMap(child => flattenText(child.props.children))
+          .includes('Cek suhu'),
+    );
+
+    if (!occurrenceRow[0]) {
+      throw new Error('Task recurring occurrence row is missing.');
+    }
+
+    await ReactTestRenderer.act(async () => {
+      occurrenceRow[0].props.onPress();
+    });
+
+    expect(onRouteChange).toHaveBeenCalledWith('/task-manager/task-1');
   });
 
   it('renders the native Task Manager categories settings route', async () => {
