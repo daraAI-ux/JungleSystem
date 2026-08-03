@@ -52,9 +52,14 @@ import {KolamDashboardMetricSparkline} from './kolam-dashboard-metric-sparkline'
 import {KolamDropdownSelect} from './kolam-dropdown-select';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamFormTextField} from './kolam-form-text-field';
+import {KolamHtmlContent} from './kolam-html-content';
 import {KolamRemoteImage} from './kolam-remote-image';
 import {KolamStatusBadge} from './kolam-status-badge';
 import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
+import {
+  KolamTipTapExclusiveField,
+  KolamTipTapExclusiveGroup,
+} from './kolam-tiptap-exclusive-host';
 import {KolamToggleRow} from './kolam-toggle-row';
 
 type EnclosureDetailTab =
@@ -1633,6 +1638,8 @@ function EnclosureSaleListingOperation({
   );
 }
 
+const ENCLOSURE_COMMENT_COMPOSE_FIELD = 'compose';
+
 function EnclosureCommentsOperation({
   controller,
 }: {
@@ -1640,45 +1647,53 @@ function EnclosureCommentsOperation({
 }) {
   const [comment, setComment] = React.useState('');
   const comments = controller.enclosureComments ?? [];
+  const canSend = Boolean(stripHtmlText(comment));
+
   return (
     <DetailSection title="Komentar">
-      <View style={styles.operationGrid}>
-        <KolamFormTextField
-          multiline
-          onChangeText={setComment}
-          placeholder="Komentar baru"
-          style={[styles.operationInput, styles.operationInputMultiline]}
-          value={comment}
-        />
-        <KolamButton
-          disabled={controller.operationLoading || !comment.trim()}
-          label="Kirim"
-          onPress={() =>
-            controller.onCreateComment(comment.trim()).then(() => setComment(''))
-          }
-          style={styles.toolbarButton}
-        />
-        <KolamButton
-          disabled={controller.operationLoading}
-          label="Muat ulang"
-          onPress={() => void controller.onRefreshComments()}
-          style={styles.toolbarButton}
-        />
-      </View>
-      {comments.length ? (
-        <View style={styles.commentThread}>
-          {comments.map(item => (
-            <EnclosureCommentItem
-              comment={item}
-              controller={controller}
-              depth={0}
-              key={item.id}
+      <Text style={styles.sectionMeta}>
+        Catatan tim terkait enclosure ini
+      </Text>
+      <KolamTipTapExclusiveGroup initialFieldId={ENCLOSURE_COMMENT_COMPOSE_FIELD}>
+        <View style={styles.commentComposer}>
+          <KolamTipTapExclusiveField
+            fieldId={ENCLOSURE_COMMENT_COMPOSE_FIELD}
+            onChangeText={setComment}
+            placeholder="Tulis komentar…"
+            value={comment}
+          />
+          <View style={styles.detailActions}>
+            <KolamButton
+              disabled={controller.operationLoading || !canSend}
+              label="Kirim"
+              onPress={() =>
+                void controller.onCreateComment(comment).then(() => setComment(''))
+              }
+              style={styles.toolbarButton}
             />
-          ))}
+            <KolamButton
+              disabled={controller.operationLoading}
+              label="Muat ulang"
+              onPress={() => void controller.onRefreshComments()}
+              style={styles.toolbarButton}
+            />
+          </View>
         </View>
-      ) : (
-        <Text style={styles.mutedText}>Belum ada komentar.</Text>
-      )}
+        {comments.length ? (
+          <View style={styles.commentThread}>
+            {comments.map(item => (
+              <EnclosureCommentItem
+                comment={item}
+                controller={controller}
+                depth={0}
+                key={item.id}
+              />
+            ))}
+          </View>
+        ) : (
+          <Text style={styles.mutedText}>Belum ada komentar.</Text>
+        )}
+      </KolamTipTapExclusiveGroup>
     </DetailSection>
   );
 }
@@ -1695,15 +1710,19 @@ function EnclosureCommentItem({
   const [replyOpen, setReplyOpen] = React.useState(false);
   const [editOpen, setEditOpen] = React.useState(false);
   const [replyText, setReplyText] = React.useState('');
-  const [editText, setEditText] = React.useState(stripHtmlText(comment.comment));
+  const [editText, setEditText] = React.useState(comment.comment);
   const author =
     comment.user?.displayName || comment.customer?.name || 'Komentar';
   const likeLabel = comment.likedByMe
     ? `♥ ${comment.totalLikes}`
     : `♡ ${comment.totalLikes}`;
+  const replyFieldId = `reply:${comment.id}`;
+  const editFieldId = `edit:${comment.id}`;
+  const canSendReply = Boolean(stripHtmlText(replyText));
+  const canSaveEdit = Boolean(stripHtmlText(editText));
 
   React.useEffect(() => {
-    setEditText(stripHtmlText(comment.comment));
+    setEditText(comment.comment);
   }, [comment.comment]);
 
   const body = (
@@ -1723,35 +1742,36 @@ function EnclosureCommentItem({
         <Text style={styles.commentEdited}>(diedit)</Text>
       ) : null}
       {editOpen ? (
-        <View style={styles.operationGrid}>
-          <KolamFormTextField
-            multiline
+        <View style={styles.commentComposer}>
+          <KolamTipTapExclusiveField
+            fieldId={editFieldId}
             onChangeText={setEditText}
             placeholder="Ubah komentar…"
-            style={[styles.operationInput, styles.operationInputMultiline]}
             value={editText}
           />
-          <KolamButton
-            disabled={controller.operationLoading || !editText.trim()}
-            label="Simpan"
-            onPress={() =>
-              void controller
-                .onEditComment(comment.id, editText.trim())
-                .then(() => setEditOpen(false))
-            }
-            style={styles.toolbarButton}
-          />
-          <KolamButton
-            label="Batal"
-            onPress={() => {
-              setEditOpen(false);
-              setEditText(stripHtmlText(comment.comment));
-            }}
-            style={styles.toolbarButton}
-          />
+          <View style={styles.detailActions}>
+            <KolamButton
+              disabled={controller.operationLoading || !canSaveEdit}
+              label="Simpan"
+              onPress={() =>
+                void controller
+                  .onEditComment(comment.id, editText)
+                  .then(() => setEditOpen(false))
+              }
+              style={styles.toolbarButton}
+            />
+            <KolamButton
+              label="Batal"
+              onPress={() => {
+                setEditOpen(false);
+                setEditText(comment.comment);
+              }}
+              style={styles.toolbarButton}
+            />
+          </View>
         </View>
       ) : (
-        <Text style={styles.cellText}>{stripHtmlText(comment.comment)}</Text>
+        <KolamHtmlContent html={comment.comment} style={styles.commentHtml} />
       )}
       <View style={styles.detailActions}>
         <KolamButton
@@ -1784,24 +1804,21 @@ function EnclosureCommentItem({
         ) : null}
       </View>
       {replyOpen ? (
-        <View style={styles.operationGrid}>
-          <KolamFormTextField
-            multiline
+        <View style={styles.commentComposer}>
+          <KolamTipTapExclusiveField
+            fieldId={replyFieldId}
             onChangeText={setReplyText}
             placeholder="Tulis balasan…"
-            style={[styles.operationInput, styles.operationInputMultiline]}
             value={replyText}
           />
           <KolamButton
-            disabled={controller.operationLoading || !replyText.trim()}
+            disabled={controller.operationLoading || !canSendReply}
             label="Kirim balasan"
             onPress={() =>
-              void controller
-                .onReplyComment(comment.id, replyText.trim())
-                .then(() => {
-                  setReplyText('');
-                  setReplyOpen(false);
-                })
+              void controller.onReplyComment(comment.id, replyText).then(() => {
+                setReplyText('');
+                setReplyOpen(false);
+              })
             }
             style={styles.toolbarButton}
           />
@@ -3427,6 +3444,12 @@ const styles = StyleSheet.create({
   },
   commentThread: {
     gap: 10,
+  },
+  commentComposer: {
+    gap: 10,
+  },
+  commentHtml: {
+    marginTop: 2,
   },
   commentCard: {
     backgroundColor: V.colors.secondary,

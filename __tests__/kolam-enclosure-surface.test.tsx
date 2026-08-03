@@ -32,6 +32,31 @@ jest.mock('../src/components/kolam-barcode-print-dialog', () => ({
   KolamBarcodePrintDialog: () => null,
 }));
 
+jest.mock('../src/components/kolam-tiptap-rich-text-editor', () => {
+  const ReactNative = require('react-native');
+  return {
+    KolamTipTapRichTextEditor: ({
+      placeholder,
+      value,
+    }: {
+      placeholder?: string;
+      value: string;
+    }) => (
+      <ReactNative.Text>{`editor:${placeholder ?? ''}:${value}`}</ReactNative.Text>
+    ),
+  };
+});
+
+jest.mock('../src/components/kolam-html-content', () => {
+  const ReactNative = require('react-native');
+  return {
+    containsHtmlMarkup: (value: string) => /<[^>]+>/.test(value),
+    KolamHtmlContent: ({html}: {html?: string | null}) => (
+      <ReactNative.Text>{html ?? ''}</ReactNative.Text>
+    ),
+  };
+});
+
 jest.mock('../src/services/kolam-species-api', () => ({
   getKolamSpeciesList: jest.fn().mockResolvedValue({data: [], pagination: {}}),
   getKolamSpeciesTaxonomyProduction: jest.fn().mockResolvedValue({
@@ -432,6 +457,12 @@ describe('Kolam enclosure surface', () => {
     expect(root.findAllByProps({children: 'Ukuran'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'Jual unit kandang'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'Komentar'}).length).toBeGreaterThan(0);
+    expect(
+      root.findAllByProps({children: 'Catatan tim terkait enclosure ini'}).length,
+    ).toBeGreaterThan(0);
+    expect(
+      root.findAllByProps({children: 'editor:Tulis komentar…:'}).length,
+    ).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'Belum ada komentar.'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'Informasi enclosure'}).length).toBe(0);
     expect(root.findAllByProps({label: 'Cetak barcode'}).length).toBeGreaterThan(0);
