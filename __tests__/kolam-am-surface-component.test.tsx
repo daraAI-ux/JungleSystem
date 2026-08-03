@@ -1492,7 +1492,7 @@ describe('KolamAmSurface', () => {
     jest.mocked(getAmDeviceServiceLogs).mockResolvedValue({
       logs: [
         {ts: '2026-01-01T00:00:00.000Z', level: 'info', message: 'OTP_REQUIRED'},
-        {ts: '2026-01-01T00:00:01.000Z', level: 'info', message: 'QR_LOGIN {"qrcodeId":"qr-1","status":"WAITING"}'},
+        {ts: '2026-01-01T00:00:01.000Z', level: 'info', message: '{"event":"qr_code","data":{"qrcodeId":"qr-1","status":"WAITING"}}'},
       ],
       processRunning: true,
     });
@@ -1538,6 +1538,72 @@ describe('KolamAmSurface', () => {
 
     expect(sendAmDeviceServiceInput).toHaveBeenCalledWith('device-otp', 'otp', '123456');
     expect(getAmDeviceServices).toHaveBeenCalledWith('device-otp');
+  });
+
+  it('renders nested QR base64 events from AM worker logs', async () => {
+    jest.mocked(getAmServiceAccounts).mockResolvedValue({
+      data: [
+        {
+          _id: 'service-qr-base64',
+          platform: 'tiktok',
+          label: 'TikTok QR',
+          deviceId: {
+            _id: 'device-qr-base64',
+            name: 'Browser QR',
+            connectionType: 'browser',
+            tcpAddress: null,
+            udid: null,
+          },
+          status: 'active',
+          credentials: {},
+          meta: {},
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 1, limit: 1},
+    });
+    jest.mocked(getAmDeviceServiceLogs).mockResolvedValue({
+      logs: [
+        {
+          ts: '2026-01-01T00:00:01.000Z',
+          level: 'info',
+          message: '{"event":"qr_code","data":{"qrcodeId":"qr-base64","qrcodeBase64":"data:image/png;base64,abc123","status":"WAITING"}}',
+        },
+      ],
+      processRunning: true,
+    });
+    jest.mocked(getAmDeviceServices).mockResolvedValue([
+      {
+        serviceAccountId: 'service-qr-base64',
+        label: 'TikTok QR',
+        platform: 'tiktok',
+        accountNumber: '',
+        serviceStatus: 'active',
+        taskStatus: 'running',
+        processRunning: true,
+        isBanking: false,
+      },
+    ]);
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await updateAmRoute(renderer!, 'services');
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Service TikTok QR'}).props.onPress();
+    });
+
+    expect(
+      renderer!.root.findByProps({accessibilityLabel: 'AM Service QR Image service-qr-base64'}).props.source,
+    ).toEqual({
+      uri: 'data:image/png;base64,abc123',
+    });
   });
 
   it('sends password-required runtime input through the AM BE otp command channel', async () => {

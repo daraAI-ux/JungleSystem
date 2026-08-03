@@ -6808,11 +6808,17 @@ function getQrLoginSignal(logs: AmDeviceServiceLog[]) {
     if (jsonStart >= 0) {
       try {
         const parsed = JSON.parse(message.slice(jsonStart)) as {
+          data?: {
+            qrcodeBase64?: string;
+            qrcodeId?: string;
+            status?: string;
+          };
           qrcodeBase64?: string;
           qrcodeId?: string;
           status?: string;
         };
-        if (parsed.qrcodeBase64 || parsed.qrcodeId) return parsed;
+        const qrData = parsed.data ?? parsed;
+        if (qrData.qrcodeBase64 || qrData.qrcodeId) return qrData;
       } catch {
         // Fall through to pattern extraction below.
       }
