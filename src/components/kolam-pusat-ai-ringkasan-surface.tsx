@@ -15,6 +15,8 @@ import {
   isKolamDaraJobActive,
   KOLAM_DARA_JOBS_MODULE_OPTIONS,
   KOLAM_DARA_JOBS_STATUS_OPTIONS,
+  KOLAM_PUSAT_AI_PROSES_EMPTY_COPY,
+  KOLAM_PUSAT_AI_PROSES_HELPER_COPY,
   type KolamDaraAsyncJob,
 } from '../domain/kolam-pusat-ai-jobs';
 import {isTopNavAdminRole} from '../domain/top-nav';
@@ -47,7 +49,9 @@ export function KolamPusatAiRingkasanSurface({
   const hubTabs = useMemo(() => filterKolamPusatAiHubTabs(isAdmin), [isAdmin]);
   const selectedTab = resolveSelectedHubTab(route, isAdmin);
   const ringkasanController = useKolamPusatAiRingkasanController(route);
-  const prosesController = useKolamPusatAiProsesController(route);
+  const prosesController = useKolamPusatAiProsesController(route, {
+    canNormalize: isAdmin,
+  });
 
   return (
     <View style={styles.surface}>
@@ -99,71 +103,116 @@ function KolamPusatAiProsesBody({
 }) {
   return (
     <View style={styles.proses}>
-      <View style={kolamTableToolbarStyles.shell}>
-        <View style={kolamTableToolbarStyles.row}>
-          <View style={kolamTableToolbarStyles.filters}>
-            <KolamDropdownSelect
-              accessibilityLabel="Filter modul"
-              label="Modul"
-              onChange={value =>
-                controller.onSetModuleFilter(
-                  value as typeof controller.moduleFilter,
-                )
-              }
-              options={KOLAM_DARA_JOBS_MODULE_OPTIONS}
-              showLabelInTrigger={false}
-              value={controller.moduleFilter}
-            />
-            <KolamDropdownSelect
-              accessibilityLabel="Filter status"
-              label="Status"
-              onChange={value =>
-                controller.onSetStatusFilter(
-                  value as typeof controller.statusFilter,
-                )
-              }
-              options={KOLAM_DARA_JOBS_STATUS_OPTIONS}
-              showLabelInTrigger={false}
-              value={controller.statusFilter}
-            />
-          </View>
-          <View style={kolamTableToolbarStyles.actions}>
-            <KolamButton
-              disabled={controller.loading}
-              label={controller.loading ? 'Memuat…' : 'Refresh'}
-              onPress={() => {
-                void controller.onRefresh();
-              }}
-            />
-          </View>
+      <View style={styles.helperCard}>
+        <Text style={styles.helperText}>{KOLAM_PUSAT_AI_PROSES_HELPER_COPY}</Text>
+      </View>
+
+      <View style={styles.prosesActions}>
+        <KolamButton
+          disabled={controller.loading}
+          intent="outline"
+          label="Refresh"
+          onPress={() => {
+            void controller.onRefresh();
+          }}
+        />
+        {controller.canNormalize ? (
+          <KolamButton
+            disabled={controller.normalizeBusy}
+            intent="outline"
+            label={
+              controller.normalizeBusy
+                ? 'Memperbaiki…'
+                : 'Perbaiki tipe SEO lama'
+            }
+            onPress={() => {
+              void controller.onNormalizeSeo();
+            }}
+          />
+        ) : null}
+      </View>
+
+      {controller.notice ? (
+        <Text style={styles.noticeText}>{controller.notice}</Text>
+      ) : null}
+      {controller.error ? (
+        <Text style={styles.noticeText}>{controller.error}</Text>
+      ) : null}
+
+      <View style={styles.filterCard}>
+        <View style={styles.filterField}>
+          <Text style={styles.filterLabel}>Modul</Text>
+          <KolamDropdownSelect
+            accessibilityLabel="Filter modul"
+            label="Modul"
+            onChange={value =>
+              controller.onSetModuleFilter(
+                value as typeof controller.moduleFilter,
+              )
+            }
+            options={KOLAM_DARA_JOBS_MODULE_OPTIONS}
+            showLabelInTrigger={false}
+            value={controller.moduleFilter}
+          />
+        </View>
+        <View style={styles.filterField}>
+          <Text style={styles.filterLabel}>Status</Text>
+          <KolamDropdownSelect
+            accessibilityLabel="Filter status"
+            label="Status"
+            onChange={value =>
+              controller.onSetStatusFilter(
+                value as typeof controller.statusFilter,
+              )
+            }
+            options={KOLAM_DARA_JOBS_STATUS_OPTIONS}
+            showLabelInTrigger={false}
+            value={controller.statusFilter}
+          />
         </View>
       </View>
 
-      {controller.error && controller.jobs.length === 0 ? (
-        <KolamEmptyState message={controller.error} title="Gagal memuat" />
-      ) : null}
+      {controller.loading ? (
+        <Text style={styles.loadingText}>Memuat…</Text>
+      ) : (
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          style={styles.scroll}>
+          <View style={styles.jobsTable}>
+            <View style={styles.jobsHeader}>
+              <Text style={[styles.jobsHeaderCell, styles.colProses]}>
+                Proses
+              </Text>
+              <Text style={[styles.jobsHeaderCell, styles.colModul]}>Modul</Text>
+              <Text style={[styles.jobsHeaderCell, styles.colStatus]}>
+                Status
+              </Text>
+              <Text style={[styles.jobsHeaderCell, styles.colProgress]}>
+                Progress
+              </Text>
+              <Text style={[styles.jobsHeaderCell, styles.colAksi]}>Aksi</Text>
+            </View>
 
-      {!controller.loading &&
-      !controller.error &&
-      controller.jobs.length === 0 ? (
-        <KolamEmptyState title="Belum ada proses dalam 72 jam terakhir." />
-      ) : null}
-
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        style={styles.scroll}>
-        {controller.jobs.map(job => (
-          <ProsesJobRow
-            job={job}
-            key={job.id}
-            onDismiss={() => controller.onDismissJob(job.id)}
-            onPoll={() => {
-              void controller.onPollJob(job.id);
-            }}
-            polling={controller.pollingJobId === job.id}
-          />
-        ))}
-      </ScrollView>
+            {controller.jobs.length === 0 ? (
+              <Text style={styles.emptyTableText}>
+                {KOLAM_PUSAT_AI_PROSES_EMPTY_COPY}
+              </Text>
+            ) : (
+              controller.jobs.map(job => (
+                <ProsesJobRow
+                  job={job}
+                  key={job.id}
+                  onDismiss={() => controller.onDismissJob(job.id)}
+                  onPoll={() => {
+                    void controller.onPollJob(job.id);
+                  }}
+                  polling={controller.pollingJobId === job.id}
+                />
+              ))
+            )}
+          </View>
+        </ScrollView>
+      )}
     </View>
   );
 }
@@ -183,34 +232,41 @@ function ProsesJobRow({
   const percent = getKolamDaraJobProgressPercent(job);
 
   return (
-    <View style={styles.jobRow}>
-      <View style={styles.jobMain}>
+    <View style={styles.jobsRow}>
+      <View style={[styles.jobsCell, styles.colProses]}>
         <Text style={styles.jobLabel}>{job.label}</Text>
         {job.progressMessage ? (
           <Text numberOfLines={1} style={styles.jobMessage}>
             {job.progressMessage}
           </Text>
         ) : null}
-        <View style={styles.jobMeta}>
-          <KolamStatusBadge
-            intent="muted"
-            label={formatKolamDaraJobModuleLabel(job.module)}
-          />
-          <KolamStatusBadge
-            intent={getKolamDaraJobStatusIntent(job.status)}
-            label={job.status}
-          />
-          <Text style={styles.jobProgress}>
-            {percent}% · {formatKolamDaraJobProgressLabel(job)}
-          </Text>
-        </View>
       </View>
-      <View style={styles.jobActions}>
+      <View style={[styles.jobsCell, styles.colModul]}>
+        <KolamStatusBadge
+          intent="secondary"
+          label={formatKolamDaraJobModuleLabel(job.module)}
+        />
+      </View>
+      <View style={[styles.jobsCell, styles.colStatus]}>
+        <KolamStatusBadge
+          intent={getKolamDaraJobStatusIntent(job.status)}
+          label={job.status}
+        />
+      </View>
+      <View style={[styles.jobsCell, styles.colProgress]}>
+        <View style={styles.progressTrack}>
+          <View style={[styles.progressFill, {width: `${percent}%`}]} />
+        </View>
+        <Text style={styles.jobProgress}>
+          {formatKolamDaraJobProgressLabel(job)}
+        </Text>
+      </View>
+      <View style={[styles.jobsCell, styles.colAksi, styles.jobActions]}>
         {active ? (
           <KolamButton
             disabled={polling}
             intent="outline"
-            label={polling ? '…' : 'Update'}
+            label="Update"
             onPress={onPoll}
           />
         ) : null}
@@ -412,7 +468,58 @@ const styles = StyleSheet.create({
   },
   proses: {
     flex: 1,
-    gap: 12,
+    gap: 16,
+  },
+  helperCard: {
+    backgroundColor: V.colors.primarySoft,
+    borderColor: V.colors.primary,
+    borderRadius: V.radius.lg,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  helperText: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  prosesActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  noticeText: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+  },
+  filterCard: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: V.radius.lg,
+    borderWidth: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+    padding: 16,
+  },
+  filterField: {
+    gap: 4,
+    minWidth: 160,
+  },
+  filterLabel: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  loadingText: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    paddingHorizontal: 8,
   },
   scroll: {
     flex: 1,
@@ -421,19 +528,63 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingBottom: 24,
   },
-  jobRow: {
+  jobsTable: {
     backgroundColor: V.colors.bg,
     borderColor: V.colors.border,
     borderRadius: V.radius.lg,
     borderWidth: 1,
-    flexDirection: 'row',
-    gap: 12,
-    padding: 12,
+    overflow: 'hidden',
   },
-  jobMain: {
-    flex: 1,
-    gap: 4,
+  jobsHeader: {
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  jobsHeaderCell: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  jobsRow: {
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  jobsCell: {
+    justifyContent: 'center',
     minWidth: 0,
+  },
+  colProses: {
+    flex: 2.2,
+  },
+  colModul: {
+    flex: 0.8,
+  },
+  colStatus: {
+    flex: 0.9,
+  },
+  colProgress: {
+    flex: 1.2,
+    gap: 4,
+    minWidth: 120,
+  },
+  colAksi: {
+    flex: 1,
+    minWidth: 128,
+  },
+  emptyTableText: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    paddingVertical: 40,
+    textAlign: 'center',
   },
   jobLabel: {
     color: V.colors.fg,
@@ -445,13 +596,19 @@ const styles = StyleSheet.create({
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 12,
+    fontWeight: '400',
+    marginTop: 2,
   },
-  jobMeta: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginTop: 4,
+  progressTrack: {
+    backgroundColor: V.colors.muted,
+    borderRadius: 999,
+    height: 8,
+    overflow: 'hidden',
+    width: '100%',
+  },
+  progressFill: {
+    backgroundColor: V.colors.primary,
+    height: '100%',
   },
   jobProgress: {
     color: V.colors.mutedFg,
@@ -460,8 +617,8 @@ const styles = StyleSheet.create({
   },
   jobActions: {
     flexDirection: 'row',
-    flexShrink: 0,
-    gap: 6,
+    flexWrap: 'wrap',
+    gap: 4,
   },
   modules: {
     flexDirection: 'row',

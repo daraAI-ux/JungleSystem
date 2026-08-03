@@ -1,9 +1,9 @@
+import type {KolamStatusBadgeIntent} from '../components/kolam-status-badge-types';
+
 /**
  * DARA async jobs — Pusat AI tab Proses.
- * SoT: FE `api/dara-jobs` + `JobsHistoryPanel` + `dara-job-labels`.
+ * SoT: FE `JobsHistoryPanel` + `api/dara-jobs` + `dara-job-labels` + `dara-job-storage`.
  */
-
-import type {KolamStatusBadgeIntent} from '../components/kolam-status-badge-types';
 
 export type KolamDaraJobModule = 'seo' | 'market-intel' | 'pricing';
 
@@ -34,6 +34,7 @@ export type KolamDaraJobsStatusFilter =
   | 'completed'
   | 'failed';
 
+/** FE `MODULE_OPTS` — JobsHistoryPanel. */
 export const KOLAM_DARA_JOBS_MODULE_OPTIONS: Array<{
   label: string;
   value: KolamDaraJobsModuleFilter;
@@ -43,6 +44,7 @@ export const KOLAM_DARA_JOBS_MODULE_OPTIONS: Array<{
   {label: 'DARA Market Intel', value: 'market-intel'},
 ];
 
+/** FE `STATUS_OPTS` — JobsHistoryPanel. */
 export const KOLAM_DARA_JOBS_STATUS_OPTIONS: Array<{
   label: string;
   value: KolamDaraJobsStatusFilter;
@@ -52,6 +54,16 @@ export const KOLAM_DARA_JOBS_STATUS_OPTIONS: Array<{
   {label: 'Selesai', value: 'completed'},
   {label: 'Gagal', value: 'failed'},
 ];
+
+/** FE helper card above JobsHistoryPanel on Proses tab. */
+export const KOLAM_PUSAT_AI_PROSES_HELPER_COPY =
+  'Progress bar hanya tampil saat proses berjalan. «Tutup» menyembunyikan job selesai/gagal dari daftar ini (72 jam terakhir).';
+
+export const KOLAM_PUSAT_AI_PROSES_EMPTY_COPY =
+  'Belum ada proses dalam 72 jam terakhir.';
+
+const DARA_DISMISSED_JOB_IDS_KEY = 'dara-dismissed-job-ids-v1';
+const dismissedIdsMemory = new Set<string>();
 
 const DARA_JOB_LABELS: Record<string, string> = {
   'seo.bulk_products': 'Audit bulk produk',
@@ -77,16 +89,12 @@ export function labelForKolamDaraJobType(jobType: string, fallback?: string) {
   return DARA_JOB_LABELS[jobType] || fallback || jobType;
 }
 
+/** FE badge: seo → SEO, otherwise Market. */
 export function formatKolamDaraJobModuleLabel(module: string) {
-  if (module === 'seo') {
-    return 'SEO';
-  }
-  if (module === 'pricing') {
-    return 'Pricing';
-  }
-  return 'Market';
+  return module === 'seo' ? 'SEO' : 'Market';
 }
 
+/** FE `statusIntent`. */
 export function getKolamDaraJobStatusIntent(
   status: string,
 ): KolamStatusBadgeIntent {
@@ -99,9 +107,10 @@ export function getKolamDaraJobStatusIntent(
   if (status === 'running') {
     return 'warning';
   }
-  return 'muted';
+  return 'secondary';
 }
 
+/** FE `pct2`. */
 export function getKolamDaraJobProgressPercent(job: KolamDaraAsyncJob) {
   if (job.status === 'completed') {
     return 100;
@@ -137,8 +146,48 @@ export function filterKolamDaraJobs(
   if (statusFilter === 'failed') {
     return jobs.filter(job => job.status === 'failed');
   }
-  // `active` is applied server-side via query; keep client pass-through.
   return jobs;
+}
+
+/** FE `isJobDismissed` / `dismissTrackedJob` (localStorage key parity). */
+export function readKolamDaraDismissedJobIds(): Set<string> {
+  try {
+    const storage = (globalThis as {localStorage?: Storage}).localStorage;
+    const raw = storage?.getItem(DARA_DISMISSED_JOB_IDS_KEY);
+    if (!raw) {
+      return new Set(dismissedIdsMemory);
+    }
+    const parsed = JSON.parse(raw) as unknown;
+    const fromStorage = new Set(
+      Array.isArray(parsed)
+        ? parsed.filter((id): id is string => typeof id === 'string')
+        : [],
+    );
+    for (const id of dismissedIdsMemory) {
+      fromStorage.add(id);
+    }
+    return fromStorage;
+  } catch {
+    return new Set(dismissedIdsMemory);
+  }
+}
+
+export function isKolamDaraJobDismissed(jobId: string) {
+  return readKolamDaraDismissedJobIds().has(jobId);
+}
+
+export function dismissKolamDaraJob(jobId: string) {
+  const dismissed = readKolamDaraDismissedJobIds();
+  dismissed.add(jobId);
+  dismissedIdsMemory.add(jobId);
+  try {
+    (globalThis as {localStorage?: Storage}).localStorage?.setItem(
+      DARA_DISMISSED_JOB_IDS_KEY,
+      JSON.stringify([...dismissed].slice(0, 200)),
+    );
+  } catch {
+    // Memory set is enough for the current process.
+  }
 }
 
 export function normalizeKolamDaraJob(payload: unknown): KolamDaraAsyncJob | null {
@@ -187,6 +236,16 @@ export function normalizeKolamDaraJobList(payload: unknown): KolamDaraAsyncJob[]
   return list
     .map(item => normalizeKolamDaraJob(item))
     .filter((item): item is KolamDaraAsyncJob => item != null);
+}
+
+export function normalizeKolamDaraSeoNormalizeResult(payload: unknown): {
+  updated: number;
+} {
+  const root = asRecord(payload);
+  const data = asRecord(
+    root.data && typeof root.data === 'object' ? root.data : root,
+  );
+  return {updated: toFiniteNumber(data.updated ?? root.updated)};
 }
 
 function asRecord(value: unknown): Record<string, unknown> {

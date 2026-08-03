@@ -12,6 +12,7 @@ jest.mock('../src/services/kolam-dara-marketing-hub-api', () => ({
 jest.mock('../src/services/kolam-dara-jobs-api', () => ({
   fetchKolamDaraJobsList: jest.fn(),
   fetchKolamDaraJob: jest.fn(),
+  normalizeKolamDaraSeoTargetTypes: jest.fn(),
 }));
 
 jest.mock('../src/context/kolam-app-contexts', () => ({
@@ -163,9 +164,20 @@ describe('KolamPusatAiRingkasanSurface', () => {
 
     const text = renderText(renderer!).join(' ');
     expect(text).not.toContain('Belum tersedia');
+    expect(text).toContain(
+      'Progress bar hanya tampil saat proses berjalan',
+    );
+    expect(text).toContain('Proses');
+    expect(text).toContain('Modul');
+    expect(text).toContain('Status');
+    expect(text).toContain('Progress');
+    expect(text).toContain('Aksi');
     expect(text).toContain('Audit bulk produk');
+    expect(text).toContain('SEO');
+    expect(text).toContain('running');
     expect(text).toContain('Update');
     expect(text).toContain('Tutup');
+    expect(text).toContain('Perbaiki tipe SEO lama');
     expect(fetchJobsMock).toHaveBeenCalled();
   });
 

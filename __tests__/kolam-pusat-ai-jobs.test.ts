@@ -40,6 +40,8 @@ describe('kolam-pusat-ai-jobs domain', () => {
       'Scan market intelligence',
     );
     expect(formatKolamDaraJobModuleLabel('market-intel')).toBe('Market');
+    expect(formatKolamDaraJobModuleLabel('pricing')).toBe('Market');
+    expect(formatKolamDaraJobModuleLabel('seo')).toBe('SEO');
   });
 
   it('computes progress and filters completed/failed client-side', () => {

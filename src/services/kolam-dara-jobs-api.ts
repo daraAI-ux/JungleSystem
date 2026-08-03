@@ -1,6 +1,7 @@
 import {appConfig} from '../config/app';
 import {
   normalizeKolamDaraJobList,
+  normalizeKolamDaraSeoNormalizeResult,
   type KolamDaraAsyncJob,
   type KolamDaraJobModule,
 } from '../domain/kolam-pusat-ai-jobs';
@@ -40,6 +41,20 @@ export async function fetchKolamDaraJob(
     throw new Error('Job tidak ditemukan');
   }
   return jobs[0];
+}
+
+/** POST /dara-seo/suggestions/normalize-target-types — FE `normalizeSeoTargetTypes`. */
+export async function normalizeKolamDaraSeoTargetTypes(
+  dryRun = false,
+): Promise<{updated: number}> {
+  const payload = await kolamRequest<unknown>(
+    '/dara-seo/suggestions/normalize-target-types',
+    {
+      method: 'POST',
+      body: {dryRun},
+    },
+  );
+  return normalizeKolamDaraSeoNormalizeResult(payload);
 }
 
 function unwrapJob(payload: unknown): unknown {
