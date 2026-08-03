@@ -3759,6 +3759,37 @@ describe('KolamAmSurface', () => {
     expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM User Delete user-1'})).toHaveLength(0);
   });
 
+  it('blocks direct Users route before fetching list data without user read permission', async () => {
+    jest.mocked(getAmCurrentUser).mockResolvedValue({
+      _id: 'user-current',
+      fullName: 'No Read',
+      username: 'no-read',
+      role: {
+        _id: 'role-no-read',
+        name: 'Operator',
+        permissions: [],
+        description: 'No read access',
+      },
+    });
+    jest.mocked(getAmUsers).mockClear();
+    jest.mocked(getAmRoles).mockClear();
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await updateAmRoute(renderer!, 'admin/users');
+
+    const text = renderText(renderer!).join(' ');
+    expect(text).toContain('Users tidak tersedia');
+    expect(getAmUsers).not.toHaveBeenCalled();
+    expect(getAmRoles).not.toHaveBeenCalled();
+  });
+
   it('keeps Super Admin role assignment available only to Super Admin users', async () => {
     jest.mocked(getAmCurrentUser).mockResolvedValue({
       _id: 'user-current',

@@ -5280,7 +5280,19 @@ function AmUsersPage() {
   const fetchUsers = React.useCallback(async () => {
     try {
       setIsLoading(true);
-      const [userResponse, roleResponse, currentUserResponse] = await Promise.all([
+      const currentUserResponse = await getAmCurrentUser();
+      setCurrentUser(currentUserResponse);
+
+      if (!hasAmPermission(currentUserResponse, 'user:read')) {
+        setUsers([]);
+        setRoles([]);
+        setTotal(0);
+        setLimit(AM_USER_PAGE_LIMIT);
+        setError(null);
+        return;
+      }
+
+      const [userResponse, roleResponse] = await Promise.all([
         getAmUsers({
           page,
           limit: AM_USER_PAGE_LIMIT,
@@ -5288,13 +5300,11 @@ function AmUsersPage() {
           role: roleFilter === 'all' ? undefined : roleFilter,
         }),
         getAmRoles(),
-        getAmCurrentUser(),
       ]);
       setUsers(userResponse.data);
       setTotal(userResponse.meta.total);
       setLimit(userResponse.meta.limit || AM_USER_PAGE_LIMIT);
       setRoles(roleResponse);
-      setCurrentUser(currentUserResponse);
       setError(null);
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : 'Gagal memuat users AM.');
@@ -5446,6 +5456,16 @@ function AmUsersPage() {
     });
     return labels;
   }, [roles]);
+
+  if (currentUser && !hasAmPermission(currentUser, 'user:read')) {
+    return (
+      <View style={styles.pageStack}>
+        <View style={styles.emptyPanel}>
+          <Text style={styles.panelTitle}>Users tidak tersedia</Text>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.pageStack}>
