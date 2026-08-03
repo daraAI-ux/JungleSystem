@@ -227,20 +227,65 @@ function KolamTaskManagerDetail({
       ) : null}
 
       <View style={styles.detailCard}>
-        <Text style={styles.sectionTitle}>Checklist</Text>
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionTitle}>Checklist</Text>
+          {checklistProgress ? (
+            <Text style={styles.metaText}>
+              {checklistProgress.done}/{checklistProgress.total}
+            </Text>
+          ) : null}
+        </View>
         {task.checklist.length ? (
-          task.checklist.map(item => (
+          task.checklist.map((item, index) => (
             <View key={item.id || item.title} style={styles.checklistRow}>
-              <KolamStatusBadge
-                intent={item.done ? 'success' : 'muted'}
+              <KolamButton
+                disabled={controller.mutatingTaskId === `checklist:${task.id}`}
+                intent={item.done ? 'primary' : 'outline'}
                 label={item.done ? 'Selesai' : 'Open'}
+                onPress={() => {
+                  void controller.onToggleChecklistItem(index);
+                }}
               />
               <Text style={styles.cellText}>{item.title}</Text>
+              {getKolamTaskUserDisplayName(item.assignedTo) !== '-' ? (
+                <Text style={styles.metaText}>
+                  {getKolamTaskUserDisplayName(item.assignedTo)}
+                </Text>
+              ) : null}
+              <KolamButton
+                disabled={controller.mutatingTaskId === `checklist:${task.id}`}
+                intent="outline"
+                label="Hapus"
+                onPress={() => {
+                  void controller.onRemoveChecklistItem(index);
+                }}
+              />
             </View>
           ))
         ) : (
           <Text style={styles.metaText}>Kosong</Text>
         )}
+        <View style={styles.checklistAddRow}>
+          <KolamFormTextField
+            onChangeText={controller.onSetChecklistDraft}
+            placeholder="Detail tugas"
+            style={[
+              settingsWebFormStyles.settingsWebFormFieldValue,
+              styles.checklistDraftInput,
+            ]}
+            value={controller.checklistDraft}
+          />
+          <KolamButton
+            disabled={
+              controller.mutatingTaskId === `checklist:${task.id}` ||
+              !controller.checklistDraft.trim()
+            }
+            label="Tambah"
+            onPress={() => {
+              void controller.onAddChecklistItem();
+            }}
+          />
+        </View>
       </View>
 
       <View style={styles.detailCard}>
@@ -1241,11 +1286,28 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     lineHeight: 20,
   },
+  sectionHeaderRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'space-between',
+  },
   checklistRow: {
     alignItems: 'center',
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+  },
+  checklistAddRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  checklistDraftInput: {
+    flex: 1,
+    minWidth: 220,
   },
   timelineRow: {
     borderColor: V.colors.border,

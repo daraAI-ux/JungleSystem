@@ -7,6 +7,7 @@ import {
   normalizeKolamTaskRecurringServiceVisits,
   normalizeKolamTaskRecurringTemplates,
   type KolamTaskManagerCategory,
+  type KolamTaskManagerChecklistItem,
   type KolamTaskManagerListQuery,
   type KolamTaskManagerListResult,
   type KolamTaskManagerPriority,
@@ -169,10 +170,43 @@ export async function updateKolamTaskManagerStatus(
   return normalizeKolamTaskManagerTask(payload);
 }
 
+export async function updateKolamTaskManagerChecklist(
+  taskId: string,
+  checklist: KolamTaskManagerChecklistItem[],
+): Promise<KolamTaskManagerTask> {
+  const payload = await kolamRequest<unknown>(
+    `/task-manager/${encodeURIComponent(taskId)}/checklist`,
+    {
+      method: 'PATCH',
+      body: {
+        checklist: checklist.map((item, index) => ({
+          title: item.title,
+          done: item.done,
+          assignedToId: getTaskRefId(item.assignedTo),
+          sortOrder: item.sortOrder ?? index,
+          doneAt: item.doneAt || null,
+          doneById: getTaskRefId(item.doneBy),
+        })),
+      },
+    },
+  );
+  return normalizeKolamTaskManagerTask(payload);
+}
+
 export async function deleteKolamTaskManagerTask(taskId: string) {
   await kolamRequest<unknown>(`/task-manager/${encodeURIComponent(taskId)}`, {
     method: 'DELETE',
   });
+}
+
+function getTaskRefId(value: unknown) {
+  if (!value) return null;
+  if (typeof value === 'string') return value;
+  if (typeof value === 'object' && value != null && 'id' in value) {
+    const id = (value as { id?: unknown }).id;
+    return typeof id === 'string' ? id : null;
+  }
+  return null;
 }
 
 function normalizeTaskInput(input: Partial<KolamTaskManagerTaskInput>) {

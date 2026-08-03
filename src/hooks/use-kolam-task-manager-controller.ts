@@ -30,6 +30,7 @@ import {
   getKolamTaskRecurringServiceVisits,
   getKolamTaskRecurringTemplates,
   runKolamTaskRecurringTick,
+  updateKolamTaskManagerChecklist,
   updateKolamTaskManagerStatus,
   updateKolamTaskManagerTask,
 } from '../services/kolam-task-manager-api';
@@ -66,6 +67,7 @@ export interface KolamTaskManagerController {
   formError: string | null;
   formMode: 'edit' | 'new';
   formOpen: boolean;
+  checklistDraft: string;
   kpi: KolamTaskManagerKpi;
   loading: boolean;
   mineOnly: boolean;
@@ -88,6 +90,7 @@ export interface KolamTaskManagerController {
   tasks: KolamTaskManagerTask[];
   total: number;
   totalPages: number;
+  onAddChecklistItem: () => Promise<boolean>;
   onChangeForm: (patch: Partial<KolamTaskManagerFormState>) => void;
   onCloseForm: () => void;
   onCreateNew: () => void;
@@ -112,7 +115,10 @@ export interface KolamTaskManagerController {
     task: KolamTaskManagerTask,
     status: KolamTaskManagerStatus,
   ) => Promise<boolean>;
+  onRemoveChecklistItem: (index: number) => Promise<boolean>;
   onSaveForm: () => Promise<boolean>;
+  onSetChecklistDraft: (value: string) => void;
+  onToggleChecklistItem: (index: number) => Promise<boolean>;
   onRunRecurringTick: () => Promise<boolean>;
   onSwitchTab: (tab: 'recurring' | 'tasks') => void;
 }
@@ -161,6 +167,7 @@ export function useKolamTaskManagerController({
   const [form, setForm] = useState<KolamTaskManagerFormState>(() =>
     getDefaultTaskForm(currentUserId),
   );
+  const [checklistDraft, setChecklistDraft] = useState('');
   const [dataSource, setDataSource] =
     useState<KolamTaskManagerDataSource>('idle');
   const [page, setPage] = useState(1);
@@ -549,6 +556,82 @@ export function useKolamTaskManagerController({
     }
   }, [editingTaskId, form, formMode, mode, refreshDetail, refreshList]);
 
+  const persistChecklist = useCallback(
+    async (nextChecklist: KolamTaskManagerTask['checklist']) => {
+      if (!selectedTask) return false;
+      setMutatingTaskId(`checklist:${selectedTask.id}`);
+      setError(null);
+      setStatusMessage(null);
+      try {
+        const updated = await updateKolamTaskManagerChecklist(
+          selectedTask.id,
+          nextChecklist,
+        );
+        setSelectedTask(updated);
+        setStatusMessage('Checklist diperbarui');
+        return true;
+      } catch (mutationError) {
+        setError(getErrorMessage(mutationError));
+        return false;
+      } finally {
+        setMutatingTaskId(null);
+      }
+    },
+    [selectedTask],
+  );
+
+  const onAddChecklistItem = useCallback(async () => {
+    if (!selectedTask) return false;
+    const title = checklistDraft.trim();
+    if (!title) return false;
+    const nextChecklist = [
+      ...selectedTask.checklist,
+      {
+        assignedTo: null,
+        done: false,
+        doneAt: '',
+        doneBy: null,
+        id: '',
+        sortOrder: selectedTask.checklist.length,
+        title,
+      },
+    ];
+    const ok = await persistChecklist(nextChecklist);
+    if (ok) {
+      setChecklistDraft('');
+    }
+    return ok;
+  }, [checklistDraft, persistChecklist, selectedTask]);
+
+  const onToggleChecklistItem = useCallback(
+    async (index: number) => {
+      if (!selectedTask) return false;
+      const nextChecklist = selectedTask.checklist.map((item, itemIndex) =>
+        itemIndex === index
+          ? {
+              ...item,
+              done: !item.done,
+              doneAt: item.done ? '' : item.doneAt,
+              doneBy: item.done ? null : item.doneBy,
+            }
+          : item,
+      );
+      return persistChecklist(nextChecklist);
+    },
+    [persistChecklist, selectedTask],
+  );
+
+  const onRemoveChecklistItem = useCallback(
+    async (index: number) => {
+      if (!selectedTask) return false;
+      const nextChecklist = selectedTask.checklist
+        .filter((_item, itemIndex) => itemIndex !== index)
+        .map((item, itemIndex) => ({ ...item, sortOrder: itemIndex }));
+      return persistChecklist(nextChecklist);
+    },
+    [persistChecklist, selectedTask],
+  );
+
   return useMemo(
     () => ({
       categories,
@@ -561,6 +644,7 @@ export function useKolamTaskManagerController({
       formError,
       formMode,
       formOpen,
+      checklistDraft,
       kpi,
       loading,
       mineOnly,
@@ -583,6 +667,7 @@ export function useKolamTaskManagerController({
       total,
       totalPages,
       selectedTask,
+      onAddChecklistItem,
       onChangeForm,
       onCloseForm,
       onBackToList,
@@ -610,7 +695,10 @@ export function useKolamTaskManagerController({
       onSetStatusFilter: setFilterAndFirstPage(setStatusFilter),
       onSetTaskPriority,
       onSetTaskStatus,
+      onRemoveChecklistItem,
       onSaveForm,
+      onSetChecklistDraft: setChecklistDraft,
+      onToggleChecklistItem,
       onRunRecurringTick,
       onSwitchTab,
     }),
@@ -625,12 +713,14 @@ export function useKolamTaskManagerController({
       formError,
       formMode,
       formOpen,
+      checklistDraft,
       kpi,
       loading,
       mineOnly,
       isTaskAdmin,
       mode,
       mutatingTaskId,
+      onAddChecklistItem,
       onChangeForm,
       onCloseForm,
       onCreateNew,
@@ -640,7 +730,9 @@ export function useKolamTaskManagerController({
       onRunRecurringTick,
       onSetTaskPriority,
       onSetTaskStatus,
+      onRemoveChecklistItem,
       onSaveForm,
+      onToggleChecklistItem,
       onSwitchTab,
       page,
       pageSize,

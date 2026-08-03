@@ -244,6 +244,7 @@ jest.mock('../src/services/kolam-task-manager-api', () => ({
   ),
   getKolamTaskRecurringServiceVisits: jest.fn(() => Promise.resolve([])),
   runKolamTaskRecurringTick: jest.fn(() => Promise.resolve(undefined)),
+  updateKolamTaskManagerChecklist: jest.fn(() => Promise.resolve({})),
   updateKolamTaskManagerStatus: jest.fn(() => Promise.resolve({})),
   updateKolamTaskManagerTask: jest.fn(() => Promise.resolve({})),
 }));
