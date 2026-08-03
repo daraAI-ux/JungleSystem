@@ -551,12 +551,10 @@ function getAmModuleRouteEntry(
   ) {
     moduleRoute = 'hardware';
   } else if (
-    surfaceId === 'marketplace' ||
     normalizedSurfaceRoute.includes('webhook')
   ) {
     moduleRoute = 'webhooks';
   } else if (
-    surfaceId === 'operations' ||
     normalizedSurfaceRoute.includes('mutasi')
   ) {
     moduleRoute = 'mutasi';
@@ -647,4 +645,3 @@ function getSettingsNavigationItem(): KolamNavigationItem {
     route: '/pengaturan',
   };
 }
-

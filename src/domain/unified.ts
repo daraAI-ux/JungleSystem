@@ -3,6 +3,7 @@ import type {
   CatalogItem,
   SaleSummary,
 } from './pos';
+import { AM_ROUTES } from './am-navigation';
 import type {
   KolamPluginConfigKey,
   KolamPluginSettings,
@@ -126,43 +127,15 @@ export function getKolamSurfaceById(
   return surfaces.find(surface => surface.id === surfaceId) ?? null;
 }
 
-export const amSurfaces: UnifiedSurface[] = [
-  {
-    id: 'dashboard',
-    label: 'Dashboard',
-    route: 'am-fe/(dashboard)',
-    description: 'Ringkasan operasi automasi dan aktivitas tim.',
-    sourceRepo: 'E:\\Projects\\da-automation-management',
-  },
-  {
-    id: 'tasks',
-    label: 'Tasks',
-    route: 'am-fe/(dashboard)/tasks / am-be/routes/task',
-    description: 'Task automation, runner, dan kontrol status pekerjaan.',
-    sourceRepo: 'E:\\Projects\\da-automation-management',
-  },
-  {
-    id: 'hardware',
-    label: 'Hardware',
-    route: 'am-fe/(dashboard)/hardware / am-be/routes/device',
-    description: 'Rack, box, device, dan koneksi perangkat automasi.',
-    sourceRepo: 'E:\\Projects\\da-automation-management',
-  },
-  {
-    id: 'marketplace',
-    label: 'Marketplace',
-    route: 'am-be/routes/webhook / platform-sync',
-    description: 'Sinkronisasi marketplace, webhook, dan order ingestion.',
-    sourceRepo: 'E:\\Projects\\da-automation-management',
-  },
-  {
-    id: 'operations',
-    label: 'Operations',
-    route: 'mutasi / services / transactions / activity-log',
-    description: 'Mutasi, service account, transaksi, dan audit aktivitas.',
-    sourceRepo: 'E:\\Projects\\da-automation-management',
-  },
-];
+export const amSurfaces: UnifiedSurface[] = AM_ROUTES.filter(
+  route => route.id !== 'login',
+).map(route => ({
+  id: route.id,
+  label: route.label,
+  route: route.moduleRoute,
+  description: route.description,
+  sourceRepo: 'E:\\Projects\\da-automation-management',
+}));
 
 export function getAmSurfaceById(
   surfaceId: string | undefined,

@@ -48,16 +48,24 @@ describe('unified application registry', () => {
     expect(amSurfaces.map(surface => surface.id)).toEqual([
       'dashboard',
       'tasks',
+      'services',
       'hardware',
-      'marketplace',
-      'operations',
+      'webhooks',
+      'transactions',
+      'mutasi',
+      'users',
+      'activity-log',
+      'settings-account',
     ]);
     expect(getAmSurfaceById('tasks')).toEqual(
       expect.objectContaining({
         label: 'Tasks',
-        route: 'am-fe/(dashboard)/tasks / am-be/routes/task',
+        route: 'tasks',
       }),
     );
+    expect(getAmSurfaceById('marketplace')).toBeNull();
+    expect(getAmSurfaceById('operations')).toBeNull();
+    expect(getAmSurfaceById('login')).toBeNull();
     expect(getAmSurfaceById('missing')).toBeNull();
   });
 

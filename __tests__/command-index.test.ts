@@ -10,12 +10,12 @@ describe('unified command index', () => {
     const commands = getCommandIndex();
 
     expect(getCommandIndexStats(commands)).toEqual({
-      total: 312,
+      total: 317,
       modules: 8,
       moduleRoutes: 33,
       kolamSurfaces: 5,
       navigationRoutes: 250,
-      amRoutes: 5,
+      amRoutes: 10,
       actions: 11,
       pluginRoutes: 0,
     });
@@ -136,8 +136,23 @@ describe('unified command index', () => {
         kind: 'am-route',
         moduleId: 'am',
         area: 'am',
-        route: 'am-fe/(dashboard)/tasks / am-be/routes/task',
+        route: 'tasks',
       }),
+    );
+    expect(commands).toContainEqual(
+      expect.objectContaining({
+        id: 'am-route:services',
+        kind: 'am-route',
+        moduleId: 'am',
+        area: 'am',
+        route: 'services',
+      }),
+    );
+    expect(commands.map(command => command.id)).not.toContain(
+      'am-route:marketplace',
+    );
+    expect(commands.map(command => command.id)).not.toContain(
+      'am-route:operations',
     );
     expect(commands.some(command => command.kind === 'plugin-route')).toBe(false);
   });
