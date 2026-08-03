@@ -22,6 +22,9 @@ import {formatRupiah} from '../lib/money';
 import type {WorkflowStep} from '../lib/workflow';
 import type {CreateCustomerBody} from '../services/pos-api';
 import {KolamButton} from './kolam-button';
+import {KolamDashboardHeaderCopy} from './kolam-dashboard-header-copy';
+import {dashboardHeaderStyles} from './kolam-dashboard-header-styles';
+import {KolamHeaderFrame} from './kolam-header-frame';
 import {KolamInteractionFrame} from './kolam-interaction-frame';
 import {KolamQuantityStepper} from './kolam-quantity-stepper';
 import {KolamRemoteImage} from './kolam-remote-image';
@@ -176,6 +179,13 @@ export function KolamPosFullWindowSurface({
     0,
   );
   const isCatalogView = activeView === 'catalog';
+  const viewCountText = getPosViewCountText({
+    activeType,
+    activeView,
+    customers,
+    filteredCatalog,
+    recentSales,
+  });
   const canOpenPayment = checkout.cart.length > 0 && !!selectedCustomer && hasCashflowSession;
 
   const handleSaveOrder = React.useCallback(() => {
@@ -269,6 +279,21 @@ export function KolamPosFullWindowSurface({
   return (
     <View style={styles.surface}>
       <View style={styles.catalogPane}>
+        <KolamHeaderFrame variant="dashboardHeader" style={styles.posHeader}>
+          <KolamDashboardHeaderCopy
+            eyebrow="POS"
+            title="POS"
+            subtitle={viewCountText}
+          />
+          <View style={dashboardHeaderStyles.headerControls}>
+            <KolamButton
+              label="Kembali"
+              intent="outline"
+              size="sm"
+              onPress={onBackToCenter}
+            />
+          </View>
+        </KolamHeaderFrame>
         <View style={styles.topBar}>
           <View style={styles.segmentRail}>
             <PosSegment
@@ -330,21 +355,6 @@ export function KolamPosFullWindowSurface({
               ) : null}
             </View>
           ) : null}
-          <Text style={styles.countText}>
-            {getPosViewCountText({
-              activeType,
-              activeView,
-              customers,
-              filteredCatalog,
-              recentSales,
-            })}
-          </Text>
-          <KolamButton
-            label="Kembali"
-            intent="outline"
-            size="sm"
-            onPress={onBackToCenter}
-          />
         </View>
 
         {isCatalogView ? (
@@ -2233,6 +2243,13 @@ const styles = StyleSheet.create({
     minWidth: 0,
     borderRightColor: V.colors.border,
     borderRightWidth: 1,
+  },
+  posHeader: {
+    marginBottom: 0,
+    paddingHorizontal: 16,
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: 1,
+    backgroundColor: V.colors.bg,
   },
   topBar: {
     minHeight: 58,
