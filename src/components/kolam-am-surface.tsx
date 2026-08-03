@@ -6095,7 +6095,7 @@ function AmLoginPage({
       <View style={styles.panel}>
         <Text style={styles.panelTitle}>Masuk</Text>
         <Text style={styles.panelText}>
-          Masuk ke Automation Management untuk mengelola service, device, dan webhook.
+          Gunakan akun Kolam yang sama. Akses AM diatur admin di Settings → pengguna.
         </Text>
         <AmInlineError title="Login AM" error={error} />
         {actionMessage ? (
@@ -6106,13 +6106,13 @@ function AmLoginPage({
         <View style={styles.formGrid}>
           <AmTextInput
             label="Email atau username"
-            placeholder="Akun AM"
+            placeholder="Akun Kolam"
             value={username}
             onChangeText={setUsername}
           />
           <AmTextInput
             label="Password"
-            placeholder="Password AM"
+            placeholder="Password Kolam"
             secureTextEntry
             value={password}
             onChangeText={setPassword}
