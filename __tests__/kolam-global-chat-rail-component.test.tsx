@@ -19,7 +19,9 @@ import {useKolamChatRailDetail} from '../src/hooks/use-kolam-chat-rail-detail';
 import {useKolamChatRailReadonlyData} from '../src/hooks/use-kolam-chat-rail-readonly-data';
 import {useKolamNotificationSoundSettings} from '../src/hooks/use-kolam-notification-sound-settings';
 import {
+  createKolamChatLabel,
   createKolamTeamChatRoom,
+  deleteKolamChatLabel,
   deleteKolamTeamChatRoom,
   getKolamChatAnalytics,
   getKolamChatContactDetails,
@@ -29,6 +31,7 @@ import {
   getKolamUserPickerRows,
   openKolamTeamChatDirect,
   searchKolamChatMarketplaceListings,
+  updateKolamChatLabel,
 } from '../src/services/kolam-api';
 import {createKolamNotificationSoundService} from '../src/services/kolam-notification-sound-service';
 import {
@@ -85,7 +88,9 @@ jest.mock('../src/services/kolam-api', () => {
   const actual = jest.requireActual('../src/services/kolam-api');
   return {
     ...actual,
+    createKolamChatLabel: jest.fn(),
     createKolamTeamChatRoom: jest.fn(),
+    deleteKolamChatLabel: jest.fn(),
     deleteKolamTeamChatRoom: jest.fn(),
     getKolamChatAnalytics: jest.fn(),
     getKolamChatContactDetails: jest.fn(),
@@ -95,6 +100,7 @@ jest.mock('../src/services/kolam-api', () => {
     getKolamUserPickerRows: jest.fn(),
     openKolamTeamChatDirect: jest.fn(),
     searchKolamChatMarketplaceListings: jest.fn(),
+    updateKolamChatLabel: jest.fn(),
   };
 });
 
@@ -148,6 +154,15 @@ const createTeamChatRoomMock =
   createKolamTeamChatRoom as jest.MockedFunction<
     typeof createKolamTeamChatRoom
   >;
+const createChatLabelMock = createKolamChatLabel as jest.MockedFunction<
+  typeof createKolamChatLabel
+>;
+const updateChatLabelMock = updateKolamChatLabel as jest.MockedFunction<
+  typeof updateKolamChatLabel
+>;
+const deleteChatLabelMock = deleteKolamChatLabel as jest.MockedFunction<
+  typeof deleteKolamChatLabel
+>;
 const deleteTeamChatRoomMock =
   deleteKolamTeamChatRoom as jest.MockedFunction<
     typeof deleteKolamTeamChatRoom
@@ -263,8 +278,22 @@ describe('KolamGlobalChatRail', () => {
     mockSoundPlay.mockClear();
     openUrlMock.mockClear();
     createTeamChatRoomMock.mockClear();
+    createChatLabelMock.mockClear();
+    updateChatLabelMock.mockClear();
+    deleteChatLabelMock.mockClear();
     deleteTeamChatRoomMock.mockClear();
     deleteTeamChatRoomMock.mockResolvedValue(undefined);
+    createChatLabelMock.mockResolvedValue({
+      _id: 'label-new',
+      color: '#3b82f6',
+      name: 'New Label',
+    });
+    updateChatLabelMock.mockResolvedValue({
+      _id: 'label-1',
+      color: '#ef4444',
+      name: 'Prioritas Baru',
+    });
+    deleteChatLabelMock.mockResolvedValue(undefined);
     getUserPickerRowsMock.mockClear();
     openTeamChatDirectMock.mockClear();
     createSoundServiceMock.mockClear();
@@ -479,6 +508,122 @@ describe('KolamGlobalChatRail', () => {
         'Template chat',
       ]),
     );
+  });
+
+  it('opens and manages conversation labels from chat settings', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamGlobalChatRail mode="inbox" onClose={() => undefined} />,
+      );
+    });
+
+    const settingsButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Pengaturan chat');
+
+    await ReactTestRenderer.act(async () => {
+      settingsButton!.props.onPress();
+    });
+
+    const labelsMenuItem = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Buka Label percakapan');
+
+    await ReactTestRenderer.act(async () => {
+      labelsMenuItem!.props.onPress();
+    });
+
+    expect(renderText(renderer!)).toEqual(
+      expect.arrayContaining([
+        'Label percakapan',
+        'Prioritas',
+        'Follow up',
+        'New Label',
+        'Save',
+      ]),
+    );
+
+    const nameInput = renderer!.root
+      .findAllByType(TextInput)
+      .find(node => node.props.accessibilityLabel === 'Name label percakapan');
+    const colorInput = renderer!.root
+      .findAllByType(TextInput)
+      .find(node => node.props.accessibilityLabel === 'Color label percakapan');
+
+    await ReactTestRenderer.act(async () => {
+      nameInput!.props.onChangeText('VIP');
+      colorInput!.props.onChangeText('#ef4444');
+    });
+
+    const saveButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Save label percakapan');
+
+    await ReactTestRenderer.act(async () => {
+      await saveButton!.props.onPress();
+    });
+
+    expect(createChatLabelMock).toHaveBeenCalledWith({
+      color: '#ef4444',
+      name: 'VIP',
+    });
+
+    const editButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Edit label Prioritas');
+
+    await ReactTestRenderer.act(async () => {
+      editButton!.props.onPress();
+    });
+
+    const editNameInput = renderer!.root
+      .findAllByType(TextInput)
+      .find(node => node.props.accessibilityLabel === 'Name label percakapan');
+
+    await ReactTestRenderer.act(async () => {
+      editNameInput!.props.onChangeText('Prioritas Baru');
+    });
+
+    const editSaveButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Save label percakapan');
+
+    await ReactTestRenderer.act(async () => {
+      await editSaveButton!.props.onPress();
+    });
+
+    expect(updateChatLabelMock).toHaveBeenCalledWith('label-1', {
+      color: '#6fbd82',
+      name: 'Prioritas Baru',
+    });
+
+    const deleteButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Hapus label Follow up');
+
+    await ReactTestRenderer.act(async () => {
+      deleteButton!.props.onPress();
+    });
+
+    expect(renderText(renderer!)).toEqual(
+      expect.arrayContaining(['Hapus label?', 'Follow up']),
+    );
+
+    const confirmDeleteButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(
+        node =>
+          node.props.accessibilityLabel ===
+          'Konfirmasi hapus label percakapan',
+      );
+
+    await ReactTestRenderer.act(async () => {
+      await confirmDeleteButton!.props.onPress();
+    });
+
+    expect(deleteChatLabelMock).toHaveBeenCalledWith('label-2');
   });
 
   it('renders a scrollable read-only team chat room list without loading message details', async () => {

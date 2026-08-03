@@ -58,7 +58,9 @@ import type {
   KolamUserPickerRow,
 } from '../services/kolam-api';
 import {
+  createKolamChatLabel,
   createKolamTeamChatRoom,
+  deleteKolamChatLabel,
   deleteKolamTeamChatRoom,
   getKolamChatAnalytics,
   getKolamChatContactDetails,
@@ -68,6 +70,7 @@ import {
   getKolamUserPickerRows,
   openKolamTeamChatDirect,
   searchKolamChatMarketplaceListings,
+  updateKolamChatLabel,
 } from '../services/kolam-api';
 import {createKolamNotificationSoundService} from '../services/kolam-notification-sound-service';
 import {createKolamRuntimeNotificationSoundAdapter} from '../services/kolam-notification-sound-runtime';
@@ -366,6 +369,7 @@ export function KolamGlobalChatRail({
   const [healthMenuOpen, setHealthMenuOpen] = React.useState(false);
   const [analyticsMenuOpen, setAnalyticsMenuOpen] = React.useState(false);
   const [settingsMenuOpen, setSettingsMenuOpen] = React.useState(false);
+  const [labelsManagerOpen, setLabelsManagerOpen] = React.useState(false);
   const [daraHeaderMenuOpen, setDaraHeaderMenuOpen] = React.useState(false);
   const [daraWindowRoomId, setDaraWindowRoomId] = React.useState<string | null>(
     null,
@@ -681,6 +685,7 @@ export function KolamGlobalChatRail({
     setPendingAttachment(null);
     setReplyTarget(null);
     setDaraThinkingLiveSignal(null);
+    setLabelsManagerOpen(false);
     setCreateRoomOpen(false);
     setCreateRoomDraft({category: 'meeting', description: '', name: ''});
     setCreateRoomBusy(false);
@@ -1164,6 +1169,10 @@ export function KolamGlobalChatRail({
                   state={analyticsState}
                 />
                 <KolamChatSettingsMenu
+                  onOpenLabels={() => {
+                    setSettingsMenuOpen(false);
+                    setLabelsManagerOpen(true);
+                  }}
                   onToggle={() => {
                     setAnalyticsMenuOpen(false);
                     setHealthMenuOpen(false);
@@ -1413,6 +1422,19 @@ export function KolamGlobalChatRail({
           onConfirm={handleDeleteTeamRoomConfirmPress}
           title={deleteRoomDialogTitle}
           visible
+        />
+      ) : null}
+      {labelsManagerOpen ? (
+        <KolamChatLabelsManagerDialog
+          labels={labelsState.items}
+          loading={labelsState.loading}
+          onClose={() => setLabelsManagerOpen(false)}
+          onLabelsChange={items =>
+            setLabelsState({
+              items,
+              loading: false,
+            })
+          }
         />
       ) : null}
     </>
@@ -2617,9 +2639,11 @@ function KolamTeamChatDaraWindowMessages({
 }
 
 function KolamChatSettingsMenu({
+  onOpenLabels,
   onToggle,
   open,
 }: {
+  onOpenLabels: () => void;
   onToggle: () => void;
   open: boolean;
 }) {
@@ -2669,7 +2693,10 @@ function KolamChatSettingsMenu({
             <Text style={styles.chatHealthPopoverMeta}>Konfigurasi inbox</Text>
           </View>
           <View style={styles.chatSettingsMenuList}>
-            <KolamChatSettingsMenuItem label="Label percakapan" />
+            <KolamChatSettingsMenuItem
+              label="Label percakapan"
+              onPress={onOpenLabels}
+            />
             <KolamChatSettingsMenuItem label="Template chat" />
           </View>
         </View>
@@ -2678,14 +2705,373 @@ function KolamChatSettingsMenu({
   );
 }
 
-function KolamChatSettingsMenuItem({label}: {label: string}) {
+function KolamChatSettingsMenuItem({
+  label,
+  onPress,
+}: {
+  label: string;
+  onPress?: () => void;
+}) {
   return (
     <KolamPressable
       accessibilityLabel={`Buka ${label}`}
+      onPress={onPress}
       style={styles.chatSettingsMenuItem}>
       <View style={styles.chatSettingsMenuBullet} />
       <Text style={styles.chatSettingsMenuLabel}>{label}</Text>
     </KolamPressable>
+  );
+}
+
+const CHAT_LABEL_COLOR_SWATCHES = [
+  '#3b82f6',
+  '#16a34a',
+  '#f59e0b',
+  '#ef4444',
+  '#8b5cf6',
+  '#64748b',
+];
+
+function KolamChatLabelsManagerDialog({
+  labels,
+  loading,
+  onClose,
+  onLabelsChange,
+}: {
+  labels: KolamChatLabel[];
+  loading: boolean;
+  onClose: () => void;
+  onLabelsChange: (labels: KolamChatLabel[]) => void;
+}) {
+  const [draft, setDraft] = React.useState({color: '#3b82f6', name: ''});
+  const [editing, setEditing] = React.useState<KolamChatLabel | null>(null);
+  const [busy, setBusy] = React.useState(false);
+  const [errorMessage, setErrorMessage] = React.useState<string | undefined>();
+  const [deleteTarget, setDeleteTarget] = React.useState<KolamChatLabel | null>(
+    null,
+  );
+
+  const resetForm = React.useCallback(() => {
+    setEditing(null);
+    setDraft({color: '#3b82f6', name: ''});
+    setErrorMessage(undefined);
+  }, []);
+
+  const refreshLabels = React.useCallback(async () => {
+    const nextLabels = await getKolamChatLabels();
+    onLabelsChange(nextLabels);
+  }, [onLabelsChange]);
+
+  const handleNewLabel = React.useCallback(() => {
+    resetForm();
+  }, [resetForm]);
+
+  const handleEditLabel = React.useCallback((label: KolamChatLabel) => {
+    setEditing(label);
+    setDraft({
+      color: normalizeChatLabelColor(label.color),
+      name: label.name,
+    });
+    setErrorMessage(undefined);
+  }, []);
+
+  const handleSubmit = React.useCallback(async () => {
+    const name = draft.name.trim();
+    const color = normalizeChatLabelColor(draft.color);
+
+    if (!name) {
+      setErrorMessage('Nama label wajib diisi.');
+      return;
+    }
+
+    setBusy(true);
+    setErrorMessage(undefined);
+    try {
+      if (editing) {
+        await updateKolamChatLabel(editing._id, {color, name});
+      } else {
+        await createKolamChatLabel({color, name});
+      }
+      await refreshLabels();
+      resetForm();
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : 'Label gagal disimpan.',
+      );
+    } finally {
+      setBusy(false);
+    }
+  }, [draft.color, draft.name, editing, refreshLabels, resetForm]);
+
+  const handleConfirmDelete = React.useCallback(async () => {
+    if (!deleteTarget) {
+      return;
+    }
+
+    setBusy(true);
+    setErrorMessage(undefined);
+    try {
+      await deleteKolamChatLabel(deleteTarget._id);
+      await refreshLabels();
+      if (editing?._id === deleteTarget._id) {
+        resetForm();
+      }
+      setDeleteTarget(null);
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : 'Label gagal dihapus.',
+      );
+    } finally {
+      setBusy(false);
+    }
+  }, [deleteTarget, editing?._id, refreshLabels, resetForm]);
+
+  return (
+    <Modal transparent animationType="fade" visible onRequestClose={onClose}>
+      <View style={styles.chatLabelsDialogHost}>
+        <KolamModalBackdrop onPress={onClose} />
+        <View
+          accessibilityLabel="Popup label percakapan"
+          style={styles.chatLabelsDialog}>
+          <View style={styles.chatLabelsDialogHeader}>
+            <View>
+              <Text style={styles.chatLabelsDialogTitle}>
+                Label percakapan
+              </Text>
+            </View>
+            <KolamPressable
+              accessibilityLabel="Tutup popup label percakapan"
+              disabled={busy}
+              onPress={onClose}
+              style={styles.chatLabelsCloseButton}>
+              <Text style={styles.chatLabelsCloseText}>Tutup</Text>
+            </KolamPressable>
+          </View>
+
+          {errorMessage ? (
+            <Text style={styles.chatLabelsError}>{errorMessage}</Text>
+          ) : null}
+
+          <View style={styles.chatLabelsBody}>
+            <View style={styles.chatLabelsList}>
+              <View style={styles.chatLabelsListHeader}>
+                <Text style={styles.chatLabelsSectionTitle}>Label</Text>
+                <KolamPressable
+                  accessibilityLabel="New Label"
+                  disabled={busy}
+                  onPress={handleNewLabel}
+                  style={[
+                    styles.chatLabelsSmallButton,
+                    busy && styles.attachButtonDisabled,
+                  ]}>
+                  <Text style={styles.chatLabelsSmallButtonText}>
+                    New Label
+                  </Text>
+                </KolamPressable>
+              </View>
+              {loading ? (
+                <Text style={styles.metaText}>Loading...</Text>
+              ) : labels.length === 0 ? (
+                <Text style={styles.emptyDetailText}>Belum ada label.</Text>
+              ) : (
+                <ScrollView
+                  style={styles.chatLabelsListScroll}
+                  showsVerticalScrollIndicator>
+                  <KolamMappedList
+                    items={labels}
+                    getKey={label => label._id}
+                    renderItem={label => {
+                      const isSystemLabel = isSystemChatLabel(label);
+                      return (
+                        <View style={styles.chatLabelsRow}>
+                          <View style={styles.chatLabelsRowMain}>
+                            <View
+                              style={[
+                                styles.chatLabelsColorDot,
+                                {
+                                  backgroundColor: normalizeChatLabelColor(
+                                    label.color,
+                                  ),
+                                },
+                              ]}
+                            />
+                            <Text numberOfLines={1} style={styles.chatLabelsName}>
+                              {label.name}
+                            </Text>
+                          </View>
+                          <View style={styles.chatLabelsRowActions}>
+                            <KolamPressable
+                              accessibilityLabel={`Edit label ${label.name}`}
+                              disabled={busy}
+                              onPress={() => handleEditLabel(label)}
+                              style={[
+                                styles.chatLabelsIconButton,
+                                busy && styles.attachButtonDisabled,
+                              ]}>
+                              <Text style={styles.chatLabelsIconButtonText}>
+                                Edit
+                              </Text>
+                            </KolamPressable>
+                            {!isSystemLabel ? (
+                              <KolamPressable
+                                accessibilityLabel={`Hapus label ${label.name}`}
+                                disabled={busy}
+                                onPress={() => setDeleteTarget(label)}
+                                style={[
+                                  styles.chatLabelsIconButton,
+                                  styles.chatLabelsDeleteButton,
+                                  busy && styles.attachButtonDisabled,
+                                ]}>
+                                <Text
+                                  style={[
+                                    styles.chatLabelsIconButtonText,
+                                    styles.chatLabelsDeleteText,
+                                  ]}>
+                                  Hapus
+                                </Text>
+                              </KolamPressable>
+                            ) : null}
+                          </View>
+                        </View>
+                      );
+                    }}
+                  />
+                </ScrollView>
+              )}
+            </View>
+
+            <View style={styles.chatLabelsForm}>
+              <Text style={styles.chatLabelsSectionTitle}>
+                {editing ? 'Edit Label' : 'New Label'}
+              </Text>
+              <TextInput
+                accessibilityLabel="Name label percakapan"
+                editable={!busy}
+                maxLength={40}
+                onChangeText={name =>
+                  setDraft(current => ({
+                    ...current,
+                    name,
+                  }))
+                }
+                placeholder="Name"
+                placeholderTextColor={V.colors.mutedFg}
+                style={styles.chatLabelsInput}
+                value={draft.name}
+              />
+              <View style={styles.chatLabelsColorRow}>
+                <View
+                  accessibilityLabel="Preview warna label"
+                  style={[
+                    styles.chatLabelsColorPreview,
+                    {backgroundColor: normalizeChatLabelColor(draft.color)},
+                  ]}
+                />
+                <TextInput
+                  accessibilityLabel="Color label percakapan"
+                  editable={!busy}
+                  maxLength={7}
+                  onChangeText={color =>
+                    setDraft(current => ({
+                      ...current,
+                      color,
+                    }))
+                  }
+                  placeholder="#3b82f6"
+                  placeholderTextColor={V.colors.mutedFg}
+                  style={[styles.chatLabelsInput, styles.chatLabelsColorInput]}
+                  value={draft.color}
+                />
+              </View>
+              <View style={styles.chatLabelsSwatches}>
+                {CHAT_LABEL_COLOR_SWATCHES.map(color => (
+                  <KolamPressable
+                    key={color}
+                    accessibilityLabel={`Pilih warna label ${color}`}
+                    disabled={busy}
+                    onPress={() =>
+                      setDraft(current => ({
+                        ...current,
+                        color,
+                      }))
+                    }
+                    style={[
+                      styles.chatLabelsSwatch,
+                      {backgroundColor: color},
+                      normalizeChatLabelColor(draft.color) === color &&
+                        styles.chatLabelsSwatchActive,
+                    ]}
+                  />
+                ))}
+              </View>
+              <View style={styles.chatLabelsFormActions}>
+                {editing ? (
+                  <KolamPressable
+                    accessibilityLabel="Cancel edit label percakapan"
+                    disabled={busy}
+                    onPress={resetForm}
+                    style={[
+                      styles.chatLabelsActionButton,
+                      busy && styles.attachButtonDisabled,
+                    ]}>
+                    <Text style={styles.chatLabelsActionText}>Cancel</Text>
+                  </KolamPressable>
+                ) : null}
+                <KolamPressable
+                  accessibilityLabel="Save label percakapan"
+                  disabled={busy || !draft.name.trim()}
+                  onPress={() => void handleSubmit()}
+                  style={[
+                    styles.chatLabelsActionButton,
+                    styles.chatLabelsActionButtonPrimary,
+                    (busy || !draft.name.trim()) && styles.attachButtonDisabled,
+                  ]}>
+                  <Text style={styles.chatLabelsActionPrimaryText}>
+                    {busy ? 'Saving...' : 'Save'}
+                  </Text>
+                </KolamPressable>
+              </View>
+            </View>
+          </View>
+
+          {deleteTarget ? (
+            <View style={styles.chatLabelsDeleteConfirm}>
+              <Text style={styles.chatLabelsDeleteConfirmTitle}>
+                Hapus label?
+              </Text>
+              <Text style={styles.chatLabelsDeleteConfirmText}>
+                {deleteTarget.name}
+              </Text>
+              <View style={styles.chatLabelsFormActions}>
+                <KolamPressable
+                  accessibilityLabel="Batal hapus label percakapan"
+                  disabled={busy}
+                  onPress={() => setDeleteTarget(null)}
+                  style={[
+                    styles.chatLabelsActionButton,
+                    busy && styles.attachButtonDisabled,
+                  ]}>
+                  <Text style={styles.chatLabelsActionText}>Batal</Text>
+                </KolamPressable>
+                <KolamPressable
+                  accessibilityLabel="Konfirmasi hapus label percakapan"
+                  disabled={busy}
+                  onPress={() => void handleConfirmDelete()}
+                  style={[
+                    styles.chatLabelsActionButton,
+                    styles.chatLabelsActionButtonDanger,
+                    busy && styles.attachButtonDisabled,
+                  ]}>
+                  <Text style={styles.chatLabelsActionPrimaryText}>
+                    {busy ? 'Menghapus...' : 'Hapus'}
+                  </Text>
+                </KolamPressable>
+              </View>
+            </View>
+          ) : null}
+        </View>
+      </View>
+    </Modal>
   );
 }
 
@@ -6894,7 +7280,13 @@ function normalizeChatLabelColor(color?: string) {
     return V.colors.primary;
   }
 
-  return value.startsWith('#') ? value : `#${value}`;
+  const normalized = value.startsWith('#') ? value : `#${value}`;
+  return /^#[0-9a-fA-F]{6}$/.test(normalized) ? normalized : V.colors.primary;
+}
+
+function isSystemChatLabel(label: KolamChatLabel) {
+  const name = label.name.trim().toLowerCase();
+  return name === 'pelanggan' || name === 'customer';
 }
 
 function getAttachmentFileName(attachment: KolamTeamChatAttachment) {
@@ -7551,6 +7943,278 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 11,
     fontWeight: '900',
+  },
+  chatLabelsDialogHost: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 18,
+  },
+  chatLabelsDialog: {
+    width: 680,
+    maxWidth: '96%',
+    maxHeight: '88%',
+    borderRadius: V.radius.lg,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.bg,
+    padding: 14,
+    gap: 12,
+    shadowColor: V.colors.fg,
+    shadowOffset: {width: 0, height: 16},
+    shadowOpacity: 0.18,
+    shadowRadius: 24,
+    zIndex: 3,
+    elevation: 30,
+  },
+  chatLabelsDialogHeader: {
+    minHeight: 36,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  chatLabelsDialogTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 16,
+    fontWeight: '900',
+  },
+  chatLabelsCloseButton: {
+    minHeight: 30,
+    paddingHorizontal: 10,
+    borderRadius: V.radius.md,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.bg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  chatLabelsCloseText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  chatLabelsError: {
+    color: V.colors.danger,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  chatLabelsBody: {
+    minHeight: 280,
+    flexDirection: 'row',
+    gap: 12,
+  },
+  chatLabelsList: {
+    minWidth: 0,
+    flex: 1.2,
+    borderRadius: V.radius.md,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.mutedSoft,
+    padding: 10,
+    gap: 8,
+  },
+  chatLabelsListHeader: {
+    minHeight: 30,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  chatLabelsSectionTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '900',
+  },
+  chatLabelsSmallButton: {
+    minHeight: 28,
+    paddingHorizontal: 9,
+    borderRadius: V.radius.md,
+    backgroundColor: V.colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  chatLabelsSmallButtonText: {
+    color: V.colors.primaryFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  chatLabelsListScroll: {
+    maxHeight: 280,
+  },
+  chatLabelsRow: {
+    minHeight: 42,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+    borderRadius: V.radius.md,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.bg,
+    paddingHorizontal: 9,
+    paddingVertical: 7,
+    marginBottom: 6,
+  },
+  chatLabelsRowMain: {
+    minWidth: 0,
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  chatLabelsColorDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+  },
+  chatLabelsName: {
+    minWidth: 0,
+    flex: 1,
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '900',
+  },
+  chatLabelsRowActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  chatLabelsIconButton: {
+    minHeight: 26,
+    paddingHorizontal: 8,
+    borderRadius: V.radius.sm,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.bg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  chatLabelsDeleteButton: {
+    borderColor: V.colors.danger,
+  },
+  chatLabelsIconButtonText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '900',
+  },
+  chatLabelsDeleteText: {
+    color: V.colors.danger,
+  },
+  chatLabelsForm: {
+    minWidth: 0,
+    flex: 1,
+    borderRadius: V.radius.md,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.bg,
+    padding: 10,
+    gap: 9,
+  },
+  chatLabelsInput: {
+    minHeight: 38,
+    borderRadius: V.radius.md,
+    borderColor: V.colors.input,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '800',
+    backgroundColor: V.colors.bg,
+  },
+  chatLabelsColorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  chatLabelsColorPreview: {
+    width: 38,
+    height: 38,
+    borderRadius: V.radius.md,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+  },
+  chatLabelsColorInput: {
+    flex: 1,
+  },
+  chatLabelsSwatches: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 7,
+  },
+  chatLabelsSwatch: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+  },
+  chatLabelsSwatchActive: {
+    borderColor: V.colors.fg,
+    borderWidth: 2,
+  },
+  chatLabelsFormActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 8,
+  },
+  chatLabelsActionButton: {
+    minHeight: 32,
+    paddingHorizontal: 11,
+    borderRadius: V.radius.md,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.bg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  chatLabelsActionButtonPrimary: {
+    borderColor: V.colors.primary,
+    backgroundColor: V.colors.primary,
+  },
+  chatLabelsActionButtonDanger: {
+    borderColor: V.colors.danger,
+    backgroundColor: V.colors.danger,
+  },
+  chatLabelsActionText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  chatLabelsActionPrimaryText: {
+    color: V.colors.primaryFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  chatLabelsDeleteConfirm: {
+    borderRadius: V.radius.md,
+    borderColor: V.colors.danger,
+    borderWidth: 1,
+    backgroundColor: V.colors.mutedSoft,
+    padding: 10,
+    gap: 8,
+  },
+  chatLabelsDeleteConfirmTitle: {
+    color: V.colors.danger,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '900',
+  },
+  chatLabelsDeleteConfirmText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '800',
   },
   chatHealthPopoverHeader: {
     gap: 2,

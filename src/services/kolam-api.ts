@@ -622,6 +622,11 @@ export interface KolamChatLabel {
   updatedAt?: string;
 }
 
+export interface KolamChatLabelPayload {
+  color: string;
+  name: string;
+}
+
 export interface KolamChatTemplate {
   _id: string;
   body: string;
@@ -2245,6 +2250,33 @@ export async function getKolamChatLabels(): Promise<KolamChatLabel[]> {
   >('/chat/labels');
 
   return response.data ?? [];
+}
+
+export async function createKolamChatLabel(
+  payload: KolamChatLabelPayload,
+): Promise<KolamChatLabel> {
+  const response = await kolamPost<
+    DataResponse<KolamChatLabel> | KolamChatLabel
+  >('/chat/labels', payload);
+
+  return unwrapData(response);
+}
+
+export async function updateKolamChatLabel(
+  labelId: string,
+  payload: KolamChatLabelPayload,
+): Promise<KolamChatLabel> {
+  const response = await kolamPatch<
+    DataResponse<KolamChatLabel> | KolamChatLabel
+  >(`/chat/labels/${encodeURIComponent(labelId)}`, payload);
+
+  return unwrapData(response);
+}
+
+export async function deleteKolamChatLabel(labelId: string): Promise<void> {
+  await kolamDelete<DataResponse<unknown> | unknown>(
+    `/chat/labels/${encodeURIComponent(labelId)}`,
+  );
 }
 
 export async function getKolamChatTemplates(
