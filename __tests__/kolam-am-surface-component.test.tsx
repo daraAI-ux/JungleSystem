@@ -4485,8 +4485,8 @@ describe('KolamAmSurface', () => {
       limit: 20,
       search: undefined,
       status: undefined,
-      serviceAccountId: undefined,
     });
+    expect(getAmServiceAccounts).not.toHaveBeenCalled();
 
     await act(async () => {
       jest.advanceTimersByTime(5000);
@@ -4499,7 +4499,6 @@ describe('KolamAmSurface', () => {
       limit: 20,
       search: undefined,
       status: undefined,
-      serviceAccountId: undefined,
     });
 
     const joinedText = renderText(renderer!).join(' ');
@@ -4522,20 +4521,8 @@ describe('KolamAmSurface', () => {
       limit: 20,
       search: undefined,
       status: undefined,
-      serviceAccountId: undefined,
     });
-
-    await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Segment BCA Main - 123'}).props.onPress();
-    });
-
-    expect(getAmTransfers).toHaveBeenLastCalledWith({
-      page: 1,
-      limit: 20,
-      search: undefined,
-      status: undefined,
-      serviceAccountId: 'account-1',
-    });
+    expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment BCA Main - 123'})).toHaveLength(0);
   });
 
   it('creates a new transfer from the Transfers route form', async () => {
