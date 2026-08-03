@@ -15,6 +15,8 @@ import {
   type KolamTaskManagerStatus,
   type KolamTaskManagerSurfaceMode,
   type KolamTaskManagerTask,
+  type KolamTaskManagerTaskType,
+  type KolamTaskManagerTaskTypeHandler,
   type KolamTaskRecurringOccurrence,
   type KolamTaskRecurringServiceVisit,
   type KolamTaskRecurringTemplate,
@@ -25,10 +27,13 @@ import {
   addKolamTaskManagerNote,
   createKolamTaskManagerCategory,
   createKolamTaskManagerTask,
+  createKolamTaskManagerTaskType,
   deleteKolamTaskManagerCategory,
+  deleteKolamTaskManagerTaskType,
   getKolamTaskManagerCategories,
   getKolamTaskManagerTask,
   getKolamTaskManagerTasks,
+  getKolamTaskManagerTaskTypes,
   getKolamTaskRecurringOccurrences,
   getKolamTaskRecurringServiceVisits,
   getKolamTaskRecurringTemplates,
@@ -37,6 +42,7 @@ import {
   updateKolamTaskManagerChecklist,
   updateKolamTaskManagerStatus,
   updateKolamTaskManagerTask,
+  updateKolamTaskManagerTaskType,
 } from '../services/kolam-task-manager-api';
 import { getKolamUserList } from '../services/kolam-user-api';
 
@@ -67,12 +73,27 @@ export interface KolamTaskManagerCategoryFormState {
   sortOrder: string;
 }
 
+export interface KolamTaskManagerTaskTypeFormState {
+  active: boolean;
+  categoryBuckets: KolamTaskCategoryBucket[];
+  description: string;
+  handler: KolamTaskManagerTaskTypeHandler;
+  key: string;
+  name: string;
+  requiresProductComponents: boolean;
+  sortOrder: string;
+}
+
 export interface KolamTaskManagerController {
   categories: KolamTaskManagerCategory[];
   categoryForm: KolamTaskManagerCategoryFormState;
   categoryFormError: string | null;
   categoryFormMode: 'edit' | 'new';
   categoryFormOpen: boolean;
+  taskTypeForm: KolamTaskManagerTaskTypeFormState;
+  taskTypeFormError: string | null;
+  taskTypeFormMode: 'edit' | 'new';
+  taskTypeFormOpen: boolean;
   categoryBucketFilter: KolamTaskCategoryBucket | 'all';
   categoryFilter: string;
   currentUserId: string;
@@ -103,6 +124,7 @@ export interface KolamTaskManagerController {
   statusFilter: KolamTaskManagerStatus | 'all';
   statusMessage: string | null;
   selectedTask: KolamTaskManagerTask | null;
+  taskTypes: KolamTaskManagerTaskType[];
   tasks: KolamTaskManagerTask[];
   total: number;
   totalPages: number;
@@ -112,12 +134,19 @@ export interface KolamTaskManagerController {
     patch: Partial<KolamTaskManagerCategoryFormState>,
   ) => void;
   onChangeForm: (patch: Partial<KolamTaskManagerFormState>) => void;
+  onChangeTaskTypeForm: (
+    patch: Partial<KolamTaskManagerTaskTypeFormState>,
+  ) => void;
   onCloseCategoryForm: () => void;
   onCloseForm: () => void;
+  onCloseTaskTypeForm: () => void;
   onCreateCategory: () => void;
   onCreateNew: () => void;
+  onCreateTaskType: () => void;
   onDeleteCategory: (category: KolamTaskManagerCategory) => Promise<boolean>;
+  onDeleteTaskType: (taskType: KolamTaskManagerTaskType) => Promise<boolean>;
   onEditCategory: (category: KolamTaskManagerCategory) => void;
+  onEditTaskType: (taskType: KolamTaskManagerTaskType) => void;
   onEditTask: (task: KolamTaskManagerTask) => void;
   onBackToList: () => void;
   onRefresh: () => Promise<void>;
@@ -142,6 +171,7 @@ export interface KolamTaskManagerController {
   onRemoveChecklistItem: (index: number) => Promise<boolean>;
   onSaveCategory: () => Promise<boolean>;
   onSaveForm: () => Promise<boolean>;
+  onSaveTaskType: () => Promise<boolean>;
   onSetChecklistDraft: (value: string) => void;
   onSetNoteDraft: (value: string) => void;
   onToggleChecklistItem: (index: number) => Promise<boolean>;
@@ -176,6 +206,7 @@ export function useKolamTaskManagerController({
   const [recurringServiceVisits, setRecurringServiceVisits] = useState<
     KolamTaskRecurringServiceVisit[]
   >([]);
+  const [taskTypes, setTaskTypes] = useState<KolamTaskManagerTaskType[]>([]);
   const [selectedTask, setSelectedTask] =
     useState<KolamTaskManagerTask | null>(null);
   const [categories, setCategories] = useState<KolamTaskManagerCategory[]>([]);
@@ -203,6 +234,16 @@ export function useKolamTaskManagerController({
   );
   const [categoryForm, setCategoryForm] =
     useState<KolamTaskManagerCategoryFormState>(() => getDefaultCategoryForm());
+  const [taskTypeFormOpen, setTaskTypeFormOpen] = useState(false);
+  const [taskTypeFormMode, setTaskTypeFormMode] = useState<'edit' | 'new'>(
+    'new',
+  );
+  const [editingTaskTypeId, setEditingTaskTypeId] = useState('');
+  const [taskTypeFormError, setTaskTypeFormError] = useState<string | null>(
+    null,
+  );
+  const [taskTypeForm, setTaskTypeForm] =
+    useState<KolamTaskManagerTaskTypeFormState>(() => getDefaultTaskTypeForm());
   const [checklistDraft, setChecklistDraft] = useState('');
   const [noteDraft, setNoteDraft] = useState('');
   const [dataSource, setDataSource] =
@@ -253,6 +294,21 @@ export function useKolamTaskManagerController({
       // Non-blocking: PIC filter can stay minimal.
     }
   }, []);
+
+  const loadTaskTypes = useCallback(async () => {
+    if (mode !== 'task-types') return;
+    setLoading(true);
+    setError(null);
+    try {
+      setTaskTypes(await getKolamTaskManagerTaskTypes(true));
+      setDataSource('live');
+    } catch (loadError) {
+      setError(getErrorMessage(loadError));
+      setDataSource('error');
+    } finally {
+      setLoading(false);
+    }
+  }, [mode]);
 
   const refreshList = useCallback(async () => {
     if (mode !== 'list') {
@@ -387,6 +443,10 @@ export function useKolamTaskManagerController({
   useEffect(() => {
     void refreshRecurring();
   }, [refreshRecurring]);
+
+  useEffect(() => {
+    void loadTaskTypes();
+  }, [loadTaskTypes]);
 
   const setFilterAndFirstPage = useCallback(
     <TValue,>(setter: (value: TValue) => void) =>
@@ -785,6 +845,113 @@ export function useKolamTaskManagerController({
     [loadCategories],
   );
 
+  const onCreateTaskType = useCallback(() => {
+    setTaskTypeFormMode('new');
+    setEditingTaskTypeId('');
+    setTaskTypeForm(getDefaultTaskTypeForm());
+    setTaskTypeFormError(null);
+    setStatusMessage(null);
+    setTaskTypeFormOpen(true);
+  }, []);
+
+  const onEditTaskType = useCallback((taskType: KolamTaskManagerTaskType) => {
+    setTaskTypeFormMode('edit');
+    setEditingTaskTypeId(taskType.id);
+    setTaskTypeForm({
+      active: taskType.active,
+      categoryBuckets: taskType.categoryBuckets,
+      description: taskType.description,
+      handler: taskType.handler,
+      key: taskType.key,
+      name: taskType.name,
+      requiresProductComponents: taskType.requiresProductComponents,
+      sortOrder: String(taskType.sortOrder ?? 100),
+    });
+    setTaskTypeFormError(null);
+    setStatusMessage(null);
+    setTaskTypeFormOpen(true);
+  }, []);
+
+  const onChangeTaskTypeForm = useCallback(
+    (patch: Partial<KolamTaskManagerTaskTypeFormState>) => {
+      setTaskTypeForm(current => ({ ...current, ...patch }));
+      setTaskTypeFormError(null);
+      setStatusMessage(null);
+    },
+    [],
+  );
+
+  const onCloseTaskTypeForm = useCallback(() => {
+    setTaskTypeFormOpen(false);
+    setTaskTypeFormError(null);
+  }, []);
+
+  const onSaveTaskType = useCallback(async () => {
+    const name = taskTypeForm.name.trim();
+    const key = taskTypeForm.key.trim().toLowerCase();
+    if (!name) {
+      setTaskTypeFormError('Nama wajib diisi');
+      return false;
+    }
+    if (taskTypeFormMode === 'new' && !key) {
+      setTaskTypeFormError('Key wajib diisi');
+      return false;
+    }
+    setMutatingTaskId(
+      taskTypeFormMode === 'edit'
+        ? `task-type:${editingTaskTypeId}`
+        : 'task-type:new',
+    );
+    setError(null);
+    setStatusMessage(null);
+    try {
+      const input = {
+        active: taskTypeForm.active,
+        categoryBuckets: taskTypeForm.categoryBuckets,
+        description: taskTypeForm.description,
+        handler: taskTypeForm.handler,
+        key,
+        name,
+        requiresProductComponents: taskTypeForm.requiresProductComponents,
+        sortOrder: Number(taskTypeForm.sortOrder) || 100,
+      };
+      if (taskTypeFormMode === 'edit' && editingTaskTypeId) {
+        await updateKolamTaskManagerTaskType(editingTaskTypeId, input);
+      } else {
+        await createKolamTaskManagerTaskType(input);
+      }
+      setTaskTypeFormOpen(false);
+      setStatusMessage('Tipe task disimpan');
+      await loadTaskTypes();
+      return true;
+    } catch (mutationError) {
+      setTaskTypeFormError(getErrorMessage(mutationError));
+      return false;
+    } finally {
+      setMutatingTaskId(null);
+    }
+  }, [editingTaskTypeId, loadTaskTypes, taskTypeForm, taskTypeFormMode]);
+
+  const onDeleteTaskType = useCallback(
+    async (taskType: KolamTaskManagerTaskType) => {
+      setMutatingTaskId(`task-type:${taskType.id}`);
+      setError(null);
+      setStatusMessage(null);
+      try {
+        await deleteKolamTaskManagerTaskType(taskType.id);
+        setStatusMessage('Tipe task dihapus');
+        await loadTaskTypes();
+        return true;
+      } catch (mutationError) {
+        setError(getErrorMessage(mutationError));
+        return false;
+      } finally {
+        setMutatingTaskId(null);
+      }
+    },
+    [loadTaskTypes],
+  );
+
   return useMemo(
     () => ({
       categories,
@@ -792,6 +959,10 @@ export function useKolamTaskManagerController({
       categoryFormError,
       categoryFormMode,
       categoryFormOpen,
+      taskTypeForm,
+      taskTypeFormError,
+      taskTypeFormMode,
+      taskTypeFormOpen,
       categoryBucketFilter,
       categoryFilter,
       currentUserId,
@@ -825,21 +996,29 @@ export function useKolamTaskManagerController({
       total,
       totalPages,
       selectedTask,
+      taskTypes,
       onAddChecklistItem,
       onAddNote,
       onChangeCategoryForm,
       onChangeForm,
+      onChangeTaskTypeForm,
       onCloseCategoryForm,
       onCloseForm,
+      onCloseTaskTypeForm,
       onBackToList,
       onCreateCategory,
       onCreateNew,
+      onCreateTaskType,
       onDeleteCategory,
+      onDeleteTaskType,
       onEditCategory,
       onEditTask,
+      onEditTaskType,
       onRefresh:
         mode === 'detail'
           ? refreshDetail
+          : mode === 'task-types'
+            ? loadTaskTypes
           : mode === 'recurring'
             ? refreshRecurring
             : refreshList,
@@ -862,6 +1041,7 @@ export function useKolamTaskManagerController({
       onRemoveChecklistItem,
       onSaveCategory,
       onSaveForm,
+      onSaveTaskType,
       onSetChecklistDraft: setChecklistDraft,
       onSetNoteDraft: setNoteDraft,
       onToggleChecklistItem,
@@ -874,6 +1054,10 @@ export function useKolamTaskManagerController({
       categoryFormError,
       categoryFormMode,
       categoryFormOpen,
+      taskTypeForm,
+      taskTypeFormError,
+      taskTypeFormMode,
+      taskTypeFormOpen,
       categoryBucketFilter,
       categoryFilter,
       currentUserId,
@@ -895,13 +1079,18 @@ export function useKolamTaskManagerController({
       onAddNote,
       onChangeCategoryForm,
       onChangeForm,
+      onChangeTaskTypeForm,
       onCloseCategoryForm,
       onCloseForm,
+      onCloseTaskTypeForm,
       onCreateCategory,
       onCreateNew,
+      onCreateTaskType,
       onDeleteCategory,
+      onDeleteTaskType,
       onEditCategory,
       onEditTask,
+      onEditTaskType,
       onBackToList,
       onResetFilters,
       onRunRecurringTick,
@@ -910,6 +1099,7 @@ export function useKolamTaskManagerController({
       onRemoveChecklistItem,
       onSaveCategory,
       onSaveForm,
+      onSaveTaskType,
       onToggleChecklistItem,
       onSwitchTab,
       page,
@@ -928,6 +1118,7 @@ export function useKolamTaskManagerController({
       staffOptions,
       statusFilter,
       statusMessage,
+      taskTypes,
       tasks,
       total,
       totalPages,
@@ -960,6 +1151,19 @@ function getDefaultCategoryForm(): KolamTaskManagerCategoryFormState {
     color: '#6366f1',
     name: '',
     sortOrder: '0',
+  };
+}
+
+function getDefaultTaskTypeForm(): KolamTaskManagerTaskTypeFormState {
+  return {
+    active: true,
+    categoryBuckets: [],
+    description: '',
+    handler: 'dosing',
+    key: '',
+    name: '',
+    requiresProductComponents: false,
+    sortOrder: '100',
   };
 }
 

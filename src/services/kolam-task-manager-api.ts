@@ -3,6 +3,7 @@ import {
   normalizeKolamTaskManagerCategories,
   normalizeKolamTaskManagerList,
   normalizeKolamTaskManagerTask,
+  normalizeKolamTaskManagerTaskTypes,
   normalizeKolamTaskRecurringOccurrences,
   normalizeKolamTaskRecurringServiceVisits,
   normalizeKolamTaskRecurringTemplates,
@@ -13,6 +14,8 @@ import {
   type KolamTaskManagerPriority,
   type KolamTaskManagerStatus,
   type KolamTaskManagerTask,
+  type KolamTaskManagerTaskType,
+  type KolamTaskManagerTaskTypeHandler,
   type KolamTaskRecurringOccurrence,
   type KolamTaskRecurringServiceVisit,
   type KolamTaskRecurringTemplate,
@@ -45,6 +48,17 @@ export interface KolamTaskManagerCategoryInput {
   active?: boolean;
   color: string;
   name: string;
+  sortOrder: number;
+}
+
+export interface KolamTaskManagerTaskTypeInput {
+  active: boolean;
+  categoryBuckets: string[];
+  description?: string | null;
+  handler: KolamTaskManagerTaskTypeHandler;
+  key?: string;
+  name: string;
+  requiresProductComponents: boolean;
   sortOrder: number;
 }
 
@@ -118,6 +132,46 @@ export async function updateKolamTaskManagerCategory(
 export async function deleteKolamTaskManagerCategory(categoryId: string) {
   await kolamRequest<unknown>(
     `/task-manager/categories/${encodeURIComponent(categoryId)}`,
+    { method: 'DELETE' },
+  );
+}
+
+export async function getKolamTaskManagerTaskTypes(
+  includeInactive = true,
+): Promise<KolamTaskManagerTaskType[]> {
+  const payload = await kolamRequest<unknown>('/enclosure-task-types', {
+    query: includeInactive ? { includeInactive: true } : {},
+  });
+  return normalizeKolamTaskManagerTaskTypes(payload);
+}
+
+export async function createKolamTaskManagerTaskType(
+  input: KolamTaskManagerTaskTypeInput,
+): Promise<KolamTaskManagerTaskType> {
+  const payload = await kolamRequest<unknown>('/enclosure-task-types', {
+    method: 'POST',
+    body: normalizeTaskTypeInput(input),
+  });
+  return normalizeKolamTaskManagerTaskTypes(payload)[0];
+}
+
+export async function updateKolamTaskManagerTaskType(
+  taskTypeId: string,
+  input: Partial<KolamTaskManagerTaskTypeInput>,
+): Promise<KolamTaskManagerTaskType> {
+  const payload = await kolamRequest<unknown>(
+    `/enclosure-task-types/${encodeURIComponent(taskTypeId)}`,
+    {
+      method: 'PUT',
+      body: normalizeTaskTypeInput(input),
+    },
+  );
+  return normalizeKolamTaskManagerTaskTypes(payload)[0];
+}
+
+export async function deleteKolamTaskManagerTaskType(taskTypeId: string) {
+  await kolamRequest<unknown>(
+    `/enclosure-task-types/${encodeURIComponent(taskTypeId)}`,
     { method: 'DELETE' },
   );
 }
@@ -267,6 +321,25 @@ function normalizeCategoryInput(input: Partial<KolamTaskManagerCategoryInput>) {
     ...(input.color != null ? { color: input.color.trim() } : {}),
     ...(input.sortOrder != null ? { sortOrder: Number(input.sortOrder) || 0 } : {}),
     ...(input.active != null ? { isActive: input.active } : {}),
+  };
+}
+
+function normalizeTaskTypeInput(input: Partial<KolamTaskManagerTaskTypeInput>) {
+  return {
+    ...(input.key != null ? { key: input.key.trim().toLowerCase() } : {}),
+    ...(input.name != null ? { name: input.name.trim() } : {}),
+    ...(input.description !== undefined
+      ? { description: input.description?.trim() || null }
+      : {}),
+    ...(input.handler ? { handler: input.handler } : {}),
+    ...(input.requiresProductComponents != null
+      ? { requiresProductComponents: input.requiresProductComponents }
+      : {}),
+    ...(input.active != null ? { active: input.active } : {}),
+    ...(input.sortOrder != null ? { sortOrder: Number(input.sortOrder) || 100 } : {}),
+    ...(input.categoryBuckets != null
+      ? { categoryBuckets: input.categoryBuckets }
+      : {}),
   };
 }
 

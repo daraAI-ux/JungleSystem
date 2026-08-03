@@ -73,6 +73,21 @@ export interface KolamTaskManagerTaskTypeRef {
   handler: string;
 }
 
+export type KolamTaskManagerTaskTypeHandler = 'dosing' | 'maintenance';
+
+export interface KolamTaskManagerTaskType {
+  id: string;
+  key: string;
+  name: string;
+  description: string;
+  handler: KolamTaskManagerTaskTypeHandler;
+  requiresProductComponents: boolean;
+  active: boolean;
+  sortOrder: number;
+  isSystem: boolean;
+  categoryBuckets: KolamTaskCategoryBucket[];
+}
+
 export interface KolamTaskManagerChecklistItem {
   id: string;
   title: string;
@@ -593,6 +608,32 @@ export function normalizeKolamTaskManagerCategories(
   });
 }
 
+export function normalizeKolamTaskManagerTaskTypes(
+  payload: unknown,
+): KolamTaskManagerTaskType[] {
+  return unwrapArrayPayload(payload).map(item => {
+    const row = unwrapData(item);
+    return {
+      id: toStringValue(row._id ?? row.id),
+      key: toStringValue(row.key),
+      name: toStringValue(row.name),
+      description: toStringValue(row.description),
+      handler: row.handler === 'maintenance' ? 'maintenance' : 'dosing',
+      requiresProductComponents: row.requiresProductComponents === true,
+      active: row.active !== false,
+      sortOrder: toNumber(row.sortOrder, 100),
+      isSystem: row.isSystem === true,
+      categoryBuckets: Array.isArray(row.categoryBuckets)
+        ? row.categoryBuckets
+            .map(toTaskCategoryBucket)
+            .filter((bucket): bucket is KolamTaskCategoryBucket =>
+              Boolean(bucket),
+            )
+        : [],
+    };
+  });
+}
+
 export function normalizeKolamTaskRecurringTemplates(
   payload: unknown,
 ): KolamTaskRecurringTemplate[] {
@@ -837,6 +878,7 @@ function unwrapArrayPayload(payload: unknown): unknown[] {
   if (Array.isArray(record)) return record;
   if (Array.isArray(record.data)) return record.data;
   if (Array.isArray(record.items)) return record.items;
+  if (toStringValue(record._id ?? record.id)) return [record];
   return [];
 }
 

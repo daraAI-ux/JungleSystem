@@ -15,6 +15,7 @@ import {
   KOLAM_TASK_CATEGORY_BUCKET_OPTIONS,
   KOLAM_TASK_PRIORITY_OPTIONS,
   KOLAM_TASK_STATUS_OPTIONS,
+  type KolamTaskCategoryBucket,
   type KolamTaskManagerTask,
 } from '../domain/kolam-task-manager';
 import type { KolamTableColumn } from '../domain/kolam-table';
@@ -69,6 +70,14 @@ const LIST_COLUMNS: KolamTableColumn[] = [
   },
 ];
 
+const TASK_TYPE_BUCKET_OPTIONS: Array<{
+  id: KolamTaskCategoryBucket;
+  label: string;
+}> = KOLAM_TASK_CATEGORY_BUCKET_OPTIONS.filter(
+  (option): option is { id: KolamTaskCategoryBucket; label: string } =>
+    option.id !== 'all',
+);
+
 export function KolamTaskManagerSurface({
   onRouteChange,
   route,
@@ -108,11 +117,14 @@ export function KolamTaskManagerSurface({
         <KolamTaskManagerDetail controller={controller} />
       ) : controller.mode === 'categories' ? (
         <KolamTaskCategorySettingsPanel controller={controller} />
+      ) : controller.mode === 'task-types' ? (
+        <KolamTaskTypeSettingsPanel controller={controller} />
       ) : (
         <KolamTaskManagerPlaceholder mode={controller.mode} />
       )}
       <KolamTaskFormModal controller={controller} />
       <KolamTaskCategoryFormModal controller={controller} />
+      <KolamTaskTypeFormModal controller={controller} />
     </View>
   );
 }
@@ -1253,6 +1265,258 @@ function KolamTaskCategoryFormModal({
   );
 }
 
+function KolamTaskTypeSettingsPanel({
+  controller,
+}: {
+  controller: KolamTaskManagerController;
+}) {
+  return (
+    <View style={styles.detailStack}>
+      <View style={kolamTableToolbarStyles.shell}>
+        <View style={kolamTableToolbarStyles.row}>
+          <View style={kolamTableToolbarStyles.filters}>
+            <Text numberOfLines={1} style={styles.detailContext}>Tipe Task</Text>
+          </View>
+          <View style={kolamTableToolbarStyles.actions}>
+            <KolamButton
+              disabled={controller.loading}
+              label="Refresh"
+              onPress={() => {
+                void controller.onRefresh();
+              }}
+            />
+            <KolamButton
+              intent="primary"
+              label="Tambah tipe"
+              onPress={controller.onCreateTaskType}
+            />
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.detailCard}>
+        {controller.taskTypes.length ? (
+          controller.taskTypes.map(row => (
+            <View key={row.id} style={styles.taskTypeRow}>
+              <View style={styles.taskTypeMain}>
+                <View style={styles.titleRow}>
+                  <Text style={styles.cellText}>{row.key}</Text>
+                  {row.isSystem ? (
+                    <KolamStatusBadge intent="muted" label="sistem" />
+                  ) : null}
+                </View>
+                <Text style={styles.primaryText}>{row.name}</Text>
+                <Text style={styles.metaText}>{row.description || '-'}</Text>
+                <View style={styles.badgeRow}>
+                  <KolamStatusBadge intent="info" label={row.handler} />
+                  <KolamStatusBadge
+                    intent={row.requiresProductComponents ? 'warning' : 'muted'}
+                    label={row.requiresProductComponents ? 'Produk' : 'Tanpa produk'}
+                  />
+                  <KolamStatusBadge
+                    intent={row.active ? 'success' : 'muted'}
+                    label={row.active ? 'Aktif' : 'Nonaktif'}
+                  />
+                  <KolamStatusBadge intent="muted" label={`Urutan ${row.sortOrder}`} />
+                </View>
+                <Text style={styles.metaText}>
+                  {row.categoryBuckets.length
+                    ? row.categoryBuckets.map(getKolamTaskCategoryBucketLabel).join(', ')
+                    : 'Semua'}
+                </Text>
+              </View>
+              <View style={styles.categoryActionsCell}>
+                <KolamButton
+                  disabled={controller.mutatingTaskId === `task-type:${row.id}`}
+                  label="Edit"
+                  onPress={() => controller.onEditTaskType(row)}
+                />
+                {!row.isSystem ? (
+                  <KolamButton
+                    disabled={controller.mutatingTaskId === `task-type:${row.id}`}
+                    intent="outline"
+                    label="Hapus"
+                    onPress={() => {
+                      void controller.onDeleteTaskType(row);
+                    }}
+                  />
+                ) : null}
+              </View>
+            </View>
+          ))
+        ) : (
+          <Text style={styles.metaText}>
+            {controller.loading ? 'Memuat...' : 'Belum ada tipe'}
+          </Text>
+        )}
+      </View>
+    </View>
+  );
+}
+
+function KolamTaskTypeFormModal({
+  controller,
+}: {
+  controller: KolamTaskManagerController;
+}) {
+  const saving =
+    controller.mutatingTaskId === 'task-type:new' ||
+    (controller.taskTypeFormMode === 'edit' &&
+      controller.mutatingTaskId?.startsWith('task-type:'));
+
+  return (
+    <Modal
+      animationType="fade"
+      onRequestClose={controller.onCloseTaskTypeForm}
+      transparent
+      visible={controller.taskTypeFormOpen}
+    >
+      <View style={styles.modalRoot}>
+        <KolamModalBackdrop onPress={controller.onCloseTaskTypeForm} />
+        <View style={styles.modalCard}>
+          <View style={styles.modalHeader}>
+            <Text numberOfLines={1} style={styles.modalTitle}>
+              {controller.taskTypeFormMode === 'edit' ? 'Edit tipe task' : 'Tambah tipe task'}
+            </Text>
+            <View style={styles.modalActions}>
+              <KolamButton
+                disabled={saving}
+                intent="outline"
+                label="Batal"
+                onPress={controller.onCloseTaskTypeForm}
+              />
+              <KolamButton
+                disabled={saving}
+                label={saving ? 'Menyimpan...' : 'Simpan'}
+                onPress={() => {
+                  void controller.onSaveTaskType();
+                }}
+              />
+            </View>
+          </View>
+          {controller.taskTypeFormError ? (
+            <KolamStatusBadge
+              intent="danger"
+              label={controller.taskTypeFormError}
+              numberOfLines={3}
+            />
+          ) : null}
+          <ScrollView contentContainerStyle={styles.modalContent}>
+            <View style={styles.formGrid}>
+              <KolamTaskField label="Key" required>
+                <KolamFormTextField
+                  onChangeText={key => controller.onChangeTaskTypeForm({ key })}
+                  style={settingsWebFormStyles.settingsWebFormFieldValue}
+                  value={controller.taskTypeForm.key}
+                />
+              </KolamTaskField>
+              <KolamTaskField label="Nama" required>
+                <KolamFormTextField
+                  onChangeText={name => controller.onChangeTaskTypeForm({ name })}
+                  style={settingsWebFormStyles.settingsWebFormFieldValue}
+                  value={controller.taskTypeForm.name}
+                />
+              </KolamTaskField>
+              <KolamTaskField label="Deskripsi">
+                <KolamFormTextField
+                  multiline
+                  onChangeText={description =>
+                    controller.onChangeTaskTypeForm({ description })
+                  }
+                  style={[
+                    settingsWebFormStyles.settingsWebFormFieldValue,
+                    settingsWebFormStyles.settingsWebFormFieldValueTextarea,
+                  ]}
+                  value={controller.taskTypeForm.description}
+                />
+              </KolamTaskField>
+              <KolamDropdownSelect
+                label="Handler"
+                onChange={handler =>
+                  controller.onChangeTaskTypeForm({
+                    handler: handler as typeof controller.taskTypeForm.handler,
+                  })
+                }
+                options={[
+                  { label: 'Dosing', value: 'dosing' },
+                  { label: 'Maintenance', value: 'maintenance' },
+                ]}
+                value={controller.taskTypeForm.handler}
+              />
+              <KolamTaskField label="Urutan">
+                <KolamFormTextField
+                  mode="numeric"
+                  onChangeText={sortOrder =>
+                    controller.onChangeTaskTypeForm({ sortOrder })
+                  }
+                  style={settingsWebFormStyles.settingsWebFormFieldValue}
+                  value={controller.taskTypeForm.sortOrder}
+                />
+              </KolamTaskField>
+            </View>
+            <View style={styles.bucketRow}>
+              {TASK_TYPE_BUCKET_OPTIONS.map(option => (
+                <KolamButton
+                  intent={
+                    controller.taskTypeForm.categoryBuckets.includes(option.id)
+                      ? 'primary'
+                      : 'outline'
+                  }
+                  key={option.id}
+                  label={option.label}
+                  onPress={() =>
+                    controller.onChangeTaskTypeForm({
+                      categoryBuckets: toggleTaskTypeBucket(
+                        controller.taskTypeForm.categoryBuckets,
+                        option.id,
+                      ),
+                    })
+                  }
+                />
+              ))}
+            </View>
+            <View style={styles.formSwitchRow}>
+              <Text style={styles.cellText}>Butuh komponen produk</Text>
+              <KolamSwitch
+                active={controller.taskTypeForm.requiresProductComponents}
+                onPress={() =>
+                  controller.onChangeTaskTypeForm({
+                    requiresProductComponents:
+                      !controller.taskTypeForm.requiresProductComponents,
+                  })
+                }
+              />
+            </View>
+            <View style={styles.formSwitchRow}>
+              <Text style={styles.cellText}>Aktif</Text>
+              <KolamSwitch
+                active={controller.taskTypeForm.active}
+                onPress={() =>
+                  controller.onChangeTaskTypeForm({
+                    active: !controller.taskTypeForm.active,
+                  })
+                }
+              />
+            </View>
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function toggleTaskTypeBucket(
+  current: KolamTaskManagerController['taskTypeForm']['categoryBuckets'],
+  bucket: KolamTaskManagerController['taskTypeForm']['categoryBuckets'][number],
+) {
+  const next = current.includes(bucket)
+    ? current.filter(item => item !== bucket)
+    : current.length >= 2
+      ? current
+      : [...current, bucket];
+  return next;
+}
+
 function KolamTaskField({
   children,
   label,
@@ -1658,5 +1922,25 @@ const styles = StyleSheet.create({
     maxWidth: 520,
     padding: 14,
     width: '100%',
+  },
+  taskTypeRow: {
+    alignItems: 'flex-start',
+    borderColor: V.colors.border,
+    borderRadius: V.radius.md,
+    borderWidth: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    padding: 12,
+  },
+  taskTypeMain: {
+    flex: 1,
+    gap: 6,
+    minWidth: 260,
+  },
+  bucketRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
   },
 });

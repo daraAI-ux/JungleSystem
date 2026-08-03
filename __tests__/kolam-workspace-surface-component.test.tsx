@@ -81,7 +81,9 @@ jest.mock('../src/services/kolam-task-manager-api', () => ({
   addKolamTaskManagerNote: jest.fn(() => Promise.resolve({})),
   createKolamTaskManagerCategory: jest.fn(() => Promise.resolve({})),
   createKolamTaskManagerTask: jest.fn(() => Promise.resolve({})),
+  createKolamTaskManagerTaskType: jest.fn(() => Promise.resolve({})),
   deleteKolamTaskManagerCategory: jest.fn(() => Promise.resolve(undefined)),
+  deleteKolamTaskManagerTaskType: jest.fn(() => Promise.resolve(undefined)),
   getKolamTaskManagerCategories: jest.fn(() =>
     Promise.resolve([
       { active: true, bucket: 'project', color: '#16a34a', id: 'cat-1', name: 'Operasional', sortOrder: 2 },
@@ -197,6 +199,22 @@ jest.mock('../src/services/kolam-task-manager-api', () => ({
       },
     }),
   ),
+  getKolamTaskManagerTaskTypes: jest.fn(() =>
+    Promise.resolve([
+      {
+        active: true,
+        categoryBuckets: ['enclosure'],
+        description: 'Cek dosing',
+        handler: 'dosing',
+        id: 'type-1',
+        isSystem: true,
+        key: 'dosing',
+        name: 'Dosing',
+        requiresProductComponents: true,
+        sortOrder: 10,
+      },
+    ]),
+  ),
   getKolamTaskRecurringTemplates: jest.fn(() =>
     Promise.resolve([
       {
@@ -251,6 +269,7 @@ jest.mock('../src/services/kolam-task-manager-api', () => ({
   updateKolamTaskManagerCategory: jest.fn(() => Promise.resolve({})),
   updateKolamTaskManagerStatus: jest.fn(() => Promise.resolve({})),
   updateKolamTaskManagerTask: jest.fn(() => Promise.resolve({})),
+  updateKolamTaskManagerTaskType: jest.fn(() => Promise.resolve({})),
 }));
 
 jest.mock('../src/services/kolam-user-api', () => ({
@@ -646,6 +665,35 @@ describe('KolamWorkspaceSurface', () => {
         'Urutan',
         'Aktif',
       ]),
+    );
+  });
+
+  it('renders the native Task Manager task types settings route', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+    const taskManagerItem = {
+      ...getKolamNavigationItemByRoute('/task-manager')!,
+      route: '/task-manager/settings/task-types',
+    };
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <View>
+          <KolamWorkspaceSurface
+            {...buildSurfaceProps({
+              activeModule: 'kolam',
+              activeNavigationItem: taskManagerItem,
+            })}
+          />
+        </View>,
+      );
+    });
+
+    await ReactTestRenderer.act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(renderText(renderer!)).toEqual(
+      expect.arrayContaining(['Tipe Task', 'Tambah tipe', 'dosing', 'Dosing']),
     );
   });
 
