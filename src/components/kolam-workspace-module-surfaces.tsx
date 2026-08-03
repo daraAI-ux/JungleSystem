@@ -6,6 +6,7 @@ export {KolamSalesSurface} from './kolam-sales-surface';
 export {KolamCashflowSurface} from './kolam-cashflow-surface';
 export {KolamCustomerSurface} from './kolam-customer-surface';
 export {KolamAmSurface} from './kolam-am-surface';
+export {KolamTaskManagerSurface} from './kolam-task-manager-surface';
 export type {
   KolamCatalogSurfaceProps,
   KolamSalesSurfaceProps,

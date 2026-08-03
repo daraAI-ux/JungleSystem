@@ -21,6 +21,7 @@ import { isKolamProductSerialRoute } from '../domain/kolam-product-serial';
 import { isKolamProductionRoute } from '../domain/kolam-production';
 import { isKolamPurchaseOrderRoute } from '../domain/kolam-purchase-order';
 import { isKolamTagRoute } from '../domain/kolam-tag';
+import { isKolamTaskManagerRoute } from '../domain/kolam-task-manager';
 import { isKolamSpeciesRoute } from '../domain/kolam-species';
 import { isKolamStockTransactionRoute } from '../domain/kolam-stock-transaction';
 import { isKolamStockOpnameRoute } from '../domain/kolam-stock-opname';
@@ -85,6 +86,7 @@ import {
   KolamOverviewSurface,
   KolamSalesSurface,
   KolamSettingsSurface,
+  KolamTaskManagerSurface,
   type KolamCashflowSurfaceProps,
   type KolamCatalogSurfaceProps,
   type KolamCustomerSurfaceProps,
@@ -206,6 +208,15 @@ export function KolamWorkspaceSurfaceComponent({
       <KolamCampaignSurface
         onRouteChange={onDashboardRoute}
         route={activeNavigationItem?.route ?? '/campaign'}
+      />
+    );
+  }
+
+  if (activeRoutePath && isKolamTaskManagerRoute(activeRoutePath)) {
+    return (
+      <KolamTaskManagerSurface
+        onRouteChange={onDashboardRoute}
+        route={activeNavigationItem?.route ?? '/task-manager'}
       />
     );
   }
@@ -424,6 +435,15 @@ export function KolamWorkspaceSurfaceComponent({
         if (isKolamCampaignRoute(activeNavigationItem.route.split('?')[0])) {
           return (
             <KolamCampaignSurface
+              onRouteChange={onDashboardRoute}
+              route={activeNavigationItem.route}
+            />
+          );
+        }
+
+        if (isKolamTaskManagerRoute(activeNavigationItem.route.split('?')[0])) {
+          return (
+            <KolamTaskManagerSurface
               onRouteChange={onDashboardRoute}
               route={activeNavigationItem.route}
             />
