@@ -57,9 +57,11 @@ import {
   useKolamPusatAiRingkasanController,
   type KolamPusatAiRingkasanController,
 } from '../hooks/use-kolam-pusat-ai-ringkasan-controller';
+import {useKolamPusatAiTransaksiCopilotController} from '../hooks/use-kolam-pusat-ai-transaksi-copilot-controller';
 import {KolamButton} from './kolam-button';
 import {KolamDropdownSelect} from './kolam-dropdown-select';
 import {KolamEmptyState} from './kolam-empty-state';
+import {KolamPusatAiTransaksiCopilotBody} from './kolam-pusat-ai-transaksi-copilot-body';
 import {KolamStatsCardStrip} from './kolam-stats-card-strip';
 import {KolamStatusBadge} from './kolam-status-badge';
 import {KolamSurfacePanelTabs} from './kolam-surface-panel-tabs';
@@ -87,6 +89,7 @@ export function KolamPusatAiRingkasanSurface({
   });
   const ownerController = useKolamPusatAiOwnerCopilotController(route);
   const logDaraController = useKolamPusatAiLogDaraController(route);
+  const transaksiController = useKolamPusatAiTransaksiCopilotController(route);
 
   return (
     <View style={styles.surface}>
@@ -114,6 +117,11 @@ export function KolamPusatAiRingkasanSurface({
         />
       ) : selectedTab === 'log-dara' ? (
         <KolamPusatAiLogDaraBody controller={logDaraController} />
+      ) : selectedTab === 'transaksi-copilot' ? (
+        <KolamPusatAiTransaksiCopilotBody
+          controller={transaksiController}
+          onRouteChange={onRouteChange}
+        />
       ) : (
         <KolamEmptyState title="Belum tersedia" />
       )}
@@ -121,7 +129,7 @@ export function KolamPusatAiRingkasanSurface({
   );
 }
 
-/** Alias for hub surface (tabs + ringkasan/proses/owner/log). */
+/** Alias for hub surface. */
 export const KolamPusatAiSurface = KolamPusatAiRingkasanSurface;
 
 function resolveSelectedHubTab(

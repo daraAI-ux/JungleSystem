@@ -6,6 +6,16 @@ import {fetchKolamDaraJobsList} from '../src/services/kolam-dara-jobs-api';
 import {fetchKolamOwnerCopilotDashboard} from '../src/services/kolam-dara-owner-copilot-api';
 import {fetchKolamDaraStaffNotifyLog} from '../src/services/kolam-dara-staff-notify-log-api';
 import {fetchKolamDaraMarketingHub} from '../src/services/kolam-dara-marketing-hub-api';
+import {
+  fetchKolamKatakTerbangHealth,
+  fetchKolamShippingDeliveryStats,
+  fetchKolamShippingOpsLog,
+} from '../src/services/kolam-dara-shipping-copilot-api';
+import {
+  getKolamTeamChatRooms,
+  getKolamWebSetting,
+} from '../src/services/kolam-api';
+import {getKolamSources} from '../src/services/kolam-source-api';
 
 jest.mock('../src/services/kolam-dara-marketing-hub-api', () => ({
   fetchKolamDaraMarketingHub: jest.fn(),
@@ -25,6 +35,22 @@ jest.mock('../src/services/kolam-dara-staff-notify-log-api', () => ({
   fetchKolamDaraStaffNotifyLog: jest.fn(),
 }));
 
+jest.mock('../src/services/kolam-dara-shipping-copilot-api', () => ({
+  fetchKolamShippingDeliveryStats: jest.fn(),
+  fetchKolamShippingOpsLog: jest.fn(),
+  fetchKolamKatakTerbangHealth: jest.fn(),
+}));
+
+jest.mock('../src/services/kolam-api', () => ({
+  getKolamTeamChatRooms: jest.fn(),
+  getKolamWebSetting: jest.fn(),
+  updateKolamWebSetting: jest.fn(),
+}));
+
+jest.mock('../src/services/kolam-source-api', () => ({
+  getKolamSources: jest.fn(),
+}));
+
 jest.mock('../src/context/kolam-app-contexts', () => ({
   useKolamAuthContext: jest.fn(),
 }));
@@ -40,6 +66,24 @@ const fetchOwnerMock = fetchKolamOwnerCopilotDashboard as jest.MockedFunction<
 >;
 const fetchLogMock = fetchKolamDaraStaffNotifyLog as jest.MockedFunction<
   typeof fetchKolamDaraStaffNotifyLog
+>;
+const fetchStatsMock = fetchKolamShippingDeliveryStats as jest.MockedFunction<
+  typeof fetchKolamShippingDeliveryStats
+>;
+const fetchOpsMock = fetchKolamShippingOpsLog as jest.MockedFunction<
+  typeof fetchKolamShippingOpsLog
+>;
+const fetchHealthMock = fetchKolamKatakTerbangHealth as jest.MockedFunction<
+  typeof fetchKolamKatakTerbangHealth
+>;
+const getRoomsMock = getKolamTeamChatRooms as jest.MockedFunction<
+  typeof getKolamTeamChatRooms
+>;
+const getWebSettingMock = getKolamWebSetting as jest.MockedFunction<
+  typeof getKolamWebSetting
+>;
+const getSourcesMock = getKolamSources as jest.MockedFunction<
+  typeof getKolamSources
 >;
 const useAuthContextMock = useKolamAuthContext as jest.MockedFunction<
   typeof useKolamAuthContext
@@ -60,7 +104,89 @@ describe('KolamPusatAiRingkasanSurface', () => {
     fetchJobsMock.mockReset();
     fetchOwnerMock.mockReset();
     fetchLogMock.mockReset();
+    fetchStatsMock.mockReset();
+    fetchOpsMock.mockReset();
+    fetchHealthMock.mockReset();
+    getRoomsMock.mockReset();
+    getWebSettingMock.mockReset();
+    getSourcesMock.mockReset();
     fetchJobsMock.mockResolvedValue([]);
+    getRoomsMock.mockResolvedValue([
+      {_id: 'room-ops', name: 'Ops Transaksi', isGeneral: false},
+    ]);
+    getWebSettingMock.mockResolvedValue({
+      katakTerbangWorkerName: 'Katak',
+      katakTerbangWorkerPhotoUrl: '',
+      transaksiCopilotChatNotifyEnabled: true,
+      transaksiCopilotTeamRoomId: 'room-ops',
+    } as never);
+    getSourcesMock.mockResolvedValue({
+      items: [],
+      page: 1,
+      limit: 50,
+      total: 0,
+      totalPages: 1,
+    });
+    fetchStatsMock.mockResolvedValue({
+      generatedAt: '2026-08-03T12:00:00.000Z',
+      range: 'month',
+      note: 'Order delivery ditangani DARA vs Katak Terbang',
+      dara: {
+        value: 12,
+        change: 5,
+        data: [{timestamp: '2026-08-01T00:00:00.000Z', value: 2}],
+        byChannel: {shopee: 4, tokopedia: 5, web: 3},
+      },
+      bot: {
+        value: 8,
+        change: -1,
+        data: [],
+        byChannel: {shopee: 3, tokopedia: 3, web: 2},
+      },
+      katakTerbangProfile: {name: 'Katak', photoUrl: ''},
+      channelSources: {
+        shopee: {sourceId: null, name: 'Shopee', logo: null},
+        tokopedia: {sourceId: null, name: 'Tokopedia', logo: null},
+        web: {sourceId: null, name: 'Website', logo: null},
+      },
+    });
+    fetchOpsMock.mockResolvedValue({
+      generatedAt: '2026-08-03T12:00:00.000Z',
+      lookbackHours: 72,
+      dara: [
+        {
+          id: 'd1',
+          at: '2026-08-03T11:00:00.000Z',
+          eventType: 'webstore_fulfillment',
+          action: '',
+          invoiceCode: 'INV-T',
+          phase: 'packing',
+          detail: 'Packing webstore',
+        },
+      ],
+      bot: [],
+    });
+    fetchHealthMock.mockResolvedValue({
+      checkedAt: '2026-08-03T12:00:00.000Z',
+      overallHealthy: true,
+      overallState: 'healthy',
+      amConfigured: true,
+      amReachable: true,
+      platforms: [
+        {
+          platform: 'shopee',
+          enabled: true,
+          healthy: true,
+          state: 'healthy',
+          reason: '',
+        },
+      ],
+      notifyRoom: {
+        id: 'room-ops',
+        name: 'Ops Transaksi',
+        webHref: '/team-chat?room=room-ops',
+      },
+    });
     fetchLogMock.mockResolvedValue({
       generatedAt: '2026-08-03T12:00:00.000Z',
       lookbackHours: 72,
@@ -308,6 +434,34 @@ describe('KolamPusatAiRingkasanSurface', () => {
     expect(text).toContain('Team Chat');
     expect(text).toContain('LLM');
     expect(fetchLogMock).toHaveBeenCalled();
+  });
+
+  it('loads Transaksi Copilot shipping dashboard for admin', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer | undefined;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamPusatAiRingkasanSurface route="/pusat-ai?tab=transaksi-copilot" />,
+      );
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const text = renderText(renderer!).join(' ');
+    expect(text).not.toContain('Belum tersedia');
+    expect(text).toContain('Transaksi Copilot');
+    expect(text).toContain('Room log transaksi DARA');
+    expect(text).toContain('Kesehatan Bot — Katak Terbang');
+    expect(text).toContain('Delivery DARA');
+    expect(text).toContain('Bot — Katak Terbang');
+    expect(text).toContain('Console operasi');
+    expect(text).toContain('Log DARA');
+    expect(text).toContain('Log Bot');
+    expect(text).toContain('12 order');
+    expect(fetchStatsMock).toHaveBeenCalled();
+    expect(fetchOpsMock).toHaveBeenCalled();
+    expect(fetchHealthMock).toHaveBeenCalled();
   });
 
   it('hides admin tabs for non-admin roles', async () => {
