@@ -1622,7 +1622,8 @@ describe('KolamAmSurface', () => {
     jest.mocked(getAmDeviceServiceLogs).mockResolvedValue({
       logs: [
         {ts: '2026-01-01T00:00:00.000Z', level: 'info', message: 'OTP_REQUIRED'},
-        {ts: '2026-01-01T00:00:01.000Z', level: 'info', message: '{"event":"login_success"}'},
+        {ts: '2026-01-01T00:00:01.000Z', level: 'info', message: 'QR_LOGIN {"qrcodeId":"stale-qr","status":"WAITING"}'},
+        {ts: '2026-01-01T00:00:02.000Z', level: 'info', message: '{"event":"login_success"}'},
       ],
       processRunning: true,
     });
@@ -1644,7 +1645,71 @@ describe('KolamAmSurface', () => {
     expect(
       renderer!.root.findAllByProps({accessibilityLabel: 'AM Service Submit Input service-login-ok'}),
     ).toHaveLength(0);
+    expect(
+      renderer!.root.findAllByProps({accessibilityLabel: 'AM Service QR Image service-login-ok'}),
+    ).toHaveLength(0);
     expect(renderText(renderer!)).not.toContain('Masukkan OTP service');
+  });
+
+  it('hides stale QR login images when the AM BE service process has stopped', async () => {
+    jest.mocked(getAmServiceAccounts).mockResolvedValue({
+      data: [
+        {
+          _id: 'service-stopped-qr',
+          platform: 'shopee',
+          label: 'Shopee Stopped QR',
+          deviceId: {
+            _id: 'device-stopped-qr',
+            name: 'Phone Stopped QR',
+            connectionType: 'tcp',
+            tcpAddress: '10.0.0.11:5555',
+            udid: null,
+          },
+          status: 'inactive',
+          credentials: {},
+          meta: {},
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 1, limit: 1},
+    });
+    jest.mocked(getAmDeviceServiceLogs).mockResolvedValue({
+      logs: [
+        {ts: '2026-01-01T00:00:01.000Z', level: 'info', message: 'QR_LOGIN {"qrcodeId":"stale-qr","status":"WAITING"}'},
+      ],
+      processRunning: false,
+    });
+    jest.mocked(getAmDeviceServices).mockResolvedValue([
+      {
+        serviceAccountId: 'service-stopped-qr',
+        label: 'Shopee Stopped QR',
+        platform: 'shopee',
+        accountNumber: '',
+        serviceStatus: 'inactive',
+        taskStatus: 'idle',
+        processRunning: false,
+        isBanking: false,
+      },
+    ]);
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await updateAmRoute(renderer!, 'services');
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Service Shopee Stopped QR'}).props.onPress();
+    });
+
+    expect(
+      renderer!.root.findAllByProps({accessibilityLabel: 'AM Service QR Image service-stopped-qr'}),
+    ).toHaveLength(0);
+    expect(renderText(renderer!)).toContain('Runtime');
   });
 
   it('runs service start and clear session actions from Services', async () => {

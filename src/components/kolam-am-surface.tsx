@@ -2626,7 +2626,7 @@ function AmServiceDetailPanel({
                 tone={processRunning ? 'success' : 'muted'}
               />
             </View>
-            {qrSignal ? (
+            {qrSignal && processRunning ? (
               <View style={styles.qrPanel}>
                 <Text style={styles.formLabel}>QR Login {AM_PLATFORM_LABELS[account.platform] ?? titleCase(account.platform)}</Text>
                 <Text style={styles.rowMeta}>{qrSignal.status ? `Status ${qrSignal.status}` : 'Scan QR tersedia.'}</Text>
@@ -6801,6 +6801,7 @@ function cleanDevicePayload(payload: AmDevicePayload): Omit<AmDevicePayload, 'bo
 function getQrLoginSignal(logs: AmDeviceServiceLog[]) {
   for (const log of logs.slice().reverse()) {
     const message = log.message;
+    if (message.includes('login_success') || message.includes('Login success')) return null;
     if (!message.includes('QR') && !message.includes('qrcode')) continue;
 
     const jsonStart = message.indexOf('{');
