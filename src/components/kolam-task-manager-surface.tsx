@@ -142,6 +142,7 @@ export function KolamTaskManagerSurface({
       <KolamTaskTypeFormModal controller={controller} />
       <KolamTaskOvertimeRequestModal controller={controller} />
       <KolamTaskDeleteConfirmModal controller={controller} />
+      <KolamTaskTypeDeleteConfirmModal controller={controller} />
     </View>
   );
 }
@@ -1890,6 +1891,56 @@ function KolamTaskDeleteConfirmModal({
   );
 }
 
+function KolamTaskTypeDeleteConfirmModal({
+  controller,
+}: {
+  controller: KolamTaskManagerController;
+}) {
+  const taskType = controller.deleteTaskTypeConfirmTaskType;
+  const deleting = Boolean(
+    taskType && controller.mutatingTaskId === `task-type:${taskType.id}`,
+  );
+
+  return (
+    <Modal
+      animationType="fade"
+      onRequestClose={controller.onCloseDeleteTaskTypeConfirm}
+      transparent
+      visible={Boolean(taskType)}
+    >
+      <View style={styles.modalRoot}>
+        <KolamModalBackdrop onPress={controller.onCloseDeleteTaskTypeConfirm} />
+        <View style={styles.categoryModalCard}>
+          <View style={styles.modalHeader}>
+            <Text numberOfLines={1} style={styles.modalTitle}>
+              Hapus tipe task
+            </Text>
+            <View style={styles.modalActions}>
+              <KolamButton
+                disabled={deleting}
+                intent="outline"
+                label="Batal"
+                onPress={controller.onCloseDeleteTaskTypeConfirm}
+              />
+              <KolamButton
+                disabled={!taskType || deleting}
+                intent="danger"
+                label={deleting ? 'Menghapus...' : 'Hapus'}
+                onPress={() => {
+                  if (taskType) {
+                    void controller.onDeleteTaskType(taskType);
+                  }
+                }}
+              />
+            </View>
+          </View>
+          <Text style={styles.metaText}>{taskType?.name || 'Tipe task'}</Text>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
 function KolamTaskCategorySettingsPanel({
   controller,
 }: {
@@ -2248,9 +2299,7 @@ function KolamTaskTypeSettingsPanel({
                     disabled={controller.mutatingTaskId === `task-type:${row.id}`}
                     intent="outline"
                     label="Hapus"
-                    onPress={() => {
-                      void controller.onDeleteTaskType(row);
-                    }}
+                    onPress={() => controller.onRequestDeleteTaskType(row)}
                   />
                 ) : null}
               </View>

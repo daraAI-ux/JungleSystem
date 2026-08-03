@@ -159,6 +159,7 @@ export interface KolamTaskManagerController {
   taskTypeFormKeyLocked: boolean;
   taskTypeFormMode: 'edit' | 'new';
   taskTypeFormOpen: boolean;
+  deleteTaskTypeConfirmTaskType: KolamTaskManagerTaskType | null;
   recurringTemplateForm: KolamTaskRecurringTemplateFormState;
   recurringTemplateFormError: string | null;
   recurringTemplateFormOpen: boolean;
@@ -235,6 +236,7 @@ export interface KolamTaskManagerController {
   onCloseCategoryForm: () => void;
   onCloseForm: () => void;
   onCloseDeleteTaskConfirm: () => void;
+  onCloseDeleteTaskTypeConfirm: () => void;
   onCloseRecurringBulkForm: () => void;
   onCloseRecurringTemplateForm: () => void;
   onCloseTaskTypeForm: () => void;
@@ -255,6 +257,7 @@ export interface KolamTaskManagerController {
   onEditTask: (task: KolamTaskManagerTask) => void;
   onOpenOvertimeRequest: (task: KolamTaskManagerTask) => void;
   onRequestDeleteTask: (task: KolamTaskManagerTask) => void;
+  onRequestDeleteTaskType: (taskType: KolamTaskManagerTaskType) => void;
   onBackToList: () => void;
   onRefresh: () => Promise<void>;
   onResetFilters: () => void;
@@ -372,6 +375,8 @@ export function useKolamTaskManagerController({
     'new',
   );
   const [editingTaskTypeId, setEditingTaskTypeId] = useState('');
+  const [deleteTaskTypeConfirmTaskType, setDeleteTaskTypeConfirmTaskType] =
+    useState<KolamTaskManagerTaskType | null>(null);
   const [taskTypeFormError, setTaskTypeFormError] = useState<string | null>(
     null,
   );
@@ -1065,6 +1070,23 @@ export function useKolamTaskManagerController({
     setDeleteTaskConfirmTask(null);
   }, []);
 
+  const onRequestDeleteTaskType = useCallback(
+    (taskType: KolamTaskManagerTaskType) => {
+      if (taskType.isSystem) {
+        setError('Tipe sistem tidak bisa dihapus');
+        return;
+      }
+      setDeleteTaskTypeConfirmTaskType(taskType);
+      setError(null);
+      setStatusMessage(null);
+    },
+    [],
+  );
+
+  const onCloseDeleteTaskTypeConfirm = useCallback(() => {
+    setDeleteTaskTypeConfirmTaskType(null);
+  }, []);
+
   const onSubmitOvertimeRequest = useCallback(async () => {
     const reason = overtimeRequestReason.trim();
     if (!overtimeRequestTaskId) return false;
@@ -1549,6 +1571,7 @@ export function useKolamTaskManagerController({
       setStatusMessage(null);
       try {
         await deleteKolamTaskManagerTaskType(taskType.id);
+        setDeleteTaskTypeConfirmTaskType(null);
         setStatusMessage('Tipe task dihapus');
         await loadTaskTypes();
         return true;
@@ -1574,6 +1597,7 @@ export function useKolamTaskManagerController({
       taskTypeFormKeyLocked,
       taskTypeFormMode,
       taskTypeFormOpen,
+      deleteTaskTypeConfirmTaskType,
       recurringTemplateForm,
       recurringTemplateFormError,
       recurringTemplateFormOpen,
@@ -1641,6 +1665,7 @@ export function useKolamTaskManagerController({
       onChangeTaskTypeForm,
       onCloseCategoryForm,
       onCloseDeleteTaskConfirm,
+      onCloseDeleteTaskTypeConfirm,
       onCloseForm,
       onCloseRecurringBulkForm,
       onCloseRecurringTemplateForm,
@@ -1661,6 +1686,7 @@ export function useKolamTaskManagerController({
       onEditTaskType,
       onOpenOvertimeRequest,
       onRequestDeleteTask,
+      onRequestDeleteTaskType,
       onRefresh:
         mode === 'detail'
           ? refreshDetail
@@ -1716,6 +1742,7 @@ export function useKolamTaskManagerController({
       taskTypeFormKeyLocked,
       taskTypeFormMode,
       taskTypeFormOpen,
+      deleteTaskTypeConfirmTaskType,
       recurringTemplateForm,
       recurringTemplateFormError,
       recurringTemplateFormOpen,
@@ -1757,6 +1784,7 @@ export function useKolamTaskManagerController({
       onChangeTaskTypeForm,
       onCloseCategoryForm,
       onCloseDeleteTaskConfirm,
+      onCloseDeleteTaskTypeConfirm,
       onCloseForm,
       onCloseRecurringBulkForm,
       onCloseRecurringTemplateForm,
@@ -1776,6 +1804,7 @@ export function useKolamTaskManagerController({
       onEditTaskType,
       onOpenOvertimeRequest,
       onRequestDeleteTask,
+      onRequestDeleteTaskType,
       onBackToList,
       onResetFilters,
       onRunRecurringTick,
