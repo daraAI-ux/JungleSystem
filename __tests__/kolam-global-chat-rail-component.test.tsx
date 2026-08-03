@@ -862,7 +862,14 @@ describe('KolamGlobalChatRail', () => {
 
   it('opens DARA from the team chat header window', async () => {
     const refresh = jest.fn().mockResolvedValue(undefined);
+    const sendAttachment = jest.fn().mockResolvedValue(undefined);
     const sendMessage = jest.fn().mockResolvedValue(undefined);
+    pickNativeAssetFileMock.mockResolvedValue({
+      cancelled: false,
+      mimeType: 'image/png',
+      name: 'dara.png',
+      path: 'C:\\media\\dara.png',
+    });
     useDetailMock.mockImplementation((input: {selectedId: string | null}) => {
       const detail = getDefaultDetailMock();
       if (input.selectedId === 'room-dara-header') {
@@ -880,7 +887,12 @@ describe('KolamGlobalChatRail', () => {
               reactions: [],
             },
           ],
+          sendAttachment,
           sendMessage,
+          teamRoomMetadata: {
+            ...detail.teamRoomMetadata,
+            bots: [{id: 'dara', label: 'DARA', username: 'dara'}],
+          },
         } as ReturnType<typeof getDefaultDetailMock>;
       }
 
@@ -969,6 +981,74 @@ describe('KolamGlobalChatRail', () => {
 
     expect(preventDefaultForEnter).toHaveBeenCalled();
     expect(sendMessage).toHaveBeenCalledWith('Apa prioritas hari ini?');
+
+    const scroll = renderer!.root
+      .findAllByType(ScrollView)
+      .find(
+        node =>
+          node.props.accessibilityLabel === 'Daftar pesan DARA team chat',
+      );
+    expect(scroll!.props.onContentSizeChange).toEqual(expect.any(Function));
+
+    const emojiButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Buka emoji chat');
+
+    await ReactTestRenderer.act(async () => {
+      emojiButton!.props.onPress();
+    });
+
+    const emojiOption = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node =>
+        String(node.props.accessibilityLabel ?? '').startsWith('Pilih emoji '),
+      );
+
+    await ReactTestRenderer.act(async () => {
+      emojiOption!.props.onPress();
+    });
+
+    const attachButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(
+        node => node.props.accessibilityLabel === 'Lampirkan file team chat',
+      );
+
+    await ReactTestRenderer.act(async () => {
+      await attachButton!.props.onPress();
+    });
+
+    expect(renderText(renderer!).join(' ')).toContain('Gambar dara.png');
+
+    const attachmentInput = renderer!.root
+      .findAllByType(TextInput)
+      .find(
+        node =>
+          node.props.accessibilityLabel === 'Tulis pesan DARA team chat',
+      );
+
+    await ReactTestRenderer.act(async () => {
+      await attachmentInput!.props.onChangeText('Lampiran DARA');
+    });
+
+    const updatedAttachmentInput = renderer!.root
+      .findAllByType(TextInput)
+      .find(
+        node =>
+          node.props.accessibilityLabel === 'Tulis pesan DARA team chat',
+      );
+
+    await ReactTestRenderer.act(async () => {
+      await updatedAttachmentInput!.props.onKeyPress({
+        nativeEvent: {key: 'Enter'},
+        preventDefault: jest.fn(),
+      });
+    });
+
+    expect(sendAttachment).toHaveBeenCalledWith(
+      expect.objectContaining({name: 'dara.png'}),
+      'Lampiran DARA',
+    );
     expect(openTeamChatDirectMock).toHaveBeenCalledWith({dara: true});
     expect(refresh).toHaveBeenCalledTimes(1);
     expect(

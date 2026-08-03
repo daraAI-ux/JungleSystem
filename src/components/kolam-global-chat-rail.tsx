@@ -375,6 +375,9 @@ export function KolamGlobalChatRail({
     string | undefined
   >();
   const [daraComposerText, setDaraComposerText] = React.useState('');
+  const [daraPendingAttachment, setDaraPendingAttachment] =
+    React.useState<NativeImagePickerResult | null>(null);
+  const [daraEmojiPickerOpen, setDaraEmojiPickerOpen] = React.useState(false);
   const inboxParams = React.useMemo(
     () => buildInboxListParams(inboxFilter),
     [inboxFilter],
@@ -1060,6 +1063,8 @@ export function KolamGlobalChatRail({
   const handleCloseDaraWindow = React.useCallback(() => {
     setDaraHeaderMenuOpen(false);
     setDaraComposerText('');
+    setDaraPendingAttachment(null);
+    setDaraEmojiPickerOpen(false);
     daraWindowDetail.signalTyping(false);
   }, [daraWindowDetail]);
   const handleDaraComposerTextChange = React.useCallback(
@@ -1069,11 +1074,8 @@ export function KolamGlobalChatRail({
     },
     [daraWindowDetail],
   );
-  const handleDaraWindowSend = React.useCallback(async () => {
-    const body = daraComposerText.trim();
-
+  const handleChooseDaraAttachment = React.useCallback(async () => {
     if (
-      !body ||
       daraWindowBusy ||
       daraWindowDetail.loading ||
       daraWindowDetail.sending
@@ -1081,10 +1083,44 @@ export function KolamGlobalChatRail({
       return;
     }
 
+    const file = await pickNativeAssetFile();
+    if (!file.cancelled) {
+      setDaraPendingAttachment(file);
+    }
+  }, [daraWindowBusy, daraWindowDetail.loading, daraWindowDetail.sending]);
+  const handlePickDaraEmoji = React.useCallback(
+    (emoji: string) => {
+      const nextText = `${daraComposerText}${daraComposerText ? ' ' : ''}${emoji}`;
+      setDaraComposerText(nextText);
+      setDaraEmojiPickerOpen(false);
+      daraWindowDetail.signalTyping(true);
+    },
+    [daraComposerText, daraWindowDetail],
+  );
+  const handleDaraWindowSend = React.useCallback(async () => {
+    const body = daraComposerText.trim();
+
+    if (
+      (!body && !daraPendingAttachment) ||
+      daraWindowBusy ||
+      daraWindowDetail.loading ||
+      daraWindowDetail.sending
+    ) {
+      return;
+    }
+
+    if (daraPendingAttachment) {
+      await daraWindowDetail.sendAttachment(daraPendingAttachment, body);
+      setDaraPendingAttachment(null);
+      setDaraComposerText('');
+      daraWindowDetail.signalTyping(false);
+      return;
+    }
+
     await daraWindowDetail.sendMessage(body);
     setDaraComposerText('');
     daraWindowDetail.signalTyping(false);
-  }, [daraComposerText, daraWindowBusy, daraWindowDetail]);
+  }, [daraComposerText, daraPendingAttachment, daraWindowBusy, daraWindowDetail]);
 
   return (
     <>
@@ -1354,11 +1390,17 @@ export function KolamGlobalChatRail({
           busy={daraWindowBusy}
           composerText={daraComposerText}
           detail={daraWindowDetail}
+          emojiPickerOpen={daraEmojiPickerOpen}
           errorMessage={daraWindowError}
           imageUrl={daraAvatarState.imageUrl}
           onClose={handleCloseDaraWindow}
           onComposerTextChange={handleDaraComposerTextChange}
+          onEmojiPick={handlePickDaraEmoji}
+          onEmojiToggle={() => setDaraEmojiPickerOpen(current => !current)}
+          onPendingAttachmentClear={() => setDaraPendingAttachment(null)}
+          onPendingAttachmentPick={handleChooseDaraAttachment}
           onSend={handleDaraWindowSend}
+          pendingAttachment={daraPendingAttachment}
         />
       ) : null}
       {deleteRoomState.target ? (
@@ -2257,20 +2299,32 @@ function KolamTeamChatDaraWindow({
   busy,
   composerText,
   detail,
+  emojiPickerOpen,
   errorMessage,
   imageUrl,
   onClose,
   onComposerTextChange,
+  onEmojiPick,
+  onEmojiToggle,
+  onPendingAttachmentClear,
+  onPendingAttachmentPick,
   onSend,
+  pendingAttachment,
 }: {
   busy: boolean;
   composerText: string;
   detail: ReturnType<typeof useKolamChatRailDetail>;
+  emojiPickerOpen: boolean;
   errorMessage?: string;
   imageUrl: string | null;
   onClose: () => void;
   onComposerTextChange: (value: string) => void;
+  onEmojiPick: (emoji: string) => void;
+  onEmojiToggle: () => void;
+  onPendingAttachmentClear: () => void;
+  onPendingAttachmentPick: () => void | Promise<void>;
   onSend: () => Promise<void>;
+  pendingAttachment: NativeImagePickerResult | null;
 }) {
   const {height: windowHeight, width: windowWidth} = useWindowDimensions();
   const panelSize = React.useMemo(
@@ -2278,10 +2332,43 @@ function KolamTeamChatDaraWindow({
     [windowHeight, windowWidth],
   );
   const composerDisabled = busy || detail.loading || detail.sending;
+  const attachmentLabel = pendingAttachment
+    ? getPendingChatAttachmentLabel(pendingAttachment)
+    : '';
+  const mentionQuery = getTrailingMentionQuery(composerText);
+  const mentionOptions = React.useMemo(
+    () =>
+      mentionQuery !== null
+        ? buildTeamMentionOptions(
+            detail.teamRoomMetadata.members,
+            mentionQuery,
+            detail.teamRoomMetadata.daraReplyEnabled,
+            detail.teamRoomMetadata.bots,
+          )
+        : [],
+    [
+      detail.teamRoomMetadata.bots,
+      detail.teamRoomMetadata.daraReplyEnabled,
+      detail.teamRoomMetadata.members,
+      mentionQuery,
+    ],
+  );
 
   const handleSubmitComposer = React.useCallback(() => {
     onSend().catch(() => undefined);
   }, [onSend]);
+  const handlePickMention = React.useCallback(
+    (username: string) => {
+      const tag = `@${username} `;
+      const nextText =
+        composerText.match(/@([a-zA-Z0-9_.-]{0,32})$/) !== null
+          ? composerText.replace(/@([a-zA-Z0-9_.-]{0,32})$/, tag)
+          : `${composerText}${composerText.endsWith(' ') || !composerText ? '' : ' '}${tag}`;
+
+      onComposerTextChange(nextText);
+    },
+    [composerText, onComposerTextChange],
+  );
   const handleComposerKeyPress = React.useCallback(
     (event: NativeSyntheticEvent<TextInputKeyPressEventData>) => {
       const nativeEvent = event.nativeEvent as TextInputKeyPressEventData & {
@@ -2342,6 +2429,36 @@ function KolamTeamChatDaraWindow({
       </View>
 
       <View style={styles.teamDaraWindowFooter}>
+        {pendingAttachment ? (
+          <View style={styles.pendingAttachment}>
+            <Text numberOfLines={1} style={styles.pendingAttachmentText}>
+              {attachmentLabel}
+            </Text>
+            <KolamPressable
+              accessibilityLabel="Hapus lampiran chat"
+              disabled={composerDisabled}
+              onPress={onPendingAttachmentClear}
+              style={styles.pendingAttachmentRemove}>
+              <Text style={styles.pendingAttachmentRemoveText}>x</Text>
+            </KolamPressable>
+          </View>
+        ) : null}
+
+        {emojiPickerOpen ? (
+          <KolamChatComposerEmojiPicker
+            disabled={composerDisabled}
+            onPick={onEmojiPick}
+          />
+        ) : null}
+
+        {mentionOptions.length > 0 ? (
+          <KolamTeamMentionPicker
+            disabled={composerDisabled}
+            onPick={handlePickMention}
+            options={mentionOptions}
+          />
+        ) : null}
+
         <View
           style={[
             styles.composerShell,
@@ -2363,6 +2480,31 @@ function KolamTeamChatDaraWindow({
             submitBehavior="submit"
             value={composerText}
           />
+          <View style={styles.composerToolbar}>
+            <View style={styles.composerToolGroup}>
+              <KolamPressable
+                accessibilityLabel="Lampirkan file team chat"
+                disabled={composerDisabled}
+                onPress={onPendingAttachmentPick}
+                style={[
+                  styles.composerIconButton,
+                  composerDisabled && styles.composerIconButtonDisabled,
+                ]}>
+                <Text style={styles.composerIconButtonText}>+</Text>
+              </KolamPressable>
+              <KolamPressable
+                accessibilityLabel="Buka emoji chat"
+                disabled={composerDisabled}
+                onPress={onEmojiToggle}
+                style={[
+                  styles.composerIconButton,
+                  emojiPickerOpen && styles.composerIconButtonActive,
+                  composerDisabled && styles.composerIconButtonDisabled,
+                ]}>
+                <Text style={styles.composerIconButtonText}>:)</Text>
+              </KolamPressable>
+            </View>
+          </View>
         </View>
       </View>
     </View>
@@ -2382,6 +2524,17 @@ function KolamTeamChatDaraWindowMessages({
 }) {
   const messages = detail.messages;
   const displayedError = errorMessage || detail.errorMessage;
+  const messageScrollRef = React.useRef<React.ElementRef<typeof ScrollView> | null>(
+    null,
+  );
+  const messageScrollKey = React.useMemo(
+    () => messages.map(message => message.id).join('|'),
+    [messages],
+  );
+
+  React.useEffect(() => {
+    messageScrollRef.current?.scrollToEnd({animated: false});
+  }, [messageScrollKey]);
 
   if (loading || detail.loading) {
     return (
@@ -2418,6 +2571,10 @@ function KolamTeamChatDaraWindowMessages({
     <ScrollView
       accessibilityLabel="Daftar pesan DARA team chat"
       contentContainerStyle={styles.teamDaraWindowMessageList}
+      onContentSizeChange={() => {
+        messageScrollRef.current?.scrollToEnd({animated: false});
+      }}
+      ref={messageScrollRef}
       style={styles.teamDaraWindowMessageScroll}
       showsVerticalScrollIndicator>
       <KolamMappedList
