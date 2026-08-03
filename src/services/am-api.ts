@@ -330,6 +330,12 @@ export type AmTransferType = 'transfer' | 'virtual-account';
 export type AmMutasiType = 'masuk' | 'keluar';
 export type AmActivityLogType = 'api' | 'page';
 export type AmActivityLogStatus = 'success' | 'failed';
+export type AmChatPlatform =
+  | 'whatsapp'
+  | 'tokopedia'
+  | 'shopee'
+  | 'tiktok'
+  | 'instagram';
 
 export interface AmBankAccountRef {
   _id: string;
@@ -498,6 +504,40 @@ export interface AmWebhookTestPingResult {
   message: string;
 }
 
+export interface AmChatContact {
+  _id: string;
+  platform: AmChatPlatform | string;
+  serviceAccountId: {
+    _id: string;
+    label: string;
+    platform: string;
+  } | null;
+  externalId: string;
+  name: string;
+  meta: Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AmChatMessage {
+  _id: string;
+  platform: AmChatPlatform | string;
+  direction: 'incoming' | 'outgoing' | string;
+  serviceAccountId: string;
+  contactId: {
+    _id: string;
+    name: string;
+    externalId: string;
+    platform: string;
+  } | null;
+  body: string;
+  mediaUrl: string;
+  externalId: string;
+  relayedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface AmTaskQuery extends Record<string, AmQueryValue> {
   page?: number;
   limit?: number;
@@ -595,6 +635,23 @@ export interface AmWebhookLogQuery extends Record<string, AmQueryValue> {
   configId?: string;
   page?: number;
   limit?: number;
+}
+
+export interface AmChatMessageQuery extends Record<string, AmQueryValue> {
+  page?: number;
+  limit?: number;
+  platform?: string;
+  serviceAccountId?: string;
+  contactId?: string;
+  direction?: string;
+}
+
+export interface AmChatContactQuery extends Record<string, AmQueryValue> {
+  page?: number;
+  limit?: number;
+  platform?: string;
+  serviceAccountId?: string;
+  search?: string;
 }
 
 export interface AmWebhookConfigPayload {
@@ -1251,6 +1308,20 @@ export async function getAmWebhookLogs(
   baseUrl = appConfig.amApiBaseUrl,
 ): Promise<AmListResponse<AmWebhookLog>> {
   return getAmList<AmWebhookLog>('/webhook/logs', query, baseUrl);
+}
+
+export async function getAmChatMessages(
+  query?: AmChatMessageQuery,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmListResponse<AmChatMessage>> {
+  return getAmList<AmChatMessage>('/chat/message', query, baseUrl);
+}
+
+export async function getAmChatContacts(
+  query?: AmChatContactQuery,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmListResponse<AmChatContact>> {
+  return getAmList<AmChatContact>('/chat/contact', query, baseUrl);
 }
 
 async function getAmList<T>(

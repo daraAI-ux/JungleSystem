@@ -3,6 +3,8 @@ import {clearResponseCookieJar} from '../src/lib/api-client';
 import {
   createAmTask,
   createAmTransfer,
+  getAmChatContacts,
+  getAmChatMessages,
   getAmBoxById,
   getAmDeviceById,
   getAmMutasiReceiptUrl,
@@ -105,6 +107,69 @@ describe('AM API service', () => {
 
     expect(fetchMock).toHaveBeenCalledWith(
       'https://am.example.test/api/service-account/service-account-1',
+      expect.objectContaining({
+        method: 'GET',
+        credentials: 'include',
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+  });
+
+  it('loads AM chat messages through the live read-only chat endpoint', async () => {
+    fetchMock.mockResolvedValue(jsonResponse({
+      success: true,
+      data: [{_id: 'message-1', body: 'Halo'}],
+      meta: {total: 1, limit: 20, page: 1},
+    }));
+
+    await getAmChatMessages(
+      {
+        page: 1,
+        limit: 20,
+        platform: 'whatsapp',
+        serviceAccountId: 'account-1',
+        contactId: 'contact-1',
+        direction: 'incoming',
+      },
+      'https://am.example.test/api',
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://am.example.test/api/chat/message?page=1&limit=20&platform=whatsapp&serviceAccountId=account-1&contactId=contact-1&direction=incoming',
+      expect.objectContaining({
+        method: 'GET',
+        credentials: 'include',
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+  });
+
+  it('loads AM chat contacts through the live read-only chat endpoint', async () => {
+    fetchMock.mockResolvedValue(jsonResponse({
+      success: true,
+      data: [{_id: 'contact-1', name: 'Buyer'}],
+      meta: {total: 1, limit: 20, page: 1},
+    }));
+
+    await getAmChatContacts(
+      {
+        page: 1,
+        limit: 20,
+        platform: 'tokopedia',
+        serviceAccountId: 'account-1',
+        search: 'buyer',
+      },
+      'https://am.example.test/api',
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://am.example.test/api/chat/contact?page=1&limit=20&platform=tokopedia&serviceAccountId=account-1&search=buyer',
       expect.objectContaining({
         method: 'GET',
         credentials: 'include',
