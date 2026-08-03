@@ -1221,6 +1221,17 @@ function AmServicesPage() {
     const credentials: Record<string, unknown> = {};
     if (formPhoneNumber.trim()) credentials.phoneNumber = formPhoneNumber.trim();
 
+    if (formPlatform === 'dana') {
+      return {
+        platform: formPlatform,
+        label: formLabel.trim(),
+        deviceId: formDeviceId === 'none' ? null : formDeviceId,
+        pin: formPin.trim(),
+        credentials,
+        status: formStatus,
+      };
+    }
+
     return {
       platform: formPlatform,
       label: formLabel.trim(),
@@ -3493,18 +3504,28 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
       return;
     }
 
-    const payload: AmServiceAccountPayload = {
-      platform: serviceFormPlatform,
-      label: serviceFormLabel.trim(),
-      deviceId: targetDeviceId,
-      username: serviceFormUsername.trim(),
-      accountNumber: serviceFormAccountNumber.trim(),
-      credentials,
-      status: serviceFormStatus,
-    };
+    const payload: AmServiceAccountPayload = serviceFormPlatform === 'dana'
+      ? {
+          platform: serviceFormPlatform,
+          label: serviceFormLabel.trim(),
+          deviceId: targetDeviceId,
+          credentials,
+          status: serviceFormStatus,
+        }
+      : {
+          platform: serviceFormPlatform,
+          label: serviceFormLabel.trim(),
+          deviceId: targetDeviceId,
+          username: serviceFormUsername.trim(),
+          accountNumber: serviceFormAccountNumber.trim(),
+          credentials,
+          status: serviceFormStatus,
+        };
     const password = serviceFormPassword.trim();
     const pin = serviceFormPin.trim();
-    if (!editingDeviceServiceId || password) payload.password = password;
+    if (serviceFormPlatform !== 'dana' && (!editingDeviceServiceId || password)) {
+      payload.password = password;
+    }
     if (!editingDeviceServiceId || pin) payload.pin = pin;
 
     try {

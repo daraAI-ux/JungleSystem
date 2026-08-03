@@ -2168,6 +2168,35 @@ describe('KolamAmSurface', () => {
       credentials: {},
       status: 'inactive',
     }));
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Device Add Service Account device-1'}).props.onPress();
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Segment DANA'}).props.onPress();
+    });
+    await act(async () => {
+      findInput('Service label')!.props.onChangeText('DANA Detail');
+      findInput('PIN')!.props.onChangeText('654321');
+      findInput('nomor HP')!.props.onChangeText('081234567890');
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Device Save Service Account device-1'}).props.onPress();
+    });
+
+    expect(createAmServiceAccount).toHaveBeenLastCalledWith(expect.objectContaining({
+      platform: 'dana',
+      label: 'DANA Detail',
+      deviceId: 'device-1',
+      pin: '654321',
+      credentials: {phoneNumber: '081234567890'},
+      status: 'inactive',
+    }));
+    expect(createAmServiceAccount).toHaveBeenLastCalledWith(expect.not.objectContaining({
+      username: expect.anything(),
+      password: expect.anything(),
+      accountNumber: expect.anything(),
+    }));
   });
 
   it('defaults browser device service creation to WhatsApp like AM FE', async () => {
