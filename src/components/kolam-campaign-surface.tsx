@@ -184,7 +184,7 @@ function KolamCampaignList({
               value={searchInput}
             />
             <KolamDropdownSelect
-              label={controller.statusFilter ? statusFilterLabel : 'Status'}
+              label={statusFilterLabel}
               onChange={value =>
                 controller.onSetStatusFilter(
                   value as '' | KolamCampaignStatus,
@@ -194,6 +194,7 @@ function KolamCampaignList({
                 label: option.label,
                 value: option.value,
               }))}
+              showLabelInTrigger={false}
               style={styles.statusFilter}
               value={controller.statusFilter}
             />

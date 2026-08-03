@@ -227,6 +227,7 @@ export interface AmDevice {
   adbPort?: number;
   adbStatus?: 'connected' | 'disconnected' | 'unauthorized' | string;
   adbCheckedAt?: string;
+  tags?: string[];
   createdAt: string;
   updatedAt: string;
 }

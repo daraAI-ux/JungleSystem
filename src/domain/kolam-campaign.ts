@@ -114,7 +114,7 @@ export const KOLAM_CAMPAIGN_STATUS_FILTER_OPTIONS: Array<{
   label: string;
   value: '' | KolamCampaignStatus;
 }> = [
-  { label: 'Semua Status', value: '' },
+  { label: 'Status', value: '' },
   { label: 'Perencanaan', value: 'on_planning' },
   { label: 'Berlangsung', value: 'on_going' },
   { label: 'Berakhir', value: 'ended' },
