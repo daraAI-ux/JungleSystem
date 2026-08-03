@@ -21,6 +21,15 @@ describe('KolamMenuSection primary hub', () => {
     const primary = getKolamNavigationSectionPrimaryItem(pusatAi);
     expect(primary?.route).toBe('/pusat-ai');
     expect(primary?.group).toBeUndefined();
+    expect(pusatAi.items.every(item => item.group == null)).toBe(true);
+    expect(pusatAi.items.map(item => item.label)).toEqual([
+      'Pusat AI',
+      'DARA SEO',
+      'Intel Pasar',
+      'DARA Pajak',
+      'Pelatihan DARA',
+      'Riwayat Proses DARA',
+    ]);
     expect(getKolamNavigationSectionPrimaryItem(finance)?.route).toBe(
       '/finance',
     );

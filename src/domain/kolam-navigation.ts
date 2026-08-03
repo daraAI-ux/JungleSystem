@@ -792,11 +792,23 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
     title: 'Pusat AI',
     items: [
       sidebarItem('/pusat-ai', { group: undefined, label: 'Pusat AI' }),
-      sidebarItem('/campaign/dara-seo', { label: 'DARA SEO' }),
-      sidebarItem('/campaign/dara-market-intel', { label: 'Intel Pasar' }),
-      sidebarItem('/finance/tax', { label: 'DARA Pajak' }),
-      sidebarItem('/list-of-users/dara-training', { label: 'Pelatihan DARA' }),
-      sidebarItem('/campaign/dara-jobs', { label: 'Riwayat Proses DARA' }),
+      sidebarItem('/campaign/dara-seo', {
+        group: undefined,
+        label: 'DARA SEO',
+      }),
+      sidebarItem('/campaign/dara-market-intel', {
+        group: undefined,
+        label: 'Intel Pasar',
+      }),
+      sidebarItem('/finance/tax', { group: undefined, label: 'DARA Pajak' }),
+      sidebarItem('/list-of-users/dara-training', {
+        group: undefined,
+        label: 'Pelatihan DARA',
+      }),
+      sidebarItem('/campaign/dara-jobs', {
+        group: undefined,
+        label: 'Riwayat Proses DARA',
+      }),
     ],
   },
   {
