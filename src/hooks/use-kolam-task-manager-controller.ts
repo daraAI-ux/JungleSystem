@@ -1021,6 +1021,7 @@ export function useKolamTaskManagerController({
   );
 
   const onCreateNew = useCallback(() => {
+    if (!isTaskAdmin) return;
     setFormMode('new');
     setEditingTaskId('');
     setForm(
@@ -1034,9 +1035,10 @@ export function useKolamTaskManagerController({
     setError(null);
     setStatusMessage(null);
     setFormOpen(true);
-  }, [categories, currentUserId, projectFilter, staffOptions]);
+  }, [categories, currentUserId, isTaskAdmin, projectFilter, staffOptions]);
 
   const onEditTask = useCallback((task: KolamTaskManagerTask) => {
+    if (!isTaskAdmin) return;
     setFormMode('edit');
     setEditingTaskId(task.id);
     setForm(getTaskFormFromTask(task));
@@ -1044,7 +1046,7 @@ export function useKolamTaskManagerController({
     setError(null);
     setStatusMessage(null);
     setFormOpen(true);
-  }, []);
+  }, [isTaskAdmin]);
 
   const onOpenOvertimeRequest = useCallback((task: KolamTaskManagerTask) => {
     setOvertimeRequestTaskId(task.id);

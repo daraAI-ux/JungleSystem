@@ -205,11 +205,13 @@ function KolamTaskManagerDetail({
           </View>
           <View style={kolamTableToolbarStyles.actions}>
             <KolamButton label="Daftar" onPress={controller.onBackToList} />
-            <KolamButton
-              disabled={controller.mutatingTaskId === task.id}
-              label="Ubah"
-              onPress={() => controller.onEditTask(task)}
-            />
+            {controller.isTaskAdmin ? (
+              <KolamButton
+                disabled={controller.mutatingTaskId === task.id}
+                label="Ubah"
+                onPress={() => controller.onEditTask(task)}
+              />
+            ) : null}
             {canRequestOvertime ? (
               <KolamButton
                 disabled={controller.mutatingTaskId === `overtime:${task.id}`}
@@ -960,11 +962,13 @@ function KolamTaskToolbar({
               void controller.onRefresh();
             }}
           />
-          <KolamButton
-            intent="primary"
-            label="Baru"
-            onPress={controller.onCreateNew}
-          />
+          {controller.isTaskAdmin ? (
+            <KolamButton
+              intent="primary"
+              label="Baru"
+              onPress={controller.onCreateNew}
+            />
+          ) : null}
         </View>
       </View>
     </View>
@@ -989,6 +993,7 @@ function KolamTaskRow({
     task,
   });
   const statusDisabled =
+    !controller.isTaskAdmin ||
     task.status === 'done' ||
     task.status === 'cancelled' ||
     controller.mutatingTaskId === task.id ||
@@ -1111,11 +1116,15 @@ function KolamTaskRow({
                   },
                 ]
               : []),
-            {
-              disabled: controller.mutatingTaskId === task.id,
-              label: 'Ubah',
-              onPress: () => controller.onEditTask(task),
-            },
+            ...(controller.isTaskAdmin
+              ? [
+                  {
+                    disabled: controller.mutatingTaskId === task.id,
+                    label: 'Ubah',
+                    onPress: () => controller.onEditTask(task),
+                  },
+                ]
+              : []),
             ...(controller.isTaskAdmin
               ? [
                   {
