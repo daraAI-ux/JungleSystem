@@ -92,7 +92,7 @@ export function KolamTaskManagerSurface({
         />
       ) : null}
       {controller.mode === 'recurring' ? (
-        <KolamTaskRecurringPlaceholder />
+        <KolamTaskRecurringPanel controller={controller} />
       ) : controller.mode === 'list' ? (
         <KolamTaskManagerList
           controller={controller}
@@ -639,13 +639,172 @@ function KolamTaskRow({
   );
 }
 
-function KolamTaskRecurringPlaceholder() {
+function KolamTaskRecurringPanel({
+  controller,
+}: {
+  controller: KolamTaskManagerController;
+}) {
+  const scheduleRows = [
+    ...controller.recurringOccurrences.map(row => ({
+      id: `occ-${row.id}`,
+      kind: 'internal' as const,
+      title: row.title,
+      category: row.categoryLabel || getKolamTaskCategoryBucketLabel(row.categoryBucket),
+      status: row.status,
+      assignedTo: row.assignedTo,
+      scheduledAt: row.scheduledAt,
+      dueAt: row.dueAt,
+      taskId: row.taskId,
+    })),
+    ...controller.recurringServiceVisits.map(row => ({
+      id: `svc-${row.id}`,
+      kind: 'subscription' as const,
+      title: row.title,
+      category: row.categoryLabel || row.serviceName,
+      status: row.status,
+      assignedTo: row.assignedTo,
+      scheduledAt: row.scheduledAt,
+      dueAt: row.dueAt,
+      taskId: '',
+    })),
+  ].sort(
+    (a, b) =>
+      new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime(),
+  );
+
   return (
-    <View style={styles.placeholder}>
-      <KolamStatusBadge intent="info" label="Tugas Terjadwal" />
-      <Text style={styles.placeholderText}>Recurring masuk batch berikutnya</Text>
+    <View style={styles.detailStack}>
+      <View style={kolamTableToolbarStyles.shell}>
+        <View style={kolamTableToolbarStyles.row}>
+          <View style={kolamTableToolbarStyles.filters}>
+            <Text style={styles.detailContext}>Tugas berulang</Text>
+          </View>
+          <View style={kolamTableToolbarStyles.actions}>
+            {controller.isTaskAdmin ? (
+              <View style={styles.switchInline}>
+                <Text style={styles.metaText}>Hanya enclosure</Text>
+                <KolamSwitch
+                  active={controller.recurringEnclosureOnly}
+                  onPress={() =>
+                    controller.onSetRecurringEnclosureOnly(
+                      !controller.recurringEnclosureOnly,
+                    )
+                  }
+                />
+              </View>
+            ) : null}
+            <KolamButton
+              disabled={controller.loading}
+              label="Refresh"
+              onPress={() => {
+                void controller.onRefresh();
+              }}
+            />
+            {controller.isTaskAdmin ? (
+              <KolamButton
+                disabled={controller.mutatingTaskId === 'recurring'}
+                label="Generate hari ini"
+                onPress={() => {
+                  void controller.onRunRecurringTick();
+                }}
+              />
+            ) : null}
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.detailCard}>
+        <Text style={styles.sectionTitle}>Template aktif</Text>
+        {controller.recurringTemplates.length ? (
+          controller.recurringTemplates.map(template => (
+            <View key={template.id} style={styles.timelineRow}>
+              <Text style={styles.timelineTitle}>{template.title}</Text>
+              <View style={styles.badgeRow}>
+                <KolamStatusBadge
+                  intent={getKolamTaskPriorityBadgeIntent(template.priority)}
+                  label={getKolamTaskPriorityLabel(template.priority)}
+                />
+                <KolamStatusBadge
+                  intent={template.active ? 'success' : 'muted'}
+                  label={template.active ? 'Aktif' : 'Nonaktif'}
+                />
+              </View>
+              <Text style={styles.metaText}>
+                {getRecurrenceLabel(template.recurrence)} -{' '}
+                {getKolamTaskUserDisplayName(template.assignedTo)}
+              </Text>
+            </View>
+          ))
+        ) : (
+          <Text style={styles.metaText}>
+            {controller.loading ? 'Memuat...' : 'Belum ada template'}
+          </Text>
+        )}
+      </View>
+
+      <View style={styles.detailCard}>
+        <Text style={styles.sectionTitle}>Jadwal / occurrence</Text>
+        {scheduleRows.length ? (
+          scheduleRows.map(row => (
+            <Pressable
+              accessibilityRole="button"
+              key={row.id}
+              style={styles.timelineRow}
+            >
+              <View style={styles.titleRow}>
+                <Text style={styles.timelineTitle}>{row.title || '-'}</Text>
+                <KolamStatusBadge
+                  intent={getRecurringStatusIntent(row.status)}
+                  label={row.status}
+                />
+              </View>
+              <Text style={styles.metaText}>
+                {row.kind === 'internal' ? 'Internal' : 'Subscription'} -{' '}
+                {row.category || '-'}
+              </Text>
+              <Text style={styles.metaText}>
+                {formatKolamTaskListDatetime(row.scheduledAt)} -{' '}
+                {formatKolamTaskListDatetime(row.dueAt)}
+              </Text>
+              <Text style={styles.metaText}>
+                {getKolamTaskUserDisplayName(row.assignedTo)}
+              </Text>
+            </Pressable>
+          ))
+        ) : (
+          <Text style={styles.metaText}>
+            {controller.loading ? 'Memuat...' : 'Belum ada occurrence'}
+          </Text>
+        )}
+      </View>
     </View>
   );
+}
+
+function getRecurrenceLabel(
+  recurrence: KolamTaskManagerController['recurringTemplates'][number]['recurrence'],
+) {
+  if (recurrence.type === 'weekly') return `Mingguan ${recurrence.time}`;
+  if (recurrence.type === 'monthly') {
+    return `Bulanan ${recurrence.dayOfMonth ?? 1} ${recurrence.time}`;
+  }
+  return `Harian ${recurrence.time}`;
+}
+
+function getRecurringStatusIntent(
+  status: string,
+): React.ComponentProps<typeof KolamStatusBadge>['intent'] {
+  switch (status) {
+    case 'done':
+      return 'success';
+    case 'missed':
+      return 'danger';
+    case 'skipped':
+      return 'muted';
+    case 'pending':
+    default:
+      return 'info';
+  }
 }
 
 function KolamTaskManagerPlaceholder({

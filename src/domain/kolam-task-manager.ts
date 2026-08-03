@@ -43,6 +43,13 @@ export type KolamTaskTimelineType =
   | 'status_change'
   | 'updated';
 
+export type KolamTaskRecurrenceType = 'daily' | 'monthly' | 'weekly';
+export type KolamTaskRecurringStatus =
+  | 'done'
+  | 'missed'
+  | 'pending'
+  | 'skipped';
+
 export interface KolamTaskManagerUserRef {
   id: string;
   firstName: string;
@@ -82,6 +89,55 @@ export interface KolamTaskTimelineItem {
   message: string;
   by: string | KolamTaskManagerUserRef | null;
   at: string;
+}
+
+export interface KolamTaskRecurrenceRule {
+  dayOfMonth: number | null;
+  daysOfWeek: number[];
+  dueHoursAfter: number;
+  time: string;
+  type: KolamTaskRecurrenceType;
+}
+
+export interface KolamTaskRecurringTemplate {
+  id: string;
+  title: string;
+  description: string;
+  priority: KolamTaskManagerPriority;
+  assignedTo: string | KolamTaskManagerUserRef | null;
+  taskType: string | KolamTaskManagerTaskTypeRef | null;
+  categoryBucket: KolamTaskCategoryBucket | null;
+  sampleReviewPercent: number;
+  recurrence: KolamTaskRecurrenceRule;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface KolamTaskRecurringOccurrence {
+  id: string;
+  title: string;
+  status: KolamTaskRecurringStatus;
+  priority: KolamTaskManagerPriority;
+  assignedTo: string | KolamTaskManagerUserRef | null;
+  scheduledAt: string;
+  dueAt: string;
+  categoryLabel: string;
+  categoryBucket: KolamTaskCategoryBucket | null;
+  taskId: string;
+}
+
+export interface KolamTaskRecurringServiceVisit {
+  id: string;
+  title: string;
+  status: KolamTaskRecurringStatus;
+  assignedTo: string | KolamTaskManagerUserRef | null;
+  scheduledAt: string;
+  dueAt: string;
+  categoryLabel: string;
+  href: string;
+  serviceName: string;
+  subscriptionNumber: string;
 }
 
 export interface KolamTaskManagerTask {
@@ -509,6 +565,68 @@ export function normalizeKolamTaskManagerCategories(
   });
 }
 
+export function normalizeKolamTaskRecurringTemplates(
+  payload: unknown,
+): KolamTaskRecurringTemplate[] {
+  return unwrapArrayPayload(payload).map(item => {
+    const row = unwrapData(item);
+    return {
+      id: toStringValue(row._id ?? row.id),
+      title: toStringValue(row.title),
+      description: toStringValue(row.description),
+      priority: toTaskPriority(row.priority),
+      assignedTo: normalizeUserRef(row.assignedTo),
+      taskType: normalizeTaskTypeRef(row.taskType),
+      categoryBucket: toTaskCategoryBucket(row.categoryBucket),
+      sampleReviewPercent: toNumber(row.sampleReviewPercent, 0),
+      recurrence: normalizeRecurrenceRule(row.recurrence),
+      active: row.active !== false,
+      createdAt: toStringValue(row.createdAt),
+      updatedAt: toStringValue(row.updatedAt),
+    };
+  });
+}
+
+export function normalizeKolamTaskRecurringOccurrences(
+  payload: unknown,
+): KolamTaskRecurringOccurrence[] {
+  return unwrapArrayPayload(payload).map(item => {
+    const row = unwrapData(item);
+    return {
+      id: toStringValue(row._id ?? row.id),
+      title: toStringValue(row.title),
+      status: toRecurringStatus(row.status),
+      priority: toTaskPriority(row.priority),
+      assignedTo: normalizeUserRef(row.assignedTo),
+      scheduledAt: toStringValue(row.scheduledAt),
+      dueAt: toStringValue(row.dueAt),
+      categoryLabel: toStringValue(row.categoryLabel),
+      categoryBucket: toTaskCategoryBucket(row.categoryBucket),
+      taskId: getLooseRefId(row.task),
+    };
+  });
+}
+
+export function normalizeKolamTaskRecurringServiceVisits(
+  payload: unknown,
+): KolamTaskRecurringServiceVisit[] {
+  return unwrapArrayPayload(payload).map(item => {
+    const row = unwrapData(item);
+    return {
+      id: toStringValue(row._id ?? row.id),
+      title: toStringValue(row.visitTitle ?? row.title),
+      status: toRecurringStatus(row.status),
+      assignedTo: normalizeUserRef(row.assignedTo),
+      scheduledAt: toStringValue(row.scheduledAt),
+      dueAt: toStringValue(row.dueAt),
+      categoryLabel: toStringValue(row.categoryLabel),
+      href: toStringValue(row.href),
+      serviceName: toStringValue(row.serviceName),
+      subscriptionNumber: toStringValue(row.subscriptionNumber),
+    };
+  });
+}
+
 export function buildKolamTaskManagerKpi(
   total: number,
   todo: number,
@@ -539,6 +657,22 @@ function normalizeChecklistItem(payload: unknown): KolamTaskManagerChecklistItem
     sortOrder: toNumber(record.sortOrder, 0),
     doneAt: toStringValue(record.doneAt),
     doneBy: normalizeUserRef(record.doneBy),
+  };
+}
+
+function normalizeRecurrenceRule(value: unknown): KolamTaskRecurrenceRule {
+  const record = unwrapData(value);
+  const type =
+    record.type === 'weekly' || record.type === 'monthly' ? record.type : 'daily';
+  return {
+    dayOfMonth:
+      record.dayOfMonth == null ? null : toNumber(record.dayOfMonth, 1),
+    daysOfWeek: Array.isArray(record.daysOfWeek)
+      ? record.daysOfWeek.map(day => toNumber(day, 0))
+      : [],
+    dueHoursAfter: toNumber(record.dueHoursAfter, 24),
+    time: toStringValue(record.time) || '09:00',
+    type,
   };
 }
 
@@ -640,6 +774,18 @@ function toTaskSource(value: unknown): KolamTaskManagerSource | '' {
   return '';
 }
 
+function toRecurringStatus(value: unknown): KolamTaskRecurringStatus {
+  if (
+    value === 'done' ||
+    value === 'missed' ||
+    value === 'pending' ||
+    value === 'skipped'
+  ) {
+    return value;
+  }
+  return 'pending';
+}
+
 function isTaskStatus(value: unknown): value is KolamTaskManagerStatus {
   return (
     value === 'todo' ||
@@ -656,6 +802,14 @@ function unwrapData(payload: unknown): Record<string, unknown> {
     return payload.data;
   }
   return payload;
+}
+
+function unwrapArrayPayload(payload: unknown): unknown[] {
+  const record = unwrapData(payload);
+  if (Array.isArray(record)) return record;
+  if (Array.isArray(record.data)) return record.data;
+  if (Array.isArray(record.items)) return record.items;
+  return [];
 }
 
 function toStringValue(value: unknown) {

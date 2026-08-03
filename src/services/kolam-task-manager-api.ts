@@ -3,12 +3,18 @@ import {
   normalizeKolamTaskManagerCategories,
   normalizeKolamTaskManagerList,
   normalizeKolamTaskManagerTask,
+  normalizeKolamTaskRecurringOccurrences,
+  normalizeKolamTaskRecurringServiceVisits,
+  normalizeKolamTaskRecurringTemplates,
   type KolamTaskManagerCategory,
   type KolamTaskManagerListQuery,
   type KolamTaskManagerListResult,
   type KolamTaskManagerPriority,
   type KolamTaskManagerStatus,
   type KolamTaskManagerTask,
+  type KolamTaskRecurringOccurrence,
+  type KolamTaskRecurringServiceVisit,
+  type KolamTaskRecurringTemplate,
 } from '../domain/kolam-task-manager';
 import { apiRequest } from '../lib/api-client';
 
@@ -75,6 +81,54 @@ export async function getKolamTaskManagerCategories(
     query: activeOnly ? { active: true } : {},
   });
   return normalizeKolamTaskManagerCategories(payload);
+}
+
+export async function getKolamTaskRecurringTemplates(): Promise<
+  KolamTaskRecurringTemplate[]
+> {
+  const payload = await kolamRequest<unknown>(
+    '/task-manager/recurring/templates',
+    { query: { active: true } },
+  );
+  return normalizeKolamTaskRecurringTemplates(payload);
+}
+
+export async function getKolamTaskRecurringOccurrences(
+  query: {
+    enclosureOnly?: boolean;
+    limit?: number;
+    mine?: boolean;
+    page?: number;
+  } = {},
+): Promise<KolamTaskRecurringOccurrence[]> {
+  const payload = await kolamRequest<unknown>(
+    '/task-manager/recurring/occurrences',
+    {
+      query: {
+        page: query.page ?? 1,
+        limit: query.limit ?? 100,
+        ...(query.mine ? { mine: true } : {}),
+        ...(query.enclosureOnly ? { enclosureOnly: true } : {}),
+      },
+    },
+  );
+  return normalizeKolamTaskRecurringOccurrences(payload);
+}
+
+export async function getKolamTaskRecurringServiceVisits(
+  query: { limit?: number } = {},
+): Promise<KolamTaskRecurringServiceVisit[]> {
+  const payload = await kolamRequest<unknown>(
+    '/task-manager/recurring/service-visits',
+    { query: { limit: query.limit ?? 200 } },
+  );
+  return normalizeKolamTaskRecurringServiceVisits(payload);
+}
+
+export async function runKolamTaskRecurringTick(): Promise<void> {
+  await kolamRequest<unknown>('/task-manager/recurring/run-tick', {
+    method: 'POST',
+  });
 }
 
 export async function createKolamTaskManagerTask(

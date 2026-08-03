@@ -13,6 +13,9 @@ import {
   type KolamTaskManagerStatus,
   type KolamTaskManagerSurfaceMode,
   type KolamTaskManagerTask,
+  type KolamTaskRecurringOccurrence,
+  type KolamTaskRecurringServiceVisit,
+  type KolamTaskRecurringTemplate,
 } from '../domain/kolam-task-manager';
 import type { KolamUserListItem } from '../domain/kolam-user';
 import { getErrorMessage as getApiErrorMessage } from '../lib/api-error';
@@ -20,6 +23,10 @@ import {
   getKolamTaskManagerCategories,
   getKolamTaskManagerTask,
   getKolamTaskManagerTasks,
+  getKolamTaskRecurringOccurrences,
+  getKolamTaskRecurringServiceVisits,
+  getKolamTaskRecurringTemplates,
+  runKolamTaskRecurringTick,
   updateKolamTaskManagerStatus,
   updateKolamTaskManagerTask,
 } from '../services/kolam-task-manager-api';
@@ -48,6 +55,10 @@ export interface KolamTaskManagerController {
   page: number;
   pageSize: number;
   priorityFilter: KolamTaskManagerPriority | 'all';
+  recurringEnclosureOnly: boolean;
+  recurringOccurrences: KolamTaskRecurringOccurrence[];
+  recurringServiceVisits: KolamTaskRecurringServiceVisit[];
+  recurringTemplates: KolamTaskRecurringTemplate[];
   route: string;
   search: string;
   staffOptions: KolamTaskManagerStaffOption[];
@@ -67,6 +78,7 @@ export interface KolamTaskManagerController {
   onSetMineOnly: (value: boolean) => void;
   onSetPageSize: (pageSize: number) => void;
   onSetPriorityFilter: (value: KolamTaskManagerPriority | 'all') => void;
+  onSetRecurringEnclosureOnly: (value: boolean) => void;
   onSetSearch: (value: string) => void;
   onSetStatusFilter: (value: KolamTaskManagerStatus | 'all') => void;
   onSetTaskPriority: (
@@ -77,6 +89,7 @@ export interface KolamTaskManagerController {
     task: KolamTaskManagerTask,
     status: KolamTaskManagerStatus,
   ) => Promise<boolean>;
+  onRunRecurringTick: () => Promise<boolean>;
   onSwitchTab: (tab: 'recurring' | 'tasks') => void;
 }
 
@@ -98,6 +111,15 @@ export function useKolamTaskManagerController({
     roleKey === 'super_administrator';
   const currentUserId = authUser?.id ?? '';
   const [tasks, setTasks] = useState<KolamTaskManagerTask[]>([]);
+  const [recurringTemplates, setRecurringTemplates] = useState<
+    KolamTaskRecurringTemplate[]
+  >([]);
+  const [recurringOccurrences, setRecurringOccurrences] = useState<
+    KolamTaskRecurringOccurrence[]
+  >([]);
+  const [recurringServiceVisits, setRecurringServiceVisits] = useState<
+    KolamTaskRecurringServiceVisit[]
+  >([]);
   const [selectedTask, setSelectedTask] =
     useState<KolamTaskManagerTask | null>(null);
   const [categories, setCategories] = useState<KolamTaskManagerCategory[]>([]);
@@ -124,6 +146,7 @@ export function useKolamTaskManagerController({
   >('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [mineOnly, setMineOnly] = useState(false);
+  const [recurringEnclosureOnly, setRecurringEnclosureOnly] = useState(false);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [kpi, setKpi] = useState<KolamTaskManagerKpi>({
@@ -243,6 +266,36 @@ export function useKolamTaskManagerController({
     }
   }, [mode, route]);
 
+  const refreshRecurring = useCallback(async () => {
+    if (mode !== 'recurring') {
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const [templates, occurrences, serviceVisits] = await Promise.all([
+        getKolamTaskRecurringTemplates(),
+        getKolamTaskRecurringOccurrences({
+          enclosureOnly: isTaskAdmin && recurringEnclosureOnly,
+          limit: 100,
+          mine: !isTaskAdmin,
+          page: 1,
+        }),
+        getKolamTaskRecurringServiceVisits({ limit: 200 }),
+      ]);
+      setRecurringTemplates(templates);
+      setRecurringOccurrences(occurrences);
+      setRecurringServiceVisits(serviceVisits);
+      setDataSource('live');
+    } catch (loadError) {
+      setError(getErrorMessage(loadError));
+      setDataSource('error');
+    } finally {
+      setLoading(false);
+    }
+  }, [isTaskAdmin, mode, recurringEnclosureOnly]);
+
   useEffect(() => {
     void loadCategories();
     void loadStaff();
@@ -255,6 +308,10 @@ export function useKolamTaskManagerController({
   useEffect(() => {
     void refreshDetail();
   }, [refreshDetail]);
+
+  useEffect(() => {
+    void refreshRecurring();
+  }, [refreshRecurring]);
 
   const setFilterAndFirstPage = useCallback(
     <TValue,>(setter: (value: TValue) => void) =>
@@ -343,6 +400,23 @@ export function useKolamTaskManagerController({
     onRouteChange?.(KOLAM_TASK_MANAGER_ROOT);
   }, [onRouteChange]);
 
+  const onRunRecurringTick = useCallback(async () => {
+    setMutatingTaskId('recurring');
+    setError(null);
+    setStatusMessage(null);
+    try {
+      await runKolamTaskRecurringTick();
+      setStatusMessage('Jadwal di-generate');
+      await refreshRecurring();
+      return true;
+    } catch (mutationError) {
+      setError(getErrorMessage(mutationError));
+      return false;
+    } finally {
+      setMutatingTaskId(null);
+    }
+  }, [refreshRecurring]);
+
   const onCreateNew = useCallback(() => {
     setStatusMessage('Form tugas baru masuk batch berikutnya');
   }, []);
@@ -364,6 +438,10 @@ export function useKolamTaskManagerController({
       page,
       pageSize,
       priorityFilter,
+      recurringEnclosureOnly,
+      recurringOccurrences,
+      recurringServiceVisits,
+      recurringTemplates,
       route,
       search,
       staffOptions,
@@ -375,7 +453,12 @@ export function useKolamTaskManagerController({
       selectedTask,
       onBackToList,
       onCreateNew,
-      onRefresh: mode === 'detail' ? refreshDetail : refreshList,
+      onRefresh:
+        mode === 'detail'
+          ? refreshDetail
+          : mode === 'recurring'
+            ? refreshRecurring
+            : refreshList,
       onResetFilters,
       onSelectPage: setPage,
       onSetCategoryBucketFilter: setFilterAndFirstPage(
@@ -385,10 +468,14 @@ export function useKolamTaskManagerController({
       onSetMineOnly: setFilterAndFirstPage(setMineOnly),
       onSetPageSize: setFilterAndFirstPage(setPageSize),
       onSetPriorityFilter: setFilterAndFirstPage(setPriorityFilter),
+      onSetRecurringEnclosureOnly: setFilterAndFirstPage(
+        setRecurringEnclosureOnly,
+      ),
       onSetSearch: setFilterAndFirstPage(setSearch),
       onSetStatusFilter: setFilterAndFirstPage(setStatusFilter),
       onSetTaskPriority,
       onSetTaskStatus,
+      onRunRecurringTick,
       onSwitchTab,
     }),
     [
@@ -407,14 +494,20 @@ export function useKolamTaskManagerController({
       onCreateNew,
       onBackToList,
       onResetFilters,
+      onRunRecurringTick,
       onSetTaskPriority,
       onSetTaskStatus,
       onSwitchTab,
       page,
       pageSize,
       priorityFilter,
+      recurringEnclosureOnly,
+      recurringOccurrences,
+      recurringServiceVisits,
+      recurringTemplates,
       refreshList,
       refreshDetail,
+      refreshRecurring,
       route,
       search,
       setFilterAndFirstPage,

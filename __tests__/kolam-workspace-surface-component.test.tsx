@@ -184,6 +184,56 @@ jest.mock('../src/services/kolam-task-manager-api', () => ({
       },
     }),
   ),
+  getKolamTaskRecurringTemplates: jest.fn(() =>
+    Promise.resolve([
+      {
+        active: true,
+        assignedTo: {
+          displayName: 'Dara Ops',
+          email: '',
+          firstName: 'Dara',
+          id: 'user-1',
+          lastName: 'Ops',
+          profilePicture: '',
+          username: 'dara',
+        },
+        categoryBucket: 'enclosure',
+        createdAt: '',
+        description: '',
+        id: 'tpl-1',
+        priority: 'medium',
+        recurrence: {
+          dayOfMonth: null,
+          daysOfWeek: [],
+          dueHoursAfter: 24,
+          time: '09:00',
+          type: 'daily',
+        },
+        sampleReviewPercent: 10,
+        taskType: null,
+        title: 'Cek harian enclosure',
+        updatedAt: '',
+      },
+    ]),
+  ),
+  getKolamTaskRecurringOccurrences: jest.fn(() =>
+    Promise.resolve([
+      {
+        assignedTo: null,
+        categoryBucket: 'enclosure',
+        categoryLabel: 'Enclosure',
+        dueAt: '2026-08-03T16:59:00.000Z',
+        id: 'occ-1',
+        priority: 'medium',
+        scheduledAt: '2026-08-03T02:00:00.000Z',
+        status: 'pending',
+        taskId: 'task-1',
+        title: 'Cek suhu',
+      },
+    ]),
+  ),
+  getKolamTaskRecurringServiceVisits: jest.fn(() => Promise.resolve([])),
+  runKolamTaskRecurringTick: jest.fn(() => Promise.resolve(undefined)),
   updateKolamTaskManagerStatus: jest.fn(() => Promise.resolve({})),
   updateKolamTaskManagerTask: jest.fn(() => Promise.resolve({})),
 }));
@@ -466,6 +516,48 @@ describe('KolamWorkspaceSurface', () => {
         'Cek pompa',
         'Timeline',
         'Tugas dibuat',
+      ]),
+    );
+  });
+
+  it('renders the native Task Manager recurring tab', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+    const baseItem = getKolamNavigationItemByRoute('/task-manager');
+    const recurringItem = baseItem
+      ? {
+          ...baseItem,
+          route: '/task-manager/tugas-terjadwal',
+        }
+      : null;
+
+    if (!recurringItem) {
+      throw new Error('Task Manager recurring navigation item is missing.');
+    }
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <View>
+          <KolamWorkspaceSurface
+            {...buildSurfaceProps({
+              activeModule: 'kolam',
+              activeNavigationItem: recurringItem,
+            })}
+          />
+        </View>,
+      );
+    });
+
+    await ReactTestRenderer.act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(renderText(renderer!)).toEqual(
+      expect.arrayContaining([
+        'Tugas berulang',
+        'Template aktif',
+        'Cek harian enclosure',
+        'Jadwal / occurrence',
+        'Cek suhu',
       ]),
     );
   });
