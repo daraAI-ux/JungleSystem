@@ -54,9 +54,11 @@ describe('POS split widgets', () => {
               discountType: 'fixed',
               itemId: firstItem.id,
               quantity: 1,
+              voucherCode: '',
             }}
             onDiscountAmountChange={() => undefined}
             onDiscountTypeChange={() => undefined}
+            onVoucherCodeChange={() => undefined}
             onQuantityChange={() => undefined}
           />
         </View>,

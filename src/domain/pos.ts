@@ -61,6 +61,8 @@ export interface CartLine {
   quantity: number;
   discountType: DiscountType;
   discountAmount: number;
+  /** Per-item voucher code → POST /sales `items[].voucherCode`. */
+  voucherCode: string;
 }
 
 export interface SaleSummary {

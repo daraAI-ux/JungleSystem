@@ -59,6 +59,12 @@ export interface KolamPosFullWindowSurfaceProps {
   onCustomerFormChange: (nextForm: CreateCustomerBody) => void;
   onGlobalDiscountChange: (value: string) => void;
   onGlobalDiscountTypeChange: (discountType: CheckoutState['globalDiscountType']) => void;
+  onDiscountAmountChange: (itemId: string, value: string) => void;
+  onDiscountTypeChange: (
+    itemId: string,
+    discountType: CartLine['discountType'],
+  ) => void;
+  onVoucherCodeChange: (itemId: string, voucherCode: string) => void;
   onQuantityChange: (itemId: string, nextQuantity: number) => void;
   onReplaceCheckout?: (checkout: CheckoutState) => void;
   onSelectCustomer: (customerId: string) => void;
@@ -126,6 +132,9 @@ export function KolamPosFullWindowSurface({
   onCustomerFormChange,
   onGlobalDiscountChange,
   onGlobalDiscountTypeChange,
+  onDiscountAmountChange,
+  onDiscountTypeChange,
+  onVoucherCodeChange,
   onQuantityChange,
   onReplaceCheckout,
   onSelectCustomer,
@@ -459,7 +468,10 @@ export function KolamPosFullWindowSurface({
                 key={line.itemId}
                 catalog={catalog}
                 line={line}
+                onDiscountAmountChange={onDiscountAmountChange}
+                onDiscountTypeChange={onDiscountTypeChange}
                 onQuantityChange={onQuantityChange}
+                onVoucherCodeChange={onVoucherCodeChange}
               />
             ))}
           </ScrollView>
@@ -477,28 +489,6 @@ export function KolamPosFullWindowSurface({
 
         {checkout.cart.length ? (
           <View style={styles.orderFooter}>
-            <View style={styles.adjustmentRow}>
-              <Text style={styles.adjustmentLabel}>Diskon</Text>
-              <View style={styles.discountToggle}>
-                <PosTinyToggle
-                  active={checkout.globalDiscountType === 'fixed'}
-                  label="Rp"
-                  onPress={() => onGlobalDiscountTypeChange('fixed')}
-                />
-                <PosTinyToggle
-                  active={checkout.globalDiscountType === 'percentage'}
-                  label="%"
-                  onPress={() => onGlobalDiscountTypeChange('percentage')}
-                />
-              </View>
-              <TextInput
-                keyboardType="numeric"
-                onChangeText={onGlobalDiscountChange}
-                placeholder="0"
-                style={styles.adjustmentInput}
-                value={checkout.globalDiscount ? String(checkout.globalDiscount) : ''}
-              />
-            </View>
             <View style={styles.adjustmentRow}>
               <Text style={styles.adjustmentLabel}>Ongkir</Text>
               <TextInput
@@ -1066,11 +1056,20 @@ function PosCustomerSelectorInline({
 function PosOrderRow({
   catalog,
   line,
+  onDiscountAmountChange,
+  onDiscountTypeChange,
   onQuantityChange,
+  onVoucherCodeChange,
 }: {
   catalog: CatalogItem[];
   line: CartLine;
+  onDiscountAmountChange: (itemId: string, value: string) => void;
+  onDiscountTypeChange: (
+    itemId: string,
+    discountType: CartLine['discountType'],
+  ) => void;
   onQuantityChange: (itemId: string, nextQuantity: number) => void;
+  onVoucherCodeChange: (itemId: string, voucherCode: string) => void;
 }) {
   const item = catalog.find(catalogItem => catalogItem.id === line.itemId);
 
@@ -1143,6 +1142,34 @@ function PosOrderRow({
         {isAtStockLimit ? (
           <Text style={styles.orderLimitText}>Jumlah sudah mencapai stok</Text>
         ) : null}
+        <View style={styles.orderLineControls}>
+          <View style={styles.orderDiscountRow}>
+            <PosTinyToggle
+              active={line.discountType === 'fixed'}
+              label="Rp"
+              onPress={() => onDiscountTypeChange(line.itemId, 'fixed')}
+            />
+            <PosTinyToggle
+              active={line.discountType === 'percentage'}
+              label="%"
+              onPress={() => onDiscountTypeChange(line.itemId, 'percentage')}
+            />
+            <TextInput
+              keyboardType="numeric"
+              onChangeText={value => onDiscountAmountChange(line.itemId, value)}
+              placeholder="Diskon"
+              style={styles.orderLineInput}
+              value={line.discountAmount ? String(line.discountAmount) : ''}
+            />
+          </View>
+          <TextInput
+            autoCapitalize="characters"
+            onChangeText={value => onVoucherCodeChange(line.itemId, value)}
+            placeholder="Kode voucher"
+            style={styles.orderLineInput}
+            value={line.voucherCode ?? ''}
+          />
+        </View>
       </View>
       <View style={styles.orderActions}>
         <KolamInteractionFrame
@@ -3216,6 +3243,29 @@ const styles = StyleSheet.create({
     color: V.colors.warning,
     fontSize: 9,
     fontWeight: '800',
+  },
+  orderLineControls: {
+    gap: 6,
+    marginTop: 6,
+    width: '100%',
+  },
+  orderDiscountRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
+  },
+  orderLineInput: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 6,
+    borderWidth: 1,
+    color: V.colors.fg,
+    flexGrow: 1,
+    fontSize: 11,
+    minWidth: 72,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
   },
   orderActions: {
     alignItems: 'flex-end',

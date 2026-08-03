@@ -6,6 +6,7 @@ import {
   normalizeDiscountAmount,
   parseNonNegativeNumber,
   updateCartLineDiscount,
+  updateCartLineVoucherCode,
 } from '../src/lib/checkout';
 import {catalogItems, initialCheckoutState} from '../src/data/seed';
 
@@ -16,6 +17,7 @@ test('builds mixed product and species sale payload', () => {
   expect(payload.sourceRef).toBeUndefined();
   expect(payload.customer).toBe(initialCheckoutState.customerId);
   expect(payload.paymentMethod).toBe(initialCheckoutState.paymentMethodId);
+  expect(payload.discount).toBe(0);
   expect(payload.items).toEqual([
     expect.objectContaining({
       itemType: 'product',
@@ -26,6 +28,37 @@ test('builds mixed product and species sale payload', () => {
       itemType: 'species',
       species: 'species-anemone',
       quantity: 1,
+    }),
+  ]);
+  expect(payload.items.every(item => !('discount' in item) || !item.discount)).toBe(
+    true,
+  );
+});
+
+test('includes per-item discount and voucherCode on sale payload', () => {
+  const checkout = {
+    ...initialCheckoutState,
+    globalDiscount: 50000,
+    cart: [
+      {
+        itemId: catalogItems[0].id,
+        quantity: 2,
+        discountType: 'percentage' as const,
+        discountAmount: 10,
+        voucherCode: 'hemat10',
+      },
+    ],
+  };
+  const payload = buildSaleDraftPayload(checkout, catalogItems);
+
+  expect(payload.discount).toBe(0);
+  expect(payload.items).toEqual([
+    expect.objectContaining({
+      itemType: 'product',
+      product: catalogItems[0].id,
+      quantity: 2,
+      discount: {type: 'percentage', amount: 10},
+      voucherCode: 'HEMAT10',
     }),
   ]);
 });
@@ -74,6 +107,17 @@ test('updates cart line discount and clamps percentage amount', () => {
     }),
   );
   expect(updatedCheckout.cart[1]).toBe(initialCheckoutState.cart[1]);
+});
+
+test('updates cart line voucher code as uppercase', () => {
+  const updatedCheckout = updateCartLineVoucherCode(
+    initialCheckoutState,
+    'product-filter-sponge',
+    ' hemat10 ',
+  );
+
+  expect(updatedCheckout.cart[0].voucherCode).toBe('HEMAT10');
+  expect(updatedCheckout.cart[1].voucherCode).toBe('');
 });
 
 test('normalizes discount amounts for backend validation', () => {

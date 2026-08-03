@@ -220,6 +220,7 @@ export interface CreateSaleDraftBody {
   paymentMethod: string;
   channel: 'pos';
   shippingCost: number;
+  /** Always 0 — BE rejects order-level discount > 0. */
   discount: number;
   discountType: 'fixed' | 'percentage';
   sourceRef?: string;
@@ -228,10 +229,11 @@ export interface CreateSaleDraftBody {
     product?: string;
     species?: string;
     quantity: number;
-    discount: {
+    discount?: {
       type: 'fixed' | 'percentage';
       amount: number;
     };
+    voucherCode?: string;
   }>;
 }
 

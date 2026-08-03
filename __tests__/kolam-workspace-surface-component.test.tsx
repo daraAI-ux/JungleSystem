@@ -506,6 +506,7 @@ function buildSurfaceProps(
       onCreateSaleDraft: () => undefined,
       onDiscountAmountChange: () => undefined,
       onDiscountTypeChange: () => undefined,
+      onVoucherCodeChange: () => undefined,
       onGlobalDiscountChange: () => undefined,
       onGlobalDiscountTypeChange: () => undefined,
       onQuantityChange: () => undefined,

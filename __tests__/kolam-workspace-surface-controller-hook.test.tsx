@@ -69,6 +69,7 @@ function buildWorkspaceSurfaceInput(
     onMessage: () => undefined,
     onDiscountAmountChange: () => undefined,
     onDiscountTypeChange: () => undefined,
+      onVoucherCodeChange: () => undefined,
     onGlobalDiscountChange: () => undefined,
     onGlobalDiscountTypeChange: () => undefined,
     onOpenCashflow: () => undefined,

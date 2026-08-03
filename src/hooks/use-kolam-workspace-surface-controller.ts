@@ -63,6 +63,7 @@ export function useKolamWorkspaceSurfaceController({
   onSettingsTabChange,
   onDiscountAmountChange,
   onDiscountTypeChange,
+  onVoucherCodeChange,
   onGlobalDiscountChange,
   onGlobalDiscountTypeChange,
   onOpenCashflow,
@@ -132,6 +133,7 @@ export function useKolamWorkspaceSurfaceController({
   onSettingsTabChange?: KolamWorkspaceSurfaceProps['onSettingsTabChange'];
   onDiscountAmountChange: WorkspaceCheckoutProps['onDiscountAmountChange'];
   onDiscountTypeChange: WorkspaceCheckoutProps['onDiscountTypeChange'];
+  onVoucherCodeChange: WorkspaceCheckoutProps['onVoucherCodeChange'];
   onGlobalDiscountChange: WorkspaceCheckoutProps['onGlobalDiscountChange'];
   onGlobalDiscountTypeChange: WorkspaceCheckoutProps['onGlobalDiscountTypeChange'];
   onOpenCashflow: WorkspaceCashflowProps['onOpenCashflow'];
@@ -188,6 +190,7 @@ export function useKolamWorkspaceSurfaceController({
       onCreateSaleDraft,
       onDiscountAmountChange,
       onDiscountTypeChange,
+      onVoucherCodeChange,
       onGlobalDiscountChange,
       onGlobalDiscountTypeChange,
       onQuantityChange,
@@ -226,6 +229,7 @@ export function useKolamWorkspaceSurfaceController({
       onCreateSaleDraft,
       onDiscountAmountChange,
       onDiscountTypeChange,
+      onVoucherCodeChange,
       onGlobalDiscountChange,
       onGlobalDiscountTypeChange,
       onQuantityChange,

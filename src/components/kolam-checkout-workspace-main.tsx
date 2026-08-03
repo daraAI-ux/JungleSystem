@@ -35,6 +35,7 @@ export interface KolamCheckoutWorkspaceProps {
   onCreateSaleDraft: () => void;
   onDiscountAmountChange: (itemId: string, value: string) => void;
   onDiscountTypeChange: (itemId: string, discountType: CartLine['discountType']) => void;
+  onVoucherCodeChange: (itemId: string, voucherCode: string) => void;
   onGlobalDiscountChange: (value: string) => void;
   onGlobalDiscountTypeChange: (discountType: CheckoutState['globalDiscountType']) => void;
   onQuantityChange: (itemId: string, nextQuantity: number) => void;

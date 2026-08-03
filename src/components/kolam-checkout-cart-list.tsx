@@ -11,6 +11,7 @@ export function KolamCheckoutCartList({
   onDiscountAmountChange,
   onDiscountTypeChange,
   onQuantityChange,
+  onVoucherCodeChange,
 }: {
   cart: CartLine[];
   catalog: CatalogItem[];
@@ -20,6 +21,7 @@ export function KolamCheckoutCartList({
     discountType: CartLine['discountType'],
   ) => void;
   onQuantityChange: (itemId: string, nextQuantity: number) => void;
+  onVoucherCodeChange: (itemId: string, voucherCode: string) => void;
 }) {
   return (
     <KolamContentFrame variant="checkoutCartList">
@@ -34,6 +36,7 @@ export function KolamCheckoutCartList({
               onQuantityChange={onQuantityChange}
               onDiscountTypeChange={onDiscountTypeChange}
               onDiscountAmountChange={onDiscountAmountChange}
+              onVoucherCodeChange={onVoucherCodeChange}
             />
           )}
         />

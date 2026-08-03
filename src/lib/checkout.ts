@@ -73,6 +73,22 @@ export function updateCartLineDiscount(
   };
 }
 
+export function updateCartLineVoucherCode(
+  checkout: CheckoutState,
+  itemId: string,
+  voucherCode: string,
+): CheckoutState {
+  const normalized = String(voucherCode ?? '')
+    .trim()
+    .toUpperCase();
+  return {
+    ...checkout,
+    cart: checkout.cart.map(line =>
+      line.itemId === itemId ? {...line, voucherCode: normalized} : line,
+    ),
+  };
+}
+
 export function parseNonNegativeNumber(value: string): number {
   const compact = value.replace(/[^0-9.,]/g, '');
   const normalized = normalizeNumberText(compact);
@@ -128,10 +144,17 @@ export function buildSaleDraftPayload(
       product: item.type === 'product' ? item.id : undefined,
       species: item.type === 'species' ? item.id : undefined,
       quantity: line.quantity,
-      discount: {
-        type: line.discountType,
-        amount: line.discountAmount,
-      },
+      ...(line.discountAmount > 0
+        ? {
+            discount: {
+              type: line.discountType,
+              amount: line.discountAmount,
+            },
+          }
+        : {}),
+      ...(line.voucherCode?.trim()
+        ? {voucherCode: line.voucherCode.trim().toUpperCase()}
+        : {}),
     });
   });
 
@@ -140,8 +163,9 @@ export function buildSaleDraftPayload(
     paymentMethod: checkout.paymentMethodId,
     channel: 'pos',
     shippingCost: checkout.shippingCost,
-    discount: checkout.globalDiscount,
-    discountType: checkout.globalDiscountType,
+    // BE rejects order-level discount > 0; use items[].discount / voucherCode.
+    discount: 0,
+    discountType: 'fixed',
     items,
   };
 }

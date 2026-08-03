@@ -154,6 +154,7 @@ export function KolamAppStateProvider({
     updateGlobalDiscount,
     updateLineDiscountAmount,
     updateLineDiscountType,
+    updateLineVoucherCode,
     updateQuantity,
     updateShippingCost,
   } = useKolamCheckoutController({
@@ -433,6 +434,7 @@ export function KolamAppStateProvider({
     onPluginRouteSelect: handlePluginRouteSelect,
     onDiscountAmountChange: updateLineDiscountAmount,
     onDiscountTypeChange: updateLineDiscountType,
+    onVoucherCodeChange: updateLineVoucherCode,
     onGlobalDiscountChange: updateGlobalDiscount,
     onGlobalDiscountTypeChange: setDiscountType,
     onOpenCashflow: handleOpenCashflow,

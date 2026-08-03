@@ -18,6 +18,7 @@ export function KolamCheckoutWorkspaceSummaryPane(
       onCreateSaleDraft={props.onCreateSaleDraft}
       onDiscountAmountChange={props.onDiscountAmountChange}
       onDiscountTypeChange={props.onDiscountTypeChange}
+      onVoucherCodeChange={props.onVoucherCodeChange}
       onGlobalDiscountChange={props.onGlobalDiscountChange}
       onGlobalDiscountTypeChange={props.onGlobalDiscountTypeChange}
       onQuantityChange={props.onQuantityChange}

@@ -63,6 +63,7 @@ describe('POS checkout workspace widgets', () => {
             onCreateSaleDraft={() => undefined}
             onDiscountAmountChange={() => undefined}
             onDiscountTypeChange={() => undefined}
+            onVoucherCodeChange={() => undefined}
             onGlobalDiscountChange={() => undefined}
             onGlobalDiscountTypeChange={() => undefined}
             onQuantityChange={() => undefined}
@@ -97,6 +98,7 @@ describe('POS checkout workspace widgets', () => {
             onCreateSaleDraft={() => undefined}
             onDiscountAmountChange={() => undefined}
             onDiscountTypeChange={() => undefined}
+            onVoucherCodeChange={() => undefined}
             onGlobalDiscountChange={() => undefined}
             onGlobalDiscountTypeChange={() => undefined}
             onQuantityChange={() => undefined}

@@ -22,6 +22,7 @@ export function KolamCheckoutSummaryPanel({
   onCreateSaleDraft,
   onDiscountAmountChange,
   onDiscountTypeChange,
+  onVoucherCodeChange,
   onGlobalDiscountChange,
   onGlobalDiscountTypeChange,
   onQuantityChange,
@@ -59,6 +60,7 @@ export function KolamCheckoutSummaryPanel({
         onDiscountAmountChange={onDiscountAmountChange}
         onDiscountTypeChange={onDiscountTypeChange}
         onQuantityChange={onQuantityChange}
+        onVoucherCodeChange={onVoucherCodeChange}
       />
       <KolamCheckoutTotalBox
         afterDiscount={afterDiscount}

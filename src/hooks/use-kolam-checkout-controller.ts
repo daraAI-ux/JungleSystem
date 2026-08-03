@@ -5,12 +5,12 @@ import type {CartLine, CatalogItem, CheckoutState} from '../domain/pos';
 import type {CatalogFilterType} from '../lib/catalog';
 import {filterCatalogItems} from '../lib/catalog';
 import {
-  applyDiscount,
   clearCart,
   getCartSubtotal,
   normalizeDiscountAmount,
   parseNonNegativeNumber,
   updateCartLineDiscount,
+  updateCartLineVoucherCode,
 } from '../lib/checkout';
 import {
   canCreateSaleDraft,
@@ -62,11 +62,8 @@ export function useKolamCheckoutController({
     method => method.id === checkout.paymentMethodId,
   );
   const subtotal = getCartSubtotal(checkout.cart, dataset.catalog);
-  const afterDiscount = applyDiscount(
-    subtotal,
-    checkout.globalDiscountType,
-    checkout.globalDiscount,
-  );
+  // Order-level discount is not sent to BE; totals follow per-line discounts only.
+  const afterDiscount = subtotal;
   const finalTotal = afterDiscount + checkout.shippingCost;
   const checkoutReadiness = {
     signedIn,
@@ -115,6 +112,7 @@ export function useKolamCheckoutController({
               quantity: initialQuantity,
               discountType: 'fixed',
               discountAmount: 0,
+              voucherCode: '',
             },
           ],
         };
@@ -167,6 +165,10 @@ export function useKolamCheckoutController({
         discountAmount: parseNonNegativeNumber(value),
       }),
     );
+  };
+
+  const updateLineVoucherCode = (itemId: string, voucherCode: string) => {
+    setCheckout(current => updateCartLineVoucherCode(current, itemId, voucherCode));
   };
 
   const selectCustomer = (customerId: string) => {
@@ -240,6 +242,7 @@ export function useKolamCheckoutController({
     updateGlobalDiscount,
     updateLineDiscountAmount,
     updateLineDiscountType,
+    updateLineVoucherCode,
     updateQuantity,
     updateShippingCost,
   };

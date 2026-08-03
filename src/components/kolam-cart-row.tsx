@@ -4,7 +4,10 @@ import {KolamCartRowActions} from './kolam-cart-row-actions';
 import {KolamCartRowDiscountControls} from './kolam-cart-row-discount-controls';
 import {KolamCartRowDiscountLabel} from './kolam-cart-row-discount-label';
 import {KolamCartRowItemInfo} from './kolam-cart-row-item-info';
+import {KolamFormTextField} from './kolam-form-text-field';
+import {KolamListFrame} from './kolam-list-frame';
 import {KolamRowFrame} from './kolam-row-frame';
+import {cartRowStyles as styles} from './kolam-cart-row-styles';
 
 export interface KolamCartRowProps {
   catalog: CatalogItem[];
@@ -15,6 +18,7 @@ export interface KolamCartRowProps {
     discountType: CartLine['discountType'],
   ) => void;
   onQuantityChange: (itemId: string, nextQuantity: number) => void;
+  onVoucherCodeChange: (itemId: string, voucherCode: string) => void;
 }
 
 export function KolamCartRow({
@@ -23,6 +27,7 @@ export function KolamCartRow({
   onDiscountAmountChange,
   onDiscountTypeChange,
   onQuantityChange,
+  onVoucherCodeChange,
 }: KolamCartRowProps) {
   const item = catalog.find(catalogItem => catalogItem.id === line.itemId);
 
@@ -44,6 +49,15 @@ export function KolamCartRow({
         onDiscountAmountChange={onDiscountAmountChange}
         onDiscountTypeChange={onDiscountTypeChange}
       />
+      <KolamListFrame variant="discountControlRow">
+        <KolamFormTextField
+          accessibilityLabel={`Kode voucher ${item.name}`}
+          onChangeText={value => onVoucherCodeChange(line.itemId, value)}
+          placeholder="Kode voucher"
+          style={styles.lineDiscountInput}
+          value={line.voucherCode ?? ''}
+        />
+      </KolamListFrame>
     </KolamRowFrame>
   );
 }

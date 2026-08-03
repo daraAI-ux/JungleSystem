@@ -61,6 +61,7 @@ describe('checkout split widgets', () => {
             onCreateSaleDraft={() => undefined}
             onDiscountAmountChange={() => undefined}
             onDiscountTypeChange={() => undefined}
+            onVoucherCodeChange={() => undefined}
             onGlobalDiscountChange={() => undefined}
             onGlobalDiscountTypeChange={() => undefined}
             onQuantityChange={() => undefined}
@@ -95,6 +96,7 @@ describe('checkout split widgets', () => {
             onCreateSaleDraft={() => undefined}
             onDiscountAmountChange={() => undefined}
             onDiscountTypeChange={() => undefined}
+            onVoucherCodeChange={() => undefined}
             onGlobalDiscountChange={() => undefined}
             onGlobalDiscountTypeChange={() => undefined}
             onQuantityChange={() => undefined}
