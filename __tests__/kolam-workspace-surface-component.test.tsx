@@ -2,6 +2,10 @@ import React from 'react';
 import { Text, View } from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 import { KolamWorkspaceSurface } from '../src/components/kolam-workspace-surface';
+import {
+  KolamAuthContext,
+  type KolamAuthContextValue,
+} from '../src/context/kolam-app-contexts';
 import { initialCheckoutState } from '../src/data/seed';
 import { getShellModuleRouteEntry } from '../src/domain/app-shell';
 import { authSources } from '../src/domain/auth';
@@ -79,6 +83,17 @@ jest.mock('../src/services/am-api', () => ({
 
 jest.mock('../src/services/kolam-task-manager-api', () => ({
   addKolamTaskManagerNote: jest.fn(() => Promise.resolve({})),
+  bulkSetKolamTaskRecurringEnrollment: jest.fn(() =>
+    Promise.resolve({
+      active: true,
+      capped: false,
+      processed: 3,
+      requested: 3,
+      skipped: [],
+      taskTypeId: 'type-1',
+      updated: 3,
+    }),
+  ),
   createKolamTaskManagerCategory: jest.fn(() => Promise.resolve({})),
   createKolamTaskManagerTask: jest.fn(() => Promise.resolve({})),
   createKolamTaskManagerTaskType: jest.fn(() => Promise.resolve({})),
@@ -258,6 +273,13 @@ jest.mock('../src/services/kolam-task-manager-api', () => ({
       totalActive: 5,
     }),
   ),
+  getKolamTaskRecurringEnrollmentStats: jest.fn(() =>
+    Promise.resolve({
+      activeCount: 5,
+      enclosuresWithPic: 3,
+      taskType: { id: 'type-1', key: 'dosing', name: 'Dosing' },
+    }),
+  ),
   getKolamTaskRecurringTemplates: jest.fn(() =>
     Promise.resolve([
       {
@@ -314,6 +336,20 @@ jest.mock('../src/services/kolam-task-manager-api', () => ({
   updateKolamTaskManagerStatus: jest.fn(() => Promise.resolve({})),
   updateKolamTaskManagerTask: jest.fn(() => Promise.resolve({})),
   updateKolamTaskManagerTaskType: jest.fn(() => Promise.resolve({})),
+}));
+
+jest.mock('../src/services/kolam-location-api', () => ({
+  getKolamLocations: jest.fn(() =>
+    Promise.resolve([
+      {
+        id: 'loc-1',
+        label: 'Kolam Utama',
+        name: 'Kolam Utama',
+        tier: 'primary',
+        type: 'area',
+      },
+    ]),
+  ),
 }));
 
 jest.mock('../src/services/kolam-user-api', () => ({
@@ -511,6 +547,25 @@ function buildRuntimeProps(): NonNullable<
   };
 }
 
+const taskManagerAdminAuthContext = {
+  accessScope: { am: true, kolam: true, pos: true },
+  authEmail: '',
+  authMessage: '',
+  authPassword: '',
+  authSource: 'kolam',
+  authSourceHint: '',
+  authUser: { id: 'admin-1', roleKey: 'super_admin' },
+  deviceIdentityStatus: {} as KolamAuthContextValue['deviceIdentityStatus'],
+  displayName: 'Admin',
+  handleSignIn: jest.fn(),
+  handleSignOut: jest.fn(),
+  isSigningIn: false,
+  setAuthEmail: jest.fn(),
+  setAuthMessage: jest.fn(),
+  setAuthPassword: jest.fn(),
+  setAuthSource: jest.fn(),
+} as KolamAuthContextValue;
+
 describe('KolamWorkspaceSurface', () => {
   it('renders POS catalog through the shared workspace boundary', async () => {
     let renderer: ReactTestRenderer.ReactTestRenderer;
@@ -656,14 +711,16 @@ describe('KolamWorkspaceSurface', () => {
 
     await ReactTestRenderer.act(async () => {
       renderer = ReactTestRenderer.create(
-        <View>
-          <KolamWorkspaceSurface
-            {...buildSurfaceProps({
-              activeModule: 'kolam',
-              activeNavigationItem: recurringItem,
-            })}
-          />
-        </View>,
+        <KolamAuthContext.Provider value={taskManagerAdminAuthContext}>
+          <View>
+            <KolamWorkspaceSurface
+              {...buildSurfaceProps({
+                activeModule: 'kolam',
+                activeNavigationItem: recurringItem,
+              })}
+            />
+          </View>
+        </KolamAuthContext.Provider>,
       );
     });
 
@@ -674,12 +731,19 @@ describe('KolamWorkspaceSurface', () => {
     expect(renderText(renderer!)).toEqual(
       expect.arrayContaining([
         'Tugas berulang',
+        'Bulk enrollment',
         'Template aktif',
         'Cek harian enclosure',
         'Jadwal / occurrence',
         'Cek suhu',
       ]),
     );
+
+    expect(
+      renderer!.root.findAllByProps({
+        accessibilityLabel: 'Bulk enrollment',
+      }).length,
+    ).toBeGreaterThan(0);
   });
 
   it('renders the native Task Manager categories settings route', async () => {

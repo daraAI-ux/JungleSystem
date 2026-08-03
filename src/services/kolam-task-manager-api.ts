@@ -4,9 +4,11 @@ import {
   normalizeKolamTaskManagerList,
   normalizeKolamTaskManagerTask,
   normalizeKolamTaskManagerTaskTypes,
+  normalizeKolamTaskRecurringBulkEnrollmentResult,
   normalizeKolamTaskRecurringOccurrences,
   normalizeKolamTaskRecurringEnrollmentCompliance,
   normalizeKolamTaskRecurringEnrollmentDashboard,
+  normalizeKolamTaskRecurringEnrollmentStats,
   normalizeKolamTaskRecurringServiceVisits,
   normalizeKolamTaskRecurringTemplates,
   type KolamTaskManagerCategory,
@@ -18,9 +20,11 @@ import {
   type KolamTaskManagerTask,
   type KolamTaskManagerTaskType,
   type KolamTaskManagerTaskTypeHandler,
+  type KolamTaskRecurringBulkEnrollmentResult,
   type KolamTaskRecurringOccurrence,
   type KolamTaskRecurringEnrollmentCompliance,
   type KolamTaskRecurringEnrollmentDashboard,
+  type KolamTaskRecurringEnrollmentStats,
   type KolamTaskRecurringServiceVisit,
   type KolamTaskRecurringTemplate,
 } from '../domain/kolam-task-manager';
@@ -79,6 +83,15 @@ export interface KolamTaskRecurringTemplateInput {
   taskTypeId?: string | null;
   time: string;
   title: string;
+}
+
+export interface KolamTaskRecurringBulkEnrollmentInput {
+  active: boolean;
+  allWithPic?: boolean;
+  assignedToId?: string | null;
+  enclosureIds?: string[];
+  locationId?: string | null;
+  taskTypeId: string;
 }
 
 export async function getKolamTaskManagerTasks(
@@ -274,6 +287,40 @@ export async function getKolamTaskRecurringEnrollmentCompliance(
     { query: { days: query.days ?? 30 } },
   );
   return normalizeKolamTaskRecurringEnrollmentCompliance(payload);
+}
+
+export async function getKolamTaskRecurringEnrollmentStats(
+  taskTypeId: string,
+): Promise<KolamTaskRecurringEnrollmentStats> {
+  const payload = await kolamRequest<unknown>(
+    '/task-manager/recurring/enrollment-stats',
+    { query: { taskTypeId } },
+  );
+  return normalizeKolamTaskRecurringEnrollmentStats(payload);
+}
+
+export async function bulkSetKolamTaskRecurringEnrollment(
+  input: KolamTaskRecurringBulkEnrollmentInput,
+): Promise<KolamTaskRecurringBulkEnrollmentResult> {
+  const payload = await kolamRequest<unknown>(
+    '/task-manager/recurring/enrollment-bulk',
+    {
+      method: 'POST',
+      body: {
+        taskTypeId: input.taskTypeId.trim(),
+        active: input.active,
+        ...(input.enclosureIds?.length
+          ? { enclosureIds: input.enclosureIds }
+          : {}),
+        ...(input.allWithPic ? { allWithPic: true } : {}),
+        ...(input.locationId?.trim() ? { locationId: input.locationId.trim() } : {}),
+        ...(input.assignedToId?.trim()
+          ? { assignedToId: input.assignedToId.trim() }
+          : {}),
+      },
+    },
+  );
+  return normalizeKolamTaskRecurringBulkEnrollmentResult(payload);
 }
 
 export async function runKolamTaskRecurringTick(): Promise<void> {

@@ -197,6 +197,29 @@ export interface KolamTaskRecurringEnrollmentCompliance {
   total: number;
 }
 
+export interface KolamTaskRecurringEnrollmentStats {
+  activeCount: number;
+  enclosuresWithPic: number;
+  taskType: {
+    id: string;
+    key: string;
+    name: string;
+  } | null;
+}
+
+export interface KolamTaskRecurringBulkEnrollmentResult {
+  active: boolean;
+  capped: boolean;
+  processed: number;
+  requested: number;
+  skipped: Array<{
+    enclosureId: string;
+    reason: string;
+  }>;
+  taskTypeId: string;
+  updated: number;
+}
+
 export interface KolamTaskManagerTask {
   id: string;
   title: string;
@@ -815,6 +838,45 @@ export function normalizeKolamTaskRecurringEnrollmentCompliance(
     sampleReviewPending: toNumber(row.sampleReviewPending, 0),
     sampleSpawned: toNumber(row.sampleSpawned, 0),
     total: toNumber(row.total, 0),
+  };
+}
+
+export function normalizeKolamTaskRecurringEnrollmentStats(
+  payload: unknown,
+): KolamTaskRecurringEnrollmentStats {
+  const row = unwrapData(payload);
+  const taskType = unwrapData(row.taskType);
+  return {
+    activeCount: toNumber(row.activeCount, 0),
+    enclosuresWithPic: toNumber(row.enclosuresWithPic, 0),
+    taskType: taskType
+      ? {
+          id: toStringValue(taskType.id || taskType._id),
+          key: toStringValue(taskType.key),
+          name: toStringValue(taskType.name),
+        }
+      : null,
+  };
+}
+
+export function normalizeKolamTaskRecurringBulkEnrollmentResult(
+  payload: unknown,
+): KolamTaskRecurringBulkEnrollmentResult {
+  const row = unwrapData(payload);
+  return {
+    active: Boolean(row.active),
+    capped: Boolean(row.capped),
+    processed: toNumber(row.processed, 0),
+    requested: toNumber(row.requested, 0),
+    skipped: (Array.isArray(row.skipped) ? row.skipped : []).map(item => {
+      const skipped = unwrapData(item);
+      return {
+        enclosureId: toStringValue(skipped.enclosureId),
+        reason: toStringValue(skipped.reason),
+      };
+    }),
+    taskTypeId: toStringValue(row.taskTypeId),
+    updated: toNumber(row.updated, 0),
   };
 }
 

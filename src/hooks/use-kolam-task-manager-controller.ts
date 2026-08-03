@@ -19,14 +19,17 @@ import {
   type KolamTaskManagerTaskTypeHandler,
   type KolamTaskRecurringEnrollmentCompliance,
   type KolamTaskRecurringEnrollmentDashboard,
+  type KolamTaskRecurringEnrollmentStats,
   type KolamTaskRecurringOccurrence,
   type KolamTaskRecurringServiceVisit,
   type KolamTaskRecurringTemplate,
 } from '../domain/kolam-task-manager';
 import type { KolamUserListItem } from '../domain/kolam-user';
+import type { KolamLocationOption } from '../services/kolam-location-api';
 import { getErrorMessage as getApiErrorMessage } from '../lib/api-error';
 import {
   addKolamTaskManagerNote,
+  bulkSetKolamTaskRecurringEnrollment,
   createKolamTaskManagerCategory,
   createKolamTaskManagerTask,
   createKolamTaskManagerTaskType,
@@ -41,6 +44,7 @@ import {
   getKolamTaskManagerTaskTypes,
   getKolamTaskRecurringEnrollmentCompliance,
   getKolamTaskRecurringEnrollmentDashboard,
+  getKolamTaskRecurringEnrollmentStats,
   getKolamTaskRecurringOccurrences,
   getKolamTaskRecurringServiceVisits,
   getKolamTaskRecurringTemplates,
@@ -52,6 +56,7 @@ import {
   updateKolamTaskManagerTask,
   updateKolamTaskManagerTaskType,
 } from '../services/kolam-task-manager-api';
+import { getKolamLocations } from '../services/kolam-location-api';
 import { getKolamUserList } from '../services/kolam-user-api';
 
 export type KolamTaskManagerDataSource = 'error' | 'idle' | 'live';
@@ -105,6 +110,13 @@ export interface KolamTaskRecurringTemplateFormState {
   weekPreset: 'all' | 'weekdays';
 }
 
+export interface KolamTaskRecurringBulkEnrollmentFormState {
+  active: boolean;
+  allWithPic: boolean;
+  locationId: string;
+  taskTypeId: string;
+}
+
 export interface KolamTaskManagerController {
   categories: KolamTaskManagerCategory[];
   categoryForm: KolamTaskManagerCategoryFormState;
@@ -146,6 +158,11 @@ export interface KolamTaskManagerController {
   recurringOccurrences: KolamTaskRecurringOccurrence[];
   recurringServiceVisits: KolamTaskRecurringServiceVisit[];
   recurringTemplates: KolamTaskRecurringTemplate[];
+  recurringBulkForm: KolamTaskRecurringBulkEnrollmentFormState;
+  recurringBulkFormError: string | null;
+  recurringBulkFormOpen: boolean;
+  recurringBulkLocations: KolamLocationOption[];
+  recurringBulkStats: KolamTaskRecurringEnrollmentStats | null;
   route: string;
   search: string;
   staffOptions: KolamTaskManagerStaffOption[];
@@ -169,12 +186,17 @@ export interface KolamTaskManagerController {
   onChangeRecurringTemplateForm: (
     patch: Partial<KolamTaskRecurringTemplateFormState>,
   ) => void;
+  onChangeRecurringBulkForm: (
+    patch: Partial<KolamTaskRecurringBulkEnrollmentFormState>,
+  ) => void;
   onCloseCategoryForm: () => void;
   onCloseForm: () => void;
+  onCloseRecurringBulkForm: () => void;
   onCloseRecurringTemplateForm: () => void;
   onCloseTaskTypeForm: () => void;
   onCreateCategory: () => void;
   onCreateNew: () => void;
+  onCreateRecurringBulkEnrollment: () => void;
   onCreateRecurringTemplate: () => void;
   onCreateTaskType: () => void;
   onDeleteCategory: (category: KolamTaskManagerCategory) => Promise<boolean>;
@@ -210,6 +232,7 @@ export interface KolamTaskManagerController {
   onRemoveChecklistItem: (index: number) => Promise<boolean>;
   onSaveCategory: () => Promise<boolean>;
   onSaveForm: () => Promise<boolean>;
+  onSaveRecurringBulkEnrollment: () => Promise<boolean>;
   onSaveRecurringTemplate: () => Promise<boolean>;
   onSaveTaskType: () => Promise<boolean>;
   onSetChecklistDraft: (value: string) => void;
@@ -298,6 +321,19 @@ export function useKolamTaskManagerController({
     useState<KolamTaskRecurringTemplateFormState>(() =>
       getDefaultRecurringTemplateForm(currentUserId),
     );
+  const [recurringBulkFormOpen, setRecurringBulkFormOpen] = useState(false);
+  const [recurringBulkFormError, setRecurringBulkFormError] = useState<
+    string | null
+  >(null);
+  const [recurringBulkForm, setRecurringBulkForm] =
+    useState<KolamTaskRecurringBulkEnrollmentFormState>(() =>
+      getDefaultRecurringBulkEnrollmentForm(),
+    );
+  const [recurringBulkStats, setRecurringBulkStats] =
+    useState<KolamTaskRecurringEnrollmentStats | null>(null);
+  const [recurringBulkLocations, setRecurringBulkLocations] = useState<
+    KolamLocationOption[]
+  >([]);
   const [checklistDraft, setChecklistDraft] = useState('');
   const [discussionDraft, setDiscussionDraft] = useState('');
   const [noteDraft, setNoteDraft] = useState('');
@@ -350,6 +386,17 @@ export function useKolamTaskManagerController({
       // Non-blocking: PIC filter can stay minimal.
     }
   }, []);
+
+  const loadLocations = useCallback(async () => {
+    if (!isTaskAdmin || mode !== 'recurring') {
+      return;
+    }
+    try {
+      setRecurringBulkLocations(await getKolamLocations());
+    } catch {
+      // Non-blocking: bulk enrollment can still run without location filter.
+    }
+  }, [isTaskAdmin, mode]);
 
   const loadTaskTypes = useCallback(async () => {
     if (
@@ -521,6 +568,10 @@ export function useKolamTaskManagerController({
   }, [loadCategories, loadStaff]);
 
   useEffect(() => {
+    void loadLocations();
+  }, [loadLocations]);
+
+  useEffect(() => {
     void refreshList();
   }, [refreshList]);
 
@@ -663,6 +714,94 @@ export function useKolamTaskManagerController({
     },
     [],
   );
+
+  const onCreateRecurringBulkEnrollment = useCallback(() => {
+    const initialTaskTypeId =
+      taskTypes.find(taskType => taskType.active && taskType.categoryBuckets.includes('enclosure'))
+        ?.id ??
+      taskTypes.find(taskType => taskType.active)?.id ??
+      '';
+    setRecurringBulkForm({
+      ...getDefaultRecurringBulkEnrollmentForm(),
+      taskTypeId: initialTaskTypeId,
+    });
+    setRecurringBulkStats(null);
+    setRecurringBulkFormError(null);
+    setStatusMessage(null);
+    setRecurringBulkFormOpen(true);
+  }, [taskTypes]);
+
+  const onCloseRecurringBulkForm = useCallback(() => {
+    setRecurringBulkFormOpen(false);
+    setRecurringBulkFormError(null);
+  }, []);
+
+  const onChangeRecurringBulkForm = useCallback(
+    (patch: Partial<KolamTaskRecurringBulkEnrollmentFormState>) => {
+      setRecurringBulkForm(current => ({ ...current, ...patch }));
+      setRecurringBulkFormError(null);
+      setStatusMessage(null);
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (!recurringBulkFormOpen || !recurringBulkForm.taskTypeId) {
+      setRecurringBulkStats(null);
+      return;
+    }
+
+    let cancelled = false;
+    getKolamTaskRecurringEnrollmentStats(recurringBulkForm.taskTypeId)
+      .then(stats => {
+        if (!cancelled) {
+          setRecurringBulkStats(stats);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setRecurringBulkStats(null);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [recurringBulkForm.taskTypeId, recurringBulkFormOpen]);
+
+  const onSaveRecurringBulkEnrollment = useCallback(async () => {
+    const taskTypeId = recurringBulkForm.taskTypeId.trim();
+    if (!taskTypeId) {
+      setRecurringBulkFormError('Pilih tipe task');
+      return false;
+    }
+    if (!recurringBulkForm.allWithPic && !recurringBulkForm.locationId.trim()) {
+      setRecurringBulkFormError('Pilih lokasi atau PIC');
+      return false;
+    }
+
+    setMutatingTaskId('recurring-bulk');
+    setError(null);
+    setStatusMessage(null);
+    try {
+      const result = await bulkSetKolamTaskRecurringEnrollment({
+        active: recurringBulkForm.active,
+        allWithPic: recurringBulkForm.allWithPic || undefined,
+        locationId: recurringBulkForm.locationId || undefined,
+        taskTypeId,
+      });
+      setRecurringBulkFormOpen(false);
+      setStatusMessage(
+        `${recurringBulkForm.active ? 'Diaktifkan' : 'Dinonaktifkan'} ${result.updated}`,
+      );
+      await refreshRecurring();
+      return true;
+    } catch (mutationError) {
+      setRecurringBulkFormError(getErrorMessage(mutationError));
+      return false;
+    } finally {
+      setMutatingTaskId(null);
+    }
+  }, [recurringBulkForm, refreshRecurring]);
 
   const onSaveRecurringTemplate = useCallback(async () => {
     const title = recurringTemplateForm.title.trim();
@@ -1215,6 +1354,11 @@ export function useKolamTaskManagerController({
       recurringOccurrences,
       recurringServiceVisits,
       recurringTemplates,
+      recurringBulkForm,
+      recurringBulkFormError,
+      recurringBulkFormOpen,
+      recurringBulkLocations,
+      recurringBulkStats,
       route,
       search,
       staffOptions,
@@ -1230,15 +1374,18 @@ export function useKolamTaskManagerController({
       onAddNote,
       onChangeCategoryForm,
       onChangeForm,
+      onChangeRecurringBulkForm,
       onChangeRecurringTemplateForm,
       onChangeTaskTypeForm,
       onCloseCategoryForm,
       onCloseForm,
+      onCloseRecurringBulkForm,
       onCloseRecurringTemplateForm,
       onCloseTaskTypeForm,
       onBackToList,
       onCreateCategory,
       onCreateNew,
+      onCreateRecurringBulkEnrollment,
       onCreateRecurringTemplate,
       onCreateTaskType,
       onDeleteCategory,
@@ -1276,6 +1423,7 @@ export function useKolamTaskManagerController({
       onRemoveChecklistItem,
       onSaveCategory,
       onSaveForm,
+      onSaveRecurringBulkEnrollment,
       onSaveRecurringTemplate,
       onSaveTaskType,
       onSetChecklistDraft: setChecklistDraft,
@@ -1322,14 +1470,17 @@ export function useKolamTaskManagerController({
       onAddNote,
       onChangeCategoryForm,
       onChangeForm,
+      onChangeRecurringBulkForm,
       onChangeRecurringTemplateForm,
       onChangeTaskTypeForm,
       onCloseCategoryForm,
       onCloseForm,
+      onCloseRecurringBulkForm,
       onCloseRecurringTemplateForm,
       onCloseTaskTypeForm,
       onCreateCategory,
       onCreateNew,
+      onCreateRecurringBulkEnrollment,
       onCreateRecurringTemplate,
       onCreateTaskType,
       onDeleteCategory,
@@ -1347,6 +1498,7 @@ export function useKolamTaskManagerController({
       onRemoveChecklistItem,
       onSaveCategory,
       onSaveForm,
+      onSaveRecurringBulkEnrollment,
       onSaveRecurringTemplate,
       onSaveTaskType,
       onToggleChecklistItem,
@@ -1360,6 +1512,11 @@ export function useKolamTaskManagerController({
       recurringOccurrences,
       recurringServiceVisits,
       recurringTemplates,
+      recurringBulkForm,
+      recurringBulkFormError,
+      recurringBulkFormOpen,
+      recurringBulkLocations,
+      recurringBulkStats,
       refreshList,
       refreshDetail,
       refreshRecurring,
@@ -1432,6 +1589,15 @@ function getDefaultRecurringTemplateForm(
     time: '09:00',
     title: '',
     weekPreset: 'weekdays',
+  };
+}
+
+function getDefaultRecurringBulkEnrollmentForm(): KolamTaskRecurringBulkEnrollmentFormState {
+  return {
+    active: true,
+    allWithPic: true,
+    locationId: '',
+    taskTypeId: '',
   };
 }
 

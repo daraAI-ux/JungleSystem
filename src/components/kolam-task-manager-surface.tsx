@@ -124,6 +124,7 @@ export function KolamTaskManagerSurface({
       )}
       <KolamTaskFormModal controller={controller} />
       <KolamTaskCategoryFormModal controller={controller} />
+      <KolamTaskRecurringBulkEnrollmentModal controller={controller} />
       <KolamTaskRecurringTemplateFormModal controller={controller} />
       <KolamTaskTypeFormModal controller={controller} />
     </View>
@@ -919,6 +920,14 @@ function KolamTaskRecurringPanel({
             />
             {controller.isTaskAdmin ? (
               <KolamButton
+                disabled={controller.loading}
+                intent="outline"
+                label="Bulk enrollment"
+                onPress={controller.onCreateRecurringBulkEnrollment}
+              />
+            ) : null}
+            {controller.isTaskAdmin ? (
+              <KolamButton
                 disabled={controller.mutatingTaskId === 'recurring'}
                 label="Generate hari ini"
                 onPress={() => {
@@ -1515,6 +1524,117 @@ function KolamTaskCategoryFormModal({
               }
             />
           </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function KolamTaskRecurringBulkEnrollmentModal({
+  controller,
+}: {
+  controller: KolamTaskManagerController;
+}) {
+  const saving = controller.mutatingTaskId === 'recurring-bulk';
+  const taskTypeOptions = controller.taskTypes
+    .filter(type => type.active && type.categoryBuckets.includes('enclosure'))
+    .map(type => ({ label: type.name, value: type.id }));
+  const locationOptions = [
+    { label: 'Semua lokasi', value: '' },
+    ...controller.recurringBulkLocations.map(location => ({
+      label: location.label || location.name,
+      value: location.id,
+    })),
+  ];
+
+  return (
+    <Modal
+      animationType="fade"
+      onRequestClose={controller.onCloseRecurringBulkForm}
+      transparent
+      visible={controller.recurringBulkFormOpen}
+    >
+      <View style={styles.modalRoot}>
+        <KolamModalBackdrop onPress={controller.onCloseRecurringBulkForm} />
+        <View style={styles.categoryModalCard}>
+          <View style={styles.modalHeader}>
+            <Text numberOfLines={1} style={styles.modalTitle}>
+              Bulk enrollment enclosure
+            </Text>
+            <View style={styles.modalActions}>
+              <KolamButton
+                disabled={saving}
+                intent="outline"
+                label="Batal"
+                onPress={controller.onCloseRecurringBulkForm}
+              />
+              <KolamButton
+                disabled={saving || !controller.recurringBulkForm.taskTypeId}
+                label={saving ? 'Menyimpan...' : 'Simpan'}
+                onPress={() => {
+                  void controller.onSaveRecurringBulkEnrollment();
+                }}
+              />
+            </View>
+          </View>
+          {controller.recurringBulkFormError ? (
+            <KolamStatusBadge
+              intent="danger"
+              label={controller.recurringBulkFormError}
+              numberOfLines={3}
+            />
+          ) : null}
+          <KolamDropdownSelect
+            label="Tipe task"
+            onChange={taskTypeId =>
+              controller.onChangeRecurringBulkForm({ taskTypeId })
+            }
+            options={taskTypeOptions}
+            searchable
+            value={controller.recurringBulkForm.taskTypeId}
+          />
+          {controller.recurringBulkStats ? (
+            <Text style={styles.metaText}>
+              Aktif: {controller.recurringBulkStats.activeCount} - PIC:{' '}
+              {controller.recurringBulkStats.enclosuresWithPic}
+            </Text>
+          ) : null}
+          <View style={styles.formSwitchRow}>
+            <Text style={styles.cellText}>
+              {controller.recurringBulkForm.active
+                ? 'Aktifkan enrollment'
+                : 'Nonaktifkan enrollment'}
+            </Text>
+            <KolamSwitch
+              active={controller.recurringBulkForm.active}
+              onPress={() =>
+                controller.onChangeRecurringBulkForm({
+                  active: !controller.recurringBulkForm.active,
+                })
+              }
+            />
+          </View>
+          <KolamDropdownSelect
+            label="Lokasi"
+            onChange={locationId =>
+              controller.onChangeRecurringBulkForm({ locationId })
+            }
+            options={locationOptions}
+            searchable
+            value={controller.recurringBulkForm.locationId}
+          />
+          <View style={styles.formSwitchRow}>
+            <Text style={styles.cellText}>Hanya enclosure yang punya PIC</Text>
+            <KolamSwitch
+              active={controller.recurringBulkForm.allWithPic}
+              onPress={() =>
+                controller.onChangeRecurringBulkForm({
+                  allWithPic: !controller.recurringBulkForm.allWithPic,
+                })
+              }
+            />
+          </View>
+          <Text style={styles.metaText}>Maks. 500 enclosure per operasi.</Text>
         </View>
       </View>
     </Modal>
