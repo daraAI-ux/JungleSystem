@@ -1242,13 +1242,13 @@ describe('KolamAmSurface', () => {
 
     const findInput = (placeholder: string) =>
       renderer!.root.findAllByType(TextInput).find(input => input.props.placeholder === placeholder);
-    expect(findInput('username/email opsional')).toBeUndefined();
-    expect(findInput('PIN opsional')).toBeUndefined();
-    expect(findInput('nomor akun/rekening')).toBeUndefined();
+    expect(findInput('Store login email')).toBeUndefined();
+    expect(findInput('Account PIN')).toBeUndefined();
+    expect(findInput('e.g. 1234567890')).toBeUndefined();
     await act(async () => {
       findInput('Tokopedia Seller Center')!.props.onChangeText('Tokopedia New');
-      findInput('password opsional')!.props.onChangeText('top-secret');
-      findInput('credentials.phoneNumber')!.props.onChangeText('0899');
+      findInput('TikTok Shop password')!.props.onChangeText('top-secret');
+      findInput('e.g. 08123456789')!.props.onChangeText('0899');
     });
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Service Account Save'}).props.onPress();
@@ -1276,13 +1276,13 @@ describe('KolamAmSurface', () => {
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Segment Phone Worker (10.0.0.7:5555)'}).props.onPress();
     });
-    expect(findInput('username/email opsional')).toBeUndefined();
-    expect(findInput('password opsional')).toBeUndefined();
-    expect(findInput('nomor akun/rekening')).toBeUndefined();
+    expect(findInput('myBCA username')).toBeUndefined();
+    expect(findInput('Store password')).toBeUndefined();
+    expect(findInput('e.g. 1234567890')).toBeUndefined();
     await act(async () => {
       findInput('Tokopedia Seller Center')!.props.onChangeText('DANA Services');
-      findInput('PIN opsional')!.props.onChangeText('112233');
-      findInput('credentials.phoneNumber')!.props.onChangeText('081234567891');
+      findInput('PIN DANA')!.props.onChangeText('112233');
+      findInput('e.g. 081234567890')!.props.onChangeText('081234567891');
     });
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Service Account Save'}).props.onPress();
@@ -2462,8 +2462,8 @@ describe('KolamAmSurface', () => {
     const findInput = (placeholder: string) => renderer!.root.findAllByType(TextInput).find(input => input.props.placeholder === placeholder);
     await act(async () => {
       findInput('Service label')!.props.onChangeText('BCA Detail Updated');
-      findInput('username/email')!.props.onChangeText('bca-updated');
-      findInput('nomor akun/rekening')!.props.onChangeText('9876543210');
+      findInput('myBCA username')!.props.onChangeText('bca-updated');
+      findInput('e.g. 1234567890')!.props.onChangeText('9876543210');
     });
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Device Service Target Phone Target'}).props.onPress();
@@ -2492,10 +2492,10 @@ describe('KolamAmSurface', () => {
 
     await act(async () => {
       findInput('Service label')!.props.onChangeText('BCA Detail New');
-      findInput('username/email')!.props.onChangeText('bca-detail');
-      findInput('password')!.props.onChangeText('secret');
-      findInput('PIN')!.props.onChangeText('123456');
-      findInput('nomor akun/rekening')!.props.onChangeText('9876543210');
+      findInput('myBCA username')!.props.onChangeText('bca-detail');
+      findInput('myBCA password')!.props.onChangeText('secret');
+      findInput('Account PIN')!.props.onChangeText('123456');
+      findInput('e.g. 1234567890')!.props.onChangeText('9876543210');
     });
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Device Save Service Account device-1'}).props.onPress();
@@ -2519,13 +2519,13 @@ describe('KolamAmSurface', () => {
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Segment DANA'}).props.onPress();
     });
-    expect(findInput('username/email')).toBeUndefined();
-    expect(findInput('password')).toBeUndefined();
-    expect(findInput('nomor akun/rekening')).toBeUndefined();
+    expect(findInput('myBCA username')).toBeUndefined();
+    expect(findInput('Store password')).toBeUndefined();
+    expect(findInput('e.g. 1234567890')).toBeUndefined();
     await act(async () => {
       findInput('Service label')!.props.onChangeText('DANA Detail');
-      findInput('PIN')!.props.onChangeText('654321');
-      findInput('nomor HP')!.props.onChangeText('081234567890');
+      findInput('PIN DANA')!.props.onChangeText('654321');
+      findInput('e.g. 081234567890')!.props.onChangeText('081234567890');
     });
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Device Save Service Account device-1'}).props.onPress();
@@ -2757,13 +2757,13 @@ describe('KolamAmSurface', () => {
     });
 
     const findInput = (placeholder: string) => renderer!.root.findAllByType(TextInput).find(input => input.props.placeholder === placeholder);
-    expect(findInput('username/email')).toBeUndefined();
-    expect(findInput('password')).toBeUndefined();
-    expect(findInput('PIN')).toBeUndefined();
-    expect(findInput('nomor akun/rekening')).toBeUndefined();
+    expect(findInput('Store login email')).toBeUndefined();
+    expect(findInput('Store password')).toBeUndefined();
+    expect(findInput('Account PIN')).toBeUndefined();
+    expect(findInput('e.g. 1234567890')).toBeUndefined();
     await act(async () => {
       findInput('Service label')!.props.onChangeText('WA Browser');
-      findInput('nomor HP')!.props.onChangeText('08123456789');
+      findInput('e.g. 08123456789')!.props.onChangeText('08123456789');
     });
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Device Save Service Account device-browser'}).props.onPress();

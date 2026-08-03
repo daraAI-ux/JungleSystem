@@ -165,6 +165,43 @@ const PLAYWRIGHT_PLATFORMS = new Set(['tokopedia', 'shopee', 'tiktok', 'instagra
 const AM_BROWSER_DEVICE_PLATFORMS = new Set(['tokopedia', 'shopee', 'tiktok', 'instagram', 'whatsapp']);
 const AM_EXCLUSIVE_SERVICE_PLATFORMS = new Set(['whatsapp', 'tokopedia', 'shopee', 'tiktok', 'instagram']);
 const AM_BANKING_SERVICE_PLATFORMS = new Set(['bca', 'brimo', 'dana']);
+type AmServiceFieldKind = 'username' | 'password' | 'pin' | 'accountNumber' | 'phoneNumber';
+const AM_SERVICE_FIELD_META: Record<string, Partial<Record<AmServiceFieldKind, {label: string; placeholder: string}>>> = {
+  whatsapp: {
+    phoneNumber: {label: 'Phone Number', placeholder: 'e.g. 08123456789'},
+  },
+  tokopedia: {
+    phoneNumber: {label: 'Phone Number', placeholder: 'e.g. 08123456789'},
+    password: {label: 'Password (Kata Sandi)', placeholder: 'TikTok Shop password'},
+  },
+  shopee: {
+    username: {label: 'Email / Username', placeholder: 'Store login email'},
+    password: {label: 'Password', placeholder: 'Store password'},
+  },
+  tiktok: {
+    username: {label: 'Username', placeholder: 'TikTok Username'},
+  },
+  instagram: {
+    username: {label: 'Email / Username', placeholder: 'Instagram email or username'},
+    password: {label: 'Password', placeholder: 'Instagram password'},
+  },
+  bca: {
+    username: {label: 'Username', placeholder: 'myBCA username'},
+    password: {label: 'Password', placeholder: 'myBCA password'},
+    pin: {label: 'PIN', placeholder: 'Account PIN'},
+    accountNumber: {label: 'Account Number', placeholder: 'e.g. 1234567890'},
+  },
+  brimo: {
+    username: {label: 'Username', placeholder: 'BRImo username'},
+    password: {label: 'Password', placeholder: 'BRImo password'},
+    pin: {label: 'PIN', placeholder: 'Account PIN'},
+    accountNumber: {label: 'Account Number', placeholder: 'e.g. 1234567890'},
+  },
+  dana: {
+    phoneNumber: {label: 'Nomor HP DANA', placeholder: 'e.g. 081234567890'},
+    pin: {label: 'PIN', placeholder: 'PIN DANA'},
+  },
+};
 const TOKOPEDIA_SESSION_LABELS: Record<string, string> = {
   missing: 'Belum ada session',
   empty: 'File kosong',
@@ -1751,19 +1788,19 @@ function AmServicesPage() {
         <View style={styles.formGrid}>
           <AmTextInput label="Label" placeholder="Tokopedia Seller Center" value={formLabel} onChangeText={setFormLabel} />
           {showServiceUsername ? (
-            <AmTextInput label="Username" placeholder="username/email opsional" value={formUsername} onChangeText={setFormUsername} />
+            <AmTextInput {...getAmServiceFieldProps(formPlatform, 'username', Boolean(editingServiceId))} value={formUsername} onChangeText={setFormUsername} />
           ) : null}
           {showServicePassword ? (
-            <AmTextInput label="Password" placeholder={editingServiceId ? 'Kosongkan jika tidak mengganti' : 'password opsional'} secureTextEntry value={formPassword} onChangeText={setFormPassword} />
+            <AmTextInput {...getAmServiceFieldProps(formPlatform, 'password', Boolean(editingServiceId))} secureTextEntry value={formPassword} onChangeText={setFormPassword} />
           ) : null}
           {showServicePin ? (
-            <AmTextInput label="PIN" placeholder={editingServiceId ? 'Kosongkan jika tidak mengganti' : 'PIN opsional'} secureTextEntry value={formPin} onChangeText={setFormPin} />
+            <AmTextInput {...getAmServiceFieldProps(formPlatform, 'pin', Boolean(editingServiceId))} secureTextEntry value={formPin} onChangeText={setFormPin} />
           ) : null}
           {showServiceAccountNumber ? (
-            <AmTextInput label="Account Number" placeholder="nomor akun/rekening" value={formAccountNumber} onChangeText={setFormAccountNumber} />
+            <AmTextInput {...getAmServiceFieldProps(formPlatform, 'accountNumber', Boolean(editingServiceId))} value={formAccountNumber} onChangeText={setFormAccountNumber} />
           ) : null}
           {showServicePhoneNumber ? (
-            <AmTextInput label="Phone Number" placeholder="credentials.phoneNumber" value={formPhoneNumber} onChangeText={setFormPhoneNumber} />
+            <AmTextInput {...getAmServiceFieldProps(formPlatform, 'phoneNumber', Boolean(editingServiceId))} value={formPhoneNumber} onChangeText={setFormPhoneNumber} />
           ) : null}
         </View>
         <View style={styles.inlineActions}>
@@ -3917,19 +3954,19 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
             />
             <AmTextInput label="Label" placeholder="Service label" value={serviceFormLabel} onChangeText={setServiceFormLabel} />
             {showDeviceServiceUsername ? (
-              <AmTextInput label="Username" placeholder="username/email" value={serviceFormUsername} onChangeText={setServiceFormUsername} />
+              <AmTextInput {...getAmServiceFieldProps(serviceFormPlatform, 'username', Boolean(editingDeviceServiceId))} value={serviceFormUsername} onChangeText={setServiceFormUsername} />
             ) : null}
             {showDeviceServicePassword ? (
-              <AmTextInput label="Password" placeholder="password" secureTextEntry value={serviceFormPassword} onChangeText={setServiceFormPassword} />
+              <AmTextInput {...getAmServiceFieldProps(serviceFormPlatform, 'password', Boolean(editingDeviceServiceId))} secureTextEntry value={serviceFormPassword} onChangeText={setServiceFormPassword} />
             ) : null}
             {showDeviceServicePin ? (
-              <AmTextInput label="PIN" placeholder="PIN" secureTextEntry value={serviceFormPin} onChangeText={setServiceFormPin} />
+              <AmTextInput {...getAmServiceFieldProps(serviceFormPlatform, 'pin', Boolean(editingDeviceServiceId))} secureTextEntry value={serviceFormPin} onChangeText={setServiceFormPin} />
             ) : null}
             {showDeviceServiceAccountNumber ? (
-              <AmTextInput label="Account Number" placeholder="nomor akun/rekening" value={serviceFormAccountNumber} onChangeText={setServiceFormAccountNumber} />
+              <AmTextInput {...getAmServiceFieldProps(serviceFormPlatform, 'accountNumber', Boolean(editingDeviceServiceId))} value={serviceFormAccountNumber} onChangeText={setServiceFormAccountNumber} />
             ) : null}
             {showDeviceServicePhoneNumber ? (
-              <AmTextInput label="Phone Number" placeholder="nomor HP" value={serviceFormPhoneNumber} onChangeText={setServiceFormPhoneNumber} />
+              <AmTextInput {...getAmServiceFieldProps(serviceFormPlatform, 'phoneNumber', Boolean(editingDeviceServiceId))} value={serviceFormPhoneNumber} onChangeText={setServiceFormPhoneNumber} />
             ) : null}
             {editingDeviceServiceId ? (
               <View style={styles.formField}>
@@ -7031,6 +7068,27 @@ function getServiceCredentialLogin(account: AmServiceAccount) {
     return getCredentialString(account.credentials, 'username') ?? account.username ?? '';
   }
   return account.username ?? '';
+}
+
+function getAmServiceFieldProps(
+  platform: string,
+  field: AmServiceFieldKind,
+  editing = false,
+) {
+  const fallback: Record<AmServiceFieldKind, {label: string; placeholder: string}> = {
+    username: {label: 'Username', placeholder: 'username/email'},
+    password: {label: 'Password', placeholder: 'password'},
+    pin: {label: 'PIN', placeholder: 'PIN'},
+    accountNumber: {label: 'Account Number', placeholder: 'account number'},
+    phoneNumber: {label: 'Phone Number', placeholder: 'phone number'},
+  };
+  const meta = AM_SERVICE_FIELD_META[platform]?.[field] ?? fallback[field];
+  const isSecret = field === 'password' || field === 'pin';
+
+  return {
+    label: meta.label,
+    placeholder: editing && isSecret ? 'Leave empty to keep current password' : meta.placeholder,
+  };
 }
 
 function buildWebServiceCredentials({
