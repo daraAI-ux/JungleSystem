@@ -73,6 +73,51 @@ export interface KolamTaskManagerTaskTypeRef {
   handler: string;
 }
 
+export interface KolamTaskManagerEnclosureRef {
+  code: string;
+  id: string;
+  name: string;
+  status: string;
+}
+
+export interface KolamTaskManagerServiceRef {
+  id: string;
+  name: string;
+  sku: string;
+}
+
+export interface KolamTaskManagerProductionRef {
+  code: string;
+  id: string;
+  status: string;
+}
+
+export interface KolamTaskManagerCustomerRef {
+  email: string;
+  id: string;
+  name: string;
+  phone: string;
+}
+
+export interface KolamTaskManagerProjectRef {
+  id: string;
+  lifecycleStatus: string;
+  projectStatus: string;
+  quotationNumber: string;
+}
+
+export interface KolamTaskManagerSaleRef {
+  id: string;
+  invoiceCode: string;
+  status: string;
+}
+
+export interface KolamTaskManagerComplaintRef {
+  id: string;
+  status: string;
+  ticketCode: string;
+}
+
 export type KolamTaskManagerTaskTypeHandler = 'dosing' | 'maintenance';
 
 export interface KolamTaskManagerTaskType {
@@ -234,12 +279,19 @@ export interface KolamTaskManagerTask {
   category: string | KolamTaskManagerCategoryRef | null;
   categoryBucket: KolamTaskCategoryBucket | null;
   taskType: string | KolamTaskManagerTaskTypeRef | null;
+  customer: KolamTaskManagerCustomerRef | null;
   customerId: string;
+  project: KolamTaskManagerProjectRef | null;
   projectId: string;
+  enclosure: KolamTaskManagerEnclosureRef | null;
   enclosureId: string;
+  service: KolamTaskManagerServiceRef | null;
   serviceId: string;
+  production: KolamTaskManagerProductionRef | null;
   productionId: string;
+  sale: KolamTaskManagerSaleRef | null;
   saleId: string;
+  complaint: KolamTaskManagerComplaintRef | null;
   complaintId: string;
   conversationId: string;
   dueDate: string;
@@ -714,12 +766,19 @@ export function normalizeKolamTaskManagerTask(payload: unknown): KolamTaskManage
     category: normalizeCategoryRef(record.category),
     categoryBucket: toTaskCategoryBucket(record.categoryBucket),
     taskType: normalizeTaskTypeRef(record.taskType),
+    customer: normalizeCustomerRef(record.customer),
     customerId: getLooseRefId(record.customer ?? record.customerId),
+    project: normalizeProjectRef(record.project),
     projectId: getLooseRefId(record.project ?? record.projectId),
+    enclosure: normalizeEnclosureRef(record.enclosure),
     enclosureId: getLooseRefId(record.enclosure ?? record.enclosureId),
+    service: normalizeServiceRef(record.service),
     serviceId: getLooseRefId(record.service ?? record.serviceId),
+    production: normalizeProductionRef(record.production),
     productionId: getLooseRefId(record.production ?? record.productionId),
+    sale: normalizeSaleRef(record.sale),
     saleId: getLooseRefId(record.sale ?? record.saleId),
+    complaint: normalizeComplaintRef(record.complaint),
     complaintId: getLooseRefId(record.complaint ?? record.complaintId),
     conversationId: getLooseRefId(record.conversation ?? record.conversationId),
     dueDate: toStringValue(record.dueDate),
@@ -1131,6 +1190,86 @@ function normalizeTaskTypeRef(
     key: toStringValue(value.key),
     name: toStringValue(value.name),
     handler: toStringValue(value.handler),
+  };
+}
+
+function normalizeEnclosureRef(value: unknown): KolamTaskManagerEnclosureRef | null {
+  if (!isRecord(value)) return null;
+  const id = toStringValue(value._id ?? value.id);
+  if (!id) return null;
+  return {
+    code: toStringValue(value.enclosure_code),
+    id,
+    name: toStringValue(value.enclosure_name),
+    status: toStringValue(value.status),
+  };
+}
+
+function normalizeServiceRef(value: unknown): KolamTaskManagerServiceRef | null {
+  if (!isRecord(value)) return null;
+  const id = toStringValue(value._id ?? value.id);
+  if (!id) return null;
+  return {
+    id,
+    name: toStringValue(value.name),
+    sku: toStringValue(value.sku),
+  };
+}
+
+function normalizeProductionRef(value: unknown): KolamTaskManagerProductionRef | null {
+  if (!isRecord(value)) return null;
+  const id = toStringValue(value._id ?? value.id);
+  if (!id) return null;
+  return {
+    code: toStringValue(value.production_code),
+    id,
+    status: toStringValue(value.status),
+  };
+}
+
+function normalizeCustomerRef(value: unknown): KolamTaskManagerCustomerRef | null {
+  if (!isRecord(value)) return null;
+  const id = toStringValue(value._id ?? value.id);
+  if (!id) return null;
+  return {
+    email: toStringValue(value.email),
+    id,
+    name: toStringValue(value.name),
+    phone: toStringValue(value.phone),
+  };
+}
+
+function normalizeProjectRef(value: unknown): KolamTaskManagerProjectRef | null {
+  if (!isRecord(value)) return null;
+  const id = toStringValue(value._id ?? value.id);
+  if (!id) return null;
+  return {
+    id,
+    lifecycleStatus: toStringValue(value.lifecycleStatus),
+    projectStatus: toStringValue(value.projectStatus),
+    quotationNumber: toStringValue(value.quotationNumber),
+  };
+}
+
+function normalizeSaleRef(value: unknown): KolamTaskManagerSaleRef | null {
+  if (!isRecord(value)) return null;
+  const id = toStringValue(value._id ?? value.id);
+  if (!id) return null;
+  return {
+    id,
+    invoiceCode: toStringValue(value.invoiceCode),
+    status: toStringValue(value.status),
+  };
+}
+
+function normalizeComplaintRef(value: unknown): KolamTaskManagerComplaintRef | null {
+  if (!isRecord(value)) return null;
+  const id = toStringValue(value._id ?? value.id);
+  if (!id) return null;
+  return {
+    id,
+    status: toStringValue(value.status),
+    ticketCode: toStringValue(value.ticketCode),
   };
 }
 

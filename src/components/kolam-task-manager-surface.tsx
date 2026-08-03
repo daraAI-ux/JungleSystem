@@ -121,7 +121,10 @@ export function KolamTaskManagerSurface({
           onRouteChange={onRouteChange}
         />
       ) : controller.mode === 'detail' ? (
-        <KolamTaskManagerDetail controller={controller} />
+        <KolamTaskManagerDetail
+          controller={controller}
+          onRouteChange={onRouteChange}
+        />
       ) : controller.mode === 'categories' ? (
         <KolamTaskCategorySettingsPanel controller={controller} />
       ) : controller.mode === 'task-types' ? (
@@ -140,8 +143,10 @@ export function KolamTaskManagerSurface({
 
 function KolamTaskManagerDetail({
   controller,
+  onRouteChange,
 }: {
   controller: KolamTaskManagerController;
+  onRouteChange?: (route: string) => void;
 }) {
   const task = controller.selectedTask;
   if (controller.loading && !task) {
@@ -168,6 +173,7 @@ function KolamTaskManagerDetail({
       new Date(left.createdAt || 0).getTime() -
       new Date(right.createdAt || 0).getTime(),
   );
+  const relatedLinks = getTaskRelatedLinks(task);
 
   return (
     <View style={styles.detailStack}>
@@ -303,6 +309,19 @@ function KolamTaskManagerDetail({
               ))}
             </View>
           ) : null}
+        </View>
+      ) : null}
+
+      {relatedLinks.length ? (
+        <View style={styles.relatedChipRow}>
+          {relatedLinks.map(link => (
+            <KolamButton
+              intent="outline"
+              key={link.route}
+              label={link.label}
+              onPress={() => onRouteChange?.(link.route)}
+            />
+          ))}
         </View>
       ) : null}
 
@@ -559,6 +578,59 @@ function getDiscussionAttachmentLabel(
     file.uri?.split('/').pop() ||
     'File'
   );
+}
+
+function getTaskRelatedLinks(task: KolamTaskManagerTask) {
+  const links: Array<{ label: string; route: string }> = [];
+  if (task.enclosureId) {
+    links.push({
+      label: `Enclosure ${task.enclosure?.code || task.enclosure?.name || task.enclosureId}`,
+      route: `/enclosures/${task.enclosureId}`,
+    });
+  }
+  if (task.serviceId) {
+    links.push({
+      label: `Layanan ${task.service?.name || task.service?.sku || task.serviceId}`,
+      route: `/service/${task.serviceId}`,
+    });
+  }
+  if (task.productionId) {
+    links.push({
+      label: `Produksi ${task.production?.code || task.productionId}`,
+      route: `/production/${task.productionId}`,
+    });
+  }
+  if (task.conversationId) {
+    links.push({
+      label: 'Chat Inbox',
+      route: `/inbox/${task.conversationId}`,
+    });
+  }
+  if (task.projectId) {
+    links.push({
+      label: `Project ${task.project?.quotationNumber || task.projectId}`,
+      route: `/custom-project/instances/${task.projectId}`,
+    });
+  }
+  if (task.saleId) {
+    links.push({
+      label: `Sale ${task.sale?.invoiceCode || task.saleId}`,
+      route: `/sales/${task.saleId}`,
+    });
+  }
+  if (task.complaintId) {
+    links.push({
+      label: task.complaint?.ticketCode || 'Complaint',
+      route: `/complaints/${task.complaintId}`,
+    });
+  }
+  if (task.customerId) {
+    links.push({
+      label: task.customer?.name || 'Customer',
+      route: `/customers/${task.customerId}`,
+    });
+  }
+  return links;
 }
 
 function KolamTaskManagerTabs({
@@ -2509,6 +2581,12 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   detailGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  relatedChipRow: {
+    alignItems: 'center',
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
