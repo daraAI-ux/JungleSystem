@@ -1,16 +1,24 @@
 import {
   buildKolamCampaignDetailRoute,
   buildKolamCampaignEditRoute,
+  calculateKolamCampaignPrice,
   countKolamCampaignVariants,
+  createEmptyKolamCampaignFormState,
+  createKolamCampaignFormState,
+  createKolamCampaignSavePayload,
   formatKolamCampaignDiscountLabel,
   formatKolamCampaignDurationLabel,
+  formatKolamCampaignPriceRange,
   formatKolamCampaignStatusLabel,
   getKolamCampaignIdFromRoute,
   getKolamCampaignRouteMode,
   getKolamCampaignStatusIntent,
   isKolamCampaignRoute,
+  kolamCampaignApiDateToFormDate,
+  kolamCampaignFormDateToApiIso,
   normalizeKolamCampaign,
   normalizeKolamCampaignList,
+  validateKolamCampaignForm,
 } from '../src/domain/kolam-campaign';
 import { getKolamTableColumns } from '../src/domain/kolam-table';
 import {
@@ -99,25 +107,116 @@ describe('kolam-campaign domain', () => {
     expect(formatKolamCampaignDiscountLabel(list.items[1])).toContain('10');
   });
 
-  it('normalizes a single campaign payload', () => {
+  it('normalizes enriched detail products and form/date helpers', () => {
     const campaign = normalizeKolamCampaign({
-      data: {
-        _id: { $oid: 'oid1' },
-        title: 'Nested',
-        startDate: { $date: '2026-03-01T00:00:00.000Z' },
-        endDate: '2026-03-05T00:00:00.000Z',
-        discountType: 'fixed',
-        discountValue: '5000',
-        status: 'ended',
-        products: [{ productId: 'p9', variantIds: ['a'] }],
-      },
+      _id: 'c9',
+      title: 'Detail',
+      startDate: '2026-03-01T00:00:00.000Z',
+      endDate: '2026-03-05T00:00:00.000Z',
+      discountType: 'percentage',
+      discountValue: 10,
+      status: 'on_going',
+      products: [
+        {
+          productId: 'p1',
+          variantIds: ['v1'],
+          product: {
+            _id: 'p1',
+            name: 'Produk A',
+            sku: 'SKU-A',
+            thumbnailImage: 'media/a.png',
+            price_to_sell: 100000,
+            variants: [
+              {
+                _id: 'v1',
+                tier1Value: 'S',
+                price_to_sell: 100000,
+              },
+              {
+                _id: 'v2',
+                tier1Value: 'M',
+                price_to_sell: 120000,
+              },
+            ],
+          },
+          variantDetails: [
+            {
+              _id: 'v1',
+              label: 'S',
+              price_to_sell: 100000,
+            },
+          ],
+        },
+      ],
     });
 
-    expect(campaign.id).toBe('oid1');
-    expect(campaign.status).toBe('ended');
-    expect(campaign.startDate).toBe('2026-03-01T00:00:00.000Z');
-    expect(campaign.discountValue).toBe(5000);
-    expect(formatKolamCampaignDurationLabel(campaign)).toBe('4 hari');
+    expect(campaign.products[0].product?.name).toBe('Produk A');
+    expect(campaign.products[0].product?.variants).toHaveLength(2);
+    expect(campaign.products[0].variantDetails?.[0].label).toBe('S');
+
+    const form = createKolamCampaignFormState(campaign);
+    expect(form.title).toBe('Detail');
+    expect(form.startDate).toBe(
+      kolamCampaignApiDateToFormDate(campaign.startDate),
+    );
+    expect(form.products[0].productId).toBe('p1');
+    expect(form.products[0].variantIds).toEqual(['v1']);
+
+    const apiIso = kolamCampaignFormDateToApiIso('2026-03-01');
+    expect(kolamCampaignApiDateToFormDate(apiIso)).toBe('2026-03-01');
+    expect(Number.isFinite(Date.parse(apiIso))).toBe(true);
+
+    expect(calculateKolamCampaignPrice(100000, campaign)).toBe(90000);
+    expect(
+      formatKolamCampaignPriceRange(
+        campaign.products[0].variantDetails ?? [],
+        campaign,
+      ).campaign,
+    ).toContain('90');
+  });
+
+  it('validates form and builds save payload like FE create', () => {
+    const empty = createEmptyKolamCampaignFormState();
+    expect(validateKolamCampaignForm(empty)).toBe('Judul kampanye wajib diisi');
+
+    const invalidDates = {
+      ...empty,
+      title: 'Promo',
+      startDate: '2026-04-10',
+      endDate: '2026-04-10',
+      discountValue: '10',
+      products: [{ productId: 'p1', variantIds: [] }],
+    };
+    expect(validateKolamCampaignForm(invalidDates)).toBe(
+      'Tanggal selesai harus setelah tanggal mulai',
+    );
+
+    const valid = {
+      ...empty,
+      title: ' Promo ',
+      startDate: '2026-04-01',
+      endDate: '2026-04-10',
+      discountType: 'percentage' as const,
+      discountValue: '15',
+      status: 'on_planning' as const,
+      products: [
+        { productId: 'p1', variantIds: ['v1'] },
+        { productId: '', variantIds: [] },
+      ],
+    };
+    expect(validateKolamCampaignForm(valid)).toBeNull();
+    expect(createKolamCampaignSavePayload(valid)).toEqual(
+      expect.objectContaining({
+        title: 'Promo',
+        discountType: 'percentage',
+        discountValue: 15,
+        status: 'on_planning',
+        products: [{ productId: 'p1', variantIds: ['v1'] }],
+      }),
+    );
+    const payload = createKolamCampaignSavePayload(valid);
+    expect(kolamCampaignApiDateToFormDate(payload.startDate)).toBe('2026-04-01');
+    expect(kolamCampaignApiDateToFormDate(payload.endDate)).toBe('2026-04-10');
   });
 
   it('exposes FE-aligned table columns and navigation', () => {

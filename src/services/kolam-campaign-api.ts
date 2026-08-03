@@ -1,8 +1,11 @@
 import { appConfig } from '../config/app';
 import {
+  normalizeKolamCampaign,
   normalizeKolamCampaignList,
+  type KolamCampaign,
   type KolamCampaignListQuery,
   type KolamCampaignListResult,
+  type KolamCampaignSaveBody,
 } from '../domain/kolam-campaign';
 import { apiRequest } from '../lib/api-client';
 
@@ -25,11 +28,56 @@ export async function getKolamCampaigns(
   return normalizeKolamCampaignList(payload, query);
 }
 
+/** GET /campaign/:id — FE `useGetCampaign` / server detail. */
+export async function getKolamCampaign(id: string): Promise<KolamCampaign> {
+  const payload = await kolamRequest<unknown>(
+    `/campaign/${encodeURIComponent(id)}`,
+  );
+  return normalizeKolamCampaign(payload);
+}
+
+/** POST /campaign — FE `useCreateCampaign`. */
+export async function createKolamCampaign(
+  body: KolamCampaignSaveBody,
+): Promise<KolamCampaign> {
+  const payload = await kolamRequest<unknown>('/campaign', {
+    method: 'POST',
+    body,
+  });
+  return normalizeKolamCampaign(unwrapData(payload));
+}
+
+/** PUT /campaign/:id — FE `useUpdateCampaign`. */
+export async function updateKolamCampaign(
+  id: string,
+  body: KolamCampaignSaveBody,
+): Promise<KolamCampaign> {
+  const payload = await kolamRequest<unknown>(
+    `/campaign/${encodeURIComponent(id)}`,
+    {
+      method: 'PUT',
+      body,
+    },
+  );
+  return normalizeKolamCampaign(unwrapData(payload));
+}
+
 /** DELETE /campaign/:id — FE `useDeleteCampaign`. */
 export async function deleteKolamCampaign(id: string): Promise<void> {
   await kolamRequest<unknown>(`/campaign/${encodeURIComponent(id)}`, {
     method: 'DELETE',
   });
+}
+
+function unwrapData(payload: unknown): unknown {
+  const record =
+    payload && typeof payload === 'object' && !Array.isArray(payload)
+      ? (payload as Record<string, unknown>)
+      : null;
+  if (record && 'data' in record && record.data != null) {
+    return record.data;
+  }
+  return payload;
 }
 
 function kolamRequest<T>(

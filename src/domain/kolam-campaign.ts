@@ -1,10 +1,11 @@
 /**
- * Kolam backoffice Campaign (`/campaign`) — FE Kampanye list.
- * Source of truth: FE `types/campaign.ts` + BE `/api/campaign`.
+ * Kolam backoffice Campaign (`/campaign`) — FE Kampanye list/create/detail/edit.
+ * Source of truth: FE `types/campaign.ts` + create form (ID copy) + BE `/api/campaign`.
  * DARA SEO / Market Intel under `/campaign/dara-*` are separate modules.
  */
 
 import type { KolamBadgeIntent } from './kolam-badge';
+import { formatKolamIsoDate, isKolamIsoDate, parseKolamIsoDate } from './kolam-date';
 
 export const KOLAM_CAMPAIGN_ROOT = '/campaign';
 export const KOLAM_CAMPAIGN_CREATE_ROUTE = `${KOLAM_CAMPAIGN_ROOT}/create`;
@@ -17,6 +18,34 @@ export type KolamCampaignProductRef = {
   variantIds: string[];
 };
 
+/** Enrichment from GET /campaign/:id (display + edit seed). */
+export type KolamCampaignProductSnapshot = {
+  id: string;
+  name: string;
+  sku: string;
+  thumbnailUri: string;
+  price: number;
+  priceToSell: number;
+  onlinePrice: number;
+  variants: KolamCampaignVariantSnapshot[];
+};
+
+export type KolamCampaignVariantSnapshot = {
+  id: string;
+  label: string;
+  sku: string;
+  tier1Value: string;
+  tier2Value: string;
+  price: number;
+  priceToSell: number;
+  onlinePrice: number;
+};
+
+export type KolamCampaignProductEntry = KolamCampaignProductRef & {
+  product?: KolamCampaignProductSnapshot | null;
+  variantDetails?: KolamCampaignVariantSnapshot[];
+};
+
 export type KolamCampaign = {
   id: string;
   title: string;
@@ -24,7 +53,7 @@ export type KolamCampaign = {
   endDate: string;
   discountType: KolamCampaignDiscountType;
   discountValue: number;
-  products: KolamCampaignProductRef[];
+  products: KolamCampaignProductEntry[];
   status: KolamCampaignStatus;
   createdAt?: string;
   updatedAt?: string;
@@ -46,6 +75,41 @@ export type KolamCampaignListResult = {
   totalPages: number;
 };
 
+/** Form uses YYYY-MM-DD for dates (KolamDateField) and string for discount input. */
+export type KolamCampaignFormState = {
+  title: string;
+  startDate: string;
+  endDate: string;
+  discountType: KolamCampaignDiscountType;
+  discountValue: string;
+  status: KolamCampaignStatus;
+  products: KolamCampaignProductRef[];
+};
+
+export type KolamCampaignSaveBody = {
+  title: string;
+  startDate: string;
+  endDate: string;
+  discountType: KolamCampaignDiscountType;
+  discountValue: number;
+  products: KolamCampaignProductRef[];
+  status: KolamCampaignStatus;
+};
+
+/** Slim catalog row for product picker (from GET /products). */
+export type KolamCampaignProductOption = {
+  id: string;
+  name: string;
+  sku: string;
+  thumbnailUri: string;
+  priceLabel: string;
+  variants: Array<{
+    id: string;
+    label: string;
+    sku: string;
+  }>;
+};
+
 export const KOLAM_CAMPAIGN_STATUS_FILTER_OPTIONS: Array<{
   label: string;
   value: '' | KolamCampaignStatus;
@@ -54,6 +118,23 @@ export const KOLAM_CAMPAIGN_STATUS_FILTER_OPTIONS: Array<{
   { label: 'Perencanaan', value: 'on_planning' },
   { label: 'Berlangsung', value: 'on_going' },
   { label: 'Berakhir', value: 'ended' },
+];
+
+export const KOLAM_CAMPAIGN_STATUS_FORM_OPTIONS: Array<{
+  label: string;
+  value: KolamCampaignStatus;
+}> = [
+  { label: 'Perencanaan', value: 'on_planning' },
+  { label: 'Berlangsung', value: 'on_going' },
+  { label: 'Berakhir', value: 'ended' },
+];
+
+export const KOLAM_CAMPAIGN_DISCOUNT_TYPE_OPTIONS: Array<{
+  label: string;
+  value: KolamCampaignDiscountType;
+}> = [
+  { label: 'Nominal Tetap', value: 'fixed' },
+  { label: 'Persentase', value: 'percentage' },
 ];
 
 export type KolamCampaignRouteMode = 'list' | 'detail' | 'edit' | 'new';
@@ -152,6 +233,19 @@ export function getKolamCampaignStatusIntent(
   }
 }
 
+export function formatKolamCampaignDiscountTypeLabel(
+  type?: string | null,
+): string {
+  switch (String(type || '').toLowerCase()) {
+    case 'percentage':
+      return 'persentase';
+    case 'fixed':
+      return 'nominal tetap';
+    default:
+      return type || '—';
+  }
+}
+
 /** FE list Diskon cell. */
 export function formatKolamCampaignDiscountLabel(campaign: {
   discountType?: string | null;
@@ -170,18 +264,57 @@ export function formatKolamCampaignDiscountLabel(campaign: {
   }).format(amount);
 }
 
+/** Compact discount for detail header (FE notation compact for fixed). */
+export function formatKolamCampaignDiscountCompact(campaign: {
+  discountType?: string | null;
+  discountValue?: number | null;
+}): string {
+  const value = Number(campaign.discountValue);
+  const amount = Number.isFinite(value) ? value : 0;
+  if (String(campaign.discountType || '').toLowerCase() === 'percentage') {
+    return `${amount}%`;
+  }
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    minimumFractionDigits: 0,
+    notation: 'compact',
+  }).format(amount);
+}
+
 /** FE list Durasi — ceil(|end−start| / day). */
 export function formatKolamCampaignDurationLabel(campaign: {
   startDate?: string | null;
   endDate?: string | null;
 }): string {
+  const days = getKolamCampaignDurationDays(campaign);
+  return days == null ? '—' : `${days} hari`;
+}
+
+export function getKolamCampaignDurationDays(campaign: {
+  startDate?: string | null;
+  endDate?: string | null;
+}): number | null {
   const start = Date.parse(String(campaign.startDate || ''));
   const end = Date.parse(String(campaign.endDate || ''));
   if (!Number.isFinite(start) || !Number.isFinite(end)) {
-    return '—';
+    return null;
   }
-  const days = Math.max(1, Math.ceil(Math.abs(end - start) / 86_400_000));
-  return `${days} hari`;
+  return Math.ceil(Math.abs(end - start) / 86_400_000);
+}
+
+export function getKolamCampaignDaysLeft(campaign: {
+  endDate?: string | null;
+  status?: string | null;
+}): number | null {
+  if (String(campaign.status || '').toLowerCase() !== 'on_going') {
+    return null;
+  }
+  const end = Date.parse(String(campaign.endDate || ''));
+  if (!Number.isFinite(end)) {
+    return null;
+  }
+  return Math.ceil((end - Date.now()) / 86_400_000);
 }
 
 export function countKolamCampaignVariants(campaign: {
@@ -189,7 +322,8 @@ export function countKolamCampaignVariants(campaign: {
 }): number {
   const products = campaign.products ?? [];
   return products.reduce(
-    (sum, product) => sum + (Array.isArray(product.variantIds) ? product.variantIds.length : 0),
+    (sum, product) =>
+      sum + (Array.isArray(product.variantIds) ? product.variantIds.length : 0),
     0,
   );
 }
@@ -225,6 +359,291 @@ export function formatKolamCampaignCreatedAt(value?: string | null): string {
   return new Date(parsed).toLocaleDateString();
 }
 
+export function formatKolamCampaignFullDatetime(value?: string | null): string {
+  const parsed = Date.parse(String(value || ''));
+  if (!Number.isFinite(parsed)) {
+    return '—';
+  }
+  return new Date(parsed).toLocaleString('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+/**
+ * Seed form date from stored Instant.
+ * Prefer local calendar day (matches FE detail `toLocaleDateString` and create
+ * `getLocalTimeZone()` midnight), not UTC `split('T')[0]` which shifts WIB dates.
+ */
+export function kolamCampaignApiDateToFormDate(value?: string | null): string {
+  if (!value) {
+    return '';
+  }
+  const trimmed = String(value).trim();
+  const parsed = Date.parse(trimmed);
+  if (Number.isFinite(parsed)) {
+    return formatKolamIsoDate(new Date(parsed));
+  }
+  const part = trimmed.split('T')[0] ?? '';
+  return isKolamIsoDate(part) ? part : '';
+}
+
+/**
+ * FE: CalendarDate → local midnight → toISOString().
+ * `parseKolamIsoDate` builds local midnight; toISOString matches FE getLocalTimeZone().
+ */
+export function kolamCampaignFormDateToApiIso(dateOnly: string): string {
+  const date = parseKolamIsoDate(dateOnly);
+  if (!date) {
+    return '';
+  }
+  return date.toISOString();
+}
+
+export function createEmptyKolamCampaignFormState(): KolamCampaignFormState {
+  return {
+    title: '',
+    startDate: '',
+    endDate: '',
+    discountType: 'fixed',
+    discountValue: '0',
+    status: 'on_planning',
+    products: [{ productId: '', variantIds: [] }],
+  };
+}
+
+export function createKolamCampaignFormState(
+  campaign: KolamCampaign,
+): KolamCampaignFormState {
+  const products =
+    campaign.products.length > 0
+      ? campaign.products.map(product => ({
+          productId: product.productId,
+          variantIds: [...product.variantIds],
+        }))
+      : [{ productId: '', variantIds: [] }];
+
+  return {
+    title: campaign.title === '—' ? '' : campaign.title,
+    startDate: kolamCampaignApiDateToFormDate(campaign.startDate),
+    endDate: kolamCampaignApiDateToFormDate(campaign.endDate),
+    discountType: campaign.discountType,
+    discountValue: String(campaign.discountValue ?? 0),
+    status: campaign.status,
+    products,
+  };
+}
+
+export function validateKolamCampaignForm(
+  form: KolamCampaignFormState,
+): string | null {
+  if (!form.title.trim()) {
+    return 'Judul kampanye wajib diisi';
+  }
+  if (!form.startDate || !isKolamIsoDate(form.startDate)) {
+    return 'Tanggal mulai wajib diisi';
+  }
+  if (!form.endDate || !isKolamIsoDate(form.endDate)) {
+    return 'Tanggal selesai wajib diisi';
+  }
+  const start = parseKolamIsoDate(form.startDate);
+  const end = parseKolamIsoDate(form.endDate);
+  if (!start || !end || start.getTime() >= end.getTime()) {
+    return 'Tanggal selesai harus setelah tanggal mulai';
+  }
+  const discountValue = Number(form.discountValue);
+  if (!Number.isFinite(discountValue) || discountValue <= 0) {
+    return 'Nilai diskon harus lebih dari 0';
+  }
+  if (form.discountType === 'percentage' && discountValue > 100) {
+    return 'Diskon persentase tidak boleh melebihi 100%';
+  }
+  const validProducts = form.products.filter(product => product.productId.trim());
+  if (validProducts.length === 0) {
+    return 'Pilih minimal satu produk';
+  }
+  return null;
+}
+
+export function createKolamCampaignSavePayload(
+  form: KolamCampaignFormState,
+): KolamCampaignSaveBody {
+  return {
+    title: form.title.trim(),
+    startDate: kolamCampaignFormDateToApiIso(form.startDate),
+    endDate: kolamCampaignFormDateToApiIso(form.endDate),
+    discountType: form.discountType,
+    discountValue: Number(form.discountValue) || 0,
+    products: form.products
+      .filter(product => product.productId.trim())
+      .map(product => ({
+        productId: product.productId.trim(),
+        variantIds: product.variantIds.filter(Boolean),
+      })),
+    status: form.status,
+  };
+}
+
+/** FE detail: price_to_sell ?? onlinePrice ?? price. */
+export function getKolamCampaignDisplayPrice(item?: {
+  price?: number | null;
+  priceToSell?: number | null;
+  onlinePrice?: number | null;
+  price_to_sell?: number | null;
+} | null): number | null {
+  if (!item) {
+    return null;
+  }
+  const candidates = [
+    item.priceToSell,
+    item.price_to_sell,
+    item.onlinePrice,
+    item.price,
+  ];
+  for (const value of candidates) {
+    if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+      return value;
+    }
+  }
+  return null;
+}
+
+export function calculateKolamCampaignPrice(
+  price: number,
+  campaign: { discountType?: string | null; discountValue?: number | null },
+): number {
+  const discountValue = Number(campaign.discountValue);
+  const amount = Number.isFinite(discountValue) ? discountValue : 0;
+  if (String(campaign.discountType || '').toLowerCase() === 'percentage') {
+    return Math.max(Math.round(price * (1 - amount / 100)), 0);
+  }
+  return Math.max(price - amount, 0);
+}
+
+export function formatKolamCampaignPriceRange(
+  items: Array<{
+    price?: number | null;
+    priceToSell?: number | null;
+    onlinePrice?: number | null;
+    price_to_sell?: number | null;
+  }>,
+  campaign: { discountType?: string | null; discountValue?: number | null },
+): { original: string | null; campaign: string | null } {
+  const prices = items
+    .map(item => getKolamCampaignDisplayPrice(item))
+    .filter((price): price is number => typeof price === 'number' && price > 0);
+
+  if (prices.length === 0) {
+    return { original: null, campaign: null };
+  }
+
+  const discounted = prices.map(price =>
+    calculateKolamCampaignPrice(price, campaign),
+  );
+  const formatMoney = (value: number) =>
+    new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value);
+
+  const formatRange = (min: number, max: number) =>
+    min === max ? formatMoney(min) : `${formatMoney(min)} - ${formatMoney(max)}`;
+
+  return {
+    original: formatRange(Math.min(...prices), Math.max(...prices)),
+    campaign: formatRange(Math.min(...discounted), Math.max(...discounted)),
+  };
+}
+
+export function mapKolamProductToCampaignOption(product: {
+  id: string;
+  name: string;
+  sku: string;
+  thumbnailUri?: string;
+  price?: number;
+  priceToSell?: number;
+  onlinePrice?: number;
+  variants?: Array<{
+    id: string;
+    label: string;
+    sku: string;
+    price?: number;
+    priceToSell?: number;
+    onlinePrice?: number;
+  }>;
+}): KolamCampaignProductOption {
+  const variants = product.variants ?? [];
+  let priceLabel = '';
+  if (variants.length > 0) {
+    const variantPrices = variants
+      .map(variant =>
+        getKolamCampaignDisplayPrice({
+          price: variant.price,
+          priceToSell: variant.priceToSell,
+          onlinePrice: variant.onlinePrice,
+        }),
+      )
+      .filter((price): price is number => typeof price === 'number');
+    if (variantPrices.length > 0) {
+      const min = Math.min(...variantPrices);
+      const max = Math.max(...variantPrices);
+      const formatMoney = (value: number) =>
+        new Intl.NumberFormat('id-ID', {
+          style: 'currency',
+          currency: 'IDR',
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0,
+        }).format(value);
+      priceLabel =
+        min === max
+          ? formatMoney(min)
+          : `${formatMoney(min)} - ${formatMoney(max)}`;
+    }
+  } else {
+    const single = getKolamCampaignDisplayPrice(product);
+    if (single != null) {
+      priceLabel = new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(single);
+    }
+  }
+
+  return {
+    id: product.id,
+    name: product.name,
+    sku: product.sku,
+    thumbnailUri: product.thumbnailUri ?? '',
+    priceLabel,
+    variants: variants.map(variant => ({
+      id: variant.id,
+      label: variant.label,
+      sku: variant.sku,
+    })),
+  };
+}
+
+export function seedKolamCampaignProductOptionsFromCampaign(
+  campaign: KolamCampaign,
+): KolamCampaignProductOption[] {
+  return campaign.products
+    .map(entry => {
+      const product = entry.product;
+      if (!product) {
+        return null;
+      }
+      return mapKolamProductToCampaignOption(product);
+    })
+    .filter((item): item is KolamCampaignProductOption => Boolean(item));
+}
+
 export function normalizeKolamCampaign(payload: unknown): KolamCampaign {
   const root = asRecord(payload);
   const nested = asRecord(root.data);
@@ -235,7 +654,9 @@ export function normalizeKolamCampaign(payload: unknown): KolamCampaign {
     !looksLikeCampaign && Object.keys(nested).length > 0 ? nested : root;
 
   const productsRaw = Array.isArray(record.products) ? record.products : [];
-  const products = productsRaw.map(normalizeProductRef).filter(Boolean) as KolamCampaignProductRef[];
+  const products = productsRaw
+    .map(normalizeProductEntry)
+    .filter(Boolean) as KolamCampaignProductEntry[];
 
   return {
     id: getMongoId(record, '_id') || getMongoId(record, 'id'),
@@ -291,7 +712,7 @@ export function normalizeKolamCampaignList(
   };
 }
 
-function normalizeProductRef(value: unknown): KolamCampaignProductRef | null {
+function normalizeProductEntry(value: unknown): KolamCampaignProductEntry | null {
   const record = asRecord(value);
   const productId =
     getMongoId(record, 'productId') ||
@@ -310,7 +731,83 @@ function normalizeProductRef(value: unknown): KolamCampaignProductRef | null {
       return getMongoId(nested, '_id') || getMongoId(nested, 'id');
     })
     .filter(Boolean);
-  return { productId, variantIds };
+
+  const productRecord = asRecord(record.product);
+  const product =
+    Object.keys(productRecord).length > 0
+      ? normalizeProductSnapshot(productRecord)
+      : null;
+
+  const variantDetailsRaw = Array.isArray(record.variantDetails)
+    ? record.variantDetails
+    : [];
+  const variantDetails = variantDetailsRaw
+    .map(normalizeVariantSnapshot)
+    .filter(Boolean) as KolamCampaignVariantSnapshot[];
+
+  return {
+    productId,
+    variantIds,
+    product,
+    variantDetails: variantDetails.length > 0 ? variantDetails : undefined,
+  };
+}
+
+function normalizeProductSnapshot(
+  record: Record<string, unknown>,
+): KolamCampaignProductSnapshot {
+  const variantsRaw = Array.isArray(record.variants) ? record.variants : [];
+  const variants = variantsRaw
+    .map(normalizeVariantSnapshot)
+    .filter(Boolean) as KolamCampaignVariantSnapshot[];
+  const photos = Array.isArray(record.photos)
+    ? record.photos.map(entry => String(entry || '').trim()).filter(Boolean)
+    : [];
+  const thumbnail =
+    getString(record, 'thumbnailImage') ||
+    getString(record, 'thumbnailUri') ||
+    photos[0] ||
+    '';
+
+  return {
+    id: getMongoId(record, '_id') || getMongoId(record, 'id'),
+    name: getString(record, 'name') || '—',
+    sku: getString(record, 'sku'),
+    thumbnailUri: thumbnail,
+    price: getNumber(record, 'price') ?? 0,
+    priceToSell:
+      getNumber(record, 'price_to_sell') ?? getNumber(record, 'priceToSell') ?? 0,
+    onlinePrice: getNumber(record, 'onlinePrice') ?? 0,
+    variants,
+  };
+}
+
+function normalizeVariantSnapshot(
+  value: unknown,
+): KolamCampaignVariantSnapshot | null {
+  const record = asRecord(value);
+  const id = getMongoId(record, '_id') || getMongoId(record, 'id');
+  if (!id) {
+    return null;
+  }
+  const tier1Value = getString(record, 'tier1Value');
+  const tier2Value = getString(record, 'tier2Value');
+  const label =
+    getString(record, 'label') ||
+    [tier1Value, tier2Value].filter(Boolean).join(' - ') ||
+    id;
+
+  return {
+    id,
+    label,
+    sku: getString(record, 'sku'),
+    tier1Value,
+    tier2Value,
+    price: getNumber(record, 'price') ?? 0,
+    priceToSell:
+      getNumber(record, 'price_to_sell') ?? getNumber(record, 'priceToSell') ?? 0,
+    onlinePrice: getNumber(record, 'onlinePrice') ?? 0,
+  };
 }
 
 function normalizeStatus(value: string): KolamCampaignStatus {

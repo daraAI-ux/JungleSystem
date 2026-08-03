@@ -11,7 +11,6 @@ import {
   formatKolamCampaignStatusLabel,
   getKolamCampaignStatusIntent,
   KOLAM_CAMPAIGN_CREATE_ROUTE,
-  KOLAM_CAMPAIGN_ROOT,
   KOLAM_CAMPAIGN_STATUS_FILTER_OPTIONS,
   type KolamCampaign,
   type KolamCampaignStatus,
@@ -26,10 +25,11 @@ import {
   type KolamCampaignController,
 } from '../hooks/use-kolam-campaign-controller';
 import { KolamButton } from './kolam-button';
+import { KolamCampaignDetail } from './kolam-campaign-detail';
+import { KolamCampaignForm } from './kolam-campaign-form';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import {
   getKolamDataTableColumnStyle,
-  KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
 } from './kolam-data-table-column-style';
 import { KolamDataTableHeader } from './kolam-data-table-header';
 import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
@@ -57,48 +57,23 @@ export function KolamCampaignSurface({
 }) {
   const controller = useKolamCampaignController(route);
 
-  if (controller.mode !== 'list') {
+  if (controller.mode === 'list') {
     return (
-      <KolamCampaignPlaceholder
-        mode={controller.mode}
-        onBack={() => onRouteChange?.(KOLAM_CAMPAIGN_ROOT)}
+      <KolamCampaignList controller={controller} onRouteChange={onRouteChange} />
+    );
+  }
+
+  if (controller.mode === 'detail') {
+    return (
+      <KolamCampaignDetail
+        controller={controller}
+        onRouteChange={onRouteChange}
       />
     );
   }
 
   return (
-    <KolamCampaignList controller={controller} onRouteChange={onRouteChange} />
-  );
-}
-
-function KolamCampaignPlaceholder({
-  mode,
-  onBack,
-}: {
-  mode: 'detail' | 'edit' | 'new';
-  onBack: () => void;
-}) {
-  const title =
-    mode === 'new'
-      ? 'Kampanye baru'
-      : mode === 'edit'
-        ? 'Ubah kampanye'
-        : 'Detail kampanye';
-  return (
-    <View style={styles.surface}>
-      <View style={kolamTableToolbarStyles.shell}>
-        <View style={kolamTableToolbarStyles.row}>
-          <Text numberOfLines={1} style={styles.placeholderTitle}>
-            {title}
-          </Text>
-          <KolamButton label="Kembali ke daftar" onPress={onBack} />
-        </View>
-      </View>
-      <KolamEmptyState
-        message="Form create / detail / edit kampanye menyusul di batch berikutnya. Daftar sudah live."
-        title="Belum tersedia"
-      />
-    </View>
+    <KolamCampaignForm controller={controller} onRouteChange={onRouteChange} />
   );
 }
 
@@ -185,14 +160,16 @@ function KolamCampaignList({
             ) : null}
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamButton
-              intent="outline"
-              label="Baru"
-              onPress={() => {
-                controller.onCreateNew();
-                onRouteChange?.(KOLAM_CAMPAIGN_CREATE_ROUTE);
-              }}
-            />
+            {controller.canCreate ? (
+              <KolamButton
+                intent="outline"
+                label="Baru"
+                onPress={() => {
+                  controller.onCreateNew();
+                  onRouteChange?.(KOLAM_CAMPAIGN_CREATE_ROUTE);
+                }}
+              />
+            ) : null}
             <KolamButton
               label="Muat ulang"
               onPress={() => {
@@ -257,6 +234,8 @@ function KolamCampaignList({
         {controller.campaigns.map(campaign => (
           <KolamCampaignRow
             campaign={campaign}
+            canDelete={controller.canDelete}
+            canUpdate={controller.canUpdate}
             columns={columns}
             key={campaign.id}
             mutating={controller.mutating}
@@ -288,6 +267,8 @@ function KolamCampaignList({
 
 function KolamCampaignRow({
   campaign,
+  canDelete,
+  canUpdate,
   columns,
   mutating,
   onDelete,
@@ -295,6 +276,8 @@ function KolamCampaignRow({
   onSelect,
 }: {
   campaign: KolamCampaign;
+  canDelete: boolean;
+  canUpdate: boolean;
   columns: KolamTableColumn[];
   mutating: boolean;
   onDelete: () => void;
@@ -449,22 +432,19 @@ function KolamCampaignRow({
             accessibilityLabel={`Menu ${campaign.title}`}
             actions={[
               { label: 'Lihat', onPress: onSelect },
-              { label: 'Rubah', onPress: onEdit },
-              {
-                label: 'Hapus',
-                onPress: onDelete,
-                disabled: mutating,
-              },
+              ...(canUpdate
+                ? [{ label: 'Rubah', onPress: onEdit }]
+                : []),
+              ...(canDelete
+                ? [
+                    {
+                      label: 'Hapus',
+                      onPress: onDelete,
+                      disabled: mutating,
+                    },
+                  ]
+                : []),
             ]}
-            style={
-              columnOf('actions')
-                ? {
-                    width:
-                      columnOf('actions')!.width ??
-                      KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-                  }
-                : undefined
-            }
           />
         </KolamDataTableActionsTrack>
       </KolamDataTableRowFrame>
@@ -482,13 +462,6 @@ const styles = StyleSheet.create({
   },
   emptyWrap: {
     padding: 16,
-  },
-  placeholderTitle: {
-    color: V.colors.fg,
-    flex: 1,
-    fontFamily: V.fontFamily,
-    fontSize: 14,
-    fontWeight: '700',
   },
   cell: {
     gap: 2,
