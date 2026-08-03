@@ -1402,6 +1402,10 @@ describe('KolamAmSurface', () => {
     renderers.push(renderer!);
 
     await updateAmRoute(renderer!, 'services');
+    const serviceListText = renderText(renderer!).join(' ');
+    expect(serviceListText).toContain('Running');
+    expect(serviceListText).not.toContain('Ready');
+
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Service Tokopedia Main'}).props.onPress();
     });

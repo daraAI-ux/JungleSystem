@@ -1849,7 +1849,10 @@ function AmServicesPage() {
                 </Text>
               <View style={styles.statusCol}>
                 <View style={styles.statusActionStack}>
-                  <AmStatusChip label={active ? 'Ready' : account.status} tone={active ? 'success' : 'warning'} />
+                  <AmStatusChip
+                    label={active ? (isTransferBanking(account.platform) ? 'Ready' : 'Running') : account.status}
+                    tone={active ? 'success' : 'warning'}
+                  />
                   <KolamButton
                     accessibilityLabel={`AM Service ${active ? 'Stop' : 'Start'} ${account._id}`}
                     intent={active ? 'outline' : 'warning'}
