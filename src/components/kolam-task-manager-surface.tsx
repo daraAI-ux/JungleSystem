@@ -2,12 +2,14 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   formatKolamTaskListDatetime,
+  getKolamTaskChecklistProgress,
   getKolamTaskCategoryBucketLabel,
   getKolamTaskPriorityBadgeIntent,
   getKolamTaskPriorityLabel,
   getKolamTaskStatusBadgeIntent,
   getKolamTaskStatusLabel,
   getKolamTaskStatusOptionsForUser,
+  getKolamTaskTimelineLabel,
   getKolamTaskUserDisplayName,
   isKolamTaskOverdue,
   KOLAM_TASK_CATEGORY_BUCKET_OPTIONS,
@@ -40,6 +42,7 @@ import {
   KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
+import { KolamHtmlContent } from './kolam-html-content';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamSwitch } from './kolam-switch';
@@ -95,9 +98,177 @@ export function KolamTaskManagerSurface({
           controller={controller}
           onRouteChange={onRouteChange}
         />
+      ) : controller.mode === 'detail' ? (
+        <KolamTaskManagerDetail controller={controller} />
       ) : (
         <KolamTaskManagerPlaceholder mode={controller.mode} />
       )}
+    </View>
+  );
+}
+
+function KolamTaskManagerDetail({
+  controller,
+}: {
+  controller: KolamTaskManagerController;
+}) {
+  const task = controller.selectedTask;
+  if (controller.loading && !task) {
+    return <KolamEmptyState message="Memuat tugas..." title="Detail tugas" />;
+  }
+  if (!task) {
+    return <KolamEmptyState message="Tugas tidak ditemukan" title="Detail tugas" />;
+  }
+
+  const checklistProgress = getKolamTaskChecklistProgress(task);
+  const statusOptions = getKolamTaskStatusOptionsForUser({
+    currentUserId: controller.currentUserId,
+    isTaskAdmin: controller.isTaskAdmin,
+    task,
+  });
+  const statusDisabled =
+    task.status === 'done' ||
+    task.status === 'cancelled' ||
+    controller.mutatingTaskId === task.id ||
+    statusOptions.length === 0;
+
+  return (
+    <View style={styles.detailStack}>
+      <View style={kolamTableToolbarStyles.shell}>
+        <View style={kolamTableToolbarStyles.row}>
+          <View style={kolamTableToolbarStyles.filters}>
+            <Text numberOfLines={1} style={styles.detailContext}>
+              {task.title || 'Detail tugas'}
+            </Text>
+          </View>
+          <View style={kolamTableToolbarStyles.actions}>
+            <KolamButton label="Daftar" onPress={controller.onBackToList} />
+            <KolamButton
+              disabled={controller.loading}
+              label="Refresh"
+              onPress={() => {
+                void controller.onRefresh();
+              }}
+            />
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.detailHeader}>
+        <View style={styles.detailTitleBlock}>
+          <View style={styles.titleRow}>
+            {task.urgent ? <Text style={styles.urgent}>!</Text> : null}
+            <Text style={styles.detailTitle}>{task.title || '-'}</Text>
+          </View>
+          <View style={styles.badgeRow}>
+            <KolamStatusBadge
+              intent={getKolamTaskStatusBadgeIntent(task.status)}
+              label={getKolamTaskStatusLabel(task.status)}
+            />
+            <KolamStatusBadge
+              intent={getKolamTaskPriorityBadgeIntent(task.priority)}
+              label={getKolamTaskPriorityLabel(task.priority)}
+            />
+            {task.categoryBucket ? (
+              <KolamStatusBadge
+                intent="muted"
+                label={getKolamTaskCategoryBucketLabel(task.categoryBucket)}
+              />
+            ) : null}
+          </View>
+        </View>
+        {statusDisabled ? null : (
+          <KolamDropdownSelect
+            label="Status"
+            onChange={value => {
+              void controller.onSetTaskStatus(task, value as typeof task.status);
+            }}
+            options={statusOptions.map(option => ({
+              label: option.label,
+              value: option.id,
+            }))}
+            showLabelInTrigger={false}
+            value={task.status}
+          />
+        )}
+      </View>
+
+      <View style={styles.detailGrid}>
+        <KolamTaskDetailMetric label="PIC" value={getKolamTaskUserDisplayName(task.assignedTo)} />
+        <KolamTaskDetailMetric label="Dibantu" value={getKolamTaskUserDisplayName(task.assistedBy)} />
+        <KolamTaskDetailMetric label="Due" value={formatKolamTaskListDatetime(task.dueDate)} />
+        <KolamTaskDetailMetric
+          label="Checklist"
+          value={
+            checklistProgress
+              ? `${checklistProgress.done}/${checklistProgress.total}`
+              : '-'
+          }
+        />
+      </View>
+
+      {task.description ? (
+        <View style={styles.detailCard}>
+          <Text style={styles.sectionTitle}>Deskripsi</Text>
+          <KolamHtmlContent html={task.description} />
+        </View>
+      ) : null}
+
+      <View style={styles.detailCard}>
+        <Text style={styles.sectionTitle}>Checklist</Text>
+        {task.checklist.length ? (
+          task.checklist.map(item => (
+            <View key={item.id || item.title} style={styles.checklistRow}>
+              <KolamStatusBadge
+                intent={item.done ? 'success' : 'muted'}
+                label={item.done ? 'Selesai' : 'Open'}
+              />
+              <Text style={styles.cellText}>{item.title}</Text>
+            </View>
+          ))
+        ) : (
+          <Text style={styles.metaText}>Kosong</Text>
+        )}
+      </View>
+
+      <View style={styles.detailCard}>
+        <Text style={styles.sectionTitle}>Timeline</Text>
+        {task.timeline.length ? (
+          task.timeline.map(item => (
+            <View key={item.id || `${item.type}-${item.at}`} style={styles.timelineRow}>
+              <Text style={styles.timelineTitle}>
+                {getKolamTaskTimelineLabel(item.type)}
+              </Text>
+              {item.message ? (
+                <Text style={styles.timelineMessage}>{item.message}</Text>
+              ) : null}
+              <Text style={styles.metaText}>
+                {formatKolamTaskListDatetime(item.at)} -{' '}
+                {getKolamTaskUserDisplayName(item.by)}
+              </Text>
+            </View>
+          ))
+        ) : (
+          <Text style={styles.metaText}>Kosong</Text>
+        )}
+      </View>
+    </View>
+  );
+}
+
+function KolamTaskDetailMetric({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <View style={styles.detailMetric}>
+      <Text style={styles.metaText}>{label}</Text>
+      <Text numberOfLines={2} style={styles.cellText}>
+        {value}
+      </Text>
     </View>
   );
 }
@@ -483,9 +654,7 @@ function KolamTaskManagerPlaceholder({
   mode: KolamTaskManagerController['mode'];
 }) {
   const label =
-    mode === 'detail'
-      ? 'Detail tugas'
-      : mode === 'categories'
+    mode === 'categories'
         ? 'Kategori'
         : 'Tipe Tugas';
   return (
@@ -632,5 +801,95 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 13,
     fontWeight: '800',
+  },
+  detailStack: {
+    gap: 12,
+    minHeight: 0,
+  },
+  detailContext: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '900',
+  },
+  detailHeader: {
+    alignItems: 'flex-start',
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: V.radius.lg,
+    borderWidth: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    justifyContent: 'space-between',
+    padding: 14,
+  },
+  detailTitleBlock: {
+    flex: 1,
+    gap: 8,
+    minWidth: 240,
+  },
+  detailTitle: {
+    color: V.colors.fg,
+    flexShrink: 1,
+    fontFamily: V.fontFamily,
+    fontSize: 18,
+    fontWeight: '900',
+    lineHeight: 24,
+  },
+  detailGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  detailMetric: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: V.radius.lg,
+    borderWidth: 1,
+    gap: 6,
+    minWidth: 160,
+    padding: 12,
+  },
+  detailCard: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: V.radius.lg,
+    borderWidth: 1,
+    gap: 10,
+    padding: 14,
+  },
+  sectionTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 14,
+    fontWeight: '900',
+    lineHeight: 20,
+  },
+  checklistRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  timelineRow: {
+    borderColor: V.colors.border,
+    borderRadius: V.radius.md,
+    borderWidth: 1,
+    gap: 4,
+    padding: 10,
+  },
+  timelineTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '900',
+  },
+  timelineMessage: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+    lineHeight: 18,
   },
 });

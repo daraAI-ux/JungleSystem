@@ -35,6 +35,14 @@ export type KolamTaskManagerSource =
   | 'inbox_follow_up'
   | 'recurring';
 
+export type KolamTaskTimelineType =
+  | 'assign_change'
+  | 'created'
+  | 'link_change'
+  | 'note'
+  | 'status_change'
+  | 'updated';
+
 export interface KolamTaskManagerUserRef {
   id: string;
   firstName: string;
@@ -68,6 +76,14 @@ export interface KolamTaskManagerChecklistItem {
   doneBy: string | KolamTaskManagerUserRef | null;
 }
 
+export interface KolamTaskTimelineItem {
+  id: string;
+  type: KolamTaskTimelineType | string;
+  message: string;
+  by: string | KolamTaskManagerUserRef | null;
+  at: string;
+}
+
 export interface KolamTaskManagerTask {
   id: string;
   title: string;
@@ -92,6 +108,7 @@ export interface KolamTaskManagerTask {
   dueDate: string;
   completedAt: string;
   checklist: KolamTaskManagerChecklistItem[];
+  timeline: KolamTaskTimelineItem[];
   createdBy: string | KolamTaskManagerUserRef | null;
   updatedBy: string | KolamTaskManagerUserRef | null;
   createdAt: string;
@@ -299,6 +316,36 @@ export function getKolamTaskUserDisplayName(
   );
 }
 
+export function getKolamTaskChecklistProgress(task: KolamTaskManagerTask) {
+  const total = task.checklist.length;
+  if (!total) return null;
+  const done = task.checklist.filter(item => item.done).length;
+  return {
+    done,
+    percent: Math.round((done / total) * 100),
+    total,
+  };
+}
+
+export function getKolamTaskTimelineLabel(type: string) {
+  switch (type) {
+    case 'created':
+      return 'Dibuat';
+    case 'status_change':
+      return 'Status';
+    case 'assign_change':
+      return 'Assign / Dibantu';
+    case 'note':
+      return 'Catatan';
+    case 'updated':
+      return 'Diperbarui';
+    case 'link_change':
+      return 'Link';
+    default:
+      return type || '-';
+  }
+}
+
 export function getKolamTaskRefId(
   ref: string | { id?: string; _id?: string } | null | undefined,
 ) {
@@ -418,10 +465,24 @@ export function normalizeKolamTaskManagerTask(payload: unknown): KolamTaskManage
     checklist: Array.isArray(record.checklist)
       ? record.checklist.map(normalizeChecklistItem)
       : [],
+    timeline: Array.isArray(record.timeline)
+      ? record.timeline.map(normalizeTimelineItem)
+      : [],
     createdBy: normalizeUserRef(record.createdBy),
     updatedBy: normalizeUserRef(record.updatedBy),
     createdAt: toStringValue(record.createdAt),
     updatedAt: toStringValue(record.updatedAt),
+  };
+}
+
+function normalizeTimelineItem(payload: unknown): KolamTaskTimelineItem {
+  const record = unwrapData(payload);
+  return {
+    id: toStringValue(record._id ?? record.id),
+    type: toStringValue(record.type),
+    message: toStringValue(record.message),
+    by: normalizeUserRef(record.by),
+    at: toStringValue(record.at),
   };
 }
 

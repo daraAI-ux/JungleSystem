@@ -126,6 +126,64 @@ jest.mock('../src/services/kolam-task-manager-api', () => ({
       totalPages: 1,
     }),
   ),
+  getKolamTaskManagerTask: jest.fn(() =>
+    Promise.resolve({
+      assistedBy: null,
+      category: { color: '#16a34a', id: 'cat-1', name: 'Operasional' },
+      categoryBucket: 'project',
+      checklist: [
+        {
+          assignedTo: null,
+          done: true,
+          doneAt: '',
+          doneBy: null,
+          id: 'check-1',
+          sortOrder: 0,
+          title: 'Cek pompa',
+        },
+      ],
+      completedAt: '',
+      complaintId: '',
+      conversationId: '',
+      createdAt: '2026-08-03T01:00:00.000Z',
+      createdBy: null,
+      customerId: '',
+      description: '<p>Pastikan filter berjalan.</p>',
+      dueDate: '2026-08-03T16:59:00.000Z',
+      enclosureId: '',
+      id: 'task-1',
+      priority: 'high',
+      productionId: '',
+      projectId: '',
+      saleId: '',
+      serviceId: '',
+      source: 'manual',
+      status: 'todo',
+      taskType: null,
+      timeline: [
+        {
+          at: '2026-08-03T01:00:00.000Z',
+          by: null,
+          id: 'timeline-1',
+          message: 'Tugas dibuat',
+          type: 'created',
+        },
+      ],
+      title: 'Cek jadwal kolam',
+      updatedAt: '',
+      updatedBy: null,
+      urgent: true,
+      assignedTo: {
+        displayName: 'Dara Ops',
+        email: '',
+        firstName: 'Dara',
+        id: 'user-1',
+        lastName: 'Ops',
+        profilePicture: '',
+        username: 'dara',
+      },
+    }),
+  ),
   updateKolamTaskManagerStatus: jest.fn(() => Promise.resolve({})),
   updateKolamTaskManagerTask: jest.fn(() => Promise.resolve({})),
 }));
@@ -373,6 +431,41 @@ describe('KolamWorkspaceSurface', () => {
         'To Do',
         'Cek jadwal kolam',
         'Dara Ops',
+      ]),
+    );
+  });
+
+  it('renders the native Task Manager detail surface for /task-manager/:id', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+    const taskManagerItem = {
+      ...getKolamNavigationItemByRoute('/task-manager')!,
+      route: '/task-manager/task-1',
+    };
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <View>
+          <KolamWorkspaceSurface
+            {...buildSurfaceProps({
+              activeModule: 'kolam',
+              activeNavigationItem: taskManagerItem,
+            })}
+          />
+        </View>,
+      );
+    });
+
+    await ReactTestRenderer.act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(renderText(renderer!)).toEqual(
+      expect.arrayContaining([
+        'Cek jadwal kolam',
+        'Checklist',
+        'Cek pompa',
+        'Timeline',
+        'Tugas dibuat',
       ]),
     );
   });

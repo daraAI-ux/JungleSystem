@@ -2,6 +2,7 @@ import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { KolamAuthContext } from '../context/kolam-app-contexts';
 import {
   buildKolamTaskManagerKpi,
+  getKolamTaskManagerIdFromRoute,
   getKolamTaskManagerRouteMode,
   KOLAM_TASK_MANAGER_RECURRING_ROUTE,
   KOLAM_TASK_MANAGER_ROOT,
@@ -17,6 +18,7 @@ import type { KolamUserListItem } from '../domain/kolam-user';
 import { getErrorMessage as getApiErrorMessage } from '../lib/api-error';
 import {
   getKolamTaskManagerCategories,
+  getKolamTaskManagerTask,
   getKolamTaskManagerTasks,
   updateKolamTaskManagerStatus,
   updateKolamTaskManagerTask,
@@ -51,10 +53,12 @@ export interface KolamTaskManagerController {
   staffOptions: KolamTaskManagerStaffOption[];
   statusFilter: KolamTaskManagerStatus | 'all';
   statusMessage: string | null;
+  selectedTask: KolamTaskManagerTask | null;
   tasks: KolamTaskManagerTask[];
   total: number;
   totalPages: number;
   onCreateNew: () => void;
+  onBackToList: () => void;
   onRefresh: () => Promise<void>;
   onResetFilters: () => void;
   onSelectPage: (page: number) => void;
@@ -94,6 +98,8 @@ export function useKolamTaskManagerController({
     roleKey === 'super_administrator';
   const currentUserId = authUser?.id ?? '';
   const [tasks, setTasks] = useState<KolamTaskManagerTask[]>([]);
+  const [selectedTask, setSelectedTask] =
+    useState<KolamTaskManagerTask | null>(null);
   const [categories, setCategories] = useState<KolamTaskManagerCategory[]>([]);
   const [staffOptions, setStaffOptions] = useState<KolamTaskManagerStaffOption[]>(
     [],
@@ -213,6 +219,30 @@ export function useKolamTaskManagerController({
     statusFilter,
   ]);
 
+  const refreshDetail = useCallback(async () => {
+    if (mode !== 'detail') {
+      return;
+    }
+    const taskId = getKolamTaskManagerIdFromRoute(route);
+    if (!taskId) {
+      setSelectedTask(null);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const live = await getKolamTaskManagerTask(taskId);
+      setSelectedTask(live);
+      setDataSource('live');
+    } catch (loadError) {
+      setError(getErrorMessage(loadError));
+      setDataSource('error');
+    } finally {
+      setLoading(false);
+    }
+  }, [mode, route]);
+
   useEffect(() => {
     void loadCategories();
     void loadStaff();
@@ -221,6 +251,10 @@ export function useKolamTaskManagerController({
   useEffect(() => {
     void refreshList();
   }, [refreshList]);
+
+  useEffect(() => {
+    void refreshDetail();
+  }, [refreshDetail]);
 
   const setFilterAndFirstPage = useCallback(
     <TValue,>(setter: (value: TValue) => void) =>
@@ -242,6 +276,9 @@ export function useKolamTaskManagerController({
         await updateKolamTaskManagerStatus(task.id, status);
         setStatusMessage('Status diperbarui');
         await refreshList();
+        if (mode === 'detail') {
+          await refreshDetail();
+        }
         return true;
       } catch (mutationError) {
         setError(getErrorMessage(mutationError));
@@ -250,7 +287,7 @@ export function useKolamTaskManagerController({
         setMutatingTaskId(null);
       }
     },
-    [refreshList],
+    [mode, refreshDetail, refreshList],
   );
 
   const onSetTaskPriority = useCallback(
@@ -266,6 +303,9 @@ export function useKolamTaskManagerController({
         });
         setStatusMessage('Prioritas diperbarui');
         await refreshList();
+        if (mode === 'detail') {
+          await refreshDetail();
+        }
         return true;
       } catch (mutationError) {
         setError(getErrorMessage(mutationError));
@@ -274,7 +314,7 @@ export function useKolamTaskManagerController({
         setMutatingTaskId(null);
       }
     },
-    [refreshList],
+    [mode, refreshDetail, refreshList],
   );
 
   const onResetFilters = useCallback(() => {
@@ -298,6 +338,10 @@ export function useKolamTaskManagerController({
     },
     [onRouteChange],
   );
+
+  const onBackToList = useCallback(() => {
+    onRouteChange?.(KOLAM_TASK_MANAGER_ROOT);
+  }, [onRouteChange]);
 
   const onCreateNew = useCallback(() => {
     setStatusMessage('Form tugas baru masuk batch berikutnya');
@@ -328,8 +372,10 @@ export function useKolamTaskManagerController({
       tasks,
       total,
       totalPages,
+      selectedTask,
+      onBackToList,
       onCreateNew,
-      onRefresh: refreshList,
+      onRefresh: mode === 'detail' ? refreshDetail : refreshList,
       onResetFilters,
       onSelectPage: setPage,
       onSetCategoryBucketFilter: setFilterAndFirstPage(
@@ -359,6 +405,7 @@ export function useKolamTaskManagerController({
       mode,
       mutatingTaskId,
       onCreateNew,
+      onBackToList,
       onResetFilters,
       onSetTaskPriority,
       onSetTaskStatus,
@@ -367,6 +414,7 @@ export function useKolamTaskManagerController({
       pageSize,
       priorityFilter,
       refreshList,
+      refreshDetail,
       route,
       search,
       setFilterAndFirstPage,
@@ -376,6 +424,7 @@ export function useKolamTaskManagerController({
       tasks,
       total,
       totalPages,
+      selectedTask,
     ],
   );
 }
