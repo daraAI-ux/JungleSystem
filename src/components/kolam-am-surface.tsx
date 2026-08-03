@@ -198,7 +198,6 @@ export function KolamAmSurface({
       <View style={styles.content}>
         <View style={styles.topBarCompact}>
           <View style={styles.topBarActions}>
-            <Text style={styles.serverText}>{appConfig.amApiBaseUrl}</Text>
             <KolamButton label="Kembali" intent="outline" size="sm" onPress={onBackToCenter} />
           </View>
         </View>
@@ -6723,11 +6722,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-  },
-  serverText: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 10,
   },
   pageContent: {
     padding: 18,
