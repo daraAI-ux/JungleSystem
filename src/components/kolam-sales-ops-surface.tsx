@@ -1818,6 +1818,7 @@ function KolamSalesOpsApproval({
         contentContainerStyle={styles.approvalListContent}
         data={controller.sales}
         keyExtractor={item => item.id}
+        style={styles.approvalList}
         ListEmptyComponent={
           <View style={styles.emptyWrap}>
             <KolamEmptyState
@@ -2518,9 +2519,16 @@ const styles = StyleSheet.create({
     minHeight: 34,
   },
   approvalRoot: {
+    flex: 1,
     gap: 12,
+    minHeight: 0,
+  },
+  approvalList: {
+    flex: 1,
+    minHeight: 0,
   },
   approvalListContent: {
+    flexGrow: 1,
     gap: 10,
     paddingBottom: 16,
   },
