@@ -538,7 +538,7 @@ function KolamTaskManagerDetail({
               <KolamTipTapRichTextEditor
                 mentionOptions={mentionOptions}
                 onChangeText={controller.onSetDiscussionDraft}
-                placeholder="Pesan"
+                placeholder="Tulis diskusi... Ketik @ untuk tag user."
                 value={controller.discussionDraft}
               />
               <View style={styles.discussionActionStack}>
@@ -1684,7 +1684,7 @@ function KolamTaskFormModal({
                 onChangeText={description =>
                   controller.onChangeForm({ description })
                 }
-                placeholder="Deskripsi"
+                placeholder="Spesifikasi tugas (bukan catatan aktivitas)... Ketik @ untuk tag user."
                 value={controller.form.description}
               />
             </KolamTaskField>
