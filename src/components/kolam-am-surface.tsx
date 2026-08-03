@@ -1525,6 +1525,7 @@ function AmServicesPage() {
                   onLogPageChange={nextPage => changeServiceLogPage(account, nextPage)}
                   onLogSourceChange={source => changeServiceLogSource(account, source)}
                   onSelectTab={tab => selectDetailTab(account, tab)}
+                  onSessionApplied={fetchAccounts}
                   onSubmitServiceInput={inputType => submitServiceInput(account, inputType)}
                 />
               ) : null}
@@ -2319,6 +2320,7 @@ function AmServiceDetailPanel({
   onLogPageChange,
   onLogSourceChange,
   onSelectTab,
+  onSessionApplied,
   onSubmitServiceInput,
   processRunning,
   tasks,
@@ -2347,6 +2349,7 @@ function AmServiceDetailPanel({
   onLogPageChange: (page: number) => void;
   onLogSourceChange: (source: 'realtime' | 'history') => void;
   onSelectTab: (tab: AmServiceDetailTab) => void;
+  onSessionApplied: () => void;
   onSubmitServiceInput: (inputType: 'otp' | 'password') => void;
   processRunning: boolean;
   tasks: AmTask[];
@@ -2417,6 +2420,7 @@ function AmServiceDetailPanel({
       {!isLoading && activeTab === 'session' && account.platform === 'tokopedia' ? (
         <AmTokopediaSessionPanel
           account={account}
+          onApplied={onSessionApplied}
           processRunning={processRunning}
         />
       ) : null}
@@ -2576,9 +2580,11 @@ function AmServiceDetailPanel({
 
 function AmTokopediaSessionPanel({
   account,
+  onApplied,
   processRunning,
 }: {
   account: AmServiceAccount;
+  onApplied?: () => void;
   processRunning: boolean;
 }) {
   const [info, setInfo] = React.useState<AmTokopediaSessionInfo | null>(null);
@@ -2591,6 +2597,7 @@ function AmTokopediaSessionPanel({
   const [acting, setActing] = React.useState<string | null>(null);
   const [message, setMessage] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
+  const monitorStatusRef = React.useRef<AmTokopediaApiMonitorJob['status']>('idle');
   const deviceId = resolveServiceAccountDeviceId(account.deviceId);
 
   const loadSession = React.useCallback(async (silent = false) => {
@@ -2600,16 +2607,21 @@ function AmTokopediaSessionPanel({
         getAmTokopediaSession(account._id),
         getAmTokopediaApiMonitorStatus(account._id),
       ]);
+      const previousMonitorStatus = monitorStatusRef.current;
+      monitorStatusRef.current = monitorResponse.status;
       setInfo(sessionResponse);
       setCaptchaAutoSolve(sessionResponse.captchaAutoSolve);
       setMonitorJob(monitorResponse.status === 'idle' ? null : monitorResponse);
+      if (previousMonitorStatus === 'running' && monitorResponse.status === 'success') {
+        onApplied?.();
+      }
       setError(null);
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : 'Gagal memuat Tokopedia session.');
     } finally {
       if (!silent) setIsLoading(false);
     }
-  }, [account._id]);
+  }, [account._id, onApplied]);
 
   const loadQrLogs = React.useCallback(async () => {
     if (!deviceId || !processRunning) {
@@ -2722,9 +2734,10 @@ function AmTokopediaSessionPanel({
       const cookies = parseAmTokopediaCookiesJson(cookiesJson);
       const result = await uploadAmTokopediaSession(account._id, cookies);
       setCookiesJson('');
+      onApplied?.();
       return `Session disimpan (${result.cookieCount} cookies).`;
     });
-  }, [account._id, cookiesJson, runAction]);
+  }, [account._id, cookiesJson, onApplied, runAction]);
 
   const statusLabel = info ? TOKOPEDIA_SESSION_LABELS[info.status] ?? titleCase(info.status) : 'Memuat session';
   const loginMode = info?.qrTiktokLogin ? 'qr' : info?.loginFillOnly ? 'fill' : 'password';

@@ -1890,9 +1890,11 @@ describe('KolamAmSurface', () => {
       }));
     });
     expect(renderText(renderer!).join(' ')).toContain('Siap upload: 1 cookies');
+    const serviceAccountLoadCountBeforeUpload = jest.mocked(getAmServiceAccounts).mock.calls.length;
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Tokopedia Save Cookies service-tokopedia'}).props.onPress();
     });
+    expect(jest.mocked(getAmServiceAccounts).mock.calls.length).toBeGreaterThan(serviceAccountLoadCountBeforeUpload);
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Tokopedia Api Monitor service-tokopedia'}).props.onPress();
     });
