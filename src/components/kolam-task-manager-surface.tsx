@@ -141,6 +141,7 @@ export function KolamTaskManagerSurface({
       <KolamTaskRecurringTemplateFormModal controller={controller} />
       <KolamTaskTypeFormModal controller={controller} />
       <KolamTaskOvertimeRequestModal controller={controller} />
+      <KolamTaskDeleteConfirmModal controller={controller} />
     </View>
   );
 }
@@ -221,9 +222,7 @@ function KolamTaskManagerDetail({
                 disabled={controller.mutatingTaskId === `delete:${task.id}`}
                 intent="outline"
                 label="Hapus"
-                onPress={() => {
-                  void controller.onDeleteTask(task);
-                }}
+                onPress={() => controller.onRequestDeleteTask(task)}
               />
             ) : null}
             <KolamButton
@@ -1122,9 +1121,7 @@ function KolamTaskRow({
                     disabled:
                       controller.mutatingTaskId === `delete:${task.id}`,
                     label: 'Hapus',
-                    onPress: () => {
-                      void controller.onDeleteTask(task);
-                    },
+                    onPress: () => controller.onRequestDeleteTask(task),
                   },
                 ]
               : []),
@@ -1837,6 +1834,56 @@ function KolamTaskOvertimeRequestModal({
               />
             </KolamTaskField>
           </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function KolamTaskDeleteConfirmModal({
+  controller,
+}: {
+  controller: KolamTaskManagerController;
+}) {
+  const task = controller.deleteTaskConfirmTask;
+  const deleting = Boolean(
+    task && controller.mutatingTaskId === `delete:${task.id}`,
+  );
+
+  return (
+    <Modal
+      animationType="fade"
+      onRequestClose={controller.onCloseDeleteTaskConfirm}
+      transparent
+      visible={Boolean(task)}
+    >
+      <View style={styles.modalRoot}>
+        <KolamModalBackdrop onPress={controller.onCloseDeleteTaskConfirm} />
+        <View style={styles.categoryModalCard}>
+          <View style={styles.modalHeader}>
+            <Text numberOfLines={1} style={styles.modalTitle}>
+              Hapus task
+            </Text>
+            <View style={styles.modalActions}>
+              <KolamButton
+                disabled={deleting}
+                intent="outline"
+                label="Batal"
+                onPress={controller.onCloseDeleteTaskConfirm}
+              />
+              <KolamButton
+                disabled={!task || deleting}
+                intent="danger"
+                label={deleting ? 'Menghapus...' : 'Hapus'}
+                onPress={() => {
+                  if (task) {
+                    void controller.onDeleteTask(task);
+                  }
+                }}
+              />
+            </View>
+          </View>
+          <Text style={styles.metaText}>{task?.title || 'Task'}</Text>
         </View>
       </View>
     </Modal>

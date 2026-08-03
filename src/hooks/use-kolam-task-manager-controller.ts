@@ -173,6 +173,7 @@ export interface KolamTaskManagerController {
   formError: string | null;
   formMode: 'edit' | 'new';
   formOpen: boolean;
+  deleteTaskConfirmTask: KolamTaskManagerTask | null;
   crmContext: KolamTaskCustomerCrmContext | null;
   ratingSummary: KolamUserRatingSummary | null;
   checklistDraft: string;
@@ -233,6 +234,7 @@ export interface KolamTaskManagerController {
   ) => void;
   onCloseCategoryForm: () => void;
   onCloseForm: () => void;
+  onCloseDeleteTaskConfirm: () => void;
   onCloseRecurringBulkForm: () => void;
   onCloseRecurringTemplateForm: () => void;
   onCloseTaskTypeForm: () => void;
@@ -252,6 +254,7 @@ export interface KolamTaskManagerController {
   onEditTaskType: (taskType: KolamTaskManagerTaskType) => void;
   onEditTask: (task: KolamTaskManagerTask) => void;
   onOpenOvertimeRequest: (task: KolamTaskManagerTask) => void;
+  onRequestDeleteTask: (task: KolamTaskManagerTask) => void;
   onBackToList: () => void;
   onRefresh: () => Promise<void>;
   onResetFilters: () => void;
@@ -349,6 +352,8 @@ export function useKolamTaskManagerController({
   const [formMode, setFormMode] = useState<'edit' | 'new'>('new');
   const [editingTaskId, setEditingTaskId] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
+  const [deleteTaskConfirmTask, setDeleteTaskConfirmTask] =
+    useState<KolamTaskManagerTask | null>(null);
   const [form, setForm] = useState<KolamTaskManagerFormState>(() =>
     getDefaultTaskForm(currentUserId),
   );
@@ -1049,6 +1054,17 @@ export function useKolamTaskManagerController({
     setOvertimeRequestError(null);
   }, []);
 
+  const onRequestDeleteTask = useCallback((task: KolamTaskManagerTask) => {
+    if (!isTaskAdmin) return;
+    setDeleteTaskConfirmTask(task);
+    setError(null);
+    setStatusMessage(null);
+  }, [isTaskAdmin]);
+
+  const onCloseDeleteTaskConfirm = useCallback(() => {
+    setDeleteTaskConfirmTask(null);
+  }, []);
+
   const onSubmitOvertimeRequest = useCallback(async () => {
     const reason = overtimeRequestReason.trim();
     if (!overtimeRequestTaskId) return false;
@@ -1087,6 +1103,7 @@ export function useKolamTaskManagerController({
       setStatusMessage(null);
       try {
         await deleteKolamTaskManagerTask(task.id);
+        setDeleteTaskConfirmTask(null);
         setStatusMessage('Tugas dihapus');
         if (mode === 'detail') {
           setSelectedTask(null);
@@ -1571,6 +1588,7 @@ export function useKolamTaskManagerController({
       formError,
       formMode,
       formOpen,
+      deleteTaskConfirmTask,
       crmContext,
       ratingSummary,
       checklistDraft,
@@ -1622,6 +1640,7 @@ export function useKolamTaskManagerController({
       onChangeRecurringTemplateForm,
       onChangeTaskTypeForm,
       onCloseCategoryForm,
+      onCloseDeleteTaskConfirm,
       onCloseForm,
       onCloseRecurringBulkForm,
       onCloseRecurringTemplateForm,
@@ -1641,6 +1660,7 @@ export function useKolamTaskManagerController({
       onEditTask,
       onEditTaskType,
       onOpenOvertimeRequest,
+      onRequestDeleteTask,
       onRefresh:
         mode === 'detail'
           ? refreshDetail
@@ -1710,6 +1730,7 @@ export function useKolamTaskManagerController({
       formError,
       formMode,
       formOpen,
+      deleteTaskConfirmTask,
       crmContext,
       ratingSummary,
       checklistDraft,
@@ -1735,6 +1756,7 @@ export function useKolamTaskManagerController({
       onChangeRecurringTemplateForm,
       onChangeTaskTypeForm,
       onCloseCategoryForm,
+      onCloseDeleteTaskConfirm,
       onCloseForm,
       onCloseRecurringBulkForm,
       onCloseRecurringTemplateForm,
@@ -1753,6 +1775,7 @@ export function useKolamTaskManagerController({
       onEditTask,
       onEditTaskType,
       onOpenOvertimeRequest,
+      onRequestDeleteTask,
       onBackToList,
       onResetFilters,
       onRunRecurringTick,
