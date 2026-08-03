@@ -1221,6 +1221,22 @@ describe('KolamAmSurface', () => {
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Service Clear Session service-2'}).props.onPress();
     });
+    expect(clearAmServiceAccountSession).not.toHaveBeenCalled();
+    let serviceText = renderText(renderer!).join(' ').replace(/\s+/g, ' ');
+    expect(serviceText).toContain('Clear session Tokopedia Session ?');
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Service Cancel Clear Session'}).props.onPress();
+    });
+    serviceText = renderText(renderer!).join(' ').replace(/\s+/g, ' ');
+    expect(serviceText).not.toContain('Clear session Tokopedia Session ?');
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Service Clear Session service-2'}).props.onPress();
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Service Confirm Clear Session service-2'}).props.onPress();
+    });
 
     expect(startAmDeviceService).toHaveBeenCalledWith('device-2', 'service-2');
     expect(clearAmServiceAccountSession).toHaveBeenCalledWith('service-2');

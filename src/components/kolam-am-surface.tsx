@@ -1029,6 +1029,7 @@ function AmServicesPage() {
   const [formPhoneNumber, setFormPhoneNumber] = React.useState('');
   const [expandedId, setExpandedId] = React.useState<string | null>(null);
   const [expandedTab, setExpandedTab] = React.useState<'logs' | 'history'>('logs');
+  const [sessionToClear, setSessionToClear] = React.useState<AmServiceAccount | null>(null);
   const [detailLogSource, setDetailLogSource] = React.useState<'realtime' | 'history'>('realtime');
   const [detailLogPage, setDetailLogPage] = React.useState(1);
   const [detailLogTotal, setDetailLogTotal] = React.useState(0);
@@ -1404,6 +1405,7 @@ function AmServicesPage() {
       const result = await clearAmServiceAccountSession(account._id);
       const deleted = result.deleted?.length ?? 0;
       setActionMessage(deleted > 0 ? `${account.label} session dibersihkan (${deleted} file).` : `${account.label} session state dibersihkan.`);
+      setSessionToClear(null);
       setDetailLogs([]);
       setDetailServices([]);
       setDetailRunning(false);
@@ -1509,6 +1511,30 @@ function AmServicesPage() {
       {actionMessage ? (
         <View style={styles.successPanel}>
           <Text style={styles.successText}>{actionMessage}</Text>
+        </View>
+      ) : null}
+      {sessionToClear ? (
+        <View style={styles.warningPanel}>
+          <Text style={styles.warningText}>Clear session {sessionToClear.label}?</Text>
+          <Text style={styles.panelText}>Service akan dihentikan dan login berikutnya perlu session baru.</Text>
+          <View style={styles.inlineActions}>
+            <KolamButton
+              accessibilityLabel={`AM Service Confirm Clear Session ${sessionToClear._id}`}
+              intent="danger"
+              label={actingServiceId === sessionToClear._id ? 'Clearing...' : 'Clear Session'}
+              muted={actingServiceId === sessionToClear._id}
+              size="sm"
+              onPress={() => clearServiceSession(sessionToClear)}
+            />
+            <KolamButton
+              accessibilityLabel="AM Service Cancel Clear Session"
+              intent="outline"
+              label="Cancel"
+              muted={actingServiceId === sessionToClear._id}
+              size="sm"
+              onPress={() => setSessionToClear(null)}
+            />
+          </View>
         </View>
       ) : null}
       <View style={styles.panel}>
@@ -1651,7 +1677,7 @@ function AmServicesPage() {
                   transfers={detailTransfers}
                   canClearSession={PLAYWRIGHT_PLATFORMS.has(account.platform)}
                   clearingSession={actingServiceId === account._id}
-                  onClearSession={() => clearServiceSession(account)}
+                  onClearSession={() => setSessionToClear(account)}
                   onChangeServiceInput={setServiceInputValue}
                   onHistoryPageChange={nextPage => changeServiceHistoryPage(account, nextPage)}
                   onLogPageChange={nextPage => changeServiceLogPage(account, nextPage)}
