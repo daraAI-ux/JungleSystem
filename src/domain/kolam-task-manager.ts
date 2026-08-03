@@ -534,7 +534,7 @@ export function getKolamTaskStatusBadgeIntent(
     case 'needs_review':
       return 'warning';
     case 'cancelled':
-      return 'muted';
+      return 'danger';
     case 'todo':
     default:
       return 'primary';
