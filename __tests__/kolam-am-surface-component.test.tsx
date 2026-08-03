@@ -106,6 +106,7 @@ jest.mock('../src/services/am-api', () => ({
   getAmDevicesAdbStatus: jest.fn(() => Promise.resolve({})),
   getAmMutasi: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
   getAmMutasiById: jest.fn(() => Promise.resolve({_id: 'mutasi-1'})),
+  getAmMutasiReceiptUrl: jest.fn((id: string) => `https://frogs.dunia-anura.com/api/mutasi/${encodeURIComponent(id)}/receipt`),
   getAmMutasiSummary: jest.fn(() => Promise.resolve({masuk: {total: 0, count: 0}, keluar: {total: 0, count: 0}})),
   getAmRackById: jest.fn(() => Promise.resolve({_id: 'rack-1', name: 'Rack 1'})),
   getAmRacks: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),

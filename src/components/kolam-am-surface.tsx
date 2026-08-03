@@ -49,6 +49,7 @@ import {
   getAmTaskById,
   getAmMutasi,
   getAmMutasiById,
+  getAmMutasiReceiptUrl,
   getAmMutasiSummary,
   getAmRackById,
   getAmRacks,
@@ -4571,7 +4572,7 @@ function AmMutasiDetailPanel({
   mutasi: AmMutasi | null;
 }) {
   const receiptUrl = mutasi?.receiptFile
-    ? `${appConfig.amApiBaseUrl.replace(/\/+$/, '')}/mutasi/${mutasi._id}/receipt`
+    ? getAmMutasiReceiptUrl(mutasi._id)
     : null;
 
   return (

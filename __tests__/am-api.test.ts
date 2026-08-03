@@ -4,6 +4,7 @@ import {
   createAmTransfer,
   getAmBoxById,
   getAmDeviceById,
+  getAmMutasiReceiptUrl,
   getAmRackById,
   loginAmSession,
   logoutAmSession,
@@ -193,6 +194,12 @@ describe('AM API service', () => {
           'x-source': appConfig.amSourceHeader,
         }),
       }),
+    );
+  });
+
+  it('builds authenticated AM mutasi receipt URLs against the live server', () => {
+    expect(getAmMutasiReceiptUrl('mutasi 1', 'https://am.example.test/api/')).toBe(
+      'https://am.example.test/api/mutasi/mutasi%201/receipt',
     );
   });
 });

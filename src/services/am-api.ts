@@ -1054,6 +1054,17 @@ export async function getAmMutasiById(
   return amGet<AmMutasi>(`/mutasi/${id}`, undefined, baseUrl);
 }
 
+export function getAmMutasiReceiptUrl(
+  id: string,
+  baseUrl = appConfig.amApiBaseUrl,
+): string {
+  if (!baseUrl) {
+    throw new Error('URL server AM existing belum dikonfigurasi.');
+  }
+
+  return `${baseUrl.replace(/\/+$/, '')}/mutasi/${encodeURIComponent(id)}/receipt`;
+}
+
 export async function getAmMutasiSummary(
   accountId?: string,
   baseUrl = appConfig.amApiBaseUrl,
