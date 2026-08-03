@@ -10,6 +10,7 @@ import {
   Text,
   TextInput,
   type TextInputKeyPressEventData,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import {useKolamAuthContext} from '../context/kolam-app-contexts';
@@ -1141,6 +1142,10 @@ export function KolamGlobalChatRail({
                 busy={daraWindowBusy}
                 imageUrl={daraAvatarState.imageUrl}
                 onOpenWindow={() => {
+                  if (daraHeaderMenuOpen) {
+                    handleCloseDaraWindow();
+                    return;
+                  }
                   setDaraHeaderMenuOpen(true);
                   handleEnsureDaraWindowRoom().catch(() => undefined);
                 }}
@@ -1343,6 +1348,7 @@ export function KolamGlobalChatRail({
           </ScrollView>
         ) : null}
       </View>
+      </View>
       {mode === 'team-chat' && daraHeaderMenuOpen ? (
         <KolamTeamChatDaraWindow
           busy={daraWindowBusy}
@@ -1355,7 +1361,6 @@ export function KolamGlobalChatRail({
           onSend={handleDaraWindowSend}
         />
       ) : null}
-    </View>
       {deleteRoomState.target ? (
         <KolamConfirmDialog
           cancelLabel="Batal"
@@ -2188,7 +2193,6 @@ function KolamTeamChatDaraHeaderMenu({
       <KolamPressable
         accessibilityLabel="Buka jendela DARA team chat"
         accessibilityState={{busy, expanded: open}}
-        disabled={busy}
         onPress={onOpenWindow}
         style={[
           styles.teamDaraHeaderButton,
@@ -2206,6 +2210,49 @@ function KolamTeamChatDaraHeaderMenu({
   );
 }
 
+const DARA_WINDOW_MARGIN = 12;
+const DARA_WINDOW_TOP_MIN = V.layout.topNavHeight + DARA_WINDOW_MARGIN;
+const DARA_WINDOW_WIDTH_RATIO = 0.9;
+const DARA_WINDOW_HEIGHT_RATIO = 0.86;
+const DARA_WINDOW_MAX_WIDTH = 920;
+const DARA_WINDOW_MAX_HEIGHT = 760;
+const DARA_WINDOW_MIN_WIDTH = 360;
+const DARA_WINDOW_MIN_HEIGHT = 420;
+
+function getDaraWindowPanelSize(windowWidth: number, windowHeight: number) {
+  const availableHeight = Math.max(
+    DARA_WINDOW_MIN_HEIGHT,
+    windowHeight - DARA_WINDOW_TOP_MIN - DARA_WINDOW_MARGIN,
+  );
+  const width = Math.min(
+    DARA_WINDOW_MAX_WIDTH,
+    Math.max(
+      DARA_WINDOW_MIN_WIDTH,
+      Math.round(windowWidth * DARA_WINDOW_WIDTH_RATIO),
+    ),
+  );
+  const height = Math.min(
+    DARA_WINDOW_MAX_HEIGHT,
+    Math.max(
+      DARA_WINDOW_MIN_HEIGHT,
+      Math.round(windowHeight * DARA_WINDOW_HEIGHT_RATIO),
+    ),
+    availableHeight,
+  );
+
+  return {
+    height,
+    width: Math.min(
+      width,
+      Math.max(DARA_WINDOW_MIN_WIDTH, windowWidth - DARA_WINDOW_MARGIN * 2),
+    ),
+  };
+}
+
+/**
+ * DARA popup — same open class as profile user menu:
+ * no Modal, fixed absolute anchor under top nav / right edge, final size on first paint.
+ */
 function KolamTeamChatDaraWindow({
   busy,
   composerText,
@@ -2225,7 +2272,13 @@ function KolamTeamChatDaraWindow({
   onComposerTextChange: (value: string) => void;
   onSend: () => Promise<void>;
 }) {
+  const {height: windowHeight, width: windowWidth} = useWindowDimensions();
+  const panelSize = React.useMemo(
+    () => getDaraWindowPanelSize(windowWidth, windowHeight),
+    [windowHeight, windowWidth],
+  );
   const composerDisabled = busy || detail.loading || detail.sending;
+
   const handleSubmitComposer = React.useCallback(() => {
     onSend().catch(() => undefined);
   }, [onSend]);
@@ -2246,68 +2299,73 @@ function KolamTeamChatDaraWindow({
   );
 
   return (
-    <Modal animationType="fade" onRequestClose={onClose} visible>
-      <View style={styles.teamDaraWindowOverlay}>
-        <View
-          accessibilityLabel="Jendela DARA team chat"
-          style={styles.teamDaraWindow}>
-          <View style={styles.teamDaraWindowHeader}>
-            <View style={styles.teamDaraHeaderLargeAvatar}>
-              <KolamProfileAvatarContent
-                imageStyle={styles.teamDaraHeaderLargeAvatarImage}
-                imageUrl={imageUrl}
-                initials="DA"
-                textStyle={styles.teamDaraHeaderLargeAvatarText}
-              />
-            </View>
-            <View style={styles.teamDaraHeaderCopy}>
-              <Text style={styles.teamDaraHeaderTitle}>DARA</Text>
-              <Text style={styles.teamDaraHeaderMeta}>Assistant Team Chat</Text>
-            </View>
-            <KolamPressable
-              accessibilityLabel="Tutup jendela DARA team chat"
-              onPress={onClose}
-              style={styles.teamDaraWindowCloseButton}>
-              <Text style={styles.teamDaraWindowCloseText}>Tutup</Text>
-            </KolamPressable>
-          </View>
-
-          <View style={styles.teamDaraWindowBody}>
-            <KolamTeamChatDaraWindowMessages
-              detail={detail}
-              errorMessage={errorMessage}
+    <View
+      accessibilityLabel="Jendela DARA team chat"
+      pointerEvents="auto"
+      style={[
+        styles.teamDaraWindow,
+        {
+          height: panelSize.height,
+          width: panelSize.width,
+        },
+      ]}>
+      <View style={styles.teamDaraWindowHeader}>
+        <View style={styles.teamDaraWindowDragHandle}>
+          <View style={styles.teamDaraHeaderLargeAvatar}>
+            <KolamProfileAvatarContent
+              imageStyle={styles.teamDaraHeaderLargeAvatarImage}
               imageUrl={imageUrl}
-              loading={busy}
+              initials="DA"
+              textStyle={styles.teamDaraHeaderLargeAvatarText}
             />
           </View>
-
-          <View style={styles.teamDaraWindowFooter}>
-            <View
-              style={[
-                styles.composerShell,
-                styles.teamDaraComposerShell,
-                composerDisabled && styles.composerShellBlocked,
-              ]}>
-              <TextInput
-                accessibilityLabel="Tulis pesan DARA team chat"
-                editable={!composerDisabled}
-                multiline
-                onChangeText={onComposerTextChange}
-                onKeyPress={handleComposerKeyPress}
-                onSubmitEditing={handleSubmitComposer}
-                placeholder={
-                  composerDisabled ? 'Chat DARA sedang dimuat' : 'Tulis pesan...'
-                }
-                placeholderTextColor={V.colors.mutedFg}
-                style={[styles.composerInput, styles.teamDaraComposerInput]}
-                submitBehavior="submit"
-                value={composerText}
-              />
-            </View>
+          <View style={styles.teamDaraHeaderCopy}>
+            <Text style={styles.teamDaraHeaderTitle}>DARA</Text>
+            <Text style={styles.teamDaraHeaderMeta}>Assistant Team Chat</Text>
           </View>
         </View>
+        <KolamPressable
+          accessibilityLabel="Tutup jendela DARA team chat"
+          onPress={onClose}
+          style={styles.teamDaraWindowCloseButton}>
+          <Text style={styles.teamDaraWindowCloseText}>Tutup</Text>
+        </KolamPressable>
       </View>
-    </Modal>
+
+      <View style={styles.teamDaraWindowBody}>
+        <KolamTeamChatDaraWindowMessages
+          detail={detail}
+          errorMessage={errorMessage}
+          imageUrl={imageUrl}
+          loading={busy}
+        />
+      </View>
+
+      <View style={styles.teamDaraWindowFooter}>
+        <View
+          style={[
+            styles.composerShell,
+            styles.teamDaraComposerShell,
+            composerDisabled && styles.composerShellBlocked,
+          ]}>
+          <TextInput
+            accessibilityLabel="Tulis pesan DARA team chat"
+            editable={!composerDisabled}
+            multiline
+            onChangeText={onComposerTextChange}
+            onKeyPress={handleComposerKeyPress}
+            onSubmitEditing={handleSubmitComposer}
+            placeholder={
+              composerDisabled ? 'Chat DARA sedang dimuat' : 'Tulis pesan...'
+            }
+            placeholderTextColor={V.colors.mutedFg}
+            style={[styles.composerInput, styles.teamDaraComposerInput]}
+            submitBehavior="submit"
+            value={composerText}
+          />
+        </View>
+      </View>
+    </View>
   );
 }
 
@@ -6816,6 +6874,9 @@ const styles = StyleSheet.create({
     borderLeftColor: V.colors.border,
     borderLeftWidth: 1,
     overflow: 'visible',
+    position: 'relative',
+    zIndex: 500,
+    elevation: 50,
   },
   header: {
     minHeight: V.layout.topNavHeight,
@@ -7093,23 +7154,29 @@ const styles = StyleSheet.create({
     shadowRadius: 14,
     shadowOffset: {width: 0, height: 8},
   },
-  teamDaraWindowOverlay: {
-    backgroundColor: '#f9fafb',
-    flex: 1,
-    justifyContent: 'flex-start',
-  },
   teamDaraWindow: {
-    alignSelf: 'stretch',
-    backgroundColor: '#f9fafb',
-    flexShrink: 0,
+    // Same anchor class as profile user menu — final position on first paint.
+    position: 'absolute',
+    top: V.layout.topNavHeight - 1,
+    right: V.layout.contentPadding,
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: V.radius.lg,
+    borderWidth: 1,
+    elevation: 200,
     gap: 8,
-    height: '72%',
-    minHeight: '48%',
+    overflow: 'hidden',
     padding: 12,
+    shadowColor: V.colors.fg,
+    shadowOffset: {width: 0, height: 16},
+    shadowOpacity: 0.18,
+    shadowRadius: 24,
+    zIndex: 2000,
   },
   teamDaraWindowHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexShrink: 0,
     padding: 12,
     gap: 10,
     borderRadius: V.radius.lg,
@@ -7118,9 +7185,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     backgroundColor: V.colors.primarySoft,
   },
+  teamDaraWindowDragHandle: {
+    minWidth: 0,
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
   teamDaraWindowBody: {
     flex: 1,
-    flexBasis: 0,
     minHeight: 0,
     padding: 0,
   },
