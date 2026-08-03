@@ -4190,6 +4190,33 @@ describe('KolamAmSurface', () => {
     });
     expect(getAmTransfers).toHaveBeenCalledTimes(2);
     expect(renderText(renderer!).join(' ')).toContain('Transfer created');
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM New Transfer'}).props.onPress();
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Segment Virtual Account'}).props.onPress();
+    });
+    inputs = renderer!.root.findAllByType(TextInput);
+    await act(async () => {
+      inputs[1].props.onChangeText('880812345678');
+      inputs[2].props.onChangeText('VA Vendor');
+      inputs[3].props.onChangeText('0');
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Transfer Create'}).props.onPress();
+    });
+
+    expect(createAmTransfer).toHaveBeenLastCalledWith({
+      accountId: undefined,
+      transferType: 'virtual-account',
+      recipientAccount: '880812345678',
+      recipientName: 'VA Vendor',
+      recipientBank: undefined,
+      transferMethod: undefined,
+      transactionPurpose: undefined,
+      amount: undefined,
+    });
   });
 
   it('loads transfer detail from the Transfers route', async () => {
