@@ -1,6 +1,8 @@
 import {
   getKolamTaskStatusOptionsForUser,
   normalizeKolamTaskManagerTask,
+  normalizeKolamTaskRecurringOccurrences,
+  normalizeKolamTaskRecurringServiceVisits,
 } from '../src/domain/kolam-task-manager';
 
 describe('kolam-task-manager domain', () => {
@@ -23,5 +25,29 @@ describe('kolam-task-manager domain', () => {
         task,
       }).map(option => option.id),
     ).not.toContain('done');
+  });
+
+  it('normalizes recurring sample review and customer fields', () => {
+    const occurrences = normalizeKolamTaskRecurringOccurrences([
+      {
+        _id: 'occ-1',
+        sampleReviewRequired: true,
+        status: 'pending',
+        title: 'Cek suhu',
+      },
+    ]);
+    const visits = normalizeKolamTaskRecurringServiceVisits([
+      {
+        _id: 'svc-1',
+        customerId: 'cust-1',
+        customerName: 'Anura Customer',
+        status: 'pending',
+        visitTitle: 'Kontrol layanan',
+      },
+    ]);
+
+    expect(occurrences[0].sampleReviewRequired).toBe(true);
+    expect(visits[0].customerId).toBe('cust-1');
+    expect(visits[0].customerName).toBe('Anura Customer');
   });
 });

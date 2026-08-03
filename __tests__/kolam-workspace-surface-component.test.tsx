@@ -340,6 +340,7 @@ jest.mock('../src/services/kolam-task-manager-api', () => ({
         dueAt: '2026-08-03T16:59:00.000Z',
         id: 'occ-1',
         priority: 'medium',
+        sampleReviewRequired: true,
         scheduledAt: '2026-08-03T02:00:00.000Z',
         status: 'pending',
         taskId: 'task-1',
@@ -347,7 +348,24 @@ jest.mock('../src/services/kolam-task-manager-api', () => ({
       },
     ]),
   ),
-  getKolamTaskRecurringServiceVisits: jest.fn(() => Promise.resolve([])),
+  getKolamTaskRecurringServiceVisits: jest.fn(() =>
+    Promise.resolve([
+      {
+        assignedTo: null,
+        categoryLabel: 'Subscription',
+        customerId: 'cust-1',
+        customerName: 'Anura Customer',
+        dueAt: '2026-08-03T17:00:00.000Z',
+        href: '/service-visits/svc-1',
+        id: 'svc-1',
+        scheduledAt: '2026-08-03T03:00:00.000Z',
+        serviceName: 'Kontrol layanan',
+        status: 'pending',
+        subscriptionNumber: 'SUB-1',
+        title: 'Kontrol layanan',
+      },
+    ]),
+  ),
   runKolamTaskRecurringTick: jest.fn(() => Promise.resolve(undefined)),
   sendKolamTaskManagerDiscussion: jest.fn(() => Promise.resolve({})),
   updateKolamTaskManagerChecklist: jest.fn(() => Promise.resolve({})),
@@ -800,6 +818,9 @@ describe('KolamWorkspaceSurface', () => {
         'Cek harian enclosure',
         'Jadwal / occurrence',
         'Cek suhu',
+        'Sampel',
+        'Kontrol layanan',
+        'Anura Customer',
       ]),
     );
 

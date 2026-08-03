@@ -1114,6 +1114,10 @@ function KolamTaskRecurringPanel({
       assignedTo: row.assignedTo,
       scheduledAt: row.scheduledAt,
       dueAt: row.dueAt,
+      customerId: '',
+      customerName: '',
+      href: '',
+      sampleReviewRequired: row.sampleReviewRequired,
       taskId: row.taskId,
     })),
     ...controller.recurringServiceVisits.map(row => ({
@@ -1125,6 +1129,10 @@ function KolamTaskRecurringPanel({
       assignedTo: row.assignedTo,
       scheduledAt: row.scheduledAt,
       dueAt: row.dueAt,
+      customerId: row.customerId,
+      customerName: row.customerName,
+      href: row.href,
+      sampleReviewRequired: false,
       taskId: '',
     })),
   ].sort(
@@ -1247,16 +1255,23 @@ function KolamTaskRecurringPanel({
               onPress={() => {
                 if (row.taskId) {
                   onRouteChange?.(`/task-manager/${row.taskId}`);
+                } else if (row.href) {
+                  onRouteChange?.(row.href);
                 }
               }}
               style={styles.timelineRow}
             >
               <View style={styles.titleRow}>
                 <Text style={styles.timelineTitle}>{row.title || '-'}</Text>
-                <KolamStatusBadge
-                  intent={getRecurringStatusIntent(row.status)}
-                  label={row.status}
-                />
+                <View style={styles.badgeRow}>
+                  {row.sampleReviewRequired ? (
+                    <KolamStatusBadge intent="warning" label="Sampel" />
+                  ) : null}
+                  <KolamStatusBadge
+                    intent={getRecurringStatusIntent(row.status)}
+                    label={row.status}
+                  />
+                </View>
               </View>
               <Text style={styles.metaText}>
                 {row.kind === 'internal' ? 'Internal' : 'Subscription'} -{' '}
@@ -1269,6 +1284,9 @@ function KolamTaskRecurringPanel({
               <Text style={styles.metaText}>
                 {getKolamTaskUserDisplayName(row.assignedTo)}
               </Text>
+              {row.customerName ? (
+                <Text style={styles.metaText}>{row.customerName}</Text>
+              ) : null}
             </Pressable>
           ))
         ) : (

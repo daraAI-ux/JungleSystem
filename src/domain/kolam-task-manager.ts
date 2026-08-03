@@ -200,6 +200,7 @@ export interface KolamTaskRecurringOccurrence {
   dueAt: string;
   categoryLabel: string;
   categoryBucket: KolamTaskCategoryBucket | null;
+  sampleReviewRequired: boolean;
   taskId: string;
 }
 
@@ -211,6 +212,8 @@ export interface KolamTaskRecurringServiceVisit {
   scheduledAt: string;
   dueAt: string;
   categoryLabel: string;
+  customerId: string;
+  customerName: string;
   href: string;
   serviceName: string;
   subscriptionNumber: string;
@@ -982,6 +985,7 @@ export function normalizeKolamTaskRecurringOccurrences(
       dueAt: toStringValue(row.dueAt),
       categoryLabel: toStringValue(row.categoryLabel),
       categoryBucket: toTaskCategoryBucket(row.categoryBucket),
+      sampleReviewRequired: Boolean(row.sampleReviewRequired),
       taskId: getLooseRefId(row.task),
     };
   });
@@ -1000,6 +1004,8 @@ export function normalizeKolamTaskRecurringServiceVisits(
       scheduledAt: toStringValue(row.scheduledAt),
       dueAt: toStringValue(row.dueAt),
       categoryLabel: toStringValue(row.categoryLabel),
+      customerId: toStringValue(row.customerId),
+      customerName: toStringValue(row.customerName),
       href: toStringValue(row.href),
       serviceName: toStringValue(row.serviceName),
       subscriptionNumber: toStringValue(row.subscriptionNumber),
