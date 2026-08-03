@@ -2,6 +2,7 @@ import {
   allocateKolamSaleCommissionShares,
   buildKolamSaleCreateBody,
   canAddItemsToKolamSale,
+  canApproveKolamSaleDiscount,
   canEditKolamSaleDraft,
   canMarkKolamSalePaid,
   canShowKolamSaleEditAction,
@@ -20,6 +21,8 @@ import {
   getKolamNoShippingDeliveryLabel,
   getKolamSaleAllowedDeliveryTransitions,
   getKolamSaleAllowedStatusTransitions,
+  getKolamSaleDeliveryStatusIntent,
+  getKolamSaleDiscountApprovalReasons,
   getKolamSaleEditRouteId,
   formatKolamSaleWalletSourceLabel,
   getKolamSaleCouriers,
@@ -1411,5 +1414,44 @@ describe('kolam sales domain', () => {
         marketplaceSource: 'shopee',
       }),
     ).toBe(false);
+  });
+
+  it('gates discount approval by finance/super-admin and scrapes history reasons', () => {
+    expect(canApproveKolamSaleDiscount('finance')).toBe(true);
+    expect(canApproveKolamSaleDiscount('super-admin')).toBe(true);
+    expect(canApproveKolamSaleDiscount('super_administrator')).toBe(true);
+    expect(canApproveKolamSaleDiscount('cashier')).toBe(false);
+    expect(canApproveKolamSaleDiscount(null)).toBe(false);
+
+    const sale = normalizeKolamSale({
+      _id: 'sale-pending',
+      invoiceCode: 'INV-P',
+      status: 'pending',
+      discount: 0,
+      items: [
+        {
+          _id: 'i1',
+          itemType: 'product',
+          quantity: 2,
+          unitPrice: 10000,
+          discount: { type: 'percentage', amount: 10 },
+          subtotal: 18000,
+        },
+      ],
+      saleHistories: [
+        {
+          status: 'pending',
+          note: 'Requires finance approval: item discount below minimum',
+          changedAt: '2026-08-01T00:00:00.000Z',
+        },
+        { status: 'pending', note: 'Ordinary note', changedAt: '2026-08-01T00:00:00.000Z' },
+      ],
+    });
+
+    expect(sale.discount).toBe(0);
+    expect(getKolamSaleItemDiscountAmount(sale.items[0])).toBe(2000);
+    expect(getKolamSaleDiscountApprovalReasons(sale)).toEqual([
+      'Requires finance approval: item discount below minimum',
+    ]);
   });
 });

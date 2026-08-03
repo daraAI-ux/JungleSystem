@@ -278,6 +278,8 @@ export type KolamSale = {
   paymentProofs: KolamSalePaymentProof[];
   saleHistories: KolamSaleHistory[];
   customCosts: KolamSaleCustomCost[];
+  /** Legacy sale-level discount amount (new sales usually 0). */
+  discount: number;
   discountType: string;
   notes: string;
   pointsEarned: number;
@@ -613,6 +615,57 @@ export function getKolamSaleItemDiscountAmount(item: {
     return Math.round((line * Number(discount.amount)) / 100);
   }
   return Math.round(Number(discount.amount) * (Number(item.quantity) || 0));
+}
+
+/**
+ * BE `_sale-status-handlers`: approve/reject pending discount only for
+ * finance or super-admin role keys (in addition to sale:update_status).
+ */
+export function canApproveKolamSaleDiscount(roleKey?: string | null): boolean {
+  const normalized = String(roleKey ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, '_');
+  return (
+    normalized === 'finance' ||
+    normalized === 'super_admin' ||
+    normalized === 'super_administrator' ||
+    normalized === 'superadmin'
+  );
+}
+
+/** FE Discount Approval: scrape saleHistories notes for finance/discount reasons. */
+export function getKolamSaleDiscountApprovalReasons(
+  sale: Pick<KolamSale, 'saleHistories'> | null | undefined,
+): string[] {
+  const reasons: string[] = [];
+  for (const history of sale?.saleHistories ?? []) {
+    const note = String(history.note ?? '').trim();
+    if (!note) {
+      continue;
+    }
+    const lower = note.toLowerCase();
+    if (
+      lower.includes('finance approval') ||
+      lower.includes('below minimum') ||
+      lower.includes('discount')
+    ) {
+      reasons.push(note);
+    }
+  }
+  return reasons;
+}
+
+export function formatKolamSaleItemDiscountLabel(
+  discount: KolamSaleItemDiscount | null | undefined,
+): string {
+  if (!discount || !(Number(discount.amount) > 0)) {
+    return '';
+  }
+  if (String(discount.type || '').toLowerCase() === 'percentage') {
+    return `${discount.amount}%`;
+  }
+  return String(discount.amount);
 }
 
 /**
@@ -2993,6 +3046,7 @@ export function normalizeKolamSale(payload: unknown): KolamSale {
     paymentProofs: normalizePaymentProofs(record.paymentProofs),
     saleHistories: normalizeSaleHistories(record.saleHistories),
     customCosts: normalizeCustomCosts(record.customCosts),
+    discount: getNumber(record, 'discount') ?? 0,
     discountType: getString(record, 'discountType'),
     notes: getString(record, 'notes'),
     pointsEarned:

@@ -335,7 +335,13 @@ export async function getKolamSalesNotificationSummary(): Promise<KolamSaleNotif
   const record =
     root && typeof root === 'object' ? (root as Record<string, unknown>) : {};
   return {
-    pendingApproval: Number(record.pendingApproval ?? record.pending ?? 0) || 0,
+    pendingApproval:
+      Number(
+        record.pendingDiscount ??
+          record.pendingApproval ??
+          record.pending ??
+          0,
+      ) || 0,
     needsAction: Number(record.needsAction ?? 0) || 0,
     needDelivery: Number(record.needDelivery ?? record.needsDelivery ?? 0) || 0,
   };

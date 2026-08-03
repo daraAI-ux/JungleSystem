@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useKolamAuthContext } from '../context/kolam-app-contexts';
 import type { KolamCustomer } from '../domain/kolam-customer';
 import type { KolamProduct } from '../domain/kolam-product';
 import type { KolamSpecies } from '../domain/kolam-species';
@@ -7,6 +8,7 @@ import {
   buildKolamSaleCreateBody,
   buildKolamSaleUpdateBody,
   canAddItemsToKolamSale,
+  canApproveKolamSaleDiscount,
   canEditKolamSaleDraft,
   canMarkKolamSalePaid,
   createEmptyKolamSaleCreateItem,
@@ -116,6 +118,7 @@ export interface KolamSalesController {
   analyticsLoading: boolean;
   analyticsRange: KolamSaleAnalyticsRange;
   breadcrumbPath: string;
+  canApproveDiscount: boolean;
   customers: KolamCustomer[];
   dataSource: KolamSalesDataSource;
   documentId: string | null;
@@ -186,6 +189,8 @@ export interface KolamSalesController {
 }
 
 export function useKolamSalesController(route: string): KolamSalesController {
+  const { authUser } = useKolamAuthContext();
+  const canApproveDiscount = canApproveKolamSaleDiscount(authUser?.roleKey);
   const [mode, setMode] = useState<KolamSaleSurfaceMode>(() =>
     getKolamSaleSurfaceMode(route),
   );
@@ -509,8 +514,8 @@ export function useKolamSalesController(route: string): KolamSalesController {
         needsAction: false,
         startDate: '',
         endDate: '',
-        page: 1,
-        limit: 20,
+        page: filtersRef.current.page,
+        limit: filtersRef.current.limit,
       });
       setSales(result.data);
       setPagination(result.pagination);
@@ -911,6 +916,16 @@ export function useKolamSalesController(route: string): KolamSalesController {
       if (!targetId) {
         return false;
       }
+      if (
+        approvalMode &&
+        (status === 'sent' || status === 'reject') &&
+        !canApproveDiscount
+      ) {
+        setError(
+          'Hanya role finance atau super-admin yang dapat menyetujui atau menolak diskon.',
+        );
+        return false;
+      }
       if (!approvalMode && isKolamSaleMarketplaceManaged(sale!)) {
         setError(
           'Status pembayaran marketplace dikelola otomatis dan tidak bisa diubah di sini.',
@@ -953,7 +968,7 @@ export function useKolamSalesController(route: string): KolamSalesController {
         setMutating(false);
       }
     },
-    [refreshApproval, route, selectedSale],
+    [canApproveDiscount, refreshApproval, route, selectedSale],
   );
 
   const onUpdateDelivery = useCallback(
@@ -1192,6 +1207,7 @@ export function useKolamSalesController(route: string): KolamSalesController {
     analyticsLoading,
     analyticsRange,
     breadcrumbPath: getKolamSaleBreadcrumbPath(mode),
+    canApproveDiscount,
     customers,
     dataSource,
     documentId,
