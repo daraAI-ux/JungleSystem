@@ -202,6 +202,7 @@ function KolamTaskManagerDetail({
     controller.currentUserId,
     controller.isTaskAdmin,
   );
+  const mentionOptions = getTaskMentionOptions(controller);
 
   return (
     <View style={styles.detailStack}>
@@ -522,6 +523,7 @@ function KolamTaskManagerDetail({
             ) : null}
             <View style={styles.noteAddRow}>
               <KolamTipTapRichTextEditor
+                mentionOptions={mentionOptions}
                 onChangeText={controller.onSetDiscussionDraft}
                 placeholder="Pesan"
                 value={controller.discussionDraft}
@@ -662,6 +664,13 @@ function getDiscussionAttachmentLabel(
     file.uri?.split('/').pop() ||
     'File'
   );
+}
+
+function getTaskMentionOptions(controller: KolamTaskManagerController) {
+  return controller.staffOptions.map(option => ({
+    id: option.id,
+    label: option.label,
+  }));
 }
 
 function getTaskRelatedLinks(task: KolamTaskManagerTask) {
@@ -1553,6 +1562,7 @@ function KolamTaskFormModal({
       value: option.id,
     })),
   ];
+  const mentionOptions = getTaskMentionOptions(controller);
   const categoryOptions = [
     { label: 'Pilih kategori', value: '' },
     ...controller.categories.map(category => ({
@@ -1657,6 +1667,7 @@ function KolamTaskFormModal({
 
             <KolamTaskField label="Deskripsi">
               <KolamTipTapRichTextEditor
+                mentionOptions={mentionOptions}
                 onChangeText={description =>
                   controller.onChangeForm({ description })
                 }

@@ -1,4 +1,4 @@
-import {Editor, Extension} from '@tiptap/core';
+import {Editor, Extension, Node, mergeAttributes} from '@tiptap/core';
 import Color from '@tiptap/extension-color';
 import Highlight from '@tiptap/extension-highlight';
 import Image from '@tiptap/extension-image';
@@ -22,6 +22,7 @@ declare const window: any;
 type BootstrapConfig = {
   editable: boolean;
   html: string;
+  mentionOptions?: MentionOption[];
   placeholder: string;
 };
 
@@ -32,6 +33,57 @@ type EditorMessage =
 
 let editor: Editor | null = null;
 let internalUpdate = false;
+let mentionOptions: MentionOption[] = [];
+let mentionOpen = false;
+let mentionQuery = '';
+let mentionHighlight = 0;
+
+type MentionOption = {
+  id: string;
+  label: string;
+};
+
+const TaskMention = Node.create({
+  name: 'taskMention',
+  group: 'inline',
+  inline: true,
+  atom: true,
+  selectable: true,
+  addAttributes() {
+    return {
+      'data-mention-user-id': {
+        default: null,
+        parseHTML: element =>
+          (element as any).getAttribute('data-mention-user-id'),
+      },
+      label: {
+        default: '',
+        parseHTML: element =>
+          String((element as any).textContent || '')
+            .replace(/^@/, '')
+            .trim(),
+      },
+    };
+  },
+  parseHTML() {
+    return [{tag: 'span[data-mention-user-id]'}];
+  },
+  renderHTML({node, HTMLAttributes}) {
+    const label = String(node.attrs.label || '').trim();
+    return [
+      'span',
+      mergeAttributes(HTMLAttributes, {
+        class: 'task-mention',
+        'data-mention-user-id': node.attrs['data-mention-user-id'],
+      }),
+      `@${label}`,
+    ];
+  },
+  renderText({node}) {
+    const label = String(node.attrs.label || '').trim();
+    return `@${label}`;
+  },
+});
 
 const BlockFormatting = Extension.create({
   name: 'blockFormatting',
@@ -121,6 +173,146 @@ function openImagePrompt() {
 function insertImage(src: string, alt?: string) {
   editor?.chain().focus().setImage({src, alt: alt || 'Gambar'}).run();
   emitChange();
+}
+
+function sanitizeMentionLabel(label: string) {
+  return String(label || '').replace(/[<>&"]/g, '').trim();
+}
+
+function getMentionMatch() {
+  if (!editor) {
+    return null;
+  }
+  const {from} = editor.state.selection;
+  const textBefore = editor.state.doc.textBetween(
+    Math.max(0, from - 80),
+    from,
+    '\0',
+    '\0',
+  );
+  const match = textBefore.match(/@([^\s@]*)$/);
+  if (!match) {
+    return null;
+  }
+  return {
+    from,
+    query: match[1],
+    triggerLength: match[0].length,
+  };
+}
+
+function getFilteredMentionOptions() {
+  const query = mentionQuery.trim().toLowerCase();
+  if (!query) {
+    return mentionOptions.slice(0, 8);
+  }
+  return mentionOptions
+    .filter(option => option.label.toLowerCase().includes(query))
+    .slice(0, 8);
+}
+
+function renderMentionMenu() {
+  const menu = document.getElementById('mention-menu');
+  if (!menu) {
+    return;
+  }
+  const items = getFilteredMentionOptions();
+  if (!mentionOpen || items.length === 0) {
+    menu.innerHTML = '';
+    menu.style.display = 'none';
+    return;
+  }
+
+  menu.style.display = 'block';
+  menu.innerHTML = items
+    .map(
+      (item, index) =>
+        `<button class="mention-option${
+          index === mentionHighlight ? ' active' : ''
+        }" data-mention-index="${index}" type="button">@${sanitizeMentionLabel(
+          item.label,
+        )}</button>`,
+    )
+    .join('');
+  menu.querySelectorAll('[data-mention-index]').forEach((button: any) => {
+    button.addEventListener('mousedown', (event: any) => event.preventDefault());
+    button.addEventListener('click', () => {
+      const index = Number(button.getAttribute('data-mention-index') || 0);
+      insertMention(items[index]);
+    });
+  });
+}
+
+function syncMentionState() {
+  if (!editor || mentionOptions.length === 0 || !editor.isEditable) {
+    mentionOpen = false;
+    mentionQuery = '';
+    mentionHighlight = 0;
+    renderMentionMenu();
+    return;
+  }
+
+  const match = getMentionMatch();
+  if (!match) {
+    mentionOpen = false;
+    mentionQuery = '';
+    mentionHighlight = 0;
+    renderMentionMenu();
+    return;
+  }
+
+  mentionOpen = true;
+  mentionQuery = match.query;
+  mentionHighlight = 0;
+  renderMentionMenu();
+}
+
+function insertMention(option?: MentionOption) {
+  if (!editor || !option) {
+    return;
+  }
+  const match = getMentionMatch();
+  if (!match) {
+    return;
+  }
+  const deleteFrom = match.from - match.triggerLength;
+  const label = sanitizeMentionLabel(option.label);
+  editor
+    .chain()
+    .focus()
+    .deleteRange({from: deleteFrom, to: match.from})
+    .insertContent({
+      type: 'taskMention',
+      attrs: {
+        'data-mention-user-id': option.id,
+        label,
+      },
+    })
+    .insertContent(' ')
+    .run();
+  mentionOpen = false;
+  mentionQuery = '';
+  mentionHighlight = 0;
+  renderMentionMenu();
+  emitChange();
+}
+
+function setMentionOptions(nextOptions?: MentionOption[]) {
+  mentionOptions = Array.isArray(nextOptions)
+    ? nextOptions
+        .filter(
+          option =>
+            option &&
+            typeof option.id === 'string' &&
+            typeof option.label === 'string',
+        )
+        .map(option => ({
+          id: option.id,
+          label: sanitizeMentionLabel(option.label),
+        }))
+        .filter(option => option.id && option.label)
+    : [];
+  syncMentionState();
 }
 
 function setColumns(count: number) {
@@ -446,6 +638,43 @@ function bindDropHandling() {
   });
 }
 
+function bindMentionHandling() {
+  const root = editor?.view.dom as any;
+  if (!root) {
+    return;
+  }
+  root.addEventListener('keydown', (event: any) => {
+    if (!mentionOpen) {
+      return;
+    }
+    const items = getFilteredMentionOptions();
+    if (items.length === 0) {
+      return;
+    }
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      mentionHighlight = (mentionHighlight + 1) % items.length;
+      renderMentionMenu();
+      return;
+    }
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      mentionHighlight = (mentionHighlight - 1 + items.length) % items.length;
+      renderMentionMenu();
+      return;
+    }
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      insertMention(items[mentionHighlight]);
+      return;
+    }
+    if (event.key === 'Escape') {
+      mentionOpen = false;
+      renderMentionMenu();
+    }
+  });
+}
+
 function createEditor(config: BootstrapConfig) {
   const element = document.getElementById('editor-root');
   if (!element) {
@@ -478,16 +707,25 @@ function createEditor(config: BootstrapConfig) {
       TaskList,
       TaskItem.configure({nested: true}),
       Typography,
+      TaskMention,
       BlockFormatting,
     ],
-    onUpdate: emitChange,
-    onSelectionUpdate: refreshToolbarState,
+    onUpdate() {
+      emitChange();
+      syncMentionState();
+    },
+    onSelectionUpdate() {
+      refreshToolbarState();
+      syncMentionState();
+    },
     onTransaction: refreshToolbarState,
   });
 
+  setMentionOptions(config.mentionOptions);
   bindToolbar();
   bindSelectControls();
   bindDropHandling();
+  bindMentionHandling();
   refreshToolbarState();
   console.log('TipTap editor created');
   send({type: 'ready'});
@@ -497,6 +735,7 @@ window.KolamTipTap = {
   insertImage,
   openImagePrompt,
   run: runAction,
+  setMentionOptions,
   setEditable(nextEditable: boolean) {
     editor?.setEditable(Boolean(nextEditable));
     document.querySelectorAll('[data-action]').forEach((button: any) => {

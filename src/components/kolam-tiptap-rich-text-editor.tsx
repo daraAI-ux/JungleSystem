@@ -15,12 +15,14 @@ const KolamWebView = WebView as unknown as React.ComponentType<any>;
 
 export function KolamTipTapRichTextEditor({
   editable = true,
+  mentionOptions = [],
   onChangeText,
   onDebugMessage,
   placeholder,
   value,
 }: {
   editable?: boolean;
+  mentionOptions?: Array<{id: string; label: string}>;
   onChangeText: (value: string) => void;
   onDebugMessage?: (value: string) => void;
   placeholder?: string;
@@ -33,6 +35,7 @@ export function KolamTipTapRichTextEditor({
     html: createEditorHtml({
       editable,
       html: value,
+      mentionOptions,
       placeholder: placeholder ?? 'Tulis deskripsi...',
     }),
   });
@@ -88,6 +91,19 @@ export function KolamTipTapRichTextEditor({
       `window.KolamTipTap.setEditable(${editable ? 'true' : 'false'});`,
     );
   }, [editable, ready]);
+
+  React.useEffect(() => {
+    if (!ready) {
+      return;
+    }
+
+    injectEditorCommand(
+      webViewRef.current,
+      `window.KolamTipTap.setMentionOptions(${toSafeJsLiteral(
+        sanitizeMentionOptions(mentionOptions),
+      )});`,
+    );
+  }, [mentionOptions, ready]);
 
   const handleMessage = async (event: WebViewMessageEvent) => {
     const message = parseEditorMessage(event.nativeEvent.data);
@@ -205,13 +221,34 @@ function toSafeJsString(value: string) {
   return JSON.stringify(value).replace(/<\/script/gi, '<\\/script');
 }
 
+function toSafeJsLiteral(value: unknown) {
+  return JSON.stringify(value).replace(/<\/script/gi, '<\\/script');
+}
+
+function sanitizeMentionOptions(options: Array<{id: string; label: string}>) {
+  return options
+    .filter(
+      option =>
+        option &&
+        typeof option.id === 'string' &&
+        typeof option.label === 'string',
+    )
+    .map(option => ({
+      id: option.id,
+      label: option.label.replace(/[<>&"]/g, '').trim(),
+    }))
+    .filter(option => option.id && option.label);
+}
+
 function createEditorHtml({
   editable,
   html,
+  mentionOptions,
   placeholder,
 }: {
   editable: boolean;
   html: string;
+  mentionOptions: Array<{id: string; label: string}>;
   placeholder: string;
 }) {
   return `<!doctype html>
@@ -361,6 +398,11 @@ function createEditorHtml({
       font-style: italic;
     }
     .ProseMirror a { color: var(--primary); text-decoration: underline; }
+    .ProseMirror .task-mention,
+    .ProseMirror [data-mention-user-id] {
+      color: var(--primary);
+      font-weight: 900;
+    }
     .ProseMirror code {
       padding: 2px 5px;
       border-radius: 5px;
@@ -416,6 +458,39 @@ function createEditorHtml({
       font-size: 42px;
       line-height: 34px;
       font-weight: 900;
+    }
+    #mention-menu {
+      position: absolute;
+      left: 12px;
+      right: 12px;
+      bottom: 12px;
+      z-index: 20;
+      display: none;
+      max-height: 168px;
+      overflow-y: auto;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+      box-shadow: 0 12px 28px rgba(15, 23, 42, .16);
+      padding: 4px;
+    }
+    .mention-option {
+      display: block;
+      width: 100%;
+      min-height: 30px;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--fg);
+      cursor: pointer;
+      font: 800 12px/16px ${V.fontFamily}, Segoe UI, Arial, sans-serif;
+      text-align: left;
+      padding: 6px 8px;
+    }
+    .mention-option:hover,
+    .mention-option.active {
+      background: var(--secondary);
+      color: var(--primary);
     }
   </style>
 </head>
@@ -591,12 +666,14 @@ function createEditorHtml({
       </div>
     </div>
     <div id="editor-root"></div>
+    <div id="mention-menu"></div>
   </div>
   <script>${tipTapEditorBundle}</script>
   <script>
     window.KolamTipTapBootstrap({
       editable: ${editable ? 'true' : 'false'},
       html: ${toSafeJsString(html)},
+      mentionOptions: ${toSafeJsLiteral(sanitizeMentionOptions(mentionOptions))},
       placeholder: ${toSafeJsString(placeholder)}
     });
   </script>
