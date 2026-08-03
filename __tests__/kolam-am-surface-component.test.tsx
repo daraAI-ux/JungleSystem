@@ -4536,6 +4536,7 @@ describe('KolamAmSurface', () => {
     const webhooksText = renderText(renderer!).join(' ');
     expect(webhooksText).toContain('https://example.test/webhook');
     expect(webhooksText).toMatch(/Showing\s+1\s+to\s+50\s+of\s+75\s+items/);
+    expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment Incoming'})).toHaveLength(0);
 
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Webhook Log Detail webhook-log-1'}).props.onPress();
