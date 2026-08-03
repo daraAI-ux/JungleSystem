@@ -351,6 +351,22 @@ jest.mock('../src/services/kolam-custom-project-api', () => ({
   ),
 }));
 
+jest.mock('../src/services/kolam-customer-api', () => ({
+  getKolamCustomerList: jest.fn(() =>
+    Promise.resolve({
+      items: [
+        {
+          email: '',
+          id: 'customer-1',
+          name: 'Dara Customer',
+          phone: '',
+        },
+      ],
+      pagination: { limit: 200, page: 1, total: 1, totalPages: 1 },
+    }),
+  ),
+}));
+
 jest.mock('../src/services/kolam-location-api', () => ({
   getKolamLocations: jest.fn(() =>
     Promise.resolve([

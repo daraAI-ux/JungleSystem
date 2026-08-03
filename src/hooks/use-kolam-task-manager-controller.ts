@@ -61,6 +61,7 @@ import {
   updateKolamTaskManagerTaskType,
 } from '../services/kolam-task-manager-api';
 import { getKolamLocations } from '../services/kolam-location-api';
+import { getKolamCustomerList } from '../services/kolam-customer-api';
 import { getKolamUserList } from '../services/kolam-user-api';
 
 export type KolamTaskManagerDataSource = 'error' | 'idle' | 'live';
@@ -70,9 +71,15 @@ export interface KolamTaskManagerStaffOption {
   label: string;
 }
 
+export interface KolamTaskManagerCustomerOption {
+  id: string;
+  label: string;
+}
+
 export interface KolamTaskManagerFormState {
   assistedById: string;
   categoryId: string;
+  customerId: string;
   description: string;
   dueDate: string;
   dueTime: string;
@@ -172,6 +179,7 @@ export interface KolamTaskManagerController {
   route: string;
   search: string;
   staffOptions: KolamTaskManagerStaffOption[];
+  customerOptions: KolamTaskManagerCustomerOption[];
   projectOptions: KolamCustomProjectOption[];
   statusFilter: KolamTaskManagerStatus | 'all';
   statusMessage: string | null;
@@ -289,6 +297,9 @@ export function useKolamTaskManagerController({
   const [staffOptions, setStaffOptions] = useState<KolamTaskManagerStaffOption[]>(
     [],
   );
+  const [customerOptions, setCustomerOptions] = useState<
+    KolamTaskManagerCustomerOption[]
+  >([]);
   const [projectOptions, setProjectOptions] = useState<
     KolamCustomProjectOption[]
   >([]);
@@ -404,6 +415,15 @@ export function useKolamTaskManagerController({
       setProjectOptions(await getKolamCustomProjectOptions({ limit: 200, page: 1 }));
     } catch {
       // Non-blocking: project filter/form can stay minimal.
+    }
+  }, []);
+
+  const loadCustomers = useCallback(async () => {
+    try {
+      const live = await getKolamCustomerList({ limit: 200, page: 1 });
+      setCustomerOptions(mapCustomerOptions(live.items));
+    } catch {
+      // Non-blocking: customer field can stay minimal.
     }
   }, []);
 
@@ -586,9 +606,10 @@ export function useKolamTaskManagerController({
 
   useEffect(() => {
     void loadCategories();
+    void loadCustomers();
     void loadStaff();
     void loadProjects();
-  }, [loadCategories, loadProjects, loadStaff]);
+  }, [loadCategories, loadCustomers, loadProjects, loadStaff]);
 
   useEffect(() => {
     void loadLocations();
@@ -989,6 +1010,7 @@ export function useKolamTaskManagerController({
         assistedById: form.assistedById || null,
         dueDate,
         categoryId,
+        customerId: form.projectId ? form.customerId || null : null,
         taskTypeId: form.taskTypeId || null,
         projectId: form.projectId || null,
       };
@@ -1389,6 +1411,7 @@ export function useKolamTaskManagerController({
       route,
       search,
       staffOptions,
+      customerOptions,
       projectOptions,
       statusFilter,
       statusMessage,
@@ -1554,6 +1577,7 @@ export function useKolamTaskManagerController({
       search,
       setFilterAndFirstPage,
       staffOptions,
+      customerOptions,
       projectOptions,
       statusFilter,
       statusMessage,
@@ -1574,6 +1598,7 @@ function getDefaultTaskForm(
   return {
     assistedById: '',
     categoryId,
+    customerId: '',
     description: '',
     dueDate: '',
     dueTime: '',
@@ -1641,6 +1666,7 @@ function getTaskFormFromTask(
   return {
     assistedById: getTaskUserId(task.assistedBy),
     categoryId: getTaskCategoryId(task.category),
+    customerId: task.customerId,
     description: task.description,
     dueDate: due.date,
     dueTime: due.time,
@@ -1678,6 +1704,15 @@ function mapStaffOptions(users: KolamUserListItem[]): KolamTaskManagerStaffOptio
       user.username ||
       user.email ||
       user.id,
+  }));
+}
+
+function mapCustomerOptions(
+  customers: Array<{ id: string; name: string; phone?: string; email?: string }>,
+): KolamTaskManagerCustomerOption[] {
+  return customers.map(customer => ({
+    id: customer.id,
+    label: customer.name || customer.phone || customer.email || customer.id,
   }));
 }
 

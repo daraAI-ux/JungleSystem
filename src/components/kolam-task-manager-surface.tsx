@@ -1220,6 +1220,14 @@ function KolamTaskFormModal({
       value: project.id,
     })),
   ];
+  const customerOptions = [
+    { label: 'Tidak ada', value: '' },
+    ...controller.customerOptions.map(customer => ({
+      label: customer.label,
+      value: customer.id,
+    })),
+  ];
+  const showCustomerField = Boolean(controller.form.projectId);
   const saving =
     controller.mutatingTaskId === 'new' ||
     (controller.formMode === 'edit' &&
@@ -1326,12 +1334,27 @@ function KolamTaskFormModal({
               <KolamDropdownSelect
                 label="Custom Project"
                 onChange={projectId =>
-                  controller.onChangeForm({ projectId, taskTypeId: '' })
+                  controller.onChangeForm({
+                    customerId: projectId ? controller.form.customerId : '',
+                    projectId,
+                    taskTypeId: '',
+                  })
                 }
                 options={projectOptions}
                 searchable
                 value={controller.form.projectId}
               />
+              {showCustomerField ? (
+                <KolamDropdownSelect
+                  label="Customer"
+                  onChange={customerId =>
+                    controller.onChangeForm({ customerId })
+                  }
+                  options={customerOptions}
+                  searchable
+                  value={controller.form.customerId}
+                />
+              ) : null}
               <KolamDropdownSelect
                 label="Status"
                 onChange={status =>
