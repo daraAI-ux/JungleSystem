@@ -1,38 +1,9 @@
 /**
- * Transaksi Copilot chrome — port of DA-Dara-Plugin `shipping-delivery.css`.
- * SoT: E:\Projects\DA-Dara-Plugin\src\components\shipping-copilot\shipping-delivery.css
- *
- * Local dark-tint tokens approximate CSS `color-mix(... black …)` on light Kolam
- * without changing global `kolam-visual` tokens.
+ * Transaksi Copilot chrome — layout/spacing from DA-Dara-Plugin
+ * `shipping-delivery.css`; colors follow Kolam light theme (`kolam-visual`).
  */
 import {StyleSheet} from 'react-native';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
-
-/** Soft elevated dark card (overlay 92% + black 8%). */
-const CARD_BG = '#1c1f26';
-const CARD_BORDER = '#2e3440';
-/** Muted tray / pill (muted 78% + black 22%). */
-const TRAY_BG = '#252a33';
-const TRAY_BORDER = '#343b48';
-const CHART_TRAY_BG = '#22262e';
-const FG = '#f3f4f6';
-const MUTED_FG = '#9ca3af';
-const OK_BORDER = '#3d7a5a';
-const BAD_BORDER = '#9f4a5a';
-const RANGE_ACTIVE_BG = 'rgba(243, 244, 246, 0.1)';
-
-export const transaksiCopilotColors = {
-  cardBg: CARD_BG,
-  cardBorder: CARD_BORDER,
-  trayBg: TRAY_BG,
-  trayBorder: TRAY_BORDER,
-  chartTrayBg: CHART_TRAY_BG,
-  fg: FG,
-  mutedFg: MUTED_FG,
-  okBorder: OK_BORDER,
-  badBorder: BAD_BORDER,
-  rangeActiveBg: RANGE_ACTIVE_BG,
-};
 
 export const transaksiCopilotStyles = StyleSheet.create({
   scroll: {
@@ -47,7 +18,7 @@ export const transaksiCopilotStyles = StyleSheet.create({
   },
   shellHeader: {
     alignItems: 'flex-start',
-    borderBottomColor: CARD_BORDER,
+    borderBottomColor: V.colors.border,
     borderBottomWidth: 1,
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -60,7 +31,7 @@ export const transaksiCopilotStyles = StyleSheet.create({
     minWidth: 0,
   },
   eyebrow: {
-    color: MUTED_FG,
+    color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 11,
     fontWeight: '700',
@@ -68,7 +39,7 @@ export const transaksiCopilotStyles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   title: {
-    color: FG,
+    color: V.colors.fg,
     fontFamily: V.fontFamily,
     fontSize: 22,
     fontWeight: '700',
@@ -76,7 +47,7 @@ export const transaksiCopilotStyles = StyleSheet.create({
     marginTop: 3,
   },
   desc: {
-    color: MUTED_FG,
+    color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 13,
     lineHeight: 20,
@@ -96,8 +67,8 @@ export const transaksiCopilotStyles = StyleSheet.create({
     gap: 16,
   },
   rangeTabs: {
-    backgroundColor: TRAY_BG,
-    borderColor: CARD_BORDER,
+    backgroundColor: V.colors.muted,
+    borderColor: V.colors.border,
     borderRadius: 10,
     borderWidth: 1,
     flexDirection: 'row',
@@ -111,20 +82,20 @@ export const transaksiCopilotStyles = StyleSheet.create({
     paddingVertical: 8,
   },
   rangeBtnActive: {
-    backgroundColor: RANGE_ACTIVE_BG,
+    backgroundColor: V.colors.bg,
   },
   rangeBtnText: {
-    color: MUTED_FG,
+    color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 13,
     fontWeight: '600',
   },
   rangeBtnTextActive: {
-    color: FG,
+    color: V.colors.fg,
   },
   sectionCard: {
-    backgroundColor: CARD_BG,
-    borderColor: CARD_BORDER,
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
     borderRadius: 12,
     borderWidth: 1,
     overflow: 'hidden',
@@ -147,25 +118,25 @@ export const transaksiCopilotStyles = StyleSheet.create({
     gap: 12,
   },
   sectionTitle: {
-    color: FG,
+    color: V.colors.fg,
     fontFamily: V.fontFamily,
     fontSize: 15,
     fontWeight: '700',
     margin: 0,
   },
   sectionDesc: {
-    color: MUTED_FG,
+    color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 13,
     marginTop: 5,
   },
   notice: {
-    color: MUTED_FG,
+    color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 12,
   },
   loadingText: {
-    color: MUTED_FG,
+    color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 13,
     padding: 8,
@@ -184,7 +155,7 @@ export const transaksiCopilotStyles = StyleSheet.create({
     gap: 8,
   },
   notifyLabel: {
-    color: FG,
+    color: V.colors.fg,
     fontFamily: V.fontFamily,
     fontSize: 14,
   },
@@ -214,8 +185,8 @@ export const transaksiCopilotStyles = StyleSheet.create({
     marginTop: 12,
   },
   healthRow: {
-    backgroundColor: TRAY_BG,
-    borderColor: TRAY_BORDER,
+    backgroundColor: V.colors.muted,
+    borderColor: V.colors.border,
     borderRadius: 10,
     borderWidth: 1,
     flexBasis: '48%',
@@ -225,20 +196,22 @@ export const transaksiCopilotStyles = StyleSheet.create({
     paddingVertical: 10,
   },
   healthOk: {
-    borderColor: OK_BORDER,
+    backgroundColor: V.colors.successSoft,
+    borderColor: V.colors.success,
   },
   healthBad: {
-    borderColor: BAD_BORDER,
+    backgroundColor: V.colors.dangerSoft,
+    borderColor: V.colors.danger,
   },
   healthPlatform: {
-    color: FG,
+    color: V.colors.fg,
     fontFamily: V.fontFamily,
     fontSize: 13,
     fontWeight: '700',
     textTransform: 'capitalize',
   },
   healthState: {
-    color: MUTED_FG,
+    color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 12,
     marginTop: 4,
@@ -263,30 +236,32 @@ export const transaksiCopilotStyles = StyleSheet.create({
   },
   botAvatarPh: {
     alignItems: 'center',
-    backgroundColor: '#2a303a',
+    backgroundColor: V.colors.muted,
+    borderColor: V.colors.border,
     borderRadius: 999,
+    borderWidth: 1,
     flexShrink: 0,
     height: 56,
     justifyContent: 'center',
     width: 56,
   },
   botAvatarPhText: {
-    color: MUTED_FG,
+    color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 12,
     fontWeight: '700',
   },
   botUpload: {
     alignItems: 'center',
-    backgroundColor: TRAY_BG,
-    borderColor: CARD_BORDER,
+    backgroundColor: V.colors.muted,
+    borderColor: V.colors.border,
     borderRadius: 8,
     borderWidth: 1,
     paddingHorizontal: 12,
     paddingVertical: 7,
   },
   botUploadText: {
-    color: FG,
+    color: V.colors.fg,
     fontFamily: V.fontFamily,
     fontSize: 13,
     fontWeight: '600',
@@ -299,17 +274,17 @@ export const transaksiCopilotStyles = StyleSheet.create({
     minWidth: 160,
   },
   botNameLabel: {
-    color: MUTED_FG,
+    color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 12,
     fontWeight: '600',
   },
   botNameInput: {
-    backgroundColor: TRAY_BG,
-    borderColor: CARD_BORDER,
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
     borderRadius: 8,
     borderWidth: 1,
-    color: FG,
+    color: V.colors.fg,
     fontFamily: V.fontFamily,
     fontSize: 13,
     paddingHorizontal: 10,
@@ -321,8 +296,8 @@ export const transaksiCopilotStyles = StyleSheet.create({
     gap: 10,
   },
   kpiCard: {
-    backgroundColor: CARD_BG,
-    borderColor: CARD_BORDER,
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
     borderRadius: 12,
     borderWidth: 1,
     flexBasis: '48%',
@@ -340,27 +315,27 @@ export const transaksiCopilotStyles = StyleSheet.create({
     padding: 14,
   },
   kpiLabel: {
-    color: MUTED_FG,
+    color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 12,
     marginBottom: 4,
   },
   kpiValue: {
-    color: FG,
+    color: V.colors.fg,
     fontFamily: V.fontFamily,
     fontSize: 21,
     fontWeight: '700',
     lineHeight: 22,
   },
   kpiTrend: {
-    color: MUTED_FG,
+    color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 12,
     fontWeight: '600',
     marginTop: 8,
   },
   kpiChart: {
-    backgroundColor: CHART_TRAY_BG,
+    backgroundColor: V.colors.muted,
     borderRadius: 8,
     height: 42,
     marginBottom: 10,
@@ -368,7 +343,7 @@ export const transaksiCopilotStyles = StyleSheet.create({
     overflow: 'hidden',
   },
   breakdown: {
-    borderTopColor: CARD_BORDER,
+    borderTopColor: V.colors.border,
     borderTopWidth: 1,
     marginTop: 'auto',
     paddingBottom: 12,
@@ -376,7 +351,7 @@ export const transaksiCopilotStyles = StyleSheet.create({
     paddingTop: 10,
   },
   breakdownTitle: {
-    color: MUTED_FG,
+    color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 12,
     marginBottom: 10,
@@ -387,19 +362,19 @@ export const transaksiCopilotStyles = StyleSheet.create({
   },
   breakdownItem: {
     alignItems: 'center',
-    backgroundColor: TRAY_BG,
+    backgroundColor: V.colors.muted,
     borderRadius: 8,
     flex: 1,
     paddingHorizontal: 4,
     paddingVertical: 6,
   },
   breakdownName: {
-    color: MUTED_FG,
+    color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 11,
   },
   breakdownCount: {
-    color: FG,
+    color: V.colors.fg,
     fontFamily: V.fontFamily,
     fontSize: 14,
     fontWeight: '700',
@@ -412,7 +387,7 @@ export const transaksiCopilotStyles = StyleSheet.create({
     width: 28,
   },
   meta: {
-    color: MUTED_FG,
+    color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 12,
   },
@@ -425,8 +400,8 @@ export const transaksiCopilotStyles = StyleSheet.create({
     gap: 10,
   },
   opsCard: {
-    backgroundColor: CARD_BG,
-    borderColor: CARD_BORDER,
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
     borderRadius: 12,
     borderWidth: 1,
     flexBasis: '48%',
@@ -435,7 +410,7 @@ export const transaksiCopilotStyles = StyleSheet.create({
     overflow: 'hidden',
   },
   opsCardTitle: {
-    color: FG,
+    color: V.colors.fg,
     fontFamily: V.fontFamily,
     fontSize: 12,
     fontWeight: '600',
@@ -447,15 +422,15 @@ export const transaksiCopilotStyles = StyleSheet.create({
     padding: 8,
   },
   opsEmpty: {
-    color: MUTED_FG,
+    color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 12,
     paddingHorizontal: 8,
     paddingVertical: 12,
   },
   opsItem: {
-    backgroundColor: TRAY_BG,
-    borderColor: TRAY_BORDER,
+    backgroundColor: V.colors.muted,
+    borderColor: V.colors.border,
     borderRadius: 8,
     borderWidth: 1,
     gap: 2,
@@ -464,18 +439,18 @@ export const transaksiCopilotStyles = StyleSheet.create({
     paddingVertical: 6,
   },
   opsTime: {
-    color: MUTED_FG,
+    color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 11,
   },
   opsInvoice: {
-    color: FG,
+    color: V.colors.fg,
     fontFamily: V.fontFamily,
     fontSize: 11,
     fontWeight: '600',
   },
   opsDetail: {
-    color: MUTED_FG,
+    color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 12,
     marginTop: 2,
