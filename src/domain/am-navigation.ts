@@ -45,7 +45,7 @@ export const AM_ROUTES: AmRouteItem[] = [
     section: 'Automation',
     path: '/services',
     moduleRoute: 'services',
-    description: 'Service account dan worker automation.',
+    description: 'Manage automation services. Click a row to view history.',
   },
   {
     id: 'hardware',

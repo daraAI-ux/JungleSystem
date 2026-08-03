@@ -44,6 +44,12 @@ describe('AM navigation parity', () => {
     ]);
   });
 
+  it('keeps Services header copy aligned with AM FE', () => {
+    expect(
+      AM_ROUTES.find(route => route.moduleRoute === 'services')?.description,
+    ).toBe('Manage automation services. Click a row to view history.');
+  });
+
   it('keeps detail routes selected under their AM sidebar parents', () => {
     expect(getAmRouteByModuleRoute('/tasks/task-1').moduleRoute).toBe('tasks');
     expect(
