@@ -25,6 +25,7 @@ import { isKolamSpeciesRoute } from '../domain/kolam-species';
 import { isKolamStockTransactionRoute } from '../domain/kolam-stock-transaction';
 import { isKolamStockOpnameRoute } from '../domain/kolam-stock-opname';
 import { isKolamAdminCashflowSessionRoute } from '../domain/kolam-admin-cashflow-session';
+import { isKolamCampaignRoute } from '../domain/kolam-campaign';
 import { isKolamSalesRoute } from '../domain/kolam-sales';
 import { isKolamSourceRoute } from '../domain/kolam-source';
 import { isKolamSupplierRoute } from '../domain/kolam-vendor';
@@ -42,6 +43,7 @@ import type { UnifiedSurface } from '../domain/unified';
 import type { SyncActivityEntry } from '../domain/sync-activity';
 import type { UnifiedDataset } from '../services/unified-data';
 import { KolamBrandSurface } from './kolam-brand-surface';
+import { KolamCampaignSurface } from './kolam-campaign-surface';
 import { KolamCategorySurface } from './kolam-category-surface';
 import { KolamComplaintSurface } from './kolam-complaint-surface';
 import { KolamLayananSurface } from './kolam-layanan-surface';
@@ -193,6 +195,15 @@ export function KolamWorkspaceSurfaceComponent({
       <KolamSalesOpsSurface
         onRouteChange={onDashboardRoute}
         route={activeNavigationItem?.route ?? '/sales'}
+      />
+    );
+  }
+
+  if (activeRoutePath && isKolamCampaignRoute(activeRoutePath)) {
+    return (
+      <KolamCampaignSurface
+        onRouteChange={onDashboardRoute}
+        route={activeNavigationItem?.route ?? '/campaign'}
       />
     );
   }

@@ -369,9 +369,9 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         requiredAccess: ['kolam'],
       },
       {
-        label: 'Campaign',
+        label: 'Kampanye',
         route: '/campaign',
-        description: 'Promotions, discounts, and vouchers',
+        description: 'Kelola semua kampanye pemasaran dan promosi.',
         group: 'Kampanye',
         requiredAccess: ['kolam'],
       },

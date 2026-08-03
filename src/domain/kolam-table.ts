@@ -1,5 +1,6 @@
 export type KolamTableId =
   | 'brand'
+  | 'campaign'
   | 'catalog'
   | 'category'
   | 'custom-field'
@@ -154,6 +155,72 @@ export const kolamTableVisualContract: KolamTableVisualContract = {
 };
 
 const kolamTableColumns: Record<KolamTableId, KolamTableColumn[]> = {
+  /** Backoffice `/campaign` list (FE Judul/Status/Mulai/Selesai/Durasi/Diskon/Produk/Dibuat). */
+  campaign: [
+    {
+      id: 'primary',
+      label: 'Judul Kampanye',
+      align: 'left',
+      headerAlign: 'left',
+      width: 200,
+    },
+    {
+      id: 'status',
+      label: 'Status',
+      align: 'center',
+      headerAlign: 'center',
+      width: 110,
+    },
+    {
+      id: 'children',
+      label: 'Tanggal Mulai',
+      align: 'left',
+      headerAlign: 'center',
+      width: 130,
+    },
+    {
+      id: 'marketplace',
+      label: 'Tanggal Selesai',
+      align: 'left',
+      headerAlign: 'center',
+      width: 130,
+    },
+    {
+      id: 'notes',
+      label: 'Durasi',
+      align: 'center',
+      headerAlign: 'center',
+      width: 88,
+    },
+    {
+      id: 'amount',
+      label: 'Diskon',
+      align: 'left',
+      headerAlign: 'center',
+      width: 120,
+    },
+    {
+      id: 'products',
+      label: 'Produk',
+      align: 'center',
+      headerAlign: 'center',
+      width: 110,
+    },
+    {
+      id: 'meta',
+      label: 'Dibuat',
+      align: 'center',
+      headerAlign: 'center',
+      width: 100,
+    },
+    {
+      id: 'actions',
+      label: '',
+      align: 'center',
+      headerAlign: 'center',
+      width: 64,
+    },
+  ],
   brand: [
     // Manual widths (preferred); fit still fills the measured body.
     {
