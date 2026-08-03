@@ -1869,7 +1869,7 @@ function AmHardwarePage({initialRoute}: {initialRoute?: AmHardwareInitialRoute})
     setFormTcpAddress('');
     setFormBrand('');
     setFormModel('');
-    setFormAdbPort('');
+    setFormAdbPort(nextForm === 'device' ? '5037' : '');
     setFormAppiumPort('');
     setActionMessage(null);
   }, [boxes, hardwareForm, racks, selectedBoxId, selectedRackId]);
@@ -1906,6 +1906,14 @@ function AmHardwarePage({initialRoute}: {initialRoute?: AmHardwareInitialRoute})
     setFormAppiumPort(device.appiumPort ? String(device.appiumPort) : '');
     setActionMessage(null);
   }, []);
+
+  const handleHardwareConnectionTypeChange = React.useCallback((value: string) => {
+    if (value !== 'usb' && value !== 'tcp' && value !== 'browser') return;
+    setFormConnectionType(value);
+    if (!editingHardwareId) {
+      setFormAdbPort(value === 'tcp' ? '6404' : value === 'usb' ? '5037' : '');
+    }
+  }, [editingHardwareId]);
 
   const saveHardware = React.useCallback(async () => {
     try {
@@ -1948,15 +1956,22 @@ function AmHardwarePage({initialRoute}: {initialRoute?: AmHardwareInitialRoute})
           setError('Box wajib dipilih sebelum membuat device.');
           return;
         }
-        const payload = cleanDevicePayload({
+        const devicePayload: AmDevicePayload = {
           connectionType: formConnectionType,
-          udid: formUdid.trim(),
-          tcpAddress: formTcpAddress.trim(),
-          brand: formBrand.trim(),
-          model: formModel.trim(),
-          adbPort: parseOptionalNumber(formAdbPort),
           appiumPort: editingHardwareId ? parseOptionalNumber(formAppiumPort) : undefined,
-        });
+        };
+        if (formConnectionType === 'usb') {
+          devicePayload.udid = formUdid.trim();
+          devicePayload.adbPort = parseOptionalNumber(formAdbPort);
+          devicePayload.brand = formBrand.trim();
+          devicePayload.model = formModel.trim();
+        } else if (formConnectionType === 'tcp') {
+          devicePayload.tcpAddress = formTcpAddress.trim();
+          devicePayload.adbPort = parseOptionalNumber(formAdbPort);
+          devicePayload.brand = formBrand.trim();
+          devicePayload.model = formModel.trim();
+        }
+        const payload = cleanDevicePayload(devicePayload);
         if (editingHardwareId) {
           await updateAmDevice(editingHardwareId, payload);
           setActionMessage('Device AM berhasil diupdate.');
@@ -2114,7 +2129,7 @@ function AmHardwarePage({initialRoute}: {initialRoute?: AmHardwareInitialRoute})
                 active={formConnectionType}
                 items={['usb', 'tcp', 'browser']}
                 labels={{usb: 'USB', tcp: 'TCP', browser: 'Browser'}}
-                onSelect={value => setFormConnectionType(value as 'usb' | 'tcp' | 'browser')}
+                onSelect={handleHardwareConnectionTypeChange}
               />
               <AmTextInput label="UDID" placeholder="USB device UDID" value={formUdid} onChangeText={setFormUdid} />
               <AmTextInput label="TCP Address" placeholder="192.168.101.231:5555" value={formTcpAddress} onChangeText={setFormTcpAddress} />
