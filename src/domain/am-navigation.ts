@@ -8,7 +8,8 @@ export type AmRouteId =
   | 'mutasi'
   | 'users'
   | 'settings-account'
-  | 'activity-log';
+  | 'activity-log'
+  | 'login';
 
 export interface AmRouteItem {
   id: AmRouteId;
@@ -103,6 +104,15 @@ export const AM_ROUTES: AmRouteItem[] = [
     description: 'Profil akun AM, password, dan area akun sesuai AM FE.',
     sidebar: false,
   },
+  {
+    id: 'login',
+    label: 'Login',
+    section: 'Administration',
+    path: '/login',
+    moduleRoute: 'login',
+    description: 'Masuk ke AM BE live.',
+    sidebar: false,
+  },
 ];
 
 export const AM_ROUTE_SECTIONS = [
@@ -144,5 +154,6 @@ function getAmParentRoute(route: string) {
   if (route.startsWith('admin/users')) return 'admin/users';
   if (route.startsWith('admin/activity-log')) return 'admin/activity-log';
   if (route.startsWith('settings/account')) return 'settings/account';
+  if (route.startsWith('login')) return 'login';
   return route;
 }

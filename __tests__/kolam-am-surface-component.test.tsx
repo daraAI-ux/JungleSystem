@@ -45,6 +45,7 @@ import {
   getAmUsers,
   getAmWebhookConfigs,
   getAmWebhookLogs,
+  loginAmSession,
   logoutAmSession,
   recordAmPageView,
   restartAmTokopediaSession,
@@ -135,6 +136,14 @@ jest.mock('../src/services/am-api', () => ({
   getAmWebhookConfigs: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
   getAmWebhookEvents: jest.fn(() => Promise.resolve(['transfer.success', 'mutasi.created'])),
   getAmWebhookLogs: jest.fn(() => Promise.resolve({data: [], meta: {total: 0, limit: 0}})),
+  loginAmSession: jest.fn(() => Promise.resolve({
+    user: {
+      _id: 'user-current',
+      fullName: 'Current AM User',
+      username: 'current@dunia-anura.com',
+      role: {_id: 'role-admin', name: 'Admin', permissions: ['user:read'], description: 'Admin role'},
+    },
+  })),
   logoutAmSession: jest.fn(() => Promise.resolve(undefined)),
   recordAmPageView: jest.fn(() => Promise.resolve(undefined)),
   restartAmTokopediaSession: jest.fn(() => Promise.resolve({restarted: true, wasRunning: true})),
@@ -426,6 +435,53 @@ describe('KolamAmSurface', () => {
     });
 
     expect(onModuleRouteSelect).toHaveBeenCalledWith(settingsRoute);
+  });
+
+  it('opens and submits the AM live login route from the topbar', async () => {
+    const onModuleRouteSelect = jest.fn();
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface
+          dataset={seedUnifiedDataset}
+          onModuleRouteSelect={onModuleRouteSelect}
+        />,
+      );
+    });
+    renderers.push(renderer!);
+
+    act(() => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Login'}).props.onPress();
+    });
+    expect(onModuleRouteSelect).toHaveBeenLastCalledWith(amRoute('login'));
+
+    await act(async () => {
+      renderer!.update(
+        <KolamAmSurface
+          activeModuleRoute={amRoute('login')}
+          dataset={seedUnifiedDataset}
+          onModuleRouteSelect={onModuleRouteSelect}
+        />,
+      );
+    });
+
+    const inputs = renderer!.root.findAllByType(TextInput);
+    await act(async () => {
+      inputs[0].props.onChangeText('admin<>');
+      inputs[1].props.onChangeText('secret');
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Login Submit'}).props.onPress();
+    });
+
+    expect(recordAmPageView).toHaveBeenCalledWith('/login');
+    expect(loginAmSession).toHaveBeenCalledWith({
+      username: 'admin',
+      password: 'secret',
+    });
+    expect(onModuleRouteSelect).toHaveBeenLastCalledWith(amRoute('/'));
+    expect(renderer!.root.findAllByType(TextInput)[1].props.value).toBe('');
   });
 
   it('loads live service accounts from the Services route', async () => {

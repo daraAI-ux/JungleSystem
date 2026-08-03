@@ -63,6 +63,7 @@ import {
   getAmWebhookConfigs,
   getAmWebhookEvents,
   getAmWebhookLogs,
+  loginAmSession,
   logoutAmSession,
   retryAmTransfer,
   retryAmTask,
@@ -108,6 +109,7 @@ import {
   type AmTokopediaSessionInfo,
   type AmTransfer,
   type AmUser,
+  type AmLoginPayload,
   type AmWebhookConfig,
   type AmWebhookLog,
 } from '../services/am-api';
@@ -195,6 +197,18 @@ export function KolamAmSurface({
           <View style={styles.topBarActions}>
             <Text style={styles.serverText}>{appConfig.amApiBaseUrl}</Text>
             <KolamButton
+              accessibilityLabel="AM Login"
+              label="Login"
+              intent="plain"
+              size="sm"
+              onPress={() => {
+                const loginRoute = getShellModuleRouteEntry('am', 'login');
+                if (loginRoute) {
+                  onModuleRouteSelect?.(loginRoute);
+                }
+              }}
+            />
+            <KolamButton
               accessibilityLabel="AM Settings"
               label="Settings"
               intent="plain"
@@ -234,6 +248,8 @@ export function KolamAmSurface({
             <AmUsersPage />
           ) : activeRoute === 'settings-account' ? (
             <AmAccountSettingsPage />
+          ) : activeRoute === 'login' ? (
+            <AmLoginPage onModuleRouteSelect={onModuleRouteSelect} />
           ) : activeRoute === 'activity-log' ? (
             <AmActivityLogPage />
           ) : (
@@ -5483,6 +5499,87 @@ function AmUsersPage() {
   );
 }
 
+function AmLoginPage({
+  onModuleRouteSelect,
+}: {
+  onModuleRouteSelect?: (route: ShellModuleRouteEntry) => void;
+}) {
+  const [username, setUsername] = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [actionMessage, setActionMessage] = React.useState<string | null>(null);
+
+  const handleLogin = React.useCallback(async () => {
+    const payload: AmLoginPayload = {
+      username: username.replace(/[<>]/g, '').trim(),
+      password,
+    };
+
+    if (!payload.username || !payload.password) {
+      setError('Username dan password wajib diisi.');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      setError(null);
+      const result = await loginAmSession(payload);
+      setPassword('');
+      setActionMessage(`Masuk sebagai ${result.user.fullName || result.user.username}.`);
+      const dashboardRoute = getShellModuleRouteEntry('am', '/');
+      if (dashboardRoute) {
+        onModuleRouteSelect?.(dashboardRoute);
+      }
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Login AM gagal.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [onModuleRouteSelect, password, username]);
+
+  return (
+    <View style={styles.pageStack}>
+      <View style={styles.panel}>
+        <Text style={styles.panelTitle}>Masuk</Text>
+        <Text style={styles.panelText}>
+          Masuk ke Automation Management untuk mengelola service, device, dan webhook.
+        </Text>
+        <AmInlineError title="Login AM" error={error} />
+        {actionMessage ? (
+          <View style={styles.successPanel}>
+            <Text style={styles.successText}>{actionMessage}</Text>
+          </View>
+        ) : null}
+        <View style={styles.formGrid}>
+          <AmTextInput
+            label="Email atau username"
+            placeholder="Akun AM"
+            value={username}
+            onChangeText={setUsername}
+          />
+          <AmTextInput
+            label="Password"
+            placeholder="Password AM"
+            secureTextEntry
+            value={password}
+            onChangeText={setPassword}
+          />
+          <View style={styles.inlineActions}>
+            <KolamButton
+              accessibilityLabel="AM Login Submit"
+              label={isSubmitting ? 'Memproses' : 'Masuk'}
+              muted={isSubmitting}
+              size="sm"
+              onPress={handleLogin}
+            />
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+}
+
 function AmAccountSettingsPage() {
   const [user, setUser] = React.useState<AmCurrentUser | null>(null);
   const [fullName, setFullName] = React.useState('');
@@ -6402,6 +6499,7 @@ function getRouteIdFromSurface(surface?: UnifiedSurface | null): AmRouteId {
   if (surface.route.includes('admin/users')) return 'users';
   if (surface.route.includes('activity-log')) return 'activity-log';
   if (surface.route.includes('settings/account')) return 'settings-account';
+  if (surface.route.includes('login')) return 'login';
   return 'dashboard';
 }
 

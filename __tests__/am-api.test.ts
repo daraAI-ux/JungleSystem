@@ -5,6 +5,7 @@ import {
   getAmBoxById,
   getAmDeviceById,
   getAmRackById,
+  loginAmSession,
   logoutAmSession,
   testAmWebhookPing,
   updateAmUser,
@@ -30,6 +31,30 @@ describe('AM API service', () => {
         credentials: 'include',
         headers: expect.objectContaining({
           Cookie: 'kolamCsrf=',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+  });
+
+  it('logs into the live AM session with cookie credentials', async () => {
+    const payload = {username: 'admin', password: 'secret'};
+    fetchMock.mockResolvedValue(jsonResponse({
+      success: true,
+      data: {user: {_id: 'user-current', username: 'admin'}},
+    }));
+
+    await loginAmSession(payload, 'https://am.example.test/api');
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://am.example.test/api/auth/login',
+      expect.objectContaining({
+        method: 'POST',
+        credentials: 'include',
+        body: JSON.stringify(payload),
+        headers: expect.objectContaining({
+          Cookie: 'kolamCsrf=',
+          'Content-Type': 'application/json',
           'x-source': appConfig.amSourceHeader,
         }),
       }),
