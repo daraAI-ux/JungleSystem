@@ -2,10 +2,16 @@ import React from 'react';
 import ReactTestRenderer from 'react-test-renderer';
 import {useKolamAuthContext} from '../src/context/kolam-app-contexts';
 import {KolamPusatAiRingkasanSurface} from '../src/components/kolam-pusat-ai-ringkasan-surface';
+import {fetchKolamDaraJobsList} from '../src/services/kolam-dara-jobs-api';
 import {fetchKolamDaraMarketingHub} from '../src/services/kolam-dara-marketing-hub-api';
 
 jest.mock('../src/services/kolam-dara-marketing-hub-api', () => ({
   fetchKolamDaraMarketingHub: jest.fn(),
+}));
+
+jest.mock('../src/services/kolam-dara-jobs-api', () => ({
+  fetchKolamDaraJobsList: jest.fn(),
+  fetchKolamDaraJob: jest.fn(),
 }));
 
 jest.mock('../src/context/kolam-app-contexts', () => ({
@@ -14,6 +20,9 @@ jest.mock('../src/context/kolam-app-contexts', () => ({
 
 const fetchHubMock = fetchKolamDaraMarketingHub as jest.MockedFunction<
   typeof fetchKolamDaraMarketingHub
+>;
+const fetchJobsMock = fetchKolamDaraJobsList as jest.MockedFunction<
+  typeof fetchKolamDaraJobsList
 >;
 const useAuthContextMock = useKolamAuthContext as jest.MockedFunction<
   typeof useKolamAuthContext
@@ -31,6 +40,8 @@ function renderText(renderer: ReactTestRenderer.ReactTestRenderer) {
 describe('KolamPusatAiRingkasanSurface', () => {
   beforeEach(() => {
     fetchHubMock.mockReset();
+    fetchJobsMock.mockReset();
+    fetchJobsMock.mockResolvedValue([]);
     useAuthContextMock.mockReturnValue({
       authUser: {roleKey: 'super_admin'},
     } as ReturnType<typeof useKolamAuthContext>);
@@ -97,7 +108,23 @@ describe('KolamPusatAiRingkasanSurface', () => {
     expect(onRouteChange).toHaveBeenCalledWith('/campaign/dara-seo');
   });
 
-  it('switches to Proses tab route and shows placeholder', async () => {
+  it('switches to Proses tab and loads job history', async () => {
+    fetchJobsMock.mockResolvedValue([
+      {
+        id: 'job-1',
+        module: 'seo',
+        jobType: 'seo.bulk_products',
+        status: 'running',
+        label: 'Audit bulk produk',
+        progressCurrent: 2,
+        progressTotal: 10,
+        progressMessage: 'Memproses 2/10',
+        error: '',
+        createdAt: '2026-08-03T00:00:00.000Z',
+        finishedAt: '',
+      },
+    ]);
+
     const onRouteChange = jest.fn();
     let renderer: ReactTestRenderer.ReactTestRenderer | undefined;
 
@@ -131,9 +158,15 @@ describe('KolamPusatAiRingkasanSurface', () => {
         />,
       );
       await Promise.resolve();
+      await Promise.resolve();
     });
 
-    expect(renderText(renderer!).join(' ')).toContain('Belum tersedia');
+    const text = renderText(renderer!).join(' ');
+    expect(text).not.toContain('Belum tersedia');
+    expect(text).toContain('Audit bulk produk');
+    expect(text).toContain('Update');
+    expect(text).toContain('Tutup');
+    expect(fetchJobsMock).toHaveBeenCalled();
   });
 
   it('hides admin tabs for non-admin roles', async () => {

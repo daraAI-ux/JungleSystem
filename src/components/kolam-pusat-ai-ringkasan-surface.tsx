@@ -7,8 +7,22 @@ import {
   getKolamPusatAiHubTab,
   type KolamPusatAiHubTabId,
 } from '../domain/kolam-pusat-ai';
+import {
+  formatKolamDaraJobModuleLabel,
+  formatKolamDaraJobProgressLabel,
+  getKolamDaraJobProgressPercent,
+  getKolamDaraJobStatusIntent,
+  isKolamDaraJobActive,
+  KOLAM_DARA_JOBS_MODULE_OPTIONS,
+  KOLAM_DARA_JOBS_STATUS_OPTIONS,
+  type KolamDaraAsyncJob,
+} from '../domain/kolam-pusat-ai-jobs';
 import {isTopNavAdminRole} from '../domain/top-nav';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
+import {
+  useKolamPusatAiProsesController,
+  type KolamPusatAiProsesController,
+} from '../hooks/use-kolam-pusat-ai-proses-controller';
 import {
   useKolamPusatAiRingkasanController,
   type KolamPusatAiRingkasanController,
@@ -17,6 +31,7 @@ import {KolamButton} from './kolam-button';
 import {KolamDropdownSelect} from './kolam-dropdown-select';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamStatsCardStrip} from './kolam-stats-card-strip';
+import {KolamStatusBadge} from './kolam-status-badge';
 import {KolamSurfacePanelTabs} from './kolam-surface-panel-tabs';
 import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
 
@@ -31,7 +46,8 @@ export function KolamPusatAiRingkasanSurface({
   const isAdmin = isTopNavAdminRole(authUser?.roleKey);
   const hubTabs = useMemo(() => filterKolamPusatAiHubTabs(isAdmin), [isAdmin]);
   const selectedTab = resolveSelectedHubTab(route, isAdmin);
-  const controller = useKolamPusatAiRingkasanController(route);
+  const ringkasanController = useKolamPusatAiRingkasanController(route);
+  const prosesController = useKolamPusatAiProsesController(route);
 
   return (
     <View style={styles.surface}>
@@ -47,9 +63,11 @@ export function KolamPusatAiRingkasanSurface({
 
       {selectedTab === 'ringkasan' ? (
         <KolamPusatAiRingkasanBody
-          controller={controller}
+          controller={ringkasanController}
           onRouteChange={onRouteChange}
         />
+      ) : selectedTab === 'proses' ? (
+        <KolamPusatAiProsesBody controller={prosesController} />
       ) : (
         <KolamEmptyState title="Belum tersedia" />
       )}
@@ -57,7 +75,7 @@ export function KolamPusatAiRingkasanSurface({
   );
 }
 
-/** Alias for hub surface (tabs + ringkasan). */
+/** Alias for hub surface (tabs + ringkasan/proses). */
 export const KolamPusatAiSurface = KolamPusatAiRingkasanSurface;
 
 function resolveSelectedHubTab(
@@ -68,8 +86,138 @@ function resolveSelectedHubTab(
   if (tab === 'other') {
     return 'ringkasan';
   }
-  const allowed = filterKolamPusatAiHubTabs(isAdmin).some(item => item.id === tab);
+  const allowed = filterKolamPusatAiHubTabs(isAdmin).some(
+    item => item.id === tab,
+  );
   return allowed ? tab : 'ringkasan';
+}
+
+function KolamPusatAiProsesBody({
+  controller,
+}: {
+  controller: KolamPusatAiProsesController;
+}) {
+  return (
+    <View style={styles.proses}>
+      <View style={kolamTableToolbarStyles.shell}>
+        <View style={kolamTableToolbarStyles.row}>
+          <View style={kolamTableToolbarStyles.filters}>
+            <KolamDropdownSelect
+              accessibilityLabel="Filter modul"
+              label="Modul"
+              onChange={value =>
+                controller.onSetModuleFilter(
+                  value as typeof controller.moduleFilter,
+                )
+              }
+              options={KOLAM_DARA_JOBS_MODULE_OPTIONS}
+              showLabelInTrigger={false}
+              value={controller.moduleFilter}
+            />
+            <KolamDropdownSelect
+              accessibilityLabel="Filter status"
+              label="Status"
+              onChange={value =>
+                controller.onSetStatusFilter(
+                  value as typeof controller.statusFilter,
+                )
+              }
+              options={KOLAM_DARA_JOBS_STATUS_OPTIONS}
+              showLabelInTrigger={false}
+              value={controller.statusFilter}
+            />
+          </View>
+          <View style={kolamTableToolbarStyles.actions}>
+            <KolamButton
+              disabled={controller.loading}
+              label={controller.loading ? 'Memuat…' : 'Refresh'}
+              onPress={() => {
+                void controller.onRefresh();
+              }}
+            />
+          </View>
+        </View>
+      </View>
+
+      {controller.error && controller.jobs.length === 0 ? (
+        <KolamEmptyState message={controller.error} title="Gagal memuat" />
+      ) : null}
+
+      {!controller.loading &&
+      !controller.error &&
+      controller.jobs.length === 0 ? (
+        <KolamEmptyState title="Belum ada proses dalam 72 jam terakhir." />
+      ) : null}
+
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        style={styles.scroll}>
+        {controller.jobs.map(job => (
+          <ProsesJobRow
+            job={job}
+            key={job.id}
+            onDismiss={() => controller.onDismissJob(job.id)}
+            onPoll={() => {
+              void controller.onPollJob(job.id);
+            }}
+            polling={controller.pollingJobId === job.id}
+          />
+        ))}
+      </ScrollView>
+    </View>
+  );
+}
+
+function ProsesJobRow({
+  job,
+  onDismiss,
+  onPoll,
+  polling,
+}: {
+  job: KolamDaraAsyncJob;
+  onDismiss: () => void;
+  onPoll: () => void;
+  polling: boolean;
+}) {
+  const active = isKolamDaraJobActive(job);
+  const percent = getKolamDaraJobProgressPercent(job);
+
+  return (
+    <View style={styles.jobRow}>
+      <View style={styles.jobMain}>
+        <Text style={styles.jobLabel}>{job.label}</Text>
+        {job.progressMessage ? (
+          <Text numberOfLines={1} style={styles.jobMessage}>
+            {job.progressMessage}
+          </Text>
+        ) : null}
+        <View style={styles.jobMeta}>
+          <KolamStatusBadge
+            intent="muted"
+            label={formatKolamDaraJobModuleLabel(job.module)}
+          />
+          <KolamStatusBadge
+            intent={getKolamDaraJobStatusIntent(job.status)}
+            label={job.status}
+          />
+          <Text style={styles.jobProgress}>
+            {percent}% · {formatKolamDaraJobProgressLabel(job)}
+          </Text>
+        </View>
+      </View>
+      <View style={styles.jobActions}>
+        {active ? (
+          <KolamButton
+            disabled={polling}
+            intent="outline"
+            label={polling ? '…' : 'Update'}
+            onPress={onPoll}
+          />
+        ) : null}
+        <KolamButton intent="outline" label="Tutup" onPress={onDismiss} />
+      </View>
+    </View>
+  );
 }
 
 function KolamPusatAiRingkasanBody({
@@ -262,12 +410,58 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 12,
   },
+  proses: {
+    flex: 1,
+    gap: 12,
+  },
   scroll: {
     flex: 1,
   },
   scrollContent: {
     gap: 12,
     paddingBottom: 24,
+  },
+  jobRow: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: V.radius.lg,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 12,
+    padding: 12,
+  },
+  jobMain: {
+    flex: 1,
+    gap: 4,
+    minWidth: 0,
+  },
+  jobLabel: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  jobMessage: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+  },
+  jobMeta: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 4,
+  },
+  jobProgress: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+  },
+  jobActions: {
+    flexDirection: 'row',
+    flexShrink: 0,
+    gap: 6,
   },
   modules: {
     flexDirection: 'row',
