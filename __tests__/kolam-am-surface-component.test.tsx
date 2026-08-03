@@ -3586,7 +3586,7 @@ describe('KolamAmSurface', () => {
       },
       error: '',
       fee: 2500,
-      logs: ['created', 'completed'],
+      logs: Array.from({length: 35}, (_, index) => `log-${String(index + 1).padStart(2, '0')}`),
       recipientAccount: '999',
       recipientBank: 'BCA',
       recipientName: 'Vendor Detail',
@@ -3674,7 +3674,8 @@ describe('KolamAmSurface', () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Transfer Transaction Proof'}).props.source,
     ).toEqual({uri: 'data:image/png;base64,abc123'});
     expect(renderer!.root.findAllByType(Image)).toHaveLength(1);
-    expect(joinedText).toMatch(/002\s+completed/);
+    expect(joinedText).toMatch(/001\s+log-01/);
+    expect(joinedText).toMatch(/035\s+log-35/);
   });
 
   it('opens transfer detail directly from a concrete AM shell route with detail actions', async () => {

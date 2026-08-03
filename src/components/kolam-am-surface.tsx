@@ -4279,7 +4279,7 @@ function AmTransferDetailPanel({
           ) : null}
           <View style={styles.logPanel}>
             {!transfer.logs.length ? <Text style={styles.logEmptyText}>No transfer logs</Text> : null}
-            {transfer.logs.slice(-30).map((line, index) => (
+            {transfer.logs.map((line, index) => (
               <Text key={`${index}-${line}`} style={styles.logText} numberOfLines={2}>
                 {String(index + 1).padStart(3, '0')} {line}
               </Text>
