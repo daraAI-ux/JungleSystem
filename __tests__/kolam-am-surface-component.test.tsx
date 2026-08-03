@@ -1907,8 +1907,30 @@ describe('KolamAmSurface', () => {
       meta: {total: 1, limit: 1},
     });
     jest.mocked(getAmDeviceServiceLogs).mockResolvedValue({
-      logs: [],
+      logs: [
+        {
+          ts: '2026-01-01T00:00:00.000Z',
+          level: 'info',
+          message: 'QR_LOGIN {"qrcodeId":"tokopedia-qr","qrcodeBase64":"data:image/png;base64,T0s=","status":"WAITING"}',
+        },
+      ],
       processRunning: true,
+    });
+    jest.mocked(getAmTokopediaSession).mockResolvedValue({
+      status: 'ready',
+      cookieCount: 5,
+      expiredCount: 0,
+      sessionCookieCount: 2,
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      hasFingerprint: true,
+      serviceStatus: 'active',
+      hasDevice: true,
+      captchaAutoSolve: false,
+      hasAnthropicApiKey: true,
+      anthropicApiKeyPreview: 'sk-ant-...',
+      envFallbackAvailable: true,
+      qrTiktokLogin: true,
+      loginFillOnly: false,
     });
     jest.mocked(getAmDeviceServices).mockResolvedValue([
       {
@@ -1946,8 +1968,15 @@ describe('KolamAmSurface', () => {
     expect(joinedText).toContain('Session Login Tokopedia');
     expect(joinedText).toContain('Session tersedia');
     expect(joinedText).toContain('Cookies');
+    expect(renderer!.root.findByProps({accessibilityLabel: 'AM Tokopedia QR Image service-tokopedia'}).props.source).toEqual({
+      uri: 'data:image/png;base64,T0s=',
+    });
     expect(getAmTokopediaSession).toHaveBeenCalledWith('service-tokopedia');
     expect(getAmTokopediaApiMonitorStatus).toHaveBeenCalledWith('service-tokopedia');
+    expect(getAmDeviceServiceLogs).toHaveBeenCalledWith('device-tokopedia', {
+      limit: 80,
+      source: 'realtime',
+    });
 
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Tokopedia Login QR service-tokopedia'}).props.onPress();

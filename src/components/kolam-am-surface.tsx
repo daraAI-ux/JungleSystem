@@ -2919,10 +2919,12 @@ function AmTokopediaSessionPanel({
   const [captchaAutoSolve, setCaptchaAutoSolve] = React.useState(false);
   const [anthropicApiKey, setAnthropicApiKey] = React.useState('');
   const [cookiesJson, setCookiesJson] = React.useState('');
+  const [qrLogs, setQrLogs] = React.useState<AmDeviceServiceLog[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [acting, setActing] = React.useState<string | null>(null);
   const [message, setMessage] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
+  const deviceId = resolveServiceAccountDeviceId(account.deviceId);
 
   const loadSession = React.useCallback(async (silent = false) => {
     try {
@@ -2942,9 +2944,32 @@ function AmTokopediaSessionPanel({
     }
   }, [account._id]);
 
+  const loadQrLogs = React.useCallback(async () => {
+    if (!deviceId || !processRunning) {
+      setQrLogs([]);
+      return;
+    }
+    try {
+      const response = await getAmDeviceServiceLogs(deviceId, {limit: 80, source: 'realtime'});
+      setQrLogs(response.logs ?? []);
+    } catch {
+      setQrLogs([]);
+    }
+  }, [deviceId, processRunning]);
+
   React.useEffect(() => {
     loadSession();
   }, [loadSession]);
+
+  React.useEffect(() => {
+    if (!processRunning || !info?.qrTiktokLogin) {
+      setQrLogs([]);
+      return undefined;
+    }
+    loadQrLogs();
+    const interval = setInterval(() => loadQrLogs(), 3000);
+    return () => clearInterval(interval);
+  }, [info?.qrTiktokLogin, loadQrLogs, processRunning]);
 
   React.useEffect(() => {
     if (monitorJob?.status !== 'running') return undefined;
@@ -3039,6 +3064,7 @@ function AmTokopediaSessionPanel({
   const monitorRunning = monitorJob?.status === 'running';
   const canRunSessionAction = !isLoading && acting === null;
   const cookiesPreview = getAmTokopediaCookiesPreview(cookiesJson);
+  const qrSignal = getQrLoginSignal(qrLogs);
 
   return (
     <View style={styles.emptyPanel}>
@@ -3203,6 +3229,7 @@ function AmTokopediaSessionPanel({
           size="sm"
           onPress={() => runAction('qr-start', async () => {
             await startAmTokopediaQrLogin(account._id);
+            await loadQrLogs();
             return 'QR login dimulai. Pantau QR/status di log runtime.';
           })}
         />
@@ -3235,6 +3262,30 @@ function AmTokopediaSessionPanel({
           Browser Monitor: {titleCase(monitorJob.status)} - {monitorJob.message}
           {monitorJob.restarted ? ' Service sudah dinyalakan kembali.' : ''}
         </Text>
+      ) : null}
+      {info?.qrTiktokLogin ? (
+        <View style={styles.qrPanel}>
+          <Text style={styles.formLabel}>QR Login TikTok</Text>
+          {!processRunning ? (
+            <Text style={styles.rowMeta}>Nyalakan service dulu agar QR bisa dimunculkan.</Text>
+          ) : qrSignal ? (
+            <>
+              <Text style={styles.rowMeta}>{qrSignal.status ? `Status ${qrSignal.status}` : 'Scan QR tersedia.'}</Text>
+              {qrSignal.qrcodeBase64 ? (
+                <Image
+                  accessibilityLabel={`AM Tokopedia QR Image ${account._id}`}
+                  resizeMode="contain"
+                  source={{uri: normalizeAmQrImageUri(qrSignal.qrcodeBase64)}}
+                  style={styles.qrImage}
+                />
+              ) : (
+                <Text style={styles.rowMeta}>QR image belum tersedia.</Text>
+              )}
+            </>
+          ) : (
+            <Text style={styles.rowMeta}>Klik Mulai Scan QR untuk memuat QR.</Text>
+          )}
+        </View>
       ) : null}
     </View>
   );
