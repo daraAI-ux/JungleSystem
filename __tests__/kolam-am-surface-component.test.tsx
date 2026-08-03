@@ -98,7 +98,7 @@ jest.mock('../src/services/am-api', () => ({
     _id: 'user-current',
     fullName: 'Current AM User',
     username: 'current@dunia-anura.com',
-    role: {_id: 'role-admin', name: 'Admin', permissions: ['user:read'], description: 'Admin role'},
+    role: {_id: 'role-admin', name: 'Admin', permissions: ['user:read', 'user:update'], description: 'Admin role'},
   })),
   getAmDashboard: jest.fn(() => Promise.resolve(mockDashboardData)),
   getAmDeviceById: jest.fn(() => Promise.resolve({_id: 'device-1', name: 'Device 1'})),
@@ -3697,6 +3697,17 @@ describe('KolamAmSurface', () => {
   });
 
   it('renders account settings from the live AM auth session route', async () => {
+    jest.mocked(getAmCurrentUser).mockResolvedValue({
+      _id: 'user-current',
+      fullName: 'Current AM User',
+      username: 'current@dunia-anura.com',
+      role: {
+        _id: 'role-admin',
+        name: 'Admin',
+        permissions: ['user:read', 'user:update'],
+        description: 'Admin role',
+      },
+    });
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
     await act(async () => {
@@ -3732,7 +3743,7 @@ describe('KolamAmSurface', () => {
       _id: 'user-current',
       fullName: 'Current AM User Updated',
       username: 'current.updated@dunia-anura.com',
-      role: {_id: 'role-admin', name: 'Admin', permissions: ['user:read'], description: 'Admin role'},
+      role: {_id: 'role-admin', name: 'Admin', permissions: ['user:read', 'user:update'], description: 'Admin role'},
     });
 
     const findInput = (placeholder: string) =>
@@ -3773,6 +3784,47 @@ describe('KolamAmSurface', () => {
 
     expect(logoutAmSession).toHaveBeenCalledTimes(1);
     expect(renderText(renderer!).join(' ')).toContain('AM session logged out.');
+  });
+
+  it('keeps account update actions gated by the live AM user update permission', async () => {
+    jest.mocked(getAmCurrentUser).mockResolvedValue({
+      _id: 'user-current',
+      fullName: 'Current AM Read Only',
+      username: 'readonly@dunia-anura.com',
+      role: {
+        _id: 'role-read',
+        name: 'User',
+        permissions: ['user:read'],
+        description: 'Read-only role',
+      },
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await updateAmRoute(renderer!, 'settings/account');
+
+    const saveButton = renderer!.root.findByProps({
+      accessibilityLabel: 'AM Account Save Profile',
+    });
+    const passwordButton = renderer!.root.findByProps({
+      accessibilityLabel: 'AM Account Update Password',
+    });
+
+    expect(saveButton.props.disabled).toBe(true);
+    expect(passwordButton.props.disabled).toBe(true);
+
+    await act(async () => {
+      saveButton.props.onPress();
+    });
+
+    expect(updateAmUser).not.toHaveBeenCalled();
+    expect(renderText(renderer!).join(' ')).toContain('Permission user:update diperlukan.');
   });
 
   it('runs user create, edit, and delete actions from the Users route', async () => {

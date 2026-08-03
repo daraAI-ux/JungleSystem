@@ -5789,7 +5789,14 @@ function AmAccountSettingsPage() {
     fetchCurrentUser();
   }, [fetchCurrentUser]);
 
+  const canUpdateAccount = hasAmPermission(user, 'user:update');
+
   const handleSaveProfile = React.useCallback(async () => {
+    if (!canUpdateAccount) {
+      setError('Permission user:update diperlukan.');
+      return;
+    }
+
     if (!fullName.trim() || !emailAddress.trim()) {
       setError('Full name dan email address wajib diisi.');
       return;
@@ -5821,9 +5828,14 @@ function AmAccountSettingsPage() {
     } finally {
       setIsSavingProfile(false);
     }
-  }, [emailAddress, fullName, user]);
+  }, [canUpdateAccount, emailAddress, fullName, user]);
 
   const handleUpdatePassword = React.useCallback(async () => {
+    if (!canUpdateAccount) {
+      setError('Permission user:update diperlukan.');
+      return;
+    }
+
     if (!newPassword || !confirmPassword) {
       setError('New password dan confirm password wajib diisi.');
       return;
@@ -5853,7 +5865,7 @@ function AmAccountSettingsPage() {
     } finally {
       setIsSavingProfile(false);
     }
-  }, [confirmPassword, newPassword, user]);
+  }, [canUpdateAccount, confirmPassword, newPassword, user]);
 
   const handleLogout = React.useCallback(async () => {
     try {
@@ -5919,6 +5931,7 @@ function AmAccountSettingsPage() {
           <View style={styles.inlineActions}>
             <KolamButton
               accessibilityLabel="AM Account Save Profile"
+              disabled={!canUpdateAccount}
               label={isSavingProfile ? 'Saving' : 'Save'}
               muted={isSavingProfile}
               size="sm"
@@ -5948,6 +5961,7 @@ function AmAccountSettingsPage() {
           <View style={styles.inlineActions}>
             <KolamButton
               accessibilityLabel="AM Account Update Password"
+              disabled={!canUpdateAccount}
               label="Update password"
               size="sm"
               onPress={handleUpdatePassword}
