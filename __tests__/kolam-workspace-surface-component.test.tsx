@@ -1189,9 +1189,7 @@ describe('KolamWorkspaceSurface', () => {
 
     expect(renderText(renderer!)).toEqual(
       expect.arrayContaining([
-        'https://frogs.dunia-anura.com/api',
         'Kembali',
-        'Dashboard live AM dari endpoint /dashboard.',
         'Transfer Status',
       ]),
     );
@@ -1224,7 +1222,6 @@ describe('KolamWorkspaceSurface', () => {
 
     expect(renderText(renderer!)).toEqual(
       expect.arrayContaining([
-        'https://frogs.dunia-anura.com/api',
         'Kembali',
         '0 task',
       ]),
@@ -1257,7 +1254,6 @@ describe('KolamWorkspaceSurface', () => {
 
     expect(renderText(renderer!)).toEqual(
       expect.arrayContaining([
-        'https://frogs.dunia-anura.com/api',
         'Kembali',
         '0 task',
       ]),
@@ -1290,7 +1286,6 @@ describe('KolamWorkspaceSurface', () => {
 
     expect(renderText(renderer!)).toEqual(
       expect.arrayContaining([
-        'https://frogs.dunia-anura.com/api',
         'Kembali',
         '0 transfer',
       ]),
@@ -1299,14 +1294,9 @@ describe('KolamWorkspaceSurface', () => {
     expect(renderText(renderer!)).not.toContain('Transfer bank dan status eksekusi.');
   });
 
-  it('forwards AM topbar Settings to the shell route handler', async () => {
+  it('keeps AM account actions out of the workspace surface topbar', async () => {
     const onModuleRouteSelect = jest.fn();
-    const settingsRoute = getShellModuleRouteEntry('am', 'settings/account');
     let renderer: ReactTestRenderer.ReactTestRenderer;
-
-    if (!settingsRoute) {
-      throw new Error('AM account settings route is missing.');
-    }
 
     await ReactTestRenderer.act(async () => {
       renderer = ReactTestRenderer.create(
@@ -1322,11 +1312,10 @@ describe('KolamWorkspaceSurface', () => {
     });
     mountedWorkspaceRenderers.push(renderer!);
 
-    await ReactTestRenderer.act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Settings'}).props.onPress();
-    });
-
-    expect(onModuleRouteSelect).toHaveBeenCalledWith(settingsRoute);
+    expect(
+      renderer!.root.findAllByProps({accessibilityLabel: 'AM Settings'}),
+    ).toHaveLength(0);
+    expect(onModuleRouteSelect).not.toHaveBeenCalled();
   });
 
   it('forwards Beranda customer visit confirmation actions from workspace', async () => {
