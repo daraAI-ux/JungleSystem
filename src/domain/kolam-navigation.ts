@@ -1,4 +1,4 @@
-import type { AccessScope } from './auth';
+﻿import type { AccessScope } from './auth';
 import type { AppModule } from './app-shell';
 
 export interface KolamNavigationItem {
@@ -424,16 +424,38 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         requiredAccess: ['kolam'],
       },
       {
-        label: 'Syarat & Ketentuan',
+        label: 'Custom Project',
+        route: '/custom-project',
+        description: 'Custom project dashboard and project intake',
+        group: 'Custom Project',
+        requiredAccess: ['kolam'],
+      },
+      {
+        label: 'Custom Project Instances',
+        route: '/custom-project/instances',
+        description: 'Quotation, payment, and design review',
+        group: 'Custom Project',
+        requiredAccess: ['kolam'],
+      },
+      {
+        label: 'Surat Penawaran Baru',
+        route: '/custom-project/instances/new',
+        description: 'Buat custom project dan surat penawaran baru',
+        group: 'Custom Project',
+        requiredAccess: ['kolam'],
+      },
+      {
+        label: 'Terms & Conditions',
         route: '/terms-templates',
-        description: 'Template syarat & ketentuan untuk surat penawaran',
-        group: 'Penjualan',
+        description: 'Template syarat dan ketentuan untuk surat penawaran',
+        group: 'Custom Project',
         requiredAccess: ['kolam'],
       },
       {
         label: 'Proyek',
         route: '/proyek',
-        description: 'Surat penawaran dan proyek kustom',
+        description: 'Legacy project routes still present in live Kolam',
+        group: 'Custom Project',
         requiredAccess: ['kolam'],
       },
       {
@@ -725,6 +747,11 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
       sidebarItem('/teranura', { group: 'Produk', label: 'Teranura' }),
       sidebarItem('/stock-transaction', { group: 'Stok', label: 'Transaksi Stok' }),
       sidebarItem('/stock-opname', { group: 'Stok', label: 'Stock Opname' }),
+      sidebarItem('/locations', {
+        description: 'Kelola lokasi gudang, lantai, rak, dan area penyimpanan',
+        group: 'Inventory',
+        label: 'Lokasi',
+      }),
       sidebarItem('/suppliers', { group: 'Pengadaan', label: 'Pemasok' }),
       sidebarItem('/purchase-order', { group: 'Pengadaan', label: 'Pesanan Pembelian' }),
       sidebarItem('/production', { group: 'Produksi', label: 'Produksi' }),
@@ -732,11 +759,6 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
       sidebarItem('/enclosures', {
         group: 'Produksi',
         label: 'Daftar Enclosure',
-      }),
-      sidebarItem('/locations', {
-        description: 'Kelola lokasi gudang, lantai, rak, dan area penyimpanan',
-        group: undefined,
-        label: 'Lokasi',
       }),
     ],
   },
@@ -747,19 +769,13 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
       sidebarItem('/sales', { group: 'Penjualan', label: 'Penjualan' }),
       sidebarItem('/source', { group: 'Penjualan', label: 'Sumber' }),
       sidebarItem('/complaints', { group: 'Penjualan', label: 'Komplain' }),
+      sidebarItem('/layanan', { label: 'Layanan' }),
+      sidebarItem('/terms-templates', { label: 'Syarat & Ketentuan' }),
       sidebarItem('/campaign', { group: 'Kampanye', label: 'Daftar' }),
       sidebarItem('/sales/discount-approval', { group: 'Kampanye', label: 'Persetujuan Diskon' }),
       sidebarItem('/vouchers', { group: 'Kampanye', label: 'Voucher' }),
-      sidebarItem('/layanan', { group: undefined, label: 'Layanan' }),
-      sidebarItem('/proyek', { group: undefined, label: 'Proyek' }),
-      sidebarItem('/shipping-method', {
-        group: undefined,
-        label: 'Metode Pengiriman',
-      }),
-      sidebarItem('/terms-templates', {
-        group: undefined,
-        label: 'Syarat & Ketentuan',
-      }),
+      sidebarItem('/shipping-method', { label: 'Metode Pengiriman' }),
+      sidebarItem('/proyek', { label: 'Proyek' }),
     ],
   },
   {
@@ -1585,6 +1601,18 @@ const kolamNavigationRouteVariantSpecs: Array<{
     labelSuffix: 'Edit',
     route: '/terms-templates/:id/edit',
     description: 'Edit terms template page from live Kolam',
+  },
+  {
+    baseRoute: '/custom-project/instances',
+    labelSuffix: 'Detail',
+    route: '/custom-project/instances/:id',
+    description: 'Custom project instance detail page from live Kolam',
+  },
+  {
+    baseRoute: '/custom-project/instances',
+    labelSuffix: 'Edit',
+    route: '/custom-project/instances/:id/edit',
+    description: 'Edit custom project instance page from live Kolam',
   },
   {
     baseRoute: '/appointments',
