@@ -283,6 +283,7 @@ function KolamTaskManagerDetail({
                 label={getKolamTaskCategoryBucketLabel(task.categoryBucket)}
               />
             ) : null}
+            <KolamTaskSourceBadge source={task.source} />
             {getTaskTypeLabel(task) !== '-' ? (
               <KolamStatusBadge intent="info" label={getTaskTypeLabel(task)} />
             ) : null}
@@ -654,6 +655,20 @@ function getTaskTypeLabel(task: KolamTaskManagerTask) {
   if (!task.taskType) return '-';
   if (typeof task.taskType === 'string') return task.taskType || '-';
   return task.taskType.name || task.taskType.key || task.taskType.id || '-';
+}
+
+function KolamTaskSourceBadge({
+  source,
+}: {
+  source: KolamTaskManagerTask['source'];
+}) {
+  if (source === 'inbox_follow_up') {
+    return <KolamStatusBadge intent="info" label="Inbox" />;
+  }
+  if (source === 'recurring') {
+    return <KolamStatusBadge intent="muted" label="Berulang" />;
+  }
+  return null;
 }
 
 function isTaskOvertimeRequestVisible(
@@ -1053,6 +1068,7 @@ function KolamTaskRow({
                 label={getKolamTaskCategoryBucketLabel(task.categoryBucket)}
               />
             ) : null}
+            <KolamTaskSourceBadge source={task.source} />
             {task.category && typeof task.category === 'object' ? (
               <KolamStatusBadge intent="info" label={task.category.name} />
             ) : null}
