@@ -128,6 +128,7 @@ const AM_MUTASI_PAGE_LIMIT = 50;
 const AM_WEBHOOK_LOG_PAGE_LIMIT = 50;
 const AM_USER_PAGE_LIMIT = 20;
 const AM_ACTIVITY_LOG_PAGE_LIMIT = 50;
+const AM_WEBHOOK_LOG_DIRECTIONS = ['all', 'outgoing'];
 const AM_ACTIVITY_LOG_TYPES = ['all', 'api', 'page'];
 const AM_ACTIVITY_LOG_STATUSES = ['all', 'success', 'failed'];
 const AM_ACTIVITY_LOG_METHODS = ['all', 'GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
@@ -4253,6 +4254,7 @@ function AmWebhooksPage() {
   const [configs, setConfigs] = React.useState<AmWebhookConfig[]>([]);
   const [logs, setLogs] = React.useState<AmWebhookLog[]>([]);
   const [events, setEvents] = React.useState<string[]>([]);
+  const [logDirectionFilter, setLogDirectionFilter] = React.useState('all');
   const [logEventFilter, setLogEventFilter] = React.useState('all');
   const [logConfigFilter, setLogConfigFilter] = React.useState('all');
   const [logPage, setLogPage] = React.useState(1);
@@ -4278,6 +4280,7 @@ function AmWebhooksPage() {
         getAmWebhookLogs({
           page: logPage,
           limit: AM_WEBHOOK_LOG_PAGE_LIMIT,
+          direction: logDirectionFilter === 'all' ? undefined : logDirectionFilter,
           event: logEventFilter === 'all' ? undefined : logEventFilter,
           configId: logConfigFilter === 'all' ? undefined : logConfigFilter,
         }),
@@ -4295,7 +4298,7 @@ function AmWebhooksPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [logConfigFilter, logEventFilter, logPage]);
+  }, [logConfigFilter, logDirectionFilter, logEventFilter, logPage]);
 
   React.useEffect(() => {
     fetchWebhooks();
@@ -4414,6 +4417,11 @@ function AmWebhooksPage() {
     }
   }, [fetchWebhooks]);
 
+  const handleLogDirectionChange = React.useCallback((value: string) => {
+    setLogDirectionFilter(value);
+    setLogPage(1);
+  }, []);
+
   const handleLogEventChange = React.useCallback((value: string) => {
     setLogEventFilter(value);
     setLogPage(1);
@@ -4528,6 +4536,11 @@ function AmWebhooksPage() {
       </View>
       <View style={styles.tablePanel}>
         <View style={styles.filterBar}>
+          <AmSegmentGroup
+            active={logDirectionFilter}
+            items={AM_WEBHOOK_LOG_DIRECTIONS}
+            onSelect={handleLogDirectionChange}
+          />
           <AmSegmentGroup
             active={logEventFilter}
             items={webhookLogEventItems}

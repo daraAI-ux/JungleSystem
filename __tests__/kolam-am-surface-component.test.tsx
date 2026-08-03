@@ -2948,6 +2948,7 @@ describe('KolamAmSurface', () => {
     expect(getAmWebhookLogs).toHaveBeenLastCalledWith({
       page: 1,
       limit: 50,
+      direction: undefined,
       event: undefined,
       configId: undefined,
     });
@@ -2973,6 +2974,18 @@ describe('KolamAmSurface', () => {
     expect(getAmWebhookLogs).toHaveBeenLastCalledWith({
       page: 1,
       limit: 50,
+      direction: undefined,
+      event: 'transfer.success',
+      configId: undefined,
+    });
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Segment Outgoing'}).props.onPress();
+    });
+    expect(getAmWebhookLogs).toHaveBeenLastCalledWith({
+      page: 1,
+      limit: 50,
+      direction: 'outgoing',
       event: 'transfer.success',
       configId: undefined,
     });
@@ -2983,6 +2996,7 @@ describe('KolamAmSurface', () => {
     expect(getAmWebhookLogs).toHaveBeenLastCalledWith({
       page: 1,
       limit: 50,
+      direction: 'outgoing',
       event: 'transfer.success',
       configId: 'webhook-1',
     });
@@ -2993,6 +3007,7 @@ describe('KolamAmSurface', () => {
     expect(getAmWebhookLogs).toHaveBeenLastCalledWith({
       page: 2,
       limit: 50,
+      direction: 'outgoing',
       event: 'transfer.success',
       configId: 'webhook-1',
     });
