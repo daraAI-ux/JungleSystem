@@ -135,9 +135,9 @@ describe('KolamSidebarContent AM mode', () => {
         'Administration',
         'Users',
         'Activity Log',
-        'Account Settings',
       ]),
     );
+    expect(text).not.toContain('Account Settings');
     expect(text).not.toContain('JungleSystem');
     expect(text).not.toContain('Beranda');
     expect(text).not.toContain('Pengaturan');
@@ -149,11 +149,11 @@ describe('KolamSidebarContent AM mode', () => {
   });
 
   it('uses the AM shell route as the active sidebar route', async () => {
-    const activeModuleRoute = getShellModuleRouteEntry('am', 'settings/account');
+    const activeModuleRoute = getShellModuleRouteEntry('am', 'hardware');
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
     if (!activeModuleRoute) {
-      throw new Error('AM account settings route is missing.');
+      throw new Error('AM hardware route is missing.');
     }
 
     await ReactTestRenderer.act(async () => {
@@ -189,7 +189,7 @@ describe('KolamSidebarContent AM mode', () => {
 
     expect(
       selectedItems.some(item =>
-        flattenNodeText(item).includes('Account Settings'),
+        flattenNodeText(item).includes('Hardware'),
       ),
     ).toBe(true);
     expect(

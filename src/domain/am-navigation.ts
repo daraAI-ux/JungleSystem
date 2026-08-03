@@ -101,6 +101,7 @@ export const AM_ROUTES: AmRouteItem[] = [
     path: '/settings/account',
     moduleRoute: 'settings/account',
     description: 'Profil akun AM, password, dan area akun sesuai AM FE.',
+    sidebar: false,
   },
 ];
 
