@@ -3974,7 +3974,7 @@ function AmTransfersPage({initialTransferId}: {initialTransferId?: string}) {
   const transferStats = getTransferStats(transfers);
   const transferAccountItems = React.useMemo(() => ['all', ...accounts.map(account => account._id)], [accounts]);
   const activeTransferAccounts = React.useMemo(
-    () => accounts.filter(account => account.status === 'active'),
+    () => accounts.filter(account => account.status === 'active' && isTransferBanking(account.platform)),
     [accounts],
   );
   const transferCreateAccountItems = React.useMemo(() => ['auto', ...activeTransferAccounts.map(account => account._id)], [activeTransferAccounts]);

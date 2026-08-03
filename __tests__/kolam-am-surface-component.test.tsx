@@ -4260,8 +4260,21 @@ describe('KolamAmSurface', () => {
           createdAt: '',
           updatedAt: '',
         },
+        {
+          _id: 'account-dana',
+          label: 'DANA Main',
+          platform: 'dana',
+          accountNumber: '555',
+          status: 'active',
+          deviceId: null,
+          username: '',
+          credentials: {phoneNumber: '0812'},
+          meta: {},
+          createdAt: '',
+          updatedAt: '',
+        },
       ],
-      meta: {total: 1, limit: 1},
+      meta: {total: 2, limit: 2},
     });
     jest.mocked(getAmTransfers).mockResolvedValue({
       data: [
@@ -4421,6 +4434,8 @@ describe('KolamAmSurface', () => {
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM New Transfer'}).props.onPress();
     });
+
+    expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment DANA Main - 555'})).toHaveLength(0);
 
     let inputs = renderer!.root.findAllByType(TextInput);
     await act(async () => {
