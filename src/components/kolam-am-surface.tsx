@@ -5762,7 +5762,6 @@ function AmAccountSettingsPage() {
   const [user, setUser] = React.useState<AmCurrentUser | null>(null);
   const [fullName, setFullName] = React.useState('');
   const [emailAddress, setEmailAddress] = React.useState('');
-  const [currentPassword, setCurrentPassword] = React.useState('');
   const [newPassword, setNewPassword] = React.useState('');
   const [confirmPassword, setConfirmPassword] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(true);
@@ -5825,8 +5824,8 @@ function AmAccountSettingsPage() {
   }, [emailAddress, fullName, user]);
 
   const handleUpdatePassword = React.useCallback(async () => {
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      setError('Current password, new password, dan confirm password wajib diisi.');
+    if (!newPassword || !confirmPassword) {
+      setError('New password dan confirm password wajib diisi.');
       return;
     }
 
@@ -5845,7 +5844,6 @@ function AmAccountSettingsPage() {
       await updateAmUser(user._id, {
         password: newPassword,
       });
-      setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
       setError(null);
@@ -5855,7 +5853,7 @@ function AmAccountSettingsPage() {
     } finally {
       setIsSavingProfile(false);
     }
-  }, [confirmPassword, currentPassword, newPassword, user]);
+  }, [confirmPassword, newPassword, user]);
 
   const handleLogout = React.useCallback(async () => {
     try {
@@ -5931,17 +5929,8 @@ function AmAccountSettingsPage() {
       </View>
       <View style={styles.panel}>
         <Text style={styles.panelTitle}>Change password</Text>
-        <Text style={styles.panelText}>
-          Update your current password to keep your account secure.
-        </Text>
+        <Text style={styles.panelText}>Set a new password.</Text>
         <View style={styles.formGrid}>
-          <AmTextInput
-            label="Current password"
-            placeholder="Current password"
-            secureTextEntry
-            value={currentPassword}
-            onChangeText={setCurrentPassword}
-          />
           <AmTextInput
             label="New password"
             placeholder="New password"

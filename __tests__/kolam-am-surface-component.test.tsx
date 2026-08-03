@@ -3713,6 +3713,7 @@ describe('KolamAmSurface', () => {
     expect(text).toContain('Profile information');
     expect(text).toContain('Change password');
     expect(text).toContain('Current AM User');
+    expect(text).not.toContain('Current password');
     expect(text).not.toContain('Account Settings');
     expect(text).not.toContain('Danger area');
     expect(text).not.toContain('Delete account');
@@ -3754,7 +3755,6 @@ describe('KolamAmSurface', () => {
     expect(renderText(renderer!).join(' ')).toContain('Current AM User Updated');
 
     await act(async () => {
-      findInput('Current password')!.props.onChangeText('OldPass1!');
       findInput('New password')!.props.onChangeText('NewPass1!');
       findInput('Confirm password')!.props.onChangeText('NewPass1!');
     });
