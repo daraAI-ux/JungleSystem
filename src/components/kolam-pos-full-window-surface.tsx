@@ -31,7 +31,6 @@ import {KolamNavItem} from './kolam-nav-item';
 import {KolamQuantityStepper} from './kolam-quantity-stepper';
 import {KolamQuickSearch} from './kolam-quick-search';
 import {KolamRemoteImage} from './kolam-remote-image';
-import {KolamSearchField} from './kolam-search-field';
 import {KolamSidebarBrand} from './kolam-sidebar-brand';
 
 export interface KolamPosFullWindowSurfaceProps {
@@ -140,7 +139,6 @@ export function KolamPosFullWindowSurface({
   workflowSteps = [],
 }: KolamPosFullWindowSurfaceProps) {
   const {width} = useWindowDimensions();
-  const searchInputRef = React.useRef<React.ElementRef<typeof TextInput>>(null);
   const categoryScrollRef = React.useRef<ScrollView>(null);
   const categoryScrollOffsetRef = React.useRef(0);
   const [activeView, setActiveView] = React.useState<PosWindowView>('catalog');
@@ -219,7 +217,6 @@ export function KolamPosFullWindowSurface({
 
   const handleSidebarQuickSearch = React.useCallback(() => {
     setActiveView('catalog');
-    setTimeout(() => searchInputRef.current?.focus(), 0);
   }, []);
 
   const scrollCategories = React.useCallback((direction: 'left' | 'right') => {
@@ -255,7 +252,6 @@ export function KolamPosFullWindowSurface({
       if (event.key === 'F1') {
         event.preventDefault?.();
         setActiveView('catalog');
-        setTimeout(() => searchInputRef.current?.focus(), 0);
         return;
       }
 
@@ -311,29 +307,6 @@ export function KolamPosFullWindowSurface({
             />
           </View>
         </KolamHeaderFrame>
-        {isCatalogView ? (
-          <View style={styles.topBar}>
-            <View style={styles.searchWrap}>
-              <KolamSearchField
-                value={catalogSearch}
-                onChangeText={onCatalogSearchChange}
-                placeholder="Cari... (F1)"
-                inputRef={searchInputRef}
-                containerStyle={styles.search}
-                inputStyle={catalogSearch ? styles.searchInputWithClear : null}
-              />
-              {catalogSearch ? (
-                <KolamInteractionFrame
-                  accessibilityRole="button"
-                  accessibilityLabel="Hapus pencarian katalog"
-                  onPress={() => onCatalogSearchChange('')}
-                  style={styles.searchClearButton}>
-                  <Text style={styles.searchClearText}>X</Text>
-                </KolamInteractionFrame>
-              ) : null}
-            </View>
-          </View>
-        ) : null}
 
         {isCatalogView ? (
           <>
@@ -2266,41 +2239,6 @@ const styles = StyleSheet.create({
     borderBottomColor: V.colors.border,
     borderBottomWidth: 1,
     backgroundColor: V.colors.bg,
-  },
-  topBar: {
-    minHeight: 58,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    padding: 12,
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: 1,
-    backgroundColor: V.colors.bg,
-  },
-  searchWrap: {
-    position: 'relative',
-    width: 240,
-  },
-  search: {
-    width: 240,
-  },
-  searchInputWithClear: {
-    paddingRight: 28,
-  },
-  searchClearButton: {
-    position: 'absolute',
-    right: 9,
-    top: 8,
-    width: 24,
-    height: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 12,
-  },
-  searchClearText: {
-    color: V.colors.mutedFg,
-    fontSize: 12,
-    fontWeight: '900',
   },
   posSidebar: {
     width: V.layout.sidebarWidth,
