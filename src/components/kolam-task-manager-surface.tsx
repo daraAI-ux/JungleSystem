@@ -265,7 +265,9 @@ function KolamTaskManagerDetail({
       <View style={styles.detailHeader}>
         <View style={styles.detailTitleBlock}>
           <View style={styles.titleRow}>
-            {task.urgent ? <Text style={styles.urgent}>!</Text> : null}
+            {showKolamTaskUrgentMarker(task) ? (
+              <Text style={styles.urgent}>!</Text>
+            ) : null}
             <Text style={styles.detailTitle}>{task.title || '-'}</Text>
           </View>
           <View style={styles.badgeRow}>
@@ -655,6 +657,10 @@ function getTaskTypeLabel(task: KolamTaskManagerTask) {
   if (!task.taskType) return '-';
   if (typeof task.taskType === 'string') return task.taskType || '-';
   return task.taskType.name || task.taskType.key || task.taskType.id || '-';
+}
+
+function showKolamTaskUrgentMarker(task: KolamTaskManagerTask) {
+  return task.urgent && task.status !== 'done' && task.status !== 'cancelled';
 }
 
 function KolamTaskSourceBadge({
@@ -1056,7 +1062,9 @@ function KolamTaskRow({
           style={getKolamDataTableColumnStyle(columns[0])}
         >
           <View style={styles.titleRow}>
-            {task.urgent ? <Text style={styles.urgent}>!</Text> : null}
+            {showKolamTaskUrgentMarker(task) ? (
+              <Text style={styles.urgent}>!</Text>
+            ) : null}
             <Text numberOfLines={1} style={styles.primaryText}>
               {task.title || '-'}
             </Text>
