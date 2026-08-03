@@ -55,6 +55,7 @@ import {
   sendAmDeviceServiceInput,
   startAmTokopediaQrLogin,
   testAmWebhookPing,
+  stopAmDeviceService,
   uploadAmTokopediaSession,
   updateAmTokopediaCaptchaSettings,
   updateAmTokopediaLoginMethod,
@@ -1600,6 +1601,23 @@ describe('KolamAmSurface', () => {
           createdAt: '',
           updatedAt: '',
         },
+        {
+          _id: 'service-active',
+          platform: 'shopee',
+          label: 'Shopee Running',
+          deviceId: {
+            _id: 'device-active',
+            name: 'Browser Active',
+            connectionType: 'browser',
+            tcpAddress: null,
+            udid: null,
+          },
+          status: 'active',
+          credentials: {},
+          meta: {},
+          createdAt: '',
+          updatedAt: '',
+        },
       ],
       meta: {total: 1, limit: 1},
     });
@@ -1615,6 +1633,9 @@ describe('KolamAmSurface', () => {
     await updateAmRoute(renderer!, 'services');
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Service Start service-2'}).props.onPress();
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Service Stop service-active'}).props.onPress();
     });
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Service Tokopedia Session'}).props.onPress();
@@ -1640,6 +1661,7 @@ describe('KolamAmSurface', () => {
     });
 
     expect(startAmDeviceService).toHaveBeenCalledWith('device-2', 'service-2');
+    expect(stopAmDeviceService).toHaveBeenCalledWith('device-active', 'service-active');
     expect(clearAmServiceAccountSession).toHaveBeenCalledWith('service-2');
   });
 
