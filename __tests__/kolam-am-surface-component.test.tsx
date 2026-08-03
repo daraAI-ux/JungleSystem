@@ -2889,6 +2889,34 @@ describe('KolamAmSurface', () => {
     });
 
     await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Activity Log Select log-1'}).props.onPress();
+      renderer!.root.findByProps({accessibilityLabel: 'AM Activity Log Select log-2'}).props.onPress();
+    });
+
+    text = renderText(renderer!);
+    joinedText = text.join(' ');
+    expect(joinedText).toContain('Hapus terpilih (2)');
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Activity Logs Delete Selected'}).props.onPress();
+    });
+
+    text = renderText(renderer!);
+    joinedText = text.join(' ');
+    expect(text).toContain('Hapus activity log');
+    expect(joinedText).toContain('Log yang dipilih akan dihapus permanen.');
+    expect(joinedText.replace(/\s+/g, ' ')).toContain('2 entri akan dihapus.');
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Activity Logs Confirm Delete Selected'}).props.onPress();
+    });
+
+    expect(bulkDeleteAmActivityLogs).toHaveBeenCalledWith({
+      confirm: true,
+      ids: ['log-1', 'log-2'],
+    });
+
+    await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Activity Log Detail log-1'}).props.onPress();
     });
 

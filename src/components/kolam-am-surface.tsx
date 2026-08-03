@@ -5918,6 +5918,7 @@ function AmActivityLogPage() {
   const [limit, setLimit] = React.useState(AM_ACTIVITY_LOG_PAGE_LIMIT);
   const [total, setTotal] = React.useState(0);
   const [selectedLog, setSelectedLog] = React.useState<AmActivityLog | null>(null);
+  const [selectedLogIds, setSelectedLogIds] = React.useState<Set<string>>(() => new Set());
   const [isLoading, setIsLoading] = React.useState(true);
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [showDeleteFilterConfirm, setShowDeleteFilterConfirm] = React.useState(false);
@@ -6040,24 +6041,42 @@ function AmActivityLogPage() {
   }, [buildFilterPayload, fetchLogs]);
 
   const handleDeleteSelectedLog = React.useCallback(async () => {
-    if (!selectedLog?._id) return;
+    const ids = selectedLogIds.size
+      ? Array.from(selectedLogIds)
+      : selectedLog?._id
+        ? [selectedLog._id]
+        : [];
+    if (!ids.length) return;
 
     try {
       setIsDeleting(true);
       const result = await bulkDeleteAmActivityLogs({
         confirm: true,
-        ids: [selectedLog._id],
+        ids,
       });
       setDeleteMessage(`${result.deletedCount} log dihapus`);
       setShowDeleteSelectedConfirm(false);
       setSelectedLog(null);
+      setSelectedLogIds(new Set());
       await fetchLogs();
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : 'Gagal menghapus activity log AM.');
     } finally {
       setIsDeleting(false);
     }
-  }, [fetchLogs, selectedLog]);
+  }, [fetchLogs, selectedLog, selectedLogIds]);
+
+  const toggleSelectedLogId = React.useCallback((logId: string) => {
+    setSelectedLogIds(current => {
+      const next = new Set(current);
+      if (next.has(logId)) {
+        next.delete(logId);
+      } else {
+        next.add(logId);
+      }
+      return next;
+    });
+  }, []);
 
   const totalPages = Math.max(1, Math.ceil(total / Math.max(limit, 1)));
   const rangeFrom = total ? (page - 1) * limit + 1 : 0;
@@ -6068,6 +6087,7 @@ function AmActivityLogPage() {
   const pageCount = getAmStatsCount(stats?.byType, 'page');
   const hasActiveFilters =
     Boolean(search.trim()) || type !== 'all' || status !== 'all' || method !== 'all';
+  const selectedDeleteCount = selectedLogIds.size || (selectedLog ? 1 : 0);
 
   if (!accessLoaded) {
     return (
@@ -6113,6 +6133,16 @@ function AmActivityLogPage() {
         <AmSegmentGroup active={method} items={AM_ACTIVITY_LOG_METHODS} onSelect={handleMethodChange} />
         {hasActiveFilters ? (
           <KolamButton label="Reset" intent="outline" size="sm" onPress={resetFilters} />
+        ) : null}
+        {selectedLogIds.size ? (
+          <KolamButton
+            accessibilityLabel="AM Activity Logs Delete Selected"
+            disabled={isLoading || isDeleting}
+            label={`Hapus terpilih (${selectedLogIds.size})`}
+            intent="danger"
+            size="sm"
+            onPress={() => setShowDeleteSelectedConfirm(true)}
+          />
         ) : null}
         {total > 0 ? (
           <KolamButton
@@ -6213,13 +6243,22 @@ function AmActivityLogPage() {
             </View>
             <Text style={[styles.cellText, styles.amountCol]}>{formatAmDuration(log.duration)}</Text>
             <View style={styles.actionCol}>
-              <KolamButton
-                accessibilityLabel={`AM Activity Log Detail ${log._id}`}
-                label="Detail"
-                intent="outline"
-                size="sm"
-                onPress={() => setSelectedLog(current => current?._id === log._id ? null : log)}
-              />
+              <View style={styles.statusActionStack}>
+                <KolamButton
+                  accessibilityLabel={`AM Activity Log Select ${log._id}`}
+                  label={selectedLogIds.has(log._id) ? 'Dipilih' : 'Pilih'}
+                  intent="outline"
+                  size="sm"
+                  onPress={() => toggleSelectedLogId(log._id)}
+                />
+                <KolamButton
+                  accessibilityLabel={`AM Activity Log Detail ${log._id}`}
+                  label="Detail"
+                  intent="outline"
+                  size="sm"
+                  onPress={() => setSelectedLog(current => current?._id === log._id ? null : log)}
+                />
+              </View>
             </View>
           </View>
         ))}
@@ -6253,16 +6292,19 @@ function AmActivityLogPage() {
         <AmActivityLogDetailPanel
           isDeleting={isDeleting}
           log={selectedLog}
-          onDelete={() => setShowDeleteSelectedConfirm(true)}
+          onDelete={() => {
+            setSelectedLogIds(new Set());
+            setShowDeleteSelectedConfirm(true);
+          }}
         />
       ) : null}
-      {selectedLog && showDeleteSelectedConfirm ? (
+      {showDeleteSelectedConfirm && selectedDeleteCount ? (
         <View style={styles.warningPanel}>
           <Text style={styles.panelTitle}>Hapus activity log</Text>
           <Text style={styles.panelText}>
-            Log terpilih akan dihapus permanen.
+            {selectedLogIds.size > 1 ? 'Log yang dipilih akan dihapus permanen.' : 'Log terpilih akan dihapus permanen.'}
           </Text>
-          <Text style={styles.warningText}>1 entri akan dihapus.</Text>
+          <Text style={styles.warningText}>{selectedDeleteCount} entri akan dihapus.</Text>
           <View style={styles.inlineActions}>
             <KolamButton
               accessibilityLabel="AM Activity Logs Cancel Delete Selected"
