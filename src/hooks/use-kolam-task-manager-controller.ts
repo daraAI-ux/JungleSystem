@@ -25,7 +25,10 @@ import {
   type KolamTaskRecurringServiceVisit,
   type KolamTaskRecurringTemplate,
 } from '../domain/kolam-task-manager';
-import type { KolamUserListItem } from '../domain/kolam-user';
+import type {
+  KolamUserListItem,
+  KolamUserRatingSummary,
+} from '../domain/kolam-user';
 import type { KolamLocationOption } from '../services/kolam-location-api';
 import { getErrorMessage as getApiErrorMessage } from '../lib/api-error';
 import {
@@ -64,7 +67,10 @@ import {
 } from '../services/kolam-task-manager-api';
 import { getKolamLocations } from '../services/kolam-location-api';
 import { getKolamCustomerList } from '../services/kolam-customer-api';
-import { getKolamUserList } from '../services/kolam-user-api';
+import {
+  getKolamUserList,
+  getKolamUserRatingSummary,
+} from '../services/kolam-user-api';
 import {
   pickNativeImageFile,
   pickNativeVideoFile,
@@ -164,6 +170,7 @@ export interface KolamTaskManagerController {
   formMode: 'edit' | 'new';
   formOpen: boolean;
   crmContext: KolamTaskCustomerCrmContext | null;
+  ratingSummary: KolamUserRatingSummary | null;
   checklistDraft: string;
   discussionDraft: string;
   discussionAttachments: NativeImagePickerResult[];
@@ -310,6 +317,8 @@ export function useKolamTaskManagerController({
     useState<KolamTaskManagerTask | null>(null);
   const [crmContext, setCrmContext] =
     useState<KolamTaskCustomerCrmContext | null>(null);
+  const [ratingSummary, setRatingSummary] =
+    useState<KolamUserRatingSummary | null>(null);
   const [categories, setCategories] = useState<KolamTaskManagerCategory[]>([]);
   const [staffOptions, setStaffOptions] = useState<KolamTaskManagerStaffOption[]>(
     [],
@@ -565,6 +574,7 @@ export function useKolamTaskManagerController({
     if (!taskId) {
       setSelectedTask(null);
       setCrmContext(null);
+      setRatingSummary(null);
       return;
     }
 
@@ -573,6 +583,7 @@ export function useKolamTaskManagerController({
     try {
       const live = await getKolamTaskManagerTask(taskId);
       setSelectedTask(live);
+      const assigneeId = getTaskUserId(live.assignedTo);
       if (live.customerId) {
         try {
           setCrmContext(await getKolamTaskManagerCrmContext(taskId));
@@ -582,8 +593,19 @@ export function useKolamTaskManagerController({
       } else {
         setCrmContext(null);
       }
+      if (live.categoryBucket === 'crm' && assigneeId) {
+        try {
+          setRatingSummary(await getKolamUserRatingSummary(assigneeId));
+        } catch {
+          setRatingSummary(null);
+        }
+      } else {
+        setRatingSummary(null);
+      }
       setDataSource('live');
     } catch (loadError) {
+      setCrmContext(null);
+      setRatingSummary(null);
       setError(getErrorMessage(loadError));
       setDataSource('error');
     } finally {
@@ -1454,6 +1476,7 @@ export function useKolamTaskManagerController({
       formMode,
       formOpen,
       crmContext,
+      ratingSummary,
       checklistDraft,
       discussionDraft,
       discussionAttachments,
@@ -1583,6 +1606,7 @@ export function useKolamTaskManagerController({
       formMode,
       formOpen,
       crmContext,
+      ratingSummary,
       checklistDraft,
       discussionDraft,
       discussionAttachments,

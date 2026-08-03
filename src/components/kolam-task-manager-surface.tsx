@@ -321,6 +321,32 @@ function KolamTaskManagerDetail({
         </View>
       ) : null}
 
+      {task.categoryBucket === 'crm' && controller.ratingSummary ? (
+        <View style={styles.detailCard}>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionTitle}>Rating</Text>
+            <KolamStatusBadge
+              intent={
+                controller.ratingSummary.totalRatings > 0 ? 'success' : 'muted'
+              }
+              label={`${controller.ratingSummary.totalRatings} rating`}
+            />
+          </View>
+          {controller.ratingSummary.totalRatings > 0 ? (
+            <View style={styles.ratingSummaryRow}>
+              <Text style={styles.ratingScore}>
+                {controller.ratingSummary.averageRating.toFixed(1)}
+              </Text>
+              <Text style={styles.metaText}>
+                {formatTaskRatingStars(controller.ratingSummary.averageRating)}
+              </Text>
+            </View>
+          ) : (
+            <Text style={styles.metaText}>Belum ada rating</Text>
+          )}
+        </View>
+      ) : null}
+
       {relatedLinks.length ? (
         <View style={styles.relatedChipRow}>
           {relatedLinks.map(link => (
@@ -650,6 +676,11 @@ function getTaskRelatedLinks(task: KolamTaskManagerTask) {
     });
   }
   return links;
+}
+
+function formatTaskRatingStars(value: number) {
+  const rounded = Math.round(Math.max(0, Math.min(5, value)));
+  return `${rounded}/5`;
 }
 
 function KolamTaskManagerTabs({
@@ -2694,6 +2725,19 @@ const styles = StyleSheet.create({
     gap: 8,
     justifyContent: 'space-between',
     padding: 10,
+  },
+  ratingSummaryRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  ratingScore: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 24,
+    fontWeight: '900',
+    lineHeight: 30,
   },
   attachmentRow: {
     alignItems: 'center',

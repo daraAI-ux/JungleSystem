@@ -170,7 +170,7 @@ jest.mock('../src/services/kolam-task-manager-api', () => ({
     Promise.resolve({
       assistedBy: null,
       category: { color: '#16a34a', id: 'cat-1', name: 'Operasional' },
-      categoryBucket: 'project',
+      categoryBucket: 'crm',
       checklist: [
         {
           assignedTo: null,
@@ -412,6 +412,13 @@ jest.mock('../src/services/kolam-user-api', () => ({
           username: 'dara',
         },
       ],
+    }),
+  ),
+  getKolamUserRatingSummary: jest.fn(() =>
+    Promise.resolve({
+      averageRating: 4.5,
+      counts: [1, 2, 3, 4, 5].map(rating => ({ count: 0, rating })),
+      totalRatings: 8,
     }),
   ),
 }));
@@ -739,6 +746,9 @@ describe('KolamWorkspaceSurface', () => {
         'Durasi',
         'Project Q-001',
         'Anura Customer',
+        'Rating',
+        '8 rating',
+        '4.5',
         'Diskusi',
         'Siap cek filter.',
         'Timeline',
