@@ -126,7 +126,7 @@ const TASK_TYPE_LABELS: Record<string, string> = {
   send_message: 'Send Message',
   bank_transfer: 'Bank Transfer',
 };
-const TASK_STATUSES: Array<AmTaskStatus | 'all'> = ['all', 'pending', 'queued', 'processing', 'success', 'failed', 'cancelled'];
+const TASK_FILTER_STATUSES: Array<Exclude<AmTaskStatus, 'queued'> | 'all'> = ['all', 'pending', 'processing', 'success', 'failed', 'cancelled'];
 const TASK_TYPES: Array<AmTaskType | 'all'> = ['all', 'stock_sync', 'process_sale', 'send_message', 'bank_transfer'];
 const AM_TASK_PAGE_LIMIT = 20;
 const AM_SERVICE_PAGE_LIMIT = 20;
@@ -793,7 +793,7 @@ function AmTasksPage({initialTaskId}: {initialTaskId?: string}) {
       <View style={styles.filterBar}>
         <KolamSearchField value={search} onChangeText={handleSearchChange} placeholder="Search..." containerStyle={styles.taskSearch} trailingLabel={`${total} task`} />
         <AmSegmentGroup active={type} items={TASK_TYPES} labels={TASK_TYPE_LABELS} onSelect={handleTypeChange} />
-        <AmSegmentGroup active={status} items={TASK_STATUSES} onSelect={handleStatusChange} />
+        <AmSegmentGroup active={status} items={TASK_FILTER_STATUSES} onSelect={handleStatusChange} />
         {serviceAccountFilterItems.length > 1 ? (
           <AmSegmentGroup active={serviceAccountId} items={serviceAccountFilterItems} labels={serviceAccountFilterLabels} onSelect={handleServiceAccountChange} />
         ) : null}

@@ -711,6 +711,10 @@ describe('KolamAmSurface', () => {
     renderers.push(renderer!);
 
     await updateAmRoute(renderer!, 'tasks');
+    expect(renderText(renderer!)).toContain('queued');
+    expect(
+      renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment Queued'}),
+    ).toHaveLength(0);
     expect(
       renderer!.root.findAllByProps({accessibilityLabel: 'AM Task Force Fail task-1'}),
     ).toHaveLength(0);
