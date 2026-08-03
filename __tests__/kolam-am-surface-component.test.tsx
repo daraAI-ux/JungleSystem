@@ -2474,6 +2474,136 @@ describe('KolamAmSurface', () => {
     }));
   });
 
+  it('routes hardware direct detail back to its parent box route', async () => {
+    jest.mocked(getAmRacks).mockResolvedValue({
+      data: [
+        {
+          _id: 'rack-1',
+          name: 'Rack Alpha',
+          slug: 'rack-alpha',
+          location: 'Room A',
+          description: '',
+          status: 'active',
+          serverIp: '10.0.0.1:2700',
+          boxCount: 1,
+          deviceCount: 1,
+          addedBy: {_id: 'user-1', fullName: 'Hardware Admin'},
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 1, limit: 1},
+    });
+    jest.mocked(jest.requireMock('../src/services/am-api').getAmBoxes).mockResolvedValue({
+      data: [
+        {
+          _id: 'box-1',
+          name: 'Box 01',
+          slug: 'box-01',
+          rackId: {_id: 'rack-1', name: 'Rack Alpha'},
+          description: 'Main box',
+          status: 'active',
+          deviceCount: 1,
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 1, limit: 1},
+    });
+    jest.mocked(getAmDevices).mockResolvedValue({
+      data: [
+        {
+          _id: 'device-1',
+          name: 'Phone Rack',
+          slug: 'phone-rack',
+          boxId: {
+            _id: 'box-1',
+            name: 'Box 01',
+            rackId: {_id: 'rack-1', name: 'Rack Alpha'},
+          },
+          connectionType: 'tcp',
+          tcpAddress: '10.0.0.5:5555',
+          udid: null,
+          brand: 'Samsung',
+          model: 'A15',
+          adbStatus: 'connected',
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 1, limit: 1},
+    });
+    jest.mocked(getAmRackById).mockResolvedValue({
+      _id: 'rack-1',
+      name: 'Rack Alpha',
+      slug: 'rack-alpha',
+      location: 'Room A',
+      description: '',
+      status: 'active',
+      serverIp: '10.0.0.1:2700',
+      boxCount: 1,
+      deviceCount: 1,
+      addedBy: {_id: 'user-1', fullName: 'Hardware Admin'},
+      createdAt: '',
+      updatedAt: '',
+    });
+    jest.mocked(getAmBoxById).mockResolvedValue({
+      _id: 'box-1',
+      name: 'Box 01',
+      slug: 'box-01',
+      rackId: {_id: 'rack-1', name: 'Rack Alpha'},
+      description: 'Main box',
+      status: 'active',
+      deviceCount: 1,
+      createdAt: '',
+      updatedAt: '',
+    });
+    jest.mocked(getAmDeviceById).mockResolvedValue({
+      _id: 'device-1',
+      name: 'Phone Rack',
+      slug: 'phone-rack',
+      boxId: {
+        _id: 'box-1',
+        name: 'Box 01',
+        rackId: {_id: 'rack-1', name: 'Rack Alpha'},
+      },
+      connectionType: 'tcp',
+      tcpAddress: '10.0.0.5:5555',
+      udid: null,
+      brand: 'Samsung',
+      model: 'A15',
+      adbStatus: 'connected',
+      createdAt: '',
+      updatedAt: '',
+    });
+    const onModuleRouteSelect = jest.fn();
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface
+          activeModuleRoute={concreteAmRoute(
+            'hardware/rack-1/box-1/device-1',
+            'hardware/:rackId/:boxId/:deviceId',
+          )}
+          dataset={seedUnifiedDataset}
+          onModuleRouteSelect={onModuleRouteSelect}
+        />,
+      );
+    });
+    renderers.push(renderer!);
+
+    expect(renderText(renderer!)).toContain('Phone Rack');
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Back'}).props.onPress();
+    });
+
+    expect(onModuleRouteSelect).toHaveBeenCalledWith(
+      concreteAmRoute('hardware/rack-1/box-1', 'hardware/:rackId/:boxId'),
+    );
+  });
+
   it('defaults browser device service creation to WhatsApp like AM FE', async () => {
     jest.mocked(getAmRackById).mockResolvedValue({
       _id: 'rack-1',

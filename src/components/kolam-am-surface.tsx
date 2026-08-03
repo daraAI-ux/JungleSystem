@@ -221,7 +221,10 @@ export function KolamAmSurface({
           ) : activeRoute === 'services' ? (
             <AmServicesPage />
           ) : activeRoute === 'hardware' ? (
-            <AmHardwarePage initialRoute={routeSelection?.hardwareRoute} />
+            <AmHardwarePage
+              initialRoute={routeSelection?.hardwareRoute}
+              onModuleRouteSelect={onModuleRouteSelect}
+            />
           ) : activeRoute === 'webhooks' ? (
             <AmWebhooksPage />
           ) : activeRoute === 'transactions' ? (
@@ -1919,7 +1922,13 @@ function AmTaskActions({
   );
 }
 
-function AmHardwarePage({initialRoute}: {initialRoute?: AmHardwareInitialRoute}) {
+function AmHardwarePage({
+  initialRoute,
+  onModuleRouteSelect,
+}: {
+  initialRoute?: AmHardwareInitialRoute;
+  onModuleRouteSelect?: (route: ShellModuleRouteEntry) => void;
+}) {
   const [racks, setRacks] = React.useState<AmRack[]>([]);
   const [boxes, setBoxes] = React.useState<AmBox[]>([]);
   const [devices, setDevices] = React.useState<AmDevice[]>([]);
@@ -2124,10 +2133,75 @@ function AmHardwarePage({initialRoute}: {initialRoute?: AmHardwareInitialRoute})
   }, [fetchSelectedBoxAdbStatus, selectedBox]);
 
   const resetHardwareRoute = React.useCallback(() => {
+    if (initialRoute?.rackId || initialRoute?.boxId || initialRoute?.deviceId) {
+      const hardwareRoute = getShellModuleRouteEntry('am', 'hardware');
+      if (hardwareRoute) {
+        onModuleRouteSelect?.(hardwareRoute);
+        return;
+      }
+      return;
+    }
     setSelectedRackId(null);
     setSelectedBoxId(null);
     setSelectedDeviceId(null);
-  }, []);
+  }, [initialRoute?.boxId, initialRoute?.deviceId, initialRoute?.rackId, onModuleRouteSelect]);
+
+  const goBackHardwareRoute = React.useCallback(() => {
+    if (!initialRoute?.rackId && !initialRoute?.boxId && !initialRoute?.deviceId) {
+      if (selectedDevice) {
+        setSelectedDeviceId(null);
+      } else {
+        setSelectedBoxId(null);
+      }
+      return;
+    }
+
+    if (selectedDevice) {
+      const rackRouteId = initialRoute.rackId ?? selectedRack?._id;
+      const boxRouteId = initialRoute.boxId ?? selectedBox?._id;
+      if (rackRouteId && boxRouteId) {
+        const boxRoute = getConcreteAmRouteEntry(
+          `hardware/${rackRouteId}/${boxRouteId}`,
+          'hardware/:rackId/:boxId',
+        );
+        if (boxRoute) {
+          onModuleRouteSelect?.(boxRoute);
+          return;
+        }
+        setSelectedDeviceId(null);
+        return;
+      }
+    }
+
+    if (selectedBox) {
+      const rackRouteId = initialRoute.rackId ?? selectedRack?._id;
+      if (rackRouteId) {
+        const rackRoute = getConcreteAmRouteEntry(
+          `hardware/${rackRouteId}`,
+          'hardware/:rackId',
+        );
+        if (rackRoute) {
+          onModuleRouteSelect?.(rackRoute);
+          return;
+        }
+        setSelectedBoxId(null);
+        return;
+      }
+    }
+
+    const hardwareRoute = getShellModuleRouteEntry('am', 'hardware');
+    if (hardwareRoute) {
+      onModuleRouteSelect?.(hardwareRoute);
+    }
+  }, [
+    initialRoute?.boxId,
+    initialRoute?.deviceId,
+    initialRoute?.rackId,
+    onModuleRouteSelect,
+    selectedBox,
+    selectedDevice,
+    selectedRack,
+  ]);
 
   const resetHardwareForm = React.useCallback((nextForm: 'rack' | 'box' | 'device' = hardwareForm) => {
     setHardwareForm(nextForm);
@@ -2333,16 +2407,11 @@ function AmHardwarePage({initialRoute}: {initialRoute?: AmHardwareInitialRoute})
           {selectedDevice ? <Text style={styles.breadcrumbText}>/ {selectedDevice.name}</Text> : null}
           {selectedBox || selectedDevice ? (
             <KolamButton
+              accessibilityLabel="AM Hardware Back"
               label="Back"
               intent="outline"
               size="sm"
-              onPress={() => {
-                if (selectedDevice) {
-                  setSelectedDeviceId(null);
-                } else {
-                  setSelectedBoxId(null);
-                }
-              }}
+              onPress={goBackHardwareRoute}
             />
           ) : null}
         </View>
