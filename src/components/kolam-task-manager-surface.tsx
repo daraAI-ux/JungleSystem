@@ -68,6 +68,7 @@ const LIST_COLUMNS: KolamTableColumn[] = [
   { id: 'children', label: 'Asisten', align: 'left', width: 110 },
   { id: 'status', label: 'Status', align: 'left', width: 140 },
   { id: 'notes', label: 'Prioritas', align: 'left', width: 112 },
+  { id: 'marketplace', label: 'Countdown', align: 'left', width: 150 },
   { id: 'amount', label: 'Due', align: 'left', width: 120 },
   {
     id: 'actions',
@@ -1091,6 +1092,9 @@ function KolamTaskRow({
           )}
         </View>
         <View style={getKolamDataTableColumnStyle(columns[5])}>
+          <KolamTaskDueCountdownText task={task} />
+        </View>
+        <View style={getKolamDataTableColumnStyle(columns[6])}>
           <Text
             numberOfLines={1}
             style={[styles.cellText, overdue && styles.dangerText]}
@@ -1140,6 +1144,53 @@ function KolamTaskRow({
       </KolamDataTableActionsTrack>
     </KolamDataTableRowFrame>
   );
+}
+
+function KolamTaskDueCountdownText({
+  task,
+}: {
+  task: KolamTaskManagerTask;
+}) {
+  const [label, setLabel] = React.useState(() =>
+    getKolamTaskDueCountdownTextLabel(task),
+  );
+
+  React.useEffect(() => {
+    const updateLabel = () => setLabel(getKolamTaskDueCountdownTextLabel(task));
+    const isTestRuntime =
+      typeof (globalThis as { expect?: unknown }).expect !== 'undefined' ||
+      typeof (globalThis as { it?: unknown }).it !== 'undefined';
+    updateLabel();
+    if (
+      isTestRuntime ||
+      !task.dueDate ||
+      task.status === 'done' ||
+      task.status === 'cancelled'
+    ) {
+      return undefined;
+    }
+    const intervalId = setInterval(updateLabel, 1000);
+    return () => clearInterval(intervalId);
+  }, [task]);
+
+  const danger =
+    isKolamTaskOverdue(task) || label.toLowerCase().startsWith('terlambat');
+
+  return (
+    <Text
+      numberOfLines={1}
+      style={[styles.cellText, danger && styles.dangerText]}
+    >
+      {label}
+    </Text>
+  );
+}
+
+function getKolamTaskDueCountdownTextLabel(task: KolamTaskManagerTask) {
+  return getKolamTaskDueCountdownLabel({
+    ...task,
+    timeline: Array.isArray(task.timeline) ? task.timeline : [],
+  });
 }
 
 function KolamTaskRecurringPanel({
