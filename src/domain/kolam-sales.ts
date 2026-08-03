@@ -147,7 +147,12 @@ export type KolamSaleItem = {
   customName: string;
   customUnit: string;
   customCost: number | null;
+  /** Applied voucher code from BE `items[].voucher.code` (or legacy top-level). */
   voucherCode: string;
+  /** Rupiah applied from BE `items[].voucher.discountApplied`. */
+  voucherDiscountApplied: number;
+  voucherDiscountType: 'fixed' | 'percentage' | '';
+  voucherDiscountValue: number | null;
 };
 
 export type KolamSaleCommissionAccrualByItem = {
@@ -617,6 +622,31 @@ export function getKolamSaleItemDiscountAmount(item: {
   return Math.round(Number(discount.amount) * (Number(item.quantity) || 0));
 }
 
+/** BE snapshot `items[].voucher.discountApplied` (already capped to line subtotal). */
+export function getKolamSaleItemVoucherDiscountApplied(item: {
+  voucherDiscountApplied?: number | null;
+}): number {
+  return Math.max(0, Math.round(Number(item.voucherDiscountApplied) || 0));
+}
+
+export function formatKolamSaleItemVoucherLabel(item: {
+  voucherCode?: string | null;
+  voucherDiscountType?: string | null;
+  voucherDiscountValue?: number | null;
+}): string {
+  const code = String(item.voucherCode ?? '').trim();
+  if (!code) {
+    return '';
+  }
+  if (
+    String(item.voucherDiscountType || '').toLowerCase() === 'percentage' &&
+    Number(item.voucherDiscountValue) > 0
+  ) {
+    return `${code} (${item.voucherDiscountValue}%)`;
+  }
+  return code;
+}
+
 /**
  * BE `_sale-status-handlers`: approve/reject pending discount only for
  * finance or super-admin role keys (in addition to sale:update_status).
@@ -648,7 +678,8 @@ export function getKolamSaleDiscountApprovalReasons(
     if (
       lower.includes('finance approval') ||
       lower.includes('below minimum') ||
-      lower.includes('discount')
+      lower.includes('discount') ||
+      lower.includes('voucher')
     ) {
       reasons.push(note);
     }
@@ -3611,7 +3642,36 @@ function normalizeSaleItem(value: unknown, index: number): KolamSaleItem {
     customName: getString(record, 'customName'),
     customUnit: getString(record, 'customUnit') || 'pcs',
     customCost: getNumber(record, 'customCost'),
-    voucherCode: getString(record, 'voucherCode'),
+    ...normalizeSaleItemVoucherFields(record),
+  };
+}
+
+function normalizeSaleItemVoucherFields(record: Record<string, unknown>): {
+  voucherCode: string;
+  voucherDiscountApplied: number;
+  voucherDiscountType: 'fixed' | 'percentage' | '';
+  voucherDiscountValue: number | null;
+} {
+  const voucher = asRecord(record.voucher);
+  const codeFromSnapshot = getString(voucher, 'code');
+  const codeLegacy = getString(record, 'voucherCode');
+  const voucherCode = codeFromSnapshot || codeLegacy;
+  const appliedRaw =
+    getNumber(voucher, 'discountApplied') ??
+    getNumber(record, 'voucherDiscountApplied');
+  const voucherDiscountApplied = Math.max(0, Math.round(Number(appliedRaw) || 0));
+  const typeRaw = String(getString(voucher, 'discountType') || '')
+    .trim()
+    .toLowerCase();
+  const voucherDiscountType: 'fixed' | 'percentage' | '' =
+    typeRaw === 'percentage' ? 'percentage' : typeRaw === 'fixed' ? 'fixed' : '';
+  const voucherDiscountValue = getNumber(voucher, 'discountValue');
+
+  return {
+    voucherCode,
+    voucherDiscountApplied,
+    voucherDiscountType,
+    voucherDiscountValue,
   };
 }
 

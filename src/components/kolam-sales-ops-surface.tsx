@@ -14,6 +14,8 @@ import {
   getKolamSaleDeliveryStatusIntent,
   getKolamSaleDiscountApprovalReasons,
   getKolamSaleItemDiscountAmount,
+  getKolamSaleItemVoucherDiscountApplied,
+  formatKolamSaleItemVoucherLabel,
   getKolamSaleListComplaintDisplay,
   getKolamSalePaymentStatusIntent,
   kolamSaleSkipsShippingFlow,
@@ -1769,6 +1771,11 @@ function KolamSalesOpsApproval({
             item => item.discount && item.discount.amount > 0,
           ).length;
           const hasGlobalDiscount = sale.discount > 0;
+          const voucherCount = sale.items.filter(
+            item =>
+              getKolamSaleItemVoucherDiscountApplied(item) > 0 ||
+              Boolean(item.voucherCode),
+          ).length;
 
           return (
             <View
@@ -1803,6 +1810,12 @@ function KolamSalesOpsApproval({
                       <KolamStatusBadge
                         intent="warning"
                         label={`${itemDiscountCount} item discount`}
+                      />
+                    ) : null}
+                    {voucherCount > 0 ? (
+                      <KolamStatusBadge
+                        intent="success"
+                        label={`${voucherCount} voucher`}
                       />
                     ) : null}
                     {hasGlobalDiscount ? (
@@ -1943,8 +1956,14 @@ function KolamSalesOpsApprovalDetail({ sale }: { sale: KolamSale }) {
   const itemsWithDiscount = sale.items.filter(
     item => item.discount && item.discount.amount > 0,
   );
+  const itemsWithVoucher = sale.items.filter(
+    item => getKolamSaleItemVoucherDiscountApplied(item) > 0 || Boolean(item.voucherCode),
+  );
   const itemsNoDiscount = sale.items.filter(
-    item => !item.discount || !(item.discount.amount > 0),
+    item =>
+      (!item.discount || !(item.discount.amount > 0)) &&
+      getKolamSaleItemVoucherDiscountApplied(item) <= 0 &&
+      !item.voucherCode,
   );
 
   return (
@@ -1994,6 +2013,37 @@ function KolamSalesOpsApprovalDetail({ sale }: { sale: KolamSale }) {
                   Disc: {discLabel} (-{formatRupiah(discAmt)})
                   {' · '}
                   Subtotal: {formatRupiah(item.subtotal)}
+                </Text>
+              </View>
+            );
+          })}
+        </View>
+      ) : null}
+
+      {itemsWithVoucher.length ? (
+        <View style={styles.approvalDetailSection}>
+          <Text style={styles.approvalSectionTitle}>
+            Item dengan Voucher ({itemsWithVoucher.length})
+          </Text>
+          {itemsWithVoucher.map(item => {
+            const voucherApplied = getKolamSaleItemVoucherDiscountApplied(item);
+            const voucherLabel =
+              formatKolamSaleItemVoucherLabel(item) || item.voucherCode || '—';
+            return (
+              <View key={`voucher-${item.id}`} style={styles.approvalDiscountItem}>
+                <View style={styles.approvalItemHeader}>
+                  <KolamStatusBadge intent="success" label="Voucher" />
+                  <Text numberOfLines={2} style={styles.approvalItemTitle}>
+                    {item.title || item.customName || '—'}
+                  </Text>
+                </View>
+                <Text style={styles.metaText}>
+                  {voucherLabel}
+                  {voucherApplied > 0
+                    ? ` · -${formatRupiah(voucherApplied)}`
+                    : ''}
+                  {' · '}
+                  Subtotal baris: {formatRupiah(item.subtotal)}
                 </Text>
               </View>
             );

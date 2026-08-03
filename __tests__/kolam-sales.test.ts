@@ -29,6 +29,8 @@ import {
   getKolamSaleEstimatedMargin,
   getKolamSaleInternalNetProfit,
   getKolamSaleItemDiscountAmount,
+  getKolamSaleItemVoucherDiscountApplied,
+  formatKolamSaleItemVoucherLabel,
   getKolamSaleItemHppTotal,
   getKolamSaleItemNetProfit,
   getKolamSaleMarketplaceLogistics,
@@ -1452,6 +1454,48 @@ describe('kolam sales domain', () => {
     expect(getKolamSaleItemDiscountAmount(sale.items[0])).toBe(2000);
     expect(getKolamSaleDiscountApprovalReasons(sale)).toEqual([
       'Requires finance approval: item discount below minimum',
+    ]);
+  });
+
+  it('normalizes per-item voucher snapshot from BE items[].voucher', () => {
+    const sale = normalizeKolamSale({
+      _id: 'sale-voucher',
+      invoiceCode: 'INV-V',
+      status: 'pending',
+      items: [
+        {
+          _id: 'i1',
+          itemType: 'product',
+          quantity: 1,
+          unitPrice: 100000,
+          subtotal: 100000,
+          voucher: {
+            voucherId: 'v1',
+            code: 'HEMAT10',
+            discountType: 'percentage',
+            discountValue: 10,
+            discountApplied: 10000,
+            appliedAt: '2026-08-01T00:00:00.000Z',
+          },
+        },
+      ],
+      saleHistories: [
+        {
+          status: 'pending',
+          note: 'Sale created with per-item discount / voucher — awaiting finance approval',
+          changedAt: '2026-08-01T00:00:00.000Z',
+        },
+      ],
+    });
+
+    expect(sale.items[0].voucherCode).toBe('HEMAT10');
+    expect(sale.items[0].voucherDiscountApplied).toBe(10000);
+    expect(sale.items[0].voucherDiscountType).toBe('percentage');
+    expect(sale.items[0].voucherDiscountValue).toBe(10);
+    expect(getKolamSaleItemVoucherDiscountApplied(sale.items[0])).toBe(10000);
+    expect(formatKolamSaleItemVoucherLabel(sale.items[0])).toBe('HEMAT10 (10%)');
+    expect(getKolamSaleDiscountApprovalReasons(sale)).toEqual([
+      'Sale created with per-item discount / voucher — awaiting finance approval',
     ]);
   });
 });

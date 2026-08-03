@@ -30,6 +30,8 @@ import {
   getKolamSaleCouriers,
   getKolamSaleDeliveryStatusIntent,
   getKolamSaleItemDiscountAmount,
+  getKolamSaleItemVoucherDiscountApplied,
+  formatKolamSaleItemVoucherLabel,
   getKolamSaleMainComplaint,
   getKolamSaleMarketplaceFulfillment,
   getKolamSaleMarketplaceLogistics,
@@ -525,13 +527,14 @@ export function KolamSalesOpsDetail({
             sale.items.map((item, index) => {
               const lineTotal = item.unitPrice * item.quantity;
               const discountAmount = getKolamSaleItemDiscountAmount(item);
+              const voucherApplied = getKolamSaleItemVoucherDiscountApplied(item);
               const packingClientTotal = item.packings.reduce(
                 (sum, packing) =>
                   sum + packing.unitPriceAtSale * packing.quantity,
                 0,
               );
               const clientPay =
-                item.subtotal +
+                Math.max(0, item.subtotal - voucherApplied) +
                 Math.max(0, item.shippingCost) +
                 packingClientTotal;
               const internal = profitByIndex.get(index) ?? null;
@@ -585,7 +588,13 @@ export function KolamSalesOpsDetail({
                           value={`-${formatRupiah(discountAmount)}`}
                         />
                       ) : null}
-                      {item.voucherCode ? (
+                      {voucherApplied > 0 ? (
+                        <BreakdownAmountRow
+                          label={`Voucher ${formatKolamSaleItemVoucherLabel(item) || item.voucherCode}`}
+                          tone="deduction"
+                          value={`-${formatRupiah(voucherApplied)}`}
+                        />
+                      ) : item.voucherCode ? (
                         <BreakdownAmountRow
                           label={`Voucher ${item.voucherCode}`}
                           tone="muted"
