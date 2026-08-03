@@ -98,9 +98,22 @@ export function KolamTaskManagerSurface({
     Boolean(controller.currentUserId) &&
     !controller.isTaskAdmin &&
     (controller.mode === 'categories' || controller.mode === 'task-types');
+  const accessBlocked =
+    Boolean(controller.currentUserId) &&
+    !controller.canAccess &&
+    controller.mode !== 'categories' &&
+    controller.mode !== 'task-types';
 
   if (settingsBlocked) {
     return null;
+  }
+
+  if (accessBlocked) {
+    return (
+      <View style={styles.surface}>
+        <KolamEmptyState message="Tidak ada akses" title="Akses ditolak" />
+      </View>
+    );
   }
 
   return (

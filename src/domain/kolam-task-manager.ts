@@ -30,6 +30,56 @@ export type KolamTaskCategoryBucket =
   | 'crm'
   | 'production';
 
+export interface KolamTaskManagerPermissionEntry {
+  resource?: string;
+  actions?: string[];
+}
+
+export function hasKolamTaskManagerPermission(
+  permissions: KolamTaskManagerPermissionEntry[] | null | undefined,
+  resource: 'sale' | 'task-manager',
+  action: 'view',
+  roleKey?: string | null,
+) {
+  const normalizedRole = String(roleKey ?? '')
+    .trim()
+    .toLowerCase();
+  if (
+    normalizedRole === 'super_administrator' ||
+    normalizedRole === 'super_admin' ||
+    normalizedRole === 'super-admin'
+  ) {
+    return true;
+  }
+
+  if (permissions == null) {
+    return true;
+  }
+
+  return permissions.some(permission => {
+    const permissionResource = String(permission.resource ?? '')
+      .trim()
+      .toLowerCase();
+    const actions = (permission.actions ?? []).map(item =>
+      String(item).trim().toLowerCase(),
+    );
+    return (
+      (permissionResource === resource || permissionResource === '*') &&
+      (actions.includes(action) || actions.includes('*'))
+    );
+  });
+}
+
+export function canAccessKolamTaskManager(
+  permissions: KolamTaskManagerPermissionEntry[] | null | undefined,
+  roleKey?: string | null,
+) {
+  return (
+    hasKolamTaskManagerPermission(permissions, 'task-manager', 'view', roleKey) ||
+    hasKolamTaskManagerPermission(permissions, 'sale', 'view', roleKey)
+  );
+}
+
 export type KolamTaskManagerSource =
   | 'manual'
   | 'inbox_follow_up'

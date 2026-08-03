@@ -3,6 +3,7 @@ import { KolamAuthContext } from '../context/kolam-app-contexts';
 import {
   buildKolamTaskManagerKpi,
   buildKolamTaskDueDateIso,
+  canAccessKolamTaskManager,
   getKolamTaskManagerIdFromRoute,
   getKolamTaskManagerRouteMode,
   splitKolamTaskDueDateTime,
@@ -188,6 +189,7 @@ export interface KolamTaskManagerController {
   kpi: KolamTaskManagerKpi;
   loading: boolean;
   mineOnly: boolean;
+  canAccess: boolean;
   isTaskAdmin: boolean;
   mode: KolamTaskManagerSurfaceMode;
   mutatingTaskId: string | null;
@@ -315,6 +317,7 @@ export function useKolamTaskManagerController({
     roleKey === 'super-admin' ||
     roleKey === 'super_admin' ||
     roleKey === 'super_administrator';
+  const canAccess = canAccessKolamTaskManager(authUser?.permissions, roleKey);
   const currentUserId = authUser?.id ?? '';
   const [tasks, setTasks] = useState<KolamTaskManagerTask[]>([]);
   const [recurringTemplates, setRecurringTemplates] = useState<
@@ -1639,6 +1642,7 @@ export function useKolamTaskManagerController({
       kpi,
       loading,
       mineOnly,
+      canAccess,
       isTaskAdmin,
       mode,
       mutatingTaskId,
@@ -1784,6 +1788,7 @@ export function useKolamTaskManagerController({
       kpi,
       loading,
       mineOnly,
+      canAccess,
       isTaskAdmin,
       mode,
       mutatingTaskId,

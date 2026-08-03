@@ -1,5 +1,6 @@
 import {
   canPostKolamTaskDiscussion,
+  canAccessKolamTaskManager,
   getKolamTaskStatusOptionsForUser,
   normalizeKolamTaskManagerTask,
   normalizeKolamTaskRecurringOccurrences,
@@ -69,5 +70,22 @@ describe('kolam-task-manager domain', () => {
     expect(canPostKolamTaskDiscussion(task, 'pic-1', false)).toBe(true);
     expect(canPostKolamTaskDiscussion(task, 'check-1', false)).toBe(true);
     expect(canPostKolamTaskDiscussion(task, 'viewer-1', false)).toBe(false);
+  });
+
+  it('mirrors plugin access through task-manager or sale view permission', () => {
+    expect(
+      canAccessKolamTaskManager([
+        { resource: 'task-manager', actions: ['view'] },
+      ]),
+    ).toBe(true);
+    expect(
+      canAccessKolamTaskManager([{ resource: 'sale', actions: ['view'] }]),
+    ).toBe(true);
+    expect(
+      canAccessKolamTaskManager([
+        { resource: 'task-manager', actions: ['update'] },
+      ]),
+    ).toBe(false);
+    expect(canAccessKolamTaskManager([], 'super_admin')).toBe(true);
   });
 });
