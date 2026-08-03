@@ -1227,6 +1227,7 @@ function AmServicesPage() {
     account: AmServiceAccount,
     source: 'realtime' | 'history' = 'realtime',
     logPage = 1,
+    silent = false,
   ) => {
     const device = getServiceDevice(account);
     if (!device?._id) {
@@ -1241,7 +1242,7 @@ function AmServicesPage() {
     }
 
     try {
-      setDetailLoading(true);
+      if (!silent) setDetailLoading(true);
       setDetailLogSource(source);
       setDetailLogPage(logPage);
       const [response, statusResponse] = await Promise.all([
@@ -1261,7 +1262,7 @@ function AmServicesPage() {
     } catch (nextError) {
       setDetailError(nextError instanceof Error ? nextError.message : 'Gagal memuat service logs.');
     } finally {
-      setDetailLoading(false);
+      if (!silent) setDetailLoading(false);
     }
   }, []);
 
@@ -1476,6 +1477,28 @@ function AmServicesPage() {
       setServiceInputSending(false);
     }
   }, [loadServiceLogs, serviceInputValue]);
+
+  const expandedServiceAccount = React.useMemo(
+    () => accounts.find(account => account._id === expandedId) ?? null,
+    [accounts, expandedId],
+  );
+
+  React.useEffect(() => {
+    if (
+      !expandedServiceAccount ||
+      expandedTab !== 'logs' ||
+      detailLogSource !== 'realtime' ||
+      isTransferBanking(expandedServiceAccount.platform)
+    ) {
+      return undefined;
+    }
+
+    const interval = setInterval(() => {
+      loadServiceLogs(expandedServiceAccount, 'realtime', 1, true).catch(() => undefined);
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [detailLogSource, expandedServiceAccount, expandedTab, loadServiceLogs]);
 
   return (
     <View style={styles.pageStack}>

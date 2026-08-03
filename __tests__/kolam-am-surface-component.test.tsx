@@ -291,6 +291,7 @@ describe('KolamAmSurface', () => {
         renderer.unmount();
       });
     }
+    jest.useRealTimers();
     jest.clearAllMocks();
   });
 
@@ -1113,6 +1114,76 @@ describe('KolamAmSurface', () => {
       page: 2,
       source: 'history',
     });
+  });
+
+  it('polls realtime service logs while a service is expanded', async () => {
+    jest.useFakeTimers();
+    jest.mocked(getAmServiceAccounts).mockResolvedValue({
+      data: [
+        {
+          _id: 'service-live',
+          platform: 'tokopedia',
+          label: 'Tokopedia Live',
+          deviceId: {
+            _id: 'device-live',
+            name: 'Phone Live',
+            connectionType: 'tcp',
+            tcpAddress: '10.0.0.8:5555',
+            udid: null,
+          },
+          status: 'active',
+          credentials: {},
+          meta: {},
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 1, limit: 1},
+    });
+    jest.mocked(getAmDeviceServiceLogs).mockResolvedValue({
+      logs: [{ts: '2026-01-01T00:00:00.000Z', level: 'info', message: 'Realtime ready'}],
+      processRunning: true,
+      total: 1,
+      page: 1,
+      limit: 100,
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await updateAmRoute(renderer!, 'services');
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Service Tokopedia Live'}).props.onPress();
+    });
+
+    expect(getAmDeviceServiceLogs).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      jest.advanceTimersByTime(3000);
+      await Promise.resolve();
+    });
+
+    expect(getAmDeviceServiceLogs).toHaveBeenCalledTimes(2);
+    expect(getAmDeviceServiceLogs).toHaveBeenLastCalledWith('device-live', {
+      limit: 100,
+      page: 1,
+      source: 'realtime',
+    });
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Service Tokopedia Live'}).props.onPress();
+    });
+    await act(async () => {
+      jest.advanceTimersByTime(3000);
+      await Promise.resolve();
+    });
+
+    expect(getAmDeviceServiceLogs).toHaveBeenCalledTimes(2);
   });
 
   it('sends service OTP input when runtime logs request it', async () => {
