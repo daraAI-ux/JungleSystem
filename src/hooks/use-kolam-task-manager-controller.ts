@@ -118,6 +118,7 @@ export interface KolamTaskManagerController {
   recurringTemplateFormOpen: boolean;
   categoryBucketFilter: KolamTaskCategoryBucket | 'all';
   categoryFilter: string;
+  assignedToFilter: string;
   currentUserId: string;
   dataSource: KolamTaskManagerDataSource;
   error: string | null;
@@ -188,6 +189,7 @@ export interface KolamTaskManagerController {
   onSelectPage: (page: number) => void;
   onSetCategoryBucketFilter: (value: KolamTaskCategoryBucket | 'all') => void;
   onSetCategoryFilter: (value: string) => void;
+  onSetAssignedToFilter: (value: string) => void;
   onSetMineOnly: (value: boolean) => void;
   onSetPageSize: (pageSize: number) => void;
   onSetPriorityFilter: (value: KolamTaskManagerPriority | 'all') => void;
@@ -311,6 +313,7 @@ export function useKolamTaskManagerController({
     KolamTaskCategoryBucket | 'all'
   >('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [assignedToFilter, setAssignedToFilter] = useState('all');
   const [mineOnly, setMineOnly] = useState(false);
   const [recurringEnclosureOnly, setRecurringEnclosureOnly] = useState(false);
   const [total, setTotal] = useState(0);
@@ -385,6 +388,8 @@ export function useKolamTaskManagerController({
         priority: priorityFilter,
         categoryBucket: categoryBucketFilter,
         categoryId: categoryFilter === 'all' ? undefined : categoryFilter,
+        assignedToId:
+          assignedToFilter === 'all' ? undefined : assignedToFilter,
         mine: mineOnly,
       });
       setTasks(list.items);
@@ -422,6 +427,7 @@ export function useKolamTaskManagerController({
   }, [
     categoryBucketFilter,
     categoryFilter,
+    assignedToFilter,
     mineOnly,
     mode,
     page,
@@ -587,6 +593,7 @@ export function useKolamTaskManagerController({
     setPriorityFilter('all');
     setCategoryBucketFilter('all');
     setCategoryFilter('all');
+    setAssignedToFilter('all');
     setMineOnly(false);
     setPage(1);
     setStatusMessage(null);
@@ -1146,6 +1153,7 @@ export function useKolamTaskManagerController({
       recurringTemplateFormOpen,
       categoryBucketFilter,
       categoryFilter,
+      assignedToFilter,
       currentUserId,
       dataSource,
       error,
@@ -1217,6 +1225,7 @@ export function useKolamTaskManagerController({
         setCategoryBucketFilter,
       ),
       onSetCategoryFilter: setFilterAndFirstPage(setCategoryFilter),
+      onSetAssignedToFilter: setFilterAndFirstPage(setAssignedToFilter),
       onSetMineOnly: setFilterAndFirstPage(setMineOnly),
       onSetPageSize: setFilterAndFirstPage(setPageSize),
       onSetPriorityFilter: setFilterAndFirstPage(setPriorityFilter),
@@ -1254,6 +1263,7 @@ export function useKolamTaskManagerController({
       recurringTemplateFormOpen,
       categoryBucketFilter,
       categoryFilter,
+      assignedToFilter,
       currentUserId,
       dataSource,
       error,

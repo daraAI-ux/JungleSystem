@@ -611,6 +611,20 @@ function KolamTaskToolbar({
             value={controller.categoryFilter}
           />
           <KolamDropdownSelect
+            label="PIC"
+            onChange={controller.onSetAssignedToFilter}
+            options={[
+              { label: 'PIC', value: 'all' },
+              ...controller.staffOptions.map(option => ({
+                label: option.label,
+                value: option.id,
+              })),
+            ]}
+            searchable
+            showLabelInTrigger={false}
+            value={controller.assignedToFilter}
+          />
+          <KolamDropdownSelect
             label="Status"
             onChange={value =>
               controller.onSetStatusFilter(value as typeof controller.statusFilter)
