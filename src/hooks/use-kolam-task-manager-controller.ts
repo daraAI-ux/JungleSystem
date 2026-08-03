@@ -38,6 +38,7 @@ import {
   getKolamTaskRecurringServiceVisits,
   getKolamTaskRecurringTemplates,
   runKolamTaskRecurringTick,
+  sendKolamTaskManagerDiscussion,
   updateKolamTaskManagerCategory,
   updateKolamTaskManagerChecklist,
   updateKolamTaskManagerStatus,
@@ -104,6 +105,7 @@ export interface KolamTaskManagerController {
   formMode: 'edit' | 'new';
   formOpen: boolean;
   checklistDraft: string;
+  discussionDraft: string;
   noteDraft: string;
   kpi: KolamTaskManagerKpi;
   loading: boolean;
@@ -129,6 +131,7 @@ export interface KolamTaskManagerController {
   total: number;
   totalPages: number;
   onAddChecklistItem: () => Promise<boolean>;
+  onAddDiscussion: () => Promise<boolean>;
   onAddNote: () => Promise<boolean>;
   onChangeCategoryForm: (
     patch: Partial<KolamTaskManagerCategoryFormState>,
@@ -173,6 +176,7 @@ export interface KolamTaskManagerController {
   onSaveForm: () => Promise<boolean>;
   onSaveTaskType: () => Promise<boolean>;
   onSetChecklistDraft: (value: string) => void;
+  onSetDiscussionDraft: (value: string) => void;
   onSetNoteDraft: (value: string) => void;
   onToggleChecklistItem: (index: number) => Promise<boolean>;
   onRunRecurringTick: () => Promise<boolean>;
@@ -245,6 +249,7 @@ export function useKolamTaskManagerController({
   const [taskTypeForm, setTaskTypeForm] =
     useState<KolamTaskManagerTaskTypeFormState>(() => getDefaultTaskTypeForm());
   const [checklistDraft, setChecklistDraft] = useState('');
+  const [discussionDraft, setDiscussionDraft] = useState('');
   const [noteDraft, setNoteDraft] = useState('');
   const [dataSource, setDataSource] =
     useState<KolamTaskManagerDataSource>('idle');
@@ -750,6 +755,30 @@ export function useKolamTaskManagerController({
     }
   }, [noteDraft, selectedTask]);
 
+  const onAddDiscussion = useCallback(async () => {
+    if (!selectedTask) return false;
+    const message = discussionDraft.trim();
+    if (!message) return false;
+    setMutatingTaskId(`discussion:${selectedTask.id}`);
+    setError(null);
+    setStatusMessage(null);
+    try {
+      const updated = await sendKolamTaskManagerDiscussion(
+        selectedTask.id,
+        message,
+      );
+      setSelectedTask(updated);
+      setDiscussionDraft('');
+      setStatusMessage('Pesan dikirim');
+      return true;
+    } catch (mutationError) {
+      setError(getErrorMessage(mutationError));
+      return false;
+    } finally {
+      setMutatingTaskId(null);
+    }
+  }, [discussionDraft, selectedTask]);
+
   const onCreateCategory = useCallback(() => {
     setCategoryFormMode('new');
     setEditingCategoryId('');
@@ -973,6 +1002,7 @@ export function useKolamTaskManagerController({
       formMode,
       formOpen,
       checklistDraft,
+      discussionDraft,
       noteDraft,
       kpi,
       loading,
@@ -998,6 +1028,7 @@ export function useKolamTaskManagerController({
       selectedTask,
       taskTypes,
       onAddChecklistItem,
+      onAddDiscussion,
       onAddNote,
       onChangeCategoryForm,
       onChangeForm,
@@ -1043,6 +1074,7 @@ export function useKolamTaskManagerController({
       onSaveForm,
       onSaveTaskType,
       onSetChecklistDraft: setChecklistDraft,
+      onSetDiscussionDraft: setDiscussionDraft,
       onSetNoteDraft: setNoteDraft,
       onToggleChecklistItem,
       onRunRecurringTick,
@@ -1068,6 +1100,7 @@ export function useKolamTaskManagerController({
       formMode,
       formOpen,
       checklistDraft,
+      discussionDraft,
       noteDraft,
       kpi,
       loading,
@@ -1076,6 +1109,7 @@ export function useKolamTaskManagerController({
       mode,
       mutatingTaskId,
       onAddChecklistItem,
+      onAddDiscussion,
       onAddNote,
       onChangeCategoryForm,
       onChangeForm,

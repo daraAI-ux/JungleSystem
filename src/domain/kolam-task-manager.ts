@@ -106,6 +106,21 @@ export interface KolamTaskTimelineItem {
   at: string;
 }
 
+export interface KolamTaskDiscussionAttachment {
+  fileName: string;
+  mimeType: string;
+  path: string;
+  type: 'file' | 'image' | 'video';
+}
+
+export interface KolamTaskDiscussionMessage {
+  id: string;
+  sender: string | KolamTaskManagerUserRef | null;
+  message: string;
+  attachments: KolamTaskDiscussionAttachment[];
+  createdAt: string;
+}
+
 export interface KolamTaskRecurrenceRule {
   dayOfMonth: number | null;
   daysOfWeek: number[];
@@ -179,6 +194,7 @@ export interface KolamTaskManagerTask {
   dueDate: string;
   completedAt: string;
   checklist: KolamTaskManagerChecklistItem[];
+  discussion: KolamTaskDiscussionMessage[];
   timeline: KolamTaskTimelineItem[];
   createdBy: string | KolamTaskManagerUserRef | null;
   updatedBy: string | KolamTaskManagerUserRef | null;
@@ -561,6 +577,9 @@ export function normalizeKolamTaskManagerTask(payload: unknown): KolamTaskManage
     checklist: Array.isArray(record.checklist)
       ? record.checklist.map(normalizeChecklistItem)
       : [],
+    discussion: Array.isArray(record.discussion)
+      ? record.discussion.map(normalizeDiscussionMessage)
+      : [],
     timeline: Array.isArray(record.timeline)
       ? record.timeline.map(normalizeTimelineItem)
       : [],
@@ -568,6 +587,35 @@ export function normalizeKolamTaskManagerTask(payload: unknown): KolamTaskManage
     updatedBy: normalizeUserRef(record.updatedBy),
     createdAt: toStringValue(record.createdAt),
     updatedAt: toStringValue(record.updatedAt),
+  };
+}
+
+function normalizeDiscussionMessage(
+  payload: unknown,
+): KolamTaskDiscussionMessage {
+  const record = unwrapData(payload);
+  return {
+    id: toStringValue(record._id ?? record.id),
+    sender: normalizeUserRef(record.sender),
+    message: toStringValue(record.message),
+    attachments: Array.isArray(record.attachments)
+      ? record.attachments.map(normalizeDiscussionAttachment)
+      : [],
+    createdAt: toStringValue(record.createdAt),
+  };
+}
+
+function normalizeDiscussionAttachment(
+  payload: unknown,
+): KolamTaskDiscussionAttachment {
+  const record = unwrapData(payload);
+  const type =
+    record.type === 'video' || record.type === 'file' ? record.type : 'image';
+  return {
+    fileName: toStringValue(record.fileName),
+    mimeType: toStringValue(record.mimeType),
+    path: toStringValue(record.path),
+    type,
   };
 }
 

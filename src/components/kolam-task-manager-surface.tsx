@@ -153,6 +153,11 @@ function KolamTaskManagerDetail({
     task.status === 'cancelled' ||
     controller.mutatingTaskId === task.id ||
     statusOptions.length === 0;
+  const discussionMessages = [...task.discussion].sort(
+    (left, right) =>
+      new Date(left.createdAt || 0).getTime() -
+      new Date(right.createdAt || 0).getTime(),
+  );
 
   return (
     <View style={styles.detailStack}>
@@ -298,6 +303,68 @@ function KolamTaskManagerDetail({
             label="Tambah"
             onPress={() => {
               void controller.onAddChecklistItem();
+            }}
+          />
+        </View>
+      </View>
+
+      <View style={styles.detailCard}>
+        <Text style={styles.sectionTitle}>Diskusi</Text>
+        {discussionMessages.length ? (
+          discussionMessages.map(message => (
+            <View
+              key={message.id || `${message.sender}-${message.createdAt}`}
+              style={styles.discussionRow}
+            >
+              <View style={styles.sectionHeaderRow}>
+                <Text style={styles.timelineTitle}>
+                  {getKolamTaskUserDisplayName(message.sender)}
+                </Text>
+                <Text style={styles.metaText}>
+                  {formatKolamTaskListDatetime(message.createdAt)}
+                </Text>
+              </View>
+              <KolamHtmlContent html={message.message} />
+              {message.attachments.length ? (
+                <View style={styles.attachmentRow}>
+                  {message.attachments.map(attachment => (
+                    <KolamStatusBadge
+                      intent="muted"
+                      key={
+                        attachment.path || attachment.fileName || attachment.mimeType
+                      }
+                      label={
+                        attachment.fileName || attachment.path || attachment.type
+                      }
+                    />
+                  ))}
+                </View>
+              ) : null}
+            </View>
+          ))
+        ) : (
+          <Text style={styles.metaText}>Belum ada diskusi.</Text>
+        )}
+        <View style={styles.noteAddRow}>
+          <KolamFormTextField
+            multiline
+            onChangeText={controller.onSetDiscussionDraft}
+            placeholder="Pesan"
+            style={[
+              settingsWebFormStyles.settingsWebFormFieldValue,
+              settingsWebFormStyles.settingsWebFormFieldValueTextarea,
+              styles.noteDraftInput,
+            ]}
+            value={controller.discussionDraft}
+          />
+          <KolamButton
+            disabled={
+              controller.mutatingTaskId === `discussion:${task.id}` ||
+              !controller.discussionDraft.trim()
+            }
+            label="Kirim"
+            onPress={() => {
+              void controller.onAddDiscussion();
             }}
           />
         </View>
@@ -1791,6 +1858,19 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     gap: 4,
     padding: 10,
+  },
+  discussionRow: {
+    borderColor: V.colors.border,
+    borderRadius: V.radius.md,
+    borderWidth: 1,
+    gap: 8,
+    padding: 10,
+  },
+  attachmentRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
   },
   timelineTitle: {
     color: V.colors.fg,

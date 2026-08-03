@@ -299,6 +299,20 @@ export async function addKolamTaskManagerNote(
   return normalizeKolamTaskManagerTask(payload);
 }
 
+export async function sendKolamTaskManagerDiscussion(
+  taskId: string,
+  message: string,
+): Promise<KolamTaskManagerTask> {
+  const payload = await kolamRequest<unknown>(
+    `/task-manager/${encodeURIComponent(taskId)}/discussion`,
+    {
+      method: 'POST',
+      body: { message: message.trim() },
+    },
+  );
+  return normalizeKolamTaskManagerTask(payload);
+}
+
 export async function deleteKolamTaskManagerTask(taskId: string) {
   await kolamRequest<unknown>(`/task-manager/${encodeURIComponent(taskId)}`, {
     method: 'DELETE',
