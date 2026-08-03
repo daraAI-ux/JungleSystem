@@ -413,7 +413,7 @@ function AmDashboardPage({
         <AmMetricCard label="Total Balance" value={formatRupiah(data.summary.totalBalance)} meta={`${data.summary.totalAccounts} account`} />
         <AmMetricCard label="Incoming Today" value={formatRupiah(data.summary.todayIncoming.total)} meta={`${data.summary.todayIncoming.count} transaksi`} />
         <AmMetricCard label="Outgoing Today" value={formatRupiah(data.summary.todayOutgoing.total)} meta={`${data.summary.todayOutgoing.count} transaksi`} />
-        <AmMetricCard label="Active Devices" value={String(data.summary.activeDevices)} meta={`${data.devices.length} device terdaftar`} />
+        <AmMetricCard label="Active Devices" value={String(data.summary.activeDevices)} meta="with active accounts" />
       </View>
       <View style={styles.panel}>
         <Text style={styles.panelTitle}>Transfer Status</Text>
@@ -448,46 +448,42 @@ function AmDashboardPage({
         </View>
         <AmMutationChart chartData={data.chartData} />
       </View>
-      <View style={styles.panel}>
-        <View style={styles.sectionHeaderRow}>
-          <Text style={styles.panelTitle}>Device Overview</Text>
-          <KolamButton
-            accessibilityLabel="AM Dashboard View Hardware"
-            label="View all"
-            intent="outline"
-            size="sm"
-            onPress={() => openAmRoute('hardware')}
-          />
-        </View>
-        <Text style={styles.panelText}>All devices with active accounts and their locations.</Text>
-        <View style={styles.detailListHeader}>
-          <Text style={[styles.tableHeaderText, styles.serviceCol]}>Device</Text>
-          <Text style={[styles.tableHeaderText, styles.deviceWideCol]}>Location</Text>
-          <Text style={[styles.tableHeaderText, styles.statusCol]}>Accounts</Text>
-          <Text style={[styles.tableHeaderText, styles.accountCol]}>Types</Text>
-        </View>
-        {data.devices.map(device => (
-          <View key={device._id} style={styles.deviceRow}>
-            <View style={styles.serviceCol}>
-              <Text style={styles.rowTitle}>{device.name}</Text>
-              <Text style={styles.rowMeta}>
-                {[device.brand, device.model].filter(Boolean).join(' ') || device.udid}
-              </Text>
-            </View>
-            <Text style={[styles.rowMeta, styles.deviceWideCol]}>
-              {[device.boxName, device.rackName].filter(Boolean).join(' / ') || '-'}
-            </Text>
-            <Text style={[styles.rowMeta, styles.statusCol]}>{device.activeAccountCount}/{device.accountCount}</Text>
-            <Text style={[styles.rowMeta, styles.accountCol]}>{device.accountTypes.length ? device.accountTypes.join(', ') : '-'}</Text>
+      {data.devices.length > 0 ? (
+        <View style={styles.panel}>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.panelTitle}>Device Overview</Text>
+            <KolamButton
+              accessibilityLabel="AM Dashboard View Hardware"
+              label="View all"
+              intent="outline"
+              size="sm"
+              onPress={() => openAmRoute('hardware')}
+            />
           </View>
-        ))}
-        <AmLoadingOrEmpty
-          isLoading={false}
-          items={data.devices}
-          loadingText="Memuat devices dashboard..."
-          emptyText="No dashboard devices found"
-        />
-      </View>
+          <Text style={styles.panelText}>All devices with active accounts and their locations.</Text>
+          <View style={styles.detailListHeader}>
+            <Text style={[styles.tableHeaderText, styles.serviceCol]}>Device</Text>
+            <Text style={[styles.tableHeaderText, styles.deviceWideCol]}>Location</Text>
+            <Text style={[styles.tableHeaderText, styles.statusCol]}>Accounts</Text>
+            <Text style={[styles.tableHeaderText, styles.accountCol]}>Types</Text>
+          </View>
+          {data.devices.map(device => (
+            <View key={device._id} style={styles.deviceRow}>
+              <View style={styles.serviceCol}>
+                <Text style={styles.rowTitle}>{device.name}</Text>
+                <Text style={styles.rowMeta}>
+                  {[device.brand, device.model].filter(Boolean).join(' ') || device.udid}
+                </Text>
+              </View>
+              <Text style={[styles.rowMeta, styles.deviceWideCol]}>
+                {[device.boxName, device.rackName].filter(Boolean).join(' / ') || '-'}
+              </Text>
+              <Text style={[styles.rowMeta, styles.statusCol]}>{device.activeAccountCount}/{device.accountCount}</Text>
+              <Text style={[styles.rowMeta, styles.accountCol]}>{device.accountTypes.length ? device.accountTypes.join(', ') : '-'}</Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
     </View>
   );
 }

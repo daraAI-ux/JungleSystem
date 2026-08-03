@@ -416,6 +416,7 @@ describe('KolamAmSurface', () => {
     expect(text).toContain('Incoming dashboard sixth');
     expect(joinedText).toContain('Legacy BRI - 654');
     expect(text).toContain('Device Overview');
+    expect(joinedText).toContain('with active accounts');
     expect(joinedText).toContain('All devices with active accounts and their locations.');
     expect(text).toContain('Location');
     expect(text).toContain('Accounts');
@@ -431,6 +432,32 @@ describe('KolamAmSurface', () => {
     expect(text).not.toContain('Ringkasan akun, device, transfer, dan mutasi AM.');
     expect(getAmDashboard).toHaveBeenCalledTimes(1);
     expect(recordAmPageView).toHaveBeenCalledWith('/');
+  });
+
+  it('hides the AM dashboard device overview when dashboard devices are empty', async () => {
+    (getAmDashboard as jest.Mock).mockResolvedValueOnce({
+      ...mockDashboardData,
+      devices: [],
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    const text = renderText(renderer!);
+    const joinedText = text.join(' ');
+
+    expect(joinedText).toContain('with active accounts');
+    expect(text).not.toContain('Device Overview');
+    expect(joinedText).not.toContain('All devices with active accounts and their locations.');
   });
 
   it('keeps the POS-style back button wired to return to Kolam', async () => {
