@@ -3278,7 +3278,7 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
 
   const servicePlatformItems = React.useMemo(
     () => device.connectionType === 'browser'
-      ? ['tokopedia', 'shopee', 'tiktok', 'instagram', 'whatsapp']
+      ? ['whatsapp', 'tokopedia', 'shopee', 'tiktok', 'instagram']
       : ['bca', 'brimo', 'dana'],
     [device.connectionType],
   );

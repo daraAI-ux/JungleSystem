@@ -23,6 +23,7 @@ import {
   getAmActivityLogs,
   getAmActivityLogStats,
   getAmBoxById,
+  getAmBoxes,
   getAmCurrentUser,
   getAmDashboard,
   getAmDeviceById,
@@ -1913,6 +1914,104 @@ describe('KolamAmSurface', () => {
       pin: '123456',
       accountNumber: '9876543210',
       credentials: {},
+      status: 'inactive',
+    }));
+  });
+
+  it('defaults browser device service creation to WhatsApp like AM FE', async () => {
+    jest.mocked(getAmRackById).mockResolvedValue({
+      _id: 'rack-1',
+      name: 'Rack Alpha',
+      slug: 'rack-alpha',
+      location: 'Room A',
+      description: '',
+      status: 'active',
+      serverIp: '10.0.0.1',
+      boxCount: 1,
+      deviceCount: 1,
+      createdAt: '',
+      updatedAt: '',
+    });
+    jest.mocked(getAmBoxById).mockResolvedValue({
+      _id: 'box-1',
+      name: 'Box 01',
+      slug: 'box-01',
+      rackId: {_id: 'rack-1', name: 'Rack Alpha'},
+      description: '',
+      status: 'active',
+      deviceCount: 1,
+      createdAt: '',
+      updatedAt: '',
+    });
+    const browserDevice = {
+      _id: 'device-browser',
+      name: 'Browser Target',
+      slug: 'browser-target',
+      boxId: {
+        _id: 'box-1',
+        name: 'Box 01',
+        rackId: {_id: 'rack-1', name: 'Rack Alpha'},
+      },
+      connectionType: 'browser',
+      tcpAddress: null,
+      udid: null,
+      brand: 'Playwright',
+      model: 'Chromium',
+      adbStatus: 'connected',
+      createdAt: '',
+      updatedAt: '',
+    };
+    jest.mocked(getAmDeviceById).mockResolvedValue(browserDevice);
+    jest.mocked(getAmRacks).mockResolvedValue({
+      data: [],
+      meta: {total: 0, limit: 20},
+    });
+    jest.mocked(getAmBoxes).mockResolvedValue({
+      data: [],
+      meta: {total: 0, limit: 20},
+    });
+    jest.mocked(getAmDevices).mockResolvedValue({
+      data: [browserDevice],
+      meta: {total: 1, limit: 20},
+    });
+    jest.mocked(getAmServiceAccounts).mockResolvedValue({
+      data: [],
+      meta: {total: 0, limit: 100},
+    });
+    jest.mocked(getAmDeviceServices).mockResolvedValue([]);
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface
+          activeModuleRoute={concreteAmRoute(
+            'hardware/rack-1/box-1/browser-target',
+            'hardware/:rackId/:boxId/:deviceId',
+          )}
+          dataset={seedUnifiedDataset}
+        />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Device Add Service Account device-browser'}).props.onPress();
+    });
+
+    const findInput = (placeholder: string) => renderer!.root.findAllByType(TextInput).find(input => input.props.placeholder === placeholder);
+    await act(async () => {
+      findInput('Service label')!.props.onChangeText('WA Browser');
+      findInput('nomor HP')!.props.onChangeText('08123456789');
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Device Save Service Account device-browser'}).props.onPress();
+    });
+
+    expect(createAmServiceAccount).toHaveBeenCalledWith(expect.objectContaining({
+      platform: 'whatsapp',
+      label: 'WA Browser',
+      deviceId: 'device-browser',
+      credentials: {phoneNumber: '08123456789'},
       status: 'inactive',
     }));
   });
