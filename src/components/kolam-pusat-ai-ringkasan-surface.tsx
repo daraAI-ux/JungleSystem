@@ -20,6 +20,15 @@ import {
   type KolamDaraAsyncJob,
 } from '../domain/kolam-pusat-ai-jobs';
 import {
+  formatKolamDaraStaffNotifyChannels,
+  formatKolamDaraStaffNotifyEventLabel,
+  formatKolamDaraStaffNotifyWib,
+  isKolamDaraStaffNotifyLlmCopy,
+  KOLAM_DARA_STAFF_NOTIFY_EMPTY,
+  KOLAM_DARA_STAFF_NOTIFY_UNAVAILABLE,
+  type KolamDaraStaffNotifyEvent,
+} from '../domain/kolam-pusat-ai-log-dara';
+import {
   computeKolamOwnerCopilotNightOpsTotal,
   formatKolamOwnerCopilotEventLabel,
   formatKolamOwnerCopilotWib,
@@ -32,6 +41,10 @@ import {
 } from '../domain/kolam-pusat-ai-owner-copilot';
 import {isTopNavAdminRole} from '../domain/top-nav';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
+import {
+  useKolamPusatAiLogDaraController,
+  type KolamPusatAiLogDaraController,
+} from '../hooks/use-kolam-pusat-ai-log-dara-controller';
 import {
   useKolamPusatAiOwnerCopilotController,
   type KolamPusatAiOwnerCopilotController,
@@ -52,6 +65,11 @@ import {KolamStatusBadge} from './kolam-status-badge';
 import {KolamSurfacePanelTabs} from './kolam-surface-panel-tabs';
 import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
 
+/** FE Log DARA violet tint (panel-local; not a global token). */
+const LOG_DARA_VIOLET = '#7c3aed';
+const LOG_DARA_VIOLET_SOFT = '#f5f3ff';
+const LOG_DARA_VIOLET_BORDER = 'rgba(124, 58, 237, 0.2)';
+
 export function KolamPusatAiRingkasanSurface({
   onRouteChange,
   route,
@@ -68,6 +86,7 @@ export function KolamPusatAiRingkasanSurface({
     canNormalize: isAdmin,
   });
   const ownerController = useKolamPusatAiOwnerCopilotController(route);
+  const logDaraController = useKolamPusatAiLogDaraController(route);
 
   return (
     <View style={styles.surface}>
@@ -93,6 +112,8 @@ export function KolamPusatAiRingkasanSurface({
           controller={ownerController}
           onRouteChange={onRouteChange}
         />
+      ) : selectedTab === 'log-dara' ? (
+        <KolamPusatAiLogDaraBody controller={logDaraController} />
       ) : (
         <KolamEmptyState title="Belum tersedia" />
       )}
@@ -100,7 +121,7 @@ export function KolamPusatAiRingkasanSurface({
   );
 }
 
-/** Alias for hub surface (tabs + ringkasan/proses/owner). */
+/** Alias for hub surface (tabs + ringkasan/proses/owner/log). */
 export const KolamPusatAiSurface = KolamPusatAiRingkasanSurface;
 
 function resolveSelectedHubTab(
@@ -115,6 +136,107 @@ function resolveSelectedHubTab(
     item => item.id === tab,
   );
   return allowed ? tab : 'ringkasan';
+}
+
+function KolamPusatAiLogDaraBody({
+  controller,
+}: {
+  controller: KolamPusatAiLogDaraController;
+}) {
+  const {log, loading, error} = controller;
+
+  if (loading && !log) {
+    return <Text style={styles.loadingText}>Memuat…</Text>;
+  }
+
+  if (!log) {
+    return (
+      <View style={styles.logUnavailable}>
+        <Text style={styles.logUnavailableText}>
+          {error || KOLAM_DARA_STAFF_NOTIFY_UNAVAILABLE}
+        </Text>
+        <KolamButton
+          intent="outline"
+          label="Coba lagi"
+          onPress={() => {
+            void controller.onRefresh();
+          }}
+        />
+      </View>
+    );
+  }
+
+  return (
+    <ScrollView
+      contentContainerStyle={styles.logScrollContent}
+      style={styles.scroll}>
+      <View style={styles.logSummaryCard}>
+        <View style={styles.logSummaryMeta}>
+          <Text style={styles.logSummaryItem}>
+            {`Total ${log.summary.total}`}
+          </Text>
+          <Text style={styles.logSummaryItem}>
+            {`LLM ${log.summary.llmCopy}`}
+          </Text>
+          <Text style={styles.logSummaryItem}>
+            {`Template ${log.summary.templateCopy}`}
+          </Text>
+          <Text style={styles.logSummaryMuted}>
+            {`${log.lookbackHours} jam terakhir`}
+          </Text>
+        </View>
+        <KolamButton
+          disabled={loading}
+          intent="outline"
+          label="Refresh"
+          onPress={() => {
+            void controller.onRefresh();
+          }}
+        />
+      </View>
+
+      <View style={styles.logEventsCard}>
+        <Text style={styles.logEventsTitle}>Riwayat event</Text>
+        {log.events.length === 0 ? (
+          <Text style={styles.logEmpty}>{KOLAM_DARA_STAFF_NOTIFY_EMPTY}</Text>
+        ) : (
+          log.events.map(event => (
+            <LogDaraEventRow event={event} key={event.id} />
+          ))
+        )}
+      </View>
+    </ScrollView>
+  );
+}
+
+function LogDaraEventRow({event}: {event: KolamDaraStaffNotifyEvent}) {
+  const llm = isKolamDaraStaffNotifyLlmCopy(event.copySource);
+  return (
+    <View style={styles.logEventRow}>
+      <View style={styles.logEventTop}>
+        <Text style={styles.logEventTime}>
+          {formatKolamDaraStaffNotifyWib(event.at)}
+        </Text>
+        <Text style={styles.logEventLabel}>
+          {formatKolamDaraStaffNotifyEventLabel(
+            event.action || event.eventType,
+          )}
+        </Text>
+        {event.invoiceCode ? (
+          <Text style={styles.logEventInvoice}>{event.invoiceCode}</Text>
+        ) : null}
+        <Text style={llm ? styles.logBadgeLlm : styles.logBadgeTpl}>
+          {llm ? 'LLM' : 'tpl'}
+        </Text>
+      </View>
+      <Text style={styles.logEventMeta}>
+        {formatKolamDaraStaffNotifyChannels(event.notified)}
+      </Text>
+      {event.detail ? (
+        <Text style={styles.logEventMeta}>{event.detail}</Text>
+      ) : null}
+    </View>
+  );
 }
 
 function KolamPusatAiOwnerCopilotBody({
@@ -679,6 +801,136 @@ const styles = StyleSheet.create({
     borderBottomColor: V.colors.border,
     borderBottomWidth: 1,
     paddingBottom: 4,
+  },
+  logScrollContent: {
+    gap: 16,
+    paddingBottom: 24,
+  },
+  logUnavailable: {
+    alignItems: 'center',
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: V.radius.lg,
+    borderWidth: 1,
+    gap: 8,
+    paddingVertical: 24,
+  },
+  logUnavailableText: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    textAlign: 'center',
+  },
+  logSummaryCard: {
+    alignItems: 'center',
+    backgroundColor: LOG_DARA_VIOLET_SOFT,
+    borderColor: LOG_DARA_VIOLET_BORDER,
+    borderRadius: V.radius.lg,
+    borderWidth: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+  },
+  logSummaryMeta: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+  },
+  logSummaryItem: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  logSummaryMuted: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+  },
+  logEventsCard: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: V.radius.lg,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  logEventsTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  logEmpty: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    paddingHorizontal: 12,
+    paddingVertical: 24,
+    textAlign: 'center',
+  },
+  logEventRow: {
+    borderTopColor: V.colors.border,
+    borderTopWidth: 1,
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  logEventTop: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  logEventTime: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+  },
+  logEventLabel: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  logEventInvoice: {
+    color: LOG_DARA_VIOLET,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+  },
+  logBadgeLlm: {
+    backgroundColor: LOG_DARA_VIOLET_SOFT,
+    borderRadius: V.radius.sm,
+    color: LOG_DARA_VIOLET,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '700',
+    overflow: 'hidden',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    textTransform: 'uppercase',
+  },
+  logBadgeTpl: {
+    backgroundColor: V.colors.muted,
+    borderRadius: V.radius.sm,
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '700',
+    overflow: 'hidden',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    textTransform: 'uppercase',
+  },
+  logEventMeta: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    width: '100%',
   },
   ownerScrollContent: {
     gap: 16,

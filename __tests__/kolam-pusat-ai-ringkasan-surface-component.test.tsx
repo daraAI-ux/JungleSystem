@@ -4,6 +4,7 @@ import {useKolamAuthContext} from '../src/context/kolam-app-contexts';
 import {KolamPusatAiRingkasanSurface} from '../src/components/kolam-pusat-ai-ringkasan-surface';
 import {fetchKolamDaraJobsList} from '../src/services/kolam-dara-jobs-api';
 import {fetchKolamOwnerCopilotDashboard} from '../src/services/kolam-dara-owner-copilot-api';
+import {fetchKolamDaraStaffNotifyLog} from '../src/services/kolam-dara-staff-notify-log-api';
 import {fetchKolamDaraMarketingHub} from '../src/services/kolam-dara-marketing-hub-api';
 
 jest.mock('../src/services/kolam-dara-marketing-hub-api', () => ({
@@ -20,6 +21,10 @@ jest.mock('../src/services/kolam-dara-owner-copilot-api', () => ({
   fetchKolamOwnerCopilotDashboard: jest.fn(),
 }));
 
+jest.mock('../src/services/kolam-dara-staff-notify-log-api', () => ({
+  fetchKolamDaraStaffNotifyLog: jest.fn(),
+}));
+
 jest.mock('../src/context/kolam-app-contexts', () => ({
   useKolamAuthContext: jest.fn(),
 }));
@@ -32,6 +37,9 @@ const fetchJobsMock = fetchKolamDaraJobsList as jest.MockedFunction<
 >;
 const fetchOwnerMock = fetchKolamOwnerCopilotDashboard as jest.MockedFunction<
   typeof fetchKolamOwnerCopilotDashboard
+>;
+const fetchLogMock = fetchKolamDaraStaffNotifyLog as jest.MockedFunction<
+  typeof fetchKolamDaraStaffNotifyLog
 >;
 const useAuthContextMock = useKolamAuthContext as jest.MockedFunction<
   typeof useKolamAuthContext
@@ -51,7 +59,27 @@ describe('KolamPusatAiRingkasanSurface', () => {
     fetchHubMock.mockReset();
     fetchJobsMock.mockReset();
     fetchOwnerMock.mockReset();
+    fetchLogMock.mockReset();
     fetchJobsMock.mockResolvedValue([]);
+    fetchLogMock.mockResolvedValue({
+      generatedAt: '2026-08-03T12:00:00.000Z',
+      lookbackHours: 72,
+      summary: {total: 1, llmCopy: 1, templateCopy: 0},
+      events: [
+        {
+          id: 'e1',
+          at: '2026-08-03T11:00:00.000Z',
+          eventType: 'dara_staff_notify',
+          action: 'webstore_packing_request',
+          invoiceCode: 'INV-9',
+          phase: '',
+          detail: 'Packing dimulai',
+          copySource: 'llm',
+          notified: {teamChat: true, waStaff: false, browserPush: false},
+          saleId: '',
+        },
+      ],
+    });
     fetchOwnerMock.mockResolvedValue({
       generatedAt: '2026-08-03T12:00:00.000Z',
       lookbackHours: 24,
@@ -256,6 +284,30 @@ describe('KolamPusatAiRingkasanSurface', () => {
       openRoom.props.onPress();
     });
     expect(onRouteChange).toHaveBeenCalledWith('/team-chat?room=room-1');
+  });
+
+  it('loads Log DARA staff notify events for admin', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer | undefined;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamPusatAiRingkasanSurface route="/pusat-ai?tab=log-dara" />,
+      );
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const text = renderText(renderer!).join(' ');
+    expect(text).not.toContain('Belum tersedia');
+    expect(text).toContain('Total 1');
+    expect(text).toContain('LLM 1');
+    expect(text).toContain('72 jam terakhir');
+    expect(text).toContain('Riwayat event');
+    expect(text).toContain('Packing dimulai');
+    expect(text).toContain('INV-9');
+    expect(text).toContain('Team Chat');
+    expect(text).toContain('LLM');
+    expect(fetchLogMock).toHaveBeenCalled();
   });
 
   it('hides admin tabs for non-admin roles', async () => {
