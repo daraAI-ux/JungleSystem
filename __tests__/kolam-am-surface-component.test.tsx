@@ -4729,6 +4729,100 @@ describe('KolamAmSurface', () => {
     });
   });
 
+  it('keeps transfer create validation aligned with AM FE before calling AM BE', async () => {
+    jest.mocked(getAmServiceAccounts).mockResolvedValue({
+      data: [
+        {
+          _id: 'account-1',
+          label: 'BCA Main',
+          platform: 'bca',
+          accountNumber: '123',
+          status: 'active',
+          deviceId: null,
+          username: '',
+          credentials: {},
+          meta: {},
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 1, limit: 1},
+    });
+    jest.mocked(getAmTransfers).mockResolvedValue({
+      data: [],
+      meta: {total: 0, limit: 20, page: 1, totalPages: 1},
+    });
+    jest.mocked(createAmTransfer).mockClear();
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await updateAmRoute(renderer!, 'transactions');
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM New Transfer'}).props.onPress();
+    });
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Transfer Create'}).props.onPress();
+    });
+    expect(renderText(renderer!).join(' ')).toContain('Recipient account is required');
+    expect(createAmTransfer).not.toHaveBeenCalled();
+
+    let inputs = renderer!.root.findAllByType(TextInput);
+    await act(async () => {
+      inputs[1].props.onChangeText('999001');
+      inputs[3].props.onChangeText('5000');
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Segment Mandiri'}).props.onPress();
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Transfer Create'}).props.onPress();
+    });
+    expect(renderText(renderer!).join(' ')).toContain('Minimal amount Rp 10.000');
+    expect(createAmTransfer).not.toHaveBeenCalled();
+
+    inputs = renderer!.root.findAllByType(TextInput);
+    await act(async () => {
+      inputs[3].props.onChangeText('250000');
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Transfer Create'}).props.onPress();
+    });
+    expect(renderText(renderer!).join(' ')).toContain('Transfer method is required');
+    expect(createAmTransfer).not.toHaveBeenCalled();
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Segment BI FAST'}).props.onPress();
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Transfer Create'}).props.onPress();
+    });
+    expect(renderText(renderer!).join(' ')).toContain('Transaction purpose is required');
+    expect(createAmTransfer).not.toHaveBeenCalled();
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Segment Purchase'}).props.onPress();
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Transfer Create'}).props.onPress();
+    });
+
+    expect(createAmTransfer).toHaveBeenCalledTimes(1);
+    expect(createAmTransfer).toHaveBeenCalledWith(expect.objectContaining({
+      recipientAccount: '999001',
+      recipientBank: 'Mandiri',
+      transferMethod: 'BI FAST',
+      transactionPurpose: 'Purchase',
+      amount: 250000,
+    }));
+  });
+
   it('loads transfer detail from the Transfers route', async () => {
     const transfer = {
       _id: 'transfer-detail',
