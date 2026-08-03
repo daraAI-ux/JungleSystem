@@ -735,7 +735,7 @@ describe('KolamAmSurface', () => {
     });
   });
 
-  it('keeps task action guards aligned with AM FE status rules', async () => {
+  it('keeps task action guards aligned with AM BE live status rules', async () => {
     jest.mocked(getAmTasks).mockResolvedValue({
       data: [
         {
@@ -817,10 +817,10 @@ describe('KolamAmSurface', () => {
     ).toHaveLength(0);
     expect(
       renderer!.root.findAllByProps({accessibilityLabel: 'AM Task Cancel task-queued'}),
-    ).toHaveLength(0);
+    ).not.toHaveLength(0);
     expect(
       renderer!.root.findAllByProps({accessibilityLabel: 'AM Task Cancel task-processing'}),
-    ).toHaveLength(0);
+    ).not.toHaveLength(0);
     expect(
       renderer!.root.findAllByProps({accessibilityLabel: 'AM Task Force Fail task-processing'}),
     ).not.toHaveLength(0);
@@ -829,7 +829,15 @@ describe('KolamAmSurface', () => {
     });
 
     expect(cancelAmTask).toHaveBeenCalledWith('task-1');
-    expect(getAmTasks).toHaveBeenCalledTimes(2);
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Task Cancel task-queued'}).props.onPress();
+    });
+    expect(cancelAmTask).toHaveBeenCalledWith('task-queued');
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Task Cancel task-processing'}).props.onPress();
+    });
+    expect(cancelAmTask).toHaveBeenCalledWith('task-processing');
+    expect(getAmTasks).toHaveBeenCalledTimes(4);
   });
 
   it('keeps Tasks pagination in sync with AM live list metadata', async () => {
