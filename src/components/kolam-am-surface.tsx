@@ -1210,7 +1210,7 @@ function AmServicesPage() {
     setFormStatus(account.status);
     setFormLabel(account.label);
     setFormDeviceId(device?._id ?? 'none');
-    setFormUsername(account.username ?? '');
+    setFormUsername(getServiceCredentialLogin(account));
     setFormPassword('');
     setFormPin('');
     setFormAccountNumber(account.accountNumber ?? '');
@@ -1228,6 +1228,21 @@ function AmServicesPage() {
         deviceId: formDeviceId === 'none' ? null : formDeviceId,
         pin: formPin.trim(),
         credentials,
+        status: formStatus,
+      };
+    }
+
+    if (AM_BROWSER_DEVICE_PLATFORMS.has(formPlatform)) {
+      return {
+        platform: formPlatform,
+        label: formLabel.trim(),
+        deviceId: formDeviceId === 'none' ? null : formDeviceId,
+        credentials: buildWebServiceCredentials({
+          platform: formPlatform,
+          login: formUsername,
+          password: formPassword,
+          phoneNumber: formPhoneNumber,
+        }),
         status: formStatus,
       };
     }
@@ -3466,7 +3481,7 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
     setServiceFormStatus(account.status as 'active' | 'inactive' | 'blocked');
     setServiceFormDeviceId(resolveServiceAccountDeviceId(account.deviceId) || device._id);
     setServiceFormLabel(account.label);
-    setServiceFormUsername(account.username ?? '');
+    setServiceFormUsername(getServiceCredentialLogin(account));
     setServiceFormPassword('');
     setServiceFormPin('');
     setServiceFormAccountNumber(account.accountNumber ?? '');
@@ -3534,18 +3549,35 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
           credentials,
           status: serviceFormStatus,
         }
-      : {
-          platform: serviceFormPlatform,
-          label: serviceFormLabel.trim(),
-          deviceId: targetDeviceId,
-          username: serviceFormUsername.trim(),
-          accountNumber: serviceFormAccountNumber.trim(),
-          credentials,
-          status: serviceFormStatus,
-        };
+      : AM_BROWSER_DEVICE_PLATFORMS.has(serviceFormPlatform)
+        ? {
+            platform: serviceFormPlatform,
+            label: serviceFormLabel.trim(),
+            deviceId: targetDeviceId,
+            credentials: buildWebServiceCredentials({
+              platform: serviceFormPlatform,
+              login: serviceFormUsername,
+              password: serviceFormPassword,
+              phoneNumber: serviceFormPhoneNumber,
+            }),
+            status: serviceFormStatus,
+          }
+        : {
+            platform: serviceFormPlatform,
+            label: serviceFormLabel.trim(),
+            deviceId: targetDeviceId,
+            username: serviceFormUsername.trim(),
+            accountNumber: serviceFormAccountNumber.trim(),
+            credentials,
+            status: serviceFormStatus,
+          };
     const password = serviceFormPassword.trim();
     const pin = serviceFormPin.trim();
-    if (serviceFormPlatform !== 'dana' && (!editingDeviceServiceId || password)) {
+    if (
+      serviceFormPlatform !== 'dana' &&
+      !AM_BROWSER_DEVICE_PLATFORMS.has(serviceFormPlatform) &&
+      (!editingDeviceServiceId || password)
+    ) {
       payload.password = password;
     }
     if (!editingDeviceServiceId || pin) payload.pin = pin;
@@ -6683,6 +6715,42 @@ function getCredentialString(
 ) {
   const value = credentials[key];
   return typeof value === 'string' && value.trim() ? value : null;
+}
+
+function getServiceCredentialLogin(account: AmServiceAccount) {
+  if (account.platform === 'instagram' || account.platform === 'shopee') {
+    return getCredentialString(account.credentials, 'email') ?? account.username ?? '';
+  }
+  if (account.platform === 'tiktok') {
+    return getCredentialString(account.credentials, 'username') ?? account.username ?? '';
+  }
+  return account.username ?? '';
+}
+
+function buildWebServiceCredentials({
+  platform,
+  login,
+  password,
+  phoneNumber,
+}: {
+  platform: string;
+  login: string;
+  password: string;
+  phoneNumber: string;
+}) {
+  const credentials: Record<string, unknown> = {};
+  const nextLogin = login.trim();
+  const nextPassword = password.trim();
+  const nextPhoneNumber = phoneNumber.trim();
+
+  if (platform === 'instagram' || platform === 'shopee') {
+    if (nextLogin) credentials.email = nextLogin;
+  } else if (platform === 'tiktok') {
+    if (nextLogin) credentials.username = nextLogin;
+  }
+  if (nextPhoneNumber) credentials.phoneNumber = nextPhoneNumber;
+  if (nextPassword) credentials.password = nextPassword;
+  return credentials;
 }
 
 function formatBankAccount(account: AmTransfer['accountId'] | AmMutasi['accountId']) {

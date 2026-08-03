@@ -1194,6 +1194,7 @@ describe('KolamAmSurface', () => {
     await act(async () => {
       inputs[1].props.onChangeText('Tokopedia New');
       inputs[2].props.onChangeText('new-user');
+      inputs[3].props.onChangeText('top-secret');
       inputs[6].props.onChangeText('0899');
     });
     await act(async () => {
@@ -1204,9 +1205,13 @@ describe('KolamAmSurface', () => {
       platform: 'tokopedia',
       label: 'Tokopedia New',
       deviceId: 'device-browser',
-      username: 'new-user',
-      credentials: {phoneNumber: '0899'},
+      credentials: {phoneNumber: '0899', password: 'top-secret'},
       status: 'inactive',
+    }));
+    expect(createAmServiceAccount).toHaveBeenCalledWith(expect.not.objectContaining({
+      username: expect.anything(),
+      password: expect.anything(),
+      accountNumber: expect.anything(),
     }));
 
     const findInput = (placeholder: string) =>
@@ -1261,12 +1266,14 @@ describe('KolamAmSurface', () => {
     expect(updateAmServiceAccount).toHaveBeenCalledWith('service-edit', expect.objectContaining({
       label: 'Tokopedia Updated',
       deviceId: 'device-browser',
-      username: 'old-user',
       credentials: {phoneNumber: '0812'},
       status: 'inactive',
     }));
     expect(updateAmServiceAccount).toHaveBeenCalledWith('service-edit', expect.not.objectContaining({
       platform: expect.anything(),
+      username: expect.anything(),
+      password: expect.anything(),
+      accountNumber: expect.anything(),
     }));
 
     await act(async () => {
