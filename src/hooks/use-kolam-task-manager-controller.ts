@@ -32,6 +32,7 @@ import {
   createKolamTaskManagerTaskType,
   createKolamTaskRecurringTemplate,
   deleteKolamTaskManagerCategory,
+  deleteKolamTaskManagerTask,
   deleteKolamTaskManagerTaskType,
   deleteKolamTaskRecurringTemplate,
   getKolamTaskManagerCategories,
@@ -176,6 +177,7 @@ export interface KolamTaskManagerController {
   onCreateRecurringTemplate: () => void;
   onCreateTaskType: () => void;
   onDeleteCategory: (category: KolamTaskManagerCategory) => Promise<boolean>;
+  onDeleteTask: (task: KolamTaskManagerTask) => Promise<boolean>;
   onDeleteRecurringTemplate: (
     template: KolamTaskRecurringTemplate,
   ) => Promise<boolean>;
@@ -738,6 +740,31 @@ export function useKolamTaskManagerController({
     setFormOpen(true);
   }, []);
 
+  const onDeleteTask = useCallback(
+    async (task: KolamTaskManagerTask) => {
+      if (!isTaskAdmin) return false;
+      setMutatingTaskId(`delete:${task.id}`);
+      setError(null);
+      setStatusMessage(null);
+      try {
+        await deleteKolamTaskManagerTask(task.id);
+        setStatusMessage('Tugas dihapus');
+        if (mode === 'detail') {
+          setSelectedTask(null);
+          onRouteChange?.(KOLAM_TASK_MANAGER_ROOT);
+        }
+        await refreshList();
+        return true;
+      } catch (mutationError) {
+        setError(getErrorMessage(mutationError));
+        return false;
+      } finally {
+        setMutatingTaskId(null);
+      }
+    },
+    [isTaskAdmin, mode, onRouteChange, refreshList],
+  );
+
   const onCloseForm = useCallback(() => {
     setFormOpen(false);
     setFormError(null);
@@ -1206,6 +1233,7 @@ export function useKolamTaskManagerController({
       onCreateRecurringTemplate,
       onCreateTaskType,
       onDeleteCategory,
+      onDeleteTask,
       onDeleteRecurringTemplate,
       onDeleteTaskType,
       onEditCategory,
@@ -1296,6 +1324,7 @@ export function useKolamTaskManagerController({
       onCreateRecurringTemplate,
       onCreateTaskType,
       onDeleteCategory,
+      onDeleteTask,
       onDeleteRecurringTemplate,
       onDeleteTaskType,
       onEditCategory,

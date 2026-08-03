@@ -176,6 +176,16 @@ function KolamTaskManagerDetail({
               label="Ubah"
               onPress={() => controller.onEditTask(task)}
             />
+            {controller.isTaskAdmin ? (
+              <KolamButton
+                disabled={controller.mutatingTaskId === `delete:${task.id}`}
+                intent="outline"
+                label="Hapus"
+                onPress={() => {
+                  void controller.onDeleteTask(task);
+                }}
+              />
+            ) : null}
             <KolamButton
               disabled={controller.loading}
               label="Refresh"
@@ -814,6 +824,18 @@ function KolamTaskRow({
               label: 'Ubah',
               onPress: () => controller.onEditTask(task),
             },
+            ...(controller.isTaskAdmin
+              ? [
+                  {
+                    disabled:
+                      controller.mutatingTaskId === `delete:${task.id}`,
+                    label: 'Hapus',
+                    onPress: () => {
+                      void controller.onDeleteTask(task);
+                    },
+                  },
+                ]
+              : []),
           ]}
         />
       </KolamDataTableActionsTrack>
