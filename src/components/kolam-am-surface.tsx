@@ -5790,14 +5790,7 @@ function AmUsersPage() {
             </View>
           </View>
         </View>
-      ) : (
-        <View style={styles.emptyPanel}>
-          <Text style={styles.panelTitle}>Users read-only</Text>
-          <Text style={styles.panelText}>
-            Akun AM ini hanya menampilkan daftar user karena permission create/update tidak tersedia.
-          </Text>
-        </View>
-      )}
+      ) : null}
       <View style={styles.tablePanel}>
         <View style={styles.tableHeader}>
           <Text style={[styles.tableHeaderText, styles.accountWideCol]}>Name</Text>

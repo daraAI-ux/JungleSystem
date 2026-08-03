@@ -4132,7 +4132,8 @@ describe('KolamAmSurface', () => {
     await updateAmRoute(renderer!, 'admin/users');
 
     const text = renderText(renderer!).join(' ');
-    expect(text).toContain('Users read-only');
+    expect(text).toContain('Alice Read');
+    expect(text).not.toContain('Users read-only');
     expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM User Save'})).toHaveLength(0);
     expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM User Edit user-1'})).toHaveLength(0);
     expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM User Delete user-1'})).toHaveLength(0);
