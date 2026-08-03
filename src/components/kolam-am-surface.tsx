@@ -227,7 +227,10 @@ export function KolamAmSurface({
               onModuleRouteSelect={onModuleRouteSelect}
             />
           ) : activeRoute === 'mutasi' ? (
-            <AmMutasiPage initialMutasiId={routeSelection?.mutasiId} />
+            <AmMutasiPage
+              initialMutasiId={routeSelection?.mutasiId}
+              onModuleRouteSelect={onModuleRouteSelect}
+            />
           ) : activeRoute === 'users' ? (
             <AmUsersPage />
           ) : activeRoute === 'settings-account' ? (
@@ -4519,7 +4522,13 @@ function AmTransferDetailPanel({
   );
 }
 
-function AmMutasiPage({initialMutasiId}: {initialMutasiId?: string}) {
+function AmMutasiPage({
+  initialMutasiId,
+  onModuleRouteSelect,
+}: {
+  initialMutasiId?: string;
+  onModuleRouteSelect?: (route: ShellModuleRouteEntry) => void;
+}) {
   const [mutasi, setMutasi] = React.useState<AmMutasi[]>([]);
   const [summary, setSummary] = React.useState<AmMutasiSummary | null>(null);
   const [accounts, setAccounts] = React.useState<AmServiceAccount[]>([]);
@@ -4657,6 +4666,19 @@ function AmMutasiPage({initialMutasiId}: {initialMutasiId?: string}) {
     }
   }, [selectedMutasiId]);
 
+  const closeMutasiDetail = React.useCallback(() => {
+    setSelectedMutasiId(null);
+    setSelectedMutasi(null);
+    setDetailError(null);
+
+    if (initialMutasiId) {
+      const mutasiRoute = getShellModuleRouteEntry('am', 'mutasi');
+      if (mutasiRoute) {
+        onModuleRouteSelect?.(mutasiRoute);
+      }
+    }
+  }, [initialMutasiId, onModuleRouteSelect]);
+
   const totalPages = Math.max(1, Math.ceil(total / Math.max(limit, 1)));
   const rangeFrom = total ? (page - 1) * limit + 1 : 0;
   const rangeTo = total ? Math.min(page * limit, total) : 0;
@@ -4774,6 +4796,7 @@ function AmMutasiPage({initialMutasiId}: {initialMutasiId?: string}) {
           error={detailError}
           isLoading={detailLoading}
           mutasi={selectedMutasi}
+          onBack={closeMutasiDetail}
         />
       ) : null}
     </View>
@@ -4784,10 +4807,12 @@ function AmMutasiDetailPanel({
   error,
   isLoading,
   mutasi,
+  onBack,
 }: {
   error: string | null;
   isLoading: boolean;
   mutasi: AmMutasi | null;
+  onBack: () => void;
 }) {
   const receiptUrl = mutasi?.receiptFile
     ? getAmMutasiReceiptUrl(mutasi._id)
@@ -4801,10 +4826,19 @@ function AmMutasiDetailPanel({
           <Text style={styles.rowMeta}>{mutasi?._id ?? 'Memuat detail mutasi...'}</Text>
         </View>
         {mutasi ? (
-          <AmStatusChip
-            label={formatMutasiTypeLabel(mutasi.type)}
-            tone={mutasi.type === 'masuk' ? 'success' : 'danger'}
-          />
+          <View style={styles.inlineActions}>
+            <KolamButton
+              accessibilityLabel="AM Mutasi Back"
+              intent="outline"
+              label="Back"
+              size="sm"
+              onPress={onBack}
+            />
+            <AmStatusChip
+              label={formatMutasiTypeLabel(mutasi.type)}
+              tone={mutasi.type === 'masuk' ? 'success' : 'danger'}
+            />
+          </View>
         ) : null}
       </View>
       <AmInlineError title="Detail mutasi AM belum bisa dibaca" error={error} />

@@ -3683,6 +3683,7 @@ describe('KolamAmSurface', () => {
       data: [],
       meta: {total: 0, limit: 50, page: 1, totalPages: 1},
     });
+    const onModuleRouteSelect = jest.fn();
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
     await act(async () => {
@@ -3690,6 +3691,7 @@ describe('KolamAmSurface', () => {
         <KolamAmSurface
           activeModuleRoute={concreteAmRoute('mutasi/mutasi-detail', 'mutasi/:id')}
           dataset={seedUnifiedDataset}
+          onModuleRouteSelect={onModuleRouteSelect}
         />,
       );
     });
@@ -3701,6 +3703,16 @@ describe('KolamAmSurface', () => {
     expect(text).toContain('Mutation Detail');
     expect(text).toContain('hash-direct-mutasi');
     expect(text).toContain('/mutasi/mutasi-detail/receipt');
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Mutasi Back'}).props.onPress();
+    });
+
+    expect(onModuleRouteSelect).toHaveBeenCalledWith(
+      expect.objectContaining({
+        moduleId: 'am',
+        route: 'mutasi',
+      }),
+    );
   });
 
   it('renders account settings from the live AM auth session route', async () => {
