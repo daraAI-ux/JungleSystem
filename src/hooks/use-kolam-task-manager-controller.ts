@@ -4,6 +4,7 @@ import {
   buildKolamTaskManagerKpi,
   buildKolamTaskDueDateIso,
   canAccessKolamTaskManager,
+  canPostKolamTaskDiscussion,
   getKolamTaskManagerIdFromRoute,
   getKolamTaskManagerRouteMode,
   splitKolamTaskDueDateTime,
@@ -1246,6 +1247,15 @@ export function useKolamTaskManagerController({
   const persistChecklist = useCallback(
     async (nextChecklist: KolamTaskManagerTask['checklist']) => {
       if (!selectedTask) return false;
+      if (
+        !canPostKolamTaskDiscussion(
+          selectedTask,
+          currentUserId,
+          isTaskAdmin,
+        )
+      ) {
+        return false;
+      }
       setMutatingTaskId(`checklist:${selectedTask.id}`);
       setError(null);
       setStatusMessage(null);
@@ -1264,7 +1274,7 @@ export function useKolamTaskManagerController({
         setMutatingTaskId(null);
       }
     },
-    [selectedTask],
+    [currentUserId, isTaskAdmin, selectedTask],
   );
 
   const onAddChecklistItem = useCallback(async () => {

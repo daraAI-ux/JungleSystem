@@ -215,6 +215,7 @@ function KolamTaskManagerDetail({
     controller.currentUserId,
     controller.isTaskAdmin,
   );
+  const canEditChecklist = canPostDiscussion;
   const mentionOptions = getTaskMentionOptions(controller);
 
   return (
@@ -434,7 +435,10 @@ function KolamTaskManagerDetail({
           task.checklist.map((item, index) => (
             <View key={item.id || item.title} style={styles.checklistRow}>
               <KolamButton
-                disabled={controller.mutatingTaskId === `checklist:${task.id}`}
+                disabled={
+                  !canEditChecklist ||
+                  controller.mutatingTaskId === `checklist:${task.id}`
+                }
                 intent={item.done ? 'primary' : 'outline'}
                 label={item.done ? 'Selesai' : 'Open'}
                 onPress={() => {
@@ -447,40 +451,44 @@ function KolamTaskManagerDetail({
                   {getKolamTaskUserDisplayName(item.assignedTo)}
                 </Text>
               ) : null}
-              <KolamButton
-                disabled={controller.mutatingTaskId === `checklist:${task.id}`}
-                intent="outline"
-                label="Hapus"
-                onPress={() => {
-                  void controller.onRemoveChecklistItem(index);
-                }}
-              />
+              {canEditChecklist ? (
+                <KolamButton
+                  disabled={controller.mutatingTaskId === `checklist:${task.id}`}
+                  intent="outline"
+                  label="Hapus"
+                  onPress={() => {
+                    void controller.onRemoveChecklistItem(index);
+                  }}
+                />
+              ) : null}
             </View>
           ))
         ) : (
           <Text style={styles.metaText}>Kosong</Text>
         )}
-        <View style={styles.checklistAddRow}>
-          <KolamFormTextField
-            onChangeText={controller.onSetChecklistDraft}
-            placeholder="Detail tugas"
-            style={[
-              settingsWebFormStyles.settingsWebFormFieldValue,
-              styles.checklistDraftInput,
-            ]}
-            value={controller.checklistDraft}
-          />
-          <KolamButton
-            disabled={
-              controller.mutatingTaskId === `checklist:${task.id}` ||
-              !controller.checklistDraft.trim()
-            }
-            label="Tambah"
-            onPress={() => {
-              void controller.onAddChecklistItem();
-            }}
-          />
-        </View>
+        {canEditChecklist ? (
+          <View style={styles.checklistAddRow}>
+            <KolamFormTextField
+              onChangeText={controller.onSetChecklistDraft}
+              placeholder="Detail tugas"
+              style={[
+                settingsWebFormStyles.settingsWebFormFieldValue,
+                styles.checklistDraftInput,
+              ]}
+              value={controller.checklistDraft}
+            />
+            <KolamButton
+              disabled={
+                controller.mutatingTaskId === `checklist:${task.id}` ||
+                !controller.checklistDraft.trim()
+              }
+              label="Tambah"
+              onPress={() => {
+                void controller.onAddChecklistItem();
+              }}
+            />
+          </View>
+        ) : null}
       </View>
 
       <View style={styles.detailCard}>
