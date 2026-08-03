@@ -3255,9 +3255,8 @@ describe('KolamAmSurface', () => {
     expect(getAmWebhookConfigs).toHaveBeenCalledTimes(1);
     expect(getAmUsers).toHaveBeenCalledWith({
       page: 1,
-      limit: 20,
+      limit: 100,
       search: undefined,
-      role: undefined,
     });
     expect(getAmRoles).toHaveBeenCalledTimes(1);
     expect(getAmActivityLogs).toHaveBeenCalledWith({
@@ -4099,7 +4098,7 @@ describe('KolamAmSurface', () => {
           updatedAt: '2026-01-01T00:00:00.000Z',
         },
       ],
-      meta: {total: 1, limit: 20},
+      meta: {total: 1, limit: 100},
     });
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
@@ -4169,7 +4168,7 @@ describe('KolamAmSurface', () => {
     ]);
     jest.mocked(getAmUsers).mockResolvedValue({
       data: [],
-      meta: {total: 0, limit: 20},
+      meta: {total: 0, limit: 100},
     });
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
@@ -4212,7 +4211,7 @@ describe('KolamAmSurface', () => {
           updatedAt: '2026-01-01T00:10:00.000Z',
         },
       ],
-      meta: {total: 45, limit: 20, page: 1, totalPages: 3},
+      meta: {total: 145, limit: 100, page: 1, totalPages: 2},
     });
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
@@ -4226,9 +4225,10 @@ describe('KolamAmSurface', () => {
     await updateAmRoute(renderer!, 'admin/users');
 
     const text = renderText(renderer!).join(' ').replace(/\s+/g, ' ');
-    expect(text).toContain('Showing 1 to 20 of 45 items');
-    expect(text).toContain('Page 1/3');
+    expect(text).toContain('Showing 1 to 100 of 145 items');
+    expect(text).toContain('Page 1/2');
     expect(text).toContain('Super Admin');
+    expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment Admin'})).toHaveLength(0);
 
     const searchInput = renderer!.root.findAllByType(TextInput)[0];
     await act(async () => {
@@ -4241,31 +4241,18 @@ describe('KolamAmSurface', () => {
 
     expect(getAmUsers).toHaveBeenCalledWith({
       page: 1,
-      limit: 20,
+      limit: 100,
       search: undefined,
-      role: undefined,
     });
     expect(getAmUsers).toHaveBeenCalledWith({
       page: 1,
-      limit: 20,
+      limit: 100,
       search: 'Alice',
-      role: undefined,
     });
     expect(getAmUsers).toHaveBeenCalledWith({
       page: 2,
-      limit: 20,
+      limit: 100,
       search: 'Alice',
-      role: undefined,
-    });
-
-    await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Segment Admin'}).props.onPress();
-    });
-    expect(getAmUsers).toHaveBeenCalledWith({
-      page: 1,
-      limit: 20,
-      search: 'Alice',
-      role: 'role-admin',
     });
   });
 

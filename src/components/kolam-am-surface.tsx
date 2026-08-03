@@ -134,7 +134,7 @@ const AM_SERVICE_LOG_PAGE_LIMIT = 100;
 const AM_TRANSFER_PAGE_LIMIT = 20;
 const AM_MUTASI_PAGE_LIMIT = 100;
 const AM_WEBHOOK_LOG_PAGE_LIMIT = 50;
-const AM_USER_PAGE_LIMIT = 20;
+const AM_USER_PAGE_LIMIT = 100;
 const AM_ACTIVITY_LOG_PAGE_LIMIT = 50;
 const AM_LOGIN_MAX_FAILED_ATTEMPTS = 5;
 const AM_LOGIN_LOCKOUT_DURATION_MS = 60_000;
@@ -5214,7 +5214,6 @@ function AmUsersPage() {
   const [roles, setRoles] = React.useState<AmRole[]>([]);
   const [currentUser, setCurrentUser] = React.useState<AmCurrentUser | null>(null);
   const [search, setSearch] = React.useState('');
-  const [roleFilter, setRoleFilter] = React.useState('all');
   const [page, setPage] = React.useState(1);
   const [total, setTotal] = React.useState(0);
   const [limit, setLimit] = React.useState(AM_USER_PAGE_LIMIT);
@@ -5251,7 +5250,6 @@ function AmUsersPage() {
           page,
           limit: AM_USER_PAGE_LIMIT,
           search: search.trim() || undefined,
-          role: roleFilter === 'all' ? undefined : roleFilter,
         }),
         getAmRoles(),
       ]);
@@ -5265,15 +5263,10 @@ function AmUsersPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [page, roleFilter, search]);
+  }, [page, search]);
 
   const handleUserSearchChange = React.useCallback((value: string) => {
     setSearch(value);
-    setPage(1);
-  }, []);
-
-  const handleUserRoleChange = React.useCallback((value: string) => {
-    setRoleFilter(value);
     setPage(1);
   }, []);
 
@@ -5404,15 +5397,6 @@ function AmUsersPage() {
     () => roles.filter(role => role.name !== 'Super Admin' || isAmSuperAdmin(currentUser)),
     [currentUser, roles],
   );
-  const roleFilterItems = React.useMemo(() => ['all', ...roles.map(role => role._id)], [roles]);
-  const roleFilterLabels = React.useMemo<Record<string, string>>(() => {
-    const labels: Record<string, string> = {all: 'All Roles'};
-    roles.forEach(role => {
-      labels[role._id] = role.name;
-    });
-    return labels;
-  }, [roles]);
-
   if (currentUser && !hasAmPermission(currentUser, 'user:read')) {
     return (
       <View style={styles.pageStack}>
@@ -5432,12 +5416,6 @@ function AmUsersPage() {
           placeholder="Search by name or username..."
           containerStyle={styles.taskSearch}
           trailingLabel={`${total} user`}
-        />
-        <AmSegmentGroup
-          active={roleFilter}
-          items={roleFilterItems}
-          labels={roleFilterLabels}
-          onSelect={handleUserRoleChange}
         />
         {canCreateUser && !isCreateUserFormOpen && !editingUserId ? (
           <KolamButton
