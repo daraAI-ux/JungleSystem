@@ -80,6 +80,7 @@ describe('Kolam top navigation controller hook', () => {
       'cashflow',
       'chat-inbox',
       'chat-team',
+      'task-manager',
       'notifications',
       'avatar',
     ]);

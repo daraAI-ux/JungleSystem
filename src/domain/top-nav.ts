@@ -40,7 +40,13 @@ export interface TopNavBreadcrumbItem {
 }
 
 export interface TopNavRightControl {
-  id: 'cashflow' | 'chat-inbox' | 'chat-team' | 'notifications' | 'avatar';
+  id:
+    | 'cashflow'
+    | 'chat-inbox'
+    | 'chat-team'
+    | 'task-manager'
+    | 'notifications'
+    | 'avatar';
   label: string;
   sourceComponent?: string;
 }
@@ -151,6 +157,12 @@ export function getTopNavRightControls(): TopNavRightControl[] {
       label: 'Team chat',
       sourceComponent:
         'E:\\Projects\\DA-Chat-Plugin\\src\\components\\chat-header-quick-access-icons.tsx',
+    },
+    {
+      id: 'task-manager',
+      label: 'Task Manager',
+      sourceComponent:
+        'E:\\Projects\\da-inventory-frontend\\src\\app\\(app)\\task-manager\\page.tsx',
     },
     {
       id: 'notifications',
