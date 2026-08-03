@@ -85,6 +85,9 @@ export interface KolamTaskManagerFormState {
   dueTime: string;
   priority: KolamTaskManagerPriority;
   projectId: string;
+  saleId: string;
+  complaintId: string;
+  conversationId: string;
   assignedToId: string;
   status: KolamTaskManagerStatus;
   taskTypeId: string;
@@ -1010,9 +1013,14 @@ export function useKolamTaskManagerController({
         assistedById: form.assistedById || null,
         dueDate,
         categoryId,
-        customerId: form.projectId ? form.customerId || null : null,
+        customerId: taskFormShowsCustomerField(form)
+          ? form.customerId || null
+          : null,
         taskTypeId: form.taskTypeId || null,
         projectId: form.projectId || null,
+        saleId: form.saleId || null,
+        complaintId: form.complaintId || null,
+        conversationId: form.conversationId || null,
       };
       if (formMode === 'edit' && editingTaskId) {
         await updateKolamTaskManagerTask(editingTaskId, payload);
@@ -1604,6 +1612,9 @@ function getDefaultTaskForm(
     dueTime: '',
     priority: 'medium',
     projectId,
+    saleId: '',
+    complaintId: '',
+    conversationId: '',
     assignedToId,
     status: 'todo',
     taskTypeId: '',
@@ -1672,6 +1683,9 @@ function getTaskFormFromTask(
     dueTime: due.time,
     priority: task.priority,
     projectId: task.projectId,
+    saleId: task.saleId,
+    complaintId: task.complaintId,
+    conversationId: task.conversationId,
     assignedToId: getTaskUserId(task.assignedTo),
     status: task.status,
     taskTypeId: getTaskTypeId(task.taskType),
@@ -1714,6 +1728,18 @@ function mapCustomerOptions(
     id: customer.id,
     label: customer.name || customer.phone || customer.email || customer.id,
   }));
+}
+
+function taskFormShowsCustomerField(form: {
+  conversationId?: string;
+  projectId?: string;
+  saleId?: string;
+}) {
+  return Boolean(
+    form.projectId?.trim() ||
+      form.conversationId?.trim() ||
+      form.saleId?.trim(),
+  );
 }
 
 function getErrorMessage(error: unknown) {

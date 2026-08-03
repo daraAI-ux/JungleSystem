@@ -1167,6 +1167,28 @@ function getRecurringStatusIntent(
   }
 }
 
+function taskFormShowsCustomerField(
+  form: Pick<
+    KolamTaskManagerController['form'],
+    'conversationId' | 'projectId' | 'saleId'
+  >,
+) {
+  return Boolean(
+    form.projectId.trim() || form.conversationId.trim() || form.saleId.trim(),
+  );
+}
+
+function getTaskFormCategoryBucket(
+  form: Pick<
+    KolamTaskManagerController['form'],
+    'conversationId' | 'projectId' | 'saleId'
+  >,
+): KolamTaskCategoryBucket | null {
+  if (form.conversationId.trim() || form.saleId.trim()) return 'crm';
+  if (form.projectId.trim()) return 'project';
+  return null;
+}
+
 function KolamTaskFormModal({
   controller,
 }: {
@@ -1194,9 +1216,11 @@ function KolamTaskFormModal({
     })),
   ];
   const selectedCategoryBucket =
+    getTaskFormCategoryBucket(controller.form) ??
     controller.categories.find(
       category => category.id === controller.form.categoryId,
-    )?.bucket ?? null;
+    )?.bucket ??
+    null;
   const taskTypeOptions = [
     { label: 'Tidak ada', value: '' },
     ...controller.taskTypes
@@ -1227,7 +1251,7 @@ function KolamTaskFormModal({
       value: customer.id,
     })),
   ];
-  const showCustomerField = Boolean(controller.form.projectId);
+  const showCustomerField = taskFormShowsCustomerField(controller.form);
   const saving =
     controller.mutatingTaskId === 'new' ||
     (controller.formMode === 'edit' &&
@@ -1335,7 +1359,12 @@ function KolamTaskFormModal({
                 label="Custom Project"
                 onChange={projectId =>
                   controller.onChangeForm({
-                    customerId: projectId ? controller.form.customerId : '',
+                    customerId: taskFormShowsCustomerField({
+                      ...controller.form,
+                      projectId,
+                    })
+                      ? controller.form.customerId
+                      : '',
                     projectId,
                     taskTypeId: '',
                   })
@@ -1355,6 +1384,51 @@ function KolamTaskFormModal({
                   value={controller.form.customerId}
                 />
               ) : null}
+              <KolamTaskField label="Sale ID">
+                <KolamFormTextField
+                  onChangeText={saleId =>
+                    controller.onChangeForm({
+                      customerId: taskFormShowsCustomerField({
+                        ...controller.form,
+                        saleId,
+                      })
+                        ? controller.form.customerId
+                        : '',
+                      saleId,
+                      taskTypeId: '',
+                    })
+                  }
+                  style={settingsWebFormStyles.settingsWebFormFieldValue}
+                  value={controller.form.saleId}
+                />
+              </KolamTaskField>
+              <KolamTaskField label="Complaint ID">
+                <KolamFormTextField
+                  onChangeText={complaintId =>
+                    controller.onChangeForm({ complaintId })
+                  }
+                  style={settingsWebFormStyles.settingsWebFormFieldValue}
+                  value={controller.form.complaintId}
+                />
+              </KolamTaskField>
+              <KolamTaskField label="Conversation ID">
+                <KolamFormTextField
+                  onChangeText={conversationId =>
+                    controller.onChangeForm({
+                      customerId: taskFormShowsCustomerField({
+                        ...controller.form,
+                        conversationId,
+                      })
+                        ? controller.form.customerId
+                        : '',
+                      conversationId,
+                      taskTypeId: '',
+                    })
+                  }
+                  style={settingsWebFormStyles.settingsWebFormFieldValue}
+                  value={controller.form.conversationId}
+                />
+              </KolamTaskField>
               <KolamDropdownSelect
                 label="Status"
                 onChange={status =>
