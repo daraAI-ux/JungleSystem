@@ -649,6 +649,20 @@ function KolamTaskToolbar({
             value={controller.assignedToFilter}
           />
           <KolamDropdownSelect
+            label="Project"
+            onChange={controller.onSetProjectFilter}
+            options={[
+              { label: 'Project', value: 'all' },
+              ...controller.projectOptions.map(project => ({
+                label: project.label,
+                value: project.id,
+              })),
+            ]}
+            searchable
+            showLabelInTrigger={false}
+            value={controller.projectFilter}
+          />
+          <KolamDropdownSelect
             label="Status"
             onChange={value =>
               controller.onSetStatusFilter(value as typeof controller.statusFilter)
@@ -1199,6 +1213,13 @@ function KolamTaskFormModal({
         value: taskType.id,
       })),
   ];
+  const projectOptions = [
+    { label: 'Tidak ada', value: '' },
+    ...controller.projectOptions.map(project => ({
+      label: project.label,
+      value: project.id,
+    })),
+  ];
   const saving =
     controller.mutatingTaskId === 'new' ||
     (controller.formMode === 'edit' &&
@@ -1301,6 +1322,15 @@ function KolamTaskFormModal({
                 options={taskTypeOptions}
                 searchable
                 value={controller.form.taskTypeId}
+              />
+              <KolamDropdownSelect
+                label="Custom Project"
+                onChange={projectId =>
+                  controller.onChangeForm({ projectId, taskTypeId: '' })
+                }
+                options={projectOptions}
+                searchable
+                value={controller.form.projectId}
               />
               <KolamDropdownSelect
                 label="Status"

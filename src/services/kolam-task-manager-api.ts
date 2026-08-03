@@ -113,6 +113,7 @@ export async function getKolamTaskManagerTasks(
       ...(query.assignedToId?.trim()
         ? { assignedToId: query.assignedToId.trim() }
         : {}),
+      ...(query.projectId?.trim() ? { projectId: query.projectId.trim() } : {}),
       ...(query.mine ? { mine: true } : {}),
     },
   });

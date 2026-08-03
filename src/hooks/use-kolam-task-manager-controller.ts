@@ -28,6 +28,10 @@ import type { KolamUserListItem } from '../domain/kolam-user';
 import type { KolamLocationOption } from '../services/kolam-location-api';
 import { getErrorMessage as getApiErrorMessage } from '../lib/api-error';
 import {
+  getKolamCustomProjectOptions,
+  type KolamCustomProjectOption,
+} from '../services/kolam-custom-project-api';
+import {
   addKolamTaskManagerNote,
   bulkSetKolamTaskRecurringEnrollment,
   createKolamTaskManagerCategory,
@@ -73,6 +77,7 @@ export interface KolamTaskManagerFormState {
   dueDate: string;
   dueTime: string;
   priority: KolamTaskManagerPriority;
+  projectId: string;
   assignedToId: string;
   status: KolamTaskManagerStatus;
   taskTypeId: string;
@@ -133,6 +138,7 @@ export interface KolamTaskManagerController {
   categoryBucketFilter: KolamTaskCategoryBucket | 'all';
   categoryFilter: string;
   assignedToFilter: string;
+  projectFilter: string;
   currentUserId: string;
   dataSource: KolamTaskManagerDataSource;
   error: string | null;
@@ -166,6 +172,7 @@ export interface KolamTaskManagerController {
   route: string;
   search: string;
   staffOptions: KolamTaskManagerStaffOption[];
+  projectOptions: KolamCustomProjectOption[];
   statusFilter: KolamTaskManagerStatus | 'all';
   statusMessage: string | null;
   selectedTask: KolamTaskManagerTask | null;
@@ -215,6 +222,7 @@ export interface KolamTaskManagerController {
   onSetCategoryBucketFilter: (value: KolamTaskCategoryBucket | 'all') => void;
   onSetCategoryFilter: (value: string) => void;
   onSetAssignedToFilter: (value: string) => void;
+  onSetProjectFilter: (value: string) => void;
   onSetMineOnly: (value: boolean) => void;
   onSetPageSize: (pageSize: number) => void;
   onSetPriorityFilter: (value: KolamTaskManagerPriority | 'all') => void;
@@ -281,6 +289,9 @@ export function useKolamTaskManagerController({
   const [staffOptions, setStaffOptions] = useState<KolamTaskManagerStaffOption[]>(
     [],
   );
+  const [projectOptions, setProjectOptions] = useState<
+    KolamCustomProjectOption[]
+  >([]);
   const [loading, setLoading] = useState(false);
   const [mutatingTaskId, setMutatingTaskId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -353,6 +364,7 @@ export function useKolamTaskManagerController({
   >('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [assignedToFilter, setAssignedToFilter] = useState('all');
+  const [projectFilter, setProjectFilter] = useState('all');
   const [mineOnly, setMineOnly] = useState(false);
   const [recurringEnclosureOnly, setRecurringEnclosureOnly] = useState(false);
   const [total, setTotal] = useState(0);
@@ -384,6 +396,14 @@ export function useKolamTaskManagerController({
       setStaffOptions(mapStaffOptions(live.items));
     } catch {
       // Non-blocking: PIC filter can stay minimal.
+    }
+  }, []);
+
+  const loadProjects = useCallback(async () => {
+    try {
+      setProjectOptions(await getKolamCustomProjectOptions({ limit: 200, page: 1 }));
+    } catch {
+      // Non-blocking: project filter/form can stay minimal.
     }
   }, []);
 
@@ -447,6 +467,7 @@ export function useKolamTaskManagerController({
         categoryId: categoryFilter === 'all' ? undefined : categoryFilter,
         assignedToId:
           assignedToFilter === 'all' ? undefined : assignedToFilter,
+        projectId: projectFilter === 'all' ? undefined : projectFilter,
         mine: mineOnly,
       });
       setTasks(list.items);
@@ -485,6 +506,7 @@ export function useKolamTaskManagerController({
     categoryBucketFilter,
     categoryFilter,
     assignedToFilter,
+    projectFilter,
     mineOnly,
     mode,
     page,
@@ -565,7 +587,8 @@ export function useKolamTaskManagerController({
   useEffect(() => {
     void loadCategories();
     void loadStaff();
-  }, [loadCategories, loadStaff]);
+    void loadProjects();
+  }, [loadCategories, loadProjects, loadStaff]);
 
   useEffect(() => {
     void loadLocations();
@@ -655,6 +678,7 @@ export function useKolamTaskManagerController({
     setCategoryBucketFilter('all');
     setCategoryFilter('all');
     setAssignedToFilter('all');
+    setProjectFilter('all');
     setMineOnly(false);
     setPage(1);
     setStatusMessage(null);
@@ -869,13 +893,14 @@ export function useKolamTaskManagerController({
       getDefaultTaskForm(
         currentUserId || staffOptions[0]?.id || '',
         categories[0]?.id ?? '',
+        projectFilter === 'all' ? '' : projectFilter,
       ),
     );
     setFormError(null);
     setError(null);
     setStatusMessage(null);
     setFormOpen(true);
-  }, [categories, currentUserId, staffOptions]);
+  }, [categories, currentUserId, projectFilter, staffOptions]);
 
   const onEditTask = useCallback((task: KolamTaskManagerTask) => {
     setFormMode('edit');
@@ -965,6 +990,7 @@ export function useKolamTaskManagerController({
         dueDate,
         categoryId,
         taskTypeId: form.taskTypeId || null,
+        projectId: form.projectId || null,
       };
       if (formMode === 'edit' && editingTaskId) {
         await updateKolamTaskManagerTask(editingTaskId, payload);
@@ -1329,6 +1355,7 @@ export function useKolamTaskManagerController({
       categoryBucketFilter,
       categoryFilter,
       assignedToFilter,
+      projectFilter,
       currentUserId,
       dataSource,
       error,
@@ -1362,6 +1389,7 @@ export function useKolamTaskManagerController({
       route,
       search,
       staffOptions,
+      projectOptions,
       statusFilter,
       statusMessage,
       tasks,
@@ -1410,6 +1438,7 @@ export function useKolamTaskManagerController({
       ),
       onSetCategoryFilter: setFilterAndFirstPage(setCategoryFilter),
       onSetAssignedToFilter: setFilterAndFirstPage(setAssignedToFilter),
+      onSetProjectFilter: setFilterAndFirstPage(setProjectFilter),
       onSetMineOnly: setFilterAndFirstPage(setMineOnly),
       onSetPageSize: setFilterAndFirstPage(setPageSize),
       onSetPriorityFilter: setFilterAndFirstPage(setPriorityFilter),
@@ -1449,6 +1478,7 @@ export function useKolamTaskManagerController({
       categoryBucketFilter,
       categoryFilter,
       assignedToFilter,
+      projectFilter,
       currentUserId,
       dataSource,
       error,
@@ -1524,6 +1554,7 @@ export function useKolamTaskManagerController({
       search,
       setFilterAndFirstPage,
       staffOptions,
+      projectOptions,
       statusFilter,
       statusMessage,
       taskTypes,
@@ -1538,6 +1569,7 @@ export function useKolamTaskManagerController({
 function getDefaultTaskForm(
   assignedToId: string,
   categoryId = '',
+  projectId = '',
 ): KolamTaskManagerFormState {
   return {
     assistedById: '',
@@ -1546,6 +1578,7 @@ function getDefaultTaskForm(
     dueDate: '',
     dueTime: '',
     priority: 'medium',
+    projectId,
     assignedToId,
     status: 'todo',
     taskTypeId: '',
@@ -1612,6 +1645,7 @@ function getTaskFormFromTask(
     dueDate: due.date,
     dueTime: due.time,
     priority: task.priority,
+    projectId: task.projectId,
     assignedToId: getTaskUserId(task.assignedTo),
     status: task.status,
     taskTypeId: getTaskTypeId(task.taskType),

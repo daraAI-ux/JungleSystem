@@ -1,6 +1,7 @@
 import React from 'react';
 import { Text, View } from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
+import { KolamDropdownSelect } from '../src/components/kolam-dropdown-select';
 import { KolamWorkspaceSurface } from '../src/components/kolam-workspace-surface';
 import {
   KolamAuthContext,
@@ -132,7 +133,7 @@ jest.mock('../src/services/kolam-task-manager-api', () => ({
                 id: 'task-1',
                 priority: 'high',
                 productionId: '',
-                projectId: '',
+                projectId: 'project-1',
                 saleId: '',
                 serviceId: '',
                 source: 'manual',
@@ -204,7 +205,7 @@ jest.mock('../src/services/kolam-task-manager-api', () => ({
       id: 'task-1',
       priority: 'high',
       productionId: '',
-      projectId: '',
+      projectId: 'project-1',
       saleId: '',
       serviceId: '',
       source: 'manual',
@@ -336,6 +337,18 @@ jest.mock('../src/services/kolam-task-manager-api', () => ({
   updateKolamTaskManagerStatus: jest.fn(() => Promise.resolve({})),
   updateKolamTaskManagerTask: jest.fn(() => Promise.resolve({})),
   updateKolamTaskManagerTaskType: jest.fn(() => Promise.resolve({})),
+}));
+
+jest.mock('../src/services/kolam-custom-project-api', () => ({
+  getKolamCustomProjectOptions: jest.fn(() =>
+    Promise.resolve([
+      {
+        id: 'project-1',
+        label: 'Q-001',
+        quotationNumber: 'Q-001',
+      },
+    ]),
+  ),
 }));
 
 jest.mock('../src/services/kolam-location-api', () => ({
@@ -605,12 +618,15 @@ describe('KolamWorkspaceSurface', () => {
 
     await ReactTestRenderer.act(async () => {
       await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
     });
 
     expect(renderText(renderer!)).toEqual(
       expect.arrayContaining([
         'Tugas',
         'Tugas Terjadwal',
+        'Project',
         'To Do',
         'Cek jadwal kolam',
         'Dara Ops',
@@ -618,7 +634,7 @@ describe('KolamWorkspaceSurface', () => {
     );
   });
 
-  it('opens the native Task Manager form from /task-manager', async () => {
+  it('renders native Task Manager project controls for /task-manager', async () => {
     let renderer: ReactTestRenderer.ReactTestRenderer;
     const taskManagerItem = getKolamNavigationItemByRoute('/task-manager');
 
@@ -643,16 +659,12 @@ describe('KolamWorkspaceSurface', () => {
       await Promise.resolve();
     });
 
-    const newButton = renderer!.root.findAll(
-      node => node.props.label === 'Baru',
-    )[0];
+    const projectDropdown = renderer!.root
+      .findAllByType(KolamDropdownSelect)
+      .find(node => node.props.label === 'Project');
 
-    await ReactTestRenderer.act(async () => {
-      newButton.props.onPress();
-    });
-
-    expect(renderText(renderer!)).toEqual(
-      expect.arrayContaining(['Tugas baru', 'Judul', 'PIC', 'Kategori']),
+    expect(projectDropdown?.props.options).toEqual(
+      expect.arrayContaining([{ label: 'Q-001', value: 'project-1' }]),
     );
   });
 

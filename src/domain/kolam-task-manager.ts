@@ -270,6 +270,7 @@ export interface KolamTaskManagerListQuery {
   categoryBucket?: KolamTaskCategoryBucket | 'all';
   categoryId?: string;
   assignedToId?: string;
+  projectId?: string;
   mine?: boolean;
 }
 
