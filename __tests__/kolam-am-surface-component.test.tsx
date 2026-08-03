@@ -3017,17 +3017,17 @@ describe('KolamAmSurface', () => {
   it('hides Users create, edit, and delete actions when AM live permission is read-only', async () => {
     jest.mocked(getAmCurrentUser).mockResolvedValue({
       _id: 'user-current',
-      fullName: 'Read Only User',
-      username: 'readonly',
+      fullName: 'Read Only Super Admin',
+      username: 'readonly-root',
       role: {
         _id: 'role-read',
-        name: 'User',
+        name: 'Super Admin',
         permissions: ['user:read'],
         description: 'Read-only role',
       },
     });
     jest.mocked(getAmRoles).mockResolvedValue([
-      {_id: 'role-read', name: 'User', permissions: ['user:read'], description: 'Read-only role'},
+      {_id: 'role-read', name: 'Super Admin', permissions: ['user:read'], description: 'Read-only role'},
     ]);
     jest.mocked(getAmUsers).mockResolvedValue({
       data: [

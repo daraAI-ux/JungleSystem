@@ -6363,7 +6363,6 @@ function getServiceDevice(account: AmServiceAccount) {
 
 function hasAmPermission(user: AmCurrentUser | null, permission: string) {
   if (!user?.role) return false;
-  if (user.role.name === 'Super Admin') return true;
   return user.role.permissions.includes(permission);
 }
 
