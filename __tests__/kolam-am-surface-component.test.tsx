@@ -4699,7 +4699,7 @@ describe('KolamAmSurface', () => {
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Transfer Create'}).props.onPress();
     });
-    expect(renderText(renderer!).join(' ')).toContain('Transfer method is required');
+    expect(renderText(renderer!).join(' ')).toContain('Transfer method is required for inter-bank transfers');
     expect(createAmTransfer).not.toHaveBeenCalled();
 
     await act(async () => {

@@ -3924,7 +3924,7 @@ function AmTransfersPage({
       return;
     }
     if (isInterBankTransfer && !formTransferMethod) {
-      setError('Transfer method is required');
+      setError('Transfer method is required for inter-bank transfers');
       return;
     }
     if (isInterBankTransfer && formTransferMethod === 'BI FAST' && !formTransactionPurpose) {
