@@ -7168,6 +7168,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   tableHeader: {
+    width: '100%',
     flexDirection: 'row',
     borderBottomWidth: 1,
     borderBottomColor: V.colors.border,
@@ -7176,6 +7177,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   dashboardTableHeader: {
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     borderBottomWidth: 1,
@@ -7192,6 +7194,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   tableRow: {
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     borderTopWidth: 1,
@@ -7200,6 +7203,7 @@ const styles = StyleSheet.create({
     paddingVertical: 11,
   },
   dashboardTableRow: {
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     borderTopWidth: 1,
@@ -7288,6 +7292,7 @@ const styles = StyleSheet.create({
     paddingTop: 10,
   },
   detailListRow: {
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,

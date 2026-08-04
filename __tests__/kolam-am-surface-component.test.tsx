@@ -472,6 +472,28 @@ describe('KolamAmSurface', () => {
         return style?.minHeight === 720 && style?.borderWidth === 1;
       });
     expect(legacyFrame).toBeUndefined();
+    const amTableHeaders = renderer!.root
+      .findAllByType(View)
+      .filter(view => {
+        const style = StyleSheet.flatten(view.props.style);
+        return style?.borderBottomWidth === 1 && style?.backgroundColor;
+      });
+    expect(amTableHeaders.length).toBeGreaterThan(0);
+    expect(amTableHeaders.every(view => {
+      const style = StyleSheet.flatten(view.props.style);
+      return style?.width === '100%';
+    })).toBe(true);
+    const amTableRows = renderer!.root
+      .findAllByType(View)
+      .filter(view => {
+        const style = StyleSheet.flatten(view.props.style);
+        return style?.borderTopWidth === 1 && style?.paddingHorizontal === 12;
+      });
+    expect(amTableRows.length).toBeGreaterThan(0);
+    expect(amTableRows.every(view => {
+      const style = StyleSheet.flatten(view.props.style);
+      return style?.width === '100%';
+    })).toBe(true);
     expect(getAmDashboard).toHaveBeenCalledTimes(1);
     expect(recordAmPageView).toHaveBeenCalledWith('/');
   });
