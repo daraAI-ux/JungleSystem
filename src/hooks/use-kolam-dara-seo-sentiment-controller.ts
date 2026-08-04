@@ -15,11 +15,21 @@ import {
 
 export type KolamDaraSeoSentimentFilter = 'all' | KolamDaraSeoSentimentKind;
 
+export type KolamDaraSeoSentimentTopic = {
+  title: string;
+  pct: number;
+};
+
 export interface KolamDaraSeoSentimentSummary {
+  daraSummary: string;
   negative: number;
+  negativePct: number;
   neutral: number;
+  neutralPct: number;
   positive: number;
-  topics: string[];
+  positivePct: number;
+  topics: KolamDaraSeoSentimentTopic[];
+  total: number;
 }
 
 export interface KolamDaraSeoSentimentController {
@@ -44,28 +54,87 @@ export interface KolamDaraSeoSentimentController {
   onUseQuickChip: (text: string) => void;
 }
 
-const TOPIC_STOPWORDS = new Set([
-  'yang',
-  'dengan',
-  'untuk',
-  'dari',
-  'dan',
-  'atau',
-  'ini',
-  'itu',
-  'saya',
-  'kami',
-  'kita',
-  'akan',
-  'sudah',
-  'juga',
-  'tidak',
-  'ada',
-  'nya',
-  'ke',
-  'di',
-  'sangat',
-]);
+/** FE `computeTopics` — DA-Dara-Plugin DaraSentimentDashboard. */
+function computeSentimentTopics(
+  rows: KolamDaraSeoSentimentRow[],
+): KolamDaraSeoSentimentTopic[] {
+  const keys = {
+    product: ['produk', 'bagus', 'kualitas', 'warna', 'vivid', 'cacat', 'rusak'],
+    shipping: ['kirim', 'pengiriman', 'packing', 'ongkir', 'lambat'],
+    service: ['respon', 'layanan', 'cs', 'komplain', 'kecewa'],
+    price: ['harga', 'mahal', 'murah', 'diskon'],
+  };
+  const counts = {product: 0, shipping: 0, service: 0, price: 0};
+  for (const row of rows) {
+    const text = row.text.toLowerCase();
+    (Object.keys(keys) as Array<keyof typeof keys>).forEach(key => {
+      if (keys[key].some(word => text.includes(word))) {
+        counts[key] += 1;
+      }
+    });
+  }
+  const total = Object.values(counts).reduce((a, b) => a + b, 0) || 1;
+  return [
+    {
+      title: 'Kualitas Produk',
+      pct: Math.round((counts.product / total) * 100),
+    },
+    {
+      title: 'Pengiriman & Packing',
+      pct: Math.round((counts.shipping / total) * 100),
+    },
+    {
+      title: 'Respon & Layanan',
+      pct: Math.round((counts.service / total) * 100),
+    },
+    {title: 'Harga', pct: Math.round((counts.price / total) * 100)},
+  ];
+}
+
+/** FE `buildDaraSummary`. */
+function buildDaraSentimentSummary(stats: {
+  positivePct: number;
+  negativePct: number;
+  negative: number;
+}) {
+  const parts: string[] = [];
+  if (stats.positivePct >= 50) {
+    parts.push('Mayoritas sentimen positif.');
+  } else if (stats.negativePct >= 40) {
+    parts.push('Perhatian: sentimen negatif meningkat.');
+  } else {
+    parts.push('Distribusi sentimen relatif seimbang.');
+  }
+  parts.push('Topik utama: kualitas produk, pengiriman, dan harga.');
+  if (stats.negative > 0) {
+    parts.push('Perlu perhatian: respon lambat dan komplain pelanggan.');
+  }
+  return parts.join(' ');
+}
+
+export function formatKolamDaraSeoSentimentRelativeTime(input?: string) {
+  if (!input) {
+    return '—';
+  }
+  const date = new Date(input);
+  if (Number.isNaN(date.getTime())) {
+    return '—';
+  }
+  const diffMs = Date.now() - date.getTime();
+  const minutes = Math.floor(diffMs / 60000);
+  if (minutes < 1) {
+    return 'Baru saja';
+  }
+  if (minutes < 60) {
+    return `${minutes} menit lalu`;
+  }
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) {
+    return `${hours} jam lalu`;
+  }
+  const days = Math.floor(hours / 24);
+  return `${days} hari lalu`;
+}
 
 export function useKolamDaraSeoSentimentController(
   route: string,
@@ -96,6 +165,9 @@ export function useKolamDaraSeoSentimentController(
       ]);
       setRows(sentimentRows);
       setLlamaEnabled(llmEnabled);
+      if (!llmEnabled) {
+        setUseLlm(false);
+      }
     } catch (err) {
       setRows([]);
       setError(
@@ -121,6 +193,12 @@ export function useKolamDaraSeoSentimentController(
       setNotice('Isi teks dulu');
       return;
     }
+    if (useLlm && !llamaEnabled) {
+      setNotice(
+        'Llama sentiment nonaktif. Aktifkan di Settings → AI-Tools → DARA SEO Sentiment Llama.',
+      );
+      return;
+    }
     setBusy(true);
     setNotice(null);
     try {
@@ -129,13 +207,13 @@ export function useKolamDaraSeoSentimentController(
         useLlm: llamaEnabled && useLlm,
       });
       setText('');
-      setNotice('Sentimen tercatat');
+      setNotice('Sentimen dicatat');
       await onRefresh();
     } catch (err) {
       setNotice(
         err instanceof Error && err.message.trim()
           ? sanitizeApiErrorMessage(err.message)
-          : 'Gagal menyimpan',
+          : 'Gagal analisis sentimen',
       );
     } finally {
       setBusy(false);
@@ -148,19 +226,19 @@ export function useKolamDaraSeoSentimentController(
       setNotice(null);
       try {
         await deleteKolamDaraSeoSentiment(id);
-        setNotice('Entri dihapus');
-        await onRefresh();
+        setNotice('Sentimen dihapus');
+        setRows(prev => prev.filter(row => row.id !== id));
       } catch (err) {
         setNotice(
           err instanceof Error && err.message.trim()
             ? sanitizeApiErrorMessage(err.message)
-            : 'Gagal menghapus',
+            : 'Gagal hapus sentimen',
         );
       } finally {
         setDeletingId(null);
       }
     },
-    [onRefresh],
+    [],
   );
 
   const filteredRows = useMemo(
@@ -170,24 +248,28 @@ export function useKolamDaraSeoSentimentController(
   );
 
   const summary = useMemo<KolamDaraSeoSentimentSummary>(() => {
-    const counts = {positive: 0, neutral: 0, negative: 0};
-    const freq = new Map<string, number>();
-    rows.forEach(row => {
-      counts[row.sentiment] += 1;
-      row.text
-        .toLowerCase()
-        .split(/[^a-z0-9]+/)
-        .filter(word => word.length >= 4 && !TOPIC_STOPWORDS.has(word))
-        .forEach(word => {
-          freq.set(word, (freq.get(word) ?? 0) + 1);
-        });
-    });
-    const topics = Array.from(freq.entries())
-      .filter(([, count]) => count > 1)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
-      .map(([word]) => word);
-    return {...counts, topics};
+    const total = rows.length || 1;
+    const positive = rows.filter(row => row.sentiment === 'positive').length;
+    const neutral = rows.filter(row => row.sentiment === 'neutral').length;
+    const negative = rows.filter(row => row.sentiment === 'negative').length;
+    const positivePct = Math.round((positive / total) * 100);
+    const neutralPct = Math.round((neutral / total) * 100);
+    const negativePct = Math.round((negative / total) * 100);
+    return {
+      total: rows.length,
+      positive,
+      neutral,
+      negative,
+      positivePct,
+      neutralPct,
+      negativePct,
+      topics: computeSentimentTopics(rows),
+      daraSummary: buildDaraSentimentSummary({
+        positivePct,
+        negativePct,
+        negative,
+      }),
+    };
   }, [rows]);
 
   return {
