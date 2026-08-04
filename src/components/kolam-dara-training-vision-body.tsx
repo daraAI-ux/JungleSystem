@@ -347,6 +347,14 @@ export function KolamDaraTrainingVisionBody({
     setBusy(key);
     try {
       await fn();
+    } catch (err) {
+      setNotice(
+        err instanceof ApiError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : 'Operasi gagal',
+      );
     } finally {
       setBusy(null);
     }
@@ -708,11 +716,19 @@ export function KolamDaraTrainingVisionBody({
                     value={stats.clipIndexMissing ?? 0}
                   />
                   <PipelineField
+                    hint={
+                      clipJob?.status === 'failed' && clipJob.error
+                        ? clipJob.error
+                        : undefined
+                    }
                     label="Job"
                     value={clipJobLabel(clipJob)}
                   />
                 </View>
               </View>
+            ) : null}
+            {clipJob?.status === 'failed' && clipJob.error ? (
+              <Text style={styles.notice}>{clipJob.error}</Text>
             ) : null}
           </View>
         </>
