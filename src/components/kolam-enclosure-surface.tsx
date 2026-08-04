@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -3335,45 +3334,6 @@ const styles = StyleSheet.create({
     gap: 4,
     justifyContent: 'center',
     overflow: 'visible',
-  },
-  speciesThumb: {
-    alignItems: 'center',
-    backgroundColor: V.colors.secondary,
-    borderColor: V.colors.border,
-    borderRadius: 5,
-    borderWidth: 1,
-    height: 28,
-    justifyContent: 'center',
-    overflow: 'hidden',
-    width: 28,
-  },
-  speciesThumbImage: {
-    height: 28,
-    width: 28,
-  },
-  speciesThumbPlaceholderText: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 10,
-    fontWeight: '800',
-  },
-  speciesThumbMore: {
-    alignItems: 'center',
-    backgroundColor: V.colors.muted,
-    borderColor: V.colors.border,
-    borderRadius: 5,
-    borderWidth: 1,
-    height: 28,
-    justifyContent: 'center',
-    minWidth: 28,
-    overflow: 'hidden',
-    paddingHorizontal: 4,
-  },
-  speciesThumbMoreText: {
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 10,
-    fontWeight: '800',
   },
   cell: {
     justifyContent: 'center',
