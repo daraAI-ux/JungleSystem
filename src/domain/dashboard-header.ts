@@ -202,9 +202,15 @@ export function getDashboardGreeting(
 }
 
 export function getDashboardSubtitle(moduleLabel: string): string {
-  return moduleLabel === 'Kolam'
-    ? 'Ringkasan performa toko hari ini: penjualan, stok, dan pesanan tertunda.'
-    : `${moduleLabel} workspace native Windows.`;
+  if (moduleLabel === 'Kolam') {
+    return 'Ringkasan performa toko hari ini: penjualan, stok, dan pesanan tertunda.';
+  }
+
+  if (moduleLabel === 'AM') {
+    return getAmRouteByModuleRoute('/').description;
+  }
+
+  return `${moduleLabel} workspace native Windows.`;
 }
 
 export function getDashboardHeaderRouteContext({

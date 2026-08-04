@@ -51,6 +51,9 @@ describe('dashboard header copy', () => {
     expect(getDashboardSubtitle('Kolam')).toBe(
       'Ringkasan performa toko hari ini: penjualan, stok, dan pesanan tertunda.',
     );
+    expect(getDashboardSubtitle('AM')).toBe(
+      'Ringkasan akun, device, transfer, dan mutasi AM.',
+    );
     expect(getDashboardSubtitle('Plugin Hub')).toBe(
       'Plugin Hub workspace native Windows.',
     );
