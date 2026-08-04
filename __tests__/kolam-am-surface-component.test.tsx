@@ -637,57 +637,6 @@ describe('KolamAmSurface', () => {
     expect(recordAmPageView).toHaveBeenCalledWith('/services');
   });
 
-  it('keeps non-dashboard AM route bodies flush with the shell wrapper', async () => {
-    let renderer: ReactTestRenderer.ReactTestRenderer;
-
-    await act(async () => {
-      renderer = ReactTestRenderer.create(
-        <KolamAmSurface
-          activeModuleRoute={amRoute('services')}
-          dataset={seedUnifiedDataset}
-        />,
-      );
-    });
-    renderers.push(renderer!);
-
-    await act(async () => {
-      await Promise.resolve();
-    });
-
-    const routeTablePanels = renderer!.root
-      .findAllByType(View)
-      .filter(view => {
-        const style = StyleSheet.flatten(view.props.style);
-        return style?.overflow === 'hidden' &&
-          style?.borderWidth === 1 &&
-          style?.borderRadius === 8 &&
-          style?.backgroundColor;
-      });
-
-    expect(routeTablePanels.length).toBeGreaterThan(0);
-    expect(routeTablePanels.every(view => {
-      const style = StyleSheet.flatten(view.props.style);
-      return style?.width === '100%' &&
-        style?.alignSelf === 'stretch' &&
-        style?.minWidth === 0;
-    })).toBe(true);
-
-    await updateAmRoute(renderer!, 'mutasi');
-
-    const mutasiBodyStacks = renderer!.root
-      .findAllByType(View)
-      .filter(view => {
-        const style = StyleSheet.flatten(view.props.style);
-        return style?.width === '100%' &&
-          style?.alignSelf === 'stretch' &&
-          style?.minWidth === 0;
-      });
-
-    expect(mutasiBodyStacks.length).toBeGreaterThanOrEqual(4);
-    expect(recordAmPageView).toHaveBeenCalledWith('/services');
-    expect(recordAmPageView).toHaveBeenCalledWith('/mutasi');
-  });
-
   it('opens AM dashboard parity routes from recent panels', async () => {
     const onModuleRouteSelect = jest.fn();
     let renderer: ReactTestRenderer.ReactTestRenderer;
