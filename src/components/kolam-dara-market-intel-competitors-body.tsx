@@ -105,40 +105,78 @@ function CompetitorsToolbar({
   return (
     <View ref={toolbarRef} collapsable={false} style={styles.toolbarWrap}>
       <View style={kolamTableToolbarStyles.shell}>
-        {/* FE `dara-approvals-toolbar`: brand + actions flex-end. */}
-        <View style={styles.toolbarEndRow}>
-          {brandOptions.length > 1 ? (
-            <View ref={brandTriggerRef} collapsable={false}>
-              <KolamTableFilterTrigger
-                active={brandPanelOpen || controller.brandId !== 'all'}
-                label={brandLabel}
-                onPress={openBrandPanel}
-                open={brandPanelOpen}
-                variant="quiet"
+        <View style={kolamTableToolbarStyles.row}>
+          <View style={kolamTableToolbarStyles.filters}>
+            {controller.view === 'list' ? (
+              <KolamSearchField
+                containerStyle={kolamTableToolbarStyles.searchInput}
+                onChangeText={controller.onSetSearch}
+                placeholder="Cari nama kompetitor…"
+                value={controller.search}
               />
-            </View>
-          ) : null}
-          {controller.view === 'detail' ? (
+            ) : null}
+            {brandOptions.length > 1 ? (
+              <View ref={brandTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={brandPanelOpen || controller.brandId !== 'all'}
+                  label={brandLabel}
+                  onPress={openBrandPanel}
+                  open={brandPanelOpen}
+                  variant="quiet"
+                />
+              </View>
+            ) : null}
+          </View>
+          <View style={kolamTableToolbarStyles.actions}>
+            {controller.view === 'detail' ? (
+              <KolamButton
+                label="← Daftar kompetitor"
+                onPress={controller.onBackToList}
+                size="sm"
+              />
+            ) : (
+              <KolamButton
+                label="+ Add kompetitor"
+                onPress={controller.onToggleAddCompetitor}
+                size="sm"
+              />
+            )}
             <KolamButton
-              label="← Daftar kompetitor"
-              onPress={controller.onBackToList}
+              disabled={controller.loading}
+              label={controller.loading ? 'Memuat…' : 'Muat'}
+              onPress={() => {
+                void controller.onRefresh();
+              }}
+              size="sm"
             />
-          ) : null}
-          <KolamButton
-            disabled={controller.loading}
-            label={controller.loading ? 'Memuat…' : 'Muat'}
-            onPress={() => {
-              void controller.onRefresh();
-            }}
-          />
-          <KolamButton
-            disabled={controller.busy}
-            label="Laporkan DARA"
-            onPress={() => {
-              void controller.onSendReport();
-            }}
-          />
+            <KolamButton
+              disabled={controller.busy}
+              label="Laporkan DARA"
+              onPress={() => {
+                void controller.onSendReport();
+              }}
+              size="sm"
+            />
+          </View>
         </View>
+        {controller.view === 'list' && controller.showAddCompetitor ? (
+          <View style={styles.addRow}>
+            <Text style={styles.fieldLabel}>Nama kompetitor</Text>
+            <TextInput
+              onChangeText={controller.onSetNewCompetitorName}
+              placeholder="Contoh: Toko ABC"
+              placeholderTextColor={V.colors.mutedFg}
+              style={styles.input}
+              value={controller.newCompetitorName}
+            />
+            <KolamButton
+              disabled={!controller.newCompetitorName.trim()}
+              label="Buka & tambah barang"
+              onPress={controller.onConfirmAddCompetitor}
+              size="sm"
+            />
+          </View>
+        ) : null}
       </View>
       {brandPanelOpen && panelAnchor ? (
         <View
@@ -186,38 +224,6 @@ function CompetitorsListView({
     <ScrollView
       contentContainerStyle={styles.scrollContent}
       style={styles.scroll}>
-      <View style={styles.card}>
-        <View style={styles.listActions}>
-          <KolamSearchField
-            containerStyle={styles.searchGrow}
-            onChangeText={controller.onSetSearch}
-            placeholder="Cari nama kompetitor…"
-            value={controller.search}
-          />
-          <KolamButton
-            label="+ Add kompetitor"
-            onPress={controller.onToggleAddCompetitor}
-          />
-        </View>
-        {controller.showAddCompetitor ? (
-          <View style={styles.addRow}>
-            <Text style={styles.fieldLabel}>Nama kompetitor</Text>
-            <TextInput
-              onChangeText={controller.onSetNewCompetitorName}
-              placeholder="Contoh: Toko ABC"
-              placeholderTextColor={V.colors.mutedFg}
-              style={styles.input}
-              value={controller.newCompetitorName}
-            />
-            <KolamButton
-              disabled={!controller.newCompetitorName.trim()}
-              label="Buka & tambah barang"
-              onPress={controller.onConfirmAddCompetitor}
-            />
-          </View>
-        ) : null}
-      </View>
-
       <Text style={styles.sectionTitle}>
         {`Daftar kompetitor (${controller.filteredGroups.length})`}
       </Text>
@@ -471,15 +477,6 @@ const styles = StyleSheet.create({
     position: 'relative',
     zIndex: 100000,
   },
-  toolbarEndRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    justifyContent: 'flex-end',
-    minHeight: 40,
-    overflow: 'visible',
-  },
   filterOverlayPanel: {
     backgroundColor: V.colors.bg,
     borderColor: V.colors.border,
@@ -536,18 +533,12 @@ const styles = StyleSheet.create({
     gap: 10,
     padding: 12,
   },
-  listActions: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  searchGrow: {
-    flexGrow: 1,
-    minWidth: 180,
-  },
   addRow: {
+    borderTopColor: V.colors.border,
+    borderTopWidth: StyleSheet.hairlineWidth,
     gap: 6,
+    marginTop: 4,
+    paddingTop: 8,
   },
   fieldLabel: {
     color: V.colors.mutedFg,
