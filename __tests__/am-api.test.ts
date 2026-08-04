@@ -1,5 +1,9 @@
 import {appConfig} from '../src/config/app';
-import {clearResponseCookieJar, setAccessToken} from '../src/lib/api-client';
+import {
+  clearResponseCookieJar,
+  setAccessToken,
+  setAuthSessionHandlers,
+} from '../src/lib/api-client';
 import {
   bulkDeleteAmActivityLogs,
   cancelAmTask,
@@ -87,6 +91,7 @@ describe('AM API service', () => {
     fetchMock.mockResolvedValue(jsonResponse({success: true, message: 'Logout success'}));
     globalThis.fetch = fetchMock;
     setAccessToken(undefined);
+    setAuthSessionHandlers({});
     clearResponseCookieJar();
   });
 
@@ -158,6 +163,61 @@ describe('AM API service', () => {
     expect(fetchMock.mock.calls[1][1].headers).toEqual(
       expect.not.objectContaining({
         Cookie: 'am_accessToken=token-123',
+      }),
+    );
+  });
+
+  it('refreshes the Kolam bearer token and retries AM SSO requests after a 401', async () => {
+    const refreshAccessToken = jest.fn().mockResolvedValue('fresh-kolam-token');
+    setAuthSessionHandlers({refreshAccessToken});
+    setAccessToken('expired-kolam-token');
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse(
+        {success: false, message: 'Invalid or expired token'},
+        {},
+        401,
+      ))
+      .mockResolvedValueOnce(jsonResponse({
+        success: true,
+        data: {
+          summary: {
+            totalBalance: 0,
+            totalAccounts: 0,
+            todayIncoming: {total: 0, count: 0},
+            todayOutgoing: {total: 0, count: 0},
+            activeDevices: 0,
+          },
+          transfers: {pending: 0, processing: 0, success: 0, failed: 0, totalAmount: 0},
+          recentTransfers: [],
+          recentMutasi: [],
+          chartData: [],
+          devices: [],
+        },
+      }));
+
+    await getAmDashboard('https://am.example.test/api');
+
+    expect(refreshAccessToken).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://am.example.test/api/dashboard',
+      expect.objectContaining({
+        credentials: 'omit',
+        headers: expect.objectContaining({
+          Authorization: 'Bearer expired-kolam-token',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://am.example.test/api/dashboard',
+      expect.objectContaining({
+        credentials: 'omit',
+        headers: expect.objectContaining({
+          Authorization: 'Bearer fresh-kolam-token',
+          'x-source': appConfig.amSourceHeader,
+        }),
       }),
     );
   });
@@ -1290,10 +1350,14 @@ describe('AM API service', () => {
   });
 });
 
-function jsonResponse(payload: unknown, headers: Record<string, string> = {}) {
+function jsonResponse(
+  payload: unknown,
+  headers: Record<string, string> = {},
+  status = 200,
+) {
   return {
-    ok: true,
-    status: 200,
+    ok: status >= 200 && status < 300,
+    status,
     headers: {
       get: jest.fn((name: string) => headers[name.toLowerCase()] ?? headers[name]),
     },
