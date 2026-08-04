@@ -81,10 +81,10 @@ function WorkspaceTabButton({
           accessibilityLabel={`Tutup ${label}`}
           onPress={onClose}
           size={22}
-          radius="md"
+          radius="full"
           variant="ghost"
           style={styles.closeButton}>
-          <KolamXIcon color={V.colors.danger} />
+          <KolamXIcon color={V.colors.primaryFg} />
         </KolamIconButton>
       ) : null}
       {active ? <View style={styles.indicator} /> : null}
@@ -138,6 +138,7 @@ const styles = StyleSheet.create({
     color: V.colors.fg,
   },
   closeButton: {
+    backgroundColor: V.colors.danger,
     flexShrink: 0,
   },
   addButton: {

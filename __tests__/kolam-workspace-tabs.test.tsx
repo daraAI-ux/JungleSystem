@@ -177,11 +177,18 @@ describe('Kolam workspace tabs', () => {
       .map(node => node.props.children);
 
     expect(textLabels).toEqual(expect.arrayContaining(['Produk', 'Spesies']));
+    const closeButton = renderer!.root.findByProps({
+      accessibilityLabel: 'Tutup Produk',
+    });
+
+    expect(closeButton.props.style).toEqual(
+      expect.objectContaining({backgroundColor: V.colors.danger}),
+    );
     expect(renderer!.root.findAllByType(KolamXIcon)[0].props.color).toBe(
-      V.colors.danger,
+      V.colors.primaryFg,
     );
     renderer!.root.findByProps({accessibilityLabel: 'Tab baru'}).props.onPress();
-    renderer!.root.findByProps({accessibilityLabel: 'Tutup Produk'}).props.onPress();
+    closeButton.props.onPress();
 
     expect(onCreateTab).toHaveBeenCalledTimes(1);
     expect(onTabClose).toHaveBeenCalledWith('products');
