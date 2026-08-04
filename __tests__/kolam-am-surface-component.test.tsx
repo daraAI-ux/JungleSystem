@@ -1011,7 +1011,7 @@ describe('KolamAmSurface', () => {
           status: 'pending',
           priority: 1,
           deviceId: {_id: 'device-1', name: 'Phone 1'},
-          serviceAccountId: {_id: 'service-1', label: 'Tokopedia Main'},
+          serviceAccountId: {_id: 'service-1', label: 'Tokopedia Main', platform: 'tokopedia'},
           payload: {},
           result: {},
           error: '',
@@ -1030,7 +1030,7 @@ describe('KolamAmSurface', () => {
           status: 'queued',
           priority: 1,
           deviceId: {_id: 'device-1', name: 'Phone 1'},
-          serviceAccountId: {_id: 'service-1', label: 'Tokopedia Main'},
+          serviceAccountId: {_id: 'service-1', label: 'Tokopedia Main', platform: 'tokopedia'},
           payload: {},
           result: {},
           error: '',
@@ -1049,7 +1049,7 @@ describe('KolamAmSurface', () => {
           status: 'processing',
           priority: 1,
           deviceId: {_id: 'device-1', name: 'Phone 1'},
-          serviceAccountId: {_id: 'service-1', label: 'Tokopedia Main'},
+          serviceAccountId: {_id: 'service-1', label: 'Tokopedia Main', platform: 'tokopedia'},
           payload: {},
           result: {},
           error: '',
@@ -1076,7 +1076,9 @@ describe('KolamAmSurface', () => {
 
     await updateAmRoute(renderer!, 'tasks');
     const taskListText = renderText(renderer!);
+    const joinedTaskListText = taskListText.join(' ');
     expect(taskListText).toContain('queued');
+    expect(joinedTaskListText).toContain('Tokopedia Main tokopedia');
     expect(taskListText).toEqual(expect.arrayContaining(['Type', 'Status', 'Device', 'Account', 'Error', 'Created']));
     expect(taskListText).not.toContain('Action');
     expect(

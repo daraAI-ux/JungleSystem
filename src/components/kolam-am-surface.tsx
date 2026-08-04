@@ -942,7 +942,14 @@ function AmTasksPage({
             <Text style={[styles.cellText, styles.typeCol]}>{TASK_TYPE_LABELS[task.type] ?? task.type}</Text>
             <Text style={[styles.cellText, styles.statusCol]}>{task.status}</Text>
             <Text style={[styles.cellText, styles.deviceCol]} numberOfLines={1}>{task.deviceId?.name ?? '-'}</Text>
-            <Text style={[styles.cellText, styles.accountCol]} numberOfLines={1}>{task.serviceAccountId?.label ?? task.serviceAccountId?.platform ?? '-'}</Text>
+            <View style={styles.accountCol}>
+              <Text style={styles.cellText} numberOfLines={1}>
+                {task.serviceAccountId?.label ?? task.serviceAccountId?.platform ?? '-'}
+              </Text>
+              {task.serviceAccountId?.platform ? (
+                <Text style={styles.rowMeta} numberOfLines={1}>{task.serviceAccountId.platform}</Text>
+              ) : null}
+            </View>
             <Text style={[styles.cellText, styles.errorCol]} numberOfLines={1}>{task.error || '-'}</Text>
             <Text style={[styles.cellText, styles.dateCol]}>{formatAmDate(task.createdAt)}</Text>
             <View style={styles.actionCol}>
